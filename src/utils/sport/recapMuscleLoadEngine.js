@@ -112,7 +112,8 @@ export function getRecapDateWindow(period, ref = new Date()) {
   return { start: toYmd(d), end };
 }
 
-function inWindow(dateStr, window) {
+/** Fenêtre récap (inclusif). `start == null` ⇒ tout l’historique jusqu’à `end`. */
+export function isDateInRecapWindow(dateStr, window) {
   if (!dateStr) return false;
   if (window.start == null) return dateStr <= window.end;
   return dateStr >= window.start && dateStr <= window.end;
@@ -164,7 +165,7 @@ function pushupRepShareWeights(groupsForReps) {
   return PUSHUP_REP_SHARE_TEMPLATE;
 }
 
-function collectPushupEnduranceSessions(allData) {
+export function collectPushupEnduranceSessions(allData) {
   const modern = allData?.enduranceData?.sessions?.pushups;
   const legacy = allData?.enduranceData?.pushupSessions;
   const raw = [
@@ -194,7 +195,7 @@ function applyEndurancePushupsRepShares({ allData, window, repShareByGroup, exer
   pushupSessions.forEach((session) => {
     if (isMockEnduranceSession(session)) return;
     const ds = normalizeDateString(session?.date);
-    if (!ds || !inWindow(ds, window)) return;
+    if (!ds || !isDateInRecapWindow(ds, window)) return;
     const n = enduranceRepsForSession('pushups', session);
     if (n <= 0) return;
 
@@ -250,7 +251,7 @@ export function computeRecapMuscleState(allData, period, getExerciseNameById, re
     const sep = gkey.lastIndexOf('::');
     const dateStr = gkey.slice(0, sep);
     const idStr = gkey.slice(sep + 2);
-    if (!inWindow(dateStr, window)) return;
+    if (!isDateInRecapWindow(dateStr, window)) return;
 
     const idNum = parseInt(idStr, 10);
     const name =
@@ -312,7 +313,7 @@ export function computeRecapMuscleState(allData, period, getExerciseNameById, re
     activitySessions.forEach((session) => {
       if (isMockEnduranceSession(session)) return;
       const ds = normalizeDateString(session?.date);
-      if (!ds || !inWindow(ds, window)) return;
+      if (!ds || !isDateInRecapWindow(ds, window)) return;
       const load = enduranceSessionCalendarLoad(activityType, session);
       if (load <= 0) return;
       const sessionMinutes = parseDurationToMinutes(

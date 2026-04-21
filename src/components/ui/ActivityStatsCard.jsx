@@ -43,6 +43,7 @@ function CardContent({ className, children, ...props }) {
  *   primaryBarClassName?: string,
  *   secondaryBarClassName?: string,
  *   chartAxisDensity?: 'default' | 'compact',
+ *   sportShell?: boolean,
  * }} ActivityStatsCardProps
  */
 
@@ -59,6 +60,7 @@ const ActivityStatsCard = React.forwardRef(function ActivityStatsCard(
     primaryBarClassName,
     secondaryBarClassName,
     chartAxisDensity = 'default',
+    sportShell = false,
     ...props
   },
   ref
@@ -84,19 +86,20 @@ const ActivityStatsCard = React.forwardRef(function ActivityStatsCard(
     }),
   };
 
+  const shellClass = sportShell
+    ? 'border-2 border-[#0F4C5C]/75 bg-black text-slate-50 shadow-lg shadow-black/40'
+    : 'border border-slate-700/80 bg-slate-900/85 text-slate-50 shadow-lg backdrop-blur-md';
+
   return (
     <div
       ref={ref}
-      className={cn(
-        'w-full max-w-sm overflow-hidden rounded-xl border border-slate-700/80 bg-slate-900/85 text-slate-50 shadow-lg backdrop-blur-md',
-        className
-      )}
+      className={cn('w-full max-w-sm overflow-hidden rounded-xl', shellClass, className)}
       {...props}
     >
       <CardHeader className="pb-2">
         <div className="flex items-center justify-between gap-2">
           <div className="flex min-w-0 items-center gap-3">
-            <div className="shrink-0 text-violet-400">{icon}</div>
+            <div className={cn('shrink-0', sportShell ? 'text-teal-400' : 'text-violet-400')}>{icon}</div>
             <CardTitle className="truncate text-base font-semibold md:text-lg">{title}</CardTitle>
           </div>
           {onActionClick ? (

@@ -1,4 +1,4 @@
-/**
+﻿/**
  * NutritionHealthScore - Score Santé Globale
  * 
  * Composant pour afficher le score santé global composite
@@ -37,7 +37,7 @@ const NutritionHealthScore = React.memo(() => {
 
   if (loading && !healthScore) {
     return (
-      <Card className="bg-slate-800/50 border-slate-700">
+      <Card variant="sport">
         <CardContent className="text-center py-12">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto"></div>
           <p className="text-slate-400 mt-4">Calcul du score santé global en cours...</p>
@@ -48,7 +48,7 @@ const NutritionHealthScore = React.memo(() => {
 
   if (error) {
     return (
-      <Card className="bg-slate-800/50 border-slate-700">
+      <Card variant="sport">
         <CardContent className="text-center py-12 text-red-400">
           <AlertCircle size={48} className="mx-auto mb-4" />
           <p>Erreur lors du calcul du score santé global</p>
@@ -68,7 +68,7 @@ const NutritionHealthScore = React.memo(() => {
 
   if (!healthScore) {
     return (
-      <Card className="bg-slate-800/50 border-slate-700">
+      <Card variant="sport">
         <CardContent className="text-center py-12 text-slate-400">
           <Info size={48} className="mx-auto mb-4" />
           <p>Aucune donnée disponible pour calculer le score santé global</p>
@@ -87,17 +87,17 @@ const NutritionHealthScore = React.memo(() => {
 
   // Couleur selon score global
   const getScoreColor = (score) => {
-    if (score >= 80) return 'text-green-400';
-    if (score >= 60) return 'text-yellow-400';
-    if (score >= 40) return 'text-orange-400';
+    if (score >= 80) return 'text-emerald-300';
+    if (score >= 60) return 'text-sky-300';
+    if (score >= 40) return 'text-blue-300';
     return 'text-red-400';
   };
 
   const getScoreBgColor = (score) => {
-    if (score >= 80) return 'bg-green-500/20 border-green-500/50';
-    if (score >= 60) return 'bg-yellow-500/20 border-yellow-500/50';
-    if (score >= 40) return 'bg-orange-500/20 border-orange-500/50';
-    return 'bg-red-500/20 border-red-500/50';
+    if (score >= 80) return 'bg-emerald-500/10 border-emerald-500/45';
+    if (score >= 60) return 'bg-sky-500/10 border-sky-500/45';
+    if (score >= 40) return 'bg-blue-600/10 border-blue-500/45';
+    return 'bg-red-500/10 border-red-500/45';
   };
 
   // Icônes et labels pour sous-scores
@@ -146,7 +146,7 @@ const NutritionHealthScore = React.memo(() => {
       </div>
 
       {/* Score Global Principal */}
-      <Card className={`bg-slate-800/50 border-slate-700 ${getScoreBgColor(safeGlobal)}`}>
+      <Card variant="sport" className={`${getScoreBgColor(safeGlobal)}`}>
         <CardContent className="p-8">
           <div className="flex flex-col items-center text-center">
             {/* Jauge circulaire simplifiée (utilisant barre de progression) */}
@@ -217,7 +217,7 @@ const NutritionHealthScore = React.memo(() => {
       </Card>
 
       {/* Sous-Scores */}
-      <Card className="bg-slate-800/50 border-slate-700">
+      <Card variant="sport">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Target size={20} className="text-blue-400" />
@@ -236,25 +236,25 @@ const NutritionHealthScore = React.memo(() => {
               return (
                 <div
                   key={category}
-                  className="bg-slate-900/50 rounded-lg p-4 border border-slate-700/50"
+                  className="rounded-lg border border-[#0F4C5C]/55 bg-black p-4"
                 >
                   <div className="flex items-center justify-between mb-2">
                     <div className="flex items-center gap-2">
                       <Icon size={18} className={config.color} />
-                      <span className="text-slate-300 font-medium">{config.label}</span>
+                      <span className="font-medium text-teal-100">{config.label}</span>
                     </div>
                     <span className={`text-lg font-bold ${getScoreColor(score)}`}>
                       {score}
                     </span>
                   </div>
                   {/* Barre de progression */}
-                  <div className="w-full bg-slate-700 rounded-full h-2">
+                  <div className="h-2 w-full rounded-full bg-[#0F4C5C]/35">
                     <div
                       className={`h-2 rounded-full transition-all duration-500 ${
-                        score >= 80 ? 'bg-green-500' :
-                        score >= 60 ? 'bg-yellow-500' :
-                        score >= 40 ? 'bg-orange-500' :
-                        'bg-red-500'
+                        score >= 80 ? 'bg-emerald-500' :
+                        score >= 60 ? 'bg-sky-500' :
+                        score >= 40 ? 'bg-cyan-600' :
+                        'bg-rose-600'
                       }`}
                       style={{ width: `${progressPercent}%` }}
                     />
@@ -268,7 +268,7 @@ const NutritionHealthScore = React.memo(() => {
 
       {/* Recommandations */}
       {recommendations && recommendations.length > 0 && (
-        <Card className="bg-slate-800/50 border-slate-700">
+        <Card variant="sport">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <AlertCircle size={20} className="text-yellow-400" />
@@ -318,7 +318,7 @@ const NutritionHealthScore = React.memo(() => {
 
       {/* Aucune recommandation si tout va bien */}
       {(!recommendations || recommendations.length === 0) && (
-        <Card className="bg-slate-800/50 border-slate-700">
+        <Card variant="sport">
           <CardContent className="text-center py-8">
             <CheckCircle size={48} className="mx-auto mb-4 text-green-400" />
             <p className="text-green-300 font-semibold">Excellent travail !</p>
@@ -331,7 +331,7 @@ const NutritionHealthScore = React.memo(() => {
 
       {/* Détails calcul (optionnel, peut être masqué) */}
       {healthScore.breakdown && (
-        <Card className="bg-slate-800/50 border-slate-700">
+        <Card variant="sport">
           <CardHeader>
             <CardTitle className="flex items-center gap-2 text-sm text-slate-400">
               <Info size={16} />

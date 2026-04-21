@@ -1,4 +1,4 @@
-/**
+﻿/**
  * MealList - Liste des Repas du Jour
  * 
  * Affiche la liste des repas d'un jour avec :
@@ -174,7 +174,7 @@ const MealList = React.memo(({ meals, onEdit, onDelete, onAdd }) => {
 
   if (meals.length === 0) {
     return (
-      <Card className="bg-slate-800/50 border-slate-700">
+      <Card variant="sport">
         <CardContent className="p-8 text-center">
           <Utensils size={48} className="mx-auto text-slate-600 mb-4" />
           <p className="text-slate-400 mb-4">Aucun repas enregistré pour ce jour</p>
@@ -192,7 +192,7 @@ const MealList = React.memo(({ meals, onEdit, onDelete, onAdd }) => {
   }
 
   return (
-    <Card className="bg-slate-800/50 border-slate-700">
+    <Card variant="sport">
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <Utensils size={24} className="text-blue-400" />

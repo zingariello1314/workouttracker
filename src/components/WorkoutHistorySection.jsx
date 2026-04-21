@@ -313,20 +313,27 @@ const WorkoutHistorySection = () => {
   // Obtenir la couleur de bordure selon le type d'exercice
   const getExerciseBorderColor = (exercise) => {
     switch (exercise.type) {
-      case 'semaineA': return 'border-l-orange-400';
-      case 'semaineB': return 'border-l-purple-400';
-      case 'stretch': return 'border-l-green-400';
-      default: return 'border-l-blue-400';
+      case 'semaineA':
+        return 'border-l-[#0F5C45]';
+      case 'semaineB':
+        return 'border-l-sky-500';
+      case 'stretch':
+        return 'border-l-emerald-500';
+      default:
+        return 'border-l-[#0F4C5C]';
     }
   };
 
-  // Obtenir la couleur du badge selon le type d'exercice
   const getExerciseBadgeColor = (exercise) => {
     switch (exercise.type) {
-      case 'semaineA': return 'bg-orange-600 text-white';
-      case 'semaineB': return 'bg-purple-600 text-white';
-      case 'stretch': return 'bg-green-600 text-white';
-      default: return 'bg-blue-600 text-white';
+      case 'semaineA':
+        return 'border border-[#0F5C45]/60 bg-[#0F5C45]/25 text-teal-50';
+      case 'semaineB':
+        return 'border border-sky-500/50 bg-sky-950/40 text-sky-100';
+      case 'stretch':
+        return 'border border-emerald-500/50 bg-emerald-950/30 text-emerald-100';
+      default:
+        return 'border border-[#0F4C5C]/60 bg-black text-teal-100';
     }
   };
 
@@ -381,29 +388,29 @@ const WorkoutHistorySection = () => {
   return (
     <div className="workout-history-section">
       {/* En-tête de la section */}
-      <Card className="history-header bg-slate-800/50 border-slate-700">
+      <Card variant="sport" className="history-header">
         <CardHeader 
           className="cursor-pointer" 
           onClick={() => setIsExpanded(!isExpanded)}
         >
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <History className="text-blue-400" size={24} />
+              <History className="text-teal-400" size={24} />
               <div>
                 <CardTitle className={`${typography.presets.h2} text-white`}>
                   Saisies passées par jour
                 </CardTitle>
-                <p className={`${typography.presets.bodySmall} text-slate-400 mt-1`}>
+                <p className={`${typography.presets.bodySmall} mt-1 text-teal-700`}>
                   Tableau de saisie organisé par jour de la semaine avec historique
                 </p>
               </div>
             </div>
             <div className="flex items-center gap-4">
-              <Badge variant="outline" className="border-blue-500 text-blue-400 flex items-center gap-1">
+              <Badge variant="outline" className="flex items-center gap-1 border-[#0F4C5C]/60 text-teal-200">
                 <Calendar size={12} />
                 {stats.totalDaysWithWorkouts} jours • {stats.totalExercises} exercices • {stats.totalStretches} étirements
               </Badge>
-              {isExpanded ? <ChevronUp size={20} className="text-slate-400" /> : <ChevronDown size={20} className="text-slate-400" />}
+              {isExpanded ? <ChevronUp size={20} className="text-teal-600" /> : <ChevronDown size={20} className="text-teal-600" />}
             </div>
           </div>
         </CardHeader>
@@ -412,13 +419,13 @@ const WorkoutHistorySection = () => {
         {isExpanded && (
           <CardContent className="pt-0">
             <div className="relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400" size={20} />
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 transform text-teal-600" size={20} />
               <Input
                 type="text"
                 placeholder="Rechercher un exercice..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10 bg-slate-700 border-slate-600 text-white placeholder-slate-400 focus:border-blue-400 focus:ring-1 focus:ring-blue-400"
+                className="border-[#0F4C5C]/50 bg-black pl-10 text-white placeholder:text-teal-800 focus:border-[#0F5C45]/55 focus:ring-1 focus:ring-[#0F5C45]/40"
               />
             </div>
           </CardContent>
@@ -458,19 +465,19 @@ const WorkoutHistorySection = () => {
 
             if (!dayWorkout) {
               return (
-                <Card key={day} className="bg-slate-800/30 border-slate-700">
+                <Card key={day} variant="sport" className="opacity-90">
                   <CardHeader className="cursor-pointer" onClick={() => toggleDayCollapse(day)}>
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-3">
-                        <div className="w-3 h-3 bg-slate-600 rounded-full"></div>
-                        <CardTitle className={`${typography.presets.h3} text-slate-500`}>
+                        <div className="h-3 w-3 rounded-full bg-teal-900" />
+                        <CardTitle className={`${typography.presets.h3} text-teal-700`}>
                           {day}
                         </CardTitle>
-                        <Badge variant="outline" className="border-slate-600 text-slate-500">
+                        <Badge variant="outline" className="border-[#0F4C5C]/45 text-teal-700">
                           Repos
                         </Badge>
                       </div>
-                      {isCollapsed ? <ChevronRight size={16} className="text-slate-500" /> : <ChevronDown size={16} className="text-slate-500" />}
+                      {isCollapsed ? <ChevronRight size={16} className="text-teal-600" /> : <ChevronDown size={16} className="text-teal-600" />}
                     </div>
                   </CardHeader>
                 </Card>
@@ -478,22 +485,22 @@ const WorkoutHistorySection = () => {
             }
 
             return (
-              <Card key={day} className="bg-slate-800/50 border-slate-700">
+              <Card key={day} variant="sport">
                 <CardHeader className="cursor-pointer" onClick={() => toggleDayCollapse(day)}>
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-3">
-                      <div className="w-3 h-3 bg-blue-500 rounded-full"></div>
+                        <div className="h-3 w-3 rounded-full bg-[#0F5C45]" />
                       <CardTitle className={`${typography.presets.h3} text-white`}>
                         {day}
                       </CardTitle>
-                      <Badge className="bg-blue-600 text-white">
+                      <Badge className="bg-[#0F5C45]/40 text-teal-50 ring-1 ring-[#0F4C5C]/50">
                         {dayWorkout.name}
                       </Badge>
-                      <Badge variant="outline" className="border-slate-500 text-slate-400">
+                      <Badge variant="outline" className="border-[#0F4C5C]/50 text-teal-200/90">
                         {searchTerm.trim() ? `${filteredItems.length}/${allItems.length}` : allItems.length} éléments
                       </Badge>
                     </div>
-                    {isCollapsed ? <ChevronRight size={16} className="text-slate-400" /> : <ChevronDown size={16} className="text-slate-400" />}
+                    {isCollapsed ? <ChevronRight size={16} className="text-teal-600" /> : <ChevronDown size={16} className="text-teal-600" />}
                   </div>
                 </CardHeader>
 
@@ -503,17 +510,17 @@ const WorkoutHistorySection = () => {
                       <table className="w-full">
                         {/* En-tête du tableau pour ce jour */}
                         <thead>
-                          <tr className="border-b border-slate-700">
-                            <th className="text-left p-4 text-white font-medium min-w-[300px] sticky left-0 bg-slate-800/50">
+                          <tr className="border-b border-[#0F4C5C]/45">
+                            <th className="sticky left-0 min-w-[300px] bg-black p-4 text-left font-medium text-teal-50">
                               Exercice
                             </th>
-                            <th className="text-center p-2 text-white font-medium min-w-[80px]">
+                            <th className="min-w-[80px] p-2 text-center font-medium text-teal-50">
                               Séries
                             </th>
                             {pastDates.map((dateInfo) => (
-                              <th key={dateInfo.dateStr} className="text-center p-2 text-white font-medium min-w-[80px]">
+                              <th key={dateInfo.dateStr} className="min-w-[80px] p-2 text-center font-medium text-teal-50">
                                 <div className="flex flex-col items-center">
-                                  <span className="text-xs text-slate-400 uppercase">
+                                  <span className="text-xs uppercase text-teal-700">
                                     {day.substring(0, 3)}
                                   </span>
                                   <span className="text-sm">
@@ -528,12 +535,14 @@ const WorkoutHistorySection = () => {
                         {/* Corps du tableau pour ce jour */}
                         <tbody>
                           {filteredItems.map((item) => (
-                            <tr key={item.id} className={`border-b border-slate-700/50 hover:bg-slate-700/20 ${getExerciseBorderColor(item)} border-l-2`}>
-                              {/* Colonne exercice/étirement */}
-                              <td className="p-4 sticky left-0 bg-slate-800/50">
+                            <tr
+                              key={item.id}
+                              className={`border-b border-[#0F4C5C]/25 hover:bg-[#0F4C5C]/10 ${getExerciseBorderColor(item)} border-l-2`}
+                            >
+                              <td className="sticky left-0 bg-black p-4">
                                 <div className="flex flex-col gap-1">
                                   <div className="flex items-center gap-2">
-                                    <span className="text-white font-medium text-sm">
+                                    <span className="text-sm font-medium text-white">
                                       {item.name}
                                     </span>
                                     <Badge className={`text-xs ${getExerciseBadgeColor(item)}`}>
@@ -543,17 +552,17 @@ const WorkoutHistorySection = () => {
                                     </Badge>
                                   </div>
                                   {item.materiel && (
-                                    <span className="text-xs text-slate-500">
+                                    <span className="text-xs text-teal-700">
                                       {item.materiel}
                                     </span>
                                   )}
                                   {item.notes && (
-                                    <span className="text-xs text-slate-400">
+                                    <span className="text-xs text-teal-600/90">
                                       {item.notes}
                                     </span>
                                   )}
                                   {item.description && (
-                                    <span className="text-xs text-slate-400 max-w-xs truncate">
+                                    <span className="max-w-xs truncate text-xs text-teal-700">
                                       {item.description}
                                     </span>
                                   )}
@@ -562,7 +571,10 @@ const WorkoutHistorySection = () => {
 
                               {/* Colonne séries/période */}
                               <td className="p-2 text-center">
-                                <Badge variant="outline" className="border-slate-500 text-slate-300 text-xs">
+                                <Badge
+                                  variant="outline"
+                                  className="border-[#0F4C5C]/55 bg-black text-xs text-teal-100"
+                                >
                                   {item.series || item.stretchType || '—'}
                                 </Badge>
                               </td>
@@ -579,10 +591,10 @@ const WorkoutHistorySection = () => {
                                         {/* Case à cocher pour étirement */}
                                         <button
                                           onClick={() => handleStretchToggle(item.stretchType, dateInfo.isoDateStr)}
-                                          className={`w-8 h-8 rounded border-2 flex items-center justify-center transition-colors ${
-                                            isCompleted 
-                                              ? 'bg-green-500 border-green-500' 
-                                              : 'border-slate-500 hover:border-green-400'
+                                          className={`flex h-8 w-8 items-center justify-center rounded border-2 transition-colors ${
+                                            isCompleted
+                                              ? 'border-emerald-500 bg-emerald-600'
+                                              : 'border-[#0F4C5C]/60 bg-black hover:border-[#0F5C45]/70'
                                           }`}
                                         >
                                           {isCompleted && (
@@ -610,17 +622,17 @@ const WorkoutHistorySection = () => {
                                           onChange={(e) => handleRepsChange(item.id, dateInfo.isoDateStr, e.target.value)}
                                           onFocus={() => handleInputFocus(item.id, dateInfo.isoDateStr, item)}
                                           placeholder="0"
-                                          className="w-16 h-10 text-center text-sm bg-slate-700 border-slate-600 text-white font-medium focus:border-blue-400 focus:ring-1 focus:ring-blue-400"
+                                          className="h-10 w-16 border border-[#0F4C5C]/55 bg-black text-center text-sm font-medium text-white placeholder:text-teal-800 focus:border-[#0F5C45]/70 focus:ring-1 focus:ring-[#0F5C45]/40"
                                           min="0"
                                         />
                                         
                                         {/* Case à cocher */}
                                         <button
                                           onClick={() => handleCompletedToggle(item.id, dateInfo.isoDateStr)}
-                                          className={`w-6 h-6 rounded border-2 flex items-center justify-center transition-colors ${
-                                            isCompleted 
-                                              ? 'bg-green-500 border-green-500' 
-                                              : 'border-slate-500 hover:border-green-400'
+                                          className={`flex h-6 w-6 items-center justify-center rounded border-2 transition-colors ${
+                                            isCompleted
+                                              ? 'border-emerald-500 bg-emerald-600'
+                                              : 'border-[#0F4C5C]/60 bg-black hover:border-[#0F5C45]/70'
                                           }`}
                                         >
                                           {isCompleted && (
@@ -645,9 +657,9 @@ const WorkoutHistorySection = () => {
 
           {/* Boutons d'action */}
           <div className="mt-4 flex justify-end gap-2">
-            <Button 
-              variant="outline" 
-              className="border-slate-600 text-slate-300 hover:bg-slate-700"
+            <Button
+              variant="outline"
+              className="border-[#0F4C5C]/55 text-teal-100 hover:border-[#0F5C45]/60 hover:bg-[#0F4C5C]/10"
               onClick={saveExerciseChanges}
             >
               <Save size={16} className="mr-2" />

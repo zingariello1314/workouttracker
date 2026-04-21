@@ -16,6 +16,7 @@ import {
 import { getNextMilestone, formatTimeUntilFr } from '../../utils/addictionQuitHelpers';
 import { mergeAddictionQuitData, getActiveSession } from '../../utils/addictionQuitSessionsXp';
 import GarminRunningStatsCard from '../garmin/GarminRunningStatsCard';
+import RecapStrengthStatsCard from '../sport/recap/RecapStrengthStatsCard';
 import { ADDICTION_QUIT_JOURNAL_BOTTOM_ANCHOR_ID } from '../tabs/addictionQuit/AddictionQuitCravingsPanel';
 import MomentumWeekCharts from './MomentumWeekCharts';
 
@@ -302,8 +303,15 @@ const DashboardMomentumBlock = () => {
               </button>
             </div>
           </div>
-          <div className="min-w-0 rounded-xl border border-slate-700/50 bg-slate-950/40 p-4">
-            <GarminRunningStatsCard variant="embedded" />
+          <div className="min-w-0 space-y-3">
+            <div className="grid grid-cols-1 gap-4 lg:grid-cols-2 lg:items-start">
+              <div className="min-w-0 rounded-xl border border-slate-700/50 bg-slate-950/40 p-4">
+                <GarminRunningStatsCard variant="embedded" />
+              </div>
+              <div className="min-w-0 rounded-xl border border-slate-700/50 bg-slate-950/40 p-4">
+                <RecapStrengthStatsCard variant="embedded" />
+              </div>
+            </div>
           </div>
         </div>
       </div>

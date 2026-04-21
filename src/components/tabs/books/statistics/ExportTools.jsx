@@ -363,9 +363,9 @@ export const ExportToolsContent = ({
           {/* Status d'export */}
           {exportStatus.message && (
             <div className={`flex items-center gap-2 p-3 rounded-lg text-sm ${
-              exportStatus.type === 'success' ? 'bg-green-500/10 text-green-300 border border-green-500/20' :
+              exportStatus.type === 'success' ? 'bg-[#3A86FF]/12 text-sky-200 border border-[#3A86FF]/35' :
               exportStatus.type === 'error' ? 'bg-red-500/10 text-red-300 border border-red-500/20' :
-              'bg-blue-500/10 text-blue-300 border border-blue-500/20'
+              'bg-[#3A86FF]/10 text-sky-200 border border-[#3A86FF]/35'
             }`}>
               {exportStatus.type === 'success' && <CheckCircle className="w-4 h-4" />}
               {exportStatus.type === 'error' && <AlertCircle className="w-4 h-4" />}
@@ -378,10 +378,10 @@ export const ExportToolsContent = ({
           <div className="grid grid-cols-1 gap-3">
             {/* Export PDF */}
             <Button
-              variant="outline"
+              variant="booksMuted"
               onClick={exportToPDF}
               disabled={isExporting}
-              className="flex items-center justify-center gap-2 w-full"
+              className="flex items-center justify-center gap-2 w-full normal-case tracking-normal border-2 border-[#3A86FF]/70 text-[#bfdbfe] hover:text-[#bfdbfe]"
             >
               {isExporting ? (
                 <Loader2 className="w-4 h-4 animate-spin" />
@@ -393,10 +393,10 @@ export const ExportToolsContent = ({
 
             {/* Export CSV */}
             <Button
-              variant="outline"
+              variant="booksMuted"
               onClick={exportToCSV}
               disabled={isExporting}
-              className="flex items-center justify-center gap-2 w-full"
+              className="flex items-center justify-center gap-2 w-full normal-case tracking-normal border-2 border-[#3A86FF]/70 text-[#bfdbfe] hover:text-[#bfdbfe]"
             >
               {isExporting ? (
                 <Loader2 className="w-4 h-4 animate-spin" />
@@ -408,14 +408,14 @@ export const ExportToolsContent = ({
 
             {/* Partage des statistiques */}
             <Button
-              variant="outline"
+              variant="booksMuted"
               onClick={() => shareData({
                 title: 'Mes statistiques de lecture',
                 text: generateShareText(),
                 url: window.location.href
               })}
               disabled={isExporting}
-              className="flex items-center justify-center gap-2 w-full"
+              className="flex items-center justify-center gap-2 w-full normal-case tracking-normal border-2 border-[#3A86FF]/70 text-[#bfdbfe] hover:text-[#bfdbfe]"
             >
               <Share2 className="w-4 h-4" />
               Partager les statistiques
@@ -425,18 +425,18 @@ export const ExportToolsContent = ({
           {/* Capture de graphiques individuels */}
           {Object.keys(chartsRefs).length > 0 && (
             <div>
-              <h4 className="text-sm font-medium text-slate-300 mb-3">
+              <h4 className="text-sm font-medium text-[#bfdbfe] mb-3">
                 Capturer les graphiques
               </h4>
               <div className="grid grid-cols-2 gap-2">
                 {Object.entries(chartsRefs).map(([chartName, chartRef]) => (
                   <Button
                     key={chartName}
-                    variant="ghost"
+                    variant="booksMuted"
                     size="sm"
                     onClick={() => captureChart(chartRef, chartName)}
                     disabled={isExporting}
-                    className="flex items-center gap-2 text-xs"
+                    className="flex items-center gap-2 text-xs normal-case tracking-normal"
                   >
                     <Camera className="w-3 h-3" />
                     {chartName}
@@ -447,7 +447,7 @@ export const ExportToolsContent = ({
           )}
 
           {/* Informations sur les formats */}
-          <div className="text-xs text-slate-400 space-y-1">
+          <div className="text-xs text-[#93c5fd]/75 space-y-1">
             <p>• PDF: Rapport complet avec métriques et graphiques</p>
             <p>• CSV: Données brutes pour analyse externe</p>
             <p>• PNG: Images haute résolution des graphiques</p>
@@ -459,10 +459,10 @@ export const ExportToolsContent = ({
 // Composant wrapper avec Card pour compatibilité
 const ExportTools = (props) => {
   return (
-    <Card variant="glass">
-      <CardHeader>
-        <CardTitle size="sm" className="flex items-center gap-2">
-          <Download className="w-4 h-4" />
+    <Card variant="books">
+      <CardHeader className="border-b border-[#3A86FF]/25">
+        <CardTitle tone="books" size="sm" className="flex items-center gap-2 normal-case tracking-wide">
+          <Download className="w-4 h-4 text-[#93c5fd]" />
           Outils d'Export et Partage
         </CardTitle>
       </CardHeader>

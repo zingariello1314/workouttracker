@@ -342,14 +342,14 @@ const ProgramDetailView = ({ program, onBack, onUpdateProgram }) => {
             type="text"
             value={editedData.name || ''}
             onChange={(e) => setEditedData({ ...editedData, name: e.target.value })}
-            className="bg-slate-800 border border-slate-600 rounded px-3 py-2 text-sm"
+            className="bg-black border border-[#0F4C5C]/50 rounded px-3 py-2 text-sm"
             placeholder="Nom de l'exercice"
           />
           <input
             type="text"
             value={editedData.series || ''}
             onChange={(e) => setEditedData({ ...editedData, series: e.target.value })}
-            className="bg-slate-800 border border-slate-600 rounded px-3 py-2 text-sm"
+            className="bg-black border border-[#0F4C5C]/50 rounded px-3 py-2 text-sm"
             placeholder="Séries (ex: 4×12, 30 min, etc.)"
           />
         </div>
@@ -367,7 +367,7 @@ const ProgramDetailView = ({ program, onBack, onUpdateProgram }) => {
                   programSubType: e.target.value !== 'cardio' ? editedData.programSubType : ''
                 })
               }
-              className="mt-1 w-full bg-slate-800 border border-slate-600 rounded px-3 py-2 text-sm"
+              className="mt-1 w-full bg-black border border-[#0F4C5C]/50 rounded px-3 py-2 text-sm"
             >
               {PROGRAM_CATEGORIES.map((c) => (
                 <option key={c.id} value={c.id}>
@@ -382,7 +382,7 @@ const ProgramDetailView = ({ program, onBack, onUpdateProgram }) => {
               <select
                 value={m.pattern || ''}
                 onChange={(e) => patchEditedMeta({ pattern: e.target.value })}
-                className="mt-1 w-full bg-slate-800 border border-slate-600 rounded px-3 py-2 text-sm"
+                className="mt-1 w-full bg-black border border-[#0F4C5C]/50 rounded px-3 py-2 text-sm"
               >
                 {MUSCU_PATTERNS.map((p) => (
                   <option key={p.id || 'none'} value={p.id}>
@@ -402,7 +402,7 @@ const ProgramDetailView = ({ program, onBack, onUpdateProgram }) => {
               <select
                 value={cardioK || 'running'}
                 onChange={(e) => setEditedData({ ...editedData, cardioKind: e.target.value })}
-                className="mt-1 w-full bg-slate-800 border border-slate-600 rounded px-3 py-2 text-sm"
+                className="mt-1 w-full bg-black border border-[#0F4C5C]/50 rounded px-3 py-2 text-sm"
               >
                 {CARDIO_KINDS.map((k) => (
                   <option key={k.id} value={k.id}>
@@ -419,7 +419,7 @@ const ProgramDetailView = ({ program, onBack, onUpdateProgram }) => {
                   <select
                     value={editedData.programSubType || 'running_easy'}
                     onChange={(e) => setEditedData({ ...editedData, programSubType: e.target.value })}
-                    className="mt-1 w-full bg-slate-800 border border-slate-600 rounded px-3 py-2 text-sm"
+                    className="mt-1 w-full bg-black border border-[#0F4C5C]/50 rounded px-3 py-2 text-sm"
                   >
                     {RUNNING_SUBTYPES.map((s) => (
                       <option key={s.id} value={s.id}>
@@ -441,7 +441,7 @@ const ProgramDetailView = ({ program, onBack, onUpdateProgram }) => {
                           distanceKm: e.target.value === '' ? '' : parseFloat(e.target.value)
                         })
                       }
-                      className="mt-1 w-full bg-slate-800 border border-slate-600 rounded px-2 py-1 text-sm"
+                      className="mt-1 w-full bg-black border border-[#0F4C5C]/50 rounded px-2 py-1 text-sm"
                     />
                   </label>
                   <label className="text-xs text-slate-400">
@@ -455,7 +455,7 @@ const ProgramDetailView = ({ program, onBack, onUpdateProgram }) => {
                           durationMin: e.target.value === '' ? '' : parseInt(e.target.value, 10)
                         })
                       }
-                      className="mt-1 w-full bg-slate-800 border border-slate-600 rounded px-2 py-1 text-sm"
+                      className="mt-1 w-full bg-black border border-[#0F4C5C]/50 rounded px-2 py-1 text-sm"
                     />
                   </label>
                   <label className="text-xs text-slate-400">
@@ -464,7 +464,7 @@ const ProgramDetailView = ({ program, onBack, onUpdateProgram }) => {
                       type="text"
                       value={m.targetPace || ''}
                       onChange={(e) => patchEditedMeta({ targetPace: e.target.value })}
-                      className="mt-1 w-full bg-slate-800 border border-slate-600 rounded px-2 py-1 text-sm"
+                      className="mt-1 w-full bg-black border border-[#0F4C5C]/50 rounded px-2 py-1 text-sm"
                       placeholder="5:00/km"
                     />
                   </label>
@@ -474,7 +474,7 @@ const ProgramDetailView = ({ program, onBack, onUpdateProgram }) => {
                       type="text"
                       value={m.targetHrZone || ''}
                       onChange={(e) => patchEditedMeta({ targetHrZone: e.target.value })}
-                      className="mt-1 w-full bg-slate-800 border border-slate-600 rounded px-2 py-1 text-sm"
+                      className="mt-1 w-full bg-black border border-[#0F4C5C]/50 rounded px-2 py-1 text-sm"
                       placeholder="Z2, 140-150…"
                     />
                   </label>
@@ -489,7 +489,7 @@ const ProgramDetailView = ({ program, onBack, onUpdateProgram }) => {
                   <select
                     value={m.jumpRopeMode || 'time'}
                     onChange={(e) => patchEditedMeta({ jumpRopeMode: e.target.value })}
-                    className="mt-1 w-full bg-slate-800 border border-slate-600 rounded px-3 py-2 text-sm"
+                    className="mt-1 w-full bg-black border border-[#0F4C5C]/50 rounded px-3 py-2 text-sm"
                   >
                     {JUMP_ROPE_MODES.map((j) => (
                       <option key={j.id} value={j.id}>
@@ -512,7 +512,7 @@ const ProgramDetailView = ({ program, onBack, onUpdateProgram }) => {
                               e.target.value === '' ? '' : parseInt(e.target.value, 10)
                           })
                         }
-                        className="mt-1 w-full bg-slate-800 border border-slate-600 rounded px-2 py-1 text-sm"
+                        className="mt-1 w-full bg-black border border-[#0F4C5C]/50 rounded px-2 py-1 text-sm"
                       />
                     </label>
                   )}
@@ -528,7 +528,7 @@ const ProgramDetailView = ({ program, onBack, onUpdateProgram }) => {
                             jumpCount: e.target.value === '' ? '' : parseInt(e.target.value, 10)
                           })
                         }
-                        className="mt-1 w-full bg-slate-800 border border-slate-600 rounded px-2 py-1 text-sm"
+                        className="mt-1 w-full bg-black border border-[#0F4C5C]/50 rounded px-2 py-1 text-sm"
                       />
                     </label>
                   )}
@@ -545,7 +545,7 @@ const ProgramDetailView = ({ program, onBack, onUpdateProgram }) => {
                               rounds: e.target.value === '' ? '' : parseInt(e.target.value, 10)
                             })
                           }
-                          className="mt-1 w-full bg-slate-800 border border-slate-600 rounded px-2 py-1 text-sm"
+                          className="mt-1 w-full bg-black border border-[#0F4C5C]/50 rounded px-2 py-1 text-sm"
                         />
                       </label>
                       <label className="text-xs text-slate-400 col-span-2">
@@ -554,7 +554,7 @@ const ProgramDetailView = ({ program, onBack, onUpdateProgram }) => {
                           type="text"
                           value={m.roundDetail || ''}
                           onChange={(e) => patchEditedMeta({ roundDetail: e.target.value })}
-                          className="mt-1 w-full bg-slate-800 border border-slate-600 rounded px-2 py-1 text-sm"
+                          className="mt-1 w-full bg-black border border-[#0F4C5C]/50 rounded px-2 py-1 text-sm"
                         />
                       </label>
                     </>
@@ -571,7 +571,7 @@ const ProgramDetailView = ({ program, onBack, onUpdateProgram }) => {
                     type="text"
                     value={m.otherCardioLabel || ''}
                     onChange={(e) => patchEditedMeta({ otherCardioLabel: e.target.value })}
-                    className="mt-1 w-full bg-slate-800 border border-slate-600 rounded px-2 py-1 text-sm"
+                    className="mt-1 w-full bg-black border border-[#0F4C5C]/50 rounded px-2 py-1 text-sm"
                   />
                 </label>
                 <label className="text-xs text-slate-400">
@@ -585,7 +585,7 @@ const ProgramDetailView = ({ program, onBack, onUpdateProgram }) => {
                         durationMin: e.target.value === '' ? '' : parseInt(e.target.value, 10)
                       })
                     }
-                    className="mt-1 w-full bg-slate-800 border border-slate-600 rounded px-2 py-1 text-sm"
+                    className="mt-1 w-full bg-black border border-[#0F4C5C]/50 rounded px-2 py-1 text-sm"
                   />
                 </label>
               </div>
@@ -600,7 +600,7 @@ const ProgramDetailView = ({ program, onBack, onUpdateProgram }) => {
               type="text"
               value={m.streetOrCoreDetail || ''}
               onChange={(e) => patchEditedMeta({ streetOrCoreDetail: e.target.value })}
-              className="mt-1 w-full bg-slate-800 border border-slate-600 rounded px-3 py-2 text-sm"
+              className="mt-1 w-full bg-black border border-[#0F4C5C]/50 rounded px-3 py-2 text-sm"
               placeholder="Ex: tractions, dips, planche…"
             />
           </label>
@@ -611,13 +611,13 @@ const ProgramDetailView = ({ program, onBack, onUpdateProgram }) => {
             type="text"
             value={editedData.materiel || ''}
             onChange={(e) => setEditedData({ ...editedData, materiel: e.target.value })}
-            className="bg-slate-800 border border-slate-600 rounded px-3 py-2 text-sm"
+            className="bg-black border border-[#0F4C5C]/50 rounded px-3 py-2 text-sm"
             placeholder="Matériel"
           />
           <select
             value={editedData.intensity || 'moderate'}
             onChange={(e) => setEditedData({ ...editedData, intensity: e.target.value })}
-            className="bg-slate-800 border border-slate-600 rounded px-3 py-2 text-sm"
+            className="bg-black border border-[#0F4C5C]/50 rounded px-3 py-2 text-sm"
           >
             <option value="light">Léger</option>
             <option value="moderate">Modéré</option>
@@ -630,7 +630,7 @@ const ProgramDetailView = ({ program, onBack, onUpdateProgram }) => {
             onChange={(e) =>
               setEditedData({ ...editedData, rest: e.target.value === '' ? '' : parseInt(e.target.value, 10) })
             }
-            className="bg-slate-800 border border-slate-600 rounded px-3 py-2 text-sm"
+            className="bg-black border border-[#0F4C5C]/50 rounded px-3 py-2 text-sm"
             placeholder="Repos (sec)"
           />
         </div>
@@ -641,7 +641,7 @@ const ProgramDetailView = ({ program, onBack, onUpdateProgram }) => {
               type="text"
               value={editedData.type || 'standard'}
               onChange={(e) => setEditedData({ ...editedData, type: e.target.value })}
-              className="mt-1 w-full bg-slate-800 border border-slate-600 rounded px-3 py-2 text-sm"
+              className="mt-1 w-full bg-black border border-[#0F4C5C]/50 rounded px-3 py-2 text-sm"
               placeholder="standard"
             />
           </label>
@@ -651,14 +651,14 @@ const ProgramDetailView = ({ program, onBack, onUpdateProgram }) => {
               type="text"
               value={m.targetLoadKg ?? ''}
               onChange={(e) => patchEditedMeta({ targetLoadKg: e.target.value })}
-              className="mt-1 w-full bg-slate-800 border border-slate-600 rounded px-3 py-2 text-sm"
+              className="mt-1 w-full bg-black border border-[#0F4C5C]/50 rounded px-3 py-2 text-sm"
             />
           </label>
         </div>
         <textarea
           value={editedData.notes || ''}
           onChange={(e) => setEditedData({ ...editedData, notes: e.target.value })}
-          className="w-full bg-slate-800 border border-slate-600 rounded px-3 py-2 text-sm"
+          className="w-full bg-black border border-[#0F4C5C]/50 rounded px-3 py-2 text-sm"
           rows="2"
           placeholder="Notes techniques"
         />
@@ -738,7 +738,7 @@ const ProgramDetailView = ({ program, onBack, onUpdateProgram }) => {
       <div className="flex items-center gap-4 mb-6">
         <Button
           onClick={onBack}
-          className="bg-slate-600/20 text-slate-300 border border-slate-500/30 hover:bg-slate-600/30 flex items-center gap-2"
+          className="flex items-center gap-2 border border-[#0F4C5C]/55 bg-black text-teal-100 hover:border-[#0F5C45]/60 hover:bg-[#0F4C5C]/15"
         >
           <ArrowLeft size={20} />
           Retour
@@ -748,12 +748,12 @@ const ProgramDetailView = ({ program, onBack, onUpdateProgram }) => {
             <div className="flex items-start gap-3">
               <div className="min-w-0 flex-1">
                 <h1 className={`${typography.presets.h1} mb-2 break-words`}>{program.name}</h1>
-                <p className="text-slate-300 whitespace-pre-wrap">{program.description}</p>
+                <p className="whitespace-pre-wrap text-teal-100/85">{program.description}</p>
               </div>
               <button
                 type="button"
                 onClick={() => setEditingProgramMeta(true)}
-                className="shrink-0 p-2 rounded-lg border border-cyan-500/40 bg-cyan-500/10 text-cyan-200 hover:bg-cyan-500/20 transition-colors"
+                className="shrink-0 rounded-lg border border-[#0F4C5C]/60 bg-black p-2 text-teal-200 transition-colors hover:border-[#0F5C45]/55 hover:bg-[#0F4C5C]/15"
                 title="Modifier le nom et la description"
                 aria-label="Modifier le nom et la description du programme"
               >
@@ -768,7 +768,7 @@ const ProgramDetailView = ({ program, onBack, onUpdateProgram }) => {
                   type="text"
                   value={programMetaDraft.name}
                   onChange={(e) => setProgramMetaDraft((p) => ({ ...p, name: e.target.value }))}
-                  className="w-full rounded-lg border border-slate-600 bg-slate-900/80 px-3 py-2 text-white text-lg font-semibold"
+                  className="w-full rounded-lg border border-[#0F4C5C]/50 bg-black px-3 py-2 text-lg font-semibold text-white"
                 />
               </div>
               <div>
@@ -777,7 +777,7 @@ const ProgramDetailView = ({ program, onBack, onUpdateProgram }) => {
                   value={programMetaDraft.description}
                   onChange={(e) => setProgramMetaDraft((p) => ({ ...p, description: e.target.value }))}
                   rows={4}
-                  className="w-full rounded-lg border border-slate-600 bg-slate-900/80 px-3 py-2 text-slate-200 text-sm"
+                  className="w-full rounded-lg border border-[#0F4C5C]/50 bg-black px-3 py-2 text-sm text-teal-100/90"
                 />
               </div>
               <div className="flex flex-wrap gap-2">
@@ -792,7 +792,7 @@ const ProgramDetailView = ({ program, onBack, onUpdateProgram }) => {
                 <button
                   type="button"
                   onClick={handleCancelProgramMeta}
-                  className="inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-slate-500 text-slate-300 hover:bg-slate-700/50"
+                  className="inline-flex items-center gap-2 rounded-lg border border-[#0F4C5C]/55 bg-black px-4 py-2 text-teal-100 hover:border-[#0F5C45]/55 hover:bg-[#0F4C5C]/10"
                 >
                   <X size={16} />
                   Annuler
@@ -804,9 +804,9 @@ const ProgramDetailView = ({ program, onBack, onUpdateProgram }) => {
       </div>
 
       {/* Informations générales */}
-      <Card className="mb-6">
+      <Card variant="sport" className="mb-6">
         <CardContent className="pt-6">
-          <div className="flex flex-wrap items-center gap-6 text-sm text-slate-400">
+          <div className="flex flex-wrap items-center gap-6 text-sm text-teal-200/80">
             <div className="flex items-center gap-2">
               <Clock size={16} />
               <span>Durée: {program.duration} semaines</span>
@@ -820,12 +820,12 @@ const ProgramDetailView = ({ program, onBack, onUpdateProgram }) => {
       </Card>
 
       {/* Recherche globale d'exercices (tous les jours + variantes salle) */}
-      <Card className="mb-6 border border-cyan-500/25 bg-slate-900/40">
-        <CardHeader className="pb-2">
+      <Card variant="sport" className="mb-6">
+        <CardHeader className="border-b border-[#0F4C5C]/40 pb-2">
           <CardTitle
-            className={`${typography.presets.h3} flex items-center gap-2 text-cyan-100 normal-case tracking-normal`}
+            className={`${typography.presets.h3} flex items-center gap-2 text-teal-100 normal-case tracking-normal`}
           >
-            <Search size={20} className="text-cyan-400 shrink-0" />
+            <Search size={20} className="shrink-0 text-teal-400" />
             {tProgram('program.detailSearch.title', programSearchFallback.title)}
           </CardTitle>
         </CardHeader>
@@ -835,24 +835,24 @@ const ProgramDetailView = ({ program, onBack, onUpdateProgram }) => {
             value={exerciseSearchQuery}
             onChange={(e) => setExerciseSearchQuery(e.target.value)}
             placeholder={tProgram('program.detailSearch.placeholder', programSearchFallback.placeholder)}
-            className="w-full rounded-lg border border-slate-600 bg-slate-800/90 px-3 py-2.5 text-sm text-white placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-cyan-500/50"
+            className="w-full rounded-lg border border-[#0F4C5C]/50 bg-black px-3 py-2.5 text-sm text-white placeholder:text-teal-800 focus:outline-none focus:ring-2 focus:ring-[#0F5C45]/40"
             autoComplete="off"
           />
-          <p className="text-xs text-slate-500">{tProgram('program.detailSearch.hint', programSearchFallback.hint)}</p>
+          <p className="text-xs text-teal-700">{tProgram('program.detailSearch.hint', programSearchFallback.hint)}</p>
           {exerciseSearchQuery.trim() && (
-            <div className="rounded-lg border border-slate-600/80 bg-slate-800/50 max-h-[min(24rem,50vh)] overflow-y-auto">
+            <div className="max-h-[min(24rem,50vh)] overflow-y-auto rounded-lg border border-[#0F4C5C]/45 bg-black">
               {filteredExerciseOccurrences.length === 0 ? (
                 <p className="p-4 text-sm text-slate-400">
                   {tProgram('program.detailSearch.noResults', programSearchFallback.noResults)}
                 </p>
               ) : (
-                <ul className="divide-y divide-slate-700/80">
+                <ul className="divide-y divide-[#0F4C5C]/30">
                   {filteredExerciseOccurrences.map((row) => (
                     <li key={row.key}>
                       <button
                         type="button"
                         onClick={() => scrollToProgramExercise(row)}
-                        className="w-full px-4 py-3 text-left hover:bg-slate-700/30 focus:outline-none focus-visible:ring-2 focus-visible:ring-cyan-500/50"
+                        className="w-full px-4 py-3 text-left hover:bg-[#0F4C5C]/10 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#0F5C45]/45"
                       >
                         <div className="flex flex-wrap items-baseline gap-x-2 gap-y-1">
                           <span className="text-sm font-semibold text-amber-200/95 shrink-0">{row.dayLabel}</span>
@@ -880,8 +880,8 @@ const ProgramDetailView = ({ program, onBack, onUpdateProgram }) => {
           if (!dayData) return null;
 
           return (
-            <Card key={dayKey} className="overflow-hidden">
-              <CardHeader className="bg-gradient-to-r from-purple-600/20 to-blue-600/20 border-b border-slate-600">
+            <Card key={dayKey} variant="sport" className="overflow-hidden !p-0 md:!p-0">
+              <CardHeader className="border-b border-[#0F4C5C]/55 bg-black !px-4 md:!px-6">
                 <CardTitle
                   className={`${typography.presets.h2} flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between w-full`}
                 >
@@ -894,7 +894,7 @@ const ProgramDetailView = ({ program, onBack, onUpdateProgram }) => {
                           type="text"
                           value={dayHeaderDraft.name}
                           onChange={(e) => setDayHeaderDraft((d) => ({ ...d, name: e.target.value }))}
-                          className="flex-1 min-w-[8rem] bg-slate-800/90 border border-slate-500/60 rounded-lg px-3 py-2 text-sm text-slate-100 placeholder:text-slate-500"
+                          className="min-w-[8rem] flex-1 rounded-lg border border-[#0F4C5C]/50 bg-black px-3 py-2 text-sm text-teal-50 placeholder:text-teal-800"
                           placeholder="Titre du jour (ex. Biceps / Pectoraux)"
                         />
                       </div>
@@ -903,7 +903,7 @@ const ProgramDetailView = ({ program, onBack, onUpdateProgram }) => {
                           type="text"
                           value={dayHeaderDraft.duration}
                           onChange={(e) => setDayHeaderDraft((d) => ({ ...d, duration: e.target.value }))}
-                          className="sm:max-w-[10rem] bg-slate-800/90 border border-slate-500/60 rounded-lg px-3 py-2 text-slate-200"
+                          className="rounded-lg border border-[#0F4C5C]/50 bg-black px-3 py-2 text-teal-100 sm:max-w-[10rem]"
                           placeholder="Durée (ex. 45-55 min)"
                         />
                         <span className="hidden sm:inline text-slate-500">•</span>
@@ -911,7 +911,7 @@ const ProgramDetailView = ({ program, onBack, onUpdateProgram }) => {
                           type="text"
                           value={dayHeaderDraft.focus}
                           onChange={(e) => setDayHeaderDraft((d) => ({ ...d, focus: e.target.value }))}
-                          className="flex-1 bg-slate-800/90 border border-slate-500/60 rounded-lg px-3 py-2 text-slate-200"
+                          className="flex-1 rounded-lg border border-[#0F4C5C]/50 bg-black px-3 py-2 text-teal-100"
                           placeholder="Sous-titre / zones (ex. Biceps, pecs, haut du torse)"
                         />
                       </div>
@@ -927,7 +927,7 @@ const ProgramDetailView = ({ program, onBack, onUpdateProgram }) => {
                         <Button
                           type="button"
                           onClick={handleCancelDayHeader}
-                          className="inline-flex items-center gap-1.5 bg-slate-700/50 text-slate-200 border border-slate-500/40"
+                          className="inline-flex items-center gap-1.5 border border-[#0F4C5C]/50 bg-black text-teal-100"
                         >
                           <X size={14} />
                           Annuler
@@ -952,7 +952,7 @@ const ProgramDetailView = ({ program, onBack, onUpdateProgram }) => {
                           <Edit3 size={16} />
                         </Button>
                       </div>
-                      <div className="text-sm text-slate-400 font-normal sm:text-right sm:max-w-[50%] sm:pl-4">
+                      <div className="text-sm font-normal text-teal-700 sm:max-w-[50%] sm:pl-4 sm:text-right">
                         {dayData.duration} • {dayData.focus}
                       </div>
                     </>
@@ -974,7 +974,10 @@ const ProgramDetailView = ({ program, onBack, onUpdateProgram }) => {
                         const isEditing = editingStretch?.dayKey === dayKey && editingStretch?.stretchType === stretchType;
                         
                         return (
-                          <div key={stretchType} className="bg-slate-700/30 rounded-lg p-4 border border-slate-600">
+                          <div
+                            key={stretchType}
+                            className="rounded-lg border border-[#0F4C5C]/50 bg-black p-4"
+                          >
                             <div className="flex items-center justify-between mb-3">
                               <div className="flex items-center gap-2">
                                 <IconComponent size={16} className="text-orange-400" />
@@ -996,20 +999,20 @@ const ProgramDetailView = ({ program, onBack, onUpdateProgram }) => {
                                   type="text"
                                   value={editedData.name || ''}
                                   onChange={(e) => setEditedData({...editedData, name: e.target.value})}
-                                  className="w-full bg-slate-800 border border-slate-600 rounded px-3 py-2 text-sm"
+                                  className="w-full bg-black border border-[#0F4C5C]/50 rounded px-3 py-2 text-sm"
                                   placeholder="Nom de l'étirement"
                                 />
                                 <input
                                   type="text"
                                   value={editedData.duration || ''}
                                   onChange={(e) => setEditedData({...editedData, duration: e.target.value})}
-                                  className="w-full bg-slate-800 border border-slate-600 rounded px-3 py-2 text-sm"
+                                  className="w-full bg-black border border-[#0F4C5C]/50 rounded px-3 py-2 text-sm"
                                   placeholder="Durée"
                                 />
                                 <textarea
                                   value={editedData.instructions || ''}
                                   onChange={(e) => setEditedData({...editedData, instructions: e.target.value})}
-                                  className="w-full bg-slate-800 border border-slate-600 rounded px-3 py-2 text-sm"
+                                  className="w-full bg-black border border-[#0F4C5C]/50 rounded px-3 py-2 text-sm"
                                   rows="3"
                                   placeholder="Instructions"
                                 />
@@ -1080,14 +1083,14 @@ const ProgramDetailView = ({ program, onBack, onUpdateProgram }) => {
                 {/* Exercices */}
                 <div>
                   <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
-                    <h3 className={`${typography.presets.h3} flex items-center gap-2`}>
-                      <Dumbbell size={20} className="text-blue-400" />
+                    <h3 className={`${typography.presets.h3} flex items-center gap-2 text-teal-50`}>
+                      <Dumbbell size={20} className="text-teal-400" />
                       Exercices ({(dayData.exercises || []).length})
                     </h3>
                     <button
                       type="button"
                       onClick={() => handleAddExercise(dayKey)}
-                      className="inline-flex items-center gap-1.5 rounded-lg border border-blue-400/40 bg-blue-500/15 px-3 py-1.5 text-xs font-medium text-blue-100 hover:bg-blue-500/25"
+                      className="inline-flex items-center gap-1.5 rounded-lg border border-[#0F4C5C]/55 bg-black px-3 py-1.5 text-xs font-medium text-teal-100 hover:border-[#0F5C45]/60 hover:bg-[#0F4C5C]/15"
                     >
                       <Plus size={14} />
                       Ajouter un exercice
@@ -1108,9 +1111,9 @@ const ProgramDetailView = ({ program, onBack, onUpdateProgram }) => {
                         <div
                           key={exercise.id}
                           id={mainAnchorId}
-                          className={`rounded-lg p-4 border bg-slate-700/30 border-slate-600 transition-shadow duration-300 ${
+                          className={`rounded-lg border bg-black p-4 transition-shadow duration-300 border-[#0F4C5C]/50 ${
                             flashExerciseAnchorId === mainAnchorId
-                              ? 'ring-2 ring-cyan-400/90 ring-offset-2 ring-offset-slate-900'
+                              ? 'ring-2 ring-cyan-400/90 ring-offset-2 ring-offset-black'
                               : ''
                           }`}
                         >
@@ -1121,7 +1124,7 @@ const ProgramDetailView = ({ program, onBack, onUpdateProgram }) => {
                               ) : (
                                 <div>
                                   <div className="flex items-center gap-3 mb-2 flex-wrap">
-                                    <span className="bg-blue-500/20 text-blue-200 px-2 py-1 rounded text-xs font-medium">
+                                    <span className="rounded bg-[#0F5C45]/20 px-2 py-1 text-xs font-medium text-teal-100 ring-1 ring-[#0F4C5C]/45">
                                       {index + 1}
                                     </span>
                                     <h4 className="font-medium text-slate-200">{exercise.name}</h4>
@@ -1131,7 +1134,7 @@ const ProgramDetailView = ({ program, onBack, onUpdateProgram }) => {
                                       </span>
                                     )}
                                     {exercise.type && exercise.type !== 'standard' && (
-                                      <span className="bg-purple-500/20 text-purple-200 px-2 py-1 rounded text-xs">
+                                      <span className="rounded border border-[#0F4C5C]/45 bg-[#0F4C5C]/20 px-2 py-1 text-xs text-teal-100">
                                         {exercise.type}
                                       </span>
                                     )}
@@ -1217,15 +1220,15 @@ const ProgramDetailView = ({ program, onBack, onUpdateProgram }) => {
                 {dayData.salleVariants && (
                   <div className="mt-6">
                     <h3 className={`${typography.presets.h3} mb-4 flex items-center gap-2`}>
-                      <Dumbbell size={20} className="text-purple-400" />
+                      <Dumbbell size={20} className="text-teal-400" />
                       Variantes Salle
                     </h3>
                     
                     {/* Semaine A */}
                     <div className="mb-6">
                       <div className="flex flex-wrap items-center justify-between gap-2 mb-3">
-                        <h4 className="text-lg font-semibold text-purple-200 flex items-center gap-2">
-                          <span className="bg-purple-500/20 text-purple-200 px-2 py-1 rounded text-sm">
+                        <h4 className="flex items-center gap-2 text-lg font-semibold text-teal-100">
+                          <span className="rounded bg-[#0F5C45]/25 px-2 py-1 text-sm text-teal-50 ring-1 ring-[#0F4C5C]/50">
                             Semaine A
                           </span>
                           {dayData.salleVariants.semaineA.name}
@@ -1233,7 +1236,7 @@ const ProgramDetailView = ({ program, onBack, onUpdateProgram }) => {
                         <button
                           type="button"
                           onClick={() => handleAddVariantExercise(dayKey, 'semaineA')}
-                          className="inline-flex items-center gap-1 rounded-lg border border-purple-400/40 bg-purple-500/15 px-2 py-1 text-xs text-purple-100 hover:bg-purple-500/25"
+                          className="inline-flex items-center gap-1 rounded-lg border border-[#0F4C5C]/55 bg-black px-2 py-1 text-xs text-teal-100 hover:border-[#0F5C45]/60 hover:bg-[#0F4C5C]/15"
                         >
                           <Plus size={12} /> Ajouter
                         </button>
@@ -1249,9 +1252,9 @@ const ProgramDetailView = ({ program, onBack, onUpdateProgram }) => {
                             <div
                               key={exercise.id}
                               id={varAAnchorId}
-                              className={`rounded-lg p-4 border bg-purple-700/20 border-purple-600/30 transition-shadow duration-300 ${
+                              className={`rounded-lg border bg-black p-4 transition-shadow duration-300 border-[#0F4C5C]/55 ${
                                 flashExerciseAnchorId === varAAnchorId
-                                  ? 'ring-2 ring-cyan-400/90 ring-offset-2 ring-offset-slate-900'
+                                  ? 'ring-2 ring-cyan-400/90 ring-offset-2 ring-offset-black'
                                   : ''
                               }`}
                             >
@@ -1261,7 +1264,7 @@ const ProgramDetailView = ({ program, onBack, onUpdateProgram }) => {
                                 <>
                                   <div className="flex items-start justify-between gap-2 mb-2">
                                     <div className="flex items-center gap-3 flex-wrap">
-                                      <span className="bg-purple-500/20 text-purple-200 px-2 py-1 rounded text-xs font-medium">
+                                      <span className="rounded bg-[#0F5C45]/20 px-2 py-1 text-xs font-medium text-teal-100 ring-1 ring-[#0F4C5C]/45">
                                         {index + 1}
                                       </span>
                                       <h5 className="font-medium text-slate-200">{exercise.name}</h5>
@@ -1324,8 +1327,8 @@ const ProgramDetailView = ({ program, onBack, onUpdateProgram }) => {
                     {/* Semaine B */}
                     <div>
                       <div className="flex flex-wrap items-center justify-between gap-2 mb-3">
-                        <h4 className="text-lg font-semibold text-purple-200 flex items-center gap-2">
-                          <span className="bg-purple-500/20 text-purple-200 px-2 py-1 rounded text-sm">
+                        <h4 className="flex items-center gap-2 text-lg font-semibold text-teal-100">
+                          <span className="rounded bg-[#0F5C45]/25 px-2 py-1 text-sm text-teal-50 ring-1 ring-[#0F4C5C]/50">
                             Semaine B
                           </span>
                           {dayData.salleVariants.semaineB.name}
@@ -1333,7 +1336,7 @@ const ProgramDetailView = ({ program, onBack, onUpdateProgram }) => {
                         <button
                           type="button"
                           onClick={() => handleAddVariantExercise(dayKey, 'semaineB')}
-                          className="inline-flex items-center gap-1 rounded-lg border border-purple-400/40 bg-purple-500/15 px-2 py-1 text-xs text-purple-100 hover:bg-purple-500/25"
+                          className="inline-flex items-center gap-1 rounded-lg border border-[#0F4C5C]/55 bg-black px-2 py-1 text-xs text-teal-100 hover:border-[#0F5C45]/60 hover:bg-[#0F4C5C]/15"
                         >
                           <Plus size={12} /> Ajouter
                         </button>
@@ -1349,9 +1352,9 @@ const ProgramDetailView = ({ program, onBack, onUpdateProgram }) => {
                             <div
                               key={exercise.id}
                               id={varBAnchorId}
-                              className={`rounded-lg p-4 border bg-purple-700/20 border-purple-600/30 transition-shadow duration-300 ${
+                              className={`rounded-lg border bg-black p-4 transition-shadow duration-300 border-[#0F4C5C]/55 ${
                                 flashExerciseAnchorId === varBAnchorId
-                                  ? 'ring-2 ring-cyan-400/90 ring-offset-2 ring-offset-slate-900'
+                                  ? 'ring-2 ring-cyan-400/90 ring-offset-2 ring-offset-black'
                                   : ''
                               }`}
                             >
@@ -1361,7 +1364,7 @@ const ProgramDetailView = ({ program, onBack, onUpdateProgram }) => {
                                 <>
                                   <div className="flex items-start justify-between gap-2 mb-2">
                                     <div className="flex items-center gap-3 flex-wrap">
-                                      <span className="bg-purple-500/20 text-purple-200 px-2 py-1 rounded text-xs font-medium">
+                                      <span className="rounded bg-[#0F5C45]/20 px-2 py-1 text-xs font-medium text-teal-100 ring-1 ring-[#0F4C5C]/45">
                                         {index + 1}
                                       </span>
                                       <h5 className="font-medium text-slate-200">{exercise.name}</h5>

@@ -57,6 +57,8 @@ import {
   isDayWithoutActivity,
   JUSTIFICATION_REASONS,
   JUSTIFICATION_COLORS,
+  JUSTIFICATION_DAY_NUMBER_CLASS,
+  JUSTIFICATION_TEXT,
   JUSTIFICATION_ICONS
 } from '../utils/dayJustificationUtils';
 import { useTranslation } from '../utils/translations';
@@ -92,7 +94,7 @@ import {
 import BooksCalendarDayDetailPanel from './books/BooksCalendarDayDetailPanel';
 
 /**
- * Fond des grands blocs du calendrier : sport inchangé, livres noir, quêtes noir + liseré doré, apprentissage noir + liseré vert.
+ * Fond des grands blocs : sport (noir + contour bleu), livres (noir + bleu vif), quêtes (noir + doré), apprentissage (noir + vert).
  * @param {'sport'|'quests'|'books'|'apprentissage'} variant
  * @param {'header'|'legend'|'month'|'wide'} slot
  */
@@ -100,37 +102,45 @@ function heatmapModuleShell(variant, isEmbed, slot) {
   if (variant === 'books') {
     if (isEmbed) {
       return slot === 'month'
-        ? 'bg-black rounded-lg border border-slate-600 min-w-0 px-1.5 py-2'
-        : 'bg-black rounded-lg border border-slate-600 min-w-0 px-2 py-1.5';
+        ? 'bg-black rounded-lg border-2 border-[#3A86FF] min-w-0 px-1.5 py-2'
+        : 'bg-black rounded-lg border-2 border-[#3A86FF] min-w-0 px-2 py-1.5';
     }
     const pad = slot === 'header' || slot === 'legend' ? 'p-4' : 'p-6';
-    return `bg-black rounded-xl border border-slate-600 ${pad}`;
+    return `bg-black rounded-xl border-2 border-[#3A86FF] text-sky-100 ${pad}`;
   }
   if (variant === 'apprentissage') {
     if (isEmbed) {
       return slot === 'month'
-        ? 'bg-black rounded-lg border border-emerald-700/50 min-w-0 px-1.5 py-2'
-        : 'bg-black rounded-lg border border-emerald-700/50 min-w-0 px-2 py-1.5';
+        ? 'bg-black rounded-lg border-2 border-emerald-500/60 min-w-0 px-1.5 py-2'
+        : 'bg-black rounded-lg border-2 border-emerald-500/60 min-w-0 px-2 py-1.5';
     }
     const pad = slot === 'header' || slot === 'legend' ? 'p-4' : 'p-6';
-    return `bg-black rounded-xl border border-emerald-600/45 ${pad}`;
+    return `bg-black rounded-xl border-2 border-emerald-500/70 text-emerald-50 ${pad}`;
   }
   if (variant === 'quests') {
     if (isEmbed) {
       return slot === 'month'
-        ? 'bg-black rounded-lg border border-amber-600/45 min-w-0 px-1.5 py-2'
-        : 'bg-black rounded-lg border border-amber-600/45 min-w-0 px-2 py-1.5';
+        ? 'bg-black rounded-lg border-2 border-amber-400/70 min-w-0 px-1.5 py-2'
+        : 'bg-black rounded-lg border-2 border-amber-400/70 min-w-0 px-2 py-1.5';
     }
     const pad = slot === 'header' || slot === 'legend' ? 'p-4' : 'p-6';
-    return `bg-black rounded-xl border border-amber-600/50 ${pad}`;
+    return `bg-black rounded-xl border-2 border-amber-400/75 text-amber-50 ${pad}`;
   }
   if (isEmbed) {
     return slot === 'month'
-      ? 'bg-slate-800/50 backdrop-blur-sm rounded-lg px-1.5 py-2 border border-slate-700 min-w-0'
-      : 'bg-slate-800/50 backdrop-blur-sm rounded-lg px-2 py-1.5 border border-slate-700 min-w-0';
+      ? 'min-w-0 rounded-lg border border-blue-500/50 bg-black px-1.5 py-2'
+      : 'min-w-0 rounded-lg border border-blue-500/50 bg-black px-2 py-1.5';
   }
   const pad = slot === 'header' || slot === 'legend' ? 'p-4' : 'p-6';
-  return `bg-slate-800/50 backdrop-blur-sm rounded-xl border border-slate-700 ${pad}`;
+  return `rounded-xl border-2 border-blue-500/55 bg-black text-sky-100 ${pad}`;
+}
+
+/** Grille mini « vue année » : même logique visuelle que le dashboard / livres, avec teinte par domaine. */
+function yearMiniGridShell(variant) {
+  if (variant === 'quests') return 'bg-black border-2 border-amber-400/70 rounded-lg p-2';
+  if (variant === 'books') return 'bg-black border-2 border-[#3A86FF] rounded-lg p-2';
+  if (variant === 'apprentissage') return 'bg-black border-2 border-emerald-500/60 rounded-lg p-2';
+  return 'rounded-lg border-2 border-blue-500/50 bg-black p-2';
 }
 
 /**
@@ -144,7 +154,7 @@ function getIntensityColor(level, isToday = false) {
     3: 'bg-orange-600 border-orange-500/90',
     2: 'bg-yellow-500 border-yellow-600/85',
     1: 'bg-emerald-200 border-emerald-500/70',
-    0: 'bg-white border-slate-400'
+    0: 'bg-black border-2 border-blue-500/55',
   };
   const todayRing = isToday ? ' ring-2 ring-amber-300/95' : '';
   return `${baseColors[safe]}${todayRing}`;
@@ -2015,7 +2025,10 @@ const CalendarHeatmap = ({
       const reason = intensity.justification.reason;
       const baseColor = JUSTIFICATION_COLORS[reason] || JUSTIFICATION_COLORS[JUSTIFICATION_REASONS.AUTRE];
       const todayRing = isToday ? ' ring-2 ring-amber-300/95' : '';
-      return { className: `${baseColor}${todayRing}`, style: undefined };
+      const dayNum =
+        JUSTIFICATION_DAY_NUMBER_CLASS[reason] ||
+        JUSTIFICATION_DAY_NUMBER_CLASS[JUSTIFICATION_REASONS.AUTRE];
+      return { className: `${baseColor}${todayRing}`, style: undefined, dayNumberClass: dayNum };
     }
     const level = Math.max(0, Math.min(4, intensity?.level || 0));
     const kcal = intensity?.activeKcal || 0;
@@ -2058,13 +2071,57 @@ const CalendarHeatmap = ({
       tl < 1.5;
 
     if (isRestLike) {
-      return { className: getIntensityColor(0, isToday), style: undefined };
+      const todayRing = isToday ? ' ring-2 ring-amber-300/95' : '';
+      if (variant === 'quests') {
+        return {
+          className: `bg-zinc-950 border-2 border-amber-500/55${todayRing}`,
+          style: undefined,
+          dayNumberClass: 'text-amber-100',
+        };
+      }
+      if (variant === 'apprentissage') {
+        return {
+          className: `bg-black border-2 border-emerald-600/50${todayRing}`,
+          style: undefined,
+          dayNumberClass: 'text-emerald-200',
+        };
+      }
+      if (variant === 'books') {
+        return {
+          className: `bg-zinc-950 border-2 border-[#3A86FF]${todayRing}`,
+          style: undefined,
+          dayNumberClass: 'text-sky-200',
+        };
+      }
+      return {
+        className: `bg-black border-2 border-blue-500/55${todayRing}`,
+        style: undefined,
+        dayNumberClass: 'text-sky-200/90',
+      };
     }
 
     const ring = isToday ? 'ring-2 ring-amber-300/95' : '';
+    const borderTone =
+      variant === 'quests'
+        ? 'border-2 border-amber-500/45'
+        : variant === 'books'
+          ? 'border-2 border-[#3A86FF]/55'
+          : variant === 'apprentissage'
+            ? 'border-2 border-emerald-500/50'
+            : 'border-2 border-blue-500/50';
+
+    if (variant === 'sport' && level === 0 && u < 0.08 && !intensity?.justification) {
+      return {
+        className: `${borderTone} bg-black ${ring}`.trim(),
+        style: undefined,
+        dayNumberClass: 'text-sky-200/90',
+      };
+    }
+
     return {
-      className: `border border-slate-900/20 ${ring}`.trim(),
-      style: { backgroundColor: calendarHeatmapCompositeBackground(u) }
+      className: `${borderTone} ${ring}`.trim(),
+      style: { backgroundColor: calendarHeatmapCompositeBackground(u) },
+      dayNumberClass: undefined,
     };
   };
 
@@ -2145,14 +2202,22 @@ const CalendarHeatmap = ({
                 <button
                   key={mode}
                   onClick={() => setViewMode(mode)}
-                  className={`px-4 py-2 rounded-lg transition-all ${
+                  className={`px-4 py-2 rounded-lg transition-all border ${
                     viewMode === mode
                       ? variant === 'quests'
-                        ? 'bg-amber-500 text-black font-semibold'
-                        : variant === 'apprentissage'
-                          ? 'bg-emerald-600 text-white'
-                          : 'bg-purple-600 text-white'
-                      : 'bg-slate-700 text-slate-300 hover:bg-slate-600'
+                        ? 'bg-amber-500/25 border-amber-400 text-amber-100 font-semibold'
+                        : variant === 'books'
+                          ? 'bg-[#3A86FF]/18 border-[#3A86FF] text-sky-100 font-semibold'
+                            : variant === 'apprentissage'
+                            ? 'bg-emerald-500/20 border-emerald-400 text-emerald-50 font-semibold'
+                            : 'border-2 border-blue-400 bg-blue-950/45 font-semibold text-sky-50'
+                      : variant === 'quests'
+                        ? 'bg-black/50 border-amber-800/45 text-amber-300/90 hover:border-amber-500/55'
+                        : variant === 'books'
+                          ? 'bg-black/50 border-[#3A86FF]/45 text-sky-200/90 hover:border-[#3A86FF]'
+                          : variant === 'apprentissage'
+                            ? 'bg-black border-emerald-600/50 text-emerald-200/90 hover:border-emerald-400/80 hover:bg-emerald-950/30'
+                            : 'border border-blue-500/50 bg-black text-sky-300 hover:border-sky-400/80 hover:text-sky-50'
                   }`}
                 >
                   {mode === 'month'
@@ -2171,19 +2236,58 @@ const CalendarHeatmap = ({
             type="button"
             onClick={() => navigateDate(-1)}
             className={
-              isSidebarEmbed
-                ? 'p-1 shrink-0 bg-slate-700 hover:bg-slate-600 rounded-md transition-all'
-                : 'p-2 bg-slate-700 hover:bg-slate-600 rounded-lg transition-all'
+              variant === 'apprentissage'
+                ? isSidebarEmbed
+                  ? 'shrink-0 rounded-md border border-emerald-500/50 bg-black p-1 transition-all hover:border-emerald-400'
+                  : 'rounded-lg border-2 border-emerald-500/55 bg-black p-2 transition-all hover:border-emerald-400'
+                : variant === 'books'
+                  ? isSidebarEmbed
+                    ? 'shrink-0 rounded-md border border-[#3A86FF]/55 bg-black p-1 transition-all hover:border-sky-400'
+                    : 'rounded-lg border-2 border-[#3A86FF]/60 bg-black p-2 transition-all hover:border-sky-400'
+                  : variant === 'quests'
+                    ? isSidebarEmbed
+                      ? 'shrink-0 rounded-md border border-amber-500/50 bg-black p-1 transition-all hover:border-amber-400'
+                      : 'rounded-lg border-2 border-amber-500/55 bg-black p-2 transition-all hover:border-amber-400'
+                    : isSidebarEmbed
+                      ? 'shrink-0 rounded-md border border-blue-500/50 bg-black p-1 transition-all hover:border-sky-400/70'
+                      : 'rounded-lg border-2 border-blue-500/55 bg-black p-2 transition-all hover:border-sky-400/80'
             }
           >
-            <ChevronLeft size={isSidebarEmbed ? 16 : 20} className="text-white" />
+            <ChevronLeft
+              size={isSidebarEmbed ? 16 : 20}
+              className={
+                variant === 'apprentissage'
+                  ? 'text-emerald-200'
+                  : variant === 'books'
+                    ? 'text-sky-200'
+                    : variant === 'quests'
+                      ? 'text-amber-200'
+                      : 'text-sky-300'
+              }
+            />
           </button>
 
           <h3
             className={
               isSidebarEmbed
-                ? 'text-xs sm:text-sm font-semibold text-white text-center truncate px-1 min-w-0 flex-1'
-                : 'text-xl font-bold text-white'
+                ? `text-xs sm:text-sm font-semibold text-center truncate px-1 min-w-0 flex-1 ${
+                    variant === 'quests'
+                      ? 'text-amber-50'
+                      : variant === 'books'
+                        ? 'text-sky-100'
+                        : variant === 'apprentissage'
+                          ? 'text-emerald-100'
+                          : 'text-sky-50'
+                  }`
+                : `text-xl font-bold ${
+                    variant === 'quests'
+                      ? 'text-amber-50'
+                      : variant === 'books'
+                        ? 'text-sky-100'
+                        : variant === 'apprentissage'
+                          ? 'text-emerald-100'
+                          : 'text-sky-50'
+                  }`
             }
           >
             {viewMode === 'month' || compact
@@ -2198,12 +2302,35 @@ const CalendarHeatmap = ({
             type="button"
             onClick={() => navigateDate(1)}
             className={
-              isSidebarEmbed
-                ? 'p-1 shrink-0 bg-slate-700 hover:bg-slate-600 rounded-md transition-all'
-                : 'p-2 bg-slate-700 hover:bg-slate-600 rounded-lg transition-all'
+              variant === 'apprentissage'
+                ? isSidebarEmbed
+                  ? 'shrink-0 rounded-md border border-emerald-500/50 bg-black p-1 transition-all hover:border-emerald-400'
+                  : 'rounded-lg border-2 border-emerald-500/55 bg-black p-2 transition-all hover:border-emerald-400'
+                : variant === 'books'
+                  ? isSidebarEmbed
+                    ? 'shrink-0 rounded-md border border-[#3A86FF]/55 bg-black p-1 transition-all hover:border-sky-400'
+                    : 'rounded-lg border-2 border-[#3A86FF]/60 bg-black p-2 transition-all hover:border-sky-400'
+                  : variant === 'quests'
+                    ? isSidebarEmbed
+                      ? 'shrink-0 rounded-md border border-amber-500/50 bg-black p-1 transition-all hover:border-amber-400'
+                      : 'rounded-lg border-2 border-amber-500/55 bg-black p-2 transition-all hover:border-amber-400'
+                    : isSidebarEmbed
+                      ? 'shrink-0 rounded-md border border-blue-500/50 bg-black p-1 transition-all hover:border-sky-400/70'
+                      : 'rounded-lg border-2 border-blue-500/55 bg-black p-2 transition-all hover:border-sky-400/80'
             }
           >
-            <ChevronRight size={isSidebarEmbed ? 16 : 20} className="text-white" />
+            <ChevronRight
+              size={isSidebarEmbed ? 16 : 20}
+              className={
+                variant === 'apprentissage'
+                  ? 'text-emerald-200'
+                  : variant === 'books'
+                    ? 'text-sky-200'
+                    : variant === 'quests'
+                      ? 'text-amber-200'
+                      : 'text-sky-300'
+              }
+            />
           </button>
         </div>
       </div>
@@ -2226,7 +2353,13 @@ const CalendarHeatmap = ({
           >
             <span
               className={
-                isSidebarEmbed ? 'text-[10px] text-slate-400 shrink-0' : 'text-slate-300 text-sm'
+                isSidebarEmbed
+                  ? variant === 'apprentissage'
+                    ? 'text-[10px] text-emerald-300/80 shrink-0'
+                    : 'text-[10px] text-slate-400 shrink-0'
+                  : variant === 'apprentissage'
+                    ? 'text-emerald-200/85 text-sm'
+                    : 'text-slate-300 text-sm'
               }
             >
               {t('calendar.heatmap.intensity')}
@@ -2244,10 +2377,30 @@ const CalendarHeatmap = ({
                   className={isSidebarEmbed ? 'flex items-center gap-0.5 shrink-0' : 'flex items-center gap-1'}
                 >
                   <div
-                    className={`rounded border shrink-0 border-slate-600/70 ${isSidebarEmbed ? 'w-2.5 h-2.5' : 'w-4 h-4'}`}
+                    className={`rounded border shrink-0 ${
+                      variant === 'apprentissage'
+                        ? 'border-emerald-500/50'
+                        : variant === 'quests' || variant === 'books'
+                          ? 'border-slate-600/70'
+                          : 'border-blue-500/55'
+                    } ${isSidebarEmbed ? 'w-2.5 h-2.5' : 'w-4 h-4'}`}
                     style={{ backgroundColor: calendarHeatmapCompositeBackground(u) }}
                   />
-                  <span className={isSidebarEmbed ? 'text-[9px] text-slate-400 leading-none' : 'text-xs text-slate-400'}>
+                  <span
+                    className={
+                      isSidebarEmbed
+                        ? variant === 'apprentissage'
+                          ? 'text-[9px] text-emerald-300/75 leading-none'
+                          : variant === 'quests' || variant === 'books'
+                            ? 'text-[9px] text-slate-400 leading-none'
+                            : 'text-[9px] leading-none text-[#7ab9a8]'
+                        : variant === 'apprentissage'
+                          ? 'text-xs text-emerald-200/75'
+                          : variant === 'quests' || variant === 'books'
+                            ? 'text-xs text-slate-400'
+                            : 'text-xs text-[#7ab9a8]'
+                    }
+                  >
                     {getIntensityLabel(level)}
                   </span>
                 </div>
@@ -2261,9 +2414,11 @@ const CalendarHeatmap = ({
               className={
                 variant === 'quests'
                   ? 'text-sm text-amber-300 hover:text-amber-200'
-                  : variant === 'apprentissage'
-                    ? 'text-sm text-emerald-300 hover:text-emerald-200'
-                    : 'text-sm text-purple-400 hover:text-purple-300'
+                  : variant === 'books'
+                    ? 'text-sm text-sky-300 hover:text-sky-200'
+                    : variant === 'apprentissage'
+                      ? 'text-sm text-emerald-300 hover:text-emerald-200'
+                      : 'text-sm text-sky-400 hover:text-sky-200'
               }
             >
               {showStats ? t('calendar.heatmap.hideStats') : t('calendar.heatmap.showStats')}
@@ -2282,8 +2437,24 @@ const CalendarHeatmap = ({
                 key={`weekday-${index}`}
                 className={
                   isSidebarEmbed
-                    ? 'text-center text-slate-400 text-[9px] font-medium py-0.5 px-0'
-                    : 'text-center text-slate-400 text-sm font-medium p-2'
+                    ? `text-center text-[9px] font-medium py-0.5 px-0 ${
+                        variant === 'quests'
+                          ? 'text-amber-500/80'
+                          : variant === 'books'
+                            ? 'text-sky-300/90'
+                            : variant === 'apprentissage'
+                              ? 'text-emerald-400/85'
+                              : 'text-[#88c9b4]/90'
+                      }`
+                    : `text-center text-sm font-medium p-2 ${
+                        variant === 'quests'
+                          ? 'text-amber-400/85'
+                          : variant === 'books'
+                            ? 'text-sky-300/90'
+                            : variant === 'apprentissage'
+                              ? 'text-emerald-300/90'
+                              : 'text-[#88c9b4]/90'
+                      }`
                 }
               >
                 {day}
@@ -2296,7 +2467,7 @@ const CalendarHeatmap = ({
             {monthDays.map((day, index) => {
               const cellColor = getDayColorStyle(day.intensity, day.isToday);
               const dayHasPaint = calendarDayHasPaintSignal(day.intensity);
-              const dayNumTone = heatmapDayNumberTone();
+              const dayNumTone = cellColor.dayNumberClass ?? heatmapDayNumberTone();
               const dayDateStr = getDateStr(day.date);
               const stepsCount =
                 day.intensity?.steps != null && Number.isFinite(Number(day.intensity.steps))
@@ -2353,22 +2524,28 @@ const CalendarHeatmap = ({
                   ${selectedDate?.date.toDateString() === day.date.toDateString()
                     ? variant === 'quests'
                       ? 'ring-2 ring-amber-400'
-                      : variant === 'apprentissage'
-                        ? 'ring-2 ring-emerald-400'
-                        : 'ring-2 ring-purple-400'
+                      : variant === 'books'
+                        ? 'ring-2 ring-[#3A86FF]'
+                        : variant === 'apprentissage'
+                          ? 'ring-2 ring-emerald-400'
+                          : 'ring-2 ring-blue-400/90'
                     : ''}
                   ${
                     isSidebarEmbed
                       ? variant === 'quests'
                         ? 'hover:ring-1 hover:ring-amber-400/80'
-                        : variant === 'apprentissage'
-                          ? 'hover:ring-1 hover:ring-emerald-400/80'
-                          : 'hover:ring-1 hover:ring-purple-300'
+                        : variant === 'books'
+                          ? 'hover:ring-1 hover:ring-[#3A86FF]/85'
+                          : variant === 'apprentissage'
+                            ? 'hover:ring-1 hover:ring-emerald-400/80'
+                            : 'hover:ring-1 hover:ring-blue-400/80'
                       : variant === 'quests'
                         ? 'hover:ring-2 hover:ring-amber-400/90 hover:scale-105'
-                        : variant === 'apprentissage'
-                          ? 'hover:ring-2 hover:ring-emerald-400/90 hover:scale-105'
-                          : 'hover:ring-2 hover:ring-purple-300 hover:scale-105'
+                        : variant === 'books'
+                          ? 'hover:ring-2 hover:ring-[#3A86FF] hover:scale-105'
+                          : variant === 'apprentissage'
+                            ? 'hover:ring-2 hover:ring-emerald-400/90 hover:scale-105'
+                            : 'hover:ring-2 hover:ring-sky-400/80 hover:scale-105'
                   }
                 `}
                 style={cellColor.style}
@@ -2461,38 +2638,38 @@ const CalendarHeatmap = ({
                 </div>
                 <div className="flex flex-wrap gap-2">
                   {monthStats[JUSTIFICATION_REASONS.MALADIE] > 0 && (
-                    <div className={`flex items-center gap-1 px-2 py-1 rounded text-xs ${JUSTIFICATION_COLORS[JUSTIFICATION_REASONS.MALADIE]}`}>
+                    <div className={`flex items-center gap-1 rounded px-2 py-1 text-xs ${JUSTIFICATION_COLORS[JUSTIFICATION_REASONS.MALADIE]} ${JUSTIFICATION_TEXT[JUSTIFICATION_REASONS.MALADIE]}`}>
                       <span>{JUSTIFICATION_ICONS[JUSTIFICATION_REASONS.MALADIE]}</span>
-                      <span className="text-white font-medium">{monthStats[JUSTIFICATION_REASONS.MALADIE]}</span>
-                      <span className="text-white/80">{t(`justification.${JUSTIFICATION_REASONS.MALADIE}`)}</span>
+                      <span className="font-medium">{monthStats[JUSTIFICATION_REASONS.MALADIE]}</span>
+                      <span className="opacity-85">{t(`justification.${JUSTIFICATION_REASONS.MALADIE}`)}</span>
                     </div>
                   )}
                   {monthStats[JUSTIFICATION_REASONS.FLEMME] > 0 && (
-                    <div className={`flex items-center gap-1 px-2 py-1 rounded text-xs ${JUSTIFICATION_COLORS[JUSTIFICATION_REASONS.FLEMME]}`}>
+                    <div className={`flex items-center gap-1 rounded px-2 py-1 text-xs ${JUSTIFICATION_COLORS[JUSTIFICATION_REASONS.FLEMME]} ${JUSTIFICATION_TEXT[JUSTIFICATION_REASONS.FLEMME]}`}>
                       <span>{JUSTIFICATION_ICONS[JUSTIFICATION_REASONS.FLEMME]}</span>
-                      <span className="text-white font-medium">{monthStats[JUSTIFICATION_REASONS.FLEMME]}</span>
-                      <span className="text-white/80">{t(`justification.${JUSTIFICATION_REASONS.FLEMME}`)}</span>
+                      <span className="font-medium">{monthStats[JUSTIFICATION_REASONS.FLEMME]}</span>
+                      <span className="opacity-85">{t(`justification.${JUSTIFICATION_REASONS.FLEMME}`)}</span>
                     </div>
                   )}
                   {monthStats[JUSTIFICATION_REASONS.PAS_LE_TEMPS] > 0 && (
-                    <div className={`flex items-center gap-1 px-2 py-1 rounded text-xs ${JUSTIFICATION_COLORS[JUSTIFICATION_REASONS.PAS_LE_TEMPS]}`}>
+                    <div className={`flex items-center gap-1 rounded px-2 py-1 text-xs ${JUSTIFICATION_COLORS[JUSTIFICATION_REASONS.PAS_LE_TEMPS]} ${JUSTIFICATION_TEXT[JUSTIFICATION_REASONS.PAS_LE_TEMPS]}`}>
                       <span>{JUSTIFICATION_ICONS[JUSTIFICATION_REASONS.PAS_LE_TEMPS]}</span>
-                      <span className="text-white font-medium">{monthStats[JUSTIFICATION_REASONS.PAS_LE_TEMPS]}</span>
-                      <span className="text-white/80">{t(`justification.${JUSTIFICATION_REASONS.PAS_LE_TEMPS}`)}</span>
+                      <span className="font-medium">{monthStats[JUSTIFICATION_REASONS.PAS_LE_TEMPS]}</span>
+                      <span className="opacity-85">{t(`justification.${JUSTIFICATION_REASONS.PAS_LE_TEMPS}`)}</span>
                     </div>
                   )}
                   {monthStats[JUSTIFICATION_REASONS.REPOS] > 0 && (
-                    <div className={`flex items-center gap-1 px-2 py-1 rounded text-xs ${JUSTIFICATION_COLORS[JUSTIFICATION_REASONS.REPOS]}`}>
+                    <div className={`flex items-center gap-1 rounded px-2 py-1 text-xs ${JUSTIFICATION_COLORS[JUSTIFICATION_REASONS.REPOS]} ${JUSTIFICATION_TEXT[JUSTIFICATION_REASONS.REPOS]}`}>
                       <span>{JUSTIFICATION_ICONS[JUSTIFICATION_REASONS.REPOS]}</span>
-                      <span className="text-white font-medium">{monthStats[JUSTIFICATION_REASONS.REPOS]}</span>
-                      <span className="text-white/80">{t(`justification.${JUSTIFICATION_REASONS.REPOS}`)}</span>
+                      <span className="font-medium">{monthStats[JUSTIFICATION_REASONS.REPOS]}</span>
+                      <span className="opacity-85">{t(`justification.${JUSTIFICATION_REASONS.REPOS}`)}</span>
                     </div>
                   )}
                   {monthStats[JUSTIFICATION_REASONS.AUTRE] > 0 && (
-                    <div className={`flex items-center gap-1 px-2 py-1 rounded text-xs ${JUSTIFICATION_COLORS[JUSTIFICATION_REASONS.AUTRE]}`}>
+                    <div className={`flex items-center gap-1 rounded px-2 py-1 text-xs ${JUSTIFICATION_COLORS[JUSTIFICATION_REASONS.AUTRE]} ${JUSTIFICATION_TEXT[JUSTIFICATION_REASONS.AUTRE]}`}>
                       <span>{JUSTIFICATION_ICONS[JUSTIFICATION_REASONS.AUTRE]}</span>
-                      <span className="text-white font-medium">{monthStats[JUSTIFICATION_REASONS.AUTRE]}</span>
-                      <span className="text-white/80">{t(`justification.${JUSTIFICATION_REASONS.AUTRE}`)}</span>
+                      <span className="font-medium">{monthStats[JUSTIFICATION_REASONS.AUTRE]}</span>
+                      <span className="opacity-85">{t(`justification.${JUSTIFICATION_REASONS.AUTRE}`)}</span>
                     </div>
                   )}
                 </div>
@@ -2559,22 +2736,22 @@ const CalendarHeatmap = ({
               </div>
             ) : variant === 'apprentissage' && learningYearAggregates ? (
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
-                <div className="bg-black border border-emerald-800/40 rounded-lg p-4">
-                  <div className="text-slate-400 text-sm">Meilleur mois (temps d&apos;étude)</div>
-                  <div className="text-xl font-bold text-white">
+                <div className="bg-black border-2 border-emerald-500/55 rounded-lg p-4">
+                  <div className="text-emerald-200/70 text-sm">Meilleur mois (temps d&apos;étude)</div>
+                  <div className="text-xl font-bold text-emerald-50">
                     {learningYearAggregates.bestMonthIdx >= 0 && learningYearAggregates.bestMonthMinutes > 0
                       ? monthNames[learningYearAggregates.bestMonthIdx]
                       : 'N/A'}
                   </div>
-                  <div className="text-sm text-slate-300">
+                  <div className="text-sm text-emerald-200/80">
                     {learningYearAggregates.bestMonthMinutes > 0
                       ? `${learningYearAggregates.bestMonthMinutes} min`
                       : '—'}
                   </div>
                 </div>
-                <div className="bg-black border border-emerald-800/40 rounded-lg p-4">
-                  <div className="text-slate-400 text-sm">Jour le plus chargé</div>
-                  <div className="text-xl font-bold text-white">
+                <div className="bg-black border-2 border-emerald-500/55 rounded-lg p-4">
+                  <div className="text-emerald-200/70 text-sm">Jour le plus chargé</div>
+                  <div className="text-xl font-bold text-emerald-50">
                     {learningYearAggregates.bestDay?.dateStr
                       ? new Date(`${learningYearAggregates.bestDay.dateStr}T12:00:00`).toLocaleDateString('fr-FR', {
                           day: '2-digit',
@@ -2582,17 +2759,17 @@ const CalendarHeatmap = ({
                         })
                       : 'N/A'}
                   </div>
-                  <div className="text-sm text-slate-300">
+                  <div className="text-sm text-emerald-200/80">
                     {(learningYearAggregates.bestDay?.bd?.minutes || 0) +
                       ' min · ' +
                       (learningYearAggregates.bestDay?.bd?.sessions || 0) +
                       ' session(s)'}
                   </div>
                 </div>
-                <div className="bg-black border border-emerald-800/40 rounded-lg p-4">
-                  <div className="text-slate-400 text-sm">Totaux année</div>
-                  <div className="text-xl font-bold text-white">{learningYearAggregates.totalMinutes} min</div>
-                  <div className="text-sm text-slate-300">
+                <div className="bg-black border-2 border-emerald-500/55 rounded-lg p-4">
+                  <div className="text-emerald-200/70 text-sm">Totaux année</div>
+                  <div className="text-xl font-bold text-emerald-50">{learningYearAggregates.totalMinutes} min</div>
+                  <div className="text-sm text-emerald-200/80">
                     {learningYearAggregates.activeDays} jours avec étude ·{' '}
                     {learningYearAggregates.totalSessions} sessions
                   </div>
@@ -2600,22 +2777,22 @@ const CalendarHeatmap = ({
               </div>
             ) : variant === 'books' && booksYearAggregates ? (
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
-                <div className="bg-black border border-slate-600 rounded-lg p-4">
-                  <div className="text-slate-400 text-sm">Meilleur mois (pages)</div>
-                  <div className="text-xl font-bold text-white">
+                <div className="bg-black/90 border border-[#3A86FF]/45 rounded-lg p-4">
+                  <div className="text-sky-200/80 text-sm">Meilleur mois (pages)</div>
+                  <div className="text-xl font-bold text-sky-100">
                     {booksYearAggregates.bestMonthIdx >= 0 && booksYearAggregates.bestMonthPages > 0
                       ? monthNames[booksYearAggregates.bestMonthIdx]
                       : 'N/A'}
                   </div>
-                  <div className="text-sm text-slate-300">
+                  <div className="text-sm text-sky-200/85">
                     {booksYearAggregates.bestMonthPages > 0
                       ? `${booksYearAggregates.bestMonthPages} p.`
                       : '—'}
                   </div>
                 </div>
-                <div className="bg-black border border-slate-600 rounded-lg p-4">
-                  <div className="text-slate-400 text-sm">Jour le plus chargé</div>
-                  <div className="text-xl font-bold text-white">
+                <div className="bg-black/90 border border-[#3A86FF]/45 rounded-lg p-4">
+                  <div className="text-sky-200/80 text-sm">Jour le plus chargé</div>
+                  <div className="text-xl font-bold text-sky-100">
                     {booksYearAggregates.bestDay?.dateStr
                       ? new Date(`${booksYearAggregates.bestDay.dateStr}T12:00:00`).toLocaleDateString('fr-FR', {
                           day: '2-digit',
@@ -2623,50 +2800,50 @@ const CalendarHeatmap = ({
                         })
                       : 'N/A'}
                   </div>
-                  <div className="text-sm text-slate-300">
+                  <div className="text-sm text-sky-200/85">
                     {(booksYearAggregates.bestDay?.bd?.pages || 0) +
                       ' p. · ' +
                       (booksYearAggregates.bestDay?.bd?.minutes || 0) +
                       ' min'}
                   </div>
                 </div>
-                <div className="bg-black border border-slate-600 rounded-lg p-4">
-                  <div className="text-slate-400 text-sm">Totaux année</div>
-                  <div className="text-xl font-bold text-white">{booksYearAggregates.totalPages} p.</div>
-                  <div className="text-sm text-slate-300">
+                <div className="bg-black/90 border border-[#3A86FF]/45 rounded-lg p-4">
+                  <div className="text-sky-200/80 text-sm">Totaux année</div>
+                  <div className="text-xl font-bold text-sky-100">{booksYearAggregates.totalPages} p.</div>
+                  <div className="text-sm text-sky-200/85">
                     {booksYearAggregates.activeDays} jours avec session · {booksYearAggregates.totalMinutes}{' '}
                     min · {booksYearAggregates.totalSessions} sessions
                   </div>
                 </div>
               </div>
             ) : (
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
-                <div className="bg-slate-700/50 rounded-lg p-4">
-                  <div className="text-slate-400 text-sm">{t('calendar.heatmap.bestMonth')}</div>
-                  <div className="text-xl font-bold text-white">
+              <div className="mb-4 grid grid-cols-1 gap-4 md:grid-cols-3">
+                <div className="rounded-lg border-2 border-blue-500/45 bg-black p-4">
+                  <div className="text-sm text-sky-500">{t('calendar.heatmap.bestMonth')}</div>
+                  <div className="text-xl font-bold text-sky-50">
                     {yearStats.bestMonth ? monthNames[yearStats.bestMonth.date.getMonth()] : 'N/A'}
                   </div>
-                  <div className="text-sm text-slate-300">
+                  <div className="text-sm text-sky-300/90">
                     {yearStats.bestMonth?.totalReps || 0} reps
                   </div>
                 </div>
 
-                <div className="bg-slate-700/50 rounded-lg p-4">
-                  <div className="text-slate-400 text-sm">{t('calendar.heatmap.bestDay')}</div>
-                  <div className="text-xl font-bold text-white">
+                <div className="rounded-lg border-2 border-sky-600/40 bg-black p-4">
+                  <div className="text-sm text-sky-500">{t('calendar.heatmap.bestDay')}</div>
+                  <div className="text-xl font-bold text-sky-50">
                     {yearStats.bestDay
                       ? yearStats.bestDay.date.toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit' })
                       : 'N/A'}
                   </div>
-                  <div className="text-sm text-slate-300">
+                  <div className="text-sm text-sky-300/90">
                     {yearStats.bestDay?.intensity.reps || 0} reps
                   </div>
                 </div>
 
-                <div className="bg-slate-700/50 rounded-lg p-4">
-                  <div className="text-slate-400 text-sm">{t('calendar.heatmap.avgPerSession')}</div>
-                  <div className="text-xl font-bold text-white">{yearStats.avgIntensity}</div>
-                  <div className="text-sm text-slate-300">{t('calendar.heatmap.repsPerSession')}</div>
+                <div className="rounded-lg border-2 border-blue-500/45 bg-black p-4">
+                  <div className="text-sm text-sky-500">{t('calendar.heatmap.avgPerSession')}</div>
+                  <div className="text-xl font-bold text-sky-50">{yearStats.avgIntensity}</div>
+                  <div className="text-sm text-sky-300/90">{t('calendar.heatmap.repsPerSession')}</div>
                 </div>
               </div>
             )}
@@ -2678,10 +2855,30 @@ const CalendarHeatmap = ({
               {yearMonths.map((month, monthIndex) => (
                 <div key={monthIndex} className="space-y-3">
                   <div className="flex items-center justify-between">
-                    <h4 className="text-white font-medium">
+                    <h4
+                      className={`font-medium ${
+                        variant === 'quests'
+                          ? 'text-amber-50'
+                          : variant === 'books'
+                            ? 'text-sky-100'
+                            : variant === 'apprentissage'
+                              ? 'text-emerald-100'
+                              : 'text-white'
+                      }`}
+                    >
                       {monthNames[month.date.getMonth()]}
                     </h4>
-                    <div className="text-xs text-slate-400">
+                    <div
+                      className={`text-xs ${
+                        variant === 'quests'
+                          ? 'text-amber-200/65'
+                          : variant === 'books'
+                            ? 'text-sky-200/80'
+                            : variant === 'apprentissage'
+                              ? 'text-emerald-300/75'
+                              : 'text-slate-400'
+                      }`}
+                    >
                       {variant === 'quests'
                         ? `${month.days.filter(
                             (d) =>
@@ -2703,10 +2900,21 @@ const CalendarHeatmap = ({
                   </div>
                   
                   {/* Mini calendrier */}
-                  <div className="bg-slate-700/30 rounded-lg p-2">
+                  <div className={yearMiniGridShell(variant)}>
                     <div className="grid grid-cols-7 gap-1 mb-1">
                       {weekDays.map((day, index) => (
-                        <div key={`year-weekday-${index}`} className="text-center text-slate-500 text-xs">
+                        <div
+                          key={`year-weekday-${index}`}
+                          className={`text-center text-xs ${
+                            variant === 'quests'
+                              ? 'text-amber-500/85 font-semibold'
+                              : variant === 'books'
+                                ? 'text-sky-300/90 font-semibold'
+                                : variant === 'apprentissage'
+                                  ? 'text-emerald-100/90'
+                                  : 'text-slate-500'
+                          }`}
+                        >
                           {day}
                         </div>
                       ))}
@@ -2715,7 +2923,7 @@ const CalendarHeatmap = ({
                       {month.days.map((day, dayIndex) => {
                         const yCell = getDayColorStyle(day.intensity, false);
                         const yPaint = calendarDayHasPaintSignal(day.intensity);
-                        const yDayNumTone = heatmapDayNumberTone();
+                        const yDayNumTone = yCell.dayNumberClass ?? heatmapDayNumberTone();
                         const yDateStr = getDateStr(day.date);
                         const yStepsCount =
                           day.intensity?.steps != null && Number.isFinite(Number(day.intensity.steps))
@@ -2739,9 +2947,11 @@ const CalendarHeatmap = ({
                             hover:ring-1 ${
                               variant === 'quests'
                                 ? 'hover:ring-amber-400/90'
-                                : variant === 'apprentissage'
-                                  ? 'hover:ring-emerald-400/90'
-                                  : 'hover:ring-purple-300'
+                                : variant === 'books'
+                                  ? 'hover:ring-[#3A86FF]/90'
+                                  : variant === 'apprentissage'
+                                    ? 'hover:ring-emerald-400/90'
+                                    : 'hover:ring-blue-400/90'
                             } hover:scale-110
                           `}
                           style={yCell.style}
@@ -2795,20 +3005,20 @@ const CalendarHeatmap = ({
                   {/* Stats du mois */}
                   {variant === 'quests' && questCalendarContext?.validationsByDate ? (
                     <div className="grid grid-cols-2 gap-2 text-xs">
-                      <div className="bg-black border border-amber-700/35 rounded p-2 text-center">
-                        <div className="text-white font-bold">
+                      <div className="bg-black/90 border border-amber-500/40 rounded p-2 text-center text-amber-100">
+                        <div className="text-amber-200 font-bold tabular-nums">
                           {sumQuestXpForMonth(
                             month.date.getFullYear(),
                             month.date.getMonth(),
                             questCalendarContext.validationsByDate
                           )}
                         </div>
-                        <div className="text-slate-400">
+                        <div className="text-amber-200/60">
                           {t('quests.calendar.monthXp', 'XP ce mois')}
                         </div>
                       </div>
-                      <div className="bg-black border border-amber-700/35 rounded p-2 text-center">
-                        <div className="text-white font-bold">
+                      <div className="bg-black/90 border border-amber-500/40 rounded p-2 text-center text-amber-100">
+                        <div className="text-amber-200 font-bold tabular-nums">
                           {month.days.reduce(
                             (sum, d) =>
                               sum +
@@ -2816,25 +3026,25 @@ const CalendarHeatmap = ({
                             0
                           )}
                         </div>
-                        <div className="text-slate-400">
+                        <div className="text-amber-200/60">
                           {t('quests.calendar.monthChecks', 'Validations')}
                         </div>
                       </div>
                     </div>
                   ) : variant === 'books' && booksCalendarContext?.sessionsByDate ? (
                     <div className="grid grid-cols-2 gap-2 text-xs">
-                      <div className="bg-slate-700/50 rounded p-2 text-center">
-                        <div className="text-white font-bold">
+                      <div className="bg-black/90 border border-[#3A86FF]/40 rounded p-2 text-center text-sky-100">
+                        <div className="text-sky-100 font-bold tabular-nums">
                           {sumBooksPagesForMonth(
                             month.date.getFullYear(),
                             month.date.getMonth(),
                             booksCalendarContext.sessionsByDate
                           )}
                         </div>
-                        <div className="text-slate-400">Pages ce mois</div>
+                        <div className="text-sky-200/80">Pages ce mois</div>
                       </div>
-                      <div className="bg-slate-700/50 rounded p-2 text-center">
-                        <div className="text-white font-bold">
+                      <div className="bg-black/90 border border-[#3A86FF]/40 rounded p-2 text-center text-sky-100">
+                        <div className="text-sky-100 font-bold tabular-nums">
                           {sumBooksMinutesForMonth(
                             month.date.getFullYear(),
                             month.date.getMonth(),
@@ -2842,23 +3052,23 @@ const CalendarHeatmap = ({
                           )}
                           min
                         </div>
-                        <div className="text-slate-400">Temps lecture</div>
+                        <div className="text-sky-200/80">Temps lecture</div>
                       </div>
                     </div>
                   ) : variant === 'apprentissage' && learningSessionsByDateResolved ? (
                     <div className="grid grid-cols-2 gap-2 text-xs">
-                      <div className="bg-black border border-emerald-800/35 rounded p-2 text-center">
-                        <div className="text-white font-bold">
+                      <div className="bg-black border-2 border-emerald-500/50 rounded p-2 text-center">
+                        <div className="text-emerald-100 font-bold tabular-nums">
                           {sumLearningSessionsForMonth(
                             month.date.getFullYear(),
                             month.date.getMonth(),
                             learningSessionsByDateResolved
                           )}
                         </div>
-                        <div className="text-slate-400">Sessions ce mois</div>
+                        <div className="text-emerald-300/70">Sessions ce mois</div>
                       </div>
-                      <div className="bg-black border border-emerald-800/35 rounded p-2 text-center">
-                        <div className="text-white font-bold">
+                      <div className="bg-black border-2 border-emerald-500/50 rounded p-2 text-center">
+                        <div className="text-emerald-100 font-bold tabular-nums">
                           {sumBooksMinutesForMonth(
                             month.date.getFullYear(),
                             month.date.getMonth(),
@@ -2866,7 +3076,7 @@ const CalendarHeatmap = ({
                           )}
                           min
                         </div>
-                        <div className="text-slate-400">Temps d&apos;étude</div>
+                        <div className="text-emerald-300/70">Temps d&apos;étude</div>
                       </div>
                     </div>
                   ) : (
@@ -2894,33 +3104,33 @@ const CalendarHeatmap = ({
                       <div className="mt-2 pt-2 border-t border-slate-700/50">
                         <div className="flex flex-wrap gap-1 justify-center">
                           {monthStats[JUSTIFICATION_REASONS.MALADIE] > 0 && (
-                            <div className={`flex items-center gap-0.5 px-1.5 py-0.5 rounded text-[10px] ${JUSTIFICATION_COLORS[JUSTIFICATION_REASONS.MALADIE]}`}>
+                            <div className={`flex items-center gap-0.5 rounded px-1.5 py-0.5 text-[10px] ${JUSTIFICATION_COLORS[JUSTIFICATION_REASONS.MALADIE]} ${JUSTIFICATION_TEXT[JUSTIFICATION_REASONS.MALADIE]}`}>
                               <span className="text-[10px]">{JUSTIFICATION_ICONS[JUSTIFICATION_REASONS.MALADIE]}</span>
-                              <span className="text-white font-medium">{monthStats[JUSTIFICATION_REASONS.MALADIE]}</span>
+                              <span className="font-medium">{monthStats[JUSTIFICATION_REASONS.MALADIE]}</span>
                             </div>
                           )}
                           {monthStats[JUSTIFICATION_REASONS.FLEMME] > 0 && (
-                            <div className={`flex items-center gap-0.5 px-1.5 py-0.5 rounded text-[10px] ${JUSTIFICATION_COLORS[JUSTIFICATION_REASONS.FLEMME]}`}>
+                            <div className={`flex items-center gap-0.5 rounded px-1.5 py-0.5 text-[10px] ${JUSTIFICATION_COLORS[JUSTIFICATION_REASONS.FLEMME]} ${JUSTIFICATION_TEXT[JUSTIFICATION_REASONS.FLEMME]}`}>
                               <span className="text-[10px]">{JUSTIFICATION_ICONS[JUSTIFICATION_REASONS.FLEMME]}</span>
-                              <span className="text-white font-medium">{monthStats[JUSTIFICATION_REASONS.FLEMME]}</span>
+                              <span className="font-medium">{monthStats[JUSTIFICATION_REASONS.FLEMME]}</span>
                             </div>
                           )}
                           {monthStats[JUSTIFICATION_REASONS.PAS_LE_TEMPS] > 0 && (
-                            <div className={`flex items-center gap-0.5 px-1.5 py-0.5 rounded text-[10px] ${JUSTIFICATION_COLORS[JUSTIFICATION_REASONS.PAS_LE_TEMPS]}`}>
+                            <div className={`flex items-center gap-0.5 rounded px-1.5 py-0.5 text-[10px] ${JUSTIFICATION_COLORS[JUSTIFICATION_REASONS.PAS_LE_TEMPS]} ${JUSTIFICATION_TEXT[JUSTIFICATION_REASONS.PAS_LE_TEMPS]}`}>
                               <span className="text-[10px]">{JUSTIFICATION_ICONS[JUSTIFICATION_REASONS.PAS_LE_TEMPS]}</span>
-                              <span className="text-white font-medium">{monthStats[JUSTIFICATION_REASONS.PAS_LE_TEMPS]}</span>
+                              <span className="font-medium">{monthStats[JUSTIFICATION_REASONS.PAS_LE_TEMPS]}</span>
                             </div>
                           )}
                           {monthStats[JUSTIFICATION_REASONS.REPOS] > 0 && (
-                            <div className={`flex items-center gap-0.5 px-1.5 py-0.5 rounded text-[10px] ${JUSTIFICATION_COLORS[JUSTIFICATION_REASONS.REPOS]}`}>
+                            <div className={`flex items-center gap-0.5 rounded px-1.5 py-0.5 text-[10px] ${JUSTIFICATION_COLORS[JUSTIFICATION_REASONS.REPOS]} ${JUSTIFICATION_TEXT[JUSTIFICATION_REASONS.REPOS]}`}>
                               <span className="text-[10px]">{JUSTIFICATION_ICONS[JUSTIFICATION_REASONS.REPOS]}</span>
-                              <span className="text-white font-medium">{monthStats[JUSTIFICATION_REASONS.REPOS]}</span>
+                              <span className="font-medium">{monthStats[JUSTIFICATION_REASONS.REPOS]}</span>
                             </div>
                           )}
                           {monthStats[JUSTIFICATION_REASONS.AUTRE] > 0 && (
-                            <div className={`flex items-center gap-0.5 px-1.5 py-0.5 rounded text-[10px] ${JUSTIFICATION_COLORS[JUSTIFICATION_REASONS.AUTRE]}`}>
+                            <div className={`flex items-center gap-0.5 rounded px-1.5 py-0.5 text-[10px] ${JUSTIFICATION_COLORS[JUSTIFICATION_REASONS.AUTRE]} ${JUSTIFICATION_TEXT[JUSTIFICATION_REASONS.AUTRE]}`}>
                               <span className="text-[10px]">{JUSTIFICATION_ICONS[JUSTIFICATION_REASONS.AUTRE]}</span>
-                              <span className="text-white font-medium">{monthStats[JUSTIFICATION_REASONS.AUTRE]}</span>
+                              <span className="font-medium">{monthStats[JUSTIFICATION_REASONS.AUTRE]}</span>
                             </div>
                           )}
                         </div>
@@ -2936,22 +3146,22 @@ const CalendarHeatmap = ({
 
       {/* Vue Streaks */}
       {!compact && viewMode === 'streaks' && !isQuestsOrBooks && (
-        <div className="bg-slate-800/50 backdrop-blur-sm rounded-xl p-6 border border-slate-700">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div className="bg-slate-700/50 rounded-lg p-6 text-center">
-              <Flame className="w-12 h-12 text-orange-500 mx-auto mb-4" />
-              <div className="text-3xl font-bold text-white mb-2">{streaks.currentStreak}</div>
-              <div className="text-slate-300">{t('calendar.heatmap.streaks.currentStreak')}</div>
-              <div className="text-sm text-slate-400 mt-2">
+        <div className="rounded-xl border-2 border-blue-500/55 bg-black p-6">
+          <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+            <div className="rounded-lg border border-sky-600/40 bg-black/80 p-6 text-center">
+              <Flame className="mx-auto mb-4 h-12 w-12 text-orange-500" />
+              <div className="mb-2 text-3xl font-bold text-sky-50">{streaks.currentStreak}</div>
+              <div className="text-sky-300/90">{t('calendar.heatmap.streaks.currentStreak')}</div>
+              <div className="mt-2 text-sm text-sky-500">
                 {streaks.currentStreak > 0 ? t('calendar.heatmap.streaks.consecutiveDays') : t('calendar.heatmap.streaks.noStreak')}
               </div>
             </div>
             
-            <div className="bg-slate-700/50 rounded-lg p-6 text-center">
-              <Award className="w-12 h-12 text-yellow-500 mx-auto mb-4" />
-              <div className="text-3xl font-bold text-white mb-2">{streaks.longestStreak}</div>
-              <div className="text-slate-300">{t('calendar.heatmap.streaks.longestStreak')}</div>
-              <div className="text-sm text-slate-400 mt-2">{t('calendar.heatmap.streaks.longestStreakDesc')}</div>
+            <div className="rounded-lg border border-blue-500/45 bg-black/80 p-6 text-center">
+              <Award className="mx-auto mb-4 h-12 w-12 text-yellow-500" />
+              <div className="mb-2 text-3xl font-bold text-sky-50">{streaks.longestStreak}</div>
+              <div className="text-sky-300/90">{t('calendar.heatmap.streaks.longestStreak')}</div>
+              <div className="mt-2 text-sm text-sky-500">{t('calendar.heatmap.streaks.longestStreakDesc')}</div>
             </div>
           </div>
         </div>
@@ -2974,22 +3184,22 @@ const CalendarHeatmap = ({
         // MODE CHOIX : Afficher les options (Justifier OU Saisir)
         if (panelMode === 'choice') {
           return (
-            <div className="bg-slate-800/50 backdrop-blur-sm rounded-xl p-6 border border-slate-700">
-              <div className="flex items-center justify-between mb-6">
-                <h3 className="text-lg font-bold text-white">{formattedDate}</h3>
+            <div className="rounded-xl border-2 border-blue-500/55 bg-black p-6">
+              <div className="mb-6 flex items-center justify-between">
+                <h3 className="text-lg font-bold text-sky-50">{formattedDate}</h3>
                 <button
                   onClick={() => {
                     setPanelMode('details');
                     setPanelDate(null);
                   }}
-                  className="text-slate-400 hover:text-white text-2xl leading-none"
+                  className="text-2xl leading-none text-sky-500 hover:text-sky-50"
                 >
                   ×
                 </button>
               </div>
               
-              <div className="text-center mb-6">
-                <p className="text-slate-300 text-sm mb-6">
+              <div className="mb-6 text-center">
+                <p className="mb-6 text-sm text-sky-300/90">
                   {t('calendar.workoutChoice.message', 'Que souhaitez-vous faire pour ce jour ?')}
                 </p>
               </div>
@@ -3400,12 +3610,12 @@ const CalendarHeatmap = ({
           };
           
           return (
-            <div className="bg-slate-800/50 backdrop-blur-sm rounded-xl border border-slate-700 overflow-hidden">
+            <div className="overflow-hidden rounded-xl border-2 border-blue-500/55 bg-black">
               {/* En-tête fixe */}
-              <div className="sticky top-0 bg-slate-800/95 backdrop-blur-sm border-b border-slate-700 px-6 py-4 z-10">
+              <div className="sticky top-0 z-10 border-b border-blue-500/50 bg-black/95 px-6 py-4 backdrop-blur-sm">
                 <div className="flex items-center justify-between">
-                  <div className="flex-1 min-w-0">
-                    <h3 className="text-lg font-bold text-white truncate">
+                  <div className="min-w-0 flex-1">
+                    <h3 className="truncate text-lg font-bold text-sky-50">
                       {t('calendar.workoutEntry.title', 'Saisie de séance - {{date}}', { date: formattedDate })}
                     </h3>
                   </div>
@@ -3419,7 +3629,7 @@ const CalendarHeatmap = ({
                       setSelectedProgramId(null);
                       setSelectedVariant(null);
                     }}
-                    className="flex-shrink-0 ml-4 text-slate-400 hover:text-white text-2xl leading-none w-8 h-8 flex items-center justify-center rounded hover:bg-slate-700/50 transition-colors"
+                    className="ml-4 flex h-8 w-8 flex-shrink-0 items-center justify-center rounded text-2xl leading-none text-sky-500 transition-colors hover:bg-slate-950 hover:text-sky-50"
                     aria-label="Fermer"
                   >
                     ×
@@ -3428,7 +3638,7 @@ const CalendarHeatmap = ({
               </div>
               
               {/* Contenu scrollable */}
-              <div className="px-6 py-6 space-y-6 max-h-[calc(100vh-300px)] overflow-y-auto">
+              <div className="max-h-[calc(100vh-300px)] space-y-6 overflow-y-auto px-6 py-6">
                 {/* Sélection du programme */}
                 <div className="space-y-2">
                   <label className="block text-sm font-medium text-slate-300">
@@ -3618,7 +3828,7 @@ const CalendarHeatmap = ({
           return (
             <div className={`${heatmapModuleShell(variant, isSidebarEmbed, 'wide')} space-y-4`}>
               <div className="flex items-center justify-between mb-2">
-                <h3 className="text-lg font-bold text-white">
+                <h3 className="text-lg font-bold text-emerald-50">
                   {formatLocaleDate(selectedDate.date, {
                     weekday: 'long',
                     year: 'numeric',
@@ -3629,36 +3839,36 @@ const CalendarHeatmap = ({
                 <button
                   type="button"
                   onClick={() => setSelectedDate(null)}
-                  className="text-slate-400 hover:text-white text-2xl leading-none"
+                  className="text-emerald-300/80 hover:text-emerald-100 text-2xl leading-none"
                 >
                   ×
                 </button>
               </div>
               <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                <div className="bg-black border border-emerald-800/40 rounded-lg p-3 text-center">
-                  <div className="text-2xl font-bold text-white">{bd?.sessions ?? 0}</div>
-                  <div className="text-xs text-slate-400">Sessions</div>
+                <div className="bg-black border-2 border-emerald-500/50 rounded-lg p-3 text-center">
+                  <div className="text-2xl font-bold text-emerald-100">{bd?.sessions ?? 0}</div>
+                  <div className="text-xs text-emerald-300/70">Sessions</div>
                 </div>
-                <div className="bg-black border border-emerald-800/40 rounded-lg p-3 text-center">
-                  <div className="text-2xl font-bold text-white">{bd?.minutes ?? 0} min</div>
-                  <div className="text-xs text-slate-400">Temps total</div>
+                <div className="bg-black border-2 border-emerald-500/50 rounded-lg p-3 text-center">
+                  <div className="text-2xl font-bold text-emerald-100">{bd?.minutes ?? 0} min</div>
+                  <div className="text-xs text-emerald-300/70">Temps total</div>
                 </div>
-                <div className="bg-black border border-emerald-800/40 rounded-lg p-3 text-center md:col-span-2">
-                  <div className="text-2xl font-bold text-white">{bd?.uniqueBooks ?? 0}</div>
-                  <div className="text-xs text-slate-400">Matières / sujets touchés</div>
+                <div className="bg-black border-2 border-emerald-500/50 rounded-lg p-3 text-center md:col-span-2">
+                  <div className="text-2xl font-bold text-emerald-100">{bd?.uniqueBooks ?? 0}</div>
+                  <div className="text-xs text-emerald-300/70">Matières / sujets touchés</div>
                 </div>
               </div>
               {entries.length > 0 ? (
                 <div>
-                  <h4 className="text-white font-medium mb-2">Sessions enregistrées</h4>
+                  <h4 className="text-emerald-200 font-medium mb-2">Sessions enregistrées</h4>
                   <ul className="space-y-2">
                     {entries.map((row, idx) => (
                       <li
                         key={`${row.sessionId || idx}`}
-                        className="flex justify-between gap-2 bg-black/90 border border-emerald-900/40 rounded-lg px-3 py-2 text-sm"
+                        className="flex justify-between gap-2 bg-black border border-emerald-500/45 rounded-lg px-3 py-2 text-sm"
                       >
-                        <span className="text-white font-medium truncate">{row.bookTitle}</span>
-                        <span className="text-slate-300 shrink-0">
+                        <span className="text-emerald-50 font-medium truncate">{row.bookTitle}</span>
+                        <span className="text-emerald-200/80 shrink-0">
                           {row.durationMinutes || 0} min
                           {row.startTime ? ` · ${row.startTime}` : ''}
                         </span>
@@ -3667,7 +3877,7 @@ const CalendarHeatmap = ({
                   </ul>
                 </div>
               ) : (
-                <p className="text-slate-400 text-sm">Aucune session d&apos;étude ce jour.</p>
+                <p className="text-emerald-200/65 text-sm">Aucune session d&apos;étude ce jour.</p>
               )}
             </div>
           );
@@ -3695,21 +3905,21 @@ const CalendarHeatmap = ({
                 </button>
               </div>
               <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                <div className="bg-black border border-slate-600 rounded-lg p-3 text-center">
-                  <div className="text-2xl font-bold text-white">{qd?.completedUnique ?? 0}</div>
-                  <div className="text-xs text-slate-400">Quêtes cochées (uniques)</div>
+                <div className="bg-black/90 border border-amber-500/35 rounded-lg p-3 text-center">
+                  <div className="text-2xl font-bold text-amber-50">{qd?.completedUnique ?? 0}</div>
+                  <div className="text-xs text-amber-200/55">Quêtes cochées (uniques)</div>
                 </div>
-                <div className="bg-black border border-slate-600 rounded-lg p-3 text-center">
-                  <div className="text-2xl font-bold text-white">{qd?.scheduledTotal ?? 0}</div>
-                  <div className="text-xs text-slate-400">Prévues ce jour</div>
+                <div className="bg-black/90 border border-amber-500/35 rounded-lg p-3 text-center">
+                  <div className="text-2xl font-bold text-amber-50">{qd?.scheduledTotal ?? 0}</div>
+                  <div className="text-xs text-amber-200/55">Prévues ce jour</div>
                 </div>
-                <div className="bg-black border border-slate-600 rounded-lg p-3 text-center">
-                  <div className="text-2xl font-bold text-white">{qd?.minutesOccupied ?? 0} min</div>
-                  <div className="text-xs text-slate-400">Temps occupé (durées param.)</div>
+                <div className="bg-black/90 border border-amber-500/35 rounded-lg p-3 text-center">
+                  <div className="text-2xl font-bold text-amber-50">{qd?.minutesOccupied ?? 0} min</div>
+                  <div className="text-xs text-amber-200/55">Temps occupé (durées param.)</div>
                 </div>
-                <div className="bg-black border border-slate-600 rounded-lg p-3 text-center">
+                <div className="bg-black/90 border border-amber-500/35 rounded-lg p-3 text-center">
                   <div className="text-2xl font-bold text-amber-300">{qd?.xpTotal ?? 0}</div>
-                  <div className="text-xs text-slate-400">XP ce jour</div>
+                  <div className="text-xs text-amber-200/55">XP ce jour</div>
                 </div>
               </div>
               {qd?.completedRows?.length > 0 && (
@@ -3719,7 +3929,7 @@ const CalendarHeatmap = ({
                     {qd.completedRows.map((row, idx) => (
                       <li
                         key={`${row.queteId}-${idx}`}
-                        className="flex justify-between gap-2 bg-black/80 border border-slate-600/80 rounded-lg px-3 py-2 text-sm"
+                        className="flex justify-between gap-2 bg-black/80 border border-amber-600/30 rounded-lg px-3 py-2 text-sm"
                       >
                         <span className="text-white font-medium truncate">{row.nom}</span>
                         <span className="text-slate-300 shrink-0">
@@ -3883,10 +4093,10 @@ const CalendarHeatmap = ({
             : { walk: 0, run: 0, other: 0, total: 0 };
           
           return (
-            <div className="bg-slate-800/50 backdrop-blur-sm rounded-xl p-6 border border-slate-700 space-y-6">
+            <div className="space-y-6 rounded-xl border-2 border-blue-500/55 bg-black p-6">
             {/* En-tête */}
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-bold text-white">
+            <div className="mb-4 flex items-center justify-between">
+              <h3 className="text-lg font-bold text-sky-50">
                 {formatLocaleDate(selectedDate.date, { 
                   weekday: 'long', 
                   year: 'numeric', 
@@ -3896,7 +4106,7 @@ const CalendarHeatmap = ({
               </h3>
               <button
                 onClick={() => setSelectedDate(null)}
-                className="text-slate-400 hover:text-white text-2xl leading-none"
+                className="text-2xl leading-none text-sky-500 hover:text-sky-50"
               >
                 ×
               </button>
@@ -3904,14 +4114,14 @@ const CalendarHeatmap = ({
             
             {/* ✅ NOUVEAU : Bandeau de justification si le jour est justifié */}
             {justification && (
-              <div className={`mb-4 p-4 rounded-lg border-2 ${JUSTIFICATION_COLORS[justification.reason] || JUSTIFICATION_COLORS[JUSTIFICATION_REASONS.AUTRE]} flex items-start gap-3`}>
+              <div className={`mb-4 flex items-start gap-3 rounded-lg border-2 p-4 ${JUSTIFICATION_COLORS[justification.reason] || JUSTIFICATION_COLORS[JUSTIFICATION_REASONS.AUTRE]} ${JUSTIFICATION_TEXT[justification.reason] || JUSTIFICATION_TEXT[JUSTIFICATION_REASONS.AUTRE]}`}>
                 <span className="text-2xl" aria-hidden="true">{JUSTIFICATION_ICONS[justification.reason] || '❓'}</span>
                 <div className="flex-1">
-                  <div className="text-white font-semibold mb-1">
+                  <div className="mb-1 font-semibold">
                     {t(`justification.${justification.reason}`) || t('justification.autre')}
                   </div>
                   {justification.note && (
-                    <div className="text-white/90 text-sm">
+                    <div className="text-sm opacity-90">
                       {justification.note}
                     </div>
                   )}
@@ -3921,7 +4131,7 @@ const CalendarHeatmap = ({
                     setSelectedDate(null);
                     setJustificationModalDate(selectedDate.date);
                   }}
-                  className="text-white/70 hover:text-white text-sm underline"
+                  className="text-sm underline opacity-80 hover:opacity-100"
                   title={t('calendar.heatmap.dayDetails.modifyJustification')}
                 >
                   {t('calendar.heatmap.dayDetails.modify')}
@@ -3932,28 +4142,28 @@ const CalendarHeatmap = ({
             {/* Statistiques principales - Masquer si jour justifié (sauf repos) */}
             {(!justification || justification.reason === JUSTIFICATION_REASONS.REPOS) && (
               <div>
-                <h4 className="text-white font-medium mb-3 flex items-center">
+                <h4 className="mb-3 flex items-center font-medium text-sky-100">
                   <Activity className="mr-2" size={16} />
                   {t('calendar.heatmap.dayDetails.workoutStats')}
                 </h4>
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                  <div className="bg-slate-700/50 rounded-lg p-4 text-center">
-                    <div className="text-2xl font-bold text-white">{selectedDate.intensity.reps}</div>
-                    <div className="text-slate-400 text-sm">{t('calendar.heatmap.dayDetails.totalReps')}</div>
+                <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
+                  <div className="rounded-lg border border-blue-500/40 bg-black p-4 text-center">
+                    <div className="text-2xl font-bold text-sky-50">{selectedDate.intensity.reps}</div>
+                    <div className="text-sm text-sky-500">{t('calendar.heatmap.dayDetails.totalReps')}</div>
                   </div>
-                  <div className="bg-slate-700/50 rounded-lg p-4 text-center">
-                    <div className="text-2xl font-bold text-white">{selectedDate.intensity.completedCount}</div>
-                    <div className="text-slate-400 text-sm">{t('calendar.heatmap.dayDetails.classicExercises')}</div>
+                  <div className="rounded-lg border border-sky-600/35 bg-black p-4 text-center">
+                    <div className="text-2xl font-bold text-sky-50">{selectedDate.intensity.completedCount}</div>
+                    <div className="text-sm text-sky-500">{t('calendar.heatmap.dayDetails.classicExercises')}</div>
                   </div>
-                  <div className="bg-slate-700/50 rounded-lg p-4 text-center">
-                    <div className="text-2xl font-bold text-white">{selectedDate.intensity.duration}min</div>
-                    <div className="text-slate-400 text-sm">{t('calendar.heatmap.dayDetails.totalDuration')}</div>
+                  <div className="rounded-lg border border-blue-500/40 bg-black p-4 text-center">
+                    <div className="text-2xl font-bold text-sky-50">{selectedDate.intensity.duration}min</div>
+                    <div className="text-sm text-sky-500">{t('calendar.heatmap.dayDetails.totalDuration')}</div>
                   </div>
-                  <div className="bg-slate-700/50 rounded-lg p-4 text-center">
-                    <div className="text-2xl font-bold text-white">{getIntensityLabel(selectedDate.intensity.level)}</div>
-                    <div className="text-slate-400 text-sm">{t('calendar.heatmap.dayDetails.globalIntensity')}</div>
+                  <div className="rounded-lg border border-sky-600/35 bg-black p-4 text-center">
+                    <div className="text-2xl font-bold text-sky-50">{getIntensityLabel(selectedDate.intensity.level)}</div>
+                    <div className="text-sm text-sky-500">{t('calendar.heatmap.dayDetails.globalIntensity')}</div>
                     {garminAdjustments && (
-                      <div className="text-xs text-green-400 mt-1">
+                      <div className="mt-1 text-xs text-green-400">
                         {garminAdjustments.multiplier > 1 ? '⬆' : '⬇'} {t('calendar.heatmap.dayDetails.garminAdjusted')}
                       </div>
                     )}
@@ -3963,19 +4173,19 @@ const CalendarHeatmap = ({
             )}
 
             {(!justification || justification.reason === JUSTIFICATION_REASONS.REPOS) && vcDetail && (
-              <div className="space-y-3 rounded-lg border border-indigo-500/30 bg-indigo-950/35 p-4">
-                <h4 className="flex items-center gap-2 font-medium text-indigo-200">
+              <div className="space-y-3 rounded-lg border-2 border-blue-500/45 bg-black p-4">
+                <h4 className="flex items-center gap-2 font-medium text-sky-100">
                   <BarChart3 size={18} />
                   {t('calendar.heatmap.colorMix.title')}
                 </h4>
-                <p className="text-xs text-slate-400">{t('calendar.heatmap.colorMix.subtitle')}</p>
-                <p className="text-[11px] leading-snug text-slate-300 border border-slate-600/50 rounded-md bg-slate-900/50 px-2 py-1.5">
+                <p className="text-xs text-sky-500">{t('calendar.heatmap.colorMix.subtitle')}</p>
+                <p className="rounded-md border border-blue-500/35 bg-black/80 px-2 py-1.5 text-[11px] leading-snug text-sky-300/90">
                   {t(
                     'calendar.heatmap.colorMix.scaleExplainer',
                     'Couleur des cases : du vert clair (jour le plus calme sur la période affichée) au rouge foncé (jour le plus chargé). Les pourcentages = part du mélange ; à droite = tes valeurs réelles et unités internes.'
                   )}
                 </p>
-                <div className="text-sm font-semibold text-white">
+                <div className="text-sm font-semibold text-sky-50">
                   {t('calendar.heatmap.colorMix.score', { score: vcDetail.visualScore100 })}
                 </div>
                 {vcDetail.synergyStreetEndurance > 1.001 && (
@@ -3999,14 +4209,14 @@ const CalendarHeatmap = ({
                     const pct = Math.round(((vcDetail.breakdownShares || {})[key] || 0) * 100);
                     return (
                       <div key={key} className="space-y-1">
-                        <div className="flex flex-wrap items-start justify-between gap-2 text-xs text-slate-400">
+                        <div className="flex flex-wrap items-start justify-between gap-2 text-xs text-sky-500">
                           <span className="min-w-0 flex-1">{t(labelKey)}</span>
-                          <span className="shrink-0 tabular-nums text-slate-200 font-medium">{pct}%</span>
+                          <span className="shrink-0 font-medium tabular-nums text-sky-100">{pct}%</span>
                         </div>
-                        <div className="text-[11px] text-slate-300 leading-snug text-right">
+                        <div className="text-right text-[11px] leading-snug text-sky-300/90">
                           {mixValueLine(key)}
                         </div>
-                        <div className="h-2 overflow-hidden rounded-full bg-slate-800">
+                        <div className="h-2 overflow-hidden rounded-full border border-blue-500/25 bg-black">
                           <div
                             className={`h-full rounded-full ${colorClass}`}
                             style={{ width: `${Math.min(100, Math.max(0, pct))}%` }}
@@ -4019,27 +4229,27 @@ const CalendarHeatmap = ({
                 {(vcDetail.walkHeavy || vcDetail.walkOnlyDay) && (
                   <p className="text-xs text-amber-200/90">{t('calendar.heatmap.colorMix.walkNote')}</p>
                 )}
-                <div className="border-t border-slate-600/60 pt-3 text-xs text-slate-300">
+                <div className="border-t border-blue-500/30 pt-3 text-xs text-sky-300/90">
                   {dayFeedback?.difficulte != null && Number(dayFeedback.difficulte) >= 1 ? (
                     <div>
-                      <div className="text-slate-400">
+                      <div className="text-sky-500">
                         {t('calendar.heatmap.colorMix.feedback', { n: dayFeedback.difficulte })}
                       </div>
                       {dayFeedback.note ? (
-                        <div className="mt-1 text-slate-200">
-                          <span className="text-slate-500">{t('calendar.heatmap.colorMix.feedbackNote')} </span>
+                        <div className="mt-1 text-sky-100">
+                          <span className="text-sky-500">{t('calendar.heatmap.colorMix.feedbackNote')} </span>
                           {dayFeedback.note}
                         </div>
                       ) : null}
                     </div>
                   ) : (
-                    <div className="text-slate-500">{t('calendar.heatmap.colorMix.feedbackNone')}</div>
+                    <div className="text-sky-600">{t('calendar.heatmap.colorMix.feedbackNone')}</div>
                   )}
                 </div>
-                <div className="rounded-md border border-slate-600/50 bg-slate-900/40 p-3 text-xs text-slate-300">
-                  <div className="font-medium text-slate-200 mb-1">{t('calendar.heatmap.equiv.title')}</div>
-                  <p className="mt-1 text-slate-400">{t('calendar.heatmap.equiv.intro')}</p>
-                  <ul className="mt-2 list-disc space-y-1.5 pl-4 marker:text-indigo-400">
+                <div className="rounded-md border border-blue-500/35 bg-black/80 p-3 text-xs text-sky-300/90">
+                  <div className="mb-1 font-medium text-sky-100">{t('calendar.heatmap.equiv.title')}</div>
+                  <p className="mt-1 text-sky-500">{t('calendar.heatmap.equiv.intro')}</p>
+                  <ul className="mt-2 list-disc space-y-1.5 pl-4 marker:text-sky-500">
                     <li>{t('calendar.heatmap.equiv.b1', { kcal: CALENDAR_VISUAL_CONSTANTS.KCAL_PER_VISUAL_UNIT })}</li>
                     <li>{t('calendar.heatmap.equiv.b2', { steps: CALENDAR_VISUAL_CONSTANTS.STEPS_PER_VISUAL_UNIT })}</li>
                     <li>{t('calendar.heatmap.equiv.b3')}</li>
@@ -4047,7 +4257,7 @@ const CalendarHeatmap = ({
                     <li>{t('calendar.heatmap.equiv.b5')}</li>
                   </ul>
                   {(vcDetail.approxRepEquivFromKcal > 0 || vcDetail.approxRepEquivFromSteps > 0) && (
-                    <p className="mt-2 text-slate-400">
+                    <p className="mt-2 text-sky-500">
                       {t('calendar.heatmap.equiv.todayApprox', {
                         kcalU: vcDetail.approxRepEquivFromKcal,
                         stepU: vcDetail.approxRepEquivFromSteps
@@ -4060,8 +4270,8 @@ const CalendarHeatmap = ({
             
             {/* ✅ NOUVEAU : Message si jour justifié (pas d'entraînement) - Sauf repos */}
             {justification && justification.reason !== JUSTIFICATION_REASONS.REPOS && (
-              <div className="bg-slate-700/30 rounded-lg p-4 text-center">
-                <div className="text-slate-400 text-sm">
+              <div className="rounded-lg border border-blue-500/40 bg-black p-4 text-center">
+                <div className="text-sm text-sky-500">
                   {t('calendar.heatmap.dayDetails.noWorkoutJustified')}
                 </div>
               </div>
@@ -4228,8 +4438,8 @@ const CalendarHeatmap = ({
 
                   {/* Métriques quotidiennes */}
                   {dailyMetrics && (
-                    <div className="bg-purple-900/20 border border-purple-500/30 rounded-lg p-4">
-                      <div className="text-purple-400 font-medium mb-2">📊 {t('calendar.heatmap.dayDetails.dailyMetrics')}</div>
+                    <div className="rounded-lg border border-sky-600/40 bg-black p-4">
+                      <div className="mb-2 font-medium text-[#7ecbb0]">📊 {t('calendar.heatmap.dayDetails.dailyMetrics')}</div>
                       <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-sm">
                         {dailyMetrics.steps > 0 && (
                           <div className="bg-slate-800/50 rounded p-2">
@@ -4336,7 +4546,7 @@ const CalendarHeatmap = ({
                         </div>
                         {programName && (
                           <div className="text-xs text-slate-400 flex items-center gap-1">
-                            <span className="text-purple-400">📋</span>
+                            <span className="text-sky-400">📋</span>
                             <span>{programName}</span>
                           </div>
                         )}

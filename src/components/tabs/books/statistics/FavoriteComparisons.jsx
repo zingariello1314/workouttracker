@@ -110,20 +110,20 @@ const FavoriteComparisons = ({
   };
 
   return (
-    <Card variant="glass">
-      <CardHeader>
-        <CardTitle className="flex items-center justify-between">
+    <Card variant="books">
+      <CardHeader className="border-b border-[#3A86FF]/25">
+        <CardTitle tone="books" className="flex items-center justify-between normal-case tracking-wide">
           <div className="flex items-center gap-2">
-            <Star className="w-5 h-5 text-yellow-400" />
+            <Star className="w-5 h-5 text-[#93c5fd]" />
             {t('books.statistics.favoriteComparisons.title', 'Comparaisons favorites')}
           </div>
           
           {currentComparison && !isAddingNew && (
             <Button
-              variant="ghost"
+              variant="booksMuted"
               size="sm"
               onClick={handleSaveCurrentComparison}
-              className="flex items-center gap-2"
+              className="flex items-center gap-2 normal-case tracking-normal"
             >
               <Plus className="w-4 h-4" />
               {t('books.statistics.favoriteComparisons.save', 'Sauvegarder')}
@@ -135,12 +135,13 @@ const FavoriteComparisons = ({
       <CardContent className="space-y-4">
         {/* Formulaire d'ajout */}
         {isAddingNew && (
-          <div className="bg-slate-800/50 rounded-lg p-4 space-y-3">
+          <div className="bg-black/60 border border-[#3A86FF]/30 rounded-xl p-4 space-y-3">
             <div>
-              <label className="text-sm text-slate-300 mb-2 block">
+              <label className="text-sm text-[#93c5fd] mb-2 block">
                 {t('books.statistics.favoriteComparisons.name', 'Nom de la comparaison')}
               </label>
               <Input
+                fieldTone="books"
                 value={newComparisonName}
                 onChange={(e) => setNewComparisonName(e.target.value)}
                 placeholder={t('books.statistics.favoriteComparisons.namePlaceholder', 'Ex: Comparaison mensuelle')}
@@ -150,7 +151,7 @@ const FavoriteComparisons = ({
             </div>
             
             {currentComparison && (
-              <div className="text-sm text-slate-400">
+              <div className="text-sm text-[#93c5fd]/80">
                 <span className="font-medium">Comparaison: </span>
                 {formatComparisonDescription(currentComparison)}
               </div>
@@ -158,20 +159,20 @@ const FavoriteComparisons = ({
             
             <div className="flex gap-2">
               <Button
-                variant="primary"
+                variant="books"
                 size="sm"
                 onClick={handleConfirmAdd}
                 disabled={!newComparisonName.trim()}
-                className="flex items-center gap-2"
+                className="flex items-center gap-2 normal-case tracking-normal"
               >
                 <Check className="w-4 h-4" />
                 {t('books.statistics.favoriteComparisons.confirm', 'Confirmer')}
               </Button>
               <Button
-                variant="ghost"
+                variant="booksMuted"
                 size="sm"
                 onClick={handleCancelAdd}
-                className="flex items-center gap-2"
+                className="flex items-center gap-2 normal-case tracking-normal"
               >
                 <X className="w-4 h-4" />
                 {t('books.statistics.favoriteComparisons.cancel', 'Annuler')}

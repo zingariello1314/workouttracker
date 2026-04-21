@@ -43,15 +43,33 @@ export const JUSTIFICATION_LABELS = {
 };
 
 /**
- * Couleurs Tailwind CSS pour chaque raison (utilisées dans le calendrier)
+ * Boîtes : fond noir + bordure (cellules calendrier, pastilles légende).
  * @constant {Object}
  */
 export const JUSTIFICATION_COLORS = {
-  [JUSTIFICATION_REASONS.MALADIE]: 'bg-red-600 border-red-500',      // Rouge pour maladie
-  [JUSTIFICATION_REASONS.FLEMME]: 'bg-orange-600 border-orange-500',  // Orange pour flemme
-  [JUSTIFICATION_REASONS.PAS_LE_TEMPS]: 'bg-yellow-600 border-yellow-500', // Jaune pour pas le temps
-  [JUSTIFICATION_REASONS.REPOS]: 'bg-blue-600 border-blue-500',      // Bleu pour repos
-  [JUSTIFICATION_REASONS.AUTRE]: 'bg-gray-600 border-gray-500'        // Gris pour autre
+  [JUSTIFICATION_REASONS.MALADIE]: 'bg-black border-2 border-red-500',
+  [JUSTIFICATION_REASONS.FLEMME]: 'bg-black border-2 border-orange-500',
+  [JUSTIFICATION_REASONS.PAS_LE_TEMPS]: 'bg-black border-2 border-amber-400',
+  [JUSTIFICATION_REASONS.REPOS]: 'bg-black border-2 border-sky-500',
+  [JUSTIFICATION_REASONS.AUTRE]: 'bg-black border-2 border-slate-500',
+};
+
+/** Texte principal sur fond noir (légende, stats, bouton justification). */
+export const JUSTIFICATION_TEXT = {
+  [JUSTIFICATION_REASONS.MALADIE]: 'text-red-100',
+  [JUSTIFICATION_REASONS.FLEMME]: 'text-orange-100',
+  [JUSTIFICATION_REASONS.PAS_LE_TEMPS]: 'text-amber-100',
+  [JUSTIFICATION_REASONS.REPOS]: 'text-sky-100',
+  [JUSTIFICATION_REASONS.AUTRE]: 'text-slate-100',
+};
+
+/** Couleur du chiffre du jour sur case « justification » (fond noir). */
+export const JUSTIFICATION_DAY_NUMBER_CLASS = {
+  [JUSTIFICATION_REASONS.MALADIE]: 'text-red-200',
+  [JUSTIFICATION_REASONS.FLEMME]: 'text-orange-200',
+  [JUSTIFICATION_REASONS.PAS_LE_TEMPS]: 'text-amber-200',
+  [JUSTIFICATION_REASONS.REPOS]: 'text-sky-200',
+  [JUSTIFICATION_REASONS.AUTRE]: 'text-slate-200',
 };
 
 /**

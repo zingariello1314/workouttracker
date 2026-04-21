@@ -11,7 +11,8 @@ const Input = ({
   helperText,
   icon,
   iconPosition = 'left',
-  variant = 'default', // 'default', 'search', 'file'
+  variant = 'default', // 'default', 'search', 'file', 'glass'
+  fieldTone = 'emerald', // 'emerald' | 'gold' | 'slate' | 'books' (hors variante glass gérée par CSS)
   size = 'md', // 'sm', 'md', 'lg'
   fullWidth = true,
   className = '',
@@ -24,11 +25,27 @@ const Input = ({
     lg: 'px-5 py-3 md:py-4 text-lg',
   };
 
-  const baseStyles = 'w-full bg-black/30 border-2 rounded-lg text-slate-200 placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/50 transition-all duration-200 backdrop-blur-sm';
+  const isGlass = variant === 'glass';
+  const goldTone = fieldTone === 'gold';
+  const slateTone = fieldTone === 'slate';
+  const booksTone = fieldTone === 'books';
+  const labelToneClass = booksTone ? 'text-[#93c5fd]/88' : 'text-slate-300';
 
-  const borderStyles = error
-    ? 'border-red-500/50 focus:border-red-400'
-    : 'border-emerald-500/50 focus:border-cyan-400 focus:bg-emerald-500/5';
+  const baseStyles = isGlass
+    ? `w-full rounded-lg focus:outline-none transition-all duration-200 backdrop-blur-sm books-glass-input ${booksTone ? 'text-[#e0f2fe] placeholder:text-[#93c5fd]/45' : 'text-slate-200 placeholder-slate-500'}`
+    : 'w-full bg-black/30 border-2 rounded-lg text-slate-200 placeholder-slate-500 focus:outline-none focus:ring-2 transition-all duration-200 backdrop-blur-sm';
+
+  const borderStyles = isGlass
+    ? ''
+    : error
+      ? 'border-red-500/50 focus:border-red-400 focus:ring-red-400/30'
+      : goldTone
+        ? 'border-amber-500/60 focus:border-amber-300 focus:ring-2 focus:ring-amber-400/45 focus:bg-amber-500/5'
+        : booksTone
+          ? 'border-[#3A86FF]/55 focus:border-[#3A86FF] focus:ring-2 focus:ring-[#3A86FF]/35 focus:bg-[#3A86FF]/8'
+          : slateTone
+            ? 'border-slate-500/50 focus:border-slate-400 focus:ring-2 focus:ring-slate-500/35 focus:bg-slate-800/40'
+            : 'border-emerald-500/50 focus:border-cyan-400 focus:ring-2 focus:ring-emerald-500/50 focus:bg-emerald-500/5';
 
   const inputId = props.id || `input-${Math.random().toString(36).substring(2, 9)}`;
 
@@ -51,7 +68,7 @@ const Input = ({
       {label && (
         <label
           htmlFor={inputId}
-          className="block text-sm font-semibold text-slate-300 mb-2"
+          className={`block text-sm font-semibold mb-2 ${labelToneClass}`}
         >
           {label}
           {props.required && <span className="text-red-400 ml-1" aria-label="requis">*</span>}
@@ -60,7 +77,7 @@ const Input = ({
       <div className="relative">
         {icon && iconPosition === 'left' && (
           <span
-            className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none"
+            className={`absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none ${booksTone ? 'text-[#93c5fd]/55' : 'text-slate-400'}`}
             aria-hidden="true"
           >
             {renderIcon()}
@@ -68,14 +85,14 @@ const Input = ({
         )}
         <input
           id={inputId}
-          className={`${baseStyles} ${borderStyles} ${sizeStyles[size]} ${icon && iconPosition === 'left' ? 'pl-10' : ''} ${icon && iconPosition === 'right' ? 'pr-10' : ''} ${className}`}
+          className={`${baseStyles} ${borderStyles} ${sizeStyles[size]} ${booksTone && !isGlass ? 'text-[#e0f2fe] placeholder:text-[#93c5fd]/45' : ''} ${icon && iconPosition === 'left' ? 'pl-10' : ''} ${icon && iconPosition === 'right' ? 'pr-10' : ''} ${className}`}
           aria-invalid={error ? 'true' : 'false'}
           aria-describedby={error ? `${inputId}-error` : helperText ? `${inputId}-helper` : undefined}
           {...props}
         />
         {icon && iconPosition === 'right' && (
           <span
-            className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none"
+            className={`absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none ${booksTone ? 'text-[#93c5fd]/55' : 'text-slate-400'}`}
             aria-hidden="true"
           >
             {renderIcon()}
@@ -88,7 +105,7 @@ const Input = ({
         </p>
       )}
       {helperText && !error && (
-        <p id={`${inputId}-helper`} className="mt-1 text-sm text-slate-400">
+        <p id={`${inputId}-helper`} className={`mt-1 text-sm ${booksTone ? 'text-[#93c5fd]/70' : 'text-slate-400'}`}>
           {helperText}
         </p>
       )}
@@ -101,6 +118,8 @@ const TextArea = React.forwardRef(({
   label,
   error,
   helperText,
+  variant = 'default',
+  fieldTone = 'emerald',
   size = 'md',
   fullWidth = true,
   className = '',
@@ -112,11 +131,27 @@ const TextArea = React.forwardRef(({
     lg: 'px-5 py-3 md:py-4 text-lg',
   };
 
-  const baseStyles = 'w-full bg-black/30 border-2 rounded-lg text-slate-200 placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/50 transition-all duration-200 backdrop-blur-sm resize-y';
+  const isGlass = variant === 'glass';
+  const goldTone = fieldTone === 'gold';
+  const slateTone = fieldTone === 'slate';
+  const booksTone = fieldTone === 'books';
+  const labelToneClass = booksTone ? 'text-[#93c5fd]/88' : 'text-slate-300';
 
-  const borderStyles = error
-    ? 'border-red-500/50 focus:border-red-400'
-    : 'border-emerald-500/50 focus:border-cyan-400 focus:bg-emerald-500/5';
+  const baseStyles = isGlass
+    ? `w-full rounded-lg focus:outline-none transition-all duration-200 backdrop-blur-sm resize-y books-glass-textarea ${booksTone ? 'text-[#e0f2fe] placeholder:text-[#93c5fd]/45' : 'text-slate-200 placeholder-slate-500'}`
+    : 'w-full bg-black/30 border-2 rounded-lg text-slate-200 placeholder-slate-500 focus:outline-none focus:ring-2 transition-all duration-200 backdrop-blur-sm resize-y';
+
+  const borderStyles = isGlass
+    ? ''
+    : error
+      ? 'border-red-500/50 focus:border-red-400 focus:ring-red-400/30'
+      : goldTone
+        ? 'border-amber-500/60 focus:border-amber-300 focus:ring-2 focus:ring-amber-400/45 focus:bg-amber-500/5'
+        : booksTone
+          ? 'border-[#3A86FF]/55 focus:border-[#3A86FF] focus:ring-2 focus:ring-[#3A86FF]/35 focus:bg-[#3A86FF]/8'
+          : slateTone
+            ? 'border-slate-500/50 focus:border-slate-400 focus:ring-2 focus:ring-slate-500/35 focus:bg-slate-800/40'
+            : 'border-emerald-500/50 focus:border-cyan-400 focus:ring-2 focus:ring-emerald-500/50 focus:bg-emerald-500/5';
 
   const textAreaId = props.id || `textarea-${Math.random().toString(36).substring(2, 9)}`;
 
@@ -125,7 +160,7 @@ const TextArea = React.forwardRef(({
       {label && (
         <label
           htmlFor={textAreaId}
-          className="block text-sm font-semibold text-slate-300 mb-2"
+          className={`block text-sm font-semibold mb-2 ${labelToneClass}`}
         >
           {label}
           {props.required && <span className="text-red-400 ml-1" aria-label="requis">*</span>}
@@ -134,7 +169,7 @@ const TextArea = React.forwardRef(({
       <textarea
         ref={ref}
         id={textAreaId}
-        className={`${baseStyles} ${borderStyles} ${sizeStyles[size]} ${className}`}
+        className={`${baseStyles} ${borderStyles} ${sizeStyles[size]} ${booksTone && !isGlass ? 'text-[#e0f2fe] placeholder:text-[#93c5fd]/45' : ''} ${className}`}
         aria-invalid={error ? 'true' : 'false'}
         aria-describedby={error ? `${textAreaId}-error` : helperText ? `${textAreaId}-helper` : undefined}
         {...props}
@@ -145,7 +180,7 @@ const TextArea = React.forwardRef(({
         </p>
       )}
       {helperText && !error && (
-        <p id={`${textAreaId}-helper`} className="mt-1 text-sm text-slate-400">
+        <p id={`${textAreaId}-helper`} className={`mt-1 text-sm ${booksTone ? 'text-[#93c5fd]/70' : 'text-slate-400'}`}>
           {helperText}
         </p>
       )}
@@ -160,6 +195,8 @@ const Select = ({
   label,
   error,
   helperText,
+  variant = 'default',
+  fieldTone = 'emerald',
   size = 'md',
   fullWidth = true,
   className = '',
@@ -172,11 +209,27 @@ const Select = ({
     lg: 'px-5 py-3 md:py-4 text-lg',
   };
 
-  const baseStyles = 'w-full bg-black/30 border-2 rounded-lg text-slate-200 focus:outline-none focus:ring-2 focus:ring-emerald-500/50 transition-all duration-200 backdrop-blur-sm';
+  const isGlass = variant === 'glass';
+  const goldTone = fieldTone === 'gold';
+  const slateTone = fieldTone === 'slate';
+  const booksTone = fieldTone === 'books';
+  const labelToneClass = booksTone ? 'text-[#93c5fd]/88' : 'text-slate-300';
 
-  const borderStyles = error
-    ? 'border-red-500/50 focus:border-red-400'
-    : 'border-emerald-500/50 focus:border-cyan-400 focus:bg-emerald-500/5';
+  const baseStyles = isGlass
+    ? `w-full rounded-lg focus:outline-none transition-all duration-200 backdrop-blur-sm books-glass-select ${booksTone ? 'text-[#e0f2fe]' : 'text-slate-200'}`
+    : 'w-full bg-black/30 border-2 rounded-lg text-slate-200 focus:outline-none focus:ring-2 transition-all duration-200 backdrop-blur-sm';
+
+  const borderStyles = isGlass
+    ? ''
+    : error
+      ? 'border-red-500/50 focus:border-red-400 focus:ring-red-400/30'
+      : goldTone
+        ? 'border-amber-500/60 focus:border-amber-300 focus:ring-2 focus:ring-amber-400/45 focus:bg-amber-500/5'
+        : booksTone
+          ? 'border-[#3A86FF]/55 focus:border-[#3A86FF] focus:ring-2 focus:ring-[#3A86FF]/35 focus:bg-[#3A86FF]/8'
+          : slateTone
+            ? 'border-slate-500/50 focus:border-slate-400 focus:ring-2 focus:ring-slate-500/35 focus:bg-slate-800/40'
+            : 'border-emerald-500/50 focus:border-cyan-400 focus:ring-2 focus:ring-emerald-500/50 focus:bg-emerald-500/5';
 
   const selectId = props.id || `select-${Math.random().toString(36).substring(2, 9)}`;
 
@@ -185,7 +238,7 @@ const Select = ({
       {label && (
         <label
           htmlFor={selectId}
-          className="block text-sm font-semibold text-slate-300 mb-2"
+          className={`block text-sm font-semibold mb-2 ${labelToneClass}`}
         >
           {label}
           {props.required && <span className="text-red-400 ml-1" aria-label="requis">*</span>}
@@ -193,7 +246,7 @@ const Select = ({
       )}
       <select
         id={selectId}
-        className={`${baseStyles} ${borderStyles} ${sizeStyles[size]} ${className}`}
+        className={`${baseStyles} ${borderStyles} ${sizeStyles[size]} ${booksTone && !isGlass ? 'text-[#e0f2fe]' : ''} ${className}`}
         aria-invalid={error ? 'true' : 'false'}
         aria-describedby={error ? `${selectId}-error` : helperText ? `${selectId}-helper` : undefined}
         {...props}
@@ -206,7 +259,7 @@ const Select = ({
         </p>
       )}
       {helperText && !error && (
-        <p id={`${selectId}-helper`} className="mt-1 text-sm text-slate-400">
+        <p id={`${selectId}-helper`} className={`mt-1 text-sm ${booksTone ? 'text-[#93c5fd]/70' : 'text-slate-400'}`}>
           {helperText}
         </p>
       )}
@@ -231,7 +284,7 @@ const Checkbox = ({
         <input
           type="checkbox"
           id={checkboxId}
-          className={`w-4 h-4 bg-black/30 border-2 border-emerald-500/50 rounded text-emerald-400 focus:ring-2 focus:ring-emerald-500/50 focus:outline-none transition-all duration-200 ${error ? 'border-red-500/50' : ''} ${className}`}
+          className={`h-4 w-4 rounded border-2 border-[#0F4C5C]/70 bg-black accent-teal-500 text-teal-500 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-teal-500/40 ${error ? 'border-red-500/50' : ''} ${className}`}
           aria-invalid={error ? 'true' : 'false'}
           aria-describedby={error ? `${checkboxId}-error` : helperText ? `${checkboxId}-helper` : undefined}
           {...props}

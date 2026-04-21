@@ -3,7 +3,7 @@
  * Optimisé avec virtualisation pour grandes listes
  */
 
-import React, { useMemo, useState, useCallback } from 'react';
+import React, { useMemo, useState, useCallback, useEffect } from 'react';
 import { FixedSizeList } from 'react-window';
 import { SESSION_TYPES, LIMITS } from '../../utils/apprentissageConstants';
 import SessionItem from './SessionItem';
@@ -27,10 +27,39 @@ const SessionsHistory = React.memo(({
   onCancelEditSession,
   onDeleteSession,
 }) => {
+  const [viewMode, setViewMode] = useState('paginated');
+  const [currentPage, setCurrentPage] = useState(1);
+
+  const totalPages = useMemo(
+    () => Math.max(1, Math.ceil((sessionsHistory?.length || 0) / ITEMS_PER_PAGE)),
+    [sessionsHistory.length]
+  );
+
+  useEffect(() => {
+    setCurrentPage((p) => Math.min(Math.max(1, p), totalPages));
+  }, [totalPages]);
+
+  const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
+  const paginatedSessions = useMemo(
+    () => sessionsHistory.slice(startIndex, startIndex + ITEMS_PER_PAGE),
+    [sessionsHistory, startIndex]
+  );
+
+  const handlePageChange = useCallback(
+    (page) => {
+      setCurrentPage(Math.min(Math.max(1, page), totalPages));
+    },
+    [totalPages]
+  );
+
+  const fieldClass =
+    'w-full px-3 py-2 bg-black border border-emerald-500/50 rounded text-sm text-emerald-100 focus:border-emerald-400 focus:outline-none focus:ring-2 focus:ring-emerald-500/35';
+  const labelClass = 'text-xs text-emerald-200/70 mb-1 block';
+
   return (
-    <div className="bg-slate-800/50 backdrop-blur-sm border border-emerald-500/30 rounded-xl p-6 shadow-xl shadow-emerald-500/10">
+    <div className="bg-black border-2 border-emerald-500/70 rounded-xl p-6 shadow-lg shadow-emerald-500/10">
       <div className="flex items-center justify-between mb-4">
-        <h3 className="text-xl font-bold text-emerald-400 uppercase tracking-wide">
+        <h3 className="text-xl font-bold text-emerald-300 uppercase tracking-wide">
           <span aria-hidden="true">📊</span> SESSION ARCHIVE
         </h3>
         <button
@@ -38,10 +67,10 @@ const SessionsHistory = React.memo(({
           onClick={onToggleManualForm}
           aria-label={showManualForm ? 'Fermer le formulaire d\'ajout manuel' : 'Ouvrir le formulaire d\'ajout manuel'}
           aria-expanded={showManualForm}
-          className={`gradient-button-premium gradient-button-premium-md rounded-lg font-semibold text-xs uppercase tracking-wide ${
+          className={`rounded-lg font-semibold text-xs uppercase tracking-wide border-2 px-4 py-2 transition-all ${
             showManualForm
-              ? 'gradient-button-premium-variant'
-              : ''
+              ? 'bg-emerald-500/15 border-emerald-400 text-emerald-50'
+              : 'bg-black border-emerald-600/50 text-emerald-200/90 hover:border-emerald-400/75'
           }`}
         >
           {showManualForm ? '❌ CANCEL' : '➕ MANUAL DATA ENTRY'}
@@ -50,15 +79,15 @@ const SessionsHistory = React.memo(({
 
       {/* Formulaire ajout manuel */}
       {showManualForm && (
-        <div className="mb-6 p-4 bg-slate-900/50 border border-emerald-500/30 rounded-lg">
-          <h4 className="text-sm font-bold text-emerald-400 mb-4 uppercase">✏️ DATA ENTRY PROTOCOL</h4>
+        <div className="mb-6 p-4 bg-black border border-emerald-500/45 rounded-lg">
+          <h4 className="text-sm font-bold text-emerald-300 mb-4 uppercase">✏️ DATA ENTRY PROTOCOL</h4>
           <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
             <div>
-              <label className="text-xs text-slate-400 mb-1 block">PROTOCOL:</label>
+              <label className={labelClass}>PROTOCOL:</label>
               <select
                 value={manualSession.subjectName}
                 onChange={(e) => onManualSessionChange({ ...manualSession, subjectName: e.target.value })}
-                className="w-full px-3 py-2 bg-slate-800 border border-slate-600 rounded text-sm text-slate-200"
+                className={fieldClass}
               >
                 <option value="">SELECT PROTOCOL</option>
                 {subjects.map((s) => (
@@ -69,43 +98,43 @@ const SessionsHistory = React.memo(({
               </select>
             </div>
             <div>
-              <label className="text-xs text-slate-400 mb-1 block">TYPE:</label>
+              <label className={labelClass}>TYPE:</label>
               <select
                 value={manualSession.type}
                 onChange={(e) => onManualSessionChange({ ...manualSession, type: e.target.value })}
-                className="w-full px-3 py-2 bg-slate-800 border border-slate-600 rounded text-sm text-slate-200"
+                className={fieldClass}
               >
                 <option value={SESSION_TYPES.WORK}>📚 WORK</option>
                 <option value={SESSION_TYPES.BREAK}>☕ BREAK</option>
               </select>
             </div>
             <div>
-              <label className="text-xs text-slate-400 mb-1 block">DURATION (MIN):</label>
+              <label className={labelClass}>DURATION (MIN):</label>
               <input
                 type="number"
                 min="1"
                 max={LIMITS.MAX_SESSION_DURATION / 60}
                 value={manualSession.duration}
                 onChange={(e) => onManualSessionChange({ ...manualSession, duration: parseInt(e.target.value) || 25 })}
-                className="w-full px-3 py-2 bg-slate-800 border border-slate-600 rounded text-sm text-slate-200"
+                className={fieldClass}
               />
             </div>
             <div>
-              <label className="text-xs text-slate-400 mb-1 block">DATE:</label>
+              <label className={labelClass}>DATE:</label>
               <input
                 type="date"
                 value={manualSession.date}
                 onChange={(e) => onManualSessionChange({ ...manualSession, date: e.target.value })}
-                className="w-full px-3 py-2 bg-slate-800 border border-slate-600 rounded text-sm text-slate-200"
+                className={fieldClass}
               />
             </div>
             <div>
-              <label className="text-xs text-slate-400 mb-1 block">TIME:</label>
+              <label className={labelClass}>TIME:</label>
               <input
                 type="time"
                 value={manualSession.time}
                 onChange={(e) => onManualSessionChange({ ...manualSession, time: e.target.value })}
-                className="w-full px-3 py-2 bg-slate-800 border border-slate-600 rounded text-sm text-slate-200"
+                className={fieldClass}
               />
             </div>
           </div>
@@ -113,7 +142,7 @@ const SessionsHistory = React.memo(({
             type="button"
             onClick={onAddManualSession}
             disabled={!manualSession.subjectName}
-            className="gradient-button-premium gradient-button-premium-md rounded-lg mt-4 font-semibold uppercase text-xs tracking-wide"
+            className="mt-4 rounded-lg border-2 border-emerald-400 bg-emerald-500/15 px-4 py-2 font-semibold uppercase text-xs tracking-wide text-emerald-50 transition-all hover:bg-emerald-500/25 disabled:opacity-40 disabled:cursor-not-allowed"
           >
             ✅ COMMIT DATA
           </button>
@@ -123,23 +152,23 @@ const SessionsHistory = React.memo(({
       {/* Statistiques */}
       {sessionsHistory.length > 0 && (
         <div className="grid grid-cols-3 gap-4 mb-6">
-          <div className="text-center p-4 bg-slate-900/50 rounded-lg border border-slate-700/50">
-            <div className="text-2xl font-bold text-cyan-400">
+          <div className="text-center p-4 bg-black rounded-lg border border-emerald-500/45">
+            <div className="text-2xl font-bold text-emerald-300">
               {sessionsHistory.filter((s) => s.type === SESSION_TYPES.WORK).length}
             </div>
-            <div className="text-xs text-slate-400 uppercase mt-1">Total Sessions</div>
+            <div className="text-xs text-emerald-200/65 uppercase mt-1">Total Sessions</div>
           </div>
-          <div className="text-center p-4 bg-slate-900/50 rounded-lg border border-slate-700/50">
+          <div className="text-center p-4 bg-black rounded-lg border border-emerald-500/45">
             <div className="text-2xl font-bold text-emerald-400">
               {Math.floor(sessionsHistory.reduce((sum, s) => sum + (s.actualWorkTime || 0), 0) / 3600)}H
             </div>
-            <div className="text-xs text-slate-400 uppercase mt-1">Total Time</div>
+            <div className="text-xs text-emerald-200/65 uppercase mt-1">Total Time</div>
           </div>
-          <div className="text-center p-4 bg-slate-900/50 rounded-lg border border-slate-700/50">
-            <div className="text-2xl font-bold text-purple-400">
+          <div className="text-center p-4 bg-black rounded-lg border border-emerald-500/45">
+            <div className="text-2xl font-bold text-emerald-200">
               {[...new Set(sessionsHistory.filter((s) => s.type === SESSION_TYPES.WORK).map((s) => s.subject))].length}
             </div>
-            <div className="text-xs text-slate-400 uppercase mt-1">Protocols</div>
+            <div className="text-xs text-emerald-200/65 uppercase mt-1">Protocols</div>
           </div>
         </div>
       )}
@@ -148,12 +177,12 @@ const SessionsHistory = React.memo(({
       {sessionsHistory.length > 0 ? (
         <div>
           <div className="flex items-center justify-between mb-4">
-            <div className="text-sm font-semibold text-slate-400">RECENT ACTIVITY:</div>
+            <div className="text-sm font-semibold text-emerald-200/70">RECENT ACTIVITY:</div>
             <div className="flex gap-2 items-center">
               <button
                 type="button"
                 onClick={() => setViewMode(viewMode === 'virtualized' ? 'paginated' : 'virtualized')}
-                className="gradient-button-premium gradient-button-premium-sm rounded-lg text-xs"
+                className="rounded-lg border border-emerald-500/50 bg-black px-3 py-1.5 text-xs font-semibold text-emerald-200 hover:border-emerald-400 transition-all"
                 aria-label={`Basculer vers ${viewMode === 'virtualized' ? 'pagination' : 'virtualisation'}`}
               >
                 {viewMode === 'virtualized' ? '📄 Pagination' : '⚡ Virtualisé'}
@@ -206,12 +235,12 @@ const SessionsHistory = React.memo(({
 
               {/* Pagination Controls */}
               {totalPages > 1 && (
-                <div className="flex items-center justify-center gap-2 mt-6 pt-4 border-t border-slate-700/50">
+                <div className="flex items-center justify-center gap-2 mt-6 pt-4 border-t border-emerald-500/25">
                   <button
                     type="button"
                     onClick={() => handlePageChange(1)}
                     disabled={currentPage === 1}
-                    className="gradient-button-premium gradient-button-premium-sm rounded-lg text-sm"
+                    className="rounded-lg border border-emerald-500/50 bg-black px-2 py-1 text-sm text-emerald-200 disabled:opacity-35"
                     aria-label="Première page"
                   >
                     ⏮️
@@ -220,19 +249,19 @@ const SessionsHistory = React.memo(({
                     type="button"
                     onClick={() => handlePageChange(currentPage - 1)}
                     disabled={currentPage === 1}
-                    className="gradient-button-premium gradient-button-premium-sm rounded-lg text-sm"
+                    className="rounded-lg border border-emerald-500/50 bg-black px-2 py-1 text-sm text-emerald-200 disabled:opacity-35"
                     aria-label="Page précédente"
                   >
                     ⬅️
                   </button>
-                  <span className="px-4 py-1 text-sm text-slate-300 font-semibold">
+                  <span className="px-4 py-1 text-sm text-emerald-100 font-semibold">
                     Page {currentPage} / {totalPages}
                   </span>
                   <button
                     type="button"
                     onClick={() => handlePageChange(currentPage + 1)}
                     disabled={currentPage === totalPages}
-                    className="gradient-button-premium gradient-button-premium-sm rounded-lg text-sm"
+                    className="rounded-lg border border-emerald-500/50 bg-black px-2 py-1 text-sm text-emerald-200 disabled:opacity-35"
                     aria-label="Page suivante"
                   >
                     ➡️
@@ -241,7 +270,7 @@ const SessionsHistory = React.memo(({
                     type="button"
                     onClick={() => handlePageChange(totalPages)}
                     disabled={currentPage === totalPages}
-                    className="gradient-button-premium gradient-button-premium-sm rounded-lg text-sm"
+                    className="rounded-lg border border-emerald-500/50 bg-black px-2 py-1 text-sm text-emerald-200 disabled:opacity-35"
                     aria-label="Dernière page"
                   >
                     ⏭️

@@ -8,6 +8,7 @@
 import React, { memo, useCallback } from 'react';
 import PropTypes from 'prop-types';
 import GarminRunningStatsCard from '../garmin/GarminRunningStatsCard';
+import RecapStrengthStatsCard from '../sport/recap/RecapStrengthStatsCard';
 
 /**
  * Section Activité Physique (ex-Sport & Santé)
@@ -186,8 +187,9 @@ const ActivitePhysiqueSection = memo(({ isExpanded, onToggle, data, navigation }
             </div>
           )}
 
-          <div className="mt-4 border-t border-white/10 pt-3">
+          <div className="mt-4 border-t border-white/10 pt-3 space-y-4">
             <GarminRunningStatsCard variant="sidebar" />
+            <RecapStrengthStatsCard variant="sidebar" />
           </div>
         </div>
       )}

@@ -3,6 +3,18 @@
  * Centralise les couleurs, espacements, typographie pour cohérence
  */
 
+/** Charte UI : fond noir, contours verts (Tailwind : bg-black + border-emerald-500/…), fluide XP en verts. */
+export const CHARTER = {
+  surface: '#000000',
+  border: 'rgba(16, 185, 129, 0.72)', // emerald-500
+  borderSoft: 'rgba(16, 185, 129, 0.45)',
+  xpTrack: '#000000',
+  xpFillFrom: '#059669', // emerald-600
+  xpFillTo: '#34d399', // emerald-400
+  textPrimary: 'rgba(209, 250, 229, 0.95)', // emerald-50-ish
+  textMuted: 'rgba(167, 243, 208, 0.75)', // emerald-200/80
+};
+
 export const COLORS = {
   // Couleurs principales
   primary: {
@@ -27,19 +39,19 @@ export const COLORS = {
     muted: '#64748b', // slate-500
   },
   
-  // Couleurs de fond
+  // Couleurs de fond (charte : noir dominant)
   background: {
-    primary: '#0f172a', // slate-900
-    secondary: '#1e293b', // slate-800
-    tertiary: '#334155', // slate-700
-    overlay: 'rgba(0, 0, 0, 0.7)',
+    primary: '#000000',
+    secondary: '#000000',
+    tertiary: '#052e16', // emerald-950 — rares accents
+    overlay: 'rgba(0, 0, 0, 0.78)',
   },
   
-  // Couleurs de bordure
+  // Couleurs de bordure (charte : vert)
   border: {
-    default: 'rgba(148, 163, 184, 0.3)', // slate-400/30
-    focus: 'rgba(16, 185, 129, 0.5)', // emerald-500/50
-    active: 'rgba(16, 185, 129, 0.3)', // emerald-500/30
+    default: 'rgba(16, 185, 129, 0.45)', // emerald-500/45
+    focus: 'rgba(52, 211, 153, 0.65)', // emerald-400
+    active: 'rgba(16, 185, 129, 0.55)',
   },
 };
 
@@ -143,6 +155,7 @@ export const Z_INDEX = {
 };
 
 export default {
+  CHARTER,
   COLORS,
   SPACING,
   TYPOGRAPHY,

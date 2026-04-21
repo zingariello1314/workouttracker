@@ -1,4 +1,4 @@
-/**
+﻿/**
  * DailyTotalsCard - Carte Totaux Journaliers
  * 
  * Affiche les totaux nutritionnels du jour avec :
@@ -24,7 +24,7 @@ import { createNutritionMemoComparator, compareDailyTotals } from '../../../../u
 const DailyTotalsCard = React.memo(({ dailyMeal, activeProgram, garminData, dateStr, nutritionData }) => {
   if (!dailyMeal || !dailyMeal.dailyTotals) {
     return (
-      <Card className="bg-slate-800/50 border-slate-700">
+      <Card variant="sport">
         <CardContent className="p-6 text-center text-slate-400">
           Aucune donnée pour ce jour
         </CardContent>
@@ -50,7 +50,7 @@ const DailyTotalsCard = React.memo(({ dailyMeal, activeProgram, garminData, date
   // - ComplianceDisplay : Composant spécifique nutrition (src/components/tabs/nutrition/components/ComplianceDisplay.jsx)
 
   return (
-    <Card className="bg-slate-800/50 border-slate-700">
+    <Card variant="sport">
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <Target size={24} className="text-blue-400" />

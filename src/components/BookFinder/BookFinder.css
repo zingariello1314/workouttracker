@@ -1,13 +1,13 @@
-/* BookFinder - Interface chat cohérente avec le thème sombre du site */
+/* BookFinder — fond noir, contour #3A86FF, textes bleus pastel */
 
 .bookfinder {
   display: flex;
   flex-direction: column;
   height: 100%;
   min-height: 420px;
-  background: rgba(15, 23, 42, 0.6);
+  background: #000000;
   border-radius: 20px;
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  border: 2px solid #3a86ff;
   overflow: hidden;
 }
 
@@ -30,16 +30,16 @@
 
 .bookfinder-msg.user {
   align-self: flex-end;
-  background: linear-gradient(135deg, rgba(16, 185, 129, 0.25), rgba(6, 182, 212, 0.2));
-  border: 1px solid rgba(16, 185, 129, 0.35);
-  color: rgb(209, 250, 229);
+  background: rgba(58, 134, 255, 0.14);
+  border: 1px solid rgba(58, 134, 255, 0.45);
+  color: rgb(224, 242, 254);
 }
 
 .bookfinder-msg.bot {
   align-self: flex-start;
-  background: rgba(30, 41, 59, 0.7);
-  border: 1px solid rgba(148, 163, 184, 0.2);
-  color: rgb(226, 232, 240);
+  background: rgba(0, 0, 0, 0.55);
+  border: 1px solid rgba(58, 134, 255, 0.35);
+  color: rgb(191, 219, 254);
 }
 
 .bookfinder-msg.error {
@@ -60,9 +60,9 @@
   align-items: flex-start;
   gap: 0.75rem;
   padding: 0.75rem;
-  background: rgba(15, 23, 42, 0.8);
+  background: rgba(0, 0, 0, 0.65);
   border-radius: 12px;
-  border: 1px solid rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(58, 134, 255, 0.38);
 }
 
 .bookfinder-card-cover {
@@ -71,7 +71,7 @@
   height: 80px;
   object-fit: cover;
   border-radius: 6px;
-  background: rgba(0, 0, 0, 0.3);
+  background: rgba(0, 0, 0, 0.4);
 }
 
 .bookfinder-card-body {
@@ -81,13 +81,13 @@
 
 .bookfinder-card-title {
   font-weight: 600;
-  color: rgb(241, 245, 249);
+  color: rgb(224, 242, 254);
   margin-bottom: 0.25rem;
 }
 
 .bookfinder-card-meta {
   font-size: 0.8125rem;
-  color: rgb(148, 163, 184);
+  color: rgba(147, 197, 253, 0.88);
   margin-bottom: 0.5rem;
 }
 
@@ -100,8 +100,8 @@
 
 .bookfinder-input-area {
   padding: 1rem 1.25rem;
-  border-top: 1px solid rgba(255, 255, 255, 0.06);
-  background: rgba(15, 23, 42, 0.5);
+  border-top: 1px solid rgba(58, 134, 255, 0.28);
+  background: rgba(0, 0, 0, 0.72);
   display: flex;
   gap: 0.5rem;
   align-items: center;
@@ -113,20 +113,20 @@
   min-width: 180px;
   padding: 0.625rem 1rem;
   border-radius: 12px;
-  border: 1px solid rgba(71, 85, 105, 0.6);
-  background: rgba(30, 41, 59, 0.8);
-  color: rgb(226, 232, 240);
+  border: 1px solid rgba(58, 134, 255, 0.4);
+  background: rgba(0, 0, 0, 0.55);
+  color: rgb(224, 242, 254);
   font-size: 0.9375rem;
 }
 
 .bookfinder-input-area input::placeholder {
-  color: rgb(100, 116, 139);
+  color: rgba(147, 197, 253, 0.55);
 }
 
 .bookfinder-input-area input:focus {
   outline: none;
-  border-color: rgba(16, 185, 129, 0.5);
-  box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.15);
+  border-color: rgba(58, 134, 255, 0.85);
+  box-shadow: 0 0 0 2px rgba(58, 134, 255, 0.2);
 }
 
 .bookfinder-typing {
@@ -139,7 +139,7 @@
   width: 6px;
   height: 6px;
   border-radius: 50%;
-  background: rgb(148, 163, 184);
+  background: rgba(147, 197, 253, 0.75);
   animation: bookfinder-bounce 0.6s ease-in-out infinite;
 }
 
@@ -162,11 +162,11 @@
 
 .bookfinder-empty {
   text-align: center;
-  color: rgb(100, 116, 139);
+  color: rgba(147, 197, 253, 0.72);
   padding: 2rem 1rem;
   font-size: 0.9375rem;
 }
 
 .bookfinder-empty strong {
-  color: rgb(148, 163, 184);
+  color: rgb(186, 230, 253);
 }

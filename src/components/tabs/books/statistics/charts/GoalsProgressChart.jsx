@@ -368,12 +368,12 @@ const GoalsProgressChart = ({
       {/* Header avec contrôles */}
       <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
         <div className="flex items-center gap-3">
-          <Target className="w-6 h-6 text-purple-300" />
+          <Target className="w-6 h-6 text-[#93c5fd]" />
           <div>
-            <h3 className="text-xl font-bold text-white">
+            <h3 className="text-xl font-bold text-[#bfdbfe]">
               {t('books.statistics.goals.title', 'Objectifs de Lecture')}
             </h3>
-            <p className="text-sm text-slate-400">
+            <p className="text-sm text-[#93c5fd]/80">
               {t('books.statistics.goals.subtitle', 'Définis et suis tes objectifs de lecture')}
             </p>
           </div>
@@ -381,24 +381,26 @@ const GoalsProgressChart = ({
         
         <div className="flex items-center gap-2">
           <Button
-            variant={activeView === 'current' ? 'primary' : 'ghost'}
+            variant={activeView === 'current' ? 'books' : 'booksMuted'}
             size="sm"
             onClick={() => setActiveView('current')}
+            className="normal-case tracking-normal"
           >
             Actuels
           </Button>
           <Button
-            variant={activeView === 'history' ? 'primary' : 'ghost'}
+            variant={activeView === 'history' ? 'books' : 'booksMuted'}
             size="sm"
             onClick={() => setActiveView('history')}
+            className="normal-case tracking-normal"
           >
             Historique
           </Button>
           <Button
-            variant="primary"
+            variant="books"
             size="sm"
             onClick={() => setShowCreateForm(true)}
-            className="flex items-center gap-2"
+            className="flex items-center gap-2 normal-case tracking-normal"
           >
             <Plus className="w-4 h-4" />
             Nouvel objectif
@@ -408,19 +410,20 @@ const GoalsProgressChart = ({
 
       {/* Formulaire de création/édition */}
       {showCreateForm && (
-        <Card variant="glass">
-          <CardHeader>
-            <CardTitle>
+        <Card variant="books">
+          <CardHeader className="border-b border-[#3A86FF]/25">
+            <CardTitle tone="books" className="normal-case tracking-wide">
               {editingGoal ? 'Modifier l\'objectif' : 'Créer un nouvel objectif'}
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-slate-300 mb-2">
+                <label className="block text-sm font-medium text-[#93c5fd] mb-2">
                   Type d'objectif
                 </label>
                 <Select
+                  fieldTone="books"
                   value={formData.type}
                   onChange={(e) => setFormData(prev => ({ ...prev, type: e.target.value }))}
                 >
@@ -431,10 +434,11 @@ const GoalsProgressChart = ({
               </div>
               
               <div>
-                <label className="block text-sm font-medium text-slate-300 mb-2">
+                <label className="block text-sm font-medium text-[#93c5fd] mb-2">
                   Unité de mesure
                 </label>
                 <Select
+                  fieldTone="books"
                   value={formData.unit}
                   onChange={(e) => setFormData(prev => ({ ...prev, unit: e.target.value }))}
                 >
@@ -445,10 +449,11 @@ const GoalsProgressChart = ({
               </div>
               
               <div>
-                <label className="block text-sm font-medium text-slate-300 mb-2">
+                <label className="block text-sm font-medium text-[#93c5fd] mb-2">
                   Objectif ({UNIT_CONFIGS[formData.unit].suffix})
                 </label>
                 <Input
+                  fieldTone="books"
                   type="number"
                   value={formData.target}
                   onChange={(e) => setFormData(prev => ({ ...prev, target: parseInt(e.target.value) || 0 }))}
@@ -457,10 +462,11 @@ const GoalsProgressChart = ({
               </div>
               
               <div>
-                <label className="block text-sm font-medium text-slate-300 mb-2">
+                <label className="block text-sm font-medium text-[#93c5fd] mb-2">
                   Date de début
                 </label>
                 <Input
+                  fieldTone="books"
                   type="date"
                   value={formData.startDate}
                   onChange={(e) => setFormData(prev => ({ ...prev, startDate: e.target.value }))}
@@ -476,24 +482,26 @@ const GoalsProgressChart = ({
                   onChange={(e) => setFormData(prev => ({ ...prev, isActive: e.target.checked }))}
                   className="rounded"
                 />
-                <span className="text-sm text-slate-300">Objectif actif</span>
+                <span className="text-sm text-[#93c5fd]/90">Objectif actif</span>
               </label>
             </div>
             
             <div className="flex justify-end gap-2">
               <Button
-                variant="ghost"
+                variant="booksMuted"
                 onClick={() => {
                   setShowCreateForm(false);
                   setEditingGoal(null);
                   resetForm();
                 }}
+                className="normal-case tracking-normal"
               >
                 Annuler
               </Button>
               <Button
-                variant="primary"
+                variant="books"
                 onClick={editingGoal ? handleUpdateGoal : handleCreateGoal}
+                className="normal-case tracking-normal"
               >
                 {editingGoal ? 'Modifier' : 'Créer'}
               </Button>
@@ -507,19 +515,19 @@ const GoalsProgressChart = ({
         // Vue des objectifs actuels
         <div className="space-y-4">
           {goalsProgress.length === 0 ? (
-            <Card variant="glass">
+            <Card variant="books">
               <CardContent className="text-center py-12">
-                <Target className="w-16 h-16 text-slate-500 mx-auto mb-4" />
-                <h3 className="text-lg font-semibold text-slate-300 mb-2">
+                <Target className="w-16 h-16 text-[#93c5fd]/60 mx-auto mb-4" />
+                <h3 className="text-lg font-semibold text-[#bfdbfe] mb-2">
                   Aucun objectif défini
                 </h3>
-                <p className="text-slate-400 mb-4">
+                <p className="text-[#93c5fd]/85 mb-4">
                   Crée ton premier objectif de lecture pour commencer à suivre tes progrès.
                 </p>
                 <Button
-                  variant="primary"
+                  variant="books"
                   onClick={() => setShowCreateForm(true)}
-                  className="flex items-center gap-2 mx-auto"
+                  className="flex items-center gap-2 mx-auto normal-case tracking-normal"
                 >
                   <Plus className="w-4 h-4" />
                   Créer un objectif
@@ -533,7 +541,7 @@ const GoalsProgressChart = ({
               const Icon = config.icon;
               
               return (
-                <Card key={goal.id} variant="glass">
+                <Card key={goal.id} variant="books">
                   <CardContent className="p-6">
                     <div className="flex items-start justify-between mb-4">
                       <div className="flex items-center gap-3">
@@ -544,7 +552,7 @@ const GoalsProgressChart = ({
                           <Icon className="w-5 h-5" />
                         </div>
                         <div>
-                          <h4 className="font-semibold text-white">
+                          <h4 className="font-semibold text-[#bfdbfe]">
                             Objectif {config.label}
                           </h4>
                           <p className="text-sm text-slate-400">
@@ -555,20 +563,21 @@ const GoalsProgressChart = ({
                       
                       <div className="flex items-center gap-2">
                         {goal.isCompleted && (
-                          <CheckCircle className="w-5 h-5 text-green-400" />
+                          <CheckCircle className="w-5 h-5 text-sky-300" />
                         )}
                         <Button
-                          variant="ghost"
+                          variant="booksMuted"
                           size="sm"
                           onClick={() => handleEditGoal(goal)}
+                          className="normal-case tracking-normal"
                         >
                           <Edit3 className="w-4 h-4" />
                         </Button>
                         <Button
-                          variant="ghost"
+                          variant="booksMuted"
                           size="sm"
                           onClick={() => handleDeleteGoal(goal.id)}
-                          className="text-red-400 hover:text-red-300"
+                          className="text-red-400 hover:text-red-300 normal-case tracking-normal"
                         >
                           <Trash2 className="w-4 h-4" />
                         </Button>
@@ -591,7 +600,7 @@ const GoalsProgressChart = ({
                           className="h-3 rounded-full transition-all duration-500 ease-out"
                           style={{
                             width: `${goal.percentage}%`,
-                            backgroundColor: goal.isCompleted ? '#10B981' : config.color
+                            backgroundColor: goal.isCompleted ? '#3A86FF' : config.color
                           }}
                         />
                       </div>
@@ -614,9 +623,11 @@ const GoalsProgressChart = ({
         </div>
       ) : (
         // Vue historique
-        <Card variant="glass">
-          <CardHeader>
-            <CardTitle>Historique des objectifs (30 derniers jours)</CardTitle>
+        <Card variant="books">
+          <CardHeader className="border-b border-[#3A86FF]/25">
+            <CardTitle tone="books" className="normal-case tracking-wide">
+              Historique des objectifs (30 derniers jours)
+            </CardTitle>
           </CardHeader>
           <CardContent>
             <div className="h-64">

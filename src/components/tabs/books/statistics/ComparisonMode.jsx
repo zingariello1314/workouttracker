@@ -171,27 +171,29 @@ const ComparisonMode = ({
   return (
     <div className="space-y-6">
       {/* Header avec contrôles de comparaison */}
-      <Card variant="glass">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-3">
-            <TrendingUp className="w-5 h-5 text-blue-400" />
+      <Card variant="books">
+        <CardHeader className="border-b border-[#3A86FF]/25">
+          <CardTitle tone="books" className="flex items-center gap-3 normal-case tracking-wide">
+            <TrendingUp className="w-5 h-5 text-[#93c5fd]" />
             {t('books.statistics.comparison.title', 'Mode Comparaison')}
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
           {/* Type de comparaison */}
-          <div className="flex gap-2">
+          <div className="flex gap-2 flex-wrap">
             <Button
-              variant={comparisonType === 'periods' ? 'primary' : 'glass'}
+              variant={comparisonType === 'periods' ? 'books' : 'booksMuted'}
               size="sm"
               onClick={() => setComparisonType('periods')}
+              className="normal-case tracking-normal"
             >
               Périodes récentes
             </Button>
             <Button
-              variant={comparisonType === 'historical' ? 'primary' : 'glass'}
+              variant={comparisonType === 'historical' ? 'books' : 'booksMuted'}
               size="sm"
               onClick={() => setComparisonType('historical')}
+              className="normal-case tracking-normal"
             >
               Comparaison historique
             </Button>
@@ -202,8 +204,9 @@ const ComparisonMode = ({
             {comparisonType === 'periods' ? (
               <>
                 <div>
-                  <label className="block text-sm text-slate-300 mb-2">Période 1</label>
+                  <label className="block text-sm text-[#93c5fd] mb-2">Période 1</label>
                   <Select
+                    fieldTone="books"
                     value={period1}
                     onChange={(e) => setPeriod1(e.target.value)}
                     className="w-full"
@@ -219,8 +222,9 @@ const ComparisonMode = ({
                 </div>
                 
                 <div>
-                  <label className="block text-sm text-slate-300 mb-2">Période 2</label>
+                  <label className="block text-sm text-[#93c5fd] mb-2">Période 2</label>
                   <Select
+                    fieldTone="books"
                     value={period2}
                     onChange={(e) => setPeriod2(e.target.value)}
                     className="w-full"
@@ -234,8 +238,8 @@ const ComparisonMode = ({
             ) : (
               <>
                 <div>
-                  <label className="block text-sm text-slate-300 mb-2">Période actuelle</label>
-                  <div className="p-2 bg-slate-700 rounded text-sm text-slate-300">
+                  <label className="block text-sm text-[#93c5fd] mb-2">Période actuelle</label>
+                  <div className="p-2 bg-black/70 border border-[#3A86FF]/35 rounded text-sm text-[#bfdbfe]">
                     {COMPARISON_PERIODS[selectedPeriod]?.label || selectedPeriod}
                   </div>
                 </div>
@@ -245,8 +249,9 @@ const ComparisonMode = ({
                 </div>
                 
                 <div>
-                  <label className="block text-sm text-slate-300 mb-2">Période historique</label>
+                  <label className="block text-sm text-[#93c5fd] mb-2">Période historique</label>
                   <Select
+                    fieldTone="books"
                     value={historicalPeriod}
                     onChange={(e) => setHistoricalPeriod(e.target.value)}
                     className="w-full"
@@ -307,18 +312,16 @@ const ComparisonMode = ({
 const PeriodCard = ({ period, color, isReference }) => {
   const t = useTranslation();
   
-  const colorClasses = {
-    blue: 'border-blue-500/30 bg-blue-500/5',
-    purple: 'border-purple-500/30 bg-purple-500/5'
-  };
+  const accentRing =
+    color === 'blue' ? 'ring-1 ring-sky-400/35' : 'ring-1 ring-violet-400/35';
 
   return (
-    <Card variant="glass" className={colorClasses[color]}>
-      <CardHeader>
-        <CardTitle className="flex items-center justify-between">
+    <Card variant="books" className={accentRing}>
+      <CardHeader className="border-b border-[#3A86FF]/25">
+        <CardTitle tone="books" className="flex items-center justify-between normal-case tracking-wide">
           <span>{period.label}</span>
           {isReference && (
-            <span className="text-xs bg-slate-600 px-2 py-1 rounded">
+            <span className="text-xs bg-[#3A86FF]/20 text-[#bfdbfe] border border-[#3A86FF]/40 px-2 py-1 rounded">
               Référence
             </span>
           )}
@@ -352,8 +355,8 @@ const PeriodCard = ({ period, color, isReference }) => {
           />
         </div>
         
-        <div className="pt-2 border-t border-slate-600">
-          <div className="text-sm text-slate-400 space-y-1">
+        <div className="pt-2 border-t border-[#3A86FF]/25">
+          <div className="text-sm text-[#93c5fd]/85 space-y-1">
             <div>Streak actuel: {period.metrics.currentStreak || 0} jours</div>
             <div>Jours actifs: {period.metrics.uniqueDays || 0}</div>
             <div>Livres touchés: {period.metrics.uniqueBooks || 0}</div>
@@ -368,15 +371,15 @@ const PeriodCard = ({ period, color, isReference }) => {
  * Composant pour afficher une métrique individuelle
  */
 const MetricItem = ({ icon, label, value, unit }) => (
-  <div className="text-center">
-    <div className="flex items-center justify-center gap-1 text-slate-400 mb-1">
+    <div className="text-center">
+    <div className="flex items-center justify-center gap-1 text-[#93c5fd]/80 mb-1">
       {icon}
       <span className="text-xs">{label}</span>
     </div>
-    <div className="text-lg font-semibold text-white">
+    <div className="text-lg font-semibold text-[#bfdbfe]">
       {typeof value === 'number' ? value.toLocaleString() : value}
     </div>
-    <div className="text-xs text-slate-500">{unit}</div>
+    <div className="text-xs text-[#93c5fd]/65">{unit}</div>
   </div>
 );
 
@@ -387,10 +390,10 @@ const EvolutionAnalysis = ({ evolution }) => {
   const t = useTranslation();
 
   return (
-    <Card variant="glass">
-      <CardHeader>
-        <CardTitle className="flex items-center gap-3">
-          <TrendingUp className="w-5 h-5 text-green-400" />
+    <Card variant="books">
+      <CardHeader className="border-b border-[#3A86FF]/25">
+        <CardTitle tone="books" className="flex items-center gap-3 normal-case tracking-wide">
+          <TrendingUp className="w-5 h-5 text-[#93c5fd]" />
           Analyse des évolutions
         </CardTitle>
       </CardHeader>
@@ -422,27 +425,27 @@ const EvolutionItem = ({ metric, data }) => {
   };
 
   const getIcon = () => {
-    if (data.percentage > 5) return <TrendingUp className="w-4 h-4 text-green-400" />;
+    if (data.percentage > 5) return <TrendingUp className="w-4 h-4 text-sky-300" />;
     if (data.percentage < -5) return <TrendingDown className="w-4 h-4 text-red-400" />;
     return <Minus className="w-4 h-4 text-slate-400" />;
   };
 
   const getColorClass = () => {
-    if (data.percentage > 5) return 'text-green-400';
+    if (data.percentage > 5) return 'text-sky-300';
     if (data.percentage < -5) return 'text-red-400';
     return 'text-slate-400';
   };
 
   return (
-    <div className="text-center p-3 bg-slate-800/50 rounded-lg">
-      <div className="flex items-center justify-center gap-1 text-slate-400 mb-2">
+    <div className="text-center p-3 bg-black/70 border border-[#3A86FF]/25 rounded-xl">
+      <div className="flex items-center justify-center gap-1 text-[#93c5fd]/75 mb-2">
         {getIcon()}
         <span className="text-xs">{getMetricLabel(metric)}</span>
       </div>
       <div className={`text-lg font-semibold ${getColorClass()}`}>
         {data.percentage > 0 ? '+' : ''}{data.percentage}%
       </div>
-      <div className="text-xs text-slate-500">
+      <div className="text-xs text-[#93c5fd]/65">
         {data.current} vs {data.previous}
       </div>
     </div>
@@ -456,15 +459,15 @@ const ComparisonCharts = ({ period1, period2 }) => {
   // Placeholder pour les graphiques comparatifs
   // Sera implémenté avec Recharts dans une version future
   return (
-    <Card variant="glass">
-      <CardHeader>
-        <CardTitle className="flex items-center gap-3">
-          <BarChart3 className="w-5 h-5 text-blue-400" />
+    <Card variant="books">
+      <CardHeader className="border-b border-[#3A86FF]/25">
+        <CardTitle tone="books" className="flex items-center gap-3 normal-case tracking-wide">
+          <BarChart3 className="w-5 h-5 text-[#93c5fd]" />
           Graphiques comparatifs
         </CardTitle>
       </CardHeader>
       <CardContent>
-        <div className="text-center py-8 text-slate-400">
+        <div className="text-center py-8 text-[#93c5fd]/80">
           <BarChart3 className="w-16 h-16 mx-auto mb-4 opacity-50" />
           <p>Graphiques comparatifs en cours de développement</p>
           <p className="text-sm mt-2">

@@ -413,7 +413,7 @@ export default function AddictionQuitCravingsPanel({ aq, onSaveData }) {
       )}
 
       <div className="flex flex-wrap items-center gap-2">
-        <span className="text-xs uppercase tracking-wide text-slate-500">{t('addictionQuit.filterAll')}</span>
+        <span className="text-xs uppercase tracking-wide text-teal-700">{t('addictionQuit.filterAll')}</span>
         {[
           ['all', t('addictionQuit.filterAll')],
           ['cigarette', t('addictionQuit.filterCig')],
@@ -423,10 +423,10 @@ export default function AddictionQuitCravingsPanel({ aq, onSaveData }) {
             key={id}
             type="button"
             onClick={() => setFilterTrack(id)}
-            className={`rounded-full px-3 py-1 text-xs font-semibold ${
+            className={`rounded-full border px-3 py-1 text-xs font-semibold ${
               filterTrack === id
-                ? 'bg-cyan-600 text-white'
-                : 'bg-slate-800 text-slate-400 hover:bg-slate-700 hover:text-white'
+                ? 'border-[#0F5C45]/70 bg-[#0F5C45]/30 text-white'
+                : 'border-[#0F4C5C]/40 bg-black text-teal-200/85 hover:border-[#0F5C45]/55'
             }`}
           >
             {lab}
@@ -434,16 +434,16 @@ export default function AddictionQuitCravingsPanel({ aq, onSaveData }) {
         ))}
       </div>
 
-      <div className="flex flex-wrap gap-2 border-b border-slate-700 pb-2" role="tablist">
+      <div className="flex flex-wrap gap-2 border-b border-[#0F4C5C]/40 pb-2" role="tablist">
         <button
           type="button"
           role="tab"
           aria-selected={cravingsSub === 'journal'}
           onClick={() => setCravingsSub('journal')}
-          className={`flex items-center gap-2 rounded-full px-4 py-2 text-sm font-semibold ${
+          className={`flex items-center gap-2 rounded-full border px-4 py-2 text-sm font-semibold ${
             cravingsSub === 'journal'
-              ? 'bg-violet-600 text-white'
-              : 'bg-slate-800 text-slate-400 hover:bg-slate-700 hover:text-white'
+              ? 'border-[#0F5C45]/70 bg-[#0F5C45]/30 text-white shadow-md shadow-black/25'
+              : 'border-[#0F4C5C]/40 bg-black text-teal-200/85 hover:border-[#0F5C45]/55'
           }`}
         >
           <LayoutList className="h-4 w-4" />
@@ -454,10 +454,10 @@ export default function AddictionQuitCravingsPanel({ aq, onSaveData }) {
           role="tab"
           aria-selected={cravingsSub === 'recap'}
           onClick={() => setCravingsSub('recap')}
-          className={`flex items-center gap-2 rounded-full px-4 py-2 text-sm font-semibold ${
+          className={`flex items-center gap-2 rounded-full border px-4 py-2 text-sm font-semibold ${
             cravingsSub === 'recap'
-              ? 'bg-amber-600 text-white'
-              : 'bg-slate-800 text-slate-400 hover:bg-slate-700 hover:text-white'
+              ? 'border-sky-500/60 bg-sky-900/40 text-sky-50 shadow-md shadow-black/25'
+              : 'border-[#0F4C5C]/40 bg-black text-teal-200/85 hover:border-sky-600/50'
           }`}
         >
           <BarChart3 className="h-4 w-4" />
@@ -466,54 +466,58 @@ export default function AddictionQuitCravingsPanel({ aq, onSaveData }) {
       </div>
 
       {cravingsSub === 'recap' ? (
-        <Card id="addiction-quit-recap-print" className="border-slate-600/60 bg-slate-900/50 print:border-0 print:bg-white">
+        <Card
+          id="addiction-quit-recap-print"
+          variant="sport"
+          className="print:border-0 print:bg-white"
+        >
           <CardHeader className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <CardTitle className="text-lg text-white print:text-black">{t('addictionQuit.subTabRecap')}</CardTitle>
             <Button
               type="button"
               variant="secondary"
-              className="border-slate-600 text-slate-200 print:hidden"
+              className="border-[#0F4C5C]/55 text-teal-100 print:hidden hover:border-[#0F5C45]/60"
               onClick={() => window.print()}
             >
               <Printer className="mr-2 h-4 w-4" />
               {t('addictionQuit.recapPrint')}
             </Button>
           </CardHeader>
-          <CardContent className="grid gap-3 text-sm text-slate-300 sm:grid-cols-2 lg:grid-cols-3 print:text-black">
-            <div className="rounded-lg border border-violet-500/30 bg-violet-950/20 p-3 sm:col-span-2 lg:col-span-3 print:border-slate-300 print:bg-white">
-              <div className="text-xs font-semibold text-violet-200/90 print:text-slate-800">
+          <CardContent className="grid gap-3 text-sm text-teal-100/90 sm:grid-cols-2 lg:grid-cols-3 print:text-black">
+            <div className="rounded-lg border border-[#0F4C5C]/55 bg-black p-3 sm:col-span-2 lg:col-span-3 print:border-slate-300 print:bg-white">
+              <div className="text-xs font-semibold text-sky-200/90 print:text-slate-800">
                 {t('addictionQuit.recapNarrativeTitle')}
               </div>
-              <ul className="mt-2 list-inside list-disc space-y-1 text-slate-200 print:text-slate-900">
+              <ul className="mt-2 list-inside list-disc space-y-1 text-teal-50 print:text-slate-900">
                 {recapNarrativeLines.map((line, i) => (
                   <li key={i}>{line}</li>
                 ))}
               </ul>
-              <p className="mt-2 text-[10px] text-slate-500 print:text-slate-600">{t('addictionQuit.recapNarrativeFoot')}</p>
+              <p className="mt-2 text-[10px] text-teal-800 print:text-slate-600">{t('addictionQuit.recapNarrativeFoot')}</p>
             </div>
 
-            <div className="rounded-lg border border-slate-700 bg-slate-950/50 p-3 sm:col-span-2 lg:col-span-3 print:border-slate-300 print:bg-white">
-              <div className="text-xs font-semibold text-slate-400 print:text-slate-800">{t('addictionQuit.recapGapTitle')}</div>
+            <div className="rounded-lg border border-[#0F4C5C]/50 bg-black p-3 sm:col-span-2 lg:col-span-3 print:border-slate-300 print:bg-white">
+              <div className="text-xs font-semibold text-teal-600 print:text-slate-800">{t('addictionQuit.recapGapTitle')}</div>
               {avgRelapseGapDays != null ? (
-                <p className="mt-1 text-slate-200 print:text-slate-900">
+                <p className="mt-1 text-white print:text-slate-900">
                   {t('addictionQuit.recapGapAvg', { n: String(avgRelapseGapDays) })}
                 </p>
               ) : (
-                <p className="mt-1 text-slate-500 print:text-slate-600">{t('addictionQuit.recapGapEmpty')}</p>
+                <p className="mt-1 text-teal-800 print:text-slate-600">{t('addictionQuit.recapGapEmpty')}</p>
               )}
             </div>
 
             {thcHeavyHint ? (
-              <div className="rounded-lg border border-cyan-600/30 bg-cyan-950/20 p-3 sm:col-span-2 lg:col-span-3 print:border-slate-300 print:bg-white">
-                <p className="text-sm text-cyan-100/95 print:text-slate-900">
+              <div className="rounded-lg border border-sky-500/40 bg-black p-3 sm:col-span-2 lg:col-span-3 print:border-slate-300 print:bg-white">
+                <p className="text-sm text-sky-100/95 print:text-slate-900">
                   {t('addictionQuit.recapThcCorrelation', { trigger: labelForTrigger(thcHeavyHint.triggerId) })}
                 </p>
-                <p className="mt-1 text-[10px] text-slate-500 print:text-slate-600">{t('addictionQuit.recapCorrelationDisclaimer')}</p>
+                <p className="mt-1 text-[10px] text-teal-800 print:text-slate-600">{t('addictionQuit.recapCorrelationDisclaimer')}</p>
               </div>
             ) : null}
 
-            <div className="rounded-lg border border-slate-700 bg-slate-950/50 p-3 sm:col-span-2 lg:col-span-3 print:border-slate-300 print:bg-white">
-              <label className="flex cursor-pointer flex-wrap items-center gap-2 text-xs text-slate-300 print:text-slate-900">
+            <div className="rounded-lg border border-[#0F4C5C]/50 bg-black p-3 sm:col-span-2 lg:col-span-3 print:border-slate-300 print:bg-white">
+              <label className="flex cursor-pointer flex-wrap items-center gap-2 text-xs text-teal-100 print:text-slate-900">
                 <input
                   type="checkbox"
                   checked={!!aq.privacy?.highlightWeekendRisk}
@@ -523,22 +527,22 @@ export default function AddictionQuitCravingsPanel({ aq, onSaveData }) {
                       privacy: { ...aq.privacy, highlightWeekendRisk: e.target.checked },
                     })
                   }
-                  className="rounded border-slate-500"
+                  className="rounded border-[#0F4C5C]/60 bg-black accent-sky-500"
                 />
                 {t('addictionQuit.recapPrivacyWeekend')}
               </label>
               {aq.privacy?.highlightWeekendRisk && weekendSharePct != null ? (
-                <p className="mt-2 text-sm text-amber-100/90 print:text-slate-900">
+                <p className="mt-2 text-sm text-sky-200/95 print:text-slate-900">
                   {t('addictionQuit.recapWeekendShare', { pct: String(weekendSharePct) })}
                 </p>
               ) : null}
-              <p className="mt-1 text-[10px] text-slate-600 print:text-slate-600">{t('addictionQuit.recapPrintHint')}</p>
+              <p className="mt-1 text-[10px] text-teal-800 print:text-slate-600">{t('addictionQuit.recapPrintHint')}</p>
             </div>
 
-            <div className="rounded-lg border border-amber-500/30 bg-amber-950/20 p-3">
-              <div className="text-xs text-amber-200/80">{t('addictionQuit.recapXp')}</div>
+            <div className="rounded-lg border border-sky-500/40 bg-black p-3">
+              <div className="text-xs text-sky-300/90">{t('addictionQuit.recapXp')}</div>
               <div className="text-xl font-bold text-white">{recapStats.xpTotal}</div>
-              <div className="mt-1 text-xs text-slate-500">
+              <div className="mt-1 text-xs text-teal-800">
                 {t('addictionQuit.recapXpDetail', {
                   m: String(recapStats.xpBreakdown?.milestones ?? 0),
                   d: String(recapStats.xpBreakdown?.daily ?? 0),
@@ -546,44 +550,44 @@ export default function AddictionQuitCravingsPanel({ aq, onSaveData }) {
                 })}
               </div>
             </div>
-            <div className="rounded-lg border border-slate-700 bg-slate-950/50 p-3">
-              <div className="text-xs text-slate-500">{t('addictionQuit.recapRelapses')}</div>
+            <div className="rounded-lg border border-[#0F4C5C]/50 bg-black p-3">
+              <div className="text-xs text-teal-700">{t('addictionQuit.recapRelapses')}</div>
               <div className="text-xl font-bold text-white">{recapStats.relapseCount}</div>
-              <div className="text-xs text-slate-500">
+              <div className="text-xs text-teal-800">
                 {t('addictionQuit.recapRelapsesBy', {
                   c: String(recapStats.relapsesCig),
                   th: String(recapStats.relapsesThc),
                 })}
               </div>
             </div>
-            <div className="rounded-lg border border-slate-700 bg-slate-950/50 p-3">
-              <div className="text-xs text-slate-500">{t('addictionQuit.recapLongestCig')}</div>
+            <div className="rounded-lg border border-[#0F4C5C]/50 bg-black p-3">
+              <div className="text-xs text-teal-700">{t('addictionQuit.recapLongestCig')}</div>
               <div className="text-lg font-semibold text-cyan-200">{formatDur(recapStats.longestMsCig)}</div>
             </div>
-            <div className="rounded-lg border border-slate-700 bg-slate-950/50 p-3">
-              <div className="text-xs text-slate-500">{t('addictionQuit.recapLongestThc')}</div>
-              <div className="text-lg font-semibold text-violet-200">{formatDur(recapStats.longestMsThc)}</div>
+            <div className="rounded-lg border border-[#0F4C5C]/50 bg-black p-3">
+              <div className="text-xs text-teal-700">{t('addictionQuit.recapLongestThc')}</div>
+              <div className="text-lg font-semibold text-sky-200">{formatDur(recapStats.longestMsThc)}</div>
             </div>
-            <div className="rounded-lg border border-slate-700 bg-slate-950/50 p-3">
-              <div className="text-xs text-slate-500">{t('addictionQuit.recapAbstinentDaysCig')}</div>
+            <div className="rounded-lg border border-[#0F4C5C]/50 bg-black p-3">
+              <div className="text-xs text-teal-700">{t('addictionQuit.recapAbstinentDaysCig')}</div>
               <div className="text-lg font-semibold text-white">{recapStats.abstinentDaysCig}</div>
             </div>
-            <div className="rounded-lg border border-slate-700 bg-slate-950/50 p-3">
-              <div className="text-xs text-slate-500">{t('addictionQuit.recapAbstinentDaysThc')}</div>
+            <div className="rounded-lg border border-[#0F4C5C]/50 bg-black p-3">
+              <div className="text-xs text-teal-700">{t('addictionQuit.recapAbstinentDaysThc')}</div>
               <div className="text-lg font-semibold text-white">{recapStats.abstinentDaysThc}</div>
             </div>
-            <div className="rounded-lg border border-slate-700 bg-slate-950/50 p-3">
-              <div className="text-xs text-slate-500">{t('addictionQuit.recapCravingsTotal')}</div>
+            <div className="rounded-lg border border-[#0F4C5C]/50 bg-black p-3">
+              <div className="text-xs text-teal-700">{t('addictionQuit.recapCravingsTotal')}</div>
               <div className="text-lg font-semibold text-white">{recapStats.cravingsTotal}</div>
             </div>
-            <div className="rounded-lg border border-slate-700 bg-slate-950/50 p-3">
-              <div className="text-xs text-slate-500">{t('addictionQuit.recapHeldSlipped')}</div>
+            <div className="rounded-lg border border-[#0F4C5C]/50 bg-black p-3">
+              <div className="text-xs text-teal-700">{t('addictionQuit.recapHeldSlipped')}</div>
               <div className="text-lg font-semibold text-emerald-200">
                 {recapStats.held} / {recapStats.slipped}
               </div>
             </div>
-            <div className="rounded-lg border border-slate-700 bg-slate-950/50 p-3">
-              <div className="text-xs text-slate-500">{t('addictionQuit.recapSessions')}</div>
+            <div className="rounded-lg border border-[#0F4C5C]/50 bg-black p-3">
+              <div className="text-xs text-teal-700">{t('addictionQuit.recapSessions')}</div>
               <div className="text-lg font-semibold text-white">
                 {t('addictionQuit.recapSessionsBy', {
                   c: String(recapStats.sessionsCig),
@@ -605,7 +609,7 @@ export default function AddictionQuitCravingsPanel({ aq, onSaveData }) {
           <AddictionQuitCopilotToday aq={aq} onSaveData={onSaveData} t={t} todayStr={todayStr} />
 
           <div className="flex flex-wrap items-center gap-2">
-            <span className="text-xs uppercase tracking-wide text-slate-500">{t('addictionQuit.scopeLabel')}</span>
+            <span className="text-xs uppercase tracking-wide text-teal-700">{t('addictionQuit.scopeLabel')}</span>
             {[
               ['current_session', t('addictionQuit.scopeCurrent')],
               ['month', t('addictionQuit.scopeMonth')],
@@ -616,10 +620,10 @@ export default function AddictionQuitCravingsPanel({ aq, onSaveData }) {
                 key={id}
                 type="button"
                 onClick={() => setJournalScope(id)}
-                className={`rounded-full px-3 py-1 text-xs font-semibold ${
+                className={`rounded-full border px-3 py-1 text-xs font-semibold ${
                   journalScope === id
-                    ? 'bg-cyan-700 text-white'
-                    : 'bg-slate-800 text-slate-400 hover:bg-slate-700 hover:text-white'
+                    ? 'border-[#0F5C45]/70 bg-[#0F5C45]/30 text-white'
+                    : 'border-[#0F4C5C]/40 bg-black text-teal-200/85 hover:border-[#0F5C45]/55'
                 }`}
               >
                 {lab}
@@ -627,38 +631,38 @@ export default function AddictionQuitCravingsPanel({ aq, onSaveData }) {
             ))}
           </div>
 
-          <Card className="border-slate-600/60 bg-slate-900/50">
+          <Card variant="sport">
             <CardHeader>
               <CardTitle className="text-lg text-white">{t('addictionQuit.summaryTitle')}</CardTitle>
             </CardHeader>
-            <CardContent className="grid gap-3 text-sm text-slate-300 sm:grid-cols-2 lg:grid-cols-4">
+            <CardContent className="grid gap-3 text-sm text-teal-100/90 sm:grid-cols-2 lg:grid-cols-4">
               {journalScope === 'all' ? (
                 <>
-                  <div className="rounded-lg border border-slate-700 bg-slate-950/50 p-3">
+                  <div className="rounded-lg border border-[#0F4C5C]/50 bg-black p-3">
                     {t('addictionQuit.avg7', { v: avg7 != null ? avg7.toFixed(1) : '—' })}
                   </div>
-                  <div className="rounded-lg border border-slate-700 bg-slate-950/50 p-3">
+                  <div className="rounded-lg border border-[#0F4C5C]/50 bg-black p-3">
                     {t('addictionQuit.avg30', { v: avg30 != null ? avg30.toFixed(1) : '—' })}
                   </div>
-                  <div className="rounded-lg border border-slate-700 bg-slate-950/50 p-3">
+                  <div className="rounded-lg border border-[#0F4C5C]/50 bg-black p-3">
                     {t('addictionQuit.weekCount', { n: String(nWeek) })}
                   </div>
-                  <div className="rounded-lg border border-slate-700 bg-slate-950/50 p-3">
+                  <div className="rounded-lg border border-[#0F4C5C]/50 bg-black p-3">
                     {t('addictionQuit.trend', { t: trendLabel })}
                   </div>
                 </>
               ) : (
                 <>
-                  <div className="rounded-lg border border-slate-700 bg-slate-950/50 p-3">
+                  <div className="rounded-lg border border-[#0F4C5C]/50 bg-black p-3">
                     {t('addictionQuit.avgScope', { v: avgPeriod != null ? avgPeriod.toFixed(1) : '—' })}
                   </div>
-                  <div className="rounded-lg border border-slate-700 bg-slate-950/50 p-3">
+                  <div className="rounded-lg border border-[#0F4C5C]/50 bg-black p-3">
                     {t('addictionQuit.countScope', { n: String(nPeriod) })}
                   </div>
-                  <div className="rounded-lg border border-slate-700 bg-slate-950/50 p-3">
+                  <div className="rounded-lg border border-[#0F4C5C]/50 bg-black p-3">
                     {t('addictionQuit.heldScope', { n: String(heldN) })}
                   </div>
-                  <div className="rounded-lg border border-slate-700 bg-slate-950/50 p-3">
+                  <div className="rounded-lg border border-[#0F4C5C]/50 bg-black p-3">
                     {t('addictionQuit.slippedScope', { n: String(slippedN) })}
                   </div>
                 </>
@@ -666,42 +670,42 @@ export default function AddictionQuitCravingsPanel({ aq, onSaveData }) {
             </CardContent>
           </Card>
 
-      <div className="rounded-xl border border-slate-600/50 bg-slate-900/40 p-4">
+      <div className="rounded-xl border border-[#0F4C5C]/50 bg-black p-4">
         <h3 className="mb-2 flex items-center gap-2 text-lg font-semibold text-white">
-          <Activity className="h-5 w-5 text-violet-400" />
+          <Activity className="h-5 w-5 text-sky-400" />
           {t('addictionQuit.chartTitle')}
         </h3>
         <div className="h-56 w-full">
           <ResponsiveContainer width="100%" height="100%">
             <BarChart data={chartData} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#334155" />
-              <XAxis dataKey="label" tick={{ fill: '#94a3b8', fontSize: 10 }} interval={2} />
-              <YAxis allowDecimals={false} tick={{ fill: '#94a3b8', fontSize: 11 }} width={28} />
+              <CartesianGrid strokeDasharray="3 3" stroke="rgba(15,76,92,0.45)" />
+              <XAxis dataKey="label" tick={{ fill: '#5eead4', fontSize: 10 }} interval={2} />
+              <YAxis allowDecimals={false} tick={{ fill: '#5eead4', fontSize: 11 }} width={28} />
               <Tooltip
-                contentStyle={{ background: '#0f172a', border: '1px solid #475569', borderRadius: 8 }}
-                labelStyle={{ color: '#e2e8f0' }}
+                contentStyle={{ background: '#000000', border: '1px solid #0F4C5C', borderRadius: 8 }}
+                labelStyle={{ color: '#ccfbf1' }}
                 formatter={(v) => [v, isFr ? 'envies' : 'cravings']}
               />
-              <Bar dataKey="count" fill="#6366f1" radius={[4, 4, 0, 0]} />
+              <Bar dataKey="count" fill="#0F5C45" radius={[4, 4, 0, 0]} />
             </BarChart>
           </ResponsiveContainer>
         </div>
       </div>
 
       <div className="flex flex-wrap gap-2">
-        <Button type="button" variant="secondary" className="border-slate-600 text-slate-200" onClick={exportCsv}>
+        <Button type="button" variant="secondary" className="border-[#0F4C5C]/55 text-teal-100" onClick={exportCsv}>
           <Download className="mr-2 h-4 w-4" />
           {t('addictionQuit.exportCsv')}
         </Button>
-        <Button type="button" variant="secondary" className="border-slate-600 text-slate-200" onClick={copySummary}>
+        <Button type="button" variant="secondary" className="border-[#0F4C5C]/55 text-teal-100" onClick={copySummary}>
           <Copy className="mr-2 h-4 w-4" />
           {t('addictionQuit.copySummary')}
         </Button>
       </div>
 
-      <div className="rounded-xl border border-amber-600/30 bg-slate-900/50 p-4">
-        <h3 className="mb-2 text-sm font-semibold text-amber-100">{t('addictionQuit.sessionTimelineTitle')}</h3>
-        <p className="mb-3 text-xs text-slate-500">{t('addictionQuit.sessionTimelineHelp')}</p>
+      <div className="rounded-xl border border-[#0F4C5C]/50 bg-black p-4">
+        <h3 className="mb-2 text-sm font-semibold text-sky-200">{t('addictionQuit.sessionTimelineTitle')}</h3>
+        <p className="mb-3 text-xs text-teal-800">{t('addictionQuit.sessionTimelineHelp')}</p>
         <div className="max-h-64 space-y-2 overflow-y-auto text-sm">
           {timelineItems.length === 0 ? (
             <p className="text-slate-500">—</p>
@@ -724,7 +728,7 @@ export default function AddictionQuitCravingsPanel({ aq, onSaveData }) {
                 return (
                   <div
                     key={it.key}
-                    className="border-t border-amber-500/40 pt-2 text-center text-xs font-medium text-amber-200/90"
+                    className="border-t border-sky-500/35 pt-2 text-center text-xs font-medium text-sky-200/90"
                   >
                     {t('addictionQuit.sessionDivider', { start: startFmt, end: endFmt })}
                   </div>
@@ -734,7 +738,7 @@ export default function AddictionQuitCravingsPanel({ aq, onSaveData }) {
               return (
                 <div
                   key={it.key}
-                  className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-slate-700 bg-slate-800/60 px-2 py-1.5 text-xs"
+                  className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-[#0F4C5C]/45 bg-black px-2 py-1.5 text-xs text-teal-100"
                 >
                   <span className="text-slate-400">
                     {day} {c.timeHHMM ? `· ${c.timeHHMM}` : ''}
@@ -749,7 +753,7 @@ export default function AddictionQuitCravingsPanel({ aq, onSaveData }) {
                   </span>
                   <button
                     type="button"
-                    className="text-violet-400 hover:text-violet-300"
+                    className="text-sky-400 hover:text-sky-300"
                     onClick={() =>
                       setEdit({
                         day,
@@ -774,13 +778,13 @@ export default function AddictionQuitCravingsPanel({ aq, onSaveData }) {
         </div>
       </div>
 
-      <div className="rounded-xl border border-slate-600/50 bg-slate-900/40 p-4">
+      <div className="rounded-xl border border-[#0F4C5C]/50 bg-black p-4">
         <h3 className="mb-3 flex flex-wrap items-center justify-between gap-2 text-lg font-semibold text-white">
           <span className="flex items-center gap-2">
-            <Activity className="h-5 w-5 text-violet-400" />
+            <Activity className="h-5 w-5 text-sky-400" />
             {t('addictionQuit.recordCraving')}
           </span>
-          <Button type="button" className="bg-amber-600/90 hover:bg-amber-500 text-sm" onClick={quickNow}>
+          <Button type="button" className="bg-sky-700/90 text-sm hover:bg-sky-600" onClick={quickNow}>
             <Plus className="mr-1 h-4 w-4" />
             {t('addictionQuit.quickAdd')}
           </Button>
@@ -793,7 +797,7 @@ export default function AddictionQuitCravingsPanel({ aq, onSaveData }) {
               type="date"
               value={form.day}
               onChange={(e) => setForm((f) => ({ ...f, day: e.target.value }))}
-              className="mt-1 w-full rounded-lg border border-slate-600 bg-slate-800 px-2 py-2 text-sm text-white"
+              className="mt-1 w-full rounded-lg border border-[#0F4C5C]/50 bg-black px-2 py-2 text-sm text-white"
             />
           </label>
           <label className="text-xs text-slate-400">
@@ -802,7 +806,7 @@ export default function AddictionQuitCravingsPanel({ aq, onSaveData }) {
               type="time"
               value={form.time}
               onChange={(e) => setForm((f) => ({ ...f, time: e.target.value }))}
-              className="mt-1 w-full rounded-lg border border-slate-600 bg-slate-800 px-2 py-2 text-sm text-white"
+              className="mt-1 w-full rounded-lg border border-[#0F4C5C]/50 bg-black px-2 py-2 text-sm text-white"
             />
           </label>
           <label className="text-xs text-slate-400">
@@ -810,7 +814,7 @@ export default function AddictionQuitCravingsPanel({ aq, onSaveData }) {
             <select
               value={form.trackId}
               onChange={(e) => setForm((f) => ({ ...f, trackId: e.target.value }))}
-              className="mt-1 w-full rounded-lg border border-slate-600 bg-slate-800 px-2 py-2 text-sm text-white"
+              className="mt-1 w-full rounded-lg border border-[#0F4C5C]/50 bg-black px-2 py-2 text-sm text-white"
             >
               {TRACK_IDS.map((id) => (
                 <option key={id} value={id}>
@@ -836,7 +840,7 @@ export default function AddictionQuitCravingsPanel({ aq, onSaveData }) {
             <select
               value={form.triggerId}
               onChange={(e) => setForm((f) => ({ ...f, triggerId: e.target.value }))}
-              className="mt-1 w-full rounded-lg border border-slate-600 bg-slate-800 px-2 py-2 text-sm text-white"
+              className="mt-1 w-full rounded-lg border border-[#0F4C5C]/50 bg-black px-2 py-2 text-sm text-white"
             >
               {CRAVING_TRIGGER_OPTIONS.map((o) => (
                 <option key={o.id || 'none'} value={o.id}>
@@ -850,7 +854,7 @@ export default function AddictionQuitCravingsPanel({ aq, onSaveData }) {
             <select
               value={form.outcomeId}
               onChange={(e) => setForm((f) => ({ ...f, outcomeId: e.target.value }))}
-              className="mt-1 w-full rounded-lg border border-slate-600 bg-slate-800 px-2 py-2 text-sm text-white"
+              className="mt-1 w-full rounded-lg border border-[#0F4C5C]/50 bg-black px-2 py-2 text-sm text-white"
             >
               {CRAVING_OUTCOME_OPTIONS.map((o) => (
                 <option key={o.id || 'none'} value={o.id}>
@@ -864,7 +868,7 @@ export default function AddictionQuitCravingsPanel({ aq, onSaveData }) {
             <input
               value={form.place}
               onChange={(e) => setForm((f) => ({ ...f, place: e.target.value }))}
-              className="mt-1 w-full rounded-lg border border-slate-600 bg-slate-800 px-2 py-2 text-sm text-white"
+              className="mt-1 w-full rounded-lg border border-[#0F4C5C]/50 bg-black px-2 py-2 text-sm text-white"
             />
           </label>
           <label className="text-xs text-slate-400 lg:col-span-2">
@@ -874,7 +878,7 @@ export default function AddictionQuitCravingsPanel({ aq, onSaveData }) {
               min={0}
               value={form.durationMinutes}
               onChange={(e) => setForm((f) => ({ ...f, durationMinutes: e.target.value }))}
-              className="mt-1 w-full rounded-lg border border-slate-600 bg-slate-800 px-2 py-2 text-sm text-white"
+              className="mt-1 w-full rounded-lg border border-[#0F4C5C]/50 bg-black px-2 py-2 text-sm text-white"
             />
           </label>
           <label className="text-xs text-slate-400 lg:col-span-4">
@@ -883,11 +887,11 @@ export default function AddictionQuitCravingsPanel({ aq, onSaveData }) {
               value={form.notes}
               onChange={(e) => setForm((f) => ({ ...f, notes: e.target.value }))}
               rows={2}
-              className="mt-1 w-full rounded-lg border border-slate-600 bg-slate-800 px-2 py-2 text-sm text-white"
+              className="mt-1 w-full rounded-lg border border-[#0F4C5C]/50 bg-black px-2 py-2 text-sm text-white"
             />
           </label>
         </div>
-        <Button type="button" className="mt-4 bg-violet-600 hover:bg-violet-500" onClick={addCraving}>
+        <Button type="button" className="mt-4 bg-[#0F5C45]/90 hover:bg-[#0F5C45]" onClick={addCraving}>
           <Plus className="mr-2 h-4 w-4" />
           {t('addictionQuit.addCraving')}
         </Button>
@@ -907,8 +911,8 @@ export default function AddictionQuitCravingsPanel({ aq, onSaveData }) {
       <div className="hidden overflow-x-auto rounded-xl border border-slate-600/50 md:block">
         <table className="w-full min-w-[640px] border-collapse text-sm">
           <thead>
-            <tr className="border-b border-slate-600 bg-slate-900/80 text-left text-xs uppercase text-slate-500">
-              <th className="sticky left-0 z-10 min-w-[160px] bg-slate-900/95 px-3 py-2">{t('addictionQuit.day')}</th>
+            <tr className="border-b border-[#0F4C5C]/45 bg-black text-left text-xs uppercase text-teal-700">
+              <th className="sticky left-0 z-10 min-w-[160px] bg-black px-3 py-2">{t('addictionQuit.day')}</th>
               {Array.from({ length: maxSlots }, (_, i) => (
                 <th key={i} className="px-2 py-2 text-center text-slate-400">
                   #{i + 1}
@@ -927,8 +931,8 @@ export default function AddictionQuitCravingsPanel({ aq, onSaveData }) {
               });
               const isToday = day === todayStr;
               return (
-                <tr key={day} className={`border-b border-slate-800 ${isToday ? 'bg-cyan-950/20' : ''}`}>
-                  <td className="sticky left-0 z-10 bg-slate-950/95 px-3 py-2 font-medium text-slate-200">
+                <tr key={day} className={`border-b border-[#0F4C5C]/25 ${isToday ? 'bg-[#0F4C5C]/15' : ''}`}>
+                  <td className="sticky left-0 z-10 bg-black px-3 py-2 font-medium text-teal-100">
                     <div>{label}</div>
                     <div className="text-xs font-normal text-slate-500">
                       {t('addictionQuit.cravingsOnDay', { n: String(arr.length) })}
@@ -939,13 +943,13 @@ export default function AddictionQuitCravingsPanel({ aq, onSaveData }) {
                     return (
                       <td key={i} className="align-top p-1">
                         {c ? (
-                          <div className="group relative min-h-[88px] rounded-lg border border-slate-600 bg-slate-800/80 p-2 text-xs">
+                          <div className="group relative min-h-[88px] rounded-lg border border-[#0F4C5C]/50 bg-black p-2 text-xs text-teal-100">
                             <div className="mb-1 flex items-center justify-between gap-1">
                               <span
                                 className={`rounded px-1.5 py-0.5 font-bold ${
                                   c.trackId === 'thc'
-                                    ? 'bg-purple-600/40 text-purple-100'
-                                    : 'bg-rose-600/40 text-rose-100'
+                                    ? 'bg-sky-800/50 text-sky-100'
+                                    : 'bg-rose-900/45 text-rose-100'
                                 }`}
                               >
                                 {c.intensity}/10
@@ -953,7 +957,7 @@ export default function AddictionQuitCravingsPanel({ aq, onSaveData }) {
                               <div className="flex gap-0.5 opacity-0 transition group-hover:opacity-100">
                                 <button
                                   type="button"
-                                  className="rounded p-1 text-slate-400 hover:bg-slate-700 hover:text-white"
+                                  className="rounded p-1 text-teal-700 hover:bg-[#0F4C5C]/25 hover:text-white"
                                   onClick={() =>
                                     setEdit({
                                       day,
@@ -985,25 +989,25 @@ export default function AddictionQuitCravingsPanel({ aq, onSaveData }) {
                               </div>
                             </div>
                             {c.timeHHMM && (
-                              <div className="flex items-center gap-1 text-slate-400">
+                              <div className="flex items-center gap-1 text-teal-700">
                                 <Clock className="h-3 w-3" />
                                 {c.timeHHMM}
                               </div>
                             )}
                             {c.triggerId ? (
-                              <div className="text-slate-500">{labelForTrigger(c.triggerId)}</div>
+                              <div className="text-teal-800">{labelForTrigger(c.triggerId)}</div>
                             ) : null}
                             {c.outcomeId ? (
-                              <div className="text-slate-500">{labelForOutcome(c.outcomeId)}</div>
+                              <div className="text-teal-800">{labelForOutcome(c.outcomeId)}</div>
                             ) : null}
                             {c.durationMinutes != null && (
-                              <div className="text-slate-500">~{c.durationMinutes} min</div>
+                              <div className="text-teal-800">~{c.durationMinutes} min</div>
                             )}
-                            {c.place ? <div className="text-slate-500">{c.place}</div> : null}
-                            {c.notes && <div className="mt-1 line-clamp-3 text-slate-400">{c.notes}</div>}
+                            {c.place ? <div className="text-teal-800">{c.place}</div> : null}
+                            {c.notes && <div className="mt-1 line-clamp-3 text-teal-700">{c.notes}</div>}
                           </div>
                         ) : (
-                          <div className="min-h-[88px] rounded-lg border border-dashed border-slate-700 bg-slate-900/40" />
+                          <div className="min-h-[88px] rounded-lg border border-dashed border-[#0F4C5C]/40 bg-black/80" />
                         )}
                       </td>
                     );
@@ -1017,7 +1021,7 @@ export default function AddictionQuitCravingsPanel({ aq, onSaveData }) {
 
       {/* Mobile : cartes */}
       <div className="space-y-4 md:hidden">
-        <p className="text-xs text-slate-500">{t('addictionQuit.mobileCards')}</p>
+        <p className="text-xs text-teal-800">{t('addictionQuit.mobileCards')}</p>
         {dayKeys.map((day) => {
           const arr = displayRows[day] || [];
           const label = new Date(day + 'T12:00:00').toLocaleDateString(isFr ? 'fr-FR' : 'en-GB', {
@@ -1027,14 +1031,14 @@ export default function AddictionQuitCravingsPanel({ aq, onSaveData }) {
             year: 'numeric',
           });
           return (
-            <div key={day} className="rounded-xl border border-slate-600 bg-slate-900/60 p-3">
+            <div key={day} className="rounded-xl border border-[#0F4C5C]/50 bg-black p-3">
               <div className="mb-2 font-semibold text-white">{label}</div>
               <div className="space-y-2">
                 {arr.length === 0 ? (
-                  <p className="text-sm text-slate-500">{t('addictionQuit.dayNoCravings')}</p>
+                  <p className="text-sm text-teal-800">{t('addictionQuit.dayNoCravings')}</p>
                 ) : (
                   arr.map((c) => (
-                    <div key={c.id} className="rounded-lg border border-slate-600 bg-slate-800/80 p-2 text-sm">
+                    <div key={c.id} className="rounded-lg border border-[#0F4C5C]/50 bg-black/80 p-2 text-sm">
                       <div className="flex items-center justify-between">
                         <span className="font-bold text-cyan-200">{c.intensity}/10</span>
                         <div className="flex gap-1">
@@ -1087,7 +1091,7 @@ export default function AddictionQuitCravingsPanel({ aq, onSaveData }) {
 
       {edit && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4" role="dialog">
-          <Card className="max-h-[90vh] w-full max-w-lg overflow-y-auto border-slate-600 bg-slate-900 shadow-2xl">
+          <Card variant="sport" className="max-h-[90vh] w-full max-w-lg overflow-y-auto shadow-2xl">
             <CardHeader>
               <CardTitle>{t('addictionQuit.editTitle')}</CardTitle>
             </CardHeader>
@@ -1097,7 +1101,7 @@ export default function AddictionQuitCravingsPanel({ aq, onSaveData }) {
                 <select
                   value={edit.trackId}
                   onChange={(e) => setEdit((x) => ({ ...x, trackId: e.target.value }))}
-                  className="mt-1 w-full rounded-lg border border-slate-600 bg-slate-800 px-2 py-2 text-sm text-white"
+                  className="mt-1 w-full rounded-lg border border-[#0F4C5C]/50 bg-black px-2 py-2 text-sm text-white"
                 >
                   {TRACK_IDS.map((id) => (
                     <option key={id} value={id}>
@@ -1124,7 +1128,7 @@ export default function AddictionQuitCravingsPanel({ aq, onSaveData }) {
                   type="time"
                   value={edit.timeHHMM || ''}
                   onChange={(e) => setEdit((x) => ({ ...x, timeHHMM: e.target.value }))}
-                  className="mt-1 w-full rounded-lg border border-slate-600 bg-slate-800 px-2 py-2 text-sm text-white"
+                  className="mt-1 w-full rounded-lg border border-[#0F4C5C]/50 bg-black px-2 py-2 text-sm text-white"
                 />
               </label>
               <label className="text-xs text-slate-400">
@@ -1132,7 +1136,7 @@ export default function AddictionQuitCravingsPanel({ aq, onSaveData }) {
                 <select
                   value={edit.triggerId || ''}
                   onChange={(e) => setEdit((x) => ({ ...x, triggerId: e.target.value }))}
-                  className="mt-1 w-full rounded-lg border border-slate-600 bg-slate-800 px-2 py-2 text-sm text-white"
+                  className="mt-1 w-full rounded-lg border border-[#0F4C5C]/50 bg-black px-2 py-2 text-sm text-white"
                 >
                   {CRAVING_TRIGGER_OPTIONS.map((o) => (
                     <option key={o.id || 'none'} value={o.id}>
@@ -1146,7 +1150,7 @@ export default function AddictionQuitCravingsPanel({ aq, onSaveData }) {
                 <select
                   value={edit.outcomeId || ''}
                   onChange={(e) => setEdit((x) => ({ ...x, outcomeId: e.target.value }))}
-                  className="mt-1 w-full rounded-lg border border-slate-600 bg-slate-800 px-2 py-2 text-sm text-white"
+                  className="mt-1 w-full rounded-lg border border-[#0F4C5C]/50 bg-black px-2 py-2 text-sm text-white"
                 >
                   {CRAVING_OUTCOME_OPTIONS.map((o) => (
                     <option key={o.id || 'none'} value={o.id}>
@@ -1160,7 +1164,7 @@ export default function AddictionQuitCravingsPanel({ aq, onSaveData }) {
                 <input
                   value={edit.place || ''}
                   onChange={(e) => setEdit((x) => ({ ...x, place: e.target.value }))}
-                  className="mt-1 w-full rounded-lg border border-slate-600 bg-slate-800 px-2 py-2 text-sm text-white"
+                  className="mt-1 w-full rounded-lg border border-[#0F4C5C]/50 bg-black px-2 py-2 text-sm text-white"
                 />
               </label>
               <label className="text-xs text-slate-400">
@@ -1170,7 +1174,7 @@ export default function AddictionQuitCravingsPanel({ aq, onSaveData }) {
                   min={0}
                   value={edit.durationMinutes}
                   onChange={(e) => setEdit((x) => ({ ...x, durationMinutes: e.target.value }))}
-                  className="mt-1 w-full rounded-lg border border-slate-600 bg-slate-800 px-2 py-2 text-sm text-white"
+                  className="mt-1 w-full rounded-lg border border-[#0F4C5C]/50 bg-black px-2 py-2 text-sm text-white"
                 />
               </label>
               <label className="text-xs text-slate-400">
@@ -1179,7 +1183,7 @@ export default function AddictionQuitCravingsPanel({ aq, onSaveData }) {
                   value={edit.notes}
                   onChange={(e) => setEdit((x) => ({ ...x, notes: e.target.value }))}
                   rows={3}
-                  className="mt-1 w-full rounded-lg border border-slate-600 bg-slate-800 px-2 py-2 text-sm text-white"
+                  className="mt-1 w-full rounded-lg border border-[#0F4C5C]/50 bg-black px-2 py-2 text-sm text-white"
                 />
               </label>
               <div className="flex gap-2 pt-2">

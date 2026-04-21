@@ -98,36 +98,36 @@ function TimelineGauge({ trackId, quitAtIso, milestones, accentClass, nowTick, t
         {liveAnnouncement}
       </p>
       {quitAtIso && nextLine && (
-        <p className="rounded-lg border border-amber-500/30 bg-amber-950/20 px-3 py-2 text-sm text-amber-100">
+        <p className="rounded-lg border border-sky-500/35 bg-sky-950/25 px-3 py-2 text-sm text-sky-100">
           {nextLine}
         </p>
       )}
       {quitAtIso && nextPeriod && (
-        <p className="rounded-lg border border-slate-600/50 bg-slate-900/50 px-3 py-2 text-xs text-slate-300">
+        <p className="rounded-lg border border-[#0F4C5C]/45 bg-black px-3 py-2 text-xs text-teal-200/90">
           {t('addictionQuit.nextPeriodMilestone', {
             label: nextPeriod.label,
             when: whenFn(nextPeriod.msUntil),
           })}
         </p>
       )}
-      <div className="flex items-center justify-between gap-2 text-xs text-slate-400 uppercase tracking-wide">
+      <div className="flex items-center justify-between gap-2 text-xs uppercase tracking-wide text-teal-700">
         <span>{t('addictionQuit.benefits20y')}</span>
         <span>{t('addictionQuit.gaugePct', { pct: String(pctRounded) })}</span>
       </div>
       <div
-        className="relative rounded-xl border border-slate-600/50 bg-slate-900/60 p-3 pt-10 pb-2"
+        className="relative rounded-xl border border-[#0F4C5C]/50 bg-black p-3 pb-2 pt-10"
         role="region"
         aria-label={progressAria}
       >
         <div
-          className="pointer-events-none absolute top-1 z-20 max-w-[min(96%,18rem)] -translate-x-1/2 truncate rounded-lg border border-amber-400/60 bg-slate-950/95 px-2 py-1 text-[11px] font-bold text-amber-200 shadow-lg sm:max-w-none sm:whitespace-nowrap sm:text-xs"
+          className="pointer-events-none absolute top-1 z-20 max-w-[min(96%,18rem)] -translate-x-1/2 truncate rounded-lg border border-sky-500/50 bg-black/95 px-2 py-1 text-[11px] font-bold text-sky-200 shadow-lg sm:max-w-none sm:whitespace-nowrap sm:text-xs"
           style={{ left: `${Math.min(100, Math.max(0, pct * 100))}%` }}
           aria-hidden="true"
         >
           {label}
         </div>
         <div
-          className="relative h-4 overflow-hidden rounded-full bg-slate-800"
+          className="relative h-4 overflow-hidden rounded-full bg-[#0F4C5C]/35"
           role="progressbar"
           aria-valuemin={0}
           aria-valuemax={100}
@@ -144,7 +144,7 @@ function TimelineGauge({ trackId, quitAtIso, milestones, accentClass, nowTick, t
           {periodDefs.map((d, i) => (
             <div
               key={`pdef-${i}`}
-              className="pointer-events-none absolute bottom-0 w-px bg-amber-400/35"
+              className="pointer-events-none absolute bottom-0 w-px bg-sky-500/40"
               style={{
                 left: `${Math.min(100, periodMilestoneGaugeT(d.ms) * 100)}%`,
                 height: '42%',
@@ -161,17 +161,17 @@ function TimelineGauge({ trackId, quitAtIso, milestones, accentClass, nowTick, t
             />
           ))}
           <div
-            className="absolute top-1/2 z-10 h-4 w-4 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-amber-300 bg-amber-500 shadow-[0_0_12px_rgba(251,191,36,0.7)]"
+            className="absolute top-1/2 z-10 h-4 w-4 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-sky-300 bg-sky-600 shadow-[0_0_12px_rgba(56,189,248,0.45)]"
             style={{ left: `${Math.min(100, Math.max(0, pct * 100))}%` }}
             aria-hidden="true"
           />
         </div>
-        <div className="mt-2 flex justify-between text-[10px] text-slate-500 sm:text-xs">
+        <div className="mt-2 flex justify-between text-[10px] text-teal-800 sm:text-xs">
           <span>0</span>
           <span>+20 ans ({Math.round(TWENTY_YEARS_MS / (365.25 * 24 * 3600 * 1000))} ans)</span>
         </div>
       </div>
-      <ul className="max-h-[min(72vh,52rem)] space-y-1.5 overflow-y-auto pr-1 text-xs text-slate-300 sm:text-sm">
+      <ul className="max-h-[min(72vh,52rem)] space-y-1.5 overflow-y-auto pr-1 text-xs text-teal-100/90 sm:text-sm">
         {milestones.map((m, i) => {
           const reached = quitAtIso && elapsed >= m.ms - 1;
           const past = !reached && aq ? findPastSessionReachedMilestone(aq, trackId, m.ms) : null;
@@ -182,8 +182,8 @@ function TimelineGauge({ trackId, quitAtIso, milestones, accentClass, nowTick, t
                 reached
                   ? 'border-emerald-500/40 bg-emerald-950/30 text-emerald-100'
                   : past
-                    ? 'border-amber-600/35 bg-amber-950/25 text-amber-50/95'
-                    : 'border-slate-700/60 bg-slate-800/40 text-slate-500'
+                    ? 'border-sky-600/40 bg-sky-950/30 text-sky-100'
+                    : 'border-[#0F4C5C]/40 bg-black text-teal-800'
               }`}
             >
               <div>{m.label}</div>
@@ -193,7 +193,7 @@ function TimelineGauge({ trackId, quitAtIso, milestones, accentClass, nowTick, t
                 </div>
               )}
               {past && (
-                <div className="mt-0.5 text-[10px] text-amber-200/90">
+                <div className="mt-0.5 text-[10px] text-sky-300/90">
                   {t('addictionQuit.milestonePastSession', { date: formatSessionLabel(past.startedAtIso, isFr) })}
                 </div>
               )}
@@ -201,12 +201,12 @@ function TimelineGauge({ trackId, quitAtIso, milestones, accentClass, nowTick, t
           );
         })}
       </ul>
-      <details className="mt-3 rounded-lg border border-slate-700/80 bg-slate-900/40 px-2 py-1.5">
-        <summary className="cursor-pointer select-none text-xs font-semibold text-amber-100/90">
+      <details className="mt-3 rounded-lg border border-[#0F4C5C]/45 bg-black px-2 py-1.5">
+        <summary className="cursor-pointer select-none text-xs font-semibold text-sky-200/90">
           {t('addictionQuit.periodMilestonesTitle')}
           <span className="ml-1 font-normal text-slate-500">({t('addictionQuit.periodMilestonesHint')})</span>
         </summary>
-        <ul className="mt-2 max-h-52 space-y-1 overflow-y-auto pr-1 text-xs text-slate-300">
+        <ul className="mt-2 max-h-52 space-y-1 overflow-y-auto pr-1 text-xs text-teal-100/85">
           {periodDefs.map((m, i) => {
             const reached = quitAtIso && elapsed >= m.ms - 1;
             const past = !reached && aq ? findPastSessionReachedMilestone(aq, trackId, m.ms) : null;
@@ -216,20 +216,20 @@ function TimelineGauge({ trackId, quitAtIso, milestones, accentClass, nowTick, t
                 key={`pd-${i}`}
                 className={`rounded-lg border px-2 py-1 ${
                   reached
-                    ? 'border-amber-500/40 bg-amber-950/25 text-amber-50'
+                    ? 'border-[#0F5C45]/50 bg-[#0F5C45]/15 text-teal-50'
                     : past
-                      ? 'border-slate-600/50 bg-slate-800/50 text-slate-200'
-                      : 'border-slate-700/60 bg-slate-800/30 text-slate-500'
+                      ? 'border-sky-600/40 bg-sky-950/25 text-sky-100'
+                      : 'border-[#0F4C5C]/40 bg-black text-teal-800'
                 }`}
               >
                 <div>{lab}</div>
                 {reached && (
-                  <div className="mt-0.5 text-[10px] font-medium text-amber-200/90">
+                  <div className="mt-0.5 text-[10px] font-medium text-teal-200/90">
                     {t('addictionQuit.milestoneCurrent')}
                   </div>
                 )}
                 {past && (
-                  <div className="mt-0.5 text-[10px] text-slate-400">
+                  <div className="mt-0.5 text-[10px] text-sky-300/85">
                     {t('addictionQuit.milestonePastSession', { date: formatSessionLabel(past.startedAtIso, isFr) })}
                   </div>
                 )}
@@ -302,7 +302,7 @@ function BigTimerBlock({
   const unitSec = t('addictionQuit.seconds');
 
   return (
-    <Card className="border-slate-600/60 bg-gradient-to-b from-slate-900/95 to-slate-950/95 shadow-xl shadow-black/40">
+    <Card variant="sport" className="shadow-xl shadow-black/40">
       <CardHeader className="pb-2">
         <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
           <input
@@ -317,7 +317,7 @@ function BigTimerBlock({
               type="datetime-local"
               value={dl}
               onChange={(e) => onSetQuit(trackId, e.target.value)}
-              className="rounded-lg border border-slate-600 bg-slate-800 px-2 py-1.5 text-sm text-slate-100"
+              className="rounded-lg border border-[#0F4C5C]/50 bg-black px-2 py-1.5 text-sm text-teal-50"
               aria-label={t('addictionQuit.quitDateTime')}
             />
             {track.quitAtIso && (
@@ -349,7 +349,7 @@ function BigTimerBlock({
             ].map(([lab, val]) => (
               <div
                 key={lab}
-                className="rounded-2xl border border-cyan-500/25 bg-slate-950/80 px-2 py-4 text-center shadow-inner"
+                className="rounded-2xl border border-[#0F4C5C]/55 bg-black px-2 py-4 text-center shadow-inner"
               >
                 <div className="font-mono text-3xl font-black tabular-nums text-cyan-200 sm:text-4xl md:text-5xl">
                   {val}
@@ -362,7 +362,7 @@ function BigTimerBlock({
           </div>
         )}
 
-        <div className="mt-4 rounded-xl border border-slate-600/50 bg-slate-950/40 p-3">
+        <div className="mt-4 rounded-xl border border-[#0F4C5C]/50 bg-black p-3">
           <h4 className="mb-2 text-sm font-semibold text-slate-200">{t('addictionQuit.estimateTitle')}</h4>
           <p className="mb-3 text-xs text-slate-500">{t('addictionQuit.estimateDisclaimer')}</p>
           {trackId === 'cigarette' ? (
@@ -379,7 +379,7 @@ function BigTimerBlock({
                       packsPerDay: e.target.value === '' ? null : Number(e.target.value),
                     })
                   }
-                  className="mt-1 w-full rounded-lg border border-slate-600 bg-slate-800 px-2 py-2 text-sm text-white"
+                  className="mt-1 w-full rounded-lg border border-[#0F4C5C]/50 bg-black px-2 py-2 text-sm text-white"
                 />
               </label>
               <label className="text-xs text-slate-400">
@@ -394,7 +394,7 @@ function BigTimerBlock({
                       packPriceEur: e.target.value === '' ? null : Number(e.target.value),
                     })
                   }
-                  className="mt-1 w-full rounded-lg border border-slate-600 bg-slate-800 px-2 py-2 text-sm text-white"
+                  className="mt-1 w-full rounded-lg border border-[#0F4C5C]/50 bg-black px-2 py-2 text-sm text-white"
                 />
               </label>
             </div>
@@ -411,7 +411,7 @@ function BigTimerBlock({
                     jointsPerWeek: e.target.value === '' ? null : Number(e.target.value),
                   })
                 }
-                className="mt-1 w-full max-w-xs rounded-lg border border-slate-600 bg-slate-800 px-2 py-2 text-sm text-white"
+                className="mt-1 w-full max-w-xs rounded-lg border border-[#0F4C5C]/50 bg-black px-2 py-2 text-sm text-white"
               />
             </label>
           )}
@@ -442,7 +442,7 @@ function BigTimerBlock({
           )}
         </div>
 
-        <div className="mt-4 rounded-xl border border-slate-600/50 bg-slate-950/35 p-3">
+        <div className="mt-4 rounded-xl border border-[#0F4C5C]/50 bg-black p-3">
           <p className="mb-2 text-xs font-medium text-slate-400">{t('addictionQuit.trackFocusTitle')}</p>
           <div className="flex flex-wrap gap-3 text-xs text-slate-300">
             {[
@@ -465,15 +465,15 @@ function BigTimerBlock({
         </div>
 
         {track.quitAtIso && activeSess && (
-          <div className="mt-3 rounded-lg border border-violet-500/30 bg-violet-950/20 p-3">
-            <label className="block text-xs text-violet-200/90">
+          <div className="mt-3 rounded-lg border border-[#0F4C5C]/55 bg-black p-3">
+            <label className="block text-xs text-teal-200/90">
               {t('addictionQuit.sessionTitleLabel')}
               <input
                 type="text"
                 value={activeSess.userTitle || ''}
                 onChange={(e) => onPatchActiveSessionTitle(trackId, e.target.value)}
                 placeholder={t('addictionQuit.sessionTitlePlaceholder')}
-                className="mt-1 w-full rounded-lg border border-slate-600 bg-slate-900 px-2 py-2 text-sm text-white"
+                className="mt-1 w-full rounded-lg border border-[#0F4C5C]/50 bg-black px-2 py-2 text-sm text-white"
               />
             </label>
           </div>
@@ -636,42 +636,42 @@ const AddictionQuitTab = () => {
 
   return (
     <div className="mx-auto max-w-6xl space-y-6 px-3 pt-[1cm] pb-24 sm:px-4">
-      <header className="rounded-2xl border border-amber-500/30 bg-gradient-to-r from-amber-950/50 via-slate-900/90 to-cyan-950/40 p-6 shadow-xl">
+      <header className="rounded-2xl border-2 border-[#0F4C5C]/70 bg-black p-6 shadow-xl shadow-black/40">
         <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
           <div>
             <h1 className="flex items-center gap-3 text-3xl font-black tracking-tight text-white sm:text-4xl">
-              <Ban className="h-10 w-10 shrink-0 text-amber-400" aria-hidden="true" />
+              <Ban className="h-10 w-10 shrink-0 text-sky-400" aria-hidden="true" />
               {t('addictionQuit.title')}
             </h1>
             <p className="mt-2 max-w-2xl text-sm text-slate-300 sm:text-base">{t('addictionQuit.subtitle')}</p>
-            <div className="mt-4 max-w-md rounded-xl border border-amber-500/30 bg-slate-950/60 p-3">
-              <div className="flex items-center justify-between text-xs text-amber-100/90">
+            <div className="mt-4 max-w-md rounded-xl border border-[#0F4C5C]/55 bg-black p-3">
+              <div className="flex items-center justify-between text-xs text-teal-200/90">
                 <span>{t('addictionQuit.xpModuleTitle')}</span>
                 <span className="font-mono font-bold text-white">{addictionXp.totalXP} XP</span>
               </div>
-              <div className="mt-2 h-2 overflow-hidden rounded-full bg-slate-800">
+              <div className="mt-2 h-2 overflow-hidden rounded-full bg-[#0F4C5C]/40">
                 <div
-                  className="h-full rounded-full bg-gradient-to-r from-amber-500 to-rose-500 transition-all"
+                  className="h-full rounded-full bg-gradient-to-r from-[#0F4C5C] to-[#0F5C45] transition-all"
                   style={{ width: `${xpPct}%` }}
                 />
               </div>
-              <p className="mt-1 text-[10px] text-slate-500">{t('addictionQuit.xpModuleHint')}</p>
+              <p className="mt-1 text-[10px] text-teal-800">{t('addictionQuit.xpModuleHint')}</p>
             </div>
           </div>
           <HeartPulse className="hidden h-24 w-24 text-rose-400/40 lg:block" aria-hidden="true" />
         </div>
       </header>
 
-      <div className="flex flex-wrap gap-2 border-b border-slate-700 pb-2" role="tablist">
+      <div className="flex flex-wrap gap-2 border-b border-[#0F4C5C]/40 pb-2" role="tablist">
         <button
           type="button"
           role="tab"
           aria-selected={sub === 'timers'}
           onClick={() => setSub('timers')}
-          className={`rounded-full px-4 py-2 text-sm font-semibold transition ${
+          className={`rounded-full border px-4 py-2 text-sm font-semibold transition ${
             sub === 'timers'
-              ? 'bg-cyan-600 text-white shadow-lg shadow-cyan-500/30'
-              : 'bg-slate-800 text-slate-400 hover:bg-slate-700 hover:text-white'
+              ? 'border-[#0F5C45]/70 bg-[#0F5C45]/30 text-white shadow-md shadow-black/30'
+              : 'border-[#0F4C5C]/45 bg-black text-teal-200/85 hover:border-[#0F5C45]/55'
           }`}
         >
           {t('addictionQuit.sub.timers')}
@@ -681,10 +681,10 @@ const AddictionQuitTab = () => {
           role="tab"
           aria-selected={sub === 'cravings'}
           onClick={() => setSub('cravings')}
-          className={`rounded-full px-4 py-2 text-sm font-semibold transition ${
+          className={`rounded-full border px-4 py-2 text-sm font-semibold transition ${
             sub === 'cravings'
-              ? 'bg-violet-600 text-white shadow-lg shadow-violet-500/30'
-              : 'bg-slate-800 text-slate-400 hover:bg-slate-700 hover:text-white'
+              ? 'border-[#0F5C45]/70 bg-[#0F5C45]/30 text-white shadow-md shadow-black/30'
+              : 'border-[#0F4C5C]/45 bg-black text-teal-200/85 hover:border-[#0F5C45]/55'
           }`}
         >
           {t('addictionQuit.sub.cravings')}
@@ -700,7 +700,7 @@ const AddictionQuitTab = () => {
               onSetQuit={onSetQuit}
               onRename={onRename}
               milestones={CIGARETTE_TIMELINE_FR}
-              accentClass="from-rose-700 via-orange-600 to-amber-400"
+              accentClass="from-rose-900 via-sky-800 to-cyan-600"
               nowTick={nowTick}
               estimates={aq.estimates}
               onPatchEstimates={onPatchEstimates}
@@ -716,7 +716,7 @@ const AddictionQuitTab = () => {
               onSetQuit={onSetQuit}
               onRename={onRename}
               milestones={THC_TIMELINE_FR}
-              accentClass="from-purple-800 via-violet-600 to-cyan-400"
+              accentClass="from-[#0F4C5C] via-sky-700 to-cyan-500"
               nowTick={nowTick}
               estimates={aq.estimates}
               onPatchEstimates={onPatchEstimates}
@@ -743,7 +743,7 @@ const AddictionQuitTab = () => {
             </Button>
           </div>
           {(aq.relapses || []).length > 0 && (
-            <Card className="border-slate-600/60 bg-slate-900/60">
+            <Card variant="sport">
               <CardHeader className="pb-2">
                 <div className="flex items-center gap-2 text-lg font-semibold text-white">
                   <Flame className="h-5 w-5 text-slate-400" />
@@ -757,7 +757,7 @@ const AddictionQuitTab = () => {
                     .map((r) => (
                       <li
                         key={r.id}
-                        className="flex flex-wrap justify-between gap-2 rounded-lg border border-slate-700 bg-slate-950/50 px-3 py-2"
+                        className="flex flex-wrap justify-between gap-2 rounded-lg border border-[#0F4C5C]/45 bg-black px-3 py-2"
                       >
                         <span className="font-medium text-slate-200">
                           {r.trackId === 'cigarette'
@@ -769,7 +769,7 @@ const AddictionQuitTab = () => {
                         </span>
                         {r.note ? <span className="w-full text-xs text-slate-500">{r.note}</span> : null}
                         {r.sessionTitle ? (
-                          <span className="w-full text-xs text-violet-200/90">
+                          <span className="w-full text-xs text-sky-200/90">
                             {t('addictionQuit.relapseSessionLine', { title: r.sessionTitle })}
                           </span>
                         ) : null}
@@ -789,7 +789,7 @@ const AddictionQuitTab = () => {
 
       {relapseOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4" role="dialog">
-          <Card className="w-full max-w-md border-slate-600 bg-slate-900 shadow-2xl">
+          <Card variant="sport" className="w-full max-w-md shadow-2xl">
             <CardHeader>
               <CardTitle className="text-white">{t('addictionQuit.relapseModalTitle')}</CardTitle>
             </CardHeader>
@@ -806,7 +806,7 @@ const AddictionQuitTab = () => {
                       type="button"
                       onClick={() => setRelapseMode(id)}
                       className={`rounded-full px-3 py-1 text-xs font-semibold ${
-                        relapseMode === id ? 'bg-rose-600 text-white' : 'bg-slate-800 text-slate-400'
+                        relapseMode === id ? 'bg-rose-600 text-white' : 'border border-[#0F4C5C]/45 bg-black text-teal-300'
                       }`}
                     >
                       {lab}
@@ -819,7 +819,7 @@ const AddictionQuitTab = () => {
                     type="datetime-local"
                     value={relapseAt}
                     onChange={(e) => setRelapseAt(e.target.value)}
-                    className="mt-1 w-full rounded-lg border border-slate-600 bg-slate-800 px-2 py-2 text-sm text-white"
+                    className="mt-1 w-full rounded-lg border border-[#0F4C5C]/50 bg-black px-2 py-2 text-sm text-white"
                   />
                 </label>
                 <label className="block text-xs text-slate-400">
@@ -828,7 +828,7 @@ const AddictionQuitTab = () => {
                     value={relapseNote}
                     onChange={(e) => setRelapseNote(e.target.value)}
                     rows={2}
-                    className="mt-1 w-full rounded-lg border border-slate-600 bg-slate-800 px-2 py-2 text-sm text-white"
+                    className="mt-1 w-full rounded-lg border border-[#0F4C5C]/50 bg-black px-2 py-2 text-sm text-white"
                   />
                 </label>
                 <label className="block text-xs text-slate-400">
@@ -838,7 +838,7 @@ const AddictionQuitTab = () => {
                     value={relapseSessionTitle}
                     onChange={(e) => setRelapseSessionTitle(e.target.value)}
                     placeholder={t('addictionQuit.relapseSessionTitlePlaceholder')}
-                    className="mt-1 w-full rounded-lg border border-slate-600 bg-slate-800 px-2 py-2 text-sm text-white"
+                    className="mt-1 w-full rounded-lg border border-[#0F4C5C]/50 bg-black px-2 py-2 text-sm text-white"
                   />
                 </label>
                 <label className="block text-xs text-slate-400">
@@ -848,7 +848,7 @@ const AddictionQuitTab = () => {
                     value={relapseSessionReflection}
                     onChange={(e) => setRelapseSessionReflection(e.target.value)}
                     placeholder={t('addictionQuit.relapseReflectionPlaceholder')}
-                    className="mt-1 w-full rounded-lg border border-slate-600 bg-slate-800 px-2 py-2 text-sm text-white"
+                    className="mt-1 w-full rounded-lg border border-[#0F4C5C]/50 bg-black px-2 py-2 text-sm text-white"
                   />
                 </label>
                 <div className="flex gap-2 pt-2">

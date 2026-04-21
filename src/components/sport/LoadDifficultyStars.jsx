@@ -21,14 +21,14 @@ const LoadDifficultyStars = ({ coeff, className = '', title, maxStars = 5 }) => 
 
   return (
     <span
-      className={`inline-flex items-center gap-0.5 text-amber-400 tracking-tight select-none ${className}`}
+      className={`inline-flex select-none items-center gap-0.5 tracking-tight text-sky-400 ${className}`}
       title={tip}
       aria-label={tip}
     >
       <span className="text-sm" aria-hidden>
         {'★'.repeat(n)}
       </span>
-      <span className="text-sm text-slate-600" aria-hidden>
+      <span className="text-sm text-teal-900" aria-hidden>
         {'☆'.repeat(max - n)}
       </span>
     </span>

@@ -272,7 +272,7 @@ const QuestsTab = () => {
   // --- Rendu des onglets QuietQuest ---------------------------------------
 
   const renderSubTabNav = () => (
-    <div className="flex flex-wrap gap-2 mb-6">
+    <div className="mb-6 flex flex-wrap gap-2">
       {[
         { id: 'today', label: "Aujourd'hui" },
         { id: 'week', label: 'Cette semaine' },
@@ -285,10 +285,10 @@ const QuestsTab = () => {
           key={tab.id}
           type="button"
           onClick={() => setCurrentSubTab(tab.id)}
-          className={`gradient-button-premium gradient-button-premium-md rounded-lg ${
+          className={`rounded-lg border-2 bg-black px-3 py-2 text-sm font-semibold transition ${
             currentSubTab === tab.id
-              ? 'gradient-button-premium-variant'
-              : ''
+              ? 'border-amber-400 text-amber-100 shadow-[0_0_14px_rgba(245,158,11,0.28)]'
+              : 'border-amber-700/55 text-amber-200/95 hover:border-amber-500 hover:text-amber-50'
           }`}
         >
           {tab.label}

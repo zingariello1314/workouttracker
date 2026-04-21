@@ -299,16 +299,16 @@ const DataEntryTab = () => {
   }
 
   return (
-    <div className="relative min-h-screen">
+    <div className="relative">
       {/* Contenu avec z-index relatif */}
-      <div className="relative z-10 p-6 space-y-6">
+      <div className="relative z-10 space-y-6 p-6">
         {/* En-tête avec sélection de date */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-wrap items-center justify-between gap-4 rounded-xl border border-[#0F4C5C]/50 bg-black px-4 py-3">
         <div>
           <h1 className={`${typography.presets.h1} text-white mb-2`}>
             {t('dataEntry.title')}
           </h1>
-          <p className={`${typography.presets.bodyLarge} text-slate-400`}>
+          <p className={`${typography.presets.bodyLarge} text-teal-200/75`}>
             {t('dataEntry.subtitle', { dayName: dayName.toLowerCase(), date: formatLocaleDate(selectedDate) })}
           </p>
         </div>
@@ -318,7 +318,7 @@ const DataEntryTab = () => {
             type="date"
             value={getDateStr(selectedDate)}
             onChange={(e) => setSelectedDate(new Date(e.target.value))}
-            className="bg-slate-800 border-slate-700 text-white"
+            className="border-[#0F4C5C]/50 bg-black text-white"
           />
           <button
             type="button"
@@ -334,10 +334,10 @@ const DataEntryTab = () => {
       </div>
 
       {/* Saisie rapide du jour */}
-      <Card className="bg-slate-800/50 border-slate-700">
-        <CardHeader>
-          <CardTitle className={`${typography.presets.h2} text-white flex items-center gap-2`}>
-             <Target size={20} className="text-blue-400" />
+      <Card variant="sport">
+        <CardHeader className="border-b border-[#0F4C5C]/40">
+          <CardTitle className={`${typography.presets.h2} flex items-center gap-2 text-teal-100`}>
+             <Target size={20} className="text-teal-400" />
              {t('dataEntry.quickEntry.title', { workoutName: workout.name })}
            </CardTitle>
         </CardHeader>
@@ -350,7 +350,7 @@ const DataEntryTab = () => {
             const tempReps = repsData[exercise.id] || currentReps;
 
             return (
-              <div key={exercise.id} className="flex items-center gap-4 p-4 bg-slate-900/50 rounded-lg">
+              <div key={exercise.id} className="flex items-center gap-4 rounded-lg border border-[#0F4C5C]/35 bg-black p-4">
                 <div className="flex-1">
                   <h4 className={`${typography.presets.h4} text-white mb-1`}>
                     {exercise.name}
@@ -372,7 +372,7 @@ const DataEntryTab = () => {
                     value={tempReps}
                     onChange={(e) => handleRepsChange(exercise.id, e.target.value)}
                     onFocus={() => handleInputFocus(exercise.id, exercise)}
-                    className={`w-20 text-center ${isCompleted ? 'bg-green-600/20 border-green-500 text-green-300' : 'bg-slate-800 border-slate-600 text-white'}`}
+                    className={`w-20 text-center ${isCompleted ? 'border border-green-500 bg-green-600/20 text-green-300' : 'border border-[#0F4C5C]/50 bg-black text-white'}`}
                     min="0"
                   />
                   
@@ -497,7 +497,7 @@ const DataEntryTab = () => {
               </table>
             </div>
             
-            <div className="mt-4 p-4 bg-slate-900/50 rounded-lg">
+            <div className="mt-4 rounded-lg border border-[#0F4C5C]/35 bg-black p-4">
               <p className={`${typography.presets.bodySmall} text-slate-400 mb-2`}>
                 {t('dataEntry.advancedMode.tip')}
               </p>
@@ -529,7 +529,7 @@ const DataEntryTab = () => {
                 const tempReps = repsData[exercise.id] || currentReps;
 
                 return (
-                  <div key={exercise.id} className="flex items-center gap-4 p-4 bg-slate-900/50 rounded-lg">
+                  <div key={exercise.id} className="flex items-center gap-4 rounded-lg border border-[#0F4C5C]/35 bg-black p-4">
                     <div className="flex-1">
                       <h4 className={`${typography.presets.h4} text-white mb-1`}>
                         {exercise.name}
@@ -551,7 +551,7 @@ const DataEntryTab = () => {
                      value={tempReps}
                      onChange={(e) => handleRepsChange(exercise.id, e.target.value)}
                      onFocus={() => handleInputFocus(exercise.id, exercise)}
-                     className={`w-20 text-center ${isCompleted ? 'bg-green-600/20 border-green-500 text-green-300' : 'bg-slate-800 border-slate-600 text-white'}`}
+                     className={`w-20 text-center ${isCompleted ? 'border border-green-500 bg-green-600/20 text-green-300' : 'border border-[#0F4C5C]/50 bg-black text-white'}`}
                      min="0"
                    />
                    
@@ -599,7 +599,7 @@ const DataEntryTab = () => {
                 const tempReps = repsData[exercise.id] || currentReps;
 
                 return (
-                  <div key={exercise.id} className="flex items-center gap-4 p-4 bg-slate-900/50 rounded-lg">
+                  <div key={exercise.id} className="flex items-center gap-4 rounded-lg border border-[#0F4C5C]/35 bg-black p-4">
                     <div className="flex-1">
                       <h4 className={`${typography.presets.h4} text-white mb-1`}>
                         {exercise.name}
@@ -621,7 +621,7 @@ const DataEntryTab = () => {
                          value={tempReps}
                          onChange={(e) => handleRepsChange(exercise.id, e.target.value)}
                          onFocus={() => handleInputFocus(exercise.id, exercise)}
-                         className={`w-20 text-center ${isCompleted ? 'bg-green-600/20 border-green-500 text-green-300' : 'bg-slate-800 border-slate-600 text-white'}`}
+                         className={`w-20 text-center ${isCompleted ? 'border border-green-500 bg-green-600/20 text-green-300' : 'border border-[#0F4C5C]/50 bg-black text-white'}`}
                          min="0"
                        />
                        
@@ -655,16 +655,16 @@ const DataEntryTab = () => {
       )}
 
       {/* Résumé des données saisies */}
-      <Card className="bg-slate-800/50 border-slate-700">
+      <Card variant="sport">
         <CardHeader>
-          <CardTitle className={`${typography.presets.h3} text-white`}>
+          <CardTitle className={`${typography.presets.h3} text-teal-50`}>
             {t('dataEntry.summary.title')}
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div className="text-center p-4 bg-slate-900/50 rounded-lg">
-              <div className={`${typography.presets.h2} text-blue-400 mb-1`}>
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+            <div className="rounded-lg border border-[#0F4C5C]/50 bg-black p-4 text-center">
+              <div className={`${typography.presets.h2} mb-1 text-teal-300`}>
                 {(() => {
                   let totalReps = 0;
                   const currentData = getCurrentData();
@@ -691,13 +691,13 @@ const DataEntryTab = () => {
                   return totalReps;
                 })()}
               </div>
-              <div className={`${typography.presets.bodySmall} text-slate-400`}>
+              <div className={`${typography.presets.bodySmall} text-teal-700`}>
                 {t('dataEntry.summary.totalReps')}
               </div>
             </div>
-            
-            <div className="text-center p-4 bg-slate-900/50 rounded-lg">
-              <div className={`${typography.presets.h2} text-green-400 mb-1`}>
+
+            <div className="rounded-lg border border-[#0F4C5C]/50 bg-black p-4 text-center">
+              <div className={`${typography.presets.h2} mb-1 text-emerald-400`}>
                 {(() => {
                   let completedExercises = 0;
                   const currentData = getCurrentData();
@@ -724,13 +724,13 @@ const DataEntryTab = () => {
                   return completedExercises;
                 })()}
               </div>
-              <div className={`${typography.presets.bodySmall} text-slate-400`}>
+              <div className={`${typography.presets.bodySmall} text-teal-700`}>
                 {t('dataEntry.summary.completedExercises')}
               </div>
             </div>
-            
-            <div className="text-center p-4 bg-slate-900/50 rounded-lg">
-              <div className={`${typography.presets.h2} text-purple-400 mb-1`}>
+
+            <div className="rounded-lg border border-[#0F4C5C]/50 bg-black p-4 text-center">
+              <div className={`${typography.presets.h2} mb-1 text-teal-200`}>
                 {(() => {
                   let totalExercises = workout.exercices.length;
                   let completedExercises = 0;
@@ -761,7 +761,7 @@ const DataEntryTab = () => {
                   return Math.round((completedExercises / totalExercises) * 100);
                 })()}%
               </div>
-              <div className={`${typography.presets.bodySmall} text-slate-400`}>
+              <div className={`${typography.presets.bodySmall} text-teal-700`}>
                 {t('dataEntry.summary.progress')}
               </div>
             </div>
@@ -799,7 +799,7 @@ const DataEntryTab = () => {
         if (selectedDateEnduranceSessions.length === 0) return null;
         
         return (
-          <Card className="bg-gradient-to-r from-orange-500/10 to-yellow-500/10 border border-orange-500/20">
+          <Card variant="sport" className="border-orange-500/30">
             <CardHeader>
               <CardTitle className="flex items-center text-orange-200">
                 <Zap className="mr-2" size={20} />

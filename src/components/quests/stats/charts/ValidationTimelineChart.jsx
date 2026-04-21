@@ -6,6 +6,7 @@
 import React, { useMemo, useState } from 'react';
 import LazyChart from '../../../BodyTracking/components/LazyChart';
 import { formatDateForChart } from '../utils/dateHelpers';
+import { qstatsPanel, qstatsHeaderRow, qstatsAccentBar, qstatsMuted, qstatsMutedTight } from '../questsStatsTheme';
 
 const ValidationTimelineChart = ({ validations, dailyPerformances, userData }) => {
   const [hoveredEvent, setHoveredEvent] = useState(null);
@@ -158,15 +159,15 @@ const ValidationTimelineChart = ({ validations, dailyPerformances, userData }) =
   const totalDays = Math.max(1, Math.floor((new Date(endDate) - new Date(startDate)) / (1000 * 60 * 60 * 24)));
 
   return (
-    <div className="rounded-2xl border border-violet-500/20 bg-gradient-to-br from-slate-900/90 via-slate-800/50 to-slate-900/90 px-4 py-3 shadow-xl shadow-violet-500/10 backdrop-blur-sm">
-      <div className="text-xs text-violet-300 mb-3 font-semibold tracking-wide flex items-center gap-2">
-        <div className="w-1 h-4 bg-gradient-to-b from-violet-400 to-purple-500 rounded-full"></div>
+    <div className={qstatsPanel}>
+      <div className={qstatsHeaderRow}>
+        <div className={qstatsAccentBar} />
         Timeline des validations et événements
       </div>
       <LazyChart height={400}>
         <div className="relative w-full" style={{ minHeight: '400px' }}>
           {/* Ligne de temps principale */}
-          <div className="absolute top-1/2 left-0 right-0 h-1 bg-gradient-to-r from-violet-500/30 via-purple-500/50 to-violet-500/30 transform -translate-y-1/2" />
+          <div className="absolute top-1/2 left-0 right-0 h-1 bg-gradient-to-r from-amber-900/60 via-amber-500/50 to-amber-900/60 transform -translate-y-1/2" />
           
           {/* Zones d'intensité */}
           {timelineData.timeline.map((item, index) => {
@@ -180,8 +181,8 @@ const ValidationTimelineChart = ({ validations, dailyPerformances, userData }) =
                 style={{
                   left: `${leftPercent}%`,
                   width: `${width}%`,
-                  backgroundColor: `rgba(139, 92, 246, ${item.normalizedIntensity * 0.4})`,
-                  borderTop: `2px solid rgba(139, 92, 246, ${item.normalizedIntensity})`,
+                  backgroundColor: `rgba(245, 158, 11, ${item.normalizedIntensity * 0.35})`,
+                  borderTop: `2px solid rgba(251, 191, 36, ${0.35 + item.normalizedIntensity * 0.45})`,
                 }}
               />
             );
@@ -245,7 +246,7 @@ const ValidationTimelineChart = ({ validations, dailyPerformances, userData }) =
                       transform: hoveredEvent === event 
                         ? 'translateX(-50%) translateY(0)' 
                         : 'translateX(-50%) translateY(10px)',
-                      backgroundColor: 'rgba(15, 23, 42, 0.95)',
+                      backgroundColor: 'rgba(0, 0, 0, 0.92)',
                       borderColor: `${event.color}80`,
                       color: event.color,
                     }}
@@ -263,9 +264,9 @@ const ValidationTimelineChart = ({ validations, dailyPerformances, userData }) =
           {/* Tooltip détaillé */}
           {hoveredEvent && (
             <div
-              className="absolute bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 border rounded-lg p-3 shadow-2xl backdrop-blur-sm z-20"
+              className="absolute bg-black border-2 rounded-lg p-3 shadow-2xl z-20"
               style={{
-                borderColor: `${hoveredEvent.color}50`,
+                borderColor: `${hoveredEvent.color}99`,
                 top: '10px',
                 right: '10px',
                 maxWidth: '250px',
@@ -277,15 +278,15 @@ const ValidationTimelineChart = ({ validations, dailyPerformances, userData }) =
                   {hoveredEvent.label}
                 </p>
               </div>
-              <p className="text-xs text-slate-400 mb-1">
+              <p className={`text-xs ${qstatsMuted} mb-1`}>
                 {formatDateForChart(hoveredEvent.date, 'long')}
               </p>
-              <p className="text-sm text-slate-300">{hoveredEvent.description}</p>
+              <p className="text-sm text-amber-100/95">{hoveredEvent.description}</p>
             </div>
           )}
 
           {/* Légende dates */}
-          <div className="absolute bottom-0 left-0 right-0 flex justify-between text-xs text-slate-500 px-2">
+          <div className={`absolute bottom-0 left-0 right-0 flex justify-between text-xs ${qstatsMutedTight} px-2`}>
             <span>{startDate ? formatDateForChart(startDate, 'short') : ''}</span>
             <span>{endDate ? formatDateForChart(endDate, 'short') : ''}</span>
           </div>

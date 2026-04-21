@@ -9,6 +9,7 @@ import { isMockEnduranceSession } from '../../utils/calendarUtils';
 import {
   JUSTIFICATION_REASONS,
   JUSTIFICATION_COLORS,
+  JUSTIFICATION_TEXT,
   JUSTIFICATION_ICONS
 } from '../../utils/dayJustificationUtils';
 import { useTranslation } from '../../utils/translations';
@@ -357,21 +358,20 @@ const StatsTab = () => {
   ];
 
   return (
-    <div className="relative min-h-screen">
-      {/* Contenu avec z-index relatif */}
-      <div className="relative z-10 p-6 space-y-6">
+    <div className="relative">
+      <div className="relative z-10 space-y-6 p-4 sm:p-6">
         {/* Sélecteur de période */}
       <div className="flex justify-center">
-        <div className="flex bg-gray-800 rounded-lg p-1 border border-gray-700">
+        <div className="inline-flex rounded-lg border border-[#0F4C5C]/55 bg-black p-1">
           {periods.map(period => (
             <button
               key={period.key}
               type="button"
               onClick={() => setStatsPeriod(period.key)}
-              className={`gradient-button-premium gradient-button-premium-sm rounded-lg ${
-                statsPeriod === period.key 
-                  ? 'gradient-button-premium-variant' 
-                  : ''
+              className={`rounded-md px-4 py-2 text-sm font-medium transition ${
+                statsPeriod === period.key
+                  ? 'border border-[#0F5C45]/70 bg-[#0F5C45]/30 text-white shadow-sm shadow-black/30'
+                  : 'border border-transparent text-teal-200/90 hover:bg-[#0F4C5C]/12'
               }`}
             >
               {period.label}
@@ -381,123 +381,123 @@ const StatsTab = () => {
       </div>
 
       {/* Statistiques principales */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        <Card className="text-center">
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4">
+        <Card variant="sport" className="text-center">
           <Card.Content className="pt-6">
-            <div className="text-3xl font-bold text-purple-600 mb-2">
+            <div className="mb-2 text-3xl font-bold text-teal-300">
               {stats.totalWorkouts}
             </div>
-            <div className="text-sm text-gray-600">{t('stats.mainStats.sessions')}</div>
+            <div className="text-sm text-teal-700">{t('stats.mainStats.sessions')}</div>
           </Card.Content>
         </Card>
 
-        <Card className="text-center">
+        <Card variant="sport" className="text-center">
           <Card.Content className="pt-6">
-            <div className="text-3xl font-bold text-green-600 mb-2">
+            <div className="mb-2 text-3xl font-bold text-emerald-400">
               {stats.totalReps}
             </div>
-            <div className="text-sm text-gray-600">{t('stats.mainStats.reps')}</div>
+            <div className="text-sm text-teal-700">{t('stats.mainStats.reps')}</div>
           </Card.Content>
         </Card>
 
-        <Card className="text-center">
+        <Card variant="sport" className="text-center">
           <Card.Content className="pt-6">
-            <div className="text-3xl font-bold text-blue-600 mb-2">
+            <div className="mb-2 text-3xl font-bold text-cyan-300">
               {currentStreak}
             </div>
-            <div className="text-sm text-gray-600">{t('stats.mainStats.currentStreak')}</div>
+            <div className="text-sm text-teal-700">{t('stats.mainStats.currentStreak')}</div>
           </Card.Content>
         </Card>
 
-        <Card className="text-center">
+        <Card variant="sport" className="text-center">
           <Card.Content className="pt-6">
-            <div className="text-3xl font-bold text-orange-600 mb-2">
+            <div className="mb-2 text-3xl font-bold text-amber-400">
               {longestStreak}
             </div>
-            <div className="text-sm text-gray-600">{t('stats.mainStats.longestStreak')}</div>
+            <div className="text-sm text-teal-700">{t('stats.mainStats.longestStreak')}</div>
           </Card.Content>
         </Card>
 
-        <Card className="text-center">
+        <Card variant="sport" className="text-center">
           <Card.Content className="pt-6">
-            <div className="text-3xl font-bold text-purple-600 mb-2">
+            <div className="mb-2 text-3xl font-bold text-teal-200">
               {stats.totalStretches}
             </div>
-            <div className="text-sm text-gray-600">{t('stats.mainStats.stretches')}</div>
+            <div className="text-sm text-teal-700">{t('stats.mainStats.stretches')}</div>
           </Card.Content>
         </Card>
       </div>
 
       {/* PHASE 5.2 : Métriques Garmin Connect */}
       {garminStats && (
-        <Card className="bg-gradient-to-r from-green-900/20 to-blue-900/20 border-green-500/30">
-          <Card.Header>
-            <Card.Title className="flex items-center gap-2 text-white">
-              <Activity className="text-green-400" size={24} />
+        <Card variant="sport">
+          <Card.Header className="border-[#0F4C5C]/40">
+            <Card.Title className="flex items-center gap-2 text-teal-100">
+              <Activity className="text-teal-400" size={24} />
               {t('stats.garmin.title')}
             </Card.Title>
           </Card.Header>
           <Card.Content>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4">
               {/* Pas */}
-              <div className="bg-slate-800/50 rounded-lg p-4">
-                <div className="text-slate-400 text-sm mb-1">{t('stats.garmin.totalSteps')}</div>
+              <div className="rounded-lg border border-[#0F4C5C]/45 bg-black p-4">
+                <div className="mb-1 text-sm text-teal-700">{t('stats.garmin.totalSteps')}</div>
                 <div className="text-2xl font-bold text-white">{garminStats.totalSteps.toLocaleString()}</div>
-                <div className="text-xs text-slate-500 mt-1">{t('stats.garmin.avgStepsPerDay', 'Moy: {{avg}}/jour', { avg: garminStats.avgSteps })}</div>
+                <div className="mt-1 text-xs text-teal-800">{t('stats.garmin.avgStepsPerDay', 'Moy: {{avg}}/jour', { avg: garminStats.avgSteps })}</div>
               </div>
               
               {/* Distance */}
-              <div className="bg-slate-800/50 rounded-lg p-4">
-                <div className="text-slate-400 text-sm mb-1">{t('stats.garmin.totalDistance')}</div>
+              <div className="rounded-lg border border-[#0F4C5C]/45 bg-black p-4">
+                <div className="mb-1 text-sm text-teal-700">{t('stats.garmin.totalDistance')}</div>
                 <div className="text-2xl font-bold text-white">{garminStats.totalDistance.toFixed(1)} km</div>
-                <div className="text-xs text-slate-500 mt-1">{t('stats.garmin.avgDistancePerDay', 'Moy: {{avg}} km/jour', { avg: garminStats.avgDistance.toFixed(1) })}</div>
+                <div className="mt-1 text-xs text-teal-800">{t('stats.garmin.avgDistancePerDay', 'Moy: {{avg}} km/jour', { avg: garminStats.avgDistance.toFixed(1) })}</div>
               </div>
               
               {/* Calories */}
-              <div className="bg-slate-800/50 rounded-lg p-4">
-                <div className="text-slate-400 text-sm mb-1">{t('stats.garmin.totalCalories')}</div>
+              <div className="rounded-lg border border-[#0F4C5C]/45 bg-black p-4">
+                <div className="mb-1 text-sm text-teal-700">{t('stats.garmin.totalCalories')}</div>
                 <div className="text-2xl font-bold text-white">{Math.round(garminStats.totalCalories).toLocaleString()}</div>
-                <div className="text-xs text-slate-500 mt-1">{t('stats.garmin.avgCaloriesPerDay', 'Moy: {{avg}}/jour', { avg: Math.round(garminStats.avgCalories) })}</div>
+                <div className="mt-1 text-xs text-teal-800">{t('stats.garmin.avgCaloriesPerDay', 'Moy: {{avg}}/jour', { avg: Math.round(garminStats.avgCalories) })}</div>
               </div>
               
               {/* FC Repos */}
-              <div className="bg-slate-800/50 rounded-lg p-4">
-                <div className="text-slate-400 text-sm mb-1">{t('stats.garmin.avgRestingHR')}</div>
+              <div className="rounded-lg border border-[#0F4C5C]/45 bg-black p-4">
+                <div className="mb-1 text-sm text-teal-700">{t('stats.garmin.avgRestingHR')}</div>
                 <div className="text-2xl font-bold text-white">{garminStats.avgRestingHR} bpm</div>
-                <div className="text-xs text-slate-500 mt-1">{t('stats.garmin.maxHR', 'FC Max: {{max}} bpm', { max: garminStats.maxHR })}</div>
+                <div className="mt-1 text-xs text-teal-800">{t('stats.garmin.maxHR', 'FC Max: {{max}} bpm', { max: garminStats.maxHR })}</div>
               </div>
               
               {/* Body Battery */}
-              <div className="bg-slate-800/50 rounded-lg p-4">
-                <div className="text-slate-400 text-sm mb-1">{t('stats.garmin.avgBodyBattery')}</div>
+              <div className="rounded-lg border border-[#0F4C5C]/45 bg-black p-4">
+                <div className="mb-1 text-sm text-teal-700">{t('stats.garmin.avgBodyBattery')}</div>
                 <div className="text-2xl font-bold text-white">{garminStats.avgBodyBattery}/100</div>
-                <div className="text-xs text-slate-500 mt-1">{t('stats.garmin.avgOverPeriod')}</div>
+                <div className="mt-1 text-xs text-teal-800">{t('stats.garmin.avgOverPeriod')}</div>
               </div>
               
               {/* Sommeil */}
-              <div className="bg-slate-800/50 rounded-lg p-4">
-                <div className="text-slate-400 text-sm mb-1">{t('stats.garmin.avgSleep')}</div>
+              <div className="rounded-lg border border-[#0F4C5C]/45 bg-black p-4">
+                <div className="mb-1 text-sm text-teal-700">{t('stats.garmin.avgSleep')}</div>
                 <div className="text-2xl font-bold text-white">
                   {garminStats.avgSleepDuration > 0 
                     ? `${Math.floor(garminStats.avgSleepDuration)}h${Math.round((garminStats.avgSleepDuration % 1) * 60)}m`
                     : '—'
                   }
                 </div>
-                <div className="text-xs text-slate-500 mt-1">{t('stats.garmin.sleepQuality', 'Qualité: {{quality}}/100', { quality: garminStats.avgSleepQuality })}</div>
+                <div className="mt-1 text-xs text-teal-800">{t('stats.garmin.sleepQuality', 'Qualité: {{quality}}/100', { quality: garminStats.avgSleepQuality })}</div>
               </div>
               
               {/* Minutes Intensives */}
-              <div className="bg-slate-800/50 rounded-lg p-4">
-                <div className="text-slate-400 text-sm mb-1">{t('stats.garmin.intensityMinutes')}</div>
+              <div className="rounded-lg border border-[#0F4C5C]/45 bg-black p-4">
+                <div className="mb-1 text-sm text-teal-700">{t('stats.garmin.intensityMinutes')}</div>
                 <div className="text-2xl font-bold text-white">{garminStats.totalIntensityMinutes} min</div>
-                <div className="text-xs text-slate-500 mt-1">{t('stats.garmin.totalOverPeriod')}</div>
+                <div className="mt-1 text-xs text-teal-800">{t('stats.garmin.totalOverPeriod')}</div>
               </div>
               
               {/* Activités */}
-              <div className="bg-slate-800/50 rounded-lg p-4">
-                <div className="text-slate-400 text-sm mb-1">{t('stats.garmin.garminActivities')}</div>
+              <div className="rounded-lg border border-[#0F4C5C]/45 bg-black p-4">
+                <div className="mb-1 text-sm text-teal-700">{t('stats.garmin.garminActivities')}</div>
                 <div className="text-2xl font-bold text-white">{garminStats.totalActivities}</div>
-                <div className="text-xs text-slate-500 mt-1">{t('stats.garmin.activeDays', 'Jours actifs: {{days}}', { days: garminStats.activeDays })}</div>
+                <div className="mt-1 text-xs text-teal-800">{t('stats.garmin.activeDays', 'Jours actifs: {{days}}', { days: garminStats.activeDays })}</div>
               </div>
             </div>
           </Card.Content>
@@ -506,49 +506,53 @@ const StatsTab = () => {
 
       {/* Statistiques d'endurance */}
       {stats.enduranceStats.sessions > 0 && (
-        <div className="bg-gradient-to-r from-orange-500/10 to-yellow-500/10 border border-orange-500/20 rounded-xl p-6">
-          <h3 className="text-lg font-semibold text-orange-200 mb-4 flex items-center">
-            <Activity className="mr-2" size={20} />
-            {t('stats.endurance.title')}
-          </h3>
-          <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
-            <div className="bg-orange-700/30 rounded-lg p-4 text-center">
+        <Card variant="sport" className="border-orange-500/25">
+          <Card.Header className="border-[#0F4C5C]/40">
+            <Card.Title className="flex items-center text-lg font-semibold text-orange-200">
+              <Activity className="mr-2" size={20} />
+              {t('stats.endurance.title')}
+            </Card.Title>
+          </Card.Header>
+          <Card.Content>
+          <div className="grid grid-cols-2 gap-4 md:grid-cols-5">
+            <div className="rounded-lg border border-orange-500/30 bg-black p-4 text-center">
               <div className="text-2xl font-bold text-orange-200">{stats.enduranceStats.sessions}</div>
-              <div className="text-orange-300 text-sm">{t('stats.endurance.sessions')}</div>
+              <div className="text-sm text-orange-300/90">{t('stats.endurance.sessions')}</div>
             </div>
-            <div className="bg-blue-700/30 rounded-lg p-4 text-center">
-              <div className="text-2xl font-bold text-blue-200">{stats.enduranceStats.reps}</div>
-              <div className="text-blue-300 text-sm">{t('stats.endurance.reps')}</div>
+            <div className="rounded-lg border border-[#0F4C5C]/45 bg-black p-4 text-center">
+              <div className="text-2xl font-bold text-teal-200">{stats.enduranceStats.reps}</div>
+              <div className="text-sm text-teal-600">{t('stats.endurance.reps')}</div>
             </div>
-            <div className="bg-green-700/30 rounded-lg p-4 text-center">
-              <div className="text-2xl font-bold text-green-200">{stats.enduranceStats.distance}m</div>
-              <div className="text-green-300 text-sm">{t('stats.endurance.distance')}</div>
+            <div className="rounded-lg border border-emerald-500/30 bg-black p-4 text-center">
+              <div className="text-2xl font-bold text-emerald-300">{stats.enduranceStats.distance}m</div>
+              <div className="text-sm text-emerald-600/90">{t('stats.endurance.distance')}</div>
             </div>
-            <div className="bg-purple-700/30 rounded-lg p-4 text-center">
-              <div className="text-2xl font-bold text-purple-200">{stats.enduranceStats.jumps}</div>
-              <div className="text-purple-300 text-sm">{t('stats.endurance.jumps')}</div>
+            <div className="rounded-lg border border-[#0F4C5C]/45 bg-black p-4 text-center">
+              <div className="text-2xl font-bold text-teal-100">{stats.enduranceStats.jumps}</div>
+              <div className="text-sm text-teal-700">{t('stats.endurance.jumps')}</div>
             </div>
-            <div className="bg-red-700/30 rounded-lg p-4 text-center">
+            <div className="rounded-lg border border-red-500/30 bg-black p-4 text-center">
               <div className="text-2xl font-bold text-red-200">{stats.enduranceStats.duration}min</div>
-              <div className="text-red-300 text-sm">{t('stats.endurance.duration')}</div>
+              <div className="text-sm text-red-300/90">{t('stats.endurance.duration')}</div>
             </div>
           </div>
-        </div>
+          </Card.Content>
+        </Card>
       )}
 
       {/* ✅ NOUVEAU : Statistiques de justifications */}
       {justificationStats.total > 0 && (
-        <Card className="bg-gradient-to-r from-slate-800/50 to-slate-700/50 border-slate-600">
-          <Card.Header>
-            <Card.Title className="flex items-center gap-2 text-white">
-              <Calendar className="text-slate-400" size={24} />
+        <Card variant="sport">
+          <Card.Header className="border-[#0F4C5C]/40">
+            <Card.Title className="flex items-center gap-2 text-teal-100">
+              <Calendar className="text-teal-500" size={24} />
               {t('stats.justifications.title')}
             </Card.Title>
           </Card.Header>
           <Card.Content>
             <div className="mb-4">
-              <div className="text-3xl font-bold text-white mb-1">{justificationStats.total}</div>
-              <div className="text-sm text-slate-400">{t('stats.justifications.justifiedDays')} ({statsPeriod === 'week' ? t('stats.justifications.thisWeek') : statsPeriod === 'month' ? t('stats.justifications.thisMonth') : statsPeriod === 'year' ? t('stats.justifications.thisYear') : t('stats.justifications.total')})</div>
+              <div className="mb-1 text-3xl font-bold text-white">{justificationStats.total}</div>
+              <div className="text-sm text-teal-700">{t('stats.justifications.justifiedDays')} ({statsPeriod === 'week' ? t('stats.justifications.thisWeek') : statsPeriod === 'month' ? t('stats.justifications.thisMonth') : statsPeriod === 'year' ? t('stats.justifications.thisYear') : t('stats.justifications.total')})</div>
             </div>
             
             <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
@@ -559,16 +563,17 @@ const StatsTab = () => {
                 const label = t(`justification.${reason}`);
                 const icon = JUSTIFICATION_ICONS[reason];
                 const colorClasses = JUSTIFICATION_COLORS[reason];
+                const textClass = JUSTIFICATION_TEXT[reason];
                 
                 return (
                   <div
                     key={reason}
-                    className={`flex items-center gap-2 p-3 rounded-lg border-2 ${colorClasses}`}
+                    className={`flex items-center gap-2 rounded-lg border-2 p-3 ${colorClasses} ${textClass}`}
                   >
                     <span className="text-xl" aria-hidden="true">{icon}</span>
                     <div className="flex flex-col">
-                      <span className="text-white text-lg font-bold">{count}</span>
-                      <span className="text-white/80 text-xs">{label}</span>
+                      <span className="text-lg font-bold">{count}</span>
+                      <span className="text-xs opacity-85">{label}</span>
                     </div>
                   </div>
                 );
@@ -579,39 +584,39 @@ const StatsTab = () => {
       )}
 
       {/* Statistiques détaillées */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <Card>
-          <Card.Header>
-            <Card.Title className="flex items-center">
-              <TrendingUp className="w-5 h-5 mr-2" />
+      <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+        <Card variant="sport">
+          <Card.Header className="border-[#0F4C5C]/40">
+            <Card.Title className="flex items-center text-teal-100">
+              <TrendingUp className="mr-2 h-5 w-5 text-teal-400" />
               {t('stats.performance.title')}
             </Card.Title>
           </Card.Header>
           <Card.Content>
             <div className="space-y-3">
               <div className="flex justify-between">
-                <span className="text-gray-600">{t('stats.performance.avgPerSession')}</span>
-                <span className="font-semibold">
+                <span className="text-teal-700">{t('stats.performance.avgPerSession')}</span>
+                <span className="font-semibold text-white">
                   {stats.totalWorkouts > 0 ? Math.round(stats.totalReps / stats.totalWorkouts) : 0} {t('stats.performance.reps')}
                 </span>
               </div>
               <div className="flex justify-between">
-                <span className="text-gray-600">{t('stats.performance.activeDays')}</span>
-                <span className="font-semibold">{stats.activeDays}</span>
+                <span className="text-teal-700">{t('stats.performance.activeDays')}</span>
+                <span className="font-semibold text-white">{stats.activeDays}</span>
               </div>
               <div className="flex justify-between">
-                <span className="text-gray-600">{t('stats.performance.regularityRate')}</span>
-                <span className="font-semibold">
+                <span className="text-teal-700">{t('stats.performance.regularityRate')}</span>
+                <span className="font-semibold text-white">
                   {stats.activeDays > 0 ? Math.round((stats.activeDays / 30) * 100) : 0}%
                 </span>
               </div>
               <div className="flex justify-between">
-                <span className="text-gray-600">{t('stats.performance.totalStretches')}</span>
-                <span className="font-semibold">{stats.totalStretches}</span>
+                <span className="text-teal-700">{t('stats.performance.totalStretches')}</span>
+                <span className="font-semibold text-white">{stats.totalStretches}</span>
               </div>
               <div className="flex justify-between">
-                <span className="text-gray-600">{t('stats.performance.avgStretchesPerSession')}</span>
-                <span className="font-semibold">
+                <span className="text-teal-700">{t('stats.performance.avgStretchesPerSession')}</span>
+                <span className="font-semibold text-white">
                   {stats.totalWorkouts > 0 ? Math.round(stats.totalStretches / stats.totalWorkouts) : 0}
                 </span>
               </div>
@@ -619,26 +624,26 @@ const StatsTab = () => {
           </Card.Content>
         </Card>
 
-        <Card>
-          <Card.Header>
-            <Card.Title className="flex items-center">
-              <Award className="w-5 h-5 mr-2" />
+        <Card variant="sport">
+          <Card.Header className="border-[#0F4C5C]/40">
+            <Card.Title className="flex items-center text-teal-100">
+              <Award className="mr-2 h-5 w-5 text-teal-400" />
               {t('stats.achievements.title')}
             </Card.Title>
           </Card.Header>
           <Card.Content>
             <div className="space-y-3">
               <div className="flex items-center justify-between">
-                <span className="text-gray-600">{t('stats.achievements.currentStreak')}</span>
-                <span className="font-semibold">{currentStreak} {t('stats.achievements.days')}</span>
+                <span className="text-teal-700">{t('stats.achievements.currentStreak')}</span>
+                <span className="font-semibold text-white">{currentStreak} {t('stats.achievements.days')}</span>
               </div>
               <div className="flex items-center justify-between">
-                <span className="text-gray-600">{t('stats.achievements.longestStreak')}</span>
-                <span className="font-semibold">{longestStreak} {t('stats.achievements.days')}</span>
+                <span className="text-teal-700">{t('stats.achievements.longestStreak')}</span>
+                <span className="font-semibold text-white">{longestStreak} {t('stats.achievements.days')}</span>
               </div>
               <div className="flex items-center justify-between">
-                <span className="text-gray-600">{t('stats.achievements.totalReps')}</span>
-                <span className="font-semibold">{stats.totalReps}</span>
+                <span className="text-teal-700">{t('stats.achievements.totalReps')}</span>
+                <span className="font-semibold text-white">{stats.totalReps}</span>
               </div>
             </div>
           </Card.Content>
@@ -647,27 +652,27 @@ const StatsTab = () => {
 
       {/* Statistiques des activités complémentaires */}
       {(stats.complementaryStats.boxeSessions > 0 || stats.complementaryStats.natationSessions > 0) && (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
           {stats.complementaryStats.boxeSessions > 0 && (
-            <Card>
-              <Card.Header>
-                <Card.Title className="flex items-center">
+            <Card variant="sport">
+              <Card.Header className="border-[#0F4C5C]/40">
+                <Card.Title className="flex items-center text-teal-100">
                   {t('stats.complementary.boxing')}
                 </Card.Title>
               </Card.Header>
               <Card.Content>
                 <div className="space-y-3">
                   <div className="flex justify-between">
-                    <span className="text-gray-600">{t('stats.complementary.sessions')}</span>
-                    <span className="font-semibold">{stats.complementaryStats.boxeSessions}</span>
+                    <span className="text-teal-700">{t('stats.complementary.sessions')}</span>
+                    <span className="font-semibold text-white">{stats.complementaryStats.boxeSessions}</span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-gray-600">{t('stats.complementary.totalDuration')}</span>
-                    <span className="font-semibold">{stats.complementaryStats.boxeDuration} min</span>
+                    <span className="text-teal-700">{t('stats.complementary.totalDuration')}</span>
+                    <span className="font-semibold text-white">{stats.complementaryStats.boxeDuration} min</span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-gray-600">{t('stats.complementary.avgPerSession')}</span>
-                    <span className="font-semibold">
+                    <span className="text-teal-700">{t('stats.complementary.avgPerSession')}</span>
+                    <span className="font-semibold text-white">
                       {stats.complementaryStats.boxeSessions > 0 
                         ? Math.round(stats.complementaryStats.boxeDuration / stats.complementaryStats.boxeSessions) 
                         : 0} {t('stats.complementary.minutes')}
@@ -679,25 +684,25 @@ const StatsTab = () => {
           )}
 
           {stats.complementaryStats.natationSessions > 0 && (
-            <Card>
-              <Card.Header>
-                <Card.Title className="flex items-center">
+            <Card variant="sport">
+              <Card.Header className="border-[#0F4C5C]/40">
+                <Card.Title className="flex items-center text-teal-100">
                   {t('stats.complementary.swimming')}
                 </Card.Title>
               </Card.Header>
               <Card.Content>
                 <div className="space-y-3">
                   <div className="flex justify-between">
-                    <span className="text-gray-600">{t('stats.complementary.sessions')}</span>
-                    <span className="font-semibold">{stats.complementaryStats.natationSessions}</span>
+                    <span className="text-teal-700">{t('stats.complementary.sessions')}</span>
+                    <span className="font-semibold text-white">{stats.complementaryStats.natationSessions}</span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-gray-600">{t('stats.complementary.totalDuration')}</span>
-                    <span className="font-semibold">{stats.complementaryStats.natationDuration} min</span>
+                    <span className="text-teal-700">{t('stats.complementary.totalDuration')}</span>
+                    <span className="font-semibold text-white">{stats.complementaryStats.natationDuration} min</span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-gray-600">{t('stats.complementary.avgPerSession')}</span>
-                    <span className="font-semibold">
+                    <span className="text-teal-700">{t('stats.complementary.avgPerSession')}</span>
+                    <span className="font-semibold text-white">
                       {stats.complementaryStats.natationSessions > 0 
                         ? Math.round(stats.complementaryStats.natationDuration / stats.complementaryStats.natationSessions) 
                         : 0} {t('stats.complementary.minutes')}
@@ -715,7 +720,7 @@ const StatsTab = () => {
         <button
           type="button"
           onClick={() => setShowAdvancedStats(true)}
-          className="gradient-button-premium gradient-button-premium-lg gradient-button-premium-variant rounded-lg flex items-center justify-center gap-2 mx-auto"
+          className="mx-auto inline-flex items-center justify-center gap-2 rounded-lg border border-[#0F4C5C]/60 bg-black px-6 py-3 text-sm font-medium text-teal-100 transition hover:border-[#0F5C45]/65 hover:bg-[#0F4C5C]/12"
         >
           <Target className="w-5 h-5" />
           Voir les statistiques avancées

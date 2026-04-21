@@ -221,41 +221,45 @@ const StatisticsSubTabContent = ({ books = [], setBooks }) => {
   }, [hasData, updateDisplay]);
 
   return (
-    <div className="statistics-container">
+    <div className="statistics-container books-statistics-root space-y-6">
       {/* Header avec titre et contrôles principaux */}
-      <div className="statistics-header">
-        <div className="statistics-title-section">
-          <BarChart3 className="w-6 h-6 text-purple-300" />
-          <div>
-            <h2 className="text-2xl font-bold text-white">
-              {t('books.statistics.title', 'Statistiques de Lecture')}
-            </h2>
-            <p className="text-sm text-slate-400">
-              {t('books.statistics.subtitle', 'Analyse de tes habitudes et progression de lecture')}
-            </p>
-          </div>
-        </div>
-        
-        <div className="statistics-controls">
-          <Button
-            variant={comparisonMode ? 'primary' : 'glass'}
-            size="sm"
-            onClick={handleComparisonToggle}
-            className="flex items-center gap-2 touch-target"
-          >
-            <TrendingUp className="w-4 h-4" />
-            {t('books.statistics.comparison', 'Comparaison')}
-          </Button>
-        </div>
-      </div>
+      <Card variant="books" className="!p-4 md:!p-5">
+        <CardContent className="!p-0">
+          <div className="statistics-header">
+            <div className="statistics-title-section">
+              <BarChart3 className="w-6 h-6 text-[#93c5fd] shrink-0" />
+              <div>
+                <h2 className="text-2xl font-bold text-[#bfdbfe]">
+                  {t('books.statistics.title', 'Statistiques de Lecture')}
+                </h2>
+                <p className="text-sm text-[#93c5fd]/90">
+                  {t('books.statistics.subtitle', 'Analyse de tes habitudes et progression de lecture')}
+                </p>
+              </div>
+            </div>
 
-      <div className="mb-6">
+            <div className="statistics-controls">
+              <Button
+                variant={comparisonMode ? 'books' : 'booksMuted'}
+                size="sm"
+                onClick={handleComparisonToggle}
+                className="flex items-center gap-2 touch-target"
+              >
+                <TrendingUp className="w-4 h-4" />
+                {t('books.statistics.comparison', 'Comparaison')}
+              </Button>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      <div>
         <FinishedBooksRatingsShowcase books={books} />
       </div>
 
       {/* Filtres temporels et autres filtres */}
-      <Card variant="glass">
-        <CardContent className="p-4">
+      <Card variant="books" className="!p-4 md:!p-5">
+        <CardContent className="!p-0">
           <div className="filters-container">
             {/* Filtres temporels */}
             <div className="time-filters">
@@ -267,19 +271,20 @@ const StatisticsSubTabContent = ({ books = [], setBooks }) => {
             </div>
             
             {/* Séparateur visuel */}
-            <div className="hidden lg:block w-px h-6 bg-slate-600"></div>
+                <div className="hidden lg:block w-px h-6 bg-[#3A86FF]/35"></div>
             
             {/* Autres filtres */}
             <div className="other-filters">
               <div className="flex items-center gap-2">
-                <Filter className="w-4 h-4 text-slate-400" />
-                <span className="text-sm text-slate-300">
+                <Filter className="w-4 h-4 text-[#93c5fd]" />
+                <span className="text-sm text-[#93c5fd]/90">
                   {t('books.statistics.filters', 'Filtres')}:
                 </span>
               </div>
               
               <DebouncedInput
                 type="select"
+                fieldTone="books"
                 value={filters.genre}
                 onChange={(e) => handleFilterChange('genre', e.target.value)}
                 className="min-w-[120px] touch-target"
@@ -294,6 +299,7 @@ const StatisticsSubTabContent = ({ books = [], setBooks }) => {
               
               <DebouncedInput
                 type="select"
+                fieldTone="books"
                 value={filters.status}
                 onChange={(e) => handleFilterChange('status', e.target.value)}
                 className="min-w-[120px] touch-target"
@@ -310,6 +316,7 @@ const StatisticsSubTabContent = ({ books = [], setBooks }) => {
               
               <DebouncedInput
                 type="select"
+                fieldTone="books"
                 value={filters.author}
                 onChange={(e) => handleFilterChange('author', e.target.value)}
                 className="min-w-[120px] touch-target"
@@ -329,17 +336,17 @@ const StatisticsSubTabContent = ({ books = [], setBooks }) => {
       {/* Contenu principal */}
       {!hasData ? (
         // État vide - pas de données
-        <Card variant="glass">
-          <CardContent className="text-center py-12">
-            <Calendar className="w-16 h-16 text-slate-500 mx-auto mb-4" />
-            <h3 className="text-lg font-semibold text-slate-300 mb-2">
+        <Card variant="books" className="!p-4 md:!p-6">
+          <CardContent className="text-center py-12 !px-4">
+            <Calendar className="w-16 h-16 text-[#93c5fd]/80 mx-auto mb-4" />
+            <h3 className="text-lg font-semibold text-[#bfdbfe] mb-2">
               {t('books.statistics.noData.title', 'Aucune donnée de lecture')}
             </h3>
-            <p className="text-slate-400 mb-4">
+            <p className="text-[#93c5fd]/85 mb-4">
               {t('books.statistics.noData.description', 
                 'Commence à enregistrer des sessions de lecture pour voir tes statistiques apparaître ici.')}
             </p>
-            <div className="text-sm text-slate-500">
+            <div className="text-sm text-[#93c5fd]/80">
               <p>{t('books.statistics.noData.suggestions.title', 'Pour commencer:')}</p>
               <ul className="mt-2 space-y-1">
                 <li>• {t('books.statistics.noData.suggestions.addBook', 'Ajoute un livre à ta bibliothèque')}</li>
@@ -395,10 +402,10 @@ const StatisticsSubTabContent = ({ books = [], setBooks }) => {
           {/* Modules supplémentaires au-dessus des graphiques */}
           <div id="books-stats-modules-stack" className="modules-section space-y-4 scroll-mt-4">
             {/* Analyse des sessions */}
-            <Card variant="glass" id="books-stats-session-analysis">
-              <CardHeader>
-                <CardTitle size="sm" className="flex items-center gap-2">
-                  <Activity className="w-4 h-4 text-green-300" />
+            <Card variant="books" id="books-stats-session-analysis">
+              <CardHeader className="border-b border-[#3A86FF]/25">
+                <CardTitle tone="books" size="sm" className="flex items-center gap-2 normal-case tracking-normal">
+                  <Activity className="w-4 h-4 text-[#93c5fd]" />
                   Analyse des sessions
                 </CardTitle>
               </CardHeader>
@@ -411,10 +418,10 @@ const StatisticsSubTabContent = ({ books = [], setBooks }) => {
             </Card>
             
             {/* Accomplissements */}
-            <Card variant="glass">
-              <CardHeader>
-                <CardTitle size="sm" className="flex items-center gap-2">
-                  <Trophy className="w-4 h-4 text-green-300" />
+            <Card variant="books">
+              <CardHeader className="border-b border-[#3A86FF]/25">
+                <CardTitle tone="books" size="sm" className="flex items-center gap-2 normal-case tracking-normal">
+                  <Trophy className="w-4 h-4 text-[#93c5fd]" />
                   Accomplissements
                 </CardTitle>
               </CardHeader>
@@ -442,10 +449,10 @@ const StatisticsSubTabContent = ({ books = [], setBooks }) => {
 
           {/* Outils d'export et partage */}
           <div className="mt-8">
-            <Card variant="glass">
-              <CardHeader>
-                <CardTitle size="sm" className="flex items-center gap-2">
-                  <Download className="w-4 h-4 text-green-300" />
+            <Card variant="books">
+              <CardHeader className="border-b border-[#3A86FF]/25">
+                <CardTitle tone="books" size="sm" className="flex items-center gap-2 normal-case tracking-normal">
+                  <Download className="w-4 h-4 text-[#93c5fd]" />
                   Outils d'Export et Partage
                 </CardTitle>
               </CardHeader>

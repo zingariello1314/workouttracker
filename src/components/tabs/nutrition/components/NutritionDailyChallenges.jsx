@@ -1,4 +1,4 @@
-/**
+﻿/**
  * NutritionDailyChallenges - Défis Nutritionnels Quotidiens
  * 
  * Composant pour afficher et suivre les défis nutritionnels quotidiens
@@ -173,7 +173,7 @@ const NutritionDailyChallenges = () => {
   
   if (loading) {
     return (
-      <Card className="bg-slate-800/50 border-slate-700">
+      <Card variant="sport">
         <CardContent className="text-center py-8">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto mb-4"></div>
           <p className="text-slate-300">Chargement des défis...</p>
@@ -184,7 +184,7 @@ const NutritionDailyChallenges = () => {
   
   if (error) {
     return (
-      <Card className="bg-slate-800/50 border-slate-700">
+      <Card variant="sport">
         <CardContent className="text-center py-8">
           <AlertCircle size={48} className="text-red-400 mx-auto mb-4" />
           <p className="text-slate-300 mb-2">Erreur lors du chargement des défis</p>
@@ -286,7 +286,7 @@ const NutritionDailyChallenges = () => {
       {/* Défis groupés par catégorie */}
       <div className="space-y-6">
         {Object.entries(challengesByCategory).map(([category, categoryChallenges]) => (
-          <Card key={category} className={`bg-slate-800/50 border-slate-700 ${CATEGORY_COLORS[category]}`}>
+          <Card key={category} variant="sport" className={`${CATEGORY_COLORS[category]}`}>
             <CardHeader>
               <CardTitle className="text-white text-lg">
                 {categoryLabels[category] || category}
@@ -338,7 +338,7 @@ const NutritionDailyChallenges = () => {
       
       {/* Message si aucun défi */}
       {Object.keys(challengesByCategory).length === 0 && (
-        <Card className="bg-slate-800/50 border-slate-700">
+        <Card variant="sport">
           <CardContent className="text-center py-8">
             <Target size={48} className="text-slate-400 mx-auto mb-4" />
             <p className="text-slate-300 mb-2">Aucun défi disponible</p>

@@ -342,7 +342,7 @@ const VoiceInput = ({
                       className={`p-4 rounded-lg border ${
                         needsManualInput
                           ? 'bg-yellow-900/20 border-yellow-700/50'
-                          : 'bg-slate-800/50 border-slate-700'
+                          : 'border border-[#0F4C5C]/50 bg-black'
                       }`}
                     >
                       {isEditing ? (

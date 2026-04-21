@@ -32,6 +32,7 @@ const PredictionsTab = lazy(() => import('./components/PredictionsTab'));
 const QuestsTab = lazy(() => import('./components/tabs/QuestsTab'));
 const ApprentissageTab = lazy(() => import('./components/tabs/ApprentissageTab'));
 const SmartBalancingTab = lazy(() => import('./components/SmartBalancingTab'));
+const SportAnalyticsHubTab = lazy(() => import('./components/tabs/SportAnalyticsHubTab'));
 const GarminTab = lazy(() => import('./components/tabs/GarminTab'));
 const NutritionTab = lazy(() => import('./components/tabs/NutritionTab'));
 const BooksTab = lazy(() => import('./components/tabs/BooksTab'));
@@ -52,6 +53,8 @@ import AnimatedBackground from './components/ui/AnimatedBackground';
 import GlassFilter from './components/ui/GlassFilter';
 import ErrorBoundary from './components/ui/ErrorBoundary';
 import { MomentumTabLoadOverlay, MomentumModalLoadCard } from './components/ui/MomentumBrandedLoading';
+import SportXPBar from './components/tabs/TodayTab/components/SportXPBar';
+import { isSportSubTab } from './constants/sportSubTabs';
 
 const WorkoutTrackerApp = () => {
   return (
@@ -103,24 +106,25 @@ const WorkoutTrackerContent = () => {
     apprentissage: '-700px',
     quests: '-700px',
     books: '-720px',
-    // Onglets Sport : même alignement vertical sous la sous-nav
-    recap: '-640px',
-    today: '-640px',
-    'data-entry': '-640px',
-    progress: '-640px',
-    endurance: '-640px',
-    calendar: '-640px',
-    program: '-640px',
-    'addiction-quit': '-640px',
-    nutrition: '-640px',
-    charts: '-640px',
-    stats: '-640px',
-    exercises: '-640px',
-    history: '-640px',
-    predictions: '-640px',
-    'smart-balancing': '-640px',
+    // Onglets Sport : un peu moins de marge négative pour laisser la barre XP respirer sous la sous-nav
+    recap: '-620px',
+    today: '-620px',
+    'data-entry': '-620px',
+    progress: '-620px',
+    endurance: '-620px',
+    calendar: '-620px',
+    program: '-620px',
+    'addiction-quit': '-620px',
+    nutrition: '-620px',
+    charts: '-620px',
+    stats: '-620px',
+    exercises: '-620px',
+    history: '-620px',
+    predictions: '-620px',
+    'smart-balancing': '-620px',
+    'sport-analytics': '-620px',
     // Sous-onglet Sport : Garmin aligné comme les autres sous-onglets
-    garmin: '-640px',
+    garmin: '-620px',
   };
 
   const defaultMainOffset = (activeTab !== 'home' && activeTab !== 'auth' && activeTab !== 'dashboard' && activeTab !== 'pricing')
@@ -220,16 +224,15 @@ const WorkoutTrackerContent = () => {
         return <NutritionTab />;
       case 'charts':
         return <ChartsTab />;
+      case 'sport-analytics':
+        return <SportAnalyticsHubTab />;
       case 'stats':
-        return <StatsTab />;
+      case 'history':
+      case 'predictions':
+      case 'smart-balancing':
+        return <SportAnalyticsHubTab legacyEntry={activeTab} />;
       case 'exercises':
         return <ExercisesTab />;
-      case 'history':
-        return <HistoryTab />;
-      case 'predictions':
-        return <PredictionsTab />;
-      case 'smart-balancing':
-        return <SmartBalancingTab />;
       case 'garmin':
         // ✅ Comportement Garmin :
         // - Déconnecté : on affiche GarminTab avec des données vides (0 partout, aucune synchro encore faite)
@@ -385,6 +388,11 @@ const WorkoutTrackerContent = () => {
               >
                 <Suspense fallback={<MomentumTabLoadOverlay message="Chargement…" />}>
                   <div className="container mx-auto px-4">
+                    {isSportSubTab(activeTab) && (
+                      <div className="mb-5 mt-5 scroll-mt-40 pt-1">
+                        <SportXPBar />
+                      </div>
+                    )}
                     {renderTabContent()}
                   </div>
                 </Suspense>

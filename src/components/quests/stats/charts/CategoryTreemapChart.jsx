@@ -5,6 +5,7 @@
 
 import React, { useMemo, useState } from 'react';
 import LazyChart from '../../../BodyTracking/components/LazyChart';
+import { qstatsPanel, qstatsHeaderRow, qstatsAccentBar, qstatsMuted } from '../questsStatsTheme';
 
 const CategoryTreemapChart = ({ categoryStats }) => {
   const [hoveredCategory, setHoveredCategory] = useState(null);
@@ -118,9 +119,9 @@ const CategoryTreemapChart = ({ categoryStats }) => {
   };
 
   return (
-    <div className="rounded-2xl border border-purple-500/20 bg-gradient-to-br from-slate-900/90 via-slate-800/50 to-slate-900/90 px-4 py-3 shadow-xl shadow-purple-500/10 backdrop-blur-sm">
-      <div className="text-xs text-purple-300 mb-3 font-semibold tracking-wide flex items-center gap-2">
-        <div className="w-1 h-4 bg-gradient-to-b from-purple-400 to-pink-500 rounded-full"></div>
+    <div className={qstatsPanel}>
+      <div className={qstatsHeaderRow}>
+        <div className={qstatsAccentBar} />
         Répartition visuelle des catégories
       </div>
       <LazyChart height={300}>
@@ -208,7 +209,7 @@ const CategoryTreemapChart = ({ categoryStats }) => {
             
             return (
               <div
-                className="absolute bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 border-2 rounded-xl p-4 shadow-2xl backdrop-blur-sm z-20"
+                className="absolute bg-black border-2 rounded-xl p-4 shadow-2xl z-20"
                 style={{
                   borderColor: `${colors.border}80`,
                   top: '10px',
@@ -237,11 +238,11 @@ const CategoryTreemapChart = ({ categoryStats }) => {
                 </div>
                 <div className="space-y-2">
                   <p className="text-sm">
-                    <span className="text-slate-400">Quêtes:</span>{' '}
-                    <span className="font-bold text-slate-200">{category.questsCount}</span>
+                    <span className={qstatsMuted}>Quêtes:</span>{' '}
+                    <span className="font-bold text-amber-100">{category.questsCount}</span>
                   </p>
                   <p className="text-sm">
-                    <span className="text-slate-400">Validations:</span>{' '}
+                    <span className={qstatsMuted}>Validations:</span>{' '}
                     <span 
                       className="font-bold text-lg"
                       style={{ 
@@ -253,14 +254,14 @@ const CategoryTreemapChart = ({ categoryStats }) => {
                     </span>
                   </p>
                   <p className="text-sm">
-                    <span className="text-slate-400">XP total:</span>{' '}
-                    <span className="font-bold text-cyan-400">
+                    <span className={qstatsMuted}>XP total:</span>{' '}
+                    <span className="font-bold text-amber-300">
                       {category.xpTotal.toLocaleString('fr-FR')} XP
                     </span>
                   </p>
                   <p className="text-sm">
-                    <span className="text-slate-400">Taux de réussite:</span>{' '}
-                    <span className="font-bold text-purple-400">{category.completionRate}%</span>
+                    <span className={qstatsMuted}>Taux de réussite:</span>{' '}
+                    <span className="font-bold text-yellow-300">{category.completionRate}%</span>
                   </p>
                 </div>
               </div>

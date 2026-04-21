@@ -24,48 +24,48 @@ const ExerciseCard = ({
   const t = useTranslation();
   const seriesSummary = useMemo(() => summarizeExerciseSeries(exercise), [exercise]);
   // Fonction pour obtenir la couleur selon la catégorie
+  /** Pastilles catégorie : nuances bleu / teal (charte Sport) */
   const getCategoryColor = (category) => {
     switch (category) {
       case ExerciseCategories.STRENGTH:
-        return 'bg-red-500/20 text-red-300 border-red-500/30';
+        return 'border border-sky-500/40 bg-sky-950/40 text-sky-200';
       case ExerciseCategories.CARDIO:
-        return 'bg-orange-500/20 text-orange-300 border-orange-500/30';
+        return 'border border-cyan-500/40 bg-cyan-950/35 text-cyan-100';
       case ExerciseCategories.CORE:
-        return 'bg-yellow-500/20 text-yellow-300 border-yellow-500/30';
+        return 'border border-[#0F5C45]/45 bg-[#0F5C45]/20 text-teal-100';
       case ExerciseCategories.ISOMETRIC:
-        return 'bg-purple-500/20 text-purple-300 border-purple-500/30';
+        return 'border border-blue-600/40 bg-blue-950/35 text-blue-200';
       case ExerciseCategories.FLEXIBILITY:
-        return 'bg-green-500/20 text-green-300 border-green-500/30';
+        return 'border border-emerald-500/40 bg-emerald-950/30 text-emerald-100';
       default:
-        return 'bg-gray-500/20 text-gray-300 border-gray-500/30';
+        return 'border border-[#0F4C5C]/50 bg-black text-teal-200';
     }
   };
 
-  // Fonction pour obtenir la couleur selon le groupe musculaire
   const getMuscleGroupColor = (muscleGroup) => {
     switch (muscleGroup) {
       case MuscleGroups.CHEST:
-        return 'bg-blue-500/20 text-blue-300';
+        return 'border border-sky-500/35 bg-sky-950/30 text-sky-200';
       case MuscleGroups.BACK:
-        return 'bg-green-500/20 text-green-300';
+        return 'border border-[#0F4C5C]/50 bg-black text-teal-100';
       case MuscleGroups.SHOULDERS:
-        return 'bg-yellow-500/20 text-yellow-300';
+        return 'border border-cyan-500/35 bg-cyan-950/30 text-cyan-100';
       case MuscleGroups.BICEPS:
-        return 'bg-pink-500/20 text-pink-300';
+        return 'border border-blue-500/35 bg-blue-950/30 text-blue-200';
       case MuscleGroups.TRICEPS:
-        return 'bg-red-500/20 text-red-300';
+        return 'border border-indigo-500/35 bg-indigo-950/30 text-indigo-200';
       case MuscleGroups.LEGS:
-        return 'bg-purple-500/20 text-purple-300';
+        return 'border border-teal-600/40 bg-teal-950/25 text-teal-100';
       case MuscleGroups.QUADS:
-        return 'bg-violet-500/20 text-violet-200';
+        return 'border border-[#0F5C45]/45 bg-[#0F5C45]/15 text-teal-50';
       case MuscleGroups.HAMSTRINGS:
-        return 'bg-fuchsia-500/20 text-fuchsia-200';
+        return 'border border-slate-600/50 bg-black text-slate-300';
       case MuscleGroups.CALVES:
-        return 'bg-indigo-500/20 text-indigo-200';
+        return 'border border-sky-600/35 bg-slate-950/50 text-sky-100';
       case MuscleGroups.CORE:
-        return 'bg-orange-500/20 text-orange-300';
+        return 'border border-[#0F4C5C]/45 bg-black text-teal-200';
       default:
-        return 'bg-gray-500/20 text-gray-300';
+        return 'border border-[#0F4C5C]/40 bg-black text-teal-300';
     }
   };
 
@@ -149,18 +149,18 @@ const ExerciseCard = ({
 
   if (compact) {
     return (
-      <div 
-        className={`p-3 rounded-lg border transition-all duration-200 cursor-pointer ${
-          isCompleted 
-            ? 'bg-green-500/10 border-green-500/30 text-green-300' 
-            : 'bg-slate-800/50 border-slate-700 hover:border-slate-600'
+      <div
+        className={`cursor-pointer rounded-lg border-2 p-3 transition-all duration-200 ${
+          isCompleted
+            ? 'border-emerald-500/50 bg-emerald-950/20 text-emerald-100'
+            : 'border-[#0F4C5C]/55 bg-black hover:border-[#0F5C45]/65'
         }`}
         onClick={onToggle}
       >
         <div className="flex items-center justify-between">
           <div className="flex-1">
-            <h4 className="font-medium text-sm">{exercise.name}</h4>
-            <p className="text-xs text-slate-400 mt-1">{exercise.series}</p>
+            <h4 className="text-sm font-medium text-white">{exercise.name}</h4>
+            <p className="mt-1 text-xs text-teal-700">{exercise.series}</p>
           </div>
           
           {exercise.category && (
@@ -175,13 +175,12 @@ const ExerciseCard = ({
 
   return (
     <Card
+      variant="sport"
       className={`transition-all duration-200 ${
-        onOpenDetail ? 'cursor-pointer focus:outline-none focus:ring-2 focus:ring-emerald-500/40' : ''
+        onOpenDetail ? 'cursor-pointer focus:outline-none focus:ring-2 focus:ring-[#0F5C45]/40' : ''
       } ${
-      isCompleted 
-        ? 'bg-green-500/10 border-green-500/30' 
-        : 'bg-slate-800/50 border-slate-700 hover:border-slate-600'
-    }`}
+        isCompleted ? '!border-emerald-500/55 bg-emerald-950/15' : ''
+      }`}
       role={onOpenDetail ? 'button' : undefined}
       tabIndex={onOpenDetail ? 0 : undefined}
       onClick={onOpenDetail ? () => onOpenDetail(exercise) : undefined}
@@ -205,13 +204,13 @@ const ExerciseCard = ({
           {typeof effectiveLoadCoeff === 'number' && !Number.isNaN(effectiveLoadCoeff) && (
             <div className="flex items-center gap-2 shrink-0">
               <LoadDifficultyStars coeff={effectiveLoadCoeff} className="scale-90" />
-              <div className="flex items-center gap-1.5 rounded-lg bg-slate-900/70 px-2.5 py-1 border border-slate-600/80">
-                <Gauge className="w-4 h-4 text-amber-300" />
+              <div className="flex items-center gap-1.5 rounded-lg border border-[#0F4C5C]/50 bg-black px-2.5 py-1">
+                <Gauge className="h-4 w-4 text-sky-400" />
                 <div className="text-right">
-                  <div className="text-[9px] uppercase text-slate-500 leading-none">
+                  <div className="text-[9px] uppercase leading-none text-teal-700">
                     {t('exercisesTab.card.loadShort', 'Diff. charge')}
                   </div>
-                  <div className="text-sm font-bold text-amber-200 tabular-nums leading-tight">
+                  <div className="text-sm font-bold tabular-nums leading-tight text-sky-200">
                     {Math.round(effectiveLoadCoeff * 100) / 100}
                   </div>
                 </div>
@@ -226,10 +225,10 @@ const ExerciseCard = ({
                 e.stopPropagation();
                 onToggle();
               }}
-              className={`ml-1 w-6 h-6 rounded-full border-2 transition-all duration-200 shrink-0 ${
+              className={`ml-1 h-6 w-6 shrink-0 rounded-full border-2 transition-all duration-200 ${
                 isCompleted
-                  ? 'bg-green-500 border-green-500'
-                  : 'border-slate-500 hover:border-slate-400'
+                  ? 'border-emerald-500 bg-emerald-600'
+                  : 'border-[#0F4C5C]/60 hover:border-[#0F5C45]/70'
               }`}
             >
               {isCompleted && (
@@ -256,7 +255,7 @@ const ExerciseCard = ({
           )}
           
           {exercise.difficulty && (
-            <Badge className="bg-amber-500/20 text-amber-300 border-amber-500/30">
+            <Badge className="border border-sky-500/40 bg-sky-950/35 text-sky-200">
               <Award className="w-3 h-3 mr-1" />
               {getDifficultyIcon(exercise.difficulty)}
             </Badge>
@@ -268,28 +267,28 @@ const ExerciseCard = ({
         {/* Informations principales */}
         <div className="space-y-3">
           {exercise.series && (
-            <div className="rounded-lg bg-slate-900/45 border border-slate-700/80 p-3">
+            <div className="rounded-lg border border-[#0F4C5C]/50 bg-black p-3">
               <div className="flex items-start justify-between gap-2">
                 <div className="min-w-0">
-                  <span className="text-[10px] uppercase tracking-wide text-slate-500">
+                  <span className="text-[10px] uppercase tracking-wide text-teal-700">
                     {t('exercisesTab.card.volume', 'Volume au programme')}
                   </span>
-                  <p className="text-white font-medium mt-1 break-words">
+                  <p className="mt-1 break-words font-medium text-white">
                     {seriesSummary.headline || exercise.series}
                   </p>
                   {seriesSummary.detail && (
-                    <p className="text-xs text-slate-400 mt-2 leading-relaxed">{seriesSummary.detail}</p>
+                    <p className="mt-2 text-xs leading-relaxed text-teal-700/95">{seriesSummary.detail}</p>
                   )}
                 </div>
-                {onOpenDetail && <ChevronRight className="w-5 h-5 text-slate-500 shrink-0 mt-0.5" aria-hidden />}
+                {onOpenDetail && <ChevronRight className="mt-0.5 h-5 w-5 shrink-0 text-teal-600" aria-hidden />}
               </div>
             </div>
           )}
 
           {(exercise.equipment || exercise.materiel) && (
             <div className="flex items-center justify-between gap-2">
-              <span className="text-slate-300 font-medium shrink-0">Équipement:</span>
-              <span className="text-slate-200 text-right">
+              <span className="shrink-0 font-medium text-teal-200/90">Équipement:</span>
+              <span className="text-right text-teal-100">
                 {exercise.equipment ? getEquipmentName(exercise.equipment) : exercise.materiel}
               </span>
             </div>
@@ -297,21 +296,21 @@ const ExerciseCard = ({
 
           {exercise.restTime && (
             <div className="flex items-center justify-between">
-              <span className="text-slate-300 font-medium flex items-center">
-                <Clock className="w-4 h-4 mr-1" />
+              <span className="flex items-center font-medium text-teal-200/90">
+                <Clock className="mr-1 h-4 w-4" />
                 Repos:
               </span>
-              <span className="text-slate-200">{exercise.restTime}s</span>
+              <span className="text-teal-50">{exercise.restTime}s</span>
             </div>
           )}
 
           {exercise.tempo && (
             <div className="flex items-center justify-between">
-              <span className="text-slate-300 font-medium flex items-center">
-                <Zap className="w-4 h-4 mr-1" />
+              <span className="flex items-center font-medium text-teal-200/90">
+                <Zap className="mr-1 h-4 w-4" />
                 Tempo:
               </span>
-              <span className="text-slate-200">{exercise.tempo}</span>
+              <span className="text-teal-50">{exercise.tempo}</span>
             </div>
           )}
         </div>
@@ -319,12 +318,12 @@ const ExerciseCard = ({
         {/* Muscles secondaires */}
         {exercise.secondaryMuscles && exercise.secondaryMuscles.length > 0 && (
           <div className="mt-4">
-            <span className="text-slate-300 text-sm font-medium">Muscles secondaires:</span>
-            <div className="flex flex-wrap gap-1 mt-1">
+            <span className="text-sm font-medium text-teal-200/90">Muscles secondaires:</span>
+            <div className="mt-1 flex flex-wrap gap-1">
               {exercise.secondaryMuscles.map((muscle, index) => (
-                <Badge 
-                  key={index} 
-                  className="text-xs bg-slate-700/50 text-slate-300 border-slate-600"
+                <Badge
+                  key={index}
+                  className="border border-[#0F4C5C]/45 bg-black text-xs text-teal-200"
                 >
                   {getMuscleGroupName(muscle)}
                 </Badge>
@@ -335,10 +334,10 @@ const ExerciseCard = ({
 
         {/* Notes et technique */}
         {(exercise.notes || exercise.technique) && showDetails && (
-          <div className="mt-4 p-3 bg-slate-700/30 rounded-lg">
+          <div className="mt-4 rounded-lg border border-[#0F4C5C]/40 bg-black p-3">
             <div className="flex items-start">
-              <Info className="w-4 h-4 text-blue-400 mr-2 mt-0.5 flex-shrink-0" />
-              <div className="text-sm text-slate-300">
+              <Info className="mr-2 mt-0.5 h-4 w-4 flex-shrink-0 text-sky-400" />
+              <div className="text-sm text-teal-100/90">
                 {exercise.technique && (
                   <p className="mb-1"><strong>Technique:</strong> {exercise.technique}</p>
                 )}
@@ -363,7 +362,7 @@ const ExerciseCard = ({
         )}
 
         {onOpenDetail && (
-          <p className="mt-3 text-xs text-emerald-400/90">
+          <p className="mt-3 text-xs text-teal-500">
             {t('exercisesTab.card.openHint', 'Cliquez pour la fiche complète et les réglages.')}
           </p>
         )}

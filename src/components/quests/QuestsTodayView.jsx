@@ -366,8 +366,8 @@ const QuestsTodayView = ({
         onDragEnd={handleDragEnd}
         onClick={() => openEditQuestPopup?.(quest.id)}
         onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); openEditQuestPopup?.(quest.id); } }}
-        className={`relative rounded-2xl border px-4 py-3 text-xs bg-slate-900/70 border-slate-700/80 hover:border-emerald-400/70 hover:bg-slate-900 transition-all ${
-          completed ? 'ring-1 ring-emerald-400/60' : ''
+        className={`relative rounded-2xl border px-4 py-3 text-xs bg-black/80 border-amber-500/35 hover:border-amber-400/55 hover:bg-black/90 transition-all ${
+          completed ? 'ring-1 ring-amber-400/50 bg-amber-500/10' : ''
         } ${canDrag ? 'cursor-grab active:cursor-grabbing' : 'cursor-pointer'} ${isDragging ? 'opacity-60 scale-[0.98]' : ''}`}
         title="Cliquer pour modifier la quête"
       >
@@ -386,8 +386,10 @@ const QuestsTodayView = ({
           <button
             type="button"
             onClick={(e) => { e.stopPropagation(); toggleQuestValidation(quest.id, today); }}
-            className={`gradient-button-premium gradient-button-premium-sm rounded-full mt-1 w-5 h-5 flex items-center justify-center text-[10px] shrink-0 ${
-              completed ? 'gradient-button-premium-variant' : ''
+            className={`rounded-full mt-1 w-5 h-5 flex items-center justify-center text-[10px] shrink-0 border-2 transition-colors ${
+              completed
+                ? 'border-amber-400 bg-amber-500 text-amber-950'
+                : 'border-amber-700/50 bg-black/80 text-amber-700 hover:border-amber-500'
             }`}
             title="Cocher / décocher"
           >
@@ -460,8 +462,8 @@ const QuestsTodayView = ({
         onDragEnd={handleDragEnd}
         onClick={() => openEditQuestPopup?.(quest.id)}
         onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); openEditQuestPopup?.(quest.id); } }}
-        className={`group flex items-center gap-2 rounded-lg border px-2 py-1 text-[10px] bg-slate-800/90 border-slate-600 hover:border-emerald-400/60 transition-colors ${
-          completed ? 'ring-1 ring-emerald-400/50' : ''
+        className={`group flex items-center gap-2 rounded-lg border px-2 py-1 text-[10px] bg-black/85 border-amber-600/35 hover:border-amber-400/50 transition-colors ${
+          completed ? 'ring-1 ring-amber-400/45 bg-amber-500/10' : ''
         } ${canDrag ? 'cursor-grab active:cursor-grabbing' : 'cursor-pointer'} ${isDragging ? 'opacity-60 scale-[0.98]' : ''}`}
         style={{ minHeight: `${blockHeight}px` }}
         title={`${quest.nom} – Cliquer pour modifier`}
@@ -469,8 +471,8 @@ const QuestsTodayView = ({
         <button
           type="button"
           onClick={(e) => { e.stopPropagation(); toggleQuestValidation(quest.id, dateStr); }}
-          className={`shrink-0 w-3.5 h-3.5 rounded-full flex items-center justify-center text-[8px] ${
-            completed ? 'bg-emerald-500/80 text-white' : 'bg-slate-600 text-slate-400'
+          className={`shrink-0 w-3.5 h-3.5 rounded-full flex items-center justify-center text-[8px] border ${
+            completed ? 'bg-amber-500 border-amber-300 text-amber-950' : 'bg-black border-amber-800/50 text-amber-600'
           }`}
           title="Cocher / décocher"
         >
@@ -508,10 +510,10 @@ const QuestsTodayView = ({
 
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <div>
-          <h1 className="text-2xl md:text-3xl font-bold text-slate-100">
-            Missions du <span className="text-emerald-400">jour</span>
+          <h1 className="text-2xl md:text-3xl font-bold text-white">
+            Missions du <span className="text-amber-400">jour</span>
           </h1>
-          <p className="text-slate-400 text-sm mt-1">
+          <p className="text-amber-200/70 text-sm mt-1">
             Vue rapide de toutes les quêtes actives prévues pour aujourd&apos;hui.
           </p>
         </div>
@@ -525,7 +527,7 @@ const QuestsTodayView = ({
                 className={`rounded-lg inline-flex items-center gap-2 px-3 py-2 text-sm border transition-colors ${
                   viewMode === 'creneau'
                     ? 'bg-amber-500/20 border-amber-400/60 text-amber-300'
-                    : 'bg-slate-800/60 border-slate-600 text-slate-300 hover:border-slate-500'
+                    : 'bg-black/60 border-amber-700/40 text-amber-200/85 hover:border-amber-500/50'
                 }`}
                 title="Ordre par heure prévue"
               >
@@ -537,8 +539,8 @@ const QuestsTodayView = ({
                 onClick={() => setViewMode('category')}
                 className={`rounded-lg inline-flex items-center gap-2 px-3 py-2 text-sm border transition-colors ${
                   viewMode === 'category'
-                    ? 'bg-emerald-500/20 border-emerald-400/60 text-emerald-300'
-                    : 'bg-slate-800/60 border-slate-600 text-slate-300 hover:border-slate-500'
+                    ? 'bg-amber-500/20 border-amber-400/60 text-amber-200'
+                    : 'bg-black/60 border-amber-700/40 text-amber-200/85 hover:border-amber-500/50'
                 }`}
                 title="Grouper par catégorie"
               >
@@ -550,8 +552,8 @@ const QuestsTodayView = ({
                 onClick={() => setViewMode('timetable')}
                 className={`rounded-lg inline-flex items-center gap-2 px-3 py-2 text-sm border transition-colors ${
                   viewMode === 'timetable'
-                    ? 'bg-cyan-500/20 border-cyan-400/60 text-cyan-300'
-                    : 'bg-slate-800/60 border-slate-600 text-slate-300 hover:border-slate-500'
+                    ? 'bg-amber-500/20 border-amber-400/60 text-amber-200'
+                    : 'bg-black/60 border-amber-700/40 text-amber-200/85 hover:border-amber-500/50'
                 }`}
                 title="Vue emploi du temps (semaine)"
               >
@@ -570,29 +572,29 @@ const QuestsTodayView = ({
               <span>Nouvelle quête</span>
             </button>
           )}
-          <div className="bg-slate-900/80 border border-slate-700 rounded-2xl px-4 py-3 text-xs text-slate-100 flex flex-col gap-1 min-w-[220px]">
+          <div className="rounded-2xl border-2 border-amber-400/75 bg-black px-4 py-3 text-xs text-amber-100 flex flex-col gap-1 min-w-[220px] shadow-md shadow-black/40">
           <div className="flex justify-between">
-            <span className="text-slate-400">Quêtes</span>
-            <span>
+            <span className="text-amber-200/65">Quêtes</span>
+            <span className="font-semibold tabular-nums text-amber-50">
               {completedCount}/{questsToday.length}
             </span>
           </div>
           <div className="flex justify-between">
-            <span className="text-slate-400">XP théorique</span>
-            <span className="text-amber-300 font-semibold">
+            <span className="text-amber-200/65">XP théorique</span>
+            <span className="text-amber-200 font-semibold tabular-nums">
               {totalXPTheorique} XP
             </span>
           </div>
           <div className="flex justify-between items-center gap-2 mt-1">
-            <span className="text-slate-400">Taux de réussite</span>
+            <span className="text-amber-200/65">Taux de réussite</span>
             <div className="flex items-center gap-2">
-              <div className="w-20 h-1.5 rounded-full bg-slate-800 overflow-hidden">
+              <div className="w-20 h-1.5 rounded-full bg-black border border-amber-800/45 overflow-hidden">
                 <div
-                  className="h-full rounded-full bg-gradient-to-r from-amber-400 to-yellow-600 transition-all"
+                  className="h-full rounded-full bg-gradient-to-r from-amber-600 via-amber-400 to-yellow-300 transition-all"
                   style={{ width: `${Math.min(successRate, 100)}%` }}
                 />
               </div>
-              <span className="font-semibold">{successRate}%</span>
+              <span className="font-semibold tabular-nums text-amber-100">{successRate}%</span>
             </div>
           </div>
           </div>

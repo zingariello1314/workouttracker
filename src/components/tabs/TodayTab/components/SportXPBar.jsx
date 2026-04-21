@@ -10,42 +10,42 @@ const SportXPBar = () => {
   const { totalXP, level, breakdown, progress } = useSportXP();
 
   return (
-    <div className="bg-gradient-to-r from-red-900/30 to-orange-900/30 border border-red-500/30 rounded-xl p-4">
-      <div className="flex items-center justify-between mb-3">
+    <div className="rounded-xl border-2 border-blue-500/55 bg-black p-4 shadow-lg shadow-black/40">
+      <div className="mb-3 flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <Dumbbell className="w-5 h-5 text-red-400" />
-          <span className="font-semibold text-white">Niveau {level}</span>
+          <Dumbbell className="h-5 w-5 text-sky-400" />
+          <span className="font-semibold text-sky-50">Niveau {level}</span>
         </div>
-        <span className="text-sm text-slate-300">{totalXP.toLocaleString('fr-FR')} XP</span>
+        <span className="text-sm text-sky-300/90">{totalXP.toLocaleString('fr-FR')} XP</span>
       </div>
 
-      <div className="w-full bg-slate-700 rounded-full h-2 mb-3">
+      <div className="mb-3 h-2.5 w-full overflow-hidden rounded-full border border-blue-500/40 bg-black">
         <div
-          className="h-full bg-gradient-to-r from-red-500 to-orange-500 transition-all"
+          className="h-full bg-gradient-to-r from-blue-700 via-cyan-700 to-emerald-700 transition-all"
           style={{ width: `${Math.min(100, Math.max(0, progress.percent))}%` }}
         />
       </div>
 
-      <div className="grid grid-cols-2 md:grid-cols-5 gap-2 text-xs">
+      <div className="grid grid-cols-2 gap-2 text-xs md:grid-cols-5">
         <div className="flex items-center gap-1">
-          <Dumbbell className="w-3 h-3 text-red-400" />
-          <span className="text-slate-400">{breakdown.reps.toLocaleString('fr-FR')} reps</span>
+          <Dumbbell className="h-3 w-3 shrink-0 text-sky-400" />
+          <span className="text-sky-400/95">{breakdown.reps.toLocaleString('fr-FR')} reps</span>
         </div>
         <div className="flex items-center gap-1">
-          <CheckCircle className="w-3 h-3 text-red-400" />
-          <span className="text-slate-400">{breakdown.exercises} exercices</span>
+          <CheckCircle className="h-3 w-3 shrink-0 text-sky-400" />
+          <span className="text-sky-400/95">{breakdown.exercises} exercices</span>
         </div>
         <div className="flex items-center gap-1">
-          <Flame className="w-3 h-3 text-red-400" />
-          <span className="text-slate-400">{breakdown.calories.toLocaleString('fr-FR')} cal</span>
+          <Flame className="h-3 w-3 shrink-0 text-[#e85d4c]" />
+          <span className="text-sky-400/95">{breakdown.calories.toLocaleString('fr-FR')} cal</span>
         </div>
         <div className="flex items-center gap-1">
-          <Footprints className="w-3 h-3 text-red-400" />
-          <span className="text-slate-400">{breakdown.steps.toLocaleString('fr-FR')} pas</span>
+          <Footprints className="h-3 w-3 shrink-0 text-sky-400" />
+          <span className="text-sky-400/95">{breakdown.steps.toLocaleString('fr-FR')} pas</span>
         </div>
         <div className="flex items-center gap-1">
-          <Target className="w-3 h-3 text-red-400" />
-          <span className="text-slate-400">{breakdown.challenges} défis</span>
+          <Target className="h-3 w-3 shrink-0 text-sky-400" />
+          <span className="text-sky-400/95">{breakdown.challenges} défis</span>
         </div>
       </div>
     </div>

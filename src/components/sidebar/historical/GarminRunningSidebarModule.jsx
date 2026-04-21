@@ -5,6 +5,7 @@ import GarminRunningStatsCard from '../../garmin/GarminRunningStatsCard';
 /**
  * Course Garmin (sidebar) : stats de course uniquement.
  * Le bloc « Corps et charges » est dans {@link SidebarBodyRecapModule} (pliage / persistance séparés).
+ * Le bloc muscu enregistré est dans {@link SidebarMuscuRecapModule}.
  */
 const GarminRunningSidebarModule = memo(({ isExpanded, onToggle }) => {
   return (
@@ -29,7 +30,7 @@ const GarminRunningSidebarModule = memo(({ isExpanded, onToggle }) => {
       </header>
 
       {isExpanded ? (
-        <div className="sidebar-section-content space-y-3 px-1 py-2">
+        <div className="sidebar-section-content space-y-4 px-1 py-2">
           <GarminRunningStatsCard variant="sidebar" />
         </div>
       ) : null}

@@ -496,7 +496,7 @@ const FoodCard = memo(({ product, isSelected, onClick }) => {
       className={`w-full text-left p-4 rounded-lg border transition-all ${
         isSelected
           ? 'bg-blue-600/20 border-blue-500 ring-2 ring-blue-500'
-          : 'bg-slate-800/50 border-slate-700 hover:bg-slate-700/50 hover:border-slate-600'
+          : 'border border-[#0F4C5C]/50 bg-black hover:border-[#0F5C45]/60 hover:bg-[#0F4C5C]/10'
       }`}
     >
       <div className="flex items-start justify-between gap-3">

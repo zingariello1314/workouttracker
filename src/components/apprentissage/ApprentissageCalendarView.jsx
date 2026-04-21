@@ -156,17 +156,17 @@ export default function ApprentissageCalendarView() {
 
   return (
     <div className="max-w-7xl mx-auto px-4 py-4 space-y-6">
-      <div className="rounded-xl border border-emerald-700/40 bg-black p-4 md:p-5">
-        <div className="flex items-start gap-3 text-slate-200">
+      <div className="rounded-xl border-2 border-emerald-500/70 bg-black p-4 md:p-5 shadow-lg shadow-emerald-500/10">
+        <div className="flex items-start gap-3 text-emerald-100/95">
           <GraduationCap className="w-8 h-8 text-emerald-400 shrink-0 mt-0.5" />
           <div>
-            <h2 className="text-lg md:text-xl font-bold text-white">Calendrier d&apos;étude</h2>
-            <p className="text-sm text-slate-400 mt-1 leading-relaxed">
+            <h2 className="text-lg md:text-xl font-bold text-emerald-50">Calendrier d&apos;étude</h2>
+            <p className="text-sm text-emerald-200/75 mt-1 leading-relaxed">
               Intensité basée sur tes sessions enregistrées (durée, régularité). Les trophées «
               calendrier fusion » (sport + quêtes + lecture) continuent d&apos;être mis à jour en
               arrière-plan quand les données combinées de l&apos;année évoluent.
             </p>
-            <p className="text-xs text-slate-500 mt-2">
+            <p className="text-xs text-emerald-300/70 mt-2">
               Trophées fusion déjà enregistrés :{' '}
               <span className="text-emerald-300 font-semibold">{fusionGranted}</span>
             </p>

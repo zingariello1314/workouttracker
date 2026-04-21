@@ -259,21 +259,25 @@ const JustificationModal = ({
       isOpen={isOpen}
       onClose={handleCancel}
       title={formattedDate ? t('justification.titleWithDate', 'Justifier l\'absence d\'activité - {{date}}', { date: formattedDate }) : t('justification.title')}
-      size="md"
+      size="lg"
+      placement="bottom"
       variant="glass"
+      noContentPadding
+      contentClassName="text-teal-50"
+      className="!max-w-lg border-[#0F4C5C] bg-black/98 backdrop-blur-xl !max-h-[min(78vh,580px)]"
     >
-      <div className="p-6 space-y-6">
+      <div className="space-y-4 p-4 sm:p-5">
         {/* Date affichée (info seulement) */}
         {formattedDate && (
-          <div className="bg-slate-800/50 rounded-lg p-3 border border-slate-700/50">
-            <p className="text-sm text-slate-400">{t('justification.dateConcerned')}</p>
+          <div className="rounded-lg border border-[#0F4C5C]/50 bg-black p-3">
+            <p className="text-sm text-teal-600">{t('justification.dateConcerned')}</p>
             <p className="text-lg font-semibold text-white">{formattedDate}</p>
           </div>
         )}
         
         {/* Sélection de la raison */}
         <div>
-          <label className="block text-slate-300 font-medium mb-3">
+          <label className="mb-3 block font-medium text-teal-100">
             {t('justification.reason')} <span className="text-red-400">{t('justification.reasonRequired')}</span>
           </label>
           
@@ -288,10 +292,10 @@ const JustificationModal = ({
                 <label
                   key={value}
                   className={`
-                    flex items-center gap-3 p-4 rounded-lg border-2 cursor-pointer transition-all duration-200
+                    flex cursor-pointer items-center gap-3 rounded-lg border-2 p-3 transition-all duration-200 sm:p-4
                     ${isSelected
-                      ? 'bg-purple-600/20 border-purple-500 text-white shadow-lg shadow-purple-500/20'
-                      : 'bg-slate-800/50 border-slate-600 text-slate-300 hover:bg-slate-700/50 hover:border-slate-500'
+                      ? 'border-[#0F5C45] bg-[#0F4C5C]/25 text-white shadow-md shadow-black/40'
+                      : 'border-[#0F4C5C]/40 bg-black text-teal-100/90 hover:border-[#0F5C45]/55 hover:bg-[#0F4C5C]/10'
                     }
                   `}
                 >
@@ -302,13 +306,13 @@ const JustificationModal = ({
                     value={value}
                     checked={isSelected}
                     onChange={() => handleReasonChange(value)}
-                    className="w-5 h-5 text-purple-600 bg-slate-700 border-slate-500 focus:ring-purple-500 focus:ring-2"
+                    className="h-5 w-5 border-[#0F4C5C] bg-black accent-[#0F5C45] text-[#0F5C45] focus:ring-2 focus:ring-[#0F5C45]/50"
                     aria-label={t('justification.ariaLabels.reason', { label })}
                   />
                   <span className="text-2xl" aria-hidden="true">{Icon}</span>
                   <span className="flex-1 font-medium">{label}</span>
                   {isSelected && (
-                    <div className="w-2 h-2 rounded-full bg-purple-400" aria-hidden="true" />
+                    <div className="h-2 w-2 rounded-full bg-teal-400" aria-hidden="true" />
                   )}
                 </label>
               );
@@ -340,7 +344,7 @@ const JustificationModal = ({
         </div>
         
         {/* Actions */}
-        <div className="flex items-center justify-between gap-3 pt-4 border-t border-slate-700/50">
+        <div className="flex items-center justify-between gap-3 border-t border-[#0F4C5C]/40 pt-4">
           {/* Bouton Supprimer (seulement si justification existante) */}
           {existingJustification && (
             <Button
@@ -379,8 +383,9 @@ const JustificationModal = ({
         </div>
         
         {/* Aide clavier */}
-        <div className="text-xs text-slate-500 text-center pt-2 border-t border-slate-800/50">
-          <kbd className="px-2 py-1 bg-slate-800 rounded text-slate-400">Ctrl/Cmd + Enter</kbd> {t('justification.help.keyboardShortcut', 'pour sauvegarder rapidement')}
+        <div className="border-t border-[#0F4C5C]/30 pt-2 text-center text-xs text-teal-700">
+          <kbd className="rounded border border-[#0F4C5C]/40 bg-black px-2 py-1 text-teal-500">Ctrl/Cmd + Enter</kbd>{' '}
+          {t('justification.help.keyboardShortcut', 'pour sauvegarder rapidement')}
         </div>
       </div>
     </Modal>

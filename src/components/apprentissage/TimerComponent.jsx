@@ -1,17 +1,18 @@
 /**
  * Composant TimerComponent - Timer principal pour les sessions d'étude
- * Affiche le timer circulaire, les contrôles et les statistiques du jour
+ * Charte : fond noir, contour vert ; stats en tons émeraude.
  */
 
 import React from 'react';
-import { TIMER_DEFAULTS, TIMER_COLORS } from '../../utils/apprentissageConstants';
-
 // Formatage temps (secondes → MM:SS)
 const formatTime = (seconds) => {
   const mins = Math.floor(seconds / 60);
   const secs = seconds % 60;
   return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
 };
+
+const ctrlBtn =
+  'rounded-lg border-2 border-emerald-500/55 bg-black px-4 py-2 min-w-[44px] min-h-[44px] font-semibold uppercase tracking-wide text-sm md:text-base text-emerald-100 hover:border-emerald-400 hover:bg-emerald-500/10 transition-all';
 
 const TimerComponent = React.memo(({
   timer,
@@ -23,7 +24,7 @@ const TimerComponent = React.memo(({
   onToggleSilentMode,
 }) => {
   return (
-    <div className="bg-slate-800/50 backdrop-blur-sm border border-emerald-500/30 rounded-xl p-6 shadow-xl shadow-emerald-500/10">
+    <div className="bg-black border-2 border-emerald-500/70 rounded-xl p-6 shadow-lg shadow-emerald-500/10">
       <div className="flex flex-col items-center">
         {/* Cercle Timer */}
         <div
@@ -31,10 +32,10 @@ const TimerComponent = React.memo(({
             timer.isRunning && !timer.isPaused ? 'animate-pulse' : ''
           }`}
           style={{
-            borderColor: `${timerColor}33`,
-            background: `radial-gradient(circle, ${timerColor}08 0%, transparent 70%)`,
+            borderColor: `${timerColor}55`,
+            background: `radial-gradient(circle, ${timerColor}12 0%, transparent 70%)`,
             willChange: timer.isRunning ? 'transform, opacity' : 'auto',
-            transform: 'translateZ(0)', // Force GPU acceleration
+            transform: 'translateZ(0)',
           }}
         >
           {/* SVG Progression */}
@@ -44,7 +45,7 @@ const TimerComponent = React.memo(({
               cy="50"
               r="45"
               fill="none"
-              stroke="rgba(0, 255, 148, 0.1)"
+              stroke="rgba(16, 185, 129, 0.15)"
               strokeWidth="2"
             />
             <circle
@@ -71,11 +72,11 @@ const TimerComponent = React.memo(({
             >
               {formatTime(timer.remainingTime)}
             </div>
-            <div className="text-lg text-emerald-400 font-semibold uppercase tracking-wider">
+            <div className="text-lg text-emerald-300 font-semibold uppercase tracking-wider">
               {timer.isPaused ? '🍫 PAUSE' : '📚 FOCUS'}
             </div>
             {timer.currentSubject && (
-              <div className="text-sm text-slate-400 mt-2">
+              <div className="text-sm text-emerald-200/75 mt-2">
                 {timer.currentSubject.name}
               </div>
             )}
@@ -88,7 +89,7 @@ const TimerComponent = React.memo(({
             type="button"
             onClick={onTogglePause}
             aria-label={timer.isPaused ? 'Reprendre la session' : 'Mettre en pause'}
-            className="gradient-button-premium gradient-button-premium-md rounded-lg min-w-[44px] min-h-[44px] font-semibold uppercase tracking-wide text-sm md:text-base"
+            className={ctrlBtn}
           >
             {timer.isPaused ? '▶️ Reprendre' : '⏸️ Pause'}
           </button>
@@ -96,7 +97,7 @@ const TimerComponent = React.memo(({
             type="button"
             onClick={onStop}
             aria-label="Arrêter la session"
-            className="gradient-button-premium gradient-button-premium-md rounded-lg min-w-[44px] min-h-[44px] font-semibold uppercase tracking-wide text-sm md:text-base"
+            className={ctrlBtn}
           >
             ⏹️ Arrêter
           </button>
@@ -104,7 +105,7 @@ const TimerComponent = React.memo(({
             type="button"
             onClick={() => onAdjustTime(10)}
             aria-label="Ajouter 10 minutes"
-            className="gradient-button-premium gradient-button-premium-sm rounded-lg min-w-[44px] min-h-[44px] font-semibold uppercase tracking-wide text-sm md:text-base"
+            className={`${ctrlBtn} text-xs md:text-sm`}
           >
             +10 min
           </button>
@@ -112,9 +113,7 @@ const TimerComponent = React.memo(({
             type="button"
             onClick={onToggleSilentMode}
             aria-label={timer.silentMode ? 'Activer le son' : 'Désactiver le son'}
-            className={`gradient-button-premium gradient-button-premium-sm rounded-lg min-w-[44px] min-h-[44px] font-semibold uppercase tracking-wide text-sm md:text-base ${
-              timer.silentMode ? 'opacity-60' : ''
-            }`}
+            className={`${ctrlBtn} ${timer.silentMode ? 'opacity-60' : ''}`}
           >
             {timer.silentMode ? '🔇' : '🔊'}
           </button>
@@ -122,28 +121,28 @@ const TimerComponent = React.memo(({
 
         {/* Statistiques du jour */}
         <div className="mt-6 flex gap-6 flex-wrap justify-center" role="group" aria-label="Statistiques du jour">
-            <div className="text-center" role="status" aria-live="polite">
+            <div className="text-center rounded-lg border border-emerald-500/40 bg-black px-4 py-2" role="status" aria-live="polite">
               <div className="text-2xl mb-1" aria-hidden="true" role="img" aria-label="Icône sessions">🎯</div>
-              <div className="text-xl font-bold text-cyan-400" aria-label={`${todayStats.sessionsCount} sessions aujourd'hui`}>
+              <div className="text-xl font-bold text-emerald-300" aria-label={`${todayStats.sessionsCount} sessions aujourd'hui`}>
                 {todayStats.sessionsCount}
               </div>
-              <div className="text-xs text-slate-500">Sessions</div>
+              <div className="text-xs text-emerald-200/60">Sessions</div>
             </div>
-            <div className="text-center" role="status" aria-live="polite">
+            <div className="text-center rounded-lg border border-emerald-500/40 bg-black px-4 py-2" role="status" aria-live="polite">
               <div className="text-2xl mb-1" aria-hidden="true" role="img" aria-label="Icône temps actif">⏱️</div>
               <div className="text-xl font-bold text-emerald-400" aria-label={`${Math.floor(todayStats.totalWorkTime / 60)} heures ${todayStats.totalWorkTime % 60} minutes de travail actif`}>
                 {Math.floor(todayStats.totalWorkTime / 60)}h
                 {todayStats.totalWorkTime % 60}
               </div>
-              <div className="text-xs text-slate-500">Active</div>
+              <div className="text-xs text-emerald-200/60">Active</div>
             </div>
-            <div className="text-center" role="status" aria-live="polite">
+            <div className="text-center rounded-lg border border-emerald-500/40 bg-black px-4 py-2" role="status" aria-live="polite">
               <div className="text-2xl mb-1" aria-hidden="true" role="img" aria-label="Icône pause">☕</div>
-              <div className="text-xl font-bold text-amber-400" aria-label={`${Math.floor(todayStats.totalBreakTime / 60)} heures ${todayStats.totalBreakTime % 60} minutes de pause`}>
+              <div className="text-xl font-bold text-emerald-200" aria-label={`${Math.floor(todayStats.totalBreakTime / 60)} heures ${todayStats.totalBreakTime % 60} minutes de pause`}>
                 {Math.floor(todayStats.totalBreakTime / 60)}h
                 {todayStats.totalBreakTime % 60}
               </div>
-              <div className="text-xs text-slate-500">Break</div>
+              <div className="text-xs text-emerald-200/60">Break</div>
             </div>
         </div>
       </div>
@@ -154,4 +153,3 @@ const TimerComponent = React.memo(({
 TimerComponent.displayName = 'TimerComponent';
 
 export default TimerComponent;
-

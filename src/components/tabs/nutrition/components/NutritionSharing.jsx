@@ -1,4 +1,4 @@
-/**
+﻿/**
  * NutritionSharing - Composant Gestion Partage avec Coach
  * 
  * Affiche :
@@ -516,7 +516,7 @@ const NutritionSharing = () => {
 
   if (!dbReady) {
     return (
-      <Card className="bg-slate-800/50 border-slate-700">
+      <Card variant="sport">
         <CardContent className="text-center py-8">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500 mx-auto"></div>
           <p className="text-slate-400 mt-4">Chargement...</p>
@@ -527,7 +527,7 @@ const NutritionSharing = () => {
 
   if (loading && shareLinks.length === 0) {
     return (
-      <Card className="bg-slate-800/50 border-slate-700">
+      <Card variant="sport">
         <CardContent className="text-center py-8">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500 mx-auto"></div>
           <p className="text-slate-400 mt-4">Chargement des liens de partage...</p>
@@ -539,7 +539,7 @@ const NutritionSharing = () => {
   return (
     <div className="space-y-4">
       {/* En-tête */}
-      <Card className="bg-slate-800/50 border-slate-700">
+      <Card variant="sport">
         <CardHeader>
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
@@ -605,7 +605,7 @@ const NutritionSharing = () => {
 
       {/* Formulaire création */}
       {showCreateForm && (
-        <Card className="bg-slate-800/50 border-slate-700">
+        <Card variant="sport">
           <CardHeader>
             <CardTitle>Créer un nouveau lien de partage</CardTitle>
           </CardHeader>
@@ -702,7 +702,7 @@ const NutritionSharing = () => {
 
       {/* Liste liens */}
       {shareLinks.length === 0 && !showCreateForm && (
-        <Card className="bg-slate-800/50 border-slate-700">
+        <Card variant="sport">
           <CardContent className="text-center py-8">
             <Share2 size={48} className="text-slate-400 mx-auto mb-4" />
             <p className="text-slate-300 mb-2">Aucun lien de partage</p>
@@ -731,7 +731,8 @@ const NutritionSharing = () => {
         return (
           <Card
             key={link.token}
-            className={`bg-slate-800/50 border-slate-700 ${isExpired ? 'opacity-60' : ''}`}
+            variant="sport"
+            className={isExpired ? 'opacity-60' : ''}
           >
             <CardHeader>
               <div className="flex items-center justify-between">

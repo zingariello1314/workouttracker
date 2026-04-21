@@ -294,12 +294,14 @@
 }
 
 /* ===== SECTIONS EXPANDABLES ===== */
+/* Ne pas appliquer de bordure ici : elle est portée par Card variant="books"
+   (sinon `border` en 1px slate écrase la bordure bleue 2px du thème Livres). */
 .expandable-section {
-  @apply border border-slate-600/30;
+  @apply rounded-2xl;
 }
 
 .expandable-header {
-  @apply cursor-pointer hover:bg-slate-800/30 transition-colors p-4;
+  @apply cursor-pointer hover:bg-[#3A86FF]/10 transition-colors p-4;
 }
 
 @media (max-width: 640px) {

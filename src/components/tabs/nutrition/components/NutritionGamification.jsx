@@ -1,4 +1,4 @@
-/**
+﻿/**
  * NutritionGamification - Composant Affichage Gamification
  * 
  * Affiche :
@@ -37,21 +37,21 @@ import VirtualizedBadgeGrid from './VirtualizedBadgeGrid';
 // ✅ OPTIMISATION 3.1 : Extraire fonctions constantes en dehors du composant
 const getRarityColor = (rarity) => {
   switch (rarity) {
-    case 'common': return 'border-slate-500 bg-slate-500/10';
-    case 'rare': return 'border-blue-500 bg-blue-500/10';
-    case 'epic': return 'border-purple-500 bg-purple-500/10';
-    case 'legendary': return 'border-yellow-500 bg-yellow-500/10';
-    default: return 'border-slate-500 bg-slate-500/10';
+    case 'common': return 'border-[#0F4C5C]/70 bg-black';
+    case 'rare': return 'border-sky-500/70 bg-sky-950/40';
+    case 'epic': return 'border-[#0F5C45]/80 bg-[#0F5C45]/10';
+    case 'legendary': return 'border-cyan-400/80 bg-cyan-950/30';
+    default: return 'border-[#0F4C5C]/70 bg-black';
   }
 };
 
 const getCategoryIcon = (category) => {
   switch (category) {
-    case 'consistency': return <Flame size={20} className="text-orange-400" />;
-    case 'nutrition': return <Target size={20} className="text-green-400" />;
-    case 'progression': return <TrendingUp size={20} className="text-blue-400" />;
-    case 'performance': return <Zap size={20} className="text-yellow-400" />;
-    default: return <Award size={20} className="text-slate-400" />;
+    case 'consistency': return <Flame size={20} className="text-sky-400" />;
+    case 'nutrition': return <Target size={20} className="text-emerald-400" />;
+    case 'progression': return <TrendingUp size={20} className="text-cyan-400" />;
+    case 'performance': return <Zap size={20} className="text-blue-300" />;
+    default: return <Award size={20} className="text-teal-600" />;
   }
 };
 
@@ -163,11 +163,11 @@ const NutritionGamification = () => {
 
   if (!enabled) {
     return (
-      <Card className="bg-slate-800/50 border-slate-700">
+      <Card variant="sport">
         <CardContent className="text-center py-8">
-          <Info size={48} className="text-slate-400 mx-auto mb-4" />
-          <p className="text-slate-300 mb-2">Gamification désactivée</p>
-          <p className="text-slate-400 text-sm">
+          <Info size={48} className="mx-auto mb-4 text-teal-600" />
+          <p className="mb-2 text-teal-100">Gamification désactivée</p>
+          <p className="text-sm text-teal-700">
             Activez-la dans les paramètres pour voir vos badges, XP et streaks.
           </p>
         </CardContent>
@@ -177,10 +177,10 @@ const NutritionGamification = () => {
 
   if (loading) {
     return (
-      <Card className="bg-slate-800/50 border-slate-700">
+      <Card variant="sport">
         <CardContent className="text-center py-8">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500 mx-auto"></div>
-          <p className="text-slate-400 mt-4">Chargement...</p>
+          <p className="mt-4 text-teal-700">Chargement...</p>
         </CardContent>
       </Card>
     );
@@ -188,7 +188,7 @@ const NutritionGamification = () => {
 
   if (error) {
     return (
-      <Card className="bg-slate-800/50 border-slate-700">
+      <Card variant="sport">
         <CardContent className="text-center py-8">
           <XCircle size={48} className="text-red-400 mx-auto mb-4" />
           <p className="text-red-400 mb-2">Erreur lors du chargement</p>
@@ -207,10 +207,10 @@ const NutritionGamification = () => {
   const nutritionStreak = streaks?.nutrition || { current: 0, actual: 0, forgivenessUsed: 0 };
 
   return (
-    <Card className="bg-slate-800/50 border-slate-700">
+    <Card variant="sport">
       <CardHeader>
         <CardTitle className="flex items-center gap-2 text-white">
-          <Trophy size={20} className="text-yellow-400" /> Gamification
+          <Trophy size={20} className="text-sky-400" /> Gamification
         </CardTitle>
       </CardHeader>
       <CardContent className="relative">
@@ -244,7 +244,7 @@ const NutritionGamification = () => {
                     >
                       <div className="text-2xl mb-1">{badge.icon}</div>
                       <div className="text-sm font-medium text-white">{badge.name}</div>
-                      <div className="text-xs text-slate-400">+{badge.points} XP</div>
+                      <div className="text-xs text-sky-300">+{badge.points} XP</div>
                     </div>
                   ))}
                 </div>
@@ -254,46 +254,46 @@ const NutritionGamification = () => {
             {/* Vue d'ensemble */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           {/* XP & Niveau */}
-          <div className="bg-slate-900/50 rounded-lg p-4 border border-slate-700">
+          <div className="rounded-lg border border-[#0F4C5C]/55 bg-black p-4">
             <div className="flex items-center justify-between mb-3">
               <div className="flex items-center gap-2">
-                <Star size={18} className="text-yellow-400" />
-                <span className="text-slate-400 text-sm">Niveau</span>
+                <Star size={18} className="text-sky-400" />
+                <span className="text-sm text-teal-700">Niveau</span>
               </div>
               <span className="text-2xl font-bold text-white">{levelProgress.level}</span>
             </div>
             <div className="space-y-2">
               <div className="flex items-center justify-between text-xs">
-                <span className="text-slate-400">XP</span>
+                <span className="text-teal-700">XP</span>
                 <span className="text-white font-medium">
                   {levelProgress.currentXP} / {levelProgress.xpForNextLevel}
                 </span>
               </div>
-              <div className="w-full bg-slate-700 rounded-full h-2">
+              <div className="h-2 w-full rounded-full bg-[#0F4C5C]/35">
                 <div
-                  className="bg-yellow-400 h-2 rounded-full transition-all"
+                  className="h-2 rounded-full bg-gradient-to-r from-sky-500 to-cyan-500 transition-all"
                   style={{ width: `${levelProgress.progressPercent}%` }}
                 />
               </div>
-              <div className="text-xs text-slate-500">
+              <div className="text-xs text-teal-800">
                 {levelProgress.xpNeeded} XP jusqu'au niveau {levelProgress.level + 1}
               </div>
             </div>
           </div>
 
           {/* Streak */}
-          <div className="bg-slate-900/50 rounded-lg p-4 border border-slate-700">
+          <div className="rounded-lg border border-[#0F4C5C]/55 bg-black p-4">
             <div className="flex items-center justify-between mb-3">
               <div className="flex items-center gap-2">
-                <Flame size={18} className="text-orange-400" />
-                <span className="text-slate-400 text-sm">Série</span>
+                <Flame size={18} className="text-cyan-400" />
+                <span className="text-sm text-teal-700">Série</span>
               </div>
-              <span className="text-2xl font-bold text-orange-400">
+              <span className="text-2xl font-bold text-cyan-300">
                 {nutritionStreak.current}
               </span>
             </div>
             <div className="space-y-1">
-              <div className="text-xs text-slate-400">
+              <div className="text-xs text-teal-700">
                 {nutritionStreak.status === 'maintenance' 
                   ? 'Mode entretien' 
                   : 'Jours consécutifs'}
@@ -307,17 +307,17 @@ const NutritionGamification = () => {
           </div>
 
           {/* Badges */}
-          <div className="bg-slate-900/50 rounded-lg p-4 border border-slate-700">
+          <div className="rounded-lg border border-[#0F4C5C]/55 bg-black p-4">
             <div className="flex items-center justify-between mb-3">
               <div className="flex items-center gap-2">
-                <Award size={18} className="text-purple-400" />
-                <span className="text-slate-400 text-sm">Badges</span>
+                <Award size={18} className="text-sky-400" />
+                <span className="text-sm text-teal-700">Badges</span>
               </div>
-              <span className="text-2xl font-bold text-purple-400">
+              <span className="text-2xl font-bold text-sky-300">
                 {achievements.length}
               </span>
             </div>
-            <div className="text-xs text-slate-400">
+            <div className="text-xs text-teal-700">
               {achievements.length > 0 
                 ? `${achievements.length} badge${achievements.length > 1 ? 's' : ''} débloqué${achievements.length > 1 ? 's' : ''}`
                 : 'Aucun badge débloqué'}
@@ -326,13 +326,13 @@ const NutritionGamification = () => {
             </div>
 
             {/* Onglets */}
-            <div className="flex gap-2 border-b border-slate-700">
+            <div className="flex gap-2 border-b border-[#0F4C5C]/40">
               <button
                 onClick={() => setActiveTab('overview')}
                 className={`px-4 py-2 text-sm font-medium transition-colors ${
                   activeTab === 'overview'
-                    ? 'text-blue-400 border-b-2 border-blue-400'
-                    : 'text-slate-400 hover:text-white'
+                    ? 'border-b-2 border-sky-400 text-sky-300'
+                    : 'text-teal-700 hover:text-teal-100'
                 }`}
               >
                 Vue d'ensemble
@@ -341,8 +341,8 @@ const NutritionGamification = () => {
                 onClick={() => setActiveTab('badges')}
                 className={`px-4 py-2 text-sm font-medium transition-colors ${
                   activeTab === 'badges'
-                    ? 'text-blue-400 border-b-2 border-blue-400'
-                    : 'text-slate-400 hover:text-white'
+                    ? 'border-b-2 border-sky-400 text-sky-300'
+                    : 'text-teal-700 hover:text-teal-100'
                 }`}
               >
                 Badges ({achievements.length}/{ALL_BADGES.length})
@@ -351,8 +351,8 @@ const NutritionGamification = () => {
                 onClick={() => setActiveTab('progress')}
                 className={`px-4 py-2 text-sm font-medium transition-colors ${
                   activeTab === 'progress'
-                    ? 'text-blue-400 border-b-2 border-blue-400'
-                    : 'text-slate-400 hover:text-white'
+                    ? 'border-b-2 border-sky-400 text-sky-300'
+                    : 'text-teal-700 hover:text-teal-100'
                 }`}
               >
                 Progression
@@ -366,7 +366,7 @@ const NutritionGamification = () => {
                 {recentBadges.length > 0 && (
                   <div>
                     <h3 className="text-white font-semibold mb-3 flex items-center gap-2">
-                      <Award size={18} className="text-purple-400" /> Badges récents
+                      <Award size={18} className="text-sky-400" /> Badges récents
                     </h3>
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
                       {recentBadges.map(badge => (
@@ -380,7 +380,7 @@ const NutritionGamification = () => {
                         >
                           <div className="text-3xl mb-2">{badge.icon}</div>
                           <div className="text-xs font-medium text-white mb-1">{badge.name}</div>
-                          <div className="text-xs text-slate-400">{badge.category}</div>
+                          <div className="text-xs text-teal-700">{badge.category}</div>
                         </div>
                       ))}
                     </div>
@@ -389,12 +389,12 @@ const NutritionGamification = () => {
 
                 {/* Statistiques */}
                 <div className="grid grid-cols-2 gap-4">
-                  <div className="bg-slate-900/50 rounded-lg p-3">
-                    <div className="text-xs text-slate-400 mb-1">XP Total</div>
+                  <div className="rounded-lg border border-[#0F4C5C]/45 bg-black p-3">
+                    <div className="mb-1 text-xs text-teal-700">XP Total</div>
                     <div className="text-lg font-bold text-white">{levelProgress.currentXP}</div>
                   </div>
-                  <div className="bg-slate-900/50 rounded-lg p-3">
-                    <div className="text-xs text-slate-400 mb-1">Streak Réelle</div>
+                  <div className="rounded-lg border border-[#0F4C5C]/45 bg-black p-3">
+                    <div className="mb-1 text-xs text-teal-700">Streak Réelle</div>
                     <div className="text-lg font-bold text-white">
                       {nutritionStreak.actual} jour{nutritionStreak.actual > 1 ? 's' : ''}
                     </div>
@@ -407,10 +407,10 @@ const NutritionGamification = () => {
               <div className="space-y-4">
                 {/* Statistiques badges */}
                 <div className="flex items-center justify-between mb-4">
-                  <div className="text-sm text-slate-400">
+                  <div className="text-sm text-teal-700">
                     {achievements.length} / {ALL_BADGES.length} badges débloqués
                   </div>
-                  <div className="text-xs text-slate-500">
+                  <div className="text-xs text-teal-800">
                     {Math.round((achievements.length / ALL_BADGES.length) * 100)}% complété
                   </div>
                 </div>
@@ -434,7 +434,7 @@ const NutritionGamification = () => {
                       const baseClasses = `rounded-lg p-4 border transition-all relative ${
                         isUnlocked 
                           ? `${getRarityColor(badge.rarity)} hover:scale-105 cursor-pointer` 
-                          : 'border-slate-700 bg-slate-900/30 opacity-50 cursor-pointer hover:opacity-70'
+                          : 'border-[#0F4C5C]/40 bg-black opacity-50 cursor-pointer hover:opacity-70'
                       }`;
                       
                       return (
@@ -447,7 +447,7 @@ const NutritionGamification = () => {
                           {/* Badge de verrouillage pour non débloqués */}
                           {!isUnlocked && (
                             <div className="absolute top-2 right-2">
-                              <Lock size={16} className="text-slate-600" />
+                              <Lock size={16} className="text-teal-800" />
                             </div>
                           )}
                           
@@ -457,33 +457,33 @@ const NutritionGamification = () => {
                             </div>
                             <div className={`text-xs px-2 py-0.5 rounded ${
                               isUnlocked
-                                ? (badge.rarity === 'common' ? 'bg-slate-500 text-white' :
-                                   badge.rarity === 'rare' ? 'bg-blue-500 text-white' :
-                                   badge.rarity === 'epic' ? 'bg-purple-500 text-white' :
-                                   'bg-yellow-500 text-white')
-                                : 'bg-slate-700 text-slate-400'
+                                ? (badge.rarity === 'common' ? 'bg-[#0F4C5C] text-white' :
+                                   badge.rarity === 'rare' ? 'bg-sky-600 text-white' :
+                                   badge.rarity === 'epic' ? 'bg-[#0F5C45] text-white' :
+                                   'bg-cyan-600 text-white')
+                                : 'bg-[#0F4C5C]/35 text-teal-700'
                             }`}>
                               {badge.rarity}
                             </div>
                           </div>
                           <div className={`text-sm font-medium mb-1 ${
-                            isUnlocked ? 'text-white' : 'text-slate-500'
+                            isUnlocked ? 'text-white' : 'text-teal-800'
                           }`}>
                             {badge.name}
                           </div>
                           <div className={`text-xs mb-2 ${
-                            isUnlocked ? 'text-slate-400' : 'text-slate-600'
+                            isUnlocked ? 'text-teal-200/90' : 'text-teal-800'
                           }`}>
                             {badge.description}
                           </div>
                           <div className="flex items-center justify-between">
                             <div className={`text-xs ${
-                              isUnlocked ? 'text-slate-500' : 'text-slate-700'
+                              isUnlocked ? 'text-teal-700' : 'text-teal-900'
                             }`}>
                               {badge.formattedDate || 'Non débloqué'}
                             </div>
                             <div className={`text-xs ${
-                              isUnlocked ? 'text-yellow-400' : 'text-slate-600'
+                              isUnlocked ? 'text-sky-300' : 'text-teal-800'
                             }`}>
                               +{badge.points} XP
                             </div>
@@ -499,62 +499,62 @@ const NutritionGamification = () => {
             {activeTab === 'progress' && (
               <div className="space-y-4">
                 {/* Progression niveau */}
-                <div className="bg-slate-900/50 rounded-lg p-4 border border-slate-700">
+                <div className="rounded-lg border border-[#0F4C5C]/55 bg-black p-4">
                   <h3 className="text-white font-semibold mb-3 flex items-center gap-2">
-                    <Star size={18} className="text-yellow-400" /> Progression Niveau
+                    <Star size={18} className="text-sky-400" /> Progression Niveau
                   </h3>
                   <div className="space-y-3">
                     <div className="flex items-center justify-between">
-                      <span className="text-slate-300">Niveau {levelProgress.level}</span>
-                      <span className="text-slate-300">
+                      <span className="text-teal-100">Niveau {levelProgress.level}</span>
+                      <span className="text-teal-100">
                         {levelProgress.currentXP} / {levelProgress.xpForNextLevel} XP
                       </span>
                     </div>
-                    <div className="w-full bg-slate-700 rounded-full h-3">
+                    <div className="h-3 w-full rounded-full bg-[#0F4C5C]/35">
                       <div
-                        className="bg-gradient-to-r from-yellow-400 to-yellow-600 h-3 rounded-full transition-all"
+                        className="h-3 rounded-full bg-gradient-to-r from-sky-500 to-cyan-500 transition-all"
                         style={{ width: `${levelProgress.progressPercent}%` }}
                       />
                     </div>
-                    <div className="text-sm text-slate-400">
+                    <div className="text-sm text-teal-700">
                       {levelProgress.xpNeeded} XP nécessaires pour le niveau {levelProgress.level + 1}
                     </div>
                   </div>
                 </div>
 
                 {/* Streak détaillé */}
-                <div className="bg-slate-900/50 rounded-lg p-4 border border-slate-700">
+                <div className="rounded-lg border border-[#0F4C5C]/55 bg-black p-4">
                   <h3 className="text-white font-semibold mb-3 flex items-center gap-2">
-                    <Flame size={18} className="text-orange-400" /> Série Nutrition
+                    <Flame size={18} className="text-cyan-400" /> Série Nutrition
                   </h3>
                   <div className="space-y-2">
                     <div className="flex items-center justify-between">
-                      <span className="text-slate-300">Affichée</span>
-                      <span className="text-2xl font-bold text-orange-400">
+                      <span className="text-teal-100">Affichée</span>
+                      <span className="text-2xl font-bold text-cyan-300">
                         {nutritionStreak.current} jour{nutritionStreak.current > 1 ? 's' : ''}
                       </span>
                     </div>
                     {nutritionStreak.actual > nutritionStreak.current && (
                       <div className="flex items-center justify-between">
-                        <span className="text-slate-300">Réelle</span>
-                        <span className="text-lg font-medium text-slate-400">
+                        <span className="text-teal-100">Réelle</span>
+                        <span className="text-lg font-medium text-teal-700">
                           {nutritionStreak.actual} jour{nutritionStreak.actual > 1 ? 's' : ''}
                         </span>
                       </div>
                     )}
                     {nutritionStreak.forgivenessUsed > 0 && (
                       <div className="flex items-center justify-between">
-                        <span className="text-slate-300">Jours pardonnes</span>
-                        <span className="text-sm text-blue-400">
+                        <span className="text-teal-100">Jours pardonnes</span>
+                        <span className="text-sm text-sky-400">
                           {nutritionStreak.forgivenessUsed} / 2
                         </span>
                       </div>
                     )}
                     {nutritionStreak.status === 'maintenance' && (
-                      <div className="bg-blue-500/10 border border-blue-500/30 rounded p-2 mt-2">
+                      <div className="mt-2 rounded border border-[#0F4C5C]/45 bg-[#0F4C5C]/15 p-2">
                         <div className="flex items-center gap-2">
-                          <CheckCircle size={16} className="text-blue-400" />
-                          <span className="text-sm text-blue-400">
+                          <CheckCircle size={16} className="text-sky-400" />
+                          <span className="text-sm text-teal-100">
                             Mode entretien activé (série ≥ 30 jours)
                           </span>
                         </div>

@@ -160,39 +160,41 @@ export default function AllSessionsSection({ books = [], setBooks }) {
 
   return (
     <div className="mt-8">
-      <Card variant="glass">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Calendar className="w-5 h-5 text-purple-300" />
+      <Card variant="books">
+        <CardHeader className="border-b border-[#3A86FF]/25">
+          <CardTitle tone="books" className="flex items-center gap-2 normal-case tracking-wide">
+            <Calendar className="w-5 h-5 text-[#93c5fd]" />
             Toutes les sessions enregistrées
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="flex flex-wrap items-center gap-2">
-            <span className="text-sm text-slate-400">Période :</span>
+            <span className="text-sm text-[#93c5fd]/85">Période :</span>
             <Button
-              variant={filter === 'year' ? 'primary' : 'ghost'}
+              variant={filter === 'year' ? 'books' : 'booksMuted'}
               size="sm"
               onClick={() => setFilter('year')}
+              className="normal-case tracking-normal"
             >
               Année {currentYear}
             </Button>
             <Button
-              variant={filter === 'all' ? 'primary' : 'ghost'}
+              variant={filter === 'all' ? 'books' : 'booksMuted'}
               size="sm"
               onClick={() => setFilter('all')}
+              className="normal-case tracking-normal"
             >
               Toutes les années
             </Button>
           </div>
 
           {filteredAndSorted.length === 0 ? (
-            <p className="text-slate-400 text-sm py-4">Aucune session pour cette période.</p>
+            <p className="text-[#93c5fd]/80 text-sm py-4">Aucune session pour cette période.</p>
           ) : (
-            <div className="overflow-x-auto -mx-2">
+            <div className="overflow-x-auto -mx-2 rounded-xl border-2 border-[#3A86FF]/40 bg-black/50">
               <table className="w-full text-sm border-collapse">
                 <thead>
-                  <tr className="text-left text-slate-400 border-b border-slate-600">
+                  <tr className="text-left text-[#93c5fd]/85 border-b border-[#3A86FF]/35">
                     <th className="py-2 px-2 font-medium">Date</th>
                     <th className="py-2 px-2 font-medium">Livre</th>
                     <th className="py-2 px-2 font-medium text-right">Pages</th>
@@ -204,21 +206,21 @@ export default function AllSessionsSection({ books = [], setBooks }) {
                   {filteredAndSorted.map((session) => (
                     <tr
                       key={`${session.bookId}-${session.id}-${session.normalizedDate}`}
-                      className="border-b border-slate-700/50 hover:bg-slate-800/30"
+                      className="border-b border-[#3A86FF]/20 hover:bg-[#3A86FF]/10"
                     >
-                      <td className="py-2 px-2 text-slate-300 whitespace-nowrap">
+                      <td className="py-2 px-2 text-[#93c5fd]/90 whitespace-nowrap tabular-nums">
                         {formatDate(session.normalizedDate)}
                       </td>
-                      <td className="py-2 px-2 text-slate-200 max-w-[180px] truncate" title={session.bookTitle}>
+                      <td className="py-2 px-2 text-[#bfdbfe] max-w-[180px] truncate" title={session.bookTitle}>
                         {session.bookTitle}
                       </td>
-                      <td className="py-2 px-2 text-slate-300 text-right">{session.pagesRead ?? '—'}</td>
-                      <td className="py-2 px-2 text-slate-300 text-right">{session.durationMinutes ?? '—'}</td>
+                      <td className="py-2 px-2 text-[#bfdbfe] text-right tabular-nums">{session.pagesRead ?? '—'}</td>
+                      <td className="py-2 px-2 text-[#bfdbfe] text-right tabular-nums">{session.durationMinutes ?? '—'}</td>
                       <td className="py-2 px-2">
                         <Button
-                          variant="ghost"
+                          variant="booksMuted"
                           size="sm"
-                          className="text-slate-400 hover:text-white"
+                          className="text-[#93c5fd] hover:text-[#bfdbfe] normal-case tracking-normal"
                           onClick={() => openEdit(session)}
                           aria-label="Modifier la session"
                         >
@@ -237,26 +239,26 @@ export default function AllSessionsSection({ books = [], setBooks }) {
       {editingSession && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60" onClick={closeEdit}>
           <div
-            className="bg-slate-800 rounded-xl shadow-xl max-w-lg w-full p-6 border border-slate-600 max-h-[90vh] overflow-y-auto"
+            className="bg-black rounded-2xl shadow-xl max-w-lg w-full p-6 border-2 border-[#3A86FF] max-h-[90vh] overflow-y-auto"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-semibold text-white flex items-center gap-2">
-                <BookOpen className="w-5 h-5" />
+              <h3 className="text-lg font-semibold text-[#bfdbfe] flex items-center gap-2">
+                <BookOpen className="w-5 h-5 text-[#93c5fd]" />
                 Modifier la session
               </h3>
-              <Button variant="ghost" size="sm" onClick={closeEdit} aria-label="Fermer">
+              <Button variant="booksMuted" size="sm" onClick={closeEdit} aria-label="Fermer" className="normal-case tracking-normal">
                 <X className="w-5 h-5" />
               </Button>
             </div>
             <div className="space-y-3">
-              <p className="text-slate-400 text-sm">Livre : {editingSession.bookTitle}</p>
+              <p className="text-[#93c5fd]/85 text-sm">Livre : {editingSession.bookTitle}</p>
               <Input
                 label="Date"
                 type="date"
                 value={editForm.date}
                 onChange={(e) => handleEditChange('date', e.target.value)}
-                variant="glass"
+                fieldTone="books"
               />
               <Input
                 label="Durée (minutes)"
@@ -265,7 +267,7 @@ export default function AllSessionsSection({ books = [], setBooks }) {
                 max={1440}
                 value={editForm.durationMinutes}
                 onChange={(e) => handleEditChange('durationMinutes', e.target.value)}
-                variant="glass"
+                fieldTone="books"
               />
               <Input
                 label="Pages lues"
@@ -273,7 +275,7 @@ export default function AllSessionsSection({ books = [], setBooks }) {
                 min={0}
                 value={editForm.pagesRead}
                 onChange={(e) => handleEditChange('pagesRead', e.target.value)}
-                variant="glass"
+                fieldTone="books"
               />
               <Input
                 label="Heure (optionnel, HH:mm)"
@@ -281,7 +283,7 @@ export default function AllSessionsSection({ books = [], setBooks }) {
                 placeholder="14:30"
                 value={editForm.startTime}
                 onChange={(e) => handleEditChange('startTime', e.target.value)}
-                variant="glass"
+                fieldTone="books"
               />
               <ReadingSessionCriteriaSliders
                 criteriaRatings={editForm.criteriaRatings}
@@ -293,14 +295,15 @@ export default function AllSessionsSection({ books = [], setBooks }) {
                 rows={3}
                 value={editForm.note}
                 onChange={(e) => handleEditChange('note', e.target.value)}
+                fieldTone="books"
               />
             </div>
             {editError && <p className="text-red-400 text-sm mt-2">{editError}</p>}
             <div className="flex gap-2 mt-4">
-              <Button variant="glass" onClick={closeEdit}>
+              <Button variant="booksMuted" onClick={closeEdit} className="normal-case tracking-normal">
                 Annuler
               </Button>
-              <Button variant="primary" onClick={saveEdit} className="flex items-center gap-2">
+              <Button variant="books" onClick={saveEdit} className="flex items-center gap-2 normal-case tracking-normal">
                 <Check className="w-4 h-4" />
                 Enregistrer
               </Button>

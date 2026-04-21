@@ -8,6 +8,11 @@ import { useWorkout } from '../../context/WorkoutContext';
 import { useBooksStorage } from '../../hooks/useBooksStorage';
 import { useGarminData } from '../../hooks/useGarminData';
 import { useQuietQuestEngine } from '../../hooks/useQuietQuestEngine';
+import { useBudget } from '../../hooks/useBudget';
+import { usePlanificateur } from '../../hooks/usePlanificateur';
+import { useSmartShopping } from '../../hooks/useSmartShopping';
+import { useInvestissements } from '../../hooks/useInvestissements';
+import { financeStorage } from '../../services/finance/financeStorage';
 import { loadReadingDayFeedbacks } from '../../utils/readingDayFeedbacksStorage';
 import { getDateStr } from '../../utils/dateUtils';
 import { calendarHeatmapCompositeBackground } from '../../utils/calendarHeatmapTint';
@@ -15,6 +20,12 @@ import {
   buildCombinedMonthIntensityMap,
   computeCombinedYearDashboardStats,
 } from '../../utils/dashboardCombinedCalendarMetrics';
+import {
+  openApprentissageDB,
+  loadSessionsHistoryFromIndexedDB,
+} from '../../utils/apprentissageIndexedDB';
+import { buildLearningSessionsByDate } from '../../utils/apprentissageCalendarMetrics';
+import { buildFinanceCalendarYearDayMap } from '../../utils/finance/financeCalendarAggregates';
 import BookSessionFeedbackReadonly from '../books/BookSessionFeedbackReadonly';
 
 const WEEK_DAYS = ['L', 'M', 'M', 'J', 'V', 'S', 'D'];
@@ -74,6 +85,14 @@ function fmtShortDate(iso) {
   }
 }
 
+function formatEurShort(n) {
+  return new Intl.NumberFormat('fr-FR', {
+    style: 'currency',
+    currency: 'EUR',
+    maximumFractionDigits: 0,
+  }).format(Number(n) || 0);
+}
+
 /** Allure moyenne globale année : minutes par km → mm:ss /km */
 function formatPaceMinPerKm(minPerKm) {
   if (minPerKm == null || !Number.isFinite(minPerKm) || minPerKm <= 0) return '—';
@@ -82,43 +101,60 @@ function formatPaceMinPerKm(minPerKm) {
   return `${whole}:${String(sec).padStart(2, '0')} /km`;
 }
 
+function countActiveDaysInMonth(intensityMap, year, monthIndex) {
+  const prefix = `${year}-${String(monthIndex + 1).padStart(2, '0')}`;
+  let n = 0;
+  intensityMap.forEach((inten, ds) => {
+    if (!ds.startsWith(prefix)) return;
+    if (Number(inten?.intensityScore) > 0) n += 1;
+  });
+  return n;
+}
+
 function MiniCombinedMonthGrid({ year, monthIndex, intensityMap, todayStr, onPickDay }) {
   const cells = useMemo(() => buildMonthCells(year, monthIndex), [year, monthIndex]);
+  const activeDays = useMemo(
+    () => countActiveDaysInMonth(intensityMap, year, monthIndex),
+    [intensityMap, year, monthIndex]
+  );
   return (
-    <div className="rounded-lg border border-slate-700/60 bg-black/40 p-1.5">
-      <div className="text-[10px] font-semibold text-slate-300 mb-1 text-center truncate">
-        {MONTH_NAMES[monthIndex]}
+    <div className="space-y-3 min-w-0">
+      <div className="flex items-center justify-between gap-2 min-w-0">
+        <h4 className="text-white font-medium text-sm truncate">{MONTH_NAMES[monthIndex]}</h4>
+        <div className="text-[10px] text-slate-400 shrink-0">
+          {activeDays} jour{activeDays > 1 ? 's' : ''} actif{activeDays > 1 ? 's' : ''}
+        </div>
       </div>
-      <div className="grid grid-cols-7 gap-px mb-0.5">
-        {WEEK_DAYS.map((wd, i) => (
-          <div key={i} className="text-center text-[7px] text-slate-600 font-medium">
-            {wd}
-          </div>
-        ))}
-      </div>
-      <div className="grid grid-cols-7 gap-px">
-        {cells.map((cell) => {
-          if (cell.type === 'pad') {
-            return <div key={cell.key} className="aspect-square rounded-sm bg-transparent min-w-0" />;
-          }
-          const inten = intensityMap.get(cell.dateStr) || null;
-          const isToday = cell.dateStr === todayStr;
-          const style = combinedCellStyle(inten, isToday);
-          const dayNum = cell.date.getDate();
-          return (
-            <button
-              key={cell.key}
-              type="button"
-              onClick={() => onPickDay(cell.dateStr)}
-              className={`aspect-square min-w-0 rounded-sm text-[8px] font-medium flex items-center justify-center transition-transform hover:scale-110 focus:outline-none focus:ring-1 focus:ring-violet-500/60 ${style.className}`}
-              style={style.style}
-            >
-              <span className={`tabular-nums text-black ${isToday ? 'font-bold' : 'font-semibold'}`}>
-                {dayNum}
-              </span>
-            </button>
-          );
-        })}
+      <div className="bg-slate-700/30 rounded-lg p-2">
+        <div className="grid grid-cols-7 gap-1 mb-1">
+          {WEEK_DAYS.map((wd, i) => (
+            <div key={i} className="text-center text-[9px] text-slate-500 font-medium">
+              {wd}
+            </div>
+          ))}
+        </div>
+        <div className="grid grid-cols-7 gap-1">
+          {cells.map((cell) => {
+            if (cell.type === 'pad') {
+              return <div key={cell.key} className="aspect-square rounded-sm bg-transparent min-w-0" />;
+            }
+            const inten = intensityMap.get(cell.dateStr) || null;
+            const isToday = cell.dateStr === todayStr;
+            const style = combinedCellStyle(inten, isToday);
+            const dayNum = cell.date.getDate();
+            return (
+              <button
+                key={cell.key}
+                type="button"
+                onClick={() => onPickDay(cell.dateStr)}
+                className={`aspect-square min-w-0 rounded-sm text-[10px] font-semibold flex items-center justify-center transition-transform hover:scale-105 focus:outline-none focus:ring-1 focus:ring-violet-500/60 ${style.className}`}
+                style={style.style}
+              >
+                <span className={`tabular-nums text-black ${isToday ? 'font-bold' : ''}`}>{dayNum}</span>
+              </button>
+            );
+          })}
+        </div>
       </div>
     </div>
   );
@@ -145,6 +181,110 @@ export default function DashboardCombinedActivityCalendar(props) {
     getQuestsForDate,
     prayerLocation,
   } = useQuietQuestEngine();
+
+  const { depenses, depensesPlanifiees, chargesFixes } = useBudget();
+  const { achatsLoisirs } = usePlanificateur();
+  const { data: smartData } = useSmartShopping();
+  const { loadAcquisitions } = useInvestissements();
+
+  const [portfolioLocal, setPortfolioLocal] = useState([]);
+  const [learningHistory, setLearningHistory] = useState([]);
+  const [yearAcquisitions, setYearAcquisitions] = useState([]);
+
+  const year = cursor.getFullYear();
+  const monthIndex = cursor.getMonth();
+
+  useEffect(() => {
+    let alive = true;
+    financeStorage
+      .loadPortfolio()
+      .then((p) => {
+        if (alive) setPortfolioLocal(Array.isArray(p) ? p : []);
+      })
+      .catch(() => {
+        if (alive) setPortfolioLocal([]);
+      });
+    return () => {
+      alive = false;
+    };
+  }, []);
+
+  const learningUserId = 'main';
+  useEffect(() => {
+    let alive = true;
+    const load = async () => {
+      try {
+        const db = await openApprentissageDB();
+        if (db) {
+          const h = await loadSessionsHistoryFromIndexedDB(db, learningUserId);
+          if (alive && Array.isArray(h)) setLearningHistory(h);
+        } else {
+          const raw = localStorage.getItem('apprentissage_sessions_history');
+          if (alive && raw) {
+            try {
+              const parsed = JSON.parse(raw);
+              if (Array.isArray(parsed)) setLearningHistory(parsed);
+            } catch {
+              /* ignore */
+            }
+          }
+        }
+      } catch {
+        /* ignore */
+      }
+    };
+    load();
+    return () => {
+      alive = false;
+    };
+  }, [learningUserId]);
+
+  useEffect(() => {
+    let alive = true;
+    const from = `${year}-01-01`;
+    const to = `${year}-12-31`;
+    loadAcquisitions({ dateFrom: from, dateTo: to })
+      .then((rows) => {
+        if (alive) setYearAcquisitions(Array.isArray(rows) ? rows : []);
+      })
+      .catch(() => {
+        if (alive) setYearAcquisitions([]);
+      });
+    return () => {
+      alive = false;
+    };
+  }, [year, loadAcquisitions]);
+
+  const learningSessionsByDate = useMemo(
+    () => buildLearningSessionsByDate(learningHistory),
+    [learningHistory]
+  );
+
+  const shoppingListes = smartData?.listes || [];
+
+  const financeYearDayMap = useMemo(
+    () =>
+      buildFinanceCalendarYearDayMap(year, {
+        depenses: depenses || [],
+        depensesPlanifiees: depensesPlanifiees || [],
+        chargesFixes: chargesFixes || [],
+        portfolio: portfolioLocal,
+        shoppingListes,
+        achatsLoisirs: achatsLoisirs || [],
+        acquisitions: yearAcquisitions,
+      }),
+    [
+      year,
+      depenses,
+      depensesPlanifiees,
+      chargesFixes,
+      portfolioLocal,
+      shoppingListes,
+      achatsLoisirs,
+      yearAcquisitions,
+    ]
+  );
+
   useEffect(() => {
     const h = () => setFbTick((x) => x + 1);
     window.addEventListener('reading-day-feedbacks-updated', h);
@@ -184,9 +324,6 @@ export default function DashboardCombinedActivityCalendar(props) {
     [validationsByDate, validations, allQuests, getQuestsForDate, prayerLocation]
   );
 
-  const year = cursor.getFullYear();
-  const monthIndex = cursor.getMonth();
-
   const combinedCtx = useMemo(() => {
     const dayFeedbacks = loadReadingDayFeedbacks();
     return {
@@ -195,8 +332,18 @@ export default function DashboardCombinedActivityCalendar(props) {
       questCalendarContext,
       workoutData,
       garminBundle,
+      learningSessionsByDate,
+      financeYearDayMap,
     };
-  }, [books, questCalendarContext, workoutData, garminBundle, fbTick]);
+  }, [
+    books,
+    questCalendarContext,
+    workoutData,
+    garminBundle,
+    fbTick,
+    learningSessionsByDate,
+    financeYearDayMap,
+  ]);
 
   const intensityMap = useMemo(
     () => buildCombinedMonthIntensityMap(year, monthIndex, combinedCtx),
@@ -287,8 +434,8 @@ export default function DashboardCombinedActivityCalendar(props) {
           <div>
             <h2 className="text-lg md:text-xl font-bold">Calendrier d’activité combinée</h2>
             <p className="text-xs text-slate-400 max-w-xl">
-              Sport, quêtes et lecture fusionnés : plusieurs piliers le même jour augmentent le score (synergie).
-              Clique un jour pour le détail de chaque pilier.
+              Sport, quêtes, lecture, apprentissage et finance (même pondération relative que les calendriers
+              par domaine) : plusieurs piliers le même jour augmentent le score. Clique un jour pour le détail.
             </p>
           </div>
         </div>
@@ -345,9 +492,9 @@ export default function DashboardCombinedActivityCalendar(props) {
             Synthèse {year} (jusqu’à aujourd’hui si année en cours)
           </p>
           <p className="text-[10px] text-slate-500 leading-relaxed">
-            Données : sessions livres (stockage livres), validations quêtes (moteur quêtes), séance
-            street/workout + métriques quotidiennes Garmin (pas, kcal, min intensité), activités cardio
-            Garmin pour la course — même base que le calendrier fusion ci-dessous.
+            Données : livres, quêtes, sport/Garmin, sessions apprentissage (IndexedDB / localStorage), et
+            signaux datés finance (budget, planifié, charges mensuelles, bourse, acquisitions, shopping,
+            loisirs mois cible) — aligné sur les vues calendrier de chaque onglet.
           </p>
           <p className="text-[10px] text-slate-400">
             Jours avec score combiné &gt; 0 :{' '}
@@ -364,7 +511,8 @@ export default function DashboardCombinedActivityCalendar(props) {
                   <p className="text-white font-medium">{fmtShortDate(bc.dateStr)}</p>
                   <p className="text-slate-500 mt-1">
                     Score brut ~{bc.score.toFixed(1)} · L {bc.bookInt.intensityScore.toFixed(0)} · Q{' '}
-                    {bc.questInt.intensityScore.toFixed(0)} · S {bc.sportDetail.score.toFixed(0)}
+                    {bc.questInt.intensityScore.toFixed(0)} · S {bc.sportDetail.score.toFixed(0)} · A{' '}
+                    {(bc.learnInt?.intensityScore ?? 0).toFixed(0)} · F {(bc.financeScore ?? 0).toFixed(0)}
                   </p>
                 </>
               ) : (
@@ -512,7 +660,7 @@ export default function DashboardCombinedActivityCalendar(props) {
       )}
 
       {viewMode === 'year' && yearMonthMaps && (
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-6">
           {yearMonthMaps.map((mapForMonth, mi) => (
             <MiniCombinedMonthGrid
               key={mi}
@@ -639,6 +787,56 @@ export default function DashboardCombinedActivityCalendar(props) {
                 </ul>
               ) : (
                 <p className="text-xs text-slate-500">Aucune session de lecture ce jour.</p>
+              )}
+            </section>
+
+            <section className="rounded-xl border border-slate-700/80 bg-slate-900/50 p-3 space-y-2">
+              <h4 className="text-sm font-semibold text-teal-300">Apprentissage</h4>
+              <p className="text-xs text-slate-400">
+                Score interne :{' '}
+                <span className="font-mono text-white">
+                  {(det.learning?.intensityScore ?? 0).toFixed(1)}
+                </span>
+              </p>
+              {(det.learning?.bookData?.entries || []).length > 0 ? (
+                <ul className="text-xs text-slate-300 space-y-1">
+                  {det.learning.bookData.entries.map((en, idx) => (
+                    <li key={`learn-${idx}`} className="border-b border-slate-800/80 pb-1">
+                      <span className="text-white font-medium">{en.bookTitle}</span> ·{' '}
+                      {en.durationMinutes || 0} min
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <p className="text-xs text-slate-500">Aucune session enregistrée ce jour.</p>
+              )}
+            </section>
+
+            <section className="rounded-xl border border-slate-700/80 bg-slate-900/50 p-3 space-y-2">
+              <h4 className="text-sm font-semibold text-cyan-300">Finance (signaux datés)</h4>
+              <p className="text-xs text-slate-400">
+                Score interne :{' '}
+                <span className="font-mono text-white">
+                  {(det.finance?.intensityScore ?? 0).toFixed(1)}
+                </span>
+              </p>
+              {det.finance?.financeDay ? (
+                <ul className="text-xs text-slate-300 space-y-1">
+                  <li>
+                    Dépenses budget : {det.finance.financeDay.budgetCount} ·{' '}
+                    {formatEurShort(det.finance.financeDay.budgetSpend)}
+                  </li>
+                  <li>Dépenses planifiées : {det.finance.financeDay.plannedCount}</li>
+                  <li>Charges fixes (mensuel) : {det.finance.financeDay.chargeCount}</li>
+                  <li>Nouvelles positions (date d&apos;achat) : {det.finance.financeDay.portfolioAdds}</li>
+                  <li>Acquisitions investissements : {det.finance.financeDay.acquisitionCount}</li>
+                  <li>Courses smart shopping terminées : {det.finance.financeDay.shoppingDone}</li>
+                  {det.finance.financeDay.loisirsMois > 0 ? (
+                    <li>Objectifs loisirs (mois) : {formatEurShort(det.finance.financeDay.loisirsMois)}</li>
+                  ) : null}
+                </ul>
+              ) : (
+                <p className="text-xs text-slate-500">Aucun mouvement finance compté ce jour.</p>
               )}
             </section>
           </div>

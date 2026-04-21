@@ -75,18 +75,18 @@ const RecapIntensityLegend = () => {
 
   return (
     <div className="space-y-3">
-      <p className="text-xs text-slate-400 leading-relaxed">{t('recap.legendIntro')}</p>
+      <p className="text-xs text-teal-200/70 leading-relaxed">{t('recap.legendIntro')}</p>
 
-      <div className="rounded-lg border border-slate-600/60 bg-slate-950/40 p-3 space-y-2">
-        <p className="text-[11px] font-medium text-slate-300">{t('recap.legendSpectrumTitle')}</p>
+      <div className="rounded-lg border border-[#0F4C5C]/55 bg-black p-3 space-y-2">
+        <p className="text-[11px] font-medium text-teal-100">{t('recap.legendSpectrumTitle')}</p>
         <div
           className="h-4 w-full rounded-md border border-white/15 shadow-inner"
           style={{ background: spectrumCss }}
           role="img"
           aria-label={t('recap.legendSpectrumAria')}
         />
-        <p className="text-[10px] text-slate-500 leading-snug">{t('recap.legendSpectrumCaption')}</p>
-        <p className="text-[10px] text-slate-500 tabular-nums">{t('recap.legendSpectrumEnds')}</p>
+        <p className="text-[10px] text-teal-700 leading-snug">{t('recap.legendSpectrumCaption')}</p>
+        <p className="text-[10px] text-teal-700 tabular-nums">{t('recap.legendSpectrumEnds')}</p>
       </div>
 
       <ul className="space-y-1 max-h-[min(40vh,360px)] overflow-y-auto pr-1">
@@ -109,9 +109,9 @@ const RecapIntensityLegend = () => {
         ))}
       </ul>
 
-      <div className="mt-4 pt-3 border-t border-slate-700/60">
-        <p className="text-xs font-semibold text-slate-300 mb-2">{t('recap.legendRecoveryTitle')}</p>
-        <ul className="space-y-1.5 text-xs text-slate-200">
+      <div className="mt-4 pt-3 border-t border-[#0F4C5C]/40">
+        <p className="text-xs font-semibold text-teal-100 mb-2">{t('recap.legendRecoveryTitle')}</p>
+        <ul className="space-y-1.5 text-xs text-teal-50/95">
           <li className="flex items-center gap-2">
             <span className="text-base leading-none" aria-hidden>
               🟢

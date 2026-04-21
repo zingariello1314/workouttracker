@@ -749,7 +749,7 @@ const SessionsView = () => {
             disabled={!canUndo}
             title="Annuler (Ctrl+Z)"
             aria-label="Annuler la dernière action"
-            className="gradient-button-premium gradient-button-premium-sm gradient-button-premium-variant rounded-lg flex items-center gap-2"
+            className="rounded-lg border-2 border-emerald-600/50 bg-black px-3 py-2 text-sm font-semibold text-emerald-200 hover:border-emerald-400 disabled:opacity-40 flex items-center gap-2"
           >
             <span>↶</span>
             Annuler
@@ -763,7 +763,7 @@ const SessionsView = () => {
             disabled={!canRedo}
             title="Refaire (Ctrl+Y)"
             aria-label="Refaire la dernière action annulée"
-            className="gradient-button-premium gradient-button-premium-sm gradient-button-premium-variant rounded-lg flex items-center gap-2"
+            className="rounded-lg border-2 border-emerald-600/50 bg-black px-3 py-2 text-sm font-semibold text-emerald-200 hover:border-emerald-400 disabled:opacity-40 flex items-center gap-2"
           >
             <span>↷</span>
             Refaire
@@ -837,7 +837,7 @@ const SessionsView = () => {
         confirmLabel="Oui, arrêter"
         cancelLabel="Annuler"
       >
-        <p className="text-slate-300">
+        <p className="text-emerald-100/90">
           Êtes-vous sûr de vouloir arrêter la session en cours ? 
           Votre progression ne sera pas sauvegardée.
         </p>
@@ -860,7 +860,7 @@ const SessionsView = () => {
         confirmLabel="Oui, supprimer"
         cancelLabel="Annuler"
       >
-        <p className="text-slate-300">
+        <p className="text-emerald-100/90">
           Êtes-vous sûr de vouloir supprimer cette session de l'historique ?
           Cette action est irréversible.
         </p>

@@ -211,7 +211,7 @@ const ReadingSpeedChart = ({ books, statisticsData, selectedPeriod, filters }) =
           <div className="text-xs text-slate-500">pages/heure</div>
         </div>
         <div className="bg-slate-800/50 rounded-lg p-3">
-          <div className={`text-2xl font-bold ${performanceStats?.improvement ? 'text-green-400' : 'text-red-400'}`}>
+          <div className={`text-2xl font-bold ${performanceStats?.improvement ? 'text-sky-300' : 'text-red-400'}`}>
             {performanceStats?.improvement ? '+' : ''}{performanceStats?.trend.toFixed(1)}
           </div>
           <div className="text-xs text-slate-400">Évolution</div>
@@ -255,12 +255,12 @@ const ReadingSpeedChart = ({ books, statisticsData, selectedPeriod, filters }) =
             {goalSpeed > 0 && (
               <ReferenceLine 
                 y={goalSpeed} 
-                stroke="#10B981" 
+                stroke="#3A86FF" 
                 strokeDasharray="5 5"
                 label={{ 
                   value: `Objectif: ${goalSpeed}p/h`, 
                   position: 'topRight',
-                  fill: '#10B981',
+                  fill: '#93c5fd',
                   fontSize: 12
                 }}
               />
@@ -307,7 +307,7 @@ const ReadingSpeedChart = ({ books, statisticsData, selectedPeriod, filters }) =
             <div>
               <p className="text-slate-300 mb-2">
                 <span className="font-medium">Tendance:</span> 
-                <span className={`ml-2 ${performanceStats.improvement ? 'text-green-400' : 'text-red-400'}`}>
+                <span className={`ml-2 ${performanceStats.improvement ? 'text-sky-300' : 'text-red-400'}`}>
                   {performanceStats.improvement ? 'En amélioration' : 'En baisse'}
                 </span>
               </p>
@@ -321,7 +321,7 @@ const ReadingSpeedChart = ({ books, statisticsData, selectedPeriod, filters }) =
             <div>
               <p className="text-slate-300 mb-2">
                 <span className="font-medium">Objectif atteint:</span> 
-                <span className={`ml-2 ${performanceStats.goalAchievement >= 70 ? 'text-green-400' : 'text-yellow-400'}`}>
+                <span className={`ml-2 ${performanceStats.goalAchievement >= 70 ? 'text-sky-300' : 'text-amber-300'}`}>
                   {performanceStats.goalAchievement.toFixed(0)}% du temps
                 </span>
               </p>
@@ -343,7 +343,7 @@ const ReadingSpeedChart = ({ books, statisticsData, selectedPeriod, filters }) =
             <span>Vitesse de lecture</span>
           </div>
           <div className="flex items-center gap-2">
-            <div className="w-3 h-0.5 bg-green-400 border-dashed"></div>
+            <div className="w-3 h-0.5 bg-[#3A86FF] border-dashed"></div>
             <span>Objectif</span>
           </div>
           <div className="flex items-center gap-2">

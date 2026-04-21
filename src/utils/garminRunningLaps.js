@@ -125,6 +125,67 @@ export function isGarminRunningLikeActivity(gAct) {
   return false;
 }
 
+function lapDistanceKm(lap) {
+  if (lap == null) return 0;
+  if (lap.distanceKm != null) {
+    const k = Number(lap.distanceKm);
+    if (Number.isFinite(k) && k > 0) return k;
+  }
+  let d = lap.distance;
+  if (d != null && typeof d === 'object') {
+    d = d.total ?? d.value ?? d.current ?? d.avg ?? 0;
+  }
+  const n = Number(d);
+  if (Number.isFinite(n) && n > 0) {
+    if (n > 400 && n < 200000) return n / 1000;
+    return n;
+  }
+  const m = Number(lap.distanceMeters ?? lap.distanceMeter ?? 0);
+  if (Number.isFinite(m) && m > 0) return m / 1000;
+  return 0;
+}
+
+function lapDurationSec(lap) {
+  const sec = Number(lap?.durationSeconds ?? lap?.duration ?? lap?.elapsedDuration ?? 0);
+  return Number.isFinite(sec) && sec > 0 ? sec : 0;
+}
+
+/**
+ * Pic d’allure / vitesse sur les tours « effort » (pas récup ni retour au calme).
+ * Si aucun tour exploitable en strict, retente en excluant seulement récup / cooldown (warmup inclus).
+ * @returns {{ bestPaceSecPerKm: number, bestSpeedKmh: number } | null}
+ */
+export function getRunningPeakPaceFromEffortLaps(activity) {
+  const laps = activity?.running?.laps;
+  if (!Array.isArray(laps) || laps.length === 0) return null;
+
+  const scan = (strictEffortOnly) => {
+    let bestPace = null;
+    let bestSpeed = 0;
+    for (const lap of laps) {
+      const phase = classifyLapPhase(lap);
+      if (strictEffortOnly) {
+        if (phase !== 'effort') continue;
+      } else if (phase === 'recovery' || phase === 'cooldown') {
+        continue;
+      }
+      const km = lapDistanceKm(lap);
+      const sec = lapDurationSec(lap);
+      if (km < 0.03 || sec < 5) continue;
+      const pace = sec / km;
+      const spd =
+        lap.avgSpeedKmh != null && Number.isFinite(Number(lap.avgSpeedKmh)) && Number(lap.avgSpeedKmh) > 0
+          ? Number(lap.avgSpeedKmh)
+          : (km / sec) * 3600;
+      if (bestPace == null || pace < bestPace) bestPace = pace;
+      if (spd > bestSpeed) bestSpeed = spd;
+    }
+    return bestPace != null ? { bestPaceSecPerKm: bestPace, bestSpeedKmh: bestSpeed } : null;
+  };
+
+  return scan(true) || scan(false);
+}
+
 /**
  * @returns {'interval'|'endurance'|null} null = autre cardio (vélo, elliptique, etc.)
  */

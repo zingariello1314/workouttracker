@@ -20,7 +20,7 @@ const TimeFilters = ({
 
   return (
     <div className="flex items-center gap-2 flex-wrap">
-      <span className="text-sm text-slate-300 whitespace-nowrap">
+      <span className="text-sm text-[#93c5fd] whitespace-nowrap">
         {t('books.statistics.period', 'Période')}:
       </span>
       
@@ -28,10 +28,10 @@ const TimeFilters = ({
         {Object.entries(periods).map(([key, config]) => (
           <Button
             key={key}
-            variant={selectedPeriod === key ? 'primary' : 'ghost'}
+            variant={selectedPeriod === key ? 'books' : 'booksMuted'}
             size="sm"
             onClick={() => onPeriodChange(key)}
-            className="text-xs px-3 py-1 touch-target"
+            className="text-xs px-3 py-1 touch-target normal-case tracking-normal"
           >
             {config.label}
           </Button>

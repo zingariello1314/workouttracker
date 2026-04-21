@@ -84,12 +84,17 @@ export const useNavigation = () => {
     },
     toSportHistory: (params = {}) => {
       if (Object.keys(params).length > 0) {
-        navigateWithParams('history', params);
+        navigateWithParams('sport-analytics', { section: 'history', ...params });
       } else {
-        navigateTo('history');
+        try {
+          sessionStorage.setItem('nav_params_sport-analytics', JSON.stringify({ section: 'history' }));
+        } catch {
+          /* ignore */
+        }
+        navigateTo('sport-analytics');
       }
     },
-    toSportStats: () => navigateTo('stats'),
+    toSportStats: () => navigateTo('sport-analytics'),
     
     // Garmin - avec paramètres contextuels
     // params: { tab, section, date }

@@ -10,6 +10,7 @@ import React, { Suspense, useEffect, useMemo, useState, useCallback, useRef } fr
 import { BOOKS_OPEN_NAV_EVENT } from '../../utils/booksSidebarNav';
 import { BookOpen, Calendar, Download, Search, Upload, BarChart3, Library } from 'lucide-react';
 import Card, { CardHeader, CardTitle, CardContent, CardFooter } from '../ui/Card';
+import Button from '../ui/Button';
 import { Input, TextArea, Select } from '../ui/Input';
 import ErrorBoundary from '../ui/ErrorBoundary';
 import './booksLiquidGlass.css';
@@ -72,6 +73,17 @@ const BooksDomeGallery = React.lazy(() =>
 const BooksTab = () => {
   const t = useTranslation();
   const { books, setBooks, isLoading } = useBooksStorage();
+
+  /** Boutons onglet Livres : fond noir, contour bleu (actif = contour plus clair). */
+  const booksBtnClass = (active, size = 'md') => {
+    const sizing =
+      size === 'sm' ? 'min-w-[2rem] px-2.5 py-1.5 text-xs' : 'px-3 py-2 text-sm';
+    return `rounded-lg border-2 bg-black font-semibold transition ${sizing} ${
+      active
+        ? 'border-sky-400 text-sky-100 shadow-[0_0_14px_rgba(56,189,248,0.35)]'
+        : 'border-blue-600/70 text-blue-200 hover:border-sky-400/90 hover:text-sky-50'
+    } disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:border-blue-600/70`;
+  };
   
   // ✅ PHASE 1 : Persistance de l'état actif dans localStorage
   const [activeSubTab, setActiveSubTab] = useState(() => {
@@ -486,9 +498,9 @@ const BooksTab = () => {
       <div className="relative z-10 space-y-8 p-8">
         <BooksXPBar />
         {isLoading && (
-          <Card variant="glass">
+          <Card variant="books">
             <CardContent>
-              <p className="text-sm text-slate-300">
+              <p className="text-sm text-[#93c5fd]/90">
                 {t('common.loading', 'Chargement de la bibliothèque de livres...')}
               </p>
             </CardContent>
@@ -497,26 +509,20 @@ const BooksTab = () => {
 
         {/* Header avec navigation par sous-onglets */}
         <div className="mb-8">
-          <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center justify-between mb-4 rounded-2xl border-2 border-[#3A86FF] bg-black px-5 py-4 shadow-lg shadow-black/30">
             <div className="flex items-center gap-4">
-              <BookOpen className="w-8 h-8 text-purple-300" />
+              <BookOpen className="w-8 h-8 text-sky-300 shrink-0" />
               <div>
-                <h1 className="text-3xl font-bold text-white mb-2" style={{ textShadow: '2px 2px 4px rgba(0,0,0,0.8)' }}>
+                <h1 className="text-3xl font-bold text-sky-100 tracking-tight">
                   {t('nav.books', 'Livres')}
                 </h1>
-                <p className="text-sm text-slate-400">
-                  {t(
-                    'books.subtitle',
-                    'Gère ta bibliothèque personnelle, tes sessions de lecture et tes sauvegardes — tout est stocké localement dans ton navigateur.'
-                  )}
-                </p>
               </div>
             </div>
             {activeSubTab === 'library' && (
               <button
                 type="button"
                 onClick={() => setShow3D(!show3D)}
-                className="gradient-button-premium gradient-button-premium-md rounded-lg"
+                className={booksBtnClass(show3D, 'md')}
               >
                 {show3D
                   ? t('books.dome.hide', 'Masquer la vue 3D')
@@ -530,9 +536,7 @@ const BooksTab = () => {
             <button
               type="button"
               onClick={() => setActiveSubTab('library')}
-              className={`gradient-button-premium gradient-button-premium-md rounded-lg flex items-center gap-2 ${
-                activeSubTab === 'library' ? 'gradient-button-premium-variant' : ''
-              }`}
+              className={`${booksBtnClass(activeSubTab === 'library', 'md')} flex items-center gap-2`}
             >
               <Library className="w-4 h-4" />
               {t('books.subtabs.library', 'Bibliothèque')}
@@ -540,9 +544,7 @@ const BooksTab = () => {
             <button
               type="button"
               onClick={() => setActiveSubTab('statistics')}
-              className={`gradient-button-premium gradient-button-premium-md rounded-lg flex items-center gap-2 ${
-                activeSubTab === 'statistics' ? 'gradient-button-premium-variant' : ''
-              }`}
+              className={`${booksBtnClass(activeSubTab === 'statistics', 'md')} flex items-center gap-2`}
             >
               <BarChart3 className="w-4 h-4" />
               {t('books.subtabs.statistics', 'Statistiques')}
@@ -550,9 +552,7 @@ const BooksTab = () => {
             <button
               type="button"
               onClick={() => setActiveSubTab('calendar')}
-              className={`gradient-button-premium gradient-button-premium-md rounded-lg flex items-center gap-2 ${
-                activeSubTab === 'calendar' ? 'gradient-button-premium-variant' : ''
-              }`}
+              className={`${booksBtnClass(activeSubTab === 'calendar', 'md')} flex items-center gap-2`}
             >
               <Calendar className="w-4 h-4" />
               {t('books.subtabs.calendar', 'Calendrier')}
@@ -560,9 +560,7 @@ const BooksTab = () => {
             <button
               type="button"
               onClick={() => setActiveSubTab('bookfinder')}
-              className={`gradient-button-premium gradient-button-premium-md rounded-lg flex items-center gap-2 ${
-                activeSubTab === 'bookfinder' ? 'gradient-button-premium-variant' : ''
-              }`}
+              className={`${booksBtnClass(activeSubTab === 'bookfinder', 'md')} flex items-center gap-2`}
             >
               <Search className="w-4 h-4" />
               {t('books.subtabs.bookfinder', 'BookFinder')}
@@ -599,13 +597,13 @@ const BooksTab = () => {
               {/* Formulaire et Recherche/Filtres en grille */}
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
                 {/* Formulaire d'ajout / édition de livre */}
-                <Card variant="glass" padding="lg">
-                  <CardHeader>
-                    <CardTitle size="md" className="books-glass-card-title">
+                <Card variant="books">
+                  <CardHeader className="border-b border-[#3A86FF]/25">
+                    <CardTitle tone="books" size="md" className="normal-case tracking-wide">
                       {t('books.form.title', 'Ajouter/Modifier un livre')}
                     </CardTitle>
                   </CardHeader>
-                  <CardContent className="books-glass-card-content">
+                  <CardContent className="text-[#93c5fd]/90">
                     <form onSubmit={handleSubmit} className="space-y-4">
                       {/* Champs toujours visibles */}
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -747,7 +745,7 @@ const BooksTab = () => {
                       <div className="flex flex-wrap items-center gap-3 pt-2">
                         <button
                           type="submit"
-                          className="gradient-button-premium gradient-button-premium-md rounded-lg"
+                          className={booksBtnClass(true, 'md')}
                         >
                           {form.id
                             ? t('books.actions.updateBook', 'Mettre à jour le livre')
@@ -757,7 +755,7 @@ const BooksTab = () => {
                           <button
                             type="button"
                             onClick={resetForm}
-                            className="gradient-button-premium gradient-button-premium-sm gradient-button-premium-variant rounded-lg"
+                            className={booksBtnClass(false, 'sm')}
                           >
                             {t('books.actions.cancelEdit', 'Annuler la modification')}
                           </button>
@@ -768,13 +766,13 @@ const BooksTab = () => {
                 </Card>
 
                 {/* Recherche & Filtres */}
-                <Card variant="glass" padding="lg" className="books-glass-card">
-                  <CardHeader className="books-glass-card-header">
-                    <CardTitle size="md" className="books-glass-card-title">
+                <Card variant="books">
+                  <CardHeader className="border-b border-[#3A86FF]/25">
+                    <CardTitle tone="books" size="md" className="normal-case tracking-wide">
                       {t('books.filters.title', 'Recherche & Filtres')}
                     </CardTitle>
                   </CardHeader>
-                  <CardContent className="books-glass-card-content">
+                  <CardContent className="text-[#93c5fd]/90">
                     <div className="space-y-4">
                       <Input
                         id="book-search"
@@ -868,9 +866,9 @@ const BooksTab = () => {
               </div>
 
               {/* Actions Export/Import */}
-              <Card variant="glass" padding="lg" className="mb-6">
-                <CardHeader>
-                  <CardTitle size="md">
+              <Card variant="books" className="mb-6">
+                <CardHeader className="border-b border-[#3A86FF]/25">
+                  <CardTitle tone="books" size="md" className="normal-case tracking-wide">
                     {t('books.actions.title', 'Actions')}
                   </CardTitle>
                 </CardHeader>
@@ -879,7 +877,7 @@ const BooksTab = () => {
                     <button
                       type="button"
                       onClick={handleExport}
-                      className="gradient-button-premium gradient-button-premium-md rounded-lg flex items-center justify-center gap-2"
+                      className={`${booksBtnClass(false, 'md')} flex items-center justify-center gap-2`}
                     >
                       <Download className="w-4 h-4" />
                       {t('books.actions.export', 'Exporter JSON')}
@@ -888,7 +886,7 @@ const BooksTab = () => {
                       type="button"
                       onClick={handleImportClick}
                       disabled={isImporting}
-                      className="gradient-button-premium gradient-button-premium-md rounded-lg flex items-center justify-center gap-2"
+                      className={`${booksBtnClass(false, 'md')} flex items-center justify-center gap-2`}
                     >
                       <Upload className="w-4 h-4" />
                       {isImporting ? t('common.loading', 'Chargement...') : t('books.actions.import', 'Importer JSON')}
@@ -901,7 +899,7 @@ const BooksTab = () => {
                       onChange={handleImportFileChange}
                     />
                   </div>
-                  <p className="text-xs text-slate-400 mt-4 flex items-center gap-2">
+                  <p className="text-xs text-[#93c5fd]/75 mt-4 flex items-center gap-2">
                     <Search className="w-4 h-4" />
                     {t(
                       'books.hint.localStorage',
@@ -916,9 +914,9 @@ const BooksTab = () => {
               {show3D && (
                 <Suspense
                   fallback={
-                    <Card variant="glass">
+                    <Card variant="books">
                       <CardContent>
-                        <p className="text-sm text-slate-300">
+                        <p className="text-sm text-[#93c5fd]/90">
                           {t('books.dome.loading', 'Chargement de la vue 3D...')}
                         </p>
                       </CardContent>
@@ -944,9 +942,9 @@ const BooksTab = () => {
 
               {/* Carrousels */}
               <div className="grid gap-6 lg:grid-cols-3">
-                <Card variant="glass" className="books-glass-card">
-                  <CardHeader className="books-glass-card-header">
-                    <CardTitle size="md" className="books-glass-card-title">
+                <Card variant="books">
+                  <CardHeader className="border-b border-[#3A86FF]/25">
+                    <CardTitle tone="books" size="md" className="normal-case tracking-wide">
                       {t('books.sections.inProgress', 'Livres en cours')}
                       {filteredLibraryBooks.length > 0 && (
                         <span className="ml-2 text-sm font-normal text-slate-400">
@@ -955,9 +953,9 @@ const BooksTab = () => {
                       )}
                     </CardTitle>
                   </CardHeader>
-                  <CardContent className="space-y-3 books-glass-card-content">
+                  <CardContent className="space-y-3 text-[#93c5fd]/90">
                     {filteredLibraryBooks.length === 0 ? (
-                      <p className="text-sm text-slate-400/70 text-center py-4 px-3 rounded-lg bg-white/2 border border-white/5">
+                      <p className="text-sm text-[#93c5fd]/70 text-center py-4 px-3 rounded-lg bg-black/40 border border-[#3A86FF]/25">
                         {t(
                           'books.empty.inProgress',
                           'Aucun livre en cours pour le moment. Ajoute un livre avec le formulaire ci-dessus.'
@@ -977,7 +975,7 @@ const BooksTab = () => {
                             <div className="flex gap-1.5">
                               <button
                                 type="button"
-                                className="gradient-button-premium gradient-button-premium-sm rounded-lg"
+                                className={booksBtnClass(false, 'sm')}
                                 onClick={() =>
                                   setPageInProgress((p) => Math.max(0, p - 1))
                                 }
@@ -987,7 +985,7 @@ const BooksTab = () => {
                               </button>
                               <button
                                 type="button"
-                                className="gradient-button-premium gradient-button-premium-sm rounded-lg"
+                                className={booksBtnClass(false, 'sm')}
                                 onClick={() =>
                                   setPageInProgress((p) =>
                                     Math.min(
@@ -1011,9 +1009,9 @@ const BooksTab = () => {
                   </CardContent>
                 </Card>
 
-                <Card variant="glass" className="books-glass-card">
-                  <CardHeader className="books-glass-card-header">
-                    <CardTitle size="md" className="books-glass-card-title">
+                <Card variant="books">
+                  <CardHeader className="border-b border-[#3A86FF]/25">
+                    <CardTitle tone="books" size="md" className="normal-case tracking-wide">
                       {t('books.sections.completed', 'Livres terminés')}
                       {filteredCompletedBooks.length > 0 && (
                         <span className="ml-2 text-sm font-normal text-slate-400">
@@ -1022,9 +1020,9 @@ const BooksTab = () => {
                       )}
                     </CardTitle>
                   </CardHeader>
-                  <CardContent className="space-y-3 books-glass-card-content">
+                  <CardContent className="space-y-3 text-[#93c5fd]/90">
                     {filteredCompletedBooks.length === 0 ? (
-                      <p className="text-sm text-slate-400/70 text-center py-4 px-3 rounded-lg bg-white/2 border border-white/5">
+                      <p className="text-sm text-[#93c5fd]/70 text-center py-4 px-3 rounded-lg bg-black/40 border border-[#3A86FF]/25">
                         {t(
                           'books.empty.completed',
                           "Tu n'as pas encore marqué de livre comme terminé."
@@ -1044,7 +1042,7 @@ const BooksTab = () => {
                             <div className="flex gap-1.5">
                               <button
                                 type="button"
-                                className="gradient-button-premium gradient-button-premium-sm rounded-lg"
+                                className={booksBtnClass(false, 'sm')}
                                 onClick={() =>
                                   setPageCompleted((p) => Math.max(0, p - 1))
                                 }
@@ -1054,7 +1052,7 @@ const BooksTab = () => {
                               </button>
                               <button
                                 type="button"
-                                className="gradient-button-premium gradient-button-premium-sm rounded-lg"
+                                className={booksBtnClass(false, 'sm')}
                                 onClick={() =>
                                   setPageCompleted((p) =>
                                     Math.min(
@@ -1081,9 +1079,9 @@ const BooksTab = () => {
                   </CardContent>
                 </Card>
 
-                <Card variant="glass" className="books-glass-card">
-                  <CardHeader className="books-glass-card-header">
-                    <CardTitle size="md" className="books-glass-card-title">
+                <Card variant="books">
+                  <CardHeader className="border-b border-[#3A86FF]/25">
+                    <CardTitle tone="books" size="md" className="normal-case tracking-wide">
                       {t('books.sections.toRead', 'Livres à lire')}
                       {filteredToReadBooks.length > 0 && (
                         <span className="ml-2 text-sm font-normal text-slate-400">
@@ -1092,9 +1090,9 @@ const BooksTab = () => {
                       )}
                     </CardTitle>
                   </CardHeader>
-                  <CardContent className="space-y-3 books-glass-card-content">
+                  <CardContent className="space-y-3 text-[#93c5fd]/90">
                     {filteredToReadBooks.length === 0 ? (
-                      <p className="text-sm text-slate-400/70 text-center py-4 px-3 rounded-lg bg-white/2 border border-white/5">
+                      <p className="text-sm text-[#93c5fd]/70 text-center py-4 px-3 rounded-lg bg-black/40 border border-[#3A86FF]/25">
                         {t(
                           'books.empty.toRead',
                           "Tu n'as pas encore de livres marqués comme \"À lire\"."
@@ -1114,7 +1112,7 @@ const BooksTab = () => {
                             <div className="flex gap-1.5">
                               <button
                                 type="button"
-                                className="gradient-button-premium gradient-button-premium-sm rounded-lg"
+                                className={booksBtnClass(false, 'sm')}
                                 onClick={() =>
                                   setPageToRead((p) => Math.max(0, p - 1))
                                 }
@@ -1124,7 +1122,7 @@ const BooksTab = () => {
                               </button>
                               <button
                                 type="button"
-                                className="gradient-button-premium gradient-button-premium-sm rounded-lg"
+                                className={booksBtnClass(false, 'sm')}
                                 onClick={() =>
                                   setPageToRead((p) =>
                                     Math.min(
@@ -1150,15 +1148,27 @@ const BooksTab = () => {
               </div>
 
               {/* Détail du livre sélectionné + sessions (ancre pour scroll depuis la sidebar) */}
-              <Card id="book-fiche">
-                <CardHeader className="flex items-center justify-between">
+              <Card
+                id="book-fiche"
+                variant="books"
+                className={!selectedBook ? 'books-detail-panel-empty' : ''}
+              >
+                <CardHeader className="flex flex-wrap items-start justify-between gap-4 border-b border-[#3A86FF]/25">
                   <div>
-                    <CardTitle size="md">
+                    <CardTitle
+                      tone="books"
+                      size="md"
+                      className={!selectedBook ? 'uppercase tracking-wide' : ''}
+                    >
                       {selectedBook
                         ? selectedBook.title || t('books.detail.noTitle', 'Livre sans titre')
                         : t('books.detail.noSelection', 'Aucun livre sélectionné')}
                     </CardTitle>
-                    <p className="text-sm text-slate-400 mt-1">
+                    <p
+                      className={`text-sm mt-1 ${
+                        !selectedBook ? 'text-[#93c5fd]/75' : 'text-[#93c5fd]/80'
+                      }`}
+                    >
                       {selectedBook
                         ? buildBookMetaLine(selectedBook) ||
                           t(
@@ -1173,40 +1183,48 @@ const BooksTab = () => {
                   </div>
                   {selectedBook && (
                     <div className="flex flex-wrap gap-2 items-center">
-                      <button
+                      <Button
                         type="button"
+                        variant="books"
+                        size="sm"
                         onClick={() => handleEdit(selectedBook)}
-                        className="gradient-button-premium gradient-button-premium-sm gradient-button-premium-variant rounded-lg"
+                        className="normal-case tracking-normal"
                       >
                         {t('books.actions.editBook', 'Éditer')}
-                      </button>
-                      <button
+                      </Button>
+                      <Button
                         type="button"
+                        variant="booksMuted"
+                        size="sm"
                         onClick={() => handleDelete(selectedBook)}
-                        className="gradient-button-premium gradient-button-premium-sm rounded-lg"
+                        className="normal-case tracking-normal"
                       >
                         {t('books.actions.deleteBook', 'Supprimer')}
-                      </button>
-                      <span className="text-xs text-slate-400 ml-2">
+                      </Button>
+                      <span className="text-xs text-[#93c5fd]/70 ml-2">
                         {selectedBook.hasPdf
                           ? t('books.assets.pdfAttached', 'PDF associé')
                           : t('books.assets.noPdf', 'Aucun PDF associé')}
                       </span>
-                      <button
+                      <Button
                         type="button"
+                        variant="booksMuted"
+                        size="sm"
                         onClick={handleAttachPdfClick}
-                        className="gradient-button-premium gradient-button-premium-sm gradient-button-premium-variant rounded-lg"
+                        className="normal-case tracking-normal"
                       >
                         {t('books.assets.attachPdf', 'Joindre un PDF')}
-                      </button>
+                      </Button>
                       {selectedBook.hasPdf && (
-                        <button
+                        <Button
                           type="button"
+                          variant="booksMuted"
+                          size="sm"
                           onClick={handleRemovePdf}
-                          className="gradient-button-premium gradient-button-premium-sm rounded-lg"
+                          className="normal-case tracking-normal"
                         >
                           {t('books.assets.removePdf', 'Supprimer le PDF')}
-                        </button>
+                        </Button>
                       )}
                       <input
                         ref={pdfInputRef}
@@ -1215,36 +1233,42 @@ const BooksTab = () => {
                         className="hidden"
                         onChange={handlePdfFileChange}
                       />
-                      <span className="text-xs text-slate-400 ml-4">
+                      <span className="text-xs text-[#93c5fd]/70 ml-4">
                         {selectedBook.hasCover
                           ? t('books.assets.coverAttached', 'Couverture associée')
                           : t('books.assets.noCover', 'Aucune couverture associée')}
                       </span>
-                      <button
+                      <Button
                         type="button"
+                        variant="booksMuted"
+                        size="sm"
                         onClick={handleAttachCoverClick}
-                        className="gradient-button-premium gradient-button-premium-sm gradient-button-premium-variant rounded-lg"
+                        className="normal-case tracking-normal"
                       >
                         {selectedBook.hasCover
                           ? t('books.assets.changeCover', 'Changer la couverture')
                           : t('books.assets.attachCover', 'Ajouter une couverture')}
-                      </button>
+                      </Button>
                       {selectedBook.hasCover && (
                         <>
-                          <button
+                          <Button
                             type="button"
+                            variant="booksMuted"
+                            size="sm"
                             onClick={handleViewCover}
-                            className="gradient-button-premium gradient-button-premium-sm gradient-button-premium-variant rounded-lg"
+                            className="normal-case tracking-normal"
                           >
                             {t('books.assets.viewCover', 'Voir la couverture')}
-                          </button>
-                          <button
+                          </Button>
+                          <Button
                             type="button"
+                            variant="booksMuted"
+                            size="sm"
                             onClick={handleRemoveCover}
-                            className="gradient-button-premium gradient-button-premium-sm rounded-lg"
+                            className="normal-case tracking-normal"
                           >
                             {t('books.assets.removeCover', 'Supprimer la couverture')}
-                          </button>
+                          </Button>
                         </>
                       )}
                       <input
@@ -1263,11 +1287,11 @@ const BooksTab = () => {
                       {/* Couverture à gauche, statistiques + sessions à droite */}
                       <div className="mt-4 grid gap-8 lg:grid-cols-[minmax(0,0.7fr)_minmax(0,1.3fr)] items-start">
                         {/* Colonne gauche : carte couverture + infos */}
-                        <div className="rounded-3xl bg-slate-900/70 border border-slate-800 px-6 py-6 max-w-sm w-full">
-                          <p className="text-sm font-semibold text-slate-300 mb-3">
+                        <div className="rounded-2xl bg-black border-2 border-[#3A86FF] px-6 py-6 max-w-sm w-full shadow-lg shadow-black/30">
+                          <p className="text-sm font-semibold text-[#93c5fd]/90 mb-3">
                             {t('books.detail.cover', 'Couverture')}
                           </p>
-                          <div className="rounded-2xl overflow-hidden shadow-xl w-full h-80 bg-slate-950 flex items-center justify-center">
+                          <div className="rounded-xl overflow-hidden w-full h-80 bg-black border border-[#3A86FF]/35 flex items-center justify-center">
                             {selectedBook.hasCover && coverUrls[selectedBook.id] ? (
                               <img
                                 src={coverUrls[selectedBook.id]}
@@ -1278,33 +1302,33 @@ const BooksTab = () => {
                                 className="w-full h-full object-contain"
                               />
                             ) : (
-                              <span className="text-xs text-slate-500">
+                              <span className="text-xs text-[#93c5fd]/55">
                                 {t('books.detail.noCoverPlaceholder', 'Pas de couverture')}
                               </span>
                             )}
                           </div>
 
-                          <div className="mt-6 space-y-1 text-sm text-slate-300">
+                          <div className="mt-6 space-y-1 text-sm text-[#93c5fd]/88">
                             <p>
-                              <span className="font-semibold">
+                              <span className="font-semibold text-[#bfdbfe]">
                                 {t('books.detail.genre', 'Genre')} :
                               </span>{' '}
                               {selectedBook.genre || '—'}
                             </p>
                             <p>
-                              <span className="font-semibold">
+                              <span className="font-semibold text-[#bfdbfe]">
                                 {t('books.detail.year', 'Année')} :
                               </span>{' '}
                               {selectedBook.year || '—'}
                             </p>
                             <p>
-                              <span className="font-semibold">
+                              <span className="font-semibold text-[#bfdbfe]">
                                 {t('books.detail.pages', 'Pages')} :
                               </span>{' '}
                               {selectedBook.pages || '—'}
                             </p>
                             <p>
-                              <span className="font-semibold">
+                              <span className="font-semibold text-[#bfdbfe]">
                                 {t('books.stats.sessionsCount', 'Nombre de sessions')} :
                               </span>{' '}
                               {(selectedBook.readingSessions || []).length}
@@ -1315,14 +1339,14 @@ const BooksTab = () => {
                                 ? new Date(`${selectedBook.finishedAt}T12:00:00`).toLocaleDateString('fr-FR')
                                 : null;
                               return (
-                                <div className="mt-4 pt-3 border-t border-slate-800 space-y-1 text-xs text-slate-300">
+                                <div className="mt-4 pt-3 border-t border-[#3A86FF]/25 space-y-1 text-xs text-[#93c5fd]/85">
                                   <p>
-                                    <span className="font-semibold text-slate-200">Note affichée :</span>{' '}
+                                    <span className="font-semibold text-[#bfdbfe]">Note affichée :</span>{' '}
                                     {disp.value > 0 ? (
                                       <>
-                                        <span className="text-amber-200 font-mono">{disp.value.toFixed(1)}</span>
+                                        <span className="text-[#93c5fd] font-mono">{disp.value.toFixed(1)}</span>
                                         /10
-                                        <span className="text-slate-500">
+                                        <span className="text-[#93c5fd]/55">
                                           {' '}
                                           (
                                           {disp.source === 'personal'
@@ -1332,14 +1356,14 @@ const BooksTab = () => {
                                         </span>
                                       </>
                                     ) : (
-                                      <span className="text-slate-500">pas encore noté</span>
+                                      <span className="text-[#93c5fd]/50">pas encore noté</span>
                                     )}
                                   </p>
                                   {selectedBookRatingAgg && (
-                                    <p className="text-slate-500">
+                                    <p className="text-[#93c5fd]/65">
                                       Synthèse critères (moy. {selectedBookRatingAgg.sessionCount} session
                                       {selectedBookRatingAgg.sessionCount > 1 ? 's' : ''}) :{' '}
-                                      <span className="text-amber-200/90 font-mono">
+                                      <span className="text-[#bfdbfe] font-mono">
                                         {selectedBookRatingAgg.overall.toFixed(1)}
                                       </span>
                                       /10
@@ -1347,7 +1371,7 @@ const BooksTab = () => {
                                   )}
                                   {selectedBook.status === 'completed' && fin && (
                                     <p>
-                                      <span className="font-semibold text-slate-200">Terminé le</span> {fin}
+                                      <span className="font-semibold text-[#bfdbfe]">Terminé le</span> {fin}
                                     </p>
                                   )}
                                 </div>
@@ -1360,26 +1384,26 @@ const BooksTab = () => {
                         <div className="space-y-4">
                           {/* Grille de stats 3 x 2 comme dans l'exemple HTML */}
                           <div className="grid gap-4 md:grid-cols-3">
-                            <div className="rounded-xl bg-slate-900/60 border border-slate-700/60 px-4 py-3">
-                              <p className="text-xs text-slate-400">
+                            <div className="rounded-xl bg-black border-2 border-[#3A86FF]/40 px-4 py-3">
+                              <p className="text-xs text-[#93c5fd]/75">
                                 {t('books.stats.totalTime', 'Temps de lecture')}
                               </p>
-                              <p className="text-lg font-semibold text-slate-50">
+                              <p className="text-lg font-semibold text-[#bfdbfe]">
                                 {getTotalReadingTime(selectedBook)}{' '}
                                 {t('books.stats.minutes', 'minutes')}
                               </p>
-                              <p className="text-xs text-slate-500">
+                              <p className="text-xs text-[#93c5fd]/60">
                                 {t(
                                   'books.stats.totalTimeSubtitle',
                                   'minutes au total'
                                 )}
                               </p>
                             </div>
-                            <div className="rounded-xl bg-slate-900/60 border border-slate-700/60 px-4 py-3">
-                              <p className="text-xs text-slate-400">
+                            <div className="rounded-xl bg-black border-2 border-[#3A86FF]/40 px-4 py-3">
+                              <p className="text-xs text-[#93c5fd]/75">
                                 {t('books.stats.totalPages', 'Pages lues')}
                               </p>
-                              <p className="text-lg font-semibold text-slate-50">
+                              <p className="text-lg font-semibold text-[#bfdbfe]">
                                 {getTotalPagesRead(selectedBook)}{' '}
                                 {selectedBook.pages
                                   ? t(
@@ -1390,29 +1414,29 @@ const BooksTab = () => {
                                   : ''}
                               </p>
                             </div>
-                            <div className="rounded-xl bg-slate-900/60 border border-slate-700/60 px-4 py-3">
-                              <p className="text-xs text-slate-400">
+                            <div className="rounded-xl bg-black border-2 border-[#3A86FF]/40 px-4 py-3">
+                              <p className="text-xs text-[#93c5fd]/75">
                                 {t('books.stats.progress', 'Progression')}
                               </p>
-                              <p className="text-lg font-semibold text-slate-50">
+                              <p className="text-lg font-semibold text-[#bfdbfe]">
                                 {(() => {
                                   const value = getReadingProgressPercent(selectedBook);
                                   if (value == null) return '—';
                                   return `${value}${t('books.stats.percent', '%')}`;
                                 })()}
                               </p>
-                              <p className="text-xs text-slate-500">
+                              <p className="text-xs text-[#93c5fd]/60">
                                 {t('books.stats.ofBook', 'du livre')}
                               </p>
                             </div>
-                            <div className="rounded-xl bg-slate-900/60 border border-slate-700/60 px-4 py-3">
-                              <p className="text-xs text-slate-400">
+                            <div className="rounded-xl bg-black border-2 border-[#3A86FF]/40 px-4 py-3">
+                              <p className="text-xs text-[#93c5fd]/75">
                                 {t(
                                   'books.stats.estimatedRemaining',
                                   'Temps restant'
                                 )}
                               </p>
-                              <p className="text-lg font-semibold text-slate-50">
+                              <p className="text-lg font-semibold text-[#bfdbfe]">
                                 {(() => {
                                   const value = getEstimatedRemainingTimeMinutes(
                                     selectedBook
@@ -1421,48 +1445,48 @@ const BooksTab = () => {
                                   return value;
                                 })()}
                               </p>
-                              <p className="text-xs text-slate-500">
+                              <p className="text-xs text-[#93c5fd]/60">
                                 {t('books.stats.minutesEstimated', 'min estimées')}
                               </p>
                             </div>
-                            <div className="rounded-xl bg-slate-900/60 border border-slate-700/60 px-4 py-3">
-                              <p className="text-xs text-slate-400">
+                            <div className="rounded-xl bg-black border-2 border-[#3A86FF]/40 px-4 py-3">
+                              <p className="text-xs text-[#93c5fd]/75">
                                 {t(
                                   'books.stats.avgPagesPerSession',
                                   'Moy. par session'
                                 )}
                               </p>
-                              <p className="text-lg font-semibold text-slate-50">
+                              <p className="text-lg font-semibold text-[#bfdbfe]">
                                 {getAveragePagesPerSession(selectedBook)}
                               </p>
-                              <p className="text-xs text-slate-500">
+                              <p className="text-xs text-[#93c5fd]/60">
                                 {t('books.pages', 'pages')}
                               </p>
                             </div>
-                            <div className="rounded-xl bg-slate-900/60 border border-slate-700/60 px-4 py-3">
-                              <p className="text-xs text-slate-400">
+                            <div className="rounded-xl bg-black border-2 border-[#3A86FF]/40 px-4 py-3">
+                              <p className="text-xs text-[#93c5fd]/75">
                                 {t(
                                   'books.stats.avgDurationPerSession',
                                   'Durée moy.'
                                 )}
                               </p>
-                              <p className="text-lg font-semibold text-slate-50">
+                              <p className="text-lg font-semibold text-[#bfdbfe]">
                                 {getAverageDurationPerSession(selectedBook)}
                               </p>
-                              <p className="text-xs text-slate-500">
+                              <p className="text-xs text-[#93c5fd]/60">
                                 {t('books.stats.minutesPerSession', 'min / session')}
                               </p>
                             </div>
                           </div>
 
                           {/* Barre de progression comme sur le mockup */}
-                          <div className="mt-2">
-                            <p className="text-xs font-semibold text-slate-300 mb-1 tracking-wide">
+                          <div className="mt-2 rounded-xl bg-black border-2 border-[#3A86FF]/40 px-4 py-3">
+                            <p className="text-xs font-semibold text-[#93c5fd]/90 mb-1 tracking-wide">
                               {t('books.detail.progressTitle', 'PROGRESSION')}
                             </p>
-                            <div className="h-1.5 rounded-full bg-slate-800 overflow-hidden">
+                            <div className="h-1.5 rounded-full bg-[#3A86FF]/15 overflow-hidden border border-[#3A86FF]/25">
                               <div
-                                className="h-full bg-gradient-to-r from-indigo-400 to-purple-500"
+                                className="h-full bg-gradient-to-r from-[#3A86FF] to-[#93c5fd]"
                                 style={{
                                   width: `${Math.max(
                                     0,
@@ -1474,7 +1498,7 @@ const BooksTab = () => {
                                 }}
                               />
                             </div>
-                            <p className="mt-1 text-xs text-slate-400">
+                            <p className="mt-1 text-xs text-[#93c5fd]/75">
                               {(() => {
                                 const pagesRead = getTotalPagesRead(selectedBook);
                                 const totalPages = selectedBook.pages || 0;
@@ -1486,11 +1510,11 @@ const BooksTab = () => {
                           </div>
 
                           {(selectedBook.readingSessions || []).length > 0 && (
-                            <div className="mt-4 rounded-2xl border border-amber-900/35 bg-slate-950/50 px-4 py-3 space-y-3">
-                              <p className="font-semibold text-sm text-amber-100/95">
+                            <div className="mt-4 rounded-xl border-2 border-[#3A86FF]/40 bg-black px-4 py-3 space-y-3">
+                              <p className="font-semibold text-sm text-[#bfdbfe]">
                                 Feedback des sessions
                               </p>
-                              <p className="text-[11px] text-slate-500">
+                              <p className="text-[11px] text-[#93c5fd]/65">
                                 Retours enregistrés pour chaque session (mêmes données qu’au calendrier et dans la
                                 bibliothèque). Modifiable via « Modifier » dans la liste ci-dessous ou depuis le
                                 calendrier lecture.
@@ -1500,7 +1524,7 @@ const BooksTab = () => {
                                   .sort((a, b) => (b.date || '').localeCompare(a.date || ''))
                                   .map((session) => (
                                     <li key={session.id || `${session.date}-${session.pagesRead}`}>
-                                      <p className="text-[10px] text-slate-500 mb-0.5">
+                                      <p className="text-[10px] text-[#93c5fd]/55 mb-0.5">
                                         {session.date || '—'}
                                       </p>
                                       <BookSessionFeedbackReadonly session={session} title="Détail" />
@@ -1511,29 +1535,29 @@ const BooksTab = () => {
                           )}
 
                           {/* Liste des sessions */}
-                          <div className="mt-4 space-y-2">
-                            <p className="font-semibold text-sm text-slate-200">
+                          <div className="mt-4 space-y-2 rounded-xl border-2 border-[#3A86FF]/40 bg-black px-4 py-3">
+                            <p className="font-semibold text-sm text-[#bfdbfe]">
                               {t('books.sessions.listTitle', 'Sessions de lecture')}
                             </p>
                             {(selectedBook.readingSessions || []).length === 0 ? (
-                              <p className="text-sm text-slate-400">
+                              <p className="text-sm text-[#93c5fd]/75">
                                 {t(
                                   'books.sessions.empty',
                                   'Aucune session enregistrée pour le moment.'
                                 )}
                               </p>
                             ) : (
-                              <ul className="space-y-2 text-sm text-slate-200 max-h-56 overflow-y-auto pr-1">
+                              <ul className="space-y-2 text-sm text-[#93c5fd]/90 max-h-56 overflow-y-auto pr-1">
                                 {selectedBook.readingSessions.map((session) => (
                                   <li
                                     key={session.id}
-                                    className="flex items-start justify-between gap-3 border border-slate-700/60 rounded-md px-3 py-2 bg-slate-900/40"
+                                    className="flex items-start justify-between gap-3 border border-[#3A86FF]/30 rounded-lg px-3 py-2 bg-black/40"
                                   >
                                     <div>
-                                      <p className="font-semibold text-xs text-slate-200">
+                                      <p className="font-semibold text-xs text-[#bfdbfe]">
                                         {session.date || '—'}
                                       </p>
-                                      <p className="text-xs text-slate-300 mt-0.5">
+                                      <p className="text-xs text-[#93c5fd]/85 mt-0.5">
                                         {session.startTime && (
                                           <span className="mr-2">
                                             {session.startTime}
@@ -1554,7 +1578,7 @@ const BooksTab = () => {
                                         {(session.sessionScore != null ||
                                           (session.criteriaRatings &&
                                             typeof session.criteriaRatings === 'object')) && (
-                                          <span className="text-amber-200/90">
+                                          <span className="text-[#93c5fd]">
                                             {' '}
                                             · note session{' '}
                                             {Number(
@@ -1567,7 +1591,7 @@ const BooksTab = () => {
                                         )}
                                       </p>
                                       {session.note && (
-                                        <p className="text-[11px] text-slate-400 mt-1">
+                                        <p className="text-[11px] text-[#93c5fd]/70 mt-1">
                                           {session.note}
                                         </p>
                                       )}
@@ -1576,7 +1600,7 @@ const BooksTab = () => {
                                       <button
                                         type="button"
                                         onClick={() => startEditSession(session)}
-                                        className="text-xs text-emerald-300 hover:text-emerald-200 underline"
+                                        className="text-xs text-[#93c5fd] hover:text-[#bfdbfe] underline"
                                       >
                                         {t('books.sessions.edit', 'Modifier')}
                                       </button>
@@ -1590,9 +1614,9 @@ const BooksTab = () => {
                           {/* Formulaire d'ajout / modification de session (ancre scroll depuis la vue 3D) */}
                           <div
                             id="book-session-form-section"
-                            className="mt-4 space-y-3 rounded-2xl bg-slate-900/70 border border-slate-800 px-4 py-4"
+                            className="mt-4 space-y-3 rounded-xl bg-black border-2 border-[#3A86FF]/40 px-4 py-4"
                           >
-                            <p className="font-semibold text-sm text-slate-200">
+                            <p className="font-semibold text-sm text-[#bfdbfe]">
                               {editingSessionId
                                 ? t(
                                     'books.sessions.editTitle',
@@ -1613,6 +1637,7 @@ const BooksTab = () => {
                                   id="session-date"
                                   type="date"
                                   max={new Date().toISOString().slice(0, 10)}
+                                  fieldTone="books"
                                   label={t('books.sessions.date', 'Date')}
                                   value={sessionForm.date}
                                   onChange={(e) =>
@@ -1623,6 +1648,7 @@ const BooksTab = () => {
                                   id="session-duration"
                                   type="number"
                                   min={0}
+                                  fieldTone="books"
                                   label={t(
                                     'books.sessions.duration',
                                     'Durée (minutes)'
@@ -1640,6 +1666,7 @@ const BooksTab = () => {
                                 <Input
                                   id="session-time"
                                   type="time"
+                                  fieldTone="books"
                                   label={t(
                                     'books.sessions.time',
                                     'Heure (optionnel)'
@@ -1653,6 +1680,7 @@ const BooksTab = () => {
                                   id="session-pages"
                                   type="number"
                                   min={0}
+                                  fieldTone="books"
                                   label={t(
                                     'books.sessions.pages',
                                     'Pages lues pendant la session'
@@ -1664,11 +1692,11 @@ const BooksTab = () => {
                                 />
                               </div>
                               {suggestedPagesHint != null && (
-                                <p className="text-[11px] text-cyan-300/90">
+                                <p className="text-[11px] text-[#93c5fd]/85">
                                   Suggestion d’après ton rythme habituel sur ce livre : environ{' '}
                                   <button
                                     type="button"
-                                    className="underline font-semibold text-cyan-200"
+                                    className="underline font-semibold text-[#bfdbfe]"
                                     onClick={() =>
                                       handleSessionChange('pagesRead', String(suggestedPagesHint))
                                     }
@@ -1682,9 +1710,9 @@ const BooksTab = () => {
                                 criteriaRatings={sessionForm.criteriaRatings}
                                 onChange={handleCriteriaRatingChange}
                               />
-                              <p className="text-xs text-slate-400">
+                              <p className="text-xs text-[#93c5fd]/75">
                                 Note de session (moyenne des 5 critères) :{' '}
-                                <span className="font-mono text-amber-200">
+                                <span className="font-mono text-[#bfdbfe]">
                                   {sessionCriteriaPreview.toFixed(1)}
                                 </span>
                                 /10
@@ -1692,6 +1720,7 @@ const BooksTab = () => {
                               <TextArea
                                 id="session-note"
                                 rows={3}
+                                fieldTone="books"
                                 label={t(
                                   'books.sessions.note',
                                   'Note (optionnel)'
@@ -1702,9 +1731,10 @@ const BooksTab = () => {
                                 }
                               />
                               <div className="flex items-center gap-3">
-                                <button
+                                <Button
                                   type="submit"
-                                  className="gradient-button-premium gradient-button-premium-md rounded-lg"
+                                  variant="books"
+                                  className="normal-case tracking-normal"
                                 >
                                   {editingSessionId
                                     ? t(
@@ -1715,12 +1745,12 @@ const BooksTab = () => {
                                         'books.sessions.addButton',
                                         'Ajouter la session de lecture'
                                       )}
-                                </button>
+                                </Button>
                                 {editingSessionId && (
                                   <button
                                     type="button"
                                     onClick={cancelEditSession}
-                                    className="text-sm text-slate-300 underline"
+                                    className="text-sm text-[#93c5fd] hover:text-[#bfdbfe] underline"
                                   >
                                     {t(
                                       'books.sessions.cancelEdit',
@@ -1746,35 +1776,41 @@ const BooksTab = () => {
                           sessionNotes.length > 0
                         );
                       })() && (
-                        <div className="mt-10 space-y-3">
+                        <div className="mt-10 space-y-3 rounded-xl border-2 border-[#3A86FF]/40 bg-black px-4 py-4">
                           <div className="flex items-center justify-between gap-4">
-                            <p className="text-sm font-semibold text-slate-300">
+                            <p className="text-sm font-semibold text-[#bfdbfe]">
                               Résumés
                             </p>
                             <div className="flex items-center gap-2">
                               {!isEditingSummaries && (
-                                <button
+                                <Button
                                   type="button"
+                                  variant="booksMuted"
+                                  size="sm"
                                   onClick={() => setIsEditingSummaries(true)}
-                                  className="text-xs px-3 py-1 rounded-full border border-slate-500 text-slate-200 hover:bg-slate-800"
+                                  className="normal-case tracking-normal text-xs px-3 py-1 rounded-full"
                                 >
                                   {t(
                                     'books.detail.editSummaries',
                                     'Modifier les résumés'
                                   )}
-                                </button>
+                                </Button>
                               )}
                               {isEditingSummaries && (
                                 <>
-                                  <button
+                                  <Button
                                     type="button"
+                                    variant="books"
+                                    size="sm"
                                     onClick={handleSaveSummariesInline}
-                                    className="text-xs px-3 py-1 rounded-full bg-emerald-500 text-slate-950 font-semibold"
+                                    className="normal-case tracking-normal text-xs px-3 py-1 rounded-full"
                                   >
                                     {t('common.save', 'Enregistrer')}
-                                  </button>
-                                  <button
+                                  </Button>
+                                  <Button
                                     type="button"
+                                    variant="booksMuted"
+                                    size="sm"
                                     onClick={() => {
                                       if (!selectedBook) return;
                                       setSummaryDraft({
@@ -1783,10 +1819,10 @@ const BooksTab = () => {
                                       });
                                       setIsEditingSummaries(false);
                                     }}
-                                    className="text-xs px-3 py-1 rounded-full border border-slate-500 text-slate-200 hover:bg-slate-800"
+                                    className="normal-case tracking-normal text-xs px-3 py-1 rounded-full"
                                   >
                                     {t('common.cancel', 'Annuler')}
-                                  </button>
+                                  </Button>
                                 </>
                               )}
                             </div>
@@ -1795,10 +1831,10 @@ const BooksTab = () => {
                             <button
                               type="button"
                               onClick={() => setSummaryTab('short')}
-                              className={`px-3 py-1 rounded-full border ${
+                              className={`rounded-full border-2 px-3 py-1 ${
                                 summaryTab === 'short'
-                                  ? 'bg-slate-200 text-slate-900 border-slate-200'
-                                  : 'bg-transparent text-slate-300 border-slate-600'
+                                  ? 'border-sky-400 bg-black text-sky-100 shadow-[0_0_10px_rgba(56,189,248,0.25)]'
+                                  : 'border-blue-600/65 bg-black text-blue-200 hover:border-sky-400/80 hover:text-sky-100'
                               }`}
                             >
                               Court
@@ -1806,10 +1842,10 @@ const BooksTab = () => {
                             <button
                               type="button"
                               onClick={() => setSummaryTab('long')}
-                              className={`px-3 py-1 rounded-full border ${
+                              className={`rounded-full border-2 px-3 py-1 ${
                                 summaryTab === 'long'
-                                  ? 'bg-slate-200 text-slate-900 border-slate-200'
-                                  : 'bg-transparent text-slate-300 border-slate-600'
+                                  ? 'border-sky-400 bg-black text-sky-100 shadow-[0_0_10px_rgba(56,189,248,0.25)]'
+                                  : 'border-blue-600/65 bg-black text-blue-200 hover:border-sky-400/80 hover:text-sky-100'
                               }`}
                             >
                               Détaillé
@@ -1817,22 +1853,22 @@ const BooksTab = () => {
                             <button
                               type="button"
                               onClick={() => setSummaryTab('notes')}
-                              className={`px-3 py-1 rounded-full border ${
+                              className={`rounded-full border-2 px-3 py-1 ${
                                 summaryTab === 'notes'
-                                  ? 'bg-slate-200 text-slate-900 border-slate-200'
-                                  : 'bg-transparent text-slate-300 border-slate-600'
+                                  ? 'border-sky-400 bg-black text-sky-100 shadow-[0_0_10px_rgba(56,189,248,0.25)]'
+                                  : 'border-blue-600/65 bg-black text-blue-200 hover:border-sky-400/80 hover:text-sky-100'
                               }`}
                             >
                               Notes
                             </button>
                           </div>
 
-                          <div className="text-sm text-slate-200 bg-slate-900/40 border border-slate-700/60 rounded-xl p-4 whitespace-pre-line">
+                          <div className="text-sm text-[#93c5fd]/90 bg-black/40 border border-[#3A86FF]/30 rounded-xl p-4 whitespace-pre-line">
                             {summaryTab === 'short' &&
                               (isEditingSummaries ? (
                                 <textarea
                                   rows={4}
-                                  className="w-full bg-transparent outline-none resize-none text-sm"
+                                  className="w-full bg-transparent outline-none resize-none text-sm text-[#e0f2fe] placeholder:text-[#93c5fd]/45"
                                   value={summaryDraft.short}
                                   onChange={(e) =>
                                     setSummaryDraft((prev) => ({
@@ -1852,7 +1888,7 @@ const BooksTab = () => {
                               (isEditingSummaries ? (
                                 <textarea
                                   rows={6}
-                                  className="w-full bg-transparent outline-none resize-none text-sm"
+                                  className="w-full bg-transparent outline-none resize-none text-sm text-[#e0f2fe] placeholder:text-[#93c5fd]/45"
                                   value={summaryDraft.long}
                                   onChange={(e) =>
                                     setSummaryDraft((prev) => ({
@@ -1894,16 +1930,17 @@ const BooksTab = () => {
                       )}
 
                       {/* Sélecteur de statut en bas de la page */}
-                      <div className="mt-6 pt-6 border-t border-slate-700">
+                      <div className="mt-6 pt-6 border-t border-[#3A86FF]/25">
                         <div className="flex items-center gap-4">
                           <label
                             htmlFor="book-status-detail"
-                            className="text-sm font-semibold text-slate-300 whitespace-nowrap"
+                            className="text-sm font-semibold text-[#93c5fd]/90 whitespace-nowrap"
                           >
                             {t('books.detail.status', 'Statut du livre')}:
                           </label>
                           <Select
                             id="book-status-detail"
+                            fieldTone="books"
                             value={selectedBook.status || 'in-progress'}
                             onChange={(e) => handleStatusChange(selectedBook.id, e.target.value)}
                             className="flex-1 max-w-xs"
@@ -1928,7 +1965,7 @@ const BooksTab = () => {
                       </div>
                     </>
                   ) : (
-                    <p className="text-sm text-slate-400">
+                    <p className="text-sm text-[#93c5fd]/80 leading-relaxed">
                       {t(
                         'books.detail.noSelectionLong',
                         'Sélectionne un livre dans les listes ci-dessus pour voir ses détails, son historique de lecture et ajouter des sessions.'
@@ -1936,8 +1973,8 @@ const BooksTab = () => {
                     </p>
                   )}
                 </CardContent>
-                <CardFooter>
-                  <p className="text-[11px] text-slate-500">
+                <CardFooter className={!selectedBook ? 'border-t border-[#3A86FF]/20' : 'border-t border-[#3A86FF]/20'}>
+                  <p className="text-[11px] text-[#93c5fd]/55">
                     {t(
                       'books.footer.info',
                       "Cette première version de l'onglet Livres implémente la gestion locale des livres et des sessions de lecture. Les fonctionnalités avancées décrites dans la documentation (sphère 3D, PDFs en IndexedDB, sauvegardes multi‑formats) pourront être ajoutées progressivement sans impacter le reste du site."

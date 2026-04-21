@@ -5,6 +5,13 @@
 
 import React, { useMemo, useState } from 'react';
 import LazyChart from '../../../BodyTracking/components/LazyChart';
+import {
+  qstatsPanel,
+  qstatsHeaderRow,
+  qstatsAccentBar,
+  qstatsMuted,
+  qstatsCategoryChartColors,
+} from '../questsStatsTheme';
 
 const QuestSunburstChart = ({ allQuests, validations }) => {
   const [hoveredSegment, setHoveredSegment] = useState(null);
@@ -79,27 +86,10 @@ const QuestSunburstChart = ({ allQuests, validations }) => {
 
   // Couleurs par catégorie
   const categoryColors = {
-    'Santé': '#10b981',
-    'Travail': '#3b82f6',
-    'Apprentissage': '#8b5cf6',
-    'Lecture': '#ec4899',
-    'Sport': '#f59e0b',
-    'Ménage': '#06b6d4',
-    'Spirituel': '#6366f1',
-    'Repas': '#f97316',
-    'Projets': '#14b8a6',
-    'Hobby': '#a855f7',
-    'Social': '#ef4444',
-    'Finance': '#22c55e',
-    'Créativité': '#eab308',
-    'Bien-être': '#06b6d4',
-  };
-
-  const difficultyColors = {
-    1: '#34d399', // Facile - vert clair
-    2: '#22d3ee', // Moyen - cyan
-    3: '#fbbf24', // Difficile - amber
-    4: '#f87171', // Épique - rouge
+    ...Object.fromEntries(
+      Object.entries(qstatsCategoryChartColors).map(([k, v]) => [k, v.from])
+    ),
+    Autre: '#94a3b8',
   };
 
   // Calculer les angles pour chaque niveau avec meilleures proportions
@@ -113,9 +103,9 @@ const QuestSunburstChart = ({ allQuests, validations }) => {
   let currentAngle = -90; // Commencer en haut
 
   return (
-    <div className="rounded-2xl border border-rose-500/20 bg-gradient-to-br from-slate-900/90 via-slate-800/50 to-slate-900/90 px-4 py-3 shadow-xl shadow-rose-500/10 backdrop-blur-sm">
-      <div className="text-xs text-rose-300 mb-3 font-semibold tracking-wide flex items-center gap-2">
-        <div className="w-1 h-4 bg-gradient-to-b from-rose-400 to-pink-500 rounded-full"></div>
+    <div className={qstatsPanel}>
+      <div className={qstatsHeaderRow}>
+        <div className={qstatsAccentBar} />
         Hiérarchie complète des quêtes
       </div>
       <LazyChart height={450}>
@@ -294,7 +284,7 @@ const QuestSunburstChart = ({ allQuests, validations }) => {
           {/* Tooltip amélioré */}
           {hoveredSegment && (
             <div
-              className="absolute bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 border rounded-lg p-4 shadow-2xl backdrop-blur-sm z-20"
+              className="absolute bg-black border-2 border-amber-400/50 rounded-lg p-4 shadow-2xl z-20"
               style={{
                 borderColor: hoveredSegment.level === 0 
                   ? '#8b5cf6' 
@@ -327,12 +317,12 @@ const QuestSunburstChart = ({ allQuests, validations }) => {
                 </p>
               </div>
               <div className="space-y-1.5">
-                <p className="text-sm text-slate-300">
-                  <span className="text-slate-400">Validations:</span>{' '}
-                  <span className="font-bold text-cyan-400">{hoveredSegment.value}</span>
+                <p className="text-sm text-amber-100">
+                  <span className={qstatsMuted}>Validations:</span>{' '}
+                  <span className="font-bold text-amber-300">{hoveredSegment.value}</span>
                 </p>
                 {hoveredSegment.level === 1 && (
-                  <p className="text-xs text-slate-400">
+                  <p className={`text-xs ${qstatsMuted}`}>
                     {Math.round((hoveredSegment.value / sunburstData.total) * 100)}% du total
                   </p>
                 )}

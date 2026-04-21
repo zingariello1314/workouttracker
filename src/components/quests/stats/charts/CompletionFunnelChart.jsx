@@ -5,6 +5,7 @@
 
 import React, { useMemo } from 'react';
 import LazyChart from '../../../BodyTracking/components/LazyChart';
+import { qstatsPanel, qstatsHeaderRow, qstatsAccentBar } from '../questsStatsTheme';
 
 const CompletionFunnelChart = ({ allQuests, validations }) => {
   const funnelData = useMemo(() => {
@@ -58,29 +59,29 @@ const CompletionFunnelChart = ({ allQuests, validations }) => {
         step: 'Disponibles',
         count: available,
         percentage: 100,
-        color: '#64748b',
-        gradient: 'from-slate-500 to-slate-600',
+        color: '#451a03',
+        gradient: 'from-amber-950 to-amber-900',
       },
       {
         step: 'Commençées',
         count: started,
         percentage: available > 0 ? Math.round((started / available) * 100) : 0,
-        color: '#3b82f6',
-        gradient: 'from-blue-500 to-blue-600',
+        color: '#92400e',
+        gradient: 'from-amber-900 to-amber-800',
       },
       {
         step: 'Régulières',
         count: regular,
         percentage: available > 0 ? Math.round((regular / available) * 100) : 0,
-        color: '#10b981',
-        gradient: 'from-emerald-500 to-emerald-600',
+        color: '#d97706',
+        gradient: 'from-amber-700 to-amber-600',
       },
       {
         step: 'Maîtrisées',
         count: mastered,
         percentage: available > 0 ? Math.round((mastered / available) * 100) : 0,
-        color: '#06b6d4',
-        gradient: 'from-cyan-500 to-cyan-600',
+        color: '#fbbf24',
+        gradient: 'from-amber-500 to-yellow-400',
       },
     ];
   }, [allQuests, validations]);
@@ -91,9 +92,9 @@ const CompletionFunnelChart = ({ allQuests, validations }) => {
   const maxCount = Math.max(...funnelData.map(d => d.count), 1);
 
   return (
-    <div className="rounded-2xl border border-blue-500/20 bg-gradient-to-br from-slate-900/90 via-slate-800/50 to-slate-900/90 px-4 py-3 shadow-xl shadow-blue-500/10 backdrop-blur-sm">
-      <div className="text-xs text-blue-300 mb-3 font-semibold tracking-wide flex items-center gap-2">
-        <div className="w-1 h-4 bg-gradient-to-b from-blue-400 to-cyan-500 rounded-full"></div>
+    <div className={qstatsPanel}>
+      <div className={qstatsHeaderRow}>
+        <div className={qstatsAccentBar} />
         Funnel de complétion des quêtes
       </div>
       <LazyChart height={350}>
@@ -106,10 +107,10 @@ const CompletionFunnelChart = ({ allQuests, validations }) => {
             
             // Gradients améliorés pour chaque étape
             const gradients = {
-              'Disponibles': 'linear-gradient(135deg, #64748b 0%, #475569 50%, #334155 100%)',
-              'Commençées': 'linear-gradient(135deg, #3b82f6 0%, #2563eb 50%, #1d4ed8 100%)',
-              'Régulières': 'linear-gradient(135deg, #10b981 0%, #059669 50%, #047857 100%)',
-              'Maîtrisées': 'linear-gradient(135deg, #06b6d4 0%, #0891b2 50%, #0e7490 100%)',
+              'Disponibles': 'linear-gradient(135deg, #451a03 0%, #78350f 50%, #92400e 100%)',
+              'Commençées': 'linear-gradient(135deg, #78350f 0%, #92400e 50%, #b45309 100%)',
+              'Régulières': 'linear-gradient(135deg, #b45309 0%, #d97706 50%, #f59e0b 100%)',
+              'Maîtrisées': 'linear-gradient(135deg, #f59e0b 0%, #fbbf24 50%, #fde68a 100%)',
             };
             
             return (
@@ -183,7 +184,7 @@ const CompletionFunnelChart = ({ allQuests, validations }) => {
                         <>
                           <span className="text-white/60">•</span>
                           <div 
-                            className="text-[10px] font-medium text-red-300"
+                            className="text-[10px] font-medium text-amber-900"
                             style={{
                               textShadow: '0 1px 3px rgba(0, 0, 0, 0.5)',
                             }}

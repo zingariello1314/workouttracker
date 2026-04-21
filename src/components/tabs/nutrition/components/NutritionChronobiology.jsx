@@ -1,4 +1,4 @@
-/**
+﻿/**
  * NutritionChronobiology - Analyse Chronobiologique
  * 
  * Composant pour afficher l'analyse du timing optimal des repas
@@ -23,7 +23,7 @@ const NutritionChronobiology = React.memo(() => {
 
   if (loading) {
     return (
-      <Card className="bg-slate-800/50 border-slate-700">
+      <Card variant="sport">
         <CardContent className="text-center py-12">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto"></div>
           <p className="text-slate-400 mt-4">Analyse chronobiologique en cours...</p>
@@ -34,7 +34,7 @@ const NutritionChronobiology = React.memo(() => {
 
   if (error) {
     return (
-      <Card className="bg-slate-800/50 border-slate-700">
+      <Card variant="sport">
         <CardContent className="text-center py-12 text-red-400">
           <AlertCircle size={48} className="mx-auto mb-4" />
           <p>Erreur lors de l'analyse chronobiologique</p>
@@ -54,7 +54,7 @@ const NutritionChronobiology = React.memo(() => {
 
   if (!analysis) {
     return (
-      <Card className="bg-slate-800/50 border-slate-700">
+      <Card variant="sport">
         <CardContent className="text-center py-12 text-slate-400">
           <Info size={48} className="mx-auto mb-4" />
           <p>Aucune donnée disponible pour l'analyse chronobiologique</p>
@@ -94,7 +94,7 @@ const NutritionChronobiology = React.memo(() => {
       </div>
 
       {/* Résumé */}
-      <Card className="bg-slate-800/50 border-slate-700">
+      <Card variant="sport">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Info size={20} className="text-blue-400" />
@@ -131,7 +131,7 @@ const NutritionChronobiology = React.memo(() => {
       </Card>
 
       {/* Timing Pré-Workout */}
-      <Card className="bg-slate-800/50 border-slate-700">
+      <Card variant="sport">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Activity size={20} className="text-green-400" />
@@ -167,7 +167,7 @@ const NutritionChronobiology = React.memo(() => {
       </Card>
 
       {/* Timing Post-Workout */}
-      <Card className="bg-slate-800/50 border-slate-700">
+      <Card variant="sport">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <TrendingUp size={20} className="text-purple-400" />
@@ -205,7 +205,7 @@ const NutritionChronobiology = React.memo(() => {
       </Card>
 
       {/* Distribution Protéines */}
-      <Card className="bg-slate-800/50 border-slate-700">
+      <Card variant="sport">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Droplet size={20} className="text-blue-400" />

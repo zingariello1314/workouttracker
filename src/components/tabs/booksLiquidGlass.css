@@ -1,26 +1,22 @@
-/* Style Liquid Glass iOS 2025 pour l'onglet Livres */
+/* Style onglet Livres — cartes type fiche (ex. BookCard) : noir + contour bleu #3A86FF */
 
-/* Cards avec effet liquid glass */
+/* Cards */
 /* OPTIMISATION: blur réduit de 40px à 12px pour améliorer les performances GPU */
 .books-glass-card {
-  background: rgba(255, 255, 255, 0.05); /* Augmenté pour compenser le blur réduit */
+  background: #000000;
   backdrop-filter: blur(12px) saturate(150%);
   -webkit-backdrop-filter: blur(12px) saturate(150%);
-  border: 1px solid rgba(255, 255, 255, 0.12);
+  border: 2px solid #3a86ff;
   border-radius: 24px;
   box-shadow: 
     0 8px 32px 0 rgba(0, 0, 0, 0.37),
-    inset 0 1px 0 0 rgba(255, 255, 255, 0.1),
-    0 0 0 1px rgba(255, 255, 255, 0.05);
+    inset 0 1px 0 0 rgba(58, 134, 255, 0.08);
   position: relative;
-  overflow: hidden; /* Garder hidden pour les effets visuels */
+  overflow: hidden;
   transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-  /* OPTIMISATION: contain sans 'size' pour éviter de limiter la taille des cartes */
-  contain: layout style paint; /* Retiré 'size' pour permettre aux cartes de s'adapter à leur contenu */
-  /* Solution 6: content-visibility pour optimiser le rendu des cartes hors de la vue */
+  contain: layout style paint;
   content-visibility: auto;
-  /* Solution 14: contain-intrinsic-size pour éviter les sauts de layout */
-  contain-intrinsic-size: 580px 360px; /* Largeur × Hauteur approximative des cartes */
+  contain-intrinsic-size: 580px 360px;
 }
 
 .books-glass-card::before {
@@ -33,35 +29,33 @@
   background: linear-gradient(
     90deg,
     transparent,
-    rgba(255, 255, 255, 0.3) 50%,
+    rgba(148, 163, 184, 0.25) 50%,
     transparent
   );
   pointer-events: none;
 }
 
 .books-glass-card:hover {
-  background: rgba(255, 255, 255, 0.05);
-  border-color: rgba(255, 255, 255, 0.18);
+  background: #000000;
+  border-color: #5a9aff;
   box-shadow: 
     0 12px 48px 0 rgba(0, 0, 0, 0.45),
-    inset 0 1px 0 0 rgba(255, 255, 255, 0.15),
-    0 0 0 1px rgba(255, 255, 255, 0.08);
+    inset 0 1px 0 0 rgba(58, 134, 255, 0.12);
   transform: translateY(-2px);
 }
 
-/* Inputs avec effet liquid glass */
-/* OPTIMISATION: blur réduit de 20px à 6px pour améliorer les performances GPU */
+/* Inputs */
 .books-glass-input {
-  background: rgba(255, 255, 255, 0.06) !important; /* Augmenté pour compenser le blur réduit */
+  background: rgba(0, 0, 0, 0.75) !important;
   backdrop-filter: blur(6px) saturate(120%);
   -webkit-backdrop-filter: blur(6px) saturate(120%);
-  border: 1px solid rgba(255, 255, 255, 0.1) !important;
+  border: 1px solid rgba(58, 134, 255, 0.45) !important;
   border-radius: 12px !important;
   color: rgba(255, 255, 255, 0.95) !important;
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   box-shadow: 
-    inset 0 1px 2px 0 rgba(0, 0, 0, 0.1),
-    0 1px 0 0 rgba(255, 255, 255, 0.05);
+    inset 0 1px 2px 0 rgba(0, 0, 0, 0.2),
+    0 1px 0 0 rgba(255, 255, 255, 0.04);
 }
 
 .books-glass-input::placeholder {
@@ -69,36 +63,34 @@
 }
 
 .books-glass-input:hover {
-  background: rgba(255, 255, 255, 0.06) !important;
-  border-color: rgba(255, 255, 255, 0.15) !important;
+  background: rgba(15, 23, 42, 0.72) !important;
+  border-color: rgba(148, 163, 184, 0.5) !important;
   box-shadow: 
-    inset 0 1px 2px 0 rgba(0, 0, 0, 0.15),
-    0 1px 0 0 rgba(255, 255, 255, 0.08);
+    inset 0 1px 2px 0 rgba(0, 0, 0, 0.25),
+    0 1px 0 0 rgba(255, 255, 255, 0.06);
 }
 
 .books-glass-input:focus {
-  background: rgba(255, 255, 255, 0.08) !important;
-  border-color: rgba(255, 255, 255, 0.25) !important;
+  background: rgba(0, 0, 0, 0.88) !important;
+  border-color: rgba(58, 134, 255, 0.85) !important;
   outline: none !important;
   box-shadow: 
-    0 0 0 3px rgba(255, 255, 255, 0.1),
-    inset 0 1px 2px 0 rgba(0, 0, 0, 0.2),
-    0 1px 0 0 rgba(255, 255, 255, 0.1);
+    0 0 0 3px rgba(58, 134, 255, 0.22),
+    inset 0 1px 2px 0 rgba(0, 0, 0, 0.25),
+    0 1px 0 0 rgba(255, 255, 255, 0.08);
 }
 
-/* TextArea avec effet liquid glass */
-/* OPTIMISATION: blur réduit de 20px à 6px pour améliorer les performances GPU */
 .books-glass-textarea {
-  background: rgba(255, 255, 255, 0.06) !important; /* Augmenté pour compenser le blur réduit */
+  background: rgba(0, 0, 0, 0.75) !important;
   backdrop-filter: blur(6px) saturate(120%);
   -webkit-backdrop-filter: blur(6px) saturate(120%);
-  border: 1px solid rgba(255, 255, 255, 0.1) !important;
+  border: 1px solid rgba(58, 134, 255, 0.45) !important;
   border-radius: 12px !important;
   color: rgba(255, 255, 255, 0.95) !important;
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   box-shadow: 
-    inset 0 1px 2px 0 rgba(0, 0, 0, 0.1),
-    0 1px 0 0 rgba(255, 255, 255, 0.05);
+    inset 0 1px 2px 0 rgba(0, 0, 0, 0.2),
+    0 1px 0 0 rgba(255, 255, 255, 0.04);
   resize: vertical;
 }
 
@@ -107,50 +99,48 @@
 }
 
 .books-glass-textarea:hover {
-  background: rgba(255, 255, 255, 0.06) !important;
-  border-color: rgba(255, 255, 255, 0.15) !important;
+  background: rgba(15, 23, 42, 0.72) !important;
+  border-color: rgba(148, 163, 184, 0.5) !important;
 }
 
 .books-glass-textarea:focus {
-  background: rgba(255, 255, 255, 0.08) !important;
-  border-color: rgba(255, 255, 255, 0.25) !important;
+  background: rgba(0, 0, 0, 0.88) !important;
+  border-color: rgba(58, 134, 255, 0.85) !important;
   outline: none !important;
   box-shadow: 
-    0 0 0 3px rgba(255, 255, 255, 0.1),
-    inset 0 1px 2px 0 rgba(0, 0, 0, 0.2),
-    0 1px 0 0 rgba(255, 255, 255, 0.1);
+    0 0 0 3px rgba(58, 134, 255, 0.22),
+    inset 0 1px 2px 0 rgba(0, 0, 0, 0.25),
+    0 1px 0 0 rgba(255, 255, 255, 0.08);
 }
 
-/* Select avec effet liquid glass */
-/* OPTIMISATION: blur réduit de 20px à 6px pour améliorer les performances GPU */
 .books-glass-select {
-  background: rgba(255, 255, 255, 0.06) !important; /* Augmenté pour compenser le blur réduit */
+  background: rgba(0, 0, 0, 0.75) !important;
   backdrop-filter: blur(6px) saturate(120%);
   -webkit-backdrop-filter: blur(6px) saturate(120%);
-  border: 1px solid rgba(255, 255, 255, 0.1) !important;
+  border: 1px solid rgba(58, 134, 255, 0.45) !important;
   border-radius: 12px !important;
   color: rgba(255, 255, 255, 0.95) !important;
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   box-shadow: 
-    inset 0 1px 2px 0 rgba(0, 0, 0, 0.1),
-    0 1px 0 0 rgba(255, 255, 255, 0.05);
+    inset 0 1px 2px 0 rgba(0, 0, 0, 0.2),
+    0 1px 0 0 rgba(255, 255, 255, 0.04);
   z-index: 1000 !important;
   position: relative;
 }
 
 .books-glass-select:hover {
-  background: rgba(255, 255, 255, 0.06) !important;
-  border-color: rgba(255, 255, 255, 0.15) !important;
+  background: rgba(15, 23, 42, 0.72) !important;
+  border-color: rgba(148, 163, 184, 0.5) !important;
 }
 
 .books-glass-select:focus {
-  background: rgba(255, 255, 255, 0.08) !important;
-  border-color: rgba(255, 255, 255, 0.25) !important;
+  background: rgba(0, 0, 0, 0.88) !important;
+  border-color: rgba(58, 134, 255, 0.85) !important;
   outline: none !important;
   box-shadow: 
-    0 0 0 3px rgba(255, 255, 255, 0.1),
-    inset 0 1px 2px 0 rgba(0, 0, 0, 0.2),
-    0 1px 0 0 rgba(255, 255, 255, 0.1);
+    0 0 0 3px rgba(58, 134, 255, 0.22),
+    inset 0 1px 2px 0 rgba(0, 0, 0, 0.25),
+    0 1px 0 0 rgba(255, 255, 255, 0.08);
   z-index: 1001 !important;
 }
 
@@ -163,24 +153,22 @@
 }
 
 .books-glass-select option:hover {
-  background: rgba(59, 130, 246, 0.3) !important;
+  background: rgba(71, 85, 105, 0.45) !important;
 }
 
 .books-glass-select option:checked {
-  background: rgba(59, 130, 246, 0.5) !important;
+  background: rgba(100, 116, 139, 0.5) !important;
   color: rgba(255, 255, 255, 1) !important;
 }
 
-/* Labels avec style glass */
 .books-glass-label {
-  color: rgba(255, 255, 255, 0.9) !important;
+  color: rgba(147, 197, 253, 0.92) !important;
   font-weight: 500;
   text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
 }
 
-/* Card Header avec séparateur glass */
 .books-glass-card-header {
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  border-bottom: 1px solid rgba(58, 134, 255, 0.28);
   padding-bottom: 1rem;
   margin-bottom: 1.5rem;
   position: relative;
@@ -196,46 +184,42 @@
   background: linear-gradient(
     90deg,
     transparent,
-    rgba(255, 255, 255, 0.2) 50%,
+    rgba(148, 163, 184, 0.2) 50%,
     transparent
   );
 }
 
-/* Titre avec effet glass */
 .books-glass-card-title {
-  color: rgba(255, 255, 255, 0.95);
+  color: rgba(191, 219, 254, 0.98);
   font-weight: 600;
   text-shadow: 0 2px 4px rgba(0, 0, 0, 0.4);
   letter-spacing: -0.02em;
 }
 
-/* Contenu avec style glass */
 .books-glass-card-content {
-  color: rgba(255, 255, 255, 0.85);
+  color: rgba(147, 197, 253, 0.88);
 }
 
-/* Amélioration des boutons glass */
-/* OPTIMISATION: blur réduit de 20px à 6px pour améliorer les performances GPU */
 .books-glass-button {
-  background: rgba(255, 255, 255, 0.10) !important; /* Augmenté pour compenser le blur réduit */
+  background: rgba(15, 23, 42, 0.55) !important;
   backdrop-filter: blur(6px) saturate(120%);
   -webkit-backdrop-filter: blur(6px) saturate(120%);
-  border: 1px solid rgba(255, 255, 255, 0.15) !important;
+  border: 1px solid rgba(148, 163, 184, 0.4) !important;
   color: rgba(255, 255, 255, 0.95) !important;
   box-shadow: 
     0 4px 16px 0 rgba(0, 0, 0, 0.2),
-    inset 0 1px 0 0 rgba(255, 255, 255, 0.1),
-    0 0 0 1px rgba(255, 255, 255, 0.05);
+    inset 0 1px 0 0 rgba(255, 255, 255, 0.06),
+    0 0 0 1px rgba(15, 23, 42, 0.4);
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .books-glass-button:hover {
-  background: rgba(255, 255, 255, 0.12) !important;
-  border-color: rgba(255, 255, 255, 0.25) !important;
+  background: rgba(30, 41, 59, 0.65) !important;
+  border-color: rgba(203, 213, 225, 0.55) !important;
   box-shadow: 
     0 8px 24px 0 rgba(0, 0, 0, 0.3),
-    inset 0 1px 0 0 rgba(255, 255, 255, 0.15),
-    0 0 0 1px rgba(255, 255, 255, 0.1);
+    inset 0 1px 0 0 rgba(255, 255, 255, 0.1),
+    0 0 0 1px rgba(30, 41, 59, 0.5);
   transform: translateY(-1px);
 }
 
@@ -243,15 +227,14 @@
   transform: translateY(0);
   box-shadow: 
     0 2px 8px 0 rgba(0, 0, 0, 0.25),
-    inset 0 1px 0 0 rgba(255, 255, 255, 0.1);
+    inset 0 1px 0 0 rgba(255, 255, 255, 0.08);
 }
 
-/* File input avec style glass */
 .books-glass-file-input {
-  background: rgba(255, 255, 255, 0.06) !important; /* Augmenté pour compenser le blur réduit */
+  background: rgba(15, 23, 42, 0.65) !important;
   backdrop-filter: blur(6px) saturate(120%);
   -webkit-backdrop-filter: blur(6px) saturate(120%);
-  border: 1px solid rgba(255, 255, 255, 0.1) !important;
+  border: 1px solid rgba(148, 163, 184, 0.35) !important;
   border-radius: 12px !important;
   color: rgba(255, 255, 255, 0.9) !important;
   padding: 0.5rem 1rem !important;
@@ -259,13 +242,13 @@
 }
 
 .books-glass-file-input:hover {
-  background: rgba(255, 255, 255, 0.06) !important;
-  border-color: rgba(255, 255, 255, 0.15) !important;
+  background: rgba(15, 23, 42, 0.72) !important;
+  border-color: rgba(148, 163, 184, 0.5) !important;
 }
 
 .books-glass-file-input::file-selector-button {
-  background: rgba(255, 255, 255, 0.1) !important;
-  border: 1px solid rgba(255, 255, 255, 0.15) !important;
+  background: rgba(51, 65, 85, 0.75) !important;
+  border: 1px solid rgba(148, 163, 184, 0.45) !important;
   border-radius: 8px !important;
   color: rgba(255, 255, 255, 0.95) !important;
   padding: 0.375rem 0.75rem !important;
@@ -276,11 +259,10 @@
 }
 
 .books-glass-file-input::file-selector-button:hover {
-  background: rgba(255, 255, 255, 0.15) !important;
-  border-color: rgba(255, 255, 255, 0.25) !important;
+  background: rgba(71, 85, 105, 0.85) !important;
+  border-color: rgba(203, 213, 225, 0.55) !important;
 }
 
-/* Animation subtile pour les cards */
 @keyframes glass-shimmer {
   0% {
     background-position: -1000px 0;
@@ -300,14 +282,13 @@
   background: linear-gradient(
     90deg,
     transparent,
-    rgba(255, 255, 255, 0.05),
+    rgba(255, 255, 255, 0.04),
     transparent
   );
   animation: glass-shimmer 2s infinite;
   pointer-events: none;
 }
 
-/* Correction du chevauchement des champs année min/max avec flexbox */
 .books-glass-card .flex.flex-col.sm\\:flex-row {
   display: flex;
   flex-direction: column;
@@ -321,14 +302,12 @@
   }
 }
 
-/* Assurer que les conteneurs flex ne débordent pas */
 .books-glass-card .flex > * {
   min-width: 0;
   flex: 1 1 0%;
   box-sizing: border-box;
 }
 
-/* Inputs avec largeur fixe pour éviter le chevauchement */
 .books-glass-card .flex .books-glass-input,
 .books-glass-card .flex input[type="number"],
 .books-glass-card .flex input[type="text"] {
@@ -337,7 +316,6 @@
   box-sizing: border-box;
 }
 
-/* Assurer que les conteneurs d'inputs ne débordent pas */
 .books-glass-card .flex > div {
   min-width: 0;
   flex: 1 1 0%;
@@ -350,18 +328,13 @@
   box-sizing: border-box;
 }
 
-/* OPTIMISATION: CSS Containment pour les carrousels */
 .books-carousel-container {
   contain: layout style paint;
-  /* Isolation complète : les changements dans le carrousel n'affectent pas le reste de la page */
-  /* Pas de 'size' pour permettre aux cartes de garder leur taille complète */
   overflow-x: auto;
-  overflow-y: visible; /* Permettre le débordement vertical si nécessaire */
-  /* Solution 9: Optimisation du scroll avec will-change pendant le scroll */
+  overflow-y: visible;
   scroll-behavior: smooth;
 }
 
-/* Solution 9: Optimisation du scroll avec passive listeners (géré via JavaScript) */
 .books-carousel-container::-webkit-scrollbar {
   width: 6px;
   height: 6px;
@@ -376,17 +349,13 @@
   border-radius: 3px;
 }
 
-/* Conteneur du dôme 3D */
 .books-dome-container {
   contain: layout paint;
-  /* Isolation : le dôme n'affecte pas le layout du reste de la page */
-  /* Solution 8: isolation: isolate pour créer un nouveau contexte de stacking */
   isolation: isolate;
   position: relative;
   z-index: 1;
 }
 
-/* Scrollbar personnalisée pour les carrousels */
 .scrollbar-thin {
   scrollbar-width: thin;
   scrollbar-color: rgba(255, 255, 255, 0.1) transparent;
@@ -411,15 +380,22 @@
   background-color: rgba(255, 255, 255, 0.2);
 }
 
-/* Amélioration des cartes de livres individuelles */
-/* OPTIMISATION: blur réduit de 20px à 6px pour améliorer les performances GPU */
+/* Carte dans carte : même traitement pour éviter un « double thème » gris */
 .books-glass-card .books-glass-card {
-  background: rgba(255, 255, 255, 0.06);
-  backdrop-filter: blur(6px) saturate(120%);
-  -webkit-backdrop-filter: blur(6px) saturate(120%);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  box-shadow: 
-    0 4px 16px 0 rgba(0, 0, 0, 0.2),
-    inset 0 1px 0 0 rgba(255, 255, 255, 0.05);
+  background: #000000;
+  border: 2px solid rgba(58, 134, 255, 0.55);
+  box-shadow: 0 4px 16px 0 rgba(0, 0, 0, 0.25);
 }
 
+/* Fiche détail — aucun livre sélectionné : même thème noir / gris */
+.books-detail-panel-empty {
+  background: #000000 !important;
+  border: 2px solid rgba(58, 134, 255, 0.55) !important;
+  box-shadow:
+    0 12px 40px rgba(0, 0, 0, 0.35),
+    inset 0 1px 0 rgba(58, 134, 255, 0.08);
+}
+
+.books-detail-panel-empty .border-slate-700 {
+  border-color: rgba(148, 163, 184, 0.35) !important;
+}

@@ -58,7 +58,7 @@ const CustomTooltip = ({ active, payload, label }) => {
       </p>
       <div className="space-y-1 text-sm">
         <div className="flex items-center gap-2">
-          <BookOpen className="w-4 h-4 text-purple-300" />
+          <BookOpen className="w-4 h-4 text-slate-400" />
           <span className="text-slate-300">
             {data.pages} {t('books.statistics.pages', 'pages lues')}
           </span>
@@ -133,29 +133,29 @@ const PagesPerDayChart = ({ books, statisticsData, selectedPeriod, filters }) =>
     <div className="space-y-4">
       {/* Statistiques rapides */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
-        <div className="bg-slate-800/50 rounded-lg p-3">
-          <div className="text-2xl font-bold text-white">
+        <div className="bg-black rounded-xl border-2 border-[#3A86FF]/50 p-3">
+          <div className="text-2xl font-bold text-[#bfdbfe] tabular-nums">
             {chartData.reduce((sum, day) => sum + day.pages, 0)}
           </div>
-          <div className="text-xs text-slate-400">Pages totales</div>
+          <div className="text-xs text-[#93c5fd]/80">Pages totales</div>
         </div>
-        <div className="bg-slate-800/50 rounded-lg p-3">
-          <div className="text-2xl font-bold text-white">
+        <div className="bg-black rounded-xl border-2 border-[#3A86FF]/50 p-3">
+          <div className="text-2xl font-bold text-[#bfdbfe] tabular-nums">
             {averagePages.toFixed(1)}
           </div>
-          <div className="text-xs text-slate-400">Moyenne/jour</div>
+          <div className="text-xs text-[#93c5fd]/80">Moyenne/jour</div>
         </div>
-        <div className="bg-slate-800/50 rounded-lg p-3">
-          <div className="text-2xl font-bold text-white">
+        <div className="bg-black rounded-xl border-2 border-[#3A86FF]/50 p-3">
+          <div className="text-2xl font-bold text-[#bfdbfe] tabular-nums">
             {Math.max(...chartData.map(d => d.pages))}
           </div>
-          <div className="text-xs text-slate-400">Maximum</div>
+          <div className="text-xs text-[#93c5fd]/80">Maximum</div>
         </div>
-        <div className="bg-slate-800/50 rounded-lg p-3">
-          <div className="text-2xl font-bold text-white">
+        <div className="bg-black rounded-xl border-2 border-[#3A86FF]/50 p-3">
+          <div className="text-2xl font-bold text-[#bfdbfe] tabular-nums">
             {chartData.filter(d => d.pages > 0).length}
           </div>
-          <div className="text-xs text-slate-400">Jours actifs</div>
+          <div className="text-xs text-[#93c5fd]/80">Jours actifs</div>
         </div>
       </div>
 
@@ -213,10 +213,10 @@ const PagesPerDayChart = ({ books, statisticsData, selectedPeriod, filters }) =>
       </div>
 
       {/* Légende et informations */}
-      <div className="flex flex-wrap items-center justify-between gap-4 text-sm text-slate-400">
+      <div className="flex flex-wrap items-center justify-between gap-4 text-sm text-[#93c5fd]/85">
         <div className="flex items-center gap-4">
           <div className="flex items-center gap-2">
-            <div className="w-3 h-0.5 bg-purple-400"></div>
+            <div className="w-3 h-0.5 bg-slate-500"></div>
             <span>Pages lues</span>
           </div>
           <div className="flex items-center gap-2">

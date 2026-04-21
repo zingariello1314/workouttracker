@@ -15,7 +15,8 @@ import { getTotalRepsFromData } from '../../context/WorkoutContext/utils/workout
 import {
   JUSTIFICATION_REASONS,
   JUSTIFICATION_COLORS,
-  JUSTIFICATION_ICONS
+  JUSTIFICATION_ICONS,
+  JUSTIFICATION_TEXT,
 } from '../../utils/dayJustificationUtils';
 import { useTranslation } from '../../utils/translations';
 import { calendarHeatmapCompositeBackground } from '../../utils/calendarHeatmapTint';
@@ -310,89 +311,89 @@ const CalendarTab = () => {
       {/* Contenu avec z-index relatif */}
       <div className="relative z-10 p-6 space-y-6">
         {/* Module Compteur de Séances */}
-      <Card className="bg-gradient-to-r from-purple-900/20 to-blue-900/20 border-purple-500/30">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-white">
-            <Activity className="text-purple-400" size={24} />
+      <Card variant="sport" className="shadow-inner shadow-black/25">
+        <CardHeader className="border-b border-[#0F4C5C]/40">
+          <CardTitle className="flex items-center gap-2 text-teal-50">
+            <Activity className="text-teal-400" size={24} />
             {t('calendar.sessionCounter.title')}
           </CardTitle>
         </CardHeader>
         <CardContent>
           {/* Statistiques principales */}
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+          <div className="mb-6 grid grid-cols-1 gap-4 md:grid-cols-4">
             {/* Total des séances */}
-            <div className="bg-slate-800/50 rounded-lg p-4 text-center">
-              <div className="flex items-center justify-center mb-2">
-                <Calendar className="text-blue-400 mr-2" size={20} />
-                <span className="text-slate-300 text-sm">{t('calendar.sessionCounter.totalSessions')}</span>
+            <div className="rounded-lg border-2 border-[#0F4C5C]/60 bg-black p-4 text-center shadow-inner shadow-black/40">
+              <div className="mb-2 flex items-center justify-center">
+                <Calendar className="mr-2 text-teal-400" size={20} />
+                <span className="text-sm text-teal-200/95">{t('calendar.sessionCounter.totalSessions')}</span>
               </div>
               <div className="text-2xl font-bold text-white">{sessionStats.totalSessions}</div>
-              <div className="text-xs text-slate-400">{t('calendar.sessionCounter.trainingDays')}</div>
+              <div className="text-xs text-teal-600">{t('calendar.sessionCounter.trainingDays')}</div>
             </div>
 
             {/* Total des exercices */}
-            <div className="bg-slate-800/50 rounded-lg p-4 text-center">
-              <div className="flex items-center justify-center mb-2">
-                <Target className="text-green-400 mr-2" size={20} />
-                <span className="text-slate-300 text-sm">{t('calendar.sessionCounter.totalExercises')}</span>
+            <div className="rounded-lg border-2 border-[#0F5C45]/50 bg-black p-4 text-center shadow-inner shadow-black/40">
+              <div className="mb-2 flex items-center justify-center">
+                <Target className="mr-2 text-emerald-400" size={20} />
+                <span className="text-sm text-teal-200/95">{t('calendar.sessionCounter.totalExercises')}</span>
               </div>
               <div className="text-2xl font-bold text-white">{sessionStats.totalExercises}</div>
-              <div className="text-xs text-slate-400">{t('calendar.sessionCounter.exercisesCompleted')}</div>
+              <div className="text-xs text-teal-600">{t('calendar.sessionCounter.exercisesCompleted')}</div>
             </div>
 
             {/* Moyenne par séance */}
-            <div className="bg-slate-800/50 rounded-lg p-4 text-center">
-              <div className="flex items-center justify-center mb-2">
-                <Activity className="text-yellow-400 mr-2" size={20} />
-                <span className="text-slate-300 text-sm">{t('calendar.sessionCounter.avgPerSession')}</span>
+            <div className="rounded-lg border-2 border-[#0F4C5C]/60 bg-black p-4 text-center shadow-inner shadow-black/40">
+              <div className="mb-2 flex items-center justify-center">
+                <Activity className="mr-2 text-yellow-400" size={20} />
+                <span className="text-sm text-teal-200/95">{t('calendar.sessionCounter.avgPerSession')}</span>
               </div>
               <div className="text-2xl font-bold text-white">{sessionStats.avgExercisesPerSession}</div>
-              <div className="text-xs text-slate-400">{t('calendar.sessionCounter.exercisesPerSession')}</div>
+              <div className="text-xs text-teal-600">{t('calendar.sessionCounter.exercisesPerSession')}</div>
             </div>
 
             {/* Séances cette semaine */}
-            <div className="bg-slate-800/50 rounded-lg p-4 text-center">
-              <div className="flex items-center justify-center mb-2">
-                <Flame className="text-orange-400 mr-2" size={20} />
-                <span className="text-slate-300 text-sm">{t('calendar.sessionCounter.thisWeek')}</span>
+            <div className="rounded-lg border-2 border-[#0F5C45]/50 bg-black p-4 text-center shadow-inner shadow-black/40">
+              <div className="mb-2 flex items-center justify-center">
+                <Flame className="mr-2 text-orange-400" size={20} />
+                <span className="text-sm text-teal-200/95">{t('calendar.sessionCounter.thisWeek')}</span>
               </div>
               <div className="text-2xl font-bold text-white">{sessionStats.sessionsThisWeek}</div>
-              <div className="text-xs text-slate-400">{t('calendar.sessionCounter.sessionsPer7Days')}</div>
+              <div className="text-xs text-teal-600">{t('calendar.sessionCounter.sessionsPer7Days')}</div>
             </div>
           </div>
 
           {showCumulativeSummaryRow && (
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-              <div className="bg-slate-800/50 rounded-lg p-4 text-center border border-slate-600/30">
-                <div className="flex items-center justify-center mb-2">
-                  <Repeat className="text-cyan-400 mr-2" size={18} />
-                  <span className="text-slate-300 text-sm">{t('calendar.cumulativeStats.streetReps')}</span>
+            <div className="mb-6 grid grid-cols-1 gap-4 md:grid-cols-3">
+              <div className="rounded-lg border-2 border-[#0F4C5C]/60 bg-black p-4 text-center shadow-inner shadow-black/40">
+                <div className="mb-2 flex items-center justify-center">
+                  <Repeat className="mr-2 text-cyan-400" size={18} />
+                  <span className="text-sm text-teal-200/95">{t('calendar.cumulativeStats.streetReps')}</span>
                 </div>
                 <div className="text-2xl font-bold text-white">{enduranceStats.totalStreetReps}</div>
                 {enduranceStats.totalStreetVolumeKg > 0 ? (
-                  <div className="text-sm text-amber-200/95 mt-2 font-medium">
+                  <div className="mt-2 text-sm font-medium text-amber-200/95">
                     {t('calendar.cumulativeStats.volumeLifted', {
                       kg: Math.round(enduranceStats.totalStreetVolumeKg).toLocaleString()
                     })}
                   </div>
                 ) : (
-                  <div className="text-xs text-slate-500 mt-2">{t('calendar.cumulativeStats.volumeLiftedHint')}</div>
+                  <div className="mt-2 text-xs text-teal-600">{t('calendar.cumulativeStats.volumeLiftedHint')}</div>
                 )}
               </div>
-              <div className="bg-slate-800/50 rounded-lg p-4 text-center border border-slate-600/30">
-                <div className="flex items-center justify-center mb-2">
-                  <Clock className="text-amber-400 mr-2" size={18} />
-                  <span className="text-slate-300 text-sm">{t('calendar.cumulativeStats.enduranceMinutes')}</span>
+              <div className="rounded-lg border-2 border-[#0F5C45]/50 bg-black p-4 text-center shadow-inner shadow-black/40">
+                <div className="mb-2 flex items-center justify-center">
+                  <Clock className="mr-2 text-amber-400" size={18} />
+                  <span className="text-sm text-teal-200/95">{t('calendar.cumulativeStats.enduranceMinutes')}</span>
                 </div>
                 <div className="text-2xl font-bold text-white">{enduranceStats.totalEnduranceMinutes}</div>
-                <div className="text-xs text-slate-400 mt-1">{t('calendar.enduranceChallenges.minutes')}</div>
+                <div className="mt-1 text-xs text-teal-600">{t('calendar.enduranceChallenges.minutes')}</div>
               </div>
-              <div className="bg-slate-800/50 rounded-lg p-4 text-center border border-slate-600/30">
-                <div className="flex items-center justify-center mb-2">
-                  <Flame className="text-orange-400 mr-2" size={18} />
-                  <span className="text-slate-300 text-sm">{t('calendar.cumulativeStats.runningTime')}</span>
+              <div className="rounded-lg border-2 border-[#0F4C5C]/60 bg-black p-4 text-center shadow-inner shadow-black/40">
+                <div className="mb-2 flex items-center justify-center">
+                  <Flame className="mr-2 text-orange-400" size={18} />
+                  <span className="text-sm text-teal-200/95">{t('calendar.cumulativeStats.runningTime')}</span>
                 </div>
-                <div className="text-xl font-bold text-white tabular-nums">{runningTimeCumulativeLabel}</div>
+                <div className="text-xl font-bold tabular-nums text-white">{runningTimeCumulativeLabel}</div>
               </div>
             </div>
           )}
@@ -400,8 +401,8 @@ const CalendarTab = () => {
           {/* 🏃 Défis d'Endurance */}
           {showEnduranceChallenges && (
             <div className="mb-6">
-              <h4 className="text-white font-medium mb-3 flex items-center">
-                <Zap className="mr-2 text-purple-400" size={16} />
+              <h4 className="mb-3 flex items-center font-medium text-teal-100">
+                <Zap className="mr-2 text-teal-400" size={16} />
                 {t('calendar.enduranceChallenges.title')}
               </h4>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-3">
@@ -490,13 +491,13 @@ const CalendarTab = () => {
 
           {/* 📊 Graphique des 7 derniers jours - Amélioré */}
           <div className="mt-6">
-            <h4 className="text-white font-medium mb-3 flex items-center">
-              <Activity className="mr-2" size={16} />
+            <h4 className="mb-3 flex items-center font-medium text-teal-100">
+              <Activity className="mr-2 text-teal-400" size={16} />
               {t('calendar.activityChart.title')}
             </h4>
-            <div className="bg-slate-800/30 rounded-lg p-4">
+            <div className="rounded-lg border-2 border-[#0F4C5C]/60 bg-black p-4 shadow-inner shadow-black/30">
               {/* Légende des intensités */}
-              <div className="flex items-center justify-between mb-4 text-xs text-slate-400">
+              <div className="mb-4 flex items-center justify-between text-xs text-teal-600">
                 <span>{t('calendar.activityChart.lowActivity')}</span>
                 <span>{t('calendar.activityChart.highActivity')}</span>
               </div>
@@ -520,7 +521,7 @@ const CalendarTab = () => {
                       <div className="relative w-8 mb-2">
                         <div 
                           className={`w-full rounded-t transition-all duration-300 ${
-                            count > 0 ? 'shadow-md border border-white/10' : 'bg-slate-600'
+                            count > 0 ? 'border border-[#0F5C45]/50 shadow-md' : 'bg-black ring-1 ring-[#0F4C5C]/40'
                           }`}
                           style={{
                             height: `${height}px`,
@@ -528,17 +529,17 @@ const CalendarTab = () => {
                           }}
                         />
                         {/* Tooltip */}
-                        <div className="absolute -top-8 left-1/2 transform -translate-x-1/2 bg-slate-700 text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-10">
+                        <div className="absolute -top-8 left-1/2 z-10 -translate-x-1/2 transform whitespace-nowrap rounded border border-[#0F4C5C]/60 bg-black px-2 py-1 text-xs text-teal-100 opacity-0 transition-opacity group-hover:opacity-100">
                           {dayName}: {count} {t('calendar.activityChart.exercises')}
                         </div>
                       </div>
                       
                       {/* Jour */}
-                      <div className="text-xs text-slate-400 font-medium">{dayName}</div>
+                      <div className="text-xs font-medium text-teal-600">{dayName}</div>
                       
                       {/* Valeur */}
-                      <div className={`text-xs font-bold mt-1 ${
-                        count > 0 ? 'text-white' : 'text-slate-500'
+                      <div className={`mt-1 text-xs font-bold ${
+                        count > 0 ? 'text-white' : 'text-teal-900'
                       }`}>
                         {count}
                       </div>
@@ -548,21 +549,21 @@ const CalendarTab = () => {
               </div>
               
               {/* Statistiques résumées */}
-              <div className="mt-4 pt-4 border-t border-slate-700/50">
+              <div className="mt-4 border-t border-[#0F4C5C]/40 pt-4">
                 <div className="grid grid-cols-3 gap-4 text-center">
                   <div>
                     <div className="text-lg font-bold text-white">{sessionStats.last7Days.reduce((a, b) => a + b, 0)}</div>
-                    <div className="text-xs text-slate-400">{t('calendar.activityChart.totalExercises')}</div>
+                    <div className="text-xs text-teal-600">{t('calendar.activityChart.totalExercises')}</div>
                   </div>
                   <div>
                     <div className="text-lg font-bold text-white">{sessionStats.last7Days.filter(count => count > 0).length}</div>
-                    <div className="text-xs text-slate-400">{t('calendar.activityChart.activeDays')}</div>
+                    <div className="text-xs text-teal-600">{t('calendar.activityChart.activeDays')}</div>
                   </div>
                   <div>
                     <div className="text-lg font-bold text-white">
                       {sessionStats.last7Days.length > 0 ? Math.round(sessionStats.last7Days.reduce((a, b) => a + b, 0) / sessionStats.last7Days.length) : 0}
                     </div>
-                    <div className="text-xs text-slate-400">{t('calendar.activityChart.avgPerDay')}</div>
+                    <div className="text-xs text-teal-600">{t('calendar.activityChart.avgPerDay')}</div>
                   </div>
                 </div>
               </div>
@@ -573,29 +574,30 @@ const CalendarTab = () => {
 
       {/* Calendrier existant */}
       {/* ✅ NOUVEAU : Légende des justifications */}
-      <Card className="bg-slate-800/50 border-slate-700">
-        <CardHeader>
-          <CardTitle className="text-white text-sm">{t('calendar.legend.title')}</CardTitle>
+      <Card variant="sport" className="shadow-inner shadow-black/25">
+        <CardHeader className="border-b border-[#0F4C5C]/40">
+          <CardTitle className="text-sm text-teal-50">{t('calendar.legend.title')}</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+          <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
             {Object.entries(JUSTIFICATION_REASONS).map(([key, reason]) => {
               const label = t(`justification.${reason}`);
               const icon = JUSTIFICATION_ICONS[reason];
               const colorClasses = JUSTIFICATION_COLORS[reason];
+              const textClass = JUSTIFICATION_TEXT[reason];
               
               return (
                 <div
                   key={reason}
-                  className={`flex items-center gap-2 p-2 rounded-lg border-2 ${colorClasses}`}
+                  className={`flex items-center gap-2 rounded-lg border-2 p-2 ${colorClasses} ${textClass}`}
                 >
                   <span className="text-lg" aria-hidden="true">{icon}</span>
-                  <span className="text-white text-sm font-medium">{label}</span>
+                  <span className="text-sm font-medium">{label}</span>
                 </div>
               );
             })}
           </div>
-          <p className="text-xs text-slate-400 mt-3">
+          <p className="mt-3 text-xs text-sky-600">
             {t('calendar.legend.description')}
           </p>
         </CardContent>

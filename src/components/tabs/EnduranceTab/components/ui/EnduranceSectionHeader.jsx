@@ -5,7 +5,7 @@ const EnduranceSectionHeader = ({ title, subtitle, actions = [] }) => {
     <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 mb-8">
       <div>
         <h2 className="text-4xl font-bold text-white mb-2">{title}</h2>
-        {subtitle && <p className="text-slate-400">{subtitle}</p>}
+        {subtitle && <p className="text-teal-700">{subtitle}</p>}
       </div>
       {actions.length > 0 && (
         <div className="flex flex-wrap gap-3">

@@ -11,6 +11,10 @@ import { calculateQuestXP } from '../../../../hooks/useQuietQuestEngine';
 import { getHeureDisplay, getCreneauForQuest, getQuestDureeMinutes, CRENEAU_ORDER, CRENEAUX } from '../../../../utils/quests';
 import { formatDuration } from '../utils';
 import { CATEGORIES, DIFFICULTIES, JOUR_OPTIONS } from '../constants';
+import {
+  qstatsPanel,
+  qstatsMuted,
+} from '../../../quests/stats/questsStatsTheme';
 
 /**
  * Vue tableau des quêtes avec filtres, tri et actions
@@ -90,7 +94,7 @@ export const QuestsTableView = ({
   const renderQuestRow = (quest) => (
     <tr
       key={quest.id}
-      className={`border-t border-slate-800/70 hover:bg-slate-800/80 transition-colors ${
+      className={`border-t border-amber-500/20 hover:bg-black/90 transition-colors ${
         quest.active === false ? 'opacity-60' : ''
       }`}
       draggable
@@ -103,13 +107,13 @@ export const QuestsTableView = ({
           type="checkbox"
           checked={selectedQuests.has(quest.id)}
           onChange={() => toggleQuestSelection(quest.id)}
-          className="rounded border-slate-600 bg-slate-900"
+          className="rounded border-amber-600/60 bg-black"
         />
       </td>
       <td className="px-3 py-2 align-top">
-        <div className="font-semibold text-slate-100">{quest.nom}</div>
+        <div className="font-semibold text-amber-50">{quest.nom}</div>
         {quest.description && (
-          <div className="text-[11px] text-slate-400 line-clamp-2">
+          <div className={`text-[11px] ${qstatsMuted} line-clamp-2`}>
             {quest.description}
           </div>
         )}
@@ -117,26 +121,26 @@ export const QuestsTableView = ({
       <td className="px-3 py-2 align-top text-amber-400/90 text-[11px] font-mono">
         {getHeureDisplay(quest, todayDate, prayerLocation) || '—'}
       </td>
-      <td className="px-3 py-2 align-top text-slate-200 text-[11px]">
+      <td className="px-3 py-2 align-top text-amber-100/90 text-[11px]">
         {quest.categorie}
       </td>
       <td className="px-3 py-2 align-top">
         {'★'.repeat(quest.difficulte || 1)}
-        <span className="text-slate-500 text-[10px] ml-1">
+        <span className={`${qstatsMuted} text-[10px] ml-1`}>
           ({quest.difficulte || 1})
         </span>
       </td>
-      <td className="px-3 py-2 align-top text-[11px] text-slate-200">
+      <td className="px-3 py-2 align-top text-[11px] text-amber-100/90">
         {formatDuration(getQuestDureeMinutes(quest))}
       </td>
-      <td className="px-3 py-2 align-top text-[11px] text-slate-200">
+      <td className="px-3 py-2 align-top text-[11px] text-amber-100/90">
         {quest.type === 'exceptionnelle'
           ? `Exceptionnelle – ${quest.date || 'date ?'}`
           : Array.isArray(quest.jours) && quest.jours.length
           ? `Jours : ${quest.jours.join(', ')}`
           : 'Récurrente'}
       </td>
-      <td className="px-3 py-2 align-top text-[11px] text-emerald-300 font-semibold">
+      <td className="px-3 py-2 align-top text-[11px] text-amber-300 font-semibold">
         {(quest.xp ?? calculateQuestXP(quest))} XP
       </td>
       <td className="px-3 py-2 align-top text-right">
@@ -181,14 +185,14 @@ export const QuestsTableView = ({
   );
 
   return (
-    <div className="space-y-4">
+    <div className={`${qstatsPanel} space-y-4`}>
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <div>
-          <h1 className="text-2xl md:text-3xl font-bold text-slate-100">
-            Arsenal de <span className="text-emerald-400">Missions</span>
+          <h1 className="text-2xl md:text-3xl font-bold text-white">
+            Arsenal de <span className="text-amber-400">Missions</span>
           </h1>
-          <p className="text-slate-400 text-sm mt-1">
+          <p className={`${qstatsMuted} text-sm mt-1`}>
             Centralise toutes tes quêtes, filtre, trie, duplique et organise ton système QuietQuest.
           </p>
         </div>
@@ -203,19 +207,19 @@ export const QuestsTableView = ({
       </div>
 
       {/* Barre de filtres */}
-      <div className="bg-slate-900/60 border border-slate-700/80 rounded-2xl px-4 py-3 flex flex-wrap gap-3 items-center">
+      <div className="bg-black/70 border border-amber-500/35 rounded-xl px-4 py-3 flex flex-wrap gap-3 items-center">
         <input
           type="text"
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
           placeholder="🔍 Rechercher une quête..."
-          className="flex-1 min-w-[200px] bg-slate-900/80 border border-slate-700 rounded-xl px-3 py-2 text-sm text-slate-100 placeholder:text-slate-500 focus:outline-none focus:ring-1 focus:ring-emerald-400"
+          className="flex-1 min-w-[200px] bg-black/80 border border-amber-500/40 rounded-xl px-3 py-2 text-sm text-amber-50 placeholder:text-amber-700/80 focus:outline-none focus:ring-1 focus:ring-amber-400/80"
         />
 
         <select
           value={questFilters.categorie}
           onChange={(e) => setQuestFilters((prev) => ({ ...prev, categorie: e.target.value }))}
-          className="bg-slate-900/80 border border-slate-700 rounded-xl px-2 py-2 text-xs text-slate-100"
+          className="bg-black/80 border border-amber-500/40 rounded-xl px-2 py-2 text-xs text-amber-50"
         >
           <option value="all">Toutes catégories</option>
           {CATEGORIES.map((cat) => (
@@ -228,7 +232,7 @@ export const QuestsTableView = ({
         <select
           value={questFilters.difficulte}
           onChange={(e) => setQuestFilters((prev) => ({ ...prev, difficulte: e.target.value }))}
-          className="bg-slate-900/80 border border-slate-700 rounded-xl px-2 py-2 text-xs text-slate-100"
+          className="bg-black/80 border border-amber-500/40 rounded-xl px-2 py-2 text-xs text-amber-50"
         >
           <option value="all">Toutes difficultés</option>
           {DIFFICULTIES.map((d) => (
@@ -241,7 +245,7 @@ export const QuestsTableView = ({
         <select
           value={questFilters.jour}
           onChange={(e) => setQuestFilters((prev) => ({ ...prev, jour: e.target.value }))}
-          className="bg-slate-900/80 border border-slate-700 rounded-xl px-2 py-2 text-xs text-slate-100"
+          className="bg-black/80 border border-amber-500/40 rounded-xl px-2 py-2 text-xs text-amber-50"
         >
           {JOUR_OPTIONS.map((j) => (
             <option key={j.label} value={j.value}>
@@ -251,14 +255,14 @@ export const QuestsTableView = ({
           <option value="exceptionnelles">Exceptionnelles</option>
         </select>
 
-        <label className="flex items-center gap-1 text-[11px] text-slate-300">
+        <label className={`flex items-center gap-1 text-[11px] ${qstatsMuted}`}>
           <input
             type="checkbox"
             checked={questFilters.showInactive}
             onChange={(e) =>
               setQuestFilters((prev) => ({ ...prev, showInactive: e.target.checked }))
             }
-            className="rounded border-slate-600 bg-slate-900"
+            className="rounded border-amber-600/60 bg-black"
           />
           Inactives
         </label>
@@ -266,8 +270,8 @@ export const QuestsTableView = ({
 
       {/* Actions en lot */}
       {hasSelectedQuests && (
-        <div className="flex flex-wrap items-center gap-2 text-xs text-slate-200">
-          <span className="text-slate-400 mr-1">
+        <div className="flex flex-wrap items-center gap-2 text-xs text-amber-100">
+          <span className={`${qstatsMuted} mr-1`}>
             {selectedQuests.size} quête(s) sélectionnée(s)
           </span>
           <button
@@ -295,10 +299,10 @@ export const QuestsTableView = ({
       )}
 
       {/* Tableau des quêtes */}
-      <div className="bg-slate-900/70 border border-slate-700/80 rounded-2xl overflow-hidden">
-        <table className="min-w-full text-xs text-slate-100">
-          <thead className="bg-slate-900/90">
-            <tr className="border-b border-slate-700/80">
+      <div className="bg-black/80 border border-amber-500/35 rounded-xl overflow-hidden">
+        <table className="min-w-full text-xs text-amber-50">
+          <thead className="bg-black/90 border-b border-amber-500/25">
+            <tr>
               <th className="px-3 py-2 text-left">
                 <input
                   type="checkbox"
@@ -307,7 +311,7 @@ export const QuestsTableView = ({
                     sortedQuests.length > 0 &&
                     selectedQuests.size === sortedQuests.length
                   }
-                  className="rounded border-slate-600 bg-slate-900"
+                  className="rounded border-amber-600/60 bg-black"
                 />
               </th>
               <th
@@ -361,7 +365,7 @@ export const QuestsTableView = ({
               <tr>
                 <td
                   colSpan={9}
-                  className="px-4 py-6 text-center text-sm text-slate-400 bg-slate-900/60"
+                  className={`px-4 py-6 text-center text-sm ${qstatsMuted} bg-black/70`}
                 >
                   Aucune quête trouvée. Ajuste tes filtres ou crée une nouvelle quête.
                 </td>
@@ -371,7 +375,7 @@ export const QuestsTableView = ({
                 const quests = groupedByCreneau[creneau] || [];
                 if (quests.length === 0) return [];
                 return [
-                  <tr key={`section-${creneau}`} className="bg-slate-800/90 border-t border-slate-700/80">
+                  <tr key={`section-${creneau}`} className="bg-amber-950/40 border-t border-amber-500/25">
                     <td colSpan={9} className="px-4 py-2 text-sm font-semibold text-amber-400/95">
                       {getCreneauLabel(creneau)}
                     </td>

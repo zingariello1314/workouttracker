@@ -10,6 +10,7 @@ const SidebarReadingSessionModule = lazy(() => import('./historical/SidebarReadi
 const SidebarBookFocusModule = lazy(() => import('./historical/SidebarBookFocusModule'));
 const SidebarBooksRecapModule = lazy(() => import('./historical/SidebarBooksRecapModule'));
 const GarminRunningSidebarModule = lazy(() => import('./historical/GarminRunningSidebarModule'));
+const SidebarMuscuRecapModule = lazy(() => import('./historical/SidebarMuscuRecapModule'));
 const SidebarBodyRecapModule = lazy(() => import('./historical/SidebarBodyRecapModule'));
 const ReadingProgressModule = lazy(() => import('./historical/ReadingProgressModule'));
 const GarminMetricsModule = lazy(() => import('./historical/GarminMetricsModule'));
@@ -31,6 +32,7 @@ const COMPONENT_MAP = {
   SidebarBookFocusModule,
   SidebarBooksRecapModule,
   GarminRunningSidebarModule,
+  SidebarMuscuRecapModule,
   SidebarBodyRecapModule,
   ReadingProgressModule,
   GarminMetricsModule,

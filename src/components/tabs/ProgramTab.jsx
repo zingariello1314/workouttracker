@@ -222,10 +222,9 @@ const ProgramTab = () => {
   };
 
   return (
-    <div className="relative min-h-screen">
-      {/* Contenu avec z-index relatif */}
-      <div className="relative z-10 min-h-screen text-white">
-        <div className="container mx-auto px-4 py-6 max-w-6xl">
+    <div className="relative text-white">
+      <div className="relative z-10">
+        <div className="container mx-auto max-w-6xl px-4 py-6">
         {selectedProgram ? (
           <ProgramDetailView 
             program={selectedProgram}
@@ -240,14 +239,14 @@ const ProgramTab = () => {
                 <h1 className={`${typography.presets.h1} mb-2`}>
                   {t('program.title')}
                 </h1>
-                <p className="text-slate-300">{t('program.subtitle')}</p>
+                <p className="text-teal-200/80">{t('program.subtitle')}</p>
               </div>
               {isAdmin ? (
                 <div className="flex gap-3">
                   <button
                     type="button"
                     onClick={importCurrentProgram}
-                    className="gradient-button-premium gradient-button-premium-md gradient-button-premium-variant rounded-lg flex items-center gap-2"
+                    className="inline-flex items-center gap-2 rounded-lg border border-[#0F4C5C]/60 bg-black px-4 py-2 text-sm font-medium text-teal-100 transition hover:border-[#0F5C45]/70 hover:bg-[#0F4C5C]/15"
                   >
                     <Download size={20} />
                     {t('program.buttons.import')}
@@ -255,14 +254,14 @@ const ProgramTab = () => {
                   <button
                     type="button"
                     onClick={() => setShowCreateForm(true)}
-                    className="gradient-button-premium gradient-button-premium-md rounded-lg flex items-center gap-2"
+                    className="inline-flex items-center gap-2 rounded-lg border border-[#0F5C45]/55 bg-[#0F5C45]/25 px-4 py-2 text-sm font-medium text-white shadow-md shadow-black/30 transition hover:bg-[#0F5C45]/40"
                   >
                     <Plus size={20} />
                     {t('program.buttons.new')}
                   </button>
                 </div>
               ) : (
-                <div className="px-4 py-3 rounded-lg bg-slate-800/80 border border-slate-700 text-sm text-slate-200 max-w-md">
+                <div className="max-w-md rounded-lg border border-[#0F4C5C]/55 bg-black px-4 py-3 text-sm text-teal-100/90">
                   Ce programme intégré est réservé à ton compte administrateur.  
                   Connecte-toi avec ton compte principal pour y accéder ou crée un
                   programme personnalisé ici.
@@ -272,7 +271,7 @@ const ProgramTab = () => {
 
         {/* Programme Actuel */}
         {visibleActiveProgram && (
-          <Card className="mb-8 gradient-primary border-0">
+          <Card variant="sport" className="mb-8 ring-2 ring-[#0F5C45]/45">
             <CardContent>
               <div className="flex justify-between items-start mb-4">
                 <div>
@@ -285,7 +284,7 @@ const ProgramTab = () => {
                 <button
                   type="button"
                   onClick={handleDeactivateProgram}
-                  className="gradient-button-premium gradient-button-premium-md rounded-lg flex items-center gap-2"
+                  className="inline-flex items-center gap-2 rounded-lg border border-[#0F4C5C]/60 bg-black px-4 py-2 text-sm font-medium text-teal-100 transition hover:border-amber-500/50 hover:text-amber-100"
                 >
                   <Pause size={16} />
                   {t('program.currentProgram.deactivate')}
@@ -315,9 +314,9 @@ const ProgramTab = () => {
                   <span>{t('program.currentProgram.progress')}</span>
                   <span>{Math.min(100, Math.round((new Date() - new Date(activeProgram.startDate)) / (activeProgram.duration * 7 * 24 * 60 * 60 * 1000) * 100))}%</span>
                 </div>
-                <div className="w-full bg-white/20 rounded-full h-2">
-                  <div 
-                    className="bg-white h-2 rounded-full transition-all duration-300"
+                <div className="h-2 w-full rounded-full bg-[#0F4C5C]/40">
+                  <div
+                    className="h-2 rounded-full bg-gradient-to-r from-[#0F4C5C] to-[#0F5C45] transition-all duration-300"
                     style={{ 
                       width: `${Math.min(100, Math.round((new Date() - new Date(activeProgram.startDate)) / (activeProgram.duration * 7 * 24 * 60 * 60 * 1000) * 100))}%` 
                     }}
@@ -330,14 +329,14 @@ const ProgramTab = () => {
 
         {/* Formulaire de création */}
         {showCreateForm && (
-          <Card className="mb-8">
+          <Card variant="sport" className="mb-8">
             <CardHeader>
               <CardTitle className={typography.presets.h3}>{t('program.createForm.title')}</CardTitle>
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
                 <div>
-                  <label className="block text-sm font-medium text-slate-300 mb-2">
+                  <label className="mb-2 block text-sm font-medium text-teal-200/90">
                     {t('program.createForm.name')} {t('program.createForm.nameRequired')}
                   </label>
                   <input
@@ -350,7 +349,7 @@ const ProgramTab = () => {
                 </div>
                 
                 <div>
-                  <label className="block text-sm font-medium text-slate-300 mb-2">
+                  <label className="mb-2 block text-sm font-medium text-teal-200/90">
                     {t('program.createForm.description')}
                   </label>
                   <textarea
@@ -363,7 +362,7 @@ const ProgramTab = () => {
                 </div>
                 
                 <div>
-                  <label className="block text-sm font-medium text-slate-300 mb-2">
+                  <label className="mb-2 block text-sm font-medium text-teal-200/90">
                     {t('program.createForm.duration')}
                   </label>
                   <input
@@ -377,18 +376,18 @@ const ProgramTab = () => {
                 </div>
               </div>
               
-              <div className="flex gap-3 mt-6">
+              <div className="mt-6 flex gap-3">
                 <button
                   type="button"
                   onClick={handleCreateProgram}
-                  className="gradient-button-premium gradient-button-premium-md rounded-lg"
+                  className="rounded-lg border border-[#0F5C45]/55 bg-[#0F5C45]/30 px-4 py-2 text-sm font-medium text-white transition hover:bg-[#0F5C45]/45"
                 >
                   {t('program.buttons.create')}
                 </button>
                 <button
                   type="button"
                   onClick={() => setShowCreateForm(false)}
-                  className="gradient-button-premium gradient-button-premium-md gradient-button-premium-variant rounded-lg"
+                  className="rounded-lg border border-[#0F4C5C]/60 bg-black px-4 py-2 text-sm font-medium text-teal-100 transition hover:border-[#0F5C45]/55"
                 >
                   {t('program.buttons.cancel')}
                 </button>
@@ -398,7 +397,7 @@ const ProgramTab = () => {
         )}
 
         {/* Liste des Programmes */}
-        <Card>
+        <Card variant="sport">
           <CardHeader>
             <CardTitle className={typography.presets.h3}>{t('program.list.title')}</CardTitle>
           </CardHeader>
@@ -408,30 +407,32 @@ const ProgramTab = () => {
                 {visiblePrograms.map((program) => (
                   <div
                     key={program.id}
-                    className={`p-4 rounded-lg border transition-all ${
+                    className={`rounded-lg border-2 p-4 transition-all ${
                       program.id === activeProgram?.id
-                        ? 'border-purple-400/50 bg-purple-500/10'
-                        : 'border-slate-600 bg-slate-700/30 hover:border-slate-500'
+                        ? 'border-[#0F5C45] bg-[#0F5C45]/12 shadow-md shadow-black/40 ring-1 ring-[#0F5C45]/30'
+                        : 'border-[#0F4C5C]/70 bg-black hover:border-[#0F5C45]/80'
                     }`}
                   >
                     <div className="flex justify-between items-start">
                       <div className="flex-1">
                         <div className="flex items-center gap-3 mb-2">
                           <h4 className={`${typography.presets.h4}`}>{program.name}</h4>
-                          <span className={`px-2 py-1 text-xs rounded-full ${
-                            program.id === activeProgram?.id
-                              ? 'bg-purple-500/20 text-purple-200 border border-purple-400/30'
-                              : 'bg-slate-600/20 text-slate-300 border border-slate-500/30'
-                          }`}>
+                          <span
+                            className={`rounded-full border px-2 py-1 text-xs ${
+                              program.id === activeProgram?.id
+                                ? 'border-[#0F5C45]/70 bg-[#0F5C45]/25 text-teal-50'
+                                : 'border-[#0F4C5C]/45 bg-black text-teal-200/85'
+                            }`}
+                          >
                             {program.id === activeProgram?.id ? t('program.status.active') : t('program.status.inactive')}
                           </span>
                         </div>
                         
                         {program.description && (
-                          <p className="text-slate-300 mb-3">{program.description}</p>
+                          <p className="mb-3 text-teal-100/80">{program.description}</p>
                         )}
-                        
-                        <div className="flex flex-wrap items-center gap-4 text-sm text-slate-400">
+
+                        <div className="flex flex-wrap items-center gap-4 text-sm text-teal-700">
                           <div className="flex items-center gap-1">
                             <Calendar size={14} />
                             <span>{t('program.list.duration', { weeks: program.duration })}</span>
@@ -465,34 +466,34 @@ const ProgramTab = () => {
                           <button
                             type="button"
                             onClick={() => handleActivateProgram(program.id)}
-                            className="gradient-button-premium gradient-button-premium-md rounded-lg flex items-center gap-2"
+                            className="inline-flex items-center gap-2 rounded-lg border border-[#0F5C45]/55 bg-[#0F5C45]/25 px-3 py-2 text-xs font-medium text-white transition hover:bg-[#0F5C45]/40"
                           >
                             <Play size={14} />
                             {t('program.buttons.activate')}
                           </button>
                         )}
-                        
+
                         <button
                           type="button"
                           onClick={() => handleViewProgram(program)}
-                          className="gradient-button-premium gradient-button-premium-sm gradient-button-premium-variant rounded-lg flex items-center gap-2"
+                          className="inline-flex items-center gap-2 rounded-lg border border-[#0F4C5C]/60 bg-black px-3 py-2 text-xs font-medium text-teal-100 transition hover:border-[#0F5C45]/60"
                         >
                           <Eye size={14} />
                           {t('program.buttons.view')}
                         </button>
-                        
+
                         <button
                           type="button"
-                          className="gradient-button-premium gradient-button-premium-sm gradient-button-premium-variant rounded-lg p-2"
+                          className="rounded-lg border border-[#0F4C5C]/55 bg-black p-2 text-teal-200 transition hover:border-[#0F5C45]/60"
                         >
                           <Edit3 size={16} />
                         </button>
-                        
+
                         {program.id !== activeProgram?.id && (
                           <button
                             type="button"
                             onClick={() => deleteProgram(program.id)}
-                            className="gradient-button-premium gradient-button-premium-sm rounded-lg p-2"
+                            className="rounded-lg border border-red-500/40 bg-red-950/30 p-2 text-red-200 transition hover:bg-red-950/50"
                           >
                             <Trash2 size={16} />
                           </button>
@@ -503,8 +504,8 @@ const ProgramTab = () => {
                 ))}
               </div>
             ) : (
-              <div className="text-center py-12 text-slate-400">
-                <Archive size={48} className="mx-auto mb-4 text-slate-500" />
+              <div className="py-12 text-center text-teal-700">
+                <Archive size={48} className="mx-auto mb-4 text-[#0F4C5C]" />
                 <p className={`${typography.presets.bodyLarge} mb-2`}>{t('program.misc.noPrograms')}</p>
                 <p className="text-sm">{t('program.misc.noProgramsHint')}</p>
               </div>

@@ -16,7 +16,6 @@ import { isMockEnduranceSession } from '../../utils/calendarUtils';
 import DayJustificationButton from './TodayTab/components/DayJustificationButton.jsx';
 import { isDayWithoutActivity } from '../../utils/dayJustificationUtils';
 import { useTranslation } from '../../utils/translations';
-import SportXPBar from './TodayTab/components/SportXPBar';
 import { loadEnduranceData as loadEnduranceDataService } from '../../services/endurance/enduranceDataService';
 import {
   collectExerciseKeysForWorkoutExercise,
@@ -731,9 +730,8 @@ const TodayTab = () => {
     
     return (
       <div className="max-w-4xl mx-auto px-4 py-6 space-y-6">
-        <SportXPBar />
-        <div className="text-center py-12 bg-slate-800/80 backdrop-blur-sm rounded-lg border border-slate-700">
-          <div className="text-gray-400 mb-4">
+        <div className="text-center py-12 bg-black rounded-xl border-2 border-[#0F4C5C]/70">
+          <div className="text-teal-200/80 mb-4">
             <div className="text-6xl mb-4">🎉</div>
             <h3 className="text-xl font-semibold mb-2 text-white">{t('today.restDay.title')}</h3>
             <p>{t('today.restDay.message')}</p>
@@ -747,10 +745,10 @@ const TodayTab = () => {
         
         {/* Section des défis actifs, même si jour de repos */}
         {activeChallenges.length > 0 && (
-          <Card className="bg-gradient-to-r from-purple-500/10 to-blue-500/10 border border-purple-500/20">
-            <Card.Header>
-              <Card.Title className="flex items-center text-purple-200">
-                <Award className="mr-2" size={20} />
+          <Card variant="sport">
+            <Card.Header className="border-b border-[#0F4C5C]/40">
+              <Card.Title className="flex items-center text-teal-200">
+                <Award className="mr-2 text-teal-400" size={20} />
                 {t('today.challenges.title')} ({activeChallenges.length})
               </Card.Title>
             </Card.Header>
@@ -775,13 +773,12 @@ const TodayTab = () => {
     <div className="relative min-h-screen">
       {/* Contenu avec z-index relatif */}
       <div className="relative z-10 max-w-4xl mx-auto px-4 py-6 space-y-6">
-        <SportXPBar />
         {/* Workout Header */}
-      <div className={`p-6 rounded-lg shadow-xl border border-slate-700 ${
+      <div className={`p-6 rounded-xl shadow-xl border-2 ${
         workout.focus?.includes('Repos')
-          ? 'bg-gradient-to-r from-blue-900/80 to-slate-800/80' 
-          : 'bg-gradient-to-r from-pink-600/80 to-purple-600/80'
-      } backdrop-blur-sm`}>
+          ? 'border-[#0F5C45]/60 bg-black'
+          : 'border-[#0F4C5C]/70 bg-black'
+      }`}>
         <h2 className="text-2xl font-bold text-white">{workout.name}</h2>
         <p className="text-sm text-gray-200 opacity-90 mt-1">{workout.focus}</p>
         {workout.duree ? (
@@ -792,7 +789,7 @@ const TodayTab = () => {
         {hasGymVariants && (
           <div className="mt-4 flex items-center gap-3">
             <span className="text-sm text-gray-200">{t('today.workout.trainingMode')}</span>
-            <div className="flex items-center bg-slate-700/50 rounded-lg p-1">
+            <div className="flex items-center bg-black/80 rounded-lg p-1 ring-1 ring-[#0F4C5C]/45">
               <button
                 type="button"
                 onClick={() => setIsGymMode(false)}
@@ -817,15 +814,15 @@ const TodayTab = () => {
               </button>
             </div>
             {data.weekVariant && (
-              <span className="text-xs text-gray-400 bg-slate-700/30 px-2 py-1 rounded">
+              <span className="text-xs text-teal-200/80 bg-black/60 px-2 py-1 rounded border border-[#0F4C5C]/40">
                 {t('today.workout.week', 'Semaine {{week}}', { week: currentWeekVariant })}
               </span>
             )}
           </div>
         )}
         {/* Choix d'afficher l'entraînement d'un autre jour (ex. faire lundi un vendredi) */}
-        <div className="mt-4 pt-4 border-t border-slate-600/50">
-          <p className="text-xs text-slate-400 mb-2">{t('today.workout.useWorkoutOf', "Utiliser l'entraînement de :")}</p>
+        <div className="mt-4 pt-4 border-t border-[#0F4C5C]/40">
+          <p className="text-xs text-teal-200/75 mb-2">{t('today.workout.useWorkoutOf', "Utiliser l'entraînement de :")}</p>
           <div className="flex flex-wrap gap-1.5">
             {['lundi', 'mardi', 'mercredi', 'jeudi', 'vendredi', 'samedi', 'dimanche'].map((d) => {
               const label = d.charAt(0).toUpperCase() + d.slice(1);
@@ -839,7 +836,7 @@ const TodayTab = () => {
                   className={`px-2.5 py-1 rounded-lg text-xs font-medium transition-colors ${
                     isSelected
                       ? 'bg-emerald-500/30 text-emerald-200 border border-emerald-400/50'
-                      : 'bg-slate-700/50 text-slate-300 border border-slate-600 hover:border-slate-500'
+                      : 'bg-black text-teal-100/85 border border-[#0F4C5C]/50 hover:border-[#0F5C45]/55'
                   }`}
                   title={isCurrentDay ? t('today.workout.todayWorkout', "Entraînement du jour") : t('today.workout.useDayWorkout', "Afficher et faire l'entraînement du {{day}}", { day: label })}
                 >
@@ -857,7 +854,7 @@ const TodayTab = () => {
       </div>
 
       {workout?.exercices?.length > 0 && (
-        <div className="flex flex-wrap items-center gap-3 rounded-xl border border-teal-500/30 bg-slate-800/60 px-4 py-3 text-sm text-slate-200">
+        <div className="flex flex-wrap items-center gap-3 rounded-xl border-2 border-[#0F5C45]/45 bg-black px-4 py-3 text-sm text-teal-100/90">
           <BarChart3 className="h-5 w-5 shrink-0 text-teal-400" />
           <div className="min-w-0 flex-1">
             <span className="font-medium text-white">{t('today.sessionScore.title')}</span>
@@ -866,17 +863,17 @@ const TodayTab = () => {
                 {t('today.sessionScore.score', { score: todaySessionComplexity.score0to100 })}
               </span>
             ) : (
-              <span className="ml-2 text-slate-400">{t('today.sessionScore.na')}</span>
+              <span className="ml-2 text-teal-700">{t('today.sessionScore.na')}</span>
             )}
-            <span className="mx-2 text-slate-500">·</span>
-            <span className="text-slate-400">
+            <span className="mx-2 text-teal-800">·</span>
+            <span className="text-teal-200/80">
               {t('today.sessionScore.load', {
                 done: todaySessionComplexity.completedLoad,
                 ref: todaySessionComplexity.plannedLoadEstimate
               })}
             </span>
-            <span className="mx-2 text-slate-500">·</span>
-            <span className="text-slate-400">
+            <span className="mx-2 text-teal-800">·</span>
+            <span className="text-teal-200/80">
               {t('today.sessionScore.doneCount', {
                 n: todaySessionComplexity.completedCount,
                 total: todaySessionComplexity.plannedCount
@@ -894,15 +891,15 @@ const TodayTab = () => {
       })()}
 
       {/* Exercices */}
-      <div className="bg-slate-800/80 backdrop-blur-sm p-6 rounded-lg shadow-xl border border-slate-700">
+      <div className="bg-black p-6 rounded-xl shadow-xl border-2 border-[#0F4C5C]/70">
         <h3 className="font-semibold text-white mb-4 flex items-center gap-2">
           {t('today.exercises.title')}
           {exercisesWithLoadFirst.length > 0 && (
-            <span className="text-sm text-slate-400">({exercisesWithLoadFirst.length})</span>
+            <span className="text-sm text-teal-600">({exercisesWithLoadFirst.length})</span>
           )}
         </h3>
         {exercisesWithLoadFirst.length === 0 && additionalExercises.length === 0 ? (
-          <div className="text-center py-8 text-slate-400">
+          <div className="text-center py-8 text-teal-700">
             <p>{t('today.exercises.noExercises', 'Aucun exercice prévu pour aujourd\'hui')}</p>
           </div>
         ) : (
@@ -947,7 +944,7 @@ const TodayTab = () => {
             }
 
             return (
-              <div key={exercise.id} className="flex items-center space-x-3 p-4 bg-slate-700/50 rounded-lg border border-slate-600/50 hover:bg-slate-700/70 transition-all duration-200">
+              <div key={exercise.id} className="flex items-center space-x-3 p-4 bg-black rounded-lg border border-[#0F4C5C]/45 hover:border-[#0F5C45]/50 transition-all duration-200">
                 <div className="flex-1 min-w-0">
                   <div className="flex flex-wrap items-center gap-2 min-w-0">
                     <div className="font-medium text-white shrink-0">{exercise.name}</div>
@@ -988,10 +985,10 @@ const TodayTab = () => {
                             value={reps}
                             onChange={(e) => updateLocalReps(exercise.id, e.target.value, currentDate)}
                             onFocus={() => handleInputFocus(exercise.id, exercise)}
-                            className={`w-20 text-center ${isChecked ? 'bg-green-600/20 border-green-500 text-green-300' : 'bg-slate-800 border-slate-600 text-white'}`}
+                            className={`w-20 text-center ${isChecked ? 'bg-green-600/20 border-green-500 text-green-300' : 'bg-black border-[#0F4C5C]/50 text-white'}`}
                             size="sm"
                           />
-                          <span className="text-slate-400 text-xs min-w-[35px]">
+                          <span className="text-teal-700 text-xs min-w-[35px]">
                             {inputLabel}
                           </span>
                         </div>
@@ -1006,10 +1003,10 @@ const TodayTab = () => {
                                 updateLocalExerciseWeight(exercise.id, e.target.value, currentDate)
                               }
                               onFocus={() => handleWeightInputFocus(exercise.id, exercise)}
-                              className={`w-[4.5rem] text-center ${isChecked ? 'bg-green-600/20 border-green-500 text-green-300' : 'bg-slate-800 border-slate-600 text-white'}`}
+                              className={`w-[4.5rem] text-center ${isChecked ? 'bg-green-600/20 border-green-500 text-green-300' : 'bg-black border-[#0F4C5C]/50 text-white'}`}
                               size="sm"
                             />
-                            <span className="text-slate-400 text-xs min-w-[28px]">
+                            <span className="text-teal-700 text-xs min-w-[28px]">
                               {t('today.exercises.weightUnit')}
                             </span>
                           </div>
@@ -1046,7 +1043,7 @@ const TodayTab = () => {
 
           {/* ✅ NOUVEAU : Section Exercices Exceptionnels */}
           {additionalExercises.length > 0 && (
-            <div className="mt-6 pt-6 border-t border-slate-600/50">
+            <div className="mt-6 pt-6 border-t border-[#0F4C5C]/40">
               <div className="flex items-center justify-between mb-4">
                 <h4 className="font-semibold text-white flex items-center gap-2">
                   <span className="text-yellow-400">⭐</span>
@@ -1065,7 +1062,7 @@ const TodayTab = () => {
                   return (
                     <div 
                       key={exercise.id} 
-                      className="flex items-center space-x-3 p-4 bg-gradient-to-r from-yellow-700/20 to-orange-700/20 rounded-lg border border-yellow-500/30 hover:from-yellow-700/30 hover:to-orange-700/30 transition-all duration-200"
+                      className="flex items-center space-x-3 p-4 bg-black rounded-lg border border-amber-500/35 ring-1 ring-[#0F4C5C]/25 hover:border-amber-400/45 transition-all duration-200"
                     >
                       <div className="flex-1">
                         <div className="font-medium text-white flex items-center gap-2">
@@ -1144,7 +1141,7 @@ const TodayTab = () => {
           )}
 
             {/* ✅ NOUVEAU : Bouton pour ajouter un exercice exceptionnel */}
-            <div className="mt-4 pt-4 border-t border-slate-600/50">
+            <div className="mt-4 pt-4 border-t border-[#0F4C5C]/40">
               <button
                 type="button"
                 onClick={() => setShowAddExceptionalModal(true)}
@@ -1157,18 +1154,18 @@ const TodayTab = () => {
             
             {/* Activités complémentaires */}
           {workout.complementaryActivity && (
-            <div className="flex items-center space-x-3 p-4 bg-gradient-to-r from-purple-700/30 to-blue-700/30 rounded-lg border border-purple-500/50 hover:from-purple-700/40 hover:to-blue-700/40 transition-all duration-200">
+            <div className="flex items-center space-x-3 p-4 bg-black rounded-lg border border-[#0F4C5C]/50 hover:border-[#0F5C45]/45 transition-all duration-200">
               <div className="flex-1">
                 <div className="font-medium text-white flex items-center gap-2">
                   {workout.complementaryActivity.name}
-                  <span className="text-xs bg-purple-500/30 text-purple-200 px-2 py-1 rounded-full">
+                  <span className="text-xs bg-[#0F4C5C]/35 text-teal-100 px-2 py-1 rounded-full border border-[#0F5C45]/40">
                     {workout.complementaryActivity.type}
                   </span>
                 </div>
-                <div className="text-sm text-gray-300">
+                <div className="text-sm text-teal-100/80">
                   {workout.complementaryActivity.duration} min • {workout.complementaryActivity.timeSlot}
                 </div>
-                <div className="text-xs text-purple-200 mt-1">
+                <div className="text-xs text-teal-300/90 mt-1">
                   {workout.complementaryActivity.benefits.join(' • ')}
                 </div>
               </div>
@@ -1177,7 +1174,7 @@ const TodayTab = () => {
                 <Checkbox
                   checked={getCurrentData().checkedExercises[`${dateStr}_complementary_${workout.complementaryActivity.name.toLowerCase()}`] || false}
                   onChange={() => handleExerciseCheck(`complementary_${workout.complementaryActivity.name.toLowerCase()}`, currentDate)}
-                  className="text-purple-400"
+                  className="text-teal-400"
                   name={`complementary_${workout.complementaryActivity.name.toLowerCase()}`}
                 />
                 
@@ -1193,7 +1190,7 @@ const TodayTab = () => {
                     min="0"
                     max="300"
                   />
-                  <span className="text-purple-300 text-sm font-medium">{t('today.exercises.minutesLabel')}</span>
+                  <span className="text-teal-200 text-sm font-medium">{t('today.exercises.minutesLabel')}</span>
                 </div>
                 
                 <button
@@ -1214,10 +1211,10 @@ const TodayTab = () => {
 
         {/* Boutons de sauvegarde */}
         {hasUnsavedExercises && (
-          <div className="mt-6 pt-4 border-t border-slate-600/50">
+          <div className="mt-6 pt-4 border-t border-[#0F4C5C]/40">
             <div className="flex items-center justify-between">
-              <div className="text-sm text-yellow-400 flex items-center gap-2">
-                <div className="w-2 h-2 bg-yellow-400 rounded-full animate-pulse"></div>
+              <div className="text-sm text-amber-300 flex items-center gap-2">
+                <div className="w-2 h-2 bg-amber-400 rounded-full animate-pulse"></div>
                 {t('today.exercises.unsavedChanges')}
               </div>
               <div className="flex gap-3">
@@ -1245,9 +1242,9 @@ const TodayTab = () => {
 
       {/* Étirements - Afficher seulement s'il y a des étirements avec contenu */}
       {hasStretchesContent && (
-        <div className="bg-slate-800/80 backdrop-blur-sm p-6 rounded-lg shadow-xl border border-slate-700">
+        <div className="bg-black p-6 rounded-xl shadow-xl border-2 border-[#0F4C5C]/70">
           <h3 className="font-semibold text-white mb-4 flex items-center gap-2">
-            <span className="text-purple-400">🧘‍♂️</span>
+            <span className="text-teal-400">🧘‍♂️</span>
             {t('today.stretches.titleOfDay')}
           </h3>
           <div className="space-y-4">
@@ -1260,17 +1257,17 @@ const TodayTab = () => {
                                       moment;
               
               return (
-              <div key={moment} className="border-l-4 border-purple-500/50 pl-4 bg-slate-700/30 rounded-r-lg p-3">
+              <div key={moment} className="border-l-4 border-[#0F5C45]/70 pl-4 bg-black rounded-r-lg p-3 ring-1 ring-[#0F4C5C]/35">
                 <div className="flex items-center justify-between mb-2">
                   <h4 className="font-medium text-white capitalize flex items-center gap-2">
-                    <span className="text-purple-400">•</span>
+                    <span className="text-teal-400">•</span>
                     {translatedMoment}
                   </h4>
                   <label className="flex items-center">
                     <Checkbox
                     checked={data.checkedStretches[`${dateStr}_${moment}`] || false}
                     onChange={() => toggleEtirement(moment, currentDate)}
-                    className="w-5 h-5"
+                    className="h-5 w-5 shrink-0 accent-teal-500"
                   />
                   </label>
                 </div>
@@ -1282,10 +1279,10 @@ const TodayTab = () => {
 
           {/* Boutons de sauvegarde */}
           {hasUnsavedStretches && (
-            <div className="mt-6 pt-4 border-t border-slate-600/50">
+            <div className="mt-6 pt-4 border-t border-[#0F4C5C]/40">
               <div className="flex items-center justify-between">
-                <div className="text-sm text-yellow-400 flex items-center gap-2">
-                  <div className="w-2 h-2 bg-yellow-400 rounded-full animate-pulse"></div>
+                <div className="text-sm text-amber-300 flex items-center gap-2">
+                  <div className="w-2 h-2 bg-amber-400 rounded-full animate-pulse"></div>
                   {t('today.exercises.unsavedChanges')}
                 </div>
                 <div className="flex gap-3">
@@ -1349,17 +1346,17 @@ const TodayTab = () => {
         if (todayEnduranceSessions.length === 0) return null;
         
         return (
-          <Card className="bg-gradient-to-r from-orange-500/10 to-yellow-500/10 border border-orange-500/20">
-            <Card.Header>
-              <Card.Title className="flex items-center text-orange-200">
-                <Zap className="mr-2" size={20} />
+          <Card variant="sport">
+            <Card.Header className="border-b border-[#0F4C5C]/40">
+              <Card.Title className="flex items-center text-amber-200">
+                <Zap className="mr-2 text-amber-400" size={20} />
                 {t('today.endurance.sessionsTitle')}
               </Card.Title>
             </Card.Header>
             <Card.Content>
               <div className="space-y-3">
                 {todayEnduranceSessions.map((session, index) => (
-                  <div key={index} className="bg-orange-700/20 rounded-lg p-3 border border-orange-500/30">
+                  <div key={index} className="bg-black rounded-lg p-3 border border-amber-500/35 ring-1 ring-[#0F4C5C]/20">
                     <div className="flex items-center justify-between mb-2">
                       <h4 className="font-semibold text-orange-200">{session.activityName}</h4>
                       <span className="text-orange-300 text-sm">{session.time}</span>
@@ -1409,10 +1406,10 @@ const TodayTab = () => {
         if (activeChallenges.length === 0) return null;
         
         return (
-          <Card className="bg-gradient-to-r from-purple-500/10 to-blue-500/10 border border-purple-500/20">
-            <Card.Header>
-              <Card.Title className="flex items-center text-purple-200">
-                <Award className="mr-2" size={20} />
+          <Card variant="sport">
+            <Card.Header className="border-b border-[#0F4C5C]/40">
+              <Card.Title className="flex items-center text-teal-200">
+                <Award className="mr-2 text-teal-400" size={20} />
                 {t('today.challenges.title')} ({activeChallenges.length})
               </Card.Title>
             </Card.Header>
@@ -1436,9 +1433,9 @@ const TodayTab = () => {
         <button
           type="button"
           onClick={handleSessionFeedback}
-          className="gradient-button-premium gradient-button-premium-lg rounded-lg flex items-center justify-center gap-2 mx-auto"
+          className="mx-auto flex items-center justify-center gap-2 rounded-xl border-2 border-[#0F5C45]/55 bg-black px-8 py-3 text-base font-semibold text-teal-50 shadow-lg shadow-black/40 transition hover:border-[#0F5C45] hover:bg-[#0F4C5C]/25"
         >
-          <MessageSquare className="w-5 h-5" />
+          <MessageSquare className="h-5 w-5 text-teal-400" />
           {t('today.sessionFeedback.button')}
         </button>
       </div>

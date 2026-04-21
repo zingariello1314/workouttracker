@@ -1,4 +1,4 @@
-/**
+﻿/**
  * NutritionPredictions.jsx
  * 
  * Composant UI pour les prédictions offline avec TensorFlow.js.
@@ -241,7 +241,7 @@ const NutritionPredictions = () => {
   // Si TensorFlow.js non supporté
   if (!isSupported) {
     return (
-      <Card className="bg-slate-800/50 border-slate-700">
+      <Card variant="sport">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Brain size={20} className="text-purple-400" />
@@ -271,7 +271,7 @@ const NutritionPredictions = () => {
   return (
     <div className="space-y-6">
       {/* En-tête avec actions */}
-      <Card className="bg-slate-800/50 border-slate-700">
+      <Card variant="sport">
         <CardHeader>
           <CardTitle className="flex items-center justify-between">
             <div className="flex items-center gap-2">
@@ -412,7 +412,7 @@ const NutritionPredictions = () => {
       {/* Statistiques prédiction */}
       {stats && (
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-          <Card className="bg-slate-800/50 border-slate-700">
+          <Card variant="sport">
             <CardContent className="pt-6">
               <div className="text-center">
                 <p className="text-slate-400 text-sm mb-1">Poids actuel</p>
@@ -420,7 +420,7 @@ const NutritionPredictions = () => {
               </div>
             </CardContent>
           </Card>
-          <Card className="bg-slate-800/50 border-slate-700">
+          <Card variant="sport">
             <CardContent className="pt-6">
               <div className="text-center">
                 <p className="text-slate-400 text-sm mb-1">Poids prédit</p>
@@ -429,7 +429,7 @@ const NutritionPredictions = () => {
               </div>
             </CardContent>
           </Card>
-          <Card className="bg-slate-800/50 border-slate-700">
+          <Card variant="sport">
             <CardContent className="pt-6">
               <div className="text-center">
                 <p className="text-slate-400 text-sm mb-1">Différence</p>
@@ -450,7 +450,7 @@ const NutritionPredictions = () => {
               </div>
             </CardContent>
           </Card>
-          <Card className="bg-slate-800/50 border-slate-700">
+          <Card variant="sport">
             <CardContent className="pt-6">
               <div className="text-center">
                 <p className="text-slate-400 text-sm mb-1">Date prédiction</p>
@@ -466,7 +466,7 @@ const NutritionPredictions = () => {
 
       {/* Graphique historique + prédiction */}
       {chartData.length > 0 && chartsReady && (
-        <Card className="bg-slate-800/50 border-slate-700">
+        <Card variant="sport">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Target size={20} className="text-blue-400" />
@@ -525,7 +525,7 @@ const NutritionPredictions = () => {
 
       {/* Message si pas de données */}
       {chartData.length === 0 && !error && (
-        <Card className="bg-slate-800/50 border-slate-700">
+        <Card variant="sport">
           <CardContent className="pt-6">
             <div className="flex flex-col items-center justify-center py-12 text-center">
               <Calendar size={48} className="text-slate-400 mb-4" />

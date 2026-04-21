@@ -177,18 +177,18 @@ const FileEditor = ({
     >
       <div className="space-y-4">
         {/* Informations fichier */}
-        <div className="flex items-center justify-between text-sm text-slate-400">
-          <div className="flex items-center gap-4">
+        <div className="flex flex-wrap items-center justify-between gap-2 text-sm text-emerald-600/90">
+          <div className="flex flex-wrap items-center gap-4">
             <span>Taille: {(file.size / 1024).toFixed(1)} KB</span>
             <span>Type: {file.type || fileExt}</span>
             {sessionStartTime && (
               <span>
-                ⏱️ Temps d'édition: {Math.floor(editDuration / 60)} min {editDuration % 60} s
+                ⏱️ Temps d&apos;édition: {Math.floor(editDuration / 60)} min {editDuration % 60} s
               </span>
             )}
           </div>
           {hasChanges && (
-            <span className="text-amber-400 font-semibold">● Modifications non sauvegardées</span>
+            <span className="font-semibold text-emerald-300">● Modifications non sauvegardées</span>
           )}
         </div>
 
@@ -198,18 +198,18 @@ const FileEditor = ({
             <textarea
               value={content}
               onChange={(e) => setContent(e.target.value)}
-              className="w-full h-96 px-4 py-3 bg-slate-900 border-2 border-emerald-500/50 rounded-lg text-slate-200 font-mono text-sm focus:border-cyan-400 focus:outline-none focus:ring-2 focus:ring-emerald-500/50 transition-all duration-200 resize-y"
+              className="h-96 w-full resize-y rounded-lg border-2 border-emerald-600/50 bg-black px-4 py-3 font-mono text-sm text-emerald-100 transition-all duration-200 placeholder:text-emerald-800 focus:border-emerald-400 focus:outline-none focus:ring-2 focus:ring-emerald-500/40"
               placeholder="Contenu du fichier..."
               spellCheck={false}
             />
             <div className="flex items-center justify-between">
-              <div className="text-xs text-slate-500">
+              <div className="text-xs text-emerald-700">
                 {content.length} caractères • {content.split('\n').length} lignes
               </div>
               <button
                 onClick={handleSave}
                 disabled={!hasChanges || isSaving}
-                className="gradient-button-premium gradient-button-premium-md rounded-lg disabled:opacity-50 disabled:cursor-not-allowed"
+                className="rounded-lg border-2 border-emerald-500/80 bg-emerald-600/90 px-4 py-2 text-sm font-semibold text-black transition hover:bg-emerald-500 disabled:cursor-not-allowed disabled:opacity-50"
               >
                 {isSaving ? '💾 Sauvegarde...' : '💾 Sauvegarder'}
               </button>
@@ -218,26 +218,26 @@ const FileEditor = ({
         ) : (
           <div className="space-y-4">
             {fileExt === 'pdf' ? (
-              <div className="text-center py-12 bg-slate-900/50 rounded-lg border border-slate-700/50">
-                <div className="text-4xl mb-4">📄</div>
-                <div className="text-slate-300 mb-2">Fichier PDF</div>
-                <div className="text-slate-500 text-sm mb-4">
+              <div className="rounded-lg border-2 border-emerald-600/45 bg-black py-12 text-center">
+                <div className="mb-4 text-4xl">📄</div>
+                <div className="mb-2 text-emerald-200">Fichier PDF</div>
+                <div className="mb-4 text-sm text-emerald-600/90">
                   Les fichiers PDF ne peuvent pas être édités directement
                 </div>
                 <a
                   href={file.content ? URL.createObjectURL(new Blob([file.content])) : '#'}
                   download={file.name}
-                  className="gradient-button-premium gradient-button-premium-md rounded-lg inline-block"
+                  className="inline-block rounded-lg border-2 border-emerald-500/80 bg-emerald-600/90 px-4 py-2 text-sm font-semibold text-black transition hover:bg-emerald-500"
                 >
                   📥 Télécharger
                 </a>
               </div>
             ) : (
-              <div className="text-center py-12 bg-slate-900/50 rounded-lg border border-slate-700/50">
-                <div className="text-4xl mb-4">📎</div>
-                <div className="text-slate-300 mb-2">Fichier non éditable</div>
-                <div className="text-slate-500 text-sm">
-                  Ce type de fichier ({fileExt}) ne peut pas être édité dans l'éditeur
+              <div className="rounded-lg border-2 border-emerald-600/45 bg-black py-12 text-center">
+                <div className="mb-4 text-4xl">📎</div>
+                <div className="mb-2 text-emerald-200">Fichier non éditable</div>
+                <div className="text-sm text-emerald-600/90">
+                  Ce type de fichier ({fileExt}) ne peut pas être édité dans l&apos;éditeur
                 </div>
               </div>
             )}
@@ -245,10 +245,10 @@ const FileEditor = ({
         )}
 
         {/* Actions */}
-        <div className="flex items-center justify-end gap-2 pt-4 border-t border-slate-700/50">
+        <div className="flex items-center justify-end gap-2 border-t border-emerald-600/30 pt-4">
           <button
             onClick={handleClose}
-            className="px-4 py-2 bg-slate-700/50 border border-slate-600/50 rounded-lg text-slate-300 hover:bg-slate-700 transition-all duration-200"
+            className="rounded-lg border-2 border-emerald-600/50 bg-black px-4 py-2 text-emerald-200 transition hover:border-emerald-400"
           >
             Fermer
           </button>
@@ -256,7 +256,7 @@ const FileEditor = ({
             <button
               onClick={handleSave}
               disabled={isSaving}
-              className="gradient-button-premium gradient-button-premium-md rounded-lg disabled:opacity-50"
+              className="rounded-lg border-2 border-emerald-500/80 bg-emerald-600/90 px-4 py-2 text-sm font-semibold text-black transition hover:bg-emerald-500 disabled:opacity-50"
             >
               {isSaving ? '💾 Sauvegarde...' : '💾 Sauvegarder et fermer'}
             </button>

@@ -113,32 +113,32 @@ export default function BooksCalendarDayDetailPanel({
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between mb-2">
-        <h3 className="text-lg font-bold text-white">{heading}</h3>
+        <h3 className="text-lg font-bold text-sky-100">{heading}</h3>
         <button
           type="button"
           onClick={onClose}
-          className="text-slate-400 hover:text-white text-2xl leading-none"
+          className="text-sky-300/80 hover:text-sky-100 text-2xl leading-none"
         >
           ×
         </button>
       </div>
       <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-        <div className="bg-slate-900/70 rounded-lg p-3 text-center border border-slate-700/80">
-          <div className="text-2xl font-bold text-white">{bd?.sessions ?? 0}</div>
-          <div className="text-xs text-slate-400">Sessions</div>
+        <div className="bg-black/90 rounded-lg p-3 text-center border border-[#3A86FF]/45">
+          <div className="text-2xl font-bold text-sky-100">{bd?.sessions ?? 0}</div>
+          <div className="text-xs text-sky-200/80">Sessions</div>
         </div>
-        <div className="bg-slate-900/70 rounded-lg p-3 text-center border border-slate-700/80">
-          <div className="text-2xl font-bold text-white">{bd?.pages ?? 0}</div>
-          <div className="text-xs text-slate-400">Pages lues</div>
+        <div className="bg-black/90 rounded-lg p-3 text-center border border-[#3A86FF]/45">
+          <div className="text-2xl font-bold text-sky-100">{bd?.pages ?? 0}</div>
+          <div className="text-xs text-sky-200/80">Pages lues</div>
         </div>
-        <div className="bg-slate-900/70 rounded-lg p-3 text-center border border-slate-700/80">
-          <div className="text-2xl font-bold text-white">{bd?.minutes ?? 0} min</div>
-          <div className="text-xs text-slate-400">Temps lecture</div>
+        <div className="bg-black/90 rounded-lg p-3 text-center border border-[#3A86FF]/45">
+          <div className="text-2xl font-bold text-sky-100">{bd?.minutes ?? 0} min</div>
+          <div className="text-xs text-sky-200/80">Temps lecture</div>
         </div>
       </div>
 
       {dayBonusActive && (
-        <p className="text-[11px] text-emerald-300/90 border border-emerald-800/40 rounded-lg px-2 py-1.5 bg-emerald-950/30">
+        <p className="text-[11px] text-sky-200/90 border border-[#3A86FF]/40 rounded-lg px-2 py-1.5 bg-[#3A86FF]/12">
           Ressenti du jour enregistré : +2 au score d’intensité de cette case et +20 XP comptabilisés pour cette
           date (si au moins une session de lecture).
         </p>
@@ -154,10 +154,10 @@ export default function BooksCalendarDayDetailPanel({
               return (
                 <li
                   key={key}
-                  className="rounded-xl border border-slate-700/80 bg-slate-950/60 overflow-hidden"
+                  className="rounded-xl border border-[#3A86FF]/40 bg-black/85 overflow-hidden"
                 >
                   <div className="flex flex-col sm:flex-row gap-3 p-3">
-                    <div className="shrink-0 w-full sm:w-24 h-36 sm:h-32 rounded-lg bg-slate-900 border border-slate-800 overflow-hidden flex items-center justify-center">
+                    <div className="shrink-0 w-full sm:w-24 h-36 sm:h-32 rounded-lg bg-black border border-[#3A86FF]/35 overflow-hidden flex items-center justify-center">
                       {e.cover ? (
                         <img src={e.cover} alt="" className="w-full h-full object-cover" loading="lazy" />
                       ) : (

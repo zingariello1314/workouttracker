@@ -1102,7 +1102,7 @@ const EnduranceTab = () => {
     
     if (enduranceExercises.length === 0) {
       return (
-        <div className="bg-slate-800/30 backdrop-blur-xl border border-slate-700/50 rounded-2xl p-8 mb-8">
+        <div className="bg-black border border-[#0F4C5C]/50 rounded-2xl p-8 mb-8">
           <h3 className="text-xl font-bold text-white mb-4">{t('endurance.history.fromWorkouts.title')}</h3>
           <p className="text-slate-400">{t('endurance.history.fromWorkouts.none')}</p>
         </div>
@@ -1110,11 +1110,11 @@ const EnduranceTab = () => {
     }
 
     return (
-      <div className="bg-slate-800/30 backdrop-blur-xl border border-slate-700/50 rounded-2xl p-8 mb-8">
+      <div className="bg-black border border-[#0F4C5C]/50 rounded-2xl p-8 mb-8">
         <h3 className="text-xl font-bold text-white mb-4">Exercices d'Endurance depuis vos Séances</h3>
         <div className="space-y-3">
           {enduranceExercises.slice(0, 10).map((exercise, index) => (
-            <div key={exercise.id || index} className="bg-slate-900/50 border border-slate-600/50 rounded-lg p-4">
+            <div key={exercise.id || index} className="bg-black border border-[#0F4C5C]/50 rounded-lg p-4">
               <div className="flex justify-between items-center">
                 <div>
                   <span className="text-white font-medium">{exercise.name}</span>
@@ -1130,16 +1130,16 @@ const EnduranceTab = () => {
   }, [getEnduranceExercisesFromHistory]);
 
   return (
-    <div className="relative min-h-screen">
+    <div className="relative">
       {/* Contenu avec z-index relatif */}
       <div className="relative z-10 flex h-screen">
         {/* Menu latéral */}
-      <div className="w-72 bg-slate-900/50 backdrop-blur-xl border-r border-slate-700/50 pt-20">
+      <div className="w-72 border-r border-[#0F4C5C]/50 bg-black pt-20">
         <div className="p-8">
-          <h1 className="text-3xl font-bold bg-gradient-to-r from-pink-500 via-purple-500 to-violet-500 bg-clip-text text-transparent">
+          <h1 className="bg-gradient-to-r from-teal-200 via-sky-300 to-cyan-400 bg-clip-text text-3xl font-bold text-transparent">
             {t('endurance.title')}
           </h1>
-          <p className="text-slate-400 text-sm mt-2">{t('endurance.subtitle')}</p>
+          <p className="mt-2 text-sm text-teal-700">{t('endurance.subtitle')}</p>
         </div>
         
         <nav className="px-4">
@@ -1150,10 +1150,10 @@ const EnduranceTab = () => {
               <button
                 key={item.id}
                 onClick={() => setActiveTab(item.id)}
-                className={`w-full flex items-center justify-between px-5 py-4 rounded-xl mb-2 transition-all duration-300 group ${
+                className={`group mb-2 flex w-full items-center justify-between rounded-xl border px-5 py-4 transition-all duration-300 ${
                   activeTab === item.id
-                    ? 'bg-gradient-to-r from-pink-500 to-violet-600 shadow-lg shadow-purple-500/50'
-                    : 'text-slate-300 hover:bg-slate-800/50 hover:text-white'
+                    ? 'border-[#0F5C45]/70 bg-[#0F5C45]/25 text-white shadow-md shadow-black/30'
+                    : 'border-transparent text-teal-200/90 hover:border-[#0F4C5C]/40 hover:bg-[#0F4C5C]/10 hover:text-white'
                 }`}
               >
                 <div className="flex items-center">
@@ -1161,7 +1161,7 @@ const EnduranceTab = () => {
                   <span className="font-medium">{item.label}</span>
                 </div>
                 {count > 0 && (
-                  <span className="bg-pink-500 text-white text-xs font-bold rounded-full w-6 h-6 flex items-center justify-center shadow-lg">
+                  <span className="flex h-6 w-6 items-center justify-center rounded-full bg-[#0F5C45] text-xs font-bold text-white shadow-md shadow-black/30">
                     {count}
                   </span>
                 )}
@@ -1218,7 +1218,7 @@ const EnduranceTab = () => {
 
               {/* Formulaire de session boxe */}
               {ui.showSessionForm && (
-                <div className="bg-slate-800/50 backdrop-blur-xl border border-slate-700/50 rounded-2xl p-8 mb-8 shadow-2xl">
+                <div className="bg-black border-2 border-[#0F4C5C]/70 rounded-2xl p-8 mb-8 shadow-2xl shadow-black/40">
                   <div className="flex items-center justify-between mb-6">
                     <h3 className="text-2xl font-bold text-white">
                       {ui.editingSession ? t('endurance.sections.boxing.editSession') : t('endurance.sections.boxing.newSession')}
@@ -1246,7 +1246,7 @@ const EnduranceTab = () => {
               {/* Historique boxe */}
               <div>
                 <h3 className="text-2xl font-bold text-white mb-6">{t('endurance.history.title')}</h3>
-                <div className="bg-slate-800/30 backdrop-blur-xl border border-slate-700/50 rounded-2xl overflow-hidden">
+                <div className="bg-black border border-[#0F4C5C]/50 rounded-2xl overflow-hidden">
                   {sessions.boxing.length === 0 ? (
                     <div className="p-12 text-center">
                       <Box className="w-16 h-16 text-slate-600 mx-auto mb-4" />
@@ -1257,7 +1257,7 @@ const EnduranceTab = () => {
                     <div className="overflow-x-auto">
                       <table className="w-full">
                         <thead>
-                          <tr className="border-b border-slate-700/50">
+                          <tr className="border-b border-[#0F4C5C]/45">
                             <th className="px-6 py-4 text-left text-sm font-semibold text-slate-300">{t('endurance.table.headers.date')}</th>
                             <th className="px-6 py-4 text-left text-sm font-semibold text-slate-300">{t('endurance.table.headers.time')}</th>
                             <th className="px-6 py-4 text-left text-sm font-semibold text-slate-300">{t('endurance.table.headers.duration')}</th>
@@ -1269,7 +1269,7 @@ const EnduranceTab = () => {
                           {sessions.boxing.sort((a, b) => new Date(b.date + ' ' + b.time) - new Date(a.date + ' ' + a.time)).map((session, idx) => (
                             <tr 
                               key={`boxing-${session.id}-${idx}`} 
-                              className="border-b border-slate-700/30 hover:bg-slate-700/20 transition-colors"
+                              className="border-b border-[#0F4C5C]/25 hover:bg-[#0F4C5C]/12 transition-colors"
                             >
                               <td className="px-6 py-4 text-slate-300">{session.date}</td>
                               <td className="px-6 py-4 text-slate-300">{session.time}</td>
@@ -1370,7 +1370,7 @@ const EnduranceTab = () => {
 
               {/* Formulaire de session */}
               {ui.showSessionForm && (
-                <div className="bg-slate-800/50 backdrop-blur-xl border border-slate-700/50 rounded-2xl p-8 mb-8 shadow-2xl">
+                <div className="bg-black border-2 border-[#0F4C5C]/70 rounded-2xl p-8 mb-8 shadow-2xl shadow-black/40">
                   <h3 className="text-2xl font-bold text-white mb-6">{t('endurance.actions.newSession')}</h3>
                   <EnduranceSessionForm
                     activityType="pushups"
@@ -1392,11 +1392,11 @@ const EnduranceTab = () => {
                   <h3 className="text-2xl font-bold text-white mb-6">{t('endurance.challenges.title')}</h3>
                   <div className="grid gap-4">
                     {uniqueChallenges.filter(c => c.activityType === 'pushups').map((challenge, idx) => (
-                      <div key={`pushups-challenge-${challenge.id}-${idx}`} className="bg-gradient-to-r from-slate-800/50 to-slate-700/50 backdrop-blur-xl border border-slate-600/50 rounded-2xl p-6 hover:border-purple-500/50 transition-all">
+                      <div key={`pushups-challenge-${challenge.id}-${idx}`} className="bg-black border-2 border-[#0F4C5C]/70 rounded-2xl p-6 hover:border-[#0F5C45]/90 transition-all">
                         <div className="flex justify-between items-start">
                           <div className="flex-1">
                             <div className="flex items-center gap-3 mb-2">
-                              <Award className="w-5 h-5 text-purple-400" />
+                              <Award className="w-5 h-5 text-sky-400" />
                               <h4 className="font-bold text-xl text-white">{challenge.name}</h4>
                             </div>
                             <div className="space-y-1 text-slate-400 text-sm">
@@ -1408,7 +1408,7 @@ const EnduranceTab = () => {
                                 )}
                                 {challenge.type === 'periode' && t('endurance.challenges.details.period', { startDate: challenge.startDate, endDate: challenge.endDate })}
                               </p>
-                              <p className="text-purple-300">
+                              <p className="text-sky-300">
                                 {challenge.goalCount && challenge.goalDuration
                                   ? t('endurance.challenges.details.goalPushupsWithDuration', { count: challenge.goalCount, duration: challenge.goalDuration })
                                   : challenge.goalCount
@@ -1459,7 +1459,7 @@ const EnduranceTab = () => {
               {/* Historique */}
               <div>
                 <h3 className="text-2xl font-bold text-white mb-6">{t('endurance.history.title')}</h3>
-                <div className="bg-slate-800/30 backdrop-blur-xl border border-slate-700/50 rounded-2xl overflow-hidden">
+                <div className="bg-black border border-[#0F4C5C]/50 rounded-2xl overflow-hidden">
                   {sessions.pushups.length === 0 ? (
                     <div className="p-12 text-center">
                       <Dumbbell className="w-16 h-16 text-slate-600 mx-auto mb-4" />
@@ -1470,7 +1470,7 @@ const EnduranceTab = () => {
                     <div className="overflow-x-auto">
                       <table className="w-full">
                         <thead>
-                          <tr className="border-b border-slate-700/50">
+                          <tr className="border-b border-[#0F4C5C]/45">
                             <th className="px-6 py-4 text-left text-sm font-semibold text-slate-300">Date</th>
                             <th className="px-6 py-4 text-left text-sm font-semibold text-slate-300">Heure</th>
                             <th className="px-6 py-4 text-left text-sm font-semibold text-slate-300">{t('endurance.table.headers.pushups')}</th>
@@ -1486,7 +1486,7 @@ const EnduranceTab = () => {
                             return (
                             <tr 
                               key={`pushups-${session.id}-${idx}`} 
-                              className="border-b border-slate-700/30 hover:bg-slate-700/20 transition-colors"
+                              className="border-b border-[#0F4C5C]/25 hover:bg-[#0F4C5C]/12 transition-colors"
                             >
                               <td className="px-6 py-4 text-slate-300">{session.date}</td>
                               <td className="px-6 py-4 text-slate-300">{session.time}</td>
@@ -1583,7 +1583,7 @@ const EnduranceTab = () => {
               )}
 
               {ui.showSessionForm && (
-                <div className="bg-slate-800/50 backdrop-blur-xl border border-slate-700/50 rounded-2xl p-8 mb-8 shadow-2xl">
+                <div className="bg-black border-2 border-[#0F4C5C]/70 rounded-2xl p-8 mb-8 shadow-2xl shadow-black/40">
                   <h3 className="text-2xl font-bold text-white mb-6">{t('endurance.sections.swimming.newSession')}</h3>
                   <EnduranceSessionForm
                     activityType="swimming"
@@ -1629,11 +1629,11 @@ const EnduranceTab = () => {
                   <h3 className="text-2xl font-bold text-white mb-6">{t('endurance.challenges.title')}</h3>
                   <div className="grid gap-4">
                     {challenges.filter(c => c.activityType === 'swimming').map((challenge, idx) => (
-                      <div key={`swimming-challenge-${challenge.id}-${idx}`} className="bg-gradient-to-r from-slate-800/50 to-slate-700/50 backdrop-blur-xl border border-slate-600/50 rounded-2xl p-6 hover:border-purple-500/50 transition-all">
+                      <div key={`swimming-challenge-${challenge.id}-${idx}`} className="bg-black border-2 border-[#0F4C5C]/70 rounded-2xl p-6 hover:border-[#0F5C45]/90 transition-all">
                         <div className="flex justify-between items-start">
                           <div className="flex-1">
                             <div className="flex items-center gap-3 mb-2">
-                              <Award className="w-5 h-5 text-purple-400" />
+                              <Award className="w-5 h-5 text-sky-400" />
                               <h4 className="font-bold text-xl text-white">{challenge.name}</h4>
                             </div>
                             <div className="space-y-1 text-slate-400 text-sm">
@@ -1645,7 +1645,7 @@ const EnduranceTab = () => {
                                 )}
                                 {challenge.type === 'periode' && t('endurance.challenges.details.period', { startDate: challenge.startDate, endDate: challenge.endDate })}
                               </p>
-                              <p className="text-purple-300">
+                              <p className="text-sky-300">
                                 {challenge.goalDistance && challenge.goalTime
                                   ? t('endurance.challenges.details.goalSwimmingWithTime', { distance: challenge.goalDistance, time: challenge.goalTime })
                                   : challenge.goalDistance
@@ -1695,7 +1695,7 @@ const EnduranceTab = () => {
 
               <div>
                 <h3 className="text-2xl font-bold text-white mb-6">{t('endurance.history.title')}</h3>
-                <div className="bg-slate-800/30 backdrop-blur-xl border border-slate-700/50 rounded-2xl overflow-hidden">
+                <div className="bg-black border border-[#0F4C5C]/50 rounded-2xl overflow-hidden">
                   {sessions.swimming.length === 0 ? (
                     <div className="p-12 text-center">
                       <Waves className="w-16 h-16 text-slate-600 mx-auto mb-4" />
@@ -1707,7 +1707,7 @@ const EnduranceTab = () => {
                       {sessions.swimming.sort((a, b) => new Date(b.date + ' ' + b.time) - new Date(a.date + ' ' + a.time)).map((session, idx) => {
                         const originalIndex = sessions.swimming.findIndex(s => s === session);
                         return (
-                        <div key={`swimming-${session.id}-${idx}`} className="bg-slate-900/30 border border-slate-700/50 rounded-xl p-6 hover:border-purple-500/30 transition-all">
+                        <div key={`swimming-${session.id}-${idx}`} className="bg-black border border-[#0F4C5C]/45 rounded-xl p-6 hover:border-[#0F5C45]/45 transition-all">
                           <div className="flex justify-between items-start mb-4">
                             <div className="flex-1">
                               <div className="flex items-center gap-3 mb-2">
@@ -1786,7 +1786,7 @@ const EnduranceTab = () => {
                             </div>
                           </div>
                           {session.laps && Array.isArray(session.laps) && session.laps.length > 0 && (
-                            <div className="border-t border-slate-700/50 pt-4">
+                            <div className="border-t border-[#0F4C5C]/45 pt-4">
                               <h5 className="text-slate-400 text-sm mb-3">{t('endurance.swimming.details.title')}</h5>
                               <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2">
                                 {session.laps.map((lap, idx) => (
@@ -1868,7 +1868,7 @@ const EnduranceTab = () => {
               )}
 
               {ui.showSessionForm && (
-                <div className="bg-slate-800/50 backdrop-blur-xl border border-slate-700/50 rounded-2xl p-8 mb-8 shadow-2xl">
+                <div className="bg-black border-2 border-[#0F4C5C]/70 rounded-2xl p-8 mb-8 shadow-2xl shadow-black/40">
                   <h3 className="text-2xl font-bold text-white mb-6">{t('endurance.sections.jumprope.newSession')}</h3>
                   <EnduranceSessionForm
                     activityType="jumprope"
@@ -1908,11 +1908,11 @@ const EnduranceTab = () => {
                   <h3 className="text-2xl font-bold text-white mb-6">{t('endurance.challenges.title')}</h3>
                   <div className="grid gap-4">
                     {challenges.filter(c => c.activityType === 'jumprope').map((challenge, idx) => (
-                      <div key={`jumprope-challenge-${challenge.id}-${idx}`} className="bg-gradient-to-r from-slate-800/50 to-slate-700/50 backdrop-blur-xl border border-slate-600/50 rounded-2xl p-6 hover:border-purple-500/50 transition-all">
+                      <div key={`jumprope-challenge-${challenge.id}-${idx}`} className="bg-black border-2 border-[#0F4C5C]/70 rounded-2xl p-6 hover:border-[#0F5C45]/90 transition-all">
                         <div className="flex justify-between items-start">
                           <div className="flex-1">
                             <div className="flex items-center gap-3 mb-2">
-                              <Award className="w-5 h-5 text-purple-400" />
+                              <Award className="w-5 h-5 text-sky-400" />
                               <h4 className="font-bold text-xl text-white">{challenge.name}</h4>
                               <span className={`px-2 py-1 rounded-lg text-xs font-medium ${
                                 challenge.status === 'active' 
@@ -1931,7 +1931,7 @@ const EnduranceTab = () => {
                                 )}
                                 {challenge.type === 'periode' && t('endurance.challenges.details.period', { startDate: challenge.startDate, endDate: challenge.endDate })}
                               </p>
-                              <p className="text-purple-300">
+                              <p className="text-sky-300">
                                 {challenge.goalDuration && challenge.goalCount
                                   ? t('endurance.challenges.details.goalJumpropeOrJumps', { duration: challenge.goalDuration, jumps: challenge.goalCount })
                                   : challenge.goalDuration
@@ -1975,7 +1975,7 @@ const EnduranceTab = () => {
               {/* Historique */}
               <div>
                 <h3 className="text-2xl font-bold text-white mb-6">{t('endurance.history.title')}</h3>
-                <div className="bg-slate-800/30 backdrop-blur-xl border border-slate-700/50 rounded-2xl overflow-hidden">
+                <div className="bg-black border border-[#0F4C5C]/50 rounded-2xl overflow-hidden">
                   {sessions.jumprope.length === 0 ? (
                     <div className="p-12 text-center">
                       <Activity className="w-16 h-16 text-slate-600 mx-auto mb-4" />
@@ -1986,7 +1986,7 @@ const EnduranceTab = () => {
                     <div className="overflow-x-auto">
                       <table className="w-full">
                         <thead>
-                          <tr className="border-b border-slate-700/50">
+                          <tr className="border-b border-[#0F4C5C]/45">
                             <th className="px-6 py-4 text-left text-sm font-semibold text-slate-300">Date</th>
                             <th className="px-6 py-4 text-left text-sm font-semibold text-slate-300">Heure</th>
                             <th className="px-6 py-4 text-left text-sm font-semibold text-slate-300">Durée</th>
@@ -2003,7 +2003,7 @@ const EnduranceTab = () => {
                             return (
                             <tr 
                               key={`jumprope-${session.id}-${idx}`} 
-                              className={`border-b border-slate-700/30 hover:bg-slate-700/20 transition-colors ${idx % 2 === 0 ? 'bg-slate-800/20' : 'bg-slate-800/10'}`}
+                              className={`border-b border-[#0F4C5C]/25 hover:bg-[#0F4C5C]/12 transition-colors ${idx % 2 === 0 ? 'bg-slate-800/20' : 'bg-slate-800/10'}`}
                             >
                               <td className="px-6 py-4 text-slate-300">{session.date}</td>
                               <td className="px-6 py-4 text-slate-300">{session.time}</td>
@@ -2112,7 +2112,7 @@ const EnduranceTab = () => {
 
               {/* Formulaire de session */}
               {ui.showSessionForm && (
-                <div className="bg-slate-800/50 backdrop-blur-xl border border-slate-700/50 rounded-2xl p-8 mb-8 shadow-2xl">
+                <div className="bg-black border-2 border-[#0F4C5C]/70 rounded-2xl p-8 mb-8 shadow-2xl shadow-black/40">
                   <h3 className="text-2xl font-bold text-white mb-6">{t('endurance.actions.newSession')}</h3>
                   <EnduranceSessionForm
                     activityType="running"
@@ -2151,11 +2151,11 @@ const EnduranceTab = () => {
                   <h3 className="text-2xl font-bold text-white mb-6">{t('endurance.challenges.title')}</h3>
                   <div className="grid gap-4">
                     {challenges.filter(c => c.activityType === 'running').map((challenge, idx) => (
-                      <div key={`running-challenge-${challenge.id}-${idx}`} className="bg-gradient-to-r from-slate-800/50 to-slate-700/50 backdrop-blur-xl border border-slate-600/50 rounded-2xl p-6 hover:border-purple-500/50 transition-all">
+                      <div key={`running-challenge-${challenge.id}-${idx}`} className="bg-black border-2 border-[#0F4C5C]/70 rounded-2xl p-6 hover:border-[#0F5C45]/90 transition-all">
                         <div className="flex justify-between items-start">
                           <div className="flex-1">
                             <div className="flex items-center gap-3 mb-2">
-                              <Award className="w-5 h-5 text-purple-400" />
+                              <Award className="w-5 h-5 text-sky-400" />
                               <h4 className="font-bold text-xl text-white">{challenge.name}</h4>
                               <span className={`px-2 py-1 rounded-lg text-xs font-medium ${
                                 challenge.status === 'active' 
@@ -2174,7 +2174,7 @@ const EnduranceTab = () => {
                                 )}
                                 {challenge.type === 'periode' && t('endurance.challenges.details.period', { startDate: challenge.startDate, endDate: challenge.endDate })}
                               </p>
-                              <p className="text-purple-300">
+                              <p className="text-sky-300">
                                 {challenge.goalDistance && challenge.goalDuration
                                   ? t('endurance.challenges.details.goalRunningWithDuration', { distance: challenge.goalDistance, duration: challenge.goalDuration })
                                   : challenge.goalDistance
@@ -2218,7 +2218,7 @@ const EnduranceTab = () => {
               {/* Historique */}
               <div>
                 <h3 className="text-2xl font-bold text-white mb-6">{t('endurance.history.title')}</h3>
-                <div className="bg-slate-800/30 backdrop-blur-xl border border-slate-700/50 rounded-2xl overflow-hidden">
+                <div className="bg-black border border-[#0F4C5C]/50 rounded-2xl overflow-hidden">
                   {sessions.running.length === 0 ? (
                     <div className="p-12 text-center">
                       <Play className="w-16 h-16 text-slate-600 mx-auto mb-4" />
@@ -2245,7 +2245,7 @@ const EnduranceTab = () => {
                               setRunningDetailSession(session);
                             }
                           }}
-                          className="bg-slate-900/30 border border-slate-700/50 rounded-xl p-6 transition-all hover:border-purple-500/30 cursor-pointer focus:outline-none focus:ring-2 focus:ring-purple-500/40"
+                          className="bg-black border border-[#0F4C5C]/45 rounded-xl p-6 transition-all hover:border-[#0F5C45]/45 cursor-pointer focus:outline-none focus:ring-2 focus:ring-[#0F4C5C]/50"
                         >
                           <div className="flex justify-between items-start mb-4">
                             <div className="flex-1">
@@ -2348,7 +2348,7 @@ const EnduranceTab = () => {
                   <select
                     value={ui.selectedYear}
                     onChange={(e) => setUI({ selectedYear: parseInt(e.target.value) })}
-                    className="px-4 py-2 bg-slate-800/50 border border-slate-600/50 rounded-xl text-white focus:outline-none focus:border-purple-500 transition-colors"
+                    className="px-4 py-2 bg-black border border-[#0F4C5C]/50 rounded-xl text-white focus:outline-none focus:border-[#0F5C45] transition-colors"
                   >
                     <option value={2024}>2024</option>
                     <option value={2025}>2025</option>
@@ -2356,7 +2356,7 @@ const EnduranceTab = () => {
                   <select
                     value={ui.selectedActivityFilter}
                     onChange={(e) => setUI({ selectedActivityFilter: e.target.value })}
-                    className="px-4 py-2 bg-slate-800/50 border border-slate-600/50 rounded-xl text-white focus:outline-none focus:border-purple-500 transition-colors"
+                    className="px-4 py-2 bg-black border border-[#0F4C5C]/50 rounded-xl text-white focus:outline-none focus:border-[#0F5C45] transition-colors"
                   >
                     <option value="all">{t('endurance.calendar.filters.all')}</option>
                     <option value="boxing">{t('endurance.calendar.filters.boxing')}</option>
@@ -2370,19 +2370,19 @@ const EnduranceTab = () => {
 
               {/* Statistiques rapides */}
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
-                <div className="bg-slate-800/30 backdrop-blur-xl border border-slate-700/50 rounded-xl p-4">
+                <div className="bg-slate-800/30 backdrop-blur-xl border border-[#0F4C5C]/45 rounded-xl p-4">
                   <div className="text-2xl font-bold text-white">{getTotalActivities}</div>
                   <div className="text-slate-400 text-sm">{t('endurance.calendar.stats.totalActivities')}</div>
                 </div>
-                <div className="bg-slate-800/30 backdrop-blur-xl border border-slate-700/50 rounded-xl p-4">
+                <div className="bg-slate-800/30 backdrop-blur-xl border border-[#0F4C5C]/45 rounded-xl p-4">
                   <div className="text-2xl font-bold text-white">{getCurrentStreak}</div>
                   <div className="text-slate-400 text-sm">{t('endurance.calendar.stats.consecutiveDays')}</div>
                 </div>
-                <div className="bg-slate-800/30 backdrop-blur-xl border border-slate-700/50 rounded-xl p-4">
+                <div className="bg-slate-800/30 backdrop-blur-xl border border-[#0F4C5C]/45 rounded-xl p-4">
                   <div className="text-2xl font-bold text-white">{getBestStreak}</div>
                   <div className="text-slate-400 text-sm">{t('endurance.calendar.stats.bestStreak')}</div>
                 </div>
-                <div className="bg-slate-800/30 backdrop-blur-xl border border-slate-700/50 rounded-xl p-4">
+                <div className="bg-slate-800/30 backdrop-blur-xl border border-[#0F4C5C]/45 rounded-xl p-4">
                   <div className="text-2xl font-bold text-white">{getActiveDays}</div>
                   <div className="text-slate-400 text-sm">{t('endurance.calendar.stats.activeDays')}</div>
                 </div>
@@ -2399,7 +2399,7 @@ const EnduranceTab = () => {
               </div>
 
               {/* Heatmap */}
-              <div className="bg-slate-800/30 backdrop-blur-xl border border-slate-700/50 rounded-2xl p-6 mb-8">
+              <div className="bg-black border border-[#0F4C5C]/50 rounded-2xl p-6 mb-8">
                 <h3 className="text-xl font-bold text-white mb-4">{t('endurance.calendar.heatmap.title', { year: ui.selectedYear })}</h3>
                 
                 {/* Légende */}
@@ -2487,7 +2487,7 @@ const EnduranceTab = () => {
               {/* Modal des activités du jour */}
               {ui.selectedDay && (
                 <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-                  <div className="bg-gradient-to-br from-slate-800 to-slate-900 border border-slate-700/50 rounded-2xl p-6 max-w-2xl w-full max-h-[80vh] overflow-y-auto shadow-2xl">
+                  <div className="bg-gradient-to-br from-slate-800 to-slate-900 border border-[#0F4C5C]/45 rounded-2xl p-6 max-w-2xl w-full max-h-[80vh] overflow-y-auto shadow-2xl">
                     <div className="flex justify-between items-center mb-6">
                       <h3 className="text-2xl font-bold text-white">
                         {t('endurance.calendar.heatmap.dayActivities', { 
@@ -2511,7 +2511,7 @@ const EnduranceTab = () => {
                       {getActivitiesForDay(ui.selectedDay).map((activity, index) => (
                         <div 
                           key={index}
-                          className="bg-slate-900/50 border border-slate-600/50 rounded-xl p-4 hover:border-purple-500/50 transition-all cursor-pointer"
+                          className="bg-black border border-[#0F4C5C]/50 rounded-xl p-4 hover:border-[#0F5C45]/55 transition-all cursor-pointer"
                           onClick={() => navigateToActivity(activity.type)}
                         >
                           <div className="flex justify-between items-center">
@@ -2520,7 +2520,7 @@ const EnduranceTab = () => {
                                 activity.type === 'boxing' ? 'bg-red-500' :
                                 activity.type === 'pushups' ? 'bg-orange-500' :
                                 activity.type === 'swimming' ? 'bg-blue-500' :
-                                activity.type === 'jumprope' ? 'bg-purple-500' :
+                                activity.type === 'jumprope' ? 'bg-sky-600' :
                                 'bg-green-500'
                               }`} />
                               <div>
@@ -2562,7 +2562,7 @@ const EnduranceTab = () => {
       {/* Modal création de défi */}
       {ui.showChallengeModal && (
         <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="bg-gradient-to-br from-slate-800 to-slate-900 border border-slate-700/50 rounded-2xl p-8 max-w-2xl w-full max-h-[90vh] overflow-y-auto shadow-2xl">
+          <div className="bg-gradient-to-br from-slate-800 to-slate-900 border border-[#0F4C5C]/45 rounded-2xl p-8 max-w-2xl w-full max-h-[90vh] overflow-y-auto shadow-2xl">
             <div className="flex justify-between items-center mb-6">
               <h3 className="text-3xl font-bold text-white">{t('endurance.challenges.modal.title')}</h3>
               <button
@@ -2580,7 +2580,7 @@ const EnduranceTab = () => {
                   type="text"
                   value={challengeForm.name}
                   onChange={(e) => setChallengeForm({...challengeForm, name: e.target.value})}
-                  className="w-full px-4 py-3 bg-slate-900/50 border border-slate-600/50 rounded-xl text-white focus:outline-none focus:border-purple-500 transition-colors"
+                  className="w-full px-4 py-3 bg-black border border-[#0F4C5C]/50 rounded-xl text-white focus:outline-none focus:border-[#0F5C45] transition-colors"
                   placeholder={t('endurance.challenges.modal.namePlaceholder')}
                 />
               </div>
@@ -2590,7 +2590,7 @@ const EnduranceTab = () => {
                 <select
                   value={challengeForm.activityType}
                   onChange={(e) => setChallengeForm({...challengeForm, activityType: e.target.value})}
-                  className="w-full px-4 py-3 bg-slate-900/50 border border-slate-600/50 rounded-xl text-white focus:outline-none focus:border-purple-500 transition-colors"
+                  className="w-full px-4 py-3 bg-black border border-[#0F4C5C]/50 rounded-xl text-white focus:outline-none focus:border-[#0F5C45] transition-colors"
                 >
                   <option value="boxing">{t('endurance.menu.boxing')}</option>
                   <option value="pushups">{t('endurance.menu.pushups')}</option>
@@ -2605,7 +2605,7 @@ const EnduranceTab = () => {
                 <select
                   value={challengeForm.type}
                   onChange={(e) => setChallengeForm({...challengeForm, type: e.target.value})}
-                  className="w-full px-4 py-3 bg-slate-900/50 border border-slate-600/50 rounded-xl text-white focus:outline-none focus:border-purple-500 transition-colors"
+                  className="w-full px-4 py-3 bg-black border border-[#0F4C5C]/50 rounded-xl text-white focus:outline-none focus:border-[#0F5C45] transition-colors"
                 >
                   <option value="ponctuel">{t('endurance.challenges.types.ponctuel')}</option>
                   <option value="recurrent">{t('endurance.challenges.types.recurrent')}</option>
@@ -2620,7 +2620,7 @@ const EnduranceTab = () => {
                     type="date"
                     value={challengeForm.targetDate}
                     onChange={(e) => setChallengeForm({...challengeForm, targetDate: e.target.value})}
-                    className="w-full px-4 py-3 bg-slate-900/50 border border-slate-600/50 rounded-xl text-white focus:outline-none focus:border-purple-500 transition-colors"
+                    className="w-full px-4 py-3 bg-black border border-[#0F4C5C]/50 rounded-xl text-white focus:outline-none focus:border-[#0F5C45] transition-colors"
                   />
                 </div>
               )}
@@ -2632,7 +2632,7 @@ const EnduranceTab = () => {
                     <select
                       value={challengeForm.frequency}
                       onChange={(e) => setChallengeForm({...challengeForm, frequency: e.target.value})}
-                      className="w-full px-4 py-3 bg-slate-900/50 border border-slate-600/50 rounded-xl text-white focus:outline-none focus:border-purple-500 transition-colors"
+                      className="w-full px-4 py-3 bg-black border border-[#0F4C5C]/50 rounded-xl text-white focus:outline-none focus:border-[#0F5C45] transition-colors"
                     >
                       <option value="daily">{t('endurance.challenges.frequencies.daily')}</option>
                       <option value="weekly">{t('endurance.challenges.frequencies.weekly')}</option>
@@ -2643,7 +2643,7 @@ const EnduranceTab = () => {
                     <select
                       value={challengeForm.moment}
                       onChange={(e) => setChallengeForm({...challengeForm, moment: e.target.value})}
-                      className="w-full px-4 py-3 bg-slate-900/50 border border-slate-600/50 rounded-xl text-white focus:outline-none focus:border-purple-500 transition-colors"
+                      className="w-full px-4 py-3 bg-black border border-[#0F4C5C]/50 rounded-xl text-white focus:outline-none focus:border-[#0F5C45] transition-colors"
                     >
                       <option value="matin">{t('endurance.challenges.moments.morning')}</option>
                       <option value="midi">{t('endurance.challenges.moments.midday')}</option>
@@ -2661,7 +2661,7 @@ const EnduranceTab = () => {
                       type="date"
                       value={challengeForm.startDate}
                       onChange={(e) => setChallengeForm({...challengeForm, startDate: e.target.value})}
-                      className="w-full px-4 py-3 bg-slate-900/50 border border-slate-600/50 rounded-xl text-white focus:outline-none focus:border-purple-500 transition-colors"
+                      className="w-full px-4 py-3 bg-black border border-[#0F4C5C]/50 rounded-xl text-white focus:outline-none focus:border-[#0F5C45] transition-colors"
                     />
                   </div>
                   <div>
@@ -2670,7 +2670,7 @@ const EnduranceTab = () => {
                       type="date"
                       value={challengeForm.endDate}
                       onChange={(e) => setChallengeForm({...challengeForm, endDate: e.target.value})}
-                      className="w-full px-4 py-3 bg-slate-900/50 border border-slate-600/50 rounded-xl text-white focus:outline-none focus:border-purple-500 transition-colors"
+                      className="w-full px-4 py-3 bg-black border border-[#0F4C5C]/50 rounded-xl text-white focus:outline-none focus:border-[#0F5C45] transition-colors"
                     />
                   </div>
                 </div>
@@ -2685,7 +2685,7 @@ const EnduranceTab = () => {
                     type="number"
                     value={challengeForm.goalCount}
                     onChange={(e) => setChallengeForm({...challengeForm, goalCount: e.target.value})}
-                    className="w-full px-4 py-3 bg-slate-900/50 border border-slate-600/50 rounded-xl text-white focus:outline-none focus:border-purple-500 transition-colors"
+                    className="w-full px-4 py-3 bg-black border border-[#0F4C5C]/50 rounded-xl text-white focus:outline-none focus:border-[#0F5C45] transition-colors"
                     placeholder={t('endurance.challenges.modal.optional')}
                   />
                 </div>
@@ -2696,7 +2696,7 @@ const EnduranceTab = () => {
                     step="0.5"
                     value={challengeForm.goalDuration}
                     onChange={(e) => setChallengeForm({...challengeForm, goalDuration: e.target.value})}
-                    className="w-full px-4 py-3 bg-slate-900/50 border border-slate-600/50 rounded-xl text-white focus:outline-none focus:border-purple-500 transition-colors"
+                    className="w-full px-4 py-3 bg-black border border-[#0F4C5C]/50 rounded-xl text-white focus:outline-none focus:border-[#0F5C45] transition-colors"
                     placeholder={t('endurance.challenges.modal.optional')}
                   />
                 </div>

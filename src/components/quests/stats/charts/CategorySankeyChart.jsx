@@ -5,6 +5,7 @@
 
 import React, { useMemo } from 'react';
 import LazyChart from '../../../BodyTracking/components/LazyChart';
+import { qstatsPanel, qstatsHeaderRow, qstatsAccentBar, qstatsCategoryStroke } from '../questsStatsTheme';
 
 const CategorySankeyChart = ({ validations, allQuests, selectedPeriod }) => {
   const sankeyData = useMemo(() => {
@@ -99,23 +100,7 @@ const CategorySankeyChart = ({ validations, allQuests, selectedPeriod }) => {
 
   if (sankeyData.nodes.length === 0 || sankeyData.links.length === 0) return null;
 
-  // Couleurs par catégorie
-  const categoryColors = {
-    'Santé': '#10b981',
-    'Travail': '#3b82f6',
-    'Apprentissage': '#8b5cf6',
-    'Lecture': '#ec4899',
-    'Sport': '#f59e0b',
-    'Ménage': '#06b6d4',
-    'Spirituel': '#6366f1',
-    'Repas': '#f97316',
-    'Projets': '#14b8a6',
-    'Hobby': '#a855f7',
-    'Social': '#ef4444',
-    'Finance': '#22c55e',
-    'Créativité': '#eab308',
-    'Bien-être': '#06b6d4',
-  };
+  const categoryColors = { ...qstatsCategoryStroke, Autre: '#94a3b8' };
 
   // Calculer les positions et largeurs
   const sourceNodes = sankeyData.nodes.filter(n => n.type === 'source');
@@ -220,9 +205,9 @@ const CategorySankeyChart = ({ validations, allQuests, selectedPeriod }) => {
   });
 
   return (
-    <div className="rounded-2xl border border-indigo-500/20 bg-gradient-to-br from-slate-900/90 via-slate-800/50 to-slate-900/90 px-4 py-3 shadow-xl shadow-indigo-500/10 backdrop-blur-sm">
-      <div className="text-xs text-indigo-300 mb-3 font-semibold tracking-wide flex items-center gap-2">
-        <div className="w-1 h-4 bg-gradient-to-b from-indigo-400 to-purple-500 rounded-full"></div>
+    <div className={qstatsPanel}>
+      <div className={qstatsHeaderRow}>
+        <div className={qstatsAccentBar} />
         Flux XP entre catégories (par semaine)
       </div>
       <LazyChart height={400}>
@@ -238,8 +223,8 @@ const CategorySankeyChart = ({ validations, allQuests, selectedPeriod }) => {
                 </linearGradient>
               ))}
               <linearGradient id="sourceGradient" x1="0%" y1="0%" x2="100%" y2="0%">
-                <stop offset="0%" stopColor="#3b82f6" stopOpacity={0.9} />
-                <stop offset="100%" stopColor="#2563eb" stopOpacity={0.7} />
+                <stop offset="0%" stopColor="#92400e" stopOpacity={0.95} />
+                <stop offset="100%" stopColor="#451a03" stopOpacity={0.85} />
               </linearGradient>
             </defs>
             

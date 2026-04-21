@@ -92,34 +92,34 @@ const ChallengeCard = ({ challenge, onComplete, onUpdate }) => {
   };
 
   return (
-    <div className="bg-gradient-to-r from-purple-600/20 to-blue-600/20 backdrop-blur-xl border border-purple-500/30 rounded-2xl p-4 hover:border-purple-400/50 transition-all">
-      <div className="flex items-center justify-between mb-3">
-        <div className="flex items-center gap-3">
+    <div className="rounded-2xl border border-[#0F4C5C]/50 bg-black p-4 transition-all hover:border-[#0F5C45]/55">
+      <div className="mb-3 flex items-center justify-between">
+        <div className="flex items-center gap-3 text-teal-200">
           {getChallengeTypeIcon()}
-          <h4 className="font-bold text-lg text-white">{challenge.name}</h4>
+          <h4 className="text-lg font-bold text-white">{challenge.name}</h4>
         </div>
         <div className="flex items-center gap-2">
-          <span className="text-xs bg-purple-500/30 text-purple-200 px-2 py-1 rounded-full">
+          <span className="rounded-full border border-[#0F5C45]/40 bg-[#0F4C5C]/25 px-2 py-1 text-xs text-teal-100">
             {challenge.activityType}
           </span>
           <Button
             variant="ghost"
             size="sm"
             onClick={() => setIsExpanded(!isExpanded)}
-            className="text-purple-300 hover:text-white"
+            className="text-teal-300 hover:text-white"
           >
             {isExpanded ? <X className="w-4 h-4" /> : <CheckCircle className="w-4 h-4" />}
           </Button>
         </div>
       </div>
 
-      <div className="space-y-2 text-sm text-slate-300">
+      <div className="space-y-2 text-sm text-teal-200/85">
         <p>{getChallengeTypeText()}</p>
-        <p className="text-purple-200">🎯 {t('today.challenges.goal')}: {getGoalText()}</p>
+        <p className="text-cyan-200/90">🎯 {t('today.challenges.goal')}: {getGoalText()}</p>
       </div>
 
       {isExpanded && (
-        <div className="mt-4 space-y-4 p-4 bg-slate-800/50 rounded-xl border border-slate-600/50">
+        <div className="mt-4 space-y-4 rounded-xl border border-[#0F4C5C]/45 bg-black p-4">
           <h5 className="font-semibold text-white flex items-center gap-2">
             <MessageSquare className="w-4 h-4" />
             {t('today.challenges.validate')}
@@ -177,7 +177,7 @@ const ChallengeCard = ({ challenge, onComplete, onUpdate }) => {
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
               placeholder={t('today.challenges.placeholders.notes')}
-              className="w-full p-3 bg-slate-700 border border-slate-600 rounded-lg text-white placeholder-slate-400 focus:border-purple-500 focus:outline-none"
+              className="w-full rounded-lg border border-[#0F4C5C]/50 bg-black p-3 text-white placeholder-teal-800 focus:border-[#0F5C45] focus:outline-none focus:ring-1 focus:ring-teal-500/40"
               rows={3}
             />
           </div>
@@ -193,7 +193,7 @@ const ChallengeCard = ({ challenge, onComplete, onUpdate }) => {
             <Button
               onClick={handleComplete}
               disabled={isCompleting || (!reps && !duration)}
-              className="bg-purple-600 hover:bg-purple-700 text-white"
+              className="border border-[#0F5C45]/60 bg-[#0F4C5C] text-white hover:bg-[#0F4C5C]/90"
             >
               {isCompleting ? t('today.challenges.validating') : t('today.challenges.validate')}
             </Button>

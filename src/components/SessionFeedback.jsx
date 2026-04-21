@@ -241,18 +241,18 @@ const SessionFeedback = ({ isOpen, onClose, onSave, sessionData }) => {
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-      <div className="bg-slate-800 rounded-xl border border-slate-700 w-full max-w-4xl max-h-[90vh] overflow-y-auto">
+    <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/60 px-3 pb-6 pt-20 backdrop-blur-sm sm:items-center sm:p-4 sm:pb-6 sm:pt-4">
+      <div className="w-full max-h-[min(88vh,720px)] max-w-4xl overflow-y-auto rounded-xl border-2 border-[#0F4C5C]/75 bg-black shadow-2xl shadow-black/50">
         {/* En-tête avec progression */}
-        <div className="flex items-center justify-between p-6 border-b border-slate-700">
-          <div className="flex items-center gap-4">
-            <h2 className="text-2xl font-bold text-white flex items-center gap-2">
-              <MessageSquare className="text-purple-400" />
+        <div className="flex items-center justify-between border-b border-[#0F4C5C]/40 p-4 sm:p-6">
+          <div className="flex flex-wrap items-center gap-3 sm:gap-4">
+            <h2 className="flex items-center gap-2 text-xl font-bold text-white sm:text-2xl">
+              <MessageSquare className="text-teal-400" />
               {t('sessionFeedback.title')}
             </h2>
             <div className="flex items-center gap-2">
-              <span className="text-sm text-slate-400">{t('sessionFeedback.step', { current: currentStep, total: totalSteps })}</span>
-              <div className="w-32 h-2 bg-slate-700 rounded-full overflow-hidden">
+              <span className="text-sm text-teal-600">{t('sessionFeedback.step', { current: currentStep, total: totalSteps })}</span>
+              <div className="h-2 w-32 overflow-hidden rounded-full bg-black ring-1 ring-[#0F4C5C]/50">
                 <div 
                   className={`h-full transition-all duration-300 ${getProgressColor()}`}
                   style={{ width: `${(currentStep / totalSteps) * 100}%` }}
@@ -262,16 +262,16 @@ const SessionFeedback = ({ isOpen, onClose, onSave, sessionData }) => {
           </div>
           <button
             onClick={onClose}
-            className="p-2 bg-slate-700 hover:bg-slate-600 rounded-lg transition-all"
+            className="rounded-lg border border-[#0F4C5C]/50 bg-black p-2 transition-all hover:border-teal-500/50 hover:bg-[#0F4C5C]/20"
           >
             <X size={20} className="text-white" />
           </button>
         </div>
 
-        <div className="p-6">
+        <div className="p-4 sm:p-6">
           {/* Résumé de la séance */}
           {sessionData && (
-            <div className="bg-slate-700/50 rounded-lg p-4 mb-6">
+            <div className="mb-6 rounded-lg border border-[#0F4C5C]/40 bg-black p-4">
               <h3 className="text-white font-medium mb-3 flex items-center gap-2">
                 <Activity className="text-green-400" size={16} />
                 {t('sessionFeedback.summary.title')}
@@ -281,25 +281,25 @@ const SessionFeedback = ({ isOpen, onClose, onSave, sessionData }) => {
                   <div className="text-2xl font-bold text-white">
                     {sessionData.exercises?.reduce((sum, ex) => sum + (parseInt(ex.reps) || 0), 0) || 0}
                   </div>
-                  <div className="text-slate-400">{t('sessionFeedback.summary.totalReps')}</div>
+                  <div className="text-teal-700">{t('sessionFeedback.summary.totalReps')}</div>
                 </div>
                 <div className="text-center">
                   <div className="text-2xl font-bold text-white">
                     {sessionData.exercises?.length || 0}
                   </div>
-                  <div className="text-slate-400">{t('sessionFeedback.summary.exercises')}</div>
+                  <div className="text-teal-700">{t('sessionFeedback.summary.exercises')}</div>
                 </div>
                 <div className="text-center">
                   <div className="text-2xl font-bold text-white">
                     {Math.round((sessionData.duration || 0) / 60) || 'N/A'}min
                   </div>
-                  <div className="text-slate-400">{t('sessionFeedback.summary.estimatedDuration')}</div>
+                  <div className="text-teal-700">{t('sessionFeedback.summary.estimatedDuration')}</div>
                 </div>
                 <div className="text-center">
                   <div className="text-2xl font-bold text-white">
                     {formatDate(new Date(), { weekday: 'short' })}
                   </div>
-                  <div className="text-slate-400">{t('sessionFeedback.summary.today')}</div>
+                  <div className="text-teal-700">{t('sessionFeedback.summary.today')}</div>
                 </div>
               </div>
             </div>

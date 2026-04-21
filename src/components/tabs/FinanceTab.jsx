@@ -12,6 +12,7 @@ const InvestissementsSubTab = lazy(() => import('../finance/investissements/Inve
 const SmartShoppingSubTab = lazy(() => import('../finance/smartShopping/SmartShoppingSubTab'));
 const PlanificateurSubTab = lazy(() => import('../finance/planificateur/PlanificateurSubTab'));
 const SyntheseSubTab = lazy(() => import('../finance/synthese/SyntheseSubTab'));
+const FinanceCalendarView = lazy(() => import('../finance/FinanceCalendarView'));
 
 // Skeleton loader pour les sous-onglets
 const FinanceSubTabSkeleton = () => (
@@ -50,6 +51,7 @@ const FinanceTab = () => {
     { id: 'investissements', labelKey: 'finance.subTabs.investissements', icon: '🥇' },
     { id: 'smart-shopping', labelKey: 'finance.subTabs.smartShopping', icon: '🛒' },
     { id: 'planificateur', labelKey: 'finance.subTabs.planificateur', icon: '📅' },
+    { id: 'calendrier', labelKey: 'finance.subTabs.calendrier', icon: '🗓️' },
     { id: 'synthese', labelKey: 'finance.subTabs.synthese', icon: '📊' }
   ], []);
 
@@ -69,6 +71,7 @@ const FinanceTab = () => {
     'investissements': InvestissementsSubTab,
     'smart-shopping': SmartShoppingSubTab,
     'planificateur': PlanificateurSubTab,
+    'calendrier': FinanceCalendarView,
     'synthese': SyntheseSubTab
   }), []);
 
@@ -100,6 +103,9 @@ const FinanceTab = () => {
               <button
                 key={tab.id}
                 type="button"
+                data-subtab={tab.id}
+                data-tab={`finance-${tab.id}`}
+                aria-selected={activeSubTab === tab.id}
                 onClick={() => setActiveSubTab(tab.id)}
                 className={`gradient-button-premium gradient-button-premium-md rounded-lg flex items-center gap-2 ${
                   activeSubTab === tab.id
@@ -115,7 +121,10 @@ const FinanceTab = () => {
         </div>
 
         {/* Contenu sous-onglet actif avec ErrorBoundary et Suspense */}
-        <div className="finance-main-content bg-slate-800/50 rounded-xl p-6 border border-slate-700/50">
+        <div
+          className="finance-main-content bg-slate-800/50 rounded-xl p-6 border border-slate-700/50"
+          data-subtab-content={activeSubTab}
+        >
           <ErrorBoundary
             context={{ activeSubTab, tab: 'finance' }}
             title={`Erreur dans ${t(labelKeyMap[activeSubTab] || 'finance.subTabs.bourse')}`}

@@ -10,9 +10,24 @@ import { ActivityStatsCard } from '../ui/ActivityStatsCard';
 import {
   addCalendarDays,
   buildRunningCompareChart,
+  buildRunningCompareChartForWindow,
+  earliestDateInKmByDate,
+  inclusiveCalendarSpanDays,
   sumRunningKmByDate,
   todayIsoLocal,
 } from '../../utils/sport/garminRunningPeriodStats';
+import { formatPacePerKm, formatSpeed } from '../tabs/GarminTab/utils/garminFormatters';
+import {
+  getGarminCardioActivityRunKind,
+  getRunningPeakPaceFromEffortLaps,
+  isGarminRunningLikeActivity,
+} from '../../utils/garminRunningLaps';
+import { getRecapDateWindow } from '../../utils/sport/recapMuscleLoadEngine';
+import {
+  GARMIN_RUNNING_CARD_PERIOD_LS,
+  readStoredRecapViewPeriod,
+  RECAP_VIEW_PERIODS,
+} from '../../utils/sport/recapViewPeriods';
 
 const PERIODS = [
   { days: 7, key: 'p7' },
@@ -44,6 +59,7 @@ const NUM_BARS_SIDEBAR = 5;
 
 /**
  * Carte stats course Garmin (comparaison fenêtre / fenêtre précédente).
+ * En `embedded` / `sidebar` : pastilles Aujourd’hui … Toujours (période propre à cette carte, localStorage).
  * @param {{ variant?: 'default' | 'embedded' | 'sidebar' }} props
  */
 export default function GarminRunningStatsCard({ variant = 'default' }) {
@@ -51,10 +67,15 @@ export default function GarminRunningStatsCard({ variant = 'default' }) {
   const { language } = useLanguage();
   const { isAuthenticated } = useAuth();
   const { setActiveTab } = useWorkout();
-  const { dbReady, loadDataByRange } = useGarminData();
+  const { dbReady, loadDataByRange, loadAllData } = useGarminData();
+  const recapStyleLayout = variant === 'embedded' || variant === 'sidebar';
+  const [cardPeriod, setCardPeriod] = useState(() =>
+    readStoredRecapViewPeriod(GARMIN_RUNNING_CARD_PERIOD_LS, '30d')
+  );
   const [windowDays, setWindowDays] = useState(readStoredRunningStatsWindowDays);
   const [loading, setLoading] = useState(true);
   const [kmByDate, setKmByDate] = useState(() => new Map());
+  const [runningActivities, setRunningActivities] = useState([]);
   const [garminDataTick, setGarminDataTick] = useState(0);
 
   useEffect(() => {
@@ -70,6 +91,17 @@ export default function GarminRunningStatsCard({ variant = 'default' }) {
   }, [windowDays]);
 
   useEffect(() => {
+    if (!recapStyleLayout) return;
+    try {
+      window.localStorage.setItem(GARMIN_RUNNING_CARD_PERIOD_LS, cardPeriod);
+    } catch {
+      // no-op
+    }
+  }, [recapStyleLayout, cardPeriod]);
+
+  const activeRecapPeriod = recapStyleLayout ? cardPeriod : null;
+
+  useEffect(() => {
     const bump = () => setGarminDataTick((n) => n + 1);
     window.addEventListener('garmin:data:updated', bump);
     window.addEventListener('garmin:refresh:request', bump);
@@ -83,20 +115,54 @@ export default function GarminRunningStatsCard({ variant = 'default' }) {
     if (!dbReady || !isAuthenticated) {
       setLoading(false);
       setKmByDate(new Map());
+      setRunningActivities([]);
       return;
     }
     let cancelled = false;
     const run = async () => {
       setLoading(true);
       const end = todayIsoLocal();
-      const span = windowDays * 2 + 2;
-      const start = addCalendarDays(end, -(span - 1));
       try {
-        const { activities } = await loadDataByRange(start, end);
-        if (cancelled) return;
-        setKmByDate(sumRunningKmByDate(activities || {}));
+        if (activeRecapPeriod) {
+          if (activeRecapPeriod === 'all') {
+            const all = await loadAllData();
+            if (cancelled) return;
+            const activities = all?.activities || {};
+            const byDate = sumRunningKmByDate(activities);
+            const cardio = Array.isArray(activities?.cardio) ? activities.cardio : [];
+            const runs = cardio.filter((act) => isGarminRunningLikeActivity(act));
+            setKmByDate(byDate);
+            setRunningActivities(runs);
+          } else {
+            const w = getRecapDateWindow(activeRecapPeriod, new Date());
+            const currStart = w.start;
+            const rangeEnd = w.end;
+            const wd = inclusiveCalendarSpanDays(currStart, rangeEnd);
+            const loadStart = addCalendarDays(addCalendarDays(currStart, -1), -(wd - 1));
+            const { activities } = await loadDataByRange(loadStart, rangeEnd);
+            if (cancelled) return;
+            const byDate = sumRunningKmByDate(activities || {});
+            const cardio = Array.isArray(activities?.cardio) ? activities.cardio : [];
+            const runs = cardio.filter((act) => isGarminRunningLikeActivity(act));
+            setKmByDate(byDate);
+            setRunningActivities(runs);
+          }
+        } else {
+          const span = windowDays * 2 + 2;
+          const start = addCalendarDays(end, -(span - 1));
+          const { activities } = await loadDataByRange(start, end);
+          if (cancelled) return;
+          const byDate = sumRunningKmByDate(activities || {});
+          const cardio = Array.isArray(activities?.cardio) ? activities.cardio : [];
+          const runs = cardio.filter((act) => isGarminRunningLikeActivity(act));
+          setKmByDate(byDate);
+          setRunningActivities(runs);
+        }
       } catch {
-        if (!cancelled) setKmByDate(new Map());
+        if (!cancelled) {
+          setKmByDate(new Map());
+          setRunningActivities([]);
+        }
       } finally {
         if (!cancelled) setLoading(false);
       }
@@ -105,14 +171,114 @@ export default function GarminRunningStatsCard({ variant = 'default' }) {
     return () => {
       cancelled = true;
     };
-  }, [dbReady, isAuthenticated, loadDataByRange, windowDays, garminDataTick]);
+  }, [dbReady, isAuthenticated, loadDataByRange, loadAllData, windowDays, garminDataTick, activeRecapPeriod]);
 
   const endStr = todayIsoLocal();
   const numBars = variant === 'sidebar' ? NUM_BARS_SIDEBAR : NUM_BARS;
 
+  const recapChartWindow = useMemo(() => {
+    if (!activeRecapPeriod) return null;
+    const w = getRecapDateWindow(activeRecapPeriod, new Date());
+    const rangeEnd = w.end;
+    const currStart =
+      activeRecapPeriod === 'all'
+        ? earliestDateInKmByDate(kmByDate, rangeEnd) || rangeEnd
+        : w.start || rangeEnd;
+    return {
+      currStart,
+      rangeEnd,
+      omitPrev: activeRecapPeriod === 'all',
+    };
+  }, [activeRecapPeriod, kmByDate]);
+
   const built = useMemo(() => {
+    if (activeRecapPeriod && recapChartWindow) {
+      return buildRunningCompareChartForWindow(
+        kmByDate,
+        recapChartWindow.currStart,
+        recapChartWindow.rangeEnd,
+        numBars,
+        { omitPreviousComparison: recapChartWindow.omitPrev }
+      );
+    }
     return buildRunningCompareChart(kmByDate, endStr, windowDays, numBars);
-  }, [kmByDate, endStr, windowDays, numBars]);
+  }, [activeRecapPeriod, recapChartWindow, kmByDate, endStr, windowDays, numBars]);
+
+  const runningStats = useMemo(() => {
+    const currStart =
+      activeRecapPeriod && recapChartWindow ? recapChartWindow.currStart : built?.currStart;
+    const currEnd = activeRecapPeriod && recapChartWindow ? recapChartWindow.rangeEnd : endStr;
+    if (!currStart || !currEnd || !Array.isArray(runningActivities) || runningActivities.length === 0) {
+      return null;
+    }
+
+    const toDate = (act) => {
+      const raw = String(act?.date || act?.startTimeLocal || act?.startTimeGmt || '');
+      const match = raw.match(/\d{4}-\d{2}-\d{2}/);
+      return match ? match[0] : null;
+    };
+    const toDistanceKm = (act) => {
+      let d = act?.distance;
+      if (d != null && typeof d === 'object') {
+        d = d.total ?? d.value ?? d.current ?? d.avg ?? 0;
+      }
+      const n = Number(d);
+      if (Number.isFinite(n) && n > 0) {
+        if (n > 400 && n < 200000) return n / 1000;
+        return n;
+      }
+      const meters = Number(act?.running?.distanceMeters ?? act?.distanceMeters ?? 0);
+      if (Number.isFinite(meters) && meters > 0) return meters / 1000;
+      return 0;
+    };
+    const toDurationSec = (act) => {
+      const sec = Number(act?.duration ?? 0);
+      return Number.isFinite(sec) && sec > 0 ? sec : 0;
+    };
+    let totalDistanceKm = 0;
+    let totalDurationSec = 0;
+    let bestPaceSec = null;
+    let longest = null;
+    let bestIntervalPaceSec = null;
+    let bestIntervalAvgSpeedKmh = 0;
+
+    for (const act of runningActivities) {
+      const dk = toDate(act);
+      if (!dk || dk < currStart || dk > currEnd) continue;
+      const km = toDistanceKm(act);
+      const sec = toDurationSec(act);
+      if (km <= 0 || sec <= 0) continue;
+      const paceSecPerKm = sec / km;
+      totalDistanceKm += km;
+      totalDurationSec += sec;
+      if (bestPaceSec == null || paceSecPerKm < bestPaceSec) {
+        bestPaceSec = paceSecPerKm;
+      }
+      if (!longest || sec > longest.durationSec) {
+        longest = { durationSec: sec, distanceKm: km };
+      }
+      if (getGarminCardioActivityRunKind(act) === 'interval') {
+        const lapPeak = getRunningPeakPaceFromEffortLaps(act);
+        if (lapPeak) {
+          if (bestIntervalPaceSec == null || lapPeak.bestPaceSecPerKm < bestIntervalPaceSec) {
+            bestIntervalPaceSec = lapPeak.bestPaceSecPerKm;
+          }
+          if (lapPeak.bestSpeedKmh > bestIntervalAvgSpeedKmh) {
+            bestIntervalAvgSpeedKmh = lapPeak.bestSpeedKmh;
+          }
+        }
+      }
+    }
+
+    const averagePaceSec = totalDistanceKm > 0 ? totalDurationSec / totalDistanceKm : null;
+    return {
+      bestPaceSec,
+      longest,
+      bestIntervalPaceSec,
+      averagePaceSec,
+      bestIntervalAvgSpeedKmh: bestIntervalAvgSpeedKmh > 0 ? bestIntervalAvgSpeedKmh : null,
+    };
+  }, [runningActivities, built?.currStart, endStr, activeRecapPeriod, recapChartWindow]);
 
   const chartData = useMemo(
     () =>
@@ -147,51 +313,176 @@ export default function GarminRunningStatsCard({ variant = 'default' }) {
 
   return (
     <div className={variant === 'sidebar' ? 'w-full' : ''}>
-      <div className="mb-3 flex flex-wrap items-center gap-2">
-        {PERIODS.map((p) => (
-          <button
-            key={p.key}
-            type="button"
-            onClick={() => setWindowDays(p.days)}
-            aria-pressed={windowDays === p.days}
-            className={`rounded-full border px-2.5 py-1 text-xs font-medium transition ${
-              windowDays === p.days
-                ? 'border-violet-400/60 bg-violet-500/20 text-violet-100'
-                : 'border-slate-600/80 bg-slate-800/60 text-slate-300 hover:border-slate-500'
-            }`}
-          >
-            {t(
-              `garmin.runningCard${p.key.charAt(0).toUpperCase()}${p.key.slice(1)}`,
-              `${p.days} j.`
-            )}
-          </button>
-        ))}
-      </div>
+      {recapStyleLayout ? (
+        <div className="mb-3 flex flex-wrap items-center gap-1.5">
+          {RECAP_VIEW_PERIODS.map((p) => (
+            <button
+              key={p.id}
+              type="button"
+              onClick={() => setCardPeriod(p.id)}
+              aria-pressed={cardPeriod === p.id}
+              className={`rounded-full border px-2 py-1 text-[11px] font-medium transition ${
+                cardPeriod === p.id
+                  ? variant === 'embedded'
+                    ? 'border-[#0F5C45] bg-[#0F5C45]/35 text-white'
+                    : 'border-violet-400/70 bg-violet-500/25 text-violet-50'
+                  : variant === 'embedded'
+                    ? 'border-[#0F4C5C]/60 bg-black text-teal-200/90 hover:border-[#0F5C45]/60'
+                    : 'border-slate-600/80 bg-slate-800/60 text-slate-300 hover:border-slate-500'
+              }`}
+            >
+              {t(p.labelKey)}
+            </button>
+          ))}
+        </div>
+      ) : (
+        <div className="mb-3 flex flex-wrap items-center gap-2">
+          {PERIODS.map((p) => (
+            <button
+              key={p.key}
+              type="button"
+              onClick={() => setWindowDays(p.days)}
+              aria-pressed={windowDays === p.days}
+              className={`rounded-full border px-2.5 py-1 text-xs font-medium transition ${
+                windowDays === p.days
+                  ? 'border-violet-400/60 bg-violet-500/20 text-violet-100'
+                  : 'border-slate-600/80 bg-slate-800/60 text-slate-300 hover:border-slate-500'
+              }`}
+            >
+              {t(
+                `garmin.runningCard${p.key.charAt(0).toUpperCase()}${p.key.slice(1)}`,
+                `${p.days} j.`
+              )}
+            </button>
+          ))}
+        </div>
+      )}
       {loading ? (
-        <div className="flex h-48 max-w-sm items-center justify-center rounded-xl border border-slate-700/60 bg-slate-900/60 text-sm text-slate-400">
+        <div
+          className={`flex h-48 max-w-sm items-center justify-center rounded-xl text-sm ${
+            variant === 'embedded'
+              ? 'border-2 border-[#0F4C5C]/60 bg-black text-teal-600'
+              : 'border border-slate-700/60 bg-slate-900/60 text-slate-400'
+          }`}
+        >
           {t('garmin.runningCardLoading', 'Chargement des courses…')}
         </div>
       ) : built.totalCurrKm <= 0 && built.totalPrevKm <= 0 ? (
-        <div className="max-w-sm rounded-xl border border-slate-700/60 bg-slate-900/60 p-4 text-sm text-slate-400">
+        <div
+          className={`max-w-sm rounded-xl p-4 text-sm ${
+            variant === 'embedded'
+              ? 'border-2 border-[#0F4C5C]/60 bg-black text-teal-600'
+              : 'border border-slate-700/60 bg-slate-900/60 text-slate-400'
+          }`}
+        >
           {t(
             'garmin.runningCardNoData',
             'Aucune course sur ces fenêtres. Synchronise Garmin ou choisis une période plus longue.'
           )}
         </div>
       ) : (
-        <ActivityStatsCard
-          className={wrap}
-          title={t('garmin.runningCardTitle', 'Course (Garmin)')}
-          icon={<Footprints className="h-6 w-6" />}
-          mainValue={mainValue}
-          changeValue={Number(built.changeValue.toFixed(2))}
-          changeDescription={t('garmin.runningCardVsPrev', 'vs période précédente')}
-          chartData={chartData}
-          onActionClick={onGarmin}
-          primaryBarClassName="bg-violet-500"
-          secondaryBarClassName="bg-violet-200/30 dark:bg-violet-900"
-          chartAxisDensity={variant === 'sidebar' ? 'compact' : 'default'}
-        />
+        <div className="space-y-3">
+          <ActivityStatsCard
+            className={wrap}
+            title={t('garmin.runningCardTitle', 'Course (Garmin)')}
+            icon={<Footprints className="h-6 w-6" />}
+            mainValue={mainValue}
+            changeValue={Number(built.changeValue.toFixed(2))}
+            changeDescription={t('garmin.runningCardVsPrev', 'vs période précédente')}
+            chartData={chartData}
+            onActionClick={onGarmin}
+            sportShell={variant === 'embedded'}
+            primaryBarClassName={variant === 'embedded' ? 'bg-[#0F4C5C]' : 'bg-violet-500'}
+            secondaryBarClassName={
+              variant === 'embedded'
+                ? 'bg-[#0F5C45]/45 dark:bg-[#0F5C45]/35'
+                : 'bg-violet-200/30 dark:bg-violet-900'
+            }
+            chartAxisDensity={variant === 'sidebar' ? 'compact' : 'default'}
+          />
+          {variant !== 'sidebar' && runningStats ? (
+            <div
+              className={`w-full max-w-sm rounded-xl p-3 text-xs ${
+                recapStyleLayout
+                  ? 'border-2 border-[#0F4C5C]/65 bg-black text-teal-100/90'
+                  : 'border border-slate-700/80 bg-slate-900/85 text-slate-300'
+              }`}
+            >
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                <div
+                  className={`rounded-lg border p-2 ${
+                    recapStyleLayout
+                      ? 'border-[#0F4C5C]/45 bg-black'
+                      : 'border-slate-700/70 bg-slate-950/60'
+                  }`}
+                >
+                  <div className={recapStyleLayout ? 'text-teal-700' : 'text-slate-500'}>Meilleure allure</div>
+                  <div className="font-semibold text-white">
+                    {runningStats.bestPaceSec ? formatPacePerKm(runningStats.bestPaceSec) : '—'}
+                  </div>
+                </div>
+                <div
+                  className={`rounded-lg border p-2 ${
+                    recapStyleLayout
+                      ? 'border-[#0F4C5C]/45 bg-black'
+                      : 'border-slate-700/70 bg-slate-950/60'
+                  }`}
+                >
+                  <div className={recapStyleLayout ? 'text-teal-700' : 'text-slate-500'}>Allure moyenne</div>
+                  <div className="font-semibold text-white">
+                    {runningStats.averagePaceSec ? formatPacePerKm(runningStats.averagePaceSec) : '—'}
+                  </div>
+                </div>
+                <div
+                  className={`rounded-lg border p-2 ${
+                    recapStyleLayout
+                      ? 'border-[#0F4C5C]/45 bg-black'
+                      : 'border-slate-700/70 bg-slate-950/60'
+                  }`}
+                >
+                  <div className={recapStyleLayout ? 'text-teal-700' : 'text-slate-500'}>Session la plus longue</div>
+                  <div className="font-semibold text-white">
+                    {runningStats.longest
+                      ? `${Math.round(runningStats.longest.durationSec / 60)} min · ${runningStats.longest.distanceKm.toFixed(2)} km`
+                      : '—'}
+                  </div>
+                </div>
+                <div
+                  className={`rounded-lg border p-2 ${
+                    recapStyleLayout
+                      ? 'border-[#0F4C5C]/45 bg-black'
+                      : 'border-slate-700/70 bg-slate-950/60'
+                  }`}
+                >
+                  <div className={recapStyleLayout ? 'text-teal-700' : 'text-slate-500'}>
+                    Meilleure allure fractionné (tour effort)
+                  </div>
+                  <div className="font-semibold text-white">
+                    {runningStats.bestIntervalPaceSec
+                      ? formatPacePerKm(runningStats.bestIntervalPaceSec)
+                      : '—'}
+                  </div>
+                </div>
+                <div
+                  className={`rounded-lg border p-2 sm:col-span-2 ${
+                    recapStyleLayout
+                      ? 'border-[#0F4C5C]/45 bg-black'
+                      : 'border-slate-700/70 bg-slate-950/60'
+                  }`}
+                >
+                  <div className={recapStyleLayout ? 'text-teal-700' : 'text-slate-500'}>
+                    Pic vitesse fractionné (tour effort)
+                  </div>
+                  <div className="font-semibold text-white">
+                    {runningStats.bestIntervalAvgSpeedKmh
+                      ? formatSpeed(runningStats.bestIntervalAvgSpeedKmh)
+                      : '—'}
+                  </div>
+                </div>
+              </div>
+            </div>
+          ) : null}
+        </div>
       )}
     </div>
   );

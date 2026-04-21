@@ -1,4 +1,4 @@
-/**
+﻿/**
  * NutritionProgressPhotos - Composant Photos de Progression Nutrition (Avant/Après)
  * 
  * Affiche :
@@ -463,7 +463,7 @@ const NutritionProgressPhotos = () => {
   // État de chargement
   if (!dbReady) {
     return (
-      <Card className="bg-slate-800/50 border-slate-700">
+      <Card variant="sport">
         <CardContent className="text-center py-8">
           <Loader2 className="animate-spin text-blue-500 mx-auto mb-4" size={32} />
           <p className="text-slate-400">Chargement...</p>
@@ -475,7 +475,7 @@ const NutritionProgressPhotos = () => {
   return (
     <div className="space-y-6">
       {/* En-tête */}
-      <Card className="bg-slate-800/50 border-slate-700">
+      <Card variant="sport">
         <CardHeader>
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
@@ -514,7 +514,7 @@ const NutritionProgressPhotos = () => {
 
       {/* Formulaire ajout photo */}
       {showAddForm && (
-        <Card className="bg-slate-800/50 border-slate-700">
+        <Card variant="sport">
           <CardHeader>
             <CardTitle>Ajouter une photo de progression</CardTitle>
           </CardHeader>
@@ -697,7 +697,7 @@ const NutritionProgressPhotos = () => {
 
       {/* Modal comparaison */}
       {viewingSequence && (
-        <Card className="bg-slate-800/50 border-slate-700">
+        <Card variant="sport">
           <CardHeader>
             <div className="flex items-center justify-between">
               <CardTitle>Comparaison Avant/Après</CardTitle>
@@ -837,14 +837,14 @@ const NutritionProgressPhotos = () => {
 
       {/* Galerie des séquences */}
       {loading && sequences.length === 0 ? (
-        <Card className="bg-slate-800/50 border-slate-700">
+        <Card variant="sport">
           <CardContent className="text-center py-8">
             <Loader2 className="animate-spin text-blue-500 mx-auto mb-4" size={32} />
             <p className="text-slate-400">Chargement des photos...</p>
           </CardContent>
         </Card>
       ) : sequences.length === 0 ? (
-        <Card className="bg-slate-800/50 border-slate-700">
+        <Card variant="sport">
           <CardContent className="text-center py-8">
             <Camera size={64} className="text-slate-600 mx-auto mb-4 opacity-50" />
             <p className="text-slate-300 mb-2">Aucune photo de progression</p>
@@ -885,8 +885,9 @@ const NutritionProgressPhotos = () => {
             return (
               <Card
                 key={sequence.sequenceId}
-                className={`bg-slate-800/50 border-slate-700 hover:border-blue-500 transition-colors cursor-pointer ${
-                  selectedSequence?.sequenceId === sequence.sequenceId ? 'border-blue-500' : ''
+                variant="sport"
+                className={`cursor-pointer transition-colors hover:border-[#0F5C45]/80 ${
+                  selectedSequence?.sequenceId === sequence.sequenceId ? '!border-[#0F5C45]' : ''
                 }`}
                 onClick={() => setSelectedSequence(sequence)}
               >

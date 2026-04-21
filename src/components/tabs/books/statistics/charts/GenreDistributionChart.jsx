@@ -24,18 +24,18 @@ import { useTranslation } from '../../../../../utils/translations';
  * Palette de couleurs pour les genres
  */
 const GENRE_COLORS = [
-  '#8B5CF6', // Purple
-  '#06B6D4', // Cyan
-  '#10B981', // Emerald
-  '#F59E0B', // Amber
-  '#EF4444', // Red
-  '#EC4899', // Pink
-  '#6366F1', // Indigo
-  '#84CC16', // Lime
-  '#F97316', // Orange
-  '#8B5A2B', // Brown
-  '#6B7280', // Gray
-  '#14B8A6'  // Teal
+  '#8B5CF6',
+  '#06B6D4',
+  '#10B981',
+  '#F59E0B',
+  '#EF4444',
+  '#EC4899',
+  '#6366F1',
+  '#84CC16',
+  '#F97316',
+  '#8B5A2B',
+  '#6B7280',
+  '#14B8A6'
 ];
 
 /**
@@ -231,19 +231,19 @@ const GenreDistributionChart = ({
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           <Button
-            variant={activeView === VIEW_TYPES.DISTRIBUTION ? 'primary' : 'ghost'}
+            variant={activeView === VIEW_TYPES.DISTRIBUTION ? 'books' : 'booksMuted'}
             size="sm"
             onClick={() => setActiveView(VIEW_TYPES.DISTRIBUTION)}
-            className="flex items-center gap-2"
+            className="flex items-center gap-2 normal-case tracking-normal"
           >
             <PieChartIcon className="w-4 h-4" />
             {t('books.statistics.genres.distribution', 'Répartition')}
           </Button>
           <Button
-            variant={activeView === VIEW_TYPES.SPEED_COMPARISON ? 'primary' : 'ghost'}
+            variant={activeView === VIEW_TYPES.SPEED_COMPARISON ? 'books' : 'booksMuted'}
             size="sm"
             onClick={() => setActiveView(VIEW_TYPES.SPEED_COMPARISON)}
-            className="flex items-center gap-2"
+            className="flex items-center gap-2 normal-case tracking-normal"
           >
             <BarChart3 className="w-4 h-4" />
             {t('books.statistics.genres.speeds', 'Vitesses')}
@@ -252,13 +252,13 @@ const GenreDistributionChart = ({
         
         {selectedGenre && (
           <Button
-            variant="ghost"
+            variant="booksMuted"
             size="sm"
             onClick={() => {
               setSelectedGenre(null);
               if (onGenreFilter) onGenreFilter('');
             }}
-            className="text-slate-400 hover:text-white"
+            className="normal-case tracking-normal"
           >
             Effacer le filtre: {selectedGenre}
           </Button>
@@ -375,7 +375,7 @@ const GenreDistributionChart = ({
         </div>
         
         <div className="bg-slate-800/50 rounded-lg p-4 text-center">
-          <div className="text-2xl font-bold text-emerald-300">
+          <div className="text-2xl font-bold text-sky-300">
             {genreData.speedData[0]?.speed.toFixed(1) || '0'} p/h
           </div>
           <div className="text-sm text-slate-400">
@@ -384,7 +384,7 @@ const GenreDistributionChart = ({
         </div>
         
         <div className="bg-slate-800/50 rounded-lg p-4 text-center">
-          <div className="text-2xl font-bold text-amber-300">
+          <div className="text-2xl font-bold text-slate-200">
             {Math.round(genreData.distributionData.reduce((sum, g) => sum + g.time, 0) / genreData.distributionData.length) || 0} min
           </div>
           <div className="text-sm text-slate-400">

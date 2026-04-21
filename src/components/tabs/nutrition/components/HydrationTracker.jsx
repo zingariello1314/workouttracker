@@ -1,4 +1,4 @@
-/**
+﻿/**
  * HydrationTracker - Composant de Suivi d'Hydratation
  * 
  * Permet de suivre et modifier l'hydratation quotidienne :
@@ -163,7 +163,7 @@ const HydrationTracker = React.memo(({ date, nutritionData, onUpdate }) => {
 
   if (loading) {
     return (
-      <Card className="bg-slate-800/50 border-slate-700">
+      <Card variant="sport">
         <CardContent className="p-6 text-center">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500 mx-auto"></div>
           <p className="text-slate-400 mt-2">Chargement...</p>
@@ -189,7 +189,7 @@ const HydrationTracker = React.memo(({ date, nutritionData, onUpdate }) => {
   };
 
   return (
-    <Card className="bg-slate-800/50 border-slate-700">
+    <Card variant="sport">
       <CardHeader>
         <CardTitle className="flex items-center justify-between">
           <div className="flex items-center gap-2">

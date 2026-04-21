@@ -12,19 +12,10 @@ import { buildRecapEnduranceDigest } from '../../utils/sport/recapPageDigest';
 import RecapMuscleZonesPanel from '../sport/recap/RecapMuscleZonesPanel';
 import RecapEnduranceDigestPanel from '../sport/recap/RecapEnduranceDigestPanel';
 import GarminRunningStatsCard from '../garmin/GarminRunningStatsCard';
+import RecapStrengthStatsCard from '../sport/recap/RecapStrengthStatsCard';
+import { RECAP_VIEW_PERIODS } from '../../utils/sport/recapViewPeriods';
 
 const PERIOD_STORAGE_KEY = 'sport.recap.periodView';
-
-const PERIODS = [
-  { id: 'today', labelKey: 'recap.period.today' },
-  { id: '7d', labelKey: 'recap.period.7d' },
-  { id: '30d', labelKey: 'recap.period.30d' },
-  { id: '3m', labelKey: 'recap.period.3m' },
-  { id: '6m', labelKey: 'recap.period.6m' },
-  { id: '1y', labelKey: 'recap.period.1y' },
-  { id: '2y', labelKey: 'recap.period.2y' },
-  { id: 'all', labelKey: 'recap.period.all' }
-];
 
 /**
  * Sous-onglet Sport — Récap : carte 3D, légende d’intensité, détail par zone, digest endurance.
@@ -36,7 +27,7 @@ const RecapTab = () => {
   const [period, setPeriod] = useState(() => {
     try {
       const stored = localStorage.getItem(PERIOD_STORAGE_KEY);
-      if (stored && PERIODS.some((p) => p.id === stored)) return stored;
+      if (stored && RECAP_VIEW_PERIODS.some((p) => p.id === stored)) return stored;
     } catch {
       /* ignore */
     }
@@ -73,21 +64,21 @@ const RecapTab = () => {
 
   return (
     <div className="max-w-6xl mx-auto px-4 py-6 text-slate-100">
-      <header className="mb-6">
+      <header className="mb-6 rounded-xl border border-[#0F4C5C]/50 bg-black px-4 py-3">
         <h1 className="text-2xl font-bold text-white tracking-tight">{t('recap.title')}</h1>
-        <p className="text-sm text-slate-400 mt-1">{t('recap.subtitle')}</p>
+        <p className="text-sm text-teal-200/80 mt-1">{t('recap.subtitle')}</p>
       </header>
 
       <div className="flex flex-wrap gap-2 mb-6">
-        {PERIODS.map((p) => (
+        {RECAP_VIEW_PERIODS.map((p) => (
           <button
             key={p.id}
             type="button"
             onClick={() => setPeriod(p.id)}
             className={`px-3 py-1.5 rounded-full text-xs font-medium border transition-colors ${
               period === p.id
-                ? 'bg-emerald-600/90 border-emerald-400 text-white shadow-md'
-                : 'bg-slate-800/70 border-slate-600 text-slate-300 hover:border-slate-500'
+                ? 'bg-[#0F5C45]/90 border-[#0F5C45] text-white shadow-md shadow-black/30'
+                : 'bg-black border-[#0F4C5C]/55 text-teal-100/90 hover:border-[#0F5C45]/70'
             }`}
           >
             {t(p.labelKey)}
@@ -95,11 +86,12 @@ const RecapTab = () => {
         ))}
       </div>
 
-      <div className="mb-8">
+      <div className="mb-8 grid grid-cols-1 xl:grid-cols-2 gap-4 items-start">
         <GarminRunningStatsCard variant="embedded" />
+        <RecapStrengthStatsCard variant="embedded" />
       </div>
 
-      <p className="text-xs text-slate-400 mb-4 max-w-3xl leading-relaxed">
+      <p className="text-xs text-teal-200/70 mb-4 max-w-3xl leading-relaxed">
         {t('recap.loadSummary', {
           lambda: String(DECAY_LAMBDA_PER_DAY),
           cardioPct: String(cardioPct)
@@ -110,17 +102,17 @@ const RecapTab = () => {
       </p>
 
       <div className="grid gap-8 lg:grid-cols-2 items-start">
-        <section className="rounded-xl border border-slate-700/80 bg-slate-900/30 p-4 backdrop-blur-sm">
+        <section className="rounded-xl border-2 border-[#0F4C5C]/70 bg-black p-4">
           <div className="flex flex-wrap items-end justify-between gap-3 mb-3">
-            <h2 className="text-sm font-semibold text-slate-200">{t('recap.bodyMapHeading')}</h2>
-            <div className="text-right text-[11px] leading-tight text-slate-400 max-w-[min(100%,220px)]">
+            <h2 className="text-sm font-semibold text-teal-100">{t('recap.bodyMapHeading')}</h2>
+            <div className="text-right text-[11px] leading-tight text-teal-200/60 max-w-[min(100%,220px)]">
               <div className="font-semibold text-emerald-300/95 tabular-nums">
                 {t('recap.bodyMapStats.reps', { n: Math.round(vt.strengthReps || 0) })}
               </div>
-              <div className="text-slate-500 mt-0.5">
+              <div className="text-teal-700 mt-0.5">
                 {t('recap.bodyMapStats.iso', { s: Math.round(vt.isoSeconds || 0) })}
               </div>
-              <div className="text-sky-200/90 tabular-nums mt-0.5">
+              <div className="text-teal-200/90 tabular-nums mt-0.5">
                 {t('recap.bodyMapStats.minutes', { m: totalMinRounded })}
               </div>
             </div>
@@ -131,10 +123,10 @@ const RecapTab = () => {
           />
         </section>
 
-        <section className="rounded-xl border border-slate-700/80 bg-slate-900/30 p-4 backdrop-blur-sm">
-          <h2 className="text-sm font-semibold text-slate-200 mb-3">{t('recap.legendHeading')}</h2>
+        <section className="rounded-xl border-2 border-[#0F4C5C]/70 bg-black p-4">
+          <h2 className="text-sm font-semibold text-teal-100 mb-3">{t('recap.legendHeading')}</h2>
           <RecapIntensityLegend />
-          <p className="text-xs text-slate-500 mt-4 pt-3 border-t border-slate-700/60">
+          <p className="text-xs text-teal-700 mt-4 pt-3 border-t border-[#0F4C5C]/40">
             {t('recap.periodNote', { label: t(`recap.period.${period}`) })}
           </p>
         </section>

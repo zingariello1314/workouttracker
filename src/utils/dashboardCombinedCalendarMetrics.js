@@ -10,6 +10,8 @@ import {
 } from './booksCalendarMetrics';
 import { computeQuestIntensityForDate } from './questCalendarMetrics';
 import { applyRelativePerformanceTint } from './calendarRelativeDayRanking';
+import { emptyFinanceDayAgg } from './finance/financeCalendarAggregates';
+import { computeFinanceRawIntensityScore } from './finance/financeCalendarIntensity';
 import { isGarminRunningLikeActivity } from './garminRunningLaps';
 import { normalizeGarminDate } from '../components/tabs/GarminTab/utils/garminFormatters';
 import { parseDurationToMinutes } from './calendarUtils';
@@ -138,20 +140,30 @@ export function computeSportBriefDetail(dateStr, workoutData, garminBundle) {
 }
 
 /**
- * Combine les trois scores : bonus si plusieurs piliers actifs (lecture seule reste « max »).
+ * Combine les scores des piliers (lecture, quêtes, sport, apprentissage, finance) :
+ * le plus fort tire la teinte, avec bonus sous-additif si plusieurs piliers le même jour.
+ * Coefficients calibrés pour 5 piliers (légèrement plus doux qu’avec 3 seuls).
  */
-export function computeCombinedDayScore(booksIntensityObj, questIntensityObj, sportScore) {
+export function computeCombinedDayScore(
+  booksIntensityObj,
+  questIntensityObj,
+  sportScore,
+  learningIntensityObj,
+  financeScore
+) {
   const b = Number(booksIntensityObj?.intensityScore) || 0;
   const q = Number(questIntensityObj?.intensityScore) || 0;
   const s = Number(sportScore) || 0;
-  const parts = [b, q, s].filter((x) => x > 0);
+  const l = Number(learningIntensityObj?.intensityScore) || 0;
+  const f = Number(financeScore) || 0;
+  const parts = [b, q, s, l, f].filter((x) => x > 0);
   if (parts.length === 0) return 0;
   const maxV = Math.max(...parts);
   const sumV = parts.reduce((a, x) => a + x, 0);
   const n = parts.length;
   const secondaryMass = sumV - maxV;
-  const synergy = 1 + 0.2 * (n - 1) + 0.07 * (n >= 2 ? secondaryMass / (maxV + 55) : 0);
-  return maxV * synergy + 0.11 * secondaryMass;
+  const synergy = 1 + 0.16 * (n - 1) + 0.055 * (n >= 2 ? secondaryMass / (maxV + 60) : 0);
+  return maxV * synergy + 0.1 * secondaryMass;
 }
 
 const neutralCombinedShell = () => ({
@@ -168,6 +180,7 @@ const neutralCombinedShell = () => ({
 
 /**
  * Map dateStr -> intensité teintée (même pipeline applyRelativePerformanceTint que les autres calendriers).
+ * @param {object} ctx — `learningSessionsByDate` (Map), `financeYearDayMap` (Map dateStr -> agg) optionnels.
  */
 export function buildCombinedMonthIntensityMap(year, monthIndex, ctx) {
   const {
@@ -176,9 +189,13 @@ export function buildCombinedMonthIntensityMap(year, monthIndex, ctx) {
     questCalendarContext,
     workoutData,
     garminBundle,
+    learningSessionsByDate,
+    financeYearDayMap,
   } = ctx;
 
   const sessionsByDate = buildBooksSessionsByDate(books || []);
+  const learnMap = learningSessionsByDate || null;
+  const finMap = financeYearDayMap || null;
   const monthDate = new Date(year, monthIndex, 1);
   const last = new Date(year, monthIndex + 1, 0).getDate();
   const raw = new Map();
@@ -189,7 +206,18 @@ export function buildCombinedMonthIntensityMap(year, monthIndex, ctx) {
     const bookInt = computeBooksIntensityForDate(dateStr, sessionsByDate, dayFeedbacks);
     const questInt = computeQuestIntensityForDate(dateStr, questCalendarContext);
     const sportDetail = computeSportBriefDetail(dateStr, workoutData, garminBundle);
-    const combined = computeCombinedDayScore(bookInt, questInt, sportDetail.score);
+    const learnInt = learnMap
+      ? computeBooksIntensityForDate(dateStr, learnMap, null)
+      : { intensityScore: 0, bookData: null };
+    const finAgg = finMap?.get(dateStr) || emptyFinanceDayAgg();
+    const financeScore = computeFinanceRawIntensityScore(finAgg);
+    const combined = computeCombinedDayScore(
+      bookInt,
+      questInt,
+      sportDetail.score,
+      learnInt,
+      financeScore
+    );
 
     raw.set(dateStr, {
       ...neutralCombinedShell(),
@@ -205,6 +233,14 @@ export function buildCombinedMonthIntensityMap(year, monthIndex, ctx) {
           questData: questInt.questData,
         },
         sport: sportDetail,
+        learning: {
+          intensityScore: learnInt.intensityScore,
+          bookData: learnInt.bookData,
+        },
+        finance: {
+          intensityScore: financeScore,
+          financeDay: finAgg,
+        },
       },
     });
   }
@@ -309,9 +345,13 @@ export function computeCombinedYearDashboardStats(year, ctx) {
     questCalendarContext,
     workoutData,
     garminBundle,
+    learningSessionsByDate,
+    financeYearDayMap,
   } = ctx;
 
   const sessionsByDate = buildBooksSessionsByDate(books || []);
+  const learnMap = learningSessionsByDate || null;
+  const finMap = financeYearDayMap || null;
   const todayStr = getDateStr(new Date());
   const isCurrentYear = year === new Date().getFullYear();
   const endStr = isCurrentYear ? todayStr : `${year}-12-31`;
@@ -338,22 +378,48 @@ export function computeCombinedYearDashboardStats(year, ctx) {
   let maxBook = -1;
   let maxQuest = -1;
   let maxSport = -1;
+  let maxLearn = -1;
+  let maxFinance = -1;
   let maxComb = -1;
   let bestBooks = null;
   let bestQuests = null;
   let bestSport = null;
+  let bestLearning = null;
+  let bestFinance = null;
   let bestCombined = null;
+
+  let totalLearningMinutes = 0;
+  let totalLearningSessions = 0;
+  let daysWithFinanceSignal = 0;
 
   for (const dateStr of dayStrs) {
     const bookInt = computeBooksIntensityForDate(dateStr, sessionsByDate, dayFeedbacks);
     const questInt = computeQuestIntensityForDate(dateStr, questCalendarContext);
     const sportDetail = computeSportBriefDetail(dateStr, workoutData, garminBundle);
-    const combined = computeCombinedDayScore(bookInt, questInt, sportDetail.score);
+    const learnInt = learnMap
+      ? computeBooksIntensityForDate(dateStr, learnMap, null)
+      : { intensityScore: 0, bookData: null };
+    const finAgg = finMap?.get(dateStr) || emptyFinanceDayAgg();
+    const financeScore = computeFinanceRawIntensityScore(finAgg);
+    const combined = computeCombinedDayScore(
+      bookInt,
+      questInt,
+      sportDetail.score,
+      learnInt,
+      financeScore
+    );
     if (combined > 0) daysWithCombinedActivity += 1;
     const hasBook = Number(bookInt.intensityScore) > 0;
     const hasQuest = Number(questInt.intensityScore) > 0;
     const hasSport = Number(sportDetail.score) > 0;
     if (hasBook && hasQuest && hasSport) daysTriplePillar += 1;
+
+    const ld = learnInt.bookData;
+    if (ld && ld.sessions > 0) {
+      totalLearningMinutes += ld.minutes || 0;
+      totalLearningSessions += ld.sessions || 0;
+    }
+    if (financeScore > 0) daysWithFinanceSignal += 1;
 
     const day = sessionsByDate.get(dateStr);
     if (day) {
@@ -384,6 +450,14 @@ export function computeCombinedYearDashboardStats(year, ctx) {
       maxSport = sportDetail.score;
       bestSport = { dateStr, score: sportDetail.score, sportDetail };
     }
+    if (learnInt.intensityScore > maxLearn) {
+      maxLearn = learnInt.intensityScore;
+      bestLearning = { dateStr, score: learnInt.intensityScore, learnInt };
+    }
+    if (financeScore > maxFinance) {
+      maxFinance = financeScore;
+      bestFinance = { dateStr, score: financeScore, finAgg };
+    }
     if (combined > maxComb) {
       maxComb = combined;
       bestCombined = {
@@ -392,6 +466,9 @@ export function computeCombinedYearDashboardStats(year, ctx) {
         bookInt,
         questInt,
         sportDetail,
+        learnInt,
+        financeScore,
+        finAgg,
       };
     }
   }
@@ -419,6 +496,8 @@ export function computeCombinedYearDashboardStats(year, ctx) {
     bestBooks,
     bestQuests,
     bestSport,
+    bestLearning,
+    bestFinance,
     totals: {
       combinedTimeMinutes,
       totalReadingMinutes,
@@ -436,6 +515,9 @@ export function computeCombinedYearDashboardStats(year, ctx) {
       runningTotalMin: running.totalMin,
       runningSessions: running.sessions,
       runningAvgPaceMinPerKm: running.avgPaceMinPerKm,
+      totalLearningMinutes,
+      totalLearningSessions,
+      daysWithFinanceSignal,
     },
   };
 }

@@ -7,7 +7,7 @@ import React from 'react';
 
 const Button = ({
   children,
-  variant = 'primary', // 'primary', 'secondary', 'danger', 'success', 'ghost'
+  variant = 'primary', // 'primary', 'secondary', 'danger', 'success', 'ghost', 'glass'
   size = 'md', // 'sm', 'md', 'lg'
   disabled = false,
   loading = false,
@@ -27,6 +27,9 @@ const Button = ({
     danger: 'bg-red-900/30 border-red-500 text-red-400 hover:bg-red-500/20 hover:border-red-400 hover:shadow-lg hover:shadow-red-500/40',
     success: 'bg-emerald-500/20 border-emerald-500 text-emerald-400 hover:bg-emerald-500/30 hover:shadow-lg hover:shadow-emerald-500/40',
     ghost: 'bg-transparent border-transparent text-slate-400 hover:text-slate-200 hover:bg-slate-800/30',
+    glass: 'bg-slate-900/45 border-2 border-slate-600/55 text-slate-200 hover:bg-slate-900/70 hover:border-slate-500/80',
+    books: 'bg-[#3A86FF]/14 border-[#3A86FF] text-[#93c5fd] hover:bg-[#3A86FF]/22 hover:border-sky-300/90 hover:shadow-lg hover:shadow-[#3A86FF]/25 focus:ring-[#3A86FF]/45',
+    booksMuted: 'bg-black/50 border-[#3A86FF]/45 text-sky-200/90 hover:bg-[#3A86FF]/10 hover:border-[#3A86FF]/75 focus:ring-[#3A86FF]/35',
   };
 
   const sizeStyles = {

@@ -326,19 +326,13 @@ const BooksTab = () => {
 
         {/* Header avec navigation par sous-onglets */}
         <div className="mb-8">
-          <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center justify-between mb-4 rounded-2xl border-2 border-[#3A86FF] bg-black px-5 py-4 shadow-lg shadow-black/30">
             <div className="flex items-center gap-4">
-              <BookOpen className="w-8 h-8 text-purple-300" />
+              <BookOpen className="w-8 h-8 text-sky-300 shrink-0" />
               <div>
-                <h1 className="text-3xl font-bold text-white mb-2" style={{ textShadow: '2px 2px 4px rgba(0,0,0,0.8)' }}>
+                <h1 className="text-3xl font-bold text-sky-100 tracking-tight">
                   {t('nav.books', 'Livres')}
                 </h1>
-                <p className="text-sm text-slate-400">
-                  {t(
-                    'books.subtitle',
-                    'Gère ta bibliothèque personnelle, tes sessions de lecture et tes sauvegardes — tout est stocké localement dans ton navigateur.'
-                  )}
-                </p>
               </div>
             </div>
             {activeSubTab === 'library' && (

@@ -356,7 +356,7 @@ const ExercisesTab = () => {
 
   if (detailExercise) {
     return (
-      <div className="relative min-h-screen">
+      <div className="relative">
         <div className="relative z-10 p-4 md:p-6">
           <ExerciseDetailPage
             exercise={detailExercise}
@@ -371,11 +371,10 @@ const ExercisesTab = () => {
   }
 
   return (
-    <div className="relative min-h-screen">
-      {/* Contenu avec z-index relatif */}
+    <div className="relative">
       <div className="relative z-10 space-y-6 p-6">
         {/* Statut de synchronisation */}
-      <Card>
+      <Card variant="sport">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Zap className="w-5 h-5" />
@@ -439,7 +438,7 @@ const ExercisesTab = () => {
           )}
         </CardContent>
       </Card>
-      <Card>
+      <Card variant="sport">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <RefreshCw className="w-5 h-5" />
@@ -508,7 +507,7 @@ const ExercisesTab = () => {
 
       {/* En-tête avec statistiques */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <Card>
+        <Card variant="sport">
           <CardContent className="p-4">
             <div className="flex items-center space-x-3">
               <div className="p-2 bg-blue-500/20 rounded-lg">
@@ -522,7 +521,7 @@ const ExercisesTab = () => {
           </CardContent>
         </Card>
 
-        <Card>
+        <Card variant="sport">
           <CardContent className="p-4">
             <div className="flex items-center space-x-3">
               <div className="p-2 bg-green-500/20 rounded-lg">
@@ -538,7 +537,7 @@ const ExercisesTab = () => {
           </CardContent>
         </Card>
 
-        <Card>
+        <Card variant="sport">
           <CardContent className="p-4">
             <div className="flex items-center space-x-3">
               <div className="p-2 bg-purple-500/20 rounded-lg">
@@ -554,7 +553,7 @@ const ExercisesTab = () => {
           </CardContent>
         </Card>
 
-        <Card>
+        <Card variant="sport">
           <CardContent className="p-4">
             <div className="flex items-center space-x-3">
               <div className="p-2 bg-orange-500/20 rounded-lg">
@@ -571,7 +570,7 @@ const ExercisesTab = () => {
 
       {/* Filtres - Affichés seulement en mode exercices */}
       {viewMode === 'exercises' && (
-        <Card>
+        <Card variant="sport">
             <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Filter className="w-5 h-5" />
@@ -590,7 +589,7 @@ const ExercisesTab = () => {
 
       {/* Navigation de retour - Affichée quand on visualise les exercices d'un programme spécifique */}
       {viewMode === 'exercises' && selectedProgram && (
-        <Card>
+        <Card variant="sport">
           <CardContent className="py-3">
             <button
               onClick={() => {
@@ -609,7 +608,7 @@ const ExercisesTab = () => {
       {/* Contenu principal - Programmes ou Exercices */}
       {viewMode === 'programs' ? (
         // Vue des programmes
-        <Card>
+        <Card variant="sport">
           <CardHeader>
             <CardTitle>
               {t('exercisesTab.programs.title', { count: visiblePrograms.length })}
@@ -643,7 +642,7 @@ const ExercisesTab = () => {
         </Card>
       ) : (
         // Vue des exercices
-        <Card>
+        <Card variant="sport">
           <CardHeader>
             <CardTitle>
               {selectedProgram 

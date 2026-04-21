@@ -21,7 +21,8 @@ import {
   isDayWithoutActivity,
   JUSTIFICATION_REASONS,
   JUSTIFICATION_ICONS,
-  JUSTIFICATION_COLORS
+  JUSTIFICATION_COLORS,
+  JUSTIFICATION_TEXT
 } from '../../../../utils/dayJustificationUtils';
 import { getDateStr } from '../../../../utils/dateUtils';
 import Button from '../../../ui/Button';
@@ -83,21 +84,22 @@ const DayJustificationButton = memo(({ date }) => {
     const reasonLabel = t(`justification.${justification.reason}`) || t('justification.autre');
     const reasonIcon = JUSTIFICATION_ICONS[justification.reason] || '📝';
     const colorClasses = JUSTIFICATION_COLORS[justification.reason] || JUSTIFICATION_COLORS[JUSTIFICATION_REASONS.AUTRE];
+    const textClass = JUSTIFICATION_TEXT[justification.reason] || JUSTIFICATION_TEXT[JUSTIFICATION_REASONS.AUTRE];
     
     return (
       <>
         <div className={`
-          flex items-center justify-between gap-3 p-4 rounded-lg border-2 transition-all duration-200
-          ${colorClasses}
+          flex items-center justify-between gap-3 rounded-lg border-2 p-4 transition-all duration-200
+          ${colorClasses} ${textClass}
           hover:shadow-lg hover:scale-[1.02]
         `}>
           <div className="flex items-center gap-3 flex-1">
             <span className="text-2xl" aria-hidden="true">{reasonIcon}</span>
             <div className="flex-1">
-              <p className="text-sm text-slate-300 font-medium">{t('justification.button.dayJustified')}</p>
-              <p className="text-white font-semibold">{reasonLabel}</p>
+              <p className="text-sm font-medium opacity-75">{t('justification.button.dayJustified')}</p>
+              <p className="font-semibold">{reasonLabel}</p>
               {justification.note && (
-                <p className="text-xs text-slate-400 mt-1 line-clamp-1" title={justification.note}>
+                <p className="mt-1 line-clamp-1 text-xs opacity-70" title={justification.note}>
                   {justification.note}
                 </p>
               )}
@@ -106,7 +108,7 @@ const DayJustificationButton = memo(({ date }) => {
           <button
             type="button"
             onClick={handleOpenModal}
-            className="gradient-button-premium gradient-button-premium-sm gradient-button-premium-variant rounded-lg flex items-center gap-2 flex-shrink-0"
+            className="flex shrink-0 items-center gap-2 rounded-lg border-2 border-[#0F5C45]/60 bg-[#0F4C5C]/30 px-3 py-2 text-sm font-medium text-teal-50 transition hover:border-[#0F5C45] hover:bg-[#0F4C5C]/45"
             aria-label={t('justification.button.modifyAriaLabel')}
           >
             <Edit2 className="w-4 h-4" />
@@ -127,21 +129,21 @@ const DayJustificationButton = memo(({ date }) => {
   // Sinon, afficher le bouton pour justifier
   return (
     <>
-      <div className="bg-slate-800/50 backdrop-blur-sm rounded-lg p-4 border border-slate-700/50">
+      <div className="rounded-xl border-2 border-[#0F4C5C]/70 bg-black p-4">
         <div className="flex items-center justify-between gap-4">
           <div className="flex items-center gap-3">
-            <Calendar className="text-slate-400" size={20} />
+            <Calendar className="text-teal-400" size={20} />
             <div>
-              <p className="text-sm text-slate-300 font-medium">{t('justification.button.noActivity')}</p>
-              <p className="text-xs text-slate-500">{t('justification.button.justifyHint')}</p>
+              <p className="text-sm font-medium text-teal-100">{t('justification.button.noActivity')}</p>
+              <p className="text-xs text-teal-700">{t('justification.button.justifyHint')}</p>
             </div>
           </div>
           <button
             type="button"
             onClick={handleOpenModal}
-            className="gradient-button-premium gradient-button-premium-md gradient-button-premium-variant rounded-lg flex items-center gap-2 flex-shrink-0"
+            className="flex shrink-0 items-center gap-2 rounded-lg border-2 border-[#0F5C45]/60 bg-[#0F4C5C]/35 px-4 py-2 text-sm font-semibold text-white transition hover:border-[#0F5C45] hover:bg-[#0F4C5C]/50"
           >
-            <Calendar className="w-4 h-4" />
+            <Calendar className="h-4 w-4" />
             {t('justification.button.justify')}
           </button>
         </div>

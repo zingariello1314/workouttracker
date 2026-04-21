@@ -24,6 +24,7 @@ const DebouncedInput = ({
   type = 'input', // 'input' | 'select' | 'textarea'
   showLoadingIndicator = false,
   className = '',
+  fieldTone,
   ...props
 }) => {
   const [localValue, setLocalValue] = useState(initialValue);
@@ -83,6 +84,7 @@ const DebouncedInput = ({
   const renderInput = () => {
     const commonProps = {
       ...props,
+      ...(fieldTone ? { fieldTone } : {}),
       value: localValue,
       onChange: handleChange,
       className: inputClassName

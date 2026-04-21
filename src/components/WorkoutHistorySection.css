@@ -7,15 +7,15 @@
 
 .history-header {
   margin-bottom: 1.5rem;
-  border: 2px solid #e5e7eb;
+  /* Bordure / fond : charte Sport (composant Card variant="sport") */
+  border: none;
   border-radius: 0.75rem;
-  box-shadow: 0 2px 4px 0 rgba(0, 0, 0, 0.05);
-  transition: all 0.2s ease-in-out;
+  box-shadow: none;
+  transition: box-shadow 0.2s ease-in-out;
 }
 
 .history-header:hover {
-  box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.1);
-  border-color: #d1d5db;
+  box-shadow: 0 4px 14px rgba(15, 76, 92, 0.25);
 }
 
 .history-content {

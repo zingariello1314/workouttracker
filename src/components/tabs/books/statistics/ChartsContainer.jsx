@@ -67,10 +67,10 @@ const ChartNavButton = ({ config, isActive, onClick }) => {
   
   return (
     <Button
-      variant={isActive ? 'primary' : 'ghost'}
+      variant={isActive ? 'books' : 'booksMuted'}
       size="sm"
       onClick={() => onClick(config.id)}
-      className="chart-nav-button touch-target"
+      className="chart-nav-button touch-target normal-case tracking-normal"
     >
       <Icon className="w-4 h-4" />
       <div className="hidden sm:block">
@@ -100,12 +100,12 @@ const ChartsContainer = ({
   return (
     <div className="space-y-4">
       {/* Navigation des graphiques */}
-      <Card variant="glass">
-        <CardContent className="p-4">
+      <Card variant="books" className="!p-4 md:!p-5">
+        <CardContent className="!p-0">
           <div className="charts-navigation">
             <div className="flex items-center gap-2">
-              <BarChart3 className="w-5 h-5 text-purple-300" />
-              <span className="font-medium text-slate-200">
+              <BarChart3 className="w-5 h-5 text-[#93c5fd]" />
+              <span className="font-medium text-[#bfdbfe]">
                 {t('books.statistics.charts.title', 'Graphiques')}
               </span>
             </div>
@@ -127,9 +127,9 @@ const ChartsContainer = ({
               {/* Version mobile - menu déroulant */}
               <div className="chart-nav-mobile">
                 <Button
-                  variant="glass"
+                  variant="booksMuted"
                   onClick={() => setIsNavExpanded(!isNavExpanded)}
-                  className="w-full justify-between touch-target"
+                  className="w-full justify-between touch-target normal-case tracking-normal"
                 >
                   <span className="flex items-center gap-2">
                     <activeConfig.icon className="w-4 h-4" />
@@ -162,13 +162,13 @@ const ChartsContainer = ({
       </Card>
 
       {/* Graphique actif */}
-      <Card variant="glass">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <activeConfig.icon className="w-5 h-5 text-purple-300" />
+      <Card variant="books">
+        <CardHeader className="border-b border-[#3A86FF]/25">
+          <CardTitle tone="books" className="flex items-center gap-2 normal-case tracking-wide">
+            <activeConfig.icon className="w-5 h-5 text-[#93c5fd]" />
             {activeConfig.title}
           </CardTitle>
-          <p className="text-sm text-slate-400">
+          <p className="text-sm text-[#93c5fd]/80">
             {activeConfig.description}
           </p>
         </CardHeader>

@@ -46,6 +46,7 @@ const SIDEBAR_HISTORICAL_MODULE_EXPANDED_DEFAULTS = {
   'sidebar-sport-planning': true,
   'sidebar-sport-calendar': true,
   'sidebar-daily-quests': true,
+  'sidebar-muscu-recap': true,
   'progression-lecture': false,
   'metriques-garmin': false,
   'sidebar-body-recap': true,

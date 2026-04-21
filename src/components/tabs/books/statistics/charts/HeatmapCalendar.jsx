@@ -148,10 +148,10 @@ const CalendarDay = ({ date, data, intensity, onClick, onMouseEnter, onMouseLeav
   const intensityColors = {
     // Teinte légèrement visible même sans activité pour garder la grille alignée sous les mois
     0: 'bg-slate-700/40', // Pas d'activité
-    1: 'bg-purple-900/40', // Faible
-    2: 'bg-purple-700/60', // Modéré
-    3: 'bg-purple-500/80', // Actif
-    4: 'bg-purple-400' // Très actif
+    1: 'bg-slate-600/50', // Faible
+    2: 'bg-slate-500/65', // Modéré
+    3: 'bg-slate-400/80', // Actif
+    4: 'bg-slate-300' // Très actif
   };
 
   return (
@@ -443,10 +443,10 @@ const HeatmapCalendar = ({ books, statisticsData, selectedPeriod, filters }) => 
                   key={level}
                   className={`w-3 h-3 rounded-sm ${
                     level === 0 ? 'bg-slate-800/30' :
-                    level === 1 ? 'bg-purple-900/40' :
-                    level === 2 ? 'bg-purple-700/60' :
-                    level === 3 ? 'bg-purple-500/80' :
-                    'bg-purple-400'
+                    level === 1 ? 'bg-slate-600/50' :
+                    level === 2 ? 'bg-slate-500/65' :
+                    level === 3 ? 'bg-slate-400/80' :
+                    'bg-slate-300'
                   }`}
                 />
               ))}

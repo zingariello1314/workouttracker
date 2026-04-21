@@ -18,6 +18,7 @@ import {
   snapDureeToValidOption,
 } from '../constants';
 import { formatDuration } from '../utils';
+import { qstatsMuted } from '../../../quests/stats/questsStatsTheme';
 
 /**
  * Modal pour créer ou éditer une quête
@@ -41,16 +42,16 @@ export const QuestFormModal = ({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
-      <div className="bg-slate-900 border border-slate-700 rounded-2xl shadow-2xl max-w-lg w-full mx-4 p-5 space-y-4">
-        <div className="flex items-center justify-between">
-          <h2 className="text-lg font-semibold text-slate-100">
+    <div className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/65 backdrop-blur-sm px-4 pt-20 pb-12 sm:pt-24 sm:pb-16">
+      <div className="rounded-2xl border-2 border-amber-400/75 bg-black max-w-lg w-full p-5 space-y-4 shadow-2xl shadow-black/60 max-h-[min(90dvh,calc(100vh-7rem))] overflow-y-auto my-2 sm:my-4">
+        <div className="flex items-center justify-between gap-3">
+          <h2 className="text-lg font-semibold text-amber-50">
             {isEditing ? 'Modifier la quête' : 'Nouvelle quête'}
           </h2>
           <button
             type="button"
             onClick={onClose}
-            className="gradient-button-premium gradient-button-premium-sm rounded-lg"
+            className="shrink-0 rounded-lg border border-amber-600/50 bg-black/80 px-3 py-1.5 text-sm text-amber-200 hover:border-amber-400 hover:bg-amber-500/10 transition-colors"
           >
             ✕
           </button>
@@ -58,32 +59,32 @@ export const QuestFormModal = ({
 
         <div className="space-y-3 text-sm">
           <div>
-            <label className="block text-slate-300 mb-1">Nom</label>
+            <label className="block text-amber-200/90 mb-1">Nom</label>
             <input
               type="text"
               value={questForm.nom}
               onChange={(e) =>
                 setQuestForm((prev) => ({ ...prev, nom: e.target.value }))
               }
-              className="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-slate-100 text-sm"
+              className="w-full bg-black/80 border border-amber-600/40 rounded-lg px-3 py-2 text-amber-50 text-sm focus:outline-none focus:ring-1 focus:ring-amber-400/70"
             />
           </div>
 
           <div>
-            <label className="block text-slate-300 mb-1">Description</label>
+            <label className="block text-amber-200/90 mb-1">Description</label>
             <textarea
               rows={3}
               value={questForm.description}
               onChange={(e) =>
                 setQuestForm((prev) => ({ ...prev, description: e.target.value }))
               }
-              className="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-slate-100 text-sm resize-none"
+              className="w-full bg-black/80 border border-amber-600/40 rounded-lg px-3 py-2 text-amber-50 text-sm resize-none focus:outline-none focus:ring-1 focus:ring-amber-400/70"
             />
           </div>
 
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="block text-slate-300 mb-1">Catégorie</label>
+              <label className="block text-amber-200/90 mb-1">Catégorie</label>
               <select
                 value={questForm.categorie}
                 onChange={(e) => {
@@ -94,7 +95,7 @@ export const QuestFormModal = ({
                     priere: cat === 'Prière' ? (prev.priere || 'fajr') : '',
                   }));
                 }}
-                className="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-slate-100 text-sm"
+                className="w-full bg-black/80 border border-amber-600/40 rounded-lg px-3 py-2 text-amber-50 text-sm focus:outline-none focus:ring-1 focus:ring-amber-400/70"
               >
                 {CATEGORIES.map((cat) => (
                   <option key={cat} value={cat}>
@@ -105,7 +106,7 @@ export const QuestFormModal = ({
             </div>
 
             <div>
-              <label className="block text-slate-300 mb-1">Difficulté</label>
+              <label className="block text-amber-200/90 mb-1">Difficulté</label>
               <select
                 value={questForm.difficulte}
                 onChange={(e) =>
@@ -114,7 +115,7 @@ export const QuestFormModal = ({
                     difficulte: Number(e.target.value),
                   }))
                 }
-                className="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-slate-100 text-sm"
+                className="w-full bg-black/80 border border-amber-600/40 rounded-lg px-3 py-2 text-amber-50 text-sm focus:outline-none focus:ring-1 focus:ring-amber-400/70"
               >
                 {DIFFICULTIES.map((d) => (
                   <option key={d.value} value={d.value}>
@@ -127,7 +128,7 @@ export const QuestFormModal = ({
 
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="block text-slate-300 mb-1">Durée</label>
+              <label className="block text-amber-200/90 mb-1">Durée</label>
               <select
                 value={snapDureeToValidOption(questForm.duree)}
                 onChange={(e) =>
@@ -136,7 +137,7 @@ export const QuestFormModal = ({
                     duree: Number(e.target.value),
                   }))
                 }
-                className="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-slate-100 text-sm"
+                className="w-full bg-black/80 border border-amber-600/40 rounded-lg px-3 py-2 text-amber-50 text-sm focus:outline-none focus:ring-1 focus:ring-amber-400/70"
               >
                 {DURATION_OPTIONS.map((m) => (
                   <option key={m} value={m}>
@@ -147,13 +148,13 @@ export const QuestFormModal = ({
             </div>
 
             <div>
-              <label className="block text-slate-300 mb-1">Type</label>
+              <label className="block text-amber-200/90 mb-1">Type</label>
               <select
                 value={questForm.type}
                 onChange={(e) =>
                   setQuestForm((prev) => ({ ...prev, type: e.target.value }))
                 }
-                className="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-slate-100 text-sm"
+                className="w-full bg-black/80 border border-amber-600/40 rounded-lg px-3 py-2 text-amber-50 text-sm focus:outline-none focus:ring-1 focus:ring-amber-400/70"
               >
                 <option value="recurrente">Récurrente</option>
                 <option value="exceptionnelle">Exceptionnelle</option>
@@ -163,27 +164,27 @@ export const QuestFormModal = ({
 
           {questForm.categorie === 'Prière' && (
             <div>
-              <label className="block text-slate-300 mb-1">Quelle prière ?</label>
+              <label className="block text-amber-200/90 mb-1">Quelle prière ?</label>
               <select
                 value={questForm.priere || 'fajr'}
                 onChange={(e) =>
                   setQuestForm((prev) => ({ ...prev, priere: e.target.value }))
                 }
-                className="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-slate-100 text-sm"
+                className="w-full bg-black/80 border border-amber-600/40 rounded-lg px-3 py-2 text-amber-50 text-sm focus:outline-none focus:ring-1 focus:ring-amber-400/70"
               >
                 {PRIERES.map((p) => (
                   <option key={p.value} value={p.value}>{p.label}</option>
                 ))}
               </select>
-              <p className="text-xs text-slate-500 mt-0.5">Heure calculée automatiquement selon ta position (Paramètres).</p>
+              <p className={`text-xs mt-0.5 ${qstatsMuted}`}>Heure calculée automatiquement selon ta position (Paramètres).</p>
             </div>
           )}
 
           {questForm.categorie !== 'Prière' && (
             <div className="space-y-2">
-              <label className="block text-slate-300">Heure prévue (emploi du temps)</label>
+              <label className="block text-amber-200/90">Heure prévue (emploi du temps)</label>
               <div className="flex gap-3 flex-wrap">
-                <label className="flex items-center gap-1.5 text-slate-300 cursor-pointer">
+                <label className="flex items-center gap-1.5 text-amber-200/90 cursor-pointer">
                   <input
                     type="radio"
                     name="heureType"
@@ -196,11 +197,11 @@ export const QuestFormModal = ({
                         creneau: prev.creneau || 'matin',
                       }))
                     }
-                    className="rounded border-slate-600"
+                    className="rounded border-amber-600/60 bg-black text-amber-400"
                   />
                   <span>Plage</span>
                 </label>
-                <label className="flex items-center gap-1.5 text-slate-300 cursor-pointer">
+                <label className="flex items-center gap-1.5 text-amber-200/90 cursor-pointer">
                   <input
                     type="radio"
                     name="heureType"
@@ -212,7 +213,7 @@ export const QuestFormModal = ({
                         creneau: '',
                       }))
                     }
-                    className="rounded border-slate-600"
+                    className="rounded border-amber-600/60 bg-black text-amber-400"
                   />
                   <span>Heure / Période</span>
                 </label>
@@ -223,7 +224,7 @@ export const QuestFormModal = ({
                   onChange={(e) =>
                     setQuestForm((prev) => ({ ...prev, creneau: e.target.value }))
                   }
-                  className="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-slate-100 text-sm"
+                  className="w-full bg-black/80 border border-amber-600/40 rounded-lg px-3 py-2 text-amber-50 text-sm focus:outline-none focus:ring-1 focus:ring-amber-400/70"
                 >
                   {CRENEAUX.map((c) => (
                     <option key={c.value} value={c.value}>{c.label}</option>
@@ -237,21 +238,21 @@ export const QuestFormModal = ({
                     onChange={(e) =>
                       setQuestForm((prev) => ({ ...prev, heure: e.target.value || '' }))
                     }
-                    className="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-slate-100 text-sm"
+                    className="w-full bg-black/80 border border-amber-600/40 rounded-lg px-3 py-2 text-amber-50 text-sm focus:outline-none focus:ring-1 focus:ring-amber-400/70"
                     title="Optionnel : heure de début ; la fin = début + durée de la quête"
                   />
-                  <p className="text-xs text-slate-500">
+                  <p className={`text-xs ${qstatsMuted}`}>
                     Optionnel. Heure de début ; pour une période, la fin est calculée automatiquement (début + durée).
                   </p>
                 </>
               )}
-              <p className="text-xs text-slate-500">Les quêtes sont triées par heure dans la vue Aujourd'hui.</p>
+              <p className={`text-xs ${qstatsMuted}`}>Les quêtes sont triées par heure dans la vue Aujourd'hui.</p>
             </div>
           )}
 
           {questForm.type === 'recurrente' ? (
             <div className="space-y-2">
-              <label className="block text-slate-300">Jours</label>
+              <label className="block text-amber-200/90">Jours</label>
               <div className="flex flex-wrap gap-1.5 text-xs">
                 {JOUR_OPTIONS.filter((j) => j.value !== 'all').map((j) => (
                   <button
@@ -267,10 +268,10 @@ export const QuestFormModal = ({
                         return { ...prev, jours: [...jours, day].sort() };
                       });
                     }}
-                    className={`gradient-button-premium gradient-button-premium-sm rounded-lg ${
+                    className={`rounded-lg border px-2.5 py-1.5 text-xs transition-colors ${
                       questForm.jours?.includes(Number(j.value))
-                        ? 'gradient-button-premium-variant'
-                        : ''
+                        ? 'border-amber-400 bg-amber-500/25 text-amber-50'
+                        : 'border-amber-700/45 bg-black/70 text-amber-200/90 hover:border-amber-500/55'
                     }`}
                   >
                     {j.label.slice(0, 3)}
@@ -278,7 +279,7 @@ export const QuestFormModal = ({
                 ))}
               </div>
 
-              <div className="flex flex-wrap gap-1 text-[11px] text-slate-300">
+              <div className="flex flex-wrap gap-1 text-[11px] text-amber-200/85">
                 {RECURRENCE_PRESETS.map((preset) => (
                   <button
                     key={preset.label}
@@ -286,7 +287,7 @@ export const QuestFormModal = ({
                     onClick={() =>
                       setQuestForm((prev) => ({ ...prev, jours: [...preset.jours] }))
                     }
-                    className="gradient-button-premium gradient-button-premium-sm rounded-lg"
+                    className="rounded-lg border border-amber-700/45 bg-black/70 px-2.5 py-1 text-[11px] text-amber-200 hover:border-amber-400/60 hover:bg-amber-500/10 transition-colors"
                   >
                     {preset.label}
                   </button>
@@ -295,43 +296,43 @@ export const QuestFormModal = ({
             </div>
           ) : (
             <div>
-              <label className="block text-slate-300 mb-1">Date</label>
+              <label className="block text-amber-200/90 mb-1">Date</label>
               <input
                 type="date"
                 value={questForm.date}
                 onChange={(e) =>
                   setQuestForm((prev) => ({ ...prev, date: e.target.value }))
                 }
-                className="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-slate-100 text-sm"
+                className="w-full bg-black/80 border border-amber-600/40 rounded-lg px-3 py-2 text-amber-50 text-sm focus:outline-none focus:ring-1 focus:ring-amber-400/70"
               />
             </div>
           )}
 
-          <label className="flex items-center gap-2 text-xs text-slate-300">
+          <label className="flex items-center gap-2 text-xs text-amber-200/90">
             <input
               type="checkbox"
               checked={questForm.active}
               onChange={(e) =>
                 setQuestForm((prev) => ({ ...prev, active: e.target.checked }))
               }
-              className="rounded border-slate-600 bg-slate-900"
+              className="rounded border-amber-600/60 bg-black text-amber-400"
             />
             Quête active
           </label>
         </div>
 
-        <div className="flex justify-end gap-2 pt-2">
+        <div className="flex justify-end gap-2 pt-2 border-t border-amber-800/30">
           <button
             type="button"
             onClick={onClose}
-            className="gradient-button-premium gradient-button-premium-md gradient-button-premium-variant rounded-lg"
+            className="rounded-lg border border-amber-600/50 bg-black/80 px-4 py-2 text-sm text-amber-200 hover:border-amber-400/70 hover:bg-amber-500/10 transition-colors"
           >
             Annuler
           </button>
           <button
             type="button"
             onClick={onSave}
-            className="gradient-button-premium gradient-button-premium-md rounded-lg"
+            className="rounded-lg border-2 border-amber-400/80 bg-gradient-to-r from-amber-600 to-amber-500 px-4 py-2 text-sm font-semibold text-amber-950 shadow-md shadow-amber-900/30 hover:from-amber-500 hover:to-amber-400 transition-colors"
           >
             Enregistrer
           </button>

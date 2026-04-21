@@ -1,4 +1,4 @@
-/**
+﻿/**
  * CoachDashboard - Dashboard Coach (Vue Lecture Seule)
  * 
  * Composant pour visualiser les données nutrition partagées :
@@ -305,7 +305,7 @@ const CoachDashboard = () => {
   if (!shareData) {
     return (
       <div className="space-y-6">
-        <Card className="bg-slate-800/50 border-slate-700">
+        <Card variant="sport">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Eye size={20} className="text-blue-400" />
@@ -454,7 +454,7 @@ const CoachDashboard = () => {
   return (
     <div className="space-y-6">
       {/* En-tête avec informations */}
-      <Card className="bg-slate-800/50 border-slate-700">
+      <Card variant="sport">
         <CardHeader>
           <div className="flex items-center justify-between">
             <CardTitle className="flex items-center gap-2">
@@ -543,7 +543,7 @@ const CoachDashboard = () => {
           >
             {/* Statistiques globales */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <Card className="bg-slate-800/50 border-slate-700">
+              <Card variant="sport">
                 <CardContent className="p-4">
                   <div className="flex items-center justify-between">
                     <div>
@@ -555,7 +555,7 @@ const CoachDashboard = () => {
                 </CardContent>
               </Card>
 
-              <Card className="bg-slate-800/50 border-slate-700">
+              <Card variant="sport">
                 <CardContent className="p-4">
                   <div className="flex items-center justify-between">
                     <div>
@@ -568,7 +568,7 @@ const CoachDashboard = () => {
               </Card>
 
               {stats.activeProgram && (
-                <Card className="bg-slate-800/50 border-slate-700">
+                <Card variant="sport">
                   <CardContent className="p-4">
                     <div className="flex items-center justify-between">
                       <div>
@@ -586,7 +586,7 @@ const CoachDashboard = () => {
 
             {/* Moyennes par période */}
             {stats.periods && (
-              <Card className="bg-slate-800/50 border-slate-700">
+              <Card variant="sport">
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
                     <BarChart3 size={20} className="text-purple-400" />
@@ -651,7 +651,7 @@ const CoachDashboard = () => {
           >
             {/* ✅ PHASE 5 : Timeline calories avec lazy loading et mémorisation */}
             {chartData.length > 0 && (
-              <Card className="bg-slate-800/50 border-slate-700">
+              <Card variant="sport">
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
                     <TrendingUp size={20} className="text-orange-400" />
@@ -668,7 +668,7 @@ const CoachDashboard = () => {
 
             {/* ✅ PHASE 5 : Timeline macros avec lazy loading et mémorisation */}
             {chartData.length > 0 && (
-              <Card className="bg-slate-800/50 border-slate-700">
+              <Card variant="sport">
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
                     <BarChart3 size={20} className="text-purple-400" />
@@ -685,7 +685,7 @@ const CoachDashboard = () => {
 
             {/* ✅ PHASE 5 : Distribution macros avec lazy loading et mémorisation */}
             {macroDistribution.length > 0 && (
-              <Card className="bg-slate-800/50 border-slate-700">
+              <Card variant="sport">
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
                     <Target size={20} className="text-green-400" />
@@ -702,7 +702,7 @@ const CoachDashboard = () => {
 
             {/* ✅ PHASE 5 : Timeline conformité avec lazy loading et mémorisation */}
             {chartData.length > 0 && (
-              <Card className="bg-slate-800/50 border-slate-700">
+              <Card variant="sport">
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
                     <TrendingUp size={20} className="text-blue-400" />
@@ -729,7 +729,7 @@ const CoachDashboard = () => {
           >
             {/* Statistiques progression */}
             <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-              <Card className="bg-slate-800/50 border-slate-700">
+              <Card variant="sport">
                 <CardContent className="p-4">
                   <div className="flex items-center justify-between">
                     <div>
@@ -741,7 +741,7 @@ const CoachDashboard = () => {
                 </CardContent>
               </Card>
 
-              <Card className="bg-slate-800/50 border-slate-700">
+              <Card variant="sport">
                 <CardContent className="p-4">
                   <div className="flex items-center justify-between">
                     <div>
@@ -753,7 +753,7 @@ const CoachDashboard = () => {
                 </CardContent>
               </Card>
 
-              <Card className="bg-slate-800/50 border-slate-700">
+              <Card variant="sport">
                 <CardContent className="p-4">
                   <div className="flex items-center justify-between">
                     <div>
@@ -765,7 +765,7 @@ const CoachDashboard = () => {
                 </CardContent>
               </Card>
 
-              <Card className="bg-slate-800/50 border-slate-700">
+              <Card variant="sport">
                 <CardContent className="p-4">
                   <div className="flex items-center justify-between">
                     <div>
@@ -780,7 +780,7 @@ const CoachDashboard = () => {
 
             {/* Tendances */}
             {progress.trends && (
-              <Card className="bg-slate-800/50 border-slate-700">
+              <Card variant="sport">
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
                     <TrendingUp size={20} className="text-green-400" />

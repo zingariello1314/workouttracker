@@ -17,8 +17,8 @@ const PERIODS = [
 const PeriodSelector = ({ selectedPeriod, onPeriodChange }) => {
   return (
     <div className="flex flex-wrap items-center gap-1.5">
-      <Calendar className="w-4 h-4 text-slate-400 mr-1" />
-      <span className="text-[11px] text-slate-400 mr-1">Période :</span>
+      <Calendar className="w-4 h-4 text-amber-400/90 mr-1" />
+      <span className="text-[11px] text-amber-200/80 mr-1">Période :</span>
       {PERIODS.map((period) => (
         <button
           key={period.key}

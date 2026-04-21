@@ -17,9 +17,9 @@ const ApprentissageXPBar = lazy(() => import('../apprentissage/ApprentissageXPBa
 // Composant de chargement
 const LoadingFallback = () => (
   <div className="flex items-center justify-center min-h-[400px]">
-    <div className="text-center">
+    <div className="text-center rounded-xl border-2 border-emerald-500/50 bg-black px-8 py-10">
       <div className="text-4xl mb-4 animate-spin">⚡</div>
-      <div className="text-slate-400 font-semibold uppercase tracking-wide">CHARGEMENT...</div>
+      <div className="text-emerald-200/90 font-semibold uppercase tracking-wide">CHARGEMENT...</div>
     </div>
   </div>
 );
@@ -96,10 +96,10 @@ const ApprentissageTab = () => {
                 onClick={() => switchToSubView(subView.id)}
                 data-subtab={subView.id}
                 data-tab={subView.id === 'calendrier' ? 'learning-calendar' : undefined}
-                className={`gradient-button-premium gradient-button-premium-md rounded-lg flex items-center space-x-2 whitespace-nowrap flex-shrink-0 ${
+                className={`rounded-lg flex items-center space-x-2 whitespace-nowrap flex-shrink-0 border-2 px-4 py-2 text-sm font-semibold transition-all ${
                   currentSubView === subView.id
-                    ? 'gradient-button-premium-variant'
-                    : ''
+                    ? 'bg-emerald-500/15 border-emerald-400 text-emerald-50 shadow-[0_0_20px_rgba(16,185,129,0.18)]'
+                    : 'bg-black border-emerald-600/50 text-emerald-200/90 hover:border-emerald-400/75 hover:bg-emerald-950/40'
                 }`}
               >
                 <span className="text-lg">{subView.icon}</span>
@@ -114,7 +114,7 @@ const ApprentissageTab = () => {
       <div className="py-6">
         {/* Barre XP Apprentissage */}
         <div className="max-w-7xl mx-auto px-4 mb-6">
-          <Suspense fallback={<div className="h-24 bg-slate-800/50 rounded-xl animate-pulse" />}>
+          <Suspense fallback={<div className="h-24 bg-black border-2 border-emerald-500/40 rounded-xl animate-pulse" />}>
             <ApprentissageXPBar />
           </Suspense>
         </div>

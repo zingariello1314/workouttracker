@@ -33,6 +33,7 @@ export const useSidebar = () => {
       'sidebar-sport-planning': true,
       'sidebar-sport-calendar': true,
       'sidebar-daily-quests': true,
+      'sidebar-muscu-recap': true,
       'progression-lecture': true,
       'metriques-garmin': true,
       'liste-courses': true,

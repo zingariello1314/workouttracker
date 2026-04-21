@@ -26,13 +26,13 @@ const PredictionsPanel = ({ predictions, selectedPeriod, aggregatedData }) => {
 
   if (!predictions.hasData) {
     return (
-      <Card variant="glass">
+      <Card variant="books">
         <CardContent className="text-center py-8">
-          <Lightbulb className="w-12 h-12 text-slate-500 mx-auto mb-3" />
-          <h3 className="text-lg font-semibold text-slate-300 mb-2">
+          <Lightbulb className="w-12 h-12 text-[#93c5fd]/60 mx-auto mb-3" />
+          <h3 className="text-lg font-semibold text-[#bfdbfe] mb-2">
             Prédictions en cours de calcul
           </h3>
-          <p className="text-slate-400 text-sm">
+          <p className="text-[#93c5fd]/80 text-sm">
             Continuez à enregistrer vos sessions pour obtenir des prédictions personnalisées.
           </p>
         </CardContent>
@@ -48,56 +48,55 @@ const PredictionsPanel = ({ predictions, selectedPeriod, aggregatedData }) => {
 
   return (
     <div className="space-y-4">
-      {/* Résumé des prédictions */}
-      <Card variant="glass">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-3">
-            <Lightbulb className="w-5 h-5 text-yellow-400" />
+      <Card variant="books">
+        <CardHeader className="border-b border-[#3A86FF]/25">
+          <CardTitle tone="books" className="flex items-center gap-3 normal-case tracking-wide">
+            <Lightbulb className="w-5 h-5 text-[#93c5fd]" />
             Insights & Prédictions
           </CardTitle>
         </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <SummaryMetric
-              icon={<BookOpen className="w-4 h-4" />}
-              label="Livres en cours"
-              value={predictions.completionTimes?.length || 0}
-              subtitle="prédictions disponibles"
-            />
-            <SummaryMetric
-              icon={<Clock className="w-4 h-4" />}
-              label="Temps estimé total"
-              value={`${Math.round(predictions.stats?.totalEstimatedReadingTime || 0)}h`}
-              subtitle="pour terminer tous les livres"
-            />
-            <SummaryMetric
-              icon={<TrendingUp className="w-4 h-4" />}
-              label="Régularité"
-              value={`${predictions.stats?.readingConsistency || 0}%`}
-              subtitle="de jours avec lecture"
-            />
-          </div>
-        </CardContent>
       </Card>
 
-      {/* Onglets de navigation */}
-      <div className="flex gap-2">
-        {tabs.map(tab => {
-          const Icon = tab.icon;
-          return (
-            <Button
-              key={tab.id}
-              variant={activeTab === tab.id ? 'primary' : 'glass'}
-              size="sm"
-              onClick={() => setActiveTab(tab.id)}
-              className="flex items-center gap-2"
-            >
-              <Icon className="w-4 h-4" />
-              {tab.label}
-            </Button>
-          );
-        })}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <SummaryMetric
+          icon={<BookOpen className="w-4 h-4" />}
+          label="Livres en cours"
+          value={predictions.completionTimes?.length || 0}
+          subtitle="prédictions disponibles"
+        />
+        <SummaryMetric
+          icon={<Clock className="w-4 h-4" />}
+          label="Temps estimé total"
+          value={`${Math.round(predictions.stats?.totalEstimatedReadingTime || 0)}h`}
+          subtitle="pour terminer tous les livres"
+        />
+        <SummaryMetric
+          icon={<TrendingUp className="w-4 h-4" />}
+          label="Régularité"
+          value={`${predictions.stats?.readingConsistency || 0}%`}
+          subtitle="de jours avec lecture"
+        />
       </div>
+
+      <Card variant="books" className="!p-3 md:!p-4">
+        <CardContent className="!p-0 flex flex-wrap gap-2">
+          {tabs.map(tab => {
+            const Icon = tab.icon;
+            return (
+              <Button
+                key={tab.id}
+                variant={activeTab === tab.id ? 'books' : 'booksMuted'}
+                size="sm"
+                onClick={() => setActiveTab(tab.id)}
+                className="flex items-center gap-2 normal-case tracking-normal"
+              >
+                <Icon className="w-4 h-4" />
+                {tab.label}
+              </Button>
+            );
+          })}
+        </CardContent>
+      </Card>
 
       {/* Contenu des onglets */}
       {activeTab === 'completion' && (
@@ -127,13 +126,13 @@ const PredictionsPanel = ({ predictions, selectedPeriod, aggregatedData }) => {
  * Composant pour afficher une métrique du résumé
  */
 const SummaryMetric = ({ icon, label, value, subtitle }) => (
-  <div className="text-center p-3 bg-slate-800/30 rounded-lg">
-    <div className="flex items-center justify-center gap-2 text-slate-400 mb-2">
+  <div className="text-center p-4 bg-black rounded-2xl border-2 border-[#3A86FF] shadow-md shadow-black/30">
+    <div className="flex items-center justify-center gap-2 text-[#93c5fd] mb-2">
       {icon}
       <span className="text-sm">{label}</span>
     </div>
-    <div className="text-xl font-bold text-white mb-1">{value}</div>
-    <div className="text-xs text-slate-500">{subtitle}</div>
+    <div className="text-xl font-bold text-[#bfdbfe] mb-1">{value}</div>
+    <div className="text-xs text-[#93c5fd]/75">{subtitle}</div>
   </div>
 );
 
@@ -145,19 +144,21 @@ const CompletionTimesTab = ({ predictions }) => {
 
   if (completionTimes.length === 0) {
     return (
-      <Card variant="glass">
+      <Card variant="books">
         <CardContent className="text-center py-8">
-          <BookOpen className="w-12 h-12 text-slate-500 mx-auto mb-3" />
-          <p className="text-slate-400">Aucun livre en cours avec des prédictions disponibles.</p>
+          <BookOpen className="w-12 h-12 text-[#93c5fd]/60 mx-auto mb-3" />
+          <p className="text-[#93c5fd]/85">Aucun livre en cours avec des prédictions disponibles.</p>
         </CardContent>
       </Card>
     );
   }
 
   return (
-    <Card variant="glass">
-      <CardHeader>
-        <CardTitle>Temps de lecture estimés</CardTitle>
+    <Card variant="books">
+      <CardHeader className="border-b border-[#3A86FF]/25">
+        <CardTitle tone="books" className="normal-case tracking-wide">
+          Temps de lecture estimés
+        </CardTitle>
       </CardHeader>
       <CardContent className="space-y-3">
         {completionTimes.map(prediction => (
@@ -174,10 +175,10 @@ const CompletionTimesTab = ({ predictions }) => {
 const CompletionTimeItem = ({ prediction }) => {
   const getConfidenceColor = (confidence) => {
     switch (confidence) {
-      case 'high': return 'text-green-400';
-      case 'medium': return 'text-yellow-400';
+      case 'high': return 'text-sky-300';
+      case 'medium': return 'text-amber-300';
       case 'low': return 'text-red-400';
-      default: return 'text-slate-400';
+      default: return 'text-[#93c5fd]/70';
     }
   };
 
@@ -191,33 +192,33 @@ const CompletionTimeItem = ({ prediction }) => {
   };
 
   return (
-    <div className="flex items-center justify-between p-3 bg-slate-800/30 rounded-lg">
+    <div className="flex items-center justify-between p-3 bg-black/80 rounded-xl border border-[#3A86FF]/35">
       <div className="flex-1">
         <div className="flex items-center gap-2 mb-1">
-          <h4 className="font-medium text-white text-sm">{prediction.bookTitle}</h4>
+          <h4 className="font-medium text-[#bfdbfe] text-sm">{prediction.bookTitle}</h4>
           <div className={`flex items-center gap-1 ${getConfidenceColor(prediction.confidence)}`}>
             {getConfidenceIcon(prediction.confidence)}
             <span className="text-xs capitalize">{prediction.confidence}</span>
           </div>
         </div>
-        <div className="text-xs text-slate-400 mb-2">
+        <div className="text-xs text-[#93c5fd]/75 mb-2">
           {prediction.bookAuthor} • {prediction.bookGenre}
         </div>
         <div className="flex items-center gap-4 text-xs">
-          <span className="text-slate-300">
+          <span className="text-[#93c5fd]/90">
             {prediction.progressPercent}% terminé
           </span>
-          <span className="text-slate-400">
+          <span className="text-[#93c5fd]/70">
             {prediction.remainingPages} pages restantes
           </span>
         </div>
       </div>
       
       <div className="text-right">
-        <div className="text-lg font-bold text-white">
+        <div className="text-lg font-bold text-[#bfdbfe]">
           {prediction.estimate.hours}h
         </div>
-        <div className="text-xs text-slate-400">
+        <div className="text-xs text-[#93c5fd]/75">
           {prediction.estimate.method === 'book_specific' ? 'Basé sur ce livre' :
            prediction.estimate.method === 'genre_specific' ? 'Basé sur le genre' :
            'Vitesse moyenne'}
@@ -235,12 +236,12 @@ const GoalRecommendationsTab = ({ predictions, periodLabel, periodContext }) => 
 
   if (!goals || (!goals.daily && !goals.weekly && !goals.monthly)) {
     return (
-      <Card variant="glass">
+      <Card variant="books">
         <CardContent className="text-center py-8">
-          <Target className="w-12 h-12 text-slate-500 mx-auto mb-3" />
-          <p className="text-slate-400">Pas assez de données pour générer des recommandations d'objectifs.</p>
+          <Target className="w-12 h-12 text-[#93c5fd]/60 mx-auto mb-3" />
+          <p className="text-[#93c5fd]/85">Pas assez de données pour générer des recommandations d'objectifs.</p>
           {periodLabel && (
-            <p className="text-slate-500 text-sm mt-2">Période : {periodLabel}</p>
+            <p className="text-[#93c5fd]/65 text-sm mt-2">Période : {periodLabel}</p>
           )}
         </CardContent>
       </Card>
@@ -252,12 +253,12 @@ const GoalRecommendationsTab = ({ predictions, periodLabel, periodContext }) => 
   return (
     <div className="space-y-4">
       {periodLabel && (
-        <Card variant="glass">
-          <CardContent className="py-3">
+        <Card variant="books" className="!p-3 md:!p-4">
+          <CardContent className="!py-3 !px-4">
             <div className="flex flex-wrap items-center gap-3 text-sm">
-              <span className="text-slate-300 font-medium">{periodLabel}</span>
+              <span className="text-[#bfdbfe] font-medium">{periodLabel}</span>
               {periodContext && (
-                <span className="text-slate-400">
+                <span className="text-[#93c5fd]/80">
                   {periodContext.daysWithReading} j. avec lecture / {periodContext.totalDays} j. dans la période
                 </span>
               )}
@@ -266,15 +267,15 @@ const GoalRecommendationsTab = ({ predictions, periodLabel, periodContext }) => 
         </Card>
       )}
       {recent && (recent.todayMinutes > 0 || recent.thisWeekPages > 0) && (
-        <Card variant="glass" className="border-green-500/20">
-          <CardContent className="py-3">
-            <div className="text-xs text-slate-400 mb-1">Données branchées à tes sessions (mise à jour en direct)</div>
+        <Card variant="books" className="!p-3 md:!p-4 border-[#3A86FF]/80">
+          <CardContent className="!py-3 !px-4">
+            <div className="text-xs text-[#93c5fd]/75 mb-1">Données branchées à tes sessions (mise à jour en direct)</div>
             <div className="flex flex-wrap gap-4 text-sm">
-              <span className="text-slate-200">
-                <strong className="text-white">Aujourd'hui</strong> : {recent.todayMinutes} min
+              <span className="text-[#93c5fd]/90">
+                <strong className="text-[#bfdbfe]">Aujourd'hui</strong> : {recent.todayMinutes} min
               </span>
-              <span className="text-slate-200">
-                <strong className="text-white">Cette semaine</strong> : {recent.thisWeekPages} pages
+              <span className="text-[#93c5fd]/90">
+                <strong className="text-[#bfdbfe]">Cette semaine</strong> : {recent.thisWeekPages} pages
               </span>
             </div>
           </CardContent>
@@ -330,9 +331,9 @@ const GoalRecommendationCard = ({ type, goal, icon, title }) => {
   const unit = getUnitLabel(goal.type);
 
   return (
-    <Card variant="glass">
-      <CardHeader>
-        <CardTitle className="flex items-center gap-3">
+    <Card variant="books">
+      <CardHeader className="border-b border-[#3A86FF]/25">
+        <CardTitle tone="books" className="flex items-center gap-3 normal-case tracking-wide">
           {icon}
           {title}
         </CardTitle>
@@ -340,10 +341,10 @@ const GoalRecommendationCard = ({ type, goal, icon, title }) => {
       <CardContent>
         <div className="mb-4">
           <div className="flex items-baseline gap-2">
-            <span className="text-sm text-slate-400">Moyenne sur la période</span>
-            <span className="text-lg font-semibold text-white">{goal.current} {unit}</span>
+            <span className="text-sm text-[#93c5fd]/80">Moyenne sur la période</span>
+            <span className="text-lg font-semibold text-[#bfdbfe]">{goal.current} {unit}</span>
           </div>
-          <div className="text-xs text-slate-500 mt-0.5">Adaptatif : plus tu lis dans l’année, plus les objectifs suivent.</div>
+          <div className="text-xs text-[#93c5fd]/65 mt-0.5">Adaptatif : plus tu lis dans l’année, plus les objectifs suivent.</div>
         </div>
         <div className="space-y-3 mb-4">
           {levels.map((l) => {
@@ -352,28 +353,28 @@ const GoalRecommendationCard = ({ type, goal, icon, title }) => {
             return (
               <div
                 key={l.level}
-                className={`rounded-xl p-3 transition-colors ${l.fulfilled ? 'bg-green-500/10 ring-1 ring-green-400/30' : 'bg-slate-800/40'}`}
+                className={`rounded-xl p-3 transition-colors ${l.fulfilled ? 'bg-[#3A86FF]/12 ring-1 ring-[#3A86FF]/45' : 'bg-black/60 border border-[#3A86FF]/25'}`}
               >
                 <div className="flex items-center justify-between gap-3 mb-1.5">
-                  <span className="font-medium text-white">{l.label}</span>
-                  <span className="text-slate-300 text-sm tabular-nums">
+                  <span className="font-medium text-[#bfdbfe]">{l.label}</span>
+                  <span className="text-[#93c5fd]/90 text-sm tabular-nums">
                     {goal.current} / {l.target} {unit}
                   </span>
                 </div>
                 {l.fulfilled ? (
-                  <div className="flex items-center gap-2 text-green-400 text-sm font-medium">
+                  <div className="flex items-center gap-2 text-[#93c5fd] text-sm font-medium">
                     <CheckCircle2 className="w-4 h-4 shrink-0" />
                     Objectif atteint
                   </div>
                 ) : (
                   <>
-                    <div className="h-2 bg-slate-700 rounded-full overflow-hidden">
+                    <div className="h-2 bg-slate-800 rounded-full overflow-hidden">
                       <div
-                        className="h-full bg-gradient-to-r from-amber-500 to-amber-400 rounded-full transition-all duration-500"
+                        className="h-full bg-gradient-to-r from-[#3A86FF] to-sky-300 rounded-full transition-all duration-500"
                         style={{ width: `${progressPercent}%` }}
                       />
                     </div>
-                    <div className="text-xs text-slate-500 mt-1">
+                    <div className="text-xs text-[#93c5fd]/65 mt-1">
                       {gap > 0 && `Il te manque ${gap} ${unit === 'min/jour' ? 'min' : unit === 'pages/semaine' ? 'pages' : 'livre(s)'} pour ce palier`}
                     </div>
                   </>
@@ -382,7 +383,7 @@ const GoalRecommendationCard = ({ type, goal, icon, title }) => {
             );
           })}
         </div>
-        <div className="text-sm text-slate-300 bg-slate-800/30 p-3 rounded-lg border-l-2 border-purple-500/50">
+        <div className="text-sm text-[#93c5fd]/90 bg-black/50 p-3 rounded-lg border-l-2 border-[#3A86FF]/70">
           {goal.reasoning}
         </div>
       </CardContent>
@@ -398,12 +399,12 @@ const PatternsTab = ({ predictions, periodLabel, periodContext }) => {
 
   if (!patterns || !patterns.insights) {
     return (
-      <Card variant="glass">
+      <Card variant="books">
         <CardContent className="text-center py-8">
-          <TrendingUp className="w-12 h-12 text-slate-500 mx-auto mb-3" />
-          <p className="text-slate-400">Pas assez de données pour analyser les patterns.</p>
+          <TrendingUp className="w-12 h-12 text-[#93c5fd]/60 mx-auto mb-3" />
+          <p className="text-[#93c5fd]/85">Pas assez de données pour analyser les patterns.</p>
           {periodLabel && (
-            <p className="text-slate-500 text-sm mt-2">Période : {periodLabel}</p>
+            <p className="text-[#93c5fd]/65 text-sm mt-2">Période : {periodLabel}</p>
           )}
         </CardContent>
       </Card>
@@ -413,12 +414,12 @@ const PatternsTab = ({ predictions, periodLabel, periodContext }) => {
   return (
     <div className="space-y-4">
       {/* Contexte de période : Année + régularité X jours / Y jours */}
-      <Card variant="glass">
-        <CardContent className="py-3">
+      <Card variant="books" className="!p-3 md:!p-4">
+        <CardContent className="!py-3 !px-4">
           <div className="flex flex-wrap items-center gap-3 text-sm">
-            <span className="text-slate-300 font-medium">{periodLabel}</span>
+            <span className="text-[#bfdbfe] font-medium">{periodLabel}</span>
             {periodContext && (
-              <span className="text-slate-400">
+              <span className="text-[#93c5fd]/80">
                 {periodContext.daysWithReading} jour{periodContext.daysWithReading !== 1 ? 's' : ''} avec lecture
                 {' / '}
                 {periodContext.totalDays} jour{periodContext.totalDays !== 1 ? 's' : ''} dans la période
@@ -429,9 +430,11 @@ const PatternsTab = ({ predictions, periodLabel, periodContext }) => {
       </Card>
 
       {/* Insights principaux */}
-      <Card variant="glass">
-        <CardHeader>
-          <CardTitle>Insights de lecture</CardTitle>
+      <Card variant="books">
+        <CardHeader className="border-b border-[#3A86FF]/25">
+          <CardTitle tone="books" className="normal-case tracking-wide">
+            Insights de lecture
+          </CardTitle>
         </CardHeader>
         <CardContent className="space-y-3">
           {patterns.insights.map((insight, index) => (
@@ -442,9 +445,11 @@ const PatternsTab = ({ predictions, periodLabel, periodContext }) => {
 
       {/* Recommandations actionables */}
       {patterns.actionableRecommendations?.length > 0 && (
-        <Card variant="glass">
-          <CardHeader>
-            <CardTitle>Recommandations prioritaires</CardTitle>
+        <Card variant="books">
+          <CardHeader className="border-b border-[#3A86FF]/25">
+            <CardTitle tone="books" className="normal-case tracking-wide">
+              Recommandations prioritaires
+            </CardTitle>
           </CardHeader>
           <CardContent className="space-y-3">
             {patterns.actionableRecommendations.map((recommendation, index) => (
@@ -464,23 +469,23 @@ const InsightItem = ({ insight }) => {
   const getInsightIcon = (type) => {
     switch (type) {
       case 'best_day': return <Calendar className="w-4 h-4 text-blue-400" />;
-      case 'consistency': return <Star className="w-4 h-4 text-green-400" />;
-      case 'consistency_warning': return <AlertCircle className="w-4 h-4 text-yellow-400" />;
-      case 'positive_trend': return <TrendingUp className="w-4 h-4 text-green-400" />;
+      case 'consistency': return <Star className="w-4 h-4 text-sky-300" />;
+      case 'consistency_warning': return <AlertCircle className="w-4 h-4 text-amber-300" />;
+      case 'positive_trend': return <TrendingUp className="w-4 h-4 text-sky-300" />;
       case 'negative_trend': return <TrendingUp className="w-4 h-4 text-red-400" />;
       default: return <Lightbulb className="w-4 h-4 text-slate-400" />;
     }
   };
 
   return (
-    <div className="flex items-start gap-3 p-3 bg-slate-800/30 rounded-lg">
+    <div className="flex items-start gap-3 p-3 bg-black/70 rounded-xl border border-[#3A86FF]/25">
       {getInsightIcon(insight.type)}
       <div className="flex-1">
-        <h4 className="font-medium text-white text-sm mb-1">{insight.title}</h4>
-        <p className="text-xs text-slate-400">{insight.description}</p>
+        <h4 className="font-medium text-[#bfdbfe] text-sm mb-1">{insight.title}</h4>
+        <p className="text-xs text-[#93c5fd]/80">{insight.description}</p>
       </div>
       {insight.actionable && (
-        <ChevronRight className="w-4 h-4 text-slate-500" />
+        <ChevronRight className="w-4 h-4 text-[#93c5fd]/50" />
       )}
     </div>
   );
@@ -494,18 +499,18 @@ const RecommendationItem = ({ recommendation }) => {
     switch (priority) {
       case 'high': return 'text-red-400';
       case 'medium': return 'text-yellow-400';
-      case 'low': return 'text-green-400';
+      case 'low': return 'text-sky-300';
       default: return 'text-slate-400';
     }
   };
 
   return (
-    <div className="flex items-start gap-3 p-3 bg-slate-800/30 rounded-lg">
+    <div className="flex items-start gap-3 p-3 bg-black/70 rounded-xl border border-[#3A86FF]/25">
       <div className={`w-2 h-2 rounded-full mt-2 ${getPriorityColor(recommendation.priority).replace('text-', 'bg-')}`} />
       <div className="flex-1">
-        <h4 className="font-medium text-white text-sm mb-1">{recommendation.title}</h4>
-        <p className="text-xs text-slate-400 mb-2">{recommendation.description}</p>
-        <div className="text-xs text-slate-300 bg-slate-700/50 px-2 py-1 rounded">
+        <h4 className="font-medium text-[#bfdbfe] text-sm mb-1">{recommendation.title}</h4>
+        <p className="text-xs text-[#93c5fd]/80 mb-2">{recommendation.description}</p>
+        <div className="text-xs text-[#93c5fd]/90 bg-black/60 border border-[#3A86FF]/30 px-2 py-1 rounded">
           Action: {recommendation.action}
         </div>
       </div>

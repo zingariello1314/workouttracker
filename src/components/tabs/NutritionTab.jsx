@@ -150,8 +150,7 @@ const NutritionTab = () => {
   }, []);
 
   return (
-    <div className="relative min-h-screen">
-      {/* Contenu avec z-index relatif */}
+    <div className="relative">
       <div className="relative z-10 space-y-6 p-6">
         {/* En-tête */}
         <div className="mb-8">
@@ -159,13 +158,13 @@ const NutritionTab = () => {
           <span className="text-5xl">🥗</span>
           {t('nutrition.title')}
         </h1>
-        <p className={`${typography.presets.bodyLarge} text-slate-400`}>
+        <p className={`${typography.presets.bodyLarge} text-teal-200/80`}>
           {t('nutrition.subtitle')}
         </p>
       </div>
 
       {/* Navigation sections */}
-      <div className="flex items-center gap-2 bg-slate-800/50 backdrop-blur-xl rounded-xl p-2 border border-slate-700/50">
+      <div className="flex flex-wrap items-center gap-2 rounded-xl border border-[#0F4C5C]/55 bg-black p-2">
         {sections.map((section) => {
           const Icon = section.icon;
           const isActive = activeSection === section.id;
@@ -174,10 +173,10 @@ const NutritionTab = () => {
               key={section.id}
               type="button"
               onClick={() => setActiveSection(section.id)}
-              className={`gradient-button-premium gradient-button-premium-md rounded-lg flex-1 flex items-center justify-center gap-2 ${
-                isActive 
-                  ? 'gradient-button-premium-variant' 
-                  : ''
+              className={`flex flex-1 min-w-[8rem] items-center justify-center gap-2 rounded-lg border px-3 py-2 text-sm font-medium transition ${
+                isActive
+                  ? 'border-[#0F5C45]/70 bg-[#0F5C45]/30 text-white shadow-sm shadow-black/30'
+                  : 'border-transparent text-teal-100/90 hover:border-[#0F4C5C]/40 hover:bg-[#0F4C5C]/10'
               }`}
             >
               <Icon size={18} />

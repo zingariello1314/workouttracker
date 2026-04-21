@@ -19,11 +19,12 @@ const Navigation = () => {
       { id: 'progress',       labelKey: 'nav.progress',       icon: '📸' },
       { id: 'endurance',      labelKey: 'nav.endurance',      icon: '🏃' },
       { id: 'calendar',       labelKey: 'nav.calendar',       icon: '🗓️' },
-      { id: 'history',        labelKey: 'nav.history',        icon: '📊' },
       { id: 'charts',         labelKey: 'nav.charts',         icon: '📊' },
-      { id: 'stats',          labelKey: 'nav.stats',          icon: '📈' },
-      { id: 'predictions',    labelKey: 'nav.predictions',    icon: '🔮' },
-      { id: 'smart-balancing',labelKey: 'nav.smartBalancing', icon: '🧠' },
+      {
+        id: 'sport-analytics',
+        labelKey: 'nav.sportAnalytics',
+        icon: '📉',
+      },
       { id: 'garmin',         labelKey: 'nav.garmin',         icon: '⌚' }
     ],
     []
@@ -51,8 +52,15 @@ const Navigation = () => {
 
   const getLastSportSubTab = () => {
     const stored = localStorage.getItem('sport.lastSubTab');
-    if (stored && sportSubTabs.includes(stored)) {
-      return stored;
+    const legacyToHub = {
+      history: 'sport-analytics',
+      stats: 'sport-analytics',
+      predictions: 'sport-analytics',
+      'smart-balancing': 'sport-analytics',
+    };
+    const id = legacyToHub[stored] || stored;
+    if (id && sportSubTabs.includes(id)) {
+      return id;
     }
     return 'today';
   };

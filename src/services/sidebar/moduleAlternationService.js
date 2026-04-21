@@ -66,6 +66,18 @@ const HISTORICAL_MODULES = [
     }
   },
   {
+    id: 'sidebar-muscu-recap',
+    component: 'SidebarMuscuRecapModule',
+    position: 4,
+    type: 'historical',
+    isVisible: true,
+    navigationTarget: {
+      tab: 'recap',
+      moduleId: 'sidebar-muscu-recap',
+      scrollBehavior: 'smooth'
+    }
+  },
+  {
     id: 'progression-lecture',
     component: 'ReadingProgressModule',
     position: 5,

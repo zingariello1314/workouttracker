@@ -10,7 +10,6 @@ import { recommendationsCache } from '../../utils/apprentissageCache';
 import EmptyState from '../ui/EmptyState';
 import SkeletonLoader from '../ui/SkeletonLoader';
 import Modal from '../ui/Modal';
-import Card from '../ui/Card';
 import Badge from '../ui/Badge';
 import Input from '../ui/Input';
 import LazyFile from '../ui/LazyFile';
@@ -50,31 +49,6 @@ const MatièresView = () => {
         return;
       }
 
-      // Ctrl+Z ou Cmd+Z pour undo
-      if ((e.ctrlKey || e.metaKey) && e.key === 'z' && !e.shiftKey) {
-        e.preventDefault();
-        if (canUndo) {
-          undo();
-          showSuccess('Action annulée');
-        }
-      }
-      // Ctrl+Y ou Ctrl+Shift+Z pour redo
-      if ((e.ctrlKey || e.metaKey) && (e.key === 'y' || (e.key === 'z' && e.shiftKey))) {
-        e.preventDefault();
-        if (canRedo) {
-          redo();
-          showSuccess('Action refaite');
-        }
-      }
-    };
-
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [canUndo, canRedo, undo, redo, showSuccess]);
-
-  // Raccourcis clavier pour undo/redo
-  useEffect(() => {
-    const handleKeyDown = (e) => {
       // Ctrl+Z ou Cmd+Z pour undo
       if ((e.ctrlKey || e.metaKey) && e.key === 'z' && !e.shiftKey) {
         e.preventDefault();
@@ -456,7 +430,7 @@ const MatièresView = () => {
 
   if (isLoading) {
     return (
-      <div className="max-w-6xl mx-auto p-6 text-center text-slate-300">
+      <div className="max-w-6xl mx-auto p-6 text-center text-emerald-200/80 rounded-xl border-2 border-emerald-500/50 bg-black py-10">
         Chargement...
       </div>
     );
@@ -466,11 +440,11 @@ const MatièresView = () => {
     <div className="max-w-6xl mx-auto p-6 space-y-6">
       {/* Message vide */}
       {subjects.length === 0 && (
-        <div className="text-center py-12">
-          <div className="text-slate-300 text-xl font-semibold mb-2">
+        <div className="text-center py-12 rounded-xl border-2 border-emerald-600/45 bg-black px-4">
+          <div className="text-emerald-200 text-xl font-semibold mb-2">
             AUCUN PROTOCOLE DÉTECTÉ...
           </div>
-          <div className="text-slate-400 text-lg">
+          <div className="text-emerald-200/70 text-lg">
             INITIALISEZ VOTRE PREMIER MODULE D'APPRENTISSAGE
           </div>
         </div>
@@ -485,7 +459,7 @@ const MatièresView = () => {
             disabled={!canUndo}
             title="Annuler (Ctrl+Z)"
             aria-label="Annuler la dernière action"
-            className="gradient-button-premium gradient-button-premium-sm gradient-button-premium-variant rounded-lg flex items-center gap-2"
+            className="rounded-lg border-2 border-emerald-600/50 bg-black px-3 py-2 text-sm font-semibold text-emerald-200 hover:border-emerald-400 disabled:opacity-40 flex items-center gap-2"
           >
             <span>↶</span>
             Annuler
@@ -496,7 +470,7 @@ const MatièresView = () => {
             disabled={!canRedo}
             title="Refaire (Ctrl+Y)"
             aria-label="Refaire la dernière action annulée"
-            className="gradient-button-premium gradient-button-premium-sm gradient-button-premium-variant rounded-lg flex items-center gap-2"
+            className="rounded-lg border-2 border-emerald-600/50 bg-black px-3 py-2 text-sm font-semibold text-emerald-200 hover:border-emerald-400 disabled:opacity-40 flex items-center gap-2"
           >
             <span>↷</span>
             Refaire
@@ -505,18 +479,12 @@ const MatièresView = () => {
       )}
 
       {/* Formulaire d'ajout */}
-      <Card variant="highlighted">
+      <div className="bg-black border-2 border-emerald-500/70 rounded-xl p-6 shadow-lg shadow-emerald-500/10">
         <div className="text-center mb-6">
-          <div className="text-3xl mb-2" style={{ filter: 'drop-shadow(0 0 8px rgba(50, 255, 159, 0.5))' }}>
+          <div className="text-3xl mb-2 text-emerald-400" style={{ filter: 'drop-shadow(0 0 8px rgba(16, 185, 129, 0.45))' }}>
             📚
           </div>
-          <h2
-            className="text-2xl font-extrabold uppercase tracking-wider"
-            style={{
-              color: '#32ff9f',
-              textShadow: '0 0 15px rgba(50, 255, 159, 0.5)',
-            }}
-          >
+          <h2 className="text-2xl font-extrabold uppercase tracking-wider text-emerald-300">
             INITIALISATION D'UN NOUVEAU PROTOCOLE
           </h2>
         </div>
@@ -531,7 +499,7 @@ const MatièresView = () => {
               placeholder="Nom du protocole (ex: HISTOIRE NEURALE)"
               required
               maxLength={100}
-              className="w-full px-4 py-3 bg-black/30 border-2 border-emerald-500/50 rounded-lg text-slate-200 placeholder-slate-500 focus:border-cyan-400 focus:bg-emerald-500/5 focus:outline-none focus:ring-2 focus:ring-emerald-500/50 focus:scale-[1.02] transition-all duration-200 backdrop-blur-sm"
+              className="w-full px-4 py-3 bg-black border-2 border-emerald-500/50 rounded-lg text-emerald-100 placeholder-emerald-700/50 focus:border-emerald-400 focus:bg-emerald-500/5 focus:outline-none focus:ring-2 focus:ring-emerald-500/40 focus:scale-[1.02] transition-all duration-200"
             />
           </div>
 
@@ -542,10 +510,10 @@ const MatièresView = () => {
               multiple
               onChange={handleFileUpload}
               accept=".odt,.ods,.pdf,.docx,.xlsx,.txt,.md"
-              className="w-full px-4 py-3 bg-black/30 border-2 border-emerald-500/50 rounded-lg text-slate-200 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-emerald-500/20 file:text-emerald-300 hover:file:bg-emerald-500/30 focus:border-cyan-400 focus:outline-none focus:ring-2 focus:ring-emerald-500/50 transition-all duration-200 backdrop-blur-sm"
+              className="w-full px-4 py-3 bg-black border-2 border-emerald-500/50 rounded-lg text-emerald-100 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-emerald-500/20 file:text-emerald-200 hover:file:bg-emerald-500/30 focus:border-emerald-400 focus:outline-none focus:ring-2 focus:ring-emerald-500/40 transition-all duration-200"
             />
             {newSubject.files.length > 0 && (
-              <div className="mt-2 text-sm text-slate-400">
+              <div className="mt-2 text-sm text-emerald-200/65">
                 {newSubject.files.length} fichier(s) sélectionné(s)
               </div>
             )}
@@ -559,7 +527,7 @@ const MatièresView = () => {
               placeholder="Résumé du protocole (optionnel)"
               rows={3}
               maxLength={2000}
-              className="w-full px-4 py-3 bg-black/30 border-2 border-emerald-500/50 rounded-lg text-slate-200 placeholder-slate-500 focus:border-cyan-400 focus:bg-emerald-500/5 focus:outline-none focus:ring-2 focus:ring-emerald-500/50 transition-all duration-200 backdrop-blur-sm resize-y min-h-[80px]"
+              className="w-full px-4 py-3 bg-black border-2 border-emerald-500/50 rounded-lg text-emerald-100 placeholder-emerald-700/50 focus:border-emerald-400 focus:bg-emerald-500/5 focus:outline-none focus:ring-2 focus:ring-emerald-500/40 transition-all duration-200 resize-y min-h-[80px]"
             />
           </div>
 
@@ -569,7 +537,7 @@ const MatièresView = () => {
             disabled={!newSubject.name || !newSubject.name.trim()}
             aria-label="Initialiser un nouveau protocole d'apprentissage"
             aria-describedby={!newSubject.name || !newSubject.name.trim() ? 'name-required' : undefined}
-            className="gradient-button-premium gradient-button-premium-md rounded-lg w-full"
+            className="w-full rounded-lg border-2 border-emerald-400 bg-emerald-500/15 py-3 font-semibold uppercase tracking-wide text-emerald-50 transition-all hover:bg-emerald-500/25 disabled:opacity-40"
           >
             ➕ INITIALISER LE PROTOCOLE
           </button>
@@ -577,11 +545,11 @@ const MatièresView = () => {
             <p id="name-required" className="sr-only">Le nom du protocole est requis</p>
           )}
         </form>
-      </Card>
+      </div>
 
       {/* Barre de recherche et filtres */}
       {subjects.length > 0 && (
-        <div className="bg-slate-800/50 backdrop-blur-sm border border-emerald-500/30 rounded-xl p-4 shadow-xl shadow-emerald-500/10">
+        <div className="bg-black border-2 border-emerald-500/70 rounded-xl p-4 shadow-lg shadow-emerald-500/10">
           <div className="flex flex-col md:flex-row gap-4">
             {/* Recherche */}
             <div className="flex-1">
@@ -590,7 +558,7 @@ const MatièresView = () => {
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder="🔍 Rechercher une matière..."
-                className="w-full px-4 py-2 bg-black/30 border-2 border-emerald-500/50 rounded-lg text-slate-200 placeholder-slate-500 focus:border-cyan-400 focus:bg-emerald-500/5 focus:outline-none focus:ring-2 focus:ring-emerald-500/50 transition-all duration-200 backdrop-blur-sm"
+                className="w-full px-4 py-2 bg-black border-2 border-emerald-500/50 rounded-lg text-emerald-100 placeholder-emerald-800/60 focus:border-emerald-400 focus:bg-emerald-500/5 focus:outline-none focus:ring-2 focus:ring-emerald-500/40 transition-all duration-200"
                 aria-label="Rechercher une matière"
               />
             </div>
@@ -600,7 +568,7 @@ const MatièresView = () => {
               <select
                 value={filterLevel}
                 onChange={(e) => setFilterLevel(e.target.value)}
-                className="w-full px-4 py-2 bg-black/30 border-2 border-emerald-500/50 rounded-lg text-slate-200 focus:border-cyan-400 focus:bg-emerald-500/5 focus:outline-none focus:ring-2 focus:ring-emerald-500/50 transition-all duration-200 backdrop-blur-sm"
+                className="w-full px-4 py-2 bg-black border-2 border-emerald-500/50 rounded-lg text-emerald-100 focus:border-emerald-400 focus:bg-emerald-500/5 focus:outline-none focus:ring-2 focus:ring-emerald-500/40 transition-all duration-200"
                 aria-label="Filtrer par niveau"
               >
                 <option value="all">Tous les niveaux</option>
@@ -618,7 +586,7 @@ const MatièresView = () => {
               <select
                 value={sortBy}
                 onChange={(e) => setSortBy(e.target.value)}
-                className="w-full px-4 py-2 bg-black/30 border-2 border-emerald-500/50 rounded-lg text-slate-200 focus:border-cyan-400 focus:bg-emerald-500/5 focus:outline-none focus:ring-2 focus:ring-emerald-500/50 transition-all duration-200 backdrop-blur-sm"
+                className="w-full px-4 py-2 bg-black border-2 border-emerald-500/50 rounded-lg text-emerald-100 focus:border-emerald-400 focus:bg-emerald-500/5 focus:outline-none focus:ring-2 focus:ring-emerald-500/40 transition-all duration-200"
                 aria-label="Trier par"
               >
                 <option value="name">Nom (A-Z)</option>
@@ -631,7 +599,7 @@ const MatièresView = () => {
 
           {/* Compteur résultats */}
           {filteredAndSortedSubjects.length !== subjects.length && (
-            <div className="mt-3 text-sm text-slate-400">
+            <div className="mt-3 text-sm text-emerald-200/65">
               {filteredAndSortedSubjects.length} matière{filteredAndSortedSubjects.length > 1 ? 's' : ''} trouvée{filteredAndSortedSubjects.length > 1 ? 's' : ''} sur {subjects.length}
             </div>
           )}
@@ -651,19 +619,12 @@ const MatièresView = () => {
             return (
               <div
                 key={subject.id}
-                className="bg-slate-800/50 backdrop-blur-sm border border-slate-700/50 rounded-xl p-6 shadow-xl hover:border-emerald-500/30 transition-all duration-200"
+                className="bg-black border-2 border-emerald-500/60 rounded-xl p-6 shadow-lg shadow-emerald-500/10 hover:border-emerald-400/70 transition-all duration-200"
               >
                 {/* Header */}
                 <div className="flex items-start justify-between mb-4">
                   <div className="flex-1">
-                    <h3
-                      className="text-2xl md:text-3xl font-black uppercase mb-3 tracking-tight"
-                      style={{ 
-                        color: '#32ff9f',
-                        textShadow: '0 0 20px rgba(50, 255, 159, 0.5)',
-                        lineHeight: '1.2'
-                      }}
-                    >
+                    <h3 className="text-2xl md:text-3xl font-black uppercase mb-3 tracking-tight text-emerald-300 leading-tight">
                       {subject.name || 'PROTOCOLE SANS NOM'}
                     </h3>
 
@@ -679,30 +640,22 @@ const MatièresView = () => {
                       >
                         {badge.icon} {badge.name}
                       </div>
-                      <div
-                        className="text-sm font-bold"
-                        style={{
-                          background: 'linear-gradient(45deg, #32ff9f, #00ffc8)',
-                          WebkitBackgroundClip: 'text',
-                          WebkitTextFillColor: 'transparent',
-                          textShadow: '0 0 8px rgba(50, 255, 159, 0.6)',
-                        }}
-                      >
+                      <div className="text-sm font-bold text-emerald-400">
                         LEVEL {progression.level}
                       </div>
                     </div>
 
                     {/* Barre de progression XP */}
                     <div className="space-y-1">
-                      <div className="flex justify-between text-xs text-slate-400">
+                      <div className="flex justify-between text-xs text-emerald-200/70">
                         <span>{currentLevelXP} / {nextLevelXP} XP</span>
                         <span className="text-emerald-400 font-semibold">
                           {Math.round(progression.progress)}%
                         </span>
                       </div>
-                      <div className="w-full h-3 bg-black/40 border border-emerald-500/30 rounded-full overflow-hidden">
+                      <div className="w-full h-3 bg-black border border-emerald-500/45 rounded-full overflow-hidden">
                         <div
-                          className="h-full bg-gradient-to-r from-cyan-400 via-emerald-400 to-teal-400 transition-all duration-800 rounded-full"
+                          className="h-full bg-gradient-to-r from-emerald-600 via-emerald-500 to-emerald-400 transition-all duration-800 rounded-full"
                           style={{ width: `${progression.progress}%` }}
                         />
                       </div>
@@ -714,7 +667,7 @@ const MatièresView = () => {
                     {/* Bouton démarrer session */}
                     <button
                       type="button"
-                      className="gradient-button-premium gradient-button-premium-md rounded-lg font-semibold uppercase text-xs tracking-wide"
+                      className="rounded-lg border-2 border-emerald-400 bg-emerald-500/15 px-3 py-2 font-semibold uppercase text-xs tracking-wide text-emerald-50 hover:bg-emerald-500/25"
                     >
                       ▶️ LANCER LE PROTOCOLE
                     </button>
@@ -722,7 +675,7 @@ const MatièresView = () => {
                     <button
                       type="button"
                       onClick={() => handleDeleteSubject(subject.id)}
-                      className="gradient-button-premium gradient-button-premium-sm rounded-lg font-semibold uppercase text-xs tracking-wide"
+                      className="rounded-lg border border-red-500/50 bg-black px-3 py-2 font-semibold uppercase text-xs tracking-wide text-red-300 hover:bg-red-950/25"
                     >
                       🗑️ SUPPRIMER LE PROTOCOLE
                     </button>
@@ -730,17 +683,17 @@ const MatièresView = () => {
                 </div>
 
                 {/* Status planification */}
-                <div className="mt-3 text-sm text-slate-400">
-                  <span className="text-slate-500">NON PLANIFIÉ</span>
+                <div className="mt-3 text-sm text-emerald-200/60">
+                  <span className="text-emerald-500/80">NON PLANIFIÉ</span>
                 </div>
 
                 {/* Résumé */}
                 {subject.summary && (
-                  <div className="mt-4 pt-4 border-t border-slate-700/50">
-                    <div className="text-sm font-semibold text-emerald-400 mb-2">
+                  <div className="mt-4 pt-4 border-t border-emerald-500/25">
+                    <div className="text-sm font-semibold text-emerald-300 mb-2">
                       RÉSUMÉ DU PROTOCOLE :
                     </div>
-                    <div className="text-slate-300 text-sm leading-relaxed">
+                    <div className="text-emerald-100/90 text-sm leading-relaxed">
                       {subject.summary}
                     </div>
                   </div>
@@ -748,8 +701,8 @@ const MatièresView = () => {
 
                 {/* Fichiers */}
                 {subject.files && subject.files.length > 0 && (
-                  <div className="mt-4 pt-4 border-t border-slate-700/50">
-                    <div className="text-sm font-semibold text-emerald-400 mb-3">
+                  <div className="mt-4 pt-4 border-t border-emerald-500/25">
+                    <div className="text-sm font-semibold text-emerald-300 mb-3">
                       ➕ FICHIERS TÉLÉVERSÉS :
                     </div>
                     <div className="space-y-2">
@@ -758,7 +711,7 @@ const MatièresView = () => {
                         return (
                           <div
                             key={fileId}
-                            className="flex items-center justify-between p-3 bg-slate-900/50 rounded-lg border border-slate-700/50 hover:border-emerald-500/30 transition-all duration-200"
+                            className="flex items-center justify-between p-3 bg-black rounded-lg border border-emerald-500/40 hover:border-emerald-400/70 transition-all duration-200"
                           >
                             <div className="flex items-center gap-3 flex-1">
                               <span className="text-lg">
@@ -767,11 +720,11 @@ const MatièresView = () => {
                                  file.name?.endsWith('.xlsx') || file.name?.endsWith('.ods') ? '📊' : '📎'}
                               </span>
                               <div>
-                                <div className="text-sm font-semibold text-slate-200 uppercase">
+                                <div className="text-sm font-semibold text-emerald-100 uppercase">
                                   {file.name || 'FICHIER SANS NOM'}
                                 </div>
                                 {file.size && (
-                                  <div className="text-xs text-slate-500 mt-0.5">
+                                  <div className="text-xs text-emerald-300/55 mt-0.5">
                                     {(file.size / 1024).toFixed(1)} KB
                                   </div>
                                 )}
@@ -800,8 +753,8 @@ const MatièresView = () => {
                 )}
 
                 {/* Section ajout fichiers supplémentaires */}
-                <div className="mt-4 pt-4 border-t border-slate-700/50">
-                  <label className="text-sm font-semibold text-emerald-400 mb-2 block">
+                <div className="mt-4 pt-4 border-t border-emerald-500/25">
+                  <label className="text-sm font-semibold text-emerald-300 mb-2 block">
                     ➕ TÉLÉVERSER DES FICHIERS :
                   </label>
                   <input
@@ -809,7 +762,7 @@ const MatièresView = () => {
                     multiple
                     accept=".odt,.ods,.pdf,.docx,.xlsx,.txt,.md"
                     onChange={(e) => handleAdditionalFiles(e, subject.id)}
-                    className="w-full px-4 py-2 bg-black/30 border-2 border-emerald-500/50 rounded-lg text-slate-200 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-emerald-500/20 file:text-emerald-300 hover:file:bg-emerald-500/30 focus:border-cyan-400 focus:outline-none focus:ring-2 focus:ring-emerald-500/50 transition-all duration-200 backdrop-blur-sm"
+                    className="w-full px-4 py-2 bg-black border-2 border-emerald-500/50 rounded-lg text-emerald-100 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-emerald-500/20 file:text-emerald-200 hover:file:bg-emerald-500/30 focus:border-emerald-400 focus:outline-none focus:ring-2 focus:ring-emerald-500/40 transition-all duration-200"
                   />
                 </div>
               </div>
@@ -839,14 +792,14 @@ const MatièresView = () => {
 
       {/* Module Recommandations d'Étude */}
       {(recommendations.behind.length > 0 || recommendations.urgent.length > 0) && (
-        <div className="bg-slate-800/50 backdrop-blur-sm border border-amber-500/30 rounded-xl p-6 shadow-xl shadow-amber-500/10">
+        <div className="bg-black border-2 border-emerald-500/70 rounded-xl p-6 shadow-lg shadow-emerald-500/10">
           <div className="flex items-center gap-3 mb-4">
             <span className="text-2xl">💡</span>
             <div>
-              <h3 className="text-lg font-bold text-amber-400 uppercase tracking-wide">
+              <h3 className="text-lg font-bold text-emerald-300 uppercase tracking-wide">
                 RECOMMANDATIONS D'OPTIMISATION
               </h3>
-              <p className="text-sm text-slate-400">
+              <p className="text-sm text-emerald-200/65">
                 Maximisez l'efficacité de votre progression
               </p>
             </div>
@@ -854,7 +807,7 @@ const MatièresView = () => {
 
           {recommendations.behind.length > 0 && (
             <div className="mb-4">
-              <div className="text-sm font-semibold text-amber-300 mb-2">
+              <div className="text-sm font-semibold text-emerald-300 mb-2">
                 📉 Matières en retard:
               </div>
               <div className="space-y-2">
@@ -863,12 +816,12 @@ const MatièresView = () => {
                   return (
                     <div
                       key={subject.id}
-                      className="p-3 bg-slate-900/50 rounded-lg border border-amber-500/30"
+                      className="p-3 bg-black rounded-lg border border-emerald-500/45"
                     >
-                      <div className="font-semibold text-slate-200">
+                      <div className="font-semibold text-emerald-100">
                         {subject.name}
                       </div>
-                      <div className="text-xs text-slate-400">
+                      <div className="text-xs text-emerald-200/60">
                         Niveau {prog.level} (en dessous de la moyenne)
                       </div>
                     </div>
@@ -880,7 +833,7 @@ const MatièresView = () => {
 
           {recommendations.urgent.length > 0 && (
             <div>
-              <div className="text-sm font-semibold text-red-400 mb-2">
+              <div className="text-sm font-semibold text-emerald-200 mb-2">
                 ⚠️ Matières urgentes (dernière étude &gt; 7 jours):
               </div>
               <div className="space-y-2">
@@ -894,14 +847,14 @@ const MatièresView = () => {
                     : 'Jamais';
 
                   return (
-                    <Card key={subject.id} variant="danger" className="p-3">
-                      <div className="font-semibold text-slate-200 mb-1">
+                    <div key={subject.id} className="p-3 bg-black rounded-lg border border-red-500/45">
+                      <div className="font-semibold text-emerald-100 mb-1">
                         {subject.name}
                       </div>
                       <Badge variant="danger" size="sm">
                         Dernière étude: {daysSince === 'Jamais' ? 'Jamais' : `Il y a ${daysSince} jour(s)`}
                       </Badge>
-                    </Card>
+                    </div>
                   );
                 })}
               </div>
@@ -927,10 +880,10 @@ const MatièresView = () => {
         confirmLabel="Oui, supprimer"
         cancelLabel="Annuler"
       >
-        <p className="text-slate-300 mb-2">
+        <p className="text-emerald-100/90 mb-2">
           Êtes-vous sûr de vouloir supprimer la matière <strong className="text-emerald-400">{subjectToDelete?.name}</strong> ?
         </p>
-        <p className="text-slate-400 text-sm">
+        <p className="text-emerald-200/65 text-sm">
           Cette action est irréversible. Toutes les données associées (progression, sessions) seront également supprimées.
         </p>
       </Modal>

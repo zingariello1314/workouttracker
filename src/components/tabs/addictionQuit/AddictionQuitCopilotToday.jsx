@@ -58,30 +58,30 @@ export default function AddictionQuitCopilotToday({ aq, onSaveData, t, todayStr 
   };
 
   return (
-    <Card className="border-violet-500/35 bg-gradient-to-br from-violet-950/40 via-slate-900/90 to-slate-950/95">
+    <Card variant="sport">
       <CardHeader className="pb-2">
         <CardTitle className="flex items-center gap-2 text-lg text-white">
-          <Sparkles className="h-5 w-5 text-violet-300" />
+          <Sparkles className="h-5 w-5 text-sky-400" />
           {t('addictionQuit.copilotTodayTitle')}
         </CardTitle>
-        <p className="text-xs text-slate-400">{t('addictionQuit.copilotDisclaimer')}</p>
+        <p className="text-xs text-teal-800">{t('addictionQuit.copilotDisclaimer')}</p>
       </CardHeader>
       <CardContent className="space-y-5">
-        <section className="rounded-lg border border-amber-500/25 bg-amber-950/15 p-3">
-          <h3 className="mb-2 flex items-center gap-2 text-sm font-semibold text-amber-100">
+        <section className="rounded-lg border border-sky-500/35 bg-black p-3">
+          <h3 className="mb-2 flex items-center gap-2 text-sm font-semibold text-sky-200">
             <AlertTriangle className="h-4 w-4 shrink-0" />
             {t('addictionQuit.copilotRiskTitle')}
           </h3>
           {risk.length === 0 ? (
-            <p className="text-sm text-slate-500">{t('addictionQuit.copilotRiskEmpty')}</p>
+            <p className="text-sm text-teal-800">{t('addictionQuit.copilotRiskEmpty')}</p>
           ) : (
-            <ul className="space-y-2 text-sm text-slate-200">
+            <ul className="space-y-2 text-sm text-teal-50">
               {risk.slice(0, 3).map((r) => (
-                <li key={r.pattern} className="rounded-md bg-slate-900/60 px-2 py-1.5">
-                  <span className="text-amber-200/90">{t('addictionQuit.copilotHypothesis')}</span>{' '}
+                <li key={r.pattern} className="rounded-md border border-[#0F4C5C]/35 bg-black px-2 py-1.5">
+                  <span className="text-sky-300/90">{t('addictionQuit.copilotHypothesis')}</span>{' '}
                   {labelTrigger(t, r.triggerId)} · {labelBucket(t, r.bucket)}
                   {r.hasPlace ? ` · ${t('addictionQuit.copilotWithPlace')}` : ''}
-                  <span className="ml-1 text-xs text-slate-500">
+                  <span className="ml-1 text-xs text-teal-800">
                     ({t('addictionQuit.copilotSeenTimes', { n: String(r.count) })})
                   </span>
                 </li>
@@ -96,11 +96,11 @@ export default function AddictionQuitCopilotToday({ aq, onSaveData, t, todayStr 
             {t('addictionQuit.copilotHeldTitle')}
           </h3>
           {held.length === 0 ? (
-            <p className="text-sm text-slate-500">{t('addictionQuit.copilotHeldEmpty')}</p>
+            <p className="text-sm text-teal-800">{t('addictionQuit.copilotHeldEmpty')}</p>
           ) : (
-            <ul className="space-y-2 text-sm text-slate-200">
+            <ul className="space-y-2 text-sm text-teal-50">
               {held.slice(0, 3).map((r) => (
-                <li key={r.pattern} className="rounded-md bg-slate-900/60 px-2 py-1.5">
+                <li key={r.pattern} className="rounded-md border border-[#0F4C5C]/35 bg-black px-2 py-1.5">
                   {labelTrigger(t, r.triggerId)} · {labelBucket(t, r.bucket)}
                   <span className="ml-1 text-xs text-emerald-300/90">
                     (~{r.avgIntensity.toFixed(1)}/10 · {t('addictionQuit.copilotHeldCount', { n: String(r.count) })})
@@ -111,12 +111,12 @@ export default function AddictionQuitCopilotToday({ aq, onSaveData, t, todayStr 
           )}
         </section>
 
-        <section className="rounded-lg border border-cyan-500/25 bg-slate-900/50 p-3">
+        <section className="rounded-lg border border-[#0F4C5C]/50 bg-black p-3">
           <h3 className="mb-2 flex items-center gap-2 text-sm font-semibold text-cyan-100">
             <ListChecks className="h-4 w-4 shrink-0" />
             {t('addictionQuit.copilotCalmTitle')}
           </h3>
-          <ul className="mb-3 list-inside list-disc space-y-1 text-sm text-slate-200">
+          <ul className="mb-3 list-inside list-disc space-y-1 text-sm text-teal-100/90">
             {DEFAULT_CALMING_ACTION_KEYS.map((key) => (
               <li key={key}>{t(key)}</li>
             ))}
@@ -133,13 +133,13 @@ export default function AddictionQuitCopilotToday({ aq, onSaveData, t, todayStr 
                 onChange={(e) => setDraftCustom(e.target.value)}
                 rows={4}
                 placeholder={t('addictionQuit.copilotCustomPlaceholder')}
-                className="w-full rounded-lg border border-slate-600 bg-slate-950 px-2 py-2 text-sm text-white"
+                className="w-full rounded-lg border border-[#0F4C5C]/50 bg-black px-2 py-2 text-sm text-white"
               />
               <div className="flex gap-2">
                 <Button type="button" className="bg-cyan-600 hover:bg-cyan-500" onClick={saveCustomActions}>
                   {t('addictionQuit.save')}
                 </Button>
-                <Button type="button" variant="secondary" className="border-slate-600" onClick={() => setEditingActions(false)}>
+                <Button type="button" variant="secondary" className="border-[#0F4C5C]/55 text-teal-100" onClick={() => setEditingActions(false)}>
                   {t('addictionQuit.cancel')}
                 </Button>
               </div>
@@ -159,27 +159,27 @@ export default function AddictionQuitCopilotToday({ aq, onSaveData, t, todayStr 
           )}
         </section>
 
-        <section className="rounded-lg border border-slate-600 bg-slate-950/50 p-3">
+        <section className="rounded-lg border border-[#0F4C5C]/50 bg-black p-3">
           <h3 className="mb-2 text-sm font-semibold text-white">{t('addictionQuit.reflectionDayTitle')}</h3>
           <textarea
             value={dayPhrase}
             onChange={(e) => setDayPhrase(e.target.value)}
             rows={2}
             placeholder={t('addictionQuit.reflectionDayPlaceholder')}
-            className="w-full rounded-lg border border-slate-600 bg-slate-900 px-2 py-2 text-sm text-white"
+            className="w-full rounded-lg border border-[#0F4C5C]/50 bg-black px-2 py-2 text-sm text-white"
           />
-          <p className="mt-2 text-xs text-slate-500">{t('addictionQuit.reflectionDayXpHint')}</p>
+          <p className="mt-2 text-xs text-teal-800">{t('addictionQuit.reflectionDayXpHint')}</p>
         </section>
 
-        <section className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-slate-600 bg-slate-950/40 p-3">
+        <section className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-[#0F4C5C]/50 bg-black p-3">
           <div>
             <h3 className="text-sm font-semibold text-white">{t('addictionQuit.weeklyReviewTitle')}</h3>
-            <p className="text-xs text-slate-500">{t('addictionQuit.weeklyReviewHint')}</p>
+            <p className="text-xs text-teal-800">{t('addictionQuit.weeklyReviewHint')}</p>
           </div>
           {weekDone ? (
             <span className="text-xs font-medium text-emerald-400">{t('addictionQuit.weeklyReviewDone')}</span>
           ) : (
-            <Button type="button" className="bg-violet-600 hover:bg-violet-500 text-sm" onClick={markWeeklyDone}>
+            <Button type="button" className="bg-[#0F5C45]/90 text-sm hover:bg-[#0F5C45]" onClick={markWeeklyDone}>
               {t('addictionQuit.weeklyReviewButton')}
             </Button>
           )}

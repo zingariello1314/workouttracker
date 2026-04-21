@@ -20,6 +20,10 @@ import {
   defaultUserData,
   getTodayDateStr,
 } from '../../../../hooks/useQuietQuestEngine';
+import {
+  qstatsPanel,
+  qstatsMuted,
+} from '../../../quests/stats/questsStatsTheme';
 
 /**
  * Vue Sécurité pour export/import/reset des données QuietQuest
@@ -173,23 +177,23 @@ export const SecurityView = ({
   };
 
   return (
-    <div className="space-y-4 max-w-2xl">
+    <div className={`${qstatsPanel} space-y-4 max-w-2xl`}>
       <div>
-        <h1 className="text-2xl md:text-3xl font-bold text-slate-100">
-          Sécurité <span className="text-emerald-400">QuietQuest</span>
+        <h1 className="text-2xl md:text-3xl font-bold text-white">
+          Sécurité <span className="text-amber-400">QuietQuest</span>
         </h1>
-        <p className="text-slate-400 text-sm mt-1">
+        <p className={`${qstatsMuted} text-sm mt-1`}>
           Sauvegarde, exporte ou réinitialise tes données de quêtes en un seul endroit.
         </p>
       </div>
 
       <div className="space-y-3">
-        <div className="rounded-2xl border border-slate-700 bg-slate-900/80 px-4 py-3 flex items-center justify-between gap-3">
+        <div className="rounded-xl border border-amber-500/35 bg-black/85 px-4 py-3 flex items-center justify-between gap-3">
           <div>
-            <div className="text-sm font-semibold text-slate-100">
+            <div className="text-sm font-semibold text-amber-50">
               Export JSON complet
             </div>
-            <div className="text-[11px] text-slate-400">
+            <div className={`text-[11px] ${qstatsMuted}`}>
               Quêtes, validations, XP et performances quotidiennes.
             </div>
           </div>
@@ -202,12 +206,12 @@ export const SecurityView = ({
           </button>
         </div>
 
-        <div className="rounded-2xl border border-slate-700 bg-slate-900/80 px-4 py-3 flex items-center justify-between gap-3">
+        <div className="rounded-xl border border-amber-500/35 bg-black/85 px-4 py-3 flex items-center justify-between gap-3">
           <div>
-            <div className="text-sm font-semibold text-slate-100">
+            <div className="text-sm font-semibold text-amber-50">
               Import JSON
             </div>
-            <div className="text-[11px] text-slate-400">
+            <div className={`text-[11px] ${qstatsMuted}`}>
               Remplace entièrement les données actuelles par un fichier exporté.
             </div>
           </div>
@@ -222,12 +226,12 @@ export const SecurityView = ({
           </label>
         </div>
 
-        <div className="rounded-2xl border border-rose-700 bg-rose-950/60 px-4 py-3 flex items-center justify-between gap-3">
+        <div className="rounded-xl border-2 border-red-500/50 bg-black/90 px-4 py-3 flex items-center justify-between gap-3">
           <div>
-            <div className="text-sm font-semibold text-rose-100">
+            <div className="text-sm font-semibold text-red-200">
               Réinitialisation complète
             </div>
-            <div className="text-[11px] text-rose-200/80">
+            <div className="text-[11px] text-red-300/85">
               Supprime toutes les données QuietQuest et remet l'XP au niveau initial.
             </div>
           </div>

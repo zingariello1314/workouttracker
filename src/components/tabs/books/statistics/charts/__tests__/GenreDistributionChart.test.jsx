@@ -5,9 +5,18 @@
  */
 
 import React from 'react';
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import GenreDistributionChart from '../GenreDistributionChart';
+
+beforeEach(() => {
+  global.ResizeObserver = class {
+    observe() {}
+    unobserve() {}
+    disconnect() {}
+  };
+  global.SVGElement.prototype.getBBox = vi.fn(() => ({ x: 0, y: 0, width: 0, height: 0 }));
+});
 
 // Mock des données de test
 const mockBooks = [
@@ -45,7 +54,7 @@ const mockStatisticsData = {
     },
     {
       id: '2',
-      bookId: '2', 
+      bookId: '2',
       date: '2024-01-02',
       durationMinutes: 45,
       pagesRead: 15
@@ -53,7 +62,7 @@ const mockStatisticsData = {
     {
       id: '3',
       bookId: '1',
-      date: '2024-01-03', 
+      date: '2024-01-03',
       durationMinutes: 30,
       pagesRead: 10
     },
@@ -64,7 +73,19 @@ const mockStatisticsData = {
       durationMinutes: 90,
       pagesRead: 25
     }
-  ]
+  ],
+  chartData: {
+    genreDistribution: {
+      pie: [
+        { genre: 'Fiction', minutes: 90, pages: 30, sessions: 2, books: 2 },
+        { genre: 'Non-Fiction', minutes: 45, pages: 15, sessions: 1, books: 1 }
+      ],
+      bar: [
+        { genre: 'Fiction', speed: 24, pages: 30 },
+        { genre: 'Non-Fiction', speed: 20, pages: 15 }
+      ]
+    }
+  }
 };
 
 describe('GenreDistributionChart', () => {
@@ -78,8 +99,8 @@ describe('GenreDistributionChart', () => {
 
   it('should render without crashing', () => {
     render(<GenreDistributionChart {...defaultProps} />);
-    expect(screen.getByText('Répartition')).toBeInTheDocument();
-    expect(screen.getByText('Vitesses')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /répartition/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /vitesses/i })).toBeInTheDocument();
   });
 
   it('should display genre statistics correctly', () => {
@@ -93,17 +114,17 @@ describe('GenreDistributionChart', () => {
   it('should switch between distribution and speed views', () => {
     render(<GenreDistributionChart {...defaultProps} />);
     
-    const speedButton = screen.getByText('Vitesses');
+    const speedButton = screen.getByRole('button', { name: /vitesses/i });
     fireEvent.click(speedButton);
     
     // Vérifier que la vue a changé (le bouton devrait avoir la classe active)
-    expect(speedButton.closest('button')).toHaveClass('bg-purple-600');
+    expect(speedButton.closest('button')).toHaveClass('border-[#3A86FF]');
   });
 
   it('should show no data message when no sessions exist', () => {
     const propsWithoutData = {
       ...defaultProps,
-      statisticsData: { sessions: [] }
+      statisticsData: { sessions: [], chartData: { genreDistribution: { pie: [], bar: [] } } }
     };
     
     render(<GenreDistributionChart {...propsWithoutData} />);

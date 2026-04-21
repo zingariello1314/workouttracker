@@ -1,4 +1,4 @@
-/**
+﻿/**
  * NutritionJournal - Journal Nutritionnel
  * 
  * Composant principal pour la saisie et visualisation des repas journaliers.
@@ -233,7 +233,7 @@ const NutritionJournal = ({ selectedDate, onDateChange, nutritionData, garminDat
   return (
     <div className="space-y-6">
       {/* Sélection date */}
-      <Card className="bg-slate-800/50 border-slate-700">
+      <Card variant="sport">
         <CardContent className="p-4">
           <div className="flex items-center justify-between gap-4">
             <div className="flex items-center gap-3">

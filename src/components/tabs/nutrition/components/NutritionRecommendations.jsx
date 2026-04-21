@@ -1,4 +1,4 @@
-/**
+﻿/**
  * NutritionRecommendations - Composant Affichage Recommandations
  * 
  * Affiche les recommandations nutritionnelles générées par le système expert :
@@ -95,7 +95,7 @@ const NutritionRecommendations = React.memo(() => {
 
   if (loading && !recommendations) {
     return (
-      <Card className="bg-slate-800/50 border-slate-700">
+      <Card variant="sport">
         <CardHeader>
           <CardTitle className="flex items-center gap-2 text-white">
             <Lightbulb size={20} className="text-yellow-400" /> Recommandations
@@ -110,7 +110,7 @@ const NutritionRecommendations = React.memo(() => {
 
   if (error) {
     return (
-      <Card className="bg-slate-800/50 border-slate-700">
+      <Card variant="sport">
         <CardHeader>
           <CardTitle className="flex items-center gap-2 text-white">
             <AlertTriangle size={20} className="text-red-400" /> Recommandations
@@ -131,7 +131,7 @@ const NutritionRecommendations = React.memo(() => {
   }
 
   return (
-    <Card className="bg-slate-800/50 border-slate-700">
+    <Card variant="sport">
       <CardHeader>
         <div className="flex items-center justify-between">
           <CardTitle className="flex items-center gap-2 text-white">

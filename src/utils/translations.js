@@ -108,6 +108,7 @@ export const translations = {
     'nav.books': 'Livres',
     'nav.calendar': 'Calendrier',
     'nav.stats': 'Statistiques',
+    'nav.sportAnalytics': 'Analyses & prévisions',
     'nav.program': 'Programme',
     'nav.addictionQuit': 'Arrêt addiction',
     'nav.exercises': 'Exercices',
@@ -125,6 +126,11 @@ export const translations = {
     'nav.smartBalancing': 'Smart Balancing',
     'nav.garmin': 'Garmin',
     'nav.recap': 'Récap',
+    'sportAnalyticsHub.title': 'Analyses & prévisions',
+    'sportAnalyticsHub.subtitle':
+      'Statistiques, prédictions, équilibre intelligent et historique des séances au même endroit.',
+    'sportAnalyticsHub.historyHint': 'Historique complet des données enregistrées.',
+    'sportAnalyticsHub.loading': 'Chargement…',
 
     // Arrêt addiction (Sport)
     'addictionQuit.title': 'Arrêt addiction',
@@ -520,6 +526,7 @@ export const translations = {
     'finance.subTabs.investissements': 'Investissements Divers',
     'finance.subTabs.smartShopping': 'Smart Shopping',
     'finance.subTabs.planificateur': 'Planificateur',
+    'finance.subTabs.calendrier': 'Calendrier',
     'finance.subTabs.synthese': 'Synthèse',
     'finance.subTabs.theorieRealite': 'Théorie vs Réalité',
     
@@ -785,6 +792,7 @@ export const translations = {
     'nav.books': 'Books',
     'nav.calendar': 'Calendar',
     'nav.stats': 'Statistics',
+    'nav.sportAnalytics': 'Analytics & forecasts',
     'nav.program': 'Program',
     'nav.addictionQuit': 'Quit addictions',
     'nav.exercises': 'Exercises',
@@ -802,6 +810,11 @@ export const translations = {
     'nav.smartBalancing': 'Smart Balancing',
     'nav.garmin': 'Garmin',
     'nav.recap': 'Recap',
+    'sportAnalyticsHub.title': 'Analytics & forecasts',
+    'sportAnalyticsHub.subtitle':
+      'Statistics, predictions, smart balancing, and full session history in one place.',
+    'sportAnalyticsHub.historyHint': 'Full history of your recorded data.',
+    'sportAnalyticsHub.loading': 'Loading…',
 
     // Addiction quit (Sport)
     'addictionQuit.title': 'Quit addictions',
@@ -1196,6 +1209,7 @@ export const translations = {
     'finance.subTabs.investissements': 'Diversified Investments',
     'finance.subTabs.smartShopping': 'Smart Shopping',
     'finance.subTabs.planificateur': 'Planner',
+    'finance.subTabs.calendrier': 'Calendar',
     
     // Planificateur Financier
     'finance.planificateur.sections.repartition': 'Salary Distribution',

@@ -91,7 +91,7 @@ const HistoryTab = () => {
   }
 
   return (
-    <div className="relative min-h-screen">
+    <div className="relative">
       {/* Contenu avec z-index relatif */}
       <div className="relative z-10 space-y-6 p-6">
         {/* En-tête */}

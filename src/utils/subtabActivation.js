@@ -30,9 +30,13 @@ const SUBTAB_CONFIGURATIONS = {
   finance: {
     default: 'synthese',
     subtabs: {
-      synthese: { selector: '[data-subtab="synthese"]', fallback: '[data-tab="synthese"]' },
+      bourse: { selector: '[data-subtab="bourse"]', fallback: '[data-tab="bourse"]' },
+      budget: { selector: '[data-subtab="budget"]', fallback: '[data-tab="budget"]' },
+      investissements: { selector: '[data-subtab="investissements"]', fallback: '[data-tab="investissements"]' },
+      'smart-shopping': { selector: '[data-subtab="smart-shopping"]', fallback: '[data-tab="smart-shopping"]' },
       planificateur: { selector: '[data-subtab="planificateur"]', fallback: '[data-tab="planificateur"]' },
-      smartShopping: { selector: '[data-subtab="smart-shopping"]', fallback: '[data-tab="smart-shopping"]' }
+      calendrier: { selector: '[data-subtab="calendrier"]', fallback: '[data-tab="finance-calendrier"]' },
+      synthese: { selector: '[data-subtab="synthese"]', fallback: '[data-tab="synthese"]' }
     }
   },
   

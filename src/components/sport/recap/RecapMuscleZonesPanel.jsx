@@ -110,7 +110,7 @@ function ZoneRow({
   const cardioActivationPctRounded = Math.round(cardioActivationPct * 10) / 10;
 
   return (
-    <div className="rounded-lg border border-slate-700/70 bg-slate-950/40 px-3 py-2.5">
+    <div className="rounded-lg border border-[#0F4C5C]/55 bg-black px-3 py-2.5">
       <div className="flex items-start justify-between gap-2">
         <div>
           <p className="text-sm font-medium text-slate-100">{label}</p>
@@ -123,19 +123,19 @@ function ZoneRow({
         />
       </div>
       <div
-        className="mt-3 flex items-center justify-between gap-3 rounded-lg border border-emerald-500/25 bg-emerald-950/30 px-3 py-2"
+        className="mt-3 flex items-center justify-between gap-3 rounded-lg border border-sky-500/35 bg-black px-3 py-2 ring-1 ring-[#0F4C5C]/30"
         title={
           groupId === MuscleGroups.FULL_BODY
             ? t('recap.zones.fullBodyVolumeTitle')
             : t('recap.zones.repsPartsHint')
         }
       >
-        <span className="text-xs font-semibold uppercase tracking-wide text-emerald-100/90">
+        <span className="text-xs font-semibold uppercase tracking-wide text-sky-200/95">
           {showCardioMinutesAsPrimary
             ? t('recap.zones.cardioMinutesTitle', 'Sollicitation cardio')
             : t('recap.zones.volumeCheckedTitle')}
         </span>
-        <span className="text-xl sm:text-2xl font-bold tabular-nums text-emerald-300 drop-shadow-[0_0_12px_rgba(52,211,153,0.35)]">
+        <span className="text-xl font-bold tabular-nums text-sky-300 drop-shadow-[0_0_14px_rgba(56,189,248,0.35)] sm:text-2xl">
           {showCardioMinutesAsPrimary
             ? t('recap.zones.cardioMinutesValue', '{{m}} min ({{pct}}%)', {
                 m: cardioMinutesRounded,
@@ -144,7 +144,7 @@ function ZoneRow({
             : vol}
         </span>
       </div>
-      <div className="mt-2 h-2.5 w-full rounded-full bg-slate-800/90 overflow-hidden ring-1 ring-slate-700/60">
+      <div className="mt-2 h-2.5 w-full rounded-full bg-black overflow-hidden ring-1 ring-[#0F4C5C]/45">
         <div
           className="h-full rounded-full transition-all duration-300"
           style={{ width: `${pct}%`, backgroundColor: color, boxShadow: `0 0 14px ${color}77` }}
@@ -257,9 +257,9 @@ const RecapMuscleZonesPanel = ({ recapState, t }) => {
   }, [byGroup]);
 
   return (
-    <section className="rounded-xl border border-slate-700/80 bg-slate-900/30 p-4 backdrop-blur-sm">
-      <h2 className="text-sm font-semibold text-slate-200 mb-1">{t('recap.zones.title')}</h2>
-      <p className="text-xs text-slate-500 mb-4 leading-relaxed">{t('recap.zones.intro')}</p>
+    <section className="rounded-xl border-2 border-[#0F4C5C]/70 bg-black p-4">
+      <h2 className="text-sm font-semibold text-teal-100 mb-1">{t('recap.zones.title')}</h2>
+      <p className="text-xs text-teal-700 mb-4 leading-relaxed">{t('recap.zones.intro')}</p>
       <div className="space-y-6">
         {ZONE_SECTIONS.map((section) => (
           <div key={section.titleKey}>

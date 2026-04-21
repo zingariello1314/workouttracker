@@ -1,4 +1,4 @@
-/**
+﻿/**
  * NutritionAnalyses - Analyses Avancées Nutrition
  * 
  * Composant pour les analyses approfondies :
@@ -584,7 +584,7 @@ const NutritionAnalyses = ({ nutritionData, garminData }) => {
 
   if (loading) {
     return (
-      <Card className="bg-slate-800/50 border-slate-700">
+      <Card variant="sport">
         <CardContent className="text-center py-12">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto"></div>
           <p className="text-slate-400 mt-4">Chargement des analyses...</p>
@@ -595,7 +595,7 @@ const NutritionAnalyses = ({ nutritionData, garminData }) => {
 
   if (!analysisData || analysisData.dailyData.length === 0) {
     return (
-      <Card className="bg-slate-800/50 border-slate-700">
+      <Card variant="sport">
         <CardContent className="text-center py-12">
           <BarChart3 size={48} className="mx-auto text-slate-600 mb-4" />
           <p className="text-slate-400 mb-4">Aucune donnée disponible pour cette période</p>
@@ -663,7 +663,7 @@ const NutritionAnalyses = ({ nutritionData, garminData }) => {
 
       {/* Statistiques globales */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        <Card className="bg-slate-800/50 border-slate-700">
+        <Card variant="sport">
           <CardContent className="p-4">
             <div className="flex items-center justify-between mb-2">
               <span className="text-slate-400 text-sm">Calories moyennes</span>
@@ -681,7 +681,7 @@ const NutritionAnalyses = ({ nutritionData, garminData }) => {
           </CardContent>
         </Card>
 
-        <Card className="bg-slate-800/50 border-slate-700">
+        <Card variant="sport">
           <CardContent className="p-4">
             <div className="flex items-center justify-between mb-2">
               <span className="text-slate-400 text-sm">Conformité moyenne</span>
@@ -697,7 +697,7 @@ const NutritionAnalyses = ({ nutritionData, garminData }) => {
           </CardContent>
         </Card>
 
-        <Card className="bg-slate-800/50 border-slate-700">
+        <Card variant="sport">
           <CardContent className="p-4">
             <div className="flex items-center justify-between mb-2">
               <span className="text-slate-400 text-sm">Protéines moyennes</span>
@@ -715,7 +715,7 @@ const NutritionAnalyses = ({ nutritionData, garminData }) => {
           </CardContent>
         </Card>
 
-        <Card className="bg-slate-800/50 border-slate-700">
+        <Card variant="sport">
           <CardContent className="p-4">
             <div className="flex items-center justify-between mb-2">
               <span className="text-slate-400 text-sm">Eau moyenne</span>
@@ -735,7 +735,7 @@ const NutritionAnalyses = ({ nutritionData, garminData }) => {
       </div>
 
       {/* Graphique Conformité Programme */}
-      <Card className="bg-slate-800/50 border-slate-700">
+      <Card variant="sport">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Target size={20} className="text-blue-400" />
@@ -816,7 +816,7 @@ const NutritionAnalyses = ({ nutritionData, garminData }) => {
 
       {/* Graphique Bilan Calorique (si Garmin disponible) */}
       {hasGarminData && (
-        <Card className="bg-slate-800/50 border-slate-700">
+        <Card variant="sport">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Activity size={20} className="text-green-400" />
@@ -892,7 +892,7 @@ const NutritionAnalyses = ({ nutritionData, garminData }) => {
       )}
 
       {/* Graphique Évolution Macros */}
-      <Card className="bg-slate-800/50 border-slate-700">
+      <Card variant="sport">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <TrendingUp size={20} className="text-purple-400" />
@@ -970,7 +970,7 @@ const NutritionAnalyses = ({ nutritionData, garminData }) => {
       </Card>
 
       {/* Tendances */}
-      <Card className="bg-slate-800/50 border-slate-700">
+      <Card variant="sport">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             {trend >= 0 ? (

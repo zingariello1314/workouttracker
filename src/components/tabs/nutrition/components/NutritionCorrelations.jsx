@@ -1,4 +1,4 @@
-/**
+﻿/**
  * NutritionCorrelations - Composant Affichage Corrélations
  * 
  * Affiche les corrélations nutritionnelles calculées :
@@ -88,7 +88,7 @@ const NutritionCorrelations = React.memo(() => {
 
   if (loading && !correlations) {
     return (
-      <Card className="bg-slate-800/50 border-slate-700">
+      <Card variant="sport">
         <CardHeader>
           <CardTitle className="flex items-center gap-2 text-white">
             <BarChart3 size={20} className="text-blue-400" /> {t('nutritionAnalyses.correlations.title')}
@@ -103,7 +103,7 @@ const NutritionCorrelations = React.memo(() => {
 
   if (error || metadata.hasError) {
     return (
-      <Card className="bg-slate-800/50 border-slate-700">
+      <Card variant="sport">
         <CardHeader>
           <CardTitle className="flex items-center gap-2 text-white">
             <AlertTriangle size={20} className="text-red-400" /> {t('nutritionAnalyses.correlations.title')}
@@ -127,7 +127,7 @@ const NutritionCorrelations = React.memo(() => {
 
   if (!hasData) {
     return (
-      <Card className="bg-slate-800/50 border-slate-700">
+      <Card variant="sport">
         <CardHeader>
           <CardTitle className="flex items-center gap-2 text-white">
             <BarChart3 size={20} className="text-blue-400" /> {t('nutritionAnalyses.correlations.title')}
@@ -157,7 +157,7 @@ const NutritionCorrelations = React.memo(() => {
   const allCorrelations = Object.entries(correlations).map(([key, value]) => ({ key, ...value }));
 
   return (
-    <Card className="bg-slate-800/50 border-slate-700">
+    <Card variant="sport">
       <CardHeader>
         <div className="flex items-center justify-between">
           <CardTitle className="flex items-center gap-2 text-white">

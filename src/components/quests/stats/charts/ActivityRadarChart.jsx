@@ -1,24 +1,29 @@
 /**
  * Composant ActivityRadarChart - Profil d'activité par catégorie
- * Visualise l'équilibre entre les différentes catégories avec un graphique radar
  */
 
 import React, { useMemo } from 'react';
 import { RadarChart, Radar, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Legend, ResponsiveContainer, Tooltip } from 'recharts';
 import LazyChart from '../../../BodyTracking/components/LazyChart';
+import {
+  qstatsPanel,
+  qstatsHeaderRow,
+  qstatsAccentBar,
+  qstatsMuted,
+  qstatsChartGrid,
+} from '../questsStatsTheme';
 
 const ActivityRadarTooltip = ({ active, payload }) => {
   if (active && payload && payload.length) {
     return (
-      <div className="bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 border border-purple-500/30 rounded-lg p-3 shadow-2xl shadow-purple-500/20 backdrop-blur-sm">
-        <div className="absolute inset-0 bg-gradient-to-r from-purple-500/10 to-pink-500/10 rounded-lg opacity-50"></div>
+      <div className="bg-black border-2 border-amber-400/55 rounded-lg p-3 shadow-2xl z-20">
         <div className="relative">
           {payload.map((entry, index) => (
             <div key={index} className="mb-2">
-              <p className="text-purple-300 font-semibold mb-1 text-sm tracking-wide">{entry.name}</p>
+              <p className="text-amber-300 font-semibold mb-1 text-sm tracking-wide">{entry.name}</p>
               <p className="text-sm">
-                <span className="text-slate-400">{entry.payload.category}:</span>{' '}
-                <span className="font-bold" style={{ color: entry.color }}>
+                <span className={qstatsMuted}>{entry.payload.category}:</span>{' '}
+                <span className="font-bold text-amber-200">
                   {entry.value.toFixed(1)}%
                 </span>
               </p>
@@ -35,15 +40,12 @@ const ActivityRadarChart = ({ categoryStats, validations, allQuests }) => {
   const radarData = useMemo(() => {
     if (!categoryStats || categoryStats.length === 0) return [];
 
-    // Normaliser les valeurs entre 0 et 100 pour chaque métrique
     const categories = ['Santé', 'Travail', 'Apprentissage', 'Lecture', 'Sport', 'Ménage', 'Spirituel', 'Repas', 'Projets', 'Hobby', 'Social', 'Finance', 'Créativité', 'Bien-être'];
-    
-    // Calculer les max pour normalisation
+
     const maxValidations = Math.max(...categoryStats.map(c => c.validationsCount), 1);
     const maxXP = Math.max(...categoryStats.map(c => c.xpTotal), 1);
     const maxCompletionRate = Math.max(...categoryStats.map(c => c.completionRate), 1);
-    
-    // Calculer temps total par catégorie
+
     const categoryTimeMap = new Map();
     validations.forEach(v => {
       const quest = allQuests.find(q => q.id === v.queteId);
@@ -74,10 +76,13 @@ const ActivityRadarChart = ({ categoryStats, validations, allQuests }) => {
 
   if (radarData.length === 0) return null;
 
+  const tickFill = '#fbbf24';
+  const strokeAxis = '#b45309';
+
   return (
-    <div className="rounded-2xl border border-purple-500/20 bg-gradient-to-br from-slate-900/90 via-slate-800/50 to-slate-900/90 px-4 py-3 shadow-xl shadow-purple-500/10 backdrop-blur-sm">
-      <div className="text-xs text-purple-300 mb-3 font-semibold tracking-wide flex items-center gap-2">
-        <div className="w-1 h-4 bg-gradient-to-b from-purple-400 to-pink-500 rounded-full"></div>
+    <div className={qstatsPanel}>
+      <div className={qstatsHeaderRow}>
+        <div className={qstatsAccentBar} />
         Profil d'activité par catégorie
       </div>
       <LazyChart height={350}>
@@ -85,43 +90,43 @@ const ActivityRadarChart = ({ categoryStats, validations, allQuests }) => {
           <RadarChart data={radarData} margin={{ top: 20, right: 30, left: 20, bottom: 20 }}>
             <defs>
               <linearGradient id="radarValidations" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%" stopColor="#06b6d4" stopOpacity={0.8} />
+                <stop offset="0%" stopColor="#06b6d4" stopOpacity={0.85} />
                 <stop offset="100%" stopColor="#06b6d4" stopOpacity={0.2} />
               </linearGradient>
               <linearGradient id="radarXP" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%" stopColor="#10b981" stopOpacity={0.8} />
+                <stop offset="0%" stopColor="#10b981" stopOpacity={0.85} />
                 <stop offset="100%" stopColor="#10b981" stopOpacity={0.2} />
               </linearGradient>
               <linearGradient id="radarCompletion" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%" stopColor="#a855f7" stopOpacity={0.8} />
+                <stop offset="0%" stopColor="#a855f7" stopOpacity={0.85} />
                 <stop offset="100%" stopColor="#a855f7" stopOpacity={0.2} />
               </linearGradient>
               <linearGradient id="radarTime" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%" stopColor="#f59e0b" stopOpacity={0.8} />
+                <stop offset="0%" stopColor="#f59e0b" stopOpacity={0.85} />
                 <stop offset="100%" stopColor="#f59e0b" stopOpacity={0.2} />
               </linearGradient>
             </defs>
-            <PolarGrid 
-              stroke="#1e293b" 
-              strokeOpacity={0.3}
+            <PolarGrid
+              stroke={qstatsChartGrid}
+              strokeOpacity={0.65}
               gridType="polygon"
             />
-            <PolarAngleAxis 
-              dataKey="category" 
-              tick={{ fill: '#c084fc', fontSize: 11, fontWeight: 500 }}
-              stroke="#a855f7"
-              strokeOpacity={0.5}
+            <PolarAngleAxis
+              dataKey="category"
+              tick={{ fill: tickFill, fontSize: 11, fontWeight: 500 }}
+              stroke={strokeAxis}
+              strokeOpacity={0.7}
             />
-            <PolarRadiusAxis 
-              angle={90} 
+            <PolarRadiusAxis
+              angle={90}
               domain={[0, 100]}
-              tick={{ fill: '#c084fc', fontSize: 10 }}
-              stroke="#a855f7"
-              strokeOpacity={0.5}
+              tick={{ fill: tickFill, fontSize: 10 }}
+              stroke={strokeAxis}
+              strokeOpacity={0.7}
             />
             <Tooltip content={<ActivityRadarTooltip />} />
-            <Legend 
-              wrapperStyle={{ color: '#c084fc', fontSize: '12px' }}
+            <Legend
+              wrapperStyle={{ color: '#fbbf24', fontSize: '12px' }}
               iconType="line"
             />
             <Radar
@@ -131,7 +136,7 @@ const ActivityRadarChart = ({ categoryStats, validations, allQuests }) => {
               fill="url(#radarValidations)"
               fillOpacity={0.6}
               strokeWidth={2}
-              style={{ filter: 'drop-shadow(0 0 4px rgba(6, 182, 212, 0.4))' }}
+              style={{ filter: 'drop-shadow(0 0 4px rgba(6, 182, 212, 0.45))' }}
             />
             <Radar
               name="XP"
@@ -140,7 +145,7 @@ const ActivityRadarChart = ({ categoryStats, validations, allQuests }) => {
               fill="url(#radarXP)"
               fillOpacity={0.6}
               strokeWidth={2}
-              style={{ filter: 'drop-shadow(0 0 4px rgba(16, 185, 129, 0.4))' }}
+              style={{ filter: 'drop-shadow(0 0 4px rgba(16, 185, 129, 0.45))' }}
             />
             <Radar
               name="Taux de réussite"
@@ -149,7 +154,7 @@ const ActivityRadarChart = ({ categoryStats, validations, allQuests }) => {
               fill="url(#radarCompletion)"
               fillOpacity={0.6}
               strokeWidth={2}
-              style={{ filter: 'drop-shadow(0 0 4px rgba(168, 85, 247, 0.4))' }}
+              style={{ filter: 'drop-shadow(0 0 4px rgba(168, 85, 247, 0.45))' }}
             />
             <Radar
               name="Temps"
@@ -158,7 +163,7 @@ const ActivityRadarChart = ({ categoryStats, validations, allQuests }) => {
               fill="url(#radarTime)"
               fillOpacity={0.6}
               strokeWidth={2}
-              style={{ filter: 'drop-shadow(0 0 4px rgba(245, 158, 11, 0.4))' }}
+              style={{ filter: 'drop-shadow(0 0 4px rgba(245, 158, 11, 0.45))' }}
             />
           </RadarChart>
         </ResponsiveContainer>
@@ -168,4 +173,3 @@ const ActivityRadarChart = ({ categoryStats, validations, allQuests }) => {
 };
 
 export default ActivityRadarChart;
-

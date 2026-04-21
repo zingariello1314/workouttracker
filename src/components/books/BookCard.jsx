@@ -22,9 +22,9 @@ const BookCard = memo(({
       case 'in-progress':
         return 'bg-blue-500/20 text-blue-300 border-blue-400/30';
       case 'completed':
-        return 'bg-green-500/20 text-green-300 border-green-400/30';
+        return 'bg-[#3A86FF]/18 text-sky-200 border border-[#3A86FF]/40';
       case 'to-read':
-        return 'bg-purple-500/20 text-purple-300 border-purple-400/30';
+        return 'bg-purple-500/20 text-purple-300 border border-slate-500/40';
       case 'abandoned':
         return 'bg-red-500/20 text-red-300 border-red-400/30';
       case 'paused':
@@ -82,14 +82,13 @@ const BookCard = memo(({
 
   return (
     <Card
-      variant="glass"
+      variant="books"
       className={`flex-shrink-0 w-[580px] min-w-[580px] max-w-[580px] min-h-[420px] cursor-pointer transition-all duration-300 ${
         selectedBookId === book.id 
-          ? 'ring-2 ring-purple-400/50 ring-offset-2 ring-offset-transparent scale-[1.02] shadow-lg shadow-purple-500/20' 
-          : 'hover:scale-[1.01] hover:shadow-lg hover:shadow-white/5'
+          ? 'ring-2 ring-[#3A86FF] ring-offset-2 ring-offset-black scale-[1.02] shadow-lg shadow-[#3A86FF]/20' 
+          : 'hover:scale-[1.01] hover:shadow-lg hover:shadow-black/20'
       }`}
       onClick={() => onBookClick(book.id)}
-      padding="lg"
     >
       <div className="flex items-start gap-6 h-full w-full overflow-visible">
         {/* Cover Image - Left side */}

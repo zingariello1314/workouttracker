@@ -86,26 +86,26 @@ const QuestsXPBar = ({ userData, validations, allQuests, isLoading = false }) =>
   }, [currentXP, xpForNextLevel]);
 
   return (
-    <div className="bg-black border border-amber-600/45 rounded-2xl px-6 py-4 shadow-lg shadow-amber-900/20">
+    <div className="rounded-2xl border-2 border-amber-400/75 bg-black px-6 py-4 shadow-lg shadow-black/50">
       <div className="flex items-center justify-between mb-3">
         <div className="flex items-center gap-2">
           <Target className="w-5 h-5 text-amber-400" />
-          <span className="font-semibold text-white">Niveau {level}</span>
+          <span className="font-semibold text-amber-50">Niveau {level}</span>
         </div>
-        <div className="flex items-center gap-2 text-sm text-slate-300">
-          <TrendingUp className="w-4 h-4 text-amber-300" />
+        <div className="flex items-center gap-2 text-sm text-amber-200/85">
+          <TrendingUp className="w-4 h-4 text-amber-400" />
           <span>{currentXP.toLocaleString('fr-FR')} XP actuel</span>
         </div>
       </div>
 
-      <div className="w-full h-3 rounded-full bg-slate-800 overflow-hidden">
+      <div className="w-full h-3 rounded-full bg-black border border-amber-800/45 overflow-hidden">
         <div
-          className="h-full rounded-full bg-gradient-to-r from-amber-400 via-amber-500 to-yellow-600 transition-all duration-300"
+          className="h-full rounded-full bg-gradient-to-r from-amber-600 via-amber-400 to-yellow-300 transition-all duration-300 shadow-[0_0_12px_rgba(251,191,36,0.35)]"
           style={{ width: `${Math.min(100, Math.max(0, percent))}%` }}
         />
       </div>
 
-      <div className="flex justify-between text-xs text-slate-400 mt-2">
+      <div className="flex justify-between text-xs text-amber-200/75 mt-2">
         <span>{currentXP.toLocaleString('fr-FR')} / {xpForNextLevel.toLocaleString('fr-FR')} XP</span>
         <span>Prochain niveau</span>
       </div>

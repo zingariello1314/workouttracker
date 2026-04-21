@@ -177,9 +177,9 @@ export default function BookFinder() {
           style={{
             padding: '0.5rem 0.75rem',
             borderRadius: '12px',
-            border: '1px solid rgba(71, 85, 105, 0.6)',
-            background: 'rgba(30, 41, 59, 0.8)',
-            color: 'rgb(226, 232, 240)',
+            border: '1px solid rgba(58, 134, 255, 0.45)',
+            background: 'rgba(0, 0, 0, 0.55)',
+            color: 'rgb(224, 242, 254)',
             fontSize: '0.9375rem',
           }}
           aria-label={t('books.bookfinder.format', 'Format')}
