@@ -81,7 +81,7 @@ const SidebarBooksRecapModule = memo(({ isExpanded, onToggle, setActiveTab }) =>
               <button
                 type="button"
                 onClick={go({ showGlobe: true })}
-                className={`${cardClass} border-violet-500/35 bg-violet-500/5`}
+                className={`${cardClass} border-sky-500/35 bg-sky-500/5`}
               >
                 <div className="text-[9px] text-slate-400">Bibliothèque</div>
                 <div className="text-sm font-bold text-white tabular-nums">{stats.totalBooks}</div>
@@ -95,7 +95,7 @@ const SidebarBooksRecapModule = memo(({ isExpanded, onToggle, setActiveTab }) =>
                   tab: 'statistics',
                   statsNavigation: { scrollToId: 'books-stats-session-analysis' }
                 })}
-                className={`${cardClass} border-indigo-500/35 bg-indigo-500/5`}
+                className={`${cardClass} border-sky-600/35 bg-sky-950/35`}
               >
                 <div className="text-[9px] text-slate-400 flex items-center gap-1">
                   <BookOpen className="h-3 w-3" /> Sessions
@@ -109,7 +109,7 @@ const SidebarBooksRecapModule = memo(({ isExpanded, onToggle, setActiveTab }) =>
                   tab: 'statistics',
                   statsNavigation: { scrollToId: 'books-stats-metrics-panel' }
                 })}
-                className={`${cardClass} border-blue-500/35 bg-blue-500/5`}
+                className={`${cardClass} border-sky-400/35 bg-sky-500/10`}
               >
                 <div className="text-[9px] text-slate-400 flex items-center gap-1">
                   <Clock3 className="h-3 w-3" /> Temps total

@@ -227,6 +227,7 @@ function buildChallengeSignature(challenge = {}) {
     challenge.goalDuration ?? '',
     challenge.goalDistance ?? '',
     challenge.goalJumps ?? '',
+    challenge.goalTotalCount ?? '',
     challenge.status || ''
   ].join('|');
 }
@@ -283,6 +284,11 @@ function normalizeSession(activityType, session = {}) {
   }
 
   return normalized;
+}
+
+/** Exposé pour aligner id / activityType avant évaluation des défis (ex. cumul pompes). */
+export function normalizeEnduranceSession(activityType, session = {}) {
+  return normalizeSession(activityType, session);
 }
 
 function normalizeChallenge(challenge = {}) {

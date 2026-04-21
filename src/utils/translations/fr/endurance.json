@@ -10,6 +10,10 @@
     "running": "Course",
     "calendar": "Calendrier"
   },
+  "subViews": {
+    "sessionsAndChallenges": "Séances & défis",
+    "trophies": "Trophées"
+  },
   "sections": {
     "boxing": {
       "title": "Boxe",
@@ -96,7 +100,8 @@
     "types": {
       "ponctuel": "Ponctuel",
       "recurrent": "Récurrent",
-      "periode": "Sur une période"
+      "periode": "Sur une période",
+      "pushups_cumul": "Cumul pompes (période)"
     },
     "frequencies": {
       "daily": "Quotidien",
@@ -126,6 +131,7 @@
         "default": "Nombre"
       },
       "goalDuration": "Durée max (minutes)",
+      "goalTotalCount": "Objectif total de pompes (cumul sur la période)",
       "optional": "Optionnel",
       "create": "Créer le défi"
     },
@@ -143,8 +149,41 @@
       "goalRunning": "🎯 Objectif: {{distance}}km",
       "goalRunningWithDuration": "🎯 Objectif: {{distance}}km en {{duration}} min",
       "goalGainageSeconds": "🎯 Objectif : {{seconds}} s cumulées en planche",
-      "goalGainageWithDuration": "🎯 Objectif : {{seconds}} s cumulées en max {{duration}} min"
+      "goalGainageWithDuration": "🎯 Objectif : {{seconds}} s cumulées en max {{duration}} min",
+      "cumulProgress": "📊 Cumul (sessions pompes saisies ici) : {{current}} / {{goal}} pompes"
     }
+  },
+  "pushupPresets": {
+    "title": "Modèles de défis (données onglet Pompes uniquement)",
+    "ponctuel100": "100 en une séance",
+    "ponctuel200": "200 en une séance",
+    "daily25": "25 / jour × 14 jours",
+    "daily50x30": "50 / jour × 30 jours",
+    "periodMin40": "≥ 40 pompes par séance (3 sem.)",
+    "periodMin80": "≥ 80 pompes / séance (4 sem.)",
+    "cumul500": "500 pompes / mois",
+    "cumul1500": "1500 pompes / 60 jours",
+    "cumul5000": "5000 pompes / 90 jours"
+  },
+  "gainagePresets": {
+    "title": "Modèles de défis (planche = secondes, durée séance = minutes max si renseigné)",
+    "ponctuel300s": "5 min planche / 14 j",
+    "ponctuel600s": "10 min planche / 21 j",
+    "recurrent120s21": "≥ 120 s / séance × 21 j",
+    "recurrent240s14": "≥ 240 s / séance × 14 j",
+    "periode240s": "≥ 4 min planche / séance (3 sem.)",
+    "periode360s": "≥ 6 min planche / séance (4 sem.)",
+    "periode420s": "≥ 7 min planche / séance (4 sem.)"
+  },
+  "jumpropePresets": {
+    "title": "Modèles de défis (durée en minutes, sauts = objectif)",
+    "ponctuel800": "800 sauts / 10 j",
+    "ponctuel10min600": "10 min + 600 sauts",
+    "ponctuel1200j12min": "12 min + 1200 sauts / 14 j",
+    "recurrent400j30": "≥ 400 sauts / jour × 30 j",
+    "recurrent600j21": "≥ 600 sauts + 10 min / jour × 21 j",
+    "periode15min": "≥ 15 min corde / séance (3 sem.)",
+    "periode20min": "≥ 20 min corde / séance (4 sem.)"
   },
   "swimming": {
     "details": {
@@ -308,6 +347,8 @@
     "fetchError": "Erreur lors de la récupération des exercices d'endurance",
     "unknownExercise": "Exercice inconnu",
     "nameAndTypeRequired": "Nom et type d'activité requis",
+    "pushupsCumulDates": "Défi cumul : renseigne la date de début et de fin.",
+    "pushupsCumulGoal": "Défi cumul : indique un objectif total de pompes (> 0).",
     "updateError": "Erreur lors de la modification du défi"
   },
   "session": {

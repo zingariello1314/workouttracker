@@ -8,6 +8,14 @@ import {
   evaluateRunningTrophies,
   computeRunningTrophiesXpDetailed
 } from '../endurance/runningTrophiesService';
+import {
+  evaluateSimpleEnduranceTrophies,
+  computeSimpleEnduranceTrophiesXpDetailed
+} from '../endurance/simpleEnduranceTrophiesService';
+import {
+  evaluatePushupTrophies,
+  computePushupTrophiesXpDetailed
+} from '../endurance/pushupTrophiesService';
 import { isGarminRunningLikeActivity } from '../../utils/garminRunningLaps';
 import { averageCriteriaScore } from '../../utils/bookReadingRatings';
 import { calculateQuestXP } from '../../utils/questXpCore';
@@ -120,7 +128,18 @@ export const calculateSportXP = (workoutData, garminData, enduranceData) => {
     sessions: 0,
     runningTrophies: 0,
     runningTrophyTiers: 0,
-    runningTrophiesUnlocked: 0
+    runningTrophiesUnlocked: 0,
+    runningTotalDistanceKm: 0,
+    runningSessionCount: 0,
+    jumpRopeTrophies: 0,
+    jumpRopeTrophyTiers: 0,
+    jumpRopeTrophiesUnlocked: 0,
+    gainageTrophies: 0,
+    gainageTrophyTiers: 0,
+    gainageTrophiesUnlocked: 0,
+    pushupTrophies: 0,
+    pushupTrophyTiers: 0,
+    pushupTrophiesUnlocked: 0
   };
   
   if (!workoutData) {
@@ -188,7 +207,10 @@ export const calculateSportXP = (workoutData, garminData, enduranceData) => {
       }
       const activityType = session?.activityType;
       if (!activityType) return innerSum;
-      const evaluation = evaluateChallenges(evaluationChallenges, session, activityType);
+      const relatedPushupSessions = activityType === 'pushups' && Array.isArray(list) ? list : undefined;
+      const evaluation = evaluateChallenges(evaluationChallenges, session, activityType, {
+        relatedPushupSessions
+      });
       return innerSum + (evaluation.validatedIds?.length || 0);
     }, 0);
   }, 0);
@@ -208,6 +230,9 @@ export const calculateSportXP = (workoutData, garminData, enduranceData) => {
   }
 
   const runningSessions = Array.isArray(sessionsByType.running) ? sessionsByType.running : [];
+  const runningTotalDistanceKm = runningSessions.reduce((acc, r) => acc + (Number(r?.distance) || 0), 0);
+  breakdown.runningTotalDistanceKm = Math.round(runningTotalDistanceKm * 100) / 100;
+  breakdown.runningSessionCount = runningSessions.length;
   const garminById = buildGarminRunningByIdForTrophies(garminData);
   const runningTrophyEval = evaluateRunningTrophies({ runningSessions, garminById });
   const rt = computeRunningTrophiesXpDetailed(runningTrophyEval.results);
@@ -215,6 +240,30 @@ export const calculateSportXP = (workoutData, garminData, enduranceData) => {
   breakdown.runningTrophyTiers = rt.unlockedTierCount;
   breakdown.runningTrophiesUnlocked = rt.trophiesWithTier;
   totalXP += rt.xp;
+
+  const jumpRopeSessions = Array.isArray(sessionsByType.jumprope) ? sessionsByType.jumprope : [];
+  const gainageSessions = Array.isArray(sessionsByType.gainage) ? sessionsByType.gainage : [];
+  const jrEval = evaluateSimpleEnduranceTrophies({ activityType: 'jumprope', sessions: jumpRopeSessions });
+  const jrXp = computeSimpleEnduranceTrophiesXpDetailed(jrEval.results);
+  breakdown.jumpRopeTrophies = jrXp.xp;
+  breakdown.jumpRopeTrophyTiers = jrXp.unlockedTierCount;
+  breakdown.jumpRopeTrophiesUnlocked = jrXp.trophiesWithTier;
+  totalXP += jrXp.xp;
+
+  const gaEval = evaluateSimpleEnduranceTrophies({ activityType: 'gainage', sessions: gainageSessions });
+  const gaXp = computeSimpleEnduranceTrophiesXpDetailed(gaEval.results);
+  breakdown.gainageTrophies = gaXp.xp;
+  breakdown.gainageTrophyTiers = gaXp.unlockedTierCount;
+  breakdown.gainageTrophiesUnlocked = gaXp.trophiesWithTier;
+  totalXP += gaXp.xp;
+
+  const pushupSessions = Array.isArray(sessionsByType.pushups) ? sessionsByType.pushups : [];
+  const puEval = evaluatePushupTrophies({ sessions: pushupSessions });
+  const puXp = computePushupTrophiesXpDetailed(puEval.results);
+  breakdown.pushupTrophies = puXp.xp;
+  breakdown.pushupTrophyTiers = puXp.unlockedTierCount;
+  breakdown.pushupTrophiesUnlocked = puXp.trophiesWithTier;
+  totalXP += puXp.xp;
 
   return {
     totalXP: Math.round(totalXP),
@@ -348,7 +397,16 @@ export const calculateXPForAllCategories = (data) => {
           sessions: 0,
           runningTrophies: 0,
           runningTrophyTiers: 0,
-          runningTrophiesUnlocked: 0
+          runningTrophiesUnlocked: 0,
+          jumpRopeTrophies: 0,
+          jumpRopeTrophyTiers: 0,
+          jumpRopeTrophiesUnlocked: 0,
+          gainageTrophies: 0,
+          gainageTrophyTiers: 0,
+          gainageTrophiesUnlocked: 0,
+          pushupTrophies: 0,
+          pushupTrophyTiers: 0,
+          pushupTrophiesUnlocked: 0
         }
       },
       addictionQuit: {

@@ -16,7 +16,18 @@ const DEFAULT_BREAKDOWN = {
   sessions: 0,
   runningTrophies: 0,
   runningTrophyTiers: 0,
-  runningTrophiesUnlocked: 0
+  runningTrophiesUnlocked: 0,
+  runningTotalDistanceKm: 0,
+  runningSessionCount: 0,
+  jumpRopeTrophies: 0,
+  jumpRopeTrophyTiers: 0,
+  jumpRopeTrophiesUnlocked: 0,
+  gainageTrophies: 0,
+  gainageTrophyTiers: 0,
+  gainageTrophiesUnlocked: 0,
+  pushupTrophies: 0,
+  pushupTrophyTiers: 0,
+  pushupTrophiesUnlocked: 0
 };
 
 let sportXpCache = {
@@ -102,6 +113,12 @@ export const useSportXP = () => {
 
     const runningList = Array.isArray(sessionsByType.running) ? sessionsByType.running : [];
     const runningSig = `${runningList.length}|${runningList.reduce((s, r) => s + (Number(r?.distance) || 0), 0)}`;
+    const jumpRopeList = Array.isArray(sessionsByType.jumprope) ? sessionsByType.jumprope : [];
+    const jumpRopeSig = `${jumpRopeList.length}|${jumpRopeList.reduce((s, r) => s + (Number(r?.jumps) || 0), 0)}`;
+    const gainageList = Array.isArray(sessionsByType.gainage) ? sessionsByType.gainage : [];
+    const gainageSig = `${gainageList.length}|${gainageList.reduce((s, r) => s + (Number(r?.count) || 0), 0)}`;
+    const pushupList = Array.isArray(sessionsByType.pushups) ? sessionsByType.pushups : [];
+    const pushupSig = `${pushupList.length}|${pushupList.reduce((s, r) => s + (Number(r?.count) || 0), 0)}`;
     const cardioLen = Array.isArray(garminData?.activities?.cardio) ? garminData.activities.cardio.length : 0;
     let garminLapTally = 0;
     if (Array.isArray(garminData?.activities?.cardio)) {
@@ -119,6 +136,9 @@ export const useSportXP = () => {
       validatedChallengesCount,
       enduranceData.challenges?.length || 0,
       runningSig,
+      jumpRopeSig,
+      gainageSig,
+      pushupSig,
       cardioLen,
       garminLapTally
     ].join('|');

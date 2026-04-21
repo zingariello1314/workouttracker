@@ -10,6 +10,7 @@ import {
   RECAP_VIEW_PERIODS,
   STRENGTH_CARD_PERIOD_LS,
 } from '../../../utils/sport/recapViewPeriods';
+import DashboardSportPeriodInsights from '../../dashboard/DashboardSportPeriodInsights.jsx';
 
 const NUM_BARS_SIDEBAR = 5;
 const NUM_BARS_DEFAULT = 8;
@@ -120,7 +121,7 @@ export default function RecapStrengthStatsCard({ variant = 'embedded' }) {
                   : 'border-slate-700/70 bg-slate-950/60'
               }`}
             >
-              <div className={variant === 'embedded' ? 'text-teal-700' : 'text-slate-500'}>
+              <div className={variant === 'embedded' ? 'text-teal-200/70' : 'text-slate-500'}>
                 Exercice avec le plus de reps
               </div>
               <div className="font-semibold text-white truncate">{topExerciseLabel}</div>
@@ -132,7 +133,7 @@ export default function RecapStrengthStatsCard({ variant = 'embedded' }) {
                   : 'border-slate-700/70 bg-slate-950/60'
               }`}
             >
-              <div className={variant === 'embedded' ? 'text-teal-700' : 'text-slate-500'}>Reps totales</div>
+              <div className={variant === 'embedded' ? 'text-teal-200/70' : 'text-slate-500'}>Reps totales</div>
               <div className="font-semibold text-white">
                 {Math.round(built.totalRepsCurr).toLocaleString('fr-FR')}
               </div>
@@ -144,7 +145,7 @@ export default function RecapStrengthStatsCard({ variant = 'embedded' }) {
                   : 'border-slate-700/70 bg-slate-950/60'
               }`}
             >
-              <div className={variant === 'embedded' ? 'text-teal-700' : 'text-slate-500'}>Jours actifs</div>
+              <div className={variant === 'embedded' ? 'text-teal-200/70' : 'text-slate-500'}>Jours actifs</div>
               <div className="font-semibold text-white">{built.activeDays}</div>
             </div>
             <div
@@ -154,7 +155,7 @@ export default function RecapStrengthStatsCard({ variant = 'embedded' }) {
                   : 'border-slate-700/70 bg-slate-950/60'
               }`}
             >
-              <div className={variant === 'embedded' ? 'text-teal-700' : 'text-slate-500'}>
+              <div className={variant === 'embedded' ? 'text-teal-200/70' : 'text-slate-500'}>
                 Poids soulevé (kg·rep)
               </div>
               <div className="font-semibold text-white">
@@ -168,7 +169,7 @@ export default function RecapStrengthStatsCard({ variant = 'embedded' }) {
                   : 'border-slate-700/70 bg-slate-950/60'
               }`}
             >
-              <div className={variant === 'embedded' ? 'text-teal-700' : 'text-slate-500'}>
+              <div className={variant === 'embedded' ? 'text-teal-200/70' : 'text-slate-500'}>
                 Charge max enregistrée
               </div>
               <div className="font-semibold text-white">
@@ -176,6 +177,13 @@ export default function RecapStrengthStatsCard({ variant = 'embedded' }) {
               </div>
             </div>
           </div>
+          {variant === 'embedded' ? (
+            <DashboardSportPeriodInsights
+              variant="embeddedInStrength"
+              period={cardPeriod}
+              onPeriodChange={setCardPeriod}
+            />
+          ) : null}
         </div>
       </div>
     </div>

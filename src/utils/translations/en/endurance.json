@@ -10,6 +10,10 @@
     "running": "Running",
     "calendar": "Calendar"
   },
+  "subViews": {
+    "sessionsAndChallenges": "Sessions & challenges",
+    "trophies": "Trophies"
+  },
   "sections": {
     "boxing": {
       "title": "Boxing",
@@ -97,7 +101,8 @@
     "types": {
       "ponctuel": "One-time",
       "recurrent": "Recurring",
-      "periode": "Over a period"
+      "periode": "Over a period",
+      "pushups_cumul": "Push-up total (period)"
     },
     "frequencies": {
       "daily": "Daily",
@@ -127,6 +132,7 @@
         "default": "Number"
       },
       "goalDuration": "Max duration (minutes)",
+      "goalTotalCount": "Total push-ups goal (sum over the period)",
       "optional": "Optional",
       "create": "Create challenge"
     },
@@ -144,8 +150,41 @@
       "goalRunning": "🎯 Goal: {{distance}}km",
       "goalRunningWithDuration": "🎯 Goal: {{distance}}km in {{duration}} min",
       "goalGainageSeconds": "🎯 Goal: {{seconds}} cumulative plank seconds",
-      "goalGainageWithDuration": "🎯 Goal: {{seconds}} cumulative seconds within {{duration}} min max"
+      "goalGainageWithDuration": "🎯 Goal: {{seconds}} cumulative seconds within {{duration}} min max",
+      "cumulProgress": "📊 Total (push-up tab sessions only): {{current}} / {{goal}} reps"
     }
+  },
+  "pushupPresets": {
+    "title": "Challenge templates (push-up tab data only)",
+    "ponctuel100": "100 in one session",
+    "ponctuel200": "200 in one session",
+    "daily25": "25 / day × 14 days",
+    "daily50x30": "50 / day × 30 days",
+    "periodMin40": "≥ 40 reps per session (3 wk)",
+    "periodMin80": "≥ 80 reps / session (4 wk)",
+    "cumul500": "500 reps / month",
+    "cumul1500": "1500 reps / 60 days",
+    "cumul5000": "5000 reps / 90 days"
+  },
+  "gainagePresets": {
+    "title": "Templates (plank = seconds; session duration = max minutes if set)",
+    "ponctuel300s": "5 min plank / 14 d",
+    "ponctuel600s": "10 min plank / 21 d",
+    "recurrent120s21": "≥ 120 s / session × 21 d",
+    "recurrent240s14": "≥ 240 s / session × 14 d",
+    "periode240s": "≥ 4 min plank / session (3 wk)",
+    "periode360s": "≥ 6 min plank / session (4 wk)",
+    "periode420s": "≥ 7 min plank / session (4 wk)"
+  },
+  "jumpropePresets": {
+    "title": "Templates (duration minutes, jumps target)",
+    "ponctuel800": "800 jumps / 10 d",
+    "ponctuel10min600": "10 min + 600 jumps",
+    "ponctuel1200j12min": "12 min + 1200 jumps / 14 d",
+    "recurrent400j30": "≥ 400 jumps / day × 30 d",
+    "recurrent600j21": "≥ 600 jumps + 10 min / day × 21 d",
+    "periode15min": "≥ 15 min rope / session (3 wk)",
+    "periode20min": "≥ 20 min rope / session (4 wk)"
   },
   "swimming": {
     "details": {
@@ -309,6 +348,8 @@
     "fetchError": "Error retrieving endurance exercises",
     "unknownExercise": "Unknown exercise",
     "nameAndTypeRequired": "Name and activity type required",
+    "pushupsCumulDates": "Cumulative challenge: set start and end dates.",
+    "pushupsCumulGoal": "Cumulative challenge: set a total rep goal (> 0).",
     "updateError": "Error updating challenge"
   },
   "session": {

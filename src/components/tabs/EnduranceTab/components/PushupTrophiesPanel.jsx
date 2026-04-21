@@ -2,12 +2,12 @@ import React, { useCallback, useMemo, useState } from 'react';
 import { Trophy, Sparkles, Search } from 'lucide-react';
 import { useTranslation } from '../../../../utils/translations';
 import {
-  evaluateRunningTrophies,
-  computeRunningTrophiesXp,
-  describeRunningTrophyCurrentProgress,
-  describeRunningTrophyLevelRequirement,
-  runningTrophyLevelXpReward
-} from '../../../../services/endurance/runningTrophiesService';
+  evaluatePushupTrophies,
+  computePushupTrophiesXpDetailed,
+  describePushupTrophyCurrentProgress,
+  describePushupTrophyLevelRequirement
+} from '../../../../services/endurance/pushupTrophiesService';
+import { runningTrophyLevelXpReward } from '../../../../services/endurance/runningTrophiesService';
 
 const LEVEL_LABEL = {
   bronze: 'Bronze',
@@ -33,26 +33,13 @@ function groupByCategory(results) {
   return Array.from(map.entries());
 }
 
-function formatSessionOneLine(s, t) {
-  const hrG = s.hrTrendGroup ? `[${s.hrTrendGroup}]` : '';
-  const bucket = s.bucketLabel ? `[${s.bucketLabel}]` : '';
-  const km =
-    s.distanceKm != null && Number.isFinite(s.distanceKm)
-      ? `${s.distanceKm.toLocaleString('fr-FR', { maximumFractionDigits: 1 })} km`
+function formatPushupSessionLine(s) {
+  const reps = Number(s?.count) || 0;
+  const dur =
+    s?.duration != null && s.duration !== ''
+      ? `${s.duration} min`
       : '—';
-  const fc =
-    s.avgHrBpm != null && Number.isFinite(s.avgHrBpm) ? `FC moy. ${Math.round(s.avgHrBpm)}` : null;
-  const pace = s.paceLabel || '—';
-  const dur = s.durationClock && s.durationClock !== '—' ? s.durationClock : null;
-  const src = s.source ? String(s.source) : '';
-  const beatPrev =
-    s.prevPaceLabel && typeof t === 'function'
-      ? t('endurance.running.trophies.beatPrevPace', { pace: s.prevPaceLabel })
-      : s.prevPaceLabel
-        ? `Battait ${s.prevPaceLabel}`
-        : '';
-  const mid = [hrG, bucket, km, fc, pace, dur, beatPrev].filter(Boolean).join(' · ');
-  return `${s.date}${s.time ? ` ${String(s.time).slice(0, 5)}` : ''} · ${mid}${src ? ` · ${src}` : ''}`;
+  return `${s.date}${s.time ? ` ${String(s.time).slice(0, 5)}` : ''} · ${reps} pompes · durée ${dur}`;
 }
 
 function buildUnlockedEntries(results) {
@@ -79,21 +66,18 @@ function buildUnlockedEntries(results) {
   });
 }
 
-export default function RunningTrophiesPanel({ sessions = [], garminById }) {
+export default function PushupTrophiesPanel({ sessions = [] }) {
   const t = useTranslation();
   const [subTab, setSubTab] = useState('all');
   const [search, setSearch] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('all');
 
-  const evaluation = useMemo(
-    () => evaluateRunningTrophies({ runningSessions: sessions, garminById: garminById || new Map() }),
-    [sessions, garminById]
-  );
+  const evaluation = useMemo(() => evaluatePushupTrophies({ sessions }), [sessions]);
 
   const grouped = useMemo(() => groupByCategory(evaluation.results), [evaluation.results]);
   const unlockedCount = evaluation.results.filter((r) => r.highestLevel && r.auto !== false).length;
   const autoCount = evaluation.results.filter((r) => r.auto !== false).length;
-  const trophiesXp = useMemo(() => computeRunningTrophiesXp(evaluation.results), [evaluation.results]);
+  const trophiesXp = useMemo(() => computePushupTrophiesXpDetailed(evaluation.results).xp, [evaluation.results]);
 
   const unlockedEntries = useMemo(() => buildUnlockedEntries(evaluation.results), [evaluation.results]);
 
@@ -120,7 +104,7 @@ export default function RunningTrophiesPanel({ sessions = [], garminById }) {
     setSubTab('all');
     window.requestAnimationFrame(() => {
       window.requestAnimationFrame(() => {
-        const el = document.getElementById(`running-trophy-${trophyId}`);
+        const el = document.getElementById(`pushup-trophy-${trophyId}`);
         el?.scrollIntoView({ behavior: 'smooth', block: 'center' });
       });
     });
@@ -142,16 +126,16 @@ export default function RunningTrophiesPanel({ sessions = [], garminById }) {
               <Trophy className="h-7 w-7 text-sky-300" />
             </div>
             <div>
-              <h3 className="text-2xl font-bold text-white">Trophées — Course</h3>
+              <h3 className="text-2xl font-bold text-white">Trophées — Pompes</h3>
               <p className="mt-1 text-sm text-teal-200/80">
-                Score composite basé sur tes séances (manuel + Garmin). Chaque palier bronze → élite exige un peu plus
-                (distance, durée, nombre de séances ou allure plus rapide selon le type). L’XP sport inclut ces trophées.
+                Données = nombre de pompes et durée de séance (minutes) saisis ici. Pics hebdo/mensuel en semaine ISO /
+                mois calendaire. Série = jours consécutifs avec au moins une séance. L’XP sport inclut ces trophées.
               </p>
             </div>
           </div>
           <div className="flex flex-wrap items-center gap-3">
             <div className="rounded-xl border border-emerald-600/50 bg-emerald-950/25 px-4 py-3 text-center">
-              <div className="text-xs uppercase tracking-wide text-emerald-200/80">XP trophées course</div>
+              <div className="text-xs uppercase tracking-wide text-emerald-200/80">XP trophées pompes</div>
               <div className="text-3xl font-bold text-white tabular-nums">+{trophiesXp}</div>
               <div className="text-[11px] text-emerald-300/75">comptée dans la barre Sport</div>
             </div>
@@ -182,9 +166,8 @@ export default function RunningTrophiesPanel({ sessions = [], garminById }) {
         <div className="mt-4 flex items-start gap-2 rounded-xl border border-slate-700/50 bg-slate-900/40 p-3 text-xs text-slate-300">
           <Sparkles className="mt-0.5 h-4 w-4 shrink-0 text-amber-300" />
           <p>
-            Les trophées « allure stable » et « sans arrêt » s’appuient sur les tours / métadonnées Garmin quand la sync
-            est complète. Les seuils « allure max » (5k / 10k / 1k) restent exigeants mais plafonnés côté élite pour
-            rester crédibles. Cadence et VO₂ : voir « Records & stats course ».
+            Les « sessions liées » listent les séances qui expliquent le mieux le calcul (pic de semaine, série en
+            cours, etc.). Le badge en haut à droite d’une carte = plus haut palier débloqué pour ce trophée.
           </p>
         </div>
       </div>
@@ -265,17 +248,15 @@ export default function RunningTrophiesPanel({ sessions = [], garminById }) {
             <h4 className="mb-4 text-lg font-semibold text-white">{category}</h4>
             <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
               {items.map((trophy) => {
-                const progressLine = describeRunningTrophyCurrentProgress(trophy, evaluation.stats);
+                const progressLine = describePushupTrophyCurrentProgress(trophy, evaluation.stats);
                 const contrib = trophy.contributingSessions || [];
                 const more = trophy.contributingMoreCount || 0;
                 const hint = trophy.contributingHint;
-                const sections = trophy.contributingSections || [];
                 const sessionTotal = contrib.length + more;
-                const hasSections = sections.length > 0;
 
                 return (
                   <article
-                    id={`running-trophy-${trophy.id}`}
+                    id={`pushup-trophy-${trophy.id}`}
                     key={trophy.id}
                     className={`scroll-mt-24 rounded-xl border p-4 transition ${
                       trophy.highestLevel
@@ -287,11 +268,6 @@ export default function RunningTrophiesPanel({ sessions = [], garminById }) {
                       <div className="min-w-0 flex-1">
                         <div className="flex flex-wrap items-start gap-2">
                           <p className="text-sm font-semibold leading-snug text-white">{trophy.title}</p>
-                          {trophy.auto === false && (
-                            <span className="rounded-full border border-slate-600/60 bg-slate-900/60 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-slate-300">
-                              Bientôt auto
-                            </span>
-                          )}
                           {trophy.highestLevel && (
                             <span
                               className={`rounded-full border px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide ${LEVEL_BADGE[trophy.highestLevel]}`}
@@ -315,8 +291,7 @@ export default function RunningTrophiesPanel({ sessions = [], garminById }) {
 
                     <div className="mt-3 space-y-2">
                       {trophy.levels.map((lvl) => {
-                        const xpTier =
-                          trophy.auto === false ? 0 : runningTrophyLevelXpReward(trophy.difficulty, lvl.level);
+                        const xpTier = runningTrophyLevelXpReward(trophy.difficulty, lvl.level);
                         return (
                           <div key={lvl.level} className="rounded-lg border border-slate-800/80 bg-black/30 px-2 py-1.5">
                             <div className="flex items-center justify-between gap-2 text-xs">
@@ -327,7 +302,7 @@ export default function RunningTrophiesPanel({ sessions = [], garminById }) {
                                 <span className="tabular-nums text-slate-400">
                                   {lvl.unlocked ? 'OK' : `${Math.round(lvl.progress * 100)}%`}
                                 </span>
-                                {trophy.auto !== false && xpTier > 0 ? (
+                                {xpTier > 0 ? (
                                   <span className="text-[9px] font-semibold text-amber-200/90">
                                     {lvl.unlocked
                                       ? t('endurance.running.trophies.xpGained', { xp: xpTier })
@@ -337,18 +312,18 @@ export default function RunningTrophiesPanel({ sessions = [], garminById }) {
                               </div>
                             </div>
                             <p className="mt-1 text-[10px] leading-snug text-slate-500">
-                              {describeRunningTrophyLevelRequirement(trophy, lvl.target, LEVEL_LABEL[lvl.level])}
+                              {describePushupTrophyLevelRequirement(trophy, lvl.target, LEVEL_LABEL[lvl.level])}
                             </p>
                           </div>
                         );
                       })}
                     </div>
 
-                    {(sessionTotal > 0 || hint || hasSections) && (
+                    {(sessionTotal > 0 || hint) && (
                       <details className="mt-3 rounded-lg border border-slate-700/70 bg-slate-950/50 px-2 py-1.5">
                         <summary className="cursor-pointer select-none text-[11px] font-medium text-teal-200/90 hover:text-teal-100">
                           Sessions liées
-                          {sessionTotal > 0 ? ` (${sessionTotal})` : hasSections ? ` — ${t('endurance.running.trophies.calendarDetail')}` : ''}
+                          {sessionTotal > 0 ? ` (${sessionTotal})` : ''}
                         </summary>
                         {hint && <p className="mt-2 text-[10px] leading-snug text-slate-500">{hint}</p>}
                         {contrib.length > 0 && (
@@ -358,67 +333,13 @@ export default function RunningTrophiesPanel({ sessions = [], garminById }) {
                                 key={`${trophy.id}-${String(s.id ?? idx)}-${s.date}-${s.time ?? ''}`}
                                 className="border-b border-slate-800/60 pb-1 last:border-0"
                               >
-                                {formatSessionOneLine(s, t)}
+                                {formatPushupSessionLine(s)}
                               </li>
                             ))}
                           </ul>
                         )}
                         {more > 0 && (
                           <p className="mt-1 text-[10px] text-slate-500">+ {more} autre{more > 1 ? 's' : ''}…</p>
-                        )}
-                        {hasSections && (
-                          <div className="mt-3 space-y-3 border-t border-slate-800/70 pt-2">
-                            {sections.map((sec) => (
-                              <div key={`${sec.kind}-${sec.monthKey}`} className="space-y-2">
-                                <p className="text-[10px] font-semibold uppercase tracking-wide text-slate-400">
-                                  {sec.kind === 'sustainMonth'
-                                    ? t('endurance.running.trophies.sectionSustainMonth', { month: sec.monthKey })
-                                    : sec.kind === 'currentMonth'
-                                      ? t('endurance.running.trophies.sectionCurrentMonth', { month: sec.monthKey })
-                                      : t('endurance.running.trophies.sectionBestMonth', { month: sec.monthKey })}
-                                </p>
-                                <p className="text-[10px] text-slate-500">
-                                  {t('endurance.running.trophies.totalSessionsInMonth', { count: sec.totalCount })}
-                                </p>
-                                {(sec.weeks || []).map((w) => (
-                                  <div key={w.weekKey} className="rounded-md border border-slate-800/60 bg-black/30 px-2 py-1.5">
-                                    <p className="text-[10px] font-medium text-teal-100/90">
-                                      {t('endurance.running.trophies.weekRunsHeader', {
-                                        index: w.weekIndex,
-                                        count: w.count,
-                                        weekKey: w.weekKey
-                                      })}
-                                      {typeof w.meetsMin === 'boolean' ? (
-                                        <span
-                                          className={
-                                            w.meetsMin ? 'font-normal text-emerald-400/90' : 'font-normal text-rose-400/90'
-                                          }
-                                        >
-                                          {w.meetsMin
-                                            ? t('endurance.running.trophies.weekSustainOk')
-                                            : t('endurance.running.trophies.weekSustainNo')}
-                                        </span>
-                                      ) : null}
-                                    </p>
-                                    {w.items?.length > 0 && (
-                                      <ul className="mt-1 max-h-28 space-y-0.5 overflow-y-auto text-[10px] text-slate-300">
-                                        {w.items.map((s, idx) => (
-                                          <li key={`${sec.kind}-${w.weekKey}-${String(s.id ?? idx)}`}>
-                                            {formatSessionOneLine(s, t)}
-                                          </li>
-                                        ))}
-                                      </ul>
-                                    )}
-                                    {w.moreCount > 0 && (
-                                      <p className="mt-1 text-[9px] text-slate-500">
-                                        {t('endurance.running.trophies.moreInWeek', { count: w.moreCount })}
-                                      </p>
-                                    )}
-                                  </div>
-                                ))}
-                              </div>
-                            ))}
-                          </div>
                         )}
                       </details>
                     )}

@@ -68,30 +68,30 @@ function phaseLabel(phase) {
 function phaseStyles(phase) {
   switch (phase) {
     case 'effort':
-      return 'border-l-emerald-500 bg-emerald-950/20';
+      return 'border-l-teal-400 bg-teal-950/30';
     case 'recovery':
       return 'border-l-amber-500 bg-amber-950/25';
     case 'warmup':
-      return 'border-l-sky-500 bg-sky-950/20';
+      return 'border-l-teal-600 bg-teal-950/20';
     case 'cooldown':
-      return 'border-l-violet-500 bg-violet-950/20';
+      return 'border-l-teal-700 bg-black/80';
     default:
-      return 'border-l-slate-500 bg-slate-800/40';
+      return 'border-l-teal-800 bg-black/60';
   }
 }
 
 function badgeStyles(phase) {
   switch (phase) {
     case 'effort':
-      return 'bg-emerald-500/20 text-emerald-200 border-emerald-500/30';
+      return 'bg-teal-500/20 text-teal-100 border-teal-400/45';
     case 'recovery':
       return 'bg-amber-500/20 text-amber-200 border-amber-500/30';
     case 'warmup':
-      return 'bg-sky-500/20 text-sky-200 border-sky-500/30';
+      return 'bg-teal-600/20 text-teal-100 border-teal-500/35';
     case 'cooldown':
-      return 'bg-violet-500/20 text-violet-200 border-violet-500/30';
+      return 'bg-teal-800/25 text-teal-100 border-teal-600/40';
     default:
-      return 'bg-slate-600/40 text-slate-200 border-slate-500/30';
+      return 'bg-black text-teal-200/80 border-teal-700/40';
   }
 }
 
@@ -104,13 +104,13 @@ function formatDeviceShort(deviceInfo) {
 
 function StatCard({ icon: Icon, label, value, hint }) {
   return (
-    <div className="rounded-2xl border border-slate-700/50 bg-gradient-to-br from-slate-800/80 to-slate-900/60 p-5 shadow-lg shadow-black/20">
-      <div className="mb-2 flex items-center gap-2 text-slate-400">
-        <Icon className="h-4 w-4 shrink-0 text-teal-400/90" aria-hidden />
+    <div className="rounded-2xl border border-teal-500/40 bg-black p-5 shadow-lg shadow-black/30">
+      <div className="mb-2 flex items-center gap-2 text-teal-200/75">
+        <Icon className="h-4 w-4 shrink-0 text-teal-300" aria-hidden />
         <span className="text-[11px] font-semibold uppercase tracking-wider">{label}</span>
       </div>
       <div className="text-2xl font-bold tracking-tight text-white tabular-nums">{value}</div>
-      {hint && <p className="mt-1.5 text-xs text-slate-500">{hint}</p>}
+      {hint && <p className="mt-1.5 text-xs text-teal-300/55">{hint}</p>}
     </div>
   );
 }
@@ -241,14 +241,14 @@ export default function RunningSessionDetailPage({ session, onBack }) {
   if (!session) return null;
 
   return (
-    <div className="min-h-full bg-gradient-to-b from-slate-950 via-slate-900 to-slate-950">
+    <div className="min-h-full bg-black">
       {/* Barre retour */}
-      <div className="sticky top-0 z-20 border-b border-slate-800/80 bg-slate-950/90 px-4 py-3 backdrop-blur-md">
+      <div className="sticky top-0 z-20 border-b border-teal-800/40 bg-black/95 px-4 py-3 backdrop-blur-md">
         <div className="mx-auto flex max-w-5xl items-center gap-3">
           <button
             type="button"
             onClick={onBack}
-            className="inline-flex items-center gap-2 rounded-xl border border-slate-600/50 bg-slate-800/50 px-3 py-2 text-sm font-medium text-slate-200 transition hover:bg-slate-700/50 hover:text-white"
+            className="inline-flex items-center gap-2 rounded-xl border border-teal-500/45 bg-black px-3 py-2 text-sm font-medium text-teal-100 transition hover:bg-teal-950/50 hover:text-white"
           >
             <ArrowLeft className="h-4 w-4" />
             Retour à l&apos;historique
@@ -258,8 +258,8 @@ export default function RunningSessionDetailPage({ session, onBack }) {
 
       <div className="mx-auto max-w-5xl px-4 pb-16 pt-6 sm:px-6">
         {/* En-tête hero */}
-        <header className="relative overflow-hidden rounded-3xl border border-emerald-500/20 bg-gradient-to-br from-emerald-950/50 via-slate-900/90 to-slate-950 p-8 shadow-2xl shadow-emerald-950/40">
-          <div className="pointer-events-none absolute -right-20 -top-20 h-64 w-64 rounded-full bg-emerald-500/10 blur-3xl" />
+        <header className="relative overflow-hidden rounded-3xl border border-teal-500/45 bg-black p-8 shadow-2xl shadow-teal-950/30">
+          <div className="pointer-events-none absolute -right-20 -top-20 h-64 w-64 rounded-full bg-teal-500/12 blur-3xl" />
           <div className="relative">
             <div className="mb-3 flex flex-wrap items-center gap-2">
               {showIntervalBadge && (
@@ -268,14 +268,14 @@ export default function RunningSessionDetailPage({ session, onBack }) {
                 </span>
               )}
               {session.source === 'garmin' && (
-                <span className="rounded-full border border-cyan-500/30 bg-cyan-500/10 px-3 py-1 text-xs font-medium text-cyan-200">
+                <span className="rounded-full border border-teal-500/50 bg-teal-500/15 px-3 py-1 text-xs font-medium text-teal-100">
                   Garmin
                 </span>
               )}
             </div>
             <h1 className="text-3xl font-bold tracking-tight text-white sm:text-4xl">{title}</h1>
-            <p className="mt-2 text-slate-400">{subtitleDate}</p>
-            <p className="mt-3 inline-flex rounded-lg bg-slate-800/60 px-3 py-1 text-sm text-slate-300">
+            <p className="mt-2 text-teal-200/70">{subtitleDate}</p>
+            <p className="mt-3 inline-flex rounded-lg border border-teal-800/50 bg-black px-3 py-1 text-sm text-teal-100/90">
               {t('endurance.running.details.typeSession')}{' '}
               <span className="ml-1 text-white">{runningSessionTypeLabel(effectiveSessionType, t)}</span>
             </p>
@@ -284,8 +284,8 @@ export default function RunningSessionDetailPage({ session, onBack }) {
 
         {/* Stats principales */}
         <section className="mt-8">
-          <h2 className="mb-4 flex items-center gap-2 text-sm font-semibold uppercase tracking-widest text-slate-500">
-            <Activity className="h-4 w-4" />
+          <h2 className="mb-4 flex items-center gap-2 text-sm font-semibold uppercase tracking-widest text-teal-200/80">
+            <Activity className="h-4 w-4 text-teal-400" />
             Synthèse
           </h2>
           <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
@@ -331,7 +331,7 @@ export default function RunningSessionDetailPage({ session, onBack }) {
         </section>
 
         {session.notes && (
-          <p className="mt-6 rounded-2xl border border-slate-700/50 bg-slate-800/30 px-5 py-4 text-sm leading-relaxed text-slate-300">
+          <p className="mt-6 rounded-2xl border border-teal-700/35 bg-black px-5 py-4 text-sm leading-relaxed text-teal-100/90">
             {session.notes}
           </p>
         )}
@@ -340,7 +340,7 @@ export default function RunningSessionDetailPage({ session, onBack }) {
         {(session.source === 'garmin' || session.garminId) && (
           <section className="mt-10">
             {loading && (
-              <div className="flex items-center gap-3 rounded-2xl border border-slate-700/50 bg-slate-800/40 p-6 text-slate-400">
+              <div className="flex items-center gap-3 rounded-2xl border border-teal-500/40 bg-black p-6 text-teal-200/80">
                 <Loader2 className="h-5 w-5 animate-spin text-teal-400" />
                 Chargement des métriques Garmin…
               </div>
@@ -348,42 +348,42 @@ export default function RunningSessionDetailPage({ session, onBack }) {
 
             {!loading && garminFull && (
               <>
-                <h2 className="mb-4 flex items-center gap-2 text-sm font-semibold uppercase tracking-widest text-slate-500">
-                  <Heart className="h-4 w-4" />
+                <h2 className="mb-4 flex items-center gap-2 text-sm font-semibold uppercase tracking-widest text-teal-200/80">
+                  <Heart className="h-4 w-4 text-teal-400" />
                   Physiologie & intensité
                 </h2>
                 <div className="grid gap-4 sm:grid-cols-2">
                   {garminFull.intensityMinutes && (
-                    <div className="rounded-2xl border border-slate-700/50 bg-slate-800/40 p-5">
-                      <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Minutes d&apos;intensité</p>
+                    <div className="rounded-2xl border border-teal-500/40 bg-black p-5">
+                      <p className="text-xs font-semibold uppercase tracking-wide text-teal-200/70">Minutes d&apos;intensité</p>
                       <p className="mt-2 text-lg text-white">
                         Modérée <span className="font-semibold text-teal-300">{garminFull.intensityMinutes.moderate ?? '—'}</span>
-                        <span className="mx-2 text-slate-600">·</span>
+                        <span className="mx-2 text-teal-700">·</span>
                         Vigoureuse{' '}
                         <span className="font-semibold text-orange-300">{garminFull.intensityMinutes.vigorous ?? '—'}</span>
-                        <span className="mx-2 text-slate-600">·</span>
+                        <span className="mx-2 text-teal-700">·</span>
                         Total{' '}
-                        <span className="font-semibold text-slate-200">{garminFull.intensityMinutes.total ?? '—'}</span>
+                        <span className="font-semibold text-white">{garminFull.intensityMinutes.total ?? '—'}</span>
                       </p>
                     </div>
                   )}
                   {garminFull.sweatLoss != null && (
-                    <div className="rounded-2xl border border-slate-700/50 bg-slate-800/40 p-5">
-                      <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Hydratation (estim.)</p>
-                      <p className="mt-2 text-2xl font-bold text-sky-200">{garminFull.sweatLoss} ml</p>
-                      <p className="text-xs text-slate-500">Perte de sueur indiquée par Garmin</p>
+                    <div className="rounded-2xl border border-teal-500/40 bg-black p-5">
+                      <p className="text-xs font-semibold uppercase tracking-wide text-teal-200/70">Hydratation (estim.)</p>
+                      <p className="mt-2 text-2xl font-bold text-teal-100">{garminFull.sweatLoss} ml</p>
+                      <p className="text-xs text-teal-300/55">Perte de sueur indiquée par Garmin</p>
                     </div>
                   )}
                 </div>
 
                 {garminFull.running && (
-                  <div className="mt-6 rounded-2xl border border-slate-700/50 bg-slate-800/30 p-5">
+                  <div className="mt-6 rounded-2xl border border-teal-500/40 bg-black p-5">
                     <div className="flex flex-wrap items-center justify-between gap-3">
-                      <div className="flex items-center gap-2 text-slate-300">
+                      <div className="flex items-center gap-2 text-teal-100/90">
                         <Layers className="h-5 w-5 text-teal-400" />
                         <span className="font-semibold">Course — agrégats</span>
                       </div>
-                      <div className="text-sm text-slate-400">
+                      <div className="text-sm text-teal-200/75">
                         Cadence moy. / max :{' '}
                         <span className="font-medium text-white">
                           {garminFull.running.averageCadenceSpm ?? '—'} / {garminFull.running.maxCadenceSpm ?? '—'} spm
@@ -395,45 +395,45 @@ export default function RunningSessionDetailPage({ session, onBack }) {
 
                 {/* Carte & lieu */}
                 {(garminFull.location?.start || garminFull.location?.end) && (
-                  <div className="mt-6 rounded-2xl border border-slate-700/50 bg-slate-800/30 p-5">
-                    <h3 className="mb-4 flex items-center gap-2 text-sm font-semibold text-slate-200">
-                      <MapPin className="h-4 w-4 text-cyan-400" />
+                  <div className="mt-6 rounded-2xl border border-teal-500/40 bg-black p-5">
+                    <h3 className="mb-4 flex items-center gap-2 text-sm font-semibold text-white">
+                      <MapPin className="h-4 w-4 text-teal-400" />
                       Parcours
                     </h3>
                     <div className="grid gap-4 sm:grid-cols-2">
                       {garminFull.location?.start && (
                         <div>
-                          <p className="text-xs uppercase text-slate-500">Départ</p>
+                          <p className="text-xs uppercase text-teal-200/60">Départ</p>
                           {osmLink(garminFull.location.start.lat, garminFull.location.start.lng) ? (
                             <a
                               href={osmLink(garminFull.location.start.lat, garminFull.location.start.lng)}
                               target="_blank"
                               rel="noopener noreferrer"
-                              className="mt-1 inline-flex items-center gap-1 text-cyan-400 hover:text-cyan-300"
+                              className="mt-1 inline-flex items-center gap-1 text-teal-300 hover:text-teal-200"
                             >
                               {garminFull.location.start.lat?.toFixed(5)}, {garminFull.location.start.lng?.toFixed(5)}
                               <ExternalLink className="h-3.5 w-3.5" />
                             </a>
                           ) : (
-                            <p className="text-slate-400">—</p>
+                            <p className="text-teal-300/50">—</p>
                           )}
                         </div>
                       )}
                       {garminFull.location?.end && (
                         <div>
-                          <p className="text-xs uppercase text-slate-500">Arrivée</p>
+                          <p className="text-xs uppercase text-teal-200/60">Arrivée</p>
                           {osmLink(garminFull.location.end.lat, garminFull.location.end.lng) ? (
                             <a
                               href={osmLink(garminFull.location.end.lat, garminFull.location.end.lng)}
                               target="_blank"
                               rel="noopener noreferrer"
-                              className="mt-1 inline-flex items-center gap-1 text-cyan-400 hover:text-cyan-300"
+                              className="mt-1 inline-flex items-center gap-1 text-teal-300 hover:text-teal-200"
                             >
                               {garminFull.location.end.lat?.toFixed(5)}, {garminFull.location.end.lng?.toFixed(5)}
                               <ExternalLink className="h-3.5 w-3.5" />
                             </a>
                           ) : (
-                            <p className="text-slate-400">—</p>
+                            <p className="text-teal-300/50">—</p>
                           )}
                         </div>
                       )}
@@ -442,8 +442,8 @@ export default function RunningSessionDetailPage({ session, onBack }) {
                 )}
 
                 {garminFull.elevation && (
-                  <div className="mt-4 rounded-2xl border border-slate-700/50 bg-slate-800/30 p-5">
-                    <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Altitude</p>
+                  <div className="mt-4 rounded-2xl border border-teal-500/40 bg-black p-5">
+                    <p className="text-xs font-semibold uppercase tracking-wide text-teal-200/70">Altitude</p>
                     <p className="mt-2 text-lg text-white">
                       D+ {garminFull.elevation.gain ?? '—'} m · D− {garminFull.elevation.loss ?? '—'} m · max{' '}
                       {garminFull.elevation.max ?? '—'} m · min {garminFull.elevation.min ?? '—'} m
@@ -464,17 +464,17 @@ export default function RunningSessionDetailPage({ session, onBack }) {
 
         {/* Tours auto (street / cardio) : message si pas fractionné */}
         {Array.isArray(laps) && laps.length > 0 && continuousGarminAutoLaps && (
-          <section className="mt-12 rounded-2xl border border-slate-700/60 bg-slate-800/30 p-5">
-            <h2 className="text-base font-semibold text-slate-200">
+          <section className="mt-12 rounded-2xl border border-teal-600/40 bg-black p-5">
+            <h2 className="text-base font-semibold text-white">
               {t('garmin.cardioActivity.continuousLapsTitle')}
             </h2>
-            <p className="mt-2 text-sm text-slate-400 leading-relaxed max-w-2xl">
+            <p className="mt-2 text-sm text-teal-200/75 leading-relaxed max-w-2xl">
               {t('garmin.cardioActivity.continuousLapsBody', { count: lapStats.total })}
             </p>
             <button
               type="button"
               onClick={() => setShowGarminLapsTable((v) => !v)}
-              className="mt-3 text-sm text-purple-300 hover:text-purple-200 underline-offset-2 hover:underline"
+              className="mt-3 text-sm text-teal-300 hover:text-teal-200 underline-offset-2 hover:underline"
             >
               {showGarminLapsTable
                 ? t('garmin.cardioActivity.continuousLapsHideTechnical')
@@ -494,7 +494,7 @@ export default function RunningSessionDetailPage({ session, onBack }) {
               <h2 className="flex items-center gap-2 text-lg font-bold text-white">
                 <Filter className="h-5 w-5 text-teal-400" />
                 {isIntervalLike ? 'Tours & intervalles' : 'Tours Garmin'}
-                <span className="ml-2 text-sm font-normal text-slate-500">({lapStats.total} tours)</span>
+                <span className="ml-2 text-sm font-normal text-teal-300/50">({lapStats.total} tours)</span>
               </h2>
               <div className="flex flex-wrap gap-2">
                 <button
@@ -503,7 +503,7 @@ export default function RunningSessionDetailPage({ session, onBack }) {
                   className={`rounded-full border px-4 py-2 text-sm font-medium transition ${
                     lapFilter === LAP_FILTER.ALL
                       ? 'border-teal-500 bg-teal-500/20 text-teal-100'
-                      : 'border-slate-600 bg-slate-800/50 text-slate-400 hover:border-slate-500 hover:text-slate-200'
+                      : 'border-teal-800/60 bg-black text-teal-200/70 hover:border-teal-600 hover:text-white'
                   }`}
                 >
                   Tous
@@ -513,8 +513,8 @@ export default function RunningSessionDetailPage({ session, onBack }) {
                   onClick={setFilter(LAP_FILTER.EFFORT)}
                   className={`rounded-full border px-4 py-2 text-sm font-medium transition ${
                     lapFilter === LAP_FILTER.EFFORT
-                      ? 'border-emerald-500 bg-emerald-500/20 text-emerald-100'
-                      : 'border-slate-600 bg-slate-800/50 text-slate-400 hover:border-slate-500 hover:text-slate-200'
+                      ? 'border-teal-400 bg-teal-500/25 text-teal-50'
+                      : 'border-teal-800/60 bg-black text-teal-200/70 hover:border-teal-600 hover:text-white'
                   }`}
                 >
                   Effort seulement
@@ -525,7 +525,7 @@ export default function RunningSessionDetailPage({ session, onBack }) {
                   className={`rounded-full border px-4 py-2 text-sm font-medium transition ${
                     lapFilter === LAP_FILTER.RECOVERY
                       ? 'border-amber-500 bg-amber-500/20 text-amber-100'
-                      : 'border-slate-600 bg-slate-800/50 text-slate-400 hover:border-slate-500 hover:text-slate-200'
+                      : 'border-teal-800/60 bg-black text-teal-200/70 hover:border-teal-600 hover:text-white'
                   }`}
                 >
                   Récupération seulement
@@ -534,8 +534,8 @@ export default function RunningSessionDetailPage({ session, onBack }) {
             </div>
 
             {isIntervalLike && (
-              <p className="mb-4 text-sm text-slate-400">
-                Détection : <span className="text-emerald-300">{lapStats.effort}</span> segment(s) d&apos;effort ·{' '}
+              <p className="mb-4 text-sm text-teal-200/75">
+                Détection : <span className="text-teal-300">{lapStats.effort}</span> segment(s) d&apos;effort ·{' '}
                 <span className="text-amber-300">{lapStats.recovery}</span> segment(s) de récupération / repos.
               </p>
             )}
@@ -544,7 +544,7 @@ export default function RunningSessionDetailPage({ session, onBack }) {
               {filteredLaps.map(({ lap, phase, key }) => (
                 <div
                   key={key}
-                  className={`rounded-2xl border border-slate-700/40 border-l-4 bg-slate-800/40 p-4 pl-5 shadow-sm ${phaseStyles(phase)}`}
+                  className={`rounded-2xl border border-teal-700/35 border-l-4 bg-black p-4 pl-5 shadow-sm ${phaseStyles(phase)}`}
                 >
                   <div className="flex flex-wrap items-start justify-between gap-3">
                     <div>
@@ -552,14 +552,14 @@ export default function RunningSessionDetailPage({ session, onBack }) {
                         {phaseLabel(phase)}
                       </span>
                       {lap.intervalTypeKey && (
-                        <span className="ml-2 text-xs text-slate-500">({lap.intervalTypeKey})</span>
+                        <span className="ml-2 text-xs text-teal-400/50">({lap.intervalTypeKey})</span>
                       )}
                       <p className="mt-2 text-lg font-semibold text-white">Tour {lap.index ?? '—'}</p>
                     </div>
                     <div className="grid grid-cols-2 gap-x-6 gap-y-1 text-right text-sm sm:grid-cols-3">
                       <div>
-                        <span className="block text-xs text-slate-500">Distance</span>
-                        <span className="font-medium text-slate-100">
+                        <span className="block text-xs text-teal-200/60">Distance</span>
+                        <span className="font-medium text-white">
                           {lap.distanceKm != null
                             ? `${lap.distanceKm} km`
                             : lap.distanceMeters != null
@@ -568,26 +568,26 @@ export default function RunningSessionDetailPage({ session, onBack }) {
                         </span>
                       </div>
                       <div>
-                        <span className="block text-xs text-slate-500">Durée</span>
-                        <span className="font-medium text-slate-100">{formatSec(lap.durationSeconds)}</span>
+                        <span className="block text-xs text-teal-200/60">Durée</span>
+                        <span className="font-medium text-white">{formatSec(lap.durationSeconds)}</span>
                       </div>
                       <div>
-                        <span className="block text-xs text-slate-500">Vitesse moy.</span>
-                        <span className="font-medium text-slate-100">
+                        <span className="block text-xs text-teal-200/60">Vitesse moy.</span>
+                        <span className="font-medium text-white">
                           {lap.avgSpeedKmh != null ? `${lap.avgSpeedKmh} km/h` : '—'}
                         </span>
                       </div>
                       <div>
-                        <span className="block text-xs text-slate-500">FC moy.</span>
-                        <span className="font-medium text-slate-100">{lap.avgHR ?? '—'}</span>
+                        <span className="block text-xs text-teal-200/60">FC moy.</span>
+                        <span className="font-medium text-white">{lap.avgHR ?? '—'}</span>
                       </div>
                       <div>
-                        <span className="block text-xs text-slate-500">Calories</span>
-                        <span className="font-medium text-slate-100">{lap.calories ?? '—'}</span>
+                        <span className="block text-xs text-teal-200/60">Calories</span>
+                        <span className="font-medium text-white">{lap.calories ?? '—'}</span>
                       </div>
                       <div>
-                        <span className="block text-xs text-slate-500">Cadence / foulée</span>
-                        <span className="font-medium text-slate-100">
+                        <span className="block text-xs text-teal-200/60">Cadence / foulée</span>
+                        <span className="font-medium text-white">
                           {lap.averageCadenceSpm ?? '—'} spm · {lap.averageStrideLengthMeters ?? '—'} m
                         </span>
                       </div>
@@ -598,7 +598,7 @@ export default function RunningSessionDetailPage({ session, onBack }) {
             </div>
 
             {filteredLaps.length === 0 && (
-              <p className="rounded-xl border border-slate-700/50 bg-slate-800/30 p-6 text-center text-slate-400">
+              <p className="rounded-xl border border-teal-700/40 bg-black p-6 text-center text-teal-200/70">
                 Aucun tour dans cette catégorie. Change de filtre ou vérifie les types de segment Garmin.
               </p>
             )}
@@ -607,22 +607,22 @@ export default function RunningSessionDetailPage({ session, onBack }) {
 
         {/* Pied technique discret */}
         {garminFull && (
-          <footer className="mt-12 space-y-4 border-t border-slate-800 pt-8">
+          <footer className="mt-12 space-y-4 border-t border-teal-900/40 pt-8">
             {garminFull.deviceInfo && (
-              <div className="flex items-center gap-3 rounded-xl border border-slate-700/40 bg-slate-900/50 px-4 py-3 text-sm text-slate-400">
-                <Watch className="h-4 w-4 shrink-0 text-slate-500" />
+              <div className="flex items-center gap-3 rounded-xl border border-teal-700/40 bg-black px-4 py-3 text-sm text-teal-200/75">
+                <Watch className="h-4 w-4 shrink-0 text-teal-400/80" />
                 <span>{formatDeviceShort(garminFull.deviceInfo)}</span>
               </div>
             )}
-            <details className="rounded-xl border border-slate-800 bg-slate-950/50">
-              <summary className="cursor-pointer px-4 py-3 text-xs font-medium text-slate-500">
+            <details className="rounded-xl border border-teal-800/50 bg-black">
+              <summary className="cursor-pointer px-4 py-3 text-xs font-medium text-teal-300/80">
                 Données techniques (diagnostic)
               </summary>
-              <div className="border-t border-slate-800 px-4 py-3 text-xs text-slate-500">
+              <div className="border-t border-teal-900/40 px-4 py-3 text-xs text-teal-200/65">
                 <p className="mb-2">
                   Heure locale début : {garminFull.startTimeLocal || '—'}
                 </p>
-                <pre className="max-h-56 overflow-auto rounded-lg bg-black/30 p-3 font-mono text-[10px] leading-relaxed text-slate-600">
+                <pre className="max-h-56 overflow-auto rounded-lg bg-black/50 p-3 font-mono text-[10px] leading-relaxed text-teal-400/50">
                   {rawJson}
                 </pre>
               </div>
@@ -631,7 +631,7 @@ export default function RunningSessionDetailPage({ session, onBack }) {
         )}
 
         {(!session.source || session.source !== 'garmin') && !session.garminId && (
-          <p className="mt-10 text-center text-sm text-slate-500">
+          <p className="mt-10 text-center text-sm text-teal-300/55">
             Séance enregistrée manuellement — pas de détail d&apos;activité Garmin.
           </p>
         )}

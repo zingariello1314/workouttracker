@@ -20,7 +20,7 @@ const GarminRunningSidebarModule = memo(({ isExpanded, onToggle }) => {
       >
         <h2 className="sidebar-section-title">
           <span className="sidebar-section-icon inline-flex items-center justify-center" aria-hidden="true">
-            <Footprints className="h-4 w-4 text-violet-400" />
+            <Footprints className="h-4 w-4 text-teal-400" />
           </span>
           Course (Garmin)
         </h2>

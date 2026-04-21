@@ -87,14 +87,14 @@ const SidebarBookFocusModule = memo(({ isExpanded, onToggle, setActiveTab }) => 
 
       {isExpanded ? (
         <div className="sidebar-section-content space-y-2 px-1 py-2 min-w-0">
-          <div className="rounded-xl border border-violet-500/25 bg-slate-950/75 p-2 space-y-2">
+          <div className="rounded-xl border border-sky-500/30 bg-black/80 p-2 space-y-2">
             <div className="flex items-center justify-between gap-1">
-              <span className="text-[10px] font-semibold text-violet-100">Livre focus</span>
+              <span className="text-[10px] font-semibold text-sky-100">Livre focus</span>
               {selectedBook ? (
                 <button
                   type="button"
                   onClick={openFiche}
-                  className="h-6 shrink-0 rounded border border-violet-400/40 px-2 text-[9px] font-medium text-violet-100 hover:bg-violet-500/20"
+                  className="h-6 shrink-0 rounded border border-sky-400/45 px-2 text-[9px] font-medium text-sky-100 hover:bg-sky-500/20"
                 >
                   Voir fiche
                 </button>
@@ -170,9 +170,9 @@ const SidebarBookFocusModule = memo(({ isExpanded, onToggle, setActiveTab }) => 
                   <span className="text-slate-400">Moyennes livre · </span>
                   {getAveragePagesPerSession(selectedBook)} p./sess. · {getAverageDurationPerSession(selectedBook)} min/sess.
                 </div>
-                <div className="rounded-md border border-amber-500/20 bg-amber-500/5 p-1.5">
-                  <div className="flex items-center gap-0.5 text-[8px] text-slate-400">
-                    <Star className="h-3 w-3 text-amber-300" /> Meilleure note terminée
+                <div className="rounded-md border border-sky-500/25 bg-sky-500/5 p-1.5">
+                  <div className="flex items-center gap-0.5 text-[8px] text-sky-200/70">
+                    <Star className="h-3 w-3 text-sky-400" /> Meilleure note terminée
                   </div>
                   <div className="line-clamp-2 text-[9px] font-semibold text-white">
                     {stats30.bestRated

@@ -3,7 +3,7 @@
  */
 
 import React from 'react';
-import { Dumbbell, Flame, Footprints, Target, CheckCircle, Trophy } from 'lucide-react';
+import { Dumbbell, Flame, Footprints, Target, CheckCircle, Trophy, Map, ListOrdered } from 'lucide-react';
 import { useSportXP } from '../../../../hooks/useSportXP';
 
 const SportXPBar = () => {
@@ -47,17 +47,52 @@ const SportXPBar = () => {
           <Target className="h-3 w-3 shrink-0 text-sky-400" />
           <span className="text-sky-400/95">{breakdown.challenges} défis</span>
         </div>
-        <div className="flex flex-col gap-0.5 sm:col-span-2 lg:col-span-2">
-          <div className="flex items-center gap-1">
-            <Trophy className="h-3 w-3 shrink-0 text-amber-300" />
-            <span className="text-sky-400/95">
-              {(breakdown.runningTrophies ?? 0).toLocaleString('fr-FR')} XP trophées course
-            </span>
+        <div className="flex flex-col gap-0.5 sm:col-span-2 lg:col-span-3">
+          <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+            <div className="flex items-center gap-1">
+              <Trophy className="h-3 w-3 shrink-0 text-amber-300" />
+              <span className="text-sky-400/95">
+                {(breakdown.runningTrophies ?? 0).toLocaleString('fr-FR')} XP trophées course
+              </span>
+            </div>
+            <div className="flex items-center gap-1">
+              <Map className="h-3 w-3 shrink-0 text-emerald-400/90" />
+              <span className="text-sky-400/95">
+                {(breakdown.runningTotalDistanceKm ?? 0).toLocaleString('fr-FR', { maximumFractionDigits: 1 })} km
+                cumul
+              </span>
+            </div>
+            <div className="flex items-center gap-1">
+              <ListOrdered className="h-3 w-3 shrink-0 text-teal-400/90" />
+              <span className="text-sky-400/95">
+                {(breakdown.runningSessionCount ?? 0).toLocaleString('fr-FR')} sorties course
+              </span>
+            </div>
           </div>
           <span className="pl-4 text-[10px] leading-tight text-slate-500">
             {(breakdown.runningTrophyTiers ?? 0).toLocaleString('fr-FR')} paliers ·{' '}
             {(breakdown.runningTrophiesUnlocked ?? 0).toLocaleString('fr-FR')} trophées avec au moins un palier
           </span>
+          <div className="flex flex-wrap items-center gap-x-3 gap-y-1 pt-1">
+            <div className="flex items-center gap-1">
+              <Trophy className="h-3 w-3 shrink-0 text-violet-300" />
+              <span className="text-sky-400/95">
+                {(breakdown.jumpRopeTrophies ?? 0).toLocaleString('fr-FR')} XP trophées corde
+              </span>
+            </div>
+            <div className="flex items-center gap-1">
+              <Trophy className="h-3 w-3 shrink-0 text-cyan-300" />
+              <span className="text-sky-400/95">
+                {(breakdown.gainageTrophies ?? 0).toLocaleString('fr-FR')} XP trophées gainage
+              </span>
+            </div>
+            <div className="flex items-center gap-1">
+              <Trophy className="h-3 w-3 shrink-0 text-rose-300" />
+              <span className="text-sky-400/95">
+                {(breakdown.pushupTrophies ?? 0).toLocaleString('fr-FR')} XP trophées pompes
+              </span>
+            </div>
+          </div>
         </div>
       </div>
     </div>

@@ -173,7 +173,7 @@ const BodyActivityInsights = () => {
     return (
       <Card variant="sport">
         <CardContent className="p-8 text-center">
-          <RefreshCw className="w-8 h-8 text-sky-300/90 mx-auto mb-4 animate-spin" />
+          <RefreshCw className="w-8 h-8 text-teal-400/90 mx-auto mb-4 animate-spin" />
           <p className="text-teal-100/80">Chargement des analyses...</p>
         </CardContent>
       </Card>
@@ -185,7 +185,7 @@ const BodyActivityInsights = () => {
       <Card variant="sport">
         <CardHeader variant="sport">
           <CardTitle tone="sport" className="flex items-center gap-2 normal-case tracking-normal">
-            <Brain className="w-5 h-5 text-sky-300/90" />
+            <Brain className="w-5 h-5 text-teal-400" />
             Analyses Intelligentes
           </CardTitle>
         </CardHeader>
@@ -209,10 +209,10 @@ const BodyActivityInsights = () => {
   return (
     <div className="space-y-6">
       {/* En-tête avec sélecteurs */}
-      <Card className="bg-black border border-[#0F4C5C]/50 border-[#0F4C5C]/35">
-        <CardHeader>
-          <CardTitle className="text-teal-100 flex items-center gap-2">
-            <Brain className="w-5 h-5 text-sky-300/90" />
+      <Card variant="sport" className="border-[#0F4C5C]/90">
+        <CardHeader variant="sport">
+          <CardTitle tone="sport" className="flex items-center gap-2 normal-case tracking-normal">
+            <Brain className="w-5 h-5 text-teal-400" />
             Analyses Intelligentes
           </CardTitle>
         </CardHeader>
@@ -256,7 +256,7 @@ const BodyActivityInsights = () => {
           analysisType === 'weight' && currentAnalysis.weightChange.change > 0
             ? 'border-[#0F5C45]/55'
             : analysisType === 'weight' && currentAnalysis.weightChange.change < 0
-              ? 'border-sky-400/45'
+              ? 'border-teal-400/50'
               : ''
         }
       >
@@ -264,12 +264,14 @@ const BodyActivityInsights = () => {
           <CardTitle tone="sport" className="flex items-center gap-2 normal-case tracking-normal">
             {analysisType === 'weight' ? (
               currentAnalysis.weightChange.change > 0 ? (
-                <TrendingDown className="w-5 h-5 text-green-400" />
+                <TrendingDown className="w-5 h-5 text-teal-400" />
+              ) : currentAnalysis.weightChange.change < 0 ? (
+                <TrendingUp className="w-5 h-5 text-amber-400" />
               ) : (
-                <TrendingUp className="w-5 h-5 text-yellow-400" />
+                <Activity className="w-5 h-5 text-teal-300" />
               )
             ) : (
-              <TrendingUp className="w-5 h-5 text-sky-300/90" />
+              <TrendingUp className="w-5 h-5 text-teal-400" />
             )}
             {analysisType === 'weight' ? (
               currentAnalysis.weightChange.change > 0 ? 'Perte de poids' : currentAnalysis.weightChange.change < 0 ? 'Prise de poids' : 'Poids stable'
@@ -295,21 +297,25 @@ const BodyActivityInsights = () => {
                   <div className="text-sm text-teal-100/55">Changement réel</div>
                 </div>
                 <div className="bg-black border border-[#0F4C5C]/40 rounded-lg p-3 text-center">
-                  <div className="text-2xl font-bold text-sky-300/90 mb-1">
-                    {Math.round(currentAnalysis.calories.avgDailyBurned)} kcal
+                  <div className="text-2xl font-bold text-teal-200 mb-1">
+                    {Number.isFinite(currentAnalysis.calories.avgDailyBurned)
+                      ? `${Math.round(currentAnalysis.calories.avgDailyBurned)} kcal`
+                      : '—'}
                   </div>
                   <div className="text-sm text-teal-100/55">Calories/jour (hors basal)</div>
                 </div>
                 <div className="bg-black border border-[#0F4C5C]/40 rounded-lg p-3 text-center">
-                  <div className="text-2xl font-bold text-sky-300 mb-1">
-                    {Math.round(currentAnalysis.calories.totalBurned)}
+                  <div className="text-2xl font-bold text-teal-200 mb-1">
+                    {Number.isFinite(currentAnalysis.calories.totalBurned)
+                      ? Math.round(currentAnalysis.calories.totalBurned).toLocaleString('fr-FR')
+                      : '—'}
                   </div>
                   <div className="text-sm text-teal-100/55">Total période</div>
                 </div>
                 <div className="bg-black border border-[#0F4C5C]/40 rounded-lg p-3 text-center">
                   <div className={`text-2xl font-bold mb-1 ${
-                    currentAnalysis.analysis.coherence === 'high' ? 'text-green-400' :
-                    currentAnalysis.analysis.coherence === 'medium' ? 'text-yellow-400' : 'text-orange-400'
+                    currentAnalysis.analysis.coherence === 'high' ? 'text-teal-400' :
+                    currentAnalysis.analysis.coherence === 'medium' ? 'text-amber-300' : 'text-rose-400'
                   }`}>
                     {currentAnalysis.analysis.coherence === 'high' ? 'Cohérent' :
                      currentAnalysis.analysis.coherence === 'medium' ? 'Partiel' : 'Incohérent'}
@@ -320,7 +326,7 @@ const BodyActivityInsights = () => {
             ) : (
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                 <div className="bg-black border border-[#0F4C5C]/40 rounded-lg p-3 text-center">
-                  <div className="text-2xl font-bold text-sky-300/90 mb-1">
+                  <div className="text-2xl font-bold text-teal-200 mb-1">
                     {currentAnalysis.muscleChange?.change != null && !isNaN(currentAnalysis.muscleChange.change)
                       ? `+${currentAnalysis.muscleChange.change.toFixed(1)} kg`
                       : 'N/A'}
@@ -328,13 +334,13 @@ const BodyActivityInsights = () => {
                   <div className="text-sm text-teal-100/55">Gain musculaire</div>
                 </div>
                 <div className="bg-black border border-[#0F4C5C]/40 rounded-lg p-3 text-center">
-                  <div className="text-2xl font-bold text-sky-300 mb-1">
+                  <div className="text-2xl font-bold text-teal-200 mb-1">
                     {Math.round(currentAnalysis.training.weeklyVolume.average)}
                   </div>
                   <div className="text-sm text-teal-100/55">Répétitions/semaine</div>
                 </div>
                 <div className="bg-black border border-[#0F4C5C]/40 rounded-lg p-3 text-center">
-                  <div className="text-2xl font-bold text-green-400 mb-1">
+                  <div className="text-2xl font-bold text-teal-400 mb-1">
                     {currentAnalysis.training?.weeklyVolume?.sessions != null && !isNaN(currentAnalysis.training.weeklyVolume.sessions)
                       ? currentAnalysis.training.weeklyVolume.sessions.toFixed(1)
                       : '0.0'}
@@ -343,8 +349,8 @@ const BodyActivityInsights = () => {
                 </div>
                 <div className="bg-black border border-[#0F4C5C]/40 rounded-lg p-3 text-center">
                   <div className={`text-2xl font-bold mb-1 ${
-                    currentAnalysis.recovery.status === 'optimal' ? 'text-green-400' :
-                    currentAnalysis.recovery.status === 'good' ? 'text-sky-300/90' : 'text-yellow-400'
+                    currentAnalysis.recovery.status === 'optimal' ? 'text-teal-400' :
+                    currentAnalysis.recovery.status === 'good' ? 'text-teal-300' : 'text-amber-300'
                   }`}>
                     {currentAnalysis.recovery.averageScore != null ? Math.round(currentAnalysis.recovery.averageScore) : '—'}
                   </div>
@@ -361,7 +367,7 @@ const BodyActivityInsights = () => {
         <Card variant="sport">
           <CardHeader variant="sport">
             <CardTitle tone="sport" className="flex items-center gap-2 normal-case tracking-normal">
-              <BarChart3 className="w-5 h-5 text-sky-300" />
+              <BarChart3 className="w-5 h-5 text-teal-400" />
               Facteurs d'influence
             </CardTitle>
           </CardHeader>
@@ -371,25 +377,25 @@ const BodyActivityInsights = () => {
                 <div
                   key={index}
                   className={`flex items-start gap-3 p-3 rounded-lg ${
-                    factor.impact === 'positive' ? 'bg-green-900/20 border border-green-700/30' :
-                    factor.impact === 'negative' ? 'bg-red-900/20 border border-red-700/30' :
+                    factor.impact === 'positive' ? 'bg-teal-950/40 border border-teal-600/35' :
+                    factor.impact === 'negative' ? 'bg-rose-950/30 border border-rose-600/35' :
                     'bg-black border border-[#0F4C5C]/40'
                   }`}
                 >
                   {factor.impact === 'positive' ? (
-                    <CheckCircle className="w-5 h-5 text-green-400 mt-0.5 flex-shrink-0" />
+                    <CheckCircle className="w-5 h-5 text-teal-400 mt-0.5 flex-shrink-0" />
                   ) : factor.impact === 'negative' ? (
-                    <AlertCircle className="w-5 h-5 text-red-400 mt-0.5 flex-shrink-0" />
+                    <AlertCircle className="w-5 h-5 text-rose-400 mt-0.5 flex-shrink-0" />
                   ) : (
-                    <Info className="w-5 h-5 text-sky-300/90 mt-0.5 flex-shrink-0" />
+                    <Info className="w-5 h-5 text-teal-300 mt-0.5 flex-shrink-0" />
                   )}
                   <div className="flex-1">
                     <p className="text-teal-100/90 font-medium">{factor.description}</p>
                     <div className="flex items-center gap-2 mt-1">
                       <span className={`text-xs px-2 py-0.5 rounded ${
-                        factor.contribution === 'high' ? 'bg-[#0F4C5C]/35 text-sky-200/90' :
-                        factor.contribution === 'medium' ? 'bg-[#0F4C5C]/30 text-sky-300' :
-                        'bg-[#0F4C5C]/25 text-teal-100/80'
+                        factor.contribution === 'high' ? 'bg-[#0F4C5C]/35 text-teal-100' :
+                        factor.contribution === 'medium' ? 'bg-[#0F4C5C]/30 text-teal-200' :
+                        'bg-[#0F4C5C]/25 text-teal-200/80'
                       }`}>
                         {factor.contribution === 'high' ? 'Impact élevé' :
                          factor.contribution === 'medium' ? 'Impact moyen' : 'Impact faible'}
@@ -408,7 +414,7 @@ const BodyActivityInsights = () => {
         <Card variant="sport">
           <CardHeader variant="sport">
             <CardTitle tone="sport" className="flex items-center gap-2 normal-case tracking-normal">
-              <Brain className="w-5 h-5 text-sky-300/90" />
+              <Brain className="w-5 h-5 text-teal-400" />
               Insights
             </CardTitle>
           </CardHeader>
@@ -419,14 +425,14 @@ const BodyActivityInsights = () => {
                   key={index}
                   className="flex items-start gap-3 p-3 rounded-lg bg-black border border-[#0F4C5C]/45"
                 >
-                  <Info className="w-5 h-5 text-sky-300/90 mt-0.5 flex-shrink-0" />
+                  <Info className="w-5 h-5 text-teal-400 mt-0.5 flex-shrink-0" />
                   <div className="flex-1">
                     <p className="text-teal-100/90">{insight.message}</p>
                     <div className="flex items-center gap-2 mt-2">
                       <span className={`text-xs px-2 py-0.5 rounded ${
-                        insight.confidence === 'high' ? 'bg-green-600/30 text-green-300' :
-                        insight.confidence === 'medium' ? 'bg-yellow-600/30 text-yellow-300' :
-                        'bg-[#0F4C5C]/25 text-teal-100/80'
+                        insight.confidence === 'high' ? 'bg-teal-800/40 text-teal-100' :
+                        insight.confidence === 'medium' ? 'bg-amber-900/35 text-amber-200' :
+                        'bg-[#0F4C5C]/25 text-teal-200/80'
                       }`}>
                         {insight.confidence === 'high' ? 'Confiance élevée' :
                          insight.confidence === 'medium' ? 'Confiance moyenne' : 'Confiance faible'}
@@ -445,7 +451,7 @@ const BodyActivityInsights = () => {
         <Card variant="sport">
           <CardHeader variant="sport">
             <CardTitle tone="sport" className="flex items-center gap-2 normal-case tracking-normal">
-              <Target className="w-5 h-5 text-sky-300" />
+              <Target className="w-5 h-5 text-teal-400" />
               Recommandations
             </CardTitle>
           </CardHeader>
@@ -460,7 +466,7 @@ const BodyActivityInsights = () => {
                   }`}
                 >
                   <ArrowRight className={`mt-0.5 h-5 w-5 flex-shrink-0 ${
-                    rec.priority === 'high' ? 'text-sky-300' : 'text-sky-300/90'
+                    rec.priority === 'high' ? 'text-teal-400' : 'text-teal-300'
                   }`} />
                   <p className="text-teal-100/90">{rec.message}</p>
                 </div>
@@ -475,7 +481,7 @@ const BodyActivityInsights = () => {
         <Card variant="sport">
           <CardHeader variant="sport">
             <CardTitle tone="sport" className="flex items-center gap-2 normal-case tracking-normal">
-              <Flame className="w-5 h-5 text-sky-300" />
+              <Flame className="w-5 h-5 text-teal-400" />
               Détails caloriques
             </CardTitle>
           </CardHeader>

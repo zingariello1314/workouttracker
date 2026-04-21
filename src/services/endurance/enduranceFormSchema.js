@@ -94,6 +94,7 @@ const challengeFactory = (activityType = 'pushups') => ({
   goalDuration: '',
   goalDistance: '',
   goalJumps: '',
+  goalTotalCount: '',
   notes: ''
 });
 

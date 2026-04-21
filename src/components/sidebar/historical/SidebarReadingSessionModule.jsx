@@ -165,12 +165,12 @@ const SidebarReadingSessionModule = memo(({ isExpanded, onToggle, setActiveTab }
                   label={t('books.sessions.note', 'Note (optionnel)')}
                   value={sessionForm.note}
                   onChange={(e) => handleSessionChange('note', e.target.value)}
-                  className="!text-[10px] border-emerald-500/40 bg-slate-900/80 min-h-[52px]"
+                  className="!text-[10px] border-sky-500/40 bg-slate-900/80 min-h-[52px]"
                 />
                 <div className="flex flex-wrap gap-1.5 pt-0.5">
                   <button
                     type="submit"
-                    className="flex-1 min-w-[8rem] rounded-lg border border-violet-500/40 bg-gradient-to-r from-violet-900/70 to-slate-900/90 px-2 py-1.5 text-[10px] font-semibold text-white shadow hover:from-violet-800/80"
+                    className="flex-1 min-w-[8rem] rounded-lg border border-sky-500/45 bg-gradient-to-r from-sky-950/90 to-slate-900/90 px-2 py-1.5 text-[10px] font-semibold text-sky-50 shadow hover:from-sky-900/95"
                   >
                     {t('books.sessions.addButton', 'Ajouter la session')}
                   </button>

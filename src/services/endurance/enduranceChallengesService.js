@@ -13,6 +13,7 @@ const DEFAULT_LOGGER = {
  * @param {string} activityType - Type d'activité concernée par la session.
  * @param {Object} [options]
  * @param {Object} [options.logger] - Logger optionnel.
+ * @param {Array} [options.relatedPushupSessions] - Sessions pompes (déjà normalisées) pour défis cumul.
  * @returns {{ validatedIds: Array<string>, updatedChallenges: Array }}
  */
 /**
@@ -21,7 +22,7 @@ const DEFAULT_LOGGER = {
  * même après passage du défi en « terminé ».
  */
 export function listMatchingChallengeIds(challenges = [], sessionData = {}, activityType, options = {}) {
-  const { logger = DEFAULT_LOGGER } = options;
+  const { logger = DEFAULT_LOGGER, relatedPushupSessions } = options;
   if (!activityType || !Array.isArray(challenges) || challenges.length === 0) {
     return [];
   }
@@ -39,6 +40,11 @@ export function listMatchingChallengeIds(challenges = [], sessionData = {}, acti
       case 'periode':
         ok = validatePeriodeChallenge(challenge, sessionData, logger);
         break;
+      case 'pushups_cumul':
+        ok =
+          activityType === 'pushups' &&
+          validatePushupsCumulSessionIsCompletion(challenge, sessionData, relatedPushupSessions);
+        break;
       default:
         ok = false;
     }
@@ -50,7 +56,7 @@ export function listMatchingChallengeIds(challenges = [], sessionData = {}, acti
 }
 
 export function evaluateChallenges(challenges = [], sessionData = {}, activityType, options = {}) {
-  const { logger = DEFAULT_LOGGER } = options;
+  const { logger = DEFAULT_LOGGER, relatedPushupSessions } = options;
   if (!activityType) {
     logger.warn?.('[enduranceChallengesService] activityType manquant pour evaluateChallenges');
     return { validatedIds: [], updatedChallenges: challenges };
@@ -77,6 +83,11 @@ export function evaluateChallenges(challenges = [], sessionData = {}, activityTy
         break;
       case 'periode':
         isValid = validatePeriodeChallenge(challenge, sessionData, logger);
+        break;
+      case 'pushups_cumul':
+        isValid =
+          activityType === 'pushups' &&
+          validatePushupsCumulSessionIsCompletion(challenge, sessionData, relatedPushupSessions);
         break;
       default:
         logger.debug?.('[enduranceChallengesService] Type de défi non supporté:', challenge.type);
@@ -146,11 +157,11 @@ function validatePonctuelChallenge(challenge, sessionData, logger = DEFAULT_LOGG
         numericAtLeast(sessionData.distance, challenge.goalDistance) &&
         numericAtMost(sessionData.duration, challenge.goalDuration)
       );
-    case 'jumprope':
-      return (
-        numericAtLeast(sessionData.duration, challenge.goalDuration) &&
-        numericAtLeast(sessionData.jumps ?? sessionData.reps, challenge.goalJumps)
-      );
+    case 'jumprope': {
+      const dm = jumpropeSessionDurationMinutes(sessionData);
+      const jumps = toNumber(sessionData.jumps ?? sessionData.reps, 0);
+      return numericAtLeast(dm, challenge.goalDuration) && numericAtLeast(jumps, challenge.goalJumps);
+    }
     default:
       logger.debug?.('[enduranceChallengesService] Activité non supportée pour défi ponctuel:', challenge.activityType);
       return false;
@@ -209,12 +220,92 @@ function validatePeriodeChallenge(challenge, sessionData, logger = DEFAULT_LOGGE
   return validatePonctuelChallenge(challenge, sessionData, logger);
 }
 
+function sessionSortTimestamp(s) {
+  const t = s?.time && String(s.time).length >= 5 ? String(s.time).slice(0, 5) : '00:00';
+  return new Date(`${s.date}T${t}:00`).getTime();
+}
+
+/** Ordre chronologique strict pour le cumul pompes (uniquement données onglet pompes). */
+export function sortedPushupSessionsForCumul(list = []) {
+  if (!Array.isArray(list)) return [];
+  return [...list].sort((a, b) => sessionSortTimestamp(a) - sessionSortTimestamp(b));
+}
+
+/**
+ * Total des `count` sur les sessions pompes dont la date est dans [startDate, endDate] (bornes incluses).
+ */
+export function sumPushupRepsInChallengeWindow(challenge, pushupSessions = []) {
+  if (!challenge?.startDate || !challenge?.endDate) return 0;
+  const start = toDate(challenge.startDate);
+  const end = toDate(challenge.endDate);
+  let sum = 0;
+  sortedPushupSessionsForCumul(pushupSessions).forEach((s) => {
+    const d = toDate(s.date);
+    if (d >= start && d <= end) sum += toNumber(s.count, 0);
+  });
+  return sum;
+}
+
+/**
+ * La session courante est celle où le cumul atteint pour la première fois `goalTotalCount`
+ * (uniquement sessions pompes dans la fenêtre).
+ */
+function validatePushupsCumulSessionIsCompletion(challenge, sessionData, relatedPushupSessions) {
+  if (challenge.activityType !== 'pushups' || challenge.type !== 'pushups_cumul') return false;
+  if (!Array.isArray(relatedPushupSessions) || relatedPushupSessions.length === 0) return false;
+  if (!sessionData?.date || !challenge.startDate || !challenge.endDate) return false;
+  const goal = toNumber(challenge.goalTotalCount, 0);
+  if (goal <= 0) return false;
+
+  const sessionDate = toDate(sessionData.date);
+  const start = toDate(challenge.startDate);
+  const end = toDate(challenge.endDate);
+  if (sessionDate < start || sessionDate > end) return false;
+
+  const sid = sessionData.id != null ? String(sessionData.id) : null;
+  if (!sid) return false;
+
+  let cum = 0;
+  let completionId = null;
+  sortedPushupSessionsForCumul(relatedPushupSessions).forEach((s) => {
+    const d = toDate(s.date);
+    if (d < start || d > end) return;
+    cum += toNumber(s.count, 0);
+    if (completionId == null && cum >= goal) {
+      completionId = s.id != null ? String(s.id) : null;
+    }
+  });
+
+  return completionId != null && completionId === sid;
+}
+
 // ---------- Utilitaires ----------
 
 function toNumber(value) {
   if (value === null || value === undefined || value === '') return 0;
   const num = Number(value);
   return Number.isFinite(num) ? num : 0;
+}
+
+/** Durée séance corde en minutes (aligné sur durationSec ou mm:ss saisi). */
+function jumpropeSessionDurationMinutes(sessionData) {
+  if (!sessionData) return 0;
+  const sec = toNumber(sessionData.durationSec, NaN);
+  if (Number.isFinite(sec) && sec > 0) return sec / 60;
+  const raw = sessionData.duration;
+  if (raw == null || raw === '') return 0;
+  if (typeof raw === 'number' && Number.isFinite(raw)) return raw;
+  const str = String(raw);
+  if (str.includes(':')) {
+    const parts = str.split(':').map((p) => Number(p));
+    if (parts.length === 2 && parts.every((n) => Number.isFinite(n))) {
+      return (parts[0] * 60 + parts[1]) / 60;
+    }
+    if (parts.length === 3 && parts.every((n) => Number.isFinite(n))) {
+      return (parts[0] * 3600 + parts[1] * 60 + parts[2]) / 60;
+    }
+  }
+  return toNumber(raw, 0);
 }
 
 function numericAtLeast(actual, expected) {

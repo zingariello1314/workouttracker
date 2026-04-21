@@ -145,18 +145,18 @@ const DashboardQuestsModule = () => {
         onClick={() => toggleQuestValidation(quest.id, todayDate)}
         className={`w-full text-left rounded-lg border px-3 py-2 flex items-start gap-2 transition-colors ${
           checked
-            ? 'border-emerald-500/50 bg-emerald-500/10'
-            : 'border-slate-700/70 bg-slate-900/60 hover:bg-slate-800/70'
+            ? 'border-amber-400/70 bg-amber-500/15 ring-1 ring-amber-400/40'
+            : 'border-amber-800/45 bg-black hover:border-amber-500/55 hover:bg-black/90'
         }`}
       >
-        <span className="mt-0.5 text-emerald-300">
-          {checked ? <CheckCircle2 className="w-4 h-4" /> : <Target className="w-4 h-4 text-slate-400" />}
+        <span className="mt-0.5 text-amber-400">
+          {checked ? <CheckCircle2 className="w-4 h-4" /> : <Target className="w-4 h-4 text-amber-700/80" />}
         </span>
         <span className="min-w-0">
-          <span className={`block text-sm font-medium ${checked ? 'text-emerald-200 line-through' : 'text-white'}`}>
+          <span className={`block text-sm font-medium ${checked ? 'text-amber-100 line-through' : 'text-white'}`}>
             {quest.nom || 'Quête'}
           </span>
-          <span className="block text-xs text-slate-400">
+          <span className="block text-xs text-amber-200/65">
             {getHeureDisplay(quest, todayDate, prayerLocation) || 'Sans horaire'} • {quest.categorie || 'Autre'} • {Number(quest.xp) || 0} XP
           </span>
         </span>
@@ -165,7 +165,7 @@ const DashboardQuestsModule = () => {
   };
 
   return (
-    <div className="relative overflow-hidden rounded-3xl border border-amber-500/30 bg-gradient-to-br from-slate-950/90 via-amber-950/35 to-yellow-950/30 shadow-[0_0_80px_rgba(245,158,11,0.2)]">
+    <div className="relative overflow-hidden rounded-3xl border-2 border-amber-400/70 bg-black shadow-[0_0_48px_rgba(245,158,11,0.22)]">
       <div className="relative p-6 md:p-7 lg:p-8 space-y-5">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div className="flex items-center gap-3">
@@ -174,7 +174,7 @@ const DashboardQuestsModule = () => {
             </div>
             <div>
               <h3 className="text-xl font-bold text-white">Quêtes</h3>
-              <p className="text-xs text-slate-300">Aujourd&apos;hui + stats clés + vues de classement</p>
+              <p className="text-xs text-amber-200/75">Aujourd&apos;hui + stats clés + vues de classement</p>
             </div>
           </div>
           <div className="flex items-center gap-2">
@@ -191,42 +191,42 @@ const DashboardQuestsModule = () => {
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
-          <div className="rounded-xl border border-amber-500/35 bg-slate-900/60 p-3">
-            <div className="text-xs text-slate-400">Quêtes du jour</div>
+          <div className="rounded-xl border border-amber-500/45 bg-black p-3">
+            <div className="text-xs text-amber-200/70">Quêtes du jour</div>
             <div className="text-xl font-bold text-white">{completion.completed}/{completion.total}</div>
           </div>
-          <div className="rounded-xl border border-yellow-500/35 bg-slate-900/60 p-3">
-            <div className="text-xs text-slate-400">Progression</div>
+          <div className="rounded-xl border border-yellow-500/45 bg-black p-3">
+            <div className="text-xs text-amber-200/70">Progression</div>
             <div className="text-xl font-bold text-white">{completion.rate}%</div>
           </div>
-          <div className="rounded-xl border border-orange-500/35 bg-slate-900/60 p-3">
-            <div className="text-xs text-slate-400">XP du jour</div>
+          <div className="rounded-xl border border-orange-500/45 bg-black p-3">
+            <div className="text-xs text-amber-200/70">XP du jour</div>
             <div className="text-xl font-bold text-white">{completion.gainedXP}/{completion.potentialXP}</div>
           </div>
-          <div className="rounded-xl border border-amber-500/30 bg-slate-900/60 p-3">
-            <div className="text-xs text-slate-400">Streak (30j)</div>
+          <div className="rounded-xl border border-amber-500/45 bg-black p-3">
+            <div className="text-xs text-amber-200/70">Streak (30j)</div>
             <div className="text-xl font-bold text-white">{stats30d.currentStreak} j</div>
           </div>
         </div>
 
         <div className="grid grid-cols-1 xl:grid-cols-3 gap-4 items-start">
-          <div className="xl:col-span-2 rounded-xl border border-slate-700/70 bg-slate-900/45 p-3 space-y-3">
+          <div className="xl:col-span-2 rounded-xl border-2 border-amber-500/40 bg-black p-3 space-y-3">
             <div className="flex flex-wrap items-center gap-2">
-              <button type="button" onClick={() => setViewMode('hour')} className={`h-8 px-3 rounded-lg border text-xs inline-flex items-center gap-1.5 ${viewMode === 'hour' ? 'border-amber-400/60 bg-amber-500/20 text-amber-100' : 'border-slate-600/70 bg-slate-900/50 text-slate-300'}`}>
+              <button type="button" onClick={() => setViewMode('hour')} className={`h-8 px-3 rounded-lg border text-xs inline-flex items-center gap-1.5 ${viewMode === 'hour' ? 'border-amber-400/70 bg-amber-500/25 text-amber-50 shadow-[0_0_12px_rgba(245,158,11,0.2)]' : 'border-amber-800/40 bg-black text-amber-200/85 hover:border-amber-500/50'}`}>
                 <Clock3 className="w-3.5 h-3.5" /> Par heure
               </button>
-              <button type="button" onClick={() => setViewMode('category')} className={`h-8 px-3 rounded-lg border text-xs inline-flex items-center gap-1.5 ${viewMode === 'category' ? 'border-yellow-400/60 bg-yellow-500/20 text-yellow-100' : 'border-slate-600/70 bg-slate-900/50 text-slate-300'}`}>
+              <button type="button" onClick={() => setViewMode('category')} className={`h-8 px-3 rounded-lg border text-xs inline-flex items-center gap-1.5 ${viewMode === 'category' ? 'border-yellow-400/70 bg-yellow-500/25 text-yellow-50 shadow-[0_0_12px_rgba(234,179,8,0.2)]' : 'border-amber-800/40 bg-black text-amber-200/85 hover:border-amber-500/50'}`}>
                 <ListFilter className="w-3.5 h-3.5" /> Par catégorie
               </button>
-              <button type="button" onClick={() => setViewMode('timetable')} className={`h-8 px-3 rounded-lg border text-xs inline-flex items-center gap-1.5 ${viewMode === 'timetable' ? 'border-orange-400/60 bg-orange-500/20 text-orange-100' : 'border-slate-600/70 bg-slate-900/50 text-slate-300'}`}>
+              <button type="button" onClick={() => setViewMode('timetable')} className={`h-8 px-3 rounded-lg border text-xs inline-flex items-center gap-1.5 ${viewMode === 'timetable' ? 'border-orange-400/70 bg-orange-500/25 text-orange-50 shadow-[0_0_12px_rgba(249,115,22,0.2)]' : 'border-amber-800/40 bg-black text-amber-200/85 hover:border-amber-500/50'}`}>
                 <CalendarDays className="w-3.5 h-3.5" /> Emploi du temps
               </button>
             </div>
 
             {isLoading ? (
-              <div className="text-sm text-slate-300">Chargement des quêtes...</div>
+              <div className="text-sm text-amber-200/80">Chargement des quêtes...</div>
             ) : questsToday.length === 0 ? (
-              <div className="text-sm text-slate-400">Aucune quête planifiée pour aujourd&apos;hui.</div>
+              <div className="text-sm text-amber-200/60">Aucune quête planifiée pour aujourd&apos;hui.</div>
             ) : viewMode === 'hour' ? (
               <div className="space-y-3">
                 {CRENEAU_ORDER.map((slot) => (
@@ -262,27 +262,27 @@ const DashboardQuestsModule = () => {
                 ))}
               </div>
             ) : (
-              <div className="rounded-lg border border-slate-700/70 overflow-hidden">
-                <div className="grid grid-cols-[140px_1fr_110px_90px] text-[11px] font-semibold text-slate-300 bg-slate-800/70">
-                  <div className="px-3 py-2 border-r border-slate-700/70">Heure</div>
-                  <div className="px-3 py-2 border-r border-slate-700/70">Quête</div>
-                  <div className="px-3 py-2 border-r border-slate-700/70">Catégorie</div>
+              <div className="rounded-lg border border-amber-700/45 overflow-hidden bg-black">
+                <div className="grid grid-cols-[140px_1fr_110px_90px] text-[11px] font-semibold text-amber-200/90 bg-black border-b border-amber-800/40">
+                  <div className="px-3 py-2 border-r border-amber-800/40">Heure</div>
+                  <div className="px-3 py-2 border-r border-amber-800/40">Quête</div>
+                  <div className="px-3 py-2 border-r border-amber-800/40">Catégorie</div>
                   <div className="px-3 py-2">XP</div>
                 </div>
-                <div className="divide-y divide-slate-700/60">
+                <div className="divide-y divide-amber-900/40">
                   {timetableRows.map((row) => (
                     <button
                       key={`tt-${todayDate}-${row.id}-${row.time}-${row.category}-${row.name}`}
                       type="button"
                       onClick={() => toggleQuestValidation(row.id, todayDate)}
                       className={`w-full grid grid-cols-[140px_1fr_110px_90px] text-left text-xs ${
-                        row.completed ? 'bg-emerald-500/10' : 'bg-slate-900/50 hover:bg-slate-800/70'
+                        row.completed ? 'bg-amber-500/15' : 'bg-black hover:bg-amber-950/30'
                       }`}
                     >
-                      <span className="px-3 py-2 border-r border-slate-700/60 text-slate-300">{row.time}</span>
-                      <span className={`px-3 py-2 border-r border-slate-700/60 ${row.completed ? 'text-emerald-200 line-through' : 'text-white'}`}>{row.name}</span>
-                      <span className="px-3 py-2 border-r border-slate-700/60 text-slate-300">{row.category}</span>
-                      <span className="px-3 py-2 text-emerald-300">{row.xp}</span>
+                      <span className="px-3 py-2 border-r border-amber-900/35 text-amber-200/80">{row.time}</span>
+                      <span className={`px-3 py-2 border-r border-amber-900/35 ${row.completed ? 'text-amber-100 line-through' : 'text-white'}`}>{row.name}</span>
+                      <span className="px-3 py-2 border-r border-amber-900/35 text-amber-200/75">{row.category}</span>
+                      <span className="px-3 py-2 text-amber-300 font-semibold">{row.xp}</span>
                     </button>
                   ))}
                 </div>
@@ -290,9 +290,9 @@ const DashboardQuestsModule = () => {
             )}
           </div>
 
-          <div className="rounded-xl border border-amber-500/30 bg-slate-900/45 p-3 space-y-3">
-            <div className="text-sm font-semibold text-slate-100 inline-flex items-center gap-1.5">
-              <Lightbulb className="w-4 h-4 text-amber-300" /> Insights automatiques
+          <div className="rounded-xl border-2 border-amber-500/40 bg-black p-3 space-y-3">
+            <div className="text-sm font-semibold text-amber-50 inline-flex items-center gap-1.5">
+              <Lightbulb className="w-4 h-4 text-amber-400" /> Insights automatiques
             </div>
             <div className="space-y-2">
               {(stats30d.insights || []).slice(0, 5).map((insight, idx) => (
@@ -300,10 +300,10 @@ const DashboardQuestsModule = () => {
                   key={`insight-${idx}`}
                   className={`rounded-lg border p-2 text-xs ${
                     insight.type === 'success'
-                      ? 'border-emerald-500/35 bg-emerald-500/10 text-emerald-100'
+                      ? 'border-amber-400/45 bg-amber-500/12 text-amber-50'
                       : insight.type === 'warning'
-                        ? 'border-amber-500/35 bg-amber-500/10 text-amber-100'
-                        : 'border-blue-500/35 bg-blue-500/10 text-blue-100'
+                        ? 'border-orange-500/40 bg-orange-500/10 text-orange-100'
+                        : 'border-amber-600/40 bg-amber-950/40 text-amber-100/95'
                   }`}
                 >
                   <span className="mr-1">{insight.icon}</span>
@@ -313,47 +313,47 @@ const DashboardQuestsModule = () => {
             </div>
 
             <div className="grid grid-cols-2 gap-2">
-              <div className="rounded-lg border border-slate-700/70 bg-slate-950/55 p-2">
-                <div className="text-[11px] text-slate-400">Top quêtes</div>
+              <div className="rounded-lg border border-amber-800/45 bg-black p-2">
+                <div className="text-[11px] text-amber-200/65">Top quêtes</div>
                 <div className="mt-1 space-y-1">
                   {(stats30d.topQuests || []).slice(0, 8).map((q, i) => (
                     <div key={`top-${q.id}-${i}`} className="flex items-center justify-between gap-2 text-xs">
-                      <span className="text-slate-200 truncate">{q.nom}</span>
-                      <span className="text-emerald-300 shrink-0">{q.validationsCount}</span>
+                      <span className="text-amber-50/95 truncate">{q.nom}</span>
+                      <span className="text-amber-300 shrink-0 font-semibold">{q.validationsCount}</span>
                     </div>
                   ))}
                 </div>
               </div>
-              <div className="rounded-lg border border-slate-700/70 bg-slate-950/55 p-2">
-                <div className="text-[11px] text-slate-400">Quêtes à relancer</div>
+              <div className="rounded-lg border border-amber-800/45 bg-black p-2">
+                <div className="text-[11px] text-amber-200/65">Quêtes à relancer</div>
                 <div className="mt-1 space-y-1">
                   {(stats30d.bottomQuests || []).slice(0, 8).map((q, i) => (
                     <div key={`bottom-${q.id}-${i}`} className="flex items-center justify-between gap-2 text-xs">
-                      <span className="text-slate-200 truncate">{q.nom}</span>
-                      <span className="text-amber-300 shrink-0">{q.validationsCount}</span>
+                      <span className="text-amber-50/95 truncate">{q.nom}</span>
+                      <span className="text-orange-300 shrink-0 font-semibold">{q.validationsCount}</span>
                     </div>
                   ))}
                 </div>
               </div>
             </div>
 
-            <div className="rounded-lg border border-cyan-500/30 bg-cyan-500/10 p-2">
+            <div className="rounded-lg border border-amber-600/40 bg-amber-950/25 p-2">
               <div className="flex items-center justify-between gap-2 mb-1">
-                <div className="text-[11px] text-slate-300 font-semibold">Arrêt addictions (vue du jour)</div>
+                <div className="text-[11px] text-amber-100/90 font-semibold">Arrêt addictions (vue du jour)</div>
                 <button
                   type="button"
                   onClick={() => setActiveTab?.('addiction-quit')}
-                  className="text-[10px] px-2 py-1 rounded border border-cyan-400/50 bg-cyan-500/20 text-cyan-100 hover:bg-cyan-500/30"
+                  className="text-[10px] px-2 py-1 rounded border border-amber-400/55 bg-amber-500/20 text-amber-100 hover:bg-amber-500/35"
                 >
                   Ouvrir
                 </button>
               </div>
               <div className="space-y-1.5">
                 {addictionTracks.map((row) => (
-                  <div key={`aq-${row.id}`} className="rounded border border-slate-700/70 bg-slate-950/50 p-2">
-                    <div className="text-xs text-slate-200 font-medium">{row.label}</div>
-                    <div className="text-[11px] text-cyan-200">{row.elapsed}</div>
-                    <div className="text-[11px] text-slate-400 truncate" title={row.milestone}>
+                  <div key={`aq-${row.id}`} className="rounded border border-amber-800/40 bg-black p-2">
+                    <div className="text-xs text-amber-50 font-medium">{row.label}</div>
+                    <div className="text-[11px] text-amber-200">{row.elapsed}</div>
+                    <div className="text-[11px] text-amber-200/55 truncate" title={row.milestone}>
                       Dernier jalon : {row.milestone}
                     </div>
                   </div>
@@ -363,53 +363,53 @@ const DashboardQuestsModule = () => {
 
             <div className="grid grid-cols-2 gap-2">
               <div className="rounded-lg border border-amber-500/30 bg-amber-500/10 p-2">
-                <div className="text-[11px] text-slate-400">Complétion (30j)</div>
+                <div className="text-[11px] text-amber-200/65">Complétion (30j)</div>
                 <div className="text-white font-semibold">{Math.round(stats30d.completionRate || 0)}%</div>
               </div>
               <div className="rounded-lg border border-yellow-500/30 bg-yellow-500/10 p-2">
-                <div className="text-[11px] text-slate-400">XP (30j)</div>
+                <div className="text-[11px] text-amber-200/65">XP (30j)</div>
                 <div className="text-white font-semibold">{stats30d.totalXP || 0}</div>
               </div>
               <div className="rounded-lg border border-orange-500/30 bg-orange-500/10 p-2">
-                <div className="text-[11px] text-slate-400">Moyenne/jour</div>
+                <div className="text-[11px] text-amber-200/65">Moyenne/jour</div>
                 <div className="text-white font-semibold">{(stats30d.dailyAverage || 0).toFixed(1)}</div>
               </div>
-              <div className="rounded-lg border border-emerald-500/30 bg-emerald-500/10 p-2">
-                <div className="text-[11px] text-slate-400">Meilleur streak</div>
+              <div className="rounded-lg border border-yellow-500/40 bg-yellow-500/10 p-2">
+                <div className="text-[11px] text-amber-200/65">Meilleur streak</div>
                 <div className="text-white font-semibold">{stats30d.bestStreak || 0} j</div>
               </div>
             </div>
 
             <div className="grid grid-cols-2 gap-2">
-              <div className="rounded-lg border border-cyan-500/30 bg-cyan-500/10 p-2">
-                <div className="text-[11px] text-slate-400">Moyenne 7j</div>
+              <div className="rounded-lg border border-amber-600/40 bg-black p-2">
+                <div className="text-[11px] text-amber-200/65">Moyenne 7j</div>
                 <div className="text-white font-semibold">{(stats30d.dailyAverage || 0).toFixed(1)} quêtes/j</div>
               </div>
-              <div className="rounded-lg border border-indigo-500/30 bg-indigo-500/10 p-2">
-                <div className="text-[11px] text-slate-400">Moyenne 30j</div>
+              <div className="rounded-lg border border-orange-500/40 bg-black p-2">
+                <div className="text-[11px] text-amber-200/65">Moyenne 30j</div>
                 <div className="text-white font-semibold">{(stats30d.weeklyAverage || 0).toFixed(1)} quêtes/j</div>
               </div>
             </div>
 
-            <div className="rounded-lg border border-slate-700/70 bg-slate-950/55 p-2">
-              <div className="text-[11px] text-slate-400 mb-1">Catégories (30j)</div>
+            <div className="rounded-lg border border-amber-800/45 bg-black p-2">
+              <div className="text-[11px] text-amber-200/65 mb-1">Catégories (30j)</div>
               <div className="space-y-1">
                 {(stats30d.categoryStats || []).slice(0, 5).map((c, i) => (
                   <div key={`cat-${c.category}-${i}`} className="flex items-center justify-between gap-2 text-xs">
-                    <span className="text-slate-200 truncate">{c.category}</span>
-                    <span className="text-cyan-300 shrink-0">{c.validationsCount} • {c.xpTotal} XP</span>
+                    <span className="text-amber-50/95 truncate">{c.category}</span>
+                    <span className="text-amber-300 shrink-0">{c.validationsCount} • {c.xpTotal} XP</span>
                   </div>
                 ))}
               </div>
             </div>
 
-            <div className="rounded-lg border border-slate-700/70 bg-slate-950/55 p-2">
-              <div className="text-[11px] text-slate-400 mb-1">Difficulté (30j)</div>
+            <div className="rounded-lg border border-amber-800/45 bg-black p-2">
+              <div className="text-[11px] text-amber-200/65 mb-1">Difficulté (30j)</div>
               <div className="space-y-1">
                 {(stats30d.difficultyStats || []).map((d, i) => (
                   <div key={`diff-${d.difficulty}-${i}`} className="flex items-center justify-between gap-2 text-xs">
-                    <span className="text-slate-200 truncate">{d.label}</span>
-                    <span className="text-violet-300 shrink-0">{d.validationsCount} • {d.xpTotal} XP</span>
+                    <span className="text-amber-50/95 truncate">{d.label}</span>
+                    <span className="text-orange-300 shrink-0">{d.validationsCount} • {d.xpTotal} XP</span>
                   </div>
                 ))}
               </div>

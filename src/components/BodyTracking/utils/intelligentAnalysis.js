@@ -311,8 +311,14 @@ export const explainWeightChange = async (
     currentDate.setDate(currentDate.getDate() + 1);
   }
   
+  const finCal = (n) => {
+    const x = Number(n);
+    return Number.isFinite(x) ? Math.max(0, x) : 0;
+  };
+
   // ✅ UTILISER CALORIES COMBINÉES (Garmin + Endurance déjà dédupliquées) + Calories exercices force
-  totalCaloriesBurned = combinedCaloriesTotal + workoutCalories;
+  combinedCaloriesTotal = finCal(combinedCaloriesTotal);
+  totalCaloriesBurned = finCal(combinedCaloriesTotal + finCal(workoutCalories));
   
   // ✅ CONSERVER enduranceCalories pour référence (calcul séparé pour affichage)
   const enduranceCalories = calculateEnduranceCaloriesForPeriod(
@@ -323,7 +329,7 @@ export const explainWeightChange = async (
   );
   
   // 3. Calculer déficit/surplus calorique
-  const avgDailyCaloriesBurned = totalCaloriesBurned / days;
+  const avgDailyCaloriesBurned = days >= 1 ? finCal(totalCaloriesBurned / days) : 0;
   
   // Estimation métabolisme basal (Harris-Benedict simplifié) : ~24 kcal/kg/jour
   const basalMetabolism = endWeight * 24; // kcal/jour
@@ -334,9 +340,12 @@ export const explainWeightChange = async (
   
   // 4. Calculer perte/gain attendu vs réel
   // 1 kg de graisse = ~7700 kcal
-  const expectedWeightChange = weightChange > 0 
-    ? (totalCaloriesBurned / 7700) // Perte attendue
-    : -(Math.abs(weightChange) * 7700 / days); // Gain (surplus nécessaire)
+  const expectedWeightChange =
+    weightChange > 0
+      ? finCal(totalCaloriesBurned / 7700)
+      : weightChange < 0
+        ? -finCal((Math.abs(weightChange) * 7700) / Math.max(1, days))
+        : 0;
   
   const actualWeightChange = Math.abs(weightChange);
   const difference = Math.abs(expectedWeightChange - actualWeightChange);
@@ -460,10 +469,18 @@ export const explainWeightChange = async (
   // 6. Générer insights
   const insights = [];
   
-  if (difference < 0.5) {
+  const weightStable = Math.abs(weightChange) < 0.05;
+
+  if (weightStable) {
+    insights.push({
+      type: 'stable',
+      message: `Poids stable sur la période. Activité enregistrée en moyenne : environ ${Math.round(avgDailyCaloriesBurned)} kcal/jour (hors métabolisme basal).`,
+      confidence: 'medium'
+    });
+  } else if (difference < 0.5) {
     insights.push({
       type: 'coherent',
-      message: `Changement de poids cohérent avec votre activité. Votre déficit calorique de ${Math.round(totalCaloriesBurned / days)} kcal/jour explique cette ${weightChange > 0 ? 'perte' : 'prise'} de ${actualWeightChange.toFixed(1)} kg.`,
+      message: `Changement de poids cohérent avec votre activité. Environ ${Math.round(avgDailyCaloriesBurned)} kcal/jour d’activité enregistrée en moyenne, dans le sens d’une ${weightChange > 0 ? 'perte' : 'prise'} de ${actualWeightChange.toFixed(1)} kg.`,
       confidence: 'high'
     });
   } else if (expectedWeightChange > actualWeightChange) {
@@ -586,9 +603,9 @@ export const explainWeightChange = async (
       percentage: startWeight > 0 ? ((weightChange / startWeight) * 100).toFixed(2) : null
     },
     calories: {
-      totalBurned: Math.round(totalCaloriesBurned),
-      totalIncludingBasal: Math.round(totalCaloriesIncludingBasal),
-      avgDailyBurned: Math.round(avgDailyCaloriesBurned),
+      totalBurned: Math.round(finCal(totalCaloriesBurned)),
+      totalIncludingBasal: Math.round(finCal(totalCaloriesIncludingBasal)),
+      avgDailyBurned: Math.round(finCal(avgDailyCaloriesBurned)),
       basalMetabolism: Math.round(basalMetabolism),
       breakdown: {
         garmin: garminCalories.total,
@@ -885,16 +902,18 @@ export const explainMuscleDevelopment = (
  * Génère un résumé textuel de l'analyse de changement de poids
  */
 const generateWeightChangeSummary = (weightChange, actualChange, factors, insights) => {
-  const direction = weightChange > 0 ? 'perte' : 'gain';
+  const stable = Math.abs(weightChange) < 0.05;
   const mainFactor = factors.find(f => f.contribution === 'high' && f.impact === 'positive') || factors[0];
-  
-  let summary = `Sur cette période, vous avez ${direction === 'perte' ? 'perdu' : 'pris'} ${actualChange.toFixed(1)} kg. `;
+
+  let summary = stable
+    ? `Sur cette période, votre poids est resté stable (variation ${actualChange.toFixed(1)} kg). `
+    : `Sur cette période, vous avez ${weightChange > 0 ? 'perdu' : 'pris'} ${actualChange.toFixed(1)} kg. `;
   
   if (mainFactor) {
     summary += `${mainFactor.description}. `;
   }
   
-  const coherentInsight = insights.find(i => i.type === 'coherent');
+  const coherentInsight = insights.find((i) => i.type === 'coherent' || i.type === 'stable');
   if (coherentInsight) {
     summary += coherentInsight.message;
   } else {

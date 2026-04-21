@@ -108,7 +108,7 @@ const SidebarBodyRecapModule = memo(({ isExpanded, onToggle }) => {
       >
         <h2 className="sidebar-section-title">
           <span className="sidebar-section-icon inline-flex items-center justify-center" aria-hidden="true">
-            <PersonStanding className="h-4 w-4 text-emerald-400" />
+            <PersonStanding className="h-4 w-4 text-teal-400" />
           </span>
           Corps et charges
         </h2>
@@ -130,7 +130,7 @@ const SidebarBodyRecapModule = memo(({ isExpanded, onToggle }) => {
                     onClick={() => setRecapPeriod(p.id)}
                     className={`rounded-md border px-1.5 py-0.5 text-[9px] font-medium transition-colors ${
                       recapPeriod === p.id
-                        ? 'border-emerald-400/70 bg-emerald-600/75 text-white'
+                        ? 'border-teal-400/70 bg-teal-700/80 text-white'
                         : 'border-slate-600/70 bg-slate-800/70 text-slate-300 hover:bg-slate-700/70'
                     }`}
                   >
@@ -162,12 +162,12 @@ const SidebarBodyRecapModule = memo(({ isExpanded, onToggle }) => {
                       {row.statKind === 'time' ? (
                         <>
                           Temps:{' '}
-                          <span className="font-semibold text-emerald-200">{row.statValue} min</span>
+                          <span className="font-semibold text-teal-200">{row.statValue} min</span>
                         </>
                       ) : (
                         <>
                           Reps:{' '}
-                          <span className="font-semibold text-cyan-200">{row.statValue}</span>
+                          <span className="font-semibold text-teal-200">{row.statValue}</span>
                         </>
                       )}
                     </div>

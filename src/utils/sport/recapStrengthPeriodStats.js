@@ -6,6 +6,7 @@ import {
   collectPushupEnduranceSessions,
   RECAP_SYNTHETIC_ENDURANCE_PUSHUPS_ID,
 } from './recapMuscleLoadEngine';
+import { inferMuscleGroupsForExercise } from './recapMuscleInference';
 import { addCalendarDays, inclusiveCalendarSpanDays } from './garminRunningPeriodStats';
 
 function minDateFromStrengthSources(grouped, allData) {
@@ -108,26 +109,43 @@ export function buildRecapStrengthCompareModel(allData, period, getExerciseNameB
     }
   });
 
-  let topExercise = null;
+  const exercisesRanked = [];
   byExerciseCurr.forEach((sumReps, exId) => {
-    if (!topExercise || sumReps > topExercise.reps) {
-      const numericId = Number(exId);
-      let name = '';
-      if (exId === RECAP_SYNTHETIC_ENDURANCE_PUSHUPS_ID) {
-        name = '';
-      } else if (Number.isFinite(numericId) && typeof getExerciseNameById === 'function') {
-        name = getExerciseNameById(numericId) || `Exercice ${exId}`;
-      } else {
-        name = `Exercice ${exId}`;
-      }
-      topExercise = {
-        id: exId,
-        name,
-        reps: sumReps,
-        isEndurancePushups: exId === RECAP_SYNTHETIC_ENDURANCE_PUSHUPS_ID,
-      };
+    const numericId = Number(exId);
+    let name = '';
+    if (exId === RECAP_SYNTHETIC_ENDURANCE_PUSHUPS_ID) {
+      name = '';
+    } else if (Number.isFinite(numericId) && typeof getExerciseNameById === 'function') {
+      name = getExerciseNameById(numericId) || `Exercice ${exId}`;
+    } else {
+      name = `Exercice ${exId}`;
     }
+    exercisesRanked.push({
+      id: exId,
+      name,
+      reps: sumReps,
+      isEndurancePushups: exId === RECAP_SYNTHETIC_ENDURANCE_PUSHUPS_ID
+    });
   });
+  exercisesRanked.sort((a, b) => b.reps - a.reps);
+  const topExercise = exercisesRanked[0] || null;
+  const top3Exercises = exercisesRanked.slice(0, 3);
+
+  const muscleTotals = new Map();
+  exercisesRanked.forEach(({ id, name, reps }) => {
+    const exLike =
+      id === RECAP_SYNTHETIC_ENDURANCE_PUSHUPS_ID ? { name: 'Pompes (endurance)' } : { name: name || `Exercice ${id}` };
+    const groups = inferMuscleGroupsForExercise(exLike);
+    const n = Math.max(1, groups.length);
+    const share = reps / n;
+    groups.forEach((g) => {
+      muscleTotals.set(g, (muscleTotals.get(g) || 0) + share);
+    });
+  });
+  const top3MuscleGroups = [...muscleTotals.entries()]
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 3)
+    .map(([group, r]) => ({ group, reps: Math.round(r) }));
 
   const chunks = Math.min(Math.max(numBars, 4), 14);
   const daysPerChunk = Math.max(1, Math.ceil(windowDays / chunks));
@@ -166,6 +184,8 @@ export function buildRecapStrengthCompareModel(allData, period, getExerciseNameB
     totalRepsPrev,
     totalLiftedKgRepCurr,
     topExercise,
+    top3Exercises,
+    top3MuscleGroups,
     activeDays: activeDays.size,
     maxSingleWeight,
     chartData,

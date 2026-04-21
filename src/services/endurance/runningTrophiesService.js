@@ -21,6 +21,16 @@ const LEVEL_MULTIPLIERS = {
 
 const LEVELS = ['bronze', 'silver', 'gold', 'elite'];
 
+/** Trophées « durée » où l’intitulé exige une sortie sans arrêt (Garmin) ou durée manuelle honnête. */
+const CONTINUOUS_TROPHIES_REQUIRE_NO_STOP = new Set([
+  'run_30min',
+  'run_45min',
+  'run_60min',
+  'run_130',
+  'run_2h',
+  'run_3h'
+]);
+
 /** Métriques « plus haut = mieux » avec seuil distance (km) qui monte par palier. */
 const DISTANCE_LIKE_METRICS = new Set([
   'singleDistance',
@@ -64,6 +74,15 @@ export function inversePaceFloorSec(metric) {
 function toNumber(value, fallback = 0) {
   const n = Number(value);
   return Number.isFinite(n) ? n : fallback;
+}
+
+/** Jour calendaire local (YYYY-MM-DD), aligné sur la date saisie — évite les décalages UTC sur les séries. */
+function dateKeyLocalFromDate(d) {
+  if (!d || !(d instanceof Date) || Number.isNaN(d.getTime())) return null;
+  const y = d.getFullYear();
+  const mo = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${y}-${mo}-${day}`;
 }
 
 function parseDurationToMinutes(duration) {
@@ -127,6 +146,20 @@ function normalizeRuns(sessions = []) {
     })
     .filter((s) => s.__date instanceof Date && !Number.isNaN(s.__date.getTime()) && s.__distance > 0)
     .sort((a, b) => a.__date - b.__date);
+}
+
+/**
+ * Complète FC moyenne / max depuis l’objet activité Garmin quand la session n’a pas ces champs,
+ * pour que les trophées « endurance fondamentale » (basés sur __avgHR / __maxHR) restent alignés
+ * sur les données affichées dans le détail Garmin.
+ */
+function mergeGarminHrIntoRun(run) {
+  const g = run?.garmin;
+  if (!g || typeof g !== 'object') return;
+  const ga = toNumber(g.avgHR, 0);
+  const gm = toNumber(g.maxHR, 0);
+  if (run.__avgHR <= 0 && ga > 0) run.__avgHR = ga;
+  if (run.__maxHR <= 0 && gm > 0) run.__maxHR = gm;
 }
 
 function buildWeekKey(date) {
@@ -256,14 +289,14 @@ function maxConsecutiveDays(runs) {
 /** Plus longue série de jours consécutifs avec dates (YYYY-MM-DD) de cette fenêtre. */
 function computeLongestStreak(runs) {
   if (!runs.length) return { length: 0, dates: [] };
-  const uniq = [...new Set(runs.map((r) => r.__date.toISOString().slice(0, 10)))].sort();
+  const uniq = [...new Set(runs.map((r) => dateKeyLocalFromDate(r.__date)).filter(Boolean))].sort();
   let best = 1;
   let bestStart = 0;
   let curStart = 0;
   let streak = 1;
   for (let i = 1; i < uniq.length; i += 1) {
-    const prev = new Date(`${uniq[i - 1]}T00:00:00`);
-    const cur = new Date(`${uniq[i]}T00:00:00`);
+    const prev = new Date(`${uniq[i - 1]}T12:00:00`);
+    const cur = new Date(`${uniq[i]}T12:00:00`);
     const diff = (cur - prev) / 86400000;
     if (diff === 1) {
       streak += 1;
@@ -312,6 +345,7 @@ function variabilitySecPerKm(run) {
 }
 
 function inferZone2Bounds(runs) {
+  /** FC max « observée » sur les sorties : sert à estimer zone 2 (60–75 %), pas la FCmax théorique au laboratoire. */
   const maxHr = runs.reduce((acc, r) => Math.max(acc, r.__maxHR || 0), 0);
   const fallbackMax = maxHr > 0 ? maxHr : 190;
   return {
@@ -345,6 +379,20 @@ function isGarminRunWithoutStop(garmin) {
   return !hasStop;
 }
 
+/** Durée « sans pause » alignée sur maxContinuousNoStopMinutes (Garmin sans arrêt ou manuel). */
+function noStopContinuousMinutesForRun(run) {
+  const garmin = run.garmin;
+  if (garmin && isGarminRunWithoutStop(garmin)) {
+    const movSec = toNumber(
+      garmin.movingDuration ?? garmin.movingTime ?? garmin.running?.movingDuration,
+      0
+    );
+    return movSec > 30 ? movSec / 60 : run.__durationMin;
+  }
+  if (!garmin) return run.__durationMin;
+  return 0;
+}
+
 function isIntervalRun(run, garmin) {
   const runType = String(run.type || '').toLowerCase();
   if (runType === 'interval' || runType.includes('interval') || runType.includes('fraction')) return true;
@@ -375,9 +423,15 @@ function inDurRange(sec, [lo, hi]) {
 
 /** Max de sorties « longues » (≥ minKm) dans une fenêtre glissante de 7 jours. */
 function maxLongRunsInSlidingWeek(runs, minKm = 15) {
+  return longRunsInBestSlidingWindow(runs, minKm).count;
+}
+
+/** Fenêtre glissante 7 jours avec le plus de sorties ≥ minKm ; retourne le compte et les sorties de cette fenêtre. */
+function longRunsInBestSlidingWindow(runs, minKm = 15) {
   const longRuns = runs.filter((r) => r.__distance >= minKm - 1e-6).sort((a, b) => a.__date - b.__date);
-  if (!longRuns.length) return 0;
+  if (!longRuns.length) return { count: 0, runsInWindow: [] };
   let best = 0;
+  let bestStartIdx = 0;
   for (let i = 0; i < longRuns.length; i += 1) {
     const start = longRuns[i].__date.getTime();
     const end = start + 7 * 86400000;
@@ -385,40 +439,66 @@ function maxLongRunsInSlidingWeek(runs, minKm = 15) {
     for (let j = i; j < longRuns.length && longRuns[j].__date.getTime() < end; j += 1) {
       c += 1;
     }
-    best = Math.max(best, c);
+    if (c > best) {
+      best = c;
+      bestStartIdx = i;
+    }
   }
-  return best;
+  const t0 = longRuns[bestStartIdx].__date.getTime();
+  const t1 = t0 + 7 * 86400000;
+  const runsInWindow = longRuns.filter((r) => {
+    const t = r.__date.getTime();
+    return t >= t0 && t < t1;
+  });
+  return { count: best, runsInWindow };
 }
 
 /** Nombre de mois calendaires où chaque semaine ISO touchée par le mois a au moins 3 sorties. */
 function countStrictNoSkipMonths(runs) {
+  return listStrictNoSkipMonthKeys(runs).length;
+}
+
+/** Mois calendaires qui valident la règle « mois strict » (alignée sur countStrictNoSkipMonths). */
+function listStrictNoSkipMonthKeys(runs) {
   const monthKeys = [...new Set(runs.map((r) => buildMonthKey(r.__date)))].sort();
-  let ok = 0;
+  const ok = [];
   monthKeys.forEach((mk) => {
     const monthRuns = runs.filter((r) => buildMonthKey(r.__date) === mk);
     if (monthRuns.length < 12) return;
     const weeks = buildWeekGroupsInMonth(monthRuns);
     if (weeks.length < 3) return;
-    if (weeks.every((w) => w.runs.length >= 3)) ok += 1;
+    if (weeks.every((w) => w.runs.length >= 3)) ok.push(mk);
   });
   return ok;
 }
 
 /** Parmi 5 km, 10 km et semi, combien de « familles » ont au moins une amélioration d’allure chronologique. */
 function countDistanceBucketImprovements(runs) {
+  return collectFirstImprovementRunPerDistanceBucket(runs).length;
+}
+
+/**
+ * Première amélioration d’allure chronologique par famille (≥ 5 km, ≥ 10 km, ≥ semi).
+ * Utilisé pour le comptage « 3 distances » et pour les sessions liées.
+ */
+function collectFirstImprovementRunPerDistanceBucket(runs) {
   const thresholds = [5, 10, 21.0975];
-  return thresholds.filter((minKm) => {
-    const sub = [...runs].filter((r) => r.__distance >= minKm - 1e-6 && r.__paceSec).sort((a, b) => a.__date - b.__date);
+  const labels = ['5 km', '10 km', 'semi (21,1 km)'];
+  const out = [];
+  thresholds.forEach((minKm, idx) => {
+    const sub = [...runs]
+      .filter((r) => r.__distance >= minKm - 1e-6 && r.__paceSec)
+      .sort((a, b) => a.__date - b.__date);
     let best = null;
-    let imp = 0;
-    sub.forEach((run) => {
-      if (best == null || run.__paceSec < best) {
-        if (best != null) imp += 1;
-        best = run.__paceSec;
+    for (const run of sub) {
+      if (best != null && run.__paceSec < best) {
+        out.push({ run, prevPaceSec: best, bucketLabel: labels[idx] });
+        break;
       }
-    });
-    return imp >= 1;
-  }).length;
+      if (best == null || run.__paceSec < best) best = run.__paceSec;
+    }
+  });
+  return out;
 }
 
 function splitHalfPaceSec(run, garmin) {
@@ -509,6 +589,14 @@ function maxWorkRecChain(seq, spec) {
   return best;
 }
 
+function matchesIntervalWorkTemplate(run, garmin, templateId) {
+  const spec = INTERVAL_WORK_REC_SPECS[templateId];
+  if (!spec || !garmin) return false;
+  const seq = lapsToSequence(garmin);
+  if (seq.length < spec.reps * 2 - 1) return false;
+  return maxWorkRecChain(seq, spec) >= spec.reps;
+}
+
 function secondsBeforeIndex(seq, idx) {
   let s = 0;
   for (let i = 0; i < idx && i < seq.length; i += 1) {
@@ -553,13 +641,16 @@ function intervalNoActiveStop(run, garmin) {
   if (!isIntervalRun(run, garmin)) return false;
   const laps = garmin?.running?.laps;
   if (!Array.isArray(laps) || laps.length < 4) return false;
+  let sawRecovery = false;
   for (const lap of laps) {
     const ph = classifyLapPhase(lap);
     if (ph !== 'recovery' && ph !== 'cooldown') continue;
+    sawRecovery = true;
     const dk = lapDistanceKm(lap);
     if (dk < 0.12) return false;
   }
-  return true;
+  /** Sans tour récup / retour au calme identifié, on ne peut pas valider « récup = footing ». */
+  return sawRecovery;
 }
 
 function chaosFartlek5k(run, garmin) {
@@ -649,15 +740,88 @@ function efRunsInMonth(monthRuns, zone2) {
   return { total, ef };
 }
 
-function countEfEightyPercentMonths(runs, zone2) {
+/** Sortie « EF fondamentale » alignée sur l’esprit allure Z2 : FC dans zone 2, volume mini, hors fractionné. */
+function isEfFundamentalRun(run, zone2) {
+  if (!zone2 || run.__avgHR <= 0) return false;
+  if (run.__avgHR < zone2.min || run.__avgHR > zone2.max) return false;
+  if (run.__distance < 2.5 - 1e-6) return false;
+  if (run.__durationMin < 18 - 1e-6) return false;
+  if (isIntervalRun(run, run.garmin)) return false;
+  return true;
+}
+
+/** Mois calendaires qualifiés pour le trophée « ≥8 sorties dont ≥80 % en zone EF ». */
+function listQualifyingEfEightyMonthKeys(runs, zone2) {
+  if (!zone2) return [];
   const months = [...new Set(runs.map((r) => buildMonthKey(r.__date)))];
-  let c = 0;
+  const ok = [];
   months.forEach((mk) => {
     const monthRuns = runs.filter((r) => buildMonthKey(r.__date) === mk);
     const { total, ef } = efRunsInMonth(monthRuns, zone2);
-    if (total >= 8 && ef / total >= 0.8 - 1e-6) c += 1;
+    if (total >= 8 && ef / total >= 0.8 - 1e-6) ok.push(mk);
   });
-  return c;
+  return ok;
+}
+
+function countEfEightyPercentMonths(runs, zone2) {
+  return listQualifyingEfEightyMonthKeys(runs, zone2).length;
+}
+
+/** Plus longue chaîne de jours calendaires consécutifs avec ≥1 sortie EF fondamentale chaque jour. */
+function maxConsecutiveEfFundamentalDays(runs, zone2) {
+  const daySet = new Set();
+  runs.forEach((r) => {
+    if (!isEfFundamentalRun(r, zone2)) return;
+    const k = dateKeyLocalFromDate(r.__date);
+    if (k) daySet.add(k);
+  });
+  const keys = [...daySet].sort();
+  if (!keys.length) return 0;
+  let best = 1;
+  let cur = 1;
+  for (let i = 1; i < keys.length; i += 1) {
+    const a = new Date(`${keys[i - 1]}T12:00:00`);
+    const b = new Date(`${keys[i]}T12:00:00`);
+    const diff = (b.getTime() - a.getTime()) / 86400000;
+    if (diff === 1) {
+      cur += 1;
+      best = Math.max(best, cur);
+    } else {
+      cur = 1;
+    }
+  }
+  return best;
+}
+
+/** Nombre de semaines ISO où le cumul km en EF fondamental atteint `minKm`. */
+function countIsoWeeksWithMinEfFundamentalKm(runs, zone2, minKm) {
+  if (!zone2 || minKm <= 0) return 0;
+  const weekKm = new Map();
+  runs.forEach((r) => {
+    if (!isEfFundamentalRun(r, zone2)) return;
+    const wk = buildWeekKey(r.__date);
+    weekKm.set(wk, (weekKm.get(wk) || 0) + r.__distance);
+  });
+  let n = 0;
+  weekKm.forEach((km) => {
+    if (km >= minKm - 1e-6) n += 1;
+  });
+  return n;
+}
+
+function listIsoWeekKeysWithMinEfFundamentalKm(runs, zone2, minKm) {
+  if (!zone2 || minKm <= 0) return new Set();
+  const weekKm = new Map();
+  runs.forEach((r) => {
+    if (!isEfFundamentalRun(r, zone2)) return;
+    const wk = buildWeekKey(r.__date);
+    weekKm.set(wk, (weekKm.get(wk) || 0) + r.__distance);
+  });
+  const out = new Set();
+  weekKm.forEach((km, wk) => {
+    if (km >= minKm - 1e-6) out.add(wk);
+  });
+  return out;
 }
 
 function maxConsecutiveEfPerfect(runs, zone2) {
@@ -723,6 +887,8 @@ function buildChallengeDetectionStats(runs) {
   const zone2 = inferZone2Bounds(runs);
   let ef80m = 0;
   let efStable = 0;
+  let efDawn = 0;
+  let efEvening = 0;
 
   runs.forEach((run) => {
     const garmin = run.garmin;
@@ -744,9 +910,15 @@ function buildChallengeDetectionStats(runs) {
     if (chaosHrCap(run, garmin)) cHr += 1;
     if (marathonNegativeSplitRun(run, garmin)) marathonNs += 1;
     if (efStableHrLongRun(run, garmin, zone2)) efStable += 1;
+    const hStart = startHour(run);
+    if (hStart != null && hStart < 7 && isEfFundamentalRun(run, zone2)) efDawn += 1;
+    if (hStart != null && hStart >= 20 && hStart <= 23 && isEfFundamentalRun(run, zone2)) efEvening += 1;
   });
 
   ef80m = countEfEightyPercentMonths(runs, zone2);
+  const EF_WEEK_VOLUME_KM = 30;
+  const efWeek30 = countIsoWeeksWithMinEfFundamentalKm(runs, zone2, EF_WEEK_VOLUME_KM);
+  const efDayChain = maxConsecutiveEfFundamentalDays(runs, zone2);
 
   const out = {
     intAfter30Count: intAfter30,
@@ -760,7 +932,11 @@ function buildChallengeDetectionStats(runs) {
     marathonNegativeSplitCount: marathonNs,
     efMonthEightyCount: ef80m,
     efPerfectStreakMax: maxConsecutiveEfPerfect(runs, zone2),
-    efStableHrCount: efStable
+    efStableHrCount: efStable,
+    efDawnCount: efDawn,
+    efEveningCount: efEvening,
+    efWeek30EfKmCount: efWeek30,
+    efConsecutiveEfDaysMax: efDayChain
   };
   Object.keys(intervalCounts).forEach((k) => {
     out[`tpl_${k}`] = intervalCounts[k];
@@ -801,7 +977,10 @@ function buildStats(runs, garminById = new Map()) {
   let bestSemiRaceDurationSec = null;
 
   const zone2 = inferZone2Bounds(runs);
-  const hr5k = [];
+  /** Séries chronologique pour la tendance FC (sorties ≥ 5 km avec FC ; allure optionnelle). */
+  const hr5kSeries = [];
+  const longRunWindow = longRunsInBestSlidingWindow(runs, 15);
+  const strictNoSkipMonthKeys = listStrictNoSkipMonthKeys(runs);
 
   runs.forEach((run) => {
     const garminId = run.garminId != null ? String(run.garminId) : String(run.id);
@@ -865,7 +1044,15 @@ function buildStats(runs, garminById = new Map()) {
 
     if (run.__distance >= 5 && run.__paceSec) {
       best5kPace = best5kPace == null ? run.__paceSec : Math.min(best5kPace, run.__paceSec);
-      if (run.__avgHR > 0) hr5k.push(run.__avgHR);
+    }
+    if (run.__distance >= 5 - 1e-6 && run.__avgHR > 0) {
+      hr5kSeries.push({
+        run,
+        hr: run.__avgHR,
+        date: run.__date,
+        paceSec: run.__paceSec,
+        distanceKm: run.__distance
+      });
     }
     if (run.__distance >= 10 && run.__paceSec) {
       best10kPace = best10kPace == null ? run.__paceSec : Math.min(best10kPace, run.__paceSec);
@@ -892,8 +1079,33 @@ function buildStats(runs, garminById = new Map()) {
     }
   });
 
-  const hrTrendBetter = hr5k.length >= 4 && hr5k.slice(-2).reduce((a, b) => a + b, 0) / 2 < hr5k.slice(0, 2).reduce((a, b) => a + b, 0) / 2;
-  if (hrTrendBetter) lowHR5kRuns = 1;
+  hr5kSeries.sort((a, b) => a.date - b.date);
+  let hr5kTrendDetail = {
+    meets: false,
+    earlyAvg: null,
+    lateAvg: null,
+    earlyIds: [],
+    lateIds: [],
+    sampleCount: hr5kSeries.length,
+    minRuns: 4
+  };
+  if (hr5kSeries.length >= 4) {
+    const early = hr5kSeries.slice(0, 2);
+    const late = hr5kSeries.slice(-2);
+    const earlyAvg = (early[0].hr + early[1].hr) / 2;
+    const lateAvg = (late[0].hr + late[1].hr) / 2;
+    const hrTrendBetter = lateAvg < earlyAvg;
+    if (hrTrendBetter) lowHR5kRuns = 1;
+    hr5kTrendDetail = {
+      meets: hrTrendBetter,
+      earlyAvg: Math.round(earlyAvg * 10) / 10,
+      lateAvg: Math.round(lateAvg * 10) / 10,
+      earlyIds: early.map((e) => String(e.run.id ?? e.run.garminId ?? '')).filter(Boolean),
+      lateIds: late.map((e) => String(e.run.id ?? e.run.garminId ?? '')).filter(Boolean),
+      sampleCount: hr5kSeries.length,
+      minRuns: 4
+    };
+  }
 
   const streakInfo = computeLongestStreak(runs);
   const streakDates = new Set(streakInfo.dates);
@@ -964,13 +1176,16 @@ function buildStats(runs, garminById = new Map()) {
     stablePaceRuns,
     runsWithoutStop,
     lowHR5kRuns,
+    hr5kTrendDetail,
     zone2,
     maxEFSingleDistance,
     maxEFSinglePaceSec,
     efAvgPaceSec:
       totalEFDistance > 0.01 && totalEFMinutes > 0 ? (totalEFMinutes * 60) / totalEFDistance : null,
-    rollingLongRunWeek: maxLongRunsInSlidingWeek(runs, 15),
-    monthNoSkipMonths: countStrictNoSkipMonths(runs),
+    rollingLongRunWeek: longRunWindow.count,
+    rollingLongRunWindowRuns: longRunWindow.runsInWindow,
+    monthNoSkipMonths: strictNoSkipMonthKeys.length,
+    strictNoSkipMonthKeys,
     improveBucketsCount: countDistanceBucketImprovements(runs),
     sustainMin3ConsecutiveMonths: sustain3.maxConsecutive,
     sustainMin3BestMonths: sustain3.bestMonths,
@@ -1046,6 +1261,10 @@ function resolveTierTarget(trophy, level) {
   if (trophy.metric === 'challengeStat' && trophy.statKey === 'efPerfectStreakMax') {
     const m = { bronze: 2, silver: 3, gold: 4, elite: 5 };
     return m[level] ?? 5;
+  }
+  if (trophy.metric === 'challengeStat' && trophy.statKey === 'efConsecutiveEfDaysMax') {
+    const m = { bronze: 7, silver: 14, gold: 30, elite: 56 };
+    return m[level] ?? 56;
   }
   if (trophy.metric === 'sustainWeeklyRunsInMonths') {
     const minR = toNumber(trophy.sustainMinRunsPerWeek, 3);
@@ -1126,10 +1345,9 @@ function evaluateSingle(trophy, stats, level) {
     case 'morningRuns': value = stats.morningRuns; break;
     case 'intervalRuns': value = stats.intervalCount; break;
     case 'continuousMinutes':
-      value =
-        trophy.id === 'run_30min'
-          ? stats.maxContinuousNoStopMinutes ?? 0
-          : stats.maxContinuousMinutes;
+      value = CONTINUOUS_TROPHIES_REQUIRE_NO_STOP.has(trophy.id)
+        ? stats.maxContinuousNoStopMinutes ?? 0
+        : stats.maxContinuousMinutes;
       break;
     case 'best5kPaceMaxSec': value = stats.best5kPace == null ? 9999 : stats.best5kPace; break;
     case 'best10kPaceMaxSec': value = stats.best10kPace == null ? 9999 : stats.best10kPace; break;
@@ -1170,10 +1388,32 @@ function evaluateSingle(trophy, stats, level) {
     trophy.metric === 'trialRaceMaxSec' ||
     trophy.metric === 'pace1000AvgMaxSec' ||
     String(trophy.metric || '').endsWith('MaxSec');
-  const progress = isInverse
+  let progress = isInverse
     ? (value <= target ? 1 : target > 0 ? Math.max(0, Math.min(1, target / value)) : 0)
     : (target > 0 ? Math.max(0, Math.min(1, value / target)) : 0);
-  const unlocked = isInverse ? value <= target : value >= target;
+  let unlocked = isInverse ? value <= target : value >= target;
+
+  /** Sans sortie éligible (distance min), pas de « faux » % dû au sentinelle 9999 sec/km. */
+  const noQualifyingPace =
+    (trophy.metric === 'best5kPaceMaxSec' && stats.best5kPace == null) ||
+    (trophy.metric === 'best10kPaceMaxSec' && stats.best10kPace == null) ||
+    (trophy.metric === 'best1kPaceMaxSec' && stats.best1kPace == null);
+  if (noQualifyingPace) {
+    progress = 0;
+    unlocked = false;
+  }
+
+  /** Chrono trial : sans sortie ≥ distance min, pas de % basé sur le sentinelle 99999999 s. */
+  const mkTrial = trophy.metric === 'trialRaceMaxSec' ? toNumber(trophy.trialMinKm, 5) : 0;
+  const noQualifyingTrial =
+    trophy.metric === 'trialRaceMaxSec' &&
+    ((mkTrial >= 20 && stats.bestSemiRaceDurationSec == null) ||
+      (mkTrial >= 9.5 && mkTrial < 20 && stats.best10kRaceDurationSec == null) ||
+      (mkTrial < 9.5 && stats.best5kRaceDurationSec == null));
+  if (noQualifyingTrial) {
+    progress = 0;
+    unlocked = false;
+  }
 
   return { value, target, progress, unlocked };
 }
@@ -1382,7 +1622,43 @@ export function buildRunningTrophiesCatalog() {
     { id: 'chaos_hr_cap', title: 'Fractionné avec FC plafonnée', metric: 'challengeStat', statKey: 'chaosHrCount', baseTarget: 1, difficulty: 'elite', category: 'Fractionné chaos' },
     { id: 'ef_month_80', title: '1 mois sans sortir de zone EF sur 80% des runs', metric: 'challengeStat', statKey: 'efMonthEightyCount', baseTarget: 1, difficulty: 'elite', category: 'EF avancée' },
     { id: 'ef_5_perfect', title: '5 runs consécutifs en EF parfaite', metric: 'challengeStat', statKey: 'efPerfectStreakMax', baseTarget: 2, difficulty: 'elite', category: 'EF avancée' },
-    { id: 'ef_stable_hr', title: 'EF avec FC stabilisée (écart faible sur toute sortie)', metric: 'challengeStat', statKey: 'efStableHrCount', baseTarget: 1, difficulty: 'elite', category: 'EF avancée' }
+    { id: 'ef_stable_hr', title: 'EF avec FC stabilisée (écart faible sur toute sortie)', metric: 'challengeStat', statKey: 'efStableHrCount', baseTarget: 1, difficulty: 'elite', category: 'EF avancée' },
+    {
+      id: 'ef_ad_dawn',
+      title: 'EF fondamental avant 7 h (≥2,5 km, hors fractionné)',
+      metric: 'challengeStat',
+      statKey: 'efDawnCount',
+      baseTarget: 1,
+      difficulty: 'elite',
+      category: 'EF avancée'
+    },
+    {
+      id: 'ef_ad_evening',
+      title: 'EF fondamental en soirée (20 h–23 h, même critère)',
+      metric: 'challengeStat',
+      statKey: 'efEveningCount',
+      baseTarget: 1,
+      difficulty: 'elite',
+      category: 'EF avancée'
+    },
+    {
+      id: 'ef_ad_week30',
+      title: 'Semaine ISO avec ≥ 30 km cumulés en EF Z2',
+      metric: 'challengeStat',
+      statKey: 'efWeek30EfKmCount',
+      baseTarget: 1,
+      difficulty: 'elite',
+      category: 'EF avancée'
+    },
+    {
+      id: 'ef_ad_daychain',
+      title: 'Jours consécutifs avec au moins une sortie EF Z2',
+      metric: 'challengeStat',
+      statKey: 'efConsecutiveEfDaysMax',
+      baseTarget: 7,
+      difficulty: 'elite',
+      category: 'EF avancée'
+    }
   ];
 
   const simpleTotal = base.filter((t) => t.difficulty === 'simple' && t.id !== 'complete_simples').length;
@@ -1441,21 +1717,30 @@ export function formatDurationClock(totalSec) {
   return `${m}:${String(sec).padStart(2, '0')}`;
 }
 
-/** Multiplicateur palier pour l’XP sport (aligné sur la progressivité bronze → élite). */
+/** XP de base (palier bronze) par difficulté du trophée — échelle nettement au-dessus de l’ancien plancher ~6–50 XP. */
+const RUNNING_TROPHY_BRONZE_XP = {
+  simple: 120,
+  intermediate: 220,
+  specific: 320,
+  endurance: 460,
+  elite: 640
+};
+
+/** Multiplicateur palier pour l’XP sport (bronze → élite). */
 export const RUNNING_TROPHY_TIER_XP_MULT = {
   bronze: 1,
-  silver: 1.12,
-  gold: 1.28,
-  elite: 1.45
+  silver: 1.24,
+  gold: 1.52,
+  elite: 1.95
 };
 
 /**
  * XP sport attribuée pour un seul palier débloqué (bronze, argent, or ou élite).
  */
 export function runningTrophyLevelXpReward(difficulty, level) {
-  const base = DIFFICULTY_POINTS[difficulty] || 10;
+  const base = RUNNING_TROPHY_BRONZE_XP[difficulty] ?? RUNNING_TROPHY_BRONZE_XP.simple;
   const tm = RUNNING_TROPHY_TIER_XP_MULT[level] || 1;
-  return Math.round(base * tm * 0.58);
+  return Math.round(base * tm);
 }
 
 /**
@@ -1492,7 +1777,7 @@ export function computeRunningTrophiesXp(results) {
 function efZoneHint(stats) {
   const z = stats?.zone2;
   if (!z || !Number.isFinite(z.min) || !Number.isFinite(z.max)) return '';
-  return ` (FC ${z.min}–${z.max} bpm, estimée sur tes sorties)`;
+  return ` (FC ${z.min}–${z.max} bpm, zone 2 ≈ 60–75 % de la FC max relevée sur tes sorties)`;
 }
 
 /**
@@ -1532,7 +1817,7 @@ export function describeRunningTrophyCurrentProgress(trophy, stats) {
     case 'intervalRuns':
       return `Séances fractionnées détectées : ${stats.intervalCount}`;
     case 'continuousMinutes': {
-      if (trophy?.id === 'run_30min') {
+      if (trophy?.id && CONTINUOUS_TROPHIES_REQUIRE_NO_STOP.has(trophy.id)) {
         const sec = Math.round(toNumber(stats.maxContinuousNoStopMinutes ?? 0, 0) * 60);
         return `Plus longue sortie sans pause (sans arrêt Garmin ou durée manuelle) : ${formatDurationClock(sec)}`;
       }
@@ -1552,7 +1837,9 @@ export function describeRunningTrophyCurrentProgress(trophy, stats) {
       if (stats.best1kPace == null) return 'Pas encore de segment ≥ 1 km avec allure mesurée';
       return `Meilleure allure sur ≥ 1 km : ${formatPaceSecPerKm(stats.best1kPace)}`;
     case 'stablePaceRuns':
-      return `Sorties allure stable (laps) : ${stats.stablePaceRuns}`;
+      return trophy?.id === 'stable_pace'
+        ? `Sorties allure stable (laps Garmin, variabilité ≤ 10 s/km) : ${stats.stablePaceRuns}`
+        : `Sorties allure stable (laps) : ${stats.stablePaceRuns}`;
     case 'runsWithoutStop': {
       const minKm = toNumber(trophy.withoutStopMinKm, 0);
       if (minKm >= 5) {
@@ -1578,10 +1865,15 @@ export function describeRunningTrophyCurrentProgress(trophy, stats) {
             : '';
       return `Plus longue sortie 100 % en EF${zHint} : ${formatKmOneDecimal(stats.maxEFSingleDistance || 0)}${pace}`;
     }
-    case 'hrTrend':
-      return stats.lowHR5kRuns >= 1
-        ? 'Tendance FC sur 5 km : progression détectée'
-        : 'Tendance FC sur 5 km : pas encore assez de données comparables';
+    case 'hrTrend': {
+      const d = stats.hr5kTrendDetail;
+      if (!d || d.sampleCount < 4) {
+        return `Tendance FC sur ≥ 5 km : ${d?.sampleCount ?? 0} / 4 sorties chronologiques avec FC`;
+      }
+      return d.meets
+        ? `FC moyenne : 2 premières sorties ≥ 5 km ≈ ${d.earlyAvg} bpm, 2 dernières ≈ ${d.lateAvg} bpm (baisse = progression)`
+        : `FC moyenne : 2 premières ≥ 5 km ≈ ${d.earlyAvg} bpm vs 2 dernières ≈ ${d.lateAvg} bpm — pas encore une baisse`;
+    }
     case 'trialRaceMaxSec': {
       const minKm = toNumber(trophy.trialMinKm, 5);
       let best = null;
@@ -1589,7 +1881,7 @@ export function describeRunningTrophyCurrentProgress(trophy, stats) {
       else if (minKm >= 9.5) best = stats.best10kRaceDurationSec;
       else best = stats.best5kRaceDurationSec;
       if (best == null) return `Pas encore de sortie chronométrée ≥ ${minKm} km`;
-      return `Meilleur chrono sur ≥ ${minKm} km : ${formatDurationClock(best)}`;
+      return `Meilleure durée totale sur une sortie ≥ ${minKm} km : ${formatDurationClock(best)}`;
     }
     case 'pace1000AvgMaxSec': {
       const D = stats.totalDistance;
@@ -1607,6 +1899,28 @@ export function describeRunningTrophyCurrentProgress(trophy, stats) {
       return `Marathons négative split (tours) : ${stats.marathonNegativeSplitCount ?? 0}`;
     case 'challengeStat': {
       const v = stats[trophy.statKey] ?? 0;
+      const sk = trophy.statKey;
+      if (sk === 'efMonthEightyCount') {
+        return `Mois calendaires qualifiés (≥8 sorties dont ≥80 % FC zone 2) : ${v}`;
+      }
+      if (sk === 'efPerfectStreakMax') {
+        return `Meilleure série de sorties consécutives 100 % zone EF : ${v}`;
+      }
+      if (sk === 'efStableHrCount') {
+        return `Sorties EF longues (≥42 min) avec FC par tour stable : ${v}`;
+      }
+      if (sk === 'efDawnCount') {
+        return `Sorties EF fondamentales avant 7 h : ${v}`;
+      }
+      if (sk === 'efEveningCount') {
+        return `Sorties EF fondamentales 20 h–23 h : ${v}`;
+      }
+      if (sk === 'efWeek30EfKmCount') {
+        return `Semaines ISO avec ≥30 km cumulés en EF Z2 : ${v}`;
+      }
+      if (sk === 'efConsecutiveEfDaysMax') {
+        return `Plus longue série de jours avec ≥1 sortie EF Z2 : ${v} j`;
+      }
       return `Détections / score courant : ${v}`;
     }
     case 'completeSimplesCount':
@@ -1658,21 +1972,60 @@ export function describeRunningTrophyLevelRequirement(trophy, target, levelLabel
   if (trophy.metric === 'hrTrend') {
     return `${levelLabel} : comparer plusieurs sorties ≥ 5 km (FC moyenne en baisse)`;
   }
+  if (trophy.metric === 'streakDays') {
+    const n = Math.round(Number(target) || 0);
+    return `${levelLabel} : série ≥ ${n} jour${n > 1 ? 's' : ''} consécutifs (≥ 1 sortie chaque jour)`;
+  }
+  if (trophy.metric === 'completeSimplesCount') {
+    const n = Math.round(Number(target) || 0);
+    const tot = Math.max(1, toNumber(trophy.simpleTotal, 1));
+    return `${levelLabel} : ≥ ${n} trophée${n > 1 ? 's' : ''} simple${n > 1 ? 's' : ''} débloqué${n > 1 ? 's' : ''} (sur ${tot})`;
+  }
+  if (trophy.metric === 'improveBucketsCount') {
+    const n = Math.round(Number(target) || 0);
+    return `${levelLabel} : ≥ ${n} famille${n > 1 ? 's' : ''} sur 3 (5 km, 10 km, semi) avec progression d’allure`;
+  }
+  if (trophy.metric === 'monthNoSkipMonths') {
+    const n = Math.round(Number(target) || 0);
+    return `${levelLabel} : ≥ ${n} mois calendaires « stricts » (≥ 3 sorties par semaine ISO du mois)`;
+  }
+  if (trophy.metric === 'rollingLongRunWeek') {
+    const n = Math.round(Number(target) || 0);
+    return `${levelLabel} : ≥ ${n} sortie${n > 1 ? 's' : ''} longue${n > 1 ? 's' : ''} (≥ 15 km) dans une fenêtre 7×24 h`;
+  }
+  if (trophy.metric === 'marathonNegativeSplit') {
+    const n = Math.round(Number(target) || 0);
+    return `${levelLabel} : ≥ ${n} marathon${n > 1 ? 's' : ''} (≥ 42,2 km) negative split (tours Garmin)`;
+  }
+  if (trophy.metric === 'challengeStat' && trophy.statKey === 'efMonthEightyCount') {
+    const n = Math.round(Number(target) || 0);
+    return `${levelLabel} : ≥ ${n} mois calendaires qualifiés (≥8 sorties avec FC, ≥80 % en zone EF)`;
+  }
+  if (trophy.metric === 'challengeStat' && trophy.statKey === 'efPerfectStreakMax') {
+    const n = Math.round(Number(target) || 0);
+    return `${levelLabel} : ≥ ${n} sorties consécutives entièrement en zone EF (FC)`;
+  }
+  if (trophy.metric === 'challengeStat' && trophy.statKey === 'efStableHrCount') {
+    const n = Math.round(Number(target) || 0);
+    return `${levelLabel} : ≥ ${n} sortie${n > 1 ? 's' : ''} (EF longue, FC stable par tour Garmin)`;
+  }
+  if (trophy.metric === 'challengeStat' && trophy.statKey === 'efWeek30EfKmCount') {
+    const n = Math.round(Number(target) || 0);
+    return `${levelLabel} : ≥ ${n} semaine${n > 1 ? 's' : ''} ISO avec ≥30 km cumulés en EF Z2 (hors fractionné)`;
+  }
+  if (trophy.metric === 'challengeStat' && trophy.statKey === 'efConsecutiveEfDaysMax') {
+    const n = Math.round(Number(target) || 0);
+    return `${levelLabel} : ≥ ${n} jour${n > 1 ? 's' : ''} calendaires consécutifs avec ≥1 sortie EF Z2 (≥2,5 km)`;
+  }
   if (
     trophy.metric === 'weeklyRuns' ||
     trophy.metric === 'monthlyRuns' ||
-    trophy.metric === 'streakDays' ||
     trophy.metric === 'morningRuns' ||
     trophy.metric === 'intervalRuns' ||
     trophy.metric === 'stablePaceRuns' ||
     trophy.metric === 'runsWithoutStop' ||
     trophy.metric === 'recordImprovements' ||
-    trophy.metric === 'rollingLongRunWeek' ||
-    trophy.metric === 'monthNoSkipMonths' ||
-    trophy.metric === 'improveBucketsCount' ||
-    trophy.metric === 'marathonNegativeSplit' ||
-    trophy.metric === 'challengeStat' ||
-    trophy.metric === 'completeSimplesCount'
+    trophy.metric === 'challengeStat'
   ) {
     const n = Math.round(Number(target) || 0);
     return `${levelLabel} : ≥ ${n} fois`;
@@ -1682,6 +2035,7 @@ export function describeRunningTrophyLevelRequirement(trophy, target, levelLabel
 
 function toContributingSummary(run, meta = {}) {
   const durSec = Math.max(0, Math.round(toNumber(run.__durationMin, 0) * 60));
+  const avgHrBpm = run.__avgHR > 0 ? Math.round(run.__avgHR) : null;
   return {
     id: run.id ?? run.garminId ?? null,
     garminId: run.garminId ?? null,
@@ -1690,8 +2044,16 @@ function toContributingSummary(run, meta = {}) {
     distanceKm: run.__distance,
     durationMin: run.__durationMin,
     durationClock: formatDurationClock(durSec),
+    avgHrBpm,
     paceLabel: run.__paceSec != null ? formatPaceSecPerKm(run.__paceSec) : null,
     prevPaceLabel: meta.prevPaceSec != null ? formatPaceSecPerKm(meta.prevPaceSec) : null,
+    bucketLabel: meta.bucketLabel != null ? String(meta.bucketLabel) : null,
+    hrTrendGroup:
+      meta.hrTrendRole === 'early'
+        ? 'bloc début (2×)'
+        : meta.hrTrendRole === 'late'
+          ? 'bloc récent (2×)'
+          : null,
     source: run.source || 'manual'
   };
 }
@@ -1819,13 +2181,24 @@ export function collectContributingSessions(trophy, runs, stats) {
     };
   }
 
-  if (m === 'weeklyDistance' && stats.peakWeekDistKey) {
-    const hits = runs.filter((r) => buildWeekKey(r.__date) === stats.peakWeekDistKey).sort((a, b) => b.__date - a.__date);
-    const { items, moreCount } = sliceContributing(hits, maxPreview);
+  if (m === 'weeklyDistance') {
+    if (stats.peakWeekDistKey) {
+      const hits = runs
+        .filter((r) => buildWeekKey(r.__date) === stats.peakWeekDistKey)
+        .sort((a, b) => b.__date - a.__date);
+      const { items, moreCount } = sliceContributing(hits, maxPreview);
+      return {
+        items,
+        moreCount,
+        hint: `Semaine ISO (agrégat lun–dim) la plus chargée : ${stats.peakWeekDistKey} = ${formatKmOneDecimal(getBestWeeklyDistance(stats))} (somme des km de ces sorties).`
+      };
+    }
+    const sorted = sortDesc(runs);
+    const { items, moreCount } = sliceContributing(sorted, maxPreview);
     return {
       items,
       moreCount,
-      hint: `Semaine la plus chargée : ${stats.peakWeekDistKey} (${formatKmOneDecimal(getBestWeeklyDistance(stats))}).`
+      hint: `Km / semaine ISO : aperçu des sorties récentes (aucune semaine record isolée).`
     };
   }
 
@@ -1842,39 +2215,74 @@ export function collectContributingSessions(trophy, runs, stats) {
     return { items, moreCount, hint };
   }
 
-  if (m === 'weeklyRuns' && stats.peakWeekRunsKey) {
-    const hits = runs.filter((r) => buildWeekKey(r.__date) === stats.peakWeekRunsKey).sort((a, b) => b.__date - a.__date);
-    const { items, moreCount } = sliceContributing(hits, maxPreview);
-    const hint = `Semaine avec le plus de sorties : ${stats.peakWeekRunsKey} (${getBestWeeklyRuns(stats)} sorties).`;
+  if (m === 'weeklyRuns') {
+    if (stats.peakWeekRunsKey) {
+      const hits = runs
+        .filter((r) => buildWeekKey(r.__date) === stats.peakWeekRunsKey)
+        .sort((a, b) => b.__date - a.__date);
+      const { items, moreCount } = sliceContributing(hits, maxPreview);
+      const hint = `Semaine avec le plus de sorties : ${stats.peakWeekRunsKey} (${getBestWeeklyRuns(stats)} sorties).`;
+      return {
+        items,
+        moreCount,
+        hint
+      };
+    }
+    const sorted = sortDesc(runs);
+    const { items, moreCount } = sliceContributing(sorted, maxPreview);
     return {
       items,
       moreCount,
-      hint
+      hint: 'Nombre de sorties / semaine ISO : aperçu des sorties récentes.'
     };
   }
 
-  if (m === 'monthlyDistance' && stats.peakMonthDistKey) {
-    const hits = runs.filter((r) => buildMonthKey(r.__date) === stats.peakMonthDistKey).sort((a, b) => b.__date - a.__date);
-    const { items, moreCount } = sliceContributing(hits, maxPreview);
+  if (m === 'monthlyDistance') {
+    if (stats.peakMonthDistKey) {
+      const hits = runs
+        .filter((r) => buildMonthKey(r.__date) === stats.peakMonthDistKey)
+        .sort((a, b) => b.__date - a.__date);
+      const { items, moreCount } = sliceContributing(hits, maxPreview);
+      return {
+        items,
+        moreCount,
+        hint: `Mois le plus dense en km : ${stats.peakMonthDistKey}.`
+      };
+    }
+    const sorted = sortDesc(runs);
+    const { items, moreCount } = sliceContributing(sorted, maxPreview);
     return {
       items,
       moreCount,
-      hint: `Mois le plus dense en km : ${stats.peakMonthDistKey}.`
+      hint: 'Km / mois calendaire : aperçu des sorties récentes.'
     };
   }
 
-  if (m === 'monthlyRuns' && stats.peakMonthRunsKey) {
-    const hits = runs.filter((r) => buildMonthKey(r.__date) === stats.peakMonthRunsKey).sort((a, b) => b.__date - a.__date);
-    const { items, moreCount } = sliceContributing(hits, maxPreview);
+  if (m === 'monthlyRuns') {
+    if (stats.peakMonthRunsKey) {
+      const hits = runs
+        .filter((r) => buildMonthKey(r.__date) === stats.peakMonthRunsKey)
+        .sort((a, b) => b.__date - a.__date);
+      const { items, moreCount } = sliceContributing(hits, maxPreview);
+      return {
+        items,
+        moreCount,
+        hint: `Mois avec le plus de sorties : ${stats.peakMonthRunsKey}.`
+      };
+    }
+    const sorted = sortDesc(runs);
+    const { items, moreCount } = sliceContributing(sorted, maxPreview);
     return {
       items,
       moreCount,
-      hint: `Mois avec le plus de sorties : ${stats.peakMonthRunsKey}.`
+      hint: 'Sorties / mois : aperçu des sorties récentes.'
     };
   }
 
   if (m === 'streakDays' && stats.streakDates && stats.streakDates.size > 0) {
-    const hits = runs.filter((r) => stats.streakDates.has(r.__date.toISOString().slice(0, 10))).sort((a, b) => a.__date - b.__date);
+    const hits = runs
+      .filter((r) => stats.streakDates.has(dateKeyLocalFromDate(r.__date)))
+      .sort((a, b) => a.__date - b.__date);
     const { items, moreCount } = sliceContributing(hits, maxPreview);
     return {
       items,
@@ -1897,31 +2305,24 @@ export function collectContributingSessions(trophy, runs, stats) {
 
   if (m === 'continuousMinutes') {
     const tol = 0.5;
-    const refMax =
-      trophy.id === 'run_30min'
-        ? stats.maxContinuousNoStopMinutes ?? stats.maxContinuousMinutes
-        : stats.maxContinuousMinutes;
+    const usesNoStop = Boolean(trophy.id && CONTINUOUS_TROPHIES_REQUIRE_NO_STOP.has(trophy.id));
+    const refMax = usesNoStop
+      ? stats.maxContinuousNoStopMinutes ?? stats.maxContinuousMinutes
+      : stats.maxContinuousMinutes;
     const hits = runs
       .filter((r) => {
         if (refMax <= 0) return false;
-        if (trophy.id === 'run_30min') {
-          const g = r.garmin;
-          if (g && !isGarminRunWithoutStop(g)) return false;
-          let dm = r.__durationMin;
-          if (g && isGarminRunWithoutStop(g)) {
-            const movSec = toNumber(g.movingDuration ?? g.movingTime ?? g.running?.movingDuration, 0);
-            if (movSec > 30) dm = movSec / 60;
-          }
-          return dm + tol >= refMax;
+        if (usesNoStop) {
+          const dm = noStopContinuousMinutesForRun(r);
+          return dm > 0 && dm + tol >= refMax;
         }
         return r.__durationMin + tol >= refMax;
       })
       .sort((a, b) => b.__date - a.__date);
     const { items, moreCount } = sliceContributing(hits, maxPreview);
-    const hint =
-      trophy.id === 'run_30min'
-        ? 'Sans pause : uniquement les sorties Garmin sans arrêt détecté, ou les sorties manuelles (durée saisie).'
-        : 'Sorties dont la durée atteint ta durée max continue.';
+    const hint = usesNoStop
+      ? 'Sans pause : temps mû Garmin si aucune pause détectée ; sortie manuelle = durée saisie (intégrale). Les trophées 1h30 / 2h / 3h partagent la même « plus longue » durée.'
+      : 'Sorties dont la durée atteint ta durée max continue (toutes sorties, avec ou sans preuve Garmin sans arrêt).';
     return { items, moreCount, hint };
   }
 
@@ -1955,7 +2356,11 @@ export function collectContributingSessions(trophy, runs, stats) {
   if (m === 'stablePaceRuns') {
     const hits = runs.filter((r) => isStablePaceRun(r.garmin)).sort((a, b) => b.__date - a.__date);
     const { items, moreCount } = sliceContributing(hits, maxPreview);
-    return { items, moreCount, hint: 'Sorties à variabilité d’allure faible entre tours.' };
+    const hint =
+      trophy.id === 'stable_pace'
+        ? 'Même détection que le compteur : variabilité d’allure ≤ 10 s/km entre tours Garmin (≥ 4 tours analysables).'
+        : 'Sorties à variabilité d’allure faible entre tours.';
+    return { items, moreCount, hint };
   }
 
   if (m === 'runsWithoutStop') {
@@ -1969,9 +2374,13 @@ export function collectContributingSessions(trophy, runs, stats) {
       .sort((a, b) => b.__date - a.__date);
     const { items, moreCount } = sliceContributing(hits, maxPreview);
     const hint =
-      minKm >= 5
-        ? 'Uniquement les sorties Garmin ≥ 5 km avec 0 pause détectée (distance totale de la séance).'
-        : 'Uniquement les sorties liées à Garmin avec 0 pause détectée.';
+      trophy.id === 'run_no_stop'
+        ? minKm >= 5
+          ? 'Trophée performance : uniquement Garmin ≥ 5 km, 0 pause (même compteur que l’objectif).'
+          : 'Trophée performance : uniquement Garmin, 0 pause détectée.'
+        : minKm >= 5
+          ? 'Uniquement les sorties Garmin ≥ 5 km avec 0 pause détectée (distance totale de la séance).'
+          : 'Uniquement les sorties liées à Garmin avec 0 pause détectée.';
     return { items, moreCount, hint };
   }
 
@@ -1979,11 +2388,14 @@ export function collectContributingSessions(trophy, runs, stats) {
     const hits = collectRecordImprovementRunsChrono(runs);
     const items = hits.slice(0, maxPreview).map((h) => toContributingSummary(h.run, { prevPaceSec: h.prevPaceSec }));
     const moreCount = Math.max(0, hits.length - maxPreview);
+    const hint =
+      trophy.id === 'pr_3_times'
+        ? 'Chaque ligne = une amélioration chronologique sur ≥ 5 km ; le compteur du trophée est le nombre total de telles lignes (objectif ici : 3).'
+        : 'Chaque ligne = une sortie ≥ 5 km où tu améliores ton meilleur allure chronologique ; « battait » indique l’ancien record (allure moyenne sur la séance).';
     return {
       items,
       moreCount,
-      hint:
-        'Chaque ligne = une sortie ≥ 5 km où tu améliores ton meilleur allure chronologique ; « battait » indique l’ancien record (allure moyenne sur la séance).'
+      hint
     };
   }
 
@@ -2002,7 +2414,7 @@ export function collectContributingSessions(trophy, runs, stats) {
     return {
       items,
       moreCount,
-      hint: `Sorties comptées en endurance fondamentale (FC ${z?.min ?? '—'}–${z?.max ?? '—'} bpm).`
+      hint: `Chaque séance listée a une FC moyenne dans [${z?.min ?? '—'} ; ${z?.max ?? '—'}] bpm : on compte toute sa distance et toute sa durée saisie dans le cumul EF (pas un découpage minute par minute).`
     };
   }
 
@@ -2020,16 +2432,40 @@ export function collectContributingSessions(trophy, runs, stats) {
       )
       .sort((a, b) => b.__date - a.__date);
     const { items, moreCount } = sliceContributing(hits, maxPreview);
-    return { items, moreCount, hint: 'Sorties EF au moins aussi longues que ta plus longue EF.' };
+    return {
+      items,
+      moreCount,
+      hint:
+        'Une seule sortie « 100 % EF » : FC moyenne dans la zone 2 estimée ; on retient la plus grande distance parmi elles (même base pour les trophées 15 / 25 / 30 km, seuils différents).'
+    };
   }
 
   if (m === 'hrTrend') {
+    const d = stats.hr5kTrendDetail;
+    const ridOf = (r) => String(r.id ?? r.garminId ?? '');
+    if (d?.earlyIds?.length === 2 && d?.lateIds?.length === 2) {
+      const earlyRuns = runs
+        .filter((r) => d.earlyIds.includes(ridOf(r)))
+        .sort((a, b) => a.__date - b.__date);
+      const lateRuns = runs
+        .filter((r) => d.lateIds.includes(ridOf(r)))
+        .sort((a, b) => a.__date - b.__date);
+      const merged = [...earlyRuns, ...lateRuns];
+      const items = merged.map((run) =>
+        toContributingSummary(run, { hrTrendRole: d.earlyIds.includes(ridOf(run)) ? 'early' : 'late' })
+      );
+      const hint = d.meets
+        ? `Règle : moyenne FC des 2 premières sorties ≥ 5 km avec FC (${d.earlyAvg} bpm) > moyenne des 2 dernières (${d.lateAvg} bpm). Les lignes ci-dessous sont exactement ces 4 sorties.`
+        : `Même règle : les 4 sorties ci-dessous sont les 2 premières et 2 dernières du critère ; il faut une moyenne plus basse sur le bloc récent (${d.earlyAvg} vs ${d.lateAvg} bpm actuellement).`;
+      return { items, moreCount: 0, hint };
+    }
     const pool = runs.filter((r) => r.__distance >= 5 && r.__avgHR > 0).sort((a, b) => a.__date - b.__date);
     const { items, moreCount } = sliceContributing(pool, maxPreview);
     return {
       items,
       moreCount,
-      hint: 'Comparaison FC moyenne sur les sorties ≥ 5 km (ordre chronologique).'
+      hint:
+        'Au moins 4 sorties ≥ 5 km avec FC moyenne saisie ; comparaison des moyennes des 2 premières vs 2 dernières (ordre chronologique des sorties éligibles).'
     };
   }
 
@@ -2052,7 +2488,7 @@ export function collectContributingSessions(trophy, runs, stats) {
     return {
       items,
       moreCount,
-      hint: `Sorties ≥ ${minKm} km triées par durée croissante (meilleur chrono en premier).`
+      hint: `Sorties dont la distance ≥ ${minKm} km : durée totale de la sortie = « chrono » retenu ; tri du plus court au plus long (le 1er ligne = record pour ce palier).`
     };
   }
 
@@ -2067,29 +2503,55 @@ export function collectContributingSessions(trophy, runs, stats) {
   }
 
   if (m === 'rollingLongRunWeek') {
-    const longRuns = runs.filter((r) => r.__distance >= 15 - 1e-6).sort((a, b) => a.__date - b.__date);
-    const { items, moreCount } = sliceContributing(longRuns, maxPreview);
+    const windowRuns = stats.rollingLongRunWindowRuns;
+    const arr =
+      Array.isArray(windowRuns) && windowRuns.length
+        ? windowRuns
+        : runs.filter((r) => r.__distance >= 15 - 1e-6);
+    const sorted = [...arr].sort((a, b) => b.__date - a.__date);
+    const { items, moreCount } = sliceContributing(sorted, maxPreview);
+    const n = stats.rollingLongRunWeek ?? 0;
     return {
       items,
       moreCount,
-      hint: 'Sorties longues (≥ 15 km) utilisées pour la fenêtre glissante de 7 jours.'
+      hint:
+        n > 0
+          ? `Max de sorties ≥ 15 km dans un intervalle de 7×24 h glissant (début = instant d’une de ces sorties) : ${n} — liste = sorties de la meilleure fenêtre trouvée.`
+          : 'Pas encore de sortie ≥ 15 km : le pic sur 7 jours glissants reste à 0.'
     };
   }
 
-  if (m === 'monthNoSkipMonths' && stats.peakMonthRunsKey) {
-    const hits = runs.filter((r) => buildMonthKey(r.__date) === stats.peakMonthRunsKey).sort((a, b) => b.__date - a.__date);
+  if (m === 'monthNoSkipMonths') {
+    const keys = stats.strictNoSkipMonthKeys || [];
+    if (!keys.length) {
+      return {
+        items: [],
+        moreCount: 0,
+        hint:
+          'Aucun mois « strict » encore : ≥ 12 sorties dans le mois, ≥ 3 semaines ISO couvertes, ≥ 3 sorties chaque semaine ISO du mois.'
+      };
+    }
+    const setM = new Set(keys);
+    const hits = runs.filter((r) => setM.has(buildMonthKey(r.__date))).sort((a, b) => b.__date - a.__date);
     const { items, moreCount } = sliceContributing(hits, maxPreview);
-    return { items, moreCount, hint: 'Exemple : mois avec le plus de sorties (détail utile pour les mois « stricts »).' };
-  }
-
-  if (m === 'improveBucketsCount') {
-    const hits = collectRecordImprovementRunsChrono(runs);
-    const items = hits.slice(0, maxPreview).map((h) => toContributingSummary(h.run, { prevPaceSec: h.prevPaceSec }));
-    const moreCount = Math.max(0, hits.length - maxPreview);
     return {
       items,
       moreCount,
-      hint: 'Améliorations sur 5 km, 10 km et semi (≥ 21,1 km) comptées séparément.'
+      hint: `Mois qualifiés : ${keys.join(', ')}. Les sorties listées appartiennent à ces mois (règle identique au compteur).`
+    };
+  }
+
+  if (m === 'improveBucketsCount') {
+    const bumps = collectFirstImprovementRunPerDistanceBucket(runs);
+    const items = bumps
+      .slice(0, maxPreview)
+      .map((b) => toContributingSummary(b.run, { prevPaceSec: b.prevPaceSec, bucketLabel: b.bucketLabel }));
+    const moreCount = Math.max(0, bumps.length - maxPreview);
+    return {
+      items,
+      moreCount,
+      hint:
+        'Première amélioration d’allure chronologique par famille (5 km, 10 km, semi) — une preuve par famille, pas la liste globale des records.'
     };
   }
 
@@ -2105,18 +2567,43 @@ export function collectContributingSessions(trophy, runs, stats) {
 
   if (m === 'challengeStat') {
     if (trophy.statKey?.startsWith('tpl_')) {
-      const hits = runs.filter((r) => isIntervalRun(r, r.garmin)).sort((a, b) => b.__date - a.__date);
+      const tid = trophy.statKey.slice(4);
+      const hits = runs
+        .filter((r) => matchesIntervalWorkTemplate(r, r.garmin, tid))
+        .sort((a, b) => b.__date - a.__date);
       const { items, moreCount } = sliceContributing(hits, maxPreview);
       return {
         items,
         moreCount,
-        hint: 'Détection par tours Garmin (effort / récup) — modèle approché pour limiter les faux positifs.'
+        hint: `Sorties où la chaîne travail/récup des tours matche le gabarit ${tid} (même critère que le compteur).`
       };
     }
-    if (trophy.statKey === 'intAfter30Count' || trophy.statKey === 'intDescCount' || trophy.statKey === 'intNoStopCount') {
-      const hits = runs.filter((r) => isIntervalRun(r, r.garmin)).sort((a, b) => b.__date - a.__date);
+    if (trophy.statKey === 'intAfter30Count') {
+      const hits = runs.filter((r) => intervalAfterFatigue(r, r.garmin)).sort((a, b) => b.__date - a.__date);
       const { items, moreCount } = sliceContributing(hits, maxPreview);
-      return { items, moreCount, hint: 'Séances fractionnées candidates (même logique que le compteur).' };
+      return {
+        items,
+        moreCount,
+        hint: 'Fractionné avec enchaînement type 6×1 après ≥ 30 min de chauffe (détection par tours).'
+      };
+    }
+    if (trophy.statKey === 'intDescCount') {
+      const hits = runs.filter((r) => intervalDescendingReps(r, r.garmin)).sort((a, b) => b.__date - a.__date);
+      const { items, moreCount } = sliceContributing(hits, maxPreview);
+      return {
+        items,
+        moreCount,
+        hint: 'Au moins 3 efforts successifs avec allure strictement décroissante (fractionné).'
+      };
+    }
+    if (trophy.statKey === 'intNoStopCount') {
+      const hits = runs.filter((r) => intervalNoActiveStop(r, r.garmin)).sort((a, b) => b.__date - a.__date);
+      const { items, moreCount } = sliceContributing(hits, maxPreview);
+      return {
+        items,
+        moreCount,
+        hint: 'Fractionné sans « arrêt actif » court en récup (tours récup ≥ ~120 m).'
+      };
     }
     if (trophy.statKey && /^chaos/i.test(trophy.statKey)) {
       const det = CHAOS_SESSION_DETECTORS[trophy.statKey];
@@ -2134,12 +2621,15 @@ export function collectContributingSessions(trophy, runs, stats) {
     }
     if (trophy.statKey === 'efMonthEightyCount') {
       const z = stats.zone2;
-      const hits = runs.sort((a, b) => b.__date - a.__date);
+      const monthOk = new Set(listQualifyingEfEightyMonthKeys(runs, z));
+      const hits = runs
+        .filter((r) => monthOk.has(buildMonthKey(r.__date)))
+        .sort((a, b) => b.__date - a.__date);
       const { items, moreCount } = sliceContributing(hits, maxPreview);
       return {
         items,
         moreCount,
-        hint: `Mois avec ≥ 8 sorties dont ≥ 80 % en zone EF (FC ${z?.min ?? '—'}–${z?.max ?? '—'}).`
+        hint: `Uniquement les sorties des mois qualifiés (≥8 avec FC, ≥80 % FC ${z?.min ?? '—'}–${z?.max ?? '—'}).`
       };
     }
     if (trophy.statKey === 'efPerfectStreakMax') {
@@ -2157,6 +2647,59 @@ export function collectContributingSessions(trophy, runs, stats) {
         items,
         moreCount,
         hint: 'EF longue avec FC par tour peu dispersée (données Garmin).'
+      };
+    }
+    if (trophy.statKey === 'efDawnCount') {
+      const z = stats.zone2;
+      const hits = runs
+        .filter((r) => {
+          const h = startHour(r);
+          return h != null && h < 7 && isEfFundamentalRun(r, z);
+        })
+        .sort((a, b) => b.__date - a.__date);
+      const { items, moreCount } = sliceContributing(hits, maxPreview);
+      return {
+        items,
+        moreCount,
+        hint: 'Heure de départ avant 7 h, FC zone EF, ≥2,5 km et ≥18 min, hors fractionné.'
+      };
+    }
+    if (trophy.statKey === 'efEveningCount') {
+      const z = stats.zone2;
+      const hits = runs
+        .filter((r) => {
+          const h = startHour(r);
+          return h != null && h >= 20 && h <= 23 && isEfFundamentalRun(r, z);
+        })
+        .sort((a, b) => b.__date - a.__date);
+      const { items, moreCount } = sliceContributing(hits, maxPreview);
+      return {
+        items,
+        moreCount,
+        hint: 'Heure de départ 20 h–23 h, mêmes critères EF fondamental.'
+      };
+    }
+    if (trophy.statKey === 'efWeek30EfKmCount') {
+      const z = stats.zone2;
+      const weekOk = listIsoWeekKeysWithMinEfFundamentalKm(runs, z, 30);
+      const hits = runs
+        .filter((r) => weekOk.has(buildWeekKey(r.__date)) && isEfFundamentalRun(r, z))
+        .sort((a, b) => b.__date - a.__date);
+      const { items, moreCount } = sliceContributing(hits, maxPreview);
+      return {
+        items,
+        moreCount,
+        hint: 'Sorties comptées dans des semaines ISO où le cumul EF Z2 (hors fractionné) atteint 30 km.'
+      };
+    }
+    if (trophy.statKey === 'efConsecutiveEfDaysMax') {
+      const z = stats.zone2;
+      const hits = runs.filter((r) => isEfFundamentalRun(r, z)).sort((a, b) => b.__date - a.__date);
+      const { items, moreCount } = sliceContributing(hits, maxPreview);
+      return {
+        items,
+        moreCount,
+        hint: 'Toutes les sorties EF Z2 retenues pour la série ; le score = plus longue chaîne de jours calendaires consécutifs.'
       };
     }
     return { items: [], moreCount: 0, hint: 'Signal agrégé sur tes sorties (voir intitulé du défi).' };
@@ -2178,6 +2721,7 @@ export function evaluateRunningTrophies({ runningSessions = [], garminById = new
   runsNorm.forEach((run) => {
     const garminId = run.garminId != null ? String(run.garminId) : String(run.id);
     run.garmin = garminById.get(garminId) || null;
+    mergeGarminHrIntoRun(run);
   });
   const runs = runsNorm.filter((r) => !isWalkingLikeRunningSession(r, r.garmin));
   const stats = buildStats(runs, garminById);
@@ -2239,7 +2783,7 @@ export function evaluateRunningTrophies({ runningSessions = [], garminById = new
   const trophyCs = catalog.find((t) => t.id === 'complete_simples');
   if (trophyCs) {
     const points = DIFFICULTY_POINTS[trophyCs.difficulty] || 10;
-    const levels = LEVELS.map((level) => evaluateSingle(trophyCs, statsComplete, level));
+    const levels = LEVELS.map((level) => ({ level, ...evaluateSingle(trophyCs, statsComplete, level) }));
     const highestIdx = [...levels].map((l, i) => (l.unlocked ? i : -1)).reduce((a, b) => Math.max(a, b), -1);
     const highestLevel = highestIdx >= 0 ? levels[highestIdx].level : null;
     const tierShare = highestIdx >= 0 ? (highestIdx + 1) / LEVELS.length : 0;

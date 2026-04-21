@@ -1,0 +1,201 @@
+/**
+ * Chartes couleur par domaine pour les modules sidebar (data-sidebar-theme sur .sidebar-module-historical).
+ * Chargé après module-alternation / sidebar-premium pour surcharger les bordures dorées globales.
+ */
+
+/* --- Enveloppe module (alternance historique) --- */
+.sidebar-module-historical[data-sidebar-theme='sport'] {
+  background: rgba(0, 0, 0, 0.88) !important;
+  border: 1px solid rgba(15, 76, 92, 0.7) !important;
+  border-left: 3px solid #2dd4bf !important;
+}
+
+.sidebar-module-historical[data-sidebar-theme='sport']:hover {
+  border-color: rgba(45, 212, 191, 0.55) !important;
+  background: rgba(0, 0, 0, 0.92) !important;
+}
+
+.sidebar-module-historical[data-sidebar-theme='quests'] {
+  background: rgba(0, 0, 0, 0.9) !important;
+  border: 1px solid rgba(234, 179, 8, 0.45) !important;
+  border-left: 3px solid #fbbf24 !important;
+}
+
+.sidebar-module-historical[data-sidebar-theme='quests']:hover {
+  border-color: rgba(250, 204, 21, 0.65) !important;
+}
+
+.sidebar-module-historical[data-sidebar-theme='books'] {
+  background: rgba(0, 0, 0, 0.9) !important;
+  border: 1px solid rgba(56, 189, 248, 0.45) !important;
+  border-left: 3px solid #38bdf8 !important;
+}
+
+.sidebar-module-historical[data-sidebar-theme='books']:hover {
+  border-color: rgba(125, 211, 252, 0.6) !important;
+}
+
+.sidebar-module-historical[data-sidebar-theme='finance'] {
+  background: rgba(0, 0, 0, 0.88) !important;
+  border: 1px solid rgba(245, 158, 11, 0.4) !important;
+  border-left: 3px solid #f59e0b !important;
+}
+
+.sidebar-module-historical[data-sidebar-theme='finance']:hover {
+  border-color: rgba(251, 191, 36, 0.55) !important;
+}
+
+.sidebar-module-historical[data-sidebar-theme='learning'] {
+  background: rgba(0, 0, 0, 0.88) !important;
+  border: 1px solid rgba(129, 140, 248, 0.45) !important;
+  border-left: 3px solid #818cf8 !important;
+}
+
+.sidebar-module-historical[data-sidebar-theme='learning']:hover {
+  border-color: rgba(165, 180, 252, 0.55) !important;
+}
+
+.sidebar-module-historical[data-sidebar-theme='home'],
+.sidebar-module-historical[data-sidebar-theme='default'] {
+  background: rgba(0, 0, 0, 0.88) !important;
+  border: 1px solid rgba(71, 85, 105, 0.55) !important;
+  border-left: 3px solid #64748b !important;
+}
+
+.sidebar-module-historical[data-sidebar-theme='home']:hover,
+.sidebar-module-historical[data-sidebar-theme='default']:hover {
+  border-color: rgba(100, 116, 139, 0.65) !important;
+}
+
+/* --- Sections pliables (.sidebar-section + enhanced) --- */
+.sidebar-module-historical[data-sidebar-theme='sport'] .sidebar-section,
+.sidebar-module-historical[data-sidebar-theme='sport'] .sidebar-section-enhanced {
+  background: rgba(0, 0, 0, 0.72) !important;
+  border: 1px solid rgba(15, 118, 110, 0.45) !important;
+  box-shadow: 0 4px 14px rgba(15, 118, 110, 0.12) !important;
+}
+
+.sidebar-module-historical[data-sidebar-theme='sport'] .sidebar-section:hover,
+.sidebar-module-historical[data-sidebar-theme='sport'] .sidebar-section-enhanced:hover {
+  border-color: rgba(45, 212, 191, 0.5) !important;
+  box-shadow: 0 4px 18px rgba(45, 212, 191, 0.15) !important;
+}
+
+.sidebar-module-historical[data-sidebar-theme='sport'] .sidebar-section-title {
+  color: #ecfdf5 !important;
+}
+
+.sidebar-module-historical[data-sidebar-theme='sport'] .sidebar-section-toggle {
+  color: #5eead4 !important;
+}
+
+.sidebar-module-historical[data-sidebar-theme='sport'] .sidebar-section-content {
+  border-top-color: rgba(45, 212, 191, 0.22) !important;
+}
+
+.sidebar-module-historical[data-sidebar-theme='quests'] .sidebar-section,
+.sidebar-module-historical[data-sidebar-theme='quests'] .sidebar-section-enhanced {
+  background: rgba(0, 0, 0, 0.78) !important;
+  border: 1px solid rgba(234, 179, 8, 0.4) !important;
+  box-shadow: 0 4px 14px rgba(234, 179, 8, 0.08) !important;
+}
+
+.sidebar-module-historical[data-sidebar-theme='quests'] .sidebar-section:hover,
+.sidebar-module-historical[data-sidebar-theme='quests'] .sidebar-section-enhanced:hover {
+  border-color: rgba(250, 204, 21, 0.55) !important;
+}
+
+.sidebar-module-historical[data-sidebar-theme='quests'] .sidebar-section-title {
+  color: #fffbeb !important;
+}
+
+.sidebar-module-historical[data-sidebar-theme='quests'] .sidebar-section-toggle {
+  color: #fcd34d !important;
+}
+
+.sidebar-module-historical[data-sidebar-theme='quests'] .sidebar-section-content {
+  border-top-color: rgba(234, 179, 8, 0.28) !important;
+}
+
+.sidebar-module-historical[data-sidebar-theme='books'] .sidebar-section,
+.sidebar-module-historical[data-sidebar-theme='books'] .sidebar-section-enhanced {
+  background: rgba(0, 0, 0, 0.78) !important;
+  border: 1px solid rgba(56, 189, 248, 0.4) !important;
+  box-shadow: 0 4px 14px rgba(14, 165, 233, 0.1) !important;
+}
+
+.sidebar-module-historical[data-sidebar-theme='books'] .sidebar-section:hover,
+.sidebar-module-historical[data-sidebar-theme='books'] .sidebar-section-enhanced:hover {
+  border-color: rgba(125, 211, 252, 0.55) !important;
+}
+
+.sidebar-module-historical[data-sidebar-theme='books'] .sidebar-section-title {
+  color: #e0f2fe !important;
+}
+
+.sidebar-module-historical[data-sidebar-theme='books'] .sidebar-section-toggle {
+  color: #7dd3fc !important;
+}
+
+.sidebar-module-historical[data-sidebar-theme='books'] .sidebar-section-content {
+  border-top-color: rgba(56, 189, 248, 0.28) !important;
+}
+
+.sidebar-module-historical[data-sidebar-theme='finance'] .sidebar-section,
+.sidebar-module-historical[data-sidebar-theme='finance'] .sidebar-section-enhanced {
+  background: rgba(0, 0, 0, 0.78) !important;
+  border: 1px solid rgba(245, 158, 11, 0.38) !important;
+}
+
+.sidebar-module-historical[data-sidebar-theme='finance'] .sidebar-section:hover,
+.sidebar-module-historical[data-sidebar-theme='finance'] .sidebar-section-enhanced:hover {
+  border-color: rgba(251, 191, 36, 0.5) !important;
+}
+
+.sidebar-module-historical[data-sidebar-theme='finance'] .sidebar-section-title {
+  color: #fffbeb !important;
+}
+
+.sidebar-module-historical[data-sidebar-theme='finance'] .sidebar-section-toggle {
+  color: #fcd34d !important;
+}
+
+.sidebar-module-historical[data-sidebar-theme='finance'] .sidebar-section-content {
+  border-top-color: rgba(245, 158, 11, 0.25) !important;
+}
+
+.sidebar-module-historical[data-sidebar-theme='learning'] .sidebar-section,
+.sidebar-module-historical[data-sidebar-theme='learning'] .sidebar-section-enhanced {
+  background: rgba(0, 0, 0, 0.78) !important;
+  border: 1px solid rgba(129, 140, 248, 0.42) !important;
+}
+
+.sidebar-module-historical[data-sidebar-theme='learning'] .sidebar-section-title {
+  color: #eef2ff !important;
+}
+
+.sidebar-module-historical[data-sidebar-theme='learning'] .sidebar-section-toggle {
+  color: #a5b4fc !important;
+}
+
+.sidebar-module-historical[data-sidebar-theme='learning'] .sidebar-section-content {
+  border-top-color: rgba(129, 140, 248, 0.28) !important;
+}
+
+.sidebar-module-historical[data-sidebar-theme='home'] .sidebar-section,
+.sidebar-module-historical[data-sidebar-theme='home'] .sidebar-section-enhanced,
+.sidebar-module-historical[data-sidebar-theme='default'] .sidebar-section,
+.sidebar-module-historical[data-sidebar-theme='default'] .sidebar-section-enhanced {
+  background: rgba(0, 0, 0, 0.75) !important;
+  border: 1px solid rgba(71, 85, 105, 0.5) !important;
+}
+
+.sidebar-module-historical[data-sidebar-theme='home'] .sidebar-section-toggle,
+.sidebar-module-historical[data-sidebar-theme='default'] .sidebar-section-toggle {
+  color: #94a3b8 !important;
+}
+
+.sidebar-module-historical[data-sidebar-theme='home'] .sidebar-section-content,
+.sidebar-module-historical[data-sidebar-theme='default'] .sidebar-section-content {
+  border-top-color: rgba(71, 85, 105, 0.35) !important;
+}

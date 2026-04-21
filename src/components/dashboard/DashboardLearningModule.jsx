@@ -200,44 +200,44 @@ const DashboardLearningModule = () => {
   }, [timer.isPaused, timer.remainingTime]);
 
   return (
-    <div className="relative overflow-hidden rounded-3xl border border-fuchsia-500/25 bg-gradient-to-br from-slate-950/90 via-violet-950/35 to-fuchsia-950/20 shadow-[0_0_80px_rgba(168,85,247,0.18)]">
+    <div className="relative overflow-hidden rounded-3xl border-2 border-emerald-500/55 bg-black shadow-[0_0_40px_rgba(16,185,129,0.18)]">
       <div className="relative p-6 md:p-7 lg:p-8 space-y-5">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div className="flex items-center gap-3">
-            <div className="rounded-2xl bg-fuchsia-500/20 border border-fuchsia-300/40 p-2">
-              <GraduationCap className="w-6 h-6 text-fuchsia-100" />
+            <div className="rounded-2xl bg-emerald-500/15 border-2 border-emerald-400/55 p-2 shadow-[0_0_20px_rgba(16,185,129,0.18)]">
+              <GraduationCap className="w-6 h-6 text-emerald-100" />
             </div>
             <div>
               <h3 className="text-xl font-bold text-white">Apprentissage</h3>
-              <p className="text-xs text-slate-300">Vue cockpit: progression, rythme et matières clés</p>
+              <p className="text-xs text-emerald-200/80">Vue cockpit: progression, rythme et matières clés</p>
             </div>
           </div>
           <div className="flex flex-wrap items-center gap-2">
             <button
               type="button"
               onClick={() => navigateToLearning('matieres')}
-              className="h-8 px-3 rounded-lg border border-fuchsia-400/45 bg-fuchsia-500/20 text-fuchsia-100 text-xs font-medium hover:bg-fuchsia-500/30"
+              className="h-8 px-3 rounded-lg border-2 border-emerald-600/50 bg-black text-emerald-100 text-xs font-semibold hover:border-emerald-400/75 hover:bg-emerald-950/40"
             >
               Accéder à matières
             </button>
             <button
               type="button"
               onClick={() => navigateToLearning('sessions')}
-              className="h-8 px-3 rounded-lg border border-violet-400/45 bg-violet-500/20 text-violet-100 text-xs font-medium hover:bg-violet-500/30"
+              className="h-8 px-3 rounded-lg border-2 border-emerald-600/50 bg-black text-emerald-100 text-xs font-semibold hover:border-emerald-400/75 hover:bg-emerald-950/40"
             >
               Accéder aux sessions
             </button>
             <button
               type="button"
               onClick={() => navigateToLearning('trophees')}
-              className="h-8 px-3 rounded-lg border border-indigo-400/45 bg-indigo-500/20 text-indigo-100 text-xs font-medium hover:bg-indigo-500/30"
+              className="h-8 px-3 rounded-lg border-2 border-emerald-600/50 bg-black text-emerald-100 text-xs font-semibold hover:border-emerald-400/75 hover:bg-emerald-950/40"
             >
               Accéder aux trophées
             </button>
             <button
               type="button"
               onClick={() => navigateToLearning('calendrier')}
-              className="h-8 px-3 rounded-lg border border-amber-400/45 bg-amber-500/15 text-amber-100 text-xs font-medium hover:bg-amber-500/25 inline-flex items-center gap-1.5"
+              className="h-8 px-3 rounded-lg border-2 border-emerald-500/45 bg-emerald-500/15 text-emerald-50 text-xs font-semibold hover:bg-emerald-500/25 inline-flex items-center gap-1.5 shadow-[0_0_14px_rgba(16,185,129,0.2)]"
             >
               <CalendarDays className="w-3.5 h-3.5" />
               Calendrier fusion
@@ -255,33 +255,33 @@ const DashboardLearningModule = () => {
         </div>
 
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-          <div className="rounded-xl border border-fuchsia-500/30 bg-slate-900/55 p-3">
-            <div className="text-xs text-slate-400 inline-flex items-center gap-1.5"><BookOpen className="w-3.5 h-3.5" /> Matières</div>
+          <div className="rounded-xl border border-emerald-500/40 bg-black p-3">
+            <div className="text-xs text-emerald-200/75 inline-flex items-center gap-1.5"><BookOpen className="w-3.5 h-3.5" /> Matières</div>
             <div className="text-xl font-bold text-white mt-0.5">{globalStats.subjectsCount}</div>
           </div>
-          <div className="rounded-xl border border-violet-500/30 bg-slate-900/55 p-3">
-            <div className="text-xs text-slate-400 inline-flex items-center gap-1.5"><Sparkles className="w-3.5 h-3.5" /> XP global</div>
+          <div className="rounded-xl border border-emerald-500/40 bg-black p-3">
+            <div className="text-xs text-emerald-200/75 inline-flex items-center gap-1.5"><Sparkles className="w-3.5 h-3.5" /> XP global</div>
             <div className="text-xl font-bold text-white mt-0.5">{globalStats.globalXP}</div>
           </div>
-          <div className="rounded-xl border border-indigo-500/30 bg-slate-900/55 p-3">
-            <div className="text-xs text-slate-400 inline-flex items-center gap-1.5"><Clock3 className="w-3.5 h-3.5" /> Temps total</div>
+          <div className="rounded-xl border border-emerald-500/40 bg-black p-3">
+            <div className="text-xs text-emerald-200/75 inline-flex items-center gap-1.5"><Clock3 className="w-3.5 h-3.5" /> Temps total</div>
             <div className="text-sm font-bold text-white mt-1">{formatMinutes(globalStats.totalStudyTime)}</div>
           </div>
-          <div className="rounded-xl border border-pink-500/30 bg-slate-900/55 p-3">
-            <div className="text-xs text-slate-400 inline-flex items-center gap-1.5"><Trophy className="w-3.5 h-3.5" /> Streak / Trophées</div>
+          <div className="rounded-xl border border-emerald-500/40 bg-black p-3">
+            <div className="text-xs text-emerald-200/75 inline-flex items-center gap-1.5"><Trophy className="w-3.5 h-3.5" /> Streak / Trophées</div>
             <div className="text-sm font-bold text-white mt-1">{globalStats.streak} jours • {globalStats.unlockedTrophies}</div>
           </div>
         </div>
 
-        <div className="rounded-2xl border border-emerald-500/30 bg-emerald-500/5 p-4 space-y-3">
+        <div className="rounded-2xl border border-emerald-500/40 bg-black p-4 space-y-3 shadow-inner shadow-black/40">
           <div className="flex flex-wrap items-center justify-between gap-3">
-            <div className="text-sm font-semibold text-emerald-100">Timer rapide (Dashboard)</div>
+            <div className="text-sm font-semibold text-emerald-50">Timer rapide (Dashboard)</div>
             <div className="flex items-center gap-2">
-              <label className="text-xs text-slate-300">Matière</label>
+              <label className="text-xs text-emerald-200/80">Matière</label>
               <select
                 value={selectedSubjectId}
                 onChange={(e) => setSelectedSubjectId(e.target.value)}
-                className="h-8 px-2 rounded-md bg-slate-900/70 border border-slate-600 text-xs text-slate-100"
+                className="h-8 px-2 rounded-md bg-black border border-emerald-600/50 text-xs text-emerald-50"
                 disabled={timer.isRunning}
               >
                 {(subjects || []).map((subject) => (
@@ -291,29 +291,29 @@ const DashboardLearningModule = () => {
             </div>
           </div>
 
-          <div className="rounded-xl border border-slate-700/70 bg-slate-950/60 p-4">
+          <div className="rounded-xl border border-emerald-600/45 bg-black p-4">
             <div className="text-center space-y-1">
-              <div className="text-xs text-slate-400">{timer.currentSubject?.name || selectedSubject?.name || 'Aucune matière'}</div>
+              <div className="text-xs text-emerald-200/75">{timer.currentSubject?.name || selectedSubject?.name || 'Aucune matière'}</div>
               <div className="text-4xl font-black" style={{ color: timerColor }}>{formatTimer(timer.remainingTime)}</div>
-              <div className="text-xs text-slate-300">{timer.isRunning ? (timer.isPaused ? 'En pause' : 'En session') : 'Prêt à démarrer'}</div>
+              <div className="text-xs text-emerald-100/90">{timer.isRunning ? (timer.isPaused ? 'En pause' : 'En session') : 'Prêt à démarrer'}</div>
             </div>
-            <div className="mt-3 h-2 w-full rounded-full bg-slate-800">
+            <div className="mt-3 h-2 w-full rounded-full bg-emerald-950">
               <div className="h-full rounded-full transition-all duration-300" style={{ width: `${Math.max(0, Math.min(100, timer.progress))}%`, backgroundColor: timerColor }} />
             </div>
             <div className="mt-3 flex flex-wrap items-center justify-center gap-2">
               {!timer.isRunning ? (
-                <button type="button" onClick={startLearningTimer} disabled={!selectedSubject} className="h-8 px-3 rounded-lg border border-emerald-400/45 bg-emerald-500/20 text-emerald-100 text-xs font-medium hover:bg-emerald-500/30 inline-flex items-center gap-1.5">
+                <button type="button" onClick={startLearningTimer} disabled={!selectedSubject} className="h-8 px-3 rounded-lg border border-emerald-400/55 bg-emerald-500/20 text-emerald-50 text-xs font-semibold hover:bg-emerald-500/30 inline-flex items-center gap-1.5">
                   <Play className="w-3.5 h-3.5" /> Démarrer
                 </button>
               ) : (
                 <>
-                  <button type="button" onClick={togglePause} className="h-8 px-3 rounded-lg border border-amber-400/45 bg-amber-500/20 text-amber-100 text-xs font-medium hover:bg-amber-500/30 inline-flex items-center gap-1.5">
+                  <button type="button" onClick={togglePause} className="h-8 px-3 rounded-lg border border-emerald-500/50 bg-emerald-500/15 text-emerald-50 text-xs font-semibold hover:bg-emerald-500/28 inline-flex items-center gap-1.5">
                     <Pause className="w-3.5 h-3.5" /> {timer.isPaused ? 'Reprendre' : 'Pause'}
                   </button>
-                  <button type="button" onClick={addTenMinutes} className="h-8 px-3 rounded-lg border border-cyan-400/45 bg-cyan-500/20 text-cyan-100 text-xs font-medium hover:bg-cyan-500/30">
+                  <button type="button" onClick={addTenMinutes} className="h-8 px-3 rounded-lg border border-emerald-400/45 bg-emerald-950/50 text-emerald-100 text-xs font-semibold hover:bg-emerald-900/40">
                     +10 min
                   </button>
-                  <button type="button" onClick={stopTimer} className="h-8 px-3 rounded-lg border border-rose-400/45 bg-rose-500/20 text-rose-100 text-xs font-medium hover:bg-rose-500/30 inline-flex items-center gap-1.5">
+                  <button type="button" onClick={stopTimer} className="h-8 px-3 rounded-lg border border-rose-500/45 bg-rose-950/40 text-rose-100 text-xs font-semibold hover:bg-rose-900/35 inline-flex items-center gap-1.5">
                     <Square className="w-3.5 h-3.5" /> Stop
                   </button>
                 </>
@@ -321,7 +321,7 @@ const DashboardLearningModule = () => {
               <button
                 type="button"
                 onClick={() => setTimer((prev) => ({ ...prev, silentMode: !prev.silentMode }))}
-                className="h-8 px-3 rounded-lg border border-slate-500/45 bg-slate-700/30 text-slate-200 text-xs font-medium hover:bg-slate-700/45"
+                className="h-8 px-3 rounded-lg border border-emerald-800/50 bg-black text-emerald-200 text-xs font-medium hover:bg-emerald-950/40"
               >
                 {timer.silentMode ? '🔇 Muet' : '🔊 Son'}
               </button>
@@ -330,41 +330,41 @@ const DashboardLearningModule = () => {
         </div>
 
         <div className="grid grid-cols-1 xl:grid-cols-3 gap-4">
-          <div className="xl:col-span-2 rounded-xl border border-slate-700/70 bg-slate-900/45 p-3">
-            <div className="text-sm font-semibold text-slate-100 mb-2">Top matières (XP)</div>
+          <div className="xl:col-span-2 rounded-xl border border-emerald-500/40 bg-black p-3">
+            <div className="text-sm font-semibold text-emerald-50 mb-2">Top matières (XP)</div>
             {isLoading ? (
-              <div className="text-sm text-slate-300">Chargement des données d&apos;apprentissage...</div>
+              <div className="text-sm text-emerald-200/80">Chargement des données d&apos;apprentissage...</div>
             ) : globalStats.topSubjects.length === 0 ? (
-              <div className="text-sm text-slate-400">Aucune matière enregistrée pour le moment.</div>
+              <div className="text-sm text-emerald-200/65">Aucune matière enregistrée pour le moment.</div>
             ) : (
               <div className="space-y-2">
                 {globalStats.topSubjects.map((subject) => (
-                  <div key={subject.name} className="rounded-lg border border-fuchsia-400/20 bg-fuchsia-500/5 p-2.5">
+                  <div key={subject.name} className="rounded-lg border border-emerald-600/40 bg-black p-2.5">
                     <div className="flex items-center justify-between gap-2">
-                      <span className="text-sm text-slate-100 truncate">{subject.name}</span>
-                      <span className="text-xs text-fuchsia-200 shrink-0">Niv. {subject.level}</span>
+                      <span className="text-sm text-white truncate">{subject.name}</span>
+                      <span className="text-xs text-emerald-300 shrink-0">Niv. {subject.level}</span>
                     </div>
-                    <div className="mt-1 text-xs text-slate-300">{subject.xp} XP • {subject.sessions} sessions</div>
+                    <div className="mt-1 text-xs text-emerald-200/80">{subject.xp} XP • {subject.sessions} sessions</div>
                   </div>
                 ))}
               </div>
             )}
           </div>
 
-          <div className="rounded-xl border border-violet-400/25 bg-violet-500/5 p-3 space-y-2">
-            <div className="text-sm font-semibold text-violet-100">Progression globale</div>
-            <div className="rounded-lg border border-violet-400/25 bg-slate-950/50 p-2.5">
-              <div className="text-xs text-slate-400">Niveau actuel</div>
+          <div className="rounded-xl border border-emerald-500/40 bg-black p-3 space-y-2">
+            <div className="text-sm font-semibold text-emerald-50">Progression globale</div>
+            <div className="rounded-lg border border-emerald-600/40 bg-black p-2.5">
+              <div className="text-xs text-emerald-200/70">Niveau actuel</div>
               <div className="text-lg font-semibold text-white">Niveau {globalStats.globalLevel}</div>
             </div>
-            <div className="rounded-lg border border-violet-400/25 bg-slate-950/50 p-2.5">
-              <div className="text-xs text-slate-400">XP cumulé</div>
+            <div className="rounded-lg border border-emerald-600/40 bg-black p-2.5">
+              <div className="text-xs text-emerald-200/70">XP cumulé</div>
               <div className="text-lg font-semibold text-white">{globalStats.globalXP}</div>
             </div>
             <button
               type="button"
               onClick={() => navigateToLearning('sessions')}
-              className="w-full h-8 px-3 rounded-lg border border-fuchsia-400/45 bg-fuchsia-500/15 text-fuchsia-100 text-xs font-medium hover:bg-fuchsia-500/30"
+              className="w-full h-8 px-3 rounded-lg border border-emerald-400/55 bg-emerald-500/18 text-emerald-50 text-xs font-semibold hover:bg-emerald-500/30"
             >
               Lancer une session
             </button>

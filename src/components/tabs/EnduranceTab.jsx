@@ -9,9 +9,21 @@ import { useLanguage } from '../../context/LanguageContext';
 import {
   loadEnduranceData as loadEnduranceDataService,
   persistEnduranceData,
-  ENDURANCE_SCHEMA_VERSION
+  ENDURANCE_SCHEMA_VERSION,
+  normalizeEnduranceSession
 } from '../../services/endurance/enduranceDataService';
-import { evaluateChallenges, listMatchingChallengeIds } from '../../services/endurance/enduranceChallengesService';
+import {
+  evaluateChallenges,
+  listMatchingChallengeIds,
+  sumPushupRepsInChallengeWindow
+} from '../../services/endurance/enduranceChallengesService';
+import { PUSHUP_CHALLENGE_PRESET_DEFS, buildPushupPresetChallenge } from '../../services/endurance/pushupChallengePresets';
+import {
+  GAINAGE_CHALLENGE_PRESET_DEFS,
+  JUMPROPE_CHALLENGE_PRESET_DEFS,
+  buildGainagePresetChallenge,
+  buildJumpropePresetChallenge
+} from '../../services/endurance/enduranceActivityChallengePresets';
 import {
   createDefaultFormState,
   createDefaultChallengeFormState
@@ -25,7 +37,8 @@ import EnduranceSectionHeader from './EnduranceTab/components/ui/EnduranceSectio
 import RunningGarminSyncBlock from './EnduranceTab/components/RunningGarminSyncBlock.jsx';
 import RunningPersonalRecordsPanel from './EnduranceTab/components/RunningPersonalRecordsPanel.jsx';
 import RunningSessionDetailPage from './EnduranceTab/components/RunningSessionDetailPage.jsx';
-import RunningTrophiesPanel from './EnduranceTab/components/RunningTrophiesPanel.jsx';
+import SimpleEnduranceTrophiesPanel from './EnduranceTab/components/SimpleEnduranceTrophiesPanel.jsx';
+import PushupTrophiesPanel from './EnduranceTab/components/PushupTrophiesPanel.jsx';
 import RunningSessionsHistory from './EnduranceTab/components/RunningSessionsHistory.jsx';
 import {
   inferRunningSessionTypeFromGarminActivity,
@@ -396,6 +409,7 @@ const EnduranceTab = () => {
         case 'ponctuel':
           return new Date(challenge.targetDate) > now;
         case 'periode':
+        case 'pushups_cumul':
           return new Date(challenge.endDate) > now;
         case 'recurrent':
           // Reste affiché comme « en cours » : chaque nouvelle session peut encore contribuer / être marquée.
@@ -433,22 +447,9 @@ const EnduranceTab = () => {
   const [challengeForm, setChallengeForm] = useState(() => createDefaultChallengeFormState('pushups'));
   /** Modal détail séance course (Garmin / manuel) */
   const [runningDetailSession, setRunningDetailSession] = useState(null);
-  const [runningSubView, setRunningSubView] = useState(() => {
-    try {
-      const saved = localStorage.getItem('endurance.running.subView');
-      return saved === 'trophies' ? 'trophies' : 'sessions';
-    } catch {
-      return 'sessions';
-    }
-  });
-
-  useEffect(() => {
-    try {
-      localStorage.setItem('endurance.running.subView', runningSubView);
-    } catch {
-      /* ignore */
-    }
-  }, [runningSubView]);
+  const [jumpropeSubView, setJumpropeSubView] = useState('sessions');
+  const [gainageSubView, setGainageSubView] = useState('sessions');
+  const [pushupsSubView, setPushupsSubView] = useState('sessions');
 
   const addSession = useCallback(async (activityType, sessionData) => {
     try {
@@ -457,11 +458,21 @@ const EnduranceTab = () => {
         ? currentSessionsMap[activityType]
         : [];
 
-      const evaluation = evaluateChallenges(challenges, sessionData, activityType, { logger: enduranceLogger });
-      const badgeIds = listMatchingChallengeIds(challenges, sessionData, activityType, { logger: enduranceLogger });
+      const normalizedSessionInput = normalizeEnduranceSession(activityType, sessionData);
+      const relatedPushupSessions =
+        activityType === 'pushups' ? [...activitySessions, normalizedSessionInput] : undefined;
+
+      const evaluation = evaluateChallenges(challenges, normalizedSessionInput, activityType, {
+        logger: enduranceLogger,
+        relatedPushupSessions
+      });
+      const badgeIds = listMatchingChallengeIds(challenges, normalizedSessionInput, activityType, {
+        logger: enduranceLogger,
+        relatedPushupSessions
+      });
 
       const newSession = {
-        ...sessionData,
+        ...normalizedSessionInput,
         activityType,
         validatedChallenges: badgeIds
       };
@@ -496,14 +507,21 @@ const EnduranceTab = () => {
 
       const updatedSessions = activitySessions.map((session) => {
         if (String(session.id) !== String(sessionId)) return session;
-        const merged = { ...session, ...updatedData };
-        const badgeIds = listMatchingChallengeIds(challenges, merged, activityType, { logger: enduranceLogger });
-        return { ...merged, validatedChallenges: badgeIds };
+        const merged = normalizeEnduranceSession(activityType, { ...session, ...updatedData });
+        return merged;
+      });
+      const relatedPushupSessions = activityType === 'pushups' ? updatedSessions : undefined;
+      const withBadges = updatedSessions.map((session) => {
+        const badgeIds = listMatchingChallengeIds(challenges, session, activityType, {
+          logger: enduranceLogger,
+          relatedPushupSessions
+        });
+        return { ...session, validatedChallenges: badgeIds };
       });
 
       const updatedSessionsMap = {
         ...currentSessionsMap,
-        [activityType]: updatedSessions
+        [activityType]: withBadges
       };
 
       await saveEnduranceData({
@@ -656,10 +674,88 @@ const EnduranceTab = () => {
 
 
   // Fonction d'ajout de défi (améliorée)
+  const addPresetPushupChallenge = useCallback(
+    async (presetId) => {
+      const built = buildPushupPresetChallenge(presetId);
+      if (!built) return { success: false };
+      try {
+        const currentChallenges = Array.isArray(enduranceState.challenges) ? enduranceState.challenges : [];
+        const newChallenge = {
+          ...built,
+          status: 'active',
+          createdAt: new Date().toISOString(),
+          progress: 0
+        };
+        await saveEnduranceData({ challenges: [...currentChallenges, newChallenge] });
+        enduranceLogger.info?.('[EnduranceTab] Défi pompes (modèle)', presetId);
+        return { success: true };
+      } catch (error) {
+        console.error('[EnduranceTab] Preset défi pompes:', error);
+        return { success: false, error: error.message };
+      }
+    },
+    [enduranceLogger, enduranceState.challenges, saveEnduranceData]
+  );
+
+  const addPresetGainageChallenge = useCallback(
+    async (presetId) => {
+      const built = buildGainagePresetChallenge(presetId);
+      if (!built) return { success: false };
+      try {
+        const currentChallenges = Array.isArray(enduranceState.challenges) ? enduranceState.challenges : [];
+        const newChallenge = {
+          ...built,
+          status: 'active',
+          createdAt: new Date().toISOString(),
+          progress: 0
+        };
+        await saveEnduranceData({ challenges: [...currentChallenges, newChallenge] });
+        enduranceLogger.info?.('[EnduranceTab] Défi gainage (modèle)', presetId);
+        return { success: true };
+      } catch (error) {
+        console.error('[EnduranceTab] Preset défi gainage:', error);
+        return { success: false, error: error.message };
+      }
+    },
+    [enduranceLogger, enduranceState.challenges, saveEnduranceData]
+  );
+
+  const addPresetJumpropeChallenge = useCallback(
+    async (presetId) => {
+      const built = buildJumpropePresetChallenge(presetId);
+      if (!built) return { success: false };
+      try {
+        const currentChallenges = Array.isArray(enduranceState.challenges) ? enduranceState.challenges : [];
+        const newChallenge = {
+          ...built,
+          status: 'active',
+          createdAt: new Date().toISOString(),
+          progress: 0
+        };
+        await saveEnduranceData({ challenges: [...currentChallenges, newChallenge] });
+        enduranceLogger.info?.('[EnduranceTab] Défi corde (modèle)', presetId);
+        return { success: true };
+      } catch (error) {
+        console.error('[EnduranceTab] Preset défi corde:', error);
+        return { success: false, error: error.message };
+      }
+    },
+    [enduranceLogger, enduranceState.challenges, saveEnduranceData]
+  );
+
   const addChallenge = useCallback(async () => {
     try {
       if (!challengeForm.name || !challengeForm.activityType) {
         throw new Error(t('endurance.errors.nameAndTypeRequired'));
+      }
+      if (challengeForm.type === 'pushups_cumul') {
+        if (!challengeForm.startDate || !challengeForm.endDate) {
+          throw new Error(t('endurance.errors.pushupsCumulDates'));
+        }
+        const g = Number(challengeForm.goalTotalCount);
+        if (!Number.isFinite(g) || g <= 0) {
+          throw new Error(t('endurance.errors.pushupsCumulGoal'));
+        }
       }
 
       const newChallenge = {
@@ -1405,6 +1501,53 @@ const EnduranceTab = () => {
                 ]}
               />
 
+              <div className="mb-6 flex flex-wrap gap-2">
+                <button
+                  type="button"
+                  onClick={() => setPushupsSubView('sessions')}
+                  className={`rounded-xl border px-4 py-2 text-sm font-medium transition ${
+                    pushupsSubView === 'sessions'
+                      ? 'border-[#0F5C45]/80 bg-[#0F5C45]/25 text-white'
+                      : 'border-[#0F4C5C]/45 bg-black text-teal-100 hover:border-[#0F5C45]/50'
+                  }`}
+                >
+                  {t('endurance.subViews.sessionsAndChallenges')}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setPushupsSubView('trophies')}
+                  className={`rounded-xl border px-4 py-2 text-sm font-medium transition ${
+                    pushupsSubView === 'trophies'
+                      ? 'border-sky-500/70 bg-sky-500/15 text-sky-100'
+                      : 'border-[#0F4C5C]/45 bg-black text-teal-100 hover:border-sky-500/40'
+                  }`}
+                >
+                  {t('endurance.subViews.trophies')}
+                </button>
+              </div>
+
+              {pushupsSubView === 'trophies' ? (
+                <PushupTrophiesPanel sessions={sessions.pushups} />
+              ) : (
+                <>
+              <div className="mb-6 rounded-xl border border-[#0F4C5C]/40 bg-slate-950/40 p-4">
+                <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-teal-200/90">
+                  {t('endurance.pushupPresets.title')}
+                </p>
+                <div className="flex flex-wrap gap-2">
+                  {PUSHUP_CHALLENGE_PRESET_DEFS.map((p) => (
+                    <button
+                      key={p.id}
+                      type="button"
+                      onClick={() => addPresetPushupChallenge(p.id)}
+                      className="rounded-lg border border-slate-600/60 bg-black/50 px-3 py-1.5 text-left text-[11px] text-slate-200 transition hover:border-emerald-500/50 hover:text-white"
+                    >
+                      {t(p.labelKey)}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
               {/* Rappel défis actifs */}
               {activeChallenges.length > 0 && (
                 <div className="mb-8 rounded-2xl border-2 border-[#0F4C5C]/55 bg-black p-6">
@@ -1414,10 +1557,9 @@ const EnduranceTab = () => {
                     </div>
                     <div className="flex-1">
                       <h3 className="text-white font-semibold text-lg mb-2">
-                        {activeChallenges.length === 1 
+                        {activeChallenges.length === 1
                           ? t('endurance.challenges.active', { count: activeChallenges.length })
-                          : t('endurance.challenges.activePlural', { count: activeChallenges.length })
-                        }
+                          : t('endurance.challenges.activePlural', { count: activeChallenges.length })}
                       </h3>
                       <p className="text-sm text-teal-100/90 leading-relaxed">
                         {t(
@@ -1479,16 +1621,30 @@ const EnduranceTab = () => {
                                   : t('endurance.challenges.details.recurrentWeekly')
                                 )}
                                 {challenge.type === 'periode' && t('endurance.challenges.details.period', { startDate: challenge.startDate, endDate: challenge.endDate })}
+                                {challenge.type === 'pushups_cumul' &&
+                                  t('endurance.challenges.details.period', { startDate: challenge.startDate, endDate: challenge.endDate })}
                               </p>
+                              {challenge.type === 'pushups_cumul' && (
+                                <p className="text-teal-200/95 text-sm">
+                                  {t('endurance.challenges.details.cumulProgress', {
+                                    current: sumPushupRepsInChallengeWindow(challenge, sessions.pushups || []),
+                                    goal: challenge.goalTotalCount ?? 0
+                                  })}
+                                </p>
+                              )}
                               <p className="text-sky-300">
-                                {challenge.goalCount && challenge.goalDuration
-                                  ? t('endurance.challenges.details.goalPushupsWithDuration', { count: challenge.goalCount, duration: challenge.goalDuration })
-                                  : challenge.goalCount
-                                  ? t('endurance.challenges.details.goalPushups', { count: challenge.goalCount })
-                                  : challenge.goalDuration
-                                  ? `${challenge.goalDuration} min`
-                                  : ''
-                                }
+                                {challenge.type === 'pushups_cumul'
+                                  ? t('endurance.challenges.details.goalPushups', { count: challenge.goalTotalCount ?? 0 })
+                                  : challenge.goalCount && challenge.goalDuration
+                                    ? t('endurance.challenges.details.goalPushupsWithDuration', {
+                                        count: challenge.goalCount,
+                                        duration: challenge.goalDuration
+                                      })
+                                    : challenge.goalCount
+                                      ? t('endurance.challenges.details.goalPushups', { count: challenge.goalCount })
+                                      : challenge.goalDuration
+                                        ? `${challenge.goalDuration} min`
+                                        : ''}
                               </p>
                             </div>
                           </div>
@@ -1599,6 +1755,8 @@ const EnduranceTab = () => {
                   )}
                 </div>
               </div>
+                </>
+              )}
             </>
           )}
 
@@ -1910,6 +2068,57 @@ const EnduranceTab = () => {
                 ]}
               />
 
+              <div className="mb-6 rounded-xl border border-[#0F4C5C]/40 bg-slate-950/40 p-4">
+                <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-teal-200/90">
+                  {t('endurance.jumpropePresets.title')}
+                </p>
+                <div className="flex flex-wrap gap-2">
+                  {JUMPROPE_CHALLENGE_PRESET_DEFS.map((p) => (
+                    <button
+                      key={p.id}
+                      type="button"
+                      onClick={() => addPresetJumpropeChallenge(p.id)}
+                      className="rounded-lg border border-slate-600/60 bg-black/50 px-3 py-1.5 text-left text-[11px] text-slate-200 transition hover:border-emerald-500/50 hover:text-white"
+                    >
+                      {t(p.labelKey)}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div className="mb-6 flex flex-wrap gap-2">
+                <button
+                  type="button"
+                  onClick={() => setJumpropeSubView('sessions')}
+                  className={`rounded-xl border px-4 py-2 text-sm font-medium transition ${
+                    jumpropeSubView === 'sessions'
+                      ? 'border-[#0F5C45]/80 bg-[#0F5C45]/25 text-white'
+                      : 'border-[#0F4C5C]/45 bg-black text-teal-100 hover:border-[#0F5C45]/50'
+                  }`}
+                >
+                  {t('endurance.subViews.sessionsAndChallenges')}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setJumpropeSubView('trophies')}
+                  className={`rounded-xl border px-4 py-2 text-sm font-medium transition ${
+                    jumpropeSubView === 'trophies'
+                      ? 'border-sky-500/70 bg-sky-500/15 text-sky-100'
+                      : 'border-[#0F4C5C]/45 bg-black text-teal-100 hover:border-sky-500/40'
+                  }`}
+                >
+                  {t('endurance.subViews.trophies')}
+                </button>
+              </div>
+
+              {jumpropeSubView === 'trophies' ? (
+                <SimpleEnduranceTrophiesPanel
+                  activityType="jumprope"
+                  sessions={sessions.jumprope}
+                  title="Trophées — Corde à sauter"
+                />
+              ) : (
+                <>
               {/* Rappel défis actifs */}
               {activeChallenges.length > 0 && (
                 <div className="mb-8 rounded-2xl border-2 border-[#0F4C5C]/55 bg-black p-6">
@@ -2000,14 +2209,18 @@ const EnduranceTab = () => {
                                 {challenge.type === 'periode' && t('endurance.challenges.details.period', { startDate: challenge.startDate, endDate: challenge.endDate })}
                               </p>
                               <p className="text-sky-300">
-                                {challenge.goalDuration && challenge.goalCount
-                                  ? t('endurance.challenges.details.goalJumpropeOrJumps', { duration: challenge.goalDuration, jumps: challenge.goalCount })
-                                  : challenge.goalDuration
-                                  ? t('endurance.challenges.details.goalJumprope', { duration: challenge.goalDuration })
-                                  : challenge.goalCount
-                                  ? `${challenge.goalCount} sauts`
-                                  : ''
-                                }
+                                {(() => {
+                                  const jumps = challenge.goalJumps ?? challenge.goalCount;
+                                  if (challenge.goalDuration && jumps)
+                                    return t('endurance.challenges.details.goalJumpropeOrJumps', {
+                                      duration: challenge.goalDuration,
+                                      jumps
+                                    });
+                                  if (challenge.goalDuration)
+                                    return t('endurance.challenges.details.goalJumprope', { duration: challenge.goalDuration });
+                                  if (jumps) return `${jumps} sauts`;
+                                  return '';
+                                })()}
                               </p>
                             </div>
                           </div>
@@ -2118,6 +2331,8 @@ const EnduranceTab = () => {
                   )}
                 </div>
               </div>
+                </>
+              )}
             </>
           )}
 
@@ -2155,6 +2370,57 @@ const EnduranceTab = () => {
                 ]}
               />
 
+              <div className="mb-6 rounded-xl border border-[#0F4C5C]/40 bg-slate-950/40 p-4">
+                <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-teal-200/90">
+                  {t('endurance.gainagePresets.title')}
+                </p>
+                <div className="flex flex-wrap gap-2">
+                  {GAINAGE_CHALLENGE_PRESET_DEFS.map((p) => (
+                    <button
+                      key={p.id}
+                      type="button"
+                      onClick={() => addPresetGainageChallenge(p.id)}
+                      className="rounded-lg border border-slate-600/60 bg-black/50 px-3 py-1.5 text-left text-[11px] text-slate-200 transition hover:border-emerald-500/50 hover:text-white"
+                    >
+                      {t(p.labelKey)}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div className="mb-6 flex flex-wrap gap-2">
+                <button
+                  type="button"
+                  onClick={() => setGainageSubView('sessions')}
+                  className={`rounded-xl border px-4 py-2 text-sm font-medium transition ${
+                    gainageSubView === 'sessions'
+                      ? 'border-[#0F5C45]/80 bg-[#0F5C45]/25 text-white'
+                      : 'border-[#0F4C5C]/45 bg-black text-teal-100 hover:border-[#0F5C45]/50'
+                  }`}
+                >
+                  {t('endurance.subViews.sessionsAndChallenges')}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setGainageSubView('trophies')}
+                  className={`rounded-xl border px-4 py-2 text-sm font-medium transition ${
+                    gainageSubView === 'trophies'
+                      ? 'border-sky-500/70 bg-sky-500/15 text-sky-100'
+                      : 'border-[#0F4C5C]/45 bg-black text-teal-100 hover:border-sky-500/40'
+                  }`}
+                >
+                  {t('endurance.subViews.trophies')}
+                </button>
+              </div>
+
+              {gainageSubView === 'trophies' ? (
+                <SimpleEnduranceTrophiesPanel
+                  activityType="gainage"
+                  sessions={sessions.gainage}
+                  title="Trophées — Gainage"
+                />
+              ) : (
+                <>
               {activeChallenges.length > 0 && (
                 <div className="mb-8 rounded-2xl border-2 border-[#0F4C5C]/55 bg-black p-6">
                   <div className="flex items-start gap-4">
@@ -2365,6 +2631,8 @@ const EnduranceTab = () => {
                   )}
                 </div>
               </div>
+                </>
+              )}
             </>
           )}
 
@@ -2394,46 +2662,11 @@ const EnduranceTab = () => {
                 ]}
               />
 
-              <div className="mb-6 flex flex-wrap gap-2">
-                <button
-                  type="button"
-                  onClick={() => {
-                    setRunningSubView('sessions');
-                    setRunningDetailSession(null);
-                  }}
-                  className={`rounded-xl border px-4 py-2 text-sm font-medium transition ${
-                    runningSubView === 'sessions'
-                      ? 'border-[#0F5C45]/80 bg-[#0F5C45]/25 text-white'
-                      : 'border-[#0F4C5C]/45 bg-black text-teal-100 hover:border-[#0F5C45]/50'
-                  }`}
-                >
-                  Séances & défis
-                </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setRunningSubView('trophies');
-                    setRunningDetailSession(null);
-                  }}
-                  className={`rounded-xl border px-4 py-2 text-sm font-medium transition ${
-                    runningSubView === 'trophies'
-                      ? 'border-sky-500/70 bg-sky-500/15 text-sky-100'
-                      : 'border-[#0F4C5C]/45 bg-black text-teal-100 hover:border-sky-500/40'
-                  }`}
-                >
-                  Trophées
-                </button>
-              </div>
+              <RunningGarminSyncBlock />
 
-              {runningSubView === 'trophies' ? (
-                <RunningTrophiesPanel sessions={sessions.running} garminById={garminRunningById} />
-              ) : (
-                <>
-                  <RunningGarminSyncBlock />
+              <RunningPersonalRecordsPanel sessions={sessions.running} garminById={garminRunningById} />
 
-                  <RunningPersonalRecordsPanel sessions={sessions.running} garminById={garminRunningById} />
-
-                  {/* Rappel défis actifs */}
+              {/* Rappel défis actifs */}
                   {activeChallenges.length > 0 && (
                     <div className="mb-8 rounded-2xl border-2 border-[#0F4C5C]/55 bg-black p-6">
                       <div className="flex items-start gap-4">
@@ -2458,8 +2691,8 @@ const EnduranceTab = () => {
                     </div>
                   )}
 
-                  {/* Formulaire de session */}
-                  {ui.showSessionForm && (
+              {/* Formulaire de session */}
+              {ui.showSessionForm && (
                     <div className="bg-black border-2 border-[#0F4C5C]/70 rounded-2xl p-8 mb-8 shadow-2xl shadow-black/40">
                       <h3 className="text-2xl font-bold text-white mb-6">{t('endurance.actions.newSession')}</h3>
                       <EnduranceSessionForm
@@ -2581,8 +2814,6 @@ const EnduranceTab = () => {
                       onDelete={(id, originalIndex) => deleteRunningSession(id, originalIndex)}
                     />
                   )}
-                </>
-              )}
 
             </>
           )}
@@ -2859,12 +3090,15 @@ const EnduranceTab = () => {
                 <label className="block text-slate-300 text-sm font-medium mb-2">{t('endurance.challenges.modal.challengeType')}</label>
                 <select
                   value={challengeForm.type}
-                  onChange={(e) => setChallengeForm({...challengeForm, type: e.target.value})}
+                  onChange={(e) => setChallengeForm({ ...challengeForm, type: e.target.value })}
                   className="w-full px-4 py-3 bg-black border border-[#0F4C5C]/50 rounded-xl text-white focus:outline-none focus:border-[#0F5C45] transition-colors"
                 >
                   <option value="ponctuel">{t('endurance.challenges.types.ponctuel')}</option>
                   <option value="recurrent">{t('endurance.challenges.types.recurrent')}</option>
                   <option value="periode">{t('endurance.challenges.types.periode')}</option>
+                  {challengeForm.activityType === 'pushups' ? (
+                    <option value="pushups_cumul">{t('endurance.challenges.types.pushups_cumul')}</option>
+                  ) : null}
                 </select>
               </div>
 
@@ -2931,6 +3165,49 @@ const EnduranceTab = () => {
                 </div>
               )}
 
+              {challengeForm.type === 'pushups_cumul' && (
+                <div className="space-y-4">
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="mb-2 block text-sm font-medium text-slate-300">
+                        {t('endurance.challenges.modal.startDate')}
+                      </label>
+                      <input
+                        type="date"
+                        value={challengeForm.startDate}
+                        onChange={(e) => setChallengeForm({ ...challengeForm, startDate: e.target.value })}
+                        className="w-full rounded-xl border border-[#0F4C5C]/50 bg-black px-4 py-3 text-white transition-colors focus:border-[#0F5C45] focus:outline-none"
+                      />
+                    </div>
+                    <div>
+                      <label className="mb-2 block text-sm font-medium text-slate-300">
+                        {t('endurance.challenges.modal.endDate')}
+                      </label>
+                      <input
+                        type="date"
+                        value={challengeForm.endDate}
+                        onChange={(e) => setChallengeForm({ ...challengeForm, endDate: e.target.value })}
+                        className="w-full rounded-xl border border-[#0F4C5C]/50 bg-black px-4 py-3 text-white transition-colors focus:border-[#0F5C45] focus:outline-none"
+                      />
+                    </div>
+                  </div>
+                  <div>
+                    <label className="mb-2 block text-sm font-medium text-slate-300">
+                      {t('endurance.challenges.modal.goalTotalCount')}
+                    </label>
+                    <input
+                      type="number"
+                      min={1}
+                      value={challengeForm.goalTotalCount}
+                      onChange={(e) => setChallengeForm({ ...challengeForm, goalTotalCount: e.target.value })}
+                      className="w-full rounded-xl border border-[#0F4C5C]/50 bg-black px-4 py-3 text-white transition-colors focus:border-[#0F5C45] focus:outline-none"
+                      placeholder="500"
+                    />
+                  </div>
+                </div>
+              )}
+
+              {challengeForm.type !== 'pushups_cumul' && (
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="block text-slate-300 text-sm font-medium mb-2">
@@ -2956,6 +3233,7 @@ const EnduranceTab = () => {
                   />
                 </div>
               </div>
+              )}
             </div>
 
             <div className="mt-8 flex justify-end gap-3">

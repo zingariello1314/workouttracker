@@ -22,7 +22,7 @@ const SidebarMuscuRecapModule = memo(({ isExpanded, onToggle, setActiveTab }) =>
       >
         <h2 className="sidebar-section-title">
           <span className="sidebar-section-icon inline-flex items-center justify-center" aria-hidden="true">
-            <Dumbbell className="h-4 w-4 text-violet-400" />
+            <Dumbbell className="h-4 w-4 text-teal-400" />
           </span>
           Muscu (enregistré)
         </h2>

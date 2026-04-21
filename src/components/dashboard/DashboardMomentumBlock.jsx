@@ -14,17 +14,37 @@ import {
   elapsedMs
 } from '../../utils/addictionQuitConstants';
 import { getNextMilestone, formatTimeUntilFr } from '../../utils/addictionQuitHelpers';
-import { mergeAddictionQuitData, getActiveSession } from '../../utils/addictionQuitSessionsXp';
+import { getDateStr } from '../../utils/dateUtils';
+import {
+  mergeAddictionQuitData,
+  getActiveSession,
+  calculateAddictionQuitXP
+} from '../../utils/addictionQuitSessionsXp';
 import GarminRunningStatsCard from '../garmin/GarminRunningStatsCard';
 import RecapStrengthStatsCard from '../sport/recap/RecapStrengthStatsCard';
+import RunningTrophiesDashboardCompact from './RunningTrophiesDashboardCompact.jsx';
 import { ADDICTION_QUIT_JOURNAL_BOTTOM_ANCHOR_ID } from '../tabs/addictionQuit/AddictionQuitCravingsPanel';
 import MomentumWeekCharts from './MomentumWeekCharts';
 
-const pillClass = (tone) => {
-  if (tone === 'good') return 'bg-emerald-500/15 text-emerald-200 border-emerald-500/35';
-  if (tone === 'mid') return 'bg-amber-500/15 text-amber-200 border-amber-500/35';
-  if (tone === 'low') return 'bg-rose-500/15 text-rose-200 border-rose-500/35';
-  return 'bg-slate-700/50 text-slate-400 border-slate-600/50';
+const questPillClass = (tone) => {
+  if (tone === 'good') return 'bg-amber-500/20 text-amber-50 border-amber-400/50';
+  if (tone === 'mid') return 'bg-amber-950/40 text-amber-200 border-amber-500/40';
+  if (tone === 'low') return 'bg-rose-950/30 text-rose-200 border-rose-500/40';
+  return 'bg-black/50 text-amber-200/75 border-amber-700/35';
+};
+
+const sportPillClass = (tone) => {
+  if (tone === 'good') return 'bg-teal-500/20 text-teal-50 border-teal-400/50';
+  if (tone === 'mid') return 'bg-teal-950/45 text-teal-200 border-teal-600/45';
+  if (tone === 'low') return 'bg-slate-900/60 text-slate-400 border-teal-900/45';
+  return 'bg-black/50 text-teal-200/75 border-teal-800/40';
+};
+
+const readingPillClass = (tone) => {
+  if (tone === 'good') return 'bg-sky-500/20 text-sky-50 border-sky-400/50';
+  if (tone === 'mid') return 'bg-sky-950/40 text-sky-200 border-sky-600/45';
+  if (tone === 'low') return 'bg-slate-900/55 text-sky-200/90 border-sky-900/40';
+  return 'bg-black/50 text-sky-200/75 border-sky-800/40';
 };
 
 const formatDateKeyShortFr = (dateKey) => {
@@ -139,6 +159,26 @@ const DashboardMomentumBlock = () => {
     return { rows, anyActive };
   }, [addictionData, milestoneNow]);
 
+  const addictionXpSummary = useMemo(
+    () => calculateAddictionQuitXP(addictionData, milestoneNow),
+    [addictionData, milestoneNow]
+  );
+
+  const cravingsEntriesWeek = useMemo(() => {
+    if (!todayDate || !addictionData?.cravingsByDay) return 0;
+    let n = 0;
+    const end = new Date(`${todayDate}T12:00:00`);
+    if (Number.isNaN(end.getTime())) return 0;
+    for (let i = 0; i < 7; i += 1) {
+      const d = new Date(end);
+      d.setDate(end.getDate() - i);
+      const key = getDateStr(d);
+      const arr = addictionData.cravingsByDay[key];
+      if (Array.isArray(arr)) n += arr.length;
+    }
+    return n;
+  }, [addictionData, todayDate]);
+
   const questTone = useMemo(() => {
     if (quests.total === 0) return 'good';
     if (quests.rate >= 70) return 'good';
@@ -226,15 +266,15 @@ const DashboardMomentumBlock = () => {
   }
 
   return (
-    <div className="rounded-xl border border-cyan-500/20 bg-gradient-to-br from-slate-900/90 via-slate-900/70 to-indigo-950/40 p-6 mb-6 shadow-lg shadow-slate-950/40 min-w-0">
+    <div className="rounded-xl border border-teal-900/35 bg-gradient-to-br from-black via-slate-950/98 to-black p-6 mb-6 shadow-lg shadow-black/50 min-w-0">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-5">
         <div className="flex items-center gap-3">
-          <div className="p-2 rounded-lg bg-cyan-500/15 border border-cyan-500/30">
-            <Sparkles className="w-5 h-5 text-cyan-300" aria-hidden />
+          <div className="p-2 rounded-lg bg-teal-500/10 border border-teal-500/35">
+            <Sparkles className="w-5 h-5 text-teal-300" aria-hidden />
           </div>
           <div>
             <h3 className="text-lg font-semibold text-white">Vue du jour</h3>
-            <p className="text-xs text-slate-400 capitalize">{dateLabel}</p>
+            <p className="text-xs text-teal-200/50 capitalize">{dateLabel}</p>
           </div>
         </div>
       </div>
@@ -250,65 +290,99 @@ const DashboardMomentumBlock = () => {
           </span>
           <span>
             Dernier Garmin :{' '}
-            <span className="font-medium text-slate-300">{formatDateKeyShortFr(lastGarminSyncKey)}</span>
+            <span className="font-medium text-teal-200/80">{formatDateKeyShortFr(lastGarminSyncKey)}</span>
           </span>
         </p>
         <div className="grid grid-cols-1 gap-4 xl:grid-cols-2 xl:items-start">
-          <div className="w-full rounded-xl border border-amber-500/25 bg-slate-950/60 p-4">
-            <div className="mb-3 flex items-center justify-between gap-2">
-              <span className="flex items-center gap-2 text-sm font-semibold text-white">
-                <span className="rounded-lg border border-amber-500/35 bg-amber-500/15 p-1.5">
-                  <Ban className="h-4 w-4 text-amber-300" aria-hidden />
+          <div className="w-full space-y-3">
+            <div className="w-full rounded-xl border-2 border-[#0F4C5C]/60 bg-black p-4 shadow-[0_0_24px_rgba(15,76,92,0.2)]">
+              <div className="mb-3 flex items-center justify-between gap-2">
+                <span className="flex items-center gap-2 text-sm font-semibold text-white">
+                  <span className="rounded-lg border border-teal-500/40 bg-teal-500/10 p-1.5">
+                    <Ban className="h-4 w-4 text-teal-300" aria-hidden />
+                  </span>
+                  Arrêt addiction
                 </span>
-                Arrêt addiction
-              </span>
+              </div>
+              <ul className="space-y-2 text-xs text-teal-100/75">
+                {addictionTracksSummary.rows.map((r) => (
+                  <li key={r.id} className="rounded-lg border border-[#0F4C5C]/45 bg-black/80 px-2 py-1.5">
+                    <div className="flex justify-between gap-2">
+                      <span className="text-teal-200/60">{r.label}</span>
+                      <span className={r.ok ? 'shrink-0 text-right text-white' : 'text-teal-300/45'}>{r.line}</span>
+                    </div>
+                    {r.ok && r.jalonLine ? (
+                      <p className="mt-1 text-[10px] leading-snug text-teal-200/85" title={r.jalonLine}>
+                        Prochain jalon : {r.jalonLine}
+                      </p>
+                    ) : null}
+                  </li>
+                ))}
+              </ul>
+              {!addictionTracksSummary.anyActive ? (
+                <p className="mt-2 text-[11px] text-teal-300/50">
+                  Définis une date d’arrêt dans l’onglet dédié pour suivre ton XP et tes jalons.
+                </p>
+              ) : null}
+              <div className="mt-3 flex flex-col gap-2 sm:flex-row sm:flex-wrap">
+                <button
+                  type="button"
+                  onClick={goAddictionQuit}
+                  className="inline-flex flex-1 items-center justify-center gap-1 rounded-lg border border-teal-500/45 bg-teal-500/10 px-3 py-2 text-left text-xs font-medium text-teal-100 transition hover:bg-teal-500/20"
+                >
+                  Timers · suivi
+                  <ChevronRight className="h-3.5 w-3.5 shrink-0 opacity-80" aria-hidden />
+                </button>
+                <button
+                  type="button"
+                  onClick={goCravingsJournal}
+                  className="inline-flex flex-1 items-center justify-center gap-1 rounded-lg border border-teal-600/35 bg-black px-3 py-2 text-left text-xs font-medium text-teal-200/90 transition hover:bg-teal-950/50"
+                >
+                  <LayoutList className="h-3.5 w-3.5 shrink-0 opacity-90" aria-hidden />
+                  Journal des envies (bas de page)
+                  <ChevronRight className="h-3.5 w-3.5 shrink-0 opacity-80" aria-hidden />
+                </button>
+              </div>
+              <div className="mt-3 space-y-1 rounded-lg border border-[#0F4C5C]/40 bg-teal-950/15 px-2.5 py-2 text-[10px] leading-snug text-teal-200/85">
+                <p className="font-semibold text-teal-100/90">Résumé progression (arrêt)</p>
+                <div className="flex flex-wrap gap-x-2 gap-y-0.5">
+                  <span>
+                    XP modèle :{' '}
+                    <strong className="tabular-nums text-white">{addictionXpSummary.totalXP}</strong>
+                  </span>
+                  <span className="text-teal-600/50" aria-hidden>
+                    ·
+                  </span>
+                  <span>
+                    Jalons : <strong className="text-white">{addictionXpSummary.breakdown.milestones}</strong>
+                  </span>
+                  <span className="text-teal-600/50" aria-hidden>
+                    ·
+                  </span>
+                  <span>
+                    Quotidien : <strong className="text-white">{addictionXpSummary.breakdown.daily}</strong>
+                  </span>
+                </div>
+                <div className="flex flex-wrap gap-x-2 text-teal-300/70">
+                  <span>Sessions : {addictionXpSummary.breakdown.sessions}</span>
+                  <span className="text-teal-600/50">·</span>
+                  <span>Craquages : {addictionXpSummary.breakdown.relapses}</span>
+                  <span className="text-teal-600/50">·</span>
+                  <span>Bonus réflexif : +{addictionXpSummary.breakdown.reflective}</span>
+                </div>
+                <p className="text-teal-300/60">
+                  Entrées « envies » sur 7 jours : <strong className="text-teal-100">{cravingsEntriesWeek}</strong>
+                </p>
+              </div>
             </div>
-            <ul className="space-y-2 text-xs text-slate-400">
-              {addictionTracksSummary.rows.map((r) => (
-                <li key={r.id} className="rounded-lg border border-slate-800/80 bg-slate-900/40 px-2 py-1.5">
-                  <div className="flex justify-between gap-2">
-                    <span className="text-slate-500">{r.label}</span>
-                    <span className={r.ok ? 'shrink-0 text-right text-slate-200' : 'text-slate-500'}>{r.line}</span>
-                  </div>
-                  {r.ok && r.jalonLine ? (
-                    <p className="mt-1 text-[10px] leading-snug text-amber-200/85" title={r.jalonLine}>
-                      Prochain jalon : {r.jalonLine}
-                    </p>
-                  ) : null}
-                </li>
-              ))}
-            </ul>
-            {!addictionTracksSummary.anyActive ? (
-              <p className="mt-2 text-[11px] text-slate-500">
-                Définis une date d’arrêt dans l’onglet dédié pour suivre ton XP et tes jalons.
-              </p>
-            ) : null}
-            <div className="mt-3 flex flex-col gap-2 sm:flex-row sm:flex-wrap">
-              <button
-                type="button"
-                onClick={goAddictionQuit}
-                className="inline-flex flex-1 items-center justify-center gap-1 rounded-lg border border-amber-500/40 bg-amber-500/10 px-3 py-2 text-left text-xs font-medium text-amber-100 transition hover:bg-amber-500/20"
-              >
-                Timers · suivi
-                <ChevronRight className="h-3.5 w-3.5 shrink-0 opacity-80" aria-hidden />
-              </button>
-              <button
-                type="button"
-                onClick={goCravingsJournal}
-                className="inline-flex flex-1 items-center justify-center gap-1 rounded-lg border border-violet-500/40 bg-violet-600/15 px-3 py-2 text-left text-xs font-medium text-violet-100 transition hover:bg-violet-600/25"
-              >
-                <LayoutList className="h-3.5 w-3.5 shrink-0 opacity-90" aria-hidden />
-                Journal des envies (bas de page)
-                <ChevronRight className="h-3.5 w-3.5 shrink-0 opacity-80" aria-hidden />
-              </button>
-            </div>
+            <RunningTrophiesDashboardCompact onOpenEndurance={() => setActiveTab?.('endurance')} />
           </div>
           <div className="min-w-0 space-y-3">
             <div className="grid grid-cols-1 gap-4 lg:grid-cols-2 lg:items-start">
-              <div className="min-w-0 rounded-xl border border-slate-700/50 bg-slate-950/40 p-4">
+              <div className="min-w-0 rounded-xl border-2 border-[#0F4C5C]/55 bg-black p-4 shadow-[0_0_20px_rgba(15,76,92,0.15)]">
                 <GarminRunningStatsCard variant="embedded" />
               </div>
-              <div className="min-w-0 rounded-xl border border-slate-700/50 bg-slate-950/40 p-4">
+              <div className="min-w-0 rounded-xl border-2 border-[#0F4C5C]/55 bg-black p-4 shadow-[0_0_20px_rgba(15,76,92,0.15)]">
                 <RecapStrengthStatsCard variant="embedded" />
               </div>
             </div>
@@ -320,26 +394,26 @@ const DashboardMomentumBlock = () => {
         <button
           type="button"
           onClick={goQuests}
-          className="text-left rounded-lg border border-slate-700/60 bg-slate-950/50 p-4 hover:bg-slate-800/60 hover:border-slate-600 transition-colors group"
+          className="text-left rounded-lg border border-amber-500/40 bg-black p-4 hover:bg-amber-950/25 hover:border-amber-400/55 transition-colors group shadow-[0_0_20px_rgba(234,179,8,0.06)]"
         >
           <div className="flex items-center justify-between gap-2 mb-2">
-            <span className="flex items-center gap-2 text-sm font-medium text-white">
-              <Target className="w-4 h-4 text-purple-400" />
+            <span className="flex items-center gap-2 text-sm font-medium text-amber-50">
+              <Target className="w-4 h-4 text-amber-400" />
               Quêtes
             </span>
-            <span className={`text-[10px] uppercase tracking-wide px-2 py-0.5 rounded border ${pillClass(questTone)}`}>
+            <span className={`text-[10px] uppercase tracking-wide px-2 py-0.5 rounded border ${questPillClass(questTone)}`}>
               {quests.total === 0 ? 'Libre' : `${quests.rate} %`}
             </span>
           </div>
-          <p className="text-2xl font-bold text-white tabular-nums">
+          <p className="text-2xl font-bold text-amber-50 tabular-nums">
             {quests.completed}/{quests.total || '—'}
           </p>
-          <p className="text-xs text-slate-500 mt-1">
+          <p className="text-xs text-amber-200/65 mt-1">
             {quests.total > 0
               ? `${quests.gainedXP} / ${quests.potentialXP} XP quêtes`
               : 'Aucune quête planifiée'}
           </p>
-          <span className="mt-2 inline-flex items-center gap-1 text-xs text-cyan-400/90 group-hover:text-cyan-300">
+          <span className="mt-2 inline-flex items-center gap-1 text-xs text-amber-300/95 group-hover:text-amber-200">
             Ouvrir les quêtes
             <ChevronRight className="w-3 h-3" />
           </span>
@@ -348,14 +422,14 @@ const DashboardMomentumBlock = () => {
         <button
           type="button"
           onClick={goSport}
-          className="text-left rounded-lg border border-slate-700/60 bg-slate-950/50 p-4 hover:bg-slate-800/60 hover:border-slate-600 transition-colors group"
+          className="text-left rounded-lg border border-teal-600/45 bg-black p-4 hover:bg-teal-950/30 hover:border-teal-500/55 transition-colors group shadow-[0_0_20px_rgba(20,184,166,0.07)]"
         >
           <div className="flex items-center justify-between gap-2 mb-2">
-            <span className="flex items-center gap-2 text-sm font-medium text-white">
-              <Dumbbell className="w-4 h-4 text-rose-400" />
+            <span className="flex items-center gap-2 text-sm font-medium text-teal-50">
+              <Dumbbell className="w-4 h-4 text-teal-400" />
               Sport
             </span>
-            <span className={`text-[10px] uppercase tracking-wide px-2 py-0.5 rounded border ${pillClass(sportTone)}`}>
+            <span className={`text-[10px] uppercase tracking-wide px-2 py-0.5 rounded border ${sportPillClass(sportTone)}`}>
               {sport.activitiesCount > 0 ? `${sport.activitiesCount} act.` : sport.intensityMinutes > 0 ? 'Intensité' : sport.hasGarminForDay ? 'Suivi' : '—'}
             </span>
           </div>
@@ -370,15 +444,15 @@ const DashboardMomentumBlock = () => {
                   ? `${sport.steps.toLocaleString('fr-FR')} pas`
                   : '—'}
           </p>
-          <p className="text-xs text-slate-500 mt-1">
+          <p className="text-xs text-teal-200/65 mt-1">
             Reps: {sport.reps} · Exos: {sport.checkedExercises} · Défis: {sport.validatedChallenges}
           </p>
-          <p className="text-xs text-slate-500 mt-1">
+          <p className="text-xs text-teal-200/55 mt-1">
             {sport.hasGarminForDay
               ? `Garmin: ${sport.activitiesCount} activité(s) · ${sport.steps.toLocaleString('fr-FR')} pas`
               : 'Garmin : pas de métrique pour ce jour'}
           </p>
-          <span className="mt-2 inline-flex items-center gap-1 text-xs text-cyan-400/90 group-hover:text-cyan-300">
+          <span className="mt-2 inline-flex items-center gap-1 text-xs text-teal-300/95 group-hover:text-teal-200">
             Ouvrir le sport
             <ChevronRight className="w-3 h-3" />
           </span>
@@ -387,30 +461,30 @@ const DashboardMomentumBlock = () => {
         <button
           type="button"
           onClick={goBooks}
-          className="text-left rounded-lg border border-slate-700/60 bg-slate-950/50 p-4 hover:bg-slate-800/60 hover:border-slate-600 transition-colors group"
+          className="text-left rounded-lg border border-sky-500/45 bg-black p-4 hover:bg-sky-950/30 hover:border-sky-400/55 transition-colors group shadow-[0_0_20px_rgba(14,165,233,0.08)]"
         >
           <div className="flex items-center justify-between gap-2 mb-2">
-            <span className="flex items-center gap-2 text-sm font-medium text-white">
-              <BookOpen className="w-4 h-4 text-indigo-400" />
+            <span className="flex items-center gap-2 text-sm font-medium text-sky-50">
+              <BookOpen className="w-4 h-4 text-sky-400" />
               Lecture
             </span>
-            <span className={`text-[10px] uppercase tracking-wide px-2 py-0.5 rounded border ${pillClass(readingTone)}`}>
+            <span className={`text-[10px] uppercase tracking-wide px-2 py-0.5 rounded border ${readingPillClass(readingTone)}`}>
               {reading.minutes > 0 || reading.pages > 0 ? 'En cours' : 'À faire'}
             </span>
           </div>
-          <p className="text-2xl font-bold text-white tabular-nums">
+          <p className="text-2xl font-bold text-sky-50 tabular-nums">
             {reading.pages > 0 || reading.minutes > 0
               ? `${reading.pages} p. · ${reading.minutes} min`
               : '—'}
           </p>
-          <p className="text-xs text-slate-500 mt-1">
+          <p className="text-xs text-sky-200/70 mt-1">
             Rythme: {reading.pagesPerHour > 0 ? `${reading.pagesPerHour} p/h` : '—'} · Objectif: {reading.dailyGoal} min
             {reading.sessions > 0 ? ` · ${reading.sessions} session(s)` : ''}
           </p>
-          <p className="text-xs text-slate-500 mt-1 truncate" title={reading.booksReadToday?.join(', ') || ''}>
+          <p className="text-xs text-sky-200/60 mt-1 truncate" title={reading.booksReadToday?.join(', ') || ''}>
             Livres du jour: {reading.booksReadToday?.length > 0 ? reading.booksReadToday.join(', ') : '—'}
           </p>
-          <span className="mt-2 inline-flex items-center gap-1 text-xs text-cyan-400/90 group-hover:text-cyan-300">
+          <span className="mt-2 inline-flex items-center gap-1 text-xs text-sky-300/95 group-hover:text-sky-200">
             Ouvrir les livres
             <ChevronRight className="w-3 h-3" />
           </span>
@@ -418,17 +492,17 @@ const DashboardMomentumBlock = () => {
       </div>
 
       {insight ? (
-        <p className="text-sm text-slate-300 leading-relaxed border-t border-slate-700/50 pt-4">{insight}</p>
+        <p className="text-sm text-slate-400 leading-relaxed border-t border-slate-800/70 pt-4">{insight}</p>
       ) : null}
 
       {weekChartData?.length > 0 ? (
         <MomentumWeekCharts chartData={weekChartData} weekRangeLabel={weekRangeLabel} />
       ) : null}
-      <p className="text-xs text-slate-500 mt-3">
+      <p className="text-xs text-sky-200/55 mt-3">
         Semaine lecture: {weekPagesPerHour > 0 ? `${weekPagesPerHour} p/h` : '—'} · Livres lus: {booksReadWeek?.length || 0}
       </p>
       {booksReadWeek?.length > 0 ? (
-        <p className="text-xs text-slate-500 mt-1 truncate" title={booksReadWeek.join(', ')}>
+        <p className="text-xs text-sky-200/50 mt-1 truncate" title={booksReadWeek.join(', ')}>
           {booksReadWeek.join(', ')}
         </p>
       ) : null}

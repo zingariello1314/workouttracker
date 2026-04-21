@@ -1,5 +1,6 @@
 import React, { memo, Suspense, lazy } from 'react';
 import { useModuleAlternation } from '../../hooks/useModuleAlternation';
+import { getSidebarModuleTheme } from '../../utils/sidebar/sidebarModuleTheme';
 import SidebarSectionErrorBoundary from './SidebarSectionErrorBoundary';
 
 // Lazy loading des modules historiques (sidebar)
@@ -148,6 +149,7 @@ const ModuleItem = memo(({
           data-module-id={module.id}
           data-module-type={module.type}
           data-module-position={module.position}
+          data-sidebar-theme={module.type === 'historical' ? getSidebarModuleTheme(module.id) : undefined}
         >
           <Component {...getModuleProps()} />
         </div>
