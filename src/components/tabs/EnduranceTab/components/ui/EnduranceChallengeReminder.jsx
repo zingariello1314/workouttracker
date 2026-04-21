@@ -1,6 +1,6 @@
 import React, { useMemo } from 'react';
 import { Award } from 'lucide-react';
-import { useTranslation } from '../../../../utils/translations';
+import { useTranslation } from '../../../../../utils/translations';
 
 const EnduranceChallengeReminder = ({ activeChallenges = [], urgentChallenges = [], onSelectActivity }) => {
   const t = useTranslation();

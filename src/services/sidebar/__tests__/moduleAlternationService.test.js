@@ -29,16 +29,21 @@ describe('ModuleAlternationService', () => {
 
     it('should maintain alternation sequence', () => {
       const pattern = moduleAlternationService.getAlternatedModules();
-      
+      const hasLegacy = pattern.some((m) => m.type === 'legacy');
+
       // Position 0 : slot historique optionnel en tête (Course Garmin)
       // Positions 1–3 : bloc sport + calendrier + quêtes (historique)
-      // À partir de 4 : pairs = legacy, impairs = historique
+      // À partir de 4 : alternance legacy / historique seulement si au moins un legacy visible
       pattern.forEach((module) => {
         if (module.position === 0) {
           expect(module.type).toBe('historical');
           return;
         }
         if (module.position >= 1 && module.position <= 3) {
+          expect(module.type).toBe('historical');
+          return;
+        }
+        if (module.position >= 4 && !hasLegacy) {
           expect(module.type).toBe('historical');
           return;
         }
@@ -173,20 +178,25 @@ describe('ModuleAlternationService', () => {
       expect(validation.errors).toHaveLength(0);
     });
 
-    it('should detect alternation violations', () => {
-      // Créer un module avec un type incorrect pour sa position
-      const invalidModule = {
-        id: 'invalid-module',
+    it('should detect alternation violations when a legacy module is visible', () => {
+      moduleAlternationService.insertNewModule({
+        id: 'test-legacy-visible',
+        component: 'LegacyStub',
+        position: 100,
+        type: 'legacy',
+        isVisible: true
+      });
+      moduleAlternationService.insertNewModule({
+        id: 'invalid-historical-even',
         component: 'InvalidModule',
-        position: 22, // Position paire mais type historical
-        type: 'historical'
-      };
-      
-      moduleAlternationService.insertNewModule(invalidModule);
-      
+        position: 102,
+        type: 'historical',
+        isVisible: true
+      });
+
       const validation = moduleAlternationService.validateAlternationPattern();
       expect(validation.isValid).toBe(false);
-      expect(validation.errors.some(error => error.includes('devrait être de type legacy'))).toBe(true);
+      expect(validation.errors.some((error) => error.includes('devrait être de type legacy'))).toBe(true);
     });
   });
 

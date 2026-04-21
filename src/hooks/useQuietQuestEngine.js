@@ -63,7 +63,7 @@ export function saveToStorage(key, data) {
   }
 }
 
-export { DIFFICULTY_XP_BASE, calculateQuestXP } from '../utils/questXpCore';
+export { DIFFICULTY_XP_BASE, DIFFICULTY_XP_PER_HOUR, calculateQuestXP } from '../utils/questXpCore';
 
 // Helpers date (calendrier local — cohérent avec l’affichage « aujourd’hui » / validations)
 export const getTodayDateStr = () => getLocalCalendarDateStr(new Date());

@@ -2,7 +2,7 @@
  * Graphiques 7 jours : quêtes, lecture, sport (Garmin).
  */
 
-import { useMemo } from 'react';
+import { useLayoutEffect, useMemo, useRef, useState } from 'react';
 import {
   Bar,
   BarChart,
@@ -50,6 +50,38 @@ const ReadingTooltip = ({ active, payload }) => {
   );
 };
 
+/** Évite width/height -1 de Recharts quand le parent n’a pas encore de largeur (flex / onglet caché). */
+function ResponsiveChartShell({ children }) {
+  const wrapRef = useRef(null);
+  const [width, setWidth] = useState(0);
+  const height = 200;
+  useLayoutEffect(() => {
+    const el = wrapRef.current;
+    if (!el) return undefined;
+    const measure = () => {
+      const w = el.getBoundingClientRect().width;
+      setWidth(Math.max(0, Math.floor(w)));
+    };
+    measure();
+    const ro = new ResizeObserver(measure);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
+  return (
+    <div ref={wrapRef} className="h-[200px] w-full min-h-[200px] min-w-0">
+      {width > 2 ? (
+        <ResponsiveContainer width={width} height={height} debounce={32}>
+          {children}
+        </ResponsiveContainer>
+      ) : (
+        <div className="flex h-full items-center justify-center text-[10px] text-slate-600" aria-hidden>
+          …
+        </div>
+      )}
+    </div>
+  );
+}
+
 const SportTooltip = ({ active, payload }) => {
   if (!active || !payload?.length) return null;
   const d = payload[0].payload;
@@ -86,55 +118,49 @@ const MomentumWeekCharts = ({ chartData, weekRangeLabel }) => {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 min-w-0">
         <div className={chartWrap}>
           <p className="text-xs font-medium text-purple-300/90 mb-2">Taux de complétion des quêtes (%)</p>
-          <div className="h-[200px] w-full min-w-0">
-            <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={200}>
-              <BarChart data={chartData} margin={{ top: 4, right: 4, left: -18, bottom: 0 }}>
-                <CartesianGrid strokeDasharray="3 3" stroke="rgba(71,85,105,0.35)" />
-                <XAxis dataKey="shortLabel" tick={{ fill: '#94a3b8', fontSize: 10 }} axisLine={{ stroke: '#475569' }} />
-                <YAxis domain={[0, 100]} tick={{ fill: '#94a3b8', fontSize: 10 }} width={32} axisLine={{ stroke: '#475569' }} />
-                <Tooltip content={<QuestTooltip />} cursor={{ fill: 'rgba(148, 163, 184, 0.08)' }} />
-                <Bar dataKey="questRate" fill="#a78bfa" radius={[4, 4, 0, 0]} maxBarSize={28} />
-              </BarChart>
-            </ResponsiveContainer>
-          </div>
+          <ResponsiveChartShell>
+            <BarChart data={chartData} margin={{ top: 4, right: 4, left: -18, bottom: 0 }}>
+              <CartesianGrid strokeDasharray="3 3" stroke="rgba(71,85,105,0.35)" />
+              <XAxis dataKey="shortLabel" tick={{ fill: '#94a3b8', fontSize: 10 }} axisLine={{ stroke: '#475569' }} />
+              <YAxis domain={[0, 100]} tick={{ fill: '#94a3b8', fontSize: 10 }} width={32} axisLine={{ stroke: '#475569' }} />
+              <Tooltip content={<QuestTooltip />} cursor={{ fill: 'rgba(148, 163, 184, 0.08)' }} />
+              <Bar dataKey="questRate" fill="#a78bfa" radius={[4, 4, 0, 0]} maxBarSize={28} />
+            </BarChart>
+          </ResponsiveChartShell>
         </div>
 
         <div className={chartWrap}>
           <p className="text-xs font-medium text-indigo-300/90 mb-2">Lecture (minutes / jour)</p>
-          <div className="h-[200px] w-full min-w-0">
-            <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={200}>
-              <BarChart data={chartData} margin={{ top: 4, right: 4, left: -18, bottom: 0 }}>
-                <CartesianGrid strokeDasharray="3 3" stroke="rgba(71,85,105,0.35)" />
-                <XAxis dataKey="shortLabel" tick={{ fill: '#94a3b8', fontSize: 10 }} axisLine={{ stroke: '#475569' }} />
-                <YAxis tick={{ fill: '#94a3b8', fontSize: 10 }} width={36} axisLine={{ stroke: '#475569' }} allowDecimals={false} />
-                <Tooltip content={<ReadingTooltip />} cursor={{ fill: 'rgba(148, 163, 184, 0.08)' }} />
-                <Bar dataKey="readingMinutes" fill="#818cf8" radius={[4, 4, 0, 0]} maxBarSize={28} />
-              </BarChart>
-            </ResponsiveContainer>
-          </div>
+          <ResponsiveChartShell>
+            <BarChart data={chartData} margin={{ top: 4, right: 4, left: -18, bottom: 0 }}>
+              <CartesianGrid strokeDasharray="3 3" stroke="rgba(71,85,105,0.35)" />
+              <XAxis dataKey="shortLabel" tick={{ fill: '#94a3b8', fontSize: 10 }} axisLine={{ stroke: '#475569' }} />
+              <YAxis tick={{ fill: '#94a3b8', fontSize: 10 }} width={36} axisLine={{ stroke: '#475569' }} allowDecimals={false} />
+              <Tooltip content={<ReadingTooltip />} cursor={{ fill: 'rgba(148, 163, 184, 0.08)' }} />
+              <Bar dataKey="readingMinutes" fill="#818cf8" radius={[4, 4, 0, 0]} maxBarSize={28} />
+            </BarChart>
+          </ResponsiveChartShell>
         </div>
 
         <div className={chartWrap}>
           <p className="text-xs font-medium text-rose-300/90 mb-2">Sport — intensité (min) & pas (k)</p>
-          <div className="h-[200px] w-full min-w-0">
-            <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={200}>
-              <BarChart data={chartData} margin={{ top: 4, right: 4, left: -18, bottom: 0 }}>
-                <CartesianGrid strokeDasharray="3 3" stroke="rgba(71,85,105,0.35)" />
-                <XAxis dataKey="shortLabel" tick={{ fill: '#94a3b8', fontSize: 10 }} axisLine={{ stroke: '#475569' }} />
-                <YAxis yAxisId="left" tick={{ fill: '#94a3b8', fontSize: 10 }} width={32} axisLine={{ stroke: '#475569' }} />
-                <YAxis
-                  yAxisId="right"
-                  orientation="right"
-                  tick={{ fill: '#94a3b8', fontSize: 10 }}
-                  width={36}
-                  axisLine={{ stroke: '#475569' }}
-                />
-                <Tooltip content={<SportTooltip />} cursor={{ fill: 'rgba(148, 163, 184, 0.08)' }} />
-                <Bar yAxisId="left" dataKey="sportIntensity" name="Intensité" fill="#fb7185" radius={[4, 4, 0, 0]} maxBarSize={22} />
-                <Bar yAxisId="right" dataKey="stepsK" name="Pas (k)" fill="#38bdf8" radius={[4, 4, 0, 0]} maxBarSize={22} />
-              </BarChart>
-            </ResponsiveContainer>
-          </div>
+          <ResponsiveChartShell>
+            <BarChart data={chartData} margin={{ top: 4, right: 4, left: -18, bottom: 0 }}>
+              <CartesianGrid strokeDasharray="3 3" stroke="rgba(71,85,105,0.35)" />
+              <XAxis dataKey="shortLabel" tick={{ fill: '#94a3b8', fontSize: 10 }} axisLine={{ stroke: '#475569' }} />
+              <YAxis yAxisId="left" tick={{ fill: '#94a3b8', fontSize: 10 }} width={32} axisLine={{ stroke: '#475569' }} />
+              <YAxis
+                yAxisId="right"
+                orientation="right"
+                tick={{ fill: '#94a3b8', fontSize: 10 }}
+                width={36}
+                axisLine={{ stroke: '#475569' }}
+              />
+              <Tooltip content={<SportTooltip />} cursor={{ fill: 'rgba(148, 163, 184, 0.08)' }} />
+              <Bar yAxisId="left" dataKey="sportIntensity" name="Intensité" fill="#fb7185" radius={[4, 4, 0, 0]} maxBarSize={22} />
+              <Bar yAxisId="right" dataKey="stepsK" name="Pas (k)" fill="#38bdf8" radius={[4, 4, 0, 0]} maxBarSize={22} />
+            </BarChart>
+          </ResponsiveChartShell>
           {!hasAnySport ? (
             <p className="text-[11px] text-slate-500 mt-2">Aucune donnée Garmin sur cette période — synchronise ta montre.</p>
           ) : null}

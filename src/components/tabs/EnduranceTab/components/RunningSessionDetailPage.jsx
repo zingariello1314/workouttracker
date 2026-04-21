@@ -20,6 +20,7 @@ import { useGarminData } from '../../../../hooks/useGarminData';
 import { useTranslation } from '../../../../utils/translations';
 import { classifyLapPhase } from '../../../../utils/garminRunningLaps';
 import { inferDisplayTypeFromGarminActivity, runningSessionTypeLabel } from '../../../../utils/runningSessionTypeLabel';
+import { isWalkingLikeRunningSession } from '../../../../utils/runningSessionMovementKind';
 
 function findCardioBySession(activities, session) {
   const cardio = activities?.cardio || [];
@@ -199,10 +200,10 @@ export default function RunningSessionDetailPage({ session, onBack }) {
     setShowGarminLapsTable(false);
   }, [session?.id, session?.garminId]);
 
-  const effectiveSessionType = useMemo(
-    () => inferDisplayTypeFromGarminActivity(session, garminFull, isIntervalLike),
-    [session, garminFull, isIntervalLike]
-  );
+  const effectiveSessionType = useMemo(() => {
+    if (isWalkingLikeRunningSession(session, garminFull)) return 'walking';
+    return inferDisplayTypeFromGarminActivity(session, garminFull, isIntervalLike);
+  }, [session, garminFull, isIntervalLike]);
   const showIntervalBadge = effectiveSessionType === 'interval';
 
   const filteredLaps = useMemo(() => {

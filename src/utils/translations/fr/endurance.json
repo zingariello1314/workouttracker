@@ -177,7 +177,8 @@
       "interval": "Fractionné",
       "threshold": "Seuil",
       "tempo": "Tempo",
-      "sprint": "Sprint"
+      "sprint": "Sprint",
+      "walking": "Marche"
     },
     "details": {
       "distance": "Distance:",
@@ -209,7 +210,64 @@
       "bestPace": "Meilleure allure",
       "longestDistance": "Plus longue distance",
       "longestTime": "Plus longue durée",
-      "atPace": "Allure moyenne :"
+      "atPace": "Allure moyenne :",
+      "bestCadence": "Meilleure cadence",
+      "bestVo2": "Meilleur VO₂ retenu",
+      "spmUnit": "pas/min",
+      "vo2Unit": "ml/kg/min",
+      "metricsFootnote": "Cadence : priorité aux données Garmin (moyenne ou tours), sinon estimation fouée / vitesse. VO₂ : valeur Garmin si présente, sinon estimation à partir de la distance et de la durée (modèle linéaire type ACSM, course à plat). Les séances classées « marche » (détection automatique) sont exclues de ces records course.",
+      "efPaceTitle": "Allure d’endurance fondamentale (Z2)",
+      "efPaceSubtitle": "Médiane des allures sur sorties ≥ 2,5 km, ≥ 18 min, FC moyenne en zone 2 (60–75 % FC max estimée), hors fractionné et hors marche.",
+      "efPaceSample": "{{count}} sortie(s) retenue(s)",
+      "efPaceZone": "Zone FC estimée : {{min}}–{{max}} bpm",
+      "walkingStatsTitle": "Marche (hors records course)",
+      "walkingStatsLine": "{{count}} séance(s) · {{km}} km cumulés",
+      "walkingStatsLongest": "Plus longue : {{km}} km",
+      "walkingStatsNote": "Les pas quotidiens pourront enrichir ce module lorsque la synchronisation dédiée sera disponible.",
+      "cadenceSourceGarmin_avg": "Garmin — moyenne d’activité",
+      "cadenceSourceGarmin_laps": "Garmin — moyenne pondérée des tours",
+      "cadenceSourceGarmin_max": "Garmin — pic d’activité",
+      "cadenceSourceEstimated_stride": "Estimée — vitesse ÷ fouée (tours)",
+      "vo2SourceGarmin": "Garmin — activité",
+      "vo2SourceEstimated_acsm": "Estimée — allure & durée (ACSM simplifié)"
+    },
+    "historyFilter": {
+      "title": "Filtrer l’historique course",
+      "kind": {
+        "endurance": "Course classique",
+        "interval": "Fractionné",
+        "walking": "Marche",
+        "other": "Autre type"
+      },
+      "minPace": "Allure lente min (min/km ≥)",
+      "maxPace": "Allure rapide max (min/km ≤)",
+      "minDuration": "Durée min (min)",
+      "minDistance": "Distance min (km)",
+      "paceHint": "Allure en minutes par kilomètre décimales (ex. 6,2 ≈ 6:12/km). Plus grand = plus lent.",
+      "emptyFiltered": "Aucune séance ne correspond aux filtres."
+    },
+    "trophies": {
+      "xpGained": "+{{xp}} XP gagnés (ce palier)",
+      "xpOnUnlock": "+{{xp}} XP au déblocage",
+      "tabAll": "Tous les trophées",
+      "tabUnlocked": "Mes paliers débloqués",
+      "searchPlaceholder": "Rechercher un trophée…",
+      "categoryFilter": "Catégorie",
+      "categoryAll": "Toutes",
+      "unlockedEmpty": "Aucun palier auto débloqué pour l’instant.",
+      "unlockedHint": "Chaque ligne = un palier (bronze → élite) validé automatiquement. Les paliers « allure » ne descendent pas sous un seuil réaliste (~ record mondial par distance).",
+      "unlockedCount": "{{count}} palier",
+      "unlockedCountPlural": "{{count}} paliers",
+      "beatPrevPace": "Battait {{pace}}",
+      "calendarDetail": "vue calendrier",
+      "sectionCurrentMonth": "Mois en cours · {{month}}",
+      "sectionBestMonth": "Meilleur mois (plus de sorties) · {{month}}",
+      "sectionSustainMonth": "Mois de la meilleure série · {{month}}",
+      "totalSessionsInMonth": "{{count}} sortie(s) sur le mois",
+      "weekRunsHeader": "Semaine {{index}} · {{count}} sortie(s) · {{weekKey}}",
+      "weekSustainOk": "· seuil atteint",
+      "weekSustainNo": "· sous le seuil",
+      "moreInWeek": "+ {{count}} autre(s) dans cette semaine…"
     }
   },
   "calendar": {

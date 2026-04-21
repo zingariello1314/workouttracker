@@ -4,6 +4,13 @@
  */
 
 import { parseDurationToMinutes } from './calendarUtils';
+import {
+  deriveCadenceSpmFromGarmin,
+  deriveVo2FromGarmin,
+  estimateVo2FromAcsm,
+  getGarminForRunningSession
+} from './runningGarminMetrics';
+import { filterRunningSessionsExcludingWalk } from './runningSessionMovementKind';
 
 export const RUNNING_RECORD_PERIODS = ['all', 'year', '365', '90', '30', '7'];
 
@@ -110,16 +117,70 @@ function normalizeSessionMetrics(session) {
 }
 
 /**
+ * @param {object[]} sessions
+ * @param {Map<string, object>|null} [garminById] Activités Garmin indexées par id (sync course)
  * @returns {{
  *   bestPace: { pace: number, session: object } | null,
  *   longestDistance: { dist: number, paceStr: string, durMin: number, session: object } | null,
- *   longestDuration: { durMin: number, dist: number, paceStr: string, session: object } | null
+ *   longestDuration: { durMin: number, dist: number, paceStr: string, session: object } | null,
+ *   bestCadence: { spm: number, source: string, session: object } | null,
+ *   bestVo2: { vo2: number, source: string, session: object } | null
  * }}
  */
-export function computeRunningPersonalRecords(sessions) {
-  const rows = (sessions || []).map(normalizeSessionMetrics).filter(Boolean);
+function toNum(v, fb = 0) {
+  const n = Number(String(v ?? '').replace(',', '.'));
+  return Number.isFinite(n) ? n : fb;
+}
+
+function inferZone2BoundsFromSessions(sessions) {
+  const maxHr = (sessions || []).reduce((acc, s) => Math.max(acc, toNum(s?.maxHR, 0)), 0);
+  const fallbackMax = maxHr > 0 ? maxHr : 190;
+  return {
+    min: Math.round(fallbackMax * 0.6),
+    max: Math.round(fallbackMax * 0.75)
+  };
+}
+
+/**
+ * Allure d’endurance fondamentale : médiane des allures sur sorties stables en zone 2 (60–75 % FCmax estimée),
+ * ≥ 2,5 km, ≥ 18 min, hors fractionné et hors marche (méthode proche des recommandations « easy / Z2 » en course).
+ * @returns {{ paceMinPerKm: number, sampleSize: number, zone2: { min: number, max: number } } | null}
+ */
+export function computeFundamentalEndurancePaceSummary(sessions, garminById = null) {
+  const pool = filterRunningSessionsExcludingWalk(sessions || [], garminById);
+  const zone2 = inferZone2BoundsFromSessions(pool);
+  const paces = [];
+  pool.forEach((session) => {
+    const hr = toNum(session?.avgHR, 0);
+    if (hr <= 0 || hr < zone2.min || hr > zone2.max) return;
+    const dist = toNum(session?.distance, 0);
+    const durMin = parseRunningSessionDurationMinutes(session?.duration);
+    if (dist < 2.5 || durMin < 18) return;
+    const t = String(session?.type || '').toLowerCase();
+    if (t === 'interval') return;
+    const row = normalizeSessionMetrics(session);
+    if (!row || row.pace < 4.2 || row.pace > 11.5) return;
+    paces.push(row.pace);
+  });
+  if (paces.length === 0) return null;
+  paces.sort((a, b) => a - b);
+  const mid = Math.floor(paces.length / 2);
+  const median =
+    paces.length % 2 === 1 ? paces[mid] : (paces[mid - 1] + paces[mid]) / 2;
+  return { paceMinPerKm: median, sampleSize: paces.length, zone2 };
+}
+
+export function computeRunningPersonalRecords(sessions, garminById = null) {
+  const pool = filterRunningSessionsExcludingWalk(sessions || [], garminById);
+  const rows = pool.map(normalizeSessionMetrics).filter(Boolean);
   if (rows.length === 0) {
-    return { bestPace: null, longestDistance: null, longestDuration: null };
+    return {
+      bestPace: null,
+      longestDistance: null,
+      longestDuration: null,
+      bestCadence: null,
+      bestVo2: null
+    };
   }
 
   let best = rows[0];
@@ -137,6 +198,21 @@ export function computeRunningPersonalRecords(sessions) {
     if (r.durMin > longDur.durMin) longDur = r;
   }
 
+  let bestCadence = null;
+  let bestVo2 = null;
+  for (const r of rows) {
+    const session = r.session;
+    const g = getGarminForRunningSession(session, garminById);
+    const cad = deriveCadenceSpmFromGarmin(g);
+    if (cad && (!bestCadence || cad.spm > bestCadence.spm)) {
+      bestCadence = { spm: cad.spm, source: cad.source, session };
+    }
+    const vo2 = deriveVo2FromGarmin(g) || estimateVo2FromAcsm(r.dist, r.durMin);
+    if (vo2 && (!bestVo2 || vo2.vo2 > bestVo2.vo2)) {
+      bestVo2 = { vo2: vo2.vo2, source: vo2.source, session };
+    }
+  }
+
   return {
     bestPace: { pace: best.pace, session: best.session },
     longestDistance: {
@@ -150,6 +226,8 @@ export function computeRunningPersonalRecords(sessions) {
       dist: longDur.dist,
       paceStr: formatPaceMinPerKm(longDur.pace),
       session: longDur.session
-    }
+    },
+    bestCadence,
+    bestVo2
   };
 }

@@ -82,12 +82,12 @@ export function computeQuestActivityMultiplier(quest, validationsSnapshot, compl
 export function computeValidationXpAward(quest, validationsSnapshot, completionDateStr) {
   const base = quest.xp ?? calculateQuestXP(quest);
   const mult = computeQuestActivityMultiplier(quest, validationsSnapshot, completionDateStr);
-  return Math.max(1, Math.round(base * mult));
+  return Math.max(50, Math.min(5000, Math.round(base * mult)));
 }
 
 /** Contribution 0–1 pour une validation (heatmap), cohérente avec le multiplicateur actuel */
 export function computeQuestHeatContribution01(quest, validationsSnapshot, completionDateStr) {
-  const base = Math.max(0.08, (quest.xp ?? calculateQuestXP(quest)) / 520);
+  const base = Math.max(0.08, (quest.xp ?? calculateQuestXP(quest)) / 5000);
   const mult = computeQuestActivityMultiplier(quest, validationsSnapshot, completionDateStr);
   return Math.min(1, base * mult * 0.62);
 }

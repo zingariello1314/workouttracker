@@ -450,7 +450,9 @@ class ModuleAlternationService {
     }
 
     // Position 0 : historique (ex. course Garmin). Positions 1–3 : bloc sport + calendrier + quêtes (historique).
-    // À partir de la position 4 : alternance legacy (pair) / historique (impair) lorsque les deux types sont présents.
+    // À partir de la position 4 : alternance legacy (pair) / historique (impair) uniquement s’il existe au moins
+    // un module legacy visible ; sinon toute la suite peut rester en historical (LEGACY_MODULES peut être vide).
+    const hasVisibleLegacy = visibleModules.some((m) => m.type === 'legacy');
     for (const module of visibleModules) {
       if (module.position === 0) {
         if (module.type !== 'historical') {
@@ -462,6 +464,14 @@ class ModuleAlternationService {
         if (module.type !== 'historical') {
           errors.push(
             `Module ${module.id} à la position ${module.position} fait partie du bloc sport/quêtes et doit être historical`
+          );
+        }
+        continue;
+      }
+      if (module.position >= 4 && !hasVisibleLegacy) {
+        if (module.type !== 'historical') {
+          errors.push(
+            `Module ${module.id} à la position ${module.position} doit être historical (aucun module legacy visible dans la sidebar)`
           );
         }
         continue;

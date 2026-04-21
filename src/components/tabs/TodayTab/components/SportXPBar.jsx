@@ -3,7 +3,7 @@
  */
 
 import React from 'react';
-import { Dumbbell, Flame, Footprints, Target, CheckCircle } from 'lucide-react';
+import { Dumbbell, Flame, Footprints, Target, CheckCircle, Trophy } from 'lucide-react';
 import { useSportXP } from '../../../../hooks/useSportXP';
 
 const SportXPBar = () => {
@@ -26,7 +26,7 @@ const SportXPBar = () => {
         />
       </div>
 
-      <div className="grid grid-cols-2 gap-2 text-xs md:grid-cols-5">
+      <div className="grid grid-cols-2 gap-2 text-xs sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-8">
         <div className="flex items-center gap-1">
           <Dumbbell className="h-3 w-3 shrink-0 text-sky-400" />
           <span className="text-sky-400/95">{breakdown.reps.toLocaleString('fr-FR')} reps</span>
@@ -46,6 +46,18 @@ const SportXPBar = () => {
         <div className="flex items-center gap-1">
           <Target className="h-3 w-3 shrink-0 text-sky-400" />
           <span className="text-sky-400/95">{breakdown.challenges} défis</span>
+        </div>
+        <div className="flex flex-col gap-0.5 sm:col-span-2 lg:col-span-2">
+          <div className="flex items-center gap-1">
+            <Trophy className="h-3 w-3 shrink-0 text-amber-300" />
+            <span className="text-sky-400/95">
+              {(breakdown.runningTrophies ?? 0).toLocaleString('fr-FR')} XP trophées course
+            </span>
+          </div>
+          <span className="pl-4 text-[10px] leading-tight text-slate-500">
+            {(breakdown.runningTrophyTiers ?? 0).toLocaleString('fr-FR')} paliers ·{' '}
+            {(breakdown.runningTrophiesUnlocked ?? 0).toLocaleString('fr-FR')} trophées avec au moins un palier
+          </span>
         </div>
       </div>
     </div>

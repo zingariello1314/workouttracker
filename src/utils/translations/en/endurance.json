@@ -178,7 +178,8 @@
       "interval": "Intervals",
       "threshold": "Threshold",
       "tempo": "Tempo",
-      "sprint": "Sprint"
+      "sprint": "Sprint",
+      "walking": "Walk"
     },
     "details": {
       "distance": "Distance:",
@@ -210,7 +211,64 @@
       "bestPace": "Best pace",
       "longestDistance": "Longest distance",
       "longestTime": "Longest duration",
-      "atPace": "Avg pace:"
+      "atPace": "Avg pace:",
+      "bestCadence": "Best cadence",
+      "bestVo2": "Best VO₂ (selected)",
+      "spmUnit": "spm",
+      "vo2Unit": "ml/kg/min",
+      "metricsFootnote": "Cadence: Garmin average or lap-weighted mean when available; otherwise estimated from lap speed and stride. VO₂: Garmin value when present; otherwise a pace/duration linear estimate (simplified flat-running model). Sessions auto-tagged as walking are excluded from these running records.",
+      "efPaceTitle": "Fundamental endurance pace (Z2)",
+      "efPaceSubtitle": "Median pace on runs ≥ 2.5 km, ≥ 18 min, average HR in zone 2 (60–75% of estimated max HR), excluding intervals and walks.",
+      "efPaceSample": "{{count}} run(s) used",
+      "efPaceZone": "Estimated HR zone: {{min}}–{{max}} bpm",
+      "walkingStatsTitle": "Walk (separate from running records)",
+      "walkingStatsLine": "{{count}} session(s) · {{km}} km total",
+      "walkingStatsLongest": "Longest: {{km}} km",
+      "walkingStatsNote": "Daily steps can be added later when dedicated sync is available.",
+      "cadenceSourceGarmin_avg": "Garmin — activity average",
+      "cadenceSourceGarmin_laps": "Garmin — lap-weighted mean",
+      "cadenceSourceGarmin_max": "Garmin — activity peak",
+      "cadenceSourceEstimated_stride": "Estimated — speed ÷ stride (laps)",
+      "vo2SourceGarmin": "Garmin — activity",
+      "vo2SourceEstimated_acsm": "Estimated — pace & duration (simplified ACSM)"
+    },
+    "historyFilter": {
+      "title": "Filter run history",
+      "kind": {
+        "endurance": "Steady run",
+        "interval": "Intervals",
+        "walking": "Walk",
+        "other": "Other type"
+      },
+      "minPace": "Min pace (min/km ≥)",
+      "maxPace": "Max pace (min/km ≤)",
+      "minDuration": "Min duration (min)",
+      "minDistance": "Min distance (km)",
+      "paceHint": "Pace as decimal minutes per km (e.g. 6.2 ≈ 6:12/km). Higher = slower.",
+      "emptyFiltered": "No session matches the filters."
+    },
+    "trophies": {
+      "xpGained": "+{{xp}} XP earned (this tier)",
+      "xpOnUnlock": "+{{xp}} XP when unlocked",
+      "tabAll": "All trophies",
+      "tabUnlocked": "Unlocked tiers",
+      "searchPlaceholder": "Search a trophy…",
+      "categoryFilter": "Category",
+      "categoryAll": "All",
+      "unlockedEmpty": "No auto tier unlocked yet.",
+      "unlockedHint": "Each row is a tier (bronze → elite) validated automatically. Pace tiers never go below a realistic floor (~ world-class pace per distance).",
+      "unlockedCount": "{{count}} tier",
+      "unlockedCountPlural": "{{count}} tiers",
+      "beatPrevPace": "Beat previous {{pace}}",
+      "calendarDetail": "calendar view",
+      "sectionCurrentMonth": "Current month · {{month}}",
+      "sectionBestMonth": "Best month (most runs) · {{month}}",
+      "sectionSustainMonth": "Month in best streak · {{month}}",
+      "totalSessionsInMonth": "{{count}} run(s) in that month",
+      "weekRunsHeader": "Week {{index}} · {{count}} run(s) · {{weekKey}}",
+      "weekSustainOk": "· threshold met",
+      "weekSustainNo": "· below threshold",
+      "moreInWeek": "+ {{count}} more in this week…"
     }
   },
   "calendar": {

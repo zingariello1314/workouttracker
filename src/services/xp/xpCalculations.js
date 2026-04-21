@@ -4,16 +4,27 @@
 
 import { loadEnduranceData as loadEnduranceDataService } from '../endurance/enduranceDataService';
 import { evaluateChallenges } from '../endurance/enduranceChallengesService';
-import { getQuestDureeMinutes } from '../../utils/quests';
+import {
+  evaluateRunningTrophies,
+  computeRunningTrophiesXpDetailed
+} from '../endurance/runningTrophiesService';
+import { isGarminRunningLikeActivity } from '../../utils/garminRunningLaps';
 import { averageCriteriaScore } from '../../utils/bookReadingRatings';
+import { calculateQuestXP } from '../../utils/questXpCore';
 
-// XP par difficulté pour les quêtes (réutilisé depuis useQuietQuestEngine)
-const DIFFICULTY_XP_BASE = {
-  1: 250,
-  2: 375,
-  3: 500,
-  4: 750,
-};
+function buildGarminRunningByIdForTrophies(garminData) {
+  const full = new Map();
+  const cardio = garminData?.activities?.cardio;
+  if (!Array.isArray(cardio)) return full;
+  for (const act of cardio) {
+    const id = act.garminId ?? act.id;
+    if (id == null) continue;
+    if (!Array.isArray(act.running?.laps) || act.running.laps.length === 0) continue;
+    if (!isGarminRunningLikeActivity(act)) continue;
+    full.set(String(id), act);
+  }
+  return full;
+}
 
 function genreMultiplier(genre) {
   const g = (genre || '').toLowerCase();
@@ -106,7 +117,10 @@ export const calculateSportXP = (workoutData, garminData, enduranceData) => {
     calories: 0,
     steps: 0,
     challenges: 0,
-    sessions: 0
+    sessions: 0,
+    runningTrophies: 0,
+    runningTrophyTiers: 0,
+    runningTrophiesUnlocked: 0
   };
   
   if (!workoutData) {
@@ -192,7 +206,16 @@ export const calculateSportXP = (workoutData, garminData, enduranceData) => {
     breakdown.sessions = sessionsWithFeedback;
     totalXP += sessionsWithFeedback * 25;
   }
-  
+
+  const runningSessions = Array.isArray(sessionsByType.running) ? sessionsByType.running : [];
+  const garminById = buildGarminRunningByIdForTrophies(garminData);
+  const runningTrophyEval = evaluateRunningTrophies({ runningSessions, garminById });
+  const rt = computeRunningTrophiesXpDetailed(runningTrophyEval.results);
+  breakdown.runningTrophies = rt.xp;
+  breakdown.runningTrophyTiers = rt.unlockedTierCount;
+  breakdown.runningTrophiesUnlocked = rt.trophiesWithTier;
+  totalXP += rt.xp;
+
   return {
     totalXP: Math.round(totalXP),
     breakdown
@@ -222,10 +245,7 @@ export const calculateQuestsXP = (validations, allQuests) => {
     if (!questId) return;
     const quest = allQuests.find(q => q.id === questId);
     if (!quest) return;
-    const base = DIFFICULTY_XP_BASE[quest.difficulte] || DIFFICULTY_XP_BASE[1];
-    const d = getQuestDureeMinutes(quest);
-    const multiplier = (d > 0 ? d : 60) / 60;
-    totalXP += Math.round(base * multiplier);
+    totalXP += calculateQuestXP(quest);
   });
   
   return totalXP;
@@ -319,7 +339,17 @@ export const calculateXPForAllCategories = (data) => {
       sport: {
         totalXP: sportXP,
         lastCalculated: new Date().toISOString(),
-        breakdown: data.sport?.breakdown || { reps: 0, exercises: 0, calories: 0, steps: 0, challenges: 0, sessions: 0 }
+        breakdown: data.sport?.breakdown || {
+          reps: 0,
+          exercises: 0,
+          calories: 0,
+          steps: 0,
+          challenges: 0,
+          sessions: 0,
+          runningTrophies: 0,
+          runningTrophyTiers: 0,
+          runningTrophiesUnlocked: 0
+        }
       },
       addictionQuit: {
         totalXP: addictionQuitXP,

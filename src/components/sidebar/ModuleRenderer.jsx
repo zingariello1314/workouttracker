@@ -174,9 +174,13 @@ const ModuleRenderer = memo(({
     validation 
   } = useModuleAlternation();
 
-  // Gestion des erreurs de validation
+  // Débogage uniquement : la validation est corrigée côté service quand il n’y a pas de modules legacy.
   React.useEffect(() => {
-    if (!validation.isValid && validation.errors.length > 0) {
+    if (
+      import.meta.env.DEV &&
+      !validation.isValid &&
+      validation.errors.length > 0
+    ) {
       console.warn('Problèmes de validation du pattern d\'alternance:', validation.errors);
     }
   }, [validation]);

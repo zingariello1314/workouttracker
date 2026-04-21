@@ -13,7 +13,10 @@ const DEFAULT_BREAKDOWN = {
   calories: 0,
   steps: 0,
   challenges: 0,
-  sessions: 0
+  sessions: 0,
+  runningTrophies: 0,
+  runningTrophyTiers: 0,
+  runningTrophiesUnlocked: 0
 };
 
 let sportXpCache = {
@@ -97,6 +100,16 @@ export const useSportXP = () => {
       }, 0);
     }, 0);
 
+    const runningList = Array.isArray(sessionsByType.running) ? sessionsByType.running : [];
+    const runningSig = `${runningList.length}|${runningList.reduce((s, r) => s + (Number(r?.distance) || 0), 0)}`;
+    const cardioLen = Array.isArray(garminData?.activities?.cardio) ? garminData.activities.cardio.length : 0;
+    let garminLapTally = 0;
+    if (Array.isArray(garminData?.activities?.cardio)) {
+      garminData.activities.cardio.forEach((act) => {
+        garminLapTally += Array.isArray(act?.running?.laps) ? act.running.laps.length : 0;
+      });
+    }
+
     const signature = [
       totalReps,
       checkedExercises,
@@ -104,7 +117,10 @@ export const useSportXP = () => {
       totalCalories,
       totalSteps,
       validatedChallengesCount,
-      enduranceData.challenges?.length || 0
+      enduranceData.challenges?.length || 0,
+      runningSig,
+      cardioLen,
+      garminLapTally
     ].join('|');
 
     if (cacheRef.current.signature === signature) {
