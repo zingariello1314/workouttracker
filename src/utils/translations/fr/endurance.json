@@ -6,6 +6,7 @@
     "pushups": "Pompes",
     "swimming": "Natation",
     "jumprope": "Corde à sauter",
+    "gainage": "Gainage",
     "running": "Course",
     "calendar": "Calendrier"
   },
@@ -29,6 +30,11 @@
       "title": "Corde à Sauter",
       "subtitle": "Suivez vos sessions et défis",
       "newSession": "Enregistrer une session de corde à sauter"
+    },
+    "gainage": {
+      "title": "Gainage",
+      "subtitle": "Suivez vos sessions et défis (planche, creux…)",
+      "newSession": "Enregistrer une session de gainage"
     },
     "running": {
       "title": "Course",
@@ -81,6 +87,7 @@
     "activePlural": "{{count}} défis en cours",
     "toComplete": "⚠️ Vous avez {{count}} défi à accomplir",
     "toCompletePlural": "⚠️ Vous avez {{count}} défis à accomplir",
+    "reminderBody": "Ouvre l’onglet de chaque activité concernée pour voir le détail de tes défis (sans afficher les noms ici).",
     "status": {
       "active": "🔥 En cours",
       "completed": "✅ Terminé"
@@ -115,6 +122,7 @@
         "swimming": "Distance (mètres)",
         "running": "Distance (km)",
         "jumprope": "Nombre de sauts",
+        "gainage": "Secondes cumulées en planche (objectif)",
         "default": "Nombre"
       },
       "goalDuration": "Durée max (minutes)",
@@ -133,7 +141,9 @@
       "goalJumprope": "🎯 Objectif: {{duration}} min",
       "goalJumpropeOrJumps": "🎯 Objectif: {{duration}} min ou {{jumps}} sauts",
       "goalRunning": "🎯 Objectif: {{distance}}km",
-      "goalRunningWithDuration": "🎯 Objectif: {{distance}}km en {{duration}} min"
+      "goalRunningWithDuration": "🎯 Objectif: {{distance}}km en {{duration}} min",
+      "goalGainageSeconds": "🎯 Objectif : {{seconds}} s cumulées en planche",
+      "goalGainageWithDuration": "🎯 Objectif : {{seconds}} s cumulées en max {{duration}} min"
     }
   },
   "swimming": {
@@ -215,6 +225,7 @@
       "pushups": "Pompes",
       "swimming": "Natation",
       "jumprope": "Corde à sauter",
+      "gainage": "Gainage",
       "running": "Course"
     },
     "heatmap": {

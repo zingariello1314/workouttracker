@@ -287,6 +287,7 @@ const BooksTab = () => {
 
   const {
     sessionForm,
+    sessionFormDirty,
     setSessionForm,
     handleSessionChange,
     handleCriteriaRatingChange,
@@ -1632,6 +1633,36 @@ const BooksTab = () => {
                               onSubmit={handleAddSession}
                               className="space-y-3"
                             >
+                              {sessionFormDirty && (
+                                <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-[#3A86FF]/40 bg-[#0b1220] px-3 py-2">
+                                  <p className="text-xs text-[#93c5fd]/90">
+                                    {t(
+                                      'books.sessions.unsavedHint',
+                                      'Modifications non enregistrées — enregistre la session pour les garder.'
+                                    )}
+                                  </p>
+                                  <div className="flex items-center gap-2">
+                                    <Button
+                                      type="button"
+                                      variant="books"
+                                      size="sm"
+                                      className="normal-case tracking-normal"
+                                      onClick={(e) => handleAddSession(e)}
+                                    >
+                                      {t('common.save', 'Enregistrer')}
+                                    </Button>
+                                    <Button
+                                      type="button"
+                                      variant="booksMuted"
+                                      size="sm"
+                                      className="normal-case tracking-normal"
+                                      onClick={() => (editingSessionId ? cancelEditSession() : resetSessionForm())}
+                                    >
+                                      {t('common.cancel', 'Annuler')}
+                                    </Button>
+                                  </div>
+                                </div>
+                              )}
                               <div className="grid gap-3 md:grid-cols-2">
                                 <Input
                                   id="session-date"

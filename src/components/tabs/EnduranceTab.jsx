@@ -1031,6 +1031,9 @@ const EnduranceTab = () => {
     if (ui.selectedActivityFilter === 'all' || ui.selectedActivityFilter === 'jumprope') {
       count += sessions.jumprope.filter(s => s.date === dateStr).length;
     }
+    if (ui.selectedActivityFilter === 'all' || ui.selectedActivityFilter === 'gainage') {
+      count += (sessions.gainage || []).filter(s => s.date === dateStr).length;
+    }
     if (ui.selectedActivityFilter === 'all' || ui.selectedActivityFilter === 'running') {
       count += sessions.running.filter(s => s.date === dateStr).length;
     }
@@ -1086,6 +1089,15 @@ const EnduranceTab = () => {
         time: session.time,
         duration: session.duration,
         distance: session.jumps ? `${session.jumps} sauts` : null
+      });
+    });
+
+    (sessions.gainage || []).filter(s => s.date === dateStr).forEach(session => {
+      activities.push({
+        type: 'gainage',
+        time: session.time,
+        duration: `${session.duration} min`,
+        distance: session.count != null ? `${session.count} s` : null
       });
     });
     
@@ -2105,6 +2117,253 @@ const EnduranceTab = () => {
             </>
           )}
 
+          {/* SECTION GAINAGE */}
+          {activeTab === 'gainage' && (
+            <>
+              <EnduranceSectionHeader
+                title={t('endurance.sections.gainage.title')}
+                subtitle={t('endurance.sections.gainage.subtitle')}
+                actions={[
+                  {
+                    key: 'new-gainage-session',
+                    label: t('endurance.actions.newSession'),
+                    icon: Plus,
+                    onClick: () => setUI({ showSessionForm: !ui.showSessionForm }),
+                    className:
+                      'gradient-button-premium gradient-button-premium-md rounded-lg flex items-center gap-2'
+                  },
+                  {
+                    key: 'past-gainage-session',
+                    label: t('endurance.actions.pastData'),
+                    icon: Calendar,
+                    onClick: () => setUI({ showSessionForm: !ui.showSessionForm, allowPastDates: true }),
+                    className:
+                      'gradient-button-premium gradient-button-premium-md gradient-button-premium-variant rounded-lg flex items-center gap-2'
+                  },
+                  {
+                    key: 'create-gainage-challenge',
+                    label: t('endurance.actions.createChallenge'),
+                    icon: Award,
+                    onClick: () => setUI({ showChallengeModal: true }),
+                    className:
+                      'gradient-button-premium gradient-button-premium-md gradient-button-premium-variant rounded-lg flex items-center gap-2'
+                  }
+                ]}
+              />
+
+              {activeChallenges.length > 0 && (
+                <div className="mb-8 rounded-2xl border-2 border-[#0F4C5C]/55 bg-black p-6">
+                  <div className="flex items-start gap-4">
+                    <div className="rounded-xl bg-[#0F4C5C]/25 p-3">
+                      <Award className="h-6 w-6 text-sky-400" />
+                    </div>
+                    <div className="flex-1">
+                      <h3 className="text-white font-semibold text-lg mb-2">
+                        {activeChallenges.length === 1
+                          ? t('endurance.challenges.active', { count: activeChallenges.length })
+                          : t('endurance.challenges.activePlural', { count: activeChallenges.length })
+                        }
+                      </h3>
+                      <p className="text-sm text-teal-100/90 leading-relaxed">
+                        {t(
+                          'endurance.challenges.reminderBody',
+                          'Ouvre l’onglet de chaque activité concernée pour voir le détail de tes défis.'
+                        )}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {ui.showSessionForm && (
+                <div className="bg-black border-2 border-[#0F4C5C]/70 rounded-2xl p-8 mb-8 shadow-2xl shadow-black/40">
+                  <h3 className="text-2xl font-bold text-white mb-6">{t('endurance.actions.newSession')}</h3>
+                  <EnduranceSessionForm
+                    activityType="gainage"
+                    formState={gainageForm}
+                    setFormState={setGainageForm}
+                  />
+                  <div className="mt-6 flex flex-wrap justify-end gap-3">
+                    <button
+                      type="button"
+                      onClick={() => setUI({ showSessionForm: false })}
+                      className="gradient-button-premium gradient-button-premium-md gradient-button-premium-variant rounded-lg"
+                    >
+                      {t('endurance.actions.cancel')}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={addGainageSession}
+                      className="gradient-button-premium gradient-button-premium-md rounded-lg"
+                    >
+                      {t('endurance.actions.save')}
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {uniqueChallenges.filter((c) => c.activityType === 'gainage').length > 0 && (
+                <div className="mb-8">
+                  <h3 className="text-2xl font-bold text-white mb-6">{t('endurance.challenges.title')}</h3>
+                  <div className="grid gap-4">
+                    {uniqueChallenges.filter((c) => c.activityType === 'gainage').map((challenge, idx) => (
+                      <div
+                        key={`gainage-challenge-${challenge.id}-${idx}`}
+                        className="bg-black border-2 border-[#0F4C5C]/70 rounded-2xl p-6 hover:border-[#0F5C45]/90 transition-all"
+                      >
+                        <div className="flex justify-between items-start">
+                          <div className="flex-1">
+                            <div className="flex items-center gap-3 mb-2">
+                              <Award className="w-5 h-5 text-sky-400" />
+                              <h4 className="font-bold text-xl text-white">{challenge.name}</h4>
+                            </div>
+                            <div className="space-y-1 text-slate-400 text-sm">
+                              <p>
+                                {challenge.type === 'ponctuel' &&
+                                  t('endurance.challenges.details.targetDate', { date: challenge.targetDate })}
+                                {challenge.type === 'recurrent' &&
+                                  (challenge.frequency === 'daily'
+                                    ? t('endurance.challenges.details.recurrentDaily')
+                                    : t('endurance.challenges.details.recurrentWeekly'))}
+                                {challenge.type === 'periode' &&
+                                  t('endurance.challenges.details.period', {
+                                    startDate: challenge.startDate,
+                                    endDate: challenge.endDate
+                                  })}
+                              </p>
+                              <p className="text-sky-300">
+                                {challenge.goalCount && challenge.goalDuration
+                                  ? t('endurance.challenges.details.goalGainageWithDuration', {
+                                      seconds: challenge.goalCount,
+                                      duration: challenge.goalDuration
+                                    })
+                                  : challenge.goalCount
+                                    ? t('endurance.challenges.details.goalGainageSeconds', {
+                                        seconds: challenge.goalCount
+                                      })
+                                    : challenge.goalDuration
+                                      ? `${challenge.goalDuration} min max`
+                                      : ''}
+                              </p>
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-3">
+                            <span
+                              className={`px-4 py-2 rounded-xl text-sm font-medium ${
+                                challenge.status === 'active'
+                                  ? 'bg-green-500/20 text-green-400 border border-green-500/30'
+                                  : 'bg-blue-500/20 text-blue-400 border border-blue-500/30'
+                              }`}
+                            >
+                              {challenge.status === 'active'
+                                ? t('endurance.challenges.status.active')
+                                : t('endurance.challenges.status.completed')}
+                            </span>
+                            <button
+                              type="button"
+                              onClick={() => editChallenge(challenge.id)}
+                              className="gradient-button-premium gradient-button-premium-sm gradient-button-premium-variant rounded-lg p-2"
+                              title={t('endurance.session.editChallenge')}
+                            >
+                              <Edit className="w-5 h-5" />
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                const realIndex = challenges.findIndex((c) => c === challenge);
+                                deleteChallenge(challenge.id, realIndex);
+                              }}
+                              className="gradient-button-premium gradient-button-premium-sm rounded-lg p-2"
+                              title={t('endurance.session.deleteChallenge')}
+                            >
+                              <Trash2 className="w-5 h-5" />
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              <div>
+                <h3 className="text-2xl font-bold text-white mb-6">{t('endurance.history.title')}</h3>
+                <div className="bg-black border border-[#0F4C5C]/50 rounded-2xl overflow-hidden">
+                  {sessions.gainage.length === 0 ? (
+                    <div className="p-12 text-center">
+                      <Anchor className="w-16 h-16 text-slate-600 mx-auto mb-4" />
+                      <p className="text-slate-400 text-lg">{t('endurance.history.noSessions')}</p>
+                      <p className="text-slate-500 text-sm mt-2">{t('endurance.history.noSessionsHint')}</p>
+                    </div>
+                  ) : (
+                    <div className="overflow-x-auto">
+                      <table className="w-full">
+                        <thead>
+                          <tr className="border-b border-[#0F4C5C]/45">
+                            <th className="px-6 py-4 text-left text-sm font-semibold text-slate-300">Date</th>
+                            <th className="px-6 py-4 text-left text-sm font-semibold text-slate-300">Heure</th>
+                            <th className="px-6 py-4 text-left text-sm font-semibold text-slate-300">
+                              {t('endurance.table.headers.gainageSeconds')}
+                            </th>
+                            <th className="px-6 py-4 text-left text-sm font-semibold text-slate-300">Durée</th>
+                            <th className="px-6 py-4 text-left text-sm font-semibold text-slate-300">Notes</th>
+                            <th className="px-6 py-4 text-left text-sm font-semibold text-slate-300">Actions</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {sessions.gainage
+                            .sort((a, b) => new Date(`${b.date} ${b.time}`) - new Date(`${a.date} ${a.time}`))
+                            .map((session, idx) => {
+                              const originalIndex = sessions.gainage.findIndex((s) => s === session);
+                              return (
+                                <tr
+                                  key={`gainage-${session.id}-${idx}`}
+                                  className="border-b border-[#0F4C5C]/25 hover:bg-[#0F4C5C]/12 transition-colors"
+                                >
+                                  <td className="px-6 py-4 text-slate-300">{session.date}</td>
+                                  <td className="px-6 py-4 text-slate-300">{session.time}</td>
+                                  <td className="px-6 py-4">
+                                    <span className="text-white font-bold text-lg">{session.count}</span>
+                                  </td>
+                                  <td className="px-6 py-4 text-slate-300">{session.duration} min</td>
+                                  <td className="px-6 py-4 text-slate-400 text-sm">{session.notes || '-'}</td>
+                                  <td className="px-6 py-4">
+                                    <div className="flex items-center gap-2">
+                                      {session.validatedChallenges?.length > 0 && (
+                                        <span className="bg-gradient-to-r from-green-500/20 to-emerald-500/20 border border-green-500/30 text-green-400 px-3 py-1 rounded-lg text-xs font-medium">
+                                          {t('endurance.challenges.validated')}
+                                        </span>
+                                      )}
+                                      <button
+                                        type="button"
+                                        onClick={() => editSession('gainage', session.id)}
+                                        className="gradient-button-premium gradient-button-premium-sm gradient-button-premium-variant rounded-lg p-2"
+                                        title={t('endurance.session.edit')}
+                                      >
+                                        <Edit className="w-4 h-4" />
+                                      </button>
+                                      <button
+                                        type="button"
+                                        onClick={() => deleteGainageSession(session.id, originalIndex)}
+                                        className="gradient-button-premium gradient-button-premium-sm rounded-lg p-2"
+                                        title={t('endurance.session.delete')}
+                                      >
+                                        <Trash2 className="w-4 h-4" />
+                                      </button>
+                                    </div>
+                                  </td>
+                                </tr>
+                              );
+                            })}
+                        </tbody>
+                      </table>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </>
+          )}
+
           {/* SECTION COURSE */}
           {activeTab === 'running' && (
             <>
@@ -2184,14 +2443,12 @@ const EnduranceTab = () => {
                               : t('endurance.challenges.toCompletePlural', { count: activeChallenges.length })
                             }
                           </h3>
-                          <div className="space-y-2">
-                            {activeChallenges.map((c, idx) => (
-                              <div key={`active-challenge-${c.id}-${idx}`} className="flex items-center gap-2 text-sm text-teal-100">
-                                <div className="h-1.5 w-1.5 rounded-full bg-sky-400" />
-                                {c.name}
-                              </div>
-                            ))}
-                          </div>
+                          <p className="text-sm text-teal-100/90 leading-relaxed">
+                            {t(
+                              'endurance.challenges.reminderBody',
+                              'Ouvre l’onglet de chaque activité concernée pour voir le détail de tes défis.'
+                            )}
+                          </p>
                         </div>
                       </div>
                     </div>
@@ -2454,6 +2711,7 @@ const EnduranceTab = () => {
                     <option value="pushups">{t('endurance.calendar.filters.pushups')}</option>
                     <option value="swimming">{t('endurance.calendar.filters.swimming')}</option>
                     <option value="jumprope">{t('endurance.calendar.filters.jumprope')}</option>
+                    <option value="gainage">{t('endurance.calendar.filters.gainage')}</option>
                     <option value="running">{t('endurance.calendar.filters.running')}</option>
                   </select>
                 </div>
@@ -2612,6 +2870,7 @@ const EnduranceTab = () => {
                                 activity.type === 'pushups' ? 'bg-orange-500' :
                                 activity.type === 'swimming' ? 'bg-blue-500' :
                                 activity.type === 'jumprope' ? 'bg-sky-600' :
+                                activity.type === 'gainage' ? 'bg-violet-500' :
                                 'bg-green-500'
                               }`} />
                               <div>
@@ -2620,6 +2879,7 @@ const EnduranceTab = () => {
                                    activity.type === 'pushups' ? t('endurance.menu.pushups') :
                                    activity.type === 'swimming' ? t('endurance.menu.swimming') :
                                    activity.type === 'jumprope' ? t('endurance.menu.jumprope') :
+                                   activity.type === 'gainage' ? t('endurance.menu.gainage') :
                                    t('endurance.menu.running')}
                                 </div>
                                 <div className="text-slate-400 text-sm">{activity.time}</div>
@@ -2687,6 +2947,7 @@ const EnduranceTab = () => {
                   <option value="pushups">{t('endurance.menu.pushups')}</option>
                   <option value="swimming">{t('endurance.menu.swimming')}</option>
                   <option value="jumprope">{t('endurance.menu.jumprope')}</option>
+                  <option value="gainage">{t('endurance.menu.gainage')}</option>
                   <option value="running">{t('endurance.menu.running')}</option>
                 </select>
               </div>

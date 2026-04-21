@@ -6,6 +6,7 @@
     "pushups": "Push-ups",
     "swimming": "Swimming",
     "jumprope": "Jump Rope",
+    "gainage": "Core / plank",
     "running": "Running",
     "calendar": "Calendar"
   },
@@ -29,6 +30,11 @@
       "title": "Jump Rope",
       "subtitle": "Track your sessions and challenges",
       "newSession": "Record a jump rope session"
+    },
+    "gainage": {
+      "title": "Core training",
+      "subtitle": "Track your plank / core sessions and challenges",
+      "newSession": "Record a core session"
     },
     "running": {
       "title": "Running",
@@ -70,6 +76,7 @@
       "notes": "Notes",
       "actions": "Actions",
       "pushups": "Push-ups",
+      "gainageSeconds": "Seconds (plank)",
       "type": "Type",
       "jumps": "Jumps",
       "session": "Session"
@@ -81,6 +88,7 @@
     "activePlural": "{{count}} challenges in progress",
     "toComplete": "⚠️ You have {{count}} challenge to complete",
     "toCompletePlural": "⚠️ You have {{count}} challenges to complete",
+    "reminderBody": "Open each related activity tab to see your challenge details (names are not listed here).",
     "status": {
       "active": "🔥 In progress",
       "completed": "✅ Completed"
@@ -115,6 +123,7 @@
         "swimming": "Distance (meters)",
         "running": "Distance (km)",
         "jumprope": "Number of jumps",
+        "gainage": "Cumulative plank seconds (goal)",
         "default": "Number"
       },
       "goalDuration": "Max duration (minutes)",
@@ -133,7 +142,9 @@
       "goalJumprope": "🎯 Goal: {{duration}} min",
       "goalJumpropeOrJumps": "🎯 Goal: {{duration}} min or {{jumps}} jumps",
       "goalRunning": "🎯 Goal: {{distance}}km",
-      "goalRunningWithDuration": "🎯 Goal: {{distance}}km in {{duration}} min"
+      "goalRunningWithDuration": "🎯 Goal: {{distance}}km in {{duration}} min",
+      "goalGainageSeconds": "🎯 Goal: {{seconds}} cumulative plank seconds",
+      "goalGainageWithDuration": "🎯 Goal: {{seconds}} cumulative seconds within {{duration}} min max"
     }
   },
   "swimming": {
@@ -215,6 +226,7 @@
       "pushups": "Push-ups",
       "swimming": "Swimming",
       "jumprope": "Jump Rope",
+      "gainage": "Core / plank",
       "running": "Running"
     },
     "heatmap": {

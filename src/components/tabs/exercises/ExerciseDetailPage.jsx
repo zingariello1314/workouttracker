@@ -1,4 +1,4 @@
-import React, { useMemo, useState, useEffect } from 'react';
+import React, { useMemo, useState, useEffect, useCallback } from 'react';
 import {
   ArrowLeft,
   Activity,
@@ -98,6 +98,11 @@ const ExerciseDetailPage = ({ exercise, data, updateData, onBack, readOnly = fal
   const effectiveCoeff = resolveExerciseIntensityCoeff(exercise, coeffs);
   const [draftCoeff, setDraftCoeff] = useState('');
   const [draftNotes, setDraftNotes] = useState('');
+  const [draftPerceived, setDraftPerceived] = useState({
+    difficulty: 0,
+    enjoyment: 0,
+    recovery: 0
+  });
 
   useEffect(() => {
     const c = coeffs[idKey];
@@ -108,6 +113,35 @@ const ExerciseDetailPage = ({ exercise, data, updateData, onBack, readOnly = fal
     setDraftNotes(notesMap[idKey] || '');
   }, [notesMap, idKey]);
 
+  useEffect(() => {
+    setDraftPerceived({
+      difficulty: perceived.difficulty || 0,
+      enjoyment: perceived.enjoyment || 0,
+      recovery: perceived.recovery || 0
+    });
+  }, [idKey, perceived.difficulty, perceived.enjoyment, perceived.recovery]);
+
+  const savedNotesNormalized = (notesMap[idKey] || '').trim();
+  const draftNotesNormalized = draftNotes.trim();
+  const detailRatingsDirty = useMemo(() => {
+    if (readOnly) return false;
+    const ratingsUnequal =
+      (draftPerceived.difficulty || 0) !== (perceived.difficulty || 0) ||
+      (draftPerceived.enjoyment || 0) !== (perceived.enjoyment || 0) ||
+      (draftPerceived.recovery || 0) !== (perceived.recovery || 0);
+    return ratingsUnequal || draftNotesNormalized !== savedNotesNormalized;
+  }, [
+    readOnly,
+    draftPerceived.difficulty,
+    draftPerceived.enjoyment,
+    draftPerceived.recovery,
+    perceived.difficulty,
+    perceived.enjoyment,
+    perceived.recovery,
+    draftNotesNormalized,
+    savedNotesNormalized
+  ]);
+
   const persistCoeffs = (nextCoeffs) => {
     updateData({
       ...data,
@@ -115,34 +149,46 @@ const ExerciseDetailPage = ({ exercise, data, updateData, onBack, readOnly = fal
     });
   };
 
-  const persistNotes = (text) => {
-    const next = { ...notesMap, [idKey]: text };
-    updateData({
-      ...data,
-      exercisePersonalNotes: next
-    });
-  };
-
-  const setPerceivedField = (field, nextVal) => {
+  const commitDetailRatingsAndNotes = useCallback(() => {
     if (readOnly) return;
-    const n = Math.max(0, Math.min(10, Number(nextVal) || 0));
-    const prev = ratingsMap[idKey] || {};
-    const merged = { ...prev, [field]: n };
+    const d = Math.max(0, Math.min(10, Number(draftPerceived.difficulty) || 0));
+    const e = Math.max(0, Math.min(10, Number(draftPerceived.enjoyment) || 0));
+    const r = Math.max(0, Math.min(10, Number(draftPerceived.recovery) || 0));
+    const merged = { difficulty: d, enjoyment: e, recovery: r };
     const empty =
       (!merged.difficulty || merged.difficulty === 0) &&
       (!merged.enjoyment || merged.enjoyment === 0) &&
       (!merged.recovery || merged.recovery === 0);
+
+    const nextRatings = { ...ratingsMap };
     if (empty) {
-      const nextMap = { ...ratingsMap };
-      delete nextMap[idKey];
-      updateData({ ...data, exercisePerceivedRatings: nextMap });
-      return;
+      delete nextRatings[idKey];
+    } else {
+      nextRatings[idKey] = merged;
     }
+
+    const nextNotes = { ...notesMap };
+    if (!draftNotes.trim()) {
+      delete nextNotes[idKey];
+    } else {
+      nextNotes[idKey] = draftNotes.trim();
+    }
+
     updateData({
       ...data,
-      exercisePerceivedRatings: { ...ratingsMap, [idKey]: merged },
+      exercisePerceivedRatings: nextRatings,
+      exercisePersonalNotes: nextNotes
     });
-  };
+  }, [readOnly, draftPerceived, draftNotes, data, ratingsMap, notesMap, idKey, updateData]);
+
+  const cancelDetailDraft = useCallback(() => {
+    setDraftPerceived({
+      difficulty: perceived.difficulty || 0,
+      enjoyment: perceived.enjoyment || 0,
+      recovery: perceived.recovery || 0
+    });
+    setDraftNotes(notesMap[idKey] || '');
+  }, [idKey, notesMap, perceived.difficulty, perceived.enjoyment, perceived.recovery]);
 
   const handleCoeffBlur = () => {
     if (readOnly) return;
@@ -160,20 +206,6 @@ const ExerciseDetailPage = ({ exercise, data, updateData, onBack, readOnly = fal
     }
     next[idKey] = n;
     persistCoeffs(next);
-  };
-
-  const handleNotesBlur = () => {
-    if (readOnly) return;
-    const next = { ...notesMap };
-    if (!draftNotes.trim()) {
-      delete next[idKey];
-    } else {
-      next[idKey] = draftNotes.trim();
-    }
-    updateData({
-      ...data,
-      exercisePersonalNotes: next
-    });
   };
 
   const recentSessions = useMemo(() => {
@@ -430,7 +462,6 @@ const ExerciseDetailPage = ({ exercise, data, updateData, onBack, readOnly = fal
                   className="w-full px-3 py-2 rounded-lg bg-slate-950 border border-slate-600 text-white text-sm resize-y min-h-[96px]"
                   value={draftNotes}
                   onChange={(e) => setDraftNotes(e.target.value)}
-                  onBlur={handleNotesBlur}
                   placeholder={t('exercisesTab.detail.notesPlaceholder', 'Variante, élastique, tempo…')}
                 />
               )}
@@ -451,23 +482,33 @@ const ExerciseDetailPage = ({ exercise, data, updateData, onBack, readOnly = fal
             <div className="space-y-5 max-w-xl">
               <PerceivedTenStarRow
                 label={t('exercisesTab.detail.perceivedDifficulty', 'Pénibilité perçue')}
-                value={perceived.difficulty || 0}
+                value={draftPerceived.difficulty || 0}
                 readOnly={readOnly}
-                onChange={(n) => setPerceivedField('difficulty', n)}
+                onChange={(n) => setDraftPerceived((p) => ({ ...p, difficulty: n }))}
               />
               <PerceivedTenStarRow
                 label={t('exercisesTab.detail.perceivedEnjoyment', 'Plaisir / motivation')}
-                value={perceived.enjoyment || 0}
+                value={draftPerceived.enjoyment || 0}
                 readOnly={readOnly}
-                onChange={(n) => setPerceivedField('enjoyment', n)}
+                onChange={(n) => setDraftPerceived((p) => ({ ...p, enjoyment: n }))}
               />
               <PerceivedTenStarRow
                 label={t('exercisesTab.detail.perceivedRecovery', 'Récupération ressentie')}
-                value={perceived.recovery || 0}
+                value={draftPerceived.recovery || 0}
                 readOnly={readOnly}
-                onChange={(n) => setPerceivedField('recovery', n)}
+                onChange={(n) => setDraftPerceived((p) => ({ ...p, recovery: n }))}
               />
             </div>
+            {!readOnly && detailRatingsDirty && (
+              <div className="mt-4 flex flex-wrap items-center gap-3">
+                <Button type="button" size="sm" onClick={commitDetailRatingsAndNotes}>
+                  {t('common.save', 'Enregistrer')}
+                </Button>
+                <Button type="button" size="sm" variant="ghost" onClick={cancelDetailDraft}>
+                  {t('common.cancel', 'Annuler')}
+                </Button>
+              </div>
+            )}
           </div>
         </CardContent>
       </Card>

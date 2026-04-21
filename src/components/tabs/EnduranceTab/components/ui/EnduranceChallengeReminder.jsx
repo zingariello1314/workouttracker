@@ -1,7 +1,18 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { Award } from 'lucide-react';
+import { useTranslation } from '../../../../utils/translations';
 
 const EnduranceChallengeReminder = ({ activeChallenges = [], urgentChallenges = [], onSelectActivity }) => {
+  const t = useTranslation();
+
+  const activityTypes = useMemo(() => {
+    const seen = new Set();
+    (activeChallenges || []).forEach((c) => {
+      if (c?.activityType) seen.add(c.activityType);
+    });
+    return [...seen];
+  }, [activeChallenges]);
+
   if (!Array.isArray(activeChallenges) || activeChallenges.length === 0) {
     return null;
   }
@@ -31,22 +42,24 @@ const EnduranceChallengeReminder = ({ activeChallenges = [], urgentChallenges = 
           </div>
         )}
 
+        <p className="text-sm text-teal-100/85">
+          {t(
+            'endurance.challenges.reminderBody',
+            'Ouvre l’onglet de chaque activité concernée pour voir le détail de tes défis.'
+          )}
+        </p>
+
         <div className="flex flex-wrap gap-2" role="list">
-          {activeChallenges.slice(0, 3).map((challenge) => (
+          {activityTypes.map((at) => (
             <button
-              key={`urgent-challenge-${challenge.id}`}
+              key={`challenge-activity-${at}`}
               type="button"
-              onClick={() => handleSelect(challenge.activityType)}
+              onClick={() => handleSelect(at)}
               className="rounded-lg border border-[#0F5C45]/50 bg-[#0F4C5C]/20 px-3 py-1 text-sm text-teal-100 transition-colors hover:border-[#0F5C45]/70 hover:bg-[#0F5C45]/25"
             >
-              {challenge.name}
+              {t(`endurance.menu.${at}`, at)}
             </button>
           ))}
-          {activeChallenges.length > 3 && (
-            <span className="px-3 py-1 text-sm text-teal-600" role="note">
-              +{activeChallenges.length - 3} autres…
-            </span>
-          )}
         </div>
       </div>
     </div>

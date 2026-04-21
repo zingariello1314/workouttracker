@@ -7,11 +7,21 @@
  * @module components/tabs/BooksTab/hooks/useBooksSessions
  */
 
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, useMemo } from 'react';
 import { sidebarEvents, SIDEBAR_EVENTS } from '../../../../utils/sidebarEvents';
 import { readingSessionSchema, validateWithSchema } from '../../../../utils/validation/schemas';
 import { emptySessionForm } from '../constants';
 import { suggestedPersonalScoreFromSessions } from '../../../../utils/bookReadingRatings';
+
+const serializeSessionForm = (form) =>
+  JSON.stringify({
+    date: form?.date || '',
+    durationMinutes: form?.durationMinutes || '',
+    pagesRead: form?.pagesRead || '',
+    startTime: form?.startTime || '',
+    note: form?.note || '',
+    criteriaRatings: { ...emptySessionForm.criteriaRatings, ...(form?.criteriaRatings || {}) }
+  });
 
 /**
  * @param {Array} books
@@ -24,8 +34,16 @@ export const useBooksSessions = (books = [], setBooks, selectedBook, selectedBoo
     ...emptySessionForm,
     criteriaRatings: { ...emptySessionForm.criteriaRatings },
   }));
+  const [sessionDirtyBaseline, setSessionDirtyBaseline] = useState(() =>
+    serializeSessionForm({ ...emptySessionForm, criteriaRatings: { ...emptySessionForm.criteriaRatings } })
+  );
   const [editingSessionId, setEditingSessionId] = useState(null);
   const [pendingBookCompletion, setPendingBookCompletion] = useState(null);
+
+  const sessionFormDirty = useMemo(
+    () => serializeSessionForm(sessionForm) !== sessionDirtyBaseline,
+    [sessionForm, sessionDirtyBaseline]
+  );
 
   const handleSessionChange = useCallback((field, value) => {
     setSessionForm((prev) => ({ ...prev, [field]: value }));
@@ -42,10 +60,12 @@ export const useBooksSessions = (books = [], setBooks, selectedBook, selectedBoo
   }, []);
 
   const resetSessionForm = useCallback(() => {
-    setSessionForm({
+    const empty = {
       ...emptySessionForm,
       criteriaRatings: { ...emptySessionForm.criteriaRatings },
-    });
+    };
+    setSessionForm(empty);
+    setSessionDirtyBaseline(serializeSessionForm(empty));
     setEditingSessionId(null);
   }, []);
 
@@ -81,14 +101,16 @@ export const useBooksSessions = (books = [], setBooks, selectedBook, selectedBoo
     const cr = session.criteriaRatings && typeof session.criteriaRatings === 'object'
       ? { ...emptySessionForm.criteriaRatings, ...session.criteriaRatings }
       : { ...emptySessionForm.criteriaRatings };
-    setSessionForm({
+    const nextForm = {
       date: session.date || '',
       durationMinutes: session.durationMinutes != null ? String(session.durationMinutes) : '',
       pagesRead: session.pagesRead != null ? String(session.pagesRead) : '',
       startTime: session.startTime || '',
       note: session.note || '',
       criteriaRatings: cr,
-    });
+    };
+    setSessionForm(nextForm);
+    setSessionDirtyBaseline(serializeSessionForm(nextForm));
     setEditingSessionId(session.id || null);
   }, []);
 
@@ -196,6 +218,7 @@ export const useBooksSessions = (books = [], setBooks, selectedBook, selectedBoo
 
   return {
     sessionForm,
+    sessionFormDirty,
     setSessionForm,
     handleSessionChange,
     handleCriteriaRatingChange,
