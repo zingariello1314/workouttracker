@@ -294,7 +294,7 @@ const SummaryTableSection = () => {
   }, [data?.progressEntries]);
 
   const getTrendIcon = (trend, isGood) => {
-    if (trend === 'stable') return <Minus className="w-4 h-4 text-gray-400" />;
+    if (trend === 'stable') return <Minus className="w-4 h-4 text-teal-800" />;
     
     const isPositiveTrend = (trend === 'up' && isGood) || (trend === 'down' && !isGood);
     
@@ -306,7 +306,7 @@ const SummaryTableSection = () => {
   };
 
   const getChangeColor = (change, isGood, trend) => {
-    if (change === 0) return 'text-gray-400';
+    if (change === 0) return 'text-teal-800';
     
     const isPositiveChange = change > 0;
     const shouldBePositive = (trend === 'up' && isGood) || (trend === 'down' && !isGood);
@@ -601,14 +601,14 @@ const SummaryTableSection = () => {
   return (
     <div className="space-y-6">
       {/* Bouton pour basculer entre vue normale et édition */}
-      <Card className="bg-slate-800/50 border-slate-700/50">
+      <Card variant="sport">
         <CardContent className="p-4">
           <div className="flex items-center justify-between">
             <div>
-              <h3 className="font-semibold text-white mb-1">
+              <h3 className="mb-1 font-semibold text-teal-100">
                 {editMode ? 'Mode Édition' : 'Vue Récapitulatif'}
               </h3>
-              <p className="text-sm text-slate-400">
+              <p className="text-sm text-teal-700">
                 {editMode 
                   ? 'Modifiez vos sessions d\'enregistrement. N\'oubliez pas de sauvegarder vos modifications.'
                   : 'Vue d\'ensemble de vos métriques corporelles'}
@@ -616,7 +616,11 @@ const SummaryTableSection = () => {
             </div>
             <Button
               onClick={() => setEditMode(!editMode)}
-              className={`flex items-center gap-2 ${editMode ? 'bg-slate-600 hover:bg-slate-700' : 'bg-orange-600 hover:bg-orange-700'}`}
+              className={`flex items-center gap-2 border-2 ${
+                editMode
+                  ? 'border-[#0F4C5C]/60 bg-black text-teal-100 hover:bg-[#0F4C5C]/15'
+                  : 'border-[#0F5C45]/55 bg-[#0F5C45]/30 text-teal-100 hover:bg-[#0F5C45]/45'
+              }`}
             >
               {editMode ? (
                 <>
@@ -637,31 +641,31 @@ const SummaryTableSection = () => {
       {!editMode ? (
         <>
           {/* Résumé automatique */}
-          <Card className="bg-gradient-to-r from-blue-600/20 to-purple-600/20 border-blue-500/30">
+          <Card variant="sport">
             <CardContent className="p-6">
               <div className="flex items-start gap-4">
-                <div className="p-3 bg-blue-500/20 rounded-lg">
-                  <Info className="w-6 h-6 text-blue-400" />
+                <div className="rounded-lg border border-[#0F4C5C]/50 bg-[#0F4C5C]/20 p-3">
+                  <Info className="h-6 w-6 text-sky-400" />
                 </div>
                 <div>
-                  <h3 className="font-semibold text-white mb-2">Résumé de progression (30 jours)</h3>
-                  <p className="text-blue-100">{summaryText}</p>
+                  <h3 className="mb-2 font-semibold text-teal-100">Résumé de progression (30 jours)</h3>
+                  <p className="text-teal-100">{summaryText}</p>
                 </div>
               </div>
             </CardContent>
           </Card>
 
       {/* Contrôles de tri et filtrage */}
-      <Card className="bg-slate-800/50 border-slate-700/50">
+      <Card variant="sport">
         <CardContent className="p-4">
-          <div className="flex flex-wrap gap-4 items-center">
+          <div className="flex flex-wrap items-center gap-4">
             <div className="flex items-center gap-2">
-              <ArrowUpDown className="w-4 h-4 text-slate-400" />
-              <span className="text-sm text-slate-300">Trier par :</span>
+              <ArrowUpDown className="h-4 w-4 text-teal-600" />
+              <span className="text-sm text-teal-200">Trier par :</span>
               <select
                 value={sortBy}
                 onChange={(e) => setSortBy(e.target.value)}
-                className="bg-slate-700 border border-slate-600 rounded px-3 py-1 text-sm text-white"
+                className="rounded border border-[#0F4C5C]/55 bg-black px-3 py-1 text-sm text-teal-100 focus:outline-none focus:ring-2 focus:ring-[#0F5C45]/40"
               >
                 <option value="name">Nom</option>
                 <option value="date">Date</option>
@@ -671,12 +675,12 @@ const SummaryTableSection = () => {
             </div>
 
             <div className="flex items-center gap-2">
-              <Filter className="w-4 h-4 text-slate-400" />
-              <span className="text-sm text-slate-300">Filtrer :</span>
+              <Filter className="h-4 w-4 text-teal-600" />
+              <span className="text-sm text-teal-200">Filtrer :</span>
               <select
                 value={filterBy}
                 onChange={(e) => setFilterBy(e.target.value)}
-                className="bg-slate-700 border border-slate-600 rounded px-3 py-1 text-sm text-white"
+                className="rounded border border-[#0F4C5C]/55 bg-black px-3 py-1 text-sm text-teal-100 focus:outline-none focus:ring-2 focus:ring-[#0F5C45]/40"
               >
                 <option value="all">Toutes les métriques</option>
                 <option value="basic">Métriques de base</option>
@@ -690,11 +694,11 @@ const SummaryTableSection = () => {
       </Card>
 
       {/* Tableau récapitulatif */}
-      <Card>
+      <Card variant="sport">
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
+          <CardTitle className="flex flex-wrap items-center gap-2 text-teal-100">
             📊 Tableau récapitulatif - Vue d'ensemble
-            <span className="text-sm font-normal text-slate-400">
+            <span className="text-sm font-normal text-teal-700">
               ({sortedData.length} métriques)
             </span>
           </CardTitle>
@@ -703,13 +707,13 @@ const SummaryTableSection = () => {
           <div className="overflow-x-auto">
             <table className="w-full">
               <thead>
-                <tr className="border-b border-slate-700">
-                  <th className="text-left py-3 px-4 font-semibold text-slate-300">Métrique</th>
-                  <th className="text-left py-3 px-4 font-semibold text-slate-300">Valeur actuelle</th>
-                  <th className="text-left py-3 px-4 font-semibold text-slate-300">Dernière mesure</th>
-                  <th className="text-left py-3 px-4 font-semibold text-slate-300">7 jours</th>
-                  <th className="text-left py-3 px-4 font-semibold text-slate-300">30 jours</th>
-                  <th className="text-left py-3 px-4 font-semibold text-slate-300">Tendance</th>
+                <tr className="border-b border-[#0F4C5C]/50">
+                  <th className="px-4 py-3 text-left font-semibold text-teal-200">Métrique</th>
+                  <th className="px-4 py-3 text-left font-semibold text-teal-200">Valeur actuelle</th>
+                  <th className="px-4 py-3 text-left font-semibold text-teal-200">Dernière mesure</th>
+                  <th className="px-4 py-3 text-left font-semibold text-teal-200">7 jours</th>
+                  <th className="px-4 py-3 text-left font-semibold text-teal-200">30 jours</th>
+                  <th className="px-4 py-3 text-left font-semibold text-teal-200">Tendance</th>
                 </tr>
               </thead>
               <tbody>
@@ -718,20 +722,23 @@ const SummaryTableSection = () => {
                   const isStale = daysAgo > 7;
                   
                   return (
-                    <tr key={index} className="border-b border-slate-800 hover:bg-slate-800/30">
+                    <tr key={index} className="border-b border-[#0F4C5C]/35 hover:bg-[#0F4C5C]/10">
                       <td className="py-4 px-4">
                         <div className="flex items-center gap-2">
-                          <span className="font-medium text-white">{item.name}</span>
+                          <span className="font-medium text-teal-100">{item.name}</span>
                           {isStale && (
-                            <AlertTriangle className="w-4 h-4 text-yellow-400" title={`Pas de mise à jour depuis ${daysAgo} jours`} />
+                            <AlertTriangle
+                              className="h-4 w-4 text-amber-400"
+                              title={`Pas de mise à jour depuis ${daysAgo} jours`}
+                            />
                           )}
                         </div>
                       </td>
                       <td className="py-4 px-4">
-                        <span className="font-semibold text-white">{item.value}</span>
+                        <span className="font-semibold text-teal-100">{item.value}</span>
                       </td>
                       <td className="py-4 px-4">
-                        <div className="flex items-center gap-1 text-sm text-slate-400">
+                        <div className="flex items-center gap-1 text-sm text-teal-700">
                           <Calendar className="w-3 h-3" />
                           {daysAgo === 0 ? "Aujourd'hui" : `Il y a ${daysAgo} jour${daysAgo > 1 ? 's' : ''}`}
                         </div>
@@ -762,7 +769,7 @@ const SummaryTableSection = () => {
                                       {changeFormatted.formatted}
                                     </span>
                                     {changeWithPct.percentage && (
-                                      <span className="text-xs text-slate-400">
+                                      <span className="text-xs text-teal-700">
                                         ({changeWithPct.percentage})
                                       </span>
                                     )}
@@ -771,7 +778,7 @@ const SummaryTableSection = () => {
                               })()}
                             </>
                           ) : (
-                            <span className="text-gray-400">—</span>
+                            <span className="text-teal-800">—</span>
                           )}
                         </div>
                       </td>
@@ -801,7 +808,7 @@ const SummaryTableSection = () => {
                                       {changeFormatted.formatted}
                                     </span>
                                     {changeWithPct.percentage && (
-                                      <span className="text-xs text-slate-400">
+                                      <span className="text-xs text-teal-700">
                                         ({changeWithPct.percentage})
                                       </span>
                                     )}
@@ -810,14 +817,16 @@ const SummaryTableSection = () => {
                               })()}
                             </>
                           ) : (
-                            <span className="text-gray-400">—</span>
+                            <span className="text-teal-800">—</span>
                           )}
                         </div>
                       </td>
                       <td className="py-4 px-4">
                         <div className="flex items-center gap-2">
                           {getTrendIcon(item.trend, item.isGood)}
-                          <span className="text-sm text-slate-400 capitalize">{item.trend === 'up' ? 'Hausse' : item.trend === 'down' ? 'Baisse' : 'Stable'}</span>
+                          <span className="text-sm capitalize text-teal-700">
+                            {item.trend === 'up' ? 'Hausse' : item.trend === 'down' ? 'Baisse' : 'Stable'}
+                          </span>
                         </div>
                       </td>
                     </tr>
@@ -828,11 +837,11 @@ const SummaryTableSection = () => {
           </div>
 
           {sortedData.length === 0 && (
-            <div className="text-center py-12">
-              <div className="text-slate-400">
-                <Info className="w-16 h-16 mx-auto mb-4 text-slate-500" />
-                <h4 className="text-xl font-semibold mb-2 text-white">Aucune donnée disponible</h4>
-                <p className="text-slate-400">Commencez par saisir vos premières métriques corporelles.</p>
+            <div className="py-12 text-center">
+              <div className="text-teal-700">
+                <Info className="mx-auto mb-4 h-16 w-16 text-teal-600" />
+                <h4 className="mb-2 text-xl font-semibold text-teal-100">Aucune donnée disponible</h4>
+                <p>Commencez par saisir vos premières métriques corporelles.</p>
               </div>
             </div>
           )}
@@ -844,13 +853,13 @@ const SummaryTableSection = () => {
             const daysAgo = getDaysAgo(item.date);
             return daysAgo > 7;
           }) && (
-            <Card className="bg-yellow-600/10 border-yellow-500/30">
+            <Card variant="sport" className="border-amber-500/40">
               <CardContent className="p-4">
                 <div className="flex items-center gap-3">
-                  <AlertTriangle className="w-5 h-5 text-yellow-400" />
+                  <AlertTriangle className="h-5 w-5 text-amber-400" />
                   <div>
-                    <h4 className="font-semibold text-yellow-200">Données à actualiser</h4>
-                    <p className="text-sm text-yellow-300">
+                    <h4 className="font-semibold text-amber-200">Données à actualiser</h4>
+                    <p className="text-sm text-teal-100">
                       Certaines métriques n'ont pas été mises à jour récemment. 
                       Pensez à effectuer de nouvelles mesures pour maintenir un suivi précis.
                     </p>
@@ -863,23 +872,23 @@ const SummaryTableSection = () => {
       ) : (
         <>
           {/* Vue d'édition */}
-          <Card>
+          <Card variant="sport">
             <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Edit className="w-5 h-5 text-orange-400" />
+              <CardTitle className="flex flex-wrap items-center gap-2 text-teal-100">
+                <Edit className="h-5 w-5 text-sky-400" />
                 Édition des sessions d'enregistrement
-                <span className="text-sm font-normal text-slate-400">
+                <span className="text-sm font-normal text-teal-700">
                   ({allEntriesForEdit.length} session{allEntriesForEdit.length > 1 ? 's' : ''})
                 </span>
               </CardTitle>
             </CardHeader>
             <CardContent>
               {allEntriesForEdit.length === 0 ? (
-                <div className="text-center py-12">
-                  <div className="text-slate-400">
-                    <Info className="w-16 h-16 mx-auto mb-4 text-slate-500" />
-                    <h4 className="text-xl font-semibold mb-2 text-white">Aucune session disponible</h4>
-                    <p className="text-slate-400">Commencez par saisir vos premières métriques corporelles.</p>
+                <div className="py-12 text-center">
+                  <div className="text-teal-700">
+                    <Info className="mx-auto mb-4 h-16 w-16 text-teal-600" />
+                    <h4 className="mb-2 text-xl font-semibold text-teal-100">Aucune session disponible</h4>
+                    <p>Commencez par saisir vos premières métriques corporelles.</p>
                   </div>
                 </div>
               ) : (
@@ -891,9 +900,12 @@ const SummaryTableSection = () => {
                     const editableFields = getEditableFields(entry);
 
                     return (
-                      <Card 
-                        key={entry.id} 
-                        className={isMarkedForDeletion ? 'bg-red-900/20 border-red-500/50' : 'bg-slate-800/50 border-slate-700/50'}
+                      <Card
+                        key={entry.id}
+                        variant="sport"
+                        className={
+                          isMarkedForDeletion ? '!border-red-500/60 bg-red-950/30' : ''
+                        }
                       >
                         <CardHeader>
                           <div className="flex items-center justify-between">
@@ -901,7 +913,7 @@ const SummaryTableSection = () => {
                               <CardTitle className="text-lg">
                                 {entry.type === 'metrics' ? '📏 Métriques corporelles' : '⚡ Impédancemétrie'}
                               </CardTitle>
-                              <p className="text-sm text-slate-400 mt-1">
+                              <p className="mt-1 text-sm text-teal-700">
                                 <Calendar className="w-4 h-4 inline mr-1" />
                                 {dateStr}
                               </p>
@@ -928,15 +940,15 @@ const SummaryTableSection = () => {
                           ) : (
                             <div className="space-y-4">
                               {/* Édition de la date */}
-                              <div className="p-3 rounded-lg border bg-slate-700/50 border-slate-600">
-                                <label className="text-sm font-medium text-slate-300 mb-2 block">
+                              <div className="rounded-lg border border-[#0F4C5C]/50 bg-black p-3">
+                                <label className="mb-2 block text-sm font-medium text-teal-100">
                                   Date de la session
                                 </label>
                                 <input
                                   type="date"
                                   value={getFieldValue(entry, 'date')}
                                   onChange={(e) => handleFieldChange(entry.id, 'date', e.target.value)}
-                                  className="w-full px-3 py-2 bg-slate-800 border border-slate-600 rounded text-white focus:outline-none focus:ring-2 focus:ring-orange-500"
+                                  className="w-full rounded border border-[#0F4C5C]/55 bg-black px-3 py-2 text-teal-100 focus:outline-none focus:ring-2 focus:ring-[#0F5C45]/40"
                                 />
                               </div>
                               {/* Champs éditables */}
@@ -949,14 +961,14 @@ const SummaryTableSection = () => {
                                 return (
                                   <div 
                                     key={field.key}
-                                    className={`p-3 rounded-lg border ${
-                                      isFieldDeleted 
-                                        ? 'bg-red-900/20 border-red-500/50' 
-                                        : 'bg-slate-700/50 border-slate-600'
+                                    className={`rounded-lg border p-3 ${
+                                      isFieldDeleted
+                                        ? 'border-red-500/50 bg-red-900/20'
+                                        : 'border-[#0F4C5C]/50 bg-black'
                                     }`}
                                   >
                                     <div className="flex items-center justify-between mb-2">
-                                      <label className="text-sm font-medium text-slate-300">
+                                      <label className="text-sm font-medium text-teal-100">
                                         {field.label}
                                       </label>
                                       {hasValue && (
@@ -985,7 +997,7 @@ const SummaryTableSection = () => {
                                         min={field.min || 0}
                                         value={fieldValue}
                                         onChange={(e) => handleFieldChange(entry.id, field.key, e.target.value)}
-                                        className="w-full px-3 py-2 bg-slate-800 border border-slate-600 rounded text-white focus:outline-none focus:ring-2 focus:ring-orange-500"
+                                        className="w-full rounded border border-[#0F4C5C]/55 bg-black px-3 py-2 text-teal-100 focus:outline-none focus:ring-2 focus:ring-[#0F5C45]/40"
                                         placeholder="—"
                                       />
                                     )}
@@ -996,14 +1008,14 @@ const SummaryTableSection = () => {
                               {/* Type de corps et Notes (pour impédance) */}
                               {entry.type === 'impedance' && (
                                 <>
-                                  <div className="p-3 rounded-lg border bg-slate-700/50 border-slate-600">
-                                    <label className="text-sm font-medium text-slate-300 mb-2 block">
+                                  <div className="rounded-lg border border-[#0F4C5C]/50 bg-black p-3">
+                                    <label className="mb-2 block text-sm font-medium text-teal-100">
                                       Type de corps
                                     </label>
                                     <select
                                       value={getFieldValue(entry, 'bodyType')}
                                       onChange={(e) => handleFieldChange(entry.id, 'bodyType', e.target.value)}
-                                      className="w-full px-3 py-2 bg-slate-800 border border-slate-600 rounded text-white focus:outline-none focus:ring-2 focus:ring-orange-500"
+                                      className="w-full rounded border border-[#0F4C5C]/55 bg-black px-3 py-2 text-teal-100 focus:outline-none focus:ring-2 focus:ring-[#0F5C45]/40"
                                     >
                                       <option value="">Sélectionner...</option>
                                       {getBodyTypeOptions().map(option => (
@@ -1013,14 +1025,14 @@ const SummaryTableSection = () => {
                                       ))}
                                     </select>
                                   </div>
-                                  <div className="p-3 rounded-lg border bg-slate-700/50 border-slate-600">
-                                    <label className="text-sm font-medium text-slate-300 mb-2 block">
+                                  <div className="rounded-lg border border-[#0F4C5C]/50 bg-black p-3">
+                                    <label className="mb-2 block text-sm font-medium text-teal-100">
                                       Notes (optionnel)
                                     </label>
                                     <textarea
                                       value={getFieldValue(entry, 'notes')}
                                       onChange={(e) => handleFieldChange(entry.id, 'notes', e.target.value)}
-                                      className="w-full px-3 py-2 bg-slate-800 border border-slate-600 rounded text-white focus:outline-none focus:ring-2 focus:ring-orange-500"
+                                      className="w-full rounded border border-[#0F4C5C]/55 bg-black px-3 py-2 text-teal-100 focus:outline-none focus:ring-2 focus:ring-[#0F5C45]/40"
                                       rows="3"
                                       placeholder="Conditions de mesure, observations..."
                                     />
@@ -1040,14 +1052,14 @@ const SummaryTableSection = () => {
 
           {/* Bouton d'enregistrement en bas */}
           {hasChanges && (
-            <Card className="bg-gradient-to-r from-orange-600/20 to-orange-700/20 border-orange-500/50 sticky bottom-0 z-10">
+            <Card variant="sport" className="sticky bottom-0 z-10 border-[#0F5C45]/50">
               <CardContent className="p-4">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
-                    <AlertTriangle className="w-5 h-5 text-orange-400" />
+                    <AlertTriangle className="h-5 w-5 text-sky-400" />
                     <div>
-                      <h4 className="font-semibold text-orange-200">Modifications non sauvegardées</h4>
-                      <p className="text-sm text-orange-300">
+                      <h4 className="font-semibold text-teal-100">Modifications non sauvegardées</h4>
+                      <p className="text-sm text-teal-200">
                         {entriesToDelete.size > 0 && `${entriesToDelete.size} session${entriesToDelete.size > 1 ? 's' : ''} à supprimer`}
                         {entriesToDelete.size > 0 && fieldsToDelete.size > 0 && ', '}
                         {fieldsToDelete.size > 0 && `${fieldsToDelete.size} donnée${fieldsToDelete.size > 1 ? 's' : ''} à supprimer`}
@@ -1059,7 +1071,7 @@ const SummaryTableSection = () => {
                   <div className="flex items-center gap-3">
                     <Button
                       onClick={handleCancelEdit}
-                      className="bg-slate-600 hover:bg-slate-700 flex items-center gap-2"
+                      className="flex items-center gap-2 border-2 border-[#0F4C5C]/55 bg-black text-teal-100 hover:bg-[#0F4C5C]/15"
                       disabled={isSaving}
                     >
                       <X className="w-4 h-4" />
@@ -1067,7 +1079,7 @@ const SummaryTableSection = () => {
                     </Button>
                     <Button
                       onClick={handleSaveChanges}
-                      className="bg-orange-600 hover:bg-orange-700 flex items-center gap-2"
+                      className="flex items-center gap-2 border-2 border-[#0F5C45]/55 bg-[#0F5C45]/35 text-teal-100 hover:bg-[#0F5C45]/50"
                       disabled={isSaving}
                     >
                       <Save className="w-4 h-4" />

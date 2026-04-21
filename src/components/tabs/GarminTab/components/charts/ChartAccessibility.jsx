@@ -26,7 +26,7 @@ export function ChartWrapper({
   
   return (
     <div 
-      className="bg-slate-800/60 border border-slate-700 rounded-lg p-6"
+      className="rounded-xl border-2 border-[#0F4C5C]/70 bg-black p-6 shadow-md shadow-black/40"
       role="region"
       aria-label={ariaLabel}
       aria-describedby={`${chartId}-description`}
@@ -34,7 +34,7 @@ export function ChartWrapper({
       <div className="flex items-center justify-between mb-4">
         <h4 
           id={`${chartId}-title`} 
-          className="text-white font-semibold"
+          className="text-teal-100 font-semibold"
         >
           {title}
         </h4>

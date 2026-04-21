@@ -1,0 +1,65 @@
+.finance-planificateur-theme {
+  --planif-bg: #000000;
+  --planif-bg-soft: #000000;
+  --planif-border: #1e6b47;
+  --planif-border-strong: #339c5a;
+  --planif-text: #d4f5e6;
+  --planif-muted: #8fbfa3;
+}
+
+.finance-planificateur-theme [class*='bg-slate-'],
+.finance-planificateur-theme [class*='bg-blue-'],
+.finance-planificateur-theme [class*='bg-purple-'],
+.finance-planificateur-theme [class*='bg-cyan-'],
+.finance-planificateur-theme [class*='bg-emerald-'] {
+  background: var(--planif-bg) !important;
+}
+
+.finance-planificateur-theme [class*='border-slate-'],
+.finance-planificateur-theme [class*='border-blue-'],
+.finance-planificateur-theme [class*='border-purple-'],
+.finance-planificateur-theme [class*='border-cyan-'],
+.finance-planificateur-theme [class*='border-emerald-'] {
+  border-color: color-mix(in srgb, var(--planif-border) 70%, transparent) !important;
+}
+
+.finance-planificateur-theme [class*='text-slate-'],
+.finance-planificateur-theme [class*='text-white'],
+.finance-planificateur-theme [class*='text-blue-'],
+.finance-planificateur-theme [class*='text-purple-'],
+.finance-planificateur-theme [class*='text-cyan-'],
+.finance-planificateur-theme [class*='text-emerald-'] {
+  color: var(--planif-text) !important;
+}
+
+.finance-planificateur-theme .sub-tabs-navigation,
+.finance-planificateur-theme .sub-tab-main-content {
+  background: var(--planif-bg) !important;
+  border: 1px solid color-mix(in srgb, var(--planif-border) 65%, transparent);
+}
+
+.finance-planificateur-theme .gradient-button-premium,
+.finance-planificateur-theme button[class*='bg-'] {
+  background: color-mix(in srgb, var(--planif-border-strong) 18%, black) !important;
+  border: 1px solid color-mix(in srgb, var(--planif-border-strong) 75%, transparent) !important;
+  color: var(--planif-text) !important;
+}
+
+.finance-planificateur-theme .gradient-button-premium-variant,
+.finance-planificateur-theme button[aria-current='page'] {
+  background: color-mix(in srgb, var(--planif-border-strong) 30%, black) !important;
+  border-color: var(--planif-border-strong) !important;
+}
+
+.finance-planificateur-theme input,
+.finance-planificateur-theme select,
+.finance-planificateur-theme textarea {
+  background: #000 !important;
+  border-color: color-mix(in srgb, var(--planif-border) 70%, transparent) !important;
+  color: var(--planif-text) !important;
+}
+
+.finance-planificateur-theme input::placeholder,
+.finance-planificateur-theme textarea::placeholder {
+  color: var(--planif-muted) !important;
+}

@@ -312,7 +312,7 @@ const AdvancedStats = ({ workoutData, garminData = null, isOpen, onClose }) => {
     // ✅ CORRECTION : Gérer le cas null (N/A)
     if (change === null || change === undefined) {
       return (
-        <div className="flex items-center gap-1 text-slate-400">
+        <div className="flex items-center gap-1 text-teal-700">
           <span className="text-sm font-medium">N/A</span>
         </div>
       );
@@ -845,14 +845,14 @@ const AdvancedStats = ({ workoutData, garminData = null, isOpen, onClose }) => {
    * Il faut utiliser un mapping explicite pour que Tailwind puisse générer les classes CSS
    */
   const colorMap = {
-    blue: 'text-blue-400',
-    green: 'text-green-400',
-    yellow: 'text-yellow-400',
-    purple: 'text-purple-400',
-    orange: 'text-orange-400',
+    blue: 'text-sky-400',
+    green: 'text-emerald-400',
+    yellow: 'text-sky-300',
+    purple: 'text-teal-400',
+    orange: 'text-cyan-400',
     red: 'text-red-400',
-    indigo: 'text-indigo-400',
-    pink: 'text-pink-400',
+    indigo: 'text-cyan-300',
+    pink: 'text-teal-300',
     teal: 'text-teal-400',
     cyan: 'text-cyan-400'
   };
@@ -868,23 +868,23 @@ const AdvancedStats = ({ workoutData, garminData = null, isOpen, onClose }) => {
    * @param {React.Component} icon - Composant icône Lucide
    * @param {string} color - Couleur de l'icône (blue, green, yellow, etc.)
    */
-  const StatCard = React.memo(({ title, value, unit, change, icon: Icon, color = 'purple' }) => {
+  const StatCard = React.memo(({ title, value, unit, change, icon: Icon, color = 'teal' }) => {
     // ✅ CORRECTION : Utiliser le mapping de couleurs au lieu de classes dynamiques
-    const iconColorClass = colorMap[color] || colorMap.purple;
+    const iconColorClass = colorMap[color] || colorMap.teal;
     
     return (
-      <div className="bg-slate-700/50 rounded-lg p-4 border border-slate-600 hover:bg-slate-700/70 transition-colors duration-200">
+      <div className="rounded-lg border-2 border-[#0F4C5C]/55 bg-black p-4 transition-colors duration-200 hover:border-[#0F5C45]/50">
       <div className="flex items-center justify-between mb-2">
         <div className="flex items-center gap-2">
             <Icon size={18} className={iconColorClass} />
-          <span className="text-slate-400 text-sm">{title}</span>
+          <span className="text-sm text-teal-700">{title}</span>
         </div>
           {change !== undefined && (
             <div className="group relative">
               {formatChange(change)}
               {/* ✅ PHASE 2.3 : Tooltip pour expliquer les tendances */}
               {change !== null && (
-                <div className="absolute right-0 top-full mt-1 hidden group-hover:block z-10 w-48 p-2 bg-slate-900 border border-slate-700 rounded-lg shadow-xl text-xs text-slate-300">
+                <div className="absolute right-0 top-full z-10 mt-1 hidden w-48 rounded-lg border border-[#0F4C5C]/50 bg-black p-2 text-xs text-teal-100 shadow-xl group-hover:block">
                   {change === null ? (
                     <p>Nouvelle activité : pas de comparaison possible avec la période précédente.</p>
                   ) : change > 0 ? (
@@ -899,7 +899,7 @@ const AdvancedStats = ({ workoutData, garminData = null, isOpen, onClose }) => {
       </div>
       <div className="text-2xl font-bold text-white">
           {typeof value === 'number' ? value.toLocaleString('fr-FR') : value}
-        {unit && <span className="text-lg text-slate-400 ml-1">{unit}</span>}
+        {unit && <span className="ml-1 text-lg text-teal-700">{unit}</span>}
       </div>
     </div>
   );
@@ -914,17 +914,18 @@ const AdvancedStats = ({ workoutData, garminData = null, isOpen, onClose }) => {
   // ✅ OPTIMISATION : Afficher un message si pas de données au lieu de rien
   if (!stats) {
     return (
-      <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-        <div className="bg-slate-800 rounded-xl border border-slate-700 w-full max-w-md p-6">
+      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm">
+        <div className="w-full max-w-md rounded-xl border-2 border-[#0F4C5C]/70 bg-black p-6 shadow-xl">
           <div className="text-center">
-            <BarChart3 className="text-slate-400 mx-auto mb-4" size={48} />
-            <h2 className="text-xl font-bold text-white mb-2">Aucune donnée disponible</h2>
-            <p className="text-slate-400 text-sm">
+            <BarChart3 className="mx-auto mb-4 text-teal-500" size={48} />
+            <h2 className="mb-2 text-xl font-bold text-white">Aucune donnée disponible</h2>
+            <p className="text-sm text-teal-700">
               Commencez à enregistrer vos séances d'entraînement pour voir vos statistiques avancées.
             </p>
             <button
+              type="button"
               onClick={onClose}
-              className="mt-6 px-4 py-2 bg-purple-600 hover:bg-purple-700 rounded-lg text-white transition-colors"
+              className="mt-6 rounded-lg border border-[#0F5C45]/80 bg-[#0F5C45]/30 px-4 py-2 text-white transition hover:bg-[#0F5C45]/45"
             >
               Fermer
             </button>
@@ -935,16 +936,16 @@ const AdvancedStats = ({ workoutData, garminData = null, isOpen, onClose }) => {
   }
 
   return (
-    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-      <div className="bg-slate-800 rounded-xl border border-slate-700 w-full max-w-7xl max-h-[90vh] overflow-hidden flex flex-col">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm">
+      <div className="flex max-h-[90vh] w-full max-w-7xl flex-col overflow-hidden rounded-xl border-2 border-[#0F4C5C]/80 bg-black shadow-2xl">
         {/* En-tête */}
-        <div className="flex items-center justify-between p-6 border-b border-slate-700">
+        <div className="flex items-center justify-between border-b border-[#0F4C5C]/50 p-6">
           <div>
-            <h2 className="text-2xl font-bold text-white flex items-center gap-2">
-              <BarChart3 className="text-purple-400" />
+            <h2 className="flex items-center gap-2 text-2xl font-bold text-white">
+              <BarChart3 className="text-sky-400" />
               Statistiques Avancées
             </h2>
-            <p className="text-slate-400 mt-1">
+            <p className="mt-1 text-sm text-teal-700">
               Analyse détaillée de tes performances et tendances
             </p>
           </div>
@@ -952,7 +953,7 @@ const AdvancedStats = ({ workoutData, garminData = null, isOpen, onClose }) => {
             <select
               value={selectedPeriod}
               onChange={(e) => setSelectedPeriod(e.target.value)}
-              className="bg-slate-700 border border-slate-600 rounded-lg px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-purple-500"
+              className="rounded-lg border border-[#0F4C5C]/55 bg-black px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-[#0F5C45]/50"
             >
               {periods.map(period => (
                 <option key={period.value} value={period.value}>
@@ -961,15 +962,16 @@ const AdvancedStats = ({ workoutData, garminData = null, isOpen, onClose }) => {
               ))}
             </select>
             <button
+              type="button"
               onClick={onClose}
-              className="p-2 bg-slate-700 hover:bg-slate-600 rounded-lg transition-all"
+              className="rounded-lg border border-[#0F4C5C]/50 bg-black p-2 text-teal-100 transition hover:border-[#0F5C45]/55 hover:bg-[#0F4C5C]/15"
             >
               ✕
             </button>
           </div>
         </div>
 
-        <div className="flex-1 overflow-y-auto p-6">
+        <div className="flex-1 overflow-y-auto bg-black p-6">
           {/* Métriques principales */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
             <StatCard
@@ -1000,7 +1002,7 @@ const AdvancedStats = ({ workoutData, garminData = null, isOpen, onClose }) => {
               unit="min"
               change={stats.changes.duration}
               icon={Clock}
-              color="purple"
+              color="teal"
             />
           </div>
 
@@ -1031,7 +1033,7 @@ const AdvancedStats = ({ workoutData, garminData = null, isOpen, onClose }) => {
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             {/* Tendance de progression */}
-            <div className="bg-slate-700/50 rounded-lg p-6 border border-slate-600">
+            <div className="rounded-lg border-2 border-[#0F4C5C]/55 bg-black p-6">
               <h3 className="text-white font-semibold text-lg mb-4 flex items-center gap-2">
                 <TrendingUp className="text-green-400" />
                 Tendance de Progression
@@ -1039,15 +1041,15 @@ const AdvancedStats = ({ workoutData, garminData = null, isOpen, onClose }) => {
                 <div className="group relative">
                   <HelpCircle 
                     size={16} 
-                    className="text-slate-400 hover:text-slate-300 cursor-help transition-colors" 
+                    className="cursor-help text-teal-600 transition-colors hover:text-teal-400" 
                   />
-                  <div className="absolute left-0 bottom-full mb-2 hidden group-hover:block z-10 w-64 p-3 bg-slate-900 border border-slate-700 rounded-lg shadow-xl text-xs text-slate-300">
+                  <div className="absolute left-0 bottom-full z-10 mb-2 hidden w-64 rounded-lg border border-[#0F4C5C]/50 bg-black p-3 text-xs text-teal-100 shadow-xl group-hover:block">
                     <p className="font-semibold text-white mb-1">Comment ça marche ?</p>
-                    <p className="mb-2">La tendance compare tes 5 dernières séances avec les 5 précédentes de la période sélectionnée.</p>
-                    <ul className="list-disc list-inside space-y-1 text-slate-400">
+                    <p className="mb-2 text-teal-700">La tendance compare tes 5 dernières séances avec les 5 précédentes de la période sélectionnée.</p>
+                    <ul className="list-disc list-inside space-y-1 text-teal-800">
                       <li><span className="text-green-400">En progression</span> : +10% ou plus</li>
                       <li><span className="text-red-400">En baisse</span> : -10% ou moins</li>
-                      <li><span className="text-yellow-400">Stable</span> : entre -10% et +10%</li>
+                      <li><span className="text-sky-300">Stable</span> : entre -10% et +10%</li>
                     </ul>
                   </div>
                 </div>
@@ -1056,19 +1058,19 @@ const AdvancedStats = ({ workoutData, garminData = null, isOpen, onClose }) => {
                 <div className={`p-4 rounded-lg ${
                   stats.current.progressTrend === 'improving' ? 'bg-green-900/30 border border-green-700' :
                   stats.current.progressTrend === 'declining' ? 'bg-red-900/30 border border-red-700' :
-                  'bg-yellow-900/30 border border-yellow-700'
+                  'border border-sky-600/40 bg-sky-950/25'
                 }`}>
                   <div className="flex items-center gap-2 mb-2">
                     {stats.current.progressTrend === 'improving' && <TrendingUp className="text-green-400" size={20} />}
                     {stats.current.progressTrend === 'declining' && <TrendingDown className="text-red-400" size={20} />}
-                    {stats.current.progressTrend === 'stable' && <Activity className="text-yellow-400" size={20} />}
+                    {stats.current.progressTrend === 'stable' && <Activity className="text-sky-300" size={20} />}
                     <span className="text-white font-medium">
                       {stats.current.progressTrend === 'improving' && 'En progression ! 📈'}
                       {stats.current.progressTrend === 'declining' && 'En baisse 📉'}
                       {stats.current.progressTrend === 'stable' && 'Stable 📊'}
                     </span>
                   </div>
-                  <p className="text-slate-300 text-sm">
+                  <p className="text-sm text-teal-100/90">
                     {stats.current.progressTrend === 'improving' && 'Tes performances s\'améliorent ! Continue comme ça.'}
                     {stats.current.progressTrend === 'declining' && 'Tes performances baissent. Pense à la récupération.'}
                     {stats.current.progressTrend === 'stable' && 'Tes performances sont stables. Temps de varier ?'}
@@ -1076,15 +1078,15 @@ const AdvancedStats = ({ workoutData, garminData = null, isOpen, onClose }) => {
                 </div>
 
                 {stats.current.bestDay && (
-                  <div className="bg-purple-900/30 border border-purple-700 rounded-lg p-4">
-                    <h4 className="text-purple-300 font-medium mb-2 flex items-center gap-2">
+                  <div className="rounded-lg border border-[#0F4C5C]/60 bg-[#0F4C5C]/15 p-4">
+                    <h4 className="mb-2 flex items-center gap-2 font-medium text-sky-200">
                       <Award size={16} />
                       Meilleure performance
                     </h4>
-                    <p className="text-white text-sm">
+                    <p className="text-sm text-white">
                       {new Date(stats.current.bestDay.date).toLocaleDateString('fr-FR')}
                     </p>
-                    <p className="text-slate-300 text-xs">
+                    <p className="text-xs text-teal-700">
                       {/* ✅ CORRECTION : Utiliser normalizeReps() pour éviter concaténation */}
                       {stats.current.bestDay.exercises?.reduce((s, e) => s + normalizeReps(e.reps), 0)} reps • 
                       Intensité {normalizeReps(stats.current.bestDay.intensity || 5)}/10
@@ -1095,40 +1097,40 @@ const AdvancedStats = ({ workoutData, garminData = null, isOpen, onClose }) => {
             </div>
 
             {/* Distribution des muscles */}
-            <div className="bg-slate-700/50 rounded-lg p-6 border border-slate-600">
+            <div className="rounded-lg border-2 border-[#0F4C5C]/55 bg-black p-6">
               <h3 className="text-white font-semibold text-lg mb-4 flex items-center gap-2">
-                <Target className="text-purple-400" />
+                <Target className="text-teal-400" />
                 Répartition Musculaire
               </h3>
               <div className="space-y-3">
                 {stats.current.muscleDistribution.slice(0, 6).map((item, index) => (
                   <div key={item.muscle} className="flex items-center justify-between">
                     <div className="flex items-center gap-3">
-                      <div className={`w-3 h-3 rounded-full bg-gradient-to-r ${
-                        index === 0 ? 'from-purple-500 to-purple-600' :
-                        index === 1 ? 'from-blue-500 to-blue-600' :
-                        index === 2 ? 'from-green-500 to-green-600' :
-                        index === 3 ? 'from-yellow-500 to-yellow-600' :
-                        index === 4 ? 'from-red-500 to-red-600' :
-                        'from-gray-500 to-gray-600'
+                      <div className={`h-3 w-3 rounded-full bg-gradient-to-r ${
+                        index === 0 ? 'from-teal-500 to-cyan-500' :
+                        index === 1 ? 'from-sky-500 to-blue-500' :
+                        index === 2 ? 'from-emerald-500 to-teal-600' :
+                        index === 3 ? 'from-cyan-400 to-sky-500' :
+                        index === 4 ? 'from-[#0F5C45] to-emerald-600' :
+                        'from-slate-600 to-slate-500'
                       }`} />
-                      <span className="text-white text-sm">{item.muscle}</span>
+                      <span className="text-sm text-white">{item.muscle}</span>
                     </div>
                     <div className="flex items-center gap-2">
-                      <div className="w-20 bg-slate-600 rounded-full h-2">
+                      <div className="h-2 w-20 rounded-full bg-[#0F4C5C]/35">
                         <div
                           className={`h-2 rounded-full bg-gradient-to-r ${
-                            index === 0 ? 'from-purple-500 to-purple-600' :
-                            index === 1 ? 'from-blue-500 to-blue-600' :
-                            index === 2 ? 'from-green-500 to-green-600' :
-                            index === 3 ? 'from-yellow-500 to-yellow-600' :
-                            index === 4 ? 'from-red-500 to-red-600' :
-                            'from-gray-500 to-gray-600'
+                            index === 0 ? 'from-teal-500 to-cyan-500' :
+                            index === 1 ? 'from-sky-500 to-blue-500' :
+                            index === 2 ? 'from-emerald-500 to-teal-600' :
+                            index === 3 ? 'from-cyan-400 to-sky-500' :
+                            index === 4 ? 'from-[#0F5C45] to-emerald-600' :
+                            'from-slate-600 to-slate-500'
                           }`}
                           style={{ width: `${item.percentage}%` }}
                         />
                       </div>
-                      <span className="text-slate-400 text-xs w-12 text-right">
+                      <span className="w-12 text-right text-xs text-teal-700">
                         {item.percentage.toFixed(1)}%
                       </span>
                     </div>
@@ -1138,9 +1140,9 @@ const AdvancedStats = ({ workoutData, garminData = null, isOpen, onClose }) => {
             </div>
 
             {/* Pattern hebdomadaire */}
-            <div className="bg-slate-700/50 rounded-lg p-6 border border-slate-600 lg:col-span-2">
+            <div className="rounded-lg border-2 border-[#0F4C5C]/55 bg-black p-6 lg:col-span-2">
               <h3 className="text-white font-semibold text-lg mb-4 flex items-center gap-2">
-                <Calendar className="text-blue-400" />
+                <Calendar className="text-sky-400" />
                 Répartition Hebdomadaire
               </h3>
               <div className="grid grid-cols-7 gap-2">
@@ -1152,21 +1154,21 @@ const AdvancedStats = ({ workoutData, garminData = null, isOpen, onClose }) => {
                     <div key={day.day} className="text-center">
                       <div className="h-20 flex items-end justify-center mb-2">
                         <div
-                          className={`w-8 bg-gradient-to-t from-blue-600 to-blue-400 rounded-t transition-all ${
+                          className={`w-8 rounded-t bg-gradient-to-t from-[#0F4C5C] to-sky-500 transition-all ${
                             day.workouts === 0 ? 'opacity-20' : ''
                           }`}
                           style={{ height: `${Math.max(height, 5)}%` }}
                           title={`${day.workouts} séance${day.workouts > 1 ? 's' : ''}`}
                         />
                       </div>
-                      <div className="text-slate-400 text-xs">{day.day}</div>
+                      <div className="text-xs text-teal-700">{day.day}</div>
                       <div className="text-white text-sm font-medium">{day.workouts}</div>
                     </div>
                   );
                 })}
               </div>
               <div className="mt-4 text-center">
-                <p className="text-slate-400 text-sm">
+                <p className="text-sm text-teal-700">
                   Jour le plus actif: {
                     stats.current.weeklyPattern.reduce((best, current) => 
                       current.workouts > best.workouts ? current : best

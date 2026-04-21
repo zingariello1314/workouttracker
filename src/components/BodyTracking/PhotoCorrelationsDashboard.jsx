@@ -55,8 +55,8 @@ const log = logger.component('PhotoCorrelationsDashboard');
 const CustomTooltip = ({ active, payload, label }) => {
   if (active && payload && payload.length) {
     return (
-      <div className="bg-slate-800 border border-slate-700 rounded-lg p-3 shadow-xl">
-        <p className="text-white font-medium mb-2">{label}</p>
+      <div className="bg-black border border-[#0F4C5C]/45 rounded-lg p-3 shadow-xl">
+        <p className="text-teal-100 font-medium mb-2">{label}</p>
         {payload.map((entry, index) => (
           <p key={index} className="text-sm" style={{ color: entry.color }}>
             {entry.name}: <span className="font-bold">{entry.value.toFixed(3)}</span>
@@ -238,13 +238,13 @@ const PhotoCorrelationsDashboard = () => {
   // États insuffisants
   if (analyzedPhotos.length < 3) {
     return (
-      <Card className="bg-slate-800/50 border-slate-700">
+      <Card className="bg-black border border-[#0F4C5C]/50 border-[#0F4C5C]/35">
         <CardContent className="p-12 text-center">
-          <AlertCircle className="w-16 h-16 mx-auto mb-4 text-slate-500" />
-          <h3 className="text-xl font-semibold text-white mb-2">
+          <AlertCircle className="w-16 h-16 mx-auto mb-4 text-teal-100/45" />
+          <h3 className="text-xl font-semibold text-teal-100 mb-2">
             Données insuffisantes
           </h3>
-          <p className="text-slate-400">
+          <p className="text-teal-100/55">
             Minimum 3 photos analysées nécessaires pour les corrélations globales.
           </p>
         </CardContent>
@@ -254,13 +254,13 @@ const PhotoCorrelationsDashboard = () => {
 
   if (isCalculating) {
     return (
-      <Card className="bg-slate-800/50 border-slate-700">
+      <Card className="bg-black border border-[#0F4C5C]/50 border-[#0F4C5C]/35">
         <CardContent className="p-12 text-center">
-          <Loader className="w-16 h-16 mx-auto mb-4 text-purple-400 animate-spin" />
-          <h3 className="text-xl font-semibold text-white mb-2">
+          <Loader className="w-16 h-16 mx-auto mb-4 text-sky-300 animate-spin" />
+          <h3 className="text-xl font-semibold text-teal-100 mb-2">
             Calcul des corrélations en cours...
           </h3>
-          <p className="text-slate-400">
+          <p className="text-teal-100/55">
             Analyse de {analyzedPhotos.length} photos et {getWorkoutHistory()?.length || 0} séances
           </p>
         </CardContent>
@@ -273,8 +273,8 @@ const PhotoCorrelationsDashboard = () => {
       <Card className="bg-red-600/10 border-red-500/30">
         <CardContent className="p-12 text-center">
           <AlertCircle className="w-16 h-16 mx-auto mb-4 text-red-400" />
-          <h3 className="text-xl font-semibold text-white mb-2">Erreur</h3>
-          <p className="text-slate-400">{error.message}</p>
+          <h3 className="text-xl font-semibold text-teal-100 mb-2">Erreur</h3>
+          <p className="text-teal-100/55">{error.message}</p>
         </CardContent>
       </Card>
     );
@@ -282,13 +282,13 @@ const PhotoCorrelationsDashboard = () => {
 
   if (!correlationsData || !correlationsData.muscleCorrelations) {
     return (
-      <Card className="bg-slate-800/50 border-slate-700">
+      <Card className="bg-black border border-[#0F4C5C]/50 border-[#0F4C5C]/35">
         <CardContent className="p-12 text-center">
-          <Target className="w-16 h-16 mx-auto mb-4 text-slate-500" />
-          <h3 className="text-xl font-semibold text-white mb-2">
+          <Target className="w-16 h-16 mx-auto mb-4 text-teal-100/45" />
+          <h3 className="text-xl font-semibold text-teal-100 mb-2">
             Aucune corrélation disponible
           </h3>
-          <p className="text-slate-400">
+          <p className="text-teal-100/55">
             Pas assez de données alignées pour calculer des corrélations.
           </p>
         </CardContent>
@@ -300,25 +300,25 @@ const PhotoCorrelationsDashboard = () => {
     <div className="space-y-6">
       {/* Statistiques globales */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <Card className="bg-purple-600/10 border-purple-500/30">
+        <Card className="bg-black border-2 border-[#0F4C5C]/55 shadow-sm shadow-black/15">
           <CardContent className="p-4">
-            <div className="text-sm text-slate-400 mb-1">Muscles analysés</div>
-            <div className="text-2xl font-bold text-purple-400">
+            <div className="text-sm text-teal-100/55 mb-1">Muscles analysés</div>
+            <div className="text-2xl font-bold text-sky-300">
               {correlationsData.musclesAnalyzed?.length || 0}
             </div>
-            <div className="text-xs text-slate-500 mt-1">
+            <div className="text-xs text-teal-100/45 mt-1">
               avec corrélations
             </div>
           </CardContent>
         </Card>
 
-        <Card className="bg-blue-600/10 border-blue-500/30">
+        <Card className="bg-black border-2 border-[#0F4C5C]/55 shadow-sm shadow-black/20">
           <CardContent className="p-4">
-            <div className="text-sm text-slate-400 mb-1">Photos alignées</div>
-            <div className="text-2xl font-bold text-blue-400">
+            <div className="text-sm text-teal-100/55 mb-1">Photos alignées</div>
+            <div className="text-2xl font-bold text-sky-300/90">
               {correlationsData.alignedDataPoints || 0}
             </div>
-            <div className="text-xs text-slate-500 mt-1">
+            <div className="text-xs text-teal-100/45 mt-1">
               sur {correlationsData.totalPhotos || 0} totales
             </div>
           </CardContent>
@@ -326,11 +326,11 @@ const PhotoCorrelationsDashboard = () => {
 
         <Card className="bg-green-600/10 border-green-500/30">
           <CardContent className="p-4">
-            <div className="text-sm text-slate-400 mb-1">Séances analysées</div>
+            <div className="text-sm text-teal-100/55 mb-1">Séances analysées</div>
             <div className="text-2xl font-bold text-green-400">
               {correlationsData.totalWorkouts || 0}
             </div>
-            <div className="text-xs text-slate-500 mt-1">
+            <div className="text-xs text-teal-100/45 mt-1">
               dans historique
             </div>
           </CardContent>
@@ -338,11 +338,11 @@ const PhotoCorrelationsDashboard = () => {
 
         <Card className="bg-orange-600/10 border-orange-500/30">
           <CardContent className="p-4">
-            <div className="text-sm text-slate-400 mb-1">Top exercice</div>
+            <div className="text-sm text-teal-100/55 mb-1">Top exercice</div>
             <div className="text-xl font-bold text-orange-400 truncate">
               {topExercisesGlobal[0]?.exerciseName || 'N/A'}
             </div>
-            <div className="text-xs text-slate-500 mt-1">
+            <div className="text-xs text-teal-100/45 mt-1">
               {topExercisesGlobal[0]?.avgCorrelation.toFixed(3) || '0.000'} corrélation
             </div>
           </CardContent>
@@ -353,19 +353,19 @@ const PhotoCorrelationsDashboard = () => {
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            <Target className="w-5 h-5 text-purple-400" />
+            <Target className="w-5 h-5 text-sky-300" />
             Vue Globale Corrélations
           </CardTitle>
         </CardHeader>
         <CardContent>
           <div className="mb-4">
-            <label className="block text-sm font-medium text-slate-300 mb-2">
+            <label className="block text-sm font-medium text-teal-100/80 mb-2">
               Métrique analysée
             </label>
             <select
               value={selectedMetric}
               onChange={(e) => setSelectedMetric(e.target.value)}
-              className="w-full md:w-64 px-3 py-2 bg-slate-700 border border-slate-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-purple-500"
+              className="w-full md:w-64 px-3 py-2 bg-black border border-[#0F4C5C]/45 rounded-lg text-teal-100 focus:outline-none focus:ring-2 focus:ring-[#0F5C45]/50"
             >
               <option value="volume">Volume</option>
               <option value="definition">Définition</option>
@@ -380,7 +380,7 @@ const PhotoCorrelationsDashboard = () => {
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
-              <BarChart3 className="w-5 h-5 text-blue-400" />
+              <BarChart3 className="w-5 h-5 text-sky-300/90" />
               Comparaison Corrélations par Muscle ({selectedMetric})
             </CardTitle>
           </CardHeader>
@@ -437,21 +437,21 @@ const PhotoCorrelationsDashboard = () => {
             <div className="overflow-x-auto">
               <table className="w-full">
                 <thead>
-                  <tr className="border-b border-slate-700">
-                    <th className="text-left py-3 px-4 text-slate-300 font-medium">Exercice</th>
-                    <th className="text-center py-3 px-4 text-slate-300 font-medium">Corrélation Moy.</th>
-                    <th className="text-center py-3 px-4 text-slate-300 font-medium">Impact Moy.</th>
-                    <th className="text-center py-3 px-4 text-slate-300 font-medium">Muscles Ciblés</th>
-                    <th className="text-center py-3 px-4 text-slate-300 font-medium">Significatifs</th>
+                  <tr className="border-b border-[#0F4C5C]/35">
+                    <th className="text-left py-3 px-4 text-teal-100/80 font-medium">Exercice</th>
+                    <th className="text-center py-3 px-4 text-teal-100/80 font-medium">Corrélation Moy.</th>
+                    <th className="text-center py-3 px-4 text-teal-100/80 font-medium">Impact Moy.</th>
+                    <th className="text-center py-3 px-4 text-teal-100/80 font-medium">Muscles Ciblés</th>
+                    <th className="text-center py-3 px-4 text-teal-100/80 font-medium">Significatifs</th>
                   </tr>
                 </thead>
                 <tbody>
                   {topExercisesGlobal.map((ex, index) => (
                     <tr
                       key={index}
-                      className="border-b border-slate-700/50 hover:bg-slate-700/20 transition-colors"
+                      className="border-b border-[#0F4C5C]/35/50 hover:bg-teal-950/25 transition-colors"
                     >
-                      <td className="py-3 px-4 text-white font-medium">
+                      <td className="py-3 px-4 text-teal-100 font-medium">
                         <div className="flex items-center gap-2">
                           {index < 3 && <Award className="w-4 h-4 text-yellow-400" />}
                           {ex.exerciseName}
@@ -463,12 +463,12 @@ const PhotoCorrelationsDashboard = () => {
                             ? 'text-green-400' 
                             : ex.avgCorrelation > 0.3
                             ? 'text-orange-400'
-                            : 'text-slate-400'
+                            : 'text-teal-100/55'
                         }`}>
                           {ex.avgCorrelation.toFixed(3)}
                         </span>
                       </td>
-                      <td className="py-3 px-4 text-center text-slate-300">
+                      <td className="py-3 px-4 text-center text-teal-100/80">
                         {(ex.avgImpact * 100).toFixed(0)}
                       </td>
                       <td className="py-3 px-4 text-center">
@@ -476,13 +476,13 @@ const PhotoCorrelationsDashboard = () => {
                           {ex.muscles.slice(0, 3).map((muscle, i) => (
                             <span
                               key={i}
-                              className="px-2 py-1 bg-purple-500/20 text-purple-300 rounded text-xs"
+                              className="px-2 py-1 bg-[#0F4C5C]/30 text-sky-200/90 rounded text-xs"
                             >
                               {muscle}
                             </span>
                           ))}
                           {ex.muscles.length > 3 && (
-                            <span className="px-2 py-1 bg-slate-700 text-slate-400 rounded text-xs">
+                            <span className="px-2 py-1 bg-black border border-[#0F4C5C]/45 text-teal-100/55 rounded text-xs">
                               +{ex.muscles.length - 3}
                             </span>
                           )}

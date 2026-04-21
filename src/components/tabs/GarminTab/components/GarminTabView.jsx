@@ -33,7 +33,7 @@ const SectionFallback = React.memo(({ label, minHeight = '240px' }) => {
   const displayLabel = label || t('garmin.fallback.default');
   return (
     <div
-      className="rounded-lg border border-slate-700 bg-slate-800/60 flex items-center justify-center text-slate-300 text-sm"
+      className="flex items-center justify-center rounded-lg border-2 border-[#0F4C5C]/55 bg-black text-sm text-teal-200"
       style={{ minHeight }}
       role="status"
       aria-live="polite"
@@ -41,7 +41,7 @@ const SectionFallback = React.memo(({ label, minHeight = '240px' }) => {
     >
       <div className="flex items-center gap-3">
         <span 
-          className="h-4 w-4 border-2 border-slate-600 border-t-blue-400 rounded-full animate-spin" 
+          className="h-4 w-4 animate-spin rounded-full border-2 border-[#0F4C5C] border-t-sky-400" 
           aria-hidden="true"
         />
         <span>{t('garmin.fallback.loading', { label: displayLabel })}</span>
@@ -198,40 +198,44 @@ export function GarminTabView({
           onToggleRaw={handleToggleRaw}
           toastContainer={<ToastContainer />}
         >
-          {/* Navigation temporelle avancée */}
+          {/* Navigation temporelle — module séparé */}
           {garminData && garminData.dailyMetrics && memoizedDateKeys.length > 0 && (
-            <TimeNavigation
-              selectedDate={selectedDate}
-              setSelectedDate={setSelectedDate}
-              dateKeys={memoizedDateKeys}
-              comparisonMode={comparisonMode}
-              setComparisonMode={setComparisonMode}
-              compareDate={compareDate}
-              setCompareDate={setCompareDate}
-              periodFilter={periodFilter}
-              setPeriodFilter={setPeriodFilter}
-              customStartDate={customStartDate}
-              customEndDate={customEndDate}
-              setCustomStartDate={setCustomStartDate}
-              setCustomEndDate={setCustomEndDate}
-            />
+            <div className="rounded-xl border-2 border-[#0F4C5C]/70 bg-black p-3 shadow-md shadow-black/40">
+              <TimeNavigation
+                selectedDate={selectedDate}
+                setSelectedDate={setSelectedDate}
+                dateKeys={memoizedDateKeys}
+                comparisonMode={comparisonMode}
+                setComparisonMode={setComparisonMode}
+                compareDate={compareDate}
+                setCompareDate={setCompareDate}
+                periodFilter={periodFilter}
+                setPeriodFilter={setPeriodFilter}
+                customStartDate={customStartDate}
+                customEndDate={customEndDate}
+                setCustomStartDate={setCustomStartDate}
+                setCustomEndDate={setCustomEndDate}
+              />
+            </div>
           )}
 
-          {/* Onglets de navigation */}
+          {/* Onglets Garmin — module séparé */}
           {garminData && (
-            <TabNavigation
-              tabs={tabItems}
-              activeTab={activeTab}
-              onSelect={setActiveTab}
-              ariaLabel={t('garmin.navigation.ariaLabel')}
-              onTabHover={prefetchTabModules}
-              onTabFocus={prefetchTabModules}
-            />
+            <div className="rounded-xl border-2 border-[#0F4C5C]/70 bg-black p-2 shadow-md shadow-black/40">
+              <TabNavigation
+                tabs={tabItems}
+                activeTab={activeTab}
+                onSelect={setActiveTab}
+                ariaLabel={t('garmin.navigation.ariaLabel')}
+                onTabHover={prefetchTabModules}
+                onTabFocus={prefetchTabModules}
+              />
+            </div>
           )}
 
           {/* Contenu selon l'onglet actif */}
           {garminData && (
-            <div className="mt-6">
+            <div className="space-y-6">
               {activeTab === 'dashboard' && (
                 <DashboardSection fallback={<SectionFallback label={t('garmin.fallback.dashboard')} minHeight="320px" />}>
                   <GarminDashboard />
@@ -275,7 +279,7 @@ export function GarminTabView({
 
               {/* Vue JSON brute */}
               {showRaw && (
-                <div className="mt-6 bg-slate-900 text-slate-200 text-xs p-4 rounded border border-slate-700 overflow-x-auto">
+                <div className="mt-6 overflow-x-auto rounded-xl border-2 border-[#0F4C5C]/70 bg-black p-4 text-xs text-teal-100 shadow-md shadow-black/40">
                   <pre>{JSON.stringify(garminData, null, 2)}</pre>
                 </div>
               )}
@@ -284,14 +288,13 @@ export function GarminTabView({
 
           {/* Message si aucune donnée */}
           {!garminData && (
-            <div className="mt-6 bg-slate-800/60 border border-slate-700 rounded-lg p-8 text-center text-slate-400">
-              <p className="text-lg mb-2">{t('garmin.empty.title')}</p>
+            <div className="mt-6 rounded-xl border-2 border-[#0F4C5C]/70 bg-black p-8 text-center text-teal-700 shadow-md shadow-black/40">
+              <p className="mb-2 text-lg text-white">{t('garmin.empty.title')}</p>
               <p className="text-sm">{t('garmin.empty.message')}</p>
             </div>
           )}
 
-          {/* Séparateur visuel avant les contrôles de synchronisation */}
-          <div className="mt-12 mb-8 border-t border-slate-700"></div>
+          <div className="my-10 border-t border-[#0F4C5C]/30" aria-hidden="true" />
 
           {/* Contrôles de synchronisation */}
           <div className="space-y-6">

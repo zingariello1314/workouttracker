@@ -6,6 +6,7 @@
 import React from 'react';
 import { AlertTriangle, RefreshCw } from 'lucide-react';
 import logger from '../../utils/logger';
+import { settingsTheme as S } from '../tabs/SettingsTab/settingsThemeClasses';
 
 const log = logger.component('QuotesErrorBoundary');
 
@@ -53,23 +54,23 @@ export class QuotesErrorBoundary extends React.Component {
   render() {
     if (this.state.hasError) {
       return (
-        <div className="bg-slate-800/80 backdrop-blur-sm border border-slate-700 rounded-lg p-6">
-          <div className="flex flex-col items-center text-center space-y-4">
+        <div className={`rounded-lg border-2 border-red-800/60 bg-black p-6 shadow-lg shadow-red-950/30`}>
+          <div className="flex flex-col items-center space-y-4 text-center">
             <AlertTriangle className="text-red-400" size={48} />
-            <h3 className="text-xl font-semibold text-white">
+            <h3 className="text-xl font-semibold text-red-100">
               Erreur du système de citations
             </h3>
-            <p className="text-gray-300 max-w-md">
+            <p className={`max-w-md text-sm ${S.body}`}>
               Une erreur s'est produite lors du chargement des citations. Vous pouvez réessayer ou
               continuer avec la citation par défaut.
             </p>
 
             {this.state.error && (
-              <details className="text-left w-full max-w-md">
-                <summary className="text-sm text-gray-400 cursor-pointer hover:text-gray-300">
+              <details className="w-full max-w-md text-left">
+                <summary className={`cursor-pointer text-sm ${S.muted} hover:text-red-100`}>
                   Détails techniques
                 </summary>
-                <pre className="mt-2 text-xs text-red-400 bg-slate-900/50 p-3 rounded overflow-auto max-h-40">
+                <pre className="mt-2 max-h-40 overflow-auto rounded border border-red-900/50 bg-red-950/30 p-3 text-xs text-red-300">
                   {this.state.error.toString()}
                   {this.state.errorInfo?.componentStack}
                 </pre>
@@ -80,7 +81,7 @@ export class QuotesErrorBoundary extends React.Component {
               <button
                 type="button"
                 onClick={this.handleRetry}
-                className="gradient-button-premium gradient-button-premium-md rounded-lg flex items-center gap-2"
+                className={S.btnPrimary}
               >
                 <RefreshCw size={16} />
                 Réessayer {this.state.retryCount > 0 && `(${this.state.retryCount})`}
@@ -88,14 +89,14 @@ export class QuotesErrorBoundary extends React.Component {
               <button
                 type="button"
                 onClick={this.handleReset}
-                className="gradient-button-premium gradient-button-premium-md gradient-button-premium-variant rounded-lg"
+                className={S.btnSecondary}
               >
                 Réinitialiser
               </button>
             </div>
 
             {this.state.retryCount >= 3 && (
-              <p className="text-sm text-yellow-400">
+              <p className="text-sm text-amber-300/90">
                 Si le problème persiste, essayez de vider le cache du navigateur ou contactez le
                 support.
               </p>

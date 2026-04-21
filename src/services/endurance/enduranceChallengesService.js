@@ -15,6 +15,40 @@ const DEFAULT_LOGGER = {
  * @param {Object} [options.logger] - Logger optionnel.
  * @returns {{ validatedIds: Array<string>, updatedChallenges: Array }}
  */
+/**
+ * Indique si une session satisfait les critères d’un défi (sans tenir compte du statut du défi).
+ * Sert à l’affichage des pastilles « défi validé » sur toutes les sessions éligibles,
+ * même après passage du défi en « terminé ».
+ */
+export function listMatchingChallengeIds(challenges = [], sessionData = {}, activityType, options = {}) {
+  const { logger = DEFAULT_LOGGER } = options;
+  if (!activityType || !Array.isArray(challenges) || challenges.length === 0) {
+    return [];
+  }
+  const ids = [];
+  challenges.forEach((challenge) => {
+    if (!challenge || challenge.activityType !== activityType) return;
+    let ok = false;
+    switch (challenge.type) {
+      case 'ponctuel':
+        ok = validatePonctuelChallenge(challenge, sessionData, logger);
+        break;
+      case 'recurrent':
+        ok = validateRecurrentChallenge(challenge, sessionData, logger);
+        break;
+      case 'periode':
+        ok = validatePeriodeChallenge(challenge, sessionData, logger);
+        break;
+      default:
+        ok = false;
+    }
+    if (ok && challenge.id != null) {
+      ids.push(challenge.id);
+    }
+  });
+  return ids;
+}
+
 export function evaluateChallenges(challenges = [], sessionData = {}, activityType, options = {}) {
   const { logger = DEFAULT_LOGGER } = options;
   if (!activityType) {
@@ -92,6 +126,7 @@ function validatePonctuelChallenge(challenge, sessionData, logger = DEFAULT_LOGG
 
   switch (challenge.activityType) {
     case 'pushups':
+    case 'gainage':
       return (
         numericAtLeast(sessionData.count, challenge.goalCount) &&
         numericAtMost(sessionData.duration, challenge.goalDuration)

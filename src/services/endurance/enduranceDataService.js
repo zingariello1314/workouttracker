@@ -9,7 +9,7 @@
  * de l’appel.
  */
 
-const ACTIVITY_TYPES = ['boxing', 'pushups', 'swimming', 'jumprope', 'running'];
+const ACTIVITY_TYPES = ['boxing', 'pushups', 'gainage', 'swimming', 'jumprope', 'running'];
 export const ENDURANCE_SCHEMA_VERSION = '2.0.0';
 
 const DEFAULT_LOGGER = {

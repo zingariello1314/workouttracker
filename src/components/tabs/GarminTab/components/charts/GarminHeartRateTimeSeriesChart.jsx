@@ -411,27 +411,27 @@ function GarminHeartRateTimeSeriesChart({ precomputed, selector, dailyMetrics, s
     }
 
     return (
-      <div className="bg-slate-900 border border-slate-700 rounded-lg p-3 shadow-lg min-w-[200px]">
-        <p className="text-white font-semibold mb-2">{label}</p>
+      <div className="bg-black border border-[#0F4C5C]/60 rounded-lg p-3 shadow-lg min-w-[200px]">
+        <p className="text-teal-100 font-semibold mb-2">{label}</p>
         <div className="space-y-1">
           <p className="text-sm font-medium" style={{ color: dataPoint?.color || '#EF4444' }}>
             {`FC: ${bpm} bpm`}
           </p>
           {zoneInfo && (
-            <div className="pt-1 border-t border-slate-700">
-              <p className="text-xs text-slate-400">Zone FC</p>
+            <div className="pt-1 border-t border-[#0F4C5C]/35">
+              <p className="text-xs text-teal-100/55">Zone FC</p>
               <p className="text-sm font-medium" style={{ color: zoneInfo.color }}>
                 {zoneInfo.name}
               </p>
-              <p className="text-xs text-slate-500">
+              <p className="text-xs text-teal-100/45">
                 {zoneInfo.minBpm}-{zoneInfo.maxBpm} bpm
               </p>
             </div>
           )}
           {enrichedData?.stats && (
-            <div className="pt-1 border-t border-slate-700">
-              <p className="text-xs text-slate-400">Moyenne: {enrichedData.stats.avg} bpm</p>
-              <p className="text-xs text-slate-400">Points: {enrichedData.stats.totalPoints}</p>
+            <div className="pt-1 border-t border-[#0F4C5C]/35">
+              <p className="text-xs text-teal-100/55">Moyenne: {enrichedData.stats.avg} bpm</p>
+              <p className="text-xs text-teal-100/55">Points: {enrichedData.stats.totalPoints}</p>
             </div>
           )}
         </div>
@@ -442,7 +442,7 @@ function GarminHeartRateTimeSeriesChart({ precomputed, selector, dailyMetrics, s
   // ✅ CORRECTION: Afficher le graphique même avec peu de données (courbe enrichie si nécessaire)
   if (shouldShowMissingDailyMetrics) {
     return (
-      <div className="bg-slate-800/60 border border-slate-700 rounded-lg p-6 text-center text-slate-400">
+      <div className="rounded-xl border-2 border-[#0F4C5C]/70 bg-black p-6 text-center text-teal-100/55 shadow-md shadow-black/40">
         <p>Aucune donnée de fréquence cardiaque disponible pour {selectedDate}.</p>
         <p className="text-xs mt-2">Synchronisez vos données Garmin pour afficher le graphique.</p>
       </div>
@@ -452,7 +452,7 @@ function GarminHeartRateTimeSeriesChart({ precomputed, selector, dailyMetrics, s
   // Si pas de données du tout (pas même de métriques agrégées), afficher message
   if (shouldShowNoHeartRateData) {
     return (
-      <div className="bg-slate-800/60 border border-slate-700 rounded-lg p-6 text-center text-slate-400">
+      <div className="rounded-xl border-2 border-[#0F4C5C]/70 bg-black p-6 text-center text-teal-100/55 shadow-md shadow-black/40">
         <p>Aucune donnée de fréquence cardiaque disponible pour {selectedDate}.</p>
         <p className="text-xs mt-2">Synchronisez vos données Garmin pour afficher le graphique.</p>
       </div>
@@ -462,7 +462,7 @@ function GarminHeartRateTimeSeriesChart({ precomputed, selector, dailyMetrics, s
   // Si pas de timeSeries mais on ne peut pas créer de courbe enrichie, afficher message
   if (canNotBuildFromAggregates) {
     return (
-      <div className="bg-slate-800/60 border border-slate-700 rounded-lg p-6 text-center text-slate-400">
+      <div className="rounded-xl border-2 border-[#0F4C5C]/70 bg-black p-6 text-center text-teal-100/55 shadow-md shadow-black/40">
         <p>Aucune donnée de fréquence cardiaque disponible pour {selectedDate}.</p>
         <p className="text-xs mt-2">Synchronisez vos données Garmin pour afficher le graphique.</p>
       </div>
@@ -470,10 +470,10 @@ function GarminHeartRateTimeSeriesChart({ precomputed, selector, dailyMetrics, s
   }
 
   return (
-    <div className="bg-slate-800/60 border border-slate-700 rounded-lg p-6 pb-12">
+    <div className="rounded-xl border-2 border-[#0F4C5C]/70 bg-black p-6 pb-12 shadow-md shadow-black/40">
       <div className="flex items-center justify-between mb-4">
-        <h4 className="text-white font-semibold">❤️ Fréquence Cardiaque - 24h ({selectedDate})</h4>
-        <div className="text-slate-400 text-xs flex items-center gap-3">
+        <h4 className="text-teal-100 font-semibold">❤️ Fréquence Cardiaque - 24h ({selectedDate})</h4>
+        <div className="text-teal-100/55 text-xs flex items-center gap-3">
           <span>
             {(() => {
               const realCount = enrichedData?.realPointsCount;
@@ -499,8 +499,8 @@ function GarminHeartRateTimeSeriesChart({ precomputed, selector, dailyMetrics, s
       
       {/* 🟢 PRIORITÉ 3 - TÂCHE 2 : Légende interactive des zones FC */}
       {enrichedData?.metadata?.zoneThresholds && enrichedData.metadata.zoneThresholds.length > 0 && (
-        <div className="mb-4 p-3 bg-slate-900/50 border border-slate-700 rounded-lg">
-          <p className="text-xs text-slate-400 mb-2">Zones de Fréquence Cardiaque</p>
+        <div className="mb-4 p-3 bg-black border border-[#0F4C5C]/45 rounded-lg">
+          <p className="text-xs text-teal-100/55 mb-2">Zones de Fréquence Cardiaque</p>
           <div className="grid grid-cols-5 gap-2">
             {enrichedData.metadata.zoneThresholds.map((zone) => {
               const zoneTime = enrichedData.zones?.[zone.zone] || 0;
@@ -512,7 +512,7 @@ function GarminHeartRateTimeSeriesChart({ precomputed, selector, dailyMetrics, s
               return (
                 <div 
                   key={zone.zone} 
-                  className="flex flex-col items-center p-2 rounded hover:bg-slate-800/50 transition-colors cursor-help"
+                  className="flex flex-col items-center p-2 rounded hover:bg-teal-950/25 transition-colors cursor-help"
                   title={`${zone.name} (${zone.minBpm}-${zone.maxBpm} bpm)`}
                 >
                   <div 
@@ -522,11 +522,11 @@ function GarminHeartRateTimeSeriesChart({ precomputed, selector, dailyMetrics, s
                   <div className="text-xs font-medium text-center" style={{ color: zone.color }}>
                     {zone.name.split(' - ')[0]}
                   </div>
-                  <div className="text-xs text-slate-500 text-center">
+                  <div className="text-xs text-teal-100/45 text-center">
                     {zone.minBpm}-{zone.maxBpm} bpm
                   </div>
                   {zoneTime > 0 && (
-                    <div className="text-xs text-slate-400 text-center mt-1">
+                    <div className="text-xs text-sky-300/70 text-center mt-1">
                       {minutes} min ({percentage}%)
                     </div>
                   )}
@@ -657,7 +657,7 @@ function GarminHeartRateTimeSeriesChart({ precomputed, selector, dailyMetrics, s
       </div>
       <div className="mt-4 space-y-2">
         {/* Statistiques principales */}
-        <div className="text-xs text-slate-400 flex gap-4">
+        <div className="text-xs text-teal-100/55 flex gap-4">
           <div>Min: {enrichedData?.stats?.min || (bpmValues.length > 0 ? Math.min(...bpmValues) : '—')} bpm</div>
           <div>Max: {enrichedData?.stats?.max || (bpmValues.length > 0 ? Math.max(...bpmValues) : '—')} bpm</div>
           <div>Moyenne: {enrichedData?.stats?.avg || (bpmValues.length > 0 ? Math.round(bpmValues.reduce((a, b) => a + b, 0) / bpmValues.length) : '—')} bpm</div>
@@ -668,8 +668,8 @@ function GarminHeartRateTimeSeriesChart({ precomputed, selector, dailyMetrics, s
         
         {/* Zones FC (si disponibles) */}
         {enrichedData?.zones && Object.values(enrichedData.zones).some(v => v > 0) && (
-          <div className="text-xs text-slate-400 pt-2 border-t border-slate-700">
-            <div className="font-semibold text-slate-300 mb-1">Temps par zone FC :</div>
+          <div className="text-xs text-teal-100/55 pt-2 border-t border-[#0F4C5C]/35">
+            <div className="font-semibold text-teal-100/80 mb-1">Temps par zone FC :</div>
             <div className="grid grid-cols-5 gap-2">
               {enrichedData.metadata?.zoneThresholds?.map((zone, idx) => {
                 const zoneTime = enrichedData.zones[zone.zone] || 0;
@@ -682,8 +682,8 @@ function GarminHeartRateTimeSeriesChart({ precomputed, selector, dailyMetrics, s
                     <div className="text-xs font-medium" style={{ color: zone.color }}>
                       {zone.name.split(' - ')[0]}
                     </div>
-                    <div className="text-slate-400">{minutes} min</div>
-                    <div className="text-slate-500">{percentage}%</div>
+                    <div className="text-sky-300/75">{minutes} min</div>
+                    <div className="text-teal-100/45">{percentage}%</div>
                   </div>
                 );
               })}

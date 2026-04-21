@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import Button from './ui/Button';
+import { settingsTheme as S } from './tabs/SettingsTab/settingsThemeClasses';
 
 const StorageDiagnostic = ({ onClose }) => {
   const [diagnosticResults, setDiagnosticResults] = useState(null);
@@ -15,10 +15,9 @@ const StorageDiagnostic = ({ onClose }) => {
       recommendations: []
     };
 
-    // Vérifier localStorage
     const localStorageKeys = [
       'homepage_images_primary',
-      'homepage_images_backup', 
+      'homepage_images_backup',
       'homepage_images_session',
       'workoutData_backup'
     ];
@@ -44,7 +43,6 @@ const StorageDiagnostic = ({ onClose }) => {
       }
     });
 
-    // Vérifier sessionStorage
     try {
       const sessionData = sessionStorage.getItem('homepage_images_session');
       if (sessionData) {
@@ -62,7 +60,6 @@ const StorageDiagnostic = ({ onClose }) => {
       results.sessionStorage = { exists: false, error: error.message };
     }
 
-    // Vérifier IndexedDB pour les images
     try {
       if (window.indexedDB) {
         const request = indexedDB.open('HomepageImagesDB', 1);
@@ -70,13 +67,13 @@ const StorageDiagnostic = ({ onClose }) => {
           request.onsuccess = (event) => {
             try {
               const db = event.target.result;
-              
+
               if (db && db.objectStoreNames.contains('images')) {
                 const transaction = db.transaction(['images'], 'readonly');
                 const store = transaction.objectStore('images');
                 const index = store.index('type');
                 const countRequest = index.count(IDBKeyRange.only('homepage_background'));
-                
+
                 countRequest.onsuccess = () => {
                   results.indexedDB = {
                     available: true,
@@ -124,7 +121,6 @@ const StorageDiagnostic = ({ onClose }) => {
       results.indexedDB = { available: false, error: error.message };
     }
 
-    // Vérifier la mémoire
     if (performance.memory) {
       results.memory = {
         used: Math.round(performance.memory.usedJSHeapSize / 1024 / 1024),
@@ -133,24 +129,23 @@ const StorageDiagnostic = ({ onClose }) => {
       };
     }
 
-    // Générer des recommandations
     const primaryImages = results.localStorage['homepage_images_primary'];
     const backupImages = results.localStorage['homepage_images_backup'];
-    
+
     if (!primaryImages?.exists && !backupImages?.exists) {
-      results.recommendations.push('❌ Aucune image sauvegardée dans localStorage - problème de persistance');
+      results.recommendations.push('Aucune image sauvegardée dans localStorage — problème de persistance');
     }
-    
+
     if (results.sessionStorage.exists && !primaryImages?.exists) {
-      results.recommendations.push('⚠️ Images seulement dans sessionStorage - seront perdues au redémarrage');
+      results.recommendations.push('Images seulement dans sessionStorage — seront perdues au redémarrage');
     }
-    
+
     if (results.memory && results.memory.used > results.memory.limit * 0.8) {
-      results.recommendations.push('⚠️ Mémoire utilisée élevée - risque de problèmes de performance');
+      results.recommendations.push('Mémoire utilisée élevée — risque de problèmes de performance');
     }
 
     if (primaryImages?.exists && primaryImages.hasImages > 0) {
-      results.recommendations.push('✅ Images correctement sauvegardées dans localStorage');
+      results.recommendations.push('Images correctement sauvegardées dans localStorage');
     }
 
     setDiagnosticResults(results);
@@ -164,19 +159,16 @@ const StorageDiagnostic = ({ onClose }) => {
   const clearStorage = async () => {
     if (window.confirm('Êtes-vous sûr de vouloir effacer toutes les données de stockage ? Cette action est irréversible.')) {
       try {
-        // Effacer localStorage
         localStorage.removeItem('homepage_images_primary');
         localStorage.removeItem('homepage_images_backup');
         localStorage.removeItem('homepage_images_session');
         localStorage.removeItem('homepage_images_metadata');
         localStorage.removeItem('homepage_images_fallback');
         localStorage.removeItem('homepage_images_sync_emergency');
-        
-        // Effacer sessionStorage
+
         sessionStorage.removeItem('homepage_images_session');
         sessionStorage.removeItem('homepage_images_emergency');
-        
-        // Effacer IndexedDB
+
         if (window.indexedDB) {
           const deleteRequest = indexedDB.deleteDatabase('HomepageImagesDB');
           await new Promise((resolve, reject) => {
@@ -184,7 +176,7 @@ const StorageDiagnostic = ({ onClose }) => {
             deleteRequest.onerror = () => reject(deleteRequest.error);
           });
         }
-        
+
         console.log('✅ Toutes les données supprimées');
         runDiagnostic();
       } catch (error) {
@@ -195,55 +187,57 @@ const StorageDiagnostic = ({ onClose }) => {
   };
 
   return (
-    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-      <div className="bg-slate-800 rounded-lg shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
-        {/* Header */}
-        <div className="flex items-center justify-between p-6 border-b border-slate-700">
-          <h2 className="text-2xl font-bold text-white">Diagnostic du Stockage des Images</h2>
-          <div className="flex items-center space-x-4">
-            <Button
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4 backdrop-blur-sm">
+      <div className={`${S.modalPanel} max-w-4xl`}>
+        <div className={`${S.modalHeader} flex-wrap gap-3`}>
+          <h2 className="text-2xl font-bold text-red-100">Diagnostic du stockage des images</h2>
+          <div className="flex flex-wrap items-center gap-2">
+            <button
+              type="button"
               onClick={runDiagnostic}
               disabled={isRunning}
-              className="bg-blue-600 hover:bg-blue-700"
+              className={`${S.btnSecondary} disabled:opacity-50`}
             >
-              {isRunning ? 'Diagnostic...' : '🔄 Relancer'}
-            </Button>
-            <Button
-              onClick={clearStorage}
-              className="bg-red-600 hover:bg-red-700"
-            >
-              🗑️ Effacer
-            </Button>
+              {isRunning ? 'Diagnostic...' : 'Relancer'}
+            </button>
             <button
-              onClick={onClose}
-              className="text-slate-400 hover:text-white transition-colors"
+              type="button"
+              onClick={clearStorage}
+              className="rounded-lg border border-red-600/60 bg-red-950/40 px-4 py-2 text-sm font-medium text-red-100 transition-colors hover:bg-red-900/50"
             >
-              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              Effacer
+            </button>
+            <button
+              type="button"
+              onClick={onClose}
+              className={`rounded-lg p-2 ${S.muted} hover:bg-red-950/40 hover:text-red-100`}
+              aria-label="Fermer"
+            >
+              <svg className="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
               </svg>
             </button>
           </div>
         </div>
 
-        <div className="p-6 space-y-6">
+        <div className="space-y-6 p-6">
           {diagnosticResults && (
             <>
-              {/* localStorage */}
               <div>
-                <h3 className="text-lg font-semibold text-white mb-4">📦 localStorage</h3>
+                <h3 className="mb-4 text-lg font-semibold text-red-100">localStorage</h3>
                 <div className="space-y-2">
                   {Object.entries(diagnosticResults.localStorage).map(([key, data]) => (
-                    <div key={key} className="bg-slate-700/50 rounded p-3">
-                      <div className="font-medium text-white">{key}</div>
+                    <div key={key} className={`rounded p-3 ${S.insetSm}`}>
+                      <div className="font-medium text-red-100">{key}</div>
                       {data.exists ? (
-                        <div className="text-sm text-slate-300">
-                          ✅ Images: {data.hasImages} | 
-                          Taille: {Math.round(data.size / 1024)} KB | 
-                          Timestamp: {data.timestamp ? new Date(data.timestamp).toLocaleString() : 'N/A'}
+                        <div className={`text-sm ${S.muted}`}>
+                          Images : {data.hasImages} |
+                          Taille : {Math.round(data.size / 1024)} KB |
+                          Timestamp : {data.timestamp ? new Date(data.timestamp).toLocaleString() : 'N/A'}
                         </div>
                       ) : (
                         <div className="text-sm text-red-400">
-                          ❌ Pas de données {data.error && `(${data.error})`}
+                          Pas de données {data.error && `(${data.error})`}
                         </div>
                       )}
                     </div>
@@ -251,67 +245,63 @@ const StorageDiagnostic = ({ onClose }) => {
                 </div>
               </div>
 
-              {/* sessionStorage */}
               <div>
-                <h3 className="text-lg font-semibold text-white mb-4">🔄 sessionStorage</h3>
-                <div className="bg-slate-700/50 rounded p-3">
+                <h3 className="mb-4 text-lg font-semibold text-red-100">sessionStorage</h3>
+                <div className={S.insetSm}>
                   {diagnosticResults.sessionStorage.exists ? (
-                    <div className="text-sm text-slate-300">
-                      ✅ Images: {diagnosticResults.sessionStorage.hasImages} | 
-                      Taille: {Math.round(diagnosticResults.sessionStorage.size / 1024)} KB
+                    <div className={`text-sm ${S.muted}`}>
+                      Images : {diagnosticResults.sessionStorage.hasImages} |
+                      Taille : {Math.round(diagnosticResults.sessionStorage.size / 1024)} KB
                     </div>
                   ) : (
                     <div className="text-sm text-red-400">
-                      ❌ Pas de données {diagnosticResults.sessionStorage.error && `(${diagnosticResults.sessionStorage.error})`}
+                      Pas de données {diagnosticResults.sessionStorage.error && `(${diagnosticResults.sessionStorage.error})`}
                     </div>
                   )}
                 </div>
               </div>
 
-              {/* IndexedDB */}
               <div>
-                <h3 className="text-lg font-semibold text-white mb-4">🗄️ IndexedDB</h3>
-                <div className="bg-slate-700/50 rounded p-3">
+                <h3 className="mb-4 text-lg font-semibold text-red-100">IndexedDB</h3>
+                <div className={S.insetSm}>
                   {diagnosticResults.indexedDB?.available ? (
-                    <div className="text-sm text-slate-300">
-                      ✅ Disponible | 
-                      Nom: {diagnosticResults.indexedDB.name} | 
-                      Version: {diagnosticResults.indexedDB.version} |
-                      Images: {diagnosticResults.indexedDB.imageCount || 0} |
-                      Stores: {diagnosticResults.indexedDB.stores.join(', ')}
+                    <div className={`text-sm ${S.muted}`}>
+                      Disponible |
+                      Nom : {diagnosticResults.indexedDB.name} |
+                      Version : {diagnosticResults.indexedDB.version} |
+                      Images : {diagnosticResults.indexedDB.imageCount || 0} |
+                      Stores : {diagnosticResults.indexedDB.stores.join(', ')}
                     </div>
                   ) : (
                     <div className="text-sm text-red-400">
-                      ❌ Non disponible {diagnosticResults.indexedDB?.error && `(${diagnosticResults.indexedDB.error})`}
+                      Non disponible {diagnosticResults.indexedDB?.error && `(${diagnosticResults.indexedDB.error})`}
                     </div>
                   )}
                 </div>
               </div>
 
-              {/* Mémoire */}
               {diagnosticResults.memory && (
                 <div>
-                  <h3 className="text-lg font-semibold text-white mb-4">💾 Mémoire</h3>
-                  <div className="bg-slate-700/50 rounded p-3">
-                    <div className="text-sm text-slate-300">
-                      Utilisée: {diagnosticResults.memory.used} MB / {diagnosticResults.memory.limit} MB
-                      <div className="w-full bg-slate-600 rounded-full h-2 mt-2">
-                        <div 
-                          className="bg-blue-600 h-2 rounded-full" 
+                  <h3 className="mb-4 text-lg font-semibold text-red-100">Mémoire</h3>
+                  <div className={S.insetSm}>
+                    <div className={`text-sm ${S.muted}`}>
+                      Utilisée : {diagnosticResults.memory.used} MB / {diagnosticResults.memory.limit} MB
+                      <div className="mt-2 h-2 w-full rounded-full bg-red-950/60">
+                        <div
+                          className="h-2 rounded-full bg-red-600"
                           style={{ width: `${(diagnosticResults.memory.used / diagnosticResults.memory.limit) * 100}%` }}
-                        ></div>
+                        />
                       </div>
                     </div>
                   </div>
                 </div>
               )}
 
-              {/* Recommandations */}
               <div>
-                <h3 className="text-lg font-semibold text-white mb-4">💡 Recommandations</h3>
+                <h3 className="mb-4 text-lg font-semibold text-red-100">Recommandations</h3>
                 <div className="space-y-2">
                   {diagnosticResults.recommendations.map((rec, index) => (
-                    <div key={index} className="bg-slate-700/50 rounded p-3 text-sm">
+                    <div key={index} className={`rounded p-3 text-sm ${S.insetSm}`}>
                       {rec}
                     </div>
                   ))}

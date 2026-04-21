@@ -38,7 +38,7 @@ function GarminBodyBatteryChart({ precomputed, selector, colors }) {
 
   if (chartData.length === 0) {
     return (
-      <div className="bg-slate-800/60 border border-slate-700 rounded-lg p-6 text-center text-slate-400">
+      <div className="rounded-xl border-2 border-[#0F4C5C]/70 bg-black p-6 text-center text-teal-100/55 shadow-md shadow-black/40">
         Aucune donnée Body Battery disponible pour cette période.
       </div>
     );
@@ -50,12 +50,12 @@ function GarminBodyBatteryChart({ precomputed, selector, colors }) {
     }
     const value = payload[0].value;
     return (
-      <div className="bg-slate-900 border border-slate-700 rounded-lg p-3 shadow-lg">
-        <p className="text-white font-semibold mb-2">{label}</p>
+      <div className="bg-black border border-[#0F4C5C]/60 rounded-lg p-3 shadow-lg">
+        <p className="text-teal-100 font-semibold mb-2">{label}</p>
         <p className="text-sm" style={{ color: payload[0].color }}>
           {`Body Battery: ${value}/100`}
         </p>
-        <div className="mt-2 text-xs text-slate-400">
+        <div className="mt-2 text-xs text-teal-100/55">
           {value >= 70 ? 'Excellent' : value >= 50 ? 'Bon' : value >= 30 ? 'Moyen' : 'Faible'}
         </div>
       </div>
@@ -69,19 +69,19 @@ function GarminBodyBatteryChart({ precomputed, selector, colors }) {
   
   return (
     <div 
-      className="bg-slate-800/60 border border-slate-700 rounded-lg p-6"
+      className="rounded-xl border-2 border-[#0F4C5C]/70 bg-black p-6 shadow-md shadow-black/40"
       role="region"
       aria-label={ARIA_LABELS.BODY_BATTERY_CHART}
       aria-describedby="body-battery-chart-description"
     >
       <div className="flex items-center justify-between mb-4">
-        <h4 id="body-battery-chart-title" className="text-white font-semibold">🔋 Body Battery</h4>
+        <h4 id="body-battery-chart-title" className="text-teal-100 font-semibold">🔋 Body Battery</h4>
         <div className="flex items-center gap-3">
           {displayInfo && (
-            <div className="text-slate-400 text-xs">{displayInfo}</div>
+            <div className="text-teal-100/55 text-xs">{displayInfo}</div>
           )}
           {avgValue > 0 && (
-            <div className="text-slate-400 text-sm">Moyenne: <span className="text-white font-semibold">{avgValue.toFixed(0)}/100</span></div>
+            <div className="text-sky-300/75 text-sm">Moyenne: <span className="text-teal-100 font-semibold">{avgValue.toFixed(0)}/100</span></div>
           )}
         </div>
       </div>

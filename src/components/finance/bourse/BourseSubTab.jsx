@@ -41,6 +41,7 @@ import {
   AlertsPanelSkeleton,
   RecommendationsPanelSkeleton
 } from './SkeletonLoader';
+import '../financeSubtabsThemeOverrides.css';
 
 // ✅ OPTIMISATION Phase 2.1 : Lazy loading composants lourds (réduction bundle initial 30-40%)
 const PortfolioChart = lazy(() => import('./PortfolioChart'));
@@ -153,7 +154,7 @@ const BourseSubTab = () => {
   }
 
   return (
-    <div className="bourse-sub-tab space-y-6">
+    <div className="bourse-sub-tab finance-dark-green-scope space-y-6">
       {/* Header avec boutons */}
       <div className="flex items-center justify-between">
         <div>

@@ -59,6 +59,14 @@ const activityFactories = {
     fluidite: 0,
     transpiration: 0
   }),
+  gainage: () => ({
+    date: getCurrentDateStr(),
+    time: getCurrentTimeStr(),
+    count: '',
+    duration: '',
+    notes: '',
+    ...buildRatingDefaults()
+  }),
   running: () => ({
     date: getCurrentDateStr(),
     time: getCurrentTimeStr(),
@@ -192,6 +200,29 @@ const formConfig = {
     ],
     ratingTitle: 'Évaluation de la session',
     ratingsColumns: 3
+  },
+  gainage: {
+    columns: 2,
+    fields: [
+      { key: 'date', type: 'date', label: 'Date' },
+      { key: 'time', type: 'time', label: 'Heure' },
+      {
+        key: 'count',
+        type: 'number',
+        label: 'Secondes cumulées en planche',
+        placeholder: 'Ex: 180'
+      },
+      { key: 'duration', type: 'number', label: 'Durée séance (minutes)', step: 0.5, placeholder: 'Ex: 12' },
+      { key: 'notes', type: 'textarea', label: 'Notes', placeholder: 'Variante, planche latérale…', colSpan: 2, rows: 3 }
+    ],
+    ratings: [
+      { key: 'congestion', label: 'Congestion musculaire' },
+      { key: 'motivation', label: 'Motivation' },
+      { key: 'sentimentAvant', label: 'Sentiment avant' },
+      { key: 'sentimentApres', label: 'Sentiment après' }
+    ],
+    ratingTitle: 'Évaluation de la session',
+    ratingsColumns: 2
   },
   running: {
     columns: 2,

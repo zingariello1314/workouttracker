@@ -411,7 +411,7 @@ const StatsTab = () => {
 
         <Card variant="sport" className="text-center">
           <Card.Content className="pt-6">
-            <div className="mb-2 text-3xl font-bold text-amber-400">
+            <div className="mb-2 text-3xl font-bold text-sky-300">
               {longestStreak}
             </div>
             <div className="text-sm text-teal-700">{t('stats.mainStats.longestStreak')}</div>

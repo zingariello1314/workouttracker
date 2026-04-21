@@ -7,9 +7,13 @@
 import React, { useState, useEffect } from 'react';
 import { Save, X } from 'lucide-react';
 import quotesService from '../../services/quotes/quotesService';
+import { settingsTheme as S } from '../tabs/SettingsTab/settingsThemeClasses';
 
 const DEFAULT_BOLD_START = 2;
 const DEFAULT_BOLD_END = 2;
+
+const field = `${S.input} min-h-[80px] resize-y py-2`;
+const numField = `${S.input} w-14 px-2 py-1.5 text-center`;
 
 function isLegacyQuote(quote) {
   return quote && typeof quote.line1Fr === 'string';
@@ -92,86 +96,82 @@ export function EditQuoteModal({ quote, onSave, onClose }) {
   if (!quote) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
-      <div className="bg-slate-800 rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
-        <form onSubmit={handleSubmit} className="p-6 space-y-4">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-xl font-semibold text-white">Modifier la citation</h2>
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4 backdrop-blur-sm">
+      <div className={`${S.modalPanel} max-w-2xl`}>
+        <form onSubmit={handleSubmit} className="flex max-h-[90vh] flex-col">
+          <div className={S.modalHeader}>
+            <h2 className="text-xl font-semibold text-red-100">Modifier la citation</h2>
             <button
               type="button"
               onClick={onClose}
-              className="p-2 text-slate-400 hover:text-slate-300 hover:bg-slate-700 rounded-lg transition-colors"
+              className={`rounded-lg p-2 transition-colors ${S.muted} hover:bg-red-950/40 hover:text-red-100`}
+              aria-label="Fermer"
             >
               <X size={20} />
             </button>
           </div>
 
-          <div className="space-y-2">
-            <label className="text-sm font-medium text-slate-300">Français (obligatoire)</label>
-            <textarea
-              placeholder="Phrase en français..."
-              value={formData.textFr}
-              onChange={(e) => handleChange('textFr', e.target.value)}
-              rows={4}
-              className="w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded-lg text-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500 resize-y min-h-[80px]"
-            />
-          </div>
-
-          <div className="space-y-2">
-            <label className="text-sm font-medium text-slate-300">English (optionnel)</label>
-            <textarea
-              placeholder="Traduction optionnelle..."
-              value={formData.textEn}
-              onChange={(e) => handleChange('textEn', e.target.value)}
-              rows={4}
-              className="w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded-lg text-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500 resize-y min-h-[80px]"
-            />
-          </div>
-
-          <div className="space-y-2 pt-2 border-t border-slate-600">
-            <label className="text-sm font-medium text-slate-300">Lignes en gras</label>
-            <div className="flex items-center gap-2 flex-wrap">
-              <span className="text-slate-400 text-sm">De la ligne</span>
-              <input
-                type="number"
-                min={1}
-                max={10}
-                value={formData.boldLineStart === '' ? '' : formData.boldLineStart}
-                onChange={(e) => handleChange('boldLineStart', e.target.value)}
-                className="w-14 px-2 py-1.5 bg-slate-700 border border-slate-600 rounded text-slate-200 text-center"
-              />
-              <span className="text-slate-400 text-sm">à la ligne</span>
-              <input
-                type="number"
-                min={1}
-                max={10}
-                value={formData.boldLineEnd === '' ? '' : formData.boldLineEnd}
-                onChange={(e) => handleChange('boldLineEnd', e.target.value)}
-                className="w-14 px-2 py-1.5 bg-slate-700 border border-slate-600 rounded text-slate-200 text-center"
+          <div className="space-y-4 overflow-y-auto p-6">
+            <div className="space-y-2">
+              <label className={S.label}>Français (obligatoire)</label>
+              <textarea
+                placeholder="Phrase en français..."
+                value={formData.textFr}
+                onChange={(e) => handleChange('textFr', e.target.value)}
+                rows={4}
+                className={field}
               />
             </div>
+
+            <div className="space-y-2">
+              <label className={S.label}>English (optionnel)</label>
+              <textarea
+                placeholder="Traduction optionnelle..."
+                value={formData.textEn}
+                onChange={(e) => handleChange('textEn', e.target.value)}
+                rows={4}
+                className={field}
+              />
+            </div>
+
+            <div className="space-y-2 border-t border-red-900/45 pt-2">
+              <label className={S.label}>Lignes en gras</label>
+              <div className="flex flex-wrap items-center gap-2">
+                <span className={`text-sm ${S.muted}`}>De la ligne</span>
+                <input
+                  type="number"
+                  min={1}
+                  max={10}
+                  value={formData.boldLineStart === '' ? '' : formData.boldLineStart}
+                  onChange={(e) => handleChange('boldLineStart', e.target.value)}
+                  className={numField}
+                />
+                <span className={`text-sm ${S.muted}`}>à la ligne</span>
+                <input
+                  type="number"
+                  min={1}
+                  max={10}
+                  value={formData.boldLineEnd === '' ? '' : formData.boldLineEnd}
+                  onChange={(e) => handleChange('boldLineEnd', e.target.value)}
+                  className={numField}
+                />
+              </div>
+            </div>
+
+            {errors.submit && (
+              <div className="rounded border border-red-600/40 bg-red-950/35 p-3 text-sm text-red-300">
+                {errors.submit}
+              </div>
+            )}
           </div>
 
-          {errors.submit && (
-            <div className="text-sm text-red-400 bg-red-500/10 border border-red-500/30 rounded p-3">
-              {errors.submit}
-            </div>
-          )}
-
-          <div className="flex gap-2 pt-4">
-            <button
-              type="submit"
-              className="gradient-button-premium gradient-button-premium-md rounded-lg flex-1 flex items-center justify-center gap-2"
-            >
-              <Save className="w-4 h-4" />
-              Enregistrer
-            </button>
-            <button
-              type="button"
-              onClick={onClose}
-              className="gradient-button-premium gradient-button-premium-md gradient-button-premium-variant rounded-lg flex-1"
-            >
+          <div className={`${S.modalFooter} flex-wrap`}>
+            <button type="button" onClick={onClose} className={`${S.btnSecondary} min-w-[120px]`}>
               Annuler
+            </button>
+            <button type="submit" className={`${S.btnPrimary} min-w-[120px]`}>
+              <Save className="h-4 w-4" />
+              Enregistrer
             </button>
           </div>
         </form>

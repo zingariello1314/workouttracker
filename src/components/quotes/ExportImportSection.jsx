@@ -6,21 +6,22 @@
 import React, { useRef, useState } from 'react';
 import { Download, Upload, CheckCircle, AlertTriangle } from 'lucide-react';
 import { useExportImport } from '../../hooks/useExportImport';
+import { settingsTheme as S } from '../tabs/SettingsTab/settingsThemeClasses';
 
 export function ExportImportSection({ onImportComplete }) {
   const fileInputRef = useRef(null);
   const [status, setStatus] = useState(null); // 'success' | 'error' | 'loading' | null
   const [message, setMessage] = useState('');
-  
+
   const { exportQuotes, importQuotes } = useExportImport();
 
   const handleExport = async () => {
     try {
       setStatus('loading');
       setMessage('Export en cours...');
-      
+
       const result = await exportQuotes();
-      
+
       if (result.success) {
         setStatus('success');
         setMessage(`${result.count} citations exportées avec succès`);
@@ -66,8 +67,7 @@ export function ExportImportSection({ onImportComplete }) {
         setMessage(
           `Import réussi : ${result.imported} citations importées, ${result.skipped} ignorées`
         );
-        
-        // Notify parent
+
         if (onImportComplete) {
           onImportComplete(result);
         }
@@ -93,22 +93,21 @@ export function ExportImportSection({ onImportComplete }) {
       }, 5000);
     }
 
-    // Reset file input
     e.target.value = '';
   };
 
   return (
-    <div className="space-y-4 bg-slate-700/30 rounded-lg p-4">
-      <h3 className="text-sm font-medium text-slate-300">Export / Import</h3>
+    <div className="space-y-4 rounded-lg border border-red-900/45 bg-red-950/15 p-4">
+      <h3 className={S.label}>Export / Import</h3>
 
       <div className="flex gap-2">
         <button
           type="button"
           onClick={handleExport}
           disabled={status === 'loading'}
-          className="gradient-button-premium gradient-button-premium-md rounded-lg flex-1 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+          className={`${S.btnPrimary} flex-1 disabled:cursor-not-allowed`}
         >
-          <Download className="w-4 h-4" />
+          <Download className="h-4 w-4" />
           Exporter JSON
         </button>
 
@@ -116,14 +115,13 @@ export function ExportImportSection({ onImportComplete }) {
           type="button"
           onClick={handleImportClick}
           disabled={status === 'loading'}
-          className="gradient-button-premium gradient-button-premium-md gradient-button-premium-variant rounded-lg flex-1 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+          className={`${S.btnSecondary} flex-1 disabled:cursor-not-allowed`}
         >
-          <Upload className="w-4 h-4" />
+          <Upload className="h-4 w-4" />
           Importer JSON
         </button>
       </div>
 
-      {/* Hidden file input */}
       <input
         ref={fileInputRef}
         type="file"
@@ -132,15 +130,14 @@ export function ExportImportSection({ onImportComplete }) {
         className="hidden"
       />
 
-      {/* Status Message */}
       {status && message && (
         <div
-          className={`flex items-start gap-2 text-sm p-3 rounded-lg ${
+          className={`flex items-start gap-2 rounded-lg border p-3 text-sm ${
             status === 'success'
-              ? 'bg-green-500/10 border border-green-500/30 text-green-400'
+              ? 'border-emerald-700/40 bg-emerald-950/25 text-emerald-300'
               : status === 'error'
-              ? 'bg-red-500/10 border border-red-500/30 text-red-400'
-              : 'bg-blue-500/10 border border-blue-500/30 text-blue-400'
+                ? 'border-red-700/45 bg-red-950/30 text-red-300'
+                : 'border-red-900/50 bg-red-950/20 text-red-200/90'
           }`}
         >
           {status === 'success' && <CheckCircle size={16} className="mt-0.5 flex-shrink-0" />}
@@ -149,8 +146,7 @@ export function ExportImportSection({ onImportComplete }) {
         </div>
       )}
 
-      {/* Info */}
-      <div className="text-xs text-slate-400 space-y-1">
+      <div className={`space-y-1 text-xs ${S.muted}`}>
         <p>• Export : Télécharge toutes vos citations en JSON</p>
         <p>• Import : Fusionne avec vos citations existantes (évite les doublons)</p>
       </div>

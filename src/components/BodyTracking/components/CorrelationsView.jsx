@@ -48,8 +48,8 @@ const log = logger.component('CorrelationsView');
 const CustomTooltip = ({ active, payload, label }) => {
   if (active && payload && payload.length) {
     return (
-      <div className="bg-slate-800 border border-slate-700 rounded-lg p-3 shadow-xl">
-        <p className="text-white font-medium mb-2">{label}</p>
+      <div className="bg-black border border-[#0F4C5C]/45 rounded-lg p-3 shadow-xl">
+        <p className="text-teal-100 font-medium mb-2">{label}</p>
         {payload.map((entry, index) => (
           <p key={index} className="text-sm" style={{ color: entry.color }}>
             {entry.name}: <span className="font-bold">{entry.value.toFixed(3)}</span>
@@ -154,13 +154,13 @@ const CorrelationsView = ({
   // État insuffisant de données
   if (!photos || photos.length === 0) {
     return (
-      <Card className="bg-slate-800/50 border-slate-700">
+      <Card className="bg-black border border-[#0F4C5C]/50 border-[#0F4C5C]/35">
         <CardContent className="p-12 text-center">
-          <AlertCircle className="w-16 h-16 mx-auto mb-4 text-slate-500" />
-          <h3 className="text-xl font-semibold text-white mb-2">
+          <AlertCircle className="w-16 h-16 mx-auto mb-4 text-teal-100/45" />
+          <h3 className="text-xl font-semibold text-teal-100 mb-2">
             Aucune photo analysée disponible
           </h3>
-          <p className="text-slate-400">
+          <p className="text-teal-100/55">
             Lancez des analyses IA sur vos photos pour voir les corrélations avec l'entraînement.
           </p>
         </CardContent>
@@ -170,13 +170,13 @@ const CorrelationsView = ({
 
   if (!workoutHistory || workoutHistory.length === 0) {
     return (
-      <Card className="bg-slate-800/50 border-slate-700">
+      <Card className="bg-black border border-[#0F4C5C]/50 border-[#0F4C5C]/35">
         <CardContent className="p-12 text-center">
-          <Activity className="w-16 h-16 mx-auto mb-4 text-slate-500" />
-          <h3 className="text-xl font-semibold text-white mb-2">
+          <Activity className="w-16 h-16 mx-auto mb-4 text-teal-100/45" />
+          <h3 className="text-xl font-semibold text-teal-100 mb-2">
             Aucune donnée d'entraînement disponible
           </h3>
-          <p className="text-slate-400">
+          <p className="text-teal-100/55">
             Enregistrez vos séances d'entraînement pour analyser les corrélations.
           </p>
         </CardContent>
@@ -187,13 +187,13 @@ const CorrelationsView = ({
   // Calcul en cours
   if (isCalculating) {
     return (
-      <Card className="bg-slate-800/50 border-slate-700">
+      <Card className="bg-black border border-[#0F4C5C]/50 border-[#0F4C5C]/35">
         <CardContent className="p-12 text-center">
-          <Loader className="w-16 h-16 mx-auto mb-4 text-purple-400 animate-spin" />
-          <h3 className="text-xl font-semibold text-white mb-2">
+          <Loader className="w-16 h-16 mx-auto mb-4 text-sky-300 animate-spin" />
+          <h3 className="text-xl font-semibold text-teal-100 mb-2">
             Calcul des corrélations en cours...
           </h3>
-          <p className="text-slate-400">
+          <p className="text-teal-100/55">
             Analyse de {photos.length} photos et {workoutHistory.length} séances d'entraînement
           </p>
         </CardContent>
@@ -207,12 +207,12 @@ const CorrelationsView = ({
       <Card className="bg-red-600/10 border-red-500/30">
         <CardContent className="p-12 text-center">
           <AlertCircle className="w-16 h-16 mx-auto mb-4 text-red-400" />
-          <h3 className="text-xl font-semibold text-white mb-2">
+          <h3 className="text-xl font-semibold text-teal-100 mb-2">
             Erreur lors du calcul des corrélations
           </h3>
-          <p className="text-slate-400 mb-4">{error.message}</p>
+          <p className="text-teal-100/55 mb-4">{error.message}</p>
           {error.type === 'insufficient_photos' && (
-            <p className="text-sm text-slate-500">
+            <p className="text-sm text-teal-100/45">
               Lancez des analyses IA sur plus de photos pour activer cette fonctionnalité.
             </p>
           )}
@@ -224,13 +224,13 @@ const CorrelationsView = ({
   // Pas de corrélations disponibles
   if (!correlationData || !correlationData.correlations || correlationData.correlations.length === 0) {
     return (
-      <Card className="bg-slate-800/50 border-slate-700">
+      <Card className="bg-black border border-[#0F4C5C]/50 border-[#0F4C5C]/35">
         <CardContent className="p-12 text-center">
-          <Target className="w-16 h-16 mx-auto mb-4 text-slate-500" />
-          <h3 className="text-xl font-semibold text-white mb-2">
+          <Target className="w-16 h-16 mx-auto mb-4 text-teal-100/45" />
+          <h3 className="text-xl font-semibold text-teal-100 mb-2">
             Aucune corrélation trouvée
           </h3>
-          <p className="text-slate-400">
+          <p className="text-teal-100/55">
             Aucun exercice ciblant {muscle} n'a été trouvé dans votre historique d'entraînement.
           </p>
         </CardContent>
@@ -311,7 +311,7 @@ const CorrelationsView = ({
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            <Filter className="w-5 h-5 text-purple-400" />
+            <Filter className="w-5 h-5 text-sky-300" />
             Filtres et Options
           </CardTitle>
         </CardHeader>
@@ -319,13 +319,13 @@ const CorrelationsView = ({
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
             {/* Sélection métrique */}
             <div>
-              <label className="block text-sm font-medium text-slate-300 mb-2">
+              <label className="block text-sm font-medium text-teal-100/80 mb-2">
                 Métrique analysée
               </label>
               <select
                 value={selectedMetric}
                 onChange={(e) => setSelectedMetric(e.target.value)}
-                className="w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-purple-500"
+                className="w-full px-3 py-2 bg-black border border-[#0F4C5C]/45 rounded-lg text-teal-100 focus:outline-none focus:ring-2 focus:ring-[#0F5C45]/50"
               >
                 <option value="volume">Volume</option>
                 <option value="definition">Définition</option>
@@ -338,7 +338,7 @@ const CorrelationsView = ({
 
             {/* Filtre corrélation minimale */}
             <div>
-              <label className="block text-sm font-medium text-slate-300 mb-2">
+              <label className="block text-sm font-medium text-teal-100/80 mb-2">
                 Corrélation min: {minCorrelation === -1 ? 'Aucun' : minCorrelation.toFixed(2)}
               </label>
               <input
@@ -350,7 +350,7 @@ const CorrelationsView = ({
                 onChange={(e) => setMinCorrelation(parseFloat(e.target.value))}
                 className="w-full"
               />
-              <div className="flex justify-between text-xs text-slate-500 mt-1">
+              <div className="flex justify-between text-xs text-teal-100/45 mt-1">
                 <span>Toutes</span>
                 <span>0.0</span>
                 <span>1.0</span>
@@ -359,7 +359,7 @@ const CorrelationsView = ({
 
             {/* Filtre significativité */}
             <div>
-              <label className="block text-sm font-medium text-slate-300 mb-2">
+              <label className="block text-sm font-medium text-teal-100/80 mb-2">
                 Affichage
               </label>
               <label className="flex items-center gap-2 cursor-pointer">
@@ -367,21 +367,21 @@ const CorrelationsView = ({
                   type="checkbox"
                   checked={showOnlySignificant}
                   onChange={(e) => setShowOnlySignificant(e.target.checked)}
-                  className="w-4 h-4 rounded bg-slate-700 border-slate-600 text-purple-600 focus:ring-purple-500"
+                  className="w-4 h-4 rounded bg-black border border-[#0F4C5C]/45 border-[#0F4C5C]/45 text-teal-300 focus:ring-[#0F5C45]/50"
                 />
-                <span className="text-sm text-slate-300">Seulement significatifs</span>
+                <span className="text-sm text-teal-100/80">Seulement significatifs</span>
               </label>
             </div>
 
             {/* Tri */}
             <div>
-              <label className="block text-sm font-medium text-slate-300 mb-2">
+              <label className="block text-sm font-medium text-teal-100/80 mb-2">
                 Trier par
               </label>
               <select
                 value={sortBy}
                 onChange={(e) => setSortBy(e.target.value)}
-                className="w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-purple-500"
+                className="w-full px-3 py-2 bg-black border border-[#0F4C5C]/45 rounded-lg text-teal-100 focus:outline-none focus:ring-2 focus:ring-[#0F5C45]/50"
               >
                 <option value="impact">Impact</option>
                 <option value="correlation">Corrélation</option>
@@ -413,13 +413,13 @@ const CorrelationsView = ({
 
       {/* Statistiques globales */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <Card className="bg-purple-600/10 border-purple-500/30">
+        <Card className="bg-black border-2 border-[#0F4C5C]/55 shadow-sm shadow-black/15">
           <CardContent className="p-4">
-            <div className="text-sm text-slate-400 mb-1">Exercices {chartData.length < correlationData.totalExercises ? 'filtrés' : 'analysés'}</div>
-            <div className="text-2xl font-bold text-purple-400">
+            <div className="text-sm text-teal-100/55 mb-1">Exercices {chartData.length < correlationData.totalExercises ? 'filtrés' : 'analysés'}</div>
+            <div className="text-2xl font-bold text-sky-300">
               {chartData.length}
             </div>
-            <div className="text-xs text-slate-500 mt-1">
+            <div className="text-xs text-teal-100/45 mt-1">
               {chartData.filter(d => d.significance === 'significant').length} significatifs
               {chartData.length < correlationData.totalExercises && (
                 <span className="ml-1">({correlationData.totalExercises - chartData.length} masqués)</span>
@@ -428,13 +428,13 @@ const CorrelationsView = ({
           </CardContent>
         </Card>
 
-        <Card className="bg-blue-600/10 border-blue-500/30">
+        <Card className="bg-black border-2 border-[#0F4C5C]/55 shadow-sm shadow-black/20">
           <CardContent className="p-4">
-            <div className="text-sm text-slate-400 mb-1">Meilleure corrélation</div>
-            <div className="text-2xl font-bold text-blue-400">
+            <div className="text-sm text-teal-100/55 mb-1">Meilleure corrélation</div>
+            <div className="text-2xl font-bold text-sky-300/90">
               {chartData[0]?.correlation.toFixed(3) || 'N/A'}
             </div>
-            <div className="text-xs text-slate-500 mt-1">
+            <div className="text-xs text-teal-100/45 mt-1">
               {chartData[0]?.exercise || 'N/A'}
             </div>
           </CardContent>
@@ -442,14 +442,14 @@ const CorrelationsView = ({
 
         <Card className="bg-green-600/10 border-green-500/30">
           <CardContent className="p-4">
-            <div className="text-sm text-slate-400 mb-1">R² moyen</div>
+            <div className="text-sm text-teal-100/55 mb-1">R² moyen</div>
             <div className="text-2xl font-bold text-green-400">
               {chartData.length > 0 
                 ? (chartData.reduce((sum, d) => sum + (d.r2 || 0), 0) / chartData.length).toFixed(2)
                 : '0.00'
               }
             </div>
-            <div className="text-xs text-slate-500 mt-1">
+            <div className="text-xs text-teal-100/45 mt-1">
               Qualité prédictive
             </div>
           </CardContent>
@@ -461,10 +461,10 @@ const CorrelationsView = ({
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
-              <BarChart3 className="w-5 h-5 text-purple-400" />
+              <BarChart3 className="w-5 h-5 text-sky-300" />
               Corrélations par Exercice - {muscle.charAt(0).toUpperCase() + muscle.slice(1)} ({selectedMetric})
               {chartData.length < correlationData.totalExercises && (
-                <span className="text-sm font-normal text-slate-400 ml-2">
+                <span className="text-sm font-normal text-teal-100/55 ml-2">
                   ({chartData.length}/{correlationData.totalExercises} affichés)
                 </span>
               )}
@@ -502,10 +502,10 @@ const CorrelationsView = ({
         <Card className="bg-yellow-600/10 border-yellow-500/30">
           <CardContent className="p-12 text-center">
             <Filter className="w-16 h-16 mx-auto mb-4 text-yellow-400" />
-            <h3 className="text-xl font-semibold text-white mb-2">
+            <h3 className="text-xl font-semibold text-teal-100 mb-2">
               Aucun résultat après filtres
             </h3>
-            <p className="text-slate-400 mb-4">
+            <p className="text-teal-100/55 mb-4">
               Aucun exercice ne correspond aux critères de filtrage sélectionnés.
             </p>
             <Button
@@ -525,7 +525,7 @@ const CorrelationsView = ({
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
-              <Target className="w-5 h-5 text-blue-400" />
+              <Target className="w-5 h-5 text-sky-300/90" />
               Impact des Exercices (Top {Math.min(10, chartData.length)})
             </CardTitle>
           </CardHeader>
@@ -533,33 +533,33 @@ const CorrelationsView = ({
           <div className="overflow-x-auto">
             <table className="w-full">
               <thead>
-                <tr className="border-b border-slate-700">
-                  <th className="text-left py-3 px-4 text-slate-300 font-medium">Exercice</th>
-                  <th className="text-center py-3 px-4 text-slate-300 font-medium">Corrélation</th>
-                  <th className="text-center py-3 px-4 text-slate-300 font-medium">R²</th>
-                  <th className="text-center py-3 px-4 text-slate-300 font-medium">Significativité</th>
-                  <th className="text-center py-3 px-4 text-slate-300 font-medium">Impact</th>
+                <tr className="border-b border-[#0F4C5C]/35">
+                  <th className="text-left py-3 px-4 text-teal-100/80 font-medium">Exercice</th>
+                  <th className="text-center py-3 px-4 text-teal-100/80 font-medium">Corrélation</th>
+                  <th className="text-center py-3 px-4 text-teal-100/80 font-medium">R²</th>
+                  <th className="text-center py-3 px-4 text-teal-100/80 font-medium">Significativité</th>
+                  <th className="text-center py-3 px-4 text-teal-100/80 font-medium">Impact</th>
                 </tr>
               </thead>
               <tbody>
                 {chartData.slice(0, 10).map((corr, index) => (
                   <tr
                     key={index}
-                    className="border-b border-slate-700/50 hover:bg-slate-700/20 transition-colors"
+                    className="border-b border-[#0F4C5C]/35/50 hover:bg-teal-950/25 transition-colors"
                   >
-                    <td className="py-3 px-4 text-white font-medium">{corr.exercise}</td>
+                    <td className="py-3 px-4 text-teal-100 font-medium">{corr.exercise}</td>
                     <td className="py-3 px-4 text-center">
                       <span className={`font-bold ${
                         Math.abs(corr.correlation) > 0.6 
                           ? 'text-green-400' 
                           : Math.abs(corr.correlation) > 0.3
                           ? 'text-orange-400'
-                          : 'text-slate-400'
+                          : 'text-teal-100/55'
                       }`}>
                         {corr.correlation.toFixed(3)}
                       </span>
                     </td>
-                    <td className="py-3 px-4 text-center text-slate-300">
+                    <td className="py-3 px-4 text-center text-teal-100/80">
                       {(corr.r2 * 100).toFixed(1)}%
                     </td>
                     <td className="py-3 px-4 text-center">
@@ -568,7 +568,7 @@ const CorrelationsView = ({
                           ? 'bg-green-500/20 text-green-400'
                           : corr.significance === 'marginally_significant'
                           ? 'bg-orange-500/20 text-orange-400'
-                          : 'bg-slate-500/20 text-slate-400'
+                          : 'bg-teal-950/25 text-teal-100/55'
                       }`}>
                         {corr.significance === 'significant' 
                           ? 'Significatif' 
@@ -585,7 +585,7 @@ const CorrelationsView = ({
                         ) : (
                           <TrendingDown className="w-4 h-4 text-red-400" />
                         )}
-                        <span className="text-slate-300 font-medium">
+                        <span className="text-teal-100/80 font-medium">
                           {(corr.impact * 100).toFixed(0)}
                         </span>
                       </div>

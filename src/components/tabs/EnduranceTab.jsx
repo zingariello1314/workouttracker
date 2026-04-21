@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
-import { Calendar, Dumbbell, Waves, Activity, Play, Box, Plus, X, Trash2, Award, Edit, Save, Heart, Zap } from 'lucide-react';
+import { Calendar, Dumbbell, Waves, Activity, Play, Box, Plus, X, Trash2, Award, Edit, Save, Heart, Zap, Anchor } from 'lucide-react';
 import { useWorkout } from '../../context/WorkoutContext';
 import StarRating from '../ui/StarRating';
 import { useTranslation } from '../../utils/translations';
@@ -11,7 +11,7 @@ import {
   persistEnduranceData,
   ENDURANCE_SCHEMA_VERSION
 } from '../../services/endurance/enduranceDataService';
-import { evaluateChallenges } from '../../services/endurance/enduranceChallengesService';
+import { evaluateChallenges, listMatchingChallengeIds } from '../../services/endurance/enduranceChallengesService';
 import {
   createDefaultFormState,
   createDefaultChallengeFormState
@@ -25,8 +25,9 @@ import EnduranceSectionHeader from './EnduranceTab/components/ui/EnduranceSectio
 import RunningGarminSyncBlock from './EnduranceTab/components/RunningGarminSyncBlock.jsx';
 import RunningPersonalRecordsPanel from './EnduranceTab/components/RunningPersonalRecordsPanel.jsx';
 import RunningSessionDetailPage from './EnduranceTab/components/RunningSessionDetailPage.jsx';
+import RunningTrophiesPanel from './EnduranceTab/components/RunningTrophiesPanel.jsx';
 import { runningSessionTypeLabel, resolveRunningSessionDisplayType } from '../../utils/runningSessionTypeLabel';
-import { inferRunningSessionTypeFromGarminActivity } from '../../utils/garminRunningLaps';
+import { inferRunningSessionTypeFromGarminActivity, isGarminRunningLikeActivity } from '../../utils/garminRunningLaps';
 import { useGarminData } from '../../hooks/useGarminData';
 
 const EnduranceTab = () => {
@@ -42,6 +43,7 @@ const EnduranceTab = () => {
     sessions: {
       boxing: [],
       pushups: [],
+      gainage: [],
       swimming: [],
       jumprope: [],
       running: []
@@ -64,6 +66,7 @@ const EnduranceTab = () => {
   const sessions = enduranceState?.sessions || {
     boxing: [],
     pushups: [],
+    gainage: [],
     swimming: [],
     jumprope: [],
     running: []
@@ -71,6 +74,7 @@ const EnduranceTab = () => {
   const challenges = enduranceState?.challenges || [];
   const { loadAllData, dbReady } = useGarminData();
   const [garminRunningKindByGarminId, setGarminRunningKindByGarminId] = useState(() => new Map());
+  const [garminRunningById, setGarminRunningById] = useState(() => new Map());
   const ui = enduranceState?.ui || {
     showChallengeModal: false,
     showSessionForm: false,
@@ -215,15 +219,23 @@ const EnduranceTab = () => {
         const loaded = await loadAllData();
         if (cancelled || !loaded?.activities?.cardio) return;
         const m = new Map();
+        const full = new Map();
         for (const act of loaded.activities.cardio) {
           const id = act.garminId ?? act.id;
           if (id == null) continue;
           if (!Array.isArray(act.running?.laps) || act.running.laps.length === 0) continue;
           m.set(String(id), inferRunningSessionTypeFromGarminActivity(act));
+          if (isGarminRunningLikeActivity(act)) {
+            full.set(String(id), act);
+          }
         }
         setGarminRunningKindByGarminId(m);
+        setGarminRunningById(full);
       } catch {
-        if (!cancelled) setGarminRunningKindByGarminId(new Map());
+        if (!cancelled) {
+          setGarminRunningKindByGarminId(new Map());
+          setGarminRunningById(new Map());
+        }
       }
     })();
     return () => {
@@ -240,6 +252,7 @@ const EnduranceTab = () => {
       const mergedSessions = {
         boxing: Array.isArray(enduranceState.sessions?.boxing) ? enduranceState.sessions.boxing : [],
         pushups: Array.isArray(enduranceState.sessions?.pushups) ? enduranceState.sessions.pushups : [],
+        gainage: Array.isArray(enduranceState.sessions?.gainage) ? enduranceState.sessions.gainage : [],
         swimming: Array.isArray(enduranceState.sessions?.swimming) ? enduranceState.sessions.swimming : [],
         jumprope: Array.isArray(enduranceState.sessions?.jumprope) ? enduranceState.sessions.jumprope : [],
         running: Array.isArray(enduranceState.sessions?.running) ? enduranceState.sessions.running : []
@@ -371,7 +384,6 @@ const EnduranceTab = () => {
   // Système de rappel des défis actifs
   const getActiveChallenges = useCallback(() => {
     const now = new Date();
-    const todayStr = now.toISOString().slice(0, 10);
     return uniqueChallenges.filter(challenge => {
       if (challenge.status !== 'active') return false;
       
@@ -381,11 +393,9 @@ const EnduranceTab = () => {
           return new Date(challenge.targetDate) > now;
         case 'periode':
           return new Date(challenge.endDate) > now;
-        case 'recurrent': {
-          // Un défi récurrent ne compte plus comme "actif" s'il est déjà fait aujourd'hui
-          if (challenge.lastCompletedDate === todayStr) return false;
+        case 'recurrent':
+          // Reste affiché comme « en cours » : chaque nouvelle session peut encore contribuer / être marquée.
           return true;
-        }
         default:
           return true;
       }
@@ -413,11 +423,28 @@ const EnduranceTab = () => {
   const [boxingForm, setBoxingForm] = useState(() => createDefaultFormState('boxing'));
   const [swimmingForm, setSwimmingForm] = useState(() => createDefaultFormState('swimming'));
   const [jumpropeForm, setJumpropeForm] = useState(() => createDefaultFormState('jumprope'));
+  const [gainageForm, setGainageForm] = useState(() => createDefaultFormState('gainage'));
   const [runningForm, setRunningForm] = useState(() => createDefaultFormState('running'));
 
   const [challengeForm, setChallengeForm] = useState(() => createDefaultChallengeFormState('pushups'));
   /** Modal détail séance course (Garmin / manuel) */
   const [runningDetailSession, setRunningDetailSession] = useState(null);
+  const [runningSubView, setRunningSubView] = useState(() => {
+    try {
+      const saved = localStorage.getItem('endurance.running.subView');
+      return saved === 'trophies' ? 'trophies' : 'sessions';
+    } catch {
+      return 'sessions';
+    }
+  });
+
+  useEffect(() => {
+    try {
+      localStorage.setItem('endurance.running.subView', runningSubView);
+    } catch {
+      /* ignore */
+    }
+  }, [runningSubView]);
 
   const addSession = useCallback(async (activityType, sessionData) => {
     try {
@@ -427,11 +454,12 @@ const EnduranceTab = () => {
         : [];
 
       const evaluation = evaluateChallenges(challenges, sessionData, activityType, { logger: enduranceLogger });
+      const badgeIds = listMatchingChallengeIds(challenges, sessionData, activityType, { logger: enduranceLogger });
 
       const newSession = {
         ...sessionData,
         activityType,
-        validatedChallenges: evaluation.validatedIds
+        validatedChallenges: badgeIds
       };
 
       const updatedSessionsMap = {
@@ -444,8 +472,8 @@ const EnduranceTab = () => {
         challenges: evaluation.updatedChallenges
       });
 
-      if (evaluation.validatedIds.length > 0) {
-        enduranceLogger.info?.(`[EnduranceTab] Défis validés pour ${activityType}:`, evaluation.validatedIds);
+      if (badgeIds.length > 0) {
+        enduranceLogger.info?.(`[EnduranceTab] Défis correspondant à la session (${activityType}):`, badgeIds);
       }
 
       return { success: true, validatedChallengeIds: evaluation.validatedIds };
@@ -462,11 +490,12 @@ const EnduranceTab = () => {
         ? currentSessionsMap[activityType]
         : [];
 
-      const updatedSessions = activitySessions.map(session =>
-        String(session.id) === String(sessionId)
-          ? { ...session, ...updatedData }
-          : session
-      );
+      const updatedSessions = activitySessions.map((session) => {
+        if (String(session.id) !== String(sessionId)) return session;
+        const merged = { ...session, ...updatedData };
+        const badgeIds = listMatchingChallengeIds(challenges, merged, activityType, { logger: enduranceLogger });
+        return { ...merged, validatedChallenges: badgeIds };
+      });
 
       const updatedSessionsMap = {
         ...currentSessionsMap,
@@ -488,7 +517,7 @@ const EnduranceTab = () => {
       console.error('❌ [EnduranceTab] Erreur lors de la modification de la session:', error);
       return { success: false, error: error.message };
     }
-  }, [enduranceState.sessions, saveEnduranceData, setUI]);
+  }, [challenges, enduranceLogger, enduranceState.sessions, saveEnduranceData, setUI]);
 
   // Fonctions de reset des formulaires
   const resetPushupForm = useCallback(() => {
@@ -505,6 +534,10 @@ const EnduranceTab = () => {
 
   const resetJumpropeForm = useCallback(() => {
     setJumpropeForm(createDefaultFormState('jumprope'));
+  }, []);
+
+  const resetGainageForm = useCallback(() => {
+    setGainageForm(createDefaultFormState('gainage'));
   }, []);
 
   const resetRunningForm = useCallback(() => {
@@ -532,6 +565,10 @@ const EnduranceTab = () => {
   const addPushupSession = useCallback(async () => {
     return submitSession('pushups', sessionForm, resetPushupForm);
   }, [submitSession, sessionForm, resetPushupForm]);
+
+  const addGainageSession = useCallback(async () => {
+    return submitSession('gainage', gainageForm, resetGainageForm);
+  }, [gainageForm, resetGainageForm, submitSession]);
 
   const addBoxingSession = useCallback(async () => {
     return submitSession('boxing', boxingForm, resetBoxingForm);
@@ -740,6 +777,7 @@ const EnduranceTab = () => {
   const deleteBoxingSession = useCallback((id, index) => deleteSession('boxing', id, index), [deleteSession]);
   const deleteSwimmingSession = useCallback((id, index) => deleteSession('swimming', id, index), [deleteSession]);
   const deleteJumpropeSession = useCallback((id, index) => deleteSession('jumprope', id, index), [deleteSession]);
+  const deleteGainageSession = useCallback((id, index) => deleteSession('gainage', id, index), [deleteSession]);
   const deleteRunningSession = useCallback((id, index) => deleteSession('running', id, index), [deleteSession]);
 
   // Fonctions de modification des sessions
@@ -788,6 +826,15 @@ const EnduranceTab = () => {
             duration: session.duration,
             type: session.type,
             jumps: session.jumps || '',
+            notes: session.notes || ''
+          });
+          break;
+        case 'gainage':
+          setGainageForm({
+            date: session.date,
+            time: session.time,
+            count: session.count,
+            duration: session.duration,
             notes: session.notes || ''
           });
           break;
@@ -1089,6 +1136,7 @@ const EnduranceTab = () => {
       { id: 'running', label: t('endurance.menu.running'), icon: Play },
       { id: 'pushups', label: t('endurance.menu.pushups'), icon: Dumbbell },
       { id: 'jumprope', label: t('endurance.menu.jumprope'), icon: Activity },
+      { id: 'gainage', label: t('endurance.menu.gainage'), icon: Anchor },
       { id: 'boxing', label: t('endurance.menu.boxing'), icon: Box },
       { id: 'swimming', label: t('endurance.menu.swimming'), icon: Waves },
       { id: 'calendar', label: t('endurance.menu.calendar'), icon: Calendar }
@@ -1132,14 +1180,14 @@ const EnduranceTab = () => {
   return (
     <div className="relative">
       {/* Contenu avec z-index relatif */}
-      <div className="relative z-10 flex h-screen">
-        {/* Menu latéral */}
-      <div className="w-72 border-r border-[#0F4C5C]/50 bg-black pt-20">
-        <div className="p-8">
+      <div className="relative z-10 flex min-h-0 flex-col md:flex-row md:items-start">
+        {/* Menu latéral — une seule zone de scroll (page) */}
+        <div className="mb-6 w-full shrink-0 rounded-2xl border-2 border-[#0F4C5C]/70 bg-black p-1 shadow-lg shadow-black/40 md:mb-0 md:mr-6 md:w-72 md:self-stretch">
+        <div className="px-4 pb-3 pt-4">
           <h1 className="bg-gradient-to-r from-teal-200 via-sky-300 to-cyan-400 bg-clip-text text-3xl font-bold text-transparent">
             {t('endurance.title')}
           </h1>
-          <p className="mt-2 text-sm text-teal-700">{t('endurance.subtitle')}</p>
+          <p className="mt-1.5 text-sm text-teal-700">{t('endurance.subtitle')}</p>
         </div>
         
         <nav className="px-4">
@@ -1169,10 +1217,10 @@ const EnduranceTab = () => {
             );
           })}
         </nav>
-      </div>
+        </div>
 
-      {/* Contenu principal — page détail course en pleine colonne si sélection */}
-      <div className="flex-1 overflow-auto min-h-0">
+      {/* Contenu principal — pas de scroll interne : le scroll est celui de la page */}
+      <div className="min-w-0 flex-1">
         {runningDetailSession ? (
           <RunningSessionDetailPage
             session={runningDetailSession}
@@ -1343,10 +1391,10 @@ const EnduranceTab = () => {
 
               {/* Rappel défis actifs */}
               {activeChallenges.length > 0 && (
-                <div className="bg-gradient-to-r from-amber-500/20 to-orange-500/20 backdrop-blur-sm border border-amber-500/30 rounded-2xl p-6 mb-8">
+                <div className="mb-8 rounded-2xl border-2 border-[#0F4C5C]/55 bg-black p-6">
                   <div className="flex items-start gap-4">
-                    <div className="bg-amber-500/20 p-3 rounded-xl">
-                      <Award className="w-6 h-6 text-amber-400" />
+                    <div className="rounded-xl bg-[#0F4C5C]/25 p-3">
+                      <Award className="h-6 w-6 text-sky-400" />
                     </div>
                     <div className="flex-1">
                       <h3 className="text-white font-semibold text-lg mb-2">
@@ -1355,14 +1403,12 @@ const EnduranceTab = () => {
                           : t('endurance.challenges.activePlural', { count: activeChallenges.length })
                         }
                       </h3>
-                      <div className="space-y-2">
-                        {activeChallenges.map((c, idx) => (
-                          <div key={`active-challenge-${c.id}-${idx}`} className="text-amber-200 text-sm flex items-center gap-2">
-                            <div className="w-1.5 h-1.5 bg-amber-400 rounded-full"></div>
-                            {c.name}
-                          </div>
-                        ))}
-                      </div>
+                      <p className="text-sm text-teal-100/90 leading-relaxed">
+                        {t(
+                          'endurance.challenges.reminderBody',
+                          'Ouvre l’onglet de chaque activité concernée pour voir le détail de tes défis.'
+                        )}
+                      </p>
                     </div>
                   </div>
                 </div>
@@ -1376,13 +1422,23 @@ const EnduranceTab = () => {
                     activityType="pushups"
                     formState={sessionForm}
                     setFormState={setSessionForm}
-                    onSubmit={addPushupSession}
-                    onCancel={() => setUI({ showSessionForm: false })}
-                    onUpdate={updateSession}
-                    onDelete={deletePushupSession}
-                    onEdit={editSession}
-                    onReset={resetPushupForm}
                   />
+                  <div className="mt-6 flex flex-wrap justify-end gap-3">
+                    <button
+                      type="button"
+                      onClick={() => setUI({ showSessionForm: false })}
+                      className="gradient-button-premium gradient-button-premium-md gradient-button-premium-variant rounded-lg"
+                    >
+                      {t('endurance.actions.cancel')}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={addPushupSession}
+                      className="gradient-button-premium gradient-button-premium-md rounded-lg"
+                    >
+                      {t('endurance.actions.save')}
+                    </button>
+                  </div>
                 </div>
               )}
 
@@ -1557,10 +1613,10 @@ const EnduranceTab = () => {
               />
 
               {activeChallenges.length > 0 && (
-                <div className="bg-gradient-to-r from-amber-500/20 to-orange-500/20 backdrop-blur-sm border border-amber-500/30 rounded-2xl p-6 mb-8">
+                <div className="mb-8 rounded-2xl border-2 border-[#0F4C5C]/55 bg-black p-6">
                   <div className="flex items-start gap-4">
-                    <div className="bg-amber-500/20 p-3 rounded-xl">
-                      <Award className="w-6 h-6 text-amber-400" />
+                    <div className="rounded-xl bg-[#0F4C5C]/25 p-3">
+                      <Award className="h-6 w-6 text-sky-400" />
                     </div>
                     <div className="flex-1">
                       <h3 className="text-white font-semibold text-lg mb-2">
@@ -1569,14 +1625,12 @@ const EnduranceTab = () => {
                           : t('endurance.challenges.activePlural', { count: activeChallenges.length })
                         }
                       </h3>
-                      <div className="space-y-2">
-                        {activeChallenges.map((c, idx) => (
-                          <div key={`active-challenge-${c.id}-${idx}`} className="text-amber-200 text-sm flex items-center gap-2">
-                            <div className="w-1.5 h-1.5 bg-amber-400 rounded-full"></div>
-                            {c.name}
-                          </div>
-                        ))}
-                      </div>
+                      <p className="text-sm text-teal-100/90 leading-relaxed">
+                        {t(
+                          'endurance.challenges.reminderBody',
+                          'Ouvre l’onglet de chaque activité concernée pour voir le détail de tes défis.'
+                        )}
+                      </p>
                     </div>
                   </div>
                 </div>
@@ -1842,10 +1896,10 @@ const EnduranceTab = () => {
 
               {/* Rappel défis actifs */}
               {activeChallenges.length > 0 && (
-                <div className="bg-gradient-to-r from-amber-500/20 to-orange-500/20 backdrop-blur-sm border border-amber-500/30 rounded-2xl p-6 mb-8">
+                <div className="mb-8 rounded-2xl border-2 border-[#0F4C5C]/55 bg-black p-6">
                   <div className="flex items-start gap-4">
-                    <div className="bg-amber-500/20 p-3 rounded-xl">
-                      <Award className="w-6 h-6 text-amber-400" />
+                    <div className="rounded-xl bg-[#0F4C5C]/25 p-3">
+                      <Award className="h-6 w-6 text-sky-400" />
                     </div>
                     <div className="flex-1">
                       <h3 className="text-white font-semibold text-lg mb-2">
@@ -1854,14 +1908,12 @@ const EnduranceTab = () => {
                           : t('endurance.challenges.toCompletePlural', { count: activeChallenges.length })
                         }
                       </h3>
-                      <div className="space-y-2">
-                        {activeChallenges.map((c, idx) => (
-                          <div key={`active-challenge-${c.id}-${idx}`} className="text-amber-200 text-sm flex items-center gap-2">
-                            <div className="w-1.5 h-1.5 bg-amber-400 rounded-full"></div>
-                            {c.name}
-                          </div>
-                        ))}
-                      </div>
+                      <p className="text-sm text-teal-100/90 leading-relaxed">
+                        {t(
+                          'endurance.challenges.reminderBody',
+                          'Ouvre l’onglet de chaque activité concernée pour voir le détail de tes défis.'
+                        )}
+                      </p>
                     </div>
                   </div>
                 </div>
@@ -2066,7 +2118,7 @@ const EnduranceTab = () => {
                     icon: Plus,
                     onClick: () => setUI({ showSessionForm: !ui.showSessionForm }),
                     className:
-                      'gradient-button-premium gradient-button-premium-md rounded-lg flex items-center gap-2'
+                      'inline-flex items-center gap-2 rounded-lg border border-[#0F4C5C]/60 bg-black px-4 py-2 text-sm font-medium text-teal-100 shadow-sm transition hover:border-[#0F5C45]/70 hover:bg-[#0F4C5C]/15'
                   },
                   {
                     key: 'create-running-challenge',
@@ -2074,264 +2126,303 @@ const EnduranceTab = () => {
                     icon: Award,
                     onClick: () => setUI({ showChallengeModal: true }),
                     className:
-                      'gradient-button-premium gradient-button-premium-md gradient-button-premium-variant rounded-lg flex items-center gap-2'
+                      'inline-flex items-center gap-2 rounded-lg border border-[#0F5C45]/80 bg-[#0F5C45]/25 px-4 py-2 text-sm font-medium text-white shadow-md transition hover:bg-[#0F5C45]/40'
                   }
                 ]}
               />
 
-              <RunningGarminSyncBlock />
+              <div className="mb-6 flex flex-wrap gap-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setRunningSubView('sessions');
+                    setRunningDetailSession(null);
+                  }}
+                  className={`rounded-xl border px-4 py-2 text-sm font-medium transition ${
+                    runningSubView === 'sessions'
+                      ? 'border-[#0F5C45]/80 bg-[#0F5C45]/25 text-white'
+                      : 'border-[#0F4C5C]/45 bg-black text-teal-100 hover:border-[#0F5C45]/50'
+                  }`}
+                >
+                  Séances & défis
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setRunningSubView('trophies');
+                    setRunningDetailSession(null);
+                  }}
+                  className={`rounded-xl border px-4 py-2 text-sm font-medium transition ${
+                    runningSubView === 'trophies'
+                      ? 'border-sky-500/70 bg-sky-500/15 text-sky-100'
+                      : 'border-[#0F4C5C]/45 bg-black text-teal-100 hover:border-sky-500/40'
+                  }`}
+                >
+                  Trophées
+                </button>
+              </div>
 
-              <RunningPersonalRecordsPanel sessions={sessions.running} />
+              {runningSubView === 'trophies' ? (
+                <RunningTrophiesPanel sessions={sessions.running} garminById={garminRunningById} />
+              ) : (
+                <>
+                  <RunningGarminSyncBlock />
 
-              {/* Rappel défis actifs */}
-              {activeChallenges.length > 0 && (
-                <div className="bg-gradient-to-r from-amber-500/20 to-orange-500/20 backdrop-blur-sm border border-amber-500/30 rounded-2xl p-6 mb-8">
-                  <div className="flex items-start gap-4">
-                    <div className="bg-amber-500/20 p-3 rounded-xl">
-                      <Award className="w-6 h-6 text-amber-400" />
+                  <RunningPersonalRecordsPanel sessions={sessions.running} />
+
+                  {/* Rappel défis actifs */}
+                  {activeChallenges.length > 0 && (
+                    <div className="mb-8 rounded-2xl border-2 border-[#0F4C5C]/55 bg-black p-6">
+                      <div className="flex items-start gap-4">
+                        <div className="rounded-xl bg-[#0F4C5C]/25 p-3">
+                          <Award className="h-6 w-6 text-sky-400" />
+                        </div>
+                        <div className="flex-1">
+                          <h3 className="text-white font-semibold text-lg mb-2">
+                            {activeChallenges.length === 1
+                              ? t('endurance.challenges.toComplete', { count: activeChallenges.length })
+                              : t('endurance.challenges.toCompletePlural', { count: activeChallenges.length })
+                            }
+                          </h3>
+                          <div className="space-y-2">
+                            {activeChallenges.map((c, idx) => (
+                              <div key={`active-challenge-${c.id}-${idx}`} className="flex items-center gap-2 text-sm text-teal-100">
+                                <div className="h-1.5 w-1.5 rounded-full bg-sky-400" />
+                                {c.name}
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      </div>
                     </div>
-                    <div className="flex-1">
-                      <h3 className="text-white font-semibold text-lg mb-2">
-                        {activeChallenges.length === 1
-                          ? t('endurance.challenges.toComplete', { count: activeChallenges.length })
-                          : t('endurance.challenges.toCompletePlural', { count: activeChallenges.length })
-                        }
-                      </h3>
-                      <div className="space-y-2">
-                        {activeChallenges.map((c, idx) => (
-                          <div key={`active-challenge-${c.id}-${idx}`} className="text-amber-200 text-sm flex items-center gap-2">
-                            <div className="w-1.5 h-1.5 bg-amber-400 rounded-full"></div>
-                            {c.name}
+                  )}
+
+                  {/* Formulaire de session */}
+                  {ui.showSessionForm && (
+                    <div className="bg-black border-2 border-[#0F4C5C]/70 rounded-2xl p-8 mb-8 shadow-2xl shadow-black/40">
+                      <h3 className="text-2xl font-bold text-white mb-6">{t('endurance.actions.newSession')}</h3>
+                      <EnduranceSessionForm
+                        activityType="running"
+                        formState={runningForm}
+                        setFormState={setRunningForm}
+                      />
+
+                      {/* Calculs automatiques */}
+                      {runningForm.distance && runningForm.duration && (
+                        <RunningSessionExtras
+                          distance={runningForm.distance}
+                          duration={runningForm.duration}
+                        />
+                      )}
+
+                      <div className="mt-6 flex justify-end gap-3">
+                        <button
+                          type="button"
+                          onClick={() => setUI({ showSessionForm: false })}
+                          className="rounded-lg border border-[#0F4C5C]/55 bg-black px-4 py-2 text-sm font-medium text-teal-100 transition hover:border-[#0F5C45]/60 hover:bg-[#0F4C5C]/12"
+                        >
+                          {t('endurance.actions.cancel')}
+                        </button>
+                        <button
+                          type="button"
+                          onClick={addRunningSession}
+                          className="rounded-lg border border-[#0F5C45]/80 bg-[#0F5C45]/30 px-4 py-2 text-sm font-semibold text-white transition hover:bg-[#0F5C45]/45"
+                        >
+                          {t('endurance.actions.save')}
+                        </button>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Liste des défis */}
+                  {challenges.filter(c => c.activityType === 'running').length > 0 && (
+                    <div className="mb-8">
+                      <h3 className="text-2xl font-bold text-white mb-6">{t('endurance.challenges.title')}</h3>
+                      <div className="grid gap-4">
+                        {challenges.filter(c => c.activityType === 'running').map((challenge, idx) => (
+                          <div key={`running-challenge-${challenge.id}-${idx}`} className="bg-black border-2 border-[#0F4C5C]/70 rounded-2xl p-6 hover:border-[#0F5C45]/90 transition-all">
+                            <div className="flex justify-between items-start">
+                              <div className="flex-1">
+                                <div className="flex items-center gap-3 mb-2">
+                                  <Award className="w-5 h-5 text-sky-400" />
+                                  <h4 className="font-bold text-xl text-white">{challenge.name}</h4>
+                                  <span className={`px-2 py-1 rounded-lg text-xs font-medium ${
+                                    challenge.status === 'active' 
+                                      ? 'bg-green-500/20 text-green-400 border border-green-500/30' 
+                                      : 'bg-blue-500/20 text-blue-400 border border-blue-500/30'
+                                  }`}>
+                                    {challenge.status === 'active' ? t('endurance.challenges.status.active') : t('endurance.challenges.status.completed')}
+                                  </span>
+                                </div>
+                                <div className="space-y-1 text-slate-400 text-sm">
+                                  <p>
+                                    {challenge.type === 'ponctuel' && t('endurance.challenges.details.targetDate', { date: challenge.targetDate })}
+                                    {challenge.type === 'recurrent' && (challenge.frequency === 'daily' 
+                                      ? t('endurance.challenges.details.recurrentDaily')
+                                      : t('endurance.challenges.details.recurrentWeekly')
+                                    )}
+                                    {challenge.type === 'periode' && t('endurance.challenges.details.period', { startDate: challenge.startDate, endDate: challenge.endDate })}
+                                  </p>
+                                  <p className="text-sky-300">
+                                    {challenge.goalDistance && challenge.goalDuration
+                                      ? t('endurance.challenges.details.goalRunningWithDuration', { distance: challenge.goalDistance, duration: challenge.goalDuration })
+                                      : challenge.goalDistance
+                                      ? t('endurance.challenges.details.goalRunning', { distance: challenge.goalDistance })
+                                      : challenge.goalDuration
+                                      ? `${challenge.goalDuration} min`
+                                      : ''
+                                    }
+                                  </p>
+                                </div>
+                              </div>
+                              <div className="flex items-center gap-3">
+                                <button
+                                  type="button"
+                                  onClick={() => editChallenge(challenge.id)}
+                                  className="gradient-button-premium gradient-button-premium-sm gradient-button-premium-variant rounded-lg p-2"
+                                  title={t('endurance.session.editChallenge')}
+                                >
+                                  <Edit className="w-5 h-5" />
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    // ✅ FIX DOUBLONS : Trouver l'index réel dans le tableau complet
+                                    const realIndex = challenges.findIndex(c => c === challenge);
+                                    deleteChallenge(challenge.id, realIndex);
+                                  }}
+                                  className="gradient-button-premium gradient-button-premium-sm rounded-lg p-2"
+                                  title={t('endurance.session.deleteChallenge')}
+                                >
+                                  <Trash2 className="w-5 h-5" />
+                                </button>
+                              </div>
+                            </div>
                           </div>
                         ))}
                       </div>
                     </div>
-                  </div>
-                </div>
-              )}
-
-              {/* Formulaire de session */}
-              {ui.showSessionForm && (
-                <div className="bg-black border-2 border-[#0F4C5C]/70 rounded-2xl p-8 mb-8 shadow-2xl shadow-black/40">
-                  <h3 className="text-2xl font-bold text-white mb-6">{t('endurance.actions.newSession')}</h3>
-                  <EnduranceSessionForm
-                    activityType="running"
-                    formState={runningForm}
-                    setFormState={setRunningForm}
-                  />
-
-                  {/* Calculs automatiques */}
-                  {runningForm.distance && runningForm.duration && (
-                    <RunningSessionExtras
-                      distance={runningForm.distance}
-                      duration={runningForm.duration}
-                    />
                   )}
 
-                  <div className="mt-6 flex justify-end gap-3">
-                    <button
-                      onClick={() => setUI({ showSessionForm: false })}
-                      className="gradient-button-premium gradient-button-premium-md gradient-button-premium-variant rounded-lg"
-                    >
-                      {t('endurance.actions.cancel')}
-                    </button>
-                    <button
-                      onClick={addRunningSession}
-                      className="gradient-button-premium gradient-button-premium-md rounded-lg"
-                    >
-                      {t('endurance.actions.save')}
-                    </button>
-                  </div>
-                </div>
-              )}
-
-              {/* Liste des défis */}
-              {challenges.filter(c => c.activityType === 'running').length > 0 && (
-                <div className="mb-8">
-                  <h3 className="text-2xl font-bold text-white mb-6">{t('endurance.challenges.title')}</h3>
-                  <div className="grid gap-4">
-                    {challenges.filter(c => c.activityType === 'running').map((challenge, idx) => (
-                      <div key={`running-challenge-${challenge.id}-${idx}`} className="bg-black border-2 border-[#0F4C5C]/70 rounded-2xl p-6 hover:border-[#0F5C45]/90 transition-all">
-                        <div className="flex justify-between items-start">
-                          <div className="flex-1">
-                            <div className="flex items-center gap-3 mb-2">
-                              <Award className="w-5 h-5 text-sky-400" />
-                              <h4 className="font-bold text-xl text-white">{challenge.name}</h4>
-                              <span className={`px-2 py-1 rounded-lg text-xs font-medium ${
-                                challenge.status === 'active' 
-                                  ? 'bg-green-500/20 text-green-400 border border-green-500/30' 
-                                  : 'bg-blue-500/20 text-blue-400 border border-blue-500/30'
-                              }`}>
-                                {challenge.status === 'active' ? t('endurance.challenges.status.active') : t('endurance.challenges.status.completed')}
-                              </span>
-                            </div>
-                            <div className="space-y-1 text-slate-400 text-sm">
-                              <p>
-                                {challenge.type === 'ponctuel' && t('endurance.challenges.details.targetDate', { date: challenge.targetDate })}
-                                {challenge.type === 'recurrent' && (challenge.frequency === 'daily' 
-                                  ? t('endurance.challenges.details.recurrentDaily')
-                                  : t('endurance.challenges.details.recurrentWeekly')
-                                )}
-                                {challenge.type === 'periode' && t('endurance.challenges.details.period', { startDate: challenge.startDate, endDate: challenge.endDate })}
-                              </p>
-                              <p className="text-sky-300">
-                                {challenge.goalDistance && challenge.goalDuration
-                                  ? t('endurance.challenges.details.goalRunningWithDuration', { distance: challenge.goalDistance, duration: challenge.goalDuration })
-                                  : challenge.goalDistance
-                                  ? t('endurance.challenges.details.goalRunning', { distance: challenge.goalDistance })
-                                  : challenge.goalDuration
-                                  ? `${challenge.goalDuration} min`
-                                  : ''
+                  {/* Historique */}
+                  <div>
+                    <h3 className="text-2xl font-bold text-white mb-6">{t('endurance.history.title')}</h3>
+                    <div className="bg-black border border-[#0F4C5C]/50 rounded-2xl overflow-hidden">
+                      {sessions.running.length === 0 ? (
+                        <div className="p-12 text-center">
+                          <Play className="w-16 h-16 text-slate-600 mx-auto mb-4" />
+                          <p className="text-slate-400 text-lg">{t('endurance.history.noSessions')}</p>
+                          <p className="text-slate-500 text-sm mt-2">{t('endurance.history.noSessionsHint')}</p>
+                        </div>
+                      ) : (
+                        <div className="space-y-4 p-6">
+                          {sessions.running.sort((a, b) => new Date(b.date + ' ' + b.time) - new Date(a.date + ' ' + a.time)).map((session, idx) => {
+                            const originalIndex = sessions.running.findIndex(s => s === session);
+                            const gid = session.garminId ?? session.id;
+                            const inferredFromGarmin =
+                              gid != null ? garminRunningKindByGarminId.get(String(gid)) : undefined;
+                            const displayRunType = resolveRunningSessionDisplayType(session, inferredFromGarmin);
+                            return (
+                            <div
+                              key={`running-${session.id}-${idx}`}
+                              role="button"
+                              tabIndex={0}
+                              onClick={() => setRunningDetailSession(session)}
+                              onKeyDown={(e) => {
+                                if (e.key === 'Enter' || e.key === ' ') {
+                                  e.preventDefault();
+                                  setRunningDetailSession(session);
                                 }
-                              </p>
-                            </div>
-                          </div>
-                          <div className="flex items-center gap-3">
-                            <button
-                              type="button"
-                              onClick={() => editChallenge(challenge.id)}
-                              className="gradient-button-premium gradient-button-premium-sm gradient-button-premium-variant rounded-lg p-2"
-                              title={t('endurance.session.editChallenge')}
-                            >
-                              <Edit className="w-5 h-5" />
-                            </button>
-                            <button
-                              type="button"
-                              onClick={() => {
-                                // ✅ FIX DOUBLONS : Trouver l'index réel dans le tableau complet
-                                const realIndex = challenges.findIndex(c => c === challenge);
-                                deleteChallenge(challenge.id, realIndex);
                               }}
-                              className="gradient-button-premium gradient-button-premium-sm rounded-lg p-2"
-                              title={t('endurance.session.deleteChallenge')}
+                              className="bg-black border border-[#0F4C5C]/45 rounded-xl p-6 transition-all hover:border-[#0F5C45]/45 cursor-pointer focus:outline-none focus:ring-2 focus:ring-[#0F4C5C]/50"
                             >
-                              <Trash2 className="w-5 h-5" />
-                            </button>
-                          </div>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {/* Historique */}
-              <div>
-                <h3 className="text-2xl font-bold text-white mb-6">{t('endurance.history.title')}</h3>
-                <div className="bg-black border border-[#0F4C5C]/50 rounded-2xl overflow-hidden">
-                  {sessions.running.length === 0 ? (
-                    <div className="p-12 text-center">
-                      <Play className="w-16 h-16 text-slate-600 mx-auto mb-4" />
-                      <p className="text-slate-400 text-lg">{t('endurance.history.noSessions')}</p>
-                      <p className="text-slate-500 text-sm mt-2">{t('endurance.history.noSessionsHint')}</p>
-                    </div>
-                  ) : (
-                    <div className="space-y-4 p-6">
-                      {sessions.running.sort((a, b) => new Date(b.date + ' ' + b.time) - new Date(a.date + ' ' + a.time)).map((session, idx) => {
-                        const originalIndex = sessions.running.findIndex(s => s === session);
-                        const gid = session.garminId ?? session.id;
-                        const inferredFromGarmin =
-                          gid != null ? garminRunningKindByGarminId.get(String(gid)) : undefined;
-                        const displayRunType = resolveRunningSessionDisplayType(session, inferredFromGarmin);
-                        return (
-                        <div
-                          key={`running-${session.id}-${idx}`}
-                          role="button"
-                          tabIndex={0}
-                          onClick={() => setRunningDetailSession(session)}
-                          onKeyDown={(e) => {
-                            if (e.key === 'Enter' || e.key === ' ') {
-                              e.preventDefault();
-                              setRunningDetailSession(session);
-                            }
-                          }}
-                          className="bg-black border border-[#0F4C5C]/45 rounded-xl p-6 transition-all hover:border-[#0F5C45]/45 cursor-pointer focus:outline-none focus:ring-2 focus:ring-[#0F4C5C]/50"
-                        >
-                          <div className="flex justify-between items-start mb-4">
-                            <div className="flex-1">
-                              <div className="mb-2 flex flex-wrap items-baseline gap-x-3 gap-y-1">
-                                <span
-                                  className={`text-lg font-bold tracking-tight ${
-                                    displayRunType === 'interval' ? 'text-amber-200' : 'text-emerald-200'
-                                  }`}
-                                >
-                                  {runningSessionTypeLabel(displayRunType, t)}
-                                </span>
-                                <span className="text-slate-500 hidden sm:inline" aria-hidden>
-                                  ·
-                                </span>
-                                <span className="text-white font-bold text-lg">{session.date}</span>
-                                {session.time ? (
-                                  <span className="text-slate-400 text-base font-medium">{session.time}</span>
-                                ) : null}
-                              </div>
-                              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
-                                <div>
-                                  <span className="text-slate-400">{t('endurance.running.details.distance')}</span>
-                                  <span className="text-white font-bold ml-2">{session.distance}km</span>
-                                </div>
-                                <div>
-                                  <span className="text-slate-400">{t('endurance.running.details.duration')}</span>
-                                  <span className="text-white font-bold ml-2">{session.duration}</span>
-                                </div>
-                                <div>
-                                  <span className="text-slate-400">{t('endurance.running.details.pace')}</span>
-                                  <span className="text-white font-bold ml-2">{session.pace} min/km</span>
-                                </div>
-                                <div>
-                                  <span className="text-slate-400">{t('endurance.running.details.speed')}</span>
-                                  <span className="text-white font-bold ml-2">{session.speed} km/h</span>
-                                </div>
-                                {session.elevation && (
-                                  <div>
-                                    <span className="text-slate-400">{t('endurance.running.details.elevation')}</span>
-                                    <span className="text-white font-bold ml-2">{session.elevation}m</span>
+                              <div className="flex justify-between items-start mb-4">
+                                <div className="flex-1">
+                                  <div className="mb-2 flex flex-wrap items-baseline gap-x-3 gap-y-1">
+                                    <span
+                                      className={`text-lg font-bold tracking-tight ${
+                                        displayRunType === 'interval' ? 'text-amber-200' : 'text-emerald-200'
+                                      }`}
+                                    >
+                                      {runningSessionTypeLabel(displayRunType, t)}
+                                    </span>
+                                    <span className="text-slate-500 hidden sm:inline" aria-hidden>
+                                      ·
+                                    </span>
+                                    <span className="text-white font-bold text-lg">{session.date}</span>
+                                    {session.time ? (
+                                      <span className="text-slate-400 text-base font-medium">{session.time}</span>
+                                    ) : null}
                                   </div>
-                                )}
+                                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+                                    <div>
+                                      <span className="text-slate-400">{t('endurance.running.details.distance')}</span>
+                                      <span className="text-white font-bold ml-2">{session.distance}km</span>
+                                    </div>
+                                    <div>
+                                      <span className="text-slate-400">{t('endurance.running.details.duration')}</span>
+                                      <span className="text-white font-bold ml-2">{session.duration}</span>
+                                    </div>
+                                    <div>
+                                      <span className="text-slate-400">{t('endurance.running.details.pace')}</span>
+                                      <span className="text-white font-bold ml-2">{session.pace} min/km</span>
+                                    </div>
+                                    <div>
+                                      <span className="text-slate-400">{t('endurance.running.details.speed')}</span>
+                                      <span className="text-white font-bold ml-2">{session.speed} km/h</span>
+                                    </div>
+                                    {session.elevation && (
+                                      <div>
+                                        <span className="text-slate-400">{t('endurance.running.details.elevation')}</span>
+                                        <span className="text-white font-bold ml-2">{session.elevation}m</span>
+                                      </div>
+                                    )}
+                                  </div>
+                                </div>
+                                <div className="flex items-center gap-2">
+                                  {session.validatedChallenges?.length > 0 && (
+                                    <span className="bg-gradient-to-r from-green-500/20 to-emerald-500/20 border border-green-500/30 text-green-400 px-3 py-1 rounded-lg text-xs font-medium">
+                                      ✓ Défi validé
+                                    </span>
+                                  )}
+                                  <button
+                                    type="button"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      editSession('running', session.id);
+                                    }}
+                                    className="gradient-button-premium gradient-button-premium-sm gradient-button-premium-variant rounded-lg p-2"
+                                    title="Modifier la session"
+                                  >
+                                    <Edit className="w-4 h-4" />
+                                  </button>
+                                  <button
+                                    type="button"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      deleteRunningSession(session.id, originalIndex);
+                                    }}
+                                    className="gradient-button-premium gradient-button-premium-sm rounded-lg p-2"
+                                    title="Supprimer la session"
+                                  >
+                                    <Trash2 className="w-4 h-4" />
+                                  </button>
+                                </div>
                               </div>
-                            </div>
-                            <div className="flex items-center gap-2">
-                              {session.validatedChallenges?.length > 0 && (
-                                <span className="bg-gradient-to-r from-green-500/20 to-emerald-500/20 border border-green-500/30 text-green-400 px-3 py-1 rounded-lg text-xs font-medium">
-                                  ✓ Défi validé
-                                </span>
+                              {session.notes && (
+                                <div className="mt-4 text-slate-400 text-sm">
+                                  <span className="font-medium">{t('endurance.swimming.details.notes')}</span> {session.notes}
+                                </div>
                               )}
-                              <button
-                                type="button"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  editSession('running', session.id);
-                                }}
-                                className="gradient-button-premium gradient-button-premium-sm gradient-button-premium-variant rounded-lg p-2"
-                                title="Modifier la session"
-                              >
-                                <Edit className="w-4 h-4" />
-                              </button>
-                              <button
-                                type="button"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  deleteRunningSession(session.id, originalIndex);
-                                }}
-                                className="gradient-button-premium gradient-button-premium-sm rounded-lg p-2"
-                                title="Supprimer la session"
-                              >
-                                <Trash2 className="w-4 h-4" />
-                              </button>
                             </div>
-                          </div>
-                          {session.notes && (
-                            <div className="mt-4 text-slate-400 text-sm">
-                              <span className="font-medium">{t('endurance.swimming.details.notes')}</span> {session.notes}
-                            </div>
-                          )}
+                            );
+                          })}
                         </div>
-                        );
-                      })}
+                      )}
                     </div>
-                  )}
-                </div>
-              </div>
+                  </div>
+                </>
+              )}
 
             </>
           )}

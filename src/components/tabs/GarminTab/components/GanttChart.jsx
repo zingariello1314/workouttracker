@@ -18,7 +18,7 @@ export default function GanttChart({ activities, startDate, endDate }) {
     const combined = [
       ...(activities?.swimming || []).map(a => ({ ...a, type: 'swimming', color: '#3b82f6' })),
       ...(activities?.jumpRope || []).map(a => ({ ...a, type: 'jumpRope', color: '#10b981' })),
-      ...(activities?.cardio || []).map(a => ({ ...a, type: 'cardio', color: '#f59e0b' }))
+      ...(activities?.cardio || []).map(a => ({ ...a, type: 'cardio', color: '#38bdf8' }))
     ];
 
     return combined.sort((a, b) => {
@@ -229,8 +229,8 @@ export default function GanttChart({ activities, startDate, endDate }) {
   const shouldVirtualize = organizedActivities.length > 100;
 
   return (
-    <div 
-      className="bg-slate-800/60 border border-slate-700 rounded-lg p-4"
+    <div
+      className="rounded-xl border-2 border-[#0F4C5C]/70 bg-black p-4 shadow-md shadow-black/40"
       role="region"
       aria-label="Gantt Chart des activités"
     >
@@ -241,21 +241,21 @@ export default function GanttChart({ activities, startDate, endDate }) {
         <div className="flex gap-4 text-xs">
           <div className="flex items-center gap-1">
             <div className="w-3 h-3 bg-blue-500 rounded"></div>
-            <span className="text-slate-300">Natation</span>
+            <span className="text-teal-200">Natation</span>
           </div>
           <div className="flex items-center gap-1">
             <div className="w-3 h-3 bg-emerald-500 rounded"></div>
-            <span className="text-slate-300">Corde à sauter</span>
+            <span className="text-teal-200">Corde à sauter</span>
           </div>
           <div className="flex items-center gap-1">
-            <div className="w-3 h-3 bg-amber-500 rounded"></div>
-            <span className="text-slate-300">Cardio</span>
+            <div className="h-3 w-3 rounded bg-sky-400" />
+            <span className="text-teal-200">Cardio</span>
           </div>
         </div>
       </div>
 
       {allActivities.length === 0 ? (
-        <div className="text-center text-slate-400 py-8">
+        <div className="py-8 text-center text-teal-700">
           <p>Aucune activité à afficher</p>
         </div>
       ) : (
@@ -273,19 +273,19 @@ export default function GanttChart({ activities, startDate, endDate }) {
               }}
             >
               {/* Lignes de dates */}
-              <div className="absolute top-0 left-0 right-0 h-px bg-slate-600 z-0"></div>
+              <div className="absolute left-0 right-0 top-0 z-0 h-px bg-[#0F4C5C]/50" />
               {timelineDates.map((date, idx) => {
                 const position = ((date - dateRange.start) / (dateRange.end - dateRange.start)) * 100;
                 return (
                   <div
                     key={idx}
-                    className="absolute top-0 w-px bg-slate-600 opacity-30 z-0"
+                    className="absolute top-0 z-0 w-px bg-[#0F4C5C]/40 opacity-60"
                     style={{ 
                       left: `${position}%`,
                       height: `${timelineHeight}px`
                     }}
                   >
-                    <div className="absolute top-2 left-1/2 transform -translate-x-1/2 text-xs text-slate-400 whitespace-nowrap z-10">
+                    <div className="absolute left-1/2 top-2 z-10 -translate-x-1/2 transform whitespace-nowrap text-xs text-teal-600">
                       {date.toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit' })}
                     </div>
                   </div>
@@ -309,7 +309,7 @@ export default function GanttChart({ activities, startDate, endDate }) {
           </div>
 
           {/* Infos */}
-          <div className="mt-4 pt-4 border-t border-slate-700 text-xs text-slate-400">
+          <div className="mt-4 border-t border-[#0F4C5C]/40 pt-4 text-xs text-teal-700">
             <p>
               Total: {allActivities.length} activité(s) entre{' '}
               {dateRange.start.toLocaleDateString('fr-FR')} et{' '}

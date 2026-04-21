@@ -628,13 +628,13 @@ const RemindersSection = () => {
   return (
     <div className="space-y-6">
       {/* En-tête avec bouton d'ajout */}
-      <Card>
-        <CardHeader>
+      <Card variant="sport">
+        <CardHeader variant="sport">
           <div className="flex items-center justify-between">
-            <CardTitle className="flex items-center gap-2">
+            <CardTitle tone="sport" className="flex items-center gap-2 normal-case tracking-normal">
               <Bell className="w-5 h-5 text-yellow-400" />
               Rappels automatisés
-              <span className="text-sm font-normal text-slate-400">
+              <span className="text-sm font-normal text-teal-100/55">
                 ({reminders.filter(r => r.enabled).length} actifs)
               </span>
               {notificationSupported && (
@@ -659,7 +659,7 @@ const RemindersSection = () => {
                   onClick={handleRequestNotificationPermission}
                   variant="ghost"
                   size="sm"
-                  className="bg-blue-600/20 hover:bg-blue-600/30 border border-blue-500/50"
+                  className="bg-[#0F4C5C]/25 hover:bg-[#0F4C5C]/35 border border-[#0F4C5C]/50"
                 >
                   <Bell className="w-4 h-4 mr-2" />
                   {notificationPermission === 'denied' ? 'Réactiver' : 'Activer'} notifications
@@ -667,7 +667,7 @@ const RemindersSection = () => {
               )}
               <Button
                 onClick={() => setShowForm(true)}
-                className="bg-yellow-600 hover:bg-yellow-700"
+                className="border border-[#0F5C45]/70 bg-[#0F4C5C]/50 text-teal-100 hover:bg-[#0F5C45]/40"
               >
                 <Plus className="w-4 h-4 mr-2" />
                 Nouveau rappel
@@ -679,9 +679,9 @@ const RemindersSection = () => {
 
       {/* Formulaire d'ajout/édition */}
       {showForm && (
-        <Card className="border-yellow-500/30 bg-yellow-600/10">
-          <CardHeader>
-            <CardTitle className="flex items-center justify-between">
+        <Card variant="sport" className="border-[#0F5C45]/55 bg-[#0F4C5C]/12">
+          <CardHeader variant="sport">
+            <CardTitle tone="sport" className="flex items-center justify-between normal-case tracking-normal">
               {editingReminder ? 'Modifier le rappel' : 'Nouveau rappel'}
               <Button
                 variant="ghost"
@@ -697,13 +697,13 @@ const RemindersSection = () => {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {/* Type */}
                 <div>
-                  <label className="block text-sm font-medium text-slate-300 mb-2">
+                  <label className="block text-sm font-medium text-teal-100/80 mb-2">
                     Type de rappel
                   </label>
                   <select
                     value={formData.type}
                     onChange={(e) => handleInputChange('type', e.target.value)}
-                    className="w-full bg-slate-700 border border-slate-600 rounded-lg px-3 py-2 text-white"
+                    className="w-full bg-black border border-[#0F4C5C]/45 rounded-lg px-3 py-2 text-teal-100"
                   >
                     {reminderTypes.map(type => (
                       <option key={type.value} value={type.value}>
@@ -715,13 +715,13 @@ const RemindersSection = () => {
 
                 {/* Fréquence */}
                 <div>
-                  <label className="block text-sm font-medium text-slate-300 mb-2">
+                  <label className="block text-sm font-medium text-teal-100/80 mb-2">
                     Fréquence
                   </label>
                   <select
                     value={formData.frequency}
                     onChange={(e) => handleInputChange('frequency', e.target.value)}
-                    className="w-full bg-slate-700 border border-slate-600 rounded-lg px-3 py-2 text-white"
+                    className="w-full bg-black border border-[#0F4C5C]/45 rounded-lg px-3 py-2 text-teal-100"
                   >
                     {frequencies.map(freq => (
                       <option key={freq.value} value={freq.value}>
@@ -734,14 +734,14 @@ const RemindersSection = () => {
 
               {/* Titre */}
               <div>
-                <label className="block text-sm font-medium text-slate-300 mb-2">
+                <label className="block text-sm font-medium text-teal-100/80 mb-2">
                   Titre du rappel
                 </label>
                 <input
                   type="text"
                   value={formData.title}
                   onChange={(e) => handleInputChange('title', e.target.value)}
-                  className="w-full bg-slate-700 border border-slate-600 rounded-lg px-3 py-2 text-white"
+                  className="w-full bg-black border border-[#0F4C5C]/45 rounded-lg px-3 py-2 text-teal-100"
                   placeholder="Ex: Pesée hebdomadaire"
                   required
                 />
@@ -749,13 +749,13 @@ const RemindersSection = () => {
 
               {/* Description */}
               <div>
-                <label className="block text-sm font-medium text-slate-300 mb-2">
+                <label className="block text-sm font-medium text-teal-100/80 mb-2">
                   Description (optionnel)
                 </label>
                 <textarea
                   value={formData.description}
                   onChange={(e) => handleInputChange('description', e.target.value)}
-                  className="w-full bg-slate-700 border border-slate-600 rounded-lg px-3 py-2 text-white"
+                  className="w-full bg-black border border-[#0F4C5C]/45 rounded-lg px-3 py-2 text-teal-100"
                   rows="2"
                   placeholder="Description du rappel..."
                 />
@@ -765,13 +765,13 @@ const RemindersSection = () => {
                 {/* Jour de la semaine (pour weekly/biweekly) */}
                 {(formData.frequency === 'weekly' || formData.frequency === 'biweekly') && (
                   <div>
-                    <label className="block text-sm font-medium text-slate-300 mb-2">
+                    <label className="block text-sm font-medium text-teal-100/80 mb-2">
                       Jour de la semaine
                     </label>
                     <select
                       value={formData.dayOfWeek}
                       onChange={(e) => handleInputChange('dayOfWeek', parseInt(e.target.value))}
-                      className="w-full bg-slate-700 border border-slate-600 rounded-lg px-3 py-2 text-white"
+                      className="w-full bg-black border border-[#0F4C5C]/45 rounded-lg px-3 py-2 text-teal-100"
                     >
                       {daysOfWeek.map((day, index) => (
                         <option key={index} value={index}>
@@ -785,13 +785,13 @@ const RemindersSection = () => {
                 {/* Jour du mois (pour monthly) */}
                 {formData.frequency === 'monthly' && (
                   <div>
-                    <label className="block text-sm font-medium text-slate-300 mb-2">
+                    <label className="block text-sm font-medium text-teal-100/80 mb-2">
                       Jour du mois
                     </label>
                     <select
                       value={formData.dayOfMonth}
                       onChange={(e) => handleInputChange('dayOfMonth', parseInt(e.target.value))}
-                      className="w-full bg-slate-700 border border-slate-600 rounded-lg px-3 py-2 text-white"
+                      className="w-full bg-black border border-[#0F4C5C]/45 rounded-lg px-3 py-2 text-teal-100"
                     >
                       {Array.from({ length: 28 }, (_, i) => i + 1).map(day => (
                         <option key={day} value={day}>
@@ -804,21 +804,21 @@ const RemindersSection = () => {
 
                 {/* Heure */}
                 <div>
-                  <label className="block text-sm font-medium text-slate-300 mb-2">
+                  <label className="block text-sm font-medium text-teal-100/80 mb-2">
                     Heure
                   </label>
                   <input
                     type="time"
                     value={formData.time}
                     onChange={(e) => handleInputChange('time', e.target.value)}
-                    className="w-full bg-slate-700 border border-slate-600 rounded-lg px-3 py-2 text-white"
+                    className="w-full bg-black border border-[#0F4C5C]/45 rounded-lg px-3 py-2 text-teal-100"
                   />
                 </div>
               </div>
 
               {/* Méthodes de notification */}
               <div>
-                <label className="block text-sm font-medium text-slate-300 mb-2">
+                <label className="block text-sm font-medium text-teal-100/80 mb-2">
                   Méthodes de notification
                 </label>
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
@@ -828,7 +828,7 @@ const RemindersSection = () => {
                       className={`flex items-center gap-2 p-3 rounded-lg border cursor-pointer transition-all ${
                         formData.methods.includes(method.value)
                           ? 'border-yellow-500 bg-yellow-600/20'
-                          : 'border-slate-600 bg-slate-700/50 hover:bg-slate-700'
+                          : 'border-[#0F4C5C]/45 bg-black border border-[#0F4C5C]/45 hover:bg-teal-950/35'
                       }`}
                     >
                       <input
@@ -838,7 +838,7 @@ const RemindersSection = () => {
                         className="sr-only"
                       />
                       {method.icon}
-                      <span className="text-sm text-white">{method.label}</span>
+                      <span className="text-sm text-teal-100">{method.label}</span>
                     </label>
                   ))}
                 </div>
@@ -847,7 +847,7 @@ const RemindersSection = () => {
               <div className="flex gap-2">
                 <button
                   type="submit"
-                  className="gradient-button-premium gradient-button-premium-md rounded-lg flex items-center gap-2"
+                  className="rounded-lg border border-[#0F5C45]/70 bg-[#0F4C5C]/40 px-3 py-2 text-teal-100 font-medium hover:bg-[#0F4C5C]/55 transition-colors shadow-md shadow-black/20 rounded-lg flex items-center gap-2"
                 >
                   <Save className="w-4 h-4" />
                   {editingReminder ? 'Modifier' : 'Créer'} le rappel
@@ -855,7 +855,7 @@ const RemindersSection = () => {
                 <button
                   type="button"
                   onClick={resetForm}
-                  className="gradient-button-premium gradient-button-premium-md gradient-button-premium-variant rounded-lg"
+                  className="rounded-lg border border-[#0F5C45]/70 bg-[#0F4C5C]/40 px-3 py-2 text-teal-100 font-medium hover:bg-[#0F4C5C]/55 transition-colors shadow-md shadow-black/20 rounded-lg"
                 >
                   Annuler
                 </button>
@@ -868,7 +868,11 @@ const RemindersSection = () => {
       {/* Liste des rappels */}
       <div className="space-y-4">
         {reminders.map(reminder => (
-          <Card key={reminder.id} className={`${reminder.enabled ? 'border-slate-600' : 'border-slate-700 opacity-60'}`}>
+          <Card
+            key={reminder.id}
+            variant="sport"
+            className={reminder.enabled ? 'border-[#0F4C5C]/60' : 'border-[#0F4C5C]/35 opacity-60'}
+          >
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
                 <div className="flex-1">
@@ -877,7 +881,7 @@ const RemindersSection = () => {
                       <span className="text-lg">
                         {reminderTypes.find(t => t.value === reminder.type)?.icon}
                       </span>
-                      <h3 className="font-semibold text-white">{reminder.title}</h3>
+                      <h3 className="font-semibold text-teal-100">{reminder.title}</h3>
                       <span className={`px-2 py-1 rounded text-xs ${
                         reminder.enabled ? 'bg-green-600/20 text-green-300' : 'bg-gray-600/20 text-gray-400'
                       }`}>
@@ -887,10 +891,10 @@ const RemindersSection = () => {
                   </div>
                   
                   {reminder.description && (
-                    <p className="text-sm text-slate-400 mb-2">{reminder.description}</p>
+                    <p className="text-sm text-teal-100/55 mb-2">{reminder.description}</p>
                   )}
                   
-                  <div className="flex flex-wrap gap-4 text-sm text-slate-300">
+                  <div className="flex flex-wrap gap-4 text-sm text-teal-100/80">
                     <div className="flex items-center gap-1">
                       <Clock className="w-3 h-3" />
                       {frequencies.find(f => f.value === reminder.frequency)?.label} à {reminder.time}
@@ -927,7 +931,7 @@ const RemindersSection = () => {
                     {reminder.methods.map(method => {
                       const methodInfo = notificationMethods.find(m => m.value === method);
                       return (
-                        <span key={method} className="inline-flex items-center gap-1 px-2 py-1 bg-slate-700 rounded text-xs text-slate-300">
+                        <span key={method} className="inline-flex items-center gap-1 px-2 py-1 bg-black border border-[#0F4C5C]/45 rounded text-xs text-teal-100/80">
                           {methodInfo?.icon}
                           {methodInfo?.label}
                         </span>
@@ -968,17 +972,17 @@ const RemindersSection = () => {
       </div>
 
       {reminders.length === 0 && (
-        <Card>
+        <Card variant="sport">
           <CardContent className="text-center py-12">
-            <Bell className="w-16 h-16 mx-auto mb-4 text-slate-500" />
-            <h4 className="text-xl font-semibold mb-2 text-white">Aucun rappel configuré</h4>
-            <p className="text-slate-400 mb-4">
+            <Bell className="w-16 h-16 mx-auto mb-4 text-teal-100/45" />
+            <h4 className="text-xl font-semibold mb-2 text-teal-100">Aucun rappel configuré</h4>
+            <p className="text-teal-100/55 mb-4">
               Créez des rappels pour ne jamais oublier vos mesures et votre suivi corporel.
             </p>
             <button
               type="button"
               onClick={() => setShowForm(true)}
-              className="gradient-button-premium gradient-button-premium-md rounded-lg flex items-center gap-2 mx-auto"
+              className="rounded-lg border border-[#0F5C45]/70 bg-[#0F4C5C]/40 px-3 py-2 text-teal-100 font-medium hover:bg-[#0F4C5C]/55 transition-colors shadow-md shadow-black/20 rounded-lg flex items-center gap-2 mx-auto"
             >
               <Plus className="w-4 h-4" />
               Créer le premier rappel
@@ -988,10 +992,10 @@ const RemindersSection = () => {
       )}
 
       {/* Paramètres de notification */}
-      <Card className="bg-blue-600/10 border-blue-500/30">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Settings className="w-5 h-5 text-blue-400" />
+      <Card variant="sport" className="shadow-sm shadow-black/20">
+        <CardHeader variant="sport">
+          <CardTitle tone="sport" className="flex items-center gap-2 normal-case tracking-normal">
+            <Settings className="w-5 h-5 text-sky-300/90" />
             Paramètres de notification
           </CardTitle>
         </CardHeader>
@@ -999,34 +1003,34 @@ const RemindersSection = () => {
           <div className="space-y-4">
             <div className="flex items-center justify-between">
               <div>
-                <h4 className="font-medium text-white">Notifications push</h4>
-                <p className="text-sm text-slate-400">Recevoir des notifications sur cet appareil</p>
+                <h4 className="font-medium text-teal-100">Notifications push</h4>
+                <p className="text-sm text-teal-100/55">Recevoir des notifications sur cet appareil</p>
               </div>
               <label className="relative inline-flex items-center cursor-pointer">
                 <input type="checkbox" className="sr-only peer" defaultChecked />
-                <div className="w-11 h-6 bg-slate-600 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+                <div className="w-11 h-6 bg-[#0F4C5C]/40 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[#0F5C45]"></div>
               </label>
             </div>
             
             <div className="flex items-center justify-between">
               <div>
-                <h4 className="font-medium text-white">Son des notifications</h4>
-                <p className="text-sm text-slate-400">Jouer un son lors des rappels</p>
+                <h4 className="font-medium text-teal-100">Son des notifications</h4>
+                <p className="text-sm text-teal-100/55">Jouer un son lors des rappels</p>
               </div>
               <label className="relative inline-flex items-center cursor-pointer">
                 <input type="checkbox" className="sr-only peer" defaultChecked />
-                <div className="w-11 h-6 bg-slate-600 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+                <div className="w-11 h-6 bg-[#0F4C5C]/40 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[#0F5C45]"></div>
               </label>
             </div>
             
             <div className="flex items-center justify-between">
               <div>
-                <h4 className="font-medium text-white">Rappels par email</h4>
-                <p className="text-sm text-slate-400">Envoyer des rappels par email</p>
+                <h4 className="font-medium text-teal-100">Rappels par email</h4>
+                <p className="text-sm text-teal-100/55">Envoyer des rappels par email</p>
               </div>
               <label className="relative inline-flex items-center cursor-pointer">
                 <input type="checkbox" className="sr-only peer" />
-                <div className="w-11 h-6 bg-slate-600 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+                <div className="w-11 h-6 bg-[#0F4C5C]/40 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[#0F5C45]"></div>
               </label>
             </div>
           </div>

@@ -241,8 +241,12 @@ function TimeNavigation({
     }
   }, [dateKeys, customStartDate, customEndDate, setPeriodFilter, setSelectedDate]);
 
+  const navBtn =
+    'rounded-lg border-2 border-[#0F4C5C]/55 bg-black px-3 py-1.5 text-sm font-medium text-teal-100 shadow-sm shadow-black/20 transition hover:border-[#0F5C45]/60 hover:bg-[#0F4C5C]/15 disabled:cursor-not-allowed disabled:opacity-50 focus:outline-none focus:ring-2 focus:ring-sky-500/30';
+  const navBtnOn = 'border-[#0F5C45] bg-[#0F5C45]/35 text-white shadow-md shadow-black/40';
+
   return (
-    <div className="bg-slate-800/60 border border-slate-700 rounded-lg p-4 mb-6">
+    <div className="w-full">
       <div
         id={statusRegionId}
         className="sr-only"
@@ -260,7 +264,7 @@ function TimeNavigation({
             onClick={goToFirst}
             disabled={!selectedDate || dateKeys.indexOf(selectedDate) === 0}
             aria-label="Aller à la première date"
-            className="gradient-button-premium gradient-button-premium-sm rounded-lg disabled:opacity-50 disabled:cursor-not-allowed text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className={`${navBtn} text-sm`}
             title="Première date"
           >
             ««
@@ -269,14 +273,14 @@ function TimeNavigation({
             type="button"
             onClick={goToPrevious}
             disabled={!selectedDate || dateKeys.indexOf(selectedDate) === 0}
-            className="gradient-button-premium gradient-button-premium-sm rounded-lg disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className={navBtn}
             title="Jour précédent"
           >
             ‹
           </button>
           
-          <div className="flex items-center gap-2 px-3 py-1 bg-slate-900 rounded">
-            <span className="text-slate-400 text-sm">Date:</span>
+          <div className="flex items-center gap-2 rounded-lg border border-[#0F4C5C]/50 bg-black px-3 py-1">
+            <span className="text-sm text-teal-600">Date:</span>
             {/* 🔴 FIX : Sélecteur de date libre pour permettre de choisir n'importe quelle date */}
             <input
               type="date"
@@ -299,7 +303,7 @@ function TimeNavigation({
               disabled={isPending}
               aria-label={ARIA_LABELS.DATE_SELECTOR}
               aria-busy={isPending}
-              className="bg-slate-900 border-0 text-white font-semibold text-sm cursor-pointer focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50"
+              className="cursor-pointer border-0 bg-transparent text-sm font-semibold text-white focus:outline-none focus:ring-2 focus:ring-sky-500/40 disabled:opacity-50"
               max={(() => {
                 // Limiter aux dates jusqu'à aujourd'hui
                 const now = new Date();
@@ -307,7 +311,7 @@ function TimeNavigation({
               })()}
             />
             {isPending && (
-              <div className="w-3 h-3 border-2 border-blue-400 border-t-transparent rounded-full animate-spin" />
+              <div className="h-3 w-3 animate-spin rounded-full border-2 border-sky-400 border-t-transparent" />
             )}
             {/* 🔴 FIX : Afficher un indicateur si la date sélectionnée n'est pas dans les données disponibles */}
             {selectedDate && !dateKeys.includes(selectedDate) && (
@@ -321,7 +325,7 @@ function TimeNavigation({
             type="button"
             onClick={goToNext}
             disabled={!selectedDate || dateKeys.indexOf(selectedDate) === dateKeys.length - 1}
-            className="gradient-button-premium gradient-button-premium-sm rounded-lg disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className={navBtn}
             title="Jour suivant"
           >
             ›
@@ -330,7 +334,7 @@ function TimeNavigation({
             type="button"
             onClick={goToLast}
             disabled={!selectedDate || dateKeys.indexOf(selectedDate) === dateKeys.length - 1}
-            className="gradient-button-premium gradient-button-premium-sm rounded-lg disabled:opacity-50 disabled:cursor-not-allowed text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className={`${navBtn} text-sm`}
             title="Dernière date"
           >
             »»
@@ -338,7 +342,7 @@ function TimeNavigation({
           <button
             type="button"
             onClick={goToToday}
-            className="gradient-button-premium gradient-button-premium-sm gradient-button-premium-variant rounded-lg text-sm font-medium focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className={`${navBtn} ${navBtnOn} text-sm font-semibold`}
             aria-label="Aller à aujourd'hui"
             title="Aujourd'hui"
           >
@@ -351,11 +355,7 @@ function TimeNavigation({
           <button
             type="button"
             onClick={() => setShowFilters(!showFilters)}
-            className={`gradient-button-premium gradient-button-premium-sm rounded-lg ${
-              showFilters
-                ? 'gradient-button-premium-variant'
-                : ''
-            }`}
+            className={`${navBtn} ${showFilters ? navBtnOn : ''}`}
             aria-expanded={showFilters}
             aria-controls={filtersSectionId}
             aria-label={showFilters ? 'Masquer les filtres de période' : 'Afficher les filtres de période'}
@@ -365,11 +365,7 @@ function TimeNavigation({
           <button
             type="button"
             onClick={() => setShowComparison(!showComparison)}
-            className={`gradient-button-premium gradient-button-premium-sm rounded-lg ${
-              comparisonMode
-                ? 'gradient-button-premium-variant'
-                : ''
-            }`}
+            className={`${navBtn} ${comparisonMode ? navBtnOn : ''}`}
             aria-expanded={showComparison}
             aria-controls={comparisonSectionId}
             aria-label={showComparison ? 'Masquer les options de comparaison' : 'Afficher les options de comparaison'}
@@ -383,7 +379,7 @@ function TimeNavigation({
       {/* Panneau Filtres */}
       {showFilters && (
         <div
-          className="mt-4 pt-4 border-t border-slate-700"
+          className="mt-4 border-t border-[#0F4C5C]/40 pt-4"
           id={filtersSectionId}
           role="region"
           aria-labelledby={filtersHeadingId}
@@ -395,11 +391,7 @@ function TimeNavigation({
             <button
               type="button"
               onClick={() => applyPeriodFilter('week')}
-              className={`gradient-button-premium gradient-button-premium-sm rounded-lg ${
-                periodFilter === 'week'
-                  ? 'gradient-button-premium-variant'
-                  : ''
-              }`}
+              className={`${navBtn} ${periodFilter === 'week' ? navBtnOn : ''}`}
               aria-pressed={periodFilter === 'week'}
             >
               7 derniers jours
@@ -407,11 +399,7 @@ function TimeNavigation({
             <button
               type="button"
               onClick={() => applyPeriodFilter('month')}
-              className={`gradient-button-premium gradient-button-premium-sm rounded-lg ${
-                periodFilter === 'month'
-                  ? 'gradient-button-premium-variant'
-                  : ''
-              }`}
+              className={`${navBtn} ${periodFilter === 'month' ? navBtnOn : ''}`}
               aria-pressed={periodFilter === 'month'}
             >
               30 derniers jours
@@ -419,11 +407,7 @@ function TimeNavigation({
             <button
               type="button"
               onClick={() => applyPeriodFilter('3months')}
-              className={`gradient-button-premium gradient-button-premium-sm rounded-lg ${
-                periodFilter === '3months'
-                  ? 'gradient-button-premium-variant'
-                  : ''
-              }`}
+              className={`${navBtn} ${periodFilter === '3months' ? navBtnOn : ''}`}
               aria-pressed={periodFilter === '3months'}
             >
               3 derniers mois
@@ -431,11 +415,7 @@ function TimeNavigation({
             <button
               type="button"
               onClick={() => applyPeriodFilter('6months')}
-              className={`gradient-button-premium gradient-button-premium-sm rounded-lg ${
-                periodFilter === '6months'
-                  ? 'gradient-button-premium-variant'
-                  : ''
-              }`}
+              className={`${navBtn} ${periodFilter === '6months' ? navBtnOn : ''}`}
               aria-pressed={periodFilter === '6months'}
             >
               6 derniers mois
@@ -443,11 +423,7 @@ function TimeNavigation({
             <button
               type="button"
               onClick={() => applyPeriodFilter('year')}
-              className={`gradient-button-premium gradient-button-premium-sm rounded-lg ${
-                periodFilter === 'year'
-                  ? 'gradient-button-premium-variant'
-                  : ''
-              }`}
+              className={`${navBtn} ${periodFilter === 'year' ? navBtnOn : ''}`}
               aria-pressed={periodFilter === 'year'}
             >
               1 an
@@ -455,11 +431,7 @@ function TimeNavigation({
             <button
               type="button"
               onClick={() => applyPeriodFilter('all')}
-              className={`gradient-button-premium gradient-button-premium-sm rounded-lg ${
-                periodFilter === 'all' || !periodFilter
-                  ? 'gradient-button-premium-variant'
-                  : ''
-              }`}
+              className={`${navBtn} ${periodFilter === 'all' || !periodFilter ? navBtnOn : ''}`}
               aria-pressed={periodFilter === 'all' || !periodFilter}
             >
               Toutes les dates
@@ -467,11 +439,11 @@ function TimeNavigation({
           </div>
 
           {/* Filtre personnalisé */}
-          <div className="mt-3 pt-3 border-t border-slate-700">
-            <h6 className="text-slate-300 text-sm mb-2">Période personnalisée</h6>
+          <div className="mt-3 border-t border-[#0F4C5C]/40 pt-3">
+            <h6 className="mb-2 text-sm text-teal-200">Période personnalisée</h6>
             <div className="flex gap-3 items-end">
               <div>
-                <label className="block text-slate-400 text-xs mb-1">Début</label>
+                <label className="mb-1 block text-xs text-teal-600">Début</label>
                 <input
                   type="date"
                   value={customStartDate || ''}
@@ -481,11 +453,11 @@ function TimeNavigation({
                       applyPeriodFilter('custom');
                     }
                   }}
-                  className="px-2 py-1 bg-slate-900 border border-slate-700 rounded text-white text-sm"
+                  className="rounded border border-[#0F4C5C]/55 bg-black px-2 py-1 text-sm text-white"
                 />
               </div>
               <div>
-                <label className="block text-slate-400 text-xs mb-1">Fin</label>
+                <label className="mb-1 block text-xs text-teal-600">Fin</label>
                 <input
                   type="date"
                   value={customEndDate || ''}
@@ -495,7 +467,7 @@ function TimeNavigation({
                       applyPeriodFilter('custom');
                     }
                   }}
-                  className="px-2 py-1 bg-slate-900 border border-slate-700 rounded text-white text-sm"
+                  className="rounded border border-[#0F4C5C]/55 bg-black px-2 py-1 text-sm text-white"
                 />
               </div>
               <button
@@ -507,7 +479,7 @@ function TimeNavigation({
                   }
                 }}
                 disabled={!customStartDate || !customEndDate}
-                className="gradient-button-premium gradient-button-premium-sm rounded-lg disabled:opacity-50 disabled:cursor-not-allowed"
+                className={`${navBtn} disabled:cursor-not-allowed disabled:opacity-50`}
               >
                 Appliquer
               </button>
@@ -519,7 +491,7 @@ function TimeNavigation({
                   setPeriodFilter('all');
                   applyPeriodFilter('all');
                 }}
-                className="gradient-button-premium gradient-button-premium-sm gradient-button-premium-variant rounded-lg"
+                className={`${navBtn} ${navBtnOn}`}
               >
                 Réinitialiser
               </button>
@@ -531,7 +503,7 @@ function TimeNavigation({
       {/* Panneau Comparaison */}
       {showComparison && (
         <div
-          className="mt-4 pt-4 border-t border-slate-700"
+          className="mt-4 border-t border-[#0F4C5C]/40 pt-4"
           id={comparisonSectionId}
           role="region"
           aria-labelledby={comparisonHeadingId}
@@ -550,20 +522,20 @@ function TimeNavigation({
                     setCompareDate(null);
                   }
                 }}
-                className="w-4 h-4 rounded bg-slate-700 border-slate-600 text-blue-600 focus:ring-blue-500"
+                className="h-4 w-4 rounded border-[#0F4C5C] bg-black text-sky-400 focus:ring-sky-500/40"
               />
-              <span className="text-slate-300 text-sm">Activer la comparaison</span>
+              <span className="text-sm text-teal-200">Activer la comparaison</span>
             </label>
           </div>
 
           {comparisonMode && (
             <div className="flex gap-3 items-end">
               <div>
-                <label className="block text-slate-400 text-xs mb-1">Date de comparaison</label>
+                <label className="mb-1 block text-xs text-teal-600">Date de comparaison</label>
                 <select
                   value={compareDate || ''}
                   onChange={(e) => setCompareDate(e.target.value)}
-                  className="px-3 py-2 bg-slate-900 border border-slate-700 rounded text-white text-sm"
+                  className="rounded border border-[#0F4C5C]/55 bg-black px-3 py-2 text-sm text-white"
                 >
                   <option value="">Sélectionner une date...</option>
                   {availableCompareDates.map((dk) => (
@@ -572,11 +544,11 @@ function TimeNavigation({
                 </select>
               </div>
               {compareDate && (
-                <div className="px-3 py-2 bg-purple-900/30 border border-purple-700 rounded text-sm">
-                  <span className="text-purple-300">Comparaison active:</span>
-                  <span className="text-white ml-2 font-semibold">{compareDate}</span>
-                  <span className="text-slate-400 ml-2">vs</span>
-                  <span className="text-white ml-2 font-semibold">{selectedDate}</span>
+                <div className="rounded border border-[#0F5C45]/50 bg-[#0F4C5C]/20 px-3 py-2 text-sm">
+                  <span className="text-sky-300">Comparaison active:</span>
+                  <span className="ml-2 font-semibold text-white">{compareDate}</span>
+                  <span className="ml-2 text-teal-600">vs</span>
+                  <span className="ml-2 font-semibold text-white">{selectedDate}</span>
                 </div>
               )}
             </div>

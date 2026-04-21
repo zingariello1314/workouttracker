@@ -104,7 +104,7 @@ const ProgressTab = () => {
 
   const renderSectionGrid = (sectionList, title, listId) => (
     <div className="space-y-3">
-      <h3 className="text-sm font-medium text-slate-400 uppercase tracking-wider">{title}</h3>
+      <h3 className="text-xs font-medium uppercase tracking-wider text-teal-700">{title}</h3>
       <div
         className="grid grid-cols-2 md:grid-cols-5 gap-3"
         role="tablist"
@@ -127,17 +127,17 @@ const ProgressTab = () => {
               aria-selected={isActive}
               aria-controls={`progress-section-${section.id}`}
               tabIndex={shouldTabFocus ? 0 : -1}
-              className={`gradient-button-premium rounded-lg p-4 text-left ${
+              className={`rounded-lg border p-4 text-left transition ${
                 isActive
-                  ? 'gradient-button-premium-variant'
-                  : ''
+                  ? 'border-[#0F5C45] bg-[#0F5C45]/25 text-teal-100 shadow-md shadow-black/30'
+                  : 'border-[#0F4C5C]/50 bg-black text-teal-100 hover:border-[#0F5C45]/50 hover:bg-[#0F4C5C]/10'
               }`}
             >
-              <Icon className={`w-5 h-5 mb-2 ${
-                isActive ? 'text-white' : 'text-slate-400'
+              <Icon className={`mb-2 h-5 w-5 ${
+                isActive ? 'text-sky-300' : 'text-teal-600'
               }`} />
-              <div className="font-medium text-sm">{section.label}</div>
-              <div className="text-xs text-slate-400 mt-1">{section.description}</div>
+              <div className="text-sm font-medium">{section.label}</div>
+              <div className="mt-1 text-xs text-teal-800">{section.description}</div>
             </button>
           );
         })}
@@ -150,12 +150,12 @@ const ProgressTab = () => {
       {/* Contenu avec z-index relatif */}
       <div className="relative z-10 space-y-6 p-6">
         {/* Navigation des sections */}
-        <Card>
+        <Card variant="sport">
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Brain className="w-6 h-6 text-orange-400" />
+          <CardTitle className="flex flex-wrap items-center gap-2 text-teal-100">
+            <Brain className="h-6 w-6 text-sky-400" />
             {t('progress.title')}
-            <span className="text-sm font-normal text-slate-400">
+            <span className="text-sm font-normal text-teal-700">
               - {t('progress.subtitle')}
             </span>
           </CardTitle>

@@ -34,35 +34,35 @@ const VIEW_CONFIG = {
     id: 'gallery',
     label: 'Galerie',
     icon: Grid,
-    color: 'purple',
+    iconTone: 'text-sky-400',
     description: 'Vos photos de progression'
   },
   dashboard: {
     id: 'dashboard',
     label: 'Dashboard',
     icon: BarChart3,
-    color: 'blue',
+    iconTone: 'text-teal-200',
     description: 'Vue d\'ensemble des analyses'
   },
   muscle: {
     id: 'muscle',
     label: 'Par Muscle',
     icon: Activity,
-    color: 'green',
+    iconTone: 'text-emerald-400',
     description: 'Analyse détaillée par groupe musculaire'
   },
   timeline: {
     id: 'timeline',
     label: 'Timeline',
     icon: Calendar,
-    color: 'orange',
+    iconTone: 'text-cyan-300',
     description: 'Évolution temporelle'
   },
   correlations: {
     id: 'correlations',
     label: 'Corrélations',
     icon: Target,
-    color: 'pink',
+    iconTone: 'text-sky-300',
     description: 'Liens avec l\'entraînement'
   }
 };
@@ -80,19 +80,20 @@ const Breadcrumb = ({ items, onNavigate }) => {
         return (
           <React.Fragment key={item.id}>
             {index > 0 && (
-              <ChevronRight className="w-4 h-4 text-slate-500" />
+              <ChevronRight className="h-4 w-4 text-teal-800" />
             )}
             {isLast ? (
-              <span className="flex items-center gap-2 text-white font-medium">
-                <Icon className={`w-4 h-4 text-${item.color}-400`} />
+              <span className="flex items-center gap-2 font-medium text-teal-100">
+                <Icon className={`h-4 w-4 ${item.iconTone || 'text-teal-200'}`} />
                 {item.label}
               </span>
             ) : (
               <button
+                type="button"
                 onClick={() => onNavigate(item.id)}
-                className="flex items-center gap-2 text-slate-400 hover:text-white transition-colors"
+                className="flex items-center gap-2 text-teal-600 transition-colors hover:text-teal-100"
               >
-                <Icon className="w-4 h-4" />
+                <Icon className={`h-4 w-4 ${item.iconTone || 'text-teal-500'}`} />
                 {item.label}
               </button>
             )}
@@ -125,7 +126,6 @@ const DashboardNavigation = ({
         id: 'dashboard',
         label: 'Voir résultats',
         icon: BarChart3,
-        color: 'purple',
         onClick: () => onViewChange('dashboard')
       });
     }
@@ -136,7 +136,6 @@ const DashboardNavigation = ({
         id: 'muscle',
         label: 'Analyser par muscle',
         icon: Activity,
-        color: 'green',
         onClick: () => onViewChange('muscle')
       });
     }
@@ -147,7 +146,6 @@ const DashboardNavigation = ({
         id: 'timeline',
         label: 'Voir évolution',
         icon: Calendar,
-        color: 'orange',
         onClick: () => onViewChange('timeline')
       });
     }
@@ -157,16 +155,15 @@ const DashboardNavigation = ({
 
   // Générer breadcrumb items
   const breadcrumbItems = React.useMemo(() => {
-    const items = [
-      { id: 'gallery', label: 'Photos', icon: Home, color: 'purple' }
-    ];
+    const items = [{ id: 'gallery', label: 'Photos', icon: Home, iconTone: 'text-sky-400' }];
     
     if (currentView !== 'gallery') {
       const viewConfig = VIEW_CONFIG[currentView];
       if (viewConfig) {
         items.push({
           ...viewConfig,
-          icon: viewConfig.icon
+          icon: viewConfig.icon,
+          iconTone: viewConfig.iconTone
         });
       }
     }
@@ -204,34 +201,26 @@ const DashboardNavigation = ({
         {Object.values(VIEW_CONFIG).map((view) => {
           const Icon = view.icon;
           const isActive = currentView === view.id;
-          const colorClasses = {
-            purple: 'bg-purple-600 hover:bg-purple-700 border-purple-500',
-            blue: 'bg-blue-600 hover:bg-blue-700 border-blue-500',
-            green: 'bg-green-600 hover:bg-green-700 border-green-500',
-            orange: 'bg-orange-600 hover:bg-orange-700 border-orange-500',
-            pink: 'bg-pink-600 hover:bg-pink-700 border-pink-500'
-          };
-
           return (
             <button
               key={view.id}
+              type="button"
               onClick={() => onViewChange(view.id)}
               className={`
-                flex items-center gap-2 px-4 py-2 rounded-lg transition-all duration-200
-                whitespace-nowrap relative
-                ${isActive 
-                  ? `${colorClasses[view.color]} text-white border-2 shadow-lg scale-105` 
-                  : 'bg-slate-700 hover:bg-slate-600 text-slate-300 border-2 border-transparent'
+                relative flex items-center gap-2 whitespace-nowrap rounded-lg border-2 px-4 py-2 transition-all duration-200
+                ${
+                  isActive
+                    ? 'scale-[1.02] border-[#0F5C45] bg-[#0F5C45]/30 text-teal-100 shadow-lg shadow-black/40'
+                    : 'border-[#0F4C5C]/50 bg-black text-teal-100 hover:border-[#0F5C45]/55 hover:bg-[#0F4C5C]/15'
                 }
               `}
               title={view.description}
             >
-              <Icon className={`w-4 h-4 ${isActive ? 'text-white' : 'text-slate-400'}`} />
+              <Icon className={`h-4 w-4 ${isActive ? 'text-teal-100' : view.iconTone || 'text-teal-600'}`} />
               <span className="font-medium">{view.label}</span>
-              
-              {/* ✅ Indicateur actif avec animation */}
+
               {isActive && (
-                <div className={`absolute -bottom-1 left-1/2 transform -translate-x-1/2 w-1 h-1 bg-${view.color}-400 rounded-full animate-pulse`} />
+                <div className="absolute -bottom-1 left-1/2 h-1 w-1 -translate-x-1/2 transform animate-pulse rounded-full bg-sky-400" />
               )}
             </button>
           );
@@ -240,26 +229,20 @@ const DashboardNavigation = ({
 
       {/* ✅ Quick Actions Contextuelles (suggestions intelligentes) */}
       {quickActions.length > 0 && (
-        <div className="flex items-center gap-2 p-3 bg-slate-800/50 rounded-lg border border-slate-700">
-          <Info className="w-4 h-4 text-blue-400 flex-shrink-0" />
-          <span className="text-xs text-slate-400 flex-1">
-            Suggestions:
-          </span>
-          <div className="flex gap-2 flex-wrap">
+        <div className="flex flex-wrap items-center gap-2 rounded-xl border-2 border-[#0F4C5C]/60 bg-black p-3 shadow-md shadow-black/30">
+          <Info className="h-4 w-4 shrink-0 text-sky-400" />
+          <span className="flex-1 text-xs text-teal-700">Suggestions :</span>
+          <div className="flex flex-wrap gap-2">
             {quickActions.map((action) => {
               const ActionIcon = action.icon;
               return (
                 <button
                   key={action.id}
+                  type="button"
                   onClick={action.onClick}
-                  className={`
-                    flex items-center gap-1 px-2 py-1 rounded text-xs
-                    bg-${action.color}-600/20 hover:bg-${action.color}-600/30
-                    text-${action.color}-300 border border-${action.color}-600/30
-                    transition-all hover:scale-105
-                  `}
+                  className="flex items-center gap-1 rounded-lg border border-[#0F5C45]/45 bg-[#0F4C5C]/15 px-2 py-1 text-xs text-teal-100 transition-all hover:scale-105 hover:border-[#0F5C45]/70 hover:bg-[#0F5C45]/25"
                 >
-                  <ActionIcon className="w-3 h-3" />
+                  <ActionIcon className="h-3 w-3" />
                   {action.label}
                 </button>
               );

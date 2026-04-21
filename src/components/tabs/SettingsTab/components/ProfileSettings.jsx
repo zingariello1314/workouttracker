@@ -1,25 +1,13 @@
 /**
- * Composant ProfileSettings - Interface utilisateur pour les paramètres du profil
- * 
- * ✅ PHASE 4 : Extraction de l'UI pour Avatar, Email, Password
- * 
- * @module components/tabs/SettingsTab/components/ProfileSettings
+ * Paramètres du profil (avatar, email, mot de passe, migration).
  */
 
 import React from 'react';
 import { User, Mail, Lock, Image } from 'lucide-react';
 import Card, { CardHeader, CardTitle, CardContent } from '../../../ui/Card';
 import { Input } from '../../../ui/Input';
+import { settingsTheme as S } from '../settingsThemeClasses';
 
-/**
- * Composant pour gérer les paramètres du profil utilisateur
- * 
- * @param {Object} currentUser - Utilisateur actuel
- * @param {Object} profileSettings - Données du hook useProfileSettings
- * @param {Function} setActiveTab - Fonction pour changer d'onglet
- * @param {Object} migrationSettings - Données du hook useDataMigration
- * @returns {JSX.Element}
- */
 const ProfileSettings = ({
   currentUser,
   profileSettings,
@@ -58,32 +46,33 @@ const ProfileSettings = ({
     handleMigrateData,
   } = migrationSettings || {};
 
+  const fieldClass = `${S.input} px-4 py-3`;
+
   return (
-    <Card className="bg-slate-800/80 backdrop-blur-sm border-slate-700 profile-input-dark">
-      <CardHeader>
-        <CardTitle className="flex items-center text-white">
-          <User className="mr-2" size={20} />
+    <Card variant="settings" className="profile-input-dark">
+      <CardHeader variant="settings">
+        <CardTitle tone="settings" className="flex items-center normal-case tracking-normal">
+          <User className="mr-2 text-red-400" size={20} />
           Mon profil
         </CardTitle>
       </CardHeader>
       <CardContent>
         <div className="space-y-6">
-          {/* Photo de profil */}
           <div className="space-y-3">
-            <label className="text-sm font-medium text-slate-200 flex items-center">
+            <label className={`flex items-center ${S.label}`}>
               <Image className="mr-2" size={16} />
               Photo de profil
             </label>
             <div className="flex items-center gap-6">
-              <div className="w-20 h-20 rounded-full overflow-hidden shadow-lg border border-white/20 flex items-center justify-center bg-gradient-to-br from-purple-500 to-blue-600">
+              <div className="flex h-20 w-20 items-center justify-center overflow-hidden rounded-full border-2 border-red-700/60 bg-gradient-to-br from-red-950 to-black shadow-lg">
                 {avatarPreviewUrl ? (
                   <img
                     src={avatarPreviewUrl}
                     alt={currentUser.username}
-                    className="w-full h-full object-cover"
+                    className="h-full w-full object-cover"
                   />
                 ) : (
-                  <span className="text-2xl font-semibold text-white">{usernameInitial}</span>
+                  <span className="text-2xl font-semibold text-red-100">{usernameInitial}</span>
                 )}
               </div>
               <div className="flex-1 space-y-2">
@@ -92,24 +81,23 @@ const ProfileSettings = ({
                   type="file"
                   accept="image/*"
                   onChange={handleAvatarChange}
-                  className="text-xs text-slate-300 file:mr-3 file:px-3 file:py-1.5 file:rounded-md file:border-0 file:bg-purple-600 file:text-white hover:file:bg-purple-700 cursor-pointer"
+                  className="cursor-pointer text-xs text-red-200/80 file:mr-3 file:cursor-pointer file:rounded-md file:border-0 file:bg-red-900/70 file:px-3 file:py-1.5 file:text-xs file:font-medium file:text-red-50 hover:file:bg-red-800/80"
                 />
                 {avatarStatus === 'loading' && (
-                  <span className="text-xs text-slate-300">Mise à jour…</span>
+                  <span className={`text-xs ${S.muted}`}>Mise à jour…</span>
                 )}
                 {avatarStatus === 'success' && (
-                  <span className="text-xs text-emerald-400">✅ Avatar mis à jour avec succès</span>
+                  <span className="text-xs text-emerald-400">Avatar mis à jour avec succès</span>
                 )}
                 {avatarStatus === 'error' && (
-                  <span className="text-xs text-red-400">❌ Erreur lors de la mise à jour</span>
+                  <span className="text-xs text-red-400">Erreur lors de la mise à jour</span>
                 )}
               </div>
             </div>
           </div>
 
-          {/* Nom d'utilisateur (non modifiable) */}
           <div className="space-y-2">
-            <label className="text-sm font-medium text-slate-200 flex items-center">
+            <label className={`flex items-center ${S.label}`}>
               <User className="mr-2" size={16} />
               Nom d'utilisateur
             </label>
@@ -117,14 +105,13 @@ const ProfileSettings = ({
               type="text"
               value={currentUser.username}
               disabled
-              className="!bg-slate-700/50 !text-slate-300 cursor-not-allowed"
+              className="!cursor-not-allowed !border-red-900/50 !bg-black !text-red-300/80"
             />
-            <p className="text-xs text-slate-400">Le nom d'utilisateur ne peut pas être modifié</p>
+            <p className={S.mutedXs}>Le nom d'utilisateur ne peut pas être modifié</p>
           </div>
 
-          {/* Email */}
           <div className="space-y-3">
-            <label className="text-sm font-medium text-slate-200 flex items-center">
+            <label className={`flex items-center ${S.label}`}>
               <Mail className="mr-2" size={16} />
               Adresse email
             </label>
@@ -134,37 +121,34 @@ const ProfileSettings = ({
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="Nouvelle adresse email"
-                style={{ backgroundColor: 'rgb(51 65 85)', color: '#e2e8f0', borderColor: '#475569' }}
-                className="w-full px-4 py-3 !bg-slate-700 !text-slate-200 !border-slate-600 border rounded-lg placeholder-slate-400 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 hover:border-slate-500 transition-all duration-200 focus:outline-none"
+                className={fieldClass}
               />
               <input
                 type="email"
                 value={confirmEmail}
                 onChange={(e) => setConfirmEmail(e.target.value)}
                 placeholder="Confirmer votre adresse email"
-                style={{ backgroundColor: 'rgb(51 65 85)', color: '#e2e8f0', borderColor: '#475569' }}
-                className="w-full px-4 py-3 !bg-slate-700 !text-slate-200 !border-slate-600 border rounded-lg placeholder-slate-400 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 hover:border-slate-500 transition-all duration-200 focus:outline-none"
+                className={fieldClass}
               />
               <button
                 type="button"
                 onClick={handleEmailUpdate}
                 disabled={emailStatus === 'loading' || !email || !confirmEmail || (email === (currentUser.email || '') && confirmEmail === (currentUser.email || ''))}
-                className="gradient-button-premium gradient-button-premium-md rounded-lg w-full disabled:opacity-50 disabled:cursor-not-allowed"
+                className={`${S.btnPrimary} w-full`}
               >
                 {emailStatus === 'loading' ? 'Mise à jour...' : 'Enregistrer l\'email'}
               </button>
               {emailError && (
-                <span className="text-xs text-red-400 block">{emailError}</span>
+                <span className="block text-xs text-red-400">{emailError}</span>
               )}
               {emailStatus === 'success' && (
-                <span className="text-xs text-emerald-400">✅ Email mis à jour avec succès</span>
+                <span className="text-xs text-emerald-400">Email mis à jour avec succès</span>
               )}
             </div>
           </div>
 
-          {/* Mot de passe */}
-          <div className="space-y-3 pt-4 border-t border-slate-700">
-            <label className="text-sm font-medium text-slate-200 flex items-center">
+          <div className="space-y-3 border-t border-red-900/45 pt-4">
+            <label className={`flex items-center ${S.label}`}>
               <Lock className="mr-2" size={16} />
               Changer le mot de passe
             </label>
@@ -175,8 +159,7 @@ const ProfileSettings = ({
                 onChange={(e) => setOldPassword(e.target.value)}
                 placeholder="Renseignez votre mot de passe actuel"
                 autoComplete="off"
-                style={{ backgroundColor: 'rgb(51 65 85)', color: '#e2e8f0', borderColor: '#475569' }}
-                className="w-full px-4 py-3 !bg-slate-700 !text-slate-200 !border-slate-600 border rounded-lg placeholder-slate-400 focus:ring-2 focus:ring-purple-500 focus:border-purple-500 hover:border-slate-500 transition-all duration-200 focus:outline-none"
+                className={fieldClass}
               />
               <input
                 type="password"
@@ -184,8 +167,7 @@ const ProfileSettings = ({
                 onChange={(e) => setNewPassword(e.target.value)}
                 placeholder="Nouveau mot de passe (min. 6 caractères)"
                 autoComplete="new-password"
-                style={{ backgroundColor: 'rgb(51 65 85)', color: '#e2e8f0', borderColor: '#475569' }}
-                className="w-full px-4 py-3 !bg-slate-700 !text-slate-200 !border-slate-600 border rounded-lg placeholder-slate-400 focus:ring-2 focus:ring-purple-500 focus:border-purple-500 hover:border-slate-500 transition-all duration-200 focus:outline-none"
+                className={fieldClass}
               />
               <input
                 type="password"
@@ -193,91 +175,88 @@ const ProfileSettings = ({
                 onChange={(e) => setConfirmPassword(e.target.value)}
                 placeholder="Confirmer votre mot de passe"
                 autoComplete="new-password"
-                style={{ backgroundColor: 'rgb(51 65 85)', color: '#e2e8f0', borderColor: '#475569' }}
-                className="w-full px-4 py-3 !bg-slate-700 !text-slate-200 !border-slate-600 border rounded-lg placeholder-slate-400 focus:ring-2 focus:ring-purple-500 focus:border-purple-500 hover:border-slate-500 transition-all duration-200 focus:outline-none"
+                className={fieldClass}
               />
               <button
                 type="button"
                 onClick={handlePasswordUpdate}
                 disabled={passwordStatus === 'loading' || !oldPassword || !newPassword || !confirmPassword}
-                className="gradient-button-premium gradient-button-premium-md rounded-lg w-full disabled:opacity-50 disabled:cursor-not-allowed"
+                className={`${S.btnPrimary} w-full`}
               >
                 {passwordStatus === 'loading' ? 'Mise à jour...' : 'Changer le mot de passe'}
               </button>
               {passwordError && (
-                <span className="text-xs text-red-400 block">{passwordError}</span>
+                <span className="block text-xs text-red-400">{passwordError}</span>
               )}
               {passwordStatus === 'success' && (
-                <span className="text-xs text-emerald-400">✅ Mot de passe mis à jour avec succès</span>
+                <span className="text-xs text-emerald-400">Mot de passe mis à jour avec succès</span>
               )}
             </div>
           </div>
 
-          {/* Bouton Premium */}
           {setActiveTab && (
-            <div className="space-y-3 pt-4 border-t border-slate-700">
+            <div className="space-y-3 border-t border-red-900/45 pt-4">
               <button
                 type="button"
                 onClick={() => setActiveTab('pricing')}
-                className="gradient-button-premium gradient-button-premium-lg gradient-button-premium-variant rounded-lg w-full flex items-center justify-center gap-2"
+                className={`${S.btnSecondary} w-full gap-2`}
               >
                 <span>⭐</span>
                 <span>Passer à l'abonnement premium</span>
               </button>
-              <p className="text-xs text-slate-400 text-center">
+              <p className={`text-center text-xs ${S.muted}`}>
                 Débloquez toutes les fonctionnalités avancées de Momentum
               </p>
             </div>
           )}
 
-          {/* Migration des données */}
           {migrationSettings && (
-            <div className="pt-4 border-t border-slate-700 mt-4">
-              <p className="text-xs text-slate-400 mb-3">
+            <div className="mt-4 border-t border-red-900/45 pt-4">
+              <p className={`mb-3 text-xs ${S.muted}`}>
                 Tu peux associer toutes tes données locales actuelles (notamment les livres) à ce compte.
               </p>
               <button
                 type="button"
                 onClick={handleMigrateData}
                 disabled={migrationStatus === 'loading'}
-                className="gradient-button-premium gradient-button-premium-md rounded-lg disabled:opacity-50 disabled:cursor-not-allowed"
+                className={`${S.btnPrimary} disabled:opacity-50`}
               >
                 Associer mes données locales à ce compte
               </button>
-              
+
               {migrationStatus === 'loading' && (
                 <div className="mt-4 space-y-2">
-                  <div className="flex items-center justify-between text-xs text-slate-300 mb-1">
+                  <div className={`mb-1 flex items-center justify-between text-xs ${S.muted}`}>
                     <span>{migrationProgress.message || 'Migration en cours...'}</span>
                     <span>{migrationProgress.current} / {migrationProgress.total}</span>
                   </div>
-                  <div className="w-full bg-slate-700 rounded-full h-2 overflow-hidden">
-                    <div 
-                      className="bg-blue-500 h-2 rounded-full transition-all duration-300 ease-out"
-                      style={{ 
-                        width: `${migrationProgress.total > 0 ? (migrationProgress.current / migrationProgress.total) * 100 : 0}%` 
+                  <div className="h-2 w-full overflow-hidden rounded-full bg-red-950/60">
+                    <div
+                      className="h-2 rounded-full bg-red-600 transition-all duration-300 ease-out"
+                      style={{
+                        width: `${migrationProgress.total > 0 ? (migrationProgress.current / migrationProgress.total) * 100 : 0}%`
                       }}
                     />
                   </div>
                 </div>
               )}
-              
+
               {migrationStatus === 'success' && (
                 <div className="mt-4 space-y-2">
                   <p className="text-xs text-emerald-400">
-                    ✅ Migration terminée avec succès !
+                    Migration terminée avec succès !
                   </p>
                   {migrationProgress.message && (
-                    <p className="text-xs text-slate-300">
+                    <p className={`text-xs ${S.muted}`}>
                       {migrationProgress.message}
                     </p>
                   )}
                 </div>
               )}
-              
+
               {migrationStatus === 'error' && (
-                <p className="text-xs text-red-400 mt-2">
-                  ❌ Erreur lors de la migration. Réessaie plus tard.
+                <p className="mt-2 text-xs text-red-400">
+                  Erreur lors de la migration. Réessaie plus tard.
                 </p>
               )}
             </div>

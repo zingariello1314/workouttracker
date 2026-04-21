@@ -3,6 +3,7 @@ import { usePlanificateur } from '../../../hooks/usePlanificateur';
 import SkeletonLoader from '../bourse/SkeletonLoader';
 import PlanificateurErrorBoundary from './PlanificateurErrorBoundary';
 import SubTabWrapper from '../common/SubTabWrapper';
+import './planificateurThemeOverrides.css';
 
 /**
  * ✅ PHASE 2 - Étape 2.1 : Refactorisé pour utiliser SubTabWrapper
@@ -77,7 +78,7 @@ const PlanificateurSubTab = () => {
 
   return (
     <PlanificateurErrorBoundary>
-      <div className="planificateur-sub-tab-container flex flex-col h-full">
+      <div className="planificateur-sub-tab-container finance-planificateur-theme flex h-full flex-col">
         {/* ✅ PHASE 2 : Utilisation du composant générique */}
         <SubTabWrapper
           subTabs={sections}

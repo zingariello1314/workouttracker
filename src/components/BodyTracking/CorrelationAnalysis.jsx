@@ -558,13 +558,13 @@ const CorrelationAnalysis = () => {
   const getCorrelationColor = (correlation) => {
     const strength = getCorrelationStrength(correlation);
     const strengthInfo = strengthLevels.find(s => s.value === strength);
-    return strengthInfo?.color || 'text-gray-400';
+    return strengthInfo?.color || 'text-teal-100/70';
   };
 
   const getCorrelationBg = (correlation) => {
     const strength = getCorrelationStrength(correlation);
     const strengthInfo = strengthLevels.find(s => s.value === strength);
-    return strengthInfo?.bgColor || 'bg-gray-600/20';
+    return strengthInfo?.bgColor || 'bg-[#0F4C5C]/25';
   };
 
   const getTrendIcon = (trend) => {
@@ -576,7 +576,7 @@ const CorrelationAnalysis = () => {
         return <TrendingDown className="w-4 h-4 text-red-400" />;
       case 'stable':
       default:
-        return <Activity className="w-4 h-4 text-blue-400" />;
+        return <Activity className="w-4 h-4 text-sky-300/90" />;
     }
   };
 
@@ -624,13 +624,13 @@ const CorrelationAnalysis = () => {
   return (
     <div className="space-y-6">
       {/* En-tête et contrôles */}
-      <Card>
-        <CardHeader>
+      <Card variant="sport">
+        <CardHeader variant="sport">
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-            <CardTitle className="flex items-center gap-2">
-              <Zap className="w-5 h-5 text-purple-400" />
+            <CardTitle tone="sport" className="flex items-center gap-2 normal-case tracking-normal">
+              <Zap className="w-5 h-5 text-sky-300" />
               Analyse des corrélations
-              <span className="text-sm font-normal text-slate-400">
+              <span className="text-sm font-normal text-teal-100/55">
                 ({filteredCorrelations.length} corrélations détectées)
               </span>
             </CardTitle>
@@ -639,7 +639,7 @@ const CorrelationAnalysis = () => {
               <select
                 value={selectedTimeframe}
                 onChange={(e) => setSelectedTimeframe(e.target.value)}
-                className="bg-slate-700 border border-slate-600 rounded-lg px-3 py-2 text-white text-sm"
+                className="bg-black border border-[#0F4C5C]/45 rounded-lg px-3 py-2 text-teal-100 text-sm"
               >
                 {timeframes.map(tf => (
                   <option key={tf.value} value={tf.value}>{tf.label}</option>
@@ -668,7 +668,7 @@ const CorrelationAnalysis = () => {
                 variant={showSuccessPatterns ? "default" : "ghost"}
                 size="sm"
                 onClick={() => setShowSuccessPatterns(!showSuccessPatterns)}
-                className={showSuccessPatterns ? "bg-purple-600 hover:bg-purple-700" : ""}
+                className={showSuccessPatterns ? "bg-[#0F4C5C]/50 hover:bg-[#0F4C5C]/60" : ""}
               >
                 <Target className="w-4 h-4" />
                 Patterns de succès
@@ -680,14 +680,14 @@ const CorrelationAnalysis = () => {
         {/* Filtres par force de corrélation */}
         <CardContent>
           <div className="flex flex-wrap gap-2 mb-4">
-            <span className="text-sm text-slate-400 mr-2">Afficher :</span>
+            <span className="text-sm text-teal-100/55 mr-2">Afficher :</span>
             {strengthLevels.map(strength => (
               <label
                 key={strength.value}
                 className={`flex items-center gap-2 px-3 py-1 rounded-lg border cursor-pointer transition-all ${
                   selectedCorrelations.includes(strength.value)
-                    ? `border-purple-500 ${strength.bgColor}`
-                    : 'border-slate-600 bg-slate-700/50 hover:bg-slate-700'
+                    ? `border-[#0F4C5C]/55 ${strength.bgColor}`
+                    : 'border-[#0F4C5C]/45 bg-black hover:bg-teal-950/35'
                 }`}
               >
                 <input
@@ -704,10 +704,10 @@ const CorrelationAnalysis = () => {
       </Card>
 
       {/* Résumé des insights */}
-      <Card className="bg-purple-600/10 border-purple-500/30">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Target className="w-5 h-5 text-purple-400" />
+      <Card variant="sport" className="shadow-sm shadow-black/15">
+        <CardHeader variant="sport">
+          <CardTitle tone="sport" className="flex items-center gap-2 normal-case tracking-normal">
+            <Target className="w-5 h-5 text-sky-300" />
             Insights clés
           </CardTitle>
         </CardHeader>
@@ -717,21 +717,21 @@ const CorrelationAnalysis = () => {
               <div className="text-2xl font-bold text-green-400 mb-1">
                 {filteredCorrelations.filter(c => getCorrelationStrength(c.correlation) === 'strong').length}
               </div>
-              <div className="text-sm text-slate-400">Corrélations fortes</div>
+              <div className="text-sm text-teal-100/55">Corrélations fortes</div>
             </div>
             <div className="text-center">
-              <div className="text-2xl font-bold text-purple-400 mb-1">
+              <div className="text-2xl font-bold text-sky-300 mb-1">
                 {filteredCorrelations.length > 0 
                   ? (filteredCorrelations.reduce((sum, c) => sum + Math.abs(c.correlation || 0), 0) / filteredCorrelations.length).toFixed(2)
                   : '0.00'}
               </div>
-              <div className="text-sm text-slate-400">Corrélation moyenne</div>
+              <div className="text-sm text-teal-100/55">Corrélation moyenne</div>
             </div>
             <div className="text-center">
-              <div className="text-2xl font-bold text-blue-400 mb-1">
+              <div className="text-2xl font-bold text-sky-300/90 mb-1">
                 {filteredCorrelations.filter(c => c.trend === 'improving' || c.trend === 'increasing').length}
               </div>
-              <div className="text-sm text-slate-400">Tendances positives</div>
+              <div className="text-sm text-teal-100/55">Tendances positives</div>
             </div>
           </div>
         </CardContent>
@@ -740,16 +740,20 @@ const CorrelationAnalysis = () => {
       {/* Liste des corrélations */}
       <div className="space-y-4">
         {filteredCorrelations.map(correlation => (
-          <Card key={correlation.id} className={`${getCorrelationBg(correlation.correlation)} border-slate-600`}>
+          <Card
+            key={correlation.id}
+            variant="sport"
+            className={getCorrelationBg(correlation.correlation)}
+          >
             <CardContent className="p-6">
               <div className="flex items-start justify-between mb-4">
                 <div className="flex-1">
                   <div className="flex items-center gap-3 mb-2 flex-wrap">
-                    <h3 className="font-semibold text-white text-lg">
+                    <h3 className="font-semibold text-teal-100 text-lg">
                       {correlation.variable1} ↔ {correlation.variable2}
                     </h3>
                     {correlation.isActivityCorrelation && (
-                      <span className="px-2 py-0.5 text-xs font-medium bg-blue-600/30 text-blue-300 rounded border border-blue-500/50">
+                      <span className="px-2 py-0.5 text-xs font-medium bg-[#0F4C5C]/35 text-sky-300 rounded border border-[#0F4C5C]/50">
                         Activité
                       </span>
                     )}
@@ -759,9 +763,9 @@ const CorrelationAnalysis = () => {
                     {getTrendIcon(correlation.trend)}
                   </div>
                   
-                  <p className="text-slate-300 mb-3">{correlation.description}</p>
+                  <p className="text-teal-100/80 mb-3">{correlation.description}</p>
                   
-                  <div className="flex flex-wrap gap-4 text-sm text-slate-400 mb-4">
+                  <div className="flex flex-wrap gap-4 text-sm text-teal-100/55 mb-4">
                     <div className="flex items-center gap-1">
                       <BarChart3 className="w-3 h-3" />
                       {correlation.dataPoints} points de données
@@ -785,13 +789,13 @@ const CorrelationAnalysis = () => {
               {/* Insights détaillés */}
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 <div>
-                  <h4 className="font-medium text-white mb-3 flex items-center gap-2">
-                    <Info className="w-4 h-4 text-blue-400" />
+                  <h4 className="font-medium text-teal-100 mb-3 flex items-center gap-2">
+                    <Info className="w-4 h-4 text-sky-300/90" />
                     Observations
                   </h4>
                   <ul className="space-y-2">
                     {correlation.insights.map((insight, index) => (
-                      <li key={index} className="flex items-start gap-2 text-sm text-slate-300">
+                      <li key={index} className="flex items-start gap-2 text-sm text-teal-100/80">
                         <CheckCircle className="w-3 h-3 text-green-400 mt-0.5 flex-shrink-0" />
                         {insight}
                       </li>
@@ -800,14 +804,14 @@ const CorrelationAnalysis = () => {
                 </div>
                 
                 <div>
-                  <h4 className="font-medium text-white mb-3 flex items-center gap-2">
-                    <Target className="w-4 h-4 text-purple-400" />
+                  <h4 className="font-medium text-teal-100 mb-3 flex items-center gap-2">
+                    <Target className="w-4 h-4 text-sky-300" />
                     Recommandations
                   </h4>
                   <ul className="space-y-2">
                     {correlation.recommendations.map((rec, index) => (
-                      <li key={index} className="flex items-start gap-2 text-sm text-slate-300">
-                        <TrendingUp className="w-3 h-3 text-purple-400 mt-0.5 flex-shrink-0" />
+                      <li key={index} className="flex items-start gap-2 text-sm text-teal-100/80">
+                        <TrendingUp className="w-3 h-3 text-sky-300 mt-0.5 flex-shrink-0" />
                         {rec}
                       </li>
                     ))}
@@ -816,25 +820,25 @@ const CorrelationAnalysis = () => {
               </div>
 
               {showAdvanced && (
-                <div className="mt-6 pt-4 border-t border-slate-600">
+                <div className="mt-6 pt-4 border-t border-[#0F4C5C]/45">
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
                     <div>
-                      <span className="text-slate-400">Force:</span>
+                      <span className="text-teal-100/55">Force:</span>
                       <div className={`font-medium ${getCorrelationColor(correlation.correlation)}`}>
                         {getCorrelationStrength(correlation.correlation) === 'strong' ? 'Forte' :
                          getCorrelationStrength(correlation.correlation) === 'moderate' ? 'Modérée' : 'Faible'}
                       </div>
                     </div>
                     <div>
-                      <span className="text-slate-400">P-value:</span>
-                      <div className="font-medium text-white">{correlation.significance}</div>
+                      <span className="text-teal-100/55">P-value:</span>
+                      <div className="font-medium text-teal-100">{correlation.significance}</div>
                     </div>
                     <div>
-                      <span className="text-slate-400">Tendance:</span>
-                      <div className="font-medium text-white capitalize">{correlation.trend}</div>
+                      <span className="text-teal-100/55">Tendance:</span>
+                      <div className="font-medium text-teal-100 capitalize">{correlation.trend}</div>
                     </div>
                     <div>
-                      <span className="text-slate-400">Fiabilité:</span>
+                      <span className="text-teal-100/55">Fiabilité:</span>
                       <div className={`font-medium ${getSignificanceLevel(correlation.significance).color}`}>
                         {getSignificanceLevel(correlation.significance).level}
                       </div>
@@ -848,17 +852,17 @@ const CorrelationAnalysis = () => {
       </div>
 
       {filteredCorrelations.length === 0 && (
-        <Card>
+        <Card variant="sport">
           <CardContent className="text-center py-12">
-            <Zap className="w-16 h-16 mx-auto mb-4 text-slate-500" />
-            <h4 className="text-xl font-semibold mb-2 text-white">Aucune corrélation trouvée</h4>
-            <p className="text-slate-400 mb-4">
+            <Zap className="w-16 h-16 mx-auto mb-4 text-teal-100/45" />
+            <h4 className="text-xl font-semibold mb-2 text-teal-100">Aucune corrélation trouvée</h4>
+            <p className="text-teal-100/55 mb-4">
               Ajustez les filtres ou la période d'analyse pour voir plus de corrélations.
             </p>
             <button
               type="button"
               onClick={() => setSelectedCorrelations(['strong', 'moderate', 'weak'])}
-              className="gradient-button-premium gradient-button-premium-md rounded-lg flex items-center gap-2 mx-auto"
+              className="rounded-lg border border-[#0F5C45]/70 bg-[#0F4C5C]/40 px-3 py-2 text-teal-100 font-medium hover:bg-[#0F4C5C]/55 transition-colors shadow-md shadow-black/20 rounded-lg flex items-center gap-2 mx-auto"
             >
               <RefreshCw className="w-4 h-4" />
               Afficher toutes les corrélations
@@ -869,22 +873,22 @@ const CorrelationAnalysis = () => {
 
       {/* Informations méthodologiques */}
       {showAdvanced && (
-        <Card className="bg-blue-600/10 border-blue-500/30">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Info className="w-5 h-5 text-blue-400" />
+        <Card variant="sport" className="shadow-sm shadow-black/20">
+          <CardHeader variant="sport">
+            <CardTitle tone="sport" className="flex items-center gap-2 normal-case tracking-normal">
+              <Info className="w-5 h-5 text-sky-300/90" />
               Méthodologie
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="space-y-4 text-sm text-slate-300">
+            <div className="space-y-4 text-sm text-teal-100/80">
               <div>
-                <h4 className="font-medium text-white mb-2">Calcul des corrélations</h4>
+                <h4 className="font-medium text-teal-100 mb-2">Calcul des corrélations</h4>
                 <p>Les corrélations sont calculées en utilisant le coefficient de corrélation de Pearson (r), qui mesure la relation linéaire entre deux variables.</p>
               </div>
               
               <div>
-                <h4 className="font-medium text-white mb-2">Interprétation</h4>
+                <h4 className="font-medium text-teal-100 mb-2">Interprétation</h4>
                 <ul className="space-y-1 ml-4">
                   <li>• <strong>r &gt; 0.7</strong> : Corrélation forte</li>
                   <li>• <strong>0.3 ≤ r ≤ 0.7</strong> : Corrélation modérée</li>
@@ -895,7 +899,7 @@ const CorrelationAnalysis = () => {
               </div>
               
               <div>
-                <h4 className="font-medium text-white mb-2">Signification statistique</h4>
+                <h4 className="font-medium text-teal-100 mb-2">Signification statistique</h4>
                 <p>La p-value indique la probabilité que la corrélation observée soit due au hasard. Plus elle est faible, plus la corrélation est significative.</p>
               </div>
             </div>

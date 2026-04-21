@@ -6,6 +6,7 @@
 import React, { useState } from 'react';
 import { QuoteCard } from './QuoteCard';
 import { AlertTriangle } from 'lucide-react';
+import { settingsTheme as S } from '../tabs/SettingsTab/settingsThemeClasses';
 
 export function QuoteList({ quotes, onEdit, onDelete, onTogglePin, onReorder }) {
   const [draggedIndex, setDraggedIndex] = useState(null);
@@ -28,19 +29,17 @@ export function QuoteList({ quotes, onEdit, onDelete, onTogglePin, onReorder }) 
 
   const handleDrop = async (e, dropIndex) => {
     e.preventDefault();
-    
+
     if (draggedIndex === null || draggedIndex === dropIndex) {
       setDraggedIndex(null);
       setDragOverIndex(null);
       return;
     }
 
-    // Reorder quotes
     const newQuotes = [...quotes];
     const [draggedQuote] = newQuotes.splice(draggedIndex, 1);
     newQuotes.splice(dropIndex, 0, draggedQuote);
 
-    // Update order
     const quoteIds = newQuotes.map((q) => q.id);
     await onReorder(quoteIds);
 
@@ -55,21 +54,21 @@ export function QuoteList({ quotes, onEdit, onDelete, onTogglePin, onReorder }) 
 
   if (quotes.length === 0) {
     return (
-      <div className="text-center py-12 text-slate-400">
-        <AlertTriangle size={48} className="mx-auto mb-4 opacity-50" />
-        <p className="text-lg font-medium">Aucune citation</p>
-        <p className="text-sm mt-2">Ajoutez votre première citation ci-dessous</p>
+      <div className={`py-12 text-center ${S.muted}`}>
+        <AlertTriangle size={48} className="mx-auto mb-4 opacity-50 text-red-400/50" />
+        <p className="text-lg font-medium text-red-100/90">Aucune citation</p>
+        <p className={`mt-2 text-sm ${S.muted}`}>Ajoutez votre première citation ci-dessous</p>
       </div>
     );
   }
 
   return (
     <div className="space-y-3">
-      <div className="flex items-center justify-between mb-2">
-        <h3 className="text-sm font-medium text-slate-300">
+      <div className="mb-2 flex items-center justify-between">
+        <h3 className={S.label}>
           {quotes.length === 1 ? '1 citation au total' : `${quotes.length} citations au total`}
         </h3>
-        <p className="text-xs text-slate-500">
+        <p className={S.mutedXs}>
           Glissez-déposez pour réorganiser
         </p>
       </div>
@@ -84,10 +83,10 @@ export function QuoteList({ quotes, onEdit, onDelete, onTogglePin, onReorder }) 
           onDrop={(e) => handleDrop(e, index)}
           onDragEnd={handleDragEnd}
           className={`transition-all ${
-            draggedIndex === index ? 'opacity-50 scale-95' : ''
+            draggedIndex === index ? 'scale-95 opacity-50' : ''
           } ${
             dragOverIndex === index && draggedIndex !== index
-              ? 'border-t-2 border-blue-500 pt-2'
+              ? 'border-t-2 border-red-500 pt-2'
               : ''
           }`}
         >

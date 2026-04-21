@@ -113,14 +113,14 @@ export const VirtualizedActivityList = ({
 
   if (activities.length === 0) {
     return (
-      <div className="bg-slate-800/60 border border-slate-700 rounded-lg p-6 text-center text-slate-400">
+      <div className="rounded-xl border-2 border-[#0F4C5C]/70 bg-black p-6 text-center text-teal-100/55 shadow-md shadow-black/40">
         Aucune activité pour cette période.
       </div>
     );
   }
 
   return (
-    <div className="bg-slate-800/60 border border-slate-700 rounded-lg p-4">
+    <div className="rounded-xl border-2 border-[#0F4C5C]/70 bg-black p-4 shadow-md shadow-black/40">
       <FixedSizeList
         height={height}
         itemCount={activities.length}

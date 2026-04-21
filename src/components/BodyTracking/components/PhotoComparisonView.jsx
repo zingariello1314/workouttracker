@@ -63,7 +63,7 @@ const PhotoComparisonView = ({
 
   if (!currentPhoto || photos.length === 0) {
     return (
-      <div className="text-center py-12 text-slate-400">
+      <div className="text-center py-12 text-teal-100/55">
         <p>Aucune photo disponible pour comparaison</p>
       </div>
     );
@@ -107,7 +107,7 @@ const PhotoComparisonView = ({
       {/* Contrôles */}
       <div className="flex items-center justify-between flex-wrap gap-4">
         <div className="flex items-center gap-2">
-          <span className="text-sm text-slate-400">
+          <span className="text-sm text-teal-100/55">
             Photo {currentIndex + 1}/{photos.length}
           </span>
           {photos.length > 1 && (
@@ -150,7 +150,7 @@ const PhotoComparisonView = ({
           >
             <ZoomIn className="w-4 h-4" />
           </Button>
-          <span className="text-sm text-slate-400">{Math.round(zoom * 100)}%</span>
+          <span className="text-sm text-teal-100/55">{Math.round(zoom * 100)}%</span>
           <Button
             size="sm"
             variant="ghost"
@@ -178,7 +178,7 @@ const PhotoComparisonView = ({
       </div>
 
       {/* Vue comparaison */}
-      <div className="relative bg-slate-900 rounded-lg overflow-hidden">
+      <div className="relative bg-black rounded-lg overflow-hidden">
         {/* Mode morphing (transition fluide) */}
         {isMorphing && nextPhoto && morphingProgress > 0 && (
           <div className="relative">
@@ -226,7 +226,7 @@ const PhotoComparisonView = ({
                         transformOrigin: 'center'
                       }}
                     />
-                    <div className="absolute top-4 left-4 bg-black/70 px-3 py-1 rounded text-white text-sm">
+                    <div className="absolute top-4 left-4 bg-black/70 px-3 py-1 rounded text-teal-100 text-sm">
                       {formatDate(photos[currentIndex - 1].date)}
                       {showOverlay && photos[currentIndex - 1].summary && (
                         <div className="text-xs mt-1">
@@ -238,7 +238,7 @@ const PhotoComparisonView = ({
                 )}
 
                 {/* Photo actuelle */}
-                <div className="relative border-2 border-purple-500 rounded">
+                <div className="relative border-2 border-[#0F4C5C]/55 rounded">
                   <img
                     src={currentPhoto.url}
                     alt="Photo actuelle"
@@ -249,7 +249,7 @@ const PhotoComparisonView = ({
                     }}
                   />
                   {showOverlay && currentPhoto.summary && (
-                    <div className="absolute top-4 left-4 bg-purple-600/90 px-3 py-1 rounded text-white text-sm">
+                    <div className="absolute top-4 left-4 bg-[#0F4C5C]/50/90 px-3 py-1 rounded text-teal-100 text-sm">
                       {formatDate(currentPhoto.date)}
                       <div className="text-xs mt-1">
                         Score: {currentPhoto.summary.overallScore || 0}/100
@@ -276,7 +276,7 @@ const PhotoComparisonView = ({
                         transformOrigin: 'center'
                       }}
                     />
-                    <div className="absolute top-4 left-4 bg-black/70 px-3 py-1 rounded text-white text-sm">
+                    <div className="absolute top-4 left-4 bg-black/70 px-3 py-1 rounded text-teal-100 text-sm">
                       {formatDate(photos[currentIndex + 1].date)}
                       {showOverlay && photos[currentIndex + 1].summary && (
                         <div className="text-xs mt-1">
@@ -300,7 +300,7 @@ const PhotoComparisonView = ({
                   }}
                 />
                 {showOverlay && currentPhoto.summary && (
-                  <div className="absolute top-4 left-4 bg-purple-600/90 px-3 py-1 rounded text-white text-sm">
+                  <div className="absolute top-4 left-4 bg-[#0F4C5C]/50/90 px-3 py-1 rounded text-teal-100 text-sm">
                     {formatDate(currentPhoto.date)}
                     <div className="text-xs mt-1">
                       Score: {currentPhoto.summary.overallScore || 0}/100
@@ -317,7 +317,7 @@ const PhotoComparisonView = ({
           <div className="absolute bottom-4 left-4 right-4">
             <div className="bg-black/70 rounded-full h-2 overflow-hidden">
               <div
-                className="bg-purple-500 h-2 rounded-full transition-all duration-50"
+                className="bg-[#0F5C45]/40 h-2 rounded-full transition-all duration-50"
                 style={{ width: `${morphingProgress}%` }}
               />
             </div>
@@ -335,7 +335,7 @@ const PhotoComparisonView = ({
                   setMorphingProgress(0);
                 }}
                 className={`w-2 h-2 rounded-full transition-all ${
-                  index === currentIndex ? 'bg-purple-500 w-6' : 'bg-slate-600'
+                  index === currentIndex ? 'bg-[#0F5C45]/40 w-6' : 'bg-[#0F4C5C]/40'
                 }`}
               />
             ))}

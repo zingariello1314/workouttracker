@@ -41,20 +41,20 @@ const getRecommendationIcon = (type) => {
     case 'optimize_volume':
       return <TrendingUp className="w-5 h-5 text-green-400" />;
     case 'maintain':
-      return <CheckCircle className="w-5 h-5 text-blue-400" />;
+      return <CheckCircle className="w-5 h-5 text-sky-300/90" />;
     case 'optimize':
     case 'optimize_no_correlation':
       return <Zap className="w-5 h-5 text-yellow-400" />;
     case 'regression':
       return <AlertTriangle className="w-5 h-5 text-red-400" />;
     case 'symmetry':
-      return <Target className="w-5 h-5 text-purple-400" />;
+      return <Target className="w-5 h-5 text-sky-300" />;
     case 'diversify':
       return <Award className="w-5 h-5 text-orange-400" />;
     case 'photo_quality':
-      return <Info className="w-5 h-5 text-slate-400" />;
+      return <Info className="w-5 h-5 text-teal-100/55" />;
     default:
-      return <Lightbulb className="w-5 h-5 text-blue-400" />;
+      return <Lightbulb className="w-5 h-5 text-sky-300/90" />;
   }
 };
 
@@ -68,9 +68,9 @@ const getPriorityColor = (priority) => {
     case 'medium':
       return 'bg-yellow-500/20 border-yellow-500/50 text-yellow-400';
     case 'low':
-      return 'bg-blue-500/20 border-blue-500/50 text-blue-400';
+      return 'bg-[#0F4C5C]/22 border-[#0F4C5C]/50 text-sky-300/90';
     default:
-      return 'bg-slate-500/20 border-slate-500/50 text-slate-400';
+      return 'bg-teal-950/25 border-[#0F4C5C]/50/50 text-teal-100/55';
   }
 };
 
@@ -183,13 +183,13 @@ const RecommendationsView = ({
   // États insuffisants
   if (!photos || photos.length < 3) {
     return (
-      <Card className="bg-slate-800/50 border-slate-700">
+      <Card className="bg-black border border-[#0F4C5C]/50 border-[#0F4C5C]/35">
         <CardContent className="p-12 text-center">
-          <Lightbulb className="w-16 h-16 mx-auto mb-4 text-slate-500" />
-          <h3 className="text-xl font-semibold text-white mb-2">
+          <Lightbulb className="w-16 h-16 mx-auto mb-4 text-teal-100/45" />
+          <h3 className="text-xl font-semibold text-teal-100 mb-2">
             Données insuffisantes
           </h3>
-          <p className="text-slate-400">
+          <p className="text-teal-100/55">
             Minimum 3 photos analysées nécessaires pour générer des recommandations personnalisées.
           </p>
         </CardContent>
@@ -199,13 +199,13 @@ const RecommendationsView = ({
 
   if (isLoading) {
     return (
-      <Card className="bg-slate-800/50 border-slate-700">
+      <Card className="bg-black border border-[#0F4C5C]/50 border-[#0F4C5C]/35">
         <CardContent className="p-12 text-center">
-          <Loader className="w-16 h-16 mx-auto mb-4 text-purple-400 animate-spin" />
-          <h3 className="text-xl font-semibold text-white mb-2">
+          <Loader className="w-16 h-16 mx-auto mb-4 text-sky-300 animate-spin" />
+          <h3 className="text-xl font-semibold text-teal-100 mb-2">
             Génération des recommandations...
           </h3>
-          <p className="text-slate-400">
+          <p className="text-teal-100/55">
             Analyse de {photos.length} photos et calcul des corrélations...
           </p>
         </CardContent>
@@ -218,8 +218,8 @@ const RecommendationsView = ({
       <Card className="bg-red-600/10 border-red-500/30">
         <CardContent className="p-12 text-center">
           <AlertCircle className="w-16 h-16 mx-auto mb-4 text-red-400" />
-          <h3 className="text-xl font-semibold text-white mb-2">Erreur</h3>
-          <p className="text-slate-400">{error.message}</p>
+          <h3 className="text-xl font-semibold text-teal-100 mb-2">Erreur</h3>
+          <p className="text-teal-100/55">{error.message}</p>
         </CardContent>
       </Card>
     );
@@ -230,17 +230,17 @@ const RecommendationsView = ({
       <Card className="bg-green-600/10 border-green-500/30">
         <CardContent className="p-12 text-center">
           <CheckCircle className="w-16 h-16 mx-auto mb-4 text-green-400" />
-          <h3 className="text-xl font-semibold text-white mb-2">
+          <h3 className="text-xl font-semibold text-teal-100 mb-2">
             Programme Optimal !
           </h3>
-          <p className="text-slate-400 mb-4">
+          <p className="text-teal-100/55 mb-4">
             {muscle 
               ? `Aucune recommandation spécifique pour ${muscle}. Continue comme ça !`
               : 'Ton programme est bien équilibré. Continue comme ça !'
             }
           </p>
           {recommendationsData?.dataQuality && (
-            <div className="text-sm text-slate-500 mt-4">
+            <div className="text-sm text-teal-100/45 mt-4">
               Analyse basée sur: {recommendationsData.dataQuality.hasCorrelations ? 'Corrélations' : ''} 
               {recommendationsData.dataQuality.hasGains ? ' • Progression' : ''}
               {recommendationsData.dataQuality.hasSymmetryIssues ? ' • Symétrie' : ''}
@@ -255,13 +255,13 @@ const RecommendationsView = ({
     <div className="space-y-6">
       {/* Statistiques recommandations */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <Card className="bg-purple-600/10 border-purple-500/30">
+        <Card className="bg-black border-2 border-[#0F4C5C]/55 shadow-sm shadow-black/15">
           <CardContent className="p-4">
-            <div className="text-sm text-slate-400 mb-1">Total recommandations</div>
-            <div className="text-2xl font-bold text-purple-400">
+            <div className="text-sm text-teal-100/55 mb-1">Total recommandations</div>
+            <div className="text-2xl font-bold text-sky-300">
               {recommendationsData.summary.total}
             </div>
-            <div className="text-xs text-slate-500 mt-1">
+            <div className="text-xs text-teal-100/45 mt-1">
               {muscle ? `pour ${muscle}` : 'toutes priorités'}
             </div>
           </CardContent>
@@ -269,11 +269,11 @@ const RecommendationsView = ({
 
         <Card className="bg-red-600/10 border-red-500/30">
           <CardContent className="p-4">
-            <div className="text-sm text-slate-400 mb-1">Priorité haute</div>
+            <div className="text-sm text-teal-100/55 mb-1">Priorité haute</div>
             <div className="text-2xl font-bold text-red-400">
               {recommendationsData.summary.high}
             </div>
-            <div className="text-xs text-slate-500 mt-1">
+            <div className="text-xs text-teal-100/45 mt-1">
               à traiter en priorité
             </div>
           </CardContent>
@@ -281,23 +281,23 @@ const RecommendationsView = ({
 
         <Card className="bg-yellow-600/10 border-yellow-500/30">
           <CardContent className="p-4">
-            <div className="text-sm text-slate-400 mb-1">Priorité moyenne</div>
+            <div className="text-sm text-teal-100/55 mb-1">Priorité moyenne</div>
             <div className="text-2xl font-bold text-yellow-400">
               {recommendationsData.summary.medium}
             </div>
-            <div className="text-xs text-slate-500 mt-1">
+            <div className="text-xs text-teal-100/45 mt-1">
               à considérer
             </div>
           </CardContent>
         </Card>
 
-        <Card className="bg-blue-600/10 border-blue-500/30">
+        <Card className="bg-black border-2 border-[#0F4C5C]/55 shadow-sm shadow-black/20">
           <CardContent className="p-4">
-            <div className="text-sm text-slate-400 mb-1">Priorité basse</div>
-            <div className="text-2xl font-bold text-blue-400">
+            <div className="text-sm text-teal-100/55 mb-1">Priorité basse</div>
+            <div className="text-2xl font-bold text-sky-300/90">
               {recommendationsData.summary.low}
             </div>
-            <div className="text-xs text-slate-500 mt-1">
+            <div className="text-xs text-teal-100/45 mt-1">
               optimisations optionnelles
             </div>
           </CardContent>
@@ -311,7 +311,7 @@ const RecommendationsView = ({
             <Lightbulb className="w-5 h-5 text-yellow-400" />
             Recommandations IA Personnalisées
             {muscle && (
-              <span className="text-sm font-normal text-slate-400">
+              <span className="text-sm font-normal text-teal-100/55">
                 - {muscle.charAt(0).toUpperCase() + muscle.slice(1)}
               </span>
             )}
@@ -319,7 +319,7 @@ const RecommendationsView = ({
         </CardHeader>
         <CardContent>
           <div className="mb-4">
-            <label className="block text-sm font-medium text-slate-300 mb-2">
+            <label className="block text-sm font-medium text-teal-100/80 mb-2">
               Filtrer par priorité
             </label>
             <div className="flex gap-2">
@@ -350,7 +350,7 @@ const RecommendationsView = ({
                 size="sm"
                 variant={filterPriority === 'low' ? 'default' : 'ghost'}
                 onClick={() => setFilterPriority('low')}
-                className={filterPriority === 'low' ? 'bg-blue-600 hover:bg-blue-700' : ''}
+                className={filterPriority === 'low' ? 'bg-[#0F4C5C]/50 hover:bg-[#0F4C5C]/65' : ''}
               >
                 Basse ({recommendationsData.summary.low})
               </Button>
@@ -370,7 +370,7 @@ const RecommendationsView = ({
               className={`cursor-pointer transition-all hover:border-opacity-100 ${
                 rec.priority === 'high' ? 'border-red-500/50 bg-red-600/5' :
                 rec.priority === 'medium' ? 'border-yellow-500/50 bg-yellow-600/5' :
-                'border-blue-500/50 bg-blue-600/5'
+                'border-[#0F4C5C]/50 bg-[#0F4C5C]/10'
               }`}
               onClick={() => toggleExpansion(index)}
             >
@@ -385,8 +385,8 @@ const RecommendationsView = ({
                   <div className="flex-1">
                     <div className="flex items-start justify-between mb-2">
                       <div className="flex-1">
-                        <h4 className="font-semibold text-white mb-1">{rec.title}</h4>
-                        <p className="text-sm text-slate-300">{rec.message}</p>
+                        <h4 className="font-semibold text-teal-100 mb-1">{rec.title}</h4>
+                        <p className="text-sm text-teal-100/80">{rec.message}</p>
                       </div>
                       <span className={`px-3 py-1 rounded-lg text-xs font-medium border ${getPriorityColor(rec.priority)}`}>
                         {getPriorityLabel(rec.priority)}
@@ -394,41 +394,41 @@ const RecommendationsView = ({
                     </div>
 
                     {/* Action recommandée */}
-                    <div className="mt-3 p-3 bg-slate-800/50 rounded-lg border-l-2 border-purple-500">
+                    <div className="mt-3 p-3 bg-black border border-[#0F4C5C]/50 rounded-lg border-l-2 border-[#0F4C5C]/55">
                       <div className="flex items-start gap-2">
-                        <ArrowRight className="w-4 h-4 text-purple-400 mt-0.5 flex-shrink-0" />
+                        <ArrowRight className="w-4 h-4 text-sky-300 mt-0.5 flex-shrink-0" />
                         <div className="flex-1">
-                          <div className="text-xs font-medium text-slate-400 mb-1">Action recommandée:</div>
-                          <div className="text-sm text-white font-medium">{rec.action}</div>
+                          <div className="text-xs font-medium text-teal-100/55 mb-1">Action recommandée:</div>
+                          <div className="text-sm text-teal-100 font-medium">{rec.action}</div>
                         </div>
                       </div>
                     </div>
 
                     {/* Détails supplémentaires (si expanded) */}
                     {isExpanded && (
-                      <div className="mt-4 pt-4 border-t border-slate-700 space-y-2">
+                      <div className="mt-4 pt-4 border-t border-[#0F4C5C]/35 space-y-2">
                         {rec.exercise && (
-                          <div className="text-xs text-slate-400">
+                          <div className="text-xs text-teal-100/55">
                             <span className="font-medium">Exercice:</span> {rec.exercise}
                           </div>
                         )}
                         {rec.correlation !== undefined && (
-                          <div className="text-xs text-slate-400">
+                          <div className="text-xs text-teal-100/55">
                             <span className="font-medium">Corrélation:</span> {rec.correlation.toFixed(3)}
                           </div>
                         )}
                         {rec.currentVolume !== undefined && rec.targetVolume && (
-                          <div className="text-xs text-slate-400">
+                          <div className="text-xs text-teal-100/55">
                             <span className="font-medium">Volume:</span> {rec.currentVolume.toFixed(0)} → {rec.targetVolume} reps/semaine
                           </div>
                         )}
                         {rec.confidence && (
-                          <div className="text-xs text-slate-400">
+                          <div className="text-xs text-teal-100/55">
                             <span className="font-medium">Confiance:</span> {rec.confidence === 'high' ? 'Élevée' : rec.confidence === 'medium' ? 'Moyenne' : 'Faible'}
                           </div>
                         )}
                         {rec.muscle && (
-                          <div className="text-xs text-slate-400">
+                          <div className="text-xs text-teal-100/55">
                             <span className="font-medium">Muscle:</span> {rec.muscle.charAt(0).toUpperCase() + rec.muscle.slice(1)}
                           </div>
                         )}
@@ -444,11 +444,11 @@ const RecommendationsView = ({
 
       {/* Note qualité données */}
       {recommendationsData?.dataQuality && (
-        <Card className="bg-slate-800/30 border-slate-700">
+        <Card className="bg-black border border-[#0F4C5C]/40 border-[#0F4C5C]/35">
           <CardContent className="p-4">
             <div className="flex items-start gap-2">
-              <Info className="w-4 h-4 text-slate-400 mt-0.5 flex-shrink-0" />
-              <div className="text-xs text-slate-400">
+              <Info className="w-4 h-4 text-teal-100/55 mt-0.5 flex-shrink-0" />
+              <div className="text-xs text-teal-100/55">
                 <span className="font-medium">Analyse basée sur:</span>{' '}
                 {recommendationsData.dataQuality.hasCorrelations && 'Corrélations entraînement'}
                 {recommendationsData.dataQuality.hasCorrelations && recommendationsData.dataQuality.hasGains && ' • '}

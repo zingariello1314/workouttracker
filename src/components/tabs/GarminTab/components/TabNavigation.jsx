@@ -55,7 +55,7 @@ const TabNavigation = React.memo(
 
     return (
       <div
-        className={`mt-6 border-b border-slate-700 ${className}`}
+        className={`border-b border-[#0F4C5C]/45 pb-1 ${className}`}
         role="tablist"
         aria-label={ariaLabel}
       >
@@ -77,10 +77,10 @@ const TabNavigation = React.memo(
                 aria-controls={panelId}
                 aria-label={tab.ariaLabel || tab.label}
                 tabIndex={isActive ? 0 : -1}
-                className={`gradient-button-premium gradient-button-premium-md rounded-lg px-4 py-2 font-medium focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                className={`rounded-lg border px-4 py-2 font-medium transition focus:outline-none focus:ring-2 focus:ring-[#0F5C45]/40 ${
                   isActive
-                    ? 'gradient-button-premium-variant'
-                    : ''
+                    ? 'border-[#0F5C45] bg-[#0F5C45]/30 text-white shadow-md shadow-black/30'
+                    : 'border-[#0F4C5C]/50 bg-black text-teal-100 hover:border-[#0F5C45]/55 hover:bg-[#0F4C5C]/12'
                 }`}
                 onClick={() => handleSelect(tab.id)}
                 onMouseEnter={() => onTabHover && onTabHover(tab.id)}

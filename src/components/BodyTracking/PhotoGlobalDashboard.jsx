@@ -48,8 +48,8 @@ const log = logger.component('PhotoGlobalDashboard');
 const CustomTooltip = ({ active, payload, label }) => {
   if (active && payload && payload.length) {
     return (
-      <div className="bg-slate-800 border border-slate-700 rounded-lg p-3 shadow-xl">
-        <p className="text-white font-medium mb-2">{formatDate(label)}</p>
+      <div className="rounded-lg border border-[#0F4C5C]/60 bg-black p-3 shadow-xl shadow-black/40">
+        <p className="text-teal-100 font-medium mb-2">{formatDate(label)}</p>
         {payload.map((entry, index) => (
           <p key={index} className="text-sm" style={{ color: entry.color }}>
             {entry.name}: <span className="font-bold">{entry.value}/100</span>
@@ -246,13 +246,11 @@ const PhotoGlobalDashboard = () => {
 
   if (analyzedPhotos.length === 0) {
     return (
-      <Card className="bg-slate-800/50 border-slate-700">
+      <Card variant="sport">
         <CardContent className="p-12 text-center">
-          <Sparkles className="w-16 h-16 mx-auto mb-4 text-slate-500" />
-          <h3 className="text-xl font-semibold text-white mb-2">
-            Aucune analyse disponible
-          </h3>
-          <p className="text-slate-400 mb-4">
+          <Sparkles className="mx-auto mb-4 h-16 w-16 text-teal-600" />
+          <h3 className="mb-2 text-xl font-semibold text-teal-100">Aucune analyse disponible</h3>
+          <p className="mb-4 text-teal-700">
             Lancez des analyses IA sur vos photos pour voir les graphiques de progression ici.
           </p>
         </CardContent>
@@ -264,16 +262,16 @@ const PhotoGlobalDashboard = () => {
     <div className="space-y-6">
       {/* Statistiques globales */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <Card className="bg-purple-600/10 border-purple-500/30">
+        <Card variant="sport">
           <CardContent className="p-4">
-            <div className="flex items-center justify-between mb-2">
-              <span className="text-sm text-slate-400">Analyses totales</span>
-              <Sparkles className="w-4 h-4 text-purple-400" />
+            <div className="mb-2 flex items-center justify-between">
+              <span className="text-sm text-teal-700">Analyses totales</span>
+              <Sparkles className="h-4 w-4 text-sky-400" />
             </div>
-            <div className="text-2xl font-bold text-purple-400">
+            <div className="text-2xl font-bold text-sky-300">
               {globalStats.totalAnalyses}
             </div>
-            <div className="text-xs text-slate-500 mt-1">
+            <div className="mt-1 text-xs text-teal-800">
               {globalStats.firstDate && globalStats.lastDate && (
                 <>
                   Du {formatDate(globalStats.firstDate)} au {formatDate(globalStats.lastDate)}
@@ -283,13 +281,13 @@ const PhotoGlobalDashboard = () => {
           </CardContent>
         </Card>
 
-        <Card className="bg-blue-600/10 border-blue-500/30">
+        <Card variant="sport">
           <CardContent className="p-4">
-            <div className="flex items-center justify-between mb-2">
-              <span className="text-sm text-slate-400">Score global moyen</span>
-              <Activity className="w-4 h-4 text-blue-400" />
+            <div className="mb-2 flex items-center justify-between">
+              <span className="text-sm text-teal-700">Score global moyen</span>
+              <Activity className="h-4 w-4 text-sky-400" />
             </div>
-            <div className="text-2xl font-bold text-blue-400">
+            <div className="text-2xl font-bold text-teal-200">
               {globalStats.avgOverallScore}/100
             </div>
             <div className="flex items-center gap-1 mt-1">
@@ -307,11 +305,11 @@ const PhotoGlobalDashboard = () => {
           </CardContent>
         </Card>
 
-        <Card className="bg-green-600/10 border-green-500/30">
+        <Card variant="sport">
           <CardContent className="p-4">
-            <div className="flex items-center justify-between mb-2">
-              <span className="text-sm text-slate-400">Volume moyen</span>
-              <Target className="w-4 h-4 text-green-400" />
+            <div className="mb-2 flex items-center justify-between">
+              <span className="text-sm text-teal-700">Volume moyen</span>
+              <Target className="h-4 w-4 text-emerald-400" />
             </div>
             <div className="text-2xl font-bold text-green-400">
               {globalStats.avgVolume}/100
@@ -331,13 +329,13 @@ const PhotoGlobalDashboard = () => {
           </CardContent>
         </Card>
 
-        <Card className="bg-orange-600/10 border-orange-500/30">
+        <Card variant="sport">
           <CardContent className="p-4">
-            <div className="flex items-center justify-between mb-2">
-              <span className="text-sm text-slate-400">Définition moyenne</span>
-              <BarChart3 className="w-4 h-4 text-orange-400" />
+            <div className="mb-2 flex items-center justify-between">
+              <span className="text-sm text-teal-700">Définition moyenne</span>
+              <BarChart3 className="h-4 w-4 text-cyan-400" />
             </div>
-            <div className="text-2xl font-bold text-orange-400">
+            <div className="text-2xl font-bold text-cyan-300">
               {globalStats.avgDefinition}/100
             </div>
             <div className="flex items-center gap-1 mt-1">
@@ -357,10 +355,10 @@ const PhotoGlobalDashboard = () => {
       </div>
 
       {/* Graphique progression globale (6 métriques) */}
-      <Card>
+      <Card variant="sport">
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Activity className="w-5 h-5 text-purple-400" />
+          <CardTitle className="flex items-center gap-2 text-teal-100">
+            <Activity className="h-5 w-5 text-sky-400" />
             Progression Globale des Métriques
           </CardTitle>
         </CardHeader>
@@ -372,12 +370,12 @@ const PhotoGlobalDashboard = () => {
                 <AreaChart margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
                   <defs>
                     <linearGradient id="colorVolume" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#8B5CF6" stopOpacity={0.8}/>
-                      <stop offset="95%" stopColor="#8B5CF6" stopOpacity={0}/>
+                      <stop offset="5%" stopColor="#0F5C45" stopOpacity={0.85} />
+                      <stop offset="95%" stopColor="#0F5C45" stopOpacity={0} />
                     </linearGradient>
                     <linearGradient id="colorDefinition" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#3B82F6" stopOpacity={0.8}/>
-                      <stop offset="95%" stopColor="#3B82F6" stopOpacity={0}/>
+                      <stop offset="5%" stopColor="#38bdf8" stopOpacity={0.85} />
+                      <stop offset="95%" stopColor="#38bdf8" stopOpacity={0} />
                     </linearGradient>
                     <linearGradient id="colorOverall" x1="0" y1="0" x2="0" y2="1">
                       <stop offset="5%" stopColor="#F59E0B" stopOpacity={0.8}/>
@@ -396,7 +394,7 @@ const PhotoGlobalDashboard = () => {
                   <Area
                     type="monotone"
                     dataKey="volume"
-                    stroke="#8B5CF6"
+                    stroke="#0F5C45"
                     fillOpacity={1}
                     fill="url(#colorVolume)"
                     name="Volume"
@@ -404,7 +402,7 @@ const PhotoGlobalDashboard = () => {
                   <Area
                     type="monotone"
                     dataKey="definition"
-                    stroke="#3B82F6"
+                    stroke="#38bdf8"
                     fillOpacity={1}
                     fill="url(#colorDefinition)"
                     name="Définition"
@@ -433,7 +431,7 @@ const PhotoGlobalDashboard = () => {
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            <BarChart3 className="w-5 h-5 text-blue-400" />
+            <BarChart3 className="w-5 h-5 text-sky-300/90" />
             Toutes les Métriques Détaillées
           </CardTitle>
         </CardHeader>
@@ -455,18 +453,18 @@ const PhotoGlobalDashboard = () => {
                   <Line
                     type="monotone"
                     dataKey="volume"
-                    stroke="#8B5CF6"
+                    stroke="#0F5C45"
                     strokeWidth={2}
                     name="Volume"
-                    dot={{ fill: '#8B5CF6', r: 4 }}
+                    dot={{ fill: '#0F5C45', r: 4 }}
                   />
                   <Line
                     type="monotone"
                     dataKey="definition"
-                    stroke="#3B82F6"
+                    stroke="#38bdf8"
                     strokeWidth={2}
                     name="Définition"
-                    dot={{ fill: '#3B82F6', r: 4 }}
+                    dot={{ fill: '#38bdf8', r: 4 }}
                   />
                   <Line
                     type="monotone"
@@ -522,7 +520,7 @@ const PhotoGlobalDashboard = () => {
               <Card key={muscle}>
                 <CardHeader>
                   <CardTitle size="sm" className="capitalize flex items-center gap-2">
-                    <Activity className="w-4 h-4 text-purple-400" />
+                    <Activity className="h-4 w-4 text-sky-400" />
                     {muscle}
                   </CardTitle>
                 </CardHeader>
@@ -541,8 +539,8 @@ const PhotoGlobalDashboard = () => {
                           <YAxis domain={[0, 100]} stroke="#9CA3AF" />
                           <Tooltip content={<CustomTooltip />} />
                           <Legend />
-                          <Bar dataKey="volume" fill="#8B5CF6" name="Volume" />
-                          <Bar dataKey="definition" fill="#3B82F6" name="Définition" />
+                          <Bar dataKey="volume" fill="#0F5C45" name="Volume" />
+                          <Bar dataKey="definition" fill="#38bdf8" name="Définition" />
                         </BarChart>
                       }
                       data={muscleData}

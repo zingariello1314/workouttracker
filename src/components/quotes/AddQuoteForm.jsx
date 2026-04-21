@@ -6,9 +6,13 @@
 import React, { useState } from 'react';
 import { Plus, X } from 'lucide-react';
 import quotesService from '../../services/quotes/quotesService';
+import { settingsTheme as S } from '../tabs/SettingsTab/settingsThemeClasses';
 
 const DEFAULT_BOLD_START = 2;
 const DEFAULT_BOLD_END = 2;
+
+const field = `${S.input} min-h-[80px] resize-y py-2`;
+const numField = `${S.input} w-14 px-2 py-1.5 text-center`;
 
 export function AddQuoteForm({ onAdd, onCancel }) {
   const [formData, setFormData] = useState({
@@ -65,72 +69,69 @@ export function AddQuoteForm({ onAdd, onCancel }) {
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4 bg-slate-700/30 rounded-lg p-4">
-      <div className="flex items-center justify-between mb-4">
-        <h3 className="text-lg font-semibold text-white">Ajouter une citation</h3>
+    <form onSubmit={handleSubmit} className="space-y-4 rounded-lg border border-red-900/45 bg-red-950/15 p-4">
+      <div className="mb-4 flex items-center justify-between">
+        <h3 className="text-lg font-semibold text-red-100">Ajouter une citation</h3>
         {onCancel && (
           <button
             type="button"
             onClick={onCancel}
-            className="p-1 text-slate-400 hover:text-slate-300 transition-colors"
+            className={`p-1 transition-colors ${S.muted} hover:text-red-100`}
           >
             <X size={20} />
           </button>
         )}
       </div>
 
-      {/* Français */}
       <div className="space-y-2">
-        <label className="text-sm font-medium text-slate-300">Français (obligatoire)</label>
+        <label className={S.label}>Français (obligatoire)</label>
         <textarea
           placeholder="Saisissez la phrase en entier. Vous pouvez mettre des retours à la ligne ou laisser l’app découper automatiquement (~28 caractères par ligne)."
           value={formData.textFr}
           onChange={(e) => handleChange('textFr', e.target.value)}
           rows={4}
-          className="w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded-lg text-slate-200 placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500 resize-y min-h-[80px]"
+          className={field}
         />
       </div>
 
-      {/* Anglais */}
       <div className="space-y-2">
-        <label className="text-sm font-medium text-slate-300">English (optionnel)</label>
+        <label className={S.label}>English (optionnel)</label>
         <textarea
           placeholder="Traduction optionnelle. Si vide, le français sera affiché en mode anglais."
           value={formData.textEn}
           onChange={(e) => handleChange('textEn', e.target.value)}
           rows={4}
-          className="w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded-lg text-slate-200 placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500 resize-y min-h-[80px]"
+          className={field}
         />
       </div>
 
-      {/* Lignes en gras */}
-      <div className="space-y-2 pt-2 border-t border-slate-600">
-        <label className="text-sm font-medium text-slate-300">Lignes en gras</label>
-        <div className="flex items-center gap-2 flex-wrap">
-          <span className="text-slate-400 text-sm">De la ligne</span>
+      <div className="space-y-2 border-t border-red-900/45 pt-2">
+        <label className={S.label}>Lignes en gras</label>
+        <div className="flex flex-wrap items-center gap-2">
+          <span className={`text-sm ${S.muted}`}>De la ligne</span>
           <input
             type="number"
             min={1}
             max={10}
             value={formData.boldLineStart === '' ? '' : formData.boldLineStart}
             onChange={(e) => handleChange('boldLineStart', e.target.value)}
-            className="w-14 px-2 py-1.5 bg-slate-700 border border-slate-600 rounded text-slate-200 text-center"
+            className={numField}
           />
-          <span className="text-slate-400 text-sm">à la ligne</span>
+          <span className={`text-sm ${S.muted}`}>à la ligne</span>
           <input
             type="number"
             min={1}
             max={10}
             value={formData.boldLineEnd === '' ? '' : formData.boldLineEnd}
             onChange={(e) => handleChange('boldLineEnd', e.target.value)}
-            className="w-14 px-2 py-1.5 bg-slate-700 border border-slate-600 rounded text-slate-200 text-center"
+            className={numField}
           />
-          <span className="text-slate-500 text-xs">(par défaut : 2 et 2)</span>
+          <span className="text-xs text-red-400/60">(par défaut : 2 et 2)</span>
         </div>
       </div>
 
       {errors.submit && (
-        <div className="text-sm text-red-400 bg-red-500/10 border border-red-500/30 rounded p-3">
+        <div className="rounded border border-red-600/40 bg-red-950/35 p-3 text-sm text-red-300">
           {errors.submit}
         </div>
       )}
@@ -138,16 +139,16 @@ export function AddQuoteForm({ onAdd, onCancel }) {
       <div className="flex gap-2 pt-2">
         <button
           type="submit"
-          className="gradient-button-premium gradient-button-premium-md rounded-lg flex-1 flex items-center justify-center gap-2"
+          className={`${S.btnPrimary} flex-1`}
         >
-          <Plus className="w-4 h-4" />
+          <Plus className="h-4 w-4" />
           Ajouter
         </button>
         {onCancel && (
           <button
             type="button"
             onClick={onCancel}
-            className="gradient-button-premium gradient-button-premium-md gradient-button-premium-variant rounded-lg flex-1"
+            className={`${S.btnSecondary} flex-1`}
           >
             Annuler
           </button>

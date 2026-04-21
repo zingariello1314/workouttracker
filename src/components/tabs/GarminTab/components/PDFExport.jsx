@@ -212,18 +212,18 @@ export default function PDFExport({ selectedDate: selectedDateProp, periodFilter
 
   return (
     <div 
-      className="bg-slate-800/60 border border-slate-700 rounded-lg p-4"
+      className="rounded-xl border-2 border-[#0F4C5C]/70 bg-black p-4 shadow-md shadow-black/40"
       role="region"
       aria-label="Export PDF"
     >
-      <h3 className="text-white font-semibold mb-4">📄 Export PDF</h3>
+      <h3 className="text-teal-100 font-semibold mb-4">📄 Export PDF</h3>
 
       <div className="space-y-3">
         {/* Export quotidien */}
         <button
           onClick={() => handleExport('daily')}
           disabled={isGenerating || !selectedDate}
-          className="w-full px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-slate-600 disabled:cursor-not-allowed text-white rounded-md font-medium transition-colors"
+          className="w-full px-4 py-2.5 rounded-lg border border-[#0F5C45]/70 bg-[#0F4C5C]/40 text-teal-100 font-medium hover:bg-[#0F4C5C]/55 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
           aria-label={ARIA_LABELS.EXPORT_PDF || 'Exporter rapport quotidien en PDF'}
           aria-busy={isGenerating}
         >
@@ -234,7 +234,7 @@ export default function PDFExport({ selectedDate: selectedDateProp, periodFilter
         <button
           onClick={() => handleExport('weekly')}
           disabled={isGenerating}
-          className="w-full px-4 py-2 bg-emerald-600 hover:bg-emerald-700 disabled:bg-slate-600 disabled:cursor-not-allowed text-white rounded-md font-medium transition-colors"
+          className="w-full px-4 py-2.5 rounded-lg border border-[#0F4C5C]/60 bg-black text-teal-100 font-medium hover:bg-teal-950/25 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
           aria-label="Exporter rapport hebdomadaire en PDF"
           aria-busy={isGenerating}
         >
@@ -246,7 +246,7 @@ export default function PDFExport({ selectedDate: selectedDateProp, periodFilter
           <button
             onClick={() => handleExport('custom')}
             disabled={isGenerating}
-            className="w-full px-4 py-2 bg-purple-600 hover:bg-purple-700 disabled:bg-slate-600 disabled:cursor-not-allowed text-white rounded-md font-medium transition-colors"
+            className="w-full px-4 py-2.5 rounded-lg border border-sky-500/40 bg-black text-sky-200 font-medium hover:bg-sky-950/20 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
             aria-label="Exporter période personnalisée en PDF"
             aria-busy={isGenerating}
           >
@@ -255,7 +255,7 @@ export default function PDFExport({ selectedDate: selectedDateProp, periodFilter
         )}
       </div>
 
-      <p className="text-slate-400 text-xs mt-4">
+      <p className="text-teal-100/50 text-xs mt-4">
         💡 Les rapports PDF incluent toutes les métriques et activités de la période sélectionnée.
       </p>
       <ToastContainer />

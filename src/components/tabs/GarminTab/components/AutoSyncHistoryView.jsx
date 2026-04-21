@@ -135,15 +135,15 @@ function HistoryEntry({ entry }) {
   const dateStr = formatDate(entry.timestamp);
 
   const bgColor = entry.result === RESULT_TYPES.SUCCESS
-    ? 'bg-green-900/20 border-green-500/30'
+    ? 'bg-black border-emerald-600/35'
     : entry.result === RESULT_TYPES.ERROR
-    ? 'bg-red-900/20 border-red-500/30'
+    ? 'bg-black border-red-500/40'
     : entry.result === RESULT_TYPES.SKIPPED
-    ? 'bg-yellow-900/20 border-yellow-500/30'
-    : 'bg-slate-800/40 border-slate-600/30';
+    ? 'bg-black border-amber-500/35'
+    : 'bg-black border-[#0F4C5C]/45';
 
   return (
-    <div className={`${bgColor} border rounded-lg p-3 mb-2`}>
+    <div className={`${bgColor} border rounded-xl p-3 mb-2`}>
       <div className="flex items-start justify-between gap-3">
         <div className="flex items-start gap-2 flex-1">
           <div className="mt-0.5">
@@ -151,15 +151,15 @@ function HistoryEntry({ entry }) {
           </div>
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2 mb-1">
-              <span className="text-sm font-medium text-white">
+              <span className="text-sm font-medium text-teal-100">
                 {triggerLabel}
               </span>
-              <span className="text-xs text-slate-400">
+              <span className="text-xs text-teal-100/50">
                 {dateStr}
               </span>
             </div>
             {entry.reason && (
-              <div className="text-xs text-slate-300 mb-1">
+              <div className="text-xs text-sky-300/80 mb-1">
                 {entry.reason}
               </div>
             )}
@@ -172,14 +172,14 @@ function HistoryEntry({ entry }) {
         </div>
         <div className="flex items-center gap-2 flex-shrink-0">
           {duration && (
-            <div className="text-xs text-slate-400 flex items-center gap-1">
+            <div className="text-xs text-teal-100/50 flex items-center gap-1">
               <Clock className="w-3 h-3" />
               {duration}
             </div>
           )}
           <div className="flex items-center gap-1" title={resultLabel}>
             {resultIcon}
-            <span className="text-xs text-slate-400 sr-only">
+            <span className="text-xs text-teal-100/50 sr-only">
               {resultLabel}
             </span>
           </div>
@@ -208,17 +208,17 @@ export default function AutoSyncHistoryView({ history = [], stats = null, onRefr
   const hasHistory = Array.isArray(history) && history.length > 0;
 
   return (
-    <div className="bg-slate-800/60 border border-slate-700 rounded-lg p-4">
+    <div className="rounded-xl border-2 border-[#0F4C5C]/70 bg-black p-4 shadow-md shadow-black/40">
       <div className="flex items-center justify-between mb-4">
-        <h3 className="text-white font-semibold flex items-center gap-2">
-          <Clock className="w-5 h-5" />
+        <h3 className="text-teal-100 font-semibold flex items-center gap-2">
+          <Clock className="w-5 h-5 text-sky-300/90" />
           Historique AutoSync
         </h3>
         {onRefresh && (
           <button
             type="button"
             onClick={onRefresh}
-            className="px-3 py-1 text-xs bg-slate-700 hover:bg-slate-600 text-white rounded transition-colors"
+            className="px-3 py-1.5 text-xs rounded-lg border border-[#0F5C45]/70 bg-[#0F4C5C]/40 text-teal-100 hover:bg-[#0F4C5C]/55 transition-colors"
             aria-label="Actualiser l'historique"
           >
             Actualiser
@@ -229,23 +229,23 @@ export default function AutoSyncHistoryView({ history = [], stats = null, onRefr
       {/* Statistiques */}
       {stats && (
         <div className="mb-4 grid grid-cols-2 md:grid-cols-4 gap-2 text-xs">
-          <div className="bg-slate-900/50 rounded p-2">
-            <div className="text-slate-400">Total</div>
-            <div className="text-white font-semibold">{stats.total || 0}</div>
+          <div className="bg-black border border-[#0F4C5C]/50 rounded-lg p-2">
+            <div className="text-teal-100/55">Total</div>
+            <div className="text-teal-100 font-semibold">{stats.total || 0}</div>
           </div>
           {stats.byResult && (
             <>
-              <div className="bg-green-900/20 rounded p-2">
-                <div className="text-green-400">Succès</div>
-                <div className="text-white font-semibold">{stats.byResult.success || 0}</div>
+              <div className="bg-black border border-emerald-600/35 rounded-lg p-2">
+                <div className="text-emerald-300/90">Succès</div>
+                <div className="text-teal-100 font-semibold">{stats.byResult.success || 0}</div>
               </div>
-              <div className="bg-red-900/20 rounded p-2">
-                <div className="text-red-400">Erreurs</div>
-                <div className="text-white font-semibold">{stats.byResult.error || 0}</div>
+              <div className="bg-black border border-red-500/35 rounded-lg p-2">
+                <div className="text-red-300/90">Erreurs</div>
+                <div className="text-teal-100 font-semibold">{stats.byResult.error || 0}</div>
               </div>
-              <div className="bg-yellow-900/20 rounded p-2">
-                <div className="text-yellow-400">Ignorées</div>
-                <div className="text-white font-semibold">{stats.byResult.skipped || 0}</div>
+              <div className="bg-black border border-amber-500/35 rounded-lg p-2">
+                <div className="text-amber-200/90">Ignorées</div>
+                <div className="text-teal-100 font-semibold">{stats.byResult.skipped || 0}</div>
               </div>
             </>
           )}
@@ -288,8 +288,8 @@ export default function AutoSyncHistoryView({ history = [], stats = null, onRefr
             })}
         </div>
       ) : (
-        <div className="text-center text-slate-400 py-8">
-          <Clock className="w-12 h-12 mx-auto mb-2 opacity-50" />
+        <div className="text-center text-teal-100/55 py-8">
+          <Clock className="w-12 h-12 mx-auto mb-2 opacity-50 text-sky-300/60" />
           <p>Aucun déclenchement AutoSync enregistré</p>
         </div>
       )}

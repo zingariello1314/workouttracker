@@ -47,7 +47,7 @@ export default function GarminActivities({ activities, selectedDate }) {
 
   if (!activities) {
     return (
-      <div className="bg-slate-800/60 border border-slate-700 rounded-lg p-6 text-center text-slate-400">
+      <div className="rounded-xl border-2 border-[#0F4C5C]/70 bg-black p-6 text-center text-teal-100/55 shadow-md shadow-black/40">
         Aucune activité disponible. Synchronisez vos données Garmin.
       </div>
     );
@@ -157,24 +157,24 @@ export default function GarminActivities({ activities, selectedDate }) {
       />
 
       <div className="flex items-center justify-between mb-4">
-        <h3 className="text-white font-semibold">
+        <h3 className="text-teal-100 font-semibold">
           🏃 Activités{selectedDate ? ` - ${selectedDate}` : ''}
         </h3>
         {/* 🟡 FIX #19: Info pagination */}
         {!shouldVirtualize && paginationInfo.total > PAGINATION.ACTIVITIES_PER_PAGE && (
-          <div className="text-slate-400 text-sm">
+          <div className="text-sky-300/70 text-sm">
             {paginationInfo.startIndex + 1}-{paginationInfo.endIndex} sur {paginationInfo.total}
           </div>
         )}
         {shouldVirtualize && (
-          <div className="text-slate-400 text-sm">
+          <div className="text-sky-300/70 text-sm">
             {paginationInfo.total} activité{paginationInfo.total > 1 ? 's' : ''} (mode virtualisé)
           </div>
         )}
       </div>
 
       {!hasActivities && (
-        <div className="bg-slate-800/60 border border-slate-700 rounded-lg p-6 text-center text-slate-400">
+        <div className="rounded-xl border-2 border-[#0F4C5C]/70 bg-black p-6 text-center text-teal-100/55 shadow-md shadow-black/40">
           Aucune activité pour cette période.
         </div>
       )}
@@ -213,10 +213,10 @@ export default function GarminActivities({ activities, selectedDate }) {
           <button
             onClick={goToPreviousPage}
             disabled={currentPage === 1}
-            className={`px-4 py-2 rounded-lg font-medium transition-colors ${
+            className={`px-4 py-2 rounded-lg font-medium border transition-colors ${
               currentPage === 1
-                ? 'bg-slate-700 text-slate-500 cursor-not-allowed'
-                : 'bg-slate-700 text-white hover:bg-slate-600'
+                ? 'border-[#0F4C5C]/25 text-teal-100/30 cursor-not-allowed bg-black'
+                : 'border-[#0F4C5C]/50 text-teal-100 bg-black hover:bg-teal-950/25'
             }`}
             aria-label="Page précédente"
           >
@@ -240,10 +240,10 @@ export default function GarminActivities({ activities, selectedDate }) {
                 <button
                   key={pageNum}
                   onClick={() => goToPage(pageNum)}
-                  className={`px-3 py-2 rounded-lg font-medium transition-colors ${
+                  className={`px-3 py-2 rounded-lg font-medium border transition-colors ${
                     currentPage === pageNum
-                      ? 'bg-blue-600 text-white'
-                      : 'bg-slate-700 text-slate-300 hover:bg-slate-600'
+                      ? 'border-[#0F5C45]/70 bg-[#0F4C5C]/45 text-teal-100'
+                      : 'border-[#0F4C5C]/40 text-teal-100/80 bg-black hover:bg-teal-950/25'
                   }`}
                   aria-label={`Page ${pageNum}`}
                   aria-current={currentPage === pageNum ? 'page' : undefined}
@@ -257,10 +257,10 @@ export default function GarminActivities({ activities, selectedDate }) {
           <button
             onClick={goToNextPage}
             disabled={currentPage === totalPages}
-            className={`px-4 py-2 rounded-lg font-medium transition-colors ${
+            className={`px-4 py-2 rounded-lg font-medium border transition-colors ${
               currentPage === totalPages
-                ? 'bg-slate-700 text-slate-500 cursor-not-allowed'
-                : 'bg-slate-700 text-white hover:bg-slate-600'
+                ? 'border-[#0F4C5C]/25 text-teal-100/30 cursor-not-allowed bg-black'
+                : 'border-[#0F4C5C]/50 text-teal-100 bg-black hover:bg-teal-950/25'
             }`}
             aria-label="Page suivante"
           >

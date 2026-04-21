@@ -13,20 +13,21 @@ const EnduranceChallengeReminder = ({ activeChallenges = [], urgentChallenges = 
   };
 
   return (
-    <div className="bg-gradient-to-r from-orange-500/20 to-yellow-500/20 border border-orange-500/30 rounded-xl p-4 mb-6 backdrop-blur-sm">
-      <div className="flex items-center gap-3 mb-3">
-        <div className="w-8 h-8 bg-orange-500 rounded-full flex items-center justify-center">
-          <Award className="w-4 h-4 text-white" aria-hidden="true" />
+    <div className="mb-6 rounded-xl border-2 border-[#0F4C5C]/70 bg-black p-4 shadow-md shadow-black/40 backdrop-blur-sm">
+      <div className="mb-3 flex items-center gap-3">
+        <div className="flex h-8 w-8 items-center justify-center rounded-full border border-[#0F5C45]/50 bg-[#0F5C45]/30">
+          <Award className="h-4 w-4 text-sky-300" aria-hidden="true" />
         </div>
-        <h3 className="text-lg font-semibold text-orange-200">
-          ⚠️ Vous avez {activeChallenges.length} défi{activeChallenges.length > 1 ? 's' : ''} à accomplir
+        <h3 className="text-lg font-semibold text-teal-100">
+          Vous avez {activeChallenges.length} défi{activeChallenges.length > 1 ? 's' : ''} à accomplir
         </h3>
       </div>
 
       <div className="space-y-2">
         {Array.isArray(urgentChallenges) && urgentChallenges.length > 0 && (
-          <div className="text-red-300 text-sm font-medium">
-            🚨 {urgentChallenges.length} défi{urgentChallenges.length > 1 ? 's' : ''} urgent{urgentChallenges.length > 1 ? 's' : ''} (échéance &lt; 24h)
+          <div className="text-sm font-medium text-red-300">
+            {urgentChallenges.length} défi{urgentChallenges.length > 1 ? 's' : ''} urgent
+            {urgentChallenges.length > 1 ? 's' : ''} (échéance &lt; 24h)
           </div>
         )}
 
@@ -36,14 +37,14 @@ const EnduranceChallengeReminder = ({ activeChallenges = [], urgentChallenges = 
               key={`urgent-challenge-${challenge.id}`}
               type="button"
               onClick={() => handleSelect(challenge.activityType)}
-              className="px-3 py-1 bg-orange-500/30 hover:bg-orange-500/50 text-orange-200 rounded-lg text-sm transition-colors"
+              className="rounded-lg border border-[#0F5C45]/50 bg-[#0F4C5C]/20 px-3 py-1 text-sm text-teal-100 transition-colors hover:border-[#0F5C45]/70 hover:bg-[#0F5C45]/25"
             >
               {challenge.name}
             </button>
           ))}
           {activeChallenges.length > 3 && (
-            <span className="px-3 py-1 text-orange-300 text-sm" role="note">
-              +{activeChallenges.length - 3} autres...
+            <span className="px-3 py-1 text-sm text-teal-600" role="note">
+              +{activeChallenges.length - 3} autres…
             </span>
           )}
         </div>

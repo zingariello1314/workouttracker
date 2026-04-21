@@ -85,9 +85,8 @@ const SportAnalyticsHubTab = ({ legacyEntry = null }) => {
   );
 
   return (
-    <div className="min-h-screen bg-black text-slate-100">
-      <div className="mx-auto max-w-6xl space-y-8 px-4 py-6 pb-20">
-        <header className="rounded-xl border-2 border-[#0F4C5C]/70 bg-black px-4 py-3">
+    <div className="mx-auto max-w-6xl space-y-6 px-4 py-6 pb-20 text-teal-50">
+        <header className="rounded-xl border-2 border-[#0F4C5C]/70 bg-black px-4 py-3 shadow-md shadow-black/40">
           <h1 className="text-xl font-bold tracking-tight text-white">
             {t('sportAnalyticsHub.title', 'Analyses & prévisions')}
           </h1>
@@ -99,24 +98,26 @@ const SportAnalyticsHubTab = ({ legacyEntry = null }) => {
           </p>
         </header>
 
-        <div className="flex flex-wrap gap-2">
-          {pills.map((p) => (
-            <button
-              key={p.id}
-              type="button"
-              onClick={() => setPanel(p.id)}
-              className={`rounded-full border px-3 py-1.5 text-xs font-medium transition ${
-                panel === p.id
-                  ? 'border-[#0F5C45] bg-[#0F5C45]/35 text-white shadow-md shadow-black/40'
-                  : 'border-[#0F4C5C]/55 bg-black text-teal-100 hover:border-[#0F5C45]/60'
-              }`}
-            >
-              {p.label}
-            </button>
-          ))}
+        <div className="rounded-xl border-2 border-[#0F4C5C]/70 bg-black p-4 shadow-md shadow-black/40">
+          <div className="flex flex-wrap gap-2">
+            {pills.map((p) => (
+              <button
+                key={p.id}
+                type="button"
+                onClick={() => setPanel(p.id)}
+                className={`rounded-full border px-3 py-1.5 text-xs font-medium transition ${
+                  panel === p.id
+                    ? 'border-[#0F5C45] bg-[#0F5C45]/35 text-white shadow-md shadow-black/40'
+                    : 'border-[#0F4C5C]/55 bg-black text-teal-100 hover:border-[#0F5C45]/60'
+                }`}
+              >
+                {p.label}
+              </button>
+            ))}
+          </div>
         </div>
 
-        <section className="min-h-[12rem]">
+        <section className="min-h-[12rem] rounded-xl border-2 border-[#0F4C5C]/70 bg-black p-3 shadow-md shadow-black/40 sm:p-4">
           <Suspense fallback={loadFallback}>
             {panel === 'stats' && <StatsTab />}
             {panel === 'predictions' && <PredictionsTab />}
@@ -124,20 +125,22 @@ const SportAnalyticsHubTab = ({ legacyEntry = null }) => {
           </Suspense>
         </section>
 
-        <section id="sport-analytics-history" className="scroll-mt-28 space-y-3">
-          <div className="border-t border-[#0F4C5C]/40 pt-8">
+        <section
+          id="sport-analytics-history"
+          className="scroll-mt-28 space-y-3 rounded-xl border-2 border-[#0F4C5C]/70 bg-black p-4 shadow-md shadow-black/40"
+        >
+          <div className="border-b border-[#0F4C5C]/40 pb-3">
             <h2 className="text-lg font-semibold text-teal-100">{t('nav.history')}</h2>
-            <p className="mb-2 text-xs text-teal-700">
+            <p className="mt-1 text-xs text-teal-700">
               {t('sportAnalyticsHub.historyHint', 'Consulte ici tout l’historique des données enregistrées.')}
             </p>
           </div>
-          <div className="min-h-[10rem]">
+          <div className="min-h-[10rem] pt-2">
             <Suspense fallback={loadFallback}>
               <HistoryTab />
             </Suspense>
           </div>
         </section>
-      </div>
     </div>
   );
 };

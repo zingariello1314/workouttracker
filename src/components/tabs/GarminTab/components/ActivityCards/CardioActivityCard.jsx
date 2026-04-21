@@ -185,10 +185,10 @@ export default function CardioActivityCard({ activity }) {
         : 'Repos uniquement';
 
   return (
-    <div className="bg-slate-800/60 border border-slate-700 rounded-lg p-4">
+    <div className="rounded-xl border-2 border-[#0F4C5C]/70 bg-black p-4 shadow-md shadow-black/40">
       <div className="flex justify-between items-start mb-3">
         <div>
-          <h4 className="text-white font-semibold">
+          <h4 className="text-teal-100 font-semibold">
             <span
               className={`text-lg font-bold tracking-tight ${
                 runKind === 'interval'
@@ -200,28 +200,28 @@ export default function CardioActivityCard({ activity }) {
             >
               {kindEmoji} {kindTitle}
             </span>
-            <span className="text-slate-400 font-normal">
+            <span className="text-teal-100/50 font-normal">
               {' '}
               · {activity.date} {activity.time}
             </span>
           </h4>
           {(activity.startTimeLocal || activity.startTimeGMT) && (
-            <div className="text-slate-400 text-xs mt-1">
+            <div className="text-teal-100/55 text-xs mt-1">
               {activity.startTimeLocal && <span>Début (local): {activity.startTimeLocal}</span>}
               {activity.startTimeGMT && <span className="ml-2">Début (GMT): {activity.startTimeGMT}</span>}
             </div>
           )}
           {(activity.activityType || activity.garminTypeKey) && (
-            <div className="text-slate-400 text-xs mt-1 space-y-0.5">
+            <div className="text-teal-100/55 text-xs mt-1 space-y-0.5">
               {activity.activityType && (
                 <div>
                   Type (affiché) :{' '}
-                  <span className="text-slate-300">{activity.activityType}</span>
+                  <span className="text-sky-300/85">{activity.activityType}</span>
                 </div>
               )}
               {activity.garminTypeKey &&
                 activity.garminTypeKey !== activity.activityType && (
-                  <div className="text-slate-500">
+                  <div className="text-teal-100/45">
                     Clé Garmin Connect : {activity.garminTypeKey}
                     <span className="block text-[10px] mt-0.5 opacity-90">
                       (libellé API — peut différer du profil enregistré sur la montre)
@@ -231,42 +231,42 @@ export default function CardioActivityCard({ activity }) {
             </div>
           )}
         </div>
-        <div className="text-slate-400 text-xs">ID: {activity.id}</div>
+        <div className="text-teal-100/55 text-xs">ID: {activity.id}</div>
       </div>
 
       <div className="grid grid-cols-2 md:grid-cols-3 gap-3 text-sm">
         {/* Durée */}
-        <div className="bg-slate-900/60 rounded p-2">
-          <div className="text-slate-400 text-xs">Durée</div>
-          <div className="text-white font-semibold">{formatDuration(activity.duration)}</div>
+        <div className="bg-black border border-[#0F4C5C]/40 rounded-lg p-2">
+          <div className="text-teal-100/55 text-xs">Durée</div>
+          <div className="text-teal-100 font-semibold">{formatDuration(activity.duration)}</div>
         </div>
 
         {/* Distance (si disponible) */}
         {(activity.distance > 0 || run?.distanceMeters > 0) && (
-          <div className="bg-slate-900/60 rounded p-2">
-            <div className="text-slate-400 text-xs">Distance</div>
-            <div className="text-white font-semibold">
+          <div className="bg-black border border-[#0F4C5C]/40 rounded-lg p-2">
+            <div className="text-teal-100/55 text-xs">Distance</div>
+            <div className="text-teal-100 font-semibold">
               {activity.distance > 0
                 ? formatDistance(activity.distance)
                 : formatDistance((run.distanceMeters || 0) / 1000)}
             </div>
             {laps.length > 0 && (lapBreakdown.activeKm > 0 || lapBreakdown.restKm > 0 || lapBreakdown.otherKm > 0) && (
-              <div className="text-slate-400 text-[11px] mt-1.5 space-y-0.5 border-t border-slate-700/80 pt-1.5">
+              <div className="text-teal-100/55 text-[11px] mt-1.5 space-y-0.5 border-t border-[#0F4C5C]/40 pt-1.5">
                 {lapBreakdown.activeKm > 0 && (
                   <div>
                     {intervalMode ? 'Effort (fractionné) : ' : 'En course (tours) : '}
-                    <span className="text-slate-300">{lapBreakdown.activeKm.toFixed(2)} km</span>
+                    <span className="text-sky-300/85">{lapBreakdown.activeKm.toFixed(2)} km</span>
                   </div>
                 )}
                 {lapBreakdown.restKm > 0 && (
                   <div>
                     {intervalMode ? 'Repos (fractionné) : ' : 'Au pas / léger (tours) : '}
-                    <span className="text-slate-300">{lapBreakdown.restKm.toFixed(2)} km</span>
+                    <span className="text-sky-300/85">{lapBreakdown.restKm.toFixed(2)} km</span>
                   </div>
                 )}
                 {lapBreakdown.otherKm > 0 && (
                   <div>
-                    Autre (tours) : <span className="text-slate-300">{lapBreakdown.otherKm.toFixed(2)} km</span>
+                    Autre (tours) : <span className="text-sky-300/85">{lapBreakdown.otherKm.toFixed(2)} km</span>
                   </div>
                 )}
               </div>
@@ -276,80 +276,80 @@ export default function CardioActivityCard({ activity }) {
 
         {/* Allure moyenne (course) */}
         {(activity.avgPaceSecondsPerKm > 0 || run?.averagePaceSecondsPerKm > 0) && (
-          <div className="bg-slate-900/60 rounded p-2">
-            <div className="text-slate-400 text-xs">Allure moyenne</div>
-            <div className="text-white font-semibold">
+          <div className="bg-black border border-[#0F4C5C]/40 rounded-lg p-2">
+            <div className="text-teal-100/55 text-xs">Allure moyenne</div>
+            <div className="text-teal-100 font-semibold">
               {formatPacePerKm(activity.avgPaceSecondsPerKm || run?.averagePaceSecondsPerKm)}
             </div>
           </div>
         )}
 
         {run?.bestPaceSecondsPerKm > 0 && (
-          <div className="bg-slate-900/60 rounded p-2">
-            <div className="text-slate-400 text-xs">Meilleure allure</div>
-            <div className="text-white font-semibold">{formatPacePerKm(run.bestPaceSecondsPerKm)}</div>
+          <div className="bg-black border border-[#0F4C5C]/40 rounded-lg p-2">
+            <div className="text-teal-100/55 text-xs">Meilleure allure</div>
+            <div className="text-teal-100 font-semibold">{formatPacePerKm(run.bestPaceSecondsPerKm)}</div>
           </div>
         )}
 
         {/* Vitesse (si disponible) */}
         {activity.speed > 0 && (
-          <div className="bg-slate-900/60 rounded p-2">
-            <div className="text-slate-400 text-xs">Vitesse moyenne</div>
-            <div className="text-white font-semibold">{formatSpeed(activity.speed)}</div>
+          <div className="bg-black border border-[#0F4C5C]/40 rounded-lg p-2">
+            <div className="text-teal-100/55 text-xs">Vitesse moyenne</div>
+            <div className="text-teal-100 font-semibold">{formatSpeed(activity.speed)}</div>
           </div>
         )}
 
         {activity.maxSpeed > 0 && (
-          <div className="bg-slate-900/60 rounded p-2">
-            <div className="text-slate-400 text-xs">Vitesse max</div>
-            <div className="text-white font-semibold">{formatSpeed(activity.maxSpeed)}</div>
+          <div className="bg-black border border-[#0F4C5C]/40 rounded-lg p-2">
+            <div className="text-teal-100/55 text-xs">Vitesse max</div>
+            <div className="text-teal-100 font-semibold">{formatSpeed(activity.maxSpeed)}</div>
           </div>
         )}
 
         {(run?.averageCadenceSpm > 0 || run?.maxCadenceSpm > 0) && (
-          <div className="bg-slate-900/60 rounded p-2 md:col-span-2">
-            <div className="text-slate-400 text-xs">Cadence</div>
-            <div className="text-white font-semibold">
+          <div className="bg-black border border-[#0F4C5C]/40 rounded-lg p-2 md:col-span-2">
+            <div className="text-teal-100/55 text-xs">Cadence</div>
+            <div className="text-teal-100 font-semibold">
               moy. {run.averageCadenceSpm ? `${run.averageCadenceSpm} ppm` : '—'}
               {run.maxCadenceSpm ? ` • max ${run.maxCadenceSpm} ppm` : ''}
             </div>
-            <div className="text-slate-500 text-[10px] mt-0.5">ppm = pas par minute</div>
+            <div className="text-teal-100/45 text-[10px] mt-0.5">ppm = pas par minute</div>
           </div>
         )}
 
         {run?.averageStrideLengthMeters > 0 && (
-          <div className="bg-slate-900/60 rounded p-2">
-            <div className="text-slate-400 text-xs">Longueur de foulée (moy.)</div>
-            <div className="text-white font-semibold">{run.averageStrideLengthMeters} m</div>
+          <div className="bg-black border border-[#0F4C5C]/40 rounded-lg p-2">
+            <div className="text-teal-100/55 text-xs">Longueur de foulée (moy.)</div>
+            <div className="text-teal-100 font-semibold">{run.averageStrideLengthMeters} m</div>
           </div>
         )}
 
         {/* FC */}
         {activity.avgHR > 0 && (
-          <div className="bg-slate-900/60 rounded p-2">
-            <div className="text-slate-400 text-xs">FC moyenne</div>
-            <div className="text-white font-semibold">{formatHeartRate(activity.avgHR)}</div>
+          <div className="bg-black border border-[#0F4C5C]/40 rounded-lg p-2">
+            <div className="text-teal-100/55 text-xs">FC moyenne</div>
+            <div className="text-teal-100 font-semibold">{formatHeartRate(activity.avgHR)}</div>
           </div>
         )}
         {activity.maxHR > 0 && (
-          <div className="bg-slate-900/60 rounded p-2">
-            <div className="text-slate-400 text-xs">FC max</div>
-            <div className="text-white font-semibold">{formatHeartRate(activity.maxHR)}</div>
+          <div className="bg-black border border-[#0F4C5C]/40 rounded-lg p-2">
+            <div className="text-teal-100/55 text-xs">FC max</div>
+            <div className="text-teal-100 font-semibold">{formatHeartRate(activity.maxHR)}</div>
           </div>
         )}
         {activity.minHR > 0 && (
-          <div className="bg-slate-900/60 rounded p-2">
-            <div className="text-slate-400 text-xs">FC min</div>
-            <div className="text-white font-semibold">{formatHeartRate(activity.minHR)}</div>
+          <div className="bg-black border border-[#0F4C5C]/40 rounded-lg p-2">
+            <div className="text-teal-100/55 text-xs">FC min</div>
+            <div className="text-teal-100 font-semibold">{formatHeartRate(activity.minHR)}</div>
           </div>
         )}
 
         {/* Calories */}
         {cal.total > 0 && (
-          <div className="bg-slate-900/60 rounded p-2">
-            <div className="text-slate-400 text-xs">Calories</div>
-            <div className="text-white font-semibold">{cal.total}</div>
-            <div className="text-slate-400 text-xs mt-1">
+          <div className="bg-black border border-[#0F4C5C]/40 rounded-lg p-2">
+            <div className="text-teal-100/55 text-xs">Calories</div>
+            <div className="text-teal-100 font-semibold">{cal.total}</div>
+            <div className="text-teal-100/55 text-xs mt-1">
               Actives: {cal.active || 0} • Repos: {cal.resting || 0}
             </div>
           </div>
@@ -357,18 +357,18 @@ export default function CardioActivityCard({ activity }) {
 
         {/* Transpiration */}
         {activity.sweatLoss > 0 && (
-          <div className="bg-slate-900/60 rounded p-2">
-            <div className="text-slate-400 text-xs">Transpiration</div>
-            <div className="text-white font-semibold">{activity.sweatLoss} ml</div>
+          <div className="bg-black border border-[#0F4C5C]/40 rounded-lg p-2">
+            <div className="text-teal-100/55 text-xs">Transpiration</div>
+            <div className="text-teal-100 font-semibold">{activity.sweatLoss} ml</div>
           </div>
         )}
 
         {/* Intensité */}
         {intensity.total > 0 && (
-          <div className="bg-slate-900/60 rounded p-2 md:col-span-2">
-            <div className="text-slate-400 text-xs">Minutes intensives</div>
-            <div className="text-white font-semibold">{intensity.total} min</div>
-            <div className="text-slate-400 text-xs mt-1">
+          <div className="bg-black border border-[#0F4C5C]/40 rounded-lg p-2 md:col-span-2">
+            <div className="text-teal-100/55 text-xs">Minutes intensives</div>
+            <div className="text-teal-100 font-semibold">{intensity.total} min</div>
+            <div className="text-teal-100/55 text-xs mt-1">
               Modérée: {intensity.moderate || 0} • Soutenue: {intensity.vigorous || 0} (x2)
             </div>
           </div>
@@ -376,19 +376,19 @@ export default function CardioActivityCard({ activity }) {
 
         {/* PHASE 3.3 : Training Effect */}
         {activity.trainingEffect && (
-          <div className="bg-slate-900/60 rounded p-2 md:col-span-2">
-            <div className="text-slate-400 text-xs mb-1">Training Effect</div>
+          <div className="bg-black border border-[#0F4C5C]/40 rounded-lg p-2 md:col-span-2">
+            <div className="text-teal-100/55 text-xs mb-1">Training Effect</div>
             <div className="flex gap-4">
               {activity.trainingEffect.aerobic !== undefined && (
                 <div>
                   <div className="text-blue-300 text-xs">Aérobie</div>
-                  <div className="text-white font-semibold">{activity.trainingEffect.aerobic}/5.0</div>
+                  <div className="text-teal-100 font-semibold">{activity.trainingEffect.aerobic}/5.0</div>
                 </div>
               )}
               {activity.trainingEffect.anaerobic !== undefined && (
                 <div>
-                  <div className="text-purple-300 text-xs">Anaérobie</div>
-                  <div className="text-white font-semibold">{activity.trainingEffect.anaerobic}/5.0</div>
+                  <div className="text-sky-300/80 text-xs">Anaérobie</div>
+                  <div className="text-teal-100 font-semibold">{activity.trainingEffect.anaerobic}/5.0</div>
                 </div>
               )}
             </div>
@@ -397,9 +397,9 @@ export default function CardioActivityCard({ activity }) {
 
         {/* PHASE 3.3 : Recovery Time */}
         {activity.recoveryTime && activity.recoveryTime > 0 && (
-          <div className="bg-slate-900/60 rounded p-2">
-            <div className="text-slate-400 text-xs">Temps de récupération</div>
-            <div className="text-white font-semibold">
+          <div className="bg-black border border-[#0F4C5C]/40 rounded-lg p-2">
+            <div className="text-teal-100/55 text-xs">Temps de récupération</div>
+            <div className="text-teal-100 font-semibold">
               {activity.recoveryTime >= 24 
                 ? `${Math.floor(activity.recoveryTime / 24)}j ${Math.round(activity.recoveryTime % 24)}h`
                 : `${activity.recoveryTime}h`}
@@ -409,23 +409,23 @@ export default function CardioActivityCard({ activity }) {
 
         {/* Sauts (pour activités JumpJump Pro) */}
         {(activity.jumps > 0 || activity.jumpRopeMetrics?.jumps > 0) && (
-          <div className="bg-slate-900/60 rounded p-2">
-            <div className="text-slate-400 text-xs">Sauts</div>
-            <div className="text-white font-semibold text-lg">{activity.jumps || activity.jumpRopeMetrics?.jumps || 0}</div>
+          <div className="bg-black border border-[#0F4C5C]/40 rounded-lg p-2">
+            <div className="text-teal-100/55 text-xs">Sauts</div>
+            <div className="text-teal-100 font-semibold text-lg">{activity.jumps || activity.jumpRopeMetrics?.jumps || 0}</div>
           </div>
         )}
 
         {/* Localisation */}
         {activity.location && (
-          <div className="bg-slate-900/60 rounded p-2 md:col-span-3 text-xs">
-            <div className="text-slate-400 mb-1">Localisation</div>
+          <div className="bg-black border border-[#0F4C5C]/40 rounded-lg p-2 md:col-span-3 text-xs">
+            <div className="text-teal-100/55 mb-1">Localisation</div>
             {activity.location.start && (
-              <div className="text-slate-300">
+              <div className="text-sky-300/85">
                 Départ: {activity.location.start.lat?.toFixed(6)}, {activity.location.start.lng?.toFixed(6)}
               </div>
             )}
             {activity.location.end && (
-              <div className="text-slate-300 mt-1">
+              <div className="text-sky-300/85 mt-1">
                 Arrivée: {activity.location.end.lat?.toFixed(6)}, {activity.location.end.lng?.toFixed(6)}
               </div>
             )}
@@ -435,22 +435,22 @@ export default function CardioActivityCard({ activity }) {
 
       {/* Séance continue avec tours auto : explication (street / indoor_cardio) — pas le tableau fractionné */}
       {laps.length > 0 && continuousAutoLapSession && (
-        <div className="mt-4 border-t border-slate-700 pt-3 space-y-2">
-          <div className="text-slate-200 text-sm font-semibold">
+        <div className="mt-4 border-t border-[#0F4C5C]/35 pt-3 space-y-2">
+          <div className="text-teal-100/90 text-sm font-semibold">
             {t('garmin.cardioActivity.continuousLapsTitle')}
           </div>
-          <p className="text-slate-400 text-xs leading-relaxed max-w-2xl">
+          <p className="text-teal-100/55 text-xs leading-relaxed max-w-2xl">
             {t('garmin.cardioActivity.continuousLapsBody', { count: laps.length })}
           </p>
           {allLapsAgg.avgHR != null && (
-            <p className="text-slate-500 text-xs">
+            <p className="text-teal-100/45 text-xs">
               {t('garmin.cardioActivity.continuousLapsHr', { hr: allLapsAgg.avgHR })}
             </p>
           )}
           <button
             type="button"
             onClick={() => setShowTechnicalLaps((v) => !v)}
-            className="text-xs text-purple-300 hover:text-purple-200 underline-offset-2 hover:underline"
+            className="text-xs text-sky-300/90 hover:text-sky-200 underline-offset-2 hover:underline"
           >
             {showTechnicalLaps
               ? t('garmin.cardioActivity.continuousLapsHideTechnical')
@@ -461,14 +461,14 @@ export default function CardioActivityCard({ activity }) {
 
       {/* Tours (sortie classique) ou fractionné — détail Garmin (masqué par défaut si séance continue auto-laps) */}
       {laps.length > 0 && (!continuousAutoLapSession || showTechnicalLaps) && (
-        <div className="mt-4 border-t border-slate-700 pt-3">
+        <div className="mt-4 border-t border-[#0F4C5C]/35 pt-3">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-2">
-            <div className="text-slate-300 text-sm font-semibold">
+            <div className="text-sky-300/85 text-sm font-semibold">
               {intervalMode ? 'Fractionné — tours & segments' : 'Tours & segments'} ({laps.length})
             </div>
             {showEffortRestFilters ? (
               <div className="flex flex-wrap items-center gap-2 text-xs">
-                <span className="text-slate-500">Affichage :</span>
+                <span className="text-teal-100/45">Affichage :</span>
                 {[
                   { id: 'all', label: 'Tous' },
                   { id: 'active', label: 'Effort' },
@@ -480,8 +480,8 @@ export default function CardioActivityCard({ activity }) {
                     onClick={() => setSegmentFilter(id)}
                     className={`rounded px-2 py-1 border transition-colors ${
                       segmentFilter === id
-                        ? 'bg-slate-600 border-slate-500 text-white'
-                        : 'bg-slate-900/50 border-slate-700 text-slate-400 hover:border-slate-600'
+                        ? 'bg-[#0F4C5C]/50 border-[#0F5C45]/70 text-teal-100'
+                        : 'bg-black border-[#0F4C5C]/45 text-teal-100/70 hover:border-[#0F5C45]/50'
                     }`}
                   >
                     {label}
@@ -489,15 +489,15 @@ export default function CardioActivityCard({ activity }) {
                 ))}
               </div>
             ) : (
-              <p className="text-slate-500 text-[11px] max-w-md">
+              <p className="text-teal-100/45 text-[11px] max-w-md">
                 Sortie continue ou tours auto (pas de phase repos) — pas de filtre effort/repos.
               </p>
             )}
           </div>
 
-          <div className="overflow-x-auto rounded border border-slate-700/80">
+          <div className="overflow-x-auto rounded-lg border border-[#0F4C5C]/45">
             <table className="w-full text-xs text-left">
-              <thead className="bg-slate-900/80 text-slate-400">
+              <thead className="bg-black text-teal-100/60 border-b border-[#0F4C5C]/40">
                 <tr>
                   <th className="p-2 font-medium">#</th>
                   <th className="p-2 font-medium">{intervalMode ? 'Phase' : 'Segment'}</th>
@@ -510,13 +510,13 @@ export default function CardioActivityCard({ activity }) {
                   <th className="p-2 font-medium">D+</th>
                 </tr>
               </thead>
-              <tbody className="text-slate-200">
+              <tbody className="text-teal-100/90">
                 {filteredLaps.map((lap) => {
                   const pace = lapEffectivePace(lap);
                   return (
-                    <tr key={lap.index} className="border-t border-slate-800/90">
+                    <tr key={lap.index} className="border-t border-[#0F4C5C]/25">
                       <td className="p-2">{lap.index}</td>
-                      <td className="p-2 max-w-[10rem] whitespace-normal break-words text-slate-300">
+                      <td className="p-2 max-w-[10rem] whitespace-normal break-words text-sky-300/85">
                         {formatLapIntervalLabel(lap)}
                       </td>
                       <td className="p-2">
@@ -535,7 +535,7 @@ export default function CardioActivityCard({ activity }) {
                         {pace ? (
                           <div className="leading-snug">
                             <div>{formatSpeed(pace.kmh)}</div>
-                            <div className="text-slate-400">{formatPacePerKm(pace.secondsPerKm)}</div>
+                            <div className="text-teal-100/55">{formatPacePerKm(pace.secondsPerKm)}</div>
                           </div>
                         ) : (
                           '—'
@@ -562,9 +562,9 @@ export default function CardioActivityCard({ activity }) {
                 })}
               </tbody>
               {filteredLaps.length > 0 && (
-                <tfoot className="bg-slate-900/90 text-slate-300 border-t border-slate-600">
+                <tfoot className="bg-black text-sky-300/85 border-t border-[#0F4C5C]/40">
                   <tr>
-                    <td colSpan={3} className="p-2 text-slate-400">
+                    <td colSpan={3} className="p-2 text-teal-100/55">
                       Synthèse ({filterLabel})
                     </td>
                     <td className="p-2 whitespace-nowrap">
@@ -574,8 +574,8 @@ export default function CardioActivityCard({ activity }) {
                       {tableStats.kmh != null && tableStats.paceSecPerKm != null ? (
                         <div className="leading-snug">
                           <div>{formatSpeed(tableStats.kmh)}</div>
-                          <div className="text-slate-400">{formatPacePerKm(tableStats.paceSecPerKm)}</div>
-                          <div className="text-[10px] text-slate-500 mt-0.5">moy. pondérée (Σkm / Σt)</div>
+                          <div className="text-teal-100/55">{formatPacePerKm(tableStats.paceSecPerKm)}</div>
+                          <div className="text-[10px] text-teal-100/45 mt-0.5">moy. pondérée (Σkm / Σt)</div>
                         </div>
                       ) : (
                         '—'
@@ -584,12 +584,12 @@ export default function CardioActivityCard({ activity }) {
                     <td colSpan={4} className="p-2 text-right text-[11px]">
                       <div>
                         Distance affichée :{' '}
-                        <span className="text-white font-semibold">
+                        <span className="text-teal-100 font-semibold">
                           {tableStats.totalKm > 0 ? `${tableStats.totalKm.toFixed(2)} km` : '—'}
                         </span>
                       </div>
                       {tableStats.avgHR != null && (
-                        <div className="mt-0.5 text-slate-400">
+                        <div className="mt-0.5 text-teal-100/55">
                           FC moy. (segments) : {tableStats.avgHR} bpm
                         </div>
                       )}
@@ -600,7 +600,7 @@ export default function CardioActivityCard({ activity }) {
             </table>
           </div>
           {filteredLaps.length === 0 && (
-            <p className="text-slate-500 text-xs mt-2">Aucun segment pour ce filtre.</p>
+            <p className="text-teal-100/45 text-xs mt-2">Aucun segment pour ce filtre.</p>
           )}
         </div>
       )}

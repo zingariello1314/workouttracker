@@ -89,18 +89,18 @@ const ChartsTab = () => {
     }
   };
 
-  // Couleurs élégantes dans le thème du site
+  // Couleurs graphiques (axes / secondaires) — charte Sport pour l’UI, couleurs « utiles » conservées pour les séries
   const themeColors = {
-    primary: '#3B82F6',      // Bleu principal
-    secondary: '#10B981',    // Vert émeraude
-    accent: '#F59E0B',       // Orange ambre
-    danger: '#EF4444',       // Rouge
-    purple: '#8B5CF6',      // Violet
-    pink: '#EC4899',         // Rose
-    indigo: '#6366F1',      // Indigo
-    teal: '#14B8A6',        // Teal
-    slate: '#64748B',       // Slate
-    zinc: '#71717A'         // Zinc
+    primary: '#0F4C5C',
+    secondary: '#0F5C45',
+    accent: '#38bdf8',
+    danger: '#EF4444',
+    purple: '#38bdf8',
+    pink: '#22d3ee',
+    indigo: '#0ea5e9',
+    teal: '#14b8a6',
+    slate: '#5eead4',
+    zinc: '#94a3b8'
   };
 
   // Données communes pour tous les graphiques - optimisé
@@ -453,23 +453,23 @@ const ChartsTab = () => {
 
   if (hasNoData) {
     return (
-      <div className="min-h-screen text-white p-6">
-        <div className="flex justify-between items-center mb-8">
+      <div className="relative mx-auto max-w-7xl px-4 py-6 pb-20 text-teal-50">
+        <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <h1 className="text-3xl font-bold bg-gradient-to-r from-purple-400 via-pink-400 to-cyan-400 bg-clip-text text-transparent">
+            <h1 className="text-3xl font-bold tracking-tight text-white">
               {t('charts.title')}
             </h1>
-            <p className="text-slate-400 mt-1">{t('charts.subtitle')}</p>
+            <p className="mt-1 text-sm text-teal-700">{t('charts.subtitle')}</p>
           </div>
         </div>
-        <Card className="p-12 text-center">
+        <Card variant="sport" className="p-12 text-center">
           <div className="space-y-4">
-            <BarChart3 className="w-16 h-16 mx-auto text-slate-400" />
+            <BarChart3 className="mx-auto h-16 w-16 text-teal-600" />
             <div>
-              <h3 className="text-xl font-semibold text-white mb-2">
+              <h3 className="mb-2 text-xl font-semibold text-white">
                 {t('charts.empty.title', 'Aucune donnée disponible')}
               </h3>
-              <p className="text-slate-400">
+              <p className="text-teal-700">
                 {t('charts.empty.message', 'Commencez à enregistrer vos entraînements pour voir vos graphiques ici.')}
               </p>
             </div>
@@ -479,35 +479,36 @@ const ChartsTab = () => {
     );
   }
 
+  const chartShell =
+    'rounded-2xl border-2 border-[#0F4C5C]/75 bg-black p-6 shadow-lg shadow-black/40 transition-shadow duration-300';
+
   return (
-    <div className="relative min-h-screen">
-      {/* Contenu avec z-index relatif */}
-      <div className="relative z-10 min-h-screen text-white p-6">
-        {/* Header avec votre design exact */}
-      <div className="flex justify-between items-center mb-8">
-        <div>
-          <h1 className="text-3xl font-bold bg-gradient-to-r from-purple-400 via-pink-400 to-cyan-400 bg-clip-text text-transparent">
-            {t('charts.title')}
-          </h1>
-          <p className="text-slate-400 mt-1">{t('charts.subtitle')}</p>
+    <div className="relative mx-auto max-w-7xl px-4 py-6 pb-20">
+      <div className="relative z-10 text-teal-50">
+        <div className="mb-8 flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+          <div>
+            <h1 className="text-3xl font-bold tracking-tight text-white">
+              {t('charts.title')}
+            </h1>
+            <p className="mt-1 text-sm text-teal-700">{t('charts.subtitle')}</p>
+          </div>
+          <div className="flex flex-wrap gap-2 rounded-xl border-2 border-[#0F4C5C]/60 bg-black p-1 shadow-md shadow-black/30">
+            {periods.map((period) => (
+              <button
+                key={period.value}
+                type="button"
+                onClick={() => setSelectedPeriod(period.value)}
+                className={`rounded-full border px-3 py-1.5 text-xs font-medium transition ${
+                  selectedPeriod === period.value
+                    ? 'border-[#0F5C45] bg-[#0F5C45]/35 text-white shadow-md shadow-black/40'
+                    : 'border-[#0F4C5C]/50 bg-black text-teal-100 hover:border-[#0F5C45]/55'
+                }`}
+              >
+                {period.label}
+              </button>
+            ))}
+          </div>
         </div>
-        <div className="flex gap-2 bg-slate-900/50 backdrop-blur-sm rounded-lg p-1 border border-purple-500/20">
-          {periods.map(period => (
-            <button
-              key={period.value}
-              type="button"
-              onClick={() => setSelectedPeriod(period.value)}
-              className={`gradient-button-premium gradient-button-premium-sm rounded-lg ${
-                selectedPeriod === period.value
-                  ? 'gradient-button-premium-variant'
-                  : ''
-              }`}
-            >
-              {period.label}
-            </button>
-          ))}
-        </div>
-      </div>
 
       {/* Ligne 1 : FC 24h en pleine largeur */}
       {fc24hConfig && (() => {
@@ -515,9 +516,9 @@ const ChartsTab = () => {
         const ChartComponent = fc24hConfig.component;
         return (
           <div className="mb-20">
-            <div className={`bg-slate-900/40 backdrop-blur-sm rounded-2xl p-6 pb-12 border ${fc24hConfig.bgColor.replace('bg-', 'border-').replace('/20', '/20')} shadow-xl hover:shadow-${fc24hConfig.color}-500/20 transition-all duration-300 min-h-[1050px]`}>
-              <div className="flex items-center justify-between mb-6">
-                <h2 className="text-xl font-semibold flex items-center gap-2">
+            <div className={`${chartShell} min-h-[1050px] pb-12`}>
+              <div className="mb-6 flex items-center justify-between">
+                <h2 className="flex items-center gap-2 text-xl font-semibold text-white">
                   <IconComponent className={fc24hConfig.textColor} size={20} />
                   {fc24hConfig.title}
                 </h2>
@@ -537,12 +538,9 @@ const ChartsTab = () => {
             const ChartComponent = config.component;
             
             return (
-              <div 
-                key={config.id} 
-                className={`bg-slate-900/40 backdrop-blur-sm rounded-2xl p-6 pb-8 border ${config.bgColor.replace('bg-', 'border-').replace('/20', '/20')} shadow-xl hover:shadow-${config.color}-500/20 transition-all duration-300 min-h-[600px]`}
-              >
-                <div className="flex items-center justify-between mb-6">
-                  <h2 className="text-xl font-semibold flex items-center gap-2">
+              <div key={config.id} className={`${chartShell} min-h-[600px] pb-8`}>
+                <div className="mb-6 flex items-center justify-between">
+                  <h2 className="flex items-center gap-2 text-xl font-semibold text-white">
                     <IconComponent className={config.textColor} size={20} />
                     {config.title}
                   </h2>
@@ -561,12 +559,9 @@ const ChartsTab = () => {
           const ChartComponent = config.component;
           
           return (
-            <div 
-              key={config.id} 
-              className={`bg-slate-900/40 backdrop-blur-sm rounded-2xl p-6 border ${config.bgColor.replace('bg-', 'border-').replace('/20', '/20')} shadow-xl hover:shadow-${config.color}-500/20 transition-all duration-300`}
-            >
-              <div className="flex items-center justify-between mb-6">
-                <h2 className="text-xl font-semibold flex items-center gap-2">
+            <div key={config.id} className={chartShell}>
+              <div className="mb-6 flex items-center justify-between">
+                <h2 className="flex items-center gap-2 text-xl font-semibold text-white">
                   <IconComponent className={config.textColor} size={20} />
                   {config.title}
                 </h2>

@@ -16,7 +16,7 @@ export const isEnduranceExercise = (exercise) => {
   
   // Vérifier si c'est un exercice d'endurance
   if (exerciseId.toString().startsWith('endurance_')) return true;
-  if (activityType && ['boxing', 'pushups', 'swimming', 'jumprope', 'running'].includes(activityType)) return true;
+  if (activityType && ['boxing', 'pushups', 'gainage', 'swimming', 'jumprope', 'running'].includes(activityType)) return true;
   
   // Vérifier dans le nom de l'exercice
   const exerciseName = (exercise.name || exercise.nom || '').toLowerCase();

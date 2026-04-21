@@ -126,22 +126,22 @@ const CleanupNotification = () => {
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="bg-slate-800/50 rounded-lg p-4">
-            <p className="text-slate-300 mb-4">
+          <div className="bg-black border border-[#0F4C5C]/50 rounded-lg p-4">
+            <p className="text-teal-100/80 mb-4">
               Vos données de suivi corporel contiennent des éléments anciens qui peuvent être nettoyés pour optimiser l'espace de stockage.
             </p>
             
             <div className="space-y-2 text-sm">
               {preview.photos.toRemove > 0 && (
-                <div className="flex items-center justify-between p-2 bg-slate-700/50 rounded">
+                <div className="flex items-center justify-between p-2 bg-black border border-[#0F4C5C]/45 rounded">
                   <div className="flex items-center gap-2">
-                    <Calendar className="w-4 h-4 text-blue-400" />
-                    <span className="text-slate-300">Photos anciennes (&gt; 90 jours)</span>
+                    <Calendar className="w-4 h-4 text-sky-300/90" />
+                    <span className="text-teal-100/80">Photos anciennes (&gt; 90 jours)</span>
                   </div>
                   <div className="text-right">
                     <span className="text-yellow-400 font-semibold">{preview.photos.toRemove}</span>
-                    <span className="text-slate-400 ml-1">photo(s)</span>
-                    <div className="text-xs text-slate-500">
+                    <span className="text-teal-100/55 ml-1">photo(s)</span>
+                    <div className="text-xs text-teal-100/45">
                       {preview.photos.sizeToFreeKB > 0 && `~${preview.photos.sizeToFreeKB.toFixed(0)}KB`}
                     </div>
                   </div>
@@ -149,21 +149,21 @@ const CleanupNotification = () => {
               )}
               
               {preview.progressEntries.toRemove > 0 && (
-                <div className="flex items-center justify-between p-2 bg-slate-700/50 rounded">
+                <div className="flex items-center justify-between p-2 bg-black border border-[#0F4C5C]/45 rounded">
                   <div className="flex items-center gap-2">
-                    <Info className="w-4 h-4 text-purple-400" />
-                    <span className="text-slate-300">Entrées anciennes (&gt; 365 jours)</span>
+                    <Info className="w-4 h-4 text-sky-300" />
+                    <span className="text-teal-100/80">Entrées anciennes (&gt; 365 jours)</span>
                   </div>
                   <div className="text-right">
                     <span className="text-yellow-400 font-semibold">{preview.progressEntries.toRemove}</span>
-                    <span className="text-slate-400 ml-1">entrée(s)</span>
+                    <span className="text-teal-100/55 ml-1">entrée(s)</span>
                   </div>
                 </div>
               )}
               
               {preview.totalSizeToFreeKB > 0 && (
-                <div className="mt-3 p-2 bg-blue-600/20 border border-blue-500/30 rounded">
-                  <div className="flex items-center gap-2 text-blue-300">
+                <div className="mt-3 p-2 bg-[#0F4C5C]/25 border border-[#0F4C5C]/45 rounded">
+                  <div className="flex items-center gap-2 text-sky-300">
                     <CheckCircle className="w-4 h-4" />
                     <span className="text-sm font-medium">
                       Espace libéré estimé : ~{preview.totalSizeToFreeKB.toFixed(0)}KB
@@ -174,10 +174,10 @@ const CleanupNotification = () => {
             </div>
           </div>
 
-          <div className="bg-blue-900/20 border border-blue-700/30 rounded-lg p-3">
+          <div className="bg-black border border-[#0F4C5C]/45 rounded-lg p-3">
             <div className="flex items-start gap-2">
-              <Info className="w-4 h-4 text-blue-400 mt-0.5 flex-shrink-0" />
-              <div className="text-xs text-blue-200">
+              <Info className="w-4 h-4 text-sky-300/90 mt-0.5 flex-shrink-0" />
+              <div className="text-xs text-sky-200/90">
                 <strong>Note :</strong> Les 5 photos et 30 entrées les plus récentes seront toujours conservées, même si elles dépassent la limite d'âge.
               </div>
             </div>
@@ -187,7 +187,7 @@ const CleanupNotification = () => {
             <Button
               onClick={handleCleanup}
               disabled={isProcessing}
-              className="flex-1 bg-green-600 hover:bg-green-700 text-white"
+              className="flex-1 bg-green-600 hover:bg-green-700 text-teal-100"
             >
               {isProcessing ? (
                 <>
@@ -206,7 +206,7 @@ const CleanupNotification = () => {
               onClick={handleDecline}
               disabled={isProcessing}
               variant="outline"
-              className="flex-1 border-slate-600 text-slate-300 hover:bg-slate-700"
+              className="flex-1 border-[#0F4C5C]/45 text-teal-100/80 hover:bg-teal-950/35"
             >
               <Calendar className="w-4 h-4 mr-2" />
               Rappeler dans 30 jours
@@ -216,7 +216,7 @@ const CleanupNotification = () => {
               onClick={handleDismiss}
               disabled={isProcessing}
               variant="ghost"
-              className="text-slate-400 hover:text-slate-300"
+              className="text-teal-100/55 hover:text-teal-100/80"
             >
               <X className="w-4 h-4" />
             </Button>

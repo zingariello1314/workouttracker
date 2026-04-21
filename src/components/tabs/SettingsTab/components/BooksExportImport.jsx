@@ -1,26 +1,8 @@
-/**
- * Composant BooksExportImport - Interface utilisateur pour l'export/import Livres
- * 
- * ✅ PHASE 4 : Extraction de l'UI pour l'export/import Livres
- * 
- * @module components/tabs/SettingsTab/components/BooksExportImport
- */
-
 import React from 'react';
 import { Download, Upload, CheckCircle, AlertTriangle, BookOpen } from 'lucide-react';
 import Card, { CardHeader, CardTitle, CardContent } from '../../../ui/Card';
+import { settingsTheme as S } from '../settingsThemeClasses';
 
-/**
- * Composant pour gérer l'export/import Livres
- * 
- * @param {Object} props
- * @param {Object} booksStats - Statistiques Livres
- * @param {string} booksExportStatus - Statut de l'export
- * @param {string} booksImportStatus - Statut de l'import
- * @param {Function} handleExportBooksData - Fonction pour exporter
- * @param {Function} handleImportBooksData - Fonction pour importer
- * @returns {JSX.Element}
- */
 const BooksExportImport = ({
   booksStats,
   booksExportStatus,
@@ -29,22 +11,22 @@ const BooksExportImport = ({
   handleImportBooksData,
 }) => {
   return (
-    <Card className="bg-slate-800/80 backdrop-blur-sm border-slate-700">
-      <CardHeader>
-        <CardTitle className="flex items-center text-white">
-          <BookOpen className="mr-2" size={20} />
+    <Card variant="settings">
+      <CardHeader variant="settings">
+        <CardTitle tone="settings" className="flex items-center normal-case tracking-normal">
+          <BookOpen className="mr-2 text-red-400" size={20} />
           Livres
         </CardTitle>
       </CardHeader>
       <CardContent>
         <div className="space-y-4">
-          <p className="text-gray-300 text-sm">
+          <p className={`${S.body}`}>
             Gérez vos livres, sessions de lecture et métadonnées. Exportez et importez vos données de bibliothèque.
           </p>
-          
-          <div className="bg-slate-700/50 rounded-lg p-4">
-            <h4 className="font-medium text-white mb-2">Fonctionnalités :</h4>
-            <ul className="text-sm text-gray-300 space-y-1">
+
+          <div className={S.inset}>
+            <h4 className="mb-2 font-medium text-red-100">Fonctionnalités :</h4>
+            <ul className="space-y-1 text-sm text-red-100/80">
               <li>• Gestion complète de votre bibliothèque personnelle</li>
               <li>• Suivi des sessions de lecture (durée, pages lues, notes)</li>
               <li>• Stockage des couvertures et PDFs dans IndexedDB</li>
@@ -53,10 +35,10 @@ const BooksExportImport = ({
             </ul>
           </div>
 
-          <div className="bg-slate-700/50 rounded-lg p-4 space-y-3">
+          <div className={`${S.inset} space-y-3`}>
             <div className="space-y-1">
-              <h5 className="text-sm font-medium text-indigo-300">📚 Bibliothèque</h5>
-              <ul className="text-sm text-gray-300 space-y-1">
+              <h5 className="text-sm font-medium text-rose-200">Bibliothèque</h5>
+              <ul className="space-y-1 text-sm text-red-100/80">
                 <li>• Livres : {booksStats.totalBooks} livre{booksStats.totalBooks !== 1 ? 's' : ''}</li>
                 <li>• Sessions de lecture : {booksStats.totalSessions} session{booksStats.totalSessions !== 1 ? 's' : ''}</li>
                 <li>• En cours : {booksStats.inProgress} livre{booksStats.inProgress !== 1 ? 's' : ''}</li>
@@ -68,17 +50,17 @@ const BooksExportImport = ({
             </div>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
             <button
               type="button"
               onClick={handleExportBooksData}
               disabled={booksExportStatus === 'loading'}
-              className="gradient-button-premium gradient-button-premium-md rounded-lg w-full flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+              className={`${S.btnPrimary} w-full`}
             >
               <Download className="w-4 h-4" />
               {booksExportStatus === 'loading' ? 'Export en cours...' : 'Exporter les Livres'}
             </button>
-            
+
             <button
               type="button"
               onClick={() => {
@@ -97,7 +79,7 @@ const BooksExportImport = ({
                 input.click();
               }}
               disabled={booksImportStatus === 'loading'}
-              className="gradient-button-premium gradient-button-premium-md gradient-button-premium-variant rounded-lg w-full flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+              className={`${S.btnSecondary} w-full`}
             >
               <Upload className="w-4 h-4" />
               {booksImportStatus === 'loading' ? 'Import en cours...' : 'Importer les Livres'}
@@ -105,28 +87,28 @@ const BooksExportImport = ({
           </div>
 
           {booksExportStatus === 'success' && (
-            <div className="flex items-center text-green-400 text-sm">
+            <div className="flex items-center text-sm text-emerald-400">
               <CheckCircle className="mr-2" size={16} />
               Export réussi ! Le fichier a été téléchargé.
             </div>
           )}
 
           {booksExportStatus === 'error' && (
-            <div className="flex items-center text-red-400 text-sm">
+            <div className="flex items-center text-sm text-red-400">
               <AlertTriangle className="mr-2" size={16} />
               Erreur lors de l'export
             </div>
           )}
 
           {booksImportStatus === 'success' && (
-            <div className="flex items-center text-green-400 text-sm">
+            <div className="flex items-center text-sm text-emerald-400">
               <CheckCircle className="mr-2" size={16} />
               Import réussi ! Les livres ont été restaurés.
             </div>
           )}
 
           {booksImportStatus === 'error' && (
-            <div className="flex items-center text-red-400 text-sm">
+            <div className="flex items-center text-sm text-red-400">
               <AlertTriangle className="mr-2" size={16} />
               Erreur lors de l'import
             </div>

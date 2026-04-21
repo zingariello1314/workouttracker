@@ -30,8 +30,8 @@ function GarminCorrelationCharts({ precomputed, selector, colors }) {
   const CustomTooltip = ({ active, payload, label }) => {
     if (active && payload && payload.length) {
       return (
-        <div className="bg-slate-900 border border-slate-700 rounded-lg p-3 shadow-lg">
-          <p className="text-white font-semibold mb-2">{label}</p>
+        <div className="bg-black border border-[#0F4C5C]/60 rounded-lg p-3 shadow-lg">
+          <p className="text-teal-100 font-semibold mb-2">{label}</p>
           {payload.map((entry, index) => (
             <p key={index} className="text-sm" style={{ color: entry.color }}>
               {`${entry.name}: ${entry.value}${entry.unit || ''}`}
@@ -47,11 +47,11 @@ function GarminCorrelationCharts({ precomputed, selector, colors }) {
     <div className="space-y-5">
       {/* Corrélation Sommeil / Performance */}
       {sleepPerformanceData.length > 0 && (
-        <div className="bg-slate-800/60 border border-slate-700 rounded-lg p-5">
+        <div className="rounded-xl border-2 border-[#0F4C5C]/70 bg-black p-5 shadow-md shadow-black/40">
           <div className="flex items-center justify-between mb-4">
-            <h4 className="text-white font-semibold">😴 Corrélation Sommeil / Performance</h4>
+            <h4 className="text-teal-100 font-semibold">😴 Corrélation Sommeil / Performance</h4>
           {displayInfo && (
-            <div className="text-slate-400 text-xs">{displayInfo}</div>
+            <div className="text-teal-100/55 text-xs">{displayInfo}</div>
           )}
           </div>
           <div 
@@ -154,11 +154,11 @@ function GarminCorrelationCharts({ precomputed, selector, colors }) {
 
       {/* Corrélation Body Battery / Intensité */}
       {batteryIntensityData.length > 0 && (
-        <div className="bg-slate-800/60 border border-slate-700 rounded-lg p-5">
+        <div className="rounded-xl border-2 border-[#0F4C5C]/70 bg-black p-5 shadow-md shadow-black/40">
           <div className="flex items-center justify-between mb-4">
-            <h4 className="text-white font-semibold">⚡ Body Battery & Intensité</h4>
+            <h4 className="text-teal-100 font-semibold">⚡ Body Battery & Intensité</h4>
             {displayInfo && (
-              <div className="text-slate-400 text-xs">{displayInfo}</div>
+              <div className="text-teal-100/55 text-xs">{displayInfo}</div>
             )}
           </div>
           <div 

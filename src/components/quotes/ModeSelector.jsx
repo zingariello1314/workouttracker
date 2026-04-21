@@ -6,6 +6,7 @@
 import React from 'react';
 import { Shuffle, Pin } from 'lucide-react';
 import quotesService from '../../services/quotes/quotesService';
+import { settingsTheme as S } from '../tabs/SettingsTab/settingsThemeClasses';
 
 function quotePreview(quote) {
   if (!quote) return '';
@@ -14,20 +15,21 @@ function quotePreview(quote) {
   return text.length > 60 ? text.slice(0, 57) + '…' : text;
 }
 
+const btnBase = 'flex flex-1 items-center justify-center gap-2 rounded-lg px-4 py-3 transition-all';
+
 export function ModeSelector({ mode, fixedQuoteId, quotes, onModeChange, onFixedQuoteChange }) {
   return (
-    <div className="space-y-4 bg-slate-700/30 rounded-lg p-4">
-      <h3 className="text-sm font-medium text-slate-300">Mode d'affichage</h3>
+    <div className={`space-y-4 rounded-lg border border-red-900/45 bg-red-950/15 p-4`}>
+      <h3 className={S.label}>Mode d'affichage</h3>
 
-      {/* Mode Toggle */}
       <div className="flex gap-2">
         <button
           type="button"
           onClick={() => onModeChange('random')}
-          className={`flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-lg transition-all ${
+          className={`${btnBase} ${
             mode === 'random'
-              ? 'gradient-button-premium gradient-button-premium-variant shadow-lg shadow-cyan-500/30'
-              : 'gradient-button-premium'
+              ? `${S.btnPrimary} shadow-lg shadow-red-950/40`
+              : `${S.btnSecondary} border-red-900/40`
           }`}
         >
           <Shuffle size={18} />
@@ -37,10 +39,10 @@ export function ModeSelector({ mode, fixedQuoteId, quotes, onModeChange, onFixed
         <button
           type="button"
           onClick={() => onModeChange('fixed')}
-          className={`flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-lg transition-all ${
+          className={`${btnBase} ${
             mode === 'fixed'
-              ? 'gradient-button-premium gradient-button-premium-variant shadow-lg shadow-cyan-500/30'
-              : 'gradient-button-premium'
+              ? `${S.btnPrimary} shadow-lg shadow-red-950/40`
+              : `${S.btnSecondary} border-red-900/40`
           }`}
         >
           <Pin size={18} />
@@ -48,8 +50,7 @@ export function ModeSelector({ mode, fixedQuoteId, quotes, onModeChange, onFixed
         </button>
       </div>
 
-      {/* Mode Description */}
-      <div className="text-xs text-slate-400">
+      <div className={`text-xs ${S.muted}`}>
         {mode === 'random' ? (
           <div className="space-y-1">
             <p>• Les citations changent aléatoirement à chaque visite</p>
@@ -61,16 +62,15 @@ export function ModeSelector({ mode, fixedQuoteId, quotes, onModeChange, onFixed
         )}
       </div>
 
-      {/* Fixed Quote Selector */}
       {mode === 'fixed' && quotes.length > 0 && (
-        <div className="space-y-2 pt-4 border-t border-slate-600">
-          <label className="text-sm font-medium text-slate-300">
+        <div className="space-y-2 border-t border-red-900/45 pt-4">
+          <label className={S.label}>
             Citation à afficher
           </label>
           <select
             value={fixedQuoteId || ''}
             onChange={(e) => onFixedQuoteChange(e.target.value)}
-            className="w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded-lg text-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className={S.input}
           >
             <option value="">Sélectionner une citation...</option>
             {quotes.map((quote) => (
@@ -83,8 +83,8 @@ export function ModeSelector({ mode, fixedQuoteId, quotes, onModeChange, onFixed
       )}
 
       {mode === 'fixed' && !fixedQuoteId && quotes.length > 0 && (
-        <div className="text-xs text-yellow-400 bg-yellow-500/10 border border-yellow-500/30 rounded p-2">
-          ⚠️ Veuillez sélectionner une citation à afficher
+        <div className="rounded border border-amber-700/40 bg-amber-950/25 p-2 text-xs text-amber-200">
+          Veuillez sélectionner une citation à afficher
         </div>
       )}
     </div>

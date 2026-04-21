@@ -5,11 +5,14 @@
 
 import SyntheseTab from './SyntheseTab';
 import SyntheseErrorBoundary from './SyntheseErrorBoundary';
+import '../financeSmartSyntheseThemeOverrides.css';
 
 const SyntheseSubTab = () => {
   return (
     <SyntheseErrorBoundary>
-      <SyntheseTab />
+      <div className="finance-smart-synthese-scope">
+        <SyntheseTab />
+      </div>
     </SyntheseErrorBoundary>
   );
 };

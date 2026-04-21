@@ -50,7 +50,7 @@ function GarminRespirationChart({ precomputed, selector, colors }) {
 
   if (chartData.length === 0) {
     return (
-      <div className="bg-slate-800/60 border border-slate-700 rounded-lg p-6 text-center text-slate-400">
+      <div className="rounded-xl border-2 border-[#0F4C5C]/70 bg-black p-6 text-center text-teal-100/55 shadow-md shadow-black/40">
         Aucune donnée de respiration disponible pour cette période.
       </div>
     );
@@ -59,8 +59,8 @@ function GarminRespirationChart({ precomputed, selector, colors }) {
   const CustomTooltip = ({ active, payload, label }) => {
     if (active && payload && payload.length) {
       return (
-        <div className="bg-slate-900 border border-slate-700 rounded-lg p-3 shadow-lg">
-          <p className="text-white font-semibold mb-2">{label}</p>
+        <div className="bg-black border border-[#0F4C5C]/60 rounded-lg p-3 shadow-lg">
+          <p className="text-teal-100 font-semibold mb-2">{label}</p>
           {payload.map((entry, index) => (
             <p key={index} className="text-sm" style={{ color: entry.color }}>
               {`${entry.name}: ${entry.value} resp/min`}
@@ -80,15 +80,15 @@ function GarminRespirationChart({ precomputed, selector, colors }) {
   
   return (
     <div 
-      className="bg-slate-800/60 border border-slate-700 rounded-lg p-6"
+      className="rounded-xl border-2 border-[#0F4C5C]/70 bg-black p-6 shadow-md shadow-black/40"
       role="region"
       aria-label={ARIA_LABELS.RESPIRATION_CHART}
       aria-describedby="respiration-chart-description"
     >
       <div className="flex items-center justify-between mb-4">
-        <h4 id="respiration-chart-title" className="text-white font-semibold">💨 Respiration</h4>
+        <h4 id="respiration-chart-title" className="text-teal-100 font-semibold">💨 Respiration</h4>
         {displayInfo && (
-          <div className="text-slate-400 text-xs" aria-live="polite">{displayInfo}</div>
+          <div className="text-teal-100/55 text-xs" aria-live="polite">{displayInfo}</div>
         )}
       </div>
       <p id="respiration-chart-description" className="sr-only">{chartDescription}</p>

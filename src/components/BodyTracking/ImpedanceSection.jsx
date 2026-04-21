@@ -429,10 +429,10 @@ const ImpedanceSection = () => {
       <ToastContainer />
       <div className="space-y-6">
       {/* Formulaire de saisie */}
-      <Card>
+      <Card variant="sport">
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Zap className="w-5 h-5 text-purple-400" />
+          <CardTitle className="flex items-center gap-2 text-teal-100">
+            <Zap className="h-5 w-5 text-sky-400" />
             Données d'impédancemétrie
           </CardTitle>
         </CardHeader>
@@ -440,31 +440,31 @@ const ImpedanceSection = () => {
           <form onSubmit={handleSubmit} className="space-y-6">
             {/* Date */}
             <div>
-              <label className="block text-sm font-medium text-slate-300 mb-2">
-                <Calendar className="w-4 h-4 inline mr-2" />
+              <label className="mb-2 block text-sm font-medium text-teal-100">
+                <Calendar className="mr-2 inline h-4 w-4" />
                 Date de mesure
               </label>
               <input
                 type="date"
                 value={formData.date}
                 onChange={(e) => handleInputChange('date', e.target.value)}
-                className="w-full bg-slate-700 border border-slate-600 rounded-lg px-3 py-2 text-white"
+                className="w-full rounded-lg border border-[#0F4C5C]/55 bg-black px-3 py-2 text-teal-100 focus:outline-none focus:ring-2 focus:ring-[#0F5C45]/40"
               />
             </div>
 
             {/* Métriques par catégorie */}
             {metrics.map((category, categoryIndex) => (
               <div key={categoryIndex}>
-                <h3 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
+                <h3 className="mb-4 flex items-center gap-2 text-lg font-semibold text-teal-100">
                   {category.category}
                 </h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   {category.items.map((metric) => (
                     <div key={metric.key}>
-                      <label className="block text-sm font-medium text-slate-300 mb-2">
+                      <label className="mb-2 block text-sm font-medium text-teal-100">
                         {metric.icon}
                         <span className="ml-2">{metric.label}</span>
-                        {metric.unit && <span className="text-slate-400"> ({metric.unit})</span>}
+                        {metric.unit && <span className="text-teal-600"> ({metric.unit})</span>}
                       </label>
                       <input
                         type="number"
@@ -473,8 +473,8 @@ const ImpedanceSection = () => {
                         max={metric.unit === '/8' ? 8 : metric.unit === '/5' ? 5 : metric.unit === '/20' ? 20 : undefined}
                         value={formData[metric.key]}
                         onChange={(e) => handleInputChange(metric.key, e.target.value)}
-                        className={`w-full bg-slate-700 border rounded-lg px-3 py-2 text-white ${
-                          errors[metric.key] ? 'border-red-500' : 'border-slate-600'
+                        className={`w-full rounded-lg border bg-black px-3 py-2 text-teal-100 focus:outline-none focus:ring-2 focus:ring-[#0F5C45]/40 ${
+                          errors[metric.key] ? 'border-red-500' : 'border-[#0F4C5C]/55'
                         }`}
                         placeholder={
                           metric.key === 'basalMetabolism' && garminBasalMetabolism
@@ -491,7 +491,7 @@ const ImpedanceSection = () => {
                         </p>
                       )}
                       {lastMeasurement?.[metric.key] != null && (
-                        <p className="text-slate-400 text-sm mt-1">
+                        <p className="mt-1 text-sm text-teal-700">
                           Dernière: {(() => {
                             const value = lastMeasurement[metric.key];
                             let formatted;
@@ -511,12 +511,12 @@ const ImpedanceSection = () => {
                         </p>
                       )}
                       {metric.key === 'basalMetabolism' && garminBasalMetabolism && (
-                        <p className="text-blue-400 text-sm mt-1 flex items-center gap-1">
+                        <p className="mt-1 flex items-center gap-1 text-sm text-sky-400">
                           <Info className="w-3 h-3" />
                           Garmin disponible: {garminBasalMetabolism.value} kcal ({formatDate(garminBasalMetabolism.date)})
                         </p>
                       )}
-                      <p className="text-xs text-slate-500 mt-1">{metric.description}</p>
+                      <p className="mt-1 text-xs text-teal-800">{metric.description}</p>
                     </div>
                   ))}
                 </div>
@@ -525,13 +525,13 @@ const ImpedanceSection = () => {
 
             {/* Type de corps */}
             <div>
-              <label className="block text-sm font-medium text-slate-300 mb-2">
+              <label className="mb-2 block text-sm font-medium text-teal-100">
                 Type de corps
               </label>
               <select
                 value={formData.bodyType}
                 onChange={(e) => handleInputChange('bodyType', e.target.value)}
-                className="w-full bg-slate-700 border border-slate-600 rounded-lg px-3 py-2 text-white"
+                className="w-full rounded-lg border border-[#0F4C5C]/55 bg-black px-3 py-2 text-teal-100 focus:outline-none focus:ring-2 focus:ring-[#0F5C45]/40"
               >
                 <option value="">Sélectionner...</option>
                 {bodyTypes.map(type => (
@@ -542,20 +542,23 @@ const ImpedanceSection = () => {
 
             {/* Notes */}
             <div>
-              <label className="block text-sm font-medium text-slate-300 mb-2">
+              <label className="mb-2 block text-sm font-medium text-teal-100">
                 Notes (optionnel)
               </label>
               <textarea
                 value={formData.notes}
                 onChange={(e) => handleInputChange('notes', e.target.value)}
-                className="w-full bg-slate-700 border border-slate-600 rounded-lg px-3 py-2 text-white"
+                className="w-full rounded-lg border border-[#0F4C5C]/55 bg-black px-3 py-2 text-teal-100 focus:outline-none focus:ring-2 focus:ring-[#0F5C45]/40"
                 rows="3"
                 placeholder="Conditions de mesure, observations..."
               />
             </div>
 
-            <Button type="submit" className="w-full">
-              <Save className="w-4 h-4 mr-2" />
+            <Button
+              type="submit"
+              className="w-full border-2 border-[#0F5C45]/55 bg-[#0F5C45]/30 text-teal-100 hover:bg-[#0F5C45]/45"
+            >
+              <Save className="mr-2 h-4 w-4" />
               Enregistrer les mesures
             </Button>
           </form>
@@ -564,125 +567,125 @@ const ImpedanceSection = () => {
 
       {/* Analyse des dernières mesures */}
       {lastMeasurement ? (
-        <Card className="bg-gradient-to-r from-purple-600/20 to-blue-600/20 border-purple-500/30">
+        <Card variant="sport">
           <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <BarChart3 className="w-5 h-5 text-purple-400" />
+            <CardTitle className="flex flex-wrap items-center gap-2 text-teal-100">
+              <BarChart3 className="h-5 w-5 text-sky-400" />
               Analyse des dernières mesures
-              <span className="text-sm font-normal text-slate-400">
+              <span className="text-sm font-normal text-teal-700">
                 ({formatDate(lastMeasurement.date)})
               </span>
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
               {/* Affichage des métriques principales */}
               {lastMeasurement.weight != null && (
-                <div className="bg-slate-800/50 rounded-lg p-4">
-                  <h4 className="font-semibold text-white mb-2 flex items-center gap-2">
-                    <Scale className="w-4 h-4 text-blue-400" />
+                <div className="rounded-lg border border-[#0F4C5C]/50 bg-black p-4">
+                  <h4 className="mb-2 flex items-center gap-2 font-semibold text-teal-100">
+                    <Scale className="h-4 w-4 text-sky-400" />
                     Poids
                   </h4>
-                  <div className="text-2xl font-bold text-white mb-1">
+                  <div className="text-2xl font-bold text-teal-100 mb-1">
                     {lastMeasurement.weight} kg
                   </div>
                 </div>
               )}
               
               {lastMeasurement.bmi != null && (
-                <div className="bg-slate-800/50 rounded-lg p-4">
-                  <h4 className="font-semibold text-white mb-2 flex items-center gap-2">
-                    <Activity className="w-4 h-4 text-blue-400" />
+                <div className="rounded-lg border border-[#0F4C5C]/50 bg-black p-4">
+                  <h4 className="mb-2 flex items-center gap-2 font-semibold text-teal-100">
+                    <Activity className="h-4 w-4 text-sky-400" />
                     IMC
                   </h4>
-                  <div className="text-2xl font-bold text-white mb-1">
+                  <div className="text-2xl font-bold text-teal-100 mb-1">
                     {lastMeasurement.bmi}
                   </div>
                 </div>
               )}
 
               {lastMeasurement.bodyFatPercentage != null && (
-                <div className="bg-slate-800/50 rounded-lg p-4">
-                  <h4 className="font-semibold text-white mb-2 flex items-center gap-2">
-                    <Target className="w-4 h-4 text-blue-400" />
+                <div className="rounded-lg border border-[#0F4C5C]/50 bg-black p-4">
+                  <h4 className="mb-2 flex items-center gap-2 font-semibold text-teal-100">
+                    <Target className="h-4 w-4 text-sky-400" />
                     Graisse corporelle
                   </h4>
-                  <div className="text-2xl font-bold text-white mb-1">
+                  <div className="text-2xl font-bold text-teal-100 mb-1">
                     {lastMeasurement.bodyFatPercentage}%
                   </div>
                 </div>
               )}
 
               {lastMeasurement.muscleMass != null && (
-                <div className="bg-slate-800/50 rounded-lg p-4">
-                  <h4 className="font-semibold text-white mb-2 flex items-center gap-2">
-                    <Activity className="w-4 h-4 text-green-400" />
+                <div className="rounded-lg border border-[#0F4C5C]/50 bg-black p-4">
+                  <h4 className="mb-2 flex items-center gap-2 font-semibold text-teal-100">
+                    <Activity className="h-4 w-4 text-emerald-400" />
                     Masse musculaire
                   </h4>
-                  <div className="text-2xl font-bold text-white mb-1">
+                  <div className="text-2xl font-bold text-teal-100 mb-1">
                     {lastMeasurement.muscleMass} kg
                   </div>
                 </div>
               )}
 
               {lastMeasurement.bodyWater != null && (
-                <div className="bg-slate-800/50 rounded-lg p-4">
-                  <h4 className="font-semibold text-white mb-2 flex items-center gap-2">
-                    <Droplets className="w-4 h-4 text-blue-400" />
+                <div className="rounded-lg border border-[#0F4C5C]/50 bg-black p-4">
+                  <h4 className="mb-2 flex items-center gap-2 font-semibold text-teal-100">
+                    <Droplets className="h-4 w-4 text-sky-400" />
                     Hydratation
                   </h4>
-                  <div className="text-2xl font-bold text-white mb-1">
+                  <div className="text-2xl font-bold text-teal-100 mb-1">
                     {lastMeasurement.bodyWater}%
                   </div>
                 </div>
               )}
 
               {lastMeasurement.visceralFatIndex != null && (
-                <div className="bg-slate-800/50 rounded-lg p-4">
-                  <h4 className="font-semibold text-white mb-2 flex items-center gap-2">
-                    <AlertTriangle className="w-4 h-4 text-yellow-400" />
+                <div className="rounded-lg border border-[#0F4C5C]/50 bg-black p-4">
+                  <h4 className="mb-2 flex items-center gap-2 font-semibold text-teal-100">
+                    <AlertTriangle className="h-4 w-4 text-amber-400" />
                     Graisse viscérale
                   </h4>
-                  <div className="text-2xl font-bold text-white mb-1">
+                  <div className="text-2xl font-bold text-teal-100 mb-1">
                     {lastMeasurement.visceralFatIndex}/20
                   </div>
                 </div>
               )}
 
               {lastMeasurement.basalMetabolism != null && (
-                <div className="bg-slate-800/50 rounded-lg p-4">
-                  <h4 className="font-semibold text-white mb-2 flex items-center gap-2">
-                    <Zap className="w-4 h-4 text-yellow-400" />
+                <div className="rounded-lg border border-[#0F4C5C]/50 bg-black p-4">
+                  <h4 className="mb-2 flex items-center gap-2 font-semibold text-teal-100">
+                    <Zap className="h-4 w-4 text-amber-400" />
                     Métabolisme
                   </h4>
-                  <div className="text-2xl font-bold text-white mb-1">
+                  <div className="text-2xl font-bold text-teal-100 mb-1">
                     {lastMeasurement.basalMetabolism}
                   </div>
-                  <div className="text-sm text-slate-400">kcal/jour</div>
+                  <div className="text-sm text-teal-700">kcal/jour</div>
                 </div>
               )}
 
               {lastMeasurement.metabolicAge != null && (
-                <div className="bg-slate-800/50 rounded-lg p-4">
-                  <h4 className="font-semibold text-white mb-2 flex items-center gap-2">
-                    <Heart className="w-4 h-4 text-red-400" />
+                <div className="rounded-lg border border-[#0F4C5C]/50 bg-black p-4">
+                  <h4 className="mb-2 flex items-center gap-2 font-semibold text-teal-100">
+                    <Heart className="h-4 w-4 text-red-400" />
                     Âge métabolique
                   </h4>
-                  <div className="text-2xl font-bold text-white mb-1">
+                  <div className="text-2xl font-bold text-teal-100 mb-1">
                     {lastMeasurement.metabolicAge}
                   </div>
-                  <div className="text-sm text-slate-400">ans</div>
+                  <div className="text-sm text-teal-700">ans</div>
                 </div>
               )}
             </div>
           </CardContent>
         </Card>
       ) : (
-        <Card className="bg-gradient-to-r from-purple-600/20 to-blue-600/20 border-purple-500/30">
+        <Card variant="sport">
           <CardContent className="p-6 text-center">
-            <Zap className="w-12 h-12 mx-auto mb-4 text-purple-400" />
-            <h4 className="text-lg font-semibold text-white mb-2">Aucune mesure d'impédance enregistrée</h4>
-            <p className="text-slate-400">
+            <Zap className="mx-auto mb-4 h-12 w-12 text-sky-400" />
+            <h4 className="mb-2 text-lg font-semibold text-teal-100">Aucune mesure d'impédance enregistrée</h4>
+            <p className="text-teal-700">
               Enregistrez votre première mesure d'impédancemétrie pour voir les analyses et tendances.
             </p>
           </CardContent>
@@ -690,13 +693,13 @@ const ImpedanceSection = () => {
       )}
 
       {/* Conseils d'utilisation */}
-      <Card className="bg-blue-600/10 border-blue-500/30">
+      <Card variant="sport">
         <CardContent className="p-4">
           <div className="flex items-start gap-3">
-            <Info className="w-5 h-5 text-blue-400 mt-0.5" />
+            <Info className="mt-0.5 h-5 w-5 shrink-0 text-sky-400" />
             <div>
-              <h4 className="font-semibold text-blue-200 mb-2">Conseils pour des mesures précises</h4>
-              <ul className="text-sm text-blue-100 space-y-1">
+              <h4 className="mb-2 font-semibold text-teal-100">Conseils pour des mesures précises</h4>
+              <ul className="space-y-1 text-sm text-teal-200/90">
                 <li>• Effectuez les mesures le matin à jeun, après être allé aux toilettes</li>
                 <li>• Évitez l'exercice intense 12h avant la mesure</li>
                 <li>• Maintenez une hydratation normale (pas de déshydratation ni de surhydratation)</li>
@@ -704,7 +707,9 @@ const ImpedanceSection = () => {
                 <li>• Restez immobile pendant la mesure</li>
                 <li>• Effectuez les mesures dans les mêmes conditions pour un suivi cohérent</li>
                 {garminBasalMetabolism && (
-                  <li className="text-blue-300">• ⚡ Métabolisme de base Garmin disponible: {garminBasalMetabolism.value} kcal (recommandé)</li>
+                  <li className="text-sky-300">
+                    • Métabolisme de base Garmin disponible : {garminBasalMetabolism.value} kcal (recommandé)
+                  </li>
                 )}
               </ul>
             </div>

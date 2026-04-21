@@ -195,7 +195,7 @@ const MetricsSection = () => {
     
     if (isNaN(bmiValue) || !isFinite(bmiValue)) return null;
     
-    if (bmiValue < 18.5) return { category: 'Insuffisance pondérale', color: 'text-blue-400' };
+    if (bmiValue < 18.5) return { category: 'Insuffisance pondérale', color: 'text-sky-300/90' };
     if (bmiValue < 25) return { category: 'Poids normal', color: 'text-green-400' };
     if (bmiValue < 30) return { category: 'Surpoids', color: 'text-yellow-400' };
     return { category: 'Obésité', color: 'text-red-400' };
@@ -223,10 +223,10 @@ const MetricsSection = () => {
       <ToastContainer />
       <div className="space-y-6">
       {/* Formulaire de saisie */}
-      <Card>
+      <Card variant="sport">
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Scale className="w-5 h-5 text-blue-400" />
+          <CardTitle className="flex items-center gap-2 text-teal-100">
+            <Scale className="h-5 w-5 text-sky-400" />
             {t('bodyTracking.title')}
           </CardTitle>
         </CardHeader>
@@ -234,7 +234,7 @@ const MetricsSection = () => {
           <form onSubmit={handleSubmit} className="space-y-6">
             {/* Date */}
             <div>
-              <label className="block text-sm font-medium text-slate-300 mb-2">
+              <label className="block text-sm font-medium text-teal-100 mb-2">
                 <Calendar className="w-4 h-4 inline mr-2" />
                 {t('bodyTracking.form.date.label')}
               </label>
@@ -242,14 +242,14 @@ const MetricsSection = () => {
                 type="date"
                 value={formData.date}
                 onChange={(e) => handleInputChange('date', e.target.value)}
-                className="w-full bg-slate-700 border border-slate-600 rounded-lg px-3 py-2 text-white"
+                className="w-full rounded-lg border border-[#0F4C5C]/50 bg-black px-3 py-2 text-teal-100"
               />
             </div>
 
             {/* Métriques principales */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
-                <label className="block text-sm font-medium text-slate-300 mb-2">
+                <label className="block text-sm font-medium text-teal-100 mb-2">
                   <Scale className="w-4 h-4 inline mr-2" />
                   {t('bodyTracking.form.weight.label')}
                 </label>
@@ -258,8 +258,8 @@ const MetricsSection = () => {
                   step="0.1"
                   value={formData.weight}
                   onChange={(e) => handleInputChange('weight', e.target.value)}
-                  className={`w-full bg-slate-700 border rounded-lg px-3 py-2 text-white ${
-                    errors.weight ? 'border-red-500' : 'border-slate-600'
+                  className={`w-full rounded-lg border bg-black px-3 py-2 text-teal-100 ${
+                    errors.weight ? 'border-red-500' : 'border-[#0F4C5C]/50'
                   }`}
                   placeholder={t('bodyTracking.form.weight.placeholder')}
                 />
@@ -270,14 +270,14 @@ const MetricsSection = () => {
                   </p>
                 )}
                 {lastEntry?.weight && (
-                  <p className="text-slate-400 text-sm mt-1">
+                  <p className="text-teal-700 text-sm mt-1">
                     {t('bodyTracking.form.weight.lastMeasurement', { weight: lastEntry.weight, date: formatLocaleDate(new Date(lastEntry.date)) })}
                   </p>
                 )}
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-slate-300 mb-2">
+                <label className="block text-sm font-medium text-teal-100 mb-2">
                   <Ruler className="w-4 h-4 inline mr-2" />
                   {t('bodyTracking.form.height.label')}
                 </label>
@@ -286,8 +286,8 @@ const MetricsSection = () => {
                   step="0.1"
                   value={formData.height}
                   onChange={(e) => handleInputChange('height', e.target.value)}
-                  className={`w-full bg-slate-700 border rounded-lg px-3 py-2 text-white ${
-                    errors.height ? 'border-red-500' : 'border-slate-600'
+                  className={`w-full rounded-lg border bg-black px-3 py-2 text-teal-100 ${
+                    errors.height ? 'border-red-500' : 'border-[#0F4C5C]/50'
                   }`}
                   placeholder={t('bodyTracking.form.height.placeholder')}
                 />
@@ -298,7 +298,7 @@ const MetricsSection = () => {
                   </p>
                 )}
                 {lastEntry?.height && (
-                  <p className="text-slate-400 text-sm mt-1">
+                  <p className="text-teal-700 text-sm mt-1">
                     {t('bodyTracking.form.height.lastMeasurement', { height: lastEntry.height })}
                   </p>
                 )}
@@ -307,7 +307,7 @@ const MetricsSection = () => {
 
             {/* Mensurations */}
             <div>
-              <h3 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
+              <h3 className="text-lg font-semibold text-teal-100 mb-4 flex items-center gap-2">
                 📏 {t('bodyTracking.form.measurements.title')}
               </h3>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -320,7 +320,7 @@ const MetricsSection = () => {
                   { key: 'hips', translationKey: 'hips', last: lastEntry?.hips }
                 ].map(({ key, translationKey, last }) => (
                   <div key={key}>
-                    <label className="block text-sm font-medium text-slate-300 mb-2">
+                    <label className="block text-sm font-medium text-teal-100 mb-2">
                       {t(`bodyTracking.form.measurements.${translationKey}`)} {t('bodyTracking.form.measurements.unit')}
                     </label>
                     <input
@@ -328,8 +328,8 @@ const MetricsSection = () => {
                       step="0.1"
                       value={formData[key]}
                       onChange={(e) => handleInputChange(key, e.target.value)}
-                      className={`w-full bg-slate-700 border rounded-lg px-3 py-2 text-white ${
-                        errors[key] ? 'border-red-500' : 'border-slate-600'
+                      className={`w-full rounded-lg border bg-black px-3 py-2 text-teal-100 ${
+                        errors[key] ? 'border-red-500' : 'border-[#0F4C5C]/50'
                       }`}
                       placeholder={`Ex: ${last || '80'}`}
                     />
@@ -340,7 +340,7 @@ const MetricsSection = () => {
                       </p>
                     )}
                     {last && (
-                      <p className="text-slate-400 text-sm mt-1">
+                      <p className="text-teal-700 text-sm mt-1">
                         {t('bodyTracking.form.measurements.last', { value: last })}
                       </p>
                     )}
@@ -351,13 +351,13 @@ const MetricsSection = () => {
 
             {/* Notes */}
             <div>
-              <label className="block text-sm font-medium text-slate-300 mb-2">
+              <label className="block text-sm font-medium text-teal-100 mb-2">
                 {t('bodyTracking.form.notes.label')}
               </label>
               <textarea
                 value={formData.notes}
                 onChange={(e) => handleInputChange('notes', e.target.value)}
-                className="w-full bg-slate-700 border border-slate-600 rounded-lg px-3 py-2 text-white"
+                className="w-full rounded-lg border border-[#0F4C5C]/50 bg-black px-3 py-2 text-teal-100"
                 rows="3"
                 placeholder={t('bodyTracking.form.notes.placeholder')}
               />
@@ -373,10 +373,10 @@ const MetricsSection = () => {
 
       {/* Calculs automatiques */}
       {showCalculations && (
-        <Card className="bg-gradient-to-r from-purple-600/20 to-blue-600/20 border-purple-500/30">
+        <Card variant="sport">
           <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Calculator className="w-5 h-5 text-purple-400" />
+            <CardTitle className="flex items-center gap-2 text-teal-100">
+              <Calculator className="h-5 w-5 text-sky-400" />
               Calculs automatiques
               <Button
                 variant="ghost"
@@ -391,14 +391,14 @@ const MetricsSection = () => {
           <CardContent>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               {/* IMC */}
-              <div className="bg-slate-800/50 rounded-lg p-4">
-                <h4 className="font-semibold text-white mb-2 flex items-center gap-2">
-                  <Target className="w-4 h-4 text-blue-400" />
+              <div className="rounded-lg border border-[#0F4C5C]/45 bg-black p-4">
+                <h4 className="font-semibold text-teal-100 mb-2 flex items-center gap-2">
+                  <Target className="w-4 h-4 text-sky-300/90" />
                   Indice de Masse Corporelle
                 </h4>
                 {bmi ? (
                   <div>
-                    <div className="text-2xl font-bold text-white mb-1">{bmi}</div>
+                    <div className="text-2xl font-bold text-teal-100 mb-1">{bmi}</div>
                     {bmiCategory && (
                       <div className={`text-sm ${bmiCategory.color}`}>
                         {bmiCategory.category}
@@ -406,35 +406,35 @@ const MetricsSection = () => {
                     )}
                   </div>
                 ) : (
-                  <div className="text-slate-400 text-sm">
+                  <div className="text-teal-700 text-sm">
                     Saisissez poids et taille
                   </div>
                 )}
               </div>
 
               {/* Poids idéal */}
-              <div className="bg-slate-800/50 rounded-lg p-4">
-                <h4 className="font-semibold text-white mb-2 flex items-center gap-2">
+              <div className="rounded-lg border border-[#0F4C5C]/45 bg-black p-4">
+                <h4 className="font-semibold text-teal-100 mb-2 flex items-center gap-2">
                   <Target className="w-4 h-4 text-green-400" />
                   Poids idéal estimé
                 </h4>
                 {idealWeight ? (
                   <div>
-                    <div className="text-2xl font-bold text-white mb-1">{idealWeight} kg</div>
-                    <div className="text-sm text-slate-400">
+                    <div className="text-2xl font-bold text-teal-100 mb-1">{idealWeight} kg</div>
+                    <div className="text-sm text-teal-700">
                       Formule de Lorentz
                     </div>
                   </div>
                 ) : (
-                  <div className="text-slate-400 text-sm">
+                  <div className="text-teal-700 text-sm">
                     Saisissez la taille
                   </div>
                 )}
               </div>
 
               {/* Évolution */}
-              <div className="bg-slate-800/50 rounded-lg p-4">
-                <h4 className="font-semibold text-white mb-2 flex items-center gap-2">
+              <div className="rounded-lg border border-[#0F4C5C]/45 bg-black p-4">
+                <h4 className="font-semibold text-teal-100 mb-2 flex items-center gap-2">
                   <TrendingUp className="w-4 h-4 text-yellow-400" />
                   Évolution du poids
                 </h4>
@@ -442,16 +442,16 @@ const MetricsSection = () => {
                   <div>
                     <div className={`text-2xl font-bold mb-1 ${
                       parseFloat(weightDiff) > 0 ? 'text-red-400' : 
-                      parseFloat(weightDiff) < 0 ? 'text-green-400' : 'text-slate-400'
+                      parseFloat(weightDiff) < 0 ? 'text-green-400' : 'text-teal-700'
                     }`}>
                       {parseFloat(weightDiff) > 0 ? '+' : ''}{weightDiff} kg
                     </div>
-                    <div className="text-sm text-slate-400">
+                    <div className="text-sm text-teal-700">
                       Depuis 7 jours
                     </div>
                   </div>
                 ) : (
-                  <div className="text-slate-400 text-sm">
+                  <div className="text-teal-700 text-sm">
                     Saisissez le poids
                   </div>
                 )}
@@ -460,12 +460,12 @@ const MetricsSection = () => {
 
             {/* Conseils automatiques */}
             {bmi && (
-              <div className="mt-6 p-4 bg-blue-600/10 border border-blue-500/30 rounded-lg">
+              <div className="mt-6 p-4 bg-black border border-[#0F4C5C]/50 rounded-lg">
                 <div className="flex items-start gap-3">
-                  <Info className="w-5 h-5 text-blue-400 mt-0.5" />
+                  <Info className="w-5 h-5 text-sky-300/90 mt-0.5" />
                   <div>
-                    <h5 className="font-semibold text-blue-200 mb-1">Conseil personnalisé</h5>
-                    <p className="text-blue-100 text-sm">
+                    <h5 className="font-semibold text-sky-200/90 mb-1">Conseil personnalisé</h5>
+                    <p className="text-sky-100/90 text-sm">
                       {personalizedAdvice || "Saisissez votre poids et votre taille pour obtenir des conseils personnalisés."}
                     </p>
                   </div>

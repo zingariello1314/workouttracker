@@ -16,7 +16,7 @@ const ChallengeCard = ({ challenge, onComplete, onUpdate }) => {
   const handleComplete = async () => {
     // Validation minimale en fonction du type d'activité
     const type = challenge.activityType;
-    const needReps = ['pushups', 'jumprope'].includes(type);
+    const needReps = ['pushups', 'gainage', 'jumprope'].includes(type);
     const needDuration = ['boxing', 'running', 'jumprope', 'swimming'].includes(type);
     const needDistance = ['swimming', 'running'].includes(type);
 
@@ -126,7 +126,7 @@ const ChallengeCard = ({ challenge, onComplete, onUpdate }) => {
           </h5>
           
           <div className="grid grid-cols-2 gap-4">
-            {(['pushups','jumprope'].includes(challenge.activityType)) && (
+            {(['pushups', 'gainage', 'jumprope'].includes(challenge.activityType)) && (
               <div>
                 <label className="block text-sm text-slate-300 mb-1">
                   {challenge.activityType === 'jumprope' ? t('today.endurance.jumps') : t('today.endurance.repetitions')}

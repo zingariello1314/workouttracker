@@ -1,0 +1,82 @@
+.finance-dark-green-scope {
+  --fg-bg: #000000;
+  --fg-bg-soft: #000000;
+  --fg-border: #1e6b47;
+  --fg-border-strong: #339c5a;
+  --fg-text: #d4f5e6;
+  --fg-muted: #8fbfa3;
+}
+
+.finance-dark-green-scope .sub-tab-wrapper,
+.finance-dark-green-scope .sub-tab-main-content {
+  background: transparent !important;
+  border: 0 !important;
+  padding: 0 !important;
+}
+
+.finance-dark-green-scope .sub-tabs-navigation {
+  background: transparent !important;
+  border: 0 !important;
+  padding: 0 !important;
+  gap: 0.5rem !important;
+  margin-bottom: 1rem !important;
+  box-shadow: none !important;
+}
+
+.finance-dark-green-scope .gradient-button-premium,
+.finance-dark-green-scope button[class*='gradient-button-premium'] {
+  background: color-mix(in srgb, var(--fg-border-strong) 18%, black) !important;
+  border: 1px solid color-mix(in srgb, var(--fg-border-strong) 78%, transparent) !important;
+  color: var(--fg-text) !important;
+}
+
+.finance-dark-green-scope .gradient-button-premium-variant {
+  background: color-mix(in srgb, var(--fg-border-strong) 32%, black) !important;
+  border-color: var(--fg-border-strong) !important;
+}
+
+.finance-dark-green-scope [class*='bg-slate-']:not(.sub-tabs-navigation):not(.sub-tab-main-content),
+.finance-dark-green-scope [class*='bg-blue-'],
+.finance-dark-green-scope [class*='bg-purple-'],
+.finance-dark-green-scope [class*='bg-cyan-'],
+.finance-dark-green-scope [class*='bg-emerald-'] {
+  background: var(--fg-bg) !important;
+}
+
+.finance-dark-green-scope .sub-tab-main-content {
+  background: transparent !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  padding: 0 !important;
+  box-shadow: none !important;
+}
+
+.finance-dark-green-scope [class*='border-slate-'],
+.finance-dark-green-scope [class*='border-blue-'],
+.finance-dark-green-scope [class*='border-purple-'],
+.finance-dark-green-scope [class*='border-cyan-'],
+.finance-dark-green-scope [class*='border-emerald-'] {
+  border-color: color-mix(in srgb, var(--fg-border) 70%, transparent) !important;
+}
+
+.finance-dark-green-scope [class*='text-slate-'],
+.finance-dark-green-scope [class*='text-white'],
+.finance-dark-green-scope [class*='text-blue-'],
+.finance-dark-green-scope [class*='text-purple-'],
+.finance-dark-green-scope [class*='text-cyan-'],
+.finance-dark-green-scope [class*='text-emerald-'] {
+  color: var(--fg-text) !important;
+}
+
+.finance-dark-green-scope input,
+.finance-dark-green-scope select,
+.finance-dark-green-scope textarea {
+  background: #000 !important;
+  border-color: color-mix(in srgb, var(--fg-border) 75%, transparent) !important;
+  color: var(--fg-text) !important;
+}
+
+.finance-dark-green-scope > * + *,
+.finance-dark-green-scope .sub-tab-main-content > * + * {
+  margin-top: 1rem;
+}

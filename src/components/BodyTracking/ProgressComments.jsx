@@ -59,9 +59,9 @@ const ProgressComments = () => {
 
   const commentCategories = [
     { value: 'achievements', label: 'Réussites', icon: Award, color: 'text-yellow-400' },
-    { value: 'trends', label: 'Tendances', icon: TrendingUp, color: 'text-blue-400' },
+    { value: 'trends', label: 'Tendances', icon: TrendingUp, color: 'text-sky-300/90' },
     { value: 'recommendations', label: 'Recommandations', icon: Target, color: 'text-orange-400' },
-    { value: 'motivational', label: 'Motivation', icon: Zap, color: 'text-purple-400' },
+    { value: 'motivational', label: 'Motivation', icon: Zap, color: 'text-sky-300' },
     { value: 'warnings', label: 'Alertes', icon: AlertCircle, color: 'text-red-400' },
     { value: 'insights', label: 'Insights', icon: Brain, color: 'text-green-400' }
   ];
@@ -829,7 +829,7 @@ const ProgressComments = () => {
     switch (priority) {
       case 'high': return 'border-l-red-400 bg-red-600/10';
       case 'medium': return 'border-l-yellow-400 bg-yellow-600/10';
-      case 'low': return 'border-l-blue-400 bg-blue-600/10';
+      case 'low': return 'border-l-sky-400 bg-[#0F4C5C]/15';
       default: return 'border-l-gray-400 bg-gray-600/10';
     }
   };
@@ -838,7 +838,7 @@ const ProgressComments = () => {
     switch (sentiment) {
       case 'positive': return <ThumbsUp className="w-4 h-4 text-green-400" />;
       case 'warning': return <AlertCircle className="w-4 h-4 text-yellow-400" />;
-      default: return <MessageSquare className="w-4 h-4 text-blue-400" />;
+      default: return <MessageSquare className="w-4 h-4 text-sky-300/90" />;
     }
   };
 
@@ -865,13 +865,13 @@ const ProgressComments = () => {
   return (
     <div className="space-y-6">
       {/* Contrôles et statistiques */}
-      <Card>
-        <CardHeader>
+      <Card variant="sport">
+        <CardHeader variant="sport">
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-            <CardTitle className="flex items-center gap-2">
-              <MessageSquare className="w-5 h-5 text-purple-400" />
+            <CardTitle tone="sport" className="flex items-center gap-2 normal-case tracking-normal">
+              <MessageSquare className="w-5 h-5 text-sky-300" />
               Commentaires automatiques
-              <span className="text-sm font-normal text-slate-400">
+              <span className="text-sm font-normal text-teal-100/55">
                 ({commentStats.total} commentaires générés)
               </span>
             </CardTitle>
@@ -880,7 +880,7 @@ const ProgressComments = () => {
               <select
                 value={selectedPeriod}
                 onChange={(e) => setSelectedPeriod(e.target.value)}
-                className="bg-slate-700 border border-slate-600 rounded-lg px-3 py-2 text-white text-sm"
+                className="bg-black border border-[#0F4C5C]/45 rounded-lg px-3 py-2 text-teal-100 text-sm"
               >
                 {analysisPeriods.map(period => (
                   <option key={period.value} value={period.value}>{period.label}</option>
@@ -907,10 +907,10 @@ const ProgressComments = () => {
         </CardHeader>
         
         {showSettings && (
-          <CardContent className="border-t border-slate-600">
+          <CardContent className="border-t border-[#0F4C5C]/45">
             <div className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-slate-300 mb-2">
+                <label className="block text-sm font-medium text-teal-100/80 mb-2">
                   Types de commentaires
                 </label>
                 <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
@@ -919,8 +919,8 @@ const ProgressComments = () => {
                       key={category.value}
                       className={`flex items-center gap-2 p-3 rounded-lg border cursor-pointer transition-all ${
                         commentTypes.includes(category.value)
-                          ? 'border-purple-500 bg-purple-600/20'
-                          : 'border-slate-600 bg-slate-700/50 hover:bg-slate-700'
+                          ? 'border-[#0F5C45]/55 bg-[#0F4C5C]/25'
+                          : 'border-[#0F4C5C]/45 bg-black hover:bg-teal-950/35'
                       }`}
                     >
                       <input
@@ -930,7 +930,7 @@ const ProgressComments = () => {
                         className="sr-only"
                       />
                       <category.icon className={`w-4 h-4 ${category.color}`} />
-                      <span className="text-sm text-white">{category.label}</span>
+                      <span className="text-sm text-teal-100">{category.label}</span>
                     </label>
                   ))}
                 </div>
@@ -942,9 +942,9 @@ const ProgressComments = () => {
                   id="autoRefresh"
                   checked={autoRefresh}
                   onChange={(e) => setAutoRefresh(e.target.checked)}
-                  className="rounded border-slate-600 bg-slate-700 text-purple-500"
+                  className="rounded border-[#0F4C5C]/45 bg-black border border-[#0F4C5C]/45 text-teal-200"
                 />
-                <label htmlFor="autoRefresh" className="text-sm text-slate-300">
+                <label htmlFor="autoRefresh" className="text-sm text-teal-100/80">
                   Actualisation automatique des commentaires
                 </label>
               </div>
@@ -955,39 +955,39 @@ const ProgressComments = () => {
 
       {/* Statistiques rapides */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <Card className="bg-green-600/10 border-green-500/30">
+        <Card variant="sport" className="border-green-500/35 bg-green-950/15">
           <CardContent className="p-4 text-center">
             <div className="text-2xl font-bold text-green-400 mb-1">
               {commentStats.bySentiment.positive || 0}
             </div>
-            <div className="text-sm text-slate-400">Positifs</div>
+            <div className="text-sm text-teal-100/55">Positifs</div>
           </CardContent>
         </Card>
         
-        <Card className="bg-red-600/10 border-red-500/30">
+        <Card variant="sport" className="border-red-500/35 bg-red-950/15">
           <CardContent className="p-4 text-center">
             <div className="text-2xl font-bold text-red-400 mb-1">
               {commentStats.byPriority.high || 0}
             </div>
-            <div className="text-sm text-slate-400">Priorité haute</div>
+            <div className="text-sm text-teal-100/55">Priorité haute</div>
           </CardContent>
         </Card>
         
-        <Card className="bg-orange-600/10 border-orange-500/30">
+        <Card variant="sport" className="border-amber-500/35 bg-amber-950/15">
           <CardContent className="p-4 text-center">
             <div className="text-2xl font-bold text-orange-400 mb-1">
               {generatedComments.filter(c => c.actionable).length}
             </div>
-            <div className="text-sm text-slate-400">Actionnables</div>
+            <div className="text-sm text-teal-100/55">Actionnables</div>
           </CardContent>
         </Card>
         
-        <Card className="bg-purple-600/10 border-purple-500/30">
+        <Card variant="sport" className="shadow-sm shadow-black/15">
           <CardContent className="p-4 text-center">
-            <div className="text-2xl font-bold text-purple-400 mb-1">
+            <div className="text-2xl font-bold text-sky-300 mb-1">
               {commentStats.byType.insights || 0}
             </div>
-            <div className="text-sm text-slate-400">Insights</div>
+            <div className="text-sm text-teal-100/55">Insights</div>
           </CardContent>
         </Card>
       </div>
@@ -995,43 +995,43 @@ const ProgressComments = () => {
       {/* Liste des commentaires */}
       <div className="space-y-4">
         {generatedComments.map((comment) => (
-          <Card key={comment.id} className={`border-l-4 ${getPriorityColor(comment.priority)}`}>
+          <Card key={comment.id} variant="sport" className={`border-l-4 ${getPriorityColor(comment.priority)}`}>
             <CardContent className="p-6">
               <div className="flex items-start justify-between mb-4">
                 <div className="flex items-start gap-3">
                   {getSentimentIcon(comment.sentiment)}
                   <div className="flex-1">
                     <div className="flex items-center gap-2 mb-2">
-                      <h3 className="font-semibold text-white">{comment.title}</h3>
+                      <h3 className="font-semibold text-teal-100">{comment.title}</h3>
                       {getCategoryIcon(comment.type)}
                       <span className={`px-2 py-1 rounded-full text-xs ${
                         comment.priority === 'high' ? 'bg-red-600/20 text-red-400' :
                         comment.priority === 'medium' ? 'bg-yellow-600/20 text-yellow-400' :
-                        'bg-blue-600/20 text-blue-400'
+                        'bg-[#0F4C5C]/25 text-sky-300/90'
                       }`}>
                         {comment.priority === 'high' ? 'Haute' : 
                          comment.priority === 'medium' ? 'Moyenne' : 'Basse'}
                       </span>
                     </div>
-                    <p className="text-slate-300 leading-relaxed">{comment.content}</p>
+                    <p className="text-teal-100/80 leading-relaxed">{comment.content}</p>
                   </div>
                 </div>
                 
-                <div className="text-right text-sm text-slate-400">
+                <div className="text-right text-sm text-teal-100/55">
                   {formatDate(comment.timestamp)}
                 </div>
               </div>
 
               {comment.actions && comment.actions.length > 0 && (
-                <div className="bg-slate-700/50 rounded-lg p-4 mt-4">
-                  <h4 className="font-medium text-white mb-3 flex items-center gap-2">
-                    <Target className="w-4 h-4 text-orange-400" />
+                <div className="bg-black border border-[#0F4C5C]/45 rounded-lg p-4 mt-4">
+                  <h4 className="font-medium text-teal-100 mb-3 flex items-center gap-2">
+                    <Target className="h-4 w-4 text-sky-300" />
                     Actions recommandées
                   </h4>
                   <ul className="space-y-2">
                     {comment.actions.map((action, index) => (
-                      <li key={index} className="flex items-center gap-2 text-sm text-slate-300">
-                        <ArrowRight className="w-3 h-3 text-orange-400 flex-shrink-0" />
+                      <li key={index} className="flex items-center gap-2 text-sm text-teal-100/80">
+                        <ArrowRight className="h-3 w-3 flex-shrink-0 text-sky-300" />
                         {action}
                       </li>
                     ))}
@@ -1040,9 +1040,9 @@ const ProgressComments = () => {
               )}
 
               {comment.metrics && comment.metrics.length > 0 && (
-                <div className="flex items-center gap-2 mt-4 pt-4 border-t border-slate-600">
-                  <BarChart3 className="w-4 h-4 text-slate-400" />
-                  <span className="text-sm text-slate-400">
+                <div className="flex items-center gap-2 mt-4 pt-4 border-t border-[#0F4C5C]/45">
+                  <BarChart3 className="w-4 h-4 text-teal-100/55" />
+                  <span className="text-sm text-teal-100/55">
                     Métriques liées: {comment.metrics.join(', ')}
                   </span>
                 </div>
@@ -1053,17 +1053,17 @@ const ProgressComments = () => {
       </div>
 
       {generatedComments.length === 0 && (
-        <Card>
+        <Card variant="sport">
           <CardContent className="text-center py-12">
-            <MessageSquare className="w-16 h-16 mx-auto mb-4 text-slate-500" />
-            <h4 className="text-xl font-semibold mb-2 text-white">Aucun commentaire généré</h4>
-            <p className="text-slate-400 mb-4">
+            <MessageSquare className="w-16 h-16 mx-auto mb-4 text-teal-100/45" />
+            <h4 className="text-xl font-semibold mb-2 text-teal-100">Aucun commentaire généré</h4>
+            <p className="text-teal-100/55 mb-4">
               Sélectionnez des types de commentaires et une période d'analyse pour commencer.
             </p>
             <button
               type="button"
               onClick={() => setCommentTypes(['achievements', 'trends', 'recommendations'])}
-              className="gradient-button-premium gradient-button-premium-md rounded-lg flex items-center gap-2 mx-auto"
+              className="rounded-lg border border-[#0F5C45]/70 bg-[#0F4C5C]/40 px-3 py-2 text-teal-100 font-medium hover:bg-[#0F4C5C]/55 transition-colors shadow-md shadow-black/20 rounded-lg flex items-center gap-2 mx-auto"
             >
               <Sparkles className="w-4 h-4" />
               Générer des commentaires
@@ -1073,22 +1073,22 @@ const ProgressComments = () => {
       )}
 
       {/* Informations sur le système */}
-      <Card className="bg-blue-600/10 border-blue-500/30">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Brain className="w-5 h-5 text-blue-400" />
+      <Card variant="sport" className="shadow-sm shadow-black/20">
+        <CardHeader variant="sport">
+          <CardTitle tone="sport" className="flex items-center gap-2 normal-case tracking-normal">
+            <Brain className="w-5 h-5 text-sky-300/90" />
             Comment ça fonctionne
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="space-y-4 text-sm text-slate-300">
+          <div className="space-y-4 text-sm text-teal-100/80">
             <div>
-              <h4 className="font-medium text-white mb-2">Génération automatique</h4>
+              <h4 className="font-medium text-teal-100 mb-2">Génération automatique</h4>
               <p>Les commentaires sont générés automatiquement en analysant vos données de progression, tendances et performances sur la période sélectionnée.</p>
             </div>
             
             <div>
-              <h4 className="font-medium text-white mb-2">Types de commentaires</h4>
+              <h4 className="font-medium text-teal-100 mb-2">Types de commentaires</h4>
               <ul className="space-y-1 ml-4">
                 <li>• <strong>Réussites</strong> : Célèbre vos accomplissements et progrès</li>
                 <li>• <strong>Tendances</strong> : Analyse les patterns dans vos données</li>
@@ -1100,7 +1100,7 @@ const ProgressComments = () => {
             </div>
             
             <div>
-              <h4 className="font-medium text-white mb-2">Personnalisation</h4>
+              <h4 className="font-medium text-teal-100 mb-2">Personnalisation</h4>
               <p>Vous pouvez personnaliser les types de commentaires affichés et la période d'analyse selon vos préférences.</p>
             </div>
           </div>

@@ -134,12 +134,12 @@ class BodyTrackingErrorBoundary extends React.Component {
               <h3 className="text-xl font-bold text-red-300 mb-2">
                 Trop d'erreurs détectées
               </h3>
-              <p className="text-slate-300 mb-4">
+              <p className="text-teal-100/80 mb-4">
                 Plusieurs erreurs se sont produites récemment. Veuillez rafraîchir la page complètement.
               </p>
               <Button
                 onClick={() => window.location.reload()}
-                className="bg-red-600 hover:bg-red-700 text-white"
+                className="bg-red-600 hover:bg-red-700 text-teal-100"
               >
                 <RefreshCw className="w-4 h-4 mr-2" />
                 Rafraîchir la page
@@ -159,29 +159,29 @@ class BodyTrackingErrorBoundary extends React.Component {
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
-            <p className="text-slate-300">
+            <p className="text-teal-100/80">
               Une erreur s'est produite dans cette section. L'erreur a été enregistrée et l'application continue de fonctionner.
             </p>
             
-            <div className="bg-slate-800/50 rounded-lg p-4">
-              <p className="text-sm text-slate-400 mb-2">
-                <strong className="text-slate-300">Suggestion :</strong>
+            <div className="bg-black border border-[#0F4C5C]/50 rounded-lg p-4">
+              <p className="text-sm text-teal-100/55 mb-2">
+                <strong className="text-teal-100/80">Suggestion :</strong>
               </p>
-              <p className="text-sm text-slate-300">
+              <p className="text-sm text-teal-100/80">
                 {suggestion}
               </p>
             </div>
 
             {/* Détails de l'erreur en développement uniquement */}
             {isDevelopment && this.state.error && (
-              <details className="bg-slate-900/50 rounded-lg p-4 text-xs">
+              <details className="bg-black border border-[#0F4C5C]/35 rounded-lg p-4 text-xs">
                 <summary className="cursor-pointer text-red-400 mb-2 font-medium">
                   Détails techniques (développement uniquement)
                 </summary>
-                <div className="mt-2 space-y-2 text-slate-400">
+                <div className="mt-2 space-y-2 text-teal-100/55">
                   <div>
                     <strong className="text-red-300">Type d'erreur:</strong>
-                    <span className="ml-2 text-slate-300">{errorType}</span>
+                    <span className="ml-2 text-teal-100/80">{errorType}</span>
                   </div>
                   <div>
                     <strong className="text-red-300">Message:</strong>
@@ -207,7 +207,7 @@ class BodyTrackingErrorBoundary extends React.Component {
                   )}
                   <div>
                     <strong className="text-red-300">Nombre d'erreurs:</strong>
-                    <span className="ml-2 text-slate-300">{errorCount}</span>
+                    <span className="ml-2 text-teal-100/80">{errorCount}</span>
                   </div>
                 </div>
               </details>
@@ -217,7 +217,7 @@ class BodyTrackingErrorBoundary extends React.Component {
             <div className="flex gap-3 pt-4">
               <Button
                 onClick={this.handleReset}
-                className="flex-1 bg-blue-600 hover:bg-blue-700 text-white"
+                className="flex-1 bg-[#0F4C5C]/50 hover:bg-[#0F4C5C]/65 text-teal-100"
                 aria-label="Réessayer de charger cette section"
               >
                 <RefreshCw className="w-4 h-4 mr-2" />
@@ -226,7 +226,7 @@ class BodyTrackingErrorBoundary extends React.Component {
               <Button
                 onClick={this.handleGoHome}
                 variant="outline"
-                className="flex-1 border-slate-600 text-slate-300 hover:bg-slate-700"
+                className="flex-1 border-[#0F4C5C]/45 text-teal-100/80 hover:bg-teal-950/35"
                 aria-label="Retourner à l'accueil"
               >
                 <Home className="w-4 h-4 mr-2" />
@@ -234,7 +234,7 @@ class BodyTrackingErrorBoundary extends React.Component {
               </Button>
             </div>
 
-            <p className="text-slate-500 text-xs text-center pt-2">
+            <p className="text-teal-100/45 text-xs text-center pt-2">
               Si le problème persiste, essayez de rafraîchir la page ou de synchroniser à nouveau vos données.
             </p>
           </CardContent>

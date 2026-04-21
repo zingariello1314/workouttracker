@@ -13,6 +13,7 @@ import { importBanners } from '../utils/bannerImport';
 import { useHomepageImages } from '../hooks/useHomepageImages';
 import logger from '../utils/logger';
 import { useTranslation } from '../utils/translations';
+import { settingsTheme as S } from './tabs/SettingsTab/settingsThemeClasses';
 
 const log = logger.component('BannerExportImport');
 
@@ -132,34 +133,31 @@ export default function BannerExportImport() {
   return (
     <div className="space-y-6">
       <div>
-        <h3 className="text-lg font-semibold text-white mb-2">
-          📤 Export / Import Bannières
+        <h3 className={`mb-2 text-lg font-semibold text-red-100`}>
+          Export / Import bannières
         </h3>
-        <p className="text-slate-300 text-sm mb-4">
+        <p className={`mb-4 text-sm ${S.muted}`}>
           Sauvegardez toutes vos bannières dans un fichier JSON pour les restaurer plus tard.
           Format compressé pour réduire la taille du fichier.
         </p>
       </div>
 
-      {/* Section Export */}
-      <div className="bg-slate-700/50 rounded-lg p-4 border border-slate-600">
-        <div className="flex items-center justify-between mb-3">
+      <div className={S.inset}>
+        <div className="mb-3 flex items-center justify-between">
           <div>
-            <h4 className="text-white font-semibold mb-1">📤 Exporter toutes les bannières</h4>
-            <p className="text-slate-400 text-xs">
+            <h4 className="mb-1 font-semibold text-red-100">Exporter toutes les bannières</h4>
+            <p className={S.mutedXs}>
               {backgroundImages.length} image{backgroundImages.length > 1 ? 's' : ''} disponible{backgroundImages.length > 1 ? 's' : ''}
             </p>
           </div>
           <button
             onClick={handleExport}
             disabled={exportStatus === 'loading' || backgroundImages.length === 0}
-            className={`
-              px-4 py-2 rounded-md text-sm font-medium transition-colors
-              ${exportStatus === 'loading' || backgroundImages.length === 0
-                ? 'bg-slate-600 text-slate-400 cursor-not-allowed'
-                : 'bg-blue-600 hover:bg-blue-700 text-white'
-              }
-            `}
+            className={
+              exportStatus === 'loading' || backgroundImages.length === 0
+                ? `${S.btnPrimary} cursor-not-allowed opacity-50`
+                : S.btnPrimary
+            }
           >
             {exportStatus === 'loading' ? (
               <span className="flex items-center">
@@ -170,20 +168,20 @@ export default function BannerExportImport() {
                 Export en cours...
               </span>
             ) : exportStatus === 'success' ? (
-              <span className="flex items-center text-green-400">
-                <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <span className="flex items-center text-emerald-400">
+                <svg className="mr-1 h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                 </svg>
                 Exporté !
               </span>
             ) : (
-              '📥 Télécharger'
+              'Télécharger'
             )}
           </button>
         </div>
 
         {exportStatus === 'error' && (
-          <div className="mt-2 text-red-400 text-sm flex items-center">
+          <div className="mt-2 flex items-center text-sm text-red-400">
             <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
             </svg>
@@ -192,31 +190,28 @@ export default function BannerExportImport() {
         )}
 
         {backgroundImages.length === 0 && (
-          <div className="mt-2 text-yellow-400 text-sm">
-            ⚠️ Aucune bannière à exporter
+          <div className="mt-2 text-sm text-amber-300/90">
+            Aucune bannière à exporter
           </div>
         )}
       </div>
 
-      {/* Section Import */}
-      <div className="bg-slate-700/50 rounded-lg p-4 border border-slate-600">
-        <div className="flex items-center justify-between mb-3">
+      <div className={S.inset}>
+        <div className="mb-3 flex items-center justify-between">
           <div>
-            <h4 className="text-white font-semibold mb-1">📥 Importer des bannières</h4>
-            <p className="text-slate-400 text-xs">
+            <h4 className="mb-1 font-semibold text-red-100">Importer des bannières</h4>
+            <p className={S.mutedXs}>
               Restaurez vos bannières depuis un fichier JSON exporté
             </p>
           </div>
           <button
             onClick={handleImportClick}
             disabled={importStatus === 'loading'}
-            className={`
-              px-4 py-2 rounded-md text-sm font-medium transition-colors
-              ${importStatus === 'loading'
-                ? 'bg-slate-600 text-slate-400 cursor-not-allowed'
-                : 'bg-green-600 hover:bg-green-700 text-white'
-              }
-            `}
+            className={
+              importStatus === 'loading'
+                ? `${S.btnSecondary} cursor-not-allowed opacity-50`
+                : S.btnSecondary
+            }
           >
             {importStatus === 'loading' ? (
               <span className="flex items-center">
@@ -227,14 +222,14 @@ export default function BannerExportImport() {
                 Import en cours...
               </span>
             ) : importStatus === 'success' ? (
-              <span className="flex items-center text-green-400">
-                <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <span className="flex items-center text-emerald-400">
+                <svg className="mr-1 h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                 </svg>
                 Importé !
               </span>
             ) : (
-              '📂 Sélectionner fichier'
+              'Sélectionner fichier'
             )}
           </button>
         </div>
@@ -257,9 +252,9 @@ export default function BannerExportImport() {
         )}
 
         {importResult && (
-          <div className="mt-3 bg-green-900/20 border border-green-600/30 rounded p-3">
-            <h5 className="text-green-400 font-semibold mb-2">✅ Import réussi</h5>
-            <div className="text-green-200 text-sm space-y-1">
+          <div className="mt-3 rounded border border-emerald-800/40 bg-emerald-950/25 p-3">
+            <h5 className="mb-2 font-semibold text-emerald-300">Import réussi</h5>
+            <div className="space-y-1 text-sm text-emerald-100/90">
               <p>• <strong>{importResult.imported}</strong> image{importResult.imported > 1 ? 's' : ''} importée{importResult.imported > 1 ? 's' : ''}</p>
               {importResult.skipped > 0 && (
                 <p>• <strong>{importResult.skipped}</strong> doublon{importResult.skipped > 1 ? 's' : ''} ignoré{importResult.skipped > 1 ? 's' : ''}</p>
@@ -272,7 +267,7 @@ export default function BannerExportImport() {
           </div>
         )}
 
-        <div className="mt-3 text-xs text-slate-400 space-y-1">
+        <div className={`mt-3 space-y-1 text-xs ${S.muted}`}>
           <p>• Format supporté : .json (non compressé) ou .json.gz (compressé)</p>
           <p>• Les doublons sont automatiquement détectés et ignorés</p>
           <p>• Les images existantes sont conservées (fusion intelligente)</p>

@@ -5,11 +5,14 @@
 
 import SmartShoppingTab from './SmartShoppingTab';
 import SmartShoppingErrorBoundary from './SmartShoppingErrorBoundary';
+import '../financeSmartSyntheseThemeOverrides.css';
 
 const SmartShoppingSubTab = () => {
   return (
     <SmartShoppingErrorBoundary>
-      <SmartShoppingTab />
+      <div className="finance-smart-synthese-scope">
+        <SmartShoppingTab />
+      </div>
     </SmartShoppingErrorBoundary>
   );
 };

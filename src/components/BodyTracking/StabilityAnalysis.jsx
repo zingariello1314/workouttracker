@@ -440,7 +440,7 @@ const StabilityAnalysis = () => {
       return {
         status: 'good',
         message: 'Pas assez de données pour analyser',
-        color: 'text-slate-400',
+        color: 'text-teal-100/55',
         stagnantCount: 0,
         volatileCount: 0,
         stableCount: 0,
@@ -499,7 +499,7 @@ const StabilityAnalysis = () => {
       case 'stagnant': return <Pause className="w-4 h-4 text-yellow-400" />;
       case 'volatile': return <AlertTriangle className="w-4 h-4 text-red-400" />;
       case 'stable': return <CheckCircle className="w-4 h-4 text-green-400" />;
-      default: return <Activity className="w-4 h-4 text-blue-400" />;
+      default: return <Activity className="w-4 h-4 text-sky-300/90" />;
     }
   };
 
@@ -520,7 +520,7 @@ const StabilityAnalysis = () => {
       case 'low': return 'text-green-400 bg-green-600/20';
       case 'medium': return 'text-yellow-400 bg-yellow-600/20';
       case 'high': return 'text-red-400 bg-red-600/20';
-      default: return 'text-gray-400 bg-gray-600/20';
+      default: return 'text-teal-100/70 bg-[#0F4C5C]/25';
     }
   };
 
@@ -535,13 +535,13 @@ const StabilityAnalysis = () => {
   return (
     <div className="space-y-6">
       {/* Contrôles */}
-      <Card>
-        <CardHeader>
+      <Card variant="sport">
+        <CardHeader variant="sport">
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-            <CardTitle className="flex items-center gap-2">
-              <BarChart3 className="w-5 h-5 text-orange-400" />
+            <CardTitle tone="sport" className="flex items-center gap-2 normal-case tracking-normal">
+              <BarChart3 className="h-5 w-5 text-sky-300" />
               Analyse de stabilité
-              <span className="text-sm font-normal text-slate-400">
+              <span className="text-sm font-normal text-teal-100/55">
                 ({selectedMetrics.length} métriques analysées)
               </span>
             </CardTitle>
@@ -550,7 +550,7 @@ const StabilityAnalysis = () => {
               <select
                 value={selectedPeriod}
                 onChange={(e) => setSelectedPeriod(e.target.value)}
-                className="bg-slate-700 border border-slate-600 rounded-lg px-3 py-2 text-white text-sm"
+                className="bg-black border border-[#0F4C5C]/45 rounded-lg px-3 py-2 text-teal-100 text-sm"
               >
                 {analysisPeriods.map(period => (
                   <option key={period.value} value={period.value}>{period.label}</option>
@@ -572,7 +572,7 @@ const StabilityAnalysis = () => {
         <CardContent>
           <div className="space-y-4">
             <div>
-              <label className="block text-sm font-medium text-slate-300 mb-2">
+              <label className="block text-sm font-medium text-teal-100/80 mb-2">
                 Métriques à analyser
               </label>
               <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
@@ -581,8 +581,8 @@ const StabilityAnalysis = () => {
                     key={metric.value}
                     className={`flex items-center gap-2 p-3 rounded-lg border cursor-pointer transition-all ${
                       selectedMetrics.includes(metric.value)
-                        ? 'border-orange-500 bg-orange-600/20'
-                        : 'border-slate-600 bg-slate-700/50 hover:bg-slate-700'
+                        ? 'border-[#0F5C45]/60 bg-[#0F4C5C]/30'
+                        : 'border-[#0F4C5C]/45 bg-black hover:bg-teal-950/35'
                     }`}
                   >
                     <input
@@ -592,7 +592,7 @@ const StabilityAnalysis = () => {
                       className="sr-only"
                     />
                     <span className="text-lg">{metric.icon}</span>
-                    <span className="text-sm text-white">{metric.label}</span>
+                    <span className="text-sm text-teal-100">{metric.label}</span>
                   </label>
                 ))}
               </div>
@@ -602,11 +602,18 @@ const StabilityAnalysis = () => {
       </Card>
 
       {/* Vue d'ensemble */}
-      <Card className={`${overallAnalysis.status === 'stagnant' ? 'bg-yellow-600/10 border-yellow-500/30' : 
-                          overallAnalysis.status === 'volatile' ? 'bg-red-600/10 border-red-500/30' : 
-                          'bg-green-600/10 border-green-500/30'}`}>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
+      <Card
+        variant="sport"
+        className={
+          overallAnalysis.status === 'stagnant'
+            ? 'border-amber-500/40 bg-amber-950/15'
+            : overallAnalysis.status === 'volatile'
+              ? 'border-red-500/40 bg-red-950/15'
+              : 'border-[#0F5C45]/50 bg-[#0F5C45]/10'
+        }
+      >
+        <CardHeader variant="sport">
+          <CardTitle tone="sport" className="flex items-center gap-2 normal-case tracking-normal">
             {getStatusIcon(overallAnalysis.status)}
             Vue d'ensemble - {overallAnalysis.message}
           </CardTitle>
@@ -614,41 +621,41 @@ const StabilityAnalysis = () => {
         <CardContent>
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
             <div className="text-center">
-              <div className="text-2xl font-bold text-orange-400 mb-1">
+              <div className="mb-1 text-2xl font-bold text-sky-300">
                 {overallAnalysis.avgStabilityScore.toFixed(0)}%
               </div>
-              <div className="text-sm text-slate-400">Score de stabilité</div>
+              <div className="text-sm text-teal-100/55">Score de stabilité</div>
             </div>
             <div className="text-center">
-              <div className="text-2xl font-bold text-purple-400 mb-1">
+              <div className="text-2xl font-bold text-sky-300 mb-1">
                 {overallAnalysis.avgProgressScore.toFixed(0)}%
               </div>
-              <div className="text-sm text-slate-400">Score de progression</div>
+              <div className="text-sm text-teal-100/55">Score de progression</div>
             </div>
             <div className="text-center">
               <div className="text-2xl font-bold text-yellow-400 mb-1">
                 {overallAnalysis.stagnantCount}
               </div>
-              <div className="text-sm text-slate-400">Métriques stagnantes</div>
+              <div className="text-sm text-teal-100/55">Métriques stagnantes</div>
             </div>
             <div className="text-center">
               <div className="text-2xl font-bold text-red-400 mb-1">
                 {overallAnalysis.volatileCount}
               </div>
-              <div className="text-sm text-slate-400">Métriques volatiles</div>
+              <div className="text-sm text-teal-100/55">Métriques volatiles</div>
             </div>
           </div>
 
           {overallAnalysis.recommendations.length > 0 && (
-            <div className="bg-slate-700/50 rounded-lg p-4">
-              <h4 className="font-medium text-white mb-3 flex items-center gap-2">
-                <Target className="w-4 h-4 text-orange-400" />
+            <div className="bg-black border border-[#0F4C5C]/45 rounded-lg p-4">
+              <h4 className="font-medium text-teal-100 mb-3 flex items-center gap-2">
+                <Target className="h-4 w-4 text-sky-300" />
                 Recommandations générales
               </h4>
               <ul className="space-y-2">
                 {overallAnalysis.recommendations.map((rec, index) => (
-                  <li key={index} className="flex items-start gap-2 text-sm text-slate-300">
-                    <ArrowRight className="w-3 h-3 text-orange-400 mt-0.5 flex-shrink-0" />
+                  <li key={index} className="flex items-start gap-2 text-sm text-teal-100/80">
+                    <ArrowRight className="mt-0.5 h-3 w-3 flex-shrink-0 text-sky-300" />
                     {rec}
                   </li>
                 ))}
@@ -661,14 +668,14 @@ const StabilityAnalysis = () => {
       {/* Analyse détaillée par métrique */}
       <div className="space-y-4">
         {stabilityAnalysis.map((analysis, index) => (
-          <Card key={index} className="border-slate-600">
+          <Card key={index} variant="sport">
             <CardContent className="p-6">
               <div className="flex items-start justify-between mb-4">
                 <div className="flex items-center gap-3">
                   <span className="text-2xl">{analysis.icon}</span>
                   <div>
-                    <h3 className="font-semibold text-white text-lg">{analysis.label}</h3>
-                    <div className="flex items-center gap-2 text-sm text-slate-400">
+                    <h3 className="font-semibold text-teal-100 text-lg">{analysis.label}</h3>
+                    <div className="flex items-center gap-2 text-sm text-teal-100/55">
                       <span>Valeur actuelle: {analysis.currentValue != null ? analysis.currentValue.toFixed(1) : 'N/A'} {analysis.unit}</span>
                       {getStatusIcon(analysis.stability)}
                       <span className={analysis.isStagnant ? 'text-yellow-400' : 
@@ -692,8 +699,8 @@ const StabilityAnalysis = () => {
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
                 <div className={`p-4 rounded-lg ${getScoreBg(analysis.stabilityScore)}`}>
                   <div className="flex items-center justify-between mb-2">
-                    <span className="text-sm text-slate-300">Stabilité</span>
-                    <Activity className="w-4 h-4 text-slate-400" />
+                    <span className="text-sm text-teal-100/80">Stabilité</span>
+                    <Activity className="w-4 h-4 text-teal-100/55" />
                   </div>
                   <div className={`text-2xl font-bold ${getScoreColor(analysis.stabilityScore)}`}>
                     {analysis.stabilityScore != null ? analysis.stabilityScore.toFixed(0) : 0}%
@@ -702,8 +709,8 @@ const StabilityAnalysis = () => {
                 
                 <div className={`p-4 rounded-lg ${getScoreBg(analysis.consistencyScore)}`}>
                   <div className="flex items-center justify-between mb-2">
-                    <span className="text-sm text-slate-300">Consistance</span>
-                    <CheckCircle className="w-4 h-4 text-slate-400" />
+                    <span className="text-sm text-teal-100/80">Consistance</span>
+                    <CheckCircle className="w-4 h-4 text-teal-100/55" />
                   </div>
                   <div className={`text-2xl font-bold ${getScoreColor(analysis.consistencyScore)}`}>
                     {analysis.consistencyScore != null ? analysis.consistencyScore.toFixed(0) : 0}%
@@ -712,8 +719,8 @@ const StabilityAnalysis = () => {
                 
                 <div className={`p-4 rounded-lg ${getScoreBg(analysis.progressScore)}`}>
                   <div className="flex items-center justify-between mb-2">
-                    <span className="text-sm text-slate-300">Progression</span>
-                    <TrendingUp className="w-4 h-4 text-slate-400" />
+                    <span className="text-sm text-teal-100/80">Progression</span>
+                    <TrendingUp className="w-4 h-4 text-teal-100/55" />
                   </div>
                   <div className={`text-2xl font-bold ${getScoreColor(analysis.progressScore)}`}>
                     {analysis.progressScore != null ? analysis.progressScore.toFixed(0) : 0}%
@@ -725,29 +732,29 @@ const StabilityAnalysis = () => {
               {showDetails && (
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
                   <div>
-                    <h4 className="font-medium text-white mb-3">Métriques statistiques</h4>
+                    <h4 className="font-medium text-teal-100 mb-3">Métriques statistiques</h4>
                     <div className="space-y-2 text-sm">
                       <div className="flex justify-between">
-                        <span className="text-slate-400">Variabilité:</span>
-                        <span className="text-white">{analysis.variability != null ? analysis.variability.toFixed(1) : 0}%</span>
+                        <span className="text-teal-100/55">Variabilité:</span>
+                        <span className="text-teal-100">{analysis.variability != null ? analysis.variability.toFixed(1) : 0}%</span>
                       </div>
                       <div className="flex justify-between">
-                        <span className="text-slate-400">Tendance:</span>
-                        <span className={analysis.trend > 0 ? 'text-green-400' : analysis.trend < 0 ? 'text-red-400' : 'text-gray-400'}>
+                        <span className="text-teal-100/55">Tendance:</span>
+                        <span className={analysis.trend > 0 ? 'text-green-400' : analysis.trend < 0 ? 'text-red-400' : 'text-teal-100/55'}>
                           {analysis.trend != null ? `${analysis.trend > 0 ? '+' : ''}${analysis.trend.toFixed(2)}%` : 'N/A'}
                         </span>
                       </div>
                       <div className="flex justify-between">
-                        <span className="text-slate-400">Points de données:</span>
-                        <span className="text-white">{analysis.dataPoints}</span>
+                        <span className="text-teal-100/55">Points de données:</span>
+                        <span className="text-teal-100">{analysis.dataPoints}</span>
                       </div>
                       <div className="flex justify-between">
-                        <span className="text-slate-400">Confiance:</span>
-                        <span className="text-blue-400">{analysis.confidence != null ? analysis.confidence.toFixed(0) : 0}%</span>
+                        <span className="text-teal-100/55">Confiance:</span>
+                        <span className="text-sky-300/90">{analysis.confidence != null ? analysis.confidence.toFixed(0) : 0}%</span>
                       </div>
                       <div className="flex justify-between">
-                        <span className="text-slate-400">Dernier changement:</span>
-                        <span className="text-white">
+                        <span className="text-teal-100/55">Dernier changement:</span>
+                        <span className="text-teal-100">
                           {analysis.lastSignificantChange ? formatDate(analysis.lastSignificantChange) : 'N/A'}
                         </span>
                       </div>
@@ -755,7 +762,7 @@ const StabilityAnalysis = () => {
                   </div>
                   
                   <div>
-                    <h4 className="font-medium text-white mb-3">Patterns détectés</h4>
+                    <h4 className="font-medium text-teal-100 mb-3">Patterns détectés</h4>
                     <div className="space-y-2">
                       {(analysis.patterns || []).map((pattern, idx) => (
                         <div key={idx} className="flex items-center gap-2 text-sm">
@@ -763,9 +770,9 @@ const StabilityAnalysis = () => {
                             pattern === 'stagnation' ? 'bg-yellow-400' :
                             pattern === 'volatility' ? 'bg-red-400' :
                             pattern === 'stable' ? 'bg-green-400' :
-                            'bg-blue-400'
+                            'bg-sky-400'
                           }`}></div>
-                          <span className="text-slate-300 capitalize">
+                          <span className="text-teal-100/80 capitalize">
                             {pattern.replace('_', ' ')}
                           </span>
                         </div>
@@ -777,15 +784,15 @@ const StabilityAnalysis = () => {
 
               {/* Recommandations */}
               {analysis.recommendations && analysis.recommendations.length > 0 && (
-                <div className="bg-slate-700/50 rounded-lg p-4">
-                  <h4 className="font-medium text-white mb-3 flex items-center gap-2">
-                    <Target className="w-4 h-4 text-orange-400" />
+                <div className="bg-black border border-[#0F4C5C]/45 rounded-lg p-4">
+                  <h4 className="font-medium text-teal-100 mb-3 flex items-center gap-2">
+                    <Target className="h-4 w-4 text-sky-300" />
                     Recommandations spécifiques
                   </h4>
                   <ul className="space-y-2">
                     {analysis.recommendations.map((rec, idx) => (
-                      <li key={idx} className="flex items-start gap-2 text-sm text-slate-300">
-                        <ArrowRight className="w-3 h-3 text-orange-400 mt-0.5 flex-shrink-0" />
+                      <li key={idx} className="flex items-start gap-2 text-sm text-teal-100/80">
+                        <ArrowRight className="mt-0.5 h-3 w-3 flex-shrink-0 text-sky-300" />
                         {rec}
                       </li>
                     ))}
@@ -798,17 +805,17 @@ const StabilityAnalysis = () => {
       </div>
 
       {selectedMetrics.length === 0 && (
-        <Card>
+        <Card variant="sport">
           <CardContent className="text-center py-12">
-            <BarChart3 className="w-16 h-16 mx-auto mb-4 text-slate-500" />
-            <h4 className="text-xl font-semibold mb-2 text-white">Aucune métrique sélectionnée</h4>
-            <p className="text-slate-400 mb-4">
+            <BarChart3 className="w-16 h-16 mx-auto mb-4 text-teal-100/45" />
+            <h4 className="text-xl font-semibold mb-2 text-teal-100">Aucune métrique sélectionnée</h4>
+            <p className="text-teal-100/55 mb-4">
               Sélectionnez au moins une métrique pour commencer l'analyse de stabilité.
             </p>
             <button
               type="button"
               onClick={() => setSelectedMetrics(['weight', 'bodyFat', 'muscleMass'])}
-              className="gradient-button-premium gradient-button-premium-md rounded-lg flex items-center gap-2 mx-auto"
+              className="rounded-lg border border-[#0F5C45]/70 bg-[#0F4C5C]/40 px-3 py-2 text-teal-100 font-medium hover:bg-[#0F4C5C]/55 transition-colors shadow-md shadow-black/20 rounded-lg flex items-center gap-2 mx-auto"
             >
               <RefreshCw className="w-4 h-4" />
               Sélectionner les métriques principales
@@ -818,27 +825,27 @@ const StabilityAnalysis = () => {
       )}
 
       {/* Informations sur l'analyse */}
-      <Card className="bg-blue-600/10 border-blue-500/30">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Info className="w-5 h-5 text-blue-400" />
+      <Card variant="sport" className="shadow-sm shadow-black/20">
+        <CardHeader variant="sport">
+          <CardTitle tone="sport" className="flex items-center gap-2 normal-case tracking-normal">
+            <Info className="w-5 h-5 text-sky-300/90" />
             À propos de l'analyse de stabilité
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="space-y-4 text-sm text-slate-300">
+          <div className="space-y-4 text-sm text-teal-100/80">
             <div>
-              <h4 className="font-medium text-white mb-2">Détection de stagnation</h4>
+              <h4 className="font-medium text-teal-100 mb-2">Détection de stagnation</h4>
               <p>Une métrique est considérée comme stagnante si elle ne présente pas de changement significatif (&gt;5%) sur la période analysée.</p>
             </div>
             
             <div>
-              <h4 className="font-medium text-white mb-2">Analyse de volatilité</h4>
+              <h4 className="font-medium text-teal-100 mb-2">Analyse de volatilité</h4>
               <p>La volatilité mesure la variabilité des mesures. Une forte volatilité peut indiquer des mesures irrégulières ou des facteurs externes influents.</p>
             </div>
             
             <div>
-              <h4 className="font-medium text-white mb-2">Scores de performance</h4>
+              <h4 className="font-medium text-teal-100 mb-2">Scores de performance</h4>
               <ul className="space-y-1 ml-4">
                 <li>• <strong>Stabilité</strong> : Régularité des mesures et absence de fluctuations excessives</li>
                 <li>• <strong>Consistance</strong> : Cohérence des données sur la période</li>

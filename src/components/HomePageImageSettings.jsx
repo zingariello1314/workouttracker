@@ -1,6 +1,6 @@
 import React, { useState, useRef } from 'react';
-import Button from './ui/Button';
 import { useHomepageImages } from '../hooks/useHomepageImages';
+import { settingsTheme as S } from './tabs/SettingsTab/settingsThemeClasses';
 import StorageDiagnostic from './StorageDiagnostic';
 import QuotaIndicator from './QuotaIndicator';
 import { canUploadImages, formatBytes } from '../utils/quotaManager';
@@ -218,59 +218,58 @@ const HomePageImageSettings = ({ onClose }) => {
   };
 
   return (
-    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-      <div className="bg-slate-800 rounded-lg shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
-        {/* Header */}
-        <div className="flex items-center justify-between p-6 border-b border-slate-700">
-          <h2 className="text-2xl font-bold text-white">Paramètres de la Page d'Accueil</h2>
-          <div className="flex items-center space-x-4">
-            {/* Indicateur de sauvegarde automatique */}
-            <div className="flex items-center gap-2 text-green-400 text-sm">
-              <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4 backdrop-blur-sm">
+      <div className={`${S.modalPanel} max-w-4xl`}>
+        <div className={`${S.modalHeader} flex-wrap gap-3`}>
+          <h2 className="text-2xl font-bold text-red-100">Paramètres de la page d'accueil</h2>
+          <div className="flex flex-wrap items-center gap-3">
+            <div className={`flex items-center gap-2 text-sm text-emerald-400/90`}>
+              <div className="h-2 w-2 animate-pulse rounded-full bg-emerald-500" />
               <span>Sauvegarde automatique active</span>
             </div>
-            
-            {/* Bouton de diagnostic */}
-            <Button
+
+            <button
+              type="button"
               onClick={() => setShowDiagnostic(true)}
-              className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md text-sm font-medium"
+              className={S.btnSecondary}
             >
-              🔍 Diagnostic
-            </Button>
-            
-            {/* Bouton de sauvegarde manuelle */}
-            <Button
+              Diagnostic
+            </button>
+
+            <button
+              type="button"
               onClick={handleManualSave}
               disabled={isSaving}
-              className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-md text-sm font-medium"
+              className={`${S.btnPrimary} disabled:opacity-50`}
             >
-              {isSaving ? 'Sauvegarde...' : '💾 Sauvegarder'}
-            </Button>
-            
-            {/* Indicateur de statut */}
+              {isSaving ? 'Sauvegarde...' : 'Sauvegarder'}
+            </button>
+
             {saveStatus === 'success' && (
-              <div className="text-green-400 text-sm flex items-center">
-                <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <div className="flex items-center text-sm text-emerald-400">
+                <svg className="mr-1 h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                 </svg>
                 Sauvegardé !
               </div>
             )}
-            
+
             {saveStatus === 'error' && (
-              <div className="text-red-400 text-sm flex items-center">
-                <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <div className="flex items-center text-sm text-red-400">
+                <svg className="mr-1 h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                 </svg>
                 Erreur
               </div>
             )}
-            
+
             <button
+              type="button"
               onClick={onClose}
-              className="text-slate-400 hover:text-white transition-colors"
+              className={`rounded-lg p-2 transition-colors ${S.muted} hover:bg-red-950/40 hover:text-red-100`}
+              aria-label="Fermer"
             >
-              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg className="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
               </svg>
             </button>
@@ -280,8 +279,8 @@ const HomePageImageSettings = ({ onClose }) => {
         <div className="p-6 space-y-8">
           {/* Images de fond uniquement - rotation automatique toutes les 2 minutes */}
           <div>
-            <h3 className="text-lg font-semibold text-white mb-4">Images de Fond</h3>
-            <p className="text-slate-300 text-sm mb-4">
+            <h3 className="mb-4 text-lg font-semibold text-red-100">Images de fond</h3>
+            <p className={`mb-4 text-sm ${S.muted}`}>
               Ces images seront utilisées comme arrière-plan de la page d'accueil et changeront automatiquement toutes les 2 minutes.
             </p>
             
@@ -333,8 +332,9 @@ const HomePageImageSettings = ({ onClose }) => {
                       )}
                     </div>
                     <button
+                      type="button"
                       onClick={() => setQuotaWarning(null)}
-                      className="ml-auto text-slate-400 hover:text-slate-300"
+                      className={`ml-auto ${S.muted} hover:text-red-100`}
                     >
                       <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -346,30 +346,31 @@ const HomePageImageSettings = ({ onClose }) => {
 
               {/* Info taille upload si fichiers sélectionnés */}
               {quotaCheck && quotaCheck.required > 0 && (
-                <div className="mb-4 bg-blue-900/20 border border-blue-600/30 rounded-lg p-3">
-                  <div className="text-blue-400 text-sm">
-                    <strong>Taille requise:</strong> {formatBytes(quotaCheck.required)}
+                <div className="mb-4 rounded-lg border border-red-900/45 bg-red-950/25 p-3">
+                  <div className={`text-sm ${S.body}`}>
+                    <strong className="text-red-200">Taille requise :</strong> {formatBytes(quotaCheck.required)}
                     {quotaCheck.available > 0 && (
-                      <span className="text-blue-300 ml-2">
-                        ({((quotaCheck.required / quotaCheck.available) * 100).toFixed(1)}% du quota disponible)
+                      <span className="ml-2 text-red-300/80">
+                        ({((quotaCheck.required / quotaCheck.available) * 100).toFixed(1)} % du quota disponible)
                       </span>
                     )}
                   </div>
                 </div>
               )}
 
-              <Button
+              <button
+                type="button"
                 onClick={() => fileInputRef.current?.click()}
                 disabled={isUploading || (quotaCheck && !quotaCheck.canUpload)}
-                className="w-full"
+                className={`${S.btnPrimary} w-full disabled:opacity-50`}
               >
-                {isUploading 
-                  ? 'Upload haute qualité...' 
+                {isUploading
+                  ? 'Upload haute qualité...'
                   : quotaCheck && !quotaCheck.canUpload
-                    ? '❌ Quota insuffisant'
-                    : '📸 Ajouter des Images Haute Qualité (JPG/PNG)'
+                    ? 'Quota insuffisant'
+                    : 'Ajouter des images haute qualité (JPG/PNG)'
                 }
-              </Button>
+              </button>
 
               {/* Galerie des images de fond */}
               <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
@@ -382,22 +383,23 @@ const HomePageImageSettings = ({ onClose }) => {
                       : image; // Format v2 (string)
                   
                   return (
-                    <div key={index} className="relative group">
+                    <div key={index} className="group relative">
                       <img
                         src={imageSrc}
                         alt={`Fond ${index + 1}`}
-                        className="w-full h-32 object-cover rounded-lg"
+                        className="h-32 w-full rounded-lg border border-red-900/40 object-cover"
                       />
                       <button
+                        type="button"
                         onClick={() => removeBackgroundImage(index)}
-                        className="absolute top-2 right-2 bg-red-600 text-white rounded-full w-6 h-6 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                        className="absolute right-2 top-2 flex h-6 w-6 items-center justify-center rounded-full border border-red-800/60 bg-red-950/90 text-sm text-red-50 opacity-0 transition-opacity group-hover:opacity-100"
                       >
                         ×
                       </button>
-                      <div className="absolute bottom-2 left-2 bg-black/50 text-white text-xs px-2 py-1 rounded">
+                      <div className="absolute bottom-2 left-2 rounded border border-red-900/50 bg-black/70 px-2 py-1 text-xs text-red-100">
                         Fond {index + 1}
                         {typeof image === 'object' && image?.format && (
-                          <span className="ml-1 text-blue-300">({image.format.toUpperCase()})</span>
+                          <span className="ml-1 text-red-300/90">({image.format.toUpperCase()})</span>
                         )}
                       </div>
                     </div>
@@ -409,31 +411,32 @@ const HomePageImageSettings = ({ onClose }) => {
 
 
           {/* Indicateur de santé du système */}
-          <div className="bg-slate-700/50 rounded-lg p-4">
-            <div className="flex items-center justify-between mb-2">
-              <h4 className="text-white font-semibold">🏥 Santé du Système</h4>
+          <div className={S.inset}>
+            <div className="mb-2 flex items-center justify-between">
+              <h4 className="font-semibold text-red-100">Santé du système</h4>
               <button
+                type="button"
                 onClick={checkSystemHealth}
-                className="text-blue-400 hover:text-blue-300 text-sm"
+                className={`text-sm ${S.muted} underline-offset-2 hover:text-red-100 hover:underline`}
               >
                 Vérifier
               </button>
             </div>
             <div className="flex items-center space-x-2">
-              <div className={`w-3 h-3 rounded-full ${
-                systemHealth === 'excellent' ? 'bg-green-500' :
-                systemHealth === 'good' ? 'bg-yellow-500' :
+              <div className={`h-3 w-3 rounded-full ${
+                systemHealth === 'excellent' ? 'bg-emerald-500' :
+                systemHealth === 'good' ? 'bg-amber-500' :
                 systemHealth === 'poor' ? 'bg-red-500' :
-                'bg-gray-500'
-              }`}></div>
-              <span className="text-slate-300 text-sm">
-                {systemHealth === 'excellent' ? '✅ Excellent - Tous les systèmes fonctionnent' :
-                 systemHealth === 'good' ? '⚠️ Bon - Système de fallback actif' :
-                 systemHealth === 'poor' ? '❌ Problème - Vérification nécessaire' :
-                 '❓ Inconnu - Vérification en cours'}
+                'bg-zinc-600'
+              }`} />
+              <span className={`text-sm ${S.body}`}>
+                {systemHealth === 'excellent' ? 'Excellent — tous les systèmes fonctionnent' :
+                 systemHealth === 'good' ? 'Bon — système de secours actif' :
+                 systemHealth === 'poor' ? 'Problème — vérification nécessaire' :
+                 'Inconnu — vérification en cours'}
               </span>
             </div>
-            <div className="mt-2 text-xs text-slate-400">
+            <div className={`mt-2 text-xs ${S.muted}`}>
               <p>• Sauvegarde triple niveau (IndexedDB + localStorage + sessionStorage)</p>
               <p>• Récupération automatique en cas de problème</p>
               <p>• Sauvegarde synchrone avant fermeture</p>
@@ -441,44 +444,43 @@ const HomePageImageSettings = ({ onClose }) => {
           </div>
 
           {/* Système de sauvegarde renforcé */}
-          <div className="bg-green-900/20 border border-green-600/30 rounded-lg p-4">
-            <h4 className="text-green-400 font-semibold mb-2 flex items-center">
-              <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <div className="rounded-lg border border-red-900/45 bg-red-950/20 p-4">
+            <h4 className="mb-2 flex items-center font-semibold text-red-200">
+              <svg className="mr-2 h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
               </svg>
-              Sauvegarde Optimisée Activée
+              Sauvegarde optimisée activée
             </h4>
-            <div className="text-green-200 text-sm space-y-2">
-              <p><strong>Vos images haute qualité sont sauvegardées automatiquement dans :</strong></p>
+            <div className={`space-y-2 text-sm ${S.body}`}>
+              <p><strong className="text-red-100">Vos images haute qualité sont sauvegardées automatiquement dans :</strong></p>
               <ul className="ml-4 space-y-1">
-                <li>• 💾 IndexedDB (stockage illimité, qualité maximale)</li>
-                <li>• 🔄 Métadonnées dans localStorage (léger)</li>
-                <li>• ⚡ Sauvegarde automatique toutes les 10 minutes</li>
-                <li>• 🛡️ Sauvegarde avant fermeture du navigateur</li>
+                <li>• IndexedDB (stockage étendu, qualité maximale)</li>
+                <li>• Métadonnées dans localStorage (léger)</li>
+                <li>• Sauvegarde automatique toutes les 10 minutes</li>
+                <li>• Sauvegarde avant fermeture du navigateur</li>
               </ul>
-              <div className="bg-blue-900/20 border border-blue-600/30 rounded p-3 mt-3">
-                <h5 className="text-blue-400 font-semibold mb-1">🚀 QUALITÉ MAXIMALE GARANTIE :</h5>
-                <ul className="text-blue-200 text-xs space-y-1">
-                  <li>• ✅ AUCUNE compression (qualité originale 100%)</li>
-                  <li>• ✅ AUCUN redimensionnement (résolution native)</li>
-                  <li>• ✅ Support 4K+ et images très volumineuses</li>
-                  <li>• ✅ Stockage IndexedDB (pas de limite localStorage)</li>
-                  <li>• ✅ Persistance garantie après redémarrage</li>
-                  <li>• ✅ Migration automatique depuis ancien système</li>
+              <div className="mt-3 rounded border border-red-900/40 bg-black/50 p-3">
+                <h5 className="mb-1 font-semibold text-red-300">Qualité maximale</h5>
+                <ul className={`space-y-1 text-xs ${S.muted}`}>
+                  <li>• Aucune compression (qualité originale)</li>
+                  <li>• Aucun redimensionnement (résolution native)</li>
+                  <li>• Support 4K et images volumineuses</li>
+                  <li>• Stockage IndexedDB</li>
+                  <li>• Persistance après redémarrage</li>
+                  <li>• Migration automatique depuis l’ancien système</li>
                 </ul>
               </div>
-              <p className="text-xs text-green-300 mt-2">
-                <strong>Garantie :</strong> Vos images haute qualité ne peuvent pas être perdues et conservent leur qualité originale.
+              <p className={`mt-2 text-xs ${S.muted}`}>
+                <strong className="text-red-200">Garantie :</strong> vos images conservent leur qualité d’origine.
               </p>
             </div>
           </div>
         </div>
 
-        {/* Footer */}
-        <div className="flex justify-end p-6 border-t border-slate-700">
-          <Button onClick={onClose}>
+        <div className={S.modalFooter}>
+          <button type="button" onClick={onClose} className={S.btnSecondary}>
             Fermer
-          </Button>
+          </button>
         </div>
       </div>
 

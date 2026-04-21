@@ -4,6 +4,7 @@ import { useBudget } from '../../../hooks/useBudget';
 import BudgetErrorBoundary from './BudgetErrorBoundary';
 import BudgetPersonnelSyncListener from './BudgetPersonnelSyncListener';
 import SubTabWrapper from '../common/SubTabWrapper';
+import '../financeSubtabsThemeOverrides.css';
 
 /**
  * ✅ PHASE 2 - Étape 2.1 : Refactorisé pour utiliser SubTabWrapper
@@ -45,11 +46,12 @@ const BudgetSubTab = () => {
   }
 
   return (
-    <div className="budget-tab-container min-h-[calc(100vh-140px)] flex flex-col">
+    <div className="budget-tab-container finance-dark-green-scope min-h-[calc(100vh-140px)] flex flex-col space-y-4">
       <BudgetPersonnelSyncListener />
       {/* Header */}
-      <div className="bg-slate-800/50 border-b border-slate-700/50 p-4">
-        <h2 className="text-2xl font-bold text-white mb-4">{t('finance.subTabs.budget')}</h2>
+      <div className="rounded-xl border border-[#1e6b47]/60 bg-black p-4">
+        <h2 className="mb-1 text-2xl font-bold text-[#d4f5e6]">{t('finance.subTabs.budget')}</h2>
+        <p className="text-sm text-[#8fbfa3]">Modules budget : tableau de bord, catégories et calendrier prédictif.</p>
       </div>
 
       {/* ✅ PHASE 2 : Utilisation du composant générique */}

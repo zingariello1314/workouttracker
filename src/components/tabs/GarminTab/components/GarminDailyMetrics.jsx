@@ -17,7 +17,7 @@ function GarminDailyMetrics({
 }) {
   if (!dailyMetrics || Object.keys(dailyMetrics).length === 0) {
     return (
-      <div className="bg-slate-800/60 border border-slate-700 rounded-lg p-6 text-center text-slate-400">
+      <div className="rounded-xl border-2 border-[#0F4C5C]/70 bg-black p-6 text-center text-teal-100/55 shadow-md shadow-black/40">
         Aucune métrique quotidienne disponible.
       </div>
     );
@@ -188,12 +188,12 @@ function GarminDailyMetrics({
   return (
     <div className="mt-6">
       <div className="flex items-center justify-between mb-4">
-        <h3 className="text-white font-semibold">📈 Métriques quotidiennes</h3>
+        <h3 className="text-teal-100 font-semibold">📈 Métriques quotidiennes</h3>
         {dateKeys.length > 1 && (
           <select
             value={displayDate}
             onChange={(e) => setSelectedDate(e.target.value)}
-            className="bg-slate-900 border border-slate-700 rounded px-3 py-2 text-slate-200 text-sm"
+            className="bg-black border border-[#0F4C5C]/50 rounded-lg px-3 py-2 text-teal-100 text-sm focus:outline-none focus:ring-2 focus:ring-[#0F5C45]/50"
           >
             {dateKeys.map((dk) => (
               <option key={dk} value={dk}>{dk}</option>
@@ -205,26 +205,26 @@ function GarminDailyMetrics({
       {/* Tableau historique (toutes les dates) */}
       {dateKeys.length > 1 && (
         <div className="mb-6 overflow-x-auto">
-          <table className="min-w-full text-xs text-slate-300 border border-slate-700">
-            <thead className="bg-slate-800">
+          <table className="min-w-full text-xs text-teal-100/85 border border-[#0F4C5C]/50 rounded-lg overflow-hidden">
+            <thead className="bg-black border-b border-[#0F4C5C]/40">
               <tr>
-                <th className="px-2 py-2 text-left border-b border-slate-700">Date</th>
-                <th className="px-2 py-2 text-left border-b border-slate-700">Pas</th>
-                <th className="px-2 py-2 text-left border-b border-slate-700">Distance (km)</th>
-                <th className="px-2 py-2 text-left border-b border-slate-700">Calories</th>
-                <th className="px-2 py-2 text-left border-b border-slate-700">FC repos</th>
-                <th className="px-2 py-2 text-left border-b border-slate-700">FC max</th>
-                <th className="px-2 py-2 text-left border-b border-slate-700">FC moy</th>
-                <th className="px-2 py-2 text-left border-b border-slate-700">Sommeil</th>
-                <th className="px-2 py-2 text-left border-b border-slate-700">Intensité</th>
+                <th className="px-2 py-2 text-left border-b border-[#0F4C5C]/35">Date</th>
+                <th className="px-2 py-2 text-left border-b border-[#0F4C5C]/35">Pas</th>
+                <th className="px-2 py-2 text-left border-b border-[#0F4C5C]/35">Distance (km)</th>
+                <th className="px-2 py-2 text-left border-b border-[#0F4C5C]/35">Calories</th>
+                <th className="px-2 py-2 text-left border-b border-[#0F4C5C]/35">FC repos</th>
+                <th className="px-2 py-2 text-left border-b border-[#0F4C5C]/35">FC max</th>
+                <th className="px-2 py-2 text-left border-b border-[#0F4C5C]/35">FC moy</th>
+                <th className="px-2 py-2 text-left border-b border-[#0F4C5C]/35">Sommeil</th>
+                <th className="px-2 py-2 text-left border-b border-[#0F4C5C]/35">Intensité</th>
                 {hasBodyBattery && (
-                  <th className="px-2 py-2 text-left border-b border-slate-700">Body Battery</th>
+                  <th className="px-2 py-2 text-left border-b border-[#0F4C5C]/35">Body Battery</th>
                 )}
                 {hasStress && (
-                  <th className="px-2 py-2 text-left border-b border-slate-700">Stress</th>
+                  <th className="px-2 py-2 text-left border-b border-[#0F4C5C]/35">Stress</th>
                 )}
                 {hasSpO2 && (
-                  <th className="px-2 py-2 text-left border-b border-slate-700">SpO2</th>
+                  <th className="px-2 py-2 text-left border-b border-[#0F4C5C]/35">SpO2</th>
                 )}
               </tr>
             </thead>
@@ -232,24 +232,24 @@ function GarminDailyMetrics({
               {tableData.map((row) => (
                 <tr
                   key={row.date}
-                  className={`odd:bg-slate-800/40 cursor-pointer hover:bg-slate-700/40 ${row.isSelected ? 'bg-blue-900/30' : ''}`}
+                  className={`odd:bg-teal-950/15 cursor-pointer hover:bg-teal-950/25 ${row.isSelected ? 'bg-[#0F4C5C]/25' : ''}`}
                   onClick={() => setSelectedDate(row.date)}
                 >
-                  <td className="px-2 py-1 border-b border-slate-700">{row.date}</td>
-                  <td className="px-2 py-1 border-b border-slate-700">{extractNumeric(row.dm.steps)}</td>
-                  <td className="px-2 py-1 border-b border-slate-700">{formatDistance(extractNumeric(row.dm.distance))}</td>
-                  <td className="px-2 py-1 border-b border-slate-700">{extractNumeric(row.cal.total)}</td>
-                  <td className="px-2 py-1 border-b border-slate-700">{extractNumeric(row.hrRow.resting)} bpm</td>
-                  <td className="px-2 py-1 border-b border-slate-700">{extractNumeric(row.hrRow.max)} bpm</td>
-                  <td className="px-2 py-1 border-b border-slate-700">{extractNumeric(row.hrRow.avg)} bpm</td>
-                  <td className="px-2 py-1 border-b border-slate-700">
+                  <td className="px-2 py-1 border-b border-[#0F4C5C]/35">{row.date}</td>
+                  <td className="px-2 py-1 border-b border-[#0F4C5C]/35">{extractNumeric(row.dm.steps)}</td>
+                  <td className="px-2 py-1 border-b border-[#0F4C5C]/35">{formatDistance(extractNumeric(row.dm.distance))}</td>
+                  <td className="px-2 py-1 border-b border-[#0F4C5C]/35">{extractNumeric(row.cal.total)}</td>
+                  <td className="px-2 py-1 border-b border-[#0F4C5C]/35">{extractNumeric(row.hrRow.resting)} bpm</td>
+                  <td className="px-2 py-1 border-b border-[#0F4C5C]/35">{extractNumeric(row.hrRow.max)} bpm</td>
+                  <td className="px-2 py-1 border-b border-[#0F4C5C]/35">{extractNumeric(row.hrRow.avg)} bpm</td>
+                  <td className="px-2 py-1 border-b border-[#0F4C5C]/35">
                     {row.sleepStr || <MissingValue message="Données de sommeil non disponibles. Cette métrique nécessite une synchronisation avec votre montre Garmin." />}
                   </td>
-                  <td className="px-2 py-1 border-b border-slate-700">
+                  <td className="px-2 py-1 border-b border-[#0F4C5C]/35">
                     {row.intensityStr || <MissingValue message="Minutes d'intensité non disponibles. Cette métrique nécessite une synchronisation avec votre montre Garmin." />}
                   </td>
                   {hasBodyBattery && (
-                    <td className="px-2 py-1 border-b border-slate-700">
+                    <td className="px-2 py-1 border-b border-[#0F4C5C]/35">
                       {(() => {
                         const bb = row.dm.bodyBattery;
                         if (bb === undefined || bb === null) {
@@ -261,7 +261,7 @@ function GarminDailyMetrics({
                     </td>
                   )}
                   {hasStress && (
-                    <td className="px-2 py-1 border-b border-slate-700">
+                    <td className="px-2 py-1 border-b border-[#0F4C5C]/35">
                       {(() => {
                         const s = row.dm.stress;
                         if (s === undefined || s === null) {
@@ -273,7 +273,7 @@ function GarminDailyMetrics({
                     </td>
                   )}
                   {hasSpO2 && (
-                    <td className="px-2 py-1 border-b border-slate-700">
+                    <td className="px-2 py-1 border-b border-[#0F4C5C]/35">
                       {row.dm.spo2 !== undefined && row.dm.spo2 !== null 
                         ? `${extractNumeric(row.dm.spo2)}%` 
                         : <MissingValue message="SpO2 (Saturation en oxygène) non disponible. Cette métrique nécessite une synchronisation avec votre montre Garmin." />
@@ -289,19 +289,19 @@ function GarminDailyMetrics({
 
       {/* Mode Comparaison - Afficher les deux dates côte à côte */}
       {comparisonMode && compareDate && (
-        <div className="mb-6 p-4 bg-purple-900/20 border border-purple-700 rounded-lg">
-          <h5 className="text-purple-300 font-semibold mb-4">Mode Comparaison Activé</h5>
+        <div className="mb-6 p-4 rounded-xl border-2 border-[#0F4C5C]/70 bg-black shadow-md shadow-black/40">
+          <h5 className="text-teal-100 font-semibold mb-4">Mode Comparaison Activé</h5>
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             {/* Colonne 1 : Date sélectionnée */}
             <div>
-              <h6 className="text-white font-medium mb-3">📅 {displayDate}</h6>
+              <h6 className="text-teal-100 font-medium mb-3">📅 {displayDate}</h6>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                 {renderMetricsGrid(d)}
               </div>
             </div>
             {/* Colonne 2 : Date de comparaison */}
             <div>
-              <h6 className="text-white font-medium mb-3">📅 {compareDate}</h6>
+              <h6 className="text-teal-100 font-medium mb-3">📅 {compareDate}</h6>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                 {renderMetricsGrid(dailyMetrics[compareDate] || {})}
               </div>
@@ -312,41 +312,41 @@ function GarminDailyMetrics({
 
       {/* Détails de la date sélectionnée */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div className="bg-slate-800/60 border border-slate-700 rounded p-3">
-          <div className="text-slate-400 text-xs">Pas</div>
-          <div className="text-white text-lg">{extractNumericForDisplay(d.steps)}</div>
+        <div className="rounded-xl border-2 border-[#0F4C5C]/60 bg-black p-3 shadow-md shadow-black/25">
+          <div className="text-teal-100/55 text-xs">Pas</div>
+          <div className="text-teal-100 text-lg">{extractNumericForDisplay(d.steps)}</div>
         </div>
-        <div className="bg-slate-800/60 border border-slate-700 rounded p-3">
-          <div className="text-slate-400 text-xs">Distance (km)</div>
-          <div className="text-white text-lg">{formatDistance(extractNumericForDisplay(d.distance))}</div>
+        <div className="rounded-xl border-2 border-[#0F4C5C]/60 bg-black p-3 shadow-md shadow-black/25">
+          <div className="text-teal-100/55 text-xs">Distance (km)</div>
+          <div className="text-teal-100 text-lg">{formatDistance(extractNumericForDisplay(d.distance))}</div>
         </div>
-        <div className="bg-slate-800/60 border border-slate-700 rounded p-3">
-          <div className="text-slate-400 text-xs">Étages</div>
-          <div className="text-white text-lg">{extractNumericForDisplay(d.floors)}</div>
+        <div className="rounded-xl border-2 border-[#0F4C5C]/60 bg-black p-3 shadow-md shadow-black/25">
+          <div className="text-teal-100/55 text-xs">Étages</div>
+          <div className="text-teal-100 text-lg">{extractNumericForDisplay(d.floors)}</div>
         </div>
-        <div className="bg-slate-800/60 border border-slate-700 rounded p-3">
-          <div className="text-slate-400 text-xs">Calories totales</div>
-          <div className="text-white text-lg">{extractNumericForDisplay(calories.total)}</div>
-          <div className="text-slate-400 text-xs mt-1">Actives: {extractNumericForDisplay(calories.active)} • Repos: {extractNumericForDisplay(calories.resting)}</div>
+        <div className="rounded-xl border-2 border-[#0F4C5C]/60 bg-black p-3 shadow-md shadow-black/25">
+          <div className="text-teal-100/55 text-xs">Calories totales</div>
+          <div className="text-teal-100 text-lg">{extractNumericForDisplay(calories.total)}</div>
+          <div className="text-teal-100/55 text-xs mt-1">Actives: {extractNumericForDisplay(calories.active)} • Repos: {extractNumericForDisplay(calories.resting)}</div>
         </div>
-        <div className="bg-slate-800/60 border border-slate-700 rounded p-3">
-          <div className="text-slate-400 text-xs">FC repos</div>
-          <div className="text-white text-lg">{extractNumericForDisplay(hr.resting)} bpm</div>
+        <div className="rounded-xl border-2 border-[#0F4C5C]/60 bg-black p-3 shadow-md shadow-black/25">
+          <div className="text-teal-100/55 text-xs">FC repos</div>
+          <div className="text-teal-100 text-lg">{extractNumericForDisplay(hr.resting)} bpm</div>
         </div>
-        <div className="bg-slate-800/60 border border-slate-700 rounded p-3">
-          <div className="text-slate-400 text-xs">FC max</div>
-          <div className="text-white text-lg">{extractNumericForDisplay(hr.max)} bpm</div>
+        <div className="rounded-xl border-2 border-[#0F4C5C]/60 bg-black p-3 shadow-md shadow-black/25">
+          <div className="text-teal-100/55 text-xs">FC max</div>
+          <div className="text-teal-100 text-lg">{extractNumericForDisplay(hr.max)} bpm</div>
         </div>
         {(extractNumericForDisplay(hr.avg) || extractNumericForDisplay(hr.avg) === 0) && (
-          <div className="bg-slate-800/60 border border-slate-700 rounded p-3">
-            <div className="text-slate-400 text-xs">FC moyenne</div>
-            <div className="text-white text-lg">{extractNumericForDisplay(hr.avg)} bpm</div>
+          <div className="rounded-xl border-2 border-[#0F4C5C]/60 bg-black p-3 shadow-md shadow-black/25">
+            <div className="text-teal-100/55 text-xs">FC moyenne</div>
+            <div className="text-teal-100 text-lg">{extractNumericForDisplay(hr.avg)} bpm</div>
           </div>
         )}
         {d.sleep && (
-          <div className="bg-slate-800/60 border border-slate-700 rounded p-3 md:col-span-2">
-            <div className="text-slate-400 text-xs">Sommeil</div>
-            <div className="text-white text-lg">
+          <div className="rounded-xl border-2 border-[#0F4C5C]/60 bg-black p-3 md:col-span-2 shadow-md shadow-black/25">
+            <div className="text-teal-100/55 text-xs">Sommeil</div>
+            <div className="text-teal-100 text-lg">
               {d.sleep.duration ? formatSleepDuration(d.sleep.duration) : (
                 <MissingValue message="Durée de sommeil non disponible. Cette métrique nécessite une synchronisation avec votre montre Garmin." />
               )}
@@ -354,7 +354,7 @@ function GarminDailyMetrics({
             {(() => {
               const quality = extractNumericForDisplay(d.sleep.quality);
               return quality > 0 && (
-                <div className="text-slate-400 text-xs mt-1">Qualité: {quality}/100</div>
+                <div className="text-teal-100/55 text-xs mt-1">Qualité: {quality}/100</div>
               );
             })()}
             {(() => {
@@ -362,7 +362,7 @@ function GarminDailyMetrics({
               const lightSleep = extractNumericForDisplay(d.sleep.lightSleep);
               const remSleep = extractNumericForDisplay(d.sleep.remSleep);
               return (deepSleep > 0 || lightSleep > 0 || remSleep > 0) && (
-              <div className="text-slate-400 text-xs mt-1">
+              <div className="text-teal-100/55 text-xs mt-1">
                   {deepSleep > 0 && <span>Profond: {Math.floor(deepSleep)}h{Math.round((deepSleep % 1) * 60)}m</span>}
                   {lightSleep > 0 && <span className="ml-2">Léger: {Math.floor(lightSleep)}h{Math.round((lightSleep % 1) * 60)}m</span>}
                   {remSleep > 0 && <span className="ml-2">REM: {Math.floor(remSleep)}h{Math.round((remSleep % 1) * 60)}m</span>}
@@ -370,7 +370,7 @@ function GarminDailyMetrics({
               );
             })()}
             {(d.sleep.bedTime || d.sleep.wakeTime) && (
-              <div className="text-slate-400 text-xs mt-1">
+              <div className="text-teal-100/55 text-xs mt-1">
                 {d.sleep.bedTime && <span>Coucher: {d.sleep.bedTime}</span>}
                 {d.sleep.wakeTime && <span className="ml-2">Lever: {d.sleep.wakeTime}</span>}
               </div>
@@ -378,8 +378,8 @@ function GarminDailyMetrics({
           </div>
         )}
         {d.respiration && (
-          <div className="bg-slate-800/60 border border-slate-700 rounded p-3 md:col-span-2">
-            <div className="text-slate-400 text-xs mb-3 font-semibold">Respiration (resp/min)</div>
+          <div className="rounded-xl border-2 border-[#0F4C5C]/60 bg-black p-3 md:col-span-2 shadow-md shadow-black/25">
+            <div className="text-teal-100/55 text-xs mb-3 font-semibold">Respiration (resp/min)</div>
             <div className="space-y-3">
               {d.respiration.awake && (() => {
                 const awakeMin = extractNumericForDisplay(d.respiration.awake.min);
@@ -387,24 +387,24 @@ function GarminDailyMetrics({
                 const awakeAvg = extractNumericForDisplay(d.respiration.awake.avg);
                 return (awakeMin > 0 || awakeMax > 0 || awakeAvg > 0) && (
                 <div>
-                  <div className="text-slate-300 text-xs mb-2 font-medium">Éveillé</div>
+                  <div className="text-teal-100/75 text-xs mb-2 font-medium">Éveillé</div>
                   <div className="flex gap-3 flex-wrap">
                       {awakeMin > 0 && (
-                      <div className="bg-slate-900/60 border border-slate-600 rounded px-2 py-1">
-                        <span className="text-slate-400 text-xs">Min</span>
-                          <div className="text-white text-sm font-semibold">{awakeMin}</div>
+                      <div className="bg-black border border-[#0F4C5C]/45 rounded px-2 py-1">
+                        <span className="text-teal-100/55 text-xs">Min</span>
+                          <div className="text-teal-100 text-sm font-semibold">{awakeMin}</div>
                       </div>
                     )}
                       {awakeAvg > 0 && (
-                      <div className="bg-slate-900/60 border border-slate-600 rounded px-2 py-1">
-                        <span className="text-slate-400 text-xs">Moy</span>
-                          <div className="text-white text-sm font-semibold">{awakeAvg}</div>
+                      <div className="bg-black border border-[#0F4C5C]/45 rounded px-2 py-1">
+                        <span className="text-teal-100/55 text-xs">Moy</span>
+                          <div className="text-teal-100 text-sm font-semibold">{awakeAvg}</div>
                       </div>
                     )}
                       {awakeMax > 0 && (
-                      <div className="bg-slate-900/60 border border-slate-600 rounded px-2 py-1">
-                        <span className="text-slate-400 text-xs">Max</span>
-                          <div className="text-white text-sm font-semibold">{awakeMax}</div>
+                      <div className="bg-black border border-[#0F4C5C]/45 rounded px-2 py-1">
+                        <span className="text-teal-100/55 text-xs">Max</span>
+                          <div className="text-teal-100 text-sm font-semibold">{awakeMax}</div>
                       </div>
                     )}
                   </div>
@@ -417,24 +417,24 @@ function GarminDailyMetrics({
                 const sleepAvg = extractNumericForDisplay(d.respiration.sleep.avg);
                 return (sleepMin > 0 || sleepMax > 0 || sleepAvg > 0) && (
                 <div>
-                  <div className="text-slate-300 text-xs mb-2 font-medium">Sommeil</div>
+                  <div className="text-teal-100/75 text-xs mb-2 font-medium">Sommeil</div>
                   <div className="flex gap-3 flex-wrap">
                       {sleepMin > 0 && (
-                      <div className="bg-slate-900/60 border border-slate-600 rounded px-2 py-1">
-                        <span className="text-slate-400 text-xs">Min</span>
-                          <div className="text-white text-sm font-semibold">{sleepMin}</div>
+                      <div className="bg-black border border-[#0F4C5C]/45 rounded px-2 py-1">
+                        <span className="text-teal-100/55 text-xs">Min</span>
+                          <div className="text-teal-100 text-sm font-semibold">{sleepMin}</div>
                       </div>
                     )}
                       {sleepAvg > 0 && (
-                      <div className="bg-slate-900/60 border border-slate-600 rounded px-2 py-1">
-                        <span className="text-slate-400 text-xs">Moy</span>
-                          <div className="text-white text-sm font-semibold">{sleepAvg}</div>
+                      <div className="bg-black border border-[#0F4C5C]/45 rounded px-2 py-1">
+                        <span className="text-teal-100/55 text-xs">Moy</span>
+                          <div className="text-teal-100 text-sm font-semibold">{sleepAvg}</div>
                       </div>
                     )}
                       {sleepMax > 0 && (
-                      <div className="bg-slate-900/60 border border-slate-600 rounded px-2 py-1">
-                        <span className="text-slate-400 text-xs">Max</span>
-                          <div className="text-white text-sm font-semibold">{sleepMax}</div>
+                      <div className="bg-black border border-[#0F4C5C]/45 rounded px-2 py-1">
+                        <span className="text-teal-100/55 text-xs">Max</span>
+                          <div className="text-teal-100 text-sm font-semibold">{sleepMax}</div>
                       </div>
                     )}
                   </div>
@@ -449,10 +449,10 @@ function GarminDailyMetrics({
           const moderate = extractNumericForDisplay(d.intensityMinutes.moderate);
           const vigorous = extractNumericForDisplay(d.intensityMinutes.vigorous);
           return (total > 0 || moderate > 0 || vigorous > 0) ? (
-          <div className="bg-slate-800/60 border border-slate-700 rounded p-3">
-            <div className="text-slate-400 text-xs">Minutes intensives</div>
-              <div className="text-white text-lg">{total} min</div>
-            <div className="text-slate-400 text-xs mt-1">
+          <div className="rounded-xl border-2 border-[#0F4C5C]/60 bg-black p-3 shadow-md shadow-black/25">
+            <div className="text-teal-100/55 text-xs">Minutes intensives</div>
+              <div className="text-teal-100 text-lg">{total} min</div>
+            <div className="text-teal-100/55 text-xs mt-1">
                 Modérée: {moderate} • Soutenue: {vigorous} (x2)
               </div>
             </div>
@@ -469,10 +469,10 @@ function GarminDailyMetrics({
             }
           }
           return bodyBatteryValue !== null && (
-            <div className="bg-slate-800/60 border border-slate-700 rounded p-3">
-              <div className="text-slate-400 text-xs">Body Battery</div>
-              <div className="text-white text-lg">{bodyBatteryValue}/100</div>
-              <div className="mt-2 w-full bg-slate-700 rounded-full h-2">
+            <div className="rounded-xl border-2 border-[#0F4C5C]/60 bg-black p-3 shadow-md shadow-black/25">
+              <div className="text-teal-100/55 text-xs">Body Battery</div>
+              <div className="text-teal-100 text-lg">{bodyBatteryValue}/100</div>
+              <div className="mt-2 w-full bg-black rounded-full h-2 border border-[#0F4C5C]/35">
                 <div
                   className={`h-2 rounded-full ${
                     bodyBatteryValue >= 70 ? 'bg-green-500' :
@@ -496,10 +496,10 @@ function GarminDailyMetrics({
             }
           }
           return stressValue !== null && (
-            <div className="bg-slate-800/60 border border-slate-700 rounded p-3">
-              <div className="text-slate-400 text-xs">Stress</div>
-              <div className="text-white text-lg">{stressValue}</div>
-              <div className="mt-2 w-full bg-slate-700 rounded-full h-2">
+            <div className="rounded-xl border-2 border-[#0F4C5C]/60 bg-black p-3 shadow-md shadow-black/25">
+              <div className="text-teal-100/55 text-xs">Stress</div>
+              <div className="text-teal-100 text-lg">{stressValue}</div>
+              <div className="mt-2 w-full bg-black rounded-full h-2 border border-[#0F4C5C]/35">
                 <div
                   className={`h-2 rounded-full ${
                     stressValue <= 25 ? 'bg-green-500' :
@@ -513,9 +513,9 @@ function GarminDailyMetrics({
           );
         })()}
         {(d.spo2 !== undefined && d.spo2 !== null) && (
-          <div className="bg-slate-800/60 border border-slate-700 rounded p-3">
-            <div className="text-slate-400 text-xs">SpO2 (Saturation O₂)</div>
-            <div className="text-white text-lg">{d.spo2}%</div>
+          <div className="rounded-xl border-2 border-[#0F4C5C]/60 bg-black p-3 shadow-md shadow-black/25">
+            <div className="text-teal-100/55 text-xs">SpO2 (Saturation O₂)</div>
+            <div className="text-teal-100 text-lg">{d.spo2}%</div>
             <div className={`text-xs mt-1 ${
               d.spo2 >= 95 ? 'text-green-400' :
               d.spo2 >= 90 ? 'text-yellow-400' : 'text-red-400'

@@ -39,11 +39,11 @@ export function renderMetricsGrid(metrics) {
   
   return (
     <>
-      <div className="bg-slate-800/60 border border-slate-700 rounded p-3">
+      <div className="rounded-xl border-2 border-[#0F4C5C]/60 bg-black p-3 shadow-md shadow-black/25">
         <div className="text-slate-400 text-xs">Pas</div>
         <div className="text-white text-lg">{extractNumeric(metrics.steps)}</div>
       </div>
-      <div className="bg-slate-800/60 border border-slate-700 rounded p-3">
+      <div className="rounded-xl border-2 border-[#0F4C5C]/60 bg-black p-3 shadow-md shadow-black/25">
         <div className="text-slate-400 text-xs">Distance</div>
         <div className="text-white text-lg">
           {metrics.distance != null && metrics.distance !== undefined
@@ -51,12 +51,12 @@ export function renderMetricsGrid(metrics) {
             : '—'}
         </div>
       </div>
-      <div className="bg-slate-800/60 border border-slate-700 rounded p-3">
+      <div className="rounded-xl border-2 border-[#0F4C5C]/60 bg-black p-3 shadow-md shadow-black/25">
         <div className="text-slate-400 text-xs">Calories totales</div>
         <div className="text-white text-lg">{calTotal}</div>
         <div className="text-slate-400 text-xs mt-1">Actives: {calActive} • Repos: {calResting}</div>
       </div>
-      <div className="bg-slate-800/60 border border-slate-700 rounded p-3">
+      <div className="rounded-xl border-2 border-[#0F4C5C]/60 bg-black p-3 shadow-md shadow-black/25">
         <div className="text-slate-400 text-xs">FC repos</div>
         <div className="text-white text-lg">{hrResting} bpm</div>
       </div>
@@ -72,7 +72,7 @@ export function renderMetricsGrid(metrics) {
           }
         }
         return bodyBatteryValue !== null && typeof bodyBatteryValue === 'number' && bodyBatteryValue > 0 && (
-          <div className="bg-slate-800/60 border border-slate-700 rounded p-3">
+          <div className="rounded-xl border-2 border-[#0F4C5C]/60 bg-black p-3 shadow-md shadow-black/25">
             <div className="text-slate-400 text-xs">Body Battery</div>
             <div className="text-white text-lg">{bodyBatteryValue}/100</div>
           </div>
@@ -90,7 +90,7 @@ export function renderMetricsGrid(metrics) {
           }
         }
         return stressValue !== null && typeof stressValue === 'number' && (
-          <div className="bg-slate-800/60 border border-slate-700 rounded p-3">
+          <div className="rounded-xl border-2 border-[#0F4C5C]/60 bg-black p-3 shadow-md shadow-black/25">
             <div className="text-slate-400 text-xs">Stress</div>
             <div className="text-white text-lg">{stressValue}</div>
           </div>

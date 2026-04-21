@@ -20,7 +20,7 @@ const UtilitiesSection = ({
   // ✅ Optimisation : Mémoïser le fallback par défaut pour éviter recréation
   const defaultFallback = React.useMemo(() => (
     <div
-      className="rounded-lg border border-slate-700 bg-slate-800/60 flex items-center justify-center text-slate-300 text-sm"
+      className="rounded-xl border-2 border-[#0F4C5C]/60 bg-black flex items-center justify-center text-teal-100/70 text-sm shadow-md shadow-black/30"
       style={{ minHeight: '160px' }}
       role="status"
       aria-live="polite"
@@ -28,7 +28,7 @@ const UtilitiesSection = ({
     >
       <div className="flex items-center gap-3">
         <span 
-          className="h-4 w-4 border-2 border-slate-600 border-t-blue-400 rounded-full animate-spin"
+          className="h-4 w-4 border-2 border-[#0F4C5C]/50 border-t-sky-400 rounded-full animate-spin"
           aria-hidden="true"
         />
         <span>Chargement…</span>

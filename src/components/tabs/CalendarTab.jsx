@@ -67,7 +67,7 @@ const CalendarTab = () => {
     const enduranceData = currentData?.enduranceData || {};
     const sessions = enduranceData.sessions || {};
 
-    const ENDURANCE_ACTIVITY_KEYS = ['boxing', 'pushups', 'swimming', 'jumprope', 'running'];
+    const ENDURANCE_ACTIVITY_KEYS = ['boxing', 'pushups', 'gainage', 'swimming', 'jumprope', 'running'];
 
     const stats = {
       totalSessions: 0,

@@ -109,16 +109,16 @@ const PhotoCell = ({ columnIndex, rowIndex, style, data }) => {
         ref={imgRef}
         className={`relative group cursor-pointer rounded-lg overflow-hidden border-2 transition-all h-full ${
           isSelected
-            ? 'border-purple-500 ring-2 ring-purple-500/50'
-            : 'border-slate-600 hover:border-slate-500'
+            ? 'border-[#0F4C5C]/55 ring-2 ring-[#0F5C45]/50/50'
+            : 'border-[#0F4C5C]/45 hover:border-[#0F4C5C]/50'
         }`}
         onClick={() => onPhotoSelect(photo.id)}
       >
         {/* ✅ OPTIMISATION: Skeleton loader amélioré avec blur-up technique */}
         {!isInView && (
-          <div className="w-full h-full bg-slate-700 relative overflow-hidden">
+          <div className="w-full h-full bg-black border border-[#0F4C5C]/45 relative overflow-hidden">
             {/* Gradient skeleton animé pour effet shimmer */}
-            <div className="absolute inset-0 bg-gradient-to-r from-slate-700 via-slate-600 to-slate-700 animate-pulse">
+            <div className="absolute inset-0 bg-gradient-to-r from-[#0F4C5C]/50 via-teal-950/70 to-[#0F4C5C]/50 animate-pulse">
               <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent animate-shimmer" 
                    style={{
                      backgroundSize: '200% 100%',
@@ -128,8 +128,8 @@ const PhotoCell = ({ columnIndex, rowIndex, style, data }) => {
             {/* Placeholder avec icône */}
             <div className="absolute inset-0 flex items-center justify-center">
               <div className="text-center">
-                <Calendar className="w-8 h-8 mx-auto mb-2 text-slate-500 animate-pulse" />
-                <span className="text-slate-400 text-xs block">Chargement...</span>
+                <Calendar className="w-8 h-8 mx-auto mb-2 text-teal-100/45 animate-pulse" />
+                <span className="text-teal-100/55 text-xs block">Chargement...</span>
               </div>
             </div>
           </div>
@@ -137,7 +137,7 @@ const PhotoCell = ({ columnIndex, rowIndex, style, data }) => {
 
         {/* ✅ OPTIMISATION: Image avec lazy loading et progressive loading */}
         {isInView && (
-          <div className="aspect-[3/4] bg-slate-700 relative overflow-hidden">
+          <div className="aspect-[3/4] bg-black border border-[#0F4C5C]/45 relative overflow-hidden">
             {/* Image principale avec fade-in */}
             <img
               src={photo.url}
@@ -155,16 +155,16 @@ const PhotoCell = ({ columnIndex, rowIndex, style, data }) => {
             
             {/* ✅ OPTIMISATION: Skeleton amélioré avec blur pendant chargement */}
             {!isLoaded && (
-              <div className="absolute inset-0 bg-slate-700">
+              <div className="absolute inset-0 bg-black border border-[#0F4C5C]/45">
                 {/* Gradient shimmer animé */}
-                <div className="absolute inset-0 bg-gradient-to-r from-slate-700 via-slate-600/50 to-slate-700"
+                <div className="absolute inset-0 bg-gradient-to-r from-[#0F4C5C]/40 via-teal-950/60 to-[#0F4C5C]/40"
                      style={{
                        backgroundSize: '200% 100%',
                        animation: 'shimmer 1.5s infinite'
                      }} />
                 {/* Indicateur chargement */}
                 <div className="absolute inset-0 flex items-center justify-center">
-                  <div className="w-8 h-8 border-2 border-purple-500/30 border-t-purple-500 rounded-full animate-spin" />
+                  <div className="w-8 h-8 border-2 border-[#0F4C5C]/40 border-t-sky-400 rounded-full animate-spin" />
                 </div>
               </div>
             )}
@@ -176,12 +176,12 @@ const PhotoCell = ({ columnIndex, rowIndex, style, data }) => {
           <>
             <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col justify-between p-3">
               <div className="flex justify-between items-start">
-                <span className="text-xs bg-slate-800/80 px-2 py-1 rounded text-white">
+                <span className="text-xs bg-black border border-[#0F4C5C]/50/80 px-2 py-1 rounded text-teal-100">
                   {getAngleIcon(photo.angle)} {getAngleLabel(photo.angle)}
                 </span>
                 <div className="flex gap-1">
                   {photo.analysis?.analyzed && (
-                    <span className="text-xs bg-purple-600/80 px-2 py-1 rounded text-white flex items-center gap-1">
+                    <span className="text-xs bg-[#0F4C5C]/85 px-2 py-1 rounded text-teal-100 flex items-center gap-1">
                       <Sparkles className="w-3 h-3" />
                       Analysée
                     </span>
@@ -193,21 +193,21 @@ const PhotoCell = ({ columnIndex, rowIndex, style, data }) => {
                       e.stopPropagation();
                       openModal(globalIndex);
                     }}
-                    className="p-1 h-auto bg-slate-800/80 hover:bg-slate-700"
+                    className="p-1 h-auto bg-black border border-[#0F4C5C]/50/80 hover:bg-teal-950/35"
                   >
                     <Eye className="w-3 h-3" />
                   </Button>
                 </div>
               </div>
 
-              <div className="text-xs text-white">
+              <div className="text-xs text-teal-100">
                 <div className="flex items-center gap-1 mb-1">
                   <Calendar className="w-3 h-3" />
                   {formatDate(photo.date)}
                 </div>
                 {photo.weight && <div>{photo.weight} kg</div>}
                 {photo.capture?.qualityScore && (
-                  <div className="text-purple-300">
+                  <div className="text-sky-200/90">
                     Qualité: {photo.capture.qualityScore}/100
                   </div>
                 )}
@@ -216,7 +216,7 @@ const PhotoCell = ({ columnIndex, rowIndex, style, data }) => {
 
             {/* Indicateur de sélection */}
             {isSelected && (
-              <div className="absolute top-2 left-2 w-6 h-6 bg-purple-500 rounded-full flex items-center justify-center text-white text-xs font-bold z-10">
+              <div className="absolute top-2 left-2 w-6 h-6 bg-[#0F5C45]/40 rounded-full flex items-center justify-center text-teal-100 text-xs font-bold z-10">
                 {selectedPhotos.indexOf(photo.id) + 1}
               </div>
             )}

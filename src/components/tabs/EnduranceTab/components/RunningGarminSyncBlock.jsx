@@ -42,11 +42,11 @@ export default function RunningGarminSyncBlock() {
   }, [backfill, bfStart, bfEnd]);
 
   return (
-    <div className="mb-8 rounded-2xl border border-slate-600/50 bg-slate-800/40 p-4 backdrop-blur-sm">
+    <div className="mb-8 rounded-2xl border-2 border-[#0F4C5C]/70 bg-black p-4">
       <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
-        <h4 className="text-sm font-semibold text-slate-200">Synchronisation Garmin</h4>
+        <h4 className="text-sm font-semibold text-teal-100">Synchronisation Garmin</h4>
         {!dbReady && (
-          <span className="text-xs text-amber-300/90">Initialisation du stockage local…</span>
+          <span className="text-xs text-sky-300/90">Initialisation du stockage local…</span>
         )}
       </div>
 
@@ -55,36 +55,36 @@ export default function RunningGarminSyncBlock() {
           type="button"
           onClick={handleSync}
           disabled={loading || !dbReady}
-          className="inline-flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-violet-600 to-indigo-600 px-4 py-2.5 text-sm font-medium text-white shadow-lg transition hover:from-violet-500 hover:to-indigo-500 disabled:cursor-not-allowed disabled:opacity-50"
+          className="inline-flex items-center justify-center gap-2 rounded-xl border border-[#0F5C45]/85 bg-[#0F5C45]/30 px-4 py-2.5 text-sm font-medium text-white shadow-md transition hover:bg-[#0F5C45]/45 disabled:cursor-not-allowed disabled:opacity-50"
         >
           {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
           Synchroniser
         </button>
 
-        <div className="flex flex-wrap items-end gap-2 border-t border-slate-600/40 pt-3 lg:border-t-0 lg:pt-0">
-          <label className="flex flex-col gap-1 text-xs text-slate-400">
+        <div className="flex flex-wrap items-end gap-2 border-t border-[#0F4C5C]/35 pt-3 lg:border-t-0 lg:pt-0">
+          <label className="flex flex-col gap-1 text-xs text-teal-700">
             Du
             <input
               type="date"
               value={bfStart}
               onChange={(e) => setBfRange((r) => ({ ...r, start: e.target.value }))}
-              className="rounded-lg border border-slate-600 bg-slate-900/80 px-2 py-2 text-sm text-white"
+              className="rounded-lg border border-[#0F4C5C]/50 bg-black px-2 py-2 text-sm text-white focus:outline-none focus:ring-2 focus:ring-[#0F5C45]/40"
             />
           </label>
-          <label className="flex flex-col gap-1 text-xs text-slate-400">
+          <label className="flex flex-col gap-1 text-xs text-teal-700">
             Au
             <input
               type="date"
               value={bfEnd}
               onChange={(e) => setBfRange((r) => ({ ...r, end: e.target.value }))}
-              className="rounded-lg border border-slate-600 bg-slate-900/80 px-2 py-2 text-sm text-white"
+              className="rounded-lg border border-[#0F4C5C]/50 bg-black px-2 py-2 text-sm text-white focus:outline-none focus:ring-2 focus:ring-[#0F5C45]/40"
             />
           </label>
           <button
             type="button"
             onClick={handleBackfill}
             disabled={loading || !dbReady || !bfStart || !bfEnd}
-            className="inline-flex items-center justify-center gap-2 rounded-xl border border-cyan-500/40 bg-cyan-500/15 px-4 py-2.5 text-sm font-medium text-cyan-100 hover:bg-cyan-500/25 disabled:cursor-not-allowed disabled:opacity-50"
+            className="inline-flex items-center justify-center gap-2 rounded-xl border border-sky-500/45 bg-sky-500/10 px-4 py-2.5 text-sm font-medium text-sky-100 transition hover:bg-sky-500/20 disabled:cursor-not-allowed disabled:opacity-50"
           >
             {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />}
             Backfill
@@ -93,7 +93,7 @@ export default function RunningGarminSyncBlock() {
       </div>
 
       {statusLine && (
-        <p className="mt-3 text-xs text-slate-400" role="status">
+        <p className="mt-3 text-xs text-teal-700" role="status">
           {statusLine}
         </p>
       )}

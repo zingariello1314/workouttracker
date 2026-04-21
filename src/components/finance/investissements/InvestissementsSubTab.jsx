@@ -2,6 +2,7 @@ import React, { useMemo, lazy } from 'react';
 import { useInvestissements } from '../../../hooks/useInvestissements';
 import InvestissementsErrorBoundary from './InvestissementsErrorBoundary';
 import SubTabWrapper from '../common/SubTabWrapper';
+import '../financeSubtabsThemeOverrides.css';
 
 /**
  * ✅ PHASE 2 - Étape 2.1 : Refactorisé pour utiliser SubTabWrapper
@@ -44,7 +45,7 @@ const InvestissementsSubTab = () => {
   }
 
   return (
-    <div className="investissements-sub-tab-container flex flex-col h-full">
+    <div className="investissements-sub-tab-container finance-dark-green-scope flex h-full flex-col space-y-4">
       {/* ✅ PHASE 2 : Utilisation du composant générique */}
       <SubTabWrapper
         subTabs={subTabs}

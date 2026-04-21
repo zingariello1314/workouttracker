@@ -47,6 +47,13 @@ export default function SyncControls({
   const t = useTranslation();
   const { language } = useLanguage();
 
+  const panelClass =
+    'rounded-xl border-2 border-[#0F4C5C]/60 bg-black p-4 shadow-md shadow-black/40';
+  const btnPrimary =
+    'rounded-lg border-2 border-[#0F5C45]/60 bg-[#0F5C45]/30 px-4 py-2 text-sm font-medium text-white shadow-sm shadow-black/30 transition hover:bg-[#0F5C45]/45 disabled:cursor-not-allowed disabled:opacity-50';
+  const btnGhost =
+    'rounded-lg border-2 border-[#0F4C5C]/55 bg-black px-3 py-2 text-sm font-medium text-teal-100 transition hover:border-[#0F5C45]/60 hover:bg-[#0F4C5C]/15 disabled:cursor-not-allowed disabled:opacity-50';
+
   const lastForcedRange = forcedRangesHistory?.[0] || null;
   // ✅ Utiliser la locale appropriée selon la langue sélectionnée
   const locale = language === 'en' ? 'en-US' : 'fr-FR';
@@ -310,14 +317,14 @@ export default function SyncControls({
   return (
     <div className="mb-6 space-y-4">
       {/* Statut */}
-      <div className="bg-slate-800/60 border border-slate-700 rounded-lg p-4">
-        <div className="flex items-center justify-between mb-2">
-          <h3 className="text-white font-semibold">Statut</h3>
+      <div className={panelClass}>
+        <div className="mb-2 flex items-center justify-between">
+          <h3 className="font-semibold text-white">Statut</h3>
           <button
             type="button"
             onClick={fetchStatus}
             disabled={loading}
-            className="gradient-button-premium gradient-button-premium-sm rounded-lg disabled:opacity-50 disabled:cursor-not-allowed"
+            className={`${btnGhost} px-4 py-2 text-sm disabled:cursor-not-allowed disabled:opacity-50`}
           >
             Actualiser
           </button>
@@ -332,7 +339,7 @@ export default function SyncControls({
             Statut: {status?.ok ? 'Disponible' : status?.message || 'Indisponible'}
           </div>
           {status?.lastSync && (
-            <div className="text-slate-400 mt-1">
+            <div className="text-teal-700 mt-1">
               Dernière sync: {new Date(status.lastSync).toLocaleString('fr-FR')}
             </div>
           )}
@@ -353,7 +360,7 @@ export default function SyncControls({
                   type="button"
                   onClick={syncNow}
                   disabled={loading}
-                  className="gradient-button-premium gradient-button-premium-md rounded-lg disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap"
+                  className={`${btnPrimary} whitespace-nowrap disabled:cursor-not-allowed disabled:opacity-50`}
                 >
                   {loading ? 'En cours...' : 'Réessayer'}
                 </button>
@@ -370,9 +377,9 @@ export default function SyncControls({
           />
 
           {cacheMeta && (
-            <div className="mt-3 bg-slate-900/40 border border-slate-700 rounded-lg p-3 text-xs text-slate-300">
+            <div className="mt-3 rounded-lg border border-[#0F4C5C]/50 bg-black p-3 text-xs text-teal-100">
               <div className="flex flex-wrap items-center gap-2 mb-2">
-                <span className="px-2 py-0.5 rounded bg-slate-700 text-white font-semibold uppercase tracking-wide text-[10px]">
+                <span className="rounded px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-white bg-[#0F4C5C]/40">
                   {cacheMeta.source ? cacheMeta.source : 'N/A'}
                 </span>
                 {cacheMeta.degraded && (
@@ -406,7 +413,7 @@ export default function SyncControls({
                     Réinitialiser le circuit
                   </button>
                   {typeof cacheMeta.cooldownMs === 'number' && cacheMeta.cooldownMs > 0 && (
-                    <span className="text-slate-400 text-[11px]">
+                    <span className="text-teal-700 text-[11px]">
                       Nouvel essai auto dans {formatDuration(cacheMeta.cooldownMs)}
                     </span>
                   )}
@@ -416,8 +423,8 @@ export default function SyncControls({
                 <dl className="grid grid-cols-2 gap-x-3 gap-y-1">
                   {cacheMetaEntries.map(([label, value]) => (
                     <React.Fragment key={`${label}-${value}`}>
-                      <dt className="text-slate-500 uppercase tracking-wide text-[10px]">{label}</dt>
-                      <dd className="text-slate-200 text-[11px] break-words">{value}</dd>
+                      <dt className="text-teal-800 uppercase tracking-wide text-[10px]">{label}</dt>
+                      <dd className="text-teal-100 text-[11px] break-words">{value}</dd>
                     </React.Fragment>
                   ))}
                 </dl>
@@ -425,12 +432,12 @@ export default function SyncControls({
               {cacheStats && (
                 <div className="mt-3 space-y-2">
                   <div>
-                    <div className="uppercase tracking-wide text-slate-500 text-[10px] mb-1">Compteurs cache (session)</div>
+                    <div className="uppercase tracking-wide text-teal-800 text-[10px] mb-1">Compteurs cache (session)</div>
                     <div className="flex flex-wrap gap-2">
                       {Object.entries(cacheStats.hits || {}).map(([source, value]) => (
                         <span
                           key={source}
-                          className="px-2 py-0.5 rounded bg-slate-800/60 border border-slate-700 text-slate-200 text-[10px] font-mono"
+                          className="px-2 py-0.5 rounded border border-[#0F4C5C]/50 bg-black text-teal-100 text-[10px] font-mono"
                         >
                           {source}:{value}
                         </span>
@@ -439,19 +446,19 @@ export default function SyncControls({
                   </div>
                   {latestCacheEvents.length > 0 && (
                     <div>
-                      <div className="uppercase tracking-wide text-slate-500 text-[10px] mb-1">Derniers hits</div>
+                      <div className="uppercase tracking-wide text-teal-800 text-[10px] mb-1">Derniers hits</div>
                       <ul className="space-y-1">
                         {latestCacheEvents.map((event, index) => (
                           <li
                             key={`${event.timestamp}-${event.source}-${index}`}
-                            className="bg-slate-800/40 border border-slate-700 rounded px-2 py-1 text-slate-300 text-[11px]"
+                            className="border border-[#0F4C5C]/40 bg-black/80 rounded px-2 py-1 text-teal-200 text-[11px]"
                           >
                             <div className="flex justify-between">
-                              <span className="uppercase tracking-wide text-slate-500">{event.source}</span>
-                              <span className="text-slate-500 font-mono">{formatTimestamp(event.timestamp)}</span>
+                              <span className="uppercase tracking-wide text-teal-800">{event.source}</span>
+                              <span className="text-teal-800 font-mono">{formatTimestamp(event.timestamp)}</span>
                             </div>
                             {(event.startDate || event.endDate) && (
-                              <div className="text-slate-400">
+                              <div className="text-teal-700">
                                 {event.startDate || '—'} → {event.endDate || '—'}
                               </div>
                             )}
@@ -468,7 +475,7 @@ export default function SyncControls({
       </div>
 
       {/* Synchronisation */}
-      <div className="bg-slate-800/60 border border-slate-700 rounded-lg p-4">
+      <div className={panelClass}>
         <h3 className="text-white font-semibold mb-3">Synchronisation</h3>
         <div className="flex gap-2">
           <button
@@ -478,7 +485,7 @@ export default function SyncControls({
             aria-label={ARIA_LABELS.SYNC_BUTTON}
             aria-busy={loading}
             aria-disabled={loading}
-            className="gradient-button-premium gradient-button-premium-md rounded-lg disabled:opacity-50 disabled:cursor-not-allowed"
+            className={`${btnPrimary} disabled:cursor-not-allowed disabled:opacity-50`}
           >
             {loading ? 'Synchronisation...' : 'Synchroniser'}
           </button>
@@ -488,15 +495,15 @@ export default function SyncControls({
             lastForcedRange={lastForcedRange}
           />
         </div>
-        <p className="text-slate-400 text-xs mt-2">
-          <span className="text-blue-400">Synchroniser</span> : Utilise le cache si disponible (plus rapide).
+        <p className="mt-2 text-xs text-teal-700">
+          <span className="text-sky-300">Synchroniser</span> : Utilise le cache si disponible (plus rapide).
           <br />
-          <span className="text-orange-400">Forcer</span> : Bypass tous les caches pour récupérer les données les plus récentes.
+          <span className="text-teal-200">Forcer</span> : Bypass tous les caches pour récupérer les données les plus récentes.
         </p>
       </div>
 
       {/* Historique des forçages */}
-      <div className="bg-slate-800/60 border border-slate-700 rounded-lg p-4">
+      <div className={panelClass}>
         <div className="flex items-center justify-between mb-3">
           <h3 className="text-white font-semibold">Historique des forçages</h3>
           <div className="flex items-center gap-2 text-xs">
@@ -505,10 +512,10 @@ export default function SyncControls({
                 type="button"
                 onClick={onRefreshForcedHistory}
                 disabled={loading}
-                className={`px-3 py-1 rounded ${
+                className={`rounded px-3 py-1 ${
                   loading
-                    ? 'bg-slate-700 text-slate-500 cursor-not-allowed'
-                    : 'bg-slate-700 hover:bg-slate-600 text-slate-200'
+                    ? 'cursor-not-allowed border border-[#0F4C5C]/30 bg-black text-teal-800'
+                    : `${btnGhost} py-1`
                 }`}
               >
                 Rafraîchir
@@ -518,19 +525,19 @@ export default function SyncControls({
               type="button"
               onClick={handleExportHistory}
               disabled={loading}
-              className={`px-3 py-1 rounded ${
+              className={`rounded px-3 py-1 ${
                 loading
-                  ? 'bg-slate-700 text-slate-500 cursor-not-allowed'
-                  : 'bg-emerald-700 hover:bg-emerald-600 text-white'
+                  ? 'cursor-not-allowed border border-[#0F4C5C]/30 bg-black text-teal-800'
+                  : 'border-2 border-[#0F5C45]/50 bg-[#0F5C45]/25 text-white hover:bg-[#0F5C45]/40'
               }`}
             >
               Export JSON
             </button>
             <label
-              className={`px-3 py-1 rounded cursor-pointer ${
+              className={`cursor-pointer rounded px-3 py-1 ${
                 loading
-                  ? 'bg-slate-700 text-slate-500 cursor-not-allowed'
-                  : 'bg-indigo-700 hover:bg-indigo-600 text-white'
+                  ? 'cursor-not-allowed border border-[#0F4C5C]/30 bg-black text-teal-800'
+                  : `${btnPrimary} py-1`
               }`}
             >
               Import JSON
@@ -547,10 +554,10 @@ export default function SyncControls({
                 type="button"
                 onClick={onClearForcedHistory}
                 disabled={loading}
-                className={`px-3 py-1 rounded ${
+                className={`rounded px-3 py-1 ${
                   loading
-                    ? 'bg-slate-700 text-slate-500 cursor-not-allowed'
-                    : 'bg-red-700 hover:bg-red-600 text-white'
+                    ? 'cursor-not-allowed border border-[#0F4C5C]/30 bg-black text-teal-800'
+                    : 'border-2 border-red-600/60 bg-red-900/30 text-red-100 hover:bg-red-900/50'
                 }`}
               >
                 Vider
@@ -560,28 +567,28 @@ export default function SyncControls({
         </div>
 
         {forcedRangesHistory.length === 0 ? (
-          <p className="text-sm text-slate-400">
+          <p className="text-sm text-teal-700">
             Aucun forçage enregistré pour le moment. Utilise le menu « Forcer » pour recalculer une plage de dates.
           </p>
         ) : (
           <div className="space-y-3">
-            <div className="text-sm text-slate-200 space-y-1">
+            <div className="text-sm text-teal-100 space-y-1">
               <div>
-                <span className="text-slate-400">Dernier forçage&nbsp;:</span>{' '}
+                <span className="text-teal-700">Dernier forçage&nbsp;:</span>{' '}
                 <span className="font-medium">{formatTimestamp(lastForcedRange.triggeredAt)}</span>
               </div>
               <div className="flex flex-wrap items-center gap-2 text-xs">
-                <span className="uppercase tracking-wide text-orange-300 bg-orange-900/40 border border-orange-700/40 px-2 py-0.5 rounded">
+                <span className="rounded border border-[#0F5C45]/40 bg-[#0F4C5C]/25 px-2 py-0.5 text-xs uppercase tracking-wide text-sky-200">
                   {lastForcedRange.mode || 'personnalisé'}
                 </span>
-                <span className="text-slate-300">{formatRangeLabel(lastForcedRange)}</span>
+                <span className="text-teal-200">{formatRangeLabel(lastForcedRange)}</span>
                 {lastRangeDescriptor?.spanDays && (
-                  <span className="text-slate-500">
+                  <span className="text-teal-800">
                     {lastRangeDescriptor.spanDays} jour{lastRangeDescriptor.spanDays > 1 ? 's' : ''}
                   </span>
                 )}
                 {lastForcedRange.cachePurge?.removedFiles > 0 && (
-                  <span className="text-orange-400">
+                  <span className="text-amber-300">
                     Cache serveur purgé ({lastForcedRange.cachePurge.removedFiles})
                   </span>
                 )}
@@ -591,29 +598,29 @@ export default function SyncControls({
             <button
               type="button"
               onClick={() => setShowHistory((prev) => !prev)}
-              className="text-xs text-slate-300 underline underline-offset-4"
+              className="text-xs text-teal-200 underline underline-offset-4"
             >
               {showHistory ? 'Masquer' : 'Afficher'} les {Math.min(historyLimit, forcedRangesHistory.length)} dernières entrées
             </button>
 
             {showHistory && (
-              <ul className="mt-2 divide-y divide-slate-800 text-xs text-slate-300">
+              <ul className="mt-2 divide-y divide-[#0F4C5C]/30 text-xs text-teal-200">
             {forcedRangesHistory.slice(0, historyLimit).map((entry) => {
                   const key = entry.id || `${entry.triggeredAt}-${entry.mode || 'custom'}-${entry.start}`;
                   return (
                     <li key={key} className="py-2 flex flex-col md:flex-row md:items-center md:justify-between gap-1 md:gap-3">
-                      <span className="font-medium text-slate-100">{formatTimestamp(entry.triggeredAt)}</span>
-                      <span className="text-slate-400">
+                      <span className="font-medium text-white">{formatTimestamp(entry.triggeredAt)}</span>
+                      <span className="text-teal-700">
                         {entry.mode || 'personnalisé'} • {formatRangeLabel(entry)}
                       </span>
-                      <span className="text-slate-500">
+                      <span className="text-teal-800">
                         {entry.activitiesCount || 0} activité{(entry.activitiesCount || 0) > 1 ? 's' : ''} • {entry.metricsCount || 0} jour{(entry.metricsCount || 0) > 1 ? 's' : ''}
                       </span>
                     </li>
                   );
                 })}
                 {forcedRangesHistory.length > historyLimit && (
-                  <li className="py-2 text-slate-500 italic">
+                  <li className="py-2 text-teal-800 italic">
                     … {forcedRangesHistory.length - 5} entrée{forcedRangesHistory.length - 5 > 1 ? 's' : ''} supplémentaire{forcedRangesHistory.length - 5 > 1 ? 's' : ''}
                   </li>
                 )}
@@ -624,26 +631,26 @@ export default function SyncControls({
       </div>
 
       {/* Backfill */}
-      <div className="bg-slate-800/60 border border-slate-700 rounded-lg p-4">
+      <div className={panelClass}>
         <h3 className="text-white font-semibold mb-3">Backfill (Plage de dates)</h3>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-3">
           <div>
-            <label className="block text-slate-400 text-sm mb-1">Date début</label>
+            <label className="block text-teal-700 text-sm mb-1">Date début</label>
             <input
               type="date"
               value={startDate}
               onChange={(e) => setStartDate(e.target.value)}
-              className="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded text-white"
+              className="w-full px-3 py-2 rounded border border-[#0F4C5C]/55 bg-black text-white"
               disabled={loading}
             />
           </div>
           <div>
-            <label className="block text-slate-400 text-sm mb-1">Date fin</label>
+            <label className="block text-teal-700 text-sm mb-1">Date fin</label>
             <input
               type="date"
               value={endDate}
               onChange={(e) => setEndDate(e.target.value)}
-              className="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded text-white"
+              className="w-full px-3 py-2 rounded border border-[#0F4C5C]/55 bg-black text-white"
               disabled={loading}
             />
           </div>
@@ -655,7 +662,7 @@ export default function SyncControls({
           aria-label={ARIA_LABELS.BACKFILL_BUTTON}
           aria-busy={loading}
           aria-disabled={loading || !startDate || !endDate}
-          className="gradient-button-premium gradient-button-premium-md gradient-button-premium-variant rounded-lg disabled:opacity-50 disabled:cursor-not-allowed"
+          className={`${btnPrimary} disabled:cursor-not-allowed disabled:opacity-50`}
         >
           Backfill
         </button>
@@ -663,19 +670,19 @@ export default function SyncControls({
 
       {/* 🔴 NOUVEAU : Nettoyage des données mock */}
       {deleteMockActivities && (
-        <div className="bg-slate-800/60 border border-slate-700 rounded-lg p-4">
+        <div className={panelClass}>
           <h3 className="text-white font-semibold mb-3">Nettoyage des données</h3>
-          <p className="text-slate-400 text-xs mb-3">
+          <p className="text-teal-700 text-xs mb-3">
             Supprime toutes les données de test (mock) : activités ET métriques quotidiennes qui ont pu être créées lors de tests sans identifiants Garmin configurés.
             <br />
-            <span className="text-yellow-400">⚠️ Après suppression, une synchronisation sera effectuée pour récupérer vos vraies données.</span>
+            <span className="text-sky-300">⚠️ Après suppression, une synchronisation sera effectuée pour récupérer vos vraies données.</span>
           </p>
           <div className="flex gap-2">
             <button
               type="button"
               onClick={handleDeleteMocks}
               disabled={deletingMocks || loading}
-              className="gradient-button-premium gradient-button-premium-md rounded-lg disabled:opacity-50 disabled:cursor-not-allowed"
+              className={`${btnPrimary} border-red-600/50 bg-red-950/40 hover:bg-red-900/50 disabled:cursor-not-allowed disabled:opacity-50`}
             >
               {deletingMocks ? 'Suppression...' : 'Supprimer toutes les données mock'}
             </button>
@@ -686,10 +693,8 @@ export default function SyncControls({
                   showToast('✅ Cache frontend vidé. Une nouvelle synchronisation récupérera les données fraîches.', 'success', 4000);
                 }}
                 disabled={loading}
-                className={`px-4 py-2 rounded-md text-white text-sm ${
-                  loading
-                    ? 'bg-slate-600 cursor-not-allowed'
-                    : 'bg-blue-600 hover:bg-blue-700'
+                className={`rounded-md px-4 py-2 text-sm text-white ${
+                  loading ? 'cursor-not-allowed bg-black/50 text-teal-800' : `${btnPrimary}`
                 }`}
               >
                 Vider le cache
@@ -701,24 +706,24 @@ export default function SyncControls({
 
       {/* ✅ PHASE 1 : Bouton pour ouvrir le panneau de diagnostic */}
       {onOpenDebug && (
-        <div className="bg-slate-800/60 border border-slate-700 rounded-lg p-4">
+        <div className={panelClass}>
           <h3 className="text-white font-semibold mb-3 flex items-center gap-2">
-            <AlertCircle className="w-5 h-5 text-yellow-400" />
+            <AlertCircle className="h-5 w-5 text-sky-400" />
             Diagnostic
           </h3>
-          <p className="text-slate-400 text-xs mb-3">
+          <p className="text-teal-700 text-xs mb-3">
             Ouvrez le panneau de diagnostic pour comprendre le comportement de la synchronisation, 
             voir l'état du cache et analyser les timestamps.
           </p>
           <button
             onClick={onOpenDebug}
             aria-describedby={debugShortcutHintId}
-            className="px-4 py-2 bg-yellow-600 hover:bg-yellow-700 text-white rounded-md text-sm flex items-center gap-2"
+            className={`${btnPrimary} flex items-center gap-2`}
           >
             <AlertCircle className="w-4 h-4" />
             Ouvrir le panneau de diagnostic
           </button>
-          <p id={debugShortcutHintId} className="text-slate-500 text-xs mt-2">
+          <p id={debugShortcutHintId} className="text-teal-800 text-xs mt-2">
             Raccourci clavier : <kbd className="font-mono">Ctrl</kbd> +{' '}
             <kbd className="font-mono">Maj</kbd> + <kbd className="font-mono">D</kbd>
           </p>

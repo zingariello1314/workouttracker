@@ -8,10 +8,11 @@
  * @module components/tabs/SettingsTab/components/ExportImportSection
  */
 
-import React, { useRef } from 'react';
+import React from 'react';
 import { Download, Upload, FileText, BookOpen, CheckCircle, AlertTriangle, RotateCcw } from 'lucide-react';
 import Card, { CardHeader, CardTitle, CardContent } from '../../../ui/Card';
 import { useTranslation } from '../../../../utils/translations';
+import { settingsTheme as S } from '../settingsThemeClasses';
 
 /**
  * Section Export - Tous les exports
@@ -43,39 +44,39 @@ export const ExportSection = ({ data, stats, exportSettings }) => {
   const { quietQuestStats, booksStats, apprentissageStats } = stats;
 
   return (
-    <Card className="bg-slate-800/80 backdrop-blur-sm border-slate-700">
-      <CardHeader>
-        <CardTitle className="flex items-center text-white">
+    <Card variant="settings">
+      <CardHeader variant="settings">
+        <CardTitle tone="settings" className="flex items-center normal-case tracking-normal">
           <Download className="mr-2" size={20} />
           Export des données
         </CardTitle>
       </CardHeader>
       <CardContent>
         <div className="space-y-4">
-          <p className="text-gray-300 text-sm">
+          <p className={`${S.body}`}>
             Exportez toutes vos données d'entraînement au format JSON pour créer une sauvegarde complète.
           </p>
           
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {/* Colonne Sport */}
             <div className="space-y-4">
-              <h4 className="font-semibold text-white text-lg flex items-center">
+              <h4 className="flex items-center text-lg font-semibold text-red-50">
                 <span className="mr-2">🏋️</span>
                 Sport
               </h4>
-              <div className="bg-slate-700/50 rounded-lg p-4 space-y-3">
+              <div className={`${S.inset} space-y-3`}>
                 <div className="space-y-1">
-                  <h5 className="text-sm font-medium text-blue-300">🏋️ Entraînement</h5>
-                  <ul className="text-sm text-gray-300 space-y-1">
+                  <h5 className="text-sm font-medium text-rose-300">🏋️ Entraînement</h5>
+                  <ul className="space-y-1 text-sm text-red-100/80">
                     <li>• Exercices cochés : {Object.keys(data.checkedExercises || {}).length} entrées</li>
                     <li>• Répétitions : {Object.keys(data.reps || {}).length} entrées</li>
                     <li>• Étirements : {Object.keys(data.checkedStretches || {}).length} entrées</li>
                     <li>• Historique répétitions : {Object.keys(data.historyReps || {}).length} entrées</li>
                   </ul>
                 </div>
-                <div className="space-y-1 pt-2 border-t border-slate-600">
-                  <h5 className="text-sm font-medium text-green-300">📊 Suivi Corporel</h5>
-                  <ul className="text-sm text-gray-300 space-y-1">
+                <div className={`space-y-1 border-t pt-2 ${S.divide}`}>
+                  <h5 className="text-sm font-medium text-red-300">📊 Suivi Corporel</h5>
+                  <ul className="space-y-1 text-sm text-red-100/80">
                     <li>• Photos de progression : {(data.progressPhotos || []).length} photos</li>
                     <li>• Entrées de progression : {(data.progressEntries || []).length} entrées</li>
                     <li>• Rappels configurés : {(data.bodyTrackingReminders || []).length} rappels</li>
@@ -85,9 +86,9 @@ export const ExportSection = ({ data, stats, exportSettings }) => {
                     <li>• Dernière mise à jour : {data.bodyTrackingLastUpdated ? new Date(data.bodyTrackingLastUpdated).toLocaleDateString('fr-FR') : 'Jamais'}</li>
                   </ul>
                 </div>
-                <div className="space-y-1 pt-2 border-t border-slate-600">
-                  <h5 className="text-sm font-medium text-orange-300">🏃 Endurance</h5>
-                  <ul className="text-sm text-gray-300 space-y-1">
+                <div className={`space-y-1 border-t pt-2 ${S.divide}`}>
+                  <h5 className="text-sm font-medium text-rose-200">🏃 Endurance</h5>
+                  <ul className="space-y-1 text-sm text-red-100/80">
                     <li>• Sessions boxe : {(data.enduranceData?.sessions?.boxing || data.enduranceData?.boxingSessions || []).length} sessions</li>
                     <li>• Sessions pompes : {(data.enduranceData?.sessions?.pushups || data.enduranceData?.pushupSessions || []).length} sessions</li>
                     <li>• Sessions natation : {(data.enduranceData?.sessions?.swimming || data.enduranceData?.swimmingSessions || []).length} sessions</li>
@@ -96,23 +97,23 @@ export const ExportSection = ({ data, stats, exportSettings }) => {
                     <li>• Défis actifs : {(data.enduranceData?.challenges || []).length} défis</li>
                   </ul>
                 </div>
-                <div className="space-y-1 pt-2 border-t border-slate-600">
-                  <h5 className="text-sm font-medium text-purple-300">⌚ Garmin</h5>
-                  <ul className="text-sm text-gray-300 space-y-1">
+                <div className={`space-y-1 border-t pt-2 ${S.divide}`}>
+                  <h5 className="text-sm font-medium text-red-200">⌚ Garmin</h5>
+                  <ul className="space-y-1 text-sm text-red-100/80">
                     <li>• Données synchronisées Garmin</li>
                     <li>• Activités et statistiques</li>
                   </ul>
                 </div>
-                <div className="space-y-1 pt-2 border-t border-slate-600">
-                  <h5 className="text-sm font-medium text-orange-300">🍎 Nutrition</h5>
-                  <ul className="text-sm text-gray-300 space-y-1">
+                <div className={`space-y-1 border-t pt-2 ${S.divide}`}>
+                  <h5 className="text-sm font-medium text-rose-300">🍎 Nutrition</h5>
+                  <ul className="space-y-1 text-sm text-red-100/80">
                     <li>• Repas et calories</li>
                     <li>• Suivi nutritionnel complet</li>
                   </ul>
                 </div>
-                <div className="space-y-1 pt-2 border-t border-slate-600">
-                  <h5 className="text-sm font-medium text-purple-300">⚙️ Configuration</h5>
-                  <ul className="text-sm text-gray-300 space-y-1">
+                <div className={`space-y-1 border-t pt-2 ${S.divide}`}>
+                  <h5 className="text-sm font-medium text-red-300">⚙️ Configuration</h5>
+                  <ul className="space-y-1 text-sm text-red-100/80">
                     <li>• Date de début : {data.startDate ? new Date(data.startDate).toLocaleDateString('fr-FR') : 'Non définie'}</li>
                     <li>• Variante de semaine : {data.weekVariant || 'A'}</li>
                     <li>• Historique programmes : {(data.programHistory || []).length} entrées</li>
@@ -125,7 +126,7 @@ export const ExportSection = ({ data, stats, exportSettings }) => {
                   type="button"
                   onClick={exportAllData}
                   disabled={exportStatus === 'loading'}
-                  className="gradient-button-premium gradient-button-premium-md rounded-lg w-full flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                  className={`${S.btnPrimary} w-full`}
                 >
                   <Download className="w-4 h-4" />
                   {exportStatus === 'loading' ? 'Export en cours...' : 'Export Complet Sport'}
@@ -135,7 +136,7 @@ export const ExportSection = ({ data, stats, exportSettings }) => {
                   type="button"
                   onClick={exportBodyTrackingData}
                   disabled={exportStatus === 'loading'}
-                  className="gradient-button-premium gradient-button-premium-md rounded-lg w-full flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                  className={`${S.btnPrimary} w-full`}
                 >
                   <FileText className="w-4 h-4" />
                   {exportStatus === 'loading' ? 'Export en cours...' : 'Export Suivi Corporel'}
@@ -145,7 +146,7 @@ export const ExportSection = ({ data, stats, exportSettings }) => {
                   type="button"
                   onClick={handleExportGarminData}
                   disabled={garminExportStatus === 'loading'}
-                  className="gradient-button-premium gradient-button-premium-md gradient-button-premium-variant rounded-lg w-full flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                  className={`${S.btnSecondary} w-full`}
                 >
                   <Download className="w-4 h-4" />
                   {garminExportStatus === 'loading' ? 'Export en cours...' : 'Export Garmin'}
@@ -155,7 +156,7 @@ export const ExportSection = ({ data, stats, exportSettings }) => {
                   type="button"
                   onClick={handleExportNutritionData}
                   disabled={nutritionExportStatus === 'loading'}
-                  className="gradient-button-premium gradient-button-premium-md rounded-lg w-full flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                  className={`${S.btnPrimary} w-full`}
                 >
                   <Download className="w-4 h-4" />
                   {nutritionExportStatus === 'loading' ? 'Export en cours...' : 'Export Nutrition'}
@@ -167,14 +168,14 @@ export const ExportSection = ({ data, stats, exportSettings }) => {
             <div className="space-y-4">
               {/* Section Quêtes */}
               <div className="space-y-4">
-                <h4 className="font-semibold text-white text-lg flex items-center">
+                <h4 className="flex items-center text-lg font-semibold text-red-50">
                   <span className="mr-2">⚡</span>
                   Quêtes
                 </h4>
-                <div className="bg-slate-700/50 rounded-lg p-4 space-y-3">
+                <div className={`${S.inset} space-y-3`}>
                   <div className="space-y-1">
-                    <h5 className="text-sm font-medium text-emerald-300">⚡ QuietQuest</h5>
-                    <ul className="text-sm text-gray-300 space-y-1">
+                    <h5 className="text-sm font-medium text-rose-300">⚡ QuietQuest</h5>
+                    <ul className="space-y-1 text-sm text-red-100/80">
                       <li>• Quêtes : {quietQuestStats.questsCount} quête{quietQuestStats.questsCount !== 1 ? 's' : ''}</li>
                       <li>• Validations : {quietQuestStats.validationsCount} validation{quietQuestStats.validationsCount !== 1 ? 's' : ''}</li>
                       <li>• Niveau utilisateur : {quietQuestStats.userLevel}</li>
@@ -190,7 +191,7 @@ export const ExportSection = ({ data, stats, exportSettings }) => {
                     type="button"
                     onClick={handleExportQuietQuest}
                     disabled={quietQuestExportStatus === 'loading'}
-                    className="gradient-button-premium gradient-button-premium-md rounded-lg w-full flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                    className={`${S.btnPrimary} w-full`}
                   >
                     <Download className="w-4 h-4" />
                     {quietQuestExportStatus === 'loading' ? 'Export en cours...' : 'Export QuietQuest'}
@@ -199,15 +200,15 @@ export const ExportSection = ({ data, stats, exportSettings }) => {
               </div>
 
               {/* Section Livres */}
-              <div className="space-y-4 pt-4 border-t border-slate-600">
-                <h4 className="font-semibold text-white text-lg flex items-center">
+              <div className={`space-y-4 border-t pt-4 ${S.divide}`}>
+                <h4 className="flex items-center text-lg font-semibold text-red-50">
                   <BookOpen className="mr-2" size={20} />
                   Livres
                 </h4>
-                <div className="bg-slate-700/50 rounded-lg p-4 space-y-3">
+                <div className={`${S.inset} space-y-3`}>
                   <div className="space-y-1">
-                    <h5 className="text-sm font-medium text-indigo-300">📚 Bibliothèque</h5>
-                    <ul className="text-sm text-gray-300 space-y-1">
+                    <h5 className="text-sm font-medium text-red-200">📚 Bibliothèque</h5>
+                    <ul className="space-y-1 text-sm text-red-100/80">
                       <li>• Livres : {booksStats.totalBooks} livre{booksStats.totalBooks !== 1 ? 's' : ''}</li>
                       <li>• Sessions de lecture : {booksStats.totalSessions} session{booksStats.totalSessions !== 1 ? 's' : ''}</li>
                       <li>• En cours : {booksStats.inProgress} livre{booksStats.inProgress !== 1 ? 's' : ''}</li>
@@ -224,7 +225,7 @@ export const ExportSection = ({ data, stats, exportSettings }) => {
                     type="button"
                     onClick={handleExportBooksData}
                     disabled={booksExportStatus === 'loading'}
-                    className="gradient-button-premium gradient-button-premium-md gradient-button-premium-variant rounded-lg w-full flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                    className={`${S.btnSecondary} w-full`}
                   >
                     <Download className="w-4 h-4" />
                     {booksExportStatus === 'loading' ? 'Export en cours...' : 'Export Livres'}
@@ -233,15 +234,15 @@ export const ExportSection = ({ data, stats, exportSettings }) => {
               </div>
 
               {/* Section Apprentissage */}
-              <div className="space-y-4 pt-4 border-t border-slate-600">
-                <h4 className="font-semibold text-white text-lg flex items-center">
+              <div className={`space-y-4 border-t pt-4 ${S.divide}`}>
+                <h4 className="flex items-center text-lg font-semibold text-red-50">
                   <span className="mr-2">📖</span>
                   Apprentissage
                 </h4>
-                <div className="bg-slate-700/50 rounded-lg p-4 space-y-3">
+                <div className={`${S.inset} space-y-3`}>
                   <div className="space-y-1">
-                    <h5 className="text-sm font-medium text-cyan-300">📖 Apprentissage</h5>
-                    <ul className="text-sm text-gray-300 space-y-1">
+                    <h5 className="text-sm font-medium text-rose-200">📖 Apprentissage</h5>
+                    <ul className="space-y-1 text-sm text-red-100/80">
                       <li>• Matières : {apprentissageStats.subjectsCount} matière{apprentissageStats.subjectsCount !== 1 ? 's' : ''}</li>
                       <li>• Sessions : {apprentissageStats.sessionsCount} session{apprentissageStats.sessionsCount !== 1 ? 's' : ''}</li>
                       <li>• Niveau global : {apprentissageStats.globalLevel}</li>
@@ -258,7 +259,7 @@ export const ExportSection = ({ data, stats, exportSettings }) => {
                     type="button"
                     onClick={handleExportApprentissage}
                     disabled={apprentissageExportStatus === 'loading'}
-                    className="gradient-button-premium gradient-button-premium-md rounded-lg w-full flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                    className={`${S.btnPrimary} w-full`}
                   >
                     <Download className="w-4 h-4" />
                     {apprentissageExportStatus === 'loading' ? 'Export en cours...' : 'Export Apprentissage'}
@@ -391,19 +392,19 @@ export const ImportSection = ({ allDataImportSettings, importSettings, restorePr
   } = allDataImportSettings;
 
   return (
-    <Card className="bg-slate-800/80 backdrop-blur-sm border-slate-700">
-      <CardHeader>
-        <CardTitle className="flex items-center text-white">
+    <Card variant="settings">
+      <CardHeader variant="settings">
+        <CardTitle tone="settings" className="flex items-center normal-case tracking-normal">
           <Upload className="mr-2" size={20} />
           Import des données
         </CardTitle>
       </CardHeader>
       <CardContent>
         <div className="space-y-4">
-          <div className="bg-yellow-900/20 border border-yellow-600/30 rounded-lg p-4">
+          <div className="rounded-lg border border-red-600/50 bg-red-950/35 p-4">
             <div className="flex items-start">
-              <AlertTriangle className="text-yellow-400 mr-2 mt-0.5" size={16} />
-              <div className="text-sm text-yellow-200">
+              <AlertTriangle className="mr-2 mt-0.5 text-red-400" size={16} />
+              <div className="text-sm text-red-100/90">
                 <strong>Attention :</strong> L'import remplacera toutes vos données actuelles. 
                 Une sauvegarde automatique sera créée avant l'import.
               </div>
@@ -412,7 +413,7 @@ export const ImportSection = ({ allDataImportSettings, importSettings, restorePr
 
           <div className="space-y-3">
             <div>
-              <label className="block text-sm font-medium text-white mb-2">
+              <label className={`mb-2 block ${S.label}`}>
                 Importer depuis un fichier :
               </label>
               <input
@@ -420,31 +421,31 @@ export const ImportSection = ({ allDataImportSettings, importSettings, restorePr
                 type="file"
                 accept=".json"
                 onChange={handleFileImport}
-                className="block w-full text-sm text-gray-300 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-medium file:bg-blue-600 file:text-white hover:file:bg-blue-700 file:cursor-pointer cursor-pointer"
+                className="block w-full cursor-pointer text-sm text-red-100/80 file:mr-4 file:cursor-pointer file:rounded-md file:border-0 file:bg-red-900/70 file:px-4 file:py-2 file:text-sm file:font-medium file:text-red-50 hover:file:bg-red-800/80"
               />
             </div>
 
-            <div className="text-center text-gray-400">ou</div>
+            <div className={`text-center ${S.muted}`}>ou</div>
 
             <div>
-              <label className="block text-sm font-medium text-white mb-2">
+              <label className={`mb-2 block ${S.label}`}>
                 Coller les données JSON :
               </label>
               <textarea
                 value={importData}
                 onChange={(e) => setImportData(e.target.value)}
                 placeholder={t('settings.tooltips.import.placeholder')}
-                className="w-full h-32 px-3 py-2 bg-slate-700 border border-slate-600 rounded-md text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
+                className={`${S.input} h-32 resize-none`}
               />
             </div>
           </div>
 
-          <div className="flex gap-3 flex-wrap">
+          <div className="flex flex-wrap gap-3">
             <button
               type="button"
               onClick={previewImport}
               disabled={!importData.trim() || importStatus === 'loading'}
-              className="gradient-button-premium gradient-button-premium-md gradient-button-premium-variant rounded-lg flex-1 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+              className={`${S.btnSecondary} flex-1`}
               title={t('settings.tooltips.import.previewBodyTracking')}
             >
               <FileText className="w-4 h-4" />
@@ -455,7 +456,7 @@ export const ImportSection = ({ allDataImportSettings, importSettings, restorePr
               type="button"
               onClick={previewImportAllData}
               disabled={!importData.trim() || allDataImportStatus === 'loading'}
-              className="gradient-button-premium gradient-button-premium-md rounded-lg flex-1 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+              className={`${S.btnPrimary} flex-1`}
               title={t('settings.tooltips.import.previewComplete')}
             >
               <FileText className="w-4 h-4" />
@@ -466,7 +467,7 @@ export const ImportSection = ({ allDataImportSettings, importSettings, restorePr
               type="button"
               onClick={() => handleImportGarminData(importData)}
               disabled={!importData.trim() || garminImportStatus === 'loading'}
-              className="gradient-button-premium gradient-button-premium-md gradient-button-premium-variant rounded-lg flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+              className={`${S.btnSecondary} flex items-center justify-center gap-2`}
               title={t('settings.tooltips.import.importGarmin')}
             >
               <Upload className="w-4 h-4" />
@@ -477,7 +478,7 @@ export const ImportSection = ({ allDataImportSettings, importSettings, restorePr
               <button
                 type="button"
                 onClick={restorePreImportBackup}
-                className="gradient-button-premium gradient-button-premium-md rounded-lg flex items-center justify-center gap-2"
+                className={`${S.btnPrimary} flex items-center justify-center gap-2`}
               >
                 <RotateCcw className="w-4 h-4" />
                 Restaurer
@@ -500,7 +501,7 @@ export const ImportSection = ({ allDataImportSettings, importSettings, restorePr
           )}
 
           {importStatus === 'restored' && (
-            <div className="flex items-center text-blue-400 text-sm">
+            <div className="flex items-center text-sm text-rose-300">
               <CheckCircle className="mr-2" size={16} />
               {t('messages.success.restoreBackup')}
             </div>

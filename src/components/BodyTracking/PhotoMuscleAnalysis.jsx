@@ -89,8 +89,8 @@ const TABS = [
 const CustomTooltip = ({ active, payload, label }) => {
   if (active && payload && payload.length) {
     return (
-      <div className="bg-slate-800 border border-slate-700 rounded-lg p-3 shadow-xl">
-        <p className="text-white font-medium mb-2">{formatDate(new Date(label))}</p>
+      <div className="bg-black border border-[#0F4C5C]/45 rounded-lg p-3 shadow-xl">
+        <p className="text-teal-100 font-medium mb-2">{formatDate(new Date(label))}</p>
         {payload.map((entry, index) => (
           <p key={index} className="text-sm" style={{ color: entry.color }}>
             {entry.name}: <span className="font-bold">{entry.value}/100</span>
@@ -248,13 +248,13 @@ const PhotoMuscleAnalysis = () => {
 
   if (muscleData.length === 0) {
     return (
-      <Card className="bg-slate-800/50 border-slate-700">
+      <Card className="bg-black border border-[#0F4C5C]/50 border-[#0F4C5C]/35">
         <CardContent className="p-12 text-center">
-          <Activity className="w-16 h-16 mx-auto mb-4 text-slate-500" />
-          <h3 className="text-xl font-semibold text-white mb-2">
+          <Activity className="w-16 h-16 mx-auto mb-4 text-teal-100/45" />
+          <h3 className="text-xl font-semibold text-teal-100 mb-2">
             Aucune analyse disponible pour ce muscle
           </h3>
-          <p className="text-slate-400 mb-4">
+          <p className="text-teal-100/55 mb-4">
             Lancez des analyses IA sur vos photos pour voir les données de progression ici.
           </p>
         </CardContent>
@@ -271,20 +271,20 @@ const PhotoMuscleAnalysis = () => {
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            <Activity className="w-5 h-5 text-purple-400" />
+            <Activity className="w-5 h-5 text-sky-300" />
             Analyse par Muscle
           </CardTitle>
         </CardHeader>
         <CardContent>
           <div className="flex items-center gap-4">
-            <label className="text-sm font-medium text-slate-300">Muscle:</label>
+            <label className="text-sm font-medium text-teal-100/80">Muscle:</label>
             <select
               value={selectedMuscle}
               onChange={(e) => {
                 setSelectedMuscle(e.target.value);
                 setPhotoIndex(0); // Reset photo index
               }}
-              className="px-4 py-2 bg-slate-700 border border-slate-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-purple-500"
+              className="px-4 py-2 bg-black border border-[#0F4C5C]/45 rounded-lg text-teal-100 focus:outline-none focus:ring-2 focus:ring-[#0F5C45]/50"
             >
               {MUSCLE_OPTIONS.map(muscle => (
                 <option key={muscle.value} value={muscle.value}>
@@ -292,7 +292,7 @@ const PhotoMuscleAnalysis = () => {
                 </option>
               ))}
             </select>
-            <div className="ml-auto text-sm text-slate-400">
+            <div className="ml-auto text-sm text-teal-100/55">
               {muscleStats.totalAnalyses} analyse{muscleStats.totalAnalyses > 1 ? 's' : ''}
             </div>
           </div>
@@ -301,11 +301,11 @@ const PhotoMuscleAnalysis = () => {
 
       {/* Statistiques rapides */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <Card className="bg-purple-600/10 border-purple-500/30">
+        <Card className="bg-black border-2 border-[#0F4C5C]/55 shadow-sm shadow-black/15">
           <CardContent className="p-4">
-            <div className="text-sm text-slate-400 mb-1">Score Global</div>
-            <div className="text-3xl font-bold text-purple-400">{muscleStats.globalScore}/100</div>
-            <div className="text-xs text-slate-500 mt-1">
+            <div className="text-sm text-teal-100/55 mb-1">Score Global</div>
+            <div className="text-3xl font-bold text-sky-300">{muscleStats.globalScore}/100</div>
+            <div className="text-xs text-teal-100/45 mt-1">
               {muscleStats.firstDate && muscleStats.lastDate && (
                 <>
                   {formatDate(muscleStats.firstDate)} → {formatDate(muscleStats.lastDate)}
@@ -315,10 +315,10 @@ const PhotoMuscleAnalysis = () => {
           </CardContent>
         </Card>
 
-        <Card className="bg-blue-600/10 border-blue-500/30">
+        <Card className="bg-black border-2 border-[#0F4C5C]/55 shadow-sm shadow-black/20">
           <CardContent className="p-4">
-            <div className="text-sm text-slate-400 mb-1">Volume Moyen</div>
-            <div className="text-3xl font-bold text-blue-400">{muscleStats.avgVolume}/100</div>
+            <div className="text-sm text-teal-100/55 mb-1">Volume Moyen</div>
+            <div className="text-3xl font-bold text-sky-300/90">{muscleStats.avgVolume}/100</div>
             <div className="flex items-center gap-1 mt-1">
               {muscleStats.improvementVolume >= 0 ? (
                 <TrendingUp className="w-3 h-3 text-green-400" />
@@ -336,7 +336,7 @@ const PhotoMuscleAnalysis = () => {
 
         <Card className="bg-green-600/10 border-green-500/30">
           <CardContent className="p-4">
-            <div className="text-sm text-slate-400 mb-1">Définition Moyenne</div>
+            <div className="text-sm text-teal-100/55 mb-1">Définition Moyenne</div>
             <div className="text-3xl font-bold text-green-400">{muscleStats.avgDefinition}/100</div>
             <div className="flex items-center gap-1 mt-1">
               {muscleStats.improvementDefinition >= 0 ? (
@@ -355,7 +355,7 @@ const PhotoMuscleAnalysis = () => {
 
         <Card className="bg-orange-600/10 border-orange-500/30">
           <CardContent className="p-4">
-            <div className="text-sm text-slate-400 mb-1">Symétrie Moyenne</div>
+            <div className="text-sm text-teal-100/55 mb-1">Symétrie Moyenne</div>
             <div className="text-3xl font-bold text-orange-400">{muscleStats.avgSymmetry}/100</div>
             <div className="flex items-center gap-1 mt-1">
               {muscleStats.improvementSymmetry >= 0 ? (
@@ -376,7 +376,7 @@ const PhotoMuscleAnalysis = () => {
       {/* Onglets */}
       <Card>
         <CardHeader>
-          <div className="flex items-center gap-2 border-b border-slate-700">
+          <div className="flex items-center gap-2 border-b border-[#0F4C5C]/35">
             {TABS.map(tab => {
               const Icon = tab.icon;
               return (
@@ -385,8 +385,8 @@ const PhotoMuscleAnalysis = () => {
                   onClick={() => setActiveTab(tab.id)}
                   className={`flex items-center gap-2 px-4 py-3 border-b-2 transition-all ${
                     activeTab === tab.id
-                      ? 'border-purple-500 text-purple-400'
-                      : 'border-transparent text-slate-400 hover:text-slate-300'
+                      ? 'border-[#0F4C5C]/55 text-sky-300'
+                      : 'border-transparent text-teal-100/55 hover:text-teal-100/80'
                   }`}
                 >
                   <Icon className="w-4 h-4" />
@@ -403,8 +403,8 @@ const PhotoMuscleAnalysis = () => {
               {/* Comparaison photos slider */}
               {muscleData.length > 1 && (
                 <div>
-                  <h4 className="font-semibold text-white mb-4 flex items-center gap-2">
-                    <Image className="w-5 h-5 text-purple-400" />
+                  <h4 className="font-semibold text-teal-100 mb-4 flex items-center gap-2">
+                    <Image className="w-5 h-5 text-sky-300" />
                     Comparaison Photos ({photoIndex + 1}/{muscleData.length})
                   </h4>
                   <div className="relative">
@@ -416,7 +416,7 @@ const PhotoMuscleAnalysis = () => {
                             alt="Photo précédente"
                             className="w-full h-64 object-cover rounded-lg opacity-70"
                           />
-                          <div className="absolute bottom-2 left-2 bg-black/60 px-3 py-1 rounded text-white text-xs">
+                          <div className="absolute bottom-2 left-2 bg-black/60 px-3 py-1 rounded text-teal-100 text-xs">
                             {formatDate(muscleData[photoIndex - 1].date)}
                           </div>
                         </div>
@@ -425,9 +425,9 @@ const PhotoMuscleAnalysis = () => {
                         <img
                           src={currentPhoto.url}
                           alt="Photo actuelle"
-                          className="w-full h-64 object-cover rounded-lg border-2 border-purple-500"
+                          className="w-full h-64 object-cover rounded-lg border-2 border-[#0F4C5C]/55"
                         />
-                        <div className="absolute bottom-2 left-2 bg-purple-600/80 px-3 py-1 rounded text-white text-xs font-bold">
+                        <div className="absolute bottom-2 left-2 bg-[#0F4C5C]/85 px-3 py-1 rounded text-teal-100 text-xs font-bold">
                           {formatDate(currentPhoto.date)}
                         </div>
                       </div>
@@ -438,7 +438,7 @@ const PhotoMuscleAnalysis = () => {
                             alt="Photo suivante"
                             className="w-full h-64 object-cover rounded-lg opacity-70"
                           />
-                          <div className="absolute bottom-2 left-2 bg-black/60 px-3 py-1 rounded text-white text-xs">
+                          <div className="absolute bottom-2 left-2 bg-black/60 px-3 py-1 rounded text-teal-100 text-xs">
                             {formatDate(muscleData[photoIndex + 1].date)}
                           </div>
                         </div>
@@ -459,7 +459,7 @@ const PhotoMuscleAnalysis = () => {
                             key={idx}
                             onClick={() => setPhotoIndex(idx)}
                             className={`w-2 h-2 rounded-full transition-all ${
-                              idx === photoIndex ? 'bg-purple-500 w-6' : 'bg-slate-600'
+                              idx === photoIndex ? 'bg-[#0F5C45]/40 w-6' : 'bg-[#0F4C5C]/40'
                             }`}
                           />
                         ))}
@@ -479,7 +479,7 @@ const PhotoMuscleAnalysis = () => {
 
               {/* Graphique évolution 6 métriques */}
               <div>
-                <h4 className="font-semibold text-white mb-4">Évolution des 6 Métriques</h4>
+                <h4 className="font-semibold text-teal-100 mb-4">Évolution des 6 Métriques</h4>
                 {/* ✅ OPTIMISATION: Lazy rendering - Graphique rendu seulement si visible */}
                 <LazyChart height={450} placeholderText={`Chargement évolution ${selectedMuscle}...`}>
                   <InteractiveChart
@@ -579,7 +579,7 @@ const PhotoMuscleAnalysis = () => {
                 if (!metric) return null;
 
                 return (
-                  <Card key={key} className="bg-slate-700/50">
+                  <Card key={key} className="bg-black border border-[#0F4C5C]/45">
                     <CardHeader>
                       <CardTitle size="sm" style={{ color: config.color }}>
                         {config.label}
@@ -589,10 +589,10 @@ const PhotoMuscleAnalysis = () => {
                       <div className="space-y-4">
                         <div>
                           <div className="flex justify-between items-center mb-2">
-                            <span className="text-sm text-slate-400">Score actuel</span>
-                            <span className="text-2xl font-bold text-white">{metric.score || 0}/100</span>
+                            <span className="text-sm text-teal-100/55">Score actuel</span>
+                            <span className="text-2xl font-bold text-teal-100">{metric.score || 0}/100</span>
                           </div>
-                          <div className="w-full bg-slate-600 rounded-full h-3">
+                          <div className="w-full bg-[#0F4C5C]/40 rounded-full h-3">
                             <div
                               className="h-3 rounded-full transition-all"
                               style={{
@@ -604,8 +604,8 @@ const PhotoMuscleAnalysis = () => {
                         </div>
 
                         {metric.percentage !== undefined && (
-                          <div className="text-sm text-slate-400">
-                            Pourcentage surface: <span className="text-white font-medium">{metric.percentage}%</span>
+                          <div className="text-sm text-teal-100/55">
+                            Pourcentage surface: <span className="text-teal-100 font-medium">{metric.percentage}%</span>
                           </div>
                         )}
 
@@ -613,15 +613,15 @@ const PhotoMuscleAnalysis = () => {
                           <div className="grid grid-cols-3 gap-4 text-sm">
                             {Object.entries(metric.breakdown).map(([breakdownKey, value]) => (
                               <div key={breakdownKey} className="text-center">
-                                <div className="text-slate-400 capitalize">{breakdownKey}</div>
-                                <div className="text-white font-bold">{value}/100</div>
+                                <div className="text-teal-100/55 capitalize">{breakdownKey}</div>
+                                <div className="text-teal-100 font-bold">{value}/100</div>
                               </div>
                             ))}
                           </div>
                         )}
 
                         {metric.interpretation && (
-                          <div className="text-sm text-slate-300 italic">
+                          <div className="text-sm text-teal-100/80 italic">
                             {metric.interpretation}
                           </div>
                         )}

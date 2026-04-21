@@ -6,6 +6,7 @@
 import React, { useState } from 'react';
 import { Quote, AlertTriangle, CheckCircle } from 'lucide-react';
 import Card, { CardHeader, CardTitle, CardContent } from '../ui/Card';
+import { settingsTheme as S } from '../tabs/SettingsTab/settingsThemeClasses';
 import { useQuotes } from '../../hooks/useQuotes';
 import { ModeSelector } from './ModeSelector';
 import { QuoteList } from './QuoteList';
@@ -118,15 +119,15 @@ export function QuoteManager() {
 
   if (loading) {
     return (
-      <Card className="bg-slate-800/80 backdrop-blur-sm border-slate-700">
-        <CardHeader>
-          <CardTitle className="flex items-center text-white">
-            <Quote className="mr-2" size={20} />
+      <Card variant="settings">
+        <CardHeader variant="settings">
+          <CardTitle tone="settings" className="flex items-center normal-case tracking-normal">
+            <Quote className="mr-2 text-red-400" size={20} />
             Citations de la page d'accueil
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="text-center py-8 text-slate-400">
+          <div className={`py-8 text-center ${S.muted}`}>
             Chargement...
           </div>
         </CardContent>
@@ -136,15 +137,15 @@ export function QuoteManager() {
 
   if (error) {
     return (
-      <Card className="bg-slate-800/80 backdrop-blur-sm border-slate-700">
-        <CardHeader>
-          <CardTitle className="flex items-center text-white">
-            <Quote className="mr-2" size={20} />
+      <Card variant="settings">
+        <CardHeader variant="settings">
+          <CardTitle tone="settings" className="flex items-center normal-case tracking-normal">
+            <Quote className="mr-2 text-red-400" size={20} />
             Citations de la page d'accueil
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="text-center py-8">
+          <div className="py-8 text-center">
             <AlertTriangle className="mx-auto mb-4 text-red-400" size={48} />
             <p className="text-red-400">Erreur : {error}</p>
           </div>
@@ -155,17 +156,17 @@ export function QuoteManager() {
 
   return (
     <>
-      <Card className="bg-slate-800/80 backdrop-blur-sm border-slate-700">
-        <CardHeader>
-          <CardTitle className="flex items-center text-white">
-            <Quote className="mr-2" size={20} />
+      <Card variant="settings">
+        <CardHeader variant="settings">
+          <CardTitle tone="settings" className="flex items-center normal-case tracking-normal">
+            <Quote className="mr-2 text-red-400" size={20} />
             Citations de la page d'accueil
           </CardTitle>
         </CardHeader>
         <CardContent>
           <div className="space-y-6">
             {/* Description */}
-            <p className="text-gray-300 text-sm">
+            <p className={`text-sm ${S.body}`}>
               Gérez les citations affichées sur votre page d'accueil. Choisissez entre un mode aléatoire
               ou une citation fixe.
             </p>
@@ -173,10 +174,10 @@ export function QuoteManager() {
             {/* Action Status */}
             {actionStatus && (
               <div
-                className={`flex items-center gap-2 text-sm p-3 rounded-lg ${
+                className={`flex items-center gap-2 rounded-lg border p-3 text-sm ${
                   actionStatus.type === 'success'
-                    ? 'bg-green-500/10 border border-green-500/30 text-green-400'
-                    : 'bg-red-500/10 border border-red-500/30 text-red-400'
+                    ? 'border-emerald-700/40 bg-emerald-950/25 text-emerald-300'
+                    : 'border-red-700/45 bg-red-950/30 text-red-300'
                 }`}
               >
                 {actionStatus.type === 'success' ? (
@@ -211,7 +212,7 @@ export function QuoteManager() {
               <button
                 type="button"
                 onClick={() => setShowAddForm(true)}
-                className="gradient-button-premium gradient-button-premium-md rounded-lg w-full flex items-center justify-center gap-2"
+                className={`${S.btnPrimary} w-full`}
               >
                 <span>+</span>
                 <span>Ajouter une citation</span>

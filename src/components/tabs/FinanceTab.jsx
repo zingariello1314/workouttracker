@@ -4,6 +4,7 @@ import { FinanceProvider } from '../../context/FinanceContext';
 import ErrorBoundary from '../ui/ErrorBoundary';
 import { useNavigationCache } from '../../hooks/useNavigationCache';
 import { useFinancePerformance } from '../../hooks/useFinancePerformance';
+import { financeTheme as F } from '../finance/financeThemeClasses';
 
 // ✅ PHASE 2 : Lazy loading des sous-onglets Finance
 const BourseSubTab = lazy(() => import('../finance/bourse/BourseSubTab'));
@@ -19,7 +20,7 @@ const FinanceSubTabSkeleton = () => (
   <div className="flex items-center justify-center min-h-[400px]">
     <div className="text-center">
       <div className="text-4xl mb-4 animate-spin">💰</div>
-      <div className="text-slate-400 font-semibold uppercase tracking-wide">CHARGEMENT...</div>
+      <div className="font-semibold uppercase tracking-wide text-[#8fbfa3]">CHARGEMENT...</div>
     </div>
   </div>
 );
@@ -88,10 +89,10 @@ const FinanceTab = () => {
         <div className="max-w-7xl mx-auto p-4 md:p-6">
         {/* Header */}
         <div className="mb-6">
-          <h1 className="text-3xl font-bold text-white mb-2">
+          <h1 className="mb-2 text-3xl font-bold text-[#d4f5e6]">
             {t('finance.title')}
           </h1>
-          <p className="text-slate-400">
+          <p className="text-[#8fbfa3]">
             {t('finance.subtitle')}
           </p>
         </div>
@@ -107,11 +108,7 @@ const FinanceTab = () => {
                 data-tab={`finance-${tab.id}`}
                 aria-selected={activeSubTab === tab.id}
                 onClick={() => setActiveSubTab(tab.id)}
-                className={`gradient-button-premium gradient-button-premium-md rounded-lg flex items-center gap-2 ${
-                  activeSubTab === tab.id
-                    ? 'gradient-button-premium-variant'
-                    : ''
-                }`}
+                className={`${activeSubTab === tab.id ? F.btnPrimary : F.btnSecondary} flex items-center gap-2`}
               >
                 <span className="text-lg">{tab.icon}</span>
                 <span className="font-medium">{t(tab.labelKey)}</span>
@@ -121,10 +118,7 @@ const FinanceTab = () => {
         </div>
 
         {/* Contenu sous-onglet actif avec ErrorBoundary et Suspense */}
-        <div
-          className="finance-main-content bg-slate-800/50 rounded-xl p-6 border border-slate-700/50"
-          data-subtab-content={activeSubTab}
-        >
+        <div className="finance-main-content p-1" data-subtab-content={activeSubTab}>
           <ErrorBoundary
             context={{ activeSubTab, tab: 'finance' }}
             title={`Erreur dans ${t(labelKeyMap[activeSubTab] || 'finance.subTabs.bourse')}`}

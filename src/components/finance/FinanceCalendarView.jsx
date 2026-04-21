@@ -1,6 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { ChevronLeft, ChevronRight, CalendarDays, Info, X } from 'lucide-react';
-import Card, { CardContent, CardHeader, CardTitle } from '../ui/Card';
 import { useTranslation } from '../../utils/translations';
 import { useBudget } from '../../hooks/useBudget';
 import { usePlanificateur } from '../../hooks/usePlanificateur';
@@ -18,6 +17,7 @@ import {
 } from '../../utils/finance/financeCalendarIntensity';
 import { calendarHeatmapCompositeBackground } from '../../utils/calendarHeatmapTint';
 import { getDateStr } from '../../utils/dateUtils';
+import { financeTheme as F } from './financeThemeClasses';
 
 const WEEKDAY_LABELS = ['Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam', 'Dim'];
 const WEEK_DAYS_SHORT = ['L', 'M', 'M', 'J', 'V', 'S', 'D'];
@@ -52,13 +52,18 @@ function formatEur(n) {
 
 function financeCellStyle(intensity, isToday) {
   const u = intensity?.visualContext?.composite01 ?? 0;
-  const ring = isToday ? ' ring-2 ring-amber-300/95' : '';
+  const ring = isToday ? ' ring-2 ring-[#5BC49A] ring-offset-1 ring-offset-black' : '';
   if (u < 0.008) {
-    return { className: `bg-white border border-slate-400${ring}`, style: undefined };
+    return {
+      className: `border border-[#339C5A]/32 bg-black${ring}`,
+      style: undefined,
+      dayTextClass: 'text-[#9ddbb8]',
+    };
   }
   return {
-    className: `border border-slate-900/20${ring}`.trim(),
+    className: `border border-[#339C5A]/22${ring}`.trim(),
     style: { backgroundColor: calendarHeatmapCompositeBackground(Math.min(1, Math.max(0, u))) },
+    dayTextClass: 'text-slate-900',
   };
 }
 
@@ -86,7 +91,7 @@ function countFinanceActiveDays(intensityMap, year, monthIndex) {
 }
 
 /**
- * Calendrier finance : même esthétique heatmap que Sport / Livres / Quêtes (teinte relative par mois).
+ * Calendrier finance : heatmap relative + charte noir / vert (#339C5A).
  */
 const FinanceCalendarView = () => {
   const t = useTranslation();
@@ -233,22 +238,22 @@ const FinanceCalendarView = () => {
 
   return (
     <div className="space-y-6">
-      <Card className="border border-slate-600/50 bg-slate-950/90 shadow-lg">
-        <CardHeader>
-          <CardTitle className="flex flex-wrap items-center gap-2 text-white">
-            <CalendarDays className="text-violet-400 shrink-0" size={22} />
-            {t('finance.calendar.title', 'Calendrier finance')}
-          </CardTitle>
-          <p className="text-sm text-slate-400 mt-1 leading-relaxed">
-            {t(
-              'finance.calendar.subtitle',
-              'Vue annuelle type heatmap (comme Sport / Livres / Quêtes) : teinte relative par mois. Passe en vue mois pour zoomer ; clic sur un jour = détail des signaux comptés pour l’intensité.'
-            )}
-          </p>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-slate-700/60 bg-slate-900/60 px-3 py-2">
-            <div className="flex rounded-lg border border-slate-600 overflow-hidden">
+      <section className="rounded-xl border border-[#1e6b47]/55 bg-black p-4">
+        <h3 className="flex flex-wrap items-center gap-2 text-lg font-semibold text-[#d4f5e6]">
+          <CalendarDays className="shrink-0 text-[#5BC49A]" size={22} />
+          {t('finance.calendar.title', 'Calendrier finance')}
+        </h3>
+        <p className={`mt-1 text-sm leading-relaxed ${F.muted}`}>
+          {t(
+            'finance.calendar.subtitle',
+            'Vue annuelle type heatmap (comme Sport / Livres / Quêtes) : teinte relative par mois. Passe en vue mois pour zoomer ; clic sur un jour = détail des signaux comptés pour l’intensité.'
+          )}
+        </p>
+      </section>
+
+          <section className="rounded-xl border border-[#1e6b47]/55 bg-black p-3">
+            <div className="flex flex-wrap items-center justify-between gap-3">
+            <div className="flex overflow-hidden rounded-lg border border-[#339C5A]/40">
               <button
                 type="button"
                 onClick={() => {
@@ -256,10 +261,8 @@ const FinanceCalendarView = () => {
                   setViewMode('year');
                   setCursor((c) => new Date(c.getFullYear(), 0, 1));
                 }}
-                className={`px-3 py-1.5 text-xs font-semibold ${
-                  viewMode === 'year'
-                    ? 'bg-violet-600 text-white'
-                    : 'bg-slate-800 text-slate-300 hover:bg-slate-700'
+                className={`border-r border-[#339C5A]/35 px-3 py-1.5 text-xs font-semibold last:border-r-0 ${
+                  viewMode === 'year' ? F.btnSegmentActive : F.btnSegmentIdle
                 }`}
               >
                 {t('finance.calendar.viewYear', 'Année')}
@@ -271,9 +274,7 @@ const FinanceCalendarView = () => {
                   setViewMode('month');
                 }}
                 className={`px-3 py-1.5 text-xs font-semibold ${
-                  viewMode === 'month'
-                    ? 'bg-violet-600 text-white'
-                    : 'bg-slate-800 text-slate-300 hover:bg-slate-700'
+                  viewMode === 'month' ? F.btnSegmentActive : F.btnSegmentIdle
                 }`}
               >
                 {t('finance.calendar.viewMonth', 'Mois')}
@@ -283,66 +284,73 @@ const FinanceCalendarView = () => {
               <button
                 type="button"
                 onClick={goPrev}
-                className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-slate-600 bg-slate-800 text-slate-200 hover:bg-slate-700"
+                className={F.btnIcon}
                 aria-label="Période précédente"
               >
                 <ChevronLeft className="h-5 w-5" />
               </button>
-              <div className="text-center text-base font-semibold capitalize text-white min-w-[160px]">
+              <div className="min-w-[160px] text-center text-base font-semibold capitalize text-[#e8faf0]">
                 {viewMode === 'year' ? displayYear : formatMonthTitle(displayYear, monthIndex)}
               </div>
               <button
                 type="button"
                 onClick={goNext}
-                className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-slate-600 bg-slate-800 text-slate-200 hover:bg-slate-700"
+                className={F.btnIcon}
                 aria-label="Période suivante"
               >
                 <ChevronRight className="h-5 w-5" />
               </button>
             </div>
-          </div>
+            </div>
+          </section>
 
           {loading ? (
-            <div className="flex min-h-[200px] items-center justify-center text-slate-400 text-sm">
+            <div className={`flex min-h-[200px] items-center justify-center text-sm ${F.muted}`}>
               {t('finance.calendar.loading', 'Chargement des données…')}
             </div>
           ) : (
             <>
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-center">
-                <div className="rounded-lg border border-slate-700/70 bg-slate-900/70 p-3">
-                  <div className="text-[11px] uppercase tracking-wide text-slate-500">
+              <section className="rounded-xl border border-[#1e6b47]/55 bg-black p-3">
+                <div className="mb-2 text-xs font-semibold uppercase tracking-wide text-[#7ecfae]/85">
+                  Indicateurs du mois
+                </div>
+              <div className="grid grid-cols-2 gap-3 text-center md:grid-cols-4">
+                <div className={F.inset}>
+                  <div className={F.label}>
                     {t('finance.calendar.totalSpend', 'Dépenses budget')}
                   </div>
-                  <div className="text-lg font-bold text-emerald-200 tabular-nums">
+                  <div className="text-lg font-bold tabular-nums text-[#7ecfae]">
                     {formatEur(summary.budgetSpend)}
                   </div>
                 </div>
-                <div className="rounded-lg border border-slate-700/70 bg-slate-900/70 p-3">
-                  <div className="text-[11px] uppercase tracking-wide text-slate-500">
+                <div className={F.inset}>
+                  <div className={F.label}>
                     {t('finance.calendar.daysBudget', 'Jours avec dépense')}
                   </div>
-                  <div className="text-lg font-bold text-white tabular-nums">{summary.daysWithBudget}</div>
+                  <div className="text-lg font-bold tabular-nums text-[#e8faf0]">{summary.daysWithBudget}</div>
                 </div>
-                <div className="rounded-lg border border-slate-700/70 bg-slate-900/70 p-3">
-                  <div className="text-[11px] uppercase tracking-wide text-slate-500">
+                <div className={F.inset}>
+                  <div className={F.label}>
                     {t('finance.calendar.plannedDays', 'Jours planifiés')}
                   </div>
-                  <div className="text-lg font-bold text-sky-200 tabular-nums">{summary.plannedDays}</div>
+                  <div className="text-lg font-bold tabular-nums text-[#8fd4e8]">{summary.plannedDays}</div>
                 </div>
-                <div className="rounded-lg border border-slate-700/70 bg-slate-900/70 p-3">
-                  <div className="text-[11px] uppercase tracking-wide text-slate-500">
+                <div className={F.inset}>
+                  <div className={F.label}>
                     {t('finance.calendar.shoppingDone', 'Courses terminées')}
                   </div>
-                  <div className="text-lg font-bold text-teal-200 tabular-nums">{summary.shoppingDays}</div>
+                  <div className="text-lg font-bold tabular-nums text-[#6ec9a8]">{summary.shoppingDays}</div>
                 </div>
               </div>
+              </section>
 
-              <details className="rounded-lg border border-slate-700/50 bg-slate-900/40 px-3 py-2 text-xs text-slate-400">
-                <summary className="cursor-pointer font-medium text-slate-300 flex items-center gap-2 list-none">
-                  <Info className="h-3.5 w-3.5 text-slate-500" />
+              <section className="rounded-xl border border-[#1e6b47]/55 bg-black p-3">
+              <details className={`rounded-lg border border-[#1e6b47]/50 bg-black/70 px-3 py-2 text-xs ${F.muted}`}>
+                <summary className={`flex cursor-pointer list-none items-center gap-2 font-medium text-[#b8e8d0]`}>
+                  <Info className="h-3.5 w-3.5 text-[#339C5A]" />
                   {t('finance.calendar.legendTitle', 'Sources affichées par jour')}
                 </summary>
-                <ul className="mt-2 space-y-1 pl-1 list-disc list-inside">
+                <ul className="mt-2 list-inside list-disc space-y-1 pl-1">
                   <li>Budget — dépenses enregistrées</li>
                   <li>Dépenses planifiées (hors annulées)</li>
                   <li>Charges fixes mensuelles</li>
@@ -353,20 +361,25 @@ const FinanceCalendarView = () => {
                 </ul>
               </details>
 
-              <div className="mt-2 flex flex-wrap items-center gap-2 text-[10px] text-slate-500">
+              <div className={`mt-2 flex flex-wrap items-center gap-2 text-[10px] ${F.mutedXs}`}>
                 <span>Faible</span>
                 {[0, 0.2, 0.45, 0.72, 1].map((u) => (
                   <div
                     key={u}
-                    className="w-5 h-3 rounded border border-slate-600"
+                    className="h-3 w-5 rounded border border-[#339C5A]/35"
                     style={{ backgroundColor: calendarHeatmapCompositeBackground(u) }}
                   />
                 ))}
                 <span>Élevé (échelle relative dans le mois affiché)</span>
               </div>
+              </section>
 
               {viewMode === 'year' && yearMonthIntensityMaps ? (
-                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-6">
+                <section className="rounded-xl border border-[#1e6b47]/55 bg-black p-3">
+                <div className="mb-2 text-xs font-semibold uppercase tracking-wide text-[#7ecfae]/85">
+                  Vue annuelle par module mensuel
+                </div>
+                <div className="grid grid-cols-2 gap-6 sm:grid-cols-3 lg:grid-cols-4">
                   {yearMonthIntensityMaps.map((mapForMonth, mi) => {
                     const dm = buildFinanceCalendarDayMap({
                       year: displayYear,
@@ -376,17 +389,17 @@ const FinanceCalendarView = () => {
                     const sm = monthSummaryFromMap(dm, displayYear, mi);
                     const activeDays = countFinanceActiveDays(mapForMonth, displayYear, mi);
                     return (
-                      <div key={mi} className="space-y-3 min-w-0">
-                        <div className="flex items-center justify-between gap-2 min-w-0">
-                          <h4 className="text-white font-medium text-sm truncate">{MONTH_NAMES[mi]}</h4>
-                          <div className="text-[10px] text-slate-400 shrink-0">
+                      <div key={mi} className="min-w-0 space-y-3">
+                        <div className="flex min-w-0 items-center justify-between gap-2">
+                          <h4 className="truncate text-sm font-medium text-[#e8faf0]">{MONTH_NAMES[mi]}</h4>
+                          <div className={`shrink-0 text-[10px] ${F.muted}`}>
                             {activeDays} jour{activeDays > 1 ? 's' : ''} actif{activeDays > 1 ? 's' : ''}
                           </div>
                         </div>
-                        <div className="bg-slate-700/30 rounded-lg p-2">
-                          <div className="grid grid-cols-7 gap-1 mb-1">
+                        <div className="rounded-lg border border-[#1e6b47]/45 bg-black p-2">
+                          <div className="mb-1 grid grid-cols-7 gap-1">
                             {WEEK_DAYS_SHORT.map((wd, i) => (
-                              <div key={i} className="text-center text-[9px] text-slate-500 font-medium">
+                              <div key={i} className="text-center text-[9px] font-medium text-[#6a9e86]">
                                 {wd}
                               </div>
                             ))}
@@ -395,7 +408,7 @@ const FinanceCalendarView = () => {
                             {buildMonthCells(displayYear, mi).map((cell) => {
                               if (cell.type === 'pad') {
                                 return (
-                                  <div key={cell.key} className="aspect-square rounded-sm bg-transparent min-w-0" />
+                                  <div key={cell.key} className="aspect-square min-w-0 rounded-sm bg-transparent" />
                                 );
                               }
                               const inten = mapForMonth.get(cell.dateStr) || null;
@@ -406,10 +419,10 @@ const FinanceCalendarView = () => {
                                   key={cell.key}
                                   type="button"
                                   onClick={() => openDayFromYear(cell.dateStr)}
-                                  className={`aspect-square min-w-0 rounded-sm text-[10px] font-semibold flex items-center justify-center transition-transform hover:scale-105 focus:outline-none focus:ring-1 focus:ring-violet-500/60 ${st.className}`}
+                                  className={`flex aspect-square min-w-0 items-center justify-center rounded-sm text-[10px] font-semibold transition-transform hover:scale-105 focus:outline-none focus:ring-1 focus:ring-[#339C5A]/60 ${st.className}`}
                                   style={st.style}
                                 >
-                                  <span className={`tabular-nums text-black ${isToday ? 'font-bold' : ''}`}>
+                                  <span className={`tabular-nums ${st.dayTextClass} ${isToday ? 'font-bold' : ''}`}>
                                     {cell.date.getDate()}
                                   </span>
                                 </button>
@@ -418,12 +431,12 @@ const FinanceCalendarView = () => {
                           </div>
                         </div>
                         <div className="grid grid-cols-2 gap-2 text-xs">
-                          <div className="rounded-md bg-slate-900/70 border border-slate-700/80 p-2 text-center">
-                            <div className="text-white font-bold tabular-nums">{formatEur(sm.budgetSpend)}</div>
-                            <div className="text-slate-500">Budget (mois)</div>
+                          <div className="rounded-md border border-[#1e6b47]/55 bg-black/80 p-2 text-center">
+                            <div className="font-bold tabular-nums text-[#e8faf0]">{formatEur(sm.budgetSpend)}</div>
+                            <div className={F.mutedXs}>Budget (mois)</div>
                           </div>
-                          <div className="rounded-md bg-slate-900/70 border border-slate-700/80 p-2 text-center">
-                            <div className="text-white font-bold tabular-nums">
+                          <div className="rounded-md border border-[#1e6b47]/55 bg-black/80 p-2 text-center">
+                            <div className="font-bold tabular-nums text-[#e8faf0]">
                               {sm.daysWithBudget +
                                 sm.plannedDays +
                                 sm.chargeDays +
@@ -431,20 +444,24 @@ const FinanceCalendarView = () => {
                                 sm.shoppingDays +
                                 sm.acquisitionDays}
                             </div>
-                            <div className="text-slate-500">Jours avec signal</div>
+                            <div className={F.mutedXs}>Jours avec signal</div>
                           </div>
                         </div>
                       </div>
                     );
                   })}
                 </div>
+                </section>
               ) : null}
 
               {viewMode === 'month' ? (
-                <>
-                  <div className="grid grid-cols-7 gap-2 mb-2">
+                <section className="rounded-xl border border-[#1e6b47]/55 bg-black p-3">
+                  <div className="mb-2 text-xs font-semibold uppercase tracking-wide text-[#7ecfae]/85">
+                    Vue mensuelle détaillée
+                  </div>
+                  <div className="mb-2 grid grid-cols-7 gap-2">
                     {WEEKDAY_LABELS.map((w) => (
-                      <div key={w} className="text-center text-xs text-slate-500 font-medium py-1">
+                      <div key={w} className={`py-1 text-center text-xs font-medium ${F.muted}`}>
                         {w}
                       </div>
                     ))}
@@ -452,7 +469,9 @@ const FinanceCalendarView = () => {
                   <div className="grid grid-cols-7 gap-2">
                     {cells.map((cell) => {
                       if (cell.type === 'pad') {
-                        return <div key={cell.key} className="aspect-square rounded-md bg-slate-900/20" />;
+                        return (
+                          <div key={cell.key} className={`aspect-square rounded-md border border-[#0d2818]/50 bg-black/40`} />
+                        );
                       }
                       const inten = monthIntensityMap.get(cell.dateStr) || null;
                       const isToday = cell.dateStr === todayStr;
@@ -463,28 +482,24 @@ const FinanceCalendarView = () => {
                           key={cell.key}
                           type="button"
                           onClick={() => setSelectedYmd(cell.dateStr)}
-                          className={`aspect-square rounded-md text-sm font-semibold flex items-center justify-center transition-transform hover:scale-[1.03] focus:outline-none focus:ring-2 focus:ring-violet-500/60 ${st.className}`}
+                          className={`flex aspect-square items-center justify-center rounded-md text-sm font-semibold transition-transform hover:scale-[1.03] focus:outline-none focus:ring-2 focus:ring-[#339C5A]/55 ${st.className}`}
                           style={st.style}
                         >
-                          <span className={`tabular-nums text-black ${isToday ? 'font-bold' : ''}`}>
+                          <span className={`tabular-nums ${st.dayTextClass} ${isToday ? 'font-bold' : ''}`}>
                             {dayNum}
                           </span>
                         </button>
                       );
                     })}
                   </div>
-                </>
+                </section>
               ) : null}
 
               {selectedYmd && selectedAgg ? (
-                <div className="fixed inset-0 z-[90] flex items-center justify-center p-3 bg-black/70 backdrop-blur-sm">
-                  <div
-                    role="dialog"
-                    aria-modal="true"
-                    className="w-full max-w-lg max-h-[90vh] overflow-y-auto rounded-2xl border border-violet-500/40 bg-slate-950 p-5 space-y-4 shadow-2xl"
-                  >
-                    <div className="flex items-center justify-between gap-2">
-                      <h3 className="text-lg font-bold text-white">
+                <div className="fixed inset-0 z-[90] flex items-center justify-center bg-black/75 p-3 backdrop-blur-sm">
+                  <div role="dialog" aria-modal="true" className={`${F.modalPanel} space-y-4`}>
+                    <div className="flex items-center justify-between gap-2 border-b border-[#1e6b47]/50 pb-3">
+                      <h3 className={F.modalTitle}>
                         {new Date(`${selectedYmd}T12:00:00`).toLocaleDateString('fr-FR', {
                           weekday: 'long',
                           day: 'numeric',
@@ -495,17 +510,17 @@ const FinanceCalendarView = () => {
                       <button
                         type="button"
                         onClick={() => setSelectedYmd(null)}
-                        className="text-slate-400 hover:text-white p-1"
+                        className={`rounded-lg p-1 transition-colors ${F.muted} hover:bg-[#339C5A]/15 hover:text-[#e8faf0]`}
                         aria-label="Fermer"
                       >
-                        <X className="w-6 h-6" />
+                        <X className="h-6 w-6" />
                       </button>
                     </div>
-                    <p className="text-xs text-slate-500">
+                    <p className={F.mutedXs}>
                       Intensité affichée = rang relatif des scores bruts dans le mois du jour (même principe
                       que les autres calendriers).
                     </p>
-                    <ul className="text-sm text-slate-300 space-y-1">
+                    <ul className={`space-y-1 text-sm ${F.body}`}>
                       <li>
                         Dépenses budget : {selectedAgg.budgetCount} · {formatEur(selectedAgg.budgetSpend)}
                       </li>
@@ -523,8 +538,6 @@ const FinanceCalendarView = () => {
               ) : null}
             </>
           )}
-        </CardContent>
-      </Card>
     </div>
   );
 };

@@ -130,7 +130,7 @@ const InteractiveChart = ({
                 >
                   <RefreshCw className="w-4 h-4" />
                 </Button>
-                <div className="text-xs text-slate-400">
+                <div className="text-xs text-teal-100/55">
                   {brushStartIndex !== 0 || brushEndIndex !== data.length - 1 ? (
                     <>
                       Zoom: {brushStartIndex + 1}-{brushEndIndex + 1} / {data.length}

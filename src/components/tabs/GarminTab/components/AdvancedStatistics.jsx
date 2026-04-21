@@ -215,7 +215,7 @@ export default function AdvancedStatistics({ dailyMetrics, selectedDate, periodF
 
   if (!stats) {
     return (
-      <div className="bg-slate-800/60 border border-slate-700 rounded-lg p-6 text-center text-slate-400">
+      <div className="rounded-xl border-2 border-[#0F4C5C]/70 bg-black p-6 text-center text-teal-100/55 shadow-md shadow-black/40">
         Aucune donnée disponible pour calculer les statistiques.
       </div>
     );
@@ -227,10 +227,10 @@ export default function AdvancedStatistics({ dailyMetrics, selectedDate, periodF
   };
 
   const StatCard = ({ title, icon, children }) => (
-    <div className="bg-slate-900/60 border border-slate-700 rounded-lg p-4">
+    <div className="rounded-xl border-2 border-[#0F4C5C]/60 bg-black p-4 shadow-md shadow-black/30">
       <div className="flex items-center gap-2 mb-3">
         <span className="text-2xl">{icon}</span>
-        <h5 className="text-white font-semibold">{title}</h5>
+        <h5 className="text-teal-100 font-semibold">{title}</h5>
       </div>
       {children}
     </div>
@@ -266,17 +266,17 @@ export default function AdvancedStatistics({ dailyMetrics, selectedDate, periodF
     return (
       <div className="space-y-2">
         <div className="flex justify-between items-center">
-          <span className="text-slate-400 text-sm">{label}</span>
-          <span className="text-white font-medium">{avgNum.toFixed(1)}{unit}</span>
+          <span className="text-teal-100/60 text-sm">{label}</span>
+          <span className="text-teal-100 font-medium">{avgNum.toFixed(1)}{unit}</span>
         </div>
         <div className="grid grid-cols-3 gap-2 text-xs">
-          <div className="text-slate-500">
-            Min: <span className="text-slate-300">{minNum.toFixed(1)}{unit}</span>
+          <div className="text-teal-100/45">
+            Min: <span className="text-sky-300/85">{minNum.toFixed(1)}{unit}</span>
           </div>
-          <div className="text-slate-500">
-            Max: <span className="text-slate-300">{maxNum.toFixed(1)}{unit}</span>
+          <div className="text-teal-100/45">
+            Max: <span className="text-sky-300/85">{maxNum.toFixed(1)}{unit}</span>
           </div>
-          <div className="text-slate-500">
+          <div className="text-teal-100/45">
             {formatTrend(trendNum)}
           </div>
         </div>
@@ -287,25 +287,25 @@ export default function AdvancedStatistics({ dailyMetrics, selectedDate, periodF
   return (
     <div className="space-y-6" role="region" aria-label="Statistiques avancées Garmin">
       {/* En-tête */}
-      <div className="bg-slate-800/60 border border-slate-700 rounded-lg p-4">
+      <div className="rounded-xl border-2 border-[#0F4C5C]/70 bg-black p-4 shadow-md shadow-black/40">
         <div className="flex items-center justify-between">
-          <h3 className="text-white font-semibold text-lg">📊 Statistiques Avancées</h3>
-          <div className="text-slate-400 text-sm">
+          <h3 className="text-teal-100 font-semibold text-lg">📊 Statistiques Avancées</h3>
+          <div className="text-sky-300/75 text-sm">
             Période: {stats.period.start} → {stats.period.end} ({stats.period.days} jour{stats.period.days > 1 ? 's' : ''})
           </div>
         </div>
       </div>
 
       {/* Sélecteur de métrique */}
-      <div className="bg-slate-800/60 border border-slate-700 rounded-lg p-4">
-        <label htmlFor="metric-selector" className="block text-slate-300 text-sm mb-2">
+      <div className="rounded-xl border-2 border-[#0F4C5C]/70 bg-black p-4 shadow-md shadow-black/40">
+        <label htmlFor="metric-selector" className="block text-teal-100/75 text-sm mb-2">
           Filtrer par métrique
         </label>
         <select
           id="metric-selector"
           value={selectedMetric}
           onChange={(e) => setSelectedMetric(e.target.value)}
-          className="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded text-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+          className="w-full px-3 py-2 bg-black border border-[#0F4C5C]/50 rounded-lg text-teal-100 text-sm focus:outline-none focus:ring-2 focus:ring-[#0F5C45]/50"
           aria-label="Sélectionner une métrique à afficher"
         >
           <option value="all">Toutes les métriques</option>
@@ -332,7 +332,7 @@ export default function AdvancedStatistics({ dailyMetrics, selectedDate, periodF
               trend={stats.heartRate.resting.trend}
               unit=" bpm"
             />
-            <div className="mt-3 pt-3 border-t border-slate-700">
+            <div className="mt-3 pt-3 border-t border-[#0F4C5C]/35">
               <MetricRow 
                 label="Moyenne" 
                 avg={stats.heartRate.avg.avg} 
@@ -342,7 +342,7 @@ export default function AdvancedStatistics({ dailyMetrics, selectedDate, periodF
                 unit=" bpm"
               />
             </div>
-            <div className="mt-3 pt-3 border-t border-slate-700">
+            <div className="mt-3 pt-3 border-t border-[#0F4C5C]/35">
               <MetricRow 
                 label="Maximum" 
                 avg={stats.heartRate.max.avg} 
@@ -360,23 +360,23 @@ export default function AdvancedStatistics({ dailyMetrics, selectedDate, periodF
           <StatCard title="Pas" icon="👣">
             <div className="space-y-2">
               <div className="flex justify-between items-center">
-                <span className="text-slate-400 text-sm">Moyenne</span>
-                <span className="text-white font-medium">{extractNumeric(stats.steps.avg).toFixed(0)}</span>
+                <span className="text-teal-100/60 text-sm">Moyenne</span>
+                <span className="text-teal-100 font-medium">{extractNumeric(stats.steps.avg).toFixed(0)}</span>
               </div>
               <div className="grid grid-cols-2 gap-2 text-xs">
-                <div className="text-slate-500">
-                  Min: <span className="text-slate-300">{extractNumeric(stats.steps.min).toFixed(0)}</span>
+                <div className="text-teal-100/45">
+                  Min: <span className="text-sky-300/85">{extractNumeric(stats.steps.min).toFixed(0)}</span>
                 </div>
-                <div className="text-slate-500">
-                  Max: <span className="text-slate-300">{extractNumeric(stats.steps.max).toFixed(0)}</span>
+                <div className="text-teal-100/45">
+                  Max: <span className="text-sky-300/85">{extractNumeric(stats.steps.max).toFixed(0)}</span>
                 </div>
               </div>
-              <div className="mt-3 pt-3 border-t border-slate-700">
+              <div className="mt-3 pt-3 border-t border-[#0F4C5C]/35">
                 <div className="flex justify-between items-center">
-                  <span className="text-slate-400 text-sm">Total période</span>
-                  <span className="text-white font-semibold">{extractNumeric(stats.steps.total).toLocaleString()}</span>
+                  <span className="text-teal-100/60 text-sm">Total période</span>
+                  <span className="text-teal-100 font-semibold">{extractNumeric(stats.steps.total).toLocaleString()}</span>
                 </div>
-                <div className="text-xs text-slate-500 mt-1">
+                <div className="text-xs text-teal-100/45 mt-1">
                   {formatTrend(extractNumeric(stats.steps.trend))}
                 </div>
               </div>
@@ -395,10 +395,10 @@ export default function AdvancedStatistics({ dailyMetrics, selectedDate, periodF
               trend={stats.distance.trend}
               unit=" km"
             />
-            <div className="mt-3 pt-3 border-t border-slate-700">
+            <div className="mt-3 pt-3 border-t border-[#0F4C5C]/35">
               <div className="flex justify-between items-center">
-                <span className="text-slate-400 text-sm">Total période</span>
-                <span className="text-white font-semibold">{stats.distance.total.toFixed(2)} km</span>
+                <span className="text-teal-100/60 text-sm">Total période</span>
+                <span className="text-teal-100 font-semibold">{stats.distance.total.toFixed(2)} km</span>
               </div>
             </div>
           </StatCard>
@@ -415,7 +415,7 @@ export default function AdvancedStatistics({ dailyMetrics, selectedDate, periodF
               trend={stats.calories.total.trend}
               unit=" kcal"
             />
-            <div className="mt-3 pt-3 border-t border-slate-700">
+            <div className="mt-3 pt-3 border-t border-[#0F4C5C]/35">
               <MetricRow 
                 label="Active" 
                 avg={stats.calories.active.avg} 
@@ -425,10 +425,10 @@ export default function AdvancedStatistics({ dailyMetrics, selectedDate, periodF
                 unit=" kcal"
               />
             </div>
-              <div className="mt-3 pt-3 border-t border-slate-700">
+              <div className="mt-3 pt-3 border-t border-[#0F4C5C]/35">
                 <div className="flex justify-between items-center">
-                  <span className="text-slate-400 text-sm">Total période</span>
-                  <span className="text-white font-semibold">{extractNumeric(stats.calories.total.sum).toLocaleString()} kcal</span>
+                  <span className="text-teal-100/60 text-sm">Total période</span>
+                  <span className="text-teal-100 font-semibold">{extractNumeric(stats.calories.total.sum).toLocaleString()} kcal</span>
                 </div>
               </div>
           </StatCard>
@@ -473,10 +473,10 @@ export default function AdvancedStatistics({ dailyMetrics, selectedDate, periodF
               trend={stats.sleep.trend}
               unit=" h"
             />
-            <div className="mt-3 pt-3 border-t border-slate-700">
+            <div className="mt-3 pt-3 border-t border-[#0F4C5C]/35">
               <div className="flex justify-between items-center">
-                <span className="text-slate-400 text-sm">Total période</span>
-                <span className="text-white font-semibold">{stats.sleep.total.toFixed(1)} h</span>
+                <span className="text-teal-100/60 text-sm">Total période</span>
+                <span className="text-teal-100 font-semibold">{stats.sleep.total.toFixed(1)} h</span>
               </div>
             </div>
           </StatCard>

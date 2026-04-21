@@ -70,10 +70,10 @@ const LazyChart = ({
         </div>
       ) : (
         // Placeholder avec skeleton loader
-        <div className="flex items-center justify-center h-full bg-slate-700/50 rounded-lg animate-pulse">
+        <div className="flex items-center justify-center h-full bg-black border border-[#0F4C5C]/45 rounded-lg animate-pulse">
           <div className="text-center">
-            <Loader className="w-8 h-8 mx-auto mb-3 text-purple-400 animate-spin" />
-            <p className="text-slate-400 text-sm">{placeholderText}</p>
+            <Loader className="w-8 h-8 mx-auto mb-3 text-sky-300 animate-spin" />
+            <p className="text-teal-100/55 text-sm">{placeholderText}</p>
           </div>
         </div>
       )}

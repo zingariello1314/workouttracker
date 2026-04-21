@@ -1112,13 +1112,13 @@ const PhotoCaptureSession = ({
               <CardTitle className="flex items-center gap-2">
                 <Camera className="w-6 h-6 text-green-400" />
                 Nouvelle Session Photo
-                <span className="text-sm font-normal text-slate-400 ml-auto">
+                <span className="text-sm font-normal text-teal-100/55 ml-auto">
                   {sessionConfig.name}
                 </span>
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <p className="text-slate-300 mb-6">
+              <p className="text-teal-100/80 mb-6">
                 Choisissez votre mode de capture. Vous pourrez changer de mode à tout moment.
               </p>
 
@@ -1126,14 +1126,14 @@ const PhotoCaptureSession = ({
                 {/* Mode Webcam */}
                 <button
                   onClick={() => dispatch({ type: 'SET_MODE', payload: 'webcam' })}
-                  className="p-6 rounded-lg border-2 border-slate-600 hover:border-green-500 bg-slate-800/50 hover:bg-slate-800 transition-all text-left group"
+                  className="p-6 rounded-lg border-2 border-[#0F4C5C]/45 bg-black hover:border-[#0F5C45]/60 hover:bg-teal-950/20 transition-all text-left group"
                 >
                   <Camera className="w-8 h-8 text-green-400 mb-3 group-hover:scale-110 transition-transform" />
-                  <h3 className="font-semibold text-white mb-2">Mode Webcam</h3>
-                  <p className="text-sm text-slate-400 mb-3">
+                  <h3 className="font-semibold text-teal-100 mb-2">Mode Webcam</h3>
+                  <p className="text-sm text-teal-100/55 mb-3">
                     Capture directe avec guidage pose en temps réel
                   </p>
-                  <ul className="text-xs text-slate-500 space-y-1">
+                  <ul className="text-xs text-teal-100/45 space-y-1">
                     <li>✅ Guidage visuel pose</li>
                     <li>✅ Score qualité temps réel</li>
                     <li>✅ Validation automatique</li>
@@ -1143,14 +1143,14 @@ const PhotoCaptureSession = ({
                 {/* Mode Upload */}
                 <button
                   onClick={() => dispatch({ type: 'SET_MODE', payload: 'upload' })}
-                  className="p-6 rounded-lg border-2 border-slate-600 hover:border-blue-500 bg-slate-800/50 hover:bg-slate-800 transition-all text-left group"
+                  className="p-6 rounded-lg border-2 border-[#0F4C5C]/45 bg-black hover:border-[#0F5C45]/60 hover:bg-teal-950/20 transition-all text-left group"
                 >
-                  <Upload className="w-8 h-8 text-blue-400 mb-3 group-hover:scale-110 transition-transform" />
-                  <h3 className="font-semibold text-white mb-2">Mode Upload</h3>
-                  <p className="text-sm text-slate-400 mb-3">
+                  <Upload className="w-8 h-8 text-sky-300/90 mb-3 group-hover:scale-110 transition-transform" />
+                  <h3 className="font-semibold text-teal-100 mb-2">Mode Upload</h3>
+                  <p className="text-sm text-teal-100/55 mb-3">
                     Téléchargez photos existantes, détection pose automatique
                   </p>
-                  <ul className="text-xs text-slate-500 space-y-1">
+                  <ul className="text-xs text-teal-100/45 space-y-1">
                     <li>✅ Détection pose auto</li>
                     <li>✅ Assignation intelligente</li>
                     <li>✅ Plus rapide</li>
@@ -1160,14 +1160,14 @@ const PhotoCaptureSession = ({
                 {/* Mode Mixte */}
                 <button
                   onClick={() => dispatch({ type: 'SET_MODE', payload: 'mixed' })}
-                  className="p-6 rounded-lg border-2 border-slate-600 hover:border-purple-500 bg-slate-800/50 hover:bg-slate-800 transition-all text-left group"
+                  className="p-6 rounded-lg border-2 border-[#0F4C5C]/45 bg-black hover:border-[#0F5C45]/55 hover:bg-teal-950/20 transition-all text-left group"
                 >
-                  <Sparkles className="w-8 h-8 text-purple-400 mb-3 group-hover:scale-110 transition-transform" />
-                  <h3 className="font-semibold text-white mb-2">Mode Mixte</h3>
-                  <p className="text-sm text-slate-400 mb-3">
+                  <Sparkles className="w-8 h-8 text-sky-300 mb-3 group-hover:scale-110 transition-transform" />
+                  <h3 className="font-semibold text-teal-100 mb-2">Mode Mixte</h3>
+                  <p className="text-sm text-teal-100/55 mb-3">
                     Combinez upload et webcam selon vos besoins
                   </p>
-                  <ul className="text-xs text-slate-500 space-y-1">
+                  <ul className="text-xs text-teal-100/45 space-y-1">
                     <li>✅ Flexibilité maximale</li>
                     <li>✅ Upload + webcam</li>
                     <li>✅ Recommandé</li>
@@ -1179,7 +1179,7 @@ const PhotoCaptureSession = ({
                 <button
                   type="button"
                   onClick={handleClose}
-                  className="gradient-button-premium gradient-button-premium-md gradient-button-premium-variant rounded-lg"
+                  className="rounded-lg border border-[#0F5C45]/70 bg-[#0F4C5C]/40 px-3 py-2 text-teal-100 font-medium hover:bg-[#0F4C5C]/55 transition-colors shadow-md shadow-black/20 rounded-lg"
                 >
                   Annuler
                 </button>
@@ -1216,7 +1216,7 @@ const PhotoCaptureSession = ({
               <Card className="max-w-md w-full mx-4">
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
-                    <Loader className="w-5 h-5 animate-spin text-purple-400" />
+                    <Loader className="w-5 h-5 animate-spin text-sky-300" />
                     Analyse Session en Cours
                   </CardTitle>
                 </CardHeader>
@@ -1225,12 +1225,12 @@ const PhotoCaptureSession = ({
                     {/* Barre progression globale */}
                     <div>
                       <div className="flex justify-between text-sm mb-2">
-                        <span className="text-slate-300">Progression globale</span>
-                        <span className="text-purple-400 font-bold">{Math.round(sessionAnalysisProgress.progress)}%</span>
+                        <span className="text-teal-100/80">Progression globale</span>
+                        <span className="text-sky-300 font-bold">{Math.round(sessionAnalysisProgress.progress)}%</span>
                       </div>
-                      <div className="w-full bg-slate-700 rounded-full h-3">
+                      <div className="w-full bg-black border border-[#0F4C5C]/45 rounded-full h-3">
                         <div 
-                          className="bg-purple-500 h-3 rounded-full transition-all duration-300"
+                          className="bg-[#0F5C45]/40 h-3 rounded-full transition-all duration-300"
                           style={{ width: `${sessionAnalysisProgress.progress}%` }}
                         />
                       </div>
@@ -1238,25 +1238,25 @@ const PhotoCaptureSession = ({
                     
                     {/* Photo actuelle */}
                     {sessionAnalysisProgress.total > 0 && (
-                      <div className="text-center text-sm text-slate-400">
+                      <div className="text-center text-sm text-teal-100/55">
                         Photo {sessionAnalysisProgress.current}/{sessionAnalysisProgress.total}
                       </div>
                     )}
                     
                     {/* Message détaillé */}
                     {sessionAnalysisProgress.message && (
-                      <div className="text-center text-slate-300 text-sm">
+                      <div className="text-center text-teal-100/80 text-sm">
                         {sessionAnalysisProgress.message}
                       </div>
                     )}
                     
                     {/* Étapes détaillées */}
-                    <div className="space-y-2 text-xs text-slate-400">
+                    <div className="space-y-2 text-xs text-teal-100/55">
                       <div className="flex items-center gap-2">
                         {sessionAnalysisProgress.progress > 10 ? (
                           <Check className="w-4 h-4 text-green-400" />
                         ) : (
-                          <Loader className="w-4 h-4 animate-spin text-purple-400" />
+                          <Loader className="w-4 h-4 animate-spin text-sky-300" />
                         )}
                         <span>Prétraitement images</span>
                       </div>
@@ -1264,9 +1264,9 @@ const PhotoCaptureSession = ({
                         {sessionAnalysisProgress.progress > 30 ? (
                           <Check className="w-4 h-4 text-green-400" />
                         ) : sessionAnalysisProgress.progress > 10 ? (
-                          <Loader className="w-4 h-4 animate-spin text-purple-400" />
+                          <Loader className="w-4 h-4 animate-spin text-sky-300" />
                         ) : (
-                          <span className="w-4 h-4 text-slate-600">○</span>
+                          <span className="w-4 h-4 text-teal-100/40">○</span>
                         )}
                         <span>Détection poses</span>
                       </div>
@@ -1274,9 +1274,9 @@ const PhotoCaptureSession = ({
                         {sessionAnalysisProgress.progress > 60 ? (
                           <Check className="w-4 h-4 text-green-400" />
                         ) : sessionAnalysisProgress.progress > 30 ? (
-                          <Loader className="w-4 h-4 animate-spin text-purple-400" />
+                          <Loader className="w-4 h-4 animate-spin text-sky-300" />
                         ) : (
-                          <span className="w-4 h-4 text-slate-600">○</span>
+                          <span className="w-4 h-4 text-teal-100/40">○</span>
                         )}
                         <span>Segmentation corps</span>
                       </div>
@@ -1284,9 +1284,9 @@ const PhotoCaptureSession = ({
                         {sessionAnalysisProgress.progress > 90 ? (
                           <Check className="w-4 h-4 text-green-400" />
                         ) : sessionAnalysisProgress.progress > 60 ? (
-                          <Loader className="w-4 h-4 animate-spin text-purple-400" />
+                          <Loader className="w-4 h-4 animate-spin text-sky-300" />
                         ) : (
-                          <span className="w-4 h-4 text-slate-600">○</span>
+                          <span className="w-4 h-4 text-teal-100/40">○</span>
                         )}
                         <span>Extraction métriques</span>
                       </div>
@@ -1294,7 +1294,7 @@ const PhotoCaptureSession = ({
                     
                     {/* Info temps estimé */}
                     {sessionAnalysisProgress.total > 0 && sessionAnalysisProgress.current > 0 && (
-                      <div className="text-center text-xs text-slate-500">
+                      <div className="text-center text-xs text-teal-100/45">
                         Temps estimé: ~{Math.round((sessionAnalysisProgress.progress < 100 ? 
                           (100 - sessionAnalysisProgress.progress) * 0.05 : 0) * sessionAnalysisProgress.total)}s
                       </div>
@@ -1309,12 +1309,12 @@ const PhotoCaptureSession = ({
             {/* Header */}
             <div className="flex items-center justify-between mb-4">
               <div>
-                <h2 className="text-2xl font-bold text-white">
+                <h2 className="text-2xl font-bold text-teal-100">
                   Pose {safePoseIndex + 1}/{poses.length}
                 </h2>
-                <p className="text-slate-400">{currentPose?.name || `Pose ${safePoseIndex + 1}`}</p>
+                <p className="text-teal-100/55">{currentPose?.name || `Pose ${safePoseIndex + 1}`}</p>
                 {currentPose && (
-                  <p className="text-xs text-slate-500 mt-1">
+                  <p className="text-xs text-teal-100/45 mt-1">
                     ID: {currentPose.id}
                   </p>
                 )}
@@ -1322,7 +1322,7 @@ const PhotoCaptureSession = ({
               <button
                 type="button"
                 onClick={handleClose}
-                className="gradient-button-premium gradient-button-premium-md gradient-button-premium-variant rounded-lg flex items-center gap-2"
+                className="rounded-lg border border-[#0F5C45]/70 bg-[#0F4C5C]/40 px-3 py-2 text-teal-100 font-medium hover:bg-[#0F4C5C]/55 transition-colors shadow-md shadow-black/20 rounded-lg flex items-center gap-2"
               >
                 <X className="w-4 h-4" />
                 Fermer
@@ -1331,9 +1331,9 @@ const PhotoCaptureSession = ({
 
             <div className="flex-1 grid grid-cols-1 lg:grid-cols-3 gap-4">
               {/* Webcam Preview */}
-              <div className="lg:col-span-2 relative rounded-lg overflow-hidden border-2 border-slate-700 bg-black">
+              <div className="lg:col-span-2 relative rounded-lg overflow-hidden border-2 border-[#0F4C5C]/35 bg-black">
                 {!webcamReady && (
-                  <div className="absolute inset-0 z-10 flex items-center justify-center bg-slate-900/90 text-slate-400">
+                  <div className="absolute inset-0 z-10 flex items-center justify-center bg-black/95 text-teal-100/55">
                     <Loader className="w-8 h-8 animate-spin" />
                     <span className="ml-3">Chargement webcam...</span>
                   </div>
@@ -1386,7 +1386,7 @@ const PhotoCaptureSession = ({
                 {/* Overlay pose validation */}
                 {webcamReady && poseValidation && poseValidation.valid && (
                   <div className="absolute inset-0 pointer-events-none">
-                    <div className="absolute top-4 left-4 bg-green-500/80 text-white px-3 py-1 rounded text-sm font-medium">
+                    <div className="absolute top-4 left-4 bg-green-500/80 text-teal-100 px-3 py-1 rounded text-sm font-medium">
                       ✅ Pose validée ({poseValidation.confidence.toFixed(0)}%)
                     </div>
                   </div>
@@ -1394,7 +1394,7 @@ const PhotoCaptureSession = ({
 
                 {/* Score qualité */}
                 {webcamReady && (
-                  <div className={`absolute top-4 right-4 bg-slate-900/90 text-white px-3 py-2 rounded-lg border ${getQualityColor(qualityScore)} border-current`}>
+                  <div className={`absolute top-4 right-4 bg-black/95 text-teal-100 px-3 py-2 rounded-lg border ${getQualityColor(qualityScore)} border-current`}>
                     <div className="flex items-center gap-2">
                       <span className="font-bold text-lg">{qualityScore}/100</span>
                       <span>{getQualityStars(qualityScore)}</span>
@@ -1410,21 +1410,21 @@ const PhotoCaptureSession = ({
                     <CardTitle size="sm">Instructions</CardTitle>
                   </CardHeader>
                   <CardContent>
-                    <p className="text-sm text-slate-300 mb-4">
+                    <p className="text-sm text-teal-100/80 mb-4">
                       {currentPose?.name || 'Positionnez-vous selon la pose indiquée'}
                     </p>
                     
                     <div className="space-y-3">
                       {/* Score qualité détaillé */}
                       {qualityScore > 0 && (
-                        <div className="p-3 bg-slate-800/50 rounded">
+                        <div className="p-3 bg-black border border-[#0F4C5C]/50 rounded">
                           <div className="flex items-center justify-between mb-2">
-                            <span className="text-xs text-slate-400">Qualité</span>
+                            <span className="text-xs text-teal-100/55">Qualité</span>
                             <span className={`text-sm font-bold ${getQualityColor(qualityScore)}`}>
                               {qualityScore}/100
                             </span>
                           </div>
-                          <div className="w-full bg-slate-700 rounded-full h-2">
+                          <div className="w-full bg-black border border-[#0F4C5C]/45 rounded-full h-2">
                             <div 
                               className={`h-2 rounded-full transition-all ${
                                 qualityScore >= 80 ? 'bg-green-500' :
@@ -1453,7 +1453,7 @@ const PhotoCaptureSession = ({
                               {poseValidation.valid ? 'Pose correcte' : 'Ajustez la pose'}
                             </span>
                           </div>
-                          <p className="text-xs text-slate-400">
+                          <p className="text-xs text-teal-100/55">
                             {poseValidation.matchedAngles}/{poseValidation.totalAngles} angles validés
                           </p>
                         </div>
@@ -1467,10 +1467,10 @@ const PhotoCaptureSession = ({
                   {/* Décompte visuel */}
                   {captureCountdown !== null && captureCountdown > 0 && (
                     <div className="text-center py-4">
-                      <div className="inline-flex items-center justify-center w-20 h-20 rounded-full bg-purple-600/20 border-4 border-purple-500 text-4xl font-bold text-purple-400 animate-pulse">
+                      <div className="inline-flex items-center justify-center w-20 h-20 rounded-full bg-[#0F4C5C]/50/20 border-4 border-[#0F4C5C]/55 text-4xl font-bold text-sky-300 animate-pulse">
                         {captureCountdown}
                       </div>
-                      <p className="text-sm text-slate-400 mt-2">Préparez-vous...</p>
+                      <p className="text-sm text-teal-100/55 mt-2">Préparez-vous...</p>
                     </div>
                   )}
                   
@@ -1482,7 +1482,7 @@ const PhotoCaptureSession = ({
                       }
                     }}
                     disabled={!webcamReady || isCapturing || !poseDetected || captureCountdown !== null}
-                    className="gradient-button-premium gradient-button-premium-lg rounded-lg w-full flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="rounded-lg border border-[#0F5C45]/70 bg-[#0F4C5C]/40 px-3 py-2 text-teal-100 font-medium hover:bg-[#0F4C5C]/55 transition-colors shadow-md shadow-black/20 rounded-lg w-full flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     {isCapturing || captureCountdown !== null ? (
                       <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-current" />
@@ -1517,7 +1517,7 @@ const PhotoCaptureSession = ({
                         // Reset webcam state géré automatiquement par PREV_POSE dans reducer
                         stabilityValidationsRef.current = [];
                       }}
-                      className="gradient-button-premium gradient-button-premium-md gradient-button-premium-variant rounded-lg w-full flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                      className="rounded-lg border border-[#0F5C45]/70 bg-[#0F4C5C]/40 px-3 py-2 text-teal-100 font-medium hover:bg-[#0F4C5C]/55 transition-colors shadow-md shadow-black/20 rounded-lg w-full flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
                       disabled={isCapturing} // Désactiver bouton pendant capture
                     >
                       <ChevronLeft className="w-4 h-4" />
@@ -1538,7 +1538,7 @@ const PhotoCaptureSession = ({
                         dispatch({ type: 'NEXT_POSE' });
                         // Reset webcam state géré automatiquement par NEXT_POSE dans reducer
                       }}
-                      className="gradient-button-premium gradient-button-premium-md gradient-button-premium-variant rounded-lg w-full flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                      className="rounded-lg border border-[#0F5C45]/70 bg-[#0F4C5C]/40 px-3 py-2 text-teal-100 font-medium hover:bg-[#0F4C5C]/55 transition-colors shadow-md shadow-black/20 rounded-lg w-full flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
                       disabled={isCapturing} // Désactiver bouton pendant capture
                     >
                       <ChevronRight className="w-4 h-4" />
@@ -1554,7 +1554,7 @@ const PhotoCaptureSession = ({
                           {sessionPhotos.filter(sp => sp.status === 'captured').length}
                         </span> photo(s) capturée(s) et sauvegardée(s)
                       </p>
-                      <p className="text-xs text-slate-400 mt-1">
+                      <p className="text-xs text-teal-100/55 mt-1">
                         Les photos sont sauvegardées automatiquement après chaque capture
                       </p>
                     </div>
@@ -1565,7 +1565,7 @@ const PhotoCaptureSession = ({
                     <button
                       type="button"
                       onClick={saveSession}
-                      className="gradient-button-premium gradient-button-premium-md gradient-button-premium-variant rounded-lg w-full"
+                      className="rounded-lg border border-[#0F5C45]/70 bg-[#0F4C5C]/40 px-3 py-2 text-teal-100 font-medium hover:bg-[#0F4C5C]/55 transition-colors shadow-md shadow-black/20 rounded-lg w-full"
                     >
                       🔄 Re-sauvegarder toutes les photos ({sessionPhotos.filter(sp => sp.status === 'captured').length})
                     </button>
@@ -1588,7 +1588,7 @@ const PhotoCaptureSession = ({
           <Card className="max-w-4xl w-full max-h-[90vh] overflow-y-auto">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
-                <Upload className="w-5 h-5 text-blue-400" />
+                <Upload className="w-5 h-5 text-sky-300/90" />
                 Upload de Photos
               </CardTitle>
             </CardHeader>
@@ -1599,8 +1599,8 @@ const PhotoCaptureSession = ({
                 className={`
                   border-2 border-dashed rounded-lg p-12 text-center cursor-pointer transition-all
                   ${isDragActive 
-                    ? 'border-blue-500 bg-blue-500/10' 
-                    : 'border-slate-600 hover:border-blue-400 bg-slate-800/30'
+                    ? 'border-[#0F5C45]/55 bg-[#0F4C5C]/12' 
+                    : 'border-[#0F4C5C]/45 hover:border-sky-400/60 bg-black'
                   }
                   ${uploading ? 'opacity-50 cursor-not-allowed' : ''}
                 `}
@@ -1608,16 +1608,16 @@ const PhotoCaptureSession = ({
                 <input {...getInputProps()} />
                 {uploading ? (
                   <>
-                    <Loader className="w-12 h-12 mx-auto mb-4 animate-spin text-blue-400" />
-                    <p className="text-slate-300">Téléchargement en cours...</p>
+                    <Loader className="w-12 h-12 mx-auto mb-4 animate-spin text-sky-300/90" />
+                    <p className="text-teal-100/80">Téléchargement en cours...</p>
                   </>
                 ) : (
                   <>
-                    <Upload className="w-12 h-12 mx-auto mb-4 text-slate-400" />
-                    <p className="text-slate-300 mb-2">
+                    <Upload className="w-12 h-12 mx-auto mb-4 text-teal-100/55" />
+                    <p className="text-teal-100/80 mb-2">
                       Glissez-déposez vos photos ici ou cliquez pour sélectionner
                     </p>
-                    <p className="text-sm text-slate-500">
+                    <p className="text-sm text-teal-100/45">
                       Formats: JPEG, PNG (max 10MB par photo)
                     </p>
                   </>
@@ -1628,7 +1628,7 @@ const PhotoCaptureSession = ({
               {uploadedFiles.length > 0 && (
                 <div className="mt-6">
                   <div className="flex items-center justify-between mb-4">
-                    <h3 className="font-semibold text-white">
+                    <h3 className="font-semibold text-teal-100">
                       Photos uploadées ({uploadedFiles.length})
                     </h3>
                     <Button
@@ -1643,13 +1643,13 @@ const PhotoCaptureSession = ({
 
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                     {uploadedFiles.map((file) => (
-                      <div key={file.id} className="relative rounded-lg overflow-hidden border border-slate-600">
+                      <div key={file.id} className="relative rounded-lg overflow-hidden border border-[#0F4C5C]/45">
                         <img
                           src={file.originalUrl}
                           alt={file.name}
                           className="w-full aspect-[3/4] object-cover"
                         />
-                        <div className="absolute bottom-0 left-0 right-0 bg-black/70 text-white text-xs p-2 truncate">
+                        <div className="absolute bottom-0 left-0 right-0 bg-black/70 text-teal-100 text-xs p-2 truncate">
                           {file.name}
                         </div>
                       </div>
@@ -1663,7 +1663,7 @@ const PhotoCaptureSession = ({
                 <button
                   type="button"
                   onClick={handleClose}
-                  className="gradient-button-premium gradient-button-premium-md gradient-button-premium-variant rounded-lg"
+                  className="rounded-lg border border-[#0F5C45]/70 bg-[#0F4C5C]/40 px-3 py-2 text-teal-100 font-medium hover:bg-[#0F4C5C]/55 transition-colors shadow-md shadow-black/20 rounded-lg"
                 >
                   Annuler
                 </button>

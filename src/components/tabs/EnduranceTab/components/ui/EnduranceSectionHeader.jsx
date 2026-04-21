@@ -16,7 +16,7 @@ const EnduranceSectionHeader = ({ title, subtitle, actions = [] }) => {
                 key={key || label}
                 type="button"
                 onClick={onClick}
-                className={className}
+                className={`flex items-center gap-2 ${className || ''}`}
               >
                 {Icon && <Icon className="w-5 h-5" />}
                 <span>{label}</span>

@@ -18,6 +18,7 @@ import { useNutritionData } from '../../hooks/useNutritionData';
 import { isMockEnduranceSession } from '../../utils/calendarUtils';
 import Card, { CardHeader, CardTitle, CardContent } from '../ui/Card';
 import { Input } from '../ui/Input';
+import { settingsTheme as settingsUi } from './SettingsTab/settingsThemeClasses';
 
 // Hooks
 import { useSettingsStats } from './SettingsTab/hooks/useSettingsStats';
@@ -215,30 +216,30 @@ const SettingsTab = () => {
   };
 
   return (
-    <div className="relative min-h-screen">
-      <div className="relative z-10 p-6 space-y-6">
+    <div className="relative min-h-screen bg-black text-red-50">
+      <div className="relative z-10 space-y-6 p-6">
         <style>{`
         .profile-input-dark input[type="email"],
         .profile-input-dark input[type="password"],
         .profile-input-dark input[type="text"] {
-          background-color: rgb(51 65 85) !important;
-          color: #e2e8f0 !important;
-          border-color: #475569 !important;
+          background-color: rgb(0 0 0) !important;
+          color: #fecaca !important;
+          border-color: rgba(185, 28, 28, 0.55) !important;
         }
         .profile-input-dark input[type="email"]:disabled,
         .profile-input-dark input[type="password"]:disabled,
         .profile-input-dark input[type="text"]:disabled {
-          background-color: rgb(51 65 85) !important;
-          color: #cbd5e1 !important;
-          border-color: #475569 !important;
-          opacity: 0.7 !important;
+          background-color: rgb(0 0 0) !important;
+          color: #fca5a5 !important;
+          border-color: rgba(127, 29, 29, 0.5) !important;
+          opacity: 0.65 !important;
         }
       `}</style>
         
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between mb-6">
-          <h2 className="text-2xl font-bold text-white flex items-center">
-            <Settings className="mr-3" size={28} />
-            ⚙️ Paramètres & Sauvegarde
+        <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <h2 className="flex items-center text-2xl font-bold text-red-100">
+            <Settings className="mr-3 text-red-400" size={28} />
+            Paramètres & Sauvegarde
           </h2>
         </div>
 
@@ -253,11 +254,11 @@ const SettingsTab = () => {
             value={settingsSearchQuery}
             onChange={(e) => setSettingsSearchQuery(e.target.value)}
             aria-label="Rechercher dans les paramètres"
-            className="!bg-slate-800/90 !border-slate-600"
+            className="!border-red-900/60 !bg-black !text-red-100 placeholder:!text-red-400/50"
             containerClassName="max-w-xl"
           />
           {settingsSearchQuery.trim() && (
-            <p className="mt-2 text-xs text-slate-400">
+            <p className="mt-2 text-xs text-red-300/70">
               Affichage des blocs correspondant à votre recherche. Effacez le champ pour tout afficher.
             </p>
           )}
@@ -265,13 +266,13 @@ const SettingsTab = () => {
 
         {/* Ancres : liens rapides vers les sections (filtrées si recherche active) */}
         {SETTINGS_SECTIONS.some(({ id }) => isSectionVisible(id)) && (
-        <div className="flex flex-wrap gap-2 mb-6 p-3 bg-slate-800/60 border border-slate-700 rounded-xl">
+        <div className="mb-6 flex flex-wrap gap-2 rounded-xl border border-red-900/50 bg-red-950/25 p-3">
           {SETTINGS_SECTIONS.filter(({ id }) => isSectionVisible(id)).map(({ id, label }) => (
             <button
               key={id}
               type="button"
               onClick={() => scrollToSection(id)}
-              className="px-3 py-1.5 text-xs font-medium text-slate-200 bg-slate-700/80 hover:bg-slate-600/90 hover:text-white rounded-lg transition-colors"
+              className="rounded-lg border border-red-900/50 bg-black px-3 py-1.5 text-xs font-medium text-red-100 transition-colors hover:border-red-600/70 hover:bg-red-950/50"
             >
               {label}
             </button>
@@ -281,7 +282,7 @@ const SettingsTab = () => {
 
         {showSearchEmptyState && (
           <div
-            className="mb-6 rounded-xl border border-dashed border-slate-600 bg-slate-800/40 px-4 py-8 text-center text-slate-300"
+            className="mb-6 rounded-xl border border-dashed border-red-800/50 bg-red-950/20 px-4 py-8 text-center text-red-200/80"
             role="status"
           >
             Aucun bloc de paramètres ne correspond à « {settingsSearchQuery.trim()} ». Essayez un autre mot ou effacez la recherche.
@@ -309,22 +310,22 @@ const SettingsTab = () => {
         {/* Section Carte de Profil - Image Centrale + Handle */}
         {isSectionVisible('settings-carte') && (
         <div id="settings-carte" className="scroll-mt-4">
-        <Card className="bg-slate-800/80 backdrop-blur-sm border-slate-700">
-          <CardHeader>
-            <CardTitle className="flex items-center text-white">
-              <Image className="mr-2" size={20} />
+        <Card variant="settings">
+          <CardHeader variant="settings">
+            <CardTitle tone="settings" className="flex items-center normal-case tracking-normal">
+              <Image className="mr-2 text-red-400" size={20} />
               Image de la Carte de Profil
             </CardTitle>
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
-              <p className="text-gray-300 text-sm">
+              <p className="text-sm text-red-100/80">
                 Personnalisez l'image centrale qui apparaît sur votre carte de profil dans la sidebar.
               </p>
               
-              <div className="bg-slate-700/50 rounded-lg p-4">
-                <h4 className="font-medium text-white mb-2">À propos :</h4>
-                <ul className="text-sm text-gray-300 space-y-1">
+              <div className={`${settingsUi.inset}`}>
+                <h4 className="mb-2 font-medium text-red-100">À propos :</h4>
+                <ul className="space-y-1 text-sm text-red-100/75">
                   <li>• Cette image remplace le logo par défaut au centre de votre carte</li>
                   <li>• Formats acceptés : JPG, PNG, GIF, SVG</li>
                   <li>• Taille maximale : 5 MB</li>
@@ -335,7 +336,7 @@ const SettingsTab = () => {
               <button
                 type="button"
                 onClick={() => setShowProfileCardSettings(true)}
-                className="gradient-button-premium gradient-button-premium-md rounded-lg w-full flex items-center justify-center gap-2"
+                className={`${settingsUi.btnPrimary} w-full`}
               >
                 <Image className="w-5 h-5" />
                 Gérer l'Image de la Carte
@@ -345,22 +346,22 @@ const SettingsTab = () => {
         </Card>
 
         {/* Section Carte de Profil - Handle */}
-        <Card className="bg-slate-800/80 backdrop-blur-sm border-slate-700">
-          <CardHeader>
-            <CardTitle className="flex items-center text-white">
-              <User className="mr-2" size={20} />
+        <Card variant="settings">
+          <CardHeader variant="settings">
+            <CardTitle tone="settings" className="flex items-center normal-case tracking-normal">
+              <User className="mr-2 text-red-400" size={20} />
               Handle de la Carte (@username)
             </CardTitle>
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
-              <p className="text-gray-300 text-sm">
+              <p className="text-sm text-red-100/80">
                 Personnalisez le @handle qui apparaît dans le rectangle au bas de votre carte de profil.
               </p>
               
-              <div className="bg-slate-700/50 rounded-lg p-4">
-                <h4 className="font-medium text-white mb-2">À propos :</h4>
-                <ul className="text-sm text-gray-300 space-y-1">
+              <div className={`${settingsUi.inset}`}>
+                <h4 className="mb-2 font-medium text-red-100">À propos :</h4>
+                <ul className="space-y-1 text-sm text-red-100/75">
                   <li>• Ce handle apparaît dans le petit rectangle en bas de la carte</li>
                   <li>• Il est affiché avec le symbole @ automatiquement</li>
                   <li>• Vous pouvez le personnaliser indépendamment de votre nom d'utilisateur</li>
@@ -371,7 +372,7 @@ const SettingsTab = () => {
               <button
                 type="button"
                 onClick={() => setShowProfileCardSettings(true)}
-                className="gradient-button-premium gradient-button-premium-md gradient-button-premium-variant rounded-lg w-full flex items-center justify-center gap-2"
+                className={`${settingsUi.btnSecondary} w-full`}
               >
                 <User className="w-5 h-5" />
                 Gérer le Handle de la Carte
@@ -385,22 +386,22 @@ const SettingsTab = () => {
         {/* Section Page d'Accueil */}
         {isSectionVisible('settings-accueil') && (
         <div id="settings-accueil" className="scroll-mt-4">
-        <Card className="bg-slate-800/80 backdrop-blur-sm border-slate-700">
-          <CardHeader>
-            <CardTitle className="flex items-center text-white">
-              <Image className="mr-2" size={20} />
+        <Card variant="settings">
+          <CardHeader variant="settings">
+            <CardTitle tone="settings" className="flex items-center normal-case tracking-normal">
+              <Image className="mr-2 text-red-400" size={20} />
               Page d'Accueil
             </CardTitle>
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
-              <p className="text-gray-300 text-sm">
+              <p className="text-sm text-red-100/80">
                 Personnalisez les images de fond et les bannières de votre page d'accueil.
               </p>
               
-              <div className="bg-slate-700/50 rounded-lg p-4">
-                <h4 className="font-medium text-white mb-2">Fonctionnalités :</h4>
-                <ul className="text-sm text-gray-300 space-y-1">
+              <div className={`${settingsUi.inset}`}>
+                <h4 className="mb-2 font-medium text-red-100">Fonctionnalités :</h4>
+                <ul className="space-y-1 text-sm text-red-100/75">
                   <li>• Rotation d'images de fond à chaque interaction</li>
                   <li>• Rotation automatique des bannières toutes les 2 minutes</li>
                   <li>• Import d'images JPG/JPEG depuis vos fichiers</li>
@@ -412,7 +413,7 @@ const SettingsTab = () => {
               <button
                 type="button"
                 onClick={() => setShowHomePageSettings(true)}
-                className="gradient-button-premium gradient-button-premium-md rounded-lg w-full flex items-center justify-center gap-2"
+                className={`${settingsUi.btnPrimary} w-full`}
               >
                 <Image className="w-5 h-5" />
                 Gérer les Images de la Page d'Accueil

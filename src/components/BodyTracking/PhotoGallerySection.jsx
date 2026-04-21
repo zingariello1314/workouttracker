@@ -1009,16 +1009,16 @@ const PhotoGallerySection = () => {
       <ToastContainer />
       <div className="space-y-6">
       {/* Contrôles d'upload et de vue */}
-      <Card>
+      <Card variant="sport">
         <CardHeader>
           <div className="flex items-center justify-between">
-            <CardTitle className="flex items-center gap-2">
-              <Camera className="w-5 h-5 text-green-400" />
+            <CardTitle className="flex items-center gap-2 text-teal-100">
+              <Camera className="h-5 w-5 text-sky-400" />
               {viewType === 'gallery' ? 'Galerie de progression' : 'Dashboard Analyse IA'}
                     {viewType === 'gallery' && (
-                      <span className="text-sm font-normal text-slate-400">
+                      <span className="text-sm font-normal text-teal-700">
                         ({sortedPhotos.length} photos{finalTotalPages > 1 && ` - Page ${finalCurrentPage}/${finalTotalPages}`})
-                        {finalLoading && <span className="ml-2 text-purple-400">(Chargement...)</span>}
+                        {finalLoading && <span className="ml-2 text-sky-400">(Chargement...)</span>}
                       </span>
                     )}
             </CardTitle>
@@ -1049,7 +1049,7 @@ const PhotoGallerySection = () => {
             <div className="flex gap-2">
               <Button
                 onClick={() => setShowCaptureSession(true)}
-                className="bg-purple-600 hover:bg-purple-700"
+                className="border-2 border-[#0F5C45]/55 bg-[#0F5C45]/30 text-teal-100 hover:bg-[#0F5C45]/45"
                 icon={Camera}
               >
                 Nouvelle Session Photo
@@ -1058,7 +1058,7 @@ const PhotoGallerySection = () => {
                 <>
                   <Button
                     onClick={() => fileInputRef.current?.click()}
-                    className="bg-green-600 hover:bg-green-700"
+                    className="border-2 border-[#0F4C5C]/60 bg-black text-teal-100 hover:border-[#0F5C45]/55 hover:bg-[#0F4C5C]/15"
                   >
                     <Upload className="w-4 h-4 mr-2" />
                     Ajouter des photos
@@ -1078,7 +1078,7 @@ const PhotoGallerySection = () => {
             {/* Contrôles de vue (seulement en mode galerie) */}
             {viewType === 'gallery' && (
             <div className="flex gap-2 items-center">
-              <div className="flex gap-1 bg-slate-700 rounded-lg p-1">
+              <div className="flex gap-1 rounded-lg border border-[#0F4C5C]/50 bg-black p-1">
                 <Button
                   variant={viewMode === 'grid' ? 'default' : 'ghost'}
                   size="sm"
@@ -1098,7 +1098,7 @@ const PhotoGallerySection = () => {
               <select
                 value={filterBy}
                 onChange={(e) => setFilterBy(e.target.value)}
-                className="bg-slate-700 border border-slate-600 rounded px-3 py-1 text-sm text-white"
+                className="rounded border border-[#0F4C5C]/55 bg-black px-3 py-1 text-sm text-teal-100 focus:outline-none focus:ring-2 focus:ring-[#0F5C45]/40"
               >
                 <option value="all">Tous les angles</option>
                 <option value="front">Face</option>
@@ -1109,7 +1109,7 @@ const PhotoGallerySection = () => {
               {selectedPhotos.length === 2 && (
                 <Button
                   onClick={() => setCompareMode(true)}
-                  className="bg-purple-600 hover:bg-purple-700"
+                  className="border-2 border-[#0F4C5C]/55 bg-black text-teal-100 hover:border-[#0F5C45]/55 hover:bg-[#0F4C5C]/15"
                 >
                   <ArrowLeftRight className="w-4 h-4 mr-2" />
                   Comparer
@@ -1124,8 +1124,8 @@ const PhotoGallerySection = () => {
             <Suspense fallback={
               <div className="flex items-center justify-center h-96">
                 <div className="text-center">
-                  <Loader className="w-12 h-12 mx-auto mb-4 text-purple-400 animate-spin" />
-                  <p className="text-slate-400">Chargement dashboard...</p>
+                  <Loader className="w-12 h-12 mx-auto mb-4 text-sky-400 animate-spin" />
+                  <p className="text-teal-700">Chargement dashboard...</p>
                 </div>
               </div>
             }>
@@ -1135,8 +1135,8 @@ const PhotoGallerySection = () => {
             <Suspense fallback={
               <div className="flex items-center justify-center h-96">
                 <div className="text-center">
-                  <Loader className="w-12 h-12 mx-auto mb-4 text-purple-400 animate-spin" />
-                  <p className="text-slate-400">Chargement analyse musculaire...</p>
+                  <Loader className="w-12 h-12 mx-auto mb-4 text-sky-400 animate-spin" />
+                  <p className="text-teal-700">Chargement analyse musculaire...</p>
                 </div>
               </div>
             }>
@@ -1146,8 +1146,8 @@ const PhotoGallerySection = () => {
             <Suspense fallback={
               <div className="flex items-center justify-center h-96">
                 <div className="text-center">
-                  <Loader className="w-12 h-12 mx-auto mb-4 text-purple-400 animate-spin" />
-                  <p className="text-slate-400">Chargement timeline...</p>
+                  <Loader className="w-12 h-12 mx-auto mb-4 text-sky-400 animate-spin" />
+                  <p className="text-teal-700">Chargement timeline...</p>
                 </div>
               </div>
             }>
@@ -1157,8 +1157,8 @@ const PhotoGallerySection = () => {
             <Suspense fallback={
               <div className="flex items-center justify-center h-96">
                 <div className="text-center">
-                  <Loader className="w-12 h-12 mx-auto mb-4 text-purple-400 animate-spin" />
-                  <p className="text-slate-400">Chargement corrélations...</p>
+                  <Loader className="w-12 h-12 mx-auto mb-4 text-sky-400 animate-spin" />
+                  <p className="text-teal-700">Chargement corrélations...</p>
                 </div>
               </div>
             }>
@@ -1168,39 +1168,39 @@ const PhotoGallerySection = () => {
             <>
               {/* ✅ PHASE 4.2 : Barre de progression de compression enrichie */}
               {uploadProgress.progress > 0 && uploadProgress.progress < 100 && (
-            <div className="mb-4 p-4 bg-slate-800/50 rounded-lg border border-slate-700">
+            <div className="mb-4 rounded-lg border border-[#0F4C5C]/50 bg-black p-4">
               <div className="flex items-center justify-between mb-3">
                 <div className="flex items-center gap-2">
-                  <Upload className="w-5 h-5 text-blue-400 animate-pulse" />
+                  <Upload className="h-5 w-5 animate-pulse text-sky-400" />
                   <div className="flex flex-col">
-                    <span className="text-sm font-medium text-slate-200">
+                    <span className="text-sm font-medium text-teal-100">
                       {uploadProgress.message || 'Compression en cours...'}
                   </span>
                     {uploadProgress.currentResolution && (
-                      <span className="text-xs text-slate-400 mt-0.5">
+                      <span className="text-xs text-teal-700 mt-0.5">
                         Résolution: {uploadProgress.currentResolution}
                       </span>
                     )}
                 </div>
               </div>
                 <div className="flex flex-col items-end">
-                  <span className="text-sm font-semibold text-blue-400">
+                  <span className="text-sm font-semibold text-sky-400">
                     {uploadProgress.progress.toFixed(0)}%
                   </span>
                   {uploadProgress.estimatedTime !== null && uploadProgress.estimatedTime > 0 && (
-                    <span className="text-xs text-slate-400 mt-0.5">
+                    <span className="text-xs text-teal-700 mt-0.5">
                       ~{uploadProgress.estimatedTime}s restantes
                     </span>
                   )}
                 </div>
               </div>
-              <div className="w-full bg-slate-700 rounded-full h-2.5 overflow-hidden mb-2">
+              <div className="mb-2 h-2.5 w-full overflow-hidden rounded-full bg-[#0F4C5C]/30">
                 <div 
-                  className="bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 h-2.5 rounded-full transition-all duration-300 ease-out"
+                  className="bg-gradient-to-r from-[#0F4C5C] via-[#0F5C45] to-sky-400 h-2.5 rounded-full transition-all duration-300 ease-out"
                   style={{ width: `${uploadProgress.progress}%` }}
                 />
               </div>
-              <div className="flex items-center justify-between text-xs text-slate-400">
+              <div className="flex items-center justify-between text-xs text-teal-700">
                 <span>
                   {uploadProgress.currentResolution === 'thumbnail' && 'Miniature (150x200)'}
                   {uploadProgress.currentResolution === 'preview' && 'Aperçu (400x533)'}
@@ -1247,12 +1247,12 @@ const PhotoGallerySection = () => {
                   key={photo.id}
                   className={`relative group cursor-pointer rounded-lg overflow-hidden border-2 transition-all ${
                     selectedPhotos.includes(photo.id) 
-                      ? 'border-purple-500 ring-2 ring-purple-500/50' 
-                      : 'border-slate-600 hover:border-slate-500'
+                      ? 'border-[#0F5C45] ring-2 ring-[#0F5C45]/40' 
+                      : 'border-[#0F4C5C]/45 hover:border-[#0F5C45]/50'
                   }`}
                   onClick={() => handlePhotoSelect(photo.id)}
                 >
-                  <div className="aspect-[3/4] bg-slate-700">
+                  <div className="aspect-[3/4] bg-black">
                     <img
                       src={getPhotoUrl(photo, 'thumbnail') || photo.url} // ✅ OPTIMISATION: Utiliser thumbnail pour grille (performance)
                       alt={`Photo ${getAngleLabel(photo.angle)} du ${formatDate(photo.date)}`}
@@ -1264,12 +1264,12 @@ const PhotoGallerySection = () => {
                   {/* Overlay avec infos */}
                   <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col justify-between p-3">
                     <div className="flex justify-between items-start">
-                      <span className="text-xs bg-slate-800/80 px-2 py-1 rounded text-white">
+                      <span className="rounded bg-black/90 px-2 py-1 text-xs text-teal-100 ring-1 ring-[#0F4C5C]/40">
                         {getAngleIcon(photo.angle)} {getAngleLabel(photo.angle)}
                       </span>
                       <div className="flex gap-1">
                         {photo.analysis?.analyzed && (
-                          <span className="text-xs bg-purple-600/80 px-2 py-1 rounded text-white flex items-center gap-1">
+                          <span className="text-xs bg-[#0F5C45]/85 px-2 py-1 rounded text-teal-100 flex items-center gap-1">
                             <Sparkles className="w-3 h-3" />
                             Analysée
                           </span>
@@ -1281,21 +1281,21 @@ const PhotoGallerySection = () => {
                             e.stopPropagation();
                             openModal(globalIndex);
                           }}
-                          className="p-1 h-auto bg-slate-800/80 hover:bg-slate-700"
+                          className="h-auto bg-black/90 p-1 ring-1 ring-[#0F4C5C]/40 hover:bg-[#0F4C5C]/25"
                         >
                           <Eye className="w-3 h-3" />
                         </Button>
                       </div>
                     </div>
                     
-                    <div className="text-xs text-white">
+                    <div className="text-xs text-teal-100">
                       <div className="flex items-center gap-1 mb-1">
                         <Calendar className="w-3 h-3" />
                         {formatDate(photo.date)}
                       </div>
                       <div>{photo.weight} kg</div>
                       {photo.capture?.qualityScore && (
-                        <div className="text-purple-300">
+                        <div className="text-teal-200">
                           Qualité: {photo.capture.qualityScore}/100
                         </div>
                       )}
@@ -1304,7 +1304,7 @@ const PhotoGallerySection = () => {
 
                   {/* Indicateur de sélection */}
                   {selectedPhotos.includes(photo.id) && (
-                    <div className="absolute top-2 left-2 w-6 h-6 bg-purple-500 rounded-full flex items-center justify-center text-white text-xs font-bold">
+                    <div className="absolute top-2 left-2 w-6 h-6 bg-[#0F5C45] rounded-full flex items-center justify-center text-teal-100 text-xs font-bold">
                       {selectedPhotos.indexOf(photo.id) + 1}
                     </div>
                   )}
@@ -1323,12 +1323,12 @@ const PhotoGallerySection = () => {
                   key={photo.id}
                   className={`flex gap-4 p-4 rounded-lg border transition-all cursor-pointer ${
                     selectedPhotos.includes(photo.id)
-                      ? 'border-purple-500 bg-purple-600/10'
-                      : 'border-slate-600 bg-slate-800/30 hover:bg-slate-800/50'
+                      ? 'border-[#0F5C45] bg-[#0F4C5C]/20'
+                      : 'border-[#0F4C5C]/45 bg-black/70 hover:bg-[#0F4C5C]/15'
                   }`}
                   onClick={() => handlePhotoSelect(photo.id)}
                 >
-                  <div className="w-20 h-24 bg-slate-700 rounded overflow-hidden flex-shrink-0">
+                  <div className="h-24 w-20 shrink-0 overflow-hidden rounded border border-[#0F4C5C]/40 bg-black">
                     <img
                       src={getPhotoUrl(photo, 'thumbnail') || photo.url} // ✅ OPTIMISATION: Utiliser thumbnail pour liste (performance)
                       alt={`Photo ${getAngleLabel(photo.angle)}`}
@@ -1339,24 +1339,27 @@ const PhotoGallerySection = () => {
                   
                   <div className="flex-1">
                     <div className="flex items-center gap-2 mb-2">
-                      <span className="text-sm font-medium text-white">
+                      <span className="text-sm font-medium text-teal-100">
                         {getAngleIcon(photo.angle)} {getAngleLabel(photo.angle)}
                       </span>
-                      <span className="text-xs text-slate-400">
+                      <span className="text-xs text-teal-700">
                         {formatDate(photo.date)}
                       </span>
-                      <span className="text-xs bg-slate-700 px-2 py-1 rounded text-slate-300">
+                      <span className="rounded border border-[#0F4C5C]/45 bg-black px-2 py-1 text-xs text-teal-200">
                         {photo.weight} kg
                       </span>
                     </div>
                     
                     {photo.notes && (
-                      <p className="text-sm text-slate-300 mb-2">{photo.notes}</p>
+                      <p className="text-sm text-teal-200 mb-2">{photo.notes}</p>
                     )}
                     
                     <div className="flex gap-2">
                       {photo.tags.map(tag => (
-                        <span key={tag} className="text-xs bg-blue-600/20 text-blue-300 px-2 py-1 rounded">
+                        <span
+                          key={tag}
+                          className="rounded border border-sky-500/30 bg-sky-500/10 px-2 py-1 text-xs text-sky-200"
+                        >
                           {tag}
                         </span>
                       ))}
@@ -1383,8 +1386,8 @@ const PhotoGallerySection = () => {
 
           {/* Contrôles de pagination - Affichés seulement si pas de virtualisation */}
           {!shouldVirtualize && finalTotalPages > 1 && (
-            <div className="mt-6 flex items-center justify-between border-t border-slate-700 pt-4">
-              <div className="text-sm text-slate-400">
+            <div className="mt-6 flex items-center justify-between border-t border-[#0F4C5C]/50 pt-4">
+              <div className="text-sm text-teal-700">
                 {USE_PAGINATED_LOADING ? (
                   <>Affichage {(finalCurrentPage - 1) * itemsPerPage + 1}-{Math.min(finalCurrentPage * itemsPerPage, sortedPhotos.length)} sur {paginatedTotalPhotos} photos</>
                 ) : (
@@ -1419,12 +1422,12 @@ const PhotoGallerySection = () => {
 
                 {/* Sélecteur de page */}
                 <div className="flex items-center gap-2">
-                  <span className="text-sm text-slate-300">Page</span>
+                  <span className="text-sm text-teal-200">Page</span>
                   <select
                     value={finalCurrentPage}
                     onChange={(e) => handlePageChange(parseInt(e.target.value))}
                     disabled={finalLoading}
-                    className="bg-slate-700 border border-slate-600 rounded px-3 py-1 text-sm text-white min-w-[60px] disabled:opacity-50"
+                    className="min-w-[60px] rounded border border-[#0F4C5C]/55 bg-black px-3 py-1 text-sm text-teal-100 disabled:opacity-50"
                   >
                     {Array.from({ length: finalTotalPages }, (_, i) => i + 1).map(page => (
                       <option key={page} value={page}>
@@ -1432,7 +1435,7 @@ const PhotoGallerySection = () => {
                       </option>
                     ))}
                   </select>
-                  <span className="text-sm text-slate-400">sur {finalTotalPages}</span>
+                  <span className="text-sm text-teal-700">sur {finalTotalPages}</span>
                 </div>
 
                 {/* Page suivante */}
@@ -1464,13 +1467,13 @@ const PhotoGallerySection = () => {
 
           {sortedPhotos.length === 0 && (
             <div className="text-center py-12">
-              <Camera className="w-16 h-16 mx-auto mb-4 text-slate-500" />
-              <h4 className="text-xl font-semibold mb-2 text-white">Aucune photo</h4>
-              <p className="text-slate-400 mb-4">Commencez votre suivi en ajoutant vos premières photos de progression.</p>
+              <Camera className="w-16 h-16 mx-auto mb-4 text-teal-800" />
+              <h4 className="text-xl font-semibold mb-2 text-teal-100">Aucune photo</h4>
+              <p className="text-teal-700 mb-4">Commencez votre suivi en ajoutant vos premières photos de progression.</p>
               <button
                 type="button"
                 onClick={() => fileInputRef.current?.click()}
-                className="gradient-button-premium gradient-button-premium-md rounded-lg flex items-center gap-2 mx-auto"
+                className="mx-auto flex items-center gap-2 rounded-lg border-2 border-[#0F5C45]/55 bg-[#0F5C45]/30 px-4 py-2 text-sm font-medium text-teal-100 shadow-md shadow-black/30 transition hover:bg-[#0F5C45]/45"
               >
                 <Upload className="w-4 h-4" />
                 Ajouter la première photo
@@ -1485,13 +1488,13 @@ const PhotoGallerySection = () => {
       {/* Conseils pour les photos */}
       {viewType === 'gallery' && (
       <>
-      <Card className="bg-blue-600/10 border-blue-500/30">
+      <Card variant="sport">
         <CardContent className="p-4">
           <div className="flex items-start gap-3">
-            <Info className="w-5 h-5 text-blue-400 mt-0.5" />
+            <Info className="mt-0.5 h-5 w-5 text-sky-400" />
             <div>
-              <h4 className="font-semibold text-blue-200 mb-2">Conseils pour de meilleures photos</h4>
-              <ul className="text-sm text-blue-100 space-y-1">
+              <h4 className="mb-2 font-semibold text-teal-100">Conseils pour de meilleures photos</h4>
+              <ul className="space-y-1 text-sm text-teal-200/90">
                 <li>• Prenez vos photos dans les mêmes conditions (éclairage, heure, tenue)</li>
                 <li>• Utilisez un arrière-plan neutre et uniforme</li>
                 <li>• Maintenez la même distance et le même angle</li>
@@ -1510,9 +1513,9 @@ const PhotoGallerySection = () => {
       <>
       {showModal && (
         <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4">
-          <div className="bg-slate-800 rounded-lg max-w-4xl w-full max-h-[90vh] overflow-hidden">
-            <div className="flex items-center justify-between p-4 border-b border-slate-700">
-              <h3 className="text-lg font-semibold text-white">
+          <div className="max-h-[90vh] w-full max-w-4xl overflow-hidden rounded-xl border-2 border-[#0F4C5C]/70 bg-black shadow-xl shadow-black/50">
+            <div className="flex items-center justify-between p-4 border-b border-[#0F4C5C]/50">
+              <h3 className="text-lg font-semibold text-teal-100">
                 Photo du {formatDate(sortedPhotos[currentPhotoIndex]?.date)}
               </h3>
               <Button
@@ -1558,30 +1561,30 @@ const PhotoGallerySection = () => {
                 </div>
               </div>
               
-              <div className="w-80 p-4 border-l border-slate-700">
+              <div className="w-80 p-4 border-l border-[#0F4C5C]/50">
                 <div className="space-y-4">
                   <div>
-                    <h4 className="font-semibold text-white mb-2">Détails</h4>
+                    <h4 className="font-semibold text-teal-100 mb-2">Détails</h4>
                     <div className="space-y-2 text-sm">
                       <div className="flex justify-between">
-                        <span className="text-slate-400">Angle:</span>
-                        <span className="text-white">{getAngleLabel(sortedPhotos[currentPhotoIndex]?.angle)}</span>
+                        <span className="text-teal-700">Angle:</span>
+                        <span className="text-teal-100">{getAngleLabel(sortedPhotos[currentPhotoIndex]?.angle)}</span>
                       </div>
                       <div className="flex justify-between">
-                        <span className="text-slate-400">Poids:</span>
-                        <span className="text-white">{sortedPhotos[currentPhotoIndex]?.weight} kg</span>
+                        <span className="text-teal-700">Poids:</span>
+                        <span className="text-teal-100">{sortedPhotos[currentPhotoIndex]?.weight} kg</span>
                       </div>
                       <div className="flex justify-between">
-                        <span className="text-slate-400">Date:</span>
-                        <span className="text-white">{formatDate(sortedPhotos[currentPhotoIndex]?.date)}</span>
+                        <span className="text-teal-700">Date:</span>
+                        <span className="text-teal-100">{formatDate(sortedPhotos[currentPhotoIndex]?.date)}</span>
                       </div>
                     </div>
                   </div>
                   
                   {sortedPhotos[currentPhotoIndex]?.notes && (
                     <div>
-                      <h4 className="font-semibold text-white mb-2">Notes</h4>
-                      <p className="text-sm text-slate-300">{sortedPhotos[currentPhotoIndex]?.notes}</p>
+                      <h4 className="font-semibold text-teal-100 mb-2">Notes</h4>
+                      <p className="text-sm text-teal-200">{sortedPhotos[currentPhotoIndex]?.notes}</p>
                     </div>
                   )}
                   
@@ -1589,8 +1592,8 @@ const PhotoGallerySection = () => {
                     {/* Métriques si analysée */}
                     {sortedPhotos[currentPhotoIndex]?.analysis?.analyzed && (
                       <div>
-                        <h4 className="font-semibold text-white mb-3 flex items-center gap-2">
-                          <BarChart3 className="w-4 h-4 text-purple-400" />
+                        <h4 className="font-semibold text-teal-100 mb-3 flex items-center gap-2">
+                          <BarChart3 className="w-4 h-4 text-sky-400" />
                           Métriques IA
                         </h4>
                         <div className="space-y-2">
@@ -1599,26 +1602,26 @@ const PhotoGallerySection = () => {
                               .filter(([_, m]) => m.success)
                               .slice(0, 3) // Top 3 muscles
                               .map(([muscle, metrics]) => (
-                                <div key={muscle} className="bg-slate-700/50 rounded p-2">
-                                  <div className="text-xs font-medium text-white capitalize mb-1">
+                                <div key={muscle} className="rounded border border-[#0F4C5C]/40 bg-black p-2">
+                                  <div className="text-xs font-medium text-teal-100 capitalize mb-1">
                                     {muscle}
                                   </div>
                                   <div className="grid grid-cols-3 gap-2 text-xs">
                                     <div>
-                                      <span className="text-slate-400">Volume:</span>
-                                      <span className="text-white ml-1">
+                                      <span className="text-teal-700">Volume:</span>
+                                      <span className="text-teal-100 ml-1">
                                         {metrics.metrics?.volume?.score || 0}/100
                                       </span>
                                     </div>
                                     <div>
-                                      <span className="text-slate-400">Définition:</span>
-                                      <span className="text-white ml-1">
+                                      <span className="text-teal-700">Définition:</span>
+                                      <span className="text-teal-100 ml-1">
                                         {metrics.metrics?.definition?.score || 0}/100
                                       </span>
                                     </div>
                                     <div>
-                                      <span className="text-slate-400">Symétrie:</span>
-                                      <span className="text-white ml-1">
+                                      <span className="text-teal-700">Symétrie:</span>
+                                      <span className="text-teal-100 ml-1">
                                         {metrics.metrics?.symmetry?.score || 'N/A'}
                                       </span>
                                     </div>
@@ -1649,7 +1652,7 @@ const PhotoGallerySection = () => {
                         onClick={() => handleAnalyzePhoto(sortedPhotos[currentPhotoIndex])}
                         disabled={analyzingPhoto === sortedPhotos[currentPhotoIndex]?.id}
                         loading={analyzingPhoto === sortedPhotos[currentPhotoIndex]?.id}
-                        className="w-full bg-purple-600 hover:bg-purple-700"
+                        className="w-full border-2 border-[#0F5C45]/55 bg-[#0F5C45]/30 text-teal-100 hover:bg-[#0F5C45]/45"
                         icon={Sparkles}
                       >
                         {analyzingPhoto === sortedPhotos[currentPhotoIndex]?.id 
@@ -1690,10 +1693,10 @@ const PhotoGallerySection = () => {
       {/* Modal analyse IA */}
       {showAnalysisModal && analysisResults && (
         <div className="fixed inset-0 bg-black/80 backdrop-blur-xl flex items-center justify-center z-50 p-4">
-          <div className="bg-slate-800 rounded-lg max-w-5xl w-full max-h-[90vh] overflow-hidden">
-            <div className="flex items-center justify-between p-4 border-b border-slate-700">
-              <h3 className="text-lg font-semibold text-white flex items-center gap-2">
-                <Sparkles className="w-5 h-5 text-purple-400" />
+          <div className="max-h-[90vh] w-full max-w-5xl overflow-hidden rounded-xl border-2 border-[#0F4C5C]/70 bg-black shadow-xl shadow-black/50">
+            <div className="flex items-center justify-between p-4 border-b border-[#0F4C5C]/50">
+              <h3 className="text-lg font-semibold text-teal-100 flex items-center gap-2">
+                <Sparkles className="w-5 h-5 text-sky-400" />
                 Analyse IA - {formatDate(analysisResults.date)}
               </h3>
               <Button
@@ -1711,38 +1714,38 @@ const PhotoGallerySection = () => {
             <div className="overflow-y-auto max-h-[calc(90vh-80px)] p-6">
               {/* Résumé global */}
               {analysisResults.analysis?.summary && (
-                <Card className="mb-6 bg-purple-600/10 border-purple-500/30">
+                <Card variant="sport" className="mb-6">
                   <CardHeader>
                     <CardTitle size="sm" className="flex items-center gap-2">
-                      <BarChart3 className="w-5 h-5 text-purple-400" />
+                      <BarChart3 className="w-5 h-5 text-sky-400" />
                       Résumé Analyse
                     </CardTitle>
                   </CardHeader>
                   <CardContent>
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                       <div className="text-center">
-                        <div className="text-2xl font-bold text-purple-400 mb-1">
+                        <div className="text-2xl font-bold text-sky-400 mb-1">
                           {analysisResults.analysis.summary.averageScores?.volume || 0}
                         </div>
-                        <div className="text-xs text-slate-400">Volume moyen</div>
+                        <div className="text-xs text-teal-700">Volume moyen</div>
                       </div>
                       <div className="text-center">
-                        <div className="text-2xl font-bold text-blue-400 mb-1">
+                        <div className="mb-1 text-2xl font-bold text-cyan-300">
                           {analysisResults.analysis.summary.averageScores?.definition || 0}
                         </div>
-                        <div className="text-xs text-slate-400">Définition moyenne</div>
+                        <div className="text-xs text-teal-700">Définition moyenne</div>
                       </div>
                       <div className="text-center">
                         <div className="text-2xl font-bold text-green-400 mb-1">
                           {analysisResults.analysis.summary.musclesAnalyzed || 0}
                         </div>
-                        <div className="text-xs text-slate-400">Muscles analysés</div>
+                        <div className="text-xs text-teal-700">Muscles analysés</div>
                       </div>
                       <div className="text-center">
-                        <div className="text-2xl font-bold text-orange-400 mb-1">
+                        <div className="mb-1 text-2xl font-bold text-teal-300">
                           {analysisResults.analysis.summary.overallScore || 0}
                         </div>
-                        <div className="text-xs text-slate-400">Score global</div>
+                        <div className="text-xs text-teal-700">Score global</div>
                       </div>
                     </div>
                   </CardContent>
@@ -1752,14 +1755,14 @@ const PhotoGallerySection = () => {
               {/* Métriques par muscle */}
               {analysisResults.analysis?.metrics && (
                 <div className="space-y-4">
-                  <h4 className="font-semibold text-white text-lg mb-4">Métriques par Muscle</h4>
+                  <h4 className="font-semibold text-teal-100 text-lg mb-4">Métriques par Muscle</h4>
                   
                   {Object.entries(analysisResults.analysis.metrics)
                     .filter(([_, m]) => m.success)
                     .map(([muscle, metricsData]) => {
                       const metrics = metricsData.metrics || {};
                       return (
-                        <Card key={muscle} className="bg-slate-700/50">
+                        <Card key={muscle} variant="sport" className="bg-black">
                           <CardHeader>
                             <CardTitle size="sm" className="capitalize">{muscle}</CardTitle>
                           </CardHeader>
@@ -1769,18 +1772,18 @@ const PhotoGallerySection = () => {
                               {metrics.volume && (
                                 <div>
                                   <div className="flex justify-between items-center mb-2">
-                                    <span className="text-sm text-slate-400">Volume</span>
-                                    <span className="text-sm font-bold text-white">
+                                    <span className="text-sm text-teal-700">Volume</span>
+                                    <span className="text-sm font-bold text-teal-100">
                                       {metrics.volume.score}/100
                                     </span>
                                   </div>
-                                  <div className="w-full bg-slate-600 rounded-full h-2">
+                                  <div className="h-2 w-full rounded-full bg-[#0F4C5C]/30">
                                     <div
-                                      className="bg-purple-500 h-2 rounded-full transition-all"
+                                      className="bg-[#0F5C45] h-2 rounded-full transition-all"
                                       style={{ width: `${metrics.volume.score}%` }}
                                     />
                                   </div>
-                                  <div className="text-xs text-slate-500 mt-1">
+                                  <div className="text-xs text-teal-800 mt-1">
                                     {metrics.volume.percentage}% | Percentile: {metrics.volume.percentile}%
                                   </div>
                                 </div>
@@ -1790,19 +1793,19 @@ const PhotoGallerySection = () => {
                               {metrics.definition && (
                                 <div>
                                   <div className="flex justify-between items-center mb-2">
-                                    <span className="text-sm text-slate-400">Définition</span>
-                                    <span className="text-sm font-bold text-white">
+                                    <span className="text-sm text-teal-700">Définition</span>
+                                    <span className="text-sm font-bold text-teal-100">
                                       {metrics.definition.score}/100
                                     </span>
                                   </div>
-                                  <div className="w-full bg-slate-600 rounded-full h-2">
+                                  <div className="h-2 w-full rounded-full bg-[#0F4C5C]/30">
                                     <div
-                                      className="bg-blue-500 h-2 rounded-full transition-all"
+                                      className="h-2 rounded-full bg-sky-500 transition-all"
                                       style={{ width: `${metrics.definition.score}%` }}
                                     />
                                   </div>
                                   {metrics.definition.breakdown && (
-                                    <div className="text-xs text-slate-500 mt-1">
+                                    <div className="text-xs text-teal-800 mt-1">
                                       Variance: {metrics.definition.breakdown.variance} | 
                                       FFT: {metrics.definition.breakdown.frequency} | 
                                       Contours: {metrics.definition.breakdown.contours}
@@ -1815,18 +1818,18 @@ const PhotoGallerySection = () => {
                               {metrics.symmetry && (
                                 <div>
                                   <div className="flex justify-between items-center mb-2">
-                                    <span className="text-sm text-slate-400">Symétrie</span>
-                                    <span className="text-sm font-bold text-white">
+                                    <span className="text-sm text-teal-700">Symétrie</span>
+                                    <span className="text-sm font-bold text-teal-100">
                                       {metrics.symmetry.score}/100
                                     </span>
                                   </div>
-                                  <div className="w-full bg-slate-600 rounded-full h-2">
+                                  <div className="h-2 w-full rounded-full bg-[#0F4C5C]/30">
                                     <div
                                       className="bg-green-500 h-2 rounded-full transition-all"
                                       style={{ width: `${metrics.symmetry.score}%` }}
                                     />
                                   </div>
-                                  <div className="text-xs text-slate-500 mt-1">
+                                  <div className="text-xs text-teal-800 mt-1">
                                     Différence: {metrics.symmetry.differencePercent}% | 
                                     {metrics.symmetry.weakerSide === 'left' ? 'Gauche' : 'Droite'} plus faible
                                   </div>
@@ -1837,18 +1840,18 @@ const PhotoGallerySection = () => {
                               {metrics.vascularity && (
                                 <div>
                                   <div className="flex justify-between items-center mb-2">
-                                    <span className="text-sm text-slate-400">Vascularité</span>
-                                    <span className="text-sm font-bold text-white">
+                                    <span className="text-sm text-teal-700">Vascularité</span>
+                                    <span className="text-sm font-bold text-teal-100">
                                       {metrics.vascularity.score}/100
                                     </span>
                                   </div>
-                                  <div className="w-full bg-slate-600 rounded-full h-2">
+                                  <div className="h-2 w-full rounded-full bg-[#0F4C5C]/30">
                                     <div
                                       className="bg-red-500 h-2 rounded-full transition-all"
                                       style={{ width: `${metrics.vascularity.score}%` }}
                                     />
                                   </div>
-                                  <div className="text-xs text-slate-500 mt-1">
+                                  <div className="text-xs text-teal-800 mt-1">
                                     {metrics.vascularity.veinCount} veines détectées
                                   </div>
                                 </div>
@@ -1858,18 +1861,18 @@ const PhotoGallerySection = () => {
                               {metrics.separation && (
                                 <div>
                                   <div className="flex justify-between items-center mb-2">
-                                    <span className="text-sm text-slate-400">Séparation</span>
-                                    <span className="text-sm font-bold text-white">
+                                    <span className="text-sm text-teal-700">Séparation</span>
+                                    <span className="text-sm font-bold text-teal-100">
                                       {metrics.separation.score}/100
                                     </span>
                                   </div>
-                                  <div className="w-full bg-slate-600 rounded-full h-2">
+                                  <div className="h-2 w-full rounded-full bg-[#0F4C5C]/30">
                                     <div
                                       className="bg-yellow-500 h-2 rounded-full transition-all"
                                       style={{ width: `${metrics.separation.score}%` }}
                                     />
                                   </div>
-                                  <div className="text-xs text-slate-500 mt-1">
+                                  <div className="text-xs text-teal-800 mt-1">
                                     Ratio: {metrics.separation.ratio}
                                   </div>
                                 </div>
@@ -1879,19 +1882,19 @@ const PhotoGallerySection = () => {
                               {metrics.contours && (
                                 <div>
                                   <div className="flex justify-between items-center mb-2">
-                                    <span className="text-sm text-slate-400">Contours</span>
-                                    <span className="text-sm font-bold text-white">
+                                    <span className="text-sm text-teal-700">Contours</span>
+                                    <span className="text-sm font-bold text-teal-100">
                                       {metrics.contours.score}/100
                                     </span>
                                   </div>
-                                  <div className="w-full bg-slate-600 rounded-full h-2">
+                                  <div className="h-2 w-full rounded-full bg-[#0F4C5C]/30">
                                     <div
                                       className="bg-cyan-500 h-2 rounded-full transition-all"
                                       style={{ width: `${metrics.contours.score}%` }}
                                     />
                                   </div>
                                   {metrics.contours.breakdown && (
-                                    <div className="text-xs text-slate-500 mt-1">
+                                    <div className="text-xs text-teal-800 mt-1">
                                       Edges: {metrics.contours.breakdown.edges} | 
                                       Sharpness: {metrics.contours.breakdown.sharpness}
                                     </div>
@@ -1908,28 +1911,28 @@ const PhotoGallerySection = () => {
 
               {/* Détails pose détection */}
               {analysisResults.analysis?.poseDetection && (
-                <Card className="mt-6 bg-slate-700/50">
+                <Card variant="sport" className="mt-6">
                   <CardHeader>
                     <CardTitle size="sm">Détection Pose</CardTitle>
                   </CardHeader>
                   <CardContent>
                     <div className="grid grid-cols-2 gap-4 text-sm">
                       <div>
-                        <span className="text-slate-400">Confiance:</span>
-                        <span className="text-white ml-2">
+                        <span className="text-teal-700">Confiance:</span>
+                        <span className="text-teal-100 ml-2">
                           {Math.round((analysisResults.analysis.poseDetection.confidence || 0) * 100)}%
                         </span>
                       </div>
                       <div>
-                        <span className="text-slate-400">Orientation:</span>
-                        <span className="text-white ml-2 capitalize">
+                        <span className="text-teal-700">Orientation:</span>
+                        <span className="text-teal-100 ml-2 capitalize">
                           {analysisResults.analysis.poseDetection.orientation || 'unknown'}
                         </span>
                       </div>
                       {analysisResults.analysis.poseDetection.validation && (
                         <>
                           <div>
-                            <span className="text-slate-400">Validation:</span>
+                            <span className="text-teal-700">Validation:</span>
                             <span className={`ml-2 ${
                               analysisResults.analysis.poseDetection.validation.valid 
                                 ? 'text-green-400' 
@@ -1940,8 +1943,8 @@ const PhotoGallerySection = () => {
                             </span>
                           </div>
                           <div>
-                            <span className="text-slate-400">Angles matchés:</span>
-                            <span className="text-white ml-2">
+                            <span className="text-teal-700">Angles matchés:</span>
+                            <span className="text-teal-100 ml-2">
                               {analysisResults.analysis.poseDetection.validation.matchedAngles}/
                               {analysisResults.analysis.poseDetection.validation.totalAngles}
                             </span>
@@ -1962,8 +1965,8 @@ const PhotoGallerySection = () => {
         <Suspense fallback={
           <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50">
             <div className="text-center">
-              <Loader className="w-12 h-12 mx-auto mb-4 text-purple-400 animate-spin" />
-              <p className="text-slate-400">Chargement session photo...</p>
+              <Loader className="w-12 h-12 mx-auto mb-4 text-sky-400 animate-spin" />
+              <p className="text-teal-700">Chargement session photo...</p>
             </div>
           </div>
         }>
@@ -1978,24 +1981,24 @@ const PhotoGallerySection = () => {
 
       {/* Barre progression analyse */}
       {analyzingPhoto && analysisProgress.progress > 0 && (
-        <div className="fixed bottom-4 right-4 bg-slate-800 rounded-lg p-4 shadow-2xl border border-slate-700 max-w-md z-50">
+        <div className="fixed bottom-4 right-4 z-50 max-w-md rounded-xl border-2 border-[#0F4C5C]/70 bg-black p-4 shadow-2xl shadow-black/50">
           <div className="flex items-center gap-3 mb-3">
-            <Loader className="w-5 h-5 text-purple-400 animate-spin" />
+            <Loader className="w-5 h-5 text-sky-400 animate-spin" />
             <div className="flex-1">
-              <div className="text-sm font-medium text-white mb-1">
+              <div className="text-sm font-medium text-teal-100 mb-1">
                 Analyse IA en cours...
               </div>
-              <div className="text-xs text-slate-400">
+              <div className="text-xs text-teal-700">
                 {analysisProgress.message || `${analysisProgress.progress}%`}
               </div>
             </div>
-            <span className="text-sm font-bold text-purple-400">
+            <span className="text-sm font-bold text-sky-400">
               {analysisProgress.progress}%
             </span>
           </div>
-          <div className="w-full bg-slate-700 rounded-full h-2 overflow-hidden">
+          <div className="h-2 w-full overflow-hidden rounded-full bg-[#0F4C5C]/30">
             <div
-              className="bg-gradient-to-r from-purple-500 to-blue-500 h-2 rounded-full transition-all duration-300"
+              className="h-2 rounded-full bg-gradient-to-r from-[#0F4C5C] via-[#0F5C45] to-sky-400 transition-all duration-300"
               style={{ width: `${analysisProgress.progress}%` }}
             />
           </div>
@@ -2005,9 +2008,9 @@ const PhotoGallerySection = () => {
       {/* Mode comparaison */}
       {compareMode && selectedPhotos.length === 2 && (
         <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4">
-          <div className="bg-slate-800 rounded-lg max-w-6xl w-full max-h-[90vh] overflow-hidden">
-            <div className="flex items-center justify-between p-4 border-b border-slate-700">
-              <h3 className="text-lg font-semibold text-white">Comparaison de progression</h3>
+          <div className="max-h-[90vh] w-full max-w-6xl overflow-hidden rounded-xl border-2 border-[#0F4C5C]/70 bg-black shadow-xl shadow-black/50">
+            <div className="flex items-center justify-between p-4 border-b border-[#0F4C5C]/50">
+              <h3 className="text-lg font-semibold text-teal-100">Comparaison de progression</h3>
               <Button
                 variant="ghost"
                 size="sm"
@@ -2024,10 +2027,10 @@ const PhotoGallerySection = () => {
                   return (
                     <div key={photoId} className="text-center">
                       <div className="mb-4">
-                        <h4 className="font-semibold text-white mb-2">
+                        <h4 className="font-semibold text-teal-100 mb-2">
                           {index === 0 ? 'Avant' : 'Après'} - {formatDate(photo.date)}
                         </h4>
-                        <div className="text-sm text-slate-400">
+                        <div className="text-sm text-teal-700">
                           Poids: {photo.weight} kg
                         </div>
                       </div>

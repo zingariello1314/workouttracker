@@ -2,6 +2,7 @@ import React, { useCallback, useEffect, useState } from 'react';
 import { Lock, Shield, Image as ImageIcon, Timer, Smartphone } from 'lucide-react';
 import { useAppLock } from '../../context/AppLockContext';
 import Card, { CardHeader, CardTitle, CardContent } from '../ui/Card';
+import { settingsTheme as S } from '../tabs/SettingsTab/settingsThemeClasses';
 
 const IDLE_OPTIONS = [
   { value: null, label: 'Jamais (inactivité)' },
@@ -182,48 +183,48 @@ const AppLockSettingsPanel = () => {
 
   if (!canUseAppLock) {
     return (
-      <Card className="bg-slate-800/80 backdrop-blur-sm border-slate-700">
-        <CardHeader>
-          <CardTitle className="flex items-center text-white">
-            <Lock className="mr-2" size={20} />
+      <Card variant="settings">
+        <CardHeader variant="settings">
+          <CardTitle tone="settings" className="flex items-center normal-case tracking-normal">
+            <Lock className="mr-2 text-red-400" size={20} />
             Verrouillage de l’application
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <p className="text-slate-400 text-sm">Connectez-vous pour configurer le verrouillage par compte.</p>
+          <p className={`text-sm ${S.muted}`}>Connectez-vous pour configurer le verrouillage par compte.</p>
         </CardContent>
       </Card>
     );
   }
 
   return (
-    <Card className="bg-slate-800/80 backdrop-blur-sm border-slate-700">
-      <CardHeader>
-        <CardTitle className="flex items-center text-white">
-          <Shield className="mr-2" size={20} />
+    <Card variant="settings">
+      <CardHeader variant="settings">
+        <CardTitle tone="settings" className="flex items-center normal-case tracking-normal">
+          <Shield className="mr-2 text-red-400" size={20} />
           Verrouillage de l’application
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-6">
-        <p className="text-slate-300 text-sm">
+        <p className={`text-sm ${S.body}`}>
           Verrouillage optionnel par compte : aucun code, PIN à 4 ou 6 chiffres, ou code texte. Le code n’est
           jamais stocké en clair (empreinte sécurisée dans votre navigateur).
         </p>
-        <p className="text-xs text-slate-400 rounded-lg border border-slate-600/50 bg-slate-950/50 p-3 leading-relaxed">
-          <span className="font-medium text-slate-300">Oubli du code :</span> sur l’écran de verrouillage, l’onglet{' '}
-          <span className="text-slate-300">Gratuit (mot de passe)</span> permet de réinitialiser avec le mot de passe
+        <p className={`rounded-lg border border-red-900/50 bg-red-950/20 p-3 text-xs leading-relaxed ${S.muted}`}>
+          <span className="font-medium text-red-200/90">Oubli du code :</span> sur l’écran de verrouillage, l’onglet{' '}
+          <span className="text-red-100/90">Gratuit (mot de passe)</span> permet de réinitialiser avec le mot de passe
           Momentum du compte (tout en local, sans serveur) en choisissant un nouveau type (PIN 4, PIN 6 ou texte) et en
           saisissant le code deux fois. L’onglet e-mail envoie un code à 6 chiffres via FastAPI
-          (port 8000) : <code className="text-sky-300">RESEND_API_KEY</code>, <code className="text-sky-300">APP_LOCK_EMAIL_FROM</code>, variables{' '}
-          <code className="text-sky-300">SMTP_*</code>, ou <code className="text-sky-300">APP_LOCK_DEV_MAIL=1</code> en dev (code dans le terminal).
+          (port 8000) : <code className="text-red-300/90">RESEND_API_KEY</code>, <code className="text-red-300/90">APP_LOCK_EMAIL_FROM</code>, variables{' '}
+          <code className="text-red-300/90">SMTP_*</code>, ou <code className="text-red-300/90">APP_LOCK_DEV_MAIL=1</code> en dev (code dans le terminal).
         </p>
 
-        <div className="rounded-xl border border-slate-600/60 bg-slate-900/40 p-4 space-y-4">
-          <h4 className="text-white font-medium flex items-center gap-2">
-            <Timer size={18} className="text-emerald-300" />
+        <div className="space-y-4 rounded-xl border border-red-900/50 bg-red-950/15 p-4">
+          <h4 className="flex items-center gap-2 font-medium text-red-100">
+            <Timer size={18} className="text-red-400" />
             Délai d’inactivité
           </h4>
-          <p className="text-xs text-slate-400">
+          <p className={S.mutedXs}>
             Après cette durée sans interaction, l’application se verrouille (si un code est défini).
           </p>
           <select
@@ -232,7 +233,7 @@ const AppLockSettingsPanel = () => {
               const v = e.target.value;
               setIdleDraft(v === '' ? null : Number(v));
             }}
-            className="w-full max-w-md rounded-lg bg-slate-900 border border-slate-600 text-slate-100 px-3 py-2 text-sm"
+            className={`max-w-md ${S.input}`}
           >
             {IDLE_OPTIONS.map((o) => (
               <option key={o.label} value={o.value === null ? '' : String(o.value)}>
@@ -242,31 +243,32 @@ const AppLockSettingsPanel = () => {
           </select>
         </div>
 
-        <div className="rounded-xl border border-slate-600/60 bg-slate-900/40 p-4 space-y-3">
-          <h4 className="text-white font-medium flex items-center gap-2">
-            <Smartphone size={18} className="text-cyan-300" />
+        <div className="space-y-3 rounded-xl border border-red-900/50 bg-red-950/15 p-4">
+          <h4 className="flex items-center gap-2 font-medium text-red-100">
+            <Smartphone size={18} className="text-red-400" />
             Retour depuis une autre application
           </h4>
-          <label className="flex items-center gap-2 text-sm text-slate-200 cursor-pointer">
+          <label className={`flex cursor-pointer items-center gap-2 text-sm ${S.body}`}>
             <input
               type="checkbox"
               checked={bgDraft}
               onChange={(e) => setBgDraft(e.target.checked)}
-              className="rounded border-slate-500"
+              className="rounded border-red-800 bg-black text-red-600 focus:ring-red-500/40"
             />
             Verrouiller quand l’onglet repasse au premier plan après avoir été en arrière-plan
           </label>
         </div>
 
-        <div className="rounded-xl border border-slate-600/60 bg-slate-900/40 p-4 space-y-3">
-          <h4 className="text-white font-medium">Type de protection</h4>
+        <div className="space-y-3 rounded-xl border border-red-900/50 bg-red-950/15 p-4">
+          <h4 className="font-medium text-red-100">Type de protection</h4>
           <div className="flex flex-col gap-2">
-            <label className="flex items-center gap-2 text-sm text-slate-200 cursor-pointer">
+            <label className={`flex cursor-pointer items-center gap-2 text-sm ${S.body}`}>
               <input
                 type="radio"
                 name="app-lock-mode"
                 checked={modeDraft === 'disabled'}
                 onChange={() => setModeDraft('disabled')}
+                className="border-red-800 text-red-600 focus:ring-red-500/40"
               />
               Aucun verrouillage (pas de code)
             </label>
@@ -275,30 +277,33 @@ const AppLockSettingsPanel = () => {
                 Pour retirer le code déjà enregistré, utilisez aussi « Tout désactiver » ci-dessous.
               </p>
             )}
-            <label className="flex items-center gap-2 text-sm text-slate-200 cursor-pointer">
+            <label className={`flex cursor-pointer items-center gap-2 text-sm ${S.body}`}>
               <input
                 type="radio"
                 name="app-lock-mode"
                 checked={modeDraft === 'pin4'}
                 onChange={() => setModeDraft('pin4')}
+                className="border-red-800 text-red-600 focus:ring-red-500/40"
               />
               PIN — 4 chiffres
             </label>
-            <label className="flex items-center gap-2 text-sm text-slate-200 cursor-pointer">
+            <label className={`flex cursor-pointer items-center gap-2 text-sm ${S.body}`}>
               <input
                 type="radio"
                 name="app-lock-mode"
                 checked={modeDraft === 'pin6'}
                 onChange={() => setModeDraft('pin6')}
+                className="border-red-800 text-red-600 focus:ring-red-500/40"
               />
               PIN — 6 chiffres
             </label>
-            <label className="flex items-center gap-2 text-sm text-slate-200 cursor-pointer">
+            <label className={`flex cursor-pointer items-center gap-2 text-sm ${S.body}`}>
               <input
                 type="radio"
                 name="app-lock-mode"
                 checked={modeDraft === 'alphanumeric'}
                 onChange={() => setModeDraft('alphanumeric')}
+                className="border-red-800 text-red-600 focus:ring-red-500/40"
               />
               Code texte (clavier physique ou visuel, 4 à 64 caractères)
             </label>
@@ -307,16 +312,16 @@ const AppLockSettingsPanel = () => {
             type="button"
             disabled={saving}
             onClick={applyTimingOnly}
-            className="mt-2 px-4 py-2 rounded-lg bg-slate-700 hover:bg-slate-600 text-sm font-medium text-white disabled:opacity-50"
+            className={`${S.btnSecondary} mt-2 disabled:opacity-50`}
           >
             Enregistrer délai & options d’arrière-plan
           </button>
         </div>
 
         {modeDraft !== 'disabled' && (
-          <div className="rounded-xl border border-emerald-700/40 bg-emerald-950/20 p-4 space-y-3">
-            <h4 className="text-emerald-100 font-medium">Définir ou changer le code</h4>
-            <p className="text-xs text-slate-400">
+          <div className="space-y-3 rounded-xl border border-red-800/45 bg-red-950/25 p-4">
+            <h4 className="font-medium text-red-100">Définir ou changer le code</h4>
+            <p className={S.mutedXs}>
               Saisissez deux fois le même code. Si un code existe déjà, il sera remplacé.
             </p>
             <input
@@ -325,7 +330,7 @@ const AppLockSettingsPanel = () => {
               value={codeA}
               onChange={(e) => setCodeA(e.target.value)}
               placeholder="Nouveau code"
-              className="w-full max-w-md rounded-lg bg-slate-900 border border-slate-600 px-3 py-2 text-sm text-white"
+              className={`max-w-md ${S.input}`}
             />
             <input
               type="password"
@@ -333,13 +338,13 @@ const AppLockSettingsPanel = () => {
               value={codeB}
               onChange={(e) => setCodeB(e.target.value)}
               placeholder="Confirmer le code"
-              className="w-full max-w-md rounded-lg bg-slate-900 border border-slate-600 px-3 py-2 text-sm text-white"
+              className={`max-w-md ${S.input}`}
             />
             <button
               type="button"
               disabled={saving}
               onClick={saveNewCode}
-              className="px-4 py-2 rounded-lg bg-gradient-to-r from-emerald-600 to-cyan-600 text-white text-sm font-semibold disabled:opacity-50"
+              className={`${S.btnPrimary} disabled:opacity-50`}
             >
               Enregistrer le code
             </button>
@@ -359,19 +364,19 @@ const AppLockSettingsPanel = () => {
           </div>
         )}
 
-        <div className="rounded-xl border border-slate-600/60 bg-slate-900/40 p-4 space-y-3">
-          <h4 className="text-white font-medium flex items-center gap-2">
-            <ImageIcon size={18} className="text-slate-300" />
+        <div className="space-y-3 rounded-xl border border-red-900/50 bg-red-950/15 p-4">
+          <h4 className="flex items-center gap-2 font-medium text-red-100">
+            <ImageIcon size={18} className="text-red-400" />
             Fond de l’écran de verrouillage
           </h4>
-          <p className="text-xs text-slate-400">Image affichée derrière le pavé (optionnel, max 4 Mo).</p>
+          <p className={S.mutedXs}>Image affichée derrière le pavé (optionnel, max 4 Mo).</p>
           {record.lockBackgroundDataUrl && (
-            <div className="rounded-lg overflow-hidden border border-slate-600 max-h-40 w-full max-w-xs">
-              <img src={record.lockBackgroundDataUrl} alt="" className="w-full h-full object-cover" />
+            <div className="max-h-40 w-full max-w-xs overflow-hidden rounded-lg border border-red-900/50">
+              <img src={record.lockBackgroundDataUrl} alt="" className="h-full w-full object-cover" />
             </div>
           )}
           <div className="flex flex-wrap gap-2">
-            <label className="px-4 py-2 rounded-lg bg-slate-700 hover:bg-slate-600 text-sm cursor-pointer text-white">
+            <label className={`cursor-pointer rounded-lg px-4 py-2 text-sm ${S.btnSecondary}`}>
               Choisir une image
               <input type="file" accept="image/*" className="hidden" onChange={onPickBackground} />
             </label>
@@ -380,7 +385,7 @@ const AppLockSettingsPanel = () => {
                 type="button"
                 onClick={clearBackground}
                 disabled={saving}
-                className="px-4 py-2 rounded-lg border border-slate-500 text-sm text-slate-200 hover:bg-slate-800"
+                className="rounded-lg border border-red-800/60 bg-black px-4 py-2 text-sm text-red-100/90 hover:bg-red-950/30 disabled:opacity-50"
               >
                 Retirer le fond
               </button>

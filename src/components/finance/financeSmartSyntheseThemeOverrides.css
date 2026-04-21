@@ -1,0 +1,84 @@
+.finance-smart-synthese-scope {
+  --fss-bg: #000000;
+  --fss-bg-soft: #000000;
+  --fss-border: #1e6b47;
+  --fss-border-strong: #339c5a;
+  --fss-text: #d4f5e6;
+  --fss-muted: #8fbfa3;
+}
+
+.finance-smart-synthese-scope > * + * {
+  margin-top: 1rem;
+}
+
+.finance-smart-synthese-scope [class*='gradient-button-premium'],
+.finance-smart-synthese-scope button[class*='bg-'] {
+  background: color-mix(in srgb, var(--fss-border-strong) 20%, black) !important;
+  border: 1px solid color-mix(in srgb, var(--fss-border-strong) 78%, transparent) !important;
+  color: var(--fss-text) !important;
+}
+
+.finance-smart-synthese-scope [class*='gradient-button-premium-variant'] {
+  background: color-mix(in srgb, var(--fss-border-strong) 34%, black) !important;
+  border-color: var(--fss-border-strong) !important;
+}
+
+.finance-smart-synthese-scope [class*='bg-slate-'],
+.finance-smart-synthese-scope [class*='from-slate-'],
+.finance-smart-synthese-scope [class*='to-slate-'],
+.finance-smart-synthese-scope [class*='bg-blue-'],
+.finance-smart-synthese-scope [class*='from-blue-'],
+.finance-smart-synthese-scope [class*='to-blue-'],
+.finance-smart-synthese-scope [class*='bg-purple-'],
+.finance-smart-synthese-scope [class*='from-purple-'],
+.finance-smart-synthese-scope [class*='to-purple-'],
+.finance-smart-synthese-scope [class*='bg-emerald-'],
+.finance-smart-synthese-scope [class*='from-emerald-'],
+.finance-smart-synthese-scope [class*='to-emerald-'],
+.finance-smart-synthese-scope [class*='bg-green-'],
+.finance-smart-synthese-scope [class*='from-green-'],
+.finance-smart-synthese-scope [class*='to-green-'],
+.finance-smart-synthese-scope [class*='backdrop-blur'] {
+  background: var(--fss-bg) !important;
+  backdrop-filter: none !important;
+}
+
+.finance-smart-synthese-scope [class*='border-slate-'],
+.finance-smart-synthese-scope [class*='border-blue-'],
+.finance-smart-synthese-scope [class*='border-purple-'],
+.finance-smart-synthese-scope [class*='border-emerald-'],
+.finance-smart-synthese-scope [class*='border-green-'] {
+  border-color: color-mix(in srgb, var(--fss-border) 72%, transparent) !important;
+}
+
+.finance-smart-synthese-scope [class*='text-slate-'],
+.finance-smart-synthese-scope [class*='text-white'],
+.finance-smart-synthese-scope [class*='text-blue-'],
+.finance-smart-synthese-scope [class*='text-purple-'],
+.finance-smart-synthese-scope [class*='text-emerald-'],
+.finance-smart-synthese-scope [class*='text-green-'] {
+  color: var(--fss-text) !important;
+}
+
+.finance-smart-synthese-scope [class*='shadow-'] {
+  box-shadow: none !important;
+}
+
+.finance-smart-synthese-scope input,
+.finance-smart-synthese-scope select,
+.finance-smart-synthese-scope textarea {
+  background: #000 !important;
+  border-color: color-mix(in srgb, var(--fss-border) 75%, transparent) !important;
+  color: var(--fss-text) !important;
+}
+
+.finance-smart-synthese-scope input::placeholder,
+.finance-smart-synthese-scope textarea::placeholder {
+  color: var(--fss-muted) !important;
+}
+
+.finance-smart-synthese-scope .rounded-2xl,
+.finance-smart-synthese-scope .rounded-xl,
+.finance-smart-synthese-scope .rounded-lg {
+  border-color: color-mix(in srgb, var(--fss-border) 72%, transparent);
+}

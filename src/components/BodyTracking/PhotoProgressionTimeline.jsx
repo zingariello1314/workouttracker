@@ -49,8 +49,8 @@ const log = logger.component('PhotoProgressionTimeline');
 const CustomTooltip = ({ active, payload, label }) => {
   if (active && payload && payload.length) {
     return (
-      <div className="bg-slate-800 border border-slate-700 rounded-lg p-3 shadow-xl">
-        <p className="text-white font-medium mb-2">{formatDate(new Date(label))}</p>
+      <div className="bg-black border border-[#0F4C5C]/45 rounded-lg p-3 shadow-xl">
+        <p className="text-teal-100 font-medium mb-2">{formatDate(new Date(label))}</p>
         {payload.map((entry, index) => (
           <p key={index} className="text-sm" style={{ color: entry.color }}>
             {entry.name}: <span className="font-bold">{entry.value}/100</span>
@@ -272,13 +272,13 @@ const PhotoProgressionTimeline = () => {
 
   if (filteredPhotos.length === 0) {
     return (
-      <Card className="bg-slate-800/50 border-slate-700">
+      <Card className="bg-black border border-[#0F4C5C]/50 border-[#0F4C5C]/35">
         <CardContent className="p-12 text-center">
-          <Calendar className="w-16 h-16 mx-auto mb-4 text-slate-500" />
-          <h3 className="text-xl font-semibold text-white mb-2">
+          <Calendar className="w-16 h-16 mx-auto mb-4 text-teal-100/45" />
+          <h3 className="text-xl font-semibold text-teal-100 mb-2">
             Aucune photo analysée disponible
           </h3>
-          <p className="text-slate-400">
+          <p className="text-teal-100/55">
             Lancez des analyses IA sur vos photos pour voir la timeline de progression ici.
           </p>
         </CardContent>
@@ -294,7 +294,7 @@ const PhotoProgressionTimeline = () => {
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            <Calendar className="w-5 h-5 text-purple-400" />
+            <Calendar className="w-5 h-5 text-sky-300" />
             Timeline de Progression
           </CardTitle>
         </CardHeader>
@@ -302,11 +302,11 @@ const PhotoProgressionTimeline = () => {
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
             {/* Filtre période */}
             <div>
-              <label className="block text-sm font-medium text-slate-300 mb-2">Période</label>
+              <label className="block text-sm font-medium text-teal-100/80 mb-2">Période</label>
               <select
                 value={selectedPeriod}
                 onChange={(e) => setSelectedPeriod(e.target.value)}
-                className="w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-purple-500"
+                className="w-full px-3 py-2 bg-black border border-[#0F4C5C]/45 rounded-lg text-teal-100 focus:outline-none focus:ring-2 focus:ring-[#0F5C45]/50"
               >
                 <option value="all">Toutes</option>
                 <option value="3months">3 derniers mois</option>
@@ -317,7 +317,7 @@ const PhotoProgressionTimeline = () => {
 
             {/* Filtre qualité */}
             <div>
-              <label className="block text-sm font-medium text-slate-300 mb-2">
+              <label className="block text-sm font-medium text-teal-100/80 mb-2">
                 Qualité min: {minQualityScore}/100
               </label>
               <input
@@ -332,7 +332,7 @@ const PhotoProgressionTimeline = () => {
 
             {/* Orientation timeline */}
             <div>
-              <label className="block text-sm font-medium text-slate-300 mb-2">Orientation</label>
+              <label className="block text-sm font-medium text-teal-100/80 mb-2">Orientation</label>
               <div className="flex gap-2">
                 <Button
                   size="sm"
@@ -353,7 +353,7 @@ const PhotoProgressionTimeline = () => {
 
             {/* Animation contrôles */}
             <div>
-              <label className="block text-sm font-medium text-slate-300 mb-2">Animation</label>
+              <label className="block text-sm font-medium text-teal-100/80 mb-2">Animation</label>
               <div className="flex gap-2">
                 <Button
                   size="sm"
@@ -365,7 +365,7 @@ const PhotoProgressionTimeline = () => {
                 <select
                   value={playSpeed}
                   onChange={(e) => setPlaySpeed(parseInt(e.target.value))}
-                  className="px-2 py-1 bg-slate-700 border border-slate-600 rounded text-white text-sm"
+                  className="px-2 py-1 bg-black border border-[#0F4C5C]/45 rounded text-teal-100 text-sm"
                   disabled={!isPlaying}
                 >
                   <option value="1">1x</option>
@@ -380,11 +380,11 @@ const PhotoProgressionTimeline = () => {
 
       {/* Statistiques globales */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <Card className="bg-purple-600/10 border-purple-500/30">
+        <Card className="bg-black border-2 border-[#0F4C5C]/55 shadow-sm shadow-black/15">
           <CardContent className="p-4">
-            <div className="text-sm text-slate-400 mb-1">Photos analysées</div>
-            <div className="text-2xl font-bold text-purple-400">{globalStats.totalPhotos}</div>
-            <div className="text-xs text-slate-500 mt-1">
+            <div className="text-sm text-teal-100/55 mb-1">Photos analysées</div>
+            <div className="text-2xl font-bold text-sky-300">{globalStats.totalPhotos}</div>
+            <div className="text-xs text-teal-100/45 mt-1">
               {globalStats.dateRange && (
                 <>
                   {formatDate(globalStats.dateRange.start)} → {formatDate(globalStats.dateRange.end)}
@@ -394,11 +394,11 @@ const PhotoProgressionTimeline = () => {
           </CardContent>
         </Card>
 
-        <Card className="bg-blue-600/10 border-blue-500/30">
+        <Card className="bg-black border-2 border-[#0F4C5C]/55 shadow-sm shadow-black/20">
           <CardContent className="p-4">
-            <div className="text-sm text-slate-400 mb-1">Score moyen</div>
-            <div className="text-2xl font-bold text-blue-400">{globalStats.avgOverallScore}/100</div>
-            <div className="text-xs text-slate-500 mt-1">
+            <div className="text-sm text-teal-100/55 mb-1">Score moyen</div>
+            <div className="text-2xl font-bold text-sky-300/90">{globalStats.avgOverallScore}/100</div>
+            <div className="text-xs text-teal-100/45 mt-1">
               {globalStats.totalDays > 0 && `${globalStats.totalDays} jours de suivi`}
             </div>
           </CardContent>
@@ -407,7 +407,7 @@ const PhotoProgressionTimeline = () => {
         {globalStats.weightEvolution && (
           <Card className="bg-green-600/10 border-green-500/30">
             <CardContent className="p-4">
-              <div className="text-sm text-slate-400 mb-1">Évolution poids</div>
+              <div className="text-sm text-teal-100/55 mb-1">Évolution poids</div>
               <div className="text-2xl font-bold text-green-400">
                 {globalStats.weightEvolution.first} → {globalStats.weightEvolution.last} kg
               </div>
@@ -423,9 +423,9 @@ const PhotoProgressionTimeline = () => {
 
         <Card className="bg-orange-600/10 border-orange-500/30">
           <CardContent className="p-4">
-            <div className="text-sm text-slate-400 mb-1">Muscles suivis</div>
+            <div className="text-sm text-teal-100/55 mb-1">Muscles suivis</div>
             <div className="text-2xl font-bold text-orange-400">{availableMuscles.length}</div>
-            <div className="text-xs text-slate-500 mt-1">muscles différents</div>
+            <div className="text-xs text-teal-100/45 mt-1">muscles différents</div>
           </CardContent>
         </Card>
       </div>
@@ -434,10 +434,10 @@ const PhotoProgressionTimeline = () => {
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            <Activity className="w-5 h-5 text-purple-400" />
+            <Activity className="w-5 h-5 text-sky-300" />
             Timeline Chronologique
             {isPlaying && (
-              <span className="text-sm font-normal text-purple-400 ml-auto">
+              <span className="text-sm font-normal text-sky-300 ml-auto">
                 Lecture: {currentAnimationIndex + 1}/{filteredPhotos.length}
               </span>
             )}
@@ -463,33 +463,33 @@ const PhotoProgressionTimeline = () => {
                     {/* Ligne timeline */}
                     {index < filteredPhotos.length - 1 && (
                       <div
-                        className={`${timelineOrientation === 'horizontal' ? 'w-16 h-1' : 'w-1 h-16'} bg-slate-600 ${
-                          isActive ? 'bg-purple-500' : ''
+                        className={`${timelineOrientation === 'horizontal' ? 'w-16 h-1' : 'w-1 h-16'} bg-[#0F4C5C]/40 ${
+                          isActive ? 'bg-[#0F5C45]' : ''
                         } transition-all`}
                       />
                     )}
 
                     {/* Miniature photo */}
                     <div
-                      className={`relative ${isActive ? 'ring-4 ring-purple-500' : 'ring-2 ring-slate-600'} rounded-lg overflow-hidden transition-all`}
+                      className={`relative ${isActive ? 'ring-4 ring-[#0F5C45]/50' : 'ring-2 ring-[#0F4C5C]/50'} rounded-lg overflow-hidden transition-all`}
                     >
                       <img
                         src={photo.url}
                         alt={`Photo ${formatDate(photo.date)}`}
                         className={`${timelineOrientation === 'horizontal' ? 'w-24 h-32' : 'w-32 h-24'} object-cover`}
                       />
-                      <div className="absolute bottom-0 left-0 right-0 bg-black/60 p-1 text-xs text-white text-center">
+                      <div className="absolute bottom-0 left-0 right-0 bg-black/60 p-1 text-xs text-teal-100 text-center">
                         {formatDate(photo.date)}
                       </div>
                       {photo.analysis?.analyzed && (
                         <div className="absolute top-1 right-1">
-                          <Sparkles className="w-4 h-4 text-purple-400" />
+                          <Sparkles className="w-4 h-4 text-sky-300" />
                         </div>
                       )}
                     </div>
 
                     {/* Infos rapides */}
-                    <div className={`${timelineOrientation === 'horizontal' ? 'mt-2 text-center' : 'flex-1'} text-xs text-slate-400`}>
+                    <div className={`${timelineOrientation === 'horizontal' ? 'mt-2 text-center' : 'flex-1'} text-xs text-teal-100/55`}>
                       <div>Score: {photo.summary.overallScore || 0}/100</div>
                       {photo.qualityScore > 0 && (
                         <div>Qualité: {photo.qualityScore}/100</div>
@@ -505,10 +505,10 @@ const PhotoProgressionTimeline = () => {
 
       {/* Photo principale (si animation active) */}
       {isPlaying && currentPhoto && (
-        <Card className="bg-purple-600/10 border-purple-500/30">
+        <Card className="bg-black border-2 border-[#0F4C5C]/55 shadow-sm shadow-black/15">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
-              <Play className="w-5 h-5 text-purple-400 animate-pulse" />
+              <Play className="w-5 h-5 text-sky-300 animate-pulse" />
               Photo Actuelle - {formatDate(currentPhoto.date)}
             </CardTitle>
           </CardHeader>
@@ -522,25 +522,25 @@ const PhotoProgressionTimeline = () => {
               <div className="flex-1">
                 <div className="grid grid-cols-2 gap-4 mb-4">
                   <div>
-                    <div className="text-sm text-slate-400">Score Global</div>
-                    <div className="text-2xl font-bold text-purple-400">
+                    <div className="text-sm text-teal-100/55">Score Global</div>
+                    <div className="text-2xl font-bold text-sky-300">
                       {currentPhoto.summary.overallScore || 0}/100
                     </div>
                   </div>
                   <div>
-                    <div className="text-sm text-slate-400">Volume Moyen</div>
-                    <div className="text-2xl font-bold text-blue-400">
+                    <div className="text-sm text-teal-100/55">Volume Moyen</div>
+                    <div className="text-2xl font-bold text-sky-300/90">
                       {currentPhoto.summary.averageScores?.volume || 0}/100
                     </div>
                   </div>
                   <div>
-                    <div className="text-sm text-slate-400">Définition Moyenne</div>
+                    <div className="text-sm text-teal-100/55">Définition Moyenne</div>
                     <div className="text-2xl font-bold text-green-400">
                       {currentPhoto.summary.averageScores?.definition || 0}/100
                     </div>
                   </div>
                   <div>
-                    <div className="text-sm text-slate-400">Muscles Analysés</div>
+                    <div className="text-sm text-teal-100/55">Muscles Analysés</div>
                     <div className="text-2xl font-bold text-orange-400">
                       {currentPhoto.summary.musclesAnalyzed || 0}
                     </div>
@@ -556,7 +556,7 @@ const PhotoProgressionTimeline = () => {
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            <TrendingUp className="w-5 h-5 text-blue-400" />
+            <TrendingUp className="w-5 h-5 text-sky-300/90" />
             Comparaison Multi-Muscles
           </CardTitle>
         </CardHeader>
@@ -564,7 +564,7 @@ const PhotoProgressionTimeline = () => {
           {/* Sélection muscles */}
           {availableMuscles.length > 0 && (
             <div className="mb-4">
-              <label className="block text-sm font-medium text-slate-300 mb-2">
+              <label className="block text-sm font-medium text-teal-100/80 mb-2">
                 Muscles à comparer (max 5)
               </label>
               <div className="flex flex-wrap gap-2">
@@ -583,8 +583,8 @@ const PhotoProgressionTimeline = () => {
                     }}
                     className={`px-3 py-1 rounded-lg text-sm transition-all ${
                       selectedMuscles.includes(muscle)
-                        ? 'bg-purple-600 text-white'
-                        : 'bg-slate-700 text-slate-300 hover:bg-slate-600'
+                        ? 'bg-[#0F4C5C]/50 text-teal-100'
+                        : 'bg-black border border-[#0F4C5C]/45 text-teal-100/80 hover:bg-[#0F4C5C]/40'
                     }`}
                   >
                     {muscle.charAt(0).toUpperCase() + muscle.slice(1)}

@@ -35,9 +35,9 @@ const Toast = ({ id, message, type, onClose, detailedFeedback = null }) => {
       icon: <AlertCircle className="w-5 h-5 text-yellow-100" />
     },
     info: {
-      bg: 'bg-blue-600/90',
-      border: 'border-blue-500',
-      icon: <Info className="w-5 h-5 text-blue-100" />
+      bg: 'bg-[#0F4C5C]/90',
+      border: 'border-[#0F5C45]/55',
+      icon: <Info className="w-5 h-5 text-sky-100/90" />
     }
   };
 
@@ -45,7 +45,7 @@ const Toast = ({ id, message, type, onClose, detailedFeedback = null }) => {
 
   return (
     <div
-      className={`${style.bg} ${style.border} border rounded-lg shadow-lg p-4 min-w-[300px] max-w-[600px] text-white backdrop-blur-sm animate-slide-in-right`}
+      className={`${style.bg} ${style.border} border rounded-lg shadow-lg p-4 min-w-[300px] max-w-[600px] text-teal-100 backdrop-blur-sm animate-slide-in-right`}
       role="alert"
       aria-live="assertive"
     >
@@ -61,7 +61,7 @@ const Toast = ({ id, message, type, onClose, detailedFeedback = null }) => {
                 <>
                   <button
                     onClick={() => setShowDetails(!showDetails)}
-                    className="text-xs text-white/80 hover:text-white underline mb-2"
+                    className="text-xs text-teal-100/80 hover:text-teal-100 underline mb-2"
                   >
                     {showDetails ? 'Masquer' : 'Voir'} les suggestions ({detailedFeedback.suggestions.length})
                   </button>
@@ -81,7 +81,7 @@ const Toast = ({ id, message, type, onClose, detailedFeedback = null }) => {
         </div>
         <button
           onClick={() => onClose(id)}
-          className="flex-shrink-0 text-white/80 hover:text-white transition-colors"
+          className="flex-shrink-0 text-teal-100/80 hover:text-teal-100 transition-colors"
           aria-label="Fermer la notification"
         >
           <X className="w-4 h-4" />

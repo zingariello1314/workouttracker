@@ -84,7 +84,7 @@ const WorkoutProvider = ({ children }) => {
 
   const requestOpenEnduranceSubTab = useCallback(
     (tabId) => {
-      const valid = ['running', 'pushups', 'swimming', 'jumprope', 'boxing'];
+      const valid = ['running', 'pushups', 'gainage', 'swimming', 'jumprope', 'boxing'];
       if (!valid.includes(tabId)) return;
       setPendingEnduranceSubTab(tabId);
       if (activeTab !== 'endurance') {

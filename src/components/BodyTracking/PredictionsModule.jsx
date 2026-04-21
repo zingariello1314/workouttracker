@@ -489,7 +489,7 @@ const PredictionsModule = () => {
     } else if (isNegativeGood) {
       return change < 0 ? 'text-green-400' : 'text-red-400';
     }
-    return 'text-blue-400';
+    return 'text-sky-300/90';
   };
 
   const getChangeIcon = (change) => {
@@ -530,11 +530,11 @@ const PredictionsModule = () => {
   return (
     <div className="space-y-6">
       {/* Contrôles de configuration */}
-      <Card>
-        <CardHeader>
+      <Card variant="sport">
+        <CardHeader variant="sport">
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-            <CardTitle className="flex items-center gap-2">
-              <Target className="w-5 h-5 text-purple-400" />
+            <CardTitle tone="sport" className="flex items-center gap-2 normal-case tracking-normal">
+              <Target className="w-5 h-5 text-sky-300" />
               Prévisions et projections
             </CardTitle>
             
@@ -543,7 +543,7 @@ const PredictionsModule = () => {
                 variant={showActivityScenarios ? "default" : "ghost"}
                 size="sm"
                 onClick={() => setShowActivityScenarios(!showActivityScenarios)}
-                className={showActivityScenarios ? "bg-blue-600 hover:bg-blue-700" : ""}
+                className={showActivityScenarios ? "bg-[#0F4C5C]/50 hover:bg-[#0F4C5C]/65" : ""}
               >
                 <Activity className="w-4 h-4" />
                 Scénarios activité
@@ -574,13 +574,13 @@ const PredictionsModule = () => {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             {/* Sélection de métrique */}
             <div>
-              <label className="block text-sm font-medium text-slate-300 mb-2">
+              <label className="block text-sm font-medium text-teal-100/80 mb-2">
                 Métrique à prédire
               </label>
               <select
                 value={selectedMetric}
                 onChange={(e) => setSelectedMetric(e.target.value)}
-                className="w-full bg-slate-700 border border-slate-600 rounded-lg px-3 py-2 text-white"
+                className="w-full bg-black border border-[#0F4C5C]/45 rounded-lg px-3 py-2 text-teal-100"
               >
                 {availableMetrics.map(metric => (
                   <option key={metric.value} value={metric.value}>
@@ -592,13 +592,13 @@ const PredictionsModule = () => {
 
             {/* Période de prévision */}
             <div>
-              <label className="block text-sm font-medium text-slate-300 mb-2">
+              <label className="block text-sm font-medium text-teal-100/80 mb-2">
                 Période de prévision
               </label>
               <select
                 value={predictionPeriod}
                 onChange={(e) => setPredictionPeriod(e.target.value)}
-                className="w-full bg-slate-700 border border-slate-600 rounded-lg px-3 py-2 text-white"
+                className="w-full bg-black border border-[#0F4C5C]/45 rounded-lg px-3 py-2 text-teal-100"
               >
                 {predictionPeriods.map(period => (
                   <option key={period.value} value={period.value}>
@@ -610,13 +610,13 @@ const PredictionsModule = () => {
 
             {/* Niveau de confiance */}
             <div>
-              <label className="block text-sm font-medium text-slate-300 mb-2">
+              <label className="block text-sm font-medium text-teal-100/80 mb-2">
                 Niveau de confiance
               </label>
               <select
                 value={confidenceLevel}
                 onChange={(e) => setConfidenceLevel(e.target.value)}
-                className="w-full bg-slate-700 border border-slate-600 rounded-lg px-3 py-2 text-white"
+                className="w-full bg-black border border-[#0F4C5C]/45 rounded-lg px-3 py-2 text-teal-100"
               >
                 {confidenceLevels.map(level => (
                   <option key={level.value} value={level.value}>
@@ -630,10 +630,10 @@ const PredictionsModule = () => {
       </Card>
 
       {/* Prévision principale */}
-      <Card className="bg-purple-600/10 border-purple-500/30">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Zap className="w-5 h-5 text-purple-400" />
+      <Card variant="sport" className="shadow-sm shadow-black/15">
+        <CardHeader variant="sport">
+          <CardTitle tone="sport" className="flex items-center gap-2 normal-case tracking-normal">
+            <Zap className="w-5 h-5 text-sky-300" />
             Prévision pour {predictionsData.metric?.label || 'métrique sélectionnée'}
           </CardTitle>
         </CardHeader>
@@ -641,35 +641,35 @@ const PredictionsModule = () => {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             {/* Valeur actuelle */}
             <div className="text-center">
-              <div className="text-sm text-slate-400 mb-1">Valeur actuelle</div>
+              <div className="text-sm text-teal-100/55 mb-1">Valeur actuelle</div>
               {predictionsData.current != null && !isNaN(predictionsData.current) ? (
                 <>
-                  <div className="text-3xl font-bold text-white mb-1">
+                  <div className="text-3xl font-bold text-teal-100 mb-1">
                     {predictionsData.current.toFixed(1)}
-                    <span className="text-lg text-slate-400 ml-1">{predictionsData.metric.unit}</span>
+                    <span className="text-lg text-teal-100/55 ml-1">{predictionsData.metric.unit}</span>
                   </div>
-                  <div className="text-xs text-slate-500">Dernière mesure</div>
+                  <div className="text-xs text-teal-100/45">Dernière mesure</div>
                 </>
               ) : (
-                <div className="text-lg text-slate-500">Aucune donnée</div>
+                <div className="text-lg text-teal-100/45">Aucune donnée</div>
               )}
             </div>
 
             {/* Flèche de transition */}
             <div className="flex items-center justify-center">
-              <ArrowRight className="w-8 h-8 text-purple-400" />
+              <ArrowRight className="w-8 h-8 text-sky-300" />
             </div>
 
             {/* Valeur prédite */}
             <div className="text-center">
-              <div className="text-sm text-slate-400 mb-1">
+              <div className="text-sm text-teal-100/55 mb-1">
                 Prévision ({predictionPeriods.find(p => p.value === predictionPeriod)?.label})
               </div>
               {predictionsData.predicted != null && !isNaN(predictionsData.predicted) ? (
                 <>
-                  <div className="text-3xl font-bold text-purple-400 mb-1">
+                  <div className="text-3xl font-bold text-sky-300 mb-1">
                     {predictionsData.predicted.toFixed(1)}
-                    <span className="text-lg text-slate-400 ml-1">{predictionsData.metric?.unit || ''}</span>
+                    <span className="text-lg text-teal-100/55 ml-1">{predictionsData.metric?.unit || ''}</span>
                   </div>
                   {predictionsData.change != null && !isNaN(predictionsData.change) && predictionsData.changePercentage != null && !isNaN(predictionsData.changePercentage) && (
                     <div className={`flex items-center justify-center gap-1 text-sm ${getChangeColor(predictionsData.change)}`}>
@@ -680,28 +680,28 @@ const PredictionsModule = () => {
                   )}
                 </>
               ) : (
-                <div className="text-lg text-slate-500">Prévision non disponible</div>
+                <div className="text-lg text-teal-100/45">Prévision non disponible</div>
               )}
             </div>
           </div>
 
           {/* Intervalle de confiance */}
           {predictionsData.confidenceInterval.lower != null && predictionsData.confidenceInterval.upper != null && (
-            <div className="mt-6 p-4 bg-slate-700/50 rounded-lg">
+            <div className="mt-6 p-4 bg-black border border-[#0F4C5C]/45 rounded-lg">
               <div className="flex items-center justify-between mb-2">
-                <span className="text-sm text-slate-300">Intervalle de confiance ({predictionsData.accuracy}%)</span>
-                <span className="text-sm text-purple-400">
+                <span className="text-sm text-teal-100/80">Intervalle de confiance ({predictionsData.accuracy}%)</span>
+                <span className="text-sm text-sky-300">
                   {predictionsData.confidenceInterval?.lower != null && predictionsData.confidenceInterval?.upper != null
                     ? `${predictionsData.confidenceInterval.lower.toFixed(1)} - ${predictionsData.confidenceInterval.upper.toFixed(1)} ${predictionsData.metric?.unit || ''}`
                     : 'N/A'}
                 </span>
               </div>
-              <div className="w-full bg-slate-600 rounded-full h-2">
+              <div className="w-full bg-[#0F4C5C]/40 rounded-full h-2">
                 <div 
-                  className="bg-purple-400 h-2 rounded-full relative"
+                  className="bg-sky-400/80 h-2 rounded-full relative"
                   style={{ width: '100%' }}
                 >
-                  <div className="absolute inset-0 bg-gradient-to-r from-purple-600 to-purple-400 rounded-full"></div>
+                  <div className="absolute inset-0 bg-gradient-to-r from-[#0F4C5C] to-sky-400 rounded-full"></div>
                 </div>
               </div>
             </div>
@@ -710,10 +710,10 @@ const PredictionsModule = () => {
       </Card>
 
       {/* Scénarios de prévision */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <BarChart3 className="w-5 h-5 text-blue-400" />
+      <Card variant="sport">
+        <CardHeader variant="sport">
+          <CardTitle tone="sport" className="flex items-center gap-2 normal-case tracking-normal">
+            <BarChart3 className="w-5 h-5 text-sky-300/90" />
             Scénarios possibles
           </CardTitle>
         </CardHeader>
@@ -721,8 +721,8 @@ const PredictionsModule = () => {
           {scenarios.length > 0 ? (
             <div className="space-y-4">
               {showActivityScenarios && scenarios[0]?.isActivityBased && (
-                <div className="mb-4 p-3 bg-blue-600/20 border border-blue-500/50 rounded-lg">
-                  <div className="flex items-center gap-2 text-sm text-blue-300">
+                <div className="mb-4 p-3 bg-[#0F4C5C]/25 border border-[#0F4C5C]/50 rounded-lg">
+                  <div className="flex items-center gap-2 text-sm text-sky-300">
                     <Activity className="w-4 h-4" />
                     <span>Scénarios basés sur votre historique d'activité réel (History, Endurance, Garmin)</span>
                   </div>
@@ -734,19 +734,19 @@ const PredictionsModule = () => {
                     key={index} 
                     className={`p-4 rounded-lg border ${
                       scenario.isActivityBased 
-                        ? 'border-blue-500/50 bg-blue-600/10' 
-                        : 'border-slate-600 bg-slate-700/30'
+                        ? 'border-[#0F4C5C]/50 bg-[#0F4C5C]/15' 
+                        : 'border-[#0F4C5C]/45 bg-black'
                     }`}
                   >
                     <div className="flex items-center gap-2 mb-3">
                       {scenario.icon}
                       <h4 className={`font-semibold ${
-                        scenario.isActivityBased ? 'text-blue-300' : 'text-slate-200'
+                        scenario.isActivityBased ? 'text-sky-300' : 'text-teal-100/90'
                       }`}>
                         {scenario.name}
                       </h4>
                       {scenario.probability != null && !isNaN(scenario.probability) && (
-                        <span className="text-xs text-slate-400 ml-auto">
+                        <span className="text-xs text-teal-100/55 ml-auto">
                           {(scenario.probability * 100).toFixed(0)}%
                         </span>
                       )}
@@ -754,14 +754,14 @@ const PredictionsModule = () => {
                     
                     <div className="mb-3">
                       <div className={`text-2xl font-bold ${
-                        scenario.isActivityBased ? 'text-blue-400' : 'text-slate-300'
+                        scenario.isActivityBased ? 'text-sky-300/90' : 'text-teal-100/80'
                       }`}>
                         {scenario.predictedValue != null && !isNaN(scenario.predictedValue) 
                           ? scenario.predictedValue.toFixed(1)
                           : 'N/A'}
-                        <span className="text-sm text-slate-400 ml-1">{predictionsData.metric?.unit || ''}</span>
+                        <span className="text-sm text-teal-100/55 ml-1">{predictionsData.metric?.unit || ''}</span>
                       </div>
-                      <div className="text-sm text-slate-400">
+                      <div className="text-sm text-teal-100/55">
                         {scenario.change != null && !isNaN(scenario.change)
                           ? `${scenario.change > 0 ? '+' : ''}${scenario.change.toFixed(1)} ${predictionsData.metric?.unit || ''}`
                           : 'N/A'}
@@ -773,15 +773,15 @@ const PredictionsModule = () => {
                       </div>
                     </div>
                     
-                    <p className="text-xs text-slate-300 mb-3">{scenario.description}</p>
+                    <p className="text-xs text-teal-100/80 mb-3">{scenario.description}</p>
                     
                     {scenario.recommendations && scenario.recommendations.length > 0 && (
-                      <div className="mt-3 pt-3 border-t border-slate-600">
-                        <div className="text-xs font-medium text-slate-400 mb-2">Recommandations:</div>
+                      <div className="mt-3 pt-3 border-t border-[#0F4C5C]/45">
+                        <div className="text-xs font-medium text-teal-100/55 mb-2">Recommandations:</div>
                         <ul className="space-y-1">
                           {scenario.recommendations.slice(0, 2).map((rec, idx) => (
-                            <li key={idx} className="text-xs text-slate-400 flex items-start gap-2">
-                              <CheckCircle className="w-3 h-3 text-blue-400 mt-0.5 flex-shrink-0" />
+                            <li key={idx} className="text-xs text-teal-100/55 flex items-start gap-2">
+                              <CheckCircle className="w-3 h-3 text-sky-300/90 mt-0.5 flex-shrink-0" />
                               {rec}
                             </li>
                           ))}
@@ -790,8 +790,8 @@ const PredictionsModule = () => {
                     )}
                     
                     {scenario.isActivityBased && (
-                      <div className="mt-2 pt-2 border-t border-slate-600">
-                        <span className="text-xs px-2 py-0.5 bg-blue-600/30 text-blue-300 rounded border border-blue-500/50">
+                      <div className="mt-2 pt-2 border-t border-[#0F4C5C]/45">
+                        <span className="text-xs px-2 py-0.5 bg-[#0F4C5C]/35 text-sky-300 rounded border border-[#0F4C5C]/50">
                           Basé sur activité
                         </span>
                       </div>
@@ -801,8 +801,8 @@ const PredictionsModule = () => {
               </div>
             </div>
           ) : (
-            <div className="text-center py-8 text-slate-400">
-              <BarChart3 className="w-12 h-12 mx-auto mb-4 text-slate-500" />
+            <div className="text-center py-8 text-teal-100/55">
+              <BarChart3 className="w-12 h-12 mx-auto mb-4 text-teal-100/45" />
               <p>Aucun scénario disponible. Ajoutez plus de mesures pour voir des scénarios de prévision.</p>
             </div>
           )}
@@ -810,10 +810,10 @@ const PredictionsModule = () => {
       </Card>
 
       {/* Objectifs suggérés */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Target className="w-5 h-5 text-green-400" />
+      <Card variant="sport">
+        <CardHeader variant="sport">
+          <CardTitle tone="sport" className="flex items-center gap-2 normal-case tracking-normal">
+            <Target className="w-5 h-5 text-sky-300" />
             Objectifs suggérés
           </CardTitle>
         </CardHeader>
@@ -821,10 +821,10 @@ const PredictionsModule = () => {
           {suggestedGoals.length > 0 ? (
             <div className="space-y-4">
               {suggestedGoals.map((goal, index) => (
-                <div key={index} className="flex items-center justify-between p-4 bg-slate-700/50 rounded-lg">
+                <div key={index} className="flex items-center justify-between p-4 bg-black border border-[#0F4C5C]/45 rounded-lg">
                   <div className="flex-1">
                     <div className="flex items-center gap-3 mb-2">
-                      <div className="text-lg font-semibold text-white">
+                      <div className="text-lg font-semibold text-teal-100">
                         {goal.target != null && !isNaN(goal.target)
                           ? `${goal.target.toFixed(1)} ${predictionsData.metric?.unit || ''}`
                           : 'N/A'}
@@ -833,8 +833,8 @@ const PredictionsModule = () => {
                         {goal.difficulty}
                       </span>
                     </div>
-                    <div className="text-sm text-slate-300 mb-1">{goal.description}</div>
-                    <div className="flex items-center gap-2 text-xs text-slate-400">
+                    <div className="text-sm text-teal-100/80 mb-1">{goal.description}</div>
+                    <div className="flex items-center gap-2 text-xs text-teal-100/55">
                       <Clock className="w-3 h-3" />
                       Objectif: {goal.timeframe}
                     </div>
@@ -855,8 +855,8 @@ const PredictionsModule = () => {
               ))}
             </div>
           ) : (
-            <div className="text-center py-8 text-slate-400">
-              <Target className="w-12 h-12 mx-auto mb-4 text-slate-500" />
+            <div className="text-center py-8 text-teal-100/55">
+              <Target className="w-12 h-12 mx-auto mb-4 text-teal-100/45" />
               <p>Aucun objectif disponible. Ajoutez des mesures pour voir des suggestions d'objectifs personnalisés.</p>
             </div>
           )}
@@ -865,20 +865,20 @@ const PredictionsModule = () => {
 
       {/* Détails techniques */}
       {showDetails && (
-        <Card className="bg-blue-600/10 border-blue-500/30">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Settings className="w-5 h-5 text-blue-400" />
+        <Card variant="sport" className="shadow-sm shadow-black/20">
+          <CardHeader variant="sport">
+            <CardTitle tone="sport" className="flex items-center gap-2 normal-case tracking-normal">
+              <Settings className="w-5 h-5 text-sky-300/90" />
               Détails de la prévision
             </CardTitle>
           </CardHeader>
           <CardContent>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
-                <h4 className="font-medium text-white mb-3">Facteurs pris en compte</h4>
+                <h4 className="font-medium text-teal-100 mb-3">Facteurs pris en compte</h4>
                 <ul className="space-y-2">
                   {predictionsData.factors.map((factor, index) => (
-                    <li key={index} className="flex items-start gap-2 text-sm text-slate-300">
+                    <li key={index} className="flex items-start gap-2 text-sm text-teal-100/80">
                       <CheckCircle className="w-3 h-3 text-green-400 mt-0.5 flex-shrink-0" />
                       {factor}
                     </li>
@@ -887,37 +887,37 @@ const PredictionsModule = () => {
               </div>
               
               <div>
-                <h4 className="font-medium text-white mb-3">Informations techniques</h4>
+                <h4 className="font-medium text-teal-100 mb-3">Informations techniques</h4>
                 <div className="space-y-3 text-sm">
                   <div className="flex justify-between">
-                    <span className="text-slate-400">Tendance mensuelle:</span>
-                    <span className="text-white">
+                    <span className="text-teal-100/55">Tendance mensuelle:</span>
+                    <span className="text-teal-100">
                       {predictionsData.monthlyTrend != null && !isNaN(predictionsData.monthlyTrend)
                         ? `${predictionsData.monthlyTrend > 0 ? '+' : ''}${predictionsData.monthlyTrend.toFixed(2)} ${predictionsData.metric?.unit || ''}/mois`
                         : 'N/A'}
                     </span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-slate-400">Qualité des données:</span>
+                    <span className="text-teal-100/55">Qualité des données:</span>
                     <span className="text-green-400">{predictionsData.dataQuality}</span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-slate-400">Précision estimée:</span>
-                    <span className="text-blue-400">{predictionsData.accuracy}%</span>
+                    <span className="text-teal-100/55">Précision estimée:</span>
+                    <span className="text-sky-300/90">{predictionsData.accuracy}%</span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-slate-400">Dernière mise à jour:</span>
-                    <span className="text-white">{formatDate(predictionsData.lastUpdate)}</span>
+                    <span className="text-teal-100/55">Dernière mise à jour:</span>
+                    <span className="text-teal-100">{formatDate(predictionsData.lastUpdate)}</span>
                   </div>
                 </div>
               </div>
             </div>
             
-            <div className="mt-6 p-4 bg-yellow-600/10 border border-yellow-500/30 rounded-lg">
+            <div className="mt-6 rounded-lg border border-[#0F5C45]/45 bg-[#0F4C5C]/15 p-4">
               <div className="flex items-start gap-2">
-                <AlertCircle className="w-4 h-4 text-yellow-400 mt-0.5 flex-shrink-0" />
-                <div className="text-sm text-yellow-200">
-                  <strong>Note importante:</strong> Ces prévisions sont basées sur vos données historiques et les tendances actuelles. 
+                <AlertCircle className="mt-0.5 h-4 w-4 flex-shrink-0 text-sky-300" />
+                <div className="text-sm text-teal-100/85">
+                  <strong className="text-teal-100">Note importante :</strong> Ces prévisions sont basées sur vos données historiques et les tendances actuelles. 
                   Les résultats réels peuvent varier en fonction de nombreux facteurs externes (alimentation, exercice, stress, sommeil, etc.).
                 </div>
               </div>

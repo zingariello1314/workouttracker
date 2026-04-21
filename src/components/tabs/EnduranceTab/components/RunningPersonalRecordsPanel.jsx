@@ -48,27 +48,27 @@ const RunningPersonalRecordsPanel = ({ sessions = [] }) => {
   const records = useMemo(() => computeRunningPersonalRecords(filtered), [filtered]);
 
   const cardClass =
-    'rounded-2xl border border-cyan-500/25 bg-gradient-to-br from-slate-900/80 to-slate-800/60 p-5 shadow-lg';
+    'rounded-2xl border-2 border-[#0F4C5C]/55 bg-black p-5 shadow-lg shadow-black/30';
 
   return (
-    <div className="mb-8 rounded-2xl border border-teal-500/30 bg-slate-900/40 p-6 backdrop-blur-sm">
+    <div className="mb-8 rounded-2xl border-2 border-[#0F4C5C]/70 bg-black p-6">
       <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex items-center gap-2 text-white">
-          <Trophy className="h-6 w-6 text-amber-400" />
+          <Trophy className="h-6 w-6 text-sky-400" />
           <h3 className="text-lg font-bold">{t('endurance.running.records.title')}</h3>
         </div>
-        <p className="text-xs text-slate-400 sm:max-w-md">{t('endurance.running.records.subtitle')}</p>
+        <p className="text-xs text-teal-700 sm:max-w-md">{t('endurance.running.records.subtitle')}</p>
       </div>
 
       <div className="mb-5 flex flex-col gap-3 lg:flex-row lg:items-end">
         <div className="flex-1">
-          <label className="mb-1 block text-xs font-medium text-slate-400">
+          <label className="mb-1 block text-xs font-medium text-teal-700">
             {t('endurance.running.records.periodLabel')}
           </label>
           <select
             value={period}
             onChange={(e) => setPeriod(e.target.value)}
-            className="w-full rounded-xl border border-slate-600 bg-slate-900/80 px-3 py-2.5 text-sm text-white focus:outline-none focus:ring-2 focus:ring-teal-500/50 lg:max-w-xs"
+            className="w-full rounded-xl border border-[#0F4C5C]/50 bg-black px-3 py-2.5 text-sm text-white focus:outline-none focus:ring-2 focus:ring-[#0F5C45]/40 lg:max-w-xs"
           >
             {PERIOD_OPTIONS.map((o) => (
               <option key={o.id} value={o.id}>
@@ -78,13 +78,13 @@ const RunningPersonalRecordsPanel = ({ sessions = [] }) => {
           </select>
         </div>
         <div className="flex-1">
-          <label className="mb-1 block text-xs font-medium text-slate-400">
+          <label className="mb-1 block text-xs font-medium text-teal-700">
             {t('endurance.running.records.todLabel')}
           </label>
           <select
             value={timeBand}
             onChange={(e) => setTimeBand(e.target.value)}
-            className="w-full rounded-xl border border-slate-600 bg-slate-900/80 px-3 py-2.5 text-sm text-white focus:outline-none focus:ring-2 focus:ring-teal-500/50 lg:max-w-xs"
+            className="w-full rounded-xl border border-[#0F4C5C]/50 bg-black px-3 py-2.5 text-sm text-white focus:outline-none focus:ring-2 focus:ring-[#0F5C45]/40 lg:max-w-xs"
           >
             {TIME_BAND_OPTIONS.map((o) => (
               <option key={o.id} value={o.id}>
@@ -96,7 +96,7 @@ const RunningPersonalRecordsPanel = ({ sessions = [] }) => {
       </div>
 
       {filtered.length === 0 ? (
-        <p className="text-sm text-slate-500">{t('endurance.running.records.empty')}</p>
+        <p className="text-sm text-teal-800">{t('endurance.running.records.empty')}</p>
       ) : (
         <div className="grid gap-4 md:grid-cols-3">
           <div className={cardClass}>
@@ -107,7 +107,7 @@ const RunningPersonalRecordsPanel = ({ sessions = [] }) => {
             {records.bestPace ? (
               <>
                 <div className="text-2xl font-bold text-white">{formatPaceMinPerKm(records.bestPace.pace)}</div>
-                <div className="mt-2 space-y-1 text-xs text-slate-400">
+                <div className="mt-2 space-y-1 text-xs text-teal-800">
                   <div>
                     {formatDate(records.bestPace.session.date)} · {records.bestPace.session.time || '—'}
                   </div>
@@ -118,7 +118,7 @@ const RunningPersonalRecordsPanel = ({ sessions = [] }) => {
                 </div>
               </>
             ) : (
-              <p className="text-sm text-slate-500">{t('endurance.running.records.insufficient')}</p>
+              <p className="text-sm text-teal-800">{t('endurance.running.records.insufficient')}</p>
             )}
           </div>
 
@@ -135,7 +135,7 @@ const RunningPersonalRecordsPanel = ({ sessions = [] }) => {
                 <div className="mt-1 text-sm text-cyan-200/90">
                   {t('endurance.running.records.atPace')} {records.longestDistance.paceStr}
                 </div>
-                <div className="mt-2 space-y-1 text-xs text-slate-400">
+                <div className="mt-2 space-y-1 text-xs text-teal-800">
                   <div>
                     {formatDate(records.longestDistance.session.date)} ·{' '}
                     {records.longestDistance.session.time || '—'}
@@ -144,12 +144,12 @@ const RunningPersonalRecordsPanel = ({ sessions = [] }) => {
                 </div>
               </>
             ) : (
-              <p className="text-sm text-slate-500">{t('endurance.running.records.insufficient')}</p>
+              <p className="text-sm text-teal-800">{t('endurance.running.records.insufficient')}</p>
             )}
           </div>
 
           <div className={cardClass}>
-            <div className="mb-2 flex items-center gap-2 text-violet-200">
+            <div className="mb-2 flex items-center gap-2 text-cyan-200">
               <Clock className="h-5 w-5 shrink-0" />
               <span className="text-sm font-semibold">{t('endurance.running.records.longestTime')}</span>
             </div>
@@ -158,16 +158,16 @@ const RunningPersonalRecordsPanel = ({ sessions = [] }) => {
                 <div className="text-2xl font-bold text-white">
                   {formatDurationMin(records.longestDuration.durMin)}
                 </div>
-                <div className="mt-1 text-sm text-violet-200/90">
+                <div className="mt-1 text-sm text-cyan-200/90">
                   {records.longestDuration.dist.toFixed(2)} km · {records.longestDuration.paceStr}
                 </div>
-                <div className="mt-2 text-xs text-slate-400">
+                <div className="mt-2 text-xs text-teal-800">
                   {formatDate(records.longestDuration.session.date)} ·{' '}
                   {records.longestDuration.session.time || '—'}
                 </div>
               </>
             ) : (
-              <p className="text-sm text-slate-500">{t('endurance.running.records.insufficient')}</p>
+              <p className="text-sm text-teal-800">{t('endurance.running.records.insufficient')}</p>
             )}
           </div>
         </div>

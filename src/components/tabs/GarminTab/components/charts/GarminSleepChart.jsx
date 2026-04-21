@@ -40,7 +40,7 @@ function GarminSleepChart({ precomputed, selector, colors }) {
 
   if (chartData.length === 0) {
     return (
-      <div className="bg-slate-800/60 border border-slate-700 rounded-lg p-6 text-center text-slate-400">
+      <div className="rounded-xl border-2 border-[#0F4C5C]/70 bg-black p-6 text-center text-teal-100/55 shadow-md shadow-black/40">
         Aucune donnée de sommeil disponible pour cette période.
       </div>
     );
@@ -51,8 +51,8 @@ function GarminSleepChart({ precomputed, selector, colors }) {
       return null;
     }
     return (
-      <div className="bg-slate-900 border border-slate-700 rounded-lg p-3 shadow-lg">
-        <p className="text-white font-semibold mb-2">{label}</p>
+      <div className="bg-black border border-[#0F4C5C]/60 rounded-lg p-3 shadow-lg">
+        <p className="text-teal-100 font-semibold mb-2">{label}</p>
         {payload.map((entry, index) => {
           const value = entry.value;
           let displayValue = value;
@@ -81,20 +81,20 @@ function GarminSleepChart({ precomputed, selector, colors }) {
   
   return (
     <div 
-      className="bg-slate-800/60 border border-slate-700 rounded-lg p-6"
+      className="rounded-xl border-2 border-[#0F4C5C]/70 bg-black p-6 shadow-md shadow-black/40"
       role="region"
       aria-label={ARIA_LABELS.SLEEP_CHART}
       aria-describedby="sleep-chart-description"
     >
       <div className="flex items-center justify-between mb-4">
-        <h4 id="sleep-chart-title" className="text-white font-semibold">😴 Sommeil</h4>
+        <h4 id="sleep-chart-title" className="text-teal-100 font-semibold">😴 Sommeil</h4>
         <div className="flex items-center gap-3">
           {displayInfo && (
-            <div className="text-slate-400 text-xs" aria-live="polite">{displayInfo}</div>
+            <div className="text-teal-100/55 text-xs" aria-live="polite">{displayInfo}</div>
           )}
           {avgDuration > 0 && (
-            <div className="text-slate-400 text-sm">
-              Durée moyenne: <span className="text-white font-semibold">
+            <div className="text-sky-300/75 text-sm">
+              Durée moyenne: <span className="text-teal-100 font-semibold">
                 {Math.floor(avgDuration / 60)}h{Math.round(avgDuration % 60)}m
               </span>
             </div>
