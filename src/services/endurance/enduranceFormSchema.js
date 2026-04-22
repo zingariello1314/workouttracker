@@ -54,6 +54,10 @@ const activityFactories = {
     bestStreak: '',
     jumpsPerMin: '',
     calories: '',
+    effort: '',
+    respiration: '',
+    regularite: '',
+    fatigue: '',
     notes: '',
     ...buildRatingDefaults(),
     fluidite: 0,
@@ -74,6 +78,10 @@ const activityFactories = {
     duration: '',
     type: 'endurance',
     elevation: '',
+    effort: '',
+    respiration: '',
+    regularite: '',
+    fatigue: '',
     notes: '',
     ...buildRatingDefaults()
   })
@@ -182,6 +190,10 @@ const formConfig = {
           { label: 'Double unders', value: 'double_under' }
         ]
       },
+      { key: 'effort', type: 'number', label: 'Effort perçu (1-5)', min: 1, max: 5, step: 1, placeholder: 'Ex: 4' },
+      { key: 'respiration', type: 'number', label: 'Charge respiratoire (1-5)', min: 1, max: 5, step: 1, placeholder: 'Ex: 4' },
+      { key: 'regularite', type: 'number', label: 'Régularité rythme (1-5)', min: 1, max: 5, step: 1, placeholder: 'Ex: 3' },
+      { key: 'fatigue', type: 'number', label: 'Fatigue post séance (1-5)', min: 1, max: 5, step: 1, placeholder: 'Ex: 4' },
       { key: 'jumps', type: 'number', label: 'Nombre de sauts', placeholder: 'Ex: 500' },
       { key: 'sessionNumber', type: 'number', label: 'Session n°', placeholder: 'Ex: 1' },
       { key: 'hrMax', type: 'number', label: 'Fréquence cardiaque max (bpm)', placeholder: 'Ex: 175' },
@@ -250,9 +262,15 @@ const formConfig = {
           { label: 'Fractionné / intervalles', value: 'interval' },
           { label: 'Seuil / tempo', value: 'threshold' },
           { label: 'Tempo', value: 'tempo' },
-          { label: 'Sprint / VMA courte', value: 'sprint' }
+          { label: 'Sprint / VMA courte', value: 'sprint' },
+          { label: 'Marche active', value: 'walk' },
+          { label: 'Randonnée', value: 'hike' }
         ]
       },
+      { key: 'effort', type: 'number', label: 'Effort perçu (1-5)', min: 1, max: 5, step: 1, placeholder: 'Ex: 4' },
+      { key: 'respiration', type: 'number', label: 'Charge respiratoire (1-5)', min: 1, max: 5, step: 1, placeholder: 'Ex: 3' },
+      { key: 'regularite', type: 'number', label: 'Régularité allure (1-5)', min: 1, max: 5, step: 1, placeholder: 'Ex: 4' },
+      { key: 'fatigue', type: 'number', label: 'Fatigue post séance (1-5)', min: 1, max: 5, step: 1, placeholder: 'Ex: 3' },
       { key: 'elevation', type: 'number', label: 'Dénivelé (m)', placeholder: 'Ex: 120' },
       { key: 'notes', type: 'textarea', label: 'Notes', colSpan: 2, rows: 3 }
     ],

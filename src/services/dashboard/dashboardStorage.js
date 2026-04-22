@@ -1369,17 +1369,18 @@ export const newsAPI = {
         useCache: true
       });
       
+      const safeNews = Array.isArray(result?.news) ? result.news : [];
       // Calculer les stats
       const stats = {
-        total: result.total || result.news.length,
-        today: result.news.filter(n => {
+        total: Number(result?.total) || safeNews.length,
+        today: safeNews.filter(n => {
           const date = new Date(n.publishedAt || 0);
           const today = new Date();
           return date.toDateString() === today.toDateString();
         }).length,
-        positive: result.news.filter(n => n.sentiment === 'positive').length,
-        neutral: result.news.filter(n => n.sentiment === 'neutral').length,
-        negative: result.news.filter(n => n.sentiment === 'negative').length
+        positive: safeNews.filter(n => n.sentiment === 'positive').length,
+        neutral: safeNews.filter(n => n.sentiment === 'neutral').length,
+        negative: safeNews.filter(n => n.sentiment === 'negative').length
       };
       
       // Déterminer le statut du marché (simplifié)
@@ -1389,7 +1390,7 @@ export const newsAPI = {
       const apiStatus = newsService.getAPIStatus();
       
       return {
-        news: result.news,
+        news: safeNews,
         apiStatus,
         marketStatus,
         stats

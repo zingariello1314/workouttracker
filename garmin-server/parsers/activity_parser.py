@@ -78,13 +78,14 @@ def classify_activity(act_summary: Dict[str, Any], act_details: Optional[Dict[st
         'jumpro' in act_name
     ))
     
-    # Cardio général (seulement si pas natation ni corde) — inclut course / trail / tapis
+    # Cardio général (seulement si pas natation ni corde) — inclut course / trail / tapis + marche/rando
     # pour le même traitement « cardio » côté app et déclencher get_activity + métriques étendues.
     is_cardio = (not is_swimming and not is_jump_rope and (
         act_type in ('cardio', 'cardio_general', 'indoor_cardio') or
         'cardio' in act_type or
         'cardio' in act_name or
-        is_running_like_activity(act_summary)
+        is_running_like_activity(act_summary) or
+        is_walking_like_activity(act_summary)
     ))
     
     # Re-vérifier depuis act_details si disponible
@@ -144,6 +145,36 @@ def is_running_like_activity(act_summary: Dict[str, Any]) -> bool:
     if tk == 'indoor_cardio':
         return True
     return False
+
+
+def is_walking_like_activity(act_summary: Dict[str, Any]) -> bool:
+    """
+    Indique si l'activité est une marche/randonnée (walking/hiking).
+    Utilisé pour inclure ces activités dans le pipeline cardio global.
+    """
+    if not isinstance(act_summary, dict):
+        return False
+    dto = act_summary.get('activityTypeDTO') or {}
+    if not isinstance(dto, dict):
+        dto = {}
+    tk = (dto.get('typeKey') or dto.get('type') or '').lower()
+    name = (act_summary.get('activityName') or '').lower()
+
+    walking_type_keys = (
+        'walking', 'indoor_walking', 'speed_walking',
+        'hiking', 'hike', 'trail_hiking', 'ultra_hike', 'snow_shoeing'
+    )
+    if tk in walking_type_keys:
+        return True
+    if 'walk' in tk and 'running' not in tk:
+        return True
+    if 'hike' in tk:
+        return True
+
+    name_keywords = (
+        'marche', 'walking', 'walk', 'randonnée', 'randonnee', 'hike', 'hiking'
+    )
+    return any(k in name for k in name_keywords)
 
 
 def _collect_garmin_split_lap_rows(act_details: Optional[Dict[str, Any]]) -> List[Dict[str, Any]]:

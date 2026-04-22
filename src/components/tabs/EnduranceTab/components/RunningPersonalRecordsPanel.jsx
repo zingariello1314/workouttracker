@@ -10,7 +10,6 @@ import {
   formatPaceMinPerKm,
   parseRunningSessionDurationMinutes
 } from '../../../../utils/runningPersonalRecords';
-import { summarizeWalkingRunningSessions } from '../../../../utils/runningSessionMovementKind';
 
 const PERIOD_OPTIONS = [
   { id: 'all', labelKey: 'endurance.running.records.periodAll' },
@@ -79,11 +78,6 @@ const RunningPersonalRecordsPanel = ({ sessions = [], garminById = null }) => {
   const efSummary = useMemo(
     () => computeFundamentalEndurancePaceSummary(filtered, garminById || null),
     [filtered, garminById]
-  );
-
-  const walkSummary = useMemo(
-    () => summarizeWalkingRunningSessions(sessions || [], garminById || null),
-    [sessions, garminById]
   );
 
   const cardClass =
@@ -283,31 +277,6 @@ const RunningPersonalRecordsPanel = ({ sessions = [], garminById = null }) => {
               )}
             </div>
           </div>
-
-          {walkSummary.count > 0 ? (
-            <div className={cardClass}>
-              <div className="mb-2 flex items-center gap-2 text-sky-200">
-                <Footprints className="h-5 w-5 shrink-0" />
-                <span className="text-sm font-semibold">{t('endurance.running.records.walkingStatsTitle')}</span>
-              </div>
-              <div className="text-lg font-bold text-white">
-                {t('endurance.running.records.walkingStatsLine', {
-                  count: walkSummary.count,
-                  km: walkSummary.totalKm.toFixed(1)
-                })}
-              </div>
-              {walkSummary.longestKm > 0 ? (
-                <p className="mt-1 text-sm text-cyan-200/90">
-                  {t('endurance.running.records.walkingStatsLongest', {
-                    km: walkSummary.longestKm.toFixed(2)
-                  })}
-                </p>
-              ) : null}
-              <p className="mt-2 text-[11px] leading-relaxed text-teal-800/90">
-                {t('endurance.running.records.walkingStatsNote')}
-              </p>
-            </div>
-          ) : null}
 
           <p className="text-[11px] leading-relaxed text-teal-800/90">{t('endurance.running.records.metricsFootnote')}</p>
         </div>

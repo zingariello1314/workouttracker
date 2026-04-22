@@ -5,7 +5,8 @@ import { paceMinPerKmFromSession, parseRunningSessionDurationMinutes, formatPace
 import { isWalkingLikeRunningSession } from '../../../../utils/runningSessionMovementKind';
 import { resolveRunningSessionDisplayType, runningSessionTypeLabel } from '../../../../utils/runningSessionTypeLabel';
 
-const KIND_KEYS = ['endurance', 'interval', 'walking', 'other'];
+const KIND_KEYS_RUNNING = ['endurance', 'interval', 'other'];
+const KIND_KEYS_WALKING = ['walking'];
 
 function sessionKind(session, garminActivity, inferredFromGarmin) {
   if (isWalkingLikeRunningSession(session, garminActivity)) return 'walking';
@@ -19,12 +20,16 @@ export default function RunningSessionsHistory({
   sessions = [],
   garminById = null,
   garminRunningKindByGarminId = null,
+  mode = 'running',
+  title = null,
   onOpenDetail,
   onEdit,
   onDelete
 }) {
   const t = useTranslation();
-  const [selectedKinds, setSelectedKinds] = useState(() => new Set(KIND_KEYS));
+  const isWalkingMode = mode === 'walking';
+  const kindKeys = isWalkingMode ? KIND_KEYS_WALKING : KIND_KEYS_RUNNING;
+  const [selectedKinds, setSelectedKinds] = useState(() => new Set(kindKeys));
   const [minPaceMinPerKm, setMinPaceMinPerKm] = useState('');
   const [maxPaceMinPerKm, setMaxPaceMinPerKm] = useState('');
   const [minDurMin, setMinDurMin] = useState('');
@@ -63,6 +68,8 @@ export default function RunningSessionsHistory({
         const g = getG(session);
         const inf = getInferred(session);
         const kind = sessionKind(session, g, inf);
+        if (isWalkingMode && kind !== 'walking') return false;
+        if (!isWalkingMode && kind === 'walking') return false;
         if (selectedKinds.size > 0 && !selectedKinds.has(kind)) return false;
 
         const pace = paceMinPerKmFromSession(session);
@@ -82,6 +89,7 @@ export default function RunningSessionsHistory({
     sessions,
     garminById,
     garminRunningKindByGarminId,
+    isWalkingMode,
     selectedKinds,
     minPaceMinPerKm,
     maxPaceMinPerKm,
@@ -93,23 +101,27 @@ export default function RunningSessionsHistory({
 
   return (
     <div>
-      <h3 className="mb-4 text-2xl font-bold text-white">{t('endurance.history.title')}</h3>
+      <h3 className="mb-4 text-2xl font-bold text-white">{title || t('endurance.history.title')}</h3>
 
       <div className="mb-4 rounded-xl border border-[#0F4C5C]/50 bg-black/60 p-4">
-        <p className="mb-3 text-xs font-medium text-teal-600">{t('endurance.running.historyFilter.title')}</p>
-        <div className="mb-3 flex flex-wrap gap-3">
-          {KIND_KEYS.map((k) => (
-            <label key={k} className="flex cursor-pointer items-center gap-2 text-sm text-teal-100">
-              <input
-                type="checkbox"
-                checked={selectedKinds.has(k)}
-                onChange={() => toggleKind(k)}
-                className="rounded border-[#0F4C5C]/60 bg-black text-sky-500 focus:ring-sky-500/40"
-              />
-              {kindLabel(k)}
-            </label>
-          ))}
-        </div>
+        <p className="mb-3 text-xs font-medium text-teal-600">
+          {isWalkingMode ? 'Filtrer l’historique marche' : t('endurance.running.historyFilter.title')}
+        </p>
+        {!isWalkingMode && (
+          <div className="mb-3 flex flex-wrap gap-3">
+            {kindKeys.map((k) => (
+              <label key={k} className="flex cursor-pointer items-center gap-2 text-sm text-teal-100">
+                <input
+                  type="checkbox"
+                  checked={selectedKinds.has(k)}
+                  onChange={() => toggleKind(k)}
+                  className="rounded border-[#0F4C5C]/60 bg-black text-sky-500 focus:ring-sky-500/40"
+                />
+                {kindLabel(k)}
+              </label>
+            ))}
+          </div>
+        )}
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
           <div>
             <label className="mb-1 block text-[10px] uppercase tracking-wide text-slate-500">
@@ -172,7 +184,9 @@ export default function RunningSessionsHistory({
           <div className="p-12 text-center">
             <Play className="mx-auto mb-4 h-16 w-16 text-slate-600" />
             <p className="text-lg text-slate-400">{t('endurance.history.noSessions')}</p>
-            <p className="mt-2 text-sm text-slate-500">{t('endurance.running.historyFilter.emptyFiltered')}</p>
+            <p className="mt-2 text-sm text-slate-500">
+              {isWalkingMode ? 'Aucune marche ne correspond aux filtres.' : t('endurance.running.historyFilter.emptyFiltered')}
+            </p>
           </div>
         ) : (
           <div className="space-y-4 p-6">

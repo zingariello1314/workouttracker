@@ -8,6 +8,7 @@ import { getRecapDateWindow } from '../../utils/sport/recapMuscleLoadEngine';
 import { RECAP_VIEW_PERIODS, readStoredRecapViewPeriod } from '../../utils/sport/recapViewPeriods';
 import {
   summarizeCardioLoadInWindow,
+  summarizeStrengthLoadInWindow,
   computeCardioVsStrengthShares
 } from '../../utils/sport/sportPeriodInsights';
 
@@ -99,15 +100,21 @@ export default function DashboardSportPeriodInsights({
   );
 
   const win = useMemo(() => getRecapDateWindow(period, refDate), [period]);
+  const winAllTime = useMemo(() => getRecapDateWindow('all', refDate), [refDate]);
 
   const cardio = useMemo(
-    () => summarizeCardioLoadInWindow(activities, snapshot?.enduranceData || {}, win),
-    [activities, snapshot?.enduranceData, win]
+    () => summarizeCardioLoadInWindow(activities, snapshot?.enduranceData || {}, winAllTime),
+    [activities, snapshot?.enduranceData, winAllTime]
+  );
+
+  const strength = useMemo(
+    () => summarizeStrengthLoadInWindow(snapshot, winAllTime),
+    [snapshot, winAllTime]
   );
 
   const shares = useMemo(
-    () => computeCardioVsStrengthShares(cardio, model.totalRepsCurr),
-    [cardio, model.totalRepsCurr]
+    () => computeCardioVsStrengthShares(cardio, strength),
+    [cardio, strength]
   );
 
   const border = 'border-[#0F4C5C]/55';
@@ -192,7 +199,7 @@ export default function DashboardSportPeriodInsights({
       </div>
 
       <div className={`rounded-lg border ${border} bg-black/80 p-2 space-y-2`}>
-        <div className={labelCls}>Charge « endurance » vs muscu (approx.)</div>
+        <div className={labelCls}>Jours cardio vs street (pondéré)</div>
         <div className="flex h-2 w-full overflow-hidden rounded-full bg-teal-950">
           <div
             className="h-full bg-teal-400/90 transition-all"
@@ -210,7 +217,7 @@ export default function DashboardSportPeriodInsights({
             <Activity className="h-3 w-3 text-teal-400" /> Cardio {shares.cardioPct}%
           </span>
           <span className="inline-flex items-center gap-1">
-            <Dumbbell className="h-3 w-3 text-slate-300" /> Muscu {shares.strengthPct}%
+            <Dumbbell className="h-3 w-3 text-slate-300" /> Street / muscu {shares.strengthPct}%
           </span>
         </div>
         <div className="grid grid-cols-2 gap-1.5 text-[10px] text-teal-200/80">
@@ -220,7 +227,16 @@ export default function DashboardSportPeriodInsights({
           </div>
           <div>Marche {cardio.walkKm.toFixed(1)} km → {shares.walkPct}%</div>
           <div>Corde ~{Math.round(cardio.jumpMin)} min → {shares.jumpPct}%</div>
-          <div className="text-teal-300/55">Pondération liée à l’effort cardio estimé.</div>
+          <div>
+            Jours cardio {shares.cardioDays} · jours street {shares.strengthDays}
+          </div>
+          <div>
+            Difficulté cardio ~{shares.cardioAvgDifficulty05.toFixed(1)}/5
+          </div>
+          <div>
+            Difficulté street ~{shares.strengthAvgDifficulty05.toFixed(1)}/5
+          </div>
+          <div className="text-teal-300/55">Calcul all-time (calendrier): pourcentage basé uniquement sur le nombre de jours actifs.</div>
         </div>
       </div>
     </>

@@ -3,7 +3,8 @@ import { useWorkout } from '../../../../context/WorkoutContext';
 import logger from '../../../../utils/logger';
 import {
   inferRunningSessionTypeFromGarminActivity,
-  isGarminRunningLikeActivity
+  isGarminRunningLikeActivity,
+  isGarminWalkingLikeActivity
 } from '../../../../utils/garminRunningLaps';
 
 const log = logger.hook('useGarminImport');
@@ -45,6 +46,18 @@ function paceMinPerKm(distanceKm, totalSeconds) {
   const mi = Math.floor(paceMin);
   const se = Math.round((paceMin - mi) * 60);
   return `${mi}:${String(se).padStart(2, '0')}`;
+}
+
+function distanceKmFromGarminActivity(gAct) {
+  const raw = gAct?.distance?.total ?? gAct?.distance?.value ?? gAct?.distance;
+  const d = Number(raw);
+  if (Number.isFinite(d) && d > 0) {
+    if (d > 400 && d < 200000) return d / 1000;
+    return d;
+  }
+  const m = Number(gAct?.distanceMeters ?? gAct?.running?.distanceMeters ?? gAct?.summaryDTO?.distanceMeters);
+  if (Number.isFinite(m) && m > 0) return m / 1000;
+  return 0;
 }
 
 /**
@@ -261,11 +274,11 @@ export function useGarminImport() {
                 existingJumpRope.push(session);
                 importedCount++;
               }
-            } else if (isGarminRunningLikeActivity(gAct)) {
+            } else if (isGarminRunningLikeActivity(gAct) || isGarminWalkingLikeActivity(gAct)) {
               const durationSec = gAct.duration || 0;
               const durationMinutes = durationSec / 60;
-              const distanceKm =
-                typeof gAct.distance === 'number' ? gAct.distance : parseFloat(String(gAct.distance || '').replace(',', '.')) || 0;
+              const distanceKm = distanceKmFromGarminActivity(gAct);
+              const isWalk = isGarminWalkingLikeActivity(gAct);
 
               if (durationMinutes >= 1440 || durationMinutes === 3600) {
                 log.warn(`Rejeté session running mock: durée excessive (${durationMinutes} min)`, gAct);
@@ -276,7 +289,7 @@ export function useGarminImport() {
                 return;
               }
 
-              const runType = inferRunningSessionTypeFromGarminActivity(gAct);
+              const runType = isWalk ? 'walk' : inferRunningSessionTypeFromGarminActivity(gAct);
               const hasLaps = Array.isArray(gAct?.running?.laps) && gAct.running.laps.length > 0;
 
               const existingRunningIdx = existingRunning.findIndex((s) => {
@@ -291,7 +304,7 @@ export function useGarminImport() {
               });
 
               if (existingRunningIdx >= 0) {
-                if (hasLaps && existingRunning[existingRunningIdx].type !== runType) {
+                if (existingRunning[existingRunningIdx].type !== runType && (hasLaps || isWalk)) {
                   existingRunning[existingRunningIdx] = {
                     ...existingRunning[existingRunningIdx],
                     type: runType
@@ -305,7 +318,7 @@ export function useGarminImport() {
                 const pace = paceMinPerKm(distanceKm, durationSec);
                 const speed = (distanceKm / (durationSec / 3600)).toFixed(2);
                 const elevGain = gAct.elevation?.gain;
-                const name = gAct.activityName || 'Course';
+                const name = gAct.activityName || (isWalk ? 'Marche' : 'Course');
                 const session = {
                   id: gAct.id || Date.now() + Math.random(),
                   garminId: gAct.garminId || gAct.id,

@@ -8,6 +8,7 @@
     "jumprope": "Corde à sauter",
     "gainage": "Gainage",
     "running": "Course",
+    "walking": "Marche",
     "calendar": "Calendrier"
   },
   "subViews": {
@@ -43,6 +44,10 @@
     "running": {
       "title": "Course",
       "subtitle": "Suivez vos performances et défis"
+    },
+    "walking": {
+      "title": "Marche",
+      "subtitle": "Historique, statistiques et trophées de marche"
     },
     "calendar": {
       "title": "Calendrier d'Activité",

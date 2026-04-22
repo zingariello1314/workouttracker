@@ -189,7 +189,8 @@ const ProgramDetailView = ({ program, onBack, onUpdateProgram }) => {
     onUpdateProgram({
       ...program,
       name: programMetaDraft.name.trim() || program.name,
-      description: programMetaDraft.description.trim()
+      description: programMetaDraft.description.trim(),
+      updatedAt: new Date().toISOString()
     });
     setEditingProgramMeta(false);
   };
@@ -227,7 +228,7 @@ const ProgramDetailView = ({ program, onBack, onUpdateProgram }) => {
   };
 
   const handleSaveDayHeader = (dayKey) => {
-    const updatedProgram = { ...program, schedule: { ...program.schedule } };
+    const updatedProgram = { ...program, updatedAt: new Date().toISOString(), schedule: { ...program.schedule } };
     const day = { ...updatedProgram.schedule[dayKey] };
     day.name = dayHeaderDraft.name;
     day.focus = dayHeaderDraft.focus;
@@ -683,11 +684,16 @@ const ProgramDetailView = ({ program, onBack, onUpdateProgram }) => {
   };
 
   const handleSaveStretch = () => {
-    const updatedProgram = { ...program };
-    updatedProgram.schedule[editingStretch.dayKey].etirements[editingStretch.stretchType] = {
-      ...updatedProgram.schedule[editingStretch.dayKey].etirements[editingStretch.stretchType],
+    if (!editingStretch) return;
+    const updatedProgram = { ...program, updatedAt: new Date().toISOString(), schedule: { ...program.schedule } };
+    const day = { ...updatedProgram.schedule[editingStretch.dayKey] };
+    const stretches = { ...(day.etirements || {}) };
+    stretches[editingStretch.stretchType] = {
+      ...stretches[editingStretch.stretchType],
       ...editedData
     };
+    day.etirements = stretches;
+    updatedProgram.schedule[editingStretch.dayKey] = day;
     onUpdateProgram(updatedProgram);
     
     setEditingStretch(null);

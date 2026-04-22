@@ -23,6 +23,7 @@ from parsers.activity_parser import (
     parse_jump_rope_metrics,
     extract_activity_heart_rate_time_series,
     is_running_like_activity,
+    is_walking_like_activity,
     parse_run_cardio_metrics,
 )
 from parsers.daily_metrics_parser import (
@@ -890,6 +891,7 @@ if EMAIL and PASSWORD:
                                 or is_jump_rope_preview
                                 or is_cardio_preview
                                 or is_running_like_activity(act_summary)
+                                or is_walking_like_activity(act_summary)
                             )
                             
                             if needs_details:
@@ -898,7 +900,9 @@ if EMAIL and PASSWORD:
                                     act_details = _get_activity_with_retry(client, act_id)
                                     # Splits / details : intervalles, distance, cadence (toute cardio avec détails)
                                     if act_details and (
-                                        is_running_like_activity(act_summary) or is_cardio_preview
+                                        is_running_like_activity(act_summary)
+                                        or is_walking_like_activity(act_summary)
+                                        or is_cardio_preview
                                     ):
                                         act_details = _enrich_act_details_for_running(
                                             client, act_id, act_details

@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
-import { Calendar, Dumbbell, Waves, Activity, Play, Box, Plus, X, Trash2, Award, Edit, Save, Heart, Zap, Anchor } from 'lucide-react';
+import { Calendar, Dumbbell, Waves, Activity, Play, Box, Plus, X, Trash2, Award, Edit, Save, Heart, Zap, Anchor, Footprints } from 'lucide-react';
 import { useWorkout } from '../../context/WorkoutContext';
 import StarRating from '../ui/StarRating';
 import { useTranslation } from '../../utils/translations';
@@ -37,15 +37,19 @@ import EnduranceSectionHeader from './EnduranceTab/components/ui/EnduranceSectio
 import RunningGarminSyncBlock from './EnduranceTab/components/RunningGarminSyncBlock.jsx';
 import RunningPersonalRecordsPanel from './EnduranceTab/components/RunningPersonalRecordsPanel.jsx';
 import RunningSessionDetailPage from './EnduranceTab/components/RunningSessionDetailPage.jsx';
+import RunningTrophiesPanel from './EnduranceTab/components/RunningTrophiesPanel.jsx';
 import SimpleEnduranceTrophiesPanel from './EnduranceTab/components/SimpleEnduranceTrophiesPanel.jsx';
 import PushupTrophiesPanel from './EnduranceTab/components/PushupTrophiesPanel.jsx';
 import RunningSessionsHistory from './EnduranceTab/components/RunningSessionsHistory.jsx';
+import WalkingStatsPanel from './EnduranceTab/components/WalkingStatsPanel.jsx';
+import WalkingTrophiesPanel from './EnduranceTab/components/WalkingTrophiesPanel.jsx';
 import {
   inferRunningSessionTypeFromGarminActivity,
   isGarminRunningLikeActivity,
   isGarminWalkingLikeActivity
 } from '../../utils/garminRunningLaps';
 import { useGarminData } from '../../hooks/useGarminData';
+import { isWalkingLikeRunningSession } from '../../utils/runningSessionMovementKind';
 
 const EnduranceTab = () => {
   const { data, updateData, getWorkoutHistory, pendingEnduranceSubTab, clearPendingEnduranceSubTab } =
@@ -443,10 +447,13 @@ const EnduranceTab = () => {
   const [jumpropeForm, setJumpropeForm] = useState(() => createDefaultFormState('jumprope'));
   const [gainageForm, setGainageForm] = useState(() => createDefaultFormState('gainage'));
   const [runningForm, setRunningForm] = useState(() => createDefaultFormState('running'));
+  const [walkingForm, setWalkingForm] = useState(() => ({ ...createDefaultFormState('running'), type: 'walk' }));
 
   const [challengeForm, setChallengeForm] = useState(() => createDefaultChallengeFormState('pushups'));
   /** Modal détail séance course (Garmin / manuel) */
   const [runningDetailSession, setRunningDetailSession] = useState(null);
+  const [runningSubView, setRunningSubView] = useState('sessions');
+  const [walkingSubView, setWalkingSubView] = useState('sessions');
   const [jumpropeSubView, setJumpropeSubView] = useState('sessions');
   const [gainageSubView, setGainageSubView] = useState('sessions');
   const [pushupsSubView, setPushupsSubView] = useState('sessions');
@@ -565,6 +572,9 @@ const EnduranceTab = () => {
   const resetRunningForm = useCallback(() => {
     setRunningForm(createDefaultFormState('running'));
   }, []);
+  const resetWalkingForm = useCallback(() => {
+    setWalkingForm({ ...createDefaultFormState('running'), type: 'walk' });
+  }, []);
 
   const resetChallengeForm = useCallback((activityType) => {
     const nextActivity = activityType || challengeForm.activityType || 'pushups';
@@ -670,6 +680,9 @@ const EnduranceTab = () => {
   const addRunningSession = useCallback(async () => {
     return submitSession('running', runningForm, resetRunningForm);
   }, [runningForm, resetRunningForm, submitSession]);
+  const addWalkingSession = useCallback(async () => {
+    return submitSession('running', { ...walkingForm, type: 'walk' }, resetWalkingForm);
+  }, [walkingForm, resetWalkingForm, submitSession]);
 
 
 
@@ -1246,6 +1259,7 @@ const EnduranceTab = () => {
   const menuItems = useMemo(
     () => [
       { id: 'running', label: t('endurance.menu.running'), icon: Play },
+      { id: 'walking', label: t('endurance.menu.walking'), icon: Footprints },
       { id: 'pushups', label: t('endurance.menu.pushups'), icon: Dumbbell },
       { id: 'jumprope', label: t('endurance.menu.jumprope'), icon: Activity },
       { id: 'gainage', label: t('endurance.menu.gainage'), icon: Anchor },
@@ -1288,6 +1302,15 @@ const EnduranceTab = () => {
       </div>
     );
   }, [getEnduranceExercisesFromHistory]);
+
+  const walkingSessions = useMemo(
+    () => (sessions.running || []).filter((s) => isWalkingLikeRunningSession(s, garminRunningById.get(String(s?.garminId ?? s?.id ?? '')) || null)),
+    [sessions.running, garminRunningById]
+  );
+  const runningSessionsNoWalk = useMemo(
+    () => (sessions.running || []).filter((s) => !isWalkingLikeRunningSession(s, garminRunningById.get(String(s?.garminId ?? s?.id ?? '')) || null)),
+    [sessions.running, garminRunningById]
+  );
 
   return (
     <div className="relative">
@@ -2662,9 +2685,38 @@ const EnduranceTab = () => {
                 ]}
               />
 
+              <div className="mb-6 flex flex-wrap gap-2">
+                <button
+                  type="button"
+                  onClick={() => setRunningSubView('sessions')}
+                  className={`rounded-xl border px-4 py-2 text-sm font-medium transition ${
+                    runningSubView === 'sessions'
+                      ? 'border-sky-500/70 bg-sky-500/15 text-sky-100'
+                      : 'border-[#0F4C5C]/45 bg-black text-teal-100 hover:border-sky-500/40'
+                  }`}
+                >
+                  {t('endurance.subViews.sessionsAndChallenges')}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setRunningSubView('trophies')}
+                  className={`rounded-xl border px-4 py-2 text-sm font-medium transition ${
+                    runningSubView === 'trophies'
+                      ? 'border-sky-500/70 bg-sky-500/15 text-sky-100'
+                      : 'border-[#0F4C5C]/45 bg-black text-teal-100 hover:border-sky-500/40'
+                  }`}
+                >
+                  {t('endurance.subViews.trophies')}
+                </button>
+              </div>
+
+              {runningSubView === 'trophies' ? (
+                <RunningTrophiesPanel sessions={runningSessionsNoWalk} garminById={garminRunningById} />
+              ) : (
+                <>
               <RunningGarminSyncBlock />
 
-              <RunningPersonalRecordsPanel sessions={sessions.running} garminById={garminRunningById} />
+              <RunningPersonalRecordsPanel sessions={runningSessionsNoWalk} garminById={garminRunningById} />
 
               {/* Rappel défis actifs */}
                   {activeChallenges.length > 0 && (
@@ -2798,7 +2850,7 @@ const EnduranceTab = () => {
                     </div>
                   )}
 
-                  {sessions.running.length === 0 ? (
+                  {runningSessionsNoWalk.length === 0 ? (
                     <div className="mb-8 rounded-2xl border border-[#0F4C5C]/50 bg-black p-12 text-center">
                       <Play className="mx-auto mb-4 h-16 w-16 text-slate-600" />
                       <p className="text-lg text-slate-400">{t('endurance.history.noSessions')}</p>
@@ -2806,15 +2858,166 @@ const EnduranceTab = () => {
                     </div>
                   ) : (
                     <RunningSessionsHistory
-                      sessions={sessions.running}
+                      sessions={runningSessionsNoWalk}
                       garminById={garminRunningById}
                       garminRunningKindByGarminId={garminRunningKindByGarminId}
+                      mode="running"
                       onOpenDetail={setRunningDetailSession}
                       onEdit={(id) => editSession('running', id)}
                       onDelete={(id, originalIndex) => deleteRunningSession(id, originalIndex)}
                     />
                   )}
+                </>
+              )}
 
+            </>
+          )}
+
+          {/* SECTION MARCHE */}
+          {activeTab === 'walking' && (
+            <>
+              <EnduranceSectionHeader
+                title={t('endurance.sections.walking.title')}
+                subtitle={t('endurance.sections.walking.subtitle')}
+                actions={[
+                  {
+                    key: 'new-walking-session',
+                    label: t('endurance.actions.newSession'),
+                    icon: Plus,
+                    onClick: () => {
+                      setWalkingForm((prev) => ({ ...prev, type: 'walk' }));
+                      setUI({ showSessionForm: !ui.showSessionForm });
+                    },
+                    className:
+                      'inline-flex items-center gap-2 rounded-lg border border-[#0F4C5C]/60 bg-black px-4 py-2 text-sm font-medium text-teal-100 shadow-sm transition hover:border-[#0F5C45]/70 hover:bg-[#0F4C5C]/15'
+                  }
+                ]}
+              />
+
+              <div className="mb-6 flex flex-wrap gap-2">
+                <button
+                  type="button"
+                  onClick={() => setWalkingSubView('sessions')}
+                  className={`rounded-xl border px-4 py-2 text-sm font-medium transition ${
+                    walkingSubView === 'sessions'
+                      ? 'border-sky-500/70 bg-sky-500/15 text-sky-100'
+                      : 'border-[#0F4C5C]/45 bg-black text-teal-100 hover:border-sky-500/40'
+                  }`}
+                >
+                  {t('endurance.subViews.sessionsAndChallenges')}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setWalkingSubView('trophies')}
+                  className={`rounded-xl border px-4 py-2 text-sm font-medium transition ${
+                    walkingSubView === 'trophies'
+                      ? 'border-sky-500/70 bg-sky-500/15 text-sky-100'
+                      : 'border-[#0F4C5C]/45 bg-black text-teal-100 hover:border-sky-500/40'
+                  }`}
+                >
+                  {t('endurance.subViews.trophies')}
+                </button>
+              </div>
+
+              {walkingSubView === 'trophies' ? (
+                <WalkingTrophiesPanel sessions={walkingSessions} />
+              ) : (
+                <>
+              <RunningGarminSyncBlock />
+              <WalkingStatsPanel sessions={walkingSessions} garminById={garminRunningById} />
+
+              {ui.showSessionForm && (
+                <div className="bg-black border-2 border-[#0F4C5C]/70 rounded-2xl p-8 mb-8 shadow-2xl shadow-black/40">
+                  <h3 className="text-2xl font-bold text-white mb-6">Nouvelle session de marche</h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <label className="text-sm text-teal-100">
+                      Date
+                      <input
+                        type="date"
+                        value={walkingForm.date || ''}
+                        onChange={(e) => setWalkingForm((prev) => ({ ...prev, date: e.target.value }))}
+                        className="mt-1 w-full rounded-lg border border-[#0F4C5C]/50 bg-black px-3 py-2 text-white"
+                      />
+                    </label>
+                    <label className="text-sm text-teal-100">
+                      Heure
+                      <input
+                        type="time"
+                        value={walkingForm.time || ''}
+                        onChange={(e) => setWalkingForm((prev) => ({ ...prev, time: e.target.value }))}
+                        className="mt-1 w-full rounded-lg border border-[#0F4C5C]/50 bg-black px-3 py-2 text-white"
+                      />
+                    </label>
+                    <label className="text-sm text-teal-100">
+                      Distance (km)
+                      <input
+                        type="number"
+                        step="0.1"
+                        min="0"
+                        value={walkingForm.distance || ''}
+                        onChange={(e) => setWalkingForm((prev) => ({ ...prev, distance: e.target.value }))}
+                        className="mt-1 w-full rounded-lg border border-[#0F4C5C]/50 bg-black px-3 py-2 text-white"
+                      />
+                    </label>
+                    <label className="text-sm text-teal-100">
+                      Durée (hh:mm:ss)
+                      <input
+                        type="text"
+                        value={walkingForm.duration || ''}
+                        onChange={(e) => setWalkingForm((prev) => ({ ...prev, duration: e.target.value }))}
+                        placeholder="00:45:00"
+                        className="mt-1 w-full rounded-lg border border-[#0F4C5C]/50 bg-black px-3 py-2 text-white"
+                      />
+                    </label>
+                    <label className="text-sm text-teal-100 md:col-span-2">
+                      Notes
+                      <textarea
+                        value={walkingForm.notes || ''}
+                        onChange={(e) => setWalkingForm((prev) => ({ ...prev, notes: e.target.value }))}
+                        rows={3}
+                        className="mt-1 w-full rounded-lg border border-[#0F4C5C]/50 bg-black px-3 py-2 text-white"
+                      />
+                    </label>
+                  </div>
+                  <div className="mt-6 flex justify-end gap-3">
+                    <button
+                      type="button"
+                      onClick={() => setUI({ showSessionForm: false })}
+                      className="rounded-lg border border-[#0F4C5C]/55 bg-black px-4 py-2 text-sm font-medium text-teal-100 transition hover:border-[#0F5C45]/60 hover:bg-[#0F4C5C]/12"
+                    >
+                      {t('endurance.actions.cancel')}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={addWalkingSession}
+                      className="rounded-lg border border-[#0F5C45]/80 bg-[#0F5C45]/30 px-4 py-2 text-sm font-semibold text-white transition hover:bg-[#0F5C45]/45"
+                    >
+                      {t('endurance.actions.save')}
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {walkingSessions.length === 0 ? (
+                <div className="mb-8 rounded-2xl border border-[#0F4C5C]/50 bg-black p-12 text-center">
+                  <Play className="mx-auto mb-4 h-16 w-16 text-slate-600" />
+                  <p className="text-lg text-slate-400">Aucune marche enregistrée</p>
+                  <p className="mt-2 text-sm text-slate-500">Synchronise Garmin ou ajoute une séance manuelle.</p>
+                </div>
+              ) : (
+                <RunningSessionsHistory
+                  sessions={walkingSessions}
+                  garminById={garminRunningById}
+                  garminRunningKindByGarminId={garminRunningKindByGarminId}
+                  mode="walking"
+                  title="Historique des marches"
+                  onOpenDetail={setRunningDetailSession}
+                  onEdit={(id) => editSession('running', id)}
+                  onDelete={(id, originalIndex) => deleteRunningSession(id, originalIndex)}
+                />
+              )}
+                </>
+              )}
             </>
           )}
 

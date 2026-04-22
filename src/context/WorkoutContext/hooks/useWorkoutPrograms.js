@@ -9,6 +9,7 @@
 import { useCallback } from 'react';
 import { getDateStr, getDayName } from '../../../utils/dateUtils';
 import { PROGRAM_STATUS } from '../constants';
+import { purgeSoftRemovedExercisesFromProgram } from '../../../utils/programPersistenceUtils';
 
 /**
  * @param {Function} [persistProgramsPartial] — Sauvegarde IndexedDB immédiate après mutation (programmes + actif).
@@ -21,24 +22,40 @@ export const useWorkoutPrograms = (
   data,
   persistProgramsPartial
 ) => {
+  const persistNow = useCallback(
+    (nextPrograms, nextActiveProgram) => {
+      if (!persistProgramsPartial) return;
+      Promise.resolve(
+        persistProgramsPartial({
+          programs: nextPrograms,
+          activeProgram: nextActiveProgram
+        })
+      ).catch((error) => {
+        console.error('❌ [useWorkoutPrograms] Échec persistance immédiate:', error);
+      });
+    },
+    [persistProgramsPartial]
+  );
+
   const addProgram = useCallback(
     (program) => {
       const newProgram = {
         ...program,
         id: Date.now().toString(),
         createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
         status: PROGRAM_STATUS.INACTIVE,
       };
+      let nextProgramsRef = null;
       setPrograms((prev) => {
-        const next = [...prev, newProgram];
-        if (persistProgramsPartial) {
-          queueMicrotask(() => persistProgramsPartial({ programs: next, activeProgram }));
-        }
+        const next = [...prev, purgeSoftRemovedExercisesFromProgram(newProgram)];
+        nextProgramsRef = next;
         return next;
       });
+      if (nextProgramsRef) persistNow(nextProgramsRef, activeProgram);
       return newProgram;
     },
-    [setPrograms, persistProgramsPartial, activeProgram]
+    [setPrograms, activeProgram, persistNow]
   );
 
   const activateProgram = useCallback(
@@ -46,79 +63,77 @@ export const useWorkoutPrograms = (
       const program = programs.find((p) => p.id === programId);
       if (!program) return;
       const updatedProgram = {
-        ...program,
+        ...purgeSoftRemovedExercisesFromProgram(program),
         status: PROGRAM_STATUS.ACTIVE,
         startDate: program.startDate || new Date().toISOString(),
+        updatedAt: new Date().toISOString()
       };
+      let nextProgramsRef = null;
       setPrograms((prev) => {
         let next = prev.map((p) =>
           activeProgram && p.id === activeProgram.id ? { ...p, status: PROGRAM_STATUS.INACTIVE } : p
         );
         next = next.map((p) => (p.id === programId ? updatedProgram : p));
-        if (persistProgramsPartial) {
-          queueMicrotask(() =>
-            persistProgramsPartial({ programs: next, activeProgram: updatedProgram })
-          );
-        }
+        nextProgramsRef = next;
         return next;
       });
+      if (nextProgramsRef) persistNow(nextProgramsRef, updatedProgram);
       setActiveProgram(updatedProgram);
     },
-    [programs, activeProgram, setPrograms, setActiveProgram, persistProgramsPartial]
+    [programs, activeProgram, setPrograms, setActiveProgram, persistNow]
   );
 
   const deactivateProgram = useCallback(() => {
     if (!activeProgram) return;
     const id = activeProgram.id;
+    let nextProgramsRef = null;
     setPrograms((prev) => {
       const next = prev.map((p) =>
         p.id === id ? { ...p, status: PROGRAM_STATUS.INACTIVE } : p
       );
-      if (persistProgramsPartial) {
-        queueMicrotask(() => persistProgramsPartial({ programs: next, activeProgram: null }));
-      }
+      nextProgramsRef = next;
       return next;
     });
+    if (nextProgramsRef) persistNow(nextProgramsRef, null);
     setActiveProgram(null);
-  }, [activeProgram, setPrograms, setActiveProgram, persistProgramsPartial]);
+  }, [activeProgram, setPrograms, setActiveProgram, persistNow]);
 
   const deleteProgram = useCallback(
     (programId) => {
+      let nextProgramsRef = null;
+      let nextActiveRef = activeProgram && activeProgram.id === programId ? null : activeProgram;
       setPrograms((prev) => {
         const next = prev.filter((p) => p.id !== programId);
-        const nextActive = activeProgram && activeProgram.id === programId ? null : activeProgram;
-        if (persistProgramsPartial) {
-          queueMicrotask(() =>
-            persistProgramsPartial({ programs: next, activeProgram: nextActive })
-          );
-        }
+        nextProgramsRef = next;
         return next;
       });
+      if (nextProgramsRef) persistNow(nextProgramsRef, nextActiveRef);
       if (activeProgram && activeProgram.id === programId) {
         setActiveProgram(null);
       }
     },
-    [setPrograms, activeProgram, setActiveProgram, persistProgramsPartial]
+    [setPrograms, activeProgram, setActiveProgram, persistNow]
   );
 
   const updateProgram = useCallback(
     (updatedProgram) => {
+      const normalizedProgram = {
+        ...purgeSoftRemovedExercisesFromProgram(updatedProgram),
+        updatedAt: new Date().toISOString()
+      };
+      let nextProgramsRef = null;
+      let nextActiveRef = activeProgram && activeProgram.id === normalizedProgram.id ? normalizedProgram : activeProgram;
       setPrograms((prev) => {
-        const next = prev.map((p) => (p.id === updatedProgram.id ? updatedProgram : p));
-        const nextActive =
-          activeProgram && activeProgram.id === updatedProgram.id ? updatedProgram : activeProgram;
-        if (persistProgramsPartial) {
-          queueMicrotask(() =>
-            persistProgramsPartial({ programs: next, activeProgram: nextActive })
-          );
-        }
+        const next = prev.map((p) => (p.id === normalizedProgram.id ? normalizedProgram : p));
+        nextProgramsRef = next;
         return next;
       });
-      if (activeProgram && activeProgram.id === updatedProgram.id) {
-        setActiveProgram(updatedProgram);
+      if (nextProgramsRef) persistNow(nextProgramsRef, nextActiveRef);
+      if (activeProgram && activeProgram.id === normalizedProgram.id) {
+        setActiveProgram(normalizedProgram);
       }
     },
-    [setPrograms, activeProgram, setActiveProgram, persistProgramsPartial]
+    [setPrograms, activeProgram, setActiveProgram, persistNow]
   );
 
   const calculateRealUsageDays = useCallback((programId, startDate) => {

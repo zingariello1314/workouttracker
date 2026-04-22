@@ -20,8 +20,8 @@ CACHE_DIR.mkdir(exist_ok=True)
 # Durée de vie du cache (30 jours)
 CACHE_MAX_AGE_SECONDS = 30 * 24 * 60 * 60
 
-# Version du cache (incrémenter si format change)
-CACHE_VERSION = 7
+# Version du cache (incrémenter si format/change de classification)
+CACHE_VERSION = 8
 
 
 def get_classification_hash(activity_summary: Dict) -> str:
