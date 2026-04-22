@@ -43,6 +43,8 @@ import PushupTrophiesPanel from './EnduranceTab/components/PushupTrophiesPanel.j
 import RunningSessionsHistory from './EnduranceTab/components/RunningSessionsHistory.jsx';
 import WalkingStatsPanel from './EnduranceTab/components/WalkingStatsPanel.jsx';
 import WalkingTrophiesPanel from './EnduranceTab/components/WalkingTrophiesPanel.jsx';
+import AllTrophiesHubPanel from './EnduranceTab/components/AllTrophiesHubPanel.jsx';
+import EnduranceCalendarModernPanel from './EnduranceTab/components/EnduranceCalendarModernPanel.jsx';
 import {
   inferRunningSessionTypeFromGarminActivity,
   isGarminRunningLikeActivity,
@@ -1265,6 +1267,7 @@ const EnduranceTab = () => {
       { id: 'gainage', label: t('endurance.menu.gainage'), icon: Anchor },
       { id: 'boxing', label: t('endurance.menu.boxing'), icon: Box },
       { id: 'swimming', label: t('endurance.menu.swimming'), icon: Waves },
+      { id: 'trophies', label: t('endurance.menu.allTrophies', 'Tous mes trophées'), icon: Award },
       { id: 'calendar', label: t('endurance.menu.calendar'), icon: Calendar }
     ],
     [t]
@@ -3021,226 +3024,54 @@ const EnduranceTab = () => {
             </>
           )}
 
+          {/* SECTION TOUS LES TROPHEES */}
+          {activeTab === 'trophies' && (
+            <AllTrophiesHubPanel
+              sessions={sessions}
+              garminRunningById={garminRunningById}
+              onOpenCategoryTrophies={(categoryId) => {
+                if (categoryId === 'running') {
+                  setRunningSubView('trophies');
+                  setActiveTab('running');
+                  return;
+                }
+                if (categoryId === 'walking') {
+                  setWalkingSubView('trophies');
+                  setActiveTab('walking');
+                  return;
+                }
+                if (categoryId === 'pushups') {
+                  setPushupsSubView('trophies');
+                  setActiveTab('pushups');
+                  return;
+                }
+                if (categoryId === 'jumprope') {
+                  setJumpropeSubView('trophies');
+                  setActiveTab('jumprope');
+                  return;
+                }
+                if (categoryId === 'gainage') {
+                  setGainageSubView('trophies');
+                  setActiveTab('gainage');
+                }
+              }}
+            />
+          )}
+
           {/* SECTION CALENDRIER HEATMAP */}
           {activeTab === 'calendar' && (
             <>
-              <div className="flex justify-between items-center mb-8">
-                <div>
-                  <h2 className="text-4xl font-bold text-white mb-2">{t('endurance.sections.calendar.title')}</h2>
-                  <p className="text-slate-400">{t('endurance.sections.calendar.subtitle')}</p>
-                </div>
-                <div className="flex gap-3">
-                  <select
-                    value={ui.selectedYear}
-                    onChange={(e) => setUI({ selectedYear: parseInt(e.target.value) })}
-                    className="px-4 py-2 bg-black border border-[#0F4C5C]/50 rounded-xl text-white focus:outline-none focus:border-[#0F5C45] transition-colors"
-                  >
-                    <option value={2024}>2024</option>
-                    <option value={2025}>2025</option>
-                  </select>
-                  <select
-                    value={ui.selectedActivityFilter}
-                    onChange={(e) => setUI({ selectedActivityFilter: e.target.value })}
-                    className="px-4 py-2 bg-black border border-[#0F4C5C]/50 rounded-xl text-white focus:outline-none focus:border-[#0F5C45] transition-colors"
-                  >
-                    <option value="all">{t('endurance.calendar.filters.all')}</option>
-                    <option value="boxing">{t('endurance.calendar.filters.boxing')}</option>
-                    <option value="pushups">{t('endurance.calendar.filters.pushups')}</option>
-                    <option value="swimming">{t('endurance.calendar.filters.swimming')}</option>
-                    <option value="jumprope">{t('endurance.calendar.filters.jumprope')}</option>
-                    <option value="gainage">{t('endurance.calendar.filters.gainage')}</option>
-                    <option value="running">{t('endurance.calendar.filters.running')}</option>
-                  </select>
-                </div>
-              </div>
-
-              {/* Statistiques rapides */}
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
-                <div className="bg-slate-800/30 backdrop-blur-xl border border-[#0F4C5C]/45 rounded-xl p-4">
-                  <div className="text-2xl font-bold text-white">{getTotalActivities}</div>
-                  <div className="text-slate-400 text-sm">{t('endurance.calendar.stats.totalActivities')}</div>
-                </div>
-                <div className="bg-slate-800/30 backdrop-blur-xl border border-[#0F4C5C]/45 rounded-xl p-4">
-                  <div className="text-2xl font-bold text-white">{getCurrentStreak}</div>
-                  <div className="text-slate-400 text-sm">{t('endurance.calendar.stats.consecutiveDays')}</div>
-                </div>
-                <div className="bg-slate-800/30 backdrop-blur-xl border border-[#0F4C5C]/45 rounded-xl p-4">
-                  <div className="text-2xl font-bold text-white">{getBestStreak}</div>
-                  <div className="text-slate-400 text-sm">{t('endurance.calendar.stats.bestStreak')}</div>
-                </div>
-                <div className="bg-slate-800/30 backdrop-blur-xl border border-[#0F4C5C]/45 rounded-xl p-4">
-                  <div className="text-2xl font-bold text-white">{getActiveDays}</div>
-                  <div className="text-slate-400 text-sm">{t('endurance.calendar.stats.activeDays')}</div>
-                </div>
-              </div>
-
-              {/* Bouton de diagnostic (temporaire pour debug) */}
-              <div className="mb-6">
-                <button
-                  onClick={diagnoseDataState}
-                  className="px-4 py-2 bg-blue-600/20 hover:bg-blue-600/30 border border-blue-500/50 rounded-lg text-blue-300 hover:text-blue-200 transition-all text-sm"
-                >
-                  {t('endurance.calendar.diagnostic')}
-                </button>
-              </div>
-
-              {/* Heatmap */}
-              <div className="bg-black border border-[#0F4C5C]/50 rounded-2xl p-6 mb-8">
-                <h3 className="text-xl font-bold text-white mb-4">{t('endurance.calendar.heatmap.title', { year: ui.selectedYear })}</h3>
-                
-                {/* Légende */}
-                <div className="flex items-center gap-2 mb-6">
-                  <span className="text-slate-400 text-sm">{t('endurance.calendar.heatmap.less')}</span>
-                  <div className="flex gap-1">
-                    {[0, 1, 2, 3, 4].map(level => (
-                      <div
-                        key={level}
-                        className={`w-3 h-3 rounded-sm ${
-                          level === 0 ? 'bg-slate-700' :
-                          level === 1 ? 'bg-green-500/20' :
-                          level === 2 ? 'bg-green-500/40' :
-                          level === 3 ? 'bg-green-500/60' :
-                          'bg-green-500'
-                        }`}
-                      />
-                    ))}
-                  </div>
-                  <span className="text-slate-400 text-sm">{t('endurance.calendar.heatmap.more')}</span>
-                </div>
-
-                {/* Calendrier simplifié */}
-                <div className="space-y-4">
-                  {Array.from({ length: 12 }, (_, monthIndex) => {
-                    const monthName = getMonthLabels[monthIndex];
-                    const monthDate = new Date(ui.selectedYear, monthIndex, 1);
-                    const daysInMonth = new Date(ui.selectedYear, monthIndex + 1, 0).getDate();
-                    const firstDayOfWeek = monthDate.getDay();
-                    
-                    return (
-                      <div key={monthIndex} className="bg-slate-900/30 rounded-lg p-4">
-                        <h4 className="text-white font-semibold mb-3">{monthName}</h4>
-                        <div className="grid grid-cols-7 gap-1">
-                          {/* Jours de la semaine */}
-                          {(() => {
-                            const enduranceData = getCachedNamespace(language, 'endurance');
-                            const weekdays = enduranceData?.calendar?.weekdays?.short;
-                            return Array.isArray(weekdays) ? weekdays : ['D', 'L', 'M', 'M', 'J', 'V', 'S'];
-                          })().map((day, dayIndex) => (
-                            <div key={`header-${dayIndex}`} className="text-slate-500 text-xs text-center py-1">
-                              {day}
-                            </div>
-                          ))}
-                          
-                          {/* Cases vides pour aligner */}
-                          {Array.from({ length: firstDayOfWeek }, (_, i) => (
-                            <div key={`empty-${i}`} className="w-6 h-6"></div>
-                          ))}
-                          
-                          {/* Jours du mois */}
-                          {Array.from({ length: daysInMonth }, (_, dayIndex) => {
-                            const dayNumber = dayIndex + 1;
-                            const dayDate = new Date(ui.selectedYear, monthIndex, dayNumber);
-                            const activityCount = getActivityCountForDay(dayDate);
-                            const intensity = Math.min(4, Math.floor(activityCount / 2));
-                            
-                            return (
-                              <div
-                                key={`day-${dayNumber}`}
-                                className={`w-6 h-6 rounded-sm cursor-pointer transition-all hover:scale-110 flex items-center justify-center text-xs ${
-                                  activityCount === 0 ? 'bg-slate-700 hover:bg-slate-600 text-slate-400' :
-                                  intensity === 1 ? 'bg-green-500/20 hover:bg-green-500/30 text-green-300' :
-                                  intensity === 2 ? 'bg-green-500/40 hover:bg-green-500/50 text-green-200' :
-                                  intensity === 3 ? 'bg-green-500/60 hover:bg-green-500/70 text-green-100' :
-                                  'bg-green-500 hover:bg-green-400 text-white'
-                                }`}
-                                onClick={() => handleDayClick(dayDate)}
-                                title={activityCount === 1
-                                  ? t('endurance.calendar.heatmap.dayTitle', { date: dayDate.toLocaleDateString(language === 'fr' ? 'fr-FR' : 'en-US'), count: activityCount })
-                                  : t('endurance.calendar.heatmap.dayTitlePlural', { date: dayDate.toLocaleDateString(language === 'fr' ? 'fr-FR' : 'en-US'), count: activityCount })
-                                }
-                              >
-                                {dayNumber}
-                              </div>
-                            );
-                          })}
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-
-              {/* Modal des activités du jour */}
-              {ui.selectedDay && (
-                <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-                  <div className="bg-gradient-to-br from-slate-800 to-slate-900 border border-[#0F4C5C]/45 rounded-2xl p-6 max-w-2xl w-full max-h-[80vh] overflow-y-auto shadow-2xl">
-                    <div className="flex justify-between items-center mb-6">
-                      <h3 className="text-2xl font-bold text-white">
-                        {t('endurance.calendar.heatmap.dayActivities', { 
-                          date: formatDate(ui.selectedDay, { 
-                            weekday: 'long', 
-                            year: 'numeric', 
-                            month: 'long', 
-                            day: 'numeric' 
-                          })
-                        })}
-                      </h3>
-                      <button
-                        onClick={() => setUI({ selectedDay: null })}
-                        className="p-2 text-slate-400 hover:text-white hover:bg-slate-700/50 rounded-lg transition-all"
-                      >
-                        <X className="w-6 h-6" />
-                      </button>
-                    </div>
-                    
-                    <div className="space-y-3">
-                      {getActivitiesForDay(ui.selectedDay).map((activity, index) => (
-                        <div 
-                          key={index}
-                          className="bg-black border border-[#0F4C5C]/50 rounded-xl p-4 hover:border-[#0F5C45]/55 transition-all cursor-pointer"
-                          onClick={() => navigateToActivity(activity.type)}
-                        >
-                          <div className="flex justify-between items-center">
-                            <div className="flex items-center gap-3">
-                              <div className={`w-3 h-3 rounded-full ${
-                                activity.type === 'boxing' ? 'bg-red-500' :
-                                activity.type === 'pushups' ? 'bg-orange-500' :
-                                activity.type === 'swimming' ? 'bg-blue-500' :
-                                activity.type === 'jumprope' ? 'bg-sky-600' :
-                                activity.type === 'gainage' ? 'bg-violet-500' :
-                                'bg-green-500'
-                              }`} />
-                              <div>
-                                <div className="text-white font-medium">
-                                  {activity.type === 'boxing' ? t('endurance.menu.boxing') :
-                                   activity.type === 'pushups' ? t('endurance.menu.pushups') :
-                                   activity.type === 'swimming' ? t('endurance.menu.swimming') :
-                                   activity.type === 'jumprope' ? t('endurance.menu.jumprope') :
-                                   activity.type === 'gainage' ? t('endurance.menu.gainage') :
-                                   t('endurance.menu.running')}
-                                </div>
-                                <div className="text-slate-400 text-sm">{activity.time}</div>
-                              </div>
-                            </div>
-                            <div className="text-right">
-                              <div className="text-white font-medium">{activity.duration}</div>
-                              {activity.distance && (
-                                <div className="text-slate-400 text-sm">{activity.distance}</div>
-                              )}
-                            </div>
-                          </div>
-                        </div>
-                      ))}
-                      
-                      {getActivitiesForDay(ui.selectedDay).length === 0 && (
-                        <div className="text-center py-8 text-slate-400">
-                          {t('endurance.calendar.heatmap.noActivities')}
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              )}
+              <EnduranceCalendarModernPanel
+                sessions={sessions}
+                selectedYear={ui.selectedYear}
+                selectedActivityFilter={ui.selectedActivityFilter}
+                onYearChange={(year) => setUI({ selectedYear: year })}
+                onActivityFilterChange={(value) => setUI({ selectedActivityFilter: value })}
+                onEditSession={(activityType, id) => {
+                  editSession(activityType, id);
+                  setActiveTab(activityType);
+                }}
+              />
             </>
           )}
         </div>

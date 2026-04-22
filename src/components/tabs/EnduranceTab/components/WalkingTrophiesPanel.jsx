@@ -1,7 +1,9 @@
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { Trophy, Search, Sparkles } from 'lucide-react';
 import { evaluateWalkingTrophies } from '../../../../services/endurance/walkingTrophiesService';
 import { runningTrophyLevelXpReward } from '../../../../services/endurance/runningTrophiesService';
+import { useGarminData } from '../../../../hooks/useGarminData';
+import { buildAllTimeWalkingFromSteps } from '../../../../utils/sport/walkingFromSteps';
 
 const LEVEL_LABEL = { bronze: 'Bronze', silver: 'Argent', gold: 'Or', elite: 'Élite' };
 
@@ -49,10 +51,42 @@ function buildUnlockedEntries(results) {
 }
 
 export default function WalkingTrophiesPanel({ sessions = [] }) {
+  const { dbReady, loadAllData } = useGarminData();
+  const [garminSupplemental, setGarminSupplemental] = useState({ walkKmAllTime: 0, stepsAllTime: 0 });
+  const [garminLoaded, setGarminLoaded] = useState(false);
   const [subTab, setSubTab] = useState('all');
   const [search, setSearch] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('all');
-  const evaluation = useMemo(() => evaluateWalkingTrophies(sessions), [sessions]);
+  useEffect(() => {
+    if (!dbReady) return;
+    let cancelled = false;
+    (async () => {
+      try {
+        const loaded = await loadAllData();
+        if (cancelled) return;
+        const computed = buildAllTimeWalkingFromSteps({
+          dailyMetrics: loaded?.dailyMetrics || {},
+          activities: loaded?.activities || {}
+        });
+        setGarminSupplemental({
+          walkKmAllTime: Number(computed?.totalWalkingKm) || 0,
+          stepsAllTime: Number(computed?.totalSteps) || 0
+        });
+      } catch {
+        if (!cancelled) setGarminSupplemental({ walkKmAllTime: 0, stepsAllTime: 0 });
+      } finally {
+        if (!cancelled) setGarminLoaded(true);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [dbReady, loadAllData]);
+
+  const evaluation = useMemo(
+    () => evaluateWalkingTrophies(sessions, garminSupplemental),
+    [sessions, garminSupplemental]
+  );
   const grouped = useMemo(() => groupByCategory(evaluation.results), [evaluation.results]);
   const unlockedEntries = useMemo(() => buildUnlockedEntries(evaluation.results), [evaluation.results]);
   const unlockedCount = evaluation.results.filter((r) => r.highestLevel).length;
@@ -139,7 +173,10 @@ export default function WalkingTrophiesPanel({ sessions = [] }) {
         </div>
         <div className="mt-4 flex items-start gap-2 rounded-xl border border-slate-700/50 bg-slate-900/40 p-3 text-xs text-slate-300">
           <Sparkles className="mt-0.5 h-4 w-4 shrink-0 text-amber-300" />
-          <p>Les « sessions liées » expliquent le calcul principal du trophée (records, volume, régularité).</p>
+          <p>
+            Les « sessions liées » expliquent le calcul principal du trophée (records, volume, régularité).
+            {garminLoaded ? ' Les trophées All-time Garmin sont aussi alimentés par pas et distance réelle estimée.' : ''}
+          </p>
         </div>
       </div>
 

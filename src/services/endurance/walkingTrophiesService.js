@@ -76,6 +76,7 @@ function formatCurrent(value, unit) {
   if (unit === 'km') return `${value.toLocaleString('fr-FR', { maximumFractionDigits: 1 })} km`;
   if (unit === 'min') return `${Math.round(value)} min`;
   if (unit === 'kcal') return `${Math.round(value)} kcal`;
+  if (unit === 'pas') return `${Math.round(value).toLocaleString('fr-FR')} pas`;
   if (unit === 'pas/min') return `${Math.round(value)} pas/min`;
   if (unit === 'min/km') return `${value.toLocaleString('fr-FR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} min/km`;
   if (unit === 'sessions') return `${Math.round(value)} séances`;
@@ -183,10 +184,38 @@ export const WALKING_TROPHIES = [
   { id: 'walk_best_month_km', title: 'Mois record (km)', category: 'Records calendaires', difficulty: 'elite', metric: 'bestMonthKm', levels: [20, 45, 80, 130], unit: 'km', source: (ordered) => ordered.slice(-14).reverse() }
 ];
 
-export function evaluateWalkingTrophies(sessions = []) {
+export function evaluateWalkingTrophies(sessions = [], supplemental = null) {
   const stats = buildStats(sessions);
-  const results = WALKING_TROPHIES.map((trophy) => {
-    const current = Number(stats?.[trophy.metric]) || 0;
+  const mergedStats = {
+    ...stats,
+    supplementalWalkKmAllTime: Number(supplemental?.walkKmAllTime) || 0,
+    supplementalStepsAllTime: Number(supplemental?.stepsAllTime) || 0
+  };
+  const dynamicTrophies = [
+    ...WALKING_TROPHIES,
+    {
+      id: 'walk_realistic_all_time_km',
+      title: 'Marche réaliste all-time',
+      category: 'All-time Garmin',
+      difficulty: 'hard',
+      metric: 'supplementalWalkKmAllTime',
+      levels: [30, 80, 180, 350],
+      unit: 'km',
+      source: (ordered) => ordered.slice(-10).reverse()
+    },
+    {
+      id: 'walk_steps_all_time',
+      title: 'Pas cumulés all-time',
+      category: 'All-time Garmin',
+      difficulty: 'moderate',
+      metric: 'supplementalStepsAllTime',
+      levels: [50000, 150000, 400000, 900000],
+      unit: 'pas',
+      source: (ordered) => ordered.slice(-10).reverse()
+    }
+  ];
+  const results = dynamicTrophies.map((trophy) => {
+    const current = Number(mergedStats?.[trophy.metric]) || 0;
     const levels = trophy.levels.map((target, idx) => {
       const progress = progression(current, target, Boolean(trophy.reverse));
       const unlocked = trophy.reverse ? current > 0 && current <= target : current >= target;
@@ -214,7 +243,7 @@ export function evaluateWalkingTrophies(sessions = []) {
   });
 
   return {
-    stats,
+    stats: mergedStats,
     results
   };
 }

@@ -21,6 +21,7 @@ import {
   calculateAddictionQuitXP
 } from '../../utils/addictionQuitSessionsXp';
 import GarminRunningStatsCard from '../garmin/GarminRunningStatsCard';
+import GarminWalkingStatsCard from '../garmin/GarminWalkingStatsCard';
 import RecapStrengthStatsCard from '../sport/recap/RecapStrengthStatsCard';
 import RunningTrophiesDashboardCompact from './RunningTrophiesDashboardCompact.jsx';
 import { ADDICTION_QUIT_JOURNAL_BOTTOM_ANCHOR_ID } from '../tabs/addictionQuit/AddictionQuitCravingsPanel';
@@ -266,7 +267,7 @@ const DashboardMomentumBlock = () => {
   }
 
   return (
-    <div className="rounded-xl border border-teal-900/35 bg-gradient-to-br from-black via-slate-950/98 to-black p-6 mb-6 shadow-lg shadow-black/50 min-w-0">
+    <div className="rounded-xl border-2 border-violet-500/80 bg-black p-6 mb-6 shadow-[0_0_30px_rgba(139,92,246,0.2)] min-w-0">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-5">
         <div className="flex items-center gap-3">
           <div className="p-2 rounded-lg bg-teal-500/10 border border-teal-500/35">
@@ -374,6 +375,9 @@ const DashboardMomentumBlock = () => {
                   Entrées « envies » sur 7 jours : <strong className="text-teal-100">{cravingsEntriesWeek}</strong>
                 </p>
               </div>
+            </div>
+            <div className="w-full rounded-xl border-2 border-[#0F4C5C]/55 bg-black p-4 shadow-[0_0_20px_rgba(15,76,92,0.15)]">
+              <GarminWalkingStatsCard variant="embedded" />
             </div>
             <RunningTrophiesDashboardCompact onOpenEndurance={() => setActiveTab?.('endurance')} />
           </div>

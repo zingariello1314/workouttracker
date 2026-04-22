@@ -12,7 +12,9 @@ import { buildRecapEnduranceDigest } from '../../utils/sport/recapPageDigest';
 import RecapMuscleZonesPanel from '../sport/recap/RecapMuscleZonesPanel';
 import RecapEnduranceDigestPanel from '../sport/recap/RecapEnduranceDigestPanel';
 import GarminRunningStatsCard from '../garmin/GarminRunningStatsCard';
+import GarminWalkingStatsCard from '../garmin/GarminWalkingStatsCard';
 import RecapStrengthStatsCard from '../sport/recap/RecapStrengthStatsCard';
+import RecapEnduranceTrophiesCompact from '../sport/recap/RecapEnduranceTrophiesCompact';
 import { RECAP_VIEW_PERIODS } from '../../utils/sport/recapViewPeriods';
 
 const PERIOD_STORAGE_KEY = 'sport.recap.periodView';
@@ -23,7 +25,7 @@ const PERIOD_STORAGE_KEY = 'sport.recap.periodView';
  */
 const RecapTab = () => {
   const t = useTranslation();
-  const { data, getCurrentData, getExerciseNameById } = useWorkout();
+  const { data, getCurrentData, getExerciseNameById, requestOpenEnduranceSubTab } = useWorkout();
   const [period, setPeriod] = useState(() => {
     try {
       const stored = localStorage.getItem(PERIOD_STORAGE_KEY);
@@ -61,6 +63,16 @@ const RecapTab = () => {
     totalExerciseMinutes: 0
   };
   const totalMinRounded = Math.round(Number(vt.totalExerciseMinutes) || 0);
+  const enduranceSessions = useMemo(() => {
+    const snapshot = getCurrentData();
+    const src = snapshot?.enduranceData?.sessions || {};
+    return {
+      running: Array.isArray(src.running) ? src.running : [],
+      pushups: Array.isArray(src.pushups) ? src.pushups : [],
+      jumprope: Array.isArray(src.jumprope) ? src.jumprope : [],
+      gainage: Array.isArray(src.gainage) ? src.gainage : []
+    };
+  }, [data, getCurrentData]);
 
   return (
     <div className="max-w-6xl mx-auto px-4 py-6 text-slate-100">
@@ -87,8 +99,35 @@ const RecapTab = () => {
       </div>
 
       <div className="mb-8 grid grid-cols-1 xl:grid-cols-2 gap-4 items-start">
-        <GarminRunningStatsCard variant="embedded" />
-        <RecapStrengthStatsCard variant="embedded" />
+        <div className="space-y-4">
+          <GarminRunningStatsCard
+            variant="embedded"
+            period={period}
+            onPeriodChange={setPeriod}
+            showPeriodSelector={false}
+          />
+          <GarminWalkingStatsCard
+            variant="embedded"
+            period={period}
+            onPeriodChange={setPeriod}
+            showPeriodSelector={false}
+          />
+        </div>
+        <div className="space-y-4">
+          <RecapStrengthStatsCard
+            variant="embedded"
+            period={period}
+            onPeriodChange={setPeriod}
+            showPeriodSelector={false}
+          />
+          <RecapEnduranceTrophiesCompact
+            sessions={enduranceSessions}
+            onOpenCategory={(categoryId) => {
+              if (!categoryId) return;
+              requestOpenEnduranceSubTab?.(categoryId);
+            }}
+          />
+        </div>
       </div>
 
       <p className="text-xs text-teal-200/70 mb-4 max-w-3xl leading-relaxed">

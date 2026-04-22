@@ -89,14 +89,19 @@ const NUM_BARS_SIDEBAR = 5;
  * En `embedded` / `sidebar` : pastilles Aujourd’hui … Toujours (période propre à cette carte, localStorage).
  * @param {{ variant?: 'default' | 'embedded' | 'sidebar' }} props
  */
-export default function GarminRunningStatsCard({ variant = 'default' }) {
+export default function GarminRunningStatsCard({
+  variant = 'default',
+  period: controlledPeriod = null,
+  onPeriodChange = null,
+  showPeriodSelector = true,
+}) {
   const t = useTranslation();
   const { language } = useLanguage();
   const { isAuthenticated } = useAuth();
   const { setActiveTab } = useWorkout();
   const { dbReady, loadDataByRange, loadAllData } = useGarminData();
   const recapStyleLayout = variant === 'embedded' || variant === 'sidebar';
-  const [cardPeriod, setCardPeriod] = useState(() =>
+  const [internalCardPeriod, setInternalCardPeriod] = useState(() =>
     readStoredRecapViewPeriod(GARMIN_RUNNING_CARD_PERIOD_LS, '30d')
   );
   const [windowDays, setWindowDays] = useState(readStoredRunningStatsWindowDays);
@@ -117,14 +122,26 @@ export default function GarminRunningStatsCard({ variant = 'default' }) {
     }
   }, [windowDays]);
 
+  const cardPeriod = controlledPeriod || internalCardPeriod;
+  const setCardPeriod = useCallback(
+    (next) => {
+      if (typeof onPeriodChange === 'function') {
+        onPeriodChange(next);
+        return;
+      }
+      setInternalCardPeriod(next);
+    },
+    [onPeriodChange]
+  );
+
   useEffect(() => {
-    if (!recapStyleLayout) return;
+    if (!recapStyleLayout || controlledPeriod) return;
     try {
       window.localStorage.setItem(GARMIN_RUNNING_CARD_PERIOD_LS, cardPeriod);
     } catch {
       // no-op
     }
-  }, [recapStyleLayout, cardPeriod]);
+  }, [recapStyleLayout, cardPeriod, controlledPeriod]);
 
   const activeRecapPeriod = recapStyleLayout ? cardPeriod : null;
 
@@ -391,27 +408,29 @@ export default function GarminRunningStatsCard({ variant = 'default' }) {
   return (
     <div className={variant === 'sidebar' ? 'w-full' : ''}>
       {recapStyleLayout ? (
-        <div className="mb-3 flex flex-wrap items-center gap-1.5">
-          {RECAP_VIEW_PERIODS.map((p) => (
-            <button
-              key={p.id}
-              type="button"
-              onClick={() => setCardPeriod(p.id)}
-              aria-pressed={cardPeriod === p.id}
-              className={`rounded-full border px-2 py-1 text-[11px] font-medium transition ${
-                cardPeriod === p.id
-                  ? variant === 'embedded'
-                    ? 'border-[#0F5C45] bg-[#0F5C45]/35 text-white'
-                    : 'border-violet-400/70 bg-violet-500/25 text-violet-50'
-                  : variant === 'embedded'
-                    ? 'border-[#0F4C5C]/60 bg-black text-teal-200/90 hover:border-[#0F5C45]/60'
-                    : 'border-slate-600/80 bg-slate-800/60 text-slate-300 hover:border-slate-500'
-              }`}
-            >
-              {t(p.labelKey)}
-            </button>
-          ))}
-        </div>
+        showPeriodSelector ? (
+          <div className="mb-3 flex flex-wrap items-center gap-1.5">
+            {RECAP_VIEW_PERIODS.map((p) => (
+              <button
+                key={p.id}
+                type="button"
+                onClick={() => setCardPeriod(p.id)}
+                aria-pressed={cardPeriod === p.id}
+                className={`rounded-full border px-2 py-1 text-[11px] font-medium transition ${
+                  cardPeriod === p.id
+                    ? variant === 'embedded'
+                      ? 'border-[#0F5C45] bg-[#0F5C45]/35 text-white'
+                      : 'border-violet-400/70 bg-violet-500/25 text-violet-50'
+                    : variant === 'embedded'
+                      ? 'border-[#0F4C5C]/60 bg-black text-teal-200/90 hover:border-[#0F5C45]/60'
+                      : 'border-slate-600/80 bg-slate-800/60 text-slate-300 hover:border-slate-500'
+                }`}
+              >
+                {t(p.labelKey)}
+              </button>
+            ))}
+          </div>
+        ) : null
       ) : (
         <div className="mb-3 flex flex-wrap items-center gap-2">
           {PERIODS.map((p) => (
@@ -472,7 +491,7 @@ export default function GarminRunningStatsCard({ variant = 'default' }) {
             primaryBarClassName={variant === 'embedded' ? 'bg-[#0F4C5C]' : 'bg-violet-500'}
             secondaryBarClassName={
               variant === 'embedded'
-                ? 'bg-[#0F5C45]/45 dark:bg-[#0F5C45]/35'
+                ? 'bg-[#1E7FA3]/55 dark:bg-[#1E7FA3]/45'
                 : 'bg-violet-200/30 dark:bg-violet-900'
             }
             chartAxisDensity={variant === 'sidebar' ? 'compact' : 'default'}

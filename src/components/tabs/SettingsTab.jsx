@@ -216,9 +216,24 @@ const SettingsTab = () => {
   };
 
   return (
-    <div className="relative min-h-screen bg-black text-red-50">
+    <div className="settings-page relative min-h-screen text-red-50">
       <div className="relative z-10 space-y-6 p-6">
         <style>{`
+        .settings-page {
+          background: transparent !important;
+        }
+        .settings-page [class*="bg-slate-"],
+        .settings-page [class*="bg-gray-"] {
+          background-color: rgba(0, 0, 0, 0.92) !important;
+        }
+        .settings-page [class*="border-slate-"],
+        .settings-page [class*="border-gray-"] {
+          border-color: rgba(185, 28, 28, 0.55) !important;
+        }
+        .settings-page [class*="text-slate-"],
+        .settings-page [class*="text-gray-"] {
+          color: rgb(254 202 202) !important;
+        }
         .profile-input-dark input[type="email"],
         .profile-input-dark input[type="password"],
         .profile-input-dark input[type="text"] {
@@ -266,7 +281,7 @@ const SettingsTab = () => {
 
         {/* Ancres : liens rapides vers les sections (filtrées si recherche active) */}
         {SETTINGS_SECTIONS.some(({ id }) => isSectionVisible(id)) && (
-        <div className="mb-6 flex flex-wrap gap-2 rounded-xl border border-red-900/50 bg-red-950/25 p-3">
+        <div className="mb-6 flex flex-wrap gap-2 rounded-xl border border-red-900/60 bg-black p-3">
           {SETTINGS_SECTIONS.filter(({ id }) => isSectionVisible(id)).map(({ id, label }) => (
             <button
               key={id}

@@ -50,6 +50,7 @@ export default function DashboardSportPeriodInsights({
   const { getCurrentData, getExerciseNameById } = useWorkout();
   const { dbReady, loadAllData } = useGarminData();
   const [activities, setActivities] = useState({ cardio: [], jumpRope: [] });
+  const [dailyMetrics, setDailyMetrics] = useState({});
   const [standalonePeriod, setStandalonePeriod] = useState(() =>
     readStoredRecapViewPeriod(DASHBOARD_SPORT_INSIGHTS_LS, '30d')
   );
@@ -82,8 +83,12 @@ export default function DashboardSportPeriodInsights({
           cardio: loaded?.activities?.cardio || [],
           jumpRope: loaded?.activities?.jumpRope || []
         });
+        setDailyMetrics(loaded?.dailyMetrics || {});
       } catch {
-        if (alive) setActivities({ cardio: [], jumpRope: [] });
+        if (alive) {
+          setActivities({ cardio: [], jumpRope: [] });
+          setDailyMetrics({});
+        }
       }
     })();
     return () => {
@@ -103,8 +108,8 @@ export default function DashboardSportPeriodInsights({
   const winAllTime = useMemo(() => getRecapDateWindow('all', refDate), [refDate]);
 
   const cardio = useMemo(
-    () => summarizeCardioLoadInWindow(activities, snapshot?.enduranceData || {}, winAllTime),
-    [activities, snapshot?.enduranceData, winAllTime]
+    () => summarizeCardioLoadInWindow(activities, snapshot?.enduranceData || {}, winAllTime, dailyMetrics),
+    [activities, snapshot?.enduranceData, winAllTime, dailyMetrics]
   );
 
   const strength = useMemo(

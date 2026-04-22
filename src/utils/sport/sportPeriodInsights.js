@@ -3,6 +3,7 @@ import { isDateInRecapWindow } from './recapMuscleLoadEngine';
 import { isGarminWalkingLikeActivity, isGarminRunningLikeActivity } from '../garminRunningLaps';
 import { isWalkingLikeRunningSession } from '../runningSessionMovementKind';
 import { aggregateCheckedRepsByDateAndExerciseId } from '../trainingLoadUtils';
+import { buildAllTimeWalkingFromSteps } from './walkingFromSteps';
 
 function activityDateKey(act) {
   const raw = act?.date || act?.startTimeLocal || act?.startTimeGmt;
@@ -209,7 +210,15 @@ export function summarizeStrengthLoadInWindow(snapshot = {}, win) {
  * @param {{ sessions?: { running?: unknown[], jumpRope?: unknown[] } }} enduranceData
  * @param {{ start: string, end: string }} win
  */
-export function summarizeCardioLoadInWindow(activities = {}, enduranceData = {}, win) {
+export function summarizeCardioLoadInWindow(activities = {}, enduranceData = {}, win, dailyMetrics = {}) {
+  const cardioActivities = Array.isArray(activities.cardio) ? activities.cardio : [];
+  const garminById = new Map();
+  cardioActivities.forEach((act) => {
+    const id = getGarminLikeId(act);
+    if (!id) return;
+    garminById.set(id, act);
+  });
+
   const runningSessions = uniqueSessionsByIdOrSignature([
     ...(Array.isArray(enduranceData?.sessions?.running) ? enduranceData.sessions.running : []),
     ...(Array.isArray(enduranceData?.runningSessions) ? enduranceData.runningSessions : [])
@@ -222,15 +231,16 @@ export function summarizeCardioLoadInWindow(activities = {}, enduranceData = {},
     if (!gId) return;
     const km = parseDistanceKmFromRunningSession(s);
     if (km <= 0) return;
+    const garminAct = garminById.get(gId) || null;
     runningByGarminId.set(gId, {
       km,
-      isWalk: isWalkingLikeRunningSession(s),
+      isWalk: isWalkingLikeRunningSession(s, garminAct),
       date: dk,
       session: s
     });
   });
 
-  const cardio = Array.isArray(activities.cardio) ? activities.cardio : [];
+  const cardio = cardioActivities;
   let runKm = 0;
   let walkKm = 0;
   const cardioDayMap = new Map(); // ds -> { runKm, walkKm, jumpMin, runDifficultySum, runDifficultyCount }
@@ -302,7 +312,9 @@ export function summarizeCardioLoadInWindow(activities = {}, enduranceData = {},
       cardioDayMap.set(dk, { runKm: 0, walkKm: 0, jumpMin: 0, runDifficultySum: 0, runDifficultyCount: 0 });
     }
     const day = cardioDayMap.get(dk);
-    if (isWalkingLikeRunningSession(s)) {
+    const gId = s?.garminId != null && s.garminId !== '' ? String(s.garminId) : null;
+    const garminAct = gId ? garminById.get(gId) || null : null;
+    if (isWalkingLikeRunningSession(s, garminAct)) {
       sessionWalkKm += km;
       day.walkKm += km;
     } else {
@@ -345,6 +357,25 @@ export function summarizeCardioLoadInWindow(activities = {}, enduranceData = {},
   const cardioDays = cardioDayMap.size;
   const cardioAvgDifficulty05 =
     cardioDifficultyCount > 0 ? cardioDifficultySum / cardioDifficultyCount : 3.0;
+
+  // Source de vérité "marche nette" (pas Garmin - pas course), alignée avec la carte Marche.
+  try {
+    const walkingNet = buildAllTimeWalkingFromSteps({
+      dailyMetrics: dailyMetrics || {},
+      activities: { cardio }
+    });
+    const points = Array.isArray(walkingNet?.points) ? walkingNet.points : [];
+    const walkKmNetInWindow = points.reduce((sum, p) => {
+      const dk = p?.date;
+      if (!dk || !isDateInRecapWindow(dk, win)) return sum;
+      return sum + Math.max(0, Number(p?.walkingKm || 0));
+    }, 0);
+    if (walkKmNetInWindow > 0) {
+      walkKm = Math.max(walkKm, walkKmNetInWindow);
+    }
+  } catch {
+    // no-op
+  }
 
   return {
     runKm: runKm + sessionRunKm,

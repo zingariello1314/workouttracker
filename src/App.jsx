@@ -379,7 +379,9 @@ const WorkoutTrackerContent = () => {
             {activeTab === 'auth' ? (
               <AuthPage />
             ) : activeTab === 'pricing' ? (
-              <PricingTab />
+              <Suspense fallback={<MomentumTabLoadOverlay message="Chargement…" />}>
+                <PricingTab />
+              </Suspense>
             ) : (activeTab !== 'home' && activeTab !== 'dashboard') ? (
               <ErrorBoundary
                 context={{ activeTab }}

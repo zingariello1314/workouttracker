@@ -28,7 +28,7 @@ import {
 } from '../tabs/GarminTab/utils/garminFormatters';
 import { useTranslation } from '../../utils/translations';
 import GarminRunningStatsCard from '../garmin/GarminRunningStatsCard';
-import RunningTrophiesDashboardCompact from './RunningTrophiesDashboardCompact.jsx';
+import GarminWalkingStatsCard from '../garmin/GarminWalkingStatsCard';
 import { garminCardioKindEmoji, garminCardioPrimaryLabel } from '../../utils/runningSessionTypeLabel';
 import { MuscleGroups } from '../../data/workoutProgramEnhanced';
 import {
@@ -209,23 +209,6 @@ const DashboardGarminSportRecapBlock = () => {
     () => computeRecapMuscleState(liveWorkoutData, recapPeriod, getExerciseNameById, selectedDate),
     [liveWorkoutData, recapPeriod, getExerciseNameById, selectedDate]
   );
-
-  const runningSessionsForTrophies = useMemo(
-    () => liveWorkoutData?.enduranceData?.sessions?.running || [],
-    [liveWorkoutData]
-  );
-
-  const garminByIdForRunningTrophies = useMemo(() => {
-    const m = new Map();
-    const cardio = garminData?.activities?.cardio;
-    if (!Array.isArray(cardio)) return m;
-    cardio.forEach((act) => {
-      const id = act?.garminId ?? act?.id;
-      if (id == null) return;
-      m.set(String(id), act);
-    });
-    return m;
-  }, [garminData]);
 
   useEffect(() => {
     try {
@@ -631,7 +614,7 @@ const DashboardGarminSportRecapBlock = () => {
   };
 
   return (
-    <div className="relative overflow-hidden rounded-3xl border border-[#0F4C5C]/55 bg-black backdrop-blur-2xl shadow-[0_0_60px_rgba(15,76,92,0.35)]">
+    <div className="relative overflow-hidden rounded-3xl border-2 border-[#0F4C5C]/85 bg-black backdrop-blur-2xl shadow-[0_0_60px_rgba(15,76,92,0.35)]">
       <div
         className="pointer-events-none absolute inset-0 opacity-50"
         style={{
@@ -694,17 +677,34 @@ const DashboardGarminSportRecapBlock = () => {
           </div>
         )}
 
-        <RunningTrophiesDashboardCompact
-          garminById={garminByIdForRunningTrophies}
-          onOpenEndurance={() => setActiveTab?.('endurance')}
-        />
+        <div className="flex flex-wrap gap-1.5">
+          {DASHBOARD_RECAP_PERIODS.map((p) => (
+            <button
+              key={`sport-cards-period-${p.id}`}
+              type="button"
+              onClick={() => setRecapPeriod(p.id)}
+              className={`px-2 py-1 rounded-md text-[11px] border transition-colors ${
+                recapPeriod === p.id
+                  ? 'bg-teal-600/85 border-teal-300/70 text-white'
+                  : 'bg-black border-teal-600/45 text-teal-100/90 hover:bg-teal-950/45'
+              }`}
+            >
+              {p.labelFull || p.label}
+            </button>
+          ))}
+        </div>
 
         <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
           {/* Colonne Garmin */}
           <div className="xl:col-span-2 space-y-4">
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 items-start">
               <div className="min-w-0 space-y-4">
-                <GarminRunningStatsCard variant="embedded" />
+                <GarminRunningStatsCard
+                  variant="embedded"
+                  period={recapPeriod}
+                  onPeriodChange={setRecapPeriod}
+                  showPeriodSelector={false}
+                />
                 <h4 className="text-sm font-semibold text-white flex items-center gap-2">
                   <span>{formatDateFr(selectedDateKey)}</span>
                 </h4>
@@ -1002,6 +1002,14 @@ const DashboardGarminSportRecapBlock = () => {
 
           {/* Colonne Séance + Calendrier */}
           <div className="space-y-4">
+            <div className="rounded-xl border border-teal-500/45 bg-black p-3">
+              <GarminWalkingStatsCard
+                variant="embedded"
+                period={recapPeriod}
+                onPeriodChange={setRecapPeriod}
+                showPeriodSelector={false}
+              />
+            </div>
             <div className="p-4 rounded-2xl bg-black border border-teal-500/45">
               <div className="flex items-center justify-between gap-2 mb-2">
                 <div className="text-sm font-semibold text-white">

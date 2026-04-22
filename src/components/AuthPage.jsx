@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useTransition } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useWorkout } from '../context/WorkoutContext';
 import Card from './ui/Card';
@@ -32,6 +32,7 @@ const AuthPage = () => {
   const [submitting, setSubmitting] = useState(false);
   const [webglSupported, setWebglSupported] = useState(true);
   const [isMobile, setIsMobile] = useState(false);
+  const [, startTransition] = useTransition();
 
   // Détection WebGL et mobile
   useEffect(() => {
@@ -135,7 +136,11 @@ const AuthPage = () => {
           {/* ✅ Bouton Premium */}
           <div className="mt-6 pt-4 border-t border-white/10">
             <Button
-              onClick={() => setActiveTab('pricing')}
+              onClick={() => {
+                startTransition(() => {
+                  setActiveTab('pricing');
+                });
+              }}
               variant="primary"
               className="w-full bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white font-semibold py-3 rounded-lg transition-all duration-200 shadow-lg shadow-purple-500/50"
             >

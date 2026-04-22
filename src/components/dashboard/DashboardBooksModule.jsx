@@ -204,7 +204,7 @@ const DashboardBooksModule = () => {
   };
 
   return (
-    <div className="relative overflow-hidden rounded-3xl border-2 border-[#3A86FF]/80 bg-black shadow-[0_0_40px_rgba(58,134,255,0.2)]">
+    <div className="relative overflow-hidden rounded-3xl border-2 border-[#3A86FF]/95 bg-black shadow-[0_0_50px_rgba(58,134,255,0.28)]">
       <div
         className="pointer-events-none absolute inset-0 opacity-60"
         style={{

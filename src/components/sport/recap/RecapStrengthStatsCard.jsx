@@ -21,20 +21,34 @@ const NUM_BARS_DEFAULT = 8;
  *
  * @param {{ variant?: 'embedded' | 'sidebar' }} props
  */
-export default function RecapStrengthStatsCard({ variant = 'embedded' }) {
+export default function RecapStrengthStatsCard({
+  variant = 'embedded',
+  period: controlledPeriod = null,
+  onPeriodChange = null,
+  showPeriodSelector = true,
+}) {
   const t = useTranslation();
   const { data, getCurrentData, getExerciseNameById } = useWorkout();
-  const [cardPeriod, setCardPeriod] = useState(() =>
+  const [internalCardPeriod, setInternalCardPeriod] = useState(() =>
     readStoredRecapViewPeriod(STRENGTH_CARD_PERIOD_LS, '30d')
   );
+  const cardPeriod = controlledPeriod || internalCardPeriod;
+  const setCardPeriod = (next) => {
+    if (typeof onPeriodChange === 'function') {
+      onPeriodChange(next);
+      return;
+    }
+    setInternalCardPeriod(next);
+  };
 
   useEffect(() => {
+    if (controlledPeriod) return;
     try {
       window.localStorage.setItem(STRENGTH_CARD_PERIOD_LS, cardPeriod);
     } catch {
       // ignore
     }
-  }, [cardPeriod]);
+  }, [cardPeriod, controlledPeriod]);
 
   const snapshot = getCurrentData?.() || data || {};
   const numBars = variant === 'sidebar' ? NUM_BARS_SIDEBAR : NUM_BARS_DEFAULT;
@@ -66,27 +80,29 @@ export default function RecapStrengthStatsCard({ variant = 'embedded' }) {
 
   return (
     <div className={variant === 'sidebar' ? 'w-full' : ''}>
-      <div className="mb-3 flex flex-wrap items-center gap-1.5">
-        {RECAP_VIEW_PERIODS.map((p) => (
-          <button
-            key={p.id}
-            type="button"
-            onClick={() => setCardPeriod(p.id)}
-            aria-pressed={cardPeriod === p.id}
-            className={`rounded-full border px-2 py-1 text-[11px] font-medium transition ${
-              cardPeriod === p.id
-                ? variant === 'embedded'
-                  ? 'border-[#0F5C45] bg-[#0F5C45]/35 text-white'
-                  : 'border-cyan-400/70 bg-cyan-500/25 text-cyan-50'
-                : variant === 'embedded'
-                  ? 'border-[#0F4C5C]/60 bg-black text-teal-200/90 hover:border-[#0F5C45]/60'
-                  : 'border-slate-600/80 bg-slate-800/60 text-slate-300 hover:border-slate-500'
-            }`}
-          >
-            {t(p.labelKey)}
-          </button>
-        ))}
-      </div>
+      {showPeriodSelector ? (
+        <div className="mb-3 flex flex-wrap items-center gap-1.5">
+          {RECAP_VIEW_PERIODS.map((p) => (
+            <button
+              key={p.id}
+              type="button"
+              onClick={() => setCardPeriod(p.id)}
+              aria-pressed={cardPeriod === p.id}
+              className={`rounded-full border px-2 py-1 text-[11px] font-medium transition ${
+                cardPeriod === p.id
+                  ? variant === 'embedded'
+                    ? 'border-[#0F5C45] bg-[#0F5C45]/35 text-white'
+                    : 'border-cyan-400/70 bg-cyan-500/25 text-cyan-50'
+                  : variant === 'embedded'
+                    ? 'border-[#0F4C5C]/60 bg-black text-teal-200/90 hover:border-[#0F5C45]/60'
+                    : 'border-slate-600/80 bg-slate-800/60 text-slate-300 hover:border-slate-500'
+              }`}
+            >
+              {t(p.labelKey)}
+            </button>
+          ))}
+        </div>
+      ) : null}
 
       <div className="space-y-3">
         <ActivityStatsCard
@@ -101,7 +117,7 @@ export default function RecapStrengthStatsCard({ variant = 'embedded' }) {
           primaryBarClassName={variant === 'embedded' ? 'bg-[#0F4C5C]' : 'bg-cyan-500'}
           secondaryBarClassName={
             variant === 'embedded'
-              ? 'bg-[#0F5C45]/45 dark:bg-[#0F5C45]/35'
+              ? 'bg-[#1E7FA3]/55 dark:bg-[#1E7FA3]/45'
               : 'bg-cyan-200/25 dark:bg-cyan-900'
           }
           chartAxisDensity={variant === 'sidebar' ? 'compact' : 'default'}
