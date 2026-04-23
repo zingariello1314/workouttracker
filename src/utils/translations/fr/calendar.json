@@ -204,6 +204,19 @@
     "variant": {
       "label": "Variante"
     },
+    "templateDay": {
+      "label": "Jour du programme (modèle)",
+      "hint": "Les exercices affichés viennent du jour choisi. Les coches et les reps sont enregistrées pour la date du calendrier ({{calendarDay}})."
+    },
+    "weekdays": {
+      "lundi": "Lundi",
+      "mardi": "Mardi",
+      "mercredi": "Mercredi",
+      "jeudi": "Jeudi",
+      "vendredi": "Vendredi",
+      "samedi": "Samedi",
+      "dimanche": "Dimanche"
+    },
     "exercises": {
       "title": "Exercices"
     },

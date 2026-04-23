@@ -838,20 +838,27 @@ const WorkoutProvider = ({ children }) => {
    * @param {number} [actualDuration] - Durée réelle en secondes (si type === 'duration')
    * @returns {Promise<{success: boolean, exercise: object}>}
    */
-  const markExceptionalExerciseComplete = async (exerciseId, actualReps, actualDuration) => {
+  const markExceptionalExerciseComplete = async (exerciseId, actualReps, actualDuration, targetDate = null) => {
     try {
       // ✅ Validation stricte de l'entrée
       if (!exerciseId || typeof exerciseId !== 'string' || !exerciseId.startsWith('exceptional_')) {
         throw new Error('ID d\'exercice exceptionnel invalide');
       }
 
-      const dateStr = getDateStr(new Date());
+      let dateStr;
+      if (targetDate) {
+        const d = targetDate instanceof Date ? targetDate : new Date(targetDate);
+        dateStr = getDateStr(d);
+      } else {
+        const m = String(exerciseId).match(/^exceptional_(\d{4}-\d{2}-\d{2})_/);
+        dateStr = m ? m[1] : getDateStr(new Date());
+      }
       const currentData = getCurrentData();
       const existingVariation = currentData.dailyVariations?.[dateStr];
 
       // ✅ Vérifier si variation existe
       if (!existingVariation) {
-        throw new Error('Aucune variation trouvée pour aujourd\'hui');
+        throw new Error('Aucune variation trouvée pour ce jour');
       }
 
       const additionalExercises = existingVariation.additionalExercises || [];
@@ -1162,6 +1169,12 @@ const WorkoutProvider = ({ children }) => {
     ...(workoutLogic || {}),
     // ✅ Surcharger getTodayWorkout pour utiliser activeProgram
     getTodayWorkout: getTodayWorkoutWrapper || (workoutLogic?.getTodayWorkout),
+
+    addExceptionalExercise,
+    removeExceptionalExercise,
+    markExceptionalExerciseComplete,
+    suppressExerciseForToday,
+    restoreExerciseForToday,
     
     // Fonctions de statistiques
     getWorkoutHistory,

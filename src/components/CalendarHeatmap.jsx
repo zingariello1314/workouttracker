@@ -19,9 +19,10 @@ import { getDateStr, getDayName } from '../utils/dateUtils';
 import JustificationModal from './modals/JustificationModal';
 import { workoutProgram } from '../data/workoutProgram';
 import { calculateAutoReps } from '../utils/exerciseCalculations';
-import Input from './ui/Input';
+import Input, { Checkbox } from './ui/Input';
 import Button from './ui/Button';
-import { Check, Save } from 'lucide-react';
+import { Check, Save, Plus, X } from 'lucide-react';
+import AddExceptionalExerciseModal from './modals/AddExceptionalExerciseModal';
 import {
   calculateDayIntensityWithGarmin,
   getGarminActivityIcons,
@@ -221,9 +222,24 @@ const CalendarHeatmap = ({
   const [checkedExercises, setCheckedExercises] = useState({});
   const [isSaving, setIsSaving] = useState(false);
   const [dataUpdateTrigger, setDataUpdateTrigger] = useState(0); // ✅ NOUVEAU : Pour forcer le re-render après sauvegarde
+  /** Jour du programme (lundi… dimanche) dont on affiche les exercices ; la sauvegarde reste sur la date du calendrier. */
+  const [workoutEntryTemplateDay, setWorkoutEntryTemplateDay] = useState(null);
+  const [showCalendarExceptionalModal, setShowCalendarExceptionalModal] = useState(false);
 
   // Récupérer les données du contexte pour le calcul du temps réel
-  const { data, getCurrentData, getTodayWorkout, programs, getExerciseNameById, activeProgram, updateReps, toggleCheck, updateData } = useWorkout();
+  const {
+    data,
+    getCurrentData,
+    getTodayWorkout,
+    programs,
+    getExerciseNameById,
+    activeProgram,
+    updateReps,
+    toggleCheck,
+    updateData,
+    removeExceptionalExercise,
+    markExceptionalExerciseComplete
+  } = useWorkout();
   const { currentUser, isAuthenticated } = useAuth();
   const { showSuccess, showError } = useToast();
   const isAdmin = currentUser?.role === 'admin' || currentUser?.username === 'zingariello1314';
@@ -239,20 +255,30 @@ const CalendarHeatmap = ({
     }
   }, [panelMode, selectedProgramId, activeProgram, isAdmin, isAuthenticated]);
 
+  const workoutEntryTargetDateStr =
+    panelMode === 'workout-entry' ? getDateStr(selectedDate?.date || panelDate || null) : null;
+
+  useEffect(() => {
+    if (panelMode !== 'workout-entry' || !workoutEntryTargetDateStr) return;
+    const d = selectedDate?.date || panelDate;
+    if (!d) return;
+    setWorkoutEntryTemplateDay(getDayName(d));
+  }, [panelMode, workoutEntryTargetDateStr, selectedDate?.date, panelDate]);
+
   // ✅ NOUVEAU : Initialiser selectedVariant quand on entre en mode workout-entry et qu'un programme est sélectionné
   useEffect(() => {
     if (panelMode === 'workout-entry' && selectedProgramId && panelDate && !selectedVariant) {
-      const dayName = getDayName(panelDate);
+      const templateDay = workoutEntryTemplateDay || getDayName(panelDate);
       let firstVariantId = null;
       
       if (selectedProgramId === 'default' && isAdmin && isAuthenticated) {
-        const dayWorkout = workoutProgram[dayName];
+        const dayWorkout = workoutProgram[templateDay];
         if (dayWorkout) {
           firstVariantId = 'maison'; // Toujours commencer par maison
         }
       } else if (selectedProgramId && programs) {
         const program = programs.find(p => p.id === selectedProgramId);
-        if (program && program.schedule && program.schedule[dayName]) {
+        if (program && program.schedule && program.schedule[templateDay]) {
           firstVariantId = 'maison'; // Toujours commencer par maison
         }
       }
@@ -261,7 +287,7 @@ const CalendarHeatmap = ({
         setSelectedVariant(firstVariantId);
       }
     }
-  }, [panelMode, selectedProgramId, panelDate, isAdmin, isAuthenticated, programs, selectedVariant]);
+  }, [panelMode, selectedProgramId, panelDate, isAdmin, isAuthenticated, programs, selectedVariant, workoutEntryTemplateDay]);
   
   // ✅ Initialiser les données de reps quand le workout change
   useEffect(() => {
@@ -1080,32 +1106,36 @@ const CalendarHeatmap = ({
       const repsValidation = validateNumericValue(rawReps, `getIntensityForDate.${dateStr}.${exercise.id}.reps`, false);
       const reps = repsValidation.normalizedValue;
       
-      // ✅ CORRECTION : Seulement si complété ET avec des reps > 0
-      if (isCompleted && reps > 0) {
-        completedExercises++;
-        exercisesReps += reps;
-        totalReps += reps;
-        const coeff = resolveExerciseIntensityCoeff(
-          exercise,
-          currentData?.exerciseIntensityCoeffs || {}
-        );
-        const usesLoad = exerciseUsesExternalLoad(exercise);
-        const wRaw = weightsStore[finalKey];
-        const wKg = parseFloat(String(wRaw ?? '').replace(',', '.'));
-        const medianKg = computeMedianWeightKgForExercise(weightsStore, exercise.id);
-        const wMult = computeExternalLoadMultiplier(usesLoad, wKg, medianKg);
-        strengthLoad += computeStrengthCalendarContribution(
-          {
-            id: exercise.id,
-            name: exercise.name,
-            nom: exercise.name,
-            series: exercise.series || '',
-            type: exercise.type || ''
-          },
-          reps,
-          coeff,
-          wMult
-        );
+      // Complété : la coche compte pour la fréquence ; le volume ne s’ajoute que si reps > 0
+      if (isCompleted) {
+        if (reps > 0) {
+          completedExercises++;
+          exercisesReps += reps;
+          totalReps += reps;
+          const coeff = resolveExerciseIntensityCoeff(
+            exercise,
+            currentData?.exerciseIntensityCoeffs || {}
+          );
+          const usesLoad = exerciseUsesExternalLoad(exercise);
+          const wRaw = weightsStore[finalKey];
+          const wKg = parseFloat(String(wRaw ?? '').replace(',', '.'));
+          const medianKg = computeMedianWeightKgForExercise(weightsStore, exercise.id);
+          const wMult = computeExternalLoadMultiplier(usesLoad, wKg, medianKg);
+          strengthLoad += computeStrengthCalendarContribution(
+            {
+              id: exercise.id,
+              name: exercise.name,
+              nom: exercise.name,
+              series: exercise.series || '',
+              type: exercise.type || ''
+            },
+            reps,
+            coeff,
+            wMult
+          );
+        } else {
+          completedExercises++;
+        }
       }
     });
 
@@ -1734,7 +1764,7 @@ const CalendarHeatmap = ({
               resolveBestRepsStorageKey(currentData, keys) || `${dateStr}_${ex.id}`;
             const reps = parseInt(currentData?.reps?.[actualKey] || 0);
             const isCompleted = currentData?.checkedExercises?.[actualKey] || false;
-            return isCompleted && reps > 0;
+            return isCompleted;
           })
           .map(ex => {
             const keys = collectCalendarRepKeysForExercise(dateStr, ex);
@@ -3231,7 +3261,17 @@ const CalendarHeatmap = ({
         
         // MODE WORKOUT-ENTRY : Formulaire de saisie inline
         if (panelMode === 'workout-entry') {
-          const dayName = getDayName(displayDate);
+          const calendarDayName = getDayName(displayDate);
+          const templateDayName = workoutEntryTemplateDay || calendarDayName;
+          const programDayOptions = [
+            'lundi',
+            'mardi',
+            'mercredi',
+            'jeudi',
+            'vendredi',
+            'samedi',
+            'dimanche'
+          ];
           const allDataForEntry = getCurrentData();
           
           // Liste des programmes disponibles (calcul simple, pas de hook)
@@ -3259,7 +3299,7 @@ const CalendarHeatmap = ({
             const variants = [];
             
             if (selectedProgramId === 'default' && isAdmin && isAuthenticated) {
-              const dayWorkout = workoutProgram[dayName];
+              const dayWorkout = workoutProgram[templateDayName];
               if (dayWorkout) {
                 // Toujours ajouter la variante Maison (exercices de base)
                 variants.push({
@@ -3292,7 +3332,7 @@ const CalendarHeatmap = ({
             } else if (selectedProgramId && programs) {
               const program = programs.find(p => p.id === selectedProgramId);
               if (program && program.schedule) {
-                const daySchedule = program.schedule[dayName];
+                const daySchedule = program.schedule[templateDayName];
                 if (daySchedule) {
                   // ✅ NOUVEAU : Fonction helper pour convertir les IDs string en IDs numériques
                   // (même logique que dans getIntensityForDate)
@@ -3406,10 +3446,6 @@ const CalendarHeatmap = ({
               return;
             }
             
-            // ✅ NOUVEAU : Permettre la sauvegarde même si aucun exercice n'est coché
-            // Cela permet de décocher tous les exercices pour réinitialiser le compte à 0
-            const hasCheckedExercise = Object.values(checkedExercises).some(v => v === true);
-            
             setIsSaving(true);
             
             try {
@@ -3452,16 +3488,16 @@ const CalendarHeatmap = ({
                   console.log(`[DEBUG handleSave] Exercice: ${exercise.name} (id: ${exerciseId}, type: ${typeof exerciseId}), checked: ${isChecked}, reps: ${reps}, key: ${key}`);
                 }
                 
-                if (isChecked && reps && reps !== '') {
-                  // Si l'exercice est coché ET a des reps, sauvegarder
-                  const parsedReps = parseInt(reps);
-                  if (parsedReps >= 0 && parsedReps <= 999) {
-                    updatedReps[key] = parsedReps;
-                    updatedCheckedExercises[key] = true;
-                    savedKeys.push(key);
-                    if (isDebugDate) {
-                      console.log(`[DEBUG handleSave] ✅ Sauvegardé: ${key} = ${parsedReps} reps`);
-                    }
+                if (isChecked) {
+                  const parsedReps =
+                    reps === '' || reps == null ? 0 : parseInt(String(reps), 10);
+                  const safeReps =
+                    Number.isFinite(parsedReps) && parsedReps >= 0 && parsedReps <= 999 ? parsedReps : 0;
+                  updatedReps[key] = safeReps;
+                  updatedCheckedExercises[key] = true;
+                  savedKeys.push(key);
+                  if (isDebugDate) {
+                    console.log(`[DEBUG handleSave] ✅ Sauvegardé: ${key} = ${safeReps} reps (coché)`);
                   }
                 } else {
                   // ✅ CORRECTION : Si l'exercice est décoché ou n'a pas de reps, supprimer UNIQUEMENT la variante actuelle
@@ -3508,6 +3544,8 @@ const CalendarHeatmap = ({
               setCheckedExercises({});
               setSelectedProgramId(null);
               setSelectedVariant(null);
+              setWorkoutEntryTemplateDay(null);
+              setShowCalendarExceptionalModal(false);
               
               // ✅ NOUVEAU : Déclencher un re-render pour que allData soit recalculé avec les nouvelles données
               setDataUpdateTrigger(prev => prev + 1);
@@ -3608,6 +3646,52 @@ const CalendarHeatmap = ({
               setIsSaving(false);
             }
           };
+
+          const calendarAdditionalExercises = Array.isArray(
+            allDataForEntry?.dailyVariations?.[dateStr]?.additionalExercises
+          )
+            ? allDataForEntry.dailyVariations[dateStr].additionalExercises
+            : [];
+
+          const handleCalendarExceptionalComplete = async (exerciseId, actualReps, actualDuration) => {
+            try {
+              await markExceptionalExerciseComplete(exerciseId, actualReps, actualDuration, displayDate);
+              showSuccess(t('today.messages.exceptionalExerciseCompleted'));
+              setDataUpdateTrigger((p) => p + 1);
+            } catch (error) {
+              console.error('[CalendarHeatmap] Erreur complétion exercice exceptionnel:', error);
+              showError(t('today.messages.errorCompleting'), {
+                title: t('today.messages.completeFailed'),
+                message: error.message || t('today.messages.errorMessage'),
+                suggestions: [
+                  t('today.messages.suggestions.checkExerciseExists'),
+                  t('today.messages.suggestions.tryAgain')
+                ]
+              });
+            }
+          };
+
+          const handleCalendarExceptionalRemove = async (exerciseId) => {
+            const confirmed = window.confirm(
+              t('today.confirmations.removeExceptionalExercise')
+            );
+            if (!confirmed) return;
+            try {
+              await removeExceptionalExercise(exerciseId, displayDate);
+              showSuccess(t('today.messages.exceptionalExerciseRemoved'));
+              setDataUpdateTrigger((p) => p + 1);
+            } catch (error) {
+              console.error('[CalendarHeatmap] Erreur suppression exercice exceptionnel:', error);
+              showError(t('today.messages.errorRemoving'), {
+                title: t('today.messages.removeFailed'),
+                message: error.message || t('today.messages.errorMessage'),
+                suggestions: [
+                  t('today.messages.suggestions.checkExerciseExists'),
+                  t('today.messages.suggestions.tryAgain')
+                ]
+              });
+            }
+          };
           
           return (
             <div className="overflow-hidden rounded-xl border-2 border-blue-500/55 bg-black">
@@ -3628,6 +3712,8 @@ const CalendarHeatmap = ({
                       setCheckedExercises({});
                       setSelectedProgramId(null);
                       setSelectedVariant(null);
+                      setWorkoutEntryTemplateDay(null);
+                      setShowCalendarExceptionalModal(false);
                     }}
                     className="ml-4 flex h-8 w-8 flex-shrink-0 items-center justify-center rounded text-2xl leading-none text-sky-500 transition-colors hover:bg-slate-950 hover:text-sky-50"
                     aria-label="Fermer"
@@ -3661,6 +3747,36 @@ const CalendarHeatmap = ({
                     ))}
                   </select>
                 </div>
+
+                {selectedProgramId && (
+                  <div className="space-y-2">
+                    <label className="block text-sm font-medium text-slate-300">
+                      {t('calendar.workoutEntry.templateDay.label', 'Jour du programme (modèle)')}
+                    </label>
+                    <p className="text-xs text-sky-300/75 leading-relaxed">
+                      {t(
+                        'calendar.workoutEntry.templateDay.hint',
+                        'Les exercices affichés viennent du jour choisi. Les coches et reps sont enregistrées pour la date du calendrier ({{calendarDay}}).',
+                        { calendarDay: formattedDate }
+                      )}
+                    </p>
+                    <select
+                      value={templateDayName}
+                      onChange={(e) => {
+                        setWorkoutEntryTemplateDay(e.target.value);
+                        setSelectedVariant(null);
+                      }}
+                      disabled={isSaving}
+                      className="w-full px-4 py-3 bg-slate-900/50 border border-slate-600 rounded-lg text-white text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 disabled:opacity-50 transition-all"
+                    >
+                      {programDayOptions.map((dKey) => (
+                        <option key={dKey} value={dKey}>
+                          {t(`calendar.workoutEntry.weekdays.${dKey}`, dKey)}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                )}
                 
                 {/* ✅ NOUVEAU : Sélection de la variante (Maison / Salle Semaine A / Salle Semaine B) */}
                 {selectedProgramId && availableVariants.length > 0 && (
@@ -3783,6 +3899,121 @@ const CalendarHeatmap = ({
                     <p className="text-sm">{t('calendar.workoutEntry.selectProgram', 'Veuillez sélectionner un programme')}</p>
                   </div>
                 )}
+
+                {calendarAdditionalExercises.length > 0 && (
+                  <div className="space-y-3 border-t border-amber-500/35 pt-4">
+                    <h4 className="flex items-center gap-2 text-sm font-semibold text-amber-200">
+                      <span>⭐</span>
+                      {t('today.exercises.exceptionalTitle', 'Exercices Exceptionnels')}
+                    </h4>
+                    <div className="space-y-2">
+                      {calendarAdditionalExercises.map((exercise) => {
+                        const isCompleted = exercise.completed || false;
+                        return (
+                          <div
+                            key={exercise.id}
+                            className="flex items-center gap-3 rounded-lg border border-amber-500/35 bg-slate-900/50 p-4 ring-1 ring-slate-700/40"
+                          >
+                            <div className="min-w-0 flex-1">
+                              <div className="flex flex-wrap items-center gap-2 font-medium text-white">
+                                <span className="truncate">{exercise.name}</span>
+                                <span className="shrink-0 rounded-full bg-amber-500/25 px-2 py-0.5 text-xs text-amber-100">
+                                  {t('today.exercises.exceptional', 'Exceptionnel')}
+                                </span>
+                              </div>
+                              <div className="mt-1 text-sm text-slate-400">
+                                {exercise.type === 'reps' ? (
+                                  <>
+                                    {exercise.series} {t('today.exercises.series')}
+                                    {exercise.repsPerSeries && exercise.repsPerSeries.length > 0 && (
+                                      <span className="ml-2">
+                                        ({exercise.repsPerSeries.join(' + ')} {t('today.exercises.reps')})
+                                      </span>
+                                    )}
+                                  </>
+                                ) : (
+                                  <>
+                                    {exercise.duration
+                                      ? `${Math.floor(exercise.duration / 60)}min ${exercise.duration % 60}s`
+                                      : t('today.exercises.duration')}
+                                  </>
+                                )}
+                                {exercise.materiel && ` • ${exercise.materiel}`}
+                                {exercise.notes && ` • ${exercise.notes}`}
+                              </div>
+                              {exercise.completed && (
+                                <div className="mt-1 text-xs text-emerald-300">
+                                  {exercise.type === 'reps' && exercise.totalReps ? (
+                                    t('today.exercises.completedWithReps', { reps: exercise.totalReps })
+                                  ) : exercise.type === 'duration' && exercise.actualDuration ? (
+                                    t('today.exercises.completedWithDuration', {
+                                      minutes: Math.floor(exercise.actualDuration / 60),
+                                      seconds: exercise.actualDuration % 60
+                                    })
+                                  ) : (
+                                    t('today.exercises.completedSimple')
+                                  )}
+                                </div>
+                              )}
+                            </div>
+                            <div className="flex shrink-0 items-center gap-2">
+                              <Checkbox
+                                checked={isCompleted}
+                                onChange={() => {
+                                  if (!isCompleted) {
+                                    if (exercise.type === 'reps') {
+                                      handleCalendarExceptionalComplete(
+                                        exercise.id,
+                                        exercise.repsPerSeries
+                                      );
+                                    } else {
+                                      handleCalendarExceptionalComplete(
+                                        exercise.id,
+                                        null,
+                                        exercise.duration
+                                      );
+                                    }
+                                  }
+                                }}
+                                className="text-amber-400"
+                                name={`cal_exceptional_${exercise.id}`}
+                                disabled={isSaving}
+                              />
+                              <button
+                                type="button"
+                                onClick={() => handleCalendarExceptionalRemove(exercise.id)}
+                                className="rounded-lg border border-slate-600 bg-slate-800/80 p-2 text-slate-200 transition-colors hover:border-rose-500/50 hover:bg-rose-950/30 hover:text-rose-100"
+                                title={t('today.exercises.removeExceptionalTitle')}
+                                disabled={isSaving}
+                              >
+                                <X className="h-4 w-4" />
+                              </button>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+
+                <div className="border-t border-slate-700 pt-4">
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    onClick={() => setShowCalendarExceptionalModal(true)}
+                    disabled={isSaving}
+                    className="w-full border border-amber-500/40 text-amber-100 hover:bg-amber-950/25"
+                    icon={Plus}
+                  >
+                    {t('today.exercises.addExceptional')}
+                  </Button>
+                </div>
+
+                <AddExceptionalExerciseModal
+                  isOpen={showCalendarExceptionalModal}
+                  onClose={() => setShowCalendarExceptionalModal(false)}
+                  targetDate={displayDate}
+                />
               </div>
               
               {/* Footer fixe avec les boutons */}
@@ -3799,6 +4030,8 @@ const CalendarHeatmap = ({
                       setCheckedExercises({});
                       setSelectedProgramId(null);
                       setSelectedVariant(null);
+                      setWorkoutEntryTemplateDay(null);
+                      setShowCalendarExceptionalModal(false);
                     }}
                     disabled={isSaving}
                     className="flex-1"

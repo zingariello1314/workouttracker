@@ -23,7 +23,7 @@ export const useWorkoutExceptionalExercises = (getCurrentData, updateData) => {
   const updateExceptionalExerciseDebounceRef = useRef(null);
   const pendingUpdateRef = useRef(null);
 
-  const addExceptionalExercise = useCallback(async (exercise, reason) => {
+  const addExceptionalExercise = useCallback(async (exercise, reason, targetDate = null) => {
     try {
       if (!exercise || typeof exercise !== 'object') {
         throw new Error('Données d\'exercice invalides');
@@ -62,7 +62,13 @@ export const useWorkoutExceptionalExercises = (getCurrentData, updateData) => {
         }
       }
 
-      const dateStr = getDateStr(new Date());
+      const dateObj =
+        targetDate instanceof Date
+          ? targetDate
+          : targetDate
+            ? new Date(targetDate)
+            : new Date();
+      const dateStr = getDateStr(dateObj);
       const currentData = getCurrentData();
       const existingVariation = currentData.dailyVariations?.[dateStr];
 
@@ -129,18 +135,25 @@ export const useWorkoutExceptionalExercises = (getCurrentData, updateData) => {
     }
   }, [getCurrentData, updateData]);
 
-  const removeExceptionalExercise = useCallback(async (exerciseId) => {
+  const removeExceptionalExercise = useCallback(async (exerciseId, targetDate = null) => {
     try {
       if (!exerciseId || typeof exerciseId !== 'string' || !exerciseId.startsWith('exceptional_')) {
         throw new Error('ID d\'exercice exceptionnel invalide');
       }
 
-      const dateStr = getDateStr(new Date());
+      let dateStr;
+      if (targetDate) {
+        const d = targetDate instanceof Date ? targetDate : new Date(targetDate);
+        dateStr = getDateStr(d);
+      } else {
+        const m = String(exerciseId).match(/^exceptional_(\d{4}-\d{2}-\d{2})_/);
+        dateStr = m ? m[1] : getDateStr(new Date());
+      }
       const currentData = getCurrentData();
       const existingVariation = currentData.dailyVariations?.[dateStr];
 
       if (!existingVariation) {
-        throw new Error('Aucune variation trouvée pour aujourd\'hui');
+        throw new Error('Aucune variation trouvée pour ce jour');
       }
 
       const additionalExercises = existingVariation.additionalExercises || [];

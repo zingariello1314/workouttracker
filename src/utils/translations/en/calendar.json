@@ -204,6 +204,19 @@
     "variant": {
       "label": "Variant"
     },
+    "templateDay": {
+      "label": "Program day (template)",
+      "hint": "Exercises shown follow the selected weekday. Checkmarks and reps are saved for the calendar date ({{calendarDay}})."
+    },
+    "weekdays": {
+      "lundi": "Monday",
+      "mardi": "Tuesday",
+      "mercredi": "Wednesday",
+      "jeudi": "Thursday",
+      "vendredi": "Friday",
+      "samedi": "Saturday",
+      "dimanche": "Sunday"
+    },
     "exercises": {
       "title": "Exercises"
     },

@@ -143,7 +143,7 @@ const validateExceptionalExercise = (exercise, t) => {
   };
 };
 
-const AddExceptionalExerciseModal = ({ isOpen, onClose }) => {
+const AddExceptionalExerciseModal = ({ isOpen, onClose, targetDate = null }) => {
   const { addExceptionalExercise } = useWorkout();
   const { showSuccess, showError } = useToast();
   const t = useTranslation();
@@ -301,7 +301,11 @@ const AddExceptionalExerciseModal = ({ isOpen, onClose }) => {
       }
 
       // ✅ Ajouter l'exercice exceptionnel
-      await addExceptionalExercise(exerciseData, formData.reason.trim() || undefined);
+      await addExceptionalExercise(
+        exerciseData,
+        formData.reason.trim() || undefined,
+        targetDate || undefined
+      );
       
       showSuccess(t('exercises.exceptional.messages.success'));
       
@@ -330,7 +334,7 @@ const AddExceptionalExerciseModal = ({ isOpen, onClose }) => {
         ]
       });
     }
-  }, [formData, addExceptionalExercise, showSuccess, showError, onClose]);
+  }, [formData, addExceptionalExercise, showSuccess, showError, onClose, targetDate]);
 
   // ✅ Réinitialiser le formulaire quand la modal se ferme
   React.useEffect(() => {

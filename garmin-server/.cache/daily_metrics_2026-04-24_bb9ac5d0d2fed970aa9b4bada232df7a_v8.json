@@ -3,9 +3,9 @@
   "distance": 0,
   "floors": 0,
   "calories": {
-    "total": 0,
+    "total": 60,
     "active": 0,
-    "resting": 0
+    "resting": 60
   },
   "heartRate": {
     "resting": 0,
@@ -38,8 +38,8 @@
     "movements": null,
     "phasesDetails": null
   },
-  "date": "2026-02-13",
-  "_cached_at": 1774381570.3923879,
-  "_cache_version": 2,
-  "_raw_data_hash": "996bea3149714076403f2bbea2e44954"
+  "date": "2026-04-24",
+  "_cached_at": 1776985335.8461199,
+  "_cache_version": 8,
+  "_raw_data_hash": "bb9ac5d0d2fed970aa9b4bada232df7a"
 }
