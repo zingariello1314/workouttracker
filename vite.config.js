@@ -21,6 +21,9 @@ export default defineConfig({
   },
   server: {
     port: 3001,
+    // Spotify OAuth exige http://127.0.0.1:PORT/... ; sans ça, Vite peut n’écouter que sur ::1 / « localhost »
+    // et le navigateur refuse la connexion sur 127.0.0.1 (ERR_CONNECTION_REFUSED).
+    host: '0.0.0.0',
     open: true,
     allowedHosts: [
       'unadventuring-recognizably-felecia.ngrok-free.dev'

@@ -54,6 +54,7 @@ import AnimatedBackground from './components/ui/AnimatedBackground';
 import GlassFilter from './components/ui/GlassFilter';
 import ErrorBoundary from './components/ui/ErrorBoundary';
 import GitHubOAuthLanding from './components/github/GitHubOAuthLanding';
+import SpotifyOAuthLanding from './components/spotify/SpotifyOAuthLanding';
 import { MomentumTabLoadOverlay, MomentumModalLoadCard } from './components/ui/MomentumBrandedLoading';
 import SportXPBar from './components/tabs/TodayTab/components/SportXPBar';
 import CodeXPBar from './components/code/CodeXPBar';
@@ -98,6 +99,9 @@ const WorkoutTrackerContent = () => {
   } = useWorkout();
   const { currentUser, isAuthenticated } = useAuth();
   const isAdmin = currentUser?.role === 'admin' || currentUser?.username === 'zingariello1314';
+
+  // Ne pas rediriger localhost → 127.0.0.1 : ce sont deux origines (IndexedDB / session séparées).
+  // Pour Spotify, l’URI de retour OAuth reste 127.0.0.1 (exigence dashboard) ; garde le même hôte pour le reste.
 
   // Alignement vertical du contenu principal :
   // on compense uniquement la hauteur du header + navigation (~127px),
@@ -323,6 +327,7 @@ const WorkoutTrackerContent = () => {
   return (
     <div className="min-h-screen">
       <GitHubOAuthLanding />
+      <SpotifyOAuthLanding />
       {/* Filtre SVG pour l'effet liquid glass - UNE SEULE FOIS dans l'app */}
       <GlassFilter />
       

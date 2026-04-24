@@ -2,10 +2,11 @@ import React, { memo } from 'react';
 import { useSidebar } from '../../hooks/useSidebar';
 import { useSidebarData } from '../../hooks/useSidebarData';
 import { useNavigation } from '../../hooks/useNavigation';
-import { useAuth } from '../../hooks/useAuth';
+import { useAuth } from '../../context/AuthContext';
 import { measureSync, SIDEBAR_OPERATIONS } from '../../utils/performanceMonitor';
 import ProfileCard3D from './ProfileCard3D';
 import ModuleRenderer from './ModuleRenderer';
+import SpotifySidebarCard from './SpotifySidebarCard';
 import '../../styles/sidebar-premium.css';
 import '../../styles/module-alternation.css';
 
@@ -54,8 +55,8 @@ const SidebarPremium = memo(() => {
   const navigation = useNavigation();
   const { setActiveTab } = navigation; // Extraire setActiveTab pour les modules historiques
 
-  // Hook d'authentification
-  const { user } = useAuth();
+  // Même source que Paramètres (IndexedDB / profil réel), pas le stub hooks/useAuth.js
+  const { currentUser } = useAuth();
 
   const sidebarRef = React.useRef(null);
   const observerRef = React.useRef(null);
@@ -213,7 +214,7 @@ const SidebarPremium = memo(() => {
         
         {/* Carte Développeur 3D Holographique */}
         <ProfileCard3D
-          username={user?.username || 'guest'}
+          username={currentUser?.username || 'guest'}
           showUserInfo={true}
           enableTilt={true}
           enableMobileTilt={false}
@@ -268,6 +269,9 @@ const SidebarPremium = memo(() => {
               {systemStatus.focusPercentage}%
             </div>
           </div>
+        </div>
+        <div style={{ marginTop: '2cm' }}>
+          <SpotifySidebarCard user={currentUser} />
         </div>
       </div>
 

@@ -38,6 +38,27 @@ function isoWeekKeyFromYmd(ymd) {
   return `${isoYear}-W${String(week).padStart(2, '0')}`;
 }
 
+function isoWeekKeyToStartDateFr(isoWeekKey) {
+  const m = String(isoWeekKey || '').match(/^(\d{4})-W(\d{2})$/);
+  if (!m) return String(isoWeekKey || '');
+  const isoYear = Number(m[1]);
+  const isoWeek = Number(m[2]);
+  if (!isoYear || !isoWeek) return String(isoWeekKey || '');
+
+  // Semaine ISO: lundi de la semaine qui contient le 4 janvier
+  const jan4 = new Date(Date.UTC(isoYear, 0, 4));
+  const jan4Day = jan4.getUTCDay() || 7; // 1..7 (lun..dim)
+  const mondayWeek1 = new Date(jan4);
+  mondayWeek1.setUTCDate(jan4.getUTCDate() - jan4Day + 1);
+
+  const mondayTarget = new Date(mondayWeek1);
+  mondayTarget.setUTCDate(mondayWeek1.getUTCDate() + (isoWeek - 1) * 7);
+  const y = mondayTarget.getUTCFullYear();
+  const mo = String(mondayTarget.getUTCMonth() + 1).padStart(2, '0');
+  const d = String(mondayTarget.getUTCDate()).padStart(2, '0');
+  return `${d}/${mo}/${y}`;
+}
+
 export default function CodeStatisticsSubTab() {
   const { currentUser, isAuthenticated } = useAuth();
   const userId = currentUser?.id || 'main';
@@ -332,7 +353,7 @@ export default function CodeStatisticsSubTab() {
                 <ul className="space-y-1">
                   {metrics.topWeeks.map((w) => (
                     <li key={w.week} className="flex items-center justify-between">
-                      <span>{w.week}</span>
+                      <span>{isoWeekKeyToStartDateFr(w.week)}</span>
                       <strong>{w.total}</strong>
                     </li>
                   ))}

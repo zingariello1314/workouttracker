@@ -1,11 +1,12 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Image as ImageIcon, Lightbulb, Link2, Paperclip, Plus, Send } from 'lucide-react';
+import { Image as ImageIcon, Lightbulb, Link2, Paperclip, Pin, PinOff, Plus, Send } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useGitHubDashboard } from '../../hooks/useGitHubDashboard';
 import { flattenWeeksToDayMap } from '../../utils/githubContributions';
 import {
   appendCodeJournalEntryAsync,
   loadCodeJournalEntriesAsync,
+  updateCodeJournalEntryAsync,
   initCodeJournalForUser,
   addJournalXpBonus,
   JOURNAL_XP_PER_SAVE,
@@ -87,6 +88,8 @@ export default function CodeJournalDirectivesSubTab() {
   const [onlyWithAttachments, setOnlyWithAttachments] = useState(false);
   const [sortOrder, setSortOrder] = useState('desc');
   const [pageEntry, setPageEntry] = useState(null);
+  const [pinBusyId, setPinBusyId] = useState(null);
+  const [unpinningAll, setUnpinningAll] = useState(false);
   const mode = JOURNAL_MODES[modeIndex];
   const contributionDayMap = useMemo(() => flattenWeeksToDayMap(gh.yearWeeks), [gh.yearWeeks]);
   const refreshEntries = useCallback(async () => {
@@ -126,13 +129,52 @@ export default function CodeJournalDirectivesSubTab() {
           (Array.isArray(e.attachments) && e.attachments.length > 0) || (Array.isArray(e.links) && e.links.length > 0),
       );
     }
-    list.sort((a, b) => {
+    const sortByDate = (a, b) => {
       const ca = String(a.createdAt || '');
       const cb = String(b.createdAt || '');
       return sortOrder === 'desc' ? cb.localeCompare(ca) : ca.localeCompare(cb);
-    });
-    return list.slice(0, 500);
+    };
+    const pinned = list.filter((e) => e?.isPinned === true).sort(sortByDate);
+    const unpinned = list.filter((e) => e?.isPinned !== true).sort(sortByDate);
+    return [...pinned, ...unpinned].slice(0, 500);
   }, [entries, filterMode, onlyWithAttachments, sortOrder]);
+  const hasPinnedEntries = useMemo(() => entries.some((e) => e?.isPinned === true), [entries]);
+
+  const togglePin = useCallback(
+    async (entry) => {
+      if (!entry?.id) return;
+      setPinBusyId(entry.id);
+      try {
+        await updateCodeJournalEntryAsync(userId, {
+          ...entry,
+          isPinned: entry.isPinned !== true,
+        });
+        await refreshEntries();
+      } finally {
+        setPinBusyId(null);
+      }
+    },
+    [refreshEntries, userId],
+  );
+
+  const handleUnpinAll = useCallback(async () => {
+    const pinnedEntries = entries.filter((e) => e?.isPinned === true);
+    if (pinnedEntries.length === 0) return;
+    setUnpinningAll(true);
+    try {
+      await Promise.all(
+        pinnedEntries.map((entry) =>
+          updateCodeJournalEntryAsync(userId, {
+            ...entry,
+            isPinned: false,
+          }),
+        ),
+      );
+      await refreshEntries();
+    } finally {
+      setUnpinningAll(false);
+    }
+  }, [entries, refreshEntries, userId]);
   const cycleMode = useCallback(() => {
     setModeIndex((i) => (i + 1) % JOURNAL_MODES.length);
   }, []);
@@ -224,7 +266,7 @@ export default function CodeJournalDirectivesSubTab() {
     <div className="mx-auto max-w-4xl space-y-6 py-6">
       <header className="text-center">
         <h1 className="text-4xl font-bold tracking-tight text-white sm:text-5xl">
-          What will you <span className="bg-gradient-to-b from-rose-300 via-fuchsia-300 to-white bg-clip-text italic text-transparent">build</span> today?
+          What have you <span className="bg-gradient-to-b from-rose-300 via-fuchsia-300 to-white bg-clip-text italic text-transparent">built</span> today?
         </h1>
       </header>
       {connected && todayCount > 0 ? (
@@ -420,6 +462,14 @@ export default function CodeJournalDirectivesSubTab() {
               />
               Fichiers / images ou liens uniquement
             </label>
+            <button
+              type="button"
+              onClick={() => void handleUnpinAll()}
+              disabled={!hasPinnedEntries || unpinningAll}
+              className="rounded-lg border border-rose-500/45 bg-black px-2.5 py-1.5 text-xs text-rose-100 transition hover:bg-rose-950/40 disabled:cursor-not-allowed disabled:opacity-40"
+            >
+              {unpinningAll ? 'Désépinglage…' : 'Tout désépingler'}
+            </button>
           </div>
         </div>
         {entries.length === 0 ? (
@@ -451,6 +501,12 @@ export default function CodeJournalDirectivesSubTab() {
                     className="w-full cursor-pointer rounded-lg border border-rose-500/25 bg-black/50 p-3 text-left transition hover:border-rose-400/50 hover:bg-black/70 focus:outline-none focus:ring-2 focus:ring-rose-500/50"
                   >
                     <div className="mb-1 flex flex-wrap items-center gap-2 text-xs text-rose-300/80">
+                      {e.isPinned ? (
+                        <span className="inline-flex items-center gap-1 rounded-full border border-amber-400/50 bg-amber-500/10 px-2 py-0.5 font-medium text-amber-200">
+                          <Pin className="size-3" />
+                          Épinglée
+                        </span>
+                      ) : null}
                       <span className="rounded-full border border-rose-500/40 px-2 py-0.5 font-medium text-rose-100">
                         {JOURNAL_MODES.find((m) => m.id === e.mode)?.label || e.mode}
                       </span>
@@ -515,7 +571,21 @@ export default function CodeJournalDirectivesSubTab() {
                         )}
                       </div>
                     ) : null}
-                    <p className="mt-2 text-[11px] text-rose-500/80">Cliquer pour ouvrir la page détail (édition & suppression)</p>
+                    <div className="mt-2 flex items-center justify-between gap-2">
+                      <p className="text-[11px] text-rose-500/80">Cliquer pour ouvrir la page détail (édition & suppression)</p>
+                      <button
+                        type="button"
+                        onClick={(ev) => {
+                          ev.stopPropagation();
+                          void togglePin(e);
+                        }}
+                        disabled={pinBusyId === e.id}
+                        className="inline-flex items-center gap-1 rounded border border-rose-500/45 bg-black/50 px-2 py-1 text-[11px] text-rose-200 transition hover:bg-rose-950/40 disabled:opacity-50"
+                      >
+                        {e.isPinned ? <PinOff className="size-3" /> : <Pin className="size-3" />}
+                        {e.isPinned ? 'Désépingler' : 'Épingler'}
+                      </button>
+                    </div>
                   </div>
                 </li>
               );

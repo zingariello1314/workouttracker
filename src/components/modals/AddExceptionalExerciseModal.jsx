@@ -15,6 +15,7 @@ import { Input, TextArea, Select } from '../ui/Input';
 import { useToast } from '../ui/Toast';
 import { useWorkout } from '../../context/WorkoutContext';
 import { useTranslation } from '../../utils/translations';
+import { syncExercisesFromProgramsWithCategorization } from '../../utils/programSync';
 
 /**
  * Validation complète et intelligente d'un exercice exceptionnel
@@ -144,7 +145,7 @@ const validateExceptionalExercise = (exercise, t) => {
 };
 
 const AddExceptionalExerciseModal = ({ isOpen, onClose, targetDate = null }) => {
-  const { addExceptionalExercise } = useWorkout();
+  const { addExceptionalExercise, programs, activeProgram } = useWorkout();
   const { showSuccess, showError } = useToast();
   const t = useTranslation();
 
@@ -170,6 +171,52 @@ const AddExceptionalExerciseModal = ({ isOpen, onClose, targetDate = null }) => 
 
   // ✅ État des erreurs par champ (pour affichage individuel)
   const [fieldErrors, setFieldErrors] = useState({});
+  const [selectedReferenceExercise, setSelectedReferenceExercise] = useState(null);
+
+  const exerciseCatalog = useMemo(() => {
+    const merged = [];
+
+    if (activeProgram) {
+      const activeSync = syncExercisesFromProgramsWithCategorization({ programs: [], activeProgram }, 'active');
+      merged.push(...(activeSync.exercises || []));
+    }
+
+    if (Array.isArray(programs) && programs.length > 0) {
+      const programsSync = syncExercisesFromProgramsWithCategorization({ programs, activeProgram: null }, 'all');
+      merged.push(...(programsSync.exercises || []));
+    }
+
+    const defaultSync = syncExercisesFromProgramsWithCategorization({ programs: [], activeProgram: null }, 'default');
+    merged.push(...(defaultSync.exercises || []));
+
+    const byName = new Map();
+    merged.forEach((exercise) => {
+      if (!exercise?.name) return;
+      const normalizedName = exercise.name.trim().toLowerCase();
+      if (!normalizedName) return;
+      const existing = byName.get(normalizedName);
+      if (!existing || (!existing.metadata && exercise.metadata)) {
+        byName.set(normalizedName, exercise);
+      }
+    });
+
+    return Array.from(byName.values());
+  }, [activeProgram, programs]);
+
+  const nameSuggestions = useMemo(() => {
+    const query = formData.name.trim().toLowerCase();
+    if (!query) return [];
+
+    return exerciseCatalog
+      .filter((exercise) => exercise.name.toLowerCase().includes(query))
+      .sort((a, b) => {
+        const aStarts = a.name.toLowerCase().startsWith(query) ? 0 : 1;
+        const bStarts = b.name.toLowerCase().startsWith(query) ? 0 : 1;
+        if (aStarts !== bStarts) return aStarts - bStarts;
+        return a.name.localeCompare(b.name, 'fr', { sensitivity: 'base' });
+      })
+      .slice(0, 8);
+  }, [exerciseCatalog, formData.name]);
 
   // ✅ Validation en temps réel (mémorisée pour performance)
   const currentValidation = useMemo(() => {
@@ -195,6 +242,21 @@ const AddExceptionalExerciseModal = ({ isOpen, onClose, targetDate = null }) => 
   const handleNameChange = useCallback((e) => {
     const value = e.target.value;
     setFormData(prev => ({ ...prev, name: value }));
+    const normalized = value.trim().toLowerCase();
+    if (!normalized) {
+      setSelectedReferenceExercise(null);
+      return;
+    }
+    const exactMatch = exerciseCatalog.find(
+      (exercise) => exercise.name.trim().toLowerCase() === normalized
+    );
+    setSelectedReferenceExercise(exactMatch || null);
+  }, [exerciseCatalog]);
+
+  const handleSuggestionSelect = useCallback((exercise) => {
+    if (!exercise?.name) return;
+    setFormData((prev) => ({ ...prev, name: exercise.name }));
+    setSelectedReferenceExercise(exercise);
   }, []);
 
   const handleTypeChange = useCallback((e) => {
@@ -290,7 +352,20 @@ const AddExceptionalExerciseModal = ({ isOpen, onClose, targetDate = null }) => 
         name: formData.name.trim(),
         type: formData.type,
         materiel: formData.materiel.trim() || undefined,
-        notes: formData.notes.trim() || undefined
+        notes: formData.notes.trim() || undefined,
+        linkedExerciseId: selectedReferenceExercise?.id ?? undefined,
+        difficulty:
+          selectedReferenceExercise?.metadata?.difficulty ||
+          selectedReferenceExercise?.difficulty ||
+          undefined,
+        muscleGroup:
+          selectedReferenceExercise?.metadata?.primaryMuscleGroup ||
+          selectedReferenceExercise?.muscleGroup ||
+          undefined,
+        category:
+          selectedReferenceExercise?.metadata?.category ||
+          selectedReferenceExercise?.category ||
+          undefined
       };
 
       if (formData.type === 'reps') {
@@ -320,6 +395,7 @@ const AddExceptionalExerciseModal = ({ isOpen, onClose, targetDate = null }) => 
         notes: '',
         reason: ''
       });
+      setSelectedReferenceExercise(null);
       
       // ✅ Fermer la modal
       onClose();
@@ -334,7 +410,7 @@ const AddExceptionalExerciseModal = ({ isOpen, onClose, targetDate = null }) => 
         ]
       });
     }
-  }, [formData, addExceptionalExercise, showSuccess, showError, onClose, targetDate]);
+  }, [formData, selectedReferenceExercise, addExceptionalExercise, showSuccess, showError, onClose, targetDate, t]);
 
   // ✅ Réinitialiser le formulaire quand la modal se ferme
   React.useEffect(() => {
@@ -349,6 +425,7 @@ const AddExceptionalExerciseModal = ({ isOpen, onClose, targetDate = null }) => 
         notes: '',
         reason: ''
       });
+      setSelectedReferenceExercise(null);
       setValidation({
         isValid: false,
         errors: [],
@@ -379,7 +456,32 @@ const AddExceptionalExerciseModal = ({ isOpen, onClose, targetDate = null }) => 
           error={fieldErrors.name}
           help={formData.name.trim().length > 0 && formData.name.trim().length < 2 ? t('exercises.exceptional.name.help') : undefined}
           className="w-full"
+          list="exceptional-exercise-suggestions"
         />
+        <datalist id="exceptional-exercise-suggestions">
+          {nameSuggestions.map((exercise) => (
+            <option key={`${exercise.id}_${exercise.name}`} value={exercise.name} />
+          ))}
+        </datalist>
+        {nameSuggestions.length > 0 && (
+          <div className="rounded-lg border border-purple-500/30 bg-purple-500/10 p-2">
+            <p className="mb-2 text-xs text-purple-200/80">
+              Suggestions depuis l'onglet Exercices
+            </p>
+            <div className="flex flex-wrap gap-2">
+              {nameSuggestions.slice(0, 5).map((exercise) => (
+                <button
+                  key={`${exercise.id}_${exercise.name}_chip`}
+                  type="button"
+                  onClick={() => handleSuggestionSelect(exercise)}
+                  className="rounded-full border border-purple-400/40 bg-purple-500/10 px-3 py-1 text-xs text-purple-100 transition hover:bg-purple-500/20"
+                >
+                  {exercise.name}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
 
         {/* ✅ Type d'exercice */}
         <Select

@@ -125,6 +125,7 @@ export const useWorkoutHistory = (getCurrentData, getExerciseNameById) => {
             
             dataByDate[dateStr].exercises[exerciseKey] = {
               exerciseId: ex.id,
+              linkedExerciseId: ex.linkedExerciseId || null,
               name: ex.name || 'Exercice exceptionnel',
               reps: reps,
               duration: duration,
@@ -134,6 +135,9 @@ export const useWorkoutHistory = (getCurrentData, getExerciseNameById) => {
               actualReps: actualReps,
               totalReps: totalReps,
               materiel: ex.materiel,
+              difficulty: ex.difficulty,
+              muscleGroup: ex.muscleGroup,
+              category: ex.category,
               notes: ex.notes
             };
           }
@@ -232,7 +236,7 @@ export const useWorkoutHistory = (getCurrentData, getExerciseNameById) => {
           
           if (exerciseData.isExceptional) {
             exercises.push({
-              id: exerciseData.exerciseId,
+              id: exerciseData.linkedExerciseId || exerciseData.exerciseId,
               name: exerciseData.name || 'Exercice exceptionnel',
               reps: normalizeRepsValue(exerciseData.reps),
               duration: exerciseData.duration || null,
@@ -242,6 +246,9 @@ export const useWorkoutHistory = (getCurrentData, getExerciseNameById) => {
               actualReps: exerciseData.actualReps,
               totalReps: normalizeRepsValue(exerciseData.totalReps),
               materiel: exerciseData.materiel,
+              difficulty: exerciseData.difficulty,
+              muscleGroup: exerciseData.muscleGroup,
+              category: exerciseData.category,
               notes: exerciseData.notes
             });
           } else {
