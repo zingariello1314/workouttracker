@@ -4,6 +4,52 @@
 
 import { fetchGitHubGraphql } from './githubApi';
 
+// Dédoublonnage + micro-cache pour éviter les rafales de requêtes GraphQL
+// quand plusieurs widgets demandent les mêmes données en parallèle.
+const GITHUB_CACHE_TTL_MS = 15_000;
+const contributionsRequestCache = new Map();
+
+function tokenKey(accessToken) {
+  const t = String(accessToken || '');
+  if (!t) return 'anon';
+  return `tok:${t.slice(-10)}`;
+}
+
+function getCachedValue(key) {
+  const hit = contributionsRequestCache.get(key);
+  if (!hit) return null;
+  if (Date.now() - hit.ts > GITHUB_CACHE_TTL_MS) {
+    contributionsRequestCache.delete(key);
+    return null;
+  }
+  return hit.value;
+}
+
+function setCachedValue(key, value) {
+  contributionsRequestCache.set(key, { value, ts: Date.now() });
+}
+
+async function withRequestDedup(cacheKey, fetcher) {
+  const cached = getCachedValue(cacheKey);
+  if (cached != null) return cached;
+
+  const inflight = contributionsRequestCache.get(`${cacheKey}:inflight`)?.value;
+  if (inflight) return inflight;
+
+  const promise = (async () => {
+    try {
+      const data = await fetcher();
+      setCachedValue(cacheKey, data);
+      return data;
+    } finally {
+      contributionsRequestCache.delete(`${cacheKey}:inflight`);
+    }
+  })();
+
+  contributionsRequestCache.set(`${cacheKey}:inflight`, { value: promise, ts: Date.now() });
+  return promise;
+}
+
 const VIEWER_META = `
   query ViewerMeta {
     viewer {
@@ -35,23 +81,29 @@ const CONTRIBUTIONS_YEAR = `
 `;
 
 export async function fetchViewerMeta(accessToken) {
-  const data = await fetchGitHubGraphql(accessToken, VIEWER_META, {});
-  return data?.viewer || null;
+  const key = `viewer:${tokenKey(accessToken)}`;
+  return withRequestDedup(key, async () => {
+    const data = await fetchGitHubGraphql(accessToken, VIEWER_META, {});
+    return data?.viewer || null;
+  });
 }
 
 export async function fetchContributionsForRange(accessToken, fromIso, toIso) {
-  const data = await fetchGitHubGraphql(accessToken, CONTRIBUTIONS_YEAR, {
-    from: fromIso,
-    to: toIso,
+  const key = `range:${tokenKey(accessToken)}:${fromIso}:${toIso}`;
+  return withRequestDedup(key, async () => {
+    const data = await fetchGitHubGraphql(accessToken, CONTRIBUTIONS_YEAR, {
+      from: fromIso,
+      to: toIso,
+    });
+    const coll = data?.viewer?.contributionsCollection;
+    const cal = coll?.contributionCalendar;
+    if (!coll || !cal) return null;
+    return {
+      login: data.viewer.login,
+      totalContributions: cal.totalContributions ?? 0,
+      weeks: cal.weeks || [],
+    };
   });
-  const coll = data?.viewer?.contributionsCollection;
-  const cal = coll?.contributionCalendar;
-  if (!coll || !cal) return null;
-  return {
-    login: data.viewer.login,
-    totalContributions: cal.totalContributions ?? 0,
-    weeks: cal.weeks || [],
-  };
 }
 
 /** Année civile UTC (aligné sur le graphe GitHub web). */
@@ -146,35 +198,38 @@ export function computeContributionStats(weeks) {
  */
 export async function fetchMultiYearContributions(accessToken, years) {
   const sorted = [...new Set(years)].sort((a, b) => a - b);
-  const chunks = [];
-  const batchSize = 4;
-  for (let i = 0; i < sorted.length; i += batchSize) {
-    const batch = sorted.slice(i, i + batchSize);
-    const part = await Promise.all(
-      batch.map(async (y) => {
-        const { from, to } = yearRangeUtc(y);
-        const one = await fetchContributionsForRange(accessToken, from, to);
-        return { year: y, weeks: one?.weeks || [], total: one?.totalContributions ?? 0 };
-      }),
-    );
-    chunks.push(...part);
-    if (i + batchSize < sorted.length) {
-      await new Promise((r) => setTimeout(r, 120));
+  const key = `multi:${tokenKey(accessToken)}:${sorted.join(',')}`;
+  return withRequestDedup(key, async () => {
+    const chunks = [];
+    const batchSize = 4;
+    for (let i = 0; i < sorted.length; i += batchSize) {
+      const batch = sorted.slice(i, i + batchSize);
+      const part = await Promise.all(
+        batch.map(async (y) => {
+          const { from, to } = yearRangeUtc(y);
+          const one = await fetchContributionsForRange(accessToken, from, to);
+          return { year: y, weeks: one?.weeks || [], total: one?.totalContributions ?? 0 };
+        }),
+      );
+      chunks.push(...part);
+      if (i + batchSize < sorted.length) {
+        await new Promise((r) => setTimeout(r, 120));
+      }
     }
-  }
-  const mergedWeeksByDate = new Map();
-  for (const ch of chunks) {
-    const m = flattenWeeksToDayMap(ch.weeks);
-    for (const [k, v] of m) mergedWeeksByDate.set(k, v);
-  }
-  // Reconstruire des « semaines » factices n'est pas nécessaire pour les stats ; pour le graphe année unique on affiche une année.
-  const allWeeks = chunks.flatMap((c) => c.weeks);
-  const stats = computeContributionStats(allWeeks);
-  return {
-    years: chunks,
-    stats,
-    perYearTotals: Object.fromEntries(chunks.map((c) => [String(c.year), c.total])),
-  };
+    const mergedWeeksByDate = new Map();
+    for (const ch of chunks) {
+      const m = flattenWeeksToDayMap(ch.weeks);
+      for (const [k, v] of m) mergedWeeksByDate.set(k, v);
+    }
+    // Reconstruire des « semaines » factices n'est pas nécessaire pour les stats ; pour le graphe année unique on affiche une année.
+    const allWeeks = chunks.flatMap((c) => c.weeks);
+    const stats = computeContributionStats(allWeeks);
+    return {
+      years: chunks,
+      stats,
+      perYearTotals: Object.fromEntries(chunks.map((c) => [String(c.year), c.total])),
+    };
+  });
 }
 
 /** Jour suivant (UTC) au format YYYY-MM-DD. */
