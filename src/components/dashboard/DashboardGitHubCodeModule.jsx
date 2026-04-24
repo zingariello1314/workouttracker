@@ -21,6 +21,8 @@ const DashboardGitHubCodeModule = ({
   heatmapAccent: heatmapAccentProp,
   /** Onglet Code calendrier : grille heatmap + périodes en premier (sous la barre XP / intro). */
   calendarHeroFirst = false,
+  onDayClick = null,
+  calendarDetailsNode = null,
 }) => {
   const isEmbedded = variant === 'embedded';
   const heatmapAccent = heatmapAccentProp || (isEmbedded ? 'rose' : 'emerald');
@@ -294,7 +296,10 @@ const DashboardGitHubCodeModule = ({
                   {gh.error}
                 </div>
               )}
-              {!gh.loading && !gh.error && <GitHubHeatmapGrid weeks={gh.yearWeeks} accent={heatmapAccent} />}
+              {!gh.loading && !gh.error && (
+                <GitHubHeatmapGrid weeks={gh.yearWeeks} accent={heatmapAccent} onDayClick={onDayClick} />
+              )}
+              {calendarDetailsNode ? <div className="mt-4">{calendarDetailsNode}</div> : null}
 
             {stats && (
               <div className="mt-8 border-t border-slate-700/70 pt-6">

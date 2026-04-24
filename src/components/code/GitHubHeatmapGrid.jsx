@@ -41,7 +41,7 @@ function contributionsLineFr(count) {
   return `${n} contributions`;
 }
 
-export default function GitHubHeatmapGrid({ weeks, accent = 'emerald' }) {
+export default function GitHubHeatmapGrid({ weeks, accent = 'emerald', onDayClick = null }) {
   const tipBorder = accent === 'rose' ? 'border-rose-500/30' : 'border-emerald-500/25';
   const tipCount = accent === 'rose' ? 'text-rose-200/95' : 'text-emerald-200/95';
   const [hoverTip, setHoverTip] = useState(null);
@@ -147,13 +147,22 @@ export default function GitHubHeatmapGrid({ weeks, accent = 'emerald' }) {
               const cls = tierToHeatClass(tier);
               const bg = TIER_CLASS[cls] || TIER_CLASS.gh0;
               return (
-                <div
+                <button
                   key={day.date}
-                  role="presentation"
+                  type="button"
                   onPointerEnter={(e) => showTip(e, day)}
                   onPointerMove={moveTip}
                   onPointerLeave={hideTip}
-                  className={`aspect-square w-full min-w-0 cursor-default rounded-sm ${bg}`}
+                  onClick={() => {
+                    if (typeof onDayClick === 'function') onDayClick(day);
+                  }}
+                  className={`aspect-square w-full min-w-0 rounded-sm ${bg} ${
+                    typeof onDayClick === 'function'
+                      ? 'cursor-pointer transition hover:brightness-125 focus:outline-none focus:ring-2 focus:ring-rose-400/70'
+                      : 'cursor-default'
+                  }`}
+                  aria-label={`${formatContributionDayFr(day.date)} — ${contributionsLineFr(day.contributionCount)}`}
+                  title={typeof onDayClick === 'function' ? 'Voir le détail du jour' : undefined}
                 />
               );
             })}

@@ -39,6 +39,7 @@ const Navigation = () => {
     () => [
       { id: 'code-calendar', labelKey: 'nav.codeCalendar', icon: '📅' },
       { id: 'code-journal', labelKey: 'nav.codeJournal', icon: '📝' },
+      { id: 'code-stats', labelKey: 'nav.codeStats', icon: '📈' },
     ],
     []
   );

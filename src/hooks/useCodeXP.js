@@ -4,14 +4,18 @@ import {
   fetchViewerMeta,
   fetchMultiYearContributions,
   contributionYearSpanUtc,
+  contributionStreaksFromWeeks,
 } from '../utils/githubContributions';
-import { computeCodeCategoryXp } from '../services/xp/codeXpRules';
+import { computeCodeCategoryXp, progressiveContributionXp, streakXpMultiplier } from '../services/xp/codeXpRules';
 import { loadJournalXpBonusTotal, loadGithubTrophyXpTotal } from '../services/code/codeJournalIDB';
 
 const EMPTY_GH_BREAKDOWN = {
   totalContributions: 0,
   activeCodingDays: 0,
   calendarDays: 0,
+  currentStreakDays: 0,
+  streakMultiplier: 1,
+  contributionXpAwarded: 0,
 };
 
 /**
@@ -50,12 +54,19 @@ export function useCodeXP() {
         const multi = await fetchMultiYearContributions(token, years);
         if (cancelled) return;
         const st = multi?.stats;
-        const xp = computeCodeCategoryXp(st);
+        const allWeeks = multi?.years?.flatMap((y) => y?.weeks || []) || [];
+        const streakInfo = contributionStreaksFromWeeks(allWeeks);
+        const currentStreakDays = Number(streakInfo?.current) || 0;
+        const multiplier = streakXpMultiplier(currentStreakDays);
+        const xp = computeCodeCategoryXp(st, { currentStreakDays });
         setGithubXp(xp);
         setGithubBreakdown({
           totalContributions: st?.totalCommits ?? 0,
           activeCodingDays: st?.activeCodingDays ?? 0,
           calendarDays: st?.calendarDays ?? 0,
+          currentStreakDays,
+          streakMultiplier: multiplier,
+          contributionXpAwarded: Math.round(progressiveContributionXp(st?.totalCommits ?? 0) * multiplier),
         });
       } catch (e) {
         if (!cancelled) {

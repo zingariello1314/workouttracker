@@ -131,6 +131,7 @@ const WorkoutTrackerContent = () => {
     garmin: '-620px',
     'code-calendar': '-620px',
     'code-journal': '-620px',
+    'code-stats': '-620px',
   };
 
   const defaultMainOffset = (activeTab !== 'home' && activeTab !== 'auth' && activeTab !== 'dashboard' && activeTab !== 'pricing')
@@ -270,6 +271,7 @@ const WorkoutTrackerContent = () => {
         return <FinanceTab />;
       case 'code-calendar':
       case 'code-journal':
+      case 'code-stats':
         return <CodeTab />;
       case 'settings':
         return <SettingsTab />;

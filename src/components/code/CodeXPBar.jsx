@@ -56,6 +56,13 @@ const CodeXPBar = () => {
         {br ? (
           <>
             <span>
+              XP des contributions :{' '}
+              <span className="font-medium text-white">
+                {(Number(br.contributionXpAwarded) || 0).toLocaleString('fr-FR')}
+              </span>{' '}
+              XP
+            </span>
+            <span>
               Contributions (tout profil) :{' '}
               <span className="font-medium text-white">
                 {(br.totalContributions ?? 0).toLocaleString('fr-FR')}
@@ -64,6 +71,11 @@ const CodeXPBar = () => {
             <span>
               Jours actifs :{' '}
               <span className="font-medium text-white">{(br.activeCodingDays ?? 0).toLocaleString('fr-FR')}</span>
+            </span>
+            <span>
+              Streak actuel :{' '}
+              <span className="font-medium text-white">{(br.currentStreakDays ?? 0).toLocaleString('fr-FR')}</span> j
+              (x{Number(br.streakMultiplier || 1).toFixed(1)})
             </span>
           </>
         ) : null}

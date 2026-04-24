@@ -253,28 +253,18 @@ export default function CodeJournalDirectivesSubTab() {
           <div className="relative z-10 border-t border-rose-500/20 px-5 py-3">
             <div className="mb-2 flex items-center gap-2 text-xs font-medium text-rose-300/90">
               <Link2 className="size-3.5 shrink-0 text-rose-400" aria-hidden />
-              Liens (enregistrés avec l’entrée, IndexedDB)
+              Liens (ils apparaîtront dans « Entrées récentes » après enregistrement)
             </div>
             {links.length > 0 ? (
-              <div className="mb-2 flex flex-wrap gap-2">
-                {links.map((l) => (
-                  <span
-                    key={l.id}
-                    className="inline-flex max-w-full items-center gap-1 rounded-md border border-rose-500/40 bg-black/70 px-2 py-1 text-xs text-rose-100"
-                  >
-                    <a href={l.url} target="_blank" rel="noopener noreferrer" className="truncate text-rose-300 underline hover:text-rose-100">
-                      {l.title || l.url}
-                    </a>
-                    <button
-                      type="button"
-                      className="shrink-0 text-rose-400 hover:text-rose-200"
-                      onClick={() => setLinks((x) => x.filter((z) => z.id !== l.id))}
-                      aria-label="Retirer le lien"
-                    >
-                      ×
-                    </button>
-                  </span>
-                ))}
+              <div className="mb-2 flex items-center gap-3 text-xs text-rose-300/80">
+                <p>{links.length} lien(s) prêt(s) à enregistrer.</p>
+                <button
+                  type="button"
+                  className="rounded border border-rose-500/40 px-2 py-0.5 text-rose-200 hover:bg-rose-950/35"
+                  onClick={() => setLinks([])}
+                >
+                  Vider
+                </button>
               </div>
             ) : null}
             <div className="flex flex-col gap-2 sm:flex-row sm:items-end">
