@@ -497,7 +497,6 @@ const BooksTab = () => {
       />
       <div className="relative min-h-screen">
       <div className="relative z-10 space-y-8 p-8">
-        <BooksXPBar />
         {isLoading && (
           <Card variant="books">
             <CardContent>
@@ -568,6 +567,9 @@ const BooksTab = () => {
             </button>
           </div>
         </div>
+
+        {/* XP visible sous les sous-onglets (tous les sous-onglets Livres) — même logique que la barre globale du dashboard */}
+        <BooksXPBar />
 
         {/* Contenu conditionnel selon le sous-onglet actif */}
         <ErrorBoundary

@@ -15,6 +15,7 @@ import { useCodeXP } from './useCodeXP';
 import { loadXPData, saveXPData } from '../services/xp/xpStorage';
 import { calculateXPForAllCategories } from '../services/xp/xpCalculations';
 import { globalLevelProgressFromTotalXp } from '../utils/globalLevelProgress';
+import { levelProgressFromXpAmount } from '../utils/xpLevelFromAmount';
 
 let globalXpCache = { signature: null, calculated: null, data: null };
 
@@ -26,11 +27,12 @@ const useGlobalXP = () => {
   const [xpData, setXPData] = useState(globalXpCache.data);
   const [isLoading, setIsLoading] = useState(true);
   
-  const { validations, effectiveQuests } = useQuietQuestEngine();
+  const { validations, effectiveQuests, userData } = useQuietQuestEngine();
   const { progressionData } = useApprentissageEngine();
-  const { gamificationData } = useNutritionGamification();
-  const { totalXP: booksXP, breakdown: booksBreakdown } = useBooksXP();
-  const { totalXP: sportXP, breakdown: sportBreakdown } = useSportXP();
+  const { experience: nutritionExperience } = useNutritionGamification();
+  const nutritionForCalc = nutritionExperience ? { experience: nutritionExperience } : null;
+  const { totalXP: booksXP, breakdown: booksBreakdown, level: booksLevel } = useBooksXP();
+  const { totalXP: sportXP, breakdown: sportBreakdown, level: sportLevel } = useSportXP();
   const addictionQuitXPBlock = useAddictionQuitXP();
   const codeXPBlock = useCodeXP();
   const cacheRef = useRef({ signature: null, result: null });
@@ -40,7 +42,7 @@ const useGlobalXP = () => {
     const signature = [
       validations?.length || 0,
       progressionData?.globalXP || 0,
-      gamificationData?.experience?.currentXP || 0,
+      nutritionExperience?.currentXP || 0,
       booksXP,
       sportXP,
       addictionQuitXPBlock.totalXP,
@@ -62,7 +64,7 @@ const useGlobalXP = () => {
     const result = calculateXPForAllCategories({
       quests: { validations, allQuests: effectiveQuests },
       learning: progressionData,
-      nutrition: gamificationData,
+      nutrition: nutritionForCalc,
       books: { totalXP: booksXP, breakdown: booksBreakdown },
       sport: { totalXP: sportXP, breakdown: sportBreakdown },
       addictionQuit: addictionQuitXPBlock,
@@ -75,7 +77,7 @@ const useGlobalXP = () => {
     validations,
     effectiveQuests,
     progressionData,
-    gamificationData,
+    nutritionExperience,
     booksXP,
     booksBreakdown,
     sportXP,
@@ -149,13 +151,39 @@ const useGlobalXP = () => {
     if (!xpData) return globalLevelProgressFromTotalXp(0);
     return globalLevelProgressFromTotalXp(xpData.totalXP);
   }, [xpData]);
-  
+
+  /** Niveau affiché par case = celui de l’onglet / moteur réel (pas la courbe globale sur la tranche XP). */
+  const categoryLevels = useMemo(() => {
+    const aqXp = addictionQuitXPBlock?.totalXP ?? 0;
+    const codeXp = codeXPBlock?.totalXP ?? 0;
+    return {
+      quests: Math.max(1, Number(userData?.level) || 1),
+      learning: Math.max(1, Number(progressionData?.globalLevel) || 1),
+      nutrition: Math.max(1, Number(nutritionExperience?.level) || 1),
+      books: Math.max(1, Number(booksLevel) || 1),
+      sport: Math.max(1, Number(sportLevel) || 1),
+      // Pas de niveau dédié dans l’onglet : paliers 500 XP (lisible, cohérent avec Livres)
+      addictionQuit: Math.max(1, levelProgressFromXpAmount(aqXp, 500).level),
+      code: Math.max(1, levelProgressFromXpAmount(codeXp).level),
+    };
+  }, [
+    userData?.level,
+    progressionData?.globalLevel,
+    nutritionExperience?.level,
+    nutritionExperience?.currentXP,
+    booksLevel,
+    sportLevel,
+    addictionQuitXPBlock?.totalXP,
+    codeXPBlock?.totalXP,
+  ]);
+
   return {
     totalXP: xpData?.totalXP || 0,
     level: levelInfo.level,
     xpByCategory: xpData?.xpByCategory || {},
     progress: levelInfo.progress,
     details: xpData?.details || {},
+    categoryLevels,
     isLoading
   };
 };

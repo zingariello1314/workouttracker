@@ -19,6 +19,7 @@ import {
 import { isGarminRunningLikeActivity } from '../../utils/garminRunningLaps';
 import { averageCriteriaScore } from '../../utils/bookReadingRatings';
 import { calculateQuestXP } from '../../utils/questXpCore';
+import SessionAggregator from '../statistics/SessionAggregator.js';
 
 function buildGarminRunningByIdForTrophies(garminData) {
   const full = new Map();
@@ -44,6 +45,25 @@ function genreMultiplier(genre) {
 }
 
 /**
+ * Bonus XP lié aux séries (même logique de dates que les statistiques livres).
+ * Courbes en √ : forte récompense au début, plafond pour éviter d’écraser le reste.
+ */
+export function booksStreakBonusXp(currentStreak, longestStreak) {
+  const c = Math.max(0, Number(currentStreak) || 0);
+  const l = Math.max(0, Number(longestStreak) || 0);
+  const raw = 17 * Math.sqrt(c) + 10 * Math.sqrt(l);
+  return Math.min(240, Math.round(raw));
+}
+
+/**
+ * Bonus « volume » global (pages cumulées), en complément du XP par session.
+ */
+export function booksReadingVolumeBonusXp(totalPages) {
+  const p = Math.max(0, Number(totalPages) || 0);
+  return Math.min(175, Math.round(Math.log1p(p) * 24));
+}
+
+/**
  * XP d'une session avec contexte livre (pages totales, genre, statut terminé, critères).
  */
 function sessionXpWithContext(session, book) {
@@ -53,9 +73,10 @@ function sessionXpWithContext(session, book) {
   const critAvg = averageCriteriaScore(session?.criteriaRatings);
   const ratingMult = 0.78 + (critAvg / 10) * 0.44;
 
-  let sessionXP = 8;
-  sessionXP += pages * 0.92;
-  sessionXP += Math.min(mins * 0.42, 22);
+  // Base + bonus « session enregistrée » ; pages et durée pondérées plus fort
+  let sessionXP = 12;
+  sessionXP += pages * 1.32;
+  sessionXP += Math.min(mins * 0.5, 28);
 
   if (totalBookPages > 0 && pages > 0) {
     const frac = Math.min(1, pages / totalBookPages);
@@ -80,24 +101,72 @@ function sessionXpWithContext(session, book) {
   return Math.max(0, sessionXP);
 }
 
-/**
- * Calcule l'XP pour les livres (sessions + contexte par livre).
- * @param {Array<{ readingSessions?: object[], pages?: number|string, genre?: string, status?: string }>} books
- * @returns {number} XP totale
- */
-export const calculateBooksXP = (books) => {
-  if (!books || !Array.isArray(books) || books.length === 0) return 0;
+const EMPTY_BOOKS_XP_BREAKDOWN = {
+  sessions: 0,
+  pages: 0,
+  pagesPerHour: 0,
+  currentStreak: 0,
+  longestStreak: 0,
+  streakBonusXp: 0,
+  volumeBonusXp: 0,
+  sessionSubtotalXp: 0,
+};
 
-  let totalXP = 0;
+/**
+ * Détail XP livres : sessions (pages, durée, contexte) + bonus volume pages + bonus streaks.
+ * @param {Array<{ readingSessions?: object[], pages?: number|string, genre?: string, status?: string }>} books
+ * @returns {{ totalXP: number, breakdown: typeof EMPTY_BOOKS_XP_BREAKDOWN }}
+ */
+export const computeBooksXPTotal = (books) => {
+  if (!books || !Array.isArray(books) || books.length === 0) {
+    return { totalXP: 0, breakdown: { ...EMPTY_BOOKS_XP_BREAKDOWN } };
+  }
+
+  let sessionXpSum = 0;
+  let totalPages = 0;
+  let sessionCount = 0;
+  let totalMinutes = 0;
+
   books.forEach((book) => {
     const sessions = Array.isArray(book?.readingSessions) ? book.readingSessions : [];
     sessions.forEach((session) => {
-      totalXP += sessionXpWithContext(session, book);
+      sessionCount += 1;
+      totalPages += Number(session?.pagesRead) || 0;
+      totalMinutes += Number(session?.durationMinutes) || 0;
+      sessionXpSum += sessionXpWithContext(session, book);
     });
   });
 
-  return Math.round(totalXP);
+  const allSessions = SessionAggregator.extractAllSessions(books);
+  const { currentStreak, longestStreak } = SessionAggregator.calculateStreaks(allSessions);
+  const streakBonusXp = booksStreakBonusXp(currentStreak, longestStreak);
+  const volumeBonusXp = booksReadingVolumeBonusXp(totalPages);
+  const sessionSubtotalXp = Math.round(sessionXpSum);
+  const totalXP = sessionSubtotalXp + streakBonusXp + volumeBonusXp;
+
+  const pagesPerHour = totalMinutes > 0 ? (totalPages / totalMinutes) * 60 : 0;
+
+  return {
+    totalXP,
+    breakdown: {
+      sessions: sessionCount,
+      pages: totalPages,
+      pagesPerHour: Math.round(pagesPerHour * 10) / 10,
+      currentStreak,
+      longestStreak,
+      streakBonusXp,
+      volumeBonusXp,
+      sessionSubtotalXp,
+    },
+  };
 };
+
+/**
+ * Calcule l'XP pour les livres (sessions + contexte + volume + streaks).
+ * @param {Array<{ readingSessions?: object[], pages?: number|string, genre?: string, status?: string }>} books
+ * @returns {number} XP totale
+ */
+export const calculateBooksXP = (books) => computeBooksXPTotal(books).totalXP;
 
 /** @deprecated Préfère calculateBooksXP(books) ; conservé pour appels anciens qui passent une liste plate de sessions. */
 export const calculateBooksXPFromSessionsOnly = (sessions) => {
@@ -385,7 +454,7 @@ export const calculateXPForAllCategories = (data) => {
       books: {
         totalXP: booksXP,
         lastCalculated: new Date().toISOString(),
-        breakdown: data.books?.breakdown || { sessions: 0, pages: 0, pagesPerHour: 0 }
+        breakdown: data.books?.breakdown || { ...EMPTY_BOOKS_XP_BREAKDOWN }
       },
       sport: {
         totalXP: sportXP,

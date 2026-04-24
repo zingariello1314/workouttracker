@@ -29,3 +29,13 @@ export function calculateQuestXP(quest) {
   const raw = Math.round(base * multiplier);
   return Math.max(50, Math.min(5000, raw));
 }
+
+const WEEK_DAYS = [1, 2, 3, 4, 5, 6, 7];
+
+/** Quête récurrente prévue les 7 jours de la semaine (« Tous les jours » / même logique que les presets). */
+export function isQuestEveryDayRecurrent(quest) {
+  if (!quest || quest.type !== 'recurrente') return false;
+  const j = quest.jours;
+  if (!Array.isArray(j) || j.length < 7) return false;
+  return WEEK_DAYS.every((d) => j.includes(d));
+}

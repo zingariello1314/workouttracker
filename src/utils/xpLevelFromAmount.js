@@ -18,6 +18,8 @@ export function levelProgressFromXpAmount(amount, step = 1000) {
     progress: {
       percent: Math.min(100, Math.max(0, percent)),
       xpNeeded,
+      xpOnLevel: xpProgress,
+      xpForLevel: span,
     },
   };
 }

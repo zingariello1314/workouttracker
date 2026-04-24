@@ -8,22 +8,59 @@ import { useSportXP } from '../../../../hooks/useSportXP';
 
 const SportXPBar = () => {
   const { totalXP, level, breakdown, progress } = useSportXP();
+  const xpOnLevel = progress.xpOnLevel ?? 0;
+  const xpForLevel = progress.xpForLevel ?? 1000;
+  const xpNeeded = progress.xpNeeded ?? 0;
+  const pct = Math.min(100, Math.max(0, progress.percent ?? 0));
 
   return (
     <div className="rounded-xl border-2 border-blue-500/55 bg-black p-4 shadow-lg shadow-black/40">
-      <div className="mb-3 flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <Dumbbell className="h-5 w-5 text-sky-400" />
-          <span className="font-semibold text-sky-50">Niveau {level}</span>
+      <div className="mb-3 flex flex-wrap items-start justify-between gap-3">
+        <div className="flex min-w-0 flex-1 items-start gap-2">
+          <Dumbbell className="mt-0.5 h-5 w-5 shrink-0 text-sky-400" />
+          <div className="min-w-0">
+            <div className="font-semibold text-sky-50">Niveau {level}</div>
+            <p className="mt-0.5 text-xs text-slate-400">
+              XP sur le palier niveau {level} :{' '}
+              <span className="font-semibold tabular-nums text-cyan-300">
+                {xpOnLevel.toLocaleString('fr-FR')}
+              </span>
+              <span className="text-slate-500"> / </span>
+              <span className="tabular-nums text-slate-300">
+                {xpForLevel.toLocaleString('fr-FR')}
+              </span>{' '}
+              <span className="text-slate-500">XP</span>
+            </p>
+          </div>
         </div>
-        <span className="text-sm text-sky-300/90">{totalXP.toLocaleString('fr-FR')} XP</span>
+        <div className="flex shrink-0 flex-col items-end gap-2 sm:flex-row sm:items-start">
+          <span className="text-sm text-sky-300/90">
+            {totalXP.toLocaleString('fr-FR')} XP total
+          </span>
+          <div className="min-w-[9.5rem] rounded-lg border border-cyan-500/35 bg-cyan-950/25 px-3 py-2 text-right">
+            <div className="text-[10px] font-medium uppercase tracking-wide text-cyan-200/70">
+              Reste jusqu&apos;au niveau {level + 1}
+            </div>
+            <div className="text-xl font-bold tabular-nums text-cyan-200 drop-shadow-[0_0_10px_rgba(34,211,238,0.25)]">
+              {xpNeeded.toLocaleString('fr-FR')}{' '}
+              <span className="text-sm font-semibold text-cyan-100/90">XP</span>
+            </div>
+          </div>
+        </div>
       </div>
 
-      <div className="mb-3 h-2.5 w-full overflow-hidden rounded-full border border-blue-500/40 bg-black">
+      <div className="mb-2 h-2.5 w-full overflow-hidden rounded-full border border-blue-500/40 bg-black">
         <div
           className="h-full bg-gradient-to-r from-blue-700 via-cyan-700 to-emerald-700 transition-all"
-          style={{ width: `${Math.min(100, Math.max(0, progress.percent))}%` }}
+          style={{ width: `${pct}%` }}
         />
+      </div>
+      <div className="mb-3 flex flex-wrap items-center justify-between gap-x-3 gap-y-1 text-xs text-sky-300/80">
+        <span className="tabular-nums">
+          Encore <span className="font-semibold text-cyan-200">{xpNeeded.toLocaleString('fr-FR')} XP</span> jusqu&apos;au
+          niveau {level + 1}
+        </span>
+        <span className="text-sky-400/60">{Math.round(pct)} %</span>
       </div>
 
       <div className="grid grid-cols-2 gap-2 text-xs sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-8">

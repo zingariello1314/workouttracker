@@ -5,6 +5,7 @@ import ErrorBoundary from '../ui/ErrorBoundary';
 import { useNavigationCache } from '../../hooks/useNavigationCache';
 import { useFinancePerformance } from '../../hooks/useFinancePerformance';
 import { financeTheme as F } from '../finance/financeThemeClasses';
+import FinanceXPBar from '../finance/FinanceXPBar';
 
 // ✅ PHASE 2 : Lazy loading des sous-onglets Finance
 const BourseSubTab = lazy(() => import('../finance/bourse/BourseSubTab'));
@@ -116,6 +117,8 @@ const FinanceTab = () => {
             ))}
           </nav>
         </div>
+
+        <FinanceXPBar />
 
         {/* Contenu sous-onglet actif avec ErrorBoundary et Suspense */}
         <div className="finance-main-content p-1" data-subtab-content={activeSubTab}>

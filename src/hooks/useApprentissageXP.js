@@ -101,6 +101,8 @@ export const useApprentissageXP = () => {
         xpNeeded: Math.max(0, xpNeeded),
         currentXP: Math.max(0, xpProgress),
         nextLevelXP: xpForNextLevelProgress,
+        xpOnLevel: Math.max(0, xpProgress),
+        xpForLevel: Math.max(1, xpForNextLevelProgress),
       },
     };
   }, [calculated.totalXP, progressionData?.globalLevel]);

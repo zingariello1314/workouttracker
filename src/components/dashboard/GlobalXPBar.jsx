@@ -8,7 +8,7 @@ import { Star, Target, BookOpen, Apple, Dumbbell, Ban, Github } from 'lucide-rea
 import { useGlobalXP } from '../../hooks/useGlobalXP';
 
 const GlobalXPBar = ({ onCategoryClick = null }) => {
-  const { totalXP, level, xpByCategory, progress } = useGlobalXP();
+  const { totalXP, level, xpByCategory, progress, categoryLevels } = useGlobalXP();
   const categories = [
     { key: 'quests', label: 'Quêtes', icon: Target },
     { key: 'learning', label: 'Apprentissage', icon: BookOpen },
@@ -104,6 +104,7 @@ const GlobalXPBar = ({ onCategoryClick = null }) => {
           const xp = xpByCategory[category.key] || 0;
           const percent = totalXP > 0 ? (xp / totalXP) * 100 : 0;
           const iconColor = categoryIconClass(category.key);
+          const catLevel = categoryLevels?.[category.key] ?? 1;
 
           return (
             <button
@@ -118,6 +119,9 @@ const GlobalXPBar = ({ onCategoryClick = null }) => {
                 <Icon className={`h-4 w-4 ${iconColor}`} />
                 <span className="text-xs text-slate-400">{category.label}</span>
               </div>
+              <p className="mb-1 text-[11px] font-semibold tabular-nums text-[#ffd700]/90">
+                Niveau {catLevel}
+              </p>
               <div className="text-lg font-bold text-white">{xp.toLocaleString('fr-FR')}</div>
               <div className="text-xs text-slate-500">{percent.toFixed(1)}%</div>
             </button>

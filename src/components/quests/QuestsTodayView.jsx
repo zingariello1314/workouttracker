@@ -12,7 +12,6 @@ import {
   CRENEAU_ORDER,
   CRENEAUX,
 } from '../../utils/quests';
-import QuestsXPBar from './QuestsXPBar';
 
 function getCreneauLabel(value) {
   if (value === 'sans-heure') return 'Sans heure';
@@ -38,7 +37,6 @@ const QuestsTodayView = ({
   isQuestCompletedOnDate,
   toggleQuestValidation,
   getQuestsForDate,
-  userData,
   validations,
   isLoading,
   openNewQuestPopup,
@@ -506,8 +504,6 @@ const QuestsTodayView = ({
 
   return (
     <div className="space-y-4">
-      <QuestsXPBar userData={userData} validations={validations} allQuests={allQuests} isLoading={isLoading} />
-
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <div>
           <h1 className="text-2xl md:text-3xl font-bold text-white">
@@ -800,7 +796,6 @@ const QuestsTodayView = ({
 export default React.memo(QuestsTodayView, (prevProps, nextProps) => {
   return (
     prevProps.allQuests === nextProps.allQuests &&
-    prevProps.userData === nextProps.userData &&
     prevProps.validations === nextProps.validations &&
     prevProps.isQuestCompletedOnDate === nextProps.isQuestCompletedOnDate &&
     prevProps.toggleQuestValidation === nextProps.toggleQuestValidation &&

@@ -4,13 +4,22 @@
 
 import { useMemo, useRef, useState, useEffect } from 'react';
 import { useBooksStorage } from './useBooksStorage';
-import { calculateBooksXP } from '../services/xp/xpCalculations';
+import { computeBooksXPTotal } from '../services/xp/xpCalculations';
 import {
   loadReadingDayFeedbacks,
   computeBooksDayFeedbackXpBonus,
 } from '../utils/readingDayFeedbacksStorage';
 
-const DEFAULT_BREAKDOWN = { sessions: 0, pages: 0, pagesPerHour: 0 };
+const DEFAULT_BREAKDOWN = {
+  sessions: 0,
+  pages: 0,
+  pagesPerHour: 0,
+  currentStreak: 0,
+  longestStreak: 0,
+  streakBonusXp: 0,
+  volumeBonusXp: 0,
+  sessionSubtotalXp: 0,
+};
 let booksXpCache = { signature: null, result: { totalXP: 0, breakdown: DEFAULT_BREAKDOWN } };
 
 export const useBooksXP = () => {
@@ -32,23 +41,19 @@ export const useBooksXP = () => {
       return { totalXP: 0, breakdown: DEFAULT_BREAKDOWN };
     }
 
-    let sessionCount = 0;
-    let totalPages = 0;
-    let totalMinutes = 0;
-
-    books.forEach((book) => {
-      const readingSessions = Array.isArray(book?.readingSessions)
-        ? book.readingSessions
-        : [];
-      readingSessions.forEach((session) => {
-        sessionCount += 1;
-        totalPages += Number(session?.pagesRead) || 0;
-        totalMinutes += Number(session?.durationMinutes) || 0;
-      });
-    });
-
     const fbSig = JSON.stringify(loadReadingDayFeedbacks());
-    const signature = `${sessionCount}|${totalPages}|${totalMinutes}|${fbSig}|${books.map((b) => `${b.id}:${b.status}:${b.genre || ''}`).join(';')}`;
+    const computation = computeBooksXPTotal(books);
+    const {
+      sessions: sessionCount,
+      pages: totalPages,
+      pagesPerHour,
+      currentStreak,
+      longestStreak,
+      streakBonusXp,
+      volumeBonusXp,
+    } = computation.breakdown;
+
+    const signature = `${sessionCount}|${totalPages}|${pagesPerHour}|${currentStreak}|${longestStreak}|${streakBonusXp}|${volumeBonusXp}|${fbSig}|${books.map((b) => `${b.id}:${b.status}:${b.genre || ''}`).join(';')}`;
     if (cacheRef.current.signature === signature) {
       return cacheRef.current.result;
     }
@@ -57,16 +62,13 @@ export const useBooksXP = () => {
       return booksXpCache.result;
     }
 
-    const totalXP = calculateBooksXP(books) + computeBooksDayFeedbackXpBonus(books);
-    const pagesPerHour = totalMinutes > 0 ? (totalPages / totalMinutes) * 60 : 0;
+    const totalXP = computation.totalXP + computeBooksDayFeedbackXpBonus(books);
 
     const result = {
       totalXP,
       breakdown: {
-        sessions: sessionCount,
-        pages: totalPages,
-        pagesPerHour: Math.round(pagesPerHour * 10) / 10
-      }
+        ...computation.breakdown,
+      },
     };
     cacheRef.current = { signature, result };
     booksXpCache = { signature, result };
@@ -75,19 +77,23 @@ export const useBooksXP = () => {
 
   const levelInfo = useMemo(() => {
     const totalXP = calculated.totalXP || 0;
-    const level = Math.floor(totalXP / 500) + 1;
-    const xpForCurrentLevel = (level - 1) * 500;
-    const xpForNextLevel = level * 500;
-    const xpProgress = totalXP - xpForCurrentLevel;
-    const xpNeeded = xpForNextLevel - totalXP;
-    const percent = (xpProgress / (xpForNextLevel - xpForCurrentLevel)) * 100;
+    /** Palier Livres : 500 XP par niveau (aligné avec calculateBooksXP / barre globale). */
+    const xpPerLevel = 500;
+    const level = Math.floor(totalXP / xpPerLevel) + 1;
+    const xpAtLevelStart = (level - 1) * xpPerLevel;
+    const xpOnLevel = totalXP - xpAtLevelStart;
+    const xpForLevel = xpPerLevel;
+    const xpNeeded = Math.max(0, xpAtLevelStart + xpPerLevel - totalXP);
+    const percent = (xpOnLevel / xpForLevel) * 100;
 
     return {
       level,
       progress: {
         percent: Math.min(100, Math.max(0, percent)),
-        xpNeeded
-      }
+        xpNeeded,
+        xpOnLevel,
+        xpForLevel,
+      },
     };
   }, [calculated.totalXP]);
 

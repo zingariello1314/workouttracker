@@ -10,6 +10,7 @@ import React, { useEffect, useState, useCallback } from 'react';
 import ErrorBoundary from '../ui/ErrorBoundary';
 import { useQuietQuestEngine } from '../../hooks/useQuietQuestEngine';
 import QuestsTodayView from '../quests/QuestsTodayView';
+import QuestsXPBar from '../quests/QuestsXPBar';
 import QuestsWeekView from '../quests/QuestsWeekView';
 import QuestsStatsView from '../quests/stats/QuestsStatsView';
 import QuestsCalendarView from '../quests/QuestsCalendarView';
@@ -81,6 +82,7 @@ const QuestsTab = () => {
     getQuestsForDate: getQuestsForDateMemoized,
     todayDate,
     prayerLocation,
+    isLoading,
   } = useQuietQuestEngine();
 
   // ✅ PHASE 4 : Hooks personnalisés pour la logique métier
@@ -303,7 +305,6 @@ const QuestsTab = () => {
       isQuestCompletedOnDate={isQuestCompletedOnDate}
       toggleQuestValidation={toggleQuestValidation}
       getQuestsForDate={getQuestsForDateMemoized}
-      userData={userData}
       validations={validations}
       isLoading={false}
       openNewQuestPopup={openNewQuestPopup}
@@ -397,6 +398,13 @@ const QuestsTab = () => {
       <div className="relative z-10 space-y-6 p-6">
         {/* Navigation interne QuietQuest */}
         {renderSubTabNav()}
+
+        <QuestsXPBar
+          userData={userData}
+          validations={validations}
+          allQuests={allQuests}
+          isLoading={isLoading}
+        />
 
         {/* Contenu de l'onglet courant avec ErrorBoundary */}
         <ErrorBoundary

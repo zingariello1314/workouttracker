@@ -159,19 +159,23 @@ export const useSportXP = () => {
 
   const levelInfo = useMemo(() => {
     const totalXP = calculated.totalXP || 0;
-    const level = Math.floor(totalXP / 1000) + 1;
-    const xpForCurrentLevel = (level - 1) * 1000;
-    const xpForNextLevel = level * 1000;
-    const xpProgress = totalXP - xpForCurrentLevel;
-    const xpNeeded = xpForNextLevel - totalXP;
-    const percent = (xpProgress / (xpForNextLevel - xpForCurrentLevel)) * 100;
+    /** Palier Sport : 1000 XP par niveau (aligné avec categoryLevels / barre globale). */
+    const xpPerLevel = 1000;
+    const level = Math.floor(totalXP / xpPerLevel) + 1;
+    const xpAtLevelStart = (level - 1) * xpPerLevel;
+    const xpOnLevel = totalXP - xpAtLevelStart;
+    const xpForLevel = xpPerLevel;
+    const xpNeeded = Math.max(0, xpAtLevelStart + xpPerLevel - totalXP);
+    const percent = (xpOnLevel / xpForLevel) * 100;
 
     return {
       level,
       progress: {
         percent: Math.min(100, Math.max(0, percent)),
-        xpNeeded
-      }
+        xpNeeded,
+        xpOnLevel,
+        xpForLevel,
+      },
     };
   }, [calculated.totalXP]);
 

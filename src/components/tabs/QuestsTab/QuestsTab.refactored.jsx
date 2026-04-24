@@ -176,7 +176,6 @@ const QuestsTab = () => {
       isQuestCompletedOnDate={isQuestCompletedOnDate}
       toggleQuestValidation={toggleQuestValidation}
       getQuestsForDate={getQuestsForDateMemoized}
-      userData={userData}
       validations={validations}
       isLoading={isLoading}
     />

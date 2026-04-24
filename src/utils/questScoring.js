@@ -4,7 +4,7 @@
  * @module utils/questScoring
  */
 
-import { calculateQuestXP } from './questXpCore';
+import { calculateQuestXP, isQuestEveryDayRecurrent } from './questXpCore';
 import { addCalendarDays, parseLocalCalendarDate } from './dateUtils';
 
 export function expectedWeeklySlots(quest) {
@@ -79,10 +79,31 @@ export function computeQuestActivityMultiplier(quest, validationsSnapshot, compl
   return m;
 }
 
+function countPriorCompletionsForQuest(validationsSnapshot, questId) {
+  if (!questId) return 0;
+  let n = 0;
+  for (const v of validationsSnapshot || []) {
+    if (v && v.queteId === questId) n += 1;
+  }
+  return n;
+}
+
+/**
+ * Bonus fidélité pour les quêtes récurrentes 7j/7 : augmente avec le nombre de validations
+ * déjà enregistrées pour cette quête (habitude « tous les jours »).
+ */
+export function everyDayRecurrentLoyaltyBonusXp(quest, validationsSnapshot) {
+  if (!isQuestEveryDayRecurrent(quest)) return 0;
+  const prior = countPriorCompletionsForQuest(validationsSnapshot, quest.id);
+  return Math.min(34, Math.round(5 + 3.3 * Math.sqrt(prior)));
+}
+
 export function computeValidationXpAward(quest, validationsSnapshot, completionDateStr) {
   const base = quest.xp ?? calculateQuestXP(quest);
   const mult = computeQuestActivityMultiplier(quest, validationsSnapshot, completionDateStr);
-  return Math.max(50, Math.min(5000, Math.round(base * mult)));
+  const core = Math.round(base * mult);
+  const loyalty = everyDayRecurrentLoyaltyBonusXp(quest, validationsSnapshot);
+  return Math.max(50, Math.min(5040, core + loyalty));
 }
 
 /** Contribution 0–1 pour une validation (heatmap), cohérente avec le multiplicateur actuel */
