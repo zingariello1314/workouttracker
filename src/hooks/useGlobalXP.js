@@ -14,6 +14,7 @@ import { useAddictionQuitXP } from './useAddictionQuitXP';
 import { useCodeXP } from './useCodeXP';
 import { loadXPData, saveXPData } from '../services/xp/xpStorage';
 import { calculateXPForAllCategories } from '../services/xp/xpCalculations';
+import { globalLevelProgressFromTotalXp } from '../utils/globalLevelProgress';
 
 let globalXpCache = { signature: null, calculated: null, data: null };
 
@@ -145,24 +146,8 @@ const useGlobalXP = () => {
   
   // Calculer le niveau et la progression
   const levelInfo = useMemo(() => {
-    if (!xpData) return { level: 1, xpForNextLevel: 1000, progress: { percent: 0, xpNeeded: 1000 } };
-    
-    const totalXP = xpData.totalXP;
-    const level = Math.floor(totalXP / 1000) + 1;
-    const xpForCurrentLevel = (level - 1) * 1000;
-    const xpForNextLevel = level * 1000;
-    const xpProgress = totalXP - xpForCurrentLevel;
-    const xpNeeded = xpForNextLevel - totalXP;
-    const percent = ((xpProgress / (xpForNextLevel - xpForCurrentLevel)) * 100);
-    
-    return {
-      level,
-      xpForNextLevel,
-      progress: {
-        percent: Math.min(100, Math.max(0, percent)),
-        xpNeeded
-      }
-    };
+    if (!xpData) return globalLevelProgressFromTotalXp(0);
+    return globalLevelProgressFromTotalXp(xpData.totalXP);
   }, [xpData]);
   
   return {

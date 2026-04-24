@@ -254,28 +254,45 @@ const DashboardMomentumBlock = () => {
 
   if (loading) {
     return (
-      <div className="rounded-xl border border-slate-700/60 bg-slate-900/40 p-6 mb-6 animate-pulse">
-        <div className="h-5 w-48 bg-slate-700/80 rounded mb-4" />
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
-          <div className="h-24 bg-slate-800/80 rounded-lg" />
-          <div className="h-24 bg-slate-800/80 rounded-lg" />
-          <div className="h-24 bg-slate-800/80 rounded-lg" />
+      <div
+        className="mb-6 animate-pulse rounded-xl border-2 border-[#ffd700]/40 p-6"
+        style={{
+          background:
+            'linear-gradient(135deg, rgba(15, 15, 20, 0.95) 0%, rgba(255, 20, 147, 0.06) 50%, rgba(255, 215, 0, 0.05) 100%)',
+        }}
+      >
+        <div className="mb-4 h-5 w-48 rounded bg-slate-700/80" />
+        <div className="mb-4 grid grid-cols-1 gap-4 md:grid-cols-3">
+          <div className="h-24 rounded-lg bg-slate-800/80" />
+          <div className="h-24 rounded-lg bg-slate-800/80" />
+          <div className="h-24 rounded-lg bg-slate-800/80" />
         </div>
-        <div className="h-12 bg-slate-800/60 rounded" />
+        <div className="h-12 rounded bg-slate-800/60" />
       </div>
     );
   }
 
   return (
-    <div className="rounded-xl border-2 border-violet-500/80 bg-black p-6 mb-6 shadow-[0_0_30px_rgba(139,92,246,0.2)] min-w-0">
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-5">
+    <div
+      className="mb-6 min-w-0 rounded-xl border-2 border-[#ffd700]/45 bg-black p-6 shadow-[0_0_28px_rgba(255,215,0,0.18),inset_0_0_16px_rgba(255,215,0,0.05)]"
+      style={{
+        background:
+          'linear-gradient(135deg, rgba(15, 15, 20, 0.98) 0%, rgba(255, 20, 147, 0.07) 40%, rgba(255, 140, 0, 0.05) 70%, rgba(255, 215, 0, 0.06) 100%)',
+      }}
+    >
+      <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex items-center gap-3">
-          <div className="p-2 rounded-lg bg-teal-500/10 border border-teal-500/35">
-            <Sparkles className="w-5 h-5 text-teal-300" aria-hidden />
+          <div
+            className="rounded-lg border border-[#ffd700]/45 p-2"
+            style={{ background: 'rgba(255, 215, 0, 0.1)' }}
+          >
+            <Sparkles className="h-5 w-5 text-[#ffd700]" aria-hidden />
           </div>
           <div>
-            <h3 className="text-lg font-semibold text-white">Vue du jour</h3>
-            <p className="text-xs text-teal-200/50 capitalize">{dateLabel}</p>
+            <h3 className="bg-gradient-to-b from-[#ff1493] via-[#ff8c00] to-[#ffd700] bg-clip-text text-lg font-semibold text-transparent">
+              Vue du jour
+            </h3>
+            <p className="text-xs capitalize text-[#ffb347]/90">{dateLabel}</p>
           </div>
         </div>
       </div>

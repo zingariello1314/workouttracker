@@ -1,5 +1,6 @@
 /**
- * Niveau et progression pour une quantité d’XP seule (même règle que useGlobalXP : paliers de 1000 XP).
+ * Niveau et progression pour une quantité d’XP avec paliers **fixes** (Code, etc.).
+ * Le niveau **global** du dashboard utilise `globalLevelProgress` (coût croissant par niveau).
  * @param {number} amount
  * @param {number} [step=1000]
  */

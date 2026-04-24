@@ -47,7 +47,7 @@ const MONTH_NAMES = [
 
 function combinedCellStyle(intensity, isToday) {
   const u = intensity?.visualContext?.composite01 ?? 0;
-  const ring = isToday ? ' ring-1 ring-amber-300/95' : '';
+  const ring = isToday ? ' ring-2 ring-[#ffd700]/90 shadow-[0_0_10px_rgba(255,215,0,0.45)]' : '';
   if (u < 0.008) {
     return { className: `bg-white border border-slate-400${ring}`, style: undefined };
   }
@@ -147,7 +147,7 @@ function MiniCombinedMonthGrid({ year, monthIndex, intensityMap, todayStr, onPic
                 key={cell.key}
                 type="button"
                 onClick={() => onPickDay(cell.dateStr)}
-                className={`aspect-square min-w-0 rounded-sm text-[10px] font-semibold flex items-center justify-center transition-transform hover:scale-105 focus:outline-none focus:ring-1 focus:ring-violet-500/60 ${style.className}`}
+                className={`aspect-square min-w-0 rounded-sm text-[10px] font-semibold flex items-center justify-center transition-transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-[#ffd700]/55 ${style.className}`}
                 style={style.style}
               >
                 <span className={`tabular-nums text-black ${isToday ? 'font-bold' : ''}`}>{dayNum}</span>
@@ -427,12 +427,20 @@ export default function DashboardCombinedActivityCalendar(props) {
   const bb = yearDashboardStats?.bestBooks;
 
   return (
-    <div className="rounded-2xl border border-violet-500/35 bg-gradient-to-br from-slate-950 via-slate-900 to-indigo-950/80 p-5 md:p-6 shadow-xl">
-      <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
+    <div
+      className="rounded-2xl border-2 border-[#ffd700]/45 p-5 shadow-[0_0_28px_rgba(255,215,0,0.18),inset_0_0_16px_rgba(255,215,0,0.06)] md:p-6"
+      style={{
+        background:
+          'linear-gradient(135deg, rgba(15, 15, 20, 0.98) 0%, rgba(255, 20, 147, 0.08) 35%, rgba(255, 140, 0, 0.06) 65%, rgba(255, 215, 0, 0.07) 100%)',
+      }}
+    >
+      <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-2 text-white">
-          <Layers className="w-6 h-6 text-violet-300 shrink-0" />
+          <Layers className="h-6 w-6 shrink-0 text-[#ffd700] drop-shadow-[0_0_6px_rgba(255,215,0,0.45)]" />
           <div>
-            <h2 className="text-lg md:text-xl font-bold">Calendrier d’activité combinée</h2>
+            <h2 className="bg-gradient-to-b from-[#ff1493] via-[#ff8c00] to-[#ffd700] bg-clip-text text-lg font-bold text-transparent md:text-xl">
+              Calendrier d’activité combinée
+            </h2>
             <p className="text-xs text-slate-400 max-w-xl">
               Sport, quêtes, lecture, apprentissage et finance (même pondération relative que les calendriers
               par domaine) : plusieurs piliers le même jour augmentent le score. Clique un jour pour le détail.
@@ -440,14 +448,14 @@ export default function DashboardCombinedActivityCalendar(props) {
           </div>
         </div>
         <div className="flex flex-wrap items-center gap-2">
-          <div className="flex rounded-lg border border-slate-600 overflow-hidden">
+          <div className="flex overflow-hidden rounded-lg border border-[#ffd700]/35">
             <button
               type="button"
               onClick={() => onToggleView('month')}
               className={`px-3 py-1.5 text-xs font-semibold ${
                 viewMode === 'month'
-                  ? 'bg-violet-600 text-white'
-                  : 'bg-slate-800 text-slate-300 hover:bg-slate-700'
+                  ? 'bg-gradient-to-r from-[#ff1493] via-[#ff8c00] to-[#ffd700] text-white shadow-inner'
+                  : 'bg-slate-900/80 text-slate-300 hover:bg-[rgba(255,20,147,0.12)]'
               }`}
             >
               Mois
@@ -457,8 +465,8 @@ export default function DashboardCombinedActivityCalendar(props) {
               onClick={() => onToggleView('year')}
               className={`px-3 py-1.5 text-xs font-semibold ${
                 viewMode === 'year'
-                  ? 'bg-violet-600 text-white'
-                  : 'bg-slate-800 text-slate-300 hover:bg-slate-700'
+                  ? 'bg-gradient-to-r from-[#ff1493] via-[#ff8c00] to-[#ffd700] text-white shadow-inner'
+                  : 'bg-slate-900/80 text-slate-300 hover:bg-[rgba(255,20,147,0.12)]'
               }`}
             >
               Année
@@ -467,7 +475,7 @@ export default function DashboardCombinedActivityCalendar(props) {
           <button
             type="button"
             onClick={goPrev}
-            className="p-2 rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-600 text-white"
+            className="rounded-lg border border-[#ffd700]/30 bg-slate-900/70 p-2 text-white transition hover:border-[#ff8c00]/50 hover:bg-[rgba(255,20,147,0.1)]"
             aria-label={viewMode === 'year' ? 'Année précédente' : 'Mois précédent'}
           >
             <ChevronLeft className="w-5 h-5" />
@@ -478,7 +486,7 @@ export default function DashboardCombinedActivityCalendar(props) {
           <button
             type="button"
             onClick={goNext}
-            className="p-2 rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-600 text-white"
+            className="rounded-lg border border-[#ffd700]/30 bg-slate-900/70 p-2 text-white transition hover:border-[#ff8c00]/50 hover:bg-[rgba(255,20,147,0.1)]"
             aria-label={viewMode === 'year' ? 'Année suivante' : 'Mois suivant'}
           >
             <ChevronRight className="w-5 h-5" />
@@ -487,7 +495,7 @@ export default function DashboardCombinedActivityCalendar(props) {
       </div>
 
       {viewMode === 'year' && yearDashboardStats && totals && (
-        <div className="mb-5 rounded-xl border border-violet-500/25 bg-black/55 p-4 space-y-3 text-xs text-slate-300">
+        <div className="mb-5 space-y-3 rounded-xl border border-[#ffd700]/30 bg-black/45 p-4 text-xs text-slate-300">
           <p className="text-[11px] text-slate-500 uppercase tracking-wide font-semibold">
             Synthèse {year} (jusqu’à aujourd’hui si année en cours)
           </p>
@@ -504,8 +512,8 @@ export default function DashboardCombinedActivityCalendar(props) {
             <span className="text-white font-semibold">{yearDashboardStats.daysTriplePillar}</span>
           </p>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-            <div className="rounded-lg border border-slate-700/80 bg-slate-950/60 p-3">
-              <p className="text-violet-300 font-semibold mb-1">Meilleur jour combiné</p>
+            <div className="rounded-lg border border-[#ffd700]/25 bg-slate-950/60 p-3">
+              <p className="mb-1 font-semibold text-[#ffd700]">Meilleur jour combiné</p>
               {bc ? (
                 <>
                   <p className="text-white font-medium">{fmtShortDate(bc.dateStr)}</p>
@@ -519,8 +527,8 @@ export default function DashboardCombinedActivityCalendar(props) {
                 <p className="text-slate-500">Aucune activité enregistrée.</p>
               )}
             </div>
-            <div className="rounded-lg border border-slate-700/80 bg-slate-950/60 p-3">
-              <p className="text-indigo-300 font-semibold mb-1">Meilleur jour quêtes</p>
+            <div className="rounded-lg border border-[#ffd700]/25 bg-slate-950/60 p-3">
+              <p className="mb-1 font-semibold text-[#ff69b4]">Meilleur jour quêtes</p>
               {bq ? (
                 <>
                   <p className="text-white font-medium">{fmtShortDate(bq.dateStr)}</p>
@@ -534,8 +542,8 @@ export default function DashboardCombinedActivityCalendar(props) {
                 <p className="text-slate-500">—</p>
               )}
             </div>
-            <div className="rounded-lg border border-slate-700/80 bg-slate-950/60 p-3">
-              <p className="text-emerald-300 font-semibold mb-1">Meilleur jour sport</p>
+            <div className="rounded-lg border border-[#ffd700]/25 bg-slate-950/60 p-3">
+              <p className="mb-1 font-semibold text-[#ff8c00]">Meilleur jour sport</p>
               {bs ? (
                 <>
                   <p className="text-white font-medium">{fmtShortDate(bs.dateStr)}</p>
@@ -548,8 +556,8 @@ export default function DashboardCombinedActivityCalendar(props) {
                 <p className="text-slate-500">—</p>
               )}
             </div>
-            <div className="rounded-lg border border-slate-700/80 bg-slate-950/60 p-3">
-              <p className="text-amber-200 font-semibold mb-1">Meilleur jour lecture</p>
+            <div className="rounded-lg border border-[#ffd700]/25 bg-slate-950/60 p-3">
+              <p className="mb-1 font-semibold text-[#ffb347]">Meilleur jour lecture</p>
               {bb ? (
                 <>
                   <p className="text-white font-medium">{fmtShortDate(bb.dateStr)}</p>
@@ -646,7 +654,7 @@ export default function DashboardCombinedActivityCalendar(props) {
                   key={cell.key}
                   type="button"
                   onClick={() => onPickDay(cell.dateStr)}
-                  className={`aspect-square rounded-md text-xs md:text-sm font-medium flex flex-col items-center justify-center transition-transform hover:scale-[1.03] focus:outline-none focus:ring-2 focus:ring-violet-500/60 ${style.className}`}
+                  className={`aspect-square rounded-md text-xs md:text-sm font-medium flex flex-col items-center justify-center transition-transform hover:scale-[1.03] focus:outline-none focus:ring-2 focus:ring-[#ffd700]/55 ${style.className}`}
                   style={style.style}
                 >
                   <span className={`tabular-nums text-black ${isToday ? 'font-bold' : 'font-semibold'}`}>
@@ -695,7 +703,7 @@ export default function DashboardCombinedActivityCalendar(props) {
           <div
             role="dialog"
             aria-modal="true"
-            className="w-full max-w-lg max-h-[90vh] overflow-y-auto rounded-2xl border border-violet-500/40 bg-slate-950 p-5 space-y-4 shadow-2xl"
+            className="max-h-[90vh] w-full max-w-lg space-y-4 overflow-y-auto rounded-2xl border-2 border-[#ffd700]/45 bg-slate-950 p-5 shadow-[0_0_32px_rgba(255,215,0,0.2)]"
           >
             <div className="flex items-center justify-between gap-2">
               <h3 className="text-lg font-bold text-white">
@@ -718,7 +726,7 @@ export default function DashboardCombinedActivityCalendar(props) {
 
             <p className="text-xs text-slate-500">
               Score combiné (brut) :{' '}
-              <span className="font-mono text-violet-200">
+              <span className="font-mono text-[#ffd700]">
                 {Number(selectedInt?.intensityScore || 0).toFixed(1)}
               </span>{' '}
               · teinte = rang relatif dans le mois affiché.
@@ -743,7 +751,7 @@ export default function DashboardCombinedActivityCalendar(props) {
             </section>
 
             <section className="rounded-xl border border-slate-700/80 bg-slate-900/50 p-3 space-y-2">
-              <h4 className="text-sm font-semibold text-indigo-300">Quêtes</h4>
+              <h4 className="text-sm font-semibold text-[#ff69b4]">Quêtes</h4>
               <p className="text-xs text-slate-400">
                 Score interne :{' '}
                 <span className="font-mono text-white">{det.quests.intensityScore.toFixed(1)}</span>

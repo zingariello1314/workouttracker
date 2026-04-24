@@ -106,34 +106,48 @@ const DashboardTab = () => {
       {/* Contenu avec z-index relatif */}
       <div className="relative z-10 dashboard-tab min-h-[calc(100vh-140px)]">
         <div className="max-w-[2400px] mx-auto p-4 md:p-6 space-y-6">
-          {/* Header Premium */}
-          <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-indigo-600/20 via-purple-600/20 to-pink-600/20 border border-indigo-500/30 p-6">
-            <div className="absolute inset-0 bg-gradient-to-r from-indigo-500/10 to-pink-500/10 animate-pulse"></div>
+          {/* Header — palette alignée sur l’horloge sidebar (.time-date-block / .time-main / .date-main) */}
+          <div
+            className="relative overflow-hidden rounded-2xl border-2 border-[#ffd700]/55 p-6 shadow-[0_0_40px_rgba(255,215,0,0.35),0_4px_15px_rgba(255,215,0,0.18),inset_0_0_20px_rgba(255,215,0,0.08)]"
+            style={{
+              background:
+                'linear-gradient(135deg, rgba(255, 20, 147, 0.18) 0%, rgba(255, 140, 0, 0.12) 50%, rgba(255, 215, 0, 0.18) 100%)',
+            }}
+          >
+            <div
+              className="pointer-events-none absolute inset-0 animate-pulse opacity-90"
+              style={{
+                background: 'linear-gradient(90deg, rgba(255, 20, 147, 0.12) 0%, rgba(255, 140, 0, 0.1) 50%, rgba(255, 215, 0, 0.12) 100%)',
+              }}
+            />
             <div className="relative flex items-center justify-between">
               <div>
                 <h1 className="text-3xl font-bold text-white flex items-center gap-3 mb-2">
-                  <div className="p-2 bg-indigo-500/20 rounded-xl border border-indigo-400/30">
-                    <LayoutDashboard className="w-7 h-7 text-indigo-400" />
+                  <div
+                    className="rounded-xl border-2 border-[#ffd700]/50 p-2"
+                    style={{ background: 'rgba(255, 20, 147, 0.2)' }}
+                  >
+                    <LayoutDashboard className="h-7 w-7 text-[#ffd700]" />
                   </div>
                   Dashboard Global
                 </h1>
-                <div className="text-slate-300 text-sm flex items-center gap-2 flex-wrap">
-                  <span className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></span>
-                  <button type="button" onClick={() => scrollToRef(xpRef)} className="h-7 px-2.5 rounded-md border border-white/15 bg-white/5 hover:bg-white/10 hover:text-white transition-colors">XP</button>
-                  <button type="button" onClick={() => scrollToRef(combinedCalRef)} className="h-7 px-2.5 rounded-md border border-white/15 bg-white/5 hover:bg-white/10 hover:text-white transition-colors">Cal. fusion</button>
-                  <button type="button" onClick={() => scrollToRef(momentumRef)} className="h-7 px-2.5 rounded-md border border-white/15 bg-white/5 hover:bg-white/10 hover:text-white transition-colors">Vue du jour</button>
-                  <button type="button" onClick={() => scrollToRef(codeRef)} className="h-7 px-2.5 rounded-md border border-white/15 bg-white/5 hover:bg-white/10 hover:text-white transition-colors">Code</button>
-                  <button type="button" onClick={() => scrollToRef(questsRef)} className="h-7 px-2.5 rounded-md border border-white/15 bg-white/5 hover:bg-white/10 hover:text-white transition-colors">Quêtes</button>
-                  <button type="button" onClick={() => scrollToRef(sportRef)} className="h-7 px-2.5 rounded-md border border-white/15 bg-white/5 hover:bg-white/10 hover:text-white transition-colors">Sport</button>
-                  <button type="button" onClick={() => scrollToRef(booksRef)} className="h-7 px-2.5 rounded-md border border-white/15 bg-white/5 hover:bg-white/10 hover:text-white transition-colors">Livres</button>
-                  <button type="button" onClick={() => scrollToRef(financeRef)} className="h-7 px-2.5 rounded-md border border-white/15 bg-white/5 hover:bg-white/10 hover:text-white transition-colors">Finance</button>
-                  <button type="button" onClick={() => scrollToRef(learningRef)} className="h-7 px-2.5 rounded-md border border-white/15 bg-white/5 hover:bg-white/10 hover:text-white transition-colors">Apprentissage</button>
-                  <button type="button" onClick={() => scrollToRef(newsRef)} className="h-7 px-2.5 rounded-md border border-white/15 bg-white/5 hover:bg-white/10 hover:text-white transition-colors">Actualité</button>
+                <div className="text-slate-200 text-sm flex items-center gap-2 flex-wrap">
+                  <span className="h-2 w-2 animate-pulse rounded-full bg-[#ff1493] shadow-[0_0_8px_rgba(255,20,147,0.8)]" />
+                  <button type="button" onClick={() => scrollToRef(xpRef)} className="h-7 rounded-md border border-[#ffd700]/35 bg-black/25 px-2.5 text-slate-100 transition-colors hover:border-[#ff8c00]/55 hover:bg-[rgba(255,20,147,0.12)] hover:text-white">XP</button>
+                  <button type="button" onClick={() => scrollToRef(combinedCalRef)} className="h-7 rounded-md border border-[#ffd700]/35 bg-black/25 px-2.5 text-slate-100 transition-colors hover:border-[#ff8c00]/55 hover:bg-[rgba(255,20,147,0.12)] hover:text-white">Cal. fusion</button>
+                  <button type="button" onClick={() => scrollToRef(momentumRef)} className="h-7 rounded-md border border-[#ffd700]/35 bg-black/25 px-2.5 text-slate-100 transition-colors hover:border-[#ff8c00]/55 hover:bg-[rgba(255,20,147,0.12)] hover:text-white">Vue du jour</button>
+                  <button type="button" onClick={() => scrollToRef(codeRef)} className="h-7 rounded-md border border-[#ffd700]/35 bg-black/25 px-2.5 text-slate-100 transition-colors hover:border-[#ff8c00]/55 hover:bg-[rgba(255,20,147,0.12)] hover:text-white">Code</button>
+                  <button type="button" onClick={() => scrollToRef(questsRef)} className="h-7 rounded-md border border-[#ffd700]/35 bg-black/25 px-2.5 text-slate-100 transition-colors hover:border-[#ff8c00]/55 hover:bg-[rgba(255,20,147,0.12)] hover:text-white">Quêtes</button>
+                  <button type="button" onClick={() => scrollToRef(sportRef)} className="h-7 rounded-md border border-[#ffd700]/35 bg-black/25 px-2.5 text-slate-100 transition-colors hover:border-[#ff8c00]/55 hover:bg-[rgba(255,20,147,0.12)] hover:text-white">Sport</button>
+                  <button type="button" onClick={() => scrollToRef(booksRef)} className="h-7 rounded-md border border-[#ffd700]/35 bg-black/25 px-2.5 text-slate-100 transition-colors hover:border-[#ff8c00]/55 hover:bg-[rgba(255,20,147,0.12)] hover:text-white">Livres</button>
+                  <button type="button" onClick={() => scrollToRef(financeRef)} className="h-7 rounded-md border border-[#ffd700]/35 bg-black/25 px-2.5 text-slate-100 transition-colors hover:border-[#ff8c00]/55 hover:bg-[rgba(255,20,147,0.12)] hover:text-white">Finance</button>
+                  <button type="button" onClick={() => scrollToRef(learningRef)} className="h-7 rounded-md border border-[#ffd700]/35 bg-black/25 px-2.5 text-slate-100 transition-colors hover:border-[#ff8c00]/55 hover:bg-[rgba(255,20,147,0.12)] hover:text-white">Apprentissage</button>
+                  <button type="button" onClick={() => scrollToRef(newsRef)} className="h-7 rounded-md border border-[#ffd700]/35 bg-black/25 px-2.5 text-slate-100 transition-colors hover:border-[#ff8c00]/55 hover:bg-[rgba(255,20,147,0.12)] hover:text-white">Actualité</button>
                 </div>
               </div>
               <button
                 onClick={refreshNews}
-                className="group px-5 py-2.5 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white rounded-xl transition-all duration-300 text-sm font-medium shadow-lg hover:shadow-purple-500/50 hover:scale-105 transform"
+                className="group transform rounded-xl bg-gradient-to-r from-[#ff1493] via-[#ff8c00] to-[#ffd700] px-5 py-2.5 text-sm font-medium text-white shadow-lg transition-all duration-300 hover:scale-105 hover:from-[#ff69b4] hover:via-[#ffa040] hover:to-[#ffe44d] hover:shadow-[0_0_24px_rgba(255,215,0,0.45)]"
                 aria-label="Rafraîchir les actualités"
               >
                 <span className="flex items-center gap-2">
