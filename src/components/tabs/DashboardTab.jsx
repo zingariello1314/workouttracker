@@ -15,6 +15,7 @@ import DashboardGarminSportRecapBlock from '../dashboard/DashboardGarminSportRec
 import DashboardBooksModule from '../dashboard/DashboardBooksModule';
 import DashboardFinanceModule from '../dashboard/DashboardFinanceModule';
 import DashboardLearningModule from '../dashboard/DashboardLearningModule';
+import DashboardGitHubCodeModule from '../dashboard/DashboardGitHubCodeModule';
 
 const DashboardTab = () => {
   const {
@@ -33,6 +34,7 @@ const DashboardTab = () => {
   const financeRef = useRef(null);
   const learningRef = useRef(null);
   const newsRef = useRef(null);
+  const codeRef = useRef(null);
 
   const scrollToRef = useCallback((ref) => {
     if (!ref?.current) return;
@@ -88,6 +90,7 @@ const DashboardTab = () => {
                   <button type="button" onClick={() => scrollToRef(xpRef)} className="h-7 px-2.5 rounded-md border border-white/15 bg-white/5 hover:bg-white/10 hover:text-white transition-colors">XP</button>
                   <button type="button" onClick={() => scrollToRef(combinedCalRef)} className="h-7 px-2.5 rounded-md border border-white/15 bg-white/5 hover:bg-white/10 hover:text-white transition-colors">Cal. fusion</button>
                   <button type="button" onClick={() => scrollToRef(momentumRef)} className="h-7 px-2.5 rounded-md border border-white/15 bg-white/5 hover:bg-white/10 hover:text-white transition-colors">Vue du jour</button>
+                  <button type="button" onClick={() => scrollToRef(codeRef)} className="h-7 px-2.5 rounded-md border border-white/15 bg-white/5 hover:bg-white/10 hover:text-white transition-colors">Code</button>
                   <button type="button" onClick={() => scrollToRef(questsRef)} className="h-7 px-2.5 rounded-md border border-white/15 bg-white/5 hover:bg-white/10 hover:text-white transition-colors">Quêtes</button>
                   <button type="button" onClick={() => scrollToRef(sportRef)} className="h-7 px-2.5 rounded-md border border-white/15 bg-white/5 hover:bg-white/10 hover:text-white transition-colors">Sport</button>
                   <button type="button" onClick={() => scrollToRef(booksRef)} className="h-7 px-2.5 rounded-md border border-white/15 bg-white/5 hover:bg-white/10 hover:text-white transition-colors">Livres</button>
@@ -122,6 +125,10 @@ const DashboardTab = () => {
 
             <div ref={momentumRef} className="scroll-mt-24">
               <DashboardMomentumBlock />
+            </div>
+
+            <div ref={codeRef} className="scroll-mt-24">
+              <DashboardGitHubCodeModule />
             </div>
 
             {/* Module Quêtes (au-dessus du Sport) */}
@@ -160,7 +167,7 @@ const DashboardTab = () => {
             <div className="flex items-center justify-between text-sm">
               <div className="flex items-center gap-2 text-slate-400">
                 <div className="w-2 h-2 bg-slate-400 rounded-full animate-pulse"></div>
-                <span>Dashboard: <span className="text-white font-semibold">8 modules actifs</span></span>
+                <span>Dashboard: <span className="text-white font-semibold">9 modules actifs</span></span>
               </div>
               <div className="text-slate-500 text-xs">
                 Version: 4.0.0 ✅

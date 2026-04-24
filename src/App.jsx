@@ -52,6 +52,7 @@ import { AppLockGate } from './components/appLock/LockScreen';
 import AnimatedBackground from './components/ui/AnimatedBackground';
 import GlassFilter from './components/ui/GlassFilter';
 import ErrorBoundary from './components/ui/ErrorBoundary';
+import GitHubOAuthLanding from './components/github/GitHubOAuthLanding';
 import { MomentumTabLoadOverlay, MomentumModalLoadCard } from './components/ui/MomentumBrandedLoading';
 import SportXPBar from './components/tabs/TodayTab/components/SportXPBar';
 import { isSportSubTab } from './constants/sportSubTabs';
@@ -311,6 +312,7 @@ const WorkoutTrackerContent = () => {
 
   return (
     <div className="min-h-screen">
+      <GitHubOAuthLanding />
       {/* Filtre SVG pour l'effet liquid glass - UNE SEULE FOIS dans l'app */}
       <GlassFilter />
       

@@ -9,22 +9,30 @@ import re
 import secrets
 import time
 from pathlib import Path
-from fastapi import Body, FastAPI, HTTPException, Query
+from typing import Optional
+
+from fastapi import Body, FastAPI, HTTPException, Header, Query, Request
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import StreamingResponse
+from fastapi.responses import Response, StreamingResponse
 from dotenv import load_dotenv
 
 def _load_env():
-    # Racine du projet = parent du dossier backend/
+    """Charge .env racine puis backend/. utf-8-sig évite un BOM qui casse le nom de la première variable sous Windows."""
     root = Path(__file__).resolve().parent.parent
     root_env = root / ".env"
     backend_env = Path(__file__).resolve().parent / ".env"
-    # override=True pour que le .env écrase toute variable déjà définie
-    if root_env.exists():
-        load_dotenv(str(root_env), override=True)
-    if backend_env.exists():
-        load_dotenv(str(backend_env), override=True)
-    # Au cas où : charger aussi depuis le répertoire courant (cwd au lancement)
+    _kwargs = {"override": True, "encoding": "utf-8-sig"}
+    try:
+        if root_env.exists():
+            load_dotenv(str(root_env), **_kwargs)
+        if backend_env.exists():
+            load_dotenv(str(backend_env), **_kwargs)
+    except TypeError:
+        # python-dotenv très ancien sans encoding=
+        if root_env.exists():
+            load_dotenv(str(root_env), override=True)
+        if backend_env.exists():
+            load_dotenv(str(backend_env), override=True)
     load_dotenv(override=False)
 
 _load_env()
@@ -342,3 +350,152 @@ async def app_lock_consume_reset_token(payload: dict = Body(...)):
 
     del _APP_LOCK_TOKENS[token]
     return {"ok": True}
+
+
+# ---------------------------------------------------------------------------
+# GitHub OAuth + proxy GraphQL (module « Code » Momentum)
+# .env racine ou backend/ : GITHUB_CLIENT_ID, GITHUB_CLIENT_SECRET
+# Le navigateur n'appelle jamais GitHub avec le secret ; échange code → token ici.
+# ---------------------------------------------------------------------------
+
+
+def _github_oauth_secret():
+    return (os.getenv("GITHUB_CLIENT_SECRET") or "").strip()
+
+
+@app.post("/api/github/oauth/exchange")
+async def github_oauth_exchange(payload: dict = Body(...)):
+    """Échange le code OAuth GitHub contre un access_token (JSON).
+
+    - client_id : peut être envoyé par le frontend (même valeur que VITE_GITHUB_CLIENT_ID),
+      sinon variable GITHUB_CLIENT_ID côté serveur.
+    - client_secret : toujours GITHUB_CLIENT_SECRET dans .env (racine ou backend/) — jamais dans le navigateur.
+    """
+    # Recharger .env à chaque échange : évite le cas « variable ajoutée après le démarrage d’uvicorn »
+    # (--reload ne recharge pas automatiquement les changements dans .env seul).
+    _load_env()
+    csec = _github_oauth_secret()
+    if not csec:
+        raise HTTPException(
+            status_code=503,
+            detail=(
+                "GITHUB_CLIENT_SECRET manquant : ajoute-le dans .env à la racine du projet ou dans backend/.env, "
+                "puis redémarre uvicorn (port 8000). Le Client ID peut rester uniquement dans .env.local (VITE_GITHUB_CLIENT_ID)."
+            ),
+        )
+    code = (str(payload.get("code") or "")).strip()
+    redirect_uri = (str(payload.get("redirect_uri") or "")).strip()
+    cid = (str(payload.get("client_id") or "")).strip() or (os.getenv("GITHUB_CLIENT_ID") or "").strip()
+    if not cid:
+        raise HTTPException(
+            status_code=400,
+            detail="client_id manquant : définis VITE_GITHUB_CLIENT_ID (.env.local) ou GITHUB_CLIENT_ID (.env serveur).",
+        )
+    if not code or not redirect_uri:
+        raise HTTPException(status_code=400, detail="Paramètres requis : code, redirect_uri.")
+
+    import aiohttp
+    from urllib.parse import urlencode
+
+    body = urlencode(
+        {
+            "client_id": cid,
+            "client_secret": csec,
+            "code": code,
+            "redirect_uri": redirect_uri,
+        }
+    )
+    headers = {
+        "Accept": "application/json",
+        "Content-Type": "application/x-www-form-urlencoded",
+    }
+    try:
+        async with aiohttp.ClientSession() as session:
+            async with session.post(
+                "https://github.com/login/oauth/access_token",
+                data=body,
+                headers=headers,
+                timeout=aiohttp.ClientTimeout(total=25),
+            ) as resp:
+                data = await resp.json(content_type=None)
+    except Exception as e:
+        raise HTTPException(status_code=502, detail=f"Échec contact GitHub OAuth: {e}") from e
+
+    if not isinstance(data, dict):
+        raise HTTPException(status_code=502, detail="Réponse GitHub invalide.")
+    if data.get("error"):
+        raise HTTPException(
+            status_code=400,
+            detail=data.get("error_description") or data.get("error") or "oauth_error",
+        )
+    token = (data.get("access_token") or "").strip()
+    if not token:
+        raise HTTPException(status_code=400, detail="Token absent dans la réponse GitHub.")
+
+    return {
+        "access_token": token,
+        "token_type": data.get("token_type") or "bearer",
+        "scope": data.get("scope") or "",
+    }
+
+
+@app.post("/api/github/graphql")
+async def github_graphql_proxy(
+    request: Request,
+    x_github_token: Optional[str] = Header(default=None, alias="X-GitHub-Token"),
+):
+    """Proxy vers api.github.com/graphql (évite le blocage CORS du navigateur)."""
+    token = (x_github_token or "").strip()
+    if not token:
+        raise HTTPException(status_code=401, detail="Header X-GitHub-Token requis.")
+    try:
+        body = await request.json()
+    except Exception as exc:
+        raise HTTPException(status_code=400, detail="Corps JSON invalide.") from exc
+
+    import aiohttp
+
+    try:
+        async with aiohttp.ClientSession() as session:
+            async with session.post(
+                "https://api.github.com/graphql",
+                json=body,
+                headers={
+                    "Authorization": f"Bearer {token}",
+                    "Content-Type": "application/json",
+                    "User-Agent": "MomentumDashboard/1.0",
+                },
+                timeout=aiohttp.ClientTimeout(total=45),
+            ) as resp:
+                text = await resp.text()
+                return Response(content=text, media_type="application/json", status_code=resp.status)
+    except Exception as e:
+        raise HTTPException(status_code=502, detail=str(e)) from e
+
+
+@app.get("/api/github/rest/user")
+async def github_rest_user_me(
+    x_github_token: Optional[str] = Header(default=None, alias="X-GitHub-Token"),
+):
+    """Valide un PAT ou token OAuth et renvoie le profil public GitHub."""
+    token = (x_github_token or "").strip()
+    if not token:
+        raise HTTPException(status_code=401, detail="Header X-GitHub-Token requis.")
+
+    import aiohttp
+
+    try:
+        async with aiohttp.ClientSession() as session:
+            async with session.get(
+                "https://api.github.com/user",
+                headers={
+                    "Authorization": f"Bearer {token}",
+                    "Accept": "application/vnd.github+json",
+                    "User-Agent": "MomentumDashboard/1.0",
+                },
+                timeout=aiohttp.ClientTimeout(total=20),
+            ) as resp:
+                text = await resp.text()
+                return Response(content=text, media_type="application/json", status_code=resp.status)
+    except Exception as e:
+        raise HTTPException(status_code=502, detail=str(e)) from e

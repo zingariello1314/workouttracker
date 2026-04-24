@@ -67,6 +67,11 @@ export default defineConfig({
         target: 'http://localhost:8000',
         changeOrigin: true,
         rewrite: (path) => path.replace(/^\/api\/app-lock/, '/app-lock')
+      },
+      // GitHub OAuth + GraphQL (FastAPI zlib_server — même port 8000)
+      '/api/github': {
+        target: 'http://localhost:8000',
+        changeOrigin: true
       }
     }
   },

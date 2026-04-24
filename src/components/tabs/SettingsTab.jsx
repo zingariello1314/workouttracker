@@ -52,10 +52,12 @@ import { QuoteManager } from '../quotes/QuoteManager';
 import { QuotesErrorBoundary } from '../quotes/QuotesErrorBoundary';
 import ProfileCardSettings from '../sidebar/ProfileCardSettings';
 import AppLockSettingsPanel from '../appLock/AppLockSettingsPanel';
+import GithubIntegrationSettings from '../settings/GithubIntegrationSettings';
 
 /** Sections paramètres : ancres + texte indexé pour la recherche (synonymes / termes courants) */
 const SETTINGS_SECTIONS = [
   { id: 'settings-profil', label: 'Profil', searchText: 'profil avatar email mot de passe compte utilisateur migration données anonyme invité' },
+  { id: 'settings-github', label: 'GitHub', searchText: 'github code contributions calendrier oauth jeton pat développeur intégration module dashboard momentum' },
   { id: 'settings-verrou', label: 'Verrouillage', searchText: 'verrouillage cadenas code pin mot de passe inactivité arrière-plan sécurité confidentialité session' },
   { id: 'settings-carte', label: 'Carte profil', searchText: 'carte profil image handle username bannière sidebar logo' },
   { id: 'settings-accueil', label: 'Page d\'accueil', searchText: 'accueil page fond bannière rotation images home' },
@@ -314,6 +316,12 @@ const SettingsTab = () => {
           migrationSettings={migrationSettings}
         />
         </div>
+        )}
+
+        {isSectionVisible('settings-github') && (
+          <div className="scroll-mt-4">
+            <GithubIntegrationSettings currentUser={currentUser} updateProfile={updateProfile} />
+          </div>
         )}
 
         {isSectionVisible('settings-verrou') && (
