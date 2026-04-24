@@ -38,6 +38,7 @@ const NutritionTab = lazy(() => import('./components/tabs/NutritionTab'));
 const BooksTab = lazy(() => import('./components/tabs/BooksTab'));
 const FinanceTab = lazy(() => import('./components/tabs/FinanceTab'));
 const DashboardTab = lazy(() => import('./components/tabs/DashboardTab'));
+const CodeTab = lazy(() => import('./components/tabs/CodeTab'));
 const PricingTab = lazy(() => import('./components/tabs/PricingTab'));
 const CoachDashboard = lazy(() => import('./components/tabs/nutrition/components/CoachDashboard'));
 const ExerciseVariations = lazy(() => import('./components/ExerciseVariations/ExerciseVariations'));
@@ -55,7 +56,9 @@ import ErrorBoundary from './components/ui/ErrorBoundary';
 import GitHubOAuthLanding from './components/github/GitHubOAuthLanding';
 import { MomentumTabLoadOverlay, MomentumModalLoadCard } from './components/ui/MomentumBrandedLoading';
 import SportXPBar from './components/tabs/TodayTab/components/SportXPBar';
+import CodeXPBar from './components/code/CodeXPBar';
 import { isSportSubTab } from './constants/sportSubTabs';
+import { isCodeSubTab } from './constants/codeSubTabs';
 
 const WorkoutTrackerApp = () => {
   return (
@@ -126,6 +129,8 @@ const WorkoutTrackerContent = () => {
     'sport-analytics': '-620px',
     // Sous-onglet Sport : Garmin aligné comme les autres sous-onglets
     garmin: '-620px',
+    'code-calendar': '-620px',
+    'code-journal': '-620px',
   };
 
   const defaultMainOffset = (activeTab !== 'home' && activeTab !== 'auth' && activeTab !== 'dashboard' && activeTab !== 'pricing')
@@ -263,6 +268,9 @@ const WorkoutTrackerContent = () => {
         return <DashboardTab />;
       case 'finance':
         return <FinanceTab />;
+      case 'code-calendar':
+      case 'code-journal':
+        return <CodeTab />;
       case 'settings':
         return <SettingsTab />;
       case 'pricing':
@@ -395,6 +403,11 @@ const WorkoutTrackerContent = () => {
                     {isSportSubTab(activeTab) && (
                       <div className="mb-5 mt-5 scroll-mt-40 pt-1">
                         <SportXPBar />
+                      </div>
+                    )}
+                    {isCodeSubTab(activeTab) && (
+                      <div className="mb-5 mt-5 scroll-mt-40 pt-1">
+                        <CodeXPBar />
                       </div>
                     )}
                     {renderTabContent()}

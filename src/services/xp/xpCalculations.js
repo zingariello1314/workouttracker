@@ -338,8 +338,9 @@ export const calculateXPForAllCategories = (data) => {
     sessions: 0,
     relapses: 0,
   };
+  const codeXP = Math.round(data.code?.totalXP || 0);
 
-  const totalXP = questsXP + learningXP + nutritionXP + booksXP + sportXP + addictionQuitXP;
+  const totalXP = questsXP + learningXP + nutritionXP + booksXP + sportXP + addictionQuitXP + codeXP;
 
   return {
     totalXP,
@@ -350,6 +351,7 @@ export const calculateXPForAllCategories = (data) => {
       books: booksXP,
       sport: sportXP,
       addictionQuit: addictionQuitXP,
+      code: codeXP,
     },
     details: {
       quests: {
@@ -413,6 +415,15 @@ export const calculateXPForAllCategories = (data) => {
         totalXP: addictionQuitXP,
         lastCalculated: new Date().toISOString(),
         breakdown: addictionBreakdown || { milestones: 0, daily: 0, sessions: 0, relapses: 0 },
+      },
+      code: {
+        totalXP: codeXP,
+        lastCalculated: new Date().toISOString(),
+        breakdown: data.code?.breakdown || {
+          totalContributions: 0,
+          activeCodingDays: 0,
+          calendarDays: 0,
+        },
       },
     }
   };

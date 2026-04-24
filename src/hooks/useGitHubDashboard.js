@@ -4,9 +4,8 @@ import {
   fetchMultiYearContributions,
   fetchViewerMeta,
   yearRangeUtc,
+  rollingTwelveMonthsRangeUtc,
   computeContributionStats,
-  contributionLevelToTier,
-  tierToHeatClass,
 } from '../utils/githubContributions';
 
 function yearSpanFromCreated(createdAtIso, maxYearsBack = 25) {
@@ -28,9 +27,11 @@ function yearSpanFromCreated(createdAtIso, maxYearsBack = 25) {
 
 export function useGitHubDashboard(accessToken, enabled) {
   const [viewer, setViewer] = useState(null);
-  const [displayYear, setDisplayYear] = useState(() => new Date().getUTCFullYear());
-  /** Statistiques : même année que le graphe | une année précise | agrégat toutes les années. */
-  const [statsScope, setStatsScope] = useState('current'); // 'current' | 'all' | number (année)
+  /** 'rolling' = 12 derniers mois (style GitHub profil) ; 'civil' = 1er janv. → 31 déc. */
+  const [heatmapMode, setHeatmapMode] = useState('rolling');
+  const [civilYear, setCivilYear] = useState(() => new Date().getUTCFullYear());
+  /** Statistiques : alignée sur le graphe | une année précise | toutes les années. */
+  const [statsScope, setStatsScope] = useState('current'); // 'current' | 'all' | number
   const [yearWeeks, setYearWeeks] = useState([]);
   const [yearTotal, setYearTotal] = useState(0);
   const [multiStats, setMultiStats] = useState(null);
@@ -59,44 +60,41 @@ export function useGitHubDashboard(accessToken, enabled) {
     };
   }, [accessToken, enabled]);
 
-  const loadYearHeatmap = useCallback(
-    async (year) => {
-      if (!accessToken) return;
-      const { from, to } = yearRangeUtc(year);
-      const res = await fetchContributionsForRange(accessToken, from, to);
+  const loadHeatmapAndStats = useCallback(async () => {
+    if (!accessToken) return;
+    setLoading(true);
+    setError(null);
+    try {
+      const heatRange =
+        heatmapMode === 'rolling' ? rollingTwelveMonthsRangeUtc() : yearRangeUtc(civilYear);
+      const res = await fetchContributionsForRange(accessToken, heatRange.from, heatRange.to);
       setYearWeeks(res?.weeks || []);
       setYearTotal(res?.totalContributions ?? 0);
-    },
-    [accessToken],
-  );
 
-  const loadStats = useCallback(
-    async (statArg, heatYear) => {
-      if (!accessToken) return;
-      setLoading(true);
-      setError(null);
-      try {
-        await loadYearHeatmap(heatYear);
-        const span = yearSpanFromCreated(viewer?.createdAt);
-        let yearsForStats;
-        if (statArg === 'all') {
-          yearsForStats = span;
-        } else {
-          yearsForStats = [Number(statArg)];
-        }
-        const multi = await fetchMultiYearContributions(accessToken, yearsForStats);
+      const span = yearSpanFromCreated(viewer?.createdAt);
+
+      if (statsScope === 'all') {
+        const multi = await fetchMultiYearContributions(accessToken, span);
         setMultiStats(multi.stats);
         setPerYearTotals(multi.perYearTotals || {});
-      } catch (e) {
-        setError(e?.message || String(e));
-        setYearWeeks([]);
-        setMultiStats(null);
-      } finally {
-        setLoading(false);
+      } else if (statsScope === 'current') {
+        setMultiStats(computeContributionStats(res?.weeks || []));
+        setPerYearTotals({});
+      } else {
+        const y = Number(statsScope);
+        const multi = await fetchMultiYearContributions(accessToken, [y]);
+        setMultiStats(multi.stats);
+        setPerYearTotals(multi.perYearTotals || {});
       }
-    },
-    [accessToken, loadYearHeatmap, viewer?.createdAt],
-  );
+    } catch (e) {
+      setError(e?.message || String(e));
+      setYearWeeks([]);
+      setMultiStats(null);
+      setPerYearTotals({});
+    } finally {
+      setLoading(false);
+    }
+  }, [accessToken, heatmapMode, civilYear, statsScope, viewer?.createdAt]);
 
   useEffect(() => {
     if (!enabled || !accessToken) {
@@ -105,26 +103,28 @@ export function useGitHubDashboard(accessToken, enabled) {
       setError(null);
       return;
     }
-    const statYear =
-      statsScope === 'all' ? 'all' : statsScope === 'current' ? displayYear : Number(statsScope);
-    loadStats(statYear, displayYear);
-  }, [enabled, accessToken, displayYear, statsScope, loadStats]);
+    loadHeatmapAndStats();
+  }, [enabled, accessToken, heatmapMode, civilYear, statsScope, loadHeatmapAndStats]);
 
   const statsForUi = useMemo(() => {
     if (!multiStats) return null;
-    const label =
-      statsScope === 'all'
-        ? 'Toutes les années'
-        : statsScope === 'current'
-          ? String(displayYear)
-          : String(statsScope);
+    let label;
+    if (statsScope === 'all') {
+      label = 'Toutes les années';
+    } else if (statsScope === 'current') {
+      label = heatmapMode === 'rolling' ? '12 derniers mois' : String(civilYear);
+    } else {
+      label = String(statsScope);
+    }
     return { ...multiStats, label };
-  }, [multiStats, statsScope, displayYear]);
+  }, [multiStats, statsScope, heatmapMode, civilYear]);
 
   return {
     viewer,
-    displayYear,
-    setDisplayYear,
+    heatmapMode,
+    setHeatmapMode,
+    civilYear,
+    setCivilYear,
     statsScope,
     setStatsScope,
     yearWeeks,
@@ -134,10 +134,6 @@ export function useGitHubDashboard(accessToken, enabled) {
     availableYears,
     loading,
     error,
-    refresh: () => {
-      const statYear =
-        statsScope === 'all' ? 'all' : statsScope === 'current' ? displayYear : Number(statsScope);
-      return loadStats(statYear, displayYear);
-    },
+    refresh: loadHeatmapAndStats,
   };
 }

@@ -742,6 +742,7 @@ const HomePage = () => {
                   <li>{t('home.about.features.items.programs')}</li>
                   <li>{t('home.about.features.items.predictions')}</li>
                   <li>{t('home.about.features.items.analyses')}</li>
+                  <li>{t('home.about.features.items.code')}</li>
                 </ul>
               </div>
               <div>

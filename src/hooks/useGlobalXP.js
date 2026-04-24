@@ -1,6 +1,6 @@
 /**
  * Hook pour gérer l'XP globale de tous les onglets
- * Agrège l'XP de : Quêtes, Apprentissage, Nutrition, Livres, Sport, Arrêt addiction
+ * Agrège l'XP de : Quêtes, Apprentissage, Nutrition, Livres, Sport, Arrêt addiction, Code / GitHub
  */
 
 import { useState, useEffect, useMemo, useRef } from 'react';
@@ -11,6 +11,7 @@ import { useNutritionGamification } from './useNutritionGamification';
 import { useBooksXP } from './useBooksXP';
 import { useSportXP } from './useSportXP';
 import { useAddictionQuitXP } from './useAddictionQuitXP';
+import { useCodeXP } from './useCodeXP';
 import { loadXPData, saveXPData } from '../services/xp/xpStorage';
 import { calculateXPForAllCategories } from '../services/xp/xpCalculations';
 
@@ -30,6 +31,7 @@ const useGlobalXP = () => {
   const { totalXP: booksXP, breakdown: booksBreakdown } = useBooksXP();
   const { totalXP: sportXP, breakdown: sportBreakdown } = useSportXP();
   const addictionQuitXPBlock = useAddictionQuitXP();
+  const codeXPBlock = useCodeXP();
   const cacheRef = useRef({ signature: null, result: null });
   
   // Calculer l'XP totale
@@ -43,7 +45,9 @@ const useGlobalXP = () => {
       addictionQuitXPBlock.totalXP,
       JSON.stringify(booksBreakdown),
       JSON.stringify(sportBreakdown),
-      JSON.stringify(addictionQuitXPBlock.breakdown)
+      JSON.stringify(addictionQuitXPBlock.breakdown),
+      codeXPBlock.totalXP,
+      JSON.stringify(codeXPBlock.breakdown),
     ].join('|');
 
     if (cacheRef.current.signature === signature && cacheRef.current.result) {
@@ -61,6 +65,7 @@ const useGlobalXP = () => {
       books: { totalXP: booksXP, breakdown: booksBreakdown },
       sport: { totalXP: sportXP, breakdown: sportBreakdown },
       addictionQuit: addictionQuitXPBlock,
+      code: { totalXP: codeXPBlock.totalXP, breakdown: codeXPBlock.breakdown },
     });
     cacheRef.current = { signature, result };
     globalXpCache = { ...globalXpCache, signature, calculated: result };
@@ -76,6 +81,8 @@ const useGlobalXP = () => {
     sportBreakdown,
     addictionQuitXPBlock.totalXP,
     addictionQuitXPBlock.breakdown,
+    codeXPBlock.totalXP,
+    codeXPBlock.breakdown,
   ]);
   
   // Charger les données sauvegardées

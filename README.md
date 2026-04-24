@@ -28,7 +28,7 @@
 
 - [🎯 Vue d'Ensemble](#-vue-densemble)
 - [🏗️ Architecture & Stack Technologique](#️-architecture--stack-technologique)
-- [📱 Documentation Complète - Les 8 Onglets Principaux](#-documentation-complète---les-8-onglets-principaux)
+- [📱 Documentation Complète - Les 9 Onglets Principaux](#-documentation-des-onglets)
 - [🔗 Interconnexion des Onglets](#-interconnexion-des-onglets)
 - [🛠️ Installation & Déploiement](#️-installation--déploiement)
 - [🚀 Performance & Optimisations](#-performance--optimisations)
@@ -44,7 +44,7 @@
 
 ## 🎯 Vue d'Ensemble
 
-**Momentum** est une application web progressive (PWA) sophistiquée développée avec **React 18.2+** et **Vite 4.4+**, offrant une expérience complète de gestion d'entraînement. L'application intègre **8 onglets principaux** avec de nombreux sous-onglets spécialisés, un système de suivi corporel avancé avec **analyse IA**, des fonctionnalités d'analyse de données statistiques poussées, une **intégration complète avec Garmin Connect**, un système de gestion de quêtes quotidiennes, un module d'apprentissage avec suivi de progression, une bibliothèque de livres avec statistiques avancées, et un module financier complet avec suivi de portfolio.
+**Momentum** est une application web progressive (PWA) sophistiquée développée avec **React 18.2+** et **Vite 4.4+**, offrant une expérience complète de gestion d'entraînement. L'application intègre **9 onglets principaux** (dont **Code** : GitHub, journal, trophées contributions) avec de nombreux sous-onglets spécialisés, un système de suivi corporel avancé avec **analyse IA**, des fonctionnalités d'analyse de données statistiques poussées, une **intégration complète avec Garmin Connect**, un système de gestion de quêtes quotidiennes, un module d'apprentissage avec suivi de progression, une bibliothèque de livres avec statistiques avancées, et un module financier complet avec suivi de portfolio.
 
 ### ✨ Points Forts Principaux
 
@@ -122,11 +122,11 @@
 
 | Métrique | Valeur |
 |----------|--------|
-| **Onglets Principaux** | 8 (Home, Dashboard, Sport, Quests, Apprentissage, Books, Finance, Settings) + vues plein écran **Auth** / **Pricing** ; onglet **Coach** (nutrition) |
+| **Onglets Principaux** | 9 (Home, Dashboard, Sport, Quests, Apprentissage, Books, **Code**, Finance, Settings) + vues plein écran **Auth** / **Pricing** ; onglet **Coach** (nutrition) |
 | **Sous-Onglets Sport** | 14 (Today, Data Entry, Program, Nutrition, Exercises, Progress, Endurance, Calendar, History, Charts, Stats, Predictions, Smart Balancing, Garmin) |
 | **Sous-Onglets Finance** | 6 (Bourse, Budget, Investissements, Smart Shopping, Planificateur, Synthèse) |
 | **Graphiques Disponibles** | 20+ |
-| **Bases IndexedDB** | 8 (WorkoutTrackerDB, GarminDataDB, HomepageImagesDB, WorkoutTrackerContextDB, QuietQuestDB, ApprentissageDB, BooksDB, FinanceDB) |
+| **Bases IndexedDB** | 9 (+ **MomentumCodeDB** : journal Code & méta-trophées GitHub ; autres : WorkoutTrackerDB, GarminDataDB, HomepageImagesDB, WorkoutTrackerContextDB, QuietQuestDB, ApprentissageDB, BooksDB, FinanceDB) |
 | **Types d'Activités Endurance** | 5 |
 | **Sections Suivi Corporel** | 10 |
 | **Bundle Initial (gzipped)** | ~500KB |
@@ -1274,7 +1274,7 @@ Gradients
 ```
 
 **Couverture** :
-- ✅ **Tous les onglets** : Home, Dashboard, Sport (14 sous-onglets), Quests, Apprentissage, Books, Finance (6 sous-onglets), Settings
+- ✅ **Tous les onglets** : Home, Dashboard, Sport (14 sous-onglets), Quests, Apprentissage, Books, **Code** (Calendrier, Journal), Finance (6 sous-onglets), Settings
 - ✅ **Composants réutilisables** : Modal, EmptyState, QuoteManager, etc.
 - ✅ **Actions contextuelles** : Formulaires, navigation, filtres, pagination
 
@@ -1312,11 +1312,11 @@ Les diagrammes ci-dessus utilisent **Mermaid**, un langage de diagrammes open-so
 
 ## 📱 Documentation des onglets
 
-Cette partie couvre les **8 entrées** de la barre principale (`Navigation.jsx` : Home, Dashboard, Sport, Quêtes, Apprentissage, Livres, Finance, Paramètres), puis les **14 vues** du méta-onglet **Sport** (`activeTab`), et enfin les **vues système** (Auth, Pricing, Coach) décrites près de la fin du chapitre.
+Cette partie couvre les **9 entrées** de la barre principale (`Navigation.jsx` : Home, Dashboard, Sport, Quêtes, Apprentissage, Livres, **Code**, Finance, Paramètres), puis les **14 vues** du méta-onglet **Sport** (`activeTab`), et enfin les **vues système** (Auth, Pricing, Coach) décrites près de la fin du chapitre.
 
-**Ordre réel de la barre** (`Navigation.jsx`, gauche → droite) : **Home** → **Dashboard** → **Sport** (méta) → **Quêtes** → **Apprentissage** → **Livres** → **Finance** → **Paramètres**.
+**Ordre réel de la barre** (`Navigation.jsx`, gauche → droite) : **Home** → **Dashboard** → **Sport** (méta) → **Quêtes** → **Apprentissage** → **Livres** → **Code** → **Finance** → **Paramètres**. Le même ordre est proposé depuis l’accueil (`NavigationHeader.jsx`).
 
-**Numérotation de ce chapitre** : **§1 à §6** décrivent Home, Dashboard, Quêtes, Apprentissage, Livres et Finance (sans détailler ici le méta-onglet Sport). **§7** = **Paramètres** (`settings`). Les **14 vues Sport** suivent sous le titre **Sport · … (`activeTab`)**, avec un **tableau d’alignement** sur le code juste avant « Aujourd’hui ».
+**Numérotation de ce chapitre** : **§1 à §6** décrivent Home, Dashboard, Quêtes, Apprentissage, Livres, **Code** et Finance (sans détailler ici le méta-onglet Sport). **§7** = **Paramètres** (`settings`). Les **14 vues Sport** suivent sous le titre **Sport · … (`activeTab`)**, avec un **tableau d’alignement** sur le code juste avant « Aujourd’hui ».
 
 ### 🗺️ Vue d'ensemble (barre principale + finance détaillée)
 
@@ -1796,6 +1796,24 @@ flowchart TD
 **Interconnexions** :
 - → **Dashboard** : Progression livre principal, sessions de lecture
 - ← **Settings** : Export/Import données livres
+
+---
+
+### 💻 Onglet « Code » (GitHub, calendrier, journal, trophées)
+
+**Fichiers principaux** : `src/components/tabs/CodeTab.jsx`, `src/components/code/CodeCalendarSubTab.jsx`, `src/components/code/CodeJournalDirectivesSubTab.jsx`, `src/components/code/CodeXPBar.jsx`, `src/components/code/CodeContributionsTrophiesPanel.jsx`, `src/components/dashboard/DashboardGitHubCodeModule.jsx`, `src/hooks/useGitHubDashboard.js`, `src/services/code/codeJournalIDB.js`, `src/services/code/codeContributionsTrophies.js`.
+
+#### Fonctionnalités
+
+- **Navigation** : onglet **Code** placé **entre Livres et Finance** (`Navigation.jsx`) ; raccourci identique sur l’écran d’accueil (`NavigationHeader.jsx`).
+- **Sous-onglet Calendrier** : heatmap contributions (12 mois glissants ou année civile), statistiques agrégées multi-années, **trophées** calculés sur des fenêtres **7 / 30 / 90 jours** (UTC) à partir des contributions GitHub ; progression et déblocages persistés dans **IndexedDB** (`MomentumCodeDB`, store `codeMeta`).
+- **Sous-onglet Journal & directives** : modes cycliques Plan / Journal du jour / À faire, pièces jointes, fond visuel type « horizon » (inspiré du module Bolt, recoloré charte noir & framboise), **placeholder identique au module de référence** : `What do you want to build?` ; entrées stockées **longue durée** dans IndexedDB (migration automatique depuis l’ancien `localStorage`).
+- **XP globale** : la catégorie **Code** alimente `useGlobalXP` / barre du dashboard à partir de l’historique GitHub.
+
+#### Synchronisation des données GitHub
+
+- **Court terme** : les vues calendrier / journal utilisent les données chargées par `useGitHubDashboard` (rafraîchissement manuel ou retour sur l’onglet).
+- **Long terme** : agrégat multi-années pour l’XP Code et pour les métriques du panneau Calendrier ; les trophées une fois débloqués restent enregistrés localement même si la période affichée change.
 
 ---
 
@@ -4371,11 +4389,11 @@ Votre soutien permet de :
 
 ## 📝 Conclusion
 
-**Momentum** représente une solution complète et professionnelle pour le suivi d'entraînement personnel et le développement personnel. Avec **8 onglets principaux** et de nombreux sous-onglets spécialisés, une **architecture moderne**, des **optimisations avancées**, et une **intégration IA**, l'application offre une expérience utilisateur exceptionnelle.
+**Momentum** représente une solution complète et professionnelle pour le suivi d'entraînement personnel et le développement personnel. Avec **9 onglets principaux** (dont **Code** GitHub / journal / trophées) et de nombreux sous-onglets spécialisés, une **architecture moderne**, des **optimisations avancées**, et une **intégration IA**, l'application offre une expérience utilisateur exceptionnelle.
 
 ### Points Forts Récapitulatifs
 
-✅ **8 onglets principaux** avec sous-onglets spécialisés couvrant tous les aspects  
+✅ **9 onglets principaux** avec sous-onglets spécialisés couvrant tous les aspects  
 ✅ **20+ graphiques** interactifs pour visualisation avancée  
 ✅ **Analyse IA** avec MediaPipe et BodyPix  
 ✅ **Intégration Garmin** complète avec synchronisation automatique  

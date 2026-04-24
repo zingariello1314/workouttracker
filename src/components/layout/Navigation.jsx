@@ -35,7 +35,17 @@ const Navigation = () => {
     [sportTabs]
   );
 
-  // ✅ Navigation principale : Accueil / Dashboard / Sport / Quêtes / Apprentissage / Livres / Finance / Paramètres
+  const codeTabs = useMemo(
+    () => [
+      { id: 'code-calendar', labelKey: 'nav.codeCalendar', icon: '📅' },
+      { id: 'code-journal', labelKey: 'nav.codeJournal', icon: '📝' },
+    ],
+    []
+  );
+
+  const codeSubTabs = useMemo(() => codeTabs.map((tab) => tab.id), [codeTabs]);
+
+  // ✅ Navigation principale : Accueil / Dashboard / Sport / Quêtes / Apprentissage / Livres / Code / Finance / Paramètres
   const tabs = useMemo(
     () => [
     { id: 'home', labelKey: 'nav.home', icon: '🏠' },
@@ -44,11 +54,20 @@ const Navigation = () => {
       { id: 'quests', labelKey: 'nav.quests', icon: '⚡' },
       { id: 'apprentissage', labelKey: 'nav.apprentissage', icon: '📖' },
     { id: 'books', labelKey: 'nav.books', icon: '📚' },
+    { id: 'code', labelKey: 'nav.code', icon: '💻' },
     { id: 'finance', labelKey: 'nav.finance', icon: '💰' },
     { id: 'settings', labelKey: 'nav.settings', icon: '⚙️' }
     ],
     []
   );
+
+  const getLastCodeSubTab = () => {
+    const stored = localStorage.getItem('code.lastSubTab');
+    if (stored && codeSubTabs.includes(stored)) {
+      return stored;
+    }
+    return 'code-calendar';
+  };
 
   const getLastSportSubTab = () => {
     const stored = localStorage.getItem('sport.lastSubTab');
@@ -66,6 +85,10 @@ const Navigation = () => {
   };
 
   const handleClick = (tabId) => {
+    if (tabId === 'code') {
+      setActiveTab(getLastCodeSubTab());
+      return;
+    }
     if (tabId === 'sport') {
       // Aller au dernier sous-onglet Sport visité (fallback: Aujourd'hui)
       setActiveTab(getLastSportSubTab());
@@ -88,6 +111,9 @@ const Navigation = () => {
     }
     if (tabId === 'sport') {
       return sportSubTabs.includes(activeTab);
+    }
+    if (tabId === 'code') {
+      return codeSubTabs.includes(activeTab);
     }
     return activeTab === tabId;
   };
@@ -143,6 +169,36 @@ const Navigation = () => {
                     activeTab === tab.id
                       ? 'bg-slate-100 text-slate-900 shadow-sm shadow-blue-500/30'
                       : 'text-slate-200/80 bg-slate-800/70 border border-slate-600/60 hover:bg-slate-700/80 hover:text-white'
+                  }
+                `}
+              >
+                <span className="text-xs">{tab.icon}</span>
+                <span>{t(tab.labelKey)}</span>
+              </button>
+            ))}
+          </div>
+        )}
+
+        {codeSubTabs.includes(activeTab) && (
+          <div className="flex gap-1 sm:gap-1.5 pb-2 sm:pb-3 overflow-x-auto scrollbar-hide" role="tablist" aria-label={t('nav.codeTabs')}>
+            {codeTabs.map((tab) => (
+              <button
+                key={tab.id}
+                type="button"
+                onClick={() => {
+                  localStorage.setItem('code.lastSubTab', tab.id);
+                  setActiveTab(tab.id);
+                }}
+                role="tab"
+                aria-selected={activeTab === tab.id}
+                aria-current={activeTab === tab.id ? 'page' : undefined}
+                className={`
+                  flex items-center space-x-1 px-2 sm:px-3 py-1 rounded-full text-[11px] sm:text-xs font-medium
+                  transition-all duration-200 whitespace-nowrap flex-shrink-0
+                  ${
+                    activeTab === tab.id
+                      ? 'bg-rose-100 text-rose-950 shadow-sm shadow-rose-600/30'
+                      : 'text-rose-100/85 bg-black/60 border border-rose-500/45 hover:bg-rose-950/40 hover:text-white'
                   }
                 `}
               >

@@ -4,7 +4,7 @@
  */
 
 import React from 'react';
-import { Star, Target, BookOpen, Apple, Dumbbell, Ban } from 'lucide-react';
+import { Star, Target, BookOpen, Apple, Dumbbell, Ban, Github } from 'lucide-react';
 import { useGlobalXP } from '../../hooks/useGlobalXP';
 
 const GlobalXPBar = () => {
@@ -16,6 +16,7 @@ const GlobalXPBar = () => {
     { key: 'books', label: 'Livres', icon: BookOpen, color: 'indigo' },
     { key: 'sport', label: 'Sport', icon: Dumbbell, color: 'red' },
     { key: 'addictionQuit', label: 'Arrêt addiction', icon: Ban, color: 'amber' },
+    { key: 'code', label: 'Code / GitHub', icon: Github, color: 'rose' },
   ];
   
   return (
@@ -47,23 +48,25 @@ const GlobalXPBar = () => {
       </div>
       
       {/* Détail par catégorie */}
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-7">
         {categories.map((category) => {
           const Icon = category.icon;
           const xp = xpByCategory[category.key] || 0;
           const percent = totalXP > 0 ? (xp / totalXP) * 100 : 0;
           const iconColor =
-            category.key === 'addictionQuit'
-              ? 'text-amber-400'
-              : category.key === 'quests'
-                ? 'text-purple-400'
-                : category.key === 'learning'
-                  ? 'text-blue-400'
-                  : category.key === 'nutrition'
-                    ? 'text-green-400'
-                    : category.key === 'books'
-                      ? 'text-indigo-400'
-                      : 'text-red-400';
+            category.key === 'code'
+              ? 'text-rose-400'
+              : category.key === 'addictionQuit'
+                ? 'text-amber-400'
+                : category.key === 'quests'
+                  ? 'text-purple-400'
+                  : category.key === 'learning'
+                    ? 'text-blue-400'
+                    : category.key === 'nutrition'
+                      ? 'text-green-400'
+                      : category.key === 'books'
+                        ? 'text-indigo-400'
+                        : 'text-red-400';
 
           return (
             <div

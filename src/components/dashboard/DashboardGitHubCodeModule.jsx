@@ -1,7 +1,6 @@
 import { useMemo } from 'react';
 import {
   BarChart3,
-  Calendar,
   Code2,
   ExternalLink,
   Github,
@@ -11,104 +10,22 @@ import {
 import { useAuth } from '../../context/AuthContext';
 import { useWorkout } from '../../context/WorkoutContext';
 import { useGitHubDashboard } from '../../hooks/useGitHubDashboard';
-import { contributionLevelToTier, tierToHeatClass } from '../../utils/githubContributions';
+import { useGlobalXP } from '../../hooks/useGlobalXP';
 import { getGitHubClientId, startGitHubOAuthFlow } from '../../utils/githubApi';
+import { levelProgressFromXpAmount } from '../../utils/xpLevelFromAmount';
 import Button from '../ui/Button';
+import GitHubHeatmapGrid from '../code/GitHubHeatmapGrid';
 
-const TIER_CLASS = {
-  gh0: 'bg-[#161b22] border border-slate-800/70',
-  gh1: 'bg-[#0e4429]',
-  gh2: 'bg-[#006d32]',
-  gh3: 'bg-[#26a641]',
-  gh4: 'bg-[#39d353]',
-};
+const DashboardGitHubCodeModule = ({
+  variant = 'default',
+  heatmapAccent: heatmapAccentProp,
+  /** Onglet Code calendrier : grille heatmap + périodes en premier (sous la barre XP / intro). */
+  calendarHeroFirst = false,
+}) => {
+  const isEmbedded = variant === 'embedded';
+  const heatmapAccent = heatmapAccentProp || (isEmbedded ? 'rose' : 'emerald');
+  const heroCalendar = isEmbedded && calendarHeroFirst;
 
-/** Libellés à gauche (style GitHub : Lun / Mer / Ven). */
-const ROW_LABELS = ['', 'Lun', '', 'Mer', '', 'Ven', ''];
-
-function monthShortFr(utcMonthIndex) {
-  try {
-    return new Date(Date.UTC(2000, utcMonthIndex, 1)).toLocaleDateString('fr-FR', { month: 'short' });
-  } catch {
-    return '';
-  }
-}
-
-function HeatmapGrid({ weeks }) {
-  const monthRow = useMemo(() => {
-    return (weeks || []).map((week, wi) => {
-      const first = week?.contributionDays?.[0];
-      if (!first?.date) return { key: wi, label: '' };
-      const m = new Date(`${first.date}T12:00:00Z`).getUTCMonth();
-      const prev = wi > 0 ? weeks[wi - 1]?.contributionDays?.[0]?.date : null;
-      let label = '';
-      if (!prev) label = monthShortFr(m);
-      else {
-        const pm = new Date(`${prev}T12:00:00Z`).getUTCMonth();
-        if (pm !== m) label = monthShortFr(m);
-      }
-      return { key: wi, label };
-    });
-  }, [weeks]);
-
-  if (!weeks?.length) {
-    return <div className="py-8 text-center text-sm text-slate-500">Aucune donnée pour cette année.</div>;
-  }
-
-  return (
-    <div className="flex gap-2 overflow-x-auto pb-1">
-      <div className="flex shrink-0 flex-col gap-[3px] pt-[22px] text-[10px] leading-[10px] text-slate-500">
-        {ROW_LABELS.map((lab, ri) => (
-          <div key={ri} className="flex h-[10px] items-center justify-end pr-1">
-            {lab}
-          </div>
-        ))}
-      </div>
-      <div className="min-w-0 flex-1">
-        <div
-          className="mb-1 grid gap-x-[3px] text-[10px] leading-none text-slate-500"
-          style={{ gridTemplateColumns: `repeat(${weeks.length}, minmax(0, 10px))` }}
-        >
-          {monthRow.map((c) => (
-            <div key={c.key} className="truncate text-center">
-              {c.label}
-            </div>
-          ))}
-        </div>
-        <div className="flex gap-[3px]">
-          {weeks.map((week, wi) => (
-            <div key={wi} className="flex flex-col gap-[3px]">
-              {(week.contributionDays || []).map((day) => {
-                const tier = contributionLevelToTier(day.contributionLevel);
-                const cls = tierToHeatClass(tier);
-                const bg = TIER_CLASS[cls] || TIER_CLASS.gh0;
-                const tip = `${day.date} · ${day.contributionCount} contribution${day.contributionCount !== 1 ? 's' : ''}`;
-                return (
-                  <div
-                    key={day.date}
-                    title={tip}
-                    className={`h-[10px] w-[10px] shrink-0 rounded-sm ${bg}`}
-                  />
-                );
-              })}
-            </div>
-          ))}
-        </div>
-        <div className="mt-3 flex items-center justify-end gap-2 text-xs text-slate-500">
-          <span>Moins</span>
-          <div className="flex gap-[3px]">
-            {[0, 1, 2, 3, 4].map((t) => (
-              <div key={t} className={`h-[10px] w-[10px] rounded-sm ${TIER_CLASS[`gh${t}`]}`} />
-            ))}
-          </div>
-          <span>Plus</span>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-const DashboardGitHubCodeModule = () => {
   const { currentUser, isAuthenticated, loading: authLoading } = useAuth();
   const { setActiveTab } = useWorkout();
   const token = currentUser?.github?.accessToken;
@@ -116,6 +33,10 @@ const DashboardGitHubCodeModule = () => {
   const connected = !!(isAuthenticated && token && login);
 
   const gh = useGitHubDashboard(token, connected);
+  const { xpByCategory, totalXP } = useGlobalXP();
+  const codeXp = Math.round(xpByCategory?.code ?? 0);
+  const codeLevelInfo = useMemo(() => levelProgressFromXpAmount(codeXp), [codeXp]);
+  const codeSlicePct = totalXP > 0 ? Math.min(100, (codeXp / totalXP) * 100) : 0;
 
   const clientConfigured = !!getGitHubClientId();
 
@@ -147,22 +68,14 @@ const DashboardGitHubCodeModule = () => {
     startGitHubOAuthFlow();
   };
 
-  return (
-    <section className="scroll-mt-24 rounded-2xl border border-emerald-500/25 bg-gradient-to-br from-slate-950/95 via-slate-900/90 to-black p-5 shadow-lg shadow-emerald-950/20 md:p-6">
-      <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-        <div className="flex items-start gap-3">
-          <div className="rounded-xl border border-emerald-500/35 bg-emerald-500/10 p-2.5">
-            <Code2 className="h-7 w-7 text-emerald-400" />
-          </div>
-          <div>
-            <h2 className="text-xl font-bold text-white md:text-2xl">Code & GitHub</h2>
-            <p className="mt-1 max-w-2xl text-sm text-slate-400">
-              Calendrier de contributions façon GitHub, jours actifs, meilleur jour et moyennes — lié à ton compte
-              Momentum.
-            </p>
-          </div>
-        </div>
-        <div className="flex flex-wrap items-center gap-2">
+  const shellClass = isEmbedded
+    ? 'space-y-5'
+    : 'scroll-mt-24 rounded-2xl border-2 border-rose-500/50 bg-black p-5 shadow-lg shadow-rose-950/30 md:p-6';
+
+  const inner = (
+    <>
+      {isEmbedded && (
+        <div className="flex flex-wrap items-center justify-end gap-2 pb-2">
           <Button
             type="button"
             variant="ghost"
@@ -173,7 +86,7 @@ const DashboardGitHubCodeModule = () => {
               setTimeout(() => document.getElementById('settings-github')?.scrollIntoView({ behavior: 'smooth' }), 300);
             }}
           >
-            Paramètres
+            Paramètres GitHub
           </Button>
           {connected && (
             <Button
@@ -188,7 +101,50 @@ const DashboardGitHubCodeModule = () => {
             </Button>
           )}
         </div>
-      </div>
+      )}
+
+      {!isEmbedded && (
+        <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+          <div className="flex items-start gap-3">
+            <div className="rounded-xl border border-rose-500/45 bg-rose-950/25 p-2.5">
+              <Code2 className="h-7 w-7 text-rose-400" />
+            </div>
+            <div>
+              <h2 className="text-xl font-bold text-white md:text-2xl">Code & GitHub</h2>
+              <p className="mt-1 max-w-2xl text-sm text-rose-200/75">
+                Calendrier de contributions façon GitHub, jours actifs, meilleur jour et moyennes — lié à ton compte
+                Momentum.
+              </p>
+            </div>
+          </div>
+          <div className="flex flex-wrap items-center gap-2">
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              icon={Settings}
+              onClick={() => {
+                setActiveTab('settings');
+                setTimeout(() => document.getElementById('settings-github')?.scrollIntoView({ behavior: 'smooth' }), 300);
+              }}
+            >
+              Paramètres
+            </Button>
+            {connected && (
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                icon={RefreshCw}
+                onClick={() => gh.refresh()}
+                disabled={gh.loading}
+              >
+                Rafraîchir
+              </Button>
+            )}
+          </div>
+        </div>
+      )}
 
       {!authLoading && !isAuthenticated && (
         <div className="rounded-xl border border-slate-700 bg-black/40 p-6 text-center">
@@ -201,12 +157,12 @@ const DashboardGitHubCodeModule = () => {
       )}
 
       {isAuthenticated && !connected && (
-        <div className="rounded-xl border border-emerald-600/30 bg-black/50 p-6 text-center">
-          <Github className="mx-auto mb-3 h-12 w-12 text-emerald-400/90" />
+        <div className="rounded-xl border border-rose-500/40 bg-black/60 p-6 text-center">
+          <Github className="mx-auto mb-3 h-12 w-12 text-rose-400/90" />
           <p className="mb-1 text-lg font-semibold text-white">Relie ton compte GitHub</p>
           <p className="mx-auto mb-5 max-w-lg text-sm text-slate-400">
             Tu seras redirigé vers GitHub pour autoriser la lecture du profil (
-            <code className="text-emerald-300/90">read:user</code>
+            <code className="text-rose-300/90">read:user</code>
             ). Le jeton est enregistré sur ton profil Momentum (IndexedDB).
           </p>
           <Button type="button" variant="primary" icon={Github} onClick={onConnect}>
@@ -223,69 +179,91 @@ const DashboardGitHubCodeModule = () => {
 
       {connected && (
         <div className="space-y-5">
-          <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-slate-700/80 bg-black/35 px-4 py-3">
-            <div className="flex items-center gap-3">
-              {currentUser.github?.avatarUrl ? (
-                <img
-                  src={currentUser.github.avatarUrl}
-                  alt=""
-                  className="h-10 w-10 rounded-full border border-slate-600"
-                />
-              ) : (
-                <Github className="h-9 w-9 text-slate-400" />
-              )}
-              <div>
-                <div className="font-semibold text-white">@{login}</div>
-                <a
-                  href={currentUser.github?.htmlUrl || `https://github.com/${login}`}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="inline-flex items-center gap-1 text-xs text-emerald-400 hover:text-emerald-300"
+          {heroCalendar ? null : (
+            <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-slate-700/80 bg-black/35 px-4 py-3">
+              <div className="flex items-center gap-3">
+                {currentUser.github?.avatarUrl ? (
+                  <img
+                    src={currentUser.github.avatarUrl}
+                    alt=""
+                    className="h-10 w-10 rounded-full border border-slate-600"
+                  />
+                ) : (
+                  <Github className="h-9 w-9 text-slate-400" />
+                )}
+                <div>
+                  <div className="font-semibold text-white">@{login}</div>
+                  <a
+                    href={currentUser.github?.htmlUrl || `https://github.com/${login}`}
+                    target="_blank"
+                    rel="noreferrer"
+                  className="inline-flex items-center gap-1 text-xs text-rose-400 hover:text-rose-300"
                 >
                   Profil GitHub <ExternalLink className="h-3 w-3" />
                 </a>
-              </div>
-            </div>
-            <div className="text-sm text-slate-400">
-              {gh.yearTotal != null ? (
-                <span>
-                  <strong className="text-emerald-300">{gh.yearTotal}</strong> contributions (
-                  {gh.displayYear})
-                </span>
-              ) : null}
-            </div>
-          </div>
-
-          <div className="grid gap-4 lg:grid-cols-2">
-            <div className="rounded-xl border border-slate-700/80 bg-black/30 p-4">
-              <div className="mb-3 flex flex-wrap items-center gap-2 text-sm text-slate-300">
-                <Calendar className="h-4 w-4 text-emerald-400" />
-                <span className="font-medium text-white">Année du calendrier</span>
-                <select
-                  value={gh.displayYear}
-                  onChange={(e) => gh.setDisplayYear(Number(e.target.value))}
-                  className="ml-auto rounded-lg border border-slate-600 bg-slate-900 px-2 py-1 text-sm text-white"
-                >
-                  {gh.availableYears.map((y) => (
-                    <option key={y} value={y}>
-                      {y}
-                    </option>
-                  ))}
-                </select>
-              </div>
-              {gh.loading && <div className="py-6 text-center text-slate-500">Chargement…</div>}
-              {gh.error && (
-                <div className="rounded-lg border border-rose-700/50 bg-rose-950/30 p-3 text-sm text-rose-100">
-                  {gh.error}
                 </div>
-              )}
-              {!gh.loading && !gh.error && <HeatmapGrid weeks={gh.yearWeeks} />}
+              </div>
             </div>
+          )}
 
-            <div className="rounded-xl border border-slate-700/80 bg-black/30 p-4">
-              <div className="mb-3 flex flex-wrap items-center gap-2">
-                <BarChart3 className="h-4 w-4 text-emerald-400" />
-                <span className="font-medium text-white">Statistiques</span>
+          {heroCalendar ? null : (
+            <div className="rounded-xl border border-rose-500/45 bg-black/45 px-4 py-3 shadow-inner shadow-rose-950/20">
+              <div className="flex flex-wrap items-end justify-between gap-2">
+                <div>
+                  <p className="text-xs font-semibold uppercase tracking-wide text-rose-300/90">XP Code</p>
+                  <p className="text-sm text-rose-100/85">
+                    <span className="font-bold text-white">{codeXp.toLocaleString('fr-FR')}</span> XP — niveau Code{' '}
+                    <span className="text-white">{codeLevelInfo.level}</span>
+                  </p>
+                </div>
+                <div className="text-right text-xs text-slate-400">
+                  Total Momentum :{' '}
+                  <span className="font-medium text-slate-200">{totalXP.toLocaleString('fr-FR')}</span> XP
+                </div>
+              </div>
+              <div className="mt-2 h-2 w-full overflow-hidden rounded-full border border-rose-500/35 bg-slate-900">
+                <div
+                  className="h-full bg-gradient-to-r from-rose-950 via-rose-600 to-fuchsia-500 transition-all duration-500"
+                  style={{ width: `${Math.min(100, Math.max(0, codeLevelInfo.progress.percent))}%` }}
+                  title="Progression du niveau Code (1000 XP par palier)"
+                />
+              </div>
+              <p className="mt-1.5 text-[11px] text-slate-500">
+                Prochain palier Code :{' '}
+                <span className="text-rose-200/90">{codeLevelInfo.progress.xpNeeded.toLocaleString('fr-FR')}</span> XP — part
+                Code dans le total Momentum : <span className="text-rose-200/90">{codeSlicePct.toFixed(1)} %</span>.
+              </p>
+            </div>
+          )}
+
+          <div
+            className={`flex flex-col gap-4 lg:flex-row lg:items-start ${
+              heroCalendar
+                ? 'rounded-2xl border-2 border-rose-500/45 bg-black/45 p-3 shadow-xl shadow-rose-950/30 md:p-5'
+                : ''
+            }`}
+          >
+            <div className="min-w-0 flex-1 rounded-xl border border-slate-700/80 bg-black/30 p-4 md:p-5">
+              <div className="mb-4 border-b border-slate-700/60 pb-4">
+                <p className="text-lg font-semibold text-white">
+                  {gh.yearTotal != null ? (
+                    <>
+                      <span className="text-emerald-300">{gh.yearTotal}</span>{' '}
+                      <span className="font-normal text-slate-200">
+                        {gh.heatmapMode === 'rolling'
+                          ? 'contributions sur les 12 derniers mois'
+                          : `contributions en ${gh.civilYear}`}
+                      </span>
+                    </>
+                  ) : (
+                    <span className="text-slate-400">Contributions</span>
+                  )}
+                </p>
+              </div>
+
+              <div className="mb-5 flex min-w-0 flex-wrap items-center gap-2 text-sm text-slate-300">
+                <BarChart3 className="h-4 w-4 shrink-0 text-emerald-400" />
+                <span className="font-medium text-white">Période des statistiques</span>
                 <select
                   value={gh.statsScope === 'current' ? 'current' : gh.statsScope === 'all' ? 'all' : String(gh.statsScope)}
                   onChange={(e) => {
@@ -294,9 +272,13 @@ const DashboardGitHubCodeModule = () => {
                     else if (v === 'all') gh.setStatsScope('all');
                     else gh.setStatsScope(Number(v));
                   }}
-                  className="ml-auto max-w-[200px] rounded-lg border border-slate-600 bg-slate-900 px-2 py-1 text-sm text-white"
+                  className="min-w-0 max-w-full rounded-lg border border-slate-600 bg-slate-900 px-2 py-1.5 text-sm text-white sm:max-w-xs"
                 >
-                  <option value="current">Année affichée ({gh.displayYear})</option>
+                  <option value="current">
+                    {gh.heatmapMode === 'rolling'
+                      ? 'Alignée sur le graphe (12 derniers mois)'
+                      : `Alignée sur le graphe (${gh.civilYear})`}
+                  </option>
                   <option value="all">Toutes les années</option>
                   {gh.availableYears.map((y) => (
                     <option key={`s-${y}`} value={String(y)}>
@@ -305,59 +287,166 @@ const DashboardGitHubCodeModule = () => {
                   ))}
                 </select>
               </div>
-              {stats && (
-                <ul className="space-y-3 text-sm text-slate-300">
-                  <li className="flex justify-between gap-2 border-b border-slate-800/80 pb-2">
+
+              {gh.loading && <div className="py-6 text-center text-slate-500">Chargement…</div>}
+              {gh.error && (
+                <div className="rounded-lg border border-rose-700/50 bg-rose-950/30 p-3 text-sm text-rose-100">
+                  {gh.error}
+                </div>
+              )}
+              {!gh.loading && !gh.error && <GitHubHeatmapGrid weeks={gh.yearWeeks} accent={heatmapAccent} />}
+
+            {stats && (
+              <div className="mt-8 border-t border-slate-700/70 pt-6">
+                <h3 className="mb-4 flex items-center gap-2 text-base font-semibold text-white">
+                  <BarChart3 className="h-5 w-5 text-emerald-400" />
+                  Statistiques
+                </h3>
+                <ul className="mx-auto max-w-4xl space-y-3 text-sm text-slate-300">
+                  <li className="flex flex-col justify-between gap-1 border-b border-slate-800/80 pb-3 sm:flex-row sm:items-center">
                     <span>Période</span>
-                    <span className="font-medium text-white">{stats.label}</span>
+                    <span className="font-medium text-white sm:text-right">{stats.label}</span>
                   </li>
-                  <li className="flex justify-between gap-2 border-b border-slate-800/80 pb-2">
+                  <li className="flex flex-col justify-between gap-1 border-b border-slate-800/80 pb-3 sm:flex-row sm:items-center">
                     <span>Jours avec au moins 1 contribution</span>
-                    <span className="font-medium text-emerald-300">{stats.activeCodingDays}</span>
+                    <span className="font-medium text-emerald-300 sm:text-right">{stats.activeCodingDays}</span>
                   </li>
-                  <li className="flex justify-between gap-2 border-b border-slate-800/80 pb-2">
+                  <li className="flex flex-col justify-between gap-1 border-b border-slate-800/80 pb-3 sm:flex-row sm:items-center">
                     <span>Total contributions (période)</span>
-                    <span className="font-medium text-white">{stats.totalCommits}</span>
+                    <span className="font-medium text-white sm:text-right">{stats.totalCommits}</span>
                   </li>
-                  <li className="flex justify-between gap-2 border-b border-slate-800/80 pb-2">
+                  <li className="flex flex-col justify-between gap-1 border-b border-slate-800/80 pb-3 sm:flex-row sm:items-center">
                     <span>Meilleur jour</span>
-                    <span className="text-right font-medium text-white">
+                    <span className="font-medium text-white sm:text-right">
                       {bestDayLabel}
                       {stats.bestDay ? (
-                        <span className="block text-xs font-normal text-emerald-400/90">
+                        <span className="mt-0.5 block text-xs font-normal text-emerald-400/90">
                           {stats.bestDay.count} contribution{stats.bestDay.count !== 1 ? 's' : ''}
                         </span>
                       ) : null}
                     </span>
                   </li>
-                  <li className="flex justify-between gap-2 border-b border-slate-800/80 pb-2">
+                  <li className="flex flex-col justify-between gap-1 border-b border-slate-800/80 pb-3 sm:flex-row sm:items-center">
                     <span>Moyenne / jour avec activité</span>
-                    <span className="font-medium text-white">{stats.avgPerActiveDay.toFixed(2)}</span>
+                    <span className="font-medium text-white sm:text-right">{stats.avgPerActiveDay.toFixed(2)}</span>
                   </li>
-                  <li className="flex justify-between gap-2">
+                  <li className="flex flex-col justify-between gap-1 sm:flex-row sm:items-center">
                     <span>Moyenne / jour calendaire (période)</span>
-                    <span className="font-medium text-white">{stats.avgPerCalendarDay.toFixed(2)}</span>
+                    <span className="font-medium text-white sm:text-right">{stats.avgPerCalendarDay.toFixed(2)}</span>
                   </li>
                 </ul>
-              )}
-              <p className="mt-4 text-[11px] leading-relaxed text-slate-500">
-                Les mêmes règles que GitHub s&apos;appliquent aux contributions (
-                <a
-                  href="https://docs.github.com/account-and-profile/setting-up-and-managing-your-github-profile/managing-contribution-settings-on-your-profile/why-are-my-contributions-not-showing-up-on-my-profile"
-                  className="text-emerald-500/90 underline hover:text-emerald-400"
-                  target="_blank"
-                  rel="noreferrer"
-                >
-                  documentation GitHub
-                </a>
-                ).
-              </p>
+                <p className="mx-auto mt-6 max-w-4xl text-[11px] leading-relaxed text-slate-500">
+                  Les mêmes règles que GitHub s&apos;appliquent aux contributions (
+                  <a
+                    href="https://docs.github.com/account-and-profile/setting-up-and-managing-your-github-profile/managing-contribution-settings-on-your-profile/why-are-my-contributions-not-showing-up-on-my-profile"
+                    className="text-emerald-500/90 underline hover:text-emerald-400"
+                    target="_blank"
+                    rel="noreferrer"
+                  >
+                    documentation GitHub
+                  </a>
+                  ).
+                </p>
+              </div>
+            )}
             </div>
+
+            <nav
+              className="flex shrink-0 flex-row flex-wrap gap-2 lg:w-[5.25rem] lg:flex-col lg:items-stretch lg:gap-1 lg:pt-1"
+              aria-label="Période du calendrier"
+            >
+              <button
+                type="button"
+                onClick={() => gh.setHeatmapMode('rolling')}
+                className={`rounded-lg border px-2.5 py-2 text-center text-sm font-medium transition-colors lg:py-1.5 ${
+                  gh.heatmapMode === 'rolling'
+                    ? 'border-sky-500 bg-sky-600 text-white shadow-md shadow-sky-900/40'
+                    : 'border-slate-600 bg-slate-900/80 text-slate-300 hover:border-slate-500 hover:bg-slate-800'
+                }`}
+              >
+                12 mois
+              </button>
+              {[...gh.availableYears].reverse().map((y) => (
+                <button
+                  key={y}
+                  type="button"
+                  onClick={() => {
+                    gh.setHeatmapMode('civil');
+                    gh.setCivilYear(y);
+                  }}
+                  className={`rounded-lg border px-2.5 py-2 text-center text-sm font-medium transition-colors lg:py-1.5 ${
+                    gh.heatmapMode === 'civil' && gh.civilYear === y
+                      ? 'border-sky-500 bg-sky-600 text-white shadow-md shadow-sky-900/40'
+                      : 'border-slate-600 bg-slate-900/80 text-slate-300 hover:border-slate-500 hover:bg-slate-800'
+                  }`}
+                >
+                  {y}
+                </button>
+              ))}
+            </nav>
           </div>
+
+          {heroCalendar ? (
+            <>
+              <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-slate-700/80 bg-black/35 px-4 py-3">
+                <div className="flex items-center gap-3">
+                  {currentUser.github?.avatarUrl ? (
+                    <img
+                      src={currentUser.github.avatarUrl}
+                      alt=""
+                      className="h-10 w-10 rounded-full border border-slate-600"
+                    />
+                  ) : (
+                    <Github className="h-9 w-9 text-slate-400" />
+                  )}
+                  <div>
+                    <div className="font-semibold text-white">@{login}</div>
+                    <a
+                      href={currentUser.github?.htmlUrl || `https://github.com/${login}`}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="inline-flex items-center gap-1 text-xs text-rose-400 hover:text-rose-300"
+                    >
+                      Profil GitHub <ExternalLink className="h-3 w-3" />
+                    </a>
+                  </div>
+                </div>
+              </div>
+
+              <div className="rounded-xl border border-rose-500/45 bg-black/45 px-4 py-3 shadow-inner shadow-rose-950/20">
+                <div className="flex flex-wrap items-end justify-between gap-2">
+                  <div>
+                    <p className="text-xs font-semibold uppercase tracking-wide text-rose-300/90">XP Code</p>
+                    <p className="text-sm text-rose-100/85">
+                      <span className="font-bold text-white">{codeXp.toLocaleString('fr-FR')}</span> XP — niveau Code{' '}
+                      <span className="text-white">{codeLevelInfo.level}</span>
+                    </p>
+                  </div>
+                  <div className="text-right text-xs text-slate-400">
+                    Total Momentum : <span className="font-medium text-slate-200">{totalXP.toLocaleString('fr-FR')}</span> XP
+                  </div>
+                </div>
+                <div className="mt-2 h-2 w-full overflow-hidden rounded-full border border-rose-500/35 bg-slate-900">
+                  <div
+                    className="h-full bg-gradient-to-r from-rose-950 via-rose-600 to-fuchsia-500 transition-all duration-500"
+                    style={{ width: `${Math.min(100, Math.max(0, codeLevelInfo.progress.percent))}%` }}
+                    title="Progression du niveau Code (1000 XP par palier)"
+                  />
+                </div>
+                <p className="mt-1.5 text-[11px] text-slate-500">
+                  Prochain palier Code :{' '}
+                  <span className="text-rose-200/90">{codeLevelInfo.progress.xpNeeded.toLocaleString('fr-FR')}</span> XP — part
+                  Code dans le total Momentum : <span className="text-rose-200/90">{codeSlicePct.toFixed(1)} %</span>.
+                </p>
+              </div>
+            </>
+          ) : null}
         </div>
       )}
-    </section>
+    </>
   );
+
+  return isEmbedded ? <div className={shellClass}>{inner}</div> : <section className={shellClass}>{inner}</section>;
 };
 
 export default DashboardGitHubCodeModule;

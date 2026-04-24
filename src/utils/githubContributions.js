@@ -61,6 +61,28 @@ export function yearRangeUtc(year) {
   return { from, to };
 }
 
+function padUtc(n) {
+  return String(n).padStart(2, '0');
+}
+
+/**
+ * Fenêtre glissante « comme GitHub » : du même jour (UTC) il y a un an 00:00
+ * jusqu’au jour courant 23:59 — évite d’afficher des mois futurs vides.
+ */
+export function rollingTwelveMonthsRangeUtc(now = new Date()) {
+  const y = now.getUTCFullYear();
+  const m = now.getUTCMonth();
+  const d = now.getUTCDate();
+  const to = `${y}-${padUtc(m + 1)}-${padUtc(d)}T23:59:59Z`;
+  const start = new Date(Date.UTC(y, m, d, 0, 0, 0, 0));
+  start.setUTCFullYear(start.getUTCFullYear() - 1);
+  const sy = start.getUTCFullYear();
+  const sm = start.getUTCMonth();
+  const sd = start.getUTCDate();
+  const from = `${sy}-${padUtc(sm + 1)}-${padUtc(sd)}T00:00:00Z`;
+  return { from, to };
+}
+
 export function flattenWeeksToDayMap(weeks) {
   const map = new Map();
   for (const w of weeks || []) {
@@ -153,4 +175,101 @@ export async function fetchMultiYearContributions(accessToken, years) {
     stats,
     perYearTotals: Object.fromEntries(chunks.map((c) => [String(c.year), c.total])),
   };
+}
+
+/** Jour suivant (UTC) au format YYYY-MM-DD. */
+export function nextUtcCalendarDay(ymd) {
+  const p = String(ymd || '').split('-').map(Number);
+  if (p.length !== 3 || p.some((x) => !Number.isFinite(x))) return null;
+  const dt = new Date(Date.UTC(p[0], p[1] - 1, p[2]));
+  dt.setUTCDate(dt.getUTCDate() + 1);
+  const y = dt.getUTCFullYear();
+  const m = String(dt.getUTCMonth() + 1).padStart(2, '0');
+  const d = String(dt.getUTCDate()).padStart(2, '0');
+  return `${y}-${m}-${d}`;
+}
+
+/** Jour précédent (UTC) au format YYYY-MM-DD. */
+export function prevUtcCalendarDay(ymd) {
+  const p = String(ymd || '').split('-').map(Number);
+  if (p.length !== 3 || p.some((x) => !Number.isFinite(x))) return null;
+  const dt = new Date(Date.UTC(p[0], p[1] - 1, p[2]));
+  dt.setUTCDate(dt.getUTCDate() - 1);
+  const y = dt.getUTCFullYear();
+  const m = String(dt.getUTCMonth() + 1).padStart(2, '0');
+  const d = String(dt.getUTCDate()).padStart(2, '0');
+  return `${y}-${m}-${d}`;
+}
+
+/** Histogramme des cases par palier (0 = vide … 4 = le plus actif). */
+export function contributionTierHistogramFromWeeks(weeks) {
+  const map = flattenWeeksToDayMap(weeks);
+  const counts = [0, 0, 0, 0, 0];
+  for (const d of map.values()) {
+    const t = contributionLevelToTier(d.contributionLevel);
+    if (t >= 0 && t <= 4) counts[t] += 1;
+  }
+  return counts;
+}
+
+/**
+ * Jours actifs consécutifs : série la plus longue, et série « en cours » (se termine au dernier jour avec activité).
+ */
+export function contributionStreaksFromWeeks(weeks) {
+  const map = flattenWeeksToDayMap(weeks);
+  const active = new Set();
+  for (const [date, day] of map) {
+    if ((Number(day?.contributionCount) || 0) > 0) active.add(date);
+  }
+  const sorted = [...active].sort();
+  let longest = 0;
+  let run = 0;
+  let prev = null;
+  for (const date of sorted) {
+    if (prev == null) {
+      run = 1;
+    } else if (nextUtcCalendarDay(prev) === date) {
+      run += 1;
+    } else {
+      longest = Math.max(longest, run);
+      run = 1;
+    }
+    prev = date;
+  }
+  longest = Math.max(longest, run);
+
+  if (!sorted.length) {
+    return { longest: 0, current: 0, activeDaysTotal: 0 };
+  }
+
+  /** Série « en cours » au sens GitHub : se termine au dernier jour avec activité. */
+  const lastActive = sorted[sorted.length - 1];
+  let current = 0;
+  let d = lastActive;
+  while (active.has(d)) {
+    current += 1;
+    const p = prevUtcCalendarDay(d);
+    if (!p) break;
+    d = p;
+  }
+
+  return { longest, current, activeDaysTotal: sorted.length };
+}
+
+/** Années UTC [start…now] à partir de `viewer.createdAt` (même logique que le hook GitHub). */
+export function contributionYearSpanUtc(createdAtIso, maxYearsBack = 25) {
+  const now = new Date().getUTCFullYear();
+  let start = now - maxYearsBack;
+  if (createdAtIso) {
+    try {
+      const y = new Date(createdAtIso).getUTCFullYear();
+      if (!Number.isNaN(y)) start = Math.min(now, Math.max(start, y));
+    } catch {
+      // ignore
+    }
+  }
+  const years = [];
+  for (let y = start; y <= now; y += 1) years.push(y);
+  if (!years.length) years.push(now);
+  return years;
 }
