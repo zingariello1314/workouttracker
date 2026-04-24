@@ -7,7 +7,7 @@ import React from 'react';
 import { Star, Target, BookOpen, Apple, Dumbbell, Ban, Github } from 'lucide-react';
 import { useGlobalXP } from '../../hooks/useGlobalXP';
 
-const GlobalXPBar = () => {
+const GlobalXPBar = ({ onCategoryClick = null }) => {
   const { totalXP, level, xpByCategory, progress } = useGlobalXP();
   const categories = [
     { key: 'quests', label: 'Quêtes', icon: Target, color: 'purple' },
@@ -69,9 +69,13 @@ const GlobalXPBar = () => {
                         : 'text-red-400';
 
           return (
-            <div
+            <button
               key={category.key}
-              className="bg-slate-800/50 rounded-lg p-3 border border-slate-700/50"
+              type="button"
+              onClick={() => {
+                if (typeof onCategoryClick === 'function') onCategoryClick(category.key);
+              }}
+              className="w-full text-left bg-slate-800/50 rounded-lg p-3 border border-slate-700/50 transition hover:bg-slate-700/60 hover:border-slate-500/60"
             >
               <div className="flex items-center gap-2 mb-2">
                 <Icon className={`w-4 h-4 ${iconColor}`} />
@@ -79,7 +83,7 @@ const GlobalXPBar = () => {
               </div>
               <div className="text-lg font-bold text-white">{xp.toLocaleString('fr-FR')}</div>
               <div className="text-xs text-slate-500">{percent.toFixed(1)}%</div>
-            </div>
+            </button>
           );
         })}
       </div>

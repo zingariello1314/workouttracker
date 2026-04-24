@@ -352,7 +352,7 @@ const WorkoutTrackerContent = () => {
       >
         <AnimatedBackground />
       </div>
-      
+
       {/* Fond de fallback - couleur de base du shader animé (vert foncé) pour transition fluide */}
       {/* Ce fond évite le flash blanc pendant le chargement du Canvas Three.js */}
       <div 

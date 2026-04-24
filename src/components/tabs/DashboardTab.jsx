@@ -41,6 +41,38 @@ const DashboardTab = () => {
     ref.current.scrollIntoView({ behavior: 'smooth', block: 'start' });
   }, []);
 
+  const handleXpCategoryClick = useCallback(
+    (categoryKey) => {
+      switch (categoryKey) {
+        case 'quests':
+          scrollToRef(questsRef);
+          break;
+        case 'learning':
+          scrollToRef(learningRef);
+          break;
+        case 'nutrition':
+          scrollToRef(momentumRef);
+          break;
+        case 'books':
+          scrollToRef(booksRef);
+          break;
+        case 'sport':
+          scrollToRef(sportRef);
+          break;
+        case 'addictionQuit':
+          // Exception demandée: Arrêt addiction est dans "Vue du jour".
+          scrollToRef(momentumRef);
+          break;
+        case 'code':
+          scrollToRef(codeRef);
+          break;
+        default:
+          scrollToRef(xpRef);
+      }
+    },
+    [scrollToRef],
+  );
+
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
@@ -116,7 +148,7 @@ const DashboardTab = () => {
           <div className="space-y-6">
             {/* Barre XP Globale */}
             <div ref={xpRef} className="scroll-mt-24">
-              <GlobalXPBar />
+              <GlobalXPBar onCategoryClick={handleXpCategoryClick} />
             </div>
 
             <div ref={combinedCalRef} className="scroll-mt-24">

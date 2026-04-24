@@ -754,9 +754,9 @@ const TodayTab = () => {
             </Card.Header>
             <Card.Content>
               <div className="space-y-4">
-                {activeChallenges.map(challenge => (
+                {activeChallenges.map((challenge, idx) => (
                   <ChallengeCard
-                    key={challenge.id}
+                    key={`rest-${challenge.id || challenge.title || 'challenge'}-${idx}`}
                     challenge={challenge}
                     onComplete={handleChallengeComplete}
                   />
@@ -1415,9 +1415,9 @@ const TodayTab = () => {
             </Card.Header>
             <Card.Content>
               <div className="space-y-4">
-                {activeChallenges.map(challenge => (
+                {activeChallenges.map((challenge, idx) => (
                   <ChallengeCard
-                    key={challenge.id}
+                    key={`main-${challenge.id || challenge.title || 'challenge'}-${idx}`}
                     challenge={challenge}
                     onComplete={handleChallengeComplete}
                   />

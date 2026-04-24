@@ -221,14 +221,11 @@ export default function CodeJournalDirectivesSubTab() {
   }
 
   return (
-    <div className="mx-auto max-w-3xl space-y-6 py-6">
-      <header className="rounded-xl border border-rose-500/45 bg-black/55 px-4 py-4">
-        <h1 className="text-2xl font-bold text-white">Journal & directives</h1>
-        <p className="mt-1 text-sm text-rose-200/85">
-          Plan, journal, tâches et <strong className="text-white">liens favoris</strong> (URL + titre optionnel), le tout
-          conservé sur cet appareil dans IndexedDB (même après redémarrage du serveur ou du navigateur). Un nouvel
-          enregistrement ajoute <strong className="text-white">{JOURNAL_XP_PER_SAVE} XP</strong> Code (cumul IndexedDB).
-        </p>
+    <div className="mx-auto max-w-4xl space-y-6 py-6">
+      <header className="text-center">
+        <h1 className="text-4xl font-bold tracking-tight text-white sm:text-5xl">
+          What will you <span className="bg-gradient-to-b from-rose-300 via-fuchsia-300 to-white bg-clip-text italic text-transparent">build</span> today?
+        </h1>
       </header>
       {connected && todayCount > 0 ? (
         <div className="rounded-lg border border-rose-400/50 bg-rose-950/25 px-4 py-3 text-sm text-rose-100">
@@ -236,10 +233,10 @@ export default function CodeJournalDirectivesSubTab() {
           aujourd’hui (UTC) sur la période affichée du calendrier — un bon moment pour écrire ton journal du jour.
         </div>
       ) : null}
-      <div className="relative mx-auto w-full max-w-[680px] overflow-hidden rounded-2xl border border-rose-500/45 shadow-[0_0_0_1px_rgba(225,29,72,0.12),0_8px_32px_rgba(0,0,0,0.55)]">
+      <div className="relative mx-auto w-full max-w-[760px] overflow-hidden rounded-2xl border border-rose-500/45 shadow-[0_0_0_1px_rgba(225,29,72,0.12),0_8px_32px_rgba(0,0,0,0.55)]">
         <JournalBoltBackdrop />
-        <div className="pointer-events-none absolute inset-x-0 top-0 z-[1] h-px bg-gradient-to-r from-transparent via-rose-400/40 to-transparent" />
-        <div className="relative z-10 rounded-2xl bg-[#0c0a0c]/80 backdrop-blur-[2px]">
+        <div className="pointer-events-none absolute inset-x-0 top-0 z-[1] h-px bg-gradient-to-r from-transparent via-rose-300/40 to-transparent" />
+        <div className="relative z-10 rounded-2xl bg-[#1a1118]/88 backdrop-blur-xl">
           <textarea
             ref={taRef}
             value={message}
@@ -248,19 +245,19 @@ export default function CodeJournalDirectivesSubTab() {
             placeholder={BOLT_DEFAULT_PLACEHOLDER}
             rows={3}
             disabled={!journalReady}
-            className="min-h-[88px] w-full resize-none border-0 bg-transparent px-5 pb-2 pt-5 text-[15px] text-rose-50 placeholder:text-rose-200/40 focus:outline-none focus:ring-0 disabled:opacity-50"
+            className="min-h-[88px] w-full resize-none border-0 bg-transparent px-5 pb-2 pt-5 text-[15px] text-rose-50 placeholder:text-rose-200/35 focus:outline-none focus:ring-0 disabled:opacity-50"
           />
           <div className="relative z-10 border-t border-rose-500/20 px-5 py-3">
-            <div className="mb-2 flex items-center gap-2 text-xs font-medium text-rose-300/90">
-              <Link2 className="size-3.5 shrink-0 text-rose-400" aria-hidden />
+            <div className="mb-2 flex items-center gap-2 text-xs font-medium text-rose-200/95">
+              <Link2 className="size-3.5 shrink-0 text-rose-300" aria-hidden />
               Liens (ils apparaîtront dans « Entrées récentes » après enregistrement)
             </div>
             {links.length > 0 ? (
-              <div className="mb-2 flex items-center gap-3 text-xs text-rose-300/80">
+              <div className="mb-2 flex items-center gap-3 text-xs text-rose-200/90">
                 <p>{links.length} lien(s) prêt(s) à enregistrer.</p>
                 <button
                   type="button"
-                  className="rounded border border-rose-500/40 px-2 py-0.5 text-rose-200 hover:bg-rose-950/35"
+                  className="rounded border border-rose-500/40 px-2 py-0.5 text-rose-100 hover:bg-rose-900/35"
                   onClick={() => setLinks([])}
                 >
                   Vider
@@ -277,14 +274,14 @@ export default function CodeJournalDirectivesSubTab() {
                   setLinkError('');
                 }}
                 placeholder="https://exemple.com"
-                className="min-w-0 flex-1 rounded-lg border border-rose-500/35 bg-black/60 px-3 py-2 text-sm text-rose-50 placeholder:text-rose-400/50 focus:border-rose-400 focus:outline-none"
+                className="min-w-0 flex-1 rounded-lg border border-rose-500/35 bg-[#120c12] px-3 py-2 text-sm text-rose-50 placeholder:text-rose-300/45 focus:border-rose-400/70 focus:outline-none"
               />
               <input
                 type="text"
                 value={linkTitle}
                 onChange={(e) => setLinkTitle(e.target.value)}
                 placeholder="Titre (optionnel)"
-                className="min-w-0 flex-1 rounded-lg border border-rose-500/35 bg-black/60 px-3 py-2 text-sm text-rose-50 placeholder:text-rose-400/50 focus:border-rose-400 focus:outline-none sm:max-w-[200px]"
+                className="min-w-0 flex-1 rounded-lg border border-rose-500/35 bg-[#120c12] px-3 py-2 text-sm text-rose-50 placeholder:text-rose-300/45 focus:border-rose-400/70 focus:outline-none sm:max-w-[220px]"
               />
               <button
                 type="button"
@@ -301,7 +298,7 @@ export default function CodeJournalDirectivesSubTab() {
               {attachments.map((a) => (
                 <div
                   key={a.id}
-                  className="flex items-center gap-1 rounded-md border border-rose-500/35 bg-black/60 px-2 py-1 text-xs text-rose-100"
+                  className="flex items-center gap-1 rounded-md border border-rose-500/35 bg-black/55 px-2 py-1 text-xs text-rose-100"
                 >
                   {a.kind === 'image' ? (
                     <img src={a.dataUrl} alt="" className="h-8 w-8 rounded object-cover" />
@@ -311,7 +308,7 @@ export default function CodeJournalDirectivesSubTab() {
                   <span className="max-w-[10rem] truncate">{a.name}</span>
                   <button
                     type="button"
-                    className="ml-1 text-rose-400 hover:text-rose-200"
+                    className="ml-1 text-rose-300 hover:text-rose-100"
                     onClick={() => setAttachments((x) => x.filter((z) => z.id !== a.id))}
                     aria-label="Retirer la pièce jointe"
                   >
@@ -321,12 +318,12 @@ export default function CodeJournalDirectivesSubTab() {
               ))}
             </div>
           ) : null}
-          <div className="relative z-10 flex items-center justify-between gap-2 border-t border-rose-500/25 px-3 pb-3 pt-2">
+          <div className="relative z-10 flex items-center justify-between gap-2 border-t border-rose-500/20 px-3 pb-3 pt-2">
             <div className="relative flex items-center gap-1">
               <button
                 type="button"
                 onClick={() => setShowAttach((s) => !s)}
-                className="flex size-9 items-center justify-center rounded-full border border-rose-500/40 bg-rose-950/40 text-rose-200 transition hover:bg-rose-900/50 hover:text-white"
+                className="flex size-9 items-center justify-center rounded-full border border-rose-500/40 bg-rose-950/35 text-rose-100 transition hover:bg-rose-900/50 hover:text-white"
                 aria-label="Ajouter un fichier ou une image"
               >
                 <Plus className={`size-4 transition-transform ${showAttach ? 'rotate-45' : ''}`} />
@@ -336,7 +333,7 @@ export default function CodeJournalDirectivesSubTab() {
               {showAttach && (
                 <>
                   <button type="button" className="fixed inset-0 z-40 cursor-default bg-transparent" aria-hidden onClick={() => setShowAttach(false)} />
-                  <div className="absolute bottom-full left-0 z-50 mb-2 min-w-[200px] overflow-hidden rounded-xl border border-rose-500/40 bg-black/95 py-1 shadow-xl shadow-black/60 backdrop-blur-md">
+                  <div className="absolute bottom-full left-0 z-50 mb-2 min-w-[200px] overflow-hidden rounded-xl border border-rose-500/40 bg-[#140f14]/95 py-1 shadow-xl shadow-black/60 backdrop-blur-md">
                     <button
                       type="button"
                       className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-rose-100/90 hover:bg-rose-950/50"
@@ -365,7 +362,7 @@ export default function CodeJournalDirectivesSubTab() {
               <button
                 type="button"
                 onClick={cycleMode}
-                className="flex items-center gap-1.5 rounded-full border border-rose-500/35 px-3 py-2 text-xs font-medium text-rose-200/90 transition hover:border-rose-400/60 hover:bg-rose-950/40 hover:text-white"
+                className="flex items-center gap-1.5 rounded-full border border-rose-500/35 px-3 py-2 text-xs font-medium text-rose-100/90 transition hover:border-rose-400/60 hover:bg-rose-950/40 hover:text-white"
               >
                 <Lightbulb className="size-4 shrink-0" />
                 <span className="hidden sm:inline">{mode.label}</span>
@@ -378,7 +375,7 @@ export default function CodeJournalDirectivesSubTab() {
                 className="flex items-center gap-2 rounded-full border border-rose-400/60 bg-gradient-to-r from-rose-700 to-fuchsia-700 px-4 py-2 text-sm font-medium text-white shadow-[0_0_18px_rgba(225,29,72,0.35)] transition hover:from-rose-600 hover:to-fuchsia-600 disabled:cursor-not-allowed disabled:opacity-40"
               >
                 <Send className="size-4" />
-                Enregistrer
+                Build now
               </button>
             </div>
           </div>

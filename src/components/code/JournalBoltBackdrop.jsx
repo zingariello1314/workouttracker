@@ -1,6 +1,6 @@
 /**
  * Fond type « horizon » (inspiré du module Bolt / moduleecrireporujournalgithub.md),
- * recoloré charte Code Momentum : noir + framboise (pas le bleu d’origine).
+ * recoloré charte Code Momentum : noir + rose/fuchsia.
  */
 export default function JournalBoltBackdrop() {
   return (
