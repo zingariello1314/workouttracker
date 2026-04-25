@@ -30,6 +30,7 @@ import { purgeSoftRemovedExercisesFromProgram } from '../utils/programPersistenc
 import { useTranslation } from '../utils/translations';
 import { useLanguage } from '../context/LanguageContext';
 import { LANGUAGES } from '../utils/translations/constants';
+import { exerciseDatabase } from '../data/exerciseDatabase';
 
 const PROGRAM_WEEK_DAYS = ['lundi', 'mardi', 'mercredi', 'jeudi', 'vendredi', 'samedi', 'dimanche'];
 
@@ -63,6 +64,16 @@ const ProgramDetailView = ({ program, onBack, onUpdateProgram }) => {
   const { language } = useLanguage();
   const [exerciseSearchQuery, setExerciseSearchQuery] = useState('');
   const [flashExerciseAnchorId, setFlashExerciseAnchorId] = useState(null);
+  const [showExerciseBankPicker, setShowExerciseBankPicker] = useState(false);
+  const [pickerContext, setPickerContext] = useState({ dayKey: null, variantKey: null });
+  const [pickerQuery, setPickerQuery] = useState('');
+  const [pickerSelectedKey, setPickerSelectedKey] = useState('');
+  const [pickerVolumeMode, setPickerVolumeMode] = useState('reps');
+  const [pickerSets, setPickerSets] = useState('3');
+  const [pickerReps, setPickerReps] = useState('10');
+  const [pickerSeconds, setPickerSeconds] = useState('');
+  const [pickerMinutes, setPickerMinutes] = useState('');
+  const [pickerWeight, setPickerWeight] = useState('');
 
   const programSearchFallback = useMemo(() => {
     const en = language === LANGUAGES.EN;
@@ -173,6 +184,28 @@ const ProgramDetailView = ({ program, onBack, onUpdateProgram }) => {
       return hay.includes(q);
     });
   }, [allProgramExerciseOccurrences, exerciseSearchQuery]);
+
+  const exerciseBankRows = useMemo(() => {
+    const rows = Object.entries(exerciseDatabase).map(([key, ex]) => ({
+      key,
+      name: ex.name || key,
+      category: ex.category || '',
+      equipment: ex.equipment || '',
+      primary: Array.isArray(ex.primaryMuscles) ? ex.primaryMuscles : [],
+      secondary: Array.isArray(ex.secondaryMuscles) ? ex.secondaryMuscles : []
+    }));
+    rows.sort((a, b) => a.name.localeCompare(b.name, 'fr'));
+    return rows;
+  }, []);
+
+  const filteredExerciseBankRows = useMemo(() => {
+    const q = pickerQuery.trim().toLowerCase();
+    if (!q) return exerciseBankRows;
+    return exerciseBankRows.filter((row) => {
+      const hay = `${row.name} ${row.category} ${row.equipment} ${row.primary.join(' ')} ${row.secondary.join(' ')}`.toLowerCase();
+      return hay.includes(q);
+    });
+  }, [exerciseBankRows, pickerQuery]);
 
   const scrollToProgramExercise = useCallback((row) => {
     const anchorId = getProgramExerciseAnchorId(row.dayKey, row.variantKey, row.exercise.id);
@@ -302,33 +335,82 @@ const ProgramDetailView = ({ program, onBack, onUpdateProgram }) => {
     setEditedData({});
   };
 
-  const handleAddExercise = (dayKey) => {
-    const newEx = createDefaultExercise();
-    const updatedProgram = { ...program, schedule: { ...program.schedule } };
-    const day = { ...updatedProgram.schedule[dayKey] };
-    day.exercises = [...(day.exercises || []), newEx];
-    updatedProgram.schedule[dayKey] = day;
-    onUpdateProgram(updatedProgram);
-    setEditingExercise({ dayKey, exerciseId: newEx.id });
-    setEditedData({
-      ...newEx,
-      meta: {}
-    });
+  const openExerciseBankPicker = (dayKey, variantKey = null) => {
+    setPickerContext({ dayKey, variantKey });
+    setPickerQuery('');
+    setPickerSelectedKey('');
+    setPickerVolumeMode('reps');
+    setPickerSets('3');
+    setPickerReps('10');
+    setPickerSeconds('');
+    setPickerMinutes('');
+    setPickerWeight('');
+    setShowExerciseBankPicker(true);
   };
 
-  const handleAddVariantExercise = (dayKey, variantKey) => {
+  const buildSeriesFromPicker = () => {
+    if (pickerVolumeMode === 'seconds') return `${Math.max(1, parseInt(pickerSeconds || '0', 10))} sec`;
+    if (pickerVolumeMode === 'minutes') return `${Math.max(1, parseInt(pickerMinutes || '0', 10))} min`;
+    const sets = Math.max(1, parseInt(pickerSets || '0', 10));
+    const reps = Math.max(1, parseInt(pickerReps || '0', 10));
+    return `${sets}×${reps}`;
+  };
+
+  const inferProgramCategoryFromDatabase = (dbEx) => {
+    const txt = `${dbEx?.category || ''} ${dbEx?.equipment || ''}`.toLowerCase();
+    if (txt.includes('abdo') || txt.includes('core') || txt.includes('gainage')) return 'core';
+    if (txt.includes('course') || txt.includes('cardio') || txt.includes('natation') || txt.includes('boxe')) return 'cardio';
+    if (txt.includes('poids du corps') || txt.includes('barre de traction') || txt.includes('parall')) return 'street_workout';
+    return 'muscu';
+  };
+
+  const handleConfirmExerciseBankAdd = () => {
+    if (!pickerContext.dayKey || !pickerSelectedKey) return;
+    const dbEx = exerciseDatabase[pickerSelectedKey];
+    if (!dbEx) return;
+
     const newEx = createDefaultExercise();
+    const series = buildSeriesFromPicker();
+    const category = inferProgramCategoryFromDatabase(dbEx);
+    const meta = {
+      ...normalizeExerciseMeta(newEx),
+      volumeMode: pickerVolumeMode,
+      targetLoadKg: pickerWeight ? String(pickerWeight) : ''
+    };
+    const built = {
+      ...newEx,
+      name: dbEx.name || pickerSelectedKey,
+      series,
+      rest: pickerVolumeMode === 'reps' ? 90 : 30,
+      intensity: pickerVolumeMode === 'reps' ? 'moderate' : 'light',
+      materiel: dbEx.equipment || '',
+      notes: dbEx.description || '',
+      programCategory: category,
+      cardioKind: category === 'cardio' ? 'other' : '',
+      meta
+    };
+
     const updatedProgram = { ...program, schedule: { ...program.schedule } };
-    const day = { ...updatedProgram.schedule[dayKey] };
-    const variants = { ...day.salleVariants };
-    const v = { ...variants[variantKey], exercises: [...(variants[variantKey]?.exercises || [])] };
-    v.exercises.push(newEx);
-    variants[variantKey] = v;
-    day.salleVariants = variants;
-    updatedProgram.schedule[dayKey] = day;
+    const day = { ...updatedProgram.schedule[pickerContext.dayKey] };
+    if (pickerContext.variantKey) {
+      const vk = pickerContext.variantKey;
+      const variants = { ...day.salleVariants };
+      const v = { ...variants[vk], exercises: [...(variants[vk]?.exercises || [])] };
+      v.exercises.push(built);
+      variants[vk] = v;
+      day.salleVariants = variants;
+    } else {
+      day.exercises = [...(day.exercises || []), built];
+    }
+    updatedProgram.schedule[pickerContext.dayKey] = day;
     onUpdateProgram(updatedProgram);
-    setEditingExercise({ dayKey, exerciseId: newEx.id, variantKey });
-    setEditedData({ ...newEx, meta: {} });
+    setShowExerciseBankPicker(false);
+    setEditingExercise({
+      dayKey: pickerContext.dayKey,
+      exerciseId: built.id,
+      ...(pickerContext.variantKey ? { variantKey: pickerContext.variantKey } : {})
+    });
+    setEditedData({ ...built, meta: normalizeExerciseMeta(built) });
   };
 
   const renderExerciseEditor = () => {
@@ -1095,7 +1177,7 @@ const ProgramDetailView = ({ program, onBack, onUpdateProgram }) => {
                     </h3>
                     <button
                       type="button"
-                      onClick={() => handleAddExercise(dayKey)}
+                      onClick={() => openExerciseBankPicker(dayKey)}
                       className="inline-flex items-center gap-1.5 rounded-lg border border-[#0F4C5C]/55 bg-black px-3 py-1.5 text-xs font-medium text-teal-100 hover:border-[#0F5C45]/60 hover:bg-[#0F4C5C]/15"
                     >
                       <Plus size={14} />
@@ -1241,7 +1323,7 @@ const ProgramDetailView = ({ program, onBack, onUpdateProgram }) => {
                         </h4>
                         <button
                           type="button"
-                          onClick={() => handleAddVariantExercise(dayKey, 'semaineA')}
+                          onClick={() => openExerciseBankPicker(dayKey, 'semaineA')}
                           className="inline-flex items-center gap-1 rounded-lg border border-[#0F4C5C]/55 bg-black px-2 py-1 text-xs text-teal-100 hover:border-[#0F5C45]/60 hover:bg-[#0F4C5C]/15"
                         >
                           <Plus size={12} /> Ajouter
@@ -1341,7 +1423,7 @@ const ProgramDetailView = ({ program, onBack, onUpdateProgram }) => {
                         </h4>
                         <button
                           type="button"
-                          onClick={() => handleAddVariantExercise(dayKey, 'semaineB')}
+                          onClick={() => openExerciseBankPicker(dayKey, 'semaineB')}
                           className="inline-flex items-center gap-1 rounded-lg border border-[#0F4C5C]/55 bg-black px-2 py-1 text-xs text-teal-100 hover:border-[#0F5C45]/60 hover:bg-[#0F4C5C]/15"
                         >
                           <Plus size={12} /> Ajouter
@@ -1444,6 +1526,140 @@ const ProgramDetailView = ({ program, onBack, onUpdateProgram }) => {
           );
         })}
       </div>
+
+      {showExerciseBankPicker && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
+          <div className="w-full max-w-3xl max-h-[90vh] overflow-hidden rounded-lg border border-[#0F4C5C]/70 bg-[#050A12]">
+            <div className="border-b border-[#0F4C5C]/55 p-4 flex items-center justify-between">
+              <h3 className="text-lg font-semibold text-white">Ajouter depuis la banque d’exercices</h3>
+              <button
+                type="button"
+                onClick={() => setShowExerciseBankPicker(false)}
+                className="rounded border border-[#0F4C5C]/55 px-2 py-1 text-xs text-slate-300 hover:text-white"
+              >
+                Fermer
+              </button>
+            </div>
+            <div className="p-4 space-y-3">
+              <input
+                type="search"
+                value={pickerQuery}
+                onChange={(e) => setPickerQuery(e.target.value)}
+                placeholder="Rechercher un exercice (nom, catégorie, matériel...)"
+                className="w-full rounded-lg border border-[#0F4C5C]/55 bg-black px-3 py-2 text-sm text-white"
+              />
+              <div className="max-h-52 overflow-y-auto rounded border border-[#0F4C5C]/45">
+                {filteredExerciseBankRows.slice(0, 120).map((row) => (
+                  <button
+                    key={row.key}
+                    type="button"
+                    onClick={() => setPickerSelectedKey(row.key)}
+                    className={`w-full border-b border-[#0F4C5C]/20 px-3 py-2 text-left text-sm ${
+                      pickerSelectedKey === row.key ? 'bg-[#0F5C45]/25 text-white' : 'text-slate-300 hover:bg-[#0F4C5C]/15'
+                    }`}
+                  >
+                    <div className="font-medium">{row.name}</div>
+                    <div className="text-xs text-slate-400">{[row.category, row.equipment].filter(Boolean).join(' · ')}</div>
+                  </button>
+                ))}
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                <label className="text-xs text-slate-400">
+                  Mode de volume
+                  <select
+                    value={pickerVolumeMode}
+                    onChange={(e) => setPickerVolumeMode(e.target.value)}
+                    className="mt-1 w-full rounded border border-[#0F4C5C]/55 bg-black px-2 py-2 text-sm text-white"
+                  >
+                    <option value="reps">Répétitions</option>
+                    <option value="seconds">Secondes</option>
+                    <option value="minutes">Minutes</option>
+                  </select>
+                </label>
+                {pickerVolumeMode === 'reps' && (
+                  <label className="text-xs text-slate-400">
+                    Poids cible (kg, optionnel)
+                    <input
+                      type="number"
+                      min="0"
+                      value={pickerWeight}
+                      onChange={(e) => setPickerWeight(e.target.value)}
+                      className="mt-1 w-full rounded border border-[#0F4C5C]/55 bg-black px-2 py-2 text-sm text-white"
+                    />
+                  </label>
+                )}
+              </div>
+
+              {pickerVolumeMode === 'reps' && (
+                <div className="grid grid-cols-2 gap-3">
+                  <label className="text-xs text-slate-400">
+                    Séries
+                    <input
+                      type="number"
+                      min="1"
+                      value={pickerSets}
+                      onChange={(e) => setPickerSets(e.target.value)}
+                      className="mt-1 w-full rounded border border-[#0F4C5C]/55 bg-black px-2 py-2 text-sm text-white"
+                    />
+                  </label>
+                  <label className="text-xs text-slate-400">
+                    Reps
+                    <input
+                      type="number"
+                      min="1"
+                      value={pickerReps}
+                      onChange={(e) => setPickerReps(e.target.value)}
+                      className="mt-1 w-full rounded border border-[#0F4C5C]/55 bg-black px-2 py-2 text-sm text-white"
+                    />
+                  </label>
+                </div>
+              )}
+              {pickerVolumeMode === 'seconds' && (
+                <label className="text-xs text-slate-400 block">
+                  Durée (secondes)
+                  <input
+                    type="number"
+                    min="1"
+                    value={pickerSeconds}
+                    onChange={(e) => setPickerSeconds(e.target.value)}
+                    className="mt-1 w-full rounded border border-[#0F4C5C]/55 bg-black px-2 py-2 text-sm text-white"
+                  />
+                </label>
+              )}
+              {pickerVolumeMode === 'minutes' && (
+                <label className="text-xs text-slate-400 block">
+                  Durée (minutes)
+                  <input
+                    type="number"
+                    min="1"
+                    value={pickerMinutes}
+                    onChange={(e) => setPickerMinutes(e.target.value)}
+                    className="mt-1 w-full rounded border border-[#0F4C5C]/55 bg-black px-2 py-2 text-sm text-white"
+                  />
+                </label>
+              )}
+            </div>
+            <div className="border-t border-[#0F4C5C]/55 p-4 flex items-center justify-end gap-2">
+              <button
+                type="button"
+                onClick={() => setShowExerciseBankPicker(false)}
+                className="rounded border border-[#0F4C5C]/55 bg-black px-3 py-2 text-sm text-slate-300 hover:text-white"
+              >
+                Annuler
+              </button>
+              <button
+                type="button"
+                onClick={handleConfirmExerciseBankAdd}
+                disabled={!pickerSelectedKey}
+                className="rounded border border-[#0F5C45]/55 bg-[#0F5C45]/30 px-3 py-2 text-sm text-white disabled:opacity-50"
+              >
+                Ajouter au programme
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

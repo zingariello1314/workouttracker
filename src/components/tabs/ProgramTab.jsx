@@ -13,7 +13,7 @@ import { useAuth } from '../../context/AuthContext';
 
 const ProgramTab = () => {
   const { programs, activeProgram, addProgram, activateProgram, deactivateProgram, deleteProgram, updateProgram, data } = useContext(WorkoutContext);
-  const { currentUser } = useAuth();
+  const { currentUser, isAuthenticated } = useAuth();
   const t = useTranslation();
   const { formatDate: formatLocaleDate } = useFormatters();
   const { showSuccess } = useToast();
@@ -82,15 +82,49 @@ const ProgramTab = () => {
 
   const isAdmin = currentUser?.role === 'admin' || currentUser?.username === 'zingariello1314';
 
-  // Pour les utilisateurs non admin, on ne doit jamais exposer les programmes existants.
-  const visiblePrograms = isAdmin ? programs : [];
-  const visibleActiveProgram = isAdmin ? activeProgram : null;
+  // Tous les utilisateurs connectés voient leurs programmes (stockage séparé par compte)
+  const visiblePrograms = isAuthenticated ? programs : [];
+  const visibleActiveProgram = isAuthenticated ? activeProgram : null;
+
+  const createEmptyDay = () => ({
+    name: '',
+    focus: '',
+    duration: '',
+    notes: '',
+    active: false,
+    exercises: [],
+    etirements: {
+      matin: { name: t('program.stretches.morning', 'Matin'), duration: '', instructions: '' },
+      midi: { name: t('program.stretches.midday', 'Midi'), duration: '', instructions: '' },
+      soir: { name: t('program.stretches.evening', 'Soir'), duration: '', instructions: '' }
+    },
+    salleVariants: {
+      semaineA: { name: t('program.variants.weekA', 'Variante salle A'), exercises: [] },
+      semaineB: { name: t('program.variants.weekB', 'Variante salle B'), exercises: [] }
+    }
+  });
+
+  const createEmptySchedule = () => ({
+    lundi: createEmptyDay(),
+    mardi: createEmptyDay(),
+    mercredi: createEmptyDay(),
+    jeudi: createEmptyDay(),
+    vendredi: createEmptyDay(),
+    samedi: createEmptyDay(),
+    dimanche: createEmptyDay()
+  });
 
   const handleCreateProgram = () => {
     if (newProgram.name.trim()) {
-      addProgram(newProgram);
+      const created = addProgram({
+        ...newProgram,
+        schedule: createEmptySchedule()
+      });
       setNewProgram({ name: '', description: '', duration: 4, exercises: [] });
       setShowCreateForm(false);
+      if (created) {
+        setSelectedProgram(created);
+      }
     }
   };
 
@@ -225,7 +259,14 @@ const ProgramTab = () => {
     <div className="relative text-white">
       <div className="relative z-10">
         <div className="container mx-auto max-w-6xl px-4 py-6">
-        {selectedProgram ? (
+        {!isAuthenticated ? (
+          <Card variant="sport">
+            <CardContent className="py-12 text-center text-slate-300">
+              <p className="text-lg mb-2">{t('program.auth.requiredTitle', 'Connectez-vous pour gérer vos programmes')}</p>
+              <p className="text-sm text-slate-500">{t('program.auth.requiredHint', 'La création et l’édition de programme sont disponibles après connexion.')}</p>
+            </CardContent>
+          </Card>
+        ) : selectedProgram ? (
           <ProgramDetailView 
             program={selectedProgram}
             onBack={handleBackToList}
@@ -241,8 +282,8 @@ const ProgramTab = () => {
                 </h1>
                 <p className="text-teal-200/80">{t('program.subtitle')}</p>
               </div>
-              {isAdmin ? (
-                <div className="flex gap-3">
+              <div className="flex gap-3">
+                {isAdmin && (
                   <button
                     type="button"
                     onClick={importCurrentProgram}
@@ -251,22 +292,16 @@ const ProgramTab = () => {
                     <Download size={20} />
                     {t('program.buttons.import')}
                   </button>
-                  <button
-                    type="button"
-                    onClick={() => setShowCreateForm(true)}
-                    className="inline-flex items-center gap-2 rounded-lg border border-[#0F5C45]/55 bg-[#0F5C45]/25 px-4 py-2 text-sm font-medium text-white shadow-md shadow-black/30 transition hover:bg-[#0F5C45]/40"
-                  >
-                    <Plus size={20} />
-                    {t('program.buttons.new')}
-                  </button>
-                </div>
-              ) : (
-                <div className="max-w-md rounded-lg border border-[#0F4C5C]/55 bg-black px-4 py-3 text-sm text-teal-100/90">
-                  Ce programme intégré est réservé à ton compte administrateur.  
-                  Connecte-toi avec ton compte principal pour y accéder ou crée un
-                  programme personnalisé ici.
-                </div>
-              )}
+                )}
+                <button
+                  type="button"
+                  onClick={() => setShowCreateForm(true)}
+                  className="inline-flex items-center gap-2 rounded-lg border border-[#0F5C45]/55 bg-[#0F5C45]/25 px-4 py-2 text-sm font-medium text-white shadow-md shadow-black/30 transition hover:bg-[#0F5C45]/40"
+                >
+                  <Plus size={20} />
+                  {t('program.buttons.new')}
+                </button>
+              </div>
             </div>
 
         {/* Programme Actuel */}

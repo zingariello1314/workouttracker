@@ -19,10 +19,12 @@ const ExerciseCard = ({
   showDetails = true,
   compact = false,
   onOpenDetail,
-  effectiveLoadCoeff
+  effectiveLoadCoeff,
+  showProgramVolume = true
 }) => {
   const t = useTranslation();
   const seriesSummary = useMemo(() => summarizeExerciseSeries(exercise), [exercise]);
+  const trainingDiscipline = exercise.trainingDiscipline || exercise.metadata?.trainingDiscipline || null;
   // Fonction pour obtenir la couleur selon la catégorie
   /** Pastilles catégorie : nuances bleu / teal (charte Sport) */
   const getCategoryColor = (category) => {
@@ -66,6 +68,36 @@ const ExerciseCard = ({
         return 'border border-[#0F4C5C]/45 bg-black text-teal-200';
       default:
         return 'border border-[#0F4C5C]/40 bg-black text-teal-300';
+    }
+  };
+
+  const getTrainingDisciplineColor = (discipline) => {
+    switch (discipline) {
+      case 'muscu':
+        return 'border border-fuchsia-500/40 bg-fuchsia-950/30 text-fuchsia-200';
+      case 'street':
+        return 'border border-teal-500/40 bg-teal-950/30 text-teal-100';
+      case 'endurance':
+        return 'border border-emerald-500/40 bg-emerald-950/30 text-emerald-100';
+      case 'boxe':
+        return 'border border-rose-500/45 bg-rose-950/30 text-rose-200';
+      default:
+        return 'border border-slate-600/50 bg-slate-950/40 text-slate-300';
+    }
+  };
+
+  const getTrainingDisciplineName = (discipline) => {
+    switch (discipline) {
+      case 'muscu':
+        return 'Muscu';
+      case 'street':
+        return 'Street';
+      case 'endurance':
+        return 'Endurance';
+      case 'boxe':
+        return 'Boxe';
+      default:
+        return 'Général';
     }
   };
 
@@ -168,6 +200,11 @@ const ExerciseCard = ({
               {getCategoryName(exercise.category)}
             </Badge>
           )}
+          {trainingDiscipline && (
+            <Badge className={`ml-2 text-xs ${getTrainingDisciplineColor(trainingDiscipline)}`}>
+              {getTrainingDisciplineName(trainingDiscipline)}
+            </Badge>
+          )}
         </div>
       </div>
     );
@@ -247,6 +284,12 @@ const ExerciseCard = ({
               {getCategoryName(exercise.category)}
             </Badge>
           )}
+
+          {trainingDiscipline && (
+            <Badge className={getTrainingDisciplineColor(trainingDiscipline)}>
+              {getTrainingDisciplineName(trainingDiscipline)}
+            </Badge>
+          )}
           
           {exercise.muscleGroup && (
             <Badge className={getMuscleGroupColor(exercise.muscleGroup)}>
@@ -266,7 +309,7 @@ const ExerciseCard = ({
       <CardContent className="pt-0">
         {/* Informations principales */}
         <div className="space-y-3">
-          {exercise.series && (
+          {showProgramVolume && exercise.series && (
             <div className="rounded-lg border border-[#0F4C5C]/50 bg-black p-3">
               <div className="flex items-start justify-between gap-2">
                 <div className="min-w-0">

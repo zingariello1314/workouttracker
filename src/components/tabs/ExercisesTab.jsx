@@ -2,7 +2,8 @@ import React, { useState, useMemo, useContext, useEffect } from 'react';
 import { useWorkout } from '../../context/WorkoutContext';
 import { WorkoutContext } from '../../context/WorkoutContext';
 import { workoutProgram } from '../../data/workoutProgram';
-import { convertLegacyProgram, filterExercises } from '../../utils/programUtils';
+import { exerciseDatabase } from '../../data/exerciseDatabase';
+import { convertLegacyProgram, filterExercises, enrichExercise, inferTrainingDiscipline } from '../../utils/programUtils';
 import { CARDIO_REFERENCE_EXERCISES } from '../../data/cardioExerciseCatalog';
 import { 
   syncExercisesFromPrograms, 
@@ -29,6 +30,8 @@ const ExercisesTab = () => {
   const { language } = useLanguage();
   const { currentUser, isAuthenticated } = useAuth();
   const isAdmin = currentUser?.role === 'admin' || currentUser?.username === 'zingariello1314';
+  const isGuest = !isAuthenticated;
+  const isStandardUser = isAuthenticated && !isAdmin;
   const intensityCoeffs = data?.exerciseIntensityCoeffs || {};
   const [detailExercise, setDetailExercise] = useState(null);
 
@@ -37,7 +40,7 @@ const ExercisesTab = () => {
   }, [language]);
 
   const [filters, setFilters] = useState({});
-  const [dataSource, setDataSource] = useState('default'); // 'default', 'active_program', 'all_programs'
+  const [dataSource, setDataSource] = useState('exercise_bank'); // 'exercise_bank', 'default', 'active_program', 'all_programs'
   const [syncData, setSyncData] = useState(null);
   const [lastSyncTime, setLastSyncTime] = useState(null);
   const [autoSync, setAutoSync] = useState(true);
@@ -72,9 +75,14 @@ const ExercisesTab = () => {
   }, [programs, activeProgram, dataSource, autoSync, syncData?.previousPrograms]);
   // Fonction pour extraire les exercices selon la source de données
   const getExercisesFromSource = useMemo(() => {
+    if (isGuest) return {};
+    if (isStandardUser) return {};
     let sourceProgram = null;
     
     switch (dataSource) {
+      case 'exercise_bank':
+        sourceProgram = {};
+        break;
       case 'active_program':
         if (visibleActiveProgram && visibleActiveProgram.schedule) {
           // Convertir le programme actif au format legacy pour la compatibilité
@@ -199,7 +207,7 @@ const ExercisesTab = () => {
     }
     // Invités et non-admin : ne jamais retomber sur workoutProgram
     return sourceProgram || {};
-  }, [dataSource, visibleActiveProgram, visiblePrograms, selectedProgram, isAdmin, t]);
+  }, [dataSource, visibleActiveProgram, visiblePrograms, selectedProgram, isAdmin, isGuest, isStandardUser, t]);
 
   // Convertir le programme en format enrichi
   const enhancedProgram = useMemo(() => {
@@ -208,13 +216,54 @@ const ExercisesTab = () => {
 
   // Utiliser les exercices synchronisés ou extraits manuellement
   const allExercises = useMemo(() => {
-    const mergeCardio = (list) => {
-      const seen = new Set(list.map((e) => String(e.id)));
+    const mergeReferenceExercises = (list) => {
+      const seenIds = new Set(list.map((e) => String(e.id)));
+      const normalizeName = (value) => String(value || '').toLowerCase().trim();
+      const seenNames = new Set(list.map((e) => normalizeName(e.name || e.nom)));
       const out = [...list];
+
+      // Banque commune globale (exerciseDatabase) visible pour tous les utilisateurs
+      Object.entries(exerciseDatabase).forEach(([key, ex]) => {
+        const name = ex.name || key;
+        const normalizedName = normalizeName(name);
+        if (seenNames.has(normalizedName)) return;
+
+        const id = `db_${key.normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-zA-Z0-9]+/g, '_').replace(/^_+|_+$/g, '').toLowerCase()}`;
+        if (seenIds.has(id)) return;
+
+        const enriched = enrichExercise({
+          id,
+          name,
+          materiel: ex.equipment || '',
+          notes: ex.description || '',
+          secondaryMuscles: ex.secondaryMuscles || [],
+          primaryMuscles: ex.primaryMuscles || []
+        });
+
+        seenIds.add(id);
+        seenNames.add(normalizedName);
+        out.push({
+          ...enriched,
+          category: enriched.metadata?.category || ex.category || t('exercisesTab.misc.notSpecified'),
+          muscleGroup: enriched.metadata?.primaryMuscleGroup || ex.primaryMuscles?.[0] || t('exercisesTab.misc.notSpecified'),
+          difficulty: enriched.metadata?.difficulty || 1,
+          trainingDiscipline: enriched.metadata?.trainingDiscipline || inferTrainingDiscipline({ ...enriched, rawEquipment: ex.equipment }),
+          sourceDay: t('exercisesTab.misc.exerciseBankSource', 'Banque commune exercices'),
+          // Garder les champs "métier" lisibles issus de la banque
+          primaryMuscles: ex.primaryMuscles || [],
+          secondaryMuscles: ex.secondaryMuscles || enriched.secondaryMuscles || [],
+          equipment: ex.equipment || enriched.equipment || t('exercisesTab.misc.notSpecified'),
+          notes: ex.description || enriched.notes || '',
+          categoryLabel: ex.category
+        });
+      });
+
       CARDIO_REFERENCE_EXERCISES.forEach((ex) => {
         const key = String(ex.id);
-        if (!seen.has(key)) {
-          seen.add(key);
+        const normalizedName = normalizeName(ex.name);
+        if (!seenIds.has(key) && !seenNames.has(normalizedName)) {
+          seenIds.add(key);
+          seenNames.add(normalizedName);
           out.push({
             ...ex,
             sourceDay: ex.sourceDay || t('exercisesTab.cardio.sourceLabel', 'Référentiel cardio')
@@ -224,6 +273,9 @@ const ExercisesTab = () => {
       return out;
     };
 
+    if (isGuest) return [];
+    if (isStandardUser || dataSource === 'exercise_bank') return mergeReferenceExercises([]);
+
     // Priorité aux exercices synchronisés si disponibles ET s'ils sont enrichis
     if (syncData && syncData.exercises && syncData.exercises.length > 0 && 
         syncData.exercises.some(ex => ex.category || ex.metadata)) {
@@ -231,7 +283,7 @@ const ExercisesTab = () => {
         ...exercise,
         sourceDay: exercise.sourceDay || t('exercisesTab.misc.defaultProgram')
       }));
-      return mergeCardio(withSource);
+      return mergeReferenceExercises(withSource);
     }
     
     const exercises = [];
@@ -259,8 +311,8 @@ const ExercisesTab = () => {
       sourceDay: exercise.sourceDay || t('exercisesTab.misc.defaultProgram')
     }));
 
-    return mergeCardio(fromProgram);
-  }, [enhancedProgram, syncData, t]);
+    return mergeReferenceExercises(fromProgram);
+  }, [enhancedProgram, syncData, t, isGuest, isStandardUser, dataSource]);
 
   // Filtrer les exercices
   const filteredExercises = useMemo(() => {
@@ -282,7 +334,8 @@ const ExercisesTab = () => {
         category: exercise.metadata?.category || exercise.category || t('exercisesTab.misc.notSpecified'),
         primaryMuscleGroup: exercise.metadata?.primaryMuscleGroup || exercise.muscleGroup || t('exercisesTab.misc.notSpecified'),
         difficulty: exercise.metadata?.difficulty || exercise.difficulty || t('exercisesTab.misc.notSpecified'),
-        equipment: exercise.metadata?.equipment || exercise.equipment || t('exercisesTab.misc.notSpecified')
+        equipment: exercise.metadata?.equipment || exercise.equipment || t('exercisesTab.misc.notSpecified'),
+        trainingDiscipline: exercise.metadata?.trainingDiscipline || exercise.trainingDiscipline || inferTrainingDiscipline(exercise)
       }
     };
     
@@ -291,6 +344,7 @@ const ExercisesTab = () => {
     normalized.muscleGroup = normalized.metadata.primaryMuscleGroup;
     normalized.difficulty = normalized.metadata.difficulty;
     normalized.equipment = normalized.metadata.equipment;
+    normalized.trainingDiscipline = normalized.metadata.trainingDiscipline;
     
     return normalized;
   };
@@ -370,10 +424,31 @@ const ExercisesTab = () => {
     );
   }
 
+  if (isGuest) {
+    return (
+      <div className="relative">
+        <div className="relative z-10 p-6">
+          <Card variant="sport">
+            <CardContent className="py-10 text-center">
+              <Dumbbell className="w-12 h-12 text-slate-400 mx-auto mb-4" />
+              <p className="text-slate-300 text-lg mb-2">
+                {t('exercisesTab.guest.lockedTitle', 'Connectez-vous pour voir les exercices')}
+              </p>
+              <p className="text-slate-500 text-sm">
+                {t('exercisesTab.guest.lockedHint', 'La banque d’exercices et vos programmes sont disponibles après connexion.')}
+              </p>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="relative">
       <div className="relative z-10 space-y-6 p-6">
         {/* Statut de synchronisation */}
+      {isAdmin && (
       <Card variant="sport">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
@@ -438,6 +513,8 @@ const ExercisesTab = () => {
           )}
         </CardContent>
       </Card>
+      )}
+      {isAdmin && (
       <Card variant="sport">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
@@ -447,6 +524,21 @@ const ExercisesTab = () => {
         </CardHeader>
         <CardContent>
           <div className="flex flex-wrap gap-2">
+            <button
+              type="button"
+              onClick={() => {
+                setDataSource('exercise_bank');
+                setViewMode('exercises');
+                setSelectedProgram(null);
+              }}
+              className={`gradient-button-premium gradient-button-premium-sm rounded-lg ${
+                dataSource === 'exercise_bank'
+                  ? 'gradient-button-premium-variant'
+                  : ''
+              }`}
+            >
+              Tous les exercices (banque)
+            </button>
             <button
               type="button"
               onClick={() => {
@@ -496,6 +588,7 @@ const ExercisesTab = () => {
             </button>
           </div>
           <div className="mt-3 text-sm text-slate-400">
+            {dataSource === 'exercise_bank' && 'Affichage de toute la banque d’exercices (sans doublons).'}
             {dataSource === 'default' && t('exercisesTab.source.description.default')}
             {dataSource === 'active_program' && visibleActiveProgram && t('exercisesTab.source.description.activeProgram', { programName: visibleActiveProgram.name })}
             {dataSource === 'active_program' && !visibleActiveProgram && t('exercisesTab.source.description.activeProgramNone')}
@@ -504,6 +597,7 @@ const ExercisesTab = () => {
           </div>
         </CardContent>
       </Card>
+      )}
 
       {/* En-tête avec statistiques */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
@@ -673,6 +767,7 @@ const ExercisesTab = () => {
                     isCompleted={false}
                     onOpenDetail={setDetailExercise}
                     effectiveLoadCoeff={resolveExerciseIntensityCoeff(exercise, intensityCoeffs)}
+                    showProgramVolume={isAdmin}
                   />
                 ))}
               </div>

@@ -50,15 +50,6 @@ export const exerciseDatabase = {
   },
 
   // DORSAUX
-  "tractions": {
-    name: "Tractions",
-    category: "Dorsaux",
-    primaryMuscles: ["Grand dorsal", "Rhomboïdes"],
-    secondaryMuscles: ["Biceps", "Trapèzes"],
-    equipment: "Barre de traction",
-    description: "Exercice roi pour le développement du dos",
-    variations: ["pull-ups", "traction", "chin-ups"]
-  },
   "rowing barre": {
     name: "Rowing barre",
     category: "Dorsaux",
@@ -399,7 +390,7 @@ export const exerciseDatabase = {
     secondaryMuscles: ["Obliques"],
     equipment: "Barre/Parallèles",
     description: "Exercice suspendu ciblant les abdominaux inférieurs",
-    variations: ["knee raises", "relevés genoux barre", "hanging knee raises"]
+    variations: ["knee raises", "relevés genoux barre", "hanging knee raises", "relevés de genoux à la barre", "knee raises bar"]
   },
   "mountain climbers": {
     name: "Mountain climbers",
@@ -511,7 +502,7 @@ export const exerciseDatabase = {
     secondaryMuscles: [],
     equipment: "Poulie haute + Corde",
     description: "Extension triceps à la poulie avec corde",
-    variations: ["rope pushdown", "extension corde"]
+    variations: ["rope pushdown", "extension corde", "extension à la poulie corde", "tricep rope extension"]
   },
   "extension poulie pronation": {
     name: "Extension poulie pronation",
@@ -520,7 +511,7 @@ export const exerciseDatabase = {
     secondaryMuscles: [],
     equipment: "Poulie haute",
     description: "Extension triceps prise pronation ciblant le vaste latéral",
-    variations: ["pronated pushdown", "extension pronation"]
+    variations: ["pronated pushdown", "extension pronation", "extension poulie prise pronation", "overhand pushdown"]
   },
   "extension poulie supination": {
     name: "Extension poulie supination",
@@ -529,7 +520,7 @@ export const exerciseDatabase = {
     secondaryMuscles: [],
     equipment: "Poulie haute",
     description: "Extension triceps prise supination pour la longue portion",
-    variations: ["supinated pushdown", "extension supination"]
+    variations: ["supinated pushdown", "extension supination", "extension poulie prise supination", "underhand pushdown"]
   },
 
   // ÉPAULES SPÉCIALISÉES
@@ -550,6 +541,350 @@ export const exerciseDatabase = {
     equipment: "Haltères",
     description: "Élévations postérieures en position penchée",
     variations: ["bent over reverse fly", "oiseau debout penché"]
+  },
+
+  // HAUT DU CORPS - ENRICHISSEMENT
+  "développé décliné barre": {
+    name: "Développé décliné barre",
+    category: "Pectoraux",
+    primaryMuscles: ["Pectoraux inférieurs"],
+    secondaryMuscles: ["Triceps", "Deltoïdes antérieurs"],
+    equipment: "Barre + Banc décliné",
+    description: "Développé couché en inclinaison négative pour accent bas de poitrine",
+    variations: ["decline bench press", "decline barbell press", "dc décliné barre"]
+  },
+  "développé décliné haltères": {
+    name: "Développé décliné haltères",
+    category: "Pectoraux",
+    primaryMuscles: ["Pectoraux inférieurs"],
+    secondaryMuscles: ["Triceps", "Deltoïdes antérieurs"],
+    equipment: "Haltères + Banc décliné",
+    description: "Version haltères du développé décliné pour amplitude accrue",
+    variations: ["decline dumbbell press", "dc décliné haltères", "décliné haltères"]
+  },
+  "développé couché prise serrée": {
+    name: "Développé couché prise serrée",
+    category: "Triceps",
+    primaryMuscles: ["Triceps"],
+    secondaryMuscles: ["Pectoraux", "Deltoïdes antérieurs"],
+    equipment: "Barre + Banc",
+    description: "Variante du développé couché orientée triceps avec prise rapprochée",
+    variations: ["close grip bench press", "dc prise serrée", "bench press close grip"]
+  },
+  "chest press machine": {
+    name: "Chest press machine",
+    category: "Pectoraux",
+    primaryMuscles: ["Pectoraux"],
+    secondaryMuscles: ["Triceps", "Deltoïdes antérieurs"],
+    equipment: "Machine chest press",
+    description: "Poussée guidée sur machine pour pectoraux avec trajectoire stable",
+    variations: ["machine chest press", "presse pectoraux machine", "chest press"]
+  },
+  "pec deck": {
+    name: "Pec deck",
+    category: "Pectoraux",
+    primaryMuscles: ["Pectoraux"],
+    secondaryMuscles: ["Deltoïdes antérieurs"],
+    equipment: "Machine pec deck",
+    description: "Écarté guidé sur machine pour isolation des pectoraux",
+    variations: ["butterfly machine", "écarté machine", "pec fly machine"]
+  },
+  "pompes archer": {
+    name: "Pompes archer",
+    category: "Pectoraux",
+    primaryMuscles: ["Pectoraux", "Triceps"],
+    secondaryMuscles: ["Deltoïdes antérieurs", "Core"],
+    equipment: "Poids du corps",
+    description: "Pompes asymétriques accentuant la charge sur un bras à la fois",
+    variations: ["archer push-ups", "pompes asymétriques", "archer push ups"]
+  },
+  "pompes claquées": {
+    name: "Pompes claquées",
+    category: "Pectoraux",
+    primaryMuscles: ["Pectoraux", "Triceps"],
+    secondaryMuscles: ["Deltoïdes antérieurs", "Core"],
+    equipment: "Poids du corps",
+    description: "Pompes explosives avec phase aérienne pour puissance du haut du corps",
+    variations: ["clap push-ups", "pompes explosives", "plyo push-ups"]
+  },
+  "pompes spiderman": {
+    name: "Pompes spiderman",
+    category: "Pectoraux",
+    primaryMuscles: ["Pectoraux", "Triceps"],
+    secondaryMuscles: ["Obliques", "Deltoïdes antérieurs", "Core"],
+    equipment: "Poids du corps",
+    description: "Pompes avec montée de genou latérale pour combiner poussée et gainage",
+    variations: ["spiderman push-ups", "pompes genou coude", "spider push up"]
+  },
+  "pompes hindu": {
+    name: "Pompes hindu",
+    category: "Pectoraux",
+    primaryMuscles: ["Pectoraux", "Deltoïdes"],
+    secondaryMuscles: ["Triceps", "Core"],
+    equipment: "Poids du corps",
+    description: "Pompes dynamiques en arc, très complètes pour mobilité et force",
+    variations: ["hindu push-ups", "pompes plongeantes", "dive bomber push-ups"]
+  },
+  "tractions pronation": {
+    name: "Tractions pronation",
+    category: "Dorsaux",
+    primaryMuscles: ["Grand dorsal", "Rhomboïdes"],
+    secondaryMuscles: ["Biceps", "Trapèzes moyens"],
+    equipment: "Barre de traction",
+    description: "Tractions en prise pronation pour le développement global du dos",
+    variations: ["pull-ups", "traction pronation", "tractions pronation larges", "wide grip pull-ups", "tractions larges", "pull up prise large"]
+  },
+  "tractions supination": {
+    name: "Tractions supination",
+    category: "Biceps",
+    primaryMuscles: ["Biceps brachial", "Grand dorsal"],
+    secondaryMuscles: ["Brachial antérieur", "Rhomboïdes"],
+    equipment: "Barre de traction",
+    description: "Tractions en supination, orientées biceps et dos",
+    variations: ["chin-ups", "traction supination", "tractions supination serrées", "close grip chin-ups", "chin-ups serrés", "chin-ups strictes", "strict chin-ups", "chin ups strict"]
+  },
+  "tractions explosives poitrine barre": {
+    name: "Tractions explosives poitrine barre",
+    category: "Dorsaux",
+    primaryMuscles: ["Grand dorsal", "Trapèzes", "Rhomboïdes"],
+    secondaryMuscles: ["Biceps", "Deltoïdes postérieurs"],
+    equipment: "Barre de traction",
+    description: "Tractions explosives visant le contact poitrine-barre",
+    variations: ["chest to bar pull-ups", "tractions explosives", "pull-up explosif"]
+  },
+  "rowing australien pieds surélevés": {
+    name: "Rowing australien pieds surélevés",
+    category: "Dorsaux",
+    primaryMuscles: ["Grand dorsal", "Rhomboïdes", "Trapèzes moyens"],
+    secondaryMuscles: ["Biceps", "Deltoïdes postérieurs"],
+    equipment: "Barre basse + Support",
+    description: "Variante plus difficile des tractions australiennes avec pieds surélevés",
+    variations: ["feet elevated australian rows", "inverted row avancé", "rowing inversé pieds hauts"]
+  },
+  "front lever tuck rows": {
+    name: "Front lever tuck rows",
+    category: "Dorsaux",
+    primaryMuscles: ["Grand dorsal", "Rhomboïdes", "Core"],
+    secondaryMuscles: ["Biceps", "Deltoïdes postérieurs"],
+    equipment: "Barre de traction",
+    description: "Tirages en position tuck front lever pour dos et gainage avancé",
+    variations: ["tuck front lever rows", "front lever rows", "rowing front lever tuck"]
+  },
+  "tirage horizontal poulie": {
+    name: "Tirage horizontal poulie",
+    category: "Dorsaux",
+    primaryMuscles: ["Grand dorsal", "Rhomboïdes"],
+    secondaryMuscles: ["Biceps", "Trapèzes moyens"],
+    equipment: "Poulie basse",
+    description: "Tirage assis à la poulie pour densité du dos",
+    variations: ["seated cable row", "rowing poulie basse", "tirage assis poulie"]
+  },
+  "tirage horizontal machine convergente": {
+    name: "Tirage horizontal machine convergente",
+    category: "Dorsaux",
+    primaryMuscles: ["Grand dorsal", "Rhomboïdes"],
+    secondaryMuscles: ["Biceps", "Trapèzes"],
+    equipment: "Machine convergente",
+    description: "Tirage guidé unilatéral ou bilatéral sur machine convergente",
+    variations: ["machine row converging", "rowing machine convergente", "iso lateral row machine"]
+  },
+  "tirage unilatéral poulie basse": {
+    name: "Tirage unilatéral poulie basse",
+    category: "Dorsaux",
+    primaryMuscles: ["Grand dorsal", "Rhomboïdes"],
+    secondaryMuscles: ["Biceps", "Core"],
+    equipment: "Poulie basse",
+    description: "Tirage un bras à la poulie pour corriger les asymétries du dos",
+    variations: ["single arm cable row", "rowing poulie unilatéral", "tirage un bras poulie"]
+  },
+  "pull-over poulie haute": {
+    name: "Pull-over poulie haute",
+    category: "Dorsaux",
+    primaryMuscles: ["Grand dorsal"],
+    secondaryMuscles: ["Grand rond", "Triceps longue portion"],
+    equipment: "Poulie haute",
+    description: "Mouvement d'extension d'épaule à bras quasi tendus pour isoler le grand dorsal",
+    variations: ["straight arm pulldown", "pullover câble", "tirage bras tendus poulie"]
+  },
+  "pull-over haltère": {
+    name: "Pull-over haltère",
+    category: "Dorsaux",
+    primaryMuscles: ["Grand dorsal", "Pectoraux"],
+    secondaryMuscles: ["Dentelé antérieur", "Triceps"],
+    equipment: "Haltère + Banc",
+    description: "Pull-over sur banc pour étirement thoracique et recrutement dos/pecs",
+    variations: ["dumbbell pullover", "pullover banc", "pull over haltère"]
+  },
+  "curl barre ez": {
+    name: "Curl barre EZ",
+    category: "Biceps",
+    primaryMuscles: ["Biceps brachial"],
+    secondaryMuscles: ["Brachial antérieur", "Brachio-radial"],
+    equipment: "Barre EZ",
+    description: "Curl à la barre EZ plus tolérant pour les poignets",
+    variations: ["ez bar curl", "curl ez", "flexion barre ez"]
+  },
+  "curl spider": {
+    name: "Curl spider",
+    category: "Biceps",
+    primaryMuscles: ["Biceps brachial"],
+    secondaryMuscles: ["Brachial antérieur"],
+    equipment: "Haltères + Banc incliné",
+    description: "Curl poitrine collée au banc incliné pour forte isolation des biceps",
+    variations: ["spider curl", "curl araignée", "spider dumbbell curl"]
+  },
+  "curl câble unilatéral": {
+    name: "Curl câble unilatéral",
+    category: "Biceps",
+    primaryMuscles: ["Biceps brachial"],
+    secondaryMuscles: ["Brachial antérieur"],
+    equipment: "Poulie basse",
+    description: "Curl un bras à la poulie pour tension continue et symétrie",
+    variations: ["single arm cable curl", "curl poulie unilatéral", "one arm cable curl"]
+  },
+  "curl pupitre machine": {
+    name: "Curl pupitre machine",
+    category: "Biceps",
+    primaryMuscles: ["Biceps brachial"],
+    secondaryMuscles: ["Brachial antérieur"],
+    equipment: "Machine pupitre",
+    description: "Curl guidé sur pupitre pour isoler strictement le biceps",
+    variations: ["machine preacher curl", "curl machine pupitre", "preacher machine curl"]
+  },
+  "chin-ups lestées": {
+    name: "Chin-ups lestées",
+    category: "Biceps",
+    primaryMuscles: ["Biceps brachial", "Grand dorsal"],
+    secondaryMuscles: ["Rhomboïdes", "Trapèzes"],
+    equipment: "Barre de traction + Lest",
+    description: "Chin-ups avec charge additionnelle pour progression en force",
+    variations: ["weighted chin-ups", "tractions supination lestées", "chin up lesté"]
+  },
+  "extension nuque haltère assis": {
+    name: "Extension nuque haltère assis",
+    category: "Triceps",
+    primaryMuscles: ["Triceps longue portion"],
+    secondaryMuscles: ["Triceps vaste médial", "Core"],
+    equipment: "Haltère",
+    description: "Extension triceps au-dessus de la tête en position assise",
+    variations: ["seated overhead dumbbell extension", "extension nuque assise", "overhead db extension seated"]
+  },
+  "dips coréens": {
+    name: "Dips coréens",
+    category: "Triceps",
+    primaryMuscles: ["Triceps", "Pectoraux inférieurs"],
+    secondaryMuscles: ["Deltoïdes antérieurs", "Core"],
+    equipment: "Barres parallèles",
+    description: "Variante avancée de dips avec trajectoire plus exigeante",
+    variations: ["korean dips", "dips avancés", "bar korean dips"]
+  },
+  "développé arnold": {
+    name: "Développé Arnold",
+    category: "Épaules",
+    primaryMuscles: ["Deltoïdes antérieurs", "Deltoïdes moyens"],
+    secondaryMuscles: ["Triceps", "Trapèzes supérieurs"],
+    equipment: "Haltères",
+    description: "Développé épaules avec rotation pour recruter l'ensemble du deltoïde",
+    variations: ["arnold press", "press arnold", "développé épaules rotation"]
+  },
+  "développé militaire haltères assis": {
+    name: "Développé militaire haltères assis",
+    category: "Épaules",
+    primaryMuscles: ["Deltoïdes"],
+    secondaryMuscles: ["Triceps", "Trapèzes supérieurs"],
+    equipment: "Haltères + Banc",
+    description: "Développé épaules assis pour limiter les compensations lombaires",
+    variations: ["seated dumbbell shoulder press", "dm haltères assis", "shoulder press assis haltères"]
+  },
+  "élévations latérales poulie": {
+    name: "Élévations latérales poulie",
+    category: "Épaules",
+    primaryMuscles: ["Deltoïdes moyens"],
+    secondaryMuscles: ["Trapèzes supérieurs"],
+    equipment: "Poulie basse",
+    description: "Élévation latérale au câble pour tension régulière",
+    variations: ["cable lateral raise", "élévations latérales câble", "lateral raise poulie"]
+  },
+  "oiseau poulie": {
+    name: "Oiseau poulie",
+    category: "Épaules",
+    primaryMuscles: ["Deltoïdes postérieurs"],
+    secondaryMuscles: ["Rhomboïdes", "Trapèzes moyens"],
+    equipment: "Poulie vis-à-vis",
+    description: "Reverse fly à la poulie pour l'arrière d'épaule",
+    variations: ["cable reverse fly", "reverse pec deck câble", "oiseau câble"]
+  },
+  "tirage menton barre": {
+    name: "Tirage menton barre",
+    category: "Épaules",
+    primaryMuscles: ["Deltoïdes moyens", "Trapèzes supérieurs"],
+    secondaryMuscles: ["Biceps"],
+    equipment: "Barre",
+    description: "Tirage vertical proche du corps pour épaules et trapèzes",
+    variations: ["upright row", "rowing menton barre", "tirage vertical menton"]
+  },
+  "pike push-ups": {
+    name: "Pike push-ups",
+    category: "Épaules",
+    primaryMuscles: ["Deltoïdes antérieurs", "Triceps"],
+    secondaryMuscles: ["Trapèzes", "Core"],
+    equipment: "Poids du corps",
+    description: "Pompes en V pour transférer vers handstand push-ups",
+    variations: ["pompes pike", "v push-ups", "pike push up"]
+  },
+  "handstand push-ups assistées mur": {
+    name: "Handstand push-ups assistées mur",
+    category: "Épaules",
+    primaryMuscles: ["Deltoïdes", "Triceps"],
+    secondaryMuscles: ["Trapèzes", "Core"],
+    equipment: "Poids du corps + Mur",
+    description: "Développé vertical au poids du corps avec assistance murale",
+    variations: ["wall assisted handstand push-ups", "hspu mur", "pompes en équilibre assistées"]
+  },
+  "dragon flag": {
+    name: "Dragon flag",
+    category: "Abdominaux",
+    primaryMuscles: ["Grand droit de l'abdomen", "Transverse"],
+    secondaryMuscles: ["Fléchisseurs de hanche", "Grand dorsal"],
+    equipment: "Banc/Support",
+    description: "Mouvement avancé de gainage dynamique en chaîne antérieure",
+    variations: ["dragon flags", "drapeau du dragon", "dragon flag hold"]
+  },
+  "toes to bar": {
+    name: "Toes to bar",
+    category: "Abdominaux",
+    primaryMuscles: ["Grand droit de l'abdomen", "Fléchisseurs de hanche"],
+    secondaryMuscles: ["Obliques", "Avant-bras"],
+    equipment: "Barre de traction",
+    description: "Relevé de jambes suspendu jusqu'au contact pieds-barre",
+    variations: ["ttb", "pieds à la barre", "toes-to-bar"]
+  },
+  "ab wheel rollout": {
+    name: "Ab wheel rollout",
+    category: "Abdominaux",
+    primaryMuscles: ["Transverse", "Grand droit de l'abdomen"],
+    secondaryMuscles: ["Grand dorsal", "Deltoïdes", "Obliques"],
+    equipment: "Roue abdominale",
+    description: "Extension anti-lordose du tronc avec roue abdominale",
+    variations: ["roue abdominale", "rollout ab wheel", "ab rollout"]
+  },
+  "crunch poulie haute": {
+    name: "Crunch poulie haute",
+    category: "Abdominaux",
+    primaryMuscles: ["Grand droit de l'abdomen"],
+    secondaryMuscles: ["Obliques"],
+    equipment: "Poulie haute + Corde",
+    description: "Crunch lesté à la poulie pour surcharge progressive des abdominaux",
+    variations: ["cable crunch", "crunch câble", "kneeling cable crunch"]
+  },
+  "pallof press": {
+    name: "Pallof press",
+    category: "Abdominaux",
+    primaryMuscles: ["Obliques", "Transverse"],
+    secondaryMuscles: ["Grand droit", "Fessiers", "Érecteurs du rachis"],
+    equipment: "Élastique/Poulie",
+    description: "Exercice anti-rotation pour stabilité du tronc",
+    variations: ["anti rotation press", "press anti-rotation", "pallof hold press"]
   },
 
   // JAMBES SPÉCIALISÉES
@@ -643,6 +978,150 @@ export const exerciseDatabase = {
     description: "Mollets un pied pour corriger les déséquilibres",
     variations: ["single calf raise", "mollets 1 pied"]
   },
+  "pistol squat": {
+    name: "Pistol squat",
+    category: "Quadriceps",
+    primaryMuscles: ["Quadriceps", "Fessiers"],
+    secondaryMuscles: ["Ischio-jambiers", "Core"],
+    equipment: "Poids du corps",
+    description: "Squat unilatéral complet demandant force, mobilité et équilibre",
+    variations: ["squat une jambe", "single leg squat", "pistol"]
+  },
+  "shrimp squat": {
+    name: "Shrimp squat",
+    category: "Quadriceps",
+    primaryMuscles: ["Quadriceps"],
+    secondaryMuscles: ["Fessiers", "Core", "Ischio-jambiers"],
+    equipment: "Poids du corps",
+    description: "Squat unilatéral en tenant le pied arrière, excellent en street workout",
+    variations: ["shrimp", "squat crevette", "single leg rear hold squat"]
+  },
+  "squat sauté": {
+    name: "Squat sauté",
+    category: "Quadriceps",
+    primaryMuscles: ["Quadriceps", "Fessiers"],
+    secondaryMuscles: ["Mollets", "Core"],
+    equipment: "Poids du corps",
+    description: "Squat pliométrique pour puissance des jambes et explosivité",
+    variations: ["jump squat", "sauts squat", "squat explosif"]
+  },
+  "fentes sautées": {
+    name: "Fentes sautées",
+    category: "Quadriceps",
+    primaryMuscles: ["Quadriceps", "Fessiers"],
+    secondaryMuscles: ["Mollets", "Ischio-jambiers", "Core"],
+    equipment: "Poids du corps",
+    description: "Fentes alternées avec saut pour travail unilatéral explosif",
+    variations: ["jump lunges", "fentes pliométriques", "split jump"]
+  },
+  "step-up": {
+    name: "Step-up",
+    category: "Quadriceps",
+    primaryMuscles: ["Quadriceps", "Fessiers"],
+    secondaryMuscles: ["Ischio-jambiers", "Mollets"],
+    equipment: "Banc/Box",
+    description: "Montée contrôlée sur support pour renforcer chaque jambe séparément",
+    variations: ["montée sur banc", "box step-up", "step up banc"]
+  },
+  "step-down contrôlé": {
+    name: "Step-down contrôlé",
+    category: "Quadriceps",
+    primaryMuscles: ["Quadriceps"],
+    secondaryMuscles: ["Fessiers moyens", "Mollets", "Core"],
+    equipment: "Banc/Box",
+    description: "Descente unilatérale contrôlée pour stabilité du genou et force excentrique",
+    variations: ["step down", "descente contrôlée banc", "eccentric step down"]
+  },
+  "wall sit": {
+    name: "Wall sit",
+    category: "Quadriceps",
+    primaryMuscles: ["Quadriceps"],
+    secondaryMuscles: ["Fessiers", "Mollets"],
+    equipment: "Poids du corps",
+    description: "Chaise contre un mur en isométrie pour endurance locale des quadriceps",
+    variations: ["chaise murale", "isometric wall squat", "chair hold"]
+  },
+  "hip thrust unilatéral": {
+    name: "Hip thrust unilatéral",
+    category: "Fessiers",
+    primaryMuscles: ["Fessiers"],
+    secondaryMuscles: ["Ischio-jambiers", "Core"],
+    equipment: "Banc + Haltère/Barre",
+    description: "Hip thrust une jambe pour corriger les déséquilibres de force",
+    variations: ["single leg hip thrust", "hip thrust 1 jambe", "pont fessier unilatéral banc"]
+  },
+  "glute bridge unilatéral": {
+    name: "Glute bridge unilatéral",
+    category: "Fessiers",
+    primaryMuscles: ["Fessiers"],
+    secondaryMuscles: ["Ischio-jambiers", "Core"],
+    equipment: "Poids du corps",
+    description: "Pont fessier au sol sur une jambe pour ciblage fessier précis",
+    variations: ["single leg glute bridge", "pont fessier unilatéral", "bridge 1 jambe"]
+  },
+  "soulevé de terre sumo": {
+    name: "Soulevé de terre sumo",
+    category: "Ischio-jambiers",
+    primaryMuscles: ["Ischio-jambiers", "Fessiers", "Adducteurs"],
+    secondaryMuscles: ["Érecteurs du rachis", "Quadriceps"],
+    equipment: "Barre",
+    description: "Soulevé de terre prise large ciblant fortement adducteurs et fessiers",
+    variations: ["sumo deadlift", "deadlift sumo", "sdt sumo"]
+  },
+  "soulevé de terre roumain haltères": {
+    name: "Soulevé de terre roumain haltères",
+    category: "Ischio-jambiers",
+    primaryMuscles: ["Ischio-jambiers", "Fessiers"],
+    secondaryMuscles: ["Érecteurs du rachis", "Core"],
+    equipment: "Haltères",
+    description: "Version haltères du RDL pour meilleure amplitude et contrôle unilatéral",
+    variations: ["rdl haltères", "dumbbell rdl", "sdt roumain haltères"]
+  },
+  "leg press unilatérale": {
+    name: "Leg press unilatérale",
+    category: "Quadriceps",
+    primaryMuscles: ["Quadriceps"],
+    secondaryMuscles: ["Fessiers", "Ischio-jambiers"],
+    equipment: "Machine presse",
+    description: "Presse à cuisses sur une jambe pour corriger les asymétries",
+    variations: ["single leg press", "presse unilatérale", "presse 1 jambe"]
+  },
+  "extension quadriceps unilatérale machine": {
+    name: "Extension quadriceps unilatérale machine",
+    category: "Quadriceps",
+    primaryMuscles: ["Quadriceps"],
+    secondaryMuscles: [],
+    equipment: "Machine leg extension",
+    description: "Isolation des quadriceps jambe par jambe sur machine",
+    variations: ["single leg extension", "leg extension unilatérale", "extension quadriceps 1 jambe"]
+  },
+  "leg curl allongé": {
+    name: "Leg curl allongé",
+    category: "Ischio-jambiers",
+    primaryMuscles: ["Ischio-jambiers"],
+    secondaryMuscles: ["Mollets"],
+    equipment: "Machine leg curl",
+    description: "Flexion des genoux en position allongée pour ischio-jambiers",
+    variations: ["lying leg curl", "curl ischio allongé", "leg curl couché"]
+  },
+  "mollets debout unilatéral machine": {
+    name: "Mollets debout unilatéral machine",
+    category: "Mollets",
+    primaryMuscles: ["Gastrocnémiens"],
+    secondaryMuscles: ["Soléaires"],
+    equipment: "Machine mollets debout",
+    description: "Travail des mollets jambe par jambe sur machine debout",
+    variations: ["single leg standing calf raise machine", "mollets debout machine 1 jambe", "calf raise unilatéral machine"]
+  },
+  "tibialis raises mur": {
+    name: "Tibialis raises mur",
+    category: "Mollets",
+    primaryMuscles: ["Tibial antérieur"],
+    secondaryMuscles: ["Gastrocnémiens"],
+    equipment: "Poids du corps",
+    description: "Flexion dorsale contre mur pour renforcer l'avant du tibia",
+    variations: ["tibialis raise", "relevés tibial antérieur", "toe raises wall"]
+  },
 
   // EXERCICES SALLE SPÉCIALISÉS
   "développé incliné haltères": {
@@ -670,7 +1149,7 @@ export const exerciseDatabase = {
     secondaryMuscles: [],
     equipment: "Poulie vis-à-vis",
     description: "Écarté à la poulie pour tension constante",
-    variations: ["cable fly", "écarté câble"]
+    variations: ["cable fly", "écarté câble", "écarté à la poulie vis-à-vis", "cable crossover", "crossover"]
   },
   "leg extension": {
     name: "Leg extension",
@@ -692,15 +1171,6 @@ export const exerciseDatabase = {
   },
 
   // EXERCICES ABDOMINAUX MANQUANTS
-  "relevés de genoux à la barre": {
-    name: "Relevés de genoux à la barre",
-    category: "Abdominaux",
-    primaryMuscles: ["Grand droit de l'abdomen", "Fléchisseurs de hanche"],
-    secondaryMuscles: ["Obliques"],
-    equipment: "Barre de traction",
-    description: "Exercice de suspension qui cible les abdominaux inférieurs en relevant les genoux vers la poitrine",
-    variations: ["relevés genoux barre", "knee raises bar", "hanging knee raises"]
-  },
   "relevés de genoux aux parallèles": {
     name: "Relevés de genoux aux parallèles",
     category: "Abdominaux",
@@ -748,15 +1218,6 @@ export const exerciseDatabase = {
     description: "Exercice d'isolation pour le haut des pectoraux sur banc incliné",
     variations: ["incline fly", "écarté banc incliné", "incline dumbbell fly"]
   },
-  "extension à la poulie corde": {
-    name: "Extension à la poulie corde",
-    category: "Triceps",
-    primaryMuscles: ["Triceps brachial"],
-    secondaryMuscles: [],
-    equipment: "Poulie haute + Corde",
-    description: "Extension des triceps à la poulie avec corde pour un travail complet",
-    variations: ["rope pushdown", "extension corde", "tricep rope extension"]
-  },
   "extension unilatérale à la poulie": {
     name: "Extension unilatérale à la poulie",
     category: "Triceps",
@@ -764,34 +1225,7 @@ export const exerciseDatabase = {
     secondaryMuscles: [],
     equipment: "Poulie haute",
     description: "Extension des triceps un bras à la fois pour corriger les déséquilibres",
-    variations: ["single arm pushdown", "extension 1 bras poulie", "unilateral tricep extension"]
-  },
-  "écarté à la poulie vis-à-vis": {
-    name: "Écarté à la poulie vis-à-vis",
-    category: "Pectoraux",
-    primaryMuscles: ["Pectoraux"],
-    secondaryMuscles: ["Deltoïdes antérieurs"],
-    equipment: "Poulie vis-à-vis",
-    description: "Exercice d'isolation des pectoraux avec tension constante",
-    variations: ["cable crossover", "écarté poulie", "crossover"]
-  },
-  "extension poulie prise pronation": {
-    name: "Extension poulie prise pronation",
-    category: "Triceps",
-    primaryMuscles: ["Triceps brachial"],
-    secondaryMuscles: [],
-    equipment: "Poulie haute",
-    description: "Extension des triceps en prise pronation ciblant le vaste latéral",
-    variations: ["pronated pushdown", "extension pronation", "overhand pushdown"]
-  },
-  "extension poulie prise supination": {
-    name: "Extension poulie prise supination",
-    category: "Triceps",
-    primaryMuscles: ["Triceps brachial"],
-    secondaryMuscles: [],
-    equipment: "Poulie haute",
-    description: "Extension des triceps en prise supination pour cibler la longue portion",
-    variations: ["supinated pushdown", "extension supination", "underhand pushdown"]
+    variations: ["single arm pushdown", "extension 1 bras poulie", "unilateral tricep extension", "extension unilatérale poulie", "extension 1 bras", "unilateral extension"]
   },
   "extensions triceps allongé": {
     name: "Extensions triceps allongé",
@@ -811,16 +1245,7 @@ export const exerciseDatabase = {
     description: "Variante du soulevé de terre ciblant davantage les ischio-jambiers",
     variations: ["romanian deadlift", "sdt roumain", "rdl"]
   },
-  "extension unilatérale poulie": {
-     name: "Extension unilatérale poulie",
-     category: "Triceps",
-     primaryMuscles: ["Triceps brachial"],
-     secondaryMuscles: [],
-     equipment: "Poulie haute",
-     description: "Extension unilatérale des triceps pour isolation maximale",
-     variations: ["single arm pushdown", "extension 1 bras", "unilateral extension"]
-   },
-   "gainage dynamique": {
+  "gainage dynamique": {
       name: "Gainage dynamique",
       category: "Abdominaux",
       primaryMuscles: ["Grand droit de l'abdomen", "Obliques"],

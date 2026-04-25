@@ -6,6 +6,7 @@ import { findExerciseInDatabase, getAllCategories } from '../data/exerciseDataba
 import { parseSeriesString, formatSeriesInfo } from './seriesParser.js';
 import { createFallbackExercise } from './exerciseFallback.js';
 import { workoutProgram } from '../data/workoutProgram.js';
+import { inferTrainingDiscipline } from './programUtils.js';
 
 /**
  * Extrait tous les exercices uniques depuis un programme
@@ -264,7 +265,12 @@ export const autoCategorizeSyncedExercise = (exercise) => {
     autoCategorizationApplied: true,
     categorizationTimestamp: new Date().toISOString(),
     databaseMatch: !!dbExercise,
-    categorizationSource: dbExercise ? 'database' : 'fallback'
+    categorizationSource: dbExercise ? 'database' : 'fallback',
+    trainingDiscipline: inferTrainingDiscipline({
+      ...exercise,
+      category,
+      equipment
+    })
   };
 };
 

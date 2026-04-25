@@ -141,6 +141,8 @@ export const categorizeExercises = (exercises) => {
  */
 export const enrichExercise = (exercise) => {
   const name = exercise.name.toLowerCase();
+  const rawEquipment = String(exercise.materiel || exercise.equipment || '');
+  const resolvedEquipment = inferEquipment(rawEquipment);
   
   return {
     ...exercise,
@@ -148,10 +150,15 @@ export const enrichExercise = (exercise) => {
       category: inferExerciseCategory(name),
       primaryMuscleGroup: inferMuscleGroup(name),
       secondaryMuscles: inferSecondaryMuscles(name),
-      equipment: inferEquipment(exercise.materiel || ''),
+      equipment: resolvedEquipment,
       difficulty: inferDifficulty(name, exercise.series),
       restTime: inferRestTime(exercise.series),
-      technique: exercise.notes || ''
+      technique: exercise.notes || '',
+      trainingDiscipline: inferTrainingDiscipline({
+        ...exercise,
+        equipment: resolvedEquipment,
+        rawEquipment
+      })
     }
   };
 };
@@ -322,8 +329,130 @@ const inferEquipment = (materielStr) => {
   if (materiel.includes('élastique')) return Equipment.ELASTIC;
   if (materiel.includes('gilet')) return Equipment.WEIGHTED_VEST;
   if (materiel.includes('poignées')) return Equipment.HANDLES;
+  if (materiel.includes('poulie') || materiel.includes('câble') || materiel.includes('cable')) return 'cable';
+  if (materiel.includes('machine')) return 'machine';
   
   return Equipment.BODYWEIGHT;
+};
+
+/**
+ * Classification métier :
+ * - boxe => boxe
+ * - course/marche/corde => endurance
+ * - exercices de musculation (charges/machines/mouvements guidés) => muscu
+ * - sinon => street
+ */
+export const inferTrainingDiscipline = (exercise = {}) => {
+  const name = String(exercise.name || '').toLowerCase();
+  const equipment = String(exercise.equipment || exercise.materiel || '').toLowerCase();
+  const rawEquipment = String(exercise.rawEquipment || '').toLowerCase();
+  const equipmentText = `${equipment} ${rawEquipment}`.trim();
+  const category = String(exercise.category || '').toLowerCase();
+  const type = String(exercise.type || '').toLowerCase();
+
+  const isBoxing =
+    name.includes('boxe') ||
+    name.includes('boxing') ||
+    name.includes('jab') ||
+    name.includes('uppercut') ||
+    name.includes('sac de frappe') ||
+    equipmentText.includes('gants de boxe');
+  if (isBoxing) return 'boxe';
+
+  const isEndurance =
+    name.includes('course') ||
+    name.includes('running') ||
+    name.includes('footing') ||
+    name.includes('marche') ||
+    name.includes('walk') ||
+    name.includes('corde') ||
+    name.includes('jump rope') ||
+    name.includes('sauter') ||
+    category.includes('cardio') ||
+    type.includes('running') ||
+    type.includes('course') ||
+    type.includes('marche') ||
+    type.includes('corde');
+
+  if (isEndurance) return 'endurance';
+
+  const isStreetCalisthenics =
+    name.includes('traction') ||
+    name.includes('tractions') ||
+    name.includes('pull-up') ||
+    name.includes('pull up') ||
+    name.includes('chin-up') ||
+    name.includes('chin up') ||
+    name.includes('chin-ups') ||
+    name.includes('dips') ||
+    name.includes('pompe') ||
+    name.includes('pompes') ||
+    name.includes('push-up') ||
+    name.includes('push up') ||
+    name.includes('muscle up') ||
+    name.includes('australienne') ||
+    name.includes('australiennes') ||
+    name.includes('relevés de genoux') ||
+    name.includes('relevé de genoux') ||
+    name.includes('hanging knee raises') ||
+    name.includes('toes to bar') ||
+    name.includes('front lever') ||
+    name.includes('dragon flag') ||
+    name.includes('ab wheel') ||
+    name.includes('archer') ||
+    name.includes('hindu') ||
+    name.includes('pike push') ||
+    name.includes('handstand') ||
+    name.includes('planche lean') ||
+    name.includes('gainage') ||
+    name.includes('planche') ||
+    name.includes('l-sit') ||
+    name.includes('l sit') ||
+    name.includes('pistol squat') ||
+    name.includes('shrimp squat') ||
+    ((equipmentText.includes('barre de traction') || equipmentText.includes('parallèles') || equipmentText.includes('poids du corps')) &&
+      (name.includes('traction') || name.includes('dips') || name.includes('genoux') || name.includes('pompe')));
+
+  if (isStreetCalisthenics) return 'street';
+
+  const isMuscuByEquipment =
+    equipmentText.includes('haltère') ||
+    equipmentText.includes('haltere') ||
+    equipmentText.includes('dumbbell') ||
+    equipmentText.includes('barre') ||
+    equipmentText.includes('barbell') ||
+    equipmentText.includes('smith') ||
+    equipmentText.includes('poulie') ||
+    equipmentText.includes('câble') ||
+    equipmentText.includes('cable') ||
+    equipmentText.includes('machine') ||
+    equipmentText.includes('kettlebell') ||
+    equipmentText.includes('disque') ||
+    equipmentText.includes('banc') ||
+    equipment === Equipment.DUMBBELL ||
+    equipment === Equipment.BARBELL ||
+    equipment === Equipment.BENCH;
+
+  const isMuscuByName =
+    name.includes('curl') ||
+    name.includes('développé') ||
+    name.includes('developpe') ||
+    name.includes('extension') ||
+    name.includes('écarté') ||
+    name.includes('ecarte') ||
+    name.includes('rowing') ||
+    name.includes('tirage') ||
+    name.includes('soulevé') ||
+    name.includes('souleve') ||
+    name.includes('presse') ||
+    name.includes('leg extension') ||
+    name.includes('leg curl') ||
+    name.includes('hip thrust') ||
+    name.includes('good morning');
+
+  if (isMuscuByEquipment || isMuscuByName) return 'muscu';
+
+  return 'street';
 };
 
 /**

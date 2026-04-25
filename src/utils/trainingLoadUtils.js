@@ -88,6 +88,34 @@ export function inferExerciseIntensityCoeff(exercise) {
     return 1;
   }
 
+  // Fallback structuré par discipline + difficulté (pour la banque d'exercices enrichie)
+  const discipline = String(
+    exercise?.trainingDiscipline ||
+    exercise?.metadata?.trainingDiscipline ||
+    ''
+  ).toLowerCase();
+  const difficultyRaw = Number(
+    exercise?.difficulty ??
+    exercise?.metadata?.difficulty ??
+    1
+  );
+  const difficulty = Number.isFinite(difficultyRaw)
+    ? Math.max(1, Math.min(4, Math.round(difficultyRaw)))
+    : 1;
+
+  if (discipline === 'street') {
+    return [2.2, 2.8, 3.6, 4.6][difficulty - 1];
+  }
+  if (discipline === 'muscu') {
+    return [1, 1.35, 1.8, 2.2][difficulty - 1];
+  }
+  if (discipline === 'endurance') {
+    return [1.1, 1.4, 1.8, 2.2][difficulty - 1];
+  }
+  if (discipline === 'boxe') {
+    return [1.3, 1.55, 1.9, 2.3][difficulty - 1];
+  }
+
   return 1;
 }
 
