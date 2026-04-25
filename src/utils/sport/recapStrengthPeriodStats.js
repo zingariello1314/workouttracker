@@ -1,5 +1,6 @@
 import { normalizeDateString, isMockEnduranceSession } from '../calendarUtils';
 import { aggregateCheckedRepsByDateAndExerciseId, enduranceRepsForSession } from '../trainingLoadUtils';
+import { exerciseDatabase } from '../../data/exerciseDatabase';
 import {
   getRecapDateWindow,
   isDateInRecapWindow,
@@ -8,6 +9,30 @@ import {
 } from './recapMuscleLoadEngine';
 import { inferMuscleGroupsForExercise } from './recapMuscleInference';
 import { addCalendarDays, inclusiveCalendarSpanDays } from './garminRunningPeriodStats';
+
+const makeDbExerciseId = (key) =>
+  `db_${String(key)
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-zA-Z0-9]+/g, '_')
+    .replace(/^_+|_+$/g, '')
+    .toLowerCase()}`;
+
+const EXERCISE_DB_NAME_BY_ID = Object.entries(exerciseDatabase).reduce((acc, [key, ex]) => {
+  acc[makeDbExerciseId(key)] = ex?.name || key;
+  return acc;
+}, {});
+
+const resolveExerciseNameForRecap = (exerciseId, getExerciseNameById) => {
+  const idStr = String(exerciseId || '').trim();
+  if (!idStr) return '';
+  if (EXERCISE_DB_NAME_BY_ID[idStr]) return EXERCISE_DB_NAME_BY_ID[idStr];
+  if (typeof getExerciseNameById === 'function') {
+    const byGetter = getExerciseNameById(idStr);
+    if (byGetter && !/^Exercice\s+/i.test(String(byGetter))) return byGetter;
+  }
+  return '';
+};
 
 function minDateFromStrengthSources(grouped, allData) {
   let min = null;
@@ -66,6 +91,7 @@ export function buildRecapStrengthCompareModel(allData, period, getExerciseNameB
     const idStr = gkey.slice(sep + 2);
     const inCurr = isDateInRecapWindow(dateStr, currWin);
     const inPrev = !omitPrevComparison && dateStr >= prevStart && dateStr <= prevEnd;
+    const exName = resolveExerciseNameForRecap(idStr, getExerciseNameById);
     const rInt = Math.max(0, Math.floor(Number(r) || 0));
     if (rInt <= 0) return;
 
@@ -73,7 +99,10 @@ export function buildRecapStrengthCompareModel(allData, period, getExerciseNameB
       totalRepsCurr += rInt;
       activeDays.add(dateStr);
       repsByDateCurr.set(dateStr, (repsByDateCurr.get(dateStr) || 0) + rInt);
-      byExerciseCurr.set(idStr, (byExerciseCurr.get(idStr) || 0) + rInt);
+      const current = byExerciseCurr.get(idStr) || { reps: 0, name: exName || '' };
+      current.reps += rInt;
+      if (!current.name && exName) current.name = exName;
+      byExerciseCurr.set(idStr, current);
       const weight = Number(weightsMap[storageKey]) || 0;
       if (weight > 0) {
         totalLiftedKgRepCurr += weight * rInt;
@@ -101,7 +130,9 @@ export function buildRecapStrengthCompareModel(allData, period, getExerciseNameB
       activeDays.add(ds);
       repsByDateCurr.set(ds, (repsByDateCurr.get(ds) || 0) + n);
       const idStr = RECAP_SYNTHETIC_ENDURANCE_PUSHUPS_ID;
-      byExerciseCurr.set(idStr, (byExerciseCurr.get(idStr) || 0) + n);
+      const current = byExerciseCurr.get(idStr) || { reps: 0, name: '' };
+      current.reps += n;
+      byExerciseCurr.set(idStr, current);
     }
     if (inPrev) {
       totalRepsPrev += n;
@@ -110,14 +141,15 @@ export function buildRecapStrengthCompareModel(allData, period, getExerciseNameB
   });
 
   const exercisesRanked = [];
-  byExerciseCurr.forEach((sumReps, exId) => {
+  byExerciseCurr.forEach((entry, exId) => {
+    const sumReps = Number(entry?.reps || 0);
     const numericId = Number(exId);
-    let name = '';
+    let name = String(entry?.name || '').trim();
     if (exId === RECAP_SYNTHETIC_ENDURANCE_PUSHUPS_ID) {
       name = '';
-    } else if (Number.isFinite(numericId) && typeof getExerciseNameById === 'function') {
+    } else if (!name && Number.isFinite(numericId) && typeof getExerciseNameById === 'function') {
       name = getExerciseNameById(numericId) || `Exercice ${exId}`;
-    } else {
+    } else if (!name) {
       name = `Exercice ${exId}`;
     }
     exercisesRanked.push({

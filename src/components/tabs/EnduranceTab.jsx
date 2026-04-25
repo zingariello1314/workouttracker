@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
-import { Calendar, Dumbbell, Waves, Activity, Play, Box, Plus, X, Trash2, Award, Edit, Save, Heart, Zap, Anchor, Footprints } from 'lucide-react';
+import { Calendar, Dumbbell, Waves, Activity, Play, Box, Plus, X, Trash2, Award, Edit, Save, Heart, Zap, Anchor, Footprints, Trophy } from 'lucide-react';
 import { useWorkout } from '../../context/WorkoutContext';
 import StarRating from '../ui/StarRating';
 import { useTranslation } from '../../utils/translations';
@@ -45,6 +45,7 @@ import WalkingStatsPanel from './EnduranceTab/components/WalkingStatsPanel.jsx';
 import WalkingTrophiesPanel from './EnduranceTab/components/WalkingTrophiesPanel.jsx';
 import AllTrophiesHubPanel from './EnduranceTab/components/AllTrophiesHubPanel.jsx';
 import EnduranceCalendarModernPanel from './EnduranceTab/components/EnduranceCalendarModernPanel.jsx';
+import PerformanceChallengesTab from './PerformanceChallengesTab.jsx';
 import {
   inferRunningSessionTypeFromGarminActivity,
   isGarminRunningLikeActivity,
@@ -1268,6 +1269,7 @@ const EnduranceTab = () => {
       { id: 'boxing', label: t('endurance.menu.boxing'), icon: Box },
       { id: 'swimming', label: t('endurance.menu.swimming'), icon: Waves },
       { id: 'trophies', label: t('endurance.menu.allTrophies', 'Tous mes trophées'), icon: Award },
+      { id: 'performance', label: t('endurance.menu.performance', 'Performances'), icon: Trophy },
       { id: 'calendar', label: t('endurance.menu.calendar'), icon: Calendar }
     ],
     [t]
@@ -3057,6 +3059,9 @@ const EnduranceTab = () => {
               }}
             />
           )}
+
+          {/* SECTION PERFORMANCES */}
+          {activeTab === 'performance' && <PerformanceChallengesTab />}
 
           {/* SECTION CALENDRIER HEATMAP */}
           {activeTab === 'calendar' && (

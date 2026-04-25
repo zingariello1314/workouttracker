@@ -129,6 +129,12 @@ const INITIAL_WORKOUT_DATA = {
   /** Notes subjectives 1–10 par critère (modifiables dans l’onglet Exercices > fiche) */
   exercisePerceivedRatings: {},
   exercisePersonalNotes: {},
+  /** Records max courants par exercice (street/muscu/endurance/boxe) */
+  exerciseMaxRecords: [],
+  /** Historique complet des enregistrements de performances */
+  exerciseMaxHistory: [],
+  /** Retests planifiés depuis Défis > Performances */
+  performanceRetestPlans: [],
   /** Arrêt tabac / THC : timers, jalons 20 ans, journal des envies (IndexedDB via saveToDB) */
   addictionQuitData: { ...DEFAULT_ADDICTION_QUIT_DATA },
   // homepageImages supprimé - maintenant géré par useHomepageImages indépendant
@@ -360,6 +366,18 @@ export const useWorkoutData = (options = {}) => {
         console.warn('progressPhotos corrompu, réinitialisation');
         newData.progressPhotos = [];
       }
+      if (newData.exerciseMaxRecords && !Array.isArray(newData.exerciseMaxRecords)) {
+        console.warn('exerciseMaxRecords corrompu, réinitialisation');
+        newData.exerciseMaxRecords = [];
+      }
+      if (newData.exerciseMaxHistory && !Array.isArray(newData.exerciseMaxHistory)) {
+        console.warn('exerciseMaxHistory corrompu, réinitialisation');
+        newData.exerciseMaxHistory = [];
+      }
+      if (newData.performanceRetestPlans && !Array.isArray(newData.performanceRetestPlans)) {
+        console.warn('performanceRetestPlans corrompu, réinitialisation');
+        newData.performanceRetestPlans = [];
+      }
 
       // Validation de la variante de semaine
       if (newData.weekVariant && newData.weekVariant !== 'A' && newData.weekVariant !== 'B') {
@@ -428,6 +446,12 @@ export const useWorkoutData = (options = {}) => {
           newData && newData.exercisePersonalNotes && typeof newData.exercisePersonalNotes === 'object'
             ? { ...newData.exercisePersonalNotes }
             : {},
+        exerciseMaxRecords:
+          newData && Array.isArray(newData.exerciseMaxRecords) ? [...newData.exerciseMaxRecords] : [],
+        exerciseMaxHistory:
+          newData && Array.isArray(newData.exerciseMaxHistory) ? [...newData.exerciseMaxHistory] : [],
+        performanceRetestPlans:
+          newData && Array.isArray(newData.performanceRetestPlans) ? [...newData.performanceRetestPlans] : [],
         addictionQuitData:
           newData && newData.addictionQuitData && typeof newData.addictionQuitData === 'object'
             ? JSON.parse(JSON.stringify(newData.addictionQuitData))
@@ -676,6 +700,9 @@ export const useWorkoutData = (options = {}) => {
                 migratedData.exercisePersonalNotes && typeof migratedData.exercisePersonalNotes === 'object'
                   ? { ...migratedData.exercisePersonalNotes }
                   : {},
+              exerciseMaxRecords: Array.isArray(migratedData.exerciseMaxRecords) ? migratedData.exerciseMaxRecords : [],
+              exerciseMaxHistory: Array.isArray(migratedData.exerciseMaxHistory) ? migratedData.exerciseMaxHistory : [],
+              performanceRetestPlans: Array.isArray(migratedData.performanceRetestPlans) ? migratedData.performanceRetestPlans : [],
               addictionQuitData:
                 migratedData.addictionQuitData && typeof migratedData.addictionQuitData === 'object'
                   ? migratedData.addictionQuitData
@@ -716,6 +743,9 @@ export const useWorkoutData = (options = {}) => {
                     migratedBackup.exercisePersonalNotes && typeof migratedBackup.exercisePersonalNotes === 'object'
                       ? { ...migratedBackup.exercisePersonalNotes }
                       : {},
+                  exerciseMaxRecords: Array.isArray(migratedBackup.exerciseMaxRecords) ? migratedBackup.exerciseMaxRecords : [],
+                  exerciseMaxHistory: Array.isArray(migratedBackup.exerciseMaxHistory) ? migratedBackup.exerciseMaxHistory : [],
+                  performanceRetestPlans: Array.isArray(migratedBackup.performanceRetestPlans) ? migratedBackup.performanceRetestPlans : [],
                   addictionQuitData:
                     migratedBackup.addictionQuitData && typeof migratedBackup.addictionQuitData === 'object'
                       ? migratedBackup.addictionQuitData
@@ -758,6 +788,9 @@ export const useWorkoutData = (options = {}) => {
                   typeof migratedBackup.exercisePersonalNotes === 'object'
                     ? { ...migratedBackup.exercisePersonalNotes }
                     : {},
+                exerciseMaxRecords: Array.isArray(migratedBackup.exerciseMaxRecords) ? migratedBackup.exerciseMaxRecords : [],
+                exerciseMaxHistory: Array.isArray(migratedBackup.exerciseMaxHistory) ? migratedBackup.exerciseMaxHistory : [],
+                performanceRetestPlans: Array.isArray(migratedBackup.performanceRetestPlans) ? migratedBackup.performanceRetestPlans : [],
                 addictionQuitData:
                   migratedBackup.addictionQuitData && typeof migratedBackup.addictionQuitData === 'object'
                     ? migratedBackup.addictionQuitData

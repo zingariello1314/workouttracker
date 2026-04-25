@@ -247,10 +247,14 @@ export const useWorkoutLogic = (data, updateData, getCurrentData, updateTempExer
       const newData = {
         checkedExercises: {},
         reps: {},
+        exerciseWeights: {},
         checkedStretches: {},
         startDate: null,
         weekVariant: 'A',
-        progressPhotos: []
+        progressPhotos: [],
+        exerciseMaxRecords: [],
+        exerciseMaxHistory: [],
+        performanceRetestPlans: []
       };
       
       updateData(newData);

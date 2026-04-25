@@ -20,6 +20,7 @@ const Navigation = () => {
       { id: 'endurance',      labelKey: 'nav.endurance',      icon: '🏃' },
       { id: 'calendar',       labelKey: 'nav.calendar',       icon: '🗓️' },
       { id: 'charts',         labelKey: 'nav.charts',         icon: '📊' },
+      { id: 'performance-challenges', labelKey: 'nav.performanceChallenges', icon: '🏆' },
       {
         id: 'sport-analytics',
         labelKey: 'nav.sportAnalytics',

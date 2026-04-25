@@ -27,6 +27,8 @@ import { resolveExerciseIntensityCoeff } from '../../utils/trainingLoadUtils';
 import { exerciseUsesExternalLoad } from '../../utils/programUtils';
 import LoadDifficultyStars from '../sport/LoadDifficultyStars';
 import { computeTodaySessionComplexity } from '../../utils/todaySessionScore';
+import RecordPerformanceModal from '../sport/performance/RecordPerformanceModal';
+import { applyPerformanceEntryToData } from '../../utils/exercisePerformanceUtils';
 
 const resolveExerciseWeightDisplay = (currentData, keys, readKey) => {
   const w = currentData.exerciseWeights || {};
@@ -75,6 +77,7 @@ const TodayTab = () => {
   
   const { showSuccess, showError } = useToast();
   const t = useTranslation();
+  const [showPerformanceModal, setShowPerformanceModal] = useState(false);
 
   const normalizedEndurance = useMemo(() => {
     try {
@@ -85,6 +88,22 @@ const TodayTab = () => {
       return { sessions: data?.enduranceData?.sessions || {}, challenges: data?.enduranceData?.challenges || [] };
     }
   }, [data?.enduranceData]);
+
+  const handleSavePerformanceFromToday = async (payload) => {
+    const currentData = getCurrentData();
+    const next = applyPerformanceEntryToData(
+      currentData,
+      {
+        ...payload,
+        source: 'today',
+        recordedAt: new Date().toISOString()
+      },
+      { dateStr: getDateStr(currentDate), addToTodayReps: payload.addToTodayReps }
+    );
+    await updateData(next);
+    setShowPerformanceModal(false);
+    showSuccess('Max enregistré');
+  };
 
   // Récupérer les défis actifs
   const getActiveChallenges = () => {
@@ -853,6 +872,16 @@ const TodayTab = () => {
         </div>
       </div>
 
+      <div className="flex items-center justify-end">
+        <button
+          type="button"
+          onClick={() => setShowPerformanceModal(true)}
+          className="rounded-lg border border-[#0F5C45]/55 bg-[#0F5C45]/30 px-4 py-2 text-sm text-white"
+        >
+          Enregistrer un max
+        </button>
+      </div>
+
       {workout?.exercices?.length > 0 && (
         <div className="flex flex-wrap items-center gap-3 rounded-xl border-2 border-[#0F5C45]/45 bg-black px-4 py-3 text-sm text-teal-100/90">
           <BarChart3 className="h-5 w-5 shrink-0 text-teal-400" />
@@ -1444,6 +1473,12 @@ const TodayTab = () => {
       <AddExceptionalExerciseModal
         isOpen={showAddExceptionalModal}
         onClose={() => setShowAddExceptionalModal(false)}
+      />
+      <RecordPerformanceModal
+        isOpen={showPerformanceModal}
+        onClose={() => setShowPerformanceModal(false)}
+        onSubmit={handleSavePerformanceFromToday}
+        title={t('today.performanceModal.title', 'Enregistrer un max depuis Aujourd’hui')}
       />
       </div>
     </div>

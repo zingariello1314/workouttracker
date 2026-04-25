@@ -24,6 +24,7 @@ const CalendarTab = lazy(() => import('./components/tabs/CalendarTab'));
 const ProgramTab = lazy(() => import('./components/tabs/ProgramTab'));
 const AddictionQuitTab = lazy(() => import('./components/tabs/AddictionQuitTab'));
 const ChartsTab = lazy(() => import('./components/tabs/ChartsTab'));
+const PerformanceChallengesTab = lazy(() => import('./components/tabs/PerformanceChallengesTab'));
 const StatsTab = lazy(() => import('./components/tabs/StatsTab'));
 const ExercisesTab = lazy(() => import('./components/tabs/ExercisesTab'));
 const HistoryTab = lazy(() => import('./components/tabs/HistoryTab'));
@@ -125,6 +126,7 @@ const WorkoutTrackerContent = () => {
     'addiction-quit': '-620px',
     nutrition: '-620px',
     charts: '-620px',
+    'performance-challenges': '-620px',
     stats: '-620px',
     exercises: '-620px',
     history: '-620px',
@@ -235,6 +237,8 @@ const WorkoutTrackerContent = () => {
         return <NutritionTab />;
       case 'charts':
         return <ChartsTab />;
+      case 'performance-challenges':
+        return <PerformanceChallengesTab />;
       case 'sport-analytics':
         return <SportAnalyticsHubTab />;
       case 'stats':

@@ -16,6 +16,7 @@ import { recapScoreToHexRelative, recapZoneBlendHueScore } from './recapIntensit
 import { MuscleGroups } from '../../data/workoutProgramEnhanced';
 import { getMeshesForMuscleGroup } from './recapMeshBinding';
 import { weightsForRunningSession, weightsForJumpRopeSession } from './enduranceMuscleDistribution';
+import { exerciseDatabase } from '../../data/exerciseDatabase';
 
 export const DECAY_LAMBDA_PER_DAY = 0.11;
 /** Poids du canal cardio sur la charge « affichée » (plafonné par groupe). */
@@ -25,6 +26,30 @@ export const CARDIO_PER_GROUP_DAY_CAP = 95;
 
 /** Id stable pour agréger les pompes « onglet Endurance » dans les listes d’exos du Récap. */
 export const RECAP_SYNTHETIC_ENDURANCE_PUSHUPS_ID = '__recap_endurance_pushups__';
+
+const makeDbExerciseId = (key) =>
+  `db_${String(key)
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-zA-Z0-9]+/g, '_')
+    .replace(/^_+|_+$/g, '')
+    .toLowerCase()}`;
+
+const EXERCISE_DB_NAME_BY_ID = Object.entries(exerciseDatabase).reduce((acc, [key, ex]) => {
+  acc[makeDbExerciseId(key)] = ex?.name || key;
+  return acc;
+}, {});
+
+function resolveExerciseNameForRecap(exerciseId, getExerciseNameById) {
+  const idStr = String(exerciseId || '').trim();
+  if (!idStr) return '';
+  if (EXERCISE_DB_NAME_BY_ID[idStr]) return EXERCISE_DB_NAME_BY_ID[idStr];
+  if (typeof getExerciseNameById === 'function') {
+    const byGetter = getExerciseNameById(idStr);
+    if (byGetter && !/^Exercice\s+/i.test(String(byGetter))) return byGetter;
+  }
+  return '';
+}
 
 const ALL_GROUPS = [
   MuscleGroups.CHEST,
@@ -254,11 +279,9 @@ export function computeRecapMuscleState(allData, period, getExerciseNameById, re
     if (!isDateInRecapWindow(dateStr, window)) return;
 
     const idNum = parseInt(idStr, 10);
-    const name =
-      typeof getExerciseNameById === 'function' && !Number.isNaN(idNum)
-        ? getExerciseNameById(idStr)
-        : '';
-    const exLike = { id: idNum, name, nom: name, series: '', type: 'standard' };
+    const normalizedId = Number.isNaN(idNum) ? idStr : idNum;
+    const name = resolveExerciseNameForRecap(idStr, getExerciseNameById);
+    const exLike = { id: normalizedId, name, nom: name, series: '', type: 'standard' };
     const coeff = resolveExerciseIntensityCoeff(exLike, userCoeffs);
     const contrib = computeStrengthCalendarContribution(exLike, r, coeff);
     const rInt = Math.max(0, Math.floor(Number(r) || 0));

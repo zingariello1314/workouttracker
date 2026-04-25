@@ -8,6 +8,8 @@
     "jumprope": "Jump Rope",
     "gainage": "Core / plank",
     "running": "Running",
+    "walking": "Walking",
+    "performance": "Performance",
     "calendar": "Calendar"
   },
   "subViews": {

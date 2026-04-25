@@ -190,6 +190,8 @@ export const calculateSportXP = (workoutData, garminData, enduranceData) => {
   let totalXP = 0;
   const breakdown = {
     reps: 0,
+    weightedRepsLoad: 0,
+    weightedRepsXp: 0,
     exercises: 0,
     calories: 0,
     steps: 0,
@@ -214,13 +216,49 @@ export const calculateSportXP = (workoutData, garminData, enduranceData) => {
   if (!workoutData) {
     return { totalXP: 0, breakdown };
   }
-  
-  // 1. XP des répétitions : 0.1 XP par répétition
-  const totalReps = Object.values(workoutData.reps || {}).reduce((sum, reps) => {
-    return sum + (parseInt(reps) || 0);
-  }, 0);
+
+  const extractExerciseIdFromStorageKey = (key) => {
+    const k = String(key || '');
+    if (!k) return '';
+    const firstUnderscore = k.indexOf('_');
+    if (firstUnderscore < 0) return k;
+    return k
+      .slice(firstUnderscore + 1)
+      .replace(/_semaineA$|_semaineB$/, '');
+  };
+
+  // 1. XP des répétitions pondéré difficulté + charge
+  const repsMap = workoutData.reps || {};
+  const checkedMap = workoutData.checkedExercises || {};
+  const coeffs = workoutData.exerciseIntensityCoeffs || {};
+  const weights = workoutData.exerciseWeights || {};
+  let totalReps = 0;
+  let weightedLoad = 0;
+
+  Object.entries(checkedMap).forEach(([key, isChecked]) => {
+    if (!isChecked) return;
+    const reps = parseInt(repsMap[key], 10) || 0;
+    if (reps <= 0) return;
+    totalReps += reps;
+
+    const exerciseId = extractExerciseIdFromStorageKey(key);
+    const coeffRaw = Number(coeffs[String(exerciseId)] ?? coeffs[String(key)] ?? 1);
+    const coeff = Number.isFinite(coeffRaw) && coeffRaw > 0 ? coeffRaw : 1;
+
+    const weightRaw = String(weights[key] ?? '').replace(',', '.');
+    const weightKg = parseFloat(weightRaw);
+    // Bonus charge progressif: +0% à 0kg, cap à +150% vers ~150kg
+    const weightMultiplier = Number.isFinite(weightKg) && weightKg > 0
+      ? 1 + Math.min(1.5, weightKg / 100)
+      : 1;
+
+    weightedLoad += reps * coeff * weightMultiplier;
+  });
+
   breakdown.reps = totalReps;
-  totalXP += Math.round(totalReps * 0.1);
+  breakdown.weightedRepsLoad = Math.round(weightedLoad * 100) / 100;
+  breakdown.weightedRepsXp = Math.round(weightedLoad * 0.1);
+  totalXP += breakdown.weightedRepsXp;
   
   // 2. XP des exercices cochés : 5 XP par exercice complété
   const checkedExercises = Object.values(workoutData.checkedExercises || {}).filter(v => v === true).length;
@@ -461,6 +499,8 @@ export const calculateXPForAllCategories = (data) => {
         lastCalculated: new Date().toISOString(),
         breakdown: data.sport?.breakdown || {
           reps: 0,
+          weightedRepsLoad: 0,
+          weightedRepsXp: 0,
           exercises: 0,
           calories: 0,
           steps: 0,

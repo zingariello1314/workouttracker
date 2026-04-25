@@ -9,6 +9,7 @@
     "gainage": "Gainage",
     "running": "Course",
     "walking": "Marche",
+    "performance": "Performances",
     "calendar": "Calendrier"
   },
   "subViews": {

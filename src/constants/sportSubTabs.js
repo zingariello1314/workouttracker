@@ -14,6 +14,7 @@ export const SPORT_SUB_TAB_IDS = [
   'endurance',
   'calendar',
   'charts',
+  'performance-challenges',
   /** Statistiques + prédictions + équilibre IA + historique (hub unique) */
   'sport-analytics',
   'garmin',

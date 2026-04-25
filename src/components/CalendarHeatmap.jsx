@@ -21,7 +21,7 @@ import { workoutProgram } from '../data/workoutProgram';
 import { calculateAutoReps } from '../utils/exerciseCalculations';
 import Input, { Checkbox } from './ui/Input';
 import Button from './ui/Button';
-import { Check, Save, Plus, X } from 'lucide-react';
+import { Check, Save, Plus, X, Trash2 } from 'lucide-react';
 import AddExceptionalExerciseModal from './modals/AddExceptionalExerciseModal';
 import {
   calculateDayIntensityWithGarmin,
@@ -1088,6 +1088,8 @@ const CalendarHeatmap = ({
     let completedExercises = 0;
     let totalPlannedExercises = exercisesList.length;
     let exercisesReps = 0; // Pour debug : somme des reps des exercices classiques
+    const plannedResolvedKeys = new Set();
+    const adHocCompletedExercises = [];
     
     // ✅ ÉTAPE 1 : Calculer les répétitions des exercices classiques COCHÉS
     // Seulement les exercices avec checkedExercises = true ET reps > 0
@@ -1098,6 +1100,7 @@ const CalendarHeatmap = ({
       const baseKey = `${dateStr}_${exercise.id}`;
       const finalKey =
         resolveBestRepsStorageKey(currentData, uniquePossibleKeys) || baseKey;
+      plannedResolvedKeys.add(finalKey);
       
       const rawReps = currentData?.reps?.[finalKey] || 0;
       const isCompleted = currentData?.checkedExercises?.[finalKey] || false;
@@ -1137,6 +1140,57 @@ const CalendarHeatmap = ({
           completedExercises++;
         }
       }
+    });
+
+    // ✅ NOUVEAU : inclure les exos enregistrés hors programme (ex: max saisi depuis Défis/Performance)
+    // pour que le calendrier affiche bien reps + exo du jour même si non planifié.
+    const checkedMap = currentData?.checkedExercises || {};
+    const repsMap = currentData?.reps || {};
+    Object.entries(checkedMap).forEach(([key, isCompleted]) => {
+      if (!isCompleted) return;
+      if (!String(key).startsWith(`${dateStr}_`)) return;
+      if (plannedResolvedKeys.has(key)) return;
+      if (String(key).includes('_complementary_')) return; // déjà traité via enduranceData
+
+      const rawReps = repsMap[key];
+      const repsValidation = validateNumericValue(rawReps, `getIntensityForDate.${dateStr}.adhoc.${key}`, false);
+      const reps = repsValidation.normalizedValue;
+      if (!(reps > 0)) return;
+
+      const rawId = String(key).slice(`${dateStr}_`.length).replace(/_semaineA$|_semaineB$/, '');
+      const exerciseName = getExerciseNameById?.(rawId) || rawId;
+
+      completedExercises++;
+      exercisesReps += reps;
+      totalReps += reps;
+
+      const coeff = resolveExerciseIntensityCoeff(
+        { id: rawId, name: exerciseName, series: '', type: 'standard' },
+        currentData?.exerciseIntensityCoeffs || {}
+      );
+      const usesLoad = exerciseUsesExternalLoad({ name: exerciseName, materiel: '', equipment: '' });
+      const wRaw = weightsStore[key];
+      const wKg = parseFloat(String(wRaw ?? '').replace(',', '.'));
+      const medianKg = computeMedianWeightKgForExercise(weightsStore, rawId);
+      const wMult = computeExternalLoadMultiplier(usesLoad, wKg, medianKg);
+      strengthLoad += computeStrengthCalendarContribution(
+        { id: rawId, name: exerciseName, nom: exerciseName, series: '', type: 'standard' },
+        reps,
+        coeff,
+        wMult
+      );
+
+      adHocCompletedExercises.push({
+        name: exerciseName,
+        reps,
+        exerciseId: rawId,
+        series: '',
+        type: 'standard',
+        materiel: '',
+        programName: 'Performance',
+        programId: 'performance',
+        _storageKey: key
+      });
     });
 
     // ✅ ÉTAPE 2 : Ajouter les reps d'endurance (pompes, boxe, défis complétés)
@@ -1741,7 +1795,7 @@ const CalendarHeatmap = ({
       trainingLoad: strengthLoad + enduranceLoadForCalendar,
       strengthLoad,
       duration: realDuration,
-      exerciseCount: totalPlannedExercises,
+      exerciseCount: totalPlannedExercises + adHocCompletedExercises.length,
       completedCount: completedExercises,
       intensityScore,
       completionRate: Math.round(completionRate * 100),
@@ -1756,8 +1810,9 @@ const CalendarHeatmap = ({
       weightedFeedbackScore10: computeSessionFeedbackWeightedScore10(fbRaw),
       // ✅ CORRECTION : Utiliser la même logique que pour le calcul du total
       // (chercher les variantes _semaineA, _semaineB, et vérifier reps > 0)
-      session: completedExercises > 0 ? { 
-        exercises: exercisesList
+      session: completedExercises > 0 ? {
+        exercises: [
+          ...exercisesList
           .filter(ex => {
             const keys = collectCalendarRepKeysForExercise(dateStr, ex);
             const actualKey =
@@ -1779,9 +1834,12 @@ const CalendarHeatmap = ({
               type: ex.type || '',
               materiel: ex.materiel || '',
               programName: ex.programName || 'Programme inconnu',
-              programId: ex.programId
+              programId: ex.programId,
+              _storageKey: finalKey
             };
-          })
+          }),
+          ...adHocCompletedExercises
+        ]
       } : null
     };
     
@@ -1796,6 +1854,49 @@ const CalendarHeatmap = ({
     }
     
     return result;
+  };
+
+  const handleDeleteExerciseRecordFromCalendar = async (exercise) => {
+    if (!selectedDate?.date || !exercise) return;
+    const dateStr = getDateStr(selectedDate.date);
+    const fallbackExerciseId = exercise.exerciseId ?? exercise.id;
+    const storageKeyRaw = exercise._storageKey || `${dateStr}_${fallbackExerciseId}`;
+    const storageKey = String(storageKeyRaw || '').trim();
+    if (!storageKey || !storageKey.startsWith(`${dateStr}_`)) return;
+
+    try {
+      const latestData = getCurrentData();
+      const nextChecked = { ...(latestData?.checkedExercises || {}) };
+      const nextReps = { ...(latestData?.reps || {}) };
+      const nextWeights = { ...(latestData?.exerciseWeights || {}) };
+
+      delete nextChecked[storageKey];
+      delete nextReps[storageKey];
+      delete nextWeights[storageKey];
+
+      await updateData({
+        ...latestData,
+        checkedExercises: nextChecked,
+        reps: nextReps,
+        exerciseWeights: nextWeights
+      });
+
+      delete intensityCache.current[dateStr];
+      Object.keys(intensityCache.current)
+        .filter((key) => key.startsWith(dateStr))
+        .forEach((key) => delete intensityCache.current[key]);
+
+      setDataUpdateTrigger((p) => p + 1);
+      const updatedDay = {
+        date: selectedDate.date,
+        intensity: getIntensityForDate(selectedDate.date)
+      };
+      setSelectedDate(updatedDay);
+      showSuccess(t('calendar.heatmap.dayDetails.exerciseDeleteSuccess', 'Enregistrement supprimé du calendrier'));
+    } catch (error) {
+      console.error('[CalendarHeatmap] Erreur suppression enregistrement exercice:', error);
+      showError(t('calendar.heatmap.dayDetails.exerciseDeleteError', 'Impossible de supprimer cet enregistrement'));
+    }
   };
 
   // Calcul des streaks
@@ -4775,7 +4876,18 @@ const CalendarHeatmap = ({
                               <LoadDifficultyStars coeff={loadCoeff} className="scale-90" />
                             </div>
                           </div>
-                          <span className="text-white font-medium shrink-0">{exercise.reps} {t('calendar.heatmap.dayDetails.reps')}</span>
+                          <div className="flex items-center gap-2 shrink-0">
+                            <span className="text-white font-medium">{exercise.reps} {t('calendar.heatmap.dayDetails.reps')}</span>
+                            <button
+                              type="button"
+                              onClick={() => handleDeleteExerciseRecordFromCalendar(exercise)}
+                              className="inline-flex items-center gap-1 rounded border border-rose-500/45 bg-rose-950/20 px-2 py-1 text-[11px] text-rose-200 hover:bg-rose-900/30"
+                              title={t('calendar.heatmap.dayDetails.deleteExerciseRecord', 'Supprimer cet enregistrement')}
+                            >
+                              <Trash2 size={12} />
+                              {t('calendar.heatmap.dayDetails.deleteShort', 'Supprimer')}
+                            </button>
+                          </div>
                         </div>
                         {programName && (
                           <div className="text-xs text-slate-400 flex items-center gap-1">

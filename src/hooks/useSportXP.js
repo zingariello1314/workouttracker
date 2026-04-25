@@ -9,6 +9,8 @@ import { calculateSportXP } from '../services/xp/xpCalculations';
 
 const DEFAULT_BREAKDOWN = {
   reps: 0,
+  weightedRepsLoad: 0,
+  weightedRepsXp: 0,
   exercises: 0,
   calories: 0,
   steps: 0,
@@ -84,6 +86,10 @@ export const useSportXP = () => {
     const totalReps = Object.values(workoutData.reps || {}).reduce((sum, reps) => {
       return sum + (parseInt(reps) || 0);
     }, 0);
+    const coeffs = Object.values(workoutData.exerciseIntensityCoeffs || {});
+    const coeffsChecksum = coeffs.reduce((sum, value) => sum + (Number(value) || 0), 0);
+    const weights = Object.values(workoutData.exerciseWeights || {});
+    const weightsChecksum = weights.reduce((sum, value) => sum + (Number(String(value).replace(',', '.')) || 0), 0);
     const checkedExercises = Object.values(workoutData.checkedExercises || {}).filter(v => v === true).length;
     const sessionsWithFeedback = workoutData.sessionFeedbacks ? Object.keys(workoutData.sessionFeedbacks).length : 0;
 
@@ -129,6 +135,10 @@ export const useSportXP = () => {
 
     const signature = [
       totalReps,
+      coeffs.length,
+      Math.round(coeffsChecksum * 1000),
+      weights.length,
+      Math.round(weightsChecksum * 1000),
       checkedExercises,
       sessionsWithFeedback,
       totalCalories,

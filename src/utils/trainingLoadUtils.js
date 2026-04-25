@@ -390,18 +390,21 @@ export function getEnduranceLoadForDate(dateStr, allData) {
 }
 
 /**
- * Agrège les clés reps par (date, id d'exercice numérique) en prenant la meilleure entrée cochée (même logique que variante A/B).
+ * Agrège les clés reps par (date, id d'exercice) en prenant la meilleure entrée cochée
+ * (même logique que variante A/B). Supporte les IDs numériques et `db_*`.
  */
 export function aggregateCheckedRepsByDateAndExerciseId(reps, checked) {
   const best = new Map();
   const repKeys = Object.keys(reps || {});
 
   repKeys.forEach((key) => {
-    const m = key.match(/^(\d{4}-\d{2}-\d{2})_(\d+)(?:_(semaineA|semaineB))?$/);
+    const m = key.match(/^(\d{4}-\d{2}-\d{2})_(.+)$/);
     if (!m) return;
 
     const dateStr = m[1];
-    const exerciseId = m[2];
+    let exerciseId = m[2];
+    exerciseId = exerciseId.replace(/_(semaineA|semaineB)$/, '');
+    if (!exerciseId || exerciseId.startsWith('complementary_')) return;
     const gkey = `${dateStr}::${exerciseId}`;
 
     const r = parseInt(reps[key], 10) || 0;
@@ -434,16 +437,14 @@ export function buildDailyTrainingLoadByDate(allData, getExerciseNameById) {
     const dateStr = gkey.slice(0, sep);
     const idStr = gkey.slice(sep + 2);
     const idNum = parseInt(idStr, 10);
-    const name =
-      typeof getExerciseNameById === 'function' && !Number.isNaN(idNum)
-        ? getExerciseNameById(idStr)
-        : '';
+    const name = typeof getExerciseNameById === 'function' ? (getExerciseNameById(idStr) || '') : '';
+    const normalizedId = Number.isNaN(idNum) ? idStr : idNum;
     const coeff = resolveExerciseIntensityCoeff(
-      { id: idNum, name, nom: name, series: '', type: 'standard' },
+      { id: normalizedId, name, nom: name, series: '', type: 'standard' },
       userCoeffs
     );
     const contrib = computeStrengthCalendarContribution(
-      { id: idNum, name, nom: name, series: '', type: 'standard' },
+      { id: normalizedId, name, nom: name, series: '', type: 'standard' },
       r,
       coeff
     );

@@ -20,7 +20,9 @@ const ExerciseCard = ({
   compact = false,
   onOpenDetail,
   effectiveLoadCoeff,
-  showProgramVolume = true
+  showProgramVolume = true,
+  hasRecordedMax = false,
+  maxRecord = null
 }) => {
   const t = useTranslation();
   const seriesSummary = useMemo(() => summarizeExerciseSeries(exercise), [exercise]);
@@ -303,6 +305,11 @@ const ExerciseCard = ({
               {getDifficultyIcon(exercise.difficulty)}
             </Badge>
           )}
+          {hasRecordedMax && (
+            <Badge className="border border-emerald-500/45 bg-emerald-950/30 text-emerald-200">
+              Max enregistré
+            </Badge>
+          )}
         </div>
       </CardHeader>
 
@@ -334,6 +341,12 @@ const ExerciseCard = ({
               <span className="text-right text-teal-100">
                 {exercise.equipment ? getEquipmentName(exercise.equipment) : exercise.materiel}
               </span>
+            </div>
+          )}
+
+          {hasRecordedMax && maxRecord && (
+            <div className="rounded-lg border border-emerald-500/35 bg-emerald-950/20 p-2 text-xs text-emerald-100">
+              Dernier max: {new Date(maxRecord.recordedAt).toLocaleDateString('fr-FR')}
             </div>
           )}
 

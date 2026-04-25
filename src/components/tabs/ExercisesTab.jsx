@@ -33,6 +33,15 @@ const ExercisesTab = () => {
   const isGuest = !isAuthenticated;
   const isStandardUser = isAuthenticated && !isAdmin;
   const intensityCoeffs = data?.exerciseIntensityCoeffs || {};
+  const maxRecordsByExerciseId = useMemo(() => {
+    const records = Array.isArray(data?.exerciseMaxRecords) ? data.exerciseMaxRecords : [];
+    const map = new Map();
+    records.forEach((record) => {
+      if (!record?.exerciseId) return;
+      map.set(String(record.exerciseId), record);
+    });
+    return map;
+  }, [data?.exerciseMaxRecords]);
   const [detailExercise, setDetailExercise] = useState(null);
 
   useEffect(() => {
@@ -768,6 +777,8 @@ const ExercisesTab = () => {
                     onOpenDetail={setDetailExercise}
                     effectiveLoadCoeff={resolveExerciseIntensityCoeff(exercise, intensityCoeffs)}
                     showProgramVolume={isAdmin}
+                    hasRecordedMax={maxRecordsByExerciseId.has(String(exercise.id))}
+                    maxRecord={maxRecordsByExerciseId.get(String(exercise.id)) || null}
                   />
                 ))}
               </div>

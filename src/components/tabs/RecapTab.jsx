@@ -16,6 +16,7 @@ import GarminWalkingStatsCard from '../garmin/GarminWalkingStatsCard';
 import RecapStrengthStatsCard from '../sport/recap/RecapStrengthStatsCard';
 import RecapEnduranceTrophiesCompact from '../sport/recap/RecapEnduranceTrophiesCompact';
 import { RECAP_VIEW_PERIODS } from '../../utils/sport/recapViewPeriods';
+import { buildPerformanceScore } from '../../utils/exercisePerformanceUtils';
 
 const PERIOD_STORAGE_KEY = 'sport.recap.periodView';
 
@@ -73,6 +74,100 @@ const RecapTab = () => {
       gainage: Array.isArray(src.gainage) ? src.gainage : []
     };
   }, [data, getCurrentData]);
+
+  const performanceRecap = useMemo(() => {
+    const snapshot = getCurrentData();
+    const records = Array.isArray(snapshot?.exerciseMaxRecords) ? snapshot.exerciseMaxRecords : [];
+    const history = Array.isArray(snapshot?.exerciseMaxHistory) ? snapshot.exerciseMaxHistory : [];
+    const staleCount = records.filter((r) => {
+      const d = r?.recordedAt ? new Date(r.recordedAt) : null;
+      if (!d || Number.isNaN(d.getTime())) return false;
+      const days = Math.floor((Date.now() - d.getTime()) / (1000 * 60 * 60 * 24));
+      return days > 45;
+    }).length;
+    const byDiscipline = records.reduce((acc, r) => {
+      const key = String(r.trainingDiscipline || 'general');
+      acc[key] = (acc[key] || 0) + 1;
+      return acc;
+    }, {});
+    const latest = history
+      .slice()
+      .sort((a, b) => String(b.recordedAt || '').localeCompare(String(a.recordedAt || '')))
+      .slice(0, 5);
+
+    const top10ByCurrentMax = records
+      .slice()
+      .sort((a, b) => buildPerformanceScore(b) - buildPerformanceScore(a))
+      .slice(0, 10);
+
+    const progressionByExercise = new Map();
+    history.forEach((entry) => {
+      const id = String(entry?.exerciseId || '');
+      if (!id) return;
+      if (!progressionByExercise.has(id)) progressionByExercise.set(id, []);
+      progressionByExercise.get(id).push(entry);
+    });
+
+    let bestProgression = null;
+    progressionByExercise.forEach((entries, exerciseId) => {
+      const sorted = entries
+        .slice()
+        .sort((a, b) => String(a.recordedAt || '').localeCompare(String(b.recordedAt || '')));
+      if (sorted.length < 2) return;
+      const first = sorted[0];
+      const last = sorted[sorted.length - 1];
+      const firstScore = buildPerformanceScore(first);
+      const lastScore = buildPerformanceScore(last);
+      const delta = lastScore - firstScore;
+      if (!(delta > 0)) return;
+      const pct = firstScore > 0 ? (delta / firstScore) * 100 : 100;
+      const candidate = {
+        exerciseId,
+        exerciseName: last.exerciseName || first.exerciseName || exerciseId,
+        first,
+        last,
+        delta,
+        pct
+      };
+      if (!bestProgression || candidate.pct > bestProgression.pct) {
+        bestProgression = candidate;
+      }
+    });
+
+    const bestRepsRecord = history
+      .filter((e) => Number(e?.reps) > 0)
+      .slice()
+      .sort((a, b) => Number(b.reps || 0) - Number(a.reps || 0))[0] || null;
+
+    const bestWeightRecord = history
+      .filter((e) => Number(e?.weightKg) > 0)
+      .slice()
+      .sort((a, b) => Number(b.weightKg || 0) - Number(a.weightKg || 0))[0] || null;
+
+    const bestOverallRecord = history
+      .slice()
+      .sort((a, b) => buildPerformanceScore(b) - buildPerformanceScore(a))[0] || null;
+
+    return {
+      totalRecords: records.length,
+      totalTests: history.length,
+      staleCount,
+      byDiscipline,
+      latest,
+      top10ByCurrentMax,
+      bestProgression,
+      bestRepsRecord,
+      bestWeightRecord,
+      bestOverallRecord
+    };
+  }, [data, getCurrentData]);
+
+  const formatPerfValue = (entry) => {
+    if (!entry) return '-';
+    if (entry.performanceType === 'weight_reps') return `${entry.weightKg} kg × ${entry.reps} reps`;
+    if (entry.performanceType === 'duration') return `${entry.durationSec} sec`;
+    return `${entry.reps} reps`;
+  };
 
   return (
     <div className="max-w-6xl mx-auto px-4 py-6 text-slate-100">
@@ -172,6 +267,137 @@ const RecapTab = () => {
       </div>
 
       <div className="mt-10 space-y-10">
+        <section className="rounded-xl border-2 border-[#0F4C5C]/70 bg-black p-4">
+          <div className="flex items-start justify-between gap-3 mb-3">
+            <div>
+              <h2 className="text-sm font-semibold text-teal-100">Performances & max enregistrés</h2>
+              <p className="text-xs text-teal-700 mt-1">
+                Suivi global de tes records depuis Défis et Aujourd&apos;hui.
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={() => requestOpenEnduranceSubTab?.('performance')}
+              className="rounded-lg border border-[#0F5C45]/55 bg-[#0F5C45]/25 px-3 py-1.5 text-xs font-medium text-white"
+            >
+              Ouvrir Défis &gt; Performances
+            </button>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-3 mb-4">
+            <div className="rounded-lg border border-[#0F4C5C]/45 bg-black p-3">
+              <div className="text-xs text-slate-400">Max</div>
+              <div className="text-xl font-bold text-white">{performanceRecap.totalRecords}</div>
+            </div>
+            <div className="rounded-lg border border-[#0F4C5C]/45 bg-black p-3">
+              <div className="text-xs text-slate-400">Tests</div>
+              <div className="text-xl font-bold text-white">{performanceRecap.totalTests}</div>
+            </div>
+            <div className="rounded-lg border border-[#0F4C5C]/45 bg-black p-3">
+              <div className="text-xs text-slate-400">À retester</div>
+              <div className="text-xl font-bold text-amber-300">{performanceRecap.staleCount}</div>
+            </div>
+            <div className="rounded-lg border border-[#0F4C5C]/45 bg-black p-3">
+              <div className="text-xs text-slate-400">Disciplines suivies</div>
+              <div className="text-xl font-bold text-white">{Object.keys(performanceRecap.byDiscipline).length}</div>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-4">
+            <div className="rounded-lg border border-[#0F4C5C]/45 bg-black p-3">
+              <div className="text-xs text-slate-400">Meilleure évolution</div>
+              {performanceRecap.bestProgression ? (
+                <>
+                  <div className="text-sm font-semibold text-white mt-1">
+                    {performanceRecap.bestProgression.exerciseName}
+                  </div>
+                  <div className="text-xs text-emerald-300">
+                    +{Math.round(performanceRecap.bestProgression.pct)}%
+                  </div>
+                </>
+              ) : (
+                <div className="text-sm text-slate-500 mt-1">Pas assez d’historique</div>
+              )}
+            </div>
+            <div className="rounded-lg border border-[#0F4C5C]/45 bg-black p-3">
+              <div className="text-xs text-slate-400">Record reps</div>
+              {performanceRecap.bestRepsRecord ? (
+                <>
+                  <div className="text-sm font-semibold text-white mt-1">
+                    {performanceRecap.bestRepsRecord.exerciseName}
+                  </div>
+                  <div className="text-xs text-sky-300">
+                    {performanceRecap.bestRepsRecord.reps} reps
+                  </div>
+                </>
+              ) : (
+                <div className="text-sm text-slate-500 mt-1">—</div>
+              )}
+            </div>
+            <div className="rounded-lg border border-[#0F4C5C]/45 bg-black p-3">
+              <div className="text-xs text-slate-400">Record poids</div>
+              {performanceRecap.bestWeightRecord ? (
+                <>
+                  <div className="text-sm font-semibold text-white mt-1">
+                    {performanceRecap.bestWeightRecord.exerciseName}
+                  </div>
+                  <div className="text-xs text-fuchsia-300">
+                    {performanceRecap.bestWeightRecord.weightKg} kg
+                  </div>
+                </>
+              ) : (
+                <div className="text-sm text-slate-500 mt-1">—</div>
+              )}
+            </div>
+          </div>
+
+          {performanceRecap.bestOverallRecord ? (
+            <div className="rounded-lg border border-[#0F4C5C]/35 bg-black px-3 py-2 text-sm mb-4">
+              <span className="text-slate-400">Meilleure perf globale : </span>
+              <span className="text-white font-medium">
+                {performanceRecap.bestOverallRecord.exerciseName}
+              </span>
+              <span className="text-slate-300"> · {formatPerfValue(performanceRecap.bestOverallRecord)}</span>
+            </div>
+          ) : null}
+
+          <div className="rounded-lg border border-[#0F4C5C]/35 bg-black p-3 mb-4">
+            <div className="text-sm font-semibold text-white mb-2">Top 10 exos avec max enregistré</div>
+            {performanceRecap.top10ByCurrentMax.length > 0 ? (
+              <div className="space-y-1.5">
+                {performanceRecap.top10ByCurrentMax.map((entry, idx) => (
+                  <div
+                    key={`top-max-${entry.id || entry.exerciseId || idx}`}
+                    className="flex items-center justify-between gap-2 text-xs"
+                  >
+                    <span className="text-slate-300 truncate">
+                      #{idx + 1} · {entry.exerciseName}
+                    </span>
+                    <span className="text-white font-medium shrink-0">{formatPerfValue(entry)}</span>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className="text-sm text-slate-500">Aucun max enregistré pour le moment.</p>
+            )}
+          </div>
+
+          {performanceRecap.latest.length > 0 ? (
+            <div className="space-y-2">
+              {performanceRecap.latest.map((entry) => (
+                <div key={entry.id} className="rounded-lg border border-[#0F4C5C]/35 bg-black px-3 py-2 text-sm">
+                  <div className="font-medium text-white">{entry.exerciseName}</div>
+                  <div className="text-slate-300">{formatPerfValue(entry)}</div>
+                  <div className="text-xs text-slate-500">
+                    {new Date(entry.recordedAt).toLocaleDateString('fr-FR')} · {entry.trainingDiscipline}
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <p className="text-sm text-slate-500">Aucun max enregistré pour le moment.</p>
+          )}
+        </section>
         <RecapMuscleZonesPanel recapState={recapState} t={t} />
         <RecapEnduranceDigestPanel digest={enduranceDigest} t={t} />
       </div>
