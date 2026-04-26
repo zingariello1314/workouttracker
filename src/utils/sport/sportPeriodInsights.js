@@ -1,6 +1,10 @@
 import { normalizeDateString, parseDurationToMinutes } from '../calendarUtils';
 import { isDateInRecapWindow } from './recapMuscleLoadEngine';
-import { isGarminWalkingLikeActivity, isGarminRunningLikeActivity } from '../garminRunningLaps';
+import {
+  isGarminWalkingLikeActivity,
+  isGarminRunningLikeActivity,
+  shouldExcludeStoredGarminRunningSession
+} from '../garminRunningLaps';
 import { isWalkingLikeRunningSession } from '../runningSessionMovementKind';
 import { aggregateCheckedRepsByDateAndExerciseId } from '../trainingLoadUtils';
 import { buildAllTimeWalkingFromSteps } from './walkingFromSteps';
@@ -222,7 +226,7 @@ export function summarizeCardioLoadInWindow(activities = {}, enduranceData = {},
   const runningSessions = uniqueSessionsByIdOrSignature([
     ...(Array.isArray(enduranceData?.sessions?.running) ? enduranceData.sessions.running : []),
     ...(Array.isArray(enduranceData?.runningSessions) ? enduranceData.runningSessions : [])
-  ]);
+  ]).filter((s) => !shouldExcludeStoredGarminRunningSession(s));
   const runningByGarminId = new Map();
   runningSessions.forEach((s) => {
     const dk = normalizedSessionDate(s);

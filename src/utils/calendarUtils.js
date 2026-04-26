@@ -1,3 +1,5 @@
+import { shouldExcludeStoredGarminRunningSession } from './garminRunningLaps';
+
 /**
  * Utilitaires pour l'onglet Calendrier
  * 
@@ -540,5 +542,63 @@ export function calculateTimeIntensityLevel(duration, thresholds) {
   if (duration <= thresholds[2]) return 2; // Modéré (jaune)
   if (duration <= thresholds[3]) return 3; // Intense (orange)
   return 4; // Extrême (rouge)
+}
+
+/**
+ * Sessions d'endurance (enduranceData.sessions) pour une date calendrier YYYY-MM-DD.
+ * Utilisé par le panneau « détail jour » pour lister les séances (course, natation, etc.).
+ *
+ * @param {object|null} allData
+ * @param {string} dateStr
+ * @returns {{ rows: Array<{ activityType: string, session: object }>, runningDistanceKm: number, swimmingDistanceM: number }}
+ */
+export function collectEnduranceSessionsForCalendarDay(allData, dateStr) {
+  const sessionsMap = allData?.enduranceData?.sessions || {};
+  const rows = [];
+  let runningDistanceKm = 0;
+  let swimmingDistanceM = 0;
+
+  Object.entries(sessionsMap).forEach(([activityType, sessions]) => {
+    if (!Array.isArray(sessions)) return;
+    sessions.forEach((session) => {
+      if (isMockEnduranceSession(session)) return;
+      if (activityType === 'running' && shouldExcludeStoredGarminRunningSession(session)) return;
+      const dv = validateDate(session.date, `collectEnduranceSessionsForCalendarDay.${activityType}`);
+      if (!dv.normalizedDate || dv.normalizedDate !== dateStr) return;
+
+      rows.push({ activityType, session });
+
+      if (activityType === 'running') {
+        const km = parseFloat(String(session.distance ?? '').replace(',', '.')) || 0;
+        if (km > 0) runningDistanceKm += km;
+      }
+
+      if (activityType === 'swimming') {
+        if (Array.isArray(session.laps) && session.laps.length > 0) {
+          session.laps.forEach((lap) => {
+            const m = parseFloat(String(lap?.distance ?? '').replace(',', '.')) || 0;
+            if (m > 0) swimmingDistanceM += m;
+          });
+        } else {
+          const m = parseFloat(String(session.distance ?? '').replace(',', '.')) || 0;
+          if (m > 0) swimmingDistanceM += m;
+        }
+      }
+    });
+  });
+
+  rows.sort((a, b) => {
+    const ta = String(a.session?.time || '00:00:00');
+    const tb = String(b.session?.time || '00:00:00');
+    const c = ta.localeCompare(tb);
+    if (c !== 0) return c;
+    return String(a.session?.id ?? '').localeCompare(String(b.session?.id ?? ''));
+  });
+
+  return {
+    rows,
+    runningDistanceKm: Math.round(runningDistanceKm * 10) / 10,
+    swimmingDistanceM: Math.round(swimmingDistanceM * 10) / 10
+  };
 }
 

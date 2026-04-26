@@ -1,0 +1,98 @@
+{
+  "id": 21608803596,
+  "date": "2026-01-20 15:11:40",
+  "time": "",
+  "duration": 771,
+  "calories": {
+    "total": 67,
+    "resting": 16,
+    "active": 51
+  },
+  "avgHR": 111,
+  "maxHR": 130,
+  "minHR": 85,
+  "sweatLoss": 77,
+  "intensityMinutes": {
+    "moderate": 11,
+    "vigorous": null,
+    "total": 11
+  },
+  "startTimeLocal": "2026-01-20T16:11:40Z",
+  "startTimeGMT": "2026-01-20T15:11:40Z",
+  "location": {
+    "start": {
+      "lat": 44.79117192327976,
+      "lng": -0.6231328099966049
+    },
+    "end": {
+      "lat": 44.79114250279963,
+      "lng": -0.6233121827244759
+    }
+  },
+  "elevation": {
+    "gain": 30,
+    "loss": 30,
+    "max": 65.2,
+    "min": 26.2
+  },
+  "deviceInfo": {
+    "deviceId": "3502268277",
+    "deviceTypePk": 36869,
+    "deviceVersionPk": 996879
+  },
+  "trainingEffect": null,
+  "recoveryTime": null,
+  "vo2Max": null,
+  "trainingStatus": null,
+  "trainingLoad": null,
+  "performanceCondition": null,
+  "source": "garmin",
+  "distance": 0.2146,
+  "speed": 1.0,
+  "maxSpeed": 7.89,
+  "running": {
+    "lapCount": 3,
+    "laps": [
+      {
+        "index": 1,
+        "durationSeconds": 387,
+        "avgHR": 113,
+        "calories": 37,
+        "startTime": "2026-01-20T15:11:40.0",
+        "intervalTypeKey": "ACTIVE"
+      },
+      {
+        "index": 2,
+        "durationSeconds": 29,
+        "avgHR": 106,
+        "calories": 2,
+        "startTime": "2026-01-20T15:18:07.0",
+        "intervalTypeKey": "ACTIVE"
+      },
+      {
+        "index": 3,
+        "distanceMeters": 214.58,
+        "distanceKm": 0.2146,
+        "durationSeconds": 354,
+        "avgSpeedKmh": 2.18,
+        "avgHR": 109,
+        "calories": 28,
+        "elevationGain": 30,
+        "startTime": "2026-01-20T15:18:37.0",
+        "intervalTypeKey": "ACTIVE"
+      }
+    ],
+    "distanceMeters": 214.58,
+    "durationSeconds": 771,
+    "activeCaloriesDetail": 67
+  },
+  "jumps": null,
+  "connectIQ": null,
+  "activityName": "Pessac Cardio",
+  "activityType": "running",
+  "garminTypeKey": "indoor_cardio",
+  "type": "cardio",
+  "_classification_hash": "ef3c975c",
+  "_cached_at": 1777241112.2580347,
+  "_cache_version": 8
+}

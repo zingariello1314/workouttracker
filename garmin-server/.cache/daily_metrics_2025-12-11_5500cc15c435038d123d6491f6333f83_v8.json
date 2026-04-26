@@ -1,0 +1,120 @@
+{
+  "steps": 0,
+  "distance": 0,
+  "floors": 0,
+  "calories": {
+    "total": 1978,
+    "active": 0,
+    "resting": 1978
+  },
+  "heartRate": {
+    "resting": 67,
+    "max": 77,
+    "avg": 72,
+    "timeSeries": [
+      {
+        "timestamp": "2025-12-11T19:22:00Z",
+        "bpm": 72
+      }
+    ]
+  },
+  "respiration": {
+    "awake": {
+      "min": 16,
+      "max": 17,
+      "avg": 16.0
+    },
+    "sleep": {
+      "min": 16,
+      "max": 17,
+      "avg": null
+    }
+  },
+  "intensityMinutes": null,
+  "bodyBattery": {
+    "current": 40,
+    "timeSeries": [
+      {
+        "timestamp": "2025-12-11T19:18:00Z",
+        "value": 40
+      },
+      {
+        "timestamp": null,
+        "value": 100
+      }
+    ]
+  },
+  "stress": {
+    "average": 55,
+    "max": 72,
+    "timeSeries": []
+  },
+  "spo2": null,
+  "heartRateZones": {
+    "zone1": {
+      "time": 0,
+      "percentage": 0.0
+    },
+    "zone2": {
+      "time": 0,
+      "percentage": 0.0
+    },
+    "zone3": {
+      "time": 0,
+      "percentage": 0.0
+    },
+    "zone4": {
+      "time": 0,
+      "percentage": 0.0
+    },
+    "zone5": {
+      "time": 1,
+      "percentage": 100.0
+    },
+    "total": 1,
+    "zonesDefinition": {
+      "zone1": {
+        "min": 0,
+        "max": 46,
+        "name": "Zone 1 - \u00c9chauffement"
+      },
+      "zone2": {
+        "min": 46,
+        "max": 53,
+        "name": "Zone 2 - Br\u00fblage graisses"
+      },
+      "zone3": {
+        "min": 53,
+        "max": 61,
+        "name": "Zone 3 - A\u00e9robie"
+      },
+      "zone4": {
+        "min": 61,
+        "max": 69,
+        "name": "Zone 4 - Seuil"
+      },
+      "zone5": {
+        "min": 69,
+        "max": 77,
+        "name": "Zone 5 - Maximale"
+      }
+    },
+    "calculatedFromTimeSeries": true
+  },
+  "sleep": {
+    "duration": 0,
+    "quality": 0,
+    "deepSleep": null,
+    "lightSleep": null,
+    "remSleep": null,
+    "bedTime": null,
+    "wakeTime": null,
+    "awakenings": null,
+    "movements": null,
+    "phasesDetails": null
+  },
+  "date": "2025-12-11",
+  "_cached_at": 1777241094.1904204,
+  "_cache_version": 8,
+  "_raw_data_hash": "5500cc15c435038d123d6491f6333f83"
+}

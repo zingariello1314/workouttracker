@@ -5,7 +5,7 @@
  */
 
 import { parseDurationToMinutes } from './calendarUtils';
-import { isGarminWalkingLikeActivity } from './garminRunningLaps';
+import { isGarminWalkingLikeActivity, shouldExcludeStoredGarminRunningSession } from './garminRunningLaps';
 import { deriveCadenceSpmFromGarmin } from './runningGarminMetrics';
 
 function toNum(v, fb = 0) {
@@ -68,6 +68,7 @@ export function filterRunningSessionsExcludingWalk(sessions, garminById = null) 
   if (!Array.isArray(sessions)) return [];
   const get = garminById && typeof garminById.get === 'function' ? garminById.get.bind(garminById) : () => null;
   return sessions.filter((s) => {
+    if (shouldExcludeStoredGarminRunningSession(s)) return false;
     const key = s?.garminId != null ? String(s.garminId) : String(s?.id ?? '');
     const g = key && key !== 'undefined' ? get(key) : null;
     return !isWalkingLikeRunningSession(s, g);

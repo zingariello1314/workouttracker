@@ -208,6 +208,10 @@
     "displayLabels": {
       "otherCardio": "Cardio"
     },
+    "excludedCardioBannerTitle": "Séances Garmin « cardio » (hors course à pied)",
+    "excludedCardioBannerBody": "Elles ne comptent plus pour les défis, l’XP course ni la charge calendrier. Tu peux les supprimer pour les retirer définitivement de l’historique.",
+    "excludedCardioDelete": "Supprimer",
+    "excludedCardioRestore": "Restaurer",
     "badges": {
       "interval": "Fractionné / intervalles"
     },

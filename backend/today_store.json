@@ -1,0 +1,58 @@
+{
+  "days": {
+    "2026-04-26": {
+      "date": "2026-04-26",
+      "updatedAt": 1777238629876,
+      "exerciseStates": {
+        "501": {
+          "checked": true,
+          "reps": "12",
+          "weight": "",
+          "operationId": "sync_2026-04-26_501_1777238629496",
+          "updatedAt": 1777238629554
+        },
+        "502": {
+          "checked": true,
+          "reps": "44",
+          "weight": "",
+          "operationId": "sync_2026-04-26_502_1777238629496",
+          "updatedAt": 1777238629556
+        },
+        "504": {
+          "checked": true,
+          "reps": "50",
+          "weight": "",
+          "operationId": "sync_2026-04-26_504_1777238629497",
+          "updatedAt": 1777238629846
+        },
+        "506": {
+          "checked": false,
+          "reps": "",
+          "weight": "",
+          "operationId": "sync_2026-04-26_506_1777238629497",
+          "updatedAt": 1777238629867
+        },
+        "703": {
+          "checked": true,
+          "reps": "30",
+          "weight": "",
+          "operationId": "sync_2026-04-26_703_1777222258134",
+          "updatedAt": 1777222258502
+        },
+        "505": {
+          "checked": true,
+          "reps": "60",
+          "weight": "",
+          "operationId": "sync_2026-04-26_505_1777238629497",
+          "updatedAt": 1777238629858
+        }
+      },
+      "dailyVariations": {
+        "suppressedExercises": [],
+        "additionalExercises": []
+      },
+      "dayJustification": null,
+      "sessionFeedback": null
+    }
+  }
+}

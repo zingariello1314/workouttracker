@@ -1,0 +1,90 @@
+{
+  "id": 21258841472,
+  "date": "2025-12-14 15:40:40",
+  "time": "",
+  "duration": 315,
+  "calories": {
+    "total": 39,
+    "resting": 5,
+    "active": 34
+  },
+  "avgHR": 118,
+  "maxHR": 135,
+  "minHR": 95,
+  "sweatLoss": 31,
+  "intensityMinutes": {
+    "moderate": 3,
+    "vigorous": 1,
+    "total": 4
+  },
+  "startTimeLocal": "2025-12-14T16:40:40Z",
+  "startTimeGMT": "2025-12-14T15:40:40Z",
+  "location": null,
+  "elevation": null,
+  "deviceInfo": {
+    "deviceId": "3502268277",
+    "deviceTypePk": 36869,
+    "deviceVersionPk": 996879
+  },
+  "trainingEffect": null,
+  "recoveryTime": null,
+  "vo2Max": null,
+  "trainingStatus": null,
+  "trainingLoad": null,
+  "performanceCondition": null,
+  "source": "garmin",
+  "running": {
+    "lapCount": 5,
+    "laps": [
+      {
+        "index": 1,
+        "durationSeconds": 31,
+        "avgHR": 102,
+        "calories": 2,
+        "startTime": "2025-12-14T15:40:40.0",
+        "intervalTypeKey": "ACTIVE"
+      },
+      {
+        "index": 2,
+        "avgHR": 109,
+        "startTime": "2025-12-14T15:41:13.0",
+        "intervalTypeKey": "ACTIVE"
+      },
+      {
+        "index": 3,
+        "durationSeconds": 112,
+        "avgHR": 114,
+        "calories": 13,
+        "startTime": "2025-12-14T15:41:14.0",
+        "intervalTypeKey": "ACTIVE"
+      },
+      {
+        "index": 4,
+        "durationSeconds": 123,
+        "avgHR": 123,
+        "calories": 17,
+        "startTime": "2025-12-14T15:43:08.0",
+        "intervalTypeKey": "ACTIVE"
+      },
+      {
+        "index": 5,
+        "durationSeconds": 46,
+        "avgHR": 127,
+        "calories": 7,
+        "startTime": "2025-12-14T15:45:11.0",
+        "intervalTypeKey": "ACTIVE"
+      }
+    ],
+    "durationSeconds": 315,
+    "activeCaloriesDetail": 39
+  },
+  "jumps": null,
+  "connectIQ": null,
+  "activityName": "Cardio",
+  "activityType": "indoor_cardio",
+  "garminTypeKey": "indoor_cardio",
+  "type": "cardio",
+  "_classification_hash": "c5dd04fc",
+  "_cached_at": 1777241095.1205096,
+  "_cache_version": 8
+}

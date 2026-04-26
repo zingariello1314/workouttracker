@@ -16,7 +16,7 @@ import {
   evaluatePushupTrophies,
   computePushupTrophiesXpDetailed
 } from '../endurance/pushupTrophiesService';
-import { isGarminRunningLikeActivity } from '../../utils/garminRunningLaps';
+import { isGarminRunningLikeActivity, shouldExcludeStoredGarminRunningSession } from '../../utils/garminRunningLaps';
 import { averageCriteriaScore } from '../../utils/bookReadingRatings';
 import { calculateQuestXP } from '../../utils/questXpCore';
 import SessionAggregator from '../statistics/SessionAggregator.js';
@@ -193,10 +193,15 @@ export const calculateSportXP = (workoutData, garminData, enduranceData) => {
     weightedRepsLoad: 0,
     weightedRepsXp: 0,
     exercises: 0,
+    exercisesXp: 0,
     calories: 0,
+    caloriesXp: 0,
     steps: 0,
+    stepsXp: 0,
     challenges: 0,
+    challengesXp: 0,
     sessions: 0,
+    sessionsFeedbackXp: 0,
     runningTrophies: 0,
     runningTrophyTiers: 0,
     runningTrophiesUnlocked: 0,
@@ -263,7 +268,8 @@ export const calculateSportXP = (workoutData, garminData, enduranceData) => {
   // 2. XP des exercices cochés : 5 XP par exercice complété
   const checkedExercises = Object.values(workoutData.checkedExercises || {}).filter(v => v === true).length;
   breakdown.exercises = checkedExercises;
-  totalXP += checkedExercises * 5;
+  breakdown.exercisesXp = checkedExercises * 5;
+  totalXP += breakdown.exercisesXp;
   
   // 3. XP des calories (Garmin) : 0.5 XP par calorie active
   if (garminData?.dailyMetrics) {
@@ -274,7 +280,8 @@ export const calculateSportXP = (workoutData, garminData, enduranceData) => {
       }
     });
     breakdown.calories = totalCalories;
-    totalXP += Math.round(totalCalories * 0.5);
+    breakdown.caloriesXp = Math.round(totalCalories * 0.5);
+    totalXP += breakdown.caloriesXp;
   }
   
   // 4. XP des pas (Garmin) : 0.01 XP par pas
@@ -286,7 +293,8 @@ export const calculateSportXP = (workoutData, garminData, enduranceData) => {
       }
     });
     breakdown.steps = totalSteps;
-    totalXP += Math.round(totalSteps * 0.01);
+    breakdown.stepsXp = Math.round(totalSteps * 0.01);
+    totalXP += breakdown.stepsXp;
   }
   
   // 5. XP des défis d'endurance : 50 XP par défi validé
@@ -301,25 +309,31 @@ export const calculateSportXP = (workoutData, garminData, enduranceData) => {
     status: 'active'
   }));
 
-  const sessionValidations = Object.values(sessionsByType).reduce((sum, list) => {
+  const sessionValidations = Object.entries(sessionsByType).reduce((sum, [bucketType, list]) => {
     if (!Array.isArray(list)) return sum;
-    return sum + list.reduce((innerSum, session) => {
-      if (Array.isArray(session?.validatedChallenges) && session.validatedChallenges.length > 0) {
-        const uniqueIds = new Set(
-          session.validatedChallenges
-            .filter((id) => id !== null && id !== undefined)
-            .map((id) => String(id))
-        );
-        return innerSum + uniqueIds.size;
-      }
-      const activityType = session?.activityType;
-      if (!activityType) return innerSum;
-      const relatedPushupSessions = activityType === 'pushups' && Array.isArray(list) ? list : undefined;
-      const evaluation = evaluateChallenges(evaluationChallenges, session, activityType, {
-        relatedPushupSessions
-      });
-      return innerSum + (evaluation.validatedIds?.length || 0);
-    }, 0);
+    return (
+      sum +
+      list.reduce((innerSum, session) => {
+        const activityType = session?.activityType || bucketType;
+        if (activityType === 'running' && shouldExcludeStoredGarminRunningSession(session)) {
+          return innerSum;
+        }
+        if (Array.isArray(session?.validatedChallenges) && session.validatedChallenges.length > 0) {
+          const uniqueIds = new Set(
+            session.validatedChallenges
+              .filter((id) => id !== null && id !== undefined)
+              .map((id) => String(id))
+          );
+          return innerSum + uniqueIds.size;
+        }
+        if (!activityType) return innerSum;
+        const relatedPushupSessions = activityType === 'pushups' && Array.isArray(list) ? list : undefined;
+        const evaluation = evaluateChallenges(evaluationChallenges, session, activityType, {
+          relatedPushupSessions
+        });
+        return innerSum + (evaluation.validatedIds?.length || 0);
+      }, 0)
+    );
   }, 0);
   
   const completedChallenges = allChallenges.filter(c => c.status === 'completed').length;
@@ -327,16 +341,20 @@ export const calculateSportXP = (workoutData, garminData, enduranceData) => {
   const totalChallengeCompletions = sessionValidations > 0 ? sessionValidations : completedChallenges;
   
   breakdown.challenges = totalChallengeCompletions;
-  totalXP += totalChallengeCompletions * 50;
+  breakdown.challengesXp = totalChallengeCompletions * 50;
+  totalXP += breakdown.challengesXp;
   
   // 6. XP des sessions complètes : 25 XP par session avec feedback
   if (workoutData.sessionFeedbacks) {
     const sessionsWithFeedback = Object.keys(workoutData.sessionFeedbacks).length;
     breakdown.sessions = sessionsWithFeedback;
-    totalXP += sessionsWithFeedback * 25;
+    breakdown.sessionsFeedbackXp = sessionsWithFeedback * 25;
+    totalXP += breakdown.sessionsFeedbackXp;
   }
 
-  const runningSessions = Array.isArray(sessionsByType.running) ? sessionsByType.running : [];
+  const runningSessions = (Array.isArray(sessionsByType.running) ? sessionsByType.running : []).filter(
+    (r) => !shouldExcludeStoredGarminRunningSession(r)
+  );
   const runningTotalDistanceKm = runningSessions.reduce((acc, r) => acc + (Number(r?.distance) || 0), 0);
   breakdown.runningTotalDistanceKm = Math.round(runningTotalDistanceKm * 100) / 100;
   breakdown.runningSessionCount = runningSessions.length;
@@ -502,10 +520,15 @@ export const calculateXPForAllCategories = (data) => {
           weightedRepsLoad: 0,
           weightedRepsXp: 0,
           exercises: 0,
+          exercisesXp: 0,
           calories: 0,
+          caloriesXp: 0,
           steps: 0,
+          stepsXp: 0,
           challenges: 0,
+          challengesXp: 0,
           sessions: 0,
+          sessionsFeedbackXp: 0,
           runningTrophies: 0,
           runningTrophyTiers: 0,
           runningTrophiesUnlocked: 0,

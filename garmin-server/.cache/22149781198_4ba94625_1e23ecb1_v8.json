@@ -1,0 +1,150 @@
+{
+  "id": 22149781198,
+  "date": "2026-03-12 14:44:46",
+  "time": "",
+  "duration": 334,
+  "calories": {
+    "total": 40,
+    "resting": 5,
+    "active": 35
+  },
+  "avgHR": 124,
+  "maxHR": 145,
+  "minHR": 74,
+  "sweatLoss": 33,
+  "intensityMinutes": {
+    "moderate": 3,
+    "vigorous": 2,
+    "total": 5
+  },
+  "startTimeLocal": "2026-03-12T15:44:46Z",
+  "startTimeGMT": "2026-03-12T14:44:46Z",
+  "location": {
+    "start": {
+      "lat": 44.79095860384405,
+      "lng": -0.6206401158124208
+    },
+    "end": {
+      "lat": 44.79123353026807,
+      "lng": -0.6197010912001133
+    }
+  },
+  "elevation": {
+    "gain": null,
+    "loss": null,
+    "max": 35.32,
+    "min": 30.47
+  },
+  "deviceInfo": {
+    "deviceId": "3502268277",
+    "deviceTypePk": 36869,
+    "deviceVersionPk": 996879
+  },
+  "trainingEffect": null,
+  "recoveryTime": null,
+  "vo2Max": null,
+  "trainingStatus": null,
+  "trainingLoad": null,
+  "performanceCondition": null,
+  "source": "garmin",
+  "distance": 1.0409,
+  "speed": 11.2,
+  "maxSpeed": 21.9,
+  "running": {
+    "lapCount": 6,
+    "laps": [
+      {
+        "index": 1,
+        "distanceMeters": 287.46,
+        "distanceKm": 0.2875,
+        "durationSeconds": 60,
+        "avgSpeedKmh": 17.25,
+        "avgHR": 117,
+        "calories": 6,
+        "averageCadenceSpm": 164,
+        "averageStrideLengthMeters": 1.753,
+        "startTime": "2026-03-12T14:44:46.0",
+        "intervalTypeKey": "ACTIVE"
+      },
+      {
+        "index": 2,
+        "distanceMeters": 94.54,
+        "distanceKm": 0.0945,
+        "durationSeconds": 60,
+        "avgSpeedKmh": 5.67,
+        "avgHR": 122,
+        "calories": 6,
+        "averageCadenceSpm": 108,
+        "averageStrideLengthMeters": 0.869,
+        "startTime": "2026-03-12T14:45:46.0",
+        "intervalTypeKey": "REST"
+      },
+      {
+        "index": 3,
+        "distanceMeters": 276.82,
+        "distanceKm": 0.2768,
+        "durationSeconds": 60,
+        "avgSpeedKmh": 16.61,
+        "avgHR": 128,
+        "calories": 9,
+        "averageCadenceSpm": 172,
+        "averageStrideLengthMeters": 1.609,
+        "startTime": "2026-03-12T14:46:48.0",
+        "intervalTypeKey": "ACTIVE"
+      },
+      {
+        "index": 4,
+        "distanceMeters": 90.61,
+        "distanceKm": 0.0906,
+        "durationSeconds": 60,
+        "avgSpeedKmh": 5.44,
+        "avgHR": 125,
+        "calories": 6,
+        "averageCadenceSpm": 120,
+        "averageStrideLengthMeters": 0.754,
+        "startTime": "2026-03-12T14:47:48.0",
+        "intervalTypeKey": "REST"
+      },
+      {
+        "index": 5,
+        "distanceMeters": 239.67,
+        "distanceKm": 0.2397,
+        "durationSeconds": 60,
+        "avgSpeedKmh": 14.38,
+        "avgHR": 123,
+        "calories": 9,
+        "averageCadenceSpm": 162,
+        "averageStrideLengthMeters": 1.477,
+        "startTime": "2026-03-12T14:48:48.0",
+        "intervalTypeKey": "ACTIVE"
+      },
+      {
+        "index": 6,
+        "distanceMeters": 51.82,
+        "distanceKm": 0.0518,
+        "durationSeconds": 34,
+        "avgSpeedKmh": 5.41,
+        "avgHR": 137,
+        "calories": 4,
+        "averageCadenceSpm": 131,
+        "averageStrideLengthMeters": 0.684,
+        "startTime": "2026-03-12T14:49:48.0",
+        "intervalTypeKey": "REST"
+      }
+    ],
+    "averageCadenceSpm": 143,
+    "maxCadenceSpm": 221,
+    "distanceMeters": 1040.92,
+    "durationSeconds": 334,
+    "activeCaloriesDetail": 40
+  },
+  "jumps": null,
+  "connectIQ": null,
+  "activityName": "Pessac Course \u00e0 pied",
+  "activityType": "running",
+  "garminTypeKey": "indoor_cardio",
+  "type": "cardio",
+  "_classification_hash": "1e23ecb1",
+  "_cached_at": 1777241132.358659,
+  "_cache_version": 8
+}

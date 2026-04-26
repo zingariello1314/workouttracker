@@ -1,0 +1,82 @@
+{
+  "id": 20882862273,
+  "date": "2025-11-03 20:10:28",
+  "time": "",
+  "duration": 634,
+  "calories": {
+    "total": 122,
+    "resting": 14,
+    "active": 108
+  },
+  "avgHR": 145,
+  "maxHR": 167,
+  "minHR": 102,
+  "sweatLoss": 63,
+  "intensityMinutes": {
+    "moderate": null,
+    "vigorous": 11,
+    "total": 11
+  },
+  "startTimeLocal": "2025-11-03T21:10:28Z",
+  "startTimeGMT": "2025-11-03T20:10:28Z",
+  "location": {
+    "start": {
+      "lat": 44.79181439615786,
+      "lng": -0.6228146329522133
+    },
+    "end": {
+      "lat": 44.79200449772179,
+      "lng": -0.6229557003825903
+    }
+  },
+  "elevation": {
+    "gain": 1,
+    "loss": 39,
+    "max": 77.6,
+    "min": 37.97
+  },
+  "deviceInfo": {
+    "deviceId": "3502268277",
+    "deviceTypePk": 36869,
+    "deviceVersionPk": 996879
+  },
+  "trainingEffect": null,
+  "recoveryTime": null,
+  "vo2Max": null,
+  "trainingStatus": null,
+  "trainingLoad": null,
+  "performanceCondition": null,
+  "source": "garmin",
+  "distance": 0.0304,
+  "speed": 0.17,
+  "maxSpeed": 3.86,
+  "running": {
+    "lapCount": 1,
+    "laps": [
+      {
+        "index": 1,
+        "distanceMeters": 30.43,
+        "distanceKm": 0.0304,
+        "durationSeconds": 634,
+        "avgSpeedKmh": 0.17,
+        "avgHR": 145,
+        "calories": 122,
+        "elevationGain": 1,
+        "startTime": "2025-11-03T20:10:28.0",
+        "intervalTypeKey": "ACTIVE"
+      }
+    ],
+    "distanceMeters": 30.43,
+    "durationSeconds": 634,
+    "activeCaloriesDetail": 122
+  },
+  "jumps": null,
+  "connectIQ": null,
+  "activityName": "Pessac Cardio",
+  "activityType": "running",
+  "garminTypeKey": "indoor_cardio",
+  "type": "cardio",
+  "_classification_hash": "ef3c975c",
+  "_cached_at": 1777241079.6279542,
+  "_cache_version": 8
+}

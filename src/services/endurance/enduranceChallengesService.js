@@ -1,3 +1,5 @@
+import { shouldExcludeStoredGarminRunningSession } from '../../utils/garminRunningLaps';
+
 const DEFAULT_LOGGER = {
   debug: () => {},
   info: () => {},
@@ -24,6 +26,9 @@ const DEFAULT_LOGGER = {
 export function listMatchingChallengeIds(challenges = [], sessionData = {}, activityType, options = {}) {
   const { logger = DEFAULT_LOGGER, relatedPushupSessions } = options;
   if (!activityType || !Array.isArray(challenges) || challenges.length === 0) {
+    return [];
+  }
+  if (activityType === 'running' && shouldExcludeStoredGarminRunningSession(sessionData)) {
     return [];
   }
   const ids = [];
@@ -59,6 +64,10 @@ export function evaluateChallenges(challenges = [], sessionData = {}, activityTy
   const { logger = DEFAULT_LOGGER, relatedPushupSessions } = options;
   if (!activityType) {
     logger.warn?.('[enduranceChallengesService] activityType manquant pour evaluateChallenges');
+    return { validatedIds: [], updatedChallenges: challenges };
+  }
+
+  if (activityType === 'running' && shouldExcludeStoredGarminRunningSession(sessionData)) {
     return { validatedIds: [], updatedChallenges: challenges };
   }
 

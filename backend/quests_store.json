@@ -1,0 +1,480 @@
+{
+  "updatedAt": 1777240658315,
+  "byUser": {
+    "65d7c648-af81-4b7f-b5fb-939effb7c8fa": {
+      "updatedAt": 1777240658315,
+      "quests": [
+        {
+          "id": 1,
+          "nom": "Douche",
+          "description": "",
+          "categorie": "Sant\u00e9",
+          "difficulte": 1,
+          "duree": 25,
+          "type": "recurrente",
+          "jours": [
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7
+          ],
+          "date": "",
+          "heureType": "precise",
+          "creneau": "",
+          "priere": "",
+          "heure": "11:00",
+          "active": true,
+          "creeLe": "2026-04-14",
+          "ordre": 1,
+          "xp": 104,
+          "userId": "main"
+        },
+        {
+          "id": 2,
+          "nom": "Se brosser les dents ",
+          "description": "",
+          "categorie": "Sant\u00e9",
+          "difficulte": 1,
+          "duree": 5,
+          "type": "recurrente",
+          "jours": [
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7
+          ],
+          "date": "",
+          "heureType": "precise",
+          "creneau": "",
+          "priere": "",
+          "heure": "11:30",
+          "active": true,
+          "creeLe": "2026-04-14",
+          "ordre": 2,
+          "xp": 21,
+          "userId": "main"
+        },
+        {
+          "id": 3,
+          "nom": "\u00c9tirements",
+          "description": "",
+          "categorie": "Sant\u00e9",
+          "difficulte": 1,
+          "duree": 15,
+          "type": "recurrente",
+          "jours": [
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7
+          ],
+          "date": "",
+          "heureType": "precise",
+          "creneau": "",
+          "priere": "",
+          "heure": "11:40",
+          "active": true,
+          "creeLe": "2026-04-14",
+          "ordre": 3,
+          "xp": 63,
+          "userId": "main"
+        },
+        {
+          "id": 4,
+          "nom": "Manger",
+          "description": "",
+          "categorie": "Sant\u00e9",
+          "difficulte": 1,
+          "duree": 35,
+          "type": "recurrente",
+          "jours": [
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7
+          ],
+          "date": "",
+          "heureType": "precise",
+          "creneau": "",
+          "priere": "",
+          "heure": "12:10",
+          "active": true,
+          "creeLe": "2026-04-14",
+          "ordre": 4,
+          "xp": 146,
+          "userId": "main"
+        },
+        {
+          "id": 5,
+          "nom": "Lecture ",
+          "description": "",
+          "categorie": "Lecture",
+          "difficulte": 3,
+          "duree": 45,
+          "type": "recurrente",
+          "jours": [
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7
+          ],
+          "date": "",
+          "heureType": "precise",
+          "creneau": "",
+          "priere": "",
+          "heure": "13:00",
+          "active": true,
+          "creeLe": "2026-04-14",
+          "ordre": 5,
+          "xp": 375,
+          "userId": "main"
+        },
+        {
+          "id": 6,
+          "nom": "Sport Sreet / Muscu ",
+          "description": "",
+          "categorie": "Sport",
+          "difficulte": 4,
+          "duree": 65,
+          "type": "recurrente",
+          "jours": [
+            1,
+            2,
+            3,
+            5,
+            6,
+            7
+          ],
+          "date": "",
+          "heureType": "precise",
+          "creneau": "",
+          "priere": "",
+          "heure": "14:30",
+          "active": true,
+          "creeLe": "2026-04-14",
+          "ordre": 6,
+          "xp": 813,
+          "userId": "main"
+        },
+        {
+          "id": 7,
+          "nom": "Sport 2 Course ",
+          "description": "",
+          "categorie": "Sport",
+          "difficulte": 4,
+          "duree": 45,
+          "type": "recurrente",
+          "jours": [
+            2,
+            4,
+            6,
+            7
+          ],
+          "date": "",
+          "heureType": "precise",
+          "creneau": "",
+          "priere": "",
+          "heure": "15:00",
+          "active": true,
+          "creeLe": "2026-04-14",
+          "ordre": 7,
+          "xp": 563,
+          "userId": "main"
+        },
+        {
+          "id": 8,
+          "nom": "Douche",
+          "description": "",
+          "categorie": "Sant\u00e9",
+          "difficulte": 1,
+          "duree": 15,
+          "type": "recurrente",
+          "jours": [
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7
+          ],
+          "date": "",
+          "heureType": "precise",
+          "creneau": "",
+          "priere": "",
+          "heure": "15:50",
+          "active": true,
+          "creeLe": "2026-04-14",
+          "ordre": 8,
+          "xp": 63,
+          "userId": "main"
+        },
+        {
+          "id": 9,
+          "nom": "\u00c9tirements",
+          "description": "",
+          "categorie": "Sant\u00e9",
+          "difficulte": 1,
+          "duree": 15,
+          "type": "recurrente",
+          "jours": [
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7
+          ],
+          "date": "",
+          "heureType": "precise",
+          "creneau": "",
+          "priere": "",
+          "heure": "16:10",
+          "active": true,
+          "creeLe": "2026-04-14",
+          "ordre": 9,
+          "xp": 63,
+          "userId": "main"
+        },
+        {
+          "id": 10,
+          "nom": "R\u00e9vision Code",
+          "description": "",
+          "categorie": "Apprentissage",
+          "difficulte": 3,
+          "duree": 60,
+          "type": "recurrente",
+          "jours": [
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7
+          ],
+          "date": "",
+          "heureType": "precise",
+          "creneau": "",
+          "priere": "",
+          "heure": "16:25",
+          "active": true,
+          "creeLe": "2026-04-14",
+          "ordre": 10,
+          "xp": 500,
+          "userId": "main"
+        },
+        {
+          "id": 11,
+          "nom": "Lecture 2 ",
+          "description": "",
+          "categorie": "Lecture",
+          "difficulte": 3,
+          "duree": 45,
+          "type": "recurrente",
+          "jours": [
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7
+          ],
+          "date": "",
+          "heureType": "precise",
+          "creneau": "",
+          "priere": "",
+          "heure": "20:00",
+          "active": true,
+          "creeLe": "2026-04-14",
+          "ordre": 11,
+          "xp": 375,
+          "userId": "main"
+        },
+        {
+          "id": 12,
+          "nom": "Poser des CV",
+          "description": "",
+          "categorie": "Travail",
+          "difficulte": 2,
+          "duree": 30,
+          "type": "recurrente",
+          "jours": [
+            1,
+            2,
+            3,
+            4,
+            5,
+            6
+          ],
+          "date": "",
+          "heureType": "precise",
+          "creneau": "",
+          "priere": "",
+          "heure": "18:00",
+          "active": true,
+          "creeLe": "2026-04-14",
+          "ordre": 12,
+          "xp": 188,
+          "userId": "main"
+        },
+        {
+          "id": 13,
+          "nom": "M\u00e9nage",
+          "description": "",
+          "categorie": "M\u00e9nage",
+          "difficulte": 2,
+          "duree": 30,
+          "type": "recurrente",
+          "jours": [
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7
+          ],
+          "date": "",
+          "heureType": "precise",
+          "creneau": "",
+          "priere": "",
+          "heure": "10:00",
+          "active": true,
+          "creeLe": "2026-04-19",
+          "ordre": 13,
+          "xp": 188,
+          "userId": "main"
+        }
+      ],
+      "userData": {
+        "level": 1,
+        "currentXP": 1781,
+        "xpForNextLevel": 2500
+      },
+      "validations": [
+        {
+          "queteId": 1,
+          "date": "2026-04-20",
+          "xpGagne": 107,
+          "heureValidation": "2026-04-20T20:40:26.257Z",
+          "userId": "main"
+        },
+        {
+          "queteId": 1,
+          "date": "2026-04-24",
+          "xpGagne": 98,
+          "heureValidation": "2026-04-24T10:33:35.500Z",
+          "userId": "main"
+        },
+        {
+          "queteId": 2,
+          "date": "2026-04-24",
+          "xpGagne": 50,
+          "heureValidation": "2026-04-24T10:33:36.506Z",
+          "userId": "main"
+        },
+        {
+          "queteId": 4,
+          "date": "2026-04-20",
+          "xpGagne": 150,
+          "heureValidation": "2026-04-20T20:40:38.567Z",
+          "userId": "main"
+        },
+        {
+          "queteId": 5,
+          "date": "2026-04-17",
+          "xpGagne": 375,
+          "heureValidation": "2026-04-17T14:52:20.583Z",
+          "userId": "main"
+        },
+        {
+          "queteId": 6,
+          "date": "2026-04-19",
+          "xpGagne": 813,
+          "heureValidation": "2026-04-19T20:43:20.499Z",
+          "userId": "main"
+        },
+        {
+          "queteId": 12,
+          "date": "2026-04-17",
+          "xpGagne": 188,
+          "heureValidation": "2026-04-17T14:52:30.576Z",
+          "userId": "main"
+        }
+      ],
+      "dailyPerformances": [
+        {
+          "date": "2026-04-17",
+          "totalQuests": 11,
+          "completedQuests": 1,
+          "xpTotal": 375,
+          "successRate": 9
+        },
+        {
+          "date": "2026-04-19",
+          "totalQuests": 12,
+          "completedQuests": 2,
+          "xpTotal": 1001,
+          "successRate": 17
+        },
+        {
+          "date": "2026-04-20",
+          "totalQuests": 12,
+          "completedQuests": 1,
+          "xpTotal": 107,
+          "successRate": 8
+        },
+        {
+          "date": "2026-04-24",
+          "totalQuests": 12,
+          "completedQuests": 1,
+          "xpTotal": 98,
+          "successRate": 8
+        }
+      ],
+      "appState": {
+        "version": 1,
+        "questFilters": {
+          "categorie": "all",
+          "difficulte": "all",
+          "jour": "all",
+          "showInactive": false
+        },
+        "questSortConfig": {
+          "column": null,
+          "direction": "asc"
+        },
+        "prayerLocation": {
+          "lat": 44.795152,
+          "lng": -0.6147415,
+          "method": "MoonsightingCommittee",
+          "adjustments": {
+            "fajr": 24,
+            "dhuhr": 0,
+            "asr": 0,
+            "maghrib": 0,
+            "isha": -14
+          }
+        }
+      }
+    }
+  }
+}

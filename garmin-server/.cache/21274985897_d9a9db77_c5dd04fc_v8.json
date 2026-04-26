@@ -1,0 +1,163 @@
+{
+  "id": 21274985897,
+  "date": "2025-12-16 18:48:46",
+  "time": "",
+  "duration": 1525,
+  "calories": {
+    "total": 157,
+    "resting": 28,
+    "active": 129
+  },
+  "avgHR": 115,
+  "maxHR": 146,
+  "minHR": 94,
+  "sweatLoss": 152,
+  "intensityMinutes": {
+    "moderate": 21,
+    "vigorous": 4,
+    "total": 25
+  },
+  "startTimeLocal": "2025-12-16T19:48:46Z",
+  "startTimeGMT": "2025-12-16T18:48:46Z",
+  "location": null,
+  "elevation": null,
+  "deviceInfo": {
+    "deviceId": "3502268277",
+    "deviceTypePk": 36869,
+    "deviceVersionPk": 996879
+  },
+  "trainingEffect": null,
+  "recoveryTime": null,
+  "vo2Max": null,
+  "trainingStatus": null,
+  "trainingLoad": null,
+  "performanceCondition": null,
+  "source": "garmin",
+  "running": {
+    "lapCount": 14,
+    "laps": [
+      {
+        "index": 1,
+        "durationSeconds": 74,
+        "avgHR": 109,
+        "calories": 7,
+        "startTime": "2025-12-16T18:48:46.0",
+        "intervalTypeKey": "ACTIVE"
+      },
+      {
+        "index": 2,
+        "durationSeconds": 66,
+        "avgHR": 137,
+        "calories": 11,
+        "startTime": "2025-12-16T18:50:00.0",
+        "intervalTypeKey": "ACTIVE"
+      },
+      {
+        "index": 3,
+        "durationSeconds": 76,
+        "avgHR": 131,
+        "calories": 12,
+        "startTime": "2025-12-16T18:51:06.0",
+        "intervalTypeKey": "ACTIVE"
+      },
+      {
+        "index": 4,
+        "durationSeconds": 145,
+        "avgHR": 113,
+        "calories": 16,
+        "startTime": "2025-12-16T18:52:23.0",
+        "intervalTypeKey": "ACTIVE"
+      },
+      {
+        "index": 5,
+        "durationSeconds": 152,
+        "avgHR": 110,
+        "calories": 15,
+        "startTime": "2025-12-16T18:54:48.0",
+        "intervalTypeKey": "ACTIVE"
+      },
+      {
+        "index": 6,
+        "durationSeconds": 157,
+        "avgHR": 111,
+        "calories": 16,
+        "startTime": "2025-12-16T18:57:20.0",
+        "intervalTypeKey": "ACTIVE"
+      },
+      {
+        "index": 7,
+        "durationSeconds": 68,
+        "avgHR": 118,
+        "calories": 7,
+        "startTime": "2025-12-16T18:59:58.0",
+        "intervalTypeKey": "ACTIVE"
+      },
+      {
+        "index": 8,
+        "durationSeconds": 181,
+        "avgHR": 110,
+        "calories": 16,
+        "startTime": "2025-12-16T19:01:06.0",
+        "intervalTypeKey": "ACTIVE"
+      },
+      {
+        "index": 9,
+        "durationSeconds": 221,
+        "avgHR": 111,
+        "calories": 20,
+        "startTime": "2025-12-16T19:04:08.0",
+        "intervalTypeKey": "ACTIVE"
+      },
+      {
+        "index": 10,
+        "durationSeconds": 127,
+        "avgHR": 115,
+        "calories": 13,
+        "startTime": "2025-12-16T19:07:50.0",
+        "intervalTypeKey": "ACTIVE"
+      },
+      {
+        "index": 11,
+        "durationSeconds": 66,
+        "avgHR": 111,
+        "calories": 5,
+        "startTime": "2025-12-16T19:09:57.0",
+        "intervalTypeKey": "ACTIVE"
+      },
+      {
+        "index": 12,
+        "durationSeconds": 59,
+        "avgHR": 130,
+        "calories": 8,
+        "startTime": "2025-12-16T19:11:04.0",
+        "intervalTypeKey": "ACTIVE"
+      },
+      {
+        "index": 13,
+        "durationSeconds": 122,
+        "avgHR": 114,
+        "calories": 11,
+        "startTime": "2025-12-16T19:12:04.0",
+        "intervalTypeKey": "ACTIVE"
+      },
+      {
+        "index": 14,
+        "durationSeconds": 5,
+        "avgHR": 127,
+        "startTime": "2025-12-16T19:14:06.0",
+        "intervalTypeKey": "ACTIVE"
+      }
+    ],
+    "durationSeconds": 1525,
+    "activeCaloriesDetail": 157
+  },
+  "jumps": null,
+  "connectIQ": null,
+  "activityName": "Cardio",
+  "activityType": "indoor_cardio",
+  "garminTypeKey": "indoor_cardio",
+  "type": "cardio",
+  "_classification_hash": "c5dd04fc",
+  "_cached_at": 1777241095.594504,
+  "_cache_version": 8
+}

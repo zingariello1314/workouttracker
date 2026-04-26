@@ -13,6 +13,7 @@ import { calculateAutoReps, detectExerciseUnit } from '../../utils/exerciseCalcu
 import { useTodayExercises } from '../../hooks/useTodayExercises';
 import AddExceptionalExerciseModal from '../modals/AddExceptionalExerciseModal';
 import { isMockEnduranceSession } from '../../utils/calendarUtils';
+import { shouldExcludeStoredGarminRunningSession } from '../../utils/garminRunningLaps';
 import DayJustificationButton from './TodayTab/components/DayJustificationButton.jsx';
 import { isDayWithoutActivity } from '../../utils/dayJustificationUtils';
 import { useTranslation } from '../../utils/translations';
@@ -1355,6 +1356,9 @@ const TodayTab = () => {
               if (session.date === dateStr) {
                 // ✅ PHASE 1 : Filtrer les sessions mock (fonction centralisée)
                 if (!isMockEnduranceSession(session)) {
+                  if (activityType === 'running' && shouldExcludeStoredGarminRunningSession(session)) {
+                    return;
+                  }
                   todayEnduranceSessions.push({
                     ...session,
                     activityType,

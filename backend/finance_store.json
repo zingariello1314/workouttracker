@@ -1,0 +1,1248 @@
+{
+  "updatedAt": 1777239135239,
+  "byUser": {
+    "65d7c648-af81-4b7f-b5fb-939effb7c8fa": {
+      "updatedAt": 1777239135239,
+      "stores": {
+        "portfolio": [
+          {
+            "entreprise": "TSMC",
+            "ticker": "TSMC",
+            "quantite": 0.06,
+            "prixEntree": 171.86,
+            "dateAchat": "2025-05-06",
+            "id": "a020da97-3456-4fd0-a78e-505e3bd1f935",
+            "investissementTotal": 10.3116,
+            "createdAt": "2026-01-17T01:34:12.636Z",
+            "updatedAt": "2026-01-17T01:34:12.636Z",
+            "yahooData": {
+              "prixActuel": 342.4,
+              "variationJour": 0,
+              "volume": 18068056,
+              "capitalisation": 0,
+              "previousClose": 342.4,
+              "open": 342.4,
+              "high": 349.85,
+              "low": 341.46,
+              "_source": "yahoo_scraping",
+              "_variant": "TSM",
+              "_timestamp": 1768612993787,
+              "timestamp": 1768613652682
+            },
+            "calculs": {
+              "valeurPosition": 17.71,
+              "plusValueEuro": 8.82,
+              "plusValuePourcent": 99.24,
+              "poidsPortfolio": 24.83,
+              "signal": {
+                "signal": "NEUTRE",
+                "confidence": 0
+              },
+              "currency": "USD",
+              "investissementConverti": 8.888399999999999,
+              "prixActuel": 342.4,
+              "prixActuelConverti": 295.15,
+              "isPrixActuelFallback": false
+            }
+          },
+          {
+            "entreprise": "AMD",
+            "ticker": "AMD",
+            "quantite": 0.01,
+            "prixEntree": 100.88,
+            "dateAchat": "2025-05-05",
+            "id": "adc21359-de11-47d0-8744-afd46d5aa7cb",
+            "investissementTotal": 1.0088,
+            "createdAt": "2026-01-17T01:35:47.373Z",
+            "updatedAt": "2026-01-17T01:35:47.373Z",
+            "yahooData": {
+              "prixActuel": 231.83,
+              "variationJour": 0,
+              "volume": 41875144,
+              "capitalisation": 0,
+              "previousClose": 231.83,
+              "open": 231.83,
+              "high": 234.46,
+              "low": 228.86,
+              "_source": "yahoo_scraping",
+              "_variant": "AMD",
+              "_timestamp": 1768613747505,
+              "timestamp": 1768613747506
+            },
+            "calculs": {
+              "valeurPosition": 2,
+              "plusValueEuro": 1.13,
+              "plusValuePourcent": 129.81,
+              "poidsPortfolio": 2.8,
+              "signal": {
+                "signal": "NEUTRE",
+                "confidence": 0
+              },
+              "currency": "USD",
+              "investissementConverti": 0.8695999999999999,
+              "prixActuel": 231.83,
+              "prixActuelConverti": 199.84,
+              "isPrixActuelFallback": false
+            }
+          },
+          {
+            "entreprise": "TSMC",
+            "ticker": "TSMC",
+            "quantite": 0.06,
+            "prixEntree": 153.29,
+            "dateAchat": "2025-04-17",
+            "id": "c1c03129-86b9-4273-b675-bbb66150ddfb",
+            "investissementTotal": 9.1974,
+            "createdAt": "2026-01-17T00:09:21.823Z",
+            "updatedAt": "2026-01-17T00:09:21.823Z",
+            "yahooData": {
+              "prixActuel": 342.4,
+              "variationJour": 0,
+              "volume": 18068056,
+              "capitalisation": 0,
+              "previousClose": 342.4,
+              "open": 342.4,
+              "high": 349.85,
+              "low": 341.46,
+              "_source": "yahoo_scraping",
+              "_variant": "TSM",
+              "_timestamp": 1768612993787,
+              "timestamp": 1768613610071
+            },
+            "calculs": {
+              "valeurPosition": 17.71,
+              "plusValueEuro": 9.78,
+              "plusValuePourcent": 123.36,
+              "poidsPortfolio": 24.83,
+              "signal": {
+                "signal": "NEUTRE",
+                "confidence": 0
+              },
+              "currency": "USD",
+              "investissementConverti": 7.928399999999999,
+              "prixActuel": 342.4,
+              "prixActuelConverti": 295.15,
+              "isPrixActuelFallback": false
+            }
+          },
+          {
+            "entreprise": "Nvidia",
+            "ticker": "NVDA",
+            "quantite": 0.15,
+            "prixEntree": 99.28,
+            "dateAchat": "2025-04-22",
+            "id": "f3483aa0-e655-4bcb-93e7-83c6a27153ec",
+            "investissementTotal": 14.892,
+            "yahooData": {
+              "prixActuel": 186.23,
+              "variationJour": 0,
+              "volume": 170842320,
+              "capitalisation": 0,
+              "previousClose": 186.23,
+              "open": 186.23,
+              "high": 190.44,
+              "low": 186.08,
+              "_source": "yahoo_scraping",
+              "_variant": "NVDA",
+              "_timestamp": 1768613610302,
+              "timestamp": 1768613610324
+            },
+            "calculs": {
+              "valeurPosition": 24.08,
+              "plusValueEuro": 11.24,
+              "plusValuePourcent": 87.58,
+              "poidsPortfolio": 33.76,
+              "signal": {
+                "signal": "NEUTRE",
+                "confidence": 0
+              },
+              "currency": "USD",
+              "investissementConverti": 12.837,
+              "prixActuel": 186.23,
+              "prixActuelConverti": 160.53,
+              "isPrixActuelFallback": false
+            }
+          }
+        ],
+        "yahooCache": [
+          {
+            "ticker": "AMD",
+            "data": {
+              "prixActuel": 347.81,
+              "variationJour": 13.9128,
+              "volume": 0,
+              "capitalisation": 0,
+              "previousClose": 305.33,
+              "open": 336.755,
+              "high": 352.99,
+              "low": 334.54
+            },
+            "timestamp": 1777239129720
+          },
+          {
+            "ticker": "BTC-USD",
+            "data": {
+              "c": 0,
+              "d": null,
+              "dp": null,
+              "h": 0,
+              "l": 0,
+              "o": 0,
+              "pc": 0,
+              "t": 0
+            },
+            "timestamp": 1766443097794
+          },
+          {
+            "ticker": "CL=F",
+            "data": {
+              "c": 0,
+              "d": null,
+              "dp": null,
+              "h": 0,
+              "l": 0,
+              "o": 0,
+              "pc": 0,
+              "t": 0
+            },
+            "timestamp": 1766443306018
+          },
+          {
+            "ticker": "ETH-USD",
+            "data": {
+              "c": 0,
+              "d": null,
+              "dp": null,
+              "h": 0,
+              "l": 0,
+              "o": 0,
+              "pc": 0,
+              "t": 0
+            },
+            "timestamp": 1766443097792
+          },
+          {
+            "ticker": "GC=F",
+            "data": {
+              "c": 0,
+              "d": null,
+              "dp": null,
+              "h": 0,
+              "l": 0,
+              "o": 0,
+              "pc": 0,
+              "t": 0
+            },
+            "timestamp": 1766443293851
+          },
+          {
+            "ticker": "NVDA",
+            "data": {
+              "prixActuel": 208.27,
+              "variationJour": 4.3228,
+              "volume": 0,
+              "capitalisation": 0,
+              "previousClose": 199.64,
+              "open": 199.96,
+              "high": 210.95,
+              "low": 199.81
+            },
+            "timestamp": 1777239129720
+          },
+          {
+            "ticker": "TSMC",
+            "data": {
+              "prixActuel": 0,
+              "variationJour": 0,
+              "volume": 0,
+              "capitalisation": 0,
+              "previousClose": 0,
+              "open": 0,
+              "high": 0,
+              "low": 0
+            },
+            "timestamp": 1777239130717
+          },
+          {
+            "ticker": "^DJI",
+            "data": {
+              "ticker": "^DJI",
+              "queryCount": 0,
+              "resultsCount": 0,
+              "adjusted": true,
+              "status": "OK",
+              "request_id": "faa3fb74bd88a7fd3bd9802f64fdcf6a"
+            },
+            "timestamp": 1766443206063
+          },
+          {
+            "ticker": "^FCHI",
+            "data": {
+              "ticker": "^FCHI",
+              "queryCount": 0,
+              "resultsCount": 0,
+              "adjusted": true,
+              "status": "OK",
+              "request_id": "ff1f9333924c369761f1a53d9201dbc8"
+            },
+            "timestamp": 1766443257187
+          },
+          {
+            "ticker": "^GSPC",
+            "data": {
+              "ticker": "^GSPC",
+              "queryCount": 0,
+              "resultsCount": 0,
+              "adjusted": true,
+              "status": "OK",
+              "request_id": "879234b59ae2b6e91b177ca651e191af"
+            },
+            "timestamp": 1766443279149
+          },
+          {
+            "ticker": "^IXIC",
+            "data": {
+              "ticker": "^IXIC",
+              "queryCount": 0,
+              "resultsCount": 0,
+              "adjusted": true,
+              "status": "OK",
+              "request_id": "2ba1153160eda3d08f0335374d403eb3"
+            },
+            "timestamp": 1766443193486
+          },
+          {
+            "ticker": "commodity_GOLD",
+            "data": {
+              "name": "GOLD",
+              "value": "0.00 $",
+              "change": "0.0%",
+              "trend": "down",
+              "type": "commodity"
+            },
+            "timestamp": 1766443496308
+          },
+          {
+            "ticker": "commodity_OIL",
+            "data": {
+              "name": "OIL",
+              "value": "0.00 $",
+              "change": "0.0%",
+              "trend": "down",
+              "type": "commodity"
+            },
+            "timestamp": 1766443496309
+          },
+          {
+            "ticker": "crypto_BTC",
+            "data": {
+              "name": "BTC",
+              "value": "0.00 $",
+              "change": "0.0%",
+              "trend": "down",
+              "type": "crypto"
+            },
+            "timestamp": 1766443616350
+          },
+          {
+            "ticker": "crypto_ETH",
+            "data": {
+              "name": "ETH",
+              "value": "0.00 $",
+              "change": "0.0%",
+              "trend": "down",
+              "type": "crypto"
+            },
+            "timestamp": 1766443616350
+          },
+          {
+            "ticker": "historical_AMD_1a",
+            "data": {
+              "__COMPRESSED__": true,
+              "data": "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",
+              "originalSize": 12201,
+              "compressedSize": 3524
+            },
+            "timestamp": 1777026711009
+          },
+          {
+            "ticker": "historical_AMD_3m",
+            "data": {
+              "__COMPRESSED__": true,
+              "data": "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",
+              "originalSize": 12201,
+              "compressedSize": 3512
+            },
+            "timestamp": 1776788379768
+          },
+          {
+            "ticker": "historical_NVDA_1a",
+            "data": {
+              "__COMPRESSED__": true,
+              "data": "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",
+              "originalSize": 12299,
+              "compressedSize": 3380
+            },
+            "timestamp": 1777050158988
+          },
+          {
+            "ticker": "historical_NVDA_1m",
+            "data": {
+              "2025-12-19": {
+                "1. open": "176.6650",
+                "2. high": "181.4500",
+                "3. low": "176.3400",
+                "4. close": "180.9900",
+                "5. volume": "322601005"
+              },
+              "2025-12-18": {
+                "1. open": "174.5300",
+                "2. high": "176.1500",
+                "3. low": "171.8200",
+                "4. close": "174.1400",
+                "5. volume": "176096001"
+              },
+              "2025-12-17": {
+                "1. open": "176.1000",
+                "2. high": "176.1300",
+                "3. low": "170.3100",
+                "4. close": "170.9400",
+                "5. volume": "222775464"
+              },
+              "2025-12-16": {
+                "1. open": "176.2600",
+                "2. high": "178.4900",
+                "3. low": "174.9000",
+                "4. close": "177.7200",
+                "5. volume": "148588098"
+              },
+              "2025-12-15": {
+                "1. open": "177.9360",
+                "2. high": "178.4150",
+                "3. low": "175.0300",
+                "4. close": "176.2900",
+                "5. volume": "164775636"
+              },
+              "2025-12-12": {
+                "1. open": "181.1100",
+                "2. high": "182.8200",
+                "3. low": "174.6200",
+                "4. close": "175.0200",
+                "5. volume": "204274918"
+              },
+              "2025-12-11": {
+                "1. open": "180.2750",
+                "2. high": "181.3200",
+                "3. low": "176.6200",
+                "4. close": "180.9300",
+                "5. volume": "182136641"
+              },
+              "2025-12-10": {
+                "1. open": "184.9650",
+                "2. high": "185.4800",
+                "3. low": "182.0350",
+                "4. close": "183.7800",
+                "5. volume": "162785370"
+              },
+              "2025-12-09": {
+                "1. open": "185.5600",
+                "2. high": "185.7167",
+                "3. low": "183.3200",
+                "4. close": "184.9700",
+                "5. volume": "142372621"
+              },
+              "2025-12-08": {
+                "1. open": "182.6400",
+                "2. high": "188.0000",
+                "3. low": "182.4000",
+                "4. close": "185.5500",
+                "5. volume": "191927261"
+              },
+              "2025-12-05": {
+                "1. open": "183.8900",
+                "2. high": "184.6600",
+                "3. low": "180.9100",
+                "4. close": "182.4100",
+                "5. volume": "143971098"
+              },
+              "2025-12-04": {
+                "1. open": "181.6200",
+                "2. high": "184.5150",
+                "3. low": "179.9600",
+                "4. close": "183.3800",
+                "5. volume": "167364857"
+              },
+              "2025-12-03": {
+                "1. open": "181.0800",
+                "2. high": "182.4500",
+                "3. low": "179.1101",
+                "4. close": "179.5900",
+                "5. volume": "165138023"
+              },
+              "2025-12-02": {
+                "1. open": "181.7600",
+                "2. high": "185.6600",
+                "3. low": "180.0000",
+                "4. close": "181.4600",
+                "5. volume": "182632230"
+              },
+              "2025-12-01": {
+                "1. open": "174.7600",
+                "2. high": "180.3000",
+                "3. low": "173.6800",
+                "4. close": "179.9200",
+                "5. volume": "188130955"
+              },
+              "2025-11-28": {
+                "1. open": "179.0100",
+                "2. high": "179.2900",
+                "3. low": "176.5000",
+                "4. close": "177.0000",
+                "5. volume": "121332776"
+              },
+              "2025-11-26": {
+                "1. open": "181.6300",
+                "2. high": "182.9100",
+                "3. low": "178.2400",
+                "4. close": "180.2600",
+                "5. volume": "183852010"
+              },
+              "2025-11-25": {
+                "1. open": "174.9100",
+                "2. high": "178.1600",
+                "3. low": "169.5500",
+                "4. close": "177.8200",
+                "5. volume": "320600271"
+              },
+              "2025-11-24": {
+                "1. open": "179.4900",
+                "2. high": "183.5000",
+                "3. low": "176.4800",
+                "4. close": "182.5500",
+                "5. volume": "256618335"
+              },
+              "2025-11-21": {
+                "1. open": "181.2350",
+                "2. high": "184.5600",
+                "3. low": "172.9300",
+                "4. close": "178.8800",
+                "5. volume": "346926153"
+              },
+              "2025-11-20": {
+                "1. open": "195.9500",
+                "2. high": "196.0000",
+                "3. low": "179.8500",
+                "4. close": "180.6400",
+                "5. volume": "343504849"
+              },
+              "2025-11-19": {
+                "1. open": "184.7900",
+                "2. high": "187.8550",
+                "3. low": "182.8301",
+                "4. close": "186.5200",
+                "5. volume": "247246436"
+              },
+              "2025-11-18": {
+                "1. open": "183.3750",
+                "2. high": "184.8000",
+                "3. low": "179.6500",
+                "4. close": "181.3600",
+                "5. volume": "213598877"
+              },
+              "2025-11-17": {
+                "1. open": "185.9650",
+                "2. high": "189.0000",
+                "3. low": "184.3200",
+                "4. close": "186.6000",
+                "5. volume": "173628858"
+              },
+              "2025-11-14": {
+                "1. open": "182.8600",
+                "2. high": "191.0100",
+                "3. low": "180.5800",
+                "4. close": "190.1700",
+                "5. volume": "186591856"
+              },
+              "2025-11-13": {
+                "1. open": "191.0500",
+                "2. high": "191.4400",
+                "3. low": "183.8500",
+                "4. close": "186.8600",
+                "5. volume": "207423074"
+              },
+              "2025-11-12": {
+                "1. open": "195.7200",
+                "2. high": "195.8900",
+                "3. low": "191.1300",
+                "4. close": "193.8000",
+                "5. volume": "154935263"
+              },
+              "2025-11-11": {
+                "1. open": "195.1550",
+                "2. high": "195.4200",
+                "3. low": "191.3000",
+                "4. close": "193.1600",
+                "5. volume": "176483327"
+              },
+              "2025-11-10": {
+                "1. open": "195.1100",
+                "2. high": "199.9400",
+                "3. low": "193.7900",
+                "4. close": "199.0500",
+                "5. volume": "198897134"
+              },
+              "2025-11-07": {
+                "1. open": "184.9000",
+                "2. high": "188.3200",
+                "3. low": "178.9100",
+                "4. close": "188.1500",
+                "5. volume": "264942255"
+              },
+              "2025-11-06": {
+                "1. open": "196.4200",
+                "2. high": "197.6200",
+                "3. low": "186.3800",
+                "4. close": "188.0800",
+                "5. volume": "223029778"
+              },
+              "2025-11-05": {
+                "1. open": "198.7700",
+                "2. high": "202.9200",
+                "3. low": "194.6500",
+                "4. close": "195.2100",
+                "5. volume": "166849081"
+              },
+              "2025-11-04": {
+                "1. open": "203.0000",
+                "2. high": "203.9699",
+                "3. low": "197.9300",
+                "4. close": "198.6900",
+                "5. volume": "188919320"
+              },
+              "2025-11-03": {
+                "1. open": "208.0800",
+                "2. high": "211.3350",
+                "3. low": "205.5600",
+                "4. close": "206.8800",
+                "5. volume": "180267285"
+              },
+              "2025-10-31": {
+                "1. open": "206.4500",
+                "2. high": "207.9700",
+                "3. low": "202.0700",
+                "4. close": "202.4900",
+                "5. volume": "179802178"
+              },
+              "2025-10-30": {
+                "1. open": "205.1500",
+                "2. high": "206.1600",
+                "3. low": "201.4100",
+                "4. close": "202.8900",
+                "5. volume": "178864443"
+              },
+              "2025-10-29": {
+                "1. open": "207.9800",
+                "2. high": "212.1899",
+                "3. low": "204.7750",
+                "4. close": "207.0400",
+                "5. volume": "308829564"
+              },
+              "2025-10-28": {
+                "1. open": "193.0500",
+                "2. high": "203.1500",
+                "3. low": "191.9100",
+                "4. close": "201.0300",
+                "5. volume": "297986180"
+              },
+              "2025-10-27": {
+                "1. open": "189.9900",
+                "2. high": "192.0000",
+                "3. low": "188.4318",
+                "4. close": "191.4900",
+                "5. volume": "153452704"
+              },
+              "2025-10-24": {
+                "1. open": "183.8350",
+                "2. high": "187.4700",
+                "3. low": "183.5000",
+                "4. close": "186.2600",
+                "5. volume": "131296677"
+              },
+              "2025-10-23": {
+                "1. open": "180.4200",
+                "2. high": "183.0300",
+                "3. low": "179.7901",
+                "4. close": "182.1600",
+                "5. volume": "111363718"
+              },
+              "2025-10-22": {
+                "1. open": "181.1400",
+                "2. high": "183.4400",
+                "3. low": "176.7600",
+                "4. close": "180.2800",
+                "5. volume": "162249552"
+              },
+              "2025-10-21": {
+                "1. open": "182.7850",
+                "2. high": "182.7850",
+                "3. low": "179.8000",
+                "4. close": "181.1600",
+                "5. volume": "124240168"
+              },
+              "2025-10-20": {
+                "1. open": "183.1300",
+                "2. high": "185.2000",
+                "3. low": "181.7300",
+                "4. close": "182.6400",
+                "5. volume": "128544711"
+              },
+              "2025-10-17": {
+                "1. open": "180.1800",
+                "2. high": "184.1000",
+                "3. low": "179.7500",
+                "4. close": "183.2200",
+                "5. volume": "173135217"
+              },
+              "2025-10-16": {
+                "1. open": "182.2300",
+                "2. high": "183.2800",
+                "3. low": "179.7700",
+                "4. close": "181.8100",
+                "5. volume": "179723309"
+              },
+              "2025-10-15": {
+                "1. open": "184.8000",
+                "2. high": "184.8700",
+                "3. low": "177.2900",
+                "4. close": "179.8300",
+                "5. volume": "214450482"
+              },
+              "2025-10-14": {
+                "1. open": "184.7700",
+                "2. high": "184.8000",
+                "3. low": "179.7000",
+                "4. close": "180.0300",
+                "5. volume": "205641380"
+              },
+              "2025-10-13": {
+                "1. open": "187.9650",
+                "2. high": "190.1099",
+                "3. low": "185.9600",
+                "4. close": "188.3200",
+                "5. volume": "153482755"
+              },
+              "2025-10-10": {
+                "1. open": "193.5050",
+                "2. high": "195.6200",
+                "3. low": "182.0500",
+                "4. close": "183.1600",
+                "5. volume": "268774359"
+              },
+              "2025-10-09": {
+                "1. open": "192.2250",
+                "2. high": "195.3000",
+                "3. low": "191.0600",
+                "4. close": "192.5700",
+                "5. volume": "182997234"
+              },
+              "2025-10-08": {
+                "1. open": "186.5700",
+                "2. high": "189.6000",
+                "3. low": "186.5400",
+                "4. close": "189.1100",
+                "5. volume": "130168861"
+              },
+              "2025-10-07": {
+                "1. open": "186.2300",
+                "2. high": "189.0600",
+                "3. low": "184.0000",
+                "4. close": "185.0400",
+                "5. volume": "140088008"
+              },
+              "2025-10-06": {
+                "1. open": "185.5000",
+                "2. high": "187.2300",
+                "3. low": "183.3300",
+                "4. close": "185.5400",
+                "5. volume": "157678104"
+              },
+              "2025-10-03": {
+                "1. open": "189.1900",
+                "2. high": "190.3600",
+                "3. low": "185.3800",
+                "4. close": "187.6200",
+                "5. volume": "137596896"
+              },
+              "2025-10-02": {
+                "1. open": "189.6000",
+                "2. high": "191.0500",
+                "3. low": "188.0600",
+                "4. close": "188.8900",
+                "5. volume": "136805821"
+              },
+              "2025-10-01": {
+                "1. open": "185.2400",
+                "2. high": "188.1400",
+                "3. low": "183.9000",
+                "4. close": "187.2400",
+                "5. volume": "173844901"
+              },
+              "2025-09-30": {
+                "1. open": "182.0800",
+                "2. high": "187.3500",
+                "3. low": "181.4800",
+                "4. close": "186.5800",
+                "5. volume": "236981032"
+              },
+              "2025-09-29": {
+                "1. open": "180.4250",
+                "2. high": "184.0000",
+                "3. low": "180.3200",
+                "4. close": "181.8500",
+                "5. volume": "193063455"
+              },
+              "2025-09-26": {
+                "1. open": "178.1700",
+                "2. high": "179.7700",
+                "3. low": "174.9300",
+                "4. close": "178.1900",
+                "5. volume": "148573732"
+              },
+              "2025-09-25": {
+                "1. open": "174.4800",
+                "2. high": "180.2600",
+                "3. low": "173.1250",
+                "4. close": "177.6900",
+                "5. volume": "191586733"
+              },
+              "2025-09-24": {
+                "1. open": "179.7700",
+                "2. high": "179.7800",
+                "3. low": "175.4000",
+                "4. close": "176.9700",
+                "5. volume": "143564116"
+              },
+              "2025-09-23": {
+                "1. open": "181.9700",
+                "2. high": "182.4200",
+                "3. low": "176.2100",
+                "4. close": "178.4300",
+                "5. volume": "192559552"
+              },
+              "2025-09-22": {
+                "1. open": "175.3000",
+                "2. high": "184.5500",
+                "3. low": "174.7053",
+                "4. close": "183.6100",
+                "5. volume": "269637001"
+              },
+              "2025-09-19": {
+                "1. open": "175.7700",
+                "2. high": "178.0800",
+                "3. low": "175.1800",
+                "4. close": "176.6700",
+                "5. volume": "237182143"
+              },
+              "2025-09-18": {
+                "1. open": "173.9800",
+                "2. high": "177.1000",
+                "3. low": "172.9600",
+                "4. close": "176.2400",
+                "5. volume": "191763313"
+              },
+              "2025-09-17": {
+                "1. open": "172.6400",
+                "2. high": "173.2000",
+                "3. low": "168.4100",
+                "4. close": "170.2900",
+                "5. volume": "211843817"
+              },
+              "2025-09-16": {
+                "1. open": "177.0000",
+                "2. high": "177.5000",
+                "3. low": "174.3800",
+                "4. close": "174.8800",
+                "5. volume": "140737775"
+              },
+              "2025-09-15": {
+                "1. open": "175.6700",
+                "2. high": "178.8500",
+                "3. low": "174.5100",
+                "4. close": "177.7500",
+                "5. volume": "147061559"
+              },
+              "2025-09-12": {
+                "1. open": "177.7700",
+                "2. high": "178.5950",
+                "3. low": "176.4500",
+                "4. close": "177.8200",
+                "5. volume": "124911026"
+              },
+              "2025-09-11": {
+                "1. open": "179.6800",
+                "2. high": "180.2800",
+                "3. low": "176.4800",
+                "4. close": "177.1700",
+                "5. volume": "151159274"
+              },
+              "2025-09-10": {
+                "1. open": "176.6400",
+                "2. high": "179.2900",
+                "3. low": "175.4700",
+                "4. close": "177.3300",
+                "5. volume": "226852020"
+              },
+              "2025-09-09": {
+                "1. open": "169.0900",
+                "2. high": "170.9800",
+                "3. low": "166.7401",
+                "4. close": "170.7600",
+                "5. volume": "157548392"
+              },
+              "2025-09-08": {
+                "1. open": "167.5500",
+                "2. high": "170.9600",
+                "3. low": "167.3500",
+                "4. close": "168.3100",
+                "5. volume": "163769133"
+              },
+              "2025-09-05": {
+                "1. open": "168.0300",
+                "2. high": "169.0300",
+                "3. low": "164.0700",
+                "4. close": "167.0200",
+                "5. volume": "224441435"
+              },
+              "2025-09-04": {
+                "1. open": "170.5700",
+                "2. high": "171.8600",
+                "3. low": "169.4100",
+                "4. close": "171.6600",
+                "5. volume": "141670144"
+              },
+              "2025-09-03": {
+                "1. open": "171.0600",
+                "2. high": "172.4100",
+                "3. low": "168.8750",
+                "4. close": "170.6200",
+                "5. volume": "161466040"
+              },
+              "2025-09-02": {
+                "1. open": "170.0000",
+                "2. high": "172.3790",
+                "3. low": "167.2200",
+                "4. close": "170.7800",
+                "5. volume": "231164853"
+              },
+              "2025-08-29": {
+                "1. open": "178.1100",
+                "2. high": "178.1500",
+                "3. low": "173.1450",
+                "4. close": "174.1800",
+                "5. volume": "243257873"
+              },
+              "2025-08-28": {
+                "1. open": "180.8200",
+                "2. high": "184.4700",
+                "3. low": "176.4100",
+                "4. close": "180.1700",
+                "5. volume": "281787824"
+              },
+              "2025-08-27": {
+                "1. open": "181.9800",
+                "2. high": "182.4900",
+                "3. low": "179.1000",
+                "4. close": "181.6000",
+                "5. volume": "235518949"
+              },
+              "2025-08-26": {
+                "1. open": "180.0550",
+                "2. high": "182.3900",
+                "3. low": "178.8100",
+                "4. close": "181.7700",
+                "5. volume": "168688186"
+              },
+              "2025-08-25": {
+                "1. open": "178.3500",
+                "2. high": "181.9100",
+                "3. low": "176.5700",
+                "4. close": "179.8100",
+                "5. volume": "163012789"
+              },
+              "2025-08-22": {
+                "1. open": "172.6100",
+                "2. high": "178.5900",
+                "3. low": "171.2000",
+                "4. close": "177.9900",
+                "5. volume": "172789427"
+              },
+              "2025-08-21": {
+                "1. open": "174.8500",
+                "2. high": "176.9000",
+                "3. low": "173.8100",
+                "4. close": "174.9800",
+                "5. volume": "140040850"
+              },
+              "2025-08-20": {
+                "1. open": "175.1650",
+                "2. high": "176.0000",
+                "3. low": "168.8010",
+                "4. close": "175.4000",
+                "5. volume": "215142725"
+              },
+              "2025-08-19": {
+                "1. open": "182.4300",
+                "2. high": "182.5000",
+                "3. low": "175.4900",
+                "4. close": "175.6400",
+                "5. volume": "185229219"
+              },
+              "2025-08-18": {
+                "1. open": "180.6000",
+                "2. high": "182.9375",
+                "3. low": "180.5900",
+                "4. close": "182.0100",
+                "5. volume": "132007959"
+              },
+              "2025-08-15": {
+                "1. open": "181.8800",
+                "2. high": "181.9000",
+                "3. low": "178.0417",
+                "4. close": "180.4500",
+                "5. volume": "156602161"
+              },
+              "2025-08-14": {
+                "1. open": "179.7500",
+                "2. high": "183.0200",
+                "3. low": "179.4600",
+                "4. close": "182.0200",
+                "5. volume": "129553959"
+              },
+              "2025-08-13": {
+                "1. open": "182.6150",
+                "2. high": "183.9700",
+                "3. low": "179.3500",
+                "4. close": "181.5900",
+                "5. volume": "179871724"
+              },
+              "2025-08-12": {
+                "1. open": "182.9600",
+                "2. high": "184.4800",
+                "3. low": "179.4600",
+                "4. close": "183.1600",
+                "5. volume": "145729202"
+              },
+              "2025-08-11": {
+                "1. open": "182.0500",
+                "2. high": "183.8400",
+                "3. low": "180.2500",
+                "4. close": "182.0600",
+                "5. volume": "138323191"
+              },
+              "2025-08-08": {
+                "1. open": "181.5500",
+                "2. high": "183.3000",
+                "3. low": "180.4000",
+                "4. close": "182.7000",
+                "5. volume": "123396679"
+              },
+              "2025-08-07": {
+                "1. open": "181.5700",
+                "2. high": "183.8800",
+                "3. low": "178.7950",
+                "4. close": "180.7700",
+                "5. volume": "151878365"
+              },
+              "2025-08-06": {
+                "1. open": "176.3250",
+                "2. high": "179.9000",
+                "3. low": "176.2500",
+                "4. close": "179.4200",
+                "5. volume": "137192265"
+              },
+              "2025-08-05": {
+                "1. open": "179.6200",
+                "2. high": "180.2600",
+                "3. low": "175.9000",
+                "4. close": "178.2600",
+                "5. volume": "156407621"
+              },
+              "2025-08-04": {
+                "1. open": "175.1600",
+                "2. high": "180.2000",
+                "3. low": "174.5200",
+                "4. close": "180.0000",
+                "5. volume": "148174609"
+              },
+              "2025-08-01": {
+                "1. open": "174.0900",
+                "2. high": "176.5400",
+                "3. low": "170.8900",
+                "4. close": "173.7200",
+                "5. volume": "204528985"
+              },
+              "2025-07-31": {
+                "1. open": "182.9000",
+                "2. high": "183.3000",
+                "3. low": "175.9300",
+                "4. close": "177.8700",
+                "5. volume": "221685446"
+              }
+            },
+            "timestamp": 1766195143532
+          },
+          {
+            "ticker": "historical_NVDA_3m",
+            "data": {
+              "__COMPRESSED__": true,
+              "data": "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",
+              "originalSize": 12299,
+              "compressedSize": 3376
+            },
+            "timestamp": 1776788379828
+          },
+          {
+            "ticker": "market_index_CAC40",
+            "data": {
+              "name": "CAC40",
+              "value": "0.00",
+              "change": "0.0%",
+              "trend": "down"
+            },
+            "timestamp": 1766443496307
+          },
+          {
+            "ticker": "market_index_DOWJONES",
+            "data": {
+              "name": "DOWJONES",
+              "value": "0.00",
+              "change": "0.0%",
+              "trend": "down"
+            },
+            "timestamp": 1766443496308
+          },
+          {
+            "ticker": "market_index_NASDAQ",
+            "data": {
+              "name": "NASDAQ",
+              "value": "0.00",
+              "change": "0.0%",
+              "trend": "down"
+            },
+            "timestamp": 1766443496307
+          },
+          {
+            "ticker": "market_index_SP500",
+            "data": {
+              "name": "SP500",
+              "value": "0.00",
+              "change": "0.0%",
+              "trend": "down"
+            },
+            "timestamp": 1766443496307
+          },
+          {
+            "ticker": "or_price_current",
+            "data": 119.25994532453613,
+            "timestamp": 1777239128860
+          }
+        ],
+        "calculations": [],
+        "history": [
+          {
+            "action": "PORTFOLIO_UPDATE",
+            "details": {
+              "count": 1
+            },
+            "timestamp": 1766194782539,
+            "id": 1
+          },
+          {
+            "action": "PORTFOLIO_UPDATE",
+            "details": {
+              "count": 1
+            },
+            "timestamp": 1766196310224,
+            "id": 2
+          },
+          {
+            "action": "PORTFOLIO_UPDATE",
+            "details": {
+              "count": 1
+            },
+            "timestamp": 1766196310229,
+            "id": 3
+          },
+          {
+            "action": "PORTFOLIO_UPDATE",
+            "details": {
+              "count": 1
+            },
+            "timestamp": 1766196312375,
+            "id": 4
+          },
+          {
+            "action": "PORTFOLIO_UPDATE",
+            "details": {
+              "count": 1
+            },
+            "timestamp": 1766196312376,
+            "id": 5
+          },
+          {
+            "action": "PORTFOLIO_UPDATE",
+            "details": {
+              "count": 1
+            },
+            "timestamp": 1766196314772,
+            "id": 6
+          },
+          {
+            "action": "PORTFOLIO_UPDATE",
+            "details": {
+              "count": 2
+            },
+            "timestamp": 1768608562398,
+            "id": 7
+          },
+          {
+            "action": "PORTFOLIO_UPDATE",
+            "details": {
+              "count": 2
+            },
+            "timestamp": 1768608563816,
+            "id": 8
+          },
+          {
+            "action": "PORTFOLIO_UPDATE",
+            "details": {
+              "count": 3
+            },
+            "timestamp": 1768613652749,
+            "id": 9
+          },
+          {
+            "action": "PORTFOLIO_UPDATE",
+            "details": {
+              "count": 4
+            },
+            "timestamp": 1768613747575,
+            "id": 10
+          }
+        ],
+        "exchangeRates": [
+          {
+            "key": "TWD_EUR",
+            "rate": 0.0273,
+            "timestamp": 1768612766083
+          },
+          {
+            "key": "USD_EUR",
+            "rate": 0.854,
+            "timestamp": 1777239130481
+          }
+        ]
+      }
+    }
+  }
+}

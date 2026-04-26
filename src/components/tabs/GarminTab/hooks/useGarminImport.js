@@ -4,7 +4,8 @@ import logger from '../../../../utils/logger';
 import {
   inferRunningSessionTypeFromGarminActivity,
   isGarminRunningLikeActivity,
-  isGarminWalkingLikeActivity
+  isGarminWalkingLikeActivity,
+  garminMeetsEnduranceRunWalkImportThresholds
 } from '../../../../utils/garminRunningLaps';
 
 const log = logger.hook('useGarminImport');
@@ -65,6 +66,9 @@ function distanceKmFromGarminActivity(gAct) {
  * - Vérification robuste des doublons (garminId, id, date+time)
  * - Système de retry automatique en cas d'échec
  * - Logging détaillé pour debugging
+ *
+ * Défis (endurance) : corde à sauter, pompes, gainage et boxe = **saisie manuelle uniquement**
+ * (pas d’import depuis Garmin). Natation + course/marche restent synchronisées Garmin.
  */
 export function useGarminImport() {
   const { data: workoutData, updateData } = useWorkout();
@@ -176,109 +180,28 @@ export function useGarminImport() {
         newSessions.swimming = existingSwimming;
       }
 
-      // 🟡 FIX #21 : Corde à sauter - Vérification robuste des doublons
-      if (garminDataForImport.activities.jumpRope && Array.isArray(garminDataForImport.activities.jumpRope)) {
-        const existingJumpRope = [...(newSessions.jumprope || [])];
+      // Corde à sauter : uniquement saisie manuelle (onglet Défis) — pas d’import Garmin.
 
-        garminDataForImport.activities.jumpRope.forEach(gAct => {
-          try {
-            // 🔴 FIX : Validation stricte pour éviter les données mock
-            const duration = gAct.duration || 0;
-            const jumps = gAct.jumps || 0;
-            const durationMinutes = duration / 60; // Convertir secondes en minutes
-            
-            // Rejeter les données mock évidentes (1200 min = 20h, ou 1200 jumps ET 1200 min)
-            if (durationMinutes >= 1440 || durationMinutes === 1200) {
-              log.warn(`Rejeté session jumprope mock: durée excessive (${durationMinutes} min)`, gAct);
-              errors.push({ type: 'jumprope', activity: gAct.id, error: `Durée excessive: ${durationMinutes} min` });
-              return;
-            }
-            
-            // Rejeter pattern mock : exactement 1200 jumps avec 1200 min
-            if (jumps === 1200 && durationMinutes === 1200) {
-              log.warn(`Rejeté session jumprope mock: 1200 jumps avec ${durationMinutes} min`, gAct);
-              errors.push({ type: 'jumprope', activity: gAct.id, error: `Pattern mock détecté: 1200 jumps avec ${durationMinutes} min` });
-              return;
-            }
-            
-            // Vérifier doublons avant import
-            if (!activityExists(gAct, { swimming: [], jumprope: existingJumpRope, running: newSessions.running || [] })) {
-              const session = {
-                id: gAct.id || Date.now() + Math.random(),
-                garminId: gAct.garminId || gAct.id,
-                date: gAct.date,
-                time: gAct.time || '',
-                duration: durationMinutes, // Stocker en minutes
-                jumps: jumps,
-                avgHR: gAct.avgHR || 0,
-                maxHR: gAct.maxHR || 0,
-                calories: typeof gAct.calories === 'object' ? (gAct.calories?.total || 0) : (gAct.calories || 0),
-                source: 'garmin',
-                notes: `Importé depuis Garmin le ${new Date().toLocaleDateString()}`
-              };
-              existingJumpRope.push(session);
-              importedCount++;
-            }
-          } catch (err) {
-            errors.push({ type: 'jumprope', activity: gAct.id, error: err.message });
-            log.error('Error importing jumprope activity:', err);
-          }
-        });
-        newSessions.jumprope = existingJumpRope;
-      }
-
-      // 🟡 FIX #21 : Cardio (peut contenir JumpJump Pro) - Vérification robuste des doublons
+      // 🟡 FIX #21 : Cardio (course / marche ; sauts Garmin ne vont plus en jumprope)
       if (garminDataForImport.activities.cardio && Array.isArray(garminDataForImport.activities.cardio)) {
         const existingJumpRope = [...(newSessions.jumprope || [])];
         const existingRunning = [...(newSessions.running || [])];
 
         garminDataForImport.activities.cardio.forEach(gAct => {
           try {
-            // Si c'est une activité avec sauts (JumpJump Pro), importer comme jumprope
+            // Activités avec compteur de sauts (ex. JumpJump) : ne plus alimenter l’onglet corde — saisie manuelle uniquement.
             if (gAct.jumps && gAct.jumps > 0) {
-              // 🔴 FIX : Validation stricte pour éviter les données mock
-              const duration = gAct.duration || 0;
-              const jumps = gAct.jumps || 0;
-              const durationMinutes = duration / 60; // Convertir secondes en minutes
-              
-              // Rejeter les données mock évidentes
-              if (durationMinutes >= 1440 || durationMinutes === 1200) {
-                log.warn(`Rejeté session cardio/jumprope mock: durée excessive (${durationMinutes} min)`, gAct);
-                errors.push({ type: 'cardio', activity: gAct.id, error: `Durée excessive: ${durationMinutes} min` });
-                return;
-              }
-              
-              // Rejeter pattern mock : exactement 1200 jumps avec 1200 min
-              if (jumps === 1200 && durationMinutes === 1200) {
-                log.warn(`Rejeté session cardio/jumprope mock: 1200 jumps avec ${durationMinutes} min`, gAct);
-                errors.push({ type: 'cardio', activity: gAct.id, error: `Pattern mock détecté: 1200 jumps avec ${durationMinutes} min` });
-                return;
-              }
-              
-              // Vérifier doublons avant import
-              if (!activityExists(gAct, { swimming: [], jumprope: existingJumpRope, running: existingRunning })) {
-                const session = {
-                  id: gAct.id || Date.now() + Math.random(),
-                  garminId: gAct.garminId || gAct.id,
-                  date: gAct.date,
-                  time: gAct.time || '',
-                  duration: durationMinutes, // Stocker en minutes
-                  jumps: jumps,
-                  avgHR: gAct.avgHR || 0,
-                  maxHR: gAct.maxHR || 0,
-                  calories: typeof gAct.calories === 'object' ? (gAct.calories?.total || 0) : (gAct.calories || 0),
-                  connectIQ: gAct.connectIQ || null,
-                  source: 'garmin',
-                  notes: `Importé depuis Garmin (Cardio/JumpJump Pro) le ${new Date().toLocaleDateString()}`
-                };
-                existingJumpRope.push(session);
-                importedCount++;
-              }
-            } else if (isGarminRunningLikeActivity(gAct) || isGarminWalkingLikeActivity(gAct)) {
+              return;
+            }
+            if (isGarminRunningLikeActivity(gAct) || isGarminWalkingLikeActivity(gAct)) {
               const durationSec = gAct.duration || 0;
               const durationMinutes = durationSec / 60;
               const distanceKm = distanceKmFromGarminActivity(gAct);
               const isWalk = isGarminWalkingLikeActivity(gAct);
+
+              if (!garminMeetsEnduranceRunWalkImportThresholds(gAct, isWalk)) {
+                return;
+              }
 
               if (durationMinutes >= 1440 || durationMinutes === 3600) {
                 log.warn(`Rejeté session running mock: durée excessive (${durationMinutes} min)`, gAct);

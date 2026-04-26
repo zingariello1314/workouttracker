@@ -49,7 +49,8 @@ import PerformanceChallengesTab from './PerformanceChallengesTab.jsx';
 import {
   inferRunningSessionTypeFromGarminActivity,
   isGarminRunningLikeActivity,
-  isGarminWalkingLikeActivity
+  isGarminWalkingLikeActivity,
+  shouldExcludeStoredGarminRunningSession
 } from '../../utils/garminRunningLaps';
 import { useGarminData } from '../../hooks/useGarminData';
 import { isWalkingLikeRunningSession } from '../../utils/runningSessionMovementKind';
@@ -234,9 +235,12 @@ const EnduranceTab = () => {
     loadEnduranceState();
   }, [loadEnduranceState]);
 
-  /** Types course affichés comme sur la page détail : inférence depuis les tours Garmin (IndexedDB). */
+  /**
+   * Garmin (IndexedDB) : garde les cartes id → activité pour course/marche sur tout l’onglet Défis.
+   * Avant : ne chargeait que sur l’onglet « course » et ignorait les séances sans tours → données « vides » jusqu’au backfill.
+   */
   useEffect(() => {
-    if (activeTab !== 'running' || !dbReady) return;
+    if (!dbReady) return;
     let cancelled = false;
     (async () => {
       try {
@@ -247,8 +251,9 @@ const EnduranceTab = () => {
         for (const act of loaded.activities.cardio) {
           const id = act.garminId ?? act.id;
           if (id == null) continue;
-          if (!Array.isArray(act.running?.laps) || act.running.laps.length === 0) continue;
-          m.set(String(id), inferRunningSessionTypeFromGarminActivity(act));
+          if (Array.isArray(act.running?.laps) && act.running.laps.length > 0) {
+            m.set(String(id), inferRunningSessionTypeFromGarminActivity(act));
+          }
           if (isGarminRunningLikeActivity(act) || isGarminWalkingLikeActivity(act)) {
             full.set(String(id), act);
           }
@@ -265,7 +270,7 @@ const EnduranceTab = () => {
     return () => {
       cancelled = true;
     };
-  }, [activeTab, dbReady, loadAllData, sessions.running]);
+  }, [dbReady, loadAllData, sessions.running]);
 
   const saveEnduranceData = useCallback(async (newData) => {
     try {
@@ -896,6 +901,18 @@ const EnduranceTab = () => {
   const deleteGainageSession = useCallback((id, index) => deleteSession('gainage', id, index), [deleteSession]);
   const deleteRunningSession = useCallback((id, index) => deleteSession('running', id, index), [deleteSession]);
 
+  /** Réintègre une séance « cardio Garmin » dans course (défis, XP, calendrier) — choix persisté sur la séance. */
+  const restoreRunningSessionFromGarminCardioExclusion = useCallback(
+    async (sessionId) => {
+      const list = Array.isArray(sessions.running) ? [...sessions.running] : [];
+      const i = list.findIndex((s) => String(s.id) === String(sessionId));
+      if (i < 0) return;
+      list[i] = { ...list[i], includeInRunningDespiteGarminCardio: true };
+      await saveEnduranceData({ sessions: { running: list } });
+    },
+    [sessions.running, saveEnduranceData]
+  );
+
   // Fonctions de modification des sessions
   const editSession = useCallback((activityType, sessionId) => {
     const currentSessions = enduranceState?.sessions || {};
@@ -1151,7 +1168,9 @@ const EnduranceTab = () => {
       count += (sessions.gainage || []).filter(s => s.date === dateStr).length;
     }
     if (ui.selectedActivityFilter === 'all' || ui.selectedActivityFilter === 'running') {
-      count += sessions.running.filter(s => s.date === dateStr).length;
+      count += sessions.running.filter(
+        (s) => s.date === dateStr && !shouldExcludeStoredGarminRunningSession(s)
+      ).length;
     }
     
     return count;
@@ -1217,14 +1236,16 @@ const EnduranceTab = () => {
       });
     });
     
-    sessions.running.filter(s => s.date === dateStr).forEach(session => {
-      activities.push({
-        type: 'running',
-        time: session.time,
-        duration: session.duration,
-        distance: `${session.distance}km`
+    sessions.running
+      .filter((s) => s.date === dateStr && !shouldExcludeStoredGarminRunningSession(s))
+      .forEach((session) => {
+        activities.push({
+          type: 'running',
+          time: session.time,
+          duration: session.duration,
+          distance: `${session.distance}km`
+        });
       });
-    });
     
     return activities.sort((a, b) => a.time.localeCompare(b.time));
   }, [sessions]);
@@ -1308,12 +1329,26 @@ const EnduranceTab = () => {
     );
   }, [getEnduranceExercisesFromHistory]);
 
+  const runningGarminCardioExcluded = useMemo(
+    () => (sessions.running || []).filter((s) => shouldExcludeStoredGarminRunningSession(s)),
+    [sessions.running]
+  );
   const walkingSessions = useMemo(
-    () => (sessions.running || []).filter((s) => isWalkingLikeRunningSession(s, garminRunningById.get(String(s?.garminId ?? s?.id ?? '')) || null)),
+    () =>
+      (sessions.running || []).filter(
+        (s) =>
+          !shouldExcludeStoredGarminRunningSession(s) &&
+          isWalkingLikeRunningSession(s, garminRunningById.get(String(s?.garminId ?? s?.id ?? '')) || null)
+      ),
     [sessions.running, garminRunningById]
   );
   const runningSessionsNoWalk = useMemo(
-    () => (sessions.running || []).filter((s) => !isWalkingLikeRunningSession(s, garminRunningById.get(String(s?.garminId ?? s?.id ?? '')) || null)),
+    () =>
+      (sessions.running || []).filter(
+        (s) =>
+          !shouldExcludeStoredGarminRunningSession(s) &&
+          !isWalkingLikeRunningSession(s, garminRunningById.get(String(s?.garminId ?? s?.id ?? '')) || null)
+      ),
     [sessions.running, garminRunningById]
   );
 
@@ -2852,6 +2887,50 @@ const EnduranceTab = () => {
                           </div>
                         ))}
                       </div>
+                    </div>
+                  )}
+
+                  {runningGarminCardioExcluded.length > 0 && (
+                    <div className="mb-6 rounded-xl border border-amber-500/45 bg-amber-950/25 p-4 text-amber-100">
+                      <h4 className="mb-2 text-sm font-semibold text-amber-200">
+                        {t('endurance.running.excludedCardioBannerTitle')}
+                      </h4>
+                      <p className="mb-3 text-xs leading-relaxed text-amber-100/90">
+                        {t('endurance.running.excludedCardioBannerBody')}
+                      </p>
+                      <ul className="space-y-2">
+                        {runningGarminCardioExcluded.map((session) => {
+                          const idx = (sessions.running || []).findIndex(
+                            (s) => s === session || s.id === session.id
+                          );
+                          return (
+                            <li
+                              key={String(session.id)}
+                              className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-amber-500/30 bg-black/40 px-3 py-2 text-xs"
+                            >
+                              <span className="min-w-0 flex-1 text-slate-300">
+                                {session.date} {session.time ? session.time : ''} · {session.notes}
+                              </span>
+                              <div className="flex shrink-0 flex-wrap items-center justify-end gap-2">
+                                <button
+                                  type="button"
+                                  onClick={() => restoreRunningSessionFromGarminCardioExclusion(session.id)}
+                                  className="rounded border border-emerald-500/55 px-2 py-1 text-emerald-200 hover:bg-emerald-950/35"
+                                >
+                                  {t('endurance.running.excludedCardioRestore')}
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => deleteRunningSession(session.id, idx >= 0 ? idx : 0)}
+                                  className="rounded border border-rose-500/50 px-2 py-1 text-rose-200 hover:bg-rose-950/40"
+                                >
+                                  {t('endurance.running.excludedCardioDelete')}
+                                </button>
+                              </div>
+                            </li>
+                          );
+                        })}
+                      </ul>
                     </div>
                   )}
 

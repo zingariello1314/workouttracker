@@ -1,0 +1,404 @@
+{
+  "id": 20997576635,
+  "date": "2025-11-15 14:40:13",
+  "time": "",
+  "duration": 5655,
+  "calories": {
+    "total": 511,
+    "resting": 106,
+    "active": 405
+  },
+  "avgHR": 116,
+  "maxHR": 147,
+  "minHR": 86,
+  "sweatLoss": 565,
+  "intensityMinutes": {
+    "moderate": 68,
+    "vigorous": 7,
+    "total": 75
+  },
+  "startTimeLocal": "2025-11-15T15:40:13Z",
+  "startTimeGMT": "2025-11-15T14:40:13Z",
+  "location": null,
+  "elevation": null,
+  "deviceInfo": {
+    "deviceId": "3502268277",
+    "deviceTypePk": 36869,
+    "deviceVersionPk": 996879
+  },
+  "trainingEffect": null,
+  "recoveryTime": null,
+  "vo2Max": null,
+  "trainingStatus": null,
+  "trainingLoad": null,
+  "performanceCondition": null,
+  "source": "garmin",
+  "running": {
+    "lapCount": 44,
+    "laps": [
+      {
+        "index": 1,
+        "durationSeconds": 346,
+        "avgHR": 113,
+        "calories": 40,
+        "startTime": "2025-11-15T14:40:13.0",
+        "intervalTypeKey": "ACTIVE"
+      },
+      {
+        "index": 2,
+        "durationSeconds": 135,
+        "avgHR": 118,
+        "calories": 16,
+        "startTime": "2025-11-15T14:45:59.0",
+        "intervalTypeKey": "ACTIVE"
+      },
+      {
+        "index": 3,
+        "durationSeconds": 129,
+        "avgHR": 118,
+        "calories": 15,
+        "startTime": "2025-11-15T14:48:14.0",
+        "intervalTypeKey": "ACTIVE"
+      },
+      {
+        "index": 4,
+        "durationSeconds": 39,
+        "avgHR": 127,
+        "calories": 5,
+        "startTime": "2025-11-15T14:50:23.0",
+        "intervalTypeKey": "ACTIVE"
+      },
+      {
+        "index": 5,
+        "durationSeconds": 109,
+        "avgHR": 108,
+        "calories": 10,
+        "startTime": "2025-11-15T14:51:03.0",
+        "intervalTypeKey": "ACTIVE"
+      },
+      {
+        "index": 6,
+        "durationSeconds": 329,
+        "avgHR": 109,
+        "calories": 30,
+        "startTime": "2025-11-15T14:52:53.0",
+        "intervalTypeKey": "ACTIVE"
+      },
+      {
+        "index": 7,
+        "durationSeconds": 186,
+        "avgHR": 122,
+        "calories": 23,
+        "startTime": "2025-11-15T14:58:23.0",
+        "intervalTypeKey": "ACTIVE"
+      },
+      {
+        "index": 8,
+        "durationSeconds": 57,
+        "avgHR": 117,
+        "calories": 6,
+        "startTime": "2025-11-15T15:01:34.0",
+        "intervalTypeKey": "ACTIVE"
+      },
+      {
+        "index": 9,
+        "durationSeconds": 74,
+        "avgHR": 104,
+        "calories": 5,
+        "startTime": "2025-11-15T15:02:32.0",
+        "intervalTypeKey": "ACTIVE"
+      },
+      {
+        "index": 10,
+        "durationSeconds": 225,
+        "avgHR": 121,
+        "calories": 25,
+        "startTime": "2025-11-15T15:03:47.0",
+        "intervalTypeKey": "ACTIVE"
+      },
+      {
+        "index": 11,
+        "durationSeconds": 143,
+        "avgHR": 125,
+        "calories": 17,
+        "startTime": "2025-11-15T15:07:32.0",
+        "intervalTypeKey": "ACTIVE"
+      },
+      {
+        "index": 12,
+        "durationSeconds": 141,
+        "avgHR": 127,
+        "calories": 18,
+        "startTime": "2025-11-15T15:09:55.0",
+        "intervalTypeKey": "ACTIVE"
+      },
+      {
+        "index": 13,
+        "durationSeconds": 38,
+        "avgHR": 125,
+        "calories": 4,
+        "startTime": "2025-11-15T15:12:17.0",
+        "intervalTypeKey": "ACTIVE"
+      },
+      {
+        "index": 14,
+        "durationSeconds": 93,
+        "avgHR": 112,
+        "calories": 7,
+        "startTime": "2025-11-15T15:12:55.0",
+        "intervalTypeKey": "ACTIVE"
+      },
+      {
+        "index": 15,
+        "durationSeconds": 80,
+        "avgHR": 122,
+        "calories": 9,
+        "startTime": "2025-11-15T15:14:29.0",
+        "intervalTypeKey": "ACTIVE"
+      },
+      {
+        "index": 16,
+        "durationSeconds": 43,
+        "avgHR": 105,
+        "calories": 2,
+        "startTime": "2025-11-15T15:15:50.0",
+        "intervalTypeKey": "ACTIVE"
+      },
+      {
+        "index": 17,
+        "durationSeconds": 57,
+        "avgHR": 124,
+        "calories": 6,
+        "startTime": "2025-11-15T15:16:33.0",
+        "intervalTypeKey": "ACTIVE"
+      },
+      {
+        "index": 18,
+        "durationSeconds": 48,
+        "avgHR": 117,
+        "calories": 4,
+        "startTime": "2025-11-15T15:17:31.0",
+        "intervalTypeKey": "ACTIVE"
+      },
+      {
+        "index": 19,
+        "durationSeconds": 153,
+        "avgHR": 125,
+        "calories": 18,
+        "startTime": "2025-11-15T15:18:20.0",
+        "intervalTypeKey": "ACTIVE"
+      },
+      {
+        "index": 20,
+        "durationSeconds": 124,
+        "avgHR": 129,
+        "calories": 16,
+        "startTime": "2025-11-15T15:20:53.0",
+        "intervalTypeKey": "ACTIVE"
+      },
+      {
+        "index": 21,
+        "durationSeconds": 201,
+        "avgHR": 125,
+        "calories": 22,
+        "startTime": "2025-11-15T15:22:58.0",
+        "intervalTypeKey": "ACTIVE"
+      },
+      {
+        "index": 22,
+        "durationSeconds": 194,
+        "avgHR": 124,
+        "calories": 20,
+        "startTime": "2025-11-15T15:26:20.0",
+        "intervalTypeKey": "ACTIVE"
+      },
+      {
+        "index": 23,
+        "durationSeconds": 46,
+        "avgHR": 127,
+        "calories": 5,
+        "startTime": "2025-11-15T15:29:34.0",
+        "intervalTypeKey": "ACTIVE"
+      },
+      {
+        "index": 24,
+        "durationSeconds": 72,
+        "avgHR": 124,
+        "calories": 7,
+        "startTime": "2025-11-15T15:30:21.0",
+        "intervalTypeKey": "ACTIVE"
+      },
+      {
+        "index": 25,
+        "durationSeconds": 120,
+        "avgHR": 122,
+        "calories": 11,
+        "startTime": "2025-11-15T15:31:34.0",
+        "intervalTypeKey": "ACTIVE"
+      },
+      {
+        "index": 26,
+        "durationSeconds": 76,
+        "avgHR": 121,
+        "calories": 7,
+        "startTime": "2025-11-15T15:33:34.0",
+        "intervalTypeKey": "ACTIVE"
+      },
+      {
+        "index": 27,
+        "durationSeconds": 81,
+        "avgHR": 113,
+        "calories": 5,
+        "startTime": "2025-11-15T15:34:50.0",
+        "intervalTypeKey": "ACTIVE"
+      },
+      {
+        "index": 28,
+        "durationSeconds": 65,
+        "avgHR": 123,
+        "calories": 6,
+        "startTime": "2025-11-15T15:36:12.0",
+        "intervalTypeKey": "ACTIVE"
+      },
+      {
+        "index": 29,
+        "durationSeconds": 95,
+        "avgHR": 113,
+        "calories": 6,
+        "startTime": "2025-11-15T15:37:18.0",
+        "intervalTypeKey": "ACTIVE"
+      },
+      {
+        "index": 30,
+        "durationSeconds": 172,
+        "avgHR": 115,
+        "calories": 12,
+        "startTime": "2025-11-15T15:38:54.0",
+        "intervalTypeKey": "ACTIVE"
+      },
+      {
+        "index": 31,
+        "durationSeconds": 109,
+        "avgHR": 124,
+        "calories": 11,
+        "startTime": "2025-11-15T15:41:47.0",
+        "intervalTypeKey": "ACTIVE"
+      },
+      {
+        "index": 32,
+        "durationSeconds": 29,
+        "avgHR": 127,
+        "calories": 3,
+        "startTime": "2025-11-15T15:43:36.0",
+        "intervalTypeKey": "ACTIVE"
+      },
+      {
+        "index": 33,
+        "durationSeconds": 99,
+        "avgHR": 115,
+        "calories": 7,
+        "startTime": "2025-11-15T15:44:05.0",
+        "intervalTypeKey": "ACTIVE"
+      },
+      {
+        "index": 34,
+        "durationSeconds": 151,
+        "avgHR": 104,
+        "calories": 8,
+        "startTime": "2025-11-15T15:45:45.0",
+        "intervalTypeKey": "ACTIVE"
+      },
+      {
+        "index": 35,
+        "durationSeconds": 188,
+        "avgHR": 100,
+        "calories": 8,
+        "startTime": "2025-11-15T15:48:16.0",
+        "intervalTypeKey": "ACTIVE"
+      },
+      {
+        "index": 36,
+        "durationSeconds": 104,
+        "avgHR": 110,
+        "calories": 6,
+        "startTime": "2025-11-15T15:51:25.0",
+        "intervalTypeKey": "ACTIVE"
+      },
+      {
+        "index": 37,
+        "durationSeconds": 64,
+        "avgHR": 105,
+        "calories": 3,
+        "startTime": "2025-11-15T15:53:10.0",
+        "intervalTypeKey": "ACTIVE"
+      },
+      {
+        "index": 38,
+        "durationSeconds": 66,
+        "avgHR": 118,
+        "calories": 5,
+        "startTime": "2025-11-15T15:54:14.0",
+        "intervalTypeKey": "ACTIVE"
+      },
+      {
+        "index": 39,
+        "durationSeconds": 65,
+        "avgHR": 124,
+        "calories": 7,
+        "startTime": "2025-11-15T15:55:21.0",
+        "intervalTypeKey": "ACTIVE"
+      },
+      {
+        "index": 40,
+        "durationSeconds": 183,
+        "avgHR": 114,
+        "calories": 14,
+        "startTime": "2025-11-15T15:56:26.0",
+        "intervalTypeKey": "ACTIVE"
+      },
+      {
+        "index": 41,
+        "durationSeconds": 126,
+        "avgHR": 116,
+        "calories": 10,
+        "startTime": "2025-11-15T15:59:29.0",
+        "intervalTypeKey": "ACTIVE"
+      },
+      {
+        "index": 42,
+        "durationSeconds": 176,
+        "avgHR": 112,
+        "calories": 14,
+        "startTime": "2025-11-15T16:01:36.0",
+        "intervalTypeKey": "ACTIVE"
+      },
+      {
+        "index": 43,
+        "durationSeconds": 164,
+        "avgHR": 112,
+        "calories": 11,
+        "startTime": "2025-11-15T16:04:33.0",
+        "intervalTypeKey": "ACTIVE"
+      },
+      {
+        "index": 44,
+        "durationSeconds": 434,
+        "avgHR": 106,
+        "calories": 27,
+        "startTime": "2025-11-15T16:07:17.0",
+        "intervalTypeKey": "ACTIVE"
+      }
+    ],
+    "durationSeconds": 5655,
+    "activeCaloriesDetail": 511
+  },
+  "jumps": null,
+  "connectIQ": null,
+  "activityName": "Cardio",
+  "activityType": "indoor_cardio",
+  "garminTypeKey": "indoor_cardio",
+  "type": "cardio",
+  "_classification_hash": "c5dd04fc",
+  "_cached_at": 1777241085.2622592,
+  "_cache_version": 8
+}

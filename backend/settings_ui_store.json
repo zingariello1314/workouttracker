@@ -1,0 +1,14 @@
+{
+  "updatedAt": 1777239075924,
+  "byUser": {
+    "65d7c648-af81-4b7f-b5fb-939effb7c8fa": {
+      "updatedAt": 1777239075924,
+      "swipeNavigation": {
+        "enabled": true,
+        "threshold": 100,
+        "velocityThreshold": 0.5
+      },
+      "appLanguage": "fr"
+    }
+  }
+}

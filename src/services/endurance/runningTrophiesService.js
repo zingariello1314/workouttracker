@@ -1,6 +1,7 @@
 import {
   inferRunningSessionTypeFromGarminActivity,
-  classifyLapPhase
+  classifyLapPhase,
+  shouldExcludeStoredGarminRunningSession
 } from '../../utils/garminRunningLaps';
 import { isWalkingLikeRunningSession } from '../../utils/runningSessionMovementKind';
 
@@ -2723,7 +2724,9 @@ export function evaluateRunningTrophies({ runningSessions = [], garminById = new
     run.garmin = garminById.get(garminId) || null;
     mergeGarminHrIntoRun(run);
   });
-  const runs = runsNorm.filter((r) => !isWalkingLikeRunningSession(r, r.garmin));
+  const runs = runsNorm.filter(
+    (r) => !shouldExcludeStoredGarminRunningSession(r) && !isWalkingLikeRunningSession(r, r.garmin)
+  );
   const stats = buildStats(runs, garminById);
   const catalog = buildRunningTrophiesCatalog();
   const results = [];

@@ -1,4 +1,5 @@
 import { parseRunningSessionDurationMinutes } from '../../utils/runningPersonalRecords';
+import { shouldExcludeStoredGarminRunningSession } from '../../utils/garminRunningLaps';
 
 const LEVELS = ['bronze', 'silver', 'gold', 'elite'];
 
@@ -185,7 +186,8 @@ export const WALKING_TROPHIES = [
 ];
 
 export function evaluateWalkingTrophies(sessions = [], supplemental = null) {
-  const stats = buildStats(sessions);
+  const pool = (Array.isArray(sessions) ? sessions : []).filter((s) => !shouldExcludeStoredGarminRunningSession(s));
+  const stats = buildStats(pool);
   const mergedStats = {
     ...stats,
     supplementalWalkKmAllTime: Number(supplemental?.walkKmAllTime) || 0,

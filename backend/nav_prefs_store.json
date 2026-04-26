@@ -1,0 +1,18 @@
+{
+  "updatedAt": 1777240678938,
+  "byUser": {
+    "65d7c648-af81-4b7f-b5fb-939effb7c8fa": {
+      "updatedAt": 1777240678938,
+      "entries": {
+        "finance.activeSubTab": "synthese",
+        "finance.planificateur.activeSection": "loisirs",
+        "sport.lastSubTab": "calendar",
+        "quests.activeSubTab": "today",
+        "dashboard.sport.recapPeriod": "all",
+        "dashboard.sportInsights.period": "30d",
+        "momentum_spotify_sidebar_expanded": "0",
+        "progress.activeSection": "insights"
+      }
+    }
+  }
+}

@@ -1,0 +1,99 @@
+{
+  "id": 22251539103,
+  "date": "2026-03-21 16:31:50",
+  "time": "",
+  "duration": 617,
+  "calories": {
+    "total": 101,
+    "resting": 13,
+    "active": 88
+  },
+  "avgHR": 147,
+  "maxHR": 180,
+  "minHR": 76,
+  "sweatLoss": 61,
+  "intensityMinutes": {
+    "moderate": null,
+    "vigorous": 10,
+    "total": 10
+  },
+  "startTimeLocal": "2026-03-21T17:31:50Z",
+  "startTimeGMT": "2026-03-21T16:31:50Z",
+  "location": {
+    "start": {
+      "lat": 44.79134417138994,
+      "lng": -0.6209673453122377
+    },
+    "end": {
+      "lat": 44.79141659103334,
+      "lng": -0.6207525171339512
+    }
+  },
+  "elevation": {
+    "gain": 2,
+    "loss": 4,
+    "max": 35.26,
+    "min": 30.5
+  },
+  "deviceInfo": {
+    "deviceId": "3502268277",
+    "deviceTypePk": 36869,
+    "deviceVersionPk": 996879
+  },
+  "trainingEffect": null,
+  "recoveryTime": null,
+  "vo2Max": null,
+  "trainingStatus": null,
+  "trainingLoad": null,
+  "performanceCondition": null,
+  "source": "garmin",
+  "distance": 1.6075,
+  "speed": 9.38,
+  "maxSpeed": 10.35,
+  "running": {
+    "lapCount": 2,
+    "laps": [
+      {
+        "index": 1,
+        "distanceMeters": 1000.0,
+        "distanceKm": 1.0,
+        "durationSeconds": 379,
+        "avgSpeedKmh": 9.5,
+        "avgHR": 129,
+        "calories": 61,
+        "elevationGain": 2,
+        "averageCadenceSpm": 162,
+        "averageStrideLengthMeters": 0.972,
+        "startTime": "2026-03-21T16:31:50.0",
+        "intervalTypeKey": "ACTIVE"
+      },
+      {
+        "index": 2,
+        "distanceMeters": 607.48,
+        "distanceKm": 0.6075,
+        "durationSeconds": 237,
+        "avgSpeedKmh": 9.19,
+        "avgHR": 175,
+        "calories": 40,
+        "averageCadenceSpm": 165,
+        "averageStrideLengthMeters": 0.927,
+        "startTime": "2026-03-21T16:38:10.0",
+        "intervalTypeKey": "ACTIVE"
+      }
+    ],
+    "averageCadenceSpm": 163,
+    "maxCadenceSpm": 173,
+    "distanceMeters": 1607.48,
+    "durationSeconds": 617,
+    "activeCaloriesDetail": 101
+  },
+  "jumps": null,
+  "connectIQ": null,
+  "activityName": "Pessac Course \u00e0 pied",
+  "activityType": "indoor_cardio",
+  "garminTypeKey": "indoor_cardio",
+  "type": "cardio",
+  "_classification_hash": "1e23ecb1",
+  "_cached_at": 1777239987.005385,
+  "_cache_version": 9
+}

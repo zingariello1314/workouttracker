@@ -1,0 +1,65 @@
+{
+  "id": 20835807067,
+  "date": "2025-10-29 22:14:26",
+  "time": "",
+  "duration": 652,
+  "calories": {
+    "total": 139,
+    "resting": 14,
+    "active": 125
+  },
+  "avgHR": 160,
+  "maxHR": 183,
+  "minHR": 111,
+  "sweatLoss": 65,
+  "intensityMinutes": {
+    "moderate": 1,
+    "vigorous": 9,
+    "total": 10
+  },
+  "startTimeLocal": "2025-10-29T23:14:26Z",
+  "startTimeGMT": "2025-10-29T22:14:26Z",
+  "location": {
+    "start": {
+      "lat": 44.792242711409926,
+      "lng": -0.6223687157034874
+    },
+    "end": {
+      "lat": 44.792213877663016,
+      "lng": -0.6224258802831173
+    }
+  },
+  "elevation": {
+    "gain": null,
+    "loss": null,
+    "max": 37.63,
+    "min": 37.35
+  },
+  "deviceInfo": {
+    "deviceId": "3502268277",
+    "deviceTypePk": 36869,
+    "deviceVersionPk": 996879
+  },
+  "trainingEffect": null,
+  "recoveryTime": null,
+  "vo2Max": null,
+  "trainingStatus": null,
+  "trainingLoad": null,
+  "performanceCondition": null,
+  "source": "garmin",
+  "distance": 0.034,
+  "speed": 0.19,
+  "maxSpeed": 3.49,
+  "jumps": 1034,
+  "connectIQ": {
+    "duration": "00:10:49",
+    "jumps": 1034,
+    "speed": 95.59,
+    "interruptions": 14,
+    "maxContinuousJumps": 144
+  },
+  "type": "jumpRope",
+  "_classification_hash": "b4b73f56",
+  "_cached_at": 1777241076.227047,
+  "_cache_version": 8
+}

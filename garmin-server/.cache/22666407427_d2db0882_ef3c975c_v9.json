@@ -1,0 +1,391 @@
+{
+  "id": 22666407427,
+  "date": "2026-04-26 12:44:23",
+  "time": "",
+  "duration": 2649,
+  "calories": {
+    "total": 278,
+    "resting": 43,
+    "active": 235
+  },
+  "avgHR": 132,
+  "maxHR": 167,
+  "minHR": 104,
+  "sweatLoss": 264,
+  "intensityMinutes": {
+    "moderate": 32,
+    "vigorous": 8,
+    "total": 40
+  },
+  "startTimeLocal": "2026-04-26T14:44:23Z",
+  "startTimeGMT": "2026-04-26T12:44:23Z",
+  "location": {
+    "start": {
+      "lat": 44.79251830838621,
+      "lng": -0.6251018866896629
+    },
+    "end": {
+      "lat": 44.79243792593479,
+      "lng": -0.6249475758522749
+    }
+  },
+  "elevation": {
+    "gain": 1,
+    "loss": 2,
+    "max": 39.82,
+    "min": 37.22
+  },
+  "deviceInfo": {
+    "deviceId": "3502268277",
+    "deviceTypePk": 36869,
+    "deviceVersionPk": 996879
+  },
+  "trainingEffect": null,
+  "recoveryTime": null,
+  "vo2Max": null,
+  "trainingStatus": null,
+  "trainingLoad": null,
+  "performanceCondition": null,
+  "source": "garmin",
+  "distance": 0.3871,
+  "speed": 0.53,
+  "maxSpeed": 5.41,
+  "running": {
+    "lapCount": 30,
+    "laps": [
+      {
+        "index": 1,
+        "distanceMeters": 1.47,
+        "distanceKm": 0.0015,
+        "durationSeconds": 35,
+        "avgSpeedKmh": 0.15,
+        "avgHR": 111,
+        "calories": 3,
+        "startTime": "2026-04-26T12:44:23.0",
+        "intervalTypeKey": "ACTIVE"
+      },
+      {
+        "index": 2,
+        "distanceMeters": 2.17,
+        "distanceKm": 0.0022,
+        "durationSeconds": 103,
+        "avgSpeedKmh": 0.08,
+        "avgHR": 124,
+        "calories": 12,
+        "startTime": "2026-04-26T12:44:59.0",
+        "intervalTypeKey": "ACTIVE"
+      },
+      {
+        "index": 3,
+        "distanceMeters": 0.62,
+        "durationSeconds": 53,
+        "avgSpeedKmh": 0.04,
+        "avgHR": 130,
+        "calories": 6,
+        "startTime": "2026-04-26T12:46:43.0",
+        "intervalTypeKey": "ACTIVE"
+      },
+      {
+        "index": 4,
+        "distanceMeters": 0.37,
+        "durationSeconds": 60,
+        "avgSpeedKmh": 0.02,
+        "avgHR": 134,
+        "calories": 8,
+        "startTime": "2026-04-26T12:47:37.0",
+        "intervalTypeKey": "ACTIVE"
+      },
+      {
+        "index": 5,
+        "distanceMeters": 0.6,
+        "durationSeconds": 111,
+        "avgSpeedKmh": 0.02,
+        "avgHR": 132,
+        "calories": 14,
+        "startTime": "2026-04-26T12:48:37.0",
+        "intervalTypeKey": "ACTIVE"
+      },
+      {
+        "index": 6,
+        "distanceMeters": 22.42,
+        "distanceKm": 0.0224,
+        "durationSeconds": 38,
+        "avgSpeedKmh": 2.08,
+        "avgHR": 134,
+        "calories": 5,
+        "startTime": "2026-04-26T12:50:28.0",
+        "intervalTypeKey": "ACTIVE"
+      },
+      {
+        "index": 7,
+        "distanceMeters": 3.87,
+        "distanceKm": 0.0039,
+        "durationSeconds": 41,
+        "avgSpeedKmh": 0.33,
+        "avgHR": 128,
+        "calories": 4,
+        "startTime": "2026-04-26T12:51:07.0",
+        "intervalTypeKey": "ACTIVE"
+      },
+      {
+        "index": 8,
+        "distanceMeters": 1.24,
+        "distanceKm": 0.0012,
+        "durationSeconds": 61,
+        "avgSpeedKmh": 0.07,
+        "avgHR": 127,
+        "calories": 6,
+        "startTime": "2026-04-26T12:51:49.0",
+        "intervalTypeKey": "ACTIVE"
+      },
+      {
+        "index": 9,
+        "distanceMeters": 1.23,
+        "distanceKm": 0.0012,
+        "durationSeconds": 128,
+        "avgSpeedKmh": 0.04,
+        "avgHR": 132,
+        "calories": 15,
+        "startTime": "2026-04-26T12:52:51.0",
+        "intervalTypeKey": "ACTIVE"
+      },
+      {
+        "index": 10,
+        "distanceMeters": 19.7,
+        "distanceKm": 0.0197,
+        "durationSeconds": 114,
+        "avgSpeedKmh": 0.62,
+        "avgHR": 142,
+        "calories": 16,
+        "startTime": "2026-04-26T12:55:00.0",
+        "intervalTypeKey": "ACTIVE"
+      },
+      {
+        "index": 11,
+        "distanceMeters": 39.47,
+        "distanceKm": 0.0395,
+        "durationSeconds": 93,
+        "avgSpeedKmh": 1.52,
+        "avgHR": 147,
+        "calories": 14,
+        "startTime": "2026-04-26T12:56:55.0",
+        "intervalTypeKey": "ACTIVE"
+      },
+      {
+        "index": 12,
+        "distanceMeters": 2.32,
+        "distanceKm": 0.0023,
+        "durationSeconds": 32,
+        "avgSpeedKmh": 0.26,
+        "avgHR": 140,
+        "calories": 4,
+        "startTime": "2026-04-26T12:58:28.0",
+        "intervalTypeKey": "ACTIVE"
+      },
+      {
+        "index": 13,
+        "distanceMeters": 14.71,
+        "distanceKm": 0.0147,
+        "durationSeconds": 124,
+        "avgSpeedKmh": 0.43,
+        "avgHR": 136,
+        "calories": 15,
+        "startTime": "2026-04-26T12:59:00.0",
+        "intervalTypeKey": "ACTIVE"
+      },
+      {
+        "index": 14,
+        "distanceMeters": 24.48,
+        "distanceKm": 0.0245,
+        "durationSeconds": 66,
+        "avgSpeedKmh": 1.32,
+        "avgHR": 140,
+        "calories": 8,
+        "startTime": "2026-04-26T13:01:04.0",
+        "intervalTypeKey": "ACTIVE"
+      },
+      {
+        "index": 15,
+        "distanceMeters": 2.44,
+        "distanceKm": 0.0024,
+        "durationSeconds": 42,
+        "avgSpeedKmh": 0.21,
+        "avgHR": 126,
+        "calories": 4,
+        "startTime": "2026-04-26T13:02:11.0",
+        "intervalTypeKey": "ACTIVE"
+      },
+      {
+        "index": 16,
+        "distanceMeters": 4.83,
+        "distanceKm": 0.0048,
+        "durationSeconds": 124,
+        "avgSpeedKmh": 0.14,
+        "avgHR": 130,
+        "calories": 13,
+        "startTime": "2026-04-26T13:02:53.0",
+        "intervalTypeKey": "ACTIVE"
+      },
+      {
+        "index": 17,
+        "distanceMeters": 40.71,
+        "distanceKm": 0.0407,
+        "durationSeconds": 168,
+        "avgSpeedKmh": 0.87,
+        "avgHR": 132,
+        "calories": 18,
+        "startTime": "2026-04-26T13:04:58.0",
+        "intervalTypeKey": "ACTIVE"
+      },
+      {
+        "index": 18,
+        "distanceMeters": 79.02,
+        "distanceKm": 0.079,
+        "durationSeconds": 185,
+        "avgSpeedKmh": 1.53,
+        "avgHR": 126,
+        "calories": 16,
+        "startTime": "2026-04-26T13:07:46.0",
+        "intervalTypeKey": "ACTIVE"
+      },
+      {
+        "index": 19,
+        "distanceMeters": 18.8,
+        "distanceKm": 0.0188,
+        "durationSeconds": 121,
+        "avgSpeedKmh": 0.56,
+        "avgHR": 128,
+        "calories": 11,
+        "elevationGain": 1,
+        "startTime": "2026-04-26T13:10:51.0",
+        "intervalTypeKey": "ACTIVE"
+      },
+      {
+        "index": 20,
+        "distanceMeters": 2.67,
+        "distanceKm": 0.0027,
+        "durationSeconds": 91,
+        "avgSpeedKmh": 0.1,
+        "avgHR": 121,
+        "calories": 6,
+        "startTime": "2026-04-26T13:12:52.0",
+        "intervalTypeKey": "ACTIVE"
+      },
+      {
+        "index": 21,
+        "distanceMeters": 0.03,
+        "durationSeconds": 60,
+        "avgHR": 115,
+        "calories": 3,
+        "startTime": "2026-04-26T13:14:24.0",
+        "intervalTypeKey": "ACTIVE"
+      },
+      {
+        "index": 22,
+        "distanceMeters": 0.17,
+        "durationSeconds": 72,
+        "avgSpeedKmh": 0.01,
+        "avgHR": 119,
+        "calories": 4,
+        "startTime": "2026-04-26T13:15:24.0",
+        "intervalTypeKey": "ACTIVE"
+      },
+      {
+        "index": 23,
+        "distanceMeters": 4.6,
+        "distanceKm": 0.0046,
+        "durationSeconds": 150,
+        "avgSpeedKmh": 0.11,
+        "avgHR": 129,
+        "calories": 13,
+        "startTime": "2026-04-26T13:18:26.0",
+        "intervalTypeKey": "ACTIVE"
+      },
+      {
+        "index": 24,
+        "distanceMeters": 71.84,
+        "distanceKm": 0.0718,
+        "durationSeconds": 126,
+        "avgSpeedKmh": 2.05,
+        "avgHR": 146,
+        "calories": 17,
+        "startTime": "2026-04-26T13:20:56.0",
+        "intervalTypeKey": "ACTIVE"
+      },
+      {
+        "index": 25,
+        "distanceMeters": 0.29,
+        "durationSeconds": 35,
+        "avgSpeedKmh": 0.03,
+        "avgHR": 149,
+        "calories": 5,
+        "startTime": "2026-04-26T13:23:02.0",
+        "intervalTypeKey": "ACTIVE"
+      },
+      {
+        "index": 26,
+        "distanceMeters": 15.81,
+        "distanceKm": 0.0158,
+        "durationSeconds": 88,
+        "avgSpeedKmh": 0.64,
+        "avgHR": 151,
+        "calories": 12,
+        "startTime": "2026-04-26T13:23:38.0",
+        "intervalTypeKey": "ACTIVE"
+      },
+      {
+        "index": 27,
+        "distanceMeters": 0.02,
+        "durationSeconds": 55,
+        "avgHR": 131,
+        "calories": 5,
+        "startTime": "2026-04-26T13:25:06.0",
+        "intervalTypeKey": "ACTIVE"
+      },
+      {
+        "index": 28,
+        "distanceMeters": 9.05,
+        "distanceKm": 0.0091,
+        "durationSeconds": 76,
+        "avgSpeedKmh": 0.42,
+        "avgHR": 133,
+        "calories": 7,
+        "startTime": "2026-04-26T13:26:01.0",
+        "intervalTypeKey": "ACTIVE"
+      },
+      {
+        "index": 29,
+        "distanceMeters": 2.02,
+        "distanceKm": 0.002,
+        "durationSeconds": 69,
+        "avgSpeedKmh": 0.1,
+        "avgHR": 128,
+        "calories": 5,
+        "startTime": "2026-04-26T13:27:18.0",
+        "intervalTypeKey": "ACTIVE"
+      },
+      {
+        "index": 30,
+        "distanceMeters": 0.17,
+        "durationSeconds": 114,
+        "avgSpeedKmh": 0.0,
+        "avgHR": 125,
+        "calories": 9,
+        "startTime": "2026-04-26T13:28:27.0",
+        "intervalTypeKey": "ACTIVE"
+      }
+    ],
+    "distanceMeters": 387.14,
+    "durationSeconds": 2649,
+    "activeCaloriesDetail": 278
+  },
+  "jumps": null,
+  "connectIQ": null,
+  "activityName": "Pessac Cardio",
+  "activityType": "indoor_cardio",
+  "garminTypeKey": "indoor_cardio",
+  "type": "cardio",
+  "_classification_hash": "ef3c975c",
+  "_cached_at": 1777236068.3911006,
+  "_cache_version": 9
+}

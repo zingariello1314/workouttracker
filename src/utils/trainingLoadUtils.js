@@ -6,6 +6,7 @@
  */
 
 import { isMockEnduranceSession, parseDurationToMinutes } from './calendarUtils';
+import { shouldExcludeStoredGarminRunningSession } from './garminRunningLaps';
 
 /**
  * Infère un coefficient à partir du nom / série / type (sans surcharge utilisateur).
@@ -272,6 +273,7 @@ const RUNNING_TYPE_FACTORS = {
  */
 export function analyzeRunningSessionFactors(session) {
   if (!session || isMockEnduranceSession(session)) return null;
+  if (shouldExcludeStoredGarminRunningSession(session)) return null;
 
   const minutes = parseDurationToMinutes(session.duration || 0, 'analyzeRunningSessionFactors');
   const distanceKm = parseFloat(String(session.distance ?? '').replace(',', '.')) || 0;
@@ -352,6 +354,9 @@ function computeDurationMinutesTrainingLoad(session, factorPerMinute) {
 
 export function enduranceSessionCalendarLoad(activityType, session) {
   if (isMockEnduranceSession(session)) {
+    return 0;
+  }
+  if (activityType === 'running' && shouldExcludeStoredGarminRunningSession(session)) {
     return 0;
   }
   if (activityType === 'jumprope') {

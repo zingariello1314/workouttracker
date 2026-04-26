@@ -34,15 +34,30 @@ import {
   calendarDayHasPaintSignal
 } from '../utils/calendarDayVisualModel';
 import {
-  isMockEnduranceSession, 
-  parseDurationToMinutes, 
+  isMockEnduranceSession,
+  parseDurationToMinutes,
   normalizeDateString,
   calculateIntensityLevel,
   calculateTimeIntensityLevel,
   validateDuration,
   validateDate,
-  validateNumericValue
+  validateNumericValue,
+  collectEnduranceSessionsForCalendarDay
 } from '../utils/calendarUtils';
+import {
+  paceMinPerKmFromSession,
+  parseRunningSessionDurationMinutes,
+  formatPaceMinPerKm
+} from '../utils/runningPersonalRecords';
+import {
+  resolveRunningSessionDisplayType,
+  runningSessionTypeLabel
+} from '../utils/runningSessionTypeLabel';
+import {
+  inferRunningSessionTypeFromGarminActivity,
+  shouldExcludeStoredGarminRunningSession
+} from '../utils/garminRunningLaps';
+import { isWalkingLikeRunningSession } from '../utils/runningSessionMovementKind';
 import {
   buildDailyTrainingLoadByDate,
   resolveExerciseIntensityCoeff,
@@ -321,6 +336,7 @@ const CalendarHeatmap = ({
   useEffect(() => {
     const lang = language || 'fr';
     loadTranslationNamespace(lang, 'calendar').catch(() => {});
+    loadTranslationNamespace(lang, 'endurance').catch(() => {});
   }, [language]);
 
   // ✅ PHASE 2.3 : Cache pour les intensités calculées (useRef pour persister entre renders)
@@ -967,6 +983,9 @@ const CalendarHeatmap = ({
             // ✅ PHASE 1 : Exclure les sessions mock (fonction centralisée)
             if (isMockEnduranceSession(session)) {
               return; // Ignorer cette session mock
+            }
+            if (activityType === 'running' && shouldExcludeStoredGarminRunningSession(session)) {
+              return;
             }
             // ✅ PHASE 4 : Valider la date (vérifier si future et normaliser)
             const dateValidation = validateDate(session.date, `getEnduranceDataForDate.${activityType}.${session.id || 'unknown'}`);
@@ -4328,6 +4347,12 @@ const CalendarHeatmap = ({
         // MODE DETAILS : Afficher les détails du jour (code existant)
         if (selectedDate && panelMode === 'details') {
           const selectedDateStr = getDateStr(selectedDate.date);
+          const enduranceDay = collectEnduranceSessionsForCalendarDay(allData, selectedDateStr);
+          const garminByEnduranceId = new Map();
+          (garminData?.activities?.cardio || []).forEach((act) => {
+            const k = act?.garminId ?? act?.id;
+            if (k != null && String(k) !== '') garminByEnduranceId.set(String(k), act);
+          });
           const dailyMetrics = garminData?.dailyMetrics?.[selectedDateStr];
           const swimming = (garminData?.activities?.swimming || []).filter(a => a.date === selectedDateStr);
           const jumpRope = (garminData?.activities?.jumpRope || []).filter(a => a.date === selectedDateStr);
@@ -4805,7 +4830,224 @@ const CalendarHeatmap = ({
                 </div>
               </div>
             )}
-          
+
+            {(!justification || justification.reason === JUSTIFICATION_REASONS.REPOS) &&
+              enduranceDay.rows.length > 0 && (
+              <div className="rounded-xl border border-emerald-600/40 bg-black/90 p-4">
+                <h4 className="mb-3 flex items-center font-medium text-emerald-100">
+                  <Activity className="mr-2" size={16} />
+                  {t('calendar.heatmap.dayDetails.enduranceSessionsDetailTitle')}
+                </h4>
+                <div className="space-y-3">
+                  {enduranceDay.rows.map(({ activityType, session }, idx) => {
+                    const gAct =
+                      session?.garminId != null || session?.id != null
+                        ? garminByEnduranceId.get(String(session.garminId ?? session.id))
+                        : null;
+                    const notesLine =
+                      session.notes && String(session.notes).trim() ? (
+                        <div className="mt-2 text-xs text-slate-500">
+                          <span className="font-medium text-slate-400">
+                            {t('calendar.heatmap.dayDetails.enduranceNotes')}
+                          </span>{' '}
+                          {session.notes}
+                        </div>
+                      ) : null;
+
+                    if (activityType === 'running') {
+                      const isWalk = isWalkingLikeRunningSession(session, gAct);
+                      const inferredFromGarmin = gAct
+                        ? inferRunningSessionTypeFromGarminActivity(gAct)
+                        : undefined;
+                      const displayRunType = isWalk
+                        ? 'walking'
+                        : resolveRunningSessionDisplayType(session, inferredFromGarmin);
+                      const paceNum = paceMinPerKmFromSession(session);
+                      const paceStr =
+                        paceNum != null ? formatPaceMinPerKm(paceNum) : String(session.pace || '—');
+                      const dist = parseFloat(String(session.distance ?? '').replace(',', '.')) || 0;
+                      const durMin = parseRunningSessionDurationMinutes(session.duration);
+                      const speedKmh =
+                        durMin > 0 && dist > 0
+                          ? dist / (durMin / 60)
+                          : parseFloat(String(session.speed ?? '').replace(',', '.')) || null;
+                      const speedLabel =
+                        speedKmh != null && Number.isFinite(speedKmh)
+                          ? `${speedKmh.toFixed(2)} km/h`
+                          : session.speed
+                            ? `${session.speed} km/h`
+                            : '—';
+
+                      return (
+                        <div
+                          key={`cal-end-${activityType}-${session.id ?? idx}`}
+                          className="rounded-xl border border-[#0F4C5C]/50 bg-slate-950/80 p-4"
+                        >
+                          <div className="mb-2 flex flex-wrap items-baseline gap-x-2 gap-y-1">
+                            <span
+                              className={`text-base font-bold ${
+                                displayRunType === 'interval'
+                                  ? 'text-amber-200'
+                                  : displayRunType === 'walking'
+                                    ? 'text-sky-300'
+                                    : 'text-emerald-200'
+                              }`}
+                            >
+                              {runningSessionTypeLabel(displayRunType, t)}
+                            </span>
+                            <span className="text-sm font-medium text-white">{session.date}</span>
+                            {session.time ? (
+                              <span className="text-sm text-slate-400">{session.time}</span>
+                            ) : null}
+                          </div>
+                          <div className="grid grid-cols-2 gap-2 text-sm md:grid-cols-4">
+                            <div>
+                              <span className="text-slate-400">{t('endurance.running.details.distance')}</span>
+                              <span className="ml-2 font-semibold text-white">{session.distance} km</span>
+                            </div>
+                            <div>
+                              <span className="text-slate-400">{t('endurance.running.details.duration')}</span>
+                              <span className="ml-2 font-semibold text-white">{session.duration}</span>
+                            </div>
+                            <div>
+                              <span className="text-slate-400">{t('endurance.running.details.pace')}</span>
+                              <span className="ml-2 font-semibold text-white">{paceStr}</span>
+                            </div>
+                            <div>
+                              <span className="text-slate-400">{t('endurance.running.details.speed')}</span>
+                              <span className="ml-2 font-semibold text-white">{speedLabel}</span>
+                            </div>
+                          </div>
+                          {notesLine}
+                        </div>
+                      );
+                    }
+
+                    if (activityType === 'swimming') {
+                      const swimTotalM =
+                        Array.isArray(session.laps) && session.laps.length > 0
+                          ? session.laps.reduce(
+                              (s, lap) =>
+                                s + (parseFloat(String(lap?.distance ?? '').replace(',', '.')) || 0),
+                              0
+                            )
+                          : parseFloat(String(session.distance ?? '').replace(',', '.')) || 0;
+                      const swimMin = parseDurationToMinutes(
+                        session.duration || session.totalTime || 0,
+                        `CalendarHeatmap.swim.${idx}`
+                      );
+                      return (
+                        <div
+                          key={`cal-end-${activityType}-${session.id ?? idx}`}
+                          className="rounded-xl border border-cyan-600/35 bg-slate-950/80 p-4"
+                        >
+                          <div className="mb-2 flex flex-wrap items-baseline gap-x-2 gap-y-1">
+                            <span className="text-base font-bold text-cyan-200">
+                              {t('calendar.heatmap.dayDetails.swimming')}
+                            </span>
+                            <span className="text-sm font-medium text-white">{session.date}</span>
+                            {session.time ? (
+                              <span className="text-sm text-slate-400">{session.time}</span>
+                            ) : null}
+                          </div>
+                          <div className="grid grid-cols-2 gap-2 text-sm md:grid-cols-3">
+                            <div>
+                              <span className="text-slate-400">{t('calendar.heatmap.dayDetails.distance')}</span>
+                              <span className="ml-2 font-semibold text-white">
+                                {Math.round(swimTotalM)} m
+                              </span>
+                            </div>
+                            <div>
+                              <span className="text-slate-400">{t('calendar.heatmap.dayDetails.duration')}</span>
+                              <span className="ml-2 font-semibold text-white">
+                                {session.duration || (swimMin > 0 ? `${swimMin} min` : '—')}
+                              </span>
+                            </div>
+                            {session.pace100m ? (
+                              <div>
+                                <span className="text-slate-400">
+                                  {t('endurance.swimming.details.pace100m')}
+                                </span>
+                                <span className="ml-2 font-semibold text-white">{session.pace100m}</span>
+                              </div>
+                            ) : null}
+                          </div>
+                          {notesLine}
+                        </div>
+                      );
+                    }
+
+                    if (activityType === 'jumprope') {
+                      const jumps = session.jumps ?? session.reps ?? session.count ?? 0;
+                      return (
+                        <div
+                          key={`cal-end-${activityType}-${session.id ?? idx}`}
+                          className="rounded-xl border border-amber-600/35 bg-slate-950/80 p-4"
+                        >
+                          <div className="mb-2 flex flex-wrap items-baseline gap-x-2 gap-y-1">
+                            <span className="text-base font-bold text-amber-200">
+                              {t('calendar.heatmap.dayDetails.jumpRope')}
+                            </span>
+                            <span className="text-sm font-medium text-white">{session.date}</span>
+                            {session.time ? (
+                              <span className="text-sm text-slate-400">{session.time}</span>
+                            ) : null}
+                          </div>
+                          <div className="grid grid-cols-2 gap-2 text-sm">
+                            <div>
+                              <span className="text-slate-400">{t('calendar.heatmap.dayDetails.jumps')}</span>
+                              <span className="ml-2 font-semibold text-white">{jumps}</span>
+                            </div>
+                            <div>
+                              <span className="text-slate-400">{t('calendar.heatmap.dayDetails.duration')}</span>
+                              <span className="ml-2 font-semibold text-white">{session.duration || '—'}</span>
+                            </div>
+                          </div>
+                          {notesLine}
+                        </div>
+                      );
+                    }
+
+                    const strengthLabel =
+                      activityType === 'boxing'
+                        ? t('calendar.heatmap.dayDetails.enduranceActBoxing')
+                        : activityType === 'gainage'
+                          ? t('calendar.heatmap.dayDetails.enduranceActGainage')
+                          : activityType === 'pushups'
+                            ? t('calendar.heatmap.dayDetails.pushups')
+                            : activityType;
+                    const repsVal =
+                      session.count ?? session.reps ?? session.jumps ?? 0;
+                    return (
+                      <div
+                        key={`cal-end-${activityType}-${session.id ?? idx}`}
+                        className="rounded-xl border border-slate-600/40 bg-slate-950/80 p-4"
+                      >
+                        <div className="mb-2 flex flex-wrap items-baseline gap-x-2 gap-y-1">
+                          <span className="text-base font-bold text-slate-200">{strengthLabel}</span>
+                          <span className="text-sm font-medium text-white">{session.date}</span>
+                          {session.time ? (
+                            <span className="text-sm text-slate-400">{session.time}</span>
+                          ) : null}
+                        </div>
+                        <div className="grid grid-cols-2 gap-2 text-sm">
+                          <div>
+                            <span className="text-slate-400">{t('calendar.heatmap.dayDetails.totalReps')}</span>
+                            <span className="ml-2 font-semibold text-white">{repsVal}</span>
+                          </div>
+                          <div>
+                            <span className="text-slate-400">{t('calendar.heatmap.dayDetails.duration')}</span>
+                            <span className="ml-2 font-semibold text-white">{session.duration || '—'}</span>
+                          </div>
+                        </div>
+                        {notesLine}
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
             {/* Données d'endurance détaillées */}
             {selectedDate.intensity.enduranceData && selectedDate.intensity.enduranceData.sessions > 0 && (
               <div>
@@ -4826,10 +5068,22 @@ const CalendarHeatmap = ({
                   )}
                   <div className="bg-blue-700/30 rounded-lg p-3 text-center">
                     <div className="text-lg font-bold text-blue-200">
-                      {selectedDate.intensity.enduranceData.distance % 1 === 0 
-                        ? selectedDate.intensity.enduranceData.distance 
-                        : parseFloat(selectedDate.intensity.enduranceData.distance.toFixed(1))
-                      }m
+                      {(() => {
+                        const parts = [];
+                        if (enduranceDay.runningDistanceKm > 0) {
+                          const r = enduranceDay.runningDistanceKm;
+                          parts.push(r % 1 === 0 ? `${r} km` : `${r.toFixed(1)} km`);
+                        }
+                        if (enduranceDay.swimmingDistanceM > 0) {
+                          parts.push(`${Math.round(enduranceDay.swimmingDistanceM)} m`);
+                        }
+                        if (parts.length > 0) return parts.join(' · ');
+                        const legacy = selectedDate.intensity.enduranceData.distance;
+                        if (legacy > 0) {
+                          return legacy % 1 === 0 ? `${legacy}` : parseFloat(legacy.toFixed(1)).toString();
+                        }
+                        return '—';
+                      })()}
                     </div>
                     <div className="text-blue-300 text-sm">{t('calendar.heatmap.dayDetails.enduranceDistance')}</div>
                   </div>

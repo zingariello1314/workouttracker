@@ -205,6 +205,10 @@
     "displayLabels": {
       "otherCardio": "Cardio"
     },
+    "excludedCardioBannerTitle": "Garmin “cardio” sessions (not road running)",
+    "excludedCardioBannerBody": "These no longer count toward running challenges, running XP, or calendar load. Delete them to remove them from your history.",
+    "excludedCardioDelete": "Delete",
+    "excludedCardioRestore": "Restore",
     "badges": {
       "interval": "Intervals"
     },

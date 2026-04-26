@@ -84,6 +84,45 @@ const SportXPBar = () => {
           <Target className="h-3 w-3 shrink-0 text-sky-400" />
           <span className="text-sky-400/95">{breakdown.challenges} défis</span>
         </div>
+        <div className="col-span-2 mt-1 border-t border-blue-500/20 pt-2 text-[10px] leading-snug text-slate-500 sm:col-span-3 md:col-span-4 lg:col-span-8">
+          <span className="font-medium text-slate-400">Répartition XP (hors trophées course/corde…) : </span>
+          <span className="tabular-nums text-slate-400">
+            {(breakdown.weightedRepsXp ?? 0).toLocaleString('fr-FR')} reps pond.
+          </span>
+          <span className="text-slate-600"> · </span>
+          <span className="tabular-nums text-slate-400">
+            {(breakdown.caloriesXp ?? 0).toLocaleString('fr-FR')} cal (0,5×kcal actives Garmin cumulées)
+          </span>
+          <span className="text-slate-600"> · </span>
+          <span className="tabular-nums text-slate-400">
+            {(breakdown.stepsXp ?? 0).toLocaleString('fr-FR')} pas (0,01×pas cumulés)
+          </span>
+          {(breakdown.exercisesXp ?? 0) > 0 ? (
+            <>
+              <span className="text-slate-600"> · </span>
+              <span className="tabular-nums text-slate-400">
+                {breakdown.exercisesXp.toLocaleString('fr-FR')} ex. cochés (5×)
+              </span>
+            </>
+          ) : null}
+          {(breakdown.challengesXp ?? 0) > 0 ? (
+            <>
+              <span className="text-slate-600"> · </span>
+              <span className="tabular-nums text-slate-400">
+                {breakdown.challengesXp.toLocaleString('fr-FR')} défis (50×)
+              </span>
+            </>
+          ) : null}
+          {(breakdown.sessionsFeedbackXp ?? 0) > 0 ? (
+            <>
+              <span className="text-slate-600"> · </span>
+              <span className="tabular-nums text-slate-400">
+                {breakdown.sessionsFeedbackXp.toLocaleString('fr-FR')} séances +feedback (25×)
+              </span>
+            </>
+          ) : null}
+        </div>
+
         <div className="flex flex-col gap-0.5 sm:col-span-2 lg:col-span-3">
           <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
             <div className="flex items-center gap-1">
