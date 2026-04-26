@@ -33,6 +33,12 @@ export const useWorkoutExercises = (data, updateData, getCurrentData) => {
     setHasUnsavedStretches(true);
   }, []);
 
+  /** Met à jour le snapshot brouillon sans modifier les flags hasUnsaved (ex. sync calendrier ↔ persistance). */
+  const replaceDraftWorkoutData = useCallback((snapshot) => {
+    if (!snapshot || typeof snapshot !== 'object') return;
+    setTempData(snapshot);
+  }, []);
+
   const saveExerciseChanges = useCallback(async () => {
     if (hasUnsavedExercises && tempData) {
       try {
@@ -189,6 +195,7 @@ export const useWorkoutExercises = (data, updateData, getCurrentData) => {
     hasUnsavedExercises,
     hasUnsavedStretches,
     tempData,
+    replaceDraftWorkoutData,
     updateTempExerciseData,
     updateTempStretchData,
     saveExerciseChanges,

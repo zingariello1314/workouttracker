@@ -21,7 +21,7 @@ import { workoutProgram } from '../data/workoutProgram';
 import { calculateAutoReps } from '../utils/exerciseCalculations';
 import Input, { Checkbox } from './ui/Input';
 import Button from './ui/Button';
-import { Check, Save, Plus, X, Trash2 } from 'lucide-react';
+import { Check, Save, Plus, X, Trash2, Pencil } from 'lucide-react';
 import AddExceptionalExerciseModal from './modals/AddExceptionalExerciseModal';
 import {
   calculateDayIntensityWithGarmin,
@@ -240,6 +240,9 @@ const CalendarHeatmap = ({
   /** Jour du programme (lundi… dimanche) dont on affiche les exercices ; la sauvegarde reste sur la date du calendrier. */
   const [workoutEntryTemplateDay, setWorkoutEntryTemplateDay] = useState(null);
   const [showCalendarExceptionalModal, setShowCalendarExceptionalModal] = useState(false);
+  /** Édition des reps depuis le détail jour (clé `dateStr_id` ou variante semaine). */
+  const [editingRepsStorageKey, setEditingRepsStorageKey] = useState(null);
+  const [editingRepsDraft, setEditingRepsDraft] = useState('');
 
   // Récupérer les données du contexte pour le calcul du temps réel
   const {
@@ -253,7 +256,10 @@ const CalendarHeatmap = ({
     toggleCheck,
     updateData,
     removeExceptionalExercise,
-    markExceptionalExerciseComplete
+    markExceptionalExerciseComplete,
+    hasUnsavedExercises,
+    hasUnsavedStretches,
+    replaceDraftWorkoutData
   } = useWorkout();
   const { currentUser, isAuthenticated } = useAuth();
   const { showSuccess, showError } = useToast();
@@ -269,6 +275,13 @@ const CalendarHeatmap = ({
       }
     }
   }, [panelMode, selectedProgramId, activeProgram, isAdmin, isAuthenticated]);
+
+  useEffect(() => {
+    if (!selectedDate) {
+      setEditingRepsStorageKey(null);
+      setEditingRepsDraft('');
+    }
+  }, [selectedDate]);
 
   const workoutEntryTargetDateStr =
     panelMode === 'workout-entry' ? getDateStr(selectedDate?.date || panelDate || null) : null;
@@ -822,7 +835,7 @@ const CalendarHeatmap = ({
   
   // ✅ PHASE 1 : Utiliser la fonction centralisée depuis calendarUtils
   // calculateDynamicTimeIntensityLevel remplacé par calculateTimeIntensityLevel (importée)
-  const getIntensityForDate = (date) => {
+  const getIntensityForDate = (date, currentDataOverride = null) => {
     const dateStr = getDateStr(date);
 
     if (variant === 'quests' && questIntensityMap) {
@@ -835,12 +848,12 @@ const CalendarHeatmap = ({
       return learningIntensityMap.get(dateStr) || createNeutralBooksIntensity();
     }
 
-    // ✅ NOUVEAU : Récupérer les données fraîches à chaque appel pour éviter les problèmes de closure
-    const currentData = getCurrentData();
+    // Données fraîches ; `currentDataOverride` évite un tour de render après updateData (getCurrentData peut encore pointer sur l’ancien brouillon).
+    const currentData = currentDataOverride ?? getCurrentData();
     
-    // ✅ PHASE 2.3 : Vérifier le cache avant de calculer
+    // ✅ PHASE 2.3 : Vérifier le cache avant de calculer (ignorer le cache si snapshot explicite)
     const cacheKey = dateStr;
-    if (intensityCache.current[cacheKey]) {
+    if (!currentDataOverride && intensityCache.current[cacheKey]) {
       const cached = intensityCache.current[cacheKey];
       // ✅ NOUVEAU : Ajouter justification si absente du cache (pour éviter recalcul)
       if (!cached.justification) {
@@ -1893,12 +1906,18 @@ const CalendarHeatmap = ({
       delete nextReps[storageKey];
       delete nextWeights[storageKey];
 
-      await updateData({
+      const payload = {
         ...latestData,
         checkedExercises: nextChecked,
         reps: nextReps,
         exerciseWeights: nextWeights
-      });
+      };
+
+      await updateData(payload);
+
+      if (hasUnsavedExercises || hasUnsavedStretches) {
+        replaceDraftWorkoutData(payload);
+      }
 
       delete intensityCache.current[dateStr];
       Object.keys(intensityCache.current)
@@ -1908,13 +1927,86 @@ const CalendarHeatmap = ({
       setDataUpdateTrigger((p) => p + 1);
       const updatedDay = {
         date: selectedDate.date,
-        intensity: getIntensityForDate(selectedDate.date)
+        intensity: getIntensityForDate(selectedDate.date, payload)
       };
       setSelectedDate(updatedDay);
       showSuccess(t('calendar.heatmap.dayDetails.exerciseDeleteSuccess', 'Enregistrement supprimé du calendrier'));
     } catch (error) {
       console.error('[CalendarHeatmap] Erreur suppression enregistrement exercice:', error);
       showError(t('calendar.heatmap.dayDetails.exerciseDeleteError', 'Impossible de supprimer cet enregistrement'));
+    }
+  };
+
+  const handleUpdateExerciseRepsFromCalendar = async (exercise, repsValue) => {
+    if (!selectedDate?.date || !exercise) return;
+    const dateStr = getDateStr(selectedDate.date);
+    const fallbackExerciseId = exercise.exerciseId ?? exercise.id;
+    const storageKeyRaw = exercise._storageKey || `${dateStr}_${fallbackExerciseId}`;
+    const storageKey = String(storageKeyRaw || '').trim();
+    if (!storageKey || !storageKey.startsWith(`${dateStr}_`)) return;
+
+    const parsed = parseInt(String(repsValue ?? '').replace(/\s/g, ''), 10);
+    if (!Number.isFinite(parsed) || parsed < 1) {
+      showError(
+        t(
+          'calendar.heatmap.dayDetails.exerciseRepsInvalid',
+          'Indiquez un nombre de répétitions valide (minimum 1).'
+        )
+      );
+      return;
+    }
+    const capped = Math.min(parsed, 99999);
+
+    try {
+      const latestData = getCurrentData();
+      const nextChecked = { ...(latestData?.checkedExercises || {}) };
+      const nextReps = { ...(latestData?.reps || {}) };
+
+      if (!nextChecked[storageKey]) {
+        showError(
+          t(
+            'calendar.heatmap.dayDetails.exerciseRepsUpdateMissing',
+            'Cet enregistrement n’est plus disponible. Rechargez le calendrier.'
+          )
+        );
+        return;
+      }
+
+      nextReps[storageKey] = capped;
+
+      const payload = {
+        ...latestData,
+        checkedExercises: nextChecked,
+        reps: nextReps
+      };
+
+      await updateData(payload);
+
+      if (hasUnsavedExercises || hasUnsavedStretches) {
+        replaceDraftWorkoutData(payload);
+      }
+
+      delete intensityCache.current[dateStr];
+      Object.keys(intensityCache.current)
+        .filter((key) => key.startsWith(dateStr))
+        .forEach((key) => delete intensityCache.current[key]);
+
+      setDataUpdateTrigger((p) => p + 1);
+      setEditingRepsStorageKey(null);
+      setEditingRepsDraft('');
+      const updatedDay = {
+        date: selectedDate.date,
+        intensity: getIntensityForDate(selectedDate.date, payload)
+      };
+      setSelectedDate(updatedDay);
+      showSuccess(
+        t('calendar.heatmap.dayDetails.exerciseRepsUpdated', 'Nombre de répétitions mis à jour')
+      );
+    } catch (error) {
+      console.error('[CalendarHeatmap] Erreur mise à jour reps exercice:', error);
+      showError(
+        t('calendar.heatmap.dayDetails.exerciseRepsUpdateError', 'Impossible de mettre à jour les répétitions')
+      );
     }
   };
 
@@ -5108,6 +5200,11 @@ const CalendarHeatmap = ({
                     // Récupérer le nom du programme depuis l'exercice ou via getExerciseNameById
                     const programName = exercise.programName || 'Programme inconnu';
                     const exerciseName = exercise.name || (getExerciseNameById ? getExerciseNameById(exercise.exerciseId || exercise.id) : `Exercice ${exercise.exerciseId || exercise.id}`);
+                    const dateStrForRow = getDateStr(selectedDate.date);
+                    const rowStorageKey =
+                      exercise._storageKey ||
+                      `${dateStrForRow}_${exercise.exerciseId ?? exercise.id}`;
+                    const isEditingReps = editingRepsStorageKey === rowStorageKey;
                     const coeffData = getCurrentData();
                     const userCoeffs = coeffData?.exerciseIntensityCoeffs || {};
                     const loadCoeff = resolveExerciseIntensityCoeff(
@@ -5122,16 +5219,81 @@ const CalendarHeatmap = ({
                     );
                     
                     return (
-                      <div key={index} className="bg-slate-700/30 rounded p-2">
+                      <div key={rowStorageKey || index} className="bg-slate-700/30 rounded p-2">
                         <div className="flex justify-between items-start gap-2 mb-1">
                           <div className="min-w-0">
                             <div className="flex flex-wrap items-center gap-2">
                               <span className="text-slate-300 font-medium">{exerciseName}</span>
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setEditingRepsStorageKey(rowStorageKey);
+                                  setEditingRepsDraft(String(exercise.reps ?? ''));
+                                }}
+                                className="inline-flex shrink-0 rounded border border-slate-500/50 bg-slate-800/60 p-1 text-sky-300 hover:bg-slate-700/80 hover:text-sky-200"
+                                title={t(
+                                  'calendar.heatmap.dayDetails.editExerciseReps',
+                                  'Modifier le nombre de répétitions'
+                                )}
+                                aria-label={t(
+                                  'calendar.heatmap.dayDetails.editExerciseReps',
+                                  'Modifier le nombre de répétitions'
+                                )}
+                              >
+                                <Pencil size={14} />
+                              </button>
                               <LoadDifficultyStars coeff={loadCoeff} className="scale-90" />
                             </div>
                           </div>
                           <div className="flex items-center gap-2 shrink-0">
-                            <span className="text-white font-medium">{exercise.reps} {t('calendar.heatmap.dayDetails.reps')}</span>
+                            {isEditingReps ? (
+                              <div className="flex flex-wrap items-center justify-end gap-1">
+                                <Input
+                                  type="number"
+                                  min={1}
+                                  max={99999}
+                                  value={editingRepsDraft}
+                                  onChange={(e) => setEditingRepsDraft(e.target.value)}
+                                  onKeyDown={(e) => {
+                                    if (e.key === 'Enter') {
+                                      e.preventDefault();
+                                      handleUpdateExerciseRepsFromCalendar(exercise, editingRepsDraft);
+                                    }
+                                    if (e.key === 'Escape') {
+                                      setEditingRepsStorageKey(null);
+                                      setEditingRepsDraft('');
+                                    }
+                                  }}
+                                  className="h-8 w-[4.5rem] px-1 text-center text-sm font-semibold bg-slate-800/80 border-slate-500 text-white"
+                                  autoFocus
+                                />
+                                <button
+                                  type="button"
+                                  onClick={() =>
+                                    handleUpdateExerciseRepsFromCalendar(exercise, editingRepsDraft)
+                                  }
+                                  className="inline-flex rounded border border-emerald-500/50 bg-emerald-950/30 p-1 text-emerald-200 hover:bg-emerald-900/40"
+                                  title={t('calendar.heatmap.dayDetails.saveReps', 'Enregistrer')}
+                                >
+                                  <Check size={14} />
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    setEditingRepsStorageKey(null);
+                                    setEditingRepsDraft('');
+                                  }}
+                                  className="inline-flex rounded border border-slate-500/50 bg-slate-800/60 p-1 text-slate-300 hover:bg-slate-700/80"
+                                  title={t('calendar.heatmap.dayDetails.cancelRepsEdit', 'Annuler')}
+                                >
+                                  <X size={14} />
+                                </button>
+                              </div>
+                            ) : (
+                              <span className="text-white font-medium">
+                                {exercise.reps} {t('calendar.heatmap.dayDetails.reps')}
+                              </span>
+                            )}
                             <button
                               type="button"
                               onClick={() => handleDeleteExerciseRecordFromCalendar(exercise)}

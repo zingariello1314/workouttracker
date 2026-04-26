@@ -191,6 +191,7 @@ const WorkoutProvider = ({ children }) => {
     hasUnsavedExercises: hasUnsavedExercisesFromHook,
     hasUnsavedStretches: hasUnsavedStretchesFromHook,
     tempData: tempDataFromHook,
+    replaceDraftWorkoutData: replaceDraftWorkoutDataFromHook,
     updateTempExerciseData,
     updateTempStretchData,
     saveExerciseChanges,
@@ -208,6 +209,18 @@ const WorkoutProvider = ({ children }) => {
     setHasUnsavedStretches(hasUnsavedStretchesFromHook);
     setTempData(tempDataFromHook);
   }, [hasUnsavedExercisesFromHook, hasUnsavedStretchesFromHook, tempDataFromHook]);
+
+  /** Aligner hook + état miroir sans toucher aux flags (ex. après updateData depuis le calendrier). */
+  const replaceDraftWorkoutData = useCallback(
+    (snapshot) => {
+      if (!snapshot || typeof snapshot !== 'object') return;
+      replaceDraftWorkoutDataFromHook(snapshot);
+      if (hasUnsavedExercises || hasUnsavedStretches) {
+        setTempData(snapshot);
+      }
+    },
+    [replaceDraftWorkoutDataFromHook, hasUnsavedExercises, hasUnsavedStretches]
+  );
 
   // ✅ PHASE 4 : Utilisation du hook pour les programmes
   const {
@@ -1101,6 +1114,7 @@ const WorkoutProvider = ({ children }) => {
     discardStretchChanges,
     cancelExerciseChanges,
     cancelStretchChanges,
+    replaceDraftWorkoutData,
     
     // États des modales
     showSettings,
