@@ -11,6 +11,8 @@ const generateTestWorkoutData = () => {
     checkedExercises: {},
     reps: {},
     exerciseWeights: {},
+    exerciseWeightPerArm: {},
+    exerciseSetWeights: {},
     checkedStretches: {},
     startDate: null,
     weekVariant: 'A',
@@ -110,6 +112,10 @@ const INITIAL_WORKOUT_DATA = {
   reps: {},
   /** Poids saisis (kg) par clé d’exercice — même schéma de clés que `reps` */
   exerciseWeights: {},
+  /** Haltères : true = la saisie est le kg par haltère (volume ×2 si bilatéral deux haltères) */
+  exerciseWeightPerArm: {},
+  /** Poids (kg) par série, même clé — tableau de chaînes même longueur que le nombre de séries */
+  exerciseSetWeights: {},
   checkedStretches: {},
   startDate: null,
   weekVariant: 'A',
@@ -317,7 +323,14 @@ export const useWorkoutData = (options = {}) => {
       }
 
       // Validation de l'intégrité des propriétés critiques
-      const requiredProperties = ['checkedExercises', 'reps', 'checkedStretches', 'exerciseWeights'];
+      const requiredProperties = [
+        'checkedExercises',
+        'reps',
+        'checkedStretches',
+        'exerciseWeights',
+        'exerciseWeightPerArm',
+        'exerciseSetWeights'
+      ];
       for (const prop of requiredProperties) {
         if (newData[prop] && typeof newData[prop] !== 'object') {
           console.warn(`Propriété ${prop} corrompue, réinitialisation`);
@@ -359,6 +372,32 @@ export const useWorkoutData = (options = {}) => {
           }
         }
         newData.exerciseWeights = cleanWeights;
+      }
+
+      if (newData.exerciseWeightPerArm && typeof newData.exerciseWeightPerArm === 'object') {
+        const cleanPerArm = {};
+        for (const [key, value] of Object.entries(newData.exerciseWeightPerArm)) {
+          if (value === true) cleanPerArm[key] = true;
+        }
+        newData.exerciseWeightPerArm = cleanPerArm;
+      }
+
+      if (newData.exerciseSetWeights && typeof newData.exerciseSetWeights === 'object') {
+        const cleanSets = {};
+        for (const [key, arr] of Object.entries(newData.exerciseSetWeights)) {
+          if (!Array.isArray(arr)) continue;
+          const row = arr
+            .map((cell) => {
+              if (cell === '' || cell === undefined || cell === null) return '';
+              const normalized = String(cell).trim().replace(',', '.');
+              const numValue = parseFloat(normalized);
+              if (!Number.isNaN(numValue) && numValue >= 0 && numValue <= 999) return normalized;
+              return '';
+            })
+            .filter((_, i) => i < 24);
+          if (row.some((c) => c !== '')) cleanSets[key] = row;
+        }
+        newData.exerciseSetWeights = cleanSets;
       }
 
       // Validation des photos de progression
@@ -415,6 +454,14 @@ export const useWorkoutData = (options = {}) => {
         exerciseWeights:
           newData && newData.exerciseWeights && typeof newData.exerciseWeights === 'object'
             ? { ...newData.exerciseWeights }
+            : {},
+        exerciseWeightPerArm:
+          newData && newData.exerciseWeightPerArm && typeof newData.exerciseWeightPerArm === 'object'
+            ? { ...newData.exerciseWeightPerArm }
+            : {},
+        exerciseSetWeights:
+          newData && newData.exerciseSetWeights && typeof newData.exerciseSetWeights === 'object'
+            ? { ...newData.exerciseSetWeights }
             : {},
         checkedStretches: newData && newData.checkedStretches ? { ...newData.checkedStretches } : {},
         startDate: newData && newData.startDate ? newData.startDate : null,
@@ -521,6 +568,8 @@ export const useWorkoutData = (options = {}) => {
             checkedExercises: newData.checkedExercises || {},
             reps: newData.reps || {},
             exerciseWeights: newData.exerciseWeights || {},
+            exerciseWeightPerArm: newData.exerciseWeightPerArm || {},
+            exerciseSetWeights: newData.exerciseSetWeights || {},
             checkedStretches: newData.checkedStretches || {},
             startDate: newData.startDate || null,
             weekVariant: newData.weekVariant || 'A',
@@ -673,6 +722,14 @@ export const useWorkoutData = (options = {}) => {
               exerciseWeights:
                 migratedData.exerciseWeights && typeof migratedData.exerciseWeights === 'object'
                   ? { ...migratedData.exerciseWeights }
+                  : {},
+              exerciseWeightPerArm:
+                migratedData.exerciseWeightPerArm && typeof migratedData.exerciseWeightPerArm === 'object'
+                  ? { ...migratedData.exerciseWeightPerArm }
+                  : {},
+              exerciseSetWeights:
+                migratedData.exerciseSetWeights && typeof migratedData.exerciseSetWeights === 'object'
+                  ? { ...migratedData.exerciseSetWeights }
                   : {},
               checkedStretches: migratedData.checkedStretches || {},
               startDate: migratedData.startDate || null,
@@ -877,6 +934,8 @@ export const useWorkoutData = (options = {}) => {
   useEffect(() => {
     // À chaque changement de storageKey (changement d'utilisateur), recharger les données correspondant à cette clé
     isInitialLoadRef.current = true;
+    // Réinitialiser immédiatement l'état en mémoire pour éviter d'afficher les données de l'utilisateur précédent.
+    setData(INITIAL_WORKOUT_DATA);
     loadData();
     
       // Nettoyage automatique au démarrage (une seule fois)

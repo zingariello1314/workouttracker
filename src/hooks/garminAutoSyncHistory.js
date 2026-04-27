@@ -4,7 +4,7 @@
  * @module garminAutoSyncHistory
  */
 
-import { openDB } from './garminDataUtils';
+import { openDB, getGarminScope, recordBelongsToCurrentScope } from './garminDataUtils';
 
 const STORE_AUTO_SYNC_HISTORY = 'autoSyncHistory';
 import logger from '../utils/logger';
@@ -12,6 +12,8 @@ import logger from '../utils/logger';
 const log = logger.module('garminAutoSyncHistory');
 
 export const AUTO_SYNC_HISTORY_LIMIT = 100; // Limite d'historique en mémoire
+
+const getScopedAutoSyncHistoryKey = () => `garmin_${getGarminScope()}_autosync_history`;
 
 /**
  * Persiste un déclenchement AutoSync dans IndexedDB
@@ -21,13 +23,19 @@ export const AUTO_SYNC_HISTORY_LIMIT = 100; // Limite d'historique en mémoire
  */
 export async function persistAutoSyncHistory(entry) {
   try {
+    const scope = getGarminScope();
+    const scopedEntry = {
+      ...entry,
+      userId: entry?.userId || scope
+    };
+
     const db = await openDB();
     if (!db) {
       log.warn('[persistAutoSyncHistory] IndexedDB non disponible, utilisation localStorage');
       // Fallback localStorage
-      const key = 'garmin_autosync_history';
+      const key = getScopedAutoSyncHistoryKey();
       const existing = JSON.parse(localStorage.getItem(key) || '[]');
-      existing.unshift(entry);
+      existing.unshift(scopedEntry);
       const limited = existing.slice(0, AUTO_SYNC_HISTORY_LIMIT);
       localStorage.setItem(key, JSON.stringify(limited));
       return;
@@ -36,7 +44,7 @@ export async function persistAutoSyncHistory(entry) {
     const tx = db.transaction([STORE_AUTO_SYNC_HISTORY], 'readwrite');
     const store = tx.objectStore(STORE_AUTO_SYNC_HISTORY);
     
-    await store.add(entry);
+    await store.add(scopedEntry);
     await tx.complete;
     
     // Nettoyer les anciennes entrées de manière asynchrone (non bloquant)
@@ -72,9 +80,11 @@ export async function persistAutoSyncHistory(entry) {
           return;
         }
         
-        if (allEntries.length > AUTO_SYNC_HISTORY_LIMIT) {
+        const scopedEntries = allEntries.filter((historyEntry) => recordBelongsToCurrentScope(historyEntry));
+
+        if (scopedEntries.length > AUTO_SYNC_HISTORY_LIMIT) {
           // Trier par timestamp (plus ancien en premier)
-          const sorted = allEntries.sort((a, b) => (a.timestamp || 0) - (b.timestamp || 0));
+          const sorted = scopedEntries.sort((a, b) => (a.timestamp || 0) - (b.timestamp || 0));
           
           // Supprimer les plus anciennes
           const toDelete = sorted.slice(0, sorted.length - AUTO_SYNC_HISTORY_LIMIT);
@@ -106,7 +116,7 @@ export async function loadAutoSyncHistory(limit = AUTO_SYNC_HISTORY_LIMIT) {
     if (!db) {
       log.warn('[loadAutoSyncHistory] IndexedDB non disponible, utilisation localStorage');
       // Fallback localStorage
-      const key = 'garmin_autosync_history';
+      const key = getScopedAutoSyncHistoryKey();
       const existing = JSON.parse(localStorage.getItem(key) || '[]');
       return existing.slice(0, limit);
     }
@@ -140,8 +150,9 @@ export async function loadAutoSyncHistory(limit = AUTO_SYNC_HISTORY_LIMIT) {
       }
     }
     
+    const scopedEntries = allEntries.filter((entry) => recordBelongsToCurrentScope(entry));
     // Trier par timestamp décroissant (plus récent en premier)
-    const sorted = allEntries.sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
+    const sorted = scopedEntries.sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
     
     return sorted.slice(0, limit);
   } catch (error) {
@@ -168,14 +179,16 @@ export async function cleanupAutoSyncHistory() {
     const index = store.index('timestamp');
     
     const range = IDBKeyRange.upperBound(cutoffTime);
-    const keys = await index.getAllKeys(range);
+    const candidates = await index.getAll(range);
+    const toDelete = (Array.isArray(candidates) ? candidates : [])
+      .filter((entry) => recordBelongsToCurrentScope(entry));
     
-    for (const key of keys) {
-      await store.delete(key);
+    for (const entry of toDelete) {
+      await store.delete(entry.id);
     }
     
     await tx.complete;
-    return keys.length;
+    return toDelete.length;
   } catch (error) {
     log.error('[cleanupAutoSyncHistory] Erreur lors du nettoyage', error);
     return 0;

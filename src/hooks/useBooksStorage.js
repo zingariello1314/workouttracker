@@ -3,6 +3,7 @@ import { loadBooks, saveBooks } from '../utils/booksStorage';
 import { getAllBooksFromIndexedDB, saveBooksToIndexedDB } from '../utils/booksIndexedDB';
 import { useAuth } from '../context/AuthContext';
 import logger from '../utils/logger';
+import { isAdminUser } from '../utils/accessControl';
 
 const booksLog = logger.module('useBooksStorage');
 
@@ -33,6 +34,7 @@ export const BooksStorageContext = createContext(null);
 
 function useBooksStorageImpl() {
   const { currentUser, isAuthenticated } = useAuth();
+  const isAdmin = isAdminUser(currentUser);
   const [books, setBooks] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const debounceTimerRef = useRef(null);
@@ -44,7 +46,7 @@ function useBooksStorageImpl() {
   // Autre user : userId = currentUser.id
   // Déconnecté : userId = null → retourne [] (pas de livres)
   const userId = isAuthenticated && currentUser 
-    ? (currentUser.role === 'admin' || currentUser.username === 'zingariello1314' ? null : currentUser.id)
+    ? (isAdmin ? null : currentUser.id)
     : null;
 
   // Chargement initial
@@ -72,9 +74,7 @@ function useBooksStorageImpl() {
         // ✅ Filtrer par userId
         // Admin : récupère les livres sans userId (anciennes données) OU avec userId = adminId
         // Autre user : récupère uniquement les livres avec userId = currentUser.id
-        const adminId = currentUser?.role === 'admin' || currentUser?.username === 'zingariello1314' 
-          ? currentUser.id 
-          : null;
+        const adminId = isAdmin ? currentUser.id : null;
         
         const filteredBooks = allIndexedBooks.filter(book => {
           if (!book) return false;
@@ -123,9 +123,7 @@ function useBooksStorageImpl() {
           // ✅ Filtrer aussi le fallback
           const filteredFallback = fallback.filter(book => {
             if (!book) return false;
-            const adminId = currentUser?.role === 'admin' || currentUser?.username === 'zingariello1314' 
-              ? currentUser.id 
-              : null;
+            const adminId = isAdmin ? currentUser.id : null;
             if (adminId) {
               return !book.userId || book.userId === adminId;
             }
@@ -167,9 +165,7 @@ function useBooksStorageImpl() {
       }
 
       // ✅ Ajouter userId à chaque livre avant sauvegarde
-      const userIdToAssign = currentUser.role === 'admin' || currentUser.username === 'zingariello1314'
-        ? currentUser.id
-        : currentUser.id;
+      const userIdToAssign = currentUser.id;
       
       const booksWithUserId = Array.isArray(nextBooks) 
         ? nextBooks.map(book => ({
@@ -217,9 +213,7 @@ function useBooksStorageImpl() {
         // Écriture immédiate (IndexedDB) pour ne pas perdre les changements si F5 avant la fin du debounce
         if (isAuthenticated && currentUser && !isInitialLoadRef.current) {
           const userIdToAssign =
-            currentUser.role === 'admin' || currentUser.username === 'zingariello1314'
-              ? currentUser.id
-              : currentUser.id;
+            currentUser.id;
           const booksWithUserId = Array.isArray(next)
             ? next.map((book) => ({
                 ...book,

@@ -1,10 +1,13 @@
 import React, { useMemo } from 'react';
 import { useWorkout } from '../../context/WorkoutContext';
 import { useTranslation } from '../../utils/translations';
+import { useAuth } from '../../context/AuthContext';
+import { canAccessTab } from '../../utils/accessMatrix';
 
 const Navigation = () => {
   const { activeTab, setActiveTab } = useWorkout();
   const t = useTranslation();
+  const { isAuthenticated } = useAuth();
 
   // ✅ Regrouper tous les onglets d'entraînement sous un méta-onglet "Sport"
   const sportTabs = useMemo(
@@ -87,6 +90,11 @@ const Navigation = () => {
   };
 
   const handleClick = (tabId) => {
+    const accessOk = canAccessTab(tabId, { isAuthenticated });
+    if (!accessOk) {
+      setActiveTab('auth');
+      return;
+    }
     if (tabId === 'code') {
       setActiveTab(getLastCodeSubTab());
       return;
@@ -158,6 +166,10 @@ const Navigation = () => {
               <button
                 key={tab.id}
                 onClick={() => {
+                  if (!canAccessTab(tab.id, { isAuthenticated })) {
+                    setActiveTab('auth');
+                    return;
+                  }
                   localStorage.setItem('sport.lastSubTab', tab.id);
                   setActiveTab(tab.id);
                 }}

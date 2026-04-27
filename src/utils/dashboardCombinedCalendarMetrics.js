@@ -15,6 +15,7 @@ import { computeFinanceRawIntensityScore } from './finance/financeCalendarIntens
 import { isGarminRunningLikeActivity } from './garminRunningLaps';
 import { normalizeGarminDate } from '../components/tabs/GarminTab/utils/garminFormatters';
 import { parseDurationToMinutes } from './calendarUtils';
+import { computeVolumeKgForWorkoutKey } from './exerciseLoadVolume';
 
 const extractNumeric = (val, defaultVal = 0) => {
   if (val == null) return defaultVal;
@@ -314,7 +315,6 @@ export function computeYearWorkoutRepsAndVolume(workoutData, year) {
   const prefix = `${year}-`;
   const repsMap = workoutData?.reps || {};
   const checked = workoutData?.checkedExercises || {};
-  const weights = workoutData?.exerciseWeights || {};
   let reps = 0;
   let volumeKg = 0;
   Object.entries(checked).forEach(([key, isChk]) => {
@@ -326,9 +326,7 @@ export function computeYearWorkoutRepsAndVolume(workoutData, year) {
     if (!datePart.startsWith(prefix)) return;
     const r = parseInt(repsMap[key], 10) || 0;
     reps += r;
-    const wRaw = weights[key];
-    const kg = parseFloat(String(wRaw ?? '').replace(/\s/g, '').replace(',', '.'));
-    if (Number.isFinite(kg) && kg > 0) volumeKg += kg * r;
+    volumeKg += computeVolumeKgForWorkoutKey(key, workoutData);
   });
   return { reps, volumeKg };
 }

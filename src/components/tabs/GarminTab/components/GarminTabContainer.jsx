@@ -17,6 +17,8 @@ import { isBrowser } from '../../../../utils/isBrowser';
 import { getActivitiesStabilityKey, getDailyMetricsStabilityKey } from '../utils/dataStability';
 import { useTranslation } from '../../../../utils/translations';
 import { useAuth } from '../../../../context/AuthContext';
+import { isAdminUser } from '../../../../utils/accessControl';
+import { useGarminSourceSettings } from '../hooks/useGarminSourceSettings';
 
 // Constante locale (était dans GarminTab.jsx)
 const FORCED_HISTORY_DISPLAY_LIMIT = 200;
@@ -70,6 +72,12 @@ const TAB_ITEMS = Object.freeze([
     label: '📊 Graphiques',
     ariaLabel: ARIA_LABELS.TAB_CHARTS,
     panelId: 'garmin-charts-panel'
+  },
+  {
+    id: 'settings',
+    label: '⚙️ Parametres',
+    ariaLabel: 'Onglet Parametres Garmin',
+    panelId: 'garmin-settings-panel'
   }
 ]);
 
@@ -92,7 +100,7 @@ export function useGarminTabContainer(options = {}) {
 
   // Authentification : utilisé uniquement pour adapter le rendu selon l'état de connexion
   const { currentUser, isAuthenticated } = useAuth();
-  const isAdmin = currentUser?.role === 'admin' || currentUser?.username === 'zingariello1314';
+  const isAdmin = isAdminUser(currentUser);
 
   // ==================== ÉTAT LOCAL ====================
   const [status, setStatus] = React.useState(null);
@@ -101,7 +109,13 @@ export function useGarminTabContainer(options = {}) {
   const [startDate, setStartDate] = React.useState('');
   const [endDate, setEndDate] = React.useState('');
   const [selectedDate, setSelectedDate] = React.useState(null);
-  const [activeTab, setActiveTab] = React.useState('dashboard');
+  const [activeTab, setActiveTab] = React.useState(() => {
+    try {
+      return localStorage.getItem('garmin.activeSubTab') || 'dashboard';
+    } catch {
+      return 'dashboard';
+    }
+  });
   const [comparisonMode, setComparisonMode] = React.useState(false);
   const [compareDate, setCompareDate] = React.useState(null);
   const [forcedRangesHistory, setForcedRangesHistory] = React.useState([]);
@@ -109,6 +123,11 @@ export function useGarminTabContainer(options = {}) {
   const [customStartDate, setCustomStartDate] = React.useState('');
   const [customEndDate, setCustomEndDate] = React.useState('');
   const [showDebugPanel, setShowDebugPanel] = React.useState(false);
+  const sourceSettings = useGarminSourceSettings({
+    currentUser,
+    isAuthenticated,
+    isAdmin
+  });
 
   // ==================== RÉFS ====================
   const prevLoadingRef = React.useRef(false);
@@ -200,6 +219,11 @@ export function useGarminTabContainer(options = {}) {
     {
       onForcedRangeRecorded: handleForcedRangeRecorded
     }
+  );
+
+  const syncNowWithActiveSource = React.useCallback(
+    (request = {}) => syncNow(sourceSettings.buildSyncRequest(request)),
+    [syncNow, sourceSettings]
   );
 
   // ==================== DEBUG PANEL ====================
@@ -671,6 +695,14 @@ export function useGarminTabContainer(options = {}) {
     };
   }, [activeTab, prefetchTabModules]);
 
+  React.useEffect(() => {
+    try {
+      localStorage.setItem('garmin.activeSubTab', activeTab);
+    } catch {
+      // Ignore storage errors
+    }
+  }, [activeTab]);
+
   // ==================== BACKFILL ====================
   const handleBackfill = React.useCallback(() => {
     if (!startDate || !endDate) {
@@ -701,8 +733,58 @@ export function useGarminTabContainer(options = {}) {
       );
     }
     
-    backfill(startDate, endDate, setSelectedDate);
-  }, [startDate, endDate, backfill, setSelectedDate, showToast]);
+    const sourcePayload = sourceSettings.buildSyncRequest({}).payload;
+    backfill(
+      startDate,
+      endDate,
+      setSelectedDate,
+      sourcePayload ? { payload: sourcePayload } : undefined
+    );
+  }, [startDate, endDate, backfill, setSelectedDate, showToast, sourceSettings]);
+
+  const handleBackfillWithActiveSource = React.useCallback(
+    (start, end) => {
+      if (!start || !end) return;
+      const sourcePayload = sourceSettings.buildSyncRequest({}).payload;
+      backfill(start, end, setSelectedDate, sourcePayload ? { payload: sourcePayload } : undefined);
+    },
+    [backfill, setSelectedDate, sourceSettings]
+  );
+
+  const verifySourceAccount = React.useCallback(
+    async (source, options = {}) => {
+      if (!source?.email || !source?.password) {
+        return { ok: false, error: 'Source invalide: email ou mot de passe manquant.' };
+      }
+      try {
+        const url = `${baseUrl}/api/garmin/source/verify`;
+        const response = await fetch(url, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            garminAuth: {
+              profileId: source.id,
+              label: source.label,
+              email: source.email,
+              password: source.password,
+              tokenNamespace: source.tokenNamespace || source.id
+            },
+            lookbackDays: options.lookbackDays || 30
+          })
+        });
+        const json = await response.json();
+        return json && typeof json === 'object'
+          ? json
+          : { ok: false, error: 'Réponse serveur invalide.' };
+      } catch (error) {
+        return {
+          ok: false,
+          error: error?.message || 'Erreur réseau lors de la vérification Garmin.'
+        };
+      }
+    },
+    [baseUrl]
+  );
 
   // ==================== MÉMOÏSATION ====================
   const colors = React.useMemo(() => ({
@@ -821,8 +903,9 @@ export function useGarminTabContainer(options = {}) {
     handleToggleDebugPanel,
     
     // Sync
-    syncNow,
+    syncNow: syncNowWithActiveSource,
     backfill: handleBackfill,
+    backfillWithActiveSource: handleBackfillWithActiveSource,
     fetchStatus,
     loading,
     baseUrl,
@@ -862,7 +945,9 @@ export function useGarminTabContainer(options = {}) {
     prefetchTabModules,
     
     // Callbacks pour Provider
-    handleForcedRangeRecorded
+    handleForcedRangeRecorded,
+    sourceSettings,
+    verifySourceAccount
   };
 }
 

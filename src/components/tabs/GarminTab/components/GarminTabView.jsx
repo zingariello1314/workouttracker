@@ -10,6 +10,7 @@ import ActivitiesSection from './sections/ActivitiesSection';
 import MetricsSection from './sections/MetricsSection';
 import ChartsSection from './sections/ChartsSection';
 import UtilitiesSection from './sections/UtilitiesSection';
+import GarminSettingsSection from './sections/GarminSettingsSection';
 import { GarminDebugPortal } from './GarminDebugPortal';
 import { useTranslation } from '../../../../utils/translations';
 
@@ -95,6 +96,7 @@ export function GarminTabView({
   // Sync
   syncNow,
   backfill,
+  backfillWithActiveSource,
   fetchStatus,
   loading,
   baseUrl,
@@ -133,7 +135,9 @@ export function GarminTabView({
   prefetchTabModules,
   
   // Callbacks pour Provider
-  handleForcedRangeRecorded
+  handleForcedRangeRecorded,
+  sourceSettings,
+  verifySourceAccount
 }) {
   const t = useTranslation();
   
@@ -275,6 +279,25 @@ export function GarminTabView({
 
               {activeTab === 'charts' && (
                 <ChartsSection fallback={<SectionFallback label={t('garmin.fallback.charts')} minHeight="620px" />} />
+              )}
+
+              {activeTab === 'settings' && (
+                <GarminSettingsSection
+                  loading={loading}
+                  sources={sourceSettings?.sources || []}
+                  activeSourceId={sourceSettings?.activeSourceId || null}
+                  activeSource={sourceSettings?.activeSource || null}
+                  onAddSource={sourceSettings?.addSource}
+                  onRemoveSource={sourceSettings?.removeSource}
+                  onSetActiveSource={sourceSettings?.setActiveSourceId}
+                  onUpdateSource={sourceSettings?.updateSource}
+                  onAddWatch={sourceSettings?.addWatchToSource}
+                  onRemoveWatch={sourceSettings?.removeWatchFromSource}
+                  onToggleWatch={sourceSettings?.toggleWatchEnabled}
+                  onSyncNow={syncNow}
+                  onBackfill={backfillWithActiveSource}
+                  onVerifySource={verifySourceAccount}
+                />
               )}
 
               {/* Vue JSON brute */}

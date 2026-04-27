@@ -139,11 +139,13 @@ const SessionFeedback = ({ isOpen, onClose, onSave, sessionData }) => {
       ? (typeof sessionData.date === 'string' ? sessionData.date : getDateStr(new Date(sessionData.date)))
       : getDateStr(new Date());
     
+    const hasLoadSnapshot = sessionData?.workoutLoadSnapshot && typeof sessionData.workoutLoadSnapshot === 'object';
+
     const feedbackData = {
       ...feedback,
       date: sessionDate,
       timestamp: new Date().toISOString(),
-      sessionPayloadVersion: 2,
+      sessionPayloadVersion: hasLoadSnapshot ? 3 : 2,
       sessionId: sessionData?.id || Date.now(),
       sessionDuration: sessionData?.duration || 0,
       totalReps: sessionData?.exercises?.reduce((sum, ex) => sum + (parseInt(ex.reps) || 0), 0) || 0,
@@ -153,9 +155,17 @@ const SessionFeedback = ({ isOpen, onClose, onSave, sessionData }) => {
             id: ex.id,
             name: ex.name,
             reps: ex.reps,
-            completed: ex.completed
+            completed: ex.completed,
+            ...(ex.storageKey ? { storageKey: ex.storageKey } : {}),
+            ...(ex.weightEntered != null && String(ex.weightEntered).trim() !== ''
+              ? { weightEntered: ex.weightEntered }
+              : {}),
+            ...(ex.perArm === true ? { perArm: true } : {}),
+            ...(Array.isArray(ex.setWeights) && ex.setWeights.length ? { setWeights: [...ex.setWeights] } : {}),
+            ...(Number.isFinite(Number(ex.volumeKg)) ? { volumeKg: Number(ex.volumeKg) } : {})
           }))
-        : []
+        : [],
+      ...(hasLoadSnapshot ? { workoutLoadSnapshot: sessionData.workoutLoadSnapshot } : {})
     };
     onSave(feedbackData);
     onClose();

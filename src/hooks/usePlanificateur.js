@@ -7,10 +7,38 @@ import { differenceInMonths, parseISO } from 'date-fns';
 import { planificateurStorage } from '../services/finance/planificateurStorage';
 import logger from '../utils/logger';
 import { sidebarEvents, SIDEBAR_EVENTS } from '../utils/sidebarEvents';
+import { useAuth } from '../context/AuthContext';
+import { canAccessPrivateData } from '../utils/accessControl';
 
 const log = logger.module('usePlanificateur');
 
+const getRestrictedSalaire = () => ({
+  id: 'current',
+  netMensuel: 0,
+  updatedAt: new Date().toISOString()
+});
+
+const getRestrictedRepartition = () => {
+  const base = planificateurStorage.getDefaultRepartition();
+  return {
+    ...base,
+    categories: (base?.categories || []).map((category) => ({
+      ...category,
+      montant: 0
+    })),
+    updatedAt: new Date().toISOString()
+  };
+};
+
+const getRestrictedChargesFixes = () => ({
+  id: 'current',
+  charges: [],
+  updatedAt: new Date().toISOString()
+});
+
 export const usePlanificateur = () => {
+  const { currentUser, isAuthenticated } = useAuth();
+  const canAccessData = canAccessPrivateData({ user: currentUser, isAuthenticated });
   const [salaire, setSalaire] = useState(null);
   const [repartition, setRepartition] = useState(null);
   const [achatsLoisirs, setAchatsLoisirs] = useState([]);
@@ -21,6 +49,17 @@ export const usePlanificateur = () => {
 
   // Charger toutes les données
   const loadData = useCallback(async () => {
+    if (!canAccessData) {
+      setSalaire(getRestrictedSalaire());
+      setRepartition(getRestrictedRepartition());
+      setAchatsLoisirs([]);
+      setObjectifs([]);
+      setChargesFixes(getRestrictedChargesFixes());
+      setError(null);
+      setLoading(false);
+      return;
+    }
+
     try {
       setLoading(true);
       setError(null);
@@ -53,7 +92,7 @@ export const usePlanificateur = () => {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [canAccessData]);
 
   useEffect(() => {
     loadData();
@@ -62,6 +101,10 @@ export const usePlanificateur = () => {
   // ========== SALAIRE (avec Optimistic Updates) ==========
 
   const updateSalaire = useCallback(async (salaireData) => {
+    if (!canAccessData) {
+      return getRestrictedSalaire();
+    }
+
     // Sauvegarder état actuel pour rollback
     const previousSalaire = salaire;
     
@@ -86,11 +129,15 @@ export const usePlanificateur = () => {
       log.error('[usePlanificateur] Error updating salaire, rolled back:', err);
       throw err;
     }
-  }, [salaire]);
+  }, [canAccessData, salaire]);
 
   // ========== REPARTITION (avec Optimistic Updates) ==========
 
   const updateRepartition = useCallback(async (repartitionData) => {
+    if (!canAccessData) {
+      return getRestrictedRepartition();
+    }
+
     // Sauvegarder état actuel pour rollback
     const previousRepartition = repartition;
     
@@ -115,11 +162,14 @@ export const usePlanificateur = () => {
       log.error('[usePlanificateur] Error updating repartition, rolled back:', err);
       throw err;
     }
-  }, [repartition]);
+  }, [canAccessData, repartition]);
 
   // ========== ACHATS LOISIRS ==========
 
   const addAchatLoisir = useCallback(async (achatData) => {
+    if (!canAccessData) {
+      return null;
+    }
     try {
       const saved = await planificateurStorage.saveAchatLoisir(achatData);
       await loadData(); // Recharger pour avoir la liste à jour
@@ -128,9 +178,12 @@ export const usePlanificateur = () => {
       log.error('[usePlanificateur] Error adding achat loisir:', err);
       throw err;
     }
-  }, [loadData]);
+  }, [canAccessData, loadData]);
 
   const updateAchatLoisir = useCallback(async (achatData) => {
+    if (!canAccessData) {
+      return null;
+    }
     try {
       const updated = await planificateurStorage.saveAchatLoisir(achatData);
       await loadData();
@@ -139,9 +192,12 @@ export const usePlanificateur = () => {
       log.error('[usePlanificateur] Error updating achat loisir:', err);
       throw err;
     }
-  }, [loadData]);
+  }, [canAccessData, loadData]);
 
   const deleteAchatLoisir = useCallback(async (id) => {
+    if (!canAccessData) {
+      return;
+    }
     try {
       await planificateurStorage.deleteAchatLoisir(id);
       await loadData();
@@ -149,11 +205,14 @@ export const usePlanificateur = () => {
       log.error('[usePlanificateur] Error deleting achat loisir:', err);
       throw err;
     }
-  }, [loadData]);
+  }, [canAccessData, loadData]);
 
   // ========== OBJECTIFS ==========
 
   const addObjectif = useCallback(async (objectifData) => {
+    if (!canAccessData) {
+      return null;
+    }
     try {
       const saved = await planificateurStorage.saveObjectif(objectifData);
       await loadData();
@@ -162,9 +221,12 @@ export const usePlanificateur = () => {
       log.error('[usePlanificateur] Error adding objectif:', err);
       throw err;
     }
-  }, [loadData]);
+  }, [canAccessData, loadData]);
 
   const updateObjectif = useCallback(async (objectifData) => {
+    if (!canAccessData) {
+      return null;
+    }
     try {
       const updated = await planificateurStorage.saveObjectif(objectifData);
       await loadData();
@@ -173,9 +235,12 @@ export const usePlanificateur = () => {
       log.error('[usePlanificateur] Error updating objectif:', err);
       throw err;
     }
-  }, [loadData]);
+  }, [canAccessData, loadData]);
 
   const deleteObjectif = useCallback(async (id) => {
+    if (!canAccessData) {
+      return;
+    }
     try {
       await planificateurStorage.deleteObjectif(id);
       await loadData();
@@ -183,11 +248,14 @@ export const usePlanificateur = () => {
       log.error('[usePlanificateur] Error deleting objectif:', err);
       throw err;
     }
-  }, [loadData]);
+  }, [canAccessData, loadData]);
 
   // ========== CHARGES FIXES ==========
 
   const updateChargesFixes = useCallback(async (chargesData) => {
+    if (!canAccessData) {
+      return getRestrictedChargesFixes();
+    }
     try {
       const updated = await planificateurStorage.saveChargesFixes(chargesData);
       setChargesFixes(updated);
@@ -196,7 +264,7 @@ export const usePlanificateur = () => {
       log.error('[usePlanificateur] Error updating charges fixes:', err);
       throw err;
     }
-  }, []);
+  }, [canAccessData]);
 
   // ========== HELPERS REPARTITION V2 ==========
 

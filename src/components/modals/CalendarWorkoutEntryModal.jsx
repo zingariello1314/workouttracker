@@ -25,6 +25,7 @@ import Button from '../ui/Button';
 import Input from '../ui/Input';
 import Card, { CardContent, CardHeader, CardTitle } from '../ui/Card';
 import { typography } from '../../styles/typography';
+import { isAdminUser } from '../../utils/accessControl';
 
 /**
  * Composant CalendarWorkoutEntryModal
@@ -56,7 +57,7 @@ const CalendarWorkoutEntryModal = ({ isOpen, onClose, date }) => {
   const { showSuccess, showError } = useToast();
   
   // ✅ Vérifier si l'utilisateur est admin
-  const isAdmin = currentUser?.role === 'admin' || currentUser?.username === 'zingariello1314';
+  const isAdmin = isAdminUser(currentUser);
   
   // Normaliser la date
   const dateObj = useMemo(() => {

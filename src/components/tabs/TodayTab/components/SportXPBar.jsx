@@ -3,8 +3,12 @@
  */
 
 import React from 'react';
-import { Dumbbell, Flame, Footprints, Target, CheckCircle, Trophy, Map, ListOrdered } from 'lucide-react';
+import { Dumbbell, Flame, Footprints, Target, CheckCircle, Trophy, Map, ListOrdered, Scale } from 'lucide-react';
 import { useSportXP } from '../../../../hooks/useSportXP';
+import {
+  SPORT_XP_PER_TOTAL_KG_VOLUME,
+  SPORT_XP_LIFTED_VOLUME_CAP
+} from '../../../../services/xp/xpCalculations';
 
 const SportXPBar = () => {
   const { totalXP, level, breakdown, progress } = useSportXP();
@@ -68,6 +72,17 @@ const SportXPBar = () => {
           <Dumbbell className="h-3 w-3 shrink-0 text-sky-400" />
           <span className="text-sky-400/95">{breakdown.reps.toLocaleString('fr-FR')} reps</span>
         </div>
+        <div className="flex min-w-0 flex-col gap-0.5">
+          <div className="flex items-center gap-1">
+            <Scale className="h-3 w-3 shrink-0 text-amber-300/90" />
+            <span className="text-sky-400/95">
+              {(breakdown.liftedVolumeKg ?? 0).toLocaleString('fr-FR', { maximumFractionDigits: 0 })} kg×reps
+            </span>
+          </div>
+          <span className="pl-4 text-[10px] leading-tight text-amber-200/85">
+            +{(breakdown.liftedVolumeKgXp ?? 0).toLocaleString('fr-FR')} XP (dédup. 1 exo/jour)
+          </span>
+        </div>
         <div className="flex items-center gap-1">
           <CheckCircle className="h-3 w-3 shrink-0 text-sky-400" />
           <span className="text-sky-400/95">{breakdown.exercises} exercices</span>
@@ -88,6 +103,15 @@ const SportXPBar = () => {
           <span className="font-medium text-slate-400">Répartition XP (hors trophées course/corde…) : </span>
           <span className="tabular-nums text-slate-400">
             {(breakdown.weightedRepsXp ?? 0).toLocaleString('fr-FR')} reps pond.
+          </span>
+          <span className="text-slate-600"> · </span>
+          <span className="tabular-nums text-slate-400">
+            {(breakdown.liftedVolumeKgXp ?? 0).toLocaleString('fr-FR')} vol. cumul (
+            {SPORT_XP_PER_TOTAL_KG_VOLUME.toLocaleString('fr-FR', {
+              minimumFractionDigits: 2,
+              maximumFractionDigits: 3
+            })}{' '}
+            XP/kg, plaf. {SPORT_XP_LIFTED_VOLUME_CAP.toLocaleString('fr-FR')})
           </span>
           <span className="text-slate-600"> · </span>
           <span className="tabular-nums text-slate-400">
@@ -118,6 +142,14 @@ const SportXPBar = () => {
               <span className="text-slate-600"> · </span>
               <span className="tabular-nums text-slate-400">
                 {breakdown.sessionsFeedbackXp.toLocaleString('fr-FR')} séances +feedback (25×)
+              </span>
+            </>
+          ) : null}
+          {(breakdown.programCompletionBonusXp ?? 0) > 0 ? (
+            <>
+              <span className="text-slate-600"> · </span>
+              <span className="tabular-nums text-slate-400">
+                {breakdown.programCompletionBonusXp.toLocaleString('fr-FR')} bonus complétion programme
               </span>
             </>
           ) : null}

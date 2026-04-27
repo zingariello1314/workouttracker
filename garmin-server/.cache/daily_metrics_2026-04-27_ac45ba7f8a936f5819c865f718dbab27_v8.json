@@ -1,0 +1,278 @@
+{
+  "steps": 74,
+  "distance": 0.059,
+  "floors": 0,
+  "calories": {
+    "total": 1342,
+    "active": 3,
+    "resting": 1339
+  },
+  "heartRate": {
+    "resting": 52,
+    "max": 92,
+    "avg": 83,
+    "timeSeries": [
+      {
+        "timestamp": "2026-04-27T13:54:00Z",
+        "bpm": 86
+      },
+      {
+        "timestamp": "2026-04-27T13:56:00Z",
+        "bpm": 83
+      },
+      {
+        "timestamp": "2026-04-27T13:58:00Z",
+        "bpm": 81
+      },
+      {
+        "timestamp": "2026-04-27T14:00:00Z",
+        "bpm": 83
+      },
+      {
+        "timestamp": "2026-04-27T14:02:00Z",
+        "bpm": 84
+      },
+      {
+        "timestamp": "2026-04-27T14:04:00Z",
+        "bpm": 86
+      },
+      {
+        "timestamp": "2026-04-27T14:06:00Z",
+        "bpm": 84
+      },
+      {
+        "timestamp": "2026-04-27T14:08:00Z",
+        "bpm": 84
+      },
+      {
+        "timestamp": "2026-04-27T14:10:00Z",
+        "bpm": 83
+      },
+      {
+        "timestamp": "2026-04-27T14:12:00Z",
+        "bpm": 86
+      },
+      {
+        "timestamp": "2026-04-27T14:14:00Z",
+        "bpm": 81
+      },
+      {
+        "timestamp": "2026-04-27T14:16:00Z",
+        "bpm": 78
+      }
+    ]
+  },
+  "respiration": {
+    "awake": {
+      "min": 10,
+      "max": 17,
+      "avg": 13.0
+    },
+    "sleep": {
+      "min": 10,
+      "max": 17,
+      "avg": 14.0
+    },
+    "timeSeries": [
+      {
+        "timestamp": null,
+        "value": 13.0
+      },
+      {
+        "timestamp": null,
+        "value": 13.0
+      },
+      {
+        "timestamp": null,
+        "value": 14.0
+      },
+      {
+        "timestamp": null,
+        "value": 14.0
+      },
+      {
+        "timestamp": null,
+        "value": 14.0
+      },
+      {
+        "timestamp": null,
+        "value": 15.0
+      },
+      {
+        "timestamp": null,
+        "value": 15.0
+      },
+      {
+        "timestamp": null,
+        "value": 15.0
+      },
+      {
+        "timestamp": null,
+        "value": 14.0
+      },
+      {
+        "timestamp": null,
+        "value": 14.0
+      },
+      {
+        "timestamp": null,
+        "value": 16.0
+      },
+      {
+        "timestamp": null,
+        "value": 15.0
+      },
+      {
+        "timestamp": null,
+        "value": 16.0
+      },
+      {
+        "timestamp": null,
+        "value": 16.0
+      },
+      {
+        "timestamp": null,
+        "value": 16.0
+      },
+      {
+        "timestamp": null,
+        "value": 15.0
+      },
+      {
+        "timestamp": null,
+        "value": 14.0
+      },
+      {
+        "timestamp": null,
+        "value": 14.0
+      },
+      {
+        "timestamp": null,
+        "value": 14.0
+      },
+      {
+        "timestamp": null,
+        "value": 14.0
+      },
+      {
+        "timestamp": null,
+        "value": 15.0
+      },
+      {
+        "timestamp": null,
+        "value": 15.0
+      },
+      {
+        "timestamp": null,
+        "value": 15.0
+      },
+      {
+        "timestamp": null,
+        "value": 15.0
+      }
+    ]
+  },
+  "intensityMinutes": null,
+  "bodyBattery": {
+    "current": 76,
+    "timeSeries": [
+      {
+        "timestamp": "2026-04-26T23:48:00Z",
+        "value": 27
+      },
+      {
+        "timestamp": "2026-04-27T03:21:00Z",
+        "value": 63
+      },
+      {
+        "timestamp": "2026-04-27T03:27:00Z",
+        "value": 63
+      },
+      {
+        "timestamp": "2026-04-27T06:18:00Z",
+        "value": 82
+      },
+      {
+        "timestamp": "2026-04-27T13:36:00Z",
+        "value": 84
+      },
+      {
+        "timestamp": "2026-04-27T14:12:00Z",
+        "value": 76
+      }
+    ]
+  },
+  "stress": {
+    "average": 23,
+    "max": 86,
+    "timeSeries": []
+  },
+  "spo2": null,
+  "heartRateZones": {
+    "zone1": {
+      "time": 0,
+      "percentage": 0.0
+    },
+    "zone2": {
+      "time": 0,
+      "percentage": 0.0
+    },
+    "zone3": {
+      "time": 0,
+      "percentage": 0.0
+    },
+    "zone4": {
+      "time": 360,
+      "percentage": 25.0
+    },
+    "zone5": {
+      "time": 1080,
+      "percentage": 75.0
+    },
+    "total": 1440.0,
+    "zonesDefinition": {
+      "zone1": {
+        "min": 0,
+        "max": 55,
+        "name": "Zone 1 - \u00c9chauffement"
+      },
+      "zone2": {
+        "min": 55,
+        "max": 64,
+        "name": "Zone 2 - Br\u00fblage graisses"
+      },
+      "zone3": {
+        "min": 64,
+        "max": 73,
+        "name": "Zone 3 - A\u00e9robie"
+      },
+      "zone4": {
+        "min": 73,
+        "max": 82,
+        "name": "Zone 4 - Seuil"
+      },
+      "zone5": {
+        "min": 82,
+        "max": 92,
+        "name": "Zone 5 - Maximale"
+      }
+    },
+    "calculatedFromTimeSeries": true
+  },
+  "sleep": {
+    "duration": 12.1,
+    "quality": 0,
+    "deepSleep": 8.27,
+    "lightSleep": 3.83,
+    "remSleep": null,
+    "bedTime": "01:50",
+    "wakeTime": "13:59",
+    "awakenings": null,
+    "movements": null,
+    "phasesDetails": null
+  },
+  "date": "2026-04-27",
+  "_cached_at": 1777300032.0737057,
+  "_cache_version": 8,
+  "_raw_data_hash": "ac45ba7f8a936f5819c865f718dbab27"
+}

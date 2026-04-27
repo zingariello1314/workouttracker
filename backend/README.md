@@ -33,3 +33,14 @@ Le frontend (Vite) est configuré pour proxyifier `/api/zlib` vers `http://local
 - `GET /health` — état du service et connexion Z-Library
 - `GET /search?q=...&format=epub|pdf` — recherche de livres
 - `GET /download/{book_id}` — téléchargement d’un livre par ID
+
+### Endpoints Auth (P3 - progressif)
+
+- `POST /auth/register` — création compte serveur
+- `POST /auth/login` — login, renvoie `accessToken` + `refreshToken`
+- `POST /auth/refresh` — rotation refresh token
+- `POST /auth/logout` — révocation refresh token
+- `GET /auth/me` — profil depuis access token
+- `POST /auth/change-password` — changement mot de passe serveur
+- `POST /auth/audit/events` — ingestion audit trail front
+- `GET /auth/audit/events` — lecture audit trail

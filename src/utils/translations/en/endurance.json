@@ -14,7 +14,54 @@
   },
   "subViews": {
     "sessionsAndChallenges": "Sessions & challenges",
-    "trophies": "Trophies"
+    "trophies": "Trophies",
+    "calendar": "Calendar"
+  },
+  "disciplineCalendar": {
+    "recapTitle": "Summary",
+    "recapHint": "Averages = period total ÷ number of calendar days (week = Mon–Sun, month = civil month, year = the year shown under the calendar). The “active days” line divides by days with at least one session.",
+    "period": {
+      "week": "Current week",
+      "month": "Current month",
+      "year": "Year {{year}}"
+    },
+    "avgSessions": "Sessions / day:",
+    "avgPerf": "{{unit}} total / day:",
+    "whenActive": "On active days:",
+    "sessionsWord": "sessions/active day",
+    "recordsTitle": "Records & streaks",
+    "mostSessionsDay": "Day with most sessions:",
+    "bestPerfDay": "Best day (daily total):",
+    "longestStreak": "Longest streak (consecutive days with ≥1 session):",
+    "currentStreak": "Current streak (from today):",
+    "none": "—",
+    "streakZero": "0 (no session today)",
+    "days": "days",
+    "intensityHint": "Intensity = number of sessions logged that day (selected year).",
+    "intensityLabel": "Intensity",
+    "sessionsShort": "sessions",
+    "viewMonth": "Month",
+    "viewYear": "Year",
+    "detailTitle": "{{date}} — details",
+    "detailPlaceholder": "Click a day to see details",
+    "noDaySessions": "No sessions that day.",
+    "perfUnit": {
+      "pushups": "reps",
+      "gainage": "plank seconds",
+      "jumprope": "jumps",
+      "running": "km",
+      "walking": "km"
+    },
+    "runningSustainedTitle": "Best sustained pace (non-interval)",
+    "runningSustainedHint": "Workouts flagged as intervals (type or Garmin effort/recovery laps) are excluded. We pick the fastest average pace (min/km), then the longest duration among blocks within ±0.25 min/km. Garmin blocks = consecutive laps without warmup, recovery, or cooldown.",
+    "runningSustainedLine": "{{date}} — {{pace}} for {{duration}} ({{distance}} km).",
+    "runningSustainedNone": "Not enough data (or only interval work).",
+    "runningIntervalTitle": "Best interval session (weighted score)",
+    "runningIntervalHint": "Interval sessions only. Score = (effort speed + 0.38 × recovery speed) × (1 + effort lap count)^0.42 (km/h; laps = effort/rep laps from Garmin). Without detailed lap splits this card stays empty.",
+    "runningIntervalLine": "{{date}} — avg effort {{paceEff}}{{paceRecPart}} · {{laps}} effort laps.",
+    "runningIntervalRecPart": " · avg recovery {{paceRec}}",
+    "runningIntervalNone": "No interval session with usable lap splits.",
+    "runningEditHint": "Edit this session"
   },
   "sections": {
     "boxing": {

@@ -9,7 +9,7 @@
  */
 
 import React, { useState, useCallback, useMemo } from 'react';
-import { Settings, Image, User, Search } from 'lucide-react';
+import { Settings, Image, User, Search, Watch } from 'lucide-react';
 import { useWorkout } from '../../context/WorkoutContext';
 import { useAuth } from '../../context/AuthContext';
 import { useTranslation } from '../../utils/translations';
@@ -57,9 +57,10 @@ import SpotifyIntegrationSettings from '../settings/SpotifyIntegrationSettings';
 
 /** Sections paramètres : ancres + texte indexé pour la recherche (synonymes / termes courants) */
 const SETTINGS_SECTIONS = [
-  { id: 'settings-profil', label: 'Profil', searchText: 'profil avatar email mot de passe compte utilisateur migration données anonyme invité' },
+  { id: 'settings-profil', label: 'Profil', searchText: 'profil avatar email vérification code mot de passe compte utilisateur migration données anonyme invité' },
   { id: 'settings-github', label: 'GitHub', searchText: 'github code contributions calendrier oauth jeton pat développeur intégration module dashboard momentum' },
   { id: 'settings-spotify', label: 'Spotify', searchText: 'spotify musique premium oauth lecture player sidebar son en cours piste album api' },
+  { id: 'settings-garmin', label: 'Garmin', searchText: 'garmin montre sync synchronisation backfill source comptes multi montres deviceid paramètres' },
   { id: 'settings-verrou', label: 'Verrouillage', searchText: 'verrouillage cadenas code pin mot de passe inactivité arrière-plan sécurité confidentialité session' },
   { id: 'settings-carte', label: 'Carte profil', searchText: 'carte profil image handle username bannière sidebar logo' },
   { id: 'settings-accueil', label: 'Page d\'accueil', searchText: 'accueil page fond bannière rotation images home' },
@@ -97,7 +98,15 @@ function sectionMatchesQuery(query, label, searchText) {
 
 const SettingsTab = () => {
   const { data, updateData, loadFromDB, deleteMockEnduranceSessions, setActiveTab } = useWorkout();
-  const { currentUser, updateAvatar, updateProfile, updatePassword, linkAnonymousDataToUser } = useAuth();
+  const {
+    currentUser,
+    updateAvatar,
+    updateProfile,
+    updatePassword,
+    linkAnonymousDataToUser,
+    previewAnonymousMigration,
+    rollbackAnonymousMigration
+  } = useAuth();
   const t = useTranslation();
   const { exportAll: exportGarminData, importAll: importGarminData } = useGarminData();
   const { exportAll: exportNutritionData } = useNutritionData();
@@ -143,7 +152,12 @@ const SettingsTab = () => {
   );
   const { validateAllWorkoutData } = useDataValidation();
   const cleanupSettings = useDataCleanup(deleteMockEnduranceSessions, loadFromDB, data, t);
-  const migrationSettings = useDataMigration(currentUser, linkAnonymousDataToUser);
+  const migrationSettings = useDataMigration(
+    currentUser,
+    linkAnonymousDataToUser,
+    previewAnonymousMigration,
+    rollbackAnonymousMigration
+  );
 
   const exportSettings = useSettingsExport(
     data,
@@ -329,6 +343,38 @@ const SettingsTab = () => {
         {isSectionVisible('settings-spotify') && (
           <div className="scroll-mt-4">
             <SpotifyIntegrationSettings currentUser={currentUser} updateProfile={updateProfile} />
+          </div>
+        )}
+
+        {isSectionVisible('settings-garmin') && (
+          <div id="settings-garmin" className="scroll-mt-4">
+            <Card variant="settings">
+              <CardHeader variant="settings">
+                <CardTitle tone="settings" className="flex items-center normal-case tracking-normal">
+                  <Watch className="mr-2 text-red-400" size={20} />
+                  Garmin - Parametres des montres
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-sm text-red-100/80 mb-4">
+                  Configure tes sources Garmin, tes montres et tes backfills dans le sous-onglet Garmin &gt; Parametres.
+                </p>
+                <button
+                  type="button"
+                  onClick={() => {
+                    try {
+                      localStorage.setItem('garmin.activeSubTab', 'settings');
+                    } catch {
+                      // Ignore persistence errors
+                    }
+                    setActiveTab('garmin');
+                  }}
+                  className={`${settingsUi.btnPrimary} w-full`}
+                >
+                  Ouvrir les parametres Garmin
+                </button>
+              </CardContent>
+            </Card>
           </div>
         )}
 

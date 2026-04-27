@@ -4,10 +4,16 @@ Les identifiants Z-Library doivent être dans .env (ZLIB_EMAIL, ZLIB_PASSWORD).
 Lancement : uvicorn zlib_server:app --reload --port 8000
 """
 import asyncio
+import base64
+import hashlib
+import hmac
+import json
 import os
 import re
 import secrets
+import sqlite3
 import time
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Optional
 
@@ -78,6 +84,10 @@ async def startup():
     except Exception as e:
         print(f"[zlib_server] Erreur connexion Z-Library: {e}", flush=True)
         lib = None
+    try:
+        _auth_init_db()
+    except Exception as e:
+        print(f"[zlib_server] Erreur init auth DB: {e}", flush=True)
 
 
 @app.get("/health")
@@ -175,6 +185,176 @@ _APP_LOCK_PENDING: dict[str, dict] = {}
 _APP_LOCK_TOKENS: dict[str, dict] = {}
 _APP_LOCK_REQ_TS: dict[str, list[float]] = {}
 _APP_LOCK_VERIFY_TS: dict[str, list[float]] = {}
+_AUTH_AUDIT_EVENTS: list[dict] = []
+_AUTH_AUDIT_MAX = 2000
+
+# ---------------------------------------------------------------------------
+# Auth serveur (P3) - mode progressif, compatible front existant
+# ---------------------------------------------------------------------------
+
+AUTH_DB_PATH = Path(__file__).resolve().parent / "auth_server.db"
+AUTH_JWT_SECRET = (os.getenv("AUTH_JWT_SECRET") or "").strip() or secrets.token_hex(32)
+AUTH_ACCESS_TTL_MIN = int((os.getenv("AUTH_ACCESS_TTL_MIN") or "15").strip())
+AUTH_REFRESH_TTL_DAYS = int((os.getenv("AUTH_REFRESH_TTL_DAYS") or "30").strip())
+
+
+def _auth_db_conn():
+    conn = sqlite3.connect(str(AUTH_DB_PATH))
+    conn.row_factory = sqlite3.Row
+    return conn
+
+
+def _auth_init_db():
+    conn = _auth_db_conn()
+    try:
+        cur = conn.cursor()
+        cur.execute(
+            """
+            CREATE TABLE IF NOT EXISTS users (
+                id TEXT PRIMARY KEY,
+                username TEXT NOT NULL UNIQUE,
+                email TEXT,
+                password_hash TEXT NOT NULL,
+                password_salt TEXT NOT NULL,
+                role TEXT NOT NULL DEFAULT 'user',
+                created_at TEXT NOT NULL,
+                updated_at TEXT NOT NULL
+            )
+            """
+        )
+        cur.execute(
+            """
+            CREATE TABLE IF NOT EXISTS refresh_tokens (
+                token_id TEXT PRIMARY KEY,
+                user_id TEXT NOT NULL,
+                token_hash TEXT NOT NULL,
+                expires_at TEXT NOT NULL,
+                revoked INTEGER NOT NULL DEFAULT 0,
+                created_at TEXT NOT NULL,
+                FOREIGN KEY(user_id) REFERENCES users(id)
+            )
+            """
+        )
+        conn.commit()
+    finally:
+        conn.close()
+
+
+def _auth_now_iso():
+    return datetime.now(timezone.utc).isoformat()
+
+
+def _auth_b64url_encode(data: bytes) -> str:
+    return base64.urlsafe_b64encode(data).decode("utf-8").rstrip("=")
+
+
+def _auth_b64url_decode(data: str) -> bytes:
+    pad = "=" * (-len(data) % 4)
+    return base64.urlsafe_b64decode(data + pad)
+
+
+def _auth_sign(payload: dict) -> str:
+    header = {"alg": "HS256", "typ": "JWT"}
+    header_b64 = _auth_b64url_encode(json.dumps(header, separators=(",", ":")).encode("utf-8"))
+    payload_b64 = _auth_b64url_encode(json.dumps(payload, separators=(",", ":")).encode("utf-8"))
+    to_sign = f"{header_b64}.{payload_b64}".encode("utf-8")
+    sig = hmac.new(AUTH_JWT_SECRET.encode("utf-8"), to_sign, hashlib.sha256).digest()
+    return f"{header_b64}.{payload_b64}.{_auth_b64url_encode(sig)}"
+
+
+def _auth_verify(token: str) -> dict:
+    parts = token.split(".")
+    if len(parts) != 3:
+        raise HTTPException(status_code=401, detail="Token invalide")
+    header_b64, payload_b64, sig_b64 = parts
+    to_sign = f"{header_b64}.{payload_b64}".encode("utf-8")
+    expected = hmac.new(AUTH_JWT_SECRET.encode("utf-8"), to_sign, hashlib.sha256).digest()
+    provided = _auth_b64url_decode(sig_b64)
+    if not hmac.compare_digest(expected, provided):
+        raise HTTPException(status_code=401, detail="Signature invalide")
+    payload = json.loads(_auth_b64url_decode(payload_b64).decode("utf-8"))
+    exp = payload.get("exp")
+    if not isinstance(exp, int) or int(time.time()) >= exp:
+        raise HTTPException(status_code=401, detail="Token expiré")
+    return payload
+
+
+def _auth_hash_password(password: str, salt_hex: str) -> str:
+    salt = bytes.fromhex(salt_hex)
+    derived = hashlib.pbkdf2_hmac("sha256", password.encode("utf-8"), salt, 200000)
+    return derived.hex()
+
+
+def _auth_make_user_payload(row: sqlite3.Row) -> dict:
+    return {
+        "id": row["id"],
+        "username": row["username"],
+        "email": row["email"],
+        "role": row["role"],
+        "serverManaged": True,
+    }
+
+
+def _auth_issue_tokens(user_row: sqlite3.Row) -> dict:
+    now = datetime.now(timezone.utc)
+    access_exp = now + timedelta(minutes=AUTH_ACCESS_TTL_MIN)
+    refresh_exp = now + timedelta(days=AUTH_REFRESH_TTL_DAYS)
+    access_payload = {
+        "sub": user_row["id"],
+        "typ": "access",
+        "role": user_row["role"],
+        "exp": int(access_exp.timestamp()),
+        "iat": int(now.timestamp()),
+    }
+    access_token = _auth_sign(access_payload)
+    refresh_raw = secrets.token_urlsafe(48)
+    refresh_hash = hashlib.sha256(refresh_raw.encode("utf-8")).hexdigest()
+    token_id = secrets.token_hex(16)
+    conn = _auth_db_conn()
+    try:
+        cur = conn.cursor()
+        cur.execute(
+            """
+            INSERT INTO refresh_tokens (token_id, user_id, token_hash, expires_at, revoked, created_at)
+            VALUES (?, ?, ?, ?, 0, ?)
+            """,
+            (token_id, user_row["id"], refresh_hash, refresh_exp.isoformat(), _auth_now_iso()),
+        )
+        conn.commit()
+    finally:
+        conn.close()
+    return {
+        "accessToken": access_token,
+        "refreshToken": refresh_raw,
+        "accessExpiresAt": access_exp.isoformat(),
+        "refreshExpiresAt": refresh_exp.isoformat(),
+    }
+
+
+def _auth_extract_bearer(authorization: Optional[str]) -> str:
+    if not authorization:
+        raise HTTPException(status_code=401, detail="Authorization manquant")
+    if not authorization.startswith("Bearer "):
+        raise HTTPException(status_code=401, detail="Authorization invalide")
+    return authorization[7:].strip()
+
+
+def _auth_get_user_from_access_token(authorization: Optional[str]) -> sqlite3.Row:
+    token = _auth_extract_bearer(authorization)
+    payload = _auth_verify(token)
+    if payload.get("typ") != "access":
+        raise HTTPException(status_code=401, detail="Type de token invalide")
+    user_id = payload.get("sub")
+    conn = _auth_db_conn()
+    try:
+        cur = conn.cursor()
+        cur.execute("SELECT * FROM users WHERE id = ?", (user_id,))
+        row = cur.fetchone()
+        if not row:
+            raise HTTPException(status_code=401, detail="Utilisateur introuvable")
+        return row
+    finally:
+        conn.close()
 
 
 def _app_lock_norm_email(email: str) -> str:
@@ -192,6 +372,184 @@ def _app_lock_prune_ts(store: dict[str, list[float]], email: str, window: float)
         store[email] = arr
     elif email in store:
         del store[email]
+
+
+@app.post("/auth/audit/events")
+async def auth_audit_event(payload: dict = Body(default={})):
+    event = {
+        "id": payload.get("id") or secrets.token_hex(8),
+        "eventType": payload.get("eventType") or "unknown",
+        "timestamp": payload.get("timestamp") or time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
+        "payload": payload.get("payload") or {},
+    }
+    _AUTH_AUDIT_EVENTS.append(event)
+    if len(_AUTH_AUDIT_EVENTS) > _AUTH_AUDIT_MAX:
+        del _AUTH_AUDIT_EVENTS[0 : len(_AUTH_AUDIT_EVENTS) - _AUTH_AUDIT_MAX]
+    return {"ok": True}
+
+
+@app.get("/auth/audit/events")
+async def auth_audit_events(limit: int = Query(100, ge=1, le=500)):
+    items = _AUTH_AUDIT_EVENTS[-limit:]
+    return {"events": items, "count": len(items)}
+
+
+@app.post("/auth/register")
+async def auth_register(payload: dict = Body(default={})):
+    username = str(payload.get("username") or "").strip()
+    email = (str(payload.get("email") or "").strip() or None)
+    password = str(payload.get("password") or "")
+    if len(username) < 2 or len(password) < 6:
+        raise HTTPException(status_code=400, detail="Identifiants invalides")
+
+    now = _auth_now_iso()
+    user_id = secrets.token_hex(16)
+    salt = secrets.token_hex(16)
+    password_hash = _auth_hash_password(password, salt)
+
+    conn = _auth_db_conn()
+    try:
+        cur = conn.cursor()
+        try:
+            cur.execute(
+                """
+                INSERT INTO users (id, username, email, password_hash, password_salt, role, created_at, updated_at)
+                VALUES (?, ?, ?, ?, ?, 'user', ?, ?)
+                """,
+                (user_id, username, email, password_hash, salt, now, now),
+            )
+            conn.commit()
+        except sqlite3.IntegrityError:
+            raise HTTPException(status_code=409, detail="Nom d'utilisateur déjà pris")
+        cur.execute("SELECT * FROM users WHERE id = ?", (user_id,))
+        user = cur.fetchone()
+    finally:
+        conn.close()
+
+    tokens = _auth_issue_tokens(user)
+    return {"user": _auth_make_user_payload(user), **tokens}
+
+
+@app.post("/auth/login")
+async def auth_login(payload: dict = Body(default={})):
+    username = str(payload.get("username") or "").strip()
+    password = str(payload.get("password") or "")
+    if not username or not password:
+        raise HTTPException(status_code=400, detail="Identifiants manquants")
+
+    conn = _auth_db_conn()
+    try:
+        cur = conn.cursor()
+        cur.execute("SELECT * FROM users WHERE username = ?", (username,))
+        user = cur.fetchone()
+        if not user:
+            raise HTTPException(status_code=401, detail="Identifiants invalides")
+        expected = _auth_hash_password(password, user["password_salt"])
+        if not hmac.compare_digest(expected, user["password_hash"]):
+            raise HTTPException(status_code=401, detail="Identifiants invalides")
+    finally:
+        conn.close()
+
+    tokens = _auth_issue_tokens(user)
+    return {"user": _auth_make_user_payload(user), **tokens}
+
+
+@app.post("/auth/refresh")
+async def auth_refresh(payload: dict = Body(default={})):
+    refresh_token = str(payload.get("refreshToken") or "")
+    if not refresh_token:
+        raise HTTPException(status_code=400, detail="Refresh token manquant")
+    refresh_hash = hashlib.sha256(refresh_token.encode("utf-8")).hexdigest()
+
+    conn = _auth_db_conn()
+    try:
+        cur = conn.cursor()
+        cur.execute(
+            """
+            SELECT rt.*, u.id as u_id, u.username, u.email, u.role
+            FROM refresh_tokens rt
+            JOIN users u ON u.id = rt.user_id
+            WHERE rt.token_hash = ? AND rt.revoked = 0
+            ORDER BY rt.created_at DESC LIMIT 1
+            """,
+            (refresh_hash,),
+        )
+        row = cur.fetchone()
+        if not row:
+            raise HTTPException(status_code=401, detail="Refresh token invalide")
+        exp = datetime.fromisoformat(row["expires_at"])
+        if datetime.now(timezone.utc) >= exp:
+            raise HTTPException(status_code=401, detail="Refresh token expiré")
+        # rotation
+        cur.execute("UPDATE refresh_tokens SET revoked = 1 WHERE token_id = ?", (row["token_id"],))
+        conn.commit()
+        user_row = {
+            "id": row["u_id"],
+            "username": row["username"],
+            "email": row["email"],
+            "role": row["role"],
+        }
+    finally:
+        conn.close()
+
+    class _Row(dict):
+        def __getitem__(self, k):
+            return dict.get(self, k)
+
+    user = _Row(user_row)
+    tokens = _auth_issue_tokens(user)
+    return {"user": _auth_make_user_payload(user), **tokens}
+
+
+@app.post("/auth/logout")
+async def auth_logout(payload: dict = Body(default={})):
+    refresh_token = str(payload.get("refreshToken") or "")
+    if refresh_token:
+        refresh_hash = hashlib.sha256(refresh_token.encode("utf-8")).hexdigest()
+        conn = _auth_db_conn()
+        try:
+            cur = conn.cursor()
+            cur.execute("UPDATE refresh_tokens SET revoked = 1 WHERE token_hash = ?", (refresh_hash,))
+            conn.commit()
+        finally:
+            conn.close()
+    return {"ok": True}
+
+
+@app.get("/auth/me")
+async def auth_me(authorization: Optional[str] = Header(default=None)):
+    user = _auth_get_user_from_access_token(authorization)
+    return {"user": _auth_make_user_payload(user)}
+
+
+@app.post("/auth/change-password")
+async def auth_change_password(
+    payload: dict = Body(default={}),
+    authorization: Optional[str] = Header(default=None),
+):
+    user = _auth_get_user_from_access_token(authorization)
+    old_password = str(payload.get("oldPassword") or "")
+    new_password = str(payload.get("newPassword") or "")
+    if len(new_password) < 6:
+        raise HTTPException(status_code=400, detail="Mot de passe trop court")
+    expected = _auth_hash_password(old_password, user["password_salt"])
+    if not hmac.compare_digest(expected, user["password_hash"]):
+        raise HTTPException(status_code=401, detail="Ancien mot de passe invalide")
+
+    new_salt = secrets.token_hex(16)
+    new_hash = _auth_hash_password(new_password, new_salt)
+    conn = _auth_db_conn()
+    try:
+        cur = conn.cursor()
+        cur.execute(
+            "UPDATE users SET password_hash = ?, password_salt = ?, updated_at = ? WHERE id = ?",
+            (new_hash, new_salt, _auth_now_iso(), user["id"]),
+        )
+        cur.execute("UPDATE refresh_tokens SET revoked = 1 WHERE user_id = ?", (user["id"],))
+        conn.commit()
+    finally:
+        conn.close()
+    return {"ok": True}
 
 
 async def _app_lock_send_email(to_addr: str, subject: str, text: str) -> tuple[bool, str]:

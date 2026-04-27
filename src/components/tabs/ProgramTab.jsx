@@ -10,6 +10,7 @@ import { useTranslation } from '../../utils/translations';
 import { useFormatters } from '../../utils/translations/formatters-hook';
 import { useToast } from '../ui/Toast';
 import { useAuth } from '../../context/AuthContext';
+import { isAdminUser } from '../../utils/accessControl';
 
 const ProgramTab = () => {
   const { programs, activeProgram, addProgram, activateProgram, deactivateProgram, deleteProgram, updateProgram, data } = useContext(WorkoutContext);
@@ -80,7 +81,7 @@ const ProgramTab = () => {
     }
   };
 
-  const isAdmin = currentUser?.role === 'admin' || currentUser?.username === 'zingariello1314';
+  const isAdmin = isAdminUser(currentUser);
 
   // Tous les utilisateurs connectés voient leurs programmes (stockage séparé par compte)
   const visiblePrograms = isAuthenticated ? programs : [];

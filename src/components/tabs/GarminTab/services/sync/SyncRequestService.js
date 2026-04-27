@@ -38,9 +38,10 @@ export class SyncRequestService {
         requestBody.end = endDate;
       }
 
-      if (extraPayload && typeof extraPayload === 'object') {
-        Object.assign(requestBody, extraPayload);
-      }
+    }
+
+    if (extraPayload && typeof extraPayload === 'object') {
+      Object.assign(requestBody, extraPayload);
     }
 
     if (lastSyncTimestamp) {

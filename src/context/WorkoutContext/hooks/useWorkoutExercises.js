@@ -181,6 +181,16 @@ export const useWorkoutExercises = (data, updateData, getCurrentData) => {
         delete newData.exerciseWeights[key];
       }
     });
+
+    if (!newData.exerciseWeightPerArm) newData.exerciseWeightPerArm = {};
+    Object.keys(newData.exerciseWeightPerArm).forEach(key => {
+      if (key.startsWith(dateStr)) delete newData.exerciseWeightPerArm[key];
+    });
+
+    if (!newData.exerciseSetWeights) newData.exerciseSetWeights = {};
+    Object.keys(newData.exerciseSetWeights).forEach(key => {
+      if (key.startsWith(dateStr)) delete newData.exerciseSetWeights[key];
+    });
     
     Object.keys(newData.checkedStretches || {}).forEach(key => {
       if (key.startsWith(dateStr)) {

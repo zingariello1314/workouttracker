@@ -21,6 +21,7 @@ import { useDebouncedCallback } from './useDebouncedCallback';
 import { measureAsync, measureSync, SIDEBAR_OPERATIONS } from '../utils/performanceMonitor';
 import garminEnhancedDataService from '../services/garmin/garminEnhancedDataService';
 import logger from '../utils/logger';
+import { canAccessPrivateData } from '../utils/accessControl';
 
 const sidebarDataLog = logger.module('useSidebarData');
 
@@ -40,7 +41,8 @@ const sidebarDataLog = logger.module('useSidebarData');
  * @returns {string} returns.todayDate - Date du jour au format ISO (YYYY-MM-DD)
  */
 export const useSidebarData = () => {
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, currentUser } = useAuth();
+  const canAccessData = canAccessPrivateData({ user: currentUser, isAuthenticated });
   const { getWorkoutHistory } = useWorkout();
   const { 
     userData, 
@@ -382,6 +384,16 @@ export const useSidebarData = () => {
 
   // Finances - Optimisé avec gestion d'erreur
   const finance = useMemo(() => {
+    if (!canAccessData) {
+      return {
+        netWorth: 0,
+        monthlyBudget: 0,
+        monthlySavings: 0,
+        investments: 0,
+        hasData: false
+      };
+    }
+
     try {
       const netWorth = patrimoine?.total?.valorise || 0;
       const monthlyBudget = salaire?.netMensuel || 0;
@@ -411,7 +423,7 @@ export const useSidebarData = () => {
         hasData: false
       };
     }
-  }, [patrimoine, salaire, repartition]);
+  }, [canAccessData, patrimoine, salaire, repartition]);
 
   // Nutrition - Optimisé avec gestion d'erreur
   const nutrition = useMemo(() => {

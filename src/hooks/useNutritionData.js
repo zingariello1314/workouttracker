@@ -23,6 +23,7 @@ import { useDebouncedSave } from './useDebouncedSave';
 // ✅ OPTIMISATION : Configuration centralisée (valeurs par défaut pour debounce)
 import { NutritionConfig, getConfigForExport } from '../config/nutrition.config';
 import { useAuth } from '../context/AuthContext';
+import { isAdminUser } from '../utils/accessControl';
 import {
   // DailyMeals
   getDailyMeal,
@@ -142,13 +143,14 @@ export const useNutritionData = () => {
   const [dbReady, setDbReady] = useState(false);
   const initializedRef = useRef(false); // ✅ Garde-fou React StrictMode
   const { currentUser, isAuthenticated } = useAuth();
+  const isAdmin = isAdminUser(currentUser);
 
   // ✅ Calculer le userId pour le filtrage et l'ajout automatique
   // Admin : userId = null (pour récupérer toutes les données, y compris sans userId)
   // Autre user : userId = currentUser.id
   // Déconnecté : userId = null → retourne [] (pas de données)
   const userId = isAuthenticated && currentUser 
-    ? (currentUser.role === 'admin' || currentUser.username === 'zingariello1314' ? null : currentUser.id)
+    ? (isAdmin ? null : currentUser.id)
     : null;
 
   // ✅ OPTIMISATION : Debouncing pour toutes les sauvegardes (économise 50-70% transactions si sauvegarde rapide)

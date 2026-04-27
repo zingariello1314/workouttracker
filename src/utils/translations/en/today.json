@@ -33,7 +33,10 @@
     "minutes": "Min",
     "minutesLabel": "min",
     "weightPlaceholder": "Weight",
-    "weightUnit": "kg"
+    "weightUnit": "kg",
+    "weightPerArm": "Weight per dumbbell (total volume ×2 when using both arms)",
+    "perSetOpen": "Weight per set",
+    "perSetReset": "Single weight for exercise"
   },
   "sessionScore": {
     "title": "Session load (strength)",

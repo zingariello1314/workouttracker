@@ -10,6 +10,8 @@
 
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { getAvatarByUserId } from '../../../../utils/authIndexedDB';
+import { requestEmailVerificationCode, verifyEmailCode } from '../../../../utils/emailVerificationService';
+import { useAppLock } from '../../../../context/AppLockContext';
 
 /**
  * Hook pour gérer les paramètres du profil utilisateur
@@ -21,6 +23,7 @@ import { getAvatarByUserId } from '../../../../utils/authIndexedDB';
  * @returns {Object} État et handlers pour le profil
  */
 export const useProfileSettings = (currentUser, updateAvatar, updateProfile, updatePassword) => {
+  const { lockReady, unlockWithCode } = useAppLock();
   // Avatar
   const [avatarPreviewUrl, setAvatarPreviewUrl] = useState(null);
   const [avatarStatus, setAvatarStatus] = useState(null); // 'success' | 'error' | 'loading' | null
@@ -31,6 +34,8 @@ export const useProfileSettings = (currentUser, updateAvatar, updateProfile, upd
   const [confirmEmail, setConfirmEmail] = useState('');
   const [emailStatus, setEmailStatus] = useState(null); // 'success' | 'error' | 'loading' | null
   const [emailError, setEmailError] = useState('');
+  const [emailCode, setEmailCode] = useState('');
+  const [emailCodeStatus, setEmailCodeStatus] = useState('');
 
   // Password
   const [oldPassword, setOldPassword] = useState('');
@@ -38,6 +43,7 @@ export const useProfileSettings = (currentUser, updateAvatar, updateProfile, upd
   const [confirmPassword, setConfirmPassword] = useState('');
   const [passwordStatus, setPasswordStatus] = useState(null); // 'success' | 'error' | 'loading' | null
   const [passwordError, setPasswordError] = useState('');
+  const [appLockCode, setAppLockCode] = useState('');
 
   const usernameInitial = currentUser?.username?.charAt(0).toUpperCase() || 'M';
 
@@ -67,7 +73,10 @@ export const useProfileSettings = (currentUser, updateAvatar, updateProfile, upd
 
     // Charger l'email
     setEmail(currentUser.email || '');
-    setConfirmEmail('');
+    // Si l’email n’est pas encore vérifié, pré-remplir la confirmation pour accélérer l’envoi du code
+    setConfirmEmail(
+      currentUser.email && currentUser.emailVerified !== true ? currentUser.email || '' : ''
+    );
     // Réinitialiser les mots de passe
     setOldPassword('');
     setNewPassword('');
@@ -107,8 +116,7 @@ export const useProfileSettings = (currentUser, updateAvatar, updateProfile, upd
     }
   }, [currentUser, updateAvatar, avatarPreviewUrl]);
 
-  // Handler pour mettre à jour l'email
-  const handleEmailUpdate = useCallback(async () => {
+  const requestEmailCode = useCallback(async () => {
     if (!currentUser || !email || !confirmEmail) {
       setEmailError('Tous les champs sont requis');
       setEmailStatus('error');
@@ -128,45 +136,77 @@ export const useProfileSettings = (currentUser, updateAvatar, updateProfile, upd
     }
 
     setEmailError('');
+    setEmailCodeStatus('');
     setEmailStatus('loading');
     try {
-      const result = await updateProfile({ email });
+      const result = await requestEmailVerificationCode({
+        email,
+        displayName: currentUser?.username || ''
+      });
       if (result.success) {
-        setEmailStatus('success');
-        setConfirmEmail('');
-        setTimeout(() => {
-          setEmailStatus(null);
-        }, 3000);
+        if (result.delivery === 'email') {
+          setEmailCodeStatus('Code envoyé. Vérifie ta boîte mail.');
+        } else {
+          setEmailCodeStatus(`Mode fallback actif. Code: ${result.debugCode}`);
+        }
+        setEmailStatus(null);
       } else {
-        setEmailError('Erreur lors de la mise à jour de l\'email');
+        setEmailError('Impossible d\'envoyer le code de vérification');
         setEmailStatus('error');
-        setTimeout(() => {
-          setEmailStatus(null);
-          setEmailError('');
-        }, 5000);
       }
     } catch (error) {
-      console.error('[SettingsTab] Erreur lors de la mise à jour de l\'email:', error);
-      setEmailError('Erreur lors de la mise à jour de l\'email');
+      console.error('[SettingsTab] Erreur envoi code email:', error);
+      setEmailError('Erreur lors de l\'envoi du code');
       setEmailStatus('error');
-      setTimeout(() => {
-        setEmailStatus(null);
-        setEmailError('');
-      }, 5000);
     }
-  }, [currentUser, email, confirmEmail, updateProfile]);
+  }, [confirmEmail, currentUser, email]);
 
-  // Handler pour mettre à jour le mot de passe
-  const handlePasswordUpdate = useCallback(async () => {
-    // Validation stricte : tous les champs doivent être remplis
-    if (!currentUser) {
-      setPasswordError('Vous devez être connecté');
-      setPasswordStatus('error');
+  const handleEmailUpdate = useCallback(async () => {
+    if (!emailCode.trim()) {
+      setEmailError('Le code de vérification est requis');
+      setEmailStatus('error');
+      return;
+    }
+    const verification = verifyEmailCode({ email, code: emailCode });
+    if (!verification.success) {
+      setEmailError('Code invalide ou expiré');
+      setEmailStatus('error');
       return;
     }
 
-    if (!oldPassword || oldPassword.trim() === '') {
-      setPasswordError('L\'ancien mot de passe est requis');
+    setEmailError('');
+    setEmailStatus('loading');
+    try {
+      const result = await updateProfile({ email, emailVerified: true });
+      if (result.success) {
+        setEmailStatus('success');
+        setConfirmEmail('');
+        setEmailCode('');
+        setEmailCodeStatus('Email vérifié et mis à jour.');
+        setTimeout(() => setEmailStatus(null), 3000);
+      } else {
+        setEmailError('Erreur lors de la mise à jour de l\'email');
+        setEmailStatus('error');
+      }
+    } catch (error) {
+      console.error('[SettingsTab] Erreur mise à jour email:', error);
+      setEmailError('Erreur lors de la mise à jour de l\'email');
+      setEmailStatus('error');
+    }
+  }, [email, emailCode, updateProfile]);
+
+  const isStrongPassword = useCallback((pwd) => {
+    const value = String(pwd || '');
+    if (value.length < 8) return false;
+    if (!/[A-Z]/.test(value)) return false;
+    if (!/[^A-Za-z0-9]/.test(value)) return false;
+    return true;
+  }, []);
+
+  // Handler pour mettre à jour le mot de passe
+  const handlePasswordUpdate = useCallback(async () => {
+    if (!currentUser) {
+      setPasswordError('Vous devez être connecté');
       setPasswordStatus('error');
       return;
     }
@@ -183,26 +223,56 @@ export const useProfileSettings = (currentUser, updateAvatar, updateProfile, upd
       return;
     }
 
-    if (newPassword.length < 6) {
-      setPasswordError('Le mot de passe doit contenir au moins 6 caractères');
+    if (!isStrongPassword(newPassword)) {
+      setPasswordError(
+        'Mot de passe trop faible : au moins 8 caractères, une majuscule et un caractère spécial (comme à l’inscription).'
+      );
       setPasswordStatus('error');
       return;
     }
 
     if (newPassword !== confirmPassword) {
-      setPasswordError('Les mots de passe ne correspondent pas');
+      setPasswordError('Les deux saisies du nouveau mot de passe doivent être identiques');
       setPasswordStatus('error');
       return;
     }
 
-    // Vider les erreurs précédentes
+    let skipOldPasswordCheck = false;
+    if (lockReady && appLockCode.trim()) {
+      const unlockRes = await unlockWithCode(appLockCode.trim());
+      if (!unlockRes?.success) {
+        setPasswordError('Code de verrouillage de l’app incorrect');
+        setPasswordStatus('error');
+        return;
+      }
+      skipOldPasswordCheck = true;
+    } else if (!oldPassword || oldPassword.trim() === '') {
+      setPasswordError(
+        lockReady
+          ? 'Indique soit ton mot de passe actuel, soit le code de verrouillage de l’app (remplis le champ correspondant).'
+          : 'L’ancien mot de passe est requis.'
+      );
+      setPasswordStatus('error');
+      return;
+    }
+
+    if (skipOldPasswordCheck && currentUser?.serverManaged) {
+      setPasswordError(
+        'Compte géré par le serveur : le changement de mot de passe exige toujours l’ancien mot de passe côté API. Le code de l’app ne remplace pas cette vérification en ligne.'
+      );
+      setPasswordStatus('error');
+      return;
+    }
+
     setPasswordError('');
     setPasswordStatus('loading');
-    
+
     try {
-      // La fonction updatePassword vérifie l'ancien mot de passe
-      // Si incorrect, elle retourne { success: false, error: 'INVALID_OLD_PASSWORD' }
-      const result = await updatePassword(oldPassword, newPassword);
+      const result = await updatePassword(
+        skipOldPasswordCheck ? '' : oldPassword,
+        newPassword,
+        { skipOldPasswordCheck }
+      );
       
       if (result.success) {
         // Succès : vider tous les champs
@@ -210,6 +280,7 @@ export const useProfileSettings = (currentUser, updateAvatar, updateProfile, upd
         setOldPassword('');
         setNewPassword('');
         setConfirmPassword('');
+        setAppLockCode('');
         setPasswordError('');
         setTimeout(() => {
           setPasswordStatus(null);
@@ -219,6 +290,8 @@ export const useProfileSettings = (currentUser, updateAvatar, updateProfile, upd
         if (result.error === 'INVALID_OLD_PASSWORD') {
           setPasswordError('❌ Ancien mot de passe incorrect. Impossible de changer le mot de passe.');
           // Ne pas vider l'ancien mot de passe pour que l'utilisateur puisse réessayer
+        } else if (result.error === 'PASSWORD_POLICY_FAILED') {
+          setPasswordError('Politique mot de passe non respectée (8+ caractères, majuscule, spécial).');
         } else {
           setPasswordError('Erreur lors de la mise à jour du mot de passe');
         }
@@ -237,7 +310,17 @@ export const useProfileSettings = (currentUser, updateAvatar, updateProfile, upd
         setPasswordError('');
       }, 7000);
     }
-  }, [currentUser, oldPassword, newPassword, confirmPassword, updatePassword]);
+  }, [
+    appLockCode,
+    confirmPassword,
+    currentUser,
+    isStrongPassword,
+    lockReady,
+    newPassword,
+    oldPassword,
+    unlockWithCode,
+    updatePassword
+  ]);
 
   return {
     // Avatar
@@ -254,6 +337,10 @@ export const useProfileSettings = (currentUser, updateAvatar, updateProfile, upd
     setConfirmEmail,
     emailStatus,
     emailError,
+    emailCode,
+    setEmailCode,
+    emailCodeStatus,
+    requestEmailCode,
     handleEmailUpdate,
     
     // Password
@@ -265,6 +352,9 @@ export const useProfileSettings = (currentUser, updateAvatar, updateProfile, upd
     setConfirmPassword,
     passwordStatus,
     passwordError,
+    appLockCode,
+    setAppLockCode,
+    lockReady,
     handlePasswordUpdate,
   };
 };

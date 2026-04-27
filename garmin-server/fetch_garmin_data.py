@@ -777,6 +777,10 @@ args = sys.argv[1:]
 arg_start = None
 arg_end = None
 arg_last_sync_timestamp = None  # ✅ PHASE 2.4 : Timestamp de dernière sync pour récupération incrémentale
+arg_email = None
+arg_password = None
+arg_tokenstore = None
+arg_device_ids = []
 try:
     if '--start' in args:
         arg_start = args[args.index('--start') + 1]
@@ -786,14 +790,32 @@ try:
     if '--lastSyncTimestamp' in args:
         arg_last_sync_timestamp = args[args.index('--lastSyncTimestamp') + 1]
         print_debug(f"✅ Received lastSyncTimestamp: {arg_last_sync_timestamp}")
+    if '--email' in args:
+        arg_email = args[args.index('--email') + 1]
+    if '--password' in args:
+        arg_password = args[args.index('--password') + 1]
+    if '--tokenstore' in args:
+        arg_tokenstore = args[args.index('--tokenstore') + 1]
+    if '--deviceIds' in args:
+        raw_device_ids = args[args.index('--deviceIds') + 1]
+        arg_device_ids = [item.strip() for item in str(raw_device_ids).split(',') if item.strip()]
 except Exception:
     arg_start = None
     arg_end = None
     arg_last_sync_timestamp = None
+    arg_email = None
+    arg_password = None
+    arg_tokenstore = None
+    arg_device_ids = []
 
-if EMAIL and PASSWORD:
+effective_email = arg_email or EMAIL
+effective_password = arg_password or PASSWORD
+
+if effective_email and effective_password:
     try:
-        client = connect_garmin_client(EMAIL, PASSWORD)
+        if arg_tokenstore:
+            os.environ["GARMINTOKENS"] = str(arg_tokenstore)
+        client = connect_garmin_client(effective_email, effective_password)
         # Détermine la plage
         start_for = current_date
         end_for = current_date
@@ -1850,6 +1872,32 @@ if EMAIL and PASSWORD:
             },
             "dailyMetrics": daily_dict,  # Contient TOUTES les dates
         }
+
+        if arg_device_ids:
+            allowed_device_ids = set(arg_device_ids)
+
+            def _keep_activity(activity):
+                if not isinstance(activity, dict):
+                    return False
+                device_info = activity.get("deviceInfo")
+                # Certaines activités Garmin (souvent marche/rando) arrivent sans deviceInfo.
+                # On les conserve pour éviter les pertes d'historique lors des sync/restarts.
+                if not isinstance(device_info, dict):
+                    return True
+                device_id = device_info.get("deviceId")
+                if device_id is None:
+                    return True
+                return str(device_id) in allowed_device_ids
+
+            payload["activities"]["swimming"] = [
+                activity for activity in payload["activities"]["swimming"] if _keep_activity(activity)
+            ]
+            payload["activities"]["jumpRope"] = [
+                activity for activity in payload["activities"]["jumpRope"] if _keep_activity(activity)
+            ]
+            payload["activities"]["cardio"] = [
+                activity for activity in payload["activities"]["cardio"] if _keep_activity(activity)
+            ]
         
         # 🔴 FIX #23: Ajouter les erreurs de parsing dans la réponse si présentes
         if parsing_errors:

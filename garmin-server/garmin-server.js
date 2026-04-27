@@ -52,8 +52,8 @@ class ServerCache {
 
   // ✅ PHASE 2.4 : Générer une clé de cache incluant lastSyncTimestamp
   generateKey(params) {
-    const { start, end, lastSyncTimestamp } = params || {};
-    return `sync_${start || 'default'}_${end || 'default'}_${lastSyncTimestamp || 'none'}`;
+    const { start, end, lastSyncTimestamp, profileKey } = params || {};
+    return `sync_${profileKey || 'default'}_${start || 'default'}_${end || 'default'}_${lastSyncTimestamp || 'none'}`;
   }
 
   // Vérifier si une entrée existe et n'est pas expirée
@@ -153,7 +153,22 @@ const CACHE_DIR = path.join(__dirname, '.cache');
 const FORCE_REFRESH_COOLDOWN_MS = 2 * 60 * 1000;
 const FORCED_DELTA_THRESHOLD_MS = 30 * 1000;
 
-const buildRangeKey = (start, end) => `${start || 'none'}|${end || 'none'}`;
+const buildRangeKey = (start, end, profileKey = 'default') =>
+  `${profileKey || 'default'}|${start || 'none'}|${end || 'none'}`;
+
+const sanitizeTokenNamespace = (value = '') => {
+  const raw = String(value || '').trim();
+  if (!raw) return null;
+  const safe = raw.replace(/[^a-zA-Z0-9_-]/g, '_').slice(0, 80);
+  return safe || null;
+};
+
+const buildProfileCacheKey = (garminAuth = null) => {
+  if (!garminAuth || typeof garminAuth !== 'object') return 'default';
+  if (garminAuth.profileId) return `profile:${String(garminAuth.profileId)}`;
+  if (garminAuth.email) return `email:${String(garminAuth.email).trim().toLowerCase()}`;
+  return 'default';
+};
 
 const isIsoDate = (value) => {
   if (!value || typeof value !== 'string') {
@@ -1371,6 +1386,13 @@ app.post('/api/garmin/sync', syncLimiter, async (req, res) => {
       ...(req.query || {}),
       ...(req.body && typeof req.body === 'object' ? req.body : {})
     };
+    const garminAuth = payload.garminAuth && typeof payload.garminAuth === 'object'
+      ? payload.garminAuth
+      : null;
+    const deviceIds = Array.isArray(payload.deviceIds)
+      ? payload.deviceIds.map((value) => String(value || '').trim()).filter(Boolean)
+      : [];
+    const profileCacheKey = buildProfileCacheKey(garminAuth);
     const resolution = resolveForceRange(payload);
     const start = resolution.start || payload.start || null;
     const end = resolution.end || payload.end || null;
@@ -1387,12 +1409,28 @@ app.post('/api/garmin/sync', syncLimiter, async (req, res) => {
       lastSyncTimestamp: lastSyncTimestamp || null
     });
 
-    console.log('[SERVER] Payload reçu:', payload);
+    const payloadForLogs = {
+      ...payload,
+      garminAuth: garminAuth
+        ? {
+            ...garminAuth,
+            password: garminAuth.password ? '***' : '',
+            email: garminAuth.email ? String(garminAuth.email).trim().toLowerCase() : ''
+          }
+        : null,
+      deviceIds
+    };
+    console.log('[SERVER] Payload reçu:', payloadForLogs);
     console.log('[SERVER] Plage normalisée - start:', start, 'end:', end, 'mode:', resolution.mode || 'default');
     console.log(`[🔍 DIAGNOSTIC SERVEUR] Paramètres reçus - start: ${start}, end: ${end}, lastSyncTimestamp: ${lastSyncTimestamp || 'none'}, forceRefresh: ${forceRefresh}`);
     
     // ✅ PHASE 2.4 : Inclure lastSyncTimestamp dans la clé de cache
-    const cacheKey = serverCache.generateKey({ start, end, lastSyncTimestamp: lastSyncTimestamp || 'none' });
+    const cacheKey = serverCache.generateKey({
+      start,
+      end,
+      lastSyncTimestamp: lastSyncTimestamp || 'none',
+      profileKey: profileCacheKey
+    });
     // ✅ PHASE 3.1 : Passer lastSyncTimestamp à get() pour décision intelligente
     const cachedResult = forceRefresh === 'true' ? null : serverCache.get(cacheKey, lastSyncTimestamp || null);
     
@@ -1467,7 +1505,7 @@ app.post('/api/garmin/sync', syncLimiter, async (req, res) => {
         });
       }
 
-      const rangeKey = buildRangeKey(start, end);
+      const rangeKey = buildRangeKey(start, end, profileCacheKey);
       const isForceRequest = forceRefresh === 'true';
       if (isForceRequest && lastForcedResponse && lastForcedResponse.rangeKey === rangeKey) {
         const now = Date.now();
@@ -1516,6 +1554,23 @@ app.post('/api/garmin/sync', syncLimiter, async (req, res) => {
       if (start && end) {
         args.push('--start', String(start), '--end', String(end));
       }
+      if (garminAuth?.email && garminAuth?.password) {
+        args.push('--email', String(garminAuth.email), '--password', String(garminAuth.password));
+        const tokenNamespace = sanitizeTokenNamespace(
+          garminAuth.tokenNamespace || garminAuth.profileId || garminAuth.email
+        );
+        if (tokenNamespace) {
+          const tokenRoot = path.join(__dirname, '.garmin-tokens');
+          if (!fs.existsSync(tokenRoot)) {
+            fs.mkdirSync(tokenRoot, { recursive: true });
+          }
+          const tokenStorePath = path.join(tokenRoot, tokenNamespace);
+          args.push('--tokenstore', tokenStorePath);
+        }
+      }
+      if (deviceIds.length > 0) {
+        args.push('--deviceIds', deviceIds.join(','));
+      }
       // ✅ PHASE 2.4 : Passer lastSyncTimestamp au script Python
       if (lastSyncTimestamp) {
         args.push('--lastSyncTimestamp', String(lastSyncTimestamp));
@@ -1541,6 +1596,26 @@ app.post('/api/garmin/sync', syncLimiter, async (req, res) => {
       });
       
       if (result && result.ok) {
+        if (garminAuth?.profileId || garminAuth?.label || garminAuth?.email) {
+          const sourceMeta = {
+            sourceProfileId: garminAuth.profileId ? String(garminAuth.profileId) : null,
+            sourceLabel: garminAuth.label ? String(garminAuth.label) : null,
+            sourceEmail: garminAuth.email ? String(garminAuth.email).trim().toLowerCase() : null
+          };
+          const activityGroups = result?.data?.activities;
+          if (activityGroups && typeof activityGroups === 'object') {
+            Object.keys(activityGroups).forEach((groupKey) => {
+              const group = activityGroups[groupKey];
+              if (!Array.isArray(group)) return;
+              activityGroups[groupKey] = group.map((activity) =>
+                activity && typeof activity === 'object'
+                  ? { ...activity, ...sourceMeta }
+                  : activity
+              );
+            });
+          }
+        }
+
         // ✅ PHASE 1 : Logging détaillé des données Python
         if (result.data) {
           const activitiesCount = Object.values(result.data.activities || {}).reduce((sum, arr) => sum + (Array.isArray(arr) ? arr.length : 0), 0);
@@ -1728,6 +1803,106 @@ app.post('/api/garmin/sync', syncLimiter, async (req, res) => {
       timestamp: new Date().toISOString()
     });
     res.status(500).json({ ok: false, error: e.message });
+  }
+});
+
+// Vérification non bloquante d'une source Garmin + détection des montres récentes
+app.post('/api/garmin/source/verify', statusLimiter, async (req, res) => {
+  try {
+    const payload = req.body && typeof req.body === 'object' ? req.body : {};
+    const garminAuth = payload.garminAuth && typeof payload.garminAuth === 'object'
+      ? payload.garminAuth
+      : null;
+    if (!garminAuth?.email || !garminAuth?.password) {
+      return res.status(400).json({
+        ok: false,
+        error: 'Identifiants Garmin manquants'
+      });
+    }
+
+    const lookbackDaysRaw = Number(payload.lookbackDays);
+    const lookbackDays = Number.isFinite(lookbackDaysRaw)
+      ? Math.min(90, Math.max(1, Math.round(lookbackDaysRaw)))
+      : 30;
+    const endDate = formatDateStr(new Date());
+    const startDate = shiftDateStr(endDate, -lookbackDays + 1) || endDate;
+
+    const args = ['fetch_garmin_data.py', '--start', startDate, '--end', endDate];
+    args.push('--email', String(garminAuth.email), '--password', String(garminAuth.password));
+
+    const tokenNamespace = sanitizeTokenNamespace(
+      garminAuth.tokenNamespace || garminAuth.profileId || garminAuth.email
+    );
+    if (tokenNamespace) {
+      const tokenRoot = path.join(__dirname, '.garmin-tokens');
+      if (!fs.existsSync(tokenRoot)) {
+        fs.mkdirSync(tokenRoot, { recursive: true });
+      }
+      const tokenStorePath = path.join(tokenRoot, tokenNamespace);
+      args.push('--tokenstore', tokenStorePath);
+    }
+
+    const result = await runPythonScriptWithRetry(args, 2);
+    if (!result?.ok) {
+      return res.json({
+        ok: false,
+        error: result?.error || 'Verification impossible'
+      });
+    }
+
+    const activities = result?.data?.activities || {};
+    const allActivities = [
+      ...(Array.isArray(activities.swimming) ? activities.swimming : []),
+      ...(Array.isArray(activities.jumpRope) ? activities.jumpRope : []),
+      ...(Array.isArray(activities.cardio) ? activities.cardio : [])
+    ];
+
+    const byDevice = new Map();
+    allActivities.forEach((activity) => {
+      const deviceInfo = activity?.deviceInfo;
+      if (!deviceInfo || typeof deviceInfo !== 'object') return;
+      const rawId = deviceInfo.deviceId;
+      if (rawId == null || rawId === '') return;
+      const deviceId = String(rawId).trim();
+      if (!deviceId) return;
+      const previous = byDevice.get(deviceId);
+      const labelCandidate =
+        deviceInfo.displayName ||
+        deviceInfo.productName ||
+        deviceInfo.modelName ||
+        activity?.sourceDevice ||
+        `Garmin ${deviceId}`;
+      byDevice.set(deviceId, {
+        deviceId,
+        label: String(labelCandidate || `Garmin ${deviceId}`),
+        sampleActivityName: activity?.activityName || activity?.name || null,
+        lastSeenAt: activity?.date || activity?.startTimeLocal || activity?.startTimeGmt || previous?.lastSeenAt || null
+      });
+    });
+
+    return res.json({
+      ok: true,
+      profile: {
+        email: String(garminAuth.email).trim().toLowerCase(),
+        tokenNamespace: tokenNamespace || null
+      },
+      inspectedRange: {
+        start: startDate,
+        end: endDate,
+        lookbackDays
+      },
+      devices: Array.from(byDevice.values()),
+      counts: {
+        cardio: Array.isArray(activities.cardio) ? activities.cardio.length : 0,
+        swimming: Array.isArray(activities.swimming) ? activities.swimming.length : 0,
+        jumpRope: Array.isArray(activities.jumpRope) ? activities.jumpRope.length : 0
+      }
+    });
+  } catch (error) {
+    return res.status(500).json({
+      ok: false,
+      error: error.message || 'Erreur verification source Garmin'
+    });
   }
 });
 

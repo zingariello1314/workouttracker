@@ -721,7 +721,7 @@ export const useGarminSyncActions = (deps) => {
     }
   }, [setStatus, recordUIMetric]);
 
-  const backfill = useCallback(async (startDate, endDate, setSelectedDate) => {
+  const backfill = useCallback(async (startDate, endDate, setSelectedDate, options = {}) => {
     if (!startDate || !endDate) return;
 
     try {
@@ -732,7 +732,15 @@ export const useGarminSyncActions = (deps) => {
         console.info('[useGarminSyncActions] loading ← true (backfill)');
       }
       const query = `?start=${encodeURIComponent(startDate)}&end=${encodeURIComponent(endDate)}`;
-      const json = await tryFetch(`/api/garmin/sync${query}`, { method: 'POST' }, undefined, setBaseUrl);
+      const hasPayload = options?.payload && typeof options.payload === 'object';
+      const requestOptions = hasPayload
+        ? {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(options.payload)
+          }
+        : { method: 'POST' };
+      const json = await tryFetch(`/api/garmin/sync${query}`, requestOptions, undefined, setBaseUrl);
 
       setStatus({
         lastSync: json.lastSync,

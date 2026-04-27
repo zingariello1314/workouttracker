@@ -14,7 +14,54 @@
   },
   "subViews": {
     "sessionsAndChallenges": "Séances & défis",
-    "trophies": "Trophées"
+    "trophies": "Trophées",
+    "calendar": "Calendrier"
+  },
+  "disciplineCalendar": {
+    "recapTitle": "Récapitulatif",
+    "recapHint": "Moyennes = total sur la période ÷ nombre de jours calendaires (semaine = lun–dim, mois = mois civil, année = année affichée sous le calendrier). La ligne « jours actifs » divise par les jours où tu as au moins une séance.",
+    "period": {
+      "week": "Semaine en cours",
+      "month": "Mois en cours",
+      "year": "Année {{year}}"
+    },
+    "avgSessions": "Séances / jour :",
+    "avgPerf": "{{unit}} cumulés / jour :",
+    "whenActive": "Si actif :",
+    "sessionsWord": "séances/jour actif",
+    "recordsTitle": "Records et séries",
+    "mostSessionsDay": "Jour avec le plus de séances :",
+    "bestPerfDay": "Meilleure journée (cumul) :",
+    "longestStreak": "Plus longue série (jours consécutifs avec ≥1 séance) :",
+    "currentStreak": "Série en cours (depuis aujourd’hui) :",
+    "none": "—",
+    "streakZero": "0 (aucune séance aujourd’hui)",
+    "days": "jours",
+    "intensityHint": "Intensité = nombre de séances enregistrées ce jour-là (année affichée).",
+    "intensityLabel": "Intensité",
+    "sessionsShort": "séances",
+    "viewMonth": "Mois",
+    "viewYear": "Année",
+    "detailTitle": "Détail du {{date}}",
+    "detailPlaceholder": "Clique sur un jour pour voir le détail",
+    "noDaySessions": "Aucune séance ce jour.",
+    "perfUnit": {
+      "pushups": "répétitions",
+      "gainage": "secondes planche",
+      "jumprope": "sauts",
+      "running": "km",
+      "walking": "km"
+    },
+    "runningSustainedTitle": "Meilleure allure soutenue (hors fractionné)",
+    "runningSustainedHint": "Séances détectées comme fractionné (type ou tours Garmin effort/récup) sont exclues. On prend la plus rapide allure moyenne (min/km), puis la plus longue durée parmi les blocs à allure équivalente (bande ±0,25 min/km). Blocs Garmin = tours consécutifs sans échauffement, récupération ni retour au calme.",
+    "runningSustainedLine": "{{date}} — {{pace}} pendant {{duration}} ({{distance}} km).",
+    "runningSustainedNone": "Pas assez de données (ou uniquement du fractionné).",
+    "runningIntervalTitle": "Meilleur fractionné (score pondéré)",
+    "runningIntervalHint": "Uniquement séances fractionné. Score = (vitesse effort + 0,38 × vitesse récup) × (1 + nombre de tours effort)^0,42 (km/h ; tours = répétitions effort sur les tours Garmin). Sans tours détaillés, l’encart reste vide.",
+    "runningIntervalLine": "{{date}} — effort moy. {{paceEff}}{{paceRecPart}} · {{laps}} tours effort.",
+    "runningIntervalRecPart": " · récup. moy. {{paceRec}}",
+    "runningIntervalNone": "Aucune séance fractionné avec tours exploitables.",
+    "runningEditHint": "Modifier cette séance"
   },
   "sections": {
     "boxing": {

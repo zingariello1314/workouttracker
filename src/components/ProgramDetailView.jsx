@@ -33,6 +33,36 @@ import { LANGUAGES } from '../utils/translations/constants';
 import { exerciseDatabase } from '../data/exerciseDatabase';
 
 const PROGRAM_WEEK_DAYS = ['lundi', 'mardi', 'mercredi', 'jeudi', 'vendredi', 'samedi', 'dimanche'];
+const REPS_SCOPES = {
+  TOTAL: 'total',
+  PER_HAND: 'per_hand',
+  PER_SIDE: 'per_side'
+};
+const PICKER_TARGET_VARIANTS = {
+  MAIN: 'main',
+  SALLE: 'salle',
+  ALL: 'all'
+};
+const PICKER_TARGET_WEEKS = {
+  A: 'semaineA',
+  B: 'semaineB',
+  ALL: 'all'
+};
+
+const MUSCLE_QUERY_SYNONYMS = {
+  jambes: ['quadriceps', 'ischio', 'ischios', 'mollets', 'fessiers', 'adducteurs', 'jambes'],
+  jambe: ['quadriceps', 'ischio', 'ischios', 'mollets', 'fessiers', 'adducteurs', 'jambes'],
+  bras: ['biceps', 'triceps', 'avant-bras', 'deltoides', 'épaules', 'epaule'],
+  dos: ['dorsaux', 'grand dorsal', 'trapèzes', 'trapezes', 'rhomboides', 'rhomboïdes'],
+  pecs: ['pectoraux', 'poitrine'],
+  pectoraux: ['pecs', 'poitrine', 'pectoraux'],
+  poitrine: ['pectoraux', 'pecs'],
+  abdos: ['abdominaux', 'core', 'gainage', 'obliques'],
+  epaules: ['épaules', 'deltoides', 'deltoïdes', 'trapèzes', 'trapezes'],
+  épaules: ['epaules', 'deltoides', 'deltoïdes', 'trapèzes', 'trapezes'],
+  fessier: ['fessiers', 'glutes', 'jambes'],
+  fessiers: ['fessier', 'glutes', 'jambes']
+};
 
 /** Identifiant DOM stable pour défiler jusqu'à un exo (piste principale ou variante salle). */
 const getProgramExerciseAnchorId = (dayKey, variantKey, exerciseId) => {
@@ -69,8 +99,13 @@ const ProgramDetailView = ({ program, onBack, onUpdateProgram }) => {
   const [pickerQuery, setPickerQuery] = useState('');
   const [pickerSelectedKey, setPickerSelectedKey] = useState('');
   const [pickerVolumeMode, setPickerVolumeMode] = useState('reps');
+  const [pickerRepsScope, setPickerRepsScope] = useState(REPS_SCOPES.TOTAL);
+  const [pickerTargetVariant, setPickerTargetVariant] = useState(PICKER_TARGET_VARIANTS.MAIN);
+  const [pickerTargetWeek, setPickerTargetWeek] = useState(PICKER_TARGET_WEEKS.A);
   const [pickerSets, setPickerSets] = useState('3');
   const [pickerReps, setPickerReps] = useState('10');
+  const [pickerRepsPerHand, setPickerRepsPerHand] = useState('10');
+  const [pickerRepsPerSide, setPickerRepsPerSide] = useState('10');
   const [pickerSeconds, setPickerSeconds] = useState('');
   const [pickerMinutes, setPickerMinutes] = useState('');
   const [pickerWeight, setPickerWeight] = useState('');
@@ -201,9 +236,14 @@ const ProgramDetailView = ({ program, onBack, onUpdateProgram }) => {
   const filteredExerciseBankRows = useMemo(() => {
     const q = pickerQuery.trim().toLowerCase();
     if (!q) return exerciseBankRows;
+    const expandedTerms = [q, ...(MUSCLE_QUERY_SYNONYMS[q] || [])];
     return exerciseBankRows.filter((row) => {
       const hay = `${row.name} ${row.category} ${row.equipment} ${row.primary.join(' ')} ${row.secondary.join(' ')}`.toLowerCase();
-      return hay.includes(q);
+      const variations = Array.isArray(exerciseDatabase[row.key]?.variations)
+        ? exerciseDatabase[row.key].variations.join(' ').toLowerCase()
+        : '';
+      const searchable = `${hay} ${variations}`;
+      return expandedTerms.some((term) => searchable.includes(term));
     });
   }, [exerciseBankRows, pickerQuery]);
 
@@ -336,12 +376,27 @@ const ProgramDetailView = ({ program, onBack, onUpdateProgram }) => {
   };
 
   const openExerciseBankPicker = (dayKey, variantKey = null) => {
+    const day = program?.schedule?.[dayKey];
+    const hasSalleVariants = Boolean(day?.salleVariants?.semaineA || day?.salleVariants?.semaineB);
+    const defaultVariantTarget = hasSalleVariants
+      ? variantKey
+        ? PICKER_TARGET_VARIANTS.SALLE
+        : PICKER_TARGET_VARIANTS.MAIN
+      : PICKER_TARGET_VARIANTS.MAIN;
+    const defaultWeekTarget =
+      variantKey === 'semaineB' ? PICKER_TARGET_WEEKS.B : PICKER_TARGET_WEEKS.A;
+
     setPickerContext({ dayKey, variantKey });
     setPickerQuery('');
     setPickerSelectedKey('');
     setPickerVolumeMode('reps');
+    setPickerRepsScope(REPS_SCOPES.TOTAL);
+    setPickerTargetVariant(defaultVariantTarget);
+    setPickerTargetWeek(defaultWeekTarget);
     setPickerSets('3');
     setPickerReps('10');
+    setPickerRepsPerHand('10');
+    setPickerRepsPerSide('10');
     setPickerSeconds('');
     setPickerMinutes('');
     setPickerWeight('');
@@ -352,6 +407,14 @@ const ProgramDetailView = ({ program, onBack, onUpdateProgram }) => {
     if (pickerVolumeMode === 'seconds') return `${Math.max(1, parseInt(pickerSeconds || '0', 10))} sec`;
     if (pickerVolumeMode === 'minutes') return `${Math.max(1, parseInt(pickerMinutes || '0', 10))} min`;
     const sets = Math.max(1, parseInt(pickerSets || '0', 10));
+    if (pickerRepsScope === REPS_SCOPES.PER_HAND) {
+      const repsPerHand = Math.max(1, parseInt(pickerRepsPerHand || '0', 10));
+      return `${sets}×${repsPerHand}/main`;
+    }
+    if (pickerRepsScope === REPS_SCOPES.PER_SIDE) {
+      const repsPerSide = Math.max(1, parseInt(pickerRepsPerSide || '0', 10));
+      return `${sets}×${repsPerSide}/côté`;
+    }
     const reps = Math.max(1, parseInt(pickerReps || '0', 10));
     return `${sets}×${reps}`;
   };
@@ -375,7 +438,16 @@ const ProgramDetailView = ({ program, onBack, onUpdateProgram }) => {
     const meta = {
       ...normalizeExerciseMeta(newEx),
       volumeMode: pickerVolumeMode,
-      targetLoadKg: pickerWeight ? String(pickerWeight) : ''
+      targetLoadKg: pickerWeight ? String(pickerWeight) : '',
+      repsScope: pickerVolumeMode === 'reps' ? pickerRepsScope : '',
+      repsPerHand:
+        pickerVolumeMode === 'reps' && pickerRepsScope === REPS_SCOPES.PER_HAND
+          ? Math.max(1, parseInt(pickerRepsPerHand || '0', 10))
+          : '',
+      repsPerSide:
+        pickerVolumeMode === 'reps' && pickerRepsScope === REPS_SCOPES.PER_SIDE
+          ? Math.max(1, parseInt(pickerRepsPerSide || '0', 10))
+          : ''
     };
     const built = {
       ...newEx,
@@ -392,25 +464,73 @@ const ProgramDetailView = ({ program, onBack, onUpdateProgram }) => {
 
     const updatedProgram = { ...program, schedule: { ...program.schedule } };
     const day = { ...updatedProgram.schedule[pickerContext.dayKey] };
-    if (pickerContext.variantKey) {
-      const vk = pickerContext.variantKey;
-      const variants = { ...day.salleVariants };
-      const v = { ...variants[vk], exercises: [...(variants[vk]?.exercises || [])] };
-      v.exercises.push(built);
-      variants[vk] = v;
-      day.salleVariants = variants;
-    } else {
-      day.exercises = [...(day.exercises || []), built];
+    const hasSalleVariants = Boolean(day?.salleVariants?.semaineA || day?.salleVariants?.semaineB);
+
+    const pushBuiltExercise = (targetList) => {
+      const clone = {
+        ...built,
+        id: `ex_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`
+      };
+      targetList.push(clone);
+      return clone;
+    };
+
+    let lastInsertedExercise = null;
+
+    const shouldAddToMain =
+      pickerTargetVariant === PICKER_TARGET_VARIANTS.MAIN ||
+      pickerTargetVariant === PICKER_TARGET_VARIANTS.ALL ||
+      !hasSalleVariants;
+
+    const shouldAddToWeekA =
+      hasSalleVariants &&
+      (pickerTargetVariant === PICKER_TARGET_VARIANTS.SALLE ||
+        pickerTargetVariant === PICKER_TARGET_VARIANTS.ALL) &&
+      (pickerTargetWeek === PICKER_TARGET_WEEKS.A || pickerTargetWeek === PICKER_TARGET_WEEKS.ALL);
+
+    const shouldAddToWeekB =
+      hasSalleVariants &&
+      (pickerTargetVariant === PICKER_TARGET_VARIANTS.SALLE ||
+        pickerTargetVariant === PICKER_TARGET_VARIANTS.ALL) &&
+      (pickerTargetWeek === PICKER_TARGET_WEEKS.B || pickerTargetWeek === PICKER_TARGET_WEEKS.ALL);
+
+    if (shouldAddToMain) {
+      day.exercises = [...(day.exercises || [])];
+      lastInsertedExercise = pushBuiltExercise(day.exercises);
     }
+
+    if (hasSalleVariants && (shouldAddToWeekA || shouldAddToWeekB)) {
+      const variants = { ...day.salleVariants };
+      if (shouldAddToWeekA && variants.semaineA) {
+        const vA = { ...variants.semaineA, exercises: [...(variants.semaineA?.exercises || [])] };
+        lastInsertedExercise = pushBuiltExercise(vA.exercises);
+        variants.semaineA = vA;
+      }
+      if (shouldAddToWeekB && variants.semaineB) {
+        const vB = { ...variants.semaineB, exercises: [...(variants.semaineB?.exercises || [])] };
+        lastInsertedExercise = pushBuiltExercise(vB.exercises);
+        variants.semaineB = vB;
+      }
+      day.salleVariants = variants;
+    }
+
     updatedProgram.schedule[pickerContext.dayKey] = day;
     onUpdateProgram(updatedProgram);
     setShowExerciseBankPicker(false);
-    setEditingExercise({
-      dayKey: pickerContext.dayKey,
-      exerciseId: built.id,
-      ...(pickerContext.variantKey ? { variantKey: pickerContext.variantKey } : {})
-    });
-    setEditedData({ ...built, meta: normalizeExerciseMeta(built) });
+
+    if (lastInsertedExercise) {
+      const editVariantKey =
+        pickerTargetVariant === PICKER_TARGET_VARIANTS.SALLE &&
+        pickerTargetWeek !== PICKER_TARGET_WEEKS.ALL
+          ? pickerTargetWeek
+          : undefined;
+      setEditingExercise({
+        dayKey: pickerContext.dayKey,
+        exerciseId: lastInsertedExercise.id,
+        ...(editVariantKey ? { variantKey: editVariantKey } : {})
+      });
+      setEditedData({ ...lastInsertedExercise, meta: normalizeExerciseMeta(lastInsertedExercise) });
+    }
   };
 
   const renderExerciseEditor = () => {
@@ -1564,12 +1684,56 @@ const ProgramDetailView = ({ program, onBack, onUpdateProgram }) => {
                 ))}
               </div>
 
+              {(() => {
+                const day = program?.schedule?.[pickerContext.dayKey];
+                const hasSalleVariants = Boolean(day?.salleVariants?.semaineA || day?.salleVariants?.semaineB);
+                if (!hasSalleVariants) return null;
+
+                return (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    <label className="text-xs text-slate-400">
+                      Variante cible
+                      <select
+                        value={pickerTargetVariant}
+                        onChange={(e) => setPickerTargetVariant(e.target.value)}
+                        className="mt-1 w-full rounded border border-[#0F4C5C]/55 bg-black px-2 py-2 text-sm text-white"
+                      >
+                        <option value={PICKER_TARGET_VARIANTS.MAIN}>Séance principale (street/maison)</option>
+                        <option value={PICKER_TARGET_VARIANTS.SALLE}>Variante salle</option>
+                        <option value={PICKER_TARGET_VARIANTS.ALL}>Toutes les variantes + principale</option>
+                      </select>
+                    </label>
+                    {(pickerTargetVariant === PICKER_TARGET_VARIANTS.SALLE ||
+                      pickerTargetVariant === PICKER_TARGET_VARIANTS.ALL) && (
+                      <label className="text-xs text-slate-400">
+                        Semaine cible
+                        <select
+                          value={pickerTargetWeek}
+                          onChange={(e) => setPickerTargetWeek(e.target.value)}
+                          className="mt-1 w-full rounded border border-[#0F4C5C]/55 bg-black px-2 py-2 text-sm text-white"
+                        >
+                          <option value={PICKER_TARGET_WEEKS.A}>Semaine A</option>
+                          <option value={PICKER_TARGET_WEEKS.B}>Semaine B</option>
+                          <option value={PICKER_TARGET_WEEKS.ALL}>Toutes les semaines</option>
+                        </select>
+                      </label>
+                    )}
+                  </div>
+                );
+              })()}
+
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                 <label className="text-xs text-slate-400">
                   Mode de volume
                   <select
                     value={pickerVolumeMode}
-                    onChange={(e) => setPickerVolumeMode(e.target.value)}
+                    onChange={(e) => {
+                      const mode = e.target.value;
+                      setPickerVolumeMode(mode);
+                      if (mode !== 'reps') {
+                        setPickerRepsScope(REPS_SCOPES.TOTAL);
+                      }
+                    }}
                     className="mt-1 w-full rounded border border-[#0F4C5C]/55 bg-black px-2 py-2 text-sm text-white"
                   >
                     <option value="reps">Répétitions</option>
@@ -1592,7 +1756,20 @@ const ProgramDetailView = ({ program, onBack, onUpdateProgram }) => {
               </div>
 
               {pickerVolumeMode === 'reps' && (
-                <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-3">
+                  <label className="text-xs text-slate-400 block">
+                    Type de répétitions
+                    <select
+                      value={pickerRepsScope}
+                      onChange={(e) => setPickerRepsScope(e.target.value)}
+                      className="mt-1 w-full rounded border border-[#0F4C5C]/55 bg-black px-2 py-2 text-sm text-white"
+                    >
+                      <option value={REPS_SCOPES.TOTAL}>Répétitions totales</option>
+                      <option value={REPS_SCOPES.PER_HAND}>Répétitions par main</option>
+                      <option value={REPS_SCOPES.PER_SIDE}>Répétitions par côté</option>
+                    </select>
+                  </label>
+                  <div className="grid grid-cols-2 gap-3">
                   <label className="text-xs text-slate-400">
                     Séries
                     <input
@@ -1604,15 +1781,40 @@ const ProgramDetailView = ({ program, onBack, onUpdateProgram }) => {
                     />
                   </label>
                   <label className="text-xs text-slate-400">
-                    Reps
-                    <input
-                      type="number"
-                      min="1"
-                      value={pickerReps}
-                      onChange={(e) => setPickerReps(e.target.value)}
-                      className="mt-1 w-full rounded border border-[#0F4C5C]/55 bg-black px-2 py-2 text-sm text-white"
-                    />
+                    {pickerRepsScope === REPS_SCOPES.PER_HAND
+                      ? 'Reps par main'
+                      : pickerRepsScope === REPS_SCOPES.PER_SIDE
+                        ? 'Reps par côté'
+                        : 'Reps'}
+                    {pickerRepsScope === REPS_SCOPES.TOTAL && (
+                      <input
+                        type="number"
+                        min="1"
+                        value={pickerReps}
+                        onChange={(e) => setPickerReps(e.target.value)}
+                        className="mt-1 w-full rounded border border-[#0F4C5C]/55 bg-black px-2 py-2 text-sm text-white"
+                      />
+                    )}
+                    {pickerRepsScope === REPS_SCOPES.PER_HAND && (
+                      <input
+                        type="number"
+                        min="1"
+                        value={pickerRepsPerHand}
+                        onChange={(e) => setPickerRepsPerHand(e.target.value)}
+                        className="mt-1 w-full rounded border border-[#0F4C5C]/55 bg-black px-2 py-2 text-sm text-white"
+                      />
+                    )}
+                    {pickerRepsScope === REPS_SCOPES.PER_SIDE && (
+                      <input
+                        type="number"
+                        min="1"
+                        value={pickerRepsPerSide}
+                        onChange={(e) => setPickerRepsPerSide(e.target.value)}
+                        className="mt-1 w-full rounded border border-[#0F4C5C]/55 bg-black px-2 py-2 text-sm text-white"
+                      />
+                    )}
                   </label>
+                </div>
                 </div>
               )}
               {pickerVolumeMode === 'seconds' && (

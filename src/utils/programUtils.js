@@ -170,8 +170,35 @@ const EXTERNAL_LOAD_EQUIPMENT = new Set([
   Equipment.WEIGHTED_VEST
 ]);
 
+const normalizeForMatching = (value) =>
+  String(value || '')
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '');
+
+const isKnownBodyweightBarFalsePositive = (exercise) => {
+  const name = normalizeForMatching(exercise?.name);
+
+  // Exclure toutes les variantes de tractions (barre de traction ≠ charge externe)
+  const isPullupFamily =
+    name.includes('traction') ||
+    name.includes('pull-up') ||
+    name.includes('pull up') ||
+    name.includes('chin-up') ||
+    name.includes('chin up');
+
+  // Exclure les relevés de genoux à la barre (faux positif fréquent)
+  const isKneeRaiseOnBar =
+    (name.includes('releve') || name.includes('releves')) &&
+    name.includes('genou') &&
+    name.includes('barre');
+
+  return isPullupFamily || isKneeRaiseOnBar;
+};
+
 export const exerciseUsesExternalLoad = (exercise) => {
   if (!exercise || typeof exercise !== 'object') return false;
+  if (isKnownBodyweightBarFalsePositive(exercise)) return false;
   const { metadata } = enrichExercise(exercise);
   return EXTERNAL_LOAD_EQUIPMENT.has(metadata?.equipment);
 };

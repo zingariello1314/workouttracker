@@ -22,6 +22,7 @@ import { useAuth } from '../../context/AuthContext';
 import ExerciseDetailPage from './exercises/ExerciseDetailPage';
 import { loadTranslationNamespace } from '../../utils/translations/loader';
 import { resolveExerciseIntensityCoeff } from '../../utils/trainingLoadUtils';
+import { isAdminUser } from '../../utils/accessControl';
 
 const ExercisesTab = () => {
   const { data, updateData } = useWorkout();
@@ -29,7 +30,7 @@ const ExercisesTab = () => {
   const t = useTranslation();
   const { language } = useLanguage();
   const { currentUser, isAuthenticated } = useAuth();
-  const isAdmin = currentUser?.role === 'admin' || currentUser?.username === 'zingariello1314';
+  const isAdmin = isAdminUser(currentUser);
   const isGuest = !isAuthenticated;
   const isStandardUser = isAuthenticated && !isAdmin;
   const intensityCoeffs = data?.exerciseIntensityCoeffs || {};

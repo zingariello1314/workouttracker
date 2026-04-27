@@ -19,6 +19,7 @@ import { getLocalCalendarDateStr, addCalendarDays, parseLocalCalendarDate } from
 import { calculateQuestXP, DIFFICULTY_XP_BASE } from '../utils/questXpCore';
 import { computeValidationXpAward } from '../utils/questScoring';
 import logger from '../utils/logger';
+import { canAccessPrivateData } from '../utils/accessControl';
 
 const qqLog = logger.module('useQuietQuestEngine');
 
@@ -114,6 +115,7 @@ export const QuietQuestContext = createContext(null);
  */
 function useQuietQuestEngineImpl() {
   const { currentUser, isAuthenticated } = useAuth();
+  const canAccessData = canAccessPrivateData({ user: currentUser, isAuthenticated });
   const [allQuests, setAllQuests] = useState([]);
   const [userData, setUserData] = useState(defaultUserData);
   const [validations, setValidations] = useState([]);
@@ -155,7 +157,7 @@ function useQuietQuestEngineImpl() {
   // Détection du mode de stockage
   const storageModeRef = useRef('localstorage'); // 'indexeddb' | 'localstorage'
   const dbRef = useRef(null);
-  const userId = 'main'; // Pour support multi-utilisateurs futur
+  const userId = 'main';
 
   // Cache mémo pour getQuestsForDate (clé: date, valeur: quêtes)
   const questsCacheRef = useRef(new Map());
@@ -292,6 +294,16 @@ function useQuietQuestEngineImpl() {
 
   // Chargement initial avec migration automatique
   useEffect(() => {
+    if (!canAccessData) {
+      setAllQuests([]);
+      setUserData(defaultUserData);
+      setValidations([]);
+      setDailyPerformances([]);
+      isLoadingRef.current = false;
+      setIsLoading(false);
+      return;
+    }
+
     isLoadingRef.current = true;
     setIsLoading(true);
     
@@ -407,7 +419,7 @@ function useQuietQuestEngineImpl() {
     };
 
     loadData();
-  }, [isAuthenticated]);
+  }, [canAccessData]);
 
   // Invalider le cache quand allQuests change
   useEffect(() => {
@@ -519,7 +531,7 @@ function useQuietQuestEngineImpl() {
   // Sauvegardes automatiques avec debounce (300ms) + double sauvegarde
   useEffect(() => {
     // Ne pas sauvegarder pendant le chargement initial
-    if (isLoadingRef.current) return;
+    if (!canAccessData || isLoadingRef.current) return;
     
     if (saveQuestsTimerRef.current) {
       clearTimeout(saveQuestsTimerRef.current);
@@ -546,11 +558,11 @@ function useQuietQuestEngineImpl() {
         clearTimeout(saveQuestsTimerRef.current);
       }
     };
-  }, [allQuests]);
+  }, [allQuests, canAccessData]);
 
   useEffect(() => {
     // Ne pas sauvegarder pendant le chargement initial
-    if (isLoadingRef.current) return;
+    if (!canAccessData || isLoadingRef.current) return;
     
     if (saveValidationsTimerRef.current) {
       clearTimeout(saveValidationsTimerRef.current);
@@ -579,11 +591,11 @@ function useQuietQuestEngineImpl() {
         clearTimeout(saveValidationsTimerRef.current);
       }
     };
-  }, [validations]);
+  }, [validations, canAccessData]);
 
   useEffect(() => {
     // Ne pas sauvegarder pendant le chargement initial
-    if (isLoadingRef.current) return;
+    if (!canAccessData || isLoadingRef.current) return;
     
     if (saveDailyPerformancesTimerRef.current) {
       clearTimeout(saveDailyPerformancesTimerRef.current);
@@ -612,11 +624,11 @@ function useQuietQuestEngineImpl() {
         clearTimeout(saveDailyPerformancesTimerRef.current);
       }
     };
-  }, [dailyPerformances]);
+  }, [dailyPerformances, canAccessData]);
 
   useEffect(() => {
     // Ne pas sauvegarder pendant le chargement initial
-    if (isLoadingRef.current) return;
+    if (!canAccessData || isLoadingRef.current) return;
     
     if (saveUserDataTimerRef.current) {
       clearTimeout(saveUserDataTimerRef.current);
@@ -640,7 +652,7 @@ function useQuietQuestEngineImpl() {
         clearTimeout(saveUserDataTimerRef.current);
       }
     };
-  }, [userData]);
+  }, [userData, canAccessData]);
 
   // Index des validations par date
   const validationsByDate = useMemo(() => {

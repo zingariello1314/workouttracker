@@ -14,6 +14,7 @@
  */
 
 import { openDB, STORE_ACTIVITIES, STORE_DAILY_METRICS, STORE_TELEMETRY_HISTORY, STORE_FORCED_RANGES } from '../../../../../hooks/garminDataUtils';
+import { recordBelongsToCurrentScope } from '../../../../../hooks/garminDataUtils';
 import logger from '../../../../../utils/logger';
 
 const log = logger.module('IndexedDBMaintenance');
@@ -196,8 +197,10 @@ class IndexedDBMaintenanceService {
         request.onsuccess = (event) => {
           const cursor = event.target.result;
           if (cursor && deadline.timeRemaining() > 0) {
-            cursor.delete();
-            cleanedCount++;
+            if (recordBelongsToCurrentScope(cursor.value)) {
+              cursor.delete();
+              cleanedCount++;
+            }
             cursor.continue();
           }
         };

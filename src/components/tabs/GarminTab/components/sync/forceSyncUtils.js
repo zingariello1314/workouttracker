@@ -4,8 +4,9 @@ import {
   isDateValid,
   isDateBeforeOrEqual
 } from '../../hooks/garminDateUtils';
+import { getGarminScope } from '../../../../../hooks/garminDataUtils';
 
-const STORAGE_KEY = 'garmin:forceSync:last-range';
+const getScopedStorageKey = () => `garmin:${getGarminScope()}:forceSync:last-range`;
 const MAX_SPAN_DAYS_DEFAULT = 30;
 const ESTIMATED_CALLS_PER_DAY = 8;
 
@@ -120,7 +121,7 @@ export function mapRangeToRequest(range, includeToday = false) {
 export function storeLastRange(range) {
   if (typeof sessionStorage === 'undefined') return;
   try {
-    sessionStorage.setItem(STORAGE_KEY, JSON.stringify(range));
+    sessionStorage.setItem(getScopedStorageKey(), JSON.stringify(range));
   } catch {
     // storage plein ou indisponible : ignorer
   }
@@ -132,7 +133,7 @@ export function storeLastRange(range) {
 export function restoreLastRange() {
   if (typeof sessionStorage === 'undefined') return null;
   try {
-    const raw = sessionStorage.getItem(STORAGE_KEY);
+    const raw = sessionStorage.getItem(getScopedStorageKey());
     if (!raw) return null;
     const parsed = JSON.parse(raw);
     if (!parsed || !parsed.start || !parsed.end) return null;

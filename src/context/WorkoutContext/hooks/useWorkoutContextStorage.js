@@ -24,9 +24,13 @@ export const useWorkoutContextStorage = (
   setActiveProgram,
   setProgramHistory,
   setWeekVariant,
-  setIsGymMode
+  setIsGymMode,
+  contextScopeKey = 'anonymous'
 ) => {
   const debounceTimerRef = useRef(null);
+  const contextRecordId = `context:${contextScopeKey}`;
+  const backupKey = `workoutContext_backup:${contextScopeKey}`;
+  const legacyBackupKey = 'workoutContext_backup';
 
   const openContextDB = useCallback(() => {
     return new Promise((resolve, reject) => {
@@ -84,7 +88,7 @@ export const useWorkoutContextStorage = (
         }
 
         const dataToSave = {
-          id: 'context',
+          id: contextRecordId,
           ...contextData,
           lastSaved: new Date().toISOString()
         };
@@ -98,7 +102,7 @@ export const useWorkoutContextStorage = (
           
           request.onsuccess = () => {
             try {
-              localStorage.setItem('workoutContext_backup', JSON.stringify(dataToSave));
+              localStorage.setItem(backupKey, JSON.stringify(dataToSave));
             } catch (localStorageError) {
               console.warn('⚠️ Impossible de sauvegarder le contexte en localStorage:', localStorageError);
             }
@@ -122,8 +126,8 @@ export const useWorkoutContextStorage = (
         
         if (retryCount === maxRetries) {
           try {
-            localStorage.setItem('workoutContext_backup', JSON.stringify({
-              id: 'context',
+            localStorage.setItem(backupKey, JSON.stringify({
+              id: contextRecordId,
               ...contextData,
               lastSaved: new Date().toISOString()
             }));
@@ -136,7 +140,7 @@ export const useWorkoutContextStorage = (
         await new Promise(resolve => setTimeout(resolve, 1000 * retryCount));
       }
     }
-  }, [openContextDB]);
+  }, [openContextDB, backupKey, contextRecordId]);
 
   const loadContext = useCallback(async () => {
     try {
@@ -147,57 +151,71 @@ export const useWorkoutContextStorage = (
       const store = transaction.objectStore('contextData');
       
       return new Promise((resolve, reject) => {
-        const request = store.get('context');
+        const request = store.get(contextRecordId);
         
         request.onsuccess = () => {
           const savedContext = request.result;
+          const applyContext = (ctx) => {
+            if (!ctx) return;
+            if (ctx.programs) {
+              setPrograms(ctx.programs);
+            }
+            if (ctx.activeProgram) {
+              setActiveProgram(ctx.activeProgram);
+            }
+            if (ctx.programHistory) {
+              setProgramHistory(ctx.programHistory);
+            }
+            if (ctx.weekVariant) {
+              setWeekVariant(ctx.weekVariant);
+            }
+            if (ctx.isGymMode !== undefined) {
+              setIsGymMode(ctx.isGymMode);
+            }
+          };
+
           if (savedContext) {
-            if (savedContext.programs) {
-              setPrograms(savedContext.programs);
-            }
-            if (savedContext.activeProgram) {
-              setActiveProgram(savedContext.activeProgram);
-            }
-            if (savedContext.programHistory) {
-              setProgramHistory(savedContext.programHistory);
-            }
-            if (savedContext.weekVariant) {
-              setWeekVariant(savedContext.weekVariant);
-            }
-            if (savedContext.isGymMode !== undefined) {
-              setIsGymMode(savedContext.isGymMode);
-            }
+            applyContext(savedContext);
             resolve(savedContext);
           } else {
-            // Tenter de charger depuis localStorage si IndexedDB est vide
-            const localStorageBackup = localStorage.getItem('workoutContext_backup');
-            if (localStorageBackup) {
-              try {
-                const parsedBackup = JSON.parse(localStorageBackup);
-                if (parsedBackup.programs) {
-                  setPrograms(parsedBackup.programs);
+            // Migration douce legacy -> scope utilisateur
+            const legacyRequest = store.get('context');
+            legacyRequest.onsuccess = async () => {
+              const legacyContext = legacyRequest.result;
+              if (legacyContext) {
+                const migratedContext = { ...legacyContext, id: contextRecordId };
+                applyContext(migratedContext);
+                try {
+                  const writeTx = db.transaction(['contextData'], 'readwrite');
+                  const writeStore = writeTx.objectStore('contextData');
+                  writeStore.put(migratedContext);
+                } catch {
+                  // ignore migration write error
                 }
-                if (parsedBackup.activeProgram) {
-                  setActiveProgram(parsedBackup.activeProgram);
+                resolve(migratedContext);
+                return;
+              }
+
+              // Tenter backup scope puis backup legacy
+              const scopeBackup = localStorage.getItem(backupKey);
+              const legacyBackup = localStorage.getItem(legacyBackupKey);
+              const backupCandidate = scopeBackup || legacyBackup;
+              if (backupCandidate) {
+                try {
+                  const parsedBackup = JSON.parse(backupCandidate);
+                  const normalized = { ...parsedBackup, id: contextRecordId };
+                  applyContext(normalized);
+                  console.warn('⚠️ Contexte chargé depuis localStorage backup');
+                  resolve(normalized);
+                } catch (parseError) {
+                  console.error('❌ Erreur parsing localStorage backup:', parseError);
+                  resolve(null);
                 }
-                if (parsedBackup.programHistory) {
-                  setProgramHistory(parsedBackup.programHistory);
-                }
-                if (parsedBackup.weekVariant) {
-                  setWeekVariant(parsedBackup.weekVariant);
-                }
-                if (parsedBackup.isGymMode !== undefined) {
-                  setIsGymMode(parsedBackup.isGymMode);
-                }
-                console.warn('⚠️ Contexte chargé depuis localStorage (IndexedDB vide)');
-                resolve(parsedBackup);
-              } catch (parseError) {
-                console.error('❌ Erreur parsing localStorage backup:', parseError);
+              } else {
                 resolve(null);
               }
-            } else {
-              resolve(null);
-            }
+            };
+            legacyRequest.onerror = () => resolve(null);
           }
         };
         
@@ -210,7 +228,16 @@ export const useWorkoutContextStorage = (
       console.error('❌ Erreur chargement contexte:', error);
       return null;
     }
-  }, [openContextDB, setPrograms, setActiveProgram, setProgramHistory, setWeekVariant, setIsGymMode]);
+  }, [
+    openContextDB,
+    setPrograms,
+    setActiveProgram,
+    setProgramHistory,
+    setWeekVariant,
+    setIsGymMode,
+    contextRecordId,
+    backupKey
+  ]);
 
   const flushAutoSave = useCallback((contextData) => {
     if (debounceTimerRef.current) {

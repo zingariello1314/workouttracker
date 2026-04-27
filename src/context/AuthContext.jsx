@@ -24,6 +24,8 @@ export const AuthProvider = ({ children }) => {
     updateAvatar,
     updatePassword,
     linkAnonymousDataToUser,
+    previewAnonymousMigration,
+    rollbackAnonymousMigration,
   } = useAuthStorage();
 
   const [currentUser, setCurrentUser] = useState(null);
@@ -54,9 +56,16 @@ export const AuthProvider = ({ children }) => {
   }, [loadInitialAuth]);
 
   const handleRegister = useCallback(
-    async ({ username, email, password }) => {
+    async ({ username, email, password, firstName, lastName, emailVerifiedAtSignup = false }) => {
       setError(null);
-      const result = await register({ username, email, password });
+      const result = await register({
+        username,
+        email,
+        password,
+        firstName,
+        lastName,
+        emailVerifiedAtSignup
+      });
       if (!result.success) {
         setError(result.error || 'REGISTER_FAILED');
         return result;
@@ -123,9 +132,9 @@ export const AuthProvider = ({ children }) => {
   );
 
   const handleUpdatePassword = useCallback(
-    async (oldPassword, newPassword) => {
+    async (oldPassword, newPassword, options = {}) => {
       if (!currentUser) return { success: false, error: 'NO_USER' };
-      const result = await updatePassword(currentUser.id, oldPassword, newPassword);
+      const result = await updatePassword(currentUser.id, oldPassword, newPassword, options);
       if (!result.success) {
         setError(result.error || 'PASSWORD_UPDATE_FAILED');
       }
@@ -142,6 +151,15 @@ export const AuthProvider = ({ children }) => {
     [currentUser, linkAnonymousDataToUser],
   );
 
+  const handlePreviewAnonymousMigration = useCallback(async () => {
+    return previewAnonymousMigration();
+  }, [previewAnonymousMigration]);
+
+  const handleRollbackAnonymousMigration = useCallback(async () => {
+    if (!currentUser) return { success: false, error: 'NO_USER' };
+    return rollbackAnonymousMigration(currentUser.id);
+  }, [currentUser, rollbackAnonymousMigration]);
+
   const value = useMemo(
     () => ({
       currentUser,
@@ -156,6 +174,8 @@ export const AuthProvider = ({ children }) => {
       updateAvatar: handleUpdateAvatar,
       updatePassword: handleUpdatePassword,
       linkAnonymousDataToUser: handleLinkAnonymousData,
+      previewAnonymousMigration: handlePreviewAnonymousMigration,
+      rollbackAnonymousMigration: handleRollbackAnonymousMigration,
       setError,
     }),
     [
@@ -170,6 +190,8 @@ export const AuthProvider = ({ children }) => {
       handleUpdateAvatar,
       handleUpdatePassword,
       handleLinkAnonymousData,
+      handlePreviewAnonymousMigration,
+      handleRollbackAnonymousMigration,
     ],
   );
 

@@ -38,6 +38,8 @@ import { validateAndParse, SubjectSchema, validateFile } from '../utils/apprenti
 import { sanitizeSubject } from '../utils/apprentissageSanitization';
 import { useApprentissageWorker } from './useApprentissageWorker';
 import { useUndoRedo } from './useUndoRedo';
+import { useAuth } from '../context/AuthContext';
+import { canAccessPrivateData } from '../utils/accessControl';
 
 // Clés de stockage
 const STORAGE_KEYS = {
@@ -46,6 +48,21 @@ const STORAGE_KEYS = {
   TIMER: 'apprentissage_timer',
   SESSIONS_HISTORY: 'apprentissage_sessions_history',
   PLANNER: 'apprentissage_planner',
+};
+
+const EMPTY_PROGRESSION_DATA = {
+  subjects: {},
+  globalLevel: 1,
+  globalXP: 0,
+  totalStudyTime: 0,
+  unlockedBadges: [],
+  unlockedTrophies: [],
+  fusionCalendarTrophiesGranted: [],
+  dailyStreak: 0,
+  lastStudyDate: null,
+  weeklyGoals: {},
+  monthlyStats: {},
+  progressionHistory: [],
 };
 
 // Fonctions utilitaires
@@ -111,24 +128,16 @@ const getCurrentLevelXP = (xp, currentLevel) => {
 };
 
 export const useApprentissageEngine = () => {
+  const { currentUser, isAuthenticated } = useAuth();
+  const canAccessData = canAccessPrivateData({ user: currentUser, isAuthenticated });
+
   // État des matières
   const [subjects, setSubjects] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
 
   // État de progression
   const [progressionData, setProgressionData] = useState({
-    subjects: {},
-    globalLevel: 1,
-    globalXP: 0,
-    totalStudyTime: 0,
-    unlockedBadges: [],
-    unlockedTrophies: [],
-    fusionCalendarTrophiesGranted: [],
-    dailyStreak: 0,
-    lastStudyDate: null,
-    weeklyGoals: {},
-    monthlyStats: {},
-    progressionHistory: [],
+    ...EMPTY_PROGRESSION_DATA,
   });
 
   // Refs pour débounce sauvegarde
@@ -221,6 +230,13 @@ export const useApprentissageEngine = () => {
 
   // Charger les données au montage
   useEffect(() => {
+    if (!canAccessData) {
+      setSubjects([]);
+      setProgressionData(EMPTY_PROGRESSION_DATA);
+      setIsLoading(false);
+      return;
+    }
+
     const loadData = async () => {
       try {
         // Migration d'abord
@@ -265,7 +281,7 @@ export const useApprentissageEngine = () => {
               });
             }
           } else {
-            loadedProgression = progressionData;
+            loadedProgression = EMPTY_PROGRESSION_DATA;
           }
         }
 
@@ -276,7 +292,7 @@ export const useApprentissageEngine = () => {
           severity: ERROR_SEVERITY.HIGH,
           fallback: () => {
             const loadedSubjects = loadFromStorage(STORAGE_KEYS.SUBJECTS, []);
-            const loadedProgression = loadFromStorage(STORAGE_KEYS.PROGRESSION, progressionData);
+            const loadedProgression = loadFromStorage(STORAGE_KEYS.PROGRESSION, EMPTY_PROGRESSION_DATA);
             setSubjects(loadedSubjects);
             setProgressionData(loadedProgression);
           },
@@ -287,7 +303,7 @@ export const useApprentissageEngine = () => {
     };
 
     loadData();
-  }, []);
+  }, [canAccessData, migrateFromLocalStorage, userId]);
 
   useEffect(() => {
     const onReload = async () => {

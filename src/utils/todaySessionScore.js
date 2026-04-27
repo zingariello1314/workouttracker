@@ -15,6 +15,7 @@ import {
 } from './trainingLoadUtils';
 import { detectExerciseUnit, calculateAutoReps } from './exerciseCalculations';
 import { exerciseUsesExternalLoad } from './programUtils';
+import { computeVolumeKgReps } from './exerciseLoadVolume';
 
 /**
  * @param {Date} date
@@ -60,16 +61,40 @@ export function computeTodaySessionComplexity(date, workout, currentData, isGymM
     const autoReps = autoFromSeries != null && autoFromSeries > 0 ? autoFromSeries : unit?.isTimeBased ? 60 : 15;
     const usesLoad = exerciseUsesExternalLoad(exercise);
     const medianKg = computeMedianWeightKgForExercise(weightsStore, exercise.id);
-    const wRawPlan = weightsStore[readKey];
-    const wKgPlan = parseFloat(String(wRawPlan ?? '').replace(',', '.'));
+    const pickWeightStrForKeys = () => {
+      for (const k of keys) {
+        const v = weightsStore[k];
+        if (v !== undefined && v !== null && String(v).trim() !== '') return String(v);
+      }
+      return '';
+    };
+    const pickPerArmForKeys = () => keys.some((k) => currentData?.exerciseWeightPerArm?.[k] === true);
+    const pickSetWeightsForKeys = () => {
+      for (const k of keys) {
+        const a = currentData?.exerciseSetWeights?.[k];
+        if (Array.isArray(a) && a.some((x) => String(x ?? '').trim() !== '')) return a;
+      }
+      return null;
+    };
+    const wStrPlan = pickWeightStrForKeys();
+    const wKgPlan = parseFloat(String(wStrPlan ?? '').replace(',', '.'));
     const planMult = computeExternalLoadMultiplier(usesLoad, wKgPlan, medianKg);
     const plannedGuess = computeStrengthCalendarContribution(exercise, autoReps, coeff, planMult);
     plannedLoadEstimate += plannedGuess;
 
     if (isChecked && reps !== '') {
       completedCount += 1;
-      const wRaw = weightsStore[readKey];
-      const wKg = parseFloat(String(wRaw ?? '').replace(',', '.'));
+      const perArm = pickPerArmForKeys();
+      const setArr = pickSetWeightsForKeys();
+      const volumeKg = computeVolumeKgReps({
+        exercise,
+        totalReps: reps,
+        singleWeightStr: pickWeightStrForKeys(),
+        perArm,
+        setWeightStrs: Array.isArray(setArr) ? setArr : null
+      });
+      const rNum = parseInt(String(reps), 10) || 0;
+      const wKg = rNum > 0 && volumeKg > 0 ? volumeKg / rNum : 0;
       const wMult = computeExternalLoadMultiplier(usesLoad, wKg, medianKg);
       const contrib = computeStrengthCalendarContribution(exercise, reps, coeff, wMult);
       completedLoad += contrib;

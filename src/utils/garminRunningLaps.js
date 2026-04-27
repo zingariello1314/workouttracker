@@ -313,6 +313,12 @@ export function garminActivityTitleFromStoredNotes(notes) {
 export function shouldExcludeStoredGarminRunningSession(session) {
   if (!session || typeof session !== 'object') return false;
   if (session.includeInRunningDespiteGarminCardio === true) return false;
+
+  // Les sessions explicitement classées "marche" doivent toujours rester visibles
+  // dans l'onglet Marche/Défis, même si le nom Garmin contient "cardio".
+  const explicitType = String(session?.type || '').toLowerCase();
+  if (/\b(walk|walking|marche|rando|hike|hiking)\b/i.test(explicitType)) return false;
+
   const src = String(session.source || '').toLowerCase();
   if (src !== 'garmin') return false;
   const title = garminActivityTitleFromStoredNotes(session.notes);

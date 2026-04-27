@@ -76,7 +76,8 @@ async function saveBatchToIndexedDB(db, images, options = {}) {
   const {
     enableVersioning = false,
     action = 'upload',
-    existingImages = []
+    existingImages = [],
+    storageType = 'homepage_background'
   } = options;
   return new Promise((resolve, reject) => {
     try {
@@ -100,7 +101,7 @@ async function saveBatchToIndexedDB(db, images, options = {}) {
         deletePromise = Promise.resolve();
         log.debug('⏭️ Tableau vide, conservation des images existantes');
       } else if (hasTypeIndex) {
-        const deleteRequest = store.index('type').openCursor(IDBKeyRange.only('homepage_background'));
+        const deleteRequest = store.index('type').openCursor(IDBKeyRange.only(storageType));
         deletePromise = new Promise((res, rej) => {
           deleteRequest.onsuccess = (event) => {
             const cursor = event.target.result;
@@ -119,7 +120,7 @@ async function saveBatchToIndexedDB(db, images, options = {}) {
         deletePromise = new Promise((res, rej) => {
           allRequest.onsuccess = (event) => {
             const allItems = event.target.result;
-            const itemsToDelete = allItems.filter(item => item.type === 'homepage_background');
+            const itemsToDelete = allItems.filter(item => item.type === storageType);
             
             if (itemsToDelete.length === 0) {
               res();
@@ -197,7 +198,7 @@ async function saveBatchToIndexedDB(db, images, options = {}) {
           
           const imageData = {
             id: `homepage_bg_${timestamp}_${index}`,
-            type: 'homepage_background',
+            type: storageType,
             data: isV3Format ? image.full : image,
             thumbnail: isV3Format ? (image.thumbnail || null) : null,
             timestamp: new Date().toISOString(),

@@ -12,8 +12,8 @@
   },
   "cumulativeStats": {
     "streetReps": "Program reps (checked exercises)",
-    "volumeLifted": "{{kg}} kg lifted (reps × kg)",
-    "volumeLiftedHint": "Enter weight (kg) on Today for loaded exercises to see volume here.",
+    "volumeLifted": "{{kg}} kg×reps (effective load)",
+    "volumeLiftedHint": "Deduped cumulative (one entry per exercise/day): sets, per-arm, dumbbells — same engine as XP and recap.",
     "enduranceMinutes": "Sport time (endurance, min)",
     "runningTime": "Total running time",
     "runningTimeHoursMinutes": "{{h}} h {{m}} min",
@@ -41,6 +41,20 @@
     "totalExercises": "Total exercises",
     "activeDays": "Active days",
     "avgPerDay": "Average/day"
+  },
+  "heatmapIntensityFactors": {
+    "title": "What tints a day (sport calendar)",
+    "intro": "Day color blends several signals; no single number overrides everything.",
+    "bulletLevel": "Level 0–4: checked program exercises, street reps/load, duration (holds), Today complementary, Garmin when no street.",
+    "bulletLoad": "Weighted strength load: reps × intensity coefficient × load bonus (kg moved per rep vs your median).",
+    "bulletGarmin": "Active kcal, steps above your usual baseline, Garmin intensity minutes (moderate / vigorous).",
+    "bulletProgram": "Program completion ratio for that day (tint bonus).",
+    "bulletFeedback": "Session difficulty when session feedback is filled in.",
+    "bulletVolumeRel": "Daily kg×reps volume: small adjustment vs month-to-date median and vs the previous ~3 weeks.",
+    "volumeHeading": "Load volume on your data",
+    "volume7d": "Last 7 days: {{kg}} kg×reps",
+    "volumeAll": "All-time (deduped): {{kg}} kg×reps",
+    "volumeDedupeNote": "If multiple variants (e.g. week A/B) are checked for the same exercise on the same day, only the entry with the most reps counts — same as strength recap and XP."
   },
   "legend": {
     "title": "Justification Legend",

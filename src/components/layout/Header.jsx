@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Lock } from 'lucide-react';
+import { Lock, BadgeCheck } from 'lucide-react';
 import { useWorkout } from '../../context/WorkoutContext';
 import { useAuth } from '../../context/AuthContext';
 import { useAppLock } from '../../context/AppLockContext';
@@ -165,13 +165,22 @@ const Header = () => {
                         {avatarInitial}
                       </div>
                     )}
-                    <span 
-                      className="text-sm text-slate-100 font-medium"
+                    <span
+                      className="flex items-center gap-1.5 text-sm font-medium text-slate-100"
                       style={{
                         textShadow: '0 0 8px rgba(241, 245, 249, 0.2), 0 1px 2px rgba(0, 0, 0, 0.4)',
                       }}
                     >
                       {currentUser?.username || 'Profil'}
+                      {currentUser?.emailVerified === true && (
+                        <span
+                          className="inline-flex shrink-0 rounded-full bg-emerald-500/25 p-0.5 ring-1 ring-emerald-400/50"
+                          title="Adresse email vérifiée"
+                          aria-label="Email vérifié"
+                        >
+                          <BadgeCheck className="h-4 w-4 text-emerald-300" aria-hidden />
+                        </span>
+                      )}
                     </span>
                   </span>
                   

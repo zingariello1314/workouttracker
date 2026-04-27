@@ -7,7 +7,7 @@
  * @module BannerExportImport
  */
 
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useCallback } from 'react';
 import { exportBanners, downloadBannerExport } from '../utils/bannerExport';
 import { importBanners } from '../utils/bannerImport';
 import { useHomepageImages } from '../hooks/useHomepageImages';
@@ -23,7 +23,53 @@ export default function BannerExportImport() {
   const [exportStatus, setExportStatus] = useState(null); // 'loading' | 'success' | 'error'
   const [importStatus, setImportStatus] = useState(null); // 'loading' | 'success' | 'error'
   const [importResult, setImportResult] = useState(null);
+  const [batchStatus, setBatchStatus] = useState(null);
   const fileInputRef = useRef(null);
+  const batchImagesInputRef = useRef(null);
+
+  const readFileAsDataUrl = (file) =>
+    new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result);
+      reader.onerror = () => reject(reader.error || new Error('read'));
+      reader.readAsDataURL(file);
+    });
+
+  const handleBatchImageUpload = useCallback(
+    async (event) => {
+      const files = Array.from(event.target.files || []).filter((f) => String(f.type || '').startsWith('image/'));
+      if (!files.length) return;
+      setBatchStatus('loading');
+      try {
+        const newUrls = [];
+        for (const file of files) {
+          try {
+            const url = await readFileAsDataUrl(file);
+            newUrls.push(url);
+          } catch {
+            log.warn('Fichier ignoré', file?.name);
+          }
+        }
+        if (!newUrls.length) {
+          setBatchStatus('error');
+          return;
+        }
+        const merged = [...(backgroundImages || []), ...newUrls];
+        await saveImages(merged, { force: true });
+        await loadImages();
+        await checkSystemHealth();
+        setBatchStatus('success');
+        setTimeout(() => setBatchStatus(null), 4000);
+      } catch (err) {
+        log.error('Erreur upload bannières multiples', err);
+        setBatchStatus('error');
+        setTimeout(() => setBatchStatus(null), 5000);
+      } finally {
+        if (batchImagesInputRef.current) batchImagesInputRef.current.value = '';
+      }
+    },
+    [backgroundImages, checkSystemHealth, loadImages, saveImages]
+  );
 
   /**
    * Gère l'export des bannières
@@ -140,6 +186,39 @@ export default function BannerExportImport() {
           Sauvegardez toutes vos bannières dans un fichier JSON pour les restaurer plus tard.
           Format compressé pour réduire la taille du fichier.
         </p>
+      </div>
+
+      <div className={`${S.inset} mb-6`}>
+        <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
+          <div>
+            <h4 className="mb-1 font-semibold text-red-100">Ajouter plusieurs images (rotation d’accueil)</h4>
+            <p className={S.mutedXs}>
+              Sélectionne plusieurs fichiers en une fois : elles sont ajoutées aux bannières existantes.
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={() => batchImagesInputRef.current?.click()}
+            disabled={batchStatus === 'loading'}
+            className={batchStatus === 'loading' ? `${S.btnPrimary} cursor-not-allowed opacity-60` : S.btnPrimary}
+          >
+            {batchStatus === 'loading' ? 'Import…' : 'Choisir des images'}
+          </button>
+        </div>
+        <input
+          ref={batchImagesInputRef}
+          type="file"
+          accept="image/*"
+          multiple
+          className="hidden"
+          onChange={handleBatchImageUpload}
+        />
+        {batchStatus === 'success' && (
+          <p className="text-xs text-emerald-400">Images ajoutées et enregistrées.</p>
+        )}
+        {batchStatus === 'error' && (
+          <p className="text-xs text-red-400">Échec de l’ajout (fichier trop lourd, format ou quota).</p>
+        )}
       </div>
 
       <div className={S.inset}>

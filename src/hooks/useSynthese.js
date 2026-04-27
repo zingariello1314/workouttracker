@@ -7,10 +7,14 @@ import { useState, useEffect, useCallback, useMemo } from 'react';
 import syntheseStorage from '../services/finance/syntheseStorage';
 import logger from '../utils/logger';
 import { sidebarEvents, SIDEBAR_EVENTS } from '../utils/sidebarEvents';
+import { useAuth } from '../context/AuthContext';
+import { canAccessPrivateData } from '../utils/accessControl';
 
 const log = logger.module('useSynthese');
 
 export const useSynthese = () => {
+  const { currentUser, isAuthenticated } = useAuth();
+  const canAccessData = canAccessPrivateData({ user: currentUser, isAuthenticated });
   const [patrimoine, setPatrimoine] = useState(null);
   const [projections, setProjections] = useState(null);
   const [planEpargne, setPlanEpargne] = useState(null);
@@ -19,11 +23,17 @@ export const useSynthese = () => {
   const [error, setError] = useState(null);
 
   // Chargement initial
-  useEffect(() => {
-    loadData();
-  }, []);
-
   const loadData = useCallback(async () => {
+    if (!canAccessData) {
+      setPatrimoine(null);
+      setProjections(null);
+      setPlanEpargne(null);
+      setHistorique([]);
+      setError(null);
+      setLoading(false);
+      return;
+    }
+
     try {
       setLoading(true);
       setError(null);
@@ -55,7 +65,12 @@ export const useSynthese = () => {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [canAccessData]);
+
+  // Chargement initial
+  useEffect(() => {
+    loadData();
+  }, [loadData]);
 
   // Calcul Net Worth
   const calculateNetWorth = useCallback((orData, bourseData, cashData) => {
@@ -78,6 +93,9 @@ export const useSynthese = () => {
 
   // Mise à jour patrimoine
   const updatePatrimoine = useCallback(async (newPatrimoine) => {
+    if (!canAccessData) {
+      return;
+    }
     try {
       await syntheseStorage.savePatrimoine(newPatrimoine);
       setPatrimoine(newPatrimoine);
@@ -96,10 +114,13 @@ export const useSynthese = () => {
       log.error('Failed to update patrimoine', err);
       throw err;
     }
-  }, []);
+  }, [canAccessData]);
 
   // Mise à jour projections
   const updateProjections = useCallback(async (newProjections) => {
+    if (!canAccessData) {
+      return;
+    }
     try {
       await syntheseStorage.saveProjections(newProjections);
       setProjections({ scenarios: newProjections });
@@ -108,10 +129,13 @@ export const useSynthese = () => {
       log.error('Failed to update projections', err);
       throw err;
     }
-  }, []);
+  }, [canAccessData]);
 
   // Mise à jour plan épargne
   const updatePlanEpargne = useCallback(async (newPlanEpargne) => {
+    if (!canAccessData) {
+      return;
+    }
     try {
       await syntheseStorage.savePlanEpargne(newPlanEpargne);
       setPlanEpargne(newPlanEpargne);
@@ -120,7 +144,7 @@ export const useSynthese = () => {
       log.error('Failed to update plan épargne', err);
       throw err;
     }
-  }, []);
+  }, [canAccessData]);
 
   // Calcul projections avec scénarios
   const calculateProjections = useCallback((scenario, duree, dcaMensuel) => {
@@ -165,6 +189,7 @@ export const useSynthese = () => {
 
   // Alertes intelligentes
   const alertes = useMemo(() => {
+    if (!canAccessData) return [];
     if (!patrimoine) return [];
 
     const alerts = [];
@@ -207,7 +232,7 @@ export const useSynthese = () => {
     }
 
     return alerts;
-  }, [patrimoine]);
+  }, [canAccessData, patrimoine]);
 
   // Rafraîchir données
   const refreshData = useCallback(() => {

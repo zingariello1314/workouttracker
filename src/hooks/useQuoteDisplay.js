@@ -9,6 +9,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import quotesService from '../services/quotes/quotesService';
 import { useLanguage } from '../context/LanguageContext';
+import { useAuth } from '../context/AuthContext';
 import logger from '../utils/logger';
 
 const log = logger.component('useQuoteDisplay');
@@ -23,6 +24,7 @@ export function useQuoteDisplay(options = {}) {
   } = options;
 
   const { language } = useLanguage();
+  const { currentUser, isAuthenticated } = useAuth();
   const [currentQuote, setCurrentQuote] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -33,6 +35,35 @@ export function useQuoteDisplay(options = {}) {
   // Select and display quote - SEAMLESS: no loading state after initial load
   const selectQuote = useCallback(async () => {
     try {
+      const preferredUserQuote = String(currentUser?.preferredHomeQuote || currentUser?.inspirationalPhrase || '').trim();
+      if (isAuthenticated && preferredUserQuote) {
+        setCurrentQuote({
+          id: `user-preferred-${currentUser?.id || 'unknown'}`,
+          textFr: preferredUserQuote,
+          textEn: preferredUserQuote,
+          isPinned: true,
+        });
+        if (isInitialLoadRef.current) {
+          setLoading(false);
+          isInitialLoadRef.current = false;
+        }
+        return;
+      }
+      if (!isAuthenticated) {
+        const guestQuote = "Bienvenue. Connecte-toi pour afficher ta phrase inspirante personnelle.";
+        setCurrentQuote({
+          id: 'guest-default',
+          textFr: guestQuote,
+          textEn: guestQuote,
+          isPinned: true,
+        });
+        if (isInitialLoadRef.current) {
+          setLoading(false);
+          isInitialLoadRef.current = false;
+        }
+        return;
+      }
+
       // ✅ Only show loading on initial load, not on subsequent changes
       if (isInitialLoadRef.current) {
         setLoading(true);
@@ -53,7 +84,7 @@ export function useQuoteDisplay(options = {}) {
         isInitialLoadRef.current = false; // Mark initial load as complete
       }
     }
-  }, [language]);
+  }, [currentUser?.id, currentUser?.inspirationalPhrase, currentUser?.preferredHomeQuote, isAuthenticated, language]);
 
   // Initial load
   useEffect(() => {

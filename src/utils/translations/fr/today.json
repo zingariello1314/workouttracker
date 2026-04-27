@@ -38,7 +38,10 @@
     "minutes": "Min",
     "minutesLabel": "min",
     "weightPlaceholder": "Poids",
-    "weightUnit": "kg"
+    "weightUnit": "kg",
+    "weightPerArm": "Saisie en kg par haltère (volume total ×2 si les deux bras)",
+    "perSetOpen": "Poids par série",
+    "perSetReset": "Un seul poids pour l’exo"
   },
   "sessionScore": {
     "title": "Charge séance (street)",

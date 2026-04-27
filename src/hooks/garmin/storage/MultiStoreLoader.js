@@ -6,7 +6,12 @@
  * cohérent.
  */
 
-import { openDB, STORE_ACTIVITIES, STORE_DAILY_METRICS } from '../../garminDataUtils';
+import {
+  openDB,
+  STORE_ACTIVITIES,
+  STORE_DAILY_METRICS,
+  recordBelongsToCurrentScope
+} from '../../garminDataUtils';
 import logger from '../../../utils/logger';
 
 const log = logger.module('MultiStoreLoader');
@@ -80,7 +85,10 @@ class MultiStoreLoader {
         const cursor = event.target.result;
         if (cursor) {
           const activity = cursor.value;
-          if (!range || (activity.date >= startDate && activity.date <= endDate)) {
+          if (
+            recordBelongsToCurrentScope(activity) &&
+            (!range || (activity.date >= startDate && activity.date <= endDate))
+          ) {
             pushActivity(activity);
           }
           cursor.continue();
@@ -110,7 +118,10 @@ class MultiStoreLoader {
         const cursor = event.target.result;
         if (cursor) {
           const metric = cursor.value;
-          if (!range || (metric.date >= startDate && metric.date <= endDate)) {
+          if (
+            recordBelongsToCurrentScope(metric) &&
+            (!range || (metric.date >= startDate && metric.date <= endDate))
+          ) {
             const { date, ...rest } = metric;
             metrics[date] = rest;
           }

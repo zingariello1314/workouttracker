@@ -61,6 +61,7 @@ import SportXPBar from './components/tabs/TodayTab/components/SportXPBar';
 import CodeXPBar from './components/code/CodeXPBar';
 import { isSportSubTab } from './constants/sportSubTabs';
 import { isCodeSubTab } from './constants/codeSubTabs';
+import { isAdminUser } from './utils/accessControl';
 
 const WorkoutTrackerApp = () => {
   return (
@@ -99,7 +100,7 @@ const WorkoutTrackerContent = () => {
     saveSessionFeedback
   } = useWorkout();
   const { currentUser, isAuthenticated } = useAuth();
-  const isAdmin = currentUser?.role === 'admin' || currentUser?.username === 'zingariello1314';
+  const isAdmin = isAdminUser(currentUser);
 
   // Ne pas rediriger localhost → 127.0.0.1 : ce sont deux origines (IndexedDB / session séparées).
   // Pour Spotify, l’URI de retour OAuth reste 127.0.0.1 (exigence dashboard) ; garde le même hôte pour le reste.

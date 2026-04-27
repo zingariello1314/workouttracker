@@ -425,6 +425,21 @@ export function aggregateCheckedRepsByDateAndExerciseId(reps, checked) {
 }
 
 /**
+ * Une seule clé de stockage par (jour, id exercice) avec reps cochées — évite le double comptage
+ * (ex. `date_id` + `date_id_semaineA` tous cochés) pour volume kg×reps, XP et agrégations jour.
+ * @param {object} workoutData — `reps`, `checkedExercises`
+ * @returns {string[]}
+ */
+export function collectDedupedCheckedVolumeKeys(workoutData) {
+  const grouped = aggregateCheckedRepsByDateAndExerciseId(workoutData?.reps, workoutData?.checkedExercises);
+  const keys = [];
+  grouped.forEach(({ key }) => {
+    if (key) keys.push(key);
+  });
+  return keys;
+}
+
+/**
  * Carte date → charge musculation + endurance (reps endurance non pondérées, comme avant).
  * Utilisé pour calibrer les seuils du calendrier.
  *

@@ -16,7 +16,7 @@
  */
 
 import { useState, useEffect, useCallback } from 'react';
-import { openDB, getUseFallback, setUseFallback } from './garminDataUtils';
+import { openDB, getUseFallback, setUseFallback, setGarminScope } from './garminDataUtils';
 import { saveActivities, saveDailyMetrics } from './garminDataSave';
 import {
   loadAllData,
@@ -44,6 +44,8 @@ import {
 } from '../components/tabs/GarminTab/utils/uiMetricsStore';
 import { loadTelemetryHistory } from './garminTelemetryHistory';
 import { loadAutoSyncHistory, persistAutoSyncHistory, AUTO_SYNC_HISTORY_LIMIT } from './garminAutoSyncHistory';
+import { useAuth } from '../context/AuthContext';
+import { isAdminUser } from '../utils/accessControl';
 
 /**
  * Hook principal pour la gestion des données Garmin dans IndexedDB
@@ -74,6 +76,13 @@ import { loadAutoSyncHistory, persistAutoSyncHistory, AUTO_SYNC_HISTORY_LIMIT } 
  */
 export const useGarminData = () => {
   const [dbReady, setDbReady] = useState(false);
+  const { currentUser, isAuthenticated } = useAuth();
+  const isAdmin = isAdminUser(currentUser);
+  const garminScope = !isAuthenticated ? 'guest' : (isAdmin ? 'main' : `user-${currentUser?.id || 'unknown'}`);
+
+  useEffect(() => {
+    setGarminScope(garminScope);
+  }, [garminScope]);
 
   // Initialisation IndexedDB
   useEffect(() => {
@@ -125,9 +134,9 @@ export const useGarminData = () => {
    * @returns {Promise<void>} Promise résolue quand la sauvegarde est terminée
    */
   const saveActivitiesWrapper = useCallback(async (activities) => {
-    if (!dbReady) return;
+    if (!dbReady || !isAuthenticated) return;
     await saveActivities(activities, dbReady);
-  }, [dbReady]);
+  }, [dbReady, isAuthenticated]);
 
   /**
    * Sauvegarde les métriques quotidiennes dans IndexedDB avec gestion de queue
@@ -136,9 +145,9 @@ export const useGarminData = () => {
    * @returns {Promise<void>} Promise résolue quand la sauvegarde est terminée
    */
   const saveDailyMetricsWrapper = useCallback(async (dailyMetrics) => {
-    if (!dbReady) return;
+    if (!dbReady || !isAuthenticated) return;
     await saveDailyMetrics(dailyMetrics, dbReady);
-  }, [dbReady]);
+  }, [dbReady, isAuthenticated]);
 
   /**
    * Charge toutes les données (utilisé comme fallback par loadDataForTab)
@@ -146,8 +155,11 @@ export const useGarminData = () => {
    * @returns {Promise<Object>} { activities, dailyMetrics }
    */
   const loadAllDataWrapper = useCallback(async () => {
+    if (!isAuthenticated) {
+      return { activities: { swimming: [], jumpRope: [], cardio: [] }, dailyMetrics: {} };
+    }
     return await loadAllData(dbReady);
-  }, [dbReady]);
+  }, [dbReady, isAuthenticated]);
 
   /**
    * Charge les données par plage de dates (optimisé avec range queries IndexedDB)
@@ -157,8 +169,11 @@ export const useGarminData = () => {
    * @returns {Promise<Object>} { activities, dailyMetrics }
    */
   const loadDataByRangeWrapper = useCallback(async (startDate, endDate) => {
+    if (!isAuthenticated) {
+      return { activities: { swimming: [], jumpRope: [], cardio: [] }, dailyMetrics: {} };
+    }
     return await loadDataByRange(startDate, endDate, dbReady);
-  }, [dbReady]);
+  }, [dbReady, isAuthenticated]);
 
   /**
    * Charge seulement les données nécessaires selon l'onglet actif
@@ -171,8 +186,11 @@ export const useGarminData = () => {
    * @returns {Promise<Object>} { activities, dailyMetrics }
    */
   const loadDataForTabWrapper = useCallback(async (tab, selectedDate, periodFilter, customStartDate, customEndDate) => {
+    if (!isAuthenticated) {
+      return { activities: { swimming: [], jumpRope: [], cardio: [] }, dailyMetrics: {} };
+    }
     return await loadDataForTab(tab, selectedDate, periodFilter, customStartDate, customEndDate, dbReady);
-  }, [dbReady]);
+  }, [dbReady, isAuthenticated]);
   
   const loadForcedRangesHistoryWrapper = useCallback(async (limit = FORCED_HISTORY_LIMIT) => {
     return await loadForcedRangesHistory(limit);

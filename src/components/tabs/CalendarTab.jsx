@@ -5,7 +5,13 @@ import { useWorkoutStats } from '../../hooks/useWorkoutStats';
 import { useGarminData } from '../../hooks/useGarminData';
 import CalendarHeatmap from '../CalendarHeatmap';
 import Card, { CardHeader, CardTitle, CardContent } from '../ui/Card';
-import { getDateStr } from '../../utils/dateUtils';
+import { getDateStr, addCalendarDays } from '../../utils/dateUtils';
+import {
+  aggregateLiftVolumeKgByDate,
+  computeVolumeKgForWorkoutKey
+} from '../../utils/exerciseLoadVolume';
+import { collectDedupedCheckedVolumeKeys } from '../../utils/trainingLoadUtils';
+import SportCalendarColorFactorsPanel from './SportCalendarColorFactorsPanel';
 import {
   isMockEnduranceSession,
   isPushupExerciseName,
@@ -186,19 +192,29 @@ const CalendarTab = () => {
     stats.totalReps += streetPushupReps;
 
     let totalStreetVolumeKg = 0;
-    Object.entries(repsMap).forEach(([key, val]) => {
-      if (!checked[key]) return;
-      const r = parseInt(val, 10) || 0;
-      if (r <= 0) return;
-      const wRaw = currentData?.exerciseWeights?.[key];
-      const kg = parseFloat(String(wRaw ?? '').replace(/\s/g, '').replace(',', '.'));
-      if (!Number.isFinite(kg) || kg <= 0) return;
-      totalStreetVolumeKg += kg * r;
+    collectDedupedCheckedVolumeKeys(currentData).forEach((key) => {
+      totalStreetVolumeKg += computeVolumeKgForWorkoutKey(key, currentData);
     });
     stats.totalStreetVolumeKg = totalStreetVolumeKg;
 
     return stats;
   }, [currentData, getExerciseNameById]);
+
+  const calendarLiftVolumeWindow = useMemo(() => {
+    const wd = currentData || {};
+    const byDate = aggregateLiftVolumeKgByDate(wd);
+    const todayStr = getDateStr(new Date());
+    let vol7 = 0;
+    for (let i = 0; i < 7; i += 1) {
+      const ds = addCalendarDays(todayStr, -i);
+      vol7 += byDate.get(ds) || 0;
+    }
+    let allVol = 0;
+    byDate.forEach((v) => {
+      allVol += v;
+    });
+    return { vol7, allVol };
+  }, [currentData]);
 
   const runningTimeCumulativeLabel = useMemo(() => {
     const m = Math.max(0, Math.round(enduranceStats.totalRunningMinutes));
@@ -373,7 +389,7 @@ const CalendarTab = () => {
                 {enduranceStats.totalStreetVolumeKg > 0 ? (
                   <div className="mt-2 text-sm font-medium text-amber-200/95">
                     {t('calendar.cumulativeStats.volumeLifted', {
-                      kg: Math.round(enduranceStats.totalStreetVolumeKg).toLocaleString()
+                      kg: Math.round(enduranceStats.totalStreetVolumeKg).toLocaleString('fr-FR')
                     })}
                   </div>
                 ) : (
@@ -602,6 +618,12 @@ const CalendarTab = () => {
           </p>
         </CardContent>
       </Card>
+
+      <SportCalendarColorFactorsPanel
+        t={t}
+        volume7dKg={calendarLiftVolumeWindow.vol7}
+        volumeAllKg={calendarLiftVolumeWindow.allVol}
+      />
 
       <CalendarHeatmap workoutHistory={workoutHistory} garminData={garminData} />
       </div>

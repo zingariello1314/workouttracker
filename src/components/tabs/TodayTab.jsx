@@ -30,6 +30,12 @@ import LoadDifficultyStars from '../sport/LoadDifficultyStars';
 import { computeTodaySessionComplexity } from '../../utils/todaySessionScore';
 import RecordPerformanceModal from '../sport/performance/RecordPerformanceModal';
 import { applyPerformanceEntryToData } from '../../utils/exercisePerformanceUtils';
+import {
+  exerciseIsDumbbellEquipment,
+  inferDefaultSetCount,
+  computeVolumeKgForWorkoutKey
+} from '../../utils/exerciseLoadVolume';
+import { collectWorkoutLoadSubsetForDate } from '../../utils/workoutLoadPersistence';
 
 const resolveExerciseWeightDisplay = (currentData, keys, readKey) => {
   const w = currentData.exerciseWeights || {};
@@ -39,6 +45,24 @@ const resolveExerciseWeightDisplay = (currentData, keys, readKey) => {
     if (v !== undefined && v !== null && String(v).trim() !== '') return String(v);
   }
   return '';
+};
+
+const resolveExerciseSetWeightsDisplay = (currentData, keys, readKey) => {
+  const w = currentData.exerciseSetWeights || {};
+  const ordered = [readKey, ...keys.filter((k) => k !== readKey)];
+  for (const k of ordered) {
+    const v = w[k];
+    if (Array.isArray(v) && v.some((x) => x !== undefined && x !== null && String(x).trim() !== '')) {
+      return v;
+    }
+  }
+  return null;
+};
+
+const resolveExerciseWeightPerArm = (currentData, keys, readKey) => {
+  const w = currentData.exerciseWeightPerArm || {};
+  const ordered = [readKey, ...keys.filter((k) => k !== readKey)];
+  return ordered.some((k) => w[k] === true);
 };
 
 const TodayTab = () => {
@@ -282,7 +306,17 @@ const TodayTab = () => {
           [fallbackKey]: !isCurrentlyChecked
             ? currentData.exerciseWeights?.[fallbackKey] ?? ''
             : undefined
-        }
+        },
+        exerciseWeightPerArm: (() => {
+          const o = { ...(currentData.exerciseWeightPerArm || {}) };
+          if (isCurrentlyChecked) delete o[fallbackKey];
+          return o;
+        })(),
+        exerciseSetWeights: (() => {
+          const o = { ...(currentData.exerciseSetWeights || {}) };
+          if (isCurrentlyChecked) delete o[fallbackKey];
+          return o;
+        })()
       });
       return;
     }
@@ -298,29 +332,37 @@ const TodayTab = () => {
     });
     const isCurrentlyChecked = keys.some((k) => currentData.checkedExercises?.[k] === true);
 
-    const stripKeys = (checkedObj, repsObj, weightsObj) => {
+    const stripKeys = (checkedObj, repsObj, weightsObj, perArmObj, setWObj) => {
       const nextChecked = { ...checkedObj };
       const nextReps = { ...repsObj };
       const nextWeights = { ...weightsObj };
+      const nextPerArm = { ...(perArmObj || {}) };
+      const nextSetW = { ...(setWObj || {}) };
       keys.forEach((k) => {
         delete nextChecked[k];
         delete nextReps[k];
         delete nextWeights[k];
+        delete nextPerArm[k];
+        delete nextSetW[k];
       });
-      return { nextChecked, nextReps, nextWeights };
+      return { nextChecked, nextReps, nextWeights, nextPerArm, nextSetW };
     };
 
     if (isCurrentlyChecked) {
-      const { nextChecked, nextReps, nextWeights } = stripKeys(
+      const { nextChecked, nextReps, nextWeights, nextPerArm, nextSetW } = stripKeys(
         currentData.checkedExercises,
         currentData.reps,
-        currentData.exerciseWeights || {}
+        currentData.exerciseWeights || {},
+        currentData.exerciseWeightPerArm || {},
+        currentData.exerciseSetWeights || {}
       );
       updateTempExerciseData({
         ...currentData,
         checkedExercises: nextChecked,
         reps: nextReps,
-        exerciseWeights: nextWeights
+        exerciseWeights: nextWeights,
+        exerciseWeightPerArm: nextPerArm,
+        exerciseSetWeights: nextSetW
       });
       return;
     }
@@ -337,10 +379,12 @@ const TodayTab = () => {
           autoReps = sets * Math.round((minReps + maxReps) / 2);
         }
       }
-      const { nextChecked, nextReps, nextWeights } = stripKeys(
+      const { nextChecked, nextReps, nextWeights, nextPerArm, nextSetW } = stripKeys(
         currentData.checkedExercises,
         currentData.reps,
-        currentData.exerciseWeights || {}
+        currentData.exerciseWeights || {},
+        currentData.exerciseWeightPerArm || {},
+        currentData.exerciseSetWeights || {}
       );
       nextChecked[primaryKey] = true;
       nextReps[primaryKey] = autoReps != null ? autoReps.toString() : '';
@@ -349,19 +393,29 @@ const TodayTab = () => {
         prevKeyForWeight && currentData.exerciseWeights?.[prevKeyForWeight] != null
           ? String(currentData.exerciseWeights[prevKeyForWeight])
           : '';
+      if (prevKeyForWeight && currentData.exerciseWeightPerArm?.[prevKeyForWeight] === true) {
+        nextPerArm[primaryKey] = true;
+      }
+      if (prevKeyForWeight && Array.isArray(currentData.exerciseSetWeights?.[prevKeyForWeight])) {
+        nextSetW[primaryKey] = [...currentData.exerciseSetWeights[prevKeyForWeight]];
+      }
       updateTempExerciseData({
         ...currentData,
         checkedExercises: nextChecked,
         reps: nextReps,
-        exerciseWeights: nextWeights
+        exerciseWeights: nextWeights,
+        exerciseWeightPerArm: nextPerArm,
+        exerciseSetWeights: nextSetW
       });
       return;
     }
 
-    const { nextChecked, nextReps, nextWeights } = stripKeys(
+    const { nextChecked, nextReps, nextWeights, nextPerArm, nextSetW } = stripKeys(
       currentData.checkedExercises,
       currentData.reps,
-      currentData.exerciseWeights || {}
+      currentData.exerciseWeights || {},
+      currentData.exerciseWeightPerArm || {},
+      currentData.exerciseSetWeights || {}
     );
     nextChecked[primaryKey] = true;
     const prevKey = resolveBestRepsStorageKey(currentData, keys);
@@ -371,11 +425,19 @@ const TodayTab = () => {
       prevKey && currentData.exerciseWeights?.[prevKey] != null
         ? String(currentData.exerciseWeights[prevKey])
         : '';
+    if (prevKey && currentData.exerciseWeightPerArm?.[prevKey] === true) {
+      nextPerArm[primaryKey] = true;
+    }
+    if (prevKey && Array.isArray(currentData.exerciseSetWeights?.[prevKey])) {
+      nextSetW[primaryKey] = [...currentData.exerciseSetWeights[prevKey]];
+    }
     updateTempExerciseData({
       ...currentData,
       checkedExercises: nextChecked,
       reps: nextReps,
-      exerciseWeights: nextWeights
+      exerciseWeights: nextWeights,
+      exerciseWeightPerArm: nextPerArm,
+      exerciseSetWeights: nextSetW
     });
   };
 
@@ -414,12 +476,75 @@ const TodayTab = () => {
         })
       : `${dateStr}_${exerciseId}`;
 
+    const nextSetW = { ...(currentData.exerciseSetWeights || {}) };
+    delete nextSetW[key];
     updateTempExerciseData({
       ...currentData,
       exerciseWeights: {
         ...(currentData.exerciseWeights || {}),
         [key]: weightStr
-      }
+      },
+      exerciseSetWeights: nextSetW
+    });
+  };
+
+  const getExercisePrimaryStorageKey = (exerciseId, date) => {
+    const dateStr = getDateStr(date);
+    const workout = getTodayWorkout(date, isGymMode);
+    const exercise = workout.exercices?.find((ex) => ex.id === exerciseId);
+    return exercise
+      ? generateSmartExerciseKey(date, exercise.id, {
+          isGymMode,
+          workoutIsGymMode: workout?.isGymMode,
+          weekVariant: getAutoWeekVariant(date)
+        })
+      : `${dateStr}_${exerciseId}`;
+  };
+
+  const updateLocalExerciseWeightPerArm = (exerciseId, checked, date) => {
+    const currentData = getCurrentData();
+    const key = getExercisePrimaryStorageKey(exerciseId, date);
+    const next = { ...(currentData.exerciseWeightPerArm || {}) };
+    if (checked) next[key] = true;
+    else delete next[key];
+    updateTempExerciseData({ ...currentData, exerciseWeightPerArm: next });
+  };
+
+  const updateExerciseSetWeightAtIndex = (exerciseId, setIndex, value, date, exercise) => {
+    const currentData = getCurrentData();
+    const key = getExercisePrimaryStorageKey(exerciseId, date);
+    const n = inferDefaultSetCount(exercise, 0);
+    const count = Math.max(1, n);
+    const prevRow =
+      (Array.isArray(currentData.exerciseSetWeights?.[key]) &&
+        currentData.exerciseSetWeights[key].slice()) ||
+      Array.from({ length: count }, () => String(currentData.exerciseWeights?.[key] || '').trim());
+    while (prevRow.length < count) prevRow.push(String(currentData.exerciseWeights?.[key] || '').trim());
+    prevRow[setIndex] = value;
+    updateTempExerciseData({
+      ...currentData,
+      exerciseSetWeights: { ...(currentData.exerciseSetWeights || {}), [key]: prevRow }
+    });
+  };
+
+  const clearExerciseSetWeightsForExercise = (exerciseId, date) => {
+    const currentData = getCurrentData();
+    const key = getExercisePrimaryStorageKey(exerciseId, date);
+    const next = { ...(currentData.exerciseSetWeights || {}) };
+    delete next[key];
+    updateTempExerciseData({ ...currentData, exerciseSetWeights: next });
+  };
+
+  const initExerciseSetWeightsFromSeries = (exerciseId, date, exercise) => {
+    const currentData = getCurrentData();
+    const key = getExercisePrimaryStorageKey(exerciseId, date);
+    const n = inferDefaultSetCount(exercise, 0);
+    const count = Math.max(1, n);
+    const base = String(currentData.exerciseWeights?.[key] || '').trim();
+    const row = Array.from({ length: count }, () => base);
+    updateTempExerciseData({
+      ...currentData,
+      exerciseSetWeights: { ...(currentData.exerciseSetWeights || {}), [key]: row }
     });
   };
 
@@ -596,19 +721,8 @@ const TodayTab = () => {
     metadata: exercisesMetadata
   } = useTodayExercises({ date: currentDate, isGymMode });
 
-  /** Exercices avec charge (haltères, barre, gilet) en tête — même critère que le filtre équipement de l'onglet Exercices. */
-  const exercisesWithLoadFirst = useMemo(() => {
-    const list = programExercises || [];
-    return list
-      .map((ex, i) => ({ ex, i }))
-      .sort((a, b) => {
-        const wa = exerciseUsesExternalLoad(a.ex) ? 1 : 0;
-        const wb = exerciseUsesExternalLoad(b.ex) ? 1 : 0;
-        if (wb !== wa) return wb - wa;
-        return a.i - b.i;
-      })
-      .map((x) => x.ex);
-  }, [programExercises]);
+  /** Conserver strictement l'ordre du programme pour éviter toute confusion dans Aujourd'hui. */
+  const orderedProgramExercises = useMemo(() => programExercises || [], [programExercises]);
 
   const todaySessionComplexity = useMemo(
     () => computeTodaySessionComplexity(currentDate, workout, getCurrentData(), isGymMode),
@@ -691,36 +805,53 @@ const TodayTab = () => {
       return Math.round(totalDurationMinutes);
     };
 
+    const snapshot = getCurrentData();
+
+    const buildProgramExerciseRow = (exercise) => {
+      const keys = collectExerciseKeysForWorkoutExercise(currentDate, exercise, {
+        isGymMode,
+        workoutIsGymMode: workout.isGymMode
+      });
+      const done = keys.some((k) => snapshot.checkedExercises?.[k] === true);
+      if (!done) return null;
+      const finalKey = resolveBestRepsStorageKey(snapshot, keys) || `${dateStr}_${exercise.id}`;
+      const reps = parseInt(String(snapshot.reps?.[finalKey] ?? ''), 10) || 0;
+      if (reps <= 0) return null;
+      const vol = computeVolumeKgForWorkoutKey(finalKey, snapshot);
+      return {
+        ...exercise,
+        completed: true,
+        reps,
+        storageKey: finalKey,
+        weightEntered: resolveExerciseWeightDisplay(snapshot, keys, finalKey) || undefined,
+        perArm: resolveExerciseWeightPerArm(snapshot, keys, finalKey),
+        setWeights: resolveExerciseSetWeightsDisplay(snapshot, keys, finalKey),
+        volumeKg: Math.round(vol * 10) / 10
+      };
+    };
+
+    const programRows = (workout.exercices || []).map(buildProgramExerciseRow).filter(Boolean);
+    const complementaryRows =
+      workout.complementaryActivity &&
+      data.checkedExercises[`${dateStr}_complementary_${workout.complementaryActivity.name.toLowerCase()}`]
+        ? [
+            {
+              id: `complementary_${workout.complementaryActivity.name.toLowerCase()}`,
+              name: workout.complementaryActivity.name,
+              completed: true,
+              reps: 0,
+              duration: workout.complementaryActivity.duration
+            }
+          ]
+        : [];
+
     const todayData = {
       date: dateStr,
-      exercises: [
-        // Exercices classiques
-        ...(workout.exercices || []).map((exercise) => {
-          const exerciseKey = `${dateStr}_${exercise.id}`;
-          const isChecked = data.checkedExercises[exerciseKey] || false;
-          const reps = data.reps[exerciseKey] || '';
-          return {
-            ...exercise,
-            completed: isChecked,
-            reps: parseInt(reps) || 0
-          };
-        }).filter(ex => ex.completed),
-        // Activités complémentaires
-        ...(workout.complementaryActivity && data.checkedExercises[`${dateStr}_complementary_${workout.complementaryActivity.name.toLowerCase()}`] ? [{
-          id: `complementary_${workout.complementaryActivity.name.toLowerCase()}`,
-          name: workout.complementaryActivity.name,
-          completed: true,
-          reps: 0,
-          duration: workout.complementaryActivity.duration
-        }] : [])
-      ],
-      totalReps: (workout.exercices || []).reduce((total, exercise) => {
-        const exerciseKey = `${dateStr}_${exercise.id}`;
-        const reps = data.reps[exerciseKey] || '';
-        return total + (parseInt(reps) || 0);
-      }, 0),
+      exercises: [...programRows, ...complementaryRows],
+      totalReps: programRows.reduce((total, ex) => total + (parseInt(ex.reps, 10) || 0), 0),
       estimatedDuration: Math.max(30, (workout.exercices || []).length * 3),
-      duration: calculateSessionDuration() // Ajouter la durée réelle calculée
+      duration: calculateSessionDuration(),
+      workoutLoadSnapshot: collectWorkoutLoadSubsetForDate(snapshot, dateStr)
     };
     
     setSessionData(todayData);
@@ -924,18 +1055,18 @@ const TodayTab = () => {
       <div className="bg-black p-6 rounded-xl shadow-xl border-2 border-[#0F4C5C]/70">
         <h3 className="font-semibold text-white mb-4 flex items-center gap-2">
           {t('today.exercises.title')}
-          {exercisesWithLoadFirst.length > 0 && (
-            <span className="text-sm text-teal-600">({exercisesWithLoadFirst.length})</span>
+          {orderedProgramExercises.length > 0 && (
+            <span className="text-sm text-teal-600">({orderedProgramExercises.length})</span>
           )}
         </h3>
-        {exercisesWithLoadFirst.length === 0 && additionalExercises.length === 0 ? (
+        {orderedProgramExercises.length === 0 && additionalExercises.length === 0 ? (
           <div className="text-center py-8 text-teal-700">
             <p>{t('today.exercises.noExercises', 'Aucun exercice prévu pour aujourd\'hui')}</p>
           </div>
         ) : (
           <div className="space-y-3">
             {/* ✅ NOUVEAU : Exercices du programme (filtrés selon variations) */}
-            {exercisesWithLoadFirst.map((exercise) => {
+            {orderedProgramExercises.map((exercise) => {
             const currentData = getCurrentData();
             const keys = collectExerciseKeysForWorkoutExercise(currentDate, exercise, {
               isGymMode,
@@ -951,6 +1082,9 @@ const TodayTab = () => {
             const weightStr = showWeightField
               ? resolveExerciseWeightDisplay(currentData, keys, readKey)
               : '';
+            const setWeightsRow = showWeightField
+              ? resolveExerciseSetWeightsDisplay(currentData, keys, readKey)
+              : null;
 
             const coeffs = currentData.exerciseIntensityCoeffs ?? {};
             let loadCoeff = resolveExerciseIntensityCoeff(exercise, coeffs);
@@ -973,99 +1107,167 @@ const TodayTab = () => {
               if (hasB && !hasA) loadCoeff = b;
             }
 
+            const exerciseUnit = detectExerciseUnit(exercise);
+            const inputPlaceholder =
+              exerciseUnit?.unit === 'sec' ? 'Sec' : exerciseUnit?.unit === 'min' ? 'Min' : 'Reps';
+            const inputLabel =
+              exerciseUnit?.unit === 'sec' ? 'sec' : exerciseUnit?.unit === 'min' ? 'min' : 'Reps';
+
             return (
-              <div key={exercise.id} className="flex items-center space-x-3 p-4 bg-black rounded-lg border border-[#0F4C5C]/45 hover:border-[#0F5C45]/50 transition-all duration-200">
-                <div className="flex-1 min-w-0">
-                  <div className="flex flex-wrap items-center gap-2 min-w-0">
-                    <div className="font-medium text-white shrink-0">{exercise.name}</div>
-                    <span className="shrink-0 inline-flex items-center text-amber-300">
-                      <LoadDifficultyStars coeff={loadCoeff} className="scale-95" />
-                    </span>
+              <div
+                key={exercise.id}
+                className="flex flex-col gap-3 p-4 bg-black rounded-lg border border-[#0F4C5C]/45 hover:border-[#0F5C45]/50 transition-all duration-200 w-full min-w-0"
+              >
+                <div className="flex flex-col sm:flex-row sm:items-start gap-3 min-w-0">
+                  <div className="flex-1 min-w-0 space-y-1">
+                    <div className="flex flex-wrap items-center gap-x-2 gap-y-1 min-w-0">
+                      <div className="font-medium text-white break-words">{exercise.name}</div>
+                      <span className="inline-flex items-center text-amber-300 shrink-0">
+                        <LoadDifficultyStars coeff={loadCoeff} className="scale-95" />
+                      </span>
+                    </div>
+                    <div className="text-sm text-gray-300 break-words">
+                      {exercise.series}
+                      {exercise.materiel && ` • ${exercise.materiel}`}
+                      {exercise.notes && ` • ${exercise.notes}`}
+                    </div>
                   </div>
-                  <div className="text-sm text-gray-300">
-                    {exercise.series}
-                    {exercise.materiel && ` • ${exercise.materiel}`}
-                    {exercise.notes && ` • ${exercise.notes}`}
+                  <div className="flex items-center gap-2 shrink-0 self-start sm:self-center">
+                    <Checkbox
+                      checked={isChecked}
+                      onChange={() => handleExerciseCheck(exercise.id, currentDate)}
+                      className="text-green-400"
+                      name={`exercise_${exercise.id}`}
+                    />
+                    {isChecked && (
+                      <span className="text-green-400 text-sm font-medium whitespace-nowrap">
+                        ✓ {t('today.exercises.completed')}
+                      </span>
+                    )}
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setSelectedExercise(exercise);
+                        setShowExerciseVariations(true);
+                      }}
+                      className="gradient-button-premium gradient-button-premium-sm gradient-button-premium-variant rounded-lg flex items-center gap-2 shrink-0"
+                    >
+                      <Zap className="w-4 h-4" />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleSuppressExercise(exercise.id)}
+                      className="gradient-button-premium gradient-button-premium-sm rounded-lg flex items-center gap-2 shrink-0"
+                      title={t('today.exercises.suppressTitle')}
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
                   </div>
                 </div>
-                
-                <div className="flex items-center flex-wrap gap-2">
-                  <Checkbox
-                    checked={isChecked}
-                    onChange={() => handleExerciseCheck(exercise.id, currentDate)}
-                    className="text-green-400"
-                    name={`exercise_${exercise.id}`}
-                  />
-                  {/* 🔴 FIX : Détecter l'unité de l'exercice pour afficher le bon placeholder */}
-                  {(() => {
-                    const exerciseUnit = detectExerciseUnit(exercise);
-                    const inputPlaceholder = exerciseUnit?.unit === 'sec' ? 'Sec' : 
-                                             exerciseUnit?.unit === 'min' ? 'Min' : 
-                                             'Reps';
-                    const inputLabel = exerciseUnit?.unit === 'sec' ? 'sec' : 
-                                      exerciseUnit?.unit === 'min' ? 'min' : 
-                                      'Reps';
-                    
-                    return (
-                      <div className="flex items-center flex-wrap gap-2">
-                        <div className="flex items-center gap-1">
-                          <Input
-                            type="number"
-                            placeholder={inputPlaceholder}
-                            value={reps}
-                            onChange={(e) => updateLocalReps(exercise.id, e.target.value, currentDate)}
-                            onFocus={() => handleInputFocus(exercise.id, exercise)}
-                            className={`w-20 text-center ${isChecked ? 'bg-green-600/20 border-green-500 text-green-300' : 'bg-black border-[#0F4C5C]/50 text-white'}`}
-                            size="sm"
-                          />
-                          <span className="text-teal-700 text-xs min-w-[35px]">
-                            {inputLabel}
-                          </span>
-                        </div>
-                        {showWeightField && (
-                          <div className="flex items-center gap-1">
-                            <Input
-                              type="text"
-                              inputMode="decimal"
-                              placeholder={t('today.exercises.weightPlaceholder')}
-                              value={weightStr}
-                              onChange={(e) =>
-                                updateLocalExerciseWeight(exercise.id, e.target.value, currentDate)
-                              }
-                              onFocus={() => handleWeightInputFocus(exercise.id, exercise)}
-                              className={`w-[4.5rem] text-center ${isChecked ? 'bg-green-600/20 border-green-500 text-green-300' : 'bg-black border-[#0F4C5C]/50 text-white'}`}
-                              size="sm"
-                            />
-                            <span className="text-teal-700 text-xs min-w-[28px]">
-                              {t('today.exercises.weightUnit')}
-                            </span>
-                          </div>
-                        )}
+
+                <div className="flex flex-col gap-3 pt-1 border-t border-[#0F4C5C]/35 min-w-0">
+                  <div className="flex flex-wrap items-end gap-x-4 gap-y-2">
+                    <div className="flex items-center gap-1">
+                      <Input
+                        type="number"
+                        placeholder={inputPlaceholder}
+                        value={reps}
+                        onChange={(e) => updateLocalReps(exercise.id, e.target.value, currentDate)}
+                        onFocus={() => handleInputFocus(exercise.id, exercise)}
+                        className={`w-20 text-center ${isChecked ? 'bg-green-600/20 border-green-500 text-green-300' : 'bg-black border-[#0F4C5C]/50 text-white'}`}
+                        size="sm"
+                      />
+                      <span className="text-teal-700 text-xs whitespace-nowrap">{inputLabel}</span>
+                    </div>
+                    {showWeightField && (
+                      <div className="flex items-center gap-1">
+                        <Input
+                          type="text"
+                          inputMode="decimal"
+                          placeholder={t('today.exercises.weightPlaceholder')}
+                          value={weightStr}
+                          onChange={(e) =>
+                            updateLocalExerciseWeight(exercise.id, e.target.value, currentDate)
+                          }
+                          onFocus={() => handleWeightInputFocus(exercise.id, exercise)}
+                          className={`w-[4.5rem] text-center ${isChecked ? 'bg-green-600/20 border-green-500 text-green-300' : 'bg-black border-[#0F4C5C]/50 text-white'}`}
+                          size="sm"
+                        />
+                        <span className="text-teal-700 text-xs whitespace-nowrap">
+                          {t('today.exercises.weightUnit')}
+                        </span>
                       </div>
-                    );
-                  })()}
-                  {isChecked && (
-                    <div className="text-green-400 text-sm font-medium">✓ {t('today.exercises.completed')}</div>
+                    )}
+                  </div>
+
+                  {showWeightField && exerciseIsDumbbellEquipment(exercise) && (
+                    <label className="flex items-start gap-3 text-sm text-teal-600 cursor-pointer w-full max-w-xl">
+                      <Checkbox
+                        checked={resolveExerciseWeightPerArm(currentData, keys, readKey)}
+                        onChange={(e) =>
+                          updateLocalExerciseWeightPerArm(exercise.id, e.target.checked, currentDate)
+                        }
+                        className="text-teal-400 mt-0.5 shrink-0"
+                        name={`per_arm_${exercise.id}`}
+                      />
+                      <span className="leading-snug">{t('today.exercises.weightPerArm')}</span>
+                    </label>
                   )}
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setSelectedExercise(exercise);
-                      setShowExerciseVariations(true);
-                    }}
-                    className="gradient-button-premium gradient-button-premium-sm gradient-button-premium-variant rounded-lg flex items-center gap-2"
-                  >
-                    <Zap className="w-4 h-4" />
-                  </button>
-                  {/* ✅ NOUVEAU : Bouton pour supprimer l'exercice pour aujourd'hui */}
-                  <button
-                    type="button"
-                    onClick={() => handleSuppressExercise(exercise.id)}
-                    className="gradient-button-premium gradient-button-premium-sm rounded-lg flex items-center gap-2"
-                    title={t('today.exercises.suppressTitle')}
-                  >
-                    <Trash2 className="w-4 h-4" />
-                  </button>
+
+                  {showWeightField && inferDefaultSetCount(exercise, 0) > 1 && (
+                    <div className="flex flex-col gap-2 w-full min-w-0">
+                      {setWeightsRow ? (
+                        <>
+                          <div className="flex flex-wrap gap-x-3 gap-y-2 items-end">
+                            {setWeightsRow.map((sw, idx) => (
+                              <div
+                                key={`${exercise.id}_setw_${idx}`}
+                                className="flex items-center gap-1.5 shrink-0"
+                              >
+                                <span className="text-teal-700 text-xs font-medium whitespace-nowrap">
+                                  S{idx + 1}
+                                </span>
+                                <Input
+                                  type="text"
+                                  inputMode="decimal"
+                                  value={sw != null ? String(sw) : ''}
+                                  onChange={(e) =>
+                                    updateExerciseSetWeightAtIndex(
+                                      exercise.id,
+                                      idx,
+                                      e.target.value,
+                                      currentDate,
+                                      exercise
+                                    )
+                                  }
+                                  className={`w-16 text-center text-sm ${isChecked ? 'bg-green-600/20 border-green-500 text-green-300' : 'bg-black border-[#0F4C5C]/50 text-white'}`}
+                                  size="sm"
+                                />
+                                <span className="text-teal-700 text-xs whitespace-nowrap">
+                                  {t('today.exercises.weightUnit')}
+                                </span>
+                              </div>
+                            ))}
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => clearExerciseSetWeightsForExercise(exercise.id, currentDate)}
+                            className="text-left text-xs text-teal-500 hover:text-teal-300 underline w-fit"
+                          >
+                            {t('today.exercises.perSetReset')}
+                          </button>
+                        </>
+                      ) : (
+                        <button
+                          type="button"
+                          onClick={() => initExerciseSetWeightsFromSeries(exercise.id, currentDate, exercise)}
+                          className="text-left text-xs text-teal-500 hover:text-teal-300 underline w-fit"
+                        >
+                          {t('today.exercises.perSetOpen')}
+                        </button>
+                      )}
+                    </div>
+                  )}
                 </div>
               </div>
             );

@@ -14,6 +14,7 @@ import {
 } from 'lucide-react';
 import { useWorkout } from '../context/WorkoutContext';
 import { useAuth } from '../context/AuthContext';
+import { isAdminUser } from '../utils/accessControl';
 import { useToast } from './ui/Toast';
 import { getDateStr, getDayName } from '../utils/dateUtils';
 import JustificationModal from './modals/JustificationModal';
@@ -30,6 +31,7 @@ import {
 } from '../utils/garminCalendarUtils';
 import {
   computeCalendarDayVisualContext,
+  computeLiftVolumeRelativeVisualBoost01,
   CALENDAR_VISUAL_CONSTANTS,
   calendarDayHasPaintSignal
 } from '../utils/calendarDayVisualModel';
@@ -67,6 +69,11 @@ import {
   computeExternalLoadMultiplier
 } from '../utils/trainingLoadUtils';
 import { exerciseUsesExternalLoad } from '../utils/programUtils';
+import {
+  computeVolumeKgReps,
+  computeVolumeKgForWorkoutKey,
+  aggregateLiftVolumeKgByDate
+} from '../utils/exerciseLoadVolume';
 import LoadDifficultyStars from './sport/LoadDifficultyStars';
 import {
   getDayJustification,
@@ -263,7 +270,7 @@ const CalendarHeatmap = ({
   } = useWorkout();
   const { currentUser, isAuthenticated } = useAuth();
   const { showSuccess, showError } = useToast();
-  const isAdmin = currentUser?.role === 'admin' || currentUser?.username === 'zingariello1314';
+  const isAdmin = isAdminUser(currentUser);
   
   // ✅ Initialiser le programme actif quand on entre en mode workout-entry
   useEffect(() => {
@@ -340,6 +347,11 @@ const CalendarHeatmap = ({
   // Utiliser getCurrentData() pour accéder aux données actuelles (temp + sauvegardées)
   // ✅ NOUVEAU : Recalculer allData quand dataUpdateTrigger change pour avoir les données les plus récentes
   const allData = useMemo(() => getCurrentData(), [dataUpdateTrigger, getCurrentData]);
+
+  const liftVolumeByDateMap = useMemo(() => {
+    if (variant !== 'sport') return null;
+    return aggregateLiftVolumeKgByDate(allData);
+  }, [variant, allData]);
   
   // ✅ NOUVEAU : Traductions
   const t = useTranslation();
@@ -1100,6 +1112,9 @@ const CalendarHeatmap = ({
         exerciseCount: 0,
         completedCount: 0,
         intensityScore: 0,
+        programCompletionRatio: 0,
+        programCheckedCount: 0,
+        programPlannedCount: 0,
         enduranceData: enduranceData,
         activeKcal: 0,
         kcalRefMedian: garminKcalMedianRef,
@@ -1152,8 +1167,30 @@ const CalendarHeatmap = ({
             currentData?.exerciseIntensityCoeffs || {}
           );
           const usesLoad = exerciseUsesExternalLoad(exercise);
-          const wRaw = weightsStore[finalKey];
-          const wKg = parseFloat(String(wRaw ?? '').replace(',', '.'));
+          const pickWeightStr = () => {
+            for (const k of uniquePossibleKeys) {
+              const v = weightsStore[k];
+              if (v !== undefined && v !== null && String(v).trim() !== '') return String(v);
+            }
+            return '';
+          };
+          const perArm = uniquePossibleKeys.some((k) => currentData?.exerciseWeightPerArm?.[k] === true);
+          let setArr = null;
+          for (const k of uniquePossibleKeys) {
+            const a = currentData?.exerciseSetWeights?.[k];
+            if (Array.isArray(a) && a.some((x) => String(x ?? '').trim() !== '')) {
+              setArr = a;
+              break;
+            }
+          }
+          const volumeKg = computeVolumeKgReps({
+            exercise,
+            totalReps: reps,
+            singleWeightStr: pickWeightStr(),
+            perArm,
+            setWeightStrs: Array.isArray(setArr) ? setArr : null
+          });
+          const wKg = reps > 0 && volumeKg > 0 ? volumeKg / reps : 0;
           const medianKg = computeMedianWeightKgForExercise(weightsStore, exercise.id);
           const wMult = computeExternalLoadMultiplier(usesLoad, wKg, medianKg);
           strengthLoad += computeStrengthCalendarContribution(
@@ -1201,8 +1238,8 @@ const CalendarHeatmap = ({
         currentData?.exerciseIntensityCoeffs || {}
       );
       const usesLoad = exerciseUsesExternalLoad({ name: exerciseName, materiel: '', equipment: '' });
-      const wRaw = weightsStore[key];
-      const wKg = parseFloat(String(wRaw ?? '').replace(',', '.'));
+      const volumeKgAd = computeVolumeKgForWorkoutKey(key, currentData);
+      const wKg = reps > 0 && volumeKgAd > 0 ? volumeKgAd / reps : 0;
       const medianKg = computeMedianWeightKgForExercise(weightsStore, rawId);
       const wMult = computeExternalLoadMultiplier(usesLoad, wKg, medianKg);
       strengthLoad += computeStrengthCalendarContribution(
@@ -1224,6 +1261,25 @@ const CalendarHeatmap = ({
         _storageKey: key
       });
     });
+
+    /** Ratio complétion programme : exos cochés (au moins une clé) / exos prévus listés — pour couleur + XP. */
+    const dvForCompletion = currentData?.dailyVariations?.[dateStr];
+    const suppressedForCompletion = new Set(
+      Array.isArray(dvForCompletion?.suppressedExercises)
+        ? dvForCompletion.suppressedExercises.filter((id) => typeof id === 'number' && !Number.isNaN(id))
+        : []
+    );
+    const exercisesListForCompletion = exercisesList.filter((ex) => !suppressedForCompletion.has(ex.id));
+    const chkForCompletion = currentData?.checkedExercises || {};
+    let programCheckedCount = 0;
+    exercisesListForCompletion.forEach((exercise) => {
+      const keysC = collectCalendarRepKeysForExercise(dateStr, exercise);
+      if (keysC.some((k) => chkForCompletion[k] === true)) programCheckedCount += 1;
+    });
+    const programCompletionRatio =
+      exercisesListForCompletion.length > 0
+        ? programCheckedCount / exercisesListForCompletion.length
+        : 0;
 
     // ✅ ÉTAPE 2 : Ajouter les reps d'endurance (pompes, boxe, défis complétés)
     // Les défis complétés sont déjà inclus dans enduranceData.reps via les sessions d'endurance
@@ -1648,7 +1704,7 @@ const CalendarHeatmap = ({
         // Les sessions d'endurance détaillées n'impactent PAS l'intensité du calendrier
         // Seules les activités complémentaires de l'onglet Aujourd'hui comptent
         const totalActivities = completedExercises + (isComplementaryChecked ? 1 : 0);
-        const completionRate = totalPlannedExercises > 0 ? completedExercises / totalPlannedExercises : 0;
+        const completionRate = programCompletionRatio;
         
         // Debug pour le 28 octobre 2025
         if (dateStr === '2025-10-28') {
@@ -1740,6 +1796,13 @@ const CalendarHeatmap = ({
             adjustedIntensity = Math.max(0, Math.min(4, adjustedIntensity + bump));
           }
         }
+
+        if (exercisesListForCompletion.length > 0) {
+          adjustedIntensity = Math.min(
+            4,
+            adjustedIntensity + Math.round(programCompletionRatio * 2)
+          );
+        }
     
     // L'intensité ne dépend que des activités complémentaires de l'onglet Aujourd'hui
     const intensityScore = completionRate * 100 + (totalReps * 0.1) + (isComplementaryChecked ? 50 : 0);
@@ -1791,6 +1854,13 @@ const CalendarHeatmap = ({
     const fbRaw = currentData.sessionFeedbacks?.[dateStr];
     const fbDiffVal = normalizeDifficultyForCalendarModel(fbRaw);
 
+    const dayLiftVol =
+      variant === 'sport' && liftVolumeByDateMap ? liftVolumeByDateMap.get(dateStr) || 0 : 0;
+    const relativeLiftVolumeBoost01 =
+      variant === 'sport' && liftVolumeByDateMap
+        ? computeLiftVolumeRelativeVisualBoost01(dateStr, dayLiftVol, liftVolumeByDateMap)
+        : 0;
+
     const visualContext = computeCalendarDayVisualContext({
       level: adjustedIntensity,
       activeKcal,
@@ -1809,7 +1879,8 @@ const CalendarHeatmap = ({
       feedbackDiff: fbDiffVal,
       strengthLoad,
       enduranceLoad: enduranceLoadForCalendar,
-      totalReps
+      totalReps,
+      relativeLiftVolumeBoost01
     });
 
     const result = {
@@ -1831,6 +1902,9 @@ const CalendarHeatmap = ({
       completedCount: completedExercises,
       intensityScore,
       completionRate: Math.round(completionRate * 100),
+      programCompletionRatio,
+      programCheckedCount,
+      programPlannedCount: exercisesListForCompletion.length,
       enduranceData: enduranceData,
       // PHASE 5.3 : Ajouter les icônes Garmin
       garminIcons: garminIcons,
@@ -2108,6 +2182,9 @@ const CalendarHeatmap = ({
           completedCount: 0,
           intensityScore: 0,
           completionRate: 0,
+          programCompletionRatio: 0,
+          programCheckedCount: 0,
+          programPlannedCount: 0,
           activeKcal: 0,
           kcalRefMedian: 0,
           steps: 0,
@@ -2300,6 +2377,10 @@ const CalendarHeatmap = ({
     }
 
     u += intensity?.feedbackBoost01 ?? 0;
+    const programCompletionBlend = Math.min(1, Math.max(0, intensity?.programCompletionRatio ?? 0));
+    if (variant === 'sport' && programCompletionBlend > 0) {
+      u = Math.min(1, u + programCompletionBlend * 0.42);
+    }
     u = Math.min(1, Math.max(0, u));
 
     const isRestLike =

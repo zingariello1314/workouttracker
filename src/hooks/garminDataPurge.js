@@ -21,7 +21,8 @@ import {
   getUseFallback,
   setUseFallback,
   STORE_ACTIVITIES,
-  STORE_DAILY_METRICS
+  STORE_DAILY_METRICS,
+  recordBelongsToCurrentScope
 } from './garminDataUtils';
 
 // ==================== CONSTANTES PURGE ====================
@@ -166,7 +167,7 @@ const purgeFromLocalStorage = (cutoffStr) => {
         const itemStr = localStorage.getItem(getStorageKey(STORE_ACTIVITIES, key));
         if (itemStr) {
           const item = JSON.parse(itemStr);
-          if (item.date && item.date < cutoffStr) {
+          if (recordBelongsToCurrentScope(item) && item.date && item.date < cutoffStr) {
             localStorage.removeItem(getStorageKey(STORE_ACTIVITIES, key));
             purgedActivities++;
           }
@@ -215,7 +216,7 @@ const purgeFromIndexedDB = async (db, cutoffStr) => {
     await new Promise((resolve, reject) => {
       actReq.onsuccess = async () => {
         for (const item of actReq.result) {
-          if (item.date && item.date < cutoffStr) {
+          if (recordBelongsToCurrentScope(item) && item.date && item.date < cutoffStr) {
             try {
               await new Promise((res, rej) => {
                 const delReq = actStore.delete(item.id || item.date);
@@ -527,7 +528,7 @@ const deleteMockFromIndexedDB = async (db) => {
         const cursor = event.target.result;
         if (cursor) {
           const activity = cursor.value;
-          if (isMockActivity(activity)) {
+          if (recordBelongsToCurrentScope(activity) && isMockActivity(activity)) {
             cursor.delete();
             deletedActivities++;
           }
@@ -549,6 +550,10 @@ const deleteMockFromIndexedDB = async (db) => {
         const cursor = event.target.result;
         if (cursor) {
           const metric = cursor.value;
+          if (!recordBelongsToCurrentScope(metric)) {
+            cursor.continue();
+            return;
+          }
           const { date, ...metricData } = metric;
           
           // Supprimer si métrique mock par valeurs

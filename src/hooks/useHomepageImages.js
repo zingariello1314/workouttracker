@@ -1,18 +1,29 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useMemo } from 'react';
 import { debouncedBatchSave, forceSave, saveBatchToIndexedDB, cleanupDebounce } from '../utils/bannerSaveOptimizer';
 import { rollbackToVersion, getVersionHistory } from '../utils/bannerVersioning';
 import { validateImageIntegrity, validateImagesBatch, detectAndRepairCorruption } from '../utils/bannerIntegrity';
 import logger from '../utils/logger';
+import { useAuth } from '../context/AuthContext';
 
 const log = logger.module('useHomepageImages');
 
 export const useHomepageImages = () => {
+  const { currentUser, isAuthenticated } = useAuth();
   const [backgroundImages, setBackgroundImages] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [systemHealth, setSystemHealth] = useState('unknown');
   const backgroundImagesRef = useRef([]);
   const lastSaveTimeRef = useRef(0); // ✅ Phase 7: Protection contre sauvegardes trop rapprochées
   const shuffledImagesRef = useRef(null); // ✅ RANDOMISATION : Cache shuffle par session
+  const scopeKey = useMemo(() => {
+    if (!isAuthenticated || !currentUser?.id) return 'guest';
+    return `user-${currentUser.id}`;
+  }, [currentUser?.id, isAuthenticated]);
+  const scopedType = useMemo(() => `homepage_background_${scopeKey}`, [scopeKey]);
+  const scopedFallbackKey = useMemo(() => `homepage_images_fallback_${scopeKey}`, [scopeKey]);
+  const scopedEmergencyKey = useMemo(() => `homepage_images_emergency_${scopeKey}`, [scopeKey]);
+  const scopedSyncEmergencyKey = useMemo(() => `homepage_images_sync_emergency_${scopeKey}`, [scopeKey]);
+  const scopedMetadataKey = useMemo(() => `homepage_images_metadata_${scopeKey}`, [scopeKey]);
 
   // Mettre à jour la ref quand backgroundImages change
   useEffect(() => {
@@ -174,7 +185,8 @@ export const useHomepageImages = () => {
       const success = await saveBatchToIndexedDB(db, images, {
         enableVersioning: options.enableVersioning || false,
         action: options.action || 'upload',
-        existingImages: options.existingImages || backgroundImagesRef.current
+        existingImages: options.existingImages || backgroundImagesRef.current,
+        storageType: scopedType
       });
       
       if (success) {
@@ -202,7 +214,7 @@ export const useHomepageImages = () => {
         quality: 'maximum'
       };
       
-      localStorage.setItem('homepage_images_fallback', JSON.stringify(data));
+      localStorage.setItem(scopedFallbackKey, JSON.stringify(data));
       log.debug('✅ Sauvegarde localStorage réussie');
       return true;
       
@@ -225,7 +237,7 @@ export const useHomepageImages = () => {
         quality: 'maximum'
       };
       
-      sessionStorage.setItem('homepage_images_emergency', JSON.stringify(data));
+      sessionStorage.setItem(scopedEmergencyKey, JSON.stringify(data));
       log.debug('✅ Sauvegarde sessionStorage réussie');
       return true;
       
@@ -256,7 +268,7 @@ export const useHomepageImages = () => {
         };
         
         try {
-          localStorage.setItem('homepage_images_sync_emergency', JSON.stringify(data));
+          localStorage.setItem(scopedSyncEmergencyKey, JSON.stringify(data));
           log.debug('✅ Sauvegarde d\'urgence limitée effectuée');
         } catch (fallbackError) {
           log.error('❌ Erreur sauvegarde d\'urgence:', fallbackError);
@@ -287,7 +299,7 @@ export const useHomepageImages = () => {
             version: '3.0', // ✅ Phase 6: Version 3.0
             storage: 'indexeddb_primary'
           };
-          localStorage.setItem('homepage_images_metadata', JSON.stringify(metadata));
+          localStorage.setItem(scopedMetadataKey, JSON.stringify(metadata));
           log.debug('✅ Métadonnées sauvegardées dans localStorage');
         } catch (error) {
           log.warn('⚠️ Impossible de sauvegarder les métadonnées:', error);
@@ -417,7 +429,7 @@ export const useHomepageImages = () => {
       try {
         // Essayer d'utiliser l'index si disponible
         const index = store.index('type');
-        const request = index.getAll(IDBKeyRange.only('homepage_background'));
+        const request = index.getAll(IDBKeyRange.only(scopedType));
         
         images = await new Promise((resolve, reject) => {
           request.onsuccess = (event) => {
@@ -539,7 +551,7 @@ export const useHomepageImages = () => {
             const allResults = event.target.result;
             
             // Filtrer manuellement par type
-            const filteredResults = allResults.filter(item => item.type === 'homepage_background');
+            const filteredResults = allResults.filter(item => item.type === scopedType);
             
             if (filteredResults.length > 0) {
               // ✅ Phase 3: Charger images (format v3 avec thumbnail ou v2 string)
@@ -627,7 +639,7 @@ export const useHomepageImages = () => {
     try {
       log.debug('🔍 Chargement niveau 2: localStorage...');
       
-      const data = localStorage.getItem('homepage_images_fallback');
+      const data = localStorage.getItem(scopedFallbackKey);
       if (!data) {
         log.debug('📭 Aucune donnée dans localStorage');
         return [];
@@ -662,7 +674,7 @@ export const useHomepageImages = () => {
     try {
       log.debug('🔍 Chargement niveau 3: sessionStorage...');
       
-      const data = sessionStorage.getItem('homepage_images_emergency');
+      const data = sessionStorage.getItem(scopedEmergencyKey);
       if (!data) {
         log.debug('📭 Aucune donnée dans sessionStorage');
         return [];
@@ -912,7 +924,7 @@ export const useHomepageImages = () => {
         'homepage_images_primary',
         'homepage_images_backup',
         'homepage_images_session',
-        'homepage_images_sync_emergency'
+        scopedSyncEmergencyKey
       ];
       
       for (const key of oldKeys) {
@@ -1091,7 +1103,7 @@ export const useHomepageImages = () => {
       // ✅ Phase 7: Vérifier que le nombre d'images correspond (protection contre écrasement)
       let savedCount = 0;
       try {
-        const metadata = JSON.parse(localStorage.getItem('homepage_images_metadata') || '{}');
+        const metadata = JSON.parse(localStorage.getItem(scopedMetadataKey) || '{}');
         savedCount = metadata.count || 0;
       } catch (e) {
         // Ignorer erreur parsing
@@ -1136,7 +1148,7 @@ export const useHomepageImages = () => {
       // Réinitialiser le flag si le composant est démonté (pour remontage propre)
       initializedRef.current = false;
     };
-  }, []);
+  }, [scopedEmergencyKey, scopedFallbackKey, scopedMetadataKey, scopedSyncEmergencyKey, scopedType]);
 
   // ✅ Phase 7: Fonction pour mettre à jour la ref directement (pour éviter race condition)
   const updateImagesRef = (images) => {

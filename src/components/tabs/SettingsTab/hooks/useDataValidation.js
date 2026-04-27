@@ -75,6 +75,16 @@ export const useDataValidation = () => {
     if (workoutData.sessionFeedbacks !== undefined && typeof workoutData.sessionFeedbacks !== 'object') {
       errors.push('sessionFeedbacks doit être un objet');
     }
+
+    if (workoutData.exerciseWeights !== undefined && typeof workoutData.exerciseWeights !== 'object') {
+      errors.push('exerciseWeights doit être un objet');
+    }
+    if (workoutData.exerciseWeightPerArm !== undefined && typeof workoutData.exerciseWeightPerArm !== 'object') {
+      errors.push('exerciseWeightPerArm doit être un objet');
+    }
+    if (workoutData.exerciseSetWeights !== undefined && typeof workoutData.exerciseSetWeights !== 'object') {
+      errors.push('exerciseSetWeights doit être un objet');
+    }
     
     if (workoutData.weekVariant !== undefined && typeof workoutData.weekVariant !== 'string') {
       errors.push('weekVariant doit être une chaîne de caractères');
@@ -106,7 +116,12 @@ export const useDataValidation = () => {
         (sum, arr) => sum + (Array.isArray(arr) ? arr.length : 0), 0
       ),
       dailyVariations: Object.keys(workoutData.dailyVariations || {}).length,
-      sessionFeedbacks: Object.keys(workoutData.sessionFeedbacks || {}).length
+      sessionFeedbacks: Object.keys(workoutData.sessionFeedbacks || {}).length,
+      exerciseWeightKeys: Object.keys(workoutData.exerciseWeights || {}).length,
+      exercisePerArmKeys: Object.keys(workoutData.exerciseWeightPerArm || {}).filter(
+        (k) => workoutData.exerciseWeightPerArm[k] === true
+      ).length,
+      exerciseSetWeightKeys: Object.keys(workoutData.exerciseSetWeights || {}).length
     };
     
     return {

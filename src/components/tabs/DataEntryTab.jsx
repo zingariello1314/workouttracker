@@ -13,6 +13,7 @@ import { calculateAutoReps } from '../../utils/exerciseCalculations';
 import { useTranslation } from '../../utils/translations';
 import { useFormatters } from '../../utils/translations/formatters-hook';
 import { useToast } from '../ui/Toast';
+import { isAdminUser } from '../../utils/accessControl';
 
 const DataEntryTab = () => {
   const { data, updateReps, toggleCheck, getDateStr, getDayName, getCurrentData, getTodayWorkout, activeProgram } = useWorkout();
@@ -22,7 +23,7 @@ const DataEntryTab = () => {
   const { showSuccess, showError } = useToast();
   
   // ✅ Vérifier si l'utilisateur est admin
-  const isAdmin = currentUser?.role === 'admin' || currentUser?.username === 'zingariello1314';
+  const isAdmin = isAdminUser(currentUser);
   
   // Utiliser getCurrentData() pour obtenir les données actuelles (incluant tempData)
   const currentData = getCurrentData();

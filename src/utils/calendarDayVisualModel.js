@@ -65,6 +65,7 @@ export function calendarDayHasPaintSignal(intensity) {
  * @param {number} [p.strengthLoad]
  * @param {number} [p.enduranceLoad]
  * @param {number} [p.totalReps]
+ * @param {number} [p.relativeLiftVolumeBoost01] — ajustement mineur (≈ ±0–0,04) selon volume kg×reps vs mois / jours passés
  */
 export function computeCalendarDayVisualContext(p) {
   const level = Number(p.level) || 0;
@@ -177,6 +178,10 @@ export function computeCalendarDayVisualContext(p) {
   const synergyStreetEndurance =
     strengthLoad >= 14 && enduranceLoad >= 10 ? 1.085 : strengthLoad >= 8 && enduranceLoad >= 6 ? 1.045 : 1;
   compositeRaw *= synergyStreetEndurance;
+  const relLift = Number(p.relativeLiftVolumeBoost01);
+  if (Number.isFinite(relLift) && relLift !== 0) {
+    compositeRaw += Math.max(-0.014, Math.min(0.042, relLift));
+  }
   const composite01 = Math.max(0, Math.min(1, compositeRaw));
 
   const denom = preBlend > 1e-6 ? preBlend : 1;
@@ -229,4 +234,55 @@ export function computeCalendarDayVisualContext(p) {
     approxRepEquivFromSteps,
     weights: w
   };
+}
+
+function medianPositive(values) {
+  const a = values.filter((x) => Number(x) > 0).sort((x, y) => x - y);
+  if (!a.length) return 0;
+  const mid = Math.floor((a.length - 1) / 2);
+  if (a.length % 2) return a[mid];
+  return (a[mid] + a[mid + 1]) / 2;
+}
+
+function addCalendarDaysIso(dateStr, deltaDays) {
+  const d = new Date(`${dateStr}T12:00:00`);
+  d.setDate(d.getDate() + deltaDays);
+  return d.toISOString().slice(0, 10);
+}
+
+/**
+ * Ajustement secondaire de la teinte (composite01) : volume kg×reps du jour vs médiane
+ * du même mois (jours strictement antérieurs) et vs médiane des 21 jours précédents avec charge.
+ */
+export function computeLiftVolumeRelativeVisualBoost01(dateStr, dayVol, volumeByDate) {
+  if (!volumeByDate || typeof volumeByDate.get !== 'function') return 0;
+  const d0 = Math.max(0, Number(dayVol) || 0);
+  if (d0 <= 0) return 0;
+  const parts = String(dateStr || '').split('-');
+  if (parts.length < 3) return 0;
+  const y = Number(parts[0]);
+  const m = Number(parts[1]);
+  if (!Number.isFinite(y) || !Number.isFinite(m)) return 0;
+
+  const monthVals = [];
+  volumeByDate.forEach((v, ds) => {
+    if (!ds || ds >= dateStr) return;
+    const p = ds.split('-').map(Number);
+    if (p[0] === y && p[1] === m) monthVals.push(Number(v) || 0);
+  });
+  const medMonth = medianPositive(monthVals);
+
+  const prevVals = [];
+  for (let i = 1; i <= 21; i += 1) {
+    const ds = addCalendarDaysIso(dateStr, -i);
+    const v = volumeByDate.get(ds);
+    if (v != null && Number(v) > 0) prevVals.push(Number(v));
+  }
+  const medPrev = medianPositive(prevVals);
+
+  const rMonth = medMonth > 0 ? d0 / medMonth : 1;
+  const rPrev = medPrev > 0 ? d0 / medPrev : 1;
+  const bumpMonth = 0.02 * Math.tanh(Math.min(1.8, Math.max(-1.2, rMonth - 1)));
+  const bumpPrev = 0.017 * Math.tanh(Math.min(2, Math.max(-1.4, rPrev - 1)));
+  return Math.max(-0.012, Math.min(0.04, bumpMonth + bumpPrev));
 }

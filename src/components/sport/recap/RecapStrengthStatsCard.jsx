@@ -11,6 +11,7 @@ import {
   STRENGTH_CARD_PERIOD_LS,
 } from '../../../utils/sport/recapViewPeriods';
 import DashboardSportPeriodInsights from '../../dashboard/DashboardSportPeriodInsights.jsx';
+import RecapLiftVolumeBreakdown from './RecapLiftVolumeBreakdown.jsx';
 
 const NUM_BARS_SIDEBAR = 5;
 const NUM_BARS_DEFAULT = 8;
@@ -193,6 +194,11 @@ export default function RecapStrengthStatsCard({
               </div>
             </div>
           </div>
+          <RecapLiftVolumeBreakdown
+            rows={built.liftVolumeByExercise || []}
+            totalKg={built.totalLiftedKgRepCurr}
+            periodLabel={t(RECAP_VIEW_PERIODS.find((p) => p.id === cardPeriod)?.labelKey || '')}
+          />
           {variant === 'embedded' ? (
             <DashboardSportPeriodInsights
               variant="embeddedInStrength"

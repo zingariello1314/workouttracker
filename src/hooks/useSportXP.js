@@ -6,6 +6,11 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { useWorkout } from '../context/WorkoutContext';
 import { useGarminData } from './useGarminData';
 import { calculateSportXP } from '../services/xp/xpCalculations';
+import { computeProgramCompletionBonusXp } from '../utils/programCompletionBonus';
+import { computeVolumeKgForWorkoutKey } from '../utils/exerciseLoadVolume';
+import { collectDedupedCheckedVolumeKeys } from '../utils/trainingLoadUtils';
+import { useAuth } from '../context/AuthContext';
+import { canAccessPrivateData } from '../utils/accessControl';
 
 const DEFAULT_BREAKDOWN = {
   reps: 0,
@@ -34,7 +39,10 @@ const DEFAULT_BREAKDOWN = {
   gainageTrophiesUnlocked: 0,
   pushupTrophies: 0,
   pushupTrophyTiers: 0,
-  pushupTrophiesUnlocked: 0
+  pushupTrophiesUnlocked: 0,
+  programCompletionBonusXp: 0,
+  liftedVolumeKg: 0,
+  liftedVolumeKgXp: 0
 };
 
 let sportXpCache = {
@@ -44,7 +52,21 @@ let sportXpCache = {
 };
 
 export const useSportXP = () => {
-  const { data: workoutData } = useWorkout();
+  const { currentUser, isAuthenticated } = useAuth();
+  const canAccessData = canAccessPrivateData({ user: currentUser, isAuthenticated });
+  const { data: workoutData, programs, activeProgram, getExerciseNameById } = useWorkout();
+
+  const programsForCompletionXp = useMemo(() => {
+    const arr = Array.isArray(programs) ? [...programs] : [];
+    if (
+      activeProgram?.schedule &&
+      activeProgram.id != null &&
+      !arr.some((p) => p && p.id === activeProgram.id)
+    ) {
+      arr.push(activeProgram);
+    }
+    return arr;
+  }, [programs, activeProgram]);
   const { dbReady, loadAllData } = useGarminData();
   const [garminData, setGarminData] = useState(sportXpCache.garminData || null);
   const [isLoading, setIsLoading] = useState(!sportXpCache.garminData);
@@ -54,7 +76,13 @@ export const useSportXP = () => {
     let isMounted = true;
 
     const loadGarmin = async () => {
-      if (!dbReady) return;
+      if (!canAccessData || !dbReady) {
+        if (isMounted) {
+          setGarminData(null);
+          setIsLoading(false);
+        }
+        return;
+      }
       if (sportXpCache.garminData) {
         if (isMounted) {
           setGarminData(sportXpCache.garminData);
@@ -82,10 +110,10 @@ export const useSportXP = () => {
     return () => {
       isMounted = false;
     };
-  }, [dbReady, loadAllData]);
+  }, [dbReady, loadAllData, canAccessData]);
 
   const calculated = useMemo(() => {
-    if (!workoutData) {
+    if (!canAccessData || !workoutData) {
       return { totalXP: 0, breakdown: DEFAULT_BREAKDOWN };
     }
     const totalReps = Object.values(workoutData.reps || {}).reduce((sum, reps) => {
@@ -138,6 +166,16 @@ export const useSportXP = () => {
       });
     }
 
+    const programCompletionBonusXp = computeProgramCompletionBonusXp(workoutData, {
+      programs: programsForCompletionXp,
+      getExerciseNameById
+    });
+
+    let liftedVolumeChecksum = 0;
+    collectDedupedCheckedVolumeKeys(workoutData).forEach((k) => {
+      liftedVolumeChecksum += computeVolumeKgForWorkoutKey(k, workoutData);
+    });
+
     const signature = [
       totalReps,
       coeffs.length,
@@ -155,7 +193,9 @@ export const useSportXP = () => {
       gainageSig,
       pushupSig,
       cardioLen,
-      garminLapTally
+      garminLapTally,
+      programCompletionBonusXp,
+      Math.round(liftedVolumeChecksum * 10)
     ].join('|');
 
     if (cacheRef.current.signature === signature) {
@@ -166,11 +206,15 @@ export const useSportXP = () => {
       return sportXpCache.result;
     }
 
-    const result = calculateSportXP(workoutData, garminData, enduranceData);
+    const result = calculateSportXP(workoutData, garminData, enduranceData, {
+      programs: programsForCompletionXp,
+      activeProgram,
+      getExerciseNameById
+    });
     cacheRef.current = { signature, result };
     sportXpCache = { ...sportXpCache, signature, result };
     return result;
-  }, [workoutData, garminData]);
+  }, [workoutData, garminData, canAccessData, programsForCompletionXp, getExerciseNameById, activeProgram]);
 
   const levelInfo = useMemo(() => {
     const totalXP = calculated.totalXP || 0;

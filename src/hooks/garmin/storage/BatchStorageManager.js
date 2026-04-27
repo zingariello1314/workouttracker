@@ -4,7 +4,13 @@
  * en regroupant les lectures/écritures dans une transaction unique.
  */
 
-import { openDB, STORE_ACTIVITIES, STORE_DAILY_METRICS } from '../../garminDataUtils';
+import {
+  openDB,
+  STORE_ACTIVITIES,
+  STORE_DAILY_METRICS,
+  getGarminScope,
+  recordBelongsToCurrentScope
+} from '../../garminDataUtils';
 import { mergeActivityRecord, mergeDailyMetrics } from '../../garminDataFusion';
 import logger from '../../../utils/logger';
 
@@ -27,13 +33,15 @@ class BatchStorageManager {
 
     const tx = db.transaction([STORE_ACTIVITIES], 'readwrite');
     const store = tx.objectStore(STORE_ACTIVITIES);
+    const scope = getGarminScope();
 
     try {
       const existingMap = await this.#loadExistingRecords(store, entries.map(({ item }) => item.id));
 
-      const mergedActivities = entries.map(({ item, type }) =>
-        mergeActivityRecord(existingMap.get(item.id) || null, item, type)
-      );
+      const mergedActivities = entries.map(({ item, type }) => {
+        const merged = mergeActivityRecord(existingMap.get(item.id) || null, item, type);
+        return { ...merged, userId: scope };
+      });
 
       await Promise.all(mergedActivities.map((activity) => this.#putRecord(store, activity)));
       await this.#awaitTransaction(tx);
@@ -69,6 +77,7 @@ class BatchStorageManager {
 
     const tx = db.transaction([STORE_DAILY_METRICS], 'readwrite');
     const store = tx.objectStore(STORE_DAILY_METRICS);
+    const scope = getGarminScope();
 
     try {
       const existingMap = await this.#loadExistingRecords(store, entries.map(([date]) => date));
@@ -77,7 +86,7 @@ class BatchStorageManager {
         entries.map(([date, metrics]) => {
           const existing = existingMap.get(date) || null;
           const merged = mergeDailyMetrics(metrics, existing, date);
-          return this.#putRecord(store, { ...merged, date });
+          return this.#putRecord(store, { ...merged, date, userId: scope });
         })
       );
 
@@ -126,7 +135,7 @@ class BatchStorageManager {
       request.onsuccess = (event) => {
         const cursor = event.target.result;
         if (cursor) {
-          if (idsSet.has(cursor.key)) {
+          if (idsSet.has(cursor.key) && recordBelongsToCurrentScope(cursor.value)) {
             existingMap.set(cursor.key, cursor.value);
           }
           cursor.continue();

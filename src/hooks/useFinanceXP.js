@@ -12,8 +12,12 @@ import { smartShoppingStorage } from '../services/finance/smartShoppingStorage';
 import { sidebarEvents, SIDEBAR_EVENTS } from '../utils/sidebarEvents';
 import { computeFinanceXp, FINANCE_XP_PER_LEVEL } from '../services/xp/financeXpRules';
 import { levelProgressFromXpAmount } from '../utils/xpLevelFromAmount';
+import { useAuth } from '../context/AuthContext';
+import { canAccessPrivateData } from '../utils/accessControl';
 
 export function useFinanceXP() {
+  const { currentUser, isAuthenticated } = useAuth();
+  const canAccessData = canAccessPrivateData({ user: currentUser, isAuthenticated });
   const { portfolio, loading: financeLoading } = useFinance();
   const plan = usePlanificateur();
   const inv = useInvestissements();
@@ -41,6 +45,10 @@ export function useFinanceXP() {
   }, []);
 
   useEffect(() => {
+    if (!canAccessData) {
+      setBudgetSnap({ depensesCount: 0, categoriesCount: 0 });
+      return () => {};
+    }
     void reloadBudget();
     const unsub = sidebarEvents.on(SIDEBAR_EVENTS.FINANCE_UPDATED, () => {
       bump();
@@ -57,14 +65,16 @@ export function useFinanceXP() {
       unsub();
       document.removeEventListener('visibilitychange', onVis);
     };
-  }, [reloadBudget, bump]);
+  }, [reloadBudget, bump, canAccessData]);
 
   useEffect(() => {
+    if (!canAccessData) return () => {};
     const id = window.setInterval(() => bump(), 120_000);
     return () => window.clearInterval(id);
-  }, [bump]);
+  }, [bump, canAccessData]);
 
   const shoppingSnap = useMemo(() => {
+    if (!canAccessData) return { listes: 0, articles: 0, done: 0 };
     void refreshTick;
     try {
       const listes = smartShoppingStorage.getListes() || [];
@@ -77,27 +87,30 @@ export function useFinanceXP() {
     } catch {
       return { listes: 0, articles: 0, done: 0 };
     }
-  }, [refreshTick]);
+  }, [refreshTick, canAccessData]);
 
   const { totalXP, breakdown } = useMemo(
     () =>
-      computeFinanceXp({
-        portfolio,
-        salaire: plan.salaire,
-        repartition: plan.repartition,
-        objectifs: plan.objectifs,
-        achatsLoisirs: plan.achatsLoisirs,
-        or: inv.or,
-        liquidites: inv.liquidites,
-        bourseCrypto: inv.bourseCrypto,
-        allocation: inv.allocation,
-        budgetDepensesCount: budgetSnap.depensesCount,
-        budgetCategoriesCount: budgetSnap.categoriesCount,
-        shoppingListesCount: shoppingSnap.listes,
-        shoppingArticlesCount: shoppingSnap.articles,
-        shoppingListesCompletees: shoppingSnap.done,
-      }),
+      canAccessData
+        ? computeFinanceXp({
+            portfolio,
+            salaire: plan.salaire,
+            repartition: plan.repartition,
+            objectifs: plan.objectifs,
+            achatsLoisirs: plan.achatsLoisirs,
+            or: inv.or,
+            liquidites: inv.liquidites,
+            bourseCrypto: inv.bourseCrypto,
+            allocation: inv.allocation,
+            budgetDepensesCount: budgetSnap.depensesCount,
+            budgetCategoriesCount: budgetSnap.categoriesCount,
+            shoppingListesCount: shoppingSnap.listes,
+            shoppingArticlesCount: shoppingSnap.articles,
+            shoppingListesCompletees: shoppingSnap.done,
+          })
+        : { totalXP: 0, breakdown: {} },
     [
+      canAccessData,
       portfolio,
       plan.salaire,
       plan.repartition,
@@ -125,6 +138,6 @@ export function useFinanceXP() {
     breakdown,
     level: levelInfo.level,
     progress: levelInfo.progress,
-    isLoading: !!(financeLoading || plan.loading || inv.loading),
+    isLoading: canAccessData ? !!(financeLoading || plan.loading || inv.loading) : false,
   };
 }

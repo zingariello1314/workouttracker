@@ -2,6 +2,8 @@ import {
   openDB,
   getUseFallback,
   setUseFallback,
+  getGarminScope,
+  recordBelongsToCurrentScope,
   readStorageBucket,
   writeStorageBucket,
   deleteStorageBucket,
@@ -129,7 +131,8 @@ const normalizeEntry = (entry) => {
     createdAt: toIsoString(entry.createdAt, triggeredAt),
     updatedAt: nowIso,
     source: entry.source || 'syncNow',
-    notes: entry.notes || null
+    notes: entry.notes || null,
+    userId: entry.userId || getGarminScope()
   };
 
   if (!normalized.start || !normalized.end) {
@@ -177,26 +180,27 @@ const pruneIndexedDB = async (db) => {
     tx.onerror = (event) => reject(event.target.error);
     tx.onabort = (event) => reject(event.target.error || new Error('Transaction aborted'));
 
-    const countRequest = store.count();
-    countRequest.onsuccess = () => {
-      const total = countRequest.result || 0;
-      if (total <= MAX_HISTORY_ENTRIES) {
-        return;
-      }
-      const toDelete = total - MAX_HISTORY_ENTRIES;
-      const index = store.index('triggeredAt');
-      let deleted = 0;
-      index.openCursor().onsuccess = (event) => {
-        const cursor = event.target.result;
-        if (!cursor || deleted >= toDelete) {
+    const index = store.index('triggeredAt');
+    const entries = [];
+    index.openCursor().onsuccess = (event) => {
+      const cursor = event.target.result;
+      if (!cursor) {
+        if (entries.length <= MAX_HISTORY_ENTRIES) {
           return;
         }
-        cursor.delete();
-        deleted += 1;
-        cursor.continue();
-      };
+        const toDelete = entries.slice(0, entries.length - MAX_HISTORY_ENTRIES);
+        toDelete.forEach((entry) => {
+          if (entry?.id !== undefined && entry?.id !== null) {
+            store.delete(entry.id);
+          }
+        });
+        return;
+      }
+      if (recordBelongsToCurrentScope(cursor.value)) {
+        entries.push(cursor.value);
+      }
+      cursor.continue();
     };
-    countRequest.onerror = (event) => reject(event.target.error);
   });
 };
 
@@ -281,7 +285,7 @@ export const loadForcedRangesHistory = async (limit = MAX_HISTORY_ENTRIES) => {
       return [];
     }
     return Object.values(bucket)
-      .filter((item) => item && item.triggeredAt)
+      .filter((item) => item && item.triggeredAt && recordBelongsToCurrentScope(item))
       .sort((a, b) => b.triggeredAt.localeCompare(a.triggeredAt))
       .slice(0, effectiveLimit);
   }
@@ -299,7 +303,7 @@ export const loadForcedRangesHistory = async (limit = MAX_HISTORY_ENTRIES) => {
 
     tx.oncomplete = () => {
       results = results
-        .filter((item) => item && item.triggeredAt)
+        .filter((item) => item && item.triggeredAt && recordBelongsToCurrentScope(item))
         .sort((a, b) => b.triggeredAt.localeCompare(a.triggeredAt))
         .slice(0, effectiveLimit);
       resolve(results);
@@ -345,8 +349,15 @@ export const clearForcedRangesHistory = async () => {
   await retryWithBackoff(() => new Promise((resolve, reject) => {
     const tx = db.transaction([STORE_FORCED_RANGES], 'readwrite');
     const store = tx.objectStore(STORE_FORCED_RANGES);
-    const request = store.clear();
-    request.onsuccess = () => resolve();
+    const request = store.openCursor();
+    request.onsuccess = (event) => {
+      const cursor = event.target.result;
+      if (!cursor) return;
+      if (recordBelongsToCurrentScope(cursor.value)) {
+        cursor.delete();
+      }
+      cursor.continue();
+    };
     request.onerror = () => reject(request.error);
     tx.oncomplete = () => resolve();
     tx.onerror = (event) => reject(event.target.error);

@@ -2,6 +2,30 @@ import logger from './logger';
 import { getAllBooksFromIndexedDB, saveBooksToIndexedDB } from './booksIndexedDB';
 import { openNutritionDB, STORE_DAILY_MEALS, STORE_MEALS, STORE_PROGRAMS, STORE_FAVORITE_FOODS, STORE_HYDRATION_LOG } from '../hooks/nutritionDataUtils';
 import { openDB, STORE_ACTIVITIES, STORE_DAILY_METRICS } from '../hooks/garminDataUtils';
+import {
+  openQuietQuestDB,
+  loadQuestsFromIndexedDB,
+  loadValidationsFromIndexedDB,
+  loadUserDataFromIndexedDB,
+  loadDailyPerformancesFromIndexedDB,
+  loadAppStateFromIndexedDB,
+  saveQuestsToIndexedDB,
+  saveValidationsToIndexedDB,
+  saveUserDataToIndexedDB,
+  saveDailyPerformancesToIndexedDB,
+  saveAppStateToIndexedDB
+} from './quietQuestIndexedDB';
+import {
+  openApprentissageDB,
+  loadProgressionFromIndexedDB,
+  loadSessionsHistoryFromIndexedDB,
+  loadTimerFromIndexedDB,
+  loadPlannerFromIndexedDB,
+  saveProgressionToIndexedDB,
+  saveSessionsHistoryToIndexedDB,
+  saveTimerToIndexedDB,
+  savePlannerToIndexedDB
+} from './apprentissageIndexedDB';
 
 /**
  * Ouvre la base de données WorkoutTrackerDB pour Body Tracking et Programmes
@@ -37,6 +61,296 @@ const openWorkoutDB = () => {
 };
 
 const log = logger.module('AuthMigration');
+const MIGRATION_SNAPSHOT_KEY = 'momentum:authMigration:lastSnapshot';
+const LEGACY_QUIETQUEST_KEYS = [
+  'quietquest_quests',
+  'quietquest_validations',
+  'quietquest_user_data',
+  'quietquest_daily_performances',
+  'quietquest_app_state',
+  'quietquest_last_visit',
+  'quietquest_last_cleanup'
+];
+const LEGACY_APPRENTISSAGE_KEYS = [
+  'apprentissage_subjects',
+  'apprentissage_progression',
+  'apprentissage_timer',
+  'apprentissage_sessions_history',
+  'apprentissage_planner'
+];
+const LEGACY_FINANCE_KEYS = [
+  'finance_portfolio_backup',
+  'budget_backup'
+];
+const GARMIN_SETTINGS_PREFIX = 'garmin_source_settings_v1_';
+const LEGACY_GARMIN_SETTINGS_MAIN = `${GARMIN_SETTINGS_PREFIX}main`;
+const LEGACY_GARMIN_SETTINGS_GUEST = `${GARMIN_SETTINGS_PREFIX}guest`;
+
+const persistMigrationSnapshot = (snapshot) => {
+  try {
+    localStorage.setItem(MIGRATION_SNAPSHOT_KEY, JSON.stringify(snapshot));
+  } catch (error) {
+    log.warn('[auth-migration] Snapshot non persisté', error);
+  }
+};
+
+const readMigrationSnapshot = () => {
+  try {
+    const raw = localStorage.getItem(MIGRATION_SNAPSHOT_KEY);
+    return raw ? JSON.parse(raw) : null;
+  } catch {
+    return null;
+  }
+};
+
+const clearMigrationSnapshot = () => {
+  try {
+    localStorage.removeItem(MIGRATION_SNAPSHOT_KEY);
+  } catch {
+    // ignore
+  }
+};
+
+const hasAnonymousBodyTrackingData = (entry) => {
+  if (!entry || typeof entry !== 'object') return false;
+  const photos = Array.isArray(entry.progressPhotos) ? entry.progressPhotos : [];
+  const progress = Array.isArray(entry.progressEntries) ? entry.progressEntries : [];
+  const reminders = Array.isArray(entry.bodyTrackingReminders) ? entry.bodyTrackingReminders : [];
+  return (
+    photos.some((x) => x && !x.userId) ||
+    progress.some((x) => x && !x.userId) ||
+    reminders.some((x) => x && !x.userId)
+  );
+};
+
+const hasAnonymousProgramData = (entry) => {
+  if (!entry || typeof entry !== 'object') return false;
+  const customPrograms = Array.isArray(entry.customPrograms) ? entry.customPrograms : [];
+  const programHistory = Array.isArray(entry.programHistory) ? entry.programHistory : [];
+  return (
+    customPrograms.some((x) => x && !x.userId) ||
+    programHistory.some((x) => x && !x.userId)
+  );
+};
+
+const buildAnonymousDataSnapshot = async (userId) => {
+  const snapshot = {
+    userId,
+    createdAt: new Date().toISOString(),
+    books: [],
+    nutrition: {},
+    garmin: {},
+    workoutEntries: [],
+    quietQuest: {
+      indexedDb: {},
+      localStorage: {}
+    },
+    apprentissage: {
+      indexedDb: {},
+      localStorage: {}
+    },
+    finance: {
+      localStorage: {}
+    },
+    garminSettings: {
+      localStorage: {}
+    }
+  };
+
+  // Books
+  const allBooks = await getAllBooksFromIndexedDB().catch(() => []);
+  snapshot.books = (Array.isArray(allBooks) ? allBooks : []).filter((b) => b && !b.userId);
+
+  // Nutrition
+  const nutritionDb = await openNutritionDB().catch(() => null);
+  if (nutritionDb) {
+    const stores = [
+      STORE_DAILY_MEALS,
+      STORE_MEALS,
+      STORE_PROGRAMS,
+      STORE_FAVORITE_FOODS,
+      STORE_HYDRATION_LOG
+    ];
+    for (const storeName of stores) {
+      const tx = nutritionDb.transaction([storeName], 'readonly');
+      const store = tx.objectStore(storeName);
+      const records = await new Promise((resolve, reject) => {
+        const req = store.getAll();
+        req.onsuccess = () => resolve(req.result || []);
+        req.onerror = () => reject(req.error);
+      }).catch(() => []);
+      snapshot.nutrition[storeName] = (records || []).filter((r) => r && !r.userId);
+    }
+  }
+
+  // Garmin
+  const garminDb = await openDB().catch(() => null);
+  if (garminDb) {
+    const stores = [STORE_ACTIVITIES, STORE_DAILY_METRICS];
+    for (const storeName of stores) {
+      const tx = garminDb.transaction([storeName], 'readonly');
+      const store = tx.objectStore(storeName);
+      const records = await new Promise((resolve, reject) => {
+        const req = store.getAll();
+        req.onsuccess = () => resolve(req.result || []);
+        req.onerror = () => reject(req.error);
+      }).catch(() => []);
+      snapshot.garmin[storeName] = (records || []).filter((r) => r && !r.userId);
+    }
+  }
+
+  // Workout/BodyTracking/Programs
+  const workoutDb = await openWorkoutDB().catch(() => null);
+  if (workoutDb) {
+    const tx = workoutDb.transaction(['workouts'], 'readonly');
+    const store = tx.objectStore('workouts');
+    const records = await new Promise((resolve, reject) => {
+      const req = store.getAll();
+      req.onsuccess = () => resolve(req.result || []);
+      req.onerror = () => reject(req.error);
+    }).catch(() => []);
+    snapshot.workoutEntries = (records || []).filter(
+      (entry) => hasAnonymousBodyTrackingData(entry) || hasAnonymousProgramData(entry)
+    );
+  }
+
+  // QuietQuest snapshot (legacy main + localStorage)
+  const quietQuestDb = await openQuietQuestDB().catch(() => null);
+  if (quietQuestDb) {
+    const quests = await loadQuestsFromIndexedDB(quietQuestDb, 'main').catch(() => []);
+    const validations = await loadValidationsFromIndexedDB(quietQuestDb, 'main').catch(() => []);
+    const userData = await loadUserDataFromIndexedDB(quietQuestDb, 'main').catch(() => null);
+    const dailyPerformances = await loadDailyPerformancesFromIndexedDB(quietQuestDb, 'main').catch(() => []);
+    const appState = await loadAppStateFromIndexedDB(quietQuestDb, 'main').catch(() => null);
+    snapshot.quietQuest.indexedDb = {
+      quests: Array.isArray(quests) ? quests : [],
+      validations: Array.isArray(validations) ? validations : [],
+      userData: userData || null,
+      dailyPerformances: Array.isArray(dailyPerformances) ? dailyPerformances : [],
+      appState: appState || null
+    };
+  }
+  LEGACY_QUIETQUEST_KEYS.forEach((key) => {
+    try {
+      const raw = localStorage.getItem(key);
+      if (raw != null) snapshot.quietQuest.localStorage[key] = raw;
+    } catch {
+      // ignore storage access errors
+    }
+  });
+
+  // Apprentissage snapshot (legacy main + localStorage)
+  const apprentissageDb = await openApprentissageDB().catch(() => null);
+  if (apprentissageDb) {
+    const progression = await loadProgressionFromIndexedDB(apprentissageDb, 'main').catch(() => null);
+    const sessions = await loadSessionsHistoryFromIndexedDB(apprentissageDb, 'main').catch(() => []);
+    const timer = await loadTimerFromIndexedDB(apprentissageDb, 'main').catch(() => null);
+    const planner = await loadPlannerFromIndexedDB(apprentissageDb, 'main').catch(() => null);
+    snapshot.apprentissage.indexedDb = {
+      progression: progression || null,
+      sessions: Array.isArray(sessions) ? sessions : [],
+      timer: timer || null,
+      planner: planner || null
+    };
+  }
+  LEGACY_APPRENTISSAGE_KEYS.forEach((key) => {
+    try {
+      const raw = localStorage.getItem(key);
+      if (raw != null) snapshot.apprentissage.localStorage[key] = raw;
+    } catch {
+      // ignore storage access errors
+    }
+  });
+
+  // Finance local snapshot
+  LEGACY_FINANCE_KEYS.forEach((key) => {
+    try {
+      const raw = localStorage.getItem(key);
+      if (raw != null) snapshot.finance.localStorage[key] = raw;
+    } catch {
+      // ignore storage access errors
+    }
+  });
+
+  // Garmin settings snapshot
+  [LEGACY_GARMIN_SETTINGS_MAIN, LEGACY_GARMIN_SETTINGS_GUEST].forEach((key) => {
+    try {
+      const raw = localStorage.getItem(key);
+      if (raw != null) snapshot.garminSettings.localStorage[key] = raw;
+    } catch {
+      // ignore storage access errors
+    }
+  });
+
+  return snapshot;
+};
+
+export const previewAnonymousDataMigration = async () => {
+  const snapshot = await buildAnonymousDataSnapshot('preview');
+  const nutritionCount = Object.values(snapshot.nutrition).reduce(
+    (sum, arr) => sum + (Array.isArray(arr) ? arr.length : 0),
+    0
+  );
+  const garminCount = Object.values(snapshot.garmin).reduce(
+    (sum, arr) => sum + (Array.isArray(arr) ? arr.length : 0),
+    0
+  );
+
+  let bodyTrackingCount = 0;
+  let programsCount = 0;
+  const quietQuestCount =
+    (snapshot.quietQuest.indexedDb?.quests?.length || 0) +
+    (snapshot.quietQuest.indexedDb?.validations?.length || 0) +
+    (snapshot.quietQuest.indexedDb?.dailyPerformances?.length || 0) +
+    (snapshot.quietQuest.indexedDb?.userData ? 1 : 0) +
+    (snapshot.quietQuest.indexedDb?.appState ? 1 : 0) +
+    Object.keys(snapshot.quietQuest.localStorage || {}).length;
+  const apprentissageCount =
+    (snapshot.apprentissage.indexedDb?.sessions?.length || 0) +
+    (snapshot.apprentissage.indexedDb?.progression ? 1 : 0) +
+    (snapshot.apprentissage.indexedDb?.timer ? 1 : 0) +
+    (snapshot.apprentissage.indexedDb?.planner ? 1 : 0) +
+    Object.keys(snapshot.apprentissage.localStorage || {}).length;
+  const financeCount = Object.keys(snapshot.finance.localStorage || {}).length;
+  const garminSettingsCount = Object.keys(snapshot.garminSettings.localStorage || {}).length;
+  (snapshot.workoutEntries || []).forEach((entry) => {
+    const photos = Array.isArray(entry.progressPhotos) ? entry.progressPhotos : [];
+    const progress = Array.isArray(entry.progressEntries) ? entry.progressEntries : [];
+    const reminders = Array.isArray(entry.bodyTrackingReminders) ? entry.bodyTrackingReminders : [];
+    const customPrograms = Array.isArray(entry.customPrograms) ? entry.customPrograms : [];
+    const programHistory = Array.isArray(entry.programHistory) ? entry.programHistory : [];
+    bodyTrackingCount += photos.filter((x) => x && !x.userId).length;
+    bodyTrackingCount += progress.filter((x) => x && !x.userId).length;
+    bodyTrackingCount += reminders.filter((x) => x && !x.userId).length;
+    programsCount += customPrograms.filter((x) => x && !x.userId).length;
+    programsCount += programHistory.filter((x) => x && !x.userId).length;
+  });
+
+  const total =
+    (snapshot.books?.length || 0) +
+    nutritionCount +
+    garminCount +
+    bodyTrackingCount +
+    programsCount +
+    quietQuestCount +
+    apprentissageCount +
+    financeCount +
+    garminSettingsCount;
+
+  return {
+    success: true,
+    books: snapshot.books?.length || 0,
+    nutrition: nutritionCount,
+    garmin: garminCount,
+    bodyTracking: bodyTrackingCount,
+    programs: programsCount,
+    quietQuest: quietQuestCount,
+    apprentissage: apprentissageCount,
+    finance: financeCount,
+    garminSettings: garminSettingsCount,
+    total
+  };
+};
 
 /**
  * Migre les données "anonymes" (sans userId) vers un utilisateur donné.
@@ -54,7 +368,11 @@ export const migrateDataToUser = async (userId, onProgress) => {
       migratedNutrition: 0,
       migratedBodyTracking: 0,
       migratedGarmin: 0,
-      migratedPrograms: 0
+      migratedPrograms: 0,
+      migratedQuietQuest: 0,
+      migratedApprentissage: 0,
+      migratedFinance: 0,
+      migratedGarminSettings: 0
     };
   }
 
@@ -63,13 +381,21 @@ export const migrateDataToUser = async (userId, onProgress) => {
     migratedNutrition: 0,
     migratedBodyTracking: 0,
     migratedGarmin: 0,
-    migratedPrograms: 0
+    migratedPrograms: 0,
+    migratedQuietQuest: 0,
+    migratedApprentissage: 0,
+    migratedFinance: 0,
+    migratedGarminSettings: 0
   };
 
-  const totalSteps = 5;
+  const totalSteps = 9;
   let currentStep = 0;
 
   try {
+    // Snapshot de rollback avant toute mutation
+    const snapshot = await buildAnonymousDataSnapshot(userId);
+    persistMigrationSnapshot(snapshot);
+
     // 1. Migration des livres
     currentStep = 1;
     if (onProgress) onProgress(currentStep, totalSteps, 'Migration des livres...');
@@ -110,19 +436,178 @@ export const migrateDataToUser = async (userId, onProgress) => {
     results.migratedPrograms = programsResult.migrated || 0;
     if (onProgress) onProgress(currentStep, totalSteps, `${results.migratedPrograms} programmes migrés`);
 
+    // 6. Migration QuietQuest
+    currentStep = 6;
+    if (onProgress) onProgress(currentStep, totalSteps, 'Migration des quêtes...');
+    const quietQuestResult = await migrateQuietQuest(userId);
+    results.migratedQuietQuest = quietQuestResult.migrated || 0;
+    if (onProgress) onProgress(currentStep, totalSteps, `${results.migratedQuietQuest} entrées quêtes migrées`);
+
+    // 7. Migration Apprentissage
+    currentStep = 7;
+    if (onProgress) onProgress(currentStep, totalSteps, 'Migration apprentissage...');
+    const apprentissageResult = await migrateApprentissage(userId);
+    results.migratedApprentissage = apprentissageResult.migrated || 0;
+    if (onProgress) onProgress(currentStep, totalSteps, `${results.migratedApprentissage} entrées apprentissage migrées`);
+
+    // 8. Migration Finance
+    currentStep = 8;
+    if (onProgress) onProgress(currentStep, totalSteps, 'Migration finance...');
+    const financeResult = await migrateFinanceLocalData(userId);
+    results.migratedFinance = financeResult.migrated || 0;
+    if (onProgress) onProgress(currentStep, totalSteps, `${results.migratedFinance} entrées finance migrées`);
+
+    // 9. Migration Paramètres Garmin multi-sources
+    currentStep = 9;
+    if (onProgress) onProgress(currentStep, totalSteps, 'Migration des paramètres Garmin...');
+    const garminSettingsResult = await migrateGarminSettings(userId);
+    results.migratedGarminSettings = garminSettingsResult.migrated || 0;
+    if (onProgress) onProgress(currentStep, totalSteps, `${results.migratedGarminSettings} paramètres Garmin migrés`);
+
     const totalMigrated = 
       results.migratedBooks + 
       results.migratedNutrition + 
       results.migratedBodyTracking + 
       results.migratedGarmin + 
-      results.migratedPrograms;
+      results.migratedPrograms +
+      results.migratedQuietQuest +
+      results.migratedApprentissage +
+      results.migratedFinance +
+      results.migratedGarminSettings;
 
     log.debug('✅ Migration complète terminée', { userId, ...results, totalMigrated });
 
-    return { success: true, ...results };
+    return { success: true, totalSteps, ...results };
   } catch (error) {
     log.error('❌ Erreur lors de la migration des données vers l\'utilisateur', error);
-    return { success: false, ...results };
+    return { success: false, totalSteps, ...results };
+  }
+};
+
+export const rollbackLastMigration = async (userId) => {
+  const snapshot = readMigrationSnapshot();
+  if (!snapshot) return { success: false, error: 'NO_SNAPSHOT' };
+  if (userId && snapshot.userId && String(snapshot.userId) !== String(userId)) {
+    return { success: false, error: 'SNAPSHOT_USER_MISMATCH' };
+  }
+
+  try {
+    // Books restore
+    const currentBooks = await getAllBooksFromIndexedDB().catch(() => []);
+    const byId = new Map((Array.isArray(currentBooks) ? currentBooks : []).map((b) => [b.id, b]));
+    (snapshot.books || []).forEach((book) => {
+      if (book && book.id != null) byId.set(book.id, book);
+    });
+    await saveBooksToIndexedDB(Array.from(byId.values()));
+
+    // Nutrition restore
+    const nutritionDb = await openNutritionDB().catch(() => null);
+    if (nutritionDb && snapshot.nutrition) {
+      for (const [storeName, records] of Object.entries(snapshot.nutrition)) {
+        if (!Array.isArray(records) || records.length === 0) continue;
+        const tx = nutritionDb.transaction([storeName], 'readwrite');
+        const store = tx.objectStore(storeName);
+        for (const record of records) {
+          await new Promise((resolve, reject) => {
+            const req = store.put(record);
+            req.onsuccess = () => resolve();
+            req.onerror = () => reject(req.error);
+          });
+        }
+      }
+    }
+
+    // Garmin restore
+    const garminDb = await openDB().catch(() => null);
+    if (garminDb && snapshot.garmin) {
+      for (const [storeName, records] of Object.entries(snapshot.garmin)) {
+        if (!Array.isArray(records) || records.length === 0) continue;
+        const tx = garminDb.transaction([storeName], 'readwrite');
+        const store = tx.objectStore(storeName);
+        for (const record of records) {
+          await new Promise((resolve, reject) => {
+            const req = store.put(record);
+            req.onsuccess = () => resolve();
+            req.onerror = () => reject(req.error);
+          });
+        }
+      }
+    }
+
+    // Workout restore
+    const workoutDb = await openWorkoutDB().catch(() => null);
+    if (workoutDb && Array.isArray(snapshot.workoutEntries)) {
+      const tx = workoutDb.transaction(['workouts'], 'readwrite');
+      const store = tx.objectStore('workouts');
+      for (const entry of snapshot.workoutEntries) {
+        await new Promise((resolve, reject) => {
+          const req = store.put(entry);
+          req.onsuccess = () => resolve();
+          req.onerror = () => reject(req.error);
+        });
+      }
+    }
+
+    // QuietQuest restore
+    const quietQuestDb = await openQuietQuestDB().catch(() => null);
+    if (quietQuestDb && snapshot.quietQuest) {
+      const q = snapshot.quietQuest.indexedDb || {};
+      if (Array.isArray(q.quests)) await saveQuestsToIndexedDB(quietQuestDb, q.quests, 'main');
+      if (Array.isArray(q.validations)) await saveValidationsToIndexedDB(quietQuestDb, q.validations, 'main');
+      if (q.userData) await saveUserDataToIndexedDB(quietQuestDb, q.userData, 'main');
+      if (Array.isArray(q.dailyPerformances)) {
+        await saveDailyPerformancesToIndexedDB(quietQuestDb, q.dailyPerformances, 'main');
+      }
+      if (q.appState) await saveAppStateToIndexedDB(quietQuestDb, q.appState, 'main');
+      Object.entries(snapshot.quietQuest.localStorage || {}).forEach(([key, value]) => {
+        try {
+          localStorage.setItem(key, value);
+        } catch {
+          // ignore
+        }
+      });
+    }
+
+    // Apprentissage restore
+    const apprentissageDb = await openApprentissageDB().catch(() => null);
+    if (apprentissageDb && snapshot.apprentissage) {
+      const a = snapshot.apprentissage.indexedDb || {};
+      if (a.progression) await saveProgressionToIndexedDB(apprentissageDb, a.progression, 'main');
+      if (Array.isArray(a.sessions)) await saveSessionsHistoryToIndexedDB(apprentissageDb, a.sessions, 'main');
+      if (a.timer) await saveTimerToIndexedDB(apprentissageDb, a.timer, 'main');
+      if (a.planner) await savePlannerToIndexedDB(apprentissageDb, a.planner, 'main');
+      Object.entries(snapshot.apprentissage.localStorage || {}).forEach(([key, value]) => {
+        try {
+          localStorage.setItem(key, value);
+        } catch {
+          // ignore
+        }
+      });
+    }
+
+    // Finance restore
+    Object.entries(snapshot.finance?.localStorage || {}).forEach(([key, value]) => {
+      try {
+        localStorage.setItem(key, value);
+      } catch {
+        // ignore
+      }
+    });
+
+    // Garmin settings restore
+    Object.entries(snapshot.garminSettings?.localStorage || {}).forEach(([key, value]) => {
+      try {
+        localStorage.setItem(key, value);
+      } catch {
+        // ignore
+      }
+    });
+
+    clearMigrationSnapshot();
+    return { success: true };
+  } catch (error) {
+    log.error('[auth-migration] ❌ Erreur rollback migration', error);
+    return { success: false, error: 'ROLLBACK_FAILED' };
   }
 };
 
@@ -537,6 +1022,149 @@ const migratePrograms = async (userId) => {
     return { success: true, migrated };
   } catch (error) {
     log.error('[auth-migration] ❌ Erreur migration Programmes', error);
+    return { success: false, migrated: 0 };
+  }
+};
+
+const migrateQuietQuest = async (userId) => {
+  let migrated = 0;
+  try {
+    const db = await openQuietQuestDB();
+    if (!db) return { success: false, migrated: 0 };
+
+    const quests = await loadQuestsFromIndexedDB(db, 'main').catch(() => []);
+    const validations = await loadValidationsFromIndexedDB(db, 'main').catch(() => []);
+    const userData = await loadUserDataFromIndexedDB(db, 'main').catch(() => null);
+    const daily = await loadDailyPerformancesFromIndexedDB(db, 'main').catch(() => []);
+    const appState = await loadAppStateFromIndexedDB(db, 'main').catch(() => null);
+
+    if (Array.isArray(quests) && quests.length > 0) {
+      await saveQuestsToIndexedDB(db, quests, userId);
+      migrated += quests.length;
+    }
+    if (Array.isArray(validations) && validations.length > 0) {
+      await saveValidationsToIndexedDB(db, validations, userId);
+      migrated += validations.length;
+    }
+    if (userData) {
+      await saveUserDataToIndexedDB(db, userData, userId);
+      migrated += 1;
+    }
+    if (Array.isArray(daily) && daily.length > 0) {
+      await saveDailyPerformancesToIndexedDB(db, daily, userId);
+      migrated += daily.length;
+    }
+    if (appState) {
+      await saveAppStateToIndexedDB(db, appState, userId);
+      migrated += 1;
+    }
+
+    LEGACY_QUIETQUEST_KEYS.forEach((key) => {
+      try {
+        const raw = localStorage.getItem(key);
+        if (raw != null) {
+          localStorage.setItem(`${key}__user_${userId}`, raw);
+          migrated += 1;
+        }
+      } catch {
+        // ignore
+      }
+    });
+
+    return { success: true, migrated };
+  } catch (error) {
+    log.error('[auth-migration] ❌ Erreur migration QuietQuest', error);
+    return { success: false, migrated: 0 };
+  }
+};
+
+const migrateApprentissage = async (userId) => {
+  let migrated = 0;
+  try {
+    const db = await openApprentissageDB();
+    if (!db) return { success: false, migrated: 0 };
+
+    const progression = await loadProgressionFromIndexedDB(db, 'main').catch(() => null);
+    const sessions = await loadSessionsHistoryFromIndexedDB(db, 'main').catch(() => []);
+    const timer = await loadTimerFromIndexedDB(db, 'main').catch(() => null);
+    const planner = await loadPlannerFromIndexedDB(db, 'main').catch(() => null);
+
+    if (progression) {
+      await saveProgressionToIndexedDB(db, progression, userId);
+      migrated += 1;
+    }
+    if (Array.isArray(sessions) && sessions.length > 0) {
+      await saveSessionsHistoryToIndexedDB(db, sessions, userId);
+      migrated += sessions.length;
+    }
+    if (timer) {
+      await saveTimerToIndexedDB(db, timer, userId);
+      migrated += 1;
+    }
+    if (planner) {
+      await savePlannerToIndexedDB(db, planner, userId);
+      migrated += 1;
+    }
+
+    LEGACY_APPRENTISSAGE_KEYS.forEach((key) => {
+      try {
+        const raw = localStorage.getItem(key);
+        if (raw != null) {
+          localStorage.setItem(`${key}__user_${userId}`, raw);
+          migrated += 1;
+        }
+      } catch {
+        // ignore
+      }
+    });
+
+    return { success: true, migrated };
+  } catch (error) {
+    log.error('[auth-migration] ❌ Erreur migration Apprentissage', error);
+    return { success: false, migrated: 0 };
+  }
+};
+
+const migrateFinanceLocalData = async (userId) => {
+  let migrated = 0;
+  try {
+    LEGACY_FINANCE_KEYS.forEach((key) => {
+      try {
+        const raw = localStorage.getItem(key);
+        if (raw != null) {
+          localStorage.setItem(`${key}__user_${userId}`, raw);
+          migrated += 1;
+        }
+      } catch {
+        // ignore
+      }
+    });
+    return { success: true, migrated };
+  } catch (error) {
+    log.error('[auth-migration] ❌ Erreur migration Finance', error);
+    return { success: false, migrated: 0 };
+  }
+};
+
+const migrateGarminSettings = async (userId) => {
+  let migrated = 0;
+  try {
+    const userKey = `${GARMIN_SETTINGS_PREFIX}user-${userId}`;
+    [LEGACY_GARMIN_SETTINGS_MAIN, LEGACY_GARMIN_SETTINGS_GUEST].forEach((legacyKey) => {
+      try {
+        const raw = localStorage.getItem(legacyKey);
+        if (!raw) return;
+        if (!localStorage.getItem(userKey)) {
+          localStorage.setItem(userKey, raw);
+          migrated += 1;
+        }
+      } catch {
+        // ignore
+      }
+    });
+    return { success: true, migrated };
+  } catch (error) {
+    log.error('[auth-migration] ❌ Erreur migration paramètres Garmin', error);
     return { success: false, migrated: 0 };
   }
 };

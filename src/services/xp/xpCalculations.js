@@ -20,6 +20,14 @@ import { isGarminRunningLikeActivity, shouldExcludeStoredGarminRunningSession } 
 import { averageCriteriaScore } from '../../utils/bookReadingRatings';
 import { calculateQuestXP } from '../../utils/questXpCore';
 import SessionAggregator from '../statistics/SessionAggregator.js';
+import { computeVolumeKgForWorkoutKey } from '../../utils/exerciseLoadVolume';
+import { collectDedupedCheckedVolumeKeys } from '../../utils/trainingLoadUtils';
+import { computeProgramCompletionBonusXp } from '../../utils/programCompletionBonus';
+
+/** XP additionnelle liée au volume total cumulé (kg×reps), en complément du bonus déjà présent dans les reps pondérées. */
+export const SPORT_XP_PER_TOTAL_KG_VOLUME = 0.04;
+/** Plafond sur ce seul poste pour que l’historique ne fasse pas exploser l’XP globale. */
+export const SPORT_XP_LIFTED_VOLUME_CAP = 12000;
 
 function buildGarminRunningByIdForTrophies(garminData) {
   const full = new Map();
@@ -186,7 +194,7 @@ export const calculateBooksXPFromSessionsOnly = (sessions) => {
  * @param {Object} enduranceData - Données d'endurance
  * @returns {Object} { totalXP, breakdown }
  */
-export const calculateSportXP = (workoutData, garminData, enduranceData) => {
+export const calculateSportXP = (workoutData, garminData, enduranceData, sportOptions = {}) => {
   let totalXP = 0;
   const breakdown = {
     reps: 0,
@@ -215,7 +223,10 @@ export const calculateSportXP = (workoutData, garminData, enduranceData) => {
     gainageTrophiesUnlocked: 0,
     pushupTrophies: 0,
     pushupTrophyTiers: 0,
-    pushupTrophiesUnlocked: 0
+    pushupTrophiesUnlocked: 0,
+    programCompletionBonusXp: 0,
+    liftedVolumeKg: 0,
+    liftedVolumeKgXp: 0
   };
   
   if (!workoutData) {
@@ -234,14 +245,13 @@ export const calculateSportXP = (workoutData, garminData, enduranceData) => {
 
   // 1. XP des répétitions pondéré difficulté + charge
   const repsMap = workoutData.reps || {};
-  const checkedMap = workoutData.checkedExercises || {};
   const coeffs = workoutData.exerciseIntensityCoeffs || {};
-  const weights = workoutData.exerciseWeights || {};
   let totalReps = 0;
   let weightedLoad = 0;
+  let totalLiftedVolumeKg = 0;
 
-  Object.entries(checkedMap).forEach(([key, isChecked]) => {
-    if (!isChecked) return;
+  const volumeKeys = collectDedupedCheckedVolumeKeys(workoutData);
+  volumeKeys.forEach((key) => {
     const reps = parseInt(repsMap[key], 10) || 0;
     if (reps <= 0) return;
     totalReps += reps;
@@ -250,9 +260,10 @@ export const calculateSportXP = (workoutData, garminData, enduranceData) => {
     const coeffRaw = Number(coeffs[String(exerciseId)] ?? coeffs[String(key)] ?? 1);
     const coeff = Number.isFinite(coeffRaw) && coeffRaw > 0 ? coeffRaw : 1;
 
-    const weightRaw = String(weights[key] ?? '').replace(',', '.');
-    const weightKg = parseFloat(weightRaw);
-    // Bonus charge progressif: +0% à 0kg, cap à +150% vers ~150kg
+    const volumeKg = computeVolumeKgForWorkoutKey(key, workoutData);
+    totalLiftedVolumeKg += volumeKg;
+    const weightKg = reps > 0 && volumeKg > 0 ? volumeKg / reps : 0;
+    // Bonus charge progressif: +0% à 0kg, cap à +150% vers ~150kg (kg moyen déplacés par rep)
     const weightMultiplier = Number.isFinite(weightKg) && weightKg > 0
       ? 1 + Math.min(1.5, weightKg / 100)
       : 1;
@@ -264,6 +275,13 @@ export const calculateSportXP = (workoutData, garminData, enduranceData) => {
   breakdown.weightedRepsLoad = Math.round(weightedLoad * 100) / 100;
   breakdown.weightedRepsXp = Math.round(weightedLoad * 0.1);
   totalXP += breakdown.weightedRepsXp;
+
+  breakdown.liftedVolumeKg = Math.round(totalLiftedVolumeKg * 10) / 10;
+  breakdown.liftedVolumeKgXp = Math.min(
+    SPORT_XP_LIFTED_VOLUME_CAP,
+    Math.round(totalLiftedVolumeKg * SPORT_XP_PER_TOTAL_KG_VOLUME)
+  );
+  totalXP += breakdown.liftedVolumeKgXp;
   
   // 2. XP des exercices cochés : 5 XP par exercice complété
   const checkedExercises = Object.values(workoutData.checkedExercises || {}).filter(v => v === true).length;
@@ -389,6 +407,20 @@ export const calculateSportXP = (workoutData, garminData, enduranceData) => {
   breakdown.pushupTrophyTiers = puXp.unlockedTierCount;
   breakdown.pushupTrophiesUnlocked = puXp.trophiesWithTier;
   totalXP += puXp.xp;
+
+  const programsList = Array.isArray(sportOptions.programs) ? [...sportOptions.programs] : [];
+  if (
+    sportOptions.activeProgram?.schedule &&
+    !programsList.some((p) => p && sportOptions.activeProgram && p.id === sportOptions.activeProgram.id)
+  ) {
+    programsList.push(sportOptions.activeProgram);
+  }
+  const completionCtx = {
+    programs: programsList,
+    getExerciseNameById: sportOptions.getExerciseNameById
+  };
+  breakdown.programCompletionBonusXp = computeProgramCompletionBonusXp(workoutData, completionCtx);
+  totalXP += breakdown.programCompletionBonusXp;
 
   return {
     totalXP: Math.round(totalXP),
@@ -540,7 +572,8 @@ export const calculateXPForAllCategories = (data) => {
           gainageTrophiesUnlocked: 0,
           pushupTrophies: 0,
           pushupTrophyTiers: 0,
-          pushupTrophiesUnlocked: 0
+          pushupTrophiesUnlocked: 0,
+          programCompletionBonusXp: 0
         }
       },
       addictionQuit: {

@@ -390,6 +390,30 @@ export const useAllDataExportImport = (data, loadFromDB, updateData, validateAll
           ...(backupData.sessionFeedbacks || {}),
           ...(importedData.sessionFeedbacks || {})
         },
+        exerciseWeights: {
+          ...(backupData.exerciseWeights || {}),
+          ...(importedData.exerciseWeights || {})
+        },
+        exerciseWeightPerArm: {
+          ...(backupData.exerciseWeightPerArm || {}),
+          ...(importedData.exerciseWeightPerArm || {})
+        },
+        exerciseSetWeights: {
+          ...(backupData.exerciseSetWeights || {}),
+          ...(importedData.exerciseSetWeights || {})
+        },
+        exerciseIntensityCoeffs: {
+          ...(backupData.exerciseIntensityCoeffs || {}),
+          ...(importedData.exerciseIntensityCoeffs || {})
+        },
+        exercisePerceivedRatings: {
+          ...(backupData.exercisePerceivedRatings || {}),
+          ...(importedData.exercisePerceivedRatings || {})
+        },
+        exercisePersonalNotes: {
+          ...(backupData.exercisePersonalNotes || {}),
+          ...(importedData.exercisePersonalNotes || {})
+        },
         programHistory: [
           ...(backupData.programHistory || []),
           ...(importedData.programHistory || []).filter(imported => {

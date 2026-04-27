@@ -86,6 +86,7 @@ let dbInstance = null;
  * @type {boolean}
  */
 let useFallback = false;
+let garminScope = 'main';
 
 /**
  * Récupère l'état du fallback
@@ -99,6 +100,25 @@ export const getUseFallback = () => useFallback;
  */
 export const setUseFallback = (value) => {
   useFallback = value;
+};
+
+export const getGarminScope = () => garminScope;
+
+export const setGarminScope = (scope) => {
+  garminScope = scope || 'main';
+};
+
+export const isLegacyMainRecord = (record) => {
+  const uid = record?.userId;
+  return uid == null || uid === '' || uid === 'main';
+};
+
+export const recordBelongsToCurrentScope = (record) => {
+  const scope = getGarminScope();
+  if (scope === 'main') {
+    return record?.userId === 'main' || isLegacyMainRecord(record);
+  }
+  return record?.userId === scope;
 };
 
 /**
@@ -191,7 +211,7 @@ export const enqueueSave = (fn) => {
  * @example
  * getStorageKey(STORE_ACTIVITIES, '12345') // 'garmin_activities_12345'
  */
-export const getStorageKey = (store, key) => `garmin_${store}_${key}`;
+export const getStorageKey = (store, key) => `garmin_${getGarminScope()}_${store}_${key}`;
 
 /**
  * Récupère toutes les clés d'un store depuis localStorage
@@ -204,7 +224,7 @@ export const getStorageKey = (store, key) => `garmin_${store}_${key}`;
  */
 export const getAllStorageKeys = (store) => {
   const keys = [];
-  const prefix = `garmin_${store}_`;
+  const prefix = `garmin_${getGarminScope()}_${store}_`;
   
   for (let i = 0; i < localStorage.length; i++) {
     const key = localStorage.key(i);
@@ -223,6 +243,7 @@ export const getAllStorageKeys = (store) => {
  * @returns {string}
  */
 const getStorageBucketKey = (store) => `garmin_${store}_bucket`;
+const getScopedStorageBucketKey = (store) => `garmin_${getGarminScope()}_${store}_bucket`;
 
 /**
  * Lit le bucket localStorage (stockage groupé) pour un store donné
@@ -231,7 +252,7 @@ const getStorageBucketKey = (store) => `garmin_${store}_bucket`;
  */
 export const readStorageBucket = (store) => {
   try {
-    const raw = localStorage.getItem(getStorageBucketKey(store));
+    const raw = localStorage.getItem(getScopedStorageBucketKey(store));
     if (!raw) return {};
     const parsed = JSON.parse(raw);
     if (parsed && typeof parsed === 'object') {
@@ -251,7 +272,7 @@ export const readStorageBucket = (store) => {
  */
 export const writeStorageBucket = (store, data) => {
   try {
-    localStorage.setItem(getStorageBucketKey(store), JSON.stringify(data));
+    localStorage.setItem(getScopedStorageBucketKey(store), JSON.stringify(data));
   } catch (err) {
     log.error('[garminDataUtils] writeStorageBucket error:', { store, err });
     throw err;
@@ -263,7 +284,7 @@ export const writeStorageBucket = (store, data) => {
  * @param {string} store
  */
 export const deleteStorageBucket = (store) => {
-  localStorage.removeItem(getStorageBucketKey(store));
+  localStorage.removeItem(getScopedStorageBucketKey(store));
 };
 
 // ==================== OUVERTURE INDEXEDDB ====================

@@ -3,7 +3,7 @@
  */
 
 import React from 'react';
-import { User, Mail, Lock, Image } from 'lucide-react';
+import { User, Mail, Lock, Image, BadgeCheck, HelpCircle } from 'lucide-react';
 import Card, { CardHeader, CardTitle, CardContent } from '../../../ui/Card';
 import { Input } from '../../../ui/Input';
 import { settingsTheme as S } from '../settingsThemeClasses';
@@ -28,6 +28,10 @@ const ProfileSettings = ({
     setConfirmEmail,
     emailStatus,
     emailError,
+    emailCode,
+    setEmailCode,
+    emailCodeStatus,
+    requestEmailCode,
     handleEmailUpdate,
     oldPassword,
     setOldPassword,
@@ -37,23 +41,41 @@ const ProfileSettings = ({
     setConfirmPassword,
     passwordStatus,
     passwordError,
+    appLockCode,
+    setAppLockCode,
+    lockReady,
     handlePasswordUpdate,
   } = profileSettings;
 
   const {
     migrationStatus,
     migrationProgress,
+    migrationPreview,
+    previewStatus,
+    rollbackStatus,
     handleMigrateData,
+    handlePreviewMigration,
+    handleRollbackMigration,
   } = migrationSettings || {};
 
   const fieldClass = `${S.input} px-4 py-3`;
+  const emailVerified = currentUser?.emailVerified === true;
+  const canSubmitPassword =
+    Boolean(newPassword && confirmPassword) &&
+    Boolean((oldPassword && oldPassword.trim()) || (lockReady && appLockCode && appLockCode.trim()));
 
   return (
     <Card variant="settings" className="profile-input-dark">
       <CardHeader variant="settings">
-        <CardTitle tone="settings" className="flex items-center normal-case tracking-normal">
+        <CardTitle tone="settings" className="flex flex-wrap items-center gap-2 normal-case tracking-normal">
           <User className="mr-2 text-red-400" size={20} />
           Mon profil
+          {emailVerified && (
+            <span className="inline-flex items-center gap-1 rounded-full border border-emerald-600/50 bg-emerald-950/40 px-2.5 py-0.5 text-xs font-medium text-emerald-200">
+              <BadgeCheck className="h-3.5 w-3.5" />
+              Email vérifié
+            </span>
+          )}
         </CardTitle>
       </CardHeader>
       <CardContent>
@@ -110,37 +132,103 @@ const ProfileSettings = ({
             <p className={S.mutedXs}>Le nom d'utilisateur ne peut pas être modifié</p>
           </div>
 
-          <div className="space-y-3">
+          <div className="space-y-3 rounded-xl border border-red-900/40 bg-black/30 p-4">
             <label className={`flex items-center ${S.label}`}>
               <Mail className="mr-2" size={16} />
               Adresse email
             </label>
+            {!emailVerified && (
+              <p className={`rounded-lg border border-amber-800/40 bg-amber-950/20 px-3 py-2 text-xs leading-relaxed text-amber-100/95`}>
+                La vérification se fait ici quand tu veux : envoie le code, saisis-le, puis valide. Ce n’est pas
+                obligatoire pour utiliser l’app ; une fois fait, une pastille « email vérifié » apparaît à côté de ton
+                pseudo dans l’en-tête.
+              </p>
+            )}
+            <ol className={`list-decimal space-y-1 pl-4 text-xs ${S.muted}`}>
+              <li>Saisis l’adresse deux fois (identique) pour éviter les fautes de frappe.</li>
+              <li>Envoie-toi le code, puis recopie-le ci-dessous.</li>
+              <li>Valide : l’email est enregistré et marqué comme vérifié.</li>
+            </ol>
+            <details className="rounded-lg border border-slate-700/60 bg-slate-950/50 p-3 text-xs text-slate-300">
+              <summary className="flex cursor-pointer list-none items-center gap-2 font-medium text-slate-200 [&::-webkit-details-marker]:hidden">
+                <HelpCircle className="h-4 w-4 shrink-0 text-sky-400" />
+                Envoi de mails gratuit (codes / liens)
+              </summary>
+              <ul className="mt-2 list-disc space-y-1.5 pl-4 text-slate-400">
+                <li>
+                  <strong className="text-slate-300">EmailJS</strong> — gratuit (~200 envois/mois), sans backend : crée
+                  un compte sur emailjs.com, un service + modèle qui affiche <code className="text-sky-300">{'{{verification_code}}'}</code>, puis renseigne{' '}
+                  <code className="text-sky-300">VITE_EMAILJS_SERVICE_ID</code>, <code className="text-sky-300">VITE_EMAILJS_TEMPLATE_ID</code>,{' '}
+                  <code className="text-sky-300">VITE_EMAILJS_PUBLIC_KEY</code> dans ton <code className="text-sky-300">.env</code> (voir{' '}
+                  <code className="text-sky-300">.env.example</code>).
+                </li>
+                <li>
+                  <strong className="text-slate-300">Resend</strong> — couche gratuite généreuse ; nécessite un petit
+                  backend pour cacher la clé API (ex. route sur ton serveur Python existant).
+                </li>
+                <li>
+                  <strong className="text-slate-300">Brevo</strong> (ex-Sendinblue) — envois transactionnels gratuits
+                  avec quotas ; idem, clé côté serveur.
+                </li>
+                <li>
+                  <strong className="text-slate-300">SMTP Gmail / Outlook</strong> — possible en perso avec mot de
+                  passe d’application ; à utiliser depuis le backend uniquement.
+                </li>
+              </ul>
+              <p className="mt-2 text-[11px] text-slate-500">
+                Sans EmailJS configuré, l’app affiche le code à l’écran (mode secours) : pratique en dev, à éviter en
+                production.
+              </p>
+            </details>
             <div className="space-y-3">
               <input
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                placeholder="Nouvelle adresse email"
+                placeholder="Adresse email"
                 className={fieldClass}
               />
               <input
                 type="email"
                 value={confirmEmail}
                 onChange={(e) => setConfirmEmail(e.target.value)}
-                placeholder="Confirmer votre adresse email"
+                placeholder="Confirmer la même adresse email"
+                className={fieldClass}
+              />
+              <button
+                type="button"
+                onClick={requestEmailCode}
+                disabled={emailStatus === 'loading' || !email || !confirmEmail}
+                className={`${S.btnPrimary} w-full`}
+              >
+                {emailStatus === 'loading' ? 'Envoi...' : 'Envoyer le code de vérification'}
+              </button>
+              <input
+                type="text"
+                inputMode="numeric"
+                value={emailCode}
+                onChange={(e) => setEmailCode(e.target.value.replace(/\D/g, '').slice(0, 8))}
+                placeholder="Code reçu par email (6 chiffres)"
                 className={fieldClass}
               />
               <button
                 type="button"
                 onClick={handleEmailUpdate}
-                disabled={emailStatus === 'loading' || !email || !confirmEmail || (email === (currentUser.email || '') && confirmEmail === (currentUser.email || ''))}
-                className={`${S.btnPrimary} w-full`}
+                disabled={emailStatus === 'loading' || !emailCode.trim()}
+                className={`${S.btnSecondary} w-full`}
               >
-                {emailStatus === 'loading' ? 'Mise à jour...' : 'Enregistrer l\'email'}
+                Vérifier le code et enregistrer l&apos;email
               </button>
-              {emailError && (
-                <span className="block text-xs text-red-400">{emailError}</span>
+              {emailCodeStatus && (
+                <span
+                  className={`block text-xs ${
+                    /Code envoyé|vérifié|fallback/i.test(emailCodeStatus) ? 'text-emerald-400' : 'text-red-300'
+                  }`}
+                >
+                  {emailCodeStatus}
+                </span>
               )}
+              {emailError && <span className="block text-xs text-red-400">{emailError}</span>}
               {emailStatus === 'success' && (
                 <span className="text-xs text-emerald-400">Email mis à jour avec succès</span>
               )}
@@ -152,20 +240,45 @@ const ProfileSettings = ({
               <Lock className="mr-2" size={16} />
               Changer le mot de passe
             </label>
-            <div className="space-y-3">
+            <p className={`text-xs leading-relaxed ${S.muted}`}>
+              Pour confirmer ton identité : soit ton <strong className="text-slate-200">mot de passe actuel</strong>
+              {lockReady ? (
+                <>
+                  , soit le <strong className="text-slate-200">code de verrouillage de l’app</strong> si tu l’as
+                  configuré dans Paramètres → Verrouillage (l’un ou l’autre suffit).
+                </>
+              ) : (
+                <>.</>
+              )}{' '}
+              Le <strong className="text-slate-200">nouveau</strong> mot de passe doit être saisi{' '}
+              <strong className="text-slate-200">deux fois identiquement</strong>, avec au moins 8 caractères, une
+              majuscule et un caractère spécial (comme à l’inscription). En mode compte serveur, l’ancien mot de passe
+              reste exigé par l’API même si le code app est reconnu localement.
+            </p>
+            <div className="space-y-3 rounded-xl border border-red-900/40 bg-black/30 p-4">
+              {lockReady && (
+                <input
+                  type="password"
+                  value={appLockCode}
+                  onChange={(e) => setAppLockCode(e.target.value)}
+                  placeholder="Code de verrouillage de l’app (alternative au mot de passe actuel)"
+                  autoComplete="off"
+                  className={fieldClass}
+                />
+              )}
               <input
                 type="password"
                 value={oldPassword}
                 onChange={(e) => setOldPassword(e.target.value)}
-                placeholder="Renseignez votre mot de passe actuel"
-                autoComplete="off"
+                placeholder="Mot de passe actuel du compte"
+                autoComplete="current-password"
                 className={fieldClass}
               />
               <input
                 type="password"
                 value={newPassword}
                 onChange={(e) => setNewPassword(e.target.value)}
-                placeholder="Nouveau mot de passe (min. 6 caractères)"
+                placeholder="Nouveau mot de passe (8+ car., 1 maj., 1 car. spécial)"
                 autoComplete="new-password"
                 className={fieldClass}
               />
@@ -173,21 +286,19 @@ const ProfileSettings = ({
                 type="password"
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}
-                placeholder="Confirmer votre mot de passe"
+                placeholder="Retaper le nouveau mot de passe à l’identique"
                 autoComplete="new-password"
                 className={fieldClass}
               />
               <button
                 type="button"
                 onClick={handlePasswordUpdate}
-                disabled={passwordStatus === 'loading' || !oldPassword || !newPassword || !confirmPassword}
+                disabled={passwordStatus === 'loading' || !canSubmitPassword}
                 className={`${S.btnPrimary} w-full`}
               >
                 {passwordStatus === 'loading' ? 'Mise à jour...' : 'Changer le mot de passe'}
               </button>
-              {passwordError && (
-                <span className="block text-xs text-red-400">{passwordError}</span>
-              )}
+              {passwordError && <span className="block text-xs text-red-400">{passwordError}</span>}
               {passwordStatus === 'success' && (
                 <span className="text-xs text-emerald-400">Mot de passe mis à jour avec succès</span>
               )}
@@ -217,12 +328,53 @@ const ProfileSettings = ({
               </p>
               <button
                 type="button"
+                onClick={handlePreviewMigration}
+                disabled={previewStatus === 'loading' || migrationStatus === 'loading'}
+                className={`${S.btnSecondary} mr-2 disabled:opacity-50`}
+              >
+                {previewStatus === 'loading' ? 'Analyse…' : 'Prévisualiser la migration'}
+              </button>
+              <button
+                type="button"
                 onClick={handleMigrateData}
                 disabled={migrationStatus === 'loading'}
                 className={`${S.btnPrimary} disabled:opacity-50`}
               >
                 Associer mes données locales à ce compte
               </button>
+              <button
+                type="button"
+                onClick={handleRollbackMigration}
+                disabled={rollbackStatus === 'loading'}
+                className={`${S.btnSecondary} ml-2 disabled:opacity-50`}
+              >
+                {rollbackStatus === 'loading' ? 'Rollback…' : 'Rollback dernière migration'}
+              </button>
+
+              {previewStatus === 'ready' && migrationPreview && (
+                <div className="mt-3 rounded border border-red-900/45 bg-black/40 p-3 text-xs text-red-100">
+                  <p className="mb-1 font-medium">Prévisualisation :</p>
+                  <p>Livres: {migrationPreview.books}</p>
+                  <p>Nutrition: {migrationPreview.nutrition}</p>
+                  <p>Body tracking: {migrationPreview.bodyTracking}</p>
+                  <p>Garmin: {migrationPreview.garmin}</p>
+                  <p>Programmes: {migrationPreview.programs}</p>
+                  <p>Quêtes: {migrationPreview.quietQuest || 0}</p>
+                  <p>Apprentissage: {migrationPreview.apprentissage || 0}</p>
+                  <p>Finance: {migrationPreview.finance || 0}</p>
+                  <p>Paramètres Garmin: {migrationPreview.garminSettings || 0}</p>
+                  <p className="mt-1 font-semibold">Total: {migrationPreview.total}</p>
+                </div>
+              )}
+              {previewStatus === 'error' && (
+                <p className="mt-2 text-xs text-red-400">Impossible de prévisualiser la migration.</p>
+              )}
+              {rollbackStatus === 'success' && (
+                <p className="mt-2 text-xs text-emerald-400">Rollback terminé avec succès.</p>
+              )}
+              {rollbackStatus === 'error' && (
+                <p className="mt-2 text-xs text-red-400">Rollback impossible ou aucun snapshot disponible.</p>
+              )}
 
               {migrationStatus === 'loading' && (
                 <div className="mt-4 space-y-2">

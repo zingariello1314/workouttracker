@@ -12,8 +12,8 @@
   },
   "cumulativeStats": {
     "streetReps": "Reps programme (exercices cochés)",
-    "volumeLifted": "{{kg}} kg soulevés (reps × kg)",
-    "volumeLiftedHint": "Saisis le poids (kg) sur Aujourd’hui pour les exos lestés — cumul ici.",
+    "volumeLifted": "{{kg}} kg×reps (charge effective)",
+    "volumeLiftedHint": "Cumul dédupliqué (un exo / jour) : séries, option « par bras », haltères — même moteur que l’XP et le récap.",
     "enduranceMinutes": "Minutes sport (endurance)",
     "runningTime": "Temps total course",
     "runningTimeHoursMinutes": "{{h}} h {{m}} min",
@@ -41,6 +41,20 @@
     "totalExercises": "Total exercices",
     "activeDays": "Jours actifs",
     "avgPerDay": "Moyenne/jour"
+  },
+  "heatmapIntensityFactors": {
+    "title": "Ce qui colore une case (calendrier sport)",
+    "intro": "La teinte d’un jour mélange plusieurs signaux ; aucun seul chiffre ne « décide » tout seul.",
+    "bulletLevel": "Niveau 0–4 : exercices cochés du programme, reps / charge street, durée (holds), complémentaire Aujourd’hui, activité Garmin si pas de street.",
+    "bulletLoad": "Charge muscu pondérée : reps × coefficient d’intensité × bonus charge (kg déplacés par rep vs ta médiane).",
+    "bulletGarmin": "kcal actives, pas au-dessus de ta base habituelle, minutes d’intensité Garmin (modéré / soutenu).",
+    "bulletProgram": "Ratio de complétion du programme du jour (bonus sur la teinte).",
+    "bulletFeedback": "Difficulté ressentie si le feedback de séance est renseigné.",
+    "bulletVolumeRel": "Volume kg×reps du jour : petit ajustement par rapport à la médiane du mois (jours passés) et aux trois semaines précédentes.",
+    "volumeHeading": "Volume de charge sur tes données",
+    "volume7d": "7 derniers jours : {{kg}} kg×reps",
+    "volumeAll": "Tout l’historique (dédupliqué) : {{kg}} kg×reps",
+    "volumeDedupeNote": "Si plusieurs variantes (ex. semaine A / B) sont cochées pour le même exercice le même jour, seule l’entrée avec le plus de reps compte — comme le récap muscu et l’XP."
   },
   "legend": {
     "title": "Légende des Justifications",

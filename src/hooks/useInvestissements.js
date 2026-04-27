@@ -17,6 +17,8 @@ import { LRUCache } from '../utils/lruCache';
 import { syncAll as syncAllIncremental } from '../services/finance/investissementsSyncService';
 import { financeDataSync } from '../services/finance/financeDataSync';
 import logger from '../utils/logger';
+import { useAuth } from '../context/AuthContext';
+import { canAccessPrivateData } from '../utils/accessControl';
 
 const log = logger.module('useInvestissements');
 
@@ -98,6 +100,8 @@ function generateAllocationHash(or, liquidites, bourseCrypto, prixOr) {
 }
 
 export const useInvestissements = () => {
+  const { currentUser, isAuthenticated } = useAuth();
+  const canAccessData = canAccessPrivateData({ user: currentUser, isAuthenticated });
   const [or, setOr] = useState(null);
   const [liquidites, setLiquidites] = useState(null);
   const [bourseCrypto, setBourseCrypto] = useState(null);
@@ -115,6 +119,16 @@ export const useInvestissements = () => {
 
   // Charger toutes les données
   const loadData = useCallback(async () => {
+    if (!canAccessData) {
+      setOr(investissementsStorage.getDefaultOrData());
+      setLiquidites(investissementsStorage.getDefaultLiquiditesData());
+      setBourseCrypto(investissementsStorage.getDefaultBourseCryptoData());
+      setAllocation(null);
+      setError(null);
+      setLoading(false);
+      return;
+    }
+
     try {
       setLoading(true);
       setError(null);
@@ -168,7 +182,7 @@ export const useInvestissements = () => {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [canAccessData]);
 
   useEffect(() => {
     loadData();
@@ -177,6 +191,9 @@ export const useInvestissements = () => {
   // ========== OR ==========
 
   const addOrAcquisition = useCallback(async (acquisition) => {
+    if (!canAccessData) {
+      return null;
+    }
     try {
       const saved = await investissementsStorage.saveOrAcquisition(acquisition);
       await loadData();
@@ -185,9 +202,12 @@ export const useInvestissements = () => {
       log.error('Error adding or acquisition:', err);
       throw err;
     }
-  }, [loadData]);
+  }, [canAccessData, loadData]);
 
   const updateOrData = useCallback(async (updates) => {
+    if (!canAccessData) {
+      return investissementsStorage.getDefaultOrData();
+    }
     try {
       const updated = await investissementsStorage.saveOrData({
         ...or,
@@ -199,11 +219,14 @@ export const useInvestissements = () => {
       log.error('Error updating or data:', err);
       throw err;
     }
-  }, [or]);
+  }, [canAccessData, or]);
 
   // ========== LIQUIDITES ==========
 
   const updateLiquidites = useCallback(async (updates) => {
+    if (!canAccessData) {
+      return investissementsStorage.getDefaultLiquiditesData();
+    }
     try {
       const updated = await investissementsStorage.saveLiquiditesData({
         ...liquidites,
@@ -215,9 +238,12 @@ export const useInvestissements = () => {
       log.error('Error updating liquidites:', err);
       throw err;
     }
-  }, [liquidites]);
+  }, [canAccessData, liquidites]);
 
   const addLiquiditesEntry = useCallback(async (entry) => {
+    if (!canAccessData) {
+      return null;
+    }
     try {
       const progression = [...(liquidites?.progression || []), {
         ...entry,
@@ -236,11 +262,14 @@ export const useInvestissements = () => {
       log.error('Error adding liquidites entry:', err);
       throw err;
     }
-  }, [liquidites]);
+  }, [canAccessData, liquidites]);
 
   // ========== BOURSE & CRYPTO ==========
 
   const updateBourseCrypto = useCallback(async (updates) => {
+    if (!canAccessData) {
+      return investissementsStorage.getDefaultBourseCryptoData();
+    }
     try {
       const updated = await investissementsStorage.saveBourseCryptoData({
         ...bourseCrypto,
@@ -252,9 +281,12 @@ export const useInvestissements = () => {
       log.error('Error updating bourse crypto:', err);
       throw err;
     }
-  }, [bourseCrypto]);
+  }, [canAccessData, bourseCrypto]);
 
   const addPosition = useCallback(async (position) => {
+    if (!canAccessData) {
+      return null;
+    }
     try {
       const positions = [...(bourseCrypto?.positions || []), {
         ...position,
@@ -285,7 +317,7 @@ export const useInvestissements = () => {
       log.error('Error adding position:', err);
       throw err;
     }
-  }, [bourseCrypto]);
+  }, [canAccessData, bourseCrypto]);
 
   // ========== ALLOCATION ==========
 
@@ -301,6 +333,21 @@ export const useInvestissements = () => {
    * @returns {Object|null} Allocation calculée ou null
    */
   const calculateAllocation = useCallback(() => {
+    if (!canAccessData) {
+      return {
+        or: 0,
+        liquidites: 0,
+        bourseCrypto: 0,
+        total: 0,
+        details: {
+          valorisationOr: 0,
+          totalLiquidites: 0,
+          valorisationBourseCrypto: 0,
+          prixOr: prixOr || 0
+        }
+      };
+    }
+
     if (!or || !liquidites || !bourseCrypto) return null;
 
     // ✅ SOLUTION 2.2 : Utiliser prix or réel (ou fallback)
@@ -380,9 +427,12 @@ export const useInvestissements = () => {
     allocationCache.set(cacheKey, allocationResult);
     
     return allocationResult;
-  }, [or, liquidites, bourseCrypto, prixOr]);
+  }, [canAccessData, or, liquidites, bourseCrypto, prixOr]);
 
   const updateAllocation = useCallback(async (allocationData) => {
+    if (!canAccessData) {
+      return null;
+    }
     try {
       await investissementsStorage.saveAllocation(allocationData);
       setAllocation(allocationData);
@@ -391,7 +441,7 @@ export const useInvestissements = () => {
       log.error('Error updating allocation:', err);
       throw err;
     }
-  }, []);
+  }, [canAccessData]);
 
   /**
    * ✅ SOLUTION 2.3 : Synchronisation Incrémentale Optimisée
@@ -404,6 +454,9 @@ export const useInvestissements = () => {
    * @returns {Promise<Object>} Allocation calculée après synchronisation
    */
   const synchronizeAssets = useCallback(async (options = {}) => {
+    if (!canAccessData) {
+      return calculateAllocation();
+    }
     try {
       const { forceFullSync = false } = options;
       
@@ -447,17 +500,20 @@ export const useInvestissements = () => {
       await loadData();
       return calculateAllocation();
     }
-  }, [calculateAllocation, loadData]);
+  }, [canAccessData, calculateAllocation, loadData]);
 
   // Charger acquisitions
   const loadAcquisitions = useCallback(async (filters = {}) => {
+    if (!canAccessData) {
+      return [];
+    }
     try {
       return await investissementsStorage.loadAcquisitions(filters);
     } catch (err) {
       log.error('Error loading acquisitions:', err);
       throw err;
     }
-  }, []);
+  }, [canAccessData]);
 
   return {
     // Data

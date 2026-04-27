@@ -16,6 +16,8 @@ import { financeStorage } from '../../services/finance/financeStorage';
 import { loadReadingDayFeedbacks } from '../../utils/readingDayFeedbacksStorage';
 import { getDateStr } from '../../utils/dateUtils';
 import { calendarHeatmapCompositeBackground } from '../../utils/calendarHeatmapTint';
+import { useAuth } from '../../context/AuthContext';
+import { canAccessPrivateData } from '../../utils/accessControl';
 import {
   buildCombinedMonthIntensityMap,
   computeCombinedYearDashboardStats,
@@ -162,6 +164,8 @@ function MiniCombinedMonthGrid({ year, monthIndex, intensityMap, todayStr, onPic
 
 export default function DashboardCombinedActivityCalendar(props) {
   const { onCombinedYearStats } = props || {};
+  const { currentUser, isAuthenticated } = useAuth();
+  const canAccessData = canAccessPrivateData({ user: currentUser, isAuthenticated });
   const [cursor, setCursor] = useState(() => {
     const n = new Date();
     return new Date(n.getFullYear(), n.getMonth(), 1);
@@ -195,6 +199,10 @@ export default function DashboardCombinedActivityCalendar(props) {
   const monthIndex = cursor.getMonth();
 
   useEffect(() => {
+    if (!canAccessData) {
+      setPortfolioLocal([]);
+      return () => {};
+    }
     let alive = true;
     financeStorage
       .loadPortfolio()
@@ -207,10 +215,14 @@ export default function DashboardCombinedActivityCalendar(props) {
     return () => {
       alive = false;
     };
-  }, []);
+  }, [canAccessData]);
 
   const learningUserId = 'main';
   useEffect(() => {
+    if (!canAccessData) {
+      setLearningHistory([]);
+      return () => {};
+    }
     let alive = true;
     const load = async () => {
       try {
@@ -237,9 +249,13 @@ export default function DashboardCombinedActivityCalendar(props) {
     return () => {
       alive = false;
     };
-  }, [learningUserId]);
+  }, [learningUserId, canAccessData]);
 
   useEffect(() => {
+    if (!canAccessData) {
+      setYearAcquisitions([]);
+      return () => {};
+    }
     let alive = true;
     const from = `${year}-01-01`;
     const to = `${year}-12-31`;
@@ -253,7 +269,7 @@ export default function DashboardCombinedActivityCalendar(props) {
     return () => {
       alive = false;
     };
-  }, [year, loadAcquisitions]);
+  }, [year, loadAcquisitions, canAccessData]);
 
   const learningSessionsByDate = useMemo(
     () => buildLearningSessionsByDate(learningHistory),
@@ -293,7 +309,7 @@ export default function DashboardCombinedActivityCalendar(props) {
 
   useEffect(() => {
     let alive = true;
-    if (!dbReady) {
+    if (!canAccessData || !dbReady) {
       setGarminBundle({ dailyMetrics: {}, activities: {} });
       return undefined;
     }
@@ -311,7 +327,7 @@ export default function DashboardCombinedActivityCalendar(props) {
     return () => {
       alive = false;
     };
-  }, [dbReady, loadAllData]);
+  }, [dbReady, loadAllData, canAccessData]);
 
   const questCalendarContext = useMemo(
     () => ({
@@ -325,17 +341,20 @@ export default function DashboardCombinedActivityCalendar(props) {
   );
 
   const combinedCtx = useMemo(() => {
-    const dayFeedbacks = loadReadingDayFeedbacks();
+    const dayFeedbacks = canAccessData ? loadReadingDayFeedbacks() : {};
     return {
-      books,
+      books: canAccessData ? books : [],
       dayFeedbacks,
-      questCalendarContext,
-      workoutData,
-      garminBundle,
-      learningSessionsByDate,
-      financeYearDayMap,
+      questCalendarContext: canAccessData
+        ? questCalendarContext
+        : { validationsByDate: new Map(), validations: [], allQuests: [], getQuestsForDate: () => [], prayerLocation: null },
+      workoutData: canAccessData ? workoutData : {},
+      garminBundle: canAccessData ? garminBundle : { dailyMetrics: {}, activities: {} },
+      learningSessionsByDate: canAccessData ? learningSessionsByDate : new Map(),
+      financeYearDayMap: canAccessData ? financeYearDayMap : new Map(),
     };
   }, [
+    canAccessData,
     books,
     questCalendarContext,
     workoutData,

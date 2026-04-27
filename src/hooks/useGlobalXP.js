@@ -16,12 +16,14 @@ import { loadXPData, saveXPData } from '../services/xp/xpStorage';
 import { calculateXPForAllCategories } from '../services/xp/xpCalculations';
 import { globalLevelProgressFromTotalXp } from '../utils/globalLevelProgress';
 import { levelProgressFromXpAmount } from '../utils/xpLevelFromAmount';
+import { canAccessPrivateData } from '../utils/accessControl';
 
 let globalXpCache = { signature: null, calculated: null, data: null };
 
 // Hook de base - sera complété avec les hooks existants
 const useGlobalXP = () => {
   const { currentUser, isAuthenticated } = useAuth();
+  const canAccessData = canAccessPrivateData({ user: currentUser, isAuthenticated });
   const userId = currentUser?.id || 'main';
   
   const [xpData, setXPData] = useState(globalXpCache.data);
@@ -90,7 +92,8 @@ const useGlobalXP = () => {
   
   // Charger les données sauvegardées
   useEffect(() => {
-    if (!isAuthenticated) {
+    if (!canAccessData) {
+      setXPData(null);
       setIsLoading(false);
       return;
     }
@@ -119,11 +122,11 @@ const useGlobalXP = () => {
     };
     
     loadData();
-  }, [userId, isAuthenticated]);
+  }, [userId, canAccessData]);
   
   // Sauvegarder quand l'XP change
   useEffect(() => {
-    if (!xpData || !isAuthenticated || isLoading) return;
+    if (!xpData || !canAccessData || isLoading) return;
     
     // Comparer avec les données calculées
     const needsUpdate = 
@@ -144,13 +147,13 @@ const useGlobalXP = () => {
         console.error('Erreur sauvegarde XP:', error);
       });
     }
-  }, [calculatedXP, xpData, isAuthenticated, isLoading]);
+  }, [calculatedXP, xpData, canAccessData, isLoading]);
   
   // Calculer le niveau et la progression
   const levelInfo = useMemo(() => {
-    if (!xpData) return globalLevelProgressFromTotalXp(0);
+    if (!canAccessData || !xpData) return globalLevelProgressFromTotalXp(0);
     return globalLevelProgressFromTotalXp(xpData.totalXP);
-  }, [xpData]);
+  }, [canAccessData, xpData]);
 
   /** Niveau affiché par case = celui de l’onglet / moteur réel (pas la courbe globale sur la tranche XP). */
   const categoryLevels = useMemo(() => {
@@ -178,11 +181,11 @@ const useGlobalXP = () => {
   ]);
 
   return {
-    totalXP: xpData?.totalXP || 0,
+    totalXP: canAccessData ? (xpData?.totalXP || 0) : 0,
     level: levelInfo.level,
-    xpByCategory: xpData?.xpByCategory || {},
+    xpByCategory: canAccessData ? (xpData?.xpByCategory || {}) : {},
     progress: levelInfo.progress,
-    details: xpData?.details || {},
+    details: canAccessData ? (xpData?.details || {}) : {},
     categoryLevels,
     isLoading
   };

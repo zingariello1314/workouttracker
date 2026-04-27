@@ -35,6 +35,7 @@ import { DEFAULT_PROGRESS_FORM } from './WorkoutContext/constants';
 import { normalizeRepsValue } from './WorkoutContext/utils';
 import { filterExercisesForSessionDate } from '../utils/programExerciseScheduling';
 import { buildTemplateProgramsForFirstLaunch } from '../utils/programPersistenceUtils';
+import { isAdminUser } from '../utils/accessControl';
 
 const WorkoutContext = createContext();
 
@@ -131,7 +132,7 @@ const WorkoutProvider = ({ children }) => {
 
   // Authentification : déterminer l'utilisateur courant et l'admin
   const { currentUser, isAuthenticated } = useAuth();
-  const isAdmin = currentUser?.role === 'admin' || currentUser?.username === 'zingariello1314';
+  const isAdmin = isAdminUser(currentUser);
   const storageKey = useMemo(() => {
     if (isAdmin) return 'main'; // ✅ Les anciennes données "globales" deviennent les données admin
     if (currentUser?.id) return `user-${currentUser.id}`;
@@ -163,7 +164,8 @@ const WorkoutProvider = ({ children }) => {
     setActiveProgram,
     setProgramHistory,
     setWeekVariant,
-    setIsGymMode
+    setIsGymMode,
+    storageKey
   );
 
   const persistProgramsPartial = useCallback(
@@ -296,6 +298,17 @@ const WorkoutProvider = ({ children }) => {
     return index + 10000;
   }, []);
 
+  const makeUniqueNumericId = useCallback((baseId, usedIds) => {
+    let candidate = baseId;
+    let offset = 1;
+    while (usedIds.has(candidate)) {
+      candidate = baseId + offset;
+      offset += 1;
+    }
+    usedIds.add(candidate);
+    return candidate;
+  }, []);
+
   // Mettre à jour le mapping des IDs quand le programme actif change
   useEffect(() => {
     exerciseIdMappingRef.current.clear();
@@ -305,9 +318,11 @@ const WorkoutProvider = ({ children }) => {
       
       dayNames.forEach(dayName => {
         const daySchedule = activeProgram.schedule[dayName];
+        const usedIds = new Set();
         if (daySchedule && daySchedule.exercises) {
           daySchedule.exercises.forEach((ex, index) => {
-            const numericId = convertToStableNumericId(ex.id, index);
+            const baseId = convertToStableNumericId(ex.id, index);
+            const numericId = makeUniqueNumericId(baseId, usedIds);
             exerciseIdMappingRef.current.set(numericId, {
               name: ex.name,
               originalId: ex.id
@@ -319,7 +334,8 @@ const WorkoutProvider = ({ children }) => {
             const list = daySchedule.salleVariants[vk]?.exercises;
             if (Array.isArray(list)) {
               list.forEach((ex, index) => {
-                const numericId = convertToStableNumericId(ex.id, index);
+                const baseId = convertToStableNumericId(ex.id, index);
+                const numericId = makeUniqueNumericId(baseId, usedIds);
                 exerciseIdMappingRef.current.set(numericId, {
                   name: ex.name,
                   originalId: ex.id
@@ -330,7 +346,7 @@ const WorkoutProvider = ({ children }) => {
         }
       });
     }
-  }, [activeProgram, convertToStableNumericId]);
+  }, [activeProgram, convertToStableNumericId, makeUniqueNumericId]);
 
   // Fonction pour récupérer le nom d'un exercice à partir de son ID
   // ⚠️ IMPORTANT : Définie avant useWorkoutHistory pour éviter l'erreur "Cannot access before initialization"
@@ -444,8 +460,10 @@ const WorkoutProvider = ({ children }) => {
         
         // Convertir le format du programme actif au format attendu
         // Générer des IDs numériques stables pour chaque exercice
+        const usedIds = new Set();
         const exercises = exercisesToUse.map((ex, index) => {
-          const numericId = convertToStableNumericId(ex.id, index);
+          const baseId = convertToStableNumericId(ex.id, index);
+          const numericId = makeUniqueNumericId(baseId, usedIds);
           
           return {
             id: numericId,
@@ -508,7 +526,7 @@ const WorkoutProvider = ({ children }) => {
         isGymMode: false,
         weekVariant: getAutoWeekVariant(currentDate)
       };
-  }, [activeProgram, workoutLogic, convertToStableNumericId, workoutDayOverride]);
+  }, [activeProgram, workoutLogic, convertToStableNumericId, makeUniqueNumericId, workoutDayOverride]);
 
   // ✅ PHASE 4 : addProgressEntry, updateProgressEntry, deleteProgressEntry, deleteProgressEntryField,
   // addProgressPhoto, updateProgressPhoto, deleteProgressPhoto sont maintenant dans useWorkoutProgress
@@ -1402,6 +1420,15 @@ const WorkoutProvider = ({ children }) => {
   };
 
   useEffect(() => {
+    if (!isAuthenticated || !currentUser) {
+      // Vue déconnectée : état programme vide immédiat (aucune fuite de la session précédente).
+      setPrograms([]);
+      setActiveProgram(null);
+      setProgramHistory([]);
+      isInitialLoadRef.current = false;
+      return;
+    }
+
     const initializeContext = async () => {
       try {
         const saved = await loadContext();
@@ -1414,18 +1441,21 @@ const WorkoutProvider = ({ children }) => {
         let mutated = false;
 
         if (programsSnapshot.length === 0) {
-          const { defaultProgram, optimizedProgram } = buildTemplateProgramsForFirstLaunch();
-          programsSnapshot = [defaultProgram, optimizedProgram];
-          activeSnapshot = defaultProgram;
+          if (isAdmin) {
+            const { defaultProgram, optimizedProgram } = buildTemplateProgramsForFirstLaunch();
+            programsSnapshot = [defaultProgram, optimizedProgram];
+            activeSnapshot = defaultProgram;
+            mutated = true;
+          } else {
+            // Nouveau compte non-admin : zéro programme par défaut.
+            programsSnapshot = [];
+            activeSnapshot = null;
+          }
           setPrograms(programsSnapshot);
           setActiveProgram(activeSnapshot);
-          mutated = true;
         }
 
-        const zingaUser =
-          currentUser?.username === 'zingariello131' ||
-          currentUser?.username === 'zingariello1314';
-        if (zingaUser) {
+        if (isAdmin) {
           const exists = programsSnapshot.some(
             (p) => p.id === newMusculationProgram.id || p.name === newMusculationProgram.name
           );
@@ -1458,11 +1488,9 @@ const WorkoutProvider = ({ children }) => {
       }
     };
     
-    if (isAuthenticated && currentUser) {
-      initializeContext();
-    }
+    initializeContext();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [currentUser, isAuthenticated]); // Exécuter quand l'utilisateur change
+  }, [currentUser, isAuthenticated, isAdmin]); // Exécuter quand l'utilisateur change
 
   // S'assurer que contextValue est toujours défini avant de rendre
   if (!contextValue) {

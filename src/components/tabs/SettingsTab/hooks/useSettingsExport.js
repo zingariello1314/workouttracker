@@ -139,6 +139,13 @@ export const useSettingsExport = (data, loadFromDB, exportGarminData, exportNutr
           totalExercises: Object.keys(dataToExport.checkedExercises || {}).length,
           totalReps: Object.keys(dataToExport.reps || {}).length,
           totalStretches: Object.keys(dataToExport.checkedStretches || {}).length,
+          loadTracking: {
+            exerciseWeightKeys: Object.keys(dataToExport.exerciseWeights || {}).length,
+            exercisePerArmKeys: Object.keys(dataToExport.exerciseWeightPerArm || {}).filter(
+              (k) => dataToExport.exerciseWeightPerArm[k] === true
+            ).length,
+            exerciseSetWeightKeys: Object.keys(dataToExport.exerciseSetWeights || {}).length
+          },
           historyReps: Object.keys(dataToExport.historyReps || {}).length,
           progressPhotos: (dataToExport.progressPhotos || []).length,
           progressEntries: (dataToExport.progressEntries || []).length,

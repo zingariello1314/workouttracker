@@ -26,7 +26,9 @@ import {
   STORE_ACTIVITIES,
   STORE_DAILY_METRICS,
   STORE_DEVICE_META,
-  readStorageBucket
+  readStorageBucket,
+  recordBelongsToCurrentScope,
+  getGarminScope
 } from './garminDataUtils';
 import { multiStoreLoader } from './garmin/storage/MultiStoreLoader';
 
@@ -307,7 +309,7 @@ const loadActivitiesFromIndexedDB = async (db, startDate = null, endDate = null)
       });
       
       allActivities.forEach(activity => {
-        if (!activity || !activity.type) return;
+        if (!activity || !activity.type || !recordBelongsToCurrentScope(activity)) return;
         
         // Filtrer par plage si spécifiée
         if (startDate && endDate && activity.date) {
@@ -341,7 +343,7 @@ const loadActivitiesFromIndexedDB = async (db, startDate = null, endDate = null)
       });
       
       activitiesResults.forEach(activity => {
-        if (!activity || !activity.type) return;
+        if (!activity || !activity.type || !recordBelongsToCurrentScope(activity)) return;
         if (activity.type === 'swimming') {
           activities.swimming.push(activity);
         } else if (activity.type === 'jumpRope') {
@@ -359,7 +361,7 @@ const loadActivitiesFromIndexedDB = async (db, startDate = null, endDate = null)
       });
       
       allActivities.forEach(activity => {
-        if (!activity || !activity.type) return;
+        if (!activity || !activity.type || !recordBelongsToCurrentScope(activity)) return;
         if (activity.type === 'swimming') {
           activities.swimming.push(activity);
         } else if (activity.type === 'jumpRope') {
@@ -411,7 +413,7 @@ const loadDailyMetricsFromIndexedDB = async (db, startDate = null, endDate = nul
       });
       
       allMetrics.forEach(metric => {
-        if (!metric || !metric.date) return;
+        if (!metric || !metric.date || !recordBelongsToCurrentScope(metric)) return;
         
         // Filtrer par plage si spécifiée
         if (startDate && endDate) {
@@ -440,7 +442,7 @@ const loadDailyMetricsFromIndexedDB = async (db, startDate = null, endDate = nul
       
       // Convertir en objet { date: metrics } (sans la clé date dans la valeur)
       metricsResults.forEach(metric => {
-        if (metric && metric.date) {
+        if (metric && metric.date && recordBelongsToCurrentScope(metric)) {
           const { date, ...rest } = metric;
           dailyMetrics[date] = rest;
         }
@@ -454,7 +456,7 @@ const loadDailyMetricsFromIndexedDB = async (db, startDate = null, endDate = nul
       });
       
       allMetrics.forEach(metric => {
-        if (metric && metric.date) {
+        if (metric && metric.date && recordBelongsToCurrentScope(metric)) {
           const { date, ...rest } = metric;
           dailyMetrics[date] = rest;
         }
@@ -690,8 +692,10 @@ export const loadDataForTab = async (
  * @returns {Promise<string|null>} Date de dernière sync (YYYY-MM-DD) ou null
  */
 export const getLastSyncDate = async () => {
+  const scope = getGarminScope();
+  const syncKey = `lastSyncDate:${scope}`;
   if (getUseFallback()) {
-    return localStorage.getItem('garmin_lastSyncDate') || null;
+    return localStorage.getItem(`garmin_lastSyncDate:${scope}`) || null;
   }
 
   const db = await openDB();
@@ -700,7 +704,7 @@ export const getLastSyncDate = async () => {
   const tx = db.transaction([STORE_DEVICE_META], 'readonly');
   const store = tx.objectStore(STORE_DEVICE_META);
   // ✅ PHASE 1.5 : Utiliser helper avec retry
-  const meta = await getFromStoreWithRetry(store, 'lastSyncDate', {
+  const meta = await getFromStoreWithRetry(store, syncKey, {
     store: STORE_DEVICE_META,
     operation: 'getLastSyncDate'
   });
@@ -714,18 +718,20 @@ export const getLastSyncDate = async () => {
  */
 export const setLastSyncDate = async (date) => {
   if (!date) return;
+  const scope = getGarminScope();
+  const syncKey = `lastSyncDate:${scope}`;
   
   try {
     if (getUseFallback()) {
       // Fallback localStorage
-      localStorage.setItem('garmin_lastSyncDate', date);
+      localStorage.setItem(`garmin_lastSyncDate:${scope}`, date);
       return;
     }
 
     const db = await openDB();
     if (!db) {
       setUseFallback(true);
-      localStorage.setItem('garmin_lastSyncDate', date);
+      localStorage.setItem(`garmin_lastSyncDate:${scope}`, date);
       return;
     }
 
@@ -735,10 +741,10 @@ export const setLastSyncDate = async (date) => {
     // ✅ PHASE 1.5 : Utiliser retry pour put
     await retryWithBackoff(
       () => new Promise((resolve, reject) => {
-        const req = store.put({ key: 'lastSyncDate', value: date, updatedAt: new Date().toISOString() });
+        const req = store.put({ key: syncKey, value: date, updatedAt: new Date().toISOString(), userId: scope });
         req.onsuccess = () => {
           // Sauvegarder aussi dans localStorage en backup
-          localStorage.setItem('garmin_lastSyncDate', date);
+          localStorage.setItem(`garmin_lastSyncDate:${scope}`, date);
           resolve();
         };
         req.onerror = () => {
@@ -763,7 +769,7 @@ export const setLastSyncDate = async (date) => {
     }, 'error');
     log.warn('[setLastSyncDate] Falling back to localStorage');
     setUseFallback(true);
-    localStorage.setItem('garmin_lastSyncDate', date);
+    localStorage.setItem(`garmin_lastSyncDate:${scope}`, date);
   }
 };
 

@@ -9,6 +9,7 @@ import {
 } from './recapMuscleLoadEngine';
 import { inferMuscleGroupsForExercise } from './recapMuscleInference';
 import { addCalendarDays, inclusiveCalendarSpanDays } from './garminRunningPeriodStats';
+import { computeVolumeKgForWorkoutKey } from '../exerciseLoadVolume';
 
 const makeDbExerciseId = (key) =>
   `db_${String(key)
@@ -22,6 +23,34 @@ const EXERCISE_DB_NAME_BY_ID = Object.entries(exerciseDatabase).reduce((acc, [ke
   acc[makeDbExerciseId(key)] = ex?.name || key;
   return acc;
 }, {});
+
+function maxRecordedWeightKgInWindow(allData, window) {
+  const weights = allData?.exerciseWeights || {};
+  const setW = allData?.exerciseSetWeights || {};
+  let max = 0;
+  const parseNum = (s) => {
+    const n = parseFloat(String(s).replace(',', '.'));
+    return Number.isFinite(n) ? n : 0;
+  };
+  Object.keys(weights).forEach((k) => {
+    if (!/^\d{4}-\d{2}-\d{2}_/.test(k)) return;
+    const d = k.slice(0, 10);
+    if (!isDateInRecapWindow(d, window)) return;
+    const n = parseNum(weights[k]);
+    if (n > max) max = n;
+  });
+  Object.entries(setW).forEach(([k, arr]) => {
+    if (!/^\d{4}-\d{2}-\d{2}_/.test(k)) return;
+    const d = k.slice(0, 10);
+    if (!isDateInRecapWindow(d, window)) return;
+    if (!Array.isArray(arr)) return;
+    arr.forEach((cell) => {
+      const n = parseNum(cell);
+      if (n > max) max = n;
+    });
+  });
+  return max;
+}
 
 const resolveExerciseNameForRecap = (exerciseId, getExerciseNameById) => {
   const idStr = String(exerciseId || '').trim();
@@ -63,7 +92,6 @@ export function buildRecapStrengthCompareModel(allData, period, getExerciseNameB
   let currStart = window.start;
   const reps = allData?.reps || {};
   const checked = allData?.checkedExercises || {};
-  const weightsMap = allData?.exerciseWeights || {};
   const grouped = aggregateCheckedRepsByDateAndExerciseId(reps, checked);
 
   if (currStart == null) {
@@ -79,6 +107,7 @@ export function buildRecapStrengthCompareModel(allData, period, getExerciseNameB
   const repsByDateCurr = new Map();
   const repsByDatePrev = new Map();
   const byExerciseCurr = new Map();
+  const volumeByExerciseCurr = new Map();
   let totalLiftedKgRepCurr = 0;
   let maxSingleWeight = 0;
   const activeDays = new Set();
@@ -103,11 +132,9 @@ export function buildRecapStrengthCompareModel(allData, period, getExerciseNameB
       current.reps += rInt;
       if (!current.name && exName) current.name = exName;
       byExerciseCurr.set(idStr, current);
-      const weight = Number(weightsMap[storageKey]) || 0;
-      if (weight > 0) {
-        totalLiftedKgRepCurr += weight * rInt;
-        if (weight > maxSingleWeight) maxSingleWeight = weight;
-      }
+      const volK = computeVolumeKgForWorkoutKey(storageKey, allData);
+      totalLiftedKgRepCurr += volK;
+      volumeByExerciseCurr.set(idStr, (volumeByExerciseCurr.get(idStr) || 0) + volK);
     }
     if (inPrev) {
       totalRepsPrev += rInt;
@@ -140,6 +167,8 @@ export function buildRecapStrengthCompareModel(allData, period, getExerciseNameB
     }
   });
 
+  maxSingleWeight = maxRecordedWeightKgInWindow(allData, currWin);
+
   const exercisesRanked = [];
   byExerciseCurr.forEach((entry, exId) => {
     const sumReps = Number(entry?.reps || 0);
@@ -162,6 +191,18 @@ export function buildRecapStrengthCompareModel(allData, period, getExerciseNameB
   exercisesRanked.sort((a, b) => b.reps - a.reps);
   const topExercise = exercisesRanked[0] || null;
   const top3Exercises = exercisesRanked.slice(0, 3);
+
+  const liftVolumeByExercise = [];
+  volumeByExerciseCurr.forEach((volumeKg, exId) => {
+    const fromRanked = exercisesRanked.find((x) => String(x.id) === String(exId));
+    liftVolumeByExercise.push({
+      id: exId,
+      name: fromRanked?.name || resolveExerciseNameForRecap(exId, getExerciseNameById) || `Exercice ${exId}`,
+      reps: fromRanked?.reps ?? 0,
+      volumeKg
+    });
+  });
+  liftVolumeByExercise.sort((a, b) => b.volumeKg - a.volumeKg);
 
   const muscleTotals = new Map();
   exercisesRanked.forEach(({ id, name, reps }) => {
@@ -224,5 +265,6 @@ export function buildRecapStrengthCompareModel(allData, period, getExerciseNameB
     changeValue,
     currStart,
     endStr,
+    liftVolumeByExercise,
   };
 }
