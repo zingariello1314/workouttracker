@@ -1255,6 +1255,337 @@ export const exerciseDatabase = {
       variations: ["dynamic plank", "planche dynamique", "gainage mouvements"]
     },
 
+  // STREET WORKOUT — AJOUTS (poids du corps / parc, sans doublons avec les entrées ci-dessus)
+  "muscle up strict": {
+    name: "Muscle up strict",
+    category: "Dorsaux",
+    primaryMuscles: ["Grand dorsal", "Triceps brachial"],
+    secondaryMuscles: ["Deltoïdes antérieurs", "Core", "Avant-bras"],
+    equipment: "Barre de traction",
+    difficulty: 4,
+    description:
+      "Enchaînement traction explosive suivie d'une transition contrôlée au-dessus de la barre puis extension complète des bras. Exige une forte traction, un timing de faux-assis et une stabilité d'épaule.",
+    variations: ["muscle-up strict", "muscle up bar", "muscle-up barre"]
+  },
+  "tractions commando": {
+    name: "Tractions commando",
+    category: "Dorsaux",
+    primaryMuscles: ["Grand dorsal", "Rhomboïdes"],
+    secondaryMuscles: ["Biceps brachial", "Deltoïdes postérieurs", "Obliques", "Core"],
+    equipment: "Barre de traction",
+    difficulty: 2,
+    description:
+      "Prise neutre, alternance latérale du menton d'un côté puis de l'autre de la barre. Travaille le dos en anti-rotation et sollicite fortement la gaine.",
+    variations: ["commando pull-ups", "typewriter commando", "tractions prise neutre alternées"]
+  },
+  "tractions typewriter": {
+    name: "Tractions typewriter",
+    category: "Dorsaux",
+    primaryMuscles: ["Grand dorsal", "Trapèzes moyens"],
+    secondaryMuscles: ["Biceps brachial", "Brachial antérieur", "Deltoïdes postérieurs", "Core"],
+    equipment: "Barre de traction",
+    difficulty: 3,
+    description:
+      "En haut de traction, déplacement horizontal contrôlé d'un bras puis de l'autre comme une machine à écrire. Accent unilatéral sur le dos et les avant-bras.",
+    variations: ["typewriter pull-ups", "tractions machine à écrire"]
+  },
+  "tractions archer": {
+    name: "Tractions archer",
+    category: "Dorsaux",
+    primaryMuscles: ["Grand dorsal", "Rhomboïdes"],
+    secondaryMuscles: ["Biceps brachial", "Brachial antérieur", "Deltoïdes postérieurs", "Core"],
+    equipment: "Barre de traction",
+    difficulty: 3,
+    description:
+      "Un bras reste tendu en appui, l'autre tire fortement pour charger un côté du dos. Progression vers le tirage une main.",
+    variations: ["archer pull-ups", "tractions un bras assisté", "archer chin-up"]
+  },
+  "tractions en l": {
+    name: "Tractions en L",
+    category: "Dorsaux",
+    primaryMuscles: ["Grand dorsal", "Grand droit de l'abdomen"],
+    secondaryMuscles: ["Fléchisseurs de hanche", "Biceps brachial", "Deltoïdes postérieurs"],
+    equipment: "Barre de traction",
+    difficulty: 3,
+    description:
+      "Jambes tendues à l'horizontale en L pendant la traction. Combine force de tirage et compression abdominale isométrique.",
+    variations: ["L pull-ups", "L-pull-up", "tractions L-sit"]
+  },
+  "l-sit barre de traction": {
+    name: "L-sit à la barre de traction",
+    category: "Abdominaux",
+    primaryMuscles: ["Fléchisseurs de hanche", "Grand droit de l'abdomen"],
+    secondaryMuscles: ["Triceps brachial", "Deltoïdes antérieurs", "Transverse de l'abdomen"],
+    equipment: "Barre de traction",
+    difficulty: 2,
+    description:
+      "Suspendu en prise pronation, corps compact, jambes tendues parallèle au sol. Renforce la compression de hanche et la dépression d'omoplate.",
+    variations: ["L-sit hang", "L sit bar", "hanging L-sit"]
+  },
+  "l-sit parallèles": {
+    name: "L-sit aux parallèles",
+    category: "Abdominaux",
+    primaryMuscles: ["Triceps brachial", "Fléchisseurs de hanche"],
+    secondaryMuscles: ["Deltoïdes antérieurs", "Grand droit de l'abdomen", "Trapèzes inférieurs"],
+    equipment: "Barres parallèles",
+    difficulty: 2,
+    description:
+      "Appui sur les mains, épaules au-dessus des poignets, jambes tendues devant. Fondamental de calisthénie pour la stabilité d'épaule et le core.",
+    variations: ["L-sit dips support", "L sit parallels", "L-sit sur barres"]
+  },
+  "human flag tuck": {
+    name: "Human flag tuck",
+    category: "Abdominaux",
+    primaryMuscles: ["Obliques", "Deltoïdes", "Grand dorsal"],
+    secondaryMuscles: ["Trapèzes", "Fessiers", "Quadriceps"],
+    equipment: "Barre verticale / poteau",
+    difficulty: 4,
+    description:
+      "Corps aligné latéralement au poteau, jambes ramenées en tuck pour réduire le levier. Travail intense des obliques et de la chaîne latérale.",
+    variations: ["human flag tuck", "drapeau humain tuck", "side lever tuck"]
+  },
+  "back lever tuck": {
+    name: "Back lever tuck",
+    category: "Dorsaux",
+    primaryMuscles: ["Deltoïdes postérieurs", "Grand dorsal", "Triceps longue portion"],
+    secondaryMuscles: ["Trapèzes", "Core", "Biceps brachial"],
+    equipment: "Barre de traction / anneaux",
+    difficulty: 4,
+    description:
+      "Corps horizontal ventre vers le ciel, genoux ramenés, bras tendus. Isométrie avancée pour l'arrière d'épaule et la chaîne postérieure du haut du corps.",
+    variations: ["back lever tuck", "lever arrière tuck", "reverse planche tuck"]
+  },
+  "front lever tuck isométrique": {
+    name: "Front lever tuck isométrique",
+    category: "Dorsaux",
+    primaryMuscles: ["Grand dorsal", "Grand droit de l'abdomen"],
+    secondaryMuscles: ["Deltoïdes postérieurs", "Triceps brachial", "Fessiers"],
+    equipment: "Barre de traction",
+    difficulty: 4,
+    description:
+      "Maintien horizontal ventre vers le sol avec cuisses serrées contre le buste. Préparation structurée au front lever complet sans rowing dynamique.",
+    variations: ["front lever tuck hold", "FL tuck statique", "front lever isometric tuck"]
+  },
+  "planche sur coudes": {
+    name: "Planche sur coudes (elbow lever)",
+    category: "Épaules",
+    primaryMuscles: ["Deltoïdes antérieurs", "Triceps brachial"],
+    secondaryMuscles: ["Trapèzes", "Core", "Pectoraux"],
+    equipment: "Barres parallèles / barre basse",
+    difficulty: 3,
+    description:
+      "Corps horizontal appuyé sur les avant-bras ou coudes au-dessus du support. Charge importante sur le deltoïde antérieur et le gainage.",
+    variations: ["elbow lever", "crook hold", "planche coudes street"]
+  },
+  "inclinaison pseudo-planche statique": {
+    name: "Inclinaison pseudo-planche statique",
+    category: "Épaules",
+    primaryMuscles: ["Deltoïdes antérieurs", "Pectoraux supérieurs"],
+    secondaryMuscles: ["Triceps brachial", "Core", "Avant-bras"],
+    equipment: "Sol",
+    difficulty: 3,
+    description:
+      "Position de pompe avec doigts orientés vers les pieds et corps projeté vers l'avant sans flexion/extension des coudes. Base pour la force de planche.",
+    variations: ["pseudo planche lean", "pseudo planche hold", "inclinaison statique street"]
+  },
+  "frog stand": {
+    name: "Frog stand",
+    category: "Épaules",
+    primaryMuscles: ["Deltoïdes antérieurs", "Triceps brachial"],
+    secondaryMuscles: ["Core", "Avant-bras"],
+    equipment: "Sol",
+    difficulty: 1,
+    description:
+      "Équilibre sur les mains genoux posés sur les coudes. Développe la proprioception des poignets et la compression d'épaule pour les figures acrobatiques.",
+    variations: ["frogstand", "équilibre grenouille", "crow prep frog"]
+  },
+  "déplacements équilibre sur les mains": {
+    name: "Déplacements en équilibre sur les mains",
+    category: "Épaules",
+    primaryMuscles: ["Deltoïdes", "Triceps brachial"],
+    secondaryMuscles: ["Trapèzes", "Core", "Avant-bras"],
+    equipment: "Sol / gazon",
+    difficulty: 3,
+    description:
+      "Petits pas contrôlés en appui mains, corps aligné. Renforce la stabilité dynamique des épaules avant les développés verticaux libres.",
+    variations: ["handstand walk", "walk on hands", "équilibre mains pas"]
+  },
+  "burpees": {
+    name: "Burpees",
+    category: "Quadriceps",
+    primaryMuscles: ["Quadriceps", "Fessiers", "Pectoraux"],
+    secondaryMuscles: ["Deltoïdes antérieurs", "Triceps", "Core", "Grand dorsal"],
+    equipment: "Poids du corps",
+    difficulty: 2,
+    description:
+      "Squat mains au sol, saut arrière en planche, pompe optionnelle, retour squat puis extension verticale avec saut. Mouvement complet cardio-muscu de rue.",
+    variations: ["burpee", "squat thrust", "burpees stricts"]
+  },
+  "bear crawl": {
+    name: "Bear crawl",
+    category: "Abdominaux",
+    primaryMuscles: ["Core", "Deltoïdes"],
+    secondaryMuscles: ["Quadriceps", "Fessiers", "Trapèzes"],
+    equipment: "Sol",
+    difficulty: 1,
+    description:
+      "Quadrupédie avec genoux décollés, déplacement coordonné bras-jambe opposés. Excellent pour la stabilité du tronc et l'endurance d'épaule.",
+    variations: ["bear walk", "marche ours", "crawling ours"]
+  },
+  "squat cosaque": {
+    name: "Squat cosaque",
+    category: "Quadriceps",
+    primaryMuscles: ["Quadriceps", "Fessiers", "Adducteurs"],
+    secondaryMuscles: ["Ischio-jambiers", "Core"],
+    equipment: "Poids du corps",
+    difficulty: 2,
+    description:
+      "Grande fente latérale jambe tendue pointée, fesse en arrière sur la jambe de travail. Mobilité hanche et force unilatérale typique du street leg day.",
+    variations: ["cossack squat", "squat latéral", "side squat deep"]
+  },
+  "dips aux anneaux": {
+    name: "Dips aux anneaux",
+    category: "Triceps",
+    primaryMuscles: ["Triceps brachial", "Pectoraux inférieurs"],
+    secondaryMuscles: ["Deltoïdes antérieurs", "Core", "Avant-bras"],
+    equipment: "Anneaux de gymnastique",
+    difficulty: 3,
+    description:
+      "Dips sur anneaux instables : stabilisation accrue des épaules et du gainage par rapport aux barres fixes.",
+    variations: ["ring dips", "dips rings", "répulsions anneaux"]
+  },
+  "tractions inversées aux anneaux": {
+    name: "Tractions inversées aux anneaux",
+    category: "Dorsaux",
+    primaryMuscles: ["Grand dorsal", "Rhomboïdes"],
+    secondaryMuscles: ["Biceps brachial", "Deltoïdes postérieurs", "Core"],
+    equipment: "Anneaux de gymnastique",
+    difficulty: 1,
+    description:
+      "Corps incliné, pieds au sol, tirage vers les anneaux à hauteur de poitrine. Instabilité des anneaux pour recruter davantage le dos et le gainage qu’à la barre fixe.",
+    variations: ["ring rows", "inverted ring row", "bodyweight ring row", "inverted bodyweight rings"]
+  },
+  "dips barre droite": {
+    name: "Dips barre droite",
+    category: "Triceps",
+    primaryMuscles: ["Triceps brachial", "Pectoraux inférieurs"],
+    secondaryMuscles: ["Deltoïdes antérieurs", "Core"],
+    equipment: "Barre horizontale basse",
+    difficulty: 2,
+    description:
+      "Dips sur une seule barre droite devant le corps, prise pronation. Sollicite davantage les avant-bras et le contrôle que les parallèles classiques.",
+    variations: ["straight bar dips", "dips barre fixe", "bar dips"]
+  },
+  "skin the cat": {
+    name: "Skin the cat",
+    category: "Épaules",
+    primaryMuscles: ["Deltoïdes postérieurs", "Grand dorsal"],
+    secondaryMuscles: ["Triceps longue portion", "Core", "Trapèzes"],
+    equipment: "Anneaux / barre de traction",
+    difficulty: 2,
+    description:
+      "Rotation contrôlée des épaules en passant les pieds au-dessus de la tête suspendu. Mobilité et renforcement de la coiffe en amplitude étendue.",
+    variations: ["skin the cat gymnastics", "rotation suspendue épaules", "German hang prep"]
+  },
+  "tractions scapulaires": {
+    name: "Tractions scapulaires",
+    category: "Dorsaux",
+    primaryMuscles: ["Trapèzes moyens et inférieurs", "Rhomboïdes"],
+    secondaryMuscles: ["Grand dorsal", "Biceps brachial"],
+    equipment: "Barre de traction",
+    difficulty: 1,
+    description:
+      "Bras tendus, uniquement dépression et rétraction des omoplates sans plier les coudes. Fondamental d'activation avant tractions ou muscle-up.",
+    variations: ["scapular pull-ups", "scap pull", "traction omoplates"]
+  },
+  "windshield wipers barre": {
+    name: "Windshield wipers à la barre",
+    category: "Abdominaux",
+    primaryMuscles: ["Obliques", "Grand droit de l'abdomen"],
+    secondaryMuscles: ["Fléchisseurs de hanche", "Grand dorsal", "Avant-bras"],
+    equipment: "Barre de traction",
+    difficulty: 3,
+    description:
+      "Suspendu, hanches flexées vers le haut, rotation contrôlée des jambes d'un côté à l'autre comme des essuie-glaces. Forte sollicitation des obliques.",
+    variations: ["windshield wipers", "essuie-glaces barre", "hanging wipers"]
+  },
+  "ice cream makers": {
+    name: "Ice cream makers",
+    category: "Dorsaux",
+    primaryMuscles: ["Grand dorsal", "Grand droit de l'abdomen"],
+    secondaryMuscles: ["Biceps brachial", "Deltoïdes postérieurs", "Fléchisseurs de hanche"],
+    equipment: "Barre de traction",
+    difficulty: 3,
+    description:
+      "Depuis le haut de traction, bascule contrôlée vers tuck avant puis retour. Pont entre traction forte et contrôle de front lever.",
+    variations: ["ice cream maker pull", "front lever swing tuck", "ice cream makers bar"]
+  },
+  "tenue équilibre sur les mains mur": {
+    name: "Tenue en équilibre sur les mains au mur",
+    category: "Épaules",
+    primaryMuscles: ["Deltoïdes", "Triceps brachial"],
+    secondaryMuscles: ["Trapèzes", "Core", "Avant-bras"],
+    equipment: "Mur",
+    difficulty: 2,
+    description:
+      "Handstand face au mur, corps raide, regard entre les mains. Base isométrique pour les HSPU et le contrôle de ligne.",
+    variations: ["handstand hold wall", "équilibre mains mur", "chest to wall handstand"]
+  },
+  "pose corbeau": {
+    name: "Pose du corbeau (bakasana)",
+    category: "Épaules",
+    primaryMuscles: ["Deltoïdes antérieurs", "Triceps brachial"],
+    secondaryMuscles: ["Core", "Avant-bras", "Pectoraux"],
+    equipment: "Sol",
+    difficulty: 2,
+    description:
+      "Mains au sol, genoux sur les triceps, pieds décollés. Travaille la compression d'avant-bras et le courage du transfert de masse vers l'avant.",
+    variations: ["crow pose", "bakasana", "équilibre corbeau"]
+  },
+  "saut sur box": {
+    name: "Saut sur box",
+    category: "Quadriceps",
+    primaryMuscles: ["Quadriceps", "Fessiers"],
+    secondaryMuscles: ["Mollets", "Core", "Ischio-jambiers"],
+    equipment: "Box / banc stable",
+    difficulty: 2,
+    description:
+      "Extension de hanches et genoux explosifs pour atterrir en squat partiel sur le support. Développe la puissance des jambes sans matériel lourd.",
+    variations: ["box jump", "saut sur banc", "plyo box jump"]
+  },
+  "pompes décalées": {
+    name: "Pompes décalées (staggered)",
+    category: "Pectoraux",
+    primaryMuscles: ["Pectoraux", "Triceps"],
+    secondaryMuscles: ["Deltoïdes antérieurs", "Core", "Obliques"],
+    equipment: "Poids du corps",
+    difficulty: 2,
+    description:
+      "Une main placée plus haut que l'autre, alternance des côtés à chaque série. Charge asymétrique modérée pour préparer les pompes archer.",
+    variations: ["staggered push-ups", "offset push-ups", "pompes mains décalées"]
+  },
+  "hollow hold": {
+    name: "Hollow hold",
+    category: "Abdominaux",
+    primaryMuscles: ["Grand droit de l'abdomen", "Transverse de l'abdomen"],
+    secondaryMuscles: ["Fléchisseurs de hanche", "Deltoïdes antérieurs", "Quadriceps"],
+    equipment: "Sol",
+    difficulty: 1,
+    description:
+      "Allongé dos plaqué, bras au-dessus de la tête, jambes tendues levées, creux abdominal maintenu. Posture de référence pour la ligne en gymnastique et street.",
+    variations: ["hollow body hold", "position creux", "abdominal hollow"]
+  },
+  "arch hold": {
+    name: "Arch hold (extension prone)",
+    category: "Dorsaux",
+    primaryMuscles: ["Érecteurs du rachis", "Fessiers", "Ischio-jambiers"],
+    secondaryMuscles: ["Deltoïdes postérieurs", "Trapèzes inférieurs"],
+    equipment: "Sol",
+    difficulty: 1,
+    description:
+      "Ventre au sol, bras et jambes tendus décollés, regard au sol. Renforce la chaîne postérieure et équilibre le travail creux du hollow hold.",
+    variations: ["superman hold", "prone arch", "extension statique dos"]
+  },
   // ACTIVITÉS COMPLÉMENTAIRES
   "boxe": {
     name: "Boxe",

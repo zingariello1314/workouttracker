@@ -247,7 +247,8 @@ const ExercisesTab = () => {
           materiel: ex.equipment || '',
           notes: ex.description || '',
           secondaryMuscles: ex.secondaryMuscles || [],
-          primaryMuscles: ex.primaryMuscles || []
+          primaryMuscles: ex.primaryMuscles || [],
+          ...(typeof ex.difficulty === 'number' ? { difficulty: ex.difficulty } : {})
         });
 
         seenIds.add(id);

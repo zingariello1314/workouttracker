@@ -151,7 +151,12 @@ export const enrichExercise = (exercise) => {
       primaryMuscleGroup: inferMuscleGroup(name),
       secondaryMuscles: inferSecondaryMuscles(name),
       equipment: resolvedEquipment,
-      difficulty: inferDifficulty(name, exercise.series),
+      difficulty:
+        typeof exercise.difficulty === 'number' &&
+        exercise.difficulty >= Difficulty.BEGINNER &&
+        exercise.difficulty <= Difficulty.EXPERT
+          ? exercise.difficulty
+          : inferDifficulty(name, exercise.series),
       restTime: inferRestTime(exercise.series),
       technique: exercise.notes || '',
       trainingDiscipline: inferTrainingDiscipline({
