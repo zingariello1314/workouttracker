@@ -89,7 +89,12 @@ import { useLanguage } from '../context/LanguageContext';
 import { loadTranslationNamespace } from '../utils/translations/loader';
 import { useFormatters } from '../utils/translations/formatters-hook';
 import { garminCardioKindEmoji, garminCardioPrimaryLabel } from '../utils/runningSessionTypeLabel';
-import { collectCalendarRepKeysForExercise, resolveBestRepsStorageKey } from '../utils/exerciseKeyGenerator';
+import {
+  collectCalendarRepKeysForExercise,
+  resolveBestRepsStorageKey,
+  generateStretchItemKey
+} from '../utils/exerciseKeyGenerator';
+import { buildPlannedStretchListForDateStr } from '../utils/programCompletionBonus';
 import { calendarHeatmapCompositeBackground } from '../utils/calendarHeatmapTint';
 import {
   isSessionFeedbackFilled,
@@ -1262,7 +1267,9 @@ const CalendarHeatmap = ({
       });
     });
 
-    /** Ratio complétion programme : exos cochés (au moins une clé) / exos prévus listés — pour couleur + XP. */
+    /** Ratio complétion programme : (exos + étirements) cochés / (exos + étirements) prévus.
+     *  La couleur de la case du jour reflète la complétion globale du programme :
+     *  cocher TOUS les étirements d'un jour de pure mobilité passe le ratio à 100 %. */
     const dvForCompletion = currentData?.dailyVariations?.[dateStr];
     const suppressedForCompletion = new Set(
       Array.isArray(dvForCompletion?.suppressedExercises)
@@ -1276,10 +1283,22 @@ const CalendarHeatmap = ({
       const keysC = collectCalendarRepKeysForExercise(dateStr, exercise);
       if (keysC.some((k) => chkForCompletion[k] === true)) programCheckedCount += 1;
     });
+
+    // Volet étirements : items planifiés × items cochés ce jour-là
+    const stretchPlannedList = buildPlannedStretchListForDateStr(dateStr, {
+      programs: Array.isArray(programs) ? programs : []
+    });
+    const checkedStretchesForCompletion = currentData?.checkedStretches || {};
+    let stretchCheckedCount = 0;
+    stretchPlannedList.forEach((item) => {
+      const k = generateStretchItemKey(dateStr, item.moment, item.id);
+      if (checkedStretchesForCompletion[k] === true) stretchCheckedCount += 1;
+    });
+
+    const totalForCompletion = exercisesListForCompletion.length + stretchPlannedList.length;
+    const checkedForCompletion = programCheckedCount + stretchCheckedCount;
     const programCompletionRatio =
-      exercisesListForCompletion.length > 0
-        ? programCheckedCount / exercisesListForCompletion.length
-        : 0;
+      totalForCompletion > 0 ? checkedForCompletion / totalForCompletion : 0;
 
     // ✅ ÉTAPE 2 : Ajouter les reps d'endurance (pompes, boxe, défis complétés)
     // Les défis complétés sont déjà inclus dans enduranceData.reps via les sessions d'endurance

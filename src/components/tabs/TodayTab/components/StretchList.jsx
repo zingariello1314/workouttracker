@@ -1,57 +1,97 @@
 /**
  * 📋 COMPOSANT STRETCH LIST
- * 
- * Composant pour afficher la liste des étirements du jour.
- * Utilise StretchItem pour chaque étirement.
- * 
+ *
+ * Liste les étirements du jour groupés par moment (matin / midi / soir).
+ * Pour CHAQUE moment, on affiche un en-tête + UNE carte par étirement individuel
+ * (cf. user requirement : "3 cartes différentes à cocher au lieu d'une seule").
+ *
+ * Accepte n'importe quel format d'`stretches` brut grâce à `normalizeStretchSlots`.
+ *
  * @module StretchList
  */
 
-import React, { memo } from 'react';
+import React, { memo, useMemo } from 'react';
+import { Sun, Cloud, Moon } from 'lucide-react';
 import StretchItem from './StretchItem';
+import { useStretchTracking } from '../hooks/useStretchTracking';
+import { normalizeStretchSlots, STRETCH_MOMENTS } from '../../../../utils/stretchUtils';
+import { getDayName } from '../../../../utils/dateUtils';
+
+const MOMENT_META = {
+  matin: { label: 'Matin', Icon: Sun, color: 'text-amber-300' },
+  midi: { label: 'Midi', Icon: Cloud, color: 'text-sky-300' },
+  soir: { label: 'Soir', Icon: Moon, color: 'text-indigo-300' }
+};
 
 /**
- * Composant pour afficher la liste des étirements
- * 
  * @param {Object} props
- * @param {Object} props.stretches - Objet avec moments comme clés et descriptions comme valeurs
- * @param {Date} props.date - Date des étirements
- * 
- * @example
- * <StretchList
- *   stretches={{ matin: "Étirements du dos", midi: "...", soir: "..." }}
- *   date={currentDate}
- * />
+ * @param {*} props.stretches - Source brute des étirements (string / objet / tableau)
+ * @param {Date} props.date
  */
-const StretchList = memo(({ stretches = {}, date }) => {
-  if (!stretches || Object.keys(stretches).length === 0) {
-    return null;
-  }
+const StretchList = memo(({ stretches, date }) => {
+  const slots = useMemo(() => {
+    const dayName = date ? getDayName(date) : null;
+    return normalizeStretchSlots(stretches, dayName);
+  }, [stretches, date]);
+
+  const isEmpty = STRETCH_MOMENTS.every((m) => slots[m].length === 0);
+  if (isEmpty) return null;
 
   return (
-    <div className="space-y-4">
-      {Object.entries(stretches).map(([moment, description]) => (
-        <StretchItem
-          key={moment}
-          moment={moment}
-          description={description}
-          date={date}
-        />
-      ))}
+    <div className="space-y-5">
+      {STRETCH_MOMENTS.map((moment) => {
+        const items = slots[moment];
+        if (!items || items.length === 0) return null;
+        return (
+          <MomentBlock
+            key={moment}
+            moment={moment}
+            items={items}
+            date={date}
+          />
+        );
+      })}
     </div>
   );
 });
 
 StretchList.displayName = 'StretchList';
 
+const MomentBlock = memo(({ moment, items, date }) => {
+  const meta = MOMENT_META[moment] || { label: moment, Icon: Sun, color: 'text-slate-400' };
+  const { Icon } = meta;
+  const ids = useMemo(() => items.map((it) => it.id), [items]);
+  const { getMomentSummary } = useStretchTracking({ date });
+  const summary = getMomentSummary(moment, ids);
+
+  return (
+    <div>
+      <div className="flex items-center justify-between mb-2">
+        <h4 className="font-semibold text-white text-sm flex items-center gap-2">
+          <Icon className={`w-4 h-4 ${meta.color}`} aria-hidden="true" />
+          {meta.label}
+          <span className="text-[11px] font-normal text-slate-400">
+            ({summary.checked}/{summary.total})
+          </span>
+        </h4>
+        {summary.allChecked && (
+          <span className="text-[11px] text-emerald-300">Tous effectués ✓</span>
+        )}
+      </div>
+
+      <div className="space-y-2">
+        {items.map((item) => (
+          <StretchItem
+            key={`${moment}_${item.id}`}
+            item={item}
+            date={date}
+          />
+        ))}
+      </div>
+    </div>
+  );
+});
+
+MomentBlock.displayName = 'MomentBlock';
+
 export default StretchList;
-
-
-
-
-
-
-
-
-
-

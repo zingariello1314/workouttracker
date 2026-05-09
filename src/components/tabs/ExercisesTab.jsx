@@ -20,13 +20,23 @@ import { useTranslation } from '../../utils/translations';
 import { useLanguage } from '../../context/LanguageContext';
 import { useAuth } from '../../context/AuthContext';
 import ExerciseDetailPage from './exercises/ExerciseDetailPage';
+import StretchBankView from './exercises/StretchBankView';
+import MyProgramBankView from './exercises/MyProgramBankView';
+import ProgramDetailView from '../ProgramDetailView';
 import { loadTranslationNamespace } from '../../utils/translations/loader';
 import { resolveExerciseIntensityCoeff } from '../../utils/trainingLoadUtils';
 import { isAdminUser } from '../../utils/accessControl';
 
+/** Sous-onglets de la vue "Banque" (anciennement "Exercices"). */
+const BANK_SUB_TABS = {
+  EXERCISES: 'exercises',  // Banque d'exercices (existant)
+  STRETCHES: 'stretches',  // Banque d'étirements (nouveau)
+  PROGRAM: 'program'       // Mon programme (exos + étirements du programme actif)
+};
+
 const ExercisesTab = () => {
   const { data, updateData } = useWorkout();
-  const { programs, activeProgram } = useContext(WorkoutContext);
+  const { programs, activeProgram, updateProgram } = useContext(WorkoutContext);
   const t = useTranslation();
   const { language } = useLanguage();
   const { currentUser, isAuthenticated } = useAuth();
@@ -56,6 +66,16 @@ const ExercisesTab = () => {
   const [autoSync, setAutoSync] = useState(true);
   const [selectedProgram, setSelectedProgram] = useState(null); // Pour la navigation dans les programmes
   const [viewMode, setViewMode] = useState('exercises'); // 'exercises' ou 'programs'
+  /** Sélection sous-onglet : exercises (banque exos) | stretches (banque étirements) | program (mon programme) */
+  const [bankSubTab, setBankSubTab] = useState(BANK_SUB_TABS.EXERCISES);
+  /** Éditeur complet du programme actif (même vue que l’onglet Programme) depuis Banque → Mon programme */
+  const [bankProgramEditorOpen, setBankProgramEditorOpen] = useState(false);
+
+  useEffect(() => {
+    if (bankSubTab !== BANK_SUB_TABS.PROGRAM) {
+      setBankProgramEditorOpen(false);
+    }
+  }, [bankSubTab]);
 
   // ✅ Visibilité des programmes selon l'authentification
   // - invité (déconnecté) : aucun programme visible, aucun programme actif
@@ -455,9 +475,122 @@ const ExercisesTab = () => {
     );
   }
 
+  // ─── Sous-onglets "Banque" : Exercices / Étirements / Mon programme ───
+  const subTabsHeader = (
+    <Card variant="sport">
+      <CardContent className="p-2">
+        <div className="flex flex-wrap gap-2" role="tablist" aria-label="Sous-onglets Banque">
+          <button
+            type="button"
+            role="tab"
+            aria-selected={bankSubTab === BANK_SUB_TABS.EXERCISES}
+            onClick={() => setBankSubTab(BANK_SUB_TABS.EXERCISES)}
+            className={`px-3 py-1.5 rounded-md text-sm font-medium transition border ${
+              bankSubTab === BANK_SUB_TABS.EXERCISES
+                ? 'bg-blue-600/30 border-blue-400/60 text-white'
+                : 'bg-slate-900/40 border-slate-700 text-slate-300 hover:bg-slate-800/60'
+            }`}
+          >
+            <Dumbbell className="inline w-3.5 h-3.5 mr-1.5 -mt-0.5" />
+            Banque d'exercices
+          </button>
+          <button
+            type="button"
+            role="tab"
+            aria-selected={bankSubTab === BANK_SUB_TABS.STRETCHES}
+            onClick={() => setBankSubTab(BANK_SUB_TABS.STRETCHES)}
+            className={`px-3 py-1.5 rounded-md text-sm font-medium transition border ${
+              bankSubTab === BANK_SUB_TABS.STRETCHES
+                ? 'bg-teal-600/30 border-teal-400/60 text-white'
+                : 'bg-slate-900/40 border-slate-700 text-slate-300 hover:bg-slate-800/60'
+            }`}
+          >
+            <Activity className="inline w-3.5 h-3.5 mr-1.5 -mt-0.5" />
+            Banque d'étirements
+          </button>
+          <button
+            type="button"
+            role="tab"
+            aria-selected={bankSubTab === BANK_SUB_TABS.PROGRAM}
+            onClick={() => setBankSubTab(BANK_SUB_TABS.PROGRAM)}
+            className={`px-3 py-1.5 rounded-md text-sm font-medium transition border ${
+              bankSubTab === BANK_SUB_TABS.PROGRAM
+                ? 'bg-amber-600/30 border-amber-400/60 text-white'
+                : 'bg-slate-900/40 border-slate-700 text-slate-300 hover:bg-slate-800/60'
+            }`}
+          >
+            <Target className="inline w-3.5 h-3.5 mr-1.5 -mt-0.5" />
+            Mon programme
+            {visibleActiveProgram && (
+              <span className="ml-1 text-[10px] text-amber-200/80 font-normal">
+                ({visibleActiveProgram.name})
+              </span>
+            )}
+          </button>
+        </div>
+      </CardContent>
+    </Card>
+  );
+
+  // Si le sous-onglet est Étirements ou Programme, on rend une vue dédiée et on s'arrête là.
+  if (bankSubTab === BANK_SUB_TABS.STRETCHES) {
+    return (
+      <div className="relative">
+        <div className="relative z-10 space-y-6 p-6">
+          {subTabsHeader}
+          <StretchBankView data={data} updateData={updateData} readOnly={!isAuthenticated} />
+        </div>
+      </div>
+    );
+  }
+
+  if (bankSubTab === BANK_SUB_TABS.PROGRAM) {
+    return (
+      <div className="relative">
+        <div className="relative z-10 space-y-6 p-6">
+          {subTabsHeader}
+          {!visibleActiveProgram ? (
+            <MyProgramBankView activeProgram={visibleActiveProgram} isAdmin={isAdmin} />
+          ) : bankProgramEditorOpen ? (
+            <ProgramDetailView
+              program={visibleActiveProgram}
+              onBack={() => setBankProgramEditorOpen(false)}
+              onUpdateProgram={(updated) => {
+                updateProgram(updated);
+              }}
+            />
+          ) : (
+            <>
+              <Card variant="sport">
+                <CardContent className="py-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                  <p className="text-sm text-slate-400">
+                    {t(
+                      'exercisesTab.bankProgram.editHint',
+                      'Modifie les exercices, séries, étirements et variantes comme dans l’onglet Programme — les changements s’appliquent à ton programme actif.'
+                    )}
+                  </p>
+                  <button
+                    type="button"
+                    onClick={() => setBankProgramEditorOpen(true)}
+                    className="shrink-0 inline-flex items-center justify-center gap-2 rounded-lg border border-[#0F5C45]/55 bg-[#0F5C45]/25 px-4 py-2 text-sm font-medium text-white shadow-md shadow-black/30 transition hover:bg-[#0F5C45]/40"
+                  >
+                    <Target className="w-4 h-4" />
+                    {t('exercisesTab.bankProgram.openEditor', 'Modifier le programme')}
+                  </button>
+                </CardContent>
+              </Card>
+              <MyProgramBankView activeProgram={visibleActiveProgram} isAdmin={isAdmin} />
+            </>
+          )}
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="relative">
       <div className="relative z-10 space-y-6 p-6">
+        {subTabsHeader}
         {/* Statut de synchronisation */}
       {isAdmin && (
       <Card variant="sport">

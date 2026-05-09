@@ -23,6 +23,36 @@ import SessionAggregator from '../statistics/SessionAggregator.js';
 import { computeVolumeKgForWorkoutKey } from '../../utils/exerciseLoadVolume';
 import { collectDedupedCheckedVolumeKeys } from '../../utils/trainingLoadUtils';
 import { computeProgramCompletionBonusXp } from '../../utils/programCompletionBonus';
+import { computeCircuitsXp } from './circuitsXpService';
+import { parseStretchItemKey } from '../../utils/exerciseKeyGenerator';
+import { buildPlannedStretchItemsForDateStr } from '../../utils/stretchUtils';
+import { workoutProgram } from '../../data/workoutProgram';
+
+/** XP minimum / maximum par étirement coché, mappés sur la moyenne des 3 critères 1→10. */
+export const STRETCH_XP_MIN = 100; // moyenne 1/10
+export const STRETCH_XP_MAX = 300; // moyenne 10/10
+export const STRETCH_XP_FALLBACK = 150; // étirement jamais noté (médiane raisonnable)
+
+/**
+ * Calcule l'XP gagnée pour UN étirement coché en fonction de la moyenne
+ * de ses 3 critères de ressenti (Pénibilité / Plaisir / Récupération).
+ *
+ * Formule linéaire :
+ *   moy = 1  → 100 XP
+ *   moy = 10 → 300 XP
+ *   moy = 0 (jamais noté) → 150 XP (fallback médian)
+ *
+ * Les notes à 0 sont ignorées dans la moyenne (un seul critère noté = poids 1).
+ */
+export function computeStretchXpFromRating(rating) {
+  const exec = Math.max(0, Math.min(10, Number(rating?.difficulty) || 0));
+  const enjoy = Math.max(0, Math.min(10, Number(rating?.enjoyment) || 0));
+  const rec = Math.max(0, Math.min(10, Number(rating?.recovery) || 0));
+  const present = [exec, enjoy, rec].filter((n) => n > 0);
+  if (present.length === 0) return STRETCH_XP_FALLBACK;
+  const avg = present.reduce((s, n) => s + n, 0) / present.length;
+  return Math.round(STRETCH_XP_MIN + (avg - 1) * ((STRETCH_XP_MAX - STRETCH_XP_MIN) / 9));
+}
 
 /** XP additionnelle liée au volume total cumulé (kg×reps), en complément du bonus déjà présent dans les reps pondérées. */
 export const SPORT_XP_PER_TOTAL_KG_VOLUME = 0.04;
@@ -226,7 +256,11 @@ export const calculateSportXP = (workoutData, garminData, enduranceData, sportOp
     pushupTrophiesUnlocked: 0,
     programCompletionBonusXp: 0,
     liftedVolumeKg: 0,
-    liftedVolumeKgXp: 0
+    liftedVolumeKgXp: 0,
+    circuitsXp: 0,
+    circuitCompletedDays: 0,
+    circuitTripleAchievedDays: 0,
+    circuitBonusRounds: 0
   };
   
   if (!workoutData) {
@@ -288,6 +322,47 @@ export const calculateSportXP = (workoutData, garminData, enduranceData, sportOp
   breakdown.exercises = checkedExercises;
   breakdown.exercisesXp = checkedExercises * 5;
   totalXP += breakdown.exercisesXp;
+
+  // 2bis. XP des étirements cochés (granularité item individuel).
+  // 1/10 → 100 XP, 10/10 → 300 XP, jamais noté → 150 XP. Source : moyenne des 3 critères
+  // stockés dans `stretchPerceivedRatings[stretchKey]`.
+  // On résout la `stretchKey` en regardant la liste planifiée pour la date :
+  //   programme par défaut (admin) + programmes custom utilisateur passés en ctx.
+  {
+    const stretchRatings = workoutData?.stretchPerceivedRatings || {};
+    const userPrograms = Array.isArray(sportOptions?.programs) ? sportOptions.programs : [];
+    const checked = workoutData?.checkedStretches || {};
+    const plannedCacheByDate = new Map(); // dateStr → Map<itemId,string|null>
+
+    let stretchesCount = 0;
+    let stretchesXp = 0;
+
+    for (const [key, value] of Object.entries(checked)) {
+      if (value !== true) continue;
+      const parsed = parseStretchItemKey(key);
+      if (!parsed) continue; // ignore les clés legacy "YYYY-MM-DD_matin" (ne donnent plus d'XP)
+
+      const { dateStr, stretchId } = parsed;
+
+      let mapForDate = plannedCacheByDate.get(dateStr);
+      if (!mapForDate) {
+        const items = buildPlannedStretchItemsForDateStr(dateStr, workoutProgram, {
+          programs: userPrograms
+        });
+        mapForDate = new Map(items.map((it) => [String(it.id), it.stretchKey]));
+        plannedCacheByDate.set(dateStr, mapForDate);
+      }
+      const stretchKey = mapForDate.get(String(stretchId)) || null;
+      const rating = stretchKey ? stretchRatings[stretchKey] : null;
+
+      stretchesCount += 1;
+      stretchesXp += computeStretchXpFromRating(rating);
+    }
+
+    breakdown.stretches = stretchesCount;
+    breakdown.stretchesXp = stretchesXp;
+    totalXP += stretchesXp;
+  }
   
   // 3. XP des calories (Garmin) : 0.5 XP par calorie active
   if (garminData?.dailyMetrics) {
@@ -421,6 +496,17 @@ export const calculateSportXP = (workoutData, garminData, enduranceData, sportOp
   };
   breakdown.programCompletionBonusXp = computeProgramCompletionBonusXp(workoutData, completionCtx);
   totalXP += breakdown.programCompletionBonusXp;
+
+  // Circuits — XP via paliers (target / +tour / 3×target)
+  const circuitsResult = computeCircuitsXp(
+    workoutData?.circuitProgress,
+    workoutData?.circuitDefinitions
+  );
+  breakdown.circuitsXp = circuitsResult.totalXp;
+  breakdown.circuitCompletedDays = circuitsResult.completedCircuitDays;
+  breakdown.circuitTripleAchievedDays = circuitsResult.tripleAchievedDays;
+  breakdown.circuitBonusRounds = circuitsResult.bonusRoundsTotal;
+  totalXP += circuitsResult.totalXp;
 
   return {
     totalXP: Math.round(totalXP),
@@ -573,7 +659,11 @@ export const calculateXPForAllCategories = (data) => {
           pushupTrophies: 0,
           pushupTrophyTiers: 0,
           pushupTrophiesUnlocked: 0,
-          programCompletionBonusXp: 0
+          programCompletionBonusXp: 0,
+          circuitsXp: 0,
+          circuitCompletedDays: 0,
+          circuitTripleAchievedDays: 0,
+          circuitBonusRounds: 0
         }
       },
       addictionQuit: {

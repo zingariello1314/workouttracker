@@ -187,9 +187,12 @@ export const findLatestExerciseWeightValue = (currentData, exerciseIds) => {
 };
 
 /**
- * Génère une clé pour un étirement
+ * Génère une clé pour un étirement (legacy : granularité par moment)
  * 
  * Format : "YYYY-MM-DD_moment" (matin, midi, soir)
+ * 
+ * ⚠️ Conservé pour rétro-compat lecture seule. Pour les nouvelles fonctionnalités,
+ * utiliser `generateStretchItemKey` qui descend à l'item individuel.
  * 
  * @param {Date|string} date - Date de l'étirement
  * @param {string} moment - Moment de l'étirement ('matin', 'midi', 'soir')
@@ -201,6 +204,53 @@ export const findLatestExerciseWeightValue = (currentData, exerciseIds) => {
 export const generateStretchKey = (date, moment) => {
   const dateStr = getDateStr(date);
   return `${dateStr}_${moment}`;
+};
+
+/**
+ * Génère une clé pour un étirement INDIVIDUEL (nouvelle granularité par item).
+ * 
+ * Format : "YYYY-MM-DD_stretch_moment_stretchId"
+ *   ex: "2026-05-09_stretch_matin_9111"
+ * 
+ * Le segment "stretch" évite toute collision avec les clés d'exercices
+ * (qui utilisent "YYYY-MM-DD_<numericExerciseId>") et avec les clés d'étirements
+ * legacy ("YYYY-MM-DD_matin").
+ * 
+ * @param {Date|string} date - Date de l'étirement
+ * @param {string} moment - Moment ('matin', 'midi', 'soir')
+ * @param {string|number} stretchId - ID stable de l'item d'étirement (range 9000-9999 pour le programme par défaut)
+ * @returns {string} Clé générée
+ * 
+ * @example
+ * generateStretchItemKey('2026-05-09', 'matin', 9111) // "2026-05-09_stretch_matin_9111"
+ */
+export const generateStretchItemKey = (date, moment, stretchId) => {
+  const dateStr = getDateStr(date);
+  return `${dateStr}_stretch_${moment}_${stretchId}`;
+};
+
+/**
+ * Parse une clé d'étirement individuel.
+ * 
+ * @param {string} key - Clé à parser
+ * @returns {{dateStr: string, moment: string, stretchId: string}|null}
+ * 
+ * @example
+ * parseStretchItemKey("2026-05-09_stretch_matin_9111")
+ *   // { dateStr: "2026-05-09", moment: "matin", stretchId: "9111" }
+ */
+export const parseStretchItemKey = (key) => {
+  if (!key || typeof key !== 'string') return null;
+  const match = key.match(/^(\d{4}-\d{2}-\d{2})_stretch_(matin|midi|soir)_(.+)$/);
+  if (!match) return null;
+  return { dateStr: match[1], moment: match[2], stretchId: match[3] };
+};
+
+/**
+ * Vérifie si une clé est une clé d'étirement individuel (nouveau format).
+ */
+export const isStretchItemKey = (key) => {
+  return typeof key === 'string' && /^\d{4}-\d{2}-\d{2}_stretch_(matin|midi|soir)_/.test(key);
 };
 
 /**

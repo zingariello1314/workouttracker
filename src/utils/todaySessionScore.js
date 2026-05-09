@@ -16,6 +16,11 @@ import {
 import { detectExerciseUnit, calculateAutoReps } from './exerciseCalculations';
 import { exerciseUsesExternalLoad } from './programUtils';
 import { computeVolumeKgReps } from './exerciseLoadVolume';
+import { getDateStr } from './dateUtils';
+import {
+  getExerciseSeriesOverrides,
+  mergeSeriesIntoProgramExercises
+} from './dailyVariationSeriesOverrides';
 
 /**
  * @param {Date} date
@@ -25,7 +30,12 @@ import { computeVolumeKgReps } from './exerciseLoadVolume';
  * @returns {{ completedLoad: number, plannedLoadEstimate: number, score0to100: number | null, completedCount: number, plannedCount: number }}
  */
 export function computeTodaySessionComplexity(date, workout, currentData, isGymMode) {
-  const exercises = workout?.exercices || workout?.exercises || [];
+  const dateStr = getDateStr(date);
+  const overrides = getExerciseSeriesOverrides(currentData?.dailyVariations, dateStr);
+  const exercises = mergeSeriesIntoProgramExercises(
+    workout?.exercices || workout?.exercises || [],
+    overrides
+  );
   if (!Array.isArray(exercises) || exercises.length === 0) {
     return {
       completedLoad: 0,

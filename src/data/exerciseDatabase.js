@@ -1604,6 +1604,568 @@ export const exerciseDatabase = {
     equipment: "Piscine",
     description: "Sport aquatique complet excellent pour le cardio et la récupération",
     variations: ["swimming", "nage", "piscine", "crawl", "brasse"]
+  },
+
+  // ═══════════════════════════════════════════════════════════════════════
+  // ENDURANCE & CARDIO — 15 ajouts (intensités contrôlées, distinct des séances de muscu/calistheny)
+  // ═══════════════════════════════════════════════════════════════════════
+  "course endurance fondamentale": {
+    name: "Course endurance fondamentale",
+    category: "Activités Complémentaires",
+    primaryMuscles: ["Quadriceps", "Ischio-jambiers", "Mollets"],
+    secondaryMuscles: ["Fessiers", "Core", "Système cardio-respiratoire"],
+    equipment: "Aucun (terrain plat)",
+    difficulty: 1,
+    description:
+      "Sortie continue à allure conversationnelle (≈ zone 2, 65–75 % FCmax). Construit la base aérobie, la densité capillaire et l'efficacité musculaire sans casser la récupération. Volume long, intensité basse.",
+    variations: ["footing", "endurance fondamentale", "EF", "easy run", "zone 2 run", "course lente continue"]
+  },
+  "fractionné 30/30": {
+    name: "Fractionné 30/30",
+    category: "Activités Complémentaires",
+    primaryMuscles: ["Quadriceps", "Ischio-jambiers", "Mollets"],
+    secondaryMuscles: ["Fessiers", "Core", "Système cardio-respiratoire"],
+    equipment: "Chrono",
+    difficulty: 3,
+    description:
+      "Intervalles courts de 30 s à allure VMA (95–105 %) suivis de 30 s en récupération active. Idéal pour développer la VMA et la capacité à répéter des efforts intenses sans creuser un déficit excessif.",
+    variations: ["30 30", "30/30 VMA", "intervalle court", "fractionné court", "short intervals"]
+  },
+  "fractionné long VMA": {
+    name: "Fractionné long VMA",
+    category: "Activités Complémentaires",
+    primaryMuscles: ["Quadriceps", "Ischio-jambiers", "Mollets"],
+    secondaryMuscles: ["Fessiers", "Core", "Système cardio-respiratoire"],
+    equipment: "Piste / chrono",
+    difficulty: 3,
+    description:
+      "Répétitions longues (3 à 6 min) à 90–100 % VMA avec récupération mi-effort. Travaille la consommation maximale d'oxygène (VO2max) et l'endurance lactique. Format type : 5×1000 m ou 4×3 min.",
+    variations: ["fractionné long", "long intervals", "VO2max intervals", "1000m repeats", "fractionné 1000"]
+  },
+  "sprints en côte": {
+    name: "Sprints en côte",
+    category: "Activités Complémentaires",
+    primaryMuscles: ["Quadriceps", "Fessiers", "Mollets"],
+    secondaryMuscles: ["Ischio-jambiers", "Core", "Deltoïdes"],
+    equipment: "Côte (5–10 % de pente)",
+    difficulty: 3,
+    description:
+      "Sprints maximaux de 8 à 15 s sur une côte modérée, récupération marche descendante complète. Développe la puissance horizontale, l'économie de course et préserve les ischio-jambiers grâce à la pente.",
+    variations: ["hill sprints", "côtes courtes", "sprint montée", "uphill sprints", "sprints sur côte"]
+  },
+  "corde à sauter": {
+    name: "Corde à sauter",
+    category: "Activités Complémentaires",
+    primaryMuscles: ["Mollets", "Avant-bras"],
+    secondaryMuscles: ["Quadriceps", "Core", "Deltoïdes", "Système cardio-respiratoire"],
+    equipment: "Corde à sauter",
+    difficulty: 1,
+    description:
+      "Sauts pieds joints à cadence régulière (~140 sauts/min). Excellent travail de coordination, élasticité du mollet et endurance cardio. Démarrer par séries courtes pour préserver les tendons d'Achille.",
+    variations: ["jump rope", "skipping", "saut corde", "corde", "rope skipping"]
+  },
+  "double under corde à sauter": {
+    name: "Double under corde à sauter",
+    category: "Activités Complémentaires",
+    primaryMuscles: ["Mollets", "Avant-bras"],
+    secondaryMuscles: ["Quadriceps", "Core", "Deltoïdes"],
+    equipment: "Corde à sauter rapide",
+    difficulty: 3,
+    description:
+      "Saut suffisamment haut pour que la corde passe deux fois sous les pieds en un seul saut. Demande puissance plio, précision du poignet et timing. Référence en cardio cross-training.",
+    variations: ["double under", "DU", "double tour", "double-unders", "double sauts corde"]
+  },
+  "rameur indoor": {
+    name: "Rameur indoor",
+    category: "Activités Complémentaires",
+    primaryMuscles: ["Grand dorsal", "Quadriceps", "Fessiers"],
+    secondaryMuscles: ["Ischio-jambiers", "Core", "Biceps", "Deltoïdes postérieurs"],
+    equipment: "Rameur (concept2 / similaire)",
+    difficulty: 2,
+    description:
+      "Geste cyclique en 4 phases (drive jambes → bascule du tronc → tirage bras → retour). Sport portant peu d'impact qui sollicite ~85 % de la masse musculaire et délivre un travail cardio puissant.",
+    variations: ["rowing erg", "rameur", "concept2", "rowing machine", "row erg"]
+  },
+  "vélo elliptique": {
+    name: "Vélo elliptique",
+    category: "Activités Complémentaires",
+    primaryMuscles: ["Quadriceps", "Fessiers", "Mollets"],
+    secondaryMuscles: ["Ischio-jambiers", "Grand dorsal", "Deltoïdes postérieurs", "Triceps", "Core"],
+    equipment: "Machine elliptique",
+    difficulty: 1,
+    description:
+      "Pédalage elliptique avec poignées mobiles : cardio sans impact qui mobilise haut et bas du corps. Idéal en récupération active ou pour gros volume sans contrainte articulaire.",
+    variations: ["elliptique", "elliptical", "cross trainer", "vélo elliptique salle"]
+  },
+  "vélo de route": {
+    name: "Vélo de route",
+    category: "Activités Complémentaires",
+    primaryMuscles: ["Quadriceps", "Fessiers"],
+    secondaryMuscles: ["Ischio-jambiers", "Mollets", "Core", "Système cardio-respiratoire"],
+    equipment: "Vélo de route",
+    difficulty: 2,
+    description:
+      "Sortie cycliste extérieure : cardio porté avec gestion de cadence (80–100 rpm) et puissance. Excellente complément au running pour augmenter le volume sans surcharge d'impacts.",
+    variations: ["cyclisme", "vélo route", "road bike", "vélo extérieur", "sortie vélo"]
+  },
+  "vélo d'appartement HIIT": {
+    name: "Vélo d'appartement HIIT",
+    category: "Activités Complémentaires",
+    primaryMuscles: ["Quadriceps", "Fessiers"],
+    secondaryMuscles: ["Mollets", "Ischio-jambiers", "Core"],
+    equipment: "Vélo stationnaire",
+    difficulty: 3,
+    description:
+      "Intervalles courts à puissance maximale (15–60 s) suivis de récupération active. Permet un travail VO2max et seuil sans aucun impact, idéal après des séances de pliométrie ou de course.",
+    variations: ["HIIT bike", "vélo HIIT", "spinning intervals", "exercise bike intervals", "indoor cycling intervals"]
+  },
+  "ski erg": {
+    name: "Ski erg",
+    category: "Activités Complémentaires",
+    primaryMuscles: ["Grand dorsal", "Triceps", "Core"],
+    secondaryMuscles: ["Pectoraux", "Quadriceps", "Fessiers", "Avant-bras"],
+    equipment: "Machine SkiErg",
+    difficulty: 2,
+    description:
+      "Geste de double poussée du ski de fond : tirage vertical des deux bras avec engagement du tronc et flexion-extension de hanche. Cardio puissance haut du corps de référence.",
+    variations: ["ski erg concept2", "skierg", "double poling machine", "ski machine"]
+  },
+  "assault bike": {
+    name: "Assault bike",
+    category: "Activités Complémentaires",
+    primaryMuscles: ["Quadriceps", "Fessiers", "Grand dorsal", "Pectoraux"],
+    secondaryMuscles: ["Triceps", "Deltoïdes", "Core"],
+    equipment: "Air bike (assault / echo)",
+    difficulty: 3,
+    description:
+      "Vélo à résistance air avec bras mobiles : la résistance augmente avec l'effort, ce qui en fait un outil cardio très exigeant pour le HIIT et le seuil. Engage l'ensemble du corps simultanément.",
+    variations: ["air bike", "echo bike", "assault airbike", "fan bike"]
+  },
+  "kettlebell swings": {
+    name: "Kettlebell swings",
+    category: "Fessiers",
+    primaryMuscles: ["Fessiers", "Ischio-jambiers"],
+    secondaryMuscles: ["Érecteurs du rachis", "Core", "Deltoïdes", "Avant-bras"],
+    equipment: "Kettlebell",
+    difficulty: 2,
+    description:
+      "Swing balistique russe (à hauteur d'épaule) ou américain (au-dessus de la tête). L'extension de hanche explosive propulse la kettlebell ; les bras sont seulement guides. Combine puissance fessiers et cardio.",
+    variations: ["swing kettlebell", "kb swing", "russian swing", "american swing", "balancier kettlebell"]
+  },
+  "shadow boxing": {
+    name: "Shadow boxing",
+    category: "Activités Complémentaires",
+    primaryMuscles: ["Épaules", "Core"],
+    secondaryMuscles: ["Bras", "Jambes", "Système cardio-respiratoire"],
+    equipment: "Aucun",
+    difficulty: 1,
+    description:
+      "Boxe sans cible : enchaînements jab-cross-hook-uppercut, esquives et déplacements. Travail technique et cardio léger, parfait pour échauffement, conditionnement ou récupération active.",
+    variations: ["shadowboxing", "boxe ombre", "shadow box", "boxe sans gants", "ombre"]
+  },
+  "montée d'escaliers": {
+    name: "Montée d'escaliers",
+    category: "Activités Complémentaires",
+    primaryMuscles: ["Quadriceps", "Fessiers"],
+    secondaryMuscles: ["Mollets", "Ischio-jambiers", "Core"],
+    equipment: "Escalier / stair-master",
+    difficulty: 2,
+    description:
+      "Course ou marche soutenue dans un escalier (immeuble, stade, machine stair-master). Recrutement marqué des fessiers et quadriceps avec contraintes articulaires modérées sur la descente (à éviter rapide).",
+    variations: ["stair climber", "stair master", "course escaliers", "stair run", "monter les escaliers"]
+  },
+
+  // ═══════════════════════════════════════════════════════════════════════
+  // STREET WORKOUT & CALISTHÉNIE — 11 ajouts avancés
+  // ═══════════════════════════════════════════════════════════════════════
+  "one arm push-up": {
+    name: "Pompe à un bras (one arm push-up)",
+    category: "Pectoraux",
+    primaryMuscles: ["Pectoraux", "Triceps brachial"],
+    secondaryMuscles: ["Deltoïdes antérieurs", "Core", "Obliques", "Avant-bras"],
+    equipment: "Sol",
+    difficulty: 4,
+    description:
+      "Pompe stricte exécutée sur un seul bras, pieds écartés pour stabilité. Anti-rotation puissante du tronc, charge ~70 % du poids du corps sur le bras d'appui. Référence du street workout horizontal.",
+    variations: ["one arm pushup", "OAP", "pompe un bras", "pompe unilatérale", "single arm push up"]
+  },
+  "negative one arm pull-up": {
+    name: "Traction un bras négative",
+    category: "Dorsaux",
+    primaryMuscles: ["Grand dorsal", "Biceps brachial"],
+    secondaryMuscles: ["Brachial antérieur", "Avant-bras", "Rhomboïdes", "Core"],
+    equipment: "Barre de traction",
+    difficulty: 4,
+    description:
+      "Sauter en haut de la barre puis descendre lentement (3–6 s) sur un seul bras, l'autre dans le dos ou contre la poitrine. Technique d'overload excentrique pour préparer la traction un bras stricte.",
+    variations: ["one arm pull-up negative", "OAPU négative", "traction 1 bras excentrique", "negative chin-up one arm"]
+  },
+  "handstand push-ups libres": {
+    name: "Handstand push-ups libres (HSPU sans mur)",
+    category: "Épaules",
+    primaryMuscles: ["Deltoïdes antérieurs", "Triceps brachial"],
+    secondaryMuscles: ["Trapèzes", "Pectoraux supérieurs", "Core", "Avant-bras"],
+    equipment: "Sol",
+    difficulty: 4,
+    description:
+      "Handstand strict en équilibre sans appui, fléchir les coudes jusqu'à toucher le sol avec la tête puis verrouiller bras tendus. Demande équilibre, force scapulaire et force triceps maximale.",
+    variations: ["free HSPU", "freestanding handstand push-ups", "HSPU libre", "HSPU sans appui", "handstand pushup freestanding"]
+  },
+  "tuck planche hold": {
+    name: "Tuck planche hold",
+    category: "Épaules",
+    primaryMuscles: ["Deltoïdes antérieurs", "Pectoraux"],
+    secondaryMuscles: ["Triceps brachial", "Core", "Dentelé antérieur", "Avant-bras"],
+    equipment: "Sol / parallettes",
+    difficulty: 3,
+    description:
+      "Appui sur les mains, genoux serrés contre la poitrine, hanches au-dessus des épaules, pieds décollés. Première étape réelle de la planche : charge énorme sur le deltoïde antérieur en levier réduit.",
+    variations: ["tuck planche", "advanced tuck planche", "planche groupée", "frog planche tuck"]
+  },
+  "straddle planche hold": {
+    name: "Straddle planche hold",
+    category: "Épaules",
+    primaryMuscles: ["Deltoïdes antérieurs", "Pectoraux"],
+    secondaryMuscles: ["Triceps brachial", "Core", "Dentelé antérieur", "Fessiers"],
+    equipment: "Sol / parallettes",
+    difficulty: 4,
+    description:
+      "Appui sur les mains, jambes tendues écartées en V à l'horizontale, hanches au-dessus des épaules. Étape avant la full planche : levier intermédiaire qui demande force protraction et compression.",
+    variations: ["straddle planche", "planche écartée", "planche jambes ouvertes"]
+  },
+  "front lever raises": {
+    name: "Front lever raises",
+    category: "Dorsaux",
+    primaryMuscles: ["Grand dorsal", "Grand droit de l'abdomen"],
+    secondaryMuscles: ["Triceps longue portion", "Deltoïdes postérieurs", "Fessiers", "Avant-bras"],
+    equipment: "Barre de traction",
+    difficulty: 4,
+    description:
+      "Depuis la suspension bras tendus, monter le corps à l'horizontale en front lever puis redescendre contrôlé. Mouvement dynamique le plus complet pour développer la force du front lever.",
+    variations: ["front lever raise", "FL raise", "lever avant raises", "front lever pulls"]
+  },
+  "assisted muscle-up élastique": {
+    name: "Muscle-up assisté à l'élastique",
+    category: "Dorsaux",
+    primaryMuscles: ["Grand dorsal", "Triceps brachial", "Pectoraux"],
+    secondaryMuscles: ["Deltoïdes antérieurs", "Biceps brachial", "Core", "Avant-bras"],
+    equipment: "Barre + Élastique",
+    difficulty: 3,
+    description:
+      "Boucle d'élastique passée sur la barre et sous les pieds (ou genoux) pour réduire la charge. Permet de répéter la trajectoire complète du muscle-up et d'apprendre la transition au-dessus de la barre.",
+    variations: ["muscle up assisté", "band muscle up", "muscle-up bande élastique", "assisted muscle-up", "MU assisted"]
+  },
+  "dips lestés": {
+    name: "Dips lestés",
+    category: "Triceps",
+    primaryMuscles: ["Triceps brachial", "Pectoraux inférieurs"],
+    secondaryMuscles: ["Deltoïdes antérieurs", "Core"],
+    equipment: "Barres parallèles + ceinture lestée",
+    difficulty: 3,
+    description:
+      "Dips classiques aux parallèles avec une ceinture lestée ou un haltère entre les chevilles. Méthode de progression la plus directe pour passer du calistheny à de la vraie surcharge sur le bras.",
+    variations: ["weighted dips", "dips ceinture lestée", "dips lest", "dips avec poids", "dips avec lest"]
+  },
+  "drapeau humain straddle": {
+    name: "Drapeau humain straddle",
+    category: "Abdominaux",
+    primaryMuscles: ["Obliques", "Grand dorsal", "Deltoïdes"],
+    secondaryMuscles: ["Trapèzes", "Triceps", "Fessiers", "Quadriceps", "Avant-bras"],
+    equipment: "Barre verticale / poteau",
+    difficulty: 4,
+    description:
+      "Drapeau humain horizontal corps de profil au poteau, jambes ouvertes en V pour réduire le levier. Étape intermédiaire vers le full flag : transfert massif vers la chaîne latérale et les épaules.",
+    variations: ["straddle human flag", "drapeau jambes écartées", "human flag straddle", "flag straddle"]
+  },
+  "pompes triple claquées": {
+    name: "Pompes triple claquées",
+    category: "Pectoraux",
+    primaryMuscles: ["Pectoraux", "Triceps"],
+    secondaryMuscles: ["Deltoïdes antérieurs", "Core", "Mollets"],
+    equipment: "Sol",
+    difficulty: 4,
+    description:
+      "Pompe pliométrique poussée à pleine puissance permettant 3 claquements de mains pendant la phase aérienne. Demande détente, force d'absorption et coordination – à n'aborder qu'après les pompes claquées simples.",
+    variations: ["triple clap push-ups", "3 claps push-ups", "pompes claquées triples", "triple-clap pushup"]
+  },
+  "one arm dead hang": {
+    name: "Suspension à un bras (one arm dead hang)",
+    category: "Dorsaux",
+    primaryMuscles: ["Grand dorsal", "Avant-bras"],
+    secondaryMuscles: ["Trapèzes inférieurs", "Coiffe des rotateurs", "Core"],
+    equipment: "Barre de traction",
+    difficulty: 3,
+    description:
+      "Suspension passive sur un seul bras à la barre. Préparation indispensable à la traction un bras : conditionne la prise, l'épaule (descendue, packée) et la coiffe sous charge maximale.",
+    variations: ["one arm hang", "OAH", "suspension un bras", "single arm dead hang", "one-arm bar hang"]
+  },
+
+  // ═══════════════════════════════════════════════════════════════════════
+  // MUSCULATION & ACCESSOIRES — 24 ajouts (salle / haltères / poulies)
+  // ═══════════════════════════════════════════════════════════════════════
+  "landmine press": {
+    name: "Landmine press",
+    category: "Épaules",
+    primaryMuscles: ["Deltoïdes antérieurs"],
+    secondaryMuscles: ["Pectoraux supérieurs", "Triceps", "Trapèzes supérieurs", "Core"],
+    equipment: "Landmine / coin de barre + disque",
+    difficulty: 2,
+    description:
+      "Pousser une extrémité de barre fichée dans un landmine vers le haut et l'avant, à un ou deux bras. Trajectoire intermédiaire entre développé incliné et militaire, plus tolérante pour l'épaule.",
+    variations: ["landmine shoulder press", "press landmine", "landmine 1 arm press", "single arm landmine press"]
+  },
+  "landmine row": {
+    name: "Landmine row",
+    category: "Dorsaux",
+    primaryMuscles: ["Grand dorsal", "Rhomboïdes", "Trapèzes moyens"],
+    secondaryMuscles: ["Biceps", "Deltoïdes postérieurs", "Érecteurs du rachis", "Core"],
+    equipment: "Landmine + poignée en V",
+    difficulty: 2,
+    description:
+      "Tirage à 2 mains (poignée en V) ou unilatéral d'une barre en landmine, buste penché. Charge importante avec angle stable, idéal pour épaisseur du dos sans solliciter le bas du dos comme un t-bar libre.",
+    variations: ["landmine t-bar row", "row landmine", "rowing landmine", "single arm landmine row", "meadows row"]
+  },
+  "landmine squat": {
+    name: "Landmine squat",
+    category: "Quadriceps",
+    primaryMuscles: ["Quadriceps", "Fessiers"],
+    secondaryMuscles: ["Core", "Érecteurs du rachis", "Adducteurs"],
+    equipment: "Landmine + barre",
+    difficulty: 2,
+    description:
+      "Squat avec extrémité de barre tenue contre la poitrine, l'autre extrémité pivotant dans le landmine. Trajectoire arquée naturelle qui aide à conserver le buste droit – excellent pour apprendre le front squat.",
+    variations: ["landmine front squat", "viking squat", "squat landmine", "barbell landmine squat"]
+  },
+  "squat zercher": {
+    name: "Squat Zercher",
+    category: "Quadriceps",
+    primaryMuscles: ["Quadriceps", "Fessiers"],
+    secondaryMuscles: ["Core", "Trapèzes supérieurs", "Biceps", "Érecteurs du rachis"],
+    equipment: "Barre",
+    difficulty: 3,
+    description:
+      "Barre tenue dans le pli des coudes contre le buste. Force à garder un tronc très vertical et engage massivement le core, les biceps et le haut du dos en isométrique. Très bon pour la robustesse globale.",
+    variations: ["zercher squat", "squat coudes barre", "front holdsquat", "barre coude squat"]
+  },
+  "soulevé de terre déficit": {
+    name: "Soulevé de terre déficit",
+    category: "Dorsaux",
+    primaryMuscles: ["Érecteurs du rachis", "Fessiers", "Ischio-jambiers"],
+    secondaryMuscles: ["Grand dorsal", "Trapèzes", "Quadriceps", "Avant-bras"],
+    equipment: "Barre + plateforme 3–8 cm",
+    difficulty: 3,
+    description:
+      "Soulevé de terre debout sur une plateforme basse pour augmenter l'amplitude au démarrage. Renforce la position de départ et le « pull from the floor » – à n'utiliser qu'avec une bonne mobilité des hanches.",
+    variations: ["deficit deadlift", "deadlift déficit", "sdt déficit", "elevated deadlift", "deficit conventional deadlift"]
+  },
+  "t-bar row": {
+    name: "T-bar row",
+    category: "Dorsaux",
+    primaryMuscles: ["Grand dorsal", "Rhomboïdes"],
+    secondaryMuscles: ["Trapèzes moyens", "Biceps", "Deltoïdes postérieurs", "Érecteurs du rachis"],
+    equipment: "Machine t-bar / barre + poignée v",
+    difficulty: 2,
+    description:
+      "Tirage horizontal sur une barre fixée par une extrémité, poignée en V, buste fortement penché. Permet de charger lourd avec une trajectoire stable et un excellent recrutement de l'épaisseur du dos.",
+    variations: ["tbar row", "rowing t-bar", "t-bar machine row", "landmine t bar"]
+  },
+  "jm press": {
+    name: "JM press",
+    category: "Triceps",
+    primaryMuscles: ["Triceps brachial"],
+    secondaryMuscles: ["Pectoraux", "Deltoïdes antérieurs"],
+    equipment: "Barre + Banc",
+    difficulty: 3,
+    description:
+      "Hybride entre développé couché prise serrée et barre au front : descente de la barre vers la base du cou avec coudes orientés vers l'avant. Très ciblé triceps et favori du powerlifting pour le bench.",
+    variations: ["jm press barre", "jm bench press", "j.m. blakley press"]
+  },
+  "tate press": {
+    name: "Tate press",
+    category: "Triceps",
+    primaryMuscles: ["Triceps brachial"],
+    secondaryMuscles: ["Pectoraux"],
+    equipment: "Haltères + Banc",
+    difficulty: 2,
+    description:
+      "Allongé sur un banc, haltères paumes vers les pieds, descendre les coudes vers l'extérieur jusqu'à effleurer la poitrine puis tendre les bras. Cible la longue portion et le vaste latéral du triceps.",
+    variations: ["tate dumbbell press", "elbows out tricep press", "tate triceps press"]
+  },
+  "seal row banc": {
+    name: "Seal row au banc",
+    category: "Dorsaux",
+    primaryMuscles: ["Grand dorsal", "Rhomboïdes", "Trapèzes moyens"],
+    secondaryMuscles: ["Deltoïdes postérieurs", "Biceps"],
+    equipment: "Banc surélevé + Barre/Haltères",
+    difficulty: 2,
+    description:
+      "Allongé sur le ventre sur un banc surélevé, tirer une barre ou des haltères vers la poitrine. La position élimine la triche du bas du dos et impose un travail strict du dos haut.",
+    variations: ["seal row", "rowing allongé banc", "chest supported seal row", "lying row prone"]
+  },
+  "curl 21": {
+    name: "Curl 21",
+    category: "Biceps",
+    primaryMuscles: ["Biceps brachial"],
+    secondaryMuscles: ["Brachial antérieur"],
+    equipment: "Barre / Barre EZ",
+    difficulty: 2,
+    description:
+      "Méthode d'intensification : 7 répétitions sur la moitié basse, 7 sur la moitié haute, puis 7 complètes, sans temps de repos. Forte congestion et travail isométrique implicite sur tout l'arc.",
+    variations: ["21s curl", "twentyone curl", "curl 21 reps", "21 reps biceps", "barbell 21s"]
+  },
+  "tirage poulie haute prise neutre serrée": {
+    name: "Tirage poulie haute prise neutre serrée",
+    category: "Dorsaux",
+    primaryMuscles: ["Grand dorsal"],
+    secondaryMuscles: ["Biceps brachial", "Brachial antérieur", "Trapèzes inférieurs", "Rhomboïdes"],
+    equipment: "Poulie haute + poignée v / triangle",
+    difficulty: 1,
+    description:
+      "Tirage vertical avec poignée triangle (mains se touchant, paumes face à face). Cible particulièrement le bas du grand dorsal et permet une amplitude proche de la traction supination.",
+    variations: ["close grip neutral pulldown", "v-bar pulldown", "tirage vertical poignée v", "tirage neutre serré", "tirage vertical neutre"]
+  },
+  "prone y raise": {
+    name: "Prone Y raise",
+    category: "Épaules",
+    primaryMuscles: ["Trapèzes inférieurs", "Deltoïdes postérieurs"],
+    secondaryMuscles: ["Rhomboïdes", "Coiffe des rotateurs"],
+    equipment: "Banc incliné + Haltères légers",
+    difficulty: 1,
+    description:
+      "Allongé face contre un banc incliné, élever les bras tendus en Y (45°) avec pouces vers le ciel. Renforce le trapèze inférieur, clé pour la santé de l'épaule et le verrouillage scapulaire.",
+    variations: ["y raise prone", "incline bench y raise", "élévations en Y", "y raises", "trap raises Y"]
+  },
+  "machine row poitrine appuyée": {
+    name: "Machine row poitrine appuyée",
+    category: "Dorsaux",
+    primaryMuscles: ["Grand dorsal", "Rhomboïdes", "Trapèzes moyens"],
+    secondaryMuscles: ["Deltoïdes postérieurs", "Biceps"],
+    equipment: "Machine row chest supported",
+    difficulty: 1,
+    description:
+      "Machine de tirage avec coussin pour la poitrine : élimine totalement la compensation lombaire et permet un travail strict du dos haut. Excellente pour volume modéré et progression linéaire.",
+    variations: ["chest supported row", "row appuie poitrine", "machine row pad", "iso lever row chest support"]
+  },
+  "cable lateral raise unilatéral cheville": {
+    name: "Élévation latérale unilatérale poulie cheville",
+    category: "Épaules",
+    primaryMuscles: ["Deltoïdes moyens"],
+    secondaryMuscles: ["Trapèzes supérieurs"],
+    equipment: "Poulie basse + sangle cheville",
+    difficulty: 2,
+    description:
+      "Sangle cheville fixée à la poulie basse, poignée tenue par la main opposée à la poulie. La résistance reste forte dès le début du mouvement, contrairement aux haltères. Excellent pour le travail strict du deltoïde latéral.",
+    variations: ["cable lateral raise", "élévation latérale poulie 1 bras", "single arm cable lateral", "lateral raise cable poulie cheville"]
+  },
+  "cuban press": {
+    name: "Cuban press",
+    category: "Épaules",
+    primaryMuscles: ["Deltoïdes", "Coiffe des rotateurs"],
+    secondaryMuscles: ["Trapèzes", "Triceps"],
+    equipment: "Haltères légers / barre EZ",
+    difficulty: 2,
+    description:
+      "Combine tirage menton, rotation externe (épaules à 90°) puis développé au-dessus de la tête. Parfait pour réveiller la coiffe des rotateurs et préparer les épaules à du travail lourd.",
+    variations: ["cuban rotation", "press cubain", "cuban shoulder press", "rotator cuff press"]
+  },
+  "wrist curl": {
+    name: "Wrist curl (curl poignets)",
+    category: "Avant-bras",
+    primaryMuscles: ["Fléchisseurs des doigts", "Avant-bras"],
+    secondaryMuscles: [],
+    equipment: "Haltères / barre EZ",
+    difficulty: 1,
+    description:
+      "Avant-bras posés sur les cuisses ou un banc, paumes vers le haut, fléchir les poignets vers soi en relâchant la charge en bout de doigts puis remonter. Cible la face antérieure des avant-bras.",
+    variations: ["curl poignets", "barbell wrist curl", "dumbbell wrist curl", "flexion poignets", "wrist flexion curl"]
+  },
+  "reverse wrist curl": {
+    name: "Reverse wrist curl",
+    category: "Avant-bras",
+    primaryMuscles: ["Extenseurs des doigts", "Avant-bras"],
+    secondaryMuscles: ["Brachio-radial"],
+    equipment: "Haltères / barre EZ",
+    difficulty: 1,
+    description:
+      "Avant-bras posés, paumes vers le bas, étendre les poignets vers le haut puis redescendre lentement. Cible les extenseurs de l'avant-bras, souvent négligés et pourtant clés contre l'épicondylite.",
+    variations: ["reverse wrist curl haltères", "extenseurs poignets", "curl poignets inversé", "wrist extension curl"]
+  },
+  "plate pinch": {
+    name: "Plate pinch",
+    category: "Avant-bras",
+    primaryMuscles: ["Fléchisseurs des doigts", "Avant-bras"],
+    secondaryMuscles: ["Pouce", "Trapèzes supérieurs"],
+    equipment: "Disques lisses (5–15 kg)",
+    difficulty: 2,
+    description:
+      "Pincer 1 ou 2 disques face lisse à l'extérieur entre pouce et autres doigts, tenir le plus longtemps possible. Renforce la pince et l'endurance des fléchisseurs des doigts (utile pour calistheny et grimpe).",
+    variations: ["plate pinch hold", "pinch grip", "disque pince", "plate pinching", "pinch carry"]
+  },
+  "farmer's walk": {
+    name: "Farmer's walk",
+    category: "Épaules",
+    primaryMuscles: ["Trapèzes supérieurs", "Avant-bras"],
+    secondaryMuscles: ["Core", "Fessiers", "Quadriceps", "Mollets"],
+    equipment: "Haltères lourds / kettlebells / handles",
+    difficulty: 2,
+    description:
+      "Marcher sur une distance donnée avec une charge lourde dans chaque main, posture verticale, omoplates basses. Renforce la prise, le tronc, les trapèzes et la chaîne posturale globale.",
+    variations: ["farmers walk", "marche du fermier", "farmer carry", "loaded carry", "fermier carry"]
+  },
+  "cable wood chop": {
+    name: "Cable wood chop",
+    category: "Abdominaux",
+    primaryMuscles: ["Obliques"],
+    secondaryMuscles: ["Grand droit de l'abdomen", "Transverse", "Deltoïdes", "Fessiers"],
+    equipment: "Poulie haute ou basse",
+    difficulty: 2,
+    description:
+      "Mouvement de coupe en diagonal d'une poulie haute vers la hanche opposée (ou inverse). Geste fonctionnel d'anti-rotation/rotation contrôlée pour les obliques et la chaîne en X.",
+    variations: ["wood chop", "high to low chop", "chopper poulie", "diagonal cable chop", "wood chopper"]
+  },
+  "dead bug": {
+    name: "Dead bug",
+    category: "Abdominaux",
+    primaryMuscles: ["Grand droit de l'abdomen", "Transverse de l'abdomen"],
+    secondaryMuscles: ["Obliques", "Fléchisseurs de hanche"],
+    equipment: "Tapis",
+    difficulty: 1,
+    description:
+      "Allongé sur le dos, bras tendus au plafond et hanches/genoux à 90°, étendre simultanément un bras (en arrière) et la jambe opposée (vers le sol) sans creuser le bas du dos. Référence en stabilité lombaire.",
+    variations: ["deadbug", "dead bug abs", "anti-extension allongé", "dead bug exercise"]
+  },
+  "bird dog": {
+    name: "Bird dog",
+    category: "Dorsaux",
+    primaryMuscles: ["Érecteurs du rachis", "Fessiers"],
+    secondaryMuscles: ["Deltoïdes", "Core", "Multifides"],
+    equipment: "Tapis",
+    difficulty: 1,
+    description:
+      "À quatre pattes, étendre un bras devant et la jambe opposée derrière jusqu'à l'horizontale, sans rotation des hanches ni creusement lombaire. Travail fondamental d'anti-rotation et de stabilité lombaire.",
+    variations: ["birddog", "quadruped opposite arm leg", "bird-dog", "anti-rotation quadrupédie"]
+  },
+  "russian twist": {
+    name: "Russian twist",
+    category: "Abdominaux",
+    primaryMuscles: ["Obliques"],
+    secondaryMuscles: ["Grand droit de l'abdomen", "Fléchisseurs de hanche"],
+    equipment: "Poids du corps / haltère / médecine ball",
+    difficulty: 1,
+    description:
+      "Assis pieds décollés (option), buste incliné en arrière, faire pivoter le tronc d'un côté à l'autre en touchant le sol près des hanches. Cible les obliques en rotation dynamique sous tension.",
+    variations: ["russian twists", "twist russe", "rotation tronc assis", "weighted russian twist"]
+  },
+  "copenhagen plank": {
+    name: "Copenhagen plank",
+    category: "Quadriceps",
+    primaryMuscles: ["Adducteurs"],
+    secondaryMuscles: ["Obliques", "Fessiers moyens", "Core"],
+    equipment: "Banc / chaise",
+    difficulty: 3,
+    description:
+      "Gainage latéral avec la jambe supérieure posée sur un banc (cheville ou genou) et la jambe inférieure dans le vide. Sollicite intensément les adducteurs en isométrie : prévention majeure des blessures de hanche/aine en sport.",
+    variations: ["copenhagen side plank", "adductor plank", "gainage adducteurs", "copenhagen hold", "adductor side plank"]
   }
 };
 

@@ -51,7 +51,10 @@ export const useTodayWorkout = (options = {}) => {
     }
     
     // Fallback : logique directe
-    const baseWorkout = workoutProgram[dayName] || { exercices: [], etirements: [] };
+    const baseWorkout = workoutProgram[dayName] || {
+      exercices: [],
+      etirements: { matin: [], midi: [], soir: [] }
+    };
     
     // Si c'est samedi ou dimanche et qu'on est en mode salle, utiliser les variantes A/B
     if ((dayName === 'samedi' || dayName === 'dimanche') && isGymMode && baseWorkout.salleVariants) {

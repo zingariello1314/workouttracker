@@ -60,6 +60,14 @@ const SidebarSportPlanningModule = memo(({ isExpanded, onToggle, setActiveTab })
 
     const descriptionFromValue = (val) => {
       if (typeof val === 'string') return val.trim();
+      // Nouveau format : tableau d'items { id, stretchKey, duration, name? }
+      if (Array.isArray(val) && val.length) {
+        const names = val
+          .map((item) => item?.name || item?.stretchKey || '')
+          .map((s) => String(s).replace(/_/g, ' ').trim())
+          .filter(Boolean);
+        if (names.length) return names.join(' · ');
+      }
       if (!val || typeof val !== 'object') return '';
       if (typeof val.instructions === 'string') return val.instructions.trim();
       if (Array.isArray(val.exercises) && val.exercises.length) {

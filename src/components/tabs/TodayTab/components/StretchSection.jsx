@@ -1,56 +1,45 @@
 /**
  * 🧘 COMPOSANT STRETCH SECTION
- * 
- * Composant pour afficher la section complète des étirements avec sauvegarde.
- * Combine StretchList et SaveActions pour une section complète.
- * 
+ *
+ * Section "Étirements du jour" complète : titre + liste des items individuels
+ * groupés par moment + actions de sauvegarde si modifications en cours.
+ *
  * @module StretchSection
  */
 
-import React, { memo } from 'react';
+import React, { memo, useMemo } from 'react';
 import StretchList from './StretchList';
 import SaveActions from './SaveActions';
+import { normalizeStretchSlots, countStretchItems, STRETCH_MOMENTS } from '../../../../utils/stretchUtils';
+import { getDayName } from '../../../../utils/dateUtils';
 
-/**
- * Composant pour afficher la section complète des étirements
- * 
- * @param {Object} props
- * @param {Object} props.stretches - Objet avec moments comme clés et descriptions comme valeurs
- * @param {Date} props.date - Date des étirements
- * @param {boolean} props.hasUnsavedChanges - Si des modifications non sauvegardées existent
- * @param {Function} props.onSave - Callback pour sauvegarder
- * @param {Function} props.onDiscard - Callback pour annuler
- * 
- * @example
- * <StretchSection
- *   stretches={workout.etirements}
- *   date={currentDate}
- *   hasUnsavedChanges={hasUnsavedStretches}
- *   onSave={handleSaveStretches}
- *   onDiscard={handleDiscardStretches}
- * />
- */
-const StretchSection = memo(({ 
-  stretches, 
-  date, 
+const StretchSection = memo(({
+  stretches,
+  date,
   hasUnsavedChanges = false,
   onSave,
   onDiscard
 }) => {
-  // Ne pas afficher si pas d'étirements
-  if (!stretches || Object.keys(stretches).length === 0) {
-    return null;
-  }
+  const slots = useMemo(() => {
+    const dayName = date ? getDayName(date) : null;
+    return normalizeStretchSlots(stretches, dayName);
+  }, [stretches, date]);
+
+  const total = countStretchItems(slots);
+  if (total === 0) return null;
 
   return (
-    <div className="bg-slate-800/80 backdrop-blur-sm p-6 rounded-lg shadow-xl border border-slate-700">
-      <h3 className="font-semibold text-white mb-4 flex items-center gap-2">
-        <span className="text-purple-400">🧘‍♂️</span>
-        Étirements du jour
-      </h3>
-      
+    <div className="bg-black p-6 rounded-xl shadow-xl border-2 border-[#0F4C5C]/70">
+      <div className="flex items-center justify-between mb-4">
+        <h3 className="font-semibold text-white flex items-center gap-2">
+          <span className="text-teal-400">🧘‍♂️</span>
+          Étirements du jour
+          <span className="text-xs font-normal text-slate-400">({total})</span>
+        </h3>
+      </div>
+
       <StretchList stretches={stretches} date={date} />
-      
+
       <SaveActions
         hasUnsavedChanges={hasUnsavedChanges}
         onSave={onSave}
@@ -63,13 +52,5 @@ const StretchSection = memo(({
 StretchSection.displayName = 'StretchSection';
 
 export default StretchSection;
-
-
-
-
-
-
-
-
-
-
+// Re-export pour usages directs (testing / picker preview)
+export { STRETCH_MOMENTS };

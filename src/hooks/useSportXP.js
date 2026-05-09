@@ -18,6 +18,8 @@ const DEFAULT_BREAKDOWN = {
   weightedRepsXp: 0,
   exercises: 0,
   exercisesXp: 0,
+  stretches: 0,
+  stretchesXp: 0,
   calories: 0,
   caloriesXp: 0,
   steps: 0,
@@ -42,7 +44,11 @@ const DEFAULT_BREAKDOWN = {
   pushupTrophiesUnlocked: 0,
   programCompletionBonusXp: 0,
   liftedVolumeKg: 0,
-  liftedVolumeKgXp: 0
+  liftedVolumeKgXp: 0,
+  circuitsXp: 0,
+  circuitCompletedDays: 0,
+  circuitTripleAchievedDays: 0,
+  circuitBonusRounds: 0
 };
 
 let sportXpCache = {
@@ -126,6 +132,31 @@ export const useSportXP = () => {
     const checkedExercises = Object.values(workoutData.checkedExercises || {}).filter(v => v === true).length;
     const sessionsWithFeedback = workoutData.sessionFeedbacks ? Object.keys(workoutData.sessionFeedbacks).length : 0;
 
+    // Étirements : on intègre le nombre cochés + un checksum des notes perçues dans la
+    // signature du cache. Sans ça, cocher un étirement laissait le résultat précédent
+    // en cache (les autres clés restant identiques) → l'XP n'apparaissait pas.
+    const checkedStretches = workoutData.checkedStretches || {};
+    let checkedStretchCount = 0;
+    let stretchKeysChecksum = 0;
+    for (const [k, v] of Object.entries(checkedStretches)) {
+      if (v !== true) continue;
+      checkedStretchCount += 1;
+      // Petit hash positionnel sans dépendance pour distinguer rapidement deux ensembles
+      // de clés cochées ; la valeur exacte importe peu, seules les variations comptent.
+      for (let i = 0; i < k.length; i++) {
+        stretchKeysChecksum = (stretchKeysChecksum * 31 + k.charCodeAt(i)) | 0;
+      }
+    }
+    const stretchRatings = workoutData.stretchPerceivedRatings || {};
+    let stretchRatingsChecksum = 0;
+    for (const [k, r] of Object.entries(stretchRatings)) {
+      const sum =
+        (Number(r?.difficulty) || 0) +
+        (Number(r?.enjoyment) || 0) * 11 +
+        (Number(r?.recovery) || 0) * 113;
+      stretchRatingsChecksum = (stretchRatingsChecksum * 17 + sum + k.length) | 0;
+    }
+
     let totalCalories = 0;
     let totalSteps = 0;
     if (garminData?.dailyMetrics) {
@@ -176,6 +207,29 @@ export const useSportXP = () => {
       liftedVolumeChecksum += computeVolumeKgForWorkoutKey(k, workoutData);
     });
 
+    // Circuits : signature = total tours par jour + nb de définitions actives.
+    // Force la recompute lorsqu'on incrémente un tour ou qu'on ajoute / modifie un circuit.
+    const circuitProgress = workoutData.circuitProgress || {};
+    const circuitDefinitions = workoutData.circuitDefinitions || {};
+    let circuitProgressChecksum = 0;
+    let circuitProgressEntries = 0;
+    for (const [d, byCircuit] of Object.entries(circuitProgress)) {
+      if (!byCircuit || typeof byCircuit !== 'object') continue;
+      for (const [cid, val] of Object.entries(byCircuit)) {
+        circuitProgressEntries += 1;
+        const r = Math.max(0, Math.round(Number(val?.roundsCompleted) || 0));
+        circuitProgressChecksum =
+          (circuitProgressChecksum * 31 + r + d.length + cid.length) | 0;
+      }
+    }
+    let circuitDefChecksum = 0;
+    for (const [cid, def] of Object.entries(circuitDefinitions)) {
+      const t = Math.max(1, Math.round(Number(def?.targetRounds) || 1));
+      const items = Array.isArray(def?.items) ? def.items.length : 0;
+      circuitDefChecksum =
+        (circuitDefChecksum * 17 + t * 7 + items + cid.length) | 0;
+    }
+
     const signature = [
       totalReps,
       coeffs.length,
@@ -195,7 +249,14 @@ export const useSportXP = () => {
       cardioLen,
       garminLapTally,
       programCompletionBonusXp,
-      Math.round(liftedVolumeChecksum * 10)
+      Math.round(liftedVolumeChecksum * 10),
+      checkedStretchCount,
+      stretchKeysChecksum,
+      stretchRatingsChecksum,
+      circuitProgressEntries,
+      circuitProgressChecksum,
+      Object.keys(circuitDefinitions).length,
+      circuitDefChecksum
     ].join('|');
 
     if (cacheRef.current.signature === signature) {

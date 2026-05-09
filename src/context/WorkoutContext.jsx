@@ -36,6 +36,14 @@ import { normalizeRepsValue } from './WorkoutContext/utils';
 import { filterExercisesForSessionDate } from '../utils/programExerciseScheduling';
 import { buildTemplateProgramsForFirstLaunch } from '../utils/programPersistenceUtils';
 import { isAdminUser } from '../utils/accessControl';
+import {
+  normalizeCircuitDefinition,
+  upsertCircuitDefinition,
+  removeCircuitDefinition as removeCircuitFromState,
+  toggleCircuitOnProgramDay,
+  incrementRound as incrementCircuitRoundUtil,
+  decrementRound as decrementCircuitRoundUtil
+} from '../utils/circuits/circuitDefinitionUtils';
 
 const WorkoutContext = createContext();
 
@@ -599,7 +607,11 @@ const WorkoutProvider = ({ children }) => {
         modificationCount: (existingVariation?.modificationCount || 0) + 1,
         version: '1.0',
         schemaVersion: 1,
-        lastExceptionalIdCounter: existingVariation?.lastExceptionalIdCounter || 0
+        lastExceptionalIdCounter: existingVariation?.lastExceptionalIdCounter || 0,
+        ...(existingVariation?.exerciseSeriesOverrides &&
+        Object.keys(existingVariation.exerciseSeriesOverrides).length > 0
+          ? { exerciseSeriesOverrides: { ...existingVariation.exerciseSeriesOverrides } }
+          : {})
       };
 
       // ✅ Sauvegarder immédiatement (action critique)
@@ -670,8 +682,13 @@ const WorkoutProvider = ({ children }) => {
       };
 
       // ✅ Si plus aucune variation, supprimer l'entrée
-      const hasOtherVariations = updatedSuppressedExercises.length > 0 || 
-                                 (existingVariation.additionalExercises?.length || 0) > 0;
+      const hasSeriesOverrides =
+        existingVariation.exerciseSeriesOverrides &&
+        Object.keys(existingVariation.exerciseSeriesOverrides).length > 0;
+      const hasOtherVariations =
+        updatedSuppressedExercises.length > 0 ||
+        (existingVariation.additionalExercises?.length || 0) > 0 ||
+        Boolean(hasSeriesOverrides);
 
       const updatedData = {
         ...currentData,
@@ -706,6 +723,72 @@ const WorkoutProvider = ({ children }) => {
       console.error('❌ Erreur lors de la restauration de l\'exercice:', error);
       throw error;
     }
+  };
+
+  /**
+   * Surcharge le texte « séries × reps » affiché pour un exercice du programme **uniquement ce jour-là**
+   * (sans modifier le programme enregistré). Vide la chaîne pour revenir au prévu du programme.
+   *
+   * @param {string} dateStr - YYYY-MM-DD
+   * @param {number} exerciseId - ID numérique affiché dans Aujourd'hui
+   * @param {string|null|undefined} seriesText - ex. "5×15" ou "" pour reset
+   */
+  const updateExerciseSeriesOverrideForDate = async (dateStr, exerciseId, seriesText) => {
+    if (!dateStr || typeof dateStr !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) {
+      throw new Error('Date invalide');
+    }
+    if (typeof exerciseId !== 'number' || Number.isNaN(exerciseId) || exerciseId <= 0) {
+      throw new Error('ID d\'exercice invalide');
+    }
+    const currentData = getCurrentData();
+    const existing = currentData.dailyVariations?.[dateStr];
+    const normalizedSeries =
+      seriesText != null && String(seriesText).trim() !== ''
+        ? String(seriesText).trim().replace(/\s+/g, '').replace(/[xX]/g, '×')
+        : '';
+
+    const prevOverrides = { ...(existing?.exerciseSeriesOverrides || {}) };
+    const key = String(exerciseId);
+    if (!normalizedSeries) {
+      delete prevOverrides[key];
+    } else {
+      prevOverrides[key] = normalizedSeries;
+    }
+
+    const hasOverrides = Object.keys(prevOverrides).length > 0;
+    const updatedVariation = {
+      date: dateStr,
+      suppressedExercises: existing?.suppressedExercises || [],
+      additionalExercises: existing?.additionalExercises || [],
+      reason: existing?.reason,
+      createdAt: existing?.createdAt || new Date(),
+      lastModifiedAt: new Date(),
+      modificationCount: (existing?.modificationCount || 0) + 1,
+      version: existing?.version || '1.0',
+      schemaVersion: existing?.schemaVersion ?? 1,
+      lastExceptionalIdCounter: existing?.lastExceptionalIdCounter || 0,
+      ...(hasOverrides ? { exerciseSeriesOverrides: prevOverrides } : {})
+    };
+    if (!hasOverrides) {
+      delete updatedVariation.exerciseSeriesOverrides;
+    }
+
+    const hasAny =
+      (updatedVariation.suppressedExercises?.length || 0) > 0 ||
+      (updatedVariation.additionalExercises?.length || 0) > 0 ||
+      hasOverrides;
+
+    const nextDaily = { ...(currentData.dailyVariations || {}) };
+    if (hasAny) {
+      nextDaily[dateStr] = updatedVariation;
+    } else {
+      delete nextDaily[dateStr];
+    }
+
+    await updateData({
+      ...currentData,
+      dailyVariations: nextDaily
+    });
   };
 
   /**
@@ -1093,6 +1176,126 @@ const WorkoutProvider = ({ children }) => {
   
   // ✅ PHASE 4 : setDayJustification, removeDayJustification, getDayJustification sont maintenant dans useWorkoutJustifications
 
+  // ============================================================
+  // CIRCUITS — CRUD définitions + assignation programme + tours
+  // ============================================================
+
+  /**
+   * Crée ou met à jour une définition de circuit (bibliothèque globale).
+   * @param {object} input - Définition partielle (le moteur normalise).
+   * @returns {Promise<object>} La définition normalisée et persistée.
+   */
+  const saveCircuitDefinition = useCallback(async (input) => {
+    const normalized = normalizeCircuitDefinition(input);
+    const currentData = getCurrentData();
+    const updatedDefs = upsertCircuitDefinition(currentData.circuitDefinitions, normalized);
+    await updateData({
+      ...currentData,
+      circuitDefinitions: updatedDefs
+    });
+    return normalized;
+  }, [getCurrentData, updateData]);
+
+  /**
+   * Supprime une définition de circuit + nettoie sa progression et ses
+   * références dans les programmes.
+   */
+  const deleteCircuitDefinition = useCallback(async (circuitId) => {
+    if (!circuitId || typeof circuitId !== 'string') return;
+    const currentData = getCurrentData();
+    const cleaned = removeCircuitFromState(
+      {
+        circuitDefinitions: currentData.circuitDefinitions || {},
+        circuitProgress: currentData.circuitProgress || {}
+      },
+      circuitId
+    );
+
+    await updateData({
+      ...currentData,
+      circuitDefinitions: cleaned.circuitDefinitions,
+      circuitProgress: cleaned.circuitProgress
+    });
+
+    // Nettoyer les références dans les programmes
+    const allPrograms = Array.isArray(programs) ? programs : [];
+    allPrograms.forEach((program) => {
+      if (!program?.schedule) return;
+      let touched = false;
+      const newSchedule = {};
+      Object.entries(program.schedule).forEach(([dayName, day]) => {
+        const ids = Array.isArray(day?.circuitIds) ? day.circuitIds : [];
+        if (ids.includes(circuitId)) {
+          touched = true;
+          newSchedule[dayName] = {
+            ...day,
+            circuitIds: ids.filter((id) => id !== circuitId)
+          };
+        } else {
+          newSchedule[dayName] = day;
+        }
+      });
+      if (touched) {
+        updateProgram({ ...program, schedule: newSchedule });
+      }
+    });
+  }, [getCurrentData, updateData, programs, updateProgram]);
+
+  /**
+   * Assigne (ou retire) un circuit à un jour d'un programme.
+   * @param {string} programId
+   * @param {string} dayName - "lundi", "mardi", ...
+   * @param {string} circuitId
+   * @param {boolean} [enabled=true]
+   */
+  const assignCircuitToProgramDay = useCallback((programId, dayName, circuitId, enabled = true) => {
+    if (!programId || !dayName || !circuitId) return;
+    const program = (Array.isArray(programs) ? programs : []).find((p) => p?.id === programId)
+      || (activeProgram?.id === programId ? activeProgram : null);
+    if (!program) {
+      console.warn('[WorkoutContext] assignCircuitToProgramDay: programme introuvable', programId);
+      return;
+    }
+    const updated = toggleCircuitOnProgramDay(program, dayName, circuitId, enabled);
+    updateProgram(updated);
+  }, [programs, activeProgram, updateProgram]);
+
+  /**
+   * Incrémente le compteur de tours d'un circuit pour une date donnée.
+   * @param {string|Date} date
+   * @param {string} circuitId
+   * @returns {Promise<{ roundsCompleted: number, finishedAt?: string }>}
+   */
+  const incrementCircuitRound = useCallback(async (date, circuitId) => {
+    if (!circuitId) return null;
+    const currentData = getCurrentData();
+    const def = currentData.circuitDefinitions?.[circuitId];
+    if (!def) {
+      console.warn('[WorkoutContext] incrementCircuitRound: circuit introuvable', circuitId);
+      return null;
+    }
+    const nextProgress = incrementCircuitRoundUtil(currentData.circuitProgress, date, circuitId, def);
+    await updateData({
+      ...currentData,
+      circuitProgress: nextProgress
+    });
+    const dateStr = typeof date === 'string' ? date : getDateStr(date);
+    return nextProgress[dateStr]?.[circuitId] || null;
+  }, [getCurrentData, updateData]);
+
+  /** Décrémente (sans tomber sous zéro) le compteur de tours. */
+  const decrementCircuitRound = useCallback(async (date, circuitId) => {
+    if (!circuitId) return null;
+    const currentData = getCurrentData();
+    const nextProgress = decrementCircuitRoundUtil(currentData.circuitProgress, date, circuitId);
+    await updateData({
+      ...currentData,
+      circuitProgress: nextProgress
+    });
+    const dateStr = typeof date === 'string' ? date : getDateStr(date);
+    return nextProgress[dateStr]?.[circuitId] || null;
+  }, [getCurrentData, updateData]);
+
   const contextValue = {
     // États principaux
     currentDate,
@@ -1207,6 +1410,7 @@ const WorkoutProvider = ({ children }) => {
     markExceptionalExerciseComplete,
     suppressExerciseForToday,
     restoreExerciseForToday,
+    updateExerciseSeriesOverrideForDate,
     
     // Fonctions de statistiques
     getWorkoutHistory,
@@ -1220,7 +1424,14 @@ const WorkoutProvider = ({ children }) => {
     getDayJustification,
     
     // ✅ Fonction pour sauvegarder les feedbacks de session
-    saveSessionFeedback
+    saveSessionFeedback,
+
+    // Circuits (bibliothèque + assignation programme + suivi des tours)
+    saveCircuitDefinition,
+    deleteCircuitDefinition,
+    assignCircuitToProgramDay,
+    incrementCircuitRound,
+    decrementCircuitRound
   };
 
   // Sauvegarde automatique du contexte

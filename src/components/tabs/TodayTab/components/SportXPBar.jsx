@@ -3,7 +3,7 @@
  */
 
 import React from 'react';
-import { Dumbbell, Flame, Footprints, Target, CheckCircle, Trophy, Map, ListOrdered, Scale } from 'lucide-react';
+import { Dumbbell, Flame, Footprints, Target, CheckCircle, Trophy, Map, ListOrdered, Scale, Sparkles, Repeat } from 'lucide-react';
 import { useSportXP } from '../../../../hooks/useSportXP';
 import {
   SPORT_XP_PER_TOTAL_KG_VOLUME,
@@ -87,6 +87,31 @@ const SportXPBar = () => {
           <CheckCircle className="h-3 w-3 shrink-0 text-sky-400" />
           <span className="text-sky-400/95">{breakdown.exercises} exercices</span>
         </div>
+        <div className="flex min-w-0 flex-col gap-0.5">
+          <div className="flex items-center gap-1">
+            <Sparkles className="h-3 w-3 shrink-0 text-teal-300" />
+            <span className="text-sky-400/95">
+              {(breakdown.stretches ?? 0).toLocaleString('fr-FR')} étirements
+            </span>
+          </div>
+          <span className="pl-4 text-[10px] leading-tight text-teal-200/85">
+            +{(breakdown.stretchesXp ?? 0).toLocaleString('fr-FR')} XP (100→300 / coche selon notes)
+          </span>
+        </div>
+        <div className="flex min-w-0 flex-col gap-0.5">
+          <div className="flex items-center gap-1">
+            <Repeat className="h-3 w-3 shrink-0 text-amber-300" />
+            <span className="text-sky-400/95">
+              {(breakdown.circuitCompletedDays ?? 0).toLocaleString('fr-FR')} circuits
+            </span>
+          </div>
+          <span className="pl-4 text-[10px] leading-tight text-amber-200/85">
+            +{(breakdown.circuitsXp ?? 0).toLocaleString('fr-FR')} XP
+            {(breakdown.circuitTripleAchievedDays ?? 0) > 0
+              ? ` · ${breakdown.circuitTripleAchievedDays} 3× cible`
+              : ''}
+          </span>
+        </div>
         <div className="flex items-center gap-1">
           <Flame className="h-3 w-3 shrink-0 text-[#e85d4c]" />
           <span className="text-sky-400/95">{breakdown.calories.toLocaleString('fr-FR')} cal</span>
@@ -126,6 +151,33 @@ const SportXPBar = () => {
               <span className="text-slate-600"> · </span>
               <span className="tabular-nums text-slate-400">
                 {breakdown.exercisesXp.toLocaleString('fr-FR')} ex. cochés (5×)
+              </span>
+            </>
+          ) : null}
+          {(breakdown.stretchesXp ?? 0) > 0 ? (
+            <>
+              <span className="text-slate-600"> · </span>
+              <span className="tabular-nums text-slate-400">
+                {breakdown.stretchesXp.toLocaleString('fr-FR')} étirements
+                {(breakdown.stretches ?? 0) > 0
+                  ? ` (${breakdown.stretches} cochés)`
+                  : ''}
+              </span>
+            </>
+          ) : null}
+          {(breakdown.circuitsXp ?? 0) > 0 ? (
+            <>
+              <span className="text-slate-600"> · </span>
+              <span className="tabular-nums text-slate-400">
+                {breakdown.circuitsXp.toLocaleString('fr-FR')} circuits
+                {(breakdown.circuitCompletedDays ?? 0) > 0
+                  ? ` (${breakdown.circuitCompletedDays} cible(s) atteinte(s)`
+                  : ''}
+                {(breakdown.circuitTripleAchievedDays ?? 0) > 0
+                  ? `, ${breakdown.circuitTripleAchievedDays}× 3× cible)`
+                  : (breakdown.circuitCompletedDays ?? 0) > 0
+                    ? ')'
+                    : ''}
               </span>
             </>
           ) : null}

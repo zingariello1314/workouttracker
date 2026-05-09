@@ -1,13 +1,31 @@
 // Programme d'entraînement complet Cycle 3+1
+//
+// Format `etirements` : tableau d'items individuels par moment (matin/midi/soir).
+// Chaque item référence la banque `stretchDatabase` via `stretchKey` et porte un ID stable
+// dans le range 9000-9999 (convention 9<jour 1-7><moment 1-3><idx 1-9>).
+// Voir `src/utils/stretchUtils.js` (normalizeStretchSlots) pour la résolution.
 
 export const workoutProgram = {
   lundi: {
     name: "Street Workout + Boxe",
     focus: "dos / core / contrôle",
     etirements: {
-      matin: "1 min respiration nasale lente (assis ou allongé, main sur ventre) + 1 min auto-grandissement assis (aligner tête/colonne/bassin) + 2 min mobilisation cervicale (flexion / extension / rotation douce) + 2 min rotations d'épaules, bras pendants, debout",
-      midi: "2 min Étirement passif psoas (fente jambe arrière posée, dos droit) + 1 min étirement en rotation thoracique (couché, bras croisé à 90°) + 2 min pendule d'épaule (buste penché, bras relâché)",
-      soir: "3 min jambe à la paroi (décrocher le bassin) + 1 min d'étirement passif des fléchisseurs de hanche + 1 min dead hang passif au chambranle (optionnel si accessible)"
+      matin: [
+        { id: 9111, stretchKey: "respiration_nasale_lente", duration: 60 },
+        { id: 9112, stretchKey: "auto_grandissement_assis", duration: 60 },
+        { id: 9113, stretchKey: "mobilisation_cervicale", duration: 120 },
+        { id: 9114, stretchKey: "rotations_epaules", duration: 120 }
+      ],
+      midi: [
+        { id: 9121, stretchKey: "etirement_passif_psoas", duration: 120 },
+        { id: 9122, stretchKey: "etirement_rotation_thoracique", duration: 60 },
+        { id: 9123, stretchKey: "pendule_epaule", duration: 120 }
+      ],
+      soir: [
+        { id: 9131, stretchKey: "jambe_a_la_paroi", duration: 180 },
+        { id: 9132, stretchKey: "etirement_flechisseurs_hanche_passif", duration: 60 },
+        { id: 9133, stretchKey: "dead_hang_passif", duration: 60 }
+      ]
     },
     exercices: [
       { id: 101, name: "Tractions pronation", series: "4×4-6", materiel: "barre" },
@@ -39,9 +57,21 @@ export const workoutProgram = {
     name: "Biceps / Pectoraux + Natation",
     focus: "Biceps / Pectoraux / Haut du torse",
     etirements: {
-      matin: "3 min respiration allongée ventre + bassin surélevé + 2 min mobilité scapulaire (cercles bras tendus devant, coude fléchi) + 2 min étirement actif du haut du dos (assis, mains croisées loin devant)",
-      midi: "2 min ouverture en Y sur le mur (dos collé, bras glissent) + 1 min posture du sphinx (lombaires relâchées, tête rentrée) + 2 min massage auto myofascial (balle ou main sur pectoraux)",
-      soir: "2 min étirement cou + trapèzes (assise, inclinaisons lentes) + 2 min couchée sur rouleau serviette vertical (bras ouverts) + 1 min respiration nasale profonde, tempo 4-4-4"
+      matin: [
+        { id: 9211, stretchKey: "respiration_allongee_bassin_surleve", duration: 180 },
+        { id: 9212, stretchKey: "mobilite_scapulaire_cercles_bras", duration: 120 },
+        { id: 9213, stretchKey: "etirement_actif_haut_du_dos", duration: 120 }
+      ],
+      midi: [
+        { id: 9221, stretchKey: "ouverture_y_au_mur", duration: 120 },
+        { id: 9222, stretchKey: "posture_sphinx", duration: 60 },
+        { id: 9223, stretchKey: "auto_massage_pectoraux", duration: 120 }
+      ],
+      soir: [
+        { id: 9231, stretchKey: "etirement_cou_trapezes", duration: 120 },
+        { id: 9232, stretchKey: "rouleau_serviette_vertical", duration: 120 },
+        { id: 9233, stretchKey: "respiration_nasale_4_4_4", duration: 60 }
+      ]
     },
     exercices: [
       { id: 201, name: "Pompes lestées", series: "4×10-12", materiel: "gilet lesté", notes: "Focus contrôle + descente lente" },
@@ -66,9 +96,21 @@ export const workoutProgram = {
     name: "Pectoraux / Triceps + Boxe",
     focus: "Pectoraux / Triceps / Épaules",
     etirements: {
-      matin: "2 min étirement ischio (assis, dos droit, jambes tendues) + 2 min activation fessiers (ponts au sol, 2x15 reps lentes) + 2 min assouplissement psoas (fente + bras opposé en élévation)",
-      midi: "3 min assis au mur (angle droit, gainage passif en appui) + 2 min genoux-poitrine allongé (relâchement lombaire) + 1 min respiration nasale dos collé au sol, genoux fléchis",
-      soir: "3 min posture de l'enfant (bras loin devant) + 1 min chat-vache lent + 2 min allongé, jambes croisées (étirement piriforme + fessier)"
+      matin: [
+        { id: 9311, stretchKey: "etirement_ischio_assis", duration: 120 },
+        { id: 9312, stretchKey: "ponts_fessiers_activation", duration: 120 },
+        { id: 9313, stretchKey: "fente_psoas_bras_oppose_eleve", duration: 120 }
+      ],
+      midi: [
+        { id: 9321, stretchKey: "assis_au_mur_chaise", duration: 180 },
+        { id: 9322, stretchKey: "genoux_poitrine_allonge", duration: 120 },
+        { id: 9323, stretchKey: "respiration_nasale_dos_au_sol", duration: 60 }
+      ],
+      soir: [
+        { id: 9331, stretchKey: "posture_enfant", duration: 180 },
+        { id: 9332, stretchKey: "chat_vache", duration: 60 },
+        { id: 9333, stretchKey: "allonge_jambes_croisees_piriforme", duration: 120 }
+      ]
     },
     exercices: [
       { id: 301, name: "Pompes déclinées", series: "4×10", materiel: "support", notes: "Gilet sur 2 séries si possible" },
@@ -97,9 +139,21 @@ export const workoutProgram = {
     name: "Repos / Mobilité",
     focus: "Mobilité thoracique & cou / nuque",
     etirements: {
-      matin: "2 min assis dos droit, inclinaisons latérales tête + 2 min cercles thoraciques debout (mains sur cage thoracique) + 2 min ouverture en T allongé (mobilité rotation de la colonne)",
-      midi: "2 min wall slides (glisser bras contre mur en W) + 1 min étirement sternocléido (main sur clavicule, inclinaison opposée) + 2 min face contre mur, menton rentré, redressement passif",
-      soir: "3 min allongé, tête suspendue (bord du lit, traction douce) + 2 min respiration expand belly (main ventre + main poitrine) + 1 min sphinx ou mini-cobra pour relâchement postural"
+      matin: [
+        { id: 9411, stretchKey: "inclinaisons_laterales_tete", duration: 120 },
+        { id: 9412, stretchKey: "cercles_thoraciques_debout", duration: 120 },
+        { id: 9413, stretchKey: "ouverture_t_allonge", duration: 120 }
+      ],
+      midi: [
+        { id: 9421, stretchKey: "wall_slides_w", duration: 120 },
+        { id: 9422, stretchKey: "etirement_sternocleido", duration: 60 },
+        { id: 9423, stretchKey: "face_au_mur_menton_rentre", duration: 120 }
+      ],
+      soir: [
+        { id: 9431, stretchKey: "tete_suspendue_bord_de_lit", duration: 180 },
+        { id: 9432, stretchKey: "respiration_diaphragmatique_main_ventre", duration: 120 },
+        { id: 9433, stretchKey: "mini_cobra", duration: 60 }
+      ]
     },
     exercices: [],
     duree: "Étirements uniquement",
@@ -110,9 +164,21 @@ export const workoutProgram = {
     name: "Street Workout (dos / core / contrôle – variante)",
     focus: "dos / core / contrôle",
     etirements: {
-      matin: "2 min en appui contre mur (tête/omoplates/fesses/talons) + 1 min marche lente pieds nus (ancrage plantaire) + 2 min élévation sur demi-pointes (activation mollets/posture)",
-      midi: "2 min squat passif (ou assis sur talons si trop dur) + 1 min balancier bras jambe opposée debout + 1 min allongé, jambes en chaise à 90°, focus respiration",
-      soir: "2 min pendule bras + hanche + 2 min relâchement lombaire (genoux pliés, bascule douce bassin) + 2 min jambe à la verticale (décompression veineuse + bassin)"
+      matin: [
+        { id: 9511, stretchKey: "appui_mur_4_points", duration: 120 },
+        { id: 9512, stretchKey: "marche_lente_pieds_nus", duration: 60 },
+        { id: 9513, stretchKey: "elevations_demi_pointes", duration: 120 }
+      ],
+      midi: [
+        { id: 9521, stretchKey: "squat_passif", duration: 120 },
+        { id: 9522, stretchKey: "balancier_bras_jambe_opposee", duration: 60 },
+        { id: 9523, stretchKey: "jambes_en_chaise_90", duration: 60 }
+      ],
+      soir: [
+        { id: 9531, stretchKey: "pendule_bras_hanche", duration: 120 },
+        { id: 9532, stretchKey: "relachement_lombaire_bascule_bassin", duration: 120 },
+        { id: 9533, stretchKey: "jambe_a_la_paroi", duration: 120 }
+      ]
     },
     exercices: [
       { id: 501, name: "Tractions supination", series: "4×4-6", materiel: "barre", notes: "Focus traction contrôlée" },
@@ -142,9 +208,21 @@ export const workoutProgram = {
     name: "Maison - Variante",
     focus: "Biceps / Pectoraux / Haut du torse",
     etirements: {
-      matin: "3 min de marche très lente et consciente + 1 min respiration par narines alternées + 1 min auto-massage trapèze + cou avec les mains",
-      midi: "2 min étirement dynamique bras croisés (type nage dos) + 2 min posture du sphinx + inspiration/expiration amplifiée + 2 min pont fessier (pelvis enroulé doucement vers le haut)",
-      soir: "3 min assis, jambe croisée (twist lent colonne) + 2 min étirement psoas + 2 min jambes surélevées + respiration basse + yeux fermés"
+      matin: [
+        { id: 9611, stretchKey: "marche_lente_consciente", duration: 180 },
+        { id: 9612, stretchKey: "respiration_narines_alternees", duration: 60 },
+        { id: 9613, stretchKey: "auto_massage_trapezes_cou", duration: 60 }
+      ],
+      midi: [
+        { id: 9621, stretchKey: "etirement_dynamique_bras_croises", duration: 120 },
+        { id: 9622, stretchKey: "posture_sphinx", duration: 120 },
+        { id: 9623, stretchKey: "pont_fessier_pelvis_enroule", duration: 120 }
+      ],
+      soir: [
+        { id: 9631, stretchKey: "assis_jambe_croisee_twist", duration: 180 },
+        { id: 9632, stretchKey: "etirement_passif_psoas", duration: 120 },
+        { id: 9633, stretchKey: "jambes_surelevees_respiration_basse", duration: 120 }
+      ]
     },
     exercices: [
       { id: 601, name: "Pompes inclinées tempo", series: "4×10-12", materiel: "support", notes: "haut pecs, pieds sur support" },
@@ -193,9 +271,21 @@ export const workoutProgram = {
     name: "Maison - Repos",
     focus: "Pectoraux / Triceps / Épaules",
     etirements: {
-      matin: "3 min allongé, respiration sans tension + 1 min balayage corporel mental (prise de conscience zones tendues) + 1 min bras en croix, ouverture thoracique passive",
-      midi: "2 min chat-vache + 2 min cercles lents de cou, bras et hanches + 2 min relâchement psoas + dos au sol",
-      soir: "5 min allongé jambes en l'air ou sur un support + Respiration 4-7-8 (inspire 4s – bloque 7s – expire 8s) + Introspection / recentrage / récupération profonde"
+      matin: [
+        { id: 9711, stretchKey: "respiration_nasale_lente", duration: 180 },
+        { id: 9712, stretchKey: "balayage_corporel_mental", duration: 60 },
+        { id: 9713, stretchKey: "bras_en_croix_ouverture_thoracique", duration: 60 }
+      ],
+      midi: [
+        { id: 9721, stretchKey: "chat_vache", duration: 120 },
+        { id: 9722, stretchKey: "cercles_cou_bras_hanches", duration: 120 },
+        { id: 9723, stretchKey: "relachement_psoas_dos_au_sol", duration: 120 }
+      ],
+      soir: [
+        { id: 9731, stretchKey: "jambes_surelevees_respiration_basse", duration: 300 },
+        { id: 9732, stretchKey: "respiration_4_7_8", duration: 240 },
+        { id: 9733, stretchKey: "balayage_corporel_mental", duration: 60 }
+      ]
     },
     exercices: [
       { id: 701, name: "Pompes sur poignées avec gilet", series: "4×10-12", materiel: "poignées + gilet" },

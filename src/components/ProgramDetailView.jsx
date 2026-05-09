@@ -31,6 +31,11 @@ import { useTranslation } from '../utils/translations';
 import { useLanguage } from '../context/LanguageContext';
 import { LANGUAGES } from '../utils/translations/constants';
 import { exerciseDatabase } from '../data/exerciseDatabase';
+import StretchSlotsEditor from './program/StretchSlotsEditor';
+import CircuitEditor from './circuits/CircuitEditor';
+import { useWorkout } from '../context/WorkoutContext';
+import { Layers, Repeat } from 'lucide-react';
+import { getCircuitIdsForDay } from '../utils/circuits/circuitDefinitionUtils';
 
 const PROGRAM_WEEK_DAYS = ['lundi', 'mardi', 'mercredi', 'jeudi', 'vendredi', 'samedi', 'dimanche'];
 const REPS_SCOPES = {
@@ -109,6 +114,35 @@ const ProgramDetailView = ({ program, onBack, onUpdateProgram }) => {
   const [pickerSeconds, setPickerSeconds] = useState('');
   const [pickerMinutes, setPickerMinutes] = useState('');
   const [pickerWeight, setPickerWeight] = useState('');
+
+  // Circuits (bibliothèque globale + édition / assignation)
+  const {
+    data: workoutData,
+    saveCircuitDefinition,
+    deleteCircuitDefinition,
+    assignCircuitToProgramDay
+  } = useWorkout();
+  const circuitDefinitions = workoutData?.circuitDefinitions || {};
+  const [circuitEditorState, setCircuitEditorState] = useState(null); // { dayKey, definition? }
+  const openCircuitEditorForDay = useCallback((dayKey, definition = null) => {
+    setCircuitEditorState({ dayKey, definition });
+  }, []);
+  const closeCircuitEditor = useCallback(() => setCircuitEditorState(null), []);
+  const handleSaveCircuit = useCallback(async (definition) => {
+    return saveCircuitDefinition(definition);
+  }, [saveCircuitDefinition]);
+  const handleAssignCircuit = useCallback(async (programId, dayName, circuitId) => {
+    return assignCircuitToProgramDay(programId, dayName, circuitId, true);
+  }, [assignCircuitToProgramDay]);
+  const handleRemoveCircuitFromDay = useCallback((dayKey, circuitId) => {
+    if (!program?.id) return;
+    assignCircuitToProgramDay(program.id, dayKey, circuitId, false);
+  }, [program?.id, assignCircuitToProgramDay]);
+  const handleDeleteCircuitDefinition = useCallback(async (circuitId) => {
+    if (!circuitId) return;
+    if (!window.confirm('Supprimer définitivement ce circuit (toutes assignations comprises) ?')) return;
+    await deleteCircuitDefinition(circuitId);
+  }, [deleteCircuitDefinition]);
 
   const programSearchFallback = useMemo(() => {
     const en = language === LANGUAGES.EN;
@@ -879,28 +913,32 @@ const ProgramDetailView = ({ program, onBack, onUpdateProgram }) => {
     );
   };
 
-  const handleEditStretch = (dayKey, stretchType) => {
-    const stretch = program.schedule[dayKey].etirements[stretchType];
-    setEditingStretch({ dayKey, stretchType });
-    setEditedData(stretch);
-  };
+  // ───────────────────────────────────────────────────────────────────────
+  // Étirements : édition individuelle via StretchSlotsEditor + banque
+  // ───────────────────────────────────────────────────────────────────────
+  // Le composant StretchSlotsEditor gère l'ajout (avec picker recherche live),
+  // la suppression, le réordonnancement et l'édition de durée par item.
+  // Il appelle `handleStretchSlotsChange` avec le nouveau objet
+  // { matin: [...], midi: [...], soir: [...] } à persister.
+  const handleStretchSlotsChange = useCallback(
+    (dayKey, newEtirements) => {
+      const updatedProgram = {
+        ...program,
+        updatedAt: new Date().toISOString(),
+        schedule: { ...program.schedule }
+      };
+      updatedProgram.schedule[dayKey] = {
+        ...updatedProgram.schedule[dayKey],
+        etirements: newEtirements
+      };
+      onUpdateProgram(updatedProgram);
+    },
+    [program, onUpdateProgram]
+  );
 
-  const handleSaveStretch = () => {
-    if (!editingStretch) return;
-    const updatedProgram = { ...program, updatedAt: new Date().toISOString(), schedule: { ...program.schedule } };
-    const day = { ...updatedProgram.schedule[editingStretch.dayKey] };
-    const stretches = { ...(day.etirements || {}) };
-    stretches[editingStretch.stretchType] = {
-      ...stretches[editingStretch.stretchType],
-      ...editedData
-    };
-    day.etirements = stretches;
-    updatedProgram.schedule[editingStretch.dayKey] = day;
-    onUpdateProgram(updatedProgram);
-    
-    setEditingStretch(null);
-    setEditedData({});
-  };
+  // Helpers legacy conservés en cas d'utilisation externe (no-op si plus appelés)
+  const handleEditStretch = () => {};
+  const handleSaveStretch = () => {};
 
   const cancelEdit = () => {
     setEditingExercise(null);
@@ -1169,85 +1207,18 @@ const ProgramDetailView = ({ program, onBack, onUpdateProgram }) => {
               </CardHeader>
               
               <CardContent className="pt-6">
-                {/* Étirements */}
-                {dayData.etirements && (
-                  <div className="mb-8">
-                    <h3 className={`${typography.presets.h3} mb-4 flex items-center gap-2`}>
-                      <Sunrise size={20} className="text-orange-400" />
-                      Étirements
-                    </h3>
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                      {Object.entries(dayData.etirements).map(([stretchType, stretch]) => {
-                        const IconComponent = stretchIcons[stretchType];
-                        const isEditing = editingStretch?.dayKey === dayKey && editingStretch?.stretchType === stretchType;
-                        
-                        return (
-                          <div
-                            key={stretchType}
-                            className="rounded-lg border border-[#0F4C5C]/50 bg-black p-4"
-                          >
-                            <div className="flex items-center justify-between mb-3">
-                              <div className="flex items-center gap-2">
-                                <IconComponent size={16} className="text-orange-400" />
-                                <span className="font-medium capitalize">{stretchType}</span>
-                              </div>
-                              {!isEditing && (
-                                <Button
-                                  onClick={() => handleEditStretch(dayKey, stretchType)}
-                                  className="p-1 h-auto bg-transparent hover:bg-slate-600/50 text-slate-400 hover:text-slate-200"
-                                >
-                                  <Edit3 size={14} />
-                                </Button>
-                              )}
-                            </div>
-                            
-                            {isEditing ? (
-                              <div className="space-y-3">
-                                <input
-                                  type="text"
-                                  value={editedData.name || ''}
-                                  onChange={(e) => setEditedData({...editedData, name: e.target.value})}
-                                  className="w-full bg-black border border-[#0F4C5C]/50 rounded px-3 py-2 text-sm"
-                                  placeholder="Nom de l'étirement"
-                                />
-                                <input
-                                  type="text"
-                                  value={editedData.duration || ''}
-                                  onChange={(e) => setEditedData({...editedData, duration: e.target.value})}
-                                  className="w-full bg-black border border-[#0F4C5C]/50 rounded px-3 py-2 text-sm"
-                                  placeholder="Durée"
-                                />
-                                <textarea
-                                  value={editedData.instructions || ''}
-                                  onChange={(e) => setEditedData({...editedData, instructions: e.target.value})}
-                                  className="w-full bg-black border border-[#0F4C5C]/50 rounded px-3 py-2 text-sm"
-                                  rows="3"
-                                  placeholder="Instructions"
-                                />
-                                <div className="flex gap-2">
-                                  <Button onClick={handleSaveStretch} className="bg-green-600 hover:bg-green-700 text-white px-3 py-1 text-sm">
-                                    <Save size={14} className="mr-1" />
-                                    Sauver
-                                  </Button>
-                                  <Button onClick={cancelEdit} className="bg-slate-600 hover:bg-slate-700 text-white px-3 py-1 text-sm">
-                                    <X size={14} className="mr-1" />
-                                    Annuler
-                                  </Button>
-                                </div>
-                              </div>
-                            ) : (
-                              <div>
-                                <div className="text-sm font-medium text-slate-200 mb-1">{stretch.name}</div>
-                                <div className="text-xs text-slate-400 mb-2">{stretch.duration}</div>
-                                <div className="text-xs text-slate-300 leading-relaxed">{stretch.instructions}</div>
-                              </div>
-                            )}
-                          </div>
-                        );
-                      })}
-                    </div>
-                  </div>
-                )}
+                {/* Étirements — édition individuelle via picker banque */}
+                <div className="mb-8">
+                  <h3 className={`${typography.presets.h3} mb-4 flex items-center gap-2`}>
+                    <Sunrise size={20} className="text-orange-400" />
+                    Étirements
+                  </h3>
+                  <StretchSlotsEditor
+                    dayKey={dayKey}
+                    etirements={dayData.etirements}
+                    onChange={(newEtirements) => handleStretchSlotsChange(dayKey, newEtirements)}
+                  />
+                </div>
 
                 {/* Activités complémentaires */}
                 {dayData.complementaryActivity && (
@@ -1422,6 +1393,123 @@ const ProgramDetailView = ({ program, onBack, onUpdateProgram }) => {
                       );
                     })}
                   </div>
+                </div>
+
+                {/* Circuits assignés à ce jour */}
+                <div className="mt-6">
+                  <div className="flex flex-wrap items-center justify-between gap-3 mb-3">
+                    <h3 className={`${typography.presets.h3} flex items-center gap-2 text-teal-50`}>
+                      <Repeat size={20} className="text-teal-400" />
+                      Circuits ({getCircuitIdsForDay(program, dayKey).length})
+                    </h3>
+                    <button
+                      type="button"
+                      onClick={() => openCircuitEditorForDay(dayKey)}
+                      className="inline-flex items-center gap-1.5 rounded-lg border border-[#0F4C5C]/55 bg-black px-3 py-1.5 text-xs font-medium text-teal-100 hover:border-[#0F5C45]/60 hover:bg-[#0F4C5C]/15"
+                    >
+                      <Plus size={14} />
+                      Ajouter un circuit
+                    </button>
+                  </div>
+                  {getCircuitIdsForDay(program, dayKey).length === 0 ? (
+                    <p className="text-sm text-slate-500 mb-2">
+                      Aucun circuit pour ce jour. Créez-en un (ex. « Circuit core 3 tours ») pour le voir apparaître dans « Aujourd'hui ».
+                    </p>
+                  ) : (
+                    <div className="space-y-2">
+                      {getCircuitIdsForDay(program, dayKey).map((cid) => {
+                        const def = circuitDefinitions[cid];
+                        if (!def) {
+                          return (
+                            <div
+                              key={cid}
+                              className="rounded-lg border border-amber-700/40 bg-amber-900/20 px-3 py-2 text-xs text-amber-200"
+                            >
+                              Circuit introuvable (id: {cid}) — il a peut-être été supprimé.
+                              <button
+                                type="button"
+                                onClick={() => handleRemoveCircuitFromDay(dayKey, cid)}
+                                className="ml-2 underline hover:text-amber-100"
+                              >
+                                retirer
+                              </button>
+                            </div>
+                          );
+                        }
+                        return (
+                          <div
+                            key={cid}
+                            className="rounded-lg border border-[#0F4C5C]/50 bg-black p-3"
+                          >
+                            <div className="flex flex-wrap items-start justify-between gap-2">
+                              <div className="min-w-0">
+                                <p className="text-sm font-semibold text-slate-100">
+                                  <Layers size={14} className="mr-1 inline text-teal-400" />
+                                  {def.name}
+                                </p>
+                                <p className="mt-0.5 text-xs text-slate-400">
+                                  {def.targetRounds} tours · {(def.items || []).length} exos
+                                  {def.restBetweenRoundsSec ? ` · repos ${def.restBetweenRoundsSec}s` : ''}
+                                </p>
+                                {(def.items || []).length > 0 && (
+                                  <ul className="mt-2 grid grid-cols-1 gap-x-4 gap-y-1 text-[11px] text-slate-300 sm:grid-cols-2">
+                                    {def.items.map((it, i) => (
+                                      <li key={it.slotId} className="truncate">
+                                        <span className="text-teal-300">{i + 1}.</span> {it.exerciseName}
+                                        <span className="text-slate-500">
+                                          {' — '}
+                                          {it.mode === 'duration'
+                                            ? `${it.targetDurationSec}s`
+                                            : `${it.targetReps} reps`}
+                                        </span>
+                                      </li>
+                                    ))}
+                                  </ul>
+                                )}
+                                {(def.primaryMuscles || []).length > 0 && (
+                                  <div className="mt-2 flex flex-wrap gap-1">
+                                    {def.primaryMuscles.map((m) => (
+                                      <span
+                                        key={m}
+                                        className="rounded-full border border-teal-700/40 bg-teal-900/20 px-1.5 py-0.5 text-[10px] text-teal-200"
+                                      >
+                                        {m}
+                                      </span>
+                                    ))}
+                                  </div>
+                                )}
+                              </div>
+                              <div className="flex shrink-0 items-center gap-1">
+                                <button
+                                  type="button"
+                                  onClick={() => openCircuitEditorForDay(dayKey, def)}
+                                  className="rounded px-2 py-1 text-xs text-teal-200 hover:bg-[#0F4C5C]/15"
+                                >
+                                  Modifier
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => handleRemoveCircuitFromDay(dayKey, cid)}
+                                  className="rounded px-2 py-1 text-xs text-slate-400 hover:bg-slate-800 hover:text-slate-200"
+                                  title="Retirer ce circuit du jour (sans le supprimer)"
+                                >
+                                  Retirer
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => handleDeleteCircuitDefinition(cid)}
+                                  className="rounded p-1 text-red-300 hover:bg-red-900/40"
+                                  title="Supprimer définitivement le circuit"
+                                >
+                                  <Trash2 size={14} />
+                                </button>
+                              </div>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
                 </div>
 
                 {/* Variantes Salle */}
@@ -1861,6 +1949,21 @@ const ProgramDetailView = ({ program, onBack, onUpdateProgram }) => {
             </div>
           </div>
         </div>
+      )}
+
+      {circuitEditorState && (
+        <CircuitEditor
+          initialDefinition={circuitEditorState.definition}
+          programs={program ? [program] : []}
+          defaultAssignment={
+            circuitEditorState.dayKey && program?.id
+              ? { programId: program.id, dayName: circuitEditorState.dayKey }
+              : null
+          }
+          onSave={handleSaveCircuit}
+          onCancel={closeCircuitEditor}
+          onAssignToDay={handleAssignCircuit}
+        />
       )}
     </div>
   );

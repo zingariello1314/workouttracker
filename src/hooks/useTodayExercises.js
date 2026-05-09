@@ -10,6 +10,10 @@
 import { useMemo } from 'react';
 import { useWorkout } from '../context/WorkoutContext';
 import { getDateStr } from '../utils/dateUtils';
+import {
+  getExerciseSeriesOverrides,
+  mergeSeriesIntoProgramExercises
+} from '../utils/dailyVariationSeriesOverrides';
 
 /**
  * Hook pour obtenir les exercices du jour avec variations journalières
@@ -105,7 +109,10 @@ export const useTodayExercises = (options = {}) => {
 
       // ✅ FILTRAGE INTELLIGENT : Préserver l'ordre original du programme
       // + Validation que chaque exercice a un ID valide
-      const programExercises = baseWorkout.exercices.filter(ex => {
+      const seriesOverrides = getExerciseSeriesOverrides(data?.dailyVariations, dateStr);
+
+      const programExercises = mergeSeriesIntoProgramExercises(
+        baseWorkout.exercices.filter((ex) => {
         // ✅ Protection contre exercices invalides
         if (!ex || typeof ex !== 'object') {
           console.warn('⚠️ Exercice invalide dans programme (not an object):', ex);
@@ -117,7 +124,9 @@ export const useTodayExercises = (options = {}) => {
         }
         // ✅ Filtrer les exercices supprimés (lookup O(1))
         return !suppressedIdsSet.has(ex.id);
-      });
+        }),
+        seriesOverrides
+      );
 
       // ✅ VALIDATION RENFORCÉE : S'assurer que les exercices exceptionnels sont bien formés
       const additionalExercises = (Array.isArray(dailyVariation?.additionalExercises)

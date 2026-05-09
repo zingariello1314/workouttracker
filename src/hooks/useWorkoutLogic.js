@@ -24,14 +24,17 @@ export const useWorkoutLogic = (data, updateData, getCurrentData, updateTempExer
         name: null,
         focus: null,
         exercices: [],
-        etirements: [],
+        etirements: { matin: [], midi: [], soir: [] },
         isGymMode: false,
         weekVariant: currentWeekVariant
       };
     }
 
     const dayName = getDayName(currentDate);
-    const baseWorkout = workoutProgram[dayName] || { exercices: [], etirements: [] };
+    const baseWorkout = workoutProgram[dayName] || {
+      exercices: [],
+      etirements: { matin: [], midi: [], soir: [] }
+    };
     
     // Calculer la variante de semaine automatiquement (toujours basée sur la date)
     const currentWeekVariant = getAutoWeekVariant(currentDate);

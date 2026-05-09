@@ -1,10 +1,17 @@
 /**
- * Complétion « programme du jour » : exos cochés / exos prévus (même agrégation que le calendrier).
- * Bonus XP : +100 si ≥ 80 %, +200 supplémentaires si 100 % (300 au total ce jour-là).
+ * Complétion « programme du jour » : (exos + étirements) cochés / prévus.
+ *
+ * Bonus XP : +100 si ratio ≥ 80 %, +200 supplémentaires si 100 % (300 au total ce jour-là).
+ *
+ * Les étirements comptent dans le ratio depuis la refonte (granularité item individuel) :
+ * un étirement coché = 1 / total_planifié (exos + étirements) pour la couleur du calendrier
+ * et le bonus de complétion. Cela garantit que cocher TOUS les étirements d'un jour de
+ * repos donne quand même 100 % de complétion (et le bonus +300 XP associé).
  */
 
 import { workoutProgram } from '../data/workoutProgram';
-import { collectCalendarRepKeysForExercise } from './exerciseKeyGenerator';
+import { collectCalendarRepKeysForExercise, generateStretchItemKey } from './exerciseKeyGenerator';
+import { buildPlannedStretchItemsForDateStr } from './stretchUtils';
 
 const DAY_NAMES = ['dimanche', 'lundi', 'mardi', 'mercredi', 'jeudi', 'vendredi', 'samedi'];
 
@@ -112,10 +119,25 @@ export function buildPlannedExerciseListForDateStr(dateStr, workoutData, ctx = {
 }
 
 /**
- * @returns {{ checked: number, total: number, ratio: number }}
+ * Liste plate des étirements planifiés pour une date (programme par défaut + custom).
+ */
+export function buildPlannedStretchListForDateStr(dateStr, ctx = {}) {
+  const programs = Array.isArray(ctx?.programs) ? ctx.programs : [];
+  return buildPlannedStretchItemsForDateStr(dateStr, workoutProgram, { programs });
+}
+
+/**
+ * Sépare le ratio en deux composantes (exos / étirements) puis renvoie le ratio combiné.
+ * Permet à la couleur du calendrier de refléter la complétion globale du jour
+ * (et au bonus XP +100/+300 d'inclure les étirements).
+ *
+ * @returns {{ checked: number, total: number, ratio: number,
+ *             exoChecked: number, exoTotal: number,
+ *             stretchChecked: number, stretchTotal: number }}
  */
 export function computeProgramCompletionCheckedRatio(dateStr, workoutData, ctx = {}) {
-  let list = buildPlannedExerciseListForDateStr(dateStr, workoutData, ctx);
+  // ── Volet Exercices ───────────────────────────────────────────────────────
+  let exoList = buildPlannedExerciseListForDateStr(dateStr, workoutData, ctx);
   const dv = workoutData?.dailyVariations?.[dateStr];
   const suppressed = new Set(
     Array.isArray(dv?.suppressedExercises)
@@ -123,27 +145,58 @@ export function computeProgramCompletionCheckedRatio(dateStr, workoutData, ctx =
       : []
   );
   if (suppressed.size > 0) {
-    list = list.filter((ex) => !suppressed.has(ex.id));
+    exoList = exoList.filter((ex) => !suppressed.has(ex.id));
   }
-  const total = list.length;
-  if (total === 0) return { checked: 0, total: 0, ratio: 0 };
+  const exoTotal = exoList.length;
   const chk = workoutData?.checkedExercises || {};
-  let checked = 0;
-  for (const exercise of list) {
+  let exoChecked = 0;
+  for (const exercise of exoList) {
     const keys = collectCalendarRepKeysForExercise(dateStr, exercise);
-    if (keys.some((k) => chk[k] === true)) checked += 1;
+    if (keys.some((k) => chk[k] === true)) exoChecked += 1;
   }
-  return { checked, total, ratio: checked / total };
+
+  // ── Volet Étirements ──────────────────────────────────────────────────────
+  const stretchList = buildPlannedStretchListForDateStr(dateStr, ctx);
+  const stretchTotal = stretchList.length;
+  const checkedStretches = workoutData?.checkedStretches || {};
+  let stretchChecked = 0;
+  for (const item of stretchList) {
+    const key = generateStretchItemKey(dateStr, item.moment, item.id);
+    if (checkedStretches[key] === true) stretchChecked += 1;
+  }
+
+  // ── Ratio combiné ─────────────────────────────────────────────────────────
+  const total = exoTotal + stretchTotal;
+  const checked = exoChecked + stretchChecked;
+  const ratio = total === 0 ? 0 : checked / total;
+
+  return {
+    checked,
+    total,
+    ratio,
+    exoChecked,
+    exoTotal,
+    stretchChecked,
+    stretchTotal
+  };
 }
 
 /**
  * Bonus XP cumulé sur toutes les dates présentes dans les données.
+ *
+ * Une date est éligible si elle apparaît dans `checkedExercises` OU `checkedStretches`
+ * (un jour de pure mobilité avec uniquement des étirements doit pouvoir donner le bonus).
  */
 export function computeProgramCompletionBonusXp(workoutData, ctx = {}) {
   const dates = new Set();
   const ch = workoutData?.checkedExercises || {};
   Object.keys(ch).forEach((k) => {
     if (/^\d{4}-\d{2}-\d{2}_/.test(k)) dates.add(k.slice(0, 10));
+  });
+  const cs = workoutData?.checkedStretches || {};
+  Object.keys(cs).forEach((k) => {
+    const m = k.match(/^(\d{4}-\d{2}-\d{2})_/);
+    if (m) dates.add(m[1]);
   });
   let bonus = 0;
   for (const dateStr of dates) {

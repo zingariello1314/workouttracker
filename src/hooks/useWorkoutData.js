@@ -135,6 +135,16 @@ const INITIAL_WORKOUT_DATA = {
   /** Notes subjectives 1–10 par critère (modifiables dans l’onglet Exercices > fiche) */
   exercisePerceivedRatings: {},
   exercisePersonalNotes: {},
+  /**
+   * Notes subjectives 1–10 par critère pour chaque étirement de la banque.
+   * Format : { [stretchKey]: { difficulty: 1-10, enjoyment: 1-10, recovery: 1-10 } }
+   * La moyenne des 3 critères pilote l'XP gagnée par étirement coché (100 → 300 XP).
+   * Stockées par `stretchKey` (et non par item-id) pour partager la note entre
+   * toutes les occurrences du même étirement dans la semaine.
+   */
+  stretchPerceivedRatings: {},
+  /** Notes personnelles libres par étirement (clés stretchKey de la banque). */
+  stretchPersonalNotes: {},
   /** Records max courants par exercice (street/muscu/endurance/boxe) */
   exerciseMaxRecords: [],
   /** Historique complet des enregistrements de performances */
@@ -143,6 +153,18 @@ const INITIAL_WORKOUT_DATA = {
   performanceRetestPlans: [],
   /** Arrêt tabac / THC : timers, jalons 20 ans, journal des envies (IndexedDB via saveToDB) */
   addictionQuitData: { ...DEFAULT_ADDICTION_QUIT_DATA },
+  /**
+   * Circuits : bibliothèque globale (référencée par les programmes via `schedule[day].circuitIds`).
+   * Format : { [circuitId]: CircuitDef } — voir `src/utils/circuits/circuitDefinitionUtils.js`.
+   */
+  circuitDefinitions: {},
+  /**
+   * Suivi des tours réalisés par jour pour chaque circuit.
+   * Format : { "YYYY-MM-DD": { [circuitId]: { roundsCompleted: number, finishedAt?: ISO } } }
+   */
+  circuitProgress: {},
+  /** Version du schéma circuits — pour migrations futures. */
+  circuitDefinitionsVersion: '1.0',
   // homepageImages supprimé - maintenant géré par useHomepageImages indépendant
 };
 
@@ -261,6 +283,74 @@ export const useWorkoutData = (options = {}) => {
       ...rawData,
       dailyVariations: migratedVariations,
       dailyVariationsVersion: rawData.dailyVariationsVersion || '1.0'
+    };
+  };
+
+  // ✅ Migration / normalisation des Circuits (définitions + progression).
+  // Tolérante : on garde toutes les valeurs valides, on rejette les entrées corrompues.
+  const migrateCircuits = (rawData) => {
+    const inputDefs = rawData.circuitDefinitions && typeof rawData.circuitDefinitions === 'object'
+      ? rawData.circuitDefinitions
+      : {};
+    const inputProgress = rawData.circuitProgress && typeof rawData.circuitProgress === 'object'
+      ? rawData.circuitProgress
+      : {};
+
+    const cleanDefs = {};
+    Object.entries(inputDefs).forEach(([id, def]) => {
+      if (!id || typeof id !== 'string') return;
+      if (!def || typeof def !== 'object') return;
+      if (!def.name || typeof def.name !== 'string') return;
+      const target = Number(def.targetRounds);
+      if (!Number.isFinite(target) || target <= 0) return;
+      const items = Array.isArray(def.items)
+        ? def.items
+            .filter((it) => it && typeof it === 'object' && it.exerciseKey)
+            .map((it, idx) => ({
+              slotId: typeof it.slotId === 'string' && it.slotId ? it.slotId : `s_${idx + 1}`,
+              exerciseKey: String(it.exerciseKey),
+              exerciseName: typeof it.exerciseName === 'string' ? it.exerciseName : String(it.exerciseKey),
+              mode: it.mode === 'duration' ? 'duration' : 'reps',
+              targetReps: it.mode === 'duration' ? null : (Number(it.targetReps) > 0 ? Number(it.targetReps) : 10),
+              targetDurationSec: it.mode === 'duration' ? (Number(it.targetDurationSec) > 0 ? Number(it.targetDurationSec) : 30) : null,
+              notes: typeof it.notes === 'string' ? it.notes : ''
+            }))
+        : [];
+      cleanDefs[id] = {
+        id,
+        name: def.name,
+        targetRounds: Math.min(50, Math.max(1, Math.round(target))),
+        restBetweenRoundsSec: Number.isFinite(Number(def.restBetweenRoundsSec)) ? Math.max(0, Number(def.restBetweenRoundsSec)) : 60,
+        notes: typeof def.notes === 'string' ? def.notes : '',
+        primaryMuscles: Array.isArray(def.primaryMuscles) ? def.primaryMuscles.filter((m) => typeof m === 'string') : [],
+        items,
+        createdAt: def.createdAt || new Date().toISOString(),
+        updatedAt: def.updatedAt || def.createdAt || new Date().toISOString()
+      };
+    });
+
+    const cleanProgress = {};
+    Object.entries(inputProgress).forEach(([dateStr, byCircuit]) => {
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) return;
+      if (!byCircuit || typeof byCircuit !== 'object') return;
+      const dayMap = {};
+      Object.entries(byCircuit).forEach(([circuitId, val]) => {
+        if (!circuitId) return;
+        const rounds = Number(val?.roundsCompleted);
+        if (!Number.isFinite(rounds) || rounds <= 0) return;
+        dayMap[circuitId] = {
+          roundsCompleted: Math.max(0, Math.round(rounds)),
+          ...(val?.finishedAt ? { finishedAt: val.finishedAt } : {})
+        };
+      });
+      if (Object.keys(dayMap).length > 0) cleanProgress[dateStr] = dayMap;
+    });
+
+    return {
+      ...rawData,
+      circuitDefinitions: cleanDefs,
+      circuitProgress: cleanProgress,
+      circuitDefinitionsVersion: rawData.circuitDefinitionsVersion || '1.0'
     };
   };
 
@@ -503,6 +593,16 @@ export const useWorkoutData = (options = {}) => {
           newData && newData.addictionQuitData && typeof newData.addictionQuitData === 'object'
             ? JSON.parse(JSON.stringify(newData.addictionQuitData))
             : INITIAL_WORKOUT_DATA.addictionQuitData,
+        circuitDefinitions:
+          newData && newData.circuitDefinitions && typeof newData.circuitDefinitions === 'object'
+            ? { ...newData.circuitDefinitions }
+            : {},
+        circuitProgress:
+          newData && newData.circuitProgress && typeof newData.circuitProgress === 'object'
+            ? { ...newData.circuitProgress }
+            : {},
+        circuitDefinitionsVersion:
+          newData && newData.circuitDefinitionsVersion ? newData.circuitDefinitionsVersion : '1.0',
         // Données d'endurance - CRUCIAL pour la persistance
         enduranceData: newData && newData.enduranceData ? { ...newData.enduranceData } : {
           sessions: {
@@ -711,9 +811,10 @@ export const useWorkoutData = (options = {}) => {
           
           if (result) {
             // ✅ Migration automatique : Initialiser dailyVariations et dayJustifications si absents
-            // Ordre important : d'abord dailyVariations, puis dayJustifications
+            // Ordre important : d'abord dailyVariations, puis dayJustifications, puis circuits
             const migratedDataStep1 = migrateDailyVariations(result.data || result);
-            const migratedData = migrateDayJustifications(migratedDataStep1);
+            const migratedDataStep2 = migrateDayJustifications(migratedDataStep1);
+            const migratedData = migrateCircuits(migratedDataStep2);
             
             // Validation des données chargées
             const validatedData = {
@@ -764,6 +865,15 @@ export const useWorkoutData = (options = {}) => {
                 migratedData.addictionQuitData && typeof migratedData.addictionQuitData === 'object'
                   ? migratedData.addictionQuitData
                   : INITIAL_WORKOUT_DATA.addictionQuitData,
+              circuitDefinitions:
+                migratedData.circuitDefinitions && typeof migratedData.circuitDefinitions === 'object'
+                  ? { ...migratedData.circuitDefinitions }
+                  : {},
+              circuitProgress:
+                migratedData.circuitProgress && typeof migratedData.circuitProgress === 'object'
+                  ? { ...migratedData.circuitProgress }
+                  : {},
+              circuitDefinitionsVersion: migratedData.circuitDefinitionsVersion || '1.0',
               // Données d'endurance - CRUCIAL pour la persistance
               enduranceData: migratedData.enduranceData || result.enduranceData || {
                 sessions: {
@@ -785,7 +895,7 @@ export const useWorkoutData = (options = {}) => {
               if (backupData) {
                 const parsedBackup = JSON.parse(backupData);
                 // ✅ Migration automatique des données localStorage
-                const migratedBackup = migrateDailyVariations(parsedBackup);
+                const migratedBackup = migrateCircuits(migrateDailyVariations(parsedBackup));
                 resolve({
                   ...migratedBackup,
                   exerciseIntensityCoeffs:
@@ -827,7 +937,7 @@ export const useWorkoutData = (options = {}) => {
             if (backupData) {
               const parsedBackup = JSON.parse(backupData);
               // ✅ Migration automatique des données localStorage
-              const migratedBackup = migrateDailyVariations(parsedBackup);
+              const migratedBackup = migrateCircuits(migrateDailyVariations(parsedBackup));
               resolve({
                 ...migratedBackup,
                 exerciseIntensityCoeffs:

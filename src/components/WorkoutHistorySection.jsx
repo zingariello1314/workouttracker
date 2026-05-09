@@ -8,6 +8,7 @@ import { workoutProgram } from '../data/workoutProgram';
 import { useWorkout } from '../context/WorkoutContext';
 import { typography } from '../styles/typography';
 import { calculateAutoReps } from '../utils/exerciseCalculations';
+import { normalizeStretchSlots } from '../utils/stretchUtils';
 import './WorkoutHistorySection.css';
 
 /**
@@ -111,18 +112,28 @@ const WorkoutHistorySection = () => {
     return allExercises;
   };
 
-  // Fonction pour obtenir tous les étirements d'un jour
+  // Fonction pour obtenir tous les étirements d'un jour.
+  // Compatible avec les 3 formats : tableau (nouveau), string legacy, objet enrichi.
   const getAllStretchesForDay = (dayWorkout) => {
     if (!dayWorkout || !dayWorkout.etirements) return [];
-    
-    const stretchTypes = getStretchTypes(dayWorkout);
-    return stretchTypes.map(stretchType => ({
-      id: `stretch_${stretchType}`,
-      name: `Étirements ${stretchType.charAt(0).toUpperCase() + stretchType.slice(1)}`,
-      type: 'stretch',
-      stretchType: stretchType,
-      description: dayWorkout.etirements[stretchType]
-    }));
+
+    const slots = normalizeStretchSlots(dayWorkout.etirements);
+    const moments = ['matin', 'midi', 'soir'];
+    const out = [];
+    for (const moment of moments) {
+      const items = slots[moment] || [];
+      items.forEach((item) => {
+        out.push({
+          id: `stretch_${moment}_${item.id}`,
+          name: item.name,
+          type: 'stretch',
+          stretchType: moment,
+          stretchItemId: item.id,
+          description: item.instructions || item.legacyText || ''
+        });
+      });
+    }
+    return out;
   };
 
   // Référence pour le debounce de sauvegarde
@@ -302,12 +313,12 @@ const WorkoutHistorySection = () => {
     return currentData.checkedStretches[key] || false;
   };
 
-  // Obtenir les types d'étirements pour un jour
+  // Obtenir les moments d'étirements ayant au moins 1 item planifié pour ce jour.
+  // Robuste à n'importe quel format (tableau / string / objet enrichi).
   const getStretchTypes = (dayWorkout) => {
     if (!dayWorkout || !dayWorkout.etirements) return [];
-    return Object.keys(dayWorkout.etirements).filter(key => 
-      dayWorkout.etirements[key] && dayWorkout.etirements[key].trim() !== ''
-    );
+    const slots = normalizeStretchSlots(dayWorkout.etirements);
+    return ['matin', 'midi', 'soir'].filter((m) => (slots[m]?.length || 0) > 0);
   };
 
   // Obtenir la couleur de bordure selon le type d'exercice

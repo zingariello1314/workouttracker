@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from 'react';
-import { Play, Square, CheckCircle, Clock, Target, Flame, Zap, MessageSquare, Save, X, Award, Plus, Trash2, BarChart3 } from 'lucide-react';
+import { Play, Square, CheckCircle, Clock, Target, Flame, Zap, MessageSquare, Save, X, Award, Plus, Trash2, BarChart3, PenLine } from 'lucide-react';
 import { useWorkout } from '../../context/WorkoutContext';
 import { useToast } from '../../components/ui/Toast';
 import { workoutProgram } from '../../data/workoutProgram';
@@ -24,6 +24,9 @@ import {
   resolveBestRepsStorageKey,
   findLatestExerciseWeightValue
 } from '../../utils/exerciseKeyGenerator';
+import { normalizeStretchSlots, countStretchItems } from '../../utils/stretchUtils';
+import StretchList from './TodayTab/components/StretchList';
+import CircuitsTodaySection from './TodayTab/components/CircuitsTodaySection.jsx';
 import { resolveExerciseIntensityCoeff } from '../../utils/trainingLoadUtils';
 import { exerciseUsesExternalLoad } from '../../utils/programUtils';
 import LoadDifficultyStars from '../sport/LoadDifficultyStars';
@@ -36,6 +39,18 @@ import {
   computeVolumeKgForWorkoutKey
 } from '../../utils/exerciseLoadVolume';
 import { collectWorkoutLoadSubsetForDate } from '../../utils/workoutLoadPersistence';
+import {
+  getExerciseSeriesOverrides,
+  mergeSeriesIntoProgramExercises,
+  normalizeSeriesInputForStorage
+} from '../../utils/dailyVariationSeriesOverrides';
+
+/** Résout un exo du programme en appliquant les surcharges « séries » du jour (dailyVariations). */
+function resolveProgramExerciseFromWorkout(workout, dailyVariations, dateStr, exerciseId) {
+  const list = workout?.exercices || [];
+  const ov = getExerciseSeriesOverrides(dailyVariations, dateStr);
+  return mergeSeriesIntoProgramExercises(list, ov).find((ex) => ex.id === exerciseId) || null;
+}
 
 const resolveExerciseWeightDisplay = (currentData, keys, readKey) => {
   const w = currentData.exerciseWeights || {};
@@ -97,7 +112,8 @@ const TodayTab = () => {
     restoreExerciseForToday,
     addExceptionalExercise,
     removeExceptionalExercise,
-    markExceptionalExerciseComplete
+    markExceptionalExerciseComplete,
+    updateExerciseSeriesOverrideForDate
   } = useWorkout();
   
   const { showSuccess, showError } = useToast();
@@ -286,7 +302,7 @@ const TodayTab = () => {
     const currentData = getCurrentData();
     const dateStr = getDateStr(date);
     const workout = getTodayWorkout(date, isGymMode);
-    const exercise = workout.exercices?.find((ex) => ex.id === exerciseId);
+    const exercise = resolveProgramExerciseFromWorkout(workout, currentData.dailyVariations, dateStr, exerciseId);
     const fallbackKey = `${dateStr}_${exerciseId}`;
 
     if (!exercise) {
@@ -445,7 +461,7 @@ const TodayTab = () => {
     const currentData = getCurrentData();
     const dateStr = getDateStr(date);
     const workout = getTodayWorkout(date, isGymMode);
-    const exercise = workout.exercices?.find((ex) => ex.id === exerciseId);
+    const exercise = resolveProgramExerciseFromWorkout(workout, currentData.dailyVariations, dateStr, exerciseId);
     const key = exercise
       ? generateSmartExerciseKey(date, exercise.id, {
           isGymMode,
@@ -467,7 +483,7 @@ const TodayTab = () => {
     const currentData = getCurrentData();
     const dateStr = getDateStr(date);
     const workout = getTodayWorkout(date, isGymMode);
-    const exercise = workout.exercices?.find((ex) => ex.id === exerciseId);
+    const exercise = resolveProgramExerciseFromWorkout(workout, currentData.dailyVariations, dateStr, exerciseId);
     const key = exercise
       ? generateSmartExerciseKey(date, exercise.id, {
           isGymMode,
@@ -491,7 +507,8 @@ const TodayTab = () => {
   const getExercisePrimaryStorageKey = (exerciseId, date) => {
     const dateStr = getDateStr(date);
     const workout = getTodayWorkout(date, isGymMode);
-    const exercise = workout.exercices?.find((ex) => ex.id === exerciseId);
+    const snapshot = getCurrentData();
+    const exercise = resolveProgramExerciseFromWorkout(workout, snapshot.dailyVariations, dateStr, exerciseId);
     return exercise
       ? generateSmartExerciseKey(date, exercise.id, {
           isGymMode,
@@ -721,6 +738,11 @@ const TodayTab = () => {
     metadata: exercisesMetadata
   } = useTodayExercises({ date: currentDate, isGymMode });
 
+  // ✅ État pour modal d'ajout d'exercice exceptionnel
+  const [showAddExceptionalModal, setShowAddExceptionalModal] = useState(false);
+  /** Modal « adapter le prévu du jour » (séries × reps) pour un exo du programme */
+  const [seriesAdaptDialog, setSeriesAdaptDialog] = useState(null);
+
   /** Conserver strictement l'ordre du programme pour éviter toute confusion dans Aujourd'hui. */
   const orderedProgramExercises = useMemo(() => programExercises || [], [programExercises]);
 
@@ -729,14 +751,20 @@ const TodayTab = () => {
     [currentDate, workout, isGymMode, getCurrentData, data, hasUnsavedExercises]
   );
 
-  // ✅ État pour modal d'ajout d'exercice exceptionnel
-  const [showAddExceptionalModal, setShowAddExceptionalModal] = useState(false);
-
   const handleSessionFeedback = () => {
+    const seriesOverridesToday = getExerciseSeriesOverrides(
+      getCurrentData()?.dailyVariations,
+      dateStr
+    );
+    const programExercisesMerged = mergeSeriesIntoProgramExercises(
+      workout?.exercices || [],
+      seriesOverridesToday
+    );
+
     // Calculer la durée réelle basée sur les exercices accomplis
     const calculateSessionDuration = () => {
       const sessionData = getCurrentData();
-      const completedExercises = (workout.exercices || []).filter((exercise) => {
+      const completedExercises = programExercisesMerged.filter((exercise) => {
         const keys = collectExerciseKeysForWorkoutExercise(currentDate, exercise, {
           isGymMode,
           workoutIsGymMode: workout.isGymMode
@@ -830,7 +858,7 @@ const TodayTab = () => {
       };
     };
 
-    const programRows = (workout.exercices || []).map(buildProgramExerciseRow).filter(Boolean);
+    const programRows = programExercisesMerged.map(buildProgramExerciseRow).filter(Boolean);
     const complementaryRows =
       workout.complementaryActivity &&
       data.checkedExercises[`${dateStr}_complementary_${workout.complementaryActivity.name.toLowerCase()}`]
@@ -849,7 +877,7 @@ const TodayTab = () => {
       date: dateStr,
       exercises: [...programRows, ...complementaryRows],
       totalReps: programRows.reduce((total, ex) => total + (parseInt(ex.reps, 10) || 0), 0),
-      estimatedDuration: Math.max(30, (workout.exercices || []).length * 3),
+      estimatedDuration: Math.max(30, programExercisesMerged.length * 3),
       duration: calculateSessionDuration(),
       workoutLoadSnapshot: collectWorkoutLoadSubsetForDate(snapshot, dateStr)
     };
@@ -866,12 +894,54 @@ const TodayTab = () => {
     discardChanges();
   };
 
-  const hasStretchesContent =
-    workout.etirements &&
-    Object.keys(workout.etirements).length > 0 &&
-    Object.values(workout.etirements).some(
-      (txt) => txt && String(txt).trim().length > 0
-    );
+  const openSeriesAdaptForExercise = (exercise) => {
+    const raw = (workout.exercices || []).find((e) => e.id === exercise.id);
+    setSeriesAdaptDialog({
+      exerciseId: exercise.id,
+      name: exercise.name || '',
+      programSeries: String(raw?.series ?? '').trim(),
+      draft: String(exercise.series ?? '').trim()
+    });
+  };
+
+  const saveSeriesAdaptFromDialog = async () => {
+    if (!seriesAdaptDialog) return;
+    try {
+      const normDraft = normalizeSeriesInputForStorage(seriesAdaptDialog.draft);
+      const normProg = normalizeSeriesInputForStorage(seriesAdaptDialog.programSeries);
+      const toStore = normDraft && normDraft !== normProg ? normDraft : '';
+      await updateExerciseSeriesOverrideForDate(dateStr, seriesAdaptDialog.exerciseId, toStore);
+      setSeriesAdaptDialog(null);
+      showSuccess(
+        toStore
+          ? t('today.seriesAdapt.saved', 'Prévu du jour enregistré')
+          : t('today.seriesAdapt.resetToast', 'Retour au prévu du programme')
+      );
+    } catch (err) {
+      showError(err?.message || t('today.messages.errorMessage'));
+    }
+  };
+
+  const resetSeriesAdaptFromDialog = async () => {
+    if (!seriesAdaptDialog) return;
+    try {
+      await updateExerciseSeriesOverrideForDate(dateStr, seriesAdaptDialog.exerciseId, '');
+      setSeriesAdaptDialog(null);
+      showSuccess(t('today.seriesAdapt.resetToast', 'Retour au prévu du programme'));
+    } catch (err) {
+      showError(err?.message || t('today.messages.errorMessage'));
+    }
+  };
+
+  // Détection robuste qui gère TOUS les formats historiques :
+  //   - tableau ({ matin: [{...}], midi: [...], soir: [...] })  ← nouveau format
+  //   - chaîne ({ matin: "...", midi: "..." })                  ← legacy
+  //   - objet enrichi ({ matin: { instructions, ... } })        ← exporté/importé
+  const normalizedTodayStretches = useMemo(
+    () => normalizeStretchSlots(workout?.etirements, dayName),
+    [workout?.etirements, dayName]
+  );
+  const hasStretchesContent = countStretchItems(normalizedTodayStretches) > 0;
 
   /** Jour sans exercices : n’afficher l’écran « jour de repos » plein écran que s’il n’y a pas non plus d’étirements prévus */
   if ((!workout.exercices || workout.exercices.length === 0) && !hasStretchesContent) {
@@ -1126,10 +1196,24 @@ const TodayTab = () => {
                         <LoadDifficultyStars coeff={loadCoeff} className="scale-95" />
                       </span>
                     </div>
-                    <div className="text-sm text-gray-300 break-words">
-                      {exercise.series}
-                      {exercise.materiel && ` • ${exercise.materiel}`}
-                      {exercise.notes && ` • ${exercise.notes}`}
+                    <div className="text-sm text-gray-300 break-words flex flex-wrap items-center gap-x-2 gap-y-1">
+                      <span>
+                        {exercise.series}
+                        {exercise.materiel && ` • ${exercise.materiel}`}
+                        {exercise.notes && ` • ${exercise.notes}`}
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => openSeriesAdaptForExercise(exercise)}
+                        className="inline-flex items-center gap-1 rounded-md border border-teal-700/50 bg-[#0F4C5C]/20 px-2 py-0.5 text-[11px] font-medium text-teal-200 hover:border-teal-500/60 hover:bg-[#0F4C5C]/35"
+                        title={t(
+                          'today.seriesAdapt.openTitle',
+                          'Adapter séries × reps pour aujourd’hui seulement'
+                        )}
+                      >
+                        <PenLine className="w-3.5 h-3.5 shrink-0" />
+                        {t('today.seriesAdapt.short', 'Prévu du jour')}
+                      </button>
                     </div>
                   </div>
                   <div className="flex items-center gap-2 shrink-0 self-start sm:self-center">
@@ -1472,44 +1556,23 @@ const TodayTab = () => {
         )}
       </div>
 
-      {/* Étirements - Afficher seulement s'il y a des étirements avec contenu */}
+      {/* Étirements — UNE carte par étirement individuel, groupé par moment.
+         La granularité est par item (id stable depuis stretchDatabase) :
+         chaque coche déclenche XP + complétion calendrier. */}
       {hasStretchesContent && (
         <div className="bg-black p-6 rounded-xl shadow-xl border-2 border-[#0F4C5C]/70">
-          <h3 className="font-semibold text-white mb-4 flex items-center gap-2">
-            <span className="text-teal-400">🧘‍♂️</span>
-            {t('today.stretches.titleOfDay')}
-          </h3>
-          <div className="space-y-4">
-            {Object.entries(workout.etirements).map(([moment, description]) => {
-              // Traduire le moment (Matin, Midi, Soir)
-              const momentKey = moment.toLowerCase();
-              const translatedMoment = momentKey === 'matin' ? t('today.stretchMoments.matin') :
-                                      momentKey === 'midi' ? t('today.stretchMoments.midi') :
-                                      momentKey === 'soir' ? t('today.stretchMoments.soir') :
-                                      moment;
-              
-              return (
-              <div key={moment} className="border-l-4 border-[#0F5C45]/70 pl-4 bg-black rounded-r-lg p-3 ring-1 ring-[#0F4C5C]/35">
-                <div className="flex items-center justify-between mb-2">
-                  <h4 className="font-medium text-white capitalize flex items-center gap-2">
-                    <span className="text-teal-400">•</span>
-                    {translatedMoment}
-                  </h4>
-                  <label className="flex items-center">
-                    <Checkbox
-                    checked={data.checkedStretches[`${dateStr}_${moment}`] || false}
-                    onChange={() => toggleEtirement(moment, currentDate)}
-                    className="h-5 w-5 shrink-0 accent-teal-500"
-                  />
-                  </label>
-                </div>
-                <p className="text-sm text-gray-300">{description}</p>
-              </div>
-              );
-            })}
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="font-semibold text-white flex items-center gap-2">
+              <span className="text-teal-400">🧘‍♂️</span>
+              {t('today.stretches.titleOfDay')}
+              <span className="text-xs font-normal text-slate-400">
+                ({countStretchItems(normalizedTodayStretches)})
+              </span>
+            </h3>
           </div>
 
-          {/* Boutons de sauvegarde */}
+          <StretchList stretches={workout?.etirements} date={currentDate} />
+
           {hasUnsavedStretches && (
             <div className="mt-6 pt-4 border-t border-[#0F4C5C]/40">
               <div className="flex items-center justify-between">
@@ -1635,6 +1698,9 @@ const TodayTab = () => {
         );
       })()}
 
+      {/* Circuits planifiés aujourd'hui */}
+      <CircuitsTodaySection dayName={dayName} dateStr={dateStr} />
+
       {/* Section des défis actifs */}
       {(() => {
         const activeChallenges = getActiveChallenges();
@@ -1674,6 +1740,64 @@ const TodayTab = () => {
           {t('today.sessionFeedback.button')}
         </button>
       </div>
+
+      {/* Adapter séries × reps (variation journalière) */}
+      {seriesAdaptDialog && (
+        <div
+          className="fixed inset-0 z-[100] flex items-center justify-center bg-black/70 p-4"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="series-adapt-title"
+        >
+          <div className="w-full max-w-md rounded-xl border-2 border-[#0F4C5C]/70 bg-slate-950 p-5 shadow-2xl">
+            <h4 id="series-adapt-title" className="text-lg font-semibold text-white mb-1">
+              {t('today.seriesAdapt.title', 'Prévu pour aujourd’hui')}
+            </h4>
+            <p className="text-sm text-teal-200/80 mb-3 break-words">{seriesAdaptDialog.name}</p>
+            <p className="text-xs text-slate-500 mb-2">
+              {t('today.seriesAdapt.programLabel', 'Dans le programme :')}{' '}
+              <span className="text-slate-300 font-mono">
+                {seriesAdaptDialog.programSeries || '—'}
+              </span>
+            </p>
+            <label className="block text-xs text-teal-600 mb-1">
+              {t('today.seriesAdapt.inputLabel', 'Séries × reps pour ce jour (ex. 5×15, 4×8-12)')}
+            </label>
+            <Input
+              type="text"
+              value={seriesAdaptDialog.draft}
+              onChange={(e) =>
+                setSeriesAdaptDialog((d) => (d ? { ...d, draft: e.target.value } : d))
+              }
+              className="w-full bg-black border-[#0F4C5C]/50 text-white mb-4"
+              placeholder="5×15"
+            />
+            <div className="flex flex-col sm:flex-row gap-2 sm:justify-end">
+              <button
+                type="button"
+                onClick={() => setSeriesAdaptDialog(null)}
+                className="rounded-lg border border-slate-600 px-4 py-2 text-sm text-slate-200 hover:bg-slate-800"
+              >
+                {t('today.seriesAdapt.cancel', 'Annuler')}
+              </button>
+              <button
+                type="button"
+                onClick={resetSeriesAdaptFromDialog}
+                className="rounded-lg border border-amber-700/50 px-4 py-2 text-sm text-amber-200 hover:bg-amber-950/40"
+              >
+                {t('today.seriesAdapt.reset', 'Réinitialiser')}
+              </button>
+              <button
+                type="button"
+                onClick={saveSeriesAdaptFromDialog}
+                className="rounded-lg border border-[#0F5C45]/60 bg-[#0F5C45]/30 px-4 py-2 text-sm font-medium text-white hover:bg-[#0F5C45]/45"
+              >
+                {t('today.seriesAdapt.save', 'Enregistrer')}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* ✅ NOUVEAU : Modal d'ajout d'exercice exceptionnel */}
       <AddExceptionalExerciseModal
