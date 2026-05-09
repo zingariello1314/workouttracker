@@ -25,6 +25,15 @@ export const useHomepageImages = () => {
   const scopedSyncEmergencyKey = useMemo(() => `homepage_images_sync_emergency_${scopeKey}`, [scopeKey]);
   const scopedMetadataKey = useMemo(() => `homepage_images_metadata_${scopeKey}`, [scopeKey]);
 
+  // Incrémenté à chaque changement de périmètre (guest ↔ utilisateur ou rechargement explicite) pour ignorer les chargements asynchrones obsolètes
+  const homepageImagesLoadGenerationRef = useRef(0);
+  const beginNewImagesLoadGeneration = () => {
+    homepageImagesLoadGenerationRef.current += 1;
+    return homepageImagesLoadGenerationRef.current;
+  };
+  const imagesLoadStale = (generation) =>
+    generation !== homepageImagesLoadGenerationRef.current;
+
   // Mettre à jour la ref quand backgroundImages change
   useEffect(() => {
     backgroundImagesRef.current = backgroundImages;
@@ -704,24 +713,18 @@ export const useHomepageImages = () => {
     }
   };
 
-  // ✅ CORRECTION : Protection contre chargements multiples (React.StrictMode)
-  const loadingRef = useRef(false);
-  
   // Chargement avec récupération automatique
-  const loadImagesWithRecovery = async () => {
-    // ✅ Protection contre chargement multiple
-    if (loadingRef.current) {
-      return;
-    }
-    
-    loadingRef.current = true;
-    
+  const loadImagesWithRecovery = async (generation) => {
     try {
       log.debug('🔍 Chargement avec récupération automatique...');
       setIsLoading(true);
       
       // 1. Essayer IndexedDB
       let images = await loadImagesFromIndexedDB();
+      if (imagesLoadStale(generation)) {
+        log.debug('⏭️ Chargement images annulé (périmètre ou utilisateur changé)');
+        return;
+      }
       if (images.length > 0) {
         log.debug('✅ Images récupérées depuis IndexedDB');
         setSystemHealth('excellent');
@@ -736,12 +739,12 @@ export const useHomepageImages = () => {
         backgroundImagesRef.current = shuffledImagesRef.current;
         setBackgroundImages(shuffledImagesRef.current);
         setIsLoading(false);
-        loadingRef.current = false; // ✅ Réinitialiser flag
         return;
       }
       
       // 2. Essayer localStorage fallback
       images = await loadImagesFromLocalStorage();
+      if (imagesLoadStale(generation)) return;
       if (images.length > 0) {
         log.debug('✅ Images récupérées depuis localStorage, migration vers IndexedDB...');
         
@@ -760,6 +763,7 @@ export const useHomepageImages = () => {
           log.warn('⚠️ Erreur validation avant migration (non bloquant)', validationError);
         }
         
+        if (imagesLoadStale(generation)) return;
         if (images.length > 0) {
           setSystemHealth('good');
           
@@ -776,10 +780,12 @@ export const useHomepageImages = () => {
           // ✅ Phase 7: Migrer vers IndexedDB avec validation après migration
           setTimeout(async () => {
             try {
+              if (imagesLoadStale(generation)) return;
               await saveImagesToIndexedDB(images);
               
               // ✅ Phase 7: Valider après migration
               const postMigrationImages = await loadImagesFromIndexedDB();
+              if (imagesLoadStale(generation)) return;
               if (postMigrationImages.length === images.length) {
                 log.debug('✅ Migration vers IndexedDB réussie et validée');
                 setSystemHealth('excellent');
@@ -794,12 +800,14 @@ export const useHomepageImages = () => {
         }
         
         setIsLoading(false);
-        loadingRef.current = false; // ✅ Réinitialiser flag
         return;
       }
       
+      if (imagesLoadStale(generation)) return;
+      
       // 3. Essayer sessionStorage emergency
       images = await loadImagesFromSessionStorage();
+      if (imagesLoadStale(generation)) return;
       if (images.length > 0) {
         log.debug('✅ Images récupérées depuis sessionStorage, migration vers IndexedDB...');
         
@@ -818,6 +826,7 @@ export const useHomepageImages = () => {
           log.warn('⚠️ Erreur validation avant migration (non bloquant)', validationError);
         }
         
+        if (imagesLoadStale(generation)) return;
         if (images.length > 0) {
           setSystemHealth('good');
           
@@ -834,11 +843,13 @@ export const useHomepageImages = () => {
           // ✅ Phase 7: Migrer vers IndexedDB et localStorage avec validation
           setTimeout(async () => {
             try {
+              if (imagesLoadStale(generation)) return;
               await saveImagesToIndexedDB(images);
               await saveImagesToLocalStorage(images);
               
               // ✅ Phase 7: Valider après migration
               const postMigrationImages = await loadImagesFromIndexedDB();
+              if (imagesLoadStale(generation)) return;
               if (postMigrationImages.length === images.length) {
                 log.debug('✅ Migration vers IndexedDB et localStorage réussie et validée');
                 setSystemHealth('excellent');
@@ -853,12 +864,14 @@ export const useHomepageImages = () => {
         }
         
         setIsLoading(false);
-        loadingRef.current = false; // ✅ Réinitialiser flag
         return;
       }
       
+      if (imagesLoadStale(generation)) return;
+      
       // 4. Essayer les anciennes clés (migration)
       images = await migrateFromOldSystem();
+      if (imagesLoadStale(generation)) return;
       if (images.length > 0) {
         log.debug('✅ Images récupérées depuis ancien système');
         
@@ -877,6 +890,7 @@ export const useHomepageImages = () => {
           log.warn('⚠️ Erreur validation après migration ancien système (non bloquant)', validationError);
         }
         
+        if (imagesLoadStale(generation)) return;
         if (images.length > 0) {
           // ✅ RANDOMISATION : Shuffle une seule fois par session (cache dans ref)
           if (!shuffledImagesRef.current || shuffledImagesRef.current.length !== images.length) {
@@ -891,27 +905,28 @@ export const useHomepageImages = () => {
         }
         
         setIsLoading(false);
-        loadingRef.current = false; // ✅ Réinitialiser flag
         return;
       }
       
       // 5. Aucune image trouvée
       log.debug('📭 Aucune image trouvée dans tous les systèmes');
-      // ✅ Phase 7: Mettre à jour la ref IMMÉDIATEMENT
-      backgroundImagesRef.current = [];
-      setBackgroundImages([]);
-      setSystemHealth('unknown');
+      if (!imagesLoadStale(generation)) {
+        // ✅ Phase 7: Mettre à jour la ref IMMÉDIATEMENT
+        backgroundImagesRef.current = [];
+        setBackgroundImages([]);
+        setSystemHealth('unknown');
+      }
       setIsLoading(false);
-      loadingRef.current = false; // ✅ Réinitialiser flag
       
     } catch (error) {
       log.error('❌ Erreur lors du chargement avec récupération:', error);
-      // ✅ Phase 7: Mettre à jour la ref IMMÉDIATEMENT
-      backgroundImagesRef.current = [];
-      setBackgroundImages([]);
-      setSystemHealth('poor');
+      if (!imagesLoadStale(generation)) {
+        // ✅ Phase 7: Mettre à jour la ref IMMÉDIATEMENT
+        backgroundImagesRef.current = [];
+        setBackgroundImages([]);
+        setSystemHealth('poor');
+      }
       setIsLoading(false);
-      loadingRef.current = false; // ✅ Réinitialiser flag dans catch
     }
   };
 
@@ -1123,30 +1138,31 @@ export const useHomepageImages = () => {
     };
   };
 
-  // ✅ Protection contre les doubles appels (React StrictMode)
-  const initializedRef = useRef(false);
-  
-  // Initialisation du système
+  // Recharge depuis le stockage (IndexedDB / fallbacks) pour le périmètre courant
+  const reloadImagesFromStorage = async () => {
+    const gen = beginNewImagesLoadGeneration();
+    shuffledImagesRef.current = null;
+    await loadImagesWithRecovery(gen);
+    if (imagesLoadStale(gen)) return;
+    await checkSystemHealth();
+  };
+
+  // Initialisation + rechargement quand l’utilisateur (ou invité) change
   useEffect(() => {
-    // Éviter les doubles appels en développement (React StrictMode)
-    if (initializedRef.current) {
-      return;
-    }
-    initializedRef.current = true;
-    
+    const gen = beginNewImagesLoadGeneration();
+    shuffledImagesRef.current = null;
+
     const initializeSystem = async () => {
-      await loadImagesWithRecovery();
+      await loadImagesWithRecovery(gen);
+      if (imagesLoadStale(gen)) return;
       await checkSystemHealth();
     };
-    
+
     initializeSystem();
-    
-    // Démarrer la sauvegarde automatique
+
     const cleanup = startAutoSave();
     return () => {
       cleanup();
-      // Réinitialiser le flag si le composant est démonté (pour remontage propre)
-      initializedRef.current = false;
     };
   }, [scopedEmergencyKey, scopedFallbackKey, scopedMetadataKey, scopedSyncEmergencyKey, scopedType]);
 
@@ -1161,7 +1177,7 @@ export const useHomepageImages = () => {
     isLoading,
     systemHealth,
     saveImages: saveImagesRobust,
-    loadImages: loadImagesWithRecovery,
+    loadImages: reloadImagesFromStorage,
     updateImagesRef, // ✅ Phase 7: Exposer fonction pour mettre à jour la ref
     checkSystemHealth
   };

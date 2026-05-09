@@ -8,7 +8,8 @@
     "gamification": "Gamification",
     "challenges": "Challenges",
     "progress": "Progress",
-    "sharing": "Sharing"
+    "sharing": "Sharing",
+    "bank": "Food bank"
   },
   "skeletons": {
     "journal": "nutrition journal",
@@ -17,7 +18,8 @@
     "gamification": "gamification",
     "challenges": "challenges",
     "progress": "progress",
-    "sharing": "sharing"
+    "sharing": "sharing",
+    "bank": "food bank"
   },
   "tooltips": {
     "journal": {

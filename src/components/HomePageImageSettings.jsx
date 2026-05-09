@@ -17,6 +17,7 @@ const HomePageImageSettings = ({ onClose }) => {
   const [showDiagnostic, setShowDiagnostic] = useState(false);
   const [quotaCheck, setQuotaCheck] = useState(null); // Résultat vérification quota
   const [quotaWarning, setQuotaWarning] = useState(null); // Warning/Critical
+  const [batchUploadProgress, setBatchUploadProgress] = useState(null); // { current, total, fileName }
   const fileInputRef = useRef(null);
 
   // Fonction pour nettoyer le localStorage
@@ -45,24 +46,31 @@ const HomePageImageSettings = ({ onClose }) => {
 
   // Système de stockage simplifié et ultra-fiable
   // ✅ Phase 6: Sauvegarde avec option force pour uploads/suppressions
-  const saveImagesIndependently = async (images, force = false) => {
-    setIsSaving(true);
-    setSaveStatus('saving');
-    
+  // silent : pas d’overlay « Sauvegarde… » (uploads multiples en chaîne)
+  const saveImagesIndependently = async (images, force = false, { silent = false } = {}) => {
+    if (!silent) {
+      setIsSaving(true);
+      setSaveStatus('saving');
+    }
+
     try {
-      // Nettoyer avant sauvegarde
       cleanupLocalStorage();
-      
-      // ✅ Phase 6: Utiliser force pour uploads/suppressions (sauvegarde immédiate)
       await saveImages(images, { force });
-      setSaveStatus('success');
-      setTimeout(() => setSaveStatus(null), 3000);
+      if (!silent) {
+        setSaveStatus('success');
+        setTimeout(() => setSaveStatus(null), 3000);
+      }
     } catch (error) {
       log.error('Erreur lors de la sauvegarde', error);
-      setSaveStatus('error');
-      setTimeout(() => setSaveStatus(null), 3000);
+      if (!silent) {
+        setSaveStatus('error');
+        setTimeout(() => setSaveStatus(null), 3000);
+      }
+      throw error;
     } finally {
-      setIsSaving(false);
+      if (!silent) {
+        setIsSaving(false);
+      }
     }
   };
 
@@ -152,36 +160,49 @@ const HomePageImageSettings = ({ onClose }) => {
     }
 
     setIsUploading(true);
+    setBatchUploadProgress(null);
+    const failedFiles = [];
+
     try {
-      // ✅ Phase 3: Traiter images avec format optimal + thumbnails
-      const newImages = await Promise.all(
-        files.map(file => processImage(file))
-      );
-      
-      // Ajouter les nouvelles images aux existantes
-      // Note: backgroundImages peut contenir strings (v2) ou objets (v3)
-      const updatedImages = [...backgroundImages, ...newImages];
-      
-             // ✅ Phase 7: Mettre à jour la ref IMMÉDIATEMENT pour éviter race condition
-             updateImagesRef(updatedImages);
-             
-             // ✅ Phase 6: Sauvegarde immédiate après upload (force: true)
-             await saveImagesIndependently(updatedImages, true);
-             
-             // ✅ Phase 7: Attendre un peu pour que la sauvegarde soit complète, puis recharger
-             await new Promise(resolve => setTimeout(resolve, 100));
-             await loadImages();
-             
-             // Réinitialiser quota check après upload réussi
-             setQuotaCheck(null);
-             setQuotaWarning(null);
-      
+      // Une image après l’autre : traitement + sauvegarde (évite pics mémoire / UI bloquée)
+      let working = [...backgroundImages];
+      const total = files.length;
+
+      for (let i = 0; i < files.length; i++) {
+        const file = files[i];
+        setBatchUploadProgress({ current: i + 1, total, fileName: file.name });
+
+        try {
+          const processed = await processImage(file);
+          working = [...working, processed];
+          updateImagesRef(working);
+
+          const isLast = i === files.length - 1;
+          await saveImagesIndependently(working, true, { silent: !isLast });
+        } catch (fileErr) {
+          log.error(`Échec pour « ${file.name} »`, fileErr);
+          failedFiles.push(file.name);
+        }
+      }
+
+      await new Promise((resolve) => setTimeout(resolve, 100));
+      await loadImages();
+
+      setQuotaCheck(null);
+      setQuotaWarning(null);
+
+      if (failedFiles.length > 0) {
+        alert(
+          `Certaines images n’ont pas pu être ajoutées :\n\n${failedFiles.join('\n')}\n\n` +
+            `Les autres ont bien été enregistrées.`
+        );
+      }
     } catch (error) {
       log.error('Erreur lors de l\'upload des images:', error);
       alert('Erreur lors de l\'upload des images');
     } finally {
       setIsUploading(false);
-      // Réinitialiser l'input file
+      setBatchUploadProgress(null);
       if (fileInputRef.current) {
         fileInputRef.current.value = '';
       }
@@ -281,7 +302,9 @@ const HomePageImageSettings = ({ onClose }) => {
           <div>
             <h3 className="mb-4 text-lg font-semibold text-red-100">Images de fond</h3>
             <p className={`mb-4 text-sm ${S.muted}`}>
-              Ces images seront utilisées comme arrière-plan de la page d'accueil et changeront automatiquement toutes les 2 minutes.
+              Ces images seront utilisées comme arrière-plan de la page d&apos;accueil et changeront automatiquement toutes les 2 minutes.
+              {' '}
+              Vous pouvez en sélectionner plusieurs à la fois (Ctrl/Cmd + clic) : elles sont traitées et enregistrées une par une.
             </p>
             
             <div className="space-y-4">
@@ -364,13 +387,20 @@ const HomePageImageSettings = ({ onClose }) => {
                 disabled={isUploading || (quotaCheck && !quotaCheck.canUpload)}
                 className={`${S.btnPrimary} w-full disabled:opacity-50`}
               >
-                {isUploading
-                  ? 'Upload haute qualité...'
-                  : quotaCheck && !quotaCheck.canUpload
-                    ? 'Quota insuffisant'
-                    : 'Ajouter des images haute qualité (JPG/PNG)'
-                }
+                {isUploading && batchUploadProgress
+                  ? `Ajout ${batchUploadProgress.current}/${batchUploadProgress.total}…`
+                  : isUploading
+                    ? 'Traitement…'
+                    : quotaCheck && !quotaCheck.canUpload
+                      ? 'Quota insuffisant'
+                      : 'Ajouter des images (plusieurs fichiers possible, JPG/PNG)'}
               </button>
+
+              {batchUploadProgress && (
+                <p className={`text-xs ${S.muted}`}>
+                  Fichier en cours : <span className="text-red-200/90 truncate block max-w-full">{batchUploadProgress.fileName}</span>
+                </p>
+              )}
 
               {/* Galerie des images de fond */}
               <div className="grid grid-cols-2 md:grid-cols-3 gap-4">

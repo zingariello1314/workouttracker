@@ -1,4 +1,4 @@
-﻿/**
+/**
  * NutritionPrograms - Gestion Programmes Nutritionnels
  * 
  * Composant complet pour la gestion des programmes nutritionnels :
@@ -22,6 +22,7 @@ import NutritionProgramForm from './NutritionProgramForm';
 import { Badge } from '../../../ui/Badge';
 import logger from '../../../../utils/logger';
 import { useToast } from '../../../ui/Toast/ToastProvider';
+import { adaptProgramFromLatestImpedance } from '../../../../utils/nutritionProgramEstimate';
 
 const log = logger.component('NutritionPrograms');
 
@@ -31,10 +32,10 @@ const ProgrammeItem = React.memo(({ program, isActive, isActivating, onEdit, onA
     <div
       className={`p-4 rounded-lg border transition-all ${
         isActive
-          ? 'border-blue-500/50 bg-blue-500/10'
+          ? 'border-[#0F5C45]/55 bg-[#0F4C5C]/15'
           : program.isArchived
-          ? 'border-slate-600/50 bg-slate-800/30 opacity-60'
-          : 'border-slate-600 bg-slate-800/50 hover:border-slate-500'
+          ? 'border-[#0F4C5C]/35 bg-black/50 opacity-60'
+          : 'border-[#0F4C5C]/50 bg-black hover:border-[#0F5C45]/60'
       }`}
     >
       <div className="flex items-start justify-between">
@@ -56,6 +57,9 @@ const ProgrammeItem = React.memo(({ program, isActive, isActivating, onEdit, onA
             )}
             <Badge className={`${program.goalInfo.color} bg-opacity-20`}>
               {program.goalInfo.icon} {program.goalInfo.label}
+            </Badge>
+            <Badge className="bg-slate-700/50 text-slate-200 border-slate-500/40">
+              {program.creationMode === 'generated' ? 'Assisté' : 'Manuel'}
             </Badge>
           </div>
 
@@ -91,6 +95,12 @@ const ProgrammeItem = React.memo(({ program, isActive, isActivating, onEdit, onA
               </span>
             </div>
           </div>
+
+          {program.planProfile?.targetWeightKg ? (
+            <p className="text-xs mt-2 text-teal-200/85">
+              Objectif : <span className="font-semibold text-white">{program.planProfile.targetWeightKg} kg</span>
+            </p>
+          ) : null}
 
           {program.startDate && (
             <div className="flex items-center gap-2 text-slate-500 text-xs mt-3">
@@ -145,6 +155,7 @@ const ProgrammeItem = React.memo(({ program, isActive, isActivating, onEdit, onA
     prevProps.program.id === nextProps.program.id &&
     prevProps.program.name === nextProps.program.name &&
     prevProps.program.goal === nextProps.program.goal &&
+    prevProps.program.creationMode === nextProps.program.creationMode &&
     prevProps.program.isActive === nextProps.program.isActive &&
     prevProps.program.isArchived === nextProps.program.isArchived &&
     prevProps.isActive === nextProps.isActive &&
@@ -155,7 +166,7 @@ const ProgrammeItem = React.memo(({ program, isActive, isActivating, onEdit, onA
 
 ProgrammeItem.displayName = 'ProgrammeItem';
 
-const NutritionPrograms = ({ nutritionData }) => {
+const NutritionPrograms = ({ nutritionData, progressEntries = [] }) => {
   const { showSuccess, showError } = useToast();
   const [programs, setPrograms] = useState([]);
   const [activeProgram, setActiveProgram] = useState(null);
@@ -170,6 +181,7 @@ const NutritionPrograms = ({ nutritionData }) => {
   const [deactivatingProgramId, setDeactivatingProgramId] = useState(null);
   // ✅ OPTIMISATION 6.1 : Ref pour cleanup async operations
   const isMountedRef = useRef(true);
+  const lastAdaptSignatureRef = useRef('');
 
   // ✅ OPTIMISATION 1.1 : Requêtes parallèles avec Promise.all (2x plus rapide)
   // ✅ OPTIMISATION 2.1 : useCallback pour stabilité React
@@ -234,6 +246,32 @@ const NutritionPrograms = ({ nutritionData }) => {
     };
   }, [loadPrograms]);
 
+  // Ajustement auto séparé pour éviter toute boucle de re-render dans l'onglet
+  useEffect(() => {
+    const runAutoAdapt = async () => {
+      if (!activeProgram || activeProgram.creationMode !== 'generated') return;
+      const latestImp = [...(progressEntries || [])]
+        .filter((e) => e?.type === 'impedance' && e?.date)
+        .sort((a, b) => String(b.date).localeCompare(String(a.date)))[0];
+      const signature = `${activeProgram.id}|${activeProgram.planProfile?.baselineWeightKg ?? ''}|${latestImp?.date ?? ''}|${latestImp?.weight ?? ''}`;
+      if (signature === lastAdaptSignatureRef.current) return;
+      lastAdaptSignatureRef.current = signature;
+
+      const adapted = adaptProgramFromLatestImpedance(activeProgram, progressEntries, { thresholdKg: 0.7 });
+      if (!adapted) return;
+      try {
+        const saved = await nutritionData.saveProgram(adapted);
+        if (!saved || !isMountedRef.current) return;
+        setPrograms((prev) => prev.map((p) => (p.id === adapted.id ? adapted : p)));
+        setActiveProgram(adapted);
+        showSuccess('Programme assisté ajusté automatiquement selon la dernière pesée.');
+      } catch (adaptErr) {
+        log.warn('Ajustement auto du programme ignoré (non bloquant)', adaptErr);
+      }
+    };
+    runAutoAdapt();
+  }, [activeProgram, progressEntries, nutritionData.saveProgram, showSuccess]);
+
   // ✅ OPTIMISATION 1.2 : Optimistic updates + sync partielle (66% réduction requêtes)
   // ✅ OPTIMISATION 5.2 : Toasts pour feedback utilisateur
   // ✅ OPTIMISATION 2.1 : useCallback pour stabilité
@@ -277,7 +315,11 @@ const NutritionPrograms = ({ nutritionData }) => {
             setActiveProgram(active);
           }
         }
+        return true;
       }
+
+      showError('Sauvegarde refusée : données invalides ou base non prête.');
+      return false;
     } catch (error) {
       // ✅ OPTIMISATION 1.2 : Rollback : Recharger tout si erreur
       log.error('Erreur sauvegarde programme', error);
@@ -285,6 +327,7 @@ const NutritionPrograms = ({ nutritionData }) => {
       if (isMountedRef.current) {
         await loadPrograms();
       }
+      return false;
     }
   }, [nutritionData.saveProgram, nutritionData.getActiveProgram, loadPrograms, showSuccess, showError]);
 
@@ -423,12 +466,18 @@ const NutritionPrograms = ({ nutritionData }) => {
   // ✅ OPTIMISATION 2.3 : useCallback pour formatGoal (évite recréation objet)
   const formatGoal = useCallback((goal) => {
     const goals = {
+      bulking: { label: 'Prise de masse', icon: '📈', color: 'text-orange-400' },
       bulk: { label: 'Prise de masse', icon: '📈', color: 'text-orange-400' },
+      lean_bulk: { label: 'Masse sèche', icon: '💪', color: 'text-amber-400' },
+      cutting: { label: 'Sèche', icon: '📉', color: 'text-blue-400' },
       cut: { label: 'Sèche', icon: '📉', color: 'text-blue-400' },
-      maintain: { label: 'Maintien', icon: '⚖️', color: 'text-green-400' },
-      recomp: { label: 'Recomposition', icon: '🔄', color: 'text-purple-400' }
+      maintenance: { label: 'Stabilisation / maintien', icon: '⚖️', color: 'text-green-400' },
+      maintain: { label: 'Stabilisation / maintien', icon: '⚖️', color: 'text-green-400' },
+      stabilization: { label: 'Stabilisation / maintien', icon: '⚖️', color: 'text-green-400' },
+      recomp: { label: 'Recomposition', icon: '🔄', color: 'text-purple-400' },
+      custom: { label: 'Personnalisé', icon: '✏️', color: 'text-slate-300' }
     };
-    return goals[goal] || goals.maintain;
+    return goals[goal] || goals.maintenance;
   }, []);
 
   // ✅ OPTIMISATION 2.3 : useCallback pour calculateDuration
@@ -481,7 +530,7 @@ const NutritionPrograms = ({ nutritionData }) => {
     return (
       <Card variant="sport">
         <CardContent className="text-center py-12">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto"></div>
+          <div className="animate-spin rounded-full h-12 w-12 border-2 border-[#0F4C5C]/50 border-t-[#0F5C45] mx-auto" />
           <p className="text-slate-400 mt-4">Chargement des programmes...</p>
         </CardContent>
       </Card>
@@ -494,7 +543,7 @@ const NutritionPrograms = ({ nutritionData }) => {
       <div className="flex items-center justify-between">
         <div>
           <h2 className={`${typography.presets.h2} text-white mb-2 flex items-center gap-2`}>
-            <Target size={28} className="text-blue-400" />
+            <Target size={28} className="text-teal-300" />
             Programmes Nutritionnels
           </h2>
           <p className="text-slate-400">
@@ -513,7 +562,7 @@ const NutritionPrograms = ({ nutritionData }) => {
 
       {/* Programme Actif */}
       {activeProgram && (
-        <Card className="bg-gradient-to-r from-blue-600/20 to-purple-600/20 border-blue-500/50">
+        <Card className="border-[#0F5C45]/55 bg-gradient-to-r from-[#0F4C5C]/25 to-emerald-900/25">
           <CardHeader>
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
@@ -544,6 +593,11 @@ const NutritionPrograms = ({ nutritionData }) => {
                 {activeProgram.description && (
                   <p className="text-slate-300">{activeProgram.description}</p>
                 )}
+                {activeProgram.planProfile?.targetWeightKg ? (
+                  <p className="text-sm text-teal-200 mt-1">
+                    Objectif : <span className="font-semibold text-white">{activeProgram.planProfile.targetWeightKg} kg</span>
+                  </p>
+                ) : null}
               </div>
 
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
@@ -600,7 +654,7 @@ const NutritionPrograms = ({ nutritionData }) => {
       <Card variant="sport">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            <Archive size={24} className="text-blue-400" />
+            <Archive size={24} className="text-teal-400" />
             Tous les Programmes ({programs.length})
           </CardTitle>
         </CardHeader>
@@ -651,6 +705,7 @@ const NutritionPrograms = ({ nutritionData }) => {
           program={editingProgram}
           onSave={handleSaveProgram}
           nutritionData={nutritionData}
+          progressEntries={progressEntries}
         />
       )}
 

@@ -6,6 +6,7 @@ import {
   Heart, 
   TrendingUp, 
   TrendingDown,
+  Ruler,
   Minus,
   Save,
   Calendar,
@@ -27,7 +28,7 @@ import logger from '../../utils/logger';
 const log = logger.component('ImpedanceSection');
 
 const ImpedanceSection = () => {
-  const { data, addProgressEntry } = useWorkout();
+  const { data, addProgressEntry, updateData } = useWorkout();
   const { showSuccess, showError, showInfo, ToastContainer } = useToast();
   const { loadAllData, dbReady } = useGarminData();
   const [garminBasalMetabolism, setGarminBasalMetabolism] = useState(null);
@@ -68,6 +69,8 @@ const ImpedanceSection = () => {
   // ✅ FormData avec exactement les champs demandés
   const [formData, setFormData] = useState({
     weight: '',                    // Poids en kg
+    heightCm: '',                  // Taille (cm) — obligatoire avec l’âge pour l’historique & nutrition
+    chronologicalAge: '',          // Âge réel (années) — obligatoire
     bmi: '',                       // IMC
     bodyFatPercentage: '',         // Taux de graisse corporel en pourcent
     muscleMass: '',                // Masse musculaire en kg
@@ -131,9 +134,21 @@ const ImpedanceSection = () => {
       basalMetabolism: lastEntry.basalMetabolism || null,
       metabolicAge: lastEntry.metabolicAge || null,
       bodyType: lastEntry.bodyType || null,
+      heightCm: lastEntry.heightCm != null ? lastEntry.heightCm : null,
+      chronologicalAge: lastEntry.chronologicalAge != null ? lastEntry.chronologicalAge : null,
       date: entryDate
     };
   }, [data?.progressEntries]);
+
+  // Profil utilisateur : proposer la taille enregistrée si le champ est encore vide
+  useEffect(() => {
+    const h = data?.userProfile?.height;
+    if (h == null || h === '') return;
+    setFormData((prev) => {
+      if (prev.heightCm !== '') return prev;
+      return { ...prev, heightCm: String(h) };
+    });
+  }, [data?.userProfile?.height]);
 
   const handleInputChange = (field, value) => {
     setFormData(prev => ({
@@ -149,10 +164,11 @@ const ImpedanceSection = () => {
     }
   };
 
-  // ✅ Calcul automatique IMC si poids disponible
+  // ✅ Calcul automatique IMC si poids + taille (formulaire ou ancien profil)
   useEffect(() => {
-    if (formData.weight && data?.userProfile?.height) {
-      const heightInMeters = parseFloat(data.userProfile.height) / 100;
+    const hRaw = formData.heightCm || data?.userProfile?.height;
+    if (formData.weight && hRaw) {
+      const heightInMeters = parseFloat(hRaw) / 100;
       const weightInKg = parseFloat(formData.weight);
       if (heightInMeters > 0 && weightInKg > 0) {
         const calculatedBMI = (weightInKg / (heightInMeters * heightInMeters)).toFixed(1);
@@ -161,7 +177,7 @@ const ImpedanceSection = () => {
         }
       }
     }
-  }, [formData.weight, data?.userProfile?.height]);
+  }, [formData.weight, formData.heightCm, formData.bmi, data?.userProfile?.height]);
 
   // ✅ Préremplir métabolisme de base avec valeur Garmin si disponible et champ vide
   useEffect(() => {
@@ -235,11 +251,18 @@ const ImpedanceSection = () => {
         entry.basalMetabolismSource = 'Manual';
       }
       
-      // Convertir les valeurs numériques
-      Object.keys(entry).forEach(key => {
-        if (key !== 'date' && key !== 'notes' && key !== 'bodyType' && key !== 'timestamp' && key !== 'basalMetabolismSource' && entry[key]) {
-          entry[key] = parseFloat(entry[key]);
+      const stringKeys = new Set(['date', 'notes', 'bodyType', 'timestamp', 'basalMetabolismSource', 'type']);
+      Object.keys(entry).forEach((key) => {
+        if (stringKeys.has(key) || entry[key] === '' || entry[key] == null) return;
+        if (key === 'chronologicalAge') {
+          entry[key] = Math.round(parseFloat(entry[key]));
+          return;
         }
+        if (key === 'heightCm' || key === 'weight' || key === 'bmi') {
+          entry[key] = parseFloat(entry[key]);
+          return;
+        }
+        entry[key] = parseFloat(entry[key]);
       });
       
       // Ajouter le type requis
@@ -262,6 +285,8 @@ const ImpedanceSection = () => {
       // Réinitialiser le formulaire
       setFormData({
         weight: '',
+        heightCm: '',
+        chronologicalAge: '',
         bmi: '',
         bodyFatPercentage: '',
         muscleMass: '',
@@ -289,25 +314,49 @@ const ImpedanceSection = () => {
     }
   };
 
-  // ✅ Métriques avec exactement les champs demandés
+  // ✅ Métriques — minimum requis par séance puis détail impédancemètre
   const metrics = [
     {
-      category: 'Métriques de base',
+      category: 'Minimum requis (chaque enregistrement)',
       items: [
         {
           key: 'weight',
           label: 'Poids',
           unit: 'kg',
           icon: <Scale className="w-4 h-4" />,
-          description: 'Poids corporel total'
+          description: 'Poids du jour — ancrage du suivi corporel sur la durée',
+          inputStep: '0.05'
+        },
+        {
+          key: 'heightCm',
+          label: 'Taille',
+          unit: 'cm',
+          icon: <Activity className="w-4 h-4" />,
+          description: 'Ta taille actuelle (utilisée avec le poids pour l’IMC et les programmes nutrition)',
+          inputStep: '0.1'
+        },
+        {
+          key: 'chronologicalAge',
+          label: 'Âge réel',
+          unit: 'ans',
+          icon: <Heart className="w-4 h-4" />,
+          description: 'Âge chronologique (différent de l’âge métabolique affiché plus bas)',
+          inputStep: '1'
         },
         {
           key: 'bmi',
           label: 'IMC',
           unit: '',
-          icon: <Activity className="w-4 h-4" />,
-          description: 'Indice de masse corporelle (calculé automatiquement si taille disponible)'
-        },
+          icon: <BarChart3 className="w-4 h-4" />,
+          description: 'Indice calculé automatiquement (poids + taille)',
+          readOnly: true,
+          inputStep: 'any'
+        }
+      ]
+    },
+    {
+      category: 'Mesures détaillées (optionnel)',
+      items: [
         {
           key: 'bodyFatPercentage',
           label: 'Taux de graisse corporel',
@@ -452,6 +501,51 @@ const ImpedanceSection = () => {
               />
             </div>
 
+            <div className="rounded-lg border border-[#0F4C5C]/45 bg-black/50 p-3">
+              <label className="mb-2 block text-sm font-medium text-teal-100">
+                Jour de pesée hebdomadaire (rappel sur l’onglet Aujourd’hui)
+              </label>
+              <select
+                value={
+                  data?.bodyTrackingPrefs?.weeklyWeighInDay === undefined ||
+                  data?.bodyTrackingPrefs?.weeklyWeighInDay === null
+                    ? ''
+                    : String(data.bodyTrackingPrefs.weeklyWeighInDay)
+                }
+                onChange={async (e) => {
+                  const raw = e.target.value;
+                  const v = raw === '' ? null : Number(raw);
+                  try {
+                    await updateData({
+                      ...data,
+                      bodyTrackingPrefs: {
+                        ...(data.bodyTrackingPrefs || {}),
+                        weeklyWeighInDay: v
+                      }
+                    });
+                    showSuccess('Jour de rappel enregistré');
+                  } catch (err) {
+                    log.error('bodyTrackingPrefs.weeklyWeighInDay', err);
+                    showError('Impossible d’enregistrer le jour de pesée.');
+                  }
+                }}
+                className="w-full rounded-lg border border-[#0F4C5C]/55 bg-black px-3 py-2 text-teal-100 focus:outline-none focus:ring-2 focus:ring-[#0F5C45]/40"
+              >
+                <option value="">— Pas de rappel —</option>
+                <option value="0">Dimanche</option>
+                <option value="1">Lundi</option>
+                <option value="2">Mardi</option>
+                <option value="3">Mercredi</option>
+                <option value="4">Jeudi</option>
+                <option value="5">Vendredi</option>
+                <option value="6">Samedi</option>
+              </select>
+              <p className="mt-2 text-xs text-teal-700">
+                Un bandeau « Pèsée attendue » apparaît ce jour-là au-dessus des exercices si aucune entrée impédance
+                n’est enregistrée pour la date du jour.
+              </p>
+            </div>
+
             {/* Métriques par catégorie */}
             {metrics.map((category, categoryIndex) => (
               <div key={categoryIndex}>
@@ -468,14 +562,19 @@ const ImpedanceSection = () => {
                       </label>
                       <input
                         type="number"
-                        step="0.1"
+                        step={metric.inputStep === 'any' ? 'any' : metric.inputStep || '0.1'}
+                        readOnly={Boolean(metric.readOnly)}
+                        aria-readonly={metric.readOnly ? 'true' : undefined}
                         min={metric.unit?.includes('/') ? 0 : undefined}
                         max={metric.unit === '/8' ? 8 : metric.unit === '/5' ? 5 : metric.unit === '/20' ? 20 : undefined}
                         value={formData[metric.key]}
-                        onChange={(e) => handleInputChange(metric.key, e.target.value)}
+                        onChange={(e) => {
+                          if (metric.readOnly) return;
+                          handleInputChange(metric.key, e.target.value);
+                        }}
                         className={`w-full rounded-lg border bg-black px-3 py-2 text-teal-100 focus:outline-none focus:ring-2 focus:ring-[#0F5C45]/40 ${
-                          errors[metric.key] ? 'border-red-500' : 'border-[#0F4C5C]/55'
-                        }`}
+                          metric.readOnly ? 'cursor-not-allowed opacity-90' : ''
+                        } ${errors[metric.key] ? 'border-red-500' : 'border-[#0F4C5C]/55'}`}
                         placeholder={
                           metric.key === 'basalMetabolism' && garminBasalMetabolism
                             ? `${garminBasalMetabolism.value} (Garmin recommandé)`
@@ -589,6 +688,31 @@ const ImpedanceSection = () => {
                   <div className="text-2xl font-bold text-teal-100 mb-1">
                     {lastMeasurement.weight} kg
                   </div>
+                </div>
+              )}
+
+              {lastMeasurement.heightCm != null && (
+                <div className="rounded-lg border border-[#0F4C5C]/50 bg-black p-4">
+                  <h4 className="mb-2 flex items-center gap-2 font-semibold text-teal-100">
+                    <Ruler className="h-4 w-4 text-sky-400" />
+                    Taille (séance)
+                  </h4>
+                  <div className="text-2xl font-bold text-teal-100 mb-1">
+                    {lastMeasurement.heightCm} cm
+                  </div>
+                </div>
+              )}
+
+              {lastMeasurement.chronologicalAge != null && (
+                <div className="rounded-lg border border-[#0F4C5C]/50 bg-black p-4">
+                  <h4 className="mb-2 flex items-center gap-2 font-semibold text-teal-100">
+                    <Heart className="h-4 w-4 text-sky-400" />
+                    Âge réel
+                  </h4>
+                  <div className="text-2xl font-bold text-teal-100 mb-1">
+                    {lastMeasurement.chronologicalAge}
+                  </div>
+                  <div className="text-sm text-teal-700">ans</div>
                 </div>
               )}
               

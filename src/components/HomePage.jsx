@@ -27,6 +27,8 @@ const HomePage = () => {
   const language = t.language || 'fr'; // Fallback vers 'fr' si non disponible
   const { backgroundImages, isLoading, systemHealth } = useHomepageImages();
   const { displayQuote, loading: quoteLoading, handleInteraction: handleQuoteInteraction } = useQuoteDisplay();
+  const [renderedQuote, setRenderedQuote] = useState(null);
+  const [quoteAnimKey, setQuoteAnimKey] = useState(0);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [userLocation, setUserLocation] = useState('');
   
@@ -458,13 +460,22 @@ const HomePage = () => {
     }
   };
 
+  useEffect(() => {
+    if (!displayQuote) return;
+    const prevKey = renderedQuote?.lines?.join('|') || '';
+    const nextKey = displayQuote?.lines?.join('|') || '';
+    if (prevKey === nextKey) return;
+    setRenderedQuote(displayQuote);
+    setQuoteAnimKey((k) => k + 1);
+  }, [displayQuote, renderedQuote]);
+
   // Ajuster la taille quand la citation change
   useEffect(() => {
     const timer = setTimeout(() => {
       adjustQuoteSize();
     }, 100);
     return () => clearTimeout(timer);
-  }, [displayQuote, quoteLoading]);
+  }, [renderedQuote, quoteLoading]);
 
   // Fonction pour changer l'image de fond ET la citation lors des interactions
   const handleInteraction = () => {
@@ -670,7 +681,6 @@ const HomePage = () => {
         <div className="max-w-2xl flex-shrink-0 w-full">
           {/* Titre principal - Citations dynamiques (lignes variables + gras paramétrable) */}
           <h1
-            key={displayQuote ? displayQuote.lines.join('|') : 'default'}
             className="adaptive-quote-text font-light mb-10 animate-quote-fade-in"
             style={{
               textShadow: '2px 2px 4px rgba(0,0,0,0.8)',
@@ -678,7 +688,6 @@ const HomePage = () => {
               flexDirection: 'column',
               justifyContent: 'flex-start',
               gap: '0.25rem',
-              animation: 'quoteFadeIn 0.6s cubic-bezier(0.4, 0, 0.2, 1) forwards',
               lineHeight: '1.2',
               paddingTop: '0.1em'
             }}
@@ -687,40 +696,38 @@ const HomePage = () => {
               <>
                 <span className="text-white opacity-50">Chargement...</span>
               </>
-            ) : displayQuote && displayQuote.lines && displayQuote.lines.length > 0 ? (
-              displayQuote.lines.map((line, index) => {
-                const oneBased = index + 1;
-                const isBold = oneBased >= (displayQuote.boldFrom || 2) && oneBased <= (displayQuote.boldTo || 2);
-                return (
-                  <span key={index} className={isBold ? 'text-white font-bold' : 'text-white'}>
-                    {line}
-                  </span>
-                );
-              })
+            ) : renderedQuote && renderedQuote.lines && renderedQuote.lines.length > 0 ? (
+              <span key={quoteAnimKey} className="inline-flex flex-col gap-1 animate-quote-fade-in">
+                {renderedQuote.lines.map((line, index) => {
+                  const oneBased = index + 1;
+                  const isBold = oneBased >= (renderedQuote.boldFrom || 2) && oneBased <= (renderedQuote.boldTo || 2);
+                  return (
+                    <span key={index} className={isBold ? 'text-white font-bold' : 'text-white'}>
+                      {line}
+                    </span>
+                  );
+                })}
+              </span>
             ) : (
-              <>
-                <span className="text-white">{t('home.title.line1')}</span>
-                <span className="text-white font-bold">{t('home.title.line2')}</span>
-                <span className="text-white">{t('home.title.line3')}</span>
-              </>
+              <span className="text-white opacity-40">...</span>
             )}
           </h1>
 
-          {/* Bouton CTA - Texte non coupé */}
-          <div className="relative flex-shrink-0 mb-2 md:mb-8">
-            <button 
-              data-swipe-ignore
-              onClick={() => navigateToTab(isAuthenticated ? 'today' : 'auth')}
-              className="bg-white/8 backdrop-blur-2xl border border-white/15 text-white px-6 md:px-8 py-3 md:py-4 rounded-2xl text-sm md:text-lg font-semibold transition-all duration-500 hover:bg-white/20 hover:border-white/30 hover:shadow-2xl hover:shadow-white/20 hover:scale-105 hover:backdrop-blur-3xl whitespace-normal md:whitespace-nowrap overflow-visible"
-              style={{ textShadow: '1px 1px 2px rgba(0,0,0,0.7)' }}
-              aria-label={isAuthenticated ? 'Navigate to Today section' : 'Get started with Momentum'}
-            >
-              {isAuthenticated ? 'Accéder à l’onglet Aujourd’hui' : t('home.cta')}
-            </button>
-            
-          </div>
         </div>
       </main>
+
+      {/* Bouton CTA fixé juste au-dessus de "À propos de Momentum" (~1 cm) */}
+      <div className="relative z-10 px-4 md:px-8 mb-0">
+        <button
+          data-swipe-ignore
+          onClick={() => navigateToTab(isAuthenticated ? 'today' : 'auth')}
+          className="bg-white/8 backdrop-blur-2xl border border-white/15 text-white px-6 md:px-8 py-3 md:py-4 rounded-2xl text-sm md:text-lg font-semibold transition-all duration-500 hover:bg-white/20 hover:border-white/30 hover:shadow-2xl hover:shadow-white/20 hover:scale-105 hover:backdrop-blur-3xl whitespace-normal md:whitespace-nowrap overflow-visible"
+          style={{ textShadow: '1px 1px 2px rgba(0,0,0,0.7)' }}
+          aria-label={isAuthenticated ? 'Navigate to Today section' : 'Get started with Momentum'}
+        >
+          {isAuthenticated ? 'Accéder à l’onglet Aujourd’hui' : t('home.cta')}
+        </button>
+      </div>
 
       {/* Footer */}
       <footer className="relative z-10 mt-auto grid grid-cols-[minmax(0,1fr)_auto] md:flex md:flex-row md:justify-between md:items-end items-end gap-3 md:gap-8 px-4 md:p-8 pb-6 md:pb-12 flex-shrink-0" style={{ minHeight: 'fit-content' }}>

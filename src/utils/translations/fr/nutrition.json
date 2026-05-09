@@ -8,7 +8,8 @@
     "gamification": "Gamification",
     "challenges": "Défis",
     "progress": "Progression",
-    "sharing": "Partage"
+    "sharing": "Partage",
+    "bank": "Banque"
   },
   "skeletons": {
     "journal": "du journal nutritionnel",
@@ -17,7 +18,8 @@
     "gamification": "de la gamification",
     "challenges": "des défis",
     "progress": "de la progression",
-    "sharing": "du partage"
+    "sharing": "du partage",
+    "bank": "de la banque aliments"
   },
   "tooltips": {
     "journal": {

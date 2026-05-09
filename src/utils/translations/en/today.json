@@ -131,6 +131,21 @@
   "sessionFeedback": {
     "button": "Session feedback"
   },
+  "seriesAdapt": {
+    "openTitle": "Adjust today's target",
+    "short": "Today's target",
+    "saved": "Today's target saved",
+    "resetToast": "Back to program target",
+    "title": "Planned for today",
+    "programLabel": "In program:",
+    "inputLabel": "Sets × reps for today (e.g. 5×15, 4×8-12)",
+    "cancel": "Cancel",
+    "reset": "Reset",
+    "save": "Save"
+  },
+  "performanceModal": {
+    "title": "Record a max from Today"
+  },
   "stretchMoments": {
     "matin": "Morning",
     "midi": "Noon",

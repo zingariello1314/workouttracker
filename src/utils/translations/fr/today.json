@@ -132,6 +132,21 @@
   "sessionFeedback": {
     "button": "Feedback de session"
   },
+  "seriesAdapt": {
+    "openTitle": "Adapter le prévu du jour",
+    "short": "Prévu du jour",
+    "saved": "Prévu du jour enregistré",
+    "resetToast": "Retour au prévu du programme",
+    "title": "Prévu pour aujourd’hui",
+    "programLabel": "Dans le programme :",
+    "inputLabel": "Séries × reps pour ce jour (ex. 5×15, 4×8-12)",
+    "cancel": "Annuler",
+    "reset": "Réinitialiser",
+    "save": "Enregistrer"
+  },
+  "performanceModal": {
+    "title": "Enregistrer un max depuis Aujourd’hui"
+  },
   "stretchMoments": {
     "matin": "Matin",
     "midi": "Midi",

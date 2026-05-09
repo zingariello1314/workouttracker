@@ -27,6 +27,8 @@ import BodyTrackingErrorBoundary from '../BodyTracking/ErrorBoundary';
 import CleanupNotification from '../BodyTracking/components/CleanupNotification';
 import { useNavigationCache } from '../../hooks/useNavigationCache';
 
+const PENDING_PROGRESS_SECTION_KEY = 'momentum.pendingProgressSection';
+
 const ProgressTab = () => {
   const [activeSection, setActiveSection] = useNavigationCache('progress.activeSection', 'metrics');
   const t = useTranslation();
@@ -52,6 +54,19 @@ const ProgressTab = () => {
       setActiveSection('metrics');
     }
   }, [activeSection, sections, setActiveSection]);
+
+  // Navigation depuis Nutrition (ou autre) : ouvrir une sous-section (ex. impédance)
+  useEffect(() => {
+    try {
+      const pending = sessionStorage.getItem(PENDING_PROGRESS_SECTION_KEY);
+      if (pending && sections.some((s) => s.id === pending)) {
+        setActiveSection(pending);
+        sessionStorage.removeItem(PENDING_PROGRESS_SECTION_KEY);
+      }
+    } catch {
+      /* ignore */
+    }
+  }, [sections, setActiveSection]);
 
   const renderActiveSection = () => {
     switch (activeSection) {

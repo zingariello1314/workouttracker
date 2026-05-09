@@ -23,6 +23,8 @@ import VoiceInput from './VoiceInput';
 
 const log = logger.module('FoodSearch');
 
+const KNOWN_FOOD_SOURCES = new Set(['manual', 'openfoodfacts', 'usda', 'favorite', 'unknown', 'custom', 'voice']);
+
 /**
  * ✅ OPTIMISATION : React.memo pour éviter re-renders inutiles (50-80% réduction)
  * 
@@ -189,6 +191,7 @@ const FoodSearch = memo(({ onFoodSelected, onClose }) => {
     }
 
     // Formater pour MealEntryForm
+    const src = product.source && KNOWN_FOOD_SOURCES.has(product.source) ? product.source : 'unknown';
     const foodData = {
       id: `food_${Date.now()}_${Math.random()}`,
       name: product.name,
@@ -201,9 +204,11 @@ const FoodSearch = memo(({ onFoodSelected, onClose }) => {
       fiberPer100: product.nutritionPer100.fiber || 0,
       sugarPer100: product.nutritionPer100.sugar || 0,
       sodiumPer100: product.nutritionPer100.sodium || 0,
-      // Métadonnées
-      source: product.source || 'unknown',
-      sourceId: product.sourceId || null,
+      // Métadonnées (éviter null / sources invalides pour Zod)
+      source: src,
+      ...(product.sourceId != null && String(product.sourceId).trim() !== ''
+        ? { sourceId: String(product.sourceId) }
+        : {}),
       brand: product.brand || '',
       nutriScore: product.nutriScore || null,
     };
@@ -252,6 +257,10 @@ const FoodSearch = memo(({ onFoodSelected, onClose }) => {
     }
 
     // Formater pour MealEntryForm (même format que handleSelectFood)
+    const srcScan = product.source && KNOWN_FOOD_SOURCES.has(product.source)
+      ? product.source
+      : 'openfoodfacts';
+    const scanId = product.sourceId ?? product.code;
     const foodData = {
       id: `food_${Date.now()}_${Math.random()}`,
       name: product.name || product.product_name || 'Produit scanné',
@@ -264,9 +273,8 @@ const FoodSearch = memo(({ onFoodSelected, onClose }) => {
       fiberPer100: product.nutritionPer100?.fiber || 0,
       sugarPer100: product.nutritionPer100?.sugar || 0,
       sodiumPer100: product.nutritionPer100?.sodium || 0,
-      // Métadonnées
-      source: product.source || 'openfoodfacts',
-      sourceId: product.sourceId || product.code || null,
+      source: srcScan,
+      ...(scanId != null && String(scanId).trim() !== '' ? { sourceId: String(scanId) } : {}),
       brand: product.brand || product.brands || '',
       nutriScore: product.nutriScore || product.nutriscore_grade || null,
     };
@@ -295,6 +303,7 @@ const FoodSearch = memo(({ onFoodSelected, onClose }) => {
     if (voiceFoods.length === 1 && voiceFoods[0] && !voiceFoods[0].needsManualInput && voiceFoods[0].caloriesPer100 > 0) {
       // Un seul aliment trouvé avec données complètes -> ajouter directement
       const food = voiceFoods[0];
+      const vSrc = food.source && KNOWN_FOOD_SOURCES.has(food.source) ? food.source : 'voice';
       const foodData = {
         id: food.id || `food_${Date.now()}_${Math.random()}`,
         name: food.name,
@@ -307,8 +316,10 @@ const FoodSearch = memo(({ onFoodSelected, onClose }) => {
         fiberPer100: food.fiberPer100 || 0,
         sugarPer100: food.sugarPer100 || 0,
         sodiumPer100: food.sodiumPer100 || 0,
-        source: food.source || 'voice',
-        sourceId: food.sourceId || null,
+        source: vSrc,
+        ...(food.sourceId != null && String(food.sourceId).trim() !== ''
+          ? { sourceId: String(food.sourceId) }
+          : {}),
         brand: food.brand || '',
         nutriScore: food.nutriScore || null,
       };

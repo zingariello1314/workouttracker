@@ -231,7 +231,7 @@ export const NutritionConfig = {
     compressionMinSize: 2048,        // Taille minimum avant compression (2 KB)
     compressionPreferStream: true,   // Préférer CompressionStream si dispo
     preserveSectionState: true,      // ✅ OPTIMISATION Phase 15.1 : Garder sections montées mais cachées (préserve état)
-    maxMountedSections: 7,           // Nombre max de sections montées simultanément (évite surcharge mémoire)
+    maxMountedSections: 10,           // Sections Nutrition (journal, banque, programmes, …) — marge pour LRU
   },
   
   // Feature flags (pour activer/désactiver features)

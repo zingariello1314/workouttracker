@@ -1,4 +1,4 @@
-﻿/**
+/**
  * MealList - Liste des Repas du Jour
  * 
  * Affiche la liste des repas d'un jour avec :
@@ -75,12 +75,12 @@ const MealList = React.memo(({ meals, onEdit, onDelete, onAdd }) => {
     return (
       <div
         key={meal.id}
-        className="bg-slate-900/50 rounded-lg p-4 border border-slate-700/50 hover:border-slate-600 transition-all"
+        className="rounded-lg border border-[#0F4C5C]/40 bg-black p-4 transition-all hover:border-[#0F5C45]/55"
       >
         <div className="flex items-start justify-between mb-3">
           <div className="flex items-center gap-3">
-            <Clock size={16} className="text-slate-400" />
-            <span className="text-slate-400 text-sm">
+            <Clock size={16} className="text-teal-600/90" />
+            <span className="text-teal-200/75 text-sm">
               {formatTime(meal.timestamp)}
             </span>
           </div>
@@ -107,23 +107,23 @@ const MealList = React.memo(({ meals, onEdit, onDelete, onAdd }) => {
           <div className="space-y-2 mb-3">
             {meal.foods.map((food, idx) => (
               <div key={food.id || idx} className="flex items-center justify-between text-sm">
-                <span className="text-slate-300">
+                <span className="text-teal-50/95">
                   {food.name}
                 </span>
-                <span className="text-slate-400">
+                <span className="text-teal-200/70">
                   {food.quantity} {food.unit}
                 </span>
               </div>
             ))}
           </div>
         ) : (
-          <p className="text-slate-500 text-sm italic mb-3">Aucun aliment</p>
+          <p className="text-teal-700 text-sm italic mb-3">Aucun aliment</p>
         )}
 
         {/* Totaux repas */}
-        <div className="flex items-center justify-between pt-3 border-t border-slate-700/50">
+        <div className="flex items-center justify-between pt-3 border-t border-[#0F4C5C]/35">
           <div className="flex items-center gap-4 text-sm">
-            <span className="text-slate-400">
+            <span className="text-teal-200/80">
               <span className="text-white font-semibold">{Math.round(meal.totalCalories || 0)}</span> kcal
             </span>
             <span className="text-slate-500">•</span>
@@ -143,8 +143,8 @@ const MealList = React.memo(({ meals, onEdit, onDelete, onAdd }) => {
 
         {/* Notes */}
         {meal.notes && (
-          <div className="mt-2 pt-2 border-t border-slate-700/30">
-            <p className="text-slate-500 text-xs italic">{meal.notes}</p>
+          <div className="mt-2 pt-2 border-t border-[#0F4C5C]/30">
+            <p className="text-teal-700/90 text-xs italic">{meal.notes}</p>
           </div>
         )}
       </div>
@@ -176,8 +176,8 @@ const MealList = React.memo(({ meals, onEdit, onDelete, onAdd }) => {
     return (
       <Card variant="sport">
         <CardContent className="p-8 text-center">
-          <Utensils size={48} className="mx-auto text-slate-600 mb-4" />
-          <p className="text-slate-400 mb-4">Aucun repas enregistré pour ce jour</p>
+          <Utensils size={48} className="mx-auto text-[#0F4C5C]/90 mb-4" />
+          <p className="text-teal-200/75 mb-4">Aucun repas enregistré pour ce jour</p>
           <button
             type="button"
             onClick={() => onAdd()}
@@ -195,7 +195,7 @@ const MealList = React.memo(({ meals, onEdit, onDelete, onAdd }) => {
     <Card variant="sport">
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
-          <Utensils size={24} className="text-blue-400" />
+          <Utensils size={24} className="text-teal-300" />
           Repas du jour ({meals.length})
         </CardTitle>
       </CardHeader>
@@ -214,7 +214,7 @@ const MealList = React.memo(({ meals, onEdit, onDelete, onAdd }) => {
                   <h3 className={`${typography.presets.h4} text-white`}>
                     {typeInfo.label}
                   </h3>
-                  <span className="text-slate-500 text-sm">({typeMeals.length})</span>
+                  <span className="text-teal-700/90 text-sm">({typeMeals.length})</span>
                 </div>
                 {/* ✅ PHASE 14.2 : Virtual scrolling si > threshold, sinon rendu normal */}
                 {typeMeals.length > virtualScrollThreshold ? (

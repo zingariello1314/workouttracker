@@ -20,7 +20,7 @@ import React from 'react';
 const SectionSkeleton = React.memo(({ label = 'du contenu', minHeight = '400px' }) => {
   return (
     <div
-      className="rounded-lg border border-slate-700 bg-slate-800/60 flex items-center justify-center text-slate-300 text-sm"
+      className="flex items-center justify-center rounded-lg border-2 border-[#0F4C5C]/60 bg-black text-sm text-teal-200/80"
       style={{ minHeight }}
       role="status"
       aria-live="polite"
@@ -28,7 +28,7 @@ const SectionSkeleton = React.memo(({ label = 'du contenu', minHeight = '400px' 
     >
       <div className="flex items-center gap-3">
         <span 
-          className="h-5 w-5 border-2 border-slate-600 border-t-blue-400 rounded-full animate-spin" 
+          className="h-5 w-5 animate-spin rounded-full border-2 border-[#0F4C5C]/50 border-t-[#0F5C45]"
           aria-hidden="true"
         />
         <span>Chargement {label}…</span>

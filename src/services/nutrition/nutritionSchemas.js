@@ -141,7 +141,10 @@ export const dailyMealSchema = z.object({
   createdAt: isoTimestampSchema.optional(),
   
   // ✅ OPTIMISATION Phase 15.3 : Version pour optimistic locking (détection modifications concurrentes)
-  version: z.number().int().nonnegative('La version doit être un entier positif ou nul').optional().default(0)
+  version: z.number().int().nonnegative('La version doit être un entier positif ou nul').optional().default(0),
+
+  // Multi-utilisateur (IndexedDB scoppé par compte)
+  userId: z.string().min(1, 'userId invalide').optional()
 }).strict(); // Interdit champs non définis (mais on a ajouté tous les champs existants)
 
 // ==================== SCHEMAS MEAL ====================
@@ -202,16 +205,39 @@ const foodItemSchema = z.object({
     sugar: nutritionValueSchema.optional(),
     sodium: nutritionValueSchema.optional()
   }).optional(),
+
+  // Format plat utilisé par MealEntryForm / FoodSearch (legacy + UI actuelle)
+  caloriesPer100: nutritionValueSchema.optional(),
+  proteinPer100: nutritionValueSchema.optional(),
+  carbsPer100: nutritionValueSchema.optional(),
+  fatPer100: nutritionValueSchema.optional(),
+  fiberPer100: nutritionValueSchema.optional(),
+  sugarPer100: nutritionValueSchema.optional(),
+  sodiumPer100: nutritionValueSchema.optional(),
+  calories: nutritionValueSchema.optional(),
+  protein: nutritionValueSchema.optional(),
+  carbs: nutritionValueSchema.optional(),
+  fat: nutritionValueSchema.optional(),
   
   // Source aliment (optionnel)
-  source: z.enum(['manual', 'openfoodfacts', 'usda', 'favorite'], {
-    errorMap: () => ({ message: 'Source invalide (manual, openfoodfacts, usda, favorite)' })
+  source: z.enum(['manual', 'openfoodfacts', 'usda', 'favorite', 'unknown', 'custom', 'voice', 'detection'], {
+    errorMap: () => ({ message: 'Source invalide' })
   }).optional(),
-  sourceId: z.string().optional(),
+  sourceId: z.string().max(200, 'ID source trop long').optional().nullable(),
   
   // Métadonnées
   brand: z.string().max(100, 'Marque trop longue (>100 caractères)').optional(),
-  barcode: z.string().max(50, 'Code-barres trop long (>50 caractères)').optional()
+  barcode: z.string().max(50, 'Code-barres trop long (>50 caractères)').optional(),
+  nutriScore: z.string().max(3, 'Nutri-Score trop long').optional().nullable(),
+
+  // Reconnaissance photo (MobileNet / FoodPhotoScanner)
+  className: z.string().max(200).optional(),
+  confidence: z.number().min(0).max(1).optional(),
+  imageUrl: z.union([z.string().max(2000), z.null()]).optional(),
+  estimatedPortion: z.number().positive('Portion estimée invalide').max(10000).optional(),
+  estimatedCalories: nutritionValueSchema.optional(),
+
+  needsManualInput: z.boolean().optional()
 }).strict();
 
 /**
@@ -249,8 +275,11 @@ export const mealSchema = z.object({
   totalSugar: nutritionValueSchema.optional(),
   totalSodium: nutritionValueSchema.optional(),
   
-  // Notes/journal (optionnel)
-  notes: z.string().max(2000, 'Notes trop longues (>2000 caractères)').optional(),
+  // Notes/journal (optionnel ; null accepté depuis l’UI)
+  notes: z.preprocess(
+    (v) => (v === null || v === '') ? undefined : v,
+    z.string().max(2000, 'Notes trop longues (>2000 caractères)').optional()
+  ),
   
   // Métadonnées
   timestamp: isoTimestampSchema.optional(),
@@ -258,7 +287,10 @@ export const mealSchema = z.object({
   createdAt: isoTimestampSchema.optional(),
   
   // ✅ OPTIMISATION Phase 15.3 : Version pour optimistic locking (détection modifications concurrentes)
-  version: z.number().int().nonnegative('La version doit être un entier positif ou nul').optional().default(0)
+  version: z.number().int().nonnegative('La version doit être un entier positif ou nul').optional().default(0),
+
+  // Multi-utilisateur
+  userId: z.string().min(1, 'userId invalide').optional()
 }).strict();
 
 // ==================== SCHEMAS PROGRAM ====================
@@ -277,13 +309,68 @@ const nutritionGoalsSchema = z.object({
   proteinRatio: percentageSchema.optional(),
   carbsRatio: percentageSchema.optional(),
   fatRatio: percentageSchema.optional()
-}).optional();
+}).passthrough().optional(); // ✅ Optionnel ; passthrough pour champs métiers additionnels
 
 /**
  * Schéma principal pour Program
  * 
  * Représente un programme nutritionnel (cutting, bulking, maintenance, etc.)
  */
+const planProfileSchema = z.object({
+  heightCm: z.number().min(120).max(230).optional(),
+  sex: z.enum(['male', 'female', 'other']).optional(),
+  age: z.number().int().min(14).max(100).optional(),
+  baselineWeightKg: z.number().positive().optional(),
+  targetWeightKg: z.number().positive().max(400).optional(),
+  targetWeightDeltaKg: z.number().min(-80).max(80).optional(),
+  bodyFatPercent: z.number().min(3).max(65).nullable().optional(),
+  activityFactor: z.number().min(1).max(2.6).optional(),
+  impedanceSourceDate: dateStringSchema.optional().nullable(),
+  estimatedBmr: z.number().optional(),
+  estimatedTdee: z.number().optional(),
+  estimateNote: z.string().max(2000).optional(),
+  lastAdaptiveAt: isoTimestampSchema.optional()
+}).optional();
+
+const mealPlanSlotFoodSchema = z.object({
+  foodId: z.string(),
+  name: z.string(),
+  approximateGrams: z.number().optional(),
+  notes: z.string().max(500).optional(),
+  kcalRounded: z.number().optional(),
+  proteinRounded: z.number().optional()
+});
+
+const mealPlanSlotSchema = z.object({
+  slot: z.string().max(40),
+  label: z.string().max(80),
+  foods: z.array(mealPlanSlotFoodSchema).max(24)
+});
+
+const mealPlanPreferencesSchema = z.object({
+  lovedFoodIds: z.array(z.string()).max(200).optional(),
+  avoidedFoodIds: z.array(z.string()).max(200).optional(),
+  openFoodIds: z.array(z.string()).max(200).optional(),
+  selectedBankFoodIds: z.array(z.string()).max(120).optional(),
+  maxWeeklyFoodVariety: z.number().int().min(5).max(100).optional(),
+  selectedExerciseKeys: z.array(z.string()).max(400).optional(),
+  selectedSportProgramId: z.string().max(120).optional(),
+  snacksPerDay: z.number().int().min(1).max(2).optional(),
+  generatedMealPlan: z.array(mealPlanSlotSchema).max(12).optional()
+}).optional();
+
+const programGoalPreprocess = (g) => {
+  if (g == null || g === '') return undefined;
+  if (typeof g !== 'string') return g;
+  const aliases = {
+    bulk: 'bulking',
+    cut: 'cutting',
+    maintain: 'maintenance',
+    stabilization: 'maintenance'
+  };
+  return aliases[g] ?? g;
+};
+
 export const programSchema = z.object({
   // Clé primaire
   id: z.string().min(1, 'ID programme requis'),
@@ -292,10 +379,15 @@ export const programSchema = z.object({
   name: z.string().min(1, 'Nom programme requis').max(100, 'Nom programme trop long (>100 caractères)'),
   description: z.string().max(2000, 'Description trop longue (>2000 caractères)').optional(),
   
-  // Objectifs
-  goal: z.enum(['cutting', 'bulking', 'maintenance', 'recomp', 'custom'], {
-    errorMap: () => ({ message: 'Objectif invalide (cutting, bulking, maintenance, recomp, custom)' })
-  }).optional(),
+  // Objectifs (aliases UI : bulk → bulking, etc.)
+  goal: z.preprocess(
+    programGoalPreprocess,
+    z.enum(['cutting', 'bulking', 'maintenance', 'recomp', 'custom', 'lean_bulk'], {
+      errorMap: () => ({
+        message: 'Objectif invalide (cutting, bulking, maintenance, recomp, custom, lean_bulk)'
+      })
+    }).optional()
+  ),
   
   // Objectifs nutritionnels
   nutritionGoals: nutritionGoalsSchema,
@@ -315,7 +407,32 @@ export const programSchema = z.object({
   createdAt: isoTimestampSchema.optional(),
   
   // ✅ OPTIMISATION Phase 15.3 : Version pour optimistic locking (détection modifications concurrentes)
-  version: z.number().int().nonnegative('La version doit être un entier positif ou nul').optional().default(0)
+  version: z.number().int().nonnegative('La version doit être un entier positif ou nul').optional().default(0),
+
+  userId: z.string().min(1, 'userId invalide').optional(),
+
+  /** Programme saisi à la main vs généré (assistant repas + impédance requise) */
+  creationMode: z.enum(['manual', 'generated']).optional(),
+
+  // Assistant programme (profil + banque + exercices)
+  planProfile: planProfileSchema,
+  mealPlanPreferences: mealPlanPreferencesSchema,
+
+  // Champs directs (formulaire legacy)
+  targetCalories: nutritionValueSchema.optional(),
+  targetProtein: nutritionValueSchema.optional(),
+  targetCarbs: nutritionValueSchema.optional(),
+  targetFat: nutritionValueSchema.optional(),
+  adjustForWorkout: z.boolean().optional(),
+  workoutDayCalories: nutritionValueSchema.optional().nullable(),
+  restDayCalories: nutritionValueSchema.optional().nullable(),
+  duration: z.number().int().min(1).max(730).optional(),
+  isArchived: z.boolean().optional(),
+
+  targetProteinPercent: percentageSchema.optional(),
+  targetCarbsPercent: percentageSchema.optional(),
+  targetFatPercent: percentageSchema.optional(),
+  targetWater: nutritionValueSchema.optional()
 }).strict();
 
 // ==================== SCHEMAS FAVORITE FOOD ====================
@@ -340,10 +457,16 @@ export const favoriteFoodSchema = z.object({
   source: z.enum(['manual', 'openfoodfacts', 'usda', 'custom'], {
     errorMap: () => ({ message: 'Source invalide (manual, openfoodfacts, usda, custom)' })
   }).optional(),
-  sourceId: z.string().max(100, 'ID source trop long (>100 caractères)').optional(),
+  sourceId: z.string().max(100, 'ID source trop long (>100 caractères)').optional().nullable(),
   
   // Code-barres (optionnel)
   barcode: z.string().max(50, 'Code-barres trop long (>50 caractères)').optional(),
+
+  // Index / filtres UI
+  category: z.string().max(100).optional(),
+  isFavorite: z.boolean().optional(),
+
+  userId: z.string().min(1, 'userId invalide').optional(),
   
   // Métadonnées d'utilisation
   lastUsed: dateStringSchema.optional(),
@@ -395,7 +518,9 @@ export const hydrationLogSchema = z.object({
   
   // Métadonnées
   lastModified: isoTimestampSchema.optional(),
-  createdAt: isoTimestampSchema.optional()
+  createdAt: isoTimestampSchema.optional(),
+
+  userId: z.string().min(1, 'userId invalide').optional()
 }).strict();
 
 // ==================== VALIDATION FUNCTIONS ====================

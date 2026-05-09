@@ -15,6 +15,7 @@ import logger from '../utils/logger';
 const log = logger.component('useQuoteDisplay');
 
 const AUTO_ROTATION_INTERVAL = 90000; // 90 seconds
+const INTERACTION_MIN_GAP_MS = 280;
 
 export function useQuoteDisplay(options = {}) {
   const {
@@ -31,12 +32,20 @@ export function useQuoteDisplay(options = {}) {
   const autoRotationTimerRef = useRef(null);
   const lastInteractionRef = useRef(Date.now());
   const isInitialLoadRef = useRef(true); // Track if this is the first load
+  const requestVersionRef = useRef(0);
+  const inFlightRef = useRef(false);
 
   // Select and display quote - SEAMLESS: no loading state after initial load
   const selectQuote = useCallback(async () => {
+    if (inFlightRef.current) {
+      return;
+    }
+    inFlightRef.current = true;
+    const requestVersion = ++requestVersionRef.current;
     try {
       const preferredUserQuote = String(currentUser?.preferredHomeQuote || currentUser?.inspirationalPhrase || '').trim();
       if (isAuthenticated && preferredUserQuote) {
+        if (requestVersion !== requestVersionRef.current) return;
         setCurrentQuote({
           id: `user-preferred-${currentUser?.id || 'unknown'}`,
           textFr: preferredUserQuote,
@@ -51,6 +60,7 @@ export function useQuoteDisplay(options = {}) {
       }
       if (!isAuthenticated) {
         const guestQuote = "Bienvenue. Connecte-toi pour afficher ta phrase inspirante personnelle.";
+        if (requestVersion !== requestVersionRef.current) return;
         setCurrentQuote({
           id: 'guest-default',
           textFr: guestQuote,
@@ -71,14 +81,17 @@ export function useQuoteDisplay(options = {}) {
       setError(null);
 
       const quote = await quotesService.selectQuote(language);
+      if (requestVersion !== requestVersionRef.current) return;
       setCurrentQuote(quote);
       log.info('Quote selected', { id: quote.id });
     } catch (err) {
+      if (requestVersion !== requestVersionRef.current) return;
       log.error('Failed to select quote', err);
       setError(err.message);
-      // Fallback to default
-      setCurrentQuote(quotesService.getDefaultQuote(language));
+      // Garder la citation précédente si disponible pour éviter les flashes.
+      setCurrentQuote((prev) => prev || quotesService.getDefaultQuote(language));
     } finally {
+      inFlightRef.current = false;
       if (isInitialLoadRef.current) {
         setLoading(false);
         isInitialLoadRef.current = false; // Mark initial load as complete
@@ -131,11 +144,14 @@ export function useQuoteDisplay(options = {}) {
   // Handle user interaction (click, touch, etc.)
   const handleInteraction = useCallback(() => {
     if (!enableInteractionRotation) return;
+    if (inFlightRef.current) return;
+    const now = Date.now();
+    if (now - lastInteractionRef.current < INTERACTION_MIN_GAP_MS) return;
 
     // ✅ INSTANT RESPONSE: No debounce - change immediately on every click
     // This matches the background image behavior for perfect synchronization
     log.info('Quote changed by user interaction');
-    lastInteractionRef.current = Date.now();
+    lastInteractionRef.current = now;
     refreshQuote();
   }, [enableInteractionRotation, refreshQuote]);
 

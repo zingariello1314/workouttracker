@@ -1,4 +1,4 @@
-﻿/**
+/**
  * NutritionJournal - Journal Nutritionnel
  * 
  * Composant principal pour la saisie et visualisation des repas journaliers.
@@ -13,7 +13,7 @@
  * @module components/tabs/nutrition/components/NutritionJournal
  */
 
-import React, { useState, useCallback, useMemo } from 'react';
+import React, { useState, useCallback, useMemo, useEffect } from 'react';
 import Card, { CardHeader, CardTitle, CardContent } from '../../../ui/Card';
 import Button from '../../../ui/Button';
 import Input from '../../../ui/Input';
@@ -31,8 +31,13 @@ import { useTranslation } from '../../../../utils/translations';
 // ✅ OPTIMISATION Phase 15.2 : Prefetching intelligent jour suivant/précédent
 import { usePrefetchNutritionDays } from '../../../../hooks/usePrefetchNutritionDays';
 import { getNutritionConfig } from '../../../../config/nutrition.config';
+import { useToast } from '../../../ui/Toast/ToastProvider';
+import logger from '../../../../utils/logger';
+
+const log = logger.component('NutritionJournal');
 
 const NutritionJournal = ({ selectedDate, onDateChange, nutritionData, garminData, isVisible = true }) => {
+  const { showError } = useToast();
   // ✅ OPTIMISATION 16 : Utiliser DateHelper pour cohérence timezone locale
   const dateStr = DateHelper.toYYYYMMDD(selectedDate) || DateHelper.getTodayLocal();
 
@@ -76,6 +81,17 @@ const NutritionJournal = ({ selectedDate, onDateChange, nutritionData, garminDat
   
   const t = useTranslation();
 
+  /** Halo discret sur la carte jour : intensité max pour 3 repas (au-delà, même teinte). */
+  const dateNavigatorAccent = useMemo(() => {
+    const n = Math.min(3, Array.isArray(meals) ? meals.length : 0);
+    if (n <= 0) return '';
+    if (n === 1)
+      return 'ring-1 ring-[#0F5C45]/25 shadow-[inset_0_0_20px_rgba(15,76,69,0.05)]';
+    if (n === 2)
+      return 'ring-1 ring-[#0F5C45]/38 shadow-[inset_0_0_26px_rgba(15,76,69,0.075)]';
+    return 'ring-1 ring-[#0F5C45]/48 shadow-[inset_0_0_30px_rgba(15,76,69,0.095)]';
+  }, [meals]);
+
   // ✅ PHASE 12.2 : Loading combiné (toutes les données doivent être chargées)
   // ✅ CORRECTION : Ne pas bloquer sur dbReady (peut être temporaire, repository gère fallback)
   // Les hooks Observer gèrent leur propre loading et erreurs
@@ -116,6 +132,8 @@ const NutritionJournal = ({ selectedDate, onDateChange, nutritionData, garminDat
 
         setShowMealForm(false);
         setEditingMeal(null);
+      } else {
+        showError('Enregistrement impossible', 'Les données n’ont pas pu être sauvegardées. Réessayez.');
       }
     } catch (error) {
       // ✅ OPTIMISATION 1.2 : Rollback : Recharger tout si erreur
@@ -124,7 +142,7 @@ const NutritionJournal = ({ selectedDate, onDateChange, nutritionData, garminDat
       refreshMeals();
       refreshDailyMeal();
     }
-  }, [nutritionData.saveMeal, refreshDailyMealWithTotals, refreshMeals, refreshDailyMeal]);
+  }, [nutritionData.saveMeal, refreshDailyMealWithTotals, refreshMeals, refreshDailyMeal, showError]);
 
   // ✅ OPTIMISATION 17-18 : Mémoriser handleMealDelete avec useCallback
   // ✅ OPTIMISATION 19 : Ouvrir modal de confirmation au lieu de window.confirm
@@ -202,23 +220,25 @@ const NutritionJournal = ({ selectedDate, onDateChange, nutritionData, garminDat
     setEditingMeal(null);
   }, []);
 
-  // ✅ CORRECTION : Afficher erreurs si présentes (même si loading)
-  if (errorDailyMeal || errorMeals || errorProgram) {
-    console.error('[NutritionJournal] Erreurs détectées:', {
-      errorDailyMeal,
-      errorMeals,
-      errorProgram
-    });
-  }
+  // Éviter console.error à chaque rendu (pollue la console utilisateur)
+  useEffect(() => {
+    if (errorDailyMeal || errorMeals || errorProgram) {
+      log.warn('Erreurs chargement (observer)', {
+        errorDailyMeal,
+        errorMeals,
+        errorProgram
+      });
+    }
+  }, [errorDailyMeal, errorMeals, errorProgram]);
 
   // ✅ CORRECTION : Ne pas bloquer indéfiniment - afficher contenu même si loading (avec données par défaut)
   // Le loading peut être true temporairement, mais on peut afficher l'UI avec des données vides
   if (loading && !dailyMeal && !meals && !activeProgram) {
     // Seulement afficher spinner si vraiment aucune donnée n'est disponible
     return (
-      <Card>
+      <Card variant="sport">
         <CardContent className="text-center py-12">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto"></div>
+          <div className="animate-spin rounded-full h-12 w-12 border-2 border-[#0F4C5C]/50 border-t-[#0F5C45] mx-auto" />
           <p className="text-slate-400 mt-4">Chargement des données...</p>
           {(errorDailyMeal || errorMeals || errorProgram) && (
             <p className="text-red-400 mt-2 text-sm">
@@ -233,7 +253,7 @@ const NutritionJournal = ({ selectedDate, onDateChange, nutritionData, garminDat
   return (
     <div className="space-y-6">
       {/* Sélection date */}
-      <Card variant="sport">
+      <Card variant="sport" className={`transition-shadow duration-300 ${dateNavigatorAccent}`}>
         <CardContent className="p-4">
           <div className="flex items-center justify-between gap-4">
             <div className="flex items-center gap-3">
@@ -246,14 +266,14 @@ const NutritionJournal = ({ selectedDate, onDateChange, nutritionData, garminDat
               </button>
               
               <div className="flex items-center gap-2">
-                <Calendar size={20} className="text-blue-400" />
+                <Calendar size={20} className="text-teal-300" />
                 <Input
                   type="date"
                   value={dateStr}
                   onChange={handleDateSelect}
-                  className="bg-slate-700 border-slate-600 text-white"
+                  className="bg-black border-[#0F4C5C]/55 text-teal-50 placeholder:text-teal-800"
                 />
-                <span className="text-slate-300 text-sm">
+                <span className="text-teal-100/85 text-sm">
                   {formattedDate}
                 </span>
               </div>

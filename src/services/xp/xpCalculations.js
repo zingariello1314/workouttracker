@@ -59,6 +59,49 @@ export const SPORT_XP_PER_TOTAL_KG_VOLUME = 0.04;
 /** Plafond sur ce seul poste pour que l’historique ne fasse pas exploser l’XP globale. */
 export const SPORT_XP_LIFTED_VOLUME_CAP = 12000;
 
+/** XP Sport par ligne d’aliment enregistrée dans un repas (journal nutrition IndexedDB). */
+export const SPORT_XP_PER_NUTRITION_FOOD_REGISTERED = 50;
+
+/** Borne haute du coefficient « ~2 étoiles » (voir `intensityCoeffToStarCount`). */
+const TWO_STAR_INTENSITY_COEFF_UPPER = 1.34;
+
+/**
+ * Charge de référence « 10 reps × difficulté ~2★ » dans la formule reps pondérées (sans charge additionnelle).
+ * Sert de repère d’équilibre vs la récompense nutrition (affichée dans la barre XP).
+ */
+export function sportXpReferenceTenRepsTwoStarBodyweight() {
+  const weightedLoad = 10 * TWO_STAR_INTENSITY_COEFF_UPPER * 1;
+  return Math.round(weightedLoad * 0.1);
+}
+
+/**
+ * Compte les aliments réellement saisis dans les repas (nom ou id + quantité &gt; 0).
+ */
+export function countNutritionRegisteredFoodItems(meals) {
+  if (!Array.isArray(meals) || meals.length === 0) return 0;
+  let n = 0;
+  for (const meal of meals) {
+    const foods = meal?.foods;
+    if (!Array.isArray(foods)) continue;
+    for (const f of foods) {
+      if (!f || typeof f !== 'object') continue;
+      const qty = Number(f.quantity);
+      if (!Number.isFinite(qty) || qty <= 0) continue;
+      if (String(f.name || '').trim() || String(f.id || '').trim()) n += 1;
+    }
+  }
+  return n;
+}
+
+/** XP cumulée liée aux aliments enregistrés dans le journal nutrition. */
+export function computeNutritionRegisteredFoodSportXp(meals) {
+  const nutritionFoodItems = countNutritionRegisteredFoodItems(meals);
+  return {
+    nutritionFoodItems,
+    nutritionFoodXp: nutritionFoodItems * SPORT_XP_PER_NUTRITION_FOOD_REGISTERED
+  };
+}
+
 function buildGarminRunningByIdForTrophies(garminData) {
   const full = new Map();
   const cardio = garminData?.activities?.cardio;
@@ -260,11 +303,16 @@ export const calculateSportXP = (workoutData, garminData, enduranceData, sportOp
     circuitsXp: 0,
     circuitCompletedDays: 0,
     circuitTripleAchievedDays: 0,
-    circuitBonusRounds: 0
+    circuitBonusRounds: 0,
+    nutritionFoodItems: 0,
+    nutritionFoodXp: 0
   };
   
   if (!workoutData) {
-    return { totalXP: 0, breakdown };
+    const nutOnly = computeNutritionRegisteredFoodSportXp(sportOptions?.nutritionMeals);
+    breakdown.nutritionFoodItems = nutOnly.nutritionFoodItems;
+    breakdown.nutritionFoodXp = nutOnly.nutritionFoodXp;
+    return { totalXP: Math.round(nutOnly.nutritionFoodXp), breakdown };
   }
 
   const extractExerciseIdFromStorageKey = (key) => {
@@ -496,6 +544,12 @@ export const calculateSportXP = (workoutData, garminData, enduranceData, sportOp
   };
   breakdown.programCompletionBonusXp = computeProgramCompletionBonusXp(workoutData, completionCtx);
   totalXP += breakdown.programCompletionBonusXp;
+
+  // Nutrition — XP pour chaque aliment enregistré dans les repas (journal)
+  const nutSport = computeNutritionRegisteredFoodSportXp(sportOptions?.nutritionMeals);
+  breakdown.nutritionFoodItems = nutSport.nutritionFoodItems;
+  breakdown.nutritionFoodXp = nutSport.nutritionFoodXp;
+  totalXP += nutSport.nutritionFoodXp;
 
   // Circuits — XP via paliers (target / +tour / 3×target)
   const circuitsResult = computeCircuitsXp(

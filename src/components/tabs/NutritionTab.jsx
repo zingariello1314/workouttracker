@@ -18,7 +18,8 @@ import { useNutritionTheme } from '../../hooks/useNutritionTheme';
 import Card, { CardHeader, CardTitle, CardContent } from '../ui/Card';
 import Button from '../ui/Button';
 import Input from '../ui/Input';
-import { Calendar, Plus, Target, TrendingUp, BarChart3, Trophy, Share2, Camera, Zap } from 'lucide-react';
+import { Calendar, Target, BarChart3, Trophy, Share2, Camera, Zap, Boxes } from 'lucide-react';
+import { useWorkout } from '../../context/WorkoutContext';
 import { typography } from '../../styles/typography';
 import { registerNutritionServiceWorker } from '../../utils/nutritionServiceWorkerManager';
 import { getNutritionConfig } from '../../config/nutrition.config';
@@ -26,6 +27,7 @@ import { useTranslation } from '../../utils/translations';
 
 // ✅ OPTIMISATION Phase 11.1 : Lazy loading sections (réduction bundle initial 30-40%)
 const NutritionJournal = lazy(() => import('./nutrition/components/NutritionJournal'));
+const NutritionFoodBank = lazy(() => import('./nutrition/components/NutritionFoodBank'));
 const NutritionPrograms = lazy(() => import('./nutrition/components/NutritionPrograms'));
 const NutritionAnalyses = lazy(() => import('./nutrition/components/NutritionAnalyses'));
 const NutritionGamification = lazy(() => import('./nutrition/components/NutritionGamification'));
@@ -41,6 +43,8 @@ const NutritionTab = () => {
   const [selectedDate, setSelectedDate] = useState(new Date());
   const nutritionData = useNutritionData();
   const garminData = useGarminData();
+  const { data: workoutData } = useWorkout();
+  const progressEntries = workoutData?.progressEntries ?? [];
   const t = useTranslation();
 
   // Émettre un événement lors du changement de section pour la rotation des images de profil
@@ -99,6 +103,7 @@ const NutritionTab = () => {
   // Navigation entre sections
   const sections = useMemo(() => [
     { id: 'journal', label: t('nutrition.sections.journal'), icon: Calendar },
+    { id: 'bank', label: t('nutrition.sections.bank'), icon: Boxes },
     { id: 'programs', label: t('nutrition.sections.programs'), icon: Target },
     { id: 'analyses', label: t('nutrition.sections.analyses'), icon: BarChart3 },
     { id: 'gamification', label: t('nutrition.sections.gamification'), icon: Trophy },
@@ -151,14 +156,14 @@ const NutritionTab = () => {
 
   return (
     <div className="relative">
-      <div className="relative z-10 space-y-6 p-6">
+      <div className="relative z-10 mx-auto max-w-[1800px] space-y-6 rounded-2xl border-2 border-[#0F4C5C]/70 bg-black p-6 shadow-xl shadow-black/40">
         {/* En-tête */}
         <div className="mb-8">
         <h1 className={`${typography.presets.h1} text-white mb-2 flex items-center gap-3`}>
           <span className="text-5xl">🥗</span>
           {t('nutrition.title')}
         </h1>
-        <p className={`${typography.presets.bodyLarge} text-teal-200/80`}>
+        <p className={`${typography.presets.bodyLarge} text-teal-100/80`}>
           {t('nutrition.subtitle')}
         </p>
       </div>
@@ -202,11 +207,13 @@ const NutritionTab = () => {
           },
           t('nutrition.skeletons.journal')
         )}
+
+        {renderSection('bank', NutritionFoodBank, {}, t('nutrition.skeletons.bank'))}
         
         {renderSection(
           'programs',
           NutritionPrograms,
-          { nutritionData },
+          { nutritionData, progressEntries },
           t('nutrition.skeletons.programs')
         )}
         

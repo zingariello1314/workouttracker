@@ -1,5 +1,5 @@
-import React, { useMemo, useState } from 'react';
-import { Play, Square, CheckCircle, Clock, Target, Flame, Zap, MessageSquare, Save, X, Award, Plus, Trash2, BarChart3, PenLine } from 'lucide-react';
+import React, { useMemo, useState, useEffect, useCallback } from 'react';
+import { Play, Square, CheckCircle, Clock, Target, Flame, Zap, MessageSquare, Save, X, Award, Plus, Trash2, BarChart3, PenLine, Scale } from 'lucide-react';
 import { useWorkout } from '../../context/WorkoutContext';
 import { useToast } from '../../components/ui/Toast';
 import { workoutProgram } from '../../data/workoutProgram';
@@ -18,6 +18,7 @@ import DayJustificationButton from './TodayTab/components/DayJustificationButton
 import { isDayWithoutActivity } from '../../utils/dayJustificationUtils';
 import { useTranslation } from '../../utils/translations';
 import { loadEnduranceData as loadEnduranceDataService } from '../../services/endurance/enduranceDataService';
+import { useNutritionData } from '../../hooks/useNutritionData';
 import {
   collectExerciseKeysForWorkoutExercise,
   generateSmartExerciseKey,
@@ -44,6 +45,48 @@ import {
   mergeSeriesIntoProgramExercises,
   normalizeSeriesInputForStorage
 } from '../../utils/dailyVariationSeriesOverrides';
+import { findBankFoodByIdWithOverrides, getFoodUnitHints } from '../../data/nutritionFoodBank';
+
+const PENDING_PROGRESS_SECTION_KEY = 'momentum.pendingProgressSection';
+const SPOON_TABLESPOON_ML = 15;
+const SPOON_TEASPOON_ML = 5;
+const SPOON_TABLESPOON_G = 12;
+const SPOON_TEASPOON_G = 4;
+
+const unitLabel = (u) => {
+  const map = {
+    g: 'grammes',
+    ml: 'millilitres',
+    piece: 'pièce',
+    tbsp: 'c. à soupe',
+    tsp: 'c. à café'
+  };
+  return map[u] || u;
+};
+
+const unitToBaseAmount = (food, unit, quantity) => {
+  const q = Number(quantity);
+  if (!food || !Number.isFinite(q)) return null;
+  if (unit === 'piece' && food.piece?.grams) return q * food.piece.grams;
+  if (unit === 'tbsp') return q * (food.referenceUnit === 'ml' ? SPOON_TABLESPOON_ML : SPOON_TABLESPOON_G);
+  if (unit === 'tsp') return q * (food.referenceUnit === 'ml' ? SPOON_TEASPOON_ML : SPOON_TEASPOON_G);
+  return q;
+};
+
+const baseToUnitAmount = (food, unit, baseAmount) => {
+  const b = Number(baseAmount);
+  if (!food || !Number.isFinite(b)) return '';
+  if (unit === 'piece' && food.piece?.grams) return Math.round((b / food.piece.grams) * 100) / 100;
+  if (unit === 'tbsp') {
+    const d = food.referenceUnit === 'ml' ? SPOON_TABLESPOON_ML : SPOON_TABLESPOON_G;
+    return Math.round((b / d) * 100) / 100;
+  }
+  if (unit === 'tsp') {
+    const d = food.referenceUnit === 'ml' ? SPOON_TEASPOON_ML : SPOON_TEASPOON_G;
+    return Math.round((b / d) * 100) / 100;
+  }
+  return Math.round(b * 10) / 10;
+};
 
 /** Résout un exo du programme en appliquant les surcharges « séries » du jour (dailyVariations). */
 function resolveProgramExerciseFromWorkout(workout, dailyVariations, dateStr, exerciseId) {
@@ -113,12 +156,15 @@ const TodayTab = () => {
     addExceptionalExercise,
     removeExceptionalExercise,
     markExceptionalExerciseComplete,
-    updateExerciseSeriesOverrideForDate
+    updateExerciseSeriesOverrideForDate,
+    setActiveTab
   } = useWorkout();
   
   const { showSuccess, showError } = useToast();
   const t = useTranslation();
+  const nutritionData = useNutritionData();
   const [showPerformanceModal, setShowPerformanceModal] = useState(false);
+  const [activeNutritionProgram, setActiveNutritionProgram] = useState(null);
 
   const normalizedEndurance = useMemo(() => {
     try {
@@ -722,6 +768,68 @@ const TodayTab = () => {
   const dateStr = getDateStr(currentDate);
   const dayName = getDayName(currentDate);
 
+  useEffect(() => {
+    let mounted = true;
+    const loadActiveNutrition = async () => {
+      if (!nutritionData?.dbReady) {
+        if (mounted) setActiveNutritionProgram(null);
+        return;
+      }
+      try {
+        const p = await nutritionData.getActiveProgram();
+        if (mounted) setActiveNutritionProgram(p || null);
+      } catch {
+        if (mounted) setActiveNutritionProgram(null);
+      }
+    };
+    loadActiveNutrition();
+    return () => {
+      mounted = false;
+    };
+  }, [nutritionData, nutritionData?.dbReady, dateStr]);
+
+  const nutritionPlannedChecks = useMemo(() => {
+    return getCurrentData()?.nutritionPlanChecks?.[dateStr] || {};
+  }, [getCurrentData, dateStr, data?.nutritionPlanChecks]);
+
+  const setPlannedFoodCheck = useCallback(async (slot, foodId, patch) => {
+    const cur = getCurrentData();
+    const checks = cur.nutritionPlanChecks || {};
+    const dayChecks = checks[dateStr] || {};
+    const slotChecks = dayChecks[slot] || {};
+    const prev = slotChecks[foodId] || {};
+    const next = {
+      ...cur,
+      nutritionPlanChecks: {
+        ...checks,
+        [dateStr]: {
+          ...dayChecks,
+          [slot]: {
+            ...slotChecks,
+            [foodId]: {
+              ...prev,
+              ...patch
+            }
+          }
+        }
+      }
+    };
+    await updateData(next);
+  }, [getCurrentData, dateStr, updateData]);
+
+  const weighInReminderDue = useMemo(() => {
+    const cfg = data?.bodyTrackingPrefs?.weeklyWeighInDay;
+    if (cfg === undefined || cfg === null) return false;
+    const day = new Date(currentDate).getDay();
+    if (day !== cfg) return false;
+    const key = dateStr.slice(0, 10);
+    const entries = getCurrentData()?.progressEntries || [];
+    const hasToday = entries.some(
+      (e) => e && e.type === 'impedance' && e.date && String(e.date).slice(0, 10) === key
+    );
+    return !hasToday;
+  }, [data?.bodyTrackingPrefs?.weeklyWeighInDay, currentDate, dateStr, getCurrentData, data?.progressEntries]);
+
   // Calculer la variante de semaine automatique (toujours basée sur la date)
   const currentWeekVariant = getAutoWeekVariant(currentDate);
 
@@ -1120,6 +1228,138 @@ const TodayTab = () => {
         const hasNoActivity = isDayWithoutActivity(currentData, dateStr);
         return hasNoActivity ? <DayJustificationButton date={currentDate} /> : null;
       })()}
+
+      {/* Rappel pesée (jour configuré dans Impédancemètre) */}
+      {weighInReminderDue && (
+        <button
+          type="button"
+          onClick={() => {
+            try {
+              sessionStorage.setItem(PENDING_PROGRESS_SECTION_KEY, 'impedance');
+            } catch {
+              /* ignore */
+            }
+            setActiveTab?.('progress');
+          }}
+          className="mb-3 flex w-full items-start gap-3 rounded-xl border-2 border-amber-500/50 bg-amber-950/40 p-4 text-left transition hover:border-amber-400/70"
+        >
+          <Scale className="mt-0.5 h-8 w-8 shrink-0 text-amber-300" />
+          <div>
+            <div className="text-base font-semibold text-amber-100">
+              {t('today.weighIn.title', 'Pèsée attendue')}
+            </div>
+            <p className="mt-1 text-sm text-amber-200/85">
+              {t(
+                'today.weighIn.hint',
+                "Aujourd'hui est ton jour de mesure. Touche pour ouvrir Suivi corporel → Impédancemètre et enregistrer ta pesée."
+              )}
+            </p>
+          </div>
+        </button>
+      )}
+
+      {Array.isArray(activeNutritionProgram?.mealPlanPreferences?.generatedMealPlan) &&
+      activeNutritionProgram.mealPlanPreferences.generatedMealPlan.length > 0 ? (
+        <div className="mb-3 rounded-xl border-2 border-[#0F5C45]/45 bg-black p-4">
+          <div className="flex items-center justify-between gap-2 mb-3">
+            <h3 className="text-white font-semibold">
+              Nutrition du jour - {activeNutritionProgram.name}
+            </h3>
+            {activeNutritionProgram.planProfile?.targetWeightKg ? (
+              <span className="text-xs text-teal-200">
+                Objectif : {activeNutritionProgram.planProfile.targetWeightKg} kg
+              </span>
+            ) : null}
+          </div>
+          <p className="text-xs text-teal-300/80 mb-3">
+            Coche les aliments réalisés et ajuste la quantité. Tu peux choisir l’unité (g/ml/pièce/cuillère) selon l’aliment.
+          </p>
+          <div className="space-y-3">
+            {activeNutritionProgram.mealPlanPreferences.generatedMealPlan.map((slot) => (
+              <div key={slot.slot} className="rounded-lg border border-[#0F4C5C]/50 bg-black/70 p-3">
+                <h4 className="text-sm font-medium text-teal-100 mb-2">{slot.label}</h4>
+                <div className="space-y-2">
+                  {(slot.foods || []).map((food) => {
+                    const st = nutritionPlannedChecks?.[slot.slot]?.[food.foodId] || {};
+                    const bank = findBankFoodByIdWithOverrides(food.foodId, data?.nutritionFoodOverrides);
+                    const options = getFoodUnitHints(bank);
+                    const defaultUnit = st.unit || (bank?.piece ? 'piece' : (bank?.referenceUnit || 'g'));
+                    const selectedUnit = options.includes(defaultUnit) ? defaultUnit : options[0];
+                    const baseAmount = st.baseAmount ?? st.grams ?? food.approximateGrams ?? '';
+                    const shownAmount = st.amount ?? baseToUnitAmount(bank, selectedUnit, baseAmount);
+                    return (
+                      <div key={`${slot.slot}-${food.foodId}`} className="grid grid-cols-[auto,1fr,92px,120px] gap-2 items-center">
+                        <input
+                          type="checkbox"
+                          checked={Boolean(st.checked)}
+                          onChange={async (e) => {
+                            await setPlannedFoodCheck(slot.slot, food.foodId, {
+                              checked: e.target.checked,
+                              unit: selectedUnit,
+                              amount: shownAmount,
+                              baseAmount,
+                              grams: baseAmount,
+                              updatedAt: new Date().toISOString()
+                            });
+                          }}
+                          className="rounded border-[#0F4C5C]"
+                        />
+                        <div className="text-sm text-white truncate">
+                          {food.name}
+                        </div>
+                        <select
+                          value={selectedUnit}
+                          onChange={async (e) => {
+                            const nextUnit = e.target.value;
+                            const nextShown = baseToUnitAmount(bank, nextUnit, baseAmount);
+                            await setPlannedFoodCheck(slot.slot, food.foodId, {
+                              checked: Boolean(st.checked),
+                              unit: nextUnit,
+                              amount: nextShown,
+                              baseAmount,
+                              grams: baseAmount,
+                              updatedAt: new Date().toISOString()
+                            });
+                          }}
+                          className="w-full rounded border border-[#0F4C5C]/55 bg-black px-2 py-1 text-teal-100 text-xs"
+                        >
+                          {options.map((u) => (
+                            <option key={u} value={u}>
+                              {unitLabel(u)}
+                            </option>
+                          ))}
+                        </select>
+                        <input
+                          type="number"
+                          value={shownAmount}
+                          onChange={async (e) => {
+                            const v = e.target.value === '' ? '' : Number(e.target.value);
+                            const nextBase = v === '' ? '' : unitToBaseAmount(bank, selectedUnit, v);
+                            await setPlannedFoodCheck(slot.slot, food.foodId, {
+                              checked: Boolean(st.checked),
+                              unit: selectedUnit,
+                              amount: v,
+                              baseAmount: nextBase,
+                              grams: nextBase,
+                              updatedAt: new Date().toISOString()
+                            });
+                          }}
+                          className="w-full rounded border border-[#0F4C5C]/55 bg-black px-2 py-1 text-teal-100 text-sm"
+                          placeholder={selectedUnit === 'piece' ? 'nb' : selectedUnit}
+                        />
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      ) : (
+        <div className="mb-3 rounded-xl border border-[#0F4C5C]/55 bg-black/70 p-3 text-xs text-teal-200/80">
+          Aucun plan repas généré actif pour aujourd'hui. Crée/active un programme nutritionnel avec plan journalier.
+        </div>
+      )}
 
       {/* Exercices */}
       <div className="bg-black p-6 rounded-xl shadow-xl border-2 border-[#0F4C5C]/70">

@@ -39,7 +39,11 @@ export const VALIDATION_RANGES = {
   boneMass: { min: 1, max: 15, step: 0.1, decimals: 2, unit: 'kg' }, // ✅ 2 décimales pour précision
   proteinPercentage: { min: 5, max: 25, step: 0.1, decimals: 2, unit: '%' }, // ✅ 2 décimales pour précision
   basalMetabolism: { min: 800, max: 4000, step: 1, decimals: 0, unit: 'kcal' }, // ✅ Entier (pas de décimales)
-  metabolicAge: { min: 10, max: 100, step: 1, decimals: 0, unit: 'ans' } // ✅ Entier (pas de décimales)
+  metabolicAge: { min: 10, max: 100, step: 1, decimals: 0, unit: 'ans' }, // ✅ Entier (pas de décimales)
+  /** Âge chronologique (années révolues) — saisi à l’impédance pour BMR si pas de BF % utile au programme nutrition */
+  chronologicalAge: { min: 14, max: 100, step: 1, decimals: 0, unit: 'ans' },
+  /** Taille à la séance impédance (cm) — requise avec poids pour cohérence long terme */
+  heightCm: { min: 100, max: 230, step: 0.1, decimals: 1, unit: 'cm' }
 };
 
 /**
@@ -364,12 +368,40 @@ export const validateMetricsForm = (formData, existingEntries = [], options = {}
 export const validateImpedanceForm = (formData, existingEntries = [], options = {}) => {
   const errors = {};
   const { skipDuplicateCheck = false, skipConsistencyCheck = false } = options;
+
+  const dateValidationRequired = validateDate(formData.date);
+  if (dateValidationRequired) {
+    errors.date = dateValidationRequired.error;
+  }
+
+  if (!formData.weight || String(formData.weight).trim() === '') {
+    errors.weight = 'Le poids est obligatoire pour enregistrer une mesure d’impédance';
+  }
+  if (!formData.heightCm || String(formData.heightCm).trim() === '') {
+    errors.heightCm = 'La taille (cm) est obligatoire — elle est utilisée avec le suivi corporel et les programmes nutrition';
+  }
+  if (!formData.chronologicalAge || String(formData.chronologicalAge).trim() === '') {
+    errors.chronologicalAge = 'L’âge réel est obligatoire pour estimer ton métabolisme et suivre tes mesures dans le temps';
+  }
   
   // ✅ 1. Validation de tous les champs numériques (champs exacts demandés)
   const numericFields = [
-    'weight', 'bmi', 'bodyFatPercentage', 'muscleMass', 'bodyFatMass',
-    'bodyFatIndex', 'obesityLevel', 'visceralFatIndex', 'fatFreeWeight',
-    'bodyWater', 'boneMass', 'proteinPercentage', 'basalMetabolism', 'metabolicAge'
+    'weight',
+    'heightCm',
+    'chronologicalAge',
+    'bmi',
+    'bodyFatPercentage',
+    'muscleMass',
+    'bodyFatMass',
+    'bodyFatIndex',
+    'obesityLevel',
+    'visceralFatIndex',
+    'fatFreeWeight',
+    'bodyWater',
+    'boneMass',
+    'proteinPercentage',
+    'basalMetabolism',
+    'metabolicAge'
   ];
   
   numericFields.forEach(field => {
@@ -378,7 +410,7 @@ export const validateImpedanceForm = (formData, existingEntries = [], options = 
     if (fieldValue === '' || fieldValue === null || fieldValue === undefined) {
       return; // Champ vide = OK (pas de validation)
     }
-    
+
     // ✅ Valider seulement si valeur présente
     const range = VALIDATION_RANGES[field];
     if (range) {
@@ -400,6 +432,20 @@ export const validateImpedanceForm = (formData, existingEntries = [], options = 
       }
     }
   });
+
+  // Cohérence IMC (poids + taille cm)
+  if (
+    formData.weight &&
+    formData.heightCm &&
+    !errors.weight &&
+    !errors.heightCm
+  ) {
+    const bmiV = validateBMIConsistency(parseFloat(formData.weight), parseFloat(formData.heightCm));
+    if (bmiV?.errors) {
+      if (bmiV.errors.weight) errors.weight = bmiV.errors.weight;
+      if (bmiV.errors.height) errors.heightCm = bmiV.errors.height;
+    }
+  }
   
   // 2. Validation cohérence des pourcentages
   if (!skipConsistencyCheck) {
@@ -409,15 +455,7 @@ export const validateImpedanceForm = (formData, existingEntries = [], options = 
     }
   }
   
-  // ✅ 3. Validation date (seulement si date fournie)
-  // Note: Date n'est pas strictement obligatoire (peut être remplie après)
-  if (formData.date && formData.date !== '') {
-    const dateValidation = validateDate(formData.date);
-    if (dateValidation) {
-      errors.date = dateValidation.error;
-    }
-  }
-  // Si date vide, pas d'erreur (l'utilisateur peut la remplir après)
+  // Date : déjà validée en obligatoire plus haut
   
   // 4. Vérification doublon
   if (!skipDuplicateCheck && formData.date) {

@@ -5,12 +5,19 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useWorkout } from '../context/WorkoutContext';
 import { useGarminData } from './useGarminData';
-import { calculateSportXP } from '../services/xp/xpCalculations';
+import {
+  calculateSportXP,
+  computeNutritionRegisteredFoodSportXp,
+  countNutritionRegisteredFoodItems
+} from '../services/xp/xpCalculations';
 import { computeProgramCompletionBonusXp } from '../utils/programCompletionBonus';
 import { computeVolumeKgForWorkoutKey } from '../utils/exerciseLoadVolume';
 import { collectDedupedCheckedVolumeKeys } from '../utils/trainingLoadUtils';
 import { useAuth } from '../context/AuthContext';
 import { canAccessPrivateData } from '../utils/accessControl';
+import { getAllMeals } from './nutritionDataCRUD';
+import { getNutritionRepository } from '../services/nutrition/repository';
+import { STORE_MEALS } from './nutritionDataUtils';
 
 const DEFAULT_BREAKDOWN = {
   reps: 0,
@@ -48,7 +55,9 @@ const DEFAULT_BREAKDOWN = {
   circuitsXp: 0,
   circuitCompletedDays: 0,
   circuitTripleAchievedDays: 0,
-  circuitBonusRounds: 0
+  circuitBonusRounds: 0,
+  nutritionFoodItems: 0,
+  nutritionFoodXp: 0
 };
 
 let sportXpCache = {
@@ -75,8 +84,46 @@ export const useSportXP = () => {
   }, [programs, activeProgram]);
   const { dbReady, loadAllData } = useGarminData();
   const [garminData, setGarminData] = useState(sportXpCache.garminData || null);
+  /** Repas nutrition (tous les jours) pour XP aliments enregistrés */
+  const [nutritionMeals, setNutritionMeals] = useState([]);
   const [isLoading, setIsLoading] = useState(!sportXpCache.garminData);
   const cacheRef = useRef({ signature: null, result: { totalXP: 0, breakdown: DEFAULT_BREAKDOWN } });
+
+  useEffect(() => {
+    let cancelled = false;
+    const loadNutrition = async () => {
+      if (!canAccessData) {
+        setNutritionMeals([]);
+        return;
+      }
+      try {
+        const meals = await getAllMeals();
+        if (!cancelled) setNutritionMeals(Array.isArray(meals) ? meals : []);
+      } catch {
+        if (!cancelled) setNutritionMeals([]);
+      }
+    };
+    loadNutrition();
+
+    let unsubMeals = () => {};
+    (async () => {
+      try {
+        const repo = await getNutritionRepository();
+        if (repo && typeof repo.subscribe === 'function') {
+          unsubMeals = repo.subscribe(STORE_MEALS, '*', () => {
+            loadNutrition();
+          });
+        }
+      } catch {
+        /* IndexedDB / repo indisponible : XP nutrition reste 0 jusqu’au prochain rendu manuel */
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+      unsubMeals();
+    };
+  }, [canAccessData]);
 
   useEffect(() => {
     let isMounted = true;
@@ -119,8 +166,19 @@ export const useSportXP = () => {
   }, [dbReady, loadAllData, canAccessData]);
 
   const calculated = useMemo(() => {
-    if (!canAccessData || !workoutData) {
+    if (!canAccessData) {
       return { totalXP: 0, breakdown: DEFAULT_BREAKDOWN };
+    }
+    if (!workoutData) {
+      const nutOnly = computeNutritionRegisteredFoodSportXp(nutritionMeals);
+      return {
+        totalXP: nutOnly.nutritionFoodXp,
+        breakdown: {
+          ...DEFAULT_BREAKDOWN,
+          nutritionFoodItems: nutOnly.nutritionFoodItems,
+          nutritionFoodXp: nutOnly.nutritionFoodXp
+        }
+      };
     }
     const totalReps = Object.values(workoutData.reps || {}).reduce((sum, reps) => {
       return sum + (parseInt(reps) || 0);
@@ -230,6 +288,9 @@ export const useSportXP = () => {
         (circuitDefChecksum * 17 + t * 7 + items + cid.length) | 0;
     }
 
+    const nutritionFoodTally = countNutritionRegisteredFoodItems(nutritionMeals);
+    const nutritionMealsLen = Array.isArray(nutritionMeals) ? nutritionMeals.length : 0;
+
     const signature = [
       totalReps,
       coeffs.length,
@@ -256,7 +317,9 @@ export const useSportXP = () => {
       circuitProgressEntries,
       circuitProgressChecksum,
       Object.keys(circuitDefinitions).length,
-      circuitDefChecksum
+      circuitDefChecksum,
+      nutritionMealsLen,
+      nutritionFoodTally
     ].join('|');
 
     if (cacheRef.current.signature === signature) {
@@ -270,12 +333,13 @@ export const useSportXP = () => {
     const result = calculateSportXP(workoutData, garminData, enduranceData, {
       programs: programsForCompletionXp,
       activeProgram,
-      getExerciseNameById
+      getExerciseNameById,
+      nutritionMeals
     });
     cacheRef.current = { signature, result };
     sportXpCache = { ...sportXpCache, signature, result };
     return result;
-  }, [workoutData, garminData, canAccessData, programsForCompletionXp, getExerciseNameById, activeProgram]);
+  }, [workoutData, garminData, canAccessData, programsForCompletionXp, getExerciseNameById, activeProgram, nutritionMeals]);
 
   const levelInfo = useMemo(() => {
     const totalXP = calculated.totalXP || 0;
