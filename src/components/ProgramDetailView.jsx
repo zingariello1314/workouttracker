@@ -36,6 +36,7 @@ import CircuitEditor from './circuits/CircuitEditor';
 import { useWorkout } from '../context/WorkoutContext';
 import { Layers, Repeat } from 'lucide-react';
 import { getCircuitIdsForDay } from '../utils/circuits/circuitDefinitionUtils';
+import { WEEK_DAYS, normalizeProgramRestConfig } from '../utils/restDayUtils';
 
 const PROGRAM_WEEK_DAYS = ['lundi', 'mardi', 'mercredi', 'jeudi', 'vendredi', 'samedi', 'dimanche'];
 const REPS_SCOPES = {
@@ -84,7 +85,18 @@ const PROGRAM_DAY_LABELS = {
   dimanche: 'Dimanche'
 };
 
+const REST_DAY_LABELS = {
+  lundi: 'Lundi',
+  mardi: 'Mardi',
+  mercredi: 'Mercredi',
+  jeudi: 'Jeudi',
+  vendredi: 'Vendredi',
+  samedi: 'Samedi',
+  dimanche: 'Dimanche'
+};
+
 const ProgramDetailView = ({ program, onBack, onUpdateProgram }) => {
+  const normalizedProgram = useMemo(() => normalizeProgramRestConfig(program), [program]);
   /** Édition exo : { dayKey, exerciseId, variantKey?: 'semaineA'|'semaineB' } */
   const [editingExercise, setEditingExercise] = useState(null);
   const [editingStretch, setEditingStretch] = useState(null);
@@ -1055,11 +1067,35 @@ const ProgramDetailView = ({ program, onBack, onUpdateProgram }) => {
           <div className="flex flex-wrap items-center gap-6 text-sm text-teal-200/80">
             <div className="flex items-center gap-2">
               <Clock size={16} />
-              <span>Durée: {program.duration} semaines</span>
+              <span>Durée: {normalizedProgram.duration} semaines</span>
             </div>
             <div className="flex items-center gap-2">
               <Dumbbell size={16} />
-              <span>Objectif: {program.goal}</span>
+              <span>Objectif: {normalizedProgram.goal}</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <Clock size={16} />
+              <span>Jour de repos:</span>
+              <select
+                value={normalizedProgram.restConfig?.restDay || 'jeudi'}
+                onChange={(e) =>
+                  onUpdateProgram({
+                    ...normalizedProgram,
+                    restConfig: {
+                      ...(normalizedProgram.restConfig || {}),
+                      restDay: e.target.value
+                    },
+                    updatedAt: new Date().toISOString()
+                  })
+                }
+                className="rounded-md border border-[#0F4C5C]/55 bg-black px-2 py-1 text-teal-100"
+              >
+                {WEEK_DAYS.map((day) => (
+                  <option key={day} value={day}>
+                    {REST_DAY_LABELS[day]}
+                  </option>
+                ))}
+              </select>
             </div>
           </div>
         </CardContent>

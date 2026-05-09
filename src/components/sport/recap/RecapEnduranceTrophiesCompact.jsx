@@ -5,6 +5,7 @@ import { evaluateWalkingTrophies } from '../../../services/endurance/walkingTrop
 import { evaluatePushupTrophies } from '../../../services/endurance/pushupTrophiesService';
 import { evaluateSimpleEnduranceTrophies } from '../../../services/endurance/simpleEnduranceTrophiesService';
 import { useGarminData } from '../../../hooks/useGarminData';
+import { useWorkout } from '../../../context/WorkoutContext';
 import { buildAllTimeWalkingFromSteps } from '../../../utils/sport/walkingFromSteps';
 
 function summarize(results = []) {
@@ -27,6 +28,7 @@ function ProgressBar({ pct }) {
 }
 
 export default function RecapEnduranceTrophiesCompact({ sessions = {}, onOpenCategory = null }) {
+  const { data: workoutData } = useWorkout();
   const { dbReady, loadAllData } = useGarminData();
   const [garminById, setGarminById] = useState(() => new Map());
   const [walkingSupplemental, setWalkingSupplemental] = useState({ walkKmAllTime: 0, stepsAllTime: 0 });
@@ -48,7 +50,8 @@ export default function RecapEnduranceTrophiesCompact({ sessions = {}, onOpenCat
         setGarminById(byId);
         const computed = buildAllTimeWalkingFromSteps({
           dailyMetrics: loaded?.dailyMetrics || {},
-          activities: loaded?.activities || {}
+          activities: loaded?.activities || {},
+          manualStepsByDate: workoutData?.enduranceData?.manualDailyWalkByDate
         });
         setWalkingSupplemental({
           walkKmAllTime: Number(computed?.totalWalkingKm) || 0,
@@ -64,7 +67,7 @@ export default function RecapEnduranceTrophiesCompact({ sessions = {}, onOpenCat
     return () => {
       cancelled = true;
     };
-  }, [dbReady, loadAllData]);
+  }, [dbReady, loadAllData, workoutData?.enduranceData?.manualDailyWalkByDate]);
 
   const runningEval = useMemo(
     () =>

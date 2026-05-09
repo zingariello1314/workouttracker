@@ -74,6 +74,7 @@ const SETTINGS_SECTIONS = [
   { id: 'settings-import', label: 'Import', searchText: 'import restauration fusion données sauvegarde json' },
   { id: 'settings-nettoyage', label: 'Nettoyage', searchText: 'nettoyage suppression effacer mock debug cache données' },
   { id: 'settings-navigation', label: 'Navigation', searchText: 'navigation swipe gestes onglets défilement' },
+  { id: 'settings-repos', label: 'Repos dynamique', searchText: 'repos dynamique calendrier swap popup confirmation entraînement sport' },
   { id: 'settings-langue', label: 'Langue', searchText: 'langue traduction français anglais locale' },
   { id: 'settings-priere', label: 'Prière', searchText: 'prière horaires localisation adhan quête géolocalisation' },
   { id: 'settings-infos', label: 'Infos', searchText: 'infos informations version aide à propos' },
@@ -97,7 +98,7 @@ function sectionMatchesQuery(query, label, searchText) {
 }
 
 const SettingsTab = () => {
-  const { data, updateData, loadFromDB, deleteMockEnduranceSessions, setActiveTab } = useWorkout();
+  const { data, updateData, loadFromDB, deleteMockEnduranceSessions, setActiveTab, setSwapRestConfirmEnabled } = useWorkout();
   const {
     currentUser,
     updateAvatar,
@@ -140,6 +141,7 @@ const SettingsTab = () => {
   // États locaux pour les modals
   const [showProfileCardSettings, setShowProfileCardSettings] = useState(false);
   const [showHomePageSettings, setShowHomePageSettings] = useState(false);
+  const swapRestConfirmEnabled = data?.trainingPrefs?.swapRestConfirmEnabled !== false;
 
   // Hooks personnalisés
   const stats = useSettingsStats();
@@ -619,6 +621,36 @@ const SettingsTab = () => {
         {isSectionVisible('settings-navigation') && (
         <div id="settings-navigation" className="scroll-mt-4">
         <SwipeNavigationSettings swipeSettings={swipeSettings} />
+        </div>
+        )}
+
+        {isSectionVisible('settings-repos') && (
+        <div id="settings-repos" className="scroll-mt-4">
+          <Card variant="settings">
+            <CardHeader variant="settings">
+              <CardTitle tone="settings" className="flex items-center normal-case tracking-normal">
+                Jour de repos dynamique
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-sm text-red-100/80 mb-4">
+                Active ou désactive la popup de confirmation quand l’application propose de déplacer automatiquement le jour de repos hebdomadaire.
+              </p>
+              <button
+                type="button"
+                onClick={async () => {
+                  const nextEnabled = !swapRestConfirmEnabled;
+                  await setSwapRestConfirmEnabled(nextEnabled);
+                  if (!nextEnabled) {
+                    window.alert('Popup de confirmation désactivée. Les swaps de repos seront appliqués directement.');
+                  }
+                }}
+                className={`${swapRestConfirmEnabled ? settingsUi.btnPrimary : settingsUi.btnSecondary} w-full`}
+              >
+                {swapRestConfirmEnabled ? 'Popup activée (cliquer pour désactiver)' : 'Popup désactivée (cliquer pour activer)'}
+              </button>
+            </CardContent>
+          </Card>
         </div>
         )}
 

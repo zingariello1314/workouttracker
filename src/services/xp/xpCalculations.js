@@ -27,6 +27,7 @@ import { computeCircuitsXp } from './circuitsXpService';
 import { parseStretchItemKey } from '../../utils/exerciseKeyGenerator';
 import { buildPlannedStretchItemsForDateStr } from '../../utils/stretchUtils';
 import { workoutProgram } from '../../data/workoutProgram';
+import { normalizeManualDailyWalkByDate, mergedDailySteps } from '../../utils/sport/manualDailyWalkUtils';
 
 /** XP minimum / maximum par étirement coché, mappés sur la moyenne des 3 critères 1→10. */
 export const STRETCH_XP_MIN = 100; // moyenne 1/10
@@ -425,13 +426,19 @@ export const calculateSportXP = (workoutData, garminData, enduranceData, sportOp
     totalXP += breakdown.caloriesXp;
   }
   
-  // 4. XP des pas (Garmin) : 0.01 XP par pas
-  if (garminData?.dailyMetrics) {
+  // 4. XP des pas (Garmin ∪ saisie manuelle téléphone par jour max(montre, saisie)) : 0.01 XP par pas
+  {
+    const manualByDate = normalizeManualDailyWalkByDate(enduranceData?.manualDailyWalkByDate);
+    const dm =
+      garminData?.dailyMetrics && typeof garminData.dailyMetrics === 'object' ? garminData.dailyMetrics : {};
     let totalSteps = 0;
-    Object.values(garminData.dailyMetrics).forEach(day => {
-      if (day.steps) {
-        totalSteps += day.steps;
-      }
+    const keys = new Set([...Object.keys(dm), ...Object.keys(manualByDate)]);
+    keys.forEach((dateKey) => {
+      const row = dm[dateKey];
+      const gSteps =
+        row?.steps != null && Number.isFinite(Number(row.steps)) ? Math.max(0, Math.round(Number(row.steps))) : 0;
+      const mSteps = manualByDate[dateKey]?.steps || 0;
+      totalSteps += mergedDailySteps(gSteps, mSteps);
     });
     breakdown.steps = totalSteps;
     breakdown.stepsXp = Math.round(totalSteps * 0.01);

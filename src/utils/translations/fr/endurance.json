@@ -15,7 +15,26 @@
   "subViews": {
     "sessionsAndChallenges": "Séances & défis",
     "trophies": "Trophées",
-    "calendar": "Calendrier"
+    "calendar": "Calendrier",
+    "dailyWalkManual": "Marche quotidienne (manuel)"
+  },
+  "manualDailyWalk": {
+    "title": "Pas du jour — saisie manuelle",
+    "subtitle": "Pour les jours sans montre (charge, oubli…), enregistre les pas de ton téléphone ou d’une autre source. Ils fusionnent avec Garmin par jour (le plus élevé des deux pour éviter les doublons), comptent dans l’XP pas, les trophées volume pas / marche réaliste et colorent le calendrier sport.",
+    "limitsHint": "Plafond anti-abus par saisie : {{maxSteps}} pas/jour max, distance optionnelle jusqu’à {{maxKm}} km.",
+    "add": "Ajouter une journée",
+    "empty": "Aucune saisie pour l’instant.",
+    "stepsUnit": "pas",
+    "delete": "Supprimer",
+    "modalTitle": "Enregistrer des pas pour une date",
+    "fieldDate": "Date",
+    "fieldSteps": "Nombre de pas",
+    "fieldKmOptional": "Distance (km), optionnel",
+    "saveError": "Enregistrement impossible. Réessaie.",
+    "errorSteps": "Indique un nombre de pas valide (au moins 1).",
+    "errorStepsMax": "Trop élevé pour une seule journée (max {{max}} pas).",
+    "errorKm": "Distance invalide.",
+    "errorKmMax": "Distance trop élevée pour une journée (max {{max}} km)."
   },
   "disciplineCalendar": {
     "recapTitle": "Récapitulatif",

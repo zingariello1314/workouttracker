@@ -250,6 +250,66 @@ export const QuestFormModal = ({
             </div>
           )}
 
+          {!isEditing && questForm.categorie !== 'Prière' && (
+            <div className="space-y-2 rounded-lg border border-amber-700/40 bg-black/60 p-3">
+              <label className="flex items-center gap-2 text-xs text-amber-200/90">
+                <input
+                  type="checkbox"
+                  checked={!!questForm.multiSlotsEnabled}
+                  onChange={(e) =>
+                    setQuestForm((prev) => ({
+                      ...prev,
+                      multiSlotsEnabled: e.target.checked
+                    }))
+                  }
+                  className="rounded border-amber-600/60 bg-black text-amber-400"
+                />
+                Créer en multi-créneaux (matin / midi / soir)
+              </label>
+              {questForm.multiSlotsEnabled && (
+                <div className="space-y-2">
+                  {(questForm.multiSlots || []).map((slotCfg, idx) => (
+                    <div key={slotCfg.slot} className="flex items-center gap-2">
+                      <label className="flex items-center gap-2 text-xs text-amber-200/90 min-w-24">
+                        <input
+                          type="checkbox"
+                          checked={!!slotCfg.enabled}
+                          onChange={(e) =>
+                            setQuestForm((prev) => ({
+                              ...prev,
+                              multiSlots: (prev.multiSlots || []).map((entry, entryIdx) =>
+                                entryIdx === idx ? { ...entry, enabled: e.target.checked } : entry
+                              )
+                            }))
+                          }
+                          className="rounded border-amber-600/60 bg-black text-amber-400"
+                        />
+                        {slotCfg.slot}
+                      </label>
+                      <input
+                        type="time"
+                        value={slotCfg.heure || ''}
+                        onChange={(e) =>
+                          setQuestForm((prev) => ({
+                            ...prev,
+                            multiSlots: (prev.multiSlots || []).map((entry, entryIdx) =>
+                              entryIdx === idx ? { ...entry, heure: e.target.value || '' } : entry
+                            )
+                          }))
+                        }
+                        className="w-full bg-black/80 border border-amber-600/40 rounded-lg px-3 py-1.5 text-amber-50 text-sm focus:outline-none focus:ring-1 focus:ring-amber-400/70"
+                        title="Optionnel : heure précise pour ce créneau"
+                      />
+                    </div>
+                  ))}
+                  <p className={`text-xs ${qstatsMuted}`}>
+                    Une quête sera créée par créneau sélectionné, avec suffixe automatique dans le nom.
+                  </p>
+                </div>
+              )}
+            </div>
+          )}
+
           {questForm.type === 'recurrente' ? (
             <div className="space-y-2">
               <label className="block text-amber-200/90">Jours</label>

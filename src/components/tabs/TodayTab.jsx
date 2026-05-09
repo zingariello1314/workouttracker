@@ -157,7 +157,10 @@ const TodayTab = () => {
     removeExceptionalExercise,
     markExceptionalExerciseComplete,
     updateExerciseSeriesOverrideForDate,
-    setActiveTab
+    setActiveTab,
+    activeProgram,
+    getEffectiveRestDayForDate,
+    applyWeeklyRestDaySwap
   } = useWorkout();
   
   const { showSuccess, showError } = useToast();
@@ -165,6 +168,42 @@ const TodayTab = () => {
   const nutritionData = useNutritionData();
   const [showPerformanceModal, setShowPerformanceModal] = useState(false);
   const [activeNutritionProgram, setActiveNutritionProgram] = useState(null);
+
+  const maybeApplyRestDaySwapBeforeSave = useCallback(async () => {
+    if (!activeProgram || !workoutDayOverride) return false;
+    const todayName = getDayName(currentDate);
+    const effectiveRestDay = getEffectiveRestDayForDate(currentDate, activeProgram, getCurrentData());
+    if (!effectiveRestDay || todayName !== effectiveRestDay) return false;
+    if (workoutDayOverride === effectiveRestDay) return false;
+
+    const confirmEnabled = getCurrentData()?.trainingPrefs?.swapRestConfirmEnabled !== false;
+    if (confirmEnabled) {
+      const ok = window.confirm(
+        `Tu es en jour de repos (${effectiveRestDay}) mais tu as suivi la séance de ${workoutDayOverride}. Voulez-vous déplacer le repos de cette semaine sur ${workoutDayOverride} ?`
+      );
+      if (!ok) return false;
+    }
+
+    const swapped = await applyWeeklyRestDaySwap({
+      programId: activeProgram.id,
+      date: currentDate,
+      fromDay: effectiveRestDay,
+      toDay: workoutDayOverride
+    });
+    if (swapped) {
+      showSuccess(`Jour de repos déplacé vers ${workoutDayOverride} pour cette semaine.`);
+    }
+    return swapped;
+  }, [
+    activeProgram,
+    workoutDayOverride,
+    currentDate,
+    getDayName,
+    getEffectiveRestDayForDate,
+    getCurrentData,
+    applyWeeklyRestDaySwap,
+    showSuccess
+  ]);
 
   const normalizedEndurance = useMemo(() => {
     try {
@@ -630,6 +669,7 @@ const TodayTab = () => {
   // Sauvegarder les exercices avec vérification d'intégrité
   const handleSaveExercises = async () => {
     try {
+      await maybeApplyRestDaySwapBeforeSave();
       // Utiliser la fonction de sauvegarde du contexte avec gestion d'erreurs
       await saveExerciseChanges();
       showSuccess(t('today.messages.exercisesSaved'));

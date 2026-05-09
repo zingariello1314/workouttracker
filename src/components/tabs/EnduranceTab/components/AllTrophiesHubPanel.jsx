@@ -5,6 +5,7 @@ import { evaluateWalkingTrophies } from '../../../../services/endurance/walkingT
 import { evaluatePushupTrophies } from '../../../../services/endurance/pushupTrophiesService';
 import { evaluateSimpleEnduranceTrophies } from '../../../../services/endurance/simpleEnduranceTrophiesService';
 import { useGarminData } from '../../../../hooks/useGarminData';
+import { useWorkout } from '../../../../context/WorkoutContext';
 import { buildAllTimeWalkingFromSteps } from '../../../../utils/sport/walkingFromSteps';
 
 function summarize(results = []) {
@@ -35,6 +36,7 @@ export default function AllTrophiesHubPanel({
   onOpenCategoryTrophies = null
 }) {
   const [subTab, setSubTab] = useState('overview');
+  const { data: workoutData } = useWorkout();
   const { dbReady, loadAllData } = useGarminData();
   const [walkingSupplemental, setWalkingSupplemental] = useState({ walkKmAllTime: 0, stepsAllTime: 0 });
 
@@ -47,7 +49,8 @@ export default function AllTrophiesHubPanel({
         if (cancelled) return;
         const computed = buildAllTimeWalkingFromSteps({
           dailyMetrics: loaded?.dailyMetrics || {},
-          activities: loaded?.activities || {}
+          activities: loaded?.activities || {},
+          manualStepsByDate: workoutData?.enduranceData?.manualDailyWalkByDate
         });
         setWalkingSupplemental({
           walkKmAllTime: Number(computed?.totalWalkingKm) || 0,
@@ -60,7 +63,7 @@ export default function AllTrophiesHubPanel({
     return () => {
       cancelled = true;
     };
-  }, [dbReady, loadAllData]);
+  }, [dbReady, loadAllData, workoutData?.enduranceData?.manualDailyWalkByDate]);
 
   const runningEval = useMemo(
     () => evaluateRunningTrophies({ runningSessions: sessions?.running || [], garminById: garminRunningById || new Map() }),

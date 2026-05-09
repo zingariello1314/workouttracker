@@ -3,6 +3,7 @@ import { Trophy, Search, Sparkles } from 'lucide-react';
 import { evaluateWalkingTrophies } from '../../../../services/endurance/walkingTrophiesService';
 import { runningTrophyLevelXpReward } from '../../../../services/endurance/runningTrophiesService';
 import { useGarminData } from '../../../../hooks/useGarminData';
+import { useWorkout } from '../../../../context/WorkoutContext';
 import { buildAllTimeWalkingFromSteps } from '../../../../utils/sport/walkingFromSteps';
 
 const LEVEL_LABEL = { bronze: 'Bronze', silver: 'Argent', gold: 'Or', elite: 'Élite' };
@@ -51,6 +52,7 @@ function buildUnlockedEntries(results) {
 }
 
 export default function WalkingTrophiesPanel({ sessions = [] }) {
+  const { data: workoutData } = useWorkout();
   const { dbReady, loadAllData } = useGarminData();
   const [garminSupplemental, setGarminSupplemental] = useState({ walkKmAllTime: 0, stepsAllTime: 0 });
   const [garminLoaded, setGarminLoaded] = useState(false);
@@ -66,7 +68,8 @@ export default function WalkingTrophiesPanel({ sessions = [] }) {
         if (cancelled) return;
         const computed = buildAllTimeWalkingFromSteps({
           dailyMetrics: loaded?.dailyMetrics || {},
-          activities: loaded?.activities || {}
+          activities: loaded?.activities || {},
+          manualStepsByDate: workoutData?.enduranceData?.manualDailyWalkByDate
         });
         setGarminSupplemental({
           walkKmAllTime: Number(computed?.totalWalkingKm) || 0,
@@ -81,7 +84,7 @@ export default function WalkingTrophiesPanel({ sessions = [] }) {
     return () => {
       cancelled = true;
     };
-  }, [dbReady, loadAllData]);
+  }, [dbReady, loadAllData, workoutData?.enduranceData?.manualDailyWalkByDate]);
 
   const evaluation = useMemo(
     () => evaluateWalkingTrophies(sessions, garminSupplemental),

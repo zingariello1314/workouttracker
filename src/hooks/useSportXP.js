@@ -18,6 +18,7 @@ import { canAccessPrivateData } from '../utils/accessControl';
 import { getAllMeals } from './nutritionDataCRUD';
 import { getNutritionRepository } from '../services/nutrition/repository';
 import { STORE_MEALS } from './nutritionDataUtils';
+import { sumMergedDailyStepsTotal, manualDailyWalkChecksum } from '../utils/sport/manualDailyWalkUtils';
 
 const DEFAULT_BREAKDOWN = {
   reps: 0,
@@ -216,15 +217,14 @@ export const useSportXP = () => {
     }
 
     let totalCalories = 0;
-    let totalSteps = 0;
     if (garminData?.dailyMetrics) {
       Object.values(garminData.dailyMetrics).forEach(day => {
         if (day.calories?.active) totalCalories += day.calories.active;
-        if (day.steps) totalSteps += day.steps;
       });
     }
 
     const enduranceData = workoutData?.enduranceData || {};
+    const totalSteps = sumMergedDailyStepsTotal(garminData?.dailyMetrics, enduranceData?.manualDailyWalkByDate);
     const sessionsByType = enduranceData.sessions || {};
     const validatedChallengesCount = Object.values(sessionsByType).reduce((sum, list) => {
       if (!Array.isArray(list)) return sum;
@@ -290,6 +290,7 @@ export const useSportXP = () => {
 
     const nutritionFoodTally = countNutritionRegisteredFoodItems(nutritionMeals);
     const nutritionMealsLen = Array.isArray(nutritionMeals) ? nutritionMeals.length : 0;
+    const manualWalkSig = manualDailyWalkChecksum(enduranceData?.manualDailyWalkByDate);
 
     const signature = [
       totalReps,
@@ -319,7 +320,8 @@ export const useSportXP = () => {
       Object.keys(circuitDefinitions).length,
       circuitDefChecksum,
       nutritionMealsLen,
-      nutritionFoodTally
+      nutritionFoodTally,
+      manualWalkSig
     ].join('|');
 
     if (cacheRef.current.signature === signature) {

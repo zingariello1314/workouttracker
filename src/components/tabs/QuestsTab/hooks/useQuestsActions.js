@@ -13,6 +13,27 @@ import { calculateQuestXP } from '../../../../hooks/useQuietQuestEngine';
 import { emitSidebarEvent, SIDEBAR_EVENTS } from '../../../../utils/sidebarEvents';
 import { CATEGORIES, snapDureeToValidOption } from '../constants';
 
+const DEFAULT_MULTI_SLOTS = [
+  { slot: 'matin', enabled: false, heure: '' },
+  { slot: 'midi', enabled: false, heure: '' },
+  { slot: 'soir', enabled: false, heure: '' }
+];
+
+const SLOT_SUFFIX = {
+  matin: '(matin)',
+  midi: '(midi)',
+  soir: '(soir)'
+};
+
+const createDefaultMultiSlots = () => DEFAULT_MULTI_SLOTS.map((slot) => ({ ...slot }));
+
+const stripMultiSlotFields = (quest) => {
+  const payload = { ...quest };
+  delete payload.multiSlotsEnabled;
+  delete payload.multiSlots;
+  return payload;
+};
+
 /**
  * Hook pour gérer les actions CRUD sur les quêtes
  * 
@@ -39,6 +60,8 @@ export const useQuestsActions = (allQuests = [], setAllQuests) => {
     priere: '',
     heure: '',
     active: true,
+    multiSlotsEnabled: false,
+    multiSlots: createDefaultMultiSlots(),
   });
 
   const openNewQuestPopup = useCallback(() => {
@@ -57,6 +80,8 @@ export const useQuestsActions = (allQuests = [], setAllQuests) => {
       priere: '',
       heure: '',
       active: true,
+      multiSlotsEnabled: false,
+      multiSlots: createDefaultMultiSlots(),
     });
     setShowQuestPopup(true);
   }, []);
@@ -79,6 +104,8 @@ export const useQuestsActions = (allQuests = [], setAllQuests) => {
       priere: quest.priere || '',
       heure: quest.heure || '',
       active: quest.active !== false,
+      multiSlotsEnabled: false,
+      multiSlots: createDefaultMultiSlots(),
     });
     setShowQuestPopup(true);
   }, [allQuests]);
@@ -106,18 +133,26 @@ export const useQuestsActions = (allQuests = [], setAllQuests) => {
       showError('Choisis une date pour une quête exceptionnelle.');
       return;
     }
+    if (!editingQuestId && questForm.multiSlotsEnabled) {
+      const selectedSlots = (questForm.multiSlots || []).filter((slot) => slot?.enabled);
+      if (selectedSlots.length === 0) {
+        showError('Sélectionne au moins un créneau (matin, midi ou soir).');
+        return;
+      }
+    }
     
     const validatedQuest = validation.data;
     const isEditing = editingQuestId != null;
     
     setAllQuests((prev) => {
       if (isEditing) {
+        const payload = stripMultiSlotFields(validatedQuest);
         const updated = prev.map((q) =>
           String(q.id) === String(editingQuestId)
             ? {
                 ...q,
-                ...validatedQuest,
-                xp: calculateQuestXP({ ...q, ...validatedQuest }),
+                ...payload,
+                xp: calculateQuestXP({ ...q, ...payload }),
               }
             : q
         );
@@ -126,20 +161,49 @@ export const useQuestsActions = (allQuests = [], setAllQuests) => {
         return updated;
       }
 
+      const payload = stripMultiSlotFields(validatedQuest);
+      const selectedSlots = validatedQuest.multiSlotsEnabled
+        ? (validatedQuest.multiSlots || []).filter((slot) => slot?.enabled)
+        : [];
       const nextId = prev.length ? Math.max(...prev.map((q) => q.id || 0)) + 1 : 1;
-      const baseQuest = {
-        id: nextId,
-        ...validatedQuest,
-        creeLe: new Date().toISOString().slice(0, 10),
-        ordre: prev.length + 1,
-      };
-      const newQuest = {
-        ...baseQuest,
-        xp: calculateQuestXP(baseQuest),
-      };
-      
-      emitSidebarEvent(SIDEBAR_EVENTS.QUEST_CREATED, { questId: nextId });
-      return [...prev, newQuest];
+      const createdOn = new Date().toISOString().slice(0, 10);
+      const baseOrder = prev.length + 1;
+
+      if (selectedSlots.length === 0) {
+        const baseQuest = {
+          id: nextId,
+          ...payload,
+          creeLe: createdOn,
+          ordre: baseOrder,
+        };
+        const newQuest = {
+          ...baseQuest,
+          xp: calculateQuestXP(baseQuest),
+        };
+        emitSidebarEvent(SIDEBAR_EVENTS.QUEST_CREATED, { questId: nextId });
+        return [...prev, newQuest];
+      }
+
+      const generatedQuests = selectedSlots.map((slotCfg, idx) => {
+        const slot = slotCfg.slot;
+        const slotQuest = {
+          id: nextId + idx,
+          ...payload,
+          nom: `${payload.nom} ${SLOT_SUFFIX[slot] || `(${slot})`}`.trim(),
+          creneau: slot,
+          heureType: slotCfg.heure ? 'precise' : 'creneau',
+          heure: slotCfg.heure || '',
+          creeLe: createdOn,
+          ordre: baseOrder + idx
+        };
+        return {
+          ...slotQuest,
+          xp: calculateQuestXP(slotQuest)
+        };
+      });
+
+      emitSidebarEvent(SIDEBAR_EVENTS.QUEST_CREATED, { questId: generatedQuests[0]?.id });
+      return [...prev, ...generatedQuests];
     });
 
     showSuccess(isEditing ? 'Quête modifiée avec succès' : 'Quête créée avec succès');

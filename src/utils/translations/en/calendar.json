@@ -167,6 +167,7 @@
       "maxContinuous": "Max continuous",
       "cardioActivities": "Cardio activities",
       "dailyMetrics": "Daily metrics",
+      "manualStepsNote": "Merged daily steps: watch and manual (phone) entry per day count as max(watch, manual) so you cannot double-stack the same day.",
       "steps": "Steps",
       "restingHR": "Resting HR",
       "enduranceActivities": "Endurance activities",

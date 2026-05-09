@@ -166,6 +166,19 @@ export const questSchema = z.object({
     .optional()
     .default('')
     .refine((v) => !v || /^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/.test(v), 'Format attendu : HH:mm'),
+  multiSlotsEnabled: z.boolean()
+    .optional()
+    .default(false),
+  multiSlots: z.array(
+    z.object({
+      slot: z.enum(['matin', 'midi', 'soir']),
+      enabled: z.boolean().optional().default(false),
+      heure: z.string()
+        .optional()
+        .default('')
+        .refine((v) => !v || /^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/.test(v), 'Format attendu : HH:mm')
+    })
+  ).optional().default([]),
   active: z.boolean()
     .default(true)
 }).refine(

@@ -37,6 +37,12 @@ import { filterExercisesForSessionDate } from '../utils/programExerciseSchedulin
 import { buildTemplateProgramsForFirstLaunch } from '../utils/programPersistenceUtils';
 import { isAdminUser } from '../utils/accessControl';
 import {
+  normalizeProgramRestConfig,
+  getEffectiveRestDayForDate as resolveEffectiveRestDayForDate,
+  getWeekStartKey,
+  isValidWeekDay
+} from '../utils/restDayUtils';
+import {
   normalizeCircuitDefinition,
   upsertCircuitDefinition,
   removeCircuitDefinition as removeCircuitFromState,
@@ -437,6 +443,62 @@ const WorkoutProvider = ({ children }) => {
   const {
     getWorkoutHistory,
   } = useWorkoutHistory(getCurrentData, getExerciseNameById);
+
+  const getProgramRestDay = useCallback((program = activeProgram) => {
+    if (!program) return null;
+    return normalizeProgramRestConfig(program).restConfig?.restDay || null;
+  }, [activeProgram]);
+
+  const getEffectiveRestDayForDate = useCallback(
+    (date, program = activeProgram, sourceData = getCurrentData()) => {
+      if (!program || !date) return null;
+      return resolveEffectiveRestDayForDate({ program, data: sourceData, date });
+    },
+    [activeProgram, getCurrentData]
+  );
+
+  const setSwapRestConfirmEnabled = useCallback(
+    async (enabled) => {
+      const currentData = getCurrentData();
+      const nextData = {
+        ...currentData,
+        trainingPrefs: {
+          ...(currentData.trainingPrefs || {}),
+          swapRestConfirmEnabled: enabled !== false
+        }
+      };
+      await updateData(nextData);
+    },
+    [getCurrentData, updateData]
+  );
+
+  const applyWeeklyRestDaySwap = useCallback(
+    async ({ programId, date, fromDay, toDay }) => {
+      if (!programId || !date || !isValidWeekDay(fromDay) || !isValidWeekDay(toDay) || fromDay === toDay) {
+        return false;
+      }
+      const weekKey = getWeekStartKey(date);
+      if (!weekKey) return false;
+      const currentData = getCurrentData();
+      const nextData = {
+        ...currentData,
+        restDaySwaps: {
+          ...(currentData.restDaySwaps || {}),
+          [programId]: {
+            ...((currentData.restDaySwaps || {})[programId] || {}),
+            [weekKey]: {
+              fromDay,
+              toDay,
+              updatedAt: new Date().toISOString()
+            }
+          }
+        }
+      };
+      await updateData(nextData);
+      return true;
+    },
+    [getCurrentData, updateData]
+  );
 
   // Fonction wrapper pour getTodayWorkout qui utilise activeProgram si disponible
   const getTodayWorkoutWrapper = useCallback((currentDate, isGymMode = false) => {
@@ -1314,6 +1376,10 @@ const WorkoutProvider = ({ children }) => {
     setIsGymMode,
     workoutDayOverride,
     setWorkoutDayOverride,
+    getProgramRestDay,
+    getEffectiveRestDayForDate,
+    applyWeeklyRestDaySwap,
+    setSwapRestConfirmEnabled,
     
     // Données et fonctions de données
     data,
@@ -1647,9 +1713,17 @@ const WorkoutProvider = ({ children }) => {
         const wv = saved?.weekVariant ?? 'A';
         const gm = saved?.isGymMode ?? false;
 
-        let programsSnapshot = Array.isArray(saved?.programs) ? [...saved.programs] : [];
-        let activeSnapshot = saved?.activeProgram ?? null;
+        let programsSnapshot = Array.isArray(saved?.programs)
+          ? saved.programs.map((p) => normalizeProgramRestConfig(p))
+          : [];
+        let activeSnapshot = saved?.activeProgram ? normalizeProgramRestConfig(saved.activeProgram) : null;
         let mutated = false;
+        if (Array.isArray(saved?.programs)) {
+          mutated = saved.programs.some((p) => !p?.restConfig?.restDay);
+        }
+        if (saved?.activeProgram && !saved.activeProgram?.restConfig?.restDay) {
+          mutated = true;
+        }
 
         if (programsSnapshot.length === 0) {
           if (isAdmin) {

@@ -10,6 +10,7 @@ import { useCallback } from 'react';
 import { getDateStr, getDayName } from '../../../utils/dateUtils';
 import { PROGRAM_STATUS } from '../constants';
 import { purgeSoftRemovedExercisesFromProgram } from '../../../utils/programPersistenceUtils';
+import { normalizeProgramRestConfig } from '../../../utils/restDayUtils';
 
 /**
  * @param {Function} [persistProgramsPartial] — Sauvegarde IndexedDB immédiate après mutation (programmes + actif).
@@ -39,13 +40,13 @@ export const useWorkoutPrograms = (
 
   const addProgram = useCallback(
     (program) => {
-      const newProgram = {
+      const newProgram = normalizeProgramRestConfig({
         ...program,
         id: Date.now().toString(),
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
         status: PROGRAM_STATUS.INACTIVE,
-      };
+      });
       let nextProgramsRef = null;
       setPrograms((prev) => {
         const next = [...prev, purgeSoftRemovedExercisesFromProgram(newProgram)];
@@ -63,7 +64,7 @@ export const useWorkoutPrograms = (
       const program = programs.find((p) => p.id === programId);
       if (!program) return;
       const updatedProgram = {
-        ...purgeSoftRemovedExercisesFromProgram(program),
+        ...normalizeProgramRestConfig(purgeSoftRemovedExercisesFromProgram(program)),
         status: PROGRAM_STATUS.ACTIVE,
         startDate: program.startDate || new Date().toISOString(),
         updatedAt: new Date().toISOString()
@@ -118,7 +119,7 @@ export const useWorkoutPrograms = (
   const updateProgram = useCallback(
     (updatedProgram) => {
       const normalizedProgram = {
-        ...purgeSoftRemovedExercisesFromProgram(updatedProgram),
+        ...normalizeProgramRestConfig(purgeSoftRemovedExercisesFromProgram(updatedProgram)),
         updatedAt: new Date().toISOString()
       };
       let nextProgramsRef = null;

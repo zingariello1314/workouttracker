@@ -165,6 +165,12 @@ const INITIAL_WORKOUT_DATA = {
   circuitProgress: {},
   /** Version du schéma circuits — pour migrations futures. */
   circuitDefinitionsVersion: '1.0',
+  /** Préférences entraînement persistées (swap repos, confirmations, etc.). */
+  trainingPrefs: {
+    swapRestConfirmEnabled: true
+  },
+  /** Swap hebdo du jour de repos : { [programId]: { [weekStartDate]: { fromDay, toDay, updatedAt } } } */
+  restDaySwaps: {},
   // homepageImages supprimé - maintenant géré par useHomepageImages indépendant
 };
 
@@ -603,6 +609,14 @@ export const useWorkoutData = (options = {}) => {
             : {},
         circuitDefinitionsVersion:
           newData && newData.circuitDefinitionsVersion ? newData.circuitDefinitionsVersion : '1.0',
+        trainingPrefs:
+          newData && newData.trainingPrefs && typeof newData.trainingPrefs === 'object'
+            ? { ...newData.trainingPrefs }
+            : { swapRestConfirmEnabled: true },
+        restDaySwaps:
+          newData && newData.restDaySwaps && typeof newData.restDaySwaps === 'object'
+            ? { ...newData.restDaySwaps }
+            : {},
         // Données d'endurance - CRUCIAL pour la persistance
         enduranceData: newData && newData.enduranceData ? { ...newData.enduranceData } : {
           sessions: {
@@ -874,6 +888,14 @@ export const useWorkoutData = (options = {}) => {
                   ? { ...migratedData.circuitProgress }
                   : {},
               circuitDefinitionsVersion: migratedData.circuitDefinitionsVersion || '1.0',
+              trainingPrefs:
+                migratedData.trainingPrefs && typeof migratedData.trainingPrefs === 'object'
+                  ? { swapRestConfirmEnabled: migratedData.trainingPrefs.swapRestConfirmEnabled !== false }
+                  : { swapRestConfirmEnabled: true },
+              restDaySwaps:
+                migratedData.restDaySwaps && typeof migratedData.restDaySwaps === 'object'
+                  ? { ...migratedData.restDaySwaps }
+                  : {},
               // Données d'endurance - CRUCIAL pour la persistance
               enduranceData: migratedData.enduranceData || result.enduranceData || {
                 sessions: {

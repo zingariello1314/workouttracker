@@ -96,6 +96,7 @@ import {
 } from '../utils/exerciseKeyGenerator';
 import { buildPlannedStretchListForDateStr } from '../utils/programCompletionBonus';
 import { calendarHeatmapCompositeBackground } from '../utils/calendarHeatmapTint';
+import { normalizeManualDailyWalkByDate, mergedDailySteps } from '../utils/sport/manualDailyWalkUtils';
 import {
   isSessionFeedbackFilled,
   normalizeDifficultyForCalendarModel,
@@ -194,16 +195,15 @@ function heatmapDayNumberTone() {
 }
 
 /** Métriques Garmin quotidiennes : évite le panneau « choix » sur un jour déjà « vécu ». */
-function hasMeaningfulGarminDailyMetrics(garminData, dateStr) {
-  if (!garminData?.dailyMetrics || !dateStr) return false;
-  const dm = garminData.dailyMetrics[dateStr];
-  if (!dm) return false;
-  const steps = Number(dm.steps) || 0;
+function hasMeaningfulGarminDailyMetrics(garminData, dateStr, manualSteps = 0) {
+  if (!dateStr) return false;
+  const dm = garminData?.dailyMetrics?.[dateStr];
+  const steps = mergedDailySteps(dm?.steps, manualSteps);
   const kcal = Number(dm?.calories?.active) || 0;
-  const mod = Number(dm.intensityMinutes?.moderate) || 0;
-  const vig = Number(dm.intensityMinutes?.vigorous) || 0;
+  const mod = Number(dm?.intensityMinutes?.moderate) || 0;
+  const vig = Number(dm?.intensityMinutes?.vigorous) || 0;
   const tot =
-    dm.intensityMinutes?.total != null && Number.isFinite(Number(dm.intensityMinutes.total))
+    dm?.intensityMinutes?.total != null && Number.isFinite(Number(dm.intensityMinutes.total))
       ? Number(dm.intensityMinutes.total)
       : mod + vig;
   return steps >= 180 || kcal >= 22 || tot >= 1;
@@ -264,6 +264,7 @@ const CalendarHeatmap = ({
     programs,
     getExerciseNameById,
     activeProgram,
+    getEffectiveRestDayForDate,
     updateReps,
     toggleCheck,
     updateData,
@@ -351,7 +352,7 @@ const CalendarHeatmap = ({
   }, [panelMode, workout, panelDate, selectedVariant, getCurrentData, getDateStr, dataUpdateTrigger]);
   // Utiliser getCurrentData() pour accéder aux données actuelles (temp + sauvegardées)
   // ✅ NOUVEAU : Recalculer allData quand dataUpdateTrigger change pour avoir les données les plus récentes
-  const allData = useMemo(() => getCurrentData(), [dataUpdateTrigger, getCurrentData]);
+  const allData = useMemo(() => getCurrentData(), [dataUpdateTrigger, getCurrentData, data]);
 
   const liftVolumeByDateMap = useMemo(() => {
     if (variant !== 'sport') return null;
@@ -880,6 +881,11 @@ const CalendarHeatmap = ({
     }
     
     const dayName = getDayName(date);
+    const effectiveRestDay =
+      variant === 'sport' && activeProgram
+        ? getEffectiveRestDayForDate(date, activeProgram, currentData)
+        : null;
+    const isPlannedRestDay = variant === 'sport' && !!effectiveRestDay && dayName === effectiveRestDay;
     
     // ✅ NOUVEAU : Récupérer les exercices de TOUS les programmes pour cette date
     const getAllExercisesForDate = () => {
@@ -1126,7 +1132,8 @@ const CalendarHeatmap = ({
         steps: 0,
         stepsRefMedian: garminStepsMedianRef,
         intensityMinutesTotal: 0,
-        visualContext: null
+        visualContext: null,
+        isPlannedRestDay
       };
     }
 
@@ -1838,8 +1845,11 @@ const CalendarHeatmap = ({
         : 0;
 
     const dm = garminData?.dailyMetrics?.[dateStr];
-    const stepsVal =
+    const manualStepsNorm = normalizeManualDailyWalkByDate(currentData?.enduranceData?.manualDailyWalkByDate);
+    const manualStepsForDay = manualStepsNorm[dateStr]?.steps ?? 0;
+    const garminStepsRounded =
       dm?.steps != null && Number.isFinite(Number(dm.steps)) ? Math.max(0, Math.round(Number(dm.steps))) : 0;
+    const stepsVal = mergedDailySteps(garminStepsRounded, manualStepsForDay);
     let intensityMinutesTotal = 0;
     let intensityMinutesModerate;
     let intensityMinutesVigorous;
@@ -1933,6 +1943,7 @@ const CalendarHeatmap = ({
       ...(justification && { justification }),
       feedbackBoost01: sessionFeedbackVisualBoost01(fbRaw),
       weightedFeedbackScore10: computeSessionFeedbackWeightedScore10(fbRaw),
+      isPlannedRestDay,
       // ✅ CORRECTION : Utiliser la même logique que pour le calcul du total
       // (chercher les variantes _semaineA, _semaineB, et vérifier reps > 0)
       session: completedExercises > 0 ? {
@@ -2359,6 +2370,14 @@ const CalendarHeatmap = ({
    * Couleur case : dégradé direct depuis l’indice composite (sans recalage « teinte » sur la période).
    */
   const getDayColorStyle = (intensity, isToday = false) => {
+    if (intensity?.isPlannedRestDay && !intensity?.justification) {
+      const todayRing = isToday ? ' ring-2 ring-amber-300/95' : '';
+      return {
+        className: `bg-black border-2 border-violet-500/85${todayRing}`,
+        style: undefined,
+        dayNumberClass: 'text-violet-200'
+      };
+    }
     if (intensity?.justification) {
       const reason = intensity.justification.reason;
       const baseColor = JUSTIFICATION_COLORS[reason] || JUSTIFICATION_COLORS[JUSTIFICATION_REASONS.AUTRE];
@@ -2848,7 +2867,10 @@ const CalendarHeatmap = ({
                     setPanelDate(null);
                     return;
                   }
-                  const hasGarmin = hasMeaningfulGarminDailyMetrics(garminData, dateStr);
+                  const manualTap = normalizeManualDailyWalkByDate(allData?.enduranceData?.manualDailyWalkByDate)[
+                    dateStr
+                  ]?.steps ?? 0;
+                  const hasGarmin = hasMeaningfulGarminDailyMetrics(garminData, dateStr, manualTap);
                   if (!dayHasPaint && !hasGarmin && isDayWithoutActivity(allData, dateStr)) {
                     setPanelDate(day.date);
                     setPanelMode('choice');
@@ -3309,7 +3331,11 @@ const CalendarHeatmap = ({
                               return;
                             }
                             const yHasPaint = calendarDayHasPaintSignal(day.intensity);
-                            const hasGarmin = hasMeaningfulGarminDailyMetrics(garminData, dateStr);
+                            const manualY =
+                              normalizeManualDailyWalkByDate(allData?.enduranceData?.manualDailyWalkByDate)[
+                                dateStr
+                              ]?.steps ?? 0;
+                            const hasGarmin = hasMeaningfulGarminDailyMetrics(garminData, dateStr, manualY);
                             if (!yHasPaint && !hasGarmin && isDayWithoutActivity(allData, dateStr)) {
                               setPanelDate(day.date);
                               setPanelMode('choice');
@@ -4546,6 +4572,15 @@ const CalendarHeatmap = ({
             if (k != null && String(k) !== '') garminByEnduranceId.set(String(k), act);
           });
           const dailyMetrics = garminData?.dailyMetrics?.[selectedDateStr];
+          const manualSel = normalizeManualDailyWalkByDate(allData?.enduranceData?.manualDailyWalkByDate)[
+            selectedDateStr
+          ];
+          const mergedDetailSteps = mergedDailySteps(
+            dailyMetrics?.steps != null && Number.isFinite(Number(dailyMetrics.steps))
+              ? Math.round(Number(dailyMetrics.steps))
+              : 0,
+            manualSel?.steps ?? 0
+          );
           const swimming = (garminData?.activities?.swimming || []).filter(a => a.date === selectedDateStr);
           const jumpRope = (garminData?.activities?.jumpRope || []).filter(a => a.date === selectedDateStr);
           const cardio = (garminData?.activities?.cardio || []).filter(a => a.date === selectedDateStr);
@@ -4987,30 +5022,35 @@ const CalendarHeatmap = ({
                     </div>
                   )}
 
-                  {/* Métriques quotidiennes */}
-                  {dailyMetrics && (
+                  {/* Métriques quotidiennes (Garmin + saisie manuelle pas du jour) */}
+                  {(dailyMetrics || manualSel || mergedDetailSteps > 0) && (
                     <div className="rounded-lg border border-sky-600/40 bg-black p-4">
                       <div className="mb-2 font-medium text-[#7ecbb0]">📊 {t('calendar.heatmap.dayDetails.dailyMetrics')}</div>
+                      {manualSel?.steps > 0 ? (
+                        <p className="mb-2 text-xs text-sky-200/90">
+                          {t('calendar.heatmap.dayDetails.manualStepsNote')}
+                        </p>
+                      ) : null}
                       <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-sm">
-                        {dailyMetrics.steps > 0 && (
+                        {mergedDetailSteps > 0 && (
                           <div className="bg-slate-800/50 rounded p-2">
                             <div className="text-slate-400">{t('calendar.heatmap.dayDetails.steps')}</div>
-                            <div className="text-white font-semibold">{dailyMetrics.steps.toLocaleString()}</div>
+                            <div className="text-white font-semibold">{mergedDetailSteps.toLocaleString()}</div>
                           </div>
                         )}
-                        {dailyMetrics.distance > 0 && (
+                        {(dailyMetrics?.distance ?? 0) > 0 && (
                           <div className="bg-slate-800/50 rounded p-2">
                             <div className="text-slate-400">{t('calendar.heatmap.dayDetails.distance')}</div>
                             <div className="text-white font-semibold">{dailyMetrics.distance.toFixed(1)} km</div>
                           </div>
                         )}
-                        {dailyMetrics.calories?.active > 0 && (
+                        {(dailyMetrics?.calories?.active ?? 0) > 0 && (
                           <div className="bg-slate-800/50 rounded p-2">
                             <div className="text-slate-400">{t('calendar.heatmap.dayDetails.activeCalories')}</div>
                             <div className="text-white font-semibold">{Math.round(dailyMetrics.calories.active)}</div>
                           </div>
                         )}
-                        {dailyMetrics.heartRate?.resting > 0 && (
+                        {(dailyMetrics?.heartRate?.resting ?? 0) > 0 && (
                           <div className="bg-slate-800/50 rounded p-2">
                             <div className="text-slate-400">{t('calendar.heatmap.dayDetails.restingHR')}</div>
                             <div className="text-white font-semibold">{dailyMetrics.heartRate.resting} bpm</div>

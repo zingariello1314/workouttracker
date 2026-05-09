@@ -1,5 +1,6 @@
 import { normalizeGarminDate } from '../../components/tabs/GarminTab/utils/garminFormatters';
 import { isGarminRunningLikeActivity } from '../garminRunningLaps';
+import { normalizeManualDailyWalkByDate, mergedDailySteps } from './manualDailyWalkUtils';
 
 const DEFAULT_STEPS_PER_KM = 1312;
 
@@ -53,8 +54,15 @@ function stepsFromActivity(activity) {
   return 0;
 }
 
-export function buildAllTimeWalkingFromSteps({ dailyMetrics = {}, activities = {}, stepsPerKm = DEFAULT_STEPS_PER_KM }) {
-  const dates = Object.keys(dailyMetrics || {}).sort();
+export function buildAllTimeWalkingFromSteps({
+  dailyMetrics = {},
+  activities = {},
+  stepsPerKm = DEFAULT_STEPS_PER_KM,
+  manualStepsByDate = null
+}) {
+  const manual = normalizeManualDailyWalkByDate(manualStepsByDate || {});
+  const dmKeys = Object.keys(dailyMetrics || {});
+  const dates = [...new Set([...dmKeys, ...Object.keys(manual)])].sort();
   const runningKmByDate = new Map();
   const runningStepsByDate = new Map();
   const runningDurationByDate = new Map();
@@ -89,7 +97,9 @@ export function buildAllTimeWalkingFromSteps({ dailyMetrics = {}, activities = {
 
   dates.forEach((dateKey) => {
     const metric = dailyMetrics?.[dateKey] || {};
-    const steps = toFinitePositive(metric?.steps);
+    const garminSteps = toFinitePositive(metric?.steps);
+    const manualSteps = toFinitePositive(manual?.[dateKey]?.steps ?? 0);
+    const steps = mergedDailySteps(garminSteps, manualSteps);
     const runningSteps = toFinitePositive(runningStepsByDate.get(dateKey));
     const walkingSteps = Math.max(0, steps - runningSteps);
     const stepsDistanceKm = steps > 0 ? steps / stepsPerKm : 0;

@@ -15,7 +15,26 @@
   "subViews": {
     "sessionsAndChallenges": "Sessions & challenges",
     "trophies": "Trophies",
-    "calendar": "Calendar"
+    "calendar": "Calendar",
+    "dailyWalkManual": "Daily walk (manual)"
+  },
+  "manualDailyWalk": {
+    "title": "Daily steps — manual entry",
+    "subtitle": "For days without your watch (charging, forgot…), log phone or other step totals. They merge with Garmin per day as max(watch, manual) to avoid double-counting, feed step XP, walking step / realistic-walk trophies, and paint the sport calendar.",
+    "limitsHint": "Anti-spam caps per entry: {{maxSteps}} steps/day max; optional distance up to {{maxKm}} km.",
+    "add": "Add a day",
+    "empty": "No entries yet.",
+    "stepsUnit": "steps",
+    "delete": "Delete",
+    "modalTitle": "Log steps for a date",
+    "fieldDate": "Date",
+    "fieldSteps": "Step count",
+    "fieldKmOptional": "Distance (km), optional",
+    "saveError": "Could not save. Please try again.",
+    "errorSteps": "Enter a valid step count (at least 1).",
+    "errorStepsMax": "Too high for a single day (max {{max}} steps).",
+    "errorKm": "Invalid distance.",
+    "errorKmMax": "Distance too high for one day (max {{max}} km)."
   },
   "disciplineCalendar": {
     "recapTitle": "Summary",

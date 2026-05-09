@@ -167,6 +167,7 @@
       "maxContinuous": "Max continu",
       "cardioActivities": "Activités cardio",
       "dailyMetrics": "Métriques quotidiennes",
+      "manualStepsNote": "Pas du jour fusionnés : la montre et la saisie manuelle (téléphone) sont combinés par jour (le plus élevé des deux évite les doublons).",
       "steps": "Pas",
       "restingHR": "FC repos",
       "enduranceActivities": "Activités d'endurance",

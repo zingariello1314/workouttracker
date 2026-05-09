@@ -43,6 +43,7 @@ import PushupTrophiesPanel from './EnduranceTab/components/PushupTrophiesPanel.j
 import RunningSessionsHistory from './EnduranceTab/components/RunningSessionsHistory.jsx';
 import WalkingStatsPanel from './EnduranceTab/components/WalkingStatsPanel.jsx';
 import WalkingTrophiesPanel from './EnduranceTab/components/WalkingTrophiesPanel.jsx';
+import ManualDailyWalkPanel from './EnduranceTab/components/ManualDailyWalkPanel.jsx';
 import AllTrophiesHubPanel from './EnduranceTab/components/AllTrophiesHubPanel.jsx';
 import EnduranceCalendarModernPanel from './EnduranceTab/components/EnduranceCalendarModernPanel.jsx';
 import DefisDisciplineCalendarPanel from './EnduranceTab/components/DefisDisciplineCalendarPanel.jsx';
@@ -3084,10 +3085,23 @@ const EnduranceTab = () => {
                 >
                   {t('endurance.subViews.calendar')}
                 </button>
+                <button
+                  type="button"
+                  onClick={() => setWalkingSubView('dailyWalkManual')}
+                  className={`rounded-xl border px-4 py-2 text-sm font-medium transition ${
+                    walkingSubView === 'dailyWalkManual'
+                      ? 'border-emerald-500/70 bg-emerald-500/10 text-emerald-100'
+                      : 'border-[#0F4C5C]/45 bg-black text-teal-100 hover:border-emerald-500/40'
+                  }`}
+                >
+                  {t('endurance.subViews.dailyWalkManual')}
+                </button>
               </div>
 
               {walkingSubView === 'trophies' ? (
                 <WalkingTrophiesPanel sessions={walkingSessions} />
+              ) : walkingSubView === 'dailyWalkManual' ? (
+                <ManualDailyWalkPanel currentData={data} updateData={updateData} />
               ) : walkingSubView === 'calendar' ? (
                 <DefisDisciplineCalendarPanel
                   activityKind="walking"
