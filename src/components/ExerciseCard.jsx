@@ -5,6 +5,7 @@ import { summarizeExerciseSeries } from '../utils/exerciseSeriesSummary';
 import Badge from './ui/Badge';
 import Card, { CardContent, CardHeader, CardTitle } from './ui/Card';
 import LoadDifficultyStars from './sport/LoadDifficultyStars';
+import AnatomyExerciseCardPreview from './anatomy/AnatomyExerciseCardPreview';
 import { 
   ExerciseCategories, 
   MuscleGroups, 
@@ -215,7 +216,7 @@ const ExerciseCard = ({
   return (
     <Card
       variant="sport"
-      className={`transition-all duration-200 ${
+      className={`h-full min-h-0 flex flex-col transition-all duration-200 ${
         onOpenDetail ? 'cursor-pointer focus:outline-none focus:ring-2 focus:ring-[#0F5C45]/40' : ''
       } ${
         isCompleted ? '!border-emerald-500/55 bg-emerald-950/15' : ''
@@ -234,9 +235,9 @@ const ExerciseCard = ({
           : undefined
       }
     >
-      <CardHeader className="pb-3">
-        <div className="flex items-start justify-between gap-3">
-          <CardTitle className="text-lg font-semibold text-white leading-tight flex-1">
+      <CardHeader className="!border-b-0 shrink-0 flex flex-col gap-2 pb-3">
+        <div className="flex min-h-[5.25rem] items-start justify-between gap-3">
+          <CardTitle className="text-lg font-semibold normal-case tracking-normal text-white leading-snug flex-1 min-w-0 line-clamp-3">
             {exercise.name}
           </CardTitle>
 
@@ -279,8 +280,8 @@ const ExerciseCard = ({
           )}
         </div>
 
-        {/* Badges de catégorisation */}
-        <div className="flex flex-wrap gap-2 mt-2">
+        {/* Badges : hauteur mini alignée entre cartes sur une même ligne */}
+        <div className="flex min-h-[4.5rem] flex-wrap content-start gap-2">
           {exercise.category && (
             <Badge className={getCategoryColor(exercise.category)}>
               {getCategoryName(exercise.category)}
@@ -313,9 +314,11 @@ const ExerciseCard = ({
         </div>
       </CardHeader>
 
-      <CardContent className="pt-0">
+      <CardContent className="flex min-h-0 flex-1 flex-col gap-3 pt-0">
+        <AnatomyExerciseCardPreview exercise={exercise} />
+
         {/* Informations principales */}
-        <div className="space-y-3">
+        <div className="space-y-3 min-h-0">
           {showProgramVolume && exercise.series && (
             <div className="rounded-lg border border-[#0F4C5C]/50 bg-black p-3">
               <div className="flex items-start justify-between gap-2">

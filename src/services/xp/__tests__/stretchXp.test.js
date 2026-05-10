@@ -60,6 +60,50 @@ describe('computeStretchXpFromRating', () => {
   });
 });
 
+describe('computeStretchXpFromRating — schéma v2 (7 curseurs /5 pondérés)', () => {
+  it('attribue 300 XP lorsque tous les critères contribuent au maximum du ressenti', () => {
+    const r = {
+      schemaVersion: 2,
+      stretchIntensityFeel: 5,
+      holdEase: 5,
+      painfulDiscomfort: 1,
+      relaxationAfter: 5,
+      mobilityAfter: 5,
+      wantRegular: 5,
+      goalFit: 5
+    };
+    expect(computeStretchXpFromRating(r)).toBe(STRETCH_XP_MAX);
+  });
+
+  it('attribue 100 XP lorsque le ressenti agrégé est minimal', () => {
+    const r = {
+      schemaVersion: 2,
+      stretchIntensityFeel: 1,
+      holdEase: 1,
+      painfulDiscomfort: 5,
+      relaxationAfter: 1,
+      mobilityAfter: 1,
+      wantRegular: 1,
+      goalFit: 1
+    };
+    expect(computeStretchXpFromRating(r)).toBe(STRETCH_XP_MIN);
+  });
+
+  it('ignore les curseurs encore à 0 (comme avant pour le legacy)', () => {
+    const xp = computeStretchXpFromRating({
+      schemaVersion: 2,
+      relaxationAfter: 5,
+      mobilityAfter: 0,
+      painfulDiscomfort: 0,
+      stretchIntensityFeel: 0,
+      holdEase: 0,
+      wantRegular: 0,
+      goalFit: 0
+    });
+    expect(xp).toBe(STRETCH_XP_MAX);
+  });
+});
+
 describe('calculateSportXP — intégration étirements', () => {
   // Date qui matche le programme par défaut (un samedi quelconque)
   const dateStr = '2026-05-09';

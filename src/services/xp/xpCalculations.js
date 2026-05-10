@@ -28,32 +28,14 @@ import { parseStretchItemKey } from '../../utils/exerciseKeyGenerator';
 import { buildPlannedStretchItemsForDateStr } from '../../utils/stretchUtils';
 import { workoutProgram } from '../../data/workoutProgram';
 import { normalizeManualDailyWalkByDate, mergedDailySteps } from '../../utils/sport/manualDailyWalkUtils';
+import { computeStretchXpFromRating } from '../../utils/stretchPerceivedRatings';
 
-/** XP minimum / maximum par étirement coché, mappés sur la moyenne des 3 critères 1→10. */
-export const STRETCH_XP_MIN = 100; // moyenne 1/10
-export const STRETCH_XP_MAX = 300; // moyenne 10/10
-export const STRETCH_XP_FALLBACK = 150; // étirement jamais noté (médiane raisonnable)
-
-/**
- * Calcule l'XP gagnée pour UN étirement coché en fonction de la moyenne
- * de ses 3 critères de ressenti (Pénibilité / Plaisir / Récupération).
- *
- * Formule linéaire :
- *   moy = 1  → 100 XP
- *   moy = 10 → 300 XP
- *   moy = 0 (jamais noté) → 150 XP (fallback médian)
- *
- * Les notes à 0 sont ignorées dans la moyenne (un seul critère noté = poids 1).
- */
-export function computeStretchXpFromRating(rating) {
-  const exec = Math.max(0, Math.min(10, Number(rating?.difficulty) || 0));
-  const enjoy = Math.max(0, Math.min(10, Number(rating?.enjoyment) || 0));
-  const rec = Math.max(0, Math.min(10, Number(rating?.recovery) || 0));
-  const present = [exec, enjoy, rec].filter((n) => n > 0);
-  if (present.length === 0) return STRETCH_XP_FALLBACK;
-  const avg = present.reduce((s, n) => s + n, 0) / present.length;
-  return Math.round(STRETCH_XP_MIN + (avg - 1) * ((STRETCH_XP_MAX - STRETCH_XP_MIN) / 9));
-}
+export {
+  STRETCH_XP_MIN,
+  STRETCH_XP_MAX,
+  STRETCH_XP_FALLBACK,
+  computeStretchXpFromRating
+} from '../../utils/stretchPerceivedRatings';
 
 /** XP additionnelle liée au volume total cumulé (kg×reps), en complément du bonus déjà présent dans les reps pondérées. */
 export const SPORT_XP_PER_TOTAL_KG_VOLUME = 0.04;
@@ -373,8 +355,8 @@ export const calculateSportXP = (workoutData, garminData, enduranceData, sportOp
   totalXP += breakdown.exercisesXp;
 
   // 2bis. XP des étirements cochés (granularité item individuel).
-  // 1/10 → 100 XP, 10/10 → 300 XP, jamais noté → 150 XP. Source : moyenne des 3 critères
-  // stockés dans `stretchPerceivedRatings[stretchKey]`.
+  // Ancien triplet /10 : formule linéaire 100–300 (moyenne des critères > 0).
+  // Nouveau schéma : 7 curseurs /5 pondérés → note globale /5 puis même droite 100–300 XP.
   // On résout la `stretchKey` en regardant la liste planifiée pour la date :
   //   programme par défaut (admin) + programmes custom utilisateur passés en ctx.
   {

@@ -390,6 +390,7 @@ export const translations = {
     'recap.bodyView.front': 'Face',
     'recap.bodyView.side': 'Profil',
     'recap.bodyView.top': 'Dessus',
+    'recap.bodyView.back': 'Dos',
     'recap.bodyHint':
       'Vue : boutons ci-dessus · glisser pour orienter · molette ou pincer pour zoomer · rotation automatique',
     'recap.legendIntro':
@@ -431,6 +432,16 @@ export const translations = {
     'recap.muscleGroup.tibialis_anterior': 'Tibial antérieur',
     'recap.muscleGroup.core': 'Gainage / tronc',
     'recap.muscleGroup.full_body': 'Corps entier',
+
+    'anatomy.bank.sectionTitle': 'Vue anatomique',
+    'anatomy.bank.noMappedMuscles':
+      'Aucune zone du modèle 3D ne correspond aux libellés de cette fiche. Tu peux affiner les noms dans la base ou le mapping fine → groupe.',
+    'anatomy.bank.viewHintExercise':
+      'Rouge : zones principales · orange : secondaires. La vue par défaut suit le dos / la face selon les muscles listés.',
+    'anatomy.bank.viewHintStretch':
+      'Bleu foncé : zones principales · bleu : secondaires. La vue par défaut suit le dos / la face selon les zones listées.',
+    'anatomy.bank.fallbackBodyHint':
+      'Aucun muscle ne correspond encore au maillage 3D : affichage du corps entier. Tu peux affiner les libellés dans la base.',
 
     'recap.zones.title': 'Détail par zone musculaire',
     'recap.zones.intro':
@@ -1078,6 +1089,7 @@ export const translations = {
     'recap.bodyView.front': 'Front',
     'recap.bodyView.side': 'Side',
     'recap.bodyView.top': 'Top',
+    'recap.bodyView.back': 'Back',
     'recap.bodyHint':
       'View: buttons above · drag to rotate · scroll or pinch to zoom · auto rotation',
     'recap.legendIntro':
@@ -1119,6 +1131,16 @@ export const translations = {
     'recap.muscleGroup.tibialis_anterior': 'Tibialis anterior',
     'recap.muscleGroup.core': 'Core',
     'recap.muscleGroup.full_body': 'Full body',
+
+    'anatomy.bank.sectionTitle': 'Anatomy view',
+    'anatomy.bank.noMappedMuscles':
+      'No 3D region matches this entry’s muscle labels yet. Refine labels in the database or the fine → group mapping.',
+    'anatomy.bank.viewHintExercise':
+      'Red: primary zones · orange: secondary. Default camera follows back vs front based on listed muscles.',
+    'anatomy.bank.viewHintStretch':
+      'Dark blue: primary zones · blue: secondary. Default camera follows back vs front based on listed areas.',
+    'anatomy.bank.fallbackBodyHint':
+      'No muscle maps to the 3D mesh yet: showing full body in a neutral tint. You can refine labels in the database.',
 
     'recap.zones.title': 'Per muscle zone',
     'recap.zones.intro':

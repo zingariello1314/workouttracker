@@ -19,6 +19,7 @@ import { getAllMeals } from './nutritionDataCRUD';
 import { getNutritionRepository } from '../services/nutrition/repository';
 import { STORE_MEALS } from './nutritionDataUtils';
 import { sumMergedDailyStepsTotal, manualDailyWalkChecksum } from '../utils/sport/manualDailyWalkUtils';
+import { stretchRatingChecksum } from '../utils/stretchPerceivedRatings';
 
 const DEFAULT_BREAKDOWN = {
   reps: 0,
@@ -209,11 +210,8 @@ export const useSportXP = () => {
     const stretchRatings = workoutData.stretchPerceivedRatings || {};
     let stretchRatingsChecksum = 0;
     for (const [k, r] of Object.entries(stretchRatings)) {
-      const sum =
-        (Number(r?.difficulty) || 0) +
-        (Number(r?.enjoyment) || 0) * 11 +
-        (Number(r?.recovery) || 0) * 113;
-      stretchRatingsChecksum = (stretchRatingsChecksum * 17 + sum + k.length) | 0;
+      stretchRatingsChecksum =
+        (stretchRatingsChecksum * 17 + stretchRatingChecksum(r) + k.length) | 0;
     }
 
     let totalCalories = 0;

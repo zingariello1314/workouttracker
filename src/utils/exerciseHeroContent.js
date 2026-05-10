@@ -1,7 +1,7 @@
 /**
  * Contenu « héros » fiche exercice : référentiel + profil (calendrier / Récap).
  */
-import { findExerciseInDatabase } from '../data/exerciseDatabase';
+import { exerciseDatabase, findExerciseInDatabase } from '../data/exerciseDatabase';
 
 function nameNorm(exercise) {
   return String(exercise?.name || exercise?.nom || '')
@@ -17,6 +17,31 @@ export function getExerciseDatabaseHit(exercise) {
   const base = raw.split('(')[0].trim();
   if (base && base !== raw) hit = findExerciseInDatabase(base);
   return hit || null;
+}
+
+/** Clé `exerciseDatabase` pour l’exercice courant (similarités, banque). */
+export function getExerciseDatabaseKey(exercise) {
+  if (!exercise) return null;
+  if (exercise.databaseKey && exerciseDatabase[exercise.databaseKey]) return exercise.databaseKey;
+  const raw = nameNorm(exercise);
+  if (!raw) return null;
+  const direct = Object.keys(exerciseDatabase).find((k) => k.toLowerCase() === raw);
+  if (direct) return direct;
+  for (const [k, v] of Object.entries(exerciseDatabase)) {
+    const vn = String(v.name || '')
+      .trim()
+      .toLowerCase();
+    if (vn && vn === raw) return k;
+    const vars = Array.isArray(v.variations) ? v.variations : [];
+    const hitVar = vars.some((x) => {
+      const t = String(x || '')
+        .toLowerCase()
+        .trim();
+      return t && (raw.includes(t) || t.includes(raw));
+    });
+    if (hitVar) return k;
+  }
+  return null;
 }
 
 /**

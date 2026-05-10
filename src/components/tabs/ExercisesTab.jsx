@@ -12,6 +12,8 @@ import {
 } from '../../utils/programSync';
 import { ExerciseCategories, MuscleGroups, Equipment, Difficulty } from '../../data/workoutProgramEnhanced';
 import ExerciseCard from '../ExerciseCard';
+import SportBankExerciseCard from '../sport/SportBankExerciseCard';
+import BankAddToProgramModal from '../sport/BankAddToProgramModal';
 import ExerciseFilter from '../ExerciseFilter';
 import ProgramCard from '../ProgramCard';
 import Card, { CardHeader, CardTitle, CardContent } from '../ui/Card';
@@ -26,6 +28,7 @@ import ProgramDetailView from '../ProgramDetailView';
 import { loadTranslationNamespace } from '../../utils/translations/loader';
 import { resolveExerciseIntensityCoeff } from '../../utils/trainingLoadUtils';
 import { isAdminUser } from '../../utils/accessControl';
+import { buildBankExerciseViewFromDatabaseKey } from '../../utils/exerciseBankViewModel';
 
 /** Sous-onglets de la vue "Banque" (anciennement "Exercices"). */
 const BANK_SUB_TABS = {
@@ -54,6 +57,17 @@ const ExercisesTab = () => {
     return map;
   }, [data?.exerciseMaxRecords]);
   const [detailExercise, setDetailExercise] = useState(null);
+  /** Vue pleine grille « exercices similaires » (retour vers la fiche d’origine) */
+  const [similarExerciseHub, setSimilarExerciseHub] = useState(null);
+  /** Modal « Ajouter à un programme » depuis les banques exercices / étirements */
+  const [bankAddPayload, setBankAddPayload] = useState(null);
+
+  const similarHubViews = useMemo(() => {
+    if (!similarExerciseHub?.keys?.length) return [];
+    return similarExerciseHub.keys
+      .map((k) => buildBankExerciseViewFromDatabaseKey(k, t))
+      .filter(Boolean);
+  }, [similarExerciseHub, t]);
 
   useEffect(() => {
     loadTranslationNamespace(language || 'fr', 'exercisesTab');
@@ -285,7 +299,8 @@ const ExercisesTab = () => {
           secondaryMuscles: ex.secondaryMuscles || enriched.secondaryMuscles || [],
           equipment: ex.equipment || enriched.equipment || t('exercisesTab.misc.notSpecified'),
           notes: ex.description || enriched.notes || '',
-          categoryLabel: ex.category
+          categoryLabel: ex.category,
+          databaseKey: key
         });
       });
 
@@ -382,11 +397,6 @@ const ExercisesTab = () => {
 
   // Statistiques des exercices
   const exerciseStats = useMemo(() => {
-    console.log('=== DEBUG EXERCICES ===');
-    console.log('DEBUG - allExercises length:', allExercises.length);
-    console.log('DEBUG - Premier exercice:', allExercises[0]);
-    
-    // Normaliser tous les exercices avant de calculer les stats
     const normalizedExercises = allExercises.map(normalizeExercise);
     
     const stats = {
@@ -396,18 +406,7 @@ const ExercisesTab = () => {
       byDifficulty: {}
     };
     
-    normalizedExercises.forEach((exercise, index) => {
-      if (index < 5) {
-        console.log(`DEBUG - Exercice normalisé ${index + 1}:`, {
-          name: exercise.name,
-          metadata: exercise.metadata,
-          category: exercise.metadata?.category,
-          muscleGroup: exercise.metadata?.primaryMuscleGroup,
-          directCategory: exercise.category,
-          directMuscleGroup: exercise.muscleGroup
-        });
-      }
-      
+    normalizedExercises.forEach((exercise) => {
       // Par catégorie
       const category = exercise.metadata?.category || t('exercisesTab.misc.notSpecified');
       stats.byCategory[category] = (stats.byCategory[category] || 0) + 1;
@@ -420,10 +419,6 @@ const ExercisesTab = () => {
       const difficulty = exercise.metadata?.difficulty || t('exercisesTab.misc.notSpecified');
       stats.byDifficulty[difficulty] = (stats.byDifficulty[difficulty] || 0) + 1;
     });
-    
-    console.log('DEBUG - Stats par catégorie:', stats.byCategory);
-    console.log('DEBUG - Stats par groupe musculaire:', stats.byMuscleGroup);
-    console.log('DEBUG - Final stats:', stats);
     return stats;
   }, [allExercises]);
 
@@ -439,9 +434,71 @@ const ExercisesTab = () => {
     return 'text-slate-400';
   };
 
+  if (similarExerciseHub) {
+    return (
+      <div className="relative">
+        <BankAddToProgramModal payload={bankAddPayload} onClose={() => setBankAddPayload(null)} />
+        <div className="relative z-10 p-4 md:p-6 max-w-[1600px] mx-auto space-y-6">
+          <button
+            type="button"
+            className="inline-flex items-center gap-2 text-sm font-medium text-slate-200 hover:text-white transition-colors"
+            onClick={() => {
+              const seed = similarExerciseHub.seedExercise;
+              setSimilarExerciseHub(null);
+              setDetailExercise(seed);
+            }}
+          >
+            <ArrowLeft className="w-4 h-4" />
+            {t('exercisesTab.detail.similar.backToExercise', 'Retour à la fiche')}
+          </button>
+          <Card variant="sport">
+            <CardHeader>
+              <CardTitle className="text-white">
+                {t('exercisesTab.detail.similar.fullTitle', 'Exercices similaires')}
+                {similarExerciseHub.seedExercise?.name ? (
+                  <span className="block text-sm font-normal text-slate-400 mt-1">
+                    {t('exercisesTab.detail.similar.fullSubtitle', 'Pour « {{name}} »', {
+                      name: similarExerciseHub.seedExercise.name
+                    })}
+                  </span>
+                ) : null}
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              {similarHubViews.length === 0 ? (
+                <p className="text-slate-400 text-sm py-8 text-center">
+                  {t('exercisesTab.detail.similar.empty', 'Aucun exercice similaire trouvé dans la banque.')}
+                </p>
+              ) : (
+                <div className="grid grid-cols-1 items-stretch sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                  {similarHubViews.map((ex) => (
+                    <SportBankExerciseCard
+                      key={ex.id}
+                      exercise={ex}
+                      onOpenDetail={(opened) => {
+                        setSimilarExerciseHub(null);
+                        setDetailExercise(opened);
+                      }}
+                      effectiveLoadCoeff={resolveExerciseIntensityCoeff(ex, intensityCoeffs)}
+                      hasRecordedMax={maxRecordsByExerciseId.has(String(ex.id))}
+                      maxRecord={maxRecordsByExerciseId.get(String(ex.id)) || null}
+                      showAddButton={isAuthenticated}
+                      onRequestAddToProgram={isAuthenticated ? (p) => setBankAddPayload(p) : undefined}
+                    />
+                  ))}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    );
+  }
+
   if (detailExercise) {
     return (
       <div className="relative">
+        <BankAddToProgramModal payload={bankAddPayload} onClose={() => setBankAddPayload(null)} />
         <div className="relative z-10 p-4 md:p-6">
           <ExerciseDetailPage
             exercise={detailExercise}
@@ -449,6 +506,17 @@ const ExercisesTab = () => {
             updateData={updateData}
             onBack={() => setDetailExercise(null)}
             readOnly={!isAuthenticated}
+            onOpenSimilarBankExercise={(ex) => setDetailExercise(ex)}
+            onViewAllSimilarExerciseKeys={(payload) => {
+              setSimilarExerciseHub({
+                seedExercise: payload.seedExercise,
+                keys: payload.keys
+              });
+              setDetailExercise(null);
+            }}
+            maxRecordsByExerciseId={maxRecordsByExerciseId}
+            onRequestAddToProgram={isAuthenticated ? (p) => setBankAddPayload(p) : undefined}
+            isAuthenticated={isAuthenticated}
           />
         </div>
       </div>
@@ -536,9 +604,19 @@ const ExercisesTab = () => {
   if (bankSubTab === BANK_SUB_TABS.STRETCHES) {
     return (
       <div className="relative">
+        <BankAddToProgramModal payload={bankAddPayload} onClose={() => setBankAddPayload(null)} />
         <div className="relative z-10 space-y-6 p-6">
           {subTabsHeader}
-          <StretchBankView data={data} updateData={updateData} readOnly={!isAuthenticated} />
+          <StretchBankView
+            data={data}
+            updateData={updateData}
+            readOnly={!isAuthenticated}
+            onRequestAddToProgram={isAuthenticated ? (p) => setBankAddPayload(p) : undefined}
+            sportPrograms={visiblePrograms}
+            onOpenComplementaryExercise={(ex) => setDetailExercise(ex)}
+            maxRecordsByExerciseId={maxRecordsByExerciseId}
+            isAuthenticated={isAuthenticated}
+          />
         </div>
       </div>
     );
@@ -589,6 +667,7 @@ const ExercisesTab = () => {
 
   return (
     <div className="relative">
+      <BankAddToProgramModal payload={bankAddPayload} onClose={() => setBankAddPayload(null)} />
       <div className="relative z-10 space-y-6 p-6">
         {subTabsHeader}
         {/* Statut de synchronisation */}
@@ -902,20 +981,33 @@ const ExercisesTab = () => {
                 </p>
               </div>
             ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {filteredExercises.map((exercise) => (
-                  <ExerciseCard
-                    key={exercise.id}
-                    exercise={exercise}
-                    onToggleComplete={() => {}}
-                    isCompleted={false}
-                    onOpenDetail={setDetailExercise}
-                    effectiveLoadCoeff={resolveExerciseIntensityCoeff(exercise, intensityCoeffs)}
-                    showProgramVolume={isAdmin}
-                    hasRecordedMax={maxRecordsByExerciseId.has(String(exercise.id))}
-                    maxRecord={maxRecordsByExerciseId.get(String(exercise.id)) || null}
-                  />
-                ))}
+              <div className="grid grid-cols-1 items-stretch sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                {filteredExercises.map((exercise) =>
+                  dataSource === 'exercise_bank' ? (
+                    <SportBankExerciseCard
+                      key={exercise.id}
+                      exercise={exercise}
+                      onOpenDetail={setDetailExercise}
+                      effectiveLoadCoeff={resolveExerciseIntensityCoeff(exercise, intensityCoeffs)}
+                      hasRecordedMax={maxRecordsByExerciseId.has(String(exercise.id))}
+                      maxRecord={maxRecordsByExerciseId.get(String(exercise.id)) || null}
+                      showAddButton={isAuthenticated}
+                      onRequestAddToProgram={isAuthenticated ? (p) => setBankAddPayload(p) : undefined}
+                    />
+                  ) : (
+                    <ExerciseCard
+                      key={exercise.id}
+                      exercise={exercise}
+                      onToggleComplete={() => {}}
+                      isCompleted={false}
+                      onOpenDetail={setDetailExercise}
+                      effectiveLoadCoeff={resolveExerciseIntensityCoeff(exercise, intensityCoeffs)}
+                      showProgramVolume={isAdmin}
+                      hasRecordedMax={maxRecordsByExerciseId.has(String(exercise.id))}
+                      maxRecord={maxRecordsByExerciseId.get(String(exercise.id)) || null}
+                    />
+                  )
+                )}
               </div>
             )}
           </CardContent>

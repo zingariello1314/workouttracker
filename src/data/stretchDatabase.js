@@ -22,8 +22,8 @@
  *                         (ex. "respi nasale", "psoas stretch")
  *
  * 🎯 Objectif : ≈ 50 étirements transcrits du programme actuel + quelques classiques manquants.
- *    Les notes de ressenti (3 critères × 10★) sont stockées séparément côté utilisateur dans
- *    `stretchPerceivedRatings` et alimentent la formule XP (100→300 XP par étirement coché).
+ *    Les notes de ressenti (7 curseurs /5 pondérés, ancien triplet /10 encore accepté pour l’XP)
+ *    vivent dans `stretchPerceivedRatings` et calibrent l’XP par coche (100→300 XP).
  */
 
 export const stretchDatabase = {
