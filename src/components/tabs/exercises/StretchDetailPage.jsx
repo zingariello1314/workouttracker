@@ -391,6 +391,7 @@ const StretchDetailPage = ({
                 secondaryMuscles={stretch.secondaryMuscles}
                 mode="stretch"
                 portrait
+                stretchDatabaseKey={stretch.key}
               />
               <div>
                 <h4 className="text-xs uppercase tracking-wide text-teal-600/90 mb-1">

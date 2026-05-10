@@ -17,6 +17,8 @@ const CARDIO_REFERENCE_EXERCISES_RAW = [
     muscleGroup: MuscleGroups.FULL_BODY,
     equipment: Equipment.BODYWEIGHT,
     notes: 'Allure confortable, conversation possible.',
+    primaryMuscles: ['Mollets', 'Quadriceps', 'Fessiers', 'Ischio-jambiers'],
+    secondaryMuscles: ['Core', 'Mollets', 'Grand dorsal', 'Deltoïdes antérieurs', 'Triceps'],
     isCardioReference: true
   },
   {
@@ -28,6 +30,8 @@ const CARDIO_REFERENCE_EXERCISES_RAW = [
     muscleGroup: MuscleGroups.FULL_BODY,
     equipment: Equipment.BODYWEIGHT,
     notes: 'Volume long à intensité modérée.',
+    primaryMuscles: ['Mollets', 'Quadriceps', 'Fessiers', 'Ischio-jambiers'],
+    secondaryMuscles: ['Core', 'Mollets', 'Grand dorsal', 'Deltoïdes antérieurs', 'Triceps'],
     isCardioReference: true
   },
   {
@@ -39,6 +43,8 @@ const CARDIO_REFERENCE_EXERCISES_RAW = [
     muscleGroup: MuscleGroups.FULL_BODY,
     equipment: Equipment.BODYWEIGHT,
     notes: 'Séance continue hors zone seuil.',
+    primaryMuscles: ['Mollets', 'Quadriceps', 'Fessiers', 'Ischio-jambiers'],
+    secondaryMuscles: ['Core', 'Mollets', 'Grand dorsal', 'Deltoïdes antérieurs', 'Triceps'],
     isCardioReference: true
   },
   {
@@ -50,6 +56,8 @@ const CARDIO_REFERENCE_EXERCISES_RAW = [
     muscleGroup: MuscleGroups.FULL_BODY,
     equipment: Equipment.BODYWEIGHT,
     notes: 'Jeux de vitesses libres sur le terrain.',
+    primaryMuscles: ['Mollets', 'Quadriceps', 'Fessiers', 'Ischio-jambiers'],
+    secondaryMuscles: ['Core', 'Mollets', 'Grand dorsal', 'Deltoïdes antérieurs', 'Triceps'],
     isCardioReference: true
   },
   {
@@ -61,6 +69,8 @@ const CARDIO_REFERENCE_EXERCISES_RAW = [
     muscleGroup: MuscleGroups.FULL_BODY,
     equipment: Equipment.BODYWEIGHT,
     notes: 'Alternance efforts intenses / récup.',
+    primaryMuscles: ['Mollets', 'Quadriceps', 'Fessiers', 'Ischio-jambiers'],
+    secondaryMuscles: ['Core', 'Mollets', 'Grand dorsal', 'Deltoïdes antérieurs', 'Triceps'],
     isCardioReference: true
   },
   {
@@ -72,6 +82,8 @@ const CARDIO_REFERENCE_EXERCISES_RAW = [
     muscleGroup: MuscleGroups.FULL_BODY,
     equipment: Equipment.BODYWEIGHT,
     notes: 'Allure tenable ~1 h en course continue.',
+    primaryMuscles: ['Mollets', 'Quadriceps', 'Fessiers', 'Ischio-jambiers'],
+    secondaryMuscles: ['Core', 'Mollets', 'Grand dorsal', 'Deltoïdes antérieurs', 'Triceps'],
     isCardioReference: true
   },
   {
@@ -83,6 +95,8 @@ const CARDIO_REFERENCE_EXERCISES_RAW = [
     muscleGroup: MuscleGroups.FULL_BODY,
     equipment: Equipment.BODYWEIGHT,
     notes: 'Bloc soutenu sous le seuil maximal.',
+    primaryMuscles: ['Mollets', 'Quadriceps', 'Fessiers', 'Ischio-jambiers'],
+    secondaryMuscles: ['Core', 'Mollets', 'Grand dorsal', 'Deltoïdes antérieurs', 'Triceps'],
     isCardioReference: true
   },
   {
@@ -94,6 +108,8 @@ const CARDIO_REFERENCE_EXERCISES_RAW = [
     muscleGroup: MuscleGroups.FULL_BODY,
     equipment: Equipment.BODYWEIGHT,
     notes: 'Répetitions courtes très intenses.',
+    primaryMuscles: ['Mollets', 'Quadriceps', 'Fessiers', 'Grand dorsal', "Grand droit de l'abdomen"],
+    secondaryMuscles: ['Ischio-jambiers', 'Mollets', 'Deltoïdes antérieurs', 'Avant-bras'],
     isCardioReference: true
   },
   {
@@ -105,6 +121,8 @@ const CARDIO_REFERENCE_EXERCISES_RAW = [
     muscleGroup: MuscleGroups.FULL_BODY,
     equipment: Equipment.BODYWEIGHT,
     notes: 'Sauts, durée, combos.',
+    primaryMuscles: ['Mollets', 'Quadriceps', 'Fessiers', 'Core'],
+    secondaryMuscles: ['Mollets', 'Grand dorsal', 'Deltoïdes antérieurs', 'Ischio-jambiers', 'Avant-bras'],
     isCardioReference: true
   },
   {
@@ -116,6 +134,16 @@ const CARDIO_REFERENCE_EXERCISES_RAW = [
     muscleGroup: MuscleGroups.FULL_BODY,
     equipment: Equipment.BODYWEIGHT,
     notes: 'Longueurs, allures, types de nage.',
+    primaryMuscles: [
+      'Grand dorsal',
+      'Deltoïdes antérieurs',
+      'Pectoraux',
+      'Triceps brachial',
+      'Quadriceps',
+      'Mollets',
+      'Core'
+    ],
+    secondaryMuscles: ['Ischio-jambiers', 'Fessiers', 'Biceps brachial', 'Triceps'],
     isCardioReference: true
   },
   {
@@ -127,6 +155,8 @@ const CARDIO_REFERENCE_EXERCISES_RAW = [
     muscleGroup: MuscleGroups.FULL_BODY,
     equipment: Equipment.BODYWEIGHT,
     notes: 'Durée, intensité, rounds.',
+    primaryMuscles: ['Deltoïdes antérieurs', 'Triceps brachial', 'Mollets', 'Core', 'Quadriceps'],
+    secondaryMuscles: ['Fessiers', 'Grand dorsal', 'Biceps brachial', 'Avant-bras', 'Mollets'],
     isCardioReference: true
   }
 ];

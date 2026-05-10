@@ -1,14 +1,14 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { Canvas } from '@react-three/fiber';
 import { useTranslation } from '../../../utils/translations';
-import { AnatomyInteractiveScene, BODY_VIEW_PRESETS } from '../../anatomy/AnatomyModelCanvas';
+import { AnatomyInteractiveScene, BODY_VIEW_PRESETS, ANATOMY_VIEW_PRESET_KEYS } from '../../anatomy/AnatomyModelCanvas';
 
 /** Réexport pour imports existants `BodyMap` + Récap. */
 export { ANATOMY_MODEL_URL, BODY_VIEW_PRESETS } from '../../anatomy/AnatomyModelCanvas';
 
 const VIEW_STORAGE_KEY = 'sport.recap.bodyMapView';
 
-const PRESET_KEYS = ['frontLow', 'front', 'back', 'side', 'top'];
+const PRESET_KEYS = ANATOMY_VIEW_PRESET_KEYS;
 
 function readStoredPreset() {
   try {

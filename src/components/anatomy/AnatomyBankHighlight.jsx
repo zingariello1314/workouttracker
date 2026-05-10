@@ -14,7 +14,9 @@ export default function AnatomyBankHighlight({
   compact = false,
   /** Colonne portrait plus haute pour fiche étirement (gain de scroll). */
   portrait = false,
-  className = ''
+  className = '',
+  exerciseDatabaseKey = null,
+  stretchDatabaseKey = null
 }) {
   const t = useTranslation();
   const anatomy = useMemo(
@@ -24,9 +26,14 @@ export default function AnatomyBankHighlight({
           primaryMuscles,
           secondaryMuscles
         },
-        mode
+        mode,
+        exerciseDatabaseKey
+          ? { exerciseDatabaseKey }
+          : stretchDatabaseKey
+            ? { stretchDatabaseKey }
+            : undefined
       ),
-    [primaryMuscles, secondaryMuscles, mode]
+    [primaryMuscles, secondaryMuscles, mode, exerciseDatabaseKey, stretchDatabaseKey]
   );
 
   const [viewPreset, setViewPreset] = useState(anatomy.inferredView);
@@ -62,8 +69,12 @@ export default function AnatomyBankHighlight({
           neutralUnmapped={neutralUnmapped}
           sceneBackground="#000000"
           controlsEnableZoom={false}
-          boundsMargin={exerciseTightCam ? 0.805 : 0.82}
-          cameraDistanceFactor={exerciseTightCam ? 0.993 : 1}
+          boundsMargin={
+            anatomy.cameraTuningOverride?.boundsMargin ?? (exerciseTightCam ? 0.805 : 0.82)
+          }
+          cameraDistanceFactor={
+            anatomy.cameraTuningOverride?.cameraDistanceFactor ?? (exerciseTightCam ? 0.993 : 1)
+          }
         />
       </div>
 

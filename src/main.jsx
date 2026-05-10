@@ -2,6 +2,15 @@ import React from 'react'
 import ReactDOM from 'react-dom/client'
 import App from './App.jsx'
 import './index.css'
+
+function shouldMountAnatomyPreviewCapture() {
+  if (typeof window === 'undefined') return false
+  const q = new URLSearchParams(window.location.search)
+  if (q.get('anatomyPreviewCapture') !== '1') return false
+  if (import.meta.env.DEV) return true
+  const h = window.location.hostname
+  return h === 'localhost' || h === '127.0.0.1'
+}
 import './styles/sidebar-dashboard-offset.css'
 import './styles/sidebar-module-themes.css'
 
@@ -213,8 +222,16 @@ if (typeof window !== 'undefined') {
   });
 }
 
-ReactDOM.createRoot(document.getElementById('root')).render(
-  <React.StrictMode>
-    <App />
-  </React.StrictMode>,
-)
+const rootEl = document.getElementById('root')
+
+if (shouldMountAnatomyPreviewCapture()) {
+  import('./dev/AnatomyPreviewCaptureRoot.jsx').then(({ default: AnatomyPreviewCaptureRoot }) => {
+    ReactDOM.createRoot(rootEl).render(<AnatomyPreviewCaptureRoot />)
+  })
+} else {
+  ReactDOM.createRoot(rootEl).render(
+    <React.StrictMode>
+      <App />
+    </React.StrictMode>,
+  )
+}

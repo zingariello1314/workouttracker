@@ -1,0 +1,42 @@
+Prévisualisations banque (WebP, sans WebGl)
+============================================
+
+Chaque combinaison vue + coloration musculaire + mode (exercice | étirement) produit
+une clé de fichier déterministe via `anatomyRasterFileBase()` dans :
+
+  src/utils/anatomy/anatomyPreviewRasterKey.js
+
+Fichiers attendus ici :
+
+  {clé16hex}.webp
+
+Exemple de chemin référencé par l’app :
+
+  /anatomy-previews/ab12cd34ef568901.webp
+
+Liste des fichiers .webp uniques attendus (JSON) :
+  npm run anatomy:preview-keys
+
+Génération automatique (Playwright + Vite ; PNG → sharp → WebP) :
+  npm run anatomy:preview-render
+
+Après changement de vue/caméra (inferDefaultAnatomyView, BODY_VIEW_PRESETS, bankExerciseAnatomyTuning) :
+  npm run anatomy:preview-render -- --force
+  Déjà présents : ignorés sauf npm run anatomy:preview-render -- --force
+  Un seul fichier : npm run anatomy:preview-render -- --stem=abcd1234ef567890
+
+Serveur externe au lieu de lancer Vite :
+  Terminal 1 : npm run dev:frontend
+  Terminal 2 (cmd) : set ANATOMY_PREVIEW_ORIGIN=http://127.0.0.1:3001&& npm run anatomy:preview-render -- --skip-server
+  PowerShell : $env:ANATOMY_PREVIEW_ORIGIN="http://127.0.0.1:3001"; npm run anatomy:preview-render -- --skip-server
+
+Pour générer les images à partir du MÊME GLB que la fiche 3D :
+
+  1) Charger le maillage anatomique officiel (public/models/...)
+  2) Appliquer les mêmes couleurs / vue que resolveBankItemAnatomy + cardStatic
+  3) Rendre une passe offscreen (Node: puppeteer/playwright ou three + screenshot)
+  4) Nommer le fichier avec la clé ci-dessus (un fichier partagé si même visualisation)
+
+Tant qu’un .webp manque, la carte affiche un court message de substitution (pas de Canvas).
+
+Les fiches détail (ExerciseDetailPage, StretchDetailPage) conservent la vraie scène Three.js.

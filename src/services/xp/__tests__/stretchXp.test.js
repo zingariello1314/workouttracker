@@ -122,6 +122,24 @@ describe('calculateSportXP — intégration étirements', () => {
     expect(result.breakdown.stretchesXp).toBe(0);
   });
 
+  it('priorise les étoiles du jour sur la banque pour l’XP (5 → 300 XP)', () => {
+    const data = {
+      checkedExercises: {},
+      reps: {},
+      checkedStretches: {
+        [generateStretchItemKey(dateStr, 'matin', sampleStretchId)]: true
+      },
+      stretchPerceivedRatings: {
+        marche_lente_consciente: { difficulty: 1, enjoyment: 1, recovery: 1 }
+      },
+      stretchSessionEffortStars: {
+        [generateStretchItemKey(dateStr, 'matin', sampleStretchId)]: 5
+      }
+    };
+    const result = calculateSportXP(data, null, null, {});
+    expect(result.breakdown.stretchesXp).toBe(STRETCH_XP_MAX);
+  });
+
   it('attribue le fallback (150 XP) pour un étirement coché jamais noté', () => {
     const data = {
       checkedExercises: {},

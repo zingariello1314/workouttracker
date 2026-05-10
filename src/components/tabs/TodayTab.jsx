@@ -28,9 +28,10 @@ import {
 import { normalizeStretchSlots, countStretchItems } from '../../utils/stretchUtils';
 import StretchList from './TodayTab/components/StretchList';
 import CircuitsTodaySection from './TodayTab/components/CircuitsTodaySection.jsx';
-import { resolveExerciseIntensityCoeff } from '../../utils/trainingLoadUtils';
+import { intensityCoeffToStarCount, resolveExerciseIntensityCoeff } from '../../utils/trainingLoadUtils';
 import { exerciseUsesExternalLoad } from '../../utils/programUtils';
 import LoadDifficultyStars from '../sport/LoadDifficultyStars';
+import SessionEffortBlock from './TodayTab/components/SessionEffortBlock.jsx';
 import { computeTodaySessionComplexity } from '../../utils/todaySessionScore';
 import RecordPerformanceModal from '../sport/performance/RecordPerformanceModal';
 import { applyPerformanceEntryToData } from '../../utils/exercisePerformanceUtils';
@@ -122,6 +123,18 @@ const resolveExerciseWeightPerArm = (currentData, keys, readKey) => {
   const ordered = [readKey, ...keys.filter((k) => k !== readKey)];
   return ordered.some((k) => w[k] === true);
 };
+
+/** Même logique que `useExerciseTracking` / fiche : étoiles séance par clé jour+exo. */
+function pickExerciseSessionEffortStars(currentData, keys, primaryKey) {
+  const map = currentData?.exerciseSessionEffortStars || {};
+  for (const key of keys) {
+    const n = Number(map[key]);
+    if (Number.isFinite(n) && n >= 1 && n <= 5) return Math.round(n);
+  }
+  const p = Number(map[primaryKey]);
+  if (Number.isFinite(p) && p >= 1 && p <= 5) return Math.round(p);
+  return null;
+}
 
 const TodayTab = () => {
   const {
@@ -808,6 +821,27 @@ const TodayTab = () => {
   const dateStr = getDateStr(currentDate);
   const dayName = getDayName(currentDate);
 
+  const updateSessionEffortStarsToday = useCallback(
+    (exercise, starCount) => {
+      const currentData = getCurrentData();
+      const keyOpts = { isGymMode, workoutIsGymMode: workout?.isGymMode };
+      const primaryKey = generateSmartExerciseKey(currentDate, exercise.id, keyOpts);
+      const keys = collectExerciseKeysForWorkoutExercise(currentDate, exercise, keyOpts);
+      const next = { ...(currentData.exerciseSessionEffortStars || {}) };
+      keys.forEach((k) => {
+        if (k !== primaryKey) delete next[k];
+      });
+      const n = Math.round(Number(starCount));
+      if (!Number.isFinite(n) || n < 1 || n > 5) delete next[primaryKey];
+      else next[primaryKey] = n;
+      updateTempExerciseData({
+        ...currentData,
+        exerciseSessionEffortStars: next
+      });
+    },
+    [getCurrentData, updateTempExerciseData, currentDate, isGymMode, workout?.isGymMode]
+  );
+
   useEffect(() => {
     let mounted = true;
     const loadActiveNutrition = async () => {
@@ -1463,6 +1497,13 @@ const TodayTab = () => {
             const inputLabel =
               exerciseUnit?.unit === 'sec' ? 'sec' : exerciseUnit?.unit === 'min' ? 'min' : 'Reps';
 
+            const primaryKeyForStars = generateSmartExerciseKey(currentDate, exercise.id, {
+              isGymMode,
+              workoutIsGymMode: workout.isGymMode
+            });
+            const sessionEffortStars = pickExerciseSessionEffortStars(currentData, keys, primaryKeyForStars);
+            const coefStarCount = intensityCoeffToStarCount(loadCoeff);
+
             return (
               <div
                 key={exercise.id}
@@ -1630,6 +1671,20 @@ const TodayTab = () => {
                           {t('today.exercises.perSetOpen')}
                         </button>
                       )}
+                    </div>
+                  )}
+
+                  {isChecked && (
+                    <div className="w-full pt-3 mt-1 border-t border-[#0F4C5C]/45">
+                      <p className="text-[11px] font-medium text-amber-200/90 mb-1.5">
+                        {t('today.exercises.sessionEffortLabel', 'Ressenti aujourd’hui')}
+                      </p>
+                      <SessionEffortBlock
+                        idPrefix={`today-ex-${exercise.id}`}
+                        persistedValue={sessionEffortStars}
+                        suggestedStars={coefStarCount}
+                        onChange={(n) => updateSessionEffortStarsToday(exercise, n)}
+                      />
                     </div>
                   )}
                 </div>

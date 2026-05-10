@@ -159,6 +159,31 @@ export const resolveBestRepsStorageKey = (currentData, keys) => {
   return bestKey || actualKey || keys[0];
 };
 
+
+/**
+ * Partie date (YYYY-MM-DD) d'une clé d'exercice `YYYY-MM-DD_id[_semaineA|B]`.
+ * @param {string} key
+ * @returns {string}
+ */
+export const extractDateStrFromWorkoutKey = (key) => {
+  const k = String(key || '');
+  const idx = k.indexOf('_');
+  if (idx < 0) return '';
+  return k.slice(0, idx);
+};
+
+/**
+ * Identifiant exercice (sans suffixe salle) depuis une clé reps/coché.
+ * @param {string} key
+ * @returns {string}
+ */
+export const extractExerciseIdFromWorkoutKey = (key) => {
+  const k = String(key || '');
+  const idx = k.indexOf('_');
+  if (idx < 0) return k;
+  return k.slice(idx + 1).replace(/_semaineA$|_semaineB$/, '');
+};
+
 /**
  * Dernière valeur de poids enregistrée pour un id d’exercice (toutes dates),
  * pour préremplir la saisie du jour (clés du type YYYY-MM-DD_id[_semaineA|B]).

@@ -15,8 +15,9 @@ import Button from '../../ui/Button';
 import { useExerciseTracking } from '../hooks/useExerciseTracking';
 import { useWorkout } from '../../../../context/WorkoutContext';
 import { calculateAutoReps, detectExerciseUnit } from '../../../../utils/exerciseCalculations';
-import { resolveExerciseIntensityCoeff } from '../../../../utils/trainingLoadUtils';
+import { intensityCoeffToStarCount, resolveExerciseIntensityCoeff } from '../../../../utils/trainingLoadUtils';
 import LoadDifficultyStars from '../../../sport/LoadDifficultyStars';
+import SessionEffortBlock from './SessionEffortBlock';
 
 /**
  * Composant pour afficher un exercice individuel
@@ -36,13 +37,13 @@ import LoadDifficultyStars from '../../../sport/LoadDifficultyStars';
  * />
  */
 const ExerciseItem = ({ exercise, date, isGymMode, onShowVariations }) => {
-  const { toggleExercise, updateReps, getExerciseStatus } = useExerciseTracking({
+  const { toggleExercise, updateReps, updateSessionEffortStars, getExerciseStatus } = useExerciseTracking({
     date,
     isGymMode
   });
   const { data, getCurrentData } = useWorkout();
 
-  const { isChecked, reps } = getExerciseStatus(exercise);
+  const { isChecked, reps, sessionEffortStars } = getExerciseStatus(exercise);
 
   const loadCoeff = useMemo(() => {
     const live = typeof getCurrentData === 'function' ? getCurrentData() : null;
@@ -62,6 +63,11 @@ const ExerciseItem = ({ exercise, date, isGymMode, onShowVariations }) => {
     }
     return a;
   }, [exercise, data?.exerciseIntensityCoeffs, getCurrentData]);
+
+  const coefStarCount = useMemo(
+    () => intensityCoeffToStarCount(loadCoeff),
+    [loadCoeff]
+  );
 
   // Détecter l'unité de l'exercice (sec, min, ou reps)
   const exerciseUnit = useMemo(() => detectExerciseUnit(exercise), [exercise]);
@@ -116,15 +122,33 @@ const ExerciseItem = ({ exercise, date, isGymMode, onShowVariations }) => {
     }
   }, [exercise, onShowVariations]);
 
+  const handleSessionStars = useCallback(
+    (n) => {
+      updateSessionEffortStars(exercise, n);
+    },
+    [exercise, updateSessionEffortStars]
+  );
+
   return (
     <div className="flex items-center space-x-3 p-4 bg-slate-700/50 rounded-lg border border-slate-600/50 hover:bg-slate-700/70 transition-all duration-200">
       <div className="flex-1 min-w-0">
         <div className="flex flex-wrap items-center gap-2 min-w-0">
           <div className="font-medium text-white shrink-0">{exercise.name}</div>
-          <span className="shrink-0 inline-flex items-center text-amber-300">
+          <span className="shrink-0 inline-flex items-center text-sky-400" title="Indice charge (auto, avant « Fait »)">
             <LoadDifficultyStars coeff={loadCoeff} className="scale-95" />
           </span>
         </div>
+        {isChecked && (
+          <div className="mt-2 pt-2 border-t border-slate-600/50 w-full">
+            <p className="text-[11px] font-medium text-amber-200/90 mb-1.5">Ressenti aujourd’hui</p>
+            <SessionEffortBlock
+              idPrefix={`ex-${exercise.id}`}
+              persistedValue={sessionEffortStars}
+              suggestedStars={coefStarCount}
+              onChange={handleSessionStars}
+            />
+          </div>
+        )}
         <div className="text-sm text-gray-300">
           {exercise.series}
           {exercise.materiel && ` • ${exercise.materiel}`}

@@ -13,6 +13,7 @@ import React, { memo, useCallback, useState } from 'react';
 import { ChevronDown, ChevronUp, Clock, Target } from 'lucide-react';
 import { Checkbox } from '../../../ui/Input';
 import { useStretchTracking } from '../hooks/useStretchTracking';
+import SessionEffortBlock from './SessionEffortBlock';
 
 /**
  * Formate une durée en secondes vers "Xs" / "Xmin" / "Xmin Ys".
@@ -32,8 +33,8 @@ function formatDuration(seconds) {
  * @param {boolean} [props.defaultExpanded=false] - Affiche les instructions en clair par défaut
  */
 const StretchItem = memo(({ item, date, defaultExpanded = false }) => {
-  const { toggleStretch, getStretchStatus } = useStretchTracking({ date });
-  const { isChecked } = getStretchStatus(item.moment, item.id);
+  const { toggleStretch, getStretchStatus, updateStretchSessionEffortStars } = useStretchTracking({ date });
+  const { isChecked, sessionEffortStars } = getStretchStatus(item.moment, item.id);
   const [expanded, setExpanded] = useState(defaultExpanded);
 
   const handleToggle = useCallback(() => {
@@ -86,6 +87,17 @@ const StretchItem = memo(({ item, date, defaultExpanded = false }) => {
             )}
           </div>
 
+          {isChecked && (
+            <div className="mt-2 pt-2 border-t border-emerald-500/20">
+              <p className="text-[11px] font-medium text-amber-200/90 mb-1.5">Ressenti aujourd’hui</p>
+              <SessionEffortBlock
+                idPrefix={`stretch-${item.moment}-${item.id}`}
+                persistedValue={sessionEffortStars}
+                suggestedStars={3}
+                onChange={(n) => updateStretchSessionEffortStars(item.moment, item.id, n)}
+              />
+            </div>
+          )}
           {hasInstructions && (
             <>
               {expanded ? (

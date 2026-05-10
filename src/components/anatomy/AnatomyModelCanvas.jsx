@@ -28,7 +28,7 @@ export function applyViewPreset(camera, controls, presetKey, distanceOverride = 
   controls.update();
 }
 
-export function BodyMapCameraApplier({ preset, distanceFactor = 1 }) {
+export function BodyMapCameraApplier({ preset, distanceFactor = 1, onSettledOnce }) {
   const camera = useThree((s) => s.camera);
   const controls = useThree((s) => s.controls);
   const invalidate = useThree((s) => s.invalidate);
@@ -36,18 +36,30 @@ export function BodyMapCameraApplier({ preset, distanceFactor = 1 }) {
   const factorRef = useRef(distanceFactor);
   const frame = useRef(0);
   const fittedDistRef = useRef(null);
+  const settledFiredRef = useRef(false);
 
   useEffect(() => {
     presetRef.current = preset;
     factorRef.current = distanceFactor;
     frame.current = 0;
     fittedDistRef.current = null;
+    settledFiredRef.current = false;
   }, [preset, distanceFactor]);
 
   useFrame(() => {
-    if (!controls?.target) return;
-    const target = controls.target;
     frame.current += 1;
+
+    if (!controls?.target) {
+      invalidate();
+      /* OrbitControls peut arriver après les premiers ticks : sans ça frame reste bloqué et l’aperçu carte reste à opacity-0. */
+      if (!settledFiredRef.current && frame.current >= 48) {
+        settledFiredRef.current = true;
+        onSettledOnce?.();
+      }
+      return;
+    }
+
+    const target = controls.target;
     if (frame.current > 28) return;
 
     const liveDist = camera.position.distanceTo(target);
@@ -61,6 +73,10 @@ export function BodyMapCameraApplier({ preset, distanceFactor = 1 }) {
     const dist = raw * (Number.isFinite(f) && f > 0 ? f : 1);
 
     applyViewPreset(camera, controls, presetRef.current, dist);
+    if (frame.current === 28 && !settledFiredRef.current) {
+      settledFiredRef.current = true;
+      onSettledOnce?.();
+    }
     invalidate();
   });
 
@@ -177,7 +193,7 @@ export function AnatomyInteractiveScene({
           observe={false} : évite les re-fit Bounds au scroll/layout (resize observer),
           qui déclenchait une caméra qui s’éloignait (« dézoom ») en descendant la page.
         */}
-        <Bounds fit clip observe={false} margin={boundsMargin} maxDuration={0.08}>
+        <Bounds fit clip observe={false} margin={boundsMargin} maxDuration={0}>
           <Center>
             <AnatomyModel
               muscleColors={muscleColors}
@@ -217,7 +233,13 @@ export function AnatomyCardStaticScene({
   neutralUnmapped,
   sceneBackground = '#000000',
   /** Pour frameloop demand : invalider quand l’aperçu banque change. */
-  demandSignature = ''
+  demandSignature = '',
+  /** Une fois la caméra stabilisée (évite flash de zoom initial). */
+  onCameraSettledOnce,
+  /** Plus grand = plus de marge autour du maillage (moins de coupures épaules / bras). */
+  boundsMargin = 0.82,
+  /** >1 éloigne légèrement la caméra après le fit Bounds. */
+  cameraDistanceFactor = 1
 }) {
   return (
     <>
@@ -227,7 +249,7 @@ export function AnatomyCardStaticScene({
       <directionalLight position={[-3, 2, -4]} intensity={0.35} />
       <DemandInvalidateOnChange signature={demandSignature} />
       <Suspense fallback={null}>
-        <Bounds fit clip observe={false} margin={0.82} maxDuration={0.08}>
+        <Bounds fit clip observe={false} margin={boundsMargin} maxDuration={0}>
           <Center>
             <AnatomyModel
               muscleColors={muscleColors}
@@ -238,7 +260,11 @@ export function AnatomyCardStaticScene({
           </Center>
         </Bounds>
       </Suspense>
-      <BodyMapCameraApplier preset={viewPreset} />
+      <BodyMapCameraApplier
+        preset={viewPreset}
+        distanceFactor={cameraDistanceFactor}
+        onSettledOnce={onCameraSettledOnce}
+      />
       <OrbitControls
         makeDefault
         enableZoom={false}
@@ -275,7 +301,9 @@ export function AnatomyModelCanvas({
   cardDemandSignature = '',
   boundsMargin,
   cameraDistanceFactor,
-  controlsEnableZoom = true
+  controlsEnableZoom = true,
+  /** Mode carte : après stabilisation caméra (anti-flash). */
+  onStaticCameraSettled
 }) {
   const sceneEl =
     variant === 'cardStatic' ? (
@@ -287,6 +315,9 @@ export function AnatomyModelCanvas({
         neutralUnmapped={neutralUnmapped}
         sceneBackground={sceneBackground ?? '#000000'}
         demandSignature={cardDemandSignature}
+        onCameraSettledOnce={onStaticCameraSettled}
+        boundsMargin={boundsMargin ?? 0.82}
+        cameraDistanceFactor={cameraDistanceFactor ?? 1}
       />
     ) : (
       <AnatomyInteractiveScene

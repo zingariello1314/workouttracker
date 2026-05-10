@@ -1,4 +1,5 @@
-import React from 'react';
+import React, { useMemo } from 'react';
+import { computeBlendedExerciseEffortStars } from '../../utils/exerciseSessionEffortBlend';
 import { Gauge, Plus, ChevronRight, Award } from 'lucide-react';
 import { useTranslation } from '../../utils/translations';
 import {
@@ -87,9 +88,20 @@ export default function SportBankExerciseCard({
   hasRecordedMax = false,
   maxRecord = null,
   onRequestAddToProgram,
-  showAddButton = false
+  showAddButton = false,
+  /** Pour étoiles / difficulté fusionnée (séances, ressenti fiche…). */
+  workoutData = null
 }) {
   const t = useTranslation();
+
+  const effortBlend = useMemo(() => {
+    if (!workoutData || !exercise) return null;
+    try {
+      return computeBlendedExerciseEffortStars(workoutData, exercise);
+    } catch {
+      return null;
+    }
+  }, [workoutData, exercise]);
 
   const open = () => onOpenDetail?.(exercise);
 
@@ -104,6 +116,11 @@ export default function SportBankExerciseCard({
     ? getEquipmentLabel(exercise.equipment, t) || exercise.equipment
     : exercise?.materiel || '';
 
+  const coeffSafe =
+    typeof effectiveLoadCoeff === 'number' && !Number.isNaN(effectiveLoadCoeff)
+      ? effectiveLoadCoeff
+      : 1;
+
   return (
     <div
       role="button"
@@ -115,41 +132,57 @@ export default function SportBankExerciseCard({
           open();
         }
       }}
-      className="group text-left rounded-xl border-2 border-[#0F4C5C]/85 bg-black shadow-lg shadow-black/40 hover:border-[#0F5C45]/80 hover:shadow-[0_0_24px_-8px_rgba(15,92,69,0.45)] transition-all duration-200 p-4 flex h-full min-h-0 flex-col gap-3 cursor-pointer focus:outline-none focus:ring-2 focus:ring-[#0F5C45]/45"
+      className="group text-left rounded-xl border-2 border-[#0F4C5C]/85 bg-black shadow-lg shadow-black/40 hover:border-[#0F5C45]/80 hover:shadow-[0_0_24px_-8px_rgba(15,92,69,0.45)] transition-all duration-200 p-4 grid h-full min-h-[32rem] cursor-pointer focus:outline-none focus:ring-2 focus:ring-[#0F5C45]/45
+        grid-rows-[auto_auto_auto_300px_auto_auto_minmax(3.5rem,1fr)_auto]
+        gap-3"
     >
-      <div className="flex shrink-0 items-start justify-between gap-3 border-b border-[#0F4C5C]/35 pb-3">
-        <div className="min-w-0 flex-1 flex flex-col gap-1.5">
-          <h4 className="text-sm font-semibold text-white leading-snug tracking-tight line-clamp-3">
+      <div className="flex shrink-0 items-start justify-between gap-3 border-b border-[#0F4C5C]/35 pb-3 min-h-[3.75rem] row-start-1">
+        <div className="min-w-0 flex-1 flex flex-col justify-start gap-1">
+          <h4 className="text-sm font-semibold text-white leading-snug tracking-tight line-clamp-2 min-h-[2.5rem]">
             {exercise.name}
           </h4>
-          {showAddButton && onRequestAddToProgram ? (
-            <button
-              type="button"
-              onClick={(e) => {
-                e.stopPropagation();
-                onRequestAddToProgram({ kind: 'exercise', exercise });
-              }}
-              className="inline-flex w-fit max-w-full items-center gap-1 rounded-md border border-[#0F5C45]/55 bg-[#0F5C45]/18 px-2 py-0.5 text-[10px] font-medium leading-tight text-teal-100 transition hover:bg-[#0F5C45]/35 focus:outline-none focus:ring-2 focus:ring-[#0F5C45]/45"
-            >
-              <Plus className="h-3 w-3 shrink-0" />
-              Ajouter au programme
-            </button>
-          ) : null}
         </div>
-        {typeof effectiveLoadCoeff === 'number' && !Number.isNaN(effectiveLoadCoeff) && (
-          <div className="flex shrink-0 flex-col items-end gap-1">
-            <LoadDifficultyStars coeff={effectiveLoadCoeff} className="scale-90" />
-            <div className="flex items-center gap-1 rounded-md border border-[#0F4C5C]/50 bg-black px-2 py-0.5">
-              <Gauge className="h-3.5 w-3.5 text-sky-400" />
-              <span className="text-[10px] font-bold tabular-nums text-sky-200">
-                {Math.round(effectiveLoadCoeff * 100) / 100}
-              </span>
-            </div>
+        <div className="flex shrink-0 flex-col items-end gap-1" title="Étoiles = difficulté estimée (séances / ressenti / auto) lorsque tes données sont disponibles">
+          <LoadDifficultyStars
+            coeff={coeffSafe}
+            starCountOverride={
+              effortBlend?.displayStars != null ? effortBlend.displayStars : undefined
+            }
+            className="scale-90"
+          />
+          <div
+            className="flex items-center gap-1 rounded-md border border-[#0F4C5C]/50 bg-black px-2 py-0.5"
+            title="Indice charge calendrier (réglage fiche)"
+          >
+            <Gauge className="h-3.5 w-3.5 text-sky-400" />
+            <span className="text-[10px] font-bold tabular-nums text-sky-200">
+              {Math.round(coeffSafe * 100) / 100}
+            </span>
           </div>
+        </div>
+      </div>
+
+      <div className="row-start-2 min-h-[1.875rem] flex flex-col justify-start" data-no-drag-scroll>
+        {showAddButton && onRequestAddToProgram ? (
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              onRequestAddToProgram({ kind: 'exercise', exercise });
+            }}
+            className="inline-flex w-fit max-w-full items-center gap-1 rounded-md border border-[#0F5C45]/55 bg-[#0F5C45]/18 px-2 py-0.5 text-[10px] font-medium leading-tight text-teal-100 transition hover:bg-[#0F5C45]/35 focus:outline-none focus:ring-2 focus:ring-[#0F5C45]/45"
+          >
+            <Plus className="h-3 w-3 shrink-0" />
+            Ajouter au programme
+          </button>
+        ) : (
+          <span className="invisible inline-block text-[10px] py-0.5" aria-hidden>
+            Ajouter au programme
+          </span>
         )}
       </div>
 
-      <div className="flex min-h-[3.25rem] shrink-0 flex-wrap content-center items-center gap-2 text-[10px]">
+      <div className="row-start-3 flex min-h-[4.25rem] shrink-0 flex-wrap content-start items-start gap-2 text-[10px]">
         <span className="px-2 py-0.5 rounded-md border border-sky-500/35 bg-sky-950/35 text-sky-200">
           {categoryStr}
         </span>
@@ -174,10 +207,12 @@ export default function SportBankExerciseCard({
         )}
       </div>
 
-      <AnatomyExerciseCardPreview exercise={exercise} />
+      <div className="row-start-4 flex h-[300px] w-full min-h-0 shrink-0 overflow-hidden [&>*]:min-h-0">
+        <AnatomyExerciseCardPreview exercise={exercise} previewLayout="gridFill" />
+      </div>
 
-      {(exercise.primaryMuscles?.length > 0 || exercise.secondaryMuscles?.length > 0) && (
-        <div className="space-y-1">
+      {(exercise.primaryMuscles?.length > 0 || exercise.secondaryMuscles?.length > 0) ? (
+        <div className="row-start-5 space-y-1 min-h-[2.75rem]">
           {exercise.primaryMuscles?.length > 0 && (
             <div className="text-[10px] text-teal-600/90 leading-snug" title={exercise.primaryMuscles.join(', ')}>
               <span className="text-teal-800 uppercase tracking-wide font-medium">Primaires · </span>
@@ -195,26 +230,35 @@ export default function SportBankExerciseCard({
             </div>
           )}
         </div>
+      ) : (
+        <div className="row-start-5 min-h-[2.75rem]" aria-hidden />
       )}
 
-      {eqStr ? (
-        <div className="flex items-start justify-between gap-2 border-t border-[#0F4C5C]/30 pt-3 text-[11px]">
-          <span className="font-medium text-teal-800">Équipement</span>
-          <span className="text-right text-teal-100/85 leading-snug">{eqStr}</span>
-        </div>
-      ) : null}
+      <div className="row-start-6 flex min-h-[2.85rem] flex-col justify-start gap-2 border-t border-[#0F4C5C]/30 pt-3">
+        {eqStr ? (
+          <div className="flex items-start justify-between gap-2 text-[11px]">
+            <span className="font-medium text-teal-800 shrink-0">Équipement</span>
+            <span className="text-right text-teal-100/85 leading-snug">{eqStr}</span>
+          </div>
+        ) : (
+          <div className="text-[11px] text-transparent select-none pointer-events-none" aria-hidden>
+            —
+          </div>
+        )}
+        {hasRecordedMax && maxRecord?.recordedAt ? (
+          <div className="rounded-lg border border-emerald-500/30 bg-emerald-950/15 px-2 py-1 text-[10px] text-emerald-200">
+            Dernier max : {new Date(maxRecord.recordedAt).toLocaleDateString('fr-FR')}
+          </div>
+        ) : (
+          <div className="min-h-[1.35rem]" aria-hidden />
+        )}
+      </div>
 
-      {hasRecordedMax && maxRecord?.recordedAt && (
-        <div className="rounded-lg border border-emerald-500/30 bg-emerald-950/15 px-2 py-1.5 text-[10px] text-emerald-200">
-          Dernier max : {new Date(maxRecord.recordedAt).toLocaleDateString('fr-FR')}
-        </div>
-      )}
-
-      <p className="text-[11px] text-teal-100/75 line-clamp-3 leading-relaxed border-t border-[#0F4C5C]/30 pt-3 flex-1">
+      <p className="row-start-7 text-[11px] text-teal-100/75 line-clamp-3 leading-relaxed border-t border-[#0F4C5C]/30 pt-3 min-h-[3.75rem]">
         {exercise.notes || exercise.technique || t('exercisesTab.card.noNotesShort', 'Ouverture fiche pour détails et technique.')}
       </p>
 
-      <p className="flex items-center gap-1 text-[10px] text-teal-600/90">
+      <p className="row-start-8 flex items-center gap-1 text-[10px] text-teal-600/90">
         <ChevronRight className="h-3.5 w-3.5 shrink-0" />
         {t('exercisesTab.card.openHint', 'Cliquez pour la fiche complète et les réglages.')}
       </p>

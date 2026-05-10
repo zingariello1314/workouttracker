@@ -104,6 +104,9 @@ export function computeStretchXpFromGlobal5(mean5) {
 
 /**
  * Point d’entrée unique pour le calcul d’XP (detail, banque, service XP).
+ * Évolutions possibles : léger bonus si plusieurs critères sont réellement remplis ;
+ * médiane récente sur quelques coches pour lisser des journées « tout à 5 » ou « tout à 1 » ;
+ * modulation par feedback séance seulement si la règle reste lisible pour l’utilisateur.
  */
 export function computeStretchXpFromRating(rating) {
   if (!rating || typeof rating !== 'object') return STRETCH_XP_FALLBACK;

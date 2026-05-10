@@ -484,6 +484,7 @@ const ExercisesTab = () => {
                       maxRecord={maxRecordsByExerciseId.get(String(ex.id)) || null}
                       showAddButton={isAuthenticated}
                       onRequestAddToProgram={isAuthenticated ? (p) => setBankAddPayload(p) : undefined}
+                      workoutData={data}
                     />
                   ))}
                 </div>
@@ -993,6 +994,7 @@ const ExercisesTab = () => {
                       maxRecord={maxRecordsByExerciseId.get(String(exercise.id)) || null}
                       showAddButton={isAuthenticated}
                       onRequestAddToProgram={isAuthenticated ? (p) => setBankAddPayload(p) : undefined}
+                      workoutData={data}
                     />
                   ) : (
                     <ExerciseCard

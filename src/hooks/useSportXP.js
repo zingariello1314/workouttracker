@@ -214,6 +214,24 @@ export const useSportXP = () => {
         (stretchRatingsChecksum * 17 + stretchRatingChecksum(r) + k.length) | 0;
     }
 
+    const sessionEffortStars = workoutData.exerciseSessionEffortStars || {};
+    let sessionStarsChecksum = 0;
+    for (const [k, sv] of Object.entries(sessionEffortStars)) {
+      const n = Number(sv);
+      if (!Number.isFinite(n)) continue;
+      sessionStarsChecksum =
+        (sessionStarsChecksum * 41 + Math.round(n * 10) + k.length) | 0;
+    }
+
+    const stretchSessionEffortStars = workoutData.stretchSessionEffortStars || {};
+    let stretchSessionStarsChecksum = 0;
+    for (const [k, sv] of Object.entries(stretchSessionEffortStars)) {
+      const n = Number(sv);
+      if (!Number.isFinite(n)) continue;
+      stretchSessionStarsChecksum =
+        (stretchSessionStarsChecksum * 43 + Math.round(n * 10) + k.length) | 0;
+    }
+
     let totalCalories = 0;
     if (garminData?.dailyMetrics) {
       Object.values(garminData.dailyMetrics).forEach(day => {
@@ -313,6 +331,8 @@ export const useSportXP = () => {
       checkedStretchCount,
       stretchKeysChecksum,
       stretchRatingsChecksum,
+      sessionStarsChecksum,
+      stretchSessionStarsChecksum,
       circuitProgressEntries,
       circuitProgressChecksum,
       Object.keys(circuitDefinitions).length,

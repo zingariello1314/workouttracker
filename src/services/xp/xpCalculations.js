@@ -28,7 +28,7 @@ import { parseStretchItemKey } from '../../utils/exerciseKeyGenerator';
 import { buildPlannedStretchItemsForDateStr } from '../../utils/stretchUtils';
 import { workoutProgram } from '../../data/workoutProgram';
 import { normalizeManualDailyWalkByDate, mergedDailySteps } from '../../utils/sport/manualDailyWalkUtils';
-import { computeStretchXpFromRating } from '../../utils/stretchPerceivedRatings';
+import { computeStretchXpFromRating, computeStretchXpFromGlobal5 } from '../../utils/stretchPerceivedRatings';
 
 export {
   STRETCH_XP_MIN,
@@ -361,6 +361,7 @@ export const calculateSportXP = (workoutData, garminData, enduranceData, sportOp
   //   programme par défaut (admin) + programmes custom utilisateur passés en ctx.
   {
     const stretchRatings = workoutData?.stretchPerceivedRatings || {};
+    const stretchSessionEffortStars = workoutData?.stretchSessionEffortStars || {};
     const userPrograms = Array.isArray(sportOptions?.programs) ? sportOptions.programs : [];
     const checked = workoutData?.checkedStretches || {};
     const plannedCacheByDate = new Map(); // dateStr → Map<itemId,string|null>
@@ -387,7 +388,13 @@ export const calculateSportXP = (workoutData, garminData, enduranceData, sportOp
       const rating = stretchKey ? stretchRatings[stretchKey] : null;
 
       stretchesCount += 1;
-      stretchesXp += computeStretchXpFromRating(rating);
+      const sess = stretchSessionEffortStars[key];
+      const sns = Number(sess);
+      if (Number.isFinite(sns) && sns >= 1 && sns <= 5) {
+        stretchesXp += computeStretchXpFromGlobal5(sns);
+      } else {
+        stretchesXp += computeStretchXpFromRating(rating);
+      }
     }
 
     breakdown.stretches = stretchesCount;

@@ -26,8 +26,21 @@ function pickStoredState(currentData, keys) {
   return { key: keys[0] || '', reps: '', isChecked: false };
 }
 
+function pickStoredSessionStars(currentData, keys, primaryKey) {
+  const map = currentData?.exerciseSessionEffortStars || {};
+  for (const key of keys) {
+    const s = map[key];
+    const n = Number(s);
+    if (Number.isFinite(n) && n >= 1 && n <= 5) return n;
+  }
+  const p = map[primaryKey];
+  const pn = Number(p);
+  if (Number.isFinite(pn) && pn >= 1 && pn <= 5) return pn;
+  return null;
+}
+
 /**
- * @returns {{ toggleExercise: Function, updateReps: Function, getExerciseStatus: Function }}
+ * @returns {{ toggleExercise: Function, updateReps: Function, updateSessionEffortStars: Function, getExerciseStatus: Function }}
  */
 export const useExerciseTracking = (options = {}) => {
   const {
@@ -80,10 +93,12 @@ export const useExerciseTracking = (options = {}) => {
 
         const nextReps = { ...(currentData.reps || {}) };
         const nextChk = { ...(currentData.checkedExercises || {}) };
+        const nextStars = { ...(currentData.exerciseSessionEffortStars || {}) };
 
         keys.forEach((k) => {
           delete nextReps[k];
           delete nextChk[k];
+          delete nextStars[k];
         });
 
         let repsVal = '';
@@ -102,22 +117,26 @@ export const useExerciseTracking = (options = {}) => {
         updateTempExerciseData({
           ...currentData,
           checkedExercises: nextChk,
-          reps: nextReps
+          reps: nextReps,
+          exerciseSessionEffortStars: nextStars
         });
         return;
       }
 
       const nextReps = { ...(currentData.reps || {}) };
       const nextChk = { ...(currentData.checkedExercises || {}) };
+      const nextStars = { ...(currentData.exerciseSessionEffortStars || {}) };
       keys.forEach((k) => {
         delete nextReps[k];
         delete nextChk[k];
+        delete nextStars[k];
       });
 
       updateTempExerciseData({
         ...currentData,
         checkedExercises: nextChk,
-        reps: nextReps
+        reps: nextReps,
+        exerciseSessionEffortStars: nextStars
       });
     },
     [date, getCurrentData, updateTempExerciseData, workout.exercices, allKeysForExercise, primaryKeyForExercise]
@@ -148,24 +167,54 @@ export const useExerciseTracking = (options = {}) => {
 
   /**
    * @param {Object} exercise
-   * @returns {{ isChecked: boolean, reps: string }}
+   * @param {number} starCount — 1–5 (dernier clic gagne)
+   */
+  const updateSessionEffortStars = useCallback(
+    (exercise, starCount) => {
+      const currentData = getCurrentData();
+      const primaryKey = primaryKeyForExercise(exercise);
+      const keys = allKeysForExercise(exercise);
+      const next = { ...(currentData.exerciseSessionEffortStars || {}) };
+      keys.forEach((k) => {
+        if (k !== primaryKey) delete next[k];
+      });
+      const n = Math.round(Number(starCount));
+      if (!Number.isFinite(n) || n < 1 || n > 5) {
+        delete next[primaryKey];
+      } else {
+        next[primaryKey] = n;
+      }
+      updateTempExerciseData({
+        ...currentData,
+        exerciseSessionEffortStars: next
+      });
+    },
+    [getCurrentData, updateTempExerciseData, primaryKeyForExercise, allKeysForExercise]
+  );
+
+  /**
+   * @param {Object} exercise
+   * @returns {{ isChecked: boolean, reps: string, sessionEffortStars: number|null }}
    */
   const getExerciseStatus = useCallback(
     (exercise) => {
       const currentData = getCurrentData();
       const keys = allKeysForExercise(exercise);
+      const primaryKey = primaryKeyForExercise(exercise);
       const picked = pickStoredState(currentData, keys);
       return {
         isChecked: picked.isChecked,
-        reps: picked.reps
+        reps: picked.reps,
+        sessionEffortStars: pickStoredSessionStars(currentData, keys, primaryKey)
       };
     },
-    [getCurrentData, allKeysForExercise]
+    [getCurrentData, allKeysForExercise, primaryKeyForExercise]
   );
 
   return {
     toggleExercise,
     updateReps,
+    updateSessionEffortStars,
     getExerciseStatus
   };
 };

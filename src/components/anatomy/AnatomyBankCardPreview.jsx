@@ -1,6 +1,8 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { AnatomyModelCanvas } from './AnatomyModelCanvas';
+import AnatomyBankCardRaster from './AnatomyBankCardRaster';
 import { resolveBankItemAnatomy } from '../../utils/anatomy/resolveBankItemAnatomy';
+import { buildCardDemandSignature } from '../../utils/anatomy/anatomyPreviewRasterKey';
 import {
   registerAnatomyPreviewWaiter,
   releaseAnatomyPreviewSlot,
@@ -8,25 +10,67 @@ import {
   unregisterAnatomyPreviewWaiter
 } from '../../utils/anatomy/anatomyPreviewSlot';
 
+/** Délai avant destruction du canvas hors viewport (aperçus « compact » seulement). */
+const RELEASE_DELAY_MS = 38000;
+
+/** Attente après sortie de l’écran avant de libérer. */
+const OUT_VIEW_DEBOUNCE_MS = 380;
+
 /** Bordure / halo alignés sur `Card variant="sport"` (#0F4C5C / #0F5C45). */
 const PREVIEW_FRAME =
   'border-2 border-[#0F4C5C]/90 bg-black shadow-[0_0_18px_-5px_rgba(15,76,92,0.75),0_0_28px_-12px_rgba(15,92,69,0.35)]';
 
 /**
- * Aperçu 3D vertical sur carte banque : toujours un corps affiché (repli si muscles non mappés).
- * Slots WebGL limités + file d’attente réactive ; Canvas en frameloop « demand » pour limiter la charge GPU.
+ * Banque grille / carrousels (`gridFill`) : image WebP pré-rendue — voir `/public/anatomy-previews/` + HOWTO.txt.
+ * Liste / ExerciseCard (`compact`) : WebGL léger avec file de slots WebGL.
  */
 export default function AnatomyBankCardPreview({
   primaryMuscles = [],
   secondaryMuscles = [],
   mode = 'exercise',
+  layout = 'compact',
+  /** Clé banque `exerciseDatabase` ou id cardio (`cardio_*`) pour overrides caméra/vues. */
+  exerciseDatabaseKey = null,
+  /** Clé entrée `stretchDatabase`. */
+  stretchDatabaseKey = null,
   className = ''
 }) {
+  const anatomy = useMemo(
+    () =>
+      resolveBankItemAnatomy(
+        {
+          primaryMuscles: Array.isArray(primaryMuscles) ? primaryMuscles : [],
+          secondaryMuscles: Array.isArray(secondaryMuscles) ? secondaryMuscles : []
+        },
+        mode === 'stretch' ? 'stretch' : 'exercise',
+        exerciseDatabaseKey
+          ? { exerciseDatabaseKey }
+          : stretchDatabaseKey
+            ? { stretchDatabaseKey }
+            : undefined
+      ),
+    [primaryMuscles, secondaryMuscles, mode, exerciseDatabaseKey, stretchDatabaseKey]
+  );
+
+  if (layout === 'gridFill') {
+    return (
+      <AnatomyBankCardRaster anatomy={anatomy} mode={mode === 'stretch' ? 'stretch' : 'exercise'} className={className} />
+    );
+  }
+
+  return (
+    <AnatomyBankCardPreviewGl anatomy={anatomy} className={className} />
+  );
+}
+
+function AnatomyBankCardPreviewGl({ anatomy, className }) {
   const hostRef = useRef(null);
   const heldSlotRef = useRef(false);
   const inViewRef = useRef(false);
   const [inView, setInView] = useState(false);
   const [slotOk, setSlotOk] = useState(false);
+  const [cameraVisible, setCameraVisible] = useState(false);
+  const releaseTimerRef = useRef(null);
 
   const waiterRef = useRef(null);
   if (!waiterRef.current) {
@@ -53,62 +97,124 @@ export default function AnatomyBankCardPreview({
       setInView(true);
       return;
     }
+    let hideT;
     const ob = new IntersectionObserver(
-      ([entry]) => setInView(Boolean(entry?.isIntersecting)),
-      { root: null, rootMargin: '120px', threshold: 0.01 }
+      ([entry]) => {
+        const vis = Boolean(entry?.isIntersecting);
+        if (vis) {
+          if (hideT != null) window.clearTimeout(hideT);
+          hideT = null;
+          setInView(true);
+        } else {
+          if (hideT != null) window.clearTimeout(hideT);
+          hideT = window.setTimeout(() => {
+            hideT = null;
+            setInView(false);
+          }, OUT_VIEW_DEBOUNCE_MS);
+        }
+      },
+      { root: null, rootMargin: '280px 0px 280px 0px', threshold: 0 }
     );
     ob.observe(el);
-    return () => ob.disconnect();
+    return () => {
+      ob.disconnect();
+      if (hideT != null) window.clearTimeout(hideT);
+    };
   }, []);
+
+  const clearReleaseTimer = () => {
+    if (releaseTimerRef.current != null) {
+      clearTimeout(releaseTimerRef.current);
+      releaseTimerRef.current = null;
+    }
+  };
+
+  const fullReleaseSlot = () => {
+    const { bound } = waiterRef.current;
+    unregisterAnatomyPreviewWaiter(bound);
+    if (heldSlotRef.current) {
+      releaseAnatomyPreviewSlot();
+      heldSlotRef.current = false;
+    }
+    setSlotOk(false);
+    setCameraVisible(false);
+  };
 
   useEffect(() => {
     const { bound } = waiterRef.current;
 
-    if (!inView) {
-      unregisterAnatomyPreviewWaiter(bound);
-      if (heldSlotRef.current) {
-        releaseAnatomyPreviewSlot();
-        heldSlotRef.current = false;
+    if (inView) {
+      clearReleaseTimer();
+      bound();
+      if (!heldSlotRef.current) {
+        registerAnatomyPreviewWaiter(bound);
       }
-      setSlotOk(false);
-      return;
+      return undefined;
     }
 
-    bound();
+    unregisterAnatomyPreviewWaiter(bound);
     if (!heldSlotRef.current) {
-      registerAnatomyPreviewWaiter(bound);
+      setSlotOk(false);
+      setCameraVisible(false);
+      return () => {};
     }
+
+    clearReleaseTimer();
+    releaseTimerRef.current = window.setTimeout(() => {
+      fullReleaseSlot();
+      releaseTimerRef.current = null;
+    }, RELEASE_DELAY_MS);
 
     return () => {
-      unregisterAnatomyPreviewWaiter(bound);
-      if (heldSlotRef.current) {
-        releaseAnatomyPreviewSlot();
-        heldSlotRef.current = false;
-      }
-      setSlotOk(false);
+      clearReleaseTimer();
     };
   }, [inView]);
 
-  const anatomy = useMemo(
-    () =>
-      resolveBankItemAnatomy(
-        {
-          primaryMuscles: Array.isArray(primaryMuscles) ? primaryMuscles : [],
-          secondaryMuscles: Array.isArray(secondaryMuscles) ? secondaryMuscles : []
-        },
-        mode === 'stretch' ? 'stretch' : 'exercise'
-      ),
-    [primaryMuscles, secondaryMuscles, mode]
+  useEffect(() => {
+    if (!inView || slotOk) return undefined;
+    const { bound } = waiterRef.current;
+    const tick = () => {
+      if (!inViewRef.current || heldSlotRef.current) return;
+      bound();
+      if (!heldSlotRef.current) registerAnatomyPreviewWaiter(bound);
+    };
+    tick();
+    const id = window.setInterval(tick, 1100);
+    return () => window.clearInterval(id);
+  }, [inView, slotOk]);
+
+  useEffect(
+    () => () => {
+      clearReleaseTimer();
+      const { bound } = waiterRef.current;
+      unregisterAnatomyPreviewWaiter(bound);
+      if (heldSlotRef.current) {
+        releaseAnatomyPreviewSlot();
+        heldSlotRef.current = false;
+      }
+    },
+    []
   );
 
-  const cardDemandSignature = useMemo(() => {
-    const parts = Object.entries(anatomy.meshColors)
-      .sort(([a], [b]) => a.localeCompare(b))
-      .map(([k, v]) => `${k}:${v}`);
-    return `${anatomy.inferredView}|${anatomy.uniformBodyColor ?? ''}|${String(anatomy.usedFullBodyUniform)}|${String(anatomy.anatomyFallback)}|${parts.join(';')}`;
-  }, [anatomy]);
+  const cardDemandSignature = useMemo(() => buildCardDemandSignature(anatomy), [anatomy]);
+
+  useEffect(() => {
+    setCameraVisible(false);
+  }, [cardDemandSignature]);
 
   const shouldMountGl = inView && slotOk;
+
+  useEffect(() => {
+    if (!shouldMountGl) setCameraVisible(false);
+  }, [shouldMountGl]);
+
+  useEffect(() => {
+    if (!shouldMountGl) return undefined;
+    const tid = window.setTimeout(() => {
+      setCameraVisible(true);
+    }, 1400);
+    return () => window.clearTimeout(tid);
+  }, [shouldMountGl, cardDemandSignature]);
 
   const neutralUnmapped =
     anatomy.usedFullBodyUniform && !anatomy.anatomyFallback
@@ -117,35 +223,50 @@ export default function AnatomyBankCardPreview({
         ? anatomy.uniformBodyColor
         : '#334155';
 
+  const innerScale = 'scale-[1.12]';
+  const minCanvas = 'min-h-[188px]';
+
   return (
     <div
       ref={hostRef}
       className={`flex shrink-0 justify-center pointer-events-none select-none ${className}`}
       aria-hidden
     >
-      <div
-        className={`w-full max-w-[148px] rounded-xl overflow-hidden ${PREVIEW_FRAME} outline-none`}
+      <div className={`w-full max-w-[148px] rounded-xl overflow-hidden ${PREVIEW_FRAME} outline-none`}
         style={{ aspectRatio: '3 / 5', minHeight: 168, maxHeight: 220 }}
       >
         <div className="relative h-full w-full bg-black overflow-hidden">
-          <div className="absolute inset-0 flex items-center justify-center origin-center scale-[1.12]">
+          <div className={`absolute inset-0 flex items-center justify-center origin-center ${innerScale}`}>
+            <div
+              className={`absolute inset-0 z-0 bg-black transition-opacity duration-150 ${
+                shouldMountGl && cameraVisible ? 'opacity-0 pointer-events-none' : 'opacity-100'
+              }`}
+              aria-hidden
+            >
+              <div className={`h-full w-full ${minCanvas} animate-pulse bg-gradient-to-b from-slate-900/90 to-black`} />
+            </div>
             {shouldMountGl ? (
-              <AnatomyModelCanvas
-                variant="cardStatic"
-                muscleColors={anatomy.meshColors}
-                uniformBodyColor={anatomy.uniformBodyColor}
-                viewPreset={anatomy.inferredView}
-                sceneBackground="#000000"
-                dpr={[1, 1]}
-                neutralUnmapped={neutralUnmapped}
-                cardDemandSignature={cardDemandSignature}
-                className="h-full w-full min-h-[188px]"
-              />
-            ) : (
-              <div className="h-full w-full min-h-[188px] bg-black" aria-hidden>
-                <div className="h-full w-full animate-pulse bg-gradient-to-b from-slate-900/90 to-black" />
+              <div
+                className={`relative z-10 h-full w-full ${minCanvas} transition-opacity duration-150 ease-out ${
+                  cameraVisible ? 'opacity-100' : 'opacity-0'
+                }`}
+              >
+                <AnatomyModelCanvas
+                  variant="cardStatic"
+                  muscleColors={anatomy.meshColors}
+                  uniformBodyColor={anatomy.uniformBodyColor}
+                  viewPreset={anatomy.inferredView}
+                  sceneBackground="#000000"
+                  dpr={[1, 1]}
+                  neutralUnmapped={neutralUnmapped}
+                  cardDemandSignature={cardDemandSignature}
+                  onStaticCameraSettled={() => setCameraVisible(true)}
+                  boundsMargin={anatomy.cameraTuningOverride?.boundsMargin ?? 0.82}
+                  cameraDistanceFactor={anatomy.cameraTuningOverride?.cameraDistanceFactor ?? 1}
+                  className={`h-full w-full ${minCanvas}`}
+                />
               </div>
-            )}
+            ) : null}
           </div>
         </div>
       </div>

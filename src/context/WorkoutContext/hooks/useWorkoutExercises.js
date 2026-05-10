@@ -191,11 +191,21 @@ export const useWorkoutExercises = (data, updateData, getCurrentData) => {
     Object.keys(newData.exerciseSetWeights).forEach(key => {
       if (key.startsWith(dateStr)) delete newData.exerciseSetWeights[key];
     });
+
+    if (!newData.exerciseSessionEffortStars) newData.exerciseSessionEffortStars = {};
+    Object.keys(newData.exerciseSessionEffortStars).forEach(key => {
+      if (key.startsWith(dateStr)) delete newData.exerciseSessionEffortStars[key];
+    });
     
     Object.keys(newData.checkedStretches || {}).forEach(key => {
       if (key.startsWith(dateStr)) {
         delete newData.checkedStretches[key];
       }
+    });
+
+    if (!newData.stretchSessionEffortStars) newData.stretchSessionEffortStars = {};
+    Object.keys(newData.stretchSessionEffortStars).forEach((key) => {
+      if (key.startsWith(dateStr)) delete newData.stretchSessionEffortStars[key];
     });
     
     updateData(newData);

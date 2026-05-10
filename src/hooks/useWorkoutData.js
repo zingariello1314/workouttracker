@@ -19,7 +19,11 @@ const generateTestWorkoutData = () => {
     progressPhotos: [],
     exerciseIntensityCoeffs: {},
     exercisePerceivedRatings: {},
-    exercisePersonalNotes: {}
+    exercisePersonalNotes: {},
+    exerciseSessionEffortStars: {},
+    stretchPerceivedRatings: {},
+    stretchPersonalNotes: {},
+    stretchSessionEffortStars: {}
   };
 
   // Générer des données pour les 30 derniers jours
@@ -136,6 +140,11 @@ const INITIAL_WORKOUT_DATA = {
   exercisePerceivedRatings: {},
   exercisePersonalNotes: {},
   /**
+   * Ressenti 1–5 étoiles par clé jour+exercice (même schéma que `reps`).
+   * Saisie dans l’onglet Aujourd’hui ; prise en compte dans l’analyse de difficulté une fois l’exercice coché.
+   */
+  exerciseSessionEffortStars: {},
+  /**
    * Notes subjectives 1–10 par critère pour chaque étirement de la banque.
    * Format : { [stretchKey]: { difficulty: 1-10, enjoyment: 1-10, recovery: 1-10 } }
    * La moyenne des 3 critères pilote l'XP gagnée par étirement coché (100 → 300 XP).
@@ -145,6 +154,11 @@ const INITIAL_WORKOUT_DATA = {
   stretchPerceivedRatings: {},
   /** Notes personnelles libres par étirement (clés stretchKey de la banque). */
   stretchPersonalNotes: {},
+  /**
+   * Étoiles 1–5 « ressenti du jour » par clé item (`YYYY-MM-DD_stretch_{moment}_{id}`).
+   * Si renseigné pour une coche validée, l’XP de cette coche suit ce barème (100–300) au lieu de la fiche banque.
+   */
+  stretchSessionEffortStars: {},
   /** Records max courants par exercice (street/muscu/endurance/boxe) */
   exerciseMaxRecords: [],
   /** Historique complet des enregistrements de performances */
@@ -496,6 +510,30 @@ export const useWorkoutData = (options = {}) => {
         newData.exerciseSetWeights = cleanSets;
       }
 
+      if (
+        newData.exerciseSessionEffortStars &&
+        typeof newData.exerciseSessionEffortStars === 'object'
+      ) {
+        const cleanStars = {};
+        for (const [key, raw] of Object.entries(newData.exerciseSessionEffortStars)) {
+          const n = Math.round(Number(raw));
+          if (Number.isFinite(n) && n >= 1 && n <= 5) cleanStars[key] = n;
+        }
+        newData.exerciseSessionEffortStars = cleanStars;
+      }
+
+      if (
+        newData.stretchSessionEffortStars &&
+        typeof newData.stretchSessionEffortStars === 'object'
+      ) {
+        const cleanStretchStars = {};
+        for (const [key, raw] of Object.entries(newData.stretchSessionEffortStars)) {
+          const n = Math.round(Number(raw));
+          if (Number.isFinite(n) && n >= 1 && n <= 5) cleanStretchStars[key] = n;
+        }
+        newData.stretchSessionEffortStars = cleanStretchStars;
+      }
+
       // Validation des photos de progression
       if (newData.progressPhotos && !Array.isArray(newData.progressPhotos)) {
         console.warn('progressPhotos corrompu, réinitialisation');
@@ -588,6 +626,26 @@ export const useWorkoutData = (options = {}) => {
         exercisePersonalNotes:
           newData && newData.exercisePersonalNotes && typeof newData.exercisePersonalNotes === 'object'
             ? { ...newData.exercisePersonalNotes }
+            : {},
+        exerciseSessionEffortStars:
+          newData &&
+          newData.exerciseSessionEffortStars &&
+          typeof newData.exerciseSessionEffortStars === 'object'
+            ? { ...newData.exerciseSessionEffortStars }
+            : {},
+        stretchPerceivedRatings:
+          newData && newData.stretchPerceivedRatings && typeof newData.stretchPerceivedRatings === 'object'
+            ? { ...newData.stretchPerceivedRatings }
+            : {},
+        stretchPersonalNotes:
+          newData && newData.stretchPersonalNotes && typeof newData.stretchPersonalNotes === 'object'
+            ? { ...newData.stretchPersonalNotes }
+            : {},
+        stretchSessionEffortStars:
+          newData &&
+          newData.stretchSessionEffortStars &&
+          typeof newData.stretchSessionEffortStars === 'object'
+            ? { ...newData.stretchSessionEffortStars }
             : {},
         exerciseMaxRecords:
           newData && Array.isArray(newData.exerciseMaxRecords) ? [...newData.exerciseMaxRecords] : [],
@@ -872,6 +930,24 @@ export const useWorkoutData = (options = {}) => {
                 migratedData.exercisePersonalNotes && typeof migratedData.exercisePersonalNotes === 'object'
                   ? { ...migratedData.exercisePersonalNotes }
                   : {},
+              exerciseSessionEffortStars:
+                migratedData.exerciseSessionEffortStars &&
+                typeof migratedData.exerciseSessionEffortStars === 'object'
+                  ? { ...migratedData.exerciseSessionEffortStars }
+                  : {},
+              stretchPerceivedRatings:
+                migratedData.stretchPerceivedRatings && typeof migratedData.stretchPerceivedRatings === 'object'
+                  ? { ...migratedData.stretchPerceivedRatings }
+                  : {},
+              stretchPersonalNotes:
+                migratedData.stretchPersonalNotes && typeof migratedData.stretchPersonalNotes === 'object'
+                  ? { ...migratedData.stretchPersonalNotes }
+                  : {},
+              stretchSessionEffortStars:
+                migratedData.stretchSessionEffortStars &&
+                typeof migratedData.stretchSessionEffortStars === 'object'
+                  ? { ...migratedData.stretchSessionEffortStars }
+                  : {},
               exerciseMaxRecords: Array.isArray(migratedData.exerciseMaxRecords) ? migratedData.exerciseMaxRecords : [],
               exerciseMaxHistory: Array.isArray(migratedData.exerciseMaxHistory) ? migratedData.exerciseMaxHistory : [],
               performanceRetestPlans: Array.isArray(migratedData.performanceRetestPlans) ? migratedData.performanceRetestPlans : [],
@@ -932,6 +1008,26 @@ export const useWorkoutData = (options = {}) => {
                     migratedBackup.exercisePersonalNotes && typeof migratedBackup.exercisePersonalNotes === 'object'
                       ? { ...migratedBackup.exercisePersonalNotes }
                       : {},
+                  exerciseSessionEffortStars:
+                    migratedBackup.exerciseSessionEffortStars &&
+                    typeof migratedBackup.exerciseSessionEffortStars === 'object'
+                      ? { ...migratedBackup.exerciseSessionEffortStars }
+                      : {},
+                  stretchPerceivedRatings:
+                    migratedBackup.stretchPerceivedRatings &&
+                    typeof migratedBackup.stretchPerceivedRatings === 'object'
+                      ? { ...migratedBackup.stretchPerceivedRatings }
+                      : {},
+                  stretchPersonalNotes:
+                    migratedBackup.stretchPersonalNotes &&
+                    typeof migratedBackup.stretchPersonalNotes === 'object'
+                      ? { ...migratedBackup.stretchPersonalNotes }
+                      : {},
+                  stretchSessionEffortStars:
+                    migratedBackup.stretchSessionEffortStars &&
+                    typeof migratedBackup.stretchSessionEffortStars === 'object'
+                      ? { ...migratedBackup.stretchSessionEffortStars }
+                      : {},
                   exerciseMaxRecords: Array.isArray(migratedBackup.exerciseMaxRecords) ? migratedBackup.exerciseMaxRecords : [],
                   exerciseMaxHistory: Array.isArray(migratedBackup.exerciseMaxHistory) ? migratedBackup.exerciseMaxHistory : [],
                   performanceRetestPlans: Array.isArray(migratedBackup.performanceRetestPlans) ? migratedBackup.performanceRetestPlans : [],
@@ -976,6 +1072,26 @@ export const useWorkoutData = (options = {}) => {
                   migratedBackup.exercisePersonalNotes &&
                   typeof migratedBackup.exercisePersonalNotes === 'object'
                     ? { ...migratedBackup.exercisePersonalNotes }
+                    : {},
+                exerciseSessionEffortStars:
+                  migratedBackup.exerciseSessionEffortStars &&
+                  typeof migratedBackup.exerciseSessionEffortStars === 'object'
+                    ? { ...migratedBackup.exerciseSessionEffortStars }
+                    : {},
+                stretchPerceivedRatings:
+                  migratedBackup.stretchPerceivedRatings &&
+                  typeof migratedBackup.stretchPerceivedRatings === 'object'
+                    ? { ...migratedBackup.stretchPerceivedRatings }
+                    : {},
+                stretchPersonalNotes:
+                  migratedBackup.stretchPersonalNotes &&
+                  typeof migratedBackup.stretchPersonalNotes === 'object'
+                    ? { ...migratedBackup.stretchPersonalNotes }
+                    : {},
+                stretchSessionEffortStars:
+                  migratedBackup.stretchSessionEffortStars &&
+                  typeof migratedBackup.stretchSessionEffortStars === 'object'
+                    ? { ...migratedBackup.stretchSessionEffortStars }
                     : {},
                 exerciseMaxRecords: Array.isArray(migratedBackup.exerciseMaxRecords) ? migratedBackup.exerciseMaxRecords : [],
                 exerciseMaxHistory: Array.isArray(migratedBackup.exerciseMaxHistory) ? migratedBackup.exerciseMaxHistory : [],

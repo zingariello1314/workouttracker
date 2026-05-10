@@ -127,30 +127,15 @@ const StretchCard = ({ stretch, ratingForCard, onOpen, onRequestAddToProgram }) 
           open();
         }
       }}
-      className="group text-left rounded-xl border-2 border-[#0F4C5C]/85 bg-black shadow-lg shadow-black/40 hover:border-[#0F5C45]/80 hover:shadow-[0_0_24px_-8px_rgba(15,92,69,0.45)] transition-all duration-200 p-5 flex min-h-[28rem] h-full flex-col gap-4 cursor-pointer focus:outline-none focus:ring-2 focus:ring-[#0F5C45]/45"
+      className="group text-left rounded-xl border-2 border-[#0F4C5C]/85 bg-black shadow-lg shadow-black/40 hover:border-[#0F5C45]/80 hover:shadow-[0_0_24px_-8px_rgba(15,92,69,0.45)] transition-all duration-200 p-5 grid h-full min-h-[32rem] cursor-pointer focus:outline-none focus:ring-2 focus:ring-[#0F5C45]/45
+        grid-rows-[auto_auto_auto_300px_auto_auto_minmax(3.25rem,1fr)_auto]
+        gap-3"
     >
-      <div className="flex shrink-0 items-start justify-between gap-3 border-b border-[#0F4C5C]/35 pb-4">
-        <div className="min-w-0 flex-1 flex flex-col gap-2">
-          <h4 className="text-sm font-semibold text-white leading-snug tracking-tight line-clamp-5">
+      <div className="row-start-1 flex shrink-0 min-h-[3.75rem] items-start justify-between gap-3 border-b border-[#0F4C5C]/35 pb-3">
+        <div className="min-w-0 flex-1 flex flex-col justify-start gap-1">
+          <h4 className="text-sm font-semibold text-white leading-snug tracking-tight line-clamp-2 min-h-[2.5rem]">
             {stretch.name}
           </h4>
-          {onRequestAddToProgram ? (
-            <button
-              type="button"
-              onClick={(e) => {
-                e.stopPropagation();
-                onRequestAddToProgram({
-                  kind: 'stretch',
-                  stretchKey: stretch.key,
-                  stretchLabel: stretch.name
-                });
-              }}
-              className="inline-flex w-fit max-w-full items-center justify-center gap-1.5 rounded-lg border-2 border-[#0F5C45] bg-[#0F5C45]/40 px-3 py-2 text-xs font-semibold uppercase tracking-wide text-white shadow-[0_0_16px_-6px_rgba(15,92,69,0.55)] transition hover:bg-[#0F5C45]/65 focus:outline-none focus:ring-2 focus:ring-teal-300/40"
-            >
-              <Plus className="h-4 w-4 shrink-0" strokeWidth={2.5} />
-              Ajouter au programme
-            </button>
-          ) : null}
         </div>
         <span className="shrink-0 self-start text-[10px] text-teal-600/90 inline-flex items-center gap-0.5 tabular-nums rounded-md border border-[#0F4C5C]/50 bg-black px-2 py-0.5">
           <Star className="w-3 h-3 text-amber-400" />
@@ -158,7 +143,31 @@ const StretchCard = ({ stretch, ratingForCard, onOpen, onRequestAddToProgram }) 
         </span>
       </div>
 
-      <div className="flex min-h-[3.25rem] shrink-0 flex-wrap content-center items-center gap-2 text-[10px]">
+      <div className="row-start-2 flex min-h-[2.875rem] flex-col justify-start" data-no-drag-scroll>
+        {onRequestAddToProgram ? (
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              onRequestAddToProgram({
+                kind: 'stretch',
+                stretchKey: stretch.key,
+                stretchLabel: stretch.name
+              });
+            }}
+            className="inline-flex w-fit max-w-full items-center justify-center gap-1.5 rounded-lg border-2 border-[#0F5C45] bg-[#0F5C45]/40 px-3 py-2 text-xs font-semibold uppercase tracking-wide text-white shadow-[0_0_16px_-6px_rgba(15,92,69,0.55)] transition hover:bg-[#0F5C45]/65 focus:outline-none focus:ring-2 focus:ring-teal-300/40"
+          >
+            <Plus className="h-4 w-4 shrink-0" strokeWidth={2.5} />
+            Ajouter au programme
+          </button>
+        ) : (
+          <span className="invisible text-xs py-2" aria-hidden>
+            Ajouter
+          </span>
+        )}
+      </div>
+
+      <div className="row-start-3 flex min-h-[3.25rem] shrink-0 flex-wrap content-start items-start gap-2 text-[10px]">
         <span className="px-2 py-0.5 rounded-md border border-[#0F5C45]/45 bg-[#0F5C45]/15 text-teal-100 inline-flex items-center gap-1 capitalize">
           <Target className="w-3 h-3 text-teal-400 shrink-0" />
           {stretch.bodyZone}
@@ -173,14 +182,18 @@ const StretchCard = ({ stretch, ratingForCard, onOpen, onRequestAddToProgram }) 
         <span className="text-teal-700 tabular-nums">Niv. {stretch.difficulty}/4</span>
       </div>
 
-      <AnatomyBankCardPreview
-        primaryMuscles={stretch.primaryMuscles}
-        secondaryMuscles={stretch.secondaryMuscles}
-        mode="stretch"
-      />
+      <div className="row-start-4 flex h-[300px] w-full min-h-0 shrink-0 overflow-hidden [&>*]:min-h-0">
+        <AnatomyBankCardPreview
+          primaryMuscles={stretch.primaryMuscles}
+          secondaryMuscles={stretch.secondaryMuscles}
+          mode="stretch"
+          layout="gridFill"
+          stretchDatabaseKey={stretch.key}
+        />
+      </div>
 
-      {(stretch.primaryMuscles?.length > 0 || stretch.secondaryMuscles?.length > 0) && (
-        <div className="space-y-1">
+      {(stretch.primaryMuscles?.length > 0 || stretch.secondaryMuscles?.length > 0) ? (
+        <div className="row-start-5 space-y-1 min-h-[2.75rem]">
           {stretch.primaryMuscles?.length > 0 && (
             <div className="text-[10px] text-teal-600/90 leading-snug" title={stretch.primaryMuscles.join(', ')}>
               <span className="text-teal-800 uppercase tracking-wide font-medium">Primaires · </span>
@@ -198,21 +211,29 @@ const StretchCard = ({ stretch, ratingForCard, onOpen, onRequestAddToProgram }) 
             </div>
           )}
         </div>
+      ) : (
+        <div className="row-start-5 min-h-[2.75rem]" aria-hidden />
       )}
 
-      <p className="text-[11px] text-teal-100/75 line-clamp-3 leading-relaxed border-t border-[#0F4C5C]/30 pt-3 flex-1">
+      <div className="row-start-6 flex min-h-[2.25rem] items-center border-t border-[#0F4C5C]/35 pt-2">
+        {avgNote !== null ? (
+          <div className="flex w-full items-center justify-between text-[10px] text-amber-300/90">
+            <span className="inline-flex items-center gap-1">
+              <Heart className="w-3 h-3 shrink-0" />
+              Note pondérée : {avgNote}/5
+            </span>
+            <span className="text-teal-600/85 text-[9px] uppercase tracking-wide shrink-0">pondéré</span>
+          </div>
+        ) : (
+          <div className="text-[10px] text-transparent select-none" aria-hidden>
+            —
+          </div>
+        )}
+      </div>
+
+      <p className="row-start-7 text-[11px] text-teal-100/75 line-clamp-3 leading-relaxed border-t border-[#0F4C5C]/30 pt-3 min-h-[3.75rem]">
         {stretch.description}
       </p>
-
-      {avgNote !== null && (
-        <div className="flex items-center justify-between text-[10px] text-amber-300/90 pt-2 border-t border-[#0F4C5C]/35">
-          <span className="inline-flex items-center gap-1">
-            <Heart className="w-3 h-3" />
-            Note pondérée : {avgNote}/5
-          </span>
-          <span className="text-teal-600/85 text-[9px] uppercase tracking-wide">pondéré</span>
-        </div>
-      )}
     </div>
   );
 };
@@ -625,7 +646,7 @@ const StretchBankView = ({
           </CardContent>
         </Card>
       ) : (
-        <div className="grid grid-cols-1 items-stretch sm:grid-cols-2 lg:grid-cols-3 gap-5">
+        <div className="grid grid-cols-1 items-stretch sm:grid-cols-2 lg:grid-cols-4 gap-5">
           {filtered.map((stretch) => (
             <StretchCard
               key={stretch.key}

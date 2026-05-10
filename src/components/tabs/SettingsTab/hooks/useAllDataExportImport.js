@@ -414,6 +414,22 @@ export const useAllDataExportImport = (data, loadFromDB, updateData, validateAll
           ...(backupData.exercisePersonalNotes || {}),
           ...(importedData.exercisePersonalNotes || {})
         },
+        exerciseSessionEffortStars: {
+          ...(backupData.exerciseSessionEffortStars || {}),
+          ...(importedData.exerciseSessionEffortStars || {})
+        },
+        stretchPerceivedRatings: {
+          ...(backupData.stretchPerceivedRatings || {}),
+          ...(importedData.stretchPerceivedRatings || {})
+        },
+        stretchPersonalNotes: {
+          ...(backupData.stretchPersonalNotes || {}),
+          ...(importedData.stretchPersonalNotes || {})
+        },
+        stretchSessionEffortStars: {
+          ...(backupData.stretchSessionEffortStars || {}),
+          ...(importedData.stretchSessionEffortStars || {})
+        },
         programHistory: [
           ...(backupData.programHistory || []),
           ...(importedData.programHistory || []).filter(imported => {

@@ -8,6 +8,9 @@
  * (utilisée par d'anciens composants), mais à l'écriture on bascule systématiquement
  * sur les clés item-individuel (`generateStretchItemKey`).
  *
+ * Étoiles 1–5 « ressenti du jour » : `stretchSessionEffortStars` (même clé que checkedStretches),
+ * utilisées dans le calcul d’XP quand présentes ; supprimées si l’étirement est décoché.
+ *
  * @module useStretchTracking
  */
 
@@ -27,7 +30,8 @@ import { getDateStr } from '../../../../utils/dateUtils';
  *
  * @returns {{
  *   toggleStretch:   (moment: string, stretchId?: string|number) => void,
- *   getStretchStatus:(moment: string, stretchId?: string|number) => {isChecked: boolean},
+ *   getStretchStatus:(moment: string, stretchId?: string|number) => {isChecked: boolean, sessionEffortStars: number|null},
+ *   updateStretchSessionEffortStars:(moment: string, stretchId: string|number, starCount: number) => void,
  *   getMomentSummary:(moment: string, stretchIds: Array<string|number>) => {checked: number, total: number, ratio: number, allChecked: boolean}
  * }}
  *
@@ -62,12 +66,16 @@ export const useStretchTracking = (options = {}) => {
 
     const isCurrentlyChecked = currentData.checkedStretches?.[key] || false;
 
+    const nextStars = { ...(currentData.stretchSessionEffortStars || {}) };
+    if (isCurrentlyChecked) delete nextStars[key];
+
     const newData = {
       ...currentData,
       checkedStretches: {
         ...currentData.checkedStretches,
         [key]: !isCurrentlyChecked
-      }
+      },
+      stretchSessionEffortStars: nextStars
     };
     updateTempStretchData(newData);
   }, [date, getCurrentData, updateTempStretchData]);
@@ -82,8 +90,36 @@ export const useStretchTracking = (options = {}) => {
       ? generateStretchItemKey(date, moment, stretchId)
       : generateStretchKey(date, moment);
 
-    return { isChecked: currentData.checkedStretches?.[key] || false };
+    const rawStars =
+      stretchId != null ? currentData.stretchSessionEffortStars?.[key] : undefined;
+    const sn = Number(rawStars);
+    const sessionEffortStars =
+      Number.isFinite(sn) && sn >= 1 && sn <= 5 ? Math.round(sn) : null;
+
+    return {
+      isChecked: currentData.checkedStretches?.[key] || false,
+      sessionEffortStars
+    };
   }, [date, getCurrentData]);
+
+  /**
+   * @param {number} starCount — 1–5 ; hors plage ou NaN retire la note
+   */
+  const updateStretchSessionEffortStars = useCallback((moment, stretchId, starCount) => {
+    const currentData = getCurrentData();
+    const key = generateStretchItemKey(date, moment, stretchId);
+    const next = { ...(currentData.stretchSessionEffortStars || {}) };
+    const n = Math.round(Number(starCount));
+    if (!Number.isFinite(n) || n < 1 || n > 5) {
+      delete next[key];
+    } else {
+      next[key] = n;
+    }
+    updateTempStretchData({
+      ...currentData,
+      stretchSessionEffortStars: next
+    });
+  }, [date, getCurrentData, updateTempStretchData]);
 
   /**
    * Synthèse d'un moment : combien d'items cochés / total + ratio + allChecked.
@@ -112,6 +148,7 @@ export const useStretchTracking = (options = {}) => {
   return {
     toggleStretch,
     getStretchStatus,
+    updateStretchSessionEffortStars,
     getMomentSummary,
     // alias rétro-compat — laisse l'ancien nom dispo si du code le consomme encore
     getAllStretchesStatus: useCallback(() => {

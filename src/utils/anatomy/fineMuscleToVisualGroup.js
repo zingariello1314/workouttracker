@@ -13,6 +13,8 @@ export function normalizeMuscleLabel(raw) {
     .replace(/œ/g, 'oe')
     .replace(/æ/g, 'ae')
     .toLowerCase()
+    /** Apostrophe typographique (U+2019) comme l’ASCII : indispensable pour matcher « Grand droit de l'abdomen ». */
+    .replace(/\u2019/g, "'")
     .replace(/['']/g, ' ')
     .replace(/[()[\]]/g, ' ')
     .replace(/\s+/g, ' ')
@@ -52,8 +54,10 @@ const EXACT_TO_GROUP = {
   'erecteur du rachis': G.BACK,
   'rachis lombaire': G.BACK,
   lombaires: G.BACK,
-  'multifides': G.BACK,
+  multifides: G.BACK,
   multifide: G.BACK,
+  'multifides lombaires': G.BACK,
+  'multifides thoraciques': G.BACK,
   'dentele anterieur': G.CHEST,
   'dentele posterieur': G.BACK,
   infraepineux: G.SHOULDERS,
@@ -108,6 +112,10 @@ const EXACT_TO_GROUP = {
   'ischio': G.HAMSTRINGS,
   diaphragme: G.CORE,
   intercostaux: G.CORE,
+  /** Libellés « système cardio » : éviter FULL_BODY au secondaire (efface les surbrillances zonales). */
+  'systeme cardio respiratoire': G.CORE,
+  'systeme cardio-respiratoire': G.CORE,
+  'systeme cardiorespiratoire': G.CORE,
   // Generique programme
   jambes: G.QUADS,
   bras: G.BICEPS,

@@ -9,8 +9,14 @@ import {
   computeRunningTrainingLoad,
   analyzeRunningSessionFactors,
   computeMedianWeightKgForExercise,
-  computeExternalLoadMultiplier
+  computeExternalLoadMultiplier,
+  intensityCoeffToStarCount
 } from '../../../utils/trainingLoadUtils';
+import { computeBlendedExerciseEffortStars } from '../../../utils/exerciseSessionEffortBlend';
+import {
+  previewWeightedRepsXpContribution,
+  SPORT_FLAT_COMPLETED_EXERCISE_XP
+} from '../../../utils/exerciseXpPreview';
 import { exerciseUsesExternalLoad } from '../../../utils/programUtils';
 import { resolveExerciseDetailProfile } from '../../../utils/exerciseDetailProfile';
 import {
@@ -154,23 +160,59 @@ const ExerciseDetailPage = ({
     setDraftNotes(notesMap[idKey] || '');
   }, [idKey, notesMap, perceivedStored]);
 
-  const handleCoeffBlur = () => {
-    if (readOnly) return;
-    const trimmed = draftCoeff.trim();
-    const next = { ...coeffs };
-    if (trimmed === '') {
-      delete next[idKey];
+  const applyPersistedCoefficient = useCallback(
+    (trimmedOrEmpty) => {
+      if (readOnly) return;
+      const trimmed = String(trimmedOrEmpty ?? '').trim();
+      const next = { ...coeffs };
+      if (trimmed === '') {
+        delete next[idKey];
+        persistCoeffs(next);
+        setDraftCoeff('');
+        return;
+      }
+      const n = parseFloat(trimmed.replace(',', '.'));
+      if (Number.isNaN(n) || n < 0.05) {
+        setDraftCoeff(coeffs[idKey] != null ? String(coeffs[idKey]) : '');
+        return;
+      }
+      next[idKey] = n;
       persistCoeffs(next);
-      return;
-    }
-    const n = parseFloat(trimmed.replace(',', '.'));
-    if (Number.isNaN(n) || n < 0.05) {
-      setDraftCoeff(coeffs[idKey] != null ? String(coeffs[idKey]) : '');
-      return;
-    }
-    next[idKey] = n;
-    persistCoeffs(next);
+      setDraftCoeff(String(n));
+    },
+    [readOnly, coeffs, idKey]
+  );
+
+  const handleCoeffBlur = () => {
+    applyPersistedCoefficient(draftCoeff);
   };
+
+  const handleCoeffSliderCommit = useCallback(
+    (e) => {
+      const v = Number(e?.currentTarget?.value);
+      if (readOnly || !Number.isFinite(v) || v < 0.05) return;
+      applyPersistedCoefficient(String(v));
+    },
+    [applyPersistedCoefficient, readOnly]
+  );
+
+  const effortBlend = useMemo(
+    () => computeBlendedExerciseEffortStars(data || {}, exercise),
+    [data, exercise]
+  );
+
+  const coefficientForPreview = useMemo(() => {
+    const t = draftCoeff.trim().replace(',', '.');
+    const parsedDraft = parseFloat(t);
+    if (!Number.isNaN(parsedDraft) && parsedDraft >= 0.05) return parsedDraft;
+    return effectiveCoeff;
+  }, [draftCoeff, effectiveCoeff]);
+
+  const sliderDisplayCoeff = useMemo(() => {
+    const parsed = parseFloat(String(draftCoeff).trim().replace(',', '.'));
+    if (!Number.isNaN(parsed) && parsed >= 0.05) return parsed;
+    return effectiveCoeff >= 0.05 ? effectiveCoeff : defaultCoeff;
+  }, [draftCoeff, effectiveCoeff, defaultCoeff]);
 
   const recentSessions = useMemo(() => {
     const act = profile.enduranceActivityType;
@@ -209,6 +251,54 @@ const ExerciseDetailPage = ({
       at115: computeExternalLoadMultiplier(true, ref * 1.15, med ?? ref)
     };
   }, [data?.exerciseWeights, exercise]);
+
+  const repsPreviewExample = 10;
+  const repsXpPreviewRow = useMemo(() => {
+    const medKg = externalLoadWeightExplain?.median;
+    const wPerRep = medKg != null && medKg > 0 ? medKg : 0;
+    const fromRepsOnly = previewWeightedRepsXpContribution(
+      repsPreviewExample,
+      coefficientForPreview,
+      wPerRep
+    ).weightedRepsXp;
+    const exampleTotalXp = fromRepsOnly + SPORT_FLAT_COMPLETED_EXERCISE_XP;
+    return {
+      repsOnly: fromRepsOnly,
+      withCompletionFlat: exampleTotalXp,
+      usedKgPerRep: wPerRep
+    };
+  }, [coefficientForPreview, externalLoadWeightExplain?.median, repsPreviewExample]);
+
+  const effortBlendHintFr = useMemo(() => {
+    let msg;
+    switch (effortBlend.source) {
+      case 'blend_stars_history':
+      case 'blend_stars_history_perceived':
+        msg =
+          'Combine tes étoiles « séance » récentes, une tendance des reps (en ignorant les séries où la charge monte fort) et l’indice auto.';
+        break;
+      case 'blend_stars_auto':
+      case 'blend_stars_auto_perceived':
+        msg =
+          'Mélange de tes dernières étoiles séance et de l’indice auto (il manque encore assez d’historique pour la tendance reps).';
+        break;
+      case 'blend_reps_trend':
+      case 'blend_reps_trend_perceived':
+        msg = 'Surtout la tendance des reps + l’indice auto (peu ou pas d’étoiles séance enregistrées).';
+        break;
+      case 'perceived_auto':
+        msg =
+          'Bloc « Ressenti » de la fiche + indice automatique ; complète avec les étoiles sur Aujourd’hui pour encore affiner.';
+        break;
+      default:
+        msg =
+          'Indice automatique seul : ajoute des étoiles sur Aujourd’hui quand tu coches l’exercice pour affiner.';
+    }
+    if (effortBlend.perceivedStars != null && !msg.includes('Ressenti')) {
+      msg += ' Les curseurs « Ressenti » sont pris en compte.';
+    }
+    return msg;
+  }, [effortBlend.source, effortBlend.perceivedStars]);
 
   const txt = (field) => profileText(t, pid, field, profileText(t, 'strength_default', field, ''));
 
@@ -662,6 +752,91 @@ const ExerciseDetailPage = ({
         </CardContent>
       </Card>
 
+      <Card variant="sport" className="ring-1 ring-amber-500/20 border border-amber-500/15">
+        <CardHeader variant="sport" className="pb-2">
+          <CardTitle
+            tone="sport"
+            className={`text-lg normal-case flex items-center gap-2 ${SPORT_SECTION_LABEL} tracking-tight`}
+          >
+            <Gauge className="w-5 h-5 text-amber-300" />
+            {t('exercisesTab.detail.loadXpPanelTitle', 'Charge, note estimée & aperçu XP')}
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4 text-sm text-slate-300 bg-black">
+          <div className={`rounded-lg p-3 ${SPORT_SURFACE} ${SPORT_BORDER_SOFT}`}>
+            <div className={`text-xs font-semibold uppercase tracking-wide ${SPORT_SECTION_LABEL} mb-2`}>
+              {t('exercisesTab.detail.blendedEffortLabel', 'Note estimée (historique + séances)')}
+            </div>
+            <div className="flex flex-wrap items-center gap-3">
+              <span className="text-amber-300 text-lg tabular-nums" aria-hidden>
+                {'★'.repeat(effortBlend.displayStars)}
+              </span>
+              <span className="text-slate-700 text-lg" aria-hidden>
+                {'☆'.repeat(Math.max(0, 5 - effortBlend.displayStars))}
+              </span>
+              <span className="text-slate-400 text-xs">
+                ({effortBlend.displayStars}/5 · indice auto ≈{' '}
+                {intensityCoeffToStarCount(effortBlend.autoCoeff)}/5)
+              </span>
+            </div>
+            <p className="text-xs text-slate-500 mt-2 leading-relaxed">{effortBlendHintFr}</p>
+          </div>
+
+          <div>
+            <label className={`block text-xs font-semibold ${SPORT_SECTION_LABEL} mb-2`}>
+              {t('exercisesTab.detail.loadSliderLabel', 'Régler l’indice de charge')}
+            </label>
+            <input
+              type="range"
+              min={0.05}
+              max={8}
+              step={0.05}
+              disabled={readOnly}
+              value={Math.min(8, Math.max(0.05, sliderDisplayCoeff))}
+              onChange={(e) => {
+                if (!readOnly) setDraftCoeff(e.target.value);
+              }}
+              onMouseUp={handleCoeffSliderCommit}
+              onTouchEnd={handleCoeffSliderCommit}
+              className="w-full h-2 accent-emerald-600 disabled:opacity-40"
+              aria-valuemin={0.05}
+              aria-valuemax={8}
+              aria-valuenow={Math.round(sliderDisplayCoeff * 100) / 100}
+            />
+            <div className="flex justify-between text-[11px] text-slate-500 mt-1 tabular-nums">
+              <span>0.05</span>
+              <span className="text-teal-200/90">{Math.round(sliderDisplayCoeff * 100) / 100}</span>
+              <span>8</span>
+            </div>
+          </div>
+
+          <div className={`rounded-lg p-3 text-xs leading-relaxed ${SPORT_BORDER_SOFT} bg-black/60`}>
+            <div className={`font-semibold ${SPORT_SECTION_LABEL} mb-1`}>
+              {t('exercisesTab.detail.xpPreviewHeading', 'Exemple (Sport XP du jour)')}
+            </div>
+            <p className="text-slate-300">
+              {t(
+                'exercisesTab.detail.xpPreviewBody',
+                `${repsPreviewExample} reps te rapportent environ +{{repXp}} XP (reps pondérées, bonus kg inclus si médiane disponible). Une fois l’exercice coché : +{{flatXp}} XP de complétion. Total indicatif ≈ {{total}} XP.`,
+                {
+                  repXp: String(repsXpPreviewRow.repsOnly),
+                  flatXp: String(SPORT_FLAT_COMPLETED_EXERCISE_XP),
+                  total: String(repsXpPreviewRow.withCompletionFlat)
+                }
+              )}
+            </p>
+            {!externalLoadWeightExplain?.median ? (
+              <p className="text-slate-500 mt-1">
+                {t(
+                  'exercisesTab.detail.xpPreviewNoMedian',
+                  'Sans médiane de charge sur cet exercice, le multiplicateur poids reste neutre (comme dans le récap XP).'
+                )}
+              </p>
+            ) : null}
+          </div>
+        </CardContent>
+      </Card>
+
           {onOpenSimilarBankExercise ? (
             <ExerciseSimilarSection
               exercise={exercise}
@@ -692,6 +867,10 @@ const ExerciseDetailPage = ({
                 secondaryMuscles={anatomySecondaryList}
                 mode="exercise"
                 portrait
+                exerciseDatabaseKey={
+                  exercise?.databaseKey ||
+                  (String(exercise?.id ?? '').startsWith('cardio_') ? String(exercise.id) : undefined)
+                }
               />
               {primaryMusclesForChips.length > 0 && (
                 <div>

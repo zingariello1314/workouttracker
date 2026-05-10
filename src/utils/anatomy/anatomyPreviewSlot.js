@@ -1,15 +1,17 @@
 /**
- * Limite les aperçus WebGL actifs sur les grilles banque (évite « Too many WebGL contexts »).
- * Les cartes hors viewport libèrent leur slot ; les cartes en attente sont réveillées à chaque release.
+ * Limite les aperçus WebGL actifs sur les grilles banque.
+ *
+ * Limite **réelle du navigateur** : ~8 contextes WebGL **pour tout l’onglet** (tous les Canvas confondus).
+ * L’app monte en permanence `AnimatedBackground` (1 contexte) ; il faut donc rester très bas ici.
  */
 
+const MOBILE_MAX = 4;
+const DESKTOP_MAX = 6;
+
 function resolveMaxActive() {
-  if (typeof window === 'undefined') return 8;
-  const coarse =
-    typeof navigator !== 'undefined' ? Number(navigator.hardwareConcurrency) || 4 : 4;
+  if (typeof window === 'undefined') return DESKTOP_MAX;
   const narrow = window.innerWidth < 640;
-  if (narrow) return Math.min(6, Math.max(4, coarse - 2));
-  return Math.min(12, Math.max(8, coarse));
+  return narrow ? MOBILE_MAX : DESKTOP_MAX;
 }
 
 let maxActive = resolveMaxActive();
@@ -69,7 +71,7 @@ if (typeof window !== 'undefined') {
     'resize',
     () => {
       clearTimeout(resizeT);
-      resizeT = window.setTimeout(() => refreshAnatomyPreviewSlotLimit(), 400);
+      resizeT = setTimeout(() => refreshAnatomyPreviewSlotLimit(), 400);
     },
     { passive: true }
   );

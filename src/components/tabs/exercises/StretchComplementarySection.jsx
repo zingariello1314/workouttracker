@@ -1,6 +1,7 @@
 import React, { useCallback, useMemo, useRef } from 'react';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { useTranslation } from '../../../utils/translations';
+import { usePointerDragScroll } from '../../../hooks/usePointerDragScroll';
 import { rankComplementaryExerciseKeysForStretch } from '../../../utils/stretchComplementaryExercises';
 import { buildBankExerciseViewFromDatabaseKey } from '../../../utils/exerciseBankViewModel';
 import SportBankExerciseCard from '../../sport/SportBankExerciseCard';
@@ -19,6 +20,7 @@ export default function StretchComplementarySection({
 }) {
   const t = useTranslation();
   const scrollerRef = useRef(null);
+  usePointerDragScroll(scrollerRef);
 
   const ranked = useMemo(
     () => rankComplementaryExerciseKeysForStretch(stretch, { limit: CAROUSEL_BATCH }),
@@ -76,12 +78,16 @@ export default function StretchComplementarySection({
         {t(
           'stretchesTab.complementary.hint',
           'Propositions basées sur les mêmes critères que les « exercices similaires » (muscles, catégorie, équipement) pour relier étirements et séances de force.'
+        )}{' '}
+        {t(
+          'stretchesTab.complementary.dragHint',
+          'Glisser latéralement avec la souris pour parcourir les cartes.'
         )}
       </p>
 
       <div
         ref={scrollerRef}
-        className="flex gap-4 overflow-x-auto pb-2 snap-x snap-mandatory scroll-smooth [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+        className="flex cursor-grab active:cursor-grabbing touch-pan-x select-none gap-4 overflow-x-auto pb-2 snap-x snap-mandatory scroll-smooth [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
         role="region"
         aria-label={t('stretchesTab.complementary.region', 'Exercices complémentaires')}
       >
@@ -99,6 +105,7 @@ export default function StretchComplementarySection({
               maxRecord={maxRecordsByExerciseId?.get(String(ex.id)) || null}
               showAddButton={Boolean(isAuthenticated && onRequestAddToProgram)}
               onRequestAddToProgram={onRequestAddToProgram}
+              workoutData={data}
             />
           </div>
         ))}

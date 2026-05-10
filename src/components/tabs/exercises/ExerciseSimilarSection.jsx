@@ -1,6 +1,7 @@
 import React, { useCallback, useMemo, useRef } from 'react';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { useTranslation } from '../../../utils/translations';
+import { usePointerDragScroll } from '../../../hooks/usePointerDragScroll';
 import { rankSimilarExerciseKeys } from '../../../utils/exerciseSimilarity';
 import { buildBankExerciseViewFromDatabaseKey } from '../../../utils/exerciseBankViewModel';
 import SportBankExerciseCard from '../../sport/SportBankExerciseCard';
@@ -20,6 +21,7 @@ export default function ExerciseSimilarSection({
 }) {
   const t = useTranslation();
   const scrollerRef = useRef(null);
+  usePointerDragScroll(scrollerRef);
 
   const ranked = useMemo(
     () => rankSimilarExerciseKeys(exercise, { limit: CAROUSEL_BATCH }),
@@ -74,12 +76,16 @@ export default function ExerciseSimilarSection({
         {t(
           'exercisesTab.detail.similar.hint',
           'Propositions basées sur les muscles, la catégorie, l’équipement et le nom — comme les « articles similaires ».'
+        )}{' '}
+        {t(
+          'exercisesTab.detail.similar.dragHint',
+          'Tu peux aussi faire glisser la liste latéralement (souris) comme un carrousel ; sur mobile, défilement naturel.'
         )}
       </p>
 
       <div
         ref={scrollerRef}
-        className="flex gap-4 overflow-x-auto pb-2 snap-x snap-mandatory scroll-smooth [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+        className="flex cursor-grab active:cursor-grabbing touch-pan-x select-none gap-4 overflow-x-auto pb-2 snap-x snap-mandatory scroll-smooth [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
         role="region"
         aria-label={t('exercisesTab.detail.similar.carouselRegion', 'Carrousel exercices similaires')}
       >
@@ -97,6 +103,7 @@ export default function ExerciseSimilarSection({
               maxRecord={maxRecordsByExerciseId?.get(String(ex.id)) || null}
               showAddButton={Boolean(isAuthenticated && onRequestAddToProgram)}
               onRequestAddToProgram={onRequestAddToProgram}
+              workoutData={data}
             />
           </div>
         ))}
