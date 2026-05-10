@@ -171,7 +171,7 @@ export const questSchema = z.object({
     .default(false),
   multiSlots: z.array(
     z.object({
-      slot: z.enum(['matin', 'midi', 'soir']),
+      slot: z.enum(['matin', 'midi', 'apres-midi', 'soir']),
       enabled: z.boolean().optional().default(false),
       heure: z.string()
         .optional()
@@ -179,6 +179,8 @@ export const questSchema = z.object({
         .refine((v) => !v || /^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/.test(v), 'Format attendu : HH:mm')
     })
   ).optional().default([]),
+  /** Catégorie Sport : cochet la quête le jour où au moins un exo programme est marqué fait (Aujourd’hui). */
+  completeWithTodaySportExercise: z.boolean().optional().default(false),
   active: z.boolean()
     .default(true)
 }).refine(

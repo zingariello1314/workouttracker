@@ -133,11 +133,11 @@
     "button": "Feedback de session"
   },
   "seriesAdapt": {
-    "openTitle": "Adapter le prévu du jour",
-    "short": "Prévu du jour",
-    "saved": "Prévu du jour enregistré",
+    "openTitle": "Modifier séries × reps pour aujourd’hui",
+    "short": "Séries & reps du jour",
+    "saved": "Séries / reps du jour enregistrées",
     "resetToast": "Retour au prévu du programme",
-    "title": "Prévu pour aujourd’hui",
+    "title": "Séries × reps pour aujourd’hui",
     "programLabel": "Dans le programme :",
     "inputLabel": "Séries × reps pour ce jour (ex. 5×15, 4×8-12)",
     "cancel": "Annuler",

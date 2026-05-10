@@ -20,6 +20,13 @@ import {
 import { formatDuration } from '../utils';
 import { qstatsMuted } from '../../../quests/stats/questsStatsTheme';
 
+const MULTI_SLOT_LABELS = {
+  matin: 'Matin',
+  midi: 'Midi',
+  'apres-midi': 'Après-midi',
+  soir: 'Soir'
+};
+
 /**
  * Modal pour créer ou éditer une quête
  * 
@@ -93,6 +100,8 @@ export const QuestFormModal = ({
                     ...prev,
                     categorie: cat,
                     priere: cat === 'Prière' ? (prev.priere || 'fajr') : '',
+                    completeWithTodaySportExercise:
+                      cat === 'Sport' ? prev.completeWithTodaySportExercise : false,
                   }));
                 }}
                 className="w-full bg-black/80 border border-amber-600/40 rounded-lg px-3 py-2 text-amber-50 text-sm focus:outline-none focus:ring-1 focus:ring-amber-400/70"
@@ -125,6 +134,29 @@ export const QuestFormModal = ({
               </select>
             </div>
           </div>
+
+          {questForm.categorie === 'Sport' && (
+            <label className="flex items-start gap-2.5 rounded-lg border border-amber-700/35 bg-amber-500/10 px-3 py-2.5 text-amber-100/95">
+              <input
+                type="checkbox"
+                checked={Boolean(questForm.completeWithTodaySportExercise)}
+                onChange={(e) =>
+                  setQuestForm((prev) => ({
+                    ...prev,
+                    completeWithTodaySportExercise: e.target.checked,
+                  }))
+                }
+                className="mt-1 h-4 w-4 shrink-0 rounded border-amber-500/60 bg-black/80 accent-amber-400"
+              />
+              <span>
+                <span className="block font-medium text-amber-50">Lier à Aujourd’hui (Sport)</span>
+                <span className="mt-0.5 block text-xs leading-snug text-amber-200/80">
+                  Coche automatiquement cette quête le jour où tu marques au moins un exercice du programme comme
+                  fait (onglet Sport → Aujourd’hui).
+                </span>
+              </span>
+            </label>
+          )}
 
           <div className="grid grid-cols-2 gap-3">
             <div>
@@ -264,7 +296,7 @@ export const QuestFormModal = ({
                   }
                   className="rounded border-amber-600/60 bg-black text-amber-400"
                 />
-                Créer en multi-créneaux (matin / midi / soir)
+                Créer en multi-créneaux (matin / midi / après-midi / soir)
               </label>
               {questForm.multiSlotsEnabled && (
                 <div className="space-y-2">
@@ -284,7 +316,7 @@ export const QuestFormModal = ({
                           }
                           className="rounded border-amber-600/60 bg-black text-amber-400"
                         />
-                        {slotCfg.slot}
+                        {MULTI_SLOT_LABELS[slotCfg.slot] || slotCfg.slot}
                       </label>
                       <input
                         type="time"

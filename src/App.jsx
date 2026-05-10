@@ -62,6 +62,8 @@ import CodeXPBar from './components/code/CodeXPBar';
 import { isSportSubTab } from './constants/sportSubTabs';
 import { isCodeSubTab } from './constants/codeSubTabs';
 import { isAdminUser } from './utils/accessControl';
+import ProfileQuestionnaireModal, { registerProfileQuestionnaireOpenHandler } from './features/profileQuestionnaire/ProfileQuestionnaireModal';
+import { useProfileQuestionnaire } from './features/profileQuestionnaire/useProfileQuestionnaire';
 
 const WorkoutTrackerApp = () => {
   return (
@@ -100,7 +102,10 @@ const WorkoutTrackerContent = () => {
     saveSessionFeedback
   } = useWorkout();
   const { currentUser, isAuthenticated } = useAuth();
+  const { questionnaire } = useProfileQuestionnaire();
   const isAdmin = isAdminUser(currentUser);
+  const [showProfileQuiz, setShowProfileQuiz] = useState(false);
+  const [onboardingPromptHandled, setOnboardingPromptHandled] = useState(false);
 
   // Ne pas rediriger localhost → 127.0.0.1 : ce sont deux origines (IndexedDB / session séparées).
   // Pour Spotify, l’URI de retour OAuth reste 127.0.0.1 (exigence dashboard) ; garde le même hôte pour le reste.
@@ -206,6 +211,32 @@ const WorkoutTrackerContent = () => {
         });
     }
   }, [dbReady, loadAllData, isAdmin, isAuthenticated]);
+
+  useEffect(() => {
+    return registerProfileQuestionnaireOpenHandler(() => setShowProfileQuiz(true));
+  }, []);
+
+  useEffect(() => {
+    if (!isAuthenticated || !currentUser?.id) {
+      setOnboardingPromptHandled(false);
+      return;
+    }
+    if (onboardingPromptHandled) return;
+    const shouldPrompt =
+      questionnaire.completedCount < questionnaire.totalCount &&
+      !questionnaire.onboardingSkippedAt;
+    if (shouldPrompt) {
+      setShowProfileQuiz(true);
+    }
+    setOnboardingPromptHandled(true);
+  }, [
+    currentUser?.id,
+    isAuthenticated,
+    onboardingPromptHandled,
+    questionnaire.completedCount,
+    questionnaire.onboardingSkippedAt,
+    questionnaire.totalCount
+  ]);
 
   const renderTabContent = () => {
     switch (activeTab) {
@@ -494,6 +525,11 @@ const WorkoutTrackerContent = () => {
             />
           </Suspense>
         )}
+
+        <ProfileQuestionnaireModal
+          isOpen={showProfileQuiz}
+          onClose={() => setShowProfileQuiz(false)}
+        />
       </div>
     </div>
   );

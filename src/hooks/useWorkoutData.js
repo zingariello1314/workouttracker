@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { cleanJustifications } from '../utils/dayJustificationUtils';
 import { DEFAULT_ADDICTION_QUIT_DATA } from '../utils/addictionQuitConstants';
+import { deriveJourneyStartYmd } from '../utils/sport/recapUserAssessment';
 import logger from '../utils/logger';
 
 const workoutDataLog = logger.module('useWorkoutData');
@@ -1155,11 +1156,24 @@ export const useWorkoutData = (options = {}) => {
 
   const updateData = async (newData) => {
     workoutDataLog.debug('🔄 updateData appelé avec:', newData);
-    setData(newData);
+    let toStore = newData;
+    if (newData && typeof newData === 'object' && !newData.trainingPrefs?.journeyStartYmd) {
+      const derivedStart = deriveJourneyStartYmd(newData);
+      if (derivedStart) {
+        toStore = {
+          ...newData,
+          trainingPrefs: {
+            ...(newData.trainingPrefs || {}),
+            journeyStartYmd: derivedStart
+          }
+        };
+      }
+    }
+    setData(toStore);
     
     try {
       // Sauvegarde manuelle immédiate (pour les boutons de sauvegarde existants)
-      await saveToDB(newData);
+      await saveToDB(toStore);
       workoutDataLog.debug('✅ Données sauvegardées avec succès');
       
       // Notifier le contexte que des données ont été sauvegardées SEULEMENT si la sauvegarde a réussi
@@ -1170,7 +1184,7 @@ export const useWorkoutData = (options = {}) => {
       console.error('❌ Erreur lors de la sauvegarde dans updateData:', error);
       // Essayer de sauvegarder en localStorage comme fallback
       try {
-        localStorage.setItem('workoutData_backup', JSON.stringify(newData));
+        localStorage.setItem('workoutData_backup', JSON.stringify(toStore));
         workoutDataLog.debug('💾 Sauvegarde de secours en localStorage réussie');
       } catch (localStorageError) {
         console.error('❌ Échec de la sauvegarde de secours:', localStorageError);

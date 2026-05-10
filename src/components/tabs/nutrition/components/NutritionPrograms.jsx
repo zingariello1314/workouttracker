@@ -23,6 +23,11 @@ import { Badge } from '../../../ui/Badge';
 import logger from '../../../../utils/logger';
 import { useToast } from '../../../ui/Toast/ToastProvider';
 import { adaptProgramFromLatestImpedance } from '../../../../utils/nutritionProgramEstimate';
+import {
+  clearPendingQuizPrefill,
+  PENDING_QUIZ_PREFILL_NUTRITION_KEY,
+  readPendingQuizPrefill
+} from '../../../../features/profileQuestionnaire/prefill';
 
 const log = logger.component('NutritionPrograms');
 
@@ -172,6 +177,7 @@ const NutritionPrograms = ({ nutritionData, progressEntries = [] }) => {
   const [activeProgram, setActiveProgram] = useState(null);
   const [showForm, setShowForm] = useState(false);
   const [editingProgram, setEditingProgram] = useState(null);
+  const [quizPrefill, setQuizPrefill] = useState(null);
   const [loading, setLoading] = useState(true);
   // ✅ OPTIMISATION 40 : Modal personnalisée pour confirmation suppression
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
@@ -245,6 +251,15 @@ const NutritionPrograms = ({ nutritionData, progressEntries = [] }) => {
       isMountedRef.current = false;
     };
   }, [loadPrograms]);
+
+  useEffect(() => {
+    const pending = readPendingQuizPrefill(PENDING_QUIZ_PREFILL_NUTRITION_KEY);
+    if (!pending?.nutrition) return;
+    setEditingProgram(null);
+    setQuizPrefill(pending);
+    setShowForm(true);
+    clearPendingQuizPrefill(PENDING_QUIZ_PREFILL_NUTRITION_KEY);
+  }, []);
 
   // Ajustement auto séparé pour éviter toute boucle de re-render dans l'onglet
   useEffect(() => {
@@ -448,12 +463,14 @@ const NutritionPrograms = ({ nutritionData, progressEntries = [] }) => {
   // ✅ OPTIMISATION 2.2 : useCallback pour stabilité props
   const handleCreateProgram = useCallback(() => {
     setEditingProgram(null);
+    setQuizPrefill(null);
     setShowForm(true);
   }, []);
 
   // ✅ OPTIMISATION 2.2 : useCallback pour stabilité props
   const handleEditProgram = useCallback((program) => {
     setEditingProgram(program);
+    setQuizPrefill(null);
     setShowForm(true);
   }, []);
 
@@ -461,6 +478,7 @@ const NutritionPrograms = ({ nutritionData, progressEntries = [] }) => {
   const handleFormClose = useCallback(() => {
     setShowForm(false);
     setEditingProgram(null);
+    setQuizPrefill(null);
   }, []);
 
   // ✅ OPTIMISATION 2.3 : useCallback pour formatGoal (évite recréation objet)
@@ -706,6 +724,7 @@ const NutritionPrograms = ({ nutritionData, progressEntries = [] }) => {
           onSave={handleSaveProgram}
           nutritionData={nutritionData}
           progressEntries={progressEntries}
+          initialQuizPrefill={quizPrefill}
         />
       )}
 

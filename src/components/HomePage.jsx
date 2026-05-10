@@ -434,29 +434,34 @@ const HomePage = () => {
     return () => clearInterval(rotationInterval);
   }, [backgroundImages.length]);
 
-  // Fonction pour ajuster la taille de police des citations longues
+  // Fonction pour ajuster la taille de police des citations (plafonds plus bas sur mobile = moins de rognage)
   const adjustQuoteSize = () => {
     const quoteElement = document.querySelector('.adaptive-quote-text');
     if (!quoteElement) return;
 
     const textContent = quoteElement.textContent || '';
     const textLength = textContent.length;
-    
-    // Supprimer les attributs précédents
+    const narrow =
+      typeof window !== 'undefined' ? window.matchMedia('(max-width: 639px)').matches : false;
+    const cap = narrow ? '2.1rem' : '2.95rem';
+
     quoteElement.removeAttribute('data-long');
     quoteElement.removeAttribute('data-very-long');
-    
-    // Ajuster selon la longueur
-    if (textLength > 120) {
+
+    if (textLength > 140) {
       quoteElement.setAttribute('data-very-long', 'true');
-      quoteElement.style.fontSize = 'clamp(1rem, 2.5vw, 2rem)';
-    } else if (textLength > 80) {
+      quoteElement.style.fontSize = narrow
+        ? 'clamp(0.95rem, 2.85vw, 1.72rem)'
+        : 'clamp(1rem, 2.35vw, 2.25rem)';
+    } else if (textLength > 92) {
       quoteElement.setAttribute('data-long', 'true');
-      quoteElement.style.fontSize = 'clamp(1.25rem, 3vw, 2.5rem)';
-    } else if (textLength > 50) {
-      quoteElement.style.fontSize = 'clamp(1.5rem, 4vw, 3.5rem)';
+      quoteElement.style.fontSize = narrow
+        ? 'clamp(1rem, 3.1vw, 1.85rem)'
+        : 'clamp(1.05rem, 2.65vw, 2.45rem)';
+    } else if (textLength > 58) {
+      quoteElement.style.fontSize = `clamp(1.05rem, 3.6vw, ${cap})`;
     } else {
-      quoteElement.style.fontSize = 'clamp(2rem, 6vw, 5rem)';
+      quoteElement.style.fontSize = `clamp(1.1rem, 4vw, ${cap})`;
     }
   };
 
@@ -677,19 +682,20 @@ const HomePage = () => {
       />
 
       {/* Contenu principal */}
-      <main className="relative z-10 flex-1 flex flex-col md:flex-row items-start md:items-center justify-start px-4 md:px-8 pt-7 md:pt-12 pb-6 md:pb-12 gap-3 md:gap-0 min-h-0 overflow-hidden">
-        <div className="max-w-2xl flex-shrink-0 w-full">
-          {/* Titre principal - Citations dynamiques (lignes variables + gras paramétrable) */}
+      <main className="relative z-10 flex-1 flex flex-col md:flex-row items-start md:items-center justify-start px-4 md:px-8 pt-[max(5.5rem,calc(env(safe-area-inset-top,0px)+4.75rem))] md:pt-12 pb-6 md:pb-12 gap-3 md:gap-0 min-h-0 overflow-x-hidden overflow-y-auto overscroll-y-contain [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
+        <div className="max-w-2xl w-full shrink-0 min-w-0">
+          {/* Titre principal — typographie homogène (évite une ligne géante au milieu du texte) */}
           <h1
-            className="adaptive-quote-text font-light mb-10 animate-quote-fade-in"
+            className="adaptive-quote-text font-medium mb-8 md:mb-10 animate-quote-fade-in"
             style={{
               textShadow: '2px 2px 4px rgba(0,0,0,0.8)',
               display: 'flex',
               flexDirection: 'column',
               justifyContent: 'flex-start',
-              gap: '0.25rem',
-              lineHeight: '1.2',
-              paddingTop: '0.1em'
+              gap: '0.28rem',
+              lineHeight: 1.36,
+              paddingTop: '0.08em',
+              paddingBottom: '0.35em'
             }}
           >
             {quoteLoading ? (
@@ -697,12 +703,19 @@ const HomePage = () => {
                 <span className="text-white opacity-50">Chargement...</span>
               </>
             ) : renderedQuote && renderedQuote.lines && renderedQuote.lines.length > 0 ? (
-              <span key={quoteAnimKey} className="inline-flex flex-col gap-1 animate-quote-fade-in">
+              <span key={quoteAnimKey} className="inline-flex flex-col gap-1 animate-quote-fade-in [overflow:visible]">
                 {renderedQuote.lines.map((line, index) => {
-                  const oneBased = index + 1;
-                  const isBold = oneBased >= (renderedQuote.boldFrom || 2) && oneBased <= (renderedQuote.boldTo || 2);
+                  const linesLen = renderedQuote.lines.length;
+                  const isLast = index === linesLen - 1;
                   return (
-                    <span key={index} className={isBold ? 'text-white font-bold' : 'text-white'}>
+                    <span
+                      key={index}
+                      className="block font-medium leading-snug tracking-tight text-white [overflow:visible]"
+                      style={{
+                        paddingBottom: isLast ? '0.08em' : undefined,
+                        textRendering: 'geometricPrecision',
+                      }}
+                    >
                       {line}
                     </span>
                   );

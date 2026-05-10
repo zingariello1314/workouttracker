@@ -26,6 +26,7 @@ import RecapStrengthStatsCard from '../sport/recap/RecapStrengthStatsCard';
 import RunningTrophiesDashboardCompact from './RunningTrophiesDashboardCompact.jsx';
 import { ADDICTION_QUIT_JOURNAL_BOTTOM_ANCHOR_ID } from '../tabs/addictionQuit/AddictionQuitCravingsPanel';
 import MomentumWeekCharts from './MomentumWeekCharts';
+import RecapDailyTrendChartsBlock from '../sport/recap/RecapDailyTrendChartsBlock';
 
 const questPillClass = (tone) => {
   if (tone === 'good') return 'bg-amber-500/20 text-amber-50 border-amber-400/50';
@@ -409,6 +410,10 @@ const DashboardMomentumBlock = () => {
             </div>
           </div>
         </div>
+      </div>
+
+      <div className="mt-4">
+        <RecapDailyTrendChartsBlock compact />
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-5">

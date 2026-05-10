@@ -225,12 +225,14 @@ html, body {
 .adaptive-quote-text {
   /* Taille de base pour les citations courtes */
   font-size: clamp(2rem, 8vw, 5rem); /* 32px min, 80px max, responsive */
-  line-height: 1.2; /* Augmenté de 1.1 à 1.2 pour éviter la coupure des ascendantes */
+  /* Interligne + marge bas : évite de couper descendantes (g, j, y) sur lignes en gras */
+  line-height: 1.36;
   max-width: 600px;
   word-wrap: break-word;
   overflow-wrap: break-word;
   hyphens: auto;
-  padding-top: 0.1em; /* Petit padding en haut pour les ascendantes */
+  padding-top: 0.12em;
+  padding-bottom: 0.32em;
 }
 
 /* Ajustements responsifs pour différentes tailles d'écran */
@@ -274,10 +276,9 @@ html, body {
   width: 100%;
   max-width: min(600px, 90vw);
   box-sizing: border-box;
-  /* Assurer que les ascendantes et descendantes ne sont pas coupées */
   overflow: visible;
-  margin-top: 0.2em;
-  margin-bottom: 0.2em;
+  margin-top: 0.15em;
+  margin-bottom: 0.15em;
 }
 
 /* ============================================

@@ -8,7 +8,7 @@ import Button from '../ui/Button';
 import { Input, Checkbox } from '../ui/Input';
 import ChallengeCard from '../ui/ChallengeCard';
 import { typography } from '../../styles/typography';
-import { getAutoWeekVariant } from '../../utils/dateUtils';
+import { getAutoWeekVariant, getDateStr as dateToYmd } from '../../utils/dateUtils';
 import { calculateAutoReps, detectExerciseUnit } from '../../utils/exerciseCalculations';
 import { useTodayExercises } from '../../hooks/useTodayExercises';
 import AddExceptionalExerciseModal from '../modals/AddExceptionalExerciseModal';
@@ -47,6 +47,7 @@ import {
   normalizeSeriesInputForStorage
 } from '../../utils/dailyVariationSeriesOverrides';
 import { findBankFoodByIdWithOverrides, getFoodUnitHints } from '../../data/nutritionFoodBank';
+import { useQuietQuestEngine, getQuestsForDate } from '../../hooks/useQuietQuestEngine';
 
 const PENDING_PROGRESS_SECTION_KEY = 'momentum.pendingProgressSection';
 const SPOON_TABLESPOON_ML = 15;
@@ -94,6 +95,28 @@ function resolveProgramExerciseFromWorkout(workout, dailyVariations, dateStr, ex
   const list = workout?.exercices || [];
   const ov = getExerciseSeriesOverrides(dailyVariations, dateStr);
   return mergeSeriesIntoProgramExercises(list, ov).find((ex) => ex.id === exerciseId) || null;
+}
+
+/** Nombre d’exercices du programme du jour avec au moins une case cochée (pour sync quête « liée sport »). */
+function countCheckedProgramExercisesForDay(dataSnapshot, date, workout, isGymMode) {
+  if (!dataSnapshot || !workout || !Array.isArray(workout.exercices)) return 0;
+  const dateStr = dateToYmd(date);
+  const list = mergeSeriesIntoProgramExercises(
+    workout.exercices,
+    getExerciseSeriesOverrides(dataSnapshot.dailyVariations, dateStr)
+  );
+  if (!list.length) return 0;
+  const weekVariant = getAutoWeekVariant(date);
+  let n = 0;
+  for (const exercise of list) {
+    const keys = collectExerciseKeysForWorkoutExercise(date, exercise, {
+      isGymMode,
+      workoutIsGymMode: workout?.isGymMode,
+      weekVariant,
+    });
+    if (keys.some((k) => dataSnapshot.checkedExercises?.[k] === true)) n += 1;
+  }
+  return n;
 }
 
 const resolveExerciseWeightDisplay = (currentData, keys, readKey) => {
@@ -178,6 +201,13 @@ const TodayTab = () => {
   
   const { showSuccess, showError } = useToast();
   const t = useTranslation();
+  const {
+    allQuests: quietQuests,
+    toggleQuestValidation,
+    isQuestCompletedOnDate,
+    todayDate: quietEngineToday,
+    prayerLocation,
+  } = useQuietQuestEngine();
   const nutritionData = useNutritionData();
   const [showPerformanceModal, setShowPerformanceModal] = useState(false);
   const [activeNutritionProgram, setActiveNutritionProgram] = useState(null);
@@ -395,6 +425,39 @@ const TodayTab = () => {
     }
   };
 
+  /** Quêtes « liées sport » : même jour que l’engine, cocher si au moins un exo programme coché, décocher si plus aucun. */
+  const syncSportLinkedQuestsWithProgramSnapshot = useCallback(
+    (date, dataSnapshot) => {
+      const calendarDateStr = getDateStr(date);
+      if (!calendarDateStr || calendarDateStr !== quietEngineToday) return;
+      if (!Array.isArray(quietQuests) || quietQuests.length === 0) return;
+      const workout = getTodayWorkout(date, isGymMode);
+      const count = countCheckedProgramExercisesForDay(dataSnapshot, date, workout, isGymMode);
+      const todays = getQuestsForDate(quietQuests, calendarDateStr, prayerLocation);
+      const idsToday = new Set(todays.map((q) => q.id));
+      for (const q of quietQuests) {
+        if (!q || q.completeWithTodaySportExercise !== true) continue;
+        if (!idsToday.has(q.id)) continue;
+        const completed = isQuestCompletedOnDate(q.id, calendarDateStr);
+        if (count > 0) {
+          if (!completed) toggleQuestValidation(q.id, calendarDateStr, { origin: 'today-program-exercise' });
+        } else if (completed) {
+          toggleQuestValidation(q.id, calendarDateStr, { origin: 'today-program-exercise' });
+        }
+      }
+    },
+    [
+      getDateStr,
+      quietEngineToday,
+      quietQuests,
+      prayerLocation,
+      isQuestCompletedOnDate,
+      toggleQuestValidation,
+      getTodayWorkout,
+      isGymMode,
+    ]
+  );
+
   // Fonction pour gérer le clic sur une case à cocher avec auto-remplissage
   const handleExerciseCheck = (exerciseId, date) => {
     const currentData = getCurrentData();
@@ -470,14 +533,16 @@ const TodayTab = () => {
         currentData.exerciseWeightPerArm || {},
         currentData.exerciseSetWeights || {}
       );
-      updateTempExerciseData({
+      const nextSnapshot = {
         ...currentData,
         checkedExercises: nextChecked,
         reps: nextReps,
         exerciseWeights: nextWeights,
         exerciseWeightPerArm: nextPerArm,
-        exerciseSetWeights: nextSetW
-      });
+        exerciseSetWeights: nextSetW,
+      };
+      updateTempExerciseData(nextSnapshot);
+      syncSportLinkedQuestsWithProgramSnapshot(date, nextSnapshot);
       return;
     }
 
@@ -513,14 +578,16 @@ const TodayTab = () => {
       if (prevKeyForWeight && Array.isArray(currentData.exerciseSetWeights?.[prevKeyForWeight])) {
         nextSetW[primaryKey] = [...currentData.exerciseSetWeights[prevKeyForWeight]];
       }
-      updateTempExerciseData({
+      const nextSnapshot = {
         ...currentData,
         checkedExercises: nextChecked,
         reps: nextReps,
         exerciseWeights: nextWeights,
         exerciseWeightPerArm: nextPerArm,
-        exerciseSetWeights: nextSetW
-      });
+        exerciseSetWeights: nextSetW,
+      };
+      updateTempExerciseData(nextSnapshot);
+      syncSportLinkedQuestsWithProgramSnapshot(date, nextSnapshot);
       return;
     }
 
@@ -545,14 +612,16 @@ const TodayTab = () => {
     if (prevKey && Array.isArray(currentData.exerciseSetWeights?.[prevKey])) {
       nextSetW[primaryKey] = [...currentData.exerciseSetWeights[prevKey]];
     }
-    updateTempExerciseData({
+    const nextSnapshot = {
       ...currentData,
       checkedExercises: nextChecked,
       reps: nextReps,
       exerciseWeights: nextWeights,
       exerciseWeightPerArm: nextPerArm,
-      exerciseSetWeights: nextSetW
-    });
+      exerciseSetWeights: nextSetW,
+    };
+    updateTempExerciseData(nextSnapshot);
+    syncSportLinkedQuestsWithProgramSnapshot(date, nextSnapshot);
   };
 
   const updateLocalReps = (exerciseId, reps, date) => {
@@ -1055,10 +1124,26 @@ const TodayTab = () => {
           ]
         : [];
 
+    const exceptionalCompletedReps = (additionalExercises || []).reduce((sum, ex) => {
+      if (!ex?.completed) return sum;
+      if (ex?.type !== 'reps') return sum;
+      const n = Math.max(
+        0,
+        Math.floor(
+          Number(
+            ex?.totalReps ??
+              (Array.isArray(ex?.actualReps) ? ex.actualReps.reduce((a, b) => a + (Number(b) || 0), 0) : 0)
+          ) || 0
+        )
+      );
+      return sum + n;
+    }, 0);
+
     const todayData = {
       date: dateStr,
       exercises: [...programRows, ...complementaryRows],
-      totalReps: programRows.reduce((total, ex) => total + (parseInt(ex.reps, 10) || 0), 0),
+      totalReps:
+        programRows.reduce((total, ex) => total + (parseInt(ex.reps, 10) || 0), 0) + exceptionalCompletedReps,
       estimatedDuration: Math.max(30, programExercisesMerged.length * 3),
       duration: calculateSessionDuration(),
       workoutLoadSnapshot: collectWorkoutLoadSubsetForDate(snapshot, dateStr)
@@ -1096,7 +1181,7 @@ const TodayTab = () => {
       setSeriesAdaptDialog(null);
       showSuccess(
         toStore
-          ? t('today.seriesAdapt.saved', 'Prévu du jour enregistré')
+          ? t('today.seriesAdapt.saved', 'Séries / reps du jour enregistrées')
           : t('today.seriesAdapt.resetToast', 'Retour au prévu du programme')
       );
     } catch (err) {
@@ -1529,11 +1614,11 @@ const TodayTab = () => {
                         className="inline-flex items-center gap-1 rounded-md border border-teal-700/50 bg-[#0F4C5C]/20 px-2 py-0.5 text-[11px] font-medium text-teal-200 hover:border-teal-500/60 hover:bg-[#0F4C5C]/35"
                         title={t(
                           'today.seriesAdapt.openTitle',
-                          'Adapter séries × reps pour aujourd’hui seulement'
+                          'Modifier séries × reps pour aujourd’hui'
                         )}
                       >
                         <PenLine className="w-3.5 h-3.5 shrink-0" />
-                        {t('today.seriesAdapt.short', 'Prévu du jour')}
+                        {t('today.seriesAdapt.short', 'Séries & reps du jour')}
                       </button>
                     </div>
                   </div>
@@ -2086,7 +2171,7 @@ const TodayTab = () => {
         >
           <div className="w-full max-w-md rounded-xl border-2 border-[#0F4C5C]/70 bg-slate-950 p-5 shadow-2xl">
             <h4 id="series-adapt-title" className="text-lg font-semibold text-white mb-1">
-              {t('today.seriesAdapt.title', 'Prévu pour aujourd’hui')}
+              {t('today.seriesAdapt.title', 'Séries × reps pour aujourd’hui')}
             </h4>
             <p className="text-sm text-teal-200/80 mb-3 break-words">{seriesAdaptDialog.name}</p>
             <p className="text-xs text-slate-500 mb-2">

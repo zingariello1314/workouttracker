@@ -16,12 +16,14 @@ import { CATEGORIES, snapDureeToValidOption } from '../constants';
 const DEFAULT_MULTI_SLOTS = [
   { slot: 'matin', enabled: false, heure: '' },
   { slot: 'midi', enabled: false, heure: '' },
+  { slot: 'apres-midi', enabled: false, heure: '' },
   { slot: 'soir', enabled: false, heure: '' }
 ];
 
 const SLOT_SUFFIX = {
   matin: '(matin)',
   midi: '(midi)',
+  'apres-midi': '(après-midi)',
   soir: '(soir)'
 };
 
@@ -62,6 +64,7 @@ export const useQuestsActions = (allQuests = [], setAllQuests) => {
     active: true,
     multiSlotsEnabled: false,
     multiSlots: createDefaultMultiSlots(),
+    completeWithTodaySportExercise: false,
   });
 
   const openNewQuestPopup = useCallback(() => {
@@ -82,6 +85,7 @@ export const useQuestsActions = (allQuests = [], setAllQuests) => {
       active: true,
       multiSlotsEnabled: false,
       multiSlots: createDefaultMultiSlots(),
+      completeWithTodaySportExercise: false,
     });
     setShowQuestPopup(true);
   }, []);
@@ -106,6 +110,7 @@ export const useQuestsActions = (allQuests = [], setAllQuests) => {
       active: quest.active !== false,
       multiSlotsEnabled: false,
       multiSlots: createDefaultMultiSlots(),
+      completeWithTodaySportExercise: quest.completeWithTodaySportExercise === true,
     });
     setShowQuestPopup(true);
   }, [allQuests]);
@@ -157,7 +162,10 @@ export const useQuestsActions = (allQuests = [], setAllQuests) => {
             : q
         );
         
-        emitSidebarEvent(SIDEBAR_EVENTS.QUEST_UPDATED, { questId: editingQuestId });
+        emitSidebarEvent(SIDEBAR_EVENTS.QUEST_UPDATED, {
+          questId: editingQuestId,
+          skipQuietQuestListRefetch: true,
+        });
         return updated;
       }
 
@@ -180,7 +188,10 @@ export const useQuestsActions = (allQuests = [], setAllQuests) => {
           ...baseQuest,
           xp: calculateQuestXP(baseQuest),
         };
-        emitSidebarEvent(SIDEBAR_EVENTS.QUEST_CREATED, { questId: nextId });
+        emitSidebarEvent(SIDEBAR_EVENTS.QUEST_CREATED, {
+          questId: nextId,
+          skipQuietQuestListRefetch: true,
+        });
         return [...prev, newQuest];
       }
 
@@ -202,7 +213,10 @@ export const useQuestsActions = (allQuests = [], setAllQuests) => {
         };
       });
 
-      emitSidebarEvent(SIDEBAR_EVENTS.QUEST_CREATED, { questId: generatedQuests[0]?.id });
+      emitSidebarEvent(SIDEBAR_EVENTS.QUEST_CREATED, {
+        questId: generatedQuests[0]?.id,
+        skipQuietQuestListRefetch: true,
+      });
       return [...prev, ...generatedQuests];
     });
 
@@ -216,7 +230,7 @@ export const useQuestsActions = (allQuests = [], setAllQuests) => {
         String(q.id) === String(id) ? { ...q, active: !q.active } : q
       )
     );
-    emitSidebarEvent(SIDEBAR_EVENTS.QUEST_UPDATED, { questId: id });
+    emitSidebarEvent(SIDEBAR_EVENTS.QUEST_UPDATED, { questId: id, skipQuietQuestListRefetch: true });
   }, [setAllQuests]);
 
   const deleteQuest = useCallback((id) => {
@@ -229,7 +243,11 @@ export const useQuestsActions = (allQuests = [], setAllQuests) => {
     )
       return;
     setAllQuests((prev) => prev.filter((q) => String(q.id) !== String(id)));
-    emitSidebarEvent(SIDEBAR_EVENTS.QUEST_UPDATED, { questId: id, deleted: true });
+    emitSidebarEvent(SIDEBAR_EVENTS.QUEST_UPDATED, {
+      questId: id,
+      deleted: true,
+      skipQuietQuestListRefetch: true,
+    });
     showSuccess(`Quête "${questName}" supprimée`);
   }, [allQuests, setAllQuests, showSuccess]);
 
@@ -247,7 +265,10 @@ export const useQuestsActions = (allQuests = [], setAllQuests) => {
         ordre: prev.length + 1,
       };
       
-      emitSidebarEvent(SIDEBAR_EVENTS.QUEST_CREATED, { questId: nextId });
+      emitSidebarEvent(SIDEBAR_EVENTS.QUEST_CREATED, {
+        questId: nextId,
+        skipQuietQuestListRefetch: true,
+      });
       return [...prev, copy];
     });
     showSuccess(`Quête "${original.nom}" dupliquée`);

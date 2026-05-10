@@ -35,7 +35,31 @@ const formatRecordValue = (record) => {
   return `${record.reps} reps`;
 };
 
-const MiniLineChart = ({ data = [], xKey, yKey, height = 180, color = '#14b8a6' }) => {
+const formatMiniChartDate = (raw) => {
+  const s = String(raw || '').slice(0, 10);
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(s)) return String(raw || '—');
+  const [y, m, d] = s.split('-').map(Number);
+  try {
+    return new Date(y, m - 1, d).toLocaleDateString('fr-FR', {
+      weekday: 'long',
+      day: 'numeric',
+      month: 'long',
+      year: 'numeric'
+    });
+  } catch {
+    return s;
+  }
+};
+
+const MiniLineChart = ({
+  data = [],
+  xKey,
+  yKey,
+  height = 180,
+  color = '#14b8a6',
+  valueLabel = null,
+  formatY = null
+}) => {
   const width = 760;
   const pad = { top: 16, right: 18, bottom: 24, left: 40 };
   const points = Array.isArray(data) ? data : [];
@@ -47,26 +71,76 @@ const MiniLineChart = ({ data = [], xKey, yKey, height = 180, color = '#14b8a6' 
   const path = points
     .map((p, idx) => `${idx === 0 ? 'M' : 'L'} ${getX(idx)} ${getY(p?.[yKey])}`)
     .join(' ');
+  const [tip, setTip] = useState(null);
+  const fmt = formatY || ((v) => String(Math.round(Number(v) * 100) / 100));
+  const hitR = points.length > 40 ? 10 : 13;
 
   return (
-    <svg viewBox={`0 0 ${width} ${height}`} className="w-full h-auto rounded-lg border border-[#0F4C5C]/40 bg-black">
-      <line x1={pad.left} y1={height - pad.bottom} x2={width - pad.right} y2={height - pad.bottom} stroke="#334155" strokeWidth="1" />
-      <line x1={pad.left} y1={pad.top} x2={pad.left} y2={height - pad.bottom} stroke="#334155" strokeWidth="1" />
-      {points.length > 1 && <path d={path} fill="none" stroke={color} strokeWidth="2.5" />}
-      {points.map((p, idx) => (
-        <g key={`${idx}-${p?.[xKey]}`}>
-          <circle cx={getX(idx)} cy={getY(p?.[yKey])} r="2.8" fill={color} />
-          {idx === 0 || idx === points.length - 1 ? (
-            <text x={getX(idx)} y={height - 7} textAnchor={idx === 0 ? 'start' : 'end'} fontSize="10" fill="#94a3b8">
-              {String(p?.[xKey] || '').slice(5)}
-            </text>
-          ) : null}
-        </g>
-      ))}
-      <text x={pad.left + 4} y={pad.top + 10} fontSize="10" fill="#94a3b8">
-        max {maxY}
-      </text>
-    </svg>
+    <div className="relative" onMouseLeave={() => setTip(null)}>
+      <svg viewBox={`0 0 ${width} ${height}`} className="w-full h-auto rounded-lg border border-[#0F4C5C]/40 bg-black">
+        <line x1={pad.left} y1={height - pad.bottom} x2={width - pad.right} y2={height - pad.bottom} stroke="#334155" strokeWidth="1" />
+        <line x1={pad.left} y1={pad.top} x2={pad.left} y2={height - pad.bottom} stroke="#334155" strokeWidth="1" />
+        {points.length > 1 && <path d={path} fill="none" stroke={color} strokeWidth="2.5" pointerEvents="none" />}
+        {points.map((p, idx) => {
+          const cx = getX(idx);
+          const cy = getY(p?.[yKey]);
+          const v = p?.[yKey];
+          const xRaw = p?.[xKey];
+          return (
+            <g key={`${idx}-${String(xRaw)}`}>
+              <circle
+                cx={cx}
+                cy={cy}
+                r={hitR}
+                fill="transparent"
+                className="cursor-crosshair"
+                pointerEvents="all"
+                onMouseEnter={(e) =>
+                  setTip({
+                    index: idx,
+                    clientX: e.clientX,
+                    clientY: e.clientY,
+                    dateLong: formatMiniChartDate(xRaw),
+                    valueText: fmt(v)
+                  })
+                }
+                onMouseMove={(e) =>
+                  setTip((prev) => (prev ? { ...prev, clientX: e.clientX, clientY: e.clientY } : prev))
+                }
+              />
+              <circle
+                cx={cx}
+                cy={cy}
+                r={tip?.index === idx ? 4 : 2.8}
+                fill={color}
+                pointerEvents="none"
+              />
+              {idx === 0 || idx === points.length - 1 ? (
+                <text x={cx} y={height - 7} textAnchor={idx === 0 ? 'start' : 'end'} fontSize="10" fill="#94a3b8" pointerEvents="none">
+                  {String(xRaw || '').slice(5)}
+                </text>
+              ) : null}
+            </g>
+          );
+        })}
+        <text x={pad.left + 4} y={pad.top + 10} fontSize="10" fill="#94a3b8" pointerEvents="none">
+          max {maxY}
+        </text>
+      </svg>
+      {tip && (
+        <div
+          role="tooltip"
+          className="fixed z-[500] max-w-[240px] rounded-lg border border-[#0F5C45]/55 bg-[#020617]/95 px-2.5 py-2 text-[11px] text-slate-100 shadow-xl"
+          style={{ left: tip.clientX + 12, top: tip.clientY + 12 }}
+        >
+          <div className="border-b border-[#0F4C5C]/45 pb-1 text-xs font-semibold capitalize text-teal-100">{tip.dateLong}</div>
+          <div className="mt-1.5 flex items-baseline justify-between gap-2">
+            <span className="text-slate-500">{valueLabel || yKey}</span>
+            <span className="font-bold tabular-nums text-white">{tip.valueText}</span>
+          </div>
+        </div>
+      )}
+    </div>
   );
 };
 
@@ -609,7 +683,14 @@ const PerformanceChallengesTab = () => {
               <CardContent>
                 {dailyMaxCurveData.length > 0 ? (
                   <div className="space-y-2">
-                    <MiniLineChart data={dailyMaxCurveData} xKey="date" yKey="count" color="#22d3ee" />
+                    <MiniLineChart
+                      data={dailyMaxCurveData}
+                      xKey="date"
+                      yKey="count"
+                      color="#22d3ee"
+                      valueLabel="Max enregistrés"
+                      formatY={(v) => String(Math.round(Number(v)))}
+                    />
                     <p className="text-xs text-slate-500">
                       Plus la courbe monte, plus tu as enregistré de max ce jour-là.
                     </p>
@@ -645,7 +726,14 @@ const PerformanceChallengesTab = () => {
                           <div className="text-sm font-medium text-white">{curve.exerciseName}</div>
                           <div className="text-[11px] text-slate-500">{curve.trainingDiscipline}</div>
                         </div>
-                        <MiniLineChart data={curve.points} xKey="date" yKey="score" color="#34d399" />
+                        <MiniLineChart
+                          data={curve.points}
+                          xKey="date"
+                          yKey="score"
+                          color="#34d399"
+                          valueLabel="Score performance"
+                          formatY={(v) => (Math.round(Number(v) * 10) / 10).toFixed(1)}
+                        />
                         <div className="mt-2 space-y-1">
                           {curve.points.map((row, idx) => (
                             <div key={`${curve.exerciseId}-${row.date}-${idx}`} className="text-xs text-slate-400 flex items-center justify-between">
@@ -680,7 +768,14 @@ const PerformanceChallengesTab = () => {
                 {exerciseCurveData.length > 0 && (
                   <div className="mt-4 rounded-lg border border-[#0F4C5C]/40 bg-black p-3">
                     <div className="text-xs text-slate-400 mb-2">Courbe focus (exercice sélectionné)</div>
-                    <MiniLineChart data={exerciseCurveData} xKey="date" yKey="score" color="#22d3ee" />
+                    <MiniLineChart
+                      data={exerciseCurveData}
+                      xKey="date"
+                      yKey="score"
+                      color="#22d3ee"
+                      valueLabel="Score performance"
+                      formatY={(v) => (Math.round(Number(v) * 10) / 10).toFixed(1)}
+                    />
                   </div>
                 )}
               </CardContent>
@@ -767,7 +862,14 @@ const PerformanceChallengesTab = () => {
                       <div className="rounded-lg border border-[#0F4C5C]/40 bg-black p-3">
                         <div className="mb-2 text-sm font-medium text-white">Évolution du max</div>
                         {selectedExerciseCurve.length > 0 ? (
-                          <MiniLineChart data={selectedExerciseCurve} xKey="date" yKey="score" color="#34d399" />
+                          <MiniLineChart
+                            data={selectedExerciseCurve}
+                            xKey="date"
+                            yKey="score"
+                            color="#34d399"
+                            valueLabel="Score performance"
+                            formatY={(v) => (Math.round(Number(v) * 10) / 10).toFixed(1)}
+                          />
                         ) : (
                           <div className="text-xs text-slate-500">Pas encore de points à tracer.</div>
                         )}

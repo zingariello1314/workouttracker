@@ -423,6 +423,171 @@ export const translations = {
     'recap.loadSummary':
       'Charge affichée = musculation (pondérée, decay {{lambda}}/j) + {{cardioPct}} % du cardio plafonné par zone.',
     'recap.dominant': 'Zone la plus travaillée en volume (reps cochées / parts) : {{label}}',
+    'recap.assessment.title': 'Synthèse profil, niveau & habitudes (~28 j)',
+    'recap.assessment.subtitle':
+      'Un seul regard : entraînement, corps, nutrition (si saisie) et score indicatif ; courbes sur 84 j. Les remarques sont des pistes à partir de tes données — pas un avis médical.',
+    'recap.assessment.badge': 'Profil',
+    'recap.assessment.maturity': 'Historique riche (~{{pct}} % du plafond “données”)',
+    'recap.assessment.userFallback': 'Utilisateur',
+    'recap.assessment.identity': 'Identité',
+    'recap.assessment.latestWeight': 'Dernier poids',
+    'recap.assessment.bodyFat': 'Graisse corp.',
+    'recap.assessment.quizEstimate': 'estim. quiz',
+    'recap.assessment.lifetimeReps': 'Reps cumulées (app)',
+    'recap.assessment.scoreHint':
+      'Composante principale : régularité récente ; rendements décroissants au-delà de gros volumes.',
+    'recap.assessment.chartWeight': 'Évolution du poids (impédance / mensurations)',
+    'recap.assessment.chartWeightAxis': 'Poids',
+    'recap.assessment.chartEmptyWeight':
+      'Aucune pesée sur cette période — ajoute une mesure (Suivi corporel).',
+    'recap.assessment.chartWeightFoot':
+      'Entre deux pesées, la courbe prolonge la dernière valeur connue.',
+    'recap.assessment.chartReps': 'Reps musculation par jour',
+    'recap.assessment.chartRepsAxis': 'Reps / jour',
+    'recap.assessment.chartEmptyReps': 'Pas encore de reps enregistrées.',
+    'recap.assessment.chartRepsFoot': 'Total reps cochées (+ pompes endurance) par jour calendaire · {{d}} derniers jours.',
+    'recap.assessment.horizonShort': 'Court terme · quelques semaines',
+    'recap.assessment.horizonMedium': 'Moyen terme · cycles d’entraînement',
+    'recap.assessment.horizonLong': 'Long terme · mois & années',
+    'recap.assessment.journey': 'Début du suivi',
+    'recap.assessment.tenure': '{{days}} jours depuis la première activité enregistrée (ou date figée).',
+    'recap.assessment.window': 'Fenêtre récente',
+    'recap.assessment.activeDays':
+      '{{n}} jours avec activité · objectif indicatif ~{{exp}} séances sur 28 j. (quiz)',
+    'recap.assessment.regularity': 'Régularité vs objectif : {{pct}} %',
+    'recap.assessment.program': 'Programme',
+    'recap.assessment.sessionAlignTitle': 'Prévu vs réalisé (séances & séries du jour · 28 j.)',
+    'recap.assessment.sessionAlignLineAvg':
+      'Moyenne prévu / réalisé (charge) : {{score}} % · {{scored}} jour(s) analysé(s) sur {{plan}} où une séance était prévue (séries/reps du jour incluses).',
+    'recap.assessment.sessionAlignPartial':
+      'Au moins {{plan}} jour(s) avec séance prévue sur la fenêtre : données insuffisantes pour une moyenne fiable (charges / reps).',
+    'recap.assessment.sessionOverrides':
+      '{{d}} jour(s) avec adaptations séries/reps · {{t}} exercice(s) touché(s).',
+    'recap.assessment.sessionOverridesNone': 'Aucune adaptation « séries/reps du jour » sur cette fenêtre.',
+    'recap.assessment.loadBlock': 'Charge (kg × reps)',
+    'recap.assessment.weightedDays': '{{n}} jours avec au moins une charge saisie',
+    'recap.assessment.volumeSum': 'Volume total sur ces jours-là : {{v}} (kg×reps)',
+    'recap.assessment.avgVolume': 'Moyenne par jour « avec poids » : {{v}}',
+    'recap.assessment.loadOnlyWeightedDays':
+      'Les jours sans charge enregistrée sont exclus de ces moyennes de volume.',
+    'recap.assessment.repsBlock': 'Reps et complexité',
+    'recap.assessment.totalReps': '{{n}} reps (musculation / coché) sur la fenêtre',
+    'recap.assessment.avgRepsPerDay': 'Moyenne par jour avec reps : {{n}}',
+    'recap.assessment.avgDifficulty': 'Difficulté moyenne (référentiel) : {{d}} / 5',
+    'recap.assessment.noDifficulty': 'Peu d’exercices avec difficulté renseignée dans la base.',
+    'recap.assessment.quizHeading': 'Quiz profil ({{done}} / {{total}})',
+    'recap.assessment.suggestions': 'Suggestions',
+    'recap.assessment.predictions': 'Pistes',
+
+    'recap.crossCoach.badge': 'Coach',
+    'recap.crossCoach.title': 'Synthèse corps · entraînement · nutrition (~28 j)',
+    'recap.crossCoach.subtitle':
+      'Vue transversale et messages priorisés à partir de tes saisies locales (pas un avis médical).',
+    'recap.crossCoach.loadingChip': 'Nutrition en chargement…',
+    'recap.crossCoach.loadingGarminChip': 'Garmin en chargement…',
+    'recap.crossCoach.pillar.training': 'Entraînement',
+    'recap.crossCoach.pillar.body': 'Corps',
+    'recap.crossCoach.pillar.nutrition': 'Nutrition',
+    'recap.crossCoach.pillar.trainingLine':
+      '{{days}} jours avec activité · {{reps}} reps sur la fenêtre · volume (kg×reps) total : {{vol}}',
+    'recap.crossCoach.pillar.distinctExercisesLine':
+      'Exercices du programme distincts cochés sur 28 j : ~{{n}}',
+    'recap.crossCoach.pillar.bodyLine.weight': 'Dernière pesée sur la fenêtre : {{w}} kg',
+    'recap.crossCoach.pillar.bodyLine.none': 'Pas de pesée récente dans cette fenêtre.',
+    'recap.crossCoach.pillar.nutritionLine.loading': 'Chargement du journal nutrition…',
+    'recap.crossCoach.pillar.nutritionLine.days': '{{n}} jour(s) avec au moins un repas enregistré (28 j)',
+    'recap.crossCoach.pillar.nutritionLine.empty': 'Aucun repas enregistré sur cette fenêtre.',
+    'recap.crossCoach.gapsTitle': 'Pour affiner la lecture',
+    'recap.crossCoach.gap.quiz': 'Complète le quiz profil pour caler objectifs et régularité.',
+    'recap.crossCoach.gap.nutrition_empty': 'Programme nutrition actif mais journal vide sur 28 j.',
+    'recap.crossCoach.gap.body_weight': 'Ajoute une pesée (Suivi corporel) pour ancrer la tendance poids.',
+    'recap.crossCoach.disclaimer':
+      'Tout ceci est calculé localement à partir de tes saisies ; pour un avis nutritionnel ou médical, vois un·e pro.',
+    'recap.crossCoach.remarksHeading': 'Remarques',
+    'recap.crossCoach.insight.quizIncomplete':
+      'Le quiz profil est encore incomplet ({{done}} / {{total}}) : quand tu auras 5 minutes, ça ajuste objectifs et ton des messages.',
+    'recap.crossCoach.insight.logMealsWhenProgram':
+      'Tu as un programme nutrition : quelques jours de repas notés suffisent pour voir si tu colles à ton plan.',
+    'recap.crossCoach.insight.logMealsWhenProgramWithTraining':
+      'Tu t’entraînes bien en ce moment mais le journal nutrition est vide : même 2–3 jours de saisie aident à voir si l’énergie suit la charge.',
+    'recap.crossCoach.insight.tryMealsForTrainingContext':
+      'Sans programme nutrition, tu peux quand même noter des repas de temps en temps : ça donne du contexte à côté de tes séances.',
+    'recap.crossCoach.insight.weekMoreActive':
+      'Belle semaine : {{current}} jours avec activité, un cran au-dessus de ce que tu faisais en moyenne sur les semaines d’avant (environ {{priorAvg}}).',
+    'recap.crossCoach.insight.weekLessActive':
+      'Cette semaine est un peu plus calme ({{current}} j. actifs) que ta moyenne récente (≈ {{priorAvg}}) : parfois c’est voulu (récup, emploi du temps) — pas besoin de la dramatiser.',
+    'recap.crossCoach.insight.weekLiftVolumeModerate':
+      'Volume avec charges un peu plus haut que d’habitude sur les 7 derniers jours : garde un œil sur la fatigue et le sommeil.',
+    'recap.crossCoach.insight.weekLiftVolumeStrong':
+      'Volume avec charges clairement au-dessus de tes semaines précédentes : si ça s’enchaîne, prévois du facile ou du repos actif.',
+    'recap.crossCoach.insight.weekLiftVolumeVeryStrong':
+      'Gros pic de volume avec charges vs tes semaines d’avant : priorise récup, hydratation et sommeil plutôt que d’ajouter encore.',
+    'recap.crossCoach.insight.repsWeekStrongerVsRecentWeeks':
+      'Cette semaine tu enchaînes plus de reps muscu que sur les blocs précédents de la fenêtre : bon signal si le corps suit.',
+    'recap.crossCoach.insight.repsWeekQuieterVsRecentWeeks':
+      'Moins de reps muscu cette semaine que sur les semaines précédentes de la fenêtre : ça peut être une phase légère ou un créneau manquant — à voir avec ton ressenti.',
+    'recap.crossCoach.insight.sportUpNutritionAligned':
+      'En parallèle : activité en hausse et apports plutôt proches de tes calories cibles (~{{meanPct}} % en moyenne).',
+    'recap.crossCoach.insight.planCheckStreak':
+      'Tu coches le plan repas depuis {{days}} jours d’affilée : bon ancrage sur le prévu.',
+    'recap.crossCoach.insight.planChecksBuilding':
+      '{{leaves}} coches « plan » sur {{days}} jour(s) : ça aide à suivre sans tout saisir au gramme.',
+    'recap.crossCoach.insight.regularityLow':
+      'Ta régularité est en dessous de l’objectif indicatif du quiz ({{pct}} %) : souvent, deux créneaux fixes par semaine changent tout.',
+    'recap.crossCoach.insight.sessionLoadGap':
+      'Sur les séances où on peut comparer prévu et réalisé, tu es assez loin du plan (ordre de grandeur {{score}} % en moyenne) : coche charges et reps quand tu peux, ça rend la lecture plus juste.',
+    'recap.crossCoach.insight.sessionLoadGood':
+      'Bon alignement prévu / réalisé récent (~{{score}} %) : tes séries adaptées reflètent bien ce que tu fais.',
+    'recap.crossCoach.insight.weightDown28':
+      'Poids en baisse d’environ {{delta}} kg sur les mesures récentes (fenêtre Récap) : croise avec apports et intensité sans tirer des conclusions trop hâtives.',
+    'recap.crossCoach.insight.weightUp28':
+      'Poids en hausse d’environ {{delta}} kg sur les mesures récentes : normal en masse ; à contextualiser avec ton objectif.',
+    'recap.crossCoach.insight.addWeighIn':
+      'Pas de pesée sur la fenêtre : un point régulier (ex. une fois/semaine) suffit pour voir une tendance.',
+    'recap.crossCoach.insight.firstMealsLogged':
+      'Déjà {{days}} jour(s) de repas enregistrés sur 28 j : continue ainsi pour voir stabilité et écarts.',
+    'recap.crossCoach.insight.nutritionProgramBuilding':
+      'Programme nutrition + journal qui se remplit : tu peux te concentrer sur des ajustements petits mais réguliers.',
+    'recap.crossCoach.insight.complianceStrong':
+      'Scores de conformité moyens plutôt bons (~{{score}} / 100) sur les jours suivis récemment.',
+    'recap.crossCoach.insight.complianceLow':
+      'Conformité moyenne plus basse (~{{score}} / 100) sur les jours suivis ; vérifier faim, timings ou objectifs peut aider.',
+    'recap.crossCoach.insight.calorieVariance':
+      'Écarts caloriques jour à jour parfois marqués : une structure de repas simple réduit les yo-yos sans rigidité excessive.',
+    'recap.crossCoach.insight.trainingProgramAnchored':
+      'Bonne trajectoire vs ton planning (~{{pct}} % des jours de séance touchés récemment).',
+    'recap.crossCoach.insight.keepLogging':
+      'Continue d’alimenter le journal (sport ou repas ou poids) : plus les données sont complètes, plus les synthèses deviennent pertinentes.',
+    'recap.crossCoach.insight.startAnyPillar':
+      'Ajoute une activité ou une pesée ou un repas : dès qu’une colonne avance, le Récap peut te parler avec plus de précision.',
+
+    'recap.crossCoach.insight.firstNutritionJournalDay':
+      'Premier jour de repas enregistré avec ton programme nutrition : bravo, une courte série suffit déjà pour voir une tendance.',
+    'recap.crossCoach.insight.weekStepsUpModerate':
+      'Selon Garmin, tu marches un peu plus qu’en moyenne sur tes semaines précédentes : ça complète bien l’entraînement « salle ».',
+    'recap.crossCoach.insight.weekStepsUpStrong':
+      'Grosse semaine côté pas Garmin par rapport à ton habitude : utile si tu vises l’activité globale ; pense à la récup si tu cumules avec la muscu.',
+    'recap.crossCoach.insight.weekFewerSteps':
+      'Un peu moins de pas que d’habitude selon Garmin — souvent lié au rythme de travail, à la météo ou à une semaine plus « canapé » ; ce n’est pas une note.',
+    'recap.crossCoach.insight.stepsAndTrainingUp':
+      'En parallèle : pas Garmin en hausse et plus de jours actifs dans Momentum ces derniers jours — mouvements complémentaires, pas forcément la même cause.',
+    'recap.crossCoach.insight.garminStressSleepLoad':
+      'Sur des jours échantillonnés Garmin : stress moyen ~{{stress}} et sommeil ~{{sleep}} h — utile comme « charge globale », à croiser avec ressenti (indicatif).',
+    'recap.crossCoach.insight.seriesOverridesMany':
+      '{{days}} jour(s) avec adaptations « séries/reps » sur la fenêtre · {{touches}} ligne(s) d’exo touchées : ton prévu reflète bien tes marges.',
+    'recap.crossCoach.insight.distinctExercisesRich':
+      '~{{n}} mouvements du programme touchés récemment : variété raisonnable si ta récupération suit.',
+    'recap.crossCoach.insight.weightTrendMatchesLeanGoal':
+      'Ton objectif « sec / tonique » va dans le sens d’une baisse de poids mesurée (~{{delta}} kg sur la fenêtre) — contextualise fatigue et apports avant de changer quoi que ce soit.',
+    'recap.crossCoach.insight.weightTrendMassGoal':
+      'Ton objectif « musclé / défini » cadre mieux avec une légère hausse (~{{delta}} kg) si entraînement et apports suivent tes repères.',
+    'recap.crossCoach.insight.weightDown7':
+      '~{{delta}} kg sur les 7 derniers j selon tes pesées : signal court à confirmer sur 2–3 semaines avant d’interpéter trop vite.',
+    'recap.crossCoach.insight.weightUp7':
+      '~{{delta}} kg sur les 7 derniers j : utile comme photo instantanée ; garde au moins un point hebdo régulier pour la tendance.',
+    'recap.crossCoach.insight.quietSportRecentDays':
+      'Dernière séance suivie il y a ~{{days}} jours alors que tu as déjà une historique dans l’app : un léger créneau planifié suffit pour relancer.',
+
     'recap.muscleGroup.chest': 'Pectoraux',
     'recap.muscleGroup.back': 'Dos',
     'recap.muscleGroup.shoulders': 'Épaules',
@@ -1125,6 +1290,171 @@ export const translations = {
     'recap.loadSummary':
       'Displayed load = strength (weighted, decay {{lambda}}/day) + {{cardioPct}}% capped cardio per zone.',
     'recap.dominant': 'Top zone by checked training volume (rep shares): {{label}}',
+    'recap.assessment.title': 'Profile, level & habits (~28d)',
+    'recap.assessment.subtitle':
+      'One place for training, body, nutrition (when logged), and your indicative score; charts span 84d. Remarks are heuristic hints from your data — not medical advice.',
+    'recap.assessment.badge': 'Profile',
+    'recap.assessment.maturity': 'Rich history (~{{pct}}% of data “ceiling”)',
+    'recap.assessment.userFallback': 'User',
+    'recap.assessment.identity': 'Identity',
+    'recap.assessment.latestWeight': 'Latest weight',
+    'recap.assessment.bodyFat': 'Body fat',
+    'recap.assessment.quizEstimate': 'quiz est.',
+    'recap.assessment.lifetimeReps': 'Lifetime reps (app)',
+    'recap.assessment.scoreHint':
+      'Main driver: recent consistency; diminishing returns after very large cumulative volume.',
+    'recap.assessment.chartWeight': 'Weight trend (impedance / measurements)',
+    'recap.assessment.chartWeightAxis': 'Weight',
+    'recap.assessment.chartEmptyWeight':
+      'No weigh-ins in this window — add a measurement (Body tracking).',
+    'recap.assessment.chartWeightFoot':
+      'Between weigh-ins the line carries the last known value.',
+    'recap.assessment.chartReps': 'Strength reps per day',
+    'recap.assessment.chartRepsAxis': 'Reps / day',
+    'recap.assessment.chartEmptyReps': 'No reps logged yet.',
+    'recap.assessment.chartRepsFoot':
+      'Checked reps (+ endurance pushups) per calendar day · last {{d}} days.',
+    'recap.assessment.horizonShort': 'Short term · weeks',
+    'recap.assessment.horizonMedium': 'Medium term · training blocks',
+    'recap.assessment.horizonLong': 'Long term · months & years',
+    'recap.assessment.journey': 'Tracking start',
+    'recap.assessment.tenure': '{{days}} days since first logged activity (or frozen start date).',
+    'recap.assessment.window': 'Recent window',
+    'recap.assessment.activeDays':
+      '{{n}} active days · indicative target ~{{exp}} sessions per 28 days (quiz)',
+    'recap.assessment.regularity': 'Consistency vs target: {{pct}}%',
+    'recap.assessment.program': 'Program',
+    'recap.assessment.sessionAlignTitle': 'Planned vs logged (sessions & today’s sets/reps · 28d)',
+    'recap.assessment.sessionAlignLineAvg':
+      'Avg planned vs completed load: {{score}}% · {{scored}} day(s) scored out of {{plan}} planned session day(s) (today’s sets/reps included).',
+    'recap.assessment.sessionAlignPartial':
+      'At least {{plan}} planned session day(s) in the window: not enough logged data for a reliable average (weights / reps).',
+    'recap.assessment.sessionOverrides': '{{d}} day(s) with set/rep tweaks · {{t}} exercise(s).',
+    'recap.assessment.sessionOverridesNone': 'No “today’s sets/reps” tweaks in this window.',
+    'recap.assessment.loadBlock': 'Load (kg × reps)',
+    'recap.assessment.weightedDays': '{{n}} days with at least one logged weight',
+    'recap.assessment.volumeSum': 'Total volume on those days: {{v}} (kg×reps)',
+    'recap.assessment.avgVolume': 'Average on “with weight” days: {{v}}',
+    'recap.assessment.loadOnlyWeightedDays':
+      'Days without logged load are excluded from these volume averages.',
+    'recap.assessment.repsBlock': 'Reps & difficulty',
+    'recap.assessment.totalReps': '{{n}} strength reps (checked) in window',
+    'recap.assessment.avgRepsPerDay': 'Average on days with reps: {{n}}',
+    'recap.assessment.avgDifficulty': 'Mean difficulty (catalog): {{d}} / 5',
+    'recap.assessment.noDifficulty': 'Few exercises with a difficulty tag in the database.',
+    'recap.assessment.quizHeading': 'Profile quiz ({{done}} / {{total}})',
+    'recap.assessment.suggestions': 'Suggestions',
+    'recap.assessment.predictions': 'Outlook',
+
+    'recap.crossCoach.badge': 'Coach',
+    'recap.crossCoach.title': 'Body · training · nutrition snapshot (~28d)',
+    'recap.crossCoach.subtitle':
+      'Cross-pillar recap and prioritized nudges from your local logs (not medical advice).',
+    'recap.crossCoach.loadingChip': 'Nutrition loading…',
+    'recap.crossCoach.loadingGarminChip': 'Garmin loading…',
+    'recap.crossCoach.pillar.training': 'Training',
+    'recap.crossCoach.pillar.body': 'Body',
+    'recap.crossCoach.pillar.nutrition': 'Nutrition',
+    'recap.crossCoach.pillar.trainingLine':
+      '{{days}} active days · {{reps}} reps this window · total load (kg×reps): {{vol}}',
+    'recap.crossCoach.pillar.distinctExercisesLine':
+      'Distinct program exercises checked in 28d: ~{{n}}',
+    'recap.crossCoach.pillar.bodyLine.weight': 'Latest weigh-in this window: {{w}} kg',
+    'recap.crossCoach.pillar.bodyLine.none': 'No weigh-in logged in this window.',
+    'recap.crossCoach.pillar.nutritionLine.loading': 'Loading nutrition journal…',
+    'recap.crossCoach.pillar.nutritionLine.days': '{{n}} day(s) with at least one meal logged (28d)',
+    'recap.crossCoach.pillar.nutritionLine.empty': 'No meals logged in this window.',
+    'recap.crossCoach.gapsTitle': 'To sharpen the recap',
+    'recap.crossCoach.gap.quiz': 'Finish the profile quiz to align consistency targets and tips.',
+    'recap.crossCoach.gap.nutrition_empty': 'Nutrition plan active but no meals logged across 28d.',
+    'recap.crossCoach.gap.body_weight': 'Add a weigh-in (body tracking) to anchor weight trends.',
+    'recap.crossCoach.disclaimer':
+      'Computed locally from your logs; diet or health advice still belongs with a trusted professional.',
+    'recap.crossCoach.remarksHeading': 'Notes',
+    'recap.crossCoach.insight.quizIncomplete':
+      'Profile quiz still incomplete ({{done}} / {{total}}): when you have five minutes it tunes targets and wording.',
+    'recap.crossCoach.insight.logMealsWhenProgram':
+      'Nutrition plan active — a handful of logged days quickly shows gaps vs targets.',
+    'recap.crossCoach.insight.logMealsWhenProgramWithTraining':
+      'Strong training streak but no meals logged: even 2–3 logged days clarify whether intake matches workload.',
+    'recap.crossCoach.insight.tryMealsForTrainingContext':
+      'No nutrition plan? Occasional meal notes still pair nicely with workouts for context.',
+    'recap.crossCoach.insight.weekMoreActive':
+      'Strong week — {{current}} active days, a notch above your usual trailing-week average (~{{priorAvg}}).',
+    'recap.crossCoach.insight.weekLessActive':
+      'Quieter week — {{current}} active days vs your recent trailing average (~{{priorAvg}}). Could be deliberate recovery or life load; skip the guilt loop.',
+    'recap.crossCoach.insight.weekLiftVolumeModerate':
+      'Loaded volume is a touch higher than usual over the past 7 days — keep fatigue and sleep in view.',
+    'recap.crossCoach.insight.weekLiftVolumeStrong':
+      'Loaded volume is clearly above prior weeks — if it keeps stacking, budget easy days or mobility.',
+    'recap.crossCoach.insight.weekLiftVolumeVeryStrong':
+      'Major loaded-volume spike versus prior weeks — prioritize recovery staples (sleep, food, hydration) before piling more on.',
+    'recap.crossCoach.insight.repsWeekStrongerVsRecentWeeks':
+      'This week lifts more logged strength reps than the earlier blocks inside the window — good if soreness stays manageable.',
+    'recap.crossCoach.insight.repsWeekQuieterVsRecentWeeks':
+      'Fewer reps this week versus prior windows — might be tapering or schedule noise; sanity-check versus how you felt.',
+    'recap.crossCoach.insight.sportUpNutritionAligned':
+      'At the same time: higher activity alongside calories drifting near targets (~{{meanPct}} % of target on avg).',
+    'recap.crossCoach.insight.planCheckStreak':
+      'Plan check streak: {{days}} day(s) ending today — nice alignment with the planned foods.',
+    'recap.crossCoach.insight.planChecksBuilding':
+      '{{leaves}} plan checks across {{days}} day(s) — useful without journaling every gram.',
+    'recap.crossCoach.insight.regularityLow':
+      'Consistency is under the quiz’s indicative pacing ({{pct}} %) — repeatable weekly slots outperform sporadic grind.',
+    'recap.crossCoach.insight.sessionLoadGap':
+      'Where planned vs logged load is comparable you’re drifting from the blueprint (think ~{{score}} % on average lately) — accurate sets/reps make this read trustworthy.',
+    'recap.crossCoach.insight.sessionLoadGood':
+      'Solid planned-vs-logged load (~{{score}} %) lately — adaptations are reflecting what you train.',
+    'recap.crossCoach.insight.weightDown28':
+      'Weight trending down ~{{delta}} kg on recent weigh-ins — cross-check intake and workload without overstating causality.',
+    'recap.crossCoach.insight.weightUp28':
+      'Weight up ~{{delta}} kg on recent weigh-ins — normal in surplus; contextualize vs your stated goal.',
+    'recap.crossCoach.insight.addWeighIn':
+      'No weigh-in on this window: one weekly-ish point often reveals the trend.',
+    'recap.crossCoach.insight.firstMealsLogged':
+      '{{days}} day(s) logged in 28d — momentum builds faster with short streaks than with rare “perfect”.',
+    'recap.crossCoach.insight.nutritionProgramBuilding':
+      'Nutrition program + journaling that grows: favor micro-adjustments you can repeat.',
+    'recap.crossCoach.insight.complianceStrong':
+      'Average compliance trending solid (~{{score}} / 100) on tracked days lately.',
+    'recap.crossCoach.insight.complianceLow':
+      'Average compliance softer (~{{score}} / 100) on tracked days — timing/portions/program fit may merit a tweak.',
+    'recap.crossCoach.insight.calorieVariance':
+      'Daily calorie swings are noticeable lately — repeatable meal templates tame yo-yos without rigidity.',
+    'recap.crossCoach.insight.trainingProgramAnchored':
+      'You are hitting planned training days (~{{pct}} %) more often lately — anchors progression.',
+    'recap.crossCoach.insight.keepLogging':
+      'Keep topping up lifts, weigh-ins or meals; richer logs make recap insights sharper.',
+    'recap.crossCoach.insight.startAnyPillar':
+      'Log a session, weigh-in or meal — once any pillar fills in, recap messages get more specific.',
+
+    'recap.crossCoach.insight.firstNutritionJournalDay':
+      'First logged meal day alongside your nutrition program — nice milestone; momentum beats perfection.',
+    'recap.crossCoach.insight.weekStepsUpModerate':
+      'Garmin steps are mildly above recent weekly norms — complements gym work nicely.',
+    'recap.crossCoach.insight.weekStepsUpStrong':
+      'Walking volume is noticeably up versus prior Garmin weeks — awesome if intentional; mindful if stacking with heavy lifting.',
+    'recap.crossCoach.insight.weekFewerSteps':
+      'Fewer Garmin steps lately — often commute, weather, or recovery weeks; metrics aren’t a verdict.',
+    'recap.crossCoach.insight.stepsAndTrainingUp':
+      'At the same time: higher Garmin steps and more active days in Momentum lately — complementary movement, not necessarily one cause.',
+    'recap.crossCoach.insight.garminStressSleepLoad':
+      'On sampled Garmin days: average stress ~{{stress}} and sleep ~{{sleep}} h — a broad “load” hint; cross-check with how you feel (indicative).',
+    'recap.crossCoach.insight.seriesOverridesMany':
+      '{{days}} day(s) with “today’s sets/reps” tweaks in-window · {{touches}} exercise line(s) touched: your planned load tracks your adjustments.',
+    'recap.crossCoach.insight.distinctExercisesRich':
+      '~{{n}} program exercises touched recently: healthy variety if recovery keeps up.',
+    'recap.crossCoach.insight.weightTrendMatchesLeanGoal':
+      'Your “lean / toned” goal aligns with a measured weight drift down (~{{delta}} kg this window) — still balance energy intake and fatigue before big changes.',
+    'recap.crossCoach.insight.weightTrendMassGoal':
+      'A “more muscular” goal meshes better with a modest rise (~{{delta}} kg) if training and intake match intent.',
+    'recap.crossCoach.insight.weightDown7':
+      '~{{delta}} kg over the past 7 days on weigh-ins: a short signal—confirm across 2–3 weeks.',
+    'recap.crossCoach.insight.weightUp7':
+      '~{{delta}} kg over the past 7 days: a snapshot worth tracking with at least a weekly rhythm.',
+    'recap.crossCoach.insight.quietSportRecentDays':
+      'About {{days}} days since the last tracked session despite prior history — a tiny scheduled slot is often enough to restart.',
+
     'recap.muscleGroup.chest': 'Chest',
     'recap.muscleGroup.back': 'Back',
     'recap.muscleGroup.shoulders': 'Shoulders',

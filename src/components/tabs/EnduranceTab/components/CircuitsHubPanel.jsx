@@ -35,7 +35,8 @@ import {
   ChevronLeft,
   ChevronRight,
   Link2,
-  Unlink
+  Unlink,
+  BarChart3
 } from 'lucide-react';
 import { useWorkout } from '../../../../context/WorkoutContext';
 import CircuitEditor from '../../../circuits/CircuitEditor';
@@ -47,9 +48,11 @@ import {
 import { computeCircuitsXp, computeCircuitXpForDay } from '../../../../services/xp/circuitsXpService';
 import { evaluateCircuitTrophies } from '../../../../services/circuits/circuitTrophiesService';
 import { getDateStr } from '../../../../utils/dateUtils';
+import EnduranceDisciplineStatsPanel from '../../../sport/charts/EnduranceDisciplineStatsPanel.jsx';
 
 const SUB_VIEWS = [
   { id: 'sessions', label: 'Sessions', icon: Repeat },
+  { id: 'stats', label: 'Statistiques', icon: BarChart3 },
   { id: 'calendar', label: 'Calendrier', icon: Calendar },
   { id: 'trophies', label: 'Trophées', icon: Trophy }
 ];
@@ -914,6 +917,13 @@ const CircuitsHubPanel = () => {
       </div>
 
       {view === 'sessions' && renderSessions()}
+      {view === 'stats' && (
+        <EnduranceDisciplineStatsPanel
+          kind="circuits"
+          sessions={[]}
+          circuitPayload={{ circuitProgress, circuitDefinitions }}
+        />
+      )}
       {view === 'calendar' && renderCalendar()}
       {view === 'trophies' && renderTrophies()}
 

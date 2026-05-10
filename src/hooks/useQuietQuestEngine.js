@@ -443,9 +443,13 @@ function useQuietQuestEngineImpl() {
         console.warn('[useQuietQuestEngine] Refetch quêtes après événement:', e);
       }
     };
-    const onQuestListChange = () => {
-      // Court délai pour laisser le temps à la sauvegarde (debounce 300ms) de s'écrire
-      setTimeout(refetchQuests, 400);
+    const onQuestListChange = (payload) => {
+      // Les actions de l’onglet Quêtes mettent déjà `allQuests` à jour ; un refetch IndexedDB
+      // juste après QUEST_* peut lire en plein milieu d’une transaction (clear + put) et
+      // remplacer la liste par une version incomplète → quêtes « disparues ».
+      if (payload && payload.skipQuietQuestListRefetch) return;
+      // Délai pour laisser une chance à la sauvegarde debouncée (300ms) + transaction
+      setTimeout(refetchQuests, 750);
     };
     const unsubCreate = sidebarEvents.on(SIDEBAR_EVENTS.QUEST_CREATED, onQuestListChange);
     const unsubUpdate = sidebarEvents.on(SIDEBAR_EVENTS.QUEST_UPDATED, onQuestListChange);
@@ -790,11 +794,12 @@ function useQuietQuestEngineImpl() {
         persistValidationsSnapshot(copy);
         setTimeout(() => recalcDailyPerformanceForDate(date), 0);
         
-        emitSidebarEvent(SIDEBAR_EVENTS.QUEST_UPDATED, { 
-          questId, 
-          date, 
+        emitSidebarEvent(SIDEBAR_EVENTS.QUEST_UPDATED, {
+          questId,
+          date,
           completed: false,
           origin: options.origin || null,
+          skipQuietQuestListRefetch: true,
         });
         
         return copy;
@@ -839,7 +844,11 @@ function useQuietQuestEngineImpl() {
       return;
     }
     setAllQuests((prev) => prev.filter((q) => q.id !== id));
-    emitSidebarEvent(SIDEBAR_EVENTS.QUEST_UPDATED, { questId: id, deleted: true });
+    emitSidebarEvent(SIDEBAR_EVENTS.QUEST_UPDATED, {
+      questId: id,
+      deleted: true,
+      skipQuietQuestListRefetch: true,
+    });
   }, [effectiveQuests, setAllQuests]);
 
   // Maintenance automatique (changement de jour + cleanup > 1 an)

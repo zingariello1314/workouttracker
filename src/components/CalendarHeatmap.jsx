@@ -1236,39 +1236,46 @@ const CalendarHeatmap = ({
       const rawReps = repsMap[key];
       const repsValidation = validateNumericValue(rawReps, `getIntensityForDate.${dateStr}.adhoc.${key}`, false);
       const reps = repsValidation.normalizedValue;
-      if (!(reps > 0)) return;
 
       const rawId = String(key).slice(`${dateStr}_`.length).replace(/_semaineA$|_semaineB$/, '');
-      const exerciseName = getExerciseNameById?.(rawId) || rawId;
+      const dayVariation = currentData?.dailyVariations?.[dateStr];
+      const exceptionalSource = Array.isArray(dayVariation?.additionalExercises)
+        ? dayVariation.additionalExercises.find((ex) => String(ex?.id) === String(rawId))
+        : null;
+      const exerciseName = exceptionalSource?.name || getExerciseNameById?.(rawId) || rawId;
 
       completedExercises++;
-      exercisesReps += reps;
-      totalReps += reps;
+      if (reps > 0) {
+        exercisesReps += reps;
+        totalReps += reps;
+      }
 
       const coeff = resolveExerciseIntensityCoeff(
         { id: rawId, name: exerciseName, series: '', type: 'standard' },
         currentData?.exerciseIntensityCoeffs || {}
       );
-      const usesLoad = exerciseUsesExternalLoad({ name: exerciseName, materiel: '', equipment: '' });
-      const volumeKgAd = computeVolumeKgForWorkoutKey(key, currentData);
-      const wKg = reps > 0 && volumeKgAd > 0 ? volumeKgAd / reps : 0;
-      const medianKg = computeMedianWeightKgForExercise(weightsStore, rawId);
-      const wMult = computeExternalLoadMultiplier(usesLoad, wKg, medianKg);
-      strengthLoad += computeStrengthCalendarContribution(
-        { id: rawId, name: exerciseName, nom: exerciseName, series: '', type: 'standard' },
-        reps,
-        coeff,
-        wMult
-      );
+      if (reps > 0) {
+        const usesLoad = exerciseUsesExternalLoad({ name: exerciseName, materiel: '', equipment: '' });
+        const volumeKgAd = computeVolumeKgForWorkoutKey(key, currentData);
+        const wKg = reps > 0 && volumeKgAd > 0 ? volumeKgAd / reps : 0;
+        const medianKg = computeMedianWeightKgForExercise(weightsStore, rawId);
+        const wMult = computeExternalLoadMultiplier(usesLoad, wKg, medianKg);
+        strengthLoad += computeStrengthCalendarContribution(
+          { id: rawId, name: exerciseName, nom: exerciseName, series: '', type: 'standard' },
+          reps,
+          coeff,
+          wMult
+        );
+      }
 
       adHocCompletedExercises.push({
         name: exerciseName,
         reps,
         exerciseId: rawId,
-        series: '',
-        type: 'standard',
-        materiel: '',
-        programName: 'Performance',
+        series: exceptionalSource?.series || '',
+        type: exceptionalSource?.type || 'standard',
+        materiel: exceptionalSource?.materiel || '',
+        programName: exceptionalSource ? 'Exceptionnel' : 'Performance',
         programId: 'performance',
         _storageKey: key
       });

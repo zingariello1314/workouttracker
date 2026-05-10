@@ -7,6 +7,14 @@ import { User, Mail, Lock, Image, BadgeCheck, HelpCircle } from 'lucide-react';
 import Card, { CardHeader, CardTitle, CardContent } from '../../../ui/Card';
 import { Input } from '../../../ui/Input';
 import { settingsTheme as S } from '../settingsThemeClasses';
+import { ONBOARDING_OPEN_EVENT, PROFILE_QUESTION_DEFS } from '../../../../features/profileQuestionnaire/constants';
+import { normalizeProfileQuestionnaire } from '../../../../features/profileQuestionnaire/schema';
+import {
+  buildQuizPrefillPayload,
+  PENDING_QUIZ_PREFILL_NUTRITION_KEY,
+  PENDING_QUIZ_PREFILL_TRAINING_KEY,
+  writePendingQuizPrefill
+} from '../../../../features/profileQuestionnaire/prefill';
 
 const ProfileSettings = ({
   currentUser,
@@ -60,9 +68,34 @@ const ProfileSettings = ({
 
   const fieldClass = `${S.input} px-4 py-3`;
   const emailVerified = currentUser?.emailVerified === true;
+  const profileQuestionnaire = normalizeProfileQuestionnaire(currentUser?.profileQuestionnaire || null);
+  const questionnaireAnswers = profileQuestionnaire?.answers || {};
+  const quizStarted = profileQuestionnaire.completedCount > 0;
+  const quizComplete =
+    profileQuestionnaire.totalCount > 0 &&
+    profileQuestionnaire.completedCount === profileQuestionnaire.totalCount;
+  const questionMap = PROFILE_QUESTION_DEFS.reduce((acc, q) => {
+    acc[q.id] = q;
+    return acc;
+  }, {});
+  const summarizeAnswer = (questionId) => {
+    const q = questionMap[questionId];
+    const raw = questionnaireAnswers?.[questionId];
+    if (!q || raw == null) return 'Non renseigné';
+    if (Array.isArray(raw)) {
+      if (raw.length === 0) return 'Non renseigné';
+      if (q.type === 'days') return raw.join(', ');
+      const optionsMap = new Map((q.options || []).map((opt) => [String(opt.key), opt.label]));
+      return raw.map((x) => optionsMap.get(String(x)) || String(x)).join(', ');
+    }
+    if (q.type === 'slider') return `${raw}%`;
+    const option = (q.options || []).find((opt) => String(opt.key) === String(raw));
+    return option?.label || String(raw);
+  };
   const canSubmitPassword =
     Boolean(newPassword && confirmPassword) &&
     Boolean((oldPassword && oldPassword.trim()) || (lockReady && appLockCode && appLockCode.trim()));
+  const prefillPayload = buildQuizPrefillPayload(currentUser?.profileQuestionnaire || null);
 
   return (
     <Card variant="settings" className="profile-input-dark">
@@ -80,6 +113,77 @@ const ProfileSettings = ({
       </CardHeader>
       <CardContent>
         <div className="space-y-6">
+          <div className="space-y-3 rounded-xl border border-violet-800/40 bg-violet-950/20 p-4">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <p className="text-sm font-medium text-violet-100">Profil onboarding & personnalisation</p>
+              <span className="rounded-full border border-violet-600/50 bg-violet-900/35 px-2.5 py-0.5 text-[11px] text-violet-100/90">
+                {profileQuestionnaire.completedCount}/{profileQuestionnaire.totalCount} réponses
+              </span>
+            </div>
+
+            {!quizStarted ? (
+              <>
+                <p className="text-xs leading-relaxed text-violet-100/80">
+                  Fais le quiz pour débloquer une expérience plus complète et pouvoir générer plus facilement des
+                  programmes d’entraînement et nutrition adaptés à ton profil.
+                </p>
+                <button
+                  type="button"
+                  onClick={() => window.dispatchEvent(new Event(ONBOARDING_OPEN_EVENT))}
+                  className={`${S.btnPrimary} w-full`}
+                >
+                  Démarrer le quiz profil
+                </button>
+              </>
+            ) : (
+              <>
+                <div className="rounded-lg border border-violet-700/40 bg-black/30 p-3 text-xs text-violet-100/80">
+                  <p className="mb-2 font-medium text-violet-100">
+                    {quizComplete
+                      ? 'Quiz complété : voici ton récapitulatif principal.'
+                      : 'Quiz partiellement complété : voici le récapitulatif actuel.'}
+                  </p>
+                  <div className="grid gap-1.5">
+                    <p><span className="text-violet-200/90">Objectif:</span> {summarizeAnswer('goalPhysique')}</p>
+                    <p><span className="text-violet-200/90">Niveau:</span> {summarizeAnswer('experienceLevel')}</p>
+                    <p><span className="text-violet-200/90">Lieu:</span> {summarizeAnswer('trainingLocation')}</p>
+                    <p><span className="text-violet-200/90">Jours disponibles:</span> {summarizeAnswer('availableTrainingDays')}</p>
+                    <p><span className="text-violet-200/90">Durée séance:</span> {summarizeAnswer('preferredSessionDuration')}</p>
+                  </div>
+                </div>
+                <div className="grid gap-2 sm:grid-cols-3">
+                  <button
+                    type="button"
+                    onClick={() => window.dispatchEvent(new Event(ONBOARDING_OPEN_EVENT))}
+                    className={`${S.btnSecondary} w-full`}
+                  >
+                    Mettre à jour le quiz
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      writePendingQuizPrefill(PENDING_QUIZ_PREFILL_TRAINING_KEY, prefillPayload);
+                      if (setActiveTab) setActiveTab('program');
+                    }}
+                    className={`${S.btnSecondary} w-full`}
+                  >
+                    Générer entraînement
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      writePendingQuizPrefill(PENDING_QUIZ_PREFILL_NUTRITION_KEY, prefillPayload);
+                      if (setActiveTab) setActiveTab('nutrition');
+                    }}
+                    className={`${S.btnSecondary} w-full`}
+                  >
+                    Générer nutrition
+                  </button>
+                </div>
+              </>
+            )}
+          </div>
+
           <div className="space-y-3">
             <label className={`flex items-center ${S.label}`}>
               <Image className="mr-2" size={16} />

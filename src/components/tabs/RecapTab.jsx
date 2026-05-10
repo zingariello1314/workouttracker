@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { useTranslation } from '../../utils/translations';
+import { useAuth } from '../../context/AuthContext';
 import { useWorkout } from '../../context/WorkoutContext';
 import BodyMap from '../sport/recap/BodyMap';
 import RecapIntensityLegend from '../sport/recap/RecapIntensityLegend';
@@ -10,6 +11,7 @@ import {
 } from '../../utils/sport/recapMuscleLoadEngine';
 import { buildRecapEnduranceDigest } from '../../utils/sport/recapPageDigest';
 import RecapMuscleZonesPanel from '../sport/recap/RecapMuscleZonesPanel';
+import RecapDailyTrendChartsBlock from '../sport/recap/RecapDailyTrendChartsBlock';
 import RecapEnduranceDigestPanel from '../sport/recap/RecapEnduranceDigestPanel';
 import GarminRunningStatsCard from '../garmin/GarminRunningStatsCard';
 import GarminWalkingStatsCard from '../garmin/GarminWalkingStatsCard';
@@ -17,6 +19,8 @@ import RecapStrengthStatsCard from '../sport/recap/RecapStrengthStatsCard';
 import RecapEnduranceTrophiesCompact from '../sport/recap/RecapEnduranceTrophiesCompact';
 import { RECAP_VIEW_PERIODS } from '../../utils/sport/recapViewPeriods';
 import { buildPerformanceScore } from '../../utils/exercisePerformanceUtils';
+import { computeRecapUserAssessment } from '../../utils/sport/recapUserAssessment';
+import RecapUserAssessmentPanel from '../sport/recap/RecapUserAssessmentPanel';
 
 const PERIOD_STORAGE_KEY = 'sport.recap.periodView';
 
@@ -26,7 +30,44 @@ const PERIOD_STORAGE_KEY = 'sport.recap.periodView';
  */
 const RecapTab = () => {
   const t = useTranslation();
-  const { data, getCurrentData, getExerciseNameById, requestOpenEnduranceSubTab } = useWorkout();
+  const { currentUser } = useAuth();
+  const {
+    data,
+    getCurrentData,
+    getExerciseNameById,
+    requestOpenEnduranceSubTab,
+    activeProgram,
+    getTodayWorkout,
+    isGymMode
+  } = useWorkout();
+
+  const getWorkoutForDateForRecap = useMemo(
+    () => (typeof getTodayWorkout === 'function' ? (d) => getTodayWorkout(d, isGymMode) : undefined),
+    [getTodayWorkout, isGymMode]
+  );
+
+  const snapshotForRecap = useMemo(() => getCurrentData(), [data, getCurrentData]);
+
+  const recapAssessment = useMemo(
+    () =>
+      computeRecapUserAssessment({
+        snapshot: snapshotForRecap,
+        activeProgram,
+        profileQuestionnaireRaw: currentUser?.profileQuestionnaire,
+        getExerciseNameById,
+        getWorkoutForDate: getWorkoutForDateForRecap,
+        isGymMode
+      }),
+    [
+      snapshotForRecap,
+      activeProgram,
+      currentUser?.profileQuestionnaire,
+      getExerciseNameById,
+      getWorkoutForDateForRecap,
+      isGymMode
+    ]
+  );
+
   const [period, setPeriod] = useState(() => {
     try {
       const stored = localStorage.getItem(PERIOD_STORAGE_KEY);
@@ -191,6 +232,16 @@ const RecapTab = () => {
             {t(p.labelKey)}
           </button>
         ))}
+      </div>
+
+      <div className="mb-8">
+        <RecapUserAssessmentPanel
+          assessment={recapAssessment}
+          snapshot={snapshotForRecap}
+          profileQuestionnaireRaw={currentUser?.profileQuestionnaire}
+          activeProgram={activeProgram}
+          currentUser={currentUser}
+        />
       </div>
 
       <div className="mb-8 grid grid-cols-1 xl:grid-cols-2 gap-4 items-start">
@@ -399,6 +450,7 @@ const RecapTab = () => {
           )}
         </section>
         <RecapMuscleZonesPanel recapState={recapState} t={t} />
+        <RecapDailyTrendChartsBlock />
         <RecapEnduranceDigestPanel digest={enduranceDigest} t={t} />
       </div>
     </div>

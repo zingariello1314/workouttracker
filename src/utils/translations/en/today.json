@@ -132,11 +132,11 @@
     "button": "Session feedback"
   },
   "seriesAdapt": {
-    "openTitle": "Adjust today's target",
-    "short": "Today's target",
-    "saved": "Today's target saved",
+    "openTitle": "Change sets × reps for today",
+    "short": "Today's sets & reps",
+    "saved": "Today's sets/reps saved",
     "resetToast": "Back to program target",
-    "title": "Planned for today",
+    "title": "Sets × reps for today",
     "programLabel": "In program:",
     "inputLabel": "Sets × reps for today (e.g. 5×15, 4×8-12)",
     "cancel": "Cancel",

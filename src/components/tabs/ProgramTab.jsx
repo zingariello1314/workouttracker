@@ -1,4 +1,4 @@
-import React, { useState, useContext } from 'react';
+import React, { useState, useContext, useEffect } from 'react';
 import { WorkoutContext } from '../../context/WorkoutContext';
 import { Play, Pause, Plus, Clock, Calendar, Archive, Settings, Edit3, Trash2, Download, Eye } from 'lucide-react';
 import Card, { CardHeader, CardTitle, CardContent } from '../ui/Card';
@@ -11,6 +11,12 @@ import { useFormatters } from '../../utils/translations/formatters-hook';
 import { useToast } from '../ui/Toast';
 import { useAuth } from '../../context/AuthContext';
 import { isAdminUser } from '../../utils/accessControl';
+import {
+  clearPendingQuizPrefill,
+  PENDING_QUIZ_PREFILL_TRAINING_KEY,
+  readPendingQuizPrefill
+} from '../../features/profileQuestionnaire/prefill';
+import { buildTrainingScheduleFromQuizDays } from '../../features/profileQuestionnaire/trainingScheduleFromQuiz';
 
 const ProgramTab = () => {
   const { programs, activeProgram, addProgram, activateProgram, deactivateProgram, deleteProgram, updateProgram, data } = useContext(WorkoutContext);
@@ -26,6 +32,34 @@ const ProgramTab = () => {
     duration: 4, // semaines par défaut
     exercises: []
   });
+  /** Jours sélectionnés au quiz ; utilisé uniquement à la création pour activer/désactiver les jours du planning. */
+  const [pendingQuizTrainingDays, setPendingQuizTrainingDays] = useState(null);
+
+  useEffect(() => {
+    const pending = readPendingQuizPrefill(PENDING_QUIZ_PREFILL_TRAINING_KEY);
+    if (!pending?.training) return;
+    const suggestedDuration = Number(pending.training.suggestedDurationWeeks) || 6;
+    const suggestedDays = Array.isArray(pending.training.suggestedDays) ? pending.training.suggestedDays : [];
+    const mainGoal = pending?.answers?.goalPhysique || 'balanced_functional';
+    const labelByGoal = {
+      lean_toned: 'Sèche et tonification',
+      muscular_defined: 'Hypertrophie définie',
+      strong_powerful: 'Force et puissance',
+      balanced_functional: 'Condition physique globale'
+    };
+
+    setNewProgram({
+      name: `Programme personnalisé (${labelByGoal[mainGoal] || 'objectif personnalisé'})`,
+      description: suggestedDays.length
+        ? `Prérempli via quiz. Jours disponibles: ${suggestedDays.join(', ')}.`
+        : 'Prérempli via quiz onboarding.',
+      duration: Math.max(1, Math.min(52, suggestedDuration)),
+      exercises: []
+    });
+    setPendingQuizTrainingDays(suggestedDays.length > 0 ? suggestedDays : null);
+    setShowCreateForm(true);
+    clearPendingQuizPrefill(PENDING_QUIZ_PREFILL_TRAINING_KEY);
+  }, []);
 
   // Fonction pour calculer les jours réels d'utilisation d'un programme
   const calculateRealUsageDays = (program) => {
@@ -117,11 +151,17 @@ const ProgramTab = () => {
 
   const handleCreateProgram = () => {
     if (newProgram.name.trim()) {
+      const useQuizSchedule = Array.isArray(pendingQuizTrainingDays) && pendingQuizTrainingDays.length > 0;
+      const schedule = useQuizSchedule
+        ? buildTrainingScheduleFromQuizDays(pendingQuizTrainingDays, createEmptyDay)
+        : createEmptySchedule();
       const created = addProgram({
         ...newProgram,
-        schedule: createEmptySchedule()
+        schedule,
+        ...(useQuizSchedule ? { availabilitySource: 'quiz' } : {})
       });
       setNewProgram({ name: '', description: '', duration: 4, exercises: [] });
+      setPendingQuizTrainingDays(null);
       setShowCreateForm(false);
       if (created) {
         setSelectedProgram(created);
@@ -296,7 +336,11 @@ const ProgramTab = () => {
                 )}
                 <button
                   type="button"
-                  onClick={() => setShowCreateForm(true)}
+                  onClick={() => {
+                    setPendingQuizTrainingDays(null);
+                    setNewProgram({ name: '', description: '', duration: 4, exercises: [] });
+                    setShowCreateForm(true);
+                  }}
                   className="inline-flex items-center gap-2 rounded-lg border border-[#0F5C45]/55 bg-[#0F5C45]/25 px-4 py-2 text-sm font-medium text-white shadow-md shadow-black/30 transition hover:bg-[#0F5C45]/40"
                 >
                   <Plus size={20} />
@@ -422,7 +466,10 @@ const ProgramTab = () => {
                 </button>
                 <button
                   type="button"
-                  onClick={() => setShowCreateForm(false)}
+                  onClick={() => {
+                    setShowCreateForm(false);
+                    setPendingQuizTrainingDays(null);
+                  }}
                   className="rounded-lg border border-[#0F4C5C]/60 bg-black px-4 py-2 text-sm font-medium text-teal-100 transition hover:border-[#0F5C45]/55"
                 >
                   {t('program.buttons.cancel')}

@@ -509,8 +509,23 @@ const WorkoutProvider = ({ children }) => {
       const sessionDateStr = getDateStr(currentDate);
       
       if (daySchedule) {
-        // ✅ FIX : Gérer les variations salle (maison/salle) si disponibles
         const currentWeekVariant = getAutoWeekVariant(currentDate);
+
+        // Programmes créés depuis le quiz : jours hors disponibilité = repos (vide), sans casser les anciens programmes
+        // où tous les jours ont `active: false` par défaut.
+        if (activeProgram.availabilitySource === 'quiz' && daySchedule.active === false) {
+          return {
+            name: daySchedule.name || 'Repos',
+            focus: daySchedule.focus || '',
+            duree: daySchedule.duration || '',
+            exercices: [],
+            etirements: undefined,
+            isGymMode,
+            weekVariant: currentWeekVariant
+          };
+        }
+
+        // ✅ FIX : Gérer les variations salle (maison/salle) si disponibles
         let exercisesToUse = daySchedule.exercises || [];
         let variantName = daySchedule.name || '';
         
@@ -676,9 +691,28 @@ const WorkoutProvider = ({ children }) => {
           : {})
       };
 
+      const exceptionalStorageKey = `${dateStr}_${existingExercise.id}`;
+      const nextCheckedExercises = {
+        ...(currentData.checkedExercises || {}),
+        [exceptionalStorageKey]: true
+      };
+      const nextReps = { ...(currentData.reps || {}) };
+      if (existingExercise.type === 'reps') {
+        const safeTotal = Math.max(0, Math.floor(Number(updatedExercise.totalReps) || 0));
+        nextReps[exceptionalStorageKey] = safeTotal;
+      } else if (existingExercise.type === 'duration') {
+        // Conserve la visibilité dans les vues qui listent les exercices cochés.
+        // Le volume reps reste nul pour les durées (pas d'impact sur totalReps).
+        if (nextReps[exceptionalStorageKey] == null) {
+          nextReps[exceptionalStorageKey] = 0;
+        }
+      }
+
       // ✅ Sauvegarder immédiatement (action critique)
       const updatedData = {
         ...currentData,
+        checkedExercises: nextCheckedExercises,
+        reps: nextReps,
         dailyVariations: {
           ...(currentData.dailyVariations || {}),
           [dateStr]: updatedVariation

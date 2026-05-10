@@ -49,6 +49,7 @@ import EnduranceCalendarModernPanel from './EnduranceTab/components/EnduranceCal
 import DefisDisciplineCalendarPanel from './EnduranceTab/components/DefisDisciplineCalendarPanel.jsx';
 import PerformanceChallengesTab from './PerformanceChallengesTab.jsx';
 import CircuitsHubPanel from './EnduranceTab/components/CircuitsHubPanel.jsx';
+import EnduranceDisciplineStatsPanel from '../sport/charts/EnduranceDisciplineStatsPanel.jsx';
 import {
   inferRunningSessionTypeFromGarminActivity,
   isGarminRunningLikeActivity,
@@ -1602,6 +1603,17 @@ const EnduranceTab = () => {
                 >
                   {t('endurance.subViews.calendar')}
                 </button>
+                <button
+                  type="button"
+                  onClick={() => setPushupsSubView('stats')}
+                  className={`rounded-xl border px-4 py-2 text-sm font-medium transition ${
+                    pushupsSubView === 'stats'
+                      ? 'border-emerald-500/70 bg-emerald-500/10 text-emerald-100'
+                      : 'border-[#0F4C5C]/45 bg-black text-teal-100 hover:border-emerald-500/40'
+                  }`}
+                >
+                  {t('endurance.subViews.stats')}
+                </button>
               </div>
 
               {pushupsSubView === 'trophies' ? (
@@ -1612,6 +1624,8 @@ const EnduranceTab = () => {
                   sessions={sessions.pushups}
                   onEditSession={(type, id) => editSession(type, id)}
                 />
+              ) : pushupsSubView === 'stats' ? (
+                <EnduranceDisciplineStatsPanel kind="pushups" sessions={sessions.pushups} />
               ) : (
                 <>
               <div className="mb-6 rounded-xl border border-[#0F4C5C]/40 bg-slate-950/40 p-4">
@@ -2204,6 +2218,17 @@ const EnduranceTab = () => {
                 >
                   {t('endurance.subViews.calendar')}
                 </button>
+                <button
+                  type="button"
+                  onClick={() => setJumpropeSubView('stats')}
+                  className={`rounded-xl border px-4 py-2 text-sm font-medium transition ${
+                    jumpropeSubView === 'stats'
+                      ? 'border-emerald-500/70 bg-emerald-500/10 text-emerald-100'
+                      : 'border-[#0F4C5C]/45 bg-black text-teal-100 hover:border-emerald-500/40'
+                  }`}
+                >
+                  {t('endurance.subViews.stats')}
+                </button>
               </div>
 
               {jumpropeSubView === 'trophies' ? (
@@ -2218,6 +2243,8 @@ const EnduranceTab = () => {
                   sessions={sessions.jumprope}
                   onEditSession={(type, id) => editSession(type, id)}
                 />
+              ) : jumpropeSubView === 'stats' ? (
+                <EnduranceDisciplineStatsPanel kind="jumprope" sessions={sessions.jumprope} />
               ) : (
                 <>
               {/* Rappel défis actifs */}
@@ -2523,6 +2550,17 @@ const EnduranceTab = () => {
                 >
                   {t('endurance.subViews.calendar')}
                 </button>
+                <button
+                  type="button"
+                  onClick={() => setGainageSubView('stats')}
+                  className={`rounded-xl border px-4 py-2 text-sm font-medium transition ${
+                    gainageSubView === 'stats'
+                      ? 'border-emerald-500/70 bg-emerald-500/10 text-emerald-100'
+                      : 'border-[#0F4C5C]/45 bg-black text-teal-100 hover:border-emerald-500/40'
+                  }`}
+                >
+                  {t('endurance.subViews.stats')}
+                </button>
               </div>
 
               {gainageSubView === 'trophies' ? (
@@ -2537,6 +2575,8 @@ const EnduranceTab = () => {
                   sessions={sessions.gainage}
                   onEditSession={(type, id) => editSession(type, id)}
                 />
+              ) : gainageSubView === 'stats' ? (
+                <EnduranceDisciplineStatsPanel kind="gainage" sessions={sessions.gainage} />
               ) : (
                 <>
               {activeChallenges.length > 0 && (
@@ -2814,6 +2854,17 @@ const EnduranceTab = () => {
                 >
                   {t('endurance.subViews.calendar')}
                 </button>
+                <button
+                  type="button"
+                  onClick={() => setRunningSubView('stats')}
+                  className={`rounded-xl border px-4 py-2 text-sm font-medium transition ${
+                    runningSubView === 'stats'
+                      ? 'border-emerald-500/70 bg-emerald-500/10 text-emerald-100'
+                      : 'border-[#0F4C5C]/45 bg-black text-teal-100 hover:border-emerald-500/40'
+                  }`}
+                >
+                  {t('endurance.subViews.stats')}
+                </button>
               </div>
 
               {runningSubView === 'trophies' ? (
@@ -2825,6 +2876,8 @@ const EnduranceTab = () => {
                   garminById={garminRunningById}
                   onEditSession={(type, id) => editSession(type, id)}
                 />
+              ) : runningSubView === 'stats' ? (
+                <EnduranceDisciplineStatsPanel kind="running" sessions={runningSessionsNoWalk} />
               ) : (
                 <>
               <RunningGarminSyncBlock />
@@ -3096,6 +3149,17 @@ const EnduranceTab = () => {
                 >
                   {t('endurance.subViews.dailyWalkManual')}
                 </button>
+                <button
+                  type="button"
+                  onClick={() => setWalkingSubView('stats')}
+                  className={`rounded-xl border px-4 py-2 text-sm font-medium transition ${
+                    walkingSubView === 'stats'
+                      ? 'border-violet-500/70 bg-violet-500/10 text-violet-100'
+                      : 'border-[#0F4C5C]/45 bg-black text-teal-100 hover:border-violet-500/40'
+                  }`}
+                >
+                  {t('endurance.subViews.stats')}
+                </button>
               </div>
 
               {walkingSubView === 'trophies' ? (
@@ -3108,6 +3172,8 @@ const EnduranceTab = () => {
                   sessions={walkingSessions}
                   onEditSession={(type, id) => editSession(type, id)}
                 />
+              ) : walkingSubView === 'stats' ? (
+                <EnduranceDisciplineStatsPanel kind="walking" sessions={walkingSessions} />
               ) : (
                 <>
               <RunningGarminSyncBlock />

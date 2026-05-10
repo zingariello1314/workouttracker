@@ -203,6 +203,13 @@ const QuestsStatsView = () => {
                   }}
                   labelStyle={{ color: '#fcd34d', fontSize: 12, fontWeight: 600 }}
                   labelFormatter={(value) => formatDateForChart(value, 'long')}
+                  formatter={(value) => [
+                    typeof value === 'number'
+                      ? `${value.toLocaleString('fr-FR', { maximumFractionDigits: 0 })} XP`
+                      : String(value),
+                    'Gain du jour'
+                  ]}
+                  cursor={{ stroke: 'rgba(52, 211, 153, 0.55)', strokeWidth: 1 }}
                 />
                 <Legend 
                   wrapperStyle={{ color: '#fbbf24', fontSize: '12px' }}

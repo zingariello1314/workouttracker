@@ -41,6 +41,26 @@ function normalizeStoredGoal(goal) {
   return map[goal] || goal || 'maintenance';
 }
 
+function mapQuizGoalToNutrition(goal) {
+  const map = {
+    lean_toned: 'cutting',
+    muscular_defined: 'lean_bulk',
+    strong_powerful: 'bulking',
+    balanced_functional: 'maintenance'
+  };
+  return map[goal] || 'maintenance';
+}
+
+function mapQuizActivityToFactor(activityOutsideTraining) {
+  const map = {
+    sedentary: 1.2,
+    lightly_active: 1.375,
+    moderately_active: 1.55,
+    very_active: 1.725
+  };
+  return map[activityOutsideTraining] || 1.55;
+}
+
 function emptyPlanProfile() {
   return {
     heightCm: '',
@@ -156,7 +176,15 @@ function buildPlanProfileForSave(pp) {
 const WIZARD_LABELS = ['Mode', 'Base', 'Profil impédance', 'Repas & synthèse'];
 const TOTAL_STEPS = 4;
 
-const NutritionProgramForm = ({ isOpen, onClose, program, onSave, nutritionData, progressEntries = [] }) => {
+const NutritionProgramForm = ({
+  isOpen,
+  onClose,
+  program,
+  onSave,
+  nutritionData,
+  progressEntries = [],
+  initialQuizPrefill = null
+}) => {
   const {
     setActiveTab,
     addProgressEntry,
@@ -336,11 +364,15 @@ const NutritionProgramForm = ({ isOpen, onClose, program, onSave, nutritionData,
       });
     } else {
       const hint = suggestedBankSelectionQuota('maintenance', 2500);
+      const quizAnswers = initialQuizPrefill?.answers || {};
+      const suggestedGoal = mapQuizGoalToNutrition(quizAnswers.goalPhysique);
+      const quizBodyFat = initialQuizPrefill?.nutrition?.bodyFatPercent;
+      const quizActivityFactor = mapQuizActivityToFactor(initialQuizPrefill?.nutrition?.activityOutsideTraining);
       setFormData({
         name: '',
         description: '',
         creationMode: 'manual',
-        goal: 'maintenance',
+        goal: suggestedGoal,
         targetCalories: 2500,
         targetProtein: 150,
         targetCarbs: 300,
@@ -351,7 +383,14 @@ const NutritionProgramForm = ({ isOpen, onClose, program, onSave, nutritionData,
         duration: 30,
         startDate: DateHelper.getTodayLocal(),
         endDate: null,
-        planProfile: emptyPlanProfile(),
+        planProfile: {
+          ...emptyPlanProfile(),
+          bodyFatPercent:
+            quizBodyFat !== null && quizBodyFat !== undefined && quizBodyFat !== ''
+              ? String(quizBodyFat)
+              : '',
+          activityFactor: quizActivityFactor
+        },
         mealPlanPreferences: {
           ...emptyMealPlanPreferences(),
           maxWeeklyFoodVariety: hint,
@@ -365,7 +404,7 @@ const NutritionProgramForm = ({ isOpen, onClose, program, onSave, nutritionData,
     setFoodMacroSort('none');
     setExerciseSearch('');
     setWizardStep(1);
-  }, [program, isOpen, activeTrainingProgram]);
+  }, [program, isOpen, activeTrainingProgram, initialQuizPrefill]);
 
   useEffect(() => {
     if (!isOpen || program) return;

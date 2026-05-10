@@ -33,7 +33,11 @@ export const useQuestsBulkActions = (allQuests = [], setAllQuests, selectedQuest
       )
     );
     
-    emitSidebarEvent(SIDEBAR_EVENTS.QUEST_UPDATED, { bulk: true, count });
+    emitSidebarEvent(SIDEBAR_EVENTS.QUEST_UPDATED, {
+      bulk: true,
+      count,
+      skipQuietQuestListRefetch: true,
+    });
     setSelectedQuests(new Set());
     showSuccess(`${count} quête${count > 1 ? 's' : ''} activée${count > 1 ? 's' : ''}`);
   }, [selectedQuests, setAllQuests, setSelectedQuests, showSuccess]);
@@ -49,7 +53,11 @@ export const useQuestsBulkActions = (allQuests = [], setAllQuests, selectedQuest
       )
     );
     
-    emitSidebarEvent(SIDEBAR_EVENTS.QUEST_UPDATED, { bulk: true, count });
+    emitSidebarEvent(SIDEBAR_EVENTS.QUEST_UPDATED, {
+      bulk: true,
+      count,
+      skipQuietQuestListRefetch: true,
+    });
     setSelectedQuests(new Set());
     showSuccess(`${count} quête${count > 1 ? 's' : ''} désactivée${count > 1 ? 's' : ''}`);
   }, [selectedQuests, setAllQuests, setSelectedQuests, showSuccess]);
@@ -70,7 +78,12 @@ export const useQuestsBulkActions = (allQuests = [], setAllQuests, selectedQuest
       return;
     
     setAllQuests((prev) => prev.filter((q) => !selectedQuests.has(q.id)));
-    emitSidebarEvent(SIDEBAR_EVENTS.QUEST_UPDATED, { bulk: true, count, deleted: true });
+    emitSidebarEvent(SIDEBAR_EVENTS.QUEST_UPDATED, {
+      bulk: true,
+      count,
+      deleted: true,
+      skipQuietQuestListRefetch: true,
+    });
     setSelectedQuests(new Set());
     showSuccess(`${count} quête${count > 1 ? 's' : ''} supprimée${count > 1 ? 's' : ''}`);
   }, [selectedQuests, allQuests, setAllQuests, setSelectedQuests, showSuccess]);
