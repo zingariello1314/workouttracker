@@ -13,6 +13,13 @@ import {
   collectExerciseKeysForWorkoutExercise
 } from '../../../../utils/exerciseKeyGenerator';
 import { calculateAutoReps } from '../../../../utils/exerciseCalculations';
+import { getDateStr } from '../../../../utils/dateUtils';
+import { resolveExercisePyramidPattern } from '../../../../services/trainingPatterns/resolveExercisePyramidPattern';
+import { appendPyramidSessionLogEntry } from '../../../../services/trainingPatterns/pyramidSessionLog';
+import {
+  collectRecentSessionTotalsForExercise,
+  estimateSessionsPerWeek
+} from '../../../../services/trainingPatterns/pyramidUserSignals';
 
 function pickStoredState(currentData, keys) {
   for (const key of keys) {
@@ -47,7 +54,8 @@ export const useExerciseTracking = (options = {}) => {
     currentDate,
     isGymMode: contextIsGymMode,
     getCurrentData,
-    updateTempExerciseData
+    updateTempExerciseData,
+    activeProgram
   } = useWorkout();
 
   const { workout, weekVariant } = useTodayWorkout({
@@ -114,12 +122,46 @@ export const useExerciseTracking = (options = {}) => {
         nextChk[primaryKey] = true;
         nextReps[primaryKey] = repsVal;
 
-        updateTempExerciseData({
+        const dateStr = getDateStr(date);
+        const recent = collectRecentSessionTotalsForExercise(currentData.reps || {}, exercise.id, {
+          maxDays: 90
+        });
+        const sessionsPerWeek = estimateSessionsPerWeek(currentData.reps || {}, exercise.id, {
+          windowDays: 42
+        });
+        const mergedExercise = {
+          ...exercise,
+          series: seriesSource || exercise.series
+        };
+        const pattern = resolveExercisePyramidPattern({
+          dailyVariations: currentData.dailyVariations,
+          dateStr,
+          exercise: mergedExercise,
+          records: currentData.exerciseMaxRecords || [],
+          meanSessionTotal: recent.meanPerSession,
+          sessionsPerWeek
+        });
+        let nextData = {
           ...currentData,
           checkedExercises: nextChk,
           reps: nextReps,
           exerciseSessionEffortStars: nextStars
-        });
+        };
+        if (pattern) {
+          const repsDone = Math.max(0, Math.round(Number(repsVal) || 0));
+          nextData = appendPyramidSessionLogEntry(nextData, {
+            dateStr,
+            exerciseId: exercise.id,
+            exerciseName: exercise.name,
+            repsDone: repsDone || pattern.totalReps || 0,
+            plannedTotalReps: pattern.totalReps || 0,
+            patternType: pattern.patternType,
+            programId: activeProgram?.id != null ? String(activeProgram.id) : null,
+            source: 'today_check'
+          });
+        }
+
+        updateTempExerciseData(nextData);
         return;
       }
 
@@ -139,7 +181,15 @@ export const useExerciseTracking = (options = {}) => {
         exerciseSessionEffortStars: nextStars
       });
     },
-    [date, getCurrentData, updateTempExerciseData, workout.exercices, allKeysForExercise, primaryKeyForExercise]
+    [
+      date,
+      getCurrentData,
+      updateTempExerciseData,
+      workout.exercices,
+      allKeysForExercise,
+      primaryKeyForExercise,
+      activeProgram?.id
+    ]
   );
 
   /**

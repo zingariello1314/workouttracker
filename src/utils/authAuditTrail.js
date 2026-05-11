@@ -21,15 +21,27 @@ const openSecurityDb = () =>
     req.onerror = () => resolve(null);
   });
 
+/** URL absolue si audit distant configuré ; sinon pas d’appel (évite 404 sur le dev Vite :3001). */
+const getAuditEventsPostUrl = () => {
+  const explicit = String(import.meta.env.VITE_AUTH_AUDIT_BASE_URL || '').trim();
+  if (explicit) return `${explicit.replace(/\/$/, '')}/auth/audit/events`;
+  const serverBase = String(import.meta.env.VITE_AUTH_SERVER_BASE || '').trim();
+  if (serverBase) return `${serverBase.replace(/\/$/, '')}/auth/audit/events`;
+  return '';
+};
+
 const postAuditToServer = async (event) => {
+  const url = getAuditEventsPostUrl();
+  if (!url) return;
   try {
-    await fetch('/auth/audit/events', {
+    const res = await fetch(url, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(event)
     });
+    if (!res.ok) return;
   } catch {
-    // backend optionnel
+    // backend optionnel / hors ligne
   }
 };
 

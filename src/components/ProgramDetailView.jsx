@@ -911,6 +911,120 @@ const ProgramDetailView = ({ program, onBack, onUpdateProgram }) => {
           rows="2"
           placeholder="Notes techniques"
         />
+        <div className="rounded-lg border border-teal-500/40 bg-teal-950/20 p-3 space-y-2">
+          <div className="text-xs font-semibold text-teal-100 flex items-center gap-2">
+            <Layers size={16} className="text-teal-300" />
+            Pyramide (volume guidé par tes séries × reps)
+          </div>
+          <label className="flex items-center gap-2 text-xs text-slate-300 cursor-pointer">
+            <input
+              type="checkbox"
+              checked={Boolean(editedData.pyramidTemplate?.enabled)}
+              onChange={(e) => {
+                const en = e.target.checked;
+                setEditedData({
+                  ...editedData,
+                  pyramidTemplate: en
+                    ? {
+                        enabled: true,
+                        preset: editedData.pyramidTemplate?.preset || 'auto',
+                        ...(editedData.pyramidTemplate?.preset === 'custom'
+                          ? {
+                              customPeak: editedData.pyramidTemplate?.customPeak ?? 5,
+                              customMode: editedData.pyramidTemplate?.customMode || 'full'
+                            }
+                          : {})
+                      }
+                    : { enabled: false, preset: 'off' }
+                });
+              }}
+            />
+            Activer un modèle pyramide pour cet exercice
+          </label>
+          {editedData.pyramidTemplate?.enabled ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+              <label className="block text-xs text-slate-400">
+                Préréglage
+                <select
+                  value={editedData.pyramidTemplate?.preset || 'auto'}
+                  onChange={(e) => {
+                    const preset = e.target.value;
+                    setEditedData({
+                      ...editedData,
+                      pyramidTemplate: {
+                        enabled: true,
+                        preset,
+                        ...(preset === 'custom'
+                          ? {
+                              customPeak: editedData.pyramidTemplate?.customPeak ?? 5,
+                              customMode: editedData.pyramidTemplate?.customMode || 'full'
+                            }
+                          : {})
+                      }
+                    });
+                  }}
+                  className="mt-1 w-full bg-black border border-[#0F4C5C]/50 rounded px-3 py-2 text-sm"
+                >
+                  <option value="auto">Auto (proche du volume séries×reps)</option>
+                  <option value="light">Légère</option>
+                  <option value="ascending">Montante</option>
+                  <option value="full">Complète</option>
+                  <option value="custom">Perso (pic + mode)</option>
+                </select>
+              </label>
+              {editedData.pyramidTemplate?.preset === 'custom' ? (
+                <>
+                  <label className="block text-xs text-slate-400">
+                    Pic (1–25)
+                    <input
+                      type="number"
+                      min={1}
+                      max={25}
+                      value={editedData.pyramidTemplate?.customPeak ?? 5}
+                      onChange={(e) =>
+                        setEditedData({
+                          ...editedData,
+                          pyramidTemplate: {
+                            ...editedData.pyramidTemplate,
+                            enabled: true,
+                            preset: 'custom',
+                            customPeak: Math.max(1, Math.min(25, parseInt(e.target.value, 10) || 1)),
+                            customMode: editedData.pyramidTemplate?.customMode || 'full'
+                          }
+                        })
+                      }
+                      className="mt-1 w-full bg-black border border-[#0F4C5C]/50 rounded px-3 py-2 text-sm"
+                    />
+                  </label>
+                  <label className="block text-xs text-slate-400">
+                    Mode perso
+                    <select
+                      value={editedData.pyramidTemplate?.customMode || 'full'}
+                      onChange={(e) =>
+                        setEditedData({
+                          ...editedData,
+                          pyramidTemplate: {
+                            ...editedData.pyramidTemplate,
+                            enabled: true,
+                            preset: 'custom',
+                            customMode: e.target.value === 'ascending' ? 'ascending' : 'full'
+                          }
+                        })
+                      }
+                      className="mt-1 w-full bg-black border border-[#0F4C5C]/50 rounded px-3 py-2 text-sm"
+                    >
+                      <option value="full">Complète 1..n..1</option>
+                      <option value="ascending">Montante 1..n</option>
+                    </select>
+                  </label>
+                </>
+              ) : null}
+              <p className="text-[11px] text-slate-500 md:col-span-2">
+                La variation du jour (Défis) reste prioritaire sur Aujourd’hui si tu en définis une pour cette date.
+              </p>
+            </div>
+          ) : null}
+        </div>
         <div className="flex gap-2">
           <Button onClick={handleSaveExercise} className="bg-green-600 hover:bg-green-700 text-white px-3 py-1 text-sm">
             <Save size={14} className="mr-1" />

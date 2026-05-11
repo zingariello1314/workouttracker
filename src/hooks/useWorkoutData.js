@@ -166,6 +166,8 @@ const INITIAL_WORKOUT_DATA = {
   exerciseMaxHistory: [],
   /** Retests planifiés depuis Défis > Performances */
   performanceRetestPlans: [],
+  /** Journal des séances pyramide complétées (coche Aujourd’hui avec plan actif) */
+  pyramidSessionLog: [],
   /** Arrêt tabac / THC : timers, jalons 20 ans, journal des envies (IndexedDB via saveToDB) */
   addictionQuitData: { ...DEFAULT_ADDICTION_QUIT_DATA },
   /**
@@ -552,6 +554,10 @@ export const useWorkoutData = (options = {}) => {
         console.warn('performanceRetestPlans corrompu, réinitialisation');
         newData.performanceRetestPlans = [];
       }
+      if (newData.pyramidSessionLog && !Array.isArray(newData.pyramidSessionLog)) {
+        console.warn('pyramidSessionLog corrompu, réinitialisation');
+        newData.pyramidSessionLog = [];
+      }
 
       // Validation de la variante de semaine
       if (newData.weekVariant && newData.weekVariant !== 'A' && newData.weekVariant !== 'B') {
@@ -654,6 +660,8 @@ export const useWorkoutData = (options = {}) => {
           newData && Array.isArray(newData.exerciseMaxHistory) ? [...newData.exerciseMaxHistory] : [],
         performanceRetestPlans:
           newData && Array.isArray(newData.performanceRetestPlans) ? [...newData.performanceRetestPlans] : [],
+        pyramidSessionLog:
+          newData && Array.isArray(newData.pyramidSessionLog) ? [...newData.pyramidSessionLog] : [],
         addictionQuitData:
           newData && newData.addictionQuitData && typeof newData.addictionQuitData === 'object'
             ? JSON.parse(JSON.stringify(newData.addictionQuitData))
@@ -952,6 +960,7 @@ export const useWorkoutData = (options = {}) => {
               exerciseMaxRecords: Array.isArray(migratedData.exerciseMaxRecords) ? migratedData.exerciseMaxRecords : [],
               exerciseMaxHistory: Array.isArray(migratedData.exerciseMaxHistory) ? migratedData.exerciseMaxHistory : [],
               performanceRetestPlans: Array.isArray(migratedData.performanceRetestPlans) ? migratedData.performanceRetestPlans : [],
+              pyramidSessionLog: Array.isArray(migratedData.pyramidSessionLog) ? migratedData.pyramidSessionLog : [],
               addictionQuitData:
                 migratedData.addictionQuitData && typeof migratedData.addictionQuitData === 'object'
                   ? migratedData.addictionQuitData
@@ -1032,6 +1041,7 @@ export const useWorkoutData = (options = {}) => {
                   exerciseMaxRecords: Array.isArray(migratedBackup.exerciseMaxRecords) ? migratedBackup.exerciseMaxRecords : [],
                   exerciseMaxHistory: Array.isArray(migratedBackup.exerciseMaxHistory) ? migratedBackup.exerciseMaxHistory : [],
                   performanceRetestPlans: Array.isArray(migratedBackup.performanceRetestPlans) ? migratedBackup.performanceRetestPlans : [],
+                  pyramidSessionLog: Array.isArray(migratedBackup.pyramidSessionLog) ? migratedBackup.pyramidSessionLog : [],
                   addictionQuitData:
                     migratedBackup.addictionQuitData && typeof migratedBackup.addictionQuitData === 'object'
                       ? migratedBackup.addictionQuitData
@@ -1097,6 +1107,7 @@ export const useWorkoutData = (options = {}) => {
                 exerciseMaxRecords: Array.isArray(migratedBackup.exerciseMaxRecords) ? migratedBackup.exerciseMaxRecords : [],
                 exerciseMaxHistory: Array.isArray(migratedBackup.exerciseMaxHistory) ? migratedBackup.exerciseMaxHistory : [],
                 performanceRetestPlans: Array.isArray(migratedBackup.performanceRetestPlans) ? migratedBackup.performanceRetestPlans : [],
+                pyramidSessionLog: Array.isArray(migratedBackup.pyramidSessionLog) ? migratedBackup.pyramidSessionLog : [],
                 addictionQuitData:
                   migratedBackup.addictionQuitData && typeof migratedBackup.addictionQuitData === 'object'
                     ? migratedBackup.addictionQuitData

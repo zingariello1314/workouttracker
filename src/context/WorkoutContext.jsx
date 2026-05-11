@@ -682,37 +682,22 @@ const WorkoutProvider = ({ children }) => {
         createdAt: existingVariation?.createdAt || new Date(),
         lastModifiedAt: new Date(),
         modificationCount: (existingVariation?.modificationCount || 0) + 1,
-        version: '1.0',
-        schemaVersion: 1,
+        version: existingVariation?.version || '1.0',
+        schemaVersion: existingVariation?.schemaVersion ?? 1,
         lastExceptionalIdCounter: existingVariation?.lastExceptionalIdCounter || 0,
         ...(existingVariation?.exerciseSeriesOverrides &&
         Object.keys(existingVariation.exerciseSeriesOverrides).length > 0
           ? { exerciseSeriesOverrides: { ...existingVariation.exerciseSeriesOverrides } }
+          : {}),
+        ...(existingVariation?.exerciseTrainingPatterns &&
+        Object.keys(existingVariation.exerciseTrainingPatterns).length > 0
+          ? { exerciseTrainingPatterns: { ...existingVariation.exerciseTrainingPatterns } }
           : {})
       };
 
-      const exceptionalStorageKey = `${dateStr}_${existingExercise.id}`;
-      const nextCheckedExercises = {
-        ...(currentData.checkedExercises || {}),
-        [exceptionalStorageKey]: true
-      };
-      const nextReps = { ...(currentData.reps || {}) };
-      if (existingExercise.type === 'reps') {
-        const safeTotal = Math.max(0, Math.floor(Number(updatedExercise.totalReps) || 0));
-        nextReps[exceptionalStorageKey] = safeTotal;
-      } else if (existingExercise.type === 'duration') {
-        // Conserve la visibilité dans les vues qui listent les exercices cochés.
-        // Le volume reps reste nul pour les durées (pas d'impact sur totalReps).
-        if (nextReps[exceptionalStorageKey] == null) {
-          nextReps[exceptionalStorageKey] = 0;
-        }
-      }
-
-      // ✅ Sauvegarder immédiatement (action critique)
+      // ✅ Sauvegarder immédiatement (action critique) — uniquement la variation du jour (pas de cocher auto).
       const updatedData = {
         ...currentData,
-        checkedExercises: nextCheckedExercises,
-        reps: nextReps,
         dailyVariations: {
           ...(currentData.dailyVariations || {}),
           [dateStr]: updatedVariation
@@ -781,10 +766,14 @@ const WorkoutProvider = ({ children }) => {
       const hasSeriesOverrides =
         existingVariation.exerciseSeriesOverrides &&
         Object.keys(existingVariation.exerciseSeriesOverrides).length > 0;
+      const hasTrainingPatterns =
+        existingVariation.exerciseTrainingPatterns &&
+        Object.keys(existingVariation.exerciseTrainingPatterns).length > 0;
       const hasOtherVariations =
         updatedSuppressedExercises.length > 0 ||
         (existingVariation.additionalExercises?.length || 0) > 0 ||
-        Boolean(hasSeriesOverrides);
+        Boolean(hasSeriesOverrides) ||
+        Boolean(hasTrainingPatterns);
 
       const updatedData = {
         ...currentData,
@@ -852,6 +841,8 @@ const WorkoutProvider = ({ children }) => {
     }
 
     const hasOverrides = Object.keys(prevOverrides).length > 0;
+    const prevPatterns = { ...(existing?.exerciseTrainingPatterns || {}) };
+
     const updatedVariation = {
       date: dateStr,
       suppressedExercises: existing?.suppressedExercises || [],
@@ -863,7 +854,8 @@ const WorkoutProvider = ({ children }) => {
       version: existing?.version || '1.0',
       schemaVersion: existing?.schemaVersion ?? 1,
       lastExceptionalIdCounter: existing?.lastExceptionalIdCounter || 0,
-      ...(hasOverrides ? { exerciseSeriesOverrides: prevOverrides } : {})
+      ...(hasOverrides ? { exerciseSeriesOverrides: prevOverrides } : {}),
+      ...(Object.keys(prevPatterns).length > 0 ? { exerciseTrainingPatterns: prevPatterns } : {})
     };
     if (!hasOverrides) {
       delete updatedVariation.exerciseSeriesOverrides;
@@ -872,7 +864,8 @@ const WorkoutProvider = ({ children }) => {
     const hasAny =
       (updatedVariation.suppressedExercises?.length || 0) > 0 ||
       (updatedVariation.additionalExercises?.length || 0) > 0 ||
-      hasOverrides;
+      hasOverrides ||
+      Object.keys(prevPatterns).length > 0;
 
     const nextDaily = { ...(currentData.dailyVariations || {}) };
     if (hasAny) {

@@ -15,6 +15,13 @@ import Button from '../../ui/Button';
 import { useExerciseTracking } from '../hooks/useExerciseTracking';
 import { useWorkout } from '../../../../context/WorkoutContext';
 import { calculateAutoReps, detectExerciseUnit } from '../../../../utils/exerciseCalculations';
+import { getDateStr } from '../../../../utils/dateUtils';
+import { formatStepsDash } from '../../../../services/trainingPatterns/pyramidEngine';
+import { resolveExercisePyramidPattern } from '../../../../services/trainingPatterns/resolveExercisePyramidPattern';
+import {
+  collectRecentSessionTotalsForExercise,
+  estimateSessionsPerWeek
+} from '../../../../services/trainingPatterns/pyramidUserSignals';
 import { intensityCoeffToStarCount, resolveExerciseIntensityCoeff } from '../../../../utils/trainingLoadUtils';
 import LoadDifficultyStars from '../../../sport/LoadDifficultyStars';
 import SessionEffortBlock from './SessionEffortBlock';
@@ -44,6 +51,22 @@ const ExerciseItem = ({ exercise, date, isGymMode, onShowVariations }) => {
   const { data, getCurrentData } = useWorkout();
 
   const { isChecked, reps, sessionEffortStars } = getExerciseStatus(exercise);
+
+  const dateStr = useMemo(() => getDateStr(date), [date]);
+  const trainingPattern = useMemo(() => {
+    const live = typeof getCurrentData === 'function' ? getCurrentData() : null;
+    const snapshot = live || data;
+    const recent = collectRecentSessionTotalsForExercise(snapshot?.reps || {}, exercise.id, { maxDays: 90 });
+    const sessionsPerWeek = estimateSessionsPerWeek(snapshot?.reps || {}, exercise.id, { windowDays: 42 });
+    return resolveExercisePyramidPattern({
+      dailyVariations: snapshot?.dailyVariations,
+      dateStr,
+      exercise,
+      records: snapshot?.exerciseMaxRecords || [],
+      meanSessionTotal: recent.meanPerSession,
+      sessionsPerWeek
+    });
+  }, [data, dateStr, exercise, getCurrentData]);
 
   const loadCoeff = useMemo(() => {
     const live = typeof getCurrentData === 'function' ? getCurrentData() : null;
@@ -91,19 +114,19 @@ const ExerciseItem = ({ exercise, date, isGymMode, onShowVariations }) => {
 
   // Handler pour auto-remplissage au focus
   const handleInputFocus = useCallback(() => {
-    if (!reps && exercise.series) {
-      // Pour les exercices basés sur le temps, ne pas auto-remplir
-      // L'utilisateur doit saisir manuellement le temps
-      if (exerciseUnit?.isTimeBased) {
-        return;
-      }
-      
-      const autoReps = calculateAutoReps(exercise.series, { round: true });
-      if (autoReps !== null) {
-        updateReps(exercise, autoReps.toString());
-      }
+    if (reps) return;
+    if (exerciseUnit?.isTimeBased) return;
+
+    let autoReps = null;
+    if (trainingPattern && Number.isFinite(Number(trainingPattern.totalReps))) {
+      autoReps = Math.round(Number(trainingPattern.totalReps));
+    } else if (exercise.series) {
+      autoReps = calculateAutoReps(exercise.series, { round: true });
     }
-  }, [exercise, reps, updateReps, exerciseUnit]);
+    if (autoReps !== null) {
+      updateReps(exercise, String(autoReps));
+    }
+  }, [exercise, reps, updateReps, exerciseUnit, trainingPattern]);
 
   // Handler pour toggle
   const handleToggle = useCallback(() => {
@@ -154,6 +177,24 @@ const ExerciseItem = ({ exercise, date, isGymMode, onShowVariations }) => {
           {exercise.materiel && ` • ${exercise.materiel}`}
           {exercise.notes && ` • ${exercise.notes}`}
         </div>
+        {trainingPattern ? (
+          <div className="mt-2 rounded-md border border-amber-500/40 bg-amber-950/30 px-2 py-1.5 text-[11px] leading-snug text-amber-50/95">
+            <span className="font-semibold text-amber-200">
+              Plan pyramide{' '}
+              {String(trainingPattern.source || '').includes('program') ? '(programme)' : '(jour / Défis)'}
+            </span>
+            {trainingPattern.label ? (
+              <span className="text-amber-100/90"> · {trainingPattern.label}</span>
+            ) : null}
+            <div className="mt-0.5 font-mono text-[10px] text-amber-100/85">{formatStepsDash(trainingPattern.steps)}</div>
+            <div className="mt-0.5 text-amber-100/75">
+              {trainingPattern.totalReps != null ? `${trainingPattern.totalReps} reps totales prévues` : ''}
+              {trainingPattern.restBetweenStepsSec != null
+                ? ` · ~${trainingPattern.restBetweenStepsSec}s entre paliers`
+                : ''}
+            </div>
+          </div>
+        ) : null}
       </div>
       
       <div className="flex items-center space-x-2">
