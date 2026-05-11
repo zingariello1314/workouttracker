@@ -3,7 +3,7 @@
  *
  * Utilisé depuis :
  *   - `ProgramDetailView` (sous chaque jour : "Ajouter un circuit").
- *   - Hub `Défis > Circuits` (création/édition globale + assignation programme/jour).
+ *   - Hub `Défis > Circuits` (création/édition globale + assignation programme / un ou plusieurs jours).
  *
  * Style aligné sur la charte sport (PushupTrophiesPanel / EnduranceCalendarModernPanel) :
  *   - modale `rounded-2xl border-2 border-[#0F4C5C]/70 bg-black p-6`
@@ -41,6 +41,19 @@ const PROGRAM_WEEK_DAYS = [
   { id: 'samedi', label: 'Samedi' },
   { id: 'dimanche', label: 'Dimanche' }
 ];
+
+/** Jours pré-sélectionnés depuis `defaultAssignment` (un ou plusieurs). */
+const initialAssignDaysFromDefault = (defaultAssignment) => {
+  if (!defaultAssignment || typeof defaultAssignment !== 'object') return [];
+  if (Array.isArray(defaultAssignment.dayNames) && defaultAssignment.dayNames.length > 0) {
+    const allowed = new Set(PROGRAM_WEEK_DAYS.map((d) => d.id));
+    return defaultAssignment.dayNames.filter((d) => allowed.has(String(d)));
+  }
+  if (defaultAssignment.dayName && PROGRAM_WEEK_DAYS.some((d) => d.id === defaultAssignment.dayName)) {
+    return [defaultAssignment.dayName];
+  }
+  return [];
+};
 
 const buildExerciseIndex = () => {
   const out = [];
@@ -113,7 +126,7 @@ const CircuitEditor = ({
   const [pickerMuscle, setPickerMuscle] = useState('');
   const [editingSlotIdx, setEditingSlotIdx] = useState(null);
   const [assignProgramId, setAssignProgramId] = useState(defaultAssignment?.programId || '');
-  const [assignDay, setAssignDay] = useState(defaultAssignment?.dayName || '');
+  const [assignDays, setAssignDays] = useState(() => initialAssignDaysFromDefault(defaultAssignment));
   const [error, setError] = useState('');
 
   useEffect(() => {
@@ -129,6 +142,24 @@ const CircuitEditor = ({
       );
     }
   }, [initialDefinition?.id]);
+
+  const trNum = Number(targetRounds);
+
+  /** Un seul tour : aucun repos « entre tours » — aligner le champ à 0. */
+  useEffect(() => {
+    if (Number.isFinite(trNum) && trNum === 1) {
+      setRestBetween('0');
+    }
+  }, [trNum]);
+
+  const toggleAssignDay = (dayId) => {
+    setAssignDays((prev) => {
+      const set = new Set(prev);
+      if (set.has(dayId)) set.delete(dayId);
+      else set.add(dayId);
+      return PROGRAM_WEEK_DAYS.filter((d) => set.has(d.id)).map((d) => d.id);
+    });
+  };
 
   const filteredPicker = useMemo(() => {
     return exerciseIndex
@@ -198,11 +229,13 @@ const CircuitEditor = ({
       return;
     }
 
+    const restSec = tr <= 1 ? 0 : Number(restBetween) || 0;
+
     const definition = normalizeCircuitDefinition({
       id: initialDefinition?.id,
       name: trimmedName,
       targetRounds: tr,
-      restBetweenRoundsSec: Number(restBetween) || 0,
+      restBetweenRoundsSec: restSec,
       notes,
       primaryMuscles: muscleSummary,
       items,
@@ -212,8 +245,15 @@ const CircuitEditor = ({
     try {
       const saved = await onSave?.(definition);
       const finalDef = saved || definition;
-      if (assignProgramId && assignDay && typeof onAssignToDay === 'function') {
-        await onAssignToDay(assignProgramId, assignDay, finalDef.id);
+      if (
+        assignProgramId
+        && assignDays.length > 0
+        && typeof onAssignToDay === 'function'
+      ) {
+        const ordered = PROGRAM_WEEK_DAYS.map((d) => d.id).filter((id) => assignDays.includes(id));
+        for (const dayName of ordered) {
+          await onAssignToDay(assignProgramId, dayName, finalDef.id);
+        }
       }
       onCancel?.();
     } catch (e) {
@@ -288,14 +328,23 @@ const CircuitEditor = ({
           <div>
             <label className={`${labelText} flex items-center gap-1`}>
               <Clock size={11} /> Repos entre tours (s)
+              {Number.isFinite(trNum) && trNum === 1 && (
+                <span className="font-normal normal-case text-teal-200/65"> — n/a (1 tour)</span>
+              )}
             </label>
             <input
               type="number"
               min={0}
               max={600}
-              value={restBetween}
+              value={Number.isFinite(trNum) && trNum === 1 ? 0 : restBetween}
               onChange={(e) => setRestBetween(e.target.value)}
-              className={inputBase}
+              disabled={Number.isFinite(trNum) && trNum === 1}
+              className={`${inputBase} disabled:cursor-not-allowed disabled:opacity-55`}
+              title={
+                Number.isFinite(trNum) && trNum === 1
+                  ? 'Un seul tour : pas de pause entre tours'
+                  : undefined
+              }
             />
           </div>
           <div className="sm:col-span-2">
@@ -496,19 +545,34 @@ const CircuitEditor = ({
                   ))}
                 </select>
               </div>
-              <div>
-                <label className={labelText}>Jour</label>
-                <select
-                  value={assignDay}
-                  onChange={(e) => setAssignDay(e.target.value)}
-                  disabled={!assignProgramId}
-                  className={`${inputSmall} disabled:opacity-50`}
-                >
-                  <option value="">— Choisir un jour —</option>
-                  {PROGRAM_WEEK_DAYS.map((d) => (
-                    <option key={d.id} value={d.id}>{d.label}</option>
-                  ))}
-                </select>
+              <div className="sm:col-span-2">
+                <label className={labelText}>
+                  Jours <span className="font-normal text-teal-200/65">(plusieurs possibles)</span>
+                </label>
+                {!assignProgramId ? (
+                  <p className="mt-1 text-[11px] text-teal-200/55">Choisissez d’abord un programme.</p>
+                ) : (
+                  <div className="mt-1 flex flex-wrap gap-1.5">
+                    {PROGRAM_WEEK_DAYS.map((d) => {
+                      const selected = assignDays.includes(d.id);
+                      return (
+                        <button
+                          key={d.id}
+                          type="button"
+                          onClick={() => toggleAssignDay(d.id)}
+                          className={`rounded-lg border px-2.5 py-1 text-xs font-medium transition ${
+                            selected
+                              ? 'border-[#0F5C45]/80 bg-[#0F5C45]/35 text-teal-50'
+                              : 'border-[#0F4C5C]/50 bg-black text-teal-200/85 hover:border-sky-500/35'
+                          }`}
+                          aria-pressed={selected}
+                        >
+                          {d.label}
+                        </button>
+                      );
+                    })}
+                  </div>
+                )}
               </div>
             </div>
           </div>

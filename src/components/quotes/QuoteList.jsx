@@ -8,7 +8,14 @@ import { QuoteCard } from './QuoteCard';
 import { AlertTriangle } from 'lucide-react';
 import { settingsTheme as S } from '../tabs/SettingsTab/settingsThemeClasses';
 
-export function QuoteList({ quotes, onEdit, onDelete, onTogglePin, onReorder }) {
+export function QuoteList({
+  quotes,
+  onEdit,
+  onDelete,
+  onTogglePin,
+  onReorder,
+  autoSplitLineGoal = null,
+}) {
   const [draggedIndex, setDraggedIndex] = useState(null);
   const [dragOverIndex, setDragOverIndex] = useState(null);
 
@@ -97,6 +104,7 @@ export function QuoteList({ quotes, onEdit, onDelete, onTogglePin, onReorder }) 
             onTogglePin={onTogglePin}
             draggable
             listPosition={index + 1}
+            autoSplitLineGoal={autoSplitLineGoal}
           />
         </div>
       ))}

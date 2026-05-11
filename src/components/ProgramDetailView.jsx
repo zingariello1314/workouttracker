@@ -1993,7 +1993,7 @@ const ProgramDetailView = ({ program, onBack, onUpdateProgram }) => {
           programs={program ? [program] : []}
           defaultAssignment={
             circuitEditorState.dayKey && program?.id
-              ? { programId: program.id, dayName: circuitEditorState.dayKey }
+              ? { programId: program.id, dayNames: [circuitEditorState.dayKey] }
               : null
           }
           onSave={handleSaveCircuit}

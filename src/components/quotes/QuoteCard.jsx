@@ -15,9 +15,16 @@ export function QuoteCard({
   onTogglePin,
   draggable = false,
   listPosition = null,
+  autoSplitLineGoal = null,
 }) {
-  const displayFr = quote ? quotesService.formatQuoteForDisplay(quote, 'fr') : null;
-  const displayEn = quote ? quotesService.formatQuoteForDisplay(quote, 'en') : null;
+  const gn =
+    autoSplitLineGoal != null && autoSplitLineGoal !== ''
+      ? Number(autoSplitLineGoal)
+      : null;
+  const splitOpts =
+    gn != null && Number.isFinite(gn) ? { autoSplitLineGoal: gn } : {};
+  const displayFr = quote ? quotesService.formatQuoteForDisplay(quote, 'fr', splitOpts) : null;
+  const displayEn = quote ? quotesService.formatQuoteForDisplay(quote, 'en', splitOpts) : null;
   const linesFr = displayFr?.lines ?? [];
   const linesEn = displayEn?.lines ?? [];
   const boldFrom = displayFr?.boldFrom ?? 2;

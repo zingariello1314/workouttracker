@@ -7,6 +7,7 @@
 import React, { useState, useEffect } from 'react';
 import { Save, X } from 'lucide-react';
 import quotesService from '../../services/quotes/quotesService';
+import { normalizeQuoteLineBreaks } from '../../services/quotes/quoteNewlines';
 import { settingsTheme as S } from '../tabs/SettingsTab/settingsThemeClasses';
 
 const DEFAULT_BOLD_START = 2;
@@ -15,8 +16,15 @@ const DEFAULT_BOLD_END = 2;
 const field = `${S.input} min-h-[80px] resize-y py-2`;
 const numField = `${S.input} w-14 px-2 py-1.5 text-center`;
 
+/** Aligné avec quotesService.getLinesFromQuote : textFr/textEn prévalent si non vides */
+function quoteHasSeparateTextBlob(quote) {
+  const fr = typeof quote?.textFr === 'string' ? quote.textFr.trim() : '';
+  const en = typeof quote?.textEn === 'string' ? quote.textEn.trim() : '';
+  return fr !== '' || en !== '';
+}
+
 function isLegacyQuote(quote) {
-  return quote && typeof quote.line1Fr === 'string';
+  return quote && typeof quote.line1Fr === 'string' && !quoteHasSeparateTextBlob(quote);
 }
 
 /** Build textFr/textEn from legacy line1/2/3 for form display */
@@ -73,8 +81,8 @@ export function EditQuoteModal({ quote, onSave, onClose }) {
     setErrors({});
 
     const payload = {
-      textFr: formData.textFr.trim(),
-      textEn: formData.textEn.trim(),
+      textFr: normalizeQuoteLineBreaks(formData.textFr).trim(),
+      textEn: normalizeQuoteLineBreaks(formData.textEn).trim(),
       boldLineStart: formData.boldLineStart === '' ? DEFAULT_BOLD_START : formData.boldLineStart,
       boldLineEnd: formData.boldLineEnd === '' ? DEFAULT_BOLD_END : formData.boldLineEnd,
     };

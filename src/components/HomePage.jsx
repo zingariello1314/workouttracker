@@ -17,6 +17,32 @@ import { MomentumWelcomeGate } from './ui/MomentumBrandedLoading';
 
 const log = logger.component('HomePage');
 
+/** Plafond de taille (rem) pour que N lignes tiennent sans mesure layout (évite zoom/dézoom JS) */
+function getQuoteFontCapRem(lineCount, sandwichBold = false) {
+  if (typeof window === 'undefined') return 5;
+  const vh = window.innerHeight;
+  const narrow = window.innerWidth < 768;
+  const reserveFooter = narrow ? vh * 0.37 : vh * 0.31;
+  const reserveHeader = Math.min(148, vh * 0.17);
+  const budgetPx = Math.max(68, vh - reserveFooter - reserveHeader - 52);
+  const lc = Math.max(lineCount, 1);
+  let perLineEm = lc >= 5 ? 1.38 : lc >= 3 ? 1.22 : 1.12;
+  /** 5 lignes max + sandwich fins→gras→fins : interligne un peu plus haut pour le budget vertical */
+  if (lc === 5 && sandwichBold) {
+    perLineEm = 1.52;
+  }
+  const tightFactor = lc === 5 && sandwichBold ? 0.84 : 0.88;
+  const maxPx = (budgetPx / (lc * perLineEm)) * tightFactor;
+  const cap = maxPx / 16;
+  const absoluteMax =
+    lc <= 1 ? 4.55 : lc === 2 ? 4 : lc === 3 ? 3.4 : lc === 4 ? 2.75 : 2.05;
+  let abs = absoluteMax;
+  if (lc === 5 && sandwichBold) {
+    abs = Math.min(abs, 1.58);
+  }
+  return Math.max(0.68, Math.min(cap, abs));
+}
+
 const HomePage = () => {
   const { setActiveTab, activeTab } = useWorkout();
   const { isAuthenticated } = useAuth();
@@ -26,9 +52,23 @@ const HomePage = () => {
   // useTranslation utilise déjà useLanguage en interne
   const language = t.language || 'fr'; // Fallback vers 'fr' si non disponible
   const { backgroundImages, isLoading, systemHealth } = useHomepageImages();
-  const { displayQuote, loading: quoteLoading, handleInteraction: handleQuoteInteraction } = useQuoteDisplay();
-  const [renderedQuote, setRenderedQuote] = useState(null);
-  const [quoteAnimKey, setQuoteAnimKey] = useState(0);
+  const {
+    displayQuote,
+    currentQuote,
+    loading: quoteLoading,
+    tryAdvanceQuoteFromInteraction,
+  } = useQuoteDisplay();
+  /** Dernière citation affichée valide — évite un frame fallback / citation hors-sujet entre deux tours. */
+  const lastStableQuoteRef = useRef(null);
+  if (displayQuote?.lines?.length) {
+    lastStableQuoteRef.current = displayQuote;
+  }
+  const quoteToRender =
+    displayQuote?.lines?.length > 0
+      ? displayQuote
+      : !quoteLoading && lastStableQuoteRef.current?.lines?.length > 0
+        ? lastStableQuoteRef.current
+        : null;
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [userLocation, setUserLocation] = useState('');
   
@@ -101,6 +141,7 @@ const HomePage = () => {
   
   const imagePreloadedRef = useRef(new Set()); // Images déjà préchargées
   const loadingImageRef = useRef(null); // Référence image en cours de chargement
+  const homeQuoteMainRef = useRef(null);
 
   // ✅ FIX: Géolocalisation uniquement après interaction utilisateur (conformité navigateur)
   const requestUserLocation = () => {
@@ -434,58 +475,145 @@ const HomePage = () => {
     return () => clearInterval(rotationInterval);
   }, [backgroundImages.length]);
 
-  // Fonction pour ajuster la taille de police des citations (plafonds plus bas sur mobile = moins de rognage)
-  const adjustQuoteSize = () => {
+  // Échelle pilotée par le nombre de lignes réelles (display) : une même phrase peut
+  // faire 2 lignes en base (autosplit ~28 chars) tout en étant « longue » → l’ancien
+  // « textLength ≤ 52 ⇒ géant » enflait l’occupation sans raison ; 3 lignes avaient un max trop bas à l’écran large.
+  const adjustQuoteSize = useCallback(() => {
     const quoteElement = document.querySelector('.adaptive-quote-text');
     if (!quoteElement) return;
 
-    const textContent = quoteElement.textContent || '';
-    const textLength = textContent.length;
-    const narrow =
-      typeof window !== 'undefined' ? window.matchMedia('(max-width: 639px)').matches : false;
-    const cap = narrow ? '2.1rem' : '2.95rem';
+    const lineCount = quoteToRender?.lines?.length ?? 0;
+    if (lineCount < 1) return;
+
+    const textLength = (quoteToRender.lines || []).join(' ').trim().length;
 
     quoteElement.removeAttribute('data-long');
     quoteElement.removeAttribute('data-very-long');
 
-    if (textLength > 140) {
+    const veryDense = textLength > 132;
+    /** Bloc fins → gras → fins : transitions de graisse créent trop d’air + dernières lignes rognées */
+    const bf = quoteToRender.boldFrom ?? 2;
+    const bt = quoteToRender.boldTo ?? bf;
+    const sandwichBold =
+      lineCount >= 4 && bf > 1 && bt < lineCount && bf <= bt;
+
+    const cap = getQuoteFontCapRem(lineCount, sandwichBold);
+    /** Un seul `clamp` avec plafond lié au viewport : pas de ResizeObserver ni boucle sur la font-size */
+    const capped = (min, pref, ceilingRem) =>
+      `clamp(${min}, ${pref}, min(${ceilingRem}rem, ${cap}rem))`;
+
+    /* vmin : un peu lié à la hauteur de viewport pour ne pas garder tout petit sur grands écrans */
+
+    if (textLength > 158) {
       quoteElement.setAttribute('data-very-long', 'true');
-      quoteElement.style.fontSize = narrow
-        ? 'clamp(0.95rem, 2.85vw, 1.72rem)'
-        : 'clamp(1rem, 2.35vw, 2.25rem)';
-    } else if (textLength > 92) {
+      quoteElement.style.fontSize = capped('0.88rem', '1.62vw + 0.36vmin', 1.62);
+    } else if (lineCount >= 5 || textLength > 142 || veryDense) {
+      quoteElement.setAttribute('data-very-long', 'true');
+      quoteElement.style.fontSize = sandwichBold
+        ? capped('0.8rem', '1.58vw + 0.32vmin', 1.46)
+        : capped('0.92rem', '1.88vw + 0.38vmin', 1.78);
+    } else if (textLength > 118) {
       quoteElement.setAttribute('data-long', 'true');
-      quoteElement.style.fontSize = narrow
-        ? 'clamp(1rem, 3.1vw, 1.85rem)'
-        : 'clamp(1.05rem, 2.65vw, 2.45rem)';
-    } else if (textLength > 58) {
-      quoteElement.style.fontSize = `clamp(1.05rem, 3.6vw, ${cap})`;
+      quoteElement.style.fontSize = capped('1.12rem', '2.5vw + 0.52vmin', 2.35);
+    } else if (lineCount >= 4 || textLength > 105) {
+      quoteElement.setAttribute('data-long', 'true');
+      quoteElement.style.fontSize = capped('1.32rem', '2.68vw + 0.72vmin', 2.92);
+    } else if (lineCount >= 3 || textLength > 88) {
+      quoteElement.setAttribute('data-long', 'true');
+      quoteElement.style.fontSize = capped('1.52rem', '2.85vw + 0.95vmin', 3.45);
+    } else if (lineCount === 2) {
+      quoteElement.style.fontSize =
+        textLength > 78
+          ? capped('1.48rem', '3.6vw + 0.55vmin', 3.35)
+          : capped('1.72rem', '4.1vw + 0.65vmin', 3.95);
     } else {
-      quoteElement.style.fontSize = `clamp(1.1rem, 4vw, ${cap})`;
+      /* 1 ligne : impact maximum */
+      quoteElement.style.fontSize = capped('1.95rem', '4.8vw + 0.85vmin', 4.35);
     }
-  };
+
+    /** Libère de la place verticale : plafond 5 lignes — padding généreux pour ombre / descendantes */
+    if (lineCount >= 5) {
+      /** Léger air au-dessus : évite l’effet « collée au haut » / premières lettres trop près du bord */
+      quoteElement.style.paddingTop = 'max(6px, 0.08em)';
+      quoteElement.style.paddingBottom = sandwichBold
+        ? 'max(22px, 0.82em)'
+        : 'max(20px, 0.78em)';
+    } else if (lineCount >= 4) {
+      quoteElement.style.paddingTop = 'max(4px, 0.06em)';
+      quoteElement.style.paddingBottom = 'max(6px, 0.55rem)';
+    } else {
+      quoteElement.style.removeProperty('padding-top');
+      quoteElement.style.removeProperty('padding-bottom');
+    }
+  }, [quoteToRender?.lines]);
 
   useEffect(() => {
-    if (!displayQuote) return;
-    const prevKey = renderedQuote?.lines?.join('|') || '';
-    const nextKey = displayQuote?.lines?.join('|') || '';
-    if (prevKey === nextKey) return;
-    setRenderedQuote(displayQuote);
-    setQuoteAnimKey((k) => k + 1);
-  }, [displayQuote, renderedQuote]);
-
-  // Ajuster la taille quand la citation change
-  useEffect(() => {
-    const timer = setTimeout(() => {
+    const timer = window.setTimeout(() => {
       adjustQuoteSize();
     }, 100);
-    return () => clearTimeout(timer);
-  }, [renderedQuote, quoteLoading]);
+    return () => window.clearTimeout(timer);
+  }, [displayQuote, quoteLoading, quoteToRender, adjustQuoteSize]);
 
-  // Fonction pour changer l'image de fond ET la citation lors des interactions
+  /**
+   * Repartir du haut à chaque citation ; le centrage vertical est géré par le conteneur interne
+   * (`min-h` + `justify-center`), pas par scrollIntoView.
+   */
+  useEffect(() => {
+    if (quoteLoading) return;
+    const mainEl = homeQuoteMainRef.current;
+    if (!mainEl) return;
+    mainEl.scrollTop = 0;
+  }, [currentQuote?.id, quoteLoading, quoteToRender?.lines]);
+
+  /**
+   * Citation en 5 lignes (hauteur max) : après `adjustQuoteSize`, si le bas du H1 dépasse encore
+   * le scrollport (marges négatives / ombre / scrollHeight avec flex), on corrige par petits timeouts.
+   */
+  useEffect(() => {
+    if (quoteLoading || !quoteToRender?.lines?.length) return;
+    if (quoteToRender.lines.length !== 5) return;
+
+    const mainEl = homeQuoteMainRef.current;
+    if (!mainEl) return;
+
+    const ensureBottomGap = () => {
+      const q = mainEl.querySelector('.adaptive-quote-text');
+      if (!q) return;
+      const pad = 16;
+      const mr = mainEl.getBoundingClientRect();
+      const qr = q.getBoundingClientRect();
+      if (qr.bottom > mr.bottom - pad) {
+        mainEl.scrollTop += qr.bottom - (mr.bottom - pad);
+      }
+    };
+
+    const t1 = window.setTimeout(ensureBottomGap, 140);
+    const t2 = window.setTimeout(ensureBottomGap, 280);
+    const t3 = window.setTimeout(ensureBottomGap, 420);
+    let rafOuter = 0;
+    let rafInner = 0;
+    const t0 = window.setTimeout(() => {
+      rafOuter = requestAnimationFrame(() => {
+        rafInner = requestAnimationFrame(ensureBottomGap);
+      });
+    }, 0);
+    return () => {
+      window.clearTimeout(t0);
+      window.clearTimeout(t1);
+      window.clearTimeout(t2);
+      window.clearTimeout(t3);
+      if (rafOuter) cancelAnimationFrame(rafOuter);
+      if (rafInner) cancelAnimationFrame(rafInner);
+    };
+  }, [currentQuote?.id, quoteLoading, quoteToRender]);
+
+  // Une seule action par « cycle » : même throttle que les citations pour éviter
+  // plusieurs fonds différents pour une même phrase (sensation de flash hors-sujet).
   const handleInteraction = () => {
-    changeBackgroundImage();
-    handleQuoteInteraction(); // Change aussi la citation
+    const quoteWillAdvance = tryAdvanceQuoteFromInteraction();
+    if (quoteWillAdvance) {
+      changeBackgroundImage();
+    }
   };
 
   // Fonction pour naviguer vers un autre onglet avec transition
@@ -681,82 +809,158 @@ const HomePage = () => {
         visible={swipeState.isSwipping && swipeState.direction === 'down'}
       />
 
-      {/* Contenu principal */}
-      <main className="relative z-10 flex-1 flex flex-col md:flex-row items-start md:items-center justify-start px-4 md:px-8 pt-[max(5.5rem,calc(env(safe-area-inset-top,0px)+4.75rem))] md:pt-12 pb-6 md:pb-12 gap-3 md:gap-0 min-h-0 overflow-x-hidden overflow-y-auto overscroll-y-contain [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
-        <div className="max-w-2xl w-full shrink-0 min-w-0">
-          {/* Titre principal — typographie homogène (évite une ligne géante au milieu du texte) */}
+      <div className="relative z-10 flex min-h-0 min-w-0 flex-1 flex-col gap-5 md:gap-6">
+      {/* Zone citation ; le CTA est dans « À propos ». */}
+      {(() => {
+        const lc = quoteToRender?.lines?.length ?? 0;
+        /** Phrase en 5 lignes (plafond accueil) : coussin bas pour le scroll / ombre */
+        const isFiveLines = !quoteLoading && lc === 5;
+        const liftTallQuote = !quoteLoading && lc >= 5;
+        const tallScrollableQuote = liftTallQuote;
+        const mainPt = liftTallQuote
+          ? 'pt-[max(0.12rem,calc(env(safe-area-inset-top,0px)+0.2rem))] sm:pt-[max(0.2rem,calc(env(safe-area-inset-top,0px)+0.3rem))]'
+          : 'pt-[max(0rem,calc(env(safe-area-inset-top,0px)+0.2rem))] sm:pt-1 md:pt-2';
+        const mainPb = isFiveLines
+          ? 'pb-[max(3.15rem,min(13vh,6.75rem))] scroll-pb-[max(2.6rem,min(20vh,6.75rem))] md:pb-[max(3.5rem,min(14vh,7.5rem))]'
+          : 'pb-[max(1.5rem,7vh)] scroll-pb-[max(1.35rem,min(14vh,4rem))] md:pb-[max(1.85rem,min(11vh,4.5rem))]';
+        const mainScrollChrome = tallScrollableQuote
+          ? '[scrollbar-width:thin] [-ms-overflow-style:auto] [scrollbar-color:rgba(255,255,255,0.45)_rgba(0,0,0,0.15)]'
+          : '[scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden';
+        return (
+      <main
+        ref={homeQuoteMainRef}
+        className={`relative z-[1] flex min-h-0 flex-1 flex-col overflow-x-hidden overflow-y-auto overscroll-y-contain px-4 ${mainPb} ${mainPt} md:px-8 ${mainScrollChrome}`}
+      >
+        {/*
+          Centrage uniquement si la citation est plus courte que la zone : deux flex-1 (min-h-0) absorbent
+          l’espace libre. `justify-center` sur un bloc min-h=max(100%, max-content) centrait le h1 dans
+          TOUTE la hauteur du texte : quand ça dépassait le <main>, scrollTop=0 montrait le « haut » du bloc
+          (vide) et coupait les dernières lignes — donnant l’impression qu’un module du bas rognait le texte.
+        */}
+        <div className="max-w-2xl flex w-full shrink-0 min-w-0 flex-col isolate box-border overflow-visible pb-[max(0.5rem,0.35cm)] pt-0 min-h-[max(100%,max-content)]">
+          <div className="min-h-0 flex-1 shrink" aria-hidden="true" />
+          {/* Citations dynamiques — zone étendue verticalement pour ne pas rogner les glyphes */}
           <h1
-            className="adaptive-quote-text font-medium mb-8 md:mb-10 animate-quote-fade-in"
+            className="adaptive-quote-text font-light mb-0"
             style={{
               textShadow: '2px 2px 4px rgba(0,0,0,0.8)',
               display: 'flex',
               flexDirection: 'column',
               justifyContent: 'flex-start',
-              gap: '0.28rem',
-              lineHeight: 1.36,
-              paddingTop: '0.08em',
-              paddingBottom: '0.35em'
+              gap: 0,
+              lineHeight: 1.32,
             }}
           >
             {quoteLoading ? (
               <>
                 <span className="text-white opacity-50">Chargement...</span>
               </>
-            ) : renderedQuote && renderedQuote.lines && renderedQuote.lines.length > 0 ? (
-              <span key={quoteAnimKey} className="inline-flex flex-col gap-1 animate-quote-fade-in [overflow:visible]">
-                {renderedQuote.lines.map((line, index) => {
-                  const linesLen = renderedQuote.lines.length;
-                  const isLast = index === linesLen - 1;
-                  return (
-                    <span
-                      key={index}
-                      className="block font-medium leading-snug tracking-tight text-white [overflow:visible]"
-                      style={{
-                        paddingBottom: isLast ? '0.08em' : undefined,
-                        textRendering: 'geometricPrecision',
-                      }}
-                    >
-                      {line}
-                    </span>
-                  );
-                })}
-              </span>
+            ) : quoteToRender && quoteToRender.lines && quoteToRender.lines.length > 0 ? (
+              (() => {
+                const linesArr = quoteToRender.lines;
+                const lc = linesArr.length;
+                const bf0 = quoteToRender.boldFrom ?? 2;
+                const bt0 = quoteToRender.boldTo ?? bf0;
+                const lineBold = (i) => {
+                  const ob = i + 1;
+                  return ob >= bf0 && ob <= bt0;
+                };
+                const sandwichBold =
+                  lc >= 4 && bf0 > 1 && bt0 < lc && bf0 <= bt0;
+                const tightStack = lc >= 5 || sandwichBold;
+                const ultraTight = lc >= 5 || sandwichBold;
+                return (
+                  <div
+                    key={currentQuote?.id ?? linesArr.join('|')}
+                    className={`flex animate-quote-fade-in flex-col [animation-duration:0.45s] ${
+                      ultraTight ? '[row-gap:0.05em]' : tightStack ? '[row-gap:0.1em]' : '[row-gap:0.2em]'
+                    }`}
+                  >
+                    {linesArr.map((line, index) => {
+                      const isBold = lineBold(index);
+                      const weightFlip =
+                        index > 0 && isBold !== lineBold(index - 1);
+                      return (
+                        <span
+                          key={index}
+                          className="block overflow-visible py-0 text-white"
+                          style={{
+                            fontWeight: isBold ? 560 : 330,
+                            lineHeight: ultraTight ? 1.16 : sandwichBold ? 1.18 : tightStack ? 1.22 : 1.28,
+                            letterSpacing: ultraTight || sandwichBold ? '-0.01em' : undefined,
+                            paddingTop:
+                              index === 0
+                                ? ultraTight || sandwichBold
+                                  ? '0.1em'
+                                  : tightStack
+                                    ? '0.085em'
+                                    : '0.06em'
+                                : undefined,
+                            marginTop:
+                              weightFlip === true
+                                ? ultraTight
+                                  ? lc >= 5
+                                    ? '-0.04em'
+                                    : '-0.12em'
+                                  : sandwichBold
+                                    ? lc >= 5
+                                      ? '-0.04em'
+                                      : '-0.11em'
+                                    : tightStack
+                                      ? lc >= 5
+                                        ? '-0.03em'
+                                        : '-0.078em'
+                                      : '-0.045em'
+                                : undefined,
+                            paddingBottom:
+                              index === linesArr.length - 1
+                                ? lc === 5 && sandwichBold
+                                  ? '0.16em'
+                                  : ultraTight || sandwichBold
+                                    ? '0.12em'
+                                    : tightStack
+                                      ? '0.1em'
+                                      : '0.08em'
+                                : undefined,
+                          }}
+                        >
+                          {line}
+                        </span>
+                      );
+                    })}
+                  </div>
+                );
+              })()
             ) : (
-              <span className="text-white opacity-40">...</span>
+              <>
+                <span className="text-white">{t('home.title.line1')}</span>
+                <span className="text-white font-bold">{t('home.title.line2')}</span>
+                <span className="text-white">{t('home.title.line3')}</span>
+              </>
             )}
           </h1>
 
+          <div className="min-h-0 flex-1 shrink" aria-hidden="true" />
         </div>
       </main>
+        );
+      })()}
 
-      {/* Bouton CTA fixé juste au-dessus de "À propos de Momentum" (~1 cm) */}
-      <div className="relative z-10 px-4 md:px-8 mb-0">
-        <button
-          data-swipe-ignore
-          onClick={() => navigateToTab(isAuthenticated ? 'today' : 'auth')}
-          className="bg-white/8 backdrop-blur-2xl border border-white/15 text-white px-6 md:px-8 py-3 md:py-4 rounded-2xl text-sm md:text-lg font-semibold transition-all duration-500 hover:bg-white/20 hover:border-white/30 hover:shadow-2xl hover:shadow-white/20 hover:scale-105 hover:backdrop-blur-3xl whitespace-normal md:whitespace-nowrap overflow-visible"
-          style={{ textShadow: '1px 1px 2px rgba(0,0,0,0.7)' }}
-          aria-label={isAuthenticated ? 'Navigate to Today section' : 'Get started with Momentum'}
-        >
-          {isAuthenticated ? 'Accéder à l’onglet Aujourd’hui' : t('home.cta')}
-        </button>
-      </div>
-
-      {/* Footer */}
-      <footer className="relative z-10 mt-auto grid grid-cols-[minmax(0,1fr)_auto] md:flex md:flex-row md:justify-between md:items-end items-end gap-3 md:gap-8 px-4 md:p-8 pb-6 md:pb-12 flex-shrink-0" style={{ minHeight: 'fit-content' }}>
+      {/* Footer : z-0 pour rester sous la zone citation (main z-[1]) si jamais le layout déborde d’un px. */}
+      <footer className="relative z-0 grid shrink-0 grid-cols-[minmax(0,1fr)_auto] md:flex md:flex-row md:justify-between md:items-end items-end gap-3 md:gap-8 px-4 pb-6 pt-0 md:px-8 md:pb-12 flex-shrink-0" style={{ minHeight: 'fit-content' }}>
         {/* Section À propos améliorée */}
-        <div className="w-full md:max-w-2xl bg-black/10 backdrop-blur-3xl rounded-3xl p-5 md:p-10 border border-white/5 shadow-2xl max-h-[40vh] overflow-auto md:max-h-none md:overflow-visible">
-          <div className="flex items-center mb-6">
+        <div className="self-start flex min-h-0 w-full md:max-w-2xl flex-col bg-black/10 backdrop-blur-3xl rounded-2xl border border-white/5 px-4 py-3 shadow-2xl max-h-[40vh] overflow-auto md:max-h-none md:overflow-visible md:rounded-3xl md:px-6 md:py-4">
+          <div className="flex items-center mb-3 md:mb-3.5">
             <h3 className="text-white font-bold text-sm tracking-wider mr-4" style={{ textShadow: '1px 1px 2px rgba(0,0,0,0.8)' }}>{t('home.about.title')}</h3>
             <div className="flex-1 h-px bg-gradient-to-r from-white/20 via-white/40 to-transparent"></div>
           </div>
-          <div className="space-y-4">
-            <p className="text-white text-sm md:text-sm font-medium leading-relaxed" style={{ textShadow: '1px 1px 2px rgba(0,0,0,0.7)' }}>
+          <div className="flex flex-col gap-3">
+            <p className="text-white text-sm md:text-sm font-medium leading-snug md:leading-relaxed" style={{ textShadow: '1px 1px 2px rgba(0,0,0,0.7)' }}>
               {t('home.about.description')}
             </p>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs md:text-xs">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs md:text-xs">
               <div>
-                <h4 className="font-semibold text-white mb-2" style={{ textShadow: '1px 1px 2px rgba(0,0,0,0.8)' }}>{t('home.about.features.title')}</h4>
+                <h4 className="font-semibold text-white mb-1.5" style={{ textShadow: '1px 1px 2px rgba(0,0,0,0.8)' }}>{t('home.about.features.title')}</h4>
                 <ul className="space-y-1 text-white/90" style={{ textShadow: '1px 1px 2px rgba(0,0,0,0.6)' }}>
                   <li>{t('home.about.features.items.bodyTracking')}</li>
                   <li>{t('home.about.features.items.programs')}</li>
@@ -766,7 +970,7 @@ const HomePage = () => {
                 </ul>
               </div>
               <div>
-                <h4 className="font-semibold text-white mb-2" style={{ textShadow: '1px 1px 2px rgba(0,0,0,0.8)' }}>{t('home.about.data.title')}</h4>
+                <h4 className="font-semibold text-white mb-1.5" style={{ textShadow: '1px 1px 2px rgba(0,0,0,0.8)' }}>{t('home.about.data.title')}</h4>
                 <ul className="space-y-1 text-white/90" style={{ textShadow: '1px 1px 2px rgba(0,0,0,0.6)' }}>
                   <li>{t('home.about.data.items.photos')}</li>
                   <li>{t('home.about.data.items.metrics')}</li>
@@ -774,6 +978,20 @@ const HomePage = () => {
                   <li>{t('home.about.data.items.statistics')}</li>
                 </ul>
               </div>
+            </div>
+            <div className="flex justify-center border-t border-white/10 pt-2 sm:justify-start" data-swipe-ignore>
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  navigateToTab(isAuthenticated ? 'today' : 'auth');
+                }}
+                className="bg-white/8 backdrop-blur-xl border border-white/12 text-white px-3 py-1.5 md:px-4 md:py-2 rounded-lg text-[11px] md:text-xs font-medium transition-all duration-300 hover:bg-white/18 hover:border-white/25 hover:shadow-lg hover:shadow-white/10 max-w-full text-center leading-snug"
+                style={{ textShadow: '1px 1px 2px rgba(0,0,0,0.65)' }}
+                aria-label={isAuthenticated ? 'Navigate to Today section' : 'Get started with Momentum'}
+              >
+                {isAuthenticated ? 'Accéder à l’onglet Aujourd’hui' : t('home.cta')}
+              </button>
             </div>
           </div>
         </div>
@@ -795,6 +1013,7 @@ const HomePage = () => {
           </div>
         </div>
       </footer>
+      </div>
       </>
       )}
 

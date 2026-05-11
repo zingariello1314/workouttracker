@@ -205,15 +205,13 @@ html, body {
   border-width: 0;
 }
 
-/* ✨ Animation fluide pour les citations dynamiques */
+/* ✨ Citations homepage : fade sans translateY — le root en overflow:hidden rognait les glyphes en animation */
 @keyframes quoteFadeIn {
-  0% {
+  from {
     opacity: 0;
-    transform: translateY(20px);
   }
-  100% {
+  to {
     opacity: 1;
-    transform: translateY(0);
   }
 }
 
@@ -225,14 +223,16 @@ html, body {
 .adaptive-quote-text {
   /* Taille de base pour les citations courtes */
   font-size: clamp(2rem, 8vw, 5rem); /* 32px min, 80px max, responsive */
-  /* Interligne + marge bas : évite de couper descendantes (g, j, y) sur lignes en gras */
-  line-height: 1.36;
+  /* Interligne + padding block : marge pour ascendantes / descendantes (évite rognure sur petits écrans) */
+  line-height: 1.28;
   max-width: 600px;
   word-wrap: break-word;
   overflow-wrap: break-word;
   hyphens: auto;
-  padding-top: 0.12em;
-  padding-bottom: 0.32em;
+  /* Peu de marge haute : évite de pousser la citation vers le bas du viewport */
+  padding-top: clamp(0.04em, 0.8vmin, 0.12em);
+  /* ≥1 cm sous le bloc + coussin em : évite de couper ê, p, … dans un scrollport */
+  padding-bottom: calc(1cm + clamp(0.28em, 3.5vmin, 0.65em));
 }
 
 /* Ajustements responsifs pour différentes tailles d'écran */
@@ -257,18 +257,21 @@ html, body {
   }
 }
 
-/* Fallback pour les navigateurs qui ne supportent pas container queries */
-.adaptive-quote-text:has(span:nth-child(n+4)) {
-  font-size: clamp(1.5rem, 4vw, 3rem);
+/* Fallback avant le JS (évite un flash 2rem…5rem sur 2 lignes longues) */
+.adaptive-quote-text:has(.flex.flex-col > span:nth-child(3)) {
+  font-size: clamp(1.45rem, 2.9vw + 0.85vmin, 3.35rem);
 }
-
-/* Style pour les citations très longues */
-.adaptive-quote-text[data-long="true"] {
-  font-size: clamp(1.25rem, 3vw, 2.5rem);
+.adaptive-quote-text:has(.flex.flex-col > span:nth-child(4)) {
+  font-size: clamp(1.28rem, 2.55vw + 0.65vmin, 2.95rem);
 }
-
-.adaptive-quote-text[data-very-long="true"] {
-  font-size: clamp(1rem, 2.5vw, 2rem);
+.adaptive-quote-text:has(.flex.flex-col > span:nth-child(5)) {
+  font-size: clamp(1.12rem, 2.25vw + 0.5vmin, 2.35rem);
+}
+.adaptive-quote-text:has(.flex.flex-col > span:nth-child(6)) {
+  font-size: clamp(0.94rem, 1.9vw + 0.42vmin, 1.82rem);
+}
+.adaptive-quote-text:has(.flex.flex-col > span:nth-child(7)) {
+  font-size: clamp(0.88rem, 1.68vw + 0.38vmin, 1.68rem);
 }
 
 /* Assurer que le texte ne déborde jamais */
@@ -276,9 +279,10 @@ html, body {
   width: 100%;
   max-width: min(600px, 90vw);
   box-sizing: border-box;
+  /* Assurer que les ascendantes et descendantes ne sont pas coupées */
   overflow: visible;
-  margin-top: 0.15em;
-  margin-bottom: 0.15em;
+  margin-top: 0;
+  margin-bottom: 0;
 }
 
 /* ============================================

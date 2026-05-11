@@ -5,6 +5,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import quotesStorage from '../services/quotes/quotesStorage';
+import { QUOTE_SPLIT_SETTINGS_UPDATED } from '../services/quotes/quoteSettingsEvents';
 import quotesService from '../services/quotes/quotesService';
 import logger from '../utils/logger';
 
@@ -133,6 +134,9 @@ export function useQuotes() {
     try {
       const updated = await quotesStorage.updateSettings(newSettings);
       setSettings(updated);
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(new CustomEvent(QUOTE_SPLIT_SETTINGS_UPDATED));
+      }
       return { success: true, settings: updated };
     } catch (err) {
       log.error('Failed to update settings', err);

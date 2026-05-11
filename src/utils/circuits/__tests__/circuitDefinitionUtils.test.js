@@ -44,6 +44,17 @@ describe('normalizeCircuitDefinition', () => {
     });
     expect(def.primaryMuscles).toEqual(['Pectoraux', 'pectoraux', 'Triceps']);
   });
+
+  it('force le repos entre tours à 0 lorsque la cible est un seul tour', () => {
+    const def = normalizeCircuitDefinition({
+      name: 'One shot',
+      targetRounds: 1,
+      restBetweenRoundsSec: 120,
+      items: [{ exerciseKey: 'plank', exerciseName: 'Planche', mode: 'duration', targetDurationSec: 30 }]
+    });
+    expect(def.targetRounds).toBe(1);
+    expect(def.restBetweenRoundsSec).toBe(0);
+  });
 });
 
 describe('upsert / remove / list', () => {

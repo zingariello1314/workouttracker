@@ -6,6 +6,7 @@
 import React, { useState } from 'react';
 import { Plus, X } from 'lucide-react';
 import quotesService from '../../services/quotes/quotesService';
+import { normalizeQuoteLineBreaks } from '../../services/quotes/quoteNewlines';
 import { settingsTheme as S } from '../tabs/SettingsTab/settingsThemeClasses';
 
 const DEFAULT_BOLD_START = 2;
@@ -41,8 +42,8 @@ export function AddQuoteForm({ onAdd, onCancel }) {
     setErrors({});
 
     const payload = {
-      textFr: formData.textFr.trim(),
-      textEn: formData.textEn.trim(),
+      textFr: normalizeQuoteLineBreaks(formData.textFr).trim(),
+      textEn: normalizeQuoteLineBreaks(formData.textEn).trim(),
       boldLineStart: formData.boldLineStart === '' ? DEFAULT_BOLD_START : formData.boldLineStart,
       boldLineEnd: formData.boldLineEnd === '' ? DEFAULT_BOLD_END : formData.boldLineEnd,
     };

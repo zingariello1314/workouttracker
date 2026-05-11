@@ -53,6 +53,26 @@ export function QuoteManager() {
     }
   };
 
+  /** Objectif de lignes pour l’auto-découpe des textes sans retour à la ligne (page d’accueil + aperçus). */
+  const handleAutoSplitLineGoalChange = async (e) => {
+    const raw = e.target.value;
+    const next = raw === '' ? null : parseInt(raw, 10);
+    const result = await updateSettings({
+      autoSplitLineGoal:
+        Number.isFinite(next) && next >= 2 && next <= 12 ? next : null,
+    });
+    if (result.success) {
+      showStatus(
+        'success',
+        raw === ''
+          ? 'Découpage : défaut (~28 caractères par ligne)'
+          : `Découpage : env. ${next} lignes équilibrées`,
+      );
+    } else {
+      showStatus('error', 'Erreur lors du réglage du découpage');
+    }
+  };
+
   // Handle add quote
   const handleAddQuote = async (quoteData) => {
     const result = await addQuote(quoteData);
@@ -167,8 +187,9 @@ export function QuoteManager() {
           <div className="space-y-6">
             {/* Description */}
             <p className={`text-sm ${S.body}`}>
-              Gérez les citations affichées sur votre page d'accueil. Choisissez entre un mode aléatoire
-              ou une citation fixe.
+              Gérez les citations affichées sur votre page d&apos;accueil (prioritaire sur la phrase renseignée
+              dans Auth : tant qu&apos;au moins une citation existe ici, c&apos;est celle-ci qui s&apos;affiche).
+              Mode aléatoire ou citation fixe.
             </p>
 
             {/* Action Status */}
@@ -196,7 +217,34 @@ export function QuoteManager() {
               quotes={quotes}
               onModeChange={handleModeChange}
               onFixedQuoteChange={handleFixedQuoteChange}
+              autoSplitLineGoal={settings?.autoSplitLineGoal ?? null}
             />
+
+            {/* Découpage auto : jusqu’ici non branché → les citations sans \n faisaient ~6 lignes malgré l’attente utilisateur */}
+            <div className={`space-y-2 rounded-lg border border-red-900/45 bg-red-950/15 p-4`}>
+              <h3 className={S.label}>Découpage des phrases (sans retours à la ligne)</h3>
+              <p className={`text-sm ${S.body}`}>
+                Un texte sans retour à la ligne est découpé mot par mot. Par défaut c’est environ 28 caractères par ligne (souvent 5 à 8 lignes). Sélectionne un objectif ci-dessous (ex. 3 lignes) pour un bloc plus compact sur la page d’accueil et dans les listes.
+              </p>
+              <select
+                value={
+                  settings?.autoSplitLineGoal == null ||
+                  settings?.autoSplitLineGoal === ''
+                    ? ''
+                    : String(settings.autoSplitLineGoal)
+                }
+                onChange={handleAutoSplitLineGoalChange}
+                className={S.input}
+                aria-label="Nombre de lignes cibles pour le découpage automatique des citations"
+              >
+                <option value="">Par défaut (~28 car./ligne, max 10 lignes)</option>
+                {[2, 3, 4, 5, 6, 7, 8].map((n) => (
+                  <option key={n} value={n}>
+                    Environ {n} lignes équilibrées
+                  </option>
+                ))}
+              </select>
+            </div>
 
             {/* Quote List */}
             <QuoteList
@@ -205,6 +253,7 @@ export function QuoteManager() {
               onDelete={handleDeleteQuote}
               onTogglePin={handleTogglePin}
               onReorder={handleReorder}
+              autoSplitLineGoal={settings?.autoSplitLineGoal ?? null}
             />
 
             {/* Add Quote Form */}

@@ -6,13 +6,52 @@
 
 import quotesStorage from './quotesStorage';
 import { autoSplitText } from './quoteAutoSplit';
+import { normalizeQuoteLineBreaks } from './quoteNewlines';
 import logger from '../../utils/logger';
 
 const log = logger.component('QuotesService');
 
 const TARGET_CHARS_PER_LINE = 28;
 const MIN_LINES = 2;
-const MAX_LINES = 10;
+/** Découpe auto + plafond d’affichage accueil : au-delà, fusion dans la dernière ligne visible (évite 6 lignes rognées). */
+const MAX_LINES_AUTO = 5;
+
+/** Fusionne les lignes au-delà du plafond (saisie manuelle longue ou anciennes données). */
+function capQuoteLinesForHome(lines, maxLines = MAX_LINES_AUTO) {
+  if (!Array.isArray(lines) || lines.length <= maxLines) return lines;
+  const head = lines.slice(0, maxLines - 1);
+  head.push(lines.slice(maxLines - 1).join(' '));
+  return head;
+}
+
+/** True si au moins un champ textFr/textEn (non vide) : source « nouvelle » à privilégier sur line1–3 résiduels. */
+function quoteHasSeparateTextBlob(quote) {
+  const fr = typeof quote?.textFr === 'string' ? quote.textFr.trim() : '';
+  const en = typeof quote?.textEn === 'string' ? quote.textEn.trim() : '';
+  return fr !== '' || en !== '';
+}
+
+/** Coupe + plafonne (logique commune format nouveau et legacy mono-bloc). */
+function splitPlainToDisplayLines(trimmed, splitOptions) {
+  const t = trimmed.trim();
+  if (!t) return [];
+  let lines;
+  if (t.includes('\n')) {
+    lines = t.split('\n').map((l) => l.trim()).filter(Boolean);
+  } else {
+    const goal = splitOptions.autoSplitLineGoal;
+    lines = autoSplitText(t, {
+      targetCharsPerLine: TARGET_CHARS_PER_LINE,
+      minLines: MIN_LINES,
+      maxLines: MAX_LINES_AUTO,
+      balancedLineGoal:
+        goal != null && Number.isFinite(Number(goal))
+          ? Math.min(Math.max(2, Math.floor(Number(goal))), MAX_LINES_AUTO)
+          : null,
+    });
+  }
+  return capQuoteLinesForHome(lines);
+}
 
 /** Fisher-Yates shuffle — ordre aléatoire différent à chaque fois */
 function shuffleArray(arr) {
@@ -25,44 +64,63 @@ function shuffleArray(arr) {
 }
 
 /**
- * Detect if quote uses legacy format (line1Fr, line2Fr, line3Fr)
+ * Ancien format (line1–3) seulement quand aucun bloc textFr/textEn exploitable —
+ * sinon on reste sur la voie nouvelle même si line1Fr traîne après une migration/import.
  */
 function isLegacyQuote(quote) {
-  return quote && typeof quote.line1Fr === 'string';
+  return quote && typeof quote.line1Fr === 'string' && !quoteHasSeparateTextBlob(quote);
 }
 
 /**
  * Get lines array and bold range from a quote for a given language
  */
-function getLinesFromQuote(quote, language = 'fr') {
+function getLinesFromQuote(quote, language = 'fr', splitOptions = {}) {
   if (!quote) return { lines: [], boldFrom: 2, boldTo: 2 };
 
   if (isLegacyQuote(quote)) {
     const line1 = language === 'en' ? quote.line1En : quote.line1Fr;
     const line2 = language === 'en' ? quote.line2En : quote.line2Fr;
     const line3 = language === 'en' ? quote.line3En : quote.line3Fr;
-    const lines = [line1, line2, line3].filter(Boolean);
-    return { lines, boldFrom: 2, boldTo: 2 };
+    let lines = [line1, line2, line3]
+      .filter((x) => x != null && String(x).trim() !== '')
+      .flatMap((l) =>
+        normalizeQuoteLineBreaks(String(l))
+          .split('\n')
+          .map((seg) => seg.trim())
+          .filter(Boolean),
+      );
+
+    /*
+     * Ancien schéma : tout le poème dans line1Fr, line2–3 vides → un seul <span>,
+     * le navigateur coupe en ~6 lignes visuelles sans appliquer maxLines Auto / plafond 5.
+     */
+    const joinedApprox = lines.join(' ').length;
+    if (lines.length === 1 && joinedApprox >= 64) {
+      lines = splitPlainToDisplayLines(lines[0], splitOptions);
+    } else {
+      lines = capQuoteLinesForHome(lines);
+    }
+
+    let boldFrom = 2;
+    let boldTo = 2;
+    if (quote.boldLineStart != null || quote.boldLineEnd != null) {
+      boldFrom = Math.max(1, Math.min(quote.boldLineStart ?? 2, Math.max(lines.length, 1)));
+      boldTo = Math.max(boldFrom, Math.min(quote.boldLineEnd ?? boldFrom, lines.length));
+    }
+    return { lines, boldFrom, boldTo };
   }
 
-  const text = language === 'en' ? (quote.textEn || quote.textFr || '') : (quote.textFr || '');
+  const raw = language === 'en' ? (quote.textEn || quote.textFr || '') : (quote.textFr || '');
+  const text = normalizeQuoteLineBreaks(raw);
   const trimmed = text.trim();
   if (!trimmed) {
     const fallback = language === 'en' ? quote.textFr : quote.textEn;
-    if (fallback) return getLinesFromQuote({ ...quote, textFr: fallback, textEn: fallback }, language);
+    if (fallback)
+      return getLinesFromQuote({ ...quote, textFr: fallback, textEn: fallback }, language, splitOptions);
     return { lines: [], boldFrom: 2, boldTo: 2 };
   }
 
-  let lines;
-  if (trimmed.includes('\n')) {
-    lines = trimmed.split(/\n/).map((l) => l.trim()).filter(Boolean);
-  } else {
-    lines = autoSplitText(trimmed, {
-      targetCharsPerLine: TARGET_CHARS_PER_LINE,
-      minLines: MIN_LINES,
-      maxLines: MAX_LINES,
-    });
-  }
+  const lines = splitPlainToDisplayLines(trimmed, splitOptions);
 
   const boldFrom = Math.max(1, Math.min(quote.boldLineStart ?? 2, lines.length));
   const boldTo = Math.max(boldFrom, Math.min(quote.boldLineEnd ?? 2, lines.length));
@@ -132,17 +190,27 @@ class QuotesService {
         cycleIndex = 0;
       }
 
-      const selectedId = cycleIds[cycleIndex];
-      const selected = quotes.find((q) => q.id === selectedId);
+      let selectedId = cycleIds[cycleIndex];
+      let selected = quotes.find((q) => String(q.id) === String(selectedId));
+
+      // Id du cycle inexistant / type id différent → évite undefined (flash fallback page d’accueil)
+      if (!selected) {
+        log.warn('[QuotesService] Cycle id introuvable, remélange du cycle', { selectedId });
+        cycleIds = shuffleArray(quoteIds);
+        cycleIndex = 0;
+        selectedId = cycleIds[cycleIndex];
+        selected = quotes.find((q) => String(q.id) === String(selectedId));
+      }
+
       cycleIndex += 1;
 
       await this.storage.updateSettings({
-        lastDisplayedId: selectedId,
+        lastDisplayedId: selectedId ?? null,
         displayCycleIds: cycleIds,
         displayCycleIndex: cycleIndex,
       });
 
-      return selected;
+      return selected || this.getDefaultQuote(language);
     } catch (error) {
       log.error('Failed to select random quote', error);
       return this.getDefaultQuote(language);
@@ -267,9 +335,9 @@ class QuotesService {
   /**
    * Format quote for display: returns { lines, boldFrom, boldTo } (1-based)
    */
-  formatQuoteForDisplay(quote, language = 'fr') {
+  formatQuoteForDisplay(quote, language = 'fr', splitOptions = {}) {
     if (!quote) return null;
-    return getLinesFromQuote(quote, language);
+    return getLinesFromQuote(quote, language, splitOptions);
   }
 
   /**

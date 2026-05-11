@@ -47,9 +47,13 @@ export const normalizeCircuitDefinition = (input = {}) => {
   const id = typeof input.id === 'string' && input.id ? input.id : generateCircuitId();
   const targetRaw = Number(input.targetRounds);
   const targetRounds = Number.isFinite(targetRaw) ? Math.min(50, Math.max(1, Math.round(targetRaw))) : 3;
-  const restBetweenRoundsSec = Number.isFinite(Number(input.restBetweenRoundsSec))
-    ? Math.max(0, Number(input.restBetweenRoundsSec))
-    : 60;
+  // Un seul tour : pas de « entre-tours » — le repos entre tours est forcé à 0 (cohérent UI + calculs).
+  const restBetweenRoundsSec =
+    targetRounds <= 1
+      ? 0
+      : Number.isFinite(Number(input.restBetweenRoundsSec))
+        ? Math.max(0, Number(input.restBetweenRoundsSec))
+        : 60;
 
   const items = Array.isArray(input.items)
     ? input.items

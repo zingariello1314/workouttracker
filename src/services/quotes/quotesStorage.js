@@ -360,11 +360,14 @@ class QuotesStorage {
       const request = store.get(SETTINGS_KEY);
 
       request.onsuccess = () => {
-        const settings = request.result?.value || {
+        const defaults = {
           mode: 'random',
           fixedQuoteId: null,
           lastDisplayedId: null,
+          /** null : ~28 caractères/ligne et max 10 lignes ; 2–12 : équilibrer sur N lignes (auto-découpe) */
+          autoSplitLineGoal: null,
         };
+        const settings = { ...defaults, ...(request.result?.value || {}) };
         this.cache.setSettings(settings);
         resolve(settings);
       };

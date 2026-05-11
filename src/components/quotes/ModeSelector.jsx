@@ -8,16 +8,29 @@ import { Shuffle, Pin } from 'lucide-react';
 import quotesService from '../../services/quotes/quotesService';
 import { settingsTheme as S } from '../tabs/SettingsTab/settingsThemeClasses';
 
-function quotePreview(quote) {
+function quotePreview(quote, autoSplitLineGoal) {
   if (!quote) return '';
-  const display = quotesService.formatQuoteForDisplay(quote, 'fr');
+  const gn =
+    autoSplitLineGoal != null && autoSplitLineGoal !== ''
+      ? Number(autoSplitLineGoal)
+      : null;
+  const splitOpts =
+    gn != null && Number.isFinite(gn) ? { autoSplitLineGoal: gn } : {};
+  const display = quotesService.formatQuoteForDisplay(quote, 'fr', splitOpts);
   const text = display?.lines?.join(' ') ?? '';
   return text.length > 60 ? text.slice(0, 57) + '…' : text;
 }
 
 const btnBase = 'flex flex-1 items-center justify-center gap-2 rounded-lg px-4 py-3 transition-all';
 
-export function ModeSelector({ mode, fixedQuoteId, quotes, onModeChange, onFixedQuoteChange }) {
+export function ModeSelector({
+  mode,
+  fixedQuoteId,
+  quotes,
+  onModeChange,
+  onFixedQuoteChange,
+  autoSplitLineGoal = null,
+}) {
   return (
     <div className={`space-y-4 rounded-lg border border-red-900/45 bg-red-950/15 p-4`}>
       <h3 className={S.label}>Mode d'affichage</h3>
@@ -75,7 +88,7 @@ export function ModeSelector({ mode, fixedQuoteId, quotes, onModeChange, onFixed
             <option value="">Sélectionner une citation...</option>
             {quotes.map((quote) => (
               <option key={quote.id} value={quote.id}>
-                {quotePreview(quote)}
+                {quotePreview(quote, autoSplitLineGoal)}
               </option>
             ))}
           </select>

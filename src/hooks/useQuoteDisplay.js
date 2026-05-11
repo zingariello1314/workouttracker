@@ -6,8 +6,11 @@
  * - Change on any user interaction (click, touch, etc.)
  */
 
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import quotesService from '../services/quotes/quotesService';
+import quotesStorage from '../services/quotes/quotesStorage';
+import { normalizeQuoteLineBreaks } from '../services/quotes/quoteNewlines';
+import { QUOTE_SPLIT_SETTINGS_UPDATED } from '../services/quotes/quoteSettingsEvents';
 import { useLanguage } from '../context/LanguageContext';
 import { useAuth } from '../context/AuthContext';
 import logger from '../utils/logger';
@@ -16,6 +19,18 @@ const log = logger.component('useQuoteDisplay');
 
 const AUTO_ROTATION_INTERVAL = 90000; // 90 seconds
 const INTERACTION_MIN_GAP_MS = 280;
+async function loadQuoteSplitPrefs() {
+  try {
+    const s = await quotesStorage.getSettings();
+    const g = s.autoSplitLineGoal;
+    if (g == null || g === '') return { autoSplitLineGoal: null };
+    const n = Number(g);
+    if (!Number.isFinite(n) || n < 2 || n > 12) return { autoSplitLineGoal: null };
+    return { autoSplitLineGoal: n };
+  } catch {
+    return { autoSplitLineGoal: null };
+  }
+}
 
 export function useQuoteDisplay(options = {}) {
   const {
@@ -34,6 +49,22 @@ export function useQuoteDisplay(options = {}) {
   const isInitialLoadRef = useRef(true); // Track if this is the first load
   const requestVersionRef = useRef(0);
   const inFlightRef = useRef(false);
+  const [quoteSplitPrefs, setQuoteSplitPrefs] = useState({ autoSplitLineGoal: null });
+
+  useEffect(() => {
+    let cancelled = false;
+    loadQuoteSplitPrefs().then((p) => {
+      if (!cancelled) setQuoteSplitPrefs(p);
+    });
+    const onPrefs = () => {
+      loadQuoteSplitPrefs().then((p) => setQuoteSplitPrefs(p));
+    };
+    window.addEventListener(QUOTE_SPLIT_SETTINGS_UPDATED, onPrefs);
+    return () => {
+      cancelled = true;
+      window.removeEventListener(QUOTE_SPLIT_SETTINGS_UPDATED, onPrefs);
+    };
+  }, []);
 
   // Select and display quote - SEAMLESS: no loading state after initial load
   const selectQuote = useCallback(async () => {
@@ -43,21 +74,6 @@ export function useQuoteDisplay(options = {}) {
     inFlightRef.current = true;
     const requestVersion = ++requestVersionRef.current;
     try {
-      const preferredUserQuote = String(currentUser?.preferredHomeQuote || currentUser?.inspirationalPhrase || '').trim();
-      if (isAuthenticated && preferredUserQuote) {
-        if (requestVersion !== requestVersionRef.current) return;
-        setCurrentQuote({
-          id: `user-preferred-${currentUser?.id || 'unknown'}`,
-          textFr: preferredUserQuote,
-          textEn: preferredUserQuote,
-          isPinned: true,
-        });
-        if (isInitialLoadRef.current) {
-          setLoading(false);
-          isInitialLoadRef.current = false;
-        }
-        return;
-      }
       if (!isAuthenticated) {
         const guestQuote = "Bienvenue. Connecte-toi pour afficher ta phrase inspirante personnelle.";
         if (requestVersion !== requestVersionRef.current) return;
@@ -74,16 +90,54 @@ export function useQuoteDisplay(options = {}) {
         return;
       }
 
-      // ✅ Only show loading on initial load, not on subsequent changes
+      /** Citations locales (Paramètres → Citations) : priorité sur la phrase profil Auth, sinon l’édition IndexedDB était ignorée et tout passait en auto-split ~28 car. */
       if (isInitialLoadRef.current) {
         setLoading(true);
       }
       setError(null);
 
-      const quote = await quotesService.selectQuote(language);
-      if (requestVersion !== requestVersionRef.current) return;
-      setCurrentQuote(quote);
-      log.info('Quote selected', { id: quote.id });
+      let quotes = [];
+      try {
+        quotes = await quotesStorage.getAllQuotes();
+      } catch {
+        quotes = [];
+      }
+
+      const preferredRaw = String(
+        currentUser?.preferredHomeQuote || currentUser?.inspirationalPhrase || '',
+      ).trim();
+      const preferredUserQuote = normalizeQuoteLineBreaks(preferredRaw).trim();
+
+      if (quotes.length > 0) {
+        const quote = await quotesService.selectQuote(language);
+        if (requestVersion !== requestVersionRef.current) return;
+        if (quote && typeof quote === 'object') {
+          setCurrentQuote(quote);
+          log.info('Quote selected from library', { id: quote.id, count: quotes.length });
+        } else {
+          setCurrentQuote((prev) => prev || quotesService.getDefaultQuote(language));
+          log.warn('Quote sélection invalide — conservation de la citation affichée si possible');
+        }
+      } else if (preferredUserQuote) {
+        if (requestVersion !== requestVersionRef.current) return;
+        setCurrentQuote({
+          id: `user-preferred-${currentUser?.id || 'unknown'}`,
+          textFr: preferredUserQuote,
+          textEn: preferredUserQuote,
+          isPinned: true,
+        });
+        log.info('Home quote: profil (aucune citation dans la bibliothèque locale)');
+      } else {
+        const quote = await quotesService.selectQuote(language);
+        if (requestVersion !== requestVersionRef.current) return;
+        if (quote && typeof quote === 'object') {
+          setCurrentQuote(quote);
+          log.info('Quote selected', { id: quote.id });
+        } else {
+          setCurrentQuote((prev) => prev || quotesService.getDefaultQuote(language));
+          log.warn('Quote sélection invalide — conservation de la citation affichée si possible');
+        }
+      }
     } catch (err) {
       if (requestVersion !== requestVersionRef.current) return;
       log.error('Failed to select quote', err);
@@ -141,24 +195,34 @@ export function useQuoteDisplay(options = {}) {
     }
   }, [selectQuote, enableAutoRotation, autoRotationInterval]);
 
-  // Handle user interaction (click, touch, etc.)
-  const handleInteraction = useCallback(() => {
-    if (!enableInteractionRotation) return;
-    if (inFlightRef.current) return;
+  /**
+   * Tente de faire défiler la citation (même throttle que l’interaction page d’accueil).
+   * Retourne true si un nouveau tirage est lancé — pour synchroniser fond + texte.
+   */
+  const tryAdvanceQuoteFromInteraction = useCallback(() => {
+    if (!enableInteractionRotation) return false;
+    if (inFlightRef.current) return false;
     const now = Date.now();
-    if (now - lastInteractionRef.current < INTERACTION_MIN_GAP_MS) return;
+    if (now - lastInteractionRef.current < INTERACTION_MIN_GAP_MS) return false;
 
-    // ✅ INSTANT RESPONSE: No debounce - change immediately on every click
-    // This matches the background image behavior for perfect synchronization
     log.info('Quote changed by user interaction');
     lastInteractionRef.current = now;
     refreshQuote();
+    return true;
   }, [enableInteractionRotation, refreshQuote]);
 
-  // Format for display
-  const displayQuote = currentQuote
-    ? quotesService.formatQuoteForDisplay(currentQuote, language)
-    : null;
+  // Handle user interaction (click, touch, etc.)
+  const handleInteraction = useCallback(() => {
+    tryAdvanceQuoteFromInteraction();
+  }, [tryAdvanceQuoteFromInteraction]);
+
+  // Format for display (reflète Paramètres → objectif de lignes pour l’auto-découpe)
+  const displayQuote = useMemo(() => {
+    if (!currentQuote) return null;
+    return quotesService.formatQuoteForDisplay(currentQuote, language, {
+      autoSplitLineGoal: quoteSplitPrefs.autoSplitLineGoal,
+    });
+  }, [currentQuote, language, quoteSplitPrefs.autoSplitLineGoal]);
 
   return {
     currentQuote,
@@ -166,6 +230,7 @@ export function useQuoteDisplay(options = {}) {
     loading,
     error,
     refreshQuote,
-    handleInteraction, // New: call this on user interactions
+    handleInteraction,
+    tryAdvanceQuoteFromInteraction,
   };
 }

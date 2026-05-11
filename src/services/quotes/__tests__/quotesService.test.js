@@ -128,29 +128,103 @@ describe('QuotesService', () => {
     it('should format quote for French display', () => {
       const formatted = quotesService.formatQuoteForDisplay(testQuote, 'fr');
       expect(formatted).toEqual({
-        line1: 'Ligne 1 FR',
-        line2: 'Ligne 2 FR',
-        line3: 'Ligne 3 FR',
+        lines: ['Ligne 1 FR', 'Ligne 2 FR', 'Ligne 3 FR'],
+        boldFrom: 2,
+        boldTo: 2,
       });
     });
 
     it('should format quote for English display', () => {
       const formatted = quotesService.formatQuoteForDisplay(testQuote, 'en');
       expect(formatted).toEqual({
-        line1: 'Line 1 EN',
-        line2: 'Line 2 EN',
-        line3: 'Line 3 EN',
+        lines: ['Line 1 EN', 'Line 2 EN', 'Line 3 EN'],
+        boldFrom: 2,
+        boldTo: 2,
       });
     });
 
     it('should default to French if language not specified', () => {
       const formatted = quotesService.formatQuoteForDisplay(testQuote);
-      expect(formatted.line1).toBe('Ligne 1 FR');
+      expect(formatted.lines[0]).toBe('Ligne 1 FR');
     });
 
     it('should return null for null quote', () => {
       const formatted = quotesService.formatQuoteForDisplay(null);
       expect(formatted).toBeNull();
+    });
+
+    it('should keep manual breaks when text uses \\r only (sans \\u000A)', () => {
+      const q = {
+        id: 'cr-lines',
+        textFr: 'Ce n’est pas la montagne à gravir\rqui vous fera abandonner,\rc’est le caillou dans votre chaussure.',
+        boldLineStart: 2,
+        boldLineEnd: 2,
+      };
+      const f = quotesService.formatQuoteForDisplay(q, 'fr');
+      expect(f.lines.length).toBe(3);
+      expect(f.lines[0]).toContain('montagne');
+      expect(f.lines[2]).toMatch(/chaussure/i);
+    });
+
+    it('should auto-split new-format text to ~N lines when autoSplitLineGoal is set', () => {
+      const long = {
+        id: 'split-test',
+        textFr:
+          'La patience joue contre les offenses Exactement le même rôle Que les vêtements contre le froid',
+        textEn: '',
+        boldLineStart: 2,
+        boldLineEnd: 2,
+      };
+      const defaultSplit = quotesService.formatQuoteForDisplay(long, 'fr');
+      expect((defaultSplit?.lines?.length ?? 0)).toBeGreaterThan(3);
+      expect((defaultSplit?.lines?.length ?? 0)).toBeLessThanOrEqual(5);
+
+      const compact = quotesService.formatQuoteForDisplay(long, 'fr', { autoSplitLineGoal: 3 });
+      expect(compact.lines.length).toBe(3);
+      expect(compact.lines.join(' ').replace(/\s+/g, ' ').trim()).toContain('froid');
+    });
+
+    it('should merge manual line breaks beyond 5 into the last displayed line', () => {
+      const q = {
+        id: 'many-breaks',
+        textFr: ['a', 'b', 'c', 'd', 'e', 'f', 'g'].join('\n'),
+        boldLineStart: 1,
+        boldLineEnd: 7,
+      };
+      const f = quotesService.formatQuoteForDisplay(q, 'fr');
+      expect(f.lines.length).toBe(5);
+      expect(f.lines[4]).toMatch(/\bf\b/);
+      expect(f.lines[4]).toMatch(/\bg\b/);
+      expect(f.boldTo).toBeLessThanOrEqual(5);
+    });
+
+    it('should use textFr (not stray line1) when both legacy keys and textFr exist', () => {
+      const q = {
+        id: 'hybrid-fields',
+        line1Fr: 'Vieux champ',
+        line2Fr: '',
+        line3Fr: '',
+        textFr:
+          'La patience joue contre les offenses Exactement le même rôle Que les vêtements contre le froid',
+        boldLineStart: 2,
+        boldLineEnd: 2,
+      };
+      const f = quotesService.formatQuoteForDisplay(q, 'fr');
+      expect((f.lines?.length ?? 0)).toBeLessThanOrEqual(5);
+      expect(f.lines.join(' ').replace(/\s+/g, ' ')).toContain('froid');
+      expect(f.lines.some((ln) => /Vieux champ/i.test(ln))).toBe(false);
+    });
+
+    it('legacy long single line slot should auto-split and cap at 5 (no stray textFr)', () => {
+      const q = {
+        id: 'legacy-monoline',
+        line1Fr:
+          'La patience joue contre les offenses Exactement le même rôle Que les vêtements contre le froid',
+      };
+      const f = quotesService.formatQuoteForDisplay(q, 'fr');
+      expect((f.lines?.length ?? 0)).toBeLessThanOrEqual(5);
+      expect((f.lines?.length ?? 0)).toBeGreaterThanOrEqual(2);
+      expect(f.lines.join(' ').replace(/\s+/g, ' ')).toContain('froid');
     });
   });
 
@@ -223,19 +297,22 @@ describe('QuotesService', () => {
       expect(quote.id).toBe('only-one');
     });
 
-    it('should avoid repeating last displayed quote', async () => {
+    it('should take the next quote from a valid display cycle', async () => {
       const quotes = [
         { id: 'quote-1', isPinned: false },
         { id: 'quote-2', isPinned: false },
         { id: 'quote-3', isPinned: false },
       ];
       quotesStorage.getAllQuotes.mockResolvedValue(quotes);
-      quotesStorage.getSettings.mockResolvedValue({ lastDisplayedId: 'quote-1' });
+      quotesStorage.getSettings.mockResolvedValue({
+        lastDisplayedId: 'quote-1',
+        displayCycleIds: ['quote-2', 'quote-3', 'quote-1'],
+        displayCycleIndex: 0,
+      });
       quotesStorage.updateSettings.mockResolvedValue({});
 
       const quote = await quotesService.selectRandomQuote('fr');
-      expect(quote.id).not.toBe('quote-1');
-      expect(['quote-2', 'quote-3']).toContain(quote.id);
+      expect(quote.id).toBe('quote-2');
     });
 
     it('should update lastDisplayedId after selection', async () => {
