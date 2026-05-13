@@ -21,6 +21,8 @@ import { RECAP_VIEW_PERIODS } from '../../utils/sport/recapViewPeriods';
 import { buildPerformanceScore } from '../../utils/exercisePerformanceUtils';
 import { computeRecapUserAssessment } from '../../utils/sport/recapUserAssessment';
 import RecapUserAssessmentPanel from '../sport/recap/RecapUserAssessmentPanel';
+import RecapCrossCoachPanel from '../sport/recap/RecapCrossCoachPanel';
+import { useRecapSynthesisCoach } from '../../hooks/useRecapSynthesisCoach';
 
 const PERIOD_STORAGE_KEY = 'sport.recap.periodView';
 
@@ -67,6 +69,13 @@ const RecapTab = () => {
       isGymMode
     ]
   );
+
+  const synthesisCoach = useRecapSynthesisCoach({
+    snapshot: snapshotForRecap,
+    assessment: recapAssessment,
+    activeProgram: activeProgram ?? null,
+    profileQuestionnaireRaw: currentUser?.profileQuestionnaire
+  });
 
   const [period, setPeriod] = useState(() => {
     try {
@@ -239,9 +248,12 @@ const RecapTab = () => {
           assessment={recapAssessment}
           snapshot={snapshotForRecap}
           profileQuestionnaireRaw={currentUser?.profileQuestionnaire}
-          activeProgram={activeProgram}
           currentUser={currentUser}
         />
+      </div>
+
+      <div className="mb-8">
+        <RecapCrossCoachPanel synthesisCoach={synthesisCoach} />
       </div>
 
       <div className="mb-8 grid grid-cols-1 xl:grid-cols-2 gap-4 items-start">

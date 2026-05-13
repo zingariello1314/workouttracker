@@ -3,51 +3,22 @@ import { useTranslation } from '../../../utils/translations';
 import { buildAssessmentChartSeries, getLatestWeightSnapshot } from '../../../utils/sport/recapAssessmentSeries';
 import { normalizeProfileQuestionnaire } from '../../../features/profileQuestionnaire/schema';
 import DenseDailyLineChart from '../charts/DenseDailyLineChart';
-import { useRecapSynthesisCoach } from '../../../hooks/useRecapSynthesisCoach';
 
 const CHART_DAYS = 84;
 
-const COACH_PILLAR_ICONS = {
-  sport: '◆',
-  body: '◎',
-  nutrition: '◇',
-  combined: '✦'
-};
-
-function coachPillarGlyph(pillar) {
-  return COACH_PILLAR_ICONS[pillar] || COACH_PILLAR_ICONS.combined;
-}
-
 /**
- * Bloc Récap : synthèse unifiée (coach ~28 j + profil/niveau), courbes poids/reps, horizons.
- * @param {object} props.assessment — résultat de computeRecapUserAssessment (calculé par le parent pour éviter le double passage).
+ * Bloc Récap : synthèse utilisateur (profil/niveau), courbes poids/reps, horizons.
+ * Le panneau coach transversal est rendu à part dans `RecapCrossCoachPanel` (voir `RecapTab`).
+ * @param {object} props.assessment — résultat de `computeRecapUserAssessment` (calculé par le parent).
  */
 const RecapUserAssessmentPanel = ({
   assessment,
   snapshot,
   profileQuestionnaireRaw,
-  activeProgram,
   currentUser
 }) => {
   const t = useTranslation();
   const [quizOpen, setQuizOpen] = useState(false);
-
-  const synthesisCoach = useRecapSynthesisCoach({
-    snapshot,
-    assessment,
-    activeProgram: activeProgram ?? null,
-    profileQuestionnaireRaw
-  });
-
-  const {
-    aggregate,
-    engine: coachEngine,
-    nutritionLoading: coachNutritionLoading,
-    garminLoading: coachGarminLoading,
-    trainingLineParams,
-    bodyLine: coachBodyLine,
-    nutritionLineKey: coachNutritionLineKey
-  } = synthesisCoach;
 
   const chartBundle = useMemo(() => buildAssessmentChartSeries(snapshot, CHART_DAYS), [snapshot]);
 
@@ -111,20 +82,11 @@ const RecapUserAssessmentPanel = ({
               <span className="rounded-md border border-[#0F4C5C]/60 bg-[#041a14]/90 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-teal-300/90">
                 {t('recap.assessment.badge')}
               </span>
-              <span className="rounded-md border border-emerald-500/35 bg-emerald-950/45 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-emerald-200/95">
-                {t('recap.crossCoach.badge')}
-              </span>
               {dataMaturity > 0.35 && (
                 <span className="rounded-md border border-emerald-500/25 bg-emerald-950/40 px-2 py-0.5 text-[10px] text-emerald-200/90">
                   {t('recap.assessment.maturity', { pct: Math.round(dataMaturity * 100) })}
                 </span>
               )}
-              {coachNutritionLoading ? (
-                <span className="text-[10px] text-amber-200/85">{t('recap.crossCoach.loadingChip')}</span>
-              ) : null}
-              {coachGarminLoading ? (
-                <span className="text-[10px] text-sky-200/85">{t('recap.crossCoach.loadingGarminChip')}</span>
-              ) : null}
             </div>
             <h2 className="mt-2 text-lg font-bold tracking-tight text-white sm:text-xl">
               {t('recap.assessment.title')}
@@ -133,83 +95,7 @@ const RecapUserAssessmentPanel = ({
               {t('recap.assessment.subtitle')}
             </p>
 
-            <div className="mt-5 grid grid-cols-1 gap-3 sm:grid-cols-3">
-              <div className="rounded-xl border border-[#0F4C5C]/45 bg-black/55 px-3 py-3">
-                <div className="text-[10px] font-semibold uppercase tracking-wide text-slate-500">
-                  {COACH_PILLAR_ICONS.sport} {t('recap.crossCoach.pillar.training')}
-                </div>
-                <p className="mt-2 text-xs leading-snug text-teal-100/90">
-                  {t('recap.crossCoach.pillar.trainingLine', trainingLineParams)}
-                </p>
-                {Number(trainingLineParams.distinct ?? 0) > 0 ? (
-                  <p className="mt-1 text-[11px] leading-snug text-teal-200/70">
-                    {t('recap.crossCoach.pillar.distinctExercisesLine', {
-                      n: String(trainingLineParams.distinct)
-                    })}
-                  </p>
-                ) : null}
-              </div>
-              <div className="rounded-xl border border-[#0F4C5C]/45 bg-black/55 px-3 py-3">
-                <div className="text-[10px] font-semibold uppercase tracking-wide text-slate-500">
-                  {COACH_PILLAR_ICONS.body} {t('recap.crossCoach.pillar.body')}
-                </div>
-                <p className="mt-2 text-xs leading-snug text-teal-100/90">{t(coachBodyLine.k, coachBodyLine.p)}</p>
-              </div>
-              <div className="rounded-xl border border-[#0F4C5C]/45 bg-black/55 px-3 py-3">
-                <div className="text-[10px] font-semibold uppercase tracking-wide text-slate-500">
-                  {COACH_PILLAR_ICONS.nutrition} {t('recap.crossCoach.pillar.nutrition')}
-                </div>
-                <p className="mt-2 text-xs leading-snug text-teal-100/90">
-                  {coachNutritionLineKey === 'recap.crossCoach.pillar.nutritionLine.days'
-                    ? t(coachNutritionLineKey, {
-                        n: String(aggregate.nutrition?.daysWithLoggedMeals28 ?? 0)
-                      })
-                    : t(coachNutritionLineKey)}
-                </p>
-              </div>
-            </div>
-
-            <div className="mt-4">
-              <h3 className="text-[11px] font-semibold uppercase tracking-wide text-teal-200/90">
-                {t('recap.crossCoach.remarksHeading')}
-              </h3>
-              <div className="mt-2 space-y-2">
-                {coachEngine.cards.map((card) => {
-                  const tpl = `recap.crossCoach.insight.${card.templateKey}`;
-                  const text = t(tpl, card.payload || {});
-                  return (
-                    <div
-                      key={card.id}
-                      className="flex gap-3 rounded-xl border border-teal-800/35 bg-teal-950/20 px-3 py-2.5"
-                    >
-                      <span className="mt-0.5 shrink-0 text-xs text-teal-400/90" aria-hidden>
-                        {coachPillarGlyph(card.pillar)}
-                      </span>
-                      <p className="text-xs leading-relaxed text-slate-100/95">{text}</p>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-
-            {coachEngine.dataGaps?.length > 0 ? (
-              <div className="mt-4 rounded-lg border border-amber-500/25 bg-amber-950/25 px-3 py-2">
-                <div className="text-[10px] font-semibold uppercase tracking-wide text-amber-200/90">
-                  {t('recap.crossCoach.gapsTitle')}
-                </div>
-                <ul className="mt-1 list-disc pl-5 text-[11px] text-amber-100/85">
-                  {coachEngine.dataGaps.map((g) => (
-                    <li key={g.code}>{t(`recap.crossCoach.gap.${g.code}`) || g.code}</li>
-                  ))}
-                </ul>
-              </div>
-            ) : null}
-
-            <p className="mt-4 text-[10px] leading-relaxed text-slate-500">{t('recap.crossCoach.disclaimer')}</p>
-
-            <div className="my-8 border-t border-[#0F4C5C]/40" />
-
-            <div className="flex flex-wrap items-stretch gap-2">
+            <div className="mt-6 flex flex-wrap items-stretch gap-2">
               <div className="flex min-w-[140px] flex-1 items-center gap-3 rounded-xl border border-[#0F4C5C]/50 bg-black/50 px-3 py-2.5">
                 <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border border-[#0F5C45]/40 bg-[#0a1812] text-sm font-bold text-emerald-300">
                   {String(username).charAt(0).toUpperCase()}
