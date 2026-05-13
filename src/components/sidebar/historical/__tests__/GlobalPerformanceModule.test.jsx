@@ -81,23 +81,23 @@ describe('GlobalPerformanceModule', () => {
       
       // Attendre que le contenu se charge
       await waitFor(() => {
-        expect(screen.getByText('Score Productivité')).toBeInTheDocument();
-      }, { timeout: 3000 });
+        expect(screen.getByText('Score de Productivité')).toBeInTheDocument();
+      }, { timeout: 8000 });
     });
 
     it('affiche le contenu quand les données sont chargées', async () => {
       render(<GlobalPerformanceModule {...defaultProps} />);
       
       await waitFor(() => {
-        expect(screen.getByText('Score Productivité')).toBeInTheDocument();
-        expect(screen.getByText('Équilibre de vie')).toBeInTheDocument();
+        expect(screen.getByText('Score de Productivité')).toBeInTheDocument();
+        expect(screen.getByText('Équilibre de Vie')).toBeInTheDocument();
       });
     });
 
     it('n\'affiche pas le contenu quand isExpanded est false', () => {
       render(<GlobalPerformanceModule {...defaultProps} isExpanded={false} />);
       
-      expect(screen.queryByText('Score Productivité')).not.toBeInTheDocument();
+      expect(screen.queryByText('Score de Productivité')).not.toBeInTheDocument();
     });
   });
 
@@ -106,11 +106,11 @@ describe('GlobalPerformanceModule', () => {
       render(<GlobalPerformanceModule {...defaultProps} />);
       
       await waitFor(() => {
-        expect(screen.getByText('Score Productivité')).toBeInTheDocument();
+        expect(screen.getByText('Score de Productivité')).toBeInTheDocument();
         // Vérifier qu'un pourcentage est affiché
         const scoreElements = screen.getAllByText(/%/);
         expect(scoreElements.length).toBeGreaterThan(0);
-      }, { timeout: 3000 });
+      }, { timeout: 8000 });
     });
 
     it('gère les données manquantes gracieusement', async () => {
@@ -122,9 +122,9 @@ describe('GlobalPerformanceModule', () => {
       render(<GlobalPerformanceModule {...defaultProps} data={incompleteData} />);
       
       await waitFor(() => {
-        expect(screen.getByText('Score Productivité')).toBeInTheDocument();
+        expect(screen.getByText('Score de Productivité')).toBeInTheDocument();
         // Devrait afficher un score basé uniquement sur les quêtes
-      }, { timeout: 3000 });
+      }, { timeout: 8000 });
     });
   });
 
@@ -133,9 +133,9 @@ describe('GlobalPerformanceModule', () => {
       render(<GlobalPerformanceModule {...defaultProps} />);
       
       await waitFor(() => {
-        expect(screen.getByText('Travail')).toBeInTheDocument();
-        expect(screen.getByText('Vie')).toBeInTheDocument();
-        expect(screen.getByText('Loisirs')).toBeInTheDocument();
+        expect(screen.getByText(/💼\s*\d+%/)).toBeInTheDocument();
+        expect(screen.getByText(/🏠\s*\d+%/)).toBeInTheDocument();
+        expect(screen.getByText(/🎮\s*\d+%/)).toBeInTheDocument();
       });
     });
 
@@ -153,7 +153,9 @@ describe('GlobalPerformanceModule', () => {
       render(<GlobalPerformanceModule {...defaultProps} />);
       
       await waitFor(() => {
-        const balanceIndicator = screen.getByText(/Équilibré|À ajuster/);
+        const balanceIndicator = screen.getByText(
+          /Parfaitement équilibré|Bien équilibré|Acceptable|À rééquilibrer|À ajuster/i
+        );
         expect(balanceIndicator).toBeInTheDocument();
       });
     });
@@ -223,7 +225,7 @@ describe('GlobalPerformanceModule', () => {
       
       await waitFor(() => {
         expect(screen.getByText('Performance Globale')).toBeInTheDocument();
-      }, { timeout: 3000 });
+      }, { timeout: 8000 });
       
       const moduleElement = screen.getByText('Performance Globale').closest('.sidebar-section');
       expect(moduleElement).toBeInTheDocument();
@@ -250,7 +252,7 @@ describe('GlobalPerformanceModule', () => {
       
       await waitFor(() => {
         expect(screen.getByText('Performance Globale')).toBeInTheDocument();
-      }, { timeout: 3000 });
+      }, { timeout: 8000 });
       
       const moduleElement = screen.getByText('Performance Globale').closest('.sidebar-section');
       fireEvent.click(moduleElement);

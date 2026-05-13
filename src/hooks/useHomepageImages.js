@@ -4,6 +4,12 @@ import { rollbackToVersion, getVersionHistory } from '../utils/bannerVersioning'
 import { validateImageIntegrity, validateImagesBatch, detectAndRepairCorruption } from '../utils/bannerIntegrity';
 import logger from '../utils/logger';
 import { useAuth } from '../context/AuthContext';
+import {
+  HOMEPAGE_IMAGES_DB_NAME,
+  HOMEPAGE_IMAGES_DB_VERSION,
+  STORE_HOMEPAGE_IMAGES,
+  applyHomepageImagesSchemaUpgrade,
+} from '../services/homepage/homepageImagesDbGateway.js';
 
 const log = logger.module('useHomepageImages');
 
@@ -81,58 +87,10 @@ export const useHomepageImages = () => {
 
       // ✅ Phase 3: Upgrade vers version 3 pour supporter thumbnails
       // Si base existe en v1 ou v2, onupgradeneeded sera appelé automatiquement
-      const request = indexedDB.open('HomepageImagesDB', 3);
+      const request = indexedDB.open(HOMEPAGE_IMAGES_DB_NAME, HOMEPAGE_IMAGES_DB_VERSION);
       
       request.onupgradeneeded = (event) => {
-        const db = event.target.result;
-        const oldVersion = event.oldVersion;
-        log.debug(`🔄 Mise à jour IndexedDB de v${oldVersion} à v${db.version}...`);
-        
-        // Vérifier et créer l'object store 'images' si nécessaire
-        let imageStore;
-        if (!db.objectStoreNames.contains('images')) {
-          log.debug('📦 Création de l\'object store "images"...');
-          imageStore = db.createObjectStore('images', { keyPath: 'id' });
-          imageStore.createIndex('type', 'type', { unique: false });
-          imageStore.createIndex('timestamp', 'timestamp', { unique: false });
-          log.debug('✅ Object store "images" créé avec ses index');
-        } else {
-          log.debug('✅ Object store "images" existe déjà');
-          imageStore = event.target.transaction.objectStore('images');
-          
-          // ✅ Créer index manquants (upgrade depuis v1)
-          try {
-            const indexNames = imageStore.indexNames;
-            if (!indexNames.contains('type')) {
-              log.debug('📦 Création index "type" manquant...');
-              imageStore.createIndex('type', 'type', { unique: false });
-              log.debug('✅ Index "type" créé');
-            } else {
-              log.debug('✅ Index "type" existe déjà');
-            }
-            
-            if (!indexNames.contains('timestamp')) {
-              log.debug('📦 Création index "timestamp" manquant...');
-              imageStore.createIndex('timestamp', 'timestamp', { unique: false });
-              log.debug('✅ Index "timestamp" créé');
-            } else {
-              log.debug('✅ Index "timestamp" existe déjà');
-            }
-          } catch (indexError) {
-            // Peut échouer si index existe déjà ou transaction fermée, c'est OK
-            log.warn('⚠️ Erreur création index (peut être normal):', indexError.message);
-          }
-        }
-        
-        // ✅ Phase 3: Migration vers v3 (ajout support thumbnails)
-        if (oldVersion < 3) {
-          log.debug('🔄 Migration v2 → v3: Ajout support thumbnails...');
-          // Les images existantes n'auront pas de thumbnail (null), c'est OK
-          // La structure est rétrocompatible (thumbnail optionnel)
-          log.debug('✅ Migration v3: Structure compatible (thumbnail optionnel)');
-        }
-        
-        log.debug('✅ IndexedDB mis à jour pour les images');
+        applyHomepageImagesSchemaUpgrade(event, log);
       };
       
       request.onsuccess = (event) => {
@@ -140,7 +98,7 @@ export const useHomepageImages = () => {
         log.debug(`✅ IndexedDB ouvert: ${db.name} v${db.version}`);
         
         // Vérifier que l'object store existe
-        if (!db.objectStoreNames.contains('images')) {
+        if (!db.objectStoreNames.contains(STORE_HOMEPAGE_IMAGES)) {
           log.error('❌ Object store "images" manquant après ouverture');
           db.close();
           reject(new Error('Object store "images" manquant'));
@@ -157,7 +115,7 @@ export const useHomepageImages = () => {
         if (event.target.error.name === 'VersionError') {
           log.warn('⚠️ VersionError détectée, tentative réouverture...');
           // Essayer de réouvrir sans spécifier version
-          const fallbackRequest = indexedDB.open('HomepageImagesDB');
+          const fallbackRequest = indexedDB.open(HOMEPAGE_IMAGES_DB_NAME);
           fallbackRequest.onsuccess = (e) => {
             const db = e.target.result;
             log.debug(`✅ IndexedDB réouvert: ${db.name} v${db.version}`);
@@ -173,7 +131,7 @@ export const useHomepageImages = () => {
         log.warn('⚠️ IndexedDB bloqué - fermez les autres onglets et rafraîchissez');
         // Attendre un peu puis réessayer
         setTimeout(() => {
-          const retryRequest = indexedDB.open('HomepageImagesDB', 3);
+          const retryRequest = indexedDB.open(HOMEPAGE_IMAGES_DB_NAME, HOMEPAGE_IMAGES_DB_VERSION);
           retryRequest.onsuccess = (e) => resolve(e.target.result);
           retryRequest.onerror = () => reject(new Error('IndexedDB bloqué'));
         }, 1000);
@@ -429,8 +387,8 @@ export const useHomepageImages = () => {
       log.debug('🔍 Chargement niveau 1: IndexedDB...');
       
       const db = await openDB();
-      const transaction = db.transaction(['images'], 'readonly');
-      const store = transaction.objectStore('images');
+      const transaction = db.transaction([STORE_HOMEPAGE_IMAGES], 'readonly');
+      const store = transaction.objectStore(STORE_HOMEPAGE_IMAGES);
       
       // ✅ FIX: Vérifier si index existe, sinon utiliser fallback avec getAll()
       let images = [];
@@ -993,7 +951,7 @@ export const useHomepageImages = () => {
     try {
       // ✅ FIX: Utiliser openDB() pour garantir version avec index
       const indexedDBWorking = await openDB().then((db) => {
-        const hasImagesStore = db.objectStoreNames.contains('images');
+        const hasImagesStore = db.objectStoreNames.contains(STORE_HOMEPAGE_IMAGES);
         db.close();
         return hasImagesStore;
       }).catch(() => false);

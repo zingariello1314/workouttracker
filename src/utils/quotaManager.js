@@ -8,6 +8,11 @@
  */
 
 import logger from './logger';
+import {
+  HOMEPAGE_IMAGES_DB_NAME,
+  HOMEPAGE_IMAGES_DB_VERSION,
+  STORE_HOMEPAGE_IMAGES,
+} from '../services/homepage/homepageImagesDbGateway.js';
 
 const log = logger.module('quotaManager');
 
@@ -119,19 +124,19 @@ async function getCurrentBannerUsage() {
     }
 
     // ✅ Phase 7: Utiliser version 3 (cohérent avec useHomepageImages)
-    const request = indexedDB.open('HomepageImagesDB', 3);
+    const request = indexedDB.open(HOMEPAGE_IMAGES_DB_NAME, HOMEPAGE_IMAGES_DB_VERSION);
 
     request.onsuccess = (event) => {
       const db = event.target.result;
       
-      if (!db.objectStoreNames.contains('images')) {
+      if (!db.objectStoreNames.contains(STORE_HOMEPAGE_IMAGES)) {
         db.close();
         resolve(0);
         return;
       }
 
-      const transaction = db.transaction(['images'], 'readonly');
-      const store = transaction.objectStore('images');
+      const transaction = db.transaction([STORE_HOMEPAGE_IMAGES], 'readonly');
+      const store = transaction.objectStore(STORE_HOMEPAGE_IMAGES);
 
       // Essayer d'utiliser l'index 'type' si disponible
       let getAllRequest;

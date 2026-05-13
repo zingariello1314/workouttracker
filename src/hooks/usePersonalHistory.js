@@ -1,4 +1,6 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
+import { XP_DB_NAME, applyQuietQuestMetaDbUpgrade } from '../services/xp/xpDbGateway.js';
+import { STORE_QQ_HOOK_PERFORMANCE_HISTORY } from '../services/xp/quietQuestHookStores.js';
 
 /**
  * Custom hook for personal history and records
@@ -13,17 +15,13 @@ const usePersonalHistory = () => {
   // Initialize IndexedDB
   const initDB = useCallback(() => {
     return new Promise((resolve, reject) => {
-      const request = indexedDB.open('QuietQuestDB', 1);
+      const request = indexedDB.open(XP_DB_NAME);
 
       request.onerror = () => reject(request.error);
       request.onsuccess = () => resolve(request.result);
 
       request.onupgradeneeded = (event) => {
-        const db = event.target.result;
-        if (!db.objectStoreNames.contains('performanceHistory')) {
-          const store = db.createObjectStore('performanceHistory', { keyPath: 'id' });
-          store.createIndex('date', 'date', { unique: true });
-        }
+        applyQuietQuestMetaDbUpgrade(event);
       };
     });
   }, []);
@@ -35,8 +33,8 @@ const usePersonalHistory = () => {
       setError(null);
 
       const db = await initDB();
-      const transaction = db.transaction(['performanceHistory'], 'readonly');
-      const store = transaction.objectStore('performanceHistory');
+      const transaction = db.transaction([STORE_QQ_HOOK_PERFORMANCE_HISTORY], 'readonly');
+      const store = transaction.objectStore(STORE_QQ_HOOK_PERFORMANCE_HISTORY);
       const request = store.getAll();
 
       request.onsuccess = () => {

@@ -19,19 +19,14 @@ import { retrySave, retryLoad, retryDelete, retryWithBackoff } from './budgetRet
 import { compressBudgetData, decompressBudgetData, isCompressed } from './budgetCompression';
 import budgetSyncService, { SYNC_EVENTS } from './budgetSyncService';
 import budgetQueueService, { PRIORITY, RESOURCE_TYPES } from './budgetQueueService';
+import {
+  BUDGET_DB_NAME as DB_NAME,
+  BUDGET_DB_VERSION as DB_VERSION,
+  BUDGET_STORES as STORES,
+  applyBudgetSchemaUpgrade,
+} from './budgetDbGateway.js';
 
 const log = logger.module('budgetStorage');
-
-const DB_NAME = 'BudgetDB';
-const DB_VERSION = 2; // Augmenté pour forcer migration
-const STORES = {
-  BUDGET: 'budget',
-  CATEGORIES: 'categories',
-  DEPENSES: 'depenses',
-  DEPENSES_PLANIFIEES: 'depensesPlanifiees',
-  HISTORIQUE: 'historique',
-  CHARGES_FIXES: 'chargesFixes'
-};
 
 /** IndexedDB legacy : createdAt parfois en ms (number). Zod attend une ISO string. */
 function normalizeTimestampFieldForZod(val, fallbackIso) {
@@ -57,67 +52,8 @@ class BudgetStorage {
 
     try {
       this.db = await openDB(DB_NAME, DB_VERSION, {
-        upgrade(db, oldVersion, newVersion, transaction) {
-          log.debug(`Upgrading BudgetDB from version ${oldVersion} to ${newVersion}`);
-
-          // Store Budget
-          if (!db.objectStoreNames.contains(STORES.BUDGET)) {
-            db.createObjectStore(STORES.BUDGET, { keyPath: 'id' });
-            log.debug(`Created store: ${STORES.BUDGET}`);
-          }
-
-          // Store Categories avec index
-          if (!db.objectStoreNames.contains(STORES.CATEGORIES)) {
-            const catStore = db.createObjectStore(STORES.CATEGORIES, { keyPath: 'id' });
-            catStore.createIndex('nom', 'nom', { unique: false });
-            catStore.createIndex('ordre', 'ordre', { unique: false });
-            log.debug(`Created store: ${STORES.CATEGORIES}`);
-          }
-
-          // Store Depenses avec index temporel
-          if (!db.objectStoreNames.contains(STORES.DEPENSES)) {
-            const depStore = db.createObjectStore(STORES.DEPENSES, { keyPath: 'id' });
-            depStore.createIndex('date', 'date', { unique: false });
-            depStore.createIndex('categorie', 'categorie', { unique: false });
-            depStore.createIndex('statut', 'statut', { unique: false });
-            log.debug(`Created store: ${STORES.DEPENSES}`);
-          }
-
-          // Store Depenses Planifiées
-          if (!db.objectStoreNames.contains(STORES.DEPENSES_PLANIFIEES)) {
-            const planStore = db.createObjectStore(STORES.DEPENSES_PLANIFIEES, { keyPath: 'id' });
-            planStore.createIndex('date', 'date', { unique: false });
-            planStore.createIndex('statut', 'statut', { unique: false });
-            planStore.createIndex('categorie', 'categorie', { unique: false });
-            log.debug(`Created store: ${STORES.DEPENSES_PLANIFIEES}`);
-          }
-
-          // Store Charges Fixes
-          if (!db.objectStoreNames.contains(STORES.CHARGES_FIXES)) {
-            const chargesStore = db.createObjectStore(STORES.CHARGES_FIXES, { keyPath: 'id' });
-            chargesStore.createIndex('type', 'type', { unique: false });
-            chargesStore.createIndex('frequence', 'frequence', { unique: false });
-            log.debug(`Created store: ${STORES.CHARGES_FIXES}`);
-          }
-
-          // Store Historique (audit trail)
-          if (!db.objectStoreNames.contains(STORES.HISTORIQUE)) {
-            const histStore = db.createObjectStore(STORES.HISTORIQUE, {
-              keyPath: 'id',
-              autoIncrement: true
-            });
-            histStore.createIndex('timestamp', 'timestamp', { unique: false });
-            histStore.createIndex('action', 'action', { unique: false });
-            log.debug(`Created store: ${STORES.HISTORIQUE}`);
-          }
-
-          // Vérifier que tous les stores existent
-          const missingStores = Object.values(STORES).filter(
-            storeName => !db.objectStoreNames.contains(storeName)
-          );
-          if (missingStores.length > 0) {
-            log.warn(`Missing stores after upgrade: ${missingStores.join(', ')}`);
-          }
+        upgrade(db, oldVersion, newVersion) {
+          applyBudgetSchemaUpgrade(db, oldVersion, newVersion, log);
         }
       });
 

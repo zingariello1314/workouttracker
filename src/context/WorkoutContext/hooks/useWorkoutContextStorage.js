@@ -1,17 +1,23 @@
 /**
  * Hook pour la gestion de la sauvegarde/chargement du contexte
- * 
+ *
  * ✅ PHASE 4 : Extraction de la logique de sauvegarde/chargement
- * 
+ * Persistance via `LocalWorkoutRepository` / `workoutContextGateway` (même DB que la couche sync).
+ *
  * @module context/WorkoutContext/hooks/useWorkoutContextStorage
  */
 
 import { useCallback, useRef } from 'react';
+import { createWorkoutRepository } from '../../../services/workout/createWorkoutRepository.js';
+import {
+  getLegacyUnscopedContext,
+  openWorkoutContextDb,
+  putContextRow,
+} from '../../../services/workout/workoutContextGateway.js';
 
 /**
  * Hook pour gérer la sauvegarde et le chargement du contexte
- * 
- * @param {Function} loadFromDB - Fonction pour charger depuis la DB
+ *
  * @param {Function} setPrograms - Fonction pour définir les programmes
  * @param {Function} setActiveProgram - Fonction pour définir le programme actif
  * @param {Function} setProgramHistory - Fonction pour définir l'historique des programmes
@@ -28,224 +34,191 @@ export const useWorkoutContextStorage = (
   contextScopeKey = 'anonymous'
 ) => {
   const debounceTimerRef = useRef(null);
+  const contextRepoRef = useRef(null);
   const contextRecordId = `context:${contextScopeKey}`;
   const backupKey = `workoutContext_backup:${contextScopeKey}`;
   const legacyBackupKey = 'workoutContext_backup';
 
+  const getContextRepo = useCallback(() => {
+    if (typeof window === 'undefined') return null;
+    if (!contextRepoRef.current) {
+      contextRepoRef.current = createWorkoutRepository('local');
+    }
+    return contextRepoRef.current;
+  }, []);
+
   const openContextDB = useCallback(() => {
     return new Promise((resolve, reject) => {
-      if (!window.indexedDB) {
+      if (typeof window === 'undefined' || !window.indexedDB) {
         console.error('❌ IndexedDB non supporté');
         reject(new Error('IndexedDB non supporté'));
         return;
       }
 
-      const request = indexedDB.open('WorkoutTrackerContextDB', 1);
-      
-      request.onupgradeneeded = (event) => {
-        try {
-          const db = event.target.result;
-          if (!db.objectStoreNames.contains('contextData')) {
-            const store = db.createObjectStore('contextData', { keyPath: 'id' });
+      openWorkoutContextDb()
+        .then((db) => {
+          if (!db) {
+            console.error('❌ IndexedDB non supporté');
+            reject(new Error('IndexedDB non supporté'));
+            return;
           }
-        } catch (error) {
-          console.error('❌ Erreur lors de la création de l\'object store:', error);
-          reject(error);
-        }
-      };
-      
-      request.onsuccess = (event) => {
-        const db = event.target.result;
-        
-        if (!db.objectStoreNames.contains('contextData')) {
-          console.error('❌ Object store contextData manquant');
-          reject(new Error('Structure de base de données invalide'));
-          return;
-        }
-        
-        resolve(db);
-      };
-      
-      request.onerror = (event) => {
-        console.error('❌ Erreur ouverture WorkoutTrackerContextDB:', event.target.error);
-        reject(event.target.error);
-      };
-
-      request.onblocked = (event) => {
-        console.warn('⚠️ Ouverture de WorkoutTrackerContextDB bloquée');
-        reject(new Error('Base de données bloquée'));
-      };
+          if (!db.objectStoreNames.contains('contextData')) {
+            console.error('❌ Object store contextData manquant');
+            reject(new Error('Structure de base de données invalide'));
+            return;
+          }
+          resolve(db);
+        })
+        .catch((err) => {
+          console.error('❌ Erreur ouverture WorkoutTrackerContextDB:', err);
+          reject(err);
+        });
     });
   }, []);
 
-  const saveContextToDB = useCallback(async (contextData) => {
-    const maxRetries = 3;
-    
-    for (let retryCount = 1; retryCount <= maxRetries; retryCount++) {
-      try {
-        if (!contextData || typeof contextData !== 'object') {
-          throw new Error('Données de contexte invalides');
-        }
+  const saveContextToDB = useCallback(
+    async (contextData) => {
+      const maxRetries = 3;
+      const repo = getContextRepo();
 
-        const dataToSave = {
-          id: contextRecordId,
-          ...contextData,
-          lastSaved: new Date().toISOString()
-        };
-        
-        const db = await openContextDB();
-        const transaction = db.transaction(['contextData'], 'readwrite');
-        const store = transaction.objectStore('contextData');
-        
-        return new Promise((resolve, reject) => {
-          const request = store.put(dataToSave);
-          
-          request.onsuccess = () => {
-            try {
-              localStorage.setItem(backupKey, JSON.stringify(dataToSave));
-            } catch (localStorageError) {
-              console.warn('⚠️ Impossible de sauvegarder le contexte en localStorage:', localStorageError);
-            }
-            
-            resolve();
-          };
-          
-          request.onerror = (event) => {
-            console.error(`❌ Erreur sauvegarde contexte (tentative ${retryCount}):`, event.target.error);
-            reject(event.target.error);
-          };
-          
-          transaction.onerror = (event) => {
-            console.error(`❌ Erreur transaction contexte (tentative ${retryCount}):`, event.target.error);
-            reject(event.target.error);
-          };
-        });
-        
-      } catch (error) {
-        console.error(`❌ Erreur lors de la tentative ${retryCount} de sauvegarde du contexte:`, error);
-        
-        if (retryCount === maxRetries) {
-          try {
-            localStorage.setItem(backupKey, JSON.stringify({
-              id: contextRecordId,
-              ...contextData,
-              lastSaved: new Date().toISOString()
-            }));
-          } catch (localStorageError) {
-            console.error('❌ Échec de la sauvegarde de secours du contexte:', localStorageError);
+      for (let retryCount = 1; retryCount <= maxRetries; retryCount++) {
+        try {
+          if (!contextData || typeof contextData !== 'object') {
+            throw new Error('Données de contexte invalides');
           }
-          throw error;
+
+          const dataToSave = {
+            id: contextRecordId,
+            ...contextData,
+            lastSaved: new Date().toISOString(),
+          };
+
+          if (!repo) {
+            throw new Error('WORKOUT_CONTEXT_REPO_UNAVAILABLE');
+          }
+
+          await repo.saveProgramContext(contextScopeKey, contextData);
+
+          try {
+            localStorage.setItem(backupKey, JSON.stringify(dataToSave));
+          } catch (localStorageError) {
+            console.warn('⚠️ Impossible de sauvegarder le contexte en localStorage:', localStorageError);
+          }
+
+          return;
+        } catch (error) {
+          console.error(`❌ Erreur lors de la tentative ${retryCount} de sauvegarde du contexte:`, error);
+
+          if (retryCount === maxRetries) {
+            try {
+              localStorage.setItem(
+                backupKey,
+                JSON.stringify({
+                  id: contextRecordId,
+                  ...contextData,
+                  lastSaved: new Date().toISOString(),
+                })
+              );
+            } catch (localStorageError) {
+              console.error('❌ Échec de la sauvegarde de secours du contexte:', localStorageError);
+            }
+            throw error;
+          }
+
+          await new Promise((resolve) => setTimeout(resolve, 1000 * retryCount));
         }
-        
-        await new Promise(resolve => setTimeout(resolve, 1000 * retryCount));
       }
-    }
-  }, [openContextDB, backupKey, contextRecordId]);
+    },
+    [getContextRepo, backupKey, contextRecordId, contextScopeKey]
+  );
 
   const loadContext = useCallback(async () => {
+    const applyContext = (ctx) => {
+      if (!ctx) return;
+      if (ctx.programs) {
+        setPrograms(ctx.programs);
+      }
+      if (ctx.activeProgram) {
+        setActiveProgram(ctx.activeProgram);
+      }
+      if (ctx.programHistory) {
+        setProgramHistory(ctx.programHistory);
+      }
+      if (ctx.weekVariant) {
+        setWeekVariant(ctx.weekVariant);
+      }
+      if (ctx.isGymMode !== undefined) {
+        setIsGymMode(ctx.isGymMode);
+      }
+    };
+
     try {
-      // loadFromDB devrait charger depuis IndexedDB, mais ici on charge juste le contexte
-      // On utilise openContextDB pour charger directement le contexte
-      const db = await openContextDB();
-      const transaction = db.transaction(['contextData'], 'readonly');
-      const store = transaction.objectStore('contextData');
-      
-      return new Promise((resolve, reject) => {
-        const request = store.get(contextRecordId);
-        
-        request.onsuccess = () => {
-          const savedContext = request.result;
-          const applyContext = (ctx) => {
-            if (!ctx) return;
-            if (ctx.programs) {
-              setPrograms(ctx.programs);
-            }
-            if (ctx.activeProgram) {
-              setActiveProgram(ctx.activeProgram);
-            }
-            if (ctx.programHistory) {
-              setProgramHistory(ctx.programHistory);
-            }
-            if (ctx.weekVariant) {
-              setWeekVariant(ctx.weekVariant);
-            }
-            if (ctx.isGymMode !== undefined) {
-              setIsGymMode(ctx.isGymMode);
-            }
-          };
+      const repo = getContextRepo();
+      if (repo) {
+        const partial = await repo.loadProgramContext(contextScopeKey).catch(() => null);
+        // Ligne résiduelle { id, lastSaved } seule → `{}` : continuer vers legacy / backups.
+        if (partial != null && Object.keys(partial).length > 0) {
+          const savedContext = { id: contextRecordId, ...partial };
+          applyContext(savedContext);
+          return savedContext;
+        }
+      }
 
-          if (savedContext) {
-            applyContext(savedContext);
-            resolve(savedContext);
-          } else {
-            // Migration douce legacy -> scope utilisateur
-            const legacyRequest = store.get('context');
-            legacyRequest.onsuccess = async () => {
-              const legacyContext = legacyRequest.result;
-              if (legacyContext) {
-                const migratedContext = { ...legacyContext, id: contextRecordId };
-                applyContext(migratedContext);
-                try {
-                  const writeTx = db.transaction(['contextData'], 'readwrite');
-                  const writeStore = writeTx.objectStore('contextData');
-                  writeStore.put(migratedContext);
-                } catch {
-                  // ignore migration write error
-                }
-                resolve(migratedContext);
-                return;
-              }
+      const legacyContext = await getLegacyUnscopedContext().catch(() => null);
+      if (legacyContext) {
+        const migratedContext = { ...legacyContext, id: contextRecordId };
+        applyContext(migratedContext);
+        try {
+          await putContextRow(contextScopeKey, legacyContext);
+        } catch {
+          // ignore migration write error
+        }
+        return migratedContext;
+      }
 
-              // Tenter backup scope puis backup legacy
-              const scopeBackup = localStorage.getItem(backupKey);
-              const legacyBackup = localStorage.getItem(legacyBackupKey);
-              const backupCandidate = scopeBackup || legacyBackup;
-              if (backupCandidate) {
-                try {
-                  const parsedBackup = JSON.parse(backupCandidate);
-                  const normalized = { ...parsedBackup, id: contextRecordId };
-                  applyContext(normalized);
-                  console.warn('⚠️ Contexte chargé depuis localStorage backup');
-                  resolve(normalized);
-                } catch (parseError) {
-                  console.error('❌ Erreur parsing localStorage backup:', parseError);
-                  resolve(null);
-                }
-              } else {
-                resolve(null);
-              }
-            };
-            legacyRequest.onerror = () => resolve(null);
-          }
-        };
-        
-        request.onerror = (event) => {
-          console.error('❌ Erreur lecture contexte depuis IndexedDB:', event.target.error);
-          reject(event.target.error);
-        };
-      });
+      const scopeBackup = localStorage.getItem(backupKey);
+      const legacyBackup = localStorage.getItem(legacyBackupKey);
+      const backupCandidate = scopeBackup || legacyBackup;
+      if (backupCandidate) {
+        try {
+          const parsedBackup = JSON.parse(backupCandidate);
+          const normalized = { ...parsedBackup, id: contextRecordId };
+          applyContext(normalized);
+          console.warn('⚠️ Contexte chargé depuis localStorage backup');
+          return normalized;
+        } catch (parseError) {
+          console.error('❌ Erreur parsing localStorage backup:', parseError);
+          return null;
+        }
+      }
+
+      return null;
     } catch (error) {
       console.error('❌ Erreur chargement contexte:', error);
       return null;
     }
   }, [
-    openContextDB,
+    getContextRepo,
     setPrograms,
     setActiveProgram,
     setProgramHistory,
     setWeekVariant,
     setIsGymMode,
     contextRecordId,
-    backupKey
+    contextScopeKey,
+    backupKey,
   ]);
 
-  const flushAutoSave = useCallback((contextData) => {
-    if (debounceTimerRef.current) {
-      clearTimeout(debounceTimerRef.current);
-      debounceTimerRef.current = null;
-    }
-    return saveContextToDB(contextData);
-  }, [saveContextToDB]);
+  const flushAutoSave = useCallback(
+    (contextData) => {
+      if (debounceTimerRef.current) {
+        clearTimeout(debounceTimerRef.current);
+        debounceTimerRef.current = null;
+      }
+      return saveContextToDB(contextData);
+    },
+    [saveContextToDB]
+  );
 
   const autoSaveContext = useCallback(
     (contextData) => {

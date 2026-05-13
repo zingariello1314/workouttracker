@@ -6,35 +6,34 @@
 import { useState, useRef, useEffect } from 'react';
 import { Upload, X, Image as ImageIcon } from 'lucide-react';
 import { migrateMuscleImagesToIndexedDB } from '../../utils/migrateMuscleImages';
+import {
+  MUSCLE_IMAGES_DB_NAME,
+  MUSCLE_IMAGES_DB_VERSION,
+  STORE_MUSCLE_IMAGES,
+  applyMuscleImagesSchemaUpgrade,
+} from '../../services/bodyTracking/muscleImagesDbGateway.js';
 
 // ============================================================================
 // INDEXEDDB HELPERS - Stockage des images muscles
 // ============================================================================
 
-const DB_NAME = 'MuscleImagesDB';
-const DB_VERSION = 1;
-const STORE_NAME = 'muscleImages';
-
 const openMuscleImagesDB = () => {
   return new Promise((resolve, reject) => {
-    const request = indexedDB.open(DB_NAME, DB_VERSION);
+    const request = indexedDB.open(MUSCLE_IMAGES_DB_NAME, MUSCLE_IMAGES_DB_VERSION);
     
     request.onerror = () => reject(request.error);
     request.onsuccess = () => resolve(request.result);
     
     request.onupgradeneeded = (event) => {
-      const db = event.target.result;
-      if (!db.objectStoreNames.contains(STORE_NAME)) {
-        db.createObjectStore(STORE_NAME, { keyPath: 'muscleId' });
-      }
+      applyMuscleImagesSchemaUpgrade(event);
     };
   });
 };
 
 const saveMuscleImageToDB = async (db, muscleId, imageData) => {
   return new Promise((resolve, reject) => {
-    const transaction = db.transaction([STORE_NAME], 'readwrite');
-    const store = transaction.objectStore(STORE_NAME);
+    const transaction = db.transaction([STORE_MUSCLE_IMAGES], 'readwrite');
+    const store = transaction.objectStore(STORE_MUSCLE_IMAGES);
     const request = store.put({ muscleId, imageData, timestamp: Date.now() });
     
     request.onsuccess = () => resolve();
@@ -44,8 +43,8 @@ const saveMuscleImageToDB = async (db, muscleId, imageData) => {
 
 const loadMuscleImageFromDB = async (db, muscleId) => {
   return new Promise((resolve, reject) => {
-    const transaction = db.transaction([STORE_NAME], 'readonly');
-    const store = transaction.objectStore(STORE_NAME);
+    const transaction = db.transaction([STORE_MUSCLE_IMAGES], 'readonly');
+    const store = transaction.objectStore(STORE_MUSCLE_IMAGES);
     const request = store.get(muscleId);
     
     request.onsuccess = () => resolve(request.result?.imageData || null);
@@ -55,8 +54,8 @@ const loadMuscleImageFromDB = async (db, muscleId) => {
 
 const loadAllMuscleImagesFromDB = async (db) => {
   return new Promise((resolve, reject) => {
-    const transaction = db.transaction([STORE_NAME], 'readonly');
-    const store = transaction.objectStore(STORE_NAME);
+    const transaction = db.transaction([STORE_MUSCLE_IMAGES], 'readonly');
+    const store = transaction.objectStore(STORE_MUSCLE_IMAGES);
     const request = store.getAll();
     
     request.onsuccess = () => {
@@ -72,8 +71,8 @@ const loadAllMuscleImagesFromDB = async (db) => {
 
 const deleteMuscleImageFromDB = async (db, muscleId) => {
   return new Promise((resolve, reject) => {
-    const transaction = db.transaction([STORE_NAME], 'readwrite');
-    const store = transaction.objectStore(STORE_NAME);
+    const transaction = db.transaction([STORE_MUSCLE_IMAGES], 'readwrite');
+    const store = transaction.objectStore(STORE_MUSCLE_IMAGES);
     const request = store.delete(muscleId);
     
     request.onsuccess = () => resolve();

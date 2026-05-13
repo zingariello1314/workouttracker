@@ -9,6 +9,12 @@ import Hyperspeed from './ui/Hyperspeed/Hyperspeed';
 import { hyperspeedPresets } from './ui/Hyperspeed/hyperspeedPresets';
 import { requestEmailVerificationCode, verifyEmailCode } from '../utils/emailVerificationService';
 import { addAvatar, addCardIcon } from '../services/profileCard/profileCardStorage';
+import {
+  HOMEPAGE_IMAGES_DB_NAME,
+  HOMEPAGE_IMAGES_DB_VERSION,
+  STORE_HOMEPAGE_IMAGES,
+  applyHomepageImagesSchemaUpgrade,
+} from '../services/homepage/homepageImagesDbGateway.js';
 
 const checkWebGLSupport = () => {
   try {
@@ -101,21 +107,16 @@ const AuthPage = () => {
             reader.readAsDataURL(homeBackgroundFile);
           });
           await new Promise((resolve, reject) => {
-            const request = indexedDB.open('HomepageImagesDB', 3);
+            const request = indexedDB.open(HOMEPAGE_IMAGES_DB_NAME, HOMEPAGE_IMAGES_DB_VERSION);
             request.onerror = () => reject(request.error);
             request.onupgradeneeded = (event) => {
-              const db = event.target.result;
-              if (!db.objectStoreNames.contains('images')) {
-                const store = db.createObjectStore('images', { keyPath: 'id' });
-                store.createIndex('type', 'type', { unique: false });
-                store.createIndex('timestamp', 'timestamp', { unique: false });
-              }
+              applyHomepageImagesSchemaUpgrade(event);
             };
             request.onsuccess = (event) => {
               const db = event.target.result;
               const typeKey = `homepage_background_user-${currentUser.id}`;
-              const tx = db.transaction(['images'], 'readwrite');
-              const store = tx.objectStore('images');
+              const tx = db.transaction([STORE_HOMEPAGE_IMAGES], 'readwrite');
+              const store = tx.objectStore(STORE_HOMEPAGE_IMAGES);
               const getReq = store.getAll();
               getReq.onsuccess = () => {
                 (getReq.result || []).forEach((item) => {

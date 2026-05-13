@@ -156,6 +156,7 @@ const useKeyboardShortcut = (shortcuts = [], { enabled = true, allowInInputs = f
   }, [enabled, normalizedShortcuts, handleKeyDown]);
 };
 
+export { useKeyboardShortcut };
 export default useKeyboardShortcut;
 
 

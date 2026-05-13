@@ -5,6 +5,12 @@
 
 import { z } from 'zod';
 import logger from '../../utils/logger';
+import {
+  DASHBOARD_DB_NAME as DB_NAME,
+  DASHBOARD_DB_VERSION as DB_VERSION,
+  DASHBOARD_STORES as STORES,
+  applyDashboardSchemaUpgrade,
+} from './dashboardDbGateway.js';
 
 const log = logger.module('dashboardStorage');
 
@@ -102,23 +108,8 @@ const AchievementSchema = z.object({
 });
 
 // ============================================================================
-// INDEXEDDB SETUP
+// INDEXEDDB SETUP (schéma : dashboardDbGateway.js)
 // ============================================================================
-
-const DB_NAME = 'QuietQuestDashboard';
-const DB_VERSION = 2; // Incremented for new stores
-const STORES = {
-  QUESTS: 'quests',
-  SPORT_SESSIONS: 'sportSessions',
-  READING_SESSIONS: 'readingSessions',
-  BOOKS: 'books',
-  PATRIMONY: 'patrimony',
-  SETTINGS: 'settings',
-  // New stores for Today Performance refonte
-  MUSCLE_GROUPS: 'muscleGroups',
-  PERFORMANCE_HISTORY: 'performanceHistory',
-  ACHIEVEMENTS: 'achievements'
-};
 
 let dbInstance = null;
 
@@ -138,68 +129,7 @@ const initDB = () => {
     };
 
     request.onupgradeneeded = (event) => {
-      const db = event.target.result;
-
-      // Store Quests
-      if (!db.objectStoreNames.contains(STORES.QUESTS)) {
-        const questStore = db.createObjectStore(STORES.QUESTS, { keyPath: 'id' });
-        questStore.createIndex('date', 'date', { unique: false });
-      }
-
-      // Store Sport Sessions
-      if (!db.objectStoreNames.contains(STORES.SPORT_SESSIONS)) {
-        const sportStore = db.createObjectStore(STORES.SPORT_SESSIONS, { keyPath: 'id' });
-        sportStore.createIndex('date', 'date', { unique: false });
-      }
-
-      // Store Reading Sessions
-      if (!db.objectStoreNames.contains(STORES.READING_SESSIONS)) {
-        const readingStore = db.createObjectStore(STORES.READING_SESSIONS, { keyPath: 'id' });
-        readingStore.createIndex('date', 'date', { unique: false });
-        readingStore.createIndex('bookId', 'bookId', { unique: false });
-      }
-
-      // Store Books
-      if (!db.objectStoreNames.contains(STORES.BOOKS)) {
-        const bookStore = db.createObjectStore(STORES.BOOKS, { keyPath: 'id' });
-        bookStore.createIndex('active', 'active', { unique: false });
-      }
-
-      // Store Patrimony
-      if (!db.objectStoreNames.contains(STORES.PATRIMONY)) {
-        db.createObjectStore(STORES.PATRIMONY, { keyPath: 'id' });
-      }
-
-      // Store Settings
-      if (!db.objectStoreNames.contains(STORES.SETTINGS)) {
-        db.createObjectStore(STORES.SETTINGS, { keyPath: 'key' });
-      }
-
-      // ========================================================================
-      // NEW STORES FOR TODAY PERFORMANCE REFONTE
-      // ========================================================================
-
-      // Store Muscle Groups
-      if (!db.objectStoreNames.contains(STORES.MUSCLE_GROUPS)) {
-        const muscleStore = db.createObjectStore(STORES.MUSCLE_GROUPS, { keyPath: 'id' });
-        muscleStore.createIndex('name', 'name', { unique: false });
-        muscleStore.createIndex('createdAt', 'createdAt', { unique: false });
-      }
-
-      // Store Performance History
-      if (!db.objectStoreNames.contains(STORES.PERFORMANCE_HISTORY)) {
-        const perfStore = db.createObjectStore(STORES.PERFORMANCE_HISTORY, { keyPath: 'id' });
-        perfStore.createIndex('date', 'date', { unique: true });
-        perfStore.createIndex('createdAt', 'createdAt', { unique: false });
-      }
-
-      // Store Achievements
-      if (!db.objectStoreNames.contains(STORES.ACHIEVEMENTS)) {
-        const achieveStore = db.createObjectStore(STORES.ACHIEVEMENTS, { keyPath: 'id' });
-        achieveStore.createIndex('date', 'date', { unique: false });
-        achieveStore.createIndex('type', 'type', { unique: false });
-        achieveStore.createIndex('completed', 'completed', { unique: false });
-      }
+      applyDashboardSchemaUpgrade(event);
     };
   });
 };

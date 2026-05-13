@@ -6,20 +6,22 @@
  */
 
 import { describe, test, expect, beforeEach, afterEach, vi } from 'vitest';
+import { waitFor } from '@testing-library/react';
 import { 
   createBookCoverLazyLoader, 
   clearCoverCache 
 } from '../bookCoverLazyLoader';
 
-// Mock IntersectionObserver
-const mockIntersectionObserver = vi.fn().mockImplementation((callback, options) => ({
-  observe: vi.fn(),
-  unobserve: vi.fn(),
-  disconnect: vi.fn(),
-  callback,
-  options
-}));
-window.IntersectionObserver = mockIntersectionObserver;
+// IntersectionObserver : implémentation constructible (`new IntersectionObserver(...)`)
+const IntersectionObserverMock = vi.fn(function IntersectionObserverMockFn(callback, options) {
+  this.observe = vi.fn();
+  this.unobserve = vi.fn();
+  this.disconnect = vi.fn();
+  this._callback = callback;
+  this._options = options;
+});
+global.IntersectionObserver = IntersectionObserverMock;
+window.IntersectionObserver = IntersectionObserverMock;
 
 // Mock URL.revokeObjectURL
 window.URL = {
@@ -81,10 +83,9 @@ describe('bookCoverLazyLoader', () => {
       batchSize: 1
     });
 
-    // Simuler le chargement d'un batch
-    await loader.loadBatch();
-
-    expect(onCoverLoaded).toHaveBeenCalledWith('book-1', 'data:image/jpeg;base64,test1');
+    await waitFor(() => {
+      expect(onCoverLoaded).toHaveBeenCalledWith('book-1', 'data:image/jpeg;base64,test1');
+    });
   });
 
   test('should respect batch size', () => {
@@ -154,7 +155,7 @@ describe('bookCoverLazyLoader', () => {
       threshold: 0.5
     });
 
-    expect(mockIntersectionObserver).toHaveBeenCalledWith(
+    expect(IntersectionObserverMock).toHaveBeenCalledWith(
       expect.any(Function),
       expect.objectContaining({
         root: null,

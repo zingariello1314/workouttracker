@@ -14,64 +14,30 @@
 import { retryWithBackoff } from './garminRetryUtils';
 import { logIndexedDBError, isTransientError } from './garminErrorHandler';
 import logger from '../utils/logger';
+import {
+  DB_NAME,
+  DB_VERSION,
+  STORE_ACTIVITIES,
+  STORE_DAILY_METRICS,
+  STORE_DEVICE_META,
+  STORE_FORCED_RANGES,
+  STORE_TELEMETRY_HISTORY,
+  STORE_AUTO_SYNC_HISTORY,
+  applyGarminSchemaUpgrade,
+} from '../services/garmin/garminDbGateway.js';
 
 const log = logger.module('garminDataUtils');
 
-// ==================== CONSTANTES INDEXEDDB ====================
-
-/**
- * Nom de la base de données IndexedDB pour Garmin
- * @constant {string}
- */
-export const DB_NAME = 'GarminDataDB';
-
-/**
- * Version de la base de données IndexedDB
- * @constant {number}
- * 
- * Version 4 : Ajout d'indexes supplémentaires pour optimiser les requêtes
- * - Index `lastSyncTimestamp` sur activities pour requêtes par date de sync
- * - Index `timestamp` sur activities pour requêtes temporelles
- * - Index `lastSync` sur dailyMetrics pour requêtes par date de sync
- * Version 5 : Ajout du store autoSyncHistory pour l'historique des déclenchements AutoSync
- */
-export const DB_VERSION = 5;
-
-/**
- * Nom de l'object store pour les activités
- * @constant {string}
- */
-export const STORE_ACTIVITIES = 'activities';
-
-/**
- * Nom de l'object store pour les métriques quotidiennes
- * @constant {string}
- */
-export const STORE_DAILY_METRICS = 'dailyMetrics';
-
-/**
- * Nom de l'object store pour les métadonnées du device
- * @constant {string}
- */
-export const STORE_DEVICE_META = 'deviceMeta';
-
-/**
- * Nom de l'object store pour l'historique des plages forcées
- * @constant {string}
- */
-export const STORE_FORCED_RANGES = 'forcedRangesHistory';
-
-/**
- * Nom de l'object store pour l'historique télémétrie
- * @constant {string}
- */
-export const STORE_TELEMETRY_HISTORY = 'telemetryHistory';
-
-/**
- * Nom de l'object store pour l'historique AutoSync
- * @constant {string}
- */
-export const STORE_AUTO_SYNC_HISTORY = 'autoSyncHistory';
+export {
+  DB_NAME,
+  DB_VERSION,
+  STORE_ACTIVITIES,
+  STORE_DAILY_METRICS,
+  STORE_DEVICE_META,
+  STORE_FORCED_RANGES,
+  STORE_TELEMETRY_HISTORY,
+  STORE_AUTO_SYNC_HISTORY,
+};
 
 // ==================== ÉTAT GLOBAL ====================
 
@@ -332,107 +298,7 @@ const openDBInternal = () => {
       // Création/mise à jour de la structure (onupgradeneeded)
       request.onupgradeneeded = (event) => {
         try {
-          const db = event.target.result;
-
-          // Store: activities (index: date, type, date_type, lastSyncTimestamp, timestamp)
-          let activityStore;
-          if (!db.objectStoreNames.contains(STORE_ACTIVITIES)) {
-            activityStore = db.createObjectStore(STORE_ACTIVITIES, { 
-              keyPath: 'id', 
-              autoIncrement: false 
-            });
-            // Index sur date pour requêtes par plage
-            activityStore.createIndex('date', 'date', { unique: false });
-            // Index sur type pour filtrage
-            activityStore.createIndex('type', 'type', { unique: false });
-            // Index composite pour requêtes combinées
-            activityStore.createIndex('date_type', ['date', 'type'], { unique: false });
-          } else {
-            activityStore = event.target.transaction.objectStore(STORE_ACTIVITIES);
-          }
-          
-          // ✅ Version 4 : Ajouter indexes supplémentaires si absents
-          const activityIndexNames = Array.from(activityStore.indexNames);
-          if (!activityIndexNames.includes('lastSyncTimestamp')) {
-            try {
-              activityStore.createIndex('lastSyncTimestamp', 'lastSyncTimestamp', { unique: false });
-              log.debug('[openDB] Index lastSyncTimestamp créé sur activities');
-            } catch (err) {
-              log.warn('[openDB] Erreur création index lastSyncTimestamp:', err);
-            }
-          }
-          if (!activityIndexNames.includes('timestamp')) {
-            try {
-              activityStore.createIndex('timestamp', 'timestamp', { unique: false });
-              log.debug('[openDB] Index timestamp créé sur activities');
-            } catch (err) {
-              log.warn('[openDB] Erreur création index timestamp:', err);
-            }
-          }
-
-          // Store: dailyMetrics (index: date unique, lastSync)
-          let metricsStore;
-          if (!db.objectStoreNames.contains(STORE_DAILY_METRICS)) {
-            metricsStore = db.createObjectStore(STORE_DAILY_METRICS, { 
-              keyPath: 'date', 
-              autoIncrement: false 
-            });
-            // Index unique sur date pour accès rapide
-            metricsStore.createIndex('date', 'date', { unique: true });
-          } else {
-            metricsStore = event.target.transaction.objectStore(STORE_DAILY_METRICS);
-          }
-          
-          // ✅ Version 4 : Ajouter index lastSync si absent
-          const metricsIndexNames = Array.from(metricsStore.indexNames);
-          if (!metricsIndexNames.includes('lastSync')) {
-            try {
-              metricsStore.createIndex('lastSync', 'lastSync', { unique: false });
-              log.debug('[openDB] Index lastSync créé sur dailyMetrics');
-            } catch (err) {
-              log.warn('[openDB] Erreur création index lastSync:', err);
-            }
-          }
-
-          // Store: deviceMeta (métadonnées)
-          if (!db.objectStoreNames.contains(STORE_DEVICE_META)) {
-            db.createObjectStore(STORE_DEVICE_META, { 
-              keyPath: 'key', 
-              autoIncrement: false 
-            });
-          }
-
-          // Store: forcedRangesHistory (historique synchronisations forcées)
-          if (!db.objectStoreNames.contains(STORE_FORCED_RANGES)) {
-            const forcedStore = db.createObjectStore(STORE_FORCED_RANGES, {
-              keyPath: 'id',
-              autoIncrement: true
-            });
-            forcedStore.createIndex('triggeredAt', 'triggeredAt', { unique: false });
-            forcedStore.createIndex('mode', 'mode', { unique: false });
-            forcedStore.createIndex('start', 'start', { unique: false });
-            forcedStore.createIndex('end', 'end', { unique: false });
-          }
-
-          // Store: telemetryHistory (persist snapshots)
-          if (!db.objectStoreNames.contains(STORE_TELEMETRY_HISTORY)) {
-            const telemetryStore = db.createObjectStore(STORE_TELEMETRY_HISTORY, {
-              keyPath: 'timestamp',
-              autoIncrement: false
-            });
-            telemetryStore.createIndex('timestamp', 'timestamp', { unique: true });
-          }
-
-          // ✅ Tâche 13 : Store pour l'historique AutoSync
-          if (!db.objectStoreNames.contains(STORE_AUTO_SYNC_HISTORY)) {
-            const autoSyncStore = db.createObjectStore(STORE_AUTO_SYNC_HISTORY, {
-              keyPath: 'id',
-              autoIncrement: false
-            });
-            autoSyncStore.createIndex('timestamp', 'timestamp', { unique: false });
-            autoSyncStore.createIndex('triggerType', 'triggerType', { unique: false });
-            autoSyncStore.createIndex('result', 'result', { unique: false });
-          }
+          applyGarminSchemaUpgrade(event, log);
         } catch (upgradeError) {
           log.error('[openDB] Upgrade error:', upgradeError);
           reject(upgradeError);

@@ -5,18 +5,14 @@
 
 import { openDB } from 'idb';
 import logger from '../../utils/logger';
+import {
+  INVESTISSEMENTS_DB_NAME as DB_NAME,
+  INVESTISSEMENTS_DB_VERSION as DB_VERSION,
+  INVESTISSEMENTS_STORES as STORES,
+  applyInvestissementsSchemaUpgrade,
+} from './investissementsDbGateway.js';
 
 const log = logger.module('investissementsStorage');
-
-const DB_NAME = 'InvestissementsDB';
-const DB_VERSION = 2; // Augmenté pour forcer migration
-const STORES = {
-  OR: 'or',
-  LIQUIDITES: 'liquidites',
-  BOURSE_CRYPTO: 'bourseCrypto',
-  ACQUISITIONS: 'acquisitions',
-  ALLOCATION: 'allocation'
-};
 
 class InvestissementsStorage {
   constructor() {
@@ -28,55 +24,8 @@ class InvestissementsStorage {
 
     try {
       this.db = await openDB(DB_NAME, DB_VERSION, {
-        upgrade(db, oldVersion, newVersion, transaction) {
-          log.debug(`Upgrading InvestissementsDB from version ${oldVersion} to ${newVersion}`);
-
-          // Store Or avec index
-          if (!db.objectStoreNames.contains(STORES.OR)) {
-            const orStore = db.createObjectStore(STORES.OR, { keyPath: 'id' });
-            orStore.createIndex('date', 'date', { unique: false });
-            log.debug(`Created store: ${STORES.OR}`);
-          }
-
-          // Store Liquidités
-          if (!db.objectStoreNames.contains(STORES.LIQUIDITES)) {
-            const liqStore = db.createObjectStore(STORES.LIQUIDITES, { keyPath: 'id' });
-            liqStore.createIndex('date', 'date', { unique: false });
-            log.debug(`Created store: ${STORES.LIQUIDITES}`);
-          }
-
-          // Store Bourse/Crypto
-          if (!db.objectStoreNames.contains(STORES.BOURSE_CRYPTO)) {
-            const bcStore = db.createObjectStore(STORES.BOURSE_CRYPTO, { keyPath: 'id' });
-            bcStore.createIndex('type', 'type', { unique: false });
-            bcStore.createIndex('date', 'date', { unique: false });
-            log.debug(`Created store: ${STORES.BOURSE_CRYPTO}`);
-          }
-
-          // Store Acquisitions (historique)
-          if (!db.objectStoreNames.contains(STORES.ACQUISITIONS)) {
-            const acqStore = db.createObjectStore(STORES.ACQUISITIONS, {
-              keyPath: 'id',
-              autoIncrement: true
-            });
-            acqStore.createIndex('date', 'date', { unique: false });
-            acqStore.createIndex('type', 'type', { unique: false });
-            log.debug(`Created store: ${STORES.ACQUISITIONS}`);
-          }
-
-          // Store Allocation
-          if (!db.objectStoreNames.contains(STORES.ALLOCATION)) {
-            db.createObjectStore(STORES.ALLOCATION, { keyPath: 'id' });
-            log.debug(`Created store: ${STORES.ALLOCATION}`);
-          }
-
-          // Vérifier que tous les stores existent
-          const missingStores = Object.values(STORES).filter(
-            storeName => !db.objectStoreNames.contains(storeName)
-          );
-          if (missingStores.length > 0) {
-            log.warn(`Missing stores after upgrade: ${missingStores.join(', ')}`);
-          }
+        upgrade(db, oldVersion, newVersion) {
+          applyInvestissementsSchemaUpgrade(db, oldVersion, newVersion, log);
         }
       });
 

@@ -109,16 +109,14 @@ vi.mock('../../services/nutrition/nutritionRetryUtils', () => ({
   })
 }));
 
-// Mock QuotaSafeStorage
+// Mock QuotaSafeStorage : ne pas simuler une persistance réelle (sinon les lectures IDB restent vides).
+// Forcer le fallback IndexedDB (putToStoreWithRetry) comme pour saveProgram.
 vi.mock('../../utils/quotaSafeStorage', () => ({
   getQuotaSafeStorage: vi.fn(async () => ({
-    put: vi.fn(async (storeName, data) => {
-      // Simuler sauvegarde réussie
-      return true;
+    put: vi.fn(async () => {
+      throw new Error('quotaSafeStorage mock: forcer chemin IndexedDB');
     }),
-    get: vi.fn(async (storeName, key) => {
-      return null;
-    })
+    get: vi.fn(async () => null)
   })),
   QuotaExceededError: class QuotaExceededError extends Error {
     constructor(message) {

@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { settingsTheme as S } from './tabs/SettingsTab/settingsThemeClasses';
+import { HOMEPAGE_IMAGES_DB_NAME, STORE_HOMEPAGE_IMAGES } from '../services/homepage/homepageImagesDbGateway.js';
 
 const StorageDiagnostic = ({ onClose }) => {
   const [diagnosticResults, setDiagnosticResults] = useState(null);
@@ -62,15 +63,15 @@ const StorageDiagnostic = ({ onClose }) => {
 
     try {
       if (window.indexedDB) {
-        const request = indexedDB.open('HomepageImagesDB', 1);
+        const request = indexedDB.open(HOMEPAGE_IMAGES_DB_NAME);
         await new Promise((resolve, reject) => {
           request.onsuccess = (event) => {
             try {
               const db = event.target.result;
 
-              if (db && db.objectStoreNames.contains('images')) {
-                const transaction = db.transaction(['images'], 'readonly');
-                const store = transaction.objectStore('images');
+              if (db && db.objectStoreNames.contains(STORE_HOMEPAGE_IMAGES)) {
+                const transaction = db.transaction([STORE_HOMEPAGE_IMAGES], 'readonly');
+                const store = transaction.objectStore(STORE_HOMEPAGE_IMAGES);
                 const index = store.index('type');
                 const countRequest = index.count(IDBKeyRange.only('homepage_background'));
 
@@ -97,7 +98,7 @@ const StorageDiagnostic = ({ onClose }) => {
               } else {
                 results.indexedDB = {
                   available: true,
-                  name: db ? db.name : 'HomepageImagesDB',
+                  name: db ? db.name : HOMEPAGE_IMAGES_DB_NAME,
                   version: db ? db.version : 1,
                   stores: db ? Array.from(db.objectStoreNames) : [],
                   imageCount: 0
@@ -170,7 +171,7 @@ const StorageDiagnostic = ({ onClose }) => {
         sessionStorage.removeItem('homepage_images_emergency');
 
         if (window.indexedDB) {
-          const deleteRequest = indexedDB.deleteDatabase('HomepageImagesDB');
+          const deleteRequest = indexedDB.deleteDatabase(HOMEPAGE_IMAGES_DB_NAME);
           await new Promise((resolve, reject) => {
             deleteRequest.onsuccess = () => resolve();
             deleteRequest.onerror = () => reject(deleteRequest.error);

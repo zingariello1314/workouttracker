@@ -1,4 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
+import { XP_DB_NAME, applyQuietQuestMetaDbUpgrade } from '../services/xp/xpDbGateway.js';
+import { STORE_QQ_MUSCLE_GROUPS } from '../services/xp/quietQuestHookStores.js';
 
 /**
  * Custom hook for managing muscle groups
@@ -12,18 +14,13 @@ const useMuscleGroups = () => {
   // Initialize IndexedDB
   const initDB = useCallback(() => {
     return new Promise((resolve, reject) => {
-      const request = indexedDB.open('QuietQuestDB', 1);
+      const request = indexedDB.open(XP_DB_NAME);
 
       request.onerror = () => reject(request.error);
       request.onsuccess = () => resolve(request.result);
 
       request.onupgradeneeded = (event) => {
-        const db = event.target.result;
-        if (!db.objectStoreNames.contains('muscleGroups')) {
-          const store = db.createObjectStore('muscleGroups', { keyPath: 'id' });
-          store.createIndex('name', 'name', { unique: false });
-          store.createIndex('createdAt', 'createdAt', { unique: false });
-        }
+        applyQuietQuestMetaDbUpgrade(event);
       };
     });
   }, []);
@@ -35,8 +32,8 @@ const useMuscleGroups = () => {
       setError(null);
 
       const db = await initDB();
-      const transaction = db.transaction(['muscleGroups'], 'readonly');
-      const store = transaction.objectStore('muscleGroups');
+      const transaction = db.transaction([STORE_QQ_MUSCLE_GROUPS], 'readonly');
+      const store = transaction.objectStore(STORE_QQ_MUSCLE_GROUPS);
       const request = store.getAll();
 
       request.onsuccess = () => {
@@ -58,8 +55,8 @@ const useMuscleGroups = () => {
   const createMuscleGroup = useCallback(async (data) => {
     try {
       const db = await initDB();
-      const transaction = db.transaction(['muscleGroups'], 'readwrite');
-      const store = transaction.objectStore('muscleGroups');
+      const transaction = db.transaction([STORE_QQ_MUSCLE_GROUPS], 'readwrite');
+      const store = transaction.objectStore(STORE_QQ_MUSCLE_GROUPS);
 
       const newGroup = {
         id: `muscle_${Date.now()}`,
@@ -90,8 +87,8 @@ const useMuscleGroups = () => {
   const updateMuscleGroup = useCallback(async (id, updates) => {
     try {
       const db = await initDB();
-      const transaction = db.transaction(['muscleGroups'], 'readwrite');
-      const store = transaction.objectStore('muscleGroups');
+      const transaction = db.transaction([STORE_QQ_MUSCLE_GROUPS], 'readwrite');
+      const store = transaction.objectStore(STORE_QQ_MUSCLE_GROUPS);
 
       const getRequest = store.get(id);
 
@@ -129,8 +126,8 @@ const useMuscleGroups = () => {
   const deleteMuscleGroup = useCallback(async (id) => {
     try {
       const db = await initDB();
-      const transaction = db.transaction(['muscleGroups'], 'readwrite');
-      const store = transaction.objectStore('muscleGroups');
+      const transaction = db.transaction([STORE_QQ_MUSCLE_GROUPS], 'readwrite');
+      const store = transaction.objectStore(STORE_QQ_MUSCLE_GROUPS);
 
       const request = store.delete(id);
 

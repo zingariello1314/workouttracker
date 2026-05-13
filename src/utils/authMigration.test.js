@@ -37,7 +37,7 @@ describe('authMigration.migrateDataToUser', () => {
 
     const result = await migrateDataToUser(userId);
 
-    expect(getSpy).toHaveBeenCalledTimes(1);
+    expect(getSpy).toHaveBeenCalledTimes(2); // snapshot anonyme + migrateBooks
     expect(saveSpy).toHaveBeenCalledTimes(1);
 
     const savedBooks = saveSpy.mock.calls[0][0];

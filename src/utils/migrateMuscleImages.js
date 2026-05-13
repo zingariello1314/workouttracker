@@ -3,9 +3,12 @@
  * À exécuter une seule fois pour migrer les données existantes
  */
 
-const DB_NAME = 'MuscleImagesDB';
-const DB_VERSION = 1;
-const STORE_NAME = 'muscleImages';
+import {
+  MUSCLE_IMAGES_DB_NAME,
+  MUSCLE_IMAGES_DB_VERSION,
+  STORE_MUSCLE_IMAGES,
+  applyMuscleImagesSchemaUpgrade,
+} from '../services/bodyTracking/muscleImagesDbGateway.js';
 
 export const migrateMuscleImagesToIndexedDB = async () => {
   try {
@@ -29,14 +32,11 @@ export const migrateMuscleImagesToIndexedDB = async () => {
 
     // Ouvrir IndexedDB
     const db = await new Promise((resolve, reject) => {
-      const request = indexedDB.open(DB_NAME, DB_VERSION);
+      const request = indexedDB.open(MUSCLE_IMAGES_DB_NAME, MUSCLE_IMAGES_DB_VERSION);
       request.onerror = () => reject(request.error);
       request.onsuccess = () => resolve(request.result);
       request.onupgradeneeded = (event) => {
-        const db = event.target.result;
-        if (!db.objectStoreNames.contains(STORE_NAME)) {
-          db.createObjectStore(STORE_NAME, { keyPath: 'muscleId' });
-        }
+        applyMuscleImagesSchemaUpgrade(event);
       };
     });
 
@@ -45,8 +45,8 @@ export const migrateMuscleImagesToIndexedDB = async () => {
     for (const muscleId of muscleIds) {
       try {
         await new Promise((resolve, reject) => {
-          const transaction = db.transaction([STORE_NAME], 'readwrite');
-          const store = transaction.objectStore(STORE_NAME);
+          const transaction = db.transaction([STORE_MUSCLE_IMAGES], 'readwrite');
+          const store = transaction.objectStore(STORE_MUSCLE_IMAGES);
           const request = store.put({
             muscleId,
             imageData: muscleImages[muscleId],

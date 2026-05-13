@@ -29,12 +29,33 @@ Object.defineProperty(window, 'matchMedia', {
   })),
 });
 
-// Mock ResizeObserver
-global.ResizeObserver = vi.fn().mockImplementation(() => ({
-  observe: vi.fn(),
-  unobserve: vi.fn(),
-  disconnect: vi.fn(),
-}));
+// ResizeObserver : doit être une vraie classe (Recharts fait `new ResizeObserver(...)`).
+global.ResizeObserver = class ResizeObserver {
+  constructor() {
+    this.observe = vi.fn();
+    this.unobserve = vi.fn();
+    this.disconnect = vi.fn();
+  }
+};
+if (typeof window !== 'undefined') {
+  window.ResizeObserver = global.ResizeObserver;
+}
+
+// IntersectionObserver : idem pour lazy-load / charts (`new IntersectionObserver(...)`).
+global.IntersectionObserver = class IntersectionObserver {
+  constructor() {
+    this.observe = vi.fn();
+    this.unobserve = vi.fn();
+    this.disconnect = vi.fn();
+    this.takeRecords = vi.fn(() => []);
+    this.root = null;
+    this.rootMargin = '';
+    this.thresholds = [];
+  }
+};
+if (typeof window !== 'undefined') {
+  window.IntersectionObserver = global.IntersectionObserver;
+}
 
 // Mock HTMLCanvasElement
 HTMLCanvasElement.prototype.getContext = vi.fn(() => ({

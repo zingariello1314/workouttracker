@@ -3,9 +3,13 @@
  * Gère la persistance des préférences utilisateur dans IndexedDB
  */
 
-const DB_NAME = 'QuietQuestDB';
+import {
+  SIDEBAR_PREFS_DB_NAME as DB_NAME,
+  STORE_SIDEBAR_PREFERENCES as STORE_NAME,
+  applySidebarPreferencesSchemaUpgrade,
+} from './sidebarDbGateway.js';
+
 const DB_VERSION = null; // Laisser IndexedDB gérer la version actuelle
-const STORE_NAME = 'sidebarPreferences';
 const PREFERENCES_KEY = 'preferences';
 
 /**
@@ -80,8 +84,9 @@ const upgradeSidebarDB = (nextVersion) =>
 
     upgradeRequest.onupgradeneeded = (event) => {
       const db = event.target.result;
-      if (!db.objectStoreNames.contains(STORE_NAME)) {
-        db.createObjectStore(STORE_NAME);
+      const existed = db.objectStoreNames.contains(STORE_NAME);
+      applySidebarPreferencesSchemaUpgrade(event);
+      if (!existed) {
         console.log('[SidebarStorage] Object store créé:', STORE_NAME);
       }
     };
@@ -114,10 +119,9 @@ const initDB = () => {
 
     request.onupgradeneeded = (event) => {
       const db = event.target.result;
-
-      // Créer l'object store s'il n'existe pas
-      if (!db.objectStoreNames.contains(STORE_NAME)) {
-        db.createObjectStore(STORE_NAME);
+      const existed = db.objectStoreNames.contains(STORE_NAME);
+      applySidebarPreferencesSchemaUpgrade(event);
+      if (!existed) {
         console.log('[SidebarStorage] Object store créé:', STORE_NAME);
       }
     };

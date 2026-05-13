@@ -3,10 +3,14 @@
  * Migration automatique depuis l’ancien localStorage `momentum.code.journal.v1.*`.
  */
 
-const DB_NAME = 'MomentumCodeDB';
-const DB_VERSION = 2;
-const STORE_JOURNAL = 'journalEntries';
-const STORE_META = 'codeMeta';
+import {
+  CODE_JOURNAL_DB_NAME as DB_NAME,
+  CODE_JOURNAL_DB_VERSION as DB_VERSION,
+  STORE_CODE_JOURNAL_ENTRIES,
+  STORE_CODE_META,
+  applyCodeJournalSchemaUpgrade,
+} from './codeJournalDbGateway.js';
+
 const LEGACY_LS_PREFIX = 'momentum.code.journal.v1.';
 
 /** XP Code ajoutée à chaque nouvel enregistrement dans le journal (hors simple édition). */
@@ -24,15 +28,7 @@ export function openCodeDB() {
     req.onerror = () => reject(req.error);
     req.onsuccess = () => resolve(req.result);
     req.onupgradeneeded = (e) => {
-      const db = e.target.result;
-      if (!db.objectStoreNames.contains(STORE_JOURNAL)) {
-        const store = db.createObjectStore(STORE_JOURNAL, { keyPath: 'id' });
-        store.createIndex('byUser', 'userId', { unique: false });
-        store.createIndex('byCreated', 'createdAt', { unique: false });
-      }
-      if (!db.objectStoreNames.contains(STORE_META)) {
-        db.createObjectStore(STORE_META, { keyPath: 'key' });
-      }
+      applyCodeJournalSchemaUpgrade(e);
     };
   });
 }
@@ -55,8 +51,8 @@ async function migrateFromLocalStorage(userId) {
   }
   const db = await openCodeDB();
   await new Promise((resolve, reject) => {
-    const tx = db.transaction(STORE_JOURNAL, 'readwrite');
-    const store = tx.objectStore(STORE_JOURNAL);
+    const tx = db.transaction(STORE_CODE_JOURNAL_ENTRIES, 'readwrite');
+    const store = tx.objectStore(STORE_CODE_JOURNAL_ENTRIES);
     for (const row of list) {
       if (!row?.id) continue;
       store.put({ ...row, userId: row.userId || userId });
@@ -78,8 +74,8 @@ export async function loadCodeJournalEntriesAsync(userId) {
   await initCodeJournalForUser(userId);
   const db = await openCodeDB();
   return new Promise((resolve, reject) => {
-    const tx = db.transaction(STORE_JOURNAL, 'readonly');
-    const idx = tx.objectStore(STORE_JOURNAL).index('byUser');
+    const tx = db.transaction(STORE_CODE_JOURNAL_ENTRIES, 'readonly');
+    const idx = tx.objectStore(STORE_CODE_JOURNAL_ENTRIES).index('byUser');
     const req = idx.getAll(userId);
     req.onsuccess = () => {
       const rows = req.result || [];
@@ -93,8 +89,8 @@ export async function loadCodeJournalEntriesAsync(userId) {
 export async function loadGithubTrophyUnlocks(userId) {
   const db = await openCodeDB();
   return new Promise((resolve, reject) => {
-    const tx = db.transaction(STORE_META, 'readonly');
-    const req = tx.objectStore(STORE_META).get(`${userId}:githubTrophies`);
+    const tx = db.transaction(STORE_CODE_META, 'readonly');
+    const req = tx.objectStore(STORE_CODE_META).get(`${userId}:githubTrophies`);
     req.onsuccess = () => resolve(req.result?.unlocked || {});
     req.onerror = () => reject(req.error);
   });
@@ -103,8 +99,8 @@ export async function loadGithubTrophyUnlocks(userId) {
 export async function saveGithubTrophyUnlocks(userId, unlocked) {
   const db = await openCodeDB();
   return new Promise((resolve, reject) => {
-    const tx = db.transaction(STORE_META, 'readwrite');
-    tx.objectStore(STORE_META).put({
+    const tx = db.transaction(STORE_CODE_META, 'readwrite');
+    tx.objectStore(STORE_CODE_META).put({
       key: `${userId}:githubTrophies`,
       unlocked,
       updatedAt: new Date().toISOString(),
@@ -125,8 +121,8 @@ export async function appendCodeJournalEntryAsync(userId, entry) {
     createdAt: entry.createdAt || new Date().toISOString(),
   };
   return new Promise((resolve, reject) => {
-    const tx = db.transaction(STORE_JOURNAL, 'readwrite');
-    tx.objectStore(STORE_JOURNAL).put(row);
+    const tx = db.transaction(STORE_CODE_JOURNAL_ENTRIES, 'readwrite');
+    tx.objectStore(STORE_CODE_JOURNAL_ENTRIES).put(row);
     tx.oncomplete = () => resolve(id);
     tx.onerror = () => reject(tx.error);
   });
@@ -143,8 +139,8 @@ export async function updateCodeJournalEntryAsync(userId, entry) {
     updatedAt: new Date().toISOString(),
   };
   return new Promise((resolve, reject) => {
-    const tx = db.transaction(STORE_JOURNAL, 'readwrite');
-    tx.objectStore(STORE_JOURNAL).put(row);
+    const tx = db.transaction(STORE_CODE_JOURNAL_ENTRIES, 'readwrite');
+    tx.objectStore(STORE_CODE_JOURNAL_ENTRIES).put(row);
     tx.oncomplete = () => resolve();
     tx.onerror = () => reject(tx.error);
   });
@@ -154,8 +150,8 @@ export async function deleteCodeJournalEntryAsync(userId, id) {
   await initCodeJournalForUser(userId);
   const db = await openCodeDB();
   return new Promise((resolve, reject) => {
-    const tx = db.transaction(STORE_JOURNAL, 'readwrite');
-    tx.objectStore(STORE_JOURNAL).delete(id);
+    const tx = db.transaction(STORE_CODE_JOURNAL_ENTRIES, 'readwrite');
+    tx.objectStore(STORE_CODE_JOURNAL_ENTRIES).delete(id);
     tx.oncomplete = () => resolve();
     tx.onerror = () => reject(tx.error);
   });
@@ -164,8 +160,8 @@ export async function deleteCodeJournalEntryAsync(userId, id) {
 export async function loadJournalXpBonusTotal(userId) {
   const db = await openCodeDB();
   return new Promise((resolve, reject) => {
-    const tx = db.transaction(STORE_META, 'readonly');
-    const req = tx.objectStore(STORE_META).get(journalXpMetaKey(userId));
+    const tx = db.transaction(STORE_CODE_META, 'readonly');
+    const req = tx.objectStore(STORE_CODE_META).get(journalXpMetaKey(userId));
     req.onsuccess = () => resolve(Number(req.result?.total) || 0);
     req.onerror = () => reject(req.error);
   });
@@ -182,8 +178,8 @@ export async function addJournalXpBonus(userId, amount = JOURNAL_XP_PER_SAVE) {
   const next = prev + (Number(amount) || 0);
   const db = await openCodeDB();
   await new Promise((resolve, reject) => {
-    const tx = db.transaction(STORE_META, 'readwrite');
-    tx.objectStore(STORE_META).put({
+    const tx = db.transaction(STORE_CODE_META, 'readwrite');
+    tx.objectStore(STORE_CODE_META).put({
       key: journalXpMetaKey(userId),
       total: next,
       updatedAt: new Date().toISOString(),
@@ -202,8 +198,8 @@ const githubTrophyXpStateKey = (userId) => `${userId || 'main'}:githubTrophyXpSt
 export async function loadGithubTrophyXpState(userId) {
   const db = await openCodeDB();
   return new Promise((resolve, reject) => {
-    const tx = db.transaction(STORE_META, 'readonly');
-    const req = tx.objectStore(STORE_META).get(githubTrophyXpStateKey(userId));
+    const tx = db.transaction(STORE_CODE_META, 'readonly');
+    const req = tx.objectStore(STORE_CODE_META).get(githubTrophyXpStateKey(userId));
     req.onsuccess = () => {
       const r = req.result || {};
       const granted = r.granted && typeof r.granted === 'object' ? { ...r.granted } : {};
@@ -229,7 +225,7 @@ export async function grantGithubTrophyXpOnce(userId, trophyId, xpAmount) {
   return new Promise((resolve, reject) => {
     let resultTotal = 0;
     let didGrant = false;
-    const tx = db.transaction(STORE_META, 'readwrite');
+    const tx = db.transaction(STORE_CODE_META, 'readwrite');
     tx.onerror = () => reject(tx.error);
     tx.oncomplete = () => {
       if (didGrant && typeof window !== 'undefined') {
@@ -237,7 +233,7 @@ export async function grantGithubTrophyXpOnce(userId, trophyId, xpAmount) {
       }
       resolve(resultTotal);
     };
-    const store = tx.objectStore(STORE_META);
+    const store = tx.objectStore(STORE_CODE_META);
     const req = store.get(key);
     req.onerror = () => reject(req.error);
     req.onsuccess = () => {

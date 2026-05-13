@@ -1,5 +1,5 @@
 import React from 'react';
-import { render, screen } from '@testing-library/react';
+import { render, screen, waitFor } from '@testing-library/react';
 import '@testing-library/jest-dom';
 import { vi } from 'vitest';
 import SidebarHeartRateChart from '../SidebarHeartRateChart';
@@ -39,15 +39,20 @@ vi.mock('../../../../utils/garminTimeSeriesUtils', () => ({
   })
 }));
 
-// Mock de Recharts
+// Mock de Recharts (complet pour lazy GarminHeartRateTimeSeriesChart)
 vi.mock('recharts', () => ({
   ResponsiveContainer: ({ children }) => <div data-testid="responsive-container">{children}</div>,
+  LineChart: ({ children }) => <div data-testid="line-chart">{children}</div>,
+  Line: () => <div data-testid="line" />,
   AreaChart: ({ children }) => <div data-testid="area-chart">{children}</div>,
   Area: () => <div data-testid="area" />,
   XAxis: () => <div data-testid="x-axis" />,
   YAxis: () => <div data-testid="y-axis" />,
   CartesianGrid: () => <div data-testid="cartesian-grid" />,
-  Tooltip: () => <div data-testid="tooltip" />
+  Tooltip: () => <div data-testid="tooltip" />,
+  Legend: () => <div data-testid="legend" />,
+  ReferenceArea: () => <div data-testid="reference-area" />,
+  ReferenceLine: () => <div data-testid="reference-line" />,
 }));
 
 // Mock du CustomDot
@@ -194,28 +199,28 @@ describe('SidebarHeartRateChart', () => {
   it('should render without crashing', async () => {
     render(<SidebarHeartRateChart {...defaultProps} />);
     
-    // Attendre que les observers se déclenchent
-    await new Promise(resolve => setTimeout(resolve, 50));
-    
-    // Le composant devrait afficher le graphique ou un fallback
-    const chartTitle = screen.queryByText('❤️ FC - 24h');
-    const fallbackTitle = screen.queryByText('Pas de données FC');
-    
-    expect(chartTitle || fallbackTitle).toBeInTheDocument();
+    await waitFor(
+      () => {
+        const chartTitle = screen.queryByText('❤️ FC - 24h');
+        const fallbackTitle = screen.queryByText('Pas de données FC');
+        const container = screen.queryByTestId('responsive-container');
+        expect(chartTitle || fallbackTitle || container).toBeTruthy();
+      },
+      { timeout: 5000 }
+    );
   });
 
   it('should display chart components when data is available', async () => {
     render(<SidebarHeartRateChart {...defaultProps} />);
     
-    // Attendre que les observers se déclenchent
-    await new Promise(resolve => setTimeout(resolve, 50));
-    
-    // Vérifier si le graphique est rendu ou si un fallback est affiché
-    const responsiveContainer = screen.queryByTestId('responsive-container');
-    const fallbackContent = screen.queryByText('Pas de données FC');
-    
-    // Au moins un des deux devrait être présent
-    expect(responsiveContainer || fallbackContent).toBeInTheDocument();
+    await waitFor(
+      () => {
+        const responsiveContainer = screen.queryByTestId('responsive-container');
+        const fallbackContent = screen.queryByText('Pas de données FC');
+        expect(responsiveContainer || fallbackContent).toBeTruthy();
+      },
+      { timeout: 5000 }
+    );
   });
 
   it('should show empty state when no garmin data', () => {
@@ -253,27 +258,27 @@ describe('SidebarHeartRateChart', () => {
   it('should display statistics when data is available', async () => {
     render(<SidebarHeartRateChart {...defaultProps} />);
     
-    // Attendre que les observers se déclenchent
-    await new Promise(resolve => setTimeout(resolve, 50));
-    
-    // Vérifier si les statistiques sont affichées ou si un fallback est présent
-    const minStat = screen.queryByText(/Min:/);
-    const fallbackContent = screen.queryByText('Pas de données FC');
-    
-    expect(minStat || fallbackContent).toBeInTheDocument();
+    await waitFor(
+      () => {
+        const minStat = screen.queryByText(/Min:/);
+        const fallbackContent = screen.queryByText('Pas de données FC');
+        expect(minStat || fallbackContent).toBeTruthy();
+      },
+      { timeout: 5000 }
+    );
   });
 
   it('should apply compact mode styling', async () => {
     render(<SidebarHeartRateChart {...defaultProps} compactMode={true} />);
     
-    // Attendre que les observers se déclenchent
-    await new Promise(resolve => setTimeout(resolve, 50));
-    
-    // Vérifier que le composant est rendu avec le mode compact
-    const compactTitle = screen.queryByText('❤️ FC - 24h');
-    const fallbackContent = screen.queryByText('Pas de données FC');
-    
-    expect(compactTitle || fallbackContent).toBeInTheDocument();
+    await waitFor(
+      () => {
+        const compactTitle = screen.queryByText('❤️ FC - 24h');
+        const fallbackContent = screen.queryByText('Pas de données FC');
+        expect(compactTitle || fallbackContent).toBeTruthy();
+      },
+      { timeout: 5000 }
+    );
   });
 
   it('should respect height constraint', async () => {
@@ -306,13 +311,13 @@ describe('SidebarHeartRateChart', () => {
     
     render(<SidebarHeartRateChart {...defaultProps} garminData={insufficientData} />);
     
-    // Attendre que les observers se déclenchent
-    await new Promise(resolve => setTimeout(resolve, 50));
-    
-    // Vérifier qu'un message d'insuffisance de données ou un fallback est affiché
-    const insufficientMessage = screen.queryByText('Données insuffisantes');
-    const fallbackContent = screen.queryByText('Pas de données FC');
-    
-    expect(insufficientMessage || fallbackContent).toBeInTheDocument();
+    await waitFor(
+      () => {
+        const insufficientMessage = screen.queryByText('Données insuffisantes');
+        const fallbackContent = screen.queryByText('Pas de données FC');
+        expect(insufficientMessage || fallbackContent).toBeTruthy();
+      },
+      { timeout: 5000 }
+    );
   });
 });

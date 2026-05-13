@@ -6,19 +6,14 @@
 import { openDB } from 'idb';
 import { z } from 'zod';
 import logger from '../../utils/logger';
+import {
+  PLANIFICATEUR_DB_NAME as DB_NAME,
+  PLANIFICATEUR_DB_VERSION as DB_VERSION,
+  PLANIFICATEUR_STORES as STORES,
+  applyPlanificateurSchemaUpgrade,
+} from './planificateurDbGateway.js';
 
 const log = logger.module('planificateurStorage');
-
-const DB_NAME = 'PlanificateurDB';
-const DB_VERSION = 1; // Version initiale
-const STORES = {
-  SALAIRE: 'salaire',
-  REPARTITION: 'repartition',
-  ACHATS_LOISIRS: 'achatsLoisirs',
-  OBJECTIFS: 'objectifs',
-  CHARGES_FIXES: 'chargesFixes',
-  HISTORIQUE: 'historique'
-};
 
 // ========== SCHÉMAS DE VALIDATION ZOD ==========
 
@@ -144,72 +139,8 @@ class PlanificateurStorage {
 
     try {
       this.db = await openDB(DB_NAME, DB_VERSION, {
-        upgrade(db, oldVersion, newVersion, transaction) {
-          log.debug(`Upgrading PlanificateurDB from version ${oldVersion} to ${newVersion}`);
-
-          // Store Salaire
-          if (!db.objectStoreNames.contains(STORES.SALAIRE)) {
-            const salaireStore = db.createObjectStore(STORES.SALAIRE, { keyPath: 'id' });
-            salaireStore.createIndex('updatedAt', 'updatedAt', { unique: false });
-            log.debug(`Created store: ${STORES.SALAIRE}`);
-          }
-
-          // Store Répartition
-          if (!db.objectStoreNames.contains(STORES.REPARTITION)) {
-            const repartitionStore = db.createObjectStore(STORES.REPARTITION, { keyPath: 'id' });
-            repartitionStore.createIndex('updatedAt', 'updatedAt', { unique: false });
-            log.debug(`Created store: ${STORES.REPARTITION}`);
-          }
-
-          // Store Achats Loisirs
-          if (!db.objectStoreNames.contains(STORES.ACHATS_LOISIRS)) {
-            const achatsStore = db.createObjectStore(STORES.ACHATS_LOISIRS, {
-              keyPath: 'id',
-              autoIncrement: true
-            });
-            achatsStore.createIndex('moisCible', 'moisCible', { unique: false });
-            achatsStore.createIndex('statut', 'statut', { unique: false });
-            achatsStore.createIndex('priorite', 'priorite', { unique: false });
-            achatsStore.createIndex('date', 'date', { unique: false });
-            log.debug(`Created store: ${STORES.ACHATS_LOISIRS}`);
-          }
-
-          // Store Objectifs (planification 3 ans)
-          if (!db.objectStoreNames.contains(STORES.OBJECTIFS)) {
-            const objectifsStore = db.createObjectStore(STORES.OBJECTIFS, {
-              keyPath: 'id',
-              autoIncrement: true
-            });
-            objectifsStore.createIndex('moisCible', 'moisCible', { unique: false });
-            objectifsStore.createIndex('date', 'date', { unique: false });
-            log.debug(`Created store: ${STORES.OBJECTIFS}`);
-          }
-
-          // Store Charges Fixes
-          if (!db.objectStoreNames.contains(STORES.CHARGES_FIXES)) {
-            const chargesStore = db.createObjectStore(STORES.CHARGES_FIXES, { keyPath: 'id' });
-            chargesStore.createIndex('type', 'type', { unique: false });
-            log.debug(`Created store: ${STORES.CHARGES_FIXES}`);
-          }
-
-          // Store Historique
-          if (!db.objectStoreNames.contains(STORES.HISTORIQUE)) {
-            const historiqueStore = db.createObjectStore(STORES.HISTORIQUE, {
-              keyPath: 'id',
-              autoIncrement: true
-            });
-            historiqueStore.createIndex('date', 'date', { unique: false });
-            historiqueStore.createIndex('type', 'type', { unique: false });
-            log.debug(`Created store: ${STORES.HISTORIQUE}`);
-          }
-
-          // Vérifier que tous les stores existent
-          const missingStores = Object.values(STORES).filter(
-            storeName => !db.objectStoreNames.contains(storeName)
-          );
-          if (missingStores.length > 0) {
-            log.warn(`Missing stores after upgrade: ${missingStores.join(', ')}`);
-          }
+        upgrade(db, oldVersion, newVersion) {
+          applyPlanificateurSchemaUpgrade(db, oldVersion, newVersion, log);
         }
       });
 

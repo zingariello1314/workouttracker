@@ -9,6 +9,11 @@
 
 import { decompressJSON } from '../components/tabs/GarminTab/utils/jsonCompression';
 import logger from './logger';
+import {
+  HOMEPAGE_IMAGES_DB_NAME,
+  HOMEPAGE_IMAGES_DB_VERSION,
+  STORE_HOMEPAGE_IMAGES,
+} from '../services/homepage/homepageImagesDbGateway.js';
 
 const log = logger.module('bannerImport');
 
@@ -197,19 +202,19 @@ async function loadExistingImages() {
     }
 
     // ✅ Phase 3: Utiliser version 3 pour support thumbnails
-    const request = indexedDB.open('HomepageImagesDB', 3);
+    const request = indexedDB.open(HOMEPAGE_IMAGES_DB_NAME, HOMEPAGE_IMAGES_DB_VERSION);
 
     request.onsuccess = (event) => {
       const db = event.target.result;
       
-      if (!db.objectStoreNames.contains('images')) {
+      if (!db.objectStoreNames.contains(STORE_HOMEPAGE_IMAGES)) {
         db.close();
         resolve([]);
         return;
       }
 
-      const transaction = db.transaction(['images'], 'readonly');
-      const store = transaction.objectStore('images');
+      const transaction = db.transaction([STORE_HOMEPAGE_IMAGES], 'readonly');
+      const store = transaction.objectStore(STORE_HOMEPAGE_IMAGES);
 
       let getAllRequest;
       try {
@@ -311,19 +316,19 @@ async function saveImagesToIndexedDB(images) {
     }
 
     // ✅ Phase 3: Utiliser version 3 pour support thumbnails
-    const request = indexedDB.open('HomepageImagesDB', 3);
+    const request = indexedDB.open(HOMEPAGE_IMAGES_DB_NAME, HOMEPAGE_IMAGES_DB_VERSION);
 
     request.onsuccess = (event) => {
       const db = event.target.result;
       
-      if (!db.objectStoreNames.contains('images')) {
+      if (!db.objectStoreNames.contains(STORE_HOMEPAGE_IMAGES)) {
         db.close();
         reject(new Error('Object store "images" manquant'));
         return;
       }
 
-      const transaction = db.transaction(['images'], 'readwrite');
-      const store = transaction.objectStore('images');
+      const transaction = db.transaction([STORE_HOMEPAGE_IMAGES], 'readwrite');
+      const store = transaction.objectStore(STORE_HOMEPAGE_IMAGES);
 
       // Supprimer toutes les images existantes de type homepage_background
       let deletePromise;

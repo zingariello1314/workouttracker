@@ -19,6 +19,11 @@
  */
 
 import logger from '../../../utils/logger';
+import {
+  PHOTO_PAGINATION_CACHE_DB_NAME,
+  PHOTO_PAGINATION_CACHE_STORE,
+  applyPhotoPaginationCacheStoreUpgrade,
+} from '../../../services/workout/photoPaginationCacheDbGateway.js';
 
 const log = logger.module('photoPaginationCache');
 
@@ -26,8 +31,8 @@ const log = logger.module('photoPaginationCache');
  * Configuration du cache
  */
 const CACHE_CONFIG = {
-  DB_NAME: 'WorkoutTrackerDB',
-  STORE_NAME: 'photoPaginationCache',
+  DB_NAME: PHOTO_PAGINATION_CACHE_DB_NAME,
+  STORE_NAME: PHOTO_PAGINATION_CACHE_STORE,
   // ✅ Ne pas spécifier de version pour utiliser version existante
   // Le store sera créé lors de l'upgrade si nécessaire
   MAX_CACHE_SIZE: 20, // Nombre max de pages en cache (IndexedDB)
@@ -72,35 +77,7 @@ const openDB = () => {
 
       log.debug(`Upgrade IndexedDB v${oldVersion} → v${db.version}`);
 
-      // Créer objectStore pour cache pagination si nécessaire
-      if (!db.objectStoreNames.contains(CACHE_CONFIG.STORE_NAME)) {
-        log.debug(`Création objectStore "${CACHE_CONFIG.STORE_NAME}"`);
-        const store = db.createObjectStore(CACHE_CONFIG.STORE_NAME, { keyPath: 'key' });
-        
-        // Index pour recherche par timestamp (éviction LRU)
-        store.createIndex('accessTime', 'accessTime', { unique: false });
-        store.createIndex('timestamp', 'timestamp', { unique: false });
-        
-        log.debug(`✅ ObjectStore "${CACHE_CONFIG.STORE_NAME}" créé avec index`);
-      } else {
-        // Vérifier index manquants (upgrade depuis version précédente)
-        try {
-          const store = event.target.transaction.objectStore(CACHE_CONFIG.STORE_NAME);
-          const indexNames = store.indexNames;
-
-          if (!indexNames.contains('accessTime')) {
-            log.debug('Création index "accessTime" manquant');
-            store.createIndex('accessTime', 'accessTime', { unique: false });
-          }
-
-          if (!indexNames.contains('timestamp')) {
-            log.debug('Création index "timestamp" manquant');
-            store.createIndex('timestamp', 'timestamp', { unique: false });
-          }
-        } catch (err) {
-          log.error('Erreur vérification index', err);
-        }
-      }
+      applyPhotoPaginationCacheStoreUpgrade(db, event, log);
     };
 
     request.onsuccess = async (event) => {
@@ -117,13 +94,7 @@ const openDB = () => {
         
         upgradeRequest.onupgradeneeded = (upgradeEvent) => {
           const upgradeDb = upgradeEvent.target.result;
-          if (!upgradeDb.objectStoreNames.contains(CACHE_CONFIG.STORE_NAME)) {
-            log.debug(`Création objectStore "${CACHE_CONFIG.STORE_NAME}"`);
-            const store = upgradeDb.createObjectStore(CACHE_CONFIG.STORE_NAME, { keyPath: 'key' });
-            store.createIndex('accessTime', 'accessTime', { unique: false });
-            store.createIndex('timestamp', 'timestamp', { unique: false });
-            log.debug(`✅ ObjectStore "${CACHE_CONFIG.STORE_NAME}" créé`);
-          }
+          applyPhotoPaginationCacheStoreUpgrade(upgradeDb, upgradeEvent, log);
         };
         
         upgradeRequest.onsuccess = (upgradeEvent) => {

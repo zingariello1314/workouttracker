@@ -1,5 +1,10 @@
-const DB_NAME = 'WorkoutTrackerSecurityDB';
-const STORE_NAME = 'authAuditTrail';
+import {
+  SECURITY_DB_NAME,
+  SECURITY_DB_VERSION,
+  STORE_AUTH_AUDIT_TRAIL,
+  applySecurityAuditSchemaUpgrade,
+} from './securityAuditDbGateway.js';
+
 const MAX_EVENTS = 500;
 
 const openSecurityDb = () =>
@@ -8,14 +13,9 @@ const openSecurityDb = () =>
       resolve(null);
       return;
     }
-    const req = indexedDB.open(DB_NAME, 1);
+    const req = indexedDB.open(SECURITY_DB_NAME, SECURITY_DB_VERSION);
     req.onupgradeneeded = (event) => {
-      const db = event.target.result;
-      if (!db.objectStoreNames.contains(STORE_NAME)) {
-        const store = db.createObjectStore(STORE_NAME, { keyPath: 'id' });
-        store.createIndex('timestamp', 'timestamp', { unique: false });
-        store.createIndex('eventType', 'eventType', { unique: false });
-      }
+      applySecurityAuditSchemaUpgrade(event);
     };
     req.onsuccess = (event) => resolve(event.target.result);
     req.onerror = () => resolve(null);
@@ -59,8 +59,8 @@ export const logAuthAuditEvent = async (eventType, payload = {}) => {
   const db = await openSecurityDb();
   if (db) {
     try {
-      const tx = db.transaction([STORE_NAME], 'readwrite');
-      const store = tx.objectStore(STORE_NAME);
+      const tx = db.transaction([STORE_AUTH_AUDIT_TRAIL], 'readwrite');
+      const store = tx.objectStore(STORE_AUTH_AUDIT_TRAIL);
       store.put(event);
       const getAllReq = store.getAll();
       getAllReq.onsuccess = () => {

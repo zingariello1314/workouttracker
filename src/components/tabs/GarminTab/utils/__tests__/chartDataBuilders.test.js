@@ -85,8 +85,8 @@ describe('chartDataBuilders', () => {
   };
 
   describe('buildGarminChartDataset', () => {
-    it('devrait construire un dataset complet avec toutes les séries', () => {
-      const dataset = buildGarminChartDataset({
+    it('devrait construire un dataset complet avec toutes les séries', async () => {
+      const dataset = await buildGarminChartDataset({
         dailyMetrics: mockDailyMetrics,
         activities: mockActivities,
         filteredDates: mockFilteredDates,
@@ -112,8 +112,8 @@ describe('chartDataBuilders', () => {
       expect(Array.isArray(dataset.sleepTrend.data)).toBe(true);
     });
 
-    it('devrait gérer les données vides gracieusement', () => {
-      const dataset = buildGarminChartDataset({
+    it('devrait gérer les données vides gracieusement', async () => {
+      const dataset = await buildGarminChartDataset({
         dailyMetrics: {},
         activities: {},
         filteredDates: [],
@@ -130,8 +130,8 @@ describe('chartDataBuilders', () => {
   });
 
   describe('buildChartSelectors', () => {
-    it('devrait construire des selectors avec structure complète', () => {
-      const dataset = buildGarminChartDataset({
+    it('devrait construire des selectors avec structure complète', async () => {
+      const dataset = await buildGarminChartDataset({
         dailyMetrics: mockDailyMetrics,
         activities: mockActivities,
         filteredDates: mockFilteredDates,
@@ -180,8 +180,8 @@ describe('chartDataBuilders', () => {
       expect(selectors.metadata).toHaveProperty('colors');
     });
 
-    it('devrait produire un snapshot stable pour buildChartSelectors', () => {
-      const dataset = buildGarminChartDataset({
+    it('devrait produire un snapshot stable pour buildChartSelectors', async () => {
+      const dataset = await buildGarminChartDataset({
         dailyMetrics: mockDailyMetrics,
         activities: mockActivities,
         filteredDates: mockFilteredDates,
@@ -233,8 +233,8 @@ describe('chartDataBuilders', () => {
       expect(snapshot).toMatchSnapshot();
     });
 
-    it('devrait gérer les données manquantes avec des valeurs par défaut', () => {
-      const dataset = buildGarminChartDataset({
+    it('devrait gérer les données manquantes avec des valeurs par défaut', async () => {
+      const dataset = await buildGarminChartDataset({
         dailyMetrics: {},
         activities: {},
         filteredDates: [],
@@ -261,8 +261,8 @@ describe('chartDataBuilders', () => {
       expect(selectors.metadata.selectedDate).toBeNull();
     });
 
-    it('devrait préserver la cohérence entre dataset et selectors', () => {
-      const dataset = buildGarminChartDataset({
+    it('devrait préserver la cohérence entre dataset et selectors', async () => {
+      const dataset = await buildGarminChartDataset({
         dailyMetrics: mockDailyMetrics,
         activities: mockActivities,
         filteredDates: mockFilteredDates,
@@ -296,8 +296,8 @@ describe('chartDataBuilders', () => {
   });
 
   describe('buildDerivedDataset', () => {
-    it('devrait construire un dataset dérivé avec chartData et selectors', () => {
-      const derived = buildDerivedDataset({
+    it('devrait construire un dataset dérivé avec chartData et selectors', async () => {
+      const derived = await buildDerivedDataset({
         dailyMetrics: mockDailyMetrics,
         activities: mockActivities,
         dates: mockFilteredDates,
@@ -316,8 +316,8 @@ describe('chartDataBuilders', () => {
       expect(derived.selectors).toHaveProperty('metadata');
     });
 
-    it('devrait garantir la parité entre chartData et selectors', () => {
-      const derived = buildDerivedDataset({
+    it('devrait garantir la parité entre chartData et selectors', async () => {
+      const derived = await buildDerivedDataset({
         dailyMetrics: mockDailyMetrics,
         activities: mockActivities,
         dates: mockFilteredDates,
@@ -337,8 +337,8 @@ describe('chartDataBuilders', () => {
       expect(derived.effectiveSelectedDate).toBe(derived.selectors.metadata.selectedDate);
     });
 
-    it('devrait produire un snapshot stable pour buildDerivedDataset', () => {
-      const derived = buildDerivedDataset({
+    it('devrait produire un snapshot stable pour buildDerivedDataset', async () => {
+      const derived = await buildDerivedDataset({
         dailyMetrics: mockDailyMetrics,
         activities: mockActivities,
         dates: mockFilteredDates,

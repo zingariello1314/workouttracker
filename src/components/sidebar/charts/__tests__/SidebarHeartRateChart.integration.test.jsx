@@ -64,6 +64,8 @@ vi.mock('../../../../utils/garminTimeSeriesUtils', () => ({
 
 vi.mock('recharts', () => ({
   ResponsiveContainer: ({ children }) => <div data-testid="responsive-container">{children}</div>,
+  LineChart: ({ children }) => <div data-testid="line-chart">{children}</div>,
+  Line: () => <div data-testid="line" />,
   AreaChart: ({ children, data }) => (
     <div data-testid="area-chart" data-points={data?.length || 0}>
       {children}
@@ -73,7 +75,10 @@ vi.mock('recharts', () => ({
   XAxis: ({ dataKey }) => <div data-testid="x-axis" data-key={dataKey} />,
   YAxis: ({ domain }) => <div data-testid="y-axis" data-domain={JSON.stringify(domain)} />,
   CartesianGrid: () => <div data-testid="cartesian-grid" />,
-  Tooltip: () => <div data-testid="tooltip" />
+  Tooltip: () => <div data-testid="tooltip" />,
+  Legend: () => <div data-testid="legend" />,
+  ReferenceArea: () => <div data-testid="reference-area" />,
+  ReferenceLine: () => <div data-testid="reference-line" />,
 }));
 
 vi.mock('../../../tabs/GarminTab/components/charts/CustomDot', () => ({

@@ -15,7 +15,7 @@ import sqlite3
 import time
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
-from typing import Optional
+from typing import Any, Optional
 
 from fastapi import Body, FastAPI, HTTPException, Header, Query, Request
 from fastapi.middleware.cors import CORSMiddleware
@@ -62,6 +62,21 @@ def _get_zlib_credentials():
     return email, password
 
 
+def _zlib_startup_disabled() -> bool:
+    v = (os.getenv("ZLIB_DISABLE_STARTUP") or "").strip().lower()
+    return v in ("1", "true", "yes", "on")
+
+
+def _zlib_startup_error_hint(exc: BaseException) -> str:
+    err = str(exc).lower()
+    if "dns" in err or "getaddrinfo" in err or "cannot connect to host" in err:
+        return (
+            " Réseau/DNS (VPN, pare-feu, résolveur Windows). "
+            "Pour démarrer sans BookFinder : ZLIB_DISABLE_STARTUP=1 dans .env."
+        )
+    return ""
+
+
 @app.on_event("startup")
 async def startup():
     global lib
@@ -73,17 +88,29 @@ async def startup():
     has_password = bool(ZLIB_PASSWORD)
     msg = f"[zlib_server] .env: ZLIB_EMAIL={'defini' if has_email else 'MANQUANT'}, ZLIB_PASSWORD={'defini' if has_password else 'MANQUANT'}"
     print(msg, flush=True)
-    if not has_email or not has_password:
+    if _zlib_startup_disabled():
+        print(
+            "[zlib_server] Z-Library (BookFinder) ignoré au démarrage (ZLIB_DISABLE_STARTUP). "
+            "Auth, /api/v1 et /health restent disponibles ; zlib_ready=false.",
+            flush=True,
+        )
+        lib = None
+    elif not has_email or not has_password:
         print("[zlib_server] Fichier .env attendu a la racine du projet (a cote de 'backend/') avec ZLIB_EMAIL=... et ZLIB_PASSWORD=...", flush=True)
         return
-    try:
-        import zlibrary
-        lib = zlibrary.AsyncZlib()
-        await lib.login(ZLIB_EMAIL, ZLIB_PASSWORD)
-        print("[zlib_server] Connexion Z-Library OK", flush=True)
-    except Exception as e:
-        print(f"[zlib_server] Erreur connexion Z-Library: {e}", flush=True)
-        lib = None
+    else:
+        try:
+            import zlibrary
+            lib = zlibrary.AsyncZlib()
+            await lib.login(ZLIB_EMAIL, ZLIB_PASSWORD)
+            print("[zlib_server] Connexion Z-Library OK", flush=True)
+        except Exception as e:
+            hint = _zlib_startup_error_hint(e)
+            print(
+                f"[zlib_server] Z-Library (BookFinder) indisponible au démarrage — zlib_ready=false.{hint} Détail: {e}",
+                flush=True,
+            )
+            lib = None
     try:
         _auth_init_db()
     except Exception as e:
@@ -93,6 +120,26 @@ async def startup():
 @app.get("/health")
 async def health():
     return {"status": "ok", "zlib_ready": lib is not None}
+
+
+@app.get("/api/v1/health")
+async def momentum_api_v1_health():
+    """Jalon API Momentum (contrat partagé avec `contracts/apiHealth.v1.js`)."""
+    from supabase_remote import is_supabase_configured, ping_supabase
+
+    auth_db_ready = AUTH_DB_PATH.is_file()
+    payload: dict[str, Any] = {
+        "service": "momentum-api",
+        "version": 1,
+        "status": "ok",
+        "zlib_ready": lib is not None,
+        "auth_db_ready": auth_db_ready,
+    }
+    sc = is_supabase_configured()
+    payload["supabase_configured"] = sc
+    if sc:
+        payload["supabase_reachable"] = await ping_supabase()
+    return payload
 
 
 @app.get("/search")
@@ -231,6 +278,18 @@ def _auth_init_db():
                 expires_at TEXT NOT NULL,
                 revoked INTEGER NOT NULL DEFAULT 0,
                 created_at TEXT NOT NULL,
+                FOREIGN KEY(user_id) REFERENCES users(id)
+            )
+            """
+        )
+        cur.execute(
+            """
+            CREATE TABLE IF NOT EXISTS mutation_idempotency_v1 (
+                user_id TEXT NOT NULL,
+                client_mutation_id TEXT NOT NULL,
+                response_json TEXT NOT NULL,
+                created_at TEXT NOT NULL,
+                PRIMARY KEY (user_id, client_mutation_id),
                 FOREIGN KEY(user_id) REFERENCES users(id)
             )
             """
@@ -857,3 +916,19 @@ async def github_rest_user_me(
                 return Response(content=text, media_type="application/json", status_code=resp.status)
     except Exception as e:
         raise HTTPException(status_code=502, detail=str(e)) from e
+
+
+# --- Phase 2 : intentions + profil v1 (contrats partagés) ---
+try:
+    from api_v1_phase2 import register_phase2_routes
+
+    register_phase2_routes(app, _auth_get_user_from_access_token, _auth_db_conn)
+except Exception as _phase2_exc:
+    print(f"[zlib_server] Phase2 routes non chargées: {_phase2_exc}", flush=True)
+
+try:
+    from api_v1_meta import register_meta_routes
+
+    register_meta_routes(app)
+except Exception as _meta_exc:
+    print(f"[zlib_server] Routes méta Phase2 non chargées: {_meta_exc}", flush=True)

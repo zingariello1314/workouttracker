@@ -4,13 +4,16 @@
 // - Logging centralisé via logger.module('AuthIndexedDB')
 
 import logger from './logger';
+import {
+  AUTH_DB_NAME,
+  AUTH_DB_VERSION,
+  STORE_AUTH_USERS,
+  STORE_AUTH_USER_AVATARS,
+  STORE_AUTH_STATE,
+  applyAuthSchemaUpgrade,
+} from './authDbGateway.js';
 
 const log = logger.module('AuthIndexedDB');
-
-const AUTH_DB_NAME = 'WorkoutTrackerAuthDB';
-const USERS_STORE = 'users';
-const AVATARS_STORE = 'userAvatars';
-const AUTH_STATE_STORE = 'authState';
 
 /**
  * Ouvre la base d'auth et garantit l'existence des stores nécessaires.
@@ -23,35 +26,10 @@ export const openAuthDB = () => {
       return;
     }
 
-    const request = indexedDB.open(AUTH_DB_NAME, 1);
+    const request = indexedDB.open(AUTH_DB_NAME, AUTH_DB_VERSION);
 
     request.onupgradeneeded = (event) => {
-      const db = event.target.result;
-
-      // Store utilisateurs
-      if (!db.objectStoreNames.contains(USERS_STORE)) {
-        const users = db.createObjectStore(USERS_STORE, { keyPath: 'id' });
-        try {
-          users.createIndex('username', 'username', { unique: true });
-        } catch {
-          // index non critique
-        }
-      }
-
-      // Store avatars
-      if (!db.objectStoreNames.contains(AVATARS_STORE)) {
-        const avatars = db.createObjectStore(AVATARS_STORE, { keyPath: 'id' });
-        try {
-          avatars.createIndex('userId', 'userId', { unique: true });
-        } catch {
-          // index non critique
-        }
-      }
-
-      // Store état d'authentification (session actuelle)
-      if (!db.objectStoreNames.contains(AUTH_STATE_STORE)) {
-        db.createObjectStore(AUTH_STATE_STORE, { keyPath: 'id' });
-      }
+      applyAuthSchemaUpgrade(event);
     };
 
     request.onsuccess = (event) => {
@@ -75,8 +53,8 @@ export const createUser = async (user) => {
 
   return new Promise((resolve) => {
     try {
-      const tx = db.transaction([USERS_STORE], 'readwrite');
-      const store = tx.objectStore(USERS_STORE);
+      const tx = db.transaction([STORE_AUTH_USERS], 'readwrite');
+      const store = tx.objectStore(STORE_AUTH_USERS);
 
       const request = store.add(user);
 
@@ -102,8 +80,8 @@ export const getUserByUsername = async (username) => {
 
   return new Promise((resolve) => {
     try {
-      const tx = db.transaction([USERS_STORE], 'readonly');
-      const store = tx.objectStore(USERS_STORE);
+      const tx = db.transaction([STORE_AUTH_USERS], 'readonly');
+      const store = tx.objectStore(STORE_AUTH_USERS);
       const index = store.index('username');
       const request = index.get(username);
 
@@ -124,8 +102,8 @@ export const getUserById = async (id) => {
 
   return new Promise((resolve) => {
     try {
-      const tx = db.transaction([USERS_STORE], 'readonly');
-      const store = tx.objectStore(USERS_STORE);
+      const tx = db.transaction([STORE_AUTH_USERS], 'readonly');
+      const store = tx.objectStore(STORE_AUTH_USERS);
       const request = store.get(id);
 
       request.onsuccess = () => resolve(request.result || null);
@@ -143,8 +121,8 @@ export const updateUser = async (user) => {
 
   return new Promise((resolve) => {
     try {
-      const tx = db.transaction([USERS_STORE], 'readwrite');
-      const store = tx.objectStore(USERS_STORE);
+      const tx = db.transaction([STORE_AUTH_USERS], 'readwrite');
+      const store = tx.objectStore(STORE_AUTH_USERS);
       const request = store.put(user);
 
       request.onsuccess = () => {
@@ -170,8 +148,8 @@ export const saveAvatar = async ({ id, userId, blob, mimeType }) => {
 
   return new Promise((resolve) => {
     try {
-      const tx = db.transaction([AVATARS_STORE], 'readwrite');
-      const store = tx.objectStore(AVATARS_STORE);
+      const tx = db.transaction([STORE_AUTH_USER_AVATARS], 'readwrite');
+      const store = tx.objectStore(STORE_AUTH_USER_AVATARS);
       const record = { id, userId, blob, mimeType };
       const request = store.put(record);
 
@@ -196,8 +174,8 @@ export const getAvatarByUserId = async (userId) => {
 
   return new Promise((resolve) => {
     try {
-      const tx = db.transaction([AVATARS_STORE], 'readonly');
-      const store = tx.objectStore(AVATARS_STORE);
+      const tx = db.transaction([STORE_AUTH_USER_AVATARS], 'readonly');
+      const store = tx.objectStore(STORE_AUTH_USER_AVATARS);
       const index = store.index('userId');
       const request = index.get(userId);
 
@@ -220,8 +198,8 @@ export const saveAuthState = async (state) => {
 
   return new Promise((resolve) => {
     try {
-      const tx = db.transaction([AUTH_STATE_STORE], 'readwrite');
-      const store = tx.objectStore(AUTH_STATE_STORE);
+      const tx = db.transaction([STORE_AUTH_STATE], 'readwrite');
+      const store = tx.objectStore(STORE_AUTH_STATE);
       const request = store.put(record);
 
       request.onsuccess = () => {
@@ -245,8 +223,8 @@ export const getAuthState = async () => {
 
   return new Promise((resolve) => {
     try {
-      const tx = db.transaction([AUTH_STATE_STORE], 'readonly');
-      const store = tx.objectStore(AUTH_STATE_STORE);
+      const tx = db.transaction([STORE_AUTH_STATE], 'readonly');
+      const store = tx.objectStore(STORE_AUTH_STATE);
       const request = store.get('current');
 
       request.onsuccess = () => resolve(request.result || null);
@@ -264,8 +242,8 @@ export const clearAuthState = async () => {
 
   return new Promise((resolve) => {
     try {
-      const tx = db.transaction([AUTH_STATE_STORE], 'readwrite');
-      const store = tx.objectStore(AUTH_STATE_STORE);
+      const tx = db.transaction([STORE_AUTH_STATE], 'readwrite');
+      const store = tx.objectStore(STORE_AUTH_STATE);
       const request = store.delete('current');
 
       request.onsuccess = () => {

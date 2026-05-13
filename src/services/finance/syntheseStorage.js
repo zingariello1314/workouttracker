@@ -5,6 +5,7 @@
 
 import logger from '../../utils/logger';
 import { z } from 'zod';
+import { openSyntheseDb } from './syntheseDbGateway.js';
 
 const log = logger.module('syntheseStorage');
 
@@ -55,8 +56,6 @@ const CACHE_EXPIRY = 5000; // 5 secondes
 
 class SyntheseStorage {
   constructor() {
-    this.dbName = 'SyntheseDB';
-    this.version = 1;
     this.db = null;
   }
 
@@ -91,51 +90,11 @@ class SyntheseStorage {
     log.debug(`Cache invalidated: ${pattern}*`);
   }
 
-  // Initialisation IndexedDB
+  // Initialisation IndexedDB (passerelle Phase 1)
   async init() {
     if (this.db) return this.db;
-
-    return new Promise((resolve, reject) => {
-      const request = indexedDB.open(this.dbName, this.version);
-
-      request.onerror = () => {
-        log.error('Failed to open SyntheseDB', request.error);
-        reject(request.error);
-      };
-
-      request.onsuccess = () => {
-        this.db = request.result;
-        log.debug('SyntheseDB initialized successfully');
-        resolve(this.db);
-      };
-
-      request.onupgradeneeded = (event) => {
-        const db = event.target.result;
-
-        // Store Patrimoine
-        if (!db.objectStoreNames.contains('patrimoine')) {
-          db.createObjectStore('patrimoine', { keyPath: 'id' });
-        }
-
-        // Store Projections
-        if (!db.objectStoreNames.contains('projections')) {
-          db.createObjectStore('projections', { keyPath: 'id' });
-        }
-
-        // Store Plan Épargne
-        if (!db.objectStoreNames.contains('planEpargne')) {
-          db.createObjectStore('planEpargne', { keyPath: 'id' });
-        }
-
-        // Store Historique
-        if (!db.objectStoreNames.contains('historique')) {
-          const store = db.createObjectStore('historique', { keyPath: 'id', autoIncrement: true });
-          store.createIndex('date', 'date', { unique: false });
-        }
-
-        log.debug('SyntheseDB stores created');
-      };
-    });
+    this.db = await openSyntheseDb();
+    return this.db;
   }
 
   // Patrimoine

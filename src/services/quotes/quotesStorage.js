@@ -4,13 +4,16 @@
  */
 
 import logger from '../../utils/logger';
+import {
+  DB_NAME,
+  DB_VERSION,
+  STORE_QUOTES,
+  STORE_SETTINGS,
+  applyQuotesSchemaUpgrade,
+} from './quotesDbGateway.js';
 
 const log = logger.component('QuotesStorage');
 
-const DB_NAME = 'MomentumQuotes';
-const DB_VERSION = 1;
-const QUOTES_STORE = 'quotes';
-const SETTINGS_STORE = 'settings';
 const SETTINGS_KEY = 'quoteSettings';
 
 /**
@@ -100,22 +103,7 @@ class QuotesStorage {
       };
 
       request.onupgradeneeded = (event) => {
-        const db = event.target.result;
-
-        // Create quotes store
-        if (!db.objectStoreNames.contains(QUOTES_STORE)) {
-          const quotesStore = db.createObjectStore(QUOTES_STORE, { keyPath: 'id' });
-          quotesStore.createIndex('order', 'order', { unique: false });
-          quotesStore.createIndex('isPinned', 'isPinned', { unique: false });
-          quotesStore.createIndex('createdAt', 'createdAt', { unique: false });
-          log.info('Created quotes object store with indexes');
-        }
-
-        // Create settings store
-        if (!db.objectStoreNames.contains(SETTINGS_STORE)) {
-          db.createObjectStore(SETTINGS_STORE, { keyPath: 'key' });
-          log.info('Created settings object store');
-        }
+        applyQuotesSchemaUpgrade(event, log);
       };
     });
 
@@ -146,8 +134,8 @@ class QuotesStorage {
     }
 
     return new Promise((resolve, reject) => {
-      const transaction = this.db.transaction([QUOTES_STORE], 'readonly');
-      const store = transaction.objectStore(QUOTES_STORE);
+      const transaction = this.db.transaction([STORE_QUOTES], 'readonly');
+      const store = transaction.objectStore(STORE_QUOTES);
       const index = store.index('order');
       const request = index.getAll();
 
@@ -175,8 +163,8 @@ class QuotesStorage {
     if (cached) return cached;
 
     return new Promise((resolve, reject) => {
-      const transaction = this.db.transaction([QUOTES_STORE], 'readonly');
-      const store = transaction.objectStore(QUOTES_STORE);
+      const transaction = this.db.transaction([STORE_QUOTES], 'readonly');
+      const store = transaction.objectStore(STORE_QUOTES);
       const request = store.get(id);
 
       request.onsuccess = () => {
@@ -213,8 +201,8 @@ class QuotesStorage {
     };
 
     return new Promise((resolve, reject) => {
-      const transaction = this.db.transaction([QUOTES_STORE], 'readwrite');
-      const store = transaction.objectStore(QUOTES_STORE);
+      const transaction = this.db.transaction([STORE_QUOTES], 'readwrite');
+      const store = transaction.objectStore(STORE_QUOTES);
       const request = store.add(quote);
 
       request.onsuccess = () => {
@@ -254,8 +242,8 @@ class QuotesStorage {
     }
 
     return new Promise((resolve, reject) => {
-      const transaction = this.db.transaction([QUOTES_STORE], 'readwrite');
-      const store = transaction.objectStore(QUOTES_STORE);
+      const transaction = this.db.transaction([STORE_QUOTES], 'readwrite');
+      const store = transaction.objectStore(STORE_QUOTES);
       const request = store.put(updated);
 
       request.onsuccess = () => {
@@ -279,8 +267,8 @@ class QuotesStorage {
     await this.init();
 
     return new Promise((resolve, reject) => {
-      const transaction = this.db.transaction([QUOTES_STORE], 'readwrite');
-      const store = transaction.objectStore(QUOTES_STORE);
+      const transaction = this.db.transaction([STORE_QUOTES], 'readwrite');
+      const store = transaction.objectStore(STORE_QUOTES);
       const request = store.delete(id);
 
       request.onsuccess = () => {
@@ -303,8 +291,8 @@ class QuotesStorage {
     await this.init();
 
     return new Promise((resolve, reject) => {
-      const transaction = this.db.transaction([QUOTES_STORE], 'readwrite');
-      const store = transaction.objectStore(QUOTES_STORE);
+      const transaction = this.db.transaction([STORE_QUOTES], 'readwrite');
+      const store = transaction.objectStore(STORE_QUOTES);
 
       let completed = 0;
       const total = quoteIds.length;
@@ -355,8 +343,8 @@ class QuotesStorage {
     if (cached) return cached;
 
     return new Promise((resolve, reject) => {
-      const transaction = this.db.transaction([SETTINGS_STORE], 'readonly');
-      const store = transaction.objectStore(SETTINGS_STORE);
+      const transaction = this.db.transaction([STORE_SETTINGS], 'readonly');
+      const store = transaction.objectStore(STORE_SETTINGS);
       const request = store.get(SETTINGS_KEY);
 
       request.onsuccess = () => {
@@ -389,8 +377,8 @@ class QuotesStorage {
     const updated = { ...current, ...updates };
 
     return new Promise((resolve, reject) => {
-      const transaction = this.db.transaction([SETTINGS_STORE], 'readwrite');
-      const store = transaction.objectStore(SETTINGS_STORE);
+      const transaction = this.db.transaction([STORE_SETTINGS], 'readwrite');
+      const store = transaction.objectStore(STORE_SETTINGS);
       const request = store.put({ key: SETTINGS_KEY, value: updated });
 
       request.onsuccess = () => {
@@ -429,8 +417,8 @@ class QuotesStorage {
     await this.init();
 
     return new Promise((resolve, reject) => {
-      const transaction = this.db.transaction([QUOTES_STORE], 'readwrite');
-      const store = transaction.objectStore(QUOTES_STORE);
+      const transaction = this.db.transaction([STORE_QUOTES], 'readwrite');
+      const store = transaction.objectStore(STORE_QUOTES);
 
       let completed = 0;
       const results = [];

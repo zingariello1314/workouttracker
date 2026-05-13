@@ -6,18 +6,14 @@
 import { openDB } from 'idb';
 import logger from '../../utils/logger';
 import { compressFinanceData, decompressFinanceData, isCompressed } from './financeCompression';
+import {
+  FINANCE_DB_NAME as DB_NAME,
+  FINANCE_DB_VERSION as DB_VERSION,
+  FINANCE_STORES as STORES,
+  applyFinanceSchemaUpgrade,
+} from './financeDbGateway.js';
 
 const log = logger.module('financeStorage');
-
-const DB_NAME = 'FinanceDB';
-const DB_VERSION = 2; // ✅ PHASE 4 - Étape 4.9 : Version 2 pour ajouter store EXCHANGE_RATES
-const STORES = {
-  PORTFOLIO: 'portfolio',
-  YAHOO_CACHE: 'yahooCache',
-  CALCULATIONS: 'calculations',
-  HISTORY: 'history',
-  EXCHANGE_RATES: 'exchangeRates' // ✅ PHASE 4 - Étape 4.9 : Store pour taux de change
-};
 
 class FinanceStorage {
   constructor() {
@@ -28,52 +24,9 @@ class FinanceStorage {
   async initDB() {
     try {
       this.db = await openDB(DB_NAME, DB_VERSION, {
-        upgrade(db, oldVersion, newVersion, transaction) {
+        upgrade(db, oldVersion, newVersion) {
           log.info(`Upgrading FinanceDB from version ${oldVersion} to ${newVersion}`);
-          
-          // Store Portfolio (version 1)
-          if (!db.objectStoreNames.contains(STORES.PORTFOLIO)) {
-            const portfolioStore = db.createObjectStore(STORES.PORTFOLIO, {
-              keyPath: 'id'
-            });
-            portfolioStore.createIndex('ticker', 'ticker', { unique: false });
-            portfolioStore.createIndex('dateAchat', 'dateAchat', { unique: false });
-          }
-
-          // Store Yahoo Cache (version 1)
-          if (!db.objectStoreNames.contains(STORES.YAHOO_CACHE)) {
-            const cacheStore = db.createObjectStore(STORES.YAHOO_CACHE, {
-              keyPath: 'ticker'
-            });
-            cacheStore.createIndex('timestamp', 'timestamp', { unique: false });
-          }
-
-          // Store Calculations (version 1)
-          if (!db.objectStoreNames.contains(STORES.CALCULATIONS)) {
-            db.createObjectStore(STORES.CALCULATIONS, {
-              keyPath: 'key'
-            });
-          }
-
-          // Store History (version 1)
-          if (!db.objectStoreNames.contains(STORES.HISTORY)) {
-            const historyStore = db.createObjectStore(STORES.HISTORY, {
-              keyPath: 'id',
-              autoIncrement: true
-            });
-            historyStore.createIndex('timestamp', 'timestamp', { unique: false });
-            historyStore.createIndex('action', 'action', { unique: false });
-          }
-
-          // ✅ PHASE 4 - Étape 4.9 : Store Exchange Rates (version 2)
-          // Migration : Ajouter store pour taux de change
-          if (oldVersion < 2 && !db.objectStoreNames.contains(STORES.EXCHANGE_RATES)) {
-            log.info('Creating EXCHANGE_RATES store for multi-currency support');
-            const exchangeRatesStore = db.createObjectStore(STORES.EXCHANGE_RATES, {
-              keyPath: 'key'
-            });
-            exchangeRatesStore.createIndex('timestamp', 'timestamp', { unique: false });
-          }
+          applyFinanceSchemaUpgrade(db, oldVersion, newVersion, log);
         }
       });
       log.info('FinanceDB initialized');

@@ -3,152 +3,20 @@
  * Implémentation alignée sur quietQuestIndexedDB.js et useWorkoutData.openDB
  * Fallback automatique vers localStorage si IndexedDB indisponible
  * Avec retry automatique et transactions atomiques
+ * Ouverture / schéma : `services/apprentissage/apprentissageDbGateway.js`
  */
 
 import { retryIndexedDB } from './apprentissageRetry';
+import {
+  openApprentissageDB,
+  STORE_APPRENTISSAGE_SUBJECTS as STORE_SUBJECTS,
+  STORE_APPRENTISSAGE_PROGRESSION as STORE_PROGRESSION,
+  STORE_APPRENTISSAGE_SESSIONS_HISTORY as STORE_SESSIONS_HISTORY,
+  STORE_APPRENTISSAGE_PLANNER as STORE_PLANNER,
+  STORE_APPRENTISSAGE_TIMER as STORE_TIMER,
+} from '../services/apprentissage/apprentissageDbGateway.js';
 
-const DB_NAME = 'WorkoutTrackerDB';
-
-// Noms des object stores
-const STORE_SUBJECTS = 'apprentissage_subjects';
-const STORE_PROGRESSION = 'apprentissage_progression';
-const STORE_SESSIONS_HISTORY = 'apprentissage_sessions_history';
-const STORE_PLANNER = 'apprentissage_planner';
-const STORE_TIMER = 'apprentissage_timer';
-
-/**
- * Ouvre la base WorkoutTrackerDB et garantit l'existence des stores Apprentissage.
- * Retourne null si IndexedDB n'est pas disponible ou en cas d'échec non récupérable.
- */
-export const openApprentissageDB = () => {
-  return new Promise((resolve) => {
-    if (typeof window === 'undefined' || !window.indexedDB) {
-      resolve(null);
-      return;
-    }
-
-    const request = indexedDB.open(DB_NAME);
-
-    request.onupgradeneeded = (event) => {
-      const db = event.target.result;
-
-      // Store subjects
-      if (!db.objectStoreNames.contains(STORE_SUBJECTS)) {
-        console.log('[apprentissageIndexedDB] Création du store "apprentissage_subjects"');
-        const store = db.createObjectStore(STORE_SUBJECTS, { keyPath: 'id' });
-        try {
-          store.createIndex('name', 'name', { unique: false });
-          store.createIndex('createdAt', 'createdAt', { unique: false });
-        } catch (e) {
-          // Index non critique
-        }
-      }
-
-      // Store progression
-      if (!db.objectStoreNames.contains(STORE_PROGRESSION)) {
-        console.log('[apprentissageIndexedDB] Création du store "apprentissage_progression"');
-        db.createObjectStore(STORE_PROGRESSION, { keyPath: 'userId' });
-      }
-
-      // Store sessions history
-      if (!db.objectStoreNames.contains(STORE_SESSIONS_HISTORY)) {
-        console.log('[apprentissageIndexedDB] Création du store "apprentissage_sessions_history"');
-        const store = db.createObjectStore(STORE_SESSIONS_HISTORY, { keyPath: 'id', autoIncrement: true });
-        try {
-          store.createIndex('subject', 'subject', { unique: false });
-          store.createIndex('startTime', 'startTime', { unique: false });
-          store.createIndex('type', 'type', { unique: false });
-          store.createIndex('userId', 'userId', { unique: false });
-        } catch (e) {
-          // Index non critique
-        }
-      }
-
-      // Store planner
-      if (!db.objectStoreNames.contains(STORE_PLANNER)) {
-        console.log('[apprentissageIndexedDB] Création du store "apprentissage_planner"');
-        db.createObjectStore(STORE_PLANNER, { keyPath: 'userId' });
-      }
-
-      // Store timer
-      if (!db.objectStoreNames.contains(STORE_TIMER)) {
-        console.log('[apprentissageIndexedDB] Création du store "apprentissage_timer"');
-        db.createObjectStore(STORE_TIMER, { keyPath: 'userId' });
-      }
-    };
-
-    request.onsuccess = (event) => {
-      const db = event.target.result;
-      
-      // Vérifier que tous les stores existent
-      const requiredStores = [
-        STORE_SUBJECTS,
-        STORE_PROGRESSION,
-        STORE_SESSIONS_HISTORY,
-        STORE_PLANNER,
-        STORE_TIMER,
-      ];
-      const missingStores = requiredStores.filter(
-        (name) => !db.objectStoreNames.contains(name)
-      );
-
-      if (missingStores.length > 0) {
-        console.warn(
-          `[apprentissageIndexedDB] ⚠️ Stores manquants: ${missingStores.join(', ')}. Forcer upgrade...`
-        );
-        const currentVersion = db.version;
-        db.close();
-        const upgradeRequest = indexedDB.open(DB_NAME, currentVersion + 1);
-        
-        upgradeRequest.onupgradeneeded = (e) => {
-          const upgradeDb = e.target.result;
-          // Recréer les stores manquants
-          missingStores.forEach((storeName) => {
-            if (!upgradeDb.objectStoreNames.contains(storeName)) {
-              if (storeName === STORE_SUBJECTS) {
-                const store = upgradeDb.createObjectStore(STORE_SUBJECTS, { keyPath: 'id' });
-                try {
-                  store.createIndex('name', 'name', { unique: false });
-                  store.createIndex('createdAt', 'createdAt', { unique: false });
-                } catch {}
-              } else if (storeName === STORE_PROGRESSION) {
-                upgradeDb.createObjectStore(STORE_PROGRESSION, { keyPath: 'userId' });
-              } else if (storeName === STORE_SESSIONS_HISTORY) {
-                const store = upgradeDb.createObjectStore(STORE_SESSIONS_HISTORY, { keyPath: 'id', autoIncrement: true });
-                try {
-                  store.createIndex('subject', 'subject', { unique: false });
-                  store.createIndex('startTime', 'startTime', { unique: false });
-                  store.createIndex('type', 'type', { unique: false });
-                  store.createIndex('userId', 'userId', { unique: false });
-                } catch {}
-              } else if (storeName === STORE_PLANNER) {
-                upgradeDb.createObjectStore(STORE_PLANNER, { keyPath: 'userId' });
-              } else if (storeName === STORE_TIMER) {
-                upgradeDb.createObjectStore(STORE_TIMER, { keyPath: 'userId' });
-              }
-            }
-          });
-        };
-        
-        upgradeRequest.onsuccess = (e) => {
-          resolve(e.target.result);
-        };
-        
-        upgradeRequest.onerror = () => {
-          console.warn('[apprentissageIndexedDB] Erreur lors de l\'upgrade, fallback localStorage');
-          resolve(null);
-        };
-      } else {
-        resolve(db);
-      }
-    };
-
-    request.onerror = () => {
-      console.warn('[apprentissageIndexedDB] IndexedDB indisponible, fallback localStorage');
-      resolve(null);
-    };
-  });
-};
+export { openApprentissageDB };
 
 /**
  * Charge les matières depuis IndexedDB

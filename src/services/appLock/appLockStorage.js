@@ -3,9 +3,12 @@
  * Stocke hash + sel (jamais le code en clair) et optionnellement un fond en data URL.
  */
 
-const DB_NAME = 'MomentumAppLockDB';
-const DB_VERSION = 1;
-const STORE_NAME = 'appLockByUser';
+import {
+  DB_NAME,
+  DB_VERSION,
+  STORE_APP_LOCK_BY_USER,
+  applyAppLockSchemaUpgrade,
+} from './appLockDbGateway.js';
 
 const openDB = () =>
   new Promise((resolve, reject) => {
@@ -13,10 +16,7 @@ const openDB = () =>
     request.onerror = () => reject(request.error);
     request.onsuccess = () => resolve(request.result);
     request.onupgradeneeded = (event) => {
-      const db = event.target.result;
-      if (!db.objectStoreNames.contains(STORE_NAME)) {
-        db.createObjectStore(STORE_NAME, { keyPath: 'userId' });
-      }
+      applyAppLockSchemaUpgrade(event);
     };
     request.onblocked = () => reject(new Error('Database blocked'));
   });
@@ -57,8 +57,8 @@ export const getAppLockRecord = async (userId) => {
   if (!userId) return getDefaultAppLockRecord('');
   const db = await openDB();
   try {
-    const tx = db.transaction(STORE_NAME, 'readonly');
-    const store = tx.objectStore(STORE_NAME);
+    const tx = db.transaction(STORE_APP_LOCK_BY_USER, 'readonly');
+    const store = tx.objectStore(STORE_APP_LOCK_BY_USER);
     const row = await new Promise((resolve, reject) => {
       const r = store.get(userId);
       r.onsuccess = () => resolve(r.result || null);
@@ -93,8 +93,8 @@ export const saveAppLockRecord = async (partial) => {
   };
   const db = await openDB();
   try {
-    const tx = db.transaction(STORE_NAME, 'readwrite');
-    const store = tx.objectStore(STORE_NAME);
+    const tx = db.transaction(STORE_APP_LOCK_BY_USER, 'readwrite');
+    const store = tx.objectStore(STORE_APP_LOCK_BY_USER);
     await new Promise((resolve, reject) => {
       const r = store.put(next);
       r.onsuccess = () => resolve();

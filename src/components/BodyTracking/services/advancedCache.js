@@ -13,6 +13,12 @@
 
 import logger from '../../../utils/logger';
 import { getPerformanceMonitor } from './performanceMonitor';
+import {
+  PHOTO_ANALYSIS_CACHE_DB_NAME,
+  PHOTO_ANALYSIS_CACHE_DB_VERSION,
+  PHOTO_ANALYSIS_CACHE_STORE,
+  applyPhotoAnalysisCacheSchemaUpgrade,
+} from '../../../services/bodyTracking/photoAnalysisCacheDbGateway.js';
 
 const log = logger.module('AdvancedCache');
 const perfMonitor = getPerformanceMonitor();
@@ -179,7 +185,7 @@ class LRUCache {
  * Cache IndexedDB pour persistance
  */
 class IndexedDBCache {
-  constructor(dbName = 'photoAnalysisCache', storeName = 'results') {
+  constructor(dbName = PHOTO_ANALYSIS_CACHE_DB_NAME, storeName = PHOTO_ANALYSIS_CACHE_STORE) {
     this.dbName = dbName;
     this.storeName = storeName;
     this.db = null;
@@ -201,7 +207,7 @@ class IndexedDBCache {
         return;
       }
       
-      const request = indexedDB.open(this.dbName, 1);
+      const request = indexedDB.open(this.dbName, PHOTO_ANALYSIS_CACHE_DB_VERSION);
       
       request.onerror = () => {
         log.error('Erreur ouverture IndexedDB:', request.error);
@@ -216,16 +222,9 @@ class IndexedDBCache {
       
       request.onupgradeneeded = (event) => {
         const db = event.target.result;
-        
-        // Créer objectStore si n'existe pas
-        if (!db.objectStoreNames.contains(this.storeName)) {
-          const objectStore = db.createObjectStore(this.storeName, {
-            keyPath: 'key'
-          });
-          
-          // Index par timestamp pour nettoyage
-          objectStore.createIndex('timestamp', 'timestamp', { unique: false });
-          
+        const hadStore = db.objectStoreNames.contains(this.storeName);
+        applyPhotoAnalysisCacheSchemaUpgrade(db, this.storeName);
+        if (!hadStore) {
           log.info('IndexedDB objectStore créé');
         }
       };
@@ -586,8 +585,8 @@ class AdvancedCache {
     );
     
     this.indexedDBCache = new IndexedDBCache(
-      options.dbName || 'photoAnalysisCache',
-      options.storeName || 'results'
+      options.dbName || PHOTO_ANALYSIS_CACHE_DB_NAME,
+      options.storeName || PHOTO_ANALYSIS_CACHE_STORE
     );
     
     this.computationCache = new ComputationCache();

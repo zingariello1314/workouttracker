@@ -3,9 +3,12 @@
  * Gère les avatars et paramètres utilisateur dans IndexedDB
  */
 
-const DB_NAME = 'ProfileCardDB'; // Base de données séparée pour éviter les conflits
-const STORE_NAME = 'profileCards';
-const DB_VERSION = 1;
+import {
+  PROFILE_CARD_DB_NAME as DB_NAME,
+  PROFILE_CARD_DB_VERSION as DB_VERSION,
+  STORE_PROFILE_CARDS,
+  applyProfileCardSchemaUpgrade,
+} from './profileCardDbGateway.js';
 
 /**
  * Ouvre la connexion à IndexedDB
@@ -26,14 +29,7 @@ const openDB = () => {
     };
 
     request.onupgradeneeded = (event) => {
-      const db = event.target.result;
-
-      // Créer le store s'il n'existe pas
-      if (!db.objectStoreNames.contains(STORE_NAME)) {
-        const objectStore = db.createObjectStore(STORE_NAME, { keyPath: 'username' });
-        objectStore.createIndex('username', 'username', { unique: true });
-        objectStore.createIndex('lastModified', 'lastModified', { unique: false });
-      }
+      applyProfileCardSchemaUpgrade(event);
     };
     
     request.onblocked = () => {
@@ -52,8 +48,8 @@ const openDB = () => {
 export const saveProfileData = async (username, profileData) => {
   try {
     const db = await openDB();
-    const transaction = db.transaction([STORE_NAME], 'readwrite');
-    const store = transaction.objectStore(STORE_NAME);
+    const transaction = db.transaction([STORE_PROFILE_CARDS], 'readwrite');
+    const store = transaction.objectStore(STORE_PROFILE_CARDS);
 
     const data = {
       username,
@@ -82,8 +78,8 @@ export const saveProfileData = async (username, profileData) => {
 export const getProfileData = async (username) => {
   try {
     const db = await openDB();
-    const transaction = db.transaction([STORE_NAME], 'readonly');
-    const store = transaction.objectStore(STORE_NAME);
+    const transaction = db.transaction([STORE_PROFILE_CARDS], 'readonly');
+    const store = transaction.objectStore(STORE_PROFILE_CARDS);
 
     const data = await new Promise((resolve, reject) => {
       const request = store.get(username);
@@ -406,8 +402,8 @@ export const getHandle = async (username) => {
 export const deleteProfileData = async (username) => {
   try {
     const db = await openDB();
-    const transaction = db.transaction([STORE_NAME], 'readwrite');
-    const store = transaction.objectStore(STORE_NAME);
+    const transaction = db.transaction([STORE_PROFILE_CARDS], 'readwrite');
+    const store = transaction.objectStore(STORE_PROFILE_CARDS);
 
     await new Promise((resolve, reject) => {
       const request = store.delete(username);

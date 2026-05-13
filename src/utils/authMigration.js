@@ -26,6 +26,10 @@ import {
   saveTimerToIndexedDB,
   savePlannerToIndexedDB
 } from './apprentissageIndexedDB';
+import {
+  WORKOUT_TRACKER_DB_NAME,
+  applyWorkoutTrackerWorkoutsStoreUpgrade,
+} from '../services/workout/workoutDbGateway.js';
 
 /**
  * Ouvre la base de données WorkoutTrackerDB pour Body Tracking et Programmes
@@ -37,16 +41,10 @@ const openWorkoutDB = () => {
       return;
     }
 
-    const request = indexedDB.open('WorkoutTrackerDB');
+    const request = indexedDB.open(WORKOUT_TRACKER_DB_NAME);
     
     request.onupgradeneeded = (event) => {
-      const db = event.target.result;
-      
-      // Créer le store 'workouts' s'il n'existe pas
-      if (!db.objectStoreNames.contains('workouts')) {
-        const workoutStore = db.createObjectStore('workouts', { keyPath: 'id' });
-        workoutStore.createIndex('timestamp', 'timestamp', { unique: false });
-      }
+      applyWorkoutTrackerWorkoutsStoreUpgrade(event.target.result);
     };
     
     request.onsuccess = (event) => {
@@ -403,6 +401,10 @@ export const migrateDataToUser = async (userId, onProgress) => {
     const booksResult = await migrateBooks(userId);
     results.migratedBooks = booksResult.migratedBooks || 0;
     if (onProgress) onProgress(currentStep, totalSteps, `${results.migratedBooks} livres migrés`);
+    if (!booksResult.success) {
+      log.error('[auth-migration] ❌ Migration des livres interrompue');
+      return { success: false, totalSteps, ...results };
+    }
 
     // 2. Migration Nutrition
     currentStep = 2;

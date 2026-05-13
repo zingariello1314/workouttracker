@@ -11,6 +11,11 @@
  */
 
 import logger from '../../../utils/logger';
+import {
+  DB_NAME as GARMIN_DB_NAME,
+  DB_VERSION as GARMIN_DB_VERSION,
+  applyGarminSchemaUpgrade,
+} from '../../../services/garmin/garminDbGateway.js';
 
 const log = logger.module('GarminIntegration');
 
@@ -77,16 +82,16 @@ const openGarminDB = () => {
       return;
     }
     
-    const DB_NAME = 'GarminDataDB';
-    const DB_VERSION = 1;
-    const request = indexedDB.open(DB_NAME, DB_VERSION);
+    const request = indexedDB.open(GARMIN_DB_NAME, GARMIN_DB_VERSION);
     
     request.onsuccess = () => resolve(request.result);
     request.onerror = () => {
       log.error('Erreur ouverture IndexedDB Garmin');
       resolve(null);
     };
-    request.onupgradeneeded = () => {}; // La DB devrait déjà exister
+    request.onupgradeneeded = (event) => {
+      applyGarminSchemaUpgrade(event, log);
+    };
   });
 };
 

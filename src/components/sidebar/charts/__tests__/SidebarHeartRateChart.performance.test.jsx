@@ -39,15 +39,20 @@ vi.mock('../../../../utils/garminTimeSeriesUtils', () => ({
   })
 }));
 
-// Mock de Recharts
+// Mock de Recharts (complet pour lazy GarminHeartRateTimeSeriesChart : LineChart, Legend, ReferenceArea, …)
 vi.mock('recharts', () => ({
   ResponsiveContainer: ({ children }) => <div data-testid="responsive-container">{children}</div>,
+  LineChart: ({ children }) => <div data-testid="line-chart">{children}</div>,
+  Line: () => <div data-testid="line" />,
   AreaChart: ({ children }) => <div data-testid="area-chart">{children}</div>,
   Area: () => <div data-testid="area" />,
   XAxis: () => <div data-testid="x-axis" />,
   YAxis: () => <div data-testid="y-axis" />,
   CartesianGrid: () => <div data-testid="cartesian-grid" />,
-  Tooltip: () => <div data-testid="tooltip" />
+  Tooltip: () => <div data-testid="tooltip" />,
+  Legend: () => <div data-testid="legend" />,
+  ReferenceArea: () => <div data-testid="reference-area" />,
+  ReferenceLine: () => <div data-testid="reference-line" />,
 }));
 
 // Mock du CustomDot
