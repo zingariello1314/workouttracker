@@ -25,6 +25,7 @@ import {
 import { exerciseDatabase } from '../../../../data/exerciseDatabase';
 import { generateMealPlanOutline } from '../../../../utils/nutritionMealPlanGenerator';
 import ImpedanceQuickCapture from './ImpedanceQuickCapture';
+import { mapQuizGoalToNutritionGoal } from '../../../../features/profileQuestionnaire/quizInfluence';
 
 const log = logger.component('NutritionProgramForm');
 
@@ -39,16 +40,6 @@ function normalizeStoredGoal(goal) {
     stagnation: 'maintenance'
   };
   return map[goal] || goal || 'maintenance';
-}
-
-function mapQuizGoalToNutrition(goal) {
-  const map = {
-    lean_toned: 'cutting',
-    muscular_defined: 'lean_bulk',
-    strong_powerful: 'bulking',
-    balanced_functional: 'maintenance'
-  };
-  return map[goal] || 'maintenance';
 }
 
 function mapQuizActivityToFactor(activityOutsideTraining) {
@@ -365,7 +356,10 @@ const NutritionProgramForm = ({
     } else {
       const hint = suggestedBankSelectionQuota('maintenance', 2500);
       const quizAnswers = initialQuizPrefill?.answers || {};
-      const suggestedGoal = mapQuizGoalToNutrition(quizAnswers.goalPhysique);
+      const suggestedGoal = mapQuizGoalToNutritionGoal(
+        quizAnswers.goalPhysique,
+        quizAnswers.currentPhysique || null
+      );
       const quizBodyFat = initialQuizPrefill?.nutrition?.bodyFatPercent;
       const quizActivityFactor = mapQuizActivityToFactor(initialQuizPrefill?.nutrition?.activityOutsideTraining);
       setFormData({
@@ -385,6 +379,18 @@ const NutritionProgramForm = ({
         endDate: null,
         planProfile: {
           ...emptyPlanProfile(),
+          ...(quizAnswers.vitalsSelfReport?.sex === 'female' || quizAnswers.vitalsSelfReport?.sex === 'male'
+            ? { sex: quizAnswers.vitalsSelfReport.sex === 'female' ? 'female' : 'male' }
+            : {}),
+          ...(quizAnswers.vitalsSelfReport?.age != null
+            ? { age: String(quizAnswers.vitalsSelfReport.age) }
+            : {}),
+          ...(quizAnswers.vitalsSelfReport?.heightCm != null
+            ? { heightCm: String(quizAnswers.vitalsSelfReport.heightCm) }
+            : {}),
+          ...(quizAnswers.vitalsSelfReport?.weightKg != null
+            ? { baselineWeightKg: String(quizAnswers.vitalsSelfReport.weightKg) }
+            : {}),
           bodyFatPercent:
             quizBodyFat !== null && quizBodyFat !== undefined && quizBodyFat !== ''
               ? String(quizBodyFat)

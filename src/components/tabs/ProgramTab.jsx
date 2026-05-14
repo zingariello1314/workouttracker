@@ -17,6 +17,7 @@ import {
   readPendingQuizPrefill
 } from '../../features/profileQuestionnaire/prefill';
 import { buildTrainingScheduleFromQuizDays } from '../../features/profileQuestionnaire/trainingScheduleFromQuiz';
+import { getProgramGoalLabel, buildProgramDescriptionFromQuiz } from '../../features/profileQuestionnaire/quizInfluence';
 
 const ProgramTab = () => {
   const { programs, activeProgram, addProgram, activateProgram, deactivateProgram, deleteProgram, updateProgram, data } = useContext(WorkoutContext);
@@ -41,18 +42,11 @@ const ProgramTab = () => {
     const suggestedDuration = Number(pending.training.suggestedDurationWeeks) || 6;
     const suggestedDays = Array.isArray(pending.training.suggestedDays) ? pending.training.suggestedDays : [];
     const mainGoal = pending?.answers?.goalPhysique || 'balanced_functional';
-    const labelByGoal = {
-      lean_toned: 'Sèche et tonification',
-      muscular_defined: 'Hypertrophie définie',
-      strong_powerful: 'Force et puissance',
-      balanced_functional: 'Condition physique globale'
-    };
+    const quizAnswers = pending?.answers || {};
 
     setNewProgram({
-      name: `Programme personnalisé (${labelByGoal[mainGoal] || 'objectif personnalisé'})`,
-      description: suggestedDays.length
-        ? `Prérempli via quiz. Jours disponibles: ${suggestedDays.join(', ')}.`
-        : 'Prérempli via quiz onboarding.',
+      name: `Programme personnalisé (${getProgramGoalLabel(mainGoal)})`,
+      description: buildProgramDescriptionFromQuiz(quizAnswers, suggestedDays),
       duration: Math.max(1, Math.min(52, suggestedDuration)),
       exercises: []
     });

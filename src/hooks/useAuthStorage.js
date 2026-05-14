@@ -30,6 +30,7 @@ import {
   getUserByUsername,
   getUserById,
   updateUser,
+  deleteUserById,
   saveAvatar,
   saveAuthState,
   getAuthState,
@@ -75,6 +76,10 @@ const sanitizeProfilePatch = (partialUser) => {
 const upsertServerUserLocally = async (user) => {
   if (!user?.id || !user?.username) return user;
   const existing = await getUserById(user.id);
+  const sameUsername = await getUserByUsername(user.username);
+  if (sameUsername && String(sameUsername.id) !== String(user.id)) {
+    await deleteUserById(sameUsername.id);
+  }
   const now = new Date().toISOString();
   const base = {
     id: user.id,

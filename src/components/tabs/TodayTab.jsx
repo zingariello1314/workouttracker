@@ -1,5 +1,5 @@
 import React, { useMemo, useState, useEffect, useCallback } from 'react';
-import { Play, Square, CheckCircle, Clock, Target, Flame, Zap, MessageSquare, Save, X, Award, Plus, Trash2, BarChart3, PenLine, Scale } from 'lucide-react';
+import { Play, Square, CheckCircle, Clock, Target, Flame, Zap, MessageSquare, Save, X, Award, Plus, Trash2, BarChart3, PenLine, Scale, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useWorkout } from '../../context/WorkoutContext';
 import { useToast } from '../../components/ui/Toast';
 import { workoutProgram } from '../../data/workoutProgram';
@@ -17,6 +17,7 @@ import { shouldExcludeStoredGarminRunningSession } from '../../utils/garminRunni
 import DayJustificationButton from './TodayTab/components/DayJustificationButton.jsx';
 import { isDayWithoutActivity } from '../../utils/dayJustificationUtils';
 import { useTranslation } from '../../utils/translations';
+import { useLanguage, LANGUAGES } from '../../context/LanguageContext';
 import { loadEnduranceData as loadEnduranceDataService } from '../../services/endurance/enduranceDataService';
 import { useNutritionData } from '../../hooks/useNutritionData';
 import {
@@ -159,9 +160,21 @@ function pickExerciseSessionEffortStars(currentData, keys, primaryKey) {
   return null;
 }
 
+function pickExerciseSessionPleasureStars(currentData, keys, primaryKey) {
+  const map = currentData?.exerciseSessionPleasureStars || {};
+  for (const key of keys) {
+    const n = Number(map[key]);
+    if (Number.isFinite(n) && n >= 1 && n <= 5) return Math.round(n);
+  }
+  const p = Number(map[primaryKey]);
+  if (Number.isFinite(p) && p >= 1 && p <= 5) return Math.round(p);
+  return null;
+}
+
 const TodayTab = () => {
   const {
     currentDate,
+    setCurrentDate,
     data,
     updateData,
     getTodayWorkout,
@@ -201,6 +214,8 @@ const TodayTab = () => {
   
   const { showSuccess, showError } = useToast();
   const t = useTranslation();
+  const { language } = useLanguage();
+  const uiLocale = language === LANGUAGES.EN ? 'en-US' : 'fr-FR';
   const {
     allQuests: quietQuests,
     toggleQuestValidation,
@@ -750,11 +765,22 @@ const TodayTab = () => {
 
   // Sauvegarder les exercices avec vérification d'intégrité
   const handleSaveExercises = async () => {
+    const hadExercisesDraft = hasUnsavedExercises;
+    const hadStretchesDraft = hasUnsavedStretches;
     try {
       await maybeApplyRestDaySwapBeforeSave();
-      // Utiliser la fonction de sauvegarde du contexte avec gestion d'erreurs
-      await saveExerciseChanges();
-      showSuccess(t('today.messages.exercisesSaved'));
+      if (hadExercisesDraft) {
+        await saveExerciseChanges();
+      } else if (hadStretchesDraft) {
+        await saveStretchChanges();
+      }
+      if (hadExercisesDraft && hadStretchesDraft) {
+        showSuccess(t('today.messages.sessionSaved'));
+      } else if (hadExercisesDraft) {
+        showSuccess(t('today.messages.exercisesSaved'));
+      } else if (hadStretchesDraft) {
+        showSuccess(t('today.messages.stretchesSaved'));
+      }
     } catch (error) {
       console.error('Erreur lors de la sauvegarde des exercices:', error);
       showError(t('today.messages.errorSavingExercises'), {
@@ -771,10 +797,22 @@ const TodayTab = () => {
 
   // Sauvegarder les étirements avec vérification d'intégrité
   const handleSaveStretches = async () => {
+    const hadExercisesDraft = hasUnsavedExercises;
+    const hadStretchesDraft = hasUnsavedStretches;
     try {
-      // Utiliser la fonction de sauvegarde du contexte avec gestion d'erreurs
-      await saveStretchChanges();
-      showSuccess(t('today.messages.stretchesSaved'));
+      await maybeApplyRestDaySwapBeforeSave();
+      if (hadStretchesDraft) {
+        await saveStretchChanges();
+      } else if (hadExercisesDraft) {
+        await saveExerciseChanges();
+      }
+      if (hadExercisesDraft && hadStretchesDraft) {
+        showSuccess(t('today.messages.sessionSaved'));
+      } else if (hadStretchesDraft) {
+        showSuccess(t('today.messages.stretchesSaved'));
+      } else if (hadExercisesDraft) {
+        showSuccess(t('today.messages.exercisesSaved'));
+      }
     } catch (error) {
       console.error('Erreur lors de la sauvegarde des étirements:', error);
       showError(t('today.messages.errorSavingStretches'), {
@@ -889,6 +927,78 @@ const TodayTab = () => {
   const workout = getTodayWorkout(currentDate, isGymMode);
   const dateStr = getDateStr(currentDate);
   const dayName = getDayName(currentDate);
+  const calendarTodayYmd = getDateStr(new Date());
+  const canGoForwardSportDay = dateStr < calendarTodayYmd;
+
+  const formattedSportSessionDate = useMemo(
+    () =>
+      currentDate.toLocaleDateString(uiLocale, {
+        weekday: 'long',
+        day: 'numeric',
+        month: 'long',
+        year: 'numeric'
+      }),
+    [currentDate, uiLocale]
+  );
+
+  const shiftSportCalendarDay = useCallback(
+    (delta) => {
+      if (delta === 0) return;
+      if (delta > 0 && !canGoForwardSportDay) return;
+      if (hasUnsavedExercises || hasUnsavedStretches) {
+        if (!window.confirm(t('today.dateNav.discardPrompt'))) return;
+        discardExerciseChanges();
+        discardStretchChanges();
+      }
+      setCurrentDate((prev) => {
+        const n = new Date(prev);
+        n.setDate(n.getDate() + delta);
+        return n;
+      });
+    },
+    [
+      canGoForwardSportDay,
+      hasUnsavedExercises,
+      hasUnsavedStretches,
+      discardExerciseChanges,
+      discardStretchChanges,
+      setCurrentDate,
+      t
+    ]
+  );
+
+  const sportSessionDateNavRow = (
+    <div
+      className="flex flex-wrap items-center justify-center gap-3 rounded-xl border-2 border-[#0F5C45]/45 bg-black px-4 py-3"
+      role="group"
+      aria-label="Date de la séance"
+    >
+      <button
+        type="button"
+        onClick={() => shiftSportCalendarDay(-1)}
+        className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border border-[#0F5C45]/55 text-teal-100 transition hover:bg-[#0F5C45]/25 hover:text-white"
+        title={t('today.dateNav.prevDay')}
+        aria-label={t('today.dateNav.prevDay')}
+      >
+        <ChevronLeft className="h-5 w-5" aria-hidden />
+      </button>
+      <p className="min-w-0 flex-1 text-center text-sm font-medium capitalize text-white sm:text-base">
+        {formattedSportSessionDate}
+      </p>
+      <button
+        type="button"
+        onClick={() => shiftSportCalendarDay(1)}
+        disabled={!canGoForwardSportDay}
+        className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border border-[#0F5C45]/55 text-teal-100 transition hover:bg-[#0F5C45]/25 hover:text-white ${
+          !canGoForwardSportDay ? 'cursor-not-allowed opacity-35 hover:bg-transparent' : ''
+        }`}
+        title={canGoForwardSportDay ? t('today.dateNav.nextDay') : t('today.dateNav.nextDisabled')}
+        aria-label={canGoForwardSportDay ? t('today.dateNav.nextDay') : t('today.dateNav.nextDisabled')}
+      >
+        <ChevronRight className="h-5 w-5" aria-hidden />
+      </button>
+    </div>
+  );
 
   const updateSessionEffortStarsToday = useCallback(
     (exercise, starCount) => {
@@ -906,6 +1016,27 @@ const TodayTab = () => {
       updateTempExerciseData({
         ...currentData,
         exerciseSessionEffortStars: next
+      });
+    },
+    [getCurrentData, updateTempExerciseData, currentDate, isGymMode, workout?.isGymMode]
+  );
+
+  const updateSessionPleasureStarsToday = useCallback(
+    (exercise, starCount) => {
+      const currentData = getCurrentData();
+      const keyOpts = { isGymMode, workoutIsGymMode: workout?.isGymMode };
+      const primaryKey = generateSmartExerciseKey(currentDate, exercise.id, keyOpts);
+      const keys = collectExerciseKeysForWorkoutExercise(currentDate, exercise, keyOpts);
+      const next = { ...(currentData.exerciseSessionPleasureStars || {}) };
+      keys.forEach((k) => {
+        if (k !== primaryKey) delete next[k];
+      });
+      const n = Math.round(Number(starCount));
+      if (!Number.isFinite(n) || n < 1 || n > 5) delete next[primaryKey];
+      else next[primaryKey] = n;
+      updateTempExerciseData({
+        ...currentData,
+        exerciseSessionPleasureStars: next
       });
     },
     [getCurrentData, updateTempExerciseData, currentDate, isGymMode, workout?.isGymMode]
@@ -1218,6 +1349,7 @@ const TodayTab = () => {
     
     return (
       <div className="max-w-4xl mx-auto px-4 py-6 space-y-6">
+        {sportSessionDateNavRow}
         <div className="text-center py-12 bg-black rounded-xl border-2 border-[#0F4C5C]/70">
           <div className="text-teal-200/80 mb-4">
             <div className="text-6xl mb-4">🎉</div>
@@ -1335,7 +1467,18 @@ const TodayTab = () => {
           </div>
           {workoutDayOverride && (
             <p className="text-xs text-amber-400/90 mt-2">
-              {t('today.workout.overrideHint', "Tu affiches l'entraînement du {{day}}. La session sera enregistrée pour aujourd'hui.", { day: workoutDayOverride.charAt(0).toUpperCase() + workoutDayOverride.slice(1) })}
+              {dateStr < calendarTodayYmd
+                ? t('today.workout.overrideHintForDate', {
+                    day: workoutDayOverride.charAt(0).toUpperCase() + workoutDayOverride.slice(1),
+                    date: currentDate.toLocaleDateString(uiLocale, {
+                      day: 'numeric',
+                      month: 'long',
+                      year: 'numeric'
+                    })
+                  })
+                : t('today.workout.overrideHint', {
+                    day: workoutDayOverride.charAt(0).toUpperCase() + workoutDayOverride.slice(1)
+                  })}
             </p>
           )}
         </div>
@@ -1350,6 +1493,8 @@ const TodayTab = () => {
           Enregistrer un max
         </button>
       </div>
+
+      {sportSessionDateNavRow}
 
       {workout?.exercices?.length > 0 && (
         <div className="flex flex-wrap items-center gap-3 rounded-xl border-2 border-[#0F5C45]/45 bg-black px-4 py-3 text-sm text-teal-100/90">
@@ -1587,6 +1732,7 @@ const TodayTab = () => {
               workoutIsGymMode: workout.isGymMode
             });
             const sessionEffortStars = pickExerciseSessionEffortStars(currentData, keys, primaryKeyForStars);
+            const sessionPleasureStars = pickExerciseSessionPleasureStars(currentData, keys, primaryKeyForStars);
             const coefStarCount = intensityCoeffToStarCount(loadCoeff);
 
             return (
@@ -1761,14 +1907,29 @@ const TodayTab = () => {
 
                   {isChecked && (
                     <div className="w-full pt-3 mt-1 border-t border-[#0F4C5C]/45">
-                      <p className="text-[11px] font-medium text-amber-200/90 mb-1.5">
-                        {t('today.exercises.sessionEffortLabel', 'Ressenti aujourd’hui')}
+                      <p className="text-[11px] font-medium text-amber-200/90 mb-0.5">
+                        {t('today.exercises.sessionEffortDifficulty', 'Charge / difficulté perçue')}
                       </p>
                       <SessionEffortBlock
-                        idPrefix={`today-ex-${exercise.id}`}
+                        idPrefix={`today-ex-${exercise.id}-effort`}
                         persistedValue={sessionEffortStars}
                         suggestedStars={coefStarCount}
                         onChange={(n) => updateSessionEffortStarsToday(exercise, n)}
+                        ariaGroupLabel={t('today.exercises.sessionEffortAria', 'Difficulté perçue')}
+                      />
+                      <p className="text-[11px] font-medium text-sky-200/90 mt-2 mb-0.5">
+                        {t('today.exercises.sessionPleasureLabel', 'Plaisir & qualité du ressenti')}
+                      </p>
+                      <SessionEffortBlock
+                        idPrefix={`today-ex-${exercise.id}-feel`}
+                        persistedValue={sessionPleasureStars}
+                        suggestedStars={4}
+                        onChange={(n) => updateSessionPleasureStarsToday(exercise, n)}
+                        ariaGroupLabel={t('today.exercises.sessionPleasureAria', 'Plaisir de la séance')}
+                        hintText={t(
+                          'today.exercises.sessionPleasureHint',
+                          'Plus d’étoiles = meilleure séance. Les deux notes affinent l’analyse.'
+                        )}
                       />
                     </div>
                   )}

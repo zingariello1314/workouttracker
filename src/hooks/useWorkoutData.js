@@ -31,6 +31,7 @@ const generateTestWorkoutData = () => {
     exercisePerceivedRatings: {},
     exercisePersonalNotes: {},
     exerciseSessionEffortStars: {},
+    exerciseSessionPleasureStars: {},
     stretchPerceivedRatings: {},
     stretchPersonalNotes: {},
     stretchSessionEffortStars: {}
@@ -154,6 +155,10 @@ const INITIAL_WORKOUT_DATA = {
    * Saisie dans l’onglet Aujourd’hui ; prise en compte dans l’analyse de difficulté une fois l’exercice coché.
    */
   exerciseSessionEffortStars: {},
+  /**
+   * 1–5 « plaisir / qualité du ressenti » (plus = meilleure séance) — mêmes clés que l’effort perçu.
+   */
+  exerciseSessionPleasureStars: {},
   /**
    * Notes subjectives 1–10 par critère pour chaque étirement de la banque.
    * Format : { [stretchKey]: { difficulty: 1-10, enjoyment: 1-10, recovery: 1-10 } }
@@ -441,6 +446,10 @@ export const useWorkoutData = (options = {}) => {
         migratedData.exerciseSessionEffortStars && typeof migratedData.exerciseSessionEffortStars === 'object'
           ? { ...migratedData.exerciseSessionEffortStars }
           : {},
+      exerciseSessionPleasureStars:
+        migratedData.exerciseSessionPleasureStars && typeof migratedData.exerciseSessionPleasureStars === 'object'
+          ? { ...migratedData.exerciseSessionPleasureStars }
+          : {},
       stretchPerceivedRatings:
         migratedData.stretchPerceivedRatings && typeof migratedData.stretchPerceivedRatings === 'object'
           ? { ...migratedData.stretchPerceivedRatings }
@@ -512,6 +521,11 @@ export const useWorkoutData = (options = {}) => {
         migratedBackup.exerciseSessionEffortStars &&
         typeof migratedBackup.exerciseSessionEffortStars === 'object'
           ? { ...migratedBackup.exerciseSessionEffortStars }
+          : {},
+      exerciseSessionPleasureStars:
+        migratedBackup.exerciseSessionPleasureStars &&
+        typeof migratedBackup.exerciseSessionPleasureStars === 'object'
+          ? { ...migratedBackup.exerciseSessionPleasureStars }
           : {},
       stretchPerceivedRatings:
         migratedBackup.stretchPerceivedRatings && typeof migratedBackup.stretchPerceivedRatings === 'object'
@@ -636,6 +650,18 @@ export const useWorkoutData = (options = {}) => {
       }
 
       if (
+        newData.exerciseSessionPleasureStars &&
+        typeof newData.exerciseSessionPleasureStars === 'object'
+      ) {
+        const cleanPleasure = {};
+        for (const [key, raw] of Object.entries(newData.exerciseSessionPleasureStars)) {
+          const n = Math.round(Number(raw));
+          if (Number.isFinite(n) && n >= 1 && n <= 5) cleanPleasure[key] = n;
+        }
+        newData.exerciseSessionPleasureStars = cleanPleasure;
+      }
+
+      if (
         newData.stretchSessionEffortStars &&
         typeof newData.stretchSessionEffortStars === 'object'
       ) {
@@ -733,6 +759,12 @@ export const useWorkoutData = (options = {}) => {
           newData.exerciseSessionEffortStars &&
           typeof newData.exerciseSessionEffortStars === 'object'
             ? { ...newData.exerciseSessionEffortStars }
+            : {},
+        exerciseSessionPleasureStars:
+          newData &&
+          newData.exerciseSessionPleasureStars &&
+          typeof newData.exerciseSessionPleasureStars === 'object'
+            ? { ...newData.exerciseSessionPleasureStars }
             : {},
         stretchPerceivedRatings:
           newData && newData.stretchPerceivedRatings && typeof newData.stretchPerceivedRatings === 'object'

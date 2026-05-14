@@ -424,7 +424,10 @@ export function buildRecapCrossCoachAggregate({
       daysSinceLastActivity
     },
     profileHints: {
-      goalPhysique: qq.answers?.goalPhysique ?? null
+      goalPhysique: qq.answers?.goalPhysique ?? null,
+      currentPhysique: qq.answers?.currentPhysique ?? null,
+      priorityMuscleGroups: Array.isArray(qq.answers?.priorityMuscleGroups) ? qq.answers.priorityMuscleGroups : [],
+      availableEquipment: Array.isArray(qq.answers?.availableEquipment) ? qq.answers.availableEquipment : []
     },
     planChecks28: planChecks,
     nutrition: {

@@ -22,6 +22,7 @@ import { buildPerformanceScore } from '../../utils/exercisePerformanceUtils';
 import { computeRecapUserAssessment } from '../../utils/sport/recapUserAssessment';
 import RecapUserAssessmentPanel from '../sport/recap/RecapUserAssessmentPanel';
 import RecapCrossCoachPanel from '../sport/recap/RecapCrossCoachPanel';
+import RecapQuizHistoryPanel from '../sport/recap/RecapQuizHistoryPanel';
 import { useRecapSynthesisCoach } from '../../hooks/useRecapSynthesisCoach';
 
 const PERIOD_STORAGE_KEY = 'sport.recap.periodView';
@@ -250,6 +251,10 @@ const RecapTab = () => {
           profileQuestionnaireRaw={currentUser?.profileQuestionnaire}
           currentUser={currentUser}
         />
+      </div>
+
+      <div className="mb-8">
+        <RecapQuizHistoryPanel profileQuestionnaireRaw={currentUser?.profileQuestionnaire} />
       </div>
 
       <div className="mb-8">

@@ -33,8 +33,7 @@ function pickStoredState(currentData, keys) {
   return { key: keys[0] || '', reps: '', isChecked: false };
 }
 
-function pickStoredSessionStars(currentData, keys, primaryKey) {
-  const map = currentData?.exerciseSessionEffortStars || {};
+function pickStoredSessionStars(map, keys, primaryKey) {
   for (const key of keys) {
     const s = map[key];
     const n = Number(s);
@@ -46,8 +45,16 @@ function pickStoredSessionStars(currentData, keys, primaryKey) {
   return null;
 }
 
+function pickEffortSessionStars(currentData, keys, primaryKey) {
+  return pickStoredSessionStars(currentData?.exerciseSessionEffortStars || {}, keys, primaryKey);
+}
+
+function pickStoredSessionPleasureStars(currentData, keys, primaryKey) {
+  return pickStoredSessionStars(currentData?.exerciseSessionPleasureStars || {}, keys, primaryKey);
+}
+
 /**
- * @returns {{ toggleExercise: Function, updateReps: Function, updateSessionEffortStars: Function, getExerciseStatus: Function }}
+ * @returns {{ toggleExercise: Function, updateReps: Function, updateSessionEffortStars: Function, updateSessionPleasureStars: Function, getExerciseStatus: Function }}
  */
 export const useExerciseTracking = (options = {}) => {
   const {
@@ -102,11 +109,13 @@ export const useExerciseTracking = (options = {}) => {
         const nextReps = { ...(currentData.reps || {}) };
         const nextChk = { ...(currentData.checkedExercises || {}) };
         const nextStars = { ...(currentData.exerciseSessionEffortStars || {}) };
+        const nextPleasure = { ...(currentData.exerciseSessionPleasureStars || {}) };
 
         keys.forEach((k) => {
           delete nextReps[k];
           delete nextChk[k];
           delete nextStars[k];
+          delete nextPleasure[k];
         });
 
         let repsVal = '';
@@ -145,7 +154,8 @@ export const useExerciseTracking = (options = {}) => {
           ...currentData,
           checkedExercises: nextChk,
           reps: nextReps,
-          exerciseSessionEffortStars: nextStars
+          exerciseSessionEffortStars: nextStars,
+          exerciseSessionPleasureStars: nextPleasure
         };
         if (pattern) {
           const repsDone = Math.max(0, Math.round(Number(repsVal) || 0));
@@ -168,17 +178,20 @@ export const useExerciseTracking = (options = {}) => {
       const nextReps = { ...(currentData.reps || {}) };
       const nextChk = { ...(currentData.checkedExercises || {}) };
       const nextStars = { ...(currentData.exerciseSessionEffortStars || {}) };
+      const nextPleasure = { ...(currentData.exerciseSessionPleasureStars || {}) };
       keys.forEach((k) => {
         delete nextReps[k];
         delete nextChk[k];
         delete nextStars[k];
+        delete nextPleasure[k];
       });
 
       updateTempExerciseData({
         ...currentData,
         checkedExercises: nextChk,
         reps: nextReps,
-        exerciseSessionEffortStars: nextStars
+        exerciseSessionEffortStars: nextStars,
+        exerciseSessionPleasureStars: nextPleasure
       });
     },
     [
@@ -242,9 +255,32 @@ export const useExerciseTracking = (options = {}) => {
     [getCurrentData, updateTempExerciseData, primaryKeyForExercise, allKeysForExercise]
   );
 
+  const updateSessionPleasureStars = useCallback(
+    (exercise, starCount) => {
+      const currentData = getCurrentData();
+      const primaryKey = primaryKeyForExercise(exercise);
+      const keys = allKeysForExercise(exercise);
+      const next = { ...(currentData.exerciseSessionPleasureStars || {}) };
+      keys.forEach((k) => {
+        if (k !== primaryKey) delete next[k];
+      });
+      const n = Math.round(Number(starCount));
+      if (!Number.isFinite(n) || n < 1 || n > 5) {
+        delete next[primaryKey];
+      } else {
+        next[primaryKey] = n;
+      }
+      updateTempExerciseData({
+        ...currentData,
+        exerciseSessionPleasureStars: next
+      });
+    },
+    [getCurrentData, updateTempExerciseData, primaryKeyForExercise, allKeysForExercise]
+  );
+
   /**
    * @param {Object} exercise
-   * @returns {{ isChecked: boolean, reps: string, sessionEffortStars: number|null }}
+   * @returns {{ isChecked: boolean, reps: string, sessionEffortStars: number|null, sessionPleasureStars: number|null }}
    */
   const getExerciseStatus = useCallback(
     (exercise) => {
@@ -255,7 +291,8 @@ export const useExerciseTracking = (options = {}) => {
       return {
         isChecked: picked.isChecked,
         reps: picked.reps,
-        sessionEffortStars: pickStoredSessionStars(currentData, keys, primaryKey)
+        sessionEffortStars: pickEffortSessionStars(currentData, keys, primaryKey),
+        sessionPleasureStars: pickStoredSessionPleasureStars(currentData, keys, primaryKey)
       };
     },
     [getCurrentData, allKeysForExercise, primaryKeyForExercise]
@@ -265,6 +302,7 @@ export const useExerciseTracking = (options = {}) => {
     toggleExercise,
     updateReps,
     updateSessionEffortStars,
+    updateSessionPleasureStars,
     getExerciseStatus
   };
 };

@@ -18,6 +18,73 @@ const sectionById = QUESTION_SECTIONS.reduce((acc, s) => {
 const getSectionLabel = (sectionId) => sectionById[sectionId]?.label || 'Profil';
 
 const QuestionCard = ({ question, value, onSelect }) => {
+  if (question.type === 'vitals') {
+    const v = value && typeof value === 'object' ? value : {};
+    const setField = (k, raw) => {
+      const next = { ...v, [k]: raw };
+      onSelect(next);
+    };
+    return (
+      <div className="grid gap-3 sm:grid-cols-2">
+        <div className="space-y-1">
+          <label className="text-xs text-slate-400">Sexe</label>
+          <select
+            value={v.sex || ''}
+            onChange={(e) => setField('sex', e.target.value || null)}
+            className="w-full rounded-lg border border-slate-600 bg-slate-900/60 px-3 py-2 text-sm text-slate-100"
+          >
+            <option value="">—</option>
+            <option value="male">Homme</option>
+            <option value="female">Femme</option>
+            <option value="other">Autre / non précisé</option>
+            <option value="na">Préfère ne pas dire</option>
+          </select>
+        </div>
+        <div className="space-y-1">
+          <label className="text-xs text-slate-400">Âge (ans)</label>
+          <input
+            type="number"
+            min={10}
+            max={110}
+            placeholder="ex. 28"
+            value={v.age ?? ''}
+            onChange={(e) => setField('age', e.target.value === '' ? null : Number(e.target.value))}
+            className="w-full rounded-lg border border-slate-600 bg-slate-900/60 px-3 py-2 text-sm text-slate-100"
+          />
+        </div>
+        <div className="space-y-1">
+          <label className="text-xs text-slate-400">Poids (kg)</label>
+          <input
+            type="number"
+            min={30}
+            max={250}
+            step="0.1"
+            placeholder="ex. 72.5"
+            value={v.weightKg ?? ''}
+            onChange={(e) => setField('weightKg', e.target.value === '' ? null : e.target.value)}
+            className="w-full rounded-lg border border-slate-600 bg-slate-900/60 px-3 py-2 text-sm text-slate-100"
+          />
+        </div>
+        <div className="space-y-1">
+          <label className="text-xs text-slate-400">Taille (cm)</label>
+          <input
+            type="number"
+            min={120}
+            max={230}
+            placeholder="ex. 175"
+            value={v.heightCm ?? ''}
+            onChange={(e) => setField('heightCm', e.target.value === '' ? null : Number(e.target.value))}
+            className="w-full rounded-lg border border-slate-600 bg-slate-900/60 px-3 py-2 text-sm text-slate-100"
+          />
+        </div>
+        <p className="sm:col-span-2 text-[11px] text-slate-500">
+          Tu peux laisser vide ce que tu ne souhaites pas partager : les champs remplis seules alimentent les
+          suggestions.
+        </p>
+      </div>
+    );
+  }
+
   if (question.type === 'slider') {
     const safeValue = value == null ? Number(question.min || 0) : Number(value);
     return (
@@ -147,17 +214,20 @@ const ProfileQuestionnaireModal = ({ isOpen, onClose }) => {
   const question = PROFILE_QUESTION_DEFS[step];
   const stats = useMemo(() => computeCompletion(answers), [answers]);
   const progressPercent = Math.round(((step + 1) / PROFILE_QUESTION_DEFS.length) * 100);
-  const canContinue = (() => {
-    const value = answers?.[question?.id];
+  const canContinue = useMemo(() => {
+    const q = PROFILE_QUESTION_DEFS[step];
+    if (!q) return false;
+    if (q.type === 'vitals') return true;
+    const value = answers?.[q.id];
     if (value == null) return false;
     if (Array.isArray(value)) return value.length > 0;
     return true;
-  })();
+  }, [step, answers]);
 
   const persistAndClose = async (nextAnswers) => {
     setSaving(true);
     try {
-      await saveAnswers(nextAnswers);
+      await saveAnswers(nextAnswers, { completeWizard: true });
       onClose?.();
     } finally {
       setSaving(false);
@@ -223,6 +293,9 @@ const ProfileQuestionnaireModal = ({ isOpen, onClose }) => {
 
         <div className="space-y-3">
           <h3 className="text-xl font-semibold text-white">{question.title}</h3>
+          {question.description ? (
+            <p className="text-sm text-slate-400 leading-relaxed">{question.description}</p>
+          ) : null}
           <QuestionCard
             question={question}
             value={answers?.[question.id]}

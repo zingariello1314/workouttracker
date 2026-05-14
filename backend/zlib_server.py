@@ -24,22 +24,23 @@ from fastapi.responses import Response, StreamingResponse
 from dotenv import load_dotenv
 
 def _load_env():
-    """Charge .env racine puis backend/. utf-8-sig évite un BOM qui casse le nom de la première variable sous Windows."""
+    """Charge les .env comme Vite côté racine : `.env` puis `.env.local`, puis `backend/.env` et `backend/.env.local` (chaque fichier suivant écrase les clés précédentes). Ainsi `AUTH_JWT_SECRET` peut vivre dans `.env.local` à la racine. utf-8-sig évite un BOM qui casse le nom de la première variable sous Windows."""
     root = Path(__file__).resolve().parent.parent
-    root_env = root / ".env"
-    backend_env = Path(__file__).resolve().parent / ".env"
+    backend_dir = Path(__file__).resolve().parent
+    candidates = [
+        root / ".env",
+        root / ".env.local",
+        backend_dir / ".env",
+        backend_dir / ".env.local",
+    ]
     _kwargs = {"override": True, "encoding": "utf-8-sig"}
-    try:
-        if root_env.exists():
-            load_dotenv(str(root_env), **_kwargs)
-        if backend_env.exists():
-            load_dotenv(str(backend_env), **_kwargs)
-    except TypeError:
-        # python-dotenv très ancien sans encoding=
-        if root_env.exists():
-            load_dotenv(str(root_env), override=True)
-        if backend_env.exists():
-            load_dotenv(str(backend_env), override=True)
+    for path in candidates:
+        if not path.exists():
+            continue
+        try:
+            load_dotenv(str(path), **_kwargs)
+        except TypeError:
+            load_dotenv(str(path), override=True)
     load_dotenv(override=False)
 
 _load_env()

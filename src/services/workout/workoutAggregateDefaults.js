@@ -29,6 +29,7 @@ export function createEmptyWorkoutAggregate() {
     exercisePerceivedRatings: {},
     exercisePersonalNotes: {},
     exerciseSessionEffortStars: {},
+    exerciseSessionPleasureStars: {},
     stretchPerceivedRatings: {},
     stretchPersonalNotes: {},
     stretchSessionEffortStars: {},

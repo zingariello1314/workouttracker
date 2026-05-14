@@ -228,7 +228,8 @@ const WorkoutTrackerContent = () => {
     if (onboardingPromptHandled) return;
     const shouldPrompt =
       questionnaire.completedCount < questionnaire.totalCount &&
-      !questionnaire.onboardingSkippedAt;
+      !questionnaire.onboardingSkippedAt &&
+      !questionnaire.onboardingWizardCompletedAt;
     if (shouldPrompt) {
       setShowProfileQuiz(true);
     }
@@ -239,6 +240,7 @@ const WorkoutTrackerContent = () => {
     onboardingPromptHandled,
     questionnaire.completedCount,
     questionnaire.onboardingSkippedAt,
+    questionnaire.onboardingWizardCompletedAt,
     questionnaire.totalCount
   ]);
 

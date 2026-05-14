@@ -1,7 +1,7 @@
 import { useCallback, useMemo } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { QUESTIONNAIRE_STORAGE_FIELD } from './constants';
-import { normalizeProfileQuestionnaire } from './schema';
+import { normalizeProfileQuestionnaire, sanitizeAnswersPayload } from './schema';
 
 export const useProfileQuestionnaire = () => {
   const { currentUser, updateProfile } = useAuth();
@@ -11,11 +11,29 @@ export const useProfileQuestionnaire = () => {
   }, [currentUser]);
 
   const saveAnswers = useCallback(
-    async (partialAnswers) => {
+    async (partialAnswers, opts = {}) => {
       if (!currentUser?.id) return { success: false, error: 'NO_USER' };
+      const nowIso = new Date().toISOString();
+      let quizRoundHistory = Array.isArray(questionnaire.quizRoundHistory)
+        ? [...questionnaire.quizRoundHistory]
+        : [];
+      if (opts.completeWizard && questionnaire.onboardingWizardCompletedAt) {
+        quizRoundHistory.push({
+          completedAt: questionnaire.lastUpdatedAt || nowIso,
+          version: questionnaire.version,
+          answers: sanitizeAnswersPayload(questionnaire.answers),
+          completionSnapshot: {
+            completedCount: questionnaire.completedCount,
+            totalCount: questionnaire.totalCount
+          }
+        });
+        quizRoundHistory = quizRoundHistory.slice(-10);
+      }
       const merged = normalizeProfileQuestionnaire({
         ...questionnaire,
-        lastUpdatedAt: new Date().toISOString(),
+        quizRoundHistory,
+        lastUpdatedAt: nowIso,
+        ...(opts.completeWizard ? { onboardingWizardCompletedAt: nowIso } : {}),
         answers: {
           ...(questionnaire?.answers || {}),
           ...(partialAnswers || {})
@@ -40,10 +58,25 @@ export const useProfileQuestionnaire = () => {
     });
   }, [currentUser?.id, questionnaire, updateProfile]);
 
+  const snoozeQuizReminder = useCallback(async () => {
+    if (!currentUser?.id) return { success: false, error: 'NO_USER' };
+    const until = new Date();
+    until.setMonth(until.getMonth() + 3);
+    const merged = normalizeProfileQuestionnaire({
+      ...questionnaire,
+      quizReminderSnoozeUntil: until.toISOString(),
+      lastUpdatedAt: new Date().toISOString()
+    });
+    return updateProfile({
+      [QUESTIONNAIRE_STORAGE_FIELD]: merged
+    });
+  }, [currentUser?.id, questionnaire, updateProfile]);
+
   return {
     questionnaire,
     saveAnswers,
-    markSkipped
+    markSkipped,
+    snoozeQuizReminder
   };
 };
 

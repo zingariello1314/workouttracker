@@ -11,6 +11,7 @@ import { isMockEnduranceSession, normalizeDateString } from '../calendarUtils';
 import { getExerciseDatabaseHit } from '../exerciseHeroContent';
 import { normalizeProfileQuestionnaire } from '../../features/profileQuestionnaire/schema';
 import { PROFILE_QUESTION_DEFS } from '../../features/profileQuestionnaire/constants';
+import { buildQuizDerivedSuggestionTexts } from '../../features/profileQuestionnaire/quizInfluence';
 
 const MS_DAY = 86400000;
 
@@ -518,6 +519,9 @@ export function computeRecapUserAssessment({
   else tier = 'Avancé';
 
   const suggestions = [];
+  buildQuizDerivedSuggestionTexts(answers || {}).forEach((row) => {
+    suggestions.push(row);
+  });
   if (regularityScore < 0.45) {
     suggestions.push({
       kind: 'regularity',
@@ -588,6 +592,16 @@ export function computeRecapUserAssessment({
       return { id: q.id, title: q.title, value: '—' };
     if (q.type === 'slider') return { id: q.id, title: q.title, value: `${v} %` };
     if (q.type === 'days' && Array.isArray(v)) return { id: q.id, title: q.title, value: v.join(', ') };
+    if (q.type === 'vitals' && typeof v === 'object' && !Array.isArray(v)) {
+      const bits = [];
+      if (v.sex === 'male') bits.push('H');
+      else if (v.sex === 'female') bits.push('F');
+      else if (v.sex === 'other') bits.push('Autre');
+      if (v.age != null) bits.push(`${v.age} ans`);
+      if (v.weightKg != null) bits.push(`${v.weightKg} kg`);
+      if (v.heightCm != null) bits.push(`${v.heightCm} cm`);
+      return { id: q.id, title: q.title, value: bits.length ? bits.join(' · ') : '—' };
+    }
     if (Array.isArray(v)) {
       const labels = (q.options || []).filter((o) => v.includes(o.key)).map((o) => o.label);
       return { id: q.id, title: q.title, value: labels.join(', ') || v.join(', ') };

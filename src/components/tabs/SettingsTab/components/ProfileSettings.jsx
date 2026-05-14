@@ -2,7 +2,7 @@
  * Paramètres du profil (avatar, email, mot de passe, migration).
  */
 
-import React from 'react';
+import React, { useMemo } from 'react';
 import { User, Mail, Lock, Image, BadgeCheck, HelpCircle } from 'lucide-react';
 import Card, { CardHeader, CardTitle, CardContent } from '../../../ui/Card';
 import { Input } from '../../../ui/Input';
@@ -16,12 +16,16 @@ import {
   writePendingQuizPrefill
 } from '../../../../features/profileQuestionnaire/prefill';
 
+import { useProfileQuestionnaire } from '../../../../features/profileQuestionnaire/useProfileQuestionnaire';
+
 const ProfileSettings = ({
   currentUser,
   profileSettings,
   setActiveTab,
   migrationSettings
 }) => {
+  const { snoozeQuizReminder } = useProfileQuestionnaire();
+
   if (!currentUser) return null;
 
   const {
@@ -89,6 +93,16 @@ const ProfileSettings = ({
       return raw.map((x) => optionsMap.get(String(x)) || String(x)).join(', ');
     }
     if (q.type === 'slider') return `${raw}%`;
+    if (q.type === 'vitals' && typeof raw === 'object' && !Array.isArray(raw)) {
+      const bits = [];
+      if (raw.sex === 'male') bits.push('H');
+      else if (raw.sex === 'female') bits.push('F');
+      else if (raw.sex === 'other') bits.push('Autre');
+      if (raw.age != null) bits.push(`${raw.age} ans`);
+      if (raw.weightKg != null) bits.push(`${raw.weightKg} kg`);
+      if (raw.heightCm != null) bits.push(`${raw.heightCm} cm`);
+      return bits.length ? bits.join(' · ') : 'Non renseigné';
+    }
     const option = (q.options || []).find((opt) => String(opt.key) === String(raw));
     return option?.label || String(raw);
   };
@@ -96,6 +110,16 @@ const ProfileSettings = ({
     Boolean(newPassword && confirmPassword) &&
     Boolean((oldPassword && oldPassword.trim()) || (lockReady && appLockCode && appLockCode.trim()));
   const prefillPayload = buildQuizPrefillPayload(currentUser?.profileQuestionnaire || null);
+
+  const quizHistoryCount = (profileQuestionnaire.quizRoundHistory || []).length;
+  const showQuizRenewal = useMemo(() => {
+    const done = profileQuestionnaire.onboardingWizardCompletedAt;
+    if (!done) return false;
+    const snoozeUntil = profileQuestionnaire.quizReminderSnoozeUntil;
+    if (snoozeUntil && new Date(snoozeUntil) > new Date()) return false;
+    const t = new Date(done).getTime();
+    return Number.isFinite(t) && Date.now() - t > 90 * 86400000;
+  }, [profileQuestionnaire.onboardingWizardCompletedAt, profileQuestionnaire.quizReminderSnoozeUntil]);
 
   return (
     <Card variant="settings" className="profile-input-dark">
@@ -121,6 +145,32 @@ const ProfileSettings = ({
               </span>
             </div>
 
+            {showQuizRenewal ? (
+              <div className="rounded-lg border border-amber-600/45 bg-amber-950/25 p-3 text-[11px] leading-relaxed text-amber-100/90">
+                <p className="font-semibold text-amber-200">Ton dernier quiz date de plus de 3 mois</p>
+                <p className="mt-1">
+                  Refaire le bilan depuis ici met à jour les suggestions ; les versions précédentes restent consultables
+                  dans <span className="text-amber-200">Sport → Récap</span>.
+                </p>
+                <div className="mt-2 flex flex-wrap gap-2">
+                  <button
+                    type="button"
+                    onClick={() => window.dispatchEvent(new Event(ONBOARDING_OPEN_EVENT))}
+                    className={`${S.btnSecondary} text-xs`}
+                  >
+                    Nouveau bilan quiz
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => snoozeQuizReminder()}
+                    className="rounded-lg border border-amber-800/60 px-3 py-1.5 text-xs text-amber-200 hover:bg-amber-950/40"
+                  >
+                    Rappeler dans 3 mois
+                  </button>
+                </div>
+              </div>
+            ) : null}
+
             {!quizStarted ? (
               <>
                 <p className="text-xs leading-relaxed text-violet-100/80">
@@ -142,9 +192,17 @@ const ProfileSettings = ({
                     {quizComplete
                       ? 'Quiz complété : voici ton récapitulatif principal.'
                       : 'Quiz partiellement complété : voici le récapitulatif actuel.'}
+                    {quizHistoryCount > 0 ? (
+                      <span className="ml-2 text-[10px] font-normal text-violet-300/80">
+                        ({quizHistoryCount} bilan antérieur{quizHistoryCount > 1 ? 's' : ''} en archive — Récap)
+                      </span>
+                    ) : null}
                   </p>
                   <div className="grid gap-1.5">
+                    <p><span className="text-violet-200/90">Mesures (quiz):</span> {summarizeAnswer('vitalsSelfReport')}</p>
                     <p><span className="text-violet-200/90">Objectif:</span> {summarizeAnswer('goalPhysique')}</p>
+                    <p><span className="text-violet-200/90">Physique actuel:</span> {summarizeAnswer('currentPhysique')}</p>
+                    <p><span className="text-violet-200/90">Priorités:</span> {summarizeAnswer('priorityMuscleGroups')}</p>
                     <p><span className="text-violet-200/90">Niveau:</span> {summarizeAnswer('experienceLevel')}</p>
                     <p><span className="text-violet-200/90">Lieu:</span> {summarizeAnswer('trainingLocation')}</p>
                     <p><span className="text-violet-200/90">Jours disponibles:</span> {summarizeAnswer('availableTrainingDays')}</p>

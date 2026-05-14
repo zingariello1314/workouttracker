@@ -16,9 +16,10 @@ import { sidebarEvents, SIDEBAR_EVENTS } from '../../../utils/sidebarEvents';
  * @param {Object} data - Données actuelles
  * @param {Function} updateData - Fonction pour mettre à jour les données
  * @param {Function} getCurrentData - Fonction pour obtenir les données actuelles
+ * @param {string} sessionCalendarDateStr - Date calendaire de la séance (YYYY-MM-DD), ex. onglet Aujourd’hui + navigation jour
  * @returns {Object} { hasUnsavedExercises, hasUnsavedStretches, tempData, updateTempExerciseData, updateTempStretchData, saveExerciseChanges, discardExerciseChanges, saveStretchChanges, discardStretchChanges, cancelExerciseChanges, cancelStretchChanges, resetDay }
  */
-export const useWorkoutExercises = (data, updateData, getCurrentData) => {
+export const useWorkoutExercises = (data, updateData, getCurrentData, sessionCalendarDateStr = '') => {
   const [hasUnsavedExercises, setHasUnsavedExercises] = useState(false);
   const [hasUnsavedStretches, setHasUnsavedStretches] = useState(false);
   const [tempData, setTempData] = useState(null);
@@ -82,11 +83,17 @@ export const useWorkoutExercises = (data, updateData, getCurrentData) => {
         }
 
         await updateData(tempData);
+        // Le brouillon contient toujours un snapshot complet (exercices ∪ étirements) : une sauvegarde persiste tout.
         setHasUnsavedExercises(false);
+        setHasUnsavedStretches(false);
         setTempData(null);
-        
-        sidebarEvents.emit(SIDEBAR_EVENTS.WORKOUT_UPDATED, { 
-          date: getDateStr(new Date()),
+
+        const emitDate =
+          sessionCalendarDateStr && /^\d{4}-\d{2}-\d{2}$/.test(sessionCalendarDateStr)
+            ? sessionCalendarDateStr
+            : getDateStr(new Date());
+        sidebarEvents.emit(SIDEBAR_EVENTS.WORKOUT_UPDATED, {
+          date: emitDate,
           type: 'exercises'
         });
       } catch (error) {
@@ -94,11 +101,12 @@ export const useWorkoutExercises = (data, updateData, getCurrentData) => {
         throw error;
       }
     }
-  }, [hasUnsavedExercises, tempData, updateData]);
+  }, [hasUnsavedExercises, tempData, updateData, sessionCalendarDateStr]);
 
   const discardExerciseChanges = useCallback(() => {
     try {
       setHasUnsavedExercises(false);
+      setHasUnsavedStretches(false);
       setTempData(null);
     } catch (error) {
       console.error('❌ Erreur lors de l\'annulation des exercices:', error);
@@ -127,11 +135,16 @@ export const useWorkoutExercises = (data, updateData, getCurrentData) => {
         }
 
         await updateData(tempData);
+        setHasUnsavedExercises(false);
         setHasUnsavedStretches(false);
         setTempData(null);
-        
-        sidebarEvents.emit(SIDEBAR_EVENTS.WORKOUT_UPDATED, { 
-          date: getDateStr(new Date()),
+
+        const emitDate =
+          sessionCalendarDateStr && /^\d{4}-\d{2}-\d{2}$/.test(sessionCalendarDateStr)
+            ? sessionCalendarDateStr
+            : getDateStr(new Date());
+        sidebarEvents.emit(SIDEBAR_EVENTS.WORKOUT_UPDATED, {
+          date: emitDate,
           type: 'stretches'
         });
       } catch (error) {
@@ -139,11 +152,12 @@ export const useWorkoutExercises = (data, updateData, getCurrentData) => {
         throw error;
       }
     }
-  }, [hasUnsavedStretches, tempData, updateData]);
+  }, [hasUnsavedStretches, tempData, updateData, sessionCalendarDateStr]);
 
   const discardStretchChanges = useCallback(() => {
     try {
       setHasUnsavedStretches(false);
+      setHasUnsavedExercises(false);
       setTempData(null);
     } catch (error) {
       console.error('❌ Erreur lors de l\'annulation des étirements:', error);
@@ -152,11 +166,13 @@ export const useWorkoutExercises = (data, updateData, getCurrentData) => {
 
   const cancelExerciseChanges = useCallback(() => {
     setHasUnsavedExercises(false);
+    setHasUnsavedStretches(false);
     setTempData(null);
   }, []);
 
   const cancelStretchChanges = useCallback(() => {
     setHasUnsavedStretches(false);
+    setHasUnsavedExercises(false);
     setTempData(null);
   }, []);
 
@@ -190,6 +206,11 @@ export const useWorkoutExercises = (data, updateData, getCurrentData) => {
     if (!newData.exerciseSetWeights) newData.exerciseSetWeights = {};
     Object.keys(newData.exerciseSetWeights).forEach(key => {
       if (key.startsWith(dateStr)) delete newData.exerciseSetWeights[key];
+    });
+
+    if (!newData.exerciseSessionPleasureStars) newData.exerciseSessionPleasureStars = {};
+    Object.keys(newData.exerciseSessionPleasureStars).forEach((key) => {
+      if (key.startsWith(dateStr)) delete newData.exerciseSessionPleasureStars[key];
     });
 
     if (!newData.exerciseSessionEffortStars) newData.exerciseSessionEffortStars = {};

@@ -13,6 +13,16 @@ export function computeCompletion(answers) {
   PROFILE_QUESTION_DEFS.forEach((q) => {
     const v = answers?.[q.id];
     if (v == null) return;
+    if (q.type === 'vitals') {
+      if (
+        typeof v === 'object' &&
+        !Array.isArray(v) &&
+        (v.sex || v.age != null || v.weightKg != null || v.heightCm != null)
+      ) {
+        completed += 1;
+      }
+      return;
+    }
     if (Array.isArray(v)) {
       if (v.length > 0) completed += 1;
       return;
@@ -24,21 +34,70 @@ export function computeCompletion(answers) {
   return { completedCount: completed, totalCount: total, completionPercent };
 }
 
+function sanitizeVitalsValue(raw) {
+  if (raw == null) return null;
+  if (typeof raw !== 'object' || Array.isArray(raw)) return null;
+  const sexRaw = raw.sex != null ? String(raw.sex).toLowerCase() : '';
+  const sex = ['male', 'female', 'other', 'na'].includes(sexRaw) ? sexRaw : null;
+  let age = Math.round(Number(raw.age));
+  if (!Number.isFinite(age) || age < 10 || age > 110) age = null;
+  let weightKg = Number(String(raw.weightKg).replace(',', '.'));
+  if (!Number.isFinite(weightKg) || weightKg < 30 || weightKg > 250) weightKg = null;
+  let heightCm = Math.round(Number(raw.heightCm));
+  if (!Number.isFinite(heightCm) || heightCm < 120 || heightCm > 230) heightCm = null;
+  if (!sex && age == null && weightKg == null && heightCm == null) return null;
+  return { sex, age, weightKg, heightCm };
+}
+
+export function sanitizeAnswersPayload(answersIn) {
+  const answers = buildEmptyAnswers();
+  const src = isObject(answersIn) ? answersIn : {};
+  PROFILE_QUESTION_DEFS.forEach((q) => {
+    answers[q.id] = sanitizeByQuestion(q, src[q.id]);
+  });
+  return answers;
+}
+
+function sanitizeQuizRoundHistory(raw) {
+  if (!Array.isArray(raw)) return [];
+  const out = [];
+  for (const row of raw) {
+    if (!isObject(row)) continue;
+    const completedAt = typeof row.completedAt === 'string' ? row.completedAt : null;
+    if (!completedAt) continue;
+    out.push({
+      completedAt,
+      version: Number(row.version) || PROFILE_QUESTIONNAIRE_VERSION,
+      answers: sanitizeAnswersPayload(row.answers),
+      completionSnapshot: isObject(row.completionSnapshot) ? row.completionSnapshot : null
+    });
+  }
+  return out.slice(-12);
+}
+
 function sanitizeByQuestion(question, rawValue) {
   if (rawValue == null) return null;
+  if (question.type === 'vitals') {
+    return sanitizeVitalsValue(rawValue);
+  }
   if (question.type === 'single') {
     const key = String(rawValue);
     const allowed = new Set((question.options || []).map((o) => String(o.key)));
     return allowed.has(key) ? key : null;
   }
   if (question.type === 'multi' || question.type === 'days') {
-    const arr = Array.isArray(rawValue) ? rawValue : [];
+    const arrRaw = Array.isArray(rawValue) ? rawValue : [];
     const max = Number(question.max) > 0 ? Number(question.max) : 999;
     if (question.type === 'days') {
       const valid = ['lundi', 'mardi', 'mercredi', 'jeudi', 'vendredi', 'samedi', 'dimanche'];
-      const set = Array.from(new Set(arr.map((x) => String(x)).filter((x) => valid.includes(x))));
+      const set = Array.from(new Set(arrRaw.map((x) => String(x)).filter((x) => valid.includes(x))));
       return set.slice(0, 7);
     }
+    const arr = arrRaw.map((x) => {
+      const s = String(x);
+      if (question.id === 'availableEquipment' && s === 'bodyweight_only') return 'bodyweight';
+      return s;
+    });
     const allowed = new Set((question.options || []).map((o) => String(o.key)));
     const set = Array.from(new Set(arr.map((x) => String(x)).filter((x) => allowed.has(x))));
     return set.slice(0, max);
@@ -66,12 +125,18 @@ export function normalizeProfileQuestionnaire(raw) {
   });
 
   const stats = computeCompletion(answers);
+  const quizRoundHistory = sanitizeQuizRoundHistory(payload.quizRoundHistory);
 
   return {
     version: Number(payload.version) || PROFILE_QUESTIONNAIRE_VERSION,
     createdAt: typeof payload.createdAt === 'string' ? payload.createdAt : now,
     lastUpdatedAt: typeof payload.lastUpdatedAt === 'string' ? payload.lastUpdatedAt : now,
     onboardingSkippedAt: typeof payload.onboardingSkippedAt === 'string' ? payload.onboardingSkippedAt : null,
+    onboardingWizardCompletedAt:
+      typeof payload.onboardingWizardCompletedAt === 'string' ? payload.onboardingWizardCompletedAt : null,
+    quizReminderSnoozeUntil:
+      typeof payload.quizReminderSnoozeUntil === 'string' ? payload.quizReminderSnoozeUntil : null,
+    quizRoundHistory,
     ...stats,
     answers
   };

@@ -3,11 +3,23 @@
     "title": "Rest day",
     "message": "Enjoy your recovery day!"
   },
+  "dateNav": {
+    "discardPrompt": "You have unsaved changes. Discard them and continue?",
+    "prevDay": "Previous day",
+    "nextDay": "Next day",
+    "nextDisabled": "You can’t go beyond today"
+  },
   "workout": {
     "trainingMode": "Training mode:",
     "home": "🏠 Home",
     "gym": "🏋️ Gym",
-    "week": "Week {{week}}"
+    "week": "Week {{week}}",
+    "useWorkoutOf": "Use workout from:",
+    "today": "Today",
+    "todayWorkout": "Today’s workout",
+    "useDayWorkout": "Show and follow {{day}}’s workout",
+    "overrideHint": "You’re viewing {{day}}’s workout. The session will be saved for today.",
+    "overrideHintForDate": "You’re viewing {{day}}’s workout. The session will be saved for {{date}}."
   },
   "exercises": {
     "title": "Exercises",
@@ -81,6 +93,7 @@
   "messages": {
     "exercisesSaved": "Exercises saved successfully",
     "stretchesSaved": "Stretches saved successfully",
+    "sessionSaved": "Session saved (exercises and stretches)",
     "exerciseSuppressed": "Exercise suppressed for today",
     "exerciseRestored": "Exercise restored for today",
     "exceptionalExerciseCompleted": "Exceptional exercise marked as completed",

@@ -219,7 +219,7 @@ const WorkoutProvider = ({ children }) => {
     cancelExerciseChanges,
     cancelStretchChanges,
     resetDay,
-  } = useWorkoutExercises(data, updateData, getCurrentData);
+  } = useWorkoutExercises(data, updateData, getCurrentData, getDateStr(currentDate));
 
   // ✅ PHASE 4 : Synchroniser les états du hook avec les états locaux pour compatibilité
   useEffect(() => {

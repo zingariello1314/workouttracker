@@ -418,6 +418,10 @@ export const useAllDataExportImport = (data, loadFromDB, updateData, validateAll
           ...(backupData.exerciseSessionEffortStars || {}),
           ...(importedData.exerciseSessionEffortStars || {})
         },
+        exerciseSessionPleasureStars: {
+          ...(backupData.exerciseSessionPleasureStars || {}),
+          ...(importedData.exerciseSessionPleasureStars || {})
+        },
         stretchPerceivedRatings: {
           ...(backupData.stretchPerceivedRatings || {}),
           ...(importedData.stretchPerceivedRatings || {})

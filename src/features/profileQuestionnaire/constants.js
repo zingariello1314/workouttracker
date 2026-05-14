@@ -1,4 +1,4 @@
-export const PROFILE_QUESTIONNAIRE_VERSION = 1;
+export const PROFILE_QUESTIONNAIRE_VERSION = 3;
 
 export const QUESTION_SECTIONS = [
   { id: 'objectifs', label: 'Objectifs de la mission', color: 'violet' },
@@ -17,16 +17,45 @@ export const PROFILE_QUESTION_DEFS = [
       { key: 'lean_toned', label: 'Sec et tonique', description: 'Athlétique, défini' },
       { key: 'muscular_defined', label: 'Musclé et défini', description: 'Volume + définition' },
       { key: 'strong_powerful', label: 'Fort & puissant', description: 'Force et performances' },
-      { key: 'balanced_functional', label: 'Équilibré et fonctionnel', description: 'Santé et polyvalence' }
+      { key: 'balanced_functional', label: 'Équilibré et fonctionnel', description: 'Santé et polyvalence' },
+      { key: 'athletic_performance', label: 'Athlète de performance', description: 'Vitesse, agilité, explosivité' },
+      { key: 'bulk_mass', label: 'Masse maximale', description: 'Hypertrophie / prise de volume' },
+      { key: 'recomposition', label: 'Recomposition', description: 'Perdre du gras tout en prenant du muscle' },
+      { key: 'endurance_lean', label: 'Endurance & masse maigre', description: 'Capacité cardiovasculaire + tonicité' }
     ]
+  },
+  {
+    id: 'currentPhysique',
+    sectionId: 'objectifs',
+    type: 'single',
+    title: 'Comment décririez-vous votre physique actuel ?',
+    options: [
+      { key: 'very_slim', label: 'Très sec / fin', description: 'Peu de masse musculaire apparente' },
+      { key: 'slim_avg', label: 'Mince / tonique', description: 'Peu de masse grasse' },
+      { key: 'average', label: 'Moyen', description: 'Ni sec ni très musclé' },
+      { key: 'athletic', label: 'Athlétique', description: 'Musclé sans volume extrême' },
+      { key: 'muscular', label: 'Musclé / fort', description: 'Bonne masse musculaire' },
+      { key: 'higher_bodyfat', label: 'Plus de masse grasse', description: 'Priorité santé ou perte' }
+    ]
+  },
+  {
+    id: 'vitalsSelfReport',
+    sectionId: 'objectifs',
+    type: 'vitals',
+    title: 'Mesures actuelles (facultatif)',
+    description:
+      'Sexe, âge, poids et taille affinent les estimations (nutrition, charge) et les suggestions — données locales au profil.'
   },
   {
     id: 'priorityMuscleGroups',
     sectionId: 'objectifs',
     type: 'multi',
-    max: 3,
-    title: 'Sélectionnez jusqu’à 3 groupes musculaires à prioriser',
+    max: 7,
+    title: 'Sélectionnez les zones ou objectifs à prioriser (jusqu’à 7)',
     options: [
+      { key: 'upper_body', label: 'Haut du corps (global)' },
+      { key: 'lower_body', label: 'Bas du corps (global)' },
+      { key: 'cardio', label: 'Cardio / condition' },
       { key: 'chest', label: 'Pectoraux' },
       { key: 'back', label: 'Dos' },
       { key: 'shoulders', label: 'Épaules' },
@@ -73,7 +102,7 @@ export const PROFILE_QUESTION_DEFS = [
     options: [
       { key: 'commercial_gym', label: 'Salle de sport commerciale' },
       { key: 'home_gym', label: 'Salle de sport à domicile' },
-      { key: 'home_minimal', label: 'Accueil (minimal)' },
+      { key: 'home_minimal', label: 'À domicile (peu de matériel)' },
       { key: 'outdoor', label: 'Extérieur/parc' }
     ]
   },
@@ -91,7 +120,7 @@ export const PROFILE_QUESTION_DEFS = [
       { key: 'cable_machine', label: 'Machine à câbles' },
       { key: 'bench', label: 'Banc' },
       { key: 'squat_rack', label: 'Rack à squat' },
-      { key: 'bodyweight_only', label: 'Poids du corps uniquement' }
+      { key: 'bodyweight', label: 'Poids du corps' }
     ]
   },
   {

@@ -1,6 +1,7 @@
-import React, { createContext, useContext, useEffect, useMemo, useState, useCallback } from 'react';
+import React, { createContext, useContext, useEffect, useMemo, useState, useCallback, useRef } from 'react';
 import logger from '../utils/logger';
 import { useAuthStorage } from '../hooks/useAuthStorage';
+import { isServerAuthMode, readServerTokens } from '../utils/serverAuthApi';
 
 const log = logger.module('AuthContext');
 
@@ -32,6 +33,10 @@ export const AuthProvider = ({ children }) => {
   const [rememberMe, setRememberMe] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const currentUserRef = useRef(null);
+  useEffect(() => {
+    currentUserRef.current = currentUser;
+  }, [currentUser]);
 
   // Chargement initial (auto‑login éventuel)
   useEffect(() => {
@@ -54,6 +59,42 @@ export const AuthProvider = ({ children }) => {
       cancelled = true;
     };
   }, [loadInitialAuth]);
+
+  /** Si le serveur était indisponible au premier chargement, retenter `/auth/refresh` au focus / retour en ligne (sans effacer le refresh token). */
+  useEffect(() => {
+    if (!isServerAuthMode()) return undefined;
+    if (loading) return undefined;
+    if (currentUser) return undefined;
+
+    let timeoutId = 0;
+    const scheduleRetry = () => {
+      if (currentUserRef.current) return;
+      if (!readServerTokens().refreshToken) return;
+      window.clearTimeout(timeoutId);
+      timeoutId = window.setTimeout(async () => {
+        if (currentUserRef.current) return;
+        if (!readServerTokens().refreshToken) return;
+        setLoading(true);
+        try {
+          const result = await loadInitialAuth();
+          setCurrentUser(result.user || null);
+          setRememberMe(!!result.rememberMe);
+        } catch (e) {
+          log.warn('Retry session serveur', e?.message || e);
+        } finally {
+          setLoading(false);
+        }
+      }, 500);
+    };
+
+    window.addEventListener('online', scheduleRetry);
+    window.addEventListener('focus', scheduleRetry);
+    return () => {
+      window.clearTimeout(timeoutId);
+      window.removeEventListener('online', scheduleRetry);
+      window.removeEventListener('focus', scheduleRetry);
+    };
+  }, [loading, currentUser, loadInitialAuth]);
 
   const handleRegister = useCallback(
     async ({ username, email, password, firstName, lastName, emailVerifiedAtSignup = false }) => {

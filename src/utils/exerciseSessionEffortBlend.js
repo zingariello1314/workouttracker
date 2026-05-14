@@ -47,6 +47,7 @@ export function collectCompletedSessionsForExercise(workoutData, exercise) {
   const checked = workoutData?.checkedExercises || {};
   const repsMap = workoutData?.reps || {};
   const starsMap = workoutData?.exerciseSessionEffortStars || {};
+  const pleasureMap = workoutData?.exerciseSessionPleasureStars || {};
 
   const out = [];
   for (const [key, v] of Object.entries(checked)) {
@@ -64,7 +65,10 @@ export function collectCompletedSessionsForExercise(workoutData, exercise) {
       sr >= 1 && sr <= 5 && Number.isFinite(Number(sr))
         ? Math.round(Number(sr))
         : null;
-    out.push({ key, dateStr, reps: r, volumeKg: vol, weightKg, stars });
+    const pr = pleasureMap[key];
+    const pleasureStars =
+      pr >= 1 && pr <= 5 && Number.isFinite(Number(pr)) ? Math.round(Number(pr)) : null;
+    out.push({ key, dateStr, reps: r, volumeKg: vol, weightKg, stars, pleasureStars });
   }
   out.sort((a, b) => b.dateStr.localeCompare(a.dateStr));
   return out;
@@ -128,6 +132,8 @@ export function computeBlendedExerciseEffortStars(workoutData, exercise) {
   const userMedianStars = starred.length ? median(starred) : null;
   const lastStarredMedian =
     starred.length >= 2 ? median(starred.slice(0, 8)) : userMedianStars;
+  const pleasureVals = sessions.filter((s) => s.pleasureStars != null).map((s) => s.pleasureStars);
+  const pleasureMedian = pleasureVals.length ? median(pleasureVals) : null;
 
   const trend = repsTrendAdjustment(
     sessions.map((s) => ({
@@ -174,6 +180,12 @@ export function computeBlendedExerciseEffortStars(workoutData, exercise) {
       source === 'auto'
         ? 'perceived_auto'
         : `${source}_perceived`;
+  }
+
+  if (pleasureMedian != null) {
+    const adjust = (3 - pleasureMedian) * 0.38;
+    display = clampInt(Math.round(display + adjust), 1, 5);
+    source = `${source}_pleasure`;
   }
 
   return {

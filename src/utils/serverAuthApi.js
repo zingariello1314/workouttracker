@@ -80,13 +80,37 @@ export const serverLogin = async ({ username, password }) => {
   return parseJson(res);
 };
 
+/** Évite deux POST /auth/refresh parallèles (ex. React 18 StrictMode en dev) : la rotation révoque l'ancien jeton, le 2e appel recevrait 401 et effacerait la session. Même jeton → même promesse ; autre jeton → attend la requête en cours puis relance. */
+let refreshInFlight = null;
+let refreshForToken = null;
+
 export const serverRefresh = async (refreshToken) => {
-  const res = await fetch(withBase('/auth/refresh'), {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ refreshToken })
-  });
-  return parseJson(res);
+  const token = String(refreshToken || '').trim();
+  if (refreshInFlight) {
+    if (refreshForToken === token) {
+      return refreshInFlight;
+    }
+    try {
+      await refreshInFlight;
+    } catch {
+      /* la rotation suivante utilisera le nouveau refresh en localStorage */
+    }
+  }
+  refreshForToken = token;
+  refreshInFlight = (async () => {
+    try {
+      const res = await fetch(withBase('/auth/refresh'), {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ refreshToken: token })
+      });
+      return await parseJson(res);
+    } finally {
+      refreshInFlight = null;
+      refreshForToken = null;
+    }
+  })();
+  return refreshInFlight;
 };
 
 export const serverLogout = async (refreshToken) => {

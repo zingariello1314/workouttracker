@@ -1,14 +1,8 @@
 import { normalizeProfileQuestionnaire } from './schema';
+import { mapQuizGoalToNutritionGoal, buildProgramPrefillHints, adjustSuggestedProgramWeeks } from './quizInfluence';
 
 export const PENDING_QUIZ_PREFILL_NUTRITION_KEY = 'momentum.pendingQuizPrefill.nutrition';
 export const PENDING_QUIZ_PREFILL_TRAINING_KEY = 'momentum.pendingQuizPrefill.training';
-
-const goalToNutritionGoal = {
-  lean_toned: 'cutting',
-  muscular_defined: 'lean_bulk',
-  strong_powerful: 'bulking',
-  balanced_functional: 'maintenance'
-};
 
 const experienceToDurationWeeks = {
   beginner_total: 4,
@@ -42,16 +36,18 @@ export const buildQuizPrefillPayload = (profileQuestionnaireRaw) => {
     },
     answers,
     nutrition: {
-      suggestedGoal: goalToNutritionGoal[goal] || 'maintenance',
+      suggestedGoal: mapQuizGoalToNutritionGoal(goal, answers.currentPhysique || null),
       bodyFatPercent: answers.bodyFatPercentEstimate ?? null,
       activityOutsideTraining: answers.activityOutsideTraining || null
     },
     training: {
-      suggestedDurationWeeks:
-        sessionDurationToWeeks[duration] ||
-        experienceToDurationWeeks[level] ||
-        6,
-      suggestedDays: days
+      suggestedDurationWeeks: adjustSuggestedProgramWeeks(
+        sessionDurationToWeeks[duration] || experienceToDurationWeeks[level] || 6,
+        answers
+      ),
+      suggestedDays: days,
+      hints: buildProgramPrefillHints(answers),
+      vitals: answers.vitalsSelfReport || null
     }
   };
 };

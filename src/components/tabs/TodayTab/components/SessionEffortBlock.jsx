@@ -9,14 +9,17 @@ import SessionEffortStars from './SessionEffortStars';
  * @param {number} props.suggestedStars — défaut affiché (ex. difficulté auto exercice ou 3)
  * @param {boolean} props.disabled
  * @param {(n: number) => void} props.onChange
- * @param {string} props.idPrefix — id stable pour aria (ex. ex-101 / stretch-matin-9111)
+ * @param {string} [props.ariaGroupLabel]
+ * @param {string} [props.hintText]
  */
 export default function SessionEffortBlock({
   persistedValue,
   suggestedStars,
   disabled = false,
   onChange,
-  idPrefix = 'effort'
+  idPrefix = 'effort',
+  ariaGroupLabel = 'Note de 1 à 5',
+  hintText
 }) {
   const fallback = useMemo(() => {
     const s = Number(suggestedStars);
@@ -35,9 +38,9 @@ export default function SessionEffortBlock({
   };
 
   return (
-    <div className="flex flex-col gap-1.5 w-full max-w-[260px]" role="group" aria-label="Difficulté ressentie de 1 à 5">
+    <div className="flex flex-col gap-1.5 w-full max-w-[260px]" role="group" aria-label={ariaGroupLabel}>
       <label htmlFor={`${idPrefix}-effort-slider`} className="text-[11px] text-slate-400 sr-only">
-        Curseur difficulté ({display} sur 5)
+        Curseur ({display} sur 5)
       </label>
       <div className="flex items-center gap-2">
         <input
@@ -64,7 +67,8 @@ export default function SessionEffortBlock({
       />
       {!hasPersisted && (
         <p className="text-[10px] text-slate-500 leading-snug">
-          Déplace le curseur ou touche une étoile pour enregistrer ta note du jour (sinon l’auto est utilisée pour l’analyse).
+          {hintText ||
+            'Déplace le curseur ou touche une étoile pour enregistrer ta note du jour (sinon l’auto est utilisée pour l’analyse).'}
         </p>
       )}
     </div>

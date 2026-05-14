@@ -3,6 +3,12 @@
     "title": "Jour de repos",
     "message": "Profitez de votre journée de récupération !"
   },
+  "dateNav": {
+    "discardPrompt": "Des modifications non enregistrées seront perdues. Continuer ?",
+    "prevDay": "Jour précédent",
+    "nextDay": "Jour suivant",
+    "nextDisabled": "Impossible d’aller au-delà d’aujourd’hui"
+  },
   "workout": {
     "trainingMode": "Mode d'entraînement:",
     "home": "🏠 Maison",
@@ -12,7 +18,8 @@
     "today": "Aujourd'hui",
     "todayWorkout": "Entraînement du jour",
     "useDayWorkout": "Afficher et faire l'entraînement du {{day}}",
-    "overrideHint": "Tu affiches l'entraînement du {{day}}. La session sera enregistrée pour aujourd'hui."
+    "overrideHint": "Tu affiches l'entraînement du {{day}}. La session sera enregistrée pour aujourd'hui.",
+    "overrideHintForDate": "Tu affiches l'entraînement du {{day}}. La session sera enregistrée pour le {{date}}."
   },
   "exercises": {
     "title": "Exercices",
@@ -86,6 +93,7 @@
   "messages": {
     "exercisesSaved": "Exercices enregistrés avec succès",
     "stretchesSaved": "Étirements enregistrés avec succès",
+    "sessionSaved": "Séance enregistrée (exercices et étirements)",
     "exerciseSuppressed": "Exercice supprimé pour aujourd'hui",
     "exerciseRestored": "Exercice restauré pour aujourd'hui",
     "exceptionalExerciseCompleted": "Exercice exceptionnel marqué comme complété",

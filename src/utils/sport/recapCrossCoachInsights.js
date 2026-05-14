@@ -379,7 +379,8 @@ export function computeRecapCrossCoachInsights(aggregate, opts = {}) {
   }
 
   const goalPhys = ph.goalPhysique;
-  if (goalPhys === 'lean_toned' && w28 != null && w28 <= -0.25) {
+  const leanMassDownGoals = new Set(['lean_toned', 'endurance_lean', 'recomposition']);
+  if (leanMassDownGoals.has(goalPhys) && w28 != null && w28 <= -0.25) {
     raw.push({
       id: 'body.weight_context_lean',
       theme: 'weight_goal',
@@ -389,7 +390,8 @@ export function computeRecapCrossCoachInsights(aggregate, opts = {}) {
       payload: { delta: Math.round(Math.abs(w28) * 10) / 10 }
     });
   }
-  if (goalPhys === 'muscular_defined' && w28 != null && w28 >= 0.35) {
+  const massUpGoals = new Set(['muscular_defined', 'bulk_mass', 'strong_powerful']);
+  if (massUpGoals.has(goalPhys) && w28 != null && w28 >= 0.35) {
     raw.push({
       id: 'body.weight_context_bulk',
       theme: 'weight_goal',
@@ -397,6 +399,28 @@ export function computeRecapCrossCoachInsights(aggregate, opts = {}) {
       pillar: 'combined',
       templateKey: 'weightTrendMassGoal',
       payload: { delta: Math.round(Math.abs(w28) * 10) / 10 }
+    });
+  }
+
+  const pri = ph.priorityMuscleGroups || [];
+  if (Array.isArray(pri) && pri.includes('cardio') && hasSportSignal) {
+    raw.push({
+      id: 'sport.quiz_cardio_priority',
+      theme: 'quiz',
+      priority: 44,
+      pillar: 'sport',
+      templateKey: 'quizCardioPriority',
+      payload: {}
+    });
+  }
+  if (Array.isArray(pri) && (pri.includes('upper_body') || pri.includes('lower_body')) && hasSportSignal) {
+    raw.push({
+      id: 'sport.quiz_split_priority',
+      theme: 'quiz',
+      priority: 43,
+      pillar: 'sport',
+      templateKey: 'quizUpperLowerFocus',
+      payload: {}
     });
   }
 

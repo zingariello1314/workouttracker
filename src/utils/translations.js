@@ -581,6 +581,10 @@ export const translations = {
       'Ton objectif « sec / tonique » va dans le sens d’une baisse de poids mesurée (~{{delta}} kg sur la fenêtre) — contextualise fatigue et apports avant de changer quoi que ce soit.',
     'recap.crossCoach.insight.weightTrendMassGoal':
       'Ton objectif « musclé / défini » cadre mieux avec une légère hausse (~{{delta}} kg) si entraînement et apports suivent tes repères.',
+    'recap.crossCoach.insight.quizCardioPriority':
+      'Ton quiz indique un focus cardio : même deux créneaux courts réguliers améliorent la condition sans grignoter sur la récup muscu.',
+    'recap.crossCoach.insight.quizUpperLowerFocus':
+      'Priorité haut ou bas du corps notée au quiz : alterner blocs ciblés et journées complètes aide souvent à progresser sans surcharge.',
     'recap.crossCoach.insight.weightDown7':
       '~{{delta}} kg sur les 7 derniers j selon tes pesées : signal court à confirmer sur 2–3 semaines avant d’interpéter trop vite.',
     'recap.crossCoach.insight.weightUp7':
@@ -1448,6 +1452,10 @@ export const translations = {
       'Your “lean / toned” goal aligns with a measured weight drift down (~{{delta}} kg this window) — still balance energy intake and fatigue before big changes.',
     'recap.crossCoach.insight.weightTrendMassGoal':
       'A “more muscular” goal meshes better with a modest rise (~{{delta}} kg) if training and intake match intent.',
+    'recap.crossCoach.insight.quizCardioPriority':
+      'Your quiz flags cardio as a priority: two short, repeatable sessions often lift conditioning without eating into lifting recovery.',
+    'recap.crossCoach.insight.quizUpperLowerFocus':
+      'Upper- or lower-body emphasis from the quiz: alternating focused blocks with full-body days often keeps volume productive.',
     'recap.crossCoach.insight.weightDown7':
       '~{{delta}} kg over the past 7 days on weigh-ins: a short signal—confirm across 2–3 weeks.',
     'recap.crossCoach.insight.weightUp7':

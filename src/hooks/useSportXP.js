@@ -71,7 +71,22 @@ let sportXpCache = {
 export const useSportXP = () => {
   const { currentUser, isAuthenticated } = useAuth();
   const canAccessData = canAccessPrivateData({ user: currentUser, isAuthenticated });
-  const { data: workoutData, programs, activeProgram, getExerciseNameById } = useWorkout();
+  const {
+    data,
+    tempData,
+    hasUnsavedExercises,
+    hasUnsavedStretches,
+    getCurrentData,
+    programs,
+    activeProgram,
+    getExerciseNameById
+  } = useWorkout();
+
+  /** Brouillon cochages / reps : la barre XP doit suivre tout de suite (pas seulement après « Enregistrer »). */
+  const workoutData = useMemo(
+    () => getCurrentData(),
+    [getCurrentData, data, tempData, hasUnsavedExercises, hasUnsavedStretches]
+  );
 
   const programsForCompletionXp = useMemo(() => {
     const arr = Array.isArray(programs) ? [...programs] : [];
@@ -223,6 +238,15 @@ export const useSportXP = () => {
         (sessionStarsChecksum * 41 + Math.round(n * 10) + k.length) | 0;
     }
 
+    const sessionPleasureStars = workoutData.exerciseSessionPleasureStars || {};
+    let sessionPleasureChecksum = 0;
+    for (const [k, sv] of Object.entries(sessionPleasureStars)) {
+      const n = Number(sv);
+      if (!Number.isFinite(n)) continue;
+      sessionPleasureChecksum =
+        (sessionPleasureChecksum * 47 + Math.round(n * 10) + k.length) | 0;
+    }
+
     const stretchSessionEffortStars = workoutData.stretchSessionEffortStars || {};
     let stretchSessionStarsChecksum = 0;
     for (const [k, sv] of Object.entries(stretchSessionEffortStars)) {
@@ -332,6 +356,7 @@ export const useSportXP = () => {
       stretchKeysChecksum,
       stretchRatingsChecksum,
       sessionStarsChecksum,
+      sessionPleasureChecksum,
       stretchSessionStarsChecksum,
       circuitProgressEntries,
       circuitProgressChecksum,

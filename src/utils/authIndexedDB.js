@@ -140,6 +140,32 @@ export const updateUser = async (user) => {
   });
 };
 
+/** Supprime un compte local par id (clé primaire). */
+export const deleteUserById = async (userId) => {
+  const db = await openAuthDB();
+  if (!db || userId == null || userId === '') return false;
+
+  return new Promise((resolve) => {
+    try {
+      const tx = db.transaction([STORE_AUTH_USERS], 'readwrite');
+      const store = tx.objectStore(STORE_AUTH_USERS);
+      const request = store.delete(userId);
+
+      request.onsuccess = () => {
+        log.debug('🗑️ Utilisateur supprimé (IndexedDB)', { id: userId });
+        resolve(true);
+      };
+      request.onerror = (event) => {
+        log.warn('⚠️ deleteUserById', event.target.error);
+        resolve(false);
+      };
+    } catch (error) {
+      log.error('❌ Exception deleteUserById', error);
+      resolve(false);
+    }
+  });
+};
+
 // ---------- Avatars ----------
 
 export const saveAvatar = async ({ id, userId, blob, mimeType }) => {
