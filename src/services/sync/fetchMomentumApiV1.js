@@ -5,6 +5,20 @@ import { safeParseIntentionMutationResponseV1 } from '../../../contracts/intenti
 import { safeParseMutationEnvelopeV1 } from '../../../contracts/mutationEnvelope.v1.js';
 import { safeParseServerTimeV1 } from '../../../contracts/serverTime.v1.js';
 import { safeParseXpPortVerifyResponseV1 } from '../../../contracts/xpPortVerifyResponse.v1.js';
+import {
+  safeParseSettingsSnapshotGetV1,
+  safeParseSettingsSnapshotPutResponseV1
+} from '../../../contracts/settingsSnapshot.v1.js';
+import {
+  safeParseSportProgramContextGetV1,
+  safeParseSportProgramContextPutBodyV1,
+  safeParseSportProgramContextPutResponseV1
+} from '../../../contracts/sportProgramContext.v1.js';
+import {
+  safeParseWorkoutAggregateSnapshotGetV1,
+  safeParseWorkoutAggregateSnapshotPutBodyV1,
+  safeParseWorkoutAggregateSnapshotPutResponseV1
+} from '../../../contracts/workoutAggregateSnapshot.v1.js';
 
 /**
  * Base URL du backend FastAPI (même origine que l’auth livres aujourd’hui).
@@ -151,5 +165,174 @@ export async function postMomentumApiV1XpPortVerify(accessToken, body) {
   if (!res.ok) return null;
   const json = await res.json().catch(() => null);
   const parsed = safeParseXpPortVerifyResponseV1(json);
+  return parsed.success ? parsed.data : null;
+}
+
+/**
+ * GET /api/v1/settings/snapshot — Bearer requis (pilote Phase 2 : snapshot JSON utilisateur).
+ *
+ * @param {string} accessToken
+ * @returns {Promise<import('../../../contracts/settingsSnapshot.v1.js').SettingsSnapshotGetV1 | null>}
+ */
+export async function fetchMomentumApiV1SettingsSnapshot(accessToken) {
+  const token = String(accessToken || '').trim();
+  if (!token) return null;
+  const base = getMomentumApiV1Base();
+  const res = await fetch(`${base}/api/v1/settings/snapshot`, {
+    method: 'GET',
+    headers: {
+      Accept: 'application/json',
+      Authorization: `Bearer ${token}`
+    }
+  });
+  if (!res.ok) return null;
+  const json = await res.json().catch(() => null);
+  const parsed = safeParseSettingsSnapshotGetV1(json);
+  return parsed.success ? parsed.data : null;
+}
+
+/**
+ * PUT /api/v1/settings/snapshot — Bearer + corps idempotent (pilote Phase 2).
+ *
+ * @param {string} accessToken
+ * @param {{ clientMutationId: string, settings?: Record<string, unknown> }} body
+ * @returns {Promise<import('../../../contracts/settingsSnapshot.v1.js').SettingsSnapshotPutResponseV1 | null>}
+ */
+export async function putMomentumApiV1SettingsSnapshot(accessToken, body) {
+  const token = String(accessToken || '').trim();
+  if (!token) return null;
+  const base = getMomentumApiV1Base();
+  const res = await fetch(`${base}/api/v1/settings/snapshot`, {
+    method: 'PUT',
+    headers: {
+      Accept: 'application/json',
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${token}`
+    },
+    body: JSON.stringify({
+      clientMutationId: String(body?.clientMutationId || '').trim(),
+      settings: body?.settings && typeof body.settings === 'object' ? body.settings : {}
+    })
+  });
+  if (!res.ok) return null;
+  const json = await res.json().catch(() => null);
+  const parsed = safeParseSettingsSnapshotPutResponseV1(json);
+  return parsed.success ? parsed.data : null;
+}
+
+/**
+ * GET /api/v1/sport/program-context — Bearer requis (pilote : snapshot programmes / variante).
+ *
+ * @param {string} accessToken
+ * @returns {Promise<import('../../../contracts/sportProgramContext.v1.js').SportProgramContextGetV1 | null>}
+ */
+export async function fetchMomentumApiV1SportProgramContext(accessToken) {
+  const token = String(accessToken || '').trim();
+  if (!token) return null;
+  const base = getMomentumApiV1Base();
+  const res = await fetch(`${base}/api/v1/sport/program-context`, {
+    method: 'GET',
+    headers: {
+      Accept: 'application/json',
+      Authorization: `Bearer ${token}`
+    }
+  });
+  if (!res.ok) return null;
+  const json = await res.json().catch(() => null);
+  const parsed = safeParseSportProgramContextGetV1(json);
+  return parsed.success ? parsed.data : null;
+}
+
+/**
+ * PUT /api/v1/sport/program-context — Bearer + corps idempotent (pilote Sport).
+ *
+ * @param {string} accessToken
+ * @param {{ clientMutationId: string, programs?: unknown[], activeProgram?: Record<string, unknown> | null, weekVariant?: string, isGymMode?: boolean }} body
+ * @returns {Promise<import('../../../contracts/sportProgramContext.v1.js').SportProgramContextPutResponseV1 | null>}
+ */
+export async function putMomentumApiV1SportProgramContext(accessToken, body) {
+  const token = String(accessToken || '').trim();
+  if (!token) return null;
+  const raw = {
+    clientMutationId: String(body?.clientMutationId || '').trim(),
+    programs: Array.isArray(body?.programs) ? body.programs : [],
+    activeProgram:
+      body?.activeProgram != null && typeof body.activeProgram === 'object' ? body.activeProgram : null,
+    weekVariant: (() => {
+      const w = String(body?.weekVariant ?? 'A').slice(0, 8);
+      return w.length ? w : 'A';
+    })(),
+    isGymMode: !!body?.isGymMode
+  };
+  const parsedBody = safeParseSportProgramContextPutBodyV1(raw);
+  if (!parsedBody.success) return null;
+  const base = getMomentumApiV1Base();
+  const res = await fetch(`${base}/api/v1/sport/program-context`, {
+    method: 'PUT',
+    headers: {
+      Accept: 'application/json',
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${token}`
+    },
+    body: JSON.stringify(parsedBody.data)
+  });
+  if (!res.ok) return null;
+  const json = await res.json().catch(() => null);
+  const parsed = safeParseSportProgramContextPutResponseV1(json);
+  return parsed.success ? parsed.data : null;
+}
+
+/**
+ * GET /api/v1/workout/aggregate — Bearer requis (pilote : snapshot agrégat workout).
+ *
+ * @param {string} accessToken
+ * @returns {Promise<import('../../../contracts/workoutAggregateSnapshot.v1.js').WorkoutAggregateSnapshotGetV1 | null>}
+ */
+export async function fetchMomentumApiV1WorkoutAggregate(accessToken) {
+  const token = String(accessToken || '').trim();
+  if (!token) return null;
+  const base = getMomentumApiV1Base();
+  const res = await fetch(`${base}/api/v1/workout/aggregate`, {
+    method: 'GET',
+    headers: {
+      Accept: 'application/json',
+      Authorization: `Bearer ${token}`
+    }
+  });
+  if (!res.ok) return null;
+  const json = await res.json().catch(() => null);
+  const parsed = safeParseWorkoutAggregateSnapshotGetV1(json);
+  return parsed.success ? parsed.data : null;
+}
+
+/**
+ * PUT /api/v1/workout/aggregate — Bearer + corps idempotent (pilote workout).
+ *
+ * @param {string} accessToken
+ * @param {{ clientMutationId: string, aggregate?: Record<string, unknown> }} body
+ * @returns {Promise<import('../../../contracts/workoutAggregateSnapshot.v1.js').WorkoutAggregateSnapshotPutResponseV1 | null>}
+ */
+export async function putMomentumApiV1WorkoutAggregate(accessToken, body) {
+  const token = String(accessToken || '').trim();
+  if (!token) return null;
+  const raw = {
+    clientMutationId: String(body?.clientMutationId || '').trim(),
+    aggregate: body?.aggregate && typeof body.aggregate === 'object' ? body.aggregate : {}
+  };
+  const parsedBody = safeParseWorkoutAggregateSnapshotPutBodyV1(raw);
+  if (!parsedBody.success) return null;
+  const base = getMomentumApiV1Base();
+  const res = await fetch(`${base}/api/v1/workout/aggregate`, {
+    method: 'PUT',
+    headers: {
+      Accept: 'application/json',
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${token}`
+    },
+    body: JSON.stringify(parsedBody.data)
+  });
+  if (!res.ok) return null;
+  const json = await res.json().catch(() => null);
+  const parsed = safeParseWorkoutAggregateSnapshotPutResponseV1(json);
   return parsed.success ? parsed.data : null;
 }

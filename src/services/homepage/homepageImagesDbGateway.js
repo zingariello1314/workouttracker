@@ -60,3 +60,22 @@ export function applyHomepageImagesSchemaUpgrade(event, log) {
 
   dbg('✅ IndexedDB mis à jour pour les images');
 }
+
+/**
+ * Ouvre la base HomepageImages (schéma aligné `applyHomepageImagesSchemaUpgrade`).
+ * À utiliser depuis les composants au lieu de `indexedDB.open` direct.
+ *
+ * @returns {Promise<IDBDatabase>}
+ */
+export function openHomepageImagesDatabase() {
+  return new Promise((resolve, reject) => {
+    if (typeof indexedDB === 'undefined') {
+      reject(new Error('indexedDB indisponible'));
+      return;
+    }
+    const request = indexedDB.open(HOMEPAGE_IMAGES_DB_NAME, HOMEPAGE_IMAGES_DB_VERSION);
+    request.onerror = () => reject(request.error);
+    request.onupgradeneeded = (event) => applyHomepageImagesSchemaUpgrade(event);
+    request.onsuccess = () => resolve(request.result);
+  });
+}

@@ -9,6 +9,7 @@ import hashlib
 import hmac
 import json
 import os
+import warnings
 import re
 import secrets
 import sqlite3
@@ -240,6 +241,14 @@ _AUTH_AUDIT_MAX = 2000
 # ---------------------------------------------------------------------------
 
 AUTH_DB_PATH = Path(__file__).resolve().parent / "auth_server.db"
+if not (os.getenv("AUTH_JWT_SECRET") or "").strip():
+    warnings.warn(
+        "AUTH_JWT_SECRET absent : un secret JWT aléatoire est généré à chaque démarrage du "
+        "processus (les access tokens déjà émis ne sont plus valides jusqu’au prochain "
+        "/auth/refresh). Pour des sessions stables, définis AUTH_JWT_SECRET dans backend/.env "
+        "ou .env à la racine (voir backend/.env.example).",
+        stacklevel=1,
+    )
 AUTH_JWT_SECRET = (os.getenv("AUTH_JWT_SECRET") or "").strip() or secrets.token_hex(32)
 AUTH_ACCESS_TTL_MIN = int((os.getenv("AUTH_ACCESS_TTL_MIN") or "15").strip())
 AUTH_REFRESH_TTL_DAYS = int((os.getenv("AUTH_REFRESH_TTL_DAYS") or "30").strip())
@@ -290,6 +299,36 @@ def _auth_init_db():
                 response_json TEXT NOT NULL,
                 created_at TEXT NOT NULL,
                 PRIMARY KEY (user_id, client_mutation_id),
+                FOREIGN KEY(user_id) REFERENCES users(id)
+            )
+            """
+        )
+        cur.execute(
+            """
+            CREATE TABLE IF NOT EXISTS user_cloud_settings_v1 (
+                user_id TEXT PRIMARY KEY,
+                payload_json TEXT NOT NULL,
+                updated_at TEXT NOT NULL,
+                FOREIGN KEY(user_id) REFERENCES users(id)
+            )
+            """
+        )
+        cur.execute(
+            """
+            CREATE TABLE IF NOT EXISTS user_sport_program_context_v1 (
+                user_id TEXT PRIMARY KEY,
+                payload_json TEXT NOT NULL,
+                updated_at TEXT NOT NULL,
+                FOREIGN KEY(user_id) REFERENCES users(id)
+            )
+            """
+        )
+        cur.execute(
+            """
+            CREATE TABLE IF NOT EXISTS user_workout_aggregate_v1 (
+                user_id TEXT PRIMARY KEY,
+                payload_json TEXT NOT NULL,
+                updated_at TEXT NOT NULL,
                 FOREIGN KEY(user_id) REFERENCES users(id)
             )
             """

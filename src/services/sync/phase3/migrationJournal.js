@@ -1,5 +1,6 @@
 /**
- * Journal append-only des étapes migration Phase 3 (localStorage, filet de reprise).
+ * Journal append-only des exécutions orchestrateur Phase 3 (localStorage).
+ * Enregistre start/end du flush outbox intentions — **pas** un journal d’export IndexedDB.
  */
 
 const KEY = 'momentum_phase3_migration_journal_v1';

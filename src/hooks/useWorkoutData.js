@@ -3,7 +3,15 @@ import { cleanJustifications } from '../utils/dayJustificationUtils';
 import { DEFAULT_ADDICTION_QUIT_DATA } from '../utils/addictionQuitConstants';
 import { deriveJourneyStartYmd } from '../utils/sport/recapUserAssessment';
 import logger from '../utils/logger';
+import { readServerTokens } from '../utils/serverAuthApi.js';
 import { createWorkoutRepository } from '../services/workout/createWorkoutRepository.js';
+import { fetchMomentumApiV1WorkoutAggregate } from '../services/sync/fetchMomentumApiV1.js';
+import {
+  isWorkoutAggregateCloudSyncEnabled,
+  pickNewerWorkoutRawForLoad,
+  normalizeWorkoutAggregateRawForIdb,
+  scheduleWorkoutAggregateCloudPush
+} from '../services/workout/workoutAggregateCloudSync.js';
 
 const workoutDataLog = logger.module('useWorkoutData');
 
@@ -800,6 +808,10 @@ export const useWorkoutData = (options = {}) => {
         try {
           await repo.saveRawWorkoutRow(storageKey, dataToSave);
           writeScopedBackup();
+          if (!ephemeral && !generateTestData && isWorkoutAggregateCloudSyncEnabled()) {
+            const { accessToken } = readServerTokens();
+            scheduleWorkoutAggregateCloudPush({ accessToken, storageKey, row: dataToSave });
+          }
           return;
         } catch (repoErr) {
           console.error('❌ Erreur lors de la sauvegarde IndexedDB (repository):', repoErr);
@@ -994,7 +1006,34 @@ export const useWorkoutData = (options = {}) => {
   };
 
   const loadData = async () => {
-    const savedData = await loadFromDB();
+    let savedData = await loadFromDB();
+
+    if (!ephemeral && !generateTestData && isWorkoutAggregateCloudSyncEnabled()) {
+      const { accessToken } = readServerTokens();
+      if (accessToken) {
+        try {
+          const repo = getWorkoutRepo();
+          let rawLocal = null;
+          if (repo?.loadRawWorkoutRow) {
+            try {
+              rawLocal = await repo.loadRawWorkoutRow(storageKey);
+            } catch (e) {
+              workoutDataLog.debug('loadRawWorkoutRow (sync cloud)', e);
+            }
+          }
+          const remote = await fetchMomentumApiV1WorkoutAggregate(accessToken);
+          const chosenRaw = pickNewerWorkoutRawForLoad(rawLocal, remote, storageKey);
+          if (repo?.saveRawWorkoutRow && chosenRaw && chosenRaw !== rawLocal) {
+            const normalized = normalizeWorkoutAggregateRawForIdb(chosenRaw, storageKey);
+            await repo.saveRawWorkoutRow(storageKey, normalized);
+            savedData = materializeValidatedFromIdbRow(normalized);
+          }
+        } catch (e) {
+          workoutDataLog.warn('Fusion snapshot workout cloud ignorée', e);
+        }
+      }
+    }
+
     if (savedData) {
       setData(savedData);
     } else {

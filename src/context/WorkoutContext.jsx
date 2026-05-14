@@ -36,6 +36,8 @@ import { normalizeRepsValue } from './WorkoutContext/utils';
 import { filterExercisesForSessionDate } from '../utils/programExerciseScheduling';
 import { buildTemplateProgramsForFirstLaunch } from '../utils/programPersistenceUtils';
 import { isAdminUser } from '../utils/accessControl';
+import { readServerTokens } from '../utils/serverAuthApi';
+import { scheduleSportProgramContextCloudPush } from '../services/sport/sportProgramContextCloud';
 import {
   normalizeProgramRestConfig,
   getEffectiveRestDayForDate as resolveEffectiveRestDayForDate,
@@ -1540,6 +1542,19 @@ const WorkoutProvider = ({ children }) => {
       autoSaveContext(contextData);
     }
   }, [programs, activeProgram, programHistory, weekVariant, isGymMode, autoSaveContext]);
+
+  useEffect(() => {
+    if (isInitialLoadRef.current) return;
+    if (!isAuthenticated) return;
+    const { accessToken } = readServerTokens();
+    scheduleSportProgramContextCloudPush({
+      accessToken,
+      programs,
+      activeProgram,
+      weekVariant,
+      isGymMode
+    });
+  }, [isAuthenticated, programs, activeProgram, weekVariant, isGymMode]);
 
   // ✅ NORMALISATION: Migration automatique photos existantes (convertir photo → url)
   useEffect(() => {

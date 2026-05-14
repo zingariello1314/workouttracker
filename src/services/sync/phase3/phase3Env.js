@@ -1,5 +1,5 @@
 /**
- * Feature flags Phase 3 (dual-write / migration). Désactivés par défaut.
+ * Feature flags Phase 3 (sync runtime / outbox intentions). Désactivés par défaut.
  * @see docs/sync/PHASE3_MIGRATION_DUAL_WRITE.md
  */
 
@@ -14,7 +14,7 @@ export function isPhase3DualWriteEnabled() {
   return truthy(import.meta.env.VITE_PHASE3_DUAL_WRITE);
 }
 
-/** Exécute `migrateLocalDataToBackend` au focus fenêtre (optionnel). */
+/** Exécute `migrateLocalDataToBackend` (flush outbox intentions) au focus fenêtre — optionnel. */
 export function isPhase3MigrationOnFocusEnabled() {
   if (typeof import.meta === 'undefined' || !import.meta.env) return false;
   return truthy(import.meta.env.VITE_PHASE3_MIGRATION_ON_FOCUS);

@@ -14,6 +14,7 @@ import {
   openWorkoutContextDb,
   putContextRow,
 } from '../../../services/workout/workoutContextGateway.js';
+import { tryMergeSportProgramContextFromCloud } from '../../../services/sport/sportProgramContextCloud.js';
 
 /**
  * Hook pour gérer la sauvegarde et le chargement du contexte
@@ -135,13 +136,13 @@ export const useWorkoutContextStorage = (
   const loadContext = useCallback(async () => {
     const applyContext = (ctx) => {
       if (!ctx) return;
-      if (ctx.programs) {
+      if (Array.isArray(ctx.programs)) {
         setPrograms(ctx.programs);
       }
-      if (ctx.activeProgram) {
-        setActiveProgram(ctx.activeProgram);
+      if ('activeProgram' in ctx) {
+        setActiveProgram(ctx.activeProgram ?? null);
       }
-      if (ctx.programHistory) {
+      if (Array.isArray(ctx.programHistory)) {
         setProgramHistory(ctx.programHistory);
       }
       if (ctx.weekVariant) {
@@ -153,6 +154,18 @@ export const useWorkoutContextStorage = (
     };
 
     try {
+      const mergedFromCloud = await tryMergeSportProgramContextFromCloud(contextScopeKey);
+      if (mergedFromCloud) {
+        const applied = { id: contextRecordId, ...mergedFromCloud };
+        applyContext(applied);
+        try {
+          await saveContextToDB(mergedFromCloud);
+        } catch (e) {
+          console.warn('⚠️ Persistance après merge cloud sport:', e);
+        }
+        return { ...applied, lastSaved: new Date().toISOString() };
+      }
+
       const repo = getContextRepo();
       if (repo) {
         const partial = await repo.loadProgramContext(contextScopeKey).catch(() => null);
@@ -207,6 +220,7 @@ export const useWorkoutContextStorage = (
     contextRecordId,
     contextScopeKey,
     backupKey,
+    saveContextToDB,
   ]);
 
   const flushAutoSave = useCallback(

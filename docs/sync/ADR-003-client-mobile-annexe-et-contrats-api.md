@@ -6,7 +6,7 @@
 
 ## Contexte
 
-- Tu acceptes de **ne pas préserver** les données locales historiques si la contrepartie est un **vrai socle serveur** (auth, persistance, sync).
+- Tu acceptes de **ne pas préserver** les données locales historiques si la contrepartie est un **vrai socle serveur** (auth, persistance, sync) — **trajectoire actuelle** : repartir sur **cloud comme source de vérité** pour les données neuves, **cache local** pour l’offline, **sans** projet de migration one-shot massif depuis d’anciennes bases IndexedDB.
 - Tu veux un **projet annexe** (mobile) **alimenté par le même domaine** que Momentum desktop, avec un front **parfaitement adapté mobile**, **sans devoir retoucher** le code UI desktop existant.
 
 ## Décision
@@ -26,6 +26,7 @@
   - URL de base API + auth (JWT / refresh, aligné sur l’existant ou évolution ADR auth),
   - le package / dossier **contrats** (types + parse `safeParse`),
   - **aucun** import depuis `src/components` ou hooks UI du desktop.
+- **Mutualisation progressive** : extraire vers un dossier `packages/*` ou équivalent (monorepo ou git dependency) les **repositories**, la **couche sync**, et la logique métier **sans UI**, pour que desktop et mobile consomment les mêmes modules ; les deux **shells UI** restent indépendants.
 
 ### 3. Projet mobile « annexe »
 
@@ -43,7 +44,7 @@
 
 ## Conséquences
 
-- Perte des données **uniquement locales** : acceptable tant que **export ponctuel** ou **réinscription** sur le nouveau socle est assumé (pas d’engagement de migration automatique dans cet ADR).
+- Perte des données **uniquement locales** : acceptable ; **pas d’engagement** de migration automatique **bulk** IndexedDB → cloud dans cet ADR (sync **forward** + API par domaine).
 - Le mobile **ne remplace pas** le build desktop PWA ; deux canaux, une **source de vérité** serveur.
 - CI future : tests contrats (Zod) + tests API ; mobile consomme les mêmes artefacts.
 
@@ -54,7 +55,7 @@
 3. Créer **`contracts/`** avec 1–2 schémas pilote + client `fetch` typé côté mobile annexe.
 4. Lancer le repo mobile vide branché sur **staging** uniquement.
 
-**État 2026** : point 1 — **ADR-005** ; points 2–3 — jalon **Phase 2** (`/api/v1`, `contracts/`) — voir `docs/sync/PHASE2_BACKEND_DEFINITION_OF_DONE.md`. Point 4 (repo mobile) reste à faire hors ce dépôt.
+**État 2026** : point 1 — **ADR-005** ; points 2–3 — jalon **Phase 2** (`/api/v1`, `contracts/`, intentions, **snapshot Settings** `GET|PUT /api/v1/settings/snapshot`, **contexte programmes Sport** `GET|PUT /api/v1/sport/program-context`, sync intentions **`sendIntentionMutationV1`**) — voir `docs/sync/PHASE2_BACKEND_DEFINITION_OF_DONE.md`, `docs/sync/PHASE3_MIGRATION_DUAL_WRITE.md`, `docs/sync/ARCHITECTURE_SCALABLE_PLAN_ETAT.md`. Point 4 (repo mobile) reste à faire hors ce dépôt ; **priorité** : mutualiser progressivement contrats + données (repositories / sync) sans dupliquer l’UI desktop.
 
 ## Références
 

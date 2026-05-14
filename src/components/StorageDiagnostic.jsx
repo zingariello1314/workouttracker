@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { settingsTheme as S } from './tabs/SettingsTab/settingsThemeClasses';
-import { HOMEPAGE_IMAGES_DB_NAME, STORE_HOMEPAGE_IMAGES } from '../services/homepage/homepageImagesDbGateway.js';
+import { STORE_HOMEPAGE_IMAGES, openHomepageImagesDatabase } from '../services/homepage/homepageImagesDbGateway.js';
 
 const StorageDiagnostic = ({ onClose }) => {
   const [diagnosticResults, setDiagnosticResults] = useState(null);
@@ -63,58 +63,48 @@ const StorageDiagnostic = ({ onClose }) => {
 
     try {
       if (window.indexedDB) {
-        const request = indexedDB.open(HOMEPAGE_IMAGES_DB_NAME);
-        await new Promise((resolve, reject) => {
-          request.onsuccess = (event) => {
-            try {
-              const db = event.target.result;
+        const db = await openHomepageImagesDatabase();
+        try {
+          if (db && db.objectStoreNames.contains(STORE_HOMEPAGE_IMAGES)) {
+            const transaction = db.transaction([STORE_HOMEPAGE_IMAGES], 'readonly');
+            const store = transaction.objectStore(STORE_HOMEPAGE_IMAGES);
+            const index = store.index('type');
+            const countRequest = index.count(IDBKeyRange.only('homepage_background'));
 
-              if (db && db.objectStoreNames.contains(STORE_HOMEPAGE_IMAGES)) {
-                const transaction = db.transaction([STORE_HOMEPAGE_IMAGES], 'readonly');
-                const store = transaction.objectStore(STORE_HOMEPAGE_IMAGES);
-                const index = store.index('type');
-                const countRequest = index.count(IDBKeyRange.only('homepage_background'));
-
-                countRequest.onsuccess = () => {
-                  results.indexedDB = {
-                    available: true,
-                    name: db.name,
-                    version: db.version,
-                    stores: Array.from(db.objectStoreNames),
-                    imageCount: countRequest.result
-                  };
-                  resolve();
-                };
-                countRequest.onerror = () => {
-                  results.indexedDB = {
-                    available: true,
-                    name: db.name,
-                    version: db.version,
-                    stores: Array.from(db.objectStoreNames),
-                    imageCount: 0
-                  };
-                  resolve();
-                };
-              } else {
+            await new Promise((resolve) => {
+              countRequest.onsuccess = () => {
                 results.indexedDB = {
                   available: true,
-                  name: db ? db.name : HOMEPAGE_IMAGES_DB_NAME,
-                  version: db ? db.version : 1,
-                  stores: db ? Array.from(db.objectStoreNames) : [],
+                  name: db.name,
+                  version: db.version,
+                  stores: Array.from(db.objectStoreNames),
+                  imageCount: countRequest.result
+                };
+                resolve();
+              };
+              countRequest.onerror = () => {
+                results.indexedDB = {
+                  available: true,
+                  name: db.name,
+                  version: db.version,
+                  stores: Array.from(db.objectStoreNames),
                   imageCount: 0
                 };
                 resolve();
-              }
-            } catch (error) {
-              results.indexedDB = { available: false, error: error.message };
-              resolve();
-            }
-          };
-          request.onerror = () => {
-            results.indexedDB = { available: false, error: 'Erreur d\'ouverture' };
-            resolve();
-          };
-        });
+              };
+            });
+          } else {
+            results.indexedDB = {
+              available: true,
+              name: db ? db.name : 'HomepageImagesDB',
+              version: db ? db.version : 1,
+              stores: db ? Array.from(db.objectStoreNames) : [],
+              imageCount: 0
+            };
+          }
+        } finally {
+          db.close();
+        }
       } else {
         results.indexedDB = { available: false, error: 'Non supporté' };
       }

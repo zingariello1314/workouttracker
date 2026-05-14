@@ -26,6 +26,30 @@ class MutationEnvelopeV1(BaseModel):
     payload: dict[str, Any] = Field(default_factory=dict)
 
 
+class SettingsSnapshotPutV1(BaseModel):
+    """Corps `PUT /api/v1/settings/snapshot` — aligné sur contracts/settingsSnapshot.v1.js."""
+
+    clientMutationId: str = Field(..., min_length=1)
+    settings: dict[str, Any] = Field(default_factory=dict)
+
+
+class WorkoutAggregatePutV1(BaseModel):
+    """Corps `PUT /api/v1/workout/aggregate` — aligné sur contracts/workoutAggregateSnapshot.v1.js."""
+
+    clientMutationId: str = Field(..., min_length=1)
+    aggregate: dict[str, Any] = Field(default_factory=dict)
+
+
+class SportProgramContextPutV1(BaseModel):
+    """Corps `PUT /api/v1/sport/program-context` — aligné sur contracts/sportProgramContext.v1.js."""
+
+    clientMutationId: str = Field(..., min_length=1)
+    programs: list[dict[str, Any]] = Field(default_factory=list)
+    activeProgram: dict[str, Any] | None = None
+    weekVariant: str = Field(default="A", min_length=1, max_length=8)
+    isGymMode: bool = False
+
+
 def _idem_load(conn: sqlite3.Connection, user_id: str, client_mutation_id: str) -> dict[str, Any] | None:
     cur = conn.cursor()
     cur.execute(
@@ -165,3 +189,279 @@ def register_phase2_routes(
                 }
             )
         return {"items": items}
+
+    @app.get("/api/v1/settings/snapshot")
+    async def api_v1_settings_snapshot_get(authorization: Optional[str] = Header(default=None)):
+        """
+        Pilote « Settings » Phase 2 : lecture d’un snapshot JSON par utilisateur (SQLite `user_cloud_settings_v1`).
+        """
+        user = get_user_from_access_token(authorization)
+        uid = str(user["id"])
+        conn = db_conn()
+        try:
+            cur = conn.cursor()
+            cur.execute(
+                "SELECT payload_json, updated_at FROM user_cloud_settings_v1 WHERE user_id = ?",
+                (uid,),
+            )
+            row = cur.fetchone()
+            if not row:
+                return {"settings": {}, "updatedAt": None}
+            try:
+                settings = json.loads(row["payload_json"])
+            except json.JSONDecodeError:
+                settings = {}
+            if not isinstance(settings, dict):
+                settings = {}
+            return {"settings": settings, "updatedAt": row["updated_at"]}
+        finally:
+            conn.close()
+
+    @app.put("/api/v1/settings/snapshot")
+    async def api_v1_settings_snapshot_put(
+        body: SettingsSnapshotPutV1,
+        authorization: Optional[str] = Header(default=None),
+    ):
+        """
+        Pilote « Settings » Phase 2 : écriture LWW + idempotence `(userId, clientMutationId)` (même table que intentions).
+        """
+        user = get_user_from_access_token(authorization)
+        uid = str(user["id"])
+        now_iso = datetime.now(timezone.utc).isoformat()
+
+        conn = db_conn()
+        try:
+            existing = _idem_load(conn, uid, body.clientMutationId)
+            if existing is not None:
+                conn.rollback()
+                return {**existing, "idempotentReplay": True}
+
+            payload_json = json.dumps(dict(body.settings), separators=(",", ":"), ensure_ascii=False)
+            cur = conn.cursor()
+            cur.execute(
+                """
+                INSERT INTO user_cloud_settings_v1 (user_id, payload_json, updated_at)
+                VALUES (?, ?, ?)
+                ON CONFLICT(user_id) DO UPDATE SET
+                  payload_json = excluded.payload_json,
+                  updated_at = excluded.updated_at
+                """,
+                (uid, payload_json, now_iso),
+            )
+
+            out: dict[str, Any] = {
+                "accepted": True,
+                "clientMutationId": body.clientMutationId,
+                "updatedAt": now_iso,
+                "settings": dict(body.settings),
+                "phase": 2,
+                "note": "Settings snapshot (pilote Phase 2) ; idempotence SQLite.",
+            }
+            try:
+                _idem_insert(conn, uid, body.clientMutationId, out, now_iso)
+                conn.commit()
+                return out
+            except sqlite3.IntegrityError:
+                conn.rollback()
+                existing2 = _idem_load(conn, uid, body.clientMutationId)
+                if existing2 is not None:
+                    return {**existing2, "idempotentReplay": True}
+                raise HTTPException(status_code=409, detail="Conflit idempotence ; réessayez.")
+        finally:
+            conn.close()
+
+    @app.get("/api/v1/sport/program-context")
+    async def api_v1_sport_program_context_get(authorization: Optional[str] = Header(default=None)):
+        """
+        Pilote « Sport » : lecture du contexte programmes (SQLite `user_sport_program_context_v1`).
+        """
+        user = get_user_from_access_token(authorization)
+        uid = str(user["id"])
+        conn = db_conn()
+        try:
+            cur = conn.cursor()
+            cur.execute(
+                "SELECT payload_json, updated_at FROM user_sport_program_context_v1 WHERE user_id = ?",
+                (uid,),
+            )
+            row = cur.fetchone()
+            if not row:
+                return {
+                    "programs": [],
+                    "activeProgram": None,
+                    "weekVariant": "A",
+                    "isGymMode": False,
+                    "updatedAt": None,
+                }
+            try:
+                blob = json.loads(row["payload_json"])
+            except json.JSONDecodeError:
+                blob = {}
+            if not isinstance(blob, dict):
+                blob = {}
+            programs = blob.get("programs")
+            if not isinstance(programs, list):
+                programs = []
+            programs = [p for p in programs if isinstance(p, dict)]
+            ap = blob.get("activeProgram")
+            active_program = ap if isinstance(ap, dict) else None
+            wv = blob.get("weekVariant")
+            week_variant = wv if isinstance(wv, str) and wv else "A"
+            week_variant = week_variant[:8]
+            gm = blob.get("isGymMode")
+            is_gym = bool(gm) if isinstance(gm, bool) else False
+            return {
+                "programs": programs,
+                "activeProgram": active_program,
+                "weekVariant": week_variant,
+                "isGymMode": is_gym,
+                "updatedAt": row["updated_at"],
+            }
+        finally:
+            conn.close()
+
+    @app.put("/api/v1/sport/program-context")
+    async def api_v1_sport_program_context_put(
+        body: SportProgramContextPutV1,
+        authorization: Optional[str] = Header(default=None),
+    ):
+        """
+        Pilote « Sport » : écriture LWW + idempotence `(userId, clientMutationId)`.
+        """
+        user = get_user_from_access_token(authorization)
+        uid = str(user["id"])
+        now_iso = datetime.now(timezone.utc).isoformat()
+
+        conn = db_conn()
+        try:
+            existing = _idem_load(conn, uid, body.clientMutationId)
+            if existing is not None:
+                conn.rollback()
+                return {**existing, "idempotentReplay": True}
+
+            envelope = {
+                "programs": list(body.programs),
+                "activeProgram": dict(body.activeProgram) if body.activeProgram is not None else None,
+                "weekVariant": body.weekVariant,
+                "isGymMode": body.isGymMode,
+            }
+            payload_json = json.dumps(envelope, separators=(",", ":"), ensure_ascii=False)
+            cur = conn.cursor()
+            cur.execute(
+                """
+                INSERT INTO user_sport_program_context_v1 (user_id, payload_json, updated_at)
+                VALUES (?, ?, ?)
+                ON CONFLICT(user_id) DO UPDATE SET
+                  payload_json = excluded.payload_json,
+                  updated_at = excluded.updated_at
+                """,
+                (uid, payload_json, now_iso),
+            )
+
+            out: dict[str, Any] = {
+                "accepted": True,
+                "clientMutationId": body.clientMutationId,
+                "updatedAt": now_iso,
+                "programs": envelope["programs"],
+                "activeProgram": envelope["activeProgram"],
+                "weekVariant": envelope["weekVariant"],
+                "isGymMode": envelope["isGymMode"],
+                "phase": 2,
+                "note": "Sport program context (pilote) ; idempotence SQLite.",
+            }
+            try:
+                _idem_insert(conn, uid, body.clientMutationId, out, now_iso)
+                conn.commit()
+                return out
+            except sqlite3.IntegrityError:
+                conn.rollback()
+                existing2 = _idem_load(conn, uid, body.clientMutationId)
+                if existing2 is not None:
+                    return {**existing2, "idempotentReplay": True}
+                raise HTTPException(status_code=409, detail="Conflit idempotence ; réessayez.")
+        finally:
+            conn.close()
+
+    @app.get("/api/v1/workout/aggregate")
+    async def api_v1_workout_aggregate_get(authorization: Optional[str] = Header(default=None)):
+        """
+        Pilote « workout » : lecture snapshot agrégat — SQLite `user_workout_aggregate_v1`.
+        """
+        user = get_user_from_access_token(authorization)
+        uid = str(user["id"])
+        conn = db_conn()
+        try:
+            cur = conn.cursor()
+            cur.execute(
+                "SELECT payload_json, updated_at FROM user_workout_aggregate_v1 WHERE user_id = ?",
+                (uid,),
+            )
+            row = cur.fetchone()
+            if not row:
+                return {"aggregate": {}, "updatedAt": None}
+            try:
+                blob = json.loads(row["payload_json"])
+            except json.JSONDecodeError:
+                blob = {}
+            if not isinstance(blob, dict):
+                blob = {}
+            agg = blob.get("aggregate")
+            if not isinstance(agg, dict):
+                agg = {}
+            return {"aggregate": agg, "updatedAt": row["updated_at"]}
+        finally:
+            conn.close()
+
+    @app.put("/api/v1/workout/aggregate")
+    async def api_v1_workout_aggregate_put(
+        body: WorkoutAggregatePutV1,
+        authorization: Optional[str] = Header(default=None),
+    ):
+        """
+        Pilote « workout » : écriture LWW snapshot agrégat + idempotence `(userId, clientMutationId)`.
+        """
+        user = get_user_from_access_token(authorization)
+        uid = str(user["id"])
+        now_iso = datetime.now(timezone.utc).isoformat()
+
+        conn = db_conn()
+        try:
+            existing = _idem_load(conn, uid, body.clientMutationId)
+            if existing is not None:
+                conn.rollback()
+                return {**existing, "idempotentReplay": True}
+
+            envelope = {"aggregate": dict(body.aggregate)}
+            payload_json = json.dumps(envelope, separators=(",", ":"), ensure_ascii=False)
+            cur = conn.cursor()
+            cur.execute(
+                """
+                INSERT INTO user_workout_aggregate_v1 (user_id, payload_json, updated_at)
+                VALUES (?, ?, ?)
+                ON CONFLICT(user_id) DO UPDATE SET
+                  payload_json = excluded.payload_json,
+                  updated_at = excluded.updated_at
+                """,
+                (uid, payload_json, now_iso),
+            )
+
+            out: dict[str, Any] = {
+                "accepted": True,
+                "clientMutationId": body.clientMutationId,
+                "updatedAt": now_iso,
+                "aggregate": dict(body.aggregate),
+                "phase": 2,
+                "note": "Workout aggregate snapshot (pilote) ; idempotence SQLite.",
+            }
+            try:
+                _idem_insert(conn, uid, body.clientMutationId, out, now_iso)
+                conn.commit()
+                return out
+            except sqlite3.IntegrityError:
+                conn.rollback()
+                existing2 = _idem_load(conn, uid, body.clientMutationId)
+                if existing2 is not None:
+                    return {**existing2, "idempotentReplay": True}
+                raise HTTPException(status_code=409, detail="Conflit idempotence ; réessayez.")
+        finally:
+            conn.close()

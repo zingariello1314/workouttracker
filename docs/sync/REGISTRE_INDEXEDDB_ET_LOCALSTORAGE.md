@@ -206,7 +206,7 @@ Sous-onglets **`FinanceTab.jsx`** (`finance.activeSubTab` via `useNavigationCach
 | `quests.activeSubTab` | Rappel navigation quêtes (`today`, `week`, …) |
 | `progress.activeSection` | Section active **Progress** (body tracking) |
 | `momentum_phase3_intentions_outbox_v1` | File dual-write **intentions** Phase 3 (`intentionsOutbox.js`) |
-| `momentum_phase3_migration_journal_v1` | Journal append-only exécutions `migrateLocalDataToBackend` (`migrationJournal.js`) |
+| `momentum_phase3_migration_journal_v1` | Journal append-only des exécutions de l’orchestrateur Phase 3 (`migrateLocalDataToBackend` — flush outbox **uniquement**, pas export IndexedDB) (`migrationJournal.js`) |
 | Divers `*.activeSubTab` | Autres écrans avec `useNavigationCache` / `SubTabWrapper` |
 
 Liste exhaustive : grep `localStorage` dans `src/` lors des prochains inventaires.

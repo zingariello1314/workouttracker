@@ -10,7 +10,7 @@ Façade alignée sur `docs/sync/REPOSITORY_SIGNATURES_PHASE1.md`.
 
 ## Intégration
 
-- **`useWorkoutData`** : `createWorkoutRepository('local')` → store `workouts` (`loadRawWorkoutRow` / `saveRawWorkoutRow`) via `workoutDbGateway`.
+- **`useWorkoutData`** : `createWorkoutRepository('local')` → store `workouts` (`loadRawWorkoutRow` / `saveRawWorkoutRow`) via `workoutDbGateway`. Optionnel : sync snapshot cloud (`VITE_WORKOUT_AGGREGATE_CLOUD_SYNC`) via `workoutAggregateCloudSync.js` ([`docs/sync/MOBILE_CLIENT_BOOTSTRAP.md`](../../../docs/sync/MOBILE_CLIENT_BOOTSTRAP.md)).
 - **`useWorkoutContextStorage`** : `createWorkoutRepository('local')` → `LocalWorkoutRepository.loadProgramContext` / `saveProgramContext` (`workoutContextGateway`).
 
 ## Tests

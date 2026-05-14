@@ -22,7 +22,8 @@ import {
   serverLogout,
   serverRefresh,
   serverRegister,
-  setServerTokens
+  setServerTokens,
+  shouldDiscardServerTokensAfterFailedRefresh
 } from '../utils/serverAuthApi';
 import {
   createUser,
@@ -131,7 +132,9 @@ export const useAuthStorage = () => {
             });
             return { user, rememberMe: true };
           } catch (error) {
-            clearServerTokens();
+            if (shouldDiscardServerTokensAfterFailedRefresh(error)) {
+              clearServerTokens();
+            }
             if (isStrictServerAuthMode()) {
               return { user: null, rememberMe: false };
             }

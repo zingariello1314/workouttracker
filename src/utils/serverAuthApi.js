@@ -9,10 +9,25 @@ const parseJson = async (res) => {
   const data = await res.json().catch(() => ({}));
   if (!res.ok) {
     const detail = data?.detail || data?.message || `HTTP ${res.status}`;
-    throw new Error(typeof detail === 'string' ? detail : JSON.stringify(detail));
+    const err = new Error(typeof detail === 'string' ? detail : JSON.stringify(detail));
+    err.status = res.status;
+    throw err;
   }
   return data;
 };
+
+/**
+ * Après un échec de `POST /auth/refresh` : effacer les jetons locaux **seulement** si le serveur
+ * indique un refresh invalide / expiré — pas sur erreur réseau ni 5xx (sinon déconnexion
+ * factice au redémarrage du serveur ou coupure temporaire).
+ *
+ * @param {unknown} error
+ */
+export function shouldDiscardServerTokensAfterFailedRefresh(error) {
+  const s = Number(error?.status);
+  if (!Number.isFinite(s)) return false;
+  return s === 400 || s === 401 || s === 403;
+}
 
 export const getAuthMode = () => AUTH_MODE;
 export const isServerAuthMode = () => AUTH_MODE === 'server' || AUTH_MODE === 'hybrid';

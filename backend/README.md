@@ -44,6 +44,12 @@ Référence complète : [`docs/sync/PHASE2_API_REFERENCE.md`](../docs/sync/PHASE
 - `GET /api/v1/user-profile` — Bearer identique à `/auth/me` ; corps aligné sur `contracts/userProfile.v1.js`.
 - `POST /api/v1/intentions/mutation` — corps aligné sur `contracts/mutationEnvelope.v1.js` ; idempotence **SQLite** ; **miroir optionnel** vers Supabase (`momentum_intentions_v1`) si `SUPABASE_URL` + `SUPABASE_SERVICE_ROLE_KEY` (voir `docs/sync/SUPABASE_PHASE2_APPLY.md`).
 - `GET /api/v1/intentions/recent` — dernières intentions idempotentes pour l’utilisateur Bearer.
+- `GET /api/v1/settings/snapshot` — snapshot JSON utilisateur (cache cloud pilote) ; Bearer ; contrat `contracts/settingsSnapshot.v1.js`.
+- `PUT /api/v1/settings/snapshot` — écriture snapshot + idempotence `clientMutationId` (même table que les intentions) ; contrat idem.
+- `GET /api/v1/sport/program-context` — contexte programmes (liste, actif, variante, mode salle) ; Bearer ; contrat `contracts/sportProgramContext.v1.js`.
+- `PUT /api/v1/sport/program-context` — écriture + idempotence ; table SQLite `user_sport_program_context_v1`.
+- `GET /api/v1/workout/aggregate` — snapshot agrégat workout ; Bearer ; contrat `contracts/workoutAggregateSnapshot.v1.js`.
+- `PUT /api/v1/workout/aggregate` — écriture + idempotence ; table SQLite `user_workout_aggregate_v1`.
 - `GET /api/v1/server-time` — horloge UTC (ISO 8601), sans auth ; contrat `contracts/serverTime.v1.js`.
 - `POST /api/v1/xp/port-verify` — recalcul serveur partiel (nutrition + bonus livres + repère sport), aligné sur `src/services/xp/xpCalculations.js` ; voir `backend/xp_port.py` + tests `pytest tests/test_xp_port.py`.
 

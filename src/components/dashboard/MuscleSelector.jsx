@@ -6,29 +6,11 @@
 import { useState, useRef, useEffect } from 'react';
 import { Upload, X, Image as ImageIcon } from 'lucide-react';
 import { migrateMuscleImagesToIndexedDB } from '../../utils/migrateMuscleImages';
-import {
-  MUSCLE_IMAGES_DB_NAME,
-  MUSCLE_IMAGES_DB_VERSION,
-  STORE_MUSCLE_IMAGES,
-  applyMuscleImagesSchemaUpgrade,
-} from '../../services/bodyTracking/muscleImagesDbGateway.js';
+import { STORE_MUSCLE_IMAGES, openMuscleImagesDatabase } from '../../services/bodyTracking/muscleImagesDbGateway.js';
 
 // ============================================================================
 // INDEXEDDB HELPERS - Stockage des images muscles
 // ============================================================================
-
-const openMuscleImagesDB = () => {
-  return new Promise((resolve, reject) => {
-    const request = indexedDB.open(MUSCLE_IMAGES_DB_NAME, MUSCLE_IMAGES_DB_VERSION);
-    
-    request.onerror = () => reject(request.error);
-    request.onsuccess = () => resolve(request.result);
-    
-    request.onupgradeneeded = (event) => {
-      applyMuscleImagesSchemaUpgrade(event);
-    };
-  });
-};
 
 const saveMuscleImageToDB = async (db, muscleId, imageData) => {
   return new Promise((resolve, reject) => {
@@ -94,7 +76,7 @@ const MuscleSelector = ({ selected, onSelect, showVolume = false, volumeData = {
         await migrateMuscleImagesToIndexedDB();
         
         // Charger depuis IndexedDB
-        const db = await openMuscleImagesDB();
+        const db = await openMuscleImagesDatabase();
         const images = await loadAllMuscleImagesFromDB(db);
         setMuscleImages(images);
         console.log(`✅ ${Object.keys(images).length} images muscles chargées depuis IndexedDB`);
@@ -151,7 +133,7 @@ const MuscleSelector = ({ selected, onSelect, showVolume = false, volumeData = {
       
       // Utiliser IndexedDB au lieu de localStorage pour éviter QuotaExceededError
       try {
-        const db = await openMuscleImagesDB();
+        const db = await openMuscleImagesDatabase();
         await saveMuscleImageToDB(db, muscleId, imageData);
         console.log(`✅ Image muscle ${muscleId} sauvegardée dans IndexedDB`);
       } catch (error) {
@@ -171,7 +153,7 @@ const MuscleSelector = ({ selected, onSelect, showVolume = false, volumeData = {
     
     // Supprimer de IndexedDB
     try {
-      const db = await openMuscleImagesDB();
+      const db = await openMuscleImagesDatabase();
       await deleteMuscleImageFromDB(db, muscleId);
       console.log(`✅ Image muscle ${muscleId} supprimée de IndexedDB`);
     } catch (error) {

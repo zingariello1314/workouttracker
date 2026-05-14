@@ -2,7 +2,7 @@
 
 Ce dossier matérialise la **Phase 0** du plan *Architecture scalable Momentum* : inventaire factuel, ADR courts, signatures de repositories cibles — **sans refactor massif** du code applicatif.
 
-**Priorité actuelle** : serveur comme vérité acceptable même sans migration des données locales ; **client mobile annexe** branché sur **contrats API** partagés, **sans toucher au front desktop** (voir **ADR-003**). **Phase 1 (desktop) gelée côté sync locale** : Workout + contexte programmes, XP, Livres, passerelle **Synthèse** — voir [`REGISTRE_INDEXEDDB_ET_LOCALSTORAGE.md`](./REGISTRE_INDEXEDDB_ET_LOCALSTORAGE.md) § *Repositories & passerelles Phase 1*.
+**Priorité actuelle** : **cloud** comme source de vérité pour les **données synchronisées à partir de maintenant**, **cache local** pour l’offline ; **pas** de chantier prioritaire « migration bulk » depuis d’anciennes données IndexedDB (voir [`ARCHITECTURE_SCALABLE_PLAN_ETAT.md`](./ARCHITECTURE_SCALABLE_PLAN_ETAT.md) § *Priorité produit*). **Client mobile annexe** : mêmes contrats / API / auth, **UI séparée** du desktop, mutualisation progressive des repositories et de la sync (voir **ADR-003**). **Phase 1 (desktop)** : passerelles locales Workout + contexte programmes, XP, Livres, **Synthèse** — [`REGISTRE_INDEXEDDB_ET_LOCALSTORAGE.md`](./REGISTRE_INDEXEDDB_ET_LOCALSTORAGE.md) § *Repositories & passerelles Phase 1*.
 
 ## Documents
 
@@ -21,6 +21,8 @@ Ce dossier matérialise la **Phase 0** du plan *Architecture scalable Momentum* 
 | [`PHASE0_BOOT_ET_FLUX.md`](./PHASE0_BOOT_ET_FLUX.md) | Ordre de boot + diagramme |
 | [`PHASE0_USERID_ET_SCOPING.md`](./PHASE0_USERID_ET_SCOPING.md) | Table `userId` / `storageKey` par domaine |
 | [`E2E_PARCOURS_CRITIQUES.md`](./E2E_PARCOURS_CRITIQUES.md) | Liste minimale Playwright |
+| [`ARCHITECTURE_SCALABLE_PLAN_ETAT.md`](./ARCHITECTURE_SCALABLE_PLAN_ETAT.md) | Alignement plan scalable ↔ code (jalons, backlog, pilotes Settings + Sport + workout aggregate, priorités multi-appareils) |
+| [`MOBILE_CLIENT_BOOTSTRAP.md`](./MOBILE_CLIENT_BOOTSTRAP.md) | Étapes pour un front mobile séparé (auth, contrats, API workout aggregate) |
 
 ## Code (gel minimal)
 

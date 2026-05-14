@@ -29,3 +29,27 @@ export {
   MutationEnvelopeV1Schema,
   safeParseMutationEnvelopeV1
 } from './mutationEnvelope.v1.js';
+export {
+  SettingsSnapshotGetV1Schema,
+  SettingsSnapshotPutBodyV1Schema,
+  SettingsSnapshotPutResponseV1Schema,
+  safeParseSettingsSnapshotGetV1,
+  safeParseSettingsSnapshotPutBodyV1,
+  safeParseSettingsSnapshotPutResponseV1
+} from './settingsSnapshot.v1.js';
+export {
+  SportProgramContextGetV1Schema,
+  SportProgramContextPutBodyV1Schema,
+  SportProgramContextPutResponseV1Schema,
+  safeParseSportProgramContextGetV1,
+  safeParseSportProgramContextPutBodyV1,
+  safeParseSportProgramContextPutResponseV1
+} from './sportProgramContext.v1.js';
+export {
+  WorkoutAggregateSnapshotGetV1Schema,
+  WorkoutAggregateSnapshotPutBodyV1Schema,
+  WorkoutAggregateSnapshotPutResponseV1Schema,
+  safeParseWorkoutAggregateSnapshotGetV1,
+  safeParseWorkoutAggregateSnapshotPutBodyV1,
+  safeParseWorkoutAggregateSnapshotPutResponseV1
+} from './workoutAggregateSnapshot.v1.js';

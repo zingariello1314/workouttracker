@@ -65,12 +65,14 @@ import { isAdminUser } from './utils/accessControl';
 import ProfileQuestionnaireModal, { registerProfileQuestionnaireOpenHandler } from './features/profileQuestionnaire/ProfileQuestionnaireModal';
 import { useProfileQuestionnaire } from './features/profileQuestionnaire/useProfileQuestionnaire';
 import Phase3SyncEffects from './components/sync/Phase3SyncEffects';
+import SettingsUiRemoteSyncEffects from './components/sync/SettingsUiRemoteSyncEffects';
 
 const WorkoutTrackerApp = () => {
   return (
     <LanguageProvider>
       <ToastProvider>
         <AuthProvider>
+          <SettingsUiRemoteSyncEffects />
           <Phase3SyncEffects />
           <AppLockProvider>
             <QuietQuestProvider>

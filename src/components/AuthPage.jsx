@@ -10,10 +10,8 @@ import { hyperspeedPresets } from './ui/Hyperspeed/hyperspeedPresets';
 import { requestEmailVerificationCode, verifyEmailCode } from '../utils/emailVerificationService';
 import { addAvatar, addCardIcon } from '../services/profileCard/profileCardStorage';
 import {
-  HOMEPAGE_IMAGES_DB_NAME,
-  HOMEPAGE_IMAGES_DB_VERSION,
   STORE_HOMEPAGE_IMAGES,
-  applyHomepageImagesSchemaUpgrade,
+  openHomepageImagesDatabase
 } from '../services/homepage/homepageImagesDbGateway.js';
 
 const checkWebGLSupport = () => {
@@ -106,17 +104,12 @@ const AuthPage = () => {
             reader.onerror = () => reject(reader.error);
             reader.readAsDataURL(homeBackgroundFile);
           });
-          await new Promise((resolve, reject) => {
-            const request = indexedDB.open(HOMEPAGE_IMAGES_DB_NAME, HOMEPAGE_IMAGES_DB_VERSION);
-            request.onerror = () => reject(request.error);
-            request.onupgradeneeded = (event) => {
-              applyHomepageImagesSchemaUpgrade(event);
-            };
-            request.onsuccess = (event) => {
-              const db = event.target.result;
-              const typeKey = `homepage_background_user-${currentUser.id}`;
-              const tx = db.transaction([STORE_HOMEPAGE_IMAGES], 'readwrite');
-              const store = tx.objectStore(STORE_HOMEPAGE_IMAGES);
+          const db = await openHomepageImagesDatabase();
+          try {
+            const typeKey = `homepage_background_user-${currentUser.id}`;
+            const tx = db.transaction([STORE_HOMEPAGE_IMAGES], 'readwrite');
+            const store = tx.objectStore(STORE_HOMEPAGE_IMAGES);
+            await new Promise((resolve, reject) => {
               const getReq = store.getAll();
               getReq.onsuccess = () => {
                 (getReq.result || []).forEach((item) => {
@@ -132,13 +125,13 @@ const AuthPage = () => {
                   version: '2.0'
                 });
               };
-              tx.oncomplete = () => {
-                db.close();
-                resolve();
-              };
+              getReq.onerror = () => reject(getReq.error);
+              tx.oncomplete = () => resolve();
               tx.onerror = () => reject(tx.error);
-            };
-          });
+            });
+          } finally {
+            db.close();
+          }
         }
       } finally {
         setOnboardingApplied(true);
