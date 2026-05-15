@@ -59,6 +59,211 @@ function focusTagsFromAnswers(answers) {
   return tags;
 }
 
+/**
+ * Multiplicateur indicatif du volume cardio suggéré (0.5–1.45) selon désir déclaré, équipement et contexte.
+ */
+export function computeCardioBiasMultiplier(answers) {
+  if (!answers || typeof answers !== 'object') return 1;
+  let m = 1;
+  const cardio = answers.cardioTrainingDesire;
+  const desireMap = {
+    minimal: 0.62,
+    light: 0.84,
+    moderate: 1,
+    high: 1.16,
+    priority_hiit: 1.3
+  };
+  m *= desireMap[cardio] ?? 1;
+
+  const eq = Array.isArray(answers.availableEquipment) ? answers.availableEquipment : [];
+  const hasMachineCardio =
+    eq.includes('treadmill') || eq.includes('rowing_machine') || eq.includes('assault_bike') || eq.includes('elliptical');
+  if (eq.includes('jump_rope') && cardio && cardio !== 'minimal') m *= 1.07;
+  if (hasMachineCardio && cardio && cardio !== 'minimal') m *= 1.05;
+
+  const pm = Array.isArray(answers.priorityMuscleGroups) ? answers.priorityMuscleGroups : [];
+  if (pm.includes('cardio')) m *= 1.1;
+
+  const act = answers.activityOutsideTraining;
+  if (act === 'sedentary' && cardio && cardio !== 'minimal') m *= 1.06;
+  if (act === 'very_active' && cardio === 'minimal') m *= 0.93;
+
+  const g = answers.goalPhysique;
+  if (g === 'endurance_lean' || g === 'athletic_performance') m *= 1.08;
+  if (g === 'bulk_mass' && cardio && cardio !== 'minimal') m *= 0.92;
+
+  return Math.max(0.5, Math.min(1.45, m));
+}
+
+/**
+ * Petite correction au score « niveau » Récap : habitudes mobilité / souplesse déclarées (réduit si données matures).
+ */
+export function computeQuizLevelWellnessModifier(answers) {
+  if (!answers || typeof answers !== 'object') return 0;
+  let x = 0;
+  const habit = answers.stretchingHabit;
+  if (habit === 'five_plus_week') x += 3;
+  else if (habit === 'two_four_week') x += 2;
+  else if (habit === 'once_week') x += 1;
+
+  const flex = answers.flexibilityLevel;
+  if (flex === 'very_flexible' || flex === 'flexible') x += 1;
+  if (flex === 'very_stiff' && (habit === 'never' || habit === 'rarely')) x -= 1;
+
+  const know = answers.stretchingKnowledge;
+  if (know === 'confident') x += 1;
+  if (know === 'want_guidance') x += 1;
+
+  const cardio = answers.cardioTrainingDesire;
+  if (cardio === 'high' || cardio === 'priority_hiit') x += 1;
+
+  return Math.max(-2, Math.min(7, x));
+}
+
+/**
+ * Textes d’étirements à injecter dans le planning (matin / midi / soir) selon quiz.
+ */
+export function buildQuizStretchingBlocks(answers) {
+  const habit = answers?.stretchingHabit || 'once_week';
+  const flex = answers?.flexibilityLevel || 'average';
+  const know = answers?.stretchingKnowledge || 'some_gaps';
+
+  const stiff = flex === 'very_stiff' || flex === 'below_avg';
+  const needsGuidance = know === 'want_guidance' || know === 'unsure';
+
+  let morningDur = '5–7 min';
+  let morningTxt =
+    'Échauffement articulaire léger : rotations épaules, cercles hanches, chevilles ; puis 2 étirements statiques doux (ischios + dos) ~25–35 s chacun sans rebond.';
+
+  if (habit === 'never' || habit === 'rarely') {
+    morningDur = '6–8 min';
+    morningTxt =
+      'Objectif : poser une routine courte et répétable. Même séquence chaque jour : 3 min marche sur place ou montées genoux, puis mollets / quadriceps / fessiers au mur (25–30 s), respiration calme.';
+  } else if (habit === 'five_plus_week') {
+    morningDur = '4–6 min';
+    morningTxt =
+      'Entretien : mobilité thoracique + fentes statiques légères + chaîne postérieure ; garde des amplitudes modérées si tu t’entraînes lourd dans la journée.';
+  }
+
+  if (stiff) {
+    morningTxt += ' Ta souplesse est basse au quiz : évite les positions extrêmes, augmente progressivement l’amplitude sur 2–3 semaines.';
+  }
+  if (needsGuidance) {
+    morningTxt +=
+      ' Priorité technique : un seul exercice bien dosé vaut mieux que cinq mal exécutés — suis les consignes texte de l’app jour par jour.';
+  }
+
+  const middayDur = '4–6 min';
+  let middayTxt =
+    'Micro-session : épaules (traverse bras poitrine), fléchisseurs hanche debout, rotation douce du tronc. Idéal si posture assise longue.';
+
+  const eveningDur = '8–12 min';
+  let eveningTxt =
+    'Récup : chaîne postérieure (ischios allongé ou debout), pectoraux au cadre de porte, mollets marche. Après séance muscu ou journée statique.';
+
+  if (flex === 'very_flexible') {
+    eveningTxt +=
+      ' Tu t’es déclaré très souple : privilégie le contrôle et la stabilité plutôt que pousser les splits au maximum.';
+  }
+
+  return {
+    morning: { duration: morningDur, instructions: morningTxt },
+    midday: { duration: middayDur, instructions: middayTxt },
+    evening: { duration: eveningDur, instructions: eveningTxt }
+  };
+}
+
+/**
+ * Repères volume d’exercices, séries, reps, circuits et cardio de fin — pour préremplir le planning.
+ */
+export function buildQuizTrainingSessionBlueprint(answers) {
+  if (!answers || typeof answers !== 'object') {
+    return {
+      exercisesPerSession: '5–7 ex.',
+      setsHint: '3 séries / exo de base',
+      repRange: '8–12',
+      circuitGuidance: 'Option : 1 mini-circuit en fin de séance si la forme du jour suit.',
+      cardioFinisherHint: 'Fin de séance : 6–10 min cardio modéré (vélo, marche inclinée ou corde en intervalles si dispo).'
+    };
+  }
+
+  const exp = answers.experienceLevel;
+  const dur = answers.preferredSessionDuration;
+  const circuits = answers.circuitTrainingStyle;
+  const goal = answers.goalPhysique;
+
+  let lo = 5;
+  let hi = 8;
+  if (exp === 'beginner_total' || exp === 'beginner_0_3m') {
+    lo = 4;
+    hi = 6;
+  } else if (exp === 'expert_3y_plus' || exp === 'advanced_1_3y') {
+    lo = 6;
+    hi = 11;
+  }
+  if (dur === '15_30') {
+    hi = Math.min(hi, 6);
+    lo = Math.min(lo, 4);
+  } else if (dur === '60_90') {
+    hi += 2;
+    lo += 1;
+  }
+
+  let setsHint = '3 séries / exercice de base (ajuste au RPE)';
+  let repRange = '8–12';
+  if (goal === 'strong_powerful') {
+    setsHint = '3–4 séries / gros mouvement ; accessoires 2–3 séries';
+    repRange = '4–8 (force) / 8–12 (accessoires)';
+  } else if (goal === 'lean_toned' || goal === 'muscular_defined') {
+    repRange = '8–15 selon exo';
+  } else if (goal === 'endurance_lean') {
+    repRange = '12–20 ou temps sous tension sur certains blocs';
+  }
+
+  let circuitGuidance =
+    'Structure majoritaire en séries droites ; éventuellement 1 superset léger sur 2 exos complémentaires.';
+  if (circuits === 'ok_finisher') {
+    circuitGuidance =
+      'Séries droites sur le gros du travail ; 1 finisher court (2–3 mouvements enchaînés, 2 tours) en fin de séance si tu te sens frais.';
+  } else if (circuits === 'like_supersets') {
+    circuitGuidance =
+      'Prévoir 2–3 supersets (agoniste/antagoniste ou haut/bas) par séance pour densifier sans tout faire en circuit.';
+  } else if (circuits === 'love_circuits') {
+    circuitGuidance =
+      '1 bloc circuit principal (4–5 exos, repos 20–45 s) + accès libres en séries droites sur le lift prioritaire du jour.';
+  } else if (circuits === 'prefer_straight') {
+    circuitGuidance = 'Privilégier les séries droites et le repos complet entre les séries lourdes.';
+  }
+
+  const bias = computeCardioBiasMultiplier(answers);
+  const cLo = Math.max(4, Math.round(5 * bias));
+  const cHi = Math.max(cLo + 2, Math.round(14 * bias));
+  const eq = Array.isArray(answers.availableEquipment) ? answers.availableEquipment : [];
+  let cardioFinisherHint = `Fin de séance : ${cLo}–${cHi} min cardio modéré`;
+  if (eq.includes('jump_rope')) {
+    cardioFinisherHint += ' — corde : 6×(30 s effort / 30 s facile) si les chevilles tolèrent';
+  } else if (eq.includes('rowing_machine')) {
+    cardioFinisherHint += ' — rameur : 2×4 min tempo régulier';
+  } else if (eq.includes('treadmill')) {
+    cardioFinisherHint += ' — tapis : marche inclinée ou jog léger';
+  } else if (eq.includes('assault_bike') || eq.includes('elliptical')) {
+    cardioFinisherHint += ' — vélo / elliptique : intervalles courts modérés';
+  } else {
+    cardioFinisherHint += ' — marche rapide ou montées de genoux si peu de matériel';
+  }
+  if (answers.cardioTrainingDesire === 'minimal') {
+    cardioFinisherHint = 'Cardio minimal au quiz : 3–6 min très légers en fin de séance ou séance dédiée courte 1×/sem.';
+  }
+
+  return {
+    exercisesPerSession: `${lo}–${hi} ex. cibles (à ajuster dans l’éditeur)`,
+    setsHint,
+    repRange,
+    circuitGuidance,
+    cardioFinisherHint
+  };
+}
+
 export function buildProgramPrefillHints(answers) {
   const tags = focusTagsFromAnswers(answers);
   const equip = Array.isArray(answers?.availableEquipment) ? answers.availableEquipment : [];
@@ -68,7 +273,14 @@ export function buildProgramPrefillHints(answers) {
     focusTags: tags,
     equipmentKeys: equip,
     trainingLocation: loc,
-    currentPhysique: current
+    currentPhysique: current,
+    stretchingHabit: answers?.stretchingHabit || null,
+    stretchingKnowledge: answers?.stretchingKnowledge || null,
+    flexibilityLevel: answers?.flexibilityLevel || null,
+    cardioTrainingDesire: answers?.cardioTrainingDesire || null,
+    circuitTrainingStyle: answers?.circuitTrainingStyle || null,
+    cardioBias: computeCardioBiasMultiplier(answers),
+    hasJumpRope: equip.includes('jump_rope')
   };
 }
 
@@ -83,6 +295,14 @@ export function buildProgramDescriptionFromQuiz(answers, suggestedDays) {
   if (style) parts.push(style);
   const loc = locationTrainingSentence(answers?.trainingLocation);
   if (loc) parts.push(loc);
+  const bp = buildQuizTrainingSessionBlueprint(answers);
+  parts.push(`Structure suggérée : ${bp.exercisesPerSession}, ${bp.setsHint}, reps ${bp.repRange}.`);
+  parts.push(bp.circuitGuidance);
+  const sh = answers?.stretchingHabit;
+  if (sh && sh !== 'never') parts.push('Étirements guidés préremplis (matin/midi/soir) selon ton quiz.');
+  if (hints.hasJumpRope && answers?.cardioTrainingDesire && answers.cardioTrainingDesire !== 'minimal') {
+    parts.push('Corde à sauter disponible : possibilité d’intervalles courts en fin de séance.');
+  }
   return parts.length ? `Prérempli via quiz. ${parts.join(' · ')}.` : 'Prérempli via quiz onboarding.';
 }
 
@@ -128,6 +348,8 @@ export function adjustSuggestedProgramWeeks(baseWeeks, answers) {
   if (exp === 'beginner_total' || exp === 'beginner_0_3m') w = Math.min(w, 8);
   if (exp === 'expert_3y_plus') w = Math.max(w, 8);
   if (stress === 'very_high' || stress === 'high' || sleep === 'poor' || sleep === 'below_average') w = Math.max(4, w - 2);
+  if (answers?.circuitTrainingStyle === 'love_circuits' || answers?.cardioTrainingDesire === 'priority_hiit') w += 1;
+  if (answers?.stretchingHabit === 'never' || answers?.stretchingHabit === 'rarely') w = Math.max(3, w - 1);
   return Math.max(3, Math.min(16, w));
 }
 
@@ -270,5 +492,65 @@ export function buildQuizDerivedSuggestionTexts(answers) {
       text: 'Débutant + performance athlétique : base technique et condition générale avant la spécialisation (sprints, agilité).'
     });
   }
-  return out.slice(0, 8);
+
+  const stretchH = answers.stretchingHabit;
+  const stretchK = answers.stretchingKnowledge;
+  const flexL = answers.flexibilityLevel;
+  const cardioD = answers.cardioTrainingDesire;
+  const circuitS = answers.circuitTrainingStyle;
+
+  if (stretchH === 'never' || stretchH === 'rarely') {
+    out.push({
+      kind: 'quiz_stretch_low',
+      text: 'Peu d’étirements déclarés au quiz : des blocs courts après échauffement (souplesse + confort articulaire) aident souvent la récup sans alourdir la séance.'
+    });
+  } else if (stretchH === 'five_plus_week') {
+    out.push({
+      kind: 'quiz_stretch_high',
+      text: 'Bonne fréquence d’étirement déclarée : garde des amplitudes contrôlées les jours de charges lourdes pour ne pas cumuler fatigue passive.'
+    });
+  }
+  if (stretchK === 'want_guidance' || stretchK === 'unsure') {
+    out.push({
+      kind: 'quiz_stretch_edu',
+      text: 'Tu as demandé plus de guidage étirements : l’app peut proposer des séquences simples (30 s / groupe, sans rebond) — utile surtout après effort ou longues positions assises.'
+    });
+  }
+  if (flexL === 'very_stiff') {
+    out.push({
+      kind: 'quiz_flex_stiff',
+      text: 'Souplesse « très raide » au quiz : progresse par petites étapes sur l’amplitude plutôt que forcer les positions extrêmes.'
+    });
+  }
+  if (cardioD === 'minimal' && pm.includes('cardio')) {
+    out.push({
+      kind: 'quiz_cardio_conflict',
+      text: 'Priorité cardio cochée mais volume cardio souhaité minimal : privilégie la marche active ou de courtes sessions dédiées 1–2×/sem.'
+    });
+  }
+  if (cardioD === 'priority_hiit' && (eq.includes('jump_rope') || eq.includes('assault_bike'))) {
+    out.push({
+      kind: 'quiz_hiit_tools',
+      text: 'HIIT prioritaire + corde ou air bike dispo : intervalles courts (20–40 s) bien dosés après échauffement, pas en début de séance froide.'
+    });
+  }
+  if (eq.includes('jump_rope') && cardioD && cardioD !== 'minimal') {
+    out.push({
+      kind: 'quiz_jump_rope',
+      text: 'Corde à sauter disponible : excellent complément cardio compact — alterne avec mobilité chevilles pour limiter les tensions.'
+    });
+  }
+  if (circuitS === 'love_circuits' && (exp === 'beginner_total' || exp === 'beginner_0_3m')) {
+    out.push({
+      kind: 'quiz_circuit_novice',
+      text: 'Tu aimes les circuits mais débutant au quiz : commence par 3 mouvements simples et un tour de moins que ton instinct, puis augmente.'
+    });
+  } else if (circuitS === 'prefer_straight' && g === 'endurance_lean') {
+    out.push({
+      kind: 'quiz_straight_endurance',
+      text: 'Endurance + séries droites préférées : cardio continu ou tempo modéré en fin de séance plutôt que beaucoup de transitions courtes.'
+    });
+  }
+
+  return out.slice(0, 10);
 }

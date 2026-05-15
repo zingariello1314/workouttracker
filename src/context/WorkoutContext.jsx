@@ -112,13 +112,6 @@ const WorkoutProvider = ({ children }) => {
     [activeTab]
   );
   
-  // ✅ PHASE 4 : Utilisation du hook pour les exercices et étirements
-  // Les états pour les modifications non sauvegardées sont maintenant gérés par le hook
-  // On les initialise temporairement pour la compatibilité avec getCurrentData
-  const [hasUnsavedExercises, setHasUnsavedExercises] = useState(false);
-  const [hasUnsavedStretches, setHasUnsavedStretches] = useState(false);
-  const [tempData, setTempData] = useState(null);
-  
   // États des modales
   const [showSettings, setShowSettings] = useState(false);
   const [showPhotoModal, setShowPhotoModal] = useState(false);
@@ -198,18 +191,12 @@ const WorkoutProvider = ({ children }) => {
     [flushAutoSave, activeProgram, programHistory, weekVariant, isGymMode]
   );
 
-  // ✅ PHASE 4 : Fonction pour obtenir les données actuelles (temp ou réelles)
-  // Cette fonction est utilisée par les hooks, donc on la garde ici
-  const getCurrentData = useCallback(() => {
-    return (hasUnsavedExercises || hasUnsavedStretches) && tempData ? tempData : data;
-  }, [hasUnsavedExercises, hasUnsavedStretches, tempData, data]);
-
-  // ✅ PHASE 4 : Utilisation du hook pour les exercices et étirements
+  // ✅ PHASE 4 : brouillon exercices/étirements — état dans useWorkoutExercises uniquement (pas de miroir : getCurrentData lit le hook au même rendu)
   const {
-    hasUnsavedExercises: hasUnsavedExercisesFromHook,
-    hasUnsavedStretches: hasUnsavedStretchesFromHook,
-    tempData: tempDataFromHook,
-    replaceDraftWorkoutData: replaceDraftWorkoutDataFromHook,
+    hasUnsavedExercises,
+    hasUnsavedStretches,
+    tempData,
+    replaceDraftWorkoutData,
     updateTempExerciseData,
     updateTempStretchData,
     saveExerciseChanges,
@@ -219,26 +206,14 @@ const WorkoutProvider = ({ children }) => {
     cancelExerciseChanges,
     cancelStretchChanges,
     resetDay,
-  } = useWorkoutExercises(data, updateData, getCurrentData, getDateStr(currentDate));
+  } = useWorkoutExercises(data, updateData, getDateStr(currentDate));
 
-  // ✅ PHASE 4 : Synchroniser les états du hook avec les états locaux pour compatibilité
-  useEffect(() => {
-    setHasUnsavedExercises(hasUnsavedExercisesFromHook);
-    setHasUnsavedStretches(hasUnsavedStretchesFromHook);
-    setTempData(tempDataFromHook);
-  }, [hasUnsavedExercisesFromHook, hasUnsavedStretchesFromHook, tempDataFromHook]);
-
-  /** Aligner hook + état miroir sans toucher aux flags (ex. après updateData depuis le calendrier). */
-  const replaceDraftWorkoutData = useCallback(
-    (snapshot) => {
-      if (!snapshot || typeof snapshot !== 'object') return;
-      replaceDraftWorkoutDataFromHook(snapshot);
-      if (hasUnsavedExercises || hasUnsavedStretches) {
-        setTempData(snapshot);
-      }
-    },
-    [replaceDraftWorkoutDataFromHook, hasUnsavedExercises, hasUnsavedStretches]
-  );
+  const getCurrentData = useCallback(() => {
+    if ((hasUnsavedExercises || hasUnsavedStretches) && tempData) {
+      return tempData;
+    }
+    return data;
+  }, [hasUnsavedExercises, hasUnsavedStretches, tempData, data]);
 
   // ✅ PHASE 4 : Utilisation du hook pour les programmes
   const {
@@ -566,26 +541,21 @@ const WorkoutProvider = ({ children }) => {
           };
         });
         
-        // Ne créer les étirements que s'il y en a vraiment
-        const etirements = {};
-        if (daySchedule.etirements) {
-          if (daySchedule.etirements.matin?.instructions) {
-            etirements.matin = daySchedule.etirements.matin.instructions;
-          }
-          if (daySchedule.etirements.midi?.instructions) {
-            etirements.midi = daySchedule.etirements.midi.instructions;
-          }
-          if (daySchedule.etirements.soir?.instructions) {
-            etirements.soir = daySchedule.etirements.soir.instructions;
-          }
-        }
-        
+        // Étirements : passer le bloc tel quel (tableaux par moment, objets legacy, chaînes…).
+        // L’ancien code ne lisait que `*.instructions` sur des objets non-tableaux, ce qui
+        // supprimait tout le planning dès que l’éditeur Programme enregistrait le format moderne
+        // (`{ matin: [{ id, stretchKey, duration }], … }`). StretchList / normalizeStretchSlots gèrent tout.
+        const etirementsPayload =
+          daySchedule.etirements && typeof daySchedule.etirements === 'object'
+            ? daySchedule.etirements
+            : undefined;
+
         return {
           name: variantName,
           focus: daySchedule.focus || '',
           duree: daySchedule.duration || '',
           exercices: exercises,
-          etirements: Object.keys(etirements).length > 0 ? etirements : undefined,
+          etirements: etirementsPayload,
           isGymMode: isGymMode,
           weekVariant: currentWeekVariant
         };

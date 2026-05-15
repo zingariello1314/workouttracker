@@ -104,7 +104,9 @@ const upsertServerUserLocally = async (user) => {
   } else {
     await updateUser({ ...existing, ...base });
   }
-  return base;
+  const row = await getUserById(user.id);
+  if (!row) return base;
+  return decryptProfileSecretsUser(row);
 };
 
 export const useAuthStorage = () => {

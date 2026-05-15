@@ -16,7 +16,7 @@ import {
   PENDING_QUIZ_PREFILL_TRAINING_KEY,
   readPendingQuizPrefill
 } from '../../features/profileQuestionnaire/prefill';
-import { buildTrainingScheduleFromQuizDays } from '../../features/profileQuestionnaire/trainingScheduleFromQuiz';
+import { buildTrainingScheduleFromQuizDays, augmentScheduleWithQuizDefaults } from '../../features/profileQuestionnaire/trainingScheduleFromQuiz';
 import { getProgramGoalLabel, buildProgramDescriptionFromQuiz } from '../../features/profileQuestionnaire/quizInfluence';
 
 const ProgramTab = () => {
@@ -35,6 +35,8 @@ const ProgramTab = () => {
   });
   /** Jours sélectionnés au quiz ; utilisé uniquement à la création pour activer/désactiver les jours du planning. */
   const [pendingQuizTrainingDays, setPendingQuizTrainingDays] = useState(null);
+  /** Réponses quiz conservées le temps d’appliquer étirements / structure au planning. */
+  const [pendingQuizAnswers, setPendingQuizAnswers] = useState(null);
 
   useEffect(() => {
     const pending = readPendingQuizPrefill(PENDING_QUIZ_PREFILL_TRAINING_KEY);
@@ -51,6 +53,7 @@ const ProgramTab = () => {
       exercises: []
     });
     setPendingQuizTrainingDays(suggestedDays.length > 0 ? suggestedDays : null);
+    setPendingQuizAnswers(quizAnswers && typeof quizAnswers === 'object' ? quizAnswers : null);
     setShowCreateForm(true);
     clearPendingQuizPrefill(PENDING_QUIZ_PREFILL_TRAINING_KEY);
   }, []);
@@ -146,9 +149,13 @@ const ProgramTab = () => {
   const handleCreateProgram = () => {
     if (newProgram.name.trim()) {
       const useQuizSchedule = Array.isArray(pendingQuizTrainingDays) && pendingQuizTrainingDays.length > 0;
-      const schedule = useQuizSchedule
+      const scheduleBase = useQuizSchedule
         ? buildTrainingScheduleFromQuizDays(pendingQuizTrainingDays, createEmptyDay)
         : createEmptySchedule();
+      const schedule =
+        useQuizSchedule && pendingQuizAnswers && typeof pendingQuizAnswers === 'object'
+          ? augmentScheduleWithQuizDefaults(scheduleBase, pendingQuizAnswers)
+          : scheduleBase;
       const created = addProgram({
         ...newProgram,
         schedule,
@@ -156,6 +163,7 @@ const ProgramTab = () => {
       });
       setNewProgram({ name: '', description: '', duration: 4, exercises: [] });
       setPendingQuizTrainingDays(null);
+      setPendingQuizAnswers(null);
       setShowCreateForm(false);
       if (created) {
         setSelectedProgram(created);

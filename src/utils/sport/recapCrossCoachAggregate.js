@@ -14,6 +14,7 @@ import {
 } from './recapUserAssessment';
 import { buildWeightByDateMap, getLatestWeightSnapshot } from './recapAssessmentSeries';
 import { normalizeProfileQuestionnaire } from '../../features/profileQuestionnaire/schema';
+import { computeCardioBiasMultiplier } from '../../features/profileQuestionnaire/quizInfluence';
 
 /** @typedef {'loading'|'ready'|'skipped'} NutritionBundleStatus */
 
@@ -427,7 +428,10 @@ export function buildRecapCrossCoachAggregate({
       goalPhysique: qq.answers?.goalPhysique ?? null,
       currentPhysique: qq.answers?.currentPhysique ?? null,
       priorityMuscleGroups: Array.isArray(qq.answers?.priorityMuscleGroups) ? qq.answers.priorityMuscleGroups : [],
-      availableEquipment: Array.isArray(qq.answers?.availableEquipment) ? qq.answers.availableEquipment : []
+      availableEquipment: Array.isArray(qq.answers?.availableEquipment) ? qq.answers.availableEquipment : [],
+      cardioQuizBias: computeCardioBiasMultiplier(qq.answers || {}),
+      stretchingHabit: qq.answers?.stretchingHabit ?? null,
+      circuitTrainingStyle: qq.answers?.circuitTrainingStyle ?? null
     },
     planChecks28: planChecks,
     nutrition: {

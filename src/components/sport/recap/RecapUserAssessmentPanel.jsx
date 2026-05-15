@@ -203,40 +203,42 @@ const RecapUserAssessmentPanel = ({
           </div>
         </div>
 
-        <div className="mt-8 grid grid-cols-1 gap-3 md:grid-cols-2 lg:grid-cols-3">
-          <div className="rounded-xl border border-[#0F4C5C]/45 bg-black/55 p-4 backdrop-blur-sm">
-            <div className="text-[10px] font-semibold uppercase tracking-wide text-slate-500">
-              {t('recap.assessment.journey')}
-            </div>
-            <div className="mt-1 text-base font-semibold text-white">{journeyStartYmd || '—'}</div>
-            <div className="mt-1 text-xs text-teal-200/75">
-              {t('recap.assessment.tenure', { days: tenureDays })}
-            </div>
-          </div>
-          <div className="rounded-xl border border-[#0F4C5C]/45 bg-black/55 p-4 backdrop-blur-sm">
-            <div className="text-[10px] font-semibold uppercase tracking-wide text-slate-500">
-              {t('recap.assessment.window')}
-            </div>
-            <div className="mt-1 text-xs text-teal-100">
-              {window28.startYmd} → {window28.endYmd}
-            </div>
-            <div className="mt-1.5 text-xs text-teal-200/80">
-              {t('recap.assessment.activeDays', { n: activeDays28, exp: expectedSessionsOver28 })}
-            </div>
-            <div className="mt-1 text-xs text-amber-200/85">
-              {t('recap.assessment.regularity', { pct: Math.round(regularityScore * 100) })}
-            </div>
-          </div>
-          <div className="rounded-xl border border-[#0F4C5C]/45 bg-black/55 p-4 backdrop-blur-sm md:col-span-2 lg:col-span-1">
-            <div className="text-[10px] font-semibold uppercase tracking-wide text-slate-500">
-              {t('recap.assessment.program')}
-            </div>
-            <p className="mt-1 text-xs leading-snug text-teal-100">{programAdherenceDetail.label}</p>
-            {programCompletion28 != null && (
-              <div className="mt-2 text-sm font-semibold tabular-nums text-emerald-300/95">
-                {programCompletion28.pct}%
+        <div className="mt-8 rounded-xl border border-[#0F4C5C]/45 bg-black/55 p-4 backdrop-blur-sm">
+          <div className="space-y-4">
+            <div>
+              <div className="text-[10px] font-semibold uppercase tracking-wide text-slate-500">
+                {t('recap.assessment.journey')}
               </div>
-            )}
+              <div className="mt-1 text-base font-semibold text-white">{journeyStartYmd || '—'}</div>
+              <div className="mt-1 text-xs text-teal-200/75">
+                {t('recap.assessment.tenure', { days: tenureDays })}
+              </div>
+            </div>
+            <div className="border-t border-[#0F4C5C]/35 pt-4">
+              <div className="text-[10px] font-semibold uppercase tracking-wide text-slate-500">
+                {t('recap.assessment.window')}
+              </div>
+              <div className="mt-1 text-xs text-teal-100">
+                {window28.startYmd} → {window28.endYmd}
+              </div>
+              <div className="mt-1.5 text-xs text-teal-200/80">
+                {t('recap.assessment.activeDays', { n: activeDays28, exp: expectedSessionsOver28 })}
+              </div>
+              <div className="mt-1 text-xs text-amber-200/85">
+                {t('recap.assessment.regularity', { pct: Math.round(regularityScore * 100) })}
+              </div>
+            </div>
+            <div className="border-t border-[#0F4C5C]/35 pt-4">
+              <div className="text-[10px] font-semibold uppercase tracking-wide text-slate-500">
+                {t('recap.assessment.program')}
+              </div>
+              <p className="mt-1 text-xs leading-snug text-teal-100">{programAdherenceDetail.label}</p>
+              {programCompletion28 != null && (
+                <div className="mt-2 text-sm font-semibold tabular-nums text-emerald-300/95">
+                  {programCompletion28.pct}%
+                </div>
+              )}
+            </div>
           </div>
         </div>
 

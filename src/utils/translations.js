@@ -423,7 +423,7 @@ export const translations = {
     'recap.loadSummary':
       'Charge affichée = musculation (pondérée, decay {{lambda}}/j) + {{cardioPct}} % du cardio plafonné par zone.',
     'recap.dominant': 'Zone la plus travaillée en volume (reps cochées / parts) : {{label}}',
-    'recap.assessment.title': 'Synthèse profil, niveau & habitudes (~28 j)',
+    'recap.assessment.title': 'Synthèse profil, niveau & habitudes',
     'recap.assessment.subtitle':
       'Un seul regard : entraînement, corps, nutrition (si saisie) et score indicatif ; courbes sur 84 j. Les remarques sont des pistes à partir de tes données — pas un avis médical.',
     'recap.assessment.badge': 'Profil',
@@ -453,10 +453,10 @@ export const translations = {
     'recap.assessment.tenure': '{{days}} jours depuis la première activité enregistrée (ou date figée).',
     'recap.assessment.window': 'Fenêtre récente',
     'recap.assessment.activeDays':
-      '{{n}} jours avec activité · objectif indicatif ~{{exp}} séances sur 28 j. (quiz)',
+      '{{n}} jours avec activité · objectif indicatif ~{{exp}} séances (selon quiz & fenêtre récente)',
     'recap.assessment.regularity': 'Régularité vs objectif : {{pct}} %',
     'recap.assessment.program': 'Programme',
-    'recap.assessment.sessionAlignTitle': 'Prévu vs réalisé (séances & séries du jour · 28 j.)',
+    'recap.assessment.sessionAlignTitle': 'Prévu vs réalisé (séances & séries du jour)',
     'recap.assessment.sessionAlignLineAvg':
       'Moyenne prévu / réalisé (charge) : {{score}} % · {{scored}} jour(s) analysé(s) sur {{plan}} où une séance était prévue (séries/reps du jour incluses).',
     'recap.assessment.sessionAlignPartial':
@@ -480,7 +480,7 @@ export const translations = {
     'recap.assessment.predictions': 'Pistes',
 
     'recap.crossCoach.badge': 'Coach',
-    'recap.crossCoach.title': 'Synthèse corps · entraînement · nutrition (~28 j)',
+    'recap.crossCoach.title': 'Synthèse corps · entraînement · nutrition',
     'recap.crossCoach.subtitle':
       'Vue transversale et messages priorisés à partir de tes saisies locales (pas un avis médical).',
     'recap.crossCoach.loadingChip': 'Nutrition en chargement…',
@@ -491,11 +491,11 @@ export const translations = {
     'recap.crossCoach.pillar.trainingLine':
       '{{days}} jours avec activité · {{reps}} reps sur la fenêtre · volume (kg×reps) total : {{vol}}',
     'recap.crossCoach.pillar.distinctExercisesLine':
-      'Exercices du programme distincts cochés sur 28 j : ~{{n}}',
+      'Exercices du programme distincts cochés sur la fenêtre récente : ~{{n}}',
     'recap.crossCoach.pillar.bodyLine.weight': 'Dernière pesée sur la fenêtre : {{w}} kg',
     'recap.crossCoach.pillar.bodyLine.none': 'Pas de pesée récente dans cette fenêtre.',
     'recap.crossCoach.pillar.nutritionLine.loading': 'Chargement du journal nutrition…',
-    'recap.crossCoach.pillar.nutritionLine.days': '{{n}} jour(s) avec au moins un repas enregistré (28 j)',
+    'recap.crossCoach.pillar.nutritionLine.days': '{{n}} jour(s) avec au moins un repas enregistré sur la fenêtre',
     'recap.crossCoach.pillar.nutritionLine.empty': 'Aucun repas enregistré sur cette fenêtre.',
     'recap.crossCoach.gapsTitle': 'Pour affiner la lecture',
     'recap.crossCoach.gap.quiz': 'Complète le quiz profil pour caler objectifs et régularité.',
@@ -1294,7 +1294,7 @@ export const translations = {
     'recap.loadSummary':
       'Displayed load = strength (weighted, decay {{lambda}}/day) + {{cardioPct}}% capped cardio per zone.',
     'recap.dominant': 'Top zone by checked training volume (rep shares): {{label}}',
-    'recap.assessment.title': 'Profile, level & habits (~28d)',
+    'recap.assessment.title': 'Profile, level & habits',
     'recap.assessment.subtitle':
       'One place for training, body, nutrition (when logged), and your indicative score; charts span 84d. Remarks are heuristic hints from your data — not medical advice.',
     'recap.assessment.badge': 'Profile',
@@ -1325,10 +1325,10 @@ export const translations = {
     'recap.assessment.tenure': '{{days}} days since first logged activity (or frozen start date).',
     'recap.assessment.window': 'Recent window',
     'recap.assessment.activeDays':
-      '{{n}} active days · indicative target ~{{exp}} sessions per 28 days (quiz)',
+      '{{n}} active days · indicative target ~{{exp}} sessions (quiz & recent window)',
     'recap.assessment.regularity': 'Consistency vs target: {{pct}}%',
     'recap.assessment.program': 'Program',
-    'recap.assessment.sessionAlignTitle': 'Planned vs logged (sessions & today’s sets/reps · 28d)',
+    'recap.assessment.sessionAlignTitle': 'Planned vs logged (sessions & today’s sets/reps)',
     'recap.assessment.sessionAlignLineAvg':
       'Avg planned vs completed load: {{score}}% · {{scored}} day(s) scored out of {{plan}} planned session day(s) (today’s sets/reps included).',
     'recap.assessment.sessionAlignPartial':
@@ -1351,7 +1351,7 @@ export const translations = {
     'recap.assessment.predictions': 'Outlook',
 
     'recap.crossCoach.badge': 'Coach',
-    'recap.crossCoach.title': 'Body · training · nutrition snapshot (~28d)',
+    'recap.crossCoach.title': 'Body · training · nutrition snapshot',
     'recap.crossCoach.subtitle':
       'Cross-pillar recap and prioritized nudges from your local logs (not medical advice).',
     'recap.crossCoach.loadingChip': 'Nutrition loading…',
@@ -1362,11 +1362,11 @@ export const translations = {
     'recap.crossCoach.pillar.trainingLine':
       '{{days}} active days · {{reps}} reps this window · total load (kg×reps): {{vol}}',
     'recap.crossCoach.pillar.distinctExercisesLine':
-      'Distinct program exercises checked in 28d: ~{{n}}',
+      'Distinct program exercises checked in the recent window: ~{{n}}',
     'recap.crossCoach.pillar.bodyLine.weight': 'Latest weigh-in this window: {{w}} kg',
     'recap.crossCoach.pillar.bodyLine.none': 'No weigh-in logged in this window.',
     'recap.crossCoach.pillar.nutritionLine.loading': 'Loading nutrition journal…',
-    'recap.crossCoach.pillar.nutritionLine.days': '{{n}} day(s) with at least one meal logged (28d)',
+    'recap.crossCoach.pillar.nutritionLine.days': '{{n}} day(s) with at least one meal logged in this window',
     'recap.crossCoach.pillar.nutritionLine.empty': 'No meals logged in this window.',
     'recap.crossCoach.gapsTitle': 'To sharpen the recap',
     'recap.crossCoach.gap.quiz': 'Finish the profile quiz to align consistency targets and tips.',

@@ -8,8 +8,109 @@ export function isWorkoutAggregateCloudSyncEnabled() {
   return v === '1' || v === 'true' || v === 'yes';
 }
 
+/** Ligne repo plate pour fusion (même logique que `normalizeWorkoutAggregateRawForIdb` sans forcer `id`). */
+function flatWorkoutPayload(row) {
+  if (!row || typeof row !== 'object') return {};
+  if (row.data && typeof row.data === 'object' && row.data !== null && !row.checkedExercises) {
+    return {
+      ...row.data,
+      lastSaved: row.lastSaved || row.data.lastSaved,
+      dataVersion: row.dataVersion || row.data.dataVersion || '1.0'
+    };
+  }
+  return { ...row };
+}
+
+function mergeShallowRecordMaps(localVal, cloudVal) {
+  const L = localVal && typeof localVal === 'object' && !Array.isArray(localVal) ? localVal : {};
+  const C = cloudVal && typeof cloudVal === 'object' && !Array.isArray(cloudVal) ? cloudVal : {};
+  return { ...L, ...C };
+}
+
+/** `exerciseSetWeights[exId][setKey]` : fusion par exercice, valeurs cloud prioritaires sur conflit. */
+function mergeExerciseSetWeights(localVal, cloudVal) {
+  const L = localVal && typeof localVal === 'object' && !Array.isArray(localVal) ? localVal : {};
+  const C = cloudVal && typeof cloudVal === 'object' && !Array.isArray(cloudVal) ? cloudVal : {};
+  const keys = new Set([...Object.keys(L), ...Object.keys(C)]);
+  const out = {};
+  for (const k of keys) {
+    const lv = L[k];
+    const cv = C[k];
+    if (
+      lv &&
+      typeof lv === 'object' &&
+      !Array.isArray(lv) &&
+      cv &&
+      typeof cv === 'object' &&
+      !Array.isArray(cv)
+    ) {
+      out[k] = { ...lv, ...cv };
+    } else if (cv !== undefined) {
+      out[k] = cv;
+    } else {
+      out[k] = lv;
+    }
+  }
+  return out;
+}
+
 /**
- * LWW naïf : compare `lastSaved` (agrégat) puis `updatedAt` serveur.
+ * Quand le cloud « gagne » sur `lastSaved`, fusionner les maps de séance pour ne pas perdre
+ * des clés présentes uniquement en IndexedDB (reps / coches / poids du jour).
+ * Les clés communes restent celles du cloud (plus récentes).
+ */
+export function mergeCloudWinningRowOverLocal(localRaw, cloudAgg, storageKey) {
+  const sk = String(storageKey || '').trim();
+  const L = flatWorkoutPayload(localRaw);
+  const C = { ...(cloudAgg && typeof cloudAgg === 'object' ? cloudAgg : {}), id: sk };
+  return {
+    ...L,
+    ...C,
+    id: sk,
+    reps: mergeShallowRecordMaps(L.reps, C.reps),
+    checkedExercises: mergeShallowRecordMaps(L.checkedExercises, C.checkedExercises),
+    checkedStretches: mergeShallowRecordMaps(L.checkedStretches, C.checkedStretches),
+    exerciseWeights: mergeShallowRecordMaps(L.exerciseWeights, C.exerciseWeights),
+    exerciseWeightPerArm: mergeShallowRecordMaps(L.exerciseWeightPerArm, C.exerciseWeightPerArm),
+    exerciseSetWeights: mergeExerciseSetWeights(L.exerciseSetWeights, C.exerciseSetWeights),
+    exerciseSessionEffortStars: mergeShallowRecordMaps(
+      L.exerciseSessionEffortStars,
+      C.exerciseSessionEffortStars
+    ),
+    exerciseSessionPleasureStars: mergeShallowRecordMaps(
+      L.exerciseSessionPleasureStars,
+      C.exerciseSessionPleasureStars
+    ),
+    stretchSessionEffortStars: mergeShallowRecordMaps(
+      L.stretchSessionEffortStars,
+      C.stretchSessionEffortStars
+    ),
+    lastSaved: C.lastSaved || L.lastSaved,
+    dataVersion: C.dataVersion || L.dataVersion || '1.0'
+  };
+}
+
+function buildClientMutationId() {
+  return typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function'
+    ? crypto.randomUUID()
+    : `wa-${Date.now()}`;
+}
+
+function pushWorkoutAggregateToServer(token, row) {
+  const aggregate = { ...row };
+  delete aggregate.id;
+  return putMomentumApiV1WorkoutAggregate(token, {
+    clientMutationId: buildClientMutationId(),
+    aggregate
+  });
+}
+
+/**
+ * LWW : compare uniquement `lastSaved` **embarqué dans l’agrégat** (client ↔ dernier PUT).
+ *
+ * Ne pas utiliser `remoteGet.updatedAt` (horodatage ligne SQL) comme fallback : un agrégat
+ * ancien ou partiel sans `lastSaved` pouvait quand même « gagner » sur un IndexedDB riche
+ * après rafraîchissement (reps / coches effacées).
  *
  * @param {Record<string, unknown> | null} localRaw — ligne brute repo (plate ou `{ data }`).
  * @param {import('../../../contracts/workoutAggregateSnapshot.v1.js').WorkoutAggregateSnapshotGetV1 | null} remoteGet
@@ -24,14 +125,24 @@ export function pickNewerWorkoutRawForLoad(localRaw, remoteGet, storageKey) {
   if (!agg || typeof agg !== 'object' || Object.keys(agg).length === 0) return localRaw ?? null;
 
   const cloud = { ...agg, id: sk };
-  const cloudTs = String(cloud.lastSaved || remoteGet.updatedAt || '').trim();
-  const localTs = String(
+  const cloudSaved = String(cloud.lastSaved || '').trim();
+  const localSaved = String(
     (localRaw && (localRaw.lastSaved || localRaw.data?.lastSaved)) || ''
   ).trim();
 
   if (!localRaw) return cloud;
-  if (cloudTs && localTs && cloudTs > localTs) return cloud;
-  if (cloudTs && !localTs) return cloud;
+
+  // Snapshot cloud sans horodatage client : ne pas écraser un local déjà peuplé.
+  if (!cloudSaved) {
+    return localRaw;
+  }
+
+  if (!localSaved && cloudSaved) {
+    return mergeCloudWinningRowOverLocal(localRaw, cloud, sk);
+  }
+  if (cloudSaved > localSaved) {
+    return mergeCloudWinningRowOverLocal(localRaw, cloud, sk);
+  }
   return localRaw;
 }
 
@@ -65,17 +176,30 @@ export function scheduleWorkoutAggregateCloudPush(args) {
   if (timerId != null) clearTimeout(timerId);
   timerId = setTimeout(() => {
     timerId = null;
-    const clientMutationId =
-      typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function'
-        ? crypto.randomUUID()
-        : `wa-${Date.now()}`;
-    const aggregate = { ...row };
-    delete aggregate.id;
-    putMomentumApiV1WorkoutAggregate(token, {
-      clientMutationId,
-      aggregate
-    }).catch((err) => {
+    pushWorkoutAggregateToServer(token, row).catch((err) => {
       console.warn('[workoutAggregateCloudSync] push échoué', err);
     });
   }, DEBOUNCE_MS);
+}
+
+/**
+ * Annule le push différé et envoie tout de suite (ex. après sauvegarde IndexedDB, avant F5).
+ */
+export async function flushWorkoutAggregateCloudPushNow(args) {
+  if (!isWorkoutAggregateCloudSyncEnabled()) return;
+  const sk = String(args?.storageKey || '').trim();
+  if (!sk || sk === 'anonymous') return;
+  const token = String(args?.accessToken || '').trim();
+  if (!token) return;
+  const row = args?.row && typeof args.row === 'object' ? args.row : null;
+  if (!row) return;
+  if (timerId != null) {
+    clearTimeout(timerId);
+    timerId = null;
+  }
+  try {
+    await pushWorkoutAggregateToServer(token, row);
+  } catch (err) {
+    console.warn('[workoutAggregateCloudSync] push immédiat échoué', err);
+  }
 }

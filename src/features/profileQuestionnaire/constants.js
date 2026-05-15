@@ -1,9 +1,10 @@
-export const PROFILE_QUESTIONNAIRE_VERSION = 3;
+export const PROFILE_QUESTIONNAIRE_VERSION = 4;
 
 export const QUESTION_SECTIONS = [
   { id: 'objectifs', label: 'Objectifs de la mission', color: 'violet' },
   { id: 'experience', label: 'Expérience de combat', color: 'yellow' },
   { id: 'operations', label: 'Opérations quotidiennes', color: 'green' },
+  { id: 'mobilite', label: 'Mobilité, cardio & formats de séance', color: 'cyan' },
   { id: 'systeme', label: 'Paramètres système', color: 'white' }
 ];
 
@@ -120,7 +121,13 @@ export const PROFILE_QUESTION_DEFS = [
       { key: 'cable_machine', label: 'Machine à câbles' },
       { key: 'bench', label: 'Banc' },
       { key: 'squat_rack', label: 'Rack à squat' },
-      { key: 'bodyweight', label: 'Poids du corps' }
+      { key: 'bodyweight', label: 'Poids du corps' },
+      { key: 'jump_rope', label: 'Corde à sauter' },
+      { key: 'treadmill', label: 'Tapis de course' },
+      { key: 'elliptical', label: 'Vélo elliptique' },
+      { key: 'rowing_machine', label: 'Rameur' },
+      { key: 'assault_bike', label: 'Vélo assaut / air bike' },
+      { key: 'stair_climber', label: 'Stepper / escalier' }
     ]
   },
   {
@@ -188,6 +195,91 @@ export const PROFILE_QUESTION_DEFS = [
       { key: 'lightly_active', label: 'Légèrement actif' },
       { key: 'moderately_active', label: 'Modérément actif' },
       { key: 'very_active', label: 'Très actif' }
+    ]
+  },
+  {
+    id: 'stretchingHabit',
+    sectionId: 'mobilite',
+    type: 'single',
+    title: 'À quelle fréquence vous étirez-vous (hors petit échauffement) ?',
+    options: [
+      { key: 'never', label: 'Presque jamais', description: 'Moins d’une fois par mois' },
+      { key: 'rarely', label: 'Rarement', description: 'Quelques fois par mois' },
+      { key: 'once_week', label: 'Environ 1× par semaine' },
+      { key: 'two_four_week', label: '2 à 4× par semaine' },
+      { key: 'five_plus_week', label: '5× par semaine ou plus' }
+    ]
+  },
+  {
+    id: 'stretchingKnowledge',
+    sectionId: 'mobilite',
+    type: 'single',
+    title: 'Comment vous sentez-vous pour étirer correctement ?',
+    description:
+      'Repères généraux (Mayo Clinic, ACSM) : l’étirement régulier peut aider la souplesse et l’amplitude articulaire, la circulation musculaire et le confort au quotidien ; après échauffement léger, tenir ~30 s sans rebond, en ciblant grands groupes (mollets, cuisses, hanches, dos, nuque, épaules). Les étirements statiques intenses juste avant un sprint maximal ne sont pas idéaux — privilégier un échauffement dynamique avant l’effort intense.',
+    options: [
+      {
+        key: 'confident',
+        label: 'À l’aise : je sais quoi faire',
+        description: 'Technique, durées et groupes musculaires maîtrisés'
+      },
+      {
+        key: 'some_gaps',
+        label: 'Partiellement',
+        description: 'Je manque de repères (durée, respiration, ordre des groupes)'
+      },
+      { key: 'unsure', label: 'Peu confiant·e', description: 'Je reproduis des vidéos sans être sûr·e' },
+      {
+        key: 'want_guidance',
+        label: 'J’aimerais des consignes guidées',
+        description: 'Prêt·e à suivre des blocs simples proposés par l’app'
+      }
+    ]
+  },
+  {
+    id: 'flexibilityLevel',
+    sectionId: 'mobilite',
+    type: 'single',
+    title: 'Comment jugez-vous votre souplesse actuelle ?',
+    options: [
+      { key: 'very_stiff', label: 'Très raide', description: 'Amplitude limitée, inconfort fréquent' },
+      { key: 'below_avg', label: 'Sous la moyenne' },
+      { key: 'average', label: 'Moyenne' },
+      { key: 'flexible', label: 'Souple' },
+      { key: 'very_flexible', label: 'Très souple', description: 'Hyperlaxité possible — prudence sur les positions extrêmes' }
+    ]
+  },
+  {
+    id: 'cardioTrainingDesire',
+    sectionId: 'mobilite',
+    type: 'single',
+    title: 'Quelle place voulez-vous donner au cardio dans vos séances ?',
+    options: [
+      { key: 'minimal', label: 'Minimale', description: 'Échauffement court, peu de volume cardio' },
+      { key: 'light', label: 'Légère', description: 'Petit complément en fin de séance ou session courte' },
+      { key: 'moderate', label: 'Modérée', description: 'Équilibre force / condition' },
+      { key: 'high', label: 'Importante', description: 'Beaucoup de travail cardiovasculaire' },
+      {
+        key: 'priority_hiit',
+        label: 'Priorité cardio & intervalles',
+        description: 'HIIT / intervalles quand le matériel et la récup le permettent'
+      }
+    ]
+  },
+  {
+    id: 'circuitTrainingStyle',
+    sectionId: 'mobilite',
+    type: 'single',
+    title: 'Les circuits / enchaînements (peu de repos entre exos) vous conviennent ?',
+    options: [
+      { key: 'prefer_straight', label: 'Plutôt séries droites', description: 'Peu de supersets' },
+      { key: 'ok_finisher', label: 'Un finisher court parfois', description: 'Le cœur en classique, un mini-circuit occasionnel' },
+      { key: 'like_supersets', label: 'J’aime les supersets', description: '2 exercices enchaînés régulièrement' },
+      {
+        key: 'love_circuits',
+        label: 'J’aime les circuits métaboliques',
+        description: 'Rounds de 3–5 mouvements, repos court, intensité modérée à élevée'
+      }
     ]
   },
   {

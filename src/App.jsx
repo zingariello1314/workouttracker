@@ -105,7 +105,7 @@ const WorkoutTrackerContent = () => {
     getWorkoutHistory,
     saveSessionFeedback
   } = useWorkout();
-  const { currentUser, isAuthenticated } = useAuth();
+  const { currentUser, isAuthenticated, loading: authLoading } = useAuth();
   const { questionnaire } = useProfileQuestionnaire();
   const isAdmin = isAdminUser(currentUser);
   const [showProfileQuiz, setShowProfileQuiz] = useState(false);
@@ -221,6 +221,7 @@ const WorkoutTrackerContent = () => {
   }, []);
 
   useEffect(() => {
+    if (authLoading) return;
     if (!isAuthenticated || !currentUser?.id) {
       setOnboardingPromptHandled(false);
       return;
@@ -235,6 +236,7 @@ const WorkoutTrackerContent = () => {
     }
     setOnboardingPromptHandled(true);
   }, [
+    authLoading,
     currentUser?.id,
     isAuthenticated,
     onboardingPromptHandled,

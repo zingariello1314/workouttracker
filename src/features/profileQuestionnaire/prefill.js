@@ -1,5 +1,12 @@
 import { normalizeProfileQuestionnaire } from './schema';
-import { mapQuizGoalToNutritionGoal, buildProgramPrefillHints, adjustSuggestedProgramWeeks } from './quizInfluence';
+import {
+  mapQuizGoalToNutritionGoal,
+  buildProgramPrefillHints,
+  adjustSuggestedProgramWeeks,
+  computeCardioBiasMultiplier,
+  buildQuizStretchingBlocks,
+  buildQuizTrainingSessionBlueprint
+} from './quizInfluence';
 
 export const PENDING_QUIZ_PREFILL_NUTRITION_KEY = 'momentum.pendingQuizPrefill.nutrition';
 export const PENDING_QUIZ_PREFILL_TRAINING_KEY = 'momentum.pendingQuizPrefill.training';
@@ -47,7 +54,10 @@ export const buildQuizPrefillPayload = (profileQuestionnaireRaw) => {
       ),
       suggestedDays: days,
       hints: buildProgramPrefillHints(answers),
-      vitals: answers.vitalsSelfReport || null
+      vitals: answers.vitalsSelfReport || null,
+      cardioBias: computeCardioBiasMultiplier(answers),
+      stretchingBlocks: buildQuizStretchingBlocks(answers),
+      sessionBlueprint: buildQuizTrainingSessionBlueprint(answers)
     }
   };
 };

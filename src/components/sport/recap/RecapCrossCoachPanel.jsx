@@ -54,39 +54,41 @@ export default function RecapCrossCoachPanel({ synthesisCoach }) {
         <h2 className="mt-3 text-lg font-bold tracking-tight text-white sm:text-xl">{t('recap.crossCoach.title')}</h2>
         <p className="mt-2 max-w-2xl text-xs leading-relaxed text-teal-200/75 sm:text-sm">{t('recap.crossCoach.subtitle')}</p>
 
-        <div className="mt-5 grid grid-cols-1 gap-3 sm:grid-cols-3">
-          <div className="rounded-xl border border-[#0F4C5C]/45 bg-black/55 px-3 py-3">
-            <div className="text-[10px] font-semibold uppercase tracking-wide text-slate-500">
-              {COACH_PILLAR_ICONS.sport} {t('recap.crossCoach.pillar.training')}
-            </div>
-            <p className="mt-2 text-xs leading-snug text-teal-100/90">
-              {t('recap.crossCoach.pillar.trainingLine', trainingLineParams)}
-            </p>
-            {Number(trainingLineParams.distinct ?? 0) > 0 ? (
-              <p className="mt-1 text-[11px] leading-snug text-teal-200/70">
-                {t('recap.crossCoach.pillar.distinctExercisesLine', {
-                  n: String(trainingLineParams.distinct)
-                })}
+        <div className="mt-5 rounded-xl border border-[#0F4C5C]/45 bg-black/55 px-3 py-4">
+          <div className="space-y-4">
+            <div>
+              <div className="text-[10px] font-semibold uppercase tracking-wide text-slate-500">
+                {COACH_PILLAR_ICONS.sport} {t('recap.crossCoach.pillar.training')}
+              </div>
+              <p className="mt-2 text-xs leading-snug text-teal-100/90">
+                {t('recap.crossCoach.pillar.trainingLine', trainingLineParams)}
               </p>
-            ) : null}
-          </div>
-          <div className="rounded-xl border border-[#0F4C5C]/45 bg-black/55 px-3 py-3">
-            <div className="text-[10px] font-semibold uppercase tracking-wide text-slate-500">
-              {COACH_PILLAR_ICONS.body} {t('recap.crossCoach.pillar.body')}
+              {Number(trainingLineParams.distinct ?? 0) > 0 ? (
+                <p className="mt-1 text-[11px] leading-snug text-teal-200/70">
+                  {t('recap.crossCoach.pillar.distinctExercisesLine', {
+                    n: String(trainingLineParams.distinct)
+                  })}
+                </p>
+              ) : null}
             </div>
-            <p className="mt-2 text-xs leading-snug text-teal-100/90">{t(coachBodyLine.k, coachBodyLine.p)}</p>
-          </div>
-          <div className="rounded-xl border border-[#0F4C5C]/45 bg-black/55 px-3 py-3">
-            <div className="text-[10px] font-semibold uppercase tracking-wide text-slate-500">
-              {COACH_PILLAR_ICONS.nutrition} {t('recap.crossCoach.pillar.nutrition')}
+            <div className="border-t border-[#0F4C5C]/40 pt-4">
+              <div className="text-[10px] font-semibold uppercase tracking-wide text-slate-500">
+                {COACH_PILLAR_ICONS.body} {t('recap.crossCoach.pillar.body')}
+              </div>
+              <p className="mt-2 text-xs leading-snug text-teal-100/90">{t(coachBodyLine.k, coachBodyLine.p)}</p>
             </div>
-            <p className="mt-2 text-xs leading-snug text-teal-100/90">
-              {coachNutritionLineKey === 'recap.crossCoach.pillar.nutritionLine.days'
-                ? t(coachNutritionLineKey, {
-                    n: String(aggregate.nutrition?.daysWithLoggedMeals28 ?? 0)
-                  })
-                : t(coachNutritionLineKey)}
-            </p>
+            <div className="border-t border-[#0F4C5C]/40 pt-4">
+              <div className="text-[10px] font-semibold uppercase tracking-wide text-slate-500">
+                {COACH_PILLAR_ICONS.nutrition} {t('recap.crossCoach.pillar.nutrition')}
+              </div>
+              <p className="mt-2 text-xs leading-snug text-teal-100/90">
+                {coachNutritionLineKey === 'recap.crossCoach.pillar.nutritionLine.days'
+                  ? t(coachNutritionLineKey, {
+                      n: String(aggregate.nutrition?.daysWithLoggedMeals28 ?? 0)
+                    })
+                  : t(coachNutritionLineKey)}
+              </p>
+            </div>
           </div>
         </div>
 

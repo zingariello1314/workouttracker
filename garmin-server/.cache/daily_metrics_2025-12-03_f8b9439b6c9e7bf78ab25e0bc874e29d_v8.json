@@ -1,28 +1,28 @@
 {
   "steps": 0,
-  "distance": 0.778,
+  "distance": 0.744,
   "floors": 0,
   "calories": {
-    "total": 2045,
-    "active": 67,
+    "total": 2067,
+    "active": 89,
     "resting": 1978
   },
   "heartRate": {
-    "resting": 53,
-    "max": 114,
+    "resting": 54,
+    "max": 115,
     "avg": 0,
     "timeSeries": []
   },
   "respiration": {
     "awake": {
       "min": 10,
-      "max": 23,
-      "avg": 15.0
+      "max": 26,
+      "avg": 12.0
     },
     "sleep": {
       "min": 10,
-      "max": 23,
-      "avg": 17.0
+      "max": 26,
+      "avg": 16.0
     }
   },
   "intensityMinutes": null,
@@ -36,25 +36,25 @@
     ]
   },
   "stress": {
-    "average": 28,
+    "average": 29,
     "max": 95,
     "timeSeries": []
   },
   "spo2": null,
   "sleep": {
-    "duration": 6.38,
+    "duration": 11.5,
     "quality": 0,
-    "deepSleep": null,
-    "lightSleep": 6.28,
-    "remSleep": 0.1,
-    "bedTime": "01:57",
-    "wakeTime": "08:26",
+    "deepSleep": 1.63,
+    "lightSleep": 8.42,
+    "remSleep": 1.45,
+    "bedTime": "00:49",
+    "wakeTime": "12:58",
     "awakenings": null,
     "movements": null,
     "phasesDetails": null
   },
-  "date": "2025-11-27",
-  "_cached_at": 1778769701.3440585,
+  "date": "2025-12-03",
+  "_cached_at": 1778769703.550832,
   "_cache_version": 8,
-  "_raw_data_hash": "7db776c72b44f09a644dd9585beb1e10"
+  "_raw_data_hash": "f8b9439b6c9e7bf78ab25e0bc874e29d"
 }

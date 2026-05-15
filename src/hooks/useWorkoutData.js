@@ -10,7 +10,7 @@ import {
   isWorkoutAggregateCloudSyncEnabled,
   pickNewerWorkoutRawForLoad,
   normalizeWorkoutAggregateRawForIdb,
-  scheduleWorkoutAggregateCloudPush
+  flushWorkoutAggregateCloudPushNow
 } from '../services/workout/workoutAggregateCloudSync.js';
 
 const workoutDataLog = logger.module('useWorkoutData');
@@ -842,7 +842,7 @@ export const useWorkoutData = (options = {}) => {
           writeScopedBackup();
           if (!ephemeral && !generateTestData && isWorkoutAggregateCloudSyncEnabled()) {
             const { accessToken } = readServerTokens();
-            scheduleWorkoutAggregateCloudPush({ accessToken, storageKey, row: dataToSave });
+            void flushWorkoutAggregateCloudPushNow({ accessToken, storageKey, row: dataToSave });
           }
           return;
         } catch (repoErr) {

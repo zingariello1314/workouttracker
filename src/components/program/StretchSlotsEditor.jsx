@@ -3,6 +3,7 @@
  *
  * Pour chaque moment (matin / midi / soir) :
  *   • affiche UNE carte par étirement individuel (nom + zone + durée + actions)
+ *   • bouton « Modifier » : édition nom + consignes (surcharges persistées si ≠ banque)
  *   • boutons : monter / descendre / supprimer
  *   • bouton "+ Ajouter" qui ouvre un picker avec recherche live dans la banque
  *
@@ -24,7 +25,8 @@ import {
   Search,
   Clock,
   Target,
-  X
+  X,
+  Pencil
 } from 'lucide-react';
 import Button from '../ui/Button';
 import {
@@ -77,11 +79,20 @@ function slotsToRawEtirements(slots) {
     for (const item of slots[moment] || []) {
       const raw = {
         id: item.id,
-        duration: item.duration
+        duration: Math.max(5, Math.round(Number(item.duration)) || 60)
       };
-      if (item.stretchKey) raw.stretchKey = item.stretchKey;
-      // Les items "libres" (pas de stretchKey) on garde un name/instructions persos
-      if (!item.stretchKey) {
+      if (item.stretchKey) {
+        raw.stretchKey = item.stretchKey;
+        const db = stretchDatabase[item.stretchKey];
+        if (db) {
+          const nm = String(item.name || '').trim();
+          const ins = String(item.instructions || item.legacyText || '').trim();
+          const dbName = String(db.name || '').trim();
+          const dbIns = String(db.instructions || '').trim();
+          if (nm && nm !== dbName) raw.name = nm;
+          if (ins && ins !== dbIns) raw.instructions = ins;
+        }
+      } else {
         if (item.name) raw.name = item.name;
         if (item.instructions || item.legacyText) raw.instructions = item.instructions || item.legacyText;
       }
@@ -91,9 +102,14 @@ function slotsToRawEtirements(slots) {
   return out;
 }
 
+const stretchEditKey = (moment, id) => `${moment}::${id}`;
+
 const StretchSlotsEditor = memo(({ dayKey, etirements, onChange }) => {
   const slots = useMemo(() => normalizeStretchSlots(etirements, dayKey), [etirements, dayKey]);
   const [pickerMoment, setPickerMoment] = useState(null);
+  /** Édition nom + consignes (clé moment::id) */
+  const [editingKey, setEditingKey] = useState(null);
+  const [editDraft, setEditDraft] = useState({ name: '', instructions: '' });
 
   const updateSlots = useCallback(
     (mutator) => {
@@ -165,6 +181,35 @@ const StretchSlotsEditor = memo(({ dayKey, etirements, onChange }) => {
     [updateSlots]
   );
 
+  const openStretchEditor = useCallback((moment, item) => {
+    setEditingKey(stretchEditKey(moment, item.id));
+    setEditDraft({
+      name: String(item.name || '').trim(),
+      instructions: String(item.instructions || item.legacyText || '').trim()
+    });
+  }, []);
+
+  const cancelStretchEditor = useCallback(() => {
+    setEditingKey(null);
+    setEditDraft({ name: '', instructions: '' });
+  }, []);
+
+  const saveStretchEditor = useCallback(
+    (moment, itemId) => {
+      const name = String(editDraft.name || '').trim();
+      const instructions = String(editDraft.instructions || '').trim();
+      updateSlots((next) => {
+        const item = next[moment].find((it) => it.id === itemId);
+        if (!item) return;
+        item.name = name || item.name || 'Étirement';
+        item.instructions = instructions;
+        if (item.legacyText) item.legacyText = null;
+      });
+      cancelStretchEditor();
+    },
+    [editDraft.instructions, editDraft.name, updateSlots, cancelStretchEditor]
+  );
+
   return (
     <div>
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
@@ -197,16 +242,32 @@ const StretchSlotsEditor = memo(({ dayKey, etirements, onChange }) => {
                 <p className="text-xs text-slate-500 italic">Aucun étirement planifié pour ce moment.</p>
               ) : (
                 <ul className="space-y-2">
-                  {items.map((item, idx) => (
+                  {items.map((item, idx) => {
+                    const rowKey = stretchEditKey(moment, item.id);
+                    const isEditing = editingKey === rowKey;
+                    return (
                     <li
                       key={item.id}
                       className="rounded border border-slate-700/50 bg-slate-900/40 p-2"
                     >
                       <div className="flex items-start justify-between gap-2">
                         <div className="flex-1 min-w-0">
-                          <div className="text-sm font-medium text-slate-100 leading-snug truncate" title={item.name}>
-                            {item.name}
-                          </div>
+                          {!isEditing ? (
+                            <div className="text-sm font-medium text-slate-100 leading-snug truncate" title={item.name}>
+                              {item.name}
+                            </div>
+                          ) : (
+                            <label className="block text-[10px] uppercase tracking-wide text-slate-500 mb-0.5">
+                              Nom
+                              <input
+                                type="text"
+                                value={editDraft.name}
+                                onChange={(e) => setEditDraft((d) => ({ ...d, name: e.target.value }))}
+                                className="mt-0.5 w-full rounded border border-slate-600 bg-black px-2 py-1 text-sm text-slate-100"
+                                maxLength={200}
+                              />
+                            </label>
+                          )}
                           <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5 text-[10px] text-slate-400 mt-0.5">
                             {item.bodyZone && item.bodyZone !== 'full' && (
                               <span className="inline-flex items-center gap-0.5 capitalize">
@@ -218,19 +279,60 @@ const StretchSlotsEditor = memo(({ dayKey, etirements, onChange }) => {
                               <span className="text-amber-400">[hors banque]</span>
                             )}
                           </div>
-                          <div className="mt-1 flex items-center gap-1">
-                            <Clock size={10} className="text-slate-500" />
-                            <input
-                              type="number"
-                              min="5"
-                              max="3600"
-                              step="5"
-                              value={item.duration}
-                              onChange={(e) => handleEditDuration(moment, item.id, e.target.value)}
-                              className="w-14 bg-black border border-slate-700 rounded px-1 py-0.5 text-[11px] text-slate-200"
-                              aria-label="Durée en secondes"
-                            />
-                            <span className="text-[10px] text-slate-500">s ({formatDuration(item.duration)})</span>
+                          {isEditing ? (
+                            <label className="mt-2 block text-[10px] uppercase tracking-wide text-slate-500">
+                              Consignes
+                              <textarea
+                                value={editDraft.instructions}
+                                onChange={(e) => setEditDraft((d) => ({ ...d, instructions: e.target.value }))}
+                                rows={4}
+                                className="mt-0.5 w-full resize-y rounded border border-slate-600 bg-black px-2 py-1.5 text-xs text-slate-200"
+                                placeholder="Notes pour toi (exécution, reps de respiration…)"
+                              />
+                            </label>
+                          ) : null}
+                          <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1">
+                            <div className="flex items-center gap-1">
+                              <Clock size={10} className="text-slate-500" />
+                              <input
+                                type="number"
+                                min="5"
+                                max="3600"
+                                step="5"
+                                value={item.duration}
+                                onChange={(e) => handleEditDuration(moment, item.id, e.target.value)}
+                                className="w-14 bg-black border border-slate-700 rounded px-1 py-0.5 text-[11px] text-slate-200"
+                                aria-label="Durée en secondes"
+                              />
+                              <span className="text-[10px] text-slate-500">s ({formatDuration(item.duration)})</span>
+                            </div>
+                            {!isEditing ? (
+                              <button
+                                type="button"
+                                onClick={() => openStretchEditor(moment, item)}
+                                className="inline-flex items-center gap-1 rounded border border-teal-600/50 bg-teal-950/40 px-2 py-0.5 text-[11px] font-medium text-teal-200 hover:bg-teal-900/50"
+                              >
+                                <Pencil size={11} />
+                                Modifier
+                              </button>
+                            ) : (
+                              <div className="flex flex-wrap gap-1.5">
+                                <button
+                                  type="button"
+                                  onClick={() => saveStretchEditor(moment, item.id)}
+                                  className="rounded border border-emerald-600/60 bg-emerald-950/50 px-2 py-0.5 text-[11px] font-medium text-emerald-100 hover:bg-emerald-900/50"
+                                >
+                                  Enregistrer
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={cancelStretchEditor}
+                                  className="rounded border border-slate-600 px-2 py-0.5 text-[11px] text-slate-300 hover:bg-slate-800/60"
+                                >
+                                  Annuler
+                                </button>
+                              </div>
+                            )}
                           </div>
                         </div>
                         <div className="shrink-0 flex flex-col gap-0.5">
@@ -263,7 +365,8 @@ const StretchSlotsEditor = memo(({ dayKey, etirements, onChange }) => {
                         </div>
                       </div>
                     </li>
-                  ))}
+                    );
+                  })}
                 </ul>
               )}
             </div>

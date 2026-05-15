@@ -148,11 +148,16 @@ export function normalizeStretchSlots(raw, dayName = null) {
       slot.forEach((item, idx) => {
         if (!item) return;
         const id = item.id ?? buildDefaultStretchId(dayName, moment, idx + 1) ?? (95000 + idx);
+        let dur = item.duration;
+        if (typeof dur === 'string') {
+          const n = parseInt(String(dur).trim(), 10);
+          dur = Number.isFinite(n) ? n : null;
+        }
         out[moment].push(buildResolvedItem({
           id,
           moment,
           stretchKey: item.stretchKey || item.key || null,
-          duration: item.duration,
+          duration: dur,
           customName: item.customName || item.name,
           customInstructions: item.customInstructions || item.instructions,
           legacyText: item.legacyText || null

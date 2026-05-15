@@ -11,7 +11,7 @@ import { isMockEnduranceSession, normalizeDateString } from '../calendarUtils';
 import { getExerciseDatabaseHit } from '../exerciseHeroContent';
 import { normalizeProfileQuestionnaire } from '../../features/profileQuestionnaire/schema';
 import { PROFILE_QUESTION_DEFS } from '../../features/profileQuestionnaire/constants';
-import { buildQuizDerivedSuggestionTexts } from '../../features/profileQuestionnaire/quizInfluence';
+import { buildQuizDerivedSuggestionTexts, computeQuizLevelWellnessModifier } from '../../features/profileQuestionnaire/quizInfluence';
 
 const MS_DAY = 86400000;
 
@@ -506,7 +506,7 @@ export function computeRecapUserAssessment({
     0.24 * volNorm + 0.22 * repsNorm + 0.26 * regNorm + 0.1 * diffNorm + 0.18 * tenureNorm;
 
   let base0to70 = 70 * Math.min(1, baseBlend * (0.88 + 0.12 * (1 - 0.35 * dataMaturity)));
-  const quizBoostRaw = mapExperienceToLevelBoost(answers);
+  const quizBoostRaw = mapExperienceToLevelBoost(answers) + computeQuizLevelWellnessModifier(answers);
   const quizBoost = quizBoostRaw * (1 - 0.62 * dataMaturity);
 
   let level0to100 = Math.round(base0to70 + quizBoost);

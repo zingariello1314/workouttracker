@@ -769,10 +769,8 @@ const TodayTab = () => {
     const hadStretchesDraft = hasUnsavedStretches;
     try {
       await maybeApplyRestDaySwapBeforeSave();
-      if (hadExercisesDraft) {
+      if (hadExercisesDraft || hadStretchesDraft) {
         await saveExerciseChanges();
-      } else if (hadStretchesDraft) {
-        await saveStretchChanges();
       }
       if (hadExercisesDraft && hadStretchesDraft) {
         showSuccess(t('today.messages.sessionSaved'));
@@ -801,10 +799,8 @@ const TodayTab = () => {
     const hadStretchesDraft = hasUnsavedStretches;
     try {
       await maybeApplyRestDaySwapBeforeSave();
-      if (hadStretchesDraft) {
+      if (hadExercisesDraft || hadStretchesDraft) {
         await saveStretchChanges();
-      } else if (hadExercisesDraft) {
-        await saveExerciseChanges();
       }
       if (hadExercisesDraft && hadStretchesDraft) {
         showSuccess(t('today.messages.sessionSaved'));
@@ -942,13 +938,25 @@ const TodayTab = () => {
   );
 
   const shiftSportCalendarDay = useCallback(
-    (delta) => {
+    async (delta) => {
       if (delta === 0) return;
       if (delta > 0 && !canGoForwardSportDay) return;
       if (hasUnsavedExercises || hasUnsavedStretches) {
-        if (!window.confirm(t('today.dateNav.discardPrompt'))) return;
-        discardExerciseChanges();
-        discardStretchChanges();
+        try {
+          await maybeApplyRestDaySwapBeforeSave();
+          await saveExerciseChanges();
+        } catch (error) {
+          console.error('[TodayTab] Sauvegarde avant changement de jour:', error);
+          showError(
+            t('today.messages.errorSavingExercises', 'Impossible d’enregistrer la séance.'),
+            {
+              title: t('today.messages.saveFailed', 'Échec de la sauvegarde'),
+              message: error?.message || t('today.messages.errorMessage', ''),
+              suggestions: [t('today.messages.suggestions.tryAgain', 'Réessaie.')]
+            }
+          );
+          return;
+        }
       }
       setCurrentDate((prev) => {
         const n = new Date(prev);
@@ -960,8 +968,9 @@ const TodayTab = () => {
       canGoForwardSportDay,
       hasUnsavedExercises,
       hasUnsavedStretches,
-      discardExerciseChanges,
-      discardStretchChanges,
+      maybeApplyRestDaySwapBeforeSave,
+      saveExerciseChanges,
+      showError,
       setCurrentDate,
       t
     ]
@@ -2106,7 +2115,7 @@ const TodayTab = () => {
           </div>
         )}
 
-        {/* Boutons de sauvegarde */}
+        {/* Boutons de sauvegarde exercices (même action persiste tout le brouillon si étirements aussi modifiés) */}
         {hasUnsavedExercises && (
           <div className="mt-6 pt-4 border-t border-[#0F4C5C]/40">
             <div className="flex items-center justify-between">
