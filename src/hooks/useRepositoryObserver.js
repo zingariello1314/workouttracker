@@ -14,6 +14,8 @@
 
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { getRepositoryObserver, getNutritionRepository, getStoreName } from '../services/nutrition/repository';
+import { getMealsByDate } from './nutritionDataCRUD/meals';
+import { getActiveProgram as fetchActiveProgram } from './nutritionDataCRUD/programs';
 import logger from '../utils/logger';
 
 const log = logger.module('useRepositoryObserver');
@@ -318,19 +320,54 @@ export const useDailyMeal = (date, options = {}) => {
  * @returns {[Array, Function, Object]} [meals, refresh, { loading, error }]
  */
 export const useMealsByDate = (date, options = {}) => {
-  const [allMeals, refresh, { loading, error }] = useRepositoryObserver('meals', null, {
-    ...options,
-    initialValue: [],
-    subscribeToAll: true // S'abonner à tous les meals
-  });
+  const { enabled = true, onChange = null } = options;
+  const [meals, setMeals] = useState([]);
+  const [loading, setLoading] = useState(enabled);
+  const [error, setError] = useState(null);
+  const isMountedRef = useRef(true);
 
-  // ✅ Filtrer par date
-  const meals = React.useMemo(() => {
-    if (!allMeals || !Array.isArray(allMeals)) {
-      return [];
+  const refresh = useCallback(async () => {
+    if (!enabled || !date) {
+      setMeals([]);
+      setLoading(false);
+      return;
     }
-    return allMeals.filter(meal => meal.date === date);
-  }, [allMeals, date]);
+    try {
+      setLoading(true);
+      setError(null);
+      const dayMeals = await getMealsByDate(date);
+      if (!isMountedRef.current) return;
+      const list = Array.isArray(dayMeals) ? dayMeals : [];
+      setMeals(list);
+      onChange?.(list);
+    } catch (err) {
+      log.error('[useMealsByDate] Erreur chargement:', err);
+      if (isMountedRef.current) {
+        setError(err);
+        setMeals([]);
+      }
+    } finally {
+      if (isMountedRef.current) setLoading(false);
+    }
+  }, [date, enabled, onChange]);
+
+  useEffect(() => {
+    isMountedRef.current = true;
+    if (!enabled) {
+      setLoading(false);
+      return undefined;
+    }
+    refresh();
+    const observer = getRepositoryObserver();
+    const storeKey = `${getStoreName('meals')}:*`;
+    const unsubscribe = observer.subscribe(storeKey, () => {
+      refresh();
+    });
+    return () => {
+      isMountedRef.current = false;
+      if (typeof unsubscribe === 'function') unsubscribe();
+    };
+  }, [enabled, refresh]);
 
   return [meals, refresh, { loading, error }];
 };
@@ -356,19 +393,53 @@ export const useMeal = (mealId, options = {}) => {
  * @returns {[Object|null, Function, Object]} [activeProgram, refresh, { loading, error }]
  */
 export const useActiveProgram = (options = {}) => {
-  const [allPrograms, refresh, { loading, error }] = useRepositoryObserver('programs', null, {
-    ...options,
-    initialValue: [],
-    subscribeToAll: true // S'abonner à tous les programmes
-  });
+  const { enabled = true, onChange = null } = options;
+  const [activeProgram, setActiveProgram] = useState(null);
+  const [loading, setLoading] = useState(enabled);
+  const [error, setError] = useState(null);
+  const isMountedRef = useRef(true);
 
-  // ✅ Filtrer pour trouver le programme actif
-  const activeProgram = React.useMemo(() => {
-    if (!allPrograms || !Array.isArray(allPrograms)) {
-      return null;
+  const refresh = useCallback(async () => {
+    if (!enabled) {
+      setActiveProgram(null);
+      setLoading(false);
+      return;
     }
-    return allPrograms.find(program => program.isActive === true) || null;
-  }, [allPrograms]);
+    try {
+      setLoading(true);
+      setError(null);
+      const program = await fetchActiveProgram({ skipCache: true });
+      if (!isMountedRef.current) return;
+      setActiveProgram(program || null);
+      onChange?.(program || null);
+    } catch (err) {
+      log.error('[useActiveProgram] Erreur chargement:', err);
+      if (isMountedRef.current) {
+        setError(err);
+        setActiveProgram(null);
+      }
+    } finally {
+      if (isMountedRef.current) setLoading(false);
+    }
+  }, [enabled, onChange]);
+
+  useEffect(() => {
+    isMountedRef.current = true;
+    if (!enabled) {
+      setLoading(false);
+      return undefined;
+    }
+    refresh();
+    const observer = getRepositoryObserver();
+    const storeKey = `${getStoreName('programs')}:*`;
+    const unsubscribe = observer.subscribe(storeKey, () => {
+      refresh();
+    });
+    return () => {
+      isMountedRef.current = false;
+      if (typeof unsubscribe === 'function') unsubscribe();
+    };
+  }, [enabled, refresh]);
 
   return [activeProgram, refresh, { loading, error }];
 };

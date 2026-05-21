@@ -291,7 +291,7 @@ const NutritionPrograms = ({ nutritionData, progressEntries = [], isVisible = tr
     }, 400);
 
     return () => window.clearTimeout(timer);
-  }, [isVisible, loading, activeProgram, showSuccess]);
+  }, [isVisible, loading, activeProgram?.id, showSuccess]);
 
   // ✅ OPTIMISATION 1.2 : Optimistic updates + sync partielle (66% réduction requêtes)
   // ✅ OPTIMISATION 5.2 : Toasts pour feedback utilisateur

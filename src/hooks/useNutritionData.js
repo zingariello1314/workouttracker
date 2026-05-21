@@ -719,6 +719,7 @@ export const useNutritionData = () => {
     getActiveProgram,
     getAllProgramsWithActive,
     saveProgram: saveProgramDebounced, // ✅ OPTIMISATION : Version debouncée (300ms)
+    saveProgramImmediate: saveProgram, // Sauvegarde immédiate (ajustement auto, activation)
     deleteProgram,
     activateProgram,
     deactivateProgram,
