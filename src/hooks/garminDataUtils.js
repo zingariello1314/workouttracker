@@ -165,6 +165,29 @@ export const enqueueSave = (fn) => {
   });
 };
 
+/**
+ * Attend la fin de la file de sauvegarde Garmin (backfill / sync).
+ * @param {number} [timeoutMs=15000]
+ */
+export const flushGarminSaveQueue = (timeoutMs = 15000) =>
+  new Promise((resolve) => {
+    const started = Date.now();
+    const tick = () => {
+      if (!isSaving && saveQueue.length === 0) {
+        resolve();
+        return;
+      }
+      if (Date.now() - started > timeoutMs) {
+        console.warn('[GarminDataUtils] flushGarminSaveQueue timeout');
+        resolve();
+        return;
+      }
+      void processSaveQueue();
+      setTimeout(tick, 40);
+    };
+    tick();
+  });
+
 // ==================== HELPERS LOCALSTORAGE (FALLBACK) ====================
 
 /**

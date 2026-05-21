@@ -21,6 +21,7 @@ import {
 import { isMockEnduranceSession } from '../utils/calendarUtils';
 // ✅ PHASE 4 : Les utilitaires de justification sont maintenant dans useWorkoutJustifications
 import { useAuth } from './AuthContext';
+import { registerAppPersistenceFlush } from '../services/persistence/appPersistenceFlush';
 import { sidebarEvents, SIDEBAR_EVENTS } from '../utils/sidebarEvents';
 
 // ✅ PHASE 4 : Hooks personnalisés extraits
@@ -102,7 +103,18 @@ const WorkoutProvider = ({ children }) => {
 
   const requestOpenEnduranceSubTab = useCallback(
     (tabId) => {
-      const valid = ['running', 'walking', 'pushups', 'gainage', 'swimming', 'jumprope', 'boxing', 'performance'];
+      const valid = [
+        'running',
+        'walking',
+        'pushups',
+        'gainage',
+        'swimming',
+        'jumprope',
+        'boxing',
+        'circuits',
+        'pyramid',
+        'performance',
+      ];
       if (!valid.includes(tabId)) return;
       setPendingEnduranceSubTab(tabId);
       if (activeTab !== 'endurance') {
@@ -1514,6 +1526,32 @@ const WorkoutProvider = ({ children }) => {
       autoSaveContext(contextData);
     }
   }, [programs, activeProgram, programHistory, weekVariant, isGymMode, autoSaveContext]);
+
+  const programsRef = useRef(programs);
+  const activeProgramRef = useRef(activeProgram);
+  const programHistoryRef = useRef(programHistory);
+  const weekVariantRef = useRef(weekVariant);
+  const isGymModeRef = useRef(isGymMode);
+  useEffect(() => {
+    programsRef.current = programs;
+    activeProgramRef.current = activeProgram;
+    programHistoryRef.current = programHistory;
+    weekVariantRef.current = weekVariant;
+    isGymModeRef.current = isGymMode;
+  }, [programs, activeProgram, programHistory, weekVariant, isGymMode]);
+
+  useEffect(() => {
+    if (!isAuthenticated) return undefined;
+    return registerAppPersistenceFlush(() =>
+      flushAutoSave({
+        programs: programsRef.current,
+        activeProgram: activeProgramRef.current,
+        programHistory: programHistoryRef.current,
+        weekVariant: weekVariantRef.current,
+        isGymMode: isGymModeRef.current,
+      })
+    );
+  }, [isAuthenticated, flushAutoSave]);
 
   useEffect(() => {
     if (isInitialLoadRef.current) return;

@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from 'react';
-import { Trophy, TrendingUp, BarChart3, Target, AlertTriangle, Layers } from 'lucide-react';
+import { Trophy, TrendingUp, BarChart3, Target, AlertTriangle } from 'lucide-react';
 import { useWorkout } from '../../context/WorkoutContext';
 import { useTranslation } from '../../utils/translations';
 import Card, { CardContent, CardHeader, CardTitle } from '../ui/Card';
@@ -12,8 +12,6 @@ import {
   getDaysSince,
   removePerformanceEntryFromData
 } from '../../utils/exercisePerformanceUtils';
-import PyramidTrainingPanel from '../sport/pyramid/PyramidTrainingPanel.jsx';
-
 const STALE_DAYS = 45;
 const makeDbExerciseId = (key) =>
   `db_${String(key)
@@ -454,16 +452,6 @@ const PerformanceChallengesTab = () => {
             }`}
           >
             Exercices
-          </button>
-          <button
-            type="button"
-            onClick={() => setSubTab('pyramid')}
-            className={`inline-flex items-center gap-1 rounded-lg px-3 py-1.5 text-xs font-medium ${
-              subTab === 'pyramid' ? 'bg-[#0F5C45]/35 text-white border border-[#0F5C45]/55' : 'text-slate-300'
-            }`}
-          >
-            <Layers className="h-3.5 w-3.5 opacity-90" />
-            Pyramide
           </button>
         </div>
 
@@ -919,7 +907,6 @@ const PerformanceChallengesTab = () => {
           </Card>
         )}
 
-        {subTab === 'pyramid' && <PyramidTrainingPanel />}
       </div>
 
       <RecordPerformanceModal

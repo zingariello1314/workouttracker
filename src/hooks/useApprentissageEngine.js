@@ -39,7 +39,8 @@ import { sanitizeSubject } from '../utils/apprentissageSanitization';
 import { useApprentissageWorker } from './useApprentissageWorker';
 import { useUndoRedo } from './useUndoRedo';
 import { useAuth } from '../context/AuthContext';
-import { canAccessPrivateData } from '../utils/accessControl';
+import { canAccessPrivateData, getQuietQuestUserId } from '../utils/accessControl';
+import { registerAppPersistenceFlush } from '../services/persistence/appPersistenceFlush.js';
 
 // Clés de stockage
 const STORAGE_KEYS = {
@@ -145,7 +146,15 @@ export const useApprentissageEngine = () => {
   const timerSaveDebounceRef = useRef(null);
   const plannerSaveDebounceRef = useRef(null);
   const sessionsHistorySaveDebounceRef = useRef(null);
-  const userId = 'main'; // TODO: utiliser currentUser.id si authentifié
+  const userId = useMemo(() => getQuietQuestUserId(currentUser), [currentUser]);
+  const subjectsRef = useRef(subjects);
+  const progressionRef = useRef(progressionData);
+  useEffect(() => {
+    subjectsRef.current = subjects;
+  }, [subjects]);
+  useEffect(() => {
+    progressionRef.current = progressionData;
+  }, [progressionData]);
 
   // Système undo/redo pour actions destructives
   const {
@@ -1055,6 +1064,47 @@ export const useApprentissageEngine = () => {
       }
     }, DEBOUNCE_DELAYS.SAVE);
   }, [userId]);
+
+  const flushApprentissagePersistence = useCallback(async () => {
+    if (!canAccessData) return;
+    [saveDebounceRef, timerSaveDebounceRef, plannerSaveDebounceRef, sessionsHistorySaveDebounceRef].forEach(
+      (ref) => {
+        if (ref.current) {
+          clearTimeout(ref.current);
+          ref.current = null;
+        }
+      }
+    );
+    const db = await openApprentissageDB();
+    if (!db) return;
+    await saveSubjectsToIndexedDB(db, subjectsRef.current, userId).catch(() => {});
+    await saveProgressionToIndexedDB(db, progressionRef.current, userId).catch(() => {});
+    const timer = loadFromStorage(STORAGE_KEYS.TIMER, null);
+    if (timer) await saveTimerToIndexedDB(db, timer, userId).catch(() => {});
+    const planner = loadFromStorage(STORAGE_KEYS.PLANNER, null);
+    if (planner) await savePlannerToIndexedDB(db, planner, userId).catch(() => {});
+    const sessions = loadFromStorage(STORAGE_KEYS.SESSIONS_HISTORY, []);
+    if (Array.isArray(sessions) && sessions.length > 0) {
+      await saveSessionsHistoryToIndexedDB(db, sessions, userId).catch(() => {});
+    }
+  }, [canAccessData, userId]);
+
+  useEffect(() => {
+    if (!canAccessData) return undefined;
+    const unregister = registerAppPersistenceFlush(flushApprentissagePersistence);
+    return () => {
+      void flushApprentissagePersistence();
+      unregister();
+    };
+  }, [canAccessData, flushApprentissagePersistence]);
+
+  const wasCanAccessDataRef = useRef(canAccessData);
+  useEffect(() => {
+    if (wasCanAccessDataRef.current && !canAccessData) {
+      void flushApprentissagePersistence();
+    }
+    wasCanAccessDataRef.current = canAccessData;
+  }, [canAccessData, flushApprentissagePersistence]);
 
   return {
     // État

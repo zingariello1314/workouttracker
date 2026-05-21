@@ -2,6 +2,7 @@ import React, { createContext, useContext, useEffect, useMemo, useState, useCall
 import logger from '../utils/logger';
 import { useAuthStorage } from '../hooks/useAuthStorage';
 import { isServerAuthMode, readServerTokens } from '../utils/serverAuthApi';
+import { flushAllAppPersistence } from '../services/persistence/appPersistenceFlush.js';
 
 const log = logger.module('AuthContext');
 
@@ -152,6 +153,7 @@ export const AuthProvider = ({ children }) => {
 
   const handleLogout = useCallback(async () => {
     setError(null);
+    await flushAllAppPersistence();
     await logout();
     setCurrentUser(null);
     setRememberMe(false);

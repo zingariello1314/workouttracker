@@ -16,7 +16,8 @@
  */
 
 import { useState, useEffect, useCallback } from 'react';
-import { openDB, getUseFallback, setUseFallback, setGarminScope } from './garminDataUtils';
+import { openDB, getUseFallback, setUseFallback, setGarminScope, flushGarminSaveQueue } from './garminDataUtils';
+import { registerAppPersistenceFlush } from '../services/persistence/appPersistenceFlush.js';
 import { saveActivities, saveDailyMetrics } from './garminDataSave';
 import {
   loadAllData,
@@ -119,6 +120,11 @@ export const useGarminData = () => {
         });
       localStorage.setItem('lastGarminPurge', now);
     }
+  }, [dbReady]);
+
+  useEffect(() => {
+    if (!dbReady) return undefined;
+    return registerAppPersistenceFlush(() => flushGarminSaveQueue());
   }, [dbReady]);
 
   // Wrappers pour compatibilité avec l'API existante

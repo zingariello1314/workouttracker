@@ -24,6 +24,7 @@ import {
   getQuietQuestUserId,
   getQuietQuestStorageKeys,
 } from '../utils/accessControl';
+import { registerAppPersistenceFlush } from '../services/persistence/appPersistenceFlush.js';
 
 const qqLog = logger.module('useQuietQuestEngine');
 
@@ -236,9 +237,26 @@ function useQuietQuestEngineImpl() {
     dailyPerformancesRef.current = dailyPerformances;
   }, [dailyPerformances]);
   
-  // Fonction de sauvegarde immédiate (sans debounce) pour beforeunload
-  const saveAllDataImmediately = async () => {
+  // Fonction de sauvegarde immédiate (sans debounce) pour beforeunload / déconnexion
+  const saveAllDataImmediately = useCallback(async () => {
     if (isLoadingRef.current) return;
+
+    if (saveQuestsTimerRef.current) {
+      clearTimeout(saveQuestsTimerRef.current);
+      saveQuestsTimerRef.current = null;
+    }
+    if (saveValidationsTimerRef.current) {
+      clearTimeout(saveValidationsTimerRef.current);
+      saveValidationsTimerRef.current = null;
+    }
+    if (saveDailyPerformancesTimerRef.current) {
+      clearTimeout(saveDailyPerformancesTimerRef.current);
+      saveDailyPerformancesTimerRef.current = null;
+    }
+    if (saveUserDataTimerRef.current) {
+      clearTimeout(saveUserDataTimerRef.current);
+      saveUserDataTimerRef.current = null;
+    }
     
     if (!dbRef.current && storageModeRef.current === 'indexeddb') {
       const db = await openQuietQuestDB();
@@ -275,7 +293,21 @@ function useQuietQuestEngineImpl() {
     } catch (error) {
       console.error('[useQuietQuestEngine] ❌ Erreur sauvegarde immédiate:', error);
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    if (!canAccessData) return undefined;
+    const unregister = registerAppPersistenceFlush(() => saveAllDataImmediately());
+    return unregister;
+  }, [canAccessData, saveAllDataImmediately]);
+
+  const wasCanAccessDataRef = useRef(canAccessData);
+  useEffect(() => {
+    if (wasCanAccessDataRef.current && !canAccessData) {
+      void saveAllDataImmediately();
+    }
+    wasCanAccessDataRef.current = canAccessData;
+  }, [canAccessData, saveAllDataImmediately]);
 
   // Sauvegarde avant rechargement de la page
   useEffect(() => {

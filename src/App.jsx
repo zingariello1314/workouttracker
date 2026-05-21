@@ -68,6 +68,7 @@ import Phase3SyncEffects from './components/sync/Phase3SyncEffects';
 import SettingsUiRemoteSyncEffects from './components/sync/SettingsUiRemoteSyncEffects';
 import AuthPersistenceGate from './components/AuthPersistenceGate';
 import QuestStretchSyncBridge from './components/quests/QuestStretchSyncBridge';
+import AppPersistenceFlushBridge from './components/persistence/AppPersistenceFlushBridge';
 
 const WorkoutTrackerApp = () => {
   return (
@@ -77,6 +78,7 @@ const WorkoutTrackerApp = () => {
           <AuthPersistenceGate>
             <SettingsUiRemoteSyncEffects />
             <Phase3SyncEffects />
+            <AppPersistenceFlushBridge />
             <AppLockProvider>
               <QuietQuestProvider>
                 <BooksStorageProvider>

@@ -24,6 +24,7 @@ import { useDebouncedSave } from './useDebouncedSave';
 import { NutritionConfig, getConfigForExport } from '../config/nutrition.config';
 import { useAuth } from '../context/AuthContext';
 import { isAdminUser } from '../utils/accessControl';
+import { registerAppPersistenceFlush } from '../services/persistence/appPersistenceFlush.js';
 import {
   // DailyMeals
   getDailyMeal,
@@ -249,6 +250,30 @@ export const useNutritionData = () => {
       // Pas de cleanup nécessaire (DB est un singleton)
     };
   }, []); // ✅ Dépendances vides = exécuté une seule fois par composant
+
+  useEffect(() => {
+    if (!isAuthenticated || !dbReady) return undefined;
+    const flushAllNutrition = async () => {
+      await Promise.allSettled([
+        flushDailyMeal(),
+        flushProgram(),
+        flushFavoriteFood(),
+        flushHydrationLog(),
+      ]);
+    };
+    const unregister = registerAppPersistenceFlush(flushAllNutrition);
+    return () => {
+      void flushAllNutrition();
+      unregister();
+    };
+  }, [
+    isAuthenticated,
+    dbReady,
+    flushDailyMeal,
+    flushProgram,
+    flushFavoriteFood,
+    flushHydrationLog,
+  ]);
 
   // ==================== DAILY MEALS ====================
 
