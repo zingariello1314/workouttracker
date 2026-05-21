@@ -118,43 +118,7 @@ export const useAuthStorage = () => {
     return true;
   };
 
-<<<<<<< HEAD
-  // Chargement initial : tente d'auto‑connecter un utilisateur si rememberMe est actif
-  const loadInitialAuth = useCallback(async () => {
-    try {
-      if (isServerAuthMode()) {
-        const { refreshToken } = readServerTokens();
-        if (refreshToken) {
-          try {
-            const refreshed = await serverRefresh(refreshToken);
-            const user = await upsertServerUserLocally(refreshed.user);
-            setServerTokens({
-              accessToken: refreshed.accessToken,
-              refreshToken: refreshed.refreshToken
-            });
-            await saveAuthState({
-              userId: user.id,
-              rememberMe: true,
-              expiresAt: computeSessionExpiry(true),
-              authSource: 'server'
-            });
-            return { user, rememberMe: true };
-          } catch (error) {
-            if (shouldDiscardServerTokensAfterFailedRefresh(error)) {
-              clearServerTokens();
-            }
-            if (isStrictServerAuthMode()) {
-              return { user: null, rememberMe: false };
-            }
-          }
-        } else if (isStrictServerAuthMode()) {
-          return { user: null, rememberMe: false };
-        }
-      }
-
-=======
   const restoreLocalSession = useCallback(async () => {
->>>>>>> 9e0d966 (avancements au niveau de la remise a niveau de la sauvegarde des quetes de livre set ajouts d etrucs dans livres)
       // 1) Priorité à la clé rememberMe dans localStorage
       let rememberedId = null;
       let rememberedExpiresAt = null;
@@ -233,14 +197,9 @@ export const useAuthStorage = () => {
       return { user: null, rememberMe: false };
   }, []);
 
-  // Chargement initial : serveur (refresh token) puis session locale IndexedDB / rememberMe
+  // Chargement initial : refresh serveur (si dispo) puis session locale rememberMe / authState
   const loadInitialAuth = useCallback(async () => {
     try {
-      const localFirst = await restoreLocalSession();
-      if (localFirst.user) {
-        return localFirst;
-      }
-
       if (isServerAuthMode()) {
         const { refreshToken } = readServerTokens();
         if (refreshToken) {
@@ -265,13 +224,19 @@ export const useAuthStorage = () => {
             }
             return { user, rememberMe: true };
           } catch (error) {
-            clearServerTokens();
-            log.debug('Refresh serveur échoué, tentative session locale', error);
+            if (shouldDiscardServerTokensAfterFailedRefresh(error)) {
+              clearServerTokens();
+            }
+            if (isStrictServerAuthMode()) {
+              return { user: null, rememberMe: false };
+            }
           }
+        } else if (isStrictServerAuthMode()) {
+          return { user: null, rememberMe: false };
         }
       }
 
-      return { user: null, rememberMe: false };
+      return await restoreLocalSession();
     } catch (error) {
       log.error('Erreur loadInitialAuth', error);
       return { user: null, rememberMe: false };

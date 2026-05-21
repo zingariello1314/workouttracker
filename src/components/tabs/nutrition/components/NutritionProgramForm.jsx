@@ -756,6 +756,11 @@ const NutritionProgramForm = ({
     });
   }, []);
 
+  const expectedEndDate = useMemo(
+    () => computeExpectedEndDate(formData.startDate, formData.duration),
+    [formData.startDate, formData.duration]
+  );
+
   const handleSave = useCallback(async () => {
     if (!validate()) {
       return;
@@ -820,10 +825,6 @@ const NutritionProgramForm = ({
 
   const pp = formData.planProfile;
   const prefs = formData.mealPlanPreferences;
-  const expectedEndDate = useMemo(
-    () => computeExpectedEndDate(formData.startDate, formData.duration),
-    [formData.startDate, formData.duration]
-  );
   const overVariety =
     prefs.selectedBankFoodIds.length > (prefs.maxWeeklyFoodVariety || bankQuotaHint);
 

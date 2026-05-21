@@ -55,3 +55,6 @@ temp/
 
 # Vite
 .vite/
+
+# Cache Garmin local (régénéré, ne pas versionner)
+garmin-server/.cache/

@@ -18,6 +18,7 @@ import {
 } from 'lucide-react';
 import { useGarminData } from '../../../../hooks/useGarminData';
 import { useTranslation } from '../../../../utils/translations';
+import { useFormatters } from '../../../../utils/translations/formatters-hook';
 import { classifyLapPhase } from '../../../../utils/garminRunningLaps';
 import { inferDisplayTypeFromGarminActivity, runningSessionTypeLabel } from '../../../../utils/runningSessionTypeLabel';
 import { isWalkingLikeRunningSession } from '../../../../utils/runningSessionMovementKind';
@@ -126,6 +127,7 @@ const LAP_FILTER = {
  */
 export default function RunningSessionDetailPage({ session, onBack }) {
   const t = useTranslation();
+  const { formatEnduranceSessionDate } = useFormatters();
   const { loadAllData, dbReady } = useGarminData();
   const [loading, setLoading] = useState(false);
   const [garminFull, setGarminFull] = useState(null);
@@ -225,7 +227,9 @@ export default function RunningSessionDetailPage({ session, onBack }) {
     return 'Course';
   }, [garminFull, session]);
 
-  const subtitleDate = [session?.date, session?.time].filter(Boolean).join(' · ');
+  const subtitleDate = session?.date
+    ? formatEnduranceSessionDate(session.date, session.time)
+    : '';
 
   const rawJson = useMemo(() => {
     if (!garminFull) return '';

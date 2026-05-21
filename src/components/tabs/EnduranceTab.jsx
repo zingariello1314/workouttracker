@@ -63,7 +63,12 @@ const EnduranceTab = () => {
   const { data, updateData, getWorkoutHistory, pendingEnduranceSubTab, clearPendingEnduranceSubTab } =
     useWorkout();
   const t = useTranslation();
-  const { formatDate } = useFormatters();
+  const {
+    formatDate,
+    formatEnduranceSessionDateOnly,
+    formatEnduranceTime,
+    formatEnduranceSessionDate
+  } = useFormatters();
   const { language } = useLanguage();
   
   // État unifié pour toutes les sessions d'endurance
@@ -1325,7 +1330,7 @@ const EnduranceTab = () => {
                   <span className="text-white font-medium">{exercise.name}</span>
                   <span className="text-slate-400 ml-2">{t('endurance.history.fromWorkouts.reps', { count: exercise.reps })}</span>
                 </div>
-                <div className="text-slate-400 text-sm">{exercise.date}</div>
+                <div className="text-slate-400 text-sm">{formatEnduranceSessionDateOnly(exercise.date)}</div>
               </div>
             </div>
           ))}
@@ -1499,8 +1504,8 @@ const EnduranceTab = () => {
                               key={`boxing-${session.id}-${idx}`} 
                               className="border-b border-[#0F4C5C]/25 hover:bg-[#0F4C5C]/12 transition-colors"
                             >
-                              <td className="px-6 py-4 text-slate-300">{session.date}</td>
-                              <td className="px-6 py-4 text-slate-300">{session.time}</td>
+                              <td className="px-6 py-4 text-slate-300">{formatEnduranceSessionDateOnly(session.date)}</td>
+                              <td className="px-6 py-4 text-slate-300">{formatEnduranceTime(session.time) || '—'}</td>
                               <td className="px-6 py-4">
                                 <span className="text-white font-bold text-lg">{session.duration} min</span>
                               </td>
@@ -1814,8 +1819,8 @@ const EnduranceTab = () => {
                               key={`pushups-${session.id}-${idx}`} 
                               className="border-b border-[#0F4C5C]/25 hover:bg-[#0F4C5C]/12 transition-colors"
                             >
-                              <td className="px-6 py-4 text-slate-300">{session.date}</td>
-                              <td className="px-6 py-4 text-slate-300">{session.time}</td>
+                              <td className="px-6 py-4 text-slate-300">{formatEnduranceSessionDateOnly(session.date)}</td>
+                              <td className="px-6 py-4 text-slate-300">{formatEnduranceTime(session.time) || '—'}</td>
                               <td className="px-6 py-4">
                                 <span className="text-white font-bold text-lg">{session.count}</span>
                               </td>
@@ -2037,8 +2042,10 @@ const EnduranceTab = () => {
                           <div className="flex justify-between items-start mb-4">
                             <div className="flex-1">
                               <div className="flex items-center gap-3 mb-2">
-                                <span className="text-white font-bold text-lg">{session.date}</span>
-                                <span className="text-slate-400">{session.time}</span>
+                                <span className="text-white font-bold text-lg">
+                                  {formatEnduranceSessionDateOnly(session.date)}
+                                </span>
+                                <span className="text-slate-400">{formatEnduranceTime(session.time)}</span>
                                 <span className="px-3 py-1 bg-blue-500/20 border border-blue-500/30 text-blue-400 rounded-lg text-sm">
                                   {session.swimType ? (session.swimType.charAt(0).toUpperCase() + session.swimType.slice(1)) : t('endurance.swimming.details.swimType')}
                                 </span>
@@ -2414,8 +2421,8 @@ const EnduranceTab = () => {
                               key={`jumprope-${session.id}-${idx}`} 
                               className={`border-b border-[#0F4C5C]/25 hover:bg-[#0F4C5C]/12 transition-colors ${idx % 2 === 0 ? 'bg-slate-800/20' : 'bg-slate-800/10'}`}
                             >
-                              <td className="px-6 py-4 text-slate-300">{session.date}</td>
-                              <td className="px-6 py-4 text-slate-300">{session.time}</td>
+                              <td className="px-6 py-4 text-slate-300">{formatEnduranceSessionDateOnly(session.date)}</td>
+                              <td className="px-6 py-4 text-slate-300">{formatEnduranceTime(session.time) || '—'}</td>
                               <td className="px-6 py-4">
                                 <span className="text-white font-bold text-lg">{session.duration}</span>
                               </td>
@@ -2748,8 +2755,8 @@ const EnduranceTab = () => {
                                   key={`gainage-${session.id}-${idx}`}
                                   className="border-b border-[#0F4C5C]/25 hover:bg-[#0F4C5C]/12 transition-colors"
                                 >
-                                  <td className="px-6 py-4 text-slate-300">{session.date}</td>
-                                  <td className="px-6 py-4 text-slate-300">{session.time}</td>
+                                  <td className="px-6 py-4 text-slate-300">{formatEnduranceSessionDateOnly(session.date)}</td>
+                                  <td className="px-6 py-4 text-slate-300">{formatEnduranceTime(session.time) || '—'}</td>
                                   <td className="px-6 py-4">
                                     <span className="text-white font-bold text-lg">{session.count}</span>
                                   </td>
@@ -3035,7 +3042,7 @@ const EnduranceTab = () => {
                               className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-amber-500/30 bg-black/40 px-3 py-2 text-xs"
                             >
                               <span className="min-w-0 flex-1 text-slate-300">
-                                {session.date} {session.time ? session.time : ''} · {session.notes}
+                                {formatEnduranceSessionDate(session.date, session.time)} · {session.notes}
                               </span>
                               <div className="flex shrink-0 flex-wrap items-center justify-end gap-2">
                                 <button

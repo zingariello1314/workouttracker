@@ -40,7 +40,6 @@ import {
   sessionPerceivedToPayload
 } from '../../utils/exerciseSessionPerceivedModel';
 import { computeTodaySessionComplexity } from '../../utils/todaySessionScore';
-import SessionRecordDatePicker from './TodayTab/components/SessionRecordDatePicker';
 import RecordPerformanceModal from '../sport/performance/RecordPerformanceModal';
 import { applyPerformanceEntryToData } from '../../utils/exercisePerformanceUtils';
 import {
@@ -195,7 +194,6 @@ const TodayTab = () => {
     setIsGymMode,
     workoutDayOverride,
     setWorkoutDayOverride,
-    setCurrentDate,
     hasUnsavedExercises,
     hasUnsavedStretches,
     saveExerciseChanges,
@@ -978,9 +976,9 @@ const TodayTab = () => {
   const workout = getTodayWorkout(currentDate, isGymMode);
   const dateStr = getDateStr(currentDate);
   const dayName = getDayName(currentDate);
-<<<<<<< HEAD
   const calendarTodayYmd = getDateStr(new Date());
   const canGoForwardSportDay = dateStr < calendarTodayYmd;
+  const isRecordingRealToday = dateStr === calendarTodayYmd;
 
   const formattedSportSessionDate = useMemo(
     () =>
@@ -1064,9 +1062,6 @@ const TodayTab = () => {
       </button>
     </div>
   );
-=======
-  const isRecordingRealToday = dateStr === getDateStr(new Date());
->>>>>>> 9e0d966 (avancements au niveau de la remise a niveau de la sauvegarde des quetes de livre set ajouts d etrucs dans livres)
 
   const updateSessionPerceivedToday = useCallback(
     (exercise, draft, overallStars) => {
@@ -1446,11 +1441,7 @@ const TodayTab = () => {
     
     return (
       <div className="max-w-4xl mx-auto px-4 py-6 space-y-6">
-<<<<<<< HEAD
         {sportSessionDateNavRow}
-=======
-        <SessionRecordDatePicker />
->>>>>>> 9e0d966 (avancements au niveau de la remise a niveau de la sauvegarde des quetes de livre set ajouts d etrucs dans livres)
         <div className="text-center py-12 bg-black rounded-xl border-2 border-[#0F4C5C]/70">
           <div className="text-teal-200/80 mb-4">
             <div className="text-6xl mb-4">🎉</div>
@@ -1572,7 +1563,6 @@ const TodayTab = () => {
           </div>
           {workoutDayOverride && (
             <p className="text-xs text-amber-400/90 mt-2">
-<<<<<<< HEAD
               {dateStr < calendarTodayYmd
                 ? t('today.workout.overrideHintForDate', {
                     day: workoutDayOverride.charAt(0).toUpperCase() + workoutDayOverride.slice(1),
@@ -1583,18 +1573,13 @@ const TodayTab = () => {
                     })
                   })
                 : t('today.workout.overrideHint', {
-                    day: workoutDayOverride.charAt(0).toUpperCase() + workoutDayOverride.slice(1)
+                    day: workoutDayOverride.charAt(0).toUpperCase() + workoutDayOverride.slice(1),
+                    date: currentDate.toLocaleDateString(uiLocale, {
+                      weekday: 'long',
+                      day: 'numeric',
+                      month: 'long'
+                    })
                   })}
-=======
-              {t('today.workout.overrideHint', "Tu affiches l'entraînement du {{day}}. Coches et reps sont enregistrées pour le {{date}}.", {
-                day: workoutDayOverride.charAt(0).toUpperCase() + workoutDayOverride.slice(1),
-                date: currentDate.toLocaleDateString('fr-FR', {
-                  weekday: 'long',
-                  day: 'numeric',
-                  month: 'long',
-                }),
-              })}
->>>>>>> 9e0d966 (avancements au niveau de la remise a niveau de la sauvegarde des quetes de livre set ajouts d etrucs dans livres)
             </p>
           )}
         </div>
@@ -1610,11 +1595,7 @@ const TodayTab = () => {
         </button>
       </div>
 
-<<<<<<< HEAD
       {sportSessionDateNavRow}
-=======
-      <SessionRecordDatePicker />
->>>>>>> 9e0d966 (avancements au niveau de la remise a niveau de la sauvegarde des quetes de livre set ajouts d etrucs dans livres)
 
       {workout?.exercices?.length > 0 && (
         <div className="flex flex-wrap items-center gap-3 rounded-xl border-2 border-[#0F5C45]/45 bg-black px-4 py-3 text-sm text-teal-100/90">
@@ -2027,31 +2008,6 @@ const TodayTab = () => {
 
                   {isChecked && (
                     <div className="w-full pt-3 mt-1 border-t border-[#0F4C5C]/45">
-<<<<<<< HEAD
-                      <p className="text-[11px] font-medium text-amber-200/90 mb-0.5">
-                        {t('today.exercises.sessionEffortDifficulty', 'Charge / difficulté perçue')}
-                      </p>
-                      <SessionEffortBlock
-                        idPrefix={`today-ex-${exercise.id}-effort`}
-                        persistedValue={sessionEffortStars}
-                        suggestedStars={coefStarCount}
-                        onChange={(n) => updateSessionEffortStarsToday(exercise, n)}
-                        ariaGroupLabel={t('today.exercises.sessionEffortAria', 'Difficulté perçue')}
-                      />
-                      <p className="text-[11px] font-medium text-sky-200/90 mt-2 mb-0.5">
-                        {t('today.exercises.sessionPleasureLabel', 'Plaisir & qualité du ressenti')}
-                      </p>
-                      <SessionEffortBlock
-                        idPrefix={`today-ex-${exercise.id}-feel`}
-                        persistedValue={sessionPleasureStars}
-                        suggestedStars={4}
-                        onChange={(n) => updateSessionPleasureStarsToday(exercise, n)}
-                        ariaGroupLabel={t('today.exercises.sessionPleasureAria', 'Plaisir de la séance')}
-                        hintText={t(
-                          'today.exercises.sessionPleasureHint',
-                          'Plus d’étoiles = meilleure séance. Les deux notes affinent l’analyse.'
-                        )}
-=======
                       <p className="text-[11px] font-medium text-amber-200/90 mb-1.5">
                         {t('today.exercises.sessionEffortLabel', 'Ressenti de la séance')}
                       </p>
@@ -2064,7 +2020,6 @@ const TodayTab = () => {
                         )}
                         suggestedStars={sessionEffortStars ?? coefStarCount}
                         onChange={(draft, overall) => updateSessionPerceivedToday(exercise, draft, overall)}
->>>>>>> 9e0d966 (avancements au niveau de la remise a niveau de la sauvegarde des quetes de livre set ajouts d etrucs dans livres)
                       />
                     </div>
                   )}

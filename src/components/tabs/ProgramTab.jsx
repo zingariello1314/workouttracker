@@ -16,14 +16,10 @@ import {
   PENDING_QUIZ_PREFILL_TRAINING_KEY,
   readPendingQuizPrefill
 } from '../../features/profileQuestionnaire/prefill';
-<<<<<<< HEAD
 import { buildTrainingScheduleFromQuizDays, augmentScheduleWithQuizDefaults } from '../../features/profileQuestionnaire/trainingScheduleFromQuiz';
 import { getProgramGoalLabel, buildProgramDescriptionFromQuiz } from '../../features/profileQuestionnaire/quizInfluence';
-=======
-import { buildTrainingScheduleFromQuizDays } from '../../features/profileQuestionnaire/trainingScheduleFromQuiz';
 import { copyEtirementsToProgramSchedule } from '../../utils/stretchUtils';
 import { buildExerciseDaysSet, countProgramUsageDays } from '../../utils/programUsageDays';
->>>>>>> 9e0d966 (avancements au niveau de la remise a niveau de la sauvegarde des quetes de livre set ajouts d etrucs dans livres)
 
 const ProgramTab = () => {
   const { programs, activeProgram, addProgram, activateProgram, deactivateProgram, deleteProgram, updateProgram, data } = useContext(WorkoutContext);

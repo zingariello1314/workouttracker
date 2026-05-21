@@ -1376,11 +1376,7 @@
     "phasesDetails": null
   },
   "date": "2026-05-11",
-<<<<<<< HEAD
-  "_cached_at": 1778726420.2810204,
-=======
-  "_cached_at": 1779371048.218961,
->>>>>>> 9e0d966 (avancements au niveau de la remise a niveau de la sauvegarde des quetes de livre set ajouts d etrucs dans livres)
+"_cached_at": 1779371048.218961,
   "_cache_version": 8,
   "_raw_data_hash": "5c1c52626e1f613ebd8cbf169ca82534"
 }

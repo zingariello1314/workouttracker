@@ -59,11 +59,40 @@ export const loadWorkoutFromLocalStorage = (storageKey) => {
   return null;
 };
 
+/** Sessions / défis / pas manuels Garmin (backfill Défis) comptent comme données sport persistées. */
+export const hasEnduranceContent = (enduranceData) => {
+  if (!enduranceData || typeof enduranceData !== 'object') return false;
+  const sessions = enduranceData.sessions;
+  if (sessions && typeof sessions === 'object') {
+    for (const arr of Object.values(sessions)) {
+      if (Array.isArray(arr) && arr.length > 0) return true;
+    }
+  }
+  if (Array.isArray(enduranceData.challenges) && enduranceData.challenges.length > 0) {
+    return true;
+  }
+  const manual = enduranceData.manualDailyWalkByDate;
+  if (manual && typeof manual === 'object' && Object.keys(manual).length > 0) {
+    return true;
+  }
+  return false;
+};
+
 export const hasWorkoutContent = (data) => {
   if (!data || typeof data !== 'object') return false;
-  return (
+  if (
     Object.keys(data.checkedExercises || {}).length > 0 ||
     Object.keys(data.reps || {}).length > 0 ||
     Object.keys(data.checkedStretches || {}).length > 0
-  );
+  ) {
+    return true;
+  }
+  if (hasEnduranceContent(data.enduranceData)) return true;
+  if (data.circuitProgress && typeof data.circuitProgress === 'object') {
+    if (Object.keys(data.circuitProgress).length > 0) return true;
+  }
+  if (Array.isArray(data.exerciseMaxRecords) && data.exerciseMaxRecords.length > 0) return true;
+  if (Array.isArray(data.exerciseMaxHistory) && data.exerciseMaxHistory.length > 0) return true;
+  if (Array.isArray(data.pyramidSessionLog) && data.pyramidSessionLog.length > 0) return true;
+  return false;
 };

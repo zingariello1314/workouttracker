@@ -1,6 +1,7 @@
 import React, { useMemo, useState } from 'react';
 import { Edit, Play, Trash2 } from 'lucide-react';
 import { useTranslation } from '../../../../utils/translations';
+import { useFormatters } from '../../../../utils/translations/formatters-hook';
 import { paceMinPerKmFromSession, parseRunningSessionDurationMinutes, formatPaceMinPerKm } from '../../../../utils/runningPersonalRecords';
 import { isWalkingLikeRunningSession } from '../../../../utils/runningSessionMovementKind';
 import { resolveRunningSessionDisplayType, runningSessionTypeLabel } from '../../../../utils/runningSessionTypeLabel';
@@ -27,6 +28,7 @@ export default function RunningSessionsHistory({
   onDelete
 }) {
   const t = useTranslation();
+  const { formatEnduranceSessionDateOnly, formatEnduranceTime } = useFormatters();
   const isWalkingMode = mode === 'walking';
   const kindKeys = isWalkingMode ? KIND_KEYS_WALKING : KIND_KEYS_RUNNING;
   const [selectedKinds, setSelectedKinds] = useState(() => new Set(kindKeys));
@@ -234,9 +236,13 @@ export default function RunningSessionsHistory({
                         <span className="hidden text-slate-500 sm:inline" aria-hidden>
                           ·
                         </span>
-                        <span className="text-lg font-bold text-white">{session.date}</span>
+                        <span className="text-lg font-bold text-white">
+                          {formatEnduranceSessionDateOnly(session.date)}
+                        </span>
                         {session.time ? (
-                          <span className="text-base font-medium text-slate-400">{session.time}</span>
+                          <span className="text-base font-medium text-slate-400">
+                            {formatEnduranceTime(session.time)}
+                          </span>
                         ) : null}
                       </div>
                       <div className="grid grid-cols-2 gap-4 text-sm md:grid-cols-4">

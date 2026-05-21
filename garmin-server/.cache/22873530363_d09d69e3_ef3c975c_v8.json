@@ -379,10 +379,6 @@
   "garminTypeKey": "indoor_cardio",
   "type": "cardio",
   "_classification_hash": "ef3c975c",
-<<<<<<< HEAD
-  "_cached_at": 1778726739.462625,
-=======
-  "_cached_at": 1779371048.223579,
->>>>>>> 9e0d966 (avancements au niveau de la remise a niveau de la sauvegarde des quetes de livre set ajouts d etrucs dans livres)
+"_cached_at": 1779371048.223579,
   "_cache_version": 8
 }

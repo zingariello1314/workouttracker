@@ -18,12 +18,8 @@
     "today": "Aujourd'hui",
     "todayWorkout": "Entraînement du jour",
     "useDayWorkout": "Afficher et faire l'entraînement du {{day}}",
-<<<<<<< HEAD
-    "overrideHint": "Tu affiches l'entraînement du {{day}}. La session sera enregistrée pour aujourd'hui.",
-    "overrideHintForDate": "Tu affiches l'entraînement du {{day}}. La session sera enregistrée pour le {{date}}."
-=======
-    "overrideHint": "Tu affiches l'entraînement du {{day}}. Coches et reps sont enregistrées pour le {{date}}."
->>>>>>> 9e0d966 (avancements au niveau de la remise a niveau de la sauvegarde des quetes de livre set ajouts d etrucs dans livres)
+    "overrideHint": "Tu affiches l'entraînement du {{day}}. Coches et reps sont enregistrées pour aujourd'hui.",
+    "overrideHintForDate": "Tu affiches l'entraînement du {{day}}. Coches et reps sont enregistrées pour le {{date}}."
   },
   "exercises": {
     "title": "Exercices",

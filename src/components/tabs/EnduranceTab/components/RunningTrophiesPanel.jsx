@@ -1,6 +1,7 @@
 import React, { useCallback, useMemo, useState } from 'react';
 import { Trophy, Sparkles, Search } from 'lucide-react';
 import { useTranslation } from '../../../../utils/translations';
+import { useFormatters } from '../../../../utils/translations/formatters-hook';
 import {
   evaluateRunningTrophies,
   computeRunningTrophiesXp,
@@ -33,7 +34,7 @@ function groupByCategory(results) {
   return Array.from(map.entries());
 }
 
-function formatSessionOneLine(s, t) {
+function formatSessionOneLine(s, t, formatSessionDate) {
   const hrG = s.hrTrendGroup ? `[${s.hrTrendGroup}]` : '';
   const bucket = s.bucketLabel ? `[${s.bucketLabel}]` : '';
   const km =
@@ -52,7 +53,11 @@ function formatSessionOneLine(s, t) {
         ? `Battait ${s.prevPaceLabel}`
         : '';
   const mid = [hrG, bucket, km, fc, pace, dur, beatPrev].filter(Boolean).join(' · ');
-  return `${s.date}${s.time ? ` ${String(s.time).slice(0, 5)}` : ''} · ${mid}${src ? ` · ${src}` : ''}`;
+  const when =
+    typeof formatSessionDate === 'function'
+      ? formatSessionDate(s.date, s.time)
+      : `${s.date}${s.time ? ` ${String(s.time).slice(0, 5)}` : ''}`;
+  return `${when} · ${mid}${src ? ` · ${src}` : ''}`;
 }
 
 function buildUnlockedEntries(results) {
@@ -81,6 +86,7 @@ function buildUnlockedEntries(results) {
 
 export default function RunningTrophiesPanel({ sessions = [], garminById }) {
   const t = useTranslation();
+  const { formatEnduranceSessionDate } = useFormatters();
   const [subTab, setSubTab] = useState('all');
   const [search, setSearch] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('all');
@@ -358,7 +364,7 @@ export default function RunningTrophiesPanel({ sessions = [], garminById }) {
                                 key={`${trophy.id}-${String(s.id ?? idx)}-${s.date}-${s.time ?? ''}`}
                                 className="border-b border-slate-800/60 pb-1 last:border-0"
                               >
-                                {formatSessionOneLine(s, t)}
+                                {formatSessionOneLine(s, t, formatEnduranceSessionDate)}
                               </li>
                             ))}
                           </ul>
@@ -404,7 +410,7 @@ export default function RunningTrophiesPanel({ sessions = [], garminById }) {
                                       <ul className="mt-1 max-h-28 space-y-0.5 overflow-y-auto text-[10px] text-slate-300">
                                         {w.items.map((s, idx) => (
                                           <li key={`${sec.kind}-${w.weekKey}-${String(s.id ?? idx)}`}>
-                                            {formatSessionOneLine(s, t)}
+                                            {formatSessionOneLine(s, t, formatEnduranceSessionDate)}
                                           </li>
                                         ))}
                                       </ul>

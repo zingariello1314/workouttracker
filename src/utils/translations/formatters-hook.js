@@ -13,6 +13,11 @@ import {
   formatInteger as formatIntegerUtil,
   formatCurrency as formatCurrencyUtil
 } from './formatters';
+import {
+  formatEnduranceSessionDateLabel as formatEnduranceSessionDateLabelUtil,
+  formatEnduranceSessionDateOnly as formatEnduranceSessionDateOnlyUtil,
+  formatEnduranceTimeLabel as formatEnduranceTimeLabelUtil
+} from '../enduranceSessionDateFormat.js';
 
 /**
  * Hook React pour utiliser les formatters avec la langue actuelle
@@ -74,7 +79,17 @@ export const useFormatters = () => {
      * @param {Object} options - Options supplémentaires
      * @returns {string} Montant formaté avec devise
      */
-    formatCurrency: (amount, currency = 'EUR', options) => formatCurrencyUtil(amount, language, currency, options)
+    formatCurrency: (amount, currency = 'EUR', options) => formatCurrencyUtil(amount, language, currency, options),
+
+    /** Défis : « 20 mai 2026 · 07:05 » */
+    formatEnduranceSessionDate: (dateStr, timeStr) =>
+      formatEnduranceSessionDateLabelUtil(dateStr, timeStr, language),
+
+    /** Défis : « 20 mai 2026 » (colonne date) */
+    formatEnduranceSessionDateOnly: (dateStr) =>
+      formatEnduranceSessionDateOnlyUtil(dateStr, language),
+
+    formatEnduranceTime: (timeStr) => formatEnduranceTimeLabelUtil(timeStr)
   };
 };
 

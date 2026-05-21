@@ -86,14 +86,13 @@ function useBooksStorageImpl() {
         // Autre user : récupère uniquement les livres avec userId = currentUser.id
         const adminId = isAdmin ? currentUser.id : null;
         
-        const filteredBooks = allIndexedBooks.filter(book => {
+        const filteredBooks = allIndexedBooks.filter((book) => {
           if (!book) return false;
-          // Admin : récupère les livres sans userId (anciennes données) OU avec userId = adminId
           if (adminId) {
             return !book.userId || book.userId === adminId;
           }
-          // Autre user : uniquement ses propres livres
-          return book.userId === userId;
+          // Orphelins sans userId (anciennes sauvegardes) : rattachés à l'utilisateur courant au chargement
+          return !book.userId || book.userId === userId;
         });
         
         booksLog.debug('[useBooksStorage] Livres filtrés pour userId:', userId || adminId || 'déconnecté', ':', filteredBooks.length, 'livres');
@@ -113,12 +112,12 @@ function useBooksStorageImpl() {
         // 2) Sinon, fallback vers localStorage (seulement si connecté)
         const localBooks = loadBooks(userId || currentUser?.id);
         // ✅ Filtrer aussi localStorage par userId
-        const filteredLocalBooks = localBooks.filter(book => {
+        const filteredLocalBooks = localBooks.filter((book) => {
           if (!book) return false;
           if (adminId) {
             return !book.userId || book.userId === adminId;
           }
-          return book.userId === userId;
+          return !book.userId || book.userId === userId;
         });
         
         booksLog.debug('[useBooksStorage] Chargement localStorage:', filteredLocalBooks.length, 'livres trouvés (filtrés)');
@@ -151,13 +150,13 @@ function useBooksStorageImpl() {
         if (isMounted) {
           const fallback = loadBooks(userId || currentUser?.id);
           // ✅ Filtrer aussi le fallback
-          const filteredFallback = fallback.filter(book => {
+          const filteredFallback = fallback.filter((book) => {
             if (!book) return false;
-            const adminId = isAdmin ? currentUser.id : null;
-            if (adminId) {
-              return !book.userId || book.userId === adminId;
+            const adminIdFallback = isAdmin ? currentUser.id : null;
+            if (adminIdFallback) {
+              return !book.userId || book.userId === adminIdFallback;
             }
-            return book.userId === userId;
+            return !book.userId || book.userId === userId;
           });
           booksLog.debug('[useBooksStorage] Fallback localStorage:', filteredFallback.length, 'livres (filtrés)');
           setBooks(filteredFallback);
@@ -181,6 +180,37 @@ function useBooksStorageImpl() {
       }
     };
   }, [isAuthenticated, authLoading, currentUser, userId]);
+
+  const lastBooksUserIdRef = useRef(null);
+  useEffect(() => {
+    if (isAuthenticated && currentUser?.id) {
+      lastBooksUserIdRef.current = currentUser.id;
+    }
+  }, [isAuthenticated, currentUser]);
+
+  // Flush avant déconnexion (évite perte si debounce 800 ms non écoulé)
+  const wasAuthenticatedRef = useRef(isAuthenticated);
+  useEffect(() => {
+    if (wasAuthenticatedRef.current && !isAuthenticated) {
+      const userIdToAssign = lastBooksUserIdRef.current;
+      const snapshot = booksRef.current;
+      if (userIdToAssign && Array.isArray(snapshot) && snapshot.length > 0) {
+        const booksWithUserId = normalizeBooksForPersistence(
+          snapshot.map((book) => ({
+            ...book,
+            userId: book.userId || userIdToAssign,
+          }))
+        );
+        void saveBooksToIndexedDB(booksWithUserId);
+        try {
+          saveBooks(booksWithUserId, userIdToAssign);
+        } catch {
+          /* ignore */
+        }
+      }
+    }
+    wasAuthenticatedRef.current = isAuthenticated;
+  }, [isAuthenticated]);
 
   useEffect(() => {
     if (!isAuthenticated || !currentUser) return undefined;

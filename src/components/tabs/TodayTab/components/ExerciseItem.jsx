@@ -44,24 +44,18 @@ import SessionTriplePerceivedBlock from './SessionTriplePerceivedBlock';
  * />
  */
 const ExerciseItem = ({ exercise, date, isGymMode, onShowVariations }) => {
-<<<<<<< HEAD
-  const { toggleExercise, updateReps, updateSessionEffortStars, updateSessionPleasureStars, getExerciseStatus } =
-    useExerciseTracking({
-      date,
-      isGymMode
-    });
-  const { data, getCurrentData } = useWorkout();
-
-  const { isChecked, reps, sessionEffortStars, sessionPleasureStars } = getExerciseStatus(exercise);
-=======
-  const { toggleExercise, updateReps, updateSessionPerceived, getExerciseStatus } = useExerciseTracking({
+  const {
+    toggleExercise,
+    updateReps,
+    updateSessionPerceived,
+    getExerciseStatus
+  } = useExerciseTracking({
     date,
     isGymMode
   });
   const { data, getCurrentData } = useWorkout();
 
   const { isChecked, reps, sessionEffortStars, sessionPerceived } = getExerciseStatus(exercise);
->>>>>>> 9e0d966 (avancements au niveau de la remise a niveau de la sauvegarde des quetes de livre set ajouts d etrucs dans livres)
 
   const dateStr = useMemo(() => getDateStr(date), [date]);
   const trainingPattern = useMemo(() => {
@@ -163,13 +157,6 @@ const ExerciseItem = ({ exercise, date, isGymMode, onShowVariations }) => {
     [exercise, updateSessionPerceived]
   );
 
-  const handleSessionPleasureStars = useCallback(
-    (n) => {
-      updateSessionPleasureStars(exercise, n);
-    },
-    [exercise, updateSessionPleasureStars]
-  );
-
   return (
     <div className="flex items-center space-x-3 p-4 bg-slate-700/50 rounded-lg border border-slate-600/50 hover:bg-slate-700/70 transition-all duration-200">
       <div className="flex-1 min-w-0">
@@ -181,31 +168,12 @@ const ExerciseItem = ({ exercise, date, isGymMode, onShowVariations }) => {
         </div>
         {isChecked && (
           <div className="mt-2 pt-2 border-t border-slate-600/50 w-full">
-<<<<<<< HEAD
-            <p className="text-[11px] font-medium text-amber-200/90 mb-0.5">Charge / difficulté perçue</p>
-            <SessionEffortBlock
-              idPrefix={`ex-${exercise.id}-effort`}
-              persistedValue={sessionEffortStars}
-              suggestedStars={coefStarCount}
-              onChange={handleSessionStars}
-              ariaGroupLabel={`Difficulté perçue pour ${exercise.name}`}
-            />
-            <p className="text-[11px] font-medium text-sky-200/90 mt-2 mb-0.5">Plaisir & qualité du ressenti</p>
-            <SessionEffortBlock
-              idPrefix={`ex-${exercise.id}-feel`}
-              persistedValue={sessionPleasureStars}
-              suggestedStars={4}
-              onChange={handleSessionPleasureStars}
-              ariaGroupLabel={`Plaisir pour ${exercise.name}`}
-              hintText="Plus d’étoiles = meilleure séance vécue. Enregistre pour affiner l’analyse avec la difficulté."
-=======
             <p className="text-[11px] font-medium text-amber-200/90 mb-1.5">Ressenti de la séance</p>
             <SessionTriplePerceivedBlock
               idPrefix={`ex-${exercise.id}`}
               persistedDraft={sessionPerceived}
               suggestedStars={sessionEffortStars ?? coefStarCount}
               onChange={handleSessionPerceived}
->>>>>>> 9e0d966 (avancements au niveau de la remise a niveau de la sauvegarde des quetes de livre set ajouts d etrucs dans livres)
             />
           </div>
         )}

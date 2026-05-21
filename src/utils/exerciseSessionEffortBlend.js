@@ -51,11 +51,8 @@ export function collectCompletedSessionsForExercise(workoutData, exercise) {
   const checked = workoutData?.checkedExercises || {};
   const repsMap = workoutData?.reps || {};
   const starsMap = workoutData?.exerciseSessionEffortStars || {};
-<<<<<<< HEAD
   const pleasureMap = workoutData?.exerciseSessionPleasureStars || {};
-=======
   const perceivedMap = workoutData?.exerciseSessionPerceived || {};
->>>>>>> 9e0d966 (avancements au niveau de la remise a niveau de la sauvegarde des quetes de livre set ajouts d etrucs dans livres)
 
   const out = [];
   for (const [key, v] of Object.entries(checked)) {
@@ -68,17 +65,6 @@ export function collectCompletedSessionsForExercise(workoutData, exercise) {
     const vol = computeVolumeKgForWorkoutKey(key, workoutData);
     const weightKg =
       r > 0 && Number.isFinite(vol) && vol > 0 ? vol / r : null;
-<<<<<<< HEAD
-    const sr = starsMap[key];
-    const stars =
-      sr >= 1 && sr <= 5 && Number.isFinite(Number(sr))
-        ? Math.round(Number(sr))
-        : null;
-    const pr = pleasureMap[key];
-    const pleasureStars =
-      pr >= 1 && pr <= 5 && Number.isFinite(Number(pr)) ? Math.round(Number(pr)) : null;
-    out.push({ key, dateStr, reps: r, volumeKg: vol, weightKg, stars, pleasureStars });
-=======
     const perceivedRow = perceivedMap[key];
     let stars = null;
     if (perceivedRow && typeof perceivedRow === 'object') {
@@ -91,8 +77,10 @@ export function collectCompletedSessionsForExercise(workoutData, exercise) {
           ? Math.round(Number(sr))
           : null;
     }
-    out.push({ key, dateStr, reps: r, volumeKg: vol, weightKg, stars });
->>>>>>> 9e0d966 (avancements au niveau de la remise a niveau de la sauvegarde des quetes de livre set ajouts d etrucs dans livres)
+    const pr = pleasureMap[key];
+    const pleasureStars =
+      pr >= 1 && pr <= 5 && Number.isFinite(Number(pr)) ? Math.round(Number(pr)) : null;
+    out.push({ key, dateStr, reps: r, volumeKg: vol, weightKg, stars, pleasureStars });
   }
   out.sort((a, b) => b.dateStr.localeCompare(a.dateStr));
   return out;

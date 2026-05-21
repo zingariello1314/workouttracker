@@ -84,7 +84,6 @@ export const useSportXP = () => {
   const canAccessData = canAccessPrivateData({ user: currentUser, isAuthenticated });
   const {
     data,
-<<<<<<< HEAD
     tempData,
     hasUnsavedExercises,
     hasUnsavedStretches,
@@ -98,20 +97,6 @@ export const useSportXP = () => {
   const workoutData = useMemo(
     () => getCurrentData(),
     [getCurrentData, data, tempData, hasUnsavedExercises, hasUnsavedStretches]
-=======
-    programs,
-    activeProgram,
-    getExerciseNameById,
-    getCurrentData,
-    hasUnsavedExercises,
-    hasUnsavedStretches,
-    tempData
-  } = useWorkout();
-
-  const workoutData = useMemo(
-    () => getCurrentData(),
-    [data, getCurrentData, hasUnsavedExercises, hasUnsavedStretches, tempData]
->>>>>>> 9e0d966 (avancements au niveau de la remise a niveau de la sauvegarde des quetes de livre set ajouts d etrucs dans livres)
   );
 
   const programsForCompletionXp = useMemo(() => {
