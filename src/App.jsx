@@ -64,14 +64,20 @@ import { isCodeSubTab } from './constants/codeSubTabs';
 import { isAdminUser } from './utils/accessControl';
 import ProfileQuestionnaireModal, { registerProfileQuestionnaireOpenHandler } from './features/profileQuestionnaire/ProfileQuestionnaireModal';
 import { useProfileQuestionnaire } from './features/profileQuestionnaire/useProfileQuestionnaire';
+<<<<<<< HEAD
 import Phase3SyncEffects from './components/sync/Phase3SyncEffects';
 import SettingsUiRemoteSyncEffects from './components/sync/SettingsUiRemoteSyncEffects';
+=======
+import AuthPersistenceGate from './components/AuthPersistenceGate';
+import QuestStretchSyncBridge from './components/quests/QuestStretchSyncBridge';
+>>>>>>> 9e0d966 (avancements au niveau de la remise a niveau de la sauvegarde des quetes de livre set ajouts d etrucs dans livres)
 
 const WorkoutTrackerApp = () => {
   return (
     <LanguageProvider>
       <ToastProvider>
         <AuthProvider>
+<<<<<<< HEAD
           <SettingsUiRemoteSyncEffects />
           <Phase3SyncEffects />
           <AppLockProvider>
@@ -85,6 +91,21 @@ const WorkoutTrackerApp = () => {
               </BooksStorageProvider>
             </QuietQuestProvider>
           </AppLockProvider>
+=======
+          <AuthPersistenceGate>
+            <AppLockProvider>
+              <QuietQuestProvider>
+                <BooksStorageProvider>
+                  <QuickActionsProvider>
+                    <WorkoutProvider>
+                      <WorkoutTrackerContent />
+                    </WorkoutProvider>
+                  </QuickActionsProvider>
+                </BooksStorageProvider>
+              </QuietQuestProvider>
+            </AppLockProvider>
+          </AuthPersistenceGate>
+>>>>>>> 9e0d966 (avancements au niveau de la remise a niveau de la sauvegarde des quetes de livre set ajouts d etrucs dans livres)
         </AuthProvider>
       </ToastProvider>
     </LanguageProvider>
@@ -370,6 +391,7 @@ const WorkoutTrackerContent = () => {
 
   return (
     <div className="min-h-screen">
+      <QuestStretchSyncBridge />
       <GitHubOAuthLanding />
       <SpotifyOAuthLanding />
       {/* Filtre SVG pour l'effet liquid glass - UNE SEULE FOIS dans l'app */}

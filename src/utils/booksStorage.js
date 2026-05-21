@@ -1,39 +1,61 @@
 // Gestion simple de la bibliothèque de livres dans localStorage
 // Inspiré de l'architecture décrite dans nouvelongletlivres.md mais adapté en React
 
-const STORAGE_KEY = 'momentum_books';
+const STORAGE_KEY_LEGACY = 'momentum_books';
 
-export const loadBooks = () => {
+/** Clé localStorage par utilisateur (évite d’écraser la biblio d’un autre compte sur le même navigateur). */
+export const getBooksStorageKey = (userId) =>
+  userId ? `${STORAGE_KEY_LEGACY}_${userId}` : STORAGE_KEY_LEGACY;
+
+const parseBooksArray = (raw) => {
+  if (!raw) return [];
+  const parsed = JSON.parse(raw);
+  if (!Array.isArray(parsed)) return [];
+  return parsed.map((book) => ({
+    ...book,
+    readingSessions: Array.isArray(book.readingSessions) ? book.readingSessions : [],
+  }));
+};
+
+/**
+ * @param {string} [userId]
+ */
+export const loadBooks = (userId) => {
   try {
-    const raw = window.localStorage.getItem(STORAGE_KEY);
-    if (!raw) return [];
-    const parsed = JSON.parse(raw);
-    if (!Array.isArray(parsed)) return [];
-    return parsed.map((book) => ({
-      readingSessions: [],
-      ...book,
-      readingSessions: Array.isArray(book.readingSessions) ? book.readingSessions : []
-    }));
+    if (userId) {
+      const scoped = window.localStorage.getItem(getBooksStorageKey(userId));
+      if (scoped) return parseBooksArray(scoped);
+    }
+    const legacy = window.localStorage.getItem(STORAGE_KEY_LEGACY);
+    if (!legacy) return [];
+    const all = parseBooksArray(legacy);
+    if (!userId) return all;
+    return all.filter((b) => !b.userId || b.userId === userId);
   } catch {
     return [];
   }
 };
 
-export const saveBooks = (books) => {
+/**
+ * @param {Array} books
+ * @param {string} [userId]
+ */
+export const saveBooks = (books, userId) => {
   try {
     const safeBooks = (Array.isArray(books) ? books : []).map((book) => {
-      // Exclure les champs volumineux qui sont stockés dans IndexedDB
       const { _pdfBlobUrl, coverInline, ...rest } = book || {};
-      // Garder hasCover pour savoir qu'une couverture existe, mais pas coverInline (trop volumineux)
-      return rest;
+      return {
+        ...rest,
+        readingSessions: Array.isArray(rest.readingSessions) ? rest.readingSessions : [],
+      };
     });
+    const key = getBooksStorageKey(userId);
     const jsonString = JSON.stringify(safeBooks);
     const sizeKB = (jsonString.length / 1024).toFixed(2);
-    console.log('[booksStorage] Sauvegarde localStorage:', safeBooks.length, 'livres,', sizeKB, 'KB');
-    window.localStorage.setItem(STORAGE_KEY, jsonString);
+    console.log('[booksStorage] Sauvegarde localStorage:', safeBooks.length, 'livres,', sizeKB, 'KB, clé:', key);
+    window.localStorage.setItem(key, jsonString);
     return true;
   } catch (error) {
-    // En cas d'erreur de quota ou autre, on ne casse pas l'app
     console.error('[booksStorage] Erreur sauvegarde localStorage:', error);
     return false;
   }

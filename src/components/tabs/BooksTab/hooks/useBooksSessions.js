@@ -11,7 +11,13 @@ import { useState, useCallback, useEffect, useMemo } from 'react';
 import { sidebarEvents, SIDEBAR_EVENTS } from '../../../../utils/sidebarEvents';
 import { readingSessionSchema, validateWithSchema } from '../../../../utils/validation/schemas';
 import { emptySessionForm } from '../constants';
-import { suggestedPersonalScoreFromSessions } from '../../../../utils/bookReadingRatings';
+import {
+  suggestedPersonalScoreFromSessions,
+  computeBookScoreFromSessions,
+  averageCriteriaScore,
+  normalizeCriteriaRatings,
+} from '../../../../utils/bookReadingRatings';
+import { computeReadingStatsForBook, resolveFinalBookScore } from '../../../../utils/bookCompletionUtils';
 
 const serializeSessionForm = (form) =>
   JSON.stringify({
@@ -20,7 +26,7 @@ const serializeSessionForm = (form) =>
     pagesRead: form?.pagesRead || '',
     startTime: form?.startTime || '',
     note: form?.note || '',
-    criteriaRatings: { ...emptySessionForm.criteriaRatings, ...(form?.criteriaRatings || {}) }
+    criteriaRatings: { ...emptySessionForm.criteriaRatings, ...(form?.criteriaRatings || {}) },
   });
 
 /**
@@ -39,6 +45,11 @@ export const useBooksSessions = (books = [], setBooks, selectedBook, selectedBoo
   );
   const [editingSessionId, setEditingSessionId] = useState(null);
   const [pendingBookCompletion, setPendingBookCompletion] = useState(null);
+
+  const pendingBook = useMemo(() => {
+    if (!pendingBookCompletion?.bookId) return null;
+    return books.find((b) => b.id === pendingBookCompletion.bookId) || null;
+  }, [books, pendingBookCompletion]);
 
   const sessionFormDirty = useMemo(
     () => serializeSessionForm(sessionForm) !== sessionDirtyBaseline,
@@ -73,34 +84,68 @@ export const useBooksSessions = (books = [], setBooks, selectedBook, selectedBoo
     setPendingBookCompletion(null);
   }, []);
 
+  const openBookCompletionModal = useCallback((book) => {
+    if (!book) return;
+    const sessions = book.readingSessions || [];
+    const cumPages = sessions.reduce((sum, s) => sum + (Number(s.pagesRead) || 0), 0);
+    const totalPagesBook = Number(book.pages) || 0;
+    const suggested = suggestedPersonalScoreFromSessions(sessions);
+    setPendingBookCompletion({
+      bookId: book.id,
+      bookTitle: book.title || 'Livre',
+      finishedAtDate: new Date().toISOString().slice(0, 10),
+      suggestedScore:
+        suggested != null ? Math.min(10, Math.max(1, Math.round(suggested * 10) / 10)) : 7,
+      cumPages,
+      totalPagesBook,
+    });
+  }, []);
+
   const confirmBookCompletion = useCallback(
-    (personalScoreInt) => {
+    (payload) => {
       if (!pendingBookCompletion) return;
       const { bookId, finishedAtDate } = pendingBookCompletion;
-      const score = Math.min(10, Math.max(0, Math.round(Number(personalScoreInt) || 0)));
+      const book = books.find((b) => b.id === bookId);
+      const criteria = normalizeCriteriaRatings(payload?.completionCriteria);
+      const impression = payload?.impression || '';
+      const sessionScore = book ? computeBookScoreFromSessions(book.readingSessions) : null;
+      const finalScore =
+        sessionScore != null && sessionScore > 0
+          ? sessionScore
+          : resolveFinalBookScore(book || {}, criteria);
+
       setBooks((prev) =>
-        prev.map((b) =>
-          b.id === bookId
-            ? {
-                ...b,
-                status: 'completed',
-                personalScore: score,
-                finishedAt: finishedAtDate || b.finishedAt,
-              }
-            : b
-        )
+        prev.map((b) => {
+          if (b.id !== bookId) return b;
+          return {
+            ...b,
+            status: 'completed',
+            personalScore: finalScore,
+            finishedAt: finishedAtDate || b.finishedAt || new Date().toISOString().slice(0, 10),
+            completionReview: {
+              criteriaRatings: criteria,
+              impression,
+              overall: averageCriteriaScore(criteria),
+              sessionScore: sessionScore ?? finalScore,
+              stats: payload?.stats || computeReadingStatsForBook(b),
+              updatedAt: new Date().toISOString(),
+            },
+            updatedAt: new Date().toISOString(),
+          };
+        })
       );
       setPendingBookCompletion(null);
       sidebarEvents.emit(SIDEBAR_EVENTS.BOOK_UPDATED, { bookId, completed: true });
     },
-    [pendingBookCompletion, setBooks]
+    [pendingBookCompletion, setBooks, books]
   );
 
   const startEditSession = useCallback((session) => {
     if (!session) return;
-    const cr = session.criteriaRatings && typeof session.criteriaRatings === 'object'
-      ? { ...emptySessionForm.criteriaRatings, ...session.criteriaRatings }
-      : { ...emptySessionForm.criteriaRatings };
+    const cr =
+      session.criteriaRatings && typeof session.criteriaRatings === 'object'
+        ? { ...emptySessionForm.criteriaRatings, ...session.criteriaRatings }
+        : { ...emptySessionForm.criteriaRatings };
     const nextForm = {
       date: session.date || '',
       durationMinutes: session.durationMinutes != null ? String(session.durationMinutes) : '',
@@ -117,6 +162,9 @@ export const useBooksSessions = (books = [], setBooks, selectedBook, selectedBoo
   const cancelEditSession = useCallback(() => {
     resetSessionForm();
   }, [resetSessionForm]);
+
+  const syncBookScoreFromSessions = (sessions) =>
+    suggestedPersonalScoreFromSessions(sessions) ?? 0;
 
   const handleAddSession = useCallback(
     (e) => {
@@ -175,14 +223,19 @@ export const useBooksSessions = (books = [], setBooks, selectedBook, selectedBoo
       const cumPages = nextSessions.reduce((sum, s) => sum + (Number(s.pagesRead) || 0), 0);
       const totalPagesBook = Number(book.pages) || 0;
       const crossesEnd =
-        totalPagesBook > 0 &&
-        cumPages >= totalPagesBook &&
-        book.status !== 'completed';
+        totalPagesBook > 0 && cumPages >= totalPagesBook && book.status !== 'completed';
+
+      const nextScore = syncBookScoreFromSessions(nextSessions);
 
       setBooks((prev) =>
         prev.map((b) => {
           if (b.id !== selectedBook.id) return b;
-          return { ...b, readingSessions: nextSessions };
+          return {
+            ...b,
+            readingSessions: nextSessions,
+            personalScore: nextScore,
+            updatedAt: new Date().toISOString(),
+          };
         })
       );
 
@@ -195,21 +248,25 @@ export const useBooksSessions = (books = [], setBooks, selectedBook, selectedBoo
       });
 
       if (crossesEnd) {
-        const suggested = suggestedPersonalScoreFromSessions(nextSessions);
-        setPendingBookCompletion({
-          bookId: book.id,
-          bookTitle: book.title || 'Livre',
-          finishedAtDate: baseData.date,
-          suggestedScore:
-            suggested != null ? Math.min(10, Math.max(1, Math.round(suggested * 10) / 10)) : 7,
-          cumPages,
-          totalPagesBook,
-        });
+        const updatedBook = {
+          ...book,
+          readingSessions: nextSessions,
+          personalScore: nextScore,
+        };
+        openBookCompletionModal(updatedBook);
       }
 
       resetSessionForm();
     },
-    [selectedBook, sessionForm, setBooks, resetSessionForm, editingSessionId, books]
+    [
+      selectedBook,
+      sessionForm,
+      setBooks,
+      resetSessionForm,
+      editingSessionId,
+      books,
+      openBookCompletionModal,
+    ]
   );
 
   useEffect(() => {
@@ -228,7 +285,9 @@ export const useBooksSessions = (books = [], setBooks, selectedBook, selectedBoo
     startEditSession,
     cancelEditSession,
     pendingBookCompletion,
+    pendingBook,
     dismissPendingBookCompletion,
     confirmBookCompletion,
+    openBookCompletionModal,
   };
 };

@@ -83,6 +83,7 @@ const QuestsTab = () => {
     todayDate,
     prayerLocation,
     isLoading,
+    flushQuestsPersistence,
   } = useQuietQuestEngine();
 
   // ✅ PHASE 4 : Hooks personnalisés pour la logique métier
@@ -116,7 +117,7 @@ const QuestsTab = () => {
     toggleQuestActive,
     deleteQuest,
     duplicateQuest,
-  } = useQuestsActions(allQuests, setAllQuests);
+  } = useQuestsActions(allQuests, setAllQuests, flushQuestsPersistence);
 
   const {
     selectedQuests,

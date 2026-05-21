@@ -37,6 +37,8 @@ export const emptySessionForm = {
 
 export const PAGE_SIZE = 30;
 
+export { BOOK_GENRES, BOOK_GENRE_UNSPECIFIED } from '../../../data/bookGenres';
+
 export const SORT_MODES = {
   RECENT: 'recent',
   TITLE: 'title',

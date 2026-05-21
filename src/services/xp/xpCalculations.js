@@ -21,7 +21,10 @@ import { averageCriteriaScore } from '../../utils/bookReadingRatings';
 import { calculateQuestXP } from '../../utils/questXpCore';
 import SessionAggregator from '../statistics/SessionAggregator.js';
 import { computeVolumeKgForWorkoutKey } from '../../utils/exerciseLoadVolume';
-import { collectDedupedCheckedVolumeKeys } from '../../utils/trainingLoadUtils';
+import {
+  aggregateCheckedRepsByDateAndExerciseId,
+  collectDedupedCheckedVolumeKeys
+} from '../../utils/trainingLoadUtils';
 import { computeProgramCompletionBonusXp } from '../../utils/programCompletionBonus';
 import { computeCircuitsXp } from './circuitsXpService';
 import { parseStretchItemKey } from '../../utils/exerciseKeyGenerator';
@@ -29,6 +32,7 @@ import { buildPlannedStretchItemsForDateStr } from '../../utils/stretchUtils';
 import { workoutProgram } from '../../data/workoutProgram';
 import { normalizeManualDailyWalkByDate, mergedDailySteps } from '../../utils/sport/manualDailyWalkUtils';
 import { computeStretchXpFromRating, computeStretchXpFromGlobal5 } from '../../utils/stretchPerceivedRatings';
+import { collectFractionneIntervalXp } from '../../utils/intervalTrainingUtils';
 
 export {
   STRETCH_XP_MIN,
@@ -288,7 +292,9 @@ export const calculateSportXP = (workoutData, garminData, enduranceData, sportOp
     circuitTripleAchievedDays: 0,
     circuitBonusRounds: 0,
     nutritionFoodItems: 0,
-    nutritionFoodXp: 0
+    nutritionFoodXp: 0,
+    intervalTrainingSessions: 0,
+    intervalTrainingXp: 0
   };
   
   if (!workoutData) {
@@ -348,11 +354,24 @@ export const calculateSportXP = (workoutData, garminData, enduranceData, sportOp
   );
   totalXP += breakdown.liftedVolumeKgXp;
   
-  // 2. XP des exercices cochés : 5 XP par exercice complété
-  const checkedExercises = Object.values(workoutData.checkedExercises || {}).filter(v => v === true).length;
+  // 2. XP des exercices cochés : 5 XP par (date, exercice) dédupliqué — pas les clés fantômes
+  const checkedMap = workoutData.checkedExercises || {};
+  const repsMapForDedup = workoutData.reps || {};
+  const exerciseDedup = aggregateCheckedRepsByDateAndExerciseId(repsMapForDedup, checkedMap);
+  const checkedExercises = exerciseDedup.size;
   breakdown.exercises = checkedExercises;
   breakdown.exercisesXp = checkedExercises * 5;
   totalXP += breakdown.exercisesXp;
+
+  const fractionneXp = collectFractionneIntervalXp(workoutData, garminData, sportOptions);
+  if (fractionneXp.totalXp > 0) {
+    breakdown.intervalTrainingSessions = fractionneXp.sessions;
+    breakdown.intervalTrainingXp = fractionneXp.totalXp;
+    const genericOverlap = Math.min(breakdown.exercisesXp, fractionneXp.sessions * 5);
+    breakdown.exercisesXp -= genericOverlap;
+    breakdown.exercises = Math.max(0, breakdown.exercises - fractionneXp.sessions);
+    totalXP += fractionneXp.totalXp - genericOverlap;
+  }
 
   // 2bis. XP des étirements cochés (granularité item individuel).
   // Ancien triplet /10 : formule linéaire 100–300 (moyenne des critères > 0).

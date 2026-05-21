@@ -2,6 +2,11 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import { cleanJustifications } from '../utils/dayJustificationUtils';
 import { DEFAULT_ADDICTION_QUIT_DATA } from '../utils/addictionQuitConstants';
 import { deriveJourneyStartYmd } from '../utils/sport/recapUserAssessment';
+import {
+  backupWorkoutToLocalStorage,
+  hasWorkoutContent,
+  loadWorkoutFromLocalStorage,
+} from '../utils/workoutPersistence';
 import logger from '../utils/logger';
 import { readServerTokens } from '../utils/serverAuthApi.js';
 import { createWorkoutRepository } from '../services/workout/createWorkoutRepository.js';
@@ -31,7 +36,11 @@ const generateTestWorkoutData = () => {
     exercisePerceivedRatings: {},
     exercisePersonalNotes: {},
     exerciseSessionEffortStars: {},
+<<<<<<< HEAD
     exerciseSessionPleasureStars: {},
+=======
+    exerciseSessionPerceived: {},
+>>>>>>> 9e0d966 (avancements au niveau de la remise a niveau de la sauvegarde des quetes de livre set ajouts d etrucs dans livres)
     stretchPerceivedRatings: {},
     stretchPersonalNotes: {},
     stretchSessionEffortStars: {}
@@ -155,6 +164,8 @@ const INITIAL_WORKOUT_DATA = {
    * Saisie dans l’onglet Aujourd’hui ; prise en compte dans l’analyse de difficulté une fois l’exercice coché.
    */
   exerciseSessionEffortStars: {},
+  /** Triple ressenti par séance : { "YYYY-MM-DD_id": { difficulty, feeling, pleasure } } */
+  exerciseSessionPerceived: {},
   /**
    * 1–5 « plaisir / qualité du ressenti » (plus = meilleure séance) — mêmes clés que l’effort perçu.
    */
@@ -212,7 +223,9 @@ export const useWorkoutData = (options = {}) => {
     // Générer (ou non) des données de test lorsqu'aucune donnée n'existe
     generateTestData = true,
     // Mode éphémère : aucune lecture / écriture persistance (ex: utilisateur déconnecté)
-    ephemeral = false
+    ephemeral = false,
+    // Attendre la fin du chargement auth avant de lire IndexedDB (évite clé anonymous + écrasement)
+    deferLoad = false,
   } = options;
 
   const [data, setData] = useState(INITIAL_WORKOUT_DATA);
@@ -497,7 +510,35 @@ export const useWorkoutData = (options = {}) => {
         },
         challenges: []
       }
+<<<<<<< HEAD
     };
+=======
+
+      // Essayer d'abord d'ouvrir sans spécifier de version pour récupérer la version actuelle
+      const request = indexedDB.open('WorkoutTrackerDB');
+      
+      request.onupgradeneeded = (event) => {
+        const db = event.target.result;
+        
+        if (!db.objectStoreNames.contains('workouts')) {
+          const workoutStore = db.createObjectStore('workouts', { keyPath: 'id' });
+          workoutStore.createIndex('timestamp', 'timestamp', { unique: false });
+        }
+      };
+      
+      request.onsuccess = (event) => {
+        resolve(event.target.result);
+      };
+      
+      request.onerror = (event) => {
+        console.error(
+          '❌ Erreur ouverture IndexedDB (données conservées, fallback localStorage):',
+          event.target.error
+        );
+        resolve(null);
+      };
+    });
+>>>>>>> 9e0d966 (avancements au niveau de la remise a niveau de la sauvegarde des quetes de livre set ajouts d etrucs dans livres)
   };
 
   /** État normalisé depuis `workoutData_backup_${storageKey}` (localStorage). */
@@ -650,6 +691,7 @@ export const useWorkoutData = (options = {}) => {
       }
 
       if (
+<<<<<<< HEAD
         newData.exerciseSessionPleasureStars &&
         typeof newData.exerciseSessionPleasureStars === 'object'
       ) {
@@ -659,6 +701,22 @@ export const useWorkoutData = (options = {}) => {
           if (Number.isFinite(n) && n >= 1 && n <= 5) cleanPleasure[key] = n;
         }
         newData.exerciseSessionPleasureStars = cleanPleasure;
+=======
+        newData.exerciseSessionPerceived &&
+        typeof newData.exerciseSessionPerceived === 'object'
+      ) {
+        const cleanPerceived = {};
+        for (const [key, raw] of Object.entries(newData.exerciseSessionPerceived)) {
+          if (!raw || typeof raw !== 'object') continue;
+          const row = {};
+          for (const dim of ['difficulty', 'feeling', 'pleasure']) {
+            const n = Math.round(Number(raw[dim]));
+            if (Number.isFinite(n) && n >= 1 && n <= 5) row[dim] = n;
+          }
+          if (Object.keys(row).length > 0) cleanPerceived[key] = row;
+        }
+        newData.exerciseSessionPerceived = cleanPerceived;
+>>>>>>> 9e0d966 (avancements au niveau de la remise a niveau de la sauvegarde des quetes de livre set ajouts d etrucs dans livres)
       }
 
       if (
@@ -701,11 +759,31 @@ export const useWorkoutData = (options = {}) => {
         newData.weekVariant = 'A';
       }
       
-      // En mode éphémère (déconnecté), on ne persiste rien
+      backupWorkoutToLocalStorage(storageKey, newData);
+
       if (ephemeral) {
         return;
       }
 
+<<<<<<< HEAD
+=======
+      const db = await openDB();
+      
+      // Si IndexedDB n'est pas disponible, utiliser localStorage uniquement
+      if (!db) {
+        try {
+          localStorage.setItem(`workoutData_backup_${storageKey}`, JSON.stringify(newData));
+          return;
+        } catch (localStorageError) {
+          console.error('❌ Échec de la sauvegarde localStorage:', localStorageError);
+          throw new Error('Impossible de sauvegarder les données');
+        }
+      }
+      
+      const transaction = db.transaction(['workouts'], 'readwrite');
+      const store = transaction.objectStore('workouts');
+      
+>>>>>>> 9e0d966 (avancements au niveau de la remise a niveau de la sauvegarde des quetes de livre set ajouts d etrucs dans livres)
       // Créer un objet avec la nouvelle structure et validation finale
       const dataToSave = {
         // ✅ Clé de stockage dépendante de l'utilisateur
@@ -760,11 +838,19 @@ export const useWorkoutData = (options = {}) => {
           typeof newData.exerciseSessionEffortStars === 'object'
             ? { ...newData.exerciseSessionEffortStars }
             : {},
+<<<<<<< HEAD
         exerciseSessionPleasureStars:
           newData &&
           newData.exerciseSessionPleasureStars &&
           typeof newData.exerciseSessionPleasureStars === 'object'
             ? { ...newData.exerciseSessionPleasureStars }
+=======
+        exerciseSessionPerceived:
+          newData &&
+          newData.exerciseSessionPerceived &&
+          typeof newData.exerciseSessionPerceived === 'object'
+            ? { ...newData.exerciseSessionPerceived }
+>>>>>>> 9e0d966 (avancements au niveau de la remise a niveau de la sauvegarde des quetes de livre set ajouts d etrucs dans livres)
             : {},
         stretchPerceivedRatings:
           newData && newData.stretchPerceivedRatings && typeof newData.stretchPerceivedRatings === 'object'
@@ -971,8 +1057,7 @@ export const useWorkoutData = (options = {}) => {
     try {
       // Nettoyer les anciens backups volumineux
       const keysToClean = [
-        'workoutData_backup'
-        // Les clés homepage_* sont maintenant gérées par useHomepageImages indépendant
+        // Ne pas supprimer workoutData_backup* — backups critiques pour F5
       ];
       
       keysToClean.forEach(key => {
@@ -995,6 +1080,7 @@ export const useWorkoutData = (options = {}) => {
         return null;
       }
 
+<<<<<<< HEAD
       const repo = getWorkoutRepo();
       let result = null;
       if (repo?.loadRawWorkoutRow) {
@@ -1018,6 +1104,264 @@ export const useWorkoutData = (options = {}) => {
         console.error('❌ Erreur lors de la récupération du backup:', backupError);
       }
       return null;
+=======
+      const transaction = db.transaction(['workouts'], 'readonly');
+      const store = transaction.objectStore('workouts');
+          // ✅ Charger l'enregistrement associé à la storageKey de l'utilisateur
+          const request = store.get(storageKey);
+      
+      return new Promise((resolve, reject) => {
+        request.onsuccess = () => {
+          const result = request.result;
+          
+          if (result) {
+            // ✅ Migration automatique : Initialiser dailyVariations et dayJustifications si absents
+            // Ordre important : d'abord dailyVariations, puis dayJustifications, puis circuits
+            const migratedDataStep1 = migrateDailyVariations(result.data || result);
+            const migratedDataStep2 = migrateDayJustifications(migratedDataStep1);
+            const migratedData = migrateCircuits(migratedDataStep2);
+            
+            // Validation des données chargées
+            const validatedData = {
+              checkedExercises: migratedData.checkedExercises || {},
+              reps: migratedData.reps || {},
+              exerciseWeights:
+                migratedData.exerciseWeights && typeof migratedData.exerciseWeights === 'object'
+                  ? { ...migratedData.exerciseWeights }
+                  : {},
+              exerciseWeightPerArm:
+                migratedData.exerciseWeightPerArm && typeof migratedData.exerciseWeightPerArm === 'object'
+                  ? { ...migratedData.exerciseWeightPerArm }
+                  : {},
+              exerciseSetWeights:
+                migratedData.exerciseSetWeights && typeof migratedData.exerciseSetWeights === 'object'
+                  ? { ...migratedData.exerciseSetWeights }
+                  : {},
+              checkedStretches: migratedData.checkedStretches || {},
+              startDate: migratedData.startDate || null,
+              weekVariant: migratedData.weekVariant || 'A',
+              progressPhotos: Array.isArray(migratedData.progressPhotos) ? migratedData.progressPhotos : [],
+              progressEntries: Array.isArray(migratedData.progressEntries) ? migratedData.progressEntries : [],
+              bodyTrackingReminders: Array.isArray(migratedData.bodyTrackingReminders) ? migratedData.bodyTrackingReminders : [],
+              bodyTrackingLastUpdated: migratedData.bodyTrackingLastUpdated || null,
+              sessionFeedbacks: migratedData.sessionFeedbacks || {},
+              // ✅ NOUVEAU : dailyVariations avec migration automatique
+              dailyVariations: migratedData.dailyVariations || {},
+              dailyVariationsVersion: migratedData.dailyVariationsVersion || '1.0',
+              // ✅ NOUVEAU : dayJustifications avec migration automatique
+              dayJustifications: migratedData.dayJustifications || {},
+              dayJustificationsVersion: migratedData.dayJustificationsVersion || '1.0',
+              exerciseIntensityCoeffs:
+                migratedData.exerciseIntensityCoeffs && typeof migratedData.exerciseIntensityCoeffs === 'object'
+                  ? { ...migratedData.exerciseIntensityCoeffs }
+                  : {},
+              exercisePerceivedRatings:
+                migratedData.exercisePerceivedRatings && typeof migratedData.exercisePerceivedRatings === 'object'
+                  ? { ...migratedData.exercisePerceivedRatings }
+                  : {},
+              exercisePersonalNotes:
+                migratedData.exercisePersonalNotes && typeof migratedData.exercisePersonalNotes === 'object'
+                  ? { ...migratedData.exercisePersonalNotes }
+                  : {},
+              exerciseSessionEffortStars:
+                migratedData.exerciseSessionEffortStars &&
+                typeof migratedData.exerciseSessionEffortStars === 'object'
+                  ? { ...migratedData.exerciseSessionEffortStars }
+                  : {},
+              exerciseSessionPerceived:
+                migratedData.exerciseSessionPerceived &&
+                typeof migratedData.exerciseSessionPerceived === 'object'
+                  ? { ...migratedData.exerciseSessionPerceived }
+                  : {},
+              stretchPerceivedRatings:
+                migratedData.stretchPerceivedRatings && typeof migratedData.stretchPerceivedRatings === 'object'
+                  ? { ...migratedData.stretchPerceivedRatings }
+                  : {},
+              stretchPersonalNotes:
+                migratedData.stretchPersonalNotes && typeof migratedData.stretchPersonalNotes === 'object'
+                  ? { ...migratedData.stretchPersonalNotes }
+                  : {},
+              stretchSessionEffortStars:
+                migratedData.stretchSessionEffortStars &&
+                typeof migratedData.stretchSessionEffortStars === 'object'
+                  ? { ...migratedData.stretchSessionEffortStars }
+                  : {},
+              exerciseMaxRecords: Array.isArray(migratedData.exerciseMaxRecords) ? migratedData.exerciseMaxRecords : [],
+              exerciseMaxHistory: Array.isArray(migratedData.exerciseMaxHistory) ? migratedData.exerciseMaxHistory : [],
+              performanceRetestPlans: Array.isArray(migratedData.performanceRetestPlans) ? migratedData.performanceRetestPlans : [],
+              pyramidSessionLog: Array.isArray(migratedData.pyramidSessionLog) ? migratedData.pyramidSessionLog : [],
+              addictionQuitData:
+                migratedData.addictionQuitData && typeof migratedData.addictionQuitData === 'object'
+                  ? migratedData.addictionQuitData
+                  : INITIAL_WORKOUT_DATA.addictionQuitData,
+              circuitDefinitions:
+                migratedData.circuitDefinitions && typeof migratedData.circuitDefinitions === 'object'
+                  ? { ...migratedData.circuitDefinitions }
+                  : {},
+              circuitProgress:
+                migratedData.circuitProgress && typeof migratedData.circuitProgress === 'object'
+                  ? { ...migratedData.circuitProgress }
+                  : {},
+              circuitDefinitionsVersion: migratedData.circuitDefinitionsVersion || '1.0',
+              trainingPrefs:
+                migratedData.trainingPrefs && typeof migratedData.trainingPrefs === 'object'
+                  ? { swapRestConfirmEnabled: migratedData.trainingPrefs.swapRestConfirmEnabled !== false }
+                  : { swapRestConfirmEnabled: true },
+              restDaySwaps:
+                migratedData.restDaySwaps && typeof migratedData.restDaySwaps === 'object'
+                  ? { ...migratedData.restDaySwaps }
+                  : {},
+              // Données d'endurance - CRUCIAL pour la persistance
+              enduranceData: migratedData.enduranceData || result.enduranceData || {
+                sessions: {
+                  boxing: [],
+                  pushups: [],
+                  swimming: [],
+                  jumprope: [],
+                  running: []
+                },
+                challenges: []
+              }
+            };
+            
+            resolve(validatedData);
+          } else {
+            // Pas de données en IndexedDB, essayer de récupérer depuis localStorage
+            try {
+              const backupData = localStorage.getItem(`workoutData_backup_${storageKey}`);
+              if (backupData) {
+                const parsedBackup = JSON.parse(backupData);
+                // ✅ Migration automatique des données localStorage
+                const migratedBackup = migrateCircuits(migrateDailyVariations(parsedBackup));
+                resolve({
+                  ...migratedBackup,
+                  exerciseIntensityCoeffs:
+                    migratedBackup.exerciseIntensityCoeffs && typeof migratedBackup.exerciseIntensityCoeffs === 'object'
+                      ? { ...migratedBackup.exerciseIntensityCoeffs }
+                      : {},
+                  exercisePerceivedRatings:
+                    migratedBackup.exercisePerceivedRatings && typeof migratedBackup.exercisePerceivedRatings === 'object'
+                      ? { ...migratedBackup.exercisePerceivedRatings }
+                      : {},
+                  exercisePersonalNotes:
+                    migratedBackup.exercisePersonalNotes && typeof migratedBackup.exercisePersonalNotes === 'object'
+                      ? { ...migratedBackup.exercisePersonalNotes }
+                      : {},
+                  exerciseSessionEffortStars:
+                    migratedBackup.exerciseSessionEffortStars &&
+                    typeof migratedBackup.exerciseSessionEffortStars === 'object'
+                      ? { ...migratedBackup.exerciseSessionEffortStars }
+                      : {},
+                  exerciseSessionPerceived:
+                    migratedBackup.exerciseSessionPerceived &&
+                    typeof migratedBackup.exerciseSessionPerceived === 'object'
+                      ? { ...migratedBackup.exerciseSessionPerceived }
+                      : {},
+                  stretchPerceivedRatings:
+                    migratedBackup.stretchPerceivedRatings &&
+                    typeof migratedBackup.stretchPerceivedRatings === 'object'
+                      ? { ...migratedBackup.stretchPerceivedRatings }
+                      : {},
+                  stretchPersonalNotes:
+                    migratedBackup.stretchPersonalNotes &&
+                    typeof migratedBackup.stretchPersonalNotes === 'object'
+                      ? { ...migratedBackup.stretchPersonalNotes }
+                      : {},
+                  stretchSessionEffortStars:
+                    migratedBackup.stretchSessionEffortStars &&
+                    typeof migratedBackup.stretchSessionEffortStars === 'object'
+                      ? { ...migratedBackup.stretchSessionEffortStars }
+                      : {},
+                  exerciseMaxRecords: Array.isArray(migratedBackup.exerciseMaxRecords) ? migratedBackup.exerciseMaxRecords : [],
+                  exerciseMaxHistory: Array.isArray(migratedBackup.exerciseMaxHistory) ? migratedBackup.exerciseMaxHistory : [],
+                  performanceRetestPlans: Array.isArray(migratedBackup.performanceRetestPlans) ? migratedBackup.performanceRetestPlans : [],
+                  pyramidSessionLog: Array.isArray(migratedBackup.pyramidSessionLog) ? migratedBackup.pyramidSessionLog : [],
+                  addictionQuitData:
+                    migratedBackup.addictionQuitData && typeof migratedBackup.addictionQuitData === 'object'
+                      ? migratedBackup.addictionQuitData
+                      : INITIAL_WORKOUT_DATA.addictionQuitData,
+                });
+              } else {
+                resolve(null);
+              }
+            } catch (backupError) {
+              console.error('❌ Erreur lors de la récupération du backup:', backupError);
+              resolve(null);
+            }
+          }
+        };
+        
+        request.onerror = (event) => {
+          console.error('❌ Erreur lors du chargement:', event.target.error);
+          
+          // En cas d'erreur, essayer de récupérer depuis localStorage
+          try {
+            const backupData = localStorage.getItem(`workoutData_backup_${storageKey}`);
+            if (backupData) {
+              const parsedBackup = JSON.parse(backupData);
+              // ✅ Migration automatique des données localStorage
+              const migratedBackup = migrateCircuits(migrateDailyVariations(parsedBackup));
+              resolve({
+                ...migratedBackup,
+                exerciseIntensityCoeffs:
+                  migratedBackup.exerciseIntensityCoeffs &&
+                  typeof migratedBackup.exerciseIntensityCoeffs === 'object'
+                    ? { ...migratedBackup.exerciseIntensityCoeffs }
+                    : {},
+                exercisePerceivedRatings:
+                  migratedBackup.exercisePerceivedRatings &&
+                  typeof migratedBackup.exercisePerceivedRatings === 'object'
+                    ? { ...migratedBackup.exercisePerceivedRatings }
+                    : {},
+                exercisePersonalNotes:
+                  migratedBackup.exercisePersonalNotes &&
+                  typeof migratedBackup.exercisePersonalNotes === 'object'
+                    ? { ...migratedBackup.exercisePersonalNotes }
+                    : {},
+                exerciseSessionEffortStars:
+                  migratedBackup.exerciseSessionEffortStars &&
+                  typeof migratedBackup.exerciseSessionEffortStars === 'object'
+                    ? { ...migratedBackup.exerciseSessionEffortStars }
+                    : {},
+                exerciseSessionPerceived:
+                  migratedBackup.exerciseSessionPerceived &&
+                  typeof migratedBackup.exerciseSessionPerceived === 'object'
+                    ? { ...migratedBackup.exerciseSessionPerceived }
+                    : {},
+                stretchPerceivedRatings:
+                  migratedBackup.stretchPerceivedRatings &&
+                  typeof migratedBackup.stretchPerceivedRatings === 'object'
+                    ? { ...migratedBackup.stretchPerceivedRatings }
+                    : {},
+                stretchPersonalNotes:
+                  migratedBackup.stretchPersonalNotes &&
+                  typeof migratedBackup.stretchPersonalNotes === 'object'
+                    ? { ...migratedBackup.stretchPersonalNotes }
+                    : {},
+                stretchSessionEffortStars:
+                  migratedBackup.stretchSessionEffortStars &&
+                  typeof migratedBackup.stretchSessionEffortStars === 'object'
+                    ? { ...migratedBackup.stretchSessionEffortStars }
+                    : {},
+                exerciseMaxRecords: Array.isArray(migratedBackup.exerciseMaxRecords) ? migratedBackup.exerciseMaxRecords : [],
+                exerciseMaxHistory: Array.isArray(migratedBackup.exerciseMaxHistory) ? migratedBackup.exerciseMaxHistory : [],
+                performanceRetestPlans: Array.isArray(migratedBackup.performanceRetestPlans) ? migratedBackup.performanceRetestPlans : [],
+                pyramidSessionLog: Array.isArray(migratedBackup.pyramidSessionLog) ? migratedBackup.pyramidSessionLog : [],
+                addictionQuitData:
+                  migratedBackup.addictionQuitData && typeof migratedBackup.addictionQuitData === 'object'
+                    ? migratedBackup.addictionQuitData
+                    : INITIAL_WORKOUT_DATA.addictionQuitData,
+              });
+            } else {
+              resolve(null);
+            }
+          } catch (backupError) {
+            console.error('❌ Erreur lors de la récupération du backup après erreur:', backupError);
+            resolve(null);
+          }
+        };
+      });
+>>>>>>> 9e0d966 (avancements au niveau de la remise a niveau de la sauvegarde des quetes de livre set ajouts d etrucs dans livres)
     } catch (error) {
       console.error('❌ Erreur dans loadFromDB:', error);
       
@@ -1039,6 +1383,7 @@ export const useWorkoutData = (options = {}) => {
 
   const loadData = async () => {
     let savedData = await loadFromDB();
+<<<<<<< HEAD
 
     if (!ephemeral && !generateTestData && isWorkoutAggregateCloudSyncEnabled()) {
       const { accessToken } = readServerTokens();
@@ -1067,6 +1412,22 @@ export const useWorkoutData = (options = {}) => {
     }
 
     if (savedData) {
+=======
+    if (!savedData || !hasWorkoutContent(savedData)) {
+      const fromLocal = loadWorkoutFromLocalStorage(storageKey);
+      if (fromLocal && hasWorkoutContent(fromLocal)) {
+        savedData = fromLocal;
+        if (!ephemeral) {
+          try {
+            await saveToDB(fromLocal);
+          } catch {
+            // IndexedDB optionnel si localStorage a les données
+          }
+        }
+      }
+    }
+    if (savedData && hasWorkoutContent(savedData)) {
+>>>>>>> 9e0d966 (avancements au niveau de la remise a niveau de la sauvegarde des quetes de livre set ajouts d etrucs dans livres)
       setData(savedData);
     } else {
       // Si aucune donnée n'existe
@@ -1078,10 +1439,17 @@ export const useWorkoutData = (options = {}) => {
         // Sauvegarder les données de test
         await saveToDB(testData);
       } else {
-        // Mode multi-utilisateur : démarrer avec un jeu vide pour cet utilisateur
-        workoutDataLog.debug(`🎯 Aucune donnée trouvée pour ${storageKey}, initialisation d'un jeu vide`);
-        setData(INITIAL_WORKOUT_DATA);
-        await saveToDB(INITIAL_WORKOUT_DATA);
+        const fromLocal = loadWorkoutFromLocalStorage(storageKey);
+        if (fromLocal && hasWorkoutContent(fromLocal)) {
+          workoutDataLog.debug(`🎯 Données restaurées depuis localStorage pour ${storageKey}`);
+          setData(fromLocal);
+          if (!ephemeral) {
+            await saveToDB(fromLocal);
+          }
+        } else {
+          workoutDataLog.debug(`🎯 Aucune donnée pour ${storageKey}, état vide en mémoire (sans écraser IndexedDB)`);
+          setData(INITIAL_WORKOUT_DATA);
+        }
       }
     }
     // Marquer que le chargement initial est terminé pour ce storageKey
@@ -1104,7 +1472,8 @@ export const useWorkoutData = (options = {}) => {
       }
     }
     setData(toStore);
-    
+    backupWorkoutToLocalStorage(storageKey, toStore);
+
     try {
       // Sauvegarde manuelle immédiate (pour les boutons de sauvegarde existants)
       await saveToDB(toStore);
@@ -1118,7 +1487,7 @@ export const useWorkoutData = (options = {}) => {
       console.error('❌ Erreur lors de la sauvegarde dans updateData:', error);
       // Essayer de sauvegarder en localStorage comme fallback
       try {
-        localStorage.setItem('workoutData_backup', JSON.stringify(toStore));
+        localStorage.setItem(`workoutData_backup_${storageKey}`, JSON.stringify(toStore));
         workoutDataLog.debug('💾 Sauvegarde de secours en localStorage réussie');
       } catch (localStorageError) {
         console.error('❌ Échec de la sauvegarde de secours:', localStorageError);
@@ -1128,15 +1497,15 @@ export const useWorkoutData = (options = {}) => {
 
   // Effet pour le chargement initial des données
   useEffect(() => {
+    if (deferLoad) return;
     // À chaque changement de storageKey (changement d'utilisateur), recharger les données correspondant à cette clé
     isInitialLoadRef.current = true;
     // Réinitialiser immédiatement l'état en mémoire pour éviter d'afficher les données de l'utilisateur précédent.
     setData(INITIAL_WORKOUT_DATA);
     loadData();
-    
-      // Nettoyage automatique au démarrage (une seule fois)
-      cleanupLocalStorage();
-  }, [storageKey]);
+
+    cleanupLocalStorage();
+  }, [storageKey, deferLoad]);
 
   // Effet pour la sauvegarde automatique à chaque changement de données
   useEffect(() => {
@@ -1148,6 +1517,39 @@ export const useWorkoutData = (options = {}) => {
     // Sauvegarder automatiquement avec debounce
     autoSave(data);
   }, [data, autoSave]);
+
+  const dataRef = useRef(data);
+  useEffect(() => {
+    dataRef.current = data;
+  }, [data]);
+
+  // Flush IndexedDB avant fermeture / rechargement (évite perte reps / cases cochées)
+  useEffect(() => {
+    if (ephemeral) return undefined;
+
+    const flushPendingSave = () => {
+      if (isInitialLoadRef.current) return;
+      if (debounceTimerRef.current) {
+        clearTimeout(debounceTimerRef.current);
+        debounceTimerRef.current = null;
+      }
+      const latest = dataRef.current;
+      if (!latest) return;
+      saveToDB(latest).catch(() => {});
+      try {
+        localStorage.setItem(`workoutData_backup_${storageKey}`, JSON.stringify(latest));
+      } catch {
+        // ignore quota
+      }
+    };
+
+    window.addEventListener('pagehide', flushPendingSave);
+    window.addEventListener('beforeunload', flushPendingSave);
+    return () => {
+      window.removeEventListener('pagehide', flushPendingSave);
+      window.removeEventListener('beforeunload', flushPendingSave);
+    };
+  }, [ephemeral, storageKey, saveToDB]);
 
   // Nettoyer le timer lors du démontage du composant
   useEffect(() => {

@@ -1,4 +1,4 @@
-import React, { useState, useContext, useEffect } from 'react';
+import React, { useState, useContext, useEffect, useMemo } from 'react';
 import { WorkoutContext } from '../../context/WorkoutContext';
 import { Play, Pause, Plus, Clock, Calendar, Archive, Settings, Edit3, Trash2, Download, Eye } from 'lucide-react';
 import Card, { CardHeader, CardTitle, CardContent } from '../ui/Card';
@@ -16,8 +16,14 @@ import {
   PENDING_QUIZ_PREFILL_TRAINING_KEY,
   readPendingQuizPrefill
 } from '../../features/profileQuestionnaire/prefill';
+<<<<<<< HEAD
 import { buildTrainingScheduleFromQuizDays, augmentScheduleWithQuizDefaults } from '../../features/profileQuestionnaire/trainingScheduleFromQuiz';
 import { getProgramGoalLabel, buildProgramDescriptionFromQuiz } from '../../features/profileQuestionnaire/quizInfluence';
+=======
+import { buildTrainingScheduleFromQuizDays } from '../../features/profileQuestionnaire/trainingScheduleFromQuiz';
+import { copyEtirementsToProgramSchedule } from '../../utils/stretchUtils';
+import { buildExerciseDaysSet, countProgramUsageDays } from '../../utils/programUsageDays';
+>>>>>>> 9e0d966 (avancements au niveau de la remise a niveau de la sauvegarde des quetes de livre set ajouts d etrucs dans livres)
 
 const ProgramTab = () => {
   const { programs, activeProgram, addProgram, activateProgram, deactivateProgram, deleteProgram, updateProgram, data } = useContext(WorkoutContext);
@@ -58,42 +64,13 @@ const ProgramTab = () => {
     clearPendingQuizPrefill(PENDING_QUIZ_PREFILL_TRAINING_KEY);
   }, []);
 
-  // Fonction pour calculer les jours réels d'utilisation d'un programme
-  const calculateRealUsageDays = (program) => {
-    if (!program || !data || !data.checkedExercises) return 0;
-    
-    // Si le programme a un startDate, compter les jours avec exercices complétés depuis cette date
-    if (program.startDate) {
-      const programStartDate = new Date(program.startDate);
-      programStartDate.setHours(0, 0, 0, 0);
-      
-      const endDate = program.endDate ? new Date(program.endDate) : new Date();
-      endDate.setHours(23, 59, 59, 999);
-      
-      const daysWithExercises = new Set();
-      
-      // Parcourir tous les exercices complétés
-      Object.keys(data.checkedExercises).forEach(key => {
-        if (data.checkedExercises[key]) {
-          // Extraire la date de la clé (format: YYYY-MM-DD_exerciseId)
-          const parts = key.split('_');
-          if (parts.length >= 2) {
-            const dateStr = parts[0];
-            const exerciseDate = new Date(dateStr + 'T00:00:00');
-            
-            // Vérifier si la date est dans la période du programme
-            if (exerciseDate >= programStartDate && exerciseDate <= endDate) {
-              daysWithExercises.add(dateStr);
-            }
-          }
-        }
-      });
-      
-      return daysWithExercises.size;
-    }
-    
-    return 0;
-  };
+  const exerciseDaysSet = useMemo(
+    () => buildExerciseDaysSet(data?.checkedExercises),
+    [data?.checkedExercises]
+  );
+
+  const calculateRealUsageDays = (program) =>
+    countProgramUsageDays(program, exerciseDaysSet);
 
   const formatDuration = (startDate, endDate = null) => {
     const start = new Date(startDate);
@@ -206,23 +183,7 @@ const ProgramTab = () => {
         focus: dayData.focus,
         duration: dayData.duree || t('program.misc.notSpecified'),
         notes: dayData.notes || "",
-        etirements: {
-          matin: { 
-            name: t('program.stretches.morning'), 
-            duration: "5-7 min", 
-            instructions: dayData.etirements?.matin || "" 
-          },
-          midi: { 
-            name: t('program.stretches.midday'), 
-            duration: "4-6 min", 
-            instructions: dayData.etirements?.midi || "" 
-          },
-          soir: { 
-            name: t('program.stretches.evening'), 
-            duration: "5-7 min", 
-            instructions: dayData.etirements?.soir || "" 
-          }
-        },
+        etirements: copyEtirementsToProgramSchedule(dayData.etirements, day),
         exercises: [
           // Exercices classiques
           ...(dayData.exercices?.map(exercise => ({

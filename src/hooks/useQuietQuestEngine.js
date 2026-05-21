@@ -19,7 +19,11 @@ import { getLocalCalendarDateStr, addCalendarDays, parseLocalCalendarDate } from
 import { calculateQuestXP, DIFFICULTY_XP_BASE } from '../utils/questXpCore';
 import { computeValidationXpAward } from '../utils/questScoring';
 import logger from '../utils/logger';
-import { canAccessPrivateData } from '../utils/accessControl';
+import {
+  canAccessPrivateData,
+  getQuietQuestUserId,
+  getQuietQuestStorageKeys,
+} from '../utils/accessControl';
 
 const qqLog = logger.module('useQuietQuestEngine');
 
@@ -114,9 +118,38 @@ export const QuietQuestContext = createContext(null);
  * tout en laissant les composants d'UI se concentrer sur le rendu.
  */
 function useQuietQuestEngineImpl() {
-  const { currentUser, isAuthenticated } = useAuth();
+  const { currentUser, isAuthenticated, loading: authLoading } = useAuth();
   const canAccessData = canAccessPrivateData({ user: currentUser, isAuthenticated });
-  const [allQuests, setAllQuests] = useState([]);
+  const userId = useMemo(() => getQuietQuestUserId(currentUser), [currentUser]);
+  const storageKeys = useMemo(() => getQuietQuestStorageKeys(userId), [userId]);
+  const storageKeysRef = useRef(storageKeys);
+  useEffect(() => {
+    storageKeysRef.current = storageKeys;
+  }, [storageKeys]);
+
+  // Cache mémo pour getQuestsForDate (clé: date, valeur: quêtes)
+  const questsCacheRef = useRef(new Map());
+  const questsVersionRef = useRef(0);
+
+  const [allQuests, setAllQuestsState] = useState([]);
+
+  /** Invalide le cache « quêtes du jour » avant toute mise à jour de liste (évite refresh manuel). */
+  const invalidateQuestsDateCache = useCallback(() => {
+    questsVersionRef.current += 1;
+    questsCacheRef.current.clear();
+  }, []);
+
+  const setAllQuests = useCallback(
+    (update) => {
+      invalidateQuestsDateCache();
+      setAllQuestsState((prev) => {
+        const next = typeof update === 'function' ? update(prev) : update;
+        allQuestsRef.current = Array.isArray(next) ? next : [];
+        return next;
+      });
+    },
+    [invalidateQuestsDateCache]
+  );
   const [userData, setUserData] = useState(defaultUserData);
   const [validations, setValidations] = useState([]);
   const [dailyPerformances, setDailyPerformances] = useState([]);
@@ -157,12 +190,11 @@ function useQuietQuestEngineImpl() {
   // Détection du mode de stockage
   const storageModeRef = useRef('localstorage'); // 'indexeddb' | 'localstorage'
   const dbRef = useRef(null);
-  const userId = 'main';
+  const userIdRef = useRef(userId);
+  useEffect(() => {
+    userIdRef.current = userId;
+  }, [userId]);
 
-  // Cache mémo pour getQuestsForDate (clé: date, valeur: quêtes)
-  const questsCacheRef = useRef(new Map());
-  const questsVersionRef = useRef(0);
-  
   // Pour les utilisateurs connectés : utiliser les vraies quêtes
   // Pour les non-connectés : retourner un tableau vide
   const effectiveQuests = useMemo(() => {
@@ -223,20 +255,21 @@ function useQuietQuestEngineImpl() {
       // Double sauvegarde : IndexedDB + localStorage
       if (db && storageModeRef.current === 'indexeddb') {
         try {
-          await saveQuestsToIndexedDB(db, currentQuests, userId);
-          await saveUserDataToIndexedDB(db, currentUserData, userId);
-          await saveValidationsToIndexedDB(db, currentValidations, userId);
-          await saveDailyPerformancesToIndexedDB(db, currentDaily, userId);
+          const uid = userIdRef.current;
+          await saveQuestsToIndexedDB(db, currentQuests, uid);
+          await saveUserDataToIndexedDB(db, currentUserData, uid);
+          await saveValidationsToIndexedDB(db, currentValidations, uid);
+          await saveDailyPerformancesToIndexedDB(db, currentDaily, uid);
         } catch (error) {
           console.error('[useQuietQuestEngine] Erreur sauvegarde IndexedDB (beforeunload):', error);
         }
       }
       
-      // Toujours sauvegarder dans localStorage comme backup
-      saveToStorage(STORAGE_KEYS.quests, currentQuests);
-      saveToStorage(STORAGE_KEYS.userData, currentUserData);
-      saveToStorage(STORAGE_KEYS.validations, currentValidations);
-      saveToStorage(STORAGE_KEYS.dailyPerformances, currentDaily);
+      const keys = storageKeysRef.current;
+      saveToStorage(keys.quests, currentQuests);
+      saveToStorage(keys.userData, currentUserData);
+      saveToStorage(keys.validations, currentValidations);
+      saveToStorage(keys.dailyPerformances, currentDaily);
       
       qqLog.debug('Sauvegarde immédiate complétée');
     } catch (error) {
@@ -247,29 +280,12 @@ function useQuietQuestEngineImpl() {
   // Sauvegarde avant rechargement de la page
   useEffect(() => {
     const handleBeforeUnload = () => {
-      // Sauvegarder immédiatement avant le rechargement (synchronisé pour beforeunload)
-      if (typeof window !== 'undefined' && navigator.sendBeacon) {
-        // Utiliser sendBeacon pour les données critiques si disponible
-        const data = JSON.stringify({
-          userData: userDataRef.current,
-          validations: validationsRef.current,
-          dailyPerformances: dailyPerformancesRef.current,
-        });
-        try {
-          const blob = new Blob([data], { type: 'application/json' });
-          navigator.sendBeacon('/api/save-quietquest', blob);
-        } catch (e) {
-          // Fallback sur localStorage synchrone
-          saveToStorage(STORAGE_KEYS.userData, userDataRef.current);
-          saveToStorage(STORAGE_KEYS.validations, validationsRef.current);
-          saveToStorage(STORAGE_KEYS.dailyPerformances, dailyPerformancesRef.current);
-        }
-      } else {
-        // Sauvegarde synchrone dans localStorage
-        saveToStorage(STORAGE_KEYS.userData, userDataRef.current);
-        saveToStorage(STORAGE_KEYS.validations, validationsRef.current);
-        saveToStorage(STORAGE_KEYS.dailyPerformances, dailyPerformancesRef.current);
-      }
+      const keys = storageKeysRef.current;
+      saveToStorage(keys.quests, allQuestsRef.current);
+      saveToStorage(keys.userData, userDataRef.current);
+      saveToStorage(keys.validations, validationsRef.current);
+      saveToStorage(keys.dailyPerformances, dailyPerformancesRef.current);
+      void saveAllDataImmediately();
     };
     
     const handleVisibilityChange = () => {
@@ -294,6 +310,10 @@ function useQuietQuestEngineImpl() {
 
   // Chargement initial avec migration automatique
   useEffect(() => {
+    if (authLoading) {
+      return;
+    }
+
     if (!canAccessData) {
       setAllQuests([]);
       setUserData(defaultUserData);
@@ -317,11 +337,13 @@ function useQuietQuestEngineImpl() {
         storageModeRef.current = 'indexeddb';
         dbRef.current = db;
 
+        const uid = userIdRef.current;
+
         // Charger depuis IndexedDB
-        const indexedQuests = await loadQuestsFromIndexedDB(db, userId);
-        const indexedUser = await loadUserDataFromIndexedDB(db, userId);
-        const indexedValidations = await loadValidationsFromIndexedDB(db, userId);
-        const indexedDaily = await loadDailyPerformancesFromIndexedDB(db, userId);
+        const indexedQuests = await loadQuestsFromIndexedDB(db, uid);
+        const indexedUser = await loadUserDataFromIndexedDB(db, uid);
+        const indexedValidations = await loadValidationsFromIndexedDB(db, uid);
+        const indexedDaily = await loadDailyPerformancesFromIndexedDB(db, uid);
 
         qqLog.debug('IndexedDB chargé', {
           quests: indexedQuests.length,
@@ -330,21 +352,33 @@ function useQuietQuestEngineImpl() {
           daily: indexedDaily.length
         });
 
-        // Vérifier si IndexedDB a des données valides
-        const hasIndexedData = indexedUser && (
-          indexedUser.currentXP > 0 || 
-          indexedUser.level > 1 || 
+        const hasIndexedData =
           indexedQuests.length > 0 ||
-          indexedValidations.length > 0 || 
-          indexedDaily.length > 0
-        );
+          indexedValidations.length > 0 ||
+          indexedDaily.length > 0 ||
+          indexedUser != null;
 
-        // Si IndexedDB vide ou seulement valeurs par défaut, essayer migration depuis localStorage
-        if (!hasIndexedData) {
-          const localQuests = loadFromStorage(STORAGE_KEYS.quests, []);
-          const localUser = loadFromStorage(STORAGE_KEYS.userData, null);
-          const localValidations = loadFromStorage(STORAGE_KEYS.validations, []);
-          const localDaily = loadFromStorage(STORAGE_KEYS.dailyPerformances, []);
+        if (hasIndexedData) {
+          setAllQuests(Array.isArray(indexedQuests) ? indexedQuests : []);
+          setUserData({ ...defaultUserData, ...(indexedUser || {}) });
+          setValidations(Array.isArray(indexedValidations) ? indexedValidations : []);
+          setDailyPerformances(Array.isArray(indexedDaily) ? indexedDaily : []);
+        } else {
+          const keys = storageKeysRef.current;
+          let localQuests = loadFromStorage(keys.quests, []);
+          let localUser = loadFromStorage(keys.userData, null);
+          let localValidations = loadFromStorage(keys.validations, []);
+          let localDaily = loadFromStorage(keys.dailyPerformances, []);
+          const localEmpty =
+            !localQuests.length &&
+            !localValidations.length &&
+            (!localUser || (localUser.level <= 1 && !localUser.currentXP));
+          if (localEmpty && keys.quests !== STORAGE_KEYS.quests) {
+            localQuests = loadFromStorage(STORAGE_KEYS.quests, []);
+            localUser = loadFromStorage(STORAGE_KEYS.userData, null);
+            localValidations = loadFromStorage(STORAGE_KEYS.validations, []);
+            localDaily = loadFromStorage(STORAGE_KEYS.dailyPerformances, []);
+          }
 
           const hasLocalData = (localUser && (localUser.currentXP > 0 || localUser.level > 1)) ||
             localQuests.length > 0 || 
@@ -356,16 +390,16 @@ function useQuietQuestEngineImpl() {
             // Migration depuis localStorage
             try {
               if (localQuests.length > 0) {
-                await saveQuestsToIndexedDB(db, localQuests, userId);
+                await saveQuestsToIndexedDB(db, localQuests, uid);
               }
               if (localUser) {
-                await saveUserDataToIndexedDB(db, localUser, userId);
+                await saveUserDataToIndexedDB(db, localUser, uid);
               }
               if (localValidations.length > 0) {
-                await saveValidationsToIndexedDB(db, localValidations, userId);
+                await saveValidationsToIndexedDB(db, localValidations, uid);
               }
               if (localDaily.length > 0) {
-                await saveDailyPerformancesToIndexedDB(db, localDaily, userId);
+                await saveDailyPerformancesToIndexedDB(db, localDaily, uid);
               }
               qqLog.debug('Migration localStorage → IndexedDB réussie');
               // NE PAS nettoyer localStorage - garder comme backup
@@ -378,34 +412,31 @@ function useQuietQuestEngineImpl() {
             setUserData({ ...defaultUserData, ...(localUser || {}) });
             setValidations(Array.isArray(localValidations) ? localValidations : []);
             setDailyPerformances(Array.isArray(localDaily) ? localDaily : []);
-          } else if (indexedUser) {
-            // Utiliser les données IndexedDB même si elles sont par défaut
-            setAllQuests(Array.isArray(indexedQuests) ? indexedQuests : []);
-            setUserData({ ...defaultUserData, ...indexedUser });
-            setValidations(Array.isArray(indexedValidations) ? indexedValidations : []);
-            setDailyPerformances(Array.isArray(indexedDaily) ? indexedDaily : []);
           } else {
-            // Pas de données, utiliser les valeurs par défaut
             setAllQuests([]);
             setUserData(defaultUserData);
             setValidations([]);
             setDailyPerformances([]);
           }
-        } else {
-          // Données valides dans IndexedDB
-          qqLog.debug('Données chargées depuis IndexedDB');
-          setAllQuests(Array.isArray(indexedQuests) ? indexedQuests : []);
-          setUserData({ ...defaultUserData, ...(indexedUser || {}) });
-          setValidations(Array.isArray(indexedValidations) ? indexedValidations : []);
-          setDailyPerformances(Array.isArray(indexedDaily) ? indexedDaily : []);
         }
       } else {
         // Mode localStorage (fallback)
         storageModeRef.current = 'localstorage';
-        const storedQuests = loadFromStorage(STORAGE_KEYS.quests, []);
-        const storedUser = loadFromStorage(STORAGE_KEYS.userData, defaultUserData);
-        const storedValidations = loadFromStorage(STORAGE_KEYS.validations, []);
-        const storedDaily = loadFromStorage(STORAGE_KEYS.dailyPerformances, []);
+        const keys = storageKeysRef.current;
+        let storedQuests = loadFromStorage(keys.quests, []);
+        let storedUser = loadFromStorage(keys.userData, defaultUserData);
+        let storedValidations = loadFromStorage(keys.validations, []);
+        let storedDaily = loadFromStorage(keys.dailyPerformances, []);
+        const storedEmpty =
+          !storedQuests.length &&
+          !storedValidations.length &&
+          (!storedUser || (storedUser.level <= 1 && !storedUser.currentXP));
+        if (storedEmpty && keys.quests !== STORAGE_KEYS.quests) {
+          storedQuests = loadFromStorage(STORAGE_KEYS.quests, []);
+          storedUser = loadFromStorage(STORAGE_KEYS.userData, defaultUserData);
+          storedValidations = loadFromStorage(STORAGE_KEYS.validations, []);
+          storedDaily = loadFromStorage(STORAGE_KEYS.dailyPerformances, []);
+        }
 
         setAllQuests(Array.isArray(storedQuests) ? storedQuests : []);
         setUserData({ ...defaultUserData, ...(storedUser || {}) });
@@ -419,13 +450,7 @@ function useQuietQuestEngineImpl() {
     };
 
     loadData();
-  }, [canAccessData]);
-
-  // Invalider le cache quand allQuests change
-  useEffect(() => {
-    questsVersionRef.current += 1;
-    questsCacheRef.current.clear();
-  }, [allQuests]);
+  }, [canAccessData, authLoading, userId]);
 
   // Réagir aux créations/suppressions de quêtes (onglet ou autre instance) pour garder la sidebar et les autres vues à jour
   useEffect(() => {
@@ -436,7 +461,7 @@ function useQuietQuestEngineImpl() {
           const fresh = await loadQuestsFromIndexedDB(dbRef.current, userId);
           setAllQuests(Array.isArray(fresh) ? fresh : []);
         } else {
-          const stored = loadFromStorage(STORAGE_KEYS.quests, []);
+          const stored = loadFromStorage(storageKeysRef.current.quests, []);
           setAllQuests(Array.isArray(stored) ? stored : []);
         }
       } catch (e) {
@@ -547,22 +572,21 @@ function useQuietQuestEngineImpl() {
         try {
           await saveQuestsToIndexedDB(dbRef.current, currentQuests, userId);
           // Double sauvegarde : toujours sauvegarder dans localStorage aussi
-          saveToStorage(STORAGE_KEYS.quests, currentQuests);
+          saveToStorage(storageKeys.quests, currentQuests);
         } catch (error) {
           console.error('[useQuietQuestEngine] Erreur sauvegarde quêtes IndexedDB:', error);
-          // Fallback localStorage
-          saveToStorage(STORAGE_KEYS.quests, currentQuests);
+          saveToStorage(storageKeys.quests, currentQuests);
         }
       } else {
-        saveToStorage(STORAGE_KEYS.quests, currentQuests);
+        saveToStorage(storageKeys.quests, currentQuests);
       }
-    }, 300);
+    }, 100);
     return () => {
       if (saveQuestsTimerRef.current) {
         clearTimeout(saveQuestsTimerRef.current);
       }
     };
-  }, [allQuests, canAccessData]);
+  }, [allQuests, canAccessData, storageKeys]);
 
   useEffect(() => {
     // Ne pas sauvegarder pendant le chargement initial
@@ -581,21 +605,21 @@ function useQuietQuestEngineImpl() {
         try {
           await saveValidationsToIndexedDB(dbRef.current, limited, userId);
           // Double sauvegarde : toujours sauvegarder dans localStorage aussi
-          saveToStorage(STORAGE_KEYS.validations, limited);
+          saveToStorage(storageKeys.validations, limited);
         } catch (error) {
           console.error('[useQuietQuestEngine] Erreur sauvegarde validations IndexedDB:', error);
-          saveToStorage(STORAGE_KEYS.validations, limited);
+          saveToStorage(storageKeys.validations, limited);
         }
       } else {
-        saveToStorage(STORAGE_KEYS.validations, limited);
+        saveToStorage(storageKeys.validations, limited);
       }
-    }, 300);
+    }, 100);
     return () => {
       if (saveValidationsTimerRef.current) {
         clearTimeout(saveValidationsTimerRef.current);
       }
     };
-  }, [validations, canAccessData]);
+  }, [validations, canAccessData, storageKeys]);
 
   useEffect(() => {
     // Ne pas sauvegarder pendant le chargement initial
@@ -614,21 +638,21 @@ function useQuietQuestEngineImpl() {
         try {
           await saveDailyPerformancesToIndexedDB(dbRef.current, limited, userId);
           // Double sauvegarde : toujours sauvegarder dans localStorage aussi
-          saveToStorage(STORAGE_KEYS.dailyPerformances, limited);
+          saveToStorage(storageKeys.dailyPerformances, limited);
         } catch (error) {
           console.error('[useQuietQuestEngine] Erreur sauvegarde dailyPerformances IndexedDB:', error);
-          saveToStorage(STORAGE_KEYS.dailyPerformances, limited);
+          saveToStorage(storageKeys.dailyPerformances, limited);
         }
       } else {
-        saveToStorage(STORAGE_KEYS.dailyPerformances, limited);
+        saveToStorage(storageKeys.dailyPerformances, limited);
       }
-    }, 300);
+    }, 100);
     return () => {
       if (saveDailyPerformancesTimerRef.current) {
         clearTimeout(saveDailyPerformancesTimerRef.current);
       }
     };
-  }, [dailyPerformances, canAccessData]);
+  }, [dailyPerformances, canAccessData, storageKeys]);
 
   useEffect(() => {
     // Ne pas sauvegarder pendant le chargement initial
@@ -642,21 +666,21 @@ function useQuietQuestEngineImpl() {
         try {
           await saveUserDataToIndexedDB(dbRef.current, userData, userId);
           // Double sauvegarde : toujours sauvegarder dans localStorage aussi
-          saveToStorage(STORAGE_KEYS.userData, userData);
+          saveToStorage(storageKeys.userData, userData);
         } catch (error) {
           console.error('[useQuietQuestEngine] Erreur sauvegarde userData IndexedDB:', error);
-          saveToStorage(STORAGE_KEYS.userData, userData);
+          saveToStorage(storageKeys.userData, userData);
         }
       } else {
-        saveToStorage(STORAGE_KEYS.userData, userData);
+        saveToStorage(storageKeys.userData, userData);
       }
-    }, 300);
+    }, 100);
     return () => {
       if (saveUserDataTimerRef.current) {
         clearTimeout(saveUserDataTimerRef.current);
       }
     };
-  }, [userData, canAccessData]);
+  }, [userData, canAccessData, storageKeys]);
 
   // Index des validations par date
   const validationsByDate = useMemo(() => {
@@ -679,14 +703,33 @@ function useQuietQuestEngineImpl() {
     return list.some((v) => v.queteId === questId);
   };
 
-  const persistValidationsSnapshot = useCallback((arr) => {
+  const persistFullSnapshot = useCallback((overrides = {}) => {
     if (typeof window === 'undefined' || isLoadingRef.current) return;
-    const limited = arr.length > 5000 ? arr.slice(arr.length - 5000) : arr;
-    saveToStorage(STORAGE_KEYS.validations, limited);
+    const keys = storageKeysRef.current;
+    const quests = overrides.quests ?? allQuestsRef.current;
+    const vals = overrides.validations ?? validationsRef.current;
+    const ud = overrides.userData ?? userDataRef.current;
+    const daily = overrides.dailyPerformances ?? dailyPerformancesRef.current;
+    const limitedVals = vals.length > 5000 ? vals.slice(vals.length - 5000) : vals;
+    const limitedDaily =
+      daily.length > 366 ? daily.slice(daily.length - 366) : daily;
+    saveToStorage(keys.quests, quests);
+    saveToStorage(keys.validations, limitedVals);
+    saveToStorage(keys.userData, ud);
+    saveToStorage(keys.dailyPerformances, limitedDaily);
     if (dbRef.current && storageModeRef.current === 'indexeddb') {
-      saveValidationsToIndexedDB(dbRef.current, limited, userId).catch(() => {});
+      const uid = userIdRef.current;
+      const db = dbRef.current;
+      void saveQuestsToIndexedDB(db, quests, uid).catch(() => {});
+      void saveValidationsToIndexedDB(db, limitedVals, uid).catch(() => {});
+      void saveUserDataToIndexedDB(db, ud, uid).catch(() => {});
+      void saveDailyPerformancesToIndexedDB(db, limitedDaily, uid).catch(() => {});
     }
-  }, [userId]);
+  }, []);
+
+  const persistValidationsSnapshot = useCallback((arr) => {
+    persistFullSnapshot({ validations: arr });
+  }, [persistFullSnapshot]);
 
   const updateUserXP = (delta) => {
     if (!delta) return;
@@ -705,9 +748,9 @@ function useQuietQuestEngineImpl() {
 
       const next = { level, currentXP, xpForNextLevel };
       if (typeof window !== 'undefined' && !isLoadingRef.current) {
-        saveToStorage(STORAGE_KEYS.userData, next);
+        saveToStorage(storageKeysRef.current.userData, next);
         if (dbRef.current && storageModeRef.current === 'indexeddb') {
-          saveUserDataToIndexedDB(dbRef.current, next, userId).catch(() => {});
+          saveUserDataToIndexedDB(dbRef.current, next, userIdRef.current).catch(() => {});
         }
       }
       return next;
@@ -733,6 +776,20 @@ function useQuietQuestEngineImpl() {
       return result;
     };
   }, [effectiveQuests, prayerLocation]);
+
+  /** Sauvegarde immédiate (création / édition) sans attendre le debounce. */
+  const flushQuestsPersistence = useCallback(() => {
+    if (!canAccessData || isLoadingRef.current) return;
+    if (saveQuestsTimerRef.current) {
+      clearTimeout(saveQuestsTimerRef.current);
+      saveQuestsTimerRef.current = null;
+    }
+    const currentQuests = allQuestsRef.current;
+    if (storageModeRef.current === 'indexeddb' && dbRef.current) {
+      void saveQuestsToIndexedDB(dbRef.current, currentQuests, userIdRef.current).catch(() => {});
+    }
+    saveToStorage(storageKeysRef.current.quests, currentQuests);
+  }, [canAccessData]);
 
   const recalcDailyPerformanceForDate = (date) => {
     if (!date) return;
@@ -908,11 +965,15 @@ function useQuietQuestEngineImpl() {
     return () => window.removeEventListener('prayerLocationUpdated', onPrayerLocationUpdated);
   }, []);
 
-  const setPrayerLocation = useCallback((loc) => {
-    setPrayerLocationState(loc);
-    const appState = loadFromStorage(STORAGE_KEYS.appState, {});
-    saveToStorage(STORAGE_KEYS.appState, { ...appState, prayerLocation: loc || undefined });
-  }, []);
+  const setPrayerLocation = useCallback(
+    (loc) => {
+      invalidateQuestsDateCache();
+      setPrayerLocationState(loc);
+      const appState = loadFromStorage(storageKeysRef.current.appState, {});
+      saveToStorage(storageKeysRef.current.appState, { ...appState, prayerLocation: loc || undefined });
+    },
+    [invalidateQuestsDateCache]
+  );
 
   return {
     allQuests: effectiveQuests,
@@ -931,6 +992,7 @@ function useQuietQuestEngineImpl() {
     todayDate, // Date du jour, mise à jour après minuit (quêtes “aujourd’hui” décochées)
     prayerLocation,
     setPrayerLocation,
+    flushQuestsPersistence,
   };
 }
 

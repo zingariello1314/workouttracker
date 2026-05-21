@@ -21,6 +21,198 @@ const recordBelongsToUser = (record, userId) => {
 };
 
 /**
+<<<<<<< HEAD
+=======
+ * Ouvre la base WorkoutTrackerDB et garantit l'existence des stores QuietQuest.
+ * Retourne null si IndexedDB n'est pas disponible ou en cas d'échec non récupérable.
+ */
+export const openQuietQuestDB = () => {
+  return new Promise((resolve) => {
+    if (typeof window === 'undefined' || !window.indexedDB) {
+      resolve(null);
+      return;
+    }
+
+    const request = indexedDB.open(DB_NAME);
+
+    request.onupgradeneeded = (event) => {
+      const db = event.target.result;
+
+      // Store : quietquest_quests
+      if (!db.objectStoreNames.contains(STORE_QUESTS)) {
+        console.log('[quietQuestIndexedDB] Création du store "quietquest_quests"');
+        const store = db.createObjectStore(STORE_QUESTS, { keyPath: 'id' });
+        try {
+          store.createIndex('categorie', 'categorie', { unique: false });
+          store.createIndex('active', 'active', { unique: false });
+          store.createIndex('type', 'type', { unique: false });
+          store.createIndex('date', 'date', { unique: false });
+          store.createIndex('userId', 'userId', { unique: false });
+        } catch (e) {
+          // Index non critique
+        }
+      } else {
+        // Ajouter index userId si absent (migration)
+        const store = event.target.transaction.objectStore(STORE_QUESTS);
+        const indexNames = Array.from(store.indexNames);
+        if (!indexNames.includes('userId')) {
+          try {
+            store.createIndex('userId', 'userId', { unique: false });
+            console.log('[quietQuestIndexedDB] Index userId créé pour quests');
+          } catch {
+            // Index optionnel
+          }
+        }
+      }
+
+      // Store : quietquest_validations
+      if (!db.objectStoreNames.contains(STORE_VALIDATIONS)) {
+        console.log('[quietQuestIndexedDB] Création du store "quietquest_validations"');
+        const store = db.createObjectStore(STORE_VALIDATIONS, {
+          keyPath: ['queteId', 'date'],
+          autoIncrement: false,
+        });
+        try {
+          store.createIndex('queteId', 'queteId', { unique: false });
+          store.createIndex('date', 'date', { unique: false });
+          store.createIndex('userId', 'userId', { unique: false });
+        } catch (e) {
+          // Index non critique
+        }
+      } else {
+        const store = event.target.transaction.objectStore(STORE_VALIDATIONS);
+        const indexNames = Array.from(store.indexNames);
+        if (!indexNames.includes('userId')) {
+          try {
+            store.createIndex('userId', 'userId', { unique: false });
+            console.log('[quietQuestIndexedDB] Index userId créé pour validations');
+          } catch {
+            // Index optionnel
+          }
+        }
+      }
+
+      // Store : quietquest_user_data
+      if (!db.objectStoreNames.contains(STORE_USER_DATA)) {
+        console.log('[quietQuestIndexedDB] Création du store "quietquest_user_data"');
+        db.createObjectStore(STORE_USER_DATA, { keyPath: 'userId' });
+      }
+
+      // Store : quietquest_daily_performances
+      if (!db.objectStoreNames.contains(STORE_DAILY_PERFORMANCES)) {
+        console.log('[quietQuestIndexedDB] Création du store "quietquest_daily_performances"');
+        const store = db.createObjectStore(STORE_DAILY_PERFORMANCES, {
+          keyPath: ['userId', 'date'],
+        });
+        try {
+          store.createIndex('date', 'date', { unique: false });
+          store.createIndex('userId', 'userId', { unique: false });
+        } catch (e) {
+          // Index non critique
+        }
+      } else {
+        const store = event.target.transaction.objectStore(STORE_DAILY_PERFORMANCES);
+        const indexNames = Array.from(store.indexNames);
+        if (!indexNames.includes('userId')) {
+          try {
+            store.createIndex('userId', 'userId', { unique: false });
+            console.log('[quietQuestIndexedDB] Index userId créé pour daily_performances');
+          } catch {
+            // Index optionnel
+          }
+        }
+      }
+
+      // Store : quietquest_app_state
+      if (!db.objectStoreNames.contains(STORE_APP_STATE)) {
+        console.log('[quietQuestIndexedDB] Création du store "quietquest_app_state"');
+        db.createObjectStore(STORE_APP_STATE, { keyPath: 'userId' });
+      }
+    };
+
+    request.onsuccess = (event) => {
+      const db = event.target.result;
+      // Vérifier que tous les stores existent
+      const requiredStores = [
+        STORE_QUESTS,
+        STORE_VALIDATIONS,
+        STORE_USER_DATA,
+        STORE_DAILY_PERFORMANCES,
+        STORE_APP_STATE,
+      ];
+      const missingStores = requiredStores.filter(
+        (name) => !db.objectStoreNames.contains(name)
+      );
+
+      if (missingStores.length > 0) {
+        console.warn(
+          `[quietQuestIndexedDB] ⚠️ Stores manquants: ${missingStores.join(', ')}. Forcer upgrade...`
+        );
+        const currentVersion = db.version;
+        db.close();
+        const upgradeRequest = indexedDB.open(DB_NAME, currentVersion + 1);
+        upgradeRequest.onupgradeneeded = (e) => {
+          const upgradeDb = e.target.result;
+          // Recréer les stores manquants
+          missingStores.forEach((storeName) => {
+            if (!upgradeDb.objectStoreNames.contains(storeName)) {
+              if (storeName === STORE_QUESTS) {
+                const store = upgradeDb.createObjectStore(STORE_QUESTS, { keyPath: 'id' });
+                try {
+                  store.createIndex('categorie', 'categorie', { unique: false });
+                  store.createIndex('active', 'active', { unique: false });
+                  store.createIndex('type', 'type', { unique: false });
+                  store.createIndex('date', 'date', { unique: false });
+                  store.createIndex('userId', 'userId', { unique: false });
+                } catch {}
+              } else if (storeName === STORE_VALIDATIONS) {
+                const store = upgradeDb.createObjectStore(STORE_VALIDATIONS, {
+                  keyPath: ['queteId', 'date'],
+                });
+                try {
+                  store.createIndex('queteId', 'queteId', { unique: false });
+                  store.createIndex('date', 'date', { unique: false });
+                  store.createIndex('userId', 'userId', { unique: false });
+                } catch {}
+              } else if (storeName === STORE_USER_DATA) {
+                upgradeDb.createObjectStore(STORE_USER_DATA, { keyPath: 'userId' });
+              } else if (storeName === STORE_DAILY_PERFORMANCES) {
+                const store = upgradeDb.createObjectStore(STORE_DAILY_PERFORMANCES, {
+                  keyPath: ['userId', 'date'],
+                });
+                try {
+                  store.createIndex('date', 'date', { unique: false });
+                  store.createIndex('userId', 'userId', { unique: false });
+                } catch {}
+              } else if (storeName === STORE_APP_STATE) {
+                upgradeDb.createObjectStore(STORE_APP_STATE, { keyPath: 'userId' });
+              }
+            }
+          });
+        };
+        upgradeRequest.onsuccess = (e) => {
+          console.log('[quietQuestIndexedDB] ✅ Base mise à jour avec tous les stores');
+          resolve(e.target.result);
+        };
+        upgradeRequest.onerror = () => resolve(null);
+        return;
+      }
+      resolve(db);
+    };
+
+    request.onerror = (event) => {
+      const error = event.target.error;
+      console.error(
+        '[quietQuestIndexedDB] Ouverture impossible (données conservées, fallback localStorage):',
+        error?.name || error
+      );
+      resolve(null);
+    };
+  });
+};
+
+/**
+>>>>>>> 9e0d966 (avancements au niveau de la remise a niveau de la sauvegarde des quetes de livre set ajouts d etrucs dans livres)
  * Charge toutes les quêtes depuis IndexedDB
  */
 export const loadQuestsFromIndexedDB = async (db, userId = 'main') => {

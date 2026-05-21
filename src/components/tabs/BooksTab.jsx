@@ -22,12 +22,15 @@ import BookFinder from '../BookFinder/BookFinder';
 import BooksCalendarView from '../books/BooksCalendarView';
 import ReadingSessionCriteriaSliders from '../books/ReadingSessionCriteriaSliders';
 import BookCompletionDialog from '../books/BookCompletionDialog';
+import BookCompletionRecap from '../books/BookCompletionRecap';
+import { BOOK_GENRES } from '../../data/bookGenres';
 import BookSessionFeedbackReadonly from '../books/BookSessionFeedbackReadonly';
 import {
   suggestPagesFromHistory,
   aggregateCriteriaMeansForBook,
   getBookDisplayRating,
   averageCriteriaScore,
+  suggestedPersonalScoreFromSessions,
 } from '../../utils/bookReadingRatings';
 
 // Hooks personnalisés
@@ -228,6 +231,29 @@ const BooksTab = () => {
 
   const { coverUrls, setCoverUrls, coverUrlsRef } = useBooksCovers(books, show3D);
 
+  const selectedBook = useMemo(
+    () => books.find((b) => b.id === selectedBookId) || null,
+    [books, selectedBookId]
+  );
+
+  const {
+    sessionForm,
+    sessionFormDirty,
+    setSessionForm,
+    handleSessionChange,
+    handleCriteriaRatingChange,
+    handleAddSession,
+    resetSessionForm,
+    editingSessionId,
+    startEditSession,
+    cancelEditSession,
+    pendingBookCompletion,
+    pendingBook,
+    dismissPendingBookCompletion,
+    confirmBookCompletion,
+    openBookCompletionModal,
+  } = useBooksSessions(books, setBooks, selectedBook, selectedBookId);
+
   const {
     form,
     setForm,
@@ -240,12 +266,9 @@ const BooksTab = () => {
     handleDelete,
     handleStatusChange,
     resetForm,
-  } = useBooksActions(books, setBooks, coverUrls, setCoverUrls, coverUrlsRef);
-
-  const selectedBook = useMemo(
-    () => books.find((b) => b.id === selectedBookId) || null,
-    [books, selectedBookId]
-  );
+  } = useBooksActions(books, setBooks, coverUrls, setCoverUrls, coverUrlsRef, {
+    onMarkCompleted: openBookCompletionModal,
+  });
 
   // Mettre à jour les brouillons quand on change de livre
   useEffect(() => {
@@ -285,21 +308,35 @@ const BooksTab = () => {
     return () => clearTimeout(timer);
   }, [selectedBookId, selectedBook]);
 
-  const {
-    sessionForm,
-    sessionFormDirty,
-    setSessionForm,
-    handleSessionChange,
-    handleCriteriaRatingChange,
-    handleAddSession,
-    resetSessionForm,
-    editingSessionId,
-    startEditSession,
-    cancelEditSession,
-    pendingBookCompletion,
-    dismissPendingBookCompletion,
-    confirmBookCompletion,
-  } = useBooksSessions(books, setBooks, selectedBook, selectedBookId);
+  const saveBookCompletionReview = useCallback(
+    (review) => {
+      if (!selectedBook) return;
+      const overall = averageCriteriaScore(review.criteriaRatings);
+      setBooks((prev) =>
+        prev.map((b) =>
+          b.id === selectedBook.id
+            ? {
+                ...b,
+                completionReview: {
+                  ...(b.completionReview || {}),
+                  criteriaRatings: review.criteriaRatings,
+                  impression: review.impression,
+                  overall,
+                  updatedAt: new Date().toISOString(),
+                },
+              }
+            : b
+        )
+      );
+    },
+    [selectedBook, setBooks]
+  );
+
+  const formDerivedScore = useMemo(() => {
+    const editingBook = form.id ? books.find((b) => b.id === form.id) : null;
+    const sessions = editingBook?.readingSessions || [];
+    return suggestedPersonalScoreFromSessions(sessions);
+  }, [form.id, books]);
 
   const {
     isImporting,
@@ -492,6 +529,8 @@ const BooksTab = () => {
     <>
       <BookCompletionDialog
         pending={pendingBookCompletion}
+        book={pendingBook}
+        allBooks={books}
         onConfirm={confirmBookCompletion}
         onDismiss={dismissPendingBookCompletion}
       />
@@ -637,17 +676,22 @@ const BooksTab = () => {
                           value={form.year}
                           onChange={(e) => handleChange('year', e.target.value)}
                         />
-                        <Input
+                        <Select
                           id="book-genre"
                           variant="glass"
                           label={t('books.form.genre', 'Genre')}
-                          placeholder={t(
-                            'books.form.genre.placeholder',
-                            'Ex : Science-Fiction, Essai...'
-                          )}
-                          value={form.genre}
+                          value={form.genre || ''}
                           onChange={(e) => handleChange('genre', e.target.value)}
-                        />
+                        >
+                          <option value="">
+                            {t('books.form.genre.choose', '— Choisir un genre —')}
+                          </option>
+                          {BOOK_GENRES.map((g) => (
+                            <option key={g} value={g}>
+                              {g}
+                            </option>
+                          ))}
+                        </Select>
                         <Input
                           id="book-pages"
                           type="number"
@@ -728,21 +772,28 @@ const BooksTab = () => {
                         />
                       </div>
 
-                      {/* Note perso */}
-                      <Input
-                        id="book-score"
-                        type="number"
-                        variant="glass"
-                        min={0}
-                        max={5}
-                        label={t('books.form.score', 'Note perso (0–5 étoiles)')}
-                        value={form.personalScore}
-                        onChange={(e) => handleChange('personalScore', e.target.value)}
-                        help={t(
-                          'books.form.score.help',
-                          'Cette note est purement indicative et reste locale.'
-                        )}
-                      />
+                      <div className="rounded-xl border-2 border-[#3A86FF]/40 bg-black/50 px-4 py-3">
+                        <p className="text-sm font-semibold text-[#bfdbfe] mb-1">
+                          {t('books.form.score', 'Note du livre')}
+                        </p>
+                        <p className="text-2xl font-mono text-sky-200">
+                          {formDerivedScore != null ? (
+                            <>
+                              {formDerivedScore.toFixed(1)}
+                              <span className="text-sm text-sky-300/70"> /10</span>
+                            </>
+                          ) : (
+                            <span className="text-sm text-slate-400 font-sans">
+                              Sera calculée après tes sessions de lecture (5 critères /10).
+                            </span>
+                          )}
+                        </p>
+                        <p className="text-xs text-[#93c5fd]/70 mt-2 leading-snug">
+                          La note affichée est toujours la moyenne des retours de chaque session
+                          (immersion, rythme, richesse, concentration, plaisir). Le bilan de fin
+                          s’ajoute quand tu marques le livre comme terminé.
+                        </p>
+                      </div>
 
                       {/* Boutons d'action en bas du formulaire */}
                       <div className="flex flex-wrap items-center gap-3 pt-2">
@@ -794,13 +845,22 @@ const BooksTab = () => {
                           <p className="font-semibold">
                             {t('books.filters.title', 'Filtres avancés')}
                           </p>
-                          <Input
+                          <Select
                             id="filter-genre"
                             variant="glass"
                             label={t('books.filters.genre', 'Filtrer par genre')}
                             value={filterGenre}
                             onChange={(e) => setFilterGenre(e.target.value)}
-                          />
+                          >
+                            <option value="">
+                              {t('books.filters.allGenres', 'Tous les genres')}
+                            </option>
+                            {BOOK_GENRES.map((g) => (
+                              <option key={g} value={g}>
+                                {g}
+                              </option>
+                            ))}
+                          </Select>
                           <div className="flex flex-col sm:flex-row gap-4">
                             <div className="flex-1 min-w-0">
                               <Input
@@ -1352,9 +1412,11 @@ const BooksTab = () => {
                                         <span className="text-[#93c5fd]/55">
                                           {' '}
                                           (
-                                          {disp.source === 'personal'
-                                            ? 'note personnelle'
-                                            : 'moyenne des sessions'}
+                                          {disp.source === 'sessions'
+                                            ? 'moyenne des sessions'
+                                            : disp.source === 'completion'
+                                              ? 'bilan de fin'
+                                              : '—'}
                                           )
                                         </span>
                                       </>
@@ -1796,6 +1858,13 @@ const BooksTab = () => {
                           </div>
                         </div>
                       </div>
+
+                      <BookCompletionRecap
+                        book={selectedBook}
+                        allBooks={books}
+                        onSaveReview={saveBookCompletionReview}
+                        onOpenCompletionForm={openBookCompletionModal}
+                      />
 
                       {/* Résumés et notes en dessous */}
                       {(() => {

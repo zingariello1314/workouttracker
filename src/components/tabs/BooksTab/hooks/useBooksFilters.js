@@ -8,6 +8,7 @@
 
 import React, { useState, useMemo, useCallback, useEffect } from 'react';
 import { SORT_MODES, PAGE_SIZE } from '../constants';
+import { normalizeBookGenre } from '../../../../data/bookGenres';
 
 /**
  * Hook de debounce personnalisé
@@ -62,7 +63,8 @@ export const useBooksFilters = (books = []) => {
 
     const matchesGenre = (book) => {
       if (!genreQuery) return true;
-      return (book.genre || '').toLowerCase().includes(genreQuery);
+      const bookGenre = normalizeBookGenre(book.genre).toLowerCase();
+      return bookGenre === genreQuery;
     };
 
     const matchesYear = (book) => {

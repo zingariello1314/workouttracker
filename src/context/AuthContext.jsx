@@ -18,6 +18,7 @@ export const useAuth = () => {
 export const AuthProvider = ({ children }) => {
   const {
     loadInitialAuth,
+    touchSession,
     register,
     login,
     logout,
@@ -60,6 +61,7 @@ export const AuthProvider = ({ children }) => {
     };
   }, [loadInitialAuth]);
 
+<<<<<<< HEAD
   /** Si le serveur était indisponible au premier chargement, retenter `/auth/refresh` au focus / retour en ligne (sans effacer le refresh token). */
   useEffect(() => {
     if (!isServerAuthMode()) return undefined;
@@ -95,6 +97,19 @@ export const AuthProvider = ({ children }) => {
       window.removeEventListener('focus', scheduleRetry);
     };
   }, [loading, currentUser, loadInitialAuth]);
+=======
+  // Prolonger la session locale à chaque retour sur l'onglet (évite déconnexion au F5)
+  useEffect(() => {
+    if (!currentUser?.id) return undefined;
+    const renew = () => {
+      if (typeof document !== 'undefined' && document.visibilityState !== 'visible') return;
+      touchSession(currentUser.id, rememberMe).catch(() => {});
+    };
+    renew();
+    document.addEventListener('visibilitychange', renew);
+    return () => document.removeEventListener('visibilitychange', renew);
+  }, [currentUser?.id, rememberMe, touchSession]);
+>>>>>>> 9e0d966 (avancements au niveau de la remise a niveau de la sauvegarde des quetes de livre set ajouts d etrucs dans livres)
 
   const handleRegister = useCallback(
     async ({ username, email, password, firstName, lastName, emailVerifiedAtSignup = false }) => {

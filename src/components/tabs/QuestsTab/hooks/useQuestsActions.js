@@ -43,7 +43,7 @@ const stripMultiSlotFields = (quest) => {
  * @param {Function} setAllQuests - Fonction pour mettre à jour les quêtes
  * @returns {Object} { questForm, setQuestForm, showQuestPopup, setShowQuestPopup, editingQuestId, ...actions }
  */
-export const useQuestsActions = (allQuests = [], setAllQuests) => {
+export const useQuestsActions = (allQuests = [], setAllQuests, flushQuestsPersistence) => {
   const { showSuccess, showError } = useToast();
   
   const [showQuestPopup, setShowQuestPopup] = useState(false);
@@ -65,6 +65,7 @@ export const useQuestsActions = (allQuests = [], setAllQuests) => {
     multiSlotsEnabled: false,
     multiSlots: createDefaultMultiSlots(),
     completeWithTodaySportExercise: false,
+    completeWithTodaySportStretch: false,
   });
 
   const openNewQuestPopup = useCallback(() => {
@@ -86,6 +87,7 @@ export const useQuestsActions = (allQuests = [], setAllQuests) => {
       multiSlotsEnabled: false,
       multiSlots: createDefaultMultiSlots(),
       completeWithTodaySportExercise: false,
+      completeWithTodaySportStretch: false,
     });
     setShowQuestPopup(true);
   }, []);
@@ -111,6 +113,7 @@ export const useQuestsActions = (allQuests = [], setAllQuests) => {
       multiSlotsEnabled: false,
       multiSlots: createDefaultMultiSlots(),
       completeWithTodaySportExercise: quest.completeWithTodaySportExercise === true,
+      completeWithTodaySportStretch: quest.completeWithTodaySportStretch === true,
     });
     setShowQuestPopup(true);
   }, [allQuests]);
@@ -222,7 +225,10 @@ export const useQuestsActions = (allQuests = [], setAllQuests) => {
 
     showSuccess(isEditing ? 'Quête modifiée avec succès' : 'Quête créée avec succès');
     setShowQuestPopup(false);
-  }, [questForm, editingQuestId, setAllQuests, showSuccess, showError]);
+    if (typeof flushQuestsPersistence === 'function') {
+      flushQuestsPersistence();
+    }
+  }, [questForm, editingQuestId, setAllQuests, flushQuestsPersistence, showSuccess, showError]);
 
   const toggleQuestActive = useCallback((id) => {
     setAllQuests((prev) =>

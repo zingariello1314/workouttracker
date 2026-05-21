@@ -26,14 +26,21 @@ import {
   resolveBestRepsStorageKey,
   findLatestExerciseWeightValue
 } from '../../utils/exerciseKeyGenerator';
-import { normalizeStretchSlots, countStretchItems } from '../../utils/stretchUtils';
+import { normalizeStretchSlots, countStretchItems, resolveEtirementsForDay } from '../../utils/stretchUtils';
+import { syncStretchLinkedQuests } from '../../utils/questStretchSync';
 import StretchList from './TodayTab/components/StretchList';
 import CircuitsTodaySection from './TodayTab/components/CircuitsTodaySection.jsx';
 import { intensityCoeffToStarCount, resolveExerciseIntensityCoeff } from '../../utils/trainingLoadUtils';
 import { exerciseUsesExternalLoad } from '../../utils/programUtils';
 import LoadDifficultyStars from '../sport/LoadDifficultyStars';
-import SessionEffortBlock from './TodayTab/components/SessionEffortBlock.jsx';
+import SessionTriplePerceivedBlock from './TodayTab/components/SessionTriplePerceivedBlock.jsx';
+import {
+  computeOverallSessionStars,
+  pickStoredSessionPerceived,
+  sessionPerceivedToPayload
+} from '../../utils/exerciseSessionPerceivedModel';
 import { computeTodaySessionComplexity } from '../../utils/todaySessionScore';
+import SessionRecordDatePicker from './TodayTab/components/SessionRecordDatePicker';
 import RecordPerformanceModal from '../sport/performance/RecordPerformanceModal';
 import { applyPerformanceEntryToData } from '../../utils/exercisePerformanceUtils';
 import {
@@ -188,6 +195,7 @@ const TodayTab = () => {
     setIsGymMode,
     workoutDayOverride,
     setWorkoutDayOverride,
+    setCurrentDate,
     hasUnsavedExercises,
     hasUnsavedStretches,
     saveExerciseChanges,
@@ -222,6 +230,7 @@ const TodayTab = () => {
     isQuestCompletedOnDate,
     todayDate: quietEngineToday,
     prayerLocation,
+    getQuestsForDate: getQuestsForDateMemoized,
   } = useQuietQuestEngine();
   const nutritionData = useNutritionData();
   const [showPerformanceModal, setShowPerformanceModal] = useState(false);
@@ -471,6 +480,52 @@ const TodayTab = () => {
       getTodayWorkout,
       isGymMode,
     ]
+  );
+
+  /** Quêtes « Étirements » liées : sync matin/midi/soir ↔ validations quêtes. */
+  const syncStretchLinkedQuestsWithSnapshot = useCallback(
+    (date, dataSnapshot) => {
+      const calendarDateStr = getDateStr(date);
+      if (!calendarDateStr || calendarDateStr !== quietEngineToday) return;
+      if (!Array.isArray(quietQuests) || quietQuests.length === 0) return;
+      const stretchDay = workoutDayOverride || getDayName(date);
+      const workoutForDay = getTodayWorkout(date, isGymMode);
+      const resolved = resolveEtirementsForDay(
+        workoutForDay?.etirements,
+        stretchDay,
+        workoutProgram
+      );
+      syncStretchLinkedQuests({
+        date,
+        dataSnapshot,
+        allQuests: quietQuests,
+        prayerLocation,
+        isQuestCompletedOnDate,
+        toggleQuestValidation,
+        getQuestsForDate: getQuestsForDateMemoized,
+        resolvedEtirements: resolved,
+        effectiveStretchDay: stretchDay,
+      });
+    },
+    [
+      quietEngineToday,
+      quietQuests,
+      prayerLocation,
+      isQuestCompletedOnDate,
+      toggleQuestValidation,
+      getQuestsForDateMemoized,
+      getTodayWorkout,
+      isGymMode,
+      workoutDayOverride,
+      workoutProgram,
+    ]
+  );
+
+  const handleStretchDataChange = useCallback(
+    (nextSnapshot) => {
+      syncStretchLinkedQuestsWithSnapshot(currentDate, nextSnapshot);
+    },
+    [currentDate, syncStretchLinkedQuestsWithSnapshot]
   );
 
   // Fonction pour gérer le clic sur une case à cocher avec auto-remplissage
@@ -923,6 +978,7 @@ const TodayTab = () => {
   const workout = getTodayWorkout(currentDate, isGymMode);
   const dateStr = getDateStr(currentDate);
   const dayName = getDayName(currentDate);
+<<<<<<< HEAD
   const calendarTodayYmd = getDateStr(new Date());
   const canGoForwardSportDay = dateStr < calendarTodayYmd;
 
@@ -1008,23 +1064,37 @@ const TodayTab = () => {
       </button>
     </div>
   );
+=======
+  const isRecordingRealToday = dateStr === getDateStr(new Date());
+>>>>>>> 9e0d966 (avancements au niveau de la remise a niveau de la sauvegarde des quetes de livre set ajouts d etrucs dans livres)
 
-  const updateSessionEffortStarsToday = useCallback(
-    (exercise, starCount) => {
+  const updateSessionPerceivedToday = useCallback(
+    (exercise, draft, overallStars) => {
       const currentData = getCurrentData();
       const keyOpts = { isGymMode, workoutIsGymMode: workout?.isGymMode };
       const primaryKey = generateSmartExerciseKey(currentDate, exercise.id, keyOpts);
       const keys = collectExerciseKeysForWorkoutExercise(currentDate, exercise, keyOpts);
-      const next = { ...(currentData.exerciseSessionEffortStars || {}) };
+      const nextPerceived = { ...(currentData.exerciseSessionPerceived || {}) };
+      const nextStars = { ...(currentData.exerciseSessionEffortStars || {}) };
       keys.forEach((k) => {
-        if (k !== primaryKey) delete next[k];
+        if (k !== primaryKey) {
+          delete nextPerceived[k];
+          delete nextStars[k];
+        }
       });
-      const n = Math.round(Number(starCount));
-      if (!Number.isFinite(n) || n < 1 || n > 5) delete next[primaryKey];
-      else next[primaryKey] = n;
+      const payload = sessionPerceivedToPayload(draft);
+      const overall =
+        overallStars != null
+          ? Math.round(Number(overallStars))
+          : computeOverallSessionStars(draft);
+      if (payload) nextPerceived[primaryKey] = payload;
+      else delete nextPerceived[primaryKey];
+      if (Number.isFinite(overall) && overall >= 1 && overall <= 5) nextStars[primaryKey] = overall;
+      else delete nextStars[primaryKey];
       updateTempExerciseData({
         ...currentData,
-        exerciseSessionEffortStars: next
+        exerciseSessionPerceived: nextPerceived,
+        exerciseSessionEffortStars: nextStars
       });
     },
     [getCurrentData, updateTempExerciseData, currentDate, isGymMode, workout?.isGymMode]
@@ -1344,11 +1414,29 @@ const TodayTab = () => {
   //   - tableau ({ matin: [{...}], midi: [...], soir: [...] })  ← nouveau format
   //   - chaîne ({ matin: "...", midi: "..." })                  ← legacy
   //   - objet enrichi ({ matin: { instructions, ... } })        ← exporté/importé
+  const effectiveStretchDay = workoutDayOverride || dayName;
+  const resolvedWorkoutEtirements = useMemo(
+    () => resolveEtirementsForDay(workout?.etirements, effectiveStretchDay, workoutProgram),
+    [workout?.etirements, effectiveStretchDay]
+  );
   const normalizedTodayStretches = useMemo(
-    () => normalizeStretchSlots(workout?.etirements, dayName),
-    [workout?.etirements, dayName]
+    () => normalizeStretchSlots(resolvedWorkoutEtirements, effectiveStretchDay),
+    [resolvedWorkoutEtirements, effectiveStretchDay]
   );
   const hasStretchesContent = countStretchItems(normalizedTodayStretches) > 0;
+
+  useEffect(() => {
+    if (!hasStretchesContent || !Array.isArray(quietQuests) || quietQuests.length === 0) return;
+    syncStretchLinkedQuestsWithSnapshot(currentDate, getCurrentData());
+  }, [
+    hasStretchesContent,
+    normalizedTodayStretches,
+    quietQuests,
+    quietEngineToday,
+    currentDate,
+    syncStretchLinkedQuestsWithSnapshot,
+    getCurrentData,
+  ]);
 
   /** Jour sans exercices : n’afficher l’écran « jour de repos » plein écran que s’il n’y a pas non plus d’étirements prévus */
   if ((!workout.exercices || workout.exercices.length === 0) && !hasStretchesContent) {
@@ -1358,7 +1446,11 @@ const TodayTab = () => {
     
     return (
       <div className="max-w-4xl mx-auto px-4 py-6 space-y-6">
+<<<<<<< HEAD
         {sportSessionDateNavRow}
+=======
+        <SessionRecordDatePicker />
+>>>>>>> 9e0d966 (avancements au niveau de la remise a niveau de la sauvegarde des quetes de livre set ajouts d etrucs dans livres)
         <div className="text-center py-12 bg-black rounded-xl border-2 border-[#0F4C5C]/70">
           <div className="text-teal-200/80 mb-4">
             <div className="text-6xl mb-4">🎉</div>
@@ -1469,13 +1561,18 @@ const TodayTab = () => {
                   }`}
                   title={isCurrentDay ? t('today.workout.todayWorkout', "Entraînement du jour") : t('today.workout.useDayWorkout', "Afficher et faire l'entraînement du {{day}}", { day: label })}
                 >
-                  {isCurrentDay ? t('today.workout.today', "Aujourd'hui") : label}
+                  {isCurrentDay
+                    ? isRecordingRealToday
+                      ? t('today.workout.today', "Aujourd'hui")
+                      : label
+                    : label}
                 </button>
               );
             })}
           </div>
           {workoutDayOverride && (
             <p className="text-xs text-amber-400/90 mt-2">
+<<<<<<< HEAD
               {dateStr < calendarTodayYmd
                 ? t('today.workout.overrideHintForDate', {
                     day: workoutDayOverride.charAt(0).toUpperCase() + workoutDayOverride.slice(1),
@@ -1488,6 +1585,16 @@ const TodayTab = () => {
                 : t('today.workout.overrideHint', {
                     day: workoutDayOverride.charAt(0).toUpperCase() + workoutDayOverride.slice(1)
                   })}
+=======
+              {t('today.workout.overrideHint', "Tu affiches l'entraînement du {{day}}. Coches et reps sont enregistrées pour le {{date}}.", {
+                day: workoutDayOverride.charAt(0).toUpperCase() + workoutDayOverride.slice(1),
+                date: currentDate.toLocaleDateString('fr-FR', {
+                  weekday: 'long',
+                  day: 'numeric',
+                  month: 'long',
+                }),
+              })}
+>>>>>>> 9e0d966 (avancements au niveau de la remise a niveau de la sauvegarde des quetes de livre set ajouts d etrucs dans livres)
             </p>
           )}
         </div>
@@ -1503,7 +1610,11 @@ const TodayTab = () => {
         </button>
       </div>
 
+<<<<<<< HEAD
       {sportSessionDateNavRow}
+=======
+      <SessionRecordDatePicker />
+>>>>>>> 9e0d966 (avancements au niveau de la remise a niveau de la sauvegarde des quetes de livre set ajouts d etrucs dans livres)
 
       {workout?.exercices?.length > 0 && (
         <div className="flex flex-wrap items-center gap-3 rounded-xl border-2 border-[#0F5C45]/45 bg-black px-4 py-3 text-sm text-teal-100/90">
@@ -1916,6 +2027,7 @@ const TodayTab = () => {
 
                   {isChecked && (
                     <div className="w-full pt-3 mt-1 border-t border-[#0F4C5C]/45">
+<<<<<<< HEAD
                       <p className="text-[11px] font-medium text-amber-200/90 mb-0.5">
                         {t('today.exercises.sessionEffortDifficulty', 'Charge / difficulté perçue')}
                       </p>
@@ -1939,6 +2051,20 @@ const TodayTab = () => {
                           'today.exercises.sessionPleasureHint',
                           'Plus d’étoiles = meilleure séance. Les deux notes affinent l’analyse.'
                         )}
+=======
+                      <p className="text-[11px] font-medium text-amber-200/90 mb-1.5">
+                        {t('today.exercises.sessionEffortLabel', 'Ressenti de la séance')}
+                      </p>
+                      <SessionTriplePerceivedBlock
+                        idPrefix={`today-ex-${exercise.id}`}
+                        persistedDraft={pickStoredSessionPerceived(
+                          getCurrentData(),
+                          keys,
+                          primaryKeyForStars
+                        )}
+                        suggestedStars={sessionEffortStars ?? coefStarCount}
+                        onChange={(draft, overall) => updateSessionPerceivedToday(exercise, draft, overall)}
+>>>>>>> 9e0d966 (avancements au niveau de la remise a niveau de la sauvegarde des quetes de livre set ajouts d etrucs dans livres)
                       />
                     </div>
                   )}
@@ -2161,7 +2287,11 @@ const TodayTab = () => {
             </h3>
           </div>
 
-          <StretchList stretches={workout?.etirements} date={currentDate} />
+          <StretchList
+            stretches={resolvedWorkoutEtirements}
+            date={currentDate}
+            onAfterStretchDataChange={handleStretchDataChange}
+          />
 
           {hasUnsavedStretches && (
             <div className="mt-6 pt-4 border-t border-[#0F4C5C]/40">

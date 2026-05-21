@@ -44,7 +44,10 @@ const NutritionTab = () => {
   const nutritionData = useNutritionData();
   const garminData = useGarminData();
   const { data: workoutData } = useWorkout();
-  const progressEntries = workoutData?.progressEntries ?? [];
+  const progressEntries = useMemo(() => {
+    const entries = workoutData?.progressEntries;
+    return Array.isArray(entries) ? entries : [];
+  }, [workoutData?.progressEntries]);
   const t = useTranslation();
 
   // Émettre un événement lors du changement de section pour la rotation des images de profil
@@ -213,7 +216,7 @@ const NutritionTab = () => {
         {renderSection(
           'programs',
           NutritionPrograms,
-          { nutritionData, progressEntries },
+          { nutritionData, progressEntries, isVisible: activeSection === 'programs' },
           t('nutrition.skeletons.programs')
         )}
         

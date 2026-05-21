@@ -45,11 +45,15 @@ const NutritionJournal = ({ selectedDate, onDateChange, nutritionData, garminDat
   const config = useMemo(() => getNutritionConfig(), []);
   const enablePrefetching = config.features.enablePrefetching ?? true;
 
-  // ✅ PHASE 12.2 : Utiliser hooks Observer pour synchronisation automatique
-  // Les données se mettent à jour automatiquement via Observer pattern
-  const [dailyMeal, refreshDailyMeal, { loading: loadingDailyMeal, error: errorDailyMeal }] = useDailyMeal(dateStr);
-  const [meals, refreshMeals, { loading: loadingMeals, error: errorMeals }] = useMealsByDate(dateStr);
-  const [activeProgram, refreshActiveProgram, { loading: loadingProgram, error: errorProgram }] = useActiveProgram();
+  // ✅ Ne charger / s’abonner que si l’onglet Journal est visible (évite freeze autres sous-onglets)
+  const observerOptions = useMemo(() => ({ enabled: isVisible }), [isVisible]);
+
+  const [dailyMeal, refreshDailyMeal, { loading: loadingDailyMeal, error: errorDailyMeal }] =
+    useDailyMeal(dateStr, observerOptions);
+  const [meals, refreshMeals, { loading: loadingMeals, error: errorMeals }] =
+    useMealsByDate(dateStr, observerOptions);
+  const [activeProgram, refreshActiveProgram, { loading: loadingProgram, error: errorProgram }] =
+    useActiveProgram(observerOptions);
 
   // ✅ OPTIMISATION Phase 15.2 : Prefetching intelligent jour suivant/précédent
   // Précharge automatiquement J±1 avec requestIdleCallback (non bloquant)

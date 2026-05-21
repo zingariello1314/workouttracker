@@ -171,7 +171,7 @@ const ProgrammeItem = React.memo(({ program, isActive, isActivating, onEdit, onA
 
 ProgrammeItem.displayName = 'ProgrammeItem';
 
-const NutritionPrograms = ({ nutritionData, progressEntries = [] }) => {
+const NutritionPrograms = ({ nutritionData, progressEntries = [], isVisible = true }) => {
   const { showSuccess, showError } = useToast();
   const [programs, setPrograms] = useState([]);
   const [activeProgram, setActiveProgram] = useState(null);
@@ -188,12 +188,19 @@ const NutritionPrograms = ({ nutritionData, progressEntries = [] }) => {
   // ✅ OPTIMISATION 6.1 : Ref pour cleanup async operations
   const isMountedRef = useRef(true);
   const lastAdaptSignatureRef = useRef('');
+  const progressEntriesRef = useRef(progressEntries);
+  progressEntriesRef.current = progressEntries;
+  const autoAdaptForProgramIdRef = useRef(null);
 
   // ✅ OPTIMISATION 1.1 : Requêtes parallèles avec Promise.all (2x plus rapide)
   // ✅ OPTIMISATION 2.1 : useCallback pour stabilité React
   // ✅ OPTIMISATION 6.1 : Cleanup async operations pour éviter memory leaks
+  const nutritionDataRef = useRef(nutritionData);
+  nutritionDataRef.current = nutritionData;
+
   const loadPrograms = useCallback(async () => {
-    if (!nutritionData.dbReady) {
+    const nd = nutritionDataRef.current;
+    if (!nd?.dbReady) {
       if (isMountedRef.current) {
         setLoading(false);
       }
@@ -205,27 +212,11 @@ const NutritionPrograms = ({ nutritionData, progressEntries = [] }) => {
         setLoading(true);
       }
 
-      // ✅ OPTIMISATION 1.3 : Utiliser getAllProgramsWithActive (1 transaction au lieu de 2)
-      // ✅ OPTIMISATION 1.1 : Alternative : Requêtes parallèles si getAllProgramsWithActive non disponible
-      // Au lieu de 2 requêtes séquentielles (100ms), une seule transaction (~50ms) ou parallèle (~50ms)
-      let allPrograms, active;
-      
-      if (nutritionData.getAllProgramsWithActive) {
-        // ✅ Utiliser fonction optimisée (1 transaction)
-        const { programs: programsData, activeProgram: activeData } = await nutritionData.getAllProgramsWithActive();
-        allPrograms = programsData;
-        active = activeData;
-      } else {
-        // Fallback : Requêtes parallèles
-        const [programsData, activeData] = await Promise.all([
-          nutritionData.getAllPrograms(),
-          nutritionData.getActiveProgram()
-        ]);
-        allPrograms = programsData;
-        active = activeData;
-      }
+      const [allPrograms, active] = await Promise.all([
+        nd.getAllPrograms(),
+        nd.getActiveProgram()
+      ]);
 
-      // ✅ OPTIMISATION 6.1 : Vérifier si composant toujours monté avant setState
       if (isMountedRef.current) {
         setPrograms(allPrograms || []);
         setActiveProgram(active);
@@ -239,43 +230,57 @@ const NutritionPrograms = ({ nutritionData, progressEntries = [] }) => {
         setLoading(false);
       }
     }
-  }, [nutritionData.dbReady, nutritionData.getAllPrograms, nutritionData.getActiveProgram]);
+  }, [nutritionData.dbReady]);
 
-  // Charger programmes
   useEffect(() => {
     isMountedRef.current = true;
-    loadPrograms();
-
-    // ✅ OPTIMISATION 6.1 : Cleanup si composant démonté
     return () => {
       isMountedRef.current = false;
     };
-  }, [loadPrograms]);
+  }, []);
+
+  // Charger uniquement quand l’onglet Programmes est visible (évite requêtes en parallèle avec le Journal)
+  useEffect(() => {
+    if (!isVisible) return;
+    loadPrograms();
+  }, [isVisible, loadPrograms]);
 
   useEffect(() => {
+    if (!isVisible) return;
     const pending = readPendingQuizPrefill(PENDING_QUIZ_PREFILL_NUTRITION_KEY);
     if (!pending?.nutrition) return;
     setEditingProgram(null);
     setQuizPrefill(pending);
     setShowForm(true);
     clearPendingQuizPrefill(PENDING_QUIZ_PREFILL_NUTRITION_KEY);
-  }, []);
+  }, [isVisible]);
 
-  // Ajustement auto séparé pour éviter toute boucle de re-render dans l'onglet
+  // Ajustement auto : une fois par programme actif, en différé (ne bloque pas l’UI)
   useEffect(() => {
-    const runAutoAdapt = async () => {
-      if (!activeProgram || activeProgram.creationMode !== 'generated') return;
-      const latestImp = [...(progressEntries || [])]
+    if (!isVisible || loading || !activeProgram?.id) return;
+    if (autoAdaptForProgramIdRef.current === activeProgram.id) return;
+    autoAdaptForProgramIdRef.current = activeProgram.id;
+
+    const programSnapshot = activeProgram;
+    const timer = window.setTimeout(async () => {
+      if (!isMountedRef.current) return;
+      if (programSnapshot.creationMode !== 'generated') return;
+
+      const entries = progressEntriesRef.current || [];
+      const latestImp = [...entries]
         .filter((e) => e?.type === 'impedance' && e?.date)
         .sort((a, b) => String(b.date).localeCompare(String(a.date)))[0];
-      const signature = `${activeProgram.id}|${activeProgram.planProfile?.baselineWeightKg ?? ''}|${latestImp?.date ?? ''}|${latestImp?.weight ?? ''}`;
+      const signature = `${programSnapshot.id}|${programSnapshot.planProfile?.baselineWeightKg ?? ''}|${latestImp?.date ?? ''}|${latestImp?.weight ?? ''}`;
       if (signature === lastAdaptSignatureRef.current) return;
       lastAdaptSignatureRef.current = signature;
 
-      const adapted = adaptProgramFromLatestImpedance(activeProgram, progressEntries, { thresholdKg: 0.7 });
+      const adapted = adaptProgramFromLatestImpedance(programSnapshot, entries, { thresholdKg: 0.7 });
       if (!adapted) return;
+
       try {
-        const saved = await nutritionData.saveProgram(adapted);
+        const nd = nutritionDataRef.current;
+        const saveNow = nd?.saveProgramImmediate || nd?.saveProgram;
+        const saved = saveNow ? await saveNow(adapted) : false;
         if (!saved || !isMountedRef.current) return;
         setPrograms((prev) => prev.map((p) => (p.id === adapted.id ? adapted : p)));
         setActiveProgram(adapted);
@@ -283,9 +288,10 @@ const NutritionPrograms = ({ nutritionData, progressEntries = [] }) => {
       } catch (adaptErr) {
         log.warn('Ajustement auto du programme ignoré (non bloquant)', adaptErr);
       }
-    };
-    runAutoAdapt();
-  }, [activeProgram, progressEntries, nutritionData.saveProgram, showSuccess]);
+    }, 400);
+
+    return () => window.clearTimeout(timer);
+  }, [isVisible, loading, activeProgram, showSuccess]);
 
   // ✅ OPTIMISATION 1.2 : Optimistic updates + sync partielle (66% réduction requêtes)
   // ✅ OPTIMISATION 5.2 : Toasts pour feedback utilisateur

@@ -140,17 +140,22 @@ export function suggestedPersonalScoreFromSessions(sessions) {
   return Math.min(10, Math.max(1, Math.round(avg * 10) / 10));
 }
 
+/** Note livre = moyenne des notes de session (critères 1–10). */
+export function computeBookScoreFromSessions(sessions) {
+  return suggestedPersonalScoreFromSessions(sessions);
+}
+
 /**
- * @returns {{ value: number, source: 'personal' | 'sessions' | 'none' }}
+ * @returns {{ value: number, source: 'sessions' | 'completion' | 'none' }}
  */
 export function getBookDisplayRating(book) {
-  const p = Number(book?.personalScore);
-  if (Number.isFinite(p) && p > 0) {
-    return { value: Math.min(10, Math.max(0, p)), source: 'personal' };
+  const fromSessions = suggestedPersonalScoreFromSessions(book?.readingSessions);
+  if (fromSessions != null && fromSessions > 0) {
+    return { value: fromSessions, source: 'sessions' };
   }
-  const s = suggestedPersonalScoreFromSessions(book?.readingSessions);
-  if (s != null) {
-    return { value: s, source: 'sessions' };
+  const completionOverall = Number(book?.completionReview?.overall);
+  if (Number.isFinite(completionOverall) && completionOverall > 0) {
+    return { value: Math.min(10, completionOverall), source: 'completion' };
   }
   return { value: 0, source: 'none' };
 }

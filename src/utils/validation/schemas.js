@@ -7,6 +7,7 @@
  */
 
 import { z } from 'zod';
+import { normalizeBookGenre } from '../../data/bookGenres';
 
 // ============================================================================
 // SCHÉMAS COMMUNS
@@ -181,6 +182,8 @@ export const questSchema = z.object({
   ).optional().default([]),
   /** Catégorie Sport : cochet la quête le jour où au moins un exo programme est marqué fait (Aujourd’hui). */
   completeWithTodaySportExercise: z.boolean().optional().default(false),
+  /** Catégorie Étirements : sync avec les étirements cochés (Sport → Aujourd’hui), par créneau ou global. */
+  completeWithTodaySportStretch: z.boolean().optional().default(false),
   active: z.boolean()
     .default(true)
 }).refine(
@@ -220,10 +223,11 @@ export const bookSchema = z.object({
     .optional()
     .default('')
     .transform((val) => typeof val === 'string' ? val : String(val)),
-  genre: z.string()
-    .max(50, 'Le genre ne peut pas dépasser 50 caractères')
+  genre: z
+    .string()
     .optional()
-    .default(''),
+    .default('')
+    .transform((val) => normalizeBookGenre(val)),
   pages: z.union([
     z.string()
       .regex(/^\d+$/, 'Le nombre de pages doit être un nombre')

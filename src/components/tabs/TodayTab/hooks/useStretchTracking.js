@@ -78,7 +78,8 @@ export const useStretchTracking = (options = {}) => {
       stretchSessionEffortStars: nextStars
     };
     updateTempStretchData(newData);
-  }, [date, getCurrentData, updateTempStretchData]);
+    options.onAfterStretchDataChange?.(newData);
+  }, [date, getCurrentData, updateTempStretchData, options.onAfterStretchDataChange]);
 
   /**
    * Statut d'un étirement (legacy `moment` ou item individuel `moment + stretchId`).

@@ -12,6 +12,9 @@ import { bookSchema, validateWithSchema } from '../../../../utils/validation/sch
 import { saveBookCover } from '../../../../utils/booksAssetsStorage';
 import { emptyBookForm } from '../constants';
 import { readFileAsDataUrl } from '../utils';
+import { useAuth } from '../../../../context/AuthContext';
+import { suggestedPersonalScoreFromSessions } from '../../../../utils/bookReadingRatings';
+import { normalizeBookGenre } from '../../../../data/bookGenres';
 
 /**
  * Hook pour gérer les actions CRUD sur les livres
@@ -23,7 +26,15 @@ import { readFileAsDataUrl } from '../utils';
  * @param {Object} coverUrlsRef - Ref pour les URLs de couvertures
  * @returns {Object} { form, setForm, formCoverFile, setFormCoverFile, coverFormInputRef, ...actions }
  */
-export const useBooksActions = (books = [], setBooks, coverUrls, setCoverUrls, coverUrlsRef) => {
+export const useBooksActions = (
+  books = [],
+  setBooks,
+  coverUrls,
+  setCoverUrls,
+  coverUrlsRef,
+  { onMarkCompleted } = {}
+) => {
+  const { currentUser, isAuthenticated } = useAuth();
   const [form, setForm] = useState(emptyBookForm);
   const [formCoverFile, setFormCoverFile] = useState(null);
   const coverFormInputRef = useRef(null);
@@ -59,18 +70,25 @@ export const useBooksActions = (books = [], setBooks, coverUrls, setCoverUrls, c
     const nowIso = new Date().toISOString();
     const validatedBook = validation.data;
 
+    const existing = isEditing ? books.find((b) => b.id === id) : null;
+    const sessions = existing?.readingSessions || [];
+    const scoreFromSessions = suggestedPersonalScoreFromSessions(sessions);
+    const personalScore =
+      scoreFromSessions != null ? scoreFromSessions : 0;
+
     const baseBook = {
       id,
       title: validatedBook.title,
       author: validatedBook.author,
       year: validatedBook.year || '',
-      genre: validatedBook.genre || '',
+      genre: normalizeBookGenre(validatedBook.genre) || '',
       pages: validatedBook.pages || '',
       status: validatedBook.status,
       shortSummary: validatedBook.shortSummary || '',
       longSummary: validatedBook.longSummary || '',
       notes: validatedBook.shortSummary || '',
-      personalScore: validatedBook.personalScore || 0,
+      personalScore,
+      userId: existing?.userId || (isAuthenticated && currentUser ? currentUser.id : undefined),
     };
 
     let coverInlineDataUrl = null;
@@ -88,6 +106,7 @@ export const useBooksActions = (books = [], setBooks, coverUrls, setCoverUrls, c
                 hasCover: book.hasCover || !!formCoverFile,
                 coverInline: coverInlineDataUrl || book.coverInline || null,
                 createdAt: book.createdAt || nowIso,
+                updatedAt: nowIso,
               }
             : book
         );
@@ -100,6 +119,7 @@ export const useBooksActions = (books = [], setBooks, coverUrls, setCoverUrls, c
           coverInline: coverInlineDataUrl || null,
           readingSessions: [],
           createdAt: nowIso,
+          updatedAt: nowIso,
         },
         ...prev,
       ];
@@ -137,8 +157,35 @@ export const useBooksActions = (books = [], setBooks, coverUrls, setCoverUrls, c
       sidebarEvents.emit(SIDEBAR_EVENTS.BOOK_ADDED, { bookId: id });
     }
 
+    if (validatedBook.status === 'completed' && typeof onMarkCompleted === 'function') {
+      const snapshot = isEditing
+        ? {
+            ...(existing || {}),
+            ...baseBook,
+            readingSessions: existing?.readingSessions || [],
+          }
+        : {
+            ...baseBook,
+            hasCover: !!formCoverFile,
+            readingSessions: [],
+            createdAt: nowIso,
+          };
+      setTimeout(() => onMarkCompleted(snapshot), 50);
+    }
+
     resetForm();
-  }, [form, formCoverFile, setBooks, setCoverUrls, coverUrlsRef, resetForm]);
+  }, [
+    form,
+    formCoverFile,
+    setBooks,
+    setCoverUrls,
+    coverUrlsRef,
+    resetForm,
+    books,
+    isAuthenticated,
+    currentUser,
+    onMarkCompleted,
+  ]);
 
   const handleEdit = useCallback((book) => {
     setForm({
@@ -167,20 +214,28 @@ export const useBooksActions = (books = [], setBooks, coverUrls, setCoverUrls, c
     sidebarEvents.emit(SIDEBAR_EVENTS.BOOK_DELETED, { bookId: book.id });
   }, [setBooks]);
 
-  const handleStatusChange = useCallback((bookId, newStatus) => {
-    const today = new Date().toISOString().slice(0, 10);
-    setBooks((prevBooks) =>
-      prevBooks.map((b) => {
-        if (b.id !== bookId) return b;
-        const next = { ...b, status: newStatus };
-        if (newStatus === 'completed' && !b.finishedAt) {
-          next.finishedAt = today;
-        }
-        return next;
-      })
-    );
-    sidebarEvents.emit(SIDEBAR_EVENTS.BOOK_UPDATED, { bookId, statusChanged: true });
-  }, [setBooks]);
+  const handleStatusChange = useCallback(
+    (bookId, newStatus) => {
+      const today = new Date().toISOString().slice(0, 10);
+      const book = books.find((b) => b.id === bookId);
+      if (newStatus === 'completed' && book && typeof onMarkCompleted === 'function') {
+        onMarkCompleted(book);
+        return;
+      }
+      setBooks((prevBooks) =>
+        prevBooks.map((b) => {
+          if (b.id !== bookId) return b;
+          const next = { ...b, status: newStatus };
+          if (newStatus === 'completed' && !b.finishedAt) {
+            next.finishedAt = today;
+          }
+          return next;
+        })
+      );
+      sidebarEvents.emit(SIDEBAR_EVENTS.BOOK_UPDATED, { bookId, statusChanged: true });
+    },
+    [setBooks, books, onMarkCompleted]
+  );
 
   return {
     form,

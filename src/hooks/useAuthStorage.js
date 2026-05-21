@@ -118,6 +118,7 @@ export const useAuthStorage = () => {
     return true;
   };
 
+<<<<<<< HEAD
   // Chargement initial : tente d'auto‑connecter un utilisateur si rememberMe est actif
   const loadInitialAuth = useCallback(async () => {
     try {
@@ -151,6 +152,9 @@ export const useAuthStorage = () => {
         }
       }
 
+=======
+  const restoreLocalSession = useCallback(async () => {
+>>>>>>> 9e0d966 (avancements au niveau de la remise a niveau de la sauvegarde des quetes de livre set ajouts d etrucs dans livres)
       // 1) Priorité à la clé rememberMe dans localStorage
       let rememberedId = null;
       let rememberedExpiresAt = null;
@@ -227,11 +231,52 @@ export const useAuthStorage = () => {
       }
 
       return { user: null, rememberMe: false };
+  }, []);
+
+  // Chargement initial : serveur (refresh token) puis session locale IndexedDB / rememberMe
+  const loadInitialAuth = useCallback(async () => {
+    try {
+      const localFirst = await restoreLocalSession();
+      if (localFirst.user) {
+        return localFirst;
+      }
+
+      if (isServerAuthMode()) {
+        const { refreshToken } = readServerTokens();
+        if (refreshToken) {
+          try {
+            const refreshed = await serverRefresh(refreshToken);
+            const user = await upsertServerUserLocally(refreshed.user);
+            setServerTokens({
+              accessToken: refreshed.accessToken,
+              refreshToken: refreshed.refreshToken
+            });
+            await saveAuthState({
+              userId: user.id,
+              rememberMe: true,
+              expiresAt: computeSessionExpiry(true),
+              authSource: 'server'
+            });
+            try {
+              localStorage.setItem(REMEMBERED_KEY, user.id);
+              localStorage.setItem(REMEMBERED_EXPIRES_KEY, String(computeSessionExpiry(true)));
+            } catch {
+              // ignore
+            }
+            return { user, rememberMe: true };
+          } catch (error) {
+            clearServerTokens();
+            log.debug('Refresh serveur échoué, tentative session locale', error);
+          }
+        }
+      }
+
+      return { user: null, rememberMe: false };
     } catch (error) {
       log.error('Erreur loadInitialAuth', error);
       return { user: null, rememberMe: false };
     }
-  }, []);
+  }, [restoreLocalSession]);
 
   const register = useCallback(async ({
     username,
@@ -332,17 +377,16 @@ export const useAuthStorage = () => {
           expiresAt: computeSessionExpiry(!!rememberMe),
           authSource: 'server'
         });
-        if (rememberMe) {
+        try {
           localStorage.setItem(REMEMBERED_KEY, user.id);
           localStorage.setItem(REMEMBERED_EXPIRES_KEY, String(computeSessionExpiry(true)));
-        } else {
-          localStorage.removeItem(REMEMBERED_KEY);
-          localStorage.removeItem(REMEMBERED_EXPIRES_KEY);
+        } catch {
+          // ignore
         }
         void logAuthAuditEvent('login_success', {
           userId: user.id,
           username: user.username,
-          rememberMe: !!rememberMe,
+          rememberMe: true,
           source: 'server'
         });
         return { success: true, user };
@@ -372,25 +416,21 @@ export const useAuthStorage = () => {
 
     user = await maybeMigrateLegacyAdminRole(user);
     user = await decryptProfileSecretsUser(user);
+    const effectiveRemember = true;
     await saveAuthState({
       userId: user.id,
-      rememberMe: !!rememberMe,
-      expiresAt: computeSessionExpiry(!!rememberMe)
+      rememberMe: effectiveRemember,
+      expiresAt: computeSessionExpiry(effectiveRemember),
     });
 
     try {
-      if (rememberMe) {
-        localStorage.setItem(REMEMBERED_KEY, user.id);
-        localStorage.setItem(REMEMBERED_EXPIRES_KEY, String(computeSessionExpiry(true)));
-      } else {
-        localStorage.removeItem(REMEMBERED_KEY);
-        localStorage.removeItem(REMEMBERED_EXPIRES_KEY);
-      }
+      localStorage.setItem(REMEMBERED_KEY, user.id);
+      localStorage.setItem(REMEMBERED_EXPIRES_KEY, String(computeSessionExpiry(true)));
     } catch {
       // ignore
     }
 
-    log.debug('Login réussi', { userId: user.id, rememberMe: !!rememberMe });
+    log.debug('Login réussi', { userId: user.id, rememberMe: effectiveRemember });
     void logAuthAuditEvent('login_success', {
       userId: user.id,
       username: user.username,
@@ -550,8 +590,26 @@ export const useAuthStorage = () => {
     return result;
   }, []);
 
+  const touchSession = useCallback(async (userId, rememberMeFlag) => {
+    if (!userId) return;
+    await saveAuthState({
+      userId,
+      rememberMe: !!rememberMeFlag,
+      expiresAt: computeSessionExpiry(!!rememberMeFlag),
+    });
+    if (rememberMeFlag) {
+      try {
+        localStorage.setItem(REMEMBERED_KEY, userId);
+        localStorage.setItem(REMEMBERED_EXPIRES_KEY, String(computeSessionExpiry(true)));
+      } catch {
+        // ignore
+      }
+    }
+  }, []);
+
   return {
     loadInitialAuth,
+    touchSession,
     register,
     login,
     logout,

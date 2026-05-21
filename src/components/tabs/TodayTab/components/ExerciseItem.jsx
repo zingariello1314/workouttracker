@@ -24,7 +24,7 @@ import {
 } from '../../../../services/trainingPatterns/pyramidUserSignals';
 import { intensityCoeffToStarCount, resolveExerciseIntensityCoeff } from '../../../../utils/trainingLoadUtils';
 import LoadDifficultyStars from '../../../sport/LoadDifficultyStars';
-import SessionEffortBlock from './SessionEffortBlock';
+import SessionTriplePerceivedBlock from './SessionTriplePerceivedBlock';
 
 /**
  * Composant pour afficher un exercice individuel
@@ -44,6 +44,7 @@ import SessionEffortBlock from './SessionEffortBlock';
  * />
  */
 const ExerciseItem = ({ exercise, date, isGymMode, onShowVariations }) => {
+<<<<<<< HEAD
   const { toggleExercise, updateReps, updateSessionEffortStars, updateSessionPleasureStars, getExerciseStatus } =
     useExerciseTracking({
       date,
@@ -52,6 +53,15 @@ const ExerciseItem = ({ exercise, date, isGymMode, onShowVariations }) => {
   const { data, getCurrentData } = useWorkout();
 
   const { isChecked, reps, sessionEffortStars, sessionPleasureStars } = getExerciseStatus(exercise);
+=======
+  const { toggleExercise, updateReps, updateSessionPerceived, getExerciseStatus } = useExerciseTracking({
+    date,
+    isGymMode
+  });
+  const { data, getCurrentData } = useWorkout();
+
+  const { isChecked, reps, sessionEffortStars, sessionPerceived } = getExerciseStatus(exercise);
+>>>>>>> 9e0d966 (avancements au niveau de la remise a niveau de la sauvegarde des quetes de livre set ajouts d etrucs dans livres)
 
   const dateStr = useMemo(() => getDateStr(date), [date]);
   const trainingPattern = useMemo(() => {
@@ -146,11 +156,11 @@ const ExerciseItem = ({ exercise, date, isGymMode, onShowVariations }) => {
     }
   }, [exercise, onShowVariations]);
 
-  const handleSessionStars = useCallback(
-    (n) => {
-      updateSessionEffortStars(exercise, n);
+  const handleSessionPerceived = useCallback(
+    (draft, overall) => {
+      updateSessionPerceived(exercise, draft, overall);
     },
-    [exercise, updateSessionEffortStars]
+    [exercise, updateSessionPerceived]
   );
 
   const handleSessionPleasureStars = useCallback(
@@ -171,6 +181,7 @@ const ExerciseItem = ({ exercise, date, isGymMode, onShowVariations }) => {
         </div>
         {isChecked && (
           <div className="mt-2 pt-2 border-t border-slate-600/50 w-full">
+<<<<<<< HEAD
             <p className="text-[11px] font-medium text-amber-200/90 mb-0.5">Charge / difficulté perçue</p>
             <SessionEffortBlock
               idPrefix={`ex-${exercise.id}-effort`}
@@ -187,6 +198,14 @@ const ExerciseItem = ({ exercise, date, isGymMode, onShowVariations }) => {
               onChange={handleSessionPleasureStars}
               ariaGroupLabel={`Plaisir pour ${exercise.name}`}
               hintText="Plus d’étoiles = meilleure séance vécue. Enregistre pour affiner l’analyse avec la difficulté."
+=======
+            <p className="text-[11px] font-medium text-amber-200/90 mb-1.5">Ressenti de la séance</p>
+            <SessionTriplePerceivedBlock
+              idPrefix={`ex-${exercise.id}`}
+              persistedDraft={sessionPerceived}
+              suggestedStars={sessionEffortStars ?? coefStarCount}
+              onChange={handleSessionPerceived}
+>>>>>>> 9e0d966 (avancements au niveau de la remise a niveau de la sauvegarde des quetes de livre set ajouts d etrucs dans livres)
             />
           </div>
         )}

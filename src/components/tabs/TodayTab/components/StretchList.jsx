@@ -28,7 +28,7 @@ const MOMENT_META = {
  * @param {*} props.stretches - Source brute des étirements (string / objet / tableau)
  * @param {Date} props.date
  */
-const StretchList = memo(({ stretches, date }) => {
+const StretchList = memo(({ stretches, date, onAfterStretchDataChange }) => {
   const slots = useMemo(() => {
     const dayName = date ? getDayName(date) : null;
     return normalizeStretchSlots(stretches, dayName);
@@ -48,6 +48,7 @@ const StretchList = memo(({ stretches, date }) => {
             moment={moment}
             items={items}
             date={date}
+            onAfterStretchDataChange={onAfterStretchDataChange}
           />
         );
       })}
@@ -57,7 +58,7 @@ const StretchList = memo(({ stretches, date }) => {
 
 StretchList.displayName = 'StretchList';
 
-const MomentBlock = memo(({ moment, items, date }) => {
+const MomentBlock = memo(({ moment, items, date, onAfterStretchDataChange }) => {
   const meta = MOMENT_META[moment] || { label: moment, Icon: Sun, color: 'text-slate-400' };
   const { Icon } = meta;
   const ids = useMemo(() => items.map((it) => it.id), [items]);
@@ -85,6 +86,7 @@ const MomentBlock = memo(({ moment, items, date }) => {
             key={`${moment}_${item.id}`}
             item={item}
             date={date}
+            onAfterStretchDataChange={onAfterStretchDataChange}
           />
         ))}
       </div>

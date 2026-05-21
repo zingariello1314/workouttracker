@@ -59,7 +59,9 @@ const DEFAULT_BREAKDOWN = {
   circuitTripleAchievedDays: 0,
   circuitBonusRounds: 0,
   nutritionFoodItems: 0,
-  nutritionFoodXp: 0
+  nutritionFoodXp: 0,
+  intervalTrainingSessions: 0,
+  intervalTrainingXp: 0
 };
 
 let sportXpCache = {
@@ -68,11 +70,21 @@ let sportXpCache = {
   garminData: null
 };
 
+/** Invalide le cache module après modification reps / coches. */
+export const invalidateSportXpCache = () => {
+  sportXpCache = {
+    ...sportXpCache,
+    signature: null,
+    result: { totalXP: 0, breakdown: DEFAULT_BREAKDOWN }
+  };
+};
+
 export const useSportXP = () => {
   const { currentUser, isAuthenticated } = useAuth();
   const canAccessData = canAccessPrivateData({ user: currentUser, isAuthenticated });
   const {
     data,
+<<<<<<< HEAD
     tempData,
     hasUnsavedExercises,
     hasUnsavedStretches,
@@ -86,6 +98,20 @@ export const useSportXP = () => {
   const workoutData = useMemo(
     () => getCurrentData(),
     [getCurrentData, data, tempData, hasUnsavedExercises, hasUnsavedStretches]
+=======
+    programs,
+    activeProgram,
+    getExerciseNameById,
+    getCurrentData,
+    hasUnsavedExercises,
+    hasUnsavedStretches,
+    tempData
+  } = useWorkout();
+
+  const workoutData = useMemo(
+    () => getCurrentData(),
+    [data, getCurrentData, hasUnsavedExercises, hasUnsavedStretches, tempData]
+>>>>>>> 9e0d966 (avancements au niveau de la remise a niveau de la sauvegarde des quetes de livre set ajouts d etrucs dans livres)
   );
 
   const programsForCompletionXp = useMemo(() => {
@@ -197,14 +223,23 @@ export const useSportXP = () => {
         }
       };
     }
-    const totalReps = Object.values(workoutData.reps || {}).reduce((sum, reps) => {
-      return sum + (parseInt(reps) || 0);
-    }, 0);
+    let totalReps = 0;
+    collectDedupedCheckedVolumeKeys(workoutData).forEach((key) => {
+      totalReps += parseInt(workoutData.reps?.[key], 10) || 0;
+    });
     const coeffs = Object.values(workoutData.exerciseIntensityCoeffs || {});
     const coeffsChecksum = coeffs.reduce((sum, value) => sum + (Number(value) || 0), 0);
     const weights = Object.values(workoutData.exerciseWeights || {});
     const weightsChecksum = weights.reduce((sum, value) => sum + (Number(String(value).replace(',', '.')) || 0), 0);
-    const checkedExercises = Object.values(workoutData.checkedExercises || {}).filter(v => v === true).length;
+    let checkedExercises = 0;
+    let checkedKeysChecksum = 0;
+    for (const [k, v] of Object.entries(workoutData.checkedExercises || {})) {
+      if (v !== true) continue;
+      checkedExercises += 1;
+      for (let i = 0; i < k.length; i++) {
+        checkedKeysChecksum = (checkedKeysChecksum * 31 + k.charCodeAt(i)) | 0;
+      }
+    }
     const sessionsWithFeedback = workoutData.sessionFeedbacks ? Object.keys(workoutData.sessionFeedbacks).length : 0;
 
     // Étirements : on intègre le nombre cochés + un checksum des notes perçues dans la
@@ -339,6 +374,7 @@ export const useSportXP = () => {
       weights.length,
       Math.round(weightsChecksum * 1000),
       checkedExercises,
+      checkedKeysChecksum,
       sessionsWithFeedback,
       totalCalories,
       totalSteps,

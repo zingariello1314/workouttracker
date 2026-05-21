@@ -1,0 +1,264 @@
+{
+  "steps": 380,
+  "distance": 0.301,
+  "floors": 0,
+  "calories": {
+    "total": 102,
+    "active": 7,
+    "resting": 95
+  },
+  "heartRate": {
+    "resting": 59,
+    "max": 99,
+    "avg": 75,
+    "timeSeries": [
+      {
+        "timestamp": "2026-05-20T22:00:00Z",
+        "bpm": 64
+      },
+      {
+        "timestamp": "2026-05-20T22:02:00Z",
+        "bpm": 65
+      },
+      {
+        "timestamp": "2026-05-20T22:04:00Z",
+        "bpm": 65
+      },
+      {
+        "timestamp": "2026-05-20T22:06:00Z",
+        "bpm": 65
+      },
+      {
+        "timestamp": "2026-05-20T22:08:00Z",
+        "bpm": 66
+      },
+      {
+        "timestamp": "2026-05-20T22:10:00Z",
+        "bpm": 66
+      },
+      {
+        "timestamp": "2026-05-20T22:12:00Z",
+        "bpm": 78
+      },
+      {
+        "timestamp": "2026-05-20T22:14:00Z",
+        "bpm": 70
+      },
+      {
+        "timestamp": "2026-05-20T22:16:00Z",
+        "bpm": 68
+      },
+      {
+        "timestamp": "2026-05-20T22:18:00Z",
+        "bpm": 84
+      },
+      {
+        "timestamp": "2026-05-20T22:20:00Z",
+        "bpm": 70
+      },
+      {
+        "timestamp": "2026-05-20T22:22:00Z",
+        "bpm": 88
+      },
+      {
+        "timestamp": "2026-05-20T22:24:00Z",
+        "bpm": 87
+      },
+      {
+        "timestamp": "2026-05-20T22:26:00Z",
+        "bpm": 84
+      },
+      {
+        "timestamp": "2026-05-20T22:28:00Z",
+        "bpm": 75
+      },
+      {
+        "timestamp": "2026-05-20T22:30:00Z",
+        "bpm": 74
+      },
+      {
+        "timestamp": "2026-05-20T22:32:00Z",
+        "bpm": 82
+      },
+      {
+        "timestamp": "2026-05-20T22:34:00Z",
+        "bpm": 94
+      },
+      {
+        "timestamp": "2026-05-20T22:36:00Z",
+        "bpm": 89
+      },
+      {
+        "timestamp": "2026-05-20T22:38:00Z",
+        "bpm": 87
+      },
+      {
+        "timestamp": "2026-05-20T22:40:00Z",
+        "bpm": 76
+      },
+      {
+        "timestamp": "2026-05-20T22:42:00Z",
+        "bpm": 74
+      },
+      {
+        "timestamp": "2026-05-20T22:44:00Z",
+        "bpm": 75
+      },
+      {
+        "timestamp": "2026-05-20T22:46:00Z",
+        "bpm": 74
+      },
+      {
+        "timestamp": "2026-05-20T22:48:00Z",
+        "bpm": 77
+      },
+      {
+        "timestamp": "2026-05-20T22:50:00Z",
+        "bpm": 75
+      },
+      {
+        "timestamp": "2026-05-20T22:52:00Z",
+        "bpm": 75
+      },
+      {
+        "timestamp": "2026-05-20T22:54:00Z",
+        "bpm": 74
+      },
+      {
+        "timestamp": "2026-05-20T22:56:00Z",
+        "bpm": 74
+      },
+      {
+        "timestamp": "2026-05-20T22:58:00Z",
+        "bpm": 72
+      },
+      {
+        "timestamp": "2026-05-20T23:00:00Z",
+        "bpm": 72
+      },
+      {
+        "timestamp": "2026-05-20T23:02:00Z",
+        "bpm": 72
+      },
+      {
+        "timestamp": "2026-05-20T23:04:00Z",
+        "bpm": 70
+      },
+      {
+        "timestamp": "2026-05-20T23:06:00Z",
+        "bpm": 69
+      },
+      {
+        "timestamp": "2026-05-20T23:08:00Z",
+        "bpm": 70
+      }
+    ]
+  },
+  "respiration": {
+    "awake": {
+      "min": 12,
+      "max": 15,
+      "avg": 13.0
+    },
+    "sleep": {
+      "min": 12,
+      "max": 15,
+      "avg": null
+    }
+  },
+  "intensityMinutes": null,
+  "bodyBattery": {
+    "current": 35,
+    "timeSeries": [
+      {
+        "timestamp": "2026-05-20T22:00:00Z",
+        "value": 37
+      },
+      {
+        "timestamp": "2026-05-20T22:24:00Z",
+        "value": 37
+      },
+      {
+        "timestamp": "2026-05-20T22:36:00Z",
+        "value": 35
+      },
+      {
+        "timestamp": "2026-05-20T22:48:00Z",
+        "value": 35
+      }
+    ]
+  },
+  "stress": {
+    "average": 45,
+    "max": 90,
+    "timeSeries": []
+  },
+  "spo2": null,
+  "heartRateZones": {
+    "zone1": {
+      "time": 0,
+      "percentage": 0.0
+    },
+    "zone2": {
+      "time": 960,
+      "percentage": 22.9
+    },
+    "zone3": {
+      "time": 2280,
+      "percentage": 54.3
+    },
+    "zone4": {
+      "time": 840,
+      "percentage": 20.0
+    },
+    "zone5": {
+      "time": 120,
+      "percentage": 2.9
+    },
+    "total": 4200.0,
+    "zonesDefinition": {
+      "zone1": {
+        "min": 0,
+        "max": 59,
+        "name": "Zone 1 - \u00c9chauffement"
+      },
+      "zone2": {
+        "min": 59,
+        "max": 69,
+        "name": "Zone 2 - Br\u00fblage graisses"
+      },
+      "zone3": {
+        "min": 69,
+        "max": 79,
+        "name": "Zone 3 - A\u00e9robie"
+      },
+      "zone4": {
+        "min": 79,
+        "max": 89,
+        "name": "Zone 4 - Seuil"
+      },
+      "zone5": {
+        "min": 89,
+        "max": 99,
+        "name": "Zone 5 - Maximale"
+      }
+    },
+    "calculatedFromTimeSeries": true
+  },
+  "sleep": {
+    "duration": 0,
+    "quality": 0,
+    "deepSleep": null,
+    "lightSleep": null,
+    "remSleep": null,
+    "bedTime": null,
+    "wakeTime": null,
+    "awakenings": null,
+    "movements": null,
+    "phasesDetails": null
+  },
+  "date": "2026-05-21",
+  "_cached_at": 1779370980.876285,
+  "_cache_version": 8,
+  "_raw_data_hash": "ff8e1805648fe6774ed246eb6d48e67a"
+}

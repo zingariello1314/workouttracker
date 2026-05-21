@@ -1,3 +1,5 @@
+import { resolveBookGenreForStats, normalizeBookGenre } from '../../data/bookGenres';
+
 /**
  * SessionAggregator Service
  * 
@@ -56,7 +58,7 @@ class SessionAggregator {
               bookId: book.id,
               bookTitle: book.title || 'Livre sans titre',
               bookAuthor: book.author || 'Auteur inconnu',
-              bookGenre: book.genre || 'Genre non spécifié',
+              bookGenre: resolveBookGenreForStats(book.genre),
               bookPages: Number(book.pages) || 0,
               normalizedDate,
               pagesRead: Number(session.pagesRead) || 0,
@@ -128,9 +130,9 @@ class SessionAggregator {
     let filteredSessions = [...sessions];
     
     if (filters.genre) {
-      const genreQuery = filters.genre.toLowerCase();
-      filteredSessions = filteredSessions.filter(session => 
-        session.bookGenre && session.bookGenre.toLowerCase().includes(genreQuery)
+      const genreFilter = normalizeBookGenre(filters.genre) || filters.genre.trim();
+      filteredSessions = filteredSessions.filter(
+        (session) => session.bookGenre === genreFilter
       );
     }
     
@@ -212,7 +214,7 @@ class SessionAggregator {
     const sessionsByGenre = {};
     
     sessions.forEach(session => {
-      const genre = session.bookGenre || 'Non spécifié';
+      const genre = resolveBookGenreForStats(session.bookGenre);
       
       if (!sessionsByGenre[genre]) {
         sessionsByGenre[genre] = {

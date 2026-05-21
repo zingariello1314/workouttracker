@@ -1620,6 +1620,17 @@ export const exerciseDatabase = {
       "Sortie continue à allure conversationnelle (≈ zone 2, 65–75 % FCmax). Construit la base aérobie, la densité capillaire et l'efficacité musculaire sans casser la récupération. Volume long, intensité basse.",
     variations: ["footing", "endurance fondamentale", "EF", "easy run", "zone 2 run", "course lente continue"]
   },
+  "fractionné": {
+    name: "Fractionné",
+    category: "Activités Complémentaires",
+    primaryMuscles: ["Quadriceps", "Ischio-jambiers", "Mollets"],
+    secondaryMuscles: ["Fessiers", "Core", "Système cardio-respiratoire"],
+    equipment: "Chrono / Garmin",
+    difficulty: 3,
+    description:
+      "Fractionné personnalisé : définis la durée des phases effort et récupération (ex. 1 min rapide / 1 min lent) et le nombre de tours. L’XP tient compte de la structure cochée et des allures Garmin par rapport à tes séances passées.",
+    variations: ["fractionné", "intervalles", "VMA", "fartlek structuré", "interval training"]
+  },
   "fractionné 30/30": {
     name: "Fractionné 30/30",
     category: "Activités Complémentaires",

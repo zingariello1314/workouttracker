@@ -102,6 +102,8 @@ export const QuestFormModal = ({
                     priere: cat === 'Prière' ? (prev.priere || 'fajr') : '',
                     completeWithTodaySportExercise:
                       cat === 'Sport' ? prev.completeWithTodaySportExercise : false,
+                    completeWithTodaySportStretch:
+                      cat === 'Étirements' ? prev.completeWithTodaySportStretch : false,
                   }));
                 }}
                 className="w-full bg-black/80 border border-amber-600/40 rounded-lg px-3 py-2 text-amber-50 text-sm focus:outline-none focus:ring-1 focus:ring-amber-400/70"
@@ -153,6 +155,31 @@ export const QuestFormModal = ({
                 <span className="mt-0.5 block text-xs leading-snug text-amber-200/80">
                   Coche automatiquement cette quête le jour où tu marques au moins un exercice du programme comme
                   fait (onglet Sport → Aujourd’hui).
+                </span>
+              </span>
+            </label>
+          )}
+
+          {questForm.categorie === 'Étirements' && (
+            <label className="flex items-start gap-2.5 rounded-lg border border-teal-700/35 bg-teal-500/10 px-3 py-2.5 text-teal-100/95">
+              <input
+                type="checkbox"
+                checked={Boolean(questForm.completeWithTodaySportStretch)}
+                onChange={(e) =>
+                  setQuestForm((prev) => ({
+                    ...prev,
+                    completeWithTodaySportStretch: e.target.checked,
+                  }))
+                }
+                className="mt-1 h-4 w-4 shrink-0 rounded border-teal-500/60 bg-black/80 accent-teal-400"
+              />
+              <span>
+                <span className="block font-medium text-teal-50">Lier aux étirements (Aujourd’hui)</span>
+                <span className="mt-0.5 block text-xs leading-snug text-teal-200/80">
+                  Synchronise cette quête avec les étirements cochés dans Sport → Aujourd’hui. Si tu choisis la plage{' '}
+                  <strong className="text-teal-100">Matin</strong>, <strong className="text-teal-100">Midi</strong> ou{' '}
+                  <strong className="text-teal-100">Soir</strong> ci-dessus, seul ce créneau compte. Sinon, tous les
+                  étirements prévus (matin + midi + soir) doivent être faits pour cocher la quête.
                 </span>
               </span>
             </label>

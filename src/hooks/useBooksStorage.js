@@ -4,6 +4,8 @@ import { getAllBooksFromIndexedDB, saveBooksToIndexedDB } from '../utils/booksIn
 import { useAuth } from '../context/AuthContext';
 import logger from '../utils/logger';
 import { isAdminUser } from '../utils/accessControl';
+import { migrateBooksGenres } from '../data/bookGenres';
+import { normalizeBooksForPersistence } from '../utils/booksPersistence';
 
 const booksLog = logger.module('useBooksStorage');
 
@@ -33,13 +35,17 @@ const computeHash = (value) => {
 export const BooksStorageContext = createContext(null);
 
 function useBooksStorageImpl() {
-  const { currentUser, isAuthenticated } = useAuth();
+  const { currentUser, isAuthenticated, loading: authLoading } = useAuth();
   const isAdmin = isAdminUser(currentUser);
   const [books, setBooks] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const debounceTimerRef = useRef(null);
   const lastSavedHashRef = useRef(HASH_EMPTY);
   const isInitialLoadRef = useRef(true);
+  const booksRef = useRef(books);
+  useEffect(() => {
+    booksRef.current = books;
+  }, [books]);
 
   // ✅ Calculer le userId pour le filtrage
   // Admin : userId = null (ou "main") pour récupérer les livres sans userId ou avec userId = adminId
@@ -54,6 +60,10 @@ function useBooksStorageImpl() {
     let isMounted = true;
 
     const loadInitialBooks = async () => {
+      if (authLoading) {
+        return;
+      }
+
       // ✅ Si déconnecté, ne rien charger (état vide)
       if (!isAuthenticated) {
         if (isMounted) {
@@ -90,13 +100,18 @@ function useBooksStorageImpl() {
         
         if (isMounted && Array.isArray(filteredBooks) && filteredBooks.length > 0) {
           booksLog.debug('[useBooksStorage] ✅ Utilisation des livres depuis IndexedDB (filtrés)');
-          setBooks(filteredBooks);
-          lastSavedHashRef.current = computeHash(filteredBooks);
+          const prepared = normalizeBooksForPersistence(migrateBooksGenres(filteredBooks));
+          setBooks(prepared);
+          lastSavedHashRef.current = computeHash(prepared);
+          saveBooks(prepared, currentUser.id);
+          void saveBooksToIndexedDB(prepared).catch((err) => {
+            console.warn('[useBooksStorage] Resync IndexedDB après normalisation:', err);
+          });
           return;
         }
 
         // 2) Sinon, fallback vers localStorage (seulement si connecté)
-        const localBooks = loadBooks();
+        const localBooks = loadBooks(userId || currentUser?.id);
         // ✅ Filtrer aussi localStorage par userId
         const filteredLocalBooks = localBooks.filter(book => {
           if (!book) return false;
@@ -110,16 +125,31 @@ function useBooksStorageImpl() {
         if (isMounted) {
           if (filteredLocalBooks.length > 0) {
             booksLog.debug('[useBooksStorage] ✅ Utilisation des livres depuis localStorage (filtrés)');
+            const userIdToAssign = currentUser.id;
+            const migrated = normalizeBooksForPersistence(
+              migrateBooksGenres(
+                filteredLocalBooks.map((book) => ({
+                  ...book,
+                  userId: book.userId || userIdToAssign,
+                }))
+              )
+            );
+            setBooks(migrated);
+            lastSavedHashRef.current = computeHash(migrated);
+            saveBooks(migrated, currentUser.id);
+            void saveBooksToIndexedDB(migrated).catch((err) => {
+              console.warn('[useBooksStorage] Migration localStorage → IndexedDB:', err);
+            });
           } else {
             booksLog.debug('[useBooksStorage] ⚠️ Aucun livre trouvé (IndexedDB et localStorage vides pour cet utilisateur)');
+            setBooks(filteredLocalBooks);
+            lastSavedHashRef.current = computeHash(filteredLocalBooks);
           }
-          setBooks(filteredLocalBooks);
-          lastSavedHashRef.current = computeHash(filteredLocalBooks);
         }
       } catch (error) {
         console.error('[useBooksStorage] ❌ Erreur lors du chargement:', error);
         if (isMounted) {
-          const fallback = loadBooks();
+          const fallback = loadBooks(userId || currentUser?.id);
           // ✅ Filtrer aussi le fallback
           const filteredFallback = fallback.filter(book => {
             if (!book) return false;
@@ -150,14 +180,40 @@ function useBooksStorageImpl() {
         clearTimeout(debounceTimerRef.current);
       }
     };
-  }, [isAuthenticated, currentUser, userId]);
+  }, [isAuthenticated, authLoading, currentUser, userId]);
+
+  useEffect(() => {
+    if (!isAuthenticated || !currentUser) return undefined;
+
+    const flushBooks = () => {
+      if (isInitialLoadRef.current) return;
+      if (debounceTimerRef.current) {
+        clearTimeout(debounceTimerRef.current);
+        debounceTimerRef.current = null;
+      }
+      const userIdToAssign = currentUser.id;
+      const booksWithUserId = normalizeBooksForPersistence(
+        Array.isArray(booksRef.current)
+          ? booksRef.current.map((book) => ({
+              ...book,
+              userId: book.userId || userIdToAssign,
+            }))
+          : []
+      );
+      saveBooksToIndexedDB(booksWithUserId).catch(() => {});
+      saveBooks(booksWithUserId, userIdToAssign);
+    };
+
+    window.addEventListener('pagehide', flushBooks);
+    window.addEventListener('beforeunload', flushBooks);
+    return () => {
+      window.removeEventListener('pagehide', flushBooks);
+      window.removeEventListener('beforeunload', flushBooks);
+    };
+  }, [isAuthenticated, currentUser]);
 
   const scheduleSave = useCallback(
     (nextBooks) => {
-      if (isInitialLoadRef.current) {
-        return;
-      }
-
       // ✅ Si déconnecté, ne rien sauvegarder
       if (!isAuthenticated || !currentUser) {
         booksLog.debug('[useBooksStorage] ⚠️ Utilisateur déconnecté : sauvegarde ignorée');
@@ -167,12 +223,14 @@ function useBooksStorageImpl() {
       // ✅ Ajouter userId à chaque livre avant sauvegarde
       const userIdToAssign = currentUser.id;
       
-      const booksWithUserId = Array.isArray(nextBooks) 
-        ? nextBooks.map(book => ({
-            ...book,
-            userId: book.userId || userIdToAssign // Préserver userId existant ou assigner
-          }))
-        : [];
+      const booksWithUserId = normalizeBooksForPersistence(
+        Array.isArray(nextBooks)
+          ? nextBooks.map((book) => ({
+              ...book,
+              userId: book.userId || userIdToAssign,
+            }))
+          : []
+      );
 
       const nextHash = computeHash(booksWithUserId);
       if (nextHash === lastSavedHashRef.current) {
@@ -187,14 +245,16 @@ function useBooksStorageImpl() {
 
       debounceTimerRef.current = setTimeout(async () => {
         try {
-          // ✅ Sauvegarder avec userId (merge avec les autres livres dans IndexedDB)
           await saveBooksToIndexedDB(booksWithUserId);
-          booksLog.debug('[useBooksStorage] ✅ Sauvegarde IndexedDB réussie (avec userId:', userIdToAssign, ')');
+          saveBooks(booksWithUserId, userIdToAssign);
+          booksLog.debug('[useBooksStorage] ✅ Sauvegarde IndexedDB + localStorage (userId:', userIdToAssign, ')');
         } catch (error) {
-          // Ne pas casser l'app en cas d'erreur IndexedDB, mais logger l'erreur
           console.error('[useBooksStorage] ❌ Erreur sauvegarde IndexedDB:', error);
-          // NE PLUS sauvegarder dans localStorage (saturé)
-          // localStorage est utilisé uniquement comme fallback de LECTURE
+          try {
+            saveBooks(booksWithUserId, userIdToAssign);
+          } catch (lsErr) {
+            console.error('[useBooksStorage] ❌ Erreur sauvegarde localStorage:', lsErr);
+          }
         }
       }, 800);
     },
@@ -211,16 +271,22 @@ function useBooksStorageImpl() {
             ? updater
             : prev;
         // Écriture immédiate (IndexedDB) pour ne pas perdre les changements si F5 avant la fin du debounce
-        if (isAuthenticated && currentUser && !isInitialLoadRef.current) {
-          const userIdToAssign =
-            currentUser.id;
-          const booksWithUserId = Array.isArray(next)
-            ? next.map((book) => ({
-                ...book,
-                userId: book.userId || userIdToAssign
-              }))
-            : [];
+        if (isAuthenticated && currentUser) {
+          const userIdToAssign = currentUser.id;
+          const booksWithUserId = normalizeBooksForPersistence(
+            Array.isArray(next)
+              ? next.map((book) => ({
+                  ...book,
+                  userId: book.userId || userIdToAssign,
+                }))
+              : []
+          );
           saveBooksToIndexedDB(booksWithUserId).catch(() => {});
+          try {
+            saveBooks(booksWithUserId, userIdToAssign);
+          } catch {
+            /* ignore */
+          }
         }
         scheduleSave(next);
         return next;

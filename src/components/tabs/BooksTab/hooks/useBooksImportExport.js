@@ -7,7 +7,7 @@
  */
 
 import { useState, useRef, useCallback } from 'react';
-import { importBooksFromFile, saveBooks } from '../../../../utils/booksStorage';
+import { importBooksFromFile } from '../../../../utils/booksStorage';
 import {
   prepareBooksExportData,
   processBooksImportData,
@@ -128,9 +128,8 @@ export const useBooksImportExport = (books = [], setBooks, coverUrls, setCoverUr
       setCoverUrls(newCoverUrls);
       coverUrlsRef.current = newCoverUrls;
 
-      await saveBooks(booksWithValidStatus);
       await Promise.all(coverSavePromises);
-      
+
       setBooks(booksWithValidStatus);
       
       console.log('[BooksTab] Import réussi:', booksWithValidStatus.length, 'livres');

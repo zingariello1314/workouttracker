@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import Card, { CardContent, CardHeader, CardTitle } from './ui/Card';
 import Button from './ui/Button';
 import { 
@@ -37,6 +37,19 @@ import { useWorkout } from '../context/WorkoutContext';
 import { Layers, Repeat } from 'lucide-react';
 import { getCircuitIdsForDay } from '../utils/circuits/circuitDefinitionUtils';
 import { WEEK_DAYS, normalizeProgramRestConfig } from '../utils/restDayUtils';
+import {
+  isFractionneBankKey,
+  intervalPresetFromBankKey,
+  normalizeIntervalConfig,
+  buildIntervalSeriesLabel
+} from '../utils/intervalTrainingUtils';
+import { workoutProgram } from '../data/workoutProgram';
+import {
+  resolveEtirementsForDay,
+  copyEtirementsToProgramSchedule,
+  normalizeStretchSlots,
+  countStretchItems
+} from '../utils/stretchUtils';
 
 const PROGRAM_WEEK_DAYS = ['lundi', 'mardi', 'mercredi', 'jeudi', 'vendredi', 'samedi', 'dimanche'];
 const REPS_SCOPES = {
@@ -97,6 +110,33 @@ const REST_DAY_LABELS = {
 
 const ProgramDetailView = ({ program, onBack, onUpdateProgram }) => {
   const normalizedProgram = useMemo(() => normalizeProgramRestConfig(program), [program]);
+
+  /** Répare les programmes importés avant le format tableau (étirements vides en édition). */
+  useEffect(() => {
+    if (!normalizedProgram?.schedule || typeof onUpdateProgram !== 'function') return;
+    let patched = false;
+    const schedule = { ...normalizedProgram.schedule };
+    for (const dayKey of PROGRAM_WEEK_DAYS) {
+      const day = schedule[dayKey];
+      if (!day) continue;
+      const currentCount = countStretchItems(normalizeStretchSlots(day.etirements, dayKey));
+      if (currentCount > 0) continue;
+      const fallback = workoutProgram[dayKey]?.etirements;
+      if (!fallback) continue;
+      const copied = copyEtirementsToProgramSchedule(fallback, dayKey);
+      if (countStretchItems(normalizeStretchSlots(copied, dayKey)) === 0) continue;
+      schedule[dayKey] = { ...day, etirements: copied };
+      patched = true;
+    }
+    if (patched) {
+      onUpdateProgram({
+        ...normalizedProgram,
+        schedule,
+        updatedAt: new Date().toISOString()
+      });
+    }
+  }, [normalizedProgram?.id]);
+
   /** Édition exo : { dayKey, exerciseId, variantKey?: 'semaineA'|'semaineB' } */
   const [editingExercise, setEditingExercise] = useState(null);
   const [editingStretch, setEditingStretch] = useState(null);
@@ -126,6 +166,9 @@ const ProgramDetailView = ({ program, onBack, onUpdateProgram }) => {
   const [pickerSeconds, setPickerSeconds] = useState('');
   const [pickerMinutes, setPickerMinutes] = useState('');
   const [pickerWeight, setPickerWeight] = useState('');
+  const [pickerIntervalActiveMin, setPickerIntervalActiveMin] = useState('1');
+  const [pickerIntervalRecoveryMin, setPickerIntervalRecoveryMin] = useState('1');
+  const [pickerIntervalRounds, setPickerIntervalRounds] = useState('8');
 
   // Circuits (bibliothèque globale + édition / assignation)
   const {
@@ -184,13 +227,17 @@ const ProgramDetailView = ({ program, onBack, onUpdateProgram }) => {
     });
   }, [program?.id, program?.name, program?.description]);
 
+  /** Purge une seule fois à l’ouverture du programme (évite boucle program → onUpdateProgram). */
+  const purgedProgramIdRef = useRef(null);
   useEffect(() => {
-    if (!program?.id) return;
+    if (!program?.id || typeof onUpdateProgram !== 'function') return;
+    if (purgedProgramIdRef.current === program.id) return;
     const purged = purgeSoftRemovedExercisesFromProgram(program);
+    purgedProgramIdRef.current = program.id;
     if (purged !== program) {
       onUpdateProgram(purged);
     }
-  }, [program, onUpdateProgram]);
+  }, [program?.id, onUpdateProgram]);
 
   const allProgramExerciseOccurrences = useMemo(() => {
     const rows = [];
@@ -421,6 +468,17 @@ const ProgramDetailView = ({ program, onBack, onUpdateProgram }) => {
     setEditedData({});
   };
 
+  useEffect(() => {
+    if (!isFractionneBankKey(pickerSelectedKey)) return;
+    const preset = intervalPresetFromBankKey(pickerSelectedKey);
+    setPickerIntervalActiveMin(String(preset.activeMin));
+    setPickerIntervalRecoveryMin(String(preset.recoveryMin));
+    setPickerIntervalRounds(String(preset.rounds));
+    setPickerVolumeMode('interval');
+  }, [pickerSelectedKey]);
+
+  const pickerIsFractionne = isFractionneBankKey(pickerSelectedKey);
+
   const openExerciseBankPicker = (dayKey, variantKey = null) => {
     const day = program?.schedule?.[dayKey];
     const hasSalleVariants = Boolean(day?.salleVariants?.semaineA || day?.salleVariants?.semaineB);
@@ -450,6 +508,15 @@ const ProgramDetailView = ({ program, onBack, onUpdateProgram }) => {
   };
 
   const buildSeriesFromPicker = () => {
+    if (pickerIsFractionne || pickerVolumeMode === 'interval') {
+      const label = buildIntervalSeriesLabel({
+        activeMin: parseFloat(String(pickerIntervalActiveMin).replace(',', '.')),
+        recoveryMin: parseFloat(String(pickerIntervalRecoveryMin).replace(',', '.')),
+        rounds: parseInt(pickerIntervalRounds || '0', 10),
+        preset: intervalPresetFromBankKey(pickerSelectedKey).preset
+      });
+      return label || 'Fractionné';
+    }
     if (pickerVolumeMode === 'seconds') return `${Math.max(1, parseInt(pickerSeconds || '0', 10))} sec`;
     if (pickerVolumeMode === 'minutes') return `${Math.max(1, parseInt(pickerMinutes || '0', 10))} min`;
     const sets = Math.max(1, parseInt(pickerSets || '0', 10));
@@ -480,10 +547,19 @@ const ProgramDetailView = ({ program, onBack, onUpdateProgram }) => {
 
     const newEx = createDefaultExercise();
     const series = buildSeriesFromPicker();
-    const category = inferProgramCategoryFromDatabase(dbEx);
+    const isFractionne = pickerIsFractionne;
+    const category = isFractionne ? 'cardio' : inferProgramCategoryFromDatabase(dbEx);
+    const intervalConfig = isFractionne
+      ? normalizeIntervalConfig({
+          ...intervalPresetFromBankKey(pickerSelectedKey),
+          activeMin: parseFloat(String(pickerIntervalActiveMin).replace(',', '.')),
+          recoveryMin: parseFloat(String(pickerIntervalRecoveryMin).replace(',', '.')),
+          rounds: parseInt(pickerIntervalRounds || '0', 10)
+        })
+      : null;
     const meta = {
       ...normalizeExerciseMeta(newEx),
-      volumeMode: pickerVolumeMode,
+      volumeMode: isFractionne ? 'interval' : pickerVolumeMode,
       targetLoadKg: pickerWeight ? String(pickerWeight) : '',
       repsScope: pickerVolumeMode === 'reps' ? pickerRepsScope : '',
       repsPerHand:
@@ -493,18 +569,22 @@ const ProgramDetailView = ({ program, onBack, onUpdateProgram }) => {
       repsPerSide:
         pickerVolumeMode === 'reps' && pickerRepsScope === REPS_SCOPES.PER_SIDE
           ? Math.max(1, parseInt(pickerRepsPerSide || '0', 10))
-          : ''
+          : '',
+      ...(intervalConfig
+        ? { intervalConfig, intervalPreset: pickerSelectedKey }
+        : {})
     };
     const built = {
       ...newEx,
-      name: dbEx.name || pickerSelectedKey,
+      name: isFractionne && pickerSelectedKey === 'fractionné' ? 'Fractionné' : dbEx.name || pickerSelectedKey,
       series,
-      rest: pickerVolumeMode === 'reps' ? 90 : 30,
-      intensity: pickerVolumeMode === 'reps' ? 'moderate' : 'light',
+      rest: isFractionne ? 60 : pickerVolumeMode === 'reps' ? 90 : 30,
+      intensity: isFractionne ? 'heavy' : pickerVolumeMode === 'reps' ? 'moderate' : 'light',
       materiel: dbEx.equipment || '',
       notes: dbEx.description || '',
       programCategory: category,
-      cardioKind: category === 'cardio' ? 'other' : '',
+      programSubType: isFractionne ? 'running_interval' : '',
+      cardioKind: category === 'cardio' ? 'running' : '',
       meta
     };
 
@@ -677,6 +757,82 @@ const ProgramDetailView = ({ program, onBack, onUpdateProgram }) => {
                     ))}
                   </select>
                 </label>
+                {editedData.programSubType === 'running_interval' && (
+                  <div className="rounded border border-amber-500/30 bg-amber-950/15 p-2 space-y-2">
+                    <p className="text-[11px] text-amber-200/90">Structure fractionné (effort / récup / tours)</p>
+                    <div className="grid grid-cols-3 gap-2">
+                      <label className="text-xs text-slate-400">
+                        Effort (min)
+                        <input
+                          type="number"
+                          min="0.25"
+                          step="0.25"
+                          value={m.intervalConfig?.activeMin ?? 1}
+                          onChange={(e) => {
+                            const next = normalizeIntervalConfig({
+                              ...(m.intervalConfig || {}),
+                              activeMin: parseFloat(e.target.value)
+                            });
+                            patchEditedMeta({ intervalConfig: next });
+                            if (next) {
+                              setEditedData((prev) => ({
+                                ...prev,
+                                series: buildIntervalSeriesLabel(next)
+                              }));
+                            }
+                          }}
+                          className="mt-1 w-full bg-black border border-[#0F4C5C]/50 rounded px-2 py-1 text-sm"
+                        />
+                      </label>
+                      <label className="text-xs text-slate-400">
+                        Récup (min)
+                        <input
+                          type="number"
+                          min="0"
+                          step="0.25"
+                          value={m.intervalConfig?.recoveryMin ?? 1}
+                          onChange={(e) => {
+                            const next = normalizeIntervalConfig({
+                              ...(m.intervalConfig || {}),
+                              recoveryMin: parseFloat(e.target.value)
+                            });
+                            patchEditedMeta({ intervalConfig: next });
+                            if (next) {
+                              setEditedData((prev) => ({
+                                ...prev,
+                                series: buildIntervalSeriesLabel(next)
+                              }));
+                            }
+                          }}
+                          className="mt-1 w-full bg-black border border-[#0F4C5C]/50 rounded px-2 py-1 text-sm"
+                        />
+                      </label>
+                      <label className="text-xs text-slate-400">
+                        Tours
+                        <input
+                          type="number"
+                          min="1"
+                          value={m.intervalConfig?.rounds ?? 8}
+                          onChange={(e) => {
+                            const next = normalizeIntervalConfig({
+                              ...(m.intervalConfig || {}),
+                              rounds: parseInt(e.target.value, 10)
+                            });
+                            patchEditedMeta({ intervalConfig: next });
+                            if (next) {
+                              setEditedData((prev) => ({
+                                ...prev,
+                                series: buildIntervalSeriesLabel(next)
+                              }));
+                            }
+                          }}
+                          className="mt-1 w-full bg-black border border-[#0F4C5C]/50 rounded px-2 py-1 text-sm"
+                        />
+                      </label>
+                    </div>
+                  </div>
+                )}
+                {editedData.programSubType !== 'running_interval' && (
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
                   <label className="text-xs text-slate-400">
                     Distance (km)
@@ -728,6 +884,7 @@ const ProgramDetailView = ({ program, onBack, onUpdateProgram }) => {
                     />
                   </label>
                 </div>
+                )}
               </>
             )}
 
@@ -1365,7 +1522,7 @@ const ProgramDetailView = ({ program, onBack, onUpdateProgram }) => {
                   </h3>
                   <StretchSlotsEditor
                     dayKey={dayKey}
-                    etirements={dayData.etirements}
+                    etirements={resolveEtirementsForDay(dayData.etirements, dayKey, workoutProgram)}
                     onChange={(newEtirements) => handleStretchSlotsChange(dayKey, newEtirements)}
                   />
                 </div>
@@ -1960,6 +2117,51 @@ const ProgramDetailView = ({ program, onBack, onUpdateProgram }) => {
                 );
               })()}
 
+              {pickerIsFractionne ? (
+                <div className="rounded-lg border border-amber-500/35 bg-amber-950/20 p-3 space-y-3">
+                  <p className="text-xs font-semibold text-amber-200">Structure du fractionné</p>
+                  <p className="text-[11px] text-amber-100/70">
+                    L’XP comparera cette structure aux tours Garmin (effort / récup) et à tes meilleures séances
+                    fractionné passées.
+                  </p>
+                  <div className="grid grid-cols-3 gap-3">
+                    <label className="text-xs text-slate-300">
+                      Effort (min)
+                      <input
+                        type="number"
+                        min="0.25"
+                        step="0.25"
+                        value={pickerIntervalActiveMin}
+                        onChange={(e) => setPickerIntervalActiveMin(e.target.value)}
+                        className="mt-1 w-full rounded border border-[#0F4C5C]/55 bg-black px-2 py-2 text-sm text-white"
+                      />
+                    </label>
+                    <label className="text-xs text-slate-300">
+                      Récup / lent (min)
+                      <input
+                        type="number"
+                        min="0"
+                        step="0.25"
+                        value={pickerIntervalRecoveryMin}
+                        onChange={(e) => setPickerIntervalRecoveryMin(e.target.value)}
+                        className="mt-1 w-full rounded border border-[#0F4C5C]/55 bg-black px-2 py-2 text-sm text-white"
+                      />
+                    </label>
+                    <label className="text-xs text-slate-300">
+                      Tours
+                      <input
+                        type="number"
+                        min="1"
+                        max="99"
+                        value={pickerIntervalRounds}
+                        onChange={(e) => setPickerIntervalRounds(e.target.value)}
+                        className="mt-1 w-full rounded border border-[#0F4C5C]/55 bg-black px-2 py-2 text-sm text-white"
+                      />
+                    </label>
+                  </div>
+                  <p className="text-xs text-teal-200/90">Aperçu : {buildSeriesFromPicker()}</p>
+                </div>
+              ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                 <label className="text-xs text-slate-400">
                   Mode de volume
@@ -1992,8 +2194,9 @@ const ProgramDetailView = ({ program, onBack, onUpdateProgram }) => {
                   </label>
                 )}
               </div>
+              )}
 
-              {pickerVolumeMode === 'reps' && (
+              {!pickerIsFractionne && pickerVolumeMode === 'reps' && (
                 <div className="space-y-3">
                   <label className="text-xs text-slate-400 block">
                     Type de répétitions
@@ -2055,7 +2258,7 @@ const ProgramDetailView = ({ program, onBack, onUpdateProgram }) => {
                 </div>
                 </div>
               )}
-              {pickerVolumeMode === 'seconds' && (
+              {!pickerIsFractionne && pickerVolumeMode === 'seconds' && (
                 <label className="text-xs text-slate-400 block">
                   Durée (secondes)
                   <input
@@ -2067,7 +2270,7 @@ const ProgramDetailView = ({ program, onBack, onUpdateProgram }) => {
                   />
                 </label>
               )}
-              {pickerVolumeMode === 'minutes' && (
+              {!pickerIsFractionne && pickerVolumeMode === 'minutes' && (
                 <label className="text-xs text-slate-400 block">
                   Durée (minutes)
                   <input

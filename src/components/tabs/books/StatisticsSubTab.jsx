@@ -21,6 +21,7 @@ import Button from '../../ui/Button';
 import DebouncedInput from '../../ui/DebouncedInput';
 import { useTranslation } from '../../../utils/translations';
 import { sidebarEvents, SIDEBAR_EVENTS } from '../../../utils/sidebarEvents';
+import { BOOK_GENRES } from '../../../data/bookGenres';
 
 // Import des styles mobile
 import '../../../styles/statistics-mobile.css';
@@ -150,11 +151,10 @@ const StatisticsSubTabContent = ({ books = [], setBooks }) => {
 
   // Mémoriser les options de filtres disponibles
   const filterOptions = useMemo(() => {
-    const genres = [...new Set(books.map(book => book.genre).filter(Boolean))];
     const authors = [...new Set(books.map(book => book.author).filter(Boolean))];
     const statuses = ['in-progress', 'completed', 'to-read', 'paused', 'abandoned'];
     
-    return { genres, authors, statuses };
+    return { genres: BOOK_GENRES, authors, statuses };
   }, [books]);
 
   // Gestionnaires d'événements avec persistance

@@ -34,6 +34,7 @@ import { useWorkoutContextStorage } from './WorkoutContext/hooks/useWorkoutConte
 import { DEFAULT_PROGRESS_FORM } from './WorkoutContext/constants';
 import { normalizeRepsValue } from './WorkoutContext/utils';
 import { filterExercisesForSessionDate } from '../utils/programExerciseScheduling';
+import { copyEtirementsForWorkoutView, resolveEtirementsForDay } from '../utils/stretchUtils';
 import { buildTemplateProgramsForFirstLaunch } from '../utils/programPersistenceUtils';
 import { isAdminUser } from '../utils/accessControl';
 import { readServerTokens } from '../utils/serverAuthApi';
@@ -140,7 +141,7 @@ const WorkoutProvider = ({ children }) => {
   const isInitialLoadRef = useRef(true);
 
   // Authentification : déterminer l'utilisateur courant et l'admin
-  const { currentUser, isAuthenticated } = useAuth();
+  const { currentUser, isAuthenticated, loading: authLoading } = useAuth();
   const isAdmin = isAdminUser(currentUser);
   const storageKey = useMemo(() => {
     if (isAdmin) return 'main'; // ✅ Les anciennes données "globales" deviennent les données admin
@@ -155,7 +156,8 @@ const WorkoutProvider = ({ children }) => {
   const { data, updateData, loadFromDB, saveToDB, saveSessionFeedback } = useWorkoutData({
     storageKey,
     generateTestData: false,
-    ephemeral: !isAuthenticated
+    ephemeral: authLoading || !isAuthenticated,
+    deferLoad: authLoading,
   });
 
   // État pour l'historique des programmes
@@ -206,7 +208,11 @@ const WorkoutProvider = ({ children }) => {
     cancelExerciseChanges,
     cancelStretchChanges,
     resetDay,
+<<<<<<< HEAD
   } = useWorkoutExercises(data, updateData, getDateStr(currentDate));
+=======
+  } = useWorkoutExercises(data, updateData, getCurrentData, storageKey, currentDate);
+>>>>>>> 9e0d966 (avancements au niveau de la remise a niveau de la sauvegarde des quetes de livre set ajouts d etrucs dans livres)
 
   const getCurrentData = useCallback(() => {
     if ((hasUnsavedExercises || hasUnsavedStretches) && tempData) {
@@ -541,6 +547,7 @@ const WorkoutProvider = ({ children }) => {
           };
         });
         
+<<<<<<< HEAD
         // Étirements : passer le bloc tel quel (tableaux par moment, objets legacy, chaînes…).
         // L’ancien code ne lisait que `*.instructions` sur des objets non-tableaux, ce qui
         // supprimait tout le planning dès que l’éditeur Programme enregistrait le format moderne
@@ -549,13 +556,25 @@ const WorkoutProvider = ({ children }) => {
           daySchedule.etirements && typeof daySchedule.etirements === 'object'
             ? daySchedule.etirements
             : undefined;
+=======
+        const dayForStretches = workoutDayOverride || getDayName(currentDate);
+        const etirements = resolveEtirementsForDay(
+          copyEtirementsForWorkoutView(daySchedule.etirements),
+          dayForStretches,
+          workoutProgram
+        );
+>>>>>>> 9e0d966 (avancements au niveau de la remise a niveau de la sauvegarde des quetes de livre set ajouts d etrucs dans livres)
 
         return {
           name: variantName,
           focus: daySchedule.focus || '',
           duree: daySchedule.duration || '',
           exercices: exercises,
+<<<<<<< HEAD
           etirements: etirementsPayload,
+=======
+          etirements,
+>>>>>>> 9e0d966 (avancements au niveau de la remise a niveau de la sauvegarde des quetes de livre set ajouts d etrucs dans livres)
           isGymMode: isGymMode,
           weekVariant: currentWeekVariant
         };

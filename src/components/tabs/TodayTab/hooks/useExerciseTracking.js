@@ -20,6 +20,11 @@ import {
   collectRecentSessionTotalsForExercise,
   estimateSessionsPerWeek
 } from '../../../../services/trainingPatterns/pyramidUserSignals';
+import {
+  computeOverallSessionStars,
+  pickStoredSessionPerceived,
+  sessionPerceivedToPayload
+} from '../../../../utils/exerciseSessionPerceivedModel';
 
 function pickStoredState(currentData, keys) {
   for (const key of keys) {
@@ -255,6 +260,7 @@ export const useExerciseTracking = (options = {}) => {
     [getCurrentData, updateTempExerciseData, primaryKeyForExercise, allKeysForExercise]
   );
 
+<<<<<<< HEAD
   const updateSessionPleasureStars = useCallback(
     (exercise, starCount) => {
       const currentData = getCurrentData();
@@ -273,6 +279,37 @@ export const useExerciseTracking = (options = {}) => {
       updateTempExerciseData({
         ...currentData,
         exerciseSessionPleasureStars: next
+=======
+  const updateSessionPerceived = useCallback(
+    (exercise, draft, overallStars) => {
+      const currentData = getCurrentData();
+      const primaryKey = primaryKeyForExercise(exercise);
+      const keys = allKeysForExercise(exercise);
+      const nextPerceived = { ...(currentData.exerciseSessionPerceived || {}) };
+      const nextStars = { ...(currentData.exerciseSessionEffortStars || {}) };
+      keys.forEach((k) => {
+        if (k !== primaryKey) {
+          delete nextPerceived[k];
+          delete nextStars[k];
+        }
+      });
+      const payload = sessionPerceivedToPayload(draft);
+      const overall =
+        overallStars != null
+          ? Math.round(Number(overallStars))
+          : computeOverallSessionStars(draft);
+      if (payload) nextPerceived[primaryKey] = payload;
+      else delete nextPerceived[primaryKey];
+      if (Number.isFinite(overall) && overall >= 1 && overall <= 5) {
+        nextStars[primaryKey] = overall;
+      } else {
+        delete nextStars[primaryKey];
+      }
+      updateTempExerciseData({
+        ...currentData,
+        exerciseSessionPerceived: nextPerceived,
+        exerciseSessionEffortStars: nextStars
+>>>>>>> 9e0d966 (avancements au niveau de la remise a niveau de la sauvegarde des quetes de livre set ajouts d etrucs dans livres)
       });
     },
     [getCurrentData, updateTempExerciseData, primaryKeyForExercise, allKeysForExercise]
@@ -280,7 +317,11 @@ export const useExerciseTracking = (options = {}) => {
 
   /**
    * @param {Object} exercise
+<<<<<<< HEAD
    * @returns {{ isChecked: boolean, reps: string, sessionEffortStars: number|null, sessionPleasureStars: number|null }}
+=======
+   * @returns {{ isChecked: boolean, reps: string, sessionEffortStars: number|null, sessionPerceived: object }}
+>>>>>>> 9e0d966 (avancements au niveau de la remise a niveau de la sauvegarde des quetes de livre set ajouts d etrucs dans livres)
    */
   const getExerciseStatus = useCallback(
     (exercise) => {
@@ -291,8 +332,13 @@ export const useExerciseTracking = (options = {}) => {
       return {
         isChecked: picked.isChecked,
         reps: picked.reps,
+<<<<<<< HEAD
         sessionEffortStars: pickEffortSessionStars(currentData, keys, primaryKey),
         sessionPleasureStars: pickStoredSessionPleasureStars(currentData, keys, primaryKey)
+=======
+        sessionEffortStars: pickStoredSessionStars(currentData, keys, primaryKey),
+        sessionPerceived: pickStoredSessionPerceived(currentData, keys, primaryKey)
+>>>>>>> 9e0d966 (avancements au niveau de la remise a niveau de la sauvegarde des quetes de livre set ajouts d etrucs dans livres)
       };
     },
     [getCurrentData, allKeysForExercise, primaryKeyForExercise]
@@ -302,7 +348,11 @@ export const useExerciseTracking = (options = {}) => {
     toggleExercise,
     updateReps,
     updateSessionEffortStars,
+<<<<<<< HEAD
     updateSessionPleasureStars,
+=======
+    updateSessionPerceived,
+>>>>>>> 9e0d966 (avancements au niveau de la remise a niveau de la sauvegarde des quetes de livre set ajouts d etrucs dans livres)
     getExerciseStatus
   };
 };

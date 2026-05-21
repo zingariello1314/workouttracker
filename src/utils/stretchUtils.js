@@ -209,6 +209,85 @@ export function countStretchItems(slots) {
   return flattenStretchItems(slots).length;
 }
 
+/**
+ * Copie les étirements d'une journée vers le format tableau persisté dans un programme custom.
+ */
+export function copyEtirementsToProgramSchedule(raw, dayName = null) {
+  const out = { matin: [], midi: [], soir: [] };
+  if (!raw || typeof raw !== 'object') return out;
+
+  for (const moment of STRETCH_MOMENTS) {
+    const slot = raw[moment];
+    if (slot == null) continue;
+
+    if (Array.isArray(slot)) {
+      out[moment] = slot.map((item, idx) => {
+        const entry = {
+          id: item?.id ?? buildDefaultStretchId(dayName, moment, idx + 1),
+          duration: item?.duration ?? 60
+        };
+        if (item?.stretchKey) entry.stretchKey = item.stretchKey;
+        if (item?.name) entry.name = item.name;
+        if (item?.instructions) entry.instructions = item.instructions;
+        return entry;
+      });
+      continue;
+    }
+
+    if (typeof slot === 'string' && slot.trim()) {
+      const parsed = parseLegacyStretchString(slot, dayName, moment);
+      out[moment] = parsed.map((item) => ({
+        id: item.id,
+        stretchKey: item.stretchKey,
+        duration: item.duration,
+        ...(item.stretchKey ? {} : { name: item.name, instructions: item.instructions || item.legacyText })
+      }));
+    }
+  }
+
+  return out;
+}
+
+/**
+ * Format affichage Today / getTodayWorkout : préserve tableaux, chaînes legacy et objets enrichis.
+ */
+export function copyEtirementsForWorkoutView(raw) {
+  if (!raw || typeof raw !== 'object') return undefined;
+  const out = {};
+
+  for (const moment of STRETCH_MOMENTS) {
+    const slot = raw[moment];
+    if (slot == null) continue;
+
+    if (Array.isArray(slot)) {
+      out[moment] = slot;
+    } else if (typeof slot === 'string') {
+      out[moment] = slot;
+    } else if (typeof slot === 'object') {
+      if (Array.isArray(slot.instructions)) {
+        out[moment] = slot.instructions;
+      } else if (typeof slot.instructions === 'string' && slot.instructions.trim()) {
+        out[moment] = slot.instructions;
+      } else if (slot.stretchKey || slot.id) {
+        out[moment] = [slot];
+      }
+    }
+  }
+
+  return Object.keys(out).length > 0 ? out : undefined;
+}
+
+/**
+ * Si le programme actif n'a pas d'étirements exploitables, retomber sur workoutProgram[jour].
+ */
+export function resolveEtirementsForDay(raw, dayName, workoutProgramRoot) {
+  const normalized = normalizeStretchSlots(raw, dayName);
+  if (countStretchItems(normalized) > 0) return raw;
+  const fallback = workoutProgramRoot?.[dayName]?.etirements;
+  if (!fallback) return raw;
+  return copyEtirementsForWorkoutView(fallback) ?? fallback;
+}
+
 const DAY_NAMES = ['dimanche', 'lundi', 'mardi', 'mercredi', 'jeudi', 'vendredi', 'samedi'];
 
 function dayNameFromDateStr(dateStr) {

@@ -1,17 +1,24 @@
-/**
+﻿/**
  * Hook pour la gestion des exercices et étirements
  *
+<<<<<<< HEAD
  * Les coches / reps / étirements passent par un snapshot `tempData` jusqu'à
  * **Enregistrer** (ou fermeture d'onglet : flush immédiat si brouillon sale).
  * Pas de sauvegarde automatique pendant la frappe (évite courses avec le bouton
  * et états React obsolètes) ; `tempDataRef` garde toujours le dernier snapshot.
  *
  * @module context/WorkoutContext/hooks/useWorkoutExercises
+=======
+ * ✅ PHASE 4 : Extraction de la logique des exercices
+ * ✅ Persistance automatique : chaque coche / rep est sauvegardée en IndexedDB (plus besoin du bouton « Enregistrer » seul).
+>>>>>>> 9e0d966 (avancements au niveau de la remise a niveau de la sauvegarde des quetes de livre set ajouts d etrucs dans livres)
  */
 
 import { useState, useCallback, useRef, useEffect } from 'react';
 import { getDateStr } from '../../../utils/dateUtils';
 import { sidebarEvents, SIDEBAR_EVENTS } from '../../../utils/sidebarEvents';
+import { backupWorkoutToLocalStorage } from '../../../utils/workoutPersistence';
+import { invalidateSportXpCache } from '../../../hooks/useSportXP';
 
 function cloneDraft(source) {
   try {
@@ -22,6 +29,7 @@ function cloneDraft(source) {
 }
 
 /**
+<<<<<<< HEAD
  * Nettoie reps / poids / coches étirements avant écriture.
  * @param {Object} payload
  */
@@ -85,10 +93,23 @@ function sanitizeDraftForPersist(payload) {
  * @param {string} sessionCalendarDateStr
  */
 export const useWorkoutExercises = (persistedData, updateData, sessionCalendarDateStr = '') => {
+=======
+ * Hook pour gérer les exercices et étirements
+ */
+export const useWorkoutExercises = (data, updateData, getCurrentData, storageKey, recordDate) => {
+  const recordDateRef = useRef(recordDate);
+  useEffect(() => {
+    recordDateRef.current = recordDate;
+  }, [recordDate]);
+>>>>>>> 9e0d966 (avancements au niveau de la remise a niveau de la sauvegarde des quetes de livre set ajouts d etrucs dans livres)
   const [hasUnsavedExercises, setHasUnsavedExercises] = useState(false);
   const [hasUnsavedStretches, setHasUnsavedStretches] = useState(false);
   const [tempData, setTempData] = useState(null);
+  const persistTimerRef = useRef(null);
+  const tempDataRef = useRef(null);
+  const isPersistingRef = useRef(false);
 
+<<<<<<< HEAD
   const tempDataRef = useRef(null);
   const dirtyFlagsRef = useRef({ exercises: false, stretches: false });
   const persistFullDraftRef = useRef(async () => {});
@@ -188,11 +209,116 @@ export const useWorkoutExercises = (persistedData, updateData, sessionCalendarDa
    * Remplace le brouillon par un snapshot déjà aligné sur la persistance (ex. calendrier après `updateData`).
    * Remet les indicateurs « non enregistré » à zéro pour éviter une barre fantôme.
    */
+=======
+  useEffect(() => {
+    tempDataRef.current = tempData;
+  }, [tempData]);
+
+  const flushPersist = useCallback(async () => {
+    if (persistTimerRef.current) {
+      clearTimeout(persistTimerRef.current);
+      persistTimerRef.current = null;
+    }
+
+    const snapshot = tempDataRef.current;
+    if (!snapshot || typeof snapshot !== 'object' || isPersistingRef.current) {
+      return;
+    }
+
+    isPersistingRef.current = true;
+    try {
+      if (snapshot.reps) {
+        for (const [key, value] of Object.entries(snapshot.reps)) {
+          if (value !== '' && value !== undefined && value !== null) {
+            const numValue = parseInt(value, 10);
+            if (Number.isNaN(numValue) || numValue < 0 || numValue > 999) {
+              snapshot.reps[key] = '';
+            }
+          }
+        }
+      }
+
+      if (snapshot.exerciseWeights) {
+        for (const [key, value] of Object.entries(snapshot.exerciseWeights)) {
+          if (value === '' || value === undefined || value === null) continue;
+          const normalized = String(value).trim().replace(',', '.');
+          const numValue = parseFloat(normalized);
+          if (Number.isNaN(numValue) || numValue < 0 || numValue > 999) {
+            snapshot.exerciseWeights[key] = '';
+          }
+        }
+      }
+
+      await updateData(snapshot);
+      invalidateSportXpCache();
+      setHasUnsavedExercises(false);
+      setHasUnsavedStretches(false);
+      setTempData(null);
+      tempDataRef.current = null;
+
+      const d = recordDateRef.current instanceof Date ? recordDateRef.current : new Date();
+      sidebarEvents.emit(SIDEBAR_EVENTS.WORKOUT_UPDATED, {
+        date: getDateStr(d),
+        type: 'exercises',
+      });
+    } catch (error) {
+      console.error('❌ Erreur persistance automatique exercices:', error);
+    } finally {
+      isPersistingRef.current = false;
+    }
+  }, [updateData]);
+
+  const schedulePersist = useCallback(
+    (newData) => {
+      tempDataRef.current = newData;
+      backupWorkoutToLocalStorage(storageKey, newData);
+      void flushPersist();
+    },
+    [flushPersist, storageKey]
+  );
+
+  useEffect(() => {
+    const onPageHide = () => {
+      void flushPersist();
+    };
+    window.addEventListener('pagehide', onPageHide);
+    window.addEventListener('beforeunload', onPageHide);
+    return () => {
+      window.removeEventListener('pagehide', onPageHide);
+      window.removeEventListener('beforeunload', onPageHide);
+      if (persistTimerRef.current) {
+        clearTimeout(persistTimerRef.current);
+      }
+    };
+  }, [flushPersist]);
+
+  const updateTempExerciseData = useCallback(
+    (newData) => {
+      setTempData(newData);
+      setHasUnsavedExercises(true);
+      invalidateSportXpCache();
+      schedulePersist(newData);
+    },
+    [schedulePersist]
+  );
+
+  const updateTempStretchData = useCallback(
+    (newData) => {
+      setTempData(newData);
+      setHasUnsavedStretches(true);
+      invalidateSportXpCache();
+      schedulePersist(newData);
+    },
+    [schedulePersist]
+  );
+
+>>>>>>> 9e0d966 (avancements au niveau de la remise a niveau de la sauvegarde des quetes de livre set ajouts d etrucs dans livres)
   const replaceDraftWorkoutData = useCallback((snapshot) => {
     if (!snapshot || typeof snapshot !== 'object') return;
     tempDataRef.current = snapshot;
     dirtyFlagsRef.current = { exercises: false, stretches: false };
     setTempData(snapshot);
+<<<<<<< HEAD
     setHasUnsavedExercises(false);
     setHasUnsavedStretches(false);
   }, []);
@@ -200,20 +326,57 @@ export const useWorkoutExercises = (persistedData, updateData, sessionCalendarDa
   const discardExerciseChanges = useCallback(() => {
     try {
       clearDraftState();
+=======
+    tempDataRef.current = snapshot;
+  }, []);
+
+  const saveExerciseChanges = useCallback(async () => {
+    await flushPersist();
+  }, [flushPersist]);
+
+  const discardExerciseChanges = useCallback(() => {
+    try {
+      if (persistTimerRef.current) {
+        clearTimeout(persistTimerRef.current);
+        persistTimerRef.current = null;
+      }
+      setHasUnsavedExercises(false);
+      setTempData(null);
+      tempDataRef.current = null;
+>>>>>>> 9e0d966 (avancements au niveau de la remise a niveau de la sauvegarde des quetes de livre set ajouts d etrucs dans livres)
     } catch (error) {
       console.error("❌ Erreur lors de l'annulation des exercices:", error);
     }
+<<<<<<< HEAD
   }, [clearDraftState]);
 
   const discardStretchChanges = useCallback(() => {
     try {
       clearDraftState();
+=======
+  }, []);
+
+  const saveStretchChanges = useCallback(async () => {
+    await flushPersist();
+  }, [flushPersist]);
+
+  const discardStretchChanges = useCallback(() => {
+    try {
+      if (persistTimerRef.current) {
+        clearTimeout(persistTimerRef.current);
+        persistTimerRef.current = null;
+      }
+      setHasUnsavedStretches(false);
+      setTempData(null);
+      tempDataRef.current = null;
+>>>>>>> 9e0d966 (avancements au niveau de la remise a niveau de la sauvegarde des quetes de livre set ajouts d etrucs dans livres)
     } catch (error) {
       console.error("❌ Erreur lors de l'annulation des étirements:", error);
     }
   }, [clearDraftState]);
 
   const cancelExerciseChanges = useCallback(() => {
+<<<<<<< HEAD
     clearDraftState();
   }, [clearDraftState]);
 
@@ -228,6 +391,18 @@ export const useWorkoutExercises = (persistedData, updateData, sessionCalendarDa
           ? (tempDataRef.current ?? tempData)
           : null;
       const currentData = draft ? { ...draft } : { ...(persistedData || {}) };
+=======
+    discardExerciseChanges();
+  }, [discardExerciseChanges]);
+
+  const cancelStretchChanges = useCallback(() => {
+    discardStretchChanges();
+  }, [discardStretchChanges]);
+
+  const resetDay = useCallback(
+    (dateStr) => {
+      const currentData = getCurrentData();
+>>>>>>> 9e0d966 (avancements au niveau de la remise a niveau de la sauvegarde des quetes de livre set ajouts d etrucs dans livres)
       const newData = { ...currentData };
 
       Object.keys(newData.checkedExercises || {}).forEach((key) => {
@@ -258,15 +433,25 @@ export const useWorkoutExercises = (persistedData, updateData, sessionCalendarDa
         if (key.startsWith(dateStr)) delete newData.exerciseSetWeights[key];
       });
 
+<<<<<<< HEAD
       if (!newData.exerciseSessionPleasureStars) newData.exerciseSessionPleasureStars = {};
       Object.keys(newData.exerciseSessionPleasureStars).forEach((key) => {
         if (key.startsWith(dateStr)) delete newData.exerciseSessionPleasureStars[key];
       });
 
+=======
+>>>>>>> 9e0d966 (avancements au niveau de la remise a niveau de la sauvegarde des quetes de livre set ajouts d etrucs dans livres)
       if (!newData.exerciseSessionEffortStars) newData.exerciseSessionEffortStars = {};
       Object.keys(newData.exerciseSessionEffortStars).forEach((key) => {
         if (key.startsWith(dateStr)) delete newData.exerciseSessionEffortStars[key];
       });
+<<<<<<< HEAD
+=======
+      if (!newData.exerciseSessionPerceived) newData.exerciseSessionPerceived = {};
+      Object.keys(newData.exerciseSessionPerceived).forEach((key) => {
+        if (key.startsWith(dateStr)) delete newData.exerciseSessionPerceived[key];
+      });
+>>>>>>> 9e0d966 (avancements au niveau de la remise a niveau de la sauvegarde des quetes de livre set ajouts d etrucs dans livres)
 
       Object.keys(newData.checkedStretches || {}).forEach((key) => {
         if (key.startsWith(dateStr)) {
@@ -281,7 +466,11 @@ export const useWorkoutExercises = (persistedData, updateData, sessionCalendarDa
 
       updateData(newData);
     },
+<<<<<<< HEAD
     [persistedData, hasUnsavedExercises, hasUnsavedStretches, tempData, updateData]
+=======
+    [getCurrentData, updateData]
+>>>>>>> 9e0d966 (avancements au niveau de la remise a niveau de la sauvegarde des quetes de livre set ajouts d etrucs dans livres)
   );
 
   return {
@@ -297,6 +486,11 @@ export const useWorkoutExercises = (persistedData, updateData, sessionCalendarDa
     discardStretchChanges,
     cancelExerciseChanges,
     cancelStretchChanges,
+<<<<<<< HEAD
     resetDay
+=======
+    resetDay,
+    flushPersist,
+>>>>>>> 9e0d966 (avancements au niveau de la remise a niveau de la sauvegarde des quetes de livre set ajouts d etrucs dans livres)
   };
 };

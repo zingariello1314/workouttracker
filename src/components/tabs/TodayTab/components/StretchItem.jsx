@@ -32,8 +32,11 @@ function formatDuration(seconds) {
  * @param {Date} props.date
  * @param {boolean} [props.defaultExpanded=false] - Affiche les instructions en clair par défaut
  */
-const StretchItem = memo(({ item, date, defaultExpanded = false }) => {
-  const { toggleStretch, getStretchStatus, updateStretchSessionEffortStars } = useStretchTracking({ date });
+const StretchItem = memo(({ item, date, defaultExpanded = false, onAfterStretchDataChange }) => {
+  const { toggleStretch, getStretchStatus, updateStretchSessionEffortStars } = useStretchTracking({
+    date,
+    onAfterStretchDataChange,
+  });
   const { isChecked, sessionEffortStars } = getStretchStatus(item.moment, item.id);
   const [expanded, setExpanded] = useState(defaultExpanded);
 

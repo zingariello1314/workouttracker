@@ -9,7 +9,7 @@
 export { CRENEAUX } from '../../../utils/quests';
 
 export const CATEGORIES = [
-  'Santé', 'Travail', 'Apprentissage', 'Lecture', 'Sport', 
+  'Santé', 'Travail', 'Apprentissage', 'Lecture', 'Sport', 'Étirements', 'Nutrition',
   'Ménage', 'Spirituel', 'Prière', 'Repas', 'Projets', 'Hobby', 
   'Social', 'Finance', 'Créativité', 'Bien-être'
 ];
