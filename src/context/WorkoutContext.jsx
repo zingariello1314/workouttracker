@@ -165,7 +165,15 @@ const WorkoutProvider = ({ children }) => {
   // 🔒 Important :
   // - plus aucune donnée mockée / de test.
   // - lorsque l'utilisateur est déconnecté, les données sont éphémères (pas de lecture/écriture IndexedDB).
-  const { data, updateData, loadFromDB, saveToDB, saveSessionFeedback } = useWorkoutData({
+  const {
+    data,
+    updateData,
+    loadFromDB,
+    saveToDB,
+    saveSessionFeedback,
+    cancelPendingAutoSave,
+    flushPendingSaveNow
+  } = useWorkoutData({
     storageKey,
     generateTestData: false,
     ephemeral: authLoading || !isAuthenticated,
@@ -210,6 +218,7 @@ const WorkoutProvider = ({ children }) => {
     hasUnsavedExercises,
     hasUnsavedStretches,
     tempData,
+    getWorkoutDataForSession,
     replaceDraftWorkoutData,
     updateTempExerciseData,
     updateTempStretchData,
@@ -220,14 +229,46 @@ const WorkoutProvider = ({ children }) => {
     cancelExerciseChanges,
     cancelStretchChanges,
     resetDay,
-  } = useWorkoutExercises(data, updateData, getDateStr(currentDate));
+    flushDirtySessionDraft,
+  } = useWorkoutExercises(data, updateData, getDateStr(currentDate), cancelPendingAutoSave);
 
-  const getCurrentData = useCallback(() => {
-    if ((hasUnsavedExercises || hasUnsavedStretches) && tempData) {
-      return tempData;
+  const getCurrentData = getWorkoutDataForSession;
+
+  /** Quitter l’onglet Aujourd’hui : abandonner le brouillon (évite barre Enregistrer fantôme au retour). */
+  const prevActiveTabRef = useRef(activeTab);
+  useEffect(() => {
+    const prev = prevActiveTabRef.current;
+    if (prev === 'today' && activeTab !== 'today') {
+      discardExerciseChanges();
+      discardStretchChanges();
     }
-    return data;
-  }, [hasUnsavedExercises, hasUnsavedStretches, tempData, data]);
+    prevActiveTabRef.current = activeTab;
+  }, [activeTab, discardExerciseChanges, discardStretchChanges]);
+
+  const prevWorkoutDayOverrideRef = useRef(workoutDayOverride);
+  useEffect(() => {
+    if (prevWorkoutDayOverrideRef.current !== workoutDayOverride) {
+      discardExerciseChanges();
+      discardStretchChanges();
+      prevWorkoutDayOverrideRef.current = workoutDayOverride;
+    }
+  }, [workoutDayOverride, discardExerciseChanges, discardStretchChanges]);
+
+  /** Change la date calendaire de la séance : abandonne toujours le brouillon (évite blocage navigation). */
+  const changeSessionCalendarDate = useCallback(
+    (nextDate) => {
+      const normalized = new Date(nextDate);
+      if (Number.isNaN(normalized.getTime())) return;
+      normalized.setHours(12, 0, 0, 0);
+      const nextStr = getDateStr(normalized);
+      const prevStr = getDateStr(currentDate);
+      if (nextStr === prevStr) return;
+      discardExerciseChanges();
+      discardStretchChanges();
+      setCurrentDate(normalized);
+    },
+    [currentDate, discardExerciseChanges, discardStretchChanges]
+  );
 
   // ✅ PHASE 4 : Utilisation du hook pour les programmes
   const {
@@ -1264,12 +1305,37 @@ const WorkoutProvider = ({ children }) => {
     const normalized = normalizeCircuitDefinition(input);
     const currentData = getCurrentData();
     const updatedDefs = upsertCircuitDefinition(currentData.circuitDefinitions, normalized);
-    await updateData({
-      ...currentData,
-      circuitDefinitions: updatedDefs
-    });
+    await updateData(
+      {
+        ...currentData,
+        circuitDefinitions: updatedDefs
+      },
+      { strict: true }
+    );
     return normalized;
   }, [getCurrentData, updateData]);
+
+  /** Persistance atomique de plusieurs définitions (migration circuits legacy). */
+  const saveCircuitDefinitionsBatch = useCallback(
+    async (definitionsMap) => {
+      if (!definitionsMap || typeof definitionsMap !== 'object') return;
+      const entries = Object.entries(definitionsMap).filter(([, def]) => def && def.id);
+      if (entries.length === 0) return;
+      const currentData = getCurrentData();
+      const merged = { ...(currentData.circuitDefinitions || {}) };
+      entries.forEach(([id, def]) => {
+        merged[id] = def;
+      });
+      await updateData(
+        {
+          ...currentData,
+          circuitDefinitions: merged
+        },
+        { strict: true }
+      );
+    },
+    [getCurrentData, updateData]
+  );
 
   /**
    * Supprime une définition de circuit + nettoie sa progression et ses
@@ -1375,6 +1441,7 @@ const WorkoutProvider = ({ children }) => {
     // États principaux
     currentDate,
     setCurrentDate,
+    changeSessionCalendarDate,
     activeTab,
     setActiveTab,
     pendingEnduranceSubTab,
@@ -1507,10 +1574,12 @@ const WorkoutProvider = ({ children }) => {
 
     // Circuits (bibliothèque + assignation programme + suivi des tours)
     saveCircuitDefinition,
+    saveCircuitDefinitionsBatch,
     deleteCircuitDefinition,
     assignCircuitToProgramDay,
     incrementCircuitRound,
-    decrementCircuitRound
+    decrementCircuitRound,
+    flushDirtySessionDraft
   };
 
   // Sauvegarde automatique du contexte
@@ -1542,16 +1611,19 @@ const WorkoutProvider = ({ children }) => {
 
   useEffect(() => {
     if (!isAuthenticated) return undefined;
-    return registerAppPersistenceFlush(() =>
-      flushAutoSave({
+    return registerAppPersistenceFlush(async () => {
+      await flushDirtySessionDraft?.();
+      cancelPendingAutoSave?.();
+      await flushPendingSaveNow({ forcePersist: true });
+      await flushAutoSave({
         programs: programsRef.current,
         activeProgram: activeProgramRef.current,
         programHistory: programHistoryRef.current,
         weekVariant: weekVariantRef.current,
         isGymMode: isGymModeRef.current,
-      })
-    );
-  }, [isAuthenticated, flushAutoSave]);
+      });
+    });
+  }, [isAuthenticated, flushAutoSave, flushDirtySessionDraft, cancelPendingAutoSave, flushPendingSaveNow]);
 
   useEffect(() => {
     if (isInitialLoadRef.current) return;

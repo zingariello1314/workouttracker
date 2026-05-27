@@ -1076,17 +1076,27 @@ export const useWorkoutData = (options = {}) => {
   const loadData = async () => {
     let savedData = await loadFromDB();
 
+    const fromLocalBackup = loadWorkoutFromLocalStorage(storageKey);
+
     if (!savedData || !hasWorkoutContent(savedData)) {
-      const fromLocal = loadWorkoutFromLocalStorage(storageKey);
-      if (fromLocal && hasWorkoutContent(fromLocal)) {
-        savedData = fromLocal;
+      if (fromLocalBackup && hasWorkoutContent(fromLocalBackup)) {
+        savedData = fromLocalBackup;
         if (!ephemeral) {
           try {
-            await saveToDB(fromLocal);
+            await saveToDB(fromLocalBackup);
           } catch {
             // IndexedDB optionnel si localStorage a les données
           }
         }
+      }
+    } else if (fromLocalBackup) {
+      const idbDefs = savedData.circuitDefinitions || {};
+      const lsDefs = fromLocalBackup.circuitDefinitions || {};
+      if (Object.keys(lsDefs).length > Object.keys(idbDefs).length) {
+        savedData = {
+          ...savedData,
+          circuitDefinitions: { ...lsDefs, ...idbDefs }
+        };
       }
     }
 
@@ -1145,7 +1155,8 @@ export const useWorkoutData = (options = {}) => {
     isInitialLoadRef.current = false;
   };
 
-  const updateData = async (newData) => {
+  const updateData = async (newData, options = {}) => {
+    const { strict = false } = options;
     workoutDataLog.debug('🔄 updateData appelé avec:', newData);
     let toStore = newData;
     if (newData && typeof newData === 'object' && !newData.trainingPrefs?.journeyStartYmd) {
@@ -1174,13 +1185,13 @@ export const useWorkoutData = (options = {}) => {
       }
     } catch (error) {
       console.error('❌ Erreur lors de la sauvegarde dans updateData:', error);
-      // Essayer de sauvegarder en localStorage comme fallback
       try {
-        localStorage.setItem(`workoutData_backup_${storageKey}`, JSON.stringify(toStore));
-        workoutDataLog.debug('💾 Sauvegarde de secours en localStorage réussie');
+        backupWorkoutToLocalStorage(storageKey, toStore);
+        workoutDataLog.debug('💾 Sauvegarde de secours localStorage (updateData)');
       } catch (localStorageError) {
         console.error('❌ Échec de la sauvegarde de secours:', localStorageError);
       }
+      if (strict) throw error;
     }
   };
 
@@ -1304,11 +1315,19 @@ export const useWorkoutData = (options = {}) => {
     }
   }, [data, autoSave, saveToDB]);
 
+  const cancelPendingAutoSave = useCallback(() => {
+    if (debounceTimerRef.current) {
+      clearTimeout(debounceTimerRef.current);
+      debounceTimerRef.current = null;
+    }
+  }, []);
+
   return {
     data,
     updateData,
     saveToDB,
     loadFromDB,
-    saveSessionFeedback
+    saveSessionFeedback,
+    cancelPendingAutoSave
   };
 };

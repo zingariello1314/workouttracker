@@ -5,7 +5,8 @@ import {
   adjustSuggestedProgramWeeks,
   computeCardioBiasMultiplier,
   buildQuizStretchingBlocks,
-  buildQuizTrainingSessionBlueprint
+  buildQuizTrainingSessionBlueprint,
+  resolveTargetWeightFromQuiz
 } from './quizInfluence';
 
 export const PENDING_QUIZ_PREFILL_NUTRITION_KEY = 'momentum.pendingQuizPrefill.nutrition';
@@ -58,7 +59,8 @@ export const buildQuizPrefillPayload = (profileQuestionnaireRaw) => {
       cardioBias: computeCardioBiasMultiplier(answers),
       stretchingBlocks: buildQuizStretchingBlocks(answers),
       sessionBlueprint: buildQuizTrainingSessionBlueprint(answers)
-    }
+    },
+    targetWeightKg: resolveTargetWeightFromQuiz(answers)
   };
 };
 

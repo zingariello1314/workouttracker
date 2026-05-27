@@ -18,6 +18,7 @@ import {
 } from '../../features/profileQuestionnaire/prefill';
 import { buildTrainingScheduleFromQuizDays, augmentScheduleWithQuizDefaults } from '../../features/profileQuestionnaire/trainingScheduleFromQuiz';
 import { getProgramGoalLabel, buildProgramDescriptionFromQuiz } from '../../features/profileQuestionnaire/quizInfluence';
+import { isWeekAlternationEnabled } from '../../features/profileQuestionnaire/quizExercisePlanner';
 import { copyEtirementsToProgramSchedule } from '../../utils/stretchUtils';
 import { buildExerciseDaysSet, countProgramUsageDays } from '../../utils/programUsageDays';
 
@@ -91,23 +92,28 @@ const ProgramTab = () => {
   const visiblePrograms = isAuthenticated ? programs : [];
   const visibleActiveProgram = isAuthenticated ? activeProgram : null;
 
-  const createEmptyDay = () => ({
-    name: '',
-    focus: '',
-    duration: '',
-    notes: '',
-    active: false,
-    exercises: [],
-    etirements: {
-      matin: { name: t('program.stretches.morning', 'Matin'), duration: '', instructions: '' },
-      midi: { name: t('program.stretches.midday', 'Midi'), duration: '', instructions: '' },
-      soir: { name: t('program.stretches.evening', 'Soir'), duration: '', instructions: '' }
-    },
-    salleVariants: {
-      semaineA: { name: t('program.variants.weekA', 'Variante salle A'), exercises: [] },
-      semaineB: { name: t('program.variants.weekB', 'Variante salle B'), exercises: [] }
+  const createEmptyDay = (opts = {}) => {
+    const day = {
+      name: '',
+      focus: '',
+      duration: '',
+      notes: '',
+      active: false,
+      exercises: [],
+      etirements: {
+        matin: { name: t('program.stretches.morning', 'Matin'), duration: '', instructions: '' },
+        midi: { name: t('program.stretches.midday', 'Midi'), duration: '', instructions: '' },
+        soir: { name: t('program.stretches.evening', 'Soir'), duration: '', instructions: '' }
+      }
+    };
+    if (opts.alternationEnabled) {
+      day.salleVariants = {
+        semaineA: { name: t('program.variants.weekA', 'Variante salle A'), exercises: [] },
+        semaineB: { name: t('program.variants.weekB', 'Variante salle B'), exercises: [] }
+      };
     }
-  });
+    return day;
+  };
 
   const createEmptySchedule = () => ({
     lundi: createEmptyDay(),
@@ -122,8 +128,11 @@ const ProgramTab = () => {
   const handleCreateProgram = () => {
     if (newProgram.name.trim()) {
       const useQuizSchedule = Array.isArray(pendingQuizTrainingDays) && pendingQuizTrainingDays.length > 0;
+      const quizAlternation =
+        useQuizSchedule && pendingQuizAnswers && isWeekAlternationEnabled(pendingQuizAnswers);
+      const createDayForQuiz = () => createEmptyDay({ alternationEnabled: Boolean(quizAlternation) });
       const scheduleBase = useQuizSchedule
-        ? buildTrainingScheduleFromQuizDays(pendingQuizTrainingDays, createEmptyDay)
+        ? buildTrainingScheduleFromQuizDays(pendingQuizTrainingDays, createDayForQuiz)
         : createEmptySchedule();
       const schedule =
         useQuizSchedule && pendingQuizAnswers && typeof pendingQuizAnswers === 'object'
@@ -132,7 +141,12 @@ const ProgramTab = () => {
       const created = addProgram({
         ...newProgram,
         schedule,
-        ...(useQuizSchedule ? { availabilitySource: 'quiz' } : {})
+        ...(useQuizSchedule
+          ? {
+              availabilitySource: 'quiz',
+              weekAlternation: quizAlternation ? 'ab_enabled' : 'none'
+            }
+          : {})
       });
       setNewProgram({ name: '', description: '', duration: 4, exercises: [] });
       setPendingQuizTrainingDays(null);

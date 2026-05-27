@@ -54,7 +54,14 @@ export default function AnatomyBankCardPreview({
 
   if (layout === 'gridFill') {
     return (
-      <AnatomyBankCardRaster anatomy={anatomy} mode={mode === 'stretch' ? 'stretch' : 'exercise'} className={className} />
+      <AnatomyBankCardRaster
+        anatomy={anatomy}
+        mode={mode === 'stretch' ? 'stretch' : 'exercise'}
+        className={className}
+        webglFallback={
+          <AnatomyBankCardPreviewGl anatomy={anatomy} className="h-full w-full min-h-0" fillContainer />
+        }
+      />
     );
   }
 
@@ -63,7 +70,7 @@ export default function AnatomyBankCardPreview({
   );
 }
 
-function AnatomyBankCardPreviewGl({ anatomy, className }) {
+function AnatomyBankCardPreviewGl({ anatomy, className, fillContainer = false }) {
   const hostRef = useRef(null);
   const heldSlotRef = useRef(false);
   const inViewRef = useRef(false);
@@ -223,17 +230,20 @@ function AnatomyBankCardPreviewGl({ anatomy, className }) {
         ? anatomy.uniformBodyColor
         : '#334155';
 
-  const innerScale = 'scale-[1.12]';
-  const minCanvas = 'min-h-[188px]';
+  const innerScale = fillContainer ? 'scale-[1.02]' : 'scale-[1.12]';
+  const minCanvas = fillContainer ? 'min-h-0' : 'min-h-[188px]';
+  const frameClass = fillContainer
+    ? `h-full w-full min-h-0 rounded-xl overflow-hidden ${PREVIEW_FRAME} outline-none`
+    : `w-full max-w-[148px] rounded-xl overflow-hidden ${PREVIEW_FRAME} outline-none`;
+  const frameStyle = fillContainer ? undefined : { aspectRatio: '3 / 5', minHeight: 168, maxHeight: 220 };
 
   return (
     <div
       ref={hostRef}
-      className={`flex shrink-0 justify-center pointer-events-none select-none ${className}`}
+      className={`flex shrink-0 pointer-events-none select-none ${fillContainer ? 'h-full w-full min-h-0 justify-stretch' : 'justify-center'} ${className}`}
       aria-hidden
     >
-      <div className={`w-full max-w-[148px] rounded-xl overflow-hidden ${PREVIEW_FRAME} outline-none`}
-        style={{ aspectRatio: '3 / 5', minHeight: 168, maxHeight: 220 }}
+      <div className={frameClass} style={frameStyle}
       >
         <div className="relative h-full w-full bg-black overflow-hidden">
           <div className={`absolute inset-0 flex items-center justify-center origin-center ${innerScale}`}>

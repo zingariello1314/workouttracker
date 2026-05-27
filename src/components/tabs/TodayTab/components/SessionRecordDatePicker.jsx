@@ -10,7 +10,7 @@ import { useTranslation } from '../../../../utils/translations';
  * tout en enregistrant sur la date calendaire sélectionnée.
  */
 export default function SessionRecordDatePicker() {
-  const { currentDate, setCurrentDate } = useWorkout();
+  const { currentDate, changeSessionCalendarDate } = useWorkout();
   const t = useTranslation();
 
   const realToday = useMemo(() => {
@@ -35,11 +35,11 @@ export default function SessionRecordDatePicker() {
     next.setDate(next.getDate() + delta);
     next.setHours(12, 0, 0, 0);
     if (next > realToday) return;
-    setCurrentDate(next);
+    changeSessionCalendarDate(next);
   };
 
   const goToToday = () => {
-    setCurrentDate(new Date(realToday));
+    changeSessionCalendarDate(new Date(realToday));
   };
 
   return (

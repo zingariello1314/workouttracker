@@ -2,6 +2,26 @@
  * Heuristiques partagées : réponses du quiz profil → nutrition, libellés programme, indices coach.
  */
 
+import { stretchDrillsCatalog } from '../../data/stretchDrillsCatalog.js';
+import { stretchDatabase } from '../../data/stretchDatabase.js';
+
+/** Créneaux activés par choix explicite au quiz (`stretchDistribution`). */
+export const STRETCH_DISTRIBUTION_SLOTS = {
+  none_scheduled: [],
+  morning_only: ['matin'],
+  evening_only: ['soir'],
+  morning_evening: ['matin', 'soir'],
+  full_day: ['matin', 'midi', 'soir']
+};
+
+const STRETCH_DISTRIBUTION_LABELS = {
+  none_scheduled: 'Aucun créneau planifié',
+  morning_only: 'Matin',
+  evening_only: 'Soir',
+  morning_evening: 'Matin et soir',
+  full_day: 'Matin, midi et soir'
+};
+
 const GOAL_TO_NUTRITION = {
   lean_toned: 'cutting',
   muscular_defined: 'lean_bulk',
@@ -121,9 +141,33 @@ export function computeQuizLevelWellnessModifier(answers) {
 }
 
 /**
+ * Créneaux matin / midi / soir à remplir dans le programme, selon `stretchDistribution` (ou défaut selon habit).
+ */
+export function resolveStretchMomentsFromQuiz(answers) {
+  const dist = answers?.stretchDistribution;
+  if (dist && Object.prototype.hasOwnProperty.call(STRETCH_DISTRIBUTION_SLOTS, dist)) {
+    return [...STRETCH_DISTRIBUTION_SLOTS[dist]];
+  }
+  const habit = answers?.stretchingHabit;
+  if (habit === 'never' || habit === 'rarely') return [];
+  if (habit === 'five_plus_week') return ['matin', 'midi', 'soir'];
+  return ['matin', 'soir'];
+}
+
+export function describeStretchDistributionFromQuiz(answers) {
+  const dist = answers?.stretchDistribution;
+  if (dist && STRETCH_DISTRIBUTION_LABELS[dist]) return STRETCH_DISTRIBUTION_LABELS[dist];
+  const moments = resolveStretchMomentsFromQuiz(answers);
+  if (!moments.length) return 'Aucun créneau (déduit du quiz)';
+  const labels = { matin: 'matin', midi: 'midi', soir: 'soir' };
+  return moments.map((m) => labels[m] || m).join(', ');
+}
+
+/**
  * Textes d’étirements à injecter dans le planning (matin / midi / soir) selon quiz.
  */
 export function buildQuizStretchingBlocks(answers) {
+  const enabledMoments = resolveStretchMomentsFromQuiz(answers);
   const habit = answers?.stretchingHabit || 'once_week';
   const flex = answers?.flexibilityLevel || 'average';
   const know = answers?.stretchingKnowledge || 'some_gaps';
@@ -166,10 +210,18 @@ export function buildQuizStretchingBlocks(answers) {
       ' Tu t’es déclaré très souple : privilégie le contrôle et la stabilité plutôt que pousser les splits au maximum.';
   }
 
+  const emptyBlock = { duration: '', instructions: '' };
   return {
-    morning: { duration: morningDur, instructions: morningTxt },
-    midday: { duration: middayDur, instructions: middayTxt },
-    evening: { duration: eveningDur, instructions: eveningTxt }
+    enabledMoments,
+    morning: enabledMoments.includes('matin')
+      ? { duration: morningDur, instructions: morningTxt }
+      : emptyBlock,
+    midday: enabledMoments.includes('midi')
+      ? { duration: middayDur, instructions: middayTxt }
+      : emptyBlock,
+    evening: enabledMoments.includes('soir')
+      ? { duration: eveningDur, instructions: eveningTxt }
+      : emptyBlock
   };
 }
 
@@ -267,7 +319,11 @@ export function buildQuizTrainingSessionBlueprint(answers) {
 export function buildProgramPrefillHints(answers) {
   const tags = focusTagsFromAnswers(answers);
   const equip = Array.isArray(answers?.availableEquipment) ? answers.availableEquipment : [];
-  const loc = answers?.trainingLocation || null;
+  const loc = Array.isArray(answers?.trainingLocation)
+    ? answers.trainingLocation
+    : answers?.trainingLocation
+      ? [answers.trainingLocation]
+      : [];
   const current = answers?.currentPhysique || null;
   return {
     focusTags: tags,
@@ -276,9 +332,11 @@ export function buildProgramPrefillHints(answers) {
     currentPhysique: current,
     stretchingHabit: answers?.stretchingHabit || null,
     stretchingKnowledge: answers?.stretchingKnowledge || null,
+    stretchDistribution: answers?.stretchDistribution || null,
     flexibilityLevel: answers?.flexibilityLevel || null,
     cardioTrainingDesire: answers?.cardioTrainingDesire || null,
     circuitTrainingStyle: answers?.circuitTrainingStyle || null,
+    exerciseTypePreferences: Array.isArray(answers?.exerciseTypePreferences) ? answers.exerciseTypePreferences : [],
     cardioBias: computeCardioBiasMultiplier(answers),
     hasJumpRope: equip.includes('jump_rope')
   };
@@ -298,24 +356,254 @@ export function buildProgramDescriptionFromQuiz(answers, suggestedDays) {
   const bp = buildQuizTrainingSessionBlueprint(answers);
   parts.push(`Structure suggérée : ${bp.exercisesPerSession}, ${bp.setsHint}, reps ${bp.repRange}.`);
   parts.push(bp.circuitGuidance);
+  const stretchSlots = describeStretchDistributionFromQuiz(answers);
   const sh = answers?.stretchingHabit;
-  if (sh && sh !== 'never') parts.push('Étirements guidés préremplis (matin/midi/soir) selon ton quiz.');
+  if (answers?.stretchDistribution === 'none_scheduled') {
+    parts.push('Pas de routine d’étirements planifiée (choix quiz).');
+  } else if (sh && sh !== 'never' && resolveStretchMomentsFromQuiz(answers).length) {
+    parts.push(`Étirements guidés sur : ${stretchSlots}.`);
+  }
   if (hints.hasJumpRope && answers?.cardioTrainingDesire && answers.cardioTrainingDesire !== 'minimal') {
     parts.push('Corde à sauter disponible : possibilité d’intervalles courts en fin de séance.');
   }
+  if (hints.exerciseTypePreferences?.length) {
+    parts.push(`Types préférés: ${hints.exerciseTypePreferences.join(', ')}.`);
+  }
+  if (shouldInjectPlyometricsFromQuiz(answers)) {
+    parts.push('Bloc pliométrie auto-ajouté sur les jours cardio (adapté au niveau du quiz).');
+  }
+  if (shouldInjectDrillsFromQuiz(answers)) {
+    parts.push('Drills course auto-ajoutés (difficulté alignée sur ton niveau au quiz).');
+  }
+  if (answers?.weekAlternation === 'ab_enabled') {
+    parts.push('Variantes semaine A / B activées (lieux et matériel du quiz).');
+  } else if (answers?.weekAlternation === 'none') {
+    parts.push('Pas de variantes semaine A / B.');
+  }
   return parts.length ? `Prérempli via quiz. ${parts.join(' · ')}.` : 'Prérempli via quiz onboarding.';
+}
+
+export function shouldInjectPlyometricsFromQuiz(answers) {
+  if (!answers || typeof answers !== 'object') return false;
+  const priorities = Array.isArray(answers.priorityMuscleGroups) ? answers.priorityMuscleGroups : [];
+  const cardioDesire = answers.cardioTrainingDesire;
+  const goal = answers.goalPhysique;
+  const typePrefs = Array.isArray(answers.exerciseTypePreferences) ? answers.exerciseTypePreferences : [];
+  const hasCardioPriority = priorities.includes('cardio');
+  return (
+    hasCardioPriority ||
+    typePrefs.includes('plyometrics') ||
+    cardioDesire === 'high' ||
+    cardioDesire === 'priority_hiit' ||
+    goal === 'athletic_performance' ||
+    goal === 'endurance_lean'
+  );
+}
+
+function pickTargetBmiByGoal(goal) {
+  const byGoal = {
+    lean_toned: 22.2,
+    muscular_defined: 23.2,
+    strong_powerful: 24.2,
+    balanced_functional: 22.8,
+    athletic_performance: 22.6,
+    bulk_mass: 25.0,
+    recomposition: 22.5,
+    endurance_lean: 21.6
+  };
+  return byGoal[goal] || 22.8;
+}
+
+/**
+ * Estime un poids cible prudent (kg) via IMC cible modulé par l’objectif.
+ * Utilisé comme suggestion (pas médical).
+ */
+export function estimateTargetWeightFromQuiz(answers) {
+  const vitals = answers?.vitalsSelfReport || {};
+  const heightCm = Number(vitals.heightCm);
+  if (!Number.isFinite(heightCm) || heightCm < 120 || heightCm > 230) return null;
+  const h = heightCm / 100;
+  let bmi = pickTargetBmiByGoal(answers?.goalPhysique);
+
+  const exp = answers?.experienceLevel;
+  if (exp === 'expert_3y_plus' || exp === 'advanced_1_3y') bmi += 0.3;
+  if (answers?.cardioTrainingDesire === 'priority_hiit' || answers?.goalPhysique === 'endurance_lean') bmi -= 0.3;
+  bmi = Math.max(20.5, Math.min(25.5, bmi));
+
+  const kg = bmi * h * h;
+  return Math.round(kg * 10) / 10;
+}
+
+export function resolveTargetWeightFromQuiz(answers) {
+  const vitals = answers?.vitalsSelfReport || {};
+  const mode = String(vitals?.targetWeightMode || 'none');
+  const manual = Number(vitals?.targetWeightKg);
+  if (mode === 'manual' && Number.isFinite(manual) && manual >= 30 && manual <= 250) return manual;
+  if (mode === 'auto') return estimateTargetWeightFromQuiz(answers);
+  return null;
+}
+
+function levelFromExperience(experienceLevel) {
+  if (experienceLevel === 'beginner_total' || experienceLevel === 'beginner_0_3m') return 'beginner';
+  if (experienceLevel === 'intermediate_3_12m') return 'intermediate';
+  return 'advanced';
+}
+
+export function buildQuizPlyometricTemplate(answers) {
+  const lvl = levelFromExperience(answers?.experienceLevel);
+  if (lvl === 'beginner') {
+    return [
+      {
+        id: 'quiz_plyo_sauts_sur_place',
+        name: 'Pliométrie — sauts sur place débutant',
+        series: '3×20 sec',
+        rest: 45,
+        intensity: 'light'
+      },
+      {
+        id: 'quiz_plyo_line_hops',
+        name: 'Pliométrie — sauts latéraux sur ligne',
+        series: '3×20 sec',
+        rest: 45,
+        intensity: 'light'
+      }
+    ];
+  }
+  if (lvl === 'intermediate') {
+    return [
+      {
+        id: 'quiz_plyo_squat_jumps',
+        name: 'Pliométrie — squat jumps contrôlés',
+        series: '4×8',
+        rest: 60,
+        intensity: 'moderate'
+      },
+      {
+        id: 'quiz_plyo_skater',
+        name: 'Pliométrie — skater jumps',
+        series: '4×10/ côté',
+        rest: 60,
+        intensity: 'moderate'
+      }
+    ];
+  }
+  return [
+    {
+      id: 'quiz_plyo_depth_jump',
+      name: 'Pliométrie — depth jump + rebond',
+      series: '5×5',
+      rest: 90,
+      intensity: 'heavy'
+    },
+    {
+      id: 'quiz_plyo_bounds',
+      name: 'Pliométrie — bounds alternés',
+      series: '4×20 m',
+      rest: 75,
+      intensity: 'heavy'
+    }
+  ];
+}
+
+/** Drills course suggérés en fin de quiz (même logique que la pliométrie). */
+export function shouldInjectDrillsFromQuiz(answers) {
+  if (!answers || typeof answers !== 'object') return false;
+  const typePrefs = Array.isArray(answers.exerciseTypePreferences) ? answers.exerciseTypePreferences : [];
+  if (typePrefs.includes('cardio_endurance')) return true;
+  if (shouldInjectPlyometricsFromQuiz(answers)) return true;
+  const goal = answers.goalPhysique;
+  return goal === 'athletic_performance' || goal === 'endurance_lean';
+}
+
+function resolveMaxDrillDifficulty(answers) {
+  const lvl = levelFromExperience(answers?.experienceLevel);
+  let max = lvl === 'beginner' ? 2 : lvl === 'intermediate' ? 3 : 4;
+  const cardio = answers?.cardioTrainingDesire;
+  if (cardio === 'minimal') max = Math.max(1, max - 1);
+  if (cardio === 'high' || cardio === 'priority_hiit') max = Math.min(4, max + 1);
+  if (answers?.experienceLevel === 'beginner_total') max = Math.min(max, 2);
+  return max;
+}
+
+function drillIntensityLabel(difficulty) {
+  const d = Number(difficulty) || 2;
+  if (d <= 1) return 'light';
+  if (d <= 2) return 'moderate';
+  if (d <= 3) return 'moderate';
+  return 'heavy';
+}
+
+function drillRestSec(difficulty) {
+  const d = Number(difficulty) || 2;
+  if (d <= 1) return 30;
+  if (d <= 2) return 40;
+  if (d <= 3) return 50;
+  return 60;
+}
+
+function formatDrillSeries(drill) {
+  const sec = Math.max(15, Math.min(90, Number(drill?.defaultDuration) || 30));
+  const d = Number(drill?.difficulty) || 2;
+  const sets = d <= 1 ? 2 : d <= 2 ? 3 : 4;
+  return `${sets}×${sec} sec`;
+}
+
+function pickSpreadDrillEntries(entries, count) {
+  if (!entries.length || count <= 0) return [];
+  if (entries.length <= count) return entries;
+  const out = [];
+  for (let i = 0; i < count; i += 1) {
+    const idx = Math.round((i * (entries.length - 1)) / Math.max(1, count - 1));
+    const pick = entries[idx];
+    if (pick && !out.some(([id]) => id === pick[0])) out.push(pick);
+  }
+  let cursor = 0;
+  while (out.length < count && cursor < entries.length) {
+    const pick = entries[cursor];
+    if (!out.some(([id]) => id === pick[0])) out.push(pick);
+    cursor += 1;
+  }
+  return out.slice(0, count);
+}
+
+/**
+ * Sélectionne des drills banque (difficulté 1–4) selon expérience et envie cardio du quiz.
+ */
+export function buildQuizDrillTemplate(answers) {
+  const maxDiff = resolveMaxDrillDifficulty(answers);
+  const lvl = levelFromExperience(answers?.experienceLevel);
+  const count = lvl === 'beginner' ? 2 : lvl === 'intermediate' ? 3 : 3;
+
+  const pool = Object.entries(stretchDrillsCatalog)
+    .filter(([, v]) => v?.category === 'Drills course')
+    .filter(([, v]) => (Number(v?.difficulty) || 2) <= maxDiff)
+    .sort((a, b) => (Number(a[1]?.difficulty) || 2) - (Number(b[1]?.difficulty) || 2));
+
+  const picked = pickSpreadDrillEntries(pool, count);
+  return picked.map(([stretchKey, drill]) => ({
+    id: `quiz_${stretchKey}`,
+    stretchKey,
+    name: drill.name,
+    series: formatDrillSeries(drill),
+    rest: drillRestSec(drill.difficulty),
+    intensity: drillIntensityLabel(drill.difficulty),
+    difficulty: Number(drill.difficulty) || 2
+  }));
 }
 
 const LOC_LABEL = {
   commercial_gym: 'salle commerciale',
   home_gym: 'home gym',
   home_minimal: 'domicile léger',
-  outdoor: 'extérieur'
+  outdoor: 'extérieur',
+  track: 'piste d’athlétisme'
 };
 
 function locationTrainingSentence(loc) {
-  if (!loc) return '';
-  return `Lieu principal : ${LOC_LABEL[loc] || loc}.`;
+  const arr = Array.isArray(loc) ? loc : loc ? [loc] : [];
+  if (!arr.length) return '';
+  const labels = arr.map((x) => LOC_LABEL[x] || x);
+  return `Lieu(x) d’entraînement : ${labels.join(', ')}.`;
 }
 
 function buildTrainingStyleSentence(answers) {
@@ -327,6 +615,10 @@ function buildTrainingStyleSentence(answers) {
     crossfit: 'CrossFit',
     functional: 'force athlétique',
     hiit_cardio: 'HIIT / cardio',
+    running_road: 'course route',
+    running_trail: 'trail',
+    running_track: 'course sur piste',
+    sprint_track: 'sprint',
     none: 'parcours novice'
   };
   const bits = tried.filter((k) => k !== 'none').map((k) => map[k] || k);
@@ -365,7 +657,11 @@ export function buildQuizDerivedSuggestionTexts(answers) {
   const cur = answers.currentPhysique;
   const pm = Array.isArray(answers.priorityMuscleGroups) ? answers.priorityMuscleGroups : [];
   const eq = Array.isArray(answers.availableEquipment) ? answers.availableEquipment : [];
-  const loc = answers.trainingLocation;
+  const loc = Array.isArray(answers.trainingLocation)
+    ? answers.trainingLocation
+    : answers.trainingLocation
+      ? [answers.trainingLocation]
+      : [];
   const exp = answers.experienceLevel;
   const freq = answers.weeklyTrainingFrequencyCurrent;
   const styles = Array.isArray(answers.triedTrainingStyles) ? answers.triedTrainingStyles : [];
@@ -412,16 +708,22 @@ export function buildQuizDerivedSuggestionTexts(answers) {
       text: 'Haut et bas du corps cochés : alterne demi-journées « push/pull + jambes » ou split classique 4 j pour éviter les séances trop longues.'
     });
   }
-  if (loc === 'home_minimal' && !eq.includes('dumbbells') && !eq.includes('resistance_bands')) {
+  if (loc.includes('home_minimal') && !eq.includes('dumbbells') && !eq.includes('resistance_bands')) {
     out.push({
       kind: 'quiz_home_min',
       text: 'Domicile léger sans haltères ni bandes : programmes type callisthénie / volume modéré ; ajoute bandes ou haltères si tu peux pour diversifier.'
     });
   }
-  if (loc === 'commercial_gym' && eq.length >= 5) {
+  if (loc.includes('commercial_gym') && eq.length >= 5) {
     out.push({
       kind: 'quiz_gym_rich',
       text: 'Salle riche en matériel : exploite machines et câbles pour isoler les groupes que tu as cochés en priorité.'
+    });
+  }
+  if (loc.includes('track') && (pm.includes('cardio') || g === 'athletic_performance' || g === 'endurance_lean')) {
+    out.push({
+      kind: 'quiz_track_running',
+      text: 'Piste d’athlétisme cochée : intègre 1 séance piste dédiée (sprints techniques ou intervalles) selon ton niveau.'
     });
   }
   if (freq === '0' || freq === '1_2') {
@@ -514,6 +816,23 @@ export function buildQuizDerivedSuggestionTexts(answers) {
     out.push({
       kind: 'quiz_stretch_edu',
       text: 'Tu as demandé plus de guidage étirements : l’app peut proposer des séquences simples (30 s / groupe, sans rebond) — utile surtout après effort ou longues positions assises.'
+    });
+  }
+  const stretchDist = answers?.stretchDistribution;
+  if (stretchDist === 'morning_only') {
+    out.push({
+      kind: 'quiz_stretch_morning',
+      text: 'Étirements planifiés le matin uniquement : privilégie mobilité douce et respiration avant les charges lourdes de la journée.'
+    });
+  } else if (stretchDist === 'evening_only') {
+    out.push({
+      kind: 'quiz_stretch_evening',
+      text: 'Étirements planifiés le soir : idéal en récup après séance ou journée statique — amplitudes modérées, sans rebond.'
+    });
+  } else if (stretchDist === 'full_day') {
+    out.push({
+      kind: 'quiz_stretch_full',
+      text: 'Routine matin / midi / soir : garde chaque bloc court (4–8 min) pour que le volume total reste soutenable.'
     });
   }
   if (flexL === 'very_stiff') {

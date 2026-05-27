@@ -1,8 +1,34 @@
 /**
  * Utilitaire pour convertir les programmes d'entraînement au format attendu par l'application
- * 
+ *
  * @module utils/programConverter
  */
+
+import {
+  resolveProgramExerciseCategory,
+  resolveCardioKindForExercise
+} from './programExerciseTypes';
+
+function mapLegacyExerciseRow(exercise) {
+  const row = {
+    id: exercise.id,
+    name: exercise.name,
+    series: exercise.series,
+    reps: '',
+    rest: exercise.type?.includes('circuit') ? 30 : exercise.type?.includes('superset') ? 45 : 90,
+    intensity: exercise.series?.includes('4×')
+      ? 'heavy'
+      : exercise.series?.includes('3×')
+        ? 'moderate'
+        : 'light',
+    notes: exercise.notes || '',
+    materiel: exercise.materiel || 'poids du corps',
+    type: exercise.type || 'standard'
+  };
+  const programCategory = resolveProgramExerciseCategory(row);
+  const cardioKind = resolveCardioKindForExercise(row, programCategory);
+  return { ...row, programCategory, ...(cardioKind ? { cardioKind } : {}) };
+}
 
 /**
  * Convertit un programme au format workoutProgram vers le format attendu par ProgramDetailView
@@ -38,45 +64,25 @@ export function convertProgramToSchedule(programData, programName, programDescri
           instructions: dayData.etirements?.soir || "" 
         }
       },
-      exercises: dayData.exercices?.map(exercise => ({
-        id: exercise.id,
-        name: exercise.name,
-        series: exercise.series,
-        reps: "",
-        rest: exercise.type?.includes('circuit') ? 30 : (exercise.type?.includes('superset') ? 45 : 90),
-        intensity: exercise.series?.includes('4×') ? "heavy" : (exercise.series?.includes('3×') ? "moderate" : "light"),
-        notes: exercise.notes || "",
-        materiel: exercise.materiel || "poids du corps",
-        type: exercise.type || "standard"
-      })) || [],
+      exercises: dayData.exercices?.map(mapLegacyExerciseRow) || [],
       // Ajout des variantes salle si elles existent
       salleVariants: dayData.salleVariants ? {
         semaineA: {
           name: dayData.salleVariants.semaineA.name,
-          exercises: dayData.salleVariants.semaineA.exercices.map(ex => ({
-            id: ex.id,
-            name: ex.name,
-            series: ex.series,
-            reps: "",
+          exercises: dayData.salleVariants.semaineA.exercices.map((ex) => ({
+            ...mapLegacyExerciseRow(ex),
+            materiel: ex.materiel || 'salle de sport',
             rest: 90,
-            intensity: "moderate",
-            notes: ex.notes || "",
-            materiel: ex.materiel || "salle de sport",
-            type: ex.type || "standard"
+            intensity: 'moderate'
           }))
         },
         semaineB: {
           name: dayData.salleVariants.semaineB.name,
-          exercises: dayData.salleVariants.semaineB.exercices.map(ex => ({
-            id: ex.id,
-            name: ex.name,
-            series: ex.series,
-            reps: "",
+          exercises: dayData.salleVariants.semaineB.exercices.map((ex) => ({
+            ...mapLegacyExerciseRow(ex),
+            materiel: ex.materiel || 'salle de sport',
             rest: 90,
-            intensity: "moderate",
-            notes: ex.notes || "",
-            materiel: ex.materiel || "salle de sport",
-            type: ex.type || "standard"
+            intensity: 'moderate'
           }))
         }
       } : undefined

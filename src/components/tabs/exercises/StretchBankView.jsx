@@ -37,6 +37,7 @@ import {
   stretchRatingHasAnswers
 } from '../../../utils/stretchPerceivedRatings';
 import AnatomyBankCardPreview from '../../anatomy/AnatomyBankCardPreview';
+import { sortStretchesByFamily, getStretchFamilyKey, getStretchFamilyLabel } from '../../../utils/bankFamilySort';
 
 function formatDuration(seconds) {
   if (!Number.isFinite(seconds) || seconds <= 0) return '';
@@ -350,7 +351,7 @@ const StretchBankView = ({
         break;
     }
 
-    return sorted;
+    return sortStretchesByFamily(sorted);
   }, [
     query,
     categoryFilter,
@@ -375,6 +376,42 @@ const StretchBankView = ({
       rated: ratedKeys.length
     };
   }, [ratings]);
+
+  const groupedStretches = useMemo(() => {
+    const baseOrder = ['respiration', 'drills_course', 'upper_mobility', 'back', 'lower_mobility', 'full_body'];
+    const map = new Map();
+    filtered.forEach((stretch) => {
+      const key = getStretchFamilyKey(stretch);
+      if (!map.has(key)) map.set(key, []);
+      map.get(key).push(stretch);
+    });
+    const order = [
+      ...baseOrder,
+      ...Array.from(map.keys()).filter((k) => !baseOrder.includes(k))
+    ];
+    return order
+      .map((key) => {
+        const rows = map.get(key) || [];
+        if (rows.length === 0) return null;
+        const byCategory = new Map();
+        rows.forEach((row) => {
+          const cat = String(row.category || 'Autres');
+          if (!byCategory.has(cat)) byCategory.set(cat, []);
+          byCategory.get(cat).push(row);
+        });
+        const categories = Array.from(byCategory.keys()).sort((a, b) => a.localeCompare(b, 'fr'));
+        return {
+          key,
+          label: getStretchFamilyLabel(rows[0]),
+          categorySummary: categories.join(' · '),
+          groups: categories.map((cat) => ({
+            category: cat,
+            rows: byCategory.get(cat) || []
+          }))
+        };
+      })
+      .filter(Boolean);
+  }, [filtered]);
 
   const handleOpen = useCallback((stretch) => {
     setDetailKey(stretch.key);
@@ -646,15 +683,30 @@ const StretchBankView = ({
           </CardContent>
         </Card>
       ) : (
-        <div className="grid grid-cols-1 items-stretch sm:grid-cols-2 lg:grid-cols-4 gap-5">
-          {filtered.map((stretch) => (
-            <StretchCard
-              key={stretch.key}
-              stretch={stretch}
-              ratingForCard={ratings[stretch.key]}
-              onOpen={handleOpen}
-              onRequestAddToProgram={readOnly ? undefined : onRequestAddToProgram}
-            />
+        <div className="space-y-6">
+          {groupedStretches.map((group) => (
+            <section key={group.key} className="space-y-3">
+              <h3 className="text-sm font-semibold uppercase tracking-wide text-teal-200 border-b border-[#0F4C5C]/50 pb-2">
+                {group.label} ({group.groups.reduce((n, g) => n + g.rows.length, 0)})
+              </h3>
+              <p className="text-xs text-teal-400/85 -mt-1">{group.categorySummary}</p>
+              {group.groups.map((sub) => (
+                <div key={`${group.key}-${sub.category}`} className="space-y-2">
+                  <h4 className="text-xs font-semibold uppercase tracking-wide text-teal-300/90">{sub.category}</h4>
+                  <div className="grid grid-cols-1 items-stretch sm:grid-cols-2 lg:grid-cols-4 gap-5">
+                    {sub.rows.map((stretch) => (
+                      <StretchCard
+                        key={stretch.key}
+                        stretch={stretch}
+                        ratingForCard={ratings[stretch.key]}
+                        onOpen={handleOpen}
+                        onRequestAddToProgram={readOnly ? undefined : onRequestAddToProgram}
+                      />
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </section>
           ))}
         </div>
       )}

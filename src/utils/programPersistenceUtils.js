@@ -1,6 +1,10 @@
 import { workoutProgram } from '../data/workoutProgram';
 import { workoutProgramOptimized } from '../data/workoutProgramOptimized';
 import { convertProgramToSchedule } from './programConverter';
+import {
+  resolveProgramExerciseCategory,
+  resolveCardioKindForExercise
+} from './programExerciseTypes';
 
 /**
  * Programmes issus des templates embarqués — uniquement pour premier lancement (aucun programme en base).
@@ -33,25 +37,34 @@ export function buildTemplateProgramsForFirstLaunch() {
         },
       },
       exercises:
-        dayData.exercices?.map((exercise) => ({
-          id: exercise.id,
-          name: exercise.name,
-          series: exercise.series,
-          reps: '',
-          rest: exercise.type?.includes('circuit')
-            ? 30
-            : exercise.type?.includes('superset')
-              ? 45
-              : 90,
-          intensity: exercise.series?.includes('4×')
-            ? 'heavy'
-            : exercise.series?.includes('3×')
-              ? 'moderate'
-              : 'light',
-          notes: exercise.notes || '',
-          materiel: exercise.materiel || 'poids du corps',
-          type: exercise.type || 'standard',
-        })) || [],
+        dayData.exercices?.map((exercise) => {
+          const row = {
+            id: exercise.id,
+            name: exercise.name,
+            series: exercise.series,
+            reps: '',
+            rest: exercise.type?.includes('circuit')
+              ? 30
+              : exercise.type?.includes('superset')
+                ? 45
+                : 90,
+            intensity: exercise.series?.includes('4×')
+              ? 'heavy'
+              : exercise.series?.includes('3×')
+                ? 'moderate'
+                : 'light',
+            notes: exercise.notes || '',
+            materiel: exercise.materiel || 'poids du corps',
+            type: exercise.type || 'standard'
+          };
+          const programCategory = resolveProgramExerciseCategory(row);
+          const cardioKind = resolveCardioKindForExercise(row, programCategory);
+          return {
+            ...row,
+            programCategory,
+            ...(cardioKind ? { cardioKind } : {})
+          };
+        }) || [],
       salleVariants: dayData.salleVariants
         ? {
             semaineA: {

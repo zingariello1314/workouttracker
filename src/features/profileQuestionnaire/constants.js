@@ -1,4 +1,4 @@
-export const PROFILE_QUESTIONNAIRE_VERSION = 4;
+export const PROFILE_QUESTIONNAIRE_VERSION = 6;
 
 export const QUESTION_SECTIONS = [
   { id: 'objectifs', label: 'Objectifs de la mission', color: 'violet' },
@@ -45,14 +45,14 @@ export const PROFILE_QUESTION_DEFS = [
     type: 'vitals',
     title: 'Mesures actuelles (facultatif)',
     description:
-      'Sexe, âge, poids et taille affinent les estimations (nutrition, charge) et les suggestions — données locales au profil.'
+      'Sexe, âge, poids, taille et objectif de poids affinent les estimations (nutrition, charge) et les suggestions — données locales au profil.'
   },
   {
     id: 'priorityMuscleGroups',
     sectionId: 'objectifs',
     type: 'multi',
-    max: 7,
-    title: 'Sélectionnez les zones ou objectifs à prioriser (jusqu’à 7)',
+    max: 3,
+    title: 'Sélectionnez les zones ou objectifs à prioriser (jusqu’à 3)',
     options: [
       { key: 'upper_body', label: 'Haut du corps (global)' },
       { key: 'lower_body', label: 'Bas du corps (global)' },
@@ -67,6 +67,22 @@ export const PROFILE_QUESTION_DEFS = [
       { key: 'hamstrings', label: 'Ischio-jambiers' },
       { key: 'glutes', label: 'Fessiers' },
       { key: 'calves', label: 'Mollets' }
+    ]
+  },
+  {
+    id: 'exerciseTypePreferences',
+    sectionId: 'objectifs',
+    type: 'multi',
+    max: 3,
+    title: 'Quels types d’exercices veux-tu retrouver en priorité ? (jusqu’à 3)',
+    options: [
+      { key: 'strength_compounds', label: 'Force polyarticulaire' },
+      { key: 'hypertrophy', label: 'Hypertrophie / volume' },
+      { key: 'cardio_endurance', label: 'Cardio / endurance' },
+      { key: 'plyometrics', label: 'Pliométrie / explosivité' },
+      { key: 'circuits_hiit', label: 'Circuits / HIIT' },
+      { key: 'mobility_stretching', label: 'Mobilité / étirements' },
+      { key: 'isometric_core', label: 'Isométrie / gainage' }
     ]
   },
   {
@@ -98,13 +114,15 @@ export const PROFILE_QUESTION_DEFS = [
   {
     id: 'trainingLocation',
     sectionId: 'experience',
-    type: 'single',
-    title: 'Où vous entraînez-vous principalement ?',
+    type: 'multi',
+    max: 4,
+    title: 'Où vous entraînez-vous ? (plusieurs choix possibles)',
     options: [
       { key: 'commercial_gym', label: 'Salle de sport commerciale' },
       { key: 'home_gym', label: 'Salle de sport à domicile' },
       { key: 'home_minimal', label: 'À domicile (peu de matériel)' },
-      { key: 'outdoor', label: 'Extérieur/parc' }
+      { key: 'outdoor', label: 'Extérieur/parc' },
+      { key: 'track', label: 'Piste d’athlétisme' }
     ]
   },
   {
@@ -120,6 +138,9 @@ export const PROFILE_QUESTION_DEFS = [
       { key: 'pullup_bar', label: 'Barre de traction' },
       { key: 'cable_machine', label: 'Machine à câbles' },
       { key: 'bench', label: 'Banc' },
+      { key: 'parallel_bars', label: 'Barres parallèles' },
+      { key: 'rings', label: 'Anneaux' },
+      { key: 'dip_station', label: 'Station dips' },
       { key: 'squat_rack', label: 'Rack à squat' },
       { key: 'bodyweight', label: 'Poids du corps' },
       { key: 'jump_rope', label: 'Corde à sauter' },
@@ -127,7 +148,44 @@ export const PROFILE_QUESTION_DEFS = [
       { key: 'elliptical', label: 'Vélo elliptique' },
       { key: 'rowing_machine', label: 'Rameur' },
       { key: 'assault_bike', label: 'Vélo assaut / air bike' },
-      { key: 'stair_climber', label: 'Stepper / escalier' }
+      { key: 'stair_climber', label: 'Stepper / escalier' },
+      { key: 'sled', label: 'Prowler / traîneau' }
+    ]
+  },
+  {
+    id: 'weekAlternation',
+    sectionId: 'experience',
+    type: 'single',
+    title: 'Souhaitez-vous des variantes semaine A / semaine B dans votre programme ?',
+    description:
+      'Semaine A et semaine B permettent d’alterner deux listes d’exercices (ex. salle une semaine, parc l’autre). Si vous choisissez « Non », aucune variante n’apparaîtra dans l’éditeur.',
+    options: [
+      {
+        key: 'none',
+        label: 'Non — une seule liste par jour',
+        description: 'Pas de variante A/B (recommandé si vous vous entraînez toujours au même endroit)'
+      },
+      {
+        key: 'ab_enabled',
+        label: 'Oui — alterner semaine A et semaine B',
+        description: 'Deux variantes par jour d’entraînement, adaptées aux lieux choisis'
+      }
+    ]
+  },
+  {
+    id: 'weekAlternationSites',
+    sectionId: 'experience',
+    type: 'multi',
+    max: 2,
+    title: 'Où se déroulent la semaine A et la semaine B ? (max 2 lieux)',
+    description:
+      'Le 1er lieu = semaine A, le 2e = semaine B. Si un seul lieu est choisi, l’app complète avec un lieu complémentaire (salle ↔ extérieur) selon votre matériel.',
+    options: [
+      { key: 'commercial_gym', label: 'Salle commerciale' },
+      { key: 'home_gym', label: 'Salle à domicile' },
+      { key: 'home_minimal', label: 'Domicile (peu de matériel)' },
+      { key: 'outdoor', label: 'Extérieur / parc' },
+      { key: 'track', label: 'Piste d’athlétisme' }
     ]
   },
   {
@@ -141,6 +199,10 @@ export const PROFILE_QUESTION_DEFS = [
       { key: 'crossfit', label: 'CrossFit' },
       { key: 'functional', label: 'Force athlétique' },
       { key: 'hiit_cardio', label: 'HIIT/Cardio' },
+      { key: 'running_road', label: 'Course route (endurance)' },
+      { key: 'running_trail', label: 'Trail / nature' },
+      { key: 'running_track', label: 'Course sur piste' },
+      { key: 'sprint_track', label: 'Sprint / vitesse' },
       { key: 'none', label: 'Jamais entraîné formellement' }
     ]
   },
@@ -247,6 +309,41 @@ export const PROFILE_QUESTION_DEFS = [
       { key: 'average', label: 'Moyenne' },
       { key: 'flexible', label: 'Souple' },
       { key: 'very_flexible', label: 'Très souple', description: 'Hyperlaxité possible — prudence sur les positions extrêmes' }
+    ]
+  },
+  {
+    id: 'stretchDistribution',
+    sectionId: 'mobilite',
+    type: 'single',
+    title: 'Quand souhaitez-vous planifier vos étirements / mobilité ?',
+    description:
+      'Le programme n’ajoutera des blocs d’étirements que sur les créneaux choisis (les autres restent vides). Les jours de repos n’auront pas de routine imposée.',
+    options: [
+      {
+        key: 'none_scheduled',
+        label: 'Pas de routine planifiée',
+        description: 'Je gère les étirements à part ou au feeling'
+      },
+      {
+        key: 'morning_only',
+        label: 'Matin seulement',
+        description: 'Routine courte au réveil ou avant la journée'
+      },
+      {
+        key: 'evening_only',
+        label: 'Soir seulement',
+        description: 'Récupération en fin de journée ou après séance'
+      },
+      {
+        key: 'morning_evening',
+        label: 'Matin et soir',
+        description: 'Échauffement léger le matin, récup le soir'
+      },
+      {
+        key: 'full_day',
+        label: 'Matin, midi et soir',
+        description: 'Micro-sessions réparties sur la journée'
+      }
     ]
   },
   {

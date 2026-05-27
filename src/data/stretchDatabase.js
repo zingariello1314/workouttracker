@@ -1,3 +1,5 @@
+import { stretchDrillsCatalog } from './stretchDrillsCatalog.js';
+
 /**
  * 🧘 BANQUE D'ÉTIREMENTS — Momentum
  *
@@ -2021,7 +2023,328 @@ export const stretchDatabase = {
       "Allonge-toi près du mur, fesses au contact ou très proches, jambes verticales contre le mur. Effectue 15 à 20 flexions plantaires lentes (orteils vers les tibias puis pointe vers le plafond). Repos 30 s. Répète 3 séries. Sors en roulant sur le côté pour éviter l’hypotension orthostatique.",
     contraindications: ["Hypertension sévère non stabilisée"],
     variations: ["legs up wall pumps", "jambes mur pompe"]
-  }
+  },
+
+  // ═══════════════════════════════════════════════════════════════════════
+  // PLIOMÉTRIE (ajout demandé pour la banque)
+  // ═══════════════════════════════════════════════════════════════════════
+  pliometrie_sauts_sur_place_debutant: {
+    name: "Pliométrie — sauts sur place débutant",
+    category: "Pliométrie",
+    bodyZone: "quadriceps",
+    primaryMuscles: ["Quadriceps", "Mollets"],
+    secondaryMuscles: ["Fessiers", "Core"],
+    equipment: "Aucun",
+    defaultDuration: 45,
+    position: "Debout",
+    difficulty: 1,
+    description: "Introduction aux impacts légers pour apprendre l’atterrissage contrôlé.",
+    instructions: "Réalise des petits sauts verticaux pieds largeur hanches. Atterris sur l’avant-pied puis talon, genoux souples, buste gainé.",
+    contraindications: ["Douleur aiguë genou/cheville", "tendinopathie d'Achille active"],
+    variations: ["petits sauts", "plyo beginner jumps"]
+  },
+  pliometrie_sauts_lateraux_ligne: {
+    name: "Pliométrie — sauts latéraux sur ligne",
+    category: "Pliométrie",
+    bodyZone: "full",
+    primaryMuscles: ["Mollets", "Quadriceps"],
+    secondaryMuscles: ["Fessiers", "Adducteurs", "Core"],
+    equipment: "Aucun",
+    defaultDuration: 50,
+    position: "Debout",
+    difficulty: 1,
+    description: "Travaille coordination latérale et réactivité avec faible amplitude.",
+    instructions: "Saute de gauche à droite d’une ligne imaginaire avec des appuis courts et stables. Garde le regard devant.",
+    contraindications: ["Entorse récente", "instabilité latérale du genou"],
+    variations: ["line hops", "sauts latéraux", "Lateral Line Hops"]
+  },
+  pliometrie_squat_jumps_controles: {
+    name: "Pliométrie — squat jumps contrôlés",
+    category: "Pliométrie",
+    bodyZone: "quadriceps",
+    primaryMuscles: ["Quadriceps", "Fessiers"],
+    secondaryMuscles: ["Mollets", "Core"],
+    equipment: "Aucun",
+    defaultDuration: 50,
+    position: "Debout",
+    difficulty: 2,
+    description: "Développe puissance verticale avec accent sur la technique d’atterrissage.",
+    instructions: "Descends en demi-squat, explose vers le haut puis atterris doucement en absorbant avec hanches et genoux.",
+    contraindications: ["Douleur fémoro-patellaire marquée"],
+    variations: ["jump squat", "squat jump", "Squat Jump"]
+  },
+  pliometrie_fentes_sautes_alternees: {
+    name: "Pliométrie — fentes sautées alternées",
+    category: "Pliométrie",
+    bodyZone: "quadriceps",
+    primaryMuscles: ["Quadriceps", "Fessiers"],
+    secondaryMuscles: ["Mollets", "Ischio-jambiers"],
+    equipment: "Aucun",
+    defaultDuration: 60,
+    position: "Debout en fente",
+    difficulty: 2,
+    description: "Renforce la puissance unilatérale et la stabilité dynamique.",
+    instructions: "Depuis la fente, saute et inverse les jambes en l’air. Atterris genou avant aligné avec pied avant.",
+    contraindications: ["Instabilité ligamentaire genou", "douleur hanche"],
+    variations: ["jump lunges", "fentes plyo"]
+  },
+  pliometrie_skater_jumps: {
+    name: "Pliométrie — skater jumps",
+    category: "Pliométrie",
+    bodyZone: "fessiers",
+    primaryMuscles: ["Fessiers", "Quadriceps"],
+    secondaryMuscles: ["Mollets", "Adducteurs", "Core"],
+    equipment: "Aucun",
+    defaultDuration: 60,
+    position: "Debout",
+    difficulty: 2,
+    description: "Travail de puissance latérale et contrôle du bassin.",
+    instructions: "Saute latéralement d’une jambe à l’autre en cherchant un atterrissage stable 1 seconde.",
+    contraindications: ["Syndrome de bandelette ilio-tibiale inflammatoire"],
+    variations: ["patineur", "skater hop"]
+  },
+  pliometrie_tuck_jumps: {
+    name: "Pliométrie — tuck jumps",
+    category: "Pliométrie",
+    bodyZone: "full",
+    primaryMuscles: ["Quadriceps", "Mollets"],
+    secondaryMuscles: ["Fessiers", "Abdominaux"],
+    equipment: "Aucun",
+    defaultDuration: 45,
+    position: "Debout",
+    difficulty: 3,
+    description: "Exercice explosif avec montée de genoux pour puissance et gainage.",
+    instructions: "Saute verticalement en montant les genoux vers la poitrine, puis atterris souplement et repars après stabilisation.",
+    contraindications: ["Lombalgie active", "surcharge rotulienne"],
+    variations: ["knee tuck jump", "saut groupé", "Tuck Jump"]
+  },
+  pliometrie_box_jump_bas: {
+    name: "Pliométrie — box jump bas",
+    category: "Pliométrie",
+    bodyZone: "quadriceps",
+    primaryMuscles: ["Quadriceps", "Fessiers"],
+    secondaryMuscles: ["Mollets", "Core"],
+    equipment: "Banc / box plyo",
+    defaultDuration: 50,
+    position: "Debout face à box",
+    difficulty: 2,
+    description: "Puissance concentrique vers un support bas avec impact réduit.",
+    instructions: "Saute sur un support bas, atterris en demi-squat stable, redescends en marchant.",
+    contraindications: ["Peur du saut non maîtrisée", "douleur tendon rotulien"],
+    variations: ["box jump beginner", "saut sur box", "Box Jump"]
+  },
+  pliometrie_depth_drop: {
+    name: "Pliométrie — depth drop (réception)",
+    category: "Pliométrie",
+    bodyZone: "full",
+    primaryMuscles: ["Quadriceps", "Fessiers"],
+    secondaryMuscles: ["Mollets", "Ischio-jambiers", "Core"],
+    equipment: "Banc / box plyo",
+    defaultDuration: 40,
+    position: "Debout sur box",
+    difficulty: 3,
+    description: "Apprentissage de la réception mécanique avant les depth jumps.",
+    instructions: "Descends en laissant tomber les deux pieds au sol et absorbe immédiatement en position athlétique.",
+    contraindications: ["Douleur à l’impact", "antécédent rupture LCA non rééduqué"],
+    variations: ["drop landing", "réception plyo"]
+  },
+  pliometrie_depth_jump_rebond: {
+    name: "Pliométrie — depth jump + rebond",
+    category: "Pliométrie",
+    bodyZone: "full",
+    primaryMuscles: ["Quadriceps", "Mollets"],
+    secondaryMuscles: ["Fessiers", "Core"],
+    equipment: "Banc / box plyo",
+    defaultDuration: 40,
+    position: "Debout sur box",
+    difficulty: 4,
+    description: "Cycle étirement-raccourcissement avancé pour réactivité maximale.",
+    instructions: "Laisse-toi tomber d’une box basse puis enchaîne un rebond vertical immédiat avec temps de contact minimal.",
+    contraindications: ["Débutant", "douleurs articulaires aux impacts"],
+    variations: ["depth jump", "drop jump", "Depth Jump"]
+  },
+  pliometrie_broad_jump: {
+    name: "Pliométrie — broad jump (saut horizontal)",
+    category: "Pliométrie",
+    bodyZone: "fessiers",
+    primaryMuscles: ["Fessiers", "Quadriceps"],
+    secondaryMuscles: ["Mollets", "Ischio-jambiers"],
+    equipment: "Aucun",
+    defaultDuration: 45,
+    position: "Debout",
+    difficulty: 2,
+    description: "Puissance horizontale utile aux accélérations et changements d’allure.",
+    instructions: "Projette les bras, saute loin devant, atterris stable en demi-squat et tiens 1 seconde.",
+    contraindications: ["Douleur pubienne / adducteurs aiguë"],
+    variations: ["standing broad jump", "saut en longueur sans élan", "Broad Jump"]
+  },
+  pliometrie_bounds_alternes: {
+    name: "Pliométrie — bounds alternés",
+    category: "Pliométrie",
+    bodyZone: "full",
+    primaryMuscles: ["Fessiers", "Ischio-jambiers"],
+    secondaryMuscles: ["Mollets", "Quadriceps", "Core"],
+    equipment: "Aucun",
+    defaultDuration: 60,
+    position: "Course bondissante",
+    difficulty: 3,
+    description: "Développe la foulée bondissante et la puissance unilatérale dynamique.",
+    instructions: "Réalise de grands bonds alternés en avançant, avec gainage et pose active sous le centre de masse.",
+    contraindications: ["Lésion ischio récente", "tendinite Achille non contrôlée"],
+    variations: ["bounding", "foulées bondissantes", "Bounding", "Power Skip"]
+  },
+  pliometrie_hop_unipodal: {
+    name: "Pliométrie — hops unipodaux",
+    category: "Pliométrie",
+    bodyZone: "mollets",
+    primaryMuscles: ["Mollets", "Quadriceps"],
+    secondaryMuscles: ["Fessiers", "Stabilisateurs de cheville"],
+    equipment: "Aucun",
+    defaultDuration: 40,
+    position: "Debout un pied",
+    difficulty: 3,
+    description: "Renforce la rigidité cheville-pied et le contrôle unilatéral.",
+    instructions: "Effectue des petits rebonds sur un pied, bassin stable, puis change de jambe.",
+    contraindications: ["Instabilité cheville non rééduquée"],
+    variations: ["single leg hops", "rebonds unipodaux"]
+  },
+  pliometrie_pogo_jumps: {
+    name: "Pliométrie — pogo jumps",
+    category: "Pliométrie",
+    bodyZone: "mollets",
+    primaryMuscles: ["Mollets"],
+    secondaryMuscles: ["Quadriceps", "Tendon d'Achille"],
+    equipment: "Aucun",
+    defaultDuration: 35,
+    position: "Debout jambes tendues souples",
+    difficulty: 2,
+    description: "Travail de rebond court orienté cheville.",
+    instructions: "Réalise des rebonds rapides à faible amplitude, genoux quasi tendus, buste droit.",
+    contraindications: ["Achillodynie active"],
+    variations: ["ankle hops", "pogos", "Pogo Jumps"]
+  },
+  pliometrie_sauts_haie_basse: {
+    name: "Pliométrie — sauts de haie basse",
+    category: "Pliométrie",
+    bodyZone: "quadriceps",
+    primaryMuscles: ["Quadriceps", "Mollets"],
+    secondaryMuscles: ["Fessiers", "Core"],
+    equipment: "Plots / haies basses",
+    defaultDuration: 50,
+    position: "Debout",
+    difficulty: 3,
+    description: "Améliore rythme, coordination et réactivité au sol.",
+    instructions: "Enchaîne des sauts au-dessus de petites haies, réception active et regard loin.",
+    contraindications: ["Douleur méniscale", "peur du franchissement non gérée"],
+    variations: ["hurdle hops", "haies basses plyo"]
+  },
+  pliometrie_push_up_pliometrique_murs: {
+    name: "Pliométrie haut du corps — pompes explosives au mur",
+    category: "Pliométrie",
+    bodyZone: "poitrine",
+    primaryMuscles: ["Pectoraux", "Triceps"],
+    secondaryMuscles: ["Deltoïdes antérieurs", "Core"],
+    equipment: "Mur",
+    defaultDuration: 45,
+    position: "Debout incliné contre mur",
+    difficulty: 1,
+    description: "Version accessible de plyométrie du haut du corps.",
+    instructions: "Pompe contre mur avec poussée explosive pour décoller légèrement les mains, puis réception contrôlée.",
+    contraindications: ["Douleur épaule antérieure"],
+    variations: ["wall plyo push-up", "pompes explosives mur"]
+  },
+  pliometrie_push_up_pliometrique_sol: {
+    name: "Pliométrie haut du corps — pompes pliométriques sol",
+    category: "Pliométrie",
+    bodyZone: "poitrine",
+    primaryMuscles: ["Pectoraux", "Triceps"],
+    secondaryMuscles: ["Deltoïdes antérieurs", "Core"],
+    equipment: "Aucun",
+    defaultDuration: 40,
+    position: "Planche au sol",
+    difficulty: 3,
+    description: "Développe explosivité de poussée horizontale.",
+    instructions: "Depuis la pompe, pousse fort pour décoller les mains. Réceptionne coudes souples et tronc gainé.",
+    contraindications: ["Poignet douloureux", "instabilité épaule"],
+    variations: ["plyo push-up", "clap push-up progression", "Explosive Push-Up", "Clap Push-Up"]
+  },
+  pliometrie_medecine_ball_slam: {
+    name: "Pliométrie — medicine ball slam",
+    category: "Pliométrie",
+    bodyZone: "tronc",
+    primaryMuscles: ["Grand dorsal", "Abdominaux"],
+    secondaryMuscles: ["Épaules", "Fessiers"],
+    equipment: "Medecine ball",
+    defaultDuration: 45,
+    position: "Debout",
+    difficulty: 2,
+    description: "Transfert de puissance du haut vers le bas avec coordination globale.",
+    instructions: "Monte le ballon au-dessus de la tête puis claque-le au sol avec engagement du tronc.",
+    contraindications: ["Lombalgie aiguë"],
+    variations: ["ball slam", "slam medball", "Medicine Ball Slam"]
+  },
+  pliometrie_medecine_ball_chest_pass: {
+    name: "Pliométrie — medicine ball chest pass",
+    category: "Pliométrie",
+    bodyZone: "poitrine",
+    primaryMuscles: ["Pectoraux", "Triceps"],
+    secondaryMuscles: ["Deltoïdes antérieurs", "Core"],
+    equipment: "Medecine ball + mur",
+    defaultDuration: 45,
+    position: "Debout face au mur",
+    difficulty: 2,
+    description: "Travail explosif de poussée horizontale du haut du corps.",
+    instructions: "Lance le medball au mur depuis la poitrine de façon explosive puis récupère en amortissant.",
+    contraindications: ["Douleur coude / épaule"],
+    variations: ["chest throw", "lancer poitrine medball", "Medicine Ball Chest Pass"]
+  },
+  pliometrie_sauts_rotation_90: {
+    name: "Pliométrie — sauts rotation 90°",
+    category: "Pliométrie",
+    bodyZone: "full",
+    primaryMuscles: ["Quadriceps", "Fessiers"],
+    secondaryMuscles: ["Mollets", "Obliques"],
+    equipment: "Aucun",
+    defaultDuration: 45,
+    position: "Debout",
+    difficulty: 2,
+    description: "Ajoute une composante de rotation et d’orientation spatiale.",
+    instructions: "Saute puis pivote de 90°, réceptionne stable, enchaîne vers la nouvelle direction.",
+    contraindications: ["Vertiges", "douleur lombaire rotation"],
+    variations: ["quarter turn jumps", "sauts pivot"]
+  },
+  pliometrie_split_squat_jump: {
+    name: "Pliométrie — split squat jump",
+    category: "Pliométrie",
+    bodyZone: "quadriceps",
+    primaryMuscles: ["Quadriceps", "Fessiers"],
+    secondaryMuscles: ["Mollets", "Ischio-jambiers", "Core"],
+    equipment: "Aucun",
+    defaultDuration: 50,
+    position: "Fente statique",
+    difficulty: 3,
+    description: "Puissance verticale unilatérale avec maintien d’alignement.",
+    instructions: "En position fente, saute verticalement sans forcément changer de jambe, puis absorbe en fente.",
+    contraindications: ["Douleur patellaire", "déséquilibre marqué"],
+    variations: ["split jump", "jump split squat"]
+  },
+  pliometrie_rebonds_multidirectionnels: {
+    name: "Pliométrie — rebonds multidirectionnels",
+    category: "Pliométrie",
+    bodyZone: "full",
+    primaryMuscles: ["Quadriceps", "Mollets", "Fessiers"],
+    secondaryMuscles: ["Adducteurs", "Abducteurs", "Core"],
+    equipment: "Plots",
+    defaultDuration: 60,
+    position: "Debout",
+    difficulty: 4,
+    description: "Réactivité avancée dans plusieurs plans de déplacement.",
+    instructions: "Enchaîne des rebonds courts vers l’avant, arrière et côtés entre plots, avec contrôle postural.",
+    contraindications: ["Instabilité chronique cheville/genou"],
+    variations: ["reactive hops", "plyo multidirectionnel"]
+  },
+
+  ...stretchDrillsCatalog
 };
 
 // ═══════════════════════════════════════════════════════════════════════
@@ -2040,7 +2363,9 @@ export const STRETCH_CATEGORIES = [
   "Posture",
   "Auto-massage",
   "Yoga / Postures",
-  "Récupération"
+  "Récupération",
+  "Pliométrie",
+  "Drills course"
 ];
 
 /**
@@ -2098,7 +2423,10 @@ export const STRETCH_QUERY_SYNONYMS = {
   stress: ["parasympathique", "relaxation", "respiration", "méditation"],
   sommeil: ["récupération", "parasympathique", "respiration"],
   récup: ["récupération", "parasympathique", "drainage"],
-  récupération: ["parasympathique", "drainage", "veineux"]
+  récupération: ["parasympathique", "drainage", "veineux"],
+  drill: ["drills course", "skip", "sprint", "coordination", "pliométrie"],
+  skip: ["a-skip", "b-skip", "c-skip", "marching"],
+  plio: ["pliométrie", "plyometric", "saut", "explosif", "bound", "pogo"]
 };
 
 /**

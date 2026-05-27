@@ -29,6 +29,12 @@ import { loadTranslationNamespace } from '../../utils/translations/loader';
 import { resolveExerciseIntensityCoeff } from '../../utils/trainingLoadUtils';
 import { isAdminUser } from '../../utils/accessControl';
 import { buildBankExerciseViewFromDatabaseKey } from '../../utils/exerciseBankViewModel';
+import {
+  sortExercisesByFamily,
+  getExerciseFamilyKey,
+  getExerciseFamilyLabel,
+  getExerciseMuscleCategory
+} from '../../utils/bankFamilySort';
 
 /** Sous-onglets de la vue "Banque" (anciennement "Exercices"). */
 const BANK_SUB_TABS = {
@@ -362,8 +368,41 @@ const ExercisesTab = () => {
 
   // Filtrer les exercices
   const filteredExercises = useMemo(() => {
-    return filterExercises(allExercises, filters);
+    return sortExercisesByFamily(filterExercises(allExercises, filters));
   }, [allExercises, filters]);
+
+  const groupedExerciseBank = useMemo(() => {
+    if (dataSource !== 'exercise_bank') return [];
+    const order = ['upper_body', 'lower_body', 'cardio', 'other'];
+    const map = new Map(order.map((k) => [k, []]));
+    filteredExercises.forEach((exercise) => {
+      const key = getExerciseFamilyKey(exercise);
+      if (!map.has(key)) map.set(key, []);
+      map.get(key).push(exercise);
+    });
+    return order
+      .map((key) => {
+        const rows = map.get(key) || [];
+        if (rows.length === 0) return null;
+        const byCategory = new Map();
+        rows.forEach((row) => {
+          const cat = getExerciseMuscleCategory(row);
+          if (!byCategory.has(cat)) byCategory.set(cat, []);
+          byCategory.get(cat).push(row);
+        });
+        const categories = Array.from(byCategory.keys()).sort((a, b) => a.localeCompare(b, 'fr'));
+        return {
+          key,
+          label: getExerciseFamilyLabel(rows[0]),
+          categorySummary: categories.join(' · '),
+          groups: categories.map((cat) => ({
+            category: cat,
+            rows: byCategory.get(cat) || []
+          }))
+        };
+      })
+      .filter(Boolean);
+  }, [dataSource, filteredExercises]);
 
   // Fonction pour normaliser la structure des exercices
   const normalizeExercise = (exercise) => {
@@ -981,22 +1020,42 @@ const ExercisesTab = () => {
                   }
                 </p>
               </div>
-            ) : (
-              <div className="grid grid-cols-1 items-stretch sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-                {filteredExercises.map((exercise) =>
-                  dataSource === 'exercise_bank' ? (
-                    <SportBankExerciseCard
-                      key={exercise.id}
-                      exercise={exercise}
-                      onOpenDetail={setDetailExercise}
-                      effectiveLoadCoeff={resolveExerciseIntensityCoeff(exercise, intensityCoeffs)}
-                      hasRecordedMax={maxRecordsByExerciseId.has(String(exercise.id))}
-                      maxRecord={maxRecordsByExerciseId.get(String(exercise.id)) || null}
-                      showAddButton={isAuthenticated}
-                      onRequestAddToProgram={isAuthenticated ? (p) => setBankAddPayload(p) : undefined}
-                      workoutData={data}
-                    />
-                  ) : (
+            ) : dataSource === 'exercise_bank' ? (
+                <div className="space-y-6">
+                  {groupedExerciseBank.map((group) => (
+                    <section key={group.key} className="space-y-3">
+                      <h3 className="text-sm font-semibold uppercase tracking-wide text-teal-200 border-b border-[#0F4C5C]/50 pb-2">
+                        {group.label} ({group.groups.reduce((n, g) => n + g.rows.length, 0)})
+                      </h3>
+                      <p className="text-xs text-teal-400/85 -mt-1">{group.categorySummary}</p>
+                      {group.groups.map((sub) => (
+                        <div key={`${group.key}-${sub.category}`} className="space-y-2">
+                          <h4 className="text-xs font-semibold uppercase tracking-wide text-teal-300/90">
+                            {sub.category}
+                          </h4>
+                          <div className="grid grid-cols-1 items-stretch sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                            {sub.rows.map((exercise) => (
+                              <SportBankExerciseCard
+                                key={exercise.id}
+                                exercise={exercise}
+                                onOpenDetail={setDetailExercise}
+                                effectiveLoadCoeff={resolveExerciseIntensityCoeff(exercise, intensityCoeffs)}
+                                hasRecordedMax={maxRecordsByExerciseId.has(String(exercise.id))}
+                                maxRecord={maxRecordsByExerciseId.get(String(exercise.id)) || null}
+                                showAddButton={isAuthenticated}
+                                onRequestAddToProgram={isAuthenticated ? (p) => setBankAddPayload(p) : undefined}
+                                workoutData={data}
+                              />
+                            ))}
+                          </div>
+                        </div>
+                      ))}
+                    </section>
+                  ))}
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 items-stretch sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                  {filteredExercises.map((exercise) => (
                     <ExerciseCard
                       key={exercise.id}
                       exercise={exercise}
@@ -1008,10 +1067,10 @@ const ExercisesTab = () => {
                       hasRecordedMax={maxRecordsByExerciseId.has(String(exercise.id))}
                       maxRecord={maxRecordsByExerciseId.get(String(exercise.id)) || null}
                     />
-                  )
-                )}
-              </div>
-            )}
+                  ))}
+                </div>
+              )
+            }
           </CardContent>
         </Card>
       )}

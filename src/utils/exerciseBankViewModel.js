@@ -42,18 +42,24 @@ export function buildBankExerciseViewFromDatabaseKey(key, t = (k, d = '') => d) 
     rawEquipment: rawEq
   });
 
+  const muscleCategory = ex.category || null;
+
   return {
     ...base,
     databaseKey: key,
-    category: base.metadata?.category || ex.category,
-    muscleGroup: base.metadata?.primaryMuscleGroup || ex.primaryMuscles?.[0],
+    /** Groupe musculaire français (banque / sous-titres). */
+    muscleCategory,
+    categoryLabel: muscleCategory,
+    category: muscleCategory,
+    /** Type d’exercice (force, isométrique, cardio…) — tag secondaire. */
+    exerciseType: base.metadata?.category,
+    muscleGroup: muscleCategory || base.metadata?.primaryMuscleGroup || ex.primaryMuscles?.[0],
     difficulty: base.metadata?.difficulty ?? ex.difficulty ?? 1,
     trainingDiscipline: base.metadata?.trainingDiscipline || discipline,
     equipment: base.metadata?.equipment || rawEq,
     notes: ex.description || base.notes || '',
     primaryMuscles: ex.primaryMuscles || [],
     secondaryMuscles: ex.secondaryMuscles || base.secondaryMuscles || [],
-    sourceDay: t('exercisesTab.misc.exerciseBankSource', 'Banque commune exercices'),
-    categoryLabel: ex.category
+    sourceDay: t('exercisesTab.misc.exerciseBankSource', 'Banque commune exercices')
   };
 }

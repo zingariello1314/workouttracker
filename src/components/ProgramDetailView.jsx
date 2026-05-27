@@ -13,7 +13,10 @@ import {
   Sunset,
   Plus,
   Trash2,
-  Search
+  Search,
+  Copy,
+  CheckSquare,
+  Square
 } from 'lucide-react';
 import { typography } from '../styles/typography';
 import {
@@ -24,14 +27,27 @@ import {
   MUSCU_PATTERNS,
   getCategoryLabel,
   createDefaultExercise,
-  normalizeExerciseMeta
+  normalizeExerciseMeta,
+  resolveProgramExerciseCategory,
+  resolveCardioKindForExercise,
+  enrichProgramScheduleCategories
 } from '../utils/programExerciseTypes';
+import {
+  hasLegacyInlineCircuits,
+  migrateLegacyInlineCircuitsForProgram,
+  repairOrphanCircuitReferences,
+  listOrphanCircuitIds,
+  isLegacyCircuitSlotExercise,
+  isLegacyCircuitHeaderExercise
+} from '../utils/circuits/legacyCircuitProgramSync';
 import { purgeSoftRemovedExercisesFromProgram } from '../utils/programPersistenceUtils';
 import { useTranslation } from '../utils/translations';
 import { useLanguage } from '../context/LanguageContext';
 import { LANGUAGES } from '../utils/translations/constants';
 import { exerciseDatabase } from '../data/exerciseDatabase';
 import StretchSlotsEditor from './program/StretchSlotsEditor';
+import ExerciseBankNameAutocomplete from './program/ExerciseBankNameAutocomplete';
+import { buildExerciseBankRows, filterExerciseBankRows } from '../utils/exerciseBankSearch';
 import CircuitEditor from './circuits/CircuitEditor';
 import { useWorkout } from '../context/WorkoutContext';
 import { Layers, Repeat } from 'lucide-react';
@@ -68,21 +84,6 @@ const PICKER_TARGET_WEEKS = {
   ALL: 'all'
 };
 
-const MUSCLE_QUERY_SYNONYMS = {
-  jambes: ['quadriceps', 'ischio', 'ischios', 'mollets', 'fessiers', 'adducteurs', 'jambes'],
-  jambe: ['quadriceps', 'ischio', 'ischios', 'mollets', 'fessiers', 'adducteurs', 'jambes'],
-  bras: ['biceps', 'triceps', 'avant-bras', 'deltoides', 'épaules', 'epaule'],
-  dos: ['dorsaux', 'grand dorsal', 'trapèzes', 'trapezes', 'rhomboides', 'rhomboïdes'],
-  pecs: ['pectoraux', 'poitrine'],
-  pectoraux: ['pecs', 'poitrine', 'pectoraux'],
-  poitrine: ['pectoraux', 'pecs'],
-  abdos: ['abdominaux', 'core', 'gainage', 'obliques'],
-  epaules: ['épaules', 'deltoides', 'deltoïdes', 'trapèzes', 'trapezes'],
-  épaules: ['epaules', 'deltoides', 'deltoïdes', 'trapèzes', 'trapezes'],
-  fessier: ['fessiers', 'glutes', 'jambes'],
-  fessiers: ['fessier', 'glutes', 'jambes']
-};
-
 /** Identifiant DOM stable pour défiler jusqu'à un exo (piste principale ou variante salle). */
 const getProgramExerciseAnchorId = (dayKey, variantKey, exerciseId) => {
   const slot = variantKey == null ? 'main' : variantKey;
@@ -108,12 +109,30 @@ const REST_DAY_LABELS = {
   dimanche: 'Dimanche'
 };
 
+const STRETCH_MOMENTS = ['matin', 'midi', 'soir'];
+
 const ProgramDetailView = ({ program, onBack, onUpdateProgram }) => {
   const normalizedProgram = useMemo(() => normalizeProgramRestConfig(program), [program]);
+
+  /** Variantes A/B : uniquement si demandées au quiz ou si le programme contient déjà des exos en variante. */
+  const weekAlternationEnabled = useMemo(() => {
+    if (normalizedProgram?.weekAlternation === 'ab_enabled') return true;
+    if (normalizedProgram?.weekAlternation === 'none') return false;
+    const sched = normalizedProgram?.schedule;
+    if (!sched) return false;
+    return PROGRAM_WEEK_DAYS.some((dayKey) => {
+      const sv = sched[dayKey]?.salleVariants;
+      if (!sv) return false;
+      const countA = sv.semaineA?.exercises?.length || 0;
+      const countB = sv.semaineB?.exercises?.length || 0;
+      return countA + countB > 0;
+    });
+  }, [normalizedProgram]);
 
   /** Répare les programmes importés avant le format tableau (étirements vides en édition). */
   useEffect(() => {
     if (!normalizedProgram?.schedule || typeof onUpdateProgram !== 'function') return;
+    if (normalizedProgram.availabilitySource === 'quiz') return;
     let patched = false;
     const schedule = { ...normalizedProgram.schedule };
     for (const dayKey of PROGRAM_WEEK_DAYS) {
@@ -169,11 +188,22 @@ const ProgramDetailView = ({ program, onBack, onUpdateProgram }) => {
   const [pickerIntervalActiveMin, setPickerIntervalActiveMin] = useState('1');
   const [pickerIntervalRecoveryMin, setPickerIntervalRecoveryMin] = useState('1');
   const [pickerIntervalRounds, setPickerIntervalRounds] = useState('8');
+  /** Sélection en lot (dupliquer plusieurs exos à la fois) */
+  const [selectedExerciseIdsByDay, setSelectedExerciseIdsByDay] = useState({});
+  /** Modale duplication cross-jours */
+  const [duplicateModal, setDuplicateModal] = useState({
+    open: false,
+    sourceDayKey: null,
+    items: [],
+    selectedItemIds: [],
+    targetDayKeys: []
+  });
 
   // Circuits (bibliothèque globale + édition / assignation)
   const {
     data: workoutData,
     saveCircuitDefinition,
+    saveCircuitDefinitionsBatch,
     deleteCircuitDefinition,
     assignCircuitToProgramDay
   } = useWorkout();
@@ -186,6 +216,80 @@ const ProgramDetailView = ({ program, onBack, onUpdateProgram }) => {
   const handleSaveCircuit = useCallback(async (definition) => {
     return saveCircuitDefinition(definition);
   }, [saveCircuitDefinition]);
+
+  const programStructureSyncRef = useRef(null);
+
+  /** Circuits inline → section Circuits ; réparation orphelins ; catégories street/cardio/muscu. */
+  useEffect(() => {
+    if (!normalizedProgram?.id || typeof onUpdateProgram !== 'function') return;
+
+    const orphanCount = listOrphanCircuitIds(normalizedProgram, circuitDefinitions).length;
+    const needsLegacyMigrate = hasLegacyInlineCircuits(normalizedProgram);
+    const syncKey = `${normalizedProgram.id}:${Object.keys(circuitDefinitions).length}:${orphanCount}:${needsLegacyMigrate}`;
+    if (programStructureSyncRef.current === syncKey) return;
+
+    let cancelled = false;
+
+    (async () => {
+      let nextProgram = normalizedProgram;
+      let defsMap = { ...circuitDefinitions };
+      let programDirty = false;
+      let defsDirty = false;
+
+      const orphans = listOrphanCircuitIds(nextProgram, defsMap);
+      if (orphans.length > 0) {
+        const repaired = repairOrphanCircuitReferences(nextProgram, defsMap, workoutProgram);
+        defsMap = repaired.circuitDefinitions;
+        if (repaired.defsChanged) defsDirty = true;
+      }
+
+      if (hasLegacyInlineCircuits(nextProgram)) {
+        const migrated = migrateLegacyInlineCircuitsForProgram(nextProgram, defsMap);
+        if (migrated.changed) {
+          nextProgram = migrated.program;
+          programDirty = true;
+        }
+        if (migrated.defsChanged) {
+          defsMap = migrated.circuitDefinitions;
+          defsDirty = true;
+        }
+      }
+
+      if (defsDirty) {
+        const toSave = {};
+        for (const [id, def] of Object.entries(defsMap)) {
+          if (!circuitDefinitions[id] && def) toSave[id] = def;
+        }
+        if (Object.keys(toSave).length > 0) {
+          await saveCircuitDefinitionsBatch(toSave);
+        }
+      }
+
+      const enriched = enrichProgramScheduleCategories(nextProgram);
+      if (enriched.changed) {
+        nextProgram = enriched.program;
+        programDirty = true;
+      }
+
+      if (cancelled) return;
+
+      programStructureSyncRef.current = syncKey;
+      if (programDirty) {
+        onUpdateProgram(nextProgram);
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [
+    normalizedProgram,
+    normalizedProgram?.id,
+    circuitDefinitions,
+    onUpdateProgram,
+    saveCircuitDefinitionsBatch
+  ]);
+
   const handleAssignCircuit = useCallback(async (programId, dayName, circuitId) => {
     return assignCircuitToProgramDay(programId, dayName, circuitId, true);
   }, [assignCircuitToProgramDay]);
@@ -313,32 +417,12 @@ const ProgramDetailView = ({ program, onBack, onUpdateProgram }) => {
     });
   }, [allProgramExerciseOccurrences, exerciseSearchQuery]);
 
-  const exerciseBankRows = useMemo(() => {
-    const rows = Object.entries(exerciseDatabase).map(([key, ex]) => ({
-      key,
-      name: ex.name || key,
-      category: ex.category || '',
-      equipment: ex.equipment || '',
-      primary: Array.isArray(ex.primaryMuscles) ? ex.primaryMuscles : [],
-      secondary: Array.isArray(ex.secondaryMuscles) ? ex.secondaryMuscles : []
-    }));
-    rows.sort((a, b) => a.name.localeCompare(b.name, 'fr'));
-    return rows;
-  }, []);
+  const exerciseBankRows = useMemo(() => buildExerciseBankRows(), []);
 
-  const filteredExerciseBankRows = useMemo(() => {
-    const q = pickerQuery.trim().toLowerCase();
-    if (!q) return exerciseBankRows;
-    const expandedTerms = [q, ...(MUSCLE_QUERY_SYNONYMS[q] || [])];
-    return exerciseBankRows.filter((row) => {
-      const hay = `${row.name} ${row.category} ${row.equipment} ${row.primary.join(' ')} ${row.secondary.join(' ')}`.toLowerCase();
-      const variations = Array.isArray(exerciseDatabase[row.key]?.variations)
-        ? exerciseDatabase[row.key].variations.join(' ').toLowerCase()
-        : '';
-      const searchable = `${hay} ${variations}`;
-      return expandedTerms.some((term) => searchable.includes(term));
-    });
-  }, [exerciseBankRows, pickerQuery]);
+  const filteredExerciseBankRows = useMemo(
+    () => filterExerciseBankRows(exerciseBankRows, pickerQuery),
+    [exerciseBankRows, pickerQuery]
+  );
 
   const scrollToProgramExercise = useCallback((row) => {
     const anchorId = getProgramExerciseAnchorId(row.dayKey, row.variantKey, row.exercise.id);
@@ -414,8 +498,8 @@ const ProgramDetailView = ({ program, onBack, onUpdateProgram }) => {
     setEditedData({
       ...exercise,
       meta: normalizeExerciseMeta(exercise),
-      programCategory: exercise.programCategory || 'muscu',
-      cardioKind: exercise.cardioKind || ''
+      programCategory: resolveProgramExerciseCategory(exercise),
+      cardioKind: exercise.cardioKind || resolveCardioKindForExercise(exercise)
     });
   };
 
@@ -427,8 +511,8 @@ const ProgramDetailView = ({ program, onBack, onUpdateProgram }) => {
     setEditedData({
       ...exercise,
       meta: normalizeExerciseMeta(exercise),
-      programCategory: exercise.programCategory || 'muscu',
-      cardioKind: exercise.cardioKind || ''
+      programCategory: resolveProgramExerciseCategory(exercise),
+      cardioKind: exercise.cardioKind || resolveCardioKindForExercise(exercise)
     });
   };
 
@@ -481,7 +565,7 @@ const ProgramDetailView = ({ program, onBack, onUpdateProgram }) => {
 
   const openExerciseBankPicker = (dayKey, variantKey = null) => {
     const day = program?.schedule?.[dayKey];
-    const hasSalleVariants = Boolean(day?.salleVariants?.semaineA || day?.salleVariants?.semaineB);
+    const hasSalleVariants = weekAlternationEnabled && Boolean(day?.salleVariants?.semaineA || day?.salleVariants?.semaineB);
     const defaultVariantTarget = hasSalleVariants
       ? variantKey
         ? PICKER_TARGET_VARIANTS.SALLE
@@ -590,7 +674,8 @@ const ProgramDetailView = ({ program, onBack, onUpdateProgram }) => {
 
     const updatedProgram = { ...program, schedule: { ...program.schedule } };
     const day = { ...updatedProgram.schedule[pickerContext.dayKey] };
-    const hasSalleVariants = Boolean(day?.salleVariants?.semaineA || day?.salleVariants?.semaineB);
+    const hasSalleVariants =
+      weekAlternationEnabled && Boolean(day?.salleVariants?.semaineA || day?.salleVariants?.semaineB);
 
     const pushBuiltExercise = (targetList) => {
       const clone = {
@@ -659,6 +744,20 @@ const ProgramDetailView = ({ program, onBack, onUpdateProgram }) => {
     }
   };
 
+  const applyBankExerciseToEditedData = (bankKey) => {
+    const dbEx = exerciseDatabase[bankKey];
+    if (!dbEx) return;
+    const category = inferProgramCategoryFromDatabase(dbEx);
+    setEditedData((prev) => ({
+      ...prev,
+      name: dbEx.name || bankKey,
+      materiel: dbEx.equipment || prev.materiel || '',
+      notes: prev.notes?.trim() ? prev.notes : dbEx.description || '',
+      programCategory: category,
+      cardioKind: category === 'cardio' ? prev.cardioKind || 'running' : ''
+    }));
+  };
+
   const renderExerciseEditor = () => {
     const m = normalizeExerciseMeta(editedData);
     const cat = editedData.programCategory || 'muscu';
@@ -667,12 +766,11 @@ const ProgramDetailView = ({ program, onBack, onUpdateProgram }) => {
     return (
       <div className="space-y-3">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-          <input
-            type="text"
+          <ExerciseBankNameAutocomplete
             value={editedData.name || ''}
-            onChange={(e) => setEditedData({ ...editedData, name: e.target.value })}
-            className="bg-black border border-[#0F4C5C]/50 rounded px-3 py-2 text-sm"
-            placeholder="Nom de l'exercice"
+            onChange={(name) => setEditedData((prev) => ({ ...prev, name }))}
+            onSelectBankExercise={applyBankExerciseToEditedData}
+            exerciseBankRows={exerciseBankRows}
           />
           <input
             type="text"
@@ -1261,6 +1359,108 @@ const ProgramDetailView = ({ program, onBack, onUpdateProgram }) => {
     onUpdateProgram(updatedProgram);
   };
 
+  const toggleExerciseSelection = useCallback((dayKey, exerciseId, checked) => {
+    setSelectedExerciseIdsByDay((prev) => {
+      const current = new Set(prev[dayKey] || []);
+      if (checked) current.add(exerciseId);
+      else current.delete(exerciseId);
+      return { ...prev, [dayKey]: Array.from(current) };
+    });
+  }, []);
+
+  const clearExerciseSelectionForDay = useCallback((dayKey) => {
+    setSelectedExerciseIdsByDay((prev) => ({ ...prev, [dayKey]: [] }));
+  }, []);
+
+  const openDuplicateModal = useCallback((sourceDayKey, items) => {
+    const normalized = Array.isArray(items) ? items.filter(Boolean) : [];
+    if (!sourceDayKey || normalized.length === 0) return;
+    setDuplicateModal({
+      open: true,
+      sourceDayKey,
+      items: normalized,
+      selectedItemIds: normalized.map((it) => it.id),
+      targetDayKeys: []
+    });
+  }, []);
+
+  const closeDuplicateModal = useCallback(() => {
+    setDuplicateModal({
+      open: false,
+      sourceDayKey: null,
+      items: [],
+      selectedItemIds: [],
+      targetDayKeys: []
+    });
+  }, []);
+
+  const toggleDuplicateItem = useCallback((id, checked) => {
+    setDuplicateModal((prev) => {
+      const next = new Set(prev.selectedItemIds || []);
+      if (checked) next.add(id);
+      else next.delete(id);
+      return { ...prev, selectedItemIds: Array.from(next) };
+    });
+  }, []);
+
+  const toggleDuplicateTargetDay = useCallback((dayKey, checked) => {
+    setDuplicateModal((prev) => {
+      const next = new Set(prev.targetDayKeys || []);
+      if (checked) next.add(dayKey);
+      else next.delete(dayKey);
+      return { ...prev, targetDayKeys: Array.from(next) };
+    });
+  }, []);
+
+  const runDuplicateItems = useCallback(() => {
+    const sourceDayKey = duplicateModal.sourceDayKey;
+    const selectedIds = new Set(duplicateModal.selectedItemIds || []);
+    const targetDays = Array.from(new Set(duplicateModal.targetDayKeys || []));
+    if (!sourceDayKey || selectedIds.size === 0 || targetDays.length === 0) return;
+
+    const updatedProgram = {
+      ...program,
+      updatedAt: new Date().toISOString(),
+      schedule: { ...program.schedule }
+    };
+
+    const selectedItems = (duplicateModal.items || []).filter((it) => selectedIds.has(it.id));
+    const duplicateAsNew = (payload) => ({
+      ...payload,
+      id: `dup_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`
+    });
+
+    targetDays.forEach((targetDayKey) => {
+      const targetDay = { ...updatedProgram.schedule[targetDayKey] };
+      const srcDay = updatedProgram.schedule[sourceDayKey];
+      if (!targetDay || !srcDay) return;
+      const byType = {
+        exercise: selectedItems.filter((it) => it.kind === 'exercise'),
+        stretch: selectedItems.filter((it) => it.kind === 'stretch')
+      };
+
+      if (byType.exercise.length > 0) {
+        const list = Array.isArray(targetDay.exercises) ? [...targetDay.exercises] : [];
+        byType.exercise.forEach((item) => list.push(duplicateAsNew(item.payload)));
+        targetDay.exercises = list;
+      }
+
+      if (byType.stretch.length > 0) {
+        const slots = normalizeStretchSlots(targetDay.etirements, targetDayKey);
+        byType.stretch.forEach((item) => {
+          const moment = item.moment && STRETCH_MOMENTS.includes(item.moment) ? item.moment : 'soir';
+          slots[moment] = [...(slots[moment] || []), duplicateAsNew(item.payload)];
+        });
+        targetDay.etirements = slots;
+      }
+
+      updatedProgram.schedule[targetDayKey] = targetDay;
+    });
+
+    onUpdateProgram(updatedProgram);
+    closeDuplicateModal();
+  }, [duplicateModal, program, onUpdateProgram, closeDuplicateModal]);
+
   return (
     <div className="space-y-6">
       {/* En-tête avec bouton retour */}
@@ -1516,10 +1716,35 @@ const ProgramDetailView = ({ program, onBack, onUpdateProgram }) => {
               <CardContent className="pt-6">
                 {/* Étirements — édition individuelle via picker banque */}
                 <div className="mb-8">
-                  <h3 className={`${typography.presets.h3} mb-4 flex items-center gap-2`}>
-                    <Sunrise size={20} className="text-orange-400" />
-                    Étirements
-                  </h3>
+                  <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
+                    <h3 className={`${typography.presets.h3} flex items-center gap-2`}>
+                      <Sunrise size={20} className="text-orange-400" />
+                      Étirements
+                    </h3>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const slots = normalizeStretchSlots(dayData.etirements, dayKey);
+                        const items = [];
+                        STRETCH_MOMENTS.forEach((moment) => {
+                          (slots[moment] || []).forEach((st, idx) => {
+                            items.push({
+                              id: `stretch_${moment}_${st.id || idx}`,
+                              kind: 'stretch',
+                              moment,
+                              label: `${st?.name || 'Étirement'} (${moment})`,
+                              payload: st
+                            });
+                          });
+                        });
+                        openDuplicateModal(dayKey, items);
+                      }}
+                      className="inline-flex items-center gap-1.5 rounded-lg border border-[#0F4C5C]/55 bg-black px-3 py-1.5 text-xs font-medium text-teal-100 hover:border-[#0F5C45]/60 hover:bg-[#0F4C5C]/15"
+                    >
+                      <Copy size={14} />
+                      Dupliquer vers d'autres jours
+                    </button>
+                  </div>
                   <StretchSlotsEditor
                     dayKey={dayKey}
                     etirements={resolveEtirementsForDay(dayData.etirements, dayKey, workoutProgram)}
@@ -1571,22 +1796,47 @@ const ProgramDetailView = ({ program, onBack, onUpdateProgram }) => {
                   <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
                     <h3 className={`${typography.presets.h3} flex items-center gap-2 text-teal-50`}>
                       <Dumbbell size={20} className="text-teal-400" />
-                      Exercices ({(dayData.exercises || []).length})
+                      Exercices (
+                      {(dayData.exercises || []).filter(
+                        (ex) => !isLegacyCircuitSlotExercise(ex) && !isLegacyCircuitHeaderExercise(ex)
+                      ).length}
+                      )
                     </h3>
-                    <button
-                      type="button"
-                      onClick={() => openExerciseBankPicker(dayKey)}
-                      className="inline-flex items-center gap-1.5 rounded-lg border border-[#0F4C5C]/55 bg-black px-3 py-1.5 text-xs font-medium text-teal-100 hover:border-[#0F5C45]/60 hover:bg-[#0F4C5C]/15"
-                    >
-                      <Plus size={14} />
-                      Ajouter un exercice
-                    </button>
+                    <div className="flex items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const selectedIds = new Set(selectedExerciseIdsByDay[dayKey] || []);
+                          const items = (dayData.exercises || [])
+                            .filter((ex) => selectedIds.has(ex.id))
+                            .map((ex) => ({ id: `exercise_${ex.id}`, kind: 'exercise', label: ex.name, payload: ex }));
+                          openDuplicateModal(dayKey, items);
+                        }}
+                        disabled={!(selectedExerciseIdsByDay[dayKey] || []).length}
+                        className="inline-flex items-center gap-1.5 rounded-lg border border-[#0F4C5C]/55 bg-black px-3 py-1.5 text-xs font-medium text-teal-100 hover:border-[#0F5C45]/60 hover:bg-[#0F4C5C]/15 disabled:opacity-40"
+                      >
+                        <CheckSquare size={14} />
+                        Dupliquer la sélection
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => openExerciseBankPicker(dayKey)}
+                        className="inline-flex items-center gap-1.5 rounded-lg border border-[#0F4C5C]/55 bg-black px-3 py-1.5 text-xs font-medium text-teal-100 hover:border-[#0F5C45]/60 hover:bg-[#0F4C5C]/15"
+                      >
+                        <Plus size={14} />
+                        Ajouter un exercice
+                      </button>
+                    </div>
                   </div>
                   {(!dayData.exercises || dayData.exercises.length === 0) && (
                     <p className="text-sm text-slate-500 mb-3">Aucun exercice pour ce jour — utilisez « Ajouter un exercice ».</p>
                   )}
                   <div className="space-y-3">
-                    {(dayData.exercises || []).map((exercise, index) => {
+                    {(dayData.exercises || [])
+                      .filter(
+                        (ex) => !isLegacyCircuitSlotExercise(ex) && !isLegacyCircuitHeaderExercise(ex)
+                      )
+                      .map((exercise, index) => {
                       const isEditing =
                         editingExercise?.dayKey === dayKey &&
                         editingExercise?.exerciseId === exercise.id &&
@@ -1610,22 +1860,37 @@ const ProgramDetailView = ({ program, onBack, onUpdateProgram }) => {
                               ) : (
                                 <div>
                                   <div className="flex items-center gap-3 mb-2 flex-wrap">
+                                    <label className="inline-flex items-center">
+                                      <input
+                                        type="checkbox"
+                                        checked={(selectedExerciseIdsByDay[dayKey] || []).includes(exercise.id)}
+                                        onChange={(e) => toggleExerciseSelection(dayKey, exercise.id, e.target.checked)}
+                                        className="sr-only peer"
+                                      />
+                                      <span className="inline-flex items-center justify-center rounded border border-[#0F4C5C]/50 p-1 text-slate-400 peer-checked:text-teal-200 peer-checked:border-teal-500/60">
+                                        {(selectedExerciseIdsByDay[dayKey] || []).includes(exercise.id) ? (
+                                          <CheckSquare size={14} />
+                                        ) : (
+                                          <Square size={14} />
+                                        )}
+                                      </span>
+                                    </label>
                                     <span className="rounded bg-[#0F5C45]/20 px-2 py-1 text-xs font-medium text-teal-100 ring-1 ring-[#0F4C5C]/45">
                                       {index + 1}
                                     </span>
                                     <h4 className="font-medium text-slate-200">{exercise.name}</h4>
-                                    {exercise.programCategory && (
-                                      <span className="bg-slate-600/60 text-slate-200 px-2 py-0.5 rounded text-xs">
-                                        {getCategoryLabel(exercise.programCategory)}
-                                      </span>
-                                    )}
-                                    {exercise.type && exercise.type !== 'standard' && (
+                                    <span className="bg-slate-600/60 text-slate-200 px-2 py-0.5 rounded text-xs">
+                                      {getCategoryLabel(resolveProgramExerciseCategory(exercise))}
+                                    </span>
+                                    {exercise.type &&
+                                      exercise.type !== 'standard' &&
+                                      !String(exercise.type).includes('circuit_abdos') && (
                                       <span className="rounded border border-[#0F4C5C]/45 bg-[#0F4C5C]/20 px-2 py-1 text-xs text-teal-100">
                                         {exercise.type}
                                       </span>
                                     )}
                                   </div>
-                                  {exercise.programCategory === 'cardio' && exercise.meta && (
+                                  {resolveProgramExerciseCategory(exercise) === 'cardio' && exercise.meta && (
                                     <p className="text-xs text-cyan-300/90 mb-2">
                                       {exercise.cardioKind === 'running' &&
                                         RUNNING_SUBTYPES.find((s) => s.id === exercise.programSubType)?.label}
@@ -1682,6 +1947,18 @@ const ProgramDetailView = ({ program, onBack, onUpdateProgram }) => {
                                 </Button>
                                 <Button
                                   type="button"
+                                  onClick={() =>
+                                    openDuplicateModal(dayKey, [
+                                      { id: `exercise_${exercise.id}`, kind: 'exercise', label: exercise.name, payload: exercise }
+                                    ])
+                                  }
+                                  className="p-2 h-auto bg-transparent hover:bg-slate-600/50 text-slate-400 hover:text-slate-200"
+                                  title="Dupliquer vers d'autres jours"
+                                >
+                                  <Copy size={14} />
+                                </Button>
+                                <Button
+                                  type="button"
                                   onClick={() => {
                                     if (window.confirm(DELETE_EXO_CONFIRM)) {
                                       handleDeleteExerciseFromProgram(dayKey, exercise.id);
@@ -1700,6 +1977,20 @@ const ProgramDetailView = ({ program, onBack, onUpdateProgram }) => {
                       );
                     })}
                   </div>
+                  {(selectedExerciseIdsByDay[dayKey] || []).length > 0 && (
+                    <div className="mt-3 flex items-center justify-between rounded-lg border border-[#0F4C5C]/45 bg-black/60 px-3 py-2 text-xs">
+                      <span className="text-teal-200">
+                        {(selectedExerciseIdsByDay[dayKey] || []).length} exercice(s) sélectionné(s)
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => clearExerciseSelectionForDay(dayKey)}
+                        className="text-slate-300 hover:text-white"
+                      >
+                        Vider la sélection
+                      </button>
+                    </div>
+                  )}
                 </div>
 
                 {/* Circuits assignés à ce jour */}
@@ -1820,7 +2111,7 @@ const ProgramDetailView = ({ program, onBack, onUpdateProgram }) => {
                 </div>
 
                 {/* Variantes Salle */}
-                {dayData.salleVariants && (
+                {weekAlternationEnabled && dayData.salleVariants && (
                   <div className="mt-6">
                     <h3 className={`${typography.presets.h3} mb-4 flex items-center gap-2`}>
                       <Dumbbell size={20} className="text-teal-400" />
@@ -1871,11 +2162,9 @@ const ProgramDetailView = ({ program, onBack, onUpdateProgram }) => {
                                         {index + 1}
                                       </span>
                                       <h5 className="font-medium text-slate-200">{exercise.name}</h5>
-                                      {exercise.programCategory && (
-                                        <span className="text-xs text-slate-400">
-                                          {getCategoryLabel(exercise.programCategory)}
-                                        </span>
-                                      )}
+                                      <span className="text-xs text-slate-400">
+                                        {getCategoryLabel(resolveProgramExerciseCategory(exercise))}
+                                      </span>
                                     </div>
                                     <div className="flex items-center gap-2 shrink-0">
                                       <button
@@ -1971,11 +2260,9 @@ const ProgramDetailView = ({ program, onBack, onUpdateProgram }) => {
                                         {index + 1}
                                       </span>
                                       <h5 className="font-medium text-slate-200">{exercise.name}</h5>
-                                      {exercise.programCategory && (
-                                        <span className="text-xs text-slate-400">
-                                          {getCategoryLabel(exercise.programCategory)}
-                                        </span>
-                                      )}
+                                      <span className="text-xs text-slate-400">
+                                        {getCategoryLabel(resolveProgramExerciseCategory(exercise))}
+                                      </span>
                                     </div>
                                     <div className="flex items-center gap-2 shrink-0">
                                       <button
@@ -2042,6 +2329,82 @@ const ProgramDetailView = ({ program, onBack, onUpdateProgram }) => {
         })}
       </div>
 
+      {duplicateModal.open && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/65 p-4">
+          <div className="w-full max-w-2xl overflow-hidden rounded-xl border border-[#0F4C5C]/70 bg-[#050A12]">
+            <div className="border-b border-[#0F4C5C]/55 p-4 flex items-center justify-between">
+              <h3 className="text-lg font-semibold text-white">
+                Dupliquer vers d'autres jours
+              </h3>
+              <button
+                type="button"
+                onClick={closeDuplicateModal}
+                className="rounded border border-[#0F4C5C]/55 px-2 py-1 text-xs text-slate-300 hover:text-white"
+              >
+                Fermer
+              </button>
+            </div>
+            <div className="p-4 space-y-4">
+              <div>
+                <p className="text-xs uppercase tracking-wide text-slate-400 mb-2">Éléments à dupliquer</p>
+                <div className="max-h-48 overflow-y-auto rounded border border-[#0F4C5C]/40">
+                  {(duplicateModal.items || []).map((item) => {
+                    const checked = (duplicateModal.selectedItemIds || []).includes(item.id);
+                    return (
+                      <label key={item.id} className="flex items-center gap-2 border-b border-[#0F4C5C]/20 px-3 py-2 text-sm text-slate-200">
+                        <input
+                          type="checkbox"
+                          checked={checked}
+                          onChange={(e) => toggleDuplicateItem(item.id, e.target.checked)}
+                          className="accent-teal-500"
+                        />
+                        <span>{item.label}</span>
+                      </label>
+                    );
+                  })}
+                </div>
+              </div>
+              <div>
+                <p className="text-xs uppercase tracking-wide text-slate-400 mb-2">Jours cibles</p>
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                  {PROGRAM_WEEK_DAYS.filter((d) => d !== duplicateModal.sourceDayKey).map((d) => {
+                    const checked = (duplicateModal.targetDayKeys || []).includes(d);
+                    return (
+                      <label key={d} className="flex items-center gap-2 rounded border border-[#0F4C5C]/45 bg-black px-2 py-2 text-xs text-slate-200">
+                        <input
+                          type="checkbox"
+                          checked={checked}
+                          onChange={(e) => toggleDuplicateTargetDay(d, e.target.checked)}
+                          className="accent-teal-500"
+                        />
+                        <span>{REST_DAY_LABELS[d]}</span>
+                      </label>
+                    );
+                  })}
+                </div>
+              </div>
+            </div>
+            <div className="border-t border-[#0F4C5C]/55 p-4 flex items-center justify-end gap-2">
+              <button
+                type="button"
+                onClick={closeDuplicateModal}
+                className="rounded border border-[#0F4C5C]/55 bg-black px-3 py-2 text-sm text-slate-300 hover:text-white"
+              >
+                Annuler
+              </button>
+              <button
+                type="button"
+                onClick={runDuplicateItems}
+                disabled={(duplicateModal.selectedItemIds || []).length === 0 || (duplicateModal.targetDayKeys || []).length === 0}
+                className="rounded border border-[#0F5C45]/55 bg-[#0F5C45]/30 px-3 py-2 text-sm text-white disabled:opacity-40"
+              >
+                Dupliquer
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {showExerciseBankPicker && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
           <div className="w-full max-w-3xl max-h-[90vh] overflow-hidden rounded-lg border border-[#0F4C5C]/70 bg-[#050A12]">
@@ -2081,7 +2444,8 @@ const ProgramDetailView = ({ program, onBack, onUpdateProgram }) => {
 
               {(() => {
                 const day = program?.schedule?.[pickerContext.dayKey];
-                const hasSalleVariants = Boolean(day?.salleVariants?.semaineA || day?.salleVariants?.semaineB);
+                const hasSalleVariants =
+                  weekAlternationEnabled && Boolean(day?.salleVariants?.semaineA || day?.salleVariants?.semaineB);
                 if (!hasSalleVariants) return null;
 
                 return (

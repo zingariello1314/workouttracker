@@ -48,7 +48,7 @@ function getMuscleLabel(muscleGroup, t) {
     case MuscleGroups.CALVES:
       return 'Mollets';
     case MuscleGroups.CORE:
-      return 'Core';
+      return 'Abdominaux';
     case MuscleGroups.FULL_BODY:
       return 'Corps entier';
     default:
@@ -110,8 +110,11 @@ export default function SportBankExerciseCard({
       ? exercise.difficulty
       : null;
 
-  const categoryStr = getCategoryLabel(exercise?.category, t);
-  const muscleStr = getMuscleLabel(exercise?.muscleGroup, t);
+  const categoryStr = getCategoryLabel(exercise?.exerciseType || exercise?.metadata?.category, t);
+  const muscleStr =
+    exercise?.muscleCategory ||
+    exercise?.categoryLabel ||
+    getMuscleLabel(exercise?.muscleGroup, t);
   const eqStr = exercise?.equipment
     ? getEquipmentLabel(exercise.equipment, t) || exercise.equipment
     : exercise?.materiel || '';

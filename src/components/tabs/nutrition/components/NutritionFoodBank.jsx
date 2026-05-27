@@ -16,6 +16,7 @@ import {
   mergeFoodBankWithOverrides
 } from '../../../../data/nutritionFoodBank';
 import { Search, ArrowLeft, Save, RotateCcw, Sparkles } from 'lucide-react';
+import { sortFoodsByFamily, getFoodFamilyKey, getFoodFamilyLabel } from '../../../../utils/bankFamilySort';
 
 const MACRO_FIELDS = [
   ['kcal', 'Calories (kcal)'],
@@ -95,8 +96,22 @@ const NutritionFoodBank = ({ isVisible: _isVisible }) => {
     if (macroSort === 'carbs') arr = [...arr].sort((a, b) => (b.per100.carbs || 0) - (a.per100.carbs || 0));
     if (macroSort === 'fat') arr = [...arr].sort((a, b) => (b.per100.fat || 0) - (a.per100.fat || 0));
     if (macroSort === 'kcal') arr = [...arr].sort((a, b) => (b.per100.kcal || 0) - (a.per100.kcal || 0));
-    return arr;
+    return sortFoodsByFamily(arr);
   }, [query, category, macroSort, userFoodBank]);
+
+  const groupedFoods = useMemo(() => {
+    const map = new Map();
+    filtered.forEach((food) => {
+      const key = getFoodFamilyKey(food);
+      if (!map.has(key)) map.set(key, []);
+      map.get(key).push(food);
+    });
+    return Array.from(map.entries()).map(([key, rows]) => ({
+      key,
+      label: getFoodFamilyLabel(rows[0]),
+      rows
+    }));
+  }, [filtered]);
 
   const saveFoodOverrides = async () => {
     if (!selectedFood || !draft) return;
@@ -316,46 +331,55 @@ const NutritionFoodBank = ({ isVisible: _isVisible }) => {
             {filtered.length === 0 ? (
               <div className="p-8 text-center text-teal-700/95 text-sm">Aucun résultat.</div>
             ) : (
-              <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-2">
-                {filtered.map((item) => {
-                  const unitLabel = item.referenceUnit === 'ml' ? '100 ml' : '100 g';
-                  const isSelected = selectedFoodId === item.id;
-                  return (
-                  <button
-                    type="button"
-                    key={item.id}
-                    onClick={() => openFood(item)}
-                    className={`rounded-lg border p-2 text-left transition ${
-                      isSelected
-                        ? 'border-emerald-400/70 bg-emerald-950/25 shadow-[0_0_0_1px_rgba(52,211,153,0.22)]'
-                        : 'border-[#0F4C5C]/45 bg-black/80 hover:border-[#0F5C45]/65'
-                    }`}
-                  >
-                    <div className="text-white font-medium text-sm line-clamp-2">{item.name}</div>
-                    <div className="text-[10px] text-teal-700 mt-0.5">{item.category}</div>
-                    <div className="text-[11px] text-teal-100/85 mt-1">
-                      {unitLabel} · {item.per100.kcal} kcal
+              <div className="space-y-5">
+                {groupedFoods.map((group) => (
+                  <section key={group.key} className="space-y-2">
+                    <h3 className="text-xs font-semibold uppercase tracking-wide text-teal-200 border-b border-[#0F4C5C]/45 pb-1">
+                      {group.label} ({group.rows.length})
+                    </h3>
+                    <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-2">
+                      {group.rows.map((item) => {
+                        const unitLabel = item.referenceUnit === 'ml' ? '100 ml' : '100 g';
+                        const isSelected = selectedFoodId === item.id;
+                        return (
+                          <button
+                            type="button"
+                            key={item.id}
+                            onClick={() => openFood(item)}
+                            className={`rounded-lg border p-2 text-left transition ${
+                              isSelected
+                                ? 'border-emerald-400/70 bg-emerald-950/25 shadow-[0_0_0_1px_rgba(52,211,153,0.22)]'
+                                : 'border-[#0F4C5C]/45 bg-black/80 hover:border-[#0F5C45]/65'
+                            }`}
+                          >
+                            <div className="text-white font-medium text-sm line-clamp-2">{item.name}</div>
+                            <div className="text-[10px] text-teal-700 mt-0.5">{item.category}</div>
+                            <div className="text-[11px] text-teal-100/85 mt-1">
+                              {unitLabel} · {item.per100.kcal} kcal
+                            </div>
+                            <div className="grid grid-cols-2 gap-1 mt-1">
+                              <MacroPill label="Protéines" value={`${item.per100.protein} g`} />
+                              <MacroPill label="Glucides" value={`${item.per100.carbs} g`} />
+                              <MacroPill label="Lipides" value={`${item.per100.fat} g`} />
+                              <MacroPill label="Fibres" value={`${item.per100.fiber} g`} />
+                            </div>
+                            {item.piece ? (
+                              <div className="mt-2 text-[10px] text-teal-300/80">
+                                {item.piece.label}
+                                {' · '}
+                                {(() => {
+                                  const t = nutrientTotalsForGrams(item.per100, item.piece.grams);
+                                  return `${t.kcal} kcal`;
+                                })()}
+                              </div>
+                            ) : null}
+                            <p className="text-[10px] text-teal-800 mt-1">{item.key || item.id}</p>
+                          </button>
+                        );
+                      })}
                     </div>
-                    <div className="grid grid-cols-2 gap-1 mt-1">
-                      <MacroPill label="Protéines" value={`${item.per100.protein} g`} />
-                      <MacroPill label="Glucides" value={`${item.per100.carbs} g`} />
-                      <MacroPill label="Lipides" value={`${item.per100.fat} g`} />
-                      <MacroPill label="Fibres" value={`${item.per100.fiber} g`} />
-                    </div>
-                    {item.piece ? (
-                      <div className="mt-2 text-[10px] text-teal-300/80">
-                        {item.piece.label}
-                        {' · '}
-                        {(() => {
-                          const t = nutrientTotalsForGrams(item.per100, item.piece.grams);
-                          return `${t.kcal} kcal`;
-                        })()}
-                      </div>
-                    ) : null}
-                    <p className="text-[10px] text-teal-800 mt-1">{item.key || item.id}</p>
-                  </button>
-                );
-              })}
+                  </section>
+                ))}
               </div>
             )}
           </div>

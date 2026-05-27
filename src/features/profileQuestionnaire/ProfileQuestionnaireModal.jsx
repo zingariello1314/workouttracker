@@ -7,6 +7,7 @@ import {
 } from './constants';
 import { computeCompletion } from './schema';
 import { useProfileQuestionnaire } from './useProfileQuestionnaire';
+import { estimateTargetWeightFromQuiz } from './quizInfluence';
 
 const DAYS = ['lundi', 'mardi', 'mercredi', 'jeudi', 'vendredi', 'samedi', 'dimanche'];
 
@@ -17,9 +18,11 @@ const sectionById = QUESTION_SECTIONS.reduce((acc, s) => {
 
 const getSectionLabel = (sectionId) => sectionById[sectionId]?.label || 'Profil';
 
-const QuestionCard = ({ question, value, onSelect }) => {
+const QuestionCard = ({ question, value, onSelect, allAnswers }) => {
   if (question.type === 'vitals') {
     const v = value && typeof value === 'object' ? value : {};
+    const targetMode = v.targetWeightMode || 'none';
+    const autoTarget = estimateTargetWeightFromQuiz({ ...(allAnswers || {}), vitalsSelfReport: v });
     const setField = (k, raw) => {
       const next = { ...v, [k]: raw };
       onSelect(next);
@@ -76,6 +79,39 @@ const QuestionCard = ({ question, value, onSelect }) => {
             onChange={(e) => setField('heightCm', e.target.value === '' ? null : Number(e.target.value))}
             className="w-full rounded-lg border border-slate-600 bg-slate-900/60 px-3 py-2 text-sm text-slate-100"
           />
+        </div>
+        <div className="space-y-1 sm:col-span-2">
+          <label className="text-xs text-slate-400">Objectif de poids</label>
+          <div className="grid gap-2 sm:grid-cols-3">
+            <select
+              value={targetMode}
+              onChange={(e) => setField('targetWeightMode', e.target.value)}
+              className="rounded-lg border border-slate-600 bg-slate-900/60 px-3 py-2 text-sm text-slate-100"
+            >
+              <option value="none">Pas d’objectif de poids</option>
+              <option value="manual">Je saisis un poids cible</option>
+              <option value="auto">Calcul automatique (selon objectif silhouette)</option>
+            </select>
+            <input
+              type="number"
+              min={30}
+              max={250}
+              step="0.1"
+              placeholder="Poids cible (kg)"
+              value={v.targetWeightKg ?? ''}
+              onChange={(e) => setField('targetWeightKg', e.target.value === '' ? null : e.target.value)}
+              disabled={targetMode !== 'manual'}
+              className="rounded-lg border border-slate-600 bg-slate-900/60 px-3 py-2 text-sm text-slate-100 disabled:opacity-50"
+            />
+            <button
+              type="button"
+              disabled={targetMode !== 'auto' || !autoTarget}
+              onClick={() => setField('targetWeightKg', autoTarget)}
+              className="rounded-lg border border-emerald-500/60 bg-emerald-500/10 px-3 py-2 text-sm text-emerald-200 disabled:opacity-40"
+            >
+              Utiliser auto {autoTarget ? `(${autoTarget} kg)` : ''}
+            </button>
+          </div>
         </div>
         <p className="sm:col-span-2 text-[11px] text-slate-500">
           Tu peux laisser vide ce que tu ne souhaites pas partager : les champs remplis seules alimentent les
@@ -205,33 +241,58 @@ const ProfileQuestionnaireModal = ({ isOpen, onClose }) => {
   const [answers, setAnswers] = useState(questionnaire.answers || {});
   const [saving, setSaving] = useState(false);
 
+  const activeQuestions = useMemo(
+    () =>
+      PROFILE_QUESTION_DEFS.filter((q) => {
+        if (q.id === 'weekAlternationSites') {
+          return answers?.weekAlternation === 'ab_enabled';
+        }
+        return true;
+      }),
+    [answers?.weekAlternation]
+  );
+
+  const quizWasCompleted = Boolean(questionnaire.onboardingWizardCompletedAt);
+
   useEffect(() => {
     if (!isOpen) return;
     setStep(0);
     setAnswers(questionnaire.answers || {});
   }, [isOpen, questionnaire.answers]);
 
-  const question = PROFILE_QUESTION_DEFS[step];
+  useEffect(() => {
+    if (step >= activeQuestions.length) {
+      setStep(Math.max(0, activeQuestions.length - 1));
+    }
+  }, [activeQuestions.length, step]);
+
+  const question = activeQuestions[step];
   const stats = useMemo(() => computeCompletion(answers), [answers]);
-  const progressPercent = Math.round(((step + 1) / PROFILE_QUESTION_DEFS.length) * 100);
+  const progressPercent = activeQuestions.length
+    ? Math.round(((step + 1) / activeQuestions.length) * 100)
+    : 0;
   const canContinue = useMemo(() => {
-    const q = PROFILE_QUESTION_DEFS[step];
+    const q = activeQuestions[step];
     if (!q) return false;
     if (q.type === 'vitals') return true;
     const value = answers?.[q.id];
     if (value == null) return false;
     if (Array.isArray(value)) return value.length > 0;
     return true;
-  }, [step, answers]);
+  }, [step, answers, activeQuestions]);
 
-  const persistAndClose = async (nextAnswers) => {
+  const persistAndClose = async (nextAnswers, { completeWizard = true } = {}) => {
     setSaving(true);
     try {
-      await saveAnswers(nextAnswers, { completeWizard: true });
+      await saveAnswers(nextAnswers, { completeWizard });
       onClose?.();
     } finally {
       setSaving(false);
     }
+  };
+
+  const handleSaveDraft = async () => {
+    await persistAndClose(answers, { completeWizard: false });
   };
 
   const handleSkipAll = async () => {
@@ -245,17 +306,17 @@ const ProfileQuestionnaireModal = ({ isOpen, onClose }) => {
   };
 
   const handleContinue = async () => {
-    if (step < PROFILE_QUESTION_DEFS.length - 1) {
+    if (step < activeQuestions.length - 1) {
       setStep((s) => s + 1);
       return;
     }
-    await persistAndClose(answers);
+    await persistAndClose(answers, { completeWizard: true });
   };
 
   const handleSkipQuestion = () => {
     const next = { ...answers, [question.id]: null };
     setAnswers(next);
-    if (step < PROFILE_QUESTION_DEFS.length - 1) {
+    if (step < activeQuestions.length - 1) {
       setStep((s) => s + 1);
     }
   };
@@ -266,7 +327,7 @@ const ProfileQuestionnaireModal = ({ isOpen, onClose }) => {
     <Modal
       isOpen={isOpen}
       onClose={onClose}
-      title="Remplir mon profil"
+      title={quizWasCompleted ? 'Mettre à jour mon profil' : 'Remplir mon profil'}
       variant="glass"
       size="xl"
       noContentPadding
@@ -277,7 +338,7 @@ const ProfileQuestionnaireModal = ({ isOpen, onClose }) => {
         <div className="rounded-xl border border-slate-700/60 bg-slate-900/60 p-4">
           <div className="mb-2 flex items-center justify-between">
             <div className="text-xs uppercase tracking-wide text-slate-400">
-              {getSectionLabel(question.sectionId)} - question {step + 1}/{PROFILE_QUESTION_DEFS.length}
+              {getSectionLabel(question.sectionId)} - question {step + 1}/{activeQuestions.length}
             </div>
             <div className="text-xs text-slate-300">
               {stats.completedCount}/{stats.totalCount} complétées
@@ -299,6 +360,7 @@ const ProfileQuestionnaireModal = ({ isOpen, onClose }) => {
           <QuestionCard
             question={question}
             value={answers?.[question.id]}
+            allAnswers={answers}
             onSelect={(v) => setAnswers((prev) => ({ ...prev, [question.id]: v }))}
           />
         </div>
@@ -323,21 +385,32 @@ const ProfileQuestionnaireModal = ({ isOpen, onClose }) => {
             </button>
           </div>
           <div className="flex gap-2">
-            <button
-              type="button"
-              onClick={handleSkipAll}
-              disabled={saving}
-              className="rounded-lg border border-red-700/70 px-3 py-2 text-sm text-red-200"
-            >
-              Passer le quiz
-            </button>
+            {quizWasCompleted ? (
+              <button
+                type="button"
+                onClick={handleSaveDraft}
+                disabled={saving}
+                className="rounded-lg border border-cyan-600/70 px-3 py-2 text-sm text-cyan-100"
+              >
+                {saving ? 'Sauvegarde...' : 'Sauvegarder et quitter'}
+              </button>
+            ) : (
+              <button
+                type="button"
+                onClick={handleSkipAll}
+                disabled={saving}
+                className="rounded-lg border border-red-700/70 px-3 py-2 text-sm text-red-200"
+              >
+                Passer le quiz
+              </button>
+            )}
             <button
               type="button"
               onClick={handleContinue}
               disabled={!canContinue || saving}
               className="rounded-lg border border-emerald-500 bg-emerald-600/20 px-4 py-2 text-sm font-medium text-emerald-100 disabled:opacity-40"
             >
-              {saving ? 'Sauvegarde...' : step === PROFILE_QUESTION_DEFS.length - 1 ? 'Terminer' : 'Continuer'}
+              {saving ? 'Sauvegarde...' : step === activeQuestions.length - 1 ? 'Terminer' : 'Continuer'}
             </button>
           </div>
         </div>

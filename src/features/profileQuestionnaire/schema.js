@@ -17,7 +17,14 @@ export function computeCompletion(answers) {
       if (
         typeof v === 'object' &&
         !Array.isArray(v) &&
-        (v.sex || v.age != null || v.weightKg != null || v.heightCm != null)
+        (
+          v.sex ||
+          v.age != null ||
+          v.weightKg != null ||
+          v.heightCm != null ||
+          v.targetWeightKg != null ||
+          v.targetWeightMode
+        )
       ) {
         completed += 1;
       }
@@ -45,8 +52,12 @@ function sanitizeVitalsValue(raw) {
   if (!Number.isFinite(weightKg) || weightKg < 30 || weightKg > 250) weightKg = null;
   let heightCm = Math.round(Number(raw.heightCm));
   if (!Number.isFinite(heightCm) || heightCm < 120 || heightCm > 230) heightCm = null;
-  if (!sex && age == null && weightKg == null && heightCm == null) return null;
-  return { sex, age, weightKg, heightCm };
+  let targetWeightKg = Number(String(raw.targetWeightKg).replace(',', '.'));
+  if (!Number.isFinite(targetWeightKg) || targetWeightKg < 30 || targetWeightKg > 250) targetWeightKg = null;
+  const modeRaw = raw.targetWeightMode != null ? String(raw.targetWeightMode).toLowerCase() : '';
+  const targetWeightMode = ['none', 'manual', 'auto'].includes(modeRaw) ? modeRaw : null;
+  if (!sex && age == null && weightKg == null && heightCm == null && targetWeightKg == null && !targetWeightMode) return null;
+  return { sex, age, weightKg, heightCm, targetWeightKg, targetWeightMode };
 }
 
 export function sanitizeAnswersPayload(answersIn) {
@@ -86,7 +97,7 @@ function sanitizeByQuestion(question, rawValue) {
     return allowed.has(key) ? key : null;
   }
   if (question.type === 'multi' || question.type === 'days') {
-    const arrRaw = Array.isArray(rawValue) ? rawValue : [];
+    const arrRaw = Array.isArray(rawValue) ? rawValue : rawValue == null ? [] : [rawValue];
     const max = Number(question.max) > 0 ? Number(question.max) : 999;
     if (question.type === 'days') {
       const valid = ['lundi', 'mardi', 'mercredi', 'jeudi', 'vendredi', 'samedi', 'dimanche'];

@@ -91,6 +91,9 @@ export const hasWorkoutContent = (data) => {
   if (data.circuitProgress && typeof data.circuitProgress === 'object') {
     if (Object.keys(data.circuitProgress).length > 0) return true;
   }
+  if (data.circuitDefinitions && typeof data.circuitDefinitions === 'object') {
+    if (Object.keys(data.circuitDefinitions).length > 0) return true;
+  }
   if (Array.isArray(data.exerciseMaxRecords) && data.exerciseMaxRecords.length > 0) return true;
   if (Array.isArray(data.exerciseMaxHistory) && data.exerciseMaxHistory.length > 0) return true;
   if (Array.isArray(data.pyramidSessionLog) && data.pyramidSessionLog.length > 0) return true;

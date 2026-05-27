@@ -62,6 +62,23 @@ export function sessionPerceivedToPayload(draft) {
   return { schemaVersion: 1, ...d };
 }
 
+/** Retire notes triple ressenti / étoiles pour les clés de stockage données. */
+export function stripSessionPerceivedForKeys(currentData, keys) {
+  const nextPerceived = { ...(currentData?.exerciseSessionPerceived || {}) };
+  const nextStars = { ...(currentData?.exerciseSessionEffortStars || {}) };
+  const nextPleasure = { ...(currentData?.exerciseSessionPleasureStars || {}) };
+  (keys || []).forEach((k) => {
+    delete nextPerceived[k];
+    delete nextStars[k];
+    delete nextPleasure[k];
+  });
+  return {
+    exerciseSessionPerceived: nextPerceived,
+    exerciseSessionEffortStars: nextStars,
+    exerciseSessionPleasureStars: nextPleasure
+  };
+}
+
 export function pickStoredSessionPerceived(currentData, keys, primaryKey) {
   const map = currentData?.exerciseSessionPerceived || {};
   for (const key of keys) {

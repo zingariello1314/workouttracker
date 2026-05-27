@@ -22,6 +22,38 @@ function cloneDraft(source) {
   }
 }
 
+/** Retire `undefined` / `false` des maps de coches et reps (décochage propre). */
+function normalizeWorkoutDraft(data) {
+  if (!data || typeof data !== 'object') return data;
+  const next = { ...data };
+
+  if (next.checkedExercises && typeof next.checkedExercises === 'object') {
+    const clean = {};
+    for (const [key, value] of Object.entries(next.checkedExercises)) {
+      if (value === true) clean[key] = true;
+    }
+    next.checkedExercises = clean;
+  }
+
+  if (next.reps && typeof next.reps === 'object') {
+    const clean = {};
+    for (const [key, value] of Object.entries(next.reps)) {
+      if (value !== undefined && value !== null) clean[key] = value;
+    }
+    next.reps = clean;
+  }
+
+  if (next.exerciseWeights && typeof next.exerciseWeights === 'object') {
+    const clean = {};
+    for (const [key, value] of Object.entries(next.exerciseWeights)) {
+      if (value !== undefined && value !== null) clean[key] = value;
+    }
+    next.exerciseWeights = clean;
+  }
+
+  return next;
+}
+
 /**
  * Nettoie reps / poids / coches étirements avant écriture.
  * @param {Object} payload
@@ -84,13 +116,20 @@ function sanitizeDraftForPersist(payload) {
  * @param {Object} persistedData - Données persistées (`data` du provider) pour resetDay sans dépendre d’un état miroir retardé
  * @param {Function} updateData
  * @param {string} sessionCalendarDateStr
+ * @param {Function} [cancelPendingAutoSave]
  */
-export const useWorkoutExercises = (persistedData, updateData, sessionCalendarDateStr = '') => {
+export const useWorkoutExercises = (
+  persistedData,
+  updateData,
+  sessionCalendarDateStr = '',
+  cancelPendingAutoSave = null
+) => {
   const [hasUnsavedExercises, setHasUnsavedExercises] = useState(false);
   const [hasUnsavedStretches, setHasUnsavedStretches] = useState(false);
   const [tempData, setTempData] = useState(null);
   const tempDataRef = useRef(null);
   const dirtyFlagsRef = useRef({ exercises: false, stretches: false });
+  const isPersistingSessionRef = useRef(false);
   const persistFullDraftRef = useRef(async () => {});
 
   const clearDraftState = useCallback(() => {
@@ -101,18 +140,30 @@ export const useWorkoutExercises = (persistedData, updateData, sessionCalendarDa
     setTempData(null);
   }, []);
 
+  /** Données affichées : brouillon seulement si les flags « sale » le disent (évite barre / lecture fantômes). */
+  const getWorkoutDataForSession = useCallback(() => {
+    const dirty = dirtyFlagsRef.current;
+    const td = tempDataRef.current;
+    if (td && (dirty.exercises || dirty.stretches)) {
+      return td;
+    }
+    return persistedData;
+  }, [persistedData, tempData]);
+
   const persistFullDraft = useCallback(
     async (options = {}) => {
       const { emitType, force, snapshot } = options;
-      const dirty = dirtyFlagsRef.current;
+      const dirtyAtStart = { ...dirtyFlagsRef.current };
       const td = snapshot ?? tempDataRef.current;
       if (!td) return;
-      if (!force && !dirty.exercises && !dirty.stretches) return;
+      if (!force && !dirtyAtStart.exercises && !dirtyAtStart.stretches) return;
 
+      isPersistingSessionRef.current = true;
       try {
-        const payload = cloneDraft(td);
+        cancelPendingAutoSave?.();
+        const payload = cloneDraft(normalizeWorkoutDraft(td));
         sanitizeDraftForPersist(payload);
-        await updateData(payload);
+        await updateData(payload, { strict: true });
         invalidateSportXpCache();
         clearDraftState();
 
@@ -122,7 +173,11 @@ export const useWorkoutExercises = (persistedData, updateData, sessionCalendarDa
             : getDateStr(new Date());
         const resolvedType =
           emitType ||
-          (dirty.exercises && dirty.stretches ? 'session' : dirty.exercises ? 'exercises' : 'stretches');
+          (dirtyAtStart.exercises && dirtyAtStart.stretches
+            ? 'session'
+            : dirtyAtStart.exercises
+              ? 'exercises'
+              : 'stretches');
         sidebarEvents.emit(SIDEBAR_EVENTS.WORKOUT_UPDATED, {
           date: emitDate,
           type: resolvedType
@@ -130,26 +185,37 @@ export const useWorkoutExercises = (persistedData, updateData, sessionCalendarDa
       } catch (error) {
         console.error('❌ Erreur lors de la persistance du brouillon séance:', error);
         throw error;
+      } finally {
+        isPersistingSessionRef.current = false;
       }
     },
-    [updateData, sessionCalendarDateStr, clearDraftState]
+    [updateData, sessionCalendarDateStr, clearDraftState, cancelPendingAutoSave]
   );
 
   persistFullDraftRef.current = persistFullDraft;
 
   /** Enregistrement explicite : toujours le ref en priorité (évite closure React périmée sur le clic). */
   const saveSessionDraft = useCallback(async () => {
+    const dirtyAtClick = { ...dirtyFlagsRef.current };
     const snapshot = tempDataRef.current ?? tempData ?? null;
+
+    if (!dirtyAtClick.exercises && !dirtyAtClick.stretches) {
+      clearDraftState();
+      return;
+    }
+
     if (!snapshot) {
-      console.warn('[useWorkoutExercises] Enregistrer : aucun brouillon (tempData vide).');
+      console.warn('[useWorkoutExercises] Enregistrer : brouillon manquant malgré modifications signalées.');
+      clearDraftState();
       return;
     }
-    const dirty = dirtyFlagsRef.current;
-    if (!hasUnsavedExercises && !hasUnsavedStretches && !dirty.exercises && !dirty.stretches) {
-      return;
-    }
-    await persistFullDraft({ force: true, snapshot, emitType: 'session' });
-  }, [tempData, hasUnsavedExercises, hasUnsavedStretches, persistFullDraft]);
+
+    await persistFullDraft({
+      force: true,
+      snapshot,
+      emitType: 'session'
+    });
+  }, [tempData, persistFullDraft, clearDraftState]);
 
   const saveExerciseChanges = saveSessionDraft;
   const saveStretchChanges = saveSessionDraft;
@@ -171,18 +237,38 @@ export const useWorkoutExercises = (persistedData, updateData, sessionCalendarDa
     };
   }, []);
 
+  const lastSessionDateRef = useRef(sessionCalendarDateStr);
+  useEffect(() => {
+    if (lastSessionDateRef.current === sessionCalendarDateStr) return;
+    lastSessionDateRef.current = sessionCalendarDateStr;
+    clearDraftState();
+  }, [sessionCalendarDateStr, clearDraftState]);
+
+  /** Répare un indicateur UI « non enregistré » sans brouillon réellement sale. */
+  useEffect(() => {
+    if (!hasUnsavedExercises && !hasUnsavedStretches) return;
+    const dirty = dirtyFlagsRef.current;
+    if (!dirty.exercises && !dirty.stretches) {
+      clearDraftState();
+    }
+  }, [hasUnsavedExercises, hasUnsavedStretches, clearDraftState]);
+
   const updateTempExerciseData = useCallback((newData) => {
-    tempDataRef.current = newData;
+    if (isPersistingSessionRef.current) return;
+    const normalized = normalizeWorkoutDraft(newData);
+    tempDataRef.current = normalized;
     dirtyFlagsRef.current = { ...dirtyFlagsRef.current, exercises: true };
-    setTempData(newData);
+    setTempData(normalized);
     setHasUnsavedExercises(true);
     invalidateSportXpCache();
   }, []);
 
   const updateTempStretchData = useCallback((newData) => {
-    tempDataRef.current = newData;
+    if (isPersistingSessionRef.current) return;
+    const normalized = normalizeWorkoutDraft(newData);
+    tempDataRef.current = normalized;
     dirtyFlagsRef.current = { ...dirtyFlagsRef.current, stretches: true };
-    setTempData(newData);
+    setTempData(normalized);
     setHasUnsavedStretches(true);
     invalidateSportXpCache();
   }, []);
@@ -226,8 +312,9 @@ export const useWorkoutExercises = (persistedData, updateData, sessionCalendarDa
 
   const resetDay = useCallback(
     (dateStr) => {
+      const dirty = dirtyFlagsRef.current;
       const draft =
-        (hasUnsavedExercises || hasUnsavedStretches) && (tempDataRef.current ?? tempData)
+        (dirty.exercises || dirty.stretches) && (tempDataRef.current ?? tempData)
           ? (tempDataRef.current ?? tempData)
           : null;
       const currentData = draft ? { ...draft } : { ...(persistedData || {}) };
@@ -289,13 +376,14 @@ export const useWorkoutExercises = (persistedData, updateData, sessionCalendarDa
 
       updateData(newData);
     },
-    [persistedData, hasUnsavedExercises, hasUnsavedStretches, tempData, updateData]
+    [persistedData, tempData, updateData]
   );
 
   return {
     hasUnsavedExercises,
     hasUnsavedStretches,
     tempData,
+    getWorkoutDataForSession,
     replaceDraftWorkoutData,
     updateTempExerciseData,
     updateTempStretchData,
@@ -305,6 +393,7 @@ export const useWorkoutExercises = (persistedData, updateData, sessionCalendarDa
     discardStretchChanges,
     cancelExerciseChanges,
     cancelStretchChanges,
-    resetDay
+    resetDay,
+    flushDirtySessionDraft
   };
 };

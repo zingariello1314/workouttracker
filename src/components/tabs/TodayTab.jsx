@@ -28,16 +28,28 @@ import {
 } from '../../utils/exerciseKeyGenerator';
 import { normalizeStretchSlots, countStretchItems, resolveEtirementsForDay } from '../../utils/stretchUtils';
 import { syncStretchLinkedQuests } from '../../utils/questStretchSync';
+
+const SESSION_SAVE_TIMEOUT_MS = 25000;
+
+function withSessionSaveTimeout(promise) {
+  return Promise.race([
+    promise,
+    new Promise((_, reject) => {
+      setTimeout(() => reject(new Error('SESSION_SAVE_TIMEOUT')), SESSION_SAVE_TIMEOUT_MS);
+    })
+  ]);
+}
 import StretchList from './TodayTab/components/StretchList';
 import CircuitsTodaySection from './TodayTab/components/CircuitsTodaySection.jsx';
 import { intensityCoeffToStarCount, resolveExerciseIntensityCoeff } from '../../utils/trainingLoadUtils';
 import { exerciseUsesExternalLoad } from '../../utils/programUtils';
 import LoadDifficultyStars from '../sport/LoadDifficultyStars';
-import SessionTriplePerceivedBlock from './TodayTab/components/SessionTriplePerceivedBlock.jsx';
+import CollapsibleSessionPerceived from './TodayTab/components/CollapsibleSessionPerceived.jsx';
 import {
   computeOverallSessionStars,
   pickStoredSessionPerceived,
-  sessionPerceivedToPayload
+  sessionPerceivedToPayload,
+  stripSessionPerceivedForKeys
 } from '../../utils/exerciseSessionPerceivedModel';
 import { computeTodaySessionComplexity } from '../../utils/todaySessionScore';
 import RecordPerformanceModal from '../sport/performance/RecordPerformanceModal';
@@ -181,6 +193,7 @@ const TodayTab = () => {
   const {
     currentDate,
     setCurrentDate,
+    changeSessionCalendarDate,
     data,
     updateData,
     getTodayWorkout,
@@ -526,6 +539,31 @@ const TodayTab = () => {
     [currentDate, syncStretchLinkedQuestsWithSnapshot]
   );
 
+  const [expandedPerceivedIds, setExpandedPerceivedIds] = useState(() => new Set());
+  const [isSavingSessionDraft, setIsSavingSessionDraft] = useState(false);
+
+  const collapseAllPerceivedPanels = useCallback(() => {
+    setExpandedPerceivedIds(new Set());
+  }, []);
+
+  const expandPerceivedPanel = useCallback((exerciseId) => {
+    setExpandedPerceivedIds((prev) => {
+      const next = new Set(prev);
+      next.add(String(exerciseId));
+      return next;
+    });
+  }, []);
+
+  const togglePerceivedPanel = useCallback((exerciseId) => {
+    const id = String(exerciseId);
+    setExpandedPerceivedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  }, []);
+
   // Fonction pour gérer le clic sur une case à cocher avec auto-remplissage
   const handleExerciseCheck = (exerciseId, date) => {
     const currentData = getCurrentData();
@@ -536,6 +574,9 @@ const TodayTab = () => {
 
     if (!exercise) {
       const isCurrentlyChecked = !!currentData.checkedExercises?.[fallbackKey];
+      const perceivedStrip = isCurrentlyChecked
+        ? stripSessionPerceivedForKeys(currentData, [fallbackKey])
+        : {};
       updateTempExerciseData({
         ...currentData,
         checkedExercises: {
@@ -561,8 +602,18 @@ const TodayTab = () => {
           const o = { ...(currentData.exerciseSetWeights || {}) };
           if (isCurrentlyChecked) delete o[fallbackKey];
           return o;
-        })()
+        })(),
+        ...perceivedStrip
       });
+      if (isCurrentlyChecked) {
+        setExpandedPerceivedIds((prev) => {
+          const next = new Set(prev);
+          next.delete(String(exerciseId));
+          return next;
+        });
+      } else {
+        expandPerceivedPanel(exerciseId);
+      }
       return;
     }
 
@@ -608,9 +659,15 @@ const TodayTab = () => {
         exerciseWeights: nextWeights,
         exerciseWeightPerArm: nextPerArm,
         exerciseSetWeights: nextSetW,
+        ...stripSessionPerceivedForKeys(currentData, keys)
       };
       updateTempExerciseData(nextSnapshot);
       syncSportLinkedQuestsWithProgramSnapshot(date, nextSnapshot);
+      setExpandedPerceivedIds((prev) => {
+        const next = new Set(prev);
+        next.delete(String(exercise.id));
+        return next;
+      });
       return;
     }
 
@@ -656,6 +713,7 @@ const TodayTab = () => {
       };
       updateTempExerciseData(nextSnapshot);
       syncSportLinkedQuestsWithProgramSnapshot(date, nextSnapshot);
+      expandPerceivedPanel(exercise.id);
       return;
     }
 
@@ -690,6 +748,7 @@ const TodayTab = () => {
     };
     updateTempExerciseData(nextSnapshot);
     syncSportLinkedQuestsWithProgramSnapshot(date, nextSnapshot);
+    expandPerceivedPanel(exercise.id);
   };
 
   const updateLocalReps = (exerciseId, reps, date) => {
@@ -818,13 +877,18 @@ const TodayTab = () => {
 
   // Sauvegarder les exercices avec vérification d'intégrité
   const handleSaveExercises = async () => {
+    if (isSavingSessionDraft) return;
     const hadExercisesDraft = hasUnsavedExercises;
     const hadStretchesDraft = hasUnsavedStretches;
+    setIsSavingSessionDraft(true);
     try {
-      await maybeApplyRestDaySwapBeforeSave();
-      if (hadExercisesDraft || hadStretchesDraft) {
-        await saveExerciseChanges();
-      }
+      await withSessionSaveTimeout(
+        (async () => {
+          await maybeApplyRestDaySwapBeforeSave();
+          await saveExerciseChanges();
+        })()
+      );
+      collapseAllPerceivedPanels();
       if (hadExercisesDraft && hadStretchesDraft) {
         showSuccess(t('today.messages.sessionSaved'));
       } else if (hadExercisesDraft) {
@@ -834,6 +898,15 @@ const TodayTab = () => {
       }
     } catch (error) {
       console.error('Erreur lors de la sauvegarde des exercices:', error);
+      if (error?.message === 'SESSION_SAVE_TIMEOUT') {
+        showError(
+          t(
+            'today.messages.saveTimeout',
+            'La sauvegarde prend trop de temps. Réessaie ou rafraîchis la page.'
+          )
+        );
+        return;
+      }
       showError(t('today.messages.errorSavingExercises'), {
         title: t('today.messages.saveFailed'),
         message: t('today.messages.errorMessage'),
@@ -843,18 +916,25 @@ const TodayTab = () => {
           t('today.messages.suggestions.contactSupport')
         ]
       });
+    } finally {
+      setIsSavingSessionDraft(false);
     }
   };
 
   // Sauvegarder les étirements avec vérification d'intégrité
   const handleSaveStretches = async () => {
+    if (isSavingSessionDraft) return;
     const hadExercisesDraft = hasUnsavedExercises;
     const hadStretchesDraft = hasUnsavedStretches;
+    setIsSavingSessionDraft(true);
     try {
-      await maybeApplyRestDaySwapBeforeSave();
-      if (hadExercisesDraft || hadStretchesDraft) {
-        await saveStretchChanges();
-      }
+      await withSessionSaveTimeout(
+        (async () => {
+          await maybeApplyRestDaySwapBeforeSave();
+          await saveStretchChanges();
+        })()
+      );
+      collapseAllPerceivedPanels();
       if (hadExercisesDraft && hadStretchesDraft) {
         showSuccess(t('today.messages.sessionSaved'));
       } else if (hadStretchesDraft) {
@@ -864,6 +944,15 @@ const TodayTab = () => {
       }
     } catch (error) {
       console.error('Erreur lors de la sauvegarde des étirements:', error);
+      if (error?.message === 'SESSION_SAVE_TIMEOUT') {
+        showError(
+          t(
+            'today.messages.saveTimeout',
+            'La sauvegarde prend trop de temps. Réessaie ou rafraîchis la page.'
+          )
+        );
+        return;
+      }
       showError(t('today.messages.errorSavingStretches'), {
         title: t('today.messages.saveFailed'),
         message: t('today.messages.errorMessage'),
@@ -873,15 +962,19 @@ const TodayTab = () => {
           t('today.messages.suggestions.contactSupport')
         ]
       });
+    } finally {
+      setIsSavingSessionDraft(false);
     }
   };
 
   const handleDiscardExercises = () => {
     discardExerciseChanges();
+    collapseAllPerceivedPanels();
   };
 
   const handleDiscardStretches = () => {
     discardStretchChanges();
+    collapseAllPerceivedPanels();
   };
 
   // ✅ NOUVEAU : Handler pour supprimer un exercice pour aujourd'hui
@@ -991,44 +1084,47 @@ const TodayTab = () => {
     [currentDate, uiLocale]
   );
 
+  const confirmLeaveDayWithUnsavedDraft = useCallback(() => {
+    if (!hasUnsavedExercises && !hasUnsavedStretches) return true;
+    return window.confirm(
+      t(
+        'today.dateNav.leaveWithoutSave',
+        'Des modifications ne sont pas enregistrées. Changer de jour quand même ? (Utilise « Enregistrer » pour garder la séance du jour affiché.)'
+      )
+    );
+  }, [hasUnsavedExercises, hasUnsavedStretches, t]);
+
   const shiftSportCalendarDay = useCallback(
-    async (delta) => {
+    (delta) => {
       if (delta === 0) return;
-      if (delta > 0 && !canGoForwardSportDay) return;
-      if (hasUnsavedExercises || hasUnsavedStretches) {
-        try {
-          await maybeApplyRestDaySwapBeforeSave();
-          await saveExerciseChanges();
-        } catch (error) {
-          console.error('[TodayTab] Sauvegarde avant changement de jour:', error);
-          showError(
-            t('today.messages.errorSavingExercises', 'Impossible d’enregistrer la séance.'),
-            {
-              title: t('today.messages.saveFailed', 'Échec de la sauvegarde'),
-              message: error?.message || t('today.messages.errorMessage', ''),
-              suggestions: [t('today.messages.suggestions.tryAgain', 'Réessaie.')]
-            }
-          );
-          return;
-        }
-      }
-      setCurrentDate((prev) => {
-        const n = new Date(prev);
-        n.setDate(n.getDate() + delta);
-        return n;
-      });
+
+      const nextDate = new Date(currentDate);
+      nextDate.setDate(nextDate.getDate() + delta);
+      nextDate.setHours(12, 0, 0, 0);
+      const nextDateStr = getDateStr(nextDate);
+      if (delta > 0 && nextDateStr > calendarTodayYmd) return;
+      if (nextDateStr === dateStr) return;
+      if (!confirmLeaveDayWithUnsavedDraft()) return;
+
+      changeSessionCalendarDate(nextDate);
     },
     [
-      canGoForwardSportDay,
-      hasUnsavedExercises,
-      hasUnsavedStretches,
-      maybeApplyRestDaySwapBeforeSave,
-      saveExerciseChanges,
-      showError,
-      setCurrentDate,
-      t
+      currentDate,
+      dateStr,
+      calendarTodayYmd,
+      confirmLeaveDayWithUnsavedDraft,
+      changeSessionCalendarDate,
+      getDateStr,
     ]
   );
+
+  const goToSportSessionToday = useCallback(() => {
+    if (dateStr === calendarTodayYmd) return;
+    if (!confirmLeaveDayWithUnsavedDraft()) return;
+    const today = new Date();
+    today.setHours(12, 0, 0, 0);
+    changeSessionCalendarDate(today);
+  }, [dateStr, calendarTodayYmd, confirmLeaveDayWithUnsavedDraft, changeSessionCalendarDate]);
 
   const sportSessionDateNavRow = (
     <div
@@ -1045,9 +1141,18 @@ const TodayTab = () => {
       >
         <ChevronLeft className="h-5 w-5" aria-hidden />
       </button>
-      <p className="min-w-0 flex-1 text-center text-sm font-medium capitalize text-white sm:text-base">
-        {formattedSportSessionDate}
-      </p>
+      <div className="min-w-0 flex-1 text-center">
+        <p className="text-sm font-medium capitalize text-white sm:text-base">{formattedSportSessionDate}</p>
+        {!isRecordingRealToday ? (
+          <button
+            type="button"
+            onClick={() => goToSportSessionToday()}
+            className="mt-1 text-xs font-medium text-teal-300 underline-offset-2 hover:text-teal-100 hover:underline"
+          >
+            {t('today.dateNav.backToToday', "Revenir à aujourd'hui")}
+          </button>
+        ) : null}
+      </div>
       <button
         type="button"
         onClick={() => shiftSportCalendarDay(1)}
@@ -1421,9 +1526,13 @@ const TodayTab = () => {
   const hasStretchesContent = countStretchItems(normalizedTodayStretches) > 0;
 
   useEffect(() => {
+    if (isSavingSessionDraft) return;
     if (!hasStretchesContent || !Array.isArray(quietQuests) || quietQuests.length === 0) return;
-    syncStretchLinkedQuestsWithSnapshot(currentDate, getCurrentData());
+    const snapshot =
+      hasUnsavedExercises || hasUnsavedStretches ? getCurrentData() : data;
+    syncStretchLinkedQuestsWithSnapshot(currentDate, snapshot);
   }, [
+    isSavingSessionDraft,
     hasStretchesContent,
     normalizedTodayStretches,
     quietQuests,
@@ -1431,6 +1540,9 @@ const TodayTab = () => {
     currentDate,
     syncStretchLinkedQuestsWithSnapshot,
     getCurrentData,
+    data,
+    hasUnsavedExercises,
+    hasUnsavedStretches,
   ]);
 
   /** Jour sans exercices : n’afficher l’écran « jour de repos » plein écran que s’il n’y a pas non plus d’étirements prévus */
@@ -2007,21 +2119,19 @@ const TodayTab = () => {
                   )}
 
                   {isChecked && (
-                    <div className="w-full pt-3 mt-1 border-t border-[#0F4C5C]/45">
-                      <p className="text-[11px] font-medium text-amber-200/90 mb-1.5">
-                        {t('today.exercises.sessionEffortLabel', 'Ressenti de la séance')}
-                      </p>
-                      <SessionTriplePerceivedBlock
-                        idPrefix={`today-ex-${exercise.id}`}
-                        persistedDraft={pickStoredSessionPerceived(
-                          getCurrentData(),
-                          keys,
-                          primaryKeyForStars
-                        )}
-                        suggestedStars={sessionEffortStars ?? coefStarCount}
-                        onChange={(draft, overall) => updateSessionPerceivedToday(exercise, draft, overall)}
-                      />
-                    </div>
+                    <CollapsibleSessionPerceived
+                      label={t('today.exercises.sessionEffortLabel', 'Ressenti de la séance')}
+                      expanded={expandedPerceivedIds.has(String(exercise.id))}
+                      onToggle={() => togglePerceivedPanel(exercise.id)}
+                      idPrefix={`today-ex-${exercise.id}`}
+                      persistedDraft={pickStoredSessionPerceived(
+                        getCurrentData(),
+                        keys,
+                        primaryKeyForStars
+                      )}
+                      suggestedStars={sessionEffortStars ?? coefStarCount}
+                      onChange={(draft, overall) => updateSessionPerceivedToday(exercise, draft, overall)}
+                    />
                   )}
                 </div>
               </div>
@@ -2216,10 +2326,13 @@ const TodayTab = () => {
                 <button
                   type="button"
                   onClick={handleSaveExercises}
-                  className="gradient-button-premium gradient-button-premium-md rounded-lg flex items-center gap-2"
+                  disabled={isSavingSessionDraft}
+                  className="gradient-button-premium gradient-button-premium-md rounded-lg flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   <Save className="w-4 h-4" />
-                  {t('today.exercises.save')}
+                  {isSavingSessionDraft
+                    ? t('today.exercises.saving', 'Enregistrement…')
+                    : t('today.exercises.save')}
                 </button>
               </div>
             </div>
@@ -2267,10 +2380,13 @@ const TodayTab = () => {
                   <button
                     type="button"
                     onClick={handleSaveStretches}
-                    className="gradient-button-premium gradient-button-premium-md rounded-lg flex items-center gap-2"
+                    disabled={isSavingSessionDraft}
+                    className="gradient-button-premium gradient-button-premium-md rounded-lg flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     <Save className="w-4 h-4" />
-                    {t('today.stretches.save')}
+                    {isSavingSessionDraft
+                      ? t('today.stretches.saving', 'Enregistrement…')
+                      : t('today.stretches.save')}
                   </button>
                 </div>
               </div>

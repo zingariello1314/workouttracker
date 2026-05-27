@@ -207,6 +207,8 @@ const ProfileSettings = ({
                     <p><span className="text-violet-200/90">Lieu:</span> {summarizeAnswer('trainingLocation')}</p>
                     <p><span className="text-violet-200/90">Jours disponibles:</span> {summarizeAnswer('availableTrainingDays')}</p>
                     <p><span className="text-violet-200/90">Durée séance:</span> {summarizeAnswer('preferredSessionDuration')}</p>
+                    <p><span className="text-violet-200/90">Étirements (créneaux):</span> {summarizeAnswer('stretchDistribution')}</p>
+                    <p><span className="text-violet-200/90">Variantes A/B:</span> {summarizeAnswer('weekAlternation')}</p>
                   </div>
                 </div>
                 <div className="grid gap-2 sm:grid-cols-3">
