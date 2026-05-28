@@ -31,7 +31,7 @@ export function useRecapCrossCoachGarmin(opts = {}) {
         const { dailyMetrics } = await loadDataByRange(readyRange.startYmd, readyRange.endYmd);
         if (cancelled) return;
         const stats = computeGarminDailyStats(dailyMetrics, readyRange.startYmd, readyRange.endYmd);
-        setPartial({ status: 'ready', ...stats });
+        setPartial({ status: 'ready', ...stats, dailyMetrics: dailyMetrics || {} });
       } catch {
         if (!cancelled) {
           setPartial({

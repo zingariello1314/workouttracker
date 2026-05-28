@@ -12,6 +12,10 @@ import { getExerciseDatabaseHit } from '../exerciseHeroContent';
 import { normalizeProfileQuestionnaire } from '../../features/profileQuestionnaire/schema';
 import { PROFILE_QUESTION_DEFS } from '../../features/profileQuestionnaire/constants';
 import { buildQuizDerivedSuggestionTexts, computeQuizLevelWellnessModifier } from '../../features/profileQuestionnaire/quizInfluence';
+import {
+  buildRecapContextualSuggestions,
+  mergeRecapSuggestions
+} from './recapContextualSuggestions';
 
 const MS_DAY = 86400000;
 
@@ -353,6 +357,8 @@ function computeProgramDayCompletion28(data, activeProgram, startYmd, endYmd) {
  * @param {(id: string) => string} [input.getExerciseNameById]
  * @param {(date: Date) => object|null} [input.getWorkoutForDate] — ex. `getTodayWorkout(date, isGymMode)`
  * @param {boolean} [input.isGymMode]
+ * @param {object} [input.nutritionPartial] — signaux nutrition 28 j (hook Récap)
+ * @param {object} [input.garminPartial] — signaux Garmin 28 j (hook Récap)
  */
 export function computeRecapUserAssessment({
   snapshot,
@@ -360,7 +366,9 @@ export function computeRecapUserAssessment({
   profileQuestionnaireRaw = null,
   getExerciseNameById,
   getWorkoutForDate,
-  isGymMode = false
+  isGymMode = false,
+  nutritionPartial = null,
+  garminPartial = null
 }) {
   const data = snapshot || {};
   const today = new Date();
@@ -518,49 +526,49 @@ export function computeRecapUserAssessment({
   else if (level0to100 < 75) tier = 'Intermédiaire avancé';
   else tier = 'Avancé';
 
-  const suggestions = [];
+  const legacySuggestions = [];
   buildQuizDerivedSuggestionTexts(answers || {}).forEach((row) => {
-    suggestions.push(row);
+    legacySuggestions.push(row);
   });
   if (regularityScore < 0.45) {
-    suggestions.push({
+    legacySuggestions.push({
       kind: 'regularity',
       text: 'Régularité sous ton objectif (quiz) : séances un peu plus courtes mais calées sur le calendrier fonctionnent souvent mieux que des blocs rares.'
     });
   }
   if (weightedDayCount28 === 0 && totalReps28 > 50) {
-    suggestions.push({
+    legacySuggestions.push({
       kind: 'load',
       text: 'Beaucoup de reps sans charge enregistrée : pour suivre la force, ajoute les kg sur les exos chargés.'
     });
   }
   if (weightedDayCount28 > 0) {
     if (avgKgRepsPerWeightedDay28 < 900) {
-      suggestions.push({
+      legacySuggestions.push({
         kind: 'volume_low',
         text: 'Volume « avec poids » encore modeste : priorité à la technique et à la progression progressive plutôt qu’à l’échec systématique.'
       });
     } else if (avgKgRepsPerWeightedDay28 > 8500) {
-      suggestions.push({
+      legacySuggestions.push({
         kind: 'volume_high',
         text: 'Volume halie très élevé sur les jours chargés : surveille la récupération, les articulations et alterne semaines lourdes / légères.'
       });
     }
   }
   if (program28 && program28.ratio < 0.5) {
-    suggestions.push({
+    legacySuggestions.push({
       kind: 'program',
-      text: 'Adhérence partielle au planning : identifie 2–3 séances non négociables par semaine plutôt que viser 100 % des cases.'
+      text: 'Adhérence partielle au planning (28 j) : identifie 2–3 séances non négociables par semaine plutôt que viser 100 % des cases.'
     });
   }
   if (qq.completedCount < qq.totalCount) {
-    suggestions.push({
+    legacySuggestions.push({
       kind: 'quiz',
       text: 'Complète le quiz profil (Paramètres) pour caler fréquence attendue, sommeil et stress dans l’estimation.'
     });
   }
   if (lifetimeReps > 40000 && regularityScore < 0.55) {
-    suggestions.push({
+    legacySuggestions.push({
       kind: 'veteran_reg',
       text: 'Historique de volume élevé mais régularité récente en baisse : une phase « maintenance » assumée évite la frustration en attendant le bon timing.'
     });
@@ -570,7 +578,7 @@ export function computeRecapUserAssessment({
     sessionLoadAlignment28.avgScore0to100 < 42 &&
     sessionLoadAlignment28.sessionDaysScored >= 4
   ) {
-    suggestions.push({
+    legacySuggestions.push({
       kind: 'session_load_gap',
       text: 'Écart marqué entre charge prévue (programme + séries/reps du jour) et charge réalisée sur plusieurs séances : en cochant les exos et en saisissant les reps, les conseils et la synthèse gagnent en précision.'
     });
@@ -580,11 +588,27 @@ export function computeRecapUserAssessment({
     sessionLoadAlignment28.avgScore0to100 > 88 &&
     sessionLoadAlignment28.sessionDaysScored >= 3
   ) {
-    suggestions.push({
+    legacySuggestions.push({
       kind: 'session_load_aligned',
       text: 'Bonne adéquation entre prévu et réalisé récemment (séries adaptées prises en compte) : la trajectoire reflète bien ce que tu enregistres.'
     });
   }
+
+  const contextualSuggestions = buildRecapContextualSuggestions({
+    snapshot: data,
+    activeProgram,
+    getExerciseNameById,
+    nutritionPartial,
+    garminPartial,
+    garminDailyMetrics:
+      garminPartial?.status === 'ready' ? garminPartial.dailyMetrics || null : null,
+    sessionLoadAlignment: sessionLoadAlignment28
+  });
+
+  const suggestions = mergeRecapSuggestions(contextualSuggestions, legacySuggestions, {
+    max: 12,
+    maxQuiz: 2
+  });
 
   const quizSummaryLines = PROFILE_QUESTION_DEFS.map((q) => {
     const v = answers[q.id];

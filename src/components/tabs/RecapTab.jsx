@@ -24,6 +24,9 @@ import RecapUserAssessmentPanel from '../sport/recap/RecapUserAssessmentPanel';
 import RecapCrossCoachPanel from '../sport/recap/RecapCrossCoachPanel';
 import RecapQuizHistoryPanel from '../sport/recap/RecapQuizHistoryPanel';
 import { useRecapSynthesisCoach } from '../../hooks/useRecapSynthesisCoach';
+import { useRecapCrossCoachNutrition } from '../../hooks/useRecapCrossCoachNutrition';
+import { useRecapCrossCoachGarmin } from '../../hooks/useRecapCrossCoachGarmin';
+import DateHelper from '../../utils/dateHelper';
 
 const PERIOD_STORAGE_KEY = 'sport.recap.periodView';
 
@@ -51,6 +54,15 @@ const RecapTab = () => {
 
   const snapshotForRecap = useMemo(() => getCurrentData(), [data, getCurrentData]);
 
+  const recapWindowEnd = DateHelper.getTodayLocal();
+  const recapWindowStart = DateHelper.addDays(recapWindowEnd, -27);
+  const nutritionPartialForRecap = useRecapCrossCoachNutrition({ enabled: true });
+  const garminPartialForRecap = useRecapCrossCoachGarmin({
+    startYmd: recapWindowStart,
+    endYmd: recapWindowEnd,
+    enabled: true
+  });
+
   const recapAssessment = useMemo(
     () =>
       computeRecapUserAssessment({
@@ -59,7 +71,9 @@ const RecapTab = () => {
         profileQuestionnaireRaw: currentUser?.profileQuestionnaire,
         getExerciseNameById,
         getWorkoutForDate: getWorkoutForDateForRecap,
-        isGymMode
+        isGymMode,
+        nutritionPartial: nutritionPartialForRecap,
+        garminPartial: garminPartialForRecap
       }),
     [
       snapshotForRecap,
@@ -67,7 +81,9 @@ const RecapTab = () => {
       currentUser?.profileQuestionnaire,
       getExerciseNameById,
       getWorkoutForDateForRecap,
-      isGymMode
+      isGymMode,
+      nutritionPartialForRecap,
+      garminPartialForRecap
     ]
   );
 
