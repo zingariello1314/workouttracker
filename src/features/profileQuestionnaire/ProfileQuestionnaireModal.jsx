@@ -203,6 +203,9 @@ const QuestionCard = ({ question, value, onSelect, allAnswers }) => {
                 } ${blocked ? 'opacity-40 cursor-not-allowed' : ''}`}
               >
                 <div className="text-sm font-medium">{opt.label}</div>
+                {opt.description ? (
+                  <div className="mt-1 text-xs text-slate-400">{opt.description}</div>
+                ) : null}
               </button>
             );
           })}

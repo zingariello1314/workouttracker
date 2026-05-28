@@ -17,7 +17,10 @@ import {
   readPendingQuizPrefill
 } from '../../features/profileQuestionnaire/prefill';
 import { buildTrainingScheduleFromQuizDays, augmentScheduleWithQuizDefaults } from '../../features/profileQuestionnaire/trainingScheduleFromQuiz';
-import { getProgramGoalLabel, buildProgramDescriptionFromQuiz } from '../../features/profileQuestionnaire/quizInfluence';
+import {
+  buildProgramTitleFromQuiz,
+  buildProgramDescriptionFromQuiz
+} from '../../features/profileQuestionnaire/quizProgramPresentation';
 import { isWeekAlternationEnabled } from '../../features/profileQuestionnaire/quizExercisePlanner';
 import { copyEtirementsToProgramSchedule } from '../../utils/stretchUtils';
 import { buildExerciseDaysSet, countProgramUsageDays } from '../../utils/programUsageDays';
@@ -50,8 +53,8 @@ const ProgramTab = () => {
     const quizAnswers = pending?.answers || {};
 
     setNewProgram({
-      name: `Programme personnalisé (${getProgramGoalLabel(mainGoal)})`,
-      description: buildProgramDescriptionFromQuiz(quizAnswers, suggestedDays),
+      name: 'Programme personnalisé (quiz)',
+      description: 'Le titre et la description seront générés à la création selon ton planning.',
       duration: Math.max(1, Math.min(52, suggestedDuration)),
       exercises: []
     });
@@ -138,8 +141,16 @@ const ProgramTab = () => {
         useQuizSchedule && pendingQuizAnswers && typeof pendingQuizAnswers === 'object'
           ? augmentScheduleWithQuizDefaults(scheduleBase, pendingQuizAnswers)
           : scheduleBase;
+      const quizPresentation =
+        useQuizSchedule && pendingQuizAnswers
+          ? {
+              name: buildProgramTitleFromQuiz(pendingQuizAnswers, schedule),
+              description: buildProgramDescriptionFromQuiz(pendingQuizAnswers, schedule)
+            }
+          : {};
       const created = addProgram({
         ...newProgram,
+        ...quizPresentation,
         schedule,
         ...(useQuizSchedule
           ? {

@@ -4,6 +4,12 @@
 
 import { stretchDrillsCatalog } from '../../data/stretchDrillsCatalog.js';
 import { stretchDatabase } from '../../data/stretchDatabase.js';
+import {
+  buildCircuitGuidanceFromStyles,
+  hasCircuitTrainingStyle,
+  normalizeCircuitTrainingStyles
+} from './circuitTrainingStyleUtils';
+import { buildProgramDescriptionFromQuiz as buildProgramDescriptionFromSchedule } from './quizProgramPresentation';
 
 /** Créneaux activés par choix explicite au quiz (`stretchDistribution`). */
 export const STRETCH_DISTRIBUTION_SLOTS = {
@@ -241,7 +247,7 @@ export function buildQuizTrainingSessionBlueprint(answers) {
 
   const exp = answers.experienceLevel;
   const dur = answers.preferredSessionDuration;
-  const circuits = answers.circuitTrainingStyle;
+  const circuitStyles = normalizeCircuitTrainingStyles(answers.circuitTrainingStyle);
   const goal = answers.goalPhysique;
 
   let lo = 5;
@@ -272,19 +278,22 @@ export function buildQuizTrainingSessionBlueprint(answers) {
     repRange = '12–20 ou temps sous tension sur certains blocs';
   }
 
-  let circuitGuidance =
-    'Structure majoritaire en séries droites ; éventuellement 1 superset léger sur 2 exos complémentaires.';
-  if (circuits === 'ok_finisher') {
-    circuitGuidance =
-      'Séries droites sur le gros du travail ; 1 finisher court (2–3 mouvements enchaînés, 2 tours) en fin de séance si tu te sens frais.';
-  } else if (circuits === 'like_supersets') {
-    circuitGuidance =
-      'Prévoir 2–3 supersets (agoniste/antagoniste ou haut/bas) par séance pour densifier sans tout faire en circuit.';
-  } else if (circuits === 'love_circuits') {
-    circuitGuidance =
-      '1 bloc circuit principal (4–5 exos, repos 20–45 s) + accès libres en séries droites sur le lift prioritaire du jour.';
-  } else if (circuits === 'prefer_straight') {
-    circuitGuidance = 'Privilégier les séries droites et le repos complet entre les séries lourdes.';
+  const circuitGuidance = buildCircuitGuidanceFromStyles(circuitStyles);
+
+  if (hasCircuitTrainingStyle(circuitStyles, 'love_circuits')) {
+    hi = Math.min(hi + 1, 12);
+  }
+  if (
+    hasCircuitTrainingStyle(circuitStyles, 'like_supersets') ||
+    hasCircuitTrainingStyle(circuitStyles, 'ok_finisher')
+  ) {
+    hi = Math.min(hi + 1, 11);
+  }
+  if (
+    circuitStyles.length === 1 &&
+    hasCircuitTrainingStyle(circuitStyles, 'prefer_straight')
+  ) {
+    setsHint = '3–4 séries / exercice, repos complet entre séries (force / hypertrophie classique)';
   }
 
   const bias = computeCardioBiasMultiplier(answers);
@@ -335,52 +344,28 @@ export function buildProgramPrefillHints(answers) {
     stretchDistribution: answers?.stretchDistribution || null,
     flexibilityLevel: answers?.flexibilityLevel || null,
     cardioTrainingDesire: answers?.cardioTrainingDesire || null,
-    circuitTrainingStyle: answers?.circuitTrainingStyle || null,
+    circuitTrainingStyle: normalizeCircuitTrainingStyles(answers?.circuitTrainingStyle),
     exerciseTypePreferences: Array.isArray(answers?.exerciseTypePreferences) ? answers.exerciseTypePreferences : [],
     cardioBias: computeCardioBiasMultiplier(answers),
     hasJumpRope: equip.includes('jump_rope')
   };
 }
 
-export function buildProgramDescriptionFromQuiz(answers, suggestedDays) {
-  const hints = buildProgramPrefillHints(answers);
-  const parts = [];
-  if (suggestedDays?.length) parts.push(`Jours disponibles: ${suggestedDays.join(', ')}`);
-  if (hints.focusTags.length) parts.push(`Priorités: ${hints.focusTags.join(', ')}`);
-  if (hints.equipmentKeys.length) parts.push(`${hints.equipmentKeys.length} type(s) d’équipement`);
-  if (hints.currentPhysique) parts.push('Profil actuel pris en compte (quiz)');
-  const style = buildTrainingStyleSentence(answers);
-  if (style) parts.push(style);
-  const loc = locationTrainingSentence(answers?.trainingLocation);
-  if (loc) parts.push(loc);
-  const bp = buildQuizTrainingSessionBlueprint(answers);
-  parts.push(`Structure suggérée : ${bp.exercisesPerSession}, ${bp.setsHint}, reps ${bp.repRange}.`);
-  parts.push(bp.circuitGuidance);
-  const stretchSlots = describeStretchDistributionFromQuiz(answers);
-  const sh = answers?.stretchingHabit;
-  if (answers?.stretchDistribution === 'none_scheduled') {
-    parts.push('Pas de routine d’étirements planifiée (choix quiz).');
-  } else if (sh && sh !== 'never' && resolveStretchMomentsFromQuiz(answers).length) {
-    parts.push(`Étirements guidés sur : ${stretchSlots}.`);
+/** @deprecated Préférer `quizProgramPresentation.buildProgramDescriptionFromQuiz(answers, schedule)`. */
+export function buildProgramDescriptionFromQuiz(answers, suggestedDaysOrSchedule) {
+  if (
+    suggestedDaysOrSchedule &&
+    typeof suggestedDaysOrSchedule === 'object' &&
+    !Array.isArray(suggestedDaysOrSchedule)
+  ) {
+    return buildProgramDescriptionFromSchedule(answers, suggestedDaysOrSchedule);
   }
-  if (hints.hasJumpRope && answers?.cardioTrainingDesire && answers.cardioTrainingDesire !== 'minimal') {
-    parts.push('Corde à sauter disponible : possibilité d’intervalles courts en fin de séance.');
+  const goal = getProgramGoalLabel(answers?.goalPhysique || 'balanced_functional').toLowerCase();
+  const days = Array.isArray(suggestedDaysOrSchedule) ? suggestedDaysOrSchedule.length : 0;
+  if (days > 0) {
+    return `Programme ${goal} sur ${days} jour${days > 1 ? 's' : ''} par semaine, généré depuis ton profil quiz.`;
   }
-  if (hints.exerciseTypePreferences?.length) {
-    parts.push(`Types préférés: ${hints.exerciseTypePreferences.join(', ')}.`);
-  }
-  if (shouldInjectPlyometricsFromQuiz(answers)) {
-    parts.push('Bloc pliométrie auto-ajouté sur les jours cardio (adapté au niveau du quiz).');
-  }
-  if (shouldInjectDrillsFromQuiz(answers)) {
-    parts.push('Drills course auto-ajoutés (difficulté alignée sur ton niveau au quiz).');
-  }
-  if (answers?.weekAlternation === 'ab_enabled') {
-    parts.push('Variantes semaine A / B activées (lieux et matériel du quiz).');
-  } else if (answers?.weekAlternation === 'none') {
-    parts.push('Pas de variantes semaine A / B.');
-  }
-  return parts.length ? `Prérempli via quiz. ${parts.join(' · ')}.` : 'Prérempli via quiz onboarding.';
+  return `Programme ${goal} généré depuis ton profil quiz.`;
 }
 
 export function shouldInjectPlyometricsFromQuiz(answers) {
@@ -640,7 +625,12 @@ export function adjustSuggestedProgramWeeks(baseWeeks, answers) {
   if (exp === 'beginner_total' || exp === 'beginner_0_3m') w = Math.min(w, 8);
   if (exp === 'expert_3y_plus') w = Math.max(w, 8);
   if (stress === 'very_high' || stress === 'high' || sleep === 'poor' || sleep === 'below_average') w = Math.max(4, w - 2);
-  if (answers?.circuitTrainingStyle === 'love_circuits' || answers?.cardioTrainingDesire === 'priority_hiit') w += 1;
+  if (
+    hasCircuitTrainingStyle(answers?.circuitTrainingStyle, 'love_circuits') ||
+    answers?.cardioTrainingDesire === 'priority_hiit'
+  ) {
+    w += 1;
+  }
   if (answers?.stretchingHabit === 'never' || answers?.stretchingHabit === 'rarely') w = Math.max(3, w - 1);
   return Math.max(3, Math.min(16, w));
 }
@@ -799,7 +789,7 @@ export function buildQuizDerivedSuggestionTexts(answers) {
   const stretchK = answers.stretchingKnowledge;
   const flexL = answers.flexibilityLevel;
   const cardioD = answers.cardioTrainingDesire;
-  const circuitS = answers.circuitTrainingStyle;
+  const circuitStyles = normalizeCircuitTrainingStyles(answers.circuitTrainingStyle);
 
   if (stretchH === 'never' || stretchH === 'rarely') {
     out.push({
@@ -859,15 +849,41 @@ export function buildQuizDerivedSuggestionTexts(answers) {
       text: 'Corde à sauter disponible : excellent complément cardio compact — alterne avec mobilité chevilles pour limiter les tensions.'
     });
   }
-  if (circuitS === 'love_circuits' && (exp === 'beginner_total' || exp === 'beginner_0_3m')) {
+  if (
+    hasCircuitTrainingStyle(circuitStyles, 'love_circuits') &&
+    (exp === 'beginner_total' || exp === 'beginner_0_3m')
+  ) {
     out.push({
       kind: 'quiz_circuit_novice',
       text: 'Tu aimes les circuits mais débutant au quiz : commence par 3 mouvements simples et un tour de moins que ton instinct, puis augmente.'
     });
-  } else if (circuitS === 'prefer_straight' && g === 'endurance_lean') {
+  }
+  if (
+    hasCircuitTrainingStyle(circuitStyles, 'prefer_straight') &&
+    hasCircuitTrainingStyle(circuitStyles, 'love_circuits')
+  ) {
+    out.push({
+      kind: 'quiz_mixed_density',
+      text: 'Séries droites + circuits cochés : place le circuit en fin de séance ou sur un jour dédié pour ne pas griller la force du début.'
+    });
+  }
+  if (
+    hasCircuitTrainingStyle(circuitStyles, 'prefer_straight') &&
+    g === 'endurance_lean' &&
+    !hasCircuitTrainingStyle(circuitStyles, 'love_circuits')
+  ) {
     out.push({
       kind: 'quiz_straight_endurance',
       text: 'Endurance + séries droites préférées : cardio continu ou tempo modéré en fin de séance plutôt que beaucoup de transitions courtes.'
+    });
+  }
+  if (
+    hasCircuitTrainingStyle(circuitStyles, 'like_supersets') &&
+    hasCircuitTrainingStyle(circuitStyles, 'ok_finisher')
+  ) {
+    out.push({
+      kind: 'quiz_superset_finisher',
+      text: 'Supersets + finisher : garde le finisher très court (≤ 6 min) après les supersets pour limiter la fatigue nerveuse.'
     });
   }
 

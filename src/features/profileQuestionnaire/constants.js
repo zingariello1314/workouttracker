@@ -1,4 +1,4 @@
-export const PROFILE_QUESTIONNAIRE_VERSION = 6;
+export const PROFILE_QUESTIONNAIRE_VERSION = 8;
 
 export const QUESTION_SECTIONS = [
   { id: 'objectifs', label: 'Objectifs de la mission', color: 'violet' },
@@ -364,10 +364,24 @@ export const PROFILE_QUESTION_DEFS = [
     ]
   },
   {
-    id: 'circuitTrainingStyle',
+    id: 'sameDayCardioAddon',
     sectionId: 'mobilite',
     type: 'single',
-    title: 'Les circuits / enchaînements (peu de repos entre exos) vous conviennent ?',
+    title: 'Souhaitez-vous ajouter du cardio le même jour que votre séance principale ?',
+    description:
+      'Si oui, la durée choisie pour la séance force/street reste la même, avec environ la moitié de ce temps en cardio en plus (ex. 60 min force + ~30 min cardio).',
+    options: [
+      { key: 'never', label: 'Non', description: 'Cardio uniquement sur des jours dédiés' },
+      { key: 'sometimes', label: 'Parfois', description: 'Quelques jours allongés dans la semaine' },
+      { key: 'often', label: 'Souvent', description: 'Plusieurs séances couplées force + cardio' }
+    ]
+  },
+  {
+    id: 'circuitTrainingStyle',
+    sectionId: 'mobilite',
+    type: 'multi',
+    max: 4,
+    title: 'Quels formats d’enchaînement vous conviennent ? (plusieurs choix possibles)',
     options: [
       { key: 'prefer_straight', label: 'Plutôt séries droites', description: 'Peu de supersets' },
       { key: 'ok_finisher', label: 'Un finisher court parfois', description: 'Le cœur en classique, un mini-circuit occasionnel' },

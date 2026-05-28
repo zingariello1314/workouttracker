@@ -605,12 +605,23 @@ const WorkoutProvider = ({ children }) => {
             ? daySchedule.etirements
             : undefined;
 
+        const pliometriePayload =
+          daySchedule.pliometrie && typeof daySchedule.pliometrie === 'object'
+            ? daySchedule.pliometrie
+            : undefined;
+        const drillsCoursePayload =
+          daySchedule.drillsCourse && typeof daySchedule.drillsCourse === 'object'
+            ? daySchedule.drillsCourse
+            : undefined;
+
         return {
           name: variantName,
           focus: daySchedule.focus || '',
           duree: daySchedule.duration || '',
           exercices: exercises,
           etirements: etirementsPayload,
+          pliometrie: pliometriePayload,
+          drillsCourse: drillsCoursePayload,
           isGymMode: isGymMode,
           weekVariant: currentWeekVariant
         };

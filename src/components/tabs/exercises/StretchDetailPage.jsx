@@ -3,7 +3,7 @@
  * ressenti 7 curseurs pondérés, XP alignée avec `stretchPerceivedRatings` + xpCalculations.
  */
 
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useLayoutEffect, useMemo, useState } from 'react';
 import {
   ArrowLeft,
   Info,
@@ -23,7 +23,8 @@ import Button from '../../ui/Button';
 import AnatomyBankHighlight from '../../anatomy/AnatomyBankHighlight';
 import { useTranslation } from '../../../utils/translations';
 import StretchRessentiPanel from './StretchRessentiPanel';
-import StretchComplementarySection from './StretchComplementarySection';
+import StretchSimilarSection from './StretchSimilarSection';
+import { scrollBankDetailToTop } from '../../../utils/scrollBankDetailToTop';
 import { inferStretchIdealMoments } from '../../../utils/stretchIdealMoments';
 import { countStretchCheckIns } from '../../../utils/stretchCheckInStats';
 import {
@@ -86,13 +87,17 @@ const StretchDetailPage = ({
   readOnly = false,
   /** Programmes utilisateur (pour le compteur de coches aligné XP). */
   sportPrograms,
-  /** Ouvre une fiche exercice (banque force) depuis les complémentaires. */
-  onOpenComplementaryExercise,
+  /** Ouvre un autre étirement (suggestions similaires). */
+  onOpenSimilarStretch,
   maxRecordsByExerciseId,
   onRequestAddToProgram,
   isAuthenticated = false
 }) => {
   const t = useTranslation();
+
+  useLayoutEffect(() => {
+    scrollBankDetailToTop();
+  }, [stretchKey]);
 
   const ratings = data?.stretchPerceivedRatings || {};
   const notes = data?.stretchPersonalNotes || {};
@@ -367,11 +372,10 @@ const StretchDetailPage = ({
             </div>
           )}
 
-          <StretchComplementarySection
+          <StretchSimilarSection
             stretch={stretch}
             data={data}
-            onOpenExercise={onOpenComplementaryExercise}
-            maxRecordsByExerciseId={maxRecordsByExerciseId}
+            onOpenStretch={onOpenSimilarStretch}
             onRequestAddToProgram={onRequestAddToProgram}
             isAuthenticated={isAuthenticated}
           />

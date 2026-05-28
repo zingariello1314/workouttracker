@@ -46,6 +46,8 @@ import { useLanguage } from '../context/LanguageContext';
 import { LANGUAGES } from '../utils/translations/constants';
 import { exerciseDatabase } from '../data/exerciseDatabase';
 import StretchSlotsEditor from './program/StretchSlotsEditor';
+import PlyometricBlock from './program/PlyometricBlock';
+import RunningDrillsBlock from './program/RunningDrillsBlock';
 import ExerciseBankNameAutocomplete from './program/ExerciseBankNameAutocomplete';
 import { buildExerciseBankRows, filterExerciseBankRows } from '../utils/exerciseBankSearch';
 import CircuitEditor from './circuits/CircuitEditor';
@@ -1751,6 +1753,14 @@ const ProgramDetailView = ({ program, onBack, onUpdateProgram }) => {
                     onChange={(newEtirements) => handleStretchSlotsChange(dayKey, newEtirements)}
                   />
                 </div>
+
+                {dayData.pliometrie?.items?.length > 0 && (
+                  <PlyometricBlock pliometrie={dayData.pliometrie} />
+                )}
+
+                {dayData.drillsCourse?.items?.length > 0 && (
+                  <RunningDrillsBlock drillsCourse={dayData.drillsCourse} />
+                )}
 
                 {/* Activités complémentaires */}
                 {dayData.complementaryActivity && (

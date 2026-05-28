@@ -40,6 +40,8 @@ function withSessionSaveTimeout(promise) {
   ]);
 }
 import StretchList from './TodayTab/components/StretchList';
+import PlyometricBlock from '../program/PlyometricBlock';
+import RunningDrillsBlock from '../program/RunningDrillsBlock';
 import CircuitsTodaySection from './TodayTab/components/CircuitsTodaySection.jsx';
 import { intensityCoeffToStarCount, resolveExerciseIntensityCoeff } from '../../utils/trainingLoadUtils';
 import { exerciseUsesExternalLoad } from '../../utils/programUtils';
@@ -1524,6 +1526,10 @@ const TodayTab = () => {
     [resolvedWorkoutEtirements, effectiveStretchDay]
   );
   const hasStretchesContent = countStretchItems(normalizedTodayStretches) > 0;
+  const hasPlyometricsContent =
+    Array.isArray(workout?.pliometrie?.items) && workout.pliometrie.items.length > 0;
+  const hasDrillsContent =
+    Array.isArray(workout?.drillsCourse?.items) && workout.drillsCourse.items.length > 0;
 
   useEffect(() => {
     if (isSavingSessionDraft) return;
@@ -1546,7 +1552,12 @@ const TodayTab = () => {
   ]);
 
   /** Jour sans exercices : n’afficher l’écran « jour de repos » plein écran que s’il n’y a pas non plus d’étirements prévus */
-  if ((!workout.exercices || workout.exercices.length === 0) && !hasStretchesContent) {
+  if (
+    (!workout.exercices || workout.exercices.length === 0) &&
+    !hasStretchesContent &&
+    !hasPlyometricsContent &&
+    !hasDrillsContent
+  ) {
     const activeChallenges = getActiveChallenges();
     const currentData = getCurrentData();
     const hasNoActivity = isDayWithoutActivity(currentData, dateStr);
@@ -2361,6 +2372,14 @@ const TodayTab = () => {
             onAfterStretchDataChange={handleStretchDataChange}
           />
 
+          {hasPlyometricsContent && (
+            <PlyometricBlock pliometrie={workout.pliometrie} embedded />
+          )}
+
+          {hasDrillsContent && (
+            <RunningDrillsBlock drillsCourse={workout.drillsCourse} embedded />
+          )}
+
           {hasUnsavedStretches && (
             <div className="mt-6 pt-4 border-t border-[#0F4C5C]/40">
               <div className="flex items-center justify-between">
@@ -2395,7 +2414,17 @@ const TodayTab = () => {
         </div>
       )}
 
-
+      {!hasStretchesContent && (hasPlyometricsContent || hasDrillsContent) && (
+        <div className="bg-black p-6 rounded-xl shadow-xl border-2 border-[#0F4C5C]/70">
+          {hasPlyometricsContent && <PlyometricBlock pliometrie={workout.pliometrie} />}
+          {hasDrillsContent && (
+            <RunningDrillsBlock
+              drillsCourse={workout.drillsCourse}
+              embedded={hasPlyometricsContent}
+            />
+          )}
+        </div>
+      )}
 
       {/* Sessions d'endurance du jour */}
       {(() => {

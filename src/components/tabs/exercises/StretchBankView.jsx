@@ -38,6 +38,7 @@ import {
 } from '../../../utils/stretchPerceivedRatings';
 import AnatomyBankCardPreview from '../../anatomy/AnatomyBankCardPreview';
 import { sortStretchesByFamily, getStretchFamilyKey, getStretchFamilyLabel } from '../../../utils/bankFamilySort';
+import { scrollBankDetailToTop } from '../../../utils/scrollBankDetailToTop';
 
 function formatDuration(seconds) {
   if (!Number.isFinite(seconds) || seconds <= 0) return '';
@@ -415,6 +416,12 @@ const StretchBankView = ({
 
   const handleOpen = useCallback((stretch) => {
     setDetailKey(stretch.key);
+    scrollBankDetailToTop();
+  }, []);
+
+  const handleOpenSimilarStretch = useCallback((stretch) => {
+    setDetailKey(stretch.key);
+    scrollBankDetailToTop();
   }, []);
 
   const handleBack = useCallback(() => setDetailKey(null), []);
@@ -455,8 +462,7 @@ const StretchBankView = ({
         readOnly={readOnly}
         onBack={handleBack}
         sportPrograms={sportPrograms}
-        onOpenComplementaryExercise={onOpenComplementaryExercise}
-        maxRecordsByExerciseId={maxRecordsByExerciseId}
+        onOpenSimilarStretch={handleOpenSimilarStretch}
         onRequestAddToProgram={readOnly ? undefined : onRequestAddToProgram}
         isAuthenticated={isAuthenticated}
       />

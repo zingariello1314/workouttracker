@@ -1,4 +1,5 @@
 import { stretchDrillsCatalog } from './stretchDrillsCatalog.js';
+import { mobilityStretchCatalog } from './mobilityStretchCatalog.js';
 
 /**
  * 🧘 BANQUE D'ÉTIREMENTS — Momentum
@@ -2344,6 +2345,7 @@ export const stretchDatabase = {
     variations: ["reactive hops", "plyo multidirectionnel"]
   },
 
+  ...mobilityStretchCatalog,
   ...stretchDrillsCatalog
 };
 
@@ -2357,6 +2359,11 @@ export const stretchDatabase = {
 export const STRETCH_CATEGORIES = [
   "Respiration",
   "Mobilité",
+  "Mobilité genoux",
+  "Mobilité hanches",
+  "Mobilité bassin",
+  "Mobilité chevilles",
+  "Mobilité cervicales",
   "Étirement passif",
   "Étirement actif",
   "Décompression",

@@ -9,6 +9,7 @@ import {
   tryAcquireAnatomyPreviewSlot,
   unregisterAnatomyPreviewWaiter
 } from '../../utils/anatomy/anatomyPreviewSlot';
+import { shouldUseLiveAnatomyWebGl } from '../../utils/anatomy/anatomyPreviewLiveWebGl';
 
 /** Délai avant destruction du canvas hors viewport (aperçus « compact » seulement). */
 const RELEASE_DELAY_MS = 38000;
@@ -52,6 +53,19 @@ export default function AnatomyBankCardPreview({
     [primaryMuscles, secondaryMuscles, mode, exerciseDatabaseKey, stretchDatabaseKey]
   );
 
+  const useLiveWebGl = shouldUseLiveAnatomyWebGl({ stretchDatabaseKey, mode });
+
+  if (layout === 'gridFill' && useLiveWebGl) {
+    return (
+      <AnatomyBankCardPreviewGl
+        anatomy={anatomy}
+        className={className}
+        fillContainer
+        fastSettle
+      />
+    );
+  }
+
   if (layout === 'gridFill') {
     return (
       <AnatomyBankCardRaster
@@ -70,7 +84,7 @@ export default function AnatomyBankCardPreview({
   );
 }
 
-function AnatomyBankCardPreviewGl({ anatomy, className, fillContainer = false }) {
+function AnatomyBankCardPreviewGl({ anatomy, className, fillContainer = false, fastSettle = false }) {
   const hostRef = useRef(null);
   const heldSlotRef = useRef(false);
   const inViewRef = useRef(false);
@@ -219,9 +233,9 @@ function AnatomyBankCardPreviewGl({ anatomy, className, fillContainer = false })
     if (!shouldMountGl) return undefined;
     const tid = window.setTimeout(() => {
       setCameraVisible(true);
-    }, 1400);
+    }, fastSettle ? 450 : 1400);
     return () => window.clearTimeout(tid);
-  }, [shouldMountGl, cardDemandSignature]);
+  }, [shouldMountGl, cardDemandSignature, fastSettle]);
 
   const neutralUnmapped =
     anatomy.usedFullBodyUniform && !anatomy.anatomyFallback

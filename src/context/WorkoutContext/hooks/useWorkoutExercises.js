@@ -220,6 +220,13 @@ export const useWorkoutExercises = (
   const saveExerciseChanges = saveSessionDraft;
   const saveStretchChanges = saveSessionDraft;
 
+  /** Flush immédiat du brouillon (fermeture app / onglet) — même logique qu’Enregistrer. */
+  const flushDirtySessionDraft = useCallback(async () => {
+    const dirty = dirtyFlagsRef.current;
+    if (!tempDataRef.current || (!dirty.exercises && !dirty.stretches)) return;
+    await persistFullDraftRef.current({ force: true, emitType: 'session' });
+  }, []);
+
   useEffect(() => {
     const flushIfDirty = () => {
       const dirty = dirtyFlagsRef.current;
