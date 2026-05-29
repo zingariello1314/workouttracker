@@ -1,6 +1,5 @@
 import { normalizeProfileQuestionnaire } from './schema';
 import {
-  mapQuizGoalToNutritionGoal,
   buildProgramPrefillHints,
   adjustSuggestedProgramWeeks,
   computeCardioBiasMultiplier,
@@ -8,9 +7,12 @@ import {
   buildQuizTrainingSessionBlueprint,
   resolveTargetWeightFromQuiz
 } from './quizInfluence';
+import { buildNutritionCoachPayload } from './quizNutritionPayload';
 
 export const PENDING_QUIZ_PREFILL_NUTRITION_KEY = 'momentum.pendingQuizPrefill.nutrition';
 export const PENDING_QUIZ_PREFILL_TRAINING_KEY = 'momentum.pendingQuizPrefill.training';
+/** Déclenché quand un prefill programme est écrit (onglet Programme déjà monté). */
+export const PROGRAM_FROM_QUIZ_OPEN_EVENT = 'momentum:program-from-quiz-open';
 
 const experienceToDurationWeeks = {
   beginner_total: 4,
@@ -43,11 +45,7 @@ export const buildQuizPrefillPayload = (profileQuestionnaireRaw) => {
       totalCount: q.totalCount
     },
     answers,
-    nutrition: {
-      suggestedGoal: mapQuizGoalToNutritionGoal(goal, answers.currentPhysique || null),
-      bodyFatPercent: answers.bodyFatPercentEstimate ?? null,
-      activityOutsideTraining: answers.activityOutsideTraining || null
-    },
+    nutrition: buildNutritionCoachPayload(answers),
     training: {
       suggestedDurationWeeks: adjustSuggestedProgramWeeks(
         sessionDurationToWeeks[duration] || experienceToDurationWeeks[level] || 6,
@@ -88,5 +86,16 @@ export const clearPendingQuizPrefill = (storageKey) => {
   } catch {
     // no-op
   }
+};
+
+/** Ouvre le flux création programme avec les réponses quiz du profil. */
+export const openProgramCreationFromQuiz = (profileQuestionnaireRaw, { setActiveTab } = {}) => {
+  const payload = buildQuizPrefillPayload(profileQuestionnaireRaw);
+  writePendingQuizPrefill(PENDING_QUIZ_PREFILL_TRAINING_KEY, payload);
+  if (typeof window !== 'undefined') {
+    window.dispatchEvent(new CustomEvent(PROGRAM_FROM_QUIZ_OPEN_EVENT, { detail: payload }));
+  }
+  if (typeof setActiveTab === 'function') setActiveTab('program');
+  return payload;
 };
 

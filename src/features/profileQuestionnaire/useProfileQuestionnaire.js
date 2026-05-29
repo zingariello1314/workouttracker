@@ -1,7 +1,11 @@
 import { useCallback, useMemo } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { QUESTIONNAIRE_STORAGE_FIELD } from './constants';
-import { normalizeProfileQuestionnaire, sanitizeAnswersPayload } from './schema';
+import {
+  normalizeProfileQuestionnaire,
+  sanitizeAnswersPayload,
+  sanitizeLastCompletionRecap
+} from './schema';
 
 export const useProfileQuestionnaire = () => {
   const { currentUser, updateProfile } = useAuth();
@@ -34,6 +38,9 @@ export const useProfileQuestionnaire = () => {
         quizRoundHistory,
         lastUpdatedAt: nowIso,
         ...(opts.completeWizard ? { onboardingWizardCompletedAt: nowIso } : {}),
+        ...(opts.lastCompletionRecap != null
+          ? { lastCompletionRecap: sanitizeLastCompletionRecap(opts.lastCompletionRecap) }
+          : {}),
         answers: {
           ...(questionnaire?.answers || {}),
           ...(partialAnswers || {})

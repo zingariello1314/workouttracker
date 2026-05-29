@@ -191,7 +191,8 @@ function rankDaysForPlyo(schedule, activeDays) {
 /**
  * Injecte `day.pliometrie` sur les jours pertinents (après le plan d'exercices principal).
  */
-export function injectQuizPlyometricsIntoSchedule(schedule, answers) {
+export function injectQuizPlyometricsIntoSchedule(schedule, answers, coachOpts = {}) {
+  if (coachOpts?.coachContext?.deformers?.allowPlyo === false) return schedule;
   if (!shouldInjectPlyometricsFromQuiz(answers)) return schedule;
   const activeDays = QUIZ_SCHEDULE_DAY_ORDER.filter((d) => schedule?.[d]?.active);
   if (!activeDays.length) return schedule;

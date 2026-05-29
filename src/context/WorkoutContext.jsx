@@ -22,6 +22,7 @@ import { isMockEnduranceSession } from '../utils/calendarUtils';
 // ✅ PHASE 4 : Les utilitaires de justification sont maintenant dans useWorkoutJustifications
 import { useAuth } from './AuthContext';
 import { registerAppPersistenceFlush } from '../services/persistence/appPersistenceFlush';
+import { applyLiveCoachToExercises } from '../features/profileQuestionnaire/quizLiveCoach';
 import { sidebarEvents, SIDEBAR_EVENTS } from '../utils/sidebarEvents';
 
 // ✅ PHASE 4 : Hooks personnalisés extraits
@@ -574,6 +575,29 @@ const WorkoutProvider = ({ children }) => {
 
         // ✅ Retraits logiques : n'afficher l'exo que pour les dates de séance <= removedFromProgramAt
         exercisesToUse = filterExercisesForSessionDate(exercisesToUse, sessionDateStr);
+
+        if (activeProgram.availabilitySource === 'quiz' && activeProgram.quizGenerationMeta?.liveCoachEnabled !== false) {
+          try {
+            const live = applyLiveCoachToExercises(
+              exercisesToUse.map((ex) => ({
+                ...ex,
+                originalId: ex.originalId ?? ex.id
+              })),
+              {
+                activeProgram,
+                sessionYmd: sessionDateStr,
+                snapshot: getCurrentData(),
+                trainingEvidence: activeProgram.quizGenerationMeta?.trainingEvidence
+              }
+            );
+            exercisesToUse = live.exercises;
+            if (live.coachNotes?.length && !daySchedule.focus?.includes('Coach :')) {
+              daySchedule.focus = [daySchedule.focus, live.coachNotes[0]].filter(Boolean).join(' · ');
+            }
+          } catch {
+            // coach live optionnel
+          }
+        }
         
         // Convertir le format du programme actif au format attendu
         // Générer des IDs numériques stables pour chaque exercice
@@ -649,7 +673,7 @@ const WorkoutProvider = ({ children }) => {
         isGymMode: false,
         weekVariant: getAutoWeekVariant(currentDate)
       };
-  }, [activeProgram, workoutLogic, convertToStableNumericId, makeUniqueNumericId, workoutDayOverride]);
+  }, [activeProgram, workoutLogic, convertToStableNumericId, makeUniqueNumericId, workoutDayOverride, getCurrentData]);
 
   // ✅ PHASE 4 : addProgressEntry, updateProgressEntry, deleteProgressEntry, deleteProgressEntryField,
   // addProgressPhoto, updateProgressPhoto, deleteProgressPhoto sont maintenant dans useWorkoutProgress

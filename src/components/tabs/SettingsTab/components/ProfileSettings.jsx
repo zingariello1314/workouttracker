@@ -11,6 +11,7 @@ import { ONBOARDING_OPEN_EVENT, PROFILE_QUESTION_DEFS } from '../../../../featur
 import { normalizeProfileQuestionnaire } from '../../../../features/profileQuestionnaire/schema';
 import {
   buildQuizPrefillPayload,
+  openProgramCreationFromQuiz,
   PENDING_QUIZ_PREFILL_NUTRITION_KEY,
   PENDING_QUIZ_PREFILL_TRAINING_KEY,
   writePendingQuizPrefill
@@ -198,6 +199,18 @@ const ProfileSettings = ({
                       </span>
                     ) : null}
                   </p>
+                  {profileQuestionnaire.lastCompletionRecap?.placement ? (
+                    <p className="mb-2 rounded-lg border border-emerald-700/40 bg-emerald-950/25 px-2 py-1.5 text-emerald-100/95">
+                      <span className="font-medium">Dernier bilan :</span>{' '}
+                      {profileQuestionnaire.lastCompletionRecap.placement.score0to100}/100 —{' '}
+                      {profileQuestionnaire.lastCompletionRecap.placement.bandLabel}
+                      {profileQuestionnaire.lastCompletionRecap.placement.dataTrust ? (
+                        <span className="block text-[10px] text-emerald-200/70 mt-0.5">
+                          {profileQuestionnaire.lastCompletionRecap.placement.dataTrust}
+                        </span>
+                      ) : null}
+                    </p>
+                  ) : null}
                   <div className="grid gap-1.5">
                     <p><span className="text-violet-200/90">Mesures (quiz):</span> {summarizeAnswer('vitalsSelfReport')}</p>
                     <p><span className="text-violet-200/90">Objectif:</span> {summarizeAnswer('goalPhysique')}</p>
@@ -222,8 +235,7 @@ const ProfileSettings = ({
                   <button
                     type="button"
                     onClick={() => {
-                      writePendingQuizPrefill(PENDING_QUIZ_PREFILL_TRAINING_KEY, prefillPayload);
-                      if (setActiveTab) setActiveTab('program');
+                      openProgramCreationFromQuiz(currentUser?.profileQuestionnaire, { setActiveTab });
                     }}
                     className={`${S.btnSecondary} w-full`}
                   >

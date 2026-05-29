@@ -1,5 +1,6 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useContext, useEffect, useMemo, useState } from 'react';
 import Modal from '../../components/ui/Modal';
+import { WorkoutContext } from '../../context/WorkoutContext';
 import {
   ONBOARDING_OPEN_EVENT,
   PROFILE_QUESTION_DEFS,
@@ -8,6 +9,8 @@ import {
 import { computeCompletion } from './schema';
 import { useProfileQuestionnaire } from './useProfileQuestionnaire';
 import { estimateTargetWeightFromQuiz } from './quizInfluence';
+import QuizCompletionRecap from './QuizCompletionRecap.jsx';
+import { buildQuizCompletionRecap } from './buildQuizCompletionRecap.js';
 
 const DAYS = ['lundi', 'mardi', 'mercredi', 'jeudi', 'vendredi', 'samedi', 'dimanche'];
 
@@ -18,7 +21,88 @@ const sectionById = QUESTION_SECTIONS.reduce((acc, s) => {
 
 const getSectionLabel = (sectionId) => sectionById[sectionId]?.label || 'Profil';
 
-const QuestionCard = ({ question, value, onSelect, allAnswers }) => {
+const QuestionCard = ({ question, value, onSelect, allAnswers, programs = [] }) => {
+  if (question.type === 'existingProgram') {
+    const v = value && typeof value === 'object' ? value : {};
+    const has = v.hasProgram || null;
+    const list = Array.isArray(programs) ? programs : [];
+    return (
+      <div className="space-y-4">
+        <div className="grid gap-2 sm:grid-cols-2">
+          {[
+            { key: 'no', label: 'Non', desc: 'Je n’ai pas de programme en cours dans l’app' },
+            { key: 'yes', label: 'Oui', desc: 'Je suis un programme enregistré dans Programme' }
+          ].map((opt) => {
+            const active = has === opt.key;
+            return (
+              <button
+                key={opt.key}
+                type="button"
+                onClick={() =>
+                  onSelect({
+                    hasProgram: opt.key,
+                    programId: opt.key === 'yes' ? v.programId || null : null,
+                    programName: opt.key === 'yes' ? v.programName || null : null
+                  })
+                }
+                className={`rounded-lg border p-3 text-left transition ${
+                  active
+                    ? 'border-emerald-400 bg-emerald-500/20 text-emerald-100'
+                    : 'border-slate-600 bg-slate-900/40 text-slate-100 hover:border-slate-500'
+                }`}
+              >
+                <div className="text-sm font-medium">{opt.label}</div>
+                <div className="mt-1 text-xs text-slate-300">{opt.desc}</div>
+              </button>
+            );
+          })}
+        </div>
+        {has === 'yes' ? (
+          <div className="space-y-2">
+            <p className="text-xs text-slate-400">Choisis le programme que tu suis actuellement :</p>
+            {list.length === 0 ? (
+              <p className="text-sm text-amber-200/90 rounded-lg border border-amber-700/50 bg-amber-950/30 p-3">
+                Aucun programme enregistré — crée-en un dans l’onglet Programme ou réponds « Non ».
+              </p>
+            ) : (
+              <div className="grid gap-2 max-h-48 overflow-y-auto">
+                {list.map((p) => {
+                  const selected = String(v.programId) === String(p.id);
+                  return (
+                    <button
+                      key={p.id}
+                      type="button"
+                      onClick={() =>
+                        onSelect({
+                          hasProgram: 'yes',
+                          programId: p.id,
+                          programName: p.name || 'Programme'
+                        })
+                      }
+                      className={`rounded-lg border p-3 text-left text-sm transition ${
+                        selected
+                          ? 'border-cyan-400 bg-cyan-500/15 text-cyan-100'
+                          : 'border-slate-600 bg-slate-900/40 text-slate-200 hover:border-slate-500'
+                      }`}
+                    >
+                      <span className="font-medium">{p.name || 'Sans nom'}</span>
+                      {p.duration ? (
+                        <span className="ml-2 text-xs text-slate-400">{p.duration} sem.</span>
+                      ) : null}
+                      {p.status === 'active' ? (
+                        <span className="ml-2 text-[10px] uppercase text-emerald-400">actif</span>
+                      ) : null}
+                    </button>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        ) : null}
+      </div>
+    );
+  }
+
   if (question.type === 'vitals') {
     const v = value && typeof value === 'object' ? value : {};
     const targetMode = v.targetWeightMode || 'none';
@@ -280,9 +364,11 @@ const QuestionCard = ({ question, value, onSelect, allAnswers }) => {
 
 const ProfileQuestionnaireModal = ({ isOpen, onClose }) => {
   const { questionnaire, saveAnswers, markSkipped } = useProfileQuestionnaire();
+  const { data, programs, getExerciseNameById } = useContext(WorkoutContext);
   const [step, setStep] = useState(0);
   const [answers, setAnswers] = useState(questionnaire.answers || {});
   const [saving, setSaving] = useState(false);
+  const [showRecap, setShowRecap] = useState(false);
 
   const activeQuestions = useMemo(
     () =>
@@ -300,6 +386,7 @@ const ProfileQuestionnaireModal = ({ isOpen, onClose }) => {
   useEffect(() => {
     if (!isOpen) return;
     setStep(0);
+    setShowRecap(false);
     setAnswers(questionnaire.answers || {});
   }, [isOpen, questionnaire.answers]);
 
@@ -318,6 +405,12 @@ const ProfileQuestionnaireModal = ({ isOpen, onClose }) => {
     const q = activeQuestions[step];
     if (!q) return false;
     if (q.type === 'vitals' || q.type === 'strengthBaselines') return true;
+    if (q.type === 'existingProgram') {
+      const v = answers?.[q.id];
+      if (!v || v.hasProgram === 'no') return true;
+      if (v.hasProgram === 'yes' && v.programId) return true;
+      return false;
+    }
     const value = answers?.[q.id];
     if (value == null) return false;
     if (Array.isArray(value)) return value.length > 0;
@@ -353,7 +446,31 @@ const ProfileQuestionnaireModal = ({ isOpen, onClose }) => {
       setStep((s) => s + 1);
       return;
     }
-    await persistAndClose(answers, { completeWizard: true });
+    setShowRecap(true);
+  };
+
+  const handleConfirmRecap = async () => {
+    setSaving(true);
+    try {
+      const recap = buildQuizCompletionRecap({
+        answers,
+        snapshot: data,
+        programs: programs || [],
+        getExerciseNameById,
+        garminDailyMetrics: data?.garminData?.dailyMetrics || data?.dailyMetrics || null
+      });
+      await saveAnswers(answers, {
+        completeWizard: true,
+        lastCompletionRecap: {
+          completedAt: new Date().toISOString(),
+          placement: recap.placement,
+          hasActivityLogs: recap.hasActivityLogs
+        }
+      });
+      onClose?.();
+    } finally {
+      setSaving(false);
+    }
   };
 
   const handleSkipQuestion = () => {
@@ -364,100 +481,139 @@ const ProfileQuestionnaireModal = ({ isOpen, onClose }) => {
     }
   };
 
-  if (!question) return null;
+  if (!question && !showRecap) return null;
+
+  const garminDailyMetrics = data?.garminData?.dailyMetrics || data?.dailyMetrics || null;
 
   return (
     <Modal
       isOpen={isOpen}
       onClose={onClose}
-      title={quizWasCompleted ? 'Mettre à jour mon profil' : 'Remplir mon profil'}
+      title={
+        showRecap
+          ? 'Récapitulatif de ton profil'
+          : quizWasCompleted
+            ? 'Mettre à jour mon profil'
+            : 'Remplir mon profil'
+      }
       variant="glass"
       size="xl"
       noContentPadding
       contentClassName="p-5 sm:p-6"
       closeOnOverlayClick={false}
     >
-      <div className="space-y-5">
-        <div className="rounded-xl border border-slate-700/60 bg-slate-900/60 p-4">
-          <div className="mb-2 flex items-center justify-between">
-            <div className="text-xs uppercase tracking-wide text-slate-400">
-              {getSectionLabel(question.sectionId)} - question {step + 1}/{activeQuestions.length}
+      {showRecap ? (
+        <div className="space-y-5">
+          <QuizCompletionRecap
+            answers={answers}
+            snapshot={data}
+            programs={programs || []}
+            getExerciseNameById={getExerciseNameById}
+            garminDailyMetrics={garminDailyMetrics}
+          />
+          <div className="flex flex-wrap justify-between gap-2 border-t border-slate-700/50 pt-4">
+            <button
+              type="button"
+              onClick={() => setShowRecap(false)}
+              disabled={saving}
+              className="rounded-lg border border-slate-600 px-3 py-2 text-sm text-slate-200"
+            >
+              Modifier mes réponses
+            </button>
+            <button
+              type="button"
+              onClick={handleConfirmRecap}
+              disabled={saving}
+              className="rounded-lg border border-emerald-500 bg-emerald-600/20 px-4 py-2 text-sm font-medium text-emerald-100"
+            >
+              {saving ? 'Enregistrement...' : 'Valider mon profil'}
+            </button>
+          </div>
+        </div>
+      ) : (
+        <div className="space-y-5">
+          <div className="rounded-xl border border-slate-700/60 bg-slate-900/60 p-4">
+            <div className="mb-2 flex items-center justify-between">
+              <div className="text-xs uppercase tracking-wide text-slate-400">
+                {getSectionLabel(question.sectionId)} - question {step + 1}/{activeQuestions.length}
+              </div>
+              <div className="text-xs text-slate-300">
+                {stats.completedCount}/{stats.totalCount} complétées
+              </div>
             </div>
-            <div className="text-xs text-slate-300">
-              {stats.completedCount}/{stats.totalCount} complétées
+            <div className="h-2 overflow-hidden rounded-full bg-slate-800">
+              <div
+                className="h-full bg-gradient-to-r from-emerald-500 to-cyan-500 transition-all"
+                style={{ width: `${progressPercent}%` }}
+              />
             </div>
           </div>
-          <div className="h-2 overflow-hidden rounded-full bg-slate-800">
-            <div
-              className="h-full bg-gradient-to-r from-emerald-500 to-cyan-500 transition-all"
-              style={{ width: `${progressPercent}%` }}
+
+          <div className="space-y-3">
+            <h3 className="text-xl font-semibold text-white">{question.title}</h3>
+            {question.description ? (
+              <p className="text-sm text-slate-400 leading-relaxed">{question.description}</p>
+            ) : null}
+            <QuestionCard
+              question={question}
+              value={answers?.[question.id]}
+              allAnswers={answers}
+              programs={programs || []}
+              onSelect={(v) => setAnswers((prev) => ({ ...prev, [question.id]: v }))}
             />
           </div>
-        </div>
 
-        <div className="space-y-3">
-          <h3 className="text-xl font-semibold text-white">{question.title}</h3>
-          {question.description ? (
-            <p className="text-sm text-slate-400 leading-relaxed">{question.description}</p>
-          ) : null}
-          <QuestionCard
-            question={question}
-            value={answers?.[question.id]}
-            allAnswers={answers}
-            onSelect={(v) => setAnswers((prev) => ({ ...prev, [question.id]: v }))}
-          />
-        </div>
-
-        <div className="flex flex-wrap items-center justify-between gap-2 border-t border-slate-700/50 pt-4">
-          <div className="flex gap-2">
-            <button
-              type="button"
-              onClick={() => setStep((s) => Math.max(0, s - 1))}
-              disabled={step === 0 || saving}
-              className="rounded-lg border border-slate-600 px-3 py-2 text-sm text-slate-200 disabled:opacity-50"
-            >
-              Dos
-            </button>
-            <button
-              type="button"
-              onClick={handleSkipQuestion}
-              disabled={saving}
-              className="rounded-lg border border-amber-700/70 px-3 py-2 text-sm text-amber-200"
-            >
-              Passer cette question
-            </button>
-          </div>
-          <div className="flex gap-2">
-            {quizWasCompleted ? (
+          <div className="flex flex-wrap items-center justify-between gap-2 border-t border-slate-700/50 pt-4">
+            <div className="flex gap-2">
               <button
                 type="button"
-                onClick={handleSaveDraft}
-                disabled={saving}
-                className="rounded-lg border border-cyan-600/70 px-3 py-2 text-sm text-cyan-100"
+                onClick={() => setStep((s) => Math.max(0, s - 1))}
+                disabled={step === 0 || saving}
+                className="rounded-lg border border-slate-600 px-3 py-2 text-sm text-slate-200 disabled:opacity-50"
               >
-                {saving ? 'Sauvegarde...' : 'Sauvegarder et quitter'}
+                Dos
               </button>
-            ) : (
               <button
                 type="button"
-                onClick={handleSkipAll}
-                disabled={saving}
-                className="rounded-lg border border-red-700/70 px-3 py-2 text-sm text-red-200"
+                onClick={handleSkipQuestion}
+                disabled={saving || question.type === 'existingProgram'}
+                className="rounded-lg border border-amber-700/70 px-3 py-2 text-sm text-amber-200 disabled:opacity-40"
               >
-                Passer le quiz
+                Passer cette question
               </button>
-            )}
-            <button
-              type="button"
-              onClick={handleContinue}
-              disabled={!canContinue || saving}
-              className="rounded-lg border border-emerald-500 bg-emerald-600/20 px-4 py-2 text-sm font-medium text-emerald-100 disabled:opacity-40"
-            >
-              {saving ? 'Sauvegarde...' : step === activeQuestions.length - 1 ? 'Terminer' : 'Continuer'}
-            </button>
+            </div>
+            <div className="flex gap-2">
+              {quizWasCompleted ? (
+                <button
+                  type="button"
+                  onClick={handleSaveDraft}
+                  disabled={saving}
+                  className="rounded-lg border border-cyan-600/70 px-3 py-2 text-sm text-cyan-100"
+                >
+                  {saving ? 'Sauvegarde...' : 'Sauvegarder et quitter'}
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  onClick={handleSkipAll}
+                  disabled={saving}
+                  className="rounded-lg border border-red-700/70 px-3 py-2 text-sm text-red-200"
+                >
+                  Passer le quiz
+                </button>
+              )}
+              <button
+                type="button"
+                onClick={handleContinue}
+                disabled={!canContinue || saving}
+                className="rounded-lg border border-emerald-500 bg-emerald-600/20 px-4 py-2 text-sm font-medium text-emerald-100 disabled:opacity-40"
+              >
+                {saving ? 'Sauvegarde...' : step === activeQuestions.length - 1 ? 'Voir mon récap' : 'Continuer'}
+              </button>
+            </div>
           </div>
         </div>
-      </div>
+      )}
     </Modal>
   );
 };

@@ -81,10 +81,17 @@ function pickStrengthDayIndices(activeDayKeys, weekProfiles) {
 /**
  * @returns {{ assignments: { dayKey: string, circuitId: string, templateKind: string }[], definitions: Record<string, object> }}
  */
-export function planQuizCircuits(activeDayKeys, answers, weekProfiles) {
+export function planQuizCircuits(activeDayKeys, answers, weekProfiles, coachOpts = {}) {
   const definitions = {};
   const assignments = [];
-  const abDays = resolveAbCircuitDaysPerWeek(answers);
+  if (coachOpts?.coachContext?.deformers?.allowCircuits === false) {
+    return { assignments, definitions };
+  }
+  let abDays = resolveAbCircuitDaysPerWeek(answers);
+  if (!abDays) return { assignments, definitions };
+  if (coachOpts?.coachContext?.loadAnalysis?.cuts?.reduceCircuitDays) {
+    abDays = Math.max(0, abDays - 1);
+  }
   if (!abDays) return { assignments, definitions };
 
   const strengthIndices = pickStrengthDayIndices(activeDayKeys, weekProfiles);

@@ -10,8 +10,21 @@ import {
 } from './quizSessionDurationBudget';
 import { addonMinutes, planWeekSessionProfiles } from './quizSessionPlanner';
 import { applyBaselineToSeries, overallStrengthTier } from './quizVolumeFromBaselines';
+import { trimExercisesForTendonLoad } from './quizRecoveryEngine';
+import { enforceSessionExerciseLimits } from './quizSessionLimits';
+import { calibrateSeriesFromProgramPatterns } from './quizProgressionApply';
+import { getMergedQuizExerciseTemplates } from './quizExercisePool';
+import {
+  scoreFitnessForPick,
+  scorePriorityMuscleAffinity,
+  scoreTrainingStyleAffinity,
+  scoreGroupCoherence,
+  scoreLegacyTieBonus,
+  scoreVarietyVsUsed
+} from './quizExerciseSelectionScore';
 
 export { planWeekSessionProfiles };
+export { QUIZ_LEGACY_EXERCISE_TEMPLATES } from './quizExerciseTemplates';
 
 const SITE_LABELS = {
   commercial_gym: 'Salle commerciale',
@@ -20,32 +33,6 @@ const SITE_LABELS = {
   outdoor: 'Extérieur / parc',
   track: 'Piste'
 };
-
-/** Templates : clé banque + métadonnées de sélection. */
-const EXERCISE_TEMPLATES = [
-  { dbKey: 'pompes', group: 'upper', tier: 'classic', quizEquipment: ['bodyweight'], locations: ['home_minimal', 'outdoor', 'home_gym', 'commercial_gym'] },
-  { dbKey: 'tractions pronation', group: 'upper', tier: 'classic', quizEquipment: ['pullup_bar', 'bodyweight'], locations: ['commercial_gym', 'home_gym', 'outdoor'] },
-  { dbKey: 'tractions australiennes', group: 'upper', tier: 'classic', quizEquipment: ['bodyweight'], locations: ['outdoor', 'home_gym', 'commercial_gym'], needsLowBar: true },
-  { dbKey: 'dips', group: 'upper', tier: 'classic', quizEquipment: ['dip_station', 'parallel_bars', 'bodyweight'], locations: ['commercial_gym', 'outdoor', 'home_gym'] },
-  { dbKey: 'développé couché', group: 'upper', tier: 'standard', quizEquipment: ['barbell_plates', 'bench'], locations: ['commercial_gym', 'home_gym'] },
-  { dbKey: 'rowing barre', group: 'upper', tier: 'standard', quizEquipment: ['barbell_plates'], locations: ['commercial_gym', 'home_gym'] },
-  { dbKey: 'rowing haltère', group: 'upper', tier: 'standard', quizEquipment: ['dumbbells', 'bench'], locations: ['commercial_gym', 'home_gym', 'home_minimal'] },
-  { dbKey: 'tirage vertical', group: 'upper', tier: 'standard', quizEquipment: ['cable_machine'], locations: ['commercial_gym'] },
-  { dbKey: 'développé militaire', group: 'upper', tier: 'standard', quizEquipment: ['barbell_plates', 'dumbbells'], locations: ['commercial_gym', 'home_gym'] },
-  { dbKey: 'squat', group: 'lower', tier: 'classic', quizEquipment: ['barbell_plates', 'squat_rack'], locations: ['commercial_gym', 'home_gym'] },
-  { dbKey: 'squat gobelet', group: 'lower', tier: 'classic', quizEquipment: ['dumbbells', 'kettlebells', 'bodyweight'], locations: ['home_minimal', 'home_gym', 'commercial_gym'] },
-  { dbKey: 'fentes', group: 'lower', tier: 'classic', quizEquipment: ['dumbbells', 'bodyweight'], locations: ['home_minimal', 'outdoor', 'home_gym', 'commercial_gym'] },
-  { dbKey: 'soulevé de terre', group: 'lower', tier: 'standard', quizEquipment: ['barbell_plates'], locations: ['commercial_gym', 'home_gym'] },
-  { dbKey: 'presse à cuisses', group: 'lower', tier: 'standard', quizEquipment: ['bench'], locations: ['commercial_gym'] },
-  { dbKey: 'gainage', group: 'core', tier: 'classic', quizEquipment: ['bodyweight'], locations: ['home_minimal', 'outdoor', 'home_gym', 'commercial_gym', 'track'] },
-  { dbKey: 'gainage latéral', group: 'core', tier: 'classic', quizEquipment: ['bodyweight'], locations: ['home_minimal', 'outdoor', 'home_gym', 'commercial_gym'] },
-  { dbKey: 'course endurance fondamentale', group: 'cardio', tier: 'classic', quizEquipment: ['bodyweight'], locations: ['outdoor', 'track', 'commercial_gym'] },
-  { dbKey: 'fractionné', group: 'cardio', tier: 'classic', quizEquipment: ['bodyweight'], locations: ['outdoor', 'track'] },
-  { dbKey: 'fractionné 30/30', group: 'cardio', tier: 'classic', quizEquipment: ['bodyweight'], locations: ['outdoor', 'track'] },
-  { dbKey: 'corde à sauter', group: 'cardio', tier: 'classic', quizEquipment: ['jump_rope'], locations: ['home_minimal', 'outdoor', 'home_gym', 'commercial_gym', 'track'] },
-  { dbKey: 'burpees', group: 'cardio', tier: 'classic', quizEquipment: ['bodyweight'], locations: ['home_minimal', 'outdoor', 'home_gym', 'track'] },
-  { dbKey: 'mountain climbers', group: 'cardio', tier: 'classic', quizEquipment: ['bodyweight'], locations: ['home_minimal', 'outdoor', 'home_gym', 'track'] }
-];
 
 const GOAL_GROUP_BOOST = {
   lean_toned: { upper: 1, lower: 1, core: 1, cardio: 1 },
@@ -239,13 +226,33 @@ function pickWeightedTemplates(candidates, count, rng) {
   return picked;
 }
 
-function scoreTemplate(template, answers, group, dayIndex, weekStrengthUsedKeys) {
+function scoreTemplate(
+  template,
+  answers,
+  group,
+  dayIndex,
+  weekStrengthUsedKeys,
+  deformers,
+  globalTier,
+  { eligibleCount = 99, sessionUsedKeys = null } = {}
+) {
   const goal = answers?.goalPhysique || 'balanced_functional';
   const boosts = GOAL_GROUP_BOOST[goal] || GOAL_GROUP_BOOST.balanced_functional;
   let score = boosts[template.group] ?? 0;
-  if (template.group === group) score += 5;
+  const gw = deformers?.preferredGroupWeights;
+  if (gw && template.group && gw[template.group] != null) {
+    score += Math.round((gw[template.group] - 1) * 4);
+  }
+
+  score += scoreGroupCoherence(template, group);
+  score += scoreFitnessForPick(template.fitnessScore);
+  score += scorePriorityMuscleAffinity(template.dbKey, answers);
+  score += scoreTrainingStyleAffinity(template, answers, group);
+  score += scoreLegacyTieBonus(template, { eligibleCount });
+  if (sessionUsedKeys) score += scoreVarietyVsUsed(template, sessionUsedKeys);
+
   if (weekStrengthUsedKeys?.has?.(template.dbKey)) score -= 8;
-  if (template.tier === 'classic') score += 2;
+  if (template.tier === 'classic') score += 1;
   const exp = answers?.experienceLevel;
   if ((exp === 'beginner_total' || exp === 'beginner_0_3m') && template.tier === 'classic') score += 2;
   if ((exp === 'advanced_1_3y' || exp === 'expert_3y_plus') && template.tier === 'standard') score += 1;
@@ -257,6 +264,7 @@ function scoreTemplate(template, answers, group, dayIndex, weekStrengthUsedKeys)
   score += (dayIndex + template.dbKey.length) % 3;
   if (globalTier === 'beginner' && template.tier === 'classic') score += 2;
   if (globalTier === 'advanced' && template.tier === 'standard') score += 1;
+
   return score;
 }
 
@@ -268,30 +276,56 @@ function pickExercisesForContext(answers, blueprint, {
   usedKeys,
   modality = 'strength',
   weekUsedKeys,
-  weekStrengthUsedKeys
+  weekStrengthUsedKeys,
+  deformers = null,
+  globalTier = 'intermediate'
 }) {
   const quizEq = equipmentSet(answers);
   const strengthUsed = weekStrengthUsedKeys || weekUsedKeys;
-  const candidates = EXERCISE_TEMPLATES.filter((t) =>
+  const pool = getMergedQuizExerciseTemplates();
+  const filtered = pool.filter((t) =>
     templateMatches(t, { quizEq, site, modality, answers, weekUsedKeys })
-  )
+  );
+
+  const rng = seededRng(`${site || 'main'}:${dayIndex}:${answers?.goalPhysique || ''}`);
+  const eligible = filtered
+    .filter((t) => {
+      if (!groups.includes(t.group)) return false;
+      if (usedKeys.has(t.dbKey)) return false;
+      if (modality !== 'strength' || !strengthUsed) return true;
+      const lastDay = strengthUsed.get(t.dbKey);
+      if (lastDay == null) return true;
+      return dayIndex - lastDay >= 2;
+    });
+
+  const eligibleCount = eligible.length;
+  const scoreOpts = { eligibleCount, sessionUsedKeys: usedKeys };
+
+  const candidates = filtered
     .map((t) => ({
       t,
-      score: Math.max(...groups.map((g) => scoreTemplate(t, answers, g, dayIndex, strengthUsed)))
+      score: Math.max(
+        ...groups.map((g) =>
+          scoreTemplate(t, answers, g, dayIndex, strengthUsed, deformers, globalTier, scoreOpts)
+        )
+      )
     }))
     .filter((row) => row.score > 0)
     .sort((a, b) => b.score - a.score);
 
-  const rng = seededRng(`${site || 'main'}:${dayIndex}:${answers?.goalPhysique || ''}`);
-  const eligible = candidates.filter((row) => {
-    if (!groups.includes(row.t.group)) return false;
-    if (usedKeys.has(row.t.dbKey)) return false;
-    if (modality !== 'strength' || !strengthUsed) return true;
-    const lastDay = strengthUsed.get(row.t.dbKey);
-    if (lastDay == null) return true;
-    return dayIndex - lastDay >= 2;
-  });
-  const weightedRows = pickWeightedTemplates(eligible, count, rng);
+  const eligibleScored = eligible
+    .map((t) => ({
+      t,
+      score: Math.max(
+        ...groups.map((g) =>
+          scoreTemplate(t, answers, g, dayIndex, strengthUsed, deformers, globalTier, scoreOpts)
+        )
+      )
+    }))
+    .filter((row) => row.score > 0)
+    .sort((a, b) => b.score - a.score);
+
+  const weightedRows = pickWeightedTemplates(eligibleScored, count, rng);
 
   const picked = [];
   for (const row of weightedRows) {
@@ -405,9 +439,18 @@ export function planMainSessionExercises(
   dayIndex,
   profile,
   weekUsedKeys,
-  weekStrengthUsedKeys
+  weekStrengthUsedKeys,
+  coachContext = null
 ) {
-  const count = parseExerciseCountHint(blueprint, answers);
+  const deformers = coachContext?.deformers;
+  let count = parseExerciseCountHint(blueprint, answers);
+  if (deformers?.maxExercisesPerSession != null) {
+    count = Math.min(count, deformers.maxExercisesPerSession);
+  }
+  if (deformers?.volumeMul != null && deformers.volumeMul !== 1) {
+    count = Math.max(3, Math.round(count * deformers.volumeMul));
+  }
+  const globalTier = overallStrengthTier(answers);
   const modality = profile?.modality || 'strength';
   const site = profile?.site ?? null;
   const usedKeys = new Set();
@@ -427,9 +470,19 @@ export function planMainSessionExercises(
     usedKeys,
     modality: 'strength',
     weekUsedKeys,
-    weekStrengthUsedKeys
+    weekStrengthUsedKeys,
+    deformers,
+    globalTier
   });
   picked = trimExercisesToSessionBudget(picked, answers);
+  picked = trimExercisesForTendonLoad(picked, deformers);
+
+  const patterns = coachContext?.trainingEvidence?.referencedProgramAnalysis?.exercisePatterns;
+  if (patterns?.length) {
+    picked = picked.map((ex) => calibrateSeriesFromProgramPatterns(ex, patterns));
+  }
+
+  picked = enforceSessionExerciseLimits(picked, deformers, profile);
 
   if (profile?.cardioAddon) {
     const addon = planCardioAddonBlock(answers, blueprint, profile, dayIndex, usedKeys, weekUsedKeys);
@@ -464,14 +517,19 @@ export function stripSalleVariantsFromSchedule(schedule) {
   }
 }
 
-export function injectQuizExercisePlan(schedule, answers, activeDayKeys, weekProfiles) {
-  const blueprint = buildQuizTrainingSessionBlueprint(answers);
+export function injectQuizExercisePlan(schedule, answers, activeDayKeys, weekProfiles, coachOpts = {}) {
+  const coachContext = coachOpts.coachContext || null;
+  const baseBlueprint = buildQuizTrainingSessionBlueprint(answers);
+  const overrideRange = coachContext?.deformers?.repRangeOverride;
+  const blueprint =
+    overrideRange && typeof overrideRange === 'string'
+      ? { ...baseBlueprint, repRange: overrideRange }
+      : baseBlueprint;
   const alternation = resolveAlternationSites(answers);
-  const profiles = weekProfiles || planWeekSessionProfiles(activeDayKeys, answers);
+  const profiles = weekProfiles || planWeekSessionProfiles(activeDayKeys, answers, coachContext);
   const weekUsedKeys = new Set();
   /** dbKey → dernier dayIndex force (répétition autorisée tous les 2+ jours). */
   const weekStrengthUsedKeys = new Map();
-  const globalTier = overallStrengthTier(answers);
 
   if (!alternation) {
     stripSalleVariantsFromSchedule(schedule);
@@ -491,10 +549,14 @@ export function injectQuizExercisePlan(schedule, answers, activeDayKeys, weekPro
       dayIndex,
       profile,
       weekUsedKeys,
-      weekStrengthUsedKeys
+      weekStrengthUsedKeys,
+      coachContext
     );
     slot.exercises = [...existing, ...planned];
     slot.quizSessionProfile = profile;
+    if (coachContext?.generationMode) {
+      slot.quizCoachMode = coachContext.generationMode;
+    }
 
     if (!alternation || profile?.modality === 'cardio') return;
 

@@ -62,7 +62,7 @@ function countSeriesOverrideStats28(data, startYmd, endYmd) {
  * Moyenne des scores jour (charge prévue vs réalisée) sur les jours où le programme prévoit au moins un exercice.
  * Le prévu inclut les overrides « séries/reps du jour » (`dailyVariations.exerciseSeriesOverrides`).
  */
-function aggregateSessionLoadAlignment28(data, startYmd, endYmd, getWorkoutForDate, isGymMode) {
+export function aggregateSessionLoadAlignment28(data, startYmd, endYmd, getWorkoutForDate, isGymMode) {
   const override = countSeriesOverrideStats28(data, startYmd, endYmd);
   if (typeof getWorkoutForDate !== 'function') {
     return {
@@ -123,7 +123,7 @@ function collectCircuitSessionDates(data) {
   return out;
 }
 
-function collectEnduranceSessionDates(data) {
+export function collectEnduranceSessionDates(data) {
   const set = new Set();
   const sessions = data?.enduranceData?.sessions;
   if (!sessions || typeof sessions !== 'object') return [];
@@ -528,6 +528,18 @@ export function computeRecapUserAssessment({
   else tier = 'Avancé';
 
   const legacySuggestions = [];
+  const progMeta = activeProgram?.quizGenerationMeta;
+  if (Array.isArray(progMeta?.whyThisTemplate) && progMeta.whyThisTemplate[0]) {
+    legacySuggestions.push({
+      kind: 'program_coach_why',
+      text: progMeta.whyThisTemplate[0]
+    });
+  }
+  if (Array.isArray(progMeta?.warnings)) {
+    progMeta.warnings.slice(0, 2).forEach((w) => {
+      legacySuggestions.push({ kind: 'program_coach_warning', text: w });
+    });
+  }
   buildQuizDerivedSuggestionTexts(answers || {}).forEach((row) => {
     legacySuggestions.push(row);
   });

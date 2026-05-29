@@ -1,4 +1,4 @@
-export const PROFILE_QUESTIONNAIRE_VERSION = 10;
+export const PROFILE_QUESTIONNAIRE_VERSION = 11;
 
 export const QUESTION_SECTIONS = [
   { id: 'objectifs', label: 'Objectifs de la mission', color: 'violet' },
@@ -118,6 +118,14 @@ export const PROFILE_QUESTION_DEFS = [
       { key: '5_6', label: '5-6 jours' },
       { key: '7', label: 'Chaque jour' }
     ]
+  },
+  {
+    id: 'existingProgramInApp',
+    sectionId: 'experience',
+    type: 'existingProgram',
+    title: 'As-tu déjà un programme en cours dans l’onglet Programme ?',
+    description:
+      'Si oui, sélectionne-le : le coach l’analyse (durée, adhérence, type force/volume/cardio, reps moyennes) pour calibrer le prochain programme et ta note de profil.'
   },
   {
     id: 'trainingLocation',
@@ -392,11 +400,11 @@ export const PROFILE_QUESTION_DEFS = [
     type: 'single',
     title: 'Souhaitez-vous ajouter du cardio le même jour que votre séance principale ?',
     description:
-      'Si oui, la durée choisie pour la séance force/street reste la même, avec environ la moitié de ce temps en cardio en plus (ex. 60 min force + ~30 min cardio).',
+      'Un seul lieu pour la partie force/street chaque jour (pas de moitié de séance à la maison et l’autre au parc). Cette question concerne uniquement un complément cardio en fin de séance (course légère, corde, etc.), pas un deuxième lieu d’entraînement.',
     options: [
       { key: 'never', label: 'Non', description: 'Cardio uniquement sur des jours dédiés' },
-      { key: 'sometimes', label: 'Parfois', description: 'Quelques jours allongés dans la semaine' },
-      { key: 'often', label: 'Souvent', description: 'Plusieurs séances couplées force + cardio' }
+      { key: 'sometimes', label: 'Parfois', description: 'Quelques jours : séance force/street + bloc cardio court' },
+      { key: 'often', label: 'Souvent', description: 'Plusieurs jours avec force/street puis cardio le même jour' }
     ]
   },
   {

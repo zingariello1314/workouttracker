@@ -1,4 +1,4 @@
-import React, { useState, useContext, useEffect, useMemo } from 'react';
+import React, { useState, useContext, useEffect, useMemo, useCallback } from 'react';
 import { WorkoutContext } from '../../context/WorkoutContext';
 import { Play, Pause, Plus, Clock, Calendar, Archive, Settings, Edit3, Trash2, Download, Eye } from 'lucide-react';
 import Card, { CardHeader, CardTitle, CardContent } from '../ui/Card';
@@ -13,9 +13,12 @@ import { useAuth } from '../../context/AuthContext';
 import { isAdminUser } from '../../utils/accessControl';
 import {
   clearPendingQuizPrefill,
+  openProgramCreationFromQuiz,
   PENDING_QUIZ_PREFILL_TRAINING_KEY,
+  PROGRAM_FROM_QUIZ_OPEN_EVENT,
   readPendingQuizPrefill
 } from '../../features/profileQuestionnaire/prefill';
+import { useProfileQuestionnaire } from '../../features/profileQuestionnaire/useProfileQuestionnaire';
 import {
   buildTrainingScheduleFromQuizDays,
   buildQuizAugmentedSchedule
@@ -27,6 +30,7 @@ import {
 import { isWeekAlternationEnabled } from '../../features/profileQuestionnaire/quizExercisePlanner';
 import { copyEtirementsToProgramSchedule } from '../../utils/stretchUtils';
 import { buildExerciseDaysSet, countProgramUsageDays } from '../../utils/programUsageDays';
+import ProgramCoachEncart from '../../features/profileQuestionnaire/ProgramCoachEncart';
 
 const ProgramTab = () => {
   const {
@@ -38,9 +42,14 @@ const ProgramTab = () => {
     deleteProgram,
     updateProgram,
     data,
+    programs: allPrograms,
+    getExerciseNameById,
+    getTodayWorkout,
+    isGymMode,
     saveCircuitDefinitionsBatch
   } = useContext(WorkoutContext);
   const { currentUser, isAuthenticated } = useAuth();
+  const { questionnaire } = useProfileQuestionnaire();
   const t = useTranslation();
   const { formatDate: formatLocaleDate } = useFormatters();
   const { showSuccess } = useToast();
@@ -57,12 +66,10 @@ const ProgramTab = () => {
   /** Réponses quiz conservées le temps d’appliquer étirements / structure au planning. */
   const [pendingQuizAnswers, setPendingQuizAnswers] = useState(null);
 
-  useEffect(() => {
-    const pending = readPendingQuizPrefill(PENDING_QUIZ_PREFILL_TRAINING_KEY);
+  const applyPendingQuizTrainingPrefill = useCallback((pending) => {
     if (!pending?.training) return;
     const suggestedDuration = Number(pending.training.suggestedDurationWeeks) || 6;
     const suggestedDays = Array.isArray(pending.training.suggestedDays) ? pending.training.suggestedDays : [];
-    const mainGoal = pending?.answers?.goalPhysique || 'balanced_functional';
     const quizAnswers = pending?.answers || {};
 
     setNewProgram({
@@ -76,6 +83,24 @@ const ProgramTab = () => {
     setShowCreateForm(true);
     clearPendingQuizPrefill(PENDING_QUIZ_PREFILL_TRAINING_KEY);
   }, []);
+
+  useEffect(() => {
+    const pending = readPendingQuizPrefill(PENDING_QUIZ_PREFILL_TRAINING_KEY);
+    if (pending) applyPendingQuizTrainingPrefill(pending);
+  }, [applyPendingQuizTrainingPrefill]);
+
+  useEffect(() => {
+    const handler = (ev) => {
+      const pending = ev?.detail || readPendingQuizPrefill(PENDING_QUIZ_PREFILL_TRAINING_KEY);
+      if (pending) applyPendingQuizTrainingPrefill(pending);
+    };
+    window.addEventListener(PROGRAM_FROM_QUIZ_OPEN_EVENT, handler);
+    return () => window.removeEventListener(PROGRAM_FROM_QUIZ_OPEN_EVENT, handler);
+  }, [applyPendingQuizTrainingPrefill]);
+
+  const handleRegenerateProgramFromQuiz = useCallback(() => {
+    openProgramCreationFromQuiz(currentUser?.profileQuestionnaire || questionnaire);
+  }, [currentUser?.profileQuestionnaire, questionnaire]);
 
   const exerciseDaysSet = useMemo(
     () => buildExerciseDaysSet(data?.checkedExercises),
@@ -141,6 +166,83 @@ const ProgramTab = () => {
     dimanche: createEmptyDay()
   });
 
+  const activeProgramCoachMeta = useMemo(() => {
+    const prog = visibleActiveProgram;
+    const answers = questionnaire?.answers;
+    if (!prog || prog.availabilitySource !== 'quiz' || !answers || typeof answers !== 'object') {
+      return prog?.quizGenerationMeta || null;
+    }
+    const suggestedDays = ['lundi', 'mardi', 'mercredi', 'jeudi', 'vendredi', 'samedi', 'dimanche'].filter(
+      (d) => prog.schedule?.[d]?.active
+    );
+    if (suggestedDays.length === 0) return prog.quizGenerationMeta || null;
+    try {
+      const quizAlternation = isWeekAlternationEnabled(answers);
+      const createDayForQuiz = () =>
+        createEmptyDay({ alternationEnabled: Boolean(quizAlternation) });
+      const scheduleBase = buildTrainingScheduleFromQuizDays(suggestedDays, createDayForQuiz);
+      const bundle = buildQuizAugmentedSchedule(scheduleBase, answers, {
+        snapshot: data,
+        activeProgram: prog,
+        programDurationWeeks: Number(prog.duration) || 6,
+        previousProgramMeta: prog.quizGenerationMeta || null,
+        getWorkoutForDate:
+          typeof getTodayWorkout === 'function' ? (d) => getTodayWorkout(d, isGymMode) : undefined,
+        isGymMode: Boolean(isGymMode),
+        garminDailyMetrics: data?.garminData?.dailyMetrics || data?.dailyMetrics || null,
+        getExerciseNameById,
+        programs: allPrograms || []
+      });
+      return bundle.quizGenerationMeta || prog.quizGenerationMeta || null;
+    } catch {
+      return prog.quizGenerationMeta || null;
+    }
+  }, [
+    visibleActiveProgram,
+    questionnaire?.answers,
+    data,
+    getTodayWorkout,
+    isGymMode,
+    getExerciseNameById,
+    allPrograms
+  ]);
+
+  const quizCoachPreviewMeta = useMemo(() => {
+    if (!pendingQuizAnswers || !Array.isArray(pendingQuizTrainingDays) || pendingQuizTrainingDays.length === 0) {
+      return null;
+    }
+    try {
+      const quizAlternation = isWeekAlternationEnabled(pendingQuizAnswers);
+      const createDayForQuiz = () =>
+        createEmptyDay({ alternationEnabled: Boolean(quizAlternation) });
+      const scheduleBase = buildTrainingScheduleFromQuizDays(pendingQuizTrainingDays, createDayForQuiz);
+      const bundle = buildQuizAugmentedSchedule(scheduleBase, pendingQuizAnswers, {
+        snapshot: data,
+        activeProgram: activeProgram || null,
+        programDurationWeeks: Number(newProgram.duration) || 6,
+        getWorkoutForDate:
+          typeof getTodayWorkout === 'function' ? (d) => getTodayWorkout(d, isGymMode) : undefined,
+        isGymMode: Boolean(isGymMode),
+        garminDailyMetrics: data?.garminData?.dailyMetrics || data?.dailyMetrics || null,
+        getExerciseNameById,
+        programs: allPrograms || []
+      });
+      return bundle.quizGenerationMeta || null;
+    } catch {
+      return null;
+    }
+  }, [
+    pendingQuizAnswers,
+    pendingQuizTrainingDays,
+    newProgram.duration,
+    data,
+    activeProgram,
+    getTodayWorkout,
+    isGymMode,
+    getExerciseNameById,
+    allPrograms
+  ]);
+
   const handleCreateProgram = () => {
     if (newProgram.name.trim()) {
       const useQuizSchedule = Array.isArray(pendingQuizTrainingDays) && pendingQuizTrainingDays.length > 0;
@@ -150,16 +252,35 @@ const ProgramTab = () => {
       const scheduleBase = useQuizSchedule
         ? buildTrainingScheduleFromQuizDays(pendingQuizTrainingDays, createDayForQuiz)
         : createEmptySchedule();
+      const previousMeta = activeProgram?.quizGenerationMeta || null;
       const quizBundle =
         useQuizSchedule && pendingQuizAnswers && typeof pendingQuizAnswers === 'object'
-          ? buildQuizAugmentedSchedule(scheduleBase, pendingQuizAnswers)
+          ? buildQuizAugmentedSchedule(scheduleBase, pendingQuizAnswers, {
+              snapshot: data,
+              activeProgram: activeProgram || null,
+              previousProgramMeta: previousMeta,
+              programDurationWeeks: Number(newProgram.duration) || 6,
+              getWorkoutForDate:
+                typeof getTodayWorkout === 'function'
+                  ? (d) => getTodayWorkout(d, isGymMode)
+                  : undefined,
+              isGymMode: Boolean(isGymMode),
+              garminDailyMetrics: data?.garminData?.dailyMetrics || data?.dailyMetrics || null,
+              getExerciseNameById,
+              programs: allPrograms || []
+            })
           : { schedule: scheduleBase, circuitDefinitions: {} };
       const schedule = quizBundle.schedule;
+      const quizMeta = quizBundle.quizGenerationMeta || null;
       const quizPresentation =
         useQuizSchedule && pendingQuizAnswers
           ? {
               name: buildProgramTitleFromQuiz(pendingQuizAnswers, schedule),
-              description: buildProgramDescriptionFromQuiz(pendingQuizAnswers, schedule)
+              description: buildProgramDescriptionFromQuiz(
+                pendingQuizAnswers,
+                schedule,
+                quizMeta
+              )
             }
           : {};
       const created = addProgram({
@@ -169,7 +290,8 @@ const ProgramTab = () => {
         ...(useQuizSchedule
           ? {
               availabilitySource: 'quiz',
-              weekAlternation: quizAlternation ? 'ab_enabled' : 'none'
+              weekAlternation: quizAlternation ? 'ab_enabled' : 'none',
+              ...(quizMeta ? { quizGenerationMeta: quizMeta } : {})
             }
           : {})
       });
@@ -407,6 +529,18 @@ const ProgramTab = () => {
                   ></div>
                 </div>
               </div>
+
+              {activeProgramCoachMeta?.suggestRegeneration ||
+              (Array.isArray(activeProgramCoachMeta?.whyThisTemplate) &&
+                activeProgramCoachMeta.whyThisTemplate.length > 0) ? (
+                <div className="mt-4">
+                  <ProgramCoachEncart
+                    quizGenerationMeta={activeProgramCoachMeta}
+                    onSuggestRegenerate={handleRegenerateProgramFromQuiz}
+                    compact
+                  />
+                </div>
+              ) : null}
             </CardContent>
           </Card>
         )}
@@ -459,6 +593,15 @@ const ProgramTab = () => {
                   />
                 </div>
               </div>
+
+              {quizCoachPreviewMeta ? (
+                <div className="mt-4">
+                  <ProgramCoachEncart
+                    quizGenerationMeta={quizCoachPreviewMeta}
+                    onSuggestRegenerate={handleRegenerateProgramFromQuiz}
+                  />
+                </div>
+              ) : null}
               
               <div className="mt-6 flex gap-3">
                 <button

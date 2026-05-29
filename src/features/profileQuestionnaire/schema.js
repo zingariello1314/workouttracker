@@ -37,6 +37,16 @@ export function computeCompletion(answers) {
       }
       return;
     }
+    if (q.type === 'existingProgram') {
+      if (v?.hasProgram === 'no') {
+        completed += 1;
+        return;
+      }
+      if (v?.hasProgram === 'yes' && v?.programId) {
+        completed += 1;
+      }
+      return;
+    }
     if (Array.isArray(v)) {
       if (v.length > 0) completed += 1;
       return;
@@ -127,6 +137,20 @@ function sanitizeByQuestion(question, rawValue) {
   if (question.type === 'strengthBaselines') {
     return sanitizeStrengthBaselines(rawValue);
   }
+  if (question.type === 'existingProgram') {
+    if (!isObject(rawValue)) return null;
+    const has = rawValue.hasProgram === 'yes' ? 'yes' : rawValue.hasProgram === 'no' ? 'no' : null;
+    if (!has) return null;
+    const programId =
+      has === 'yes' && rawValue.programId != null ? String(rawValue.programId).trim() : null;
+    const programName =
+      has === 'yes' && rawValue.programName != null ? String(rawValue.programName).slice(0, 120) : null;
+    return {
+      hasProgram: has,
+      programId: programId || null,
+      programName: programName || null
+    };
+  }
   if (question.type === 'single') {
     const key = String(rawValue);
     const allowed = new Set((question.options || []).map((o) => String(o.key)));
@@ -173,6 +197,7 @@ export function normalizeProfileQuestionnaire(raw) {
 
   const stats = computeCompletion(answers);
   const quizRoundHistory = sanitizeQuizRoundHistory(payload.quizRoundHistory);
+  const lastCompletionRecap = sanitizeLastCompletionRecap(payload.lastCompletionRecap);
 
   return {
     version: Number(payload.version) || PROFILE_QUESTIONNAIRE_VERSION,
@@ -184,8 +209,31 @@ export function normalizeProfileQuestionnaire(raw) {
     quizReminderSnoozeUntil:
       typeof payload.quizReminderSnoozeUntil === 'string' ? payload.quizReminderSnoozeUntil : null,
     quizRoundHistory,
+    lastCompletionRecap,
     ...stats,
     answers
+  };
+}
+
+/** Résumé léger du dernier récap quiz (affichage Réglages). */
+export function sanitizeLastCompletionRecap(raw) {
+  if (!raw || typeof raw !== 'object') return null;
+  const p = raw.placement;
+  if (!p || typeof p !== 'object') return null;
+  const score = Math.round(Number(p.score0to100));
+  if (!Number.isFinite(score)) return null;
+  return {
+    completedAt: typeof raw.completedAt === 'string' ? raw.completedAt.slice(0, 30) : new Date().toISOString(),
+    placement: {
+      score0to100: Math.max(0, Math.min(100, score)),
+      bandId: String(p.bandId || '').slice(0, 40),
+      bandLabel: String(p.bandLabel || '').slice(0, 80),
+      bandDescription: String(p.bandDescription || '').slice(0, 240),
+      experienceLabel: String(p.experienceLabel || '').slice(0, 80),
+      goalLabel: String(p.goalLabel || '').slice(0, 80),
+      dataTrust: String(p.dataTrust || '').slice(0, 160)
+    },
+    hasActivityLogs: Boolean(raw.hasActivityLogs)
   };
 }
 

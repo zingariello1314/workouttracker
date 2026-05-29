@@ -69,7 +69,8 @@ function rankDaysForDrills(schedule, activeDays) {
     .map((r) => r.dayKey);
 }
 
-export function injectQuizDrillsIntoSchedule(schedule, answers) {
+export function injectQuizDrillsIntoSchedule(schedule, answers, coachOpts = {}) {
+  if (coachOpts?.coachContext?.deformers?.allowDrills === false) return schedule;
   if (!shouldInjectDrillsFromQuiz(answers)) return schedule;
   const activeDays = QUIZ_SCHEDULE_DAY_ORDER.filter((d) => schedule?.[d]?.active);
   if (!activeDays.length) return schedule;

@@ -6,12 +6,29 @@ import {
   resolveStretchMomentsFromQuiz
 } from './quizInfluence';
 import { injectQuizExercisePlan, planWeekSessionProfiles } from './quizExercisePlanner';
+import {
+  applyActiveDayCap,
+  buildQuizCoachContext,
+  buildQuizGenerationMeta,
+  refineCoachContextAfterProfiles
+} from './quizCoachPipeline';
 import { injectCircuitStylesIntoSchedule } from './circuitTrainingStyleUtils';
 import { attachQuizCircuitsToSchedule, planQuizCircuits } from './quizCircuitPlanner';
 import { injectQuizPlyometricsIntoSchedule } from './quizPlyometricPlanner';
 import { injectQuizDrillsIntoSchedule } from './quizDrillPlanner';
 import { pickQuizStretchesForMoment } from './quizStretchPicker';
 import { resolveStretchBudgetPlan } from './quizStretchBudget';
+import {
+  applyCycleProgressionToSchedule,
+  detectMissedSessionVolumeFactor
+} from './quizProgressionApply';
+import { assessCardioAlignment } from './quizCardioCoach';
+import {
+  ensureMinDedicatedCardioDays,
+  applyNervousSpacingHints
+} from './quizSessionPlannerExtras';
+import { enforceSessionExerciseLimits } from './quizSessionLimits';
+import { summarizeExercisesForDay } from './quizProgramPresentation';
 
 /** Jours français alignés avec le quiz (`availableTrainingDays`) et les clés `schedule`. */
 export const QUIZ_SCHEDULE_DAY_ORDER = [...REST_WEEK_DAYS];
@@ -114,15 +131,79 @@ export function augmentScheduleWithQuizDefaults(schedule, answers) {
 /**
  * @returns {{ schedule: Record<string, object>, circuitDefinitions: Record<string, object> }}
  */
-export function buildQuizAugmentedSchedule(schedule, answers) {
+/**
+ * @param {Record<string, object>} schedule
+ * @param {Record<string, unknown>} answers
+ * @param {{
+ *   snapshot?: object,
+ *   activeProgram?: object|null,
+ *   previousProgramMeta?: object|null,
+ *   programDurationWeeks?: number,
+ *   getWorkoutForDate?: (date: Date) => object|null,
+ *   isGymMode?: boolean,
+ *   garminDailyMetrics?: object|null,
+ *   getExerciseNameById?: (id: string) => string
+ * }} [genOpts]
+ */
+export function buildQuizAugmentedSchedule(schedule, answers, genOpts = {}) {
   if (!schedule || typeof schedule !== 'object' || !answers || typeof answers !== 'object') {
-    return { schedule: schedule || {}, circuitDefinitions: {} };
+    return { schedule: schedule || {}, circuitDefinitions: {}, quizGenerationMeta: null };
   }
+
+  const durationWeeks = Math.max(
+    2,
+    Math.min(12, Number(genOpts.programDurationWeeks) || Number(answers?.programDurationWeeks) || 6)
+  );
+
+  let coachContext = buildQuizCoachContext(answers, {
+    snapshot: genOpts.snapshot,
+    activeProgram: genOpts.activeProgram,
+    previousProgramMeta: genOpts.previousProgramMeta,
+    programDurationWeeks: durationWeeks,
+    getWorkoutForDate: genOpts.getWorkoutForDate,
+    isGymMode: genOpts.isGymMode,
+    garminDailyMetrics: genOpts.garminDailyMetrics,
+    getExerciseNameById: genOpts.getExerciseNameById,
+    programs: genOpts.programs
+  });
+  applyActiveDayCap(schedule, coachContext.maxActiveDays);
+
   const stretchBlocks = buildQuizStretchingBlocks(answers);
   const blueprint = buildQuizTrainingSessionBlueprint(answers);
-  const activeDayKeys = QUIZ_SCHEDULE_DAY_ORDER.filter((day) => schedule?.[day]?.active);
-  const weekProfiles = planWeekSessionProfiles(activeDayKeys, answers);
+  let activeDayKeys = QUIZ_SCHEDULE_DAY_ORDER.filter((day) => schedule?.[day]?.active);
+  let weekProfiles = planWeekSessionProfiles(activeDayKeys, answers, coachContext);
+  weekProfiles = ensureMinDedicatedCardioDays(activeDayKeys, weekProfiles, coachContext.deformers);
+  const spaced = applyNervousSpacingHints(weekProfiles, activeDayKeys, coachContext.deformers);
+  weekProfiles = spaced.weekProfiles;
+  if (spaced.suppressFractionnéOnDays?.length) {
+    coachContext = {
+      ...coachContext,
+      deformers: { ...coachContext.deformers, allowFractionné: false },
+      warnings: [
+        ...coachContext.warnings,
+        'Fractionné espacé des jours jambes lourdes / cardio intense (récupération).'
+      ]
+    };
+  }
+
+  coachContext = refineCoachContextAfterProfiles(coachContext, weekProfiles, activeDayKeys, answers);
+
+  const cardioAlign = assessCardioAlignment(
+    genOpts.snapshot,
+    weekProfiles,
+    activeDayKeys,
+    answers
+  );
+  if (cardioAlign.warning) {
+    coachContext = {
+      ...coachContext,
+      warnings: [...coachContext.warnings, cardioAlign.warning]
+    };
+  }
+
+  weekProfiles = planWeekSessionProfiles(activeDayKeys, answers, coachContext);
   const circuitDefinitions = {};
+  const coachOpts = { coachContext };
 
   activeDayKeys.forEach((dayKey) => {
     const profile = weekProfiles[dayKey];
@@ -133,9 +214,9 @@ export function buildQuizAugmentedSchedule(schedule, answers) {
     if (profile.durationLabel) slot.duration = profile.durationLabel;
   });
 
-  injectQuizExercisePlan(schedule, answers, activeDayKeys, weekProfiles);
+  injectQuizExercisePlan(schedule, answers, activeDayKeys, weekProfiles, coachOpts);
 
-  const circuitPlan = planQuizCircuits(activeDayKeys, answers, weekProfiles);
+  const circuitPlan = planQuizCircuits(activeDayKeys, answers, weekProfiles, coachOpts);
   Object.assign(circuitDefinitions, circuitPlan.definitions);
   attachQuizCircuitsToSchedule(schedule, circuitDefinitions, circuitPlan.assignments);
 
@@ -158,11 +239,41 @@ export function buildQuizAugmentedSchedule(schedule, answers) {
     applyQuizStretchScheduleToDay(d, day, answers, stretchBlocks, usedStretchKeys);
   }
 
-  injectQuizPlyometricsIntoSchedule(schedule, answers);
+  injectQuizPlyometricsIntoSchedule(schedule, answers, coachOpts);
 
-  injectQuizDrillsIntoSchedule(schedule, answers);
+  injectQuizDrillsIntoSchedule(schedule, answers, coachOpts);
   injectPreferredExerciseTypes(schedule, answers);
-  return { schedule, circuitDefinitions };
+
+  const missedFactor = detectMissedSessionVolumeFactor(genOpts.snapshot, schedule);
+  const cycleVol =
+    coachContext.globalLoad?.effectiveVolumeFactor ??
+    coachContext.globalLoad?.globalLoadFactor ??
+    1;
+  applyCycleProgressionToSchedule(schedule, durationWeeks, {
+    missedVolumeFactor: missedFactor,
+    volumeFactor: cycleVol
+  });
+
+  activeDayKeys.forEach((dayKey) => {
+    const day = schedule[dayKey];
+    if (!day?.active || !Array.isArray(day.exercises)) return;
+    const profile = weekProfiles[dayKey] || day.quizSessionProfile;
+    day.exercises = enforceSessionExerciseLimits(day.exercises, coachContext.deformers, profile);
+    const summary = summarizeExercisesForDay(day.exercises);
+    if (summary) {
+      const note = `Vue compacte : ${summary}`;
+      day.notes = [typeof day.notes === 'string' ? day.notes : '', note].filter(Boolean).join('\n\n');
+    }
+  });
+
+  const quizGenerationMeta = buildQuizGenerationMeta(coachContext, {
+    programDurationWeeks: durationWeeks,
+    quizGoal: answers?.goalPhysique || null,
+    quizAnswers: answers,
+    snapshot: genOpts.snapshot,
+    missedVolumeFactor: missedFactor
+  });
+  return { schedule, circuitDefinitions, quizGenerationMeta };
 }
 
 function injectPreferredExerciseTypes(schedule, answers) {

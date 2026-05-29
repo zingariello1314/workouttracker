@@ -1,5 +1,7 @@
 /**
  * Sélection d'étirements banque pour programmes quiz — pool élargi + tirage pondéré.
+ * Lit intégralement `stretchDatabase` (aucune entrée retirée) ; exclut seulement
+ * les clés du catalogue drills (`stretchDrillsCatalog`) et catégories course/pliométrie.
  */
 
 import { stretchDatabase } from '../../data/stretchDatabase';
