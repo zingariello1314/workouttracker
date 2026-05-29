@@ -30,6 +30,13 @@ export function computeCompletion(answers) {
       }
       return;
     }
+    if (q.type === 'strengthBaselines') {
+      if (v && typeof v === 'object' && !Array.isArray(v)) {
+        const filled = Object.values(v).some((x) => x != null && Number(x) > 0);
+        if (filled) completed += 1;
+      }
+      return;
+    }
     if (Array.isArray(v)) {
       if (v.length > 0) completed += 1;
       return;
@@ -39,6 +46,32 @@ export function computeCompletion(answers) {
   const total = PROFILE_QUESTION_DEFS.length;
   const completionPercent = total > 0 ? Math.round((completed / total) * 100) : 0;
   return { completedCount: completed, totalCount: total, completionPercent };
+}
+
+function sanitizeStrengthBaselines(raw) {
+  if (raw == null) return null;
+  if (typeof raw !== 'object' || Array.isArray(raw)) return null;
+  const fields = [
+    'pushupsMax',
+    'pullupsMax',
+    'dipsMax',
+    'australianPullupsMax',
+    'squatGobletMax',
+    'lungesMax',
+    'plankSecMax'
+  ];
+  const out = {};
+  let any = false;
+  fields.forEach((f) => {
+    const n = Math.round(Number(raw[f]));
+    if (!Number.isFinite(n) || n < 1) {
+      out[f] = null;
+      return;
+    }
+    out[f] = f === 'plankSecMax' ? Math.min(300, n) : Math.min(200, n);
+    any = true;
+  });
+  return any ? out : null;
 }
 
 function sanitizeVitalsValue(raw) {
@@ -90,6 +123,9 @@ function sanitizeByQuestion(question, rawValue) {
   if (rawValue == null) return null;
   if (question.type === 'vitals') {
     return sanitizeVitalsValue(rawValue);
+  }
+  if (question.type === 'strengthBaselines') {
+    return sanitizeStrengthBaselines(rawValue);
   }
   if (question.type === 'single') {
     const key = String(rawValue);

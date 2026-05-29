@@ -16,7 +16,10 @@ import {
   PENDING_QUIZ_PREFILL_TRAINING_KEY,
   readPendingQuizPrefill
 } from '../../features/profileQuestionnaire/prefill';
-import { buildTrainingScheduleFromQuizDays, augmentScheduleWithQuizDefaults } from '../../features/profileQuestionnaire/trainingScheduleFromQuiz';
+import {
+  buildTrainingScheduleFromQuizDays,
+  buildQuizAugmentedSchedule
+} from '../../features/profileQuestionnaire/trainingScheduleFromQuiz';
 import {
   buildProgramTitleFromQuiz,
   buildProgramDescriptionFromQuiz
@@ -26,7 +29,17 @@ import { copyEtirementsToProgramSchedule } from '../../utils/stretchUtils';
 import { buildExerciseDaysSet, countProgramUsageDays } from '../../utils/programUsageDays';
 
 const ProgramTab = () => {
-  const { programs, activeProgram, addProgram, activateProgram, deactivateProgram, deleteProgram, updateProgram, data } = useContext(WorkoutContext);
+  const {
+    programs,
+    activeProgram,
+    addProgram,
+    activateProgram,
+    deactivateProgram,
+    deleteProgram,
+    updateProgram,
+    data,
+    saveCircuitDefinitionsBatch
+  } = useContext(WorkoutContext);
   const { currentUser, isAuthenticated } = useAuth();
   const t = useTranslation();
   const { formatDate: formatLocaleDate } = useFormatters();
@@ -137,10 +150,11 @@ const ProgramTab = () => {
       const scheduleBase = useQuizSchedule
         ? buildTrainingScheduleFromQuizDays(pendingQuizTrainingDays, createDayForQuiz)
         : createEmptySchedule();
-      const schedule =
+      const quizBundle =
         useQuizSchedule && pendingQuizAnswers && typeof pendingQuizAnswers === 'object'
-          ? augmentScheduleWithQuizDefaults(scheduleBase, pendingQuizAnswers)
-          : scheduleBase;
+          ? buildQuizAugmentedSchedule(scheduleBase, pendingQuizAnswers)
+          : { schedule: scheduleBase, circuitDefinitions: {} };
+      const schedule = quizBundle.schedule;
       const quizPresentation =
         useQuizSchedule && pendingQuizAnswers
           ? {
@@ -165,6 +179,12 @@ const ProgramTab = () => {
       setShowCreateForm(false);
       if (created) {
         setSelectedProgram(created);
+        const defs = quizBundle.circuitDefinitions;
+        if (defs && typeof defs === 'object' && Object.keys(defs).length > 0 && saveCircuitDefinitionsBatch) {
+          saveCircuitDefinitionsBatch(defs).catch((err) => {
+            console.error('Circuits quiz : échec sauvegarde', err);
+          });
+        }
       }
     }
   };

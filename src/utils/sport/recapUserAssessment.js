@@ -4,7 +4,7 @@
  */
 
 import { aggregateLiftVolumeKgByDate } from '../exerciseLoadVolume';
-import { buildTotalStrengthRepsByDate } from './recapDailyChartData';
+import { buildTotalStrengthRepsByDate, buildMergedStepsByDate } from './recapDailyChartData';
 import { buildWeightByDateMap } from './recapAssessmentSeries';
 import { computeTodaySessionComplexity } from '../todaySessionScore';
 import { isMockEnduranceSession, normalizeDateString } from '../calendarUtils';
@@ -16,6 +16,7 @@ import {
   buildRecapContextualSuggestions,
   mergeRecapSuggestions
 } from './recapContextualSuggestions';
+import { buildRecapPistes, filterSuggestionsForTone } from './recapDeepInsights';
 
 const MS_DAY = 86400000;
 
@@ -605,10 +606,29 @@ export function computeRecapUserAssessment({
     sessionLoadAlignment: sessionLoadAlignment28
   });
 
-  const suggestions = mergeRecapSuggestions(contextualSuggestions, legacySuggestions, {
-    max: 12,
+  const mergedRaw = mergeRecapSuggestions(contextualSuggestions, legacySuggestions, {
+    max: 14,
     maxQuiz: 2
   });
+  const repsMapForRich = buildTotalStrengthRepsByDate(data);
+  const weekEnd = endYmd;
+  const weekStart = ymdAddDaysLocal(weekEnd, -6);
+  let stepsSum = 0;
+  const stepsMapRich = buildMergedStepsByDate(
+    garminPartial?.status === 'ready' ? garminPartial.dailyMetrics : null,
+    data?.enduranceData?.manualDailyWalkByDate
+  );
+  stepsMapRich.forEach((v, k) => {
+    if (k >= weekStart && k <= weekEnd) stepsSum += v;
+  });
+  const richness = {
+    sparseLogging:
+      countUniqueDaysWithActivityInWindow(data, start28, endYmd) <= 4 &&
+      activeDays28 <= 4 &&
+      stepsSum > 4000,
+    hasSteps: stepsSum > 2000
+  };
+  const suggestions = filterSuggestionsForTone(mergedRaw, richness).slice(0, 10);
 
   const quizSummaryLines = PROFILE_QUESTION_DEFS.map((q) => {
     const v = answers[q.id];
@@ -616,6 +636,14 @@ export function computeRecapUserAssessment({
       return { id: q.id, title: q.title, value: '—' };
     if (q.type === 'slider') return { id: q.id, title: q.title, value: `${v} %` };
     if (q.type === 'days' && Array.isArray(v)) return { id: q.id, title: q.title, value: v.join(', ') };
+    if (q.type === 'strengthBaselines' && typeof v === 'object' && !Array.isArray(v)) {
+      const bits = [];
+      if (v.pushupsMax != null) bits.push(`Pompes ${v.pushupsMax}`);
+      if (v.pullupsMax != null) bits.push(`Tractions ${v.pullupsMax}`);
+      if (v.dipsMax != null) bits.push(`Dips ${v.dipsMax}`);
+      if (v.plankSecMax != null) bits.push(`Gainage ${v.plankSecMax}s`);
+      return { id: q.id, title: q.title, value: bits.length ? bits.join(' · ') : '—' };
+    }
     if (q.type === 'vitals' && typeof v === 'object' && !Array.isArray(v)) {
       const bits = [];
       if (v.sex === 'male') bits.push('H');
@@ -634,83 +662,27 @@ export function computeRecapUserAssessment({
     return { id: q.id, title: q.title, value: opt?.label || String(v) };
   });
 
-  const shortTerm = [];
-  const mediumTerm = [];
-  const longTerm = [];
+  const pistes = buildRecapPistes({
+    snapshot: data,
+    activeProgram,
+    profileAnswers: answers,
+    assessment: {
+      tenureDays,
+      lifetimeReps,
+      repsMomentumRatio,
+      weightDelta28,
+      volumeKgRepsSum28,
+      sessionLoadAlignment28,
+      programCompletion28: program28
+    },
+    garminDailyMetrics: garminPartial?.status === 'ready' ? garminPartial.dailyMetrics : null,
+    getExerciseNameById
+  });
 
-  if (tenureDays < 21) {
-    shortTerm.push(
-      'Phase d’amorçage : la fenêtre 28 j priorise la régularité et la complétude des données (poids, reps).'
-    );
-  }
-  if (repsMomentumRatio > 1.12) {
-    shortTerm.push(
-      'Sur la 2ᵉ quinzaine, le volume de reps a tendance à dépasser la 1ʳᵉ : attention à la fatigue accumulée si la tendance se confirme semaine après semaine.'
-    );
-  } else if (repsMomentumRatio < 0.85 && meanDailyFirst14 > 40) {
-    shortTerm.push(
-      'Baisse récente du volume de reps vs la quinzaine précédente : utile si c’est un déload volontaire ; sinon vérifie sommeil et charge hors sport.'
-    );
-  }
-  if (weightDelta28 != null && Math.abs(weightDelta28) >= 0.4) {
-    shortTerm.push(
-      weightDelta28 < 0
-        ? `Poids en baisse sur les mesures récentes (~${Math.abs(weightDelta28).toFixed(1)} kg sur la fenêtre) : croise avec apport énergétique et entraînement.`
-        : `Poids en hausse sur les mesures récentes (~+${weightDelta28.toFixed(1)} kg) : normal en prise de masse ; à surveiller si l’objectif est la sècheresse.`
-    );
-  } else if (weightIn28.length === 0) {
-    shortTerm.push(
-      'Aucune pesée sur 28 j : la courbe de poids ne peut pas informer l’estimation corporelle — un point par semaine suffit.'
-    );
-  }
-  if (avgDifficulty != null && avgDifficulty >= 3.8 && weightedDayCount28 >= 3) {
-    shortTerm.push(
-      'Séances souvent « techniques » : espace les blocs intenses et programme un jour léger ou mobilité.'
-    );
-  }
-  if (sessionLoadAlignment28.seriesOverrideDays28 >= 3) {
-    shortTerm.push(
-      `${sessionLoadAlignment28.seriesOverrideDays28} jour(s) sur 28 avec séries/reps personnalisées : ces cibles alimentent l’estimation de charge « prévue » jour par jour.`
-    );
-  }
-
-  if (tenureDays > 30 && lifetimeReps > 8000) {
-    mediumTerm.push(
-      'À moyen terme (≈4–10 semaines), avec déjà un stock de reps significatif, les gains viennent surtout de la qualité des cycles (progression, deload, sommeil).'
-    );
-  }
-  if (regularityScore > 0.65 && weightedDayCount28 >= 3) {
-    mediumTerm.push(
-      'Régularité solide + jours avec charge : bonne base pour une progression en force sur un mesocycle sans changer radicalement le programme.'
-    );
-  }
-  if (program28 && program28.ratio >= 0.65) {
-    mediumTerm.push(
-      'Bon ancrage sur le programme actif : tu peux ajuster charge ou volume sur 1–2 mouvements clés plutôt que multiplier les exos.'
-    );
-  } else if (activeProgram?.schedule && (program28 == null || program28.ratio < 0.45)) {
-    mediumTerm.push(
-      'Écart planning / réalité : à moyen terme, revoir les jours « actifs » ou les objectifs du quiz évite la culpabilité inutile.'
-    );
-  }
-
-  if (tenureDays > 180 || lifetimeReps > 25000) {
-    longTerm.push(
-      'Long terme : au-delà de grosses bases cumulées, le score met l’accent sur la constance et la mise à jour des données plutôt que sur le volume brut — normal pour rester pertinent des années durant.'
-    );
-  }
-  if (lifetimeReps > 50000) {
-    longTerm.push(
-      'Très gros historique de reps : priorise la santé articulaire, l’alternance des motifs de mouvement et des phases de maintien pour prolonger la carrière d’entraînement.'
-    );
-  }
-  if (tenureDays > 400) {
-    longTerm.push(
-      'Utilisation prolongée : l’app tiendra compte surtout de la régularité récente et des tendances (poids, reps) pour rester actionnable — pas seulement du cumul passé.'
-    );
-  }
-
-  const predictions = [...shortTerm.slice(0, 2), ...mediumTerm.slice(0, 1)];
+  const shortTerm = pistes.shortTerm;
+  const mediumTerm = pistes.mediumTerm;
+  const longTerm = pistes.longTerm;
+  const predictions = pistes.predictions;
 
   return {
     journeyStartYmd: journeyStart,

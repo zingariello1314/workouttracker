@@ -1,4 +1,4 @@
-export const PROFILE_QUESTIONNAIRE_VERSION = 8;
+export const PROFILE_QUESTIONNAIRE_VERSION = 10;
 
 export const QUESTION_SECTIONS = [
   { id: 'objectifs', label: 'Objectifs de la mission', color: 'violet' },
@@ -84,6 +84,14 @@ export const PROFILE_QUESTION_DEFS = [
       { key: 'mobility_stretching', label: 'Mobilité / étirements' },
       { key: 'isometric_core', label: 'Isométrie / gainage' }
     ]
+  },
+  {
+    id: 'strengthBaselineMaxes',
+    sectionId: 'experience',
+    type: 'strengthBaselines',
+    title: 'Repères sur les mouvements de base (facultatif)',
+    description:
+      'Tes max stricts aident à calibrer séries et reps du programme généré (ex. 20 pompes → séries autour de 10–12 reps).'
   },
   {
     id: 'experienceLevel',
@@ -344,6 +352,21 @@ export const PROFILE_QUESTION_DEFS = [
         label: 'Matin, midi et soir',
         description: 'Micro-sessions réparties sur la journée'
       }
+    ]
+  },
+  {
+    id: 'dailyStretchMinutesBudget',
+    sectionId: 'mobilite',
+    type: 'single',
+    title: 'Combien de temps par jour pour les étirements (hors pliométrie et drills) ?',
+    description:
+      'Ce budget est réparti sur les créneaux choisis ci-dessus (matin / midi / soir). Pliométrie et drills course ne sont pas décomptés ici.',
+    options: [
+      { key: 'none', label: 'Aucun bloc planifié', description: 'Pas d’étirements dans le programme généré' },
+      { key: '5_10', label: '5–10 min / jour', description: 'Routine courte' },
+      { key: '10_15', label: '10–15 min / jour', description: 'Équilibre classique' },
+      { key: '15_25', label: '15–25 min / jour', description: 'Focus mobilité' },
+      { key: '25_40', label: '25–40 min / jour', description: 'Gros volume souplesse' }
     ]
   },
   {

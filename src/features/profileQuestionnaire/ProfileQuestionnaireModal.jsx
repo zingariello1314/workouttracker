@@ -121,6 +121,46 @@ const QuestionCard = ({ question, value, onSelect, allAnswers }) => {
     );
   }
 
+  if (question.type === 'strengthBaselines') {
+    const v = value && typeof value === 'object' ? value : {};
+    const setNum = (k, max) => (e) => {
+      const raw = e.target.value;
+      const next = { ...v, [k]: raw === '' ? null : Math.min(max, Math.max(1, Math.round(Number(raw)))) };
+      onSelect(next);
+    };
+    const fields = [
+      { k: 'pushupsMax', label: 'Pompes (max strict)', max: 200 },
+      { k: 'pullupsMax', label: 'Tractions pronation (max)', max: 80 },
+      { k: 'dipsMax', label: 'Dips (max)', max: 80 },
+      { k: 'australianPullupsMax', label: 'Tractions australiennes (max)', max: 80 },
+      { k: 'squatGobletMax', label: 'Squat gobelet (max reps)', max: 100 },
+      { k: 'lungesMax', label: 'Fentes (max / jambe)', max: 60 },
+      { k: 'plankSecMax', label: 'Gainage (secondes max)', max: 300 }
+    ];
+    return (
+      <div className="grid gap-3 sm:grid-cols-2">
+        {fields.map(({ k, label, max }) => (
+          <div key={k} className="space-y-1">
+            <label className="text-xs text-slate-400">{label}</label>
+            <input
+              type="number"
+              min={1}
+              max={max}
+              placeholder="—"
+              value={v[k] ?? ''}
+              onChange={setNum(k, max)}
+              className="w-full rounded-lg border border-slate-600 bg-slate-900/60 px-3 py-2 text-sm text-slate-100"
+            />
+          </div>
+        ))}
+        <p className="sm:col-span-2 text-[11px] text-slate-500">
+          Facultatif : laisse vide les mouvements que tu ne pratiques pas. Le programme ajustera séries/reps sur ceux
+          renseignés.
+        </p>
+      </div>
+    );
+  }
+
   if (question.type === 'slider') {
     const safeValue = value == null ? Number(question.min || 0) : Number(value);
     return (
@@ -277,7 +317,7 @@ const ProfileQuestionnaireModal = ({ isOpen, onClose }) => {
   const canContinue = useMemo(() => {
     const q = activeQuestions[step];
     if (!q) return false;
-    if (q.type === 'vitals') return true;
+    if (q.type === 'vitals' || q.type === 'strengthBaselines') return true;
     const value = answers?.[q.id];
     if (value == null) return false;
     if (Array.isArray(value)) return value.length > 0;

@@ -138,6 +138,7 @@ export function injectCircuitStylesIntoSchedule(schedule, answers, activeDayKeys
     uniqueDays.forEach((day, idx) => {
       const slot = schedule[day];
       if (!slot) return;
+      if (Array.isArray(slot.circuitIds) && slot.circuitIds.length > 0) return;
       const current = Array.isArray(slot.exercises) ? slot.exercises : [];
       const block = [
         {

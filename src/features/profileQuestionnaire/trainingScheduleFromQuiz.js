@@ -7,9 +7,11 @@ import {
 } from './quizInfluence';
 import { injectQuizExercisePlan, planWeekSessionProfiles } from './quizExercisePlanner';
 import { injectCircuitStylesIntoSchedule } from './circuitTrainingStyleUtils';
+import { attachQuizCircuitsToSchedule, planQuizCircuits } from './quizCircuitPlanner';
 import { injectQuizPlyometricsIntoSchedule } from './quizPlyometricPlanner';
 import { injectQuizDrillsIntoSchedule } from './quizDrillPlanner';
 import { pickQuizStretchesForMoment } from './quizStretchPicker';
+import { resolveStretchBudgetPlan } from './quizStretchBudget';
 
 /** Jours français alignés avec le quiz (`availableTrainingDays`) et les clés `schedule`. */
 export const QUIZ_SCHEDULE_DAY_ORDER = [...REST_WEEK_DAYS];
@@ -50,11 +52,10 @@ export function buildTrainingScheduleFromQuizDays(availableDays, createEmptyDayF
   return schedule;
 }
 
-function stretchCountForHabit(habit) {
-  if (habit === 'never' || habit === 'rarely') return 1;
-  if (habit === 'once_week') return 2;
-  if (habit === 'two_four_week') return 2;
-  return 3;
+function stretchPlanForMoment(answers, moment) {
+  const budget = resolveStretchBudgetPlan(answers);
+  if (budget.perMoment[moment]) return budget.perMoment[moment];
+  return { count: 1, durationSec: 60 };
 }
 
 function blockMetaForMoment(stretchBlocks, moment) {
@@ -64,8 +65,7 @@ function blockMetaForMoment(stretchBlocks, moment) {
 }
 
 function buildStretchItemsForMoment(moment, dayKey, answers, stretchBlocks, usedStretchKeys) {
-  const habit = answers?.stretchingHabit || 'once_week';
-  const count = stretchCountForHabit(habit);
+  const { count, durationSec } = stretchPlanForMoment(answers, moment);
   const meta = blockMetaForMoment(stretchBlocks, moment);
   const picked = pickQuizStretchesForMoment({
     answers,
@@ -77,7 +77,7 @@ function buildStretchItemsForMoment(moment, dayKey, answers, stretchBlocks, used
   return picked.map(({ key: stretchKey, entry }, i) => ({
     id: buildDefaultStretchId(dayKey, moment, i + 1) ?? 9000 + i,
     stretchKey,
-    duration: entry.defaultDuration || 60,
+    duration: durationSec || entry.defaultDuration || 60,
     name: entry.name,
     instructions: meta?.instructions
       ? String(meta.instructions).slice(0, 280)
@@ -108,11 +108,21 @@ function applyQuizStretchScheduleToDay(day, dayKey, answers, stretchBlocks, used
  * @param {Record<string, unknown>} answers
  */
 export function augmentScheduleWithQuizDefaults(schedule, answers) {
-  if (!schedule || typeof schedule !== 'object' || !answers || typeof answers !== 'object') return schedule;
+  return buildQuizAugmentedSchedule(schedule, answers).schedule;
+}
+
+/**
+ * @returns {{ schedule: Record<string, object>, circuitDefinitions: Record<string, object> }}
+ */
+export function buildQuizAugmentedSchedule(schedule, answers) {
+  if (!schedule || typeof schedule !== 'object' || !answers || typeof answers !== 'object') {
+    return { schedule: schedule || {}, circuitDefinitions: {} };
+  }
   const stretchBlocks = buildQuizStretchingBlocks(answers);
   const blueprint = buildQuizTrainingSessionBlueprint(answers);
   const activeDayKeys = QUIZ_SCHEDULE_DAY_ORDER.filter((day) => schedule?.[day]?.active);
   const weekProfiles = planWeekSessionProfiles(activeDayKeys, answers);
+  const circuitDefinitions = {};
 
   activeDayKeys.forEach((dayKey) => {
     const profile = weekProfiles[dayKey];
@@ -124,6 +134,11 @@ export function augmentScheduleWithQuizDefaults(schedule, answers) {
   });
 
   injectQuizExercisePlan(schedule, answers, activeDayKeys, weekProfiles);
+
+  const circuitPlan = planQuizCircuits(activeDayKeys, answers, weekProfiles);
+  Object.assign(circuitDefinitions, circuitPlan.definitions);
+  attachQuizCircuitsToSchedule(schedule, circuitDefinitions, circuitPlan.assignments);
+
   injectCircuitStylesIntoSchedule(schedule, answers, activeDayKeys, weekProfiles);
 
   const usedStretchKeys = new Set();
@@ -147,7 +162,7 @@ export function augmentScheduleWithQuizDefaults(schedule, answers) {
 
   injectQuizDrillsIntoSchedule(schedule, answers);
   injectPreferredExerciseTypes(schedule, answers);
-  return schedule;
+  return { schedule, circuitDefinitions };
 }
 
 function injectPreferredExerciseTypes(schedule, answers) {

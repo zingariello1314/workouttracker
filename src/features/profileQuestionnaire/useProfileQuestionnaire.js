@@ -72,11 +72,30 @@ export const useProfileQuestionnaire = () => {
     });
   }, [currentUser?.id, questionnaire, updateProfile]);
 
+  const removeQuizHistoryEntry = useCallback(
+    async (completedAt) => {
+      if (!currentUser?.id || !completedAt) return { success: false, error: 'INVALID' };
+      const filtered = (Array.isArray(questionnaire.quizRoundHistory) ? questionnaire.quizRoundHistory : []).filter(
+        (row) => row.completedAt !== completedAt
+      );
+      const merged = normalizeProfileQuestionnaire({
+        ...questionnaire,
+        quizRoundHistory: filtered,
+        lastUpdatedAt: new Date().toISOString()
+      });
+      return updateProfile({
+        [QUESTIONNAIRE_STORAGE_FIELD]: merged
+      });
+    },
+    [currentUser?.id, questionnaire, updateProfile]
+  );
+
   return {
     questionnaire,
     saveAnswers,
     markSkipped,
-    snoozeQuizReminder
+    snoozeQuizReminder,
+    removeQuizHistoryEntry
   };
 };
 

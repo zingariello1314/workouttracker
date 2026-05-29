@@ -9,6 +9,7 @@ import {
   trimExercisesToSessionBudget
 } from './quizSessionDurationBudget';
 import { addonMinutes, planWeekSessionProfiles } from './quizSessionPlanner';
+import { applyBaselineToSeries, overallStrengthTier } from './quizVolumeFromBaselines';
 
 export { planWeekSessionProfiles };
 
@@ -39,9 +40,11 @@ const EXERCISE_TEMPLATES = [
   { dbKey: 'gainage', group: 'core', tier: 'classic', quizEquipment: ['bodyweight'], locations: ['home_minimal', 'outdoor', 'home_gym', 'commercial_gym', 'track'] },
   { dbKey: 'gainage latéral', group: 'core', tier: 'classic', quizEquipment: ['bodyweight'], locations: ['home_minimal', 'outdoor', 'home_gym', 'commercial_gym'] },
   { dbKey: 'course endurance fondamentale', group: 'cardio', tier: 'classic', quizEquipment: ['bodyweight'], locations: ['outdoor', 'track', 'commercial_gym'] },
-  { dbKey: 'corde à sauter', group: 'cardio', tier: 'classic', quizEquipment: ['jump_rope'], locations: ['home_minimal', 'outdoor', 'home_gym', 'commercial_gym'] },
-  { dbKey: 'burpees', group: 'cardio', tier: 'classic', quizEquipment: ['bodyweight'], locations: ['home_minimal', 'outdoor', 'home_gym'] },
-  { dbKey: 'mountain climbers', group: 'cardio', tier: 'classic', quizEquipment: ['bodyweight'], locations: ['home_minimal', 'outdoor', 'home_gym'] }
+  { dbKey: 'fractionné', group: 'cardio', tier: 'classic', quizEquipment: ['bodyweight'], locations: ['outdoor', 'track'] },
+  { dbKey: 'fractionné 30/30', group: 'cardio', tier: 'classic', quizEquipment: ['bodyweight'], locations: ['outdoor', 'track'] },
+  { dbKey: 'corde à sauter', group: 'cardio', tier: 'classic', quizEquipment: ['jump_rope'], locations: ['home_minimal', 'outdoor', 'home_gym', 'commercial_gym', 'track'] },
+  { dbKey: 'burpees', group: 'cardio', tier: 'classic', quizEquipment: ['bodyweight'], locations: ['home_minimal', 'outdoor', 'home_gym', 'track'] },
+  { dbKey: 'mountain climbers', group: 'cardio', tier: 'classic', quizEquipment: ['bodyweight'], locations: ['home_minimal', 'outdoor', 'home_gym', 'track'] }
 ];
 
 const GOAL_GROUP_BOOST = {
@@ -105,10 +108,6 @@ function hasPullupBar(answers) {
   return eq.includes('pullup_bar');
 }
 
-function hasLowBarOrOutdoor(site) {
-  return site === 'outdoor' || site === 'home_gym' || site === 'commercial_gym';
-}
-
 function templateMatches(template, { quizEq, site, modality, answers, weekUsedKeys }) {
   if (!exerciseDatabase[template.dbKey]) return false;
   if (site && template.locations.length && !template.locations.includes(site)) return false;
@@ -118,9 +117,11 @@ function templateMatches(template, { quizEq, site, modality, answers, weekUsedKe
   if (modality === 'strength' && template.group === 'cardio') return false;
   if (modality === 'strength_plus_cardio' && template.group === 'cardio') return false;
 
-  if (template.dbKey === 'course endurance fondamentale') {
+  if (template.dbKey === 'course endurance fondamentale' || template.dbKey.startsWith('fractionné')) {
     if (modality !== 'cardio') return false;
-    if (weekUsedKeys?.has('course endurance fondamentale')) return false;
+    if (weekUsedKeys?.has('course endurance fondamentale')) {
+      if (template.dbKey === 'course endurance fondamentale') return false;
+    }
     if (site === 'home_minimal') return false;
   }
 
@@ -146,19 +147,30 @@ function inferProgramCategory(dbEx, dbKey) {
   return 'muscu';
 }
 
-function buildSeriesForExercise(dbKey, blueprint, category) {
+function buildSeriesForExercise(dbKey, blueprint, category, answers) {
   const use4 = String(blueprint?.setsHint || '').includes('4');
   const repRange = String(blueprint?.repRange || '8–12');
   if (category === 'cardio') {
     if (dbKey.includes('course')) return '1×20–35 min';
+    if (dbKey.includes('fractionné')) return '6×(30 s / 30 s)';
     if (dbKey.includes('corde')) return '6×(30 s / 30 s)';
     if (dbKey.includes('burpee')) return '4×8';
     return '3×3 min';
   }
-  if (dbKey.includes('gainage')) return '3×30–45 sec';
-  if (repRange.includes('4–8')) return use4 ? '4×5' : '3×5';
-  if (repRange.includes('12–20')) return use4 ? '4×15' : '3×15';
-  return use4 ? '4×8-10' : '3×8-12';
+  if (dbKey.includes('gainage')) {
+    const base = '3×30–45 sec';
+    return applyBaselineToSeries(dbKey, answers, base);
+  }
+  if (repRange.includes('4–8')) {
+    const base = use4 ? '4×5' : '3×5';
+    return applyBaselineToSeries(dbKey, answers, base);
+  }
+  if (repRange.includes('12–20')) {
+    const base = use4 ? '4×15' : '3×15';
+    return applyBaselineToSeries(dbKey, answers, base);
+  }
+  const base = use4 ? '4×8-10' : '3×8-12';
+  return applyBaselineToSeries(dbKey, answers, base);
 }
 
 function restForCategory(category, dbKey) {
@@ -175,7 +187,7 @@ export function buildProgramExerciseFromDbKey(dbKey, answers, blueprint, { idSuf
   return {
     id: `quiz_ex_${dbKey.replace(/\s+/g, '_')}${idSuffix}_${Math.random().toString(36).slice(2, 7)}`,
     name: dbEx.name,
-    series: buildSeriesForExercise(dbKey, blueprint, category),
+    series: buildSeriesForExercise(dbKey, blueprint, category, answers),
     reps: isCardio ? '' : '',
     rest: restForCategory(category, dbKey),
     intensity: isCardio ? 'moderate' : 'moderate',
@@ -227,11 +239,12 @@ function pickWeightedTemplates(candidates, count, rng) {
   return picked;
 }
 
-function scoreTemplate(template, answers, group, dayIndex) {
+function scoreTemplate(template, answers, group, dayIndex, weekStrengthUsedKeys) {
   const goal = answers?.goalPhysique || 'balanced_functional';
   const boosts = GOAL_GROUP_BOOST[goal] || GOAL_GROUP_BOOST.balanced_functional;
   let score = boosts[template.group] ?? 0;
   if (template.group === group) score += 5;
+  if (weekStrengthUsedKeys?.has?.(template.dbKey)) score -= 8;
   if (template.tier === 'classic') score += 2;
   const exp = answers?.experienceLevel;
   if ((exp === 'beginner_total' || exp === 'beginner_0_3m') && template.tier === 'classic') score += 2;
@@ -242,6 +255,8 @@ function scoreTemplate(template, answers, group, dayIndex) {
   if (typePrefs.includes('isometric_core') && template.group === 'core') score += 3;
   if (typePrefs.includes('strength_compounds') && template.tier === 'standard') score += 1;
   score += (dayIndex + template.dbKey.length) % 3;
+  if (globalTier === 'beginner' && template.tier === 'classic') score += 2;
+  if (globalTier === 'advanced' && template.tier === 'standard') score += 1;
   return score;
 }
 
@@ -252,20 +267,30 @@ function pickExercisesForContext(answers, blueprint, {
   dayIndex,
   usedKeys,
   modality = 'strength',
-  weekUsedKeys
+  weekUsedKeys,
+  weekStrengthUsedKeys
 }) {
   const quizEq = equipmentSet(answers);
+  const strengthUsed = weekStrengthUsedKeys || weekUsedKeys;
   const candidates = EXERCISE_TEMPLATES.filter((t) =>
     templateMatches(t, { quizEq, site, modality, answers, weekUsedKeys })
   )
-    .map((t) => ({ t, score: Math.max(...groups.map((g) => scoreTemplate(t, answers, g, dayIndex))) }))
+    .map((t) => ({
+      t,
+      score: Math.max(...groups.map((g) => scoreTemplate(t, answers, g, dayIndex, strengthUsed)))
+    }))
     .filter((row) => row.score > 0)
     .sort((a, b) => b.score - a.score);
 
   const rng = seededRng(`${site || 'main'}:${dayIndex}:${answers?.goalPhysique || ''}`);
-  const eligible = candidates.filter(
-    (row) => !usedKeys.has(row.t.dbKey) && groups.includes(row.t.group)
-  );
+  const eligible = candidates.filter((row) => {
+    if (!groups.includes(row.t.group)) return false;
+    if (usedKeys.has(row.t.dbKey)) return false;
+    if (modality !== 'strength' || !strengthUsed) return true;
+    const lastDay = strengthUsed.get(row.t.dbKey);
+    if (lastDay == null) return true;
+    return dayIndex - lastDay >= 2;
+  });
   const weightedRows = pickWeightedTemplates(eligible, count, rng);
 
   const picked = [];
@@ -291,6 +316,65 @@ function pickExercisesForContext(answers, blueprint, {
     }
   }
 
+  picked.forEach((ex) => {
+    if (modality === 'strength' && ex.exerciseBankKey && strengthUsed) {
+      strengthUsed.set(ex.exerciseBankKey, dayIndex);
+    }
+  });
+
+  return picked;
+}
+
+function planCardioSessionExercises(answers, blueprint, profile, dayIndex, weekUsedKeys, count) {
+  const site = profile?.site || 'outdoor';
+  const usedKeys = new Set();
+  const groups = ['cardio'];
+  let picked = pickExercisesForContext(answers, blueprint, {
+    groups,
+    count: Math.max(4, count),
+    site,
+    dayIndex,
+    usedKeys,
+    modality: 'cardio',
+    weekUsedKeys
+  });
+
+  if (picked.length < 3) {
+    const fallbackSite = site === 'track' ? 'outdoor' : site;
+    const extra = pickExercisesForContext(answers, blueprint, {
+      groups,
+      count: 4,
+      site: fallbackSite,
+      dayIndex: dayIndex + 20,
+      usedKeys,
+      modality: 'cardio',
+      weekUsedKeys: null
+    });
+    const seen = new Set(picked.map((e) => e.exerciseBankKey));
+    extra.forEach((ex) => {
+      if (!seen.has(ex.exerciseBankKey) && picked.length < Math.max(4, count)) {
+        picked.push(ex);
+        seen.add(ex.exerciseBankKey);
+      }
+    });
+  }
+
+  if (picked.length < 2) {
+    ['burpees', 'mountain climbers', 'corde à sauter', 'course endurance fondamentale'].forEach((dbKey, i) => {
+      if (picked.length >= 4) return;
+      const ex = buildProgramExerciseFromDbKey(dbKey, answers, blueprint, {
+        idSuffix: `_cardio_fb_${dayIndex}_${i}`
+      });
+      if (ex) picked.push(ex);
+    });
+  }
+
+  picked.forEach((ex) => {
+    if (ex.exerciseBankKey === 'course endurance fondamentale') {
+      weekUsedKeys?.add('course endurance fondamentale');
+    }
+  });
+
   return picked;
 }
 
@@ -315,29 +399,21 @@ function planCardioAddonBlock(answers, blueprint, profile, dayIndex, usedKeys, w
   }));
 }
 
-export function planMainSessionExercises(answers, blueprint, dayIndex, profile, weekUsedKeys) {
+export function planMainSessionExercises(
+  answers,
+  blueprint,
+  dayIndex,
+  profile,
+  weekUsedKeys,
+  weekStrengthUsedKeys
+) {
   const count = parseExerciseCountHint(blueprint, answers);
   const modality = profile?.modality || 'strength';
   const site = profile?.site ?? null;
   const usedKeys = new Set();
 
   if (modality === 'cardio') {
-    const groups = ['cardio'];
-    const picked = pickExercisesForContext(answers, blueprint, {
-      groups,
-      count,
-      site,
-      dayIndex,
-      usedKeys,
-      modality: 'cardio',
-      weekUsedKeys
-    });
-    picked.forEach((ex) => {
-      if (ex.exerciseBankKey === 'course endurance fondamentale') {
-        weekUsedKeys?.add('course endurance fondamentale');
-      }
-    });
-    return trimExercisesToSessionBudget(picked, answers);
+    return planCardioSessionExercises(answers, blueprint, profile, dayIndex, weekUsedKeys, count);
   }
 
   const strengthGroups = (profile?.groups || groupTargetsFromQuiz(answers)).filter((g) => g !== 'cardio');
@@ -350,7 +426,8 @@ export function planMainSessionExercises(answers, blueprint, dayIndex, profile, 
     dayIndex,
     usedKeys,
     modality: 'strength',
-    weekUsedKeys
+    weekUsedKeys,
+    weekStrengthUsedKeys
   });
   picked = trimExercisesToSessionBudget(picked, answers);
 
@@ -392,6 +469,9 @@ export function injectQuizExercisePlan(schedule, answers, activeDayKeys, weekPro
   const alternation = resolveAlternationSites(answers);
   const profiles = weekProfiles || planWeekSessionProfiles(activeDayKeys, answers);
   const weekUsedKeys = new Set();
+  /** dbKey → dernier dayIndex force (répétition autorisée tous les 2+ jours). */
+  const weekStrengthUsedKeys = new Map();
+  const globalTier = overallStrengthTier(answers);
 
   if (!alternation) {
     stripSalleVariantsFromSchedule(schedule);
@@ -405,7 +485,14 @@ export function injectQuizExercisePlan(schedule, answers, activeDayKeys, weekPro
     const existing = Array.isArray(slot.exercises)
       ? slot.exercises.filter((ex) => !String(ex.id).startsWith('quiz_base_'))
       : [];
-    const planned = planMainSessionExercises(answers, blueprint, dayIndex, profile, weekUsedKeys);
+    const planned = planMainSessionExercises(
+      answers,
+      blueprint,
+      dayIndex,
+      profile,
+      weekUsedKeys,
+      weekStrengthUsedKeys
+    );
     slot.exercises = [...existing, ...planned];
     slot.quizSessionProfile = profile;
 

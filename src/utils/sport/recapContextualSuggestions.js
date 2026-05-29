@@ -246,37 +246,35 @@ export function buildRecapContextualSuggestions(opts = {}) {
           priority: 97,
           text: `Aujourd’hui (${label}) : ${checked}/${total} exercices cochés sur « ${slot.title} ».${missTxt}`
         });
-      } else if (total > 0) {
+      } else if (total > 0 && stepsWeek.sum < 8000) {
         out.push({
           kind: 'program_today_pending',
-          priority: 96,
-          text: `Aujourd’hui (${label}) : séance prévue « ${slot.title} » (${total} exercice${total > 1 ? 's' : ''}) — rien de coché pour l’instant dans ${programName}.`
-        });
-      } else if (!hasAnyCheckOnDate(snapshot, todayYmd)) {
-        out.push({
-          kind: 'program_today_empty',
-          priority: 90,
-          text: `Aujourd’hui (${label}) : jour d’entraînement dans ${programName} — coche les exercices ou saisis tes reps pour que le Récap suive ta séance.`
+          priority: 72,
+          text: `Aujourd’hui (${label}) : « ${slot.title} » prévu (${total} ex.) — quand tu t’entraînes, une validation rapide affine les stats (pas déjà ~${stepsWeek.sum.toLocaleString('fr-FR')} cette semaine).`
         });
       }
-    } else if (weekPlanned.length > 0 && !weekPlanned.some((d) => hasAnyCheckOnDate(snapshot, d.ymd))) {
+    } else if (
+      weekPlanned.length > 0 &&
+      !weekPlanned.some((d) => hasAnyCheckOnDate(snapshot, d.ymd)) &&
+      stepsWeek.sum < 12000
+    ) {
       out.push({
         kind: 'program_week_no_touch',
-        priority: 88,
-        text: `Cette semaine (calendrier) : aucune séance du programme « ${programName} » n’a encore été validée — commence par le prochain jour prévu.`
+        priority: 68,
+        text: `Programme « ${programName} » : peu de validations cette semaine — si tu t’entraînes hors suivi, note au moins une séance pour personnaliser les conseils.`
       });
     }
 
     if (pastWeek.length > 0) {
       const donePast = pastWeek.filter((d) => hasAnyCheckOnDate(snapshot, d.ymd)).length;
       const pct = Math.round((donePast / pastWeek.length) * 100);
-      if (donePast === 0) {
+      if (donePast === 0 && stepsWeek.sum < 10000) {
         out.push({
           kind: 'program_week_missed',
-          priority: 85,
-          text: `Semaine en cours : ${pastWeek.length} séance${pastWeek.length > 1 ? 's' : ''} déjà passée${pastWeek.length > 1 ? 's' : ''} dans ${programName}, aucune cochée — une séance courte vaut mieux qu’un trou complet.`
+          priority: 70,
+          text: `Semaine en cours : séances passées sans validation dans ${programName} — une séance courte ou des pas comptent déjà dans ta charge globale.`
         });
-      } else if (pct < 50) {
+      } else if (pct < 50 && stepsWeek.sum < 15000) {
         out.push({
           kind: 'program_week_low',
           priority: 84,
@@ -353,11 +351,15 @@ export function buildRecapContextualSuggestions(opts = {}) {
         text: `Cette semaine : ~${Math.round(repsWeek)} reps saisies — continue à cocher les exercices du programme pour affiner les tendances.`
       });
     }
-  } else if (schedule && enumeratePlannedDays(schedule, week.startYmd, week.endYmd).length > 0) {
+  } else if (
+    schedule &&
+    enumeratePlannedDays(schedule, week.startYmd, week.endYmd).length > 0 &&
+    stepsWeek.sum < 8000
+  ) {
     out.push({
       kind: 'reps_week_zero',
-      priority: 86,
-      text: `Cette semaine : séances prévues dans ${programName} mais aucune rep cochée — valide au moins les exercices faits pour des conseils précis.`
+      priority: 65,
+      text: `Peu de reps saisies cette semaine malgré le planning ${programName} — les pas ou une sortie cardio comptent déjà si tu n’as pas tout noté.`
     });
   }
 
@@ -479,8 +481,8 @@ export function buildRecapContextualSuggestions(opts = {}) {
     if (sla.avgScore0to100 < 42) {
       out.push({
         kind: 'load_gap_week',
-        priority: 80,
-        text: `Charge réalisée souvent en dessous du prévu (${programName}) sur les séances récentes — coche les exos et saisis les reps pour coller au plan.`
+        priority: 62,
+        text: `Charge souvent sous le prévu (${programName}, ~${Math.round(sla.avgScore0to100)}/100) : déload, séance partielle ou saisie incomplète — les trois sont possibles.`
       });
     } else if (sla.avgScore0to100 > 88) {
       out.push({

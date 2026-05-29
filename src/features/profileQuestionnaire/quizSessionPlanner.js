@@ -17,17 +17,18 @@ const HOME_SITES = new Set(['home_minimal', 'home_gym']);
 const STREET_SITES = new Set(['outdoor', 'track']);
 const GYM_SITES = new Set(['commercial_gym', 'home_gym']);
 
-/** Jours dédiés cardio max selon désir cardio et nombre de séances / semaine. */
+/** Jours dédiés cardio (1 → 5 max) selon `cardioTrainingDesire`, plafonné par les jours actifs. */
 function maxDedicatedCardioDays(activeCount, cardioDesire) {
   if (activeCount <= 0) return 0;
-  const map = {
-    minimal: 0,
-    light: activeCount >= 4 ? 1 : 0,
-    moderate: Math.min(2, Math.max(1, Math.floor(activeCount / 3))),
-    high: Math.min(3, Math.ceil(activeCount / 2.5)),
-    priority_hiit: Math.min(4, Math.ceil(activeCount / 2))
+  const desireMap = {
+    minimal: 1,
+    light: 2,
+    moderate: 3,
+    high: 4,
+    priority_hiit: 5
   };
-  return map[cardioDesire] ?? map.moderate;
+  const target = desireMap[cardioDesire] ?? desireMap.moderate;
+  return Math.min(activeCount, Math.max(1, target));
 }
 
 function resolveTrainingSites(answers) {
@@ -91,11 +92,10 @@ function muscleRotationGroups(answers) {
   return groups;
 }
 
+/** Un seul bloc muscle principal par jour pour éviter 3 séances identiques. */
 function groupsForDayIndex(muscleGroups, dayIndex) {
-  if (muscleGroups.length <= 2) return [...muscleGroups];
-  const a = muscleGroups[dayIndex % muscleGroups.length];
-  const b = muscleGroups[(dayIndex + 1) % muscleGroups.length];
-  return a === b ? [a] : [a, b];
+  if (!muscleGroups.length) return ['upper'];
+  return [muscleGroups[dayIndex % muscleGroups.length]];
 }
 
 function addonCardioDayCount(activeCount, answers) {
@@ -133,9 +133,12 @@ export function planWeekSessionProfiles(activeDayKeys, answers) {
 
   const cardioIndices = new Set();
   if (dedicatedCardioSlots > 0 && n > 0) {
-    const step = Math.max(1, Math.floor(n / dedicatedCardioSlots));
     for (let i = 0; i < dedicatedCardioSlots; i += 1) {
-      cardioIndices.add(Math.min(n - 1, i * step));
+      const idx =
+        dedicatedCardioSlots === 1
+          ? Math.floor((n - 1) / 2)
+          : Math.round((i * (n - 1)) / Math.max(1, dedicatedCardioSlots - 1));
+      cardioIndices.add(Math.min(n - 1, Math.max(0, idx)));
     }
   }
 
