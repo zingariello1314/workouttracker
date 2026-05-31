@@ -367,7 +367,7 @@ export const validateMetricsForm = (formData, existingEntries = [], options = {}
  */
 export const validateImpedanceForm = (formData, existingEntries = [], options = {}) => {
   const errors = {};
-  const { skipDuplicateCheck = false, skipConsistencyCheck = false } = options;
+  const { skipDuplicateCheck = false, skipConsistencyCheck = false, excludeEntryId = null } = options;
 
   const dateValidationRequired = validateDate(formData.date);
   if (dateValidationRequired) {
@@ -462,7 +462,8 @@ export const validateImpedanceForm = (formData, existingEntries = [], options = 
     const duplicateValidation = validateDuplicateEntry(
       formData.date,
       'impedance',
-      existingEntries
+      existingEntries,
+      excludeEntryId
     );
     if (duplicateValidation) {
       errors.date = duplicateValidation.error;

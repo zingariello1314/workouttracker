@@ -3,6 +3,8 @@
  * (impédancemètre facultatif — pourcentage de graisse si disponible)
  */
 
+import { mifflinStJeorBmr, normalizeSexForBmr } from './metabolicBmr';
+
 /** @typedef {{ heightCm?: number, weightKg?: number, age?: number, sex?: 'male'|'female'|'other', bodyFatPercent?: number|null, activityFactor?: number, goal?: string, weeklyWeightDeltaKg?: number }} ProfileInput */
 
 /** Dernières mesures impédance utiles pour pré-remplir le profil */
@@ -95,14 +97,12 @@ export function adaptProgramFromLatestImpedance(program, progressEntries = [], o
 }
 
 function mifflinBmr({ weightKg, heightCm, age, sex }) {
-  const w = Number(weightKg);
-  const h = Number(heightCm);
-  const a = Number(age);
-  if (!w || !h || !a) return null;
-  const base = 10 * w + 6.25 * h - 5 * a;
-  if (sex === 'female') return base - 161;
-  if (sex === 'male') return base + 5;
-  return base - 78; // intermédiaire
+  return mifflinStJeorBmr({
+    weightKg,
+    heightCm,
+    ageYears: age,
+    sex: normalizeSexForBmr(sex)
+  });
 }
 
 function katchBmr(weightKg, bodyFatPercent) {

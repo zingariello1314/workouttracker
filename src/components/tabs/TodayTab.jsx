@@ -54,6 +54,11 @@ import {
   stripSessionPerceivedForKeys
 } from '../../utils/exerciseSessionPerceivedModel';
 import { computeTodaySessionComplexity } from '../../utils/todaySessionScore';
+import {
+  computeWeeklyWeighInReminder,
+  weighInReminderMessageFr,
+  weighInReminderTitleFr
+} from '../../utils/bodyTracking/weeklyWeighInReminder';
 import RecordPerformanceModal from '../sport/performance/RecordPerformanceModal';
 import { applyPerformanceEntryToData } from '../../utils/exercisePerformanceUtils';
 import {
@@ -1272,18 +1277,19 @@ const TodayTab = () => {
     await updateData(next);
   }, [getCurrentData, dateStr, updateData]);
 
-  const weighInReminderDue = useMemo(() => {
-    const cfg = data?.bodyTrackingPrefs?.weeklyWeighInDay;
-    if (cfg === undefined || cfg === null) return false;
-    const day = new Date(currentDate).getDay();
-    if (day !== cfg) return false;
-    const key = dateStr.slice(0, 10);
-    const entries = getCurrentData()?.progressEntries || [];
-    const hasToday = entries.some(
-      (e) => e && e.type === 'impedance' && e.date && String(e.date).slice(0, 10) === key
-    );
-    return !hasToday;
-  }, [data?.bodyTrackingPrefs?.weeklyWeighInDay, currentDate, dateStr, getCurrentData, data?.progressEntries]);
+  const weighInReminder = useMemo(() => {
+    const entries = getCurrentData()?.progressEntries || data?.progressEntries || [];
+    return computeWeeklyWeighInReminder({
+      weeklyWeighInDay: data?.bodyTrackingPrefs?.weeklyWeighInDay,
+      viewDate: currentDate,
+      progressEntries: entries
+    });
+  }, [
+    data?.bodyTrackingPrefs?.weeklyWeighInDay,
+    currentDate,
+    getCurrentData,
+    data?.progressEntries
+  ]);
 
   // Calculer la variante de semaine automatique (toujours basée sur la date)
   const currentWeekVariant = getAutoWeekVariant(currentDate);
@@ -1757,8 +1763,8 @@ const TodayTab = () => {
         return hasNoActivity ? <DayJustificationButton date={currentDate} /> : null;
       })()}
 
-      {/* Rappel pesée (jour configuré dans Impédancemètre) */}
-      {weighInReminderDue && (
+      {/* Rappel pesée hebdomadaire (jour configuré dans Impédancemètre) */}
+      {weighInReminder.show ? (
         <button
           type="button"
           onClick={() => {
@@ -1769,22 +1775,35 @@ const TodayTab = () => {
             }
             setActiveTab?.('progress');
           }}
-          className="mb-3 flex w-full items-start gap-3 rounded-xl border-2 border-amber-500/50 bg-amber-950/40 p-4 text-left transition hover:border-amber-400/70"
+          className="mb-3 flex w-full items-start gap-3 rounded-xl border-2 border-amber-500/50 bg-amber-950/40 p-4 text-left transition hover:border-amber-400/70 hover:bg-amber-950/55"
         >
           <Scale className="mt-0.5 h-8 w-8 shrink-0 text-amber-300" />
-          <div>
+          <div className="min-w-0 flex-1">
             <div className="text-base font-semibold text-amber-100">
-              {t('today.weighIn.title', 'Pèsée attendue')}
+              {t(
+                'today.weighIn.title',
+                weighInReminderTitleFr(weighInReminder.daysOverdue)
+              )}
             </div>
             <p className="mt-1 text-sm text-amber-200/85">
               {t(
                 'today.weighIn.hint',
-                "Aujourd'hui est ton jour de mesure. Touche pour ouvrir Suivi corporel → Impédancemètre et enregistrer ta pesée."
+                weighInReminderMessageFr(weighInReminder.daysOverdue)
               )}
             </p>
+            {weighInReminder.dueDateYmd ? (
+              <p className="mt-1 text-xs text-amber-300/70">
+                Jour de pesée prévu :{' '}
+                {new Date(`${weighInReminder.dueDateYmd}T12:00:00`).toLocaleDateString('fr-FR', {
+                  weekday: 'long',
+                  day: 'numeric',
+                  month: 'long'
+                })}
+              </p>
+            ) : null}
           </div>
         </button>
-      )}
+      ) : null}
 
       {Array.isArray(activeNutritionProgram?.mealPlanPreferences?.generatedMealPlan) &&
       activeNutritionProgram.mealPlanPreferences.generatedMealPlan.length > 0 ? (

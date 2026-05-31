@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo, useEffect, useCallback } from 'react';
 import { 
   Activity, 
   Zap, 
@@ -14,9 +14,21 @@ import {
   AlertTriangle,
   Target,
   BarChart3,
-  Scale
+  Scale,
+  Calculator,
+  Pencil,
+  Trash2,
+  X,
+  History
 } from 'lucide-react';
 import { useWorkout } from '../../context/WorkoutContext';
+import { useAuth } from '../../context/AuthContext';
+import {
+  canComputeMifflinStJeor,
+  mifflinFormulaHintFr,
+  mifflinStJeorBmr,
+  normalizeSexForBmr
+} from '../../utils/metabolicBmr';
 import { useGarminData } from '../../hooks/useGarminData'; // ✅ Pour métabolisme de base Garmin
 import Card, { CardHeader, CardTitle, CardContent } from '../ui/Card';
 import Button from '../ui/Button';
@@ -27,8 +39,113 @@ import logger from '../../utils/logger';
 
 const log = logger.component('ImpedanceSection');
 
+const EMPTY_IMPEDANCE_FORM = {
+  weight: '',
+  heightCm: '',
+  chronologicalAge: '',
+  bmi: '',
+  bodyFatPercentage: '',
+  muscleMass: '',
+  bodyFatMass: '',
+  bodyFatIndex: '',
+  obesityLevel: '',
+  visceralFatIndex: '',
+  fatFreeWeight: '',
+  bodyWater: '',
+  boneMass: '',
+  proteinPercentage: '',
+  biologicalSex: '',
+  basalMetabolism: '',
+  basalMetabolismSource: '',
+  metabolicAge: '',
+  bodyType: '',
+  date: '',
+  notes: ''
+};
+
+function ymdFromEntry(entry) {
+  if (!entry?.date) return new Date().toISOString().split('T')[0];
+  const d = new Date(entry.date);
+  if (Number.isNaN(d.getTime())) return String(entry.date).slice(0, 10);
+  return d.toISOString().split('T')[0];
+}
+
+function strField(v) {
+  return v != null && v !== '' ? String(v) : '';
+}
+
+function entryToFormData(entry) {
+  return {
+    weight: strField(entry.weight),
+    heightCm: strField(entry.heightCm),
+    chronologicalAge: strField(entry.chronologicalAge),
+    bmi: strField(entry.bmi),
+    bodyFatPercentage: strField(entry.bodyFatPercentage),
+    muscleMass: strField(entry.muscleMass ?? entry.skeletalMuscle),
+    bodyFatMass: strField(entry.bodyFatMass),
+    bodyFatIndex: strField(entry.bodyFatIndex),
+    obesityLevel: strField(entry.obesityLevel),
+    visceralFatIndex: strField(entry.visceralFatIndex ?? entry.visceralFat),
+    fatFreeWeight: strField(entry.fatFreeWeight),
+    bodyWater: strField(entry.bodyWater),
+    boneMass: strField(entry.boneMass),
+    proteinPercentage: strField(entry.proteinPercentage ?? entry.protein),
+    biologicalSex: strField(entry.biologicalSex),
+    basalMetabolism: strField(entry.basalMetabolism),
+    basalMetabolismSource: strField(entry.basalMetabolismSource),
+    metabolicAge: strField(entry.metabolicAge),
+    bodyType: strField(entry.bodyType),
+    date: ymdFromEntry(entry),
+    notes: strField(entry.notes)
+  };
+}
+
+function buildParsedImpedanceEntry(formData, { garminBasalMetabolism } = {}) {
+  const entry = {
+    ...formData,
+    timestamp: new Date(formData.date).getTime()
+  };
+
+  if (entry.basalMetabolism && !entry.basalMetabolismSource) {
+    entry.basalMetabolismSource = 'manual';
+  }
+  if (
+    garminBasalMetabolism &&
+    !entry.basalMetabolism &&
+    entry.basalMetabolismSource !== 'mifflin_st_jeor'
+  ) {
+    entry.basalMetabolism = garminBasalMetabolism.value;
+    entry.basalMetabolismSource = 'garmin';
+  }
+
+  const stringKeys = new Set([
+    'date',
+    'notes',
+    'bodyType',
+    'timestamp',
+    'basalMetabolismSource',
+    'biologicalSex',
+    'type'
+  ]);
+  Object.keys(entry).forEach((key) => {
+    if (stringKeys.has(key) || entry[key] === '' || entry[key] == null) return;
+    if (key === 'chronologicalAge') {
+      entry[key] = Math.round(parseFloat(entry[key]));
+      return;
+    }
+    if (key === 'heightCm' || key === 'weight' || key === 'bmi') {
+      entry[key] = parseFloat(entry[key]);
+      return;
+    }
+    entry[key] = parseFloat(entry[key]);
+  });
+
+  return { ...entry, type: 'impedance' };
+}
+
 const ImpedanceSection = () => {
-  const { data, addProgressEntry, updateData } = useWorkout();
+  const { data, addProgressEntry, updateProgressEntry, deleteProgressEntry, updateData } = useWorkout();
+  const { currentUser } = useAuth();
   const { showSuccess, showError, showInfo, ToastContainer } = useToast();
   const { loadAllData, dbReady } = useGarminData();
   const [garminBasalMetabolism, setGarminBasalMetabolism] = useState(null);
@@ -82,7 +199,9 @@ const ImpedanceSection = () => {
     bodyWater: '',                // Eau du corps en pourcentage
     boneMass: '',                 // Masse osseuse en kilogrammes
     proteinPercentage: '',        // Taux de protéines en pourcent
-    basalMetabolism: '',          // Taux métabolique basal (préférer Garmin)
+    biologicalSex: '',              // Homme / femme (quiz ou saisie) — Mifflin–St Jeor
+    basalMetabolism: '',          // Taux métabolique basal (kcal)
+    basalMetabolismSource: '',    // mifflin_st_jeor | garmin | manual | scale
     metabolicAge: '',             // Âge métabolique
     bodyType: '',                 // Type de corps
     date: new Date().toISOString().split('T')[0],
@@ -90,55 +209,134 @@ const ImpedanceSection = () => {
   });
 
   const [errors, setErrors] = useState({});
+  const [editingEntryId, setEditingEntryId] = useState(null);
 
-  // 🔍 CHARGER LA DERNIÈRE MESURE D'IMPÉDANCE DEPUIS INDEXEDDB
-  const lastMeasurement = useMemo(() => {
-    if (!data?.progressEntries || data.progressEntries.length === 0) {
-      return null;
-    }
-
-    // Filtrer les entrées de type 'impedance' et trier par date décroissante
-    const impedanceEntries = data.progressEntries
-      .filter(entry => entry.type === 'impedance')
+  const impedanceHistory = useMemo(() => {
+    if (!data?.progressEntries?.length) return [];
+    return data.progressEntries
+      .filter((entry) => entry.type === 'impedance')
       .sort((a, b) => {
-        const dateA = a.date ? new Date(a.date) : (a.timestamp ? new Date(a.timestamp) : new Date(0));
-        const dateB = b.date ? new Date(b.date) : (b.timestamp ? new Date(b.timestamp) : new Date(0));
-        return dateB - dateA; // Plus récent en premier
+        const dateA = a.date ? new Date(a.date) : new Date(a.timestamp || 0);
+        const dateB = b.date ? new Date(b.date) : new Date(b.timestamp || 0);
+        return dateB - dateA;
       });
+  }, [data?.progressEntries]);
 
-    if (impedanceEntries.length === 0) {
-      return null;
-    }
+  const lastMeasurement = useMemo(() => {
+    const lastEntry = impedanceHistory[0];
+    if (!lastEntry) return null;
 
-    const lastEntry = impedanceEntries[0];
-    
-    // Normaliser la date
-    const entryDate = lastEntry.date 
-      ? new Date(lastEntry.date) 
-      : (lastEntry.timestamp ? new Date(lastEntry.timestamp) : new Date());
+    const entryDate = lastEntry.date
+      ? new Date(lastEntry.date)
+      : new Date(lastEntry.timestamp || Date.now());
 
-    // Retourner avec mapping des anciens champs vers nouveaux si nécessaire
     return {
-      weight: lastEntry.weight || null,
-      bmi: lastEntry.bmi || null,
-      bodyFatPercentage: lastEntry.bodyFatPercentage || null,
-      muscleMass: lastEntry.muscleMass || lastEntry.skeletalMuscle || null, // Compatibilité
-      bodyFatMass: lastEntry.bodyFatMass || null,
-      bodyFatIndex: lastEntry.bodyFatIndex || null,
-      obesityLevel: lastEntry.obesityLevel || null,
-      visceralFatIndex: lastEntry.visceralFatIndex || lastEntry.visceralFat || null, // Compatibilité
-      fatFreeWeight: lastEntry.fatFreeWeight || null,
-      bodyWater: lastEntry.bodyWater || null,
-      boneMass: lastEntry.boneMass || null,
-      proteinPercentage: lastEntry.proteinPercentage || lastEntry.protein || null, // Compatibilité
-      basalMetabolism: lastEntry.basalMetabolism || null,
-      metabolicAge: lastEntry.metabolicAge || null,
-      bodyType: lastEntry.bodyType || null,
-      heightCm: lastEntry.heightCm != null ? lastEntry.heightCm : null,
-      chronologicalAge: lastEntry.chronologicalAge != null ? lastEntry.chronologicalAge : null,
+      id: lastEntry.id,
+      weight: lastEntry.weight ?? null,
+      bmi: lastEntry.bmi ?? null,
+      bodyFatPercentage: lastEntry.bodyFatPercentage ?? null,
+      muscleMass: lastEntry.muscleMass ?? lastEntry.skeletalMuscle ?? null,
+      bodyFatMass: lastEntry.bodyFatMass ?? null,
+      bodyFatIndex: lastEntry.bodyFatIndex ?? null,
+      obesityLevel: lastEntry.obesityLevel ?? null,
+      visceralFatIndex: lastEntry.visceralFatIndex ?? lastEntry.visceralFat ?? null,
+      fatFreeWeight: lastEntry.fatFreeWeight ?? null,
+      bodyWater: lastEntry.bodyWater ?? null,
+      boneMass: lastEntry.boneMass ?? null,
+      proteinPercentage: lastEntry.proteinPercentage ?? lastEntry.protein ?? null,
+      basalMetabolism: lastEntry.basalMetabolism ?? null,
+      metabolicAge: lastEntry.metabolicAge ?? null,
+      bodyType: lastEntry.bodyType ?? null,
+      heightCm: lastEntry.heightCm ?? null,
+      chronologicalAge: lastEntry.chronologicalAge ?? null,
+      biologicalSex: lastEntry.biologicalSex ?? null,
       date: entryDate
     };
-  }, [data?.progressEntries]);
+  }, [impedanceHistory]);
+
+  const quizSex = currentUser?.profileQuestionnaire?.answers?.vitalsSelfReport?.sex;
+
+  const resetFormForNewEntry = useCallback(() => {
+    setEditingEntryId(null);
+    setFormData((prev) => ({
+      ...EMPTY_IMPEDANCE_FORM,
+      date: new Date().toISOString().split('T')[0],
+      biologicalSex: prev.biologicalSex || quizSex || ''
+    }));
+    setErrors({});
+  }, [quizSex]);
+
+  const startEditEntry = useCallback((entry) => {
+    if (!entry?.id) return;
+    setEditingEntryId(entry.id);
+    setFormData(entryToFormData(entry));
+    setErrors({});
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }, []);
+
+  const handleDeleteEntry = useCallback(
+    async (entry) => {
+      if (!entry?.id) return;
+      const label = formatDate(entry.date ? new Date(entry.date) : new Date(entry.timestamp || Date.now()));
+      if (!window.confirm(`Supprimer la mesure du ${label} ? Cette action est irréversible.`)) {
+        return;
+      }
+      try {
+        await deleteProgressEntry(entry.id);
+        if (editingEntryId === entry.id) {
+          resetFormForNewEntry();
+        }
+        showSuccess('Mesure supprimée');
+      } catch (err) {
+        log.error('Suppression impédance', err);
+        showError('Impossible de supprimer cette mesure.');
+      }
+    },
+    [deleteProgressEntry, editingEntryId, resetFormForNewEntry, showSuccess, showError]
+  );
+
+  useEffect(() => {
+    if (formData.biologicalSex !== '') return;
+    if (quizSex === 'male' || quizSex === 'female') {
+      setFormData((prev) => ({ ...prev, biologicalSex: quizSex }));
+    }
+  }, [quizSex, formData.biologicalSex]);
+
+  const mifflinInputs = useMemo(
+    () => ({
+      weightKg: formData.weight,
+      heightCm: formData.heightCm || data?.userProfile?.height,
+      ageYears: formData.chronologicalAge,
+      sex: formData.biologicalSex || quizSex
+    }),
+    [
+      formData.weight,
+      formData.heightCm,
+      formData.chronologicalAge,
+      formData.biologicalSex,
+      quizSex,
+      data?.userProfile?.height
+    ]
+  );
+
+  const mifflinPreviewBmr = useMemo(() => {
+    if (!canComputeMifflinStJeor(mifflinInputs)) return null;
+    return mifflinStJeorBmr(mifflinInputs);
+  }, [mifflinInputs]);
+
+  const handleCalculateMifflinBmr = () => {
+    const bmr = mifflinStJeorBmr(mifflinInputs);
+    if (bmr == null) {
+      showError('Renseigne d’abord le poids, la taille et l’âge réel (et le sexe si possible).');
+      return;
+    }
+    setFormData((prev) => ({
+      ...prev,
+      basalMetabolism: String(bmr),
+      basalMetabolismSource: 'mifflin_st_jeor'
+    }));
+    showSuccess(`Taux métabolique basal estimé : ${bmr} kcal/j (Mifflin–St Jeor)`);
+  };
 
   // Profil utilisateur : proposer la taille enregistrée si le champ est encore vide
   useEffect(() => {
@@ -151,11 +349,14 @@ const ImpedanceSection = () => {
   }, [data?.userProfile?.height]);
 
   const handleInputChange = (field, value) => {
-    setFormData(prev => ({
-      ...prev,
-      [field]: value
-    }));
-    
+    setFormData((prev) => {
+      const next = { ...prev, [field]: value };
+      if (field === 'basalMetabolism') {
+        next.basalMetabolismSource = value ? 'manual' : prev.basalMetabolismSource;
+      }
+      return next;
+    });
+
     if (errors[field]) {
       setErrors(prev => ({
         ...prev,
@@ -179,13 +380,20 @@ const ImpedanceSection = () => {
     }
   }, [formData.weight, formData.heightCm, formData.bmi, data?.userProfile?.height]);
 
-  // ✅ Préremplir métabolisme de base avec valeur Garmin si disponible et champ vide
+  // Préremplir métabolisme Garmin seulement si champ vide (ne pas écraser un calcul Mifflin)
   useEffect(() => {
-    if (garminBasalMetabolism && !formData.basalMetabolism) {
-      setFormData(prev => ({ ...prev, basalMetabolism: String(garminBasalMetabolism.value) }));
-      log.debug('Métabolisme Garmin prérempli dans formulaire', { value: garminBasalMetabolism.value });
+    if (editingEntryId) return;
+    if (!garminBasalMetabolism || formData.basalMetabolism) return;
+    if (formData.basalMetabolismSource === 'mifflin_st_jeor' || formData.basalMetabolismSource === 'manual') {
+      return;
     }
-  }, [garminBasalMetabolism]);
+    setFormData((prev) => ({
+      ...prev,
+      basalMetabolism: String(garminBasalMetabolism.value),
+      basalMetabolismSource: 'garmin'
+    }));
+    log.debug('Métabolisme Garmin prérempli dans formulaire', { value: garminBasalMetabolism.value });
+  }, [editingEntryId, garminBasalMetabolism, formData.basalMetabolism, formData.basalMetabolismSource]);
 
   // 🔍 Validation complète avec module centralisé
   const validateForm = () => {
@@ -203,11 +411,11 @@ const ImpedanceSection = () => {
     e.preventDefault();
     
     // ✅ Valider et afficher erreurs détaillées si présentes
-    const validationResult = validateImpedanceForm(
-      formData,
-      data?.progressEntries || [],
-      { skipDuplicateCheck: false, skipConsistencyCheck: false }
-    );
+    const validationResult = validateImpedanceForm(formData, data?.progressEntries || [], {
+      skipDuplicateCheck: false,
+      skipConsistencyCheck: false,
+      excludeEntryId: editingEntryId
+    });
     
     setErrors(validationResult.errors);
     
@@ -232,80 +440,26 @@ const ImpedanceSection = () => {
     }
     
     try {
-      const entry = {
-        ...formData,
-        timestamp: new Date(formData.date).getTime()
-      };
-      
-      // ✅ PRÉFÉRER métabolisme de base Garmin si disponible (plus juste selon utilisateur)
-      // Si Garmin disponible, l'utiliser même si utilisateur a saisi une valeur
-      if (garminBasalMetabolism) {
-        if (entry.basalMetabolism && entry.basalMetabolism !== garminBasalMetabolism.value) {
-          // Utilisateur a saisi une valeur différente -> utiliser Garmin et informer
-          showInfo(`Métabolisme Garmin préféré: ${garminBasalMetabolism.value} kcal (au lieu de ${entry.basalMetabolism} kcal saisie)`);
-        }
-        entry.basalMetabolism = garminBasalMetabolism.value;
-        entry.basalMetabolismSource = 'Garmin';
-      } else if (entry.basalMetabolism) {
-        // Pas de Garmin mais valeur saisie -> OK
-        entry.basalMetabolismSource = 'Manual';
+      const entryWithType = buildParsedImpedanceEntry(formData, { garminBasalMetabolism });
+
+      if (editingEntryId) {
+        await updateProgressEntry(editingEntryId, entryWithType);
+        showSuccess('Mesure mise à jour');
+        resetFormForNewEntry();
+        return;
       }
-      
-      const stringKeys = new Set(['date', 'notes', 'bodyType', 'timestamp', 'basalMetabolismSource', 'type']);
-      Object.keys(entry).forEach((key) => {
-        if (stringKeys.has(key) || entry[key] === '' || entry[key] == null) return;
-        if (key === 'chronologicalAge') {
-          entry[key] = Math.round(parseFloat(entry[key]));
-          return;
-        }
-        if (key === 'heightCm' || key === 'weight' || key === 'bmi') {
-          entry[key] = parseFloat(entry[key]);
-          return;
-        }
-        entry[key] = parseFloat(entry[key]);
-      });
-      
-      // Ajouter le type requis
-      const entryWithType = {
-        ...entry,
-        type: 'impedance'
-      };
-      
-      // Sauvegarder
+
       const result = await addProgressEntry(entryWithType);
-      
+
       if (result?.action === 'replaced') {
-        showInfo('Mesure d\'impédancemétrie mise à jour (remplacement de l\'entrée existante)');
+        showInfo("Mesure d'impédancemétrie mise à jour (remplacement de l'entrée existante)");
       } else if (result?.action === 'merged') {
         showInfo('Données fusionnées avec entrée existante');
       } else {
-        showSuccess('Mesure d\'impédancemétrie enregistrée avec succès');
+        showSuccess("Mesure d'impédancemétrie enregistrée avec succès");
       }
-      
-      // Réinitialiser le formulaire
-      setFormData({
-        weight: '',
-        heightCm: '',
-        chronologicalAge: '',
-        bmi: '',
-        bodyFatPercentage: '',
-        muscleMass: '',
-        bodyFatMass: '',
-        bodyFatIndex: '',
-        obesityLevel: '',
-        visceralFatIndex: '',
-        fatFreeWeight: '',
-        bodyWater: '',
-        boneMass: '',
-        proteinPercentage: '',
-        basalMetabolism: '',
-        metabolicAge: '',
-        bodyType: '',
-        date: new Date().toISOString().split('T')[0],
-        notes: ''
-      });
-      
-      setErrors({});
+
+      resetFormForNewEntry();
     } catch (error) {
       log.error('Erreur lors de la sauvegarde des données d\'impédance', error);
       showError(
@@ -342,6 +496,17 @@ const ImpedanceSection = () => {
           icon: <Heart className="w-4 h-4" />,
           description: 'Âge chronologique (différent de l’âge métabolique affiché plus bas)',
           inputStep: '1'
+        },
+        {
+          key: 'biologicalSex',
+          label: 'Sexe (formule BMR)',
+          unit: '',
+          icon: <Heart className="w-4 h-4" />,
+          description:
+            quizSex === 'male' || quizSex === 'female'
+              ? `Prérempli depuis ton profil quiz (${quizSex === 'male' ? 'homme' : 'femme'})`
+              : 'Requis pour un calcul Mifflin–St Jeor précis',
+          inputKind: 'sex'
         },
         {
           key: 'bmi',
@@ -447,9 +612,10 @@ const ImpedanceSection = () => {
           label: 'Taux métabolique basal',
           unit: 'kcal',
           icon: <Zap className="w-4 h-4" />,
-          description: garminBasalMetabolism 
-            ? `Préférer valeur Garmin: ${garminBasalMetabolism.value} kcal (${formatDate(garminBasalMetabolism.date)})`
-            : 'Calories brûlées au repos (Garmin disponible si connecté)'
+          description: garminBasalMetabolism
+            ? `Garmin : ${garminBasalMetabolism.value} kcal (${formatDate(garminBasalMetabolism.date)}) — ou calcule avec Mifflin–St Jeor`
+            : 'Calories au repos — utilise le bouton de calcul ou saisis la valeur de ta balance',
+          calculateMifflin: true
         },
         {
           key: 'metabolicAge',
@@ -486,6 +652,19 @@ const ImpedanceSection = () => {
           </CardTitle>
         </CardHeader>
         <CardContent>
+          {editingEntryId ? (
+            <div className="mb-4 flex flex-wrap items-center justify-between gap-2 rounded-lg border border-cyan-500/40 bg-cyan-950/30 px-3 py-2">
+              <p className="text-sm text-cyan-100">
+                <Pencil className="mr-1 inline h-4 w-4" />
+                Modification de la mesure du{' '}
+                <span className="font-medium">{formatDate(new Date(`${formData.date}T12:00:00`))}</span>
+              </p>
+              <Button type="button" variant="secondary" className="text-xs" onClick={resetFormForNewEntry}>
+                <X className="mr-1 h-3 w-3" />
+                Annuler
+              </Button>
+            </div>
+          ) : null}
           <form onSubmit={handleSubmit} className="space-y-6">
             {/* Date */}
             <div>
@@ -541,8 +720,8 @@ const ImpedanceSection = () => {
                 <option value="6">Samedi</option>
               </select>
               <p className="mt-2 text-xs text-teal-700">
-                Un bandeau « Pèsée attendue » apparaît ce jour-là au-dessus des exercices si aucune entrée impédance
-                n’est enregistrée pour la date du jour.
+                Un bandeau sur l’onglet Aujourd’hui apparaît à partir de ce jour tant qu’aucune mesure impédance n’a été
+                enregistrée pour la semaine (avec le nombre de jours de retard si tu passes le jour choisi).
               </p>
             </div>
 
@@ -560,29 +739,82 @@ const ImpedanceSection = () => {
                         <span className="ml-2">{metric.label}</span>
                         {metric.unit && <span className="text-teal-600"> ({metric.unit})</span>}
                       </label>
-                      <input
-                        type="number"
-                        step={metric.inputStep === 'any' ? 'any' : metric.inputStep || '0.1'}
-                        readOnly={Boolean(metric.readOnly)}
-                        aria-readonly={metric.readOnly ? 'true' : undefined}
-                        min={metric.unit?.includes('/') ? 0 : undefined}
-                        max={metric.unit === '/8' ? 8 : metric.unit === '/5' ? 5 : metric.unit === '/20' ? 20 : undefined}
-                        value={formData[metric.key]}
-                        onChange={(e) => {
-                          if (metric.readOnly) return;
-                          handleInputChange(metric.key, e.target.value);
-                        }}
-                        className={`w-full rounded-lg border bg-black px-3 py-2 text-teal-100 focus:outline-none focus:ring-2 focus:ring-[#0F5C45]/40 ${
-                          metric.readOnly ? 'cursor-not-allowed opacity-90' : ''
-                        } ${errors[metric.key] ? 'border-red-500' : 'border-[#0F4C5C]/55'}`}
-                        placeholder={
-                          metric.key === 'basalMetabolism' && garminBasalMetabolism
-                            ? `${garminBasalMetabolism.value} (Garmin recommandé)`
-                            : lastMeasurement?.[metric.key] 
-                            ? `Ex: ${lastMeasurement[metric.key]}${metric.unit || ''}` 
-                            : `Entrer ${metric.label.toLowerCase()}...`
-                        }
-                      />
+                      {metric.inputKind === 'sex' ? (
+                        <select
+                          value={formData.biologicalSex || ''}
+                          onChange={(e) => handleInputChange('biologicalSex', e.target.value)}
+                          className={`w-full rounded-lg border bg-black px-3 py-2 text-teal-100 focus:outline-none focus:ring-2 focus:ring-[#0F5C45]/40 ${
+                            errors.biologicalSex ? 'border-red-500' : 'border-[#0F4C5C]/55'
+                          }`}
+                        >
+                          <option value="">— Choisir —</option>
+                          <option value="male">Homme</option>
+                          <option value="female">Femme</option>
+                        </select>
+                      ) : (
+                        <input
+                          type="number"
+                          step={metric.inputStep === 'any' ? 'any' : metric.inputStep || '0.1'}
+                          readOnly={Boolean(metric.readOnly)}
+                          aria-readonly={metric.readOnly ? 'true' : undefined}
+                          min={metric.unit?.includes('/') ? 0 : undefined}
+                          max={
+                            metric.unit === '/8'
+                              ? 8
+                              : metric.unit === '/5'
+                                ? 5
+                                : metric.unit === '/20'
+                                  ? 20
+                                  : undefined
+                          }
+                          value={formData[metric.key]}
+                          onChange={(e) => {
+                            if (metric.readOnly) return;
+                            handleInputChange(metric.key, e.target.value);
+                          }}
+                          className={`w-full rounded-lg border bg-black px-3 py-2 text-teal-100 focus:outline-none focus:ring-2 focus:ring-[#0F5C45]/40 ${
+                            metric.readOnly ? 'cursor-not-allowed opacity-90' : ''
+                          } ${errors[metric.key] ? 'border-red-500' : 'border-[#0F4C5C]/55'}`}
+                          placeholder={
+                            metric.key === 'basalMetabolism' && garminBasalMetabolism
+                              ? `${garminBasalMetabolism.value} (Garmin)`
+                              : metric.key === 'basalMetabolism' && mifflinPreviewBmr
+                                ? `≈ ${mifflinPreviewBmr} kcal (Mifflin)`
+                                : lastMeasurement?.[metric.key]
+                                  ? `Ex: ${lastMeasurement[metric.key]}${metric.unit || ''}`
+                                  : `Entrer ${metric.label.toLowerCase()}...`
+                          }
+                        />
+                      )}
+                      {metric.calculateMifflin ? (
+                        <div className="mt-2 space-y-2">
+                          <Button
+                            type="button"
+                            variant="secondary"
+                            className="w-full text-xs sm:w-auto"
+                            disabled={!mifflinPreviewBmr}
+                            onClick={handleCalculateMifflinBmr}
+                          >
+                            <Calculator className="mr-2 inline h-4 w-4" />
+                            Calculer (Mifflin–St Jeor)
+                          </Button>
+                          {mifflinPreviewBmr ? (
+                            <p className="text-xs text-teal-600">
+                              Estimation : <span className="text-teal-300">{mifflinPreviewBmr} kcal/j</span>
+                              {' · '}
+                              {mifflinFormulaHintFr(formData.biologicalSex || quizSex)}
+                            </p>
+                          ) : (
+                            <p className="text-xs text-amber-500/90">
+                              Complète poids, taille et âge réel
+                              {!(formData.biologicalSex || quizSex) ? ' (et sexe pour plus de précision)' : ''}.
+                            </p>
+                          )}
+                          {formData.basalMetabolismSource === 'mifflin_st_jeor' && formData.basalMetabolism ? (
+                            <p className="text-xs text-sky-400">Valeur issue du calcul Mifflin–St Jeor.</p>
+                          ) : null}
+                        </div>
+                      ) : null}
                       {errors[metric.key] && (
                         <p className="text-red-400 text-sm mt-1 flex items-center gap-1">
                           <AlertTriangle className="w-3 h-3" />
@@ -658,22 +890,100 @@ const ImpedanceSection = () => {
               className="w-full border-2 border-[#0F5C45]/55 bg-[#0F5C45]/30 text-teal-100 hover:bg-[#0F5C45]/45"
             >
               <Save className="mr-2 h-4 w-4" />
-              Enregistrer les mesures
+              {editingEntryId ? 'Enregistrer les modifications' : 'Enregistrer les mesures'}
             </Button>
           </form>
         </CardContent>
       </Card>
 
+      {impedanceHistory.length > 0 ? (
+        <Card variant="sport">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-teal-100">
+              <History className="h-5 w-5 text-sky-400" />
+              Historique des mesures
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="mb-3 text-xs text-teal-700">
+              Modifie une ancienne saisie (date, poids, métabolisme, etc.) ou supprime une entrée erronée.
+            </p>
+            <ul className="max-h-64 space-y-2 overflow-y-auto pr-1">
+              {impedanceHistory.map((entry) => {
+                const d = entry.date ? new Date(entry.date) : new Date(entry.timestamp || Date.now());
+                const isEditing = editingEntryId === entry.id;
+                return (
+                  <li
+                    key={entry.id}
+                    className={`flex flex-wrap items-center justify-between gap-2 rounded-lg border px-3 py-2 ${
+                      isEditing
+                        ? 'border-cyan-500/50 bg-cyan-950/25'
+                        : 'border-[#0F4C5C]/50 bg-black/40'
+                    }`}
+                  >
+                    <div className="min-w-0 text-sm text-teal-100">
+                      <span className="font-medium">{formatDate(d)}</span>
+                      {entry.weight != null ? (
+                        <span className="text-teal-600"> · {entry.weight} kg</span>
+                      ) : null}
+                      {entry.bodyFatPercentage != null ? (
+                        <span className="text-teal-700"> · {entry.bodyFatPercentage}% MG</span>
+                      ) : null}
+                    </div>
+                    <div className="flex shrink-0 gap-2">
+                      <Button
+                        type="button"
+                        variant="secondary"
+                        className="text-xs"
+                        onClick={() => startEditEntry(entry)}
+                      >
+                        <Pencil className="mr-1 h-3 w-3" />
+                        Modifier
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="secondary"
+                        className="text-xs text-red-300 hover:text-red-200"
+                        onClick={() => handleDeleteEntry(entry)}
+                      >
+                        <Trash2 className="mr-1 h-3 w-3" />
+                        Supprimer
+                      </Button>
+                    </div>
+                  </li>
+                );
+              })}
+            </ul>
+          </CardContent>
+        </Card>
+      ) : null}
+
       {/* Analyse des dernières mesures */}
       {lastMeasurement ? (
         <Card variant="sport">
           <CardHeader>
-            <CardTitle className="flex flex-wrap items-center gap-2 text-teal-100">
-              <BarChart3 className="h-5 w-5 text-sky-400" />
-              Analyse des dernières mesures
-              <span className="text-sm font-normal text-teal-700">
-                ({formatDate(lastMeasurement.date)})
+            <CardTitle className="flex flex-wrap items-center justify-between gap-2 text-teal-100">
+              <span className="flex flex-wrap items-center gap-2">
+                <BarChart3 className="h-5 w-5 text-sky-400" />
+                Analyse des dernières mesures
+                <span className="text-sm font-normal text-teal-700">
+                  ({formatDate(lastMeasurement.date)})
+                </span>
               </span>
+              {lastMeasurement.id ? (
+                <Button
+                  type="button"
+                  variant="secondary"
+                  className="text-xs"
+                  onClick={() => {
+                    const raw = impedanceHistory.find((e) => e.id === lastMeasurement.id);
+                    if (raw) startEditEntry(raw);
+                  }}
+                >
+                  <Pencil className="mr-1 h-3 w-3" />
+                  Modifier cette mesure
+                </Button>
+              ) : null}
             </CardTitle>
           </CardHeader>
           <CardContent>
