@@ -54,7 +54,7 @@ describe('quizWeeklyPlanner phase 5', () => {
   it('active le fill v6 par défaut (scheduleControlled)', () => {
     const plan = buildWeeklyPlan(hypertrophyStreet, { activeDays: 3 });
     expect(plan.scheduleControlled).toBe(true);
-    expect(plan.phase).toBe('v6_3_nutrition_gate_replan');
+    expect(plan.phase).toBe('v6_4_meal_enrichment');
     expect(plan.budgets.summaryFr).toMatch(/Mission/i);
   });
 });

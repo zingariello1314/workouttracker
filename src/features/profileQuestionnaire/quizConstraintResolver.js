@@ -9,6 +9,7 @@ import {
   countQuizAvailableDays,
   declaredFrequencyPerWeek
 } from './quizAdherenceEngine';
+import { applyConstraintMaxActiveDays, getProfileConstraintEffects } from './quizProfileConstraints';
 
 function clamp(n, lo, hi) {
   return Math.max(lo, Math.min(hi, n));
@@ -97,7 +98,11 @@ export function resolveQuizConstraints(answers) {
   const daysAvailable = countQuizAvailableDays(answers);
   const warnings = hasConflictingGoals(answers);
 
-  const maxActiveDays = computeMaxActiveDaysFromQuiz(answers, adherenceRisk, recoveryScore);
+  let maxActiveDays = computeMaxActiveDaysFromQuiz(answers, adherenceRisk, recoveryScore);
+  maxActiveDays = applyConstraintMaxActiveDays(maxActiveDays, answers);
+
+  const constraintFx = getProfileConstraintEffects(answers);
+  if (constraintFx.summaryFr) warnings.push(constraintFx.summaryFr);
 
   const performanceHybridEligible =
     recoveryScore >= 58 &&

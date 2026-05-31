@@ -1,33 +1,19 @@
 import { normalizeProfileQuestionnaire } from './schema';
 import {
   buildProgramPrefillHints,
-  adjustSuggestedProgramWeeks,
   computeCardioBiasMultiplier,
   buildQuizStretchingBlocks,
   buildQuizTrainingSessionBlueprint,
   resolveTargetWeightFromQuiz
 } from './quizInfluence';
+import { resolveProgramDurationWeeks } from './quizProfileConstraints';
 import { buildNutritionCoachPayload } from './quizNutritionPayload';
+import { buildEnrichedNutritionPlan } from './quizMealPlanEnrichment';
 
 export const PENDING_QUIZ_PREFILL_NUTRITION_KEY = 'momentum.pendingQuizPrefill.nutrition';
 export const PENDING_QUIZ_PREFILL_TRAINING_KEY = 'momentum.pendingQuizPrefill.training';
 /** Déclenché quand un prefill programme est écrit (onglet Programme déjà monté). */
 export const PROGRAM_FROM_QUIZ_OPEN_EVENT = 'momentum:program-from-quiz-open';
-
-const experienceToDurationWeeks = {
-  beginner_total: 4,
-  beginner_0_3m: 6,
-  intermediate_3_12m: 8,
-  advanced_1_3y: 10,
-  expert_3y_plus: 12
-};
-
-const sessionDurationToWeeks = {
-  '15_30': 4,
-  '30_45': 6,
-  '45_60': 8,
-  '60_90': 10
-};
 
 export const buildQuizPrefillPayload = (profileQuestionnaireRaw) => {
   const q = normalizeProfileQuestionnaire(profileQuestionnaireRaw || null);
@@ -46,11 +32,9 @@ export const buildQuizPrefillPayload = (profileQuestionnaireRaw) => {
     },
     answers,
     nutrition: buildNutritionCoachPayload(answers),
+    nutritionEnrichment: buildEnrichedNutritionPlan(answers, null, null),
     training: {
-      suggestedDurationWeeks: adjustSuggestedProgramWeeks(
-        sessionDurationToWeeks[duration] || experienceToDurationWeeks[level] || 6,
-        answers
-      ),
+      suggestedDurationWeeks: resolveProgramDurationWeeks(answers),
       suggestedDays: days,
       hints: buildProgramPrefillHints(answers),
       vitals: answers.vitalsSelfReport || null,

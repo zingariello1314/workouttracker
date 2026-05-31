@@ -2,6 +2,8 @@
  * Module STREET v6 — objectifs skill + boosts templates (SPEC §6.7).
  */
 
+import { resolvePrimaryMissionIds } from './quizMissionResolver';
+
 const HYPERTROPHY_GOALS = new Set(['muscular_defined', 'lean_toned', 'bulk_mass']);
 
 /** @type {Record<string, string[]>} */
@@ -25,8 +27,8 @@ export const STREET_SKILL_GOAL_KEYS = Object.keys(STREET_SKILL_TEMPLATE_BOOSTS);
  */
 export function isStreetOrientedProfile(answers) {
   if (!answers) return false;
-  const mission = answers.primaryMission;
-  if (mission === 'hypertrophy_street' || mission === 'street_strength') return true;
+  const keys = resolvePrimaryMissionIds(answers);
+  if (keys.includes('hypertrophy_street') || keys.includes('street_strength')) return true;
   if (!HYPERTROPHY_GOALS.has(answers.goalPhysique)) return false;
   const eq = Array.isArray(answers.availableEquipment) ? answers.availableEquipment : [];
   return eq.includes('pullup_bar') || eq.includes('dip_station') || eq.includes('parallel_bars');
@@ -47,7 +49,7 @@ export function inferStreetSkillGoal(answers) {
   if (pull < 8) return 'pullups_10';
   if (pull >= 15 && dips >= 15) return 'street_hypertrophy';
   if (pull >= 10) return 'pullups_20';
-  if (answers?.primaryMission === 'hypertrophy_street') return 'street_hypertrophy';
+  if (resolvePrimaryMissionIds(answers).includes('hypertrophy_street')) return 'street_hypertrophy';
   return 'street_general';
 }
 

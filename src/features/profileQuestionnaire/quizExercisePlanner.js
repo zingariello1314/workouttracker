@@ -25,6 +25,7 @@ import {
 } from './quizExerciseSelectionScore';
 import { preferenceTieBreakDelta } from './quizExercisePreferenceScore';
 import { fillSessionFromProfileBlocks } from './quizExerciseFill';
+import { resolveEffectiveQuizEquipment } from './quizProfileConstraints';
 
 export { planWeekSessionProfiles };
 export { QUIZ_LEGACY_EXERCISE_TEMPLATES } from './quizExerciseTemplates';
@@ -90,9 +91,7 @@ function groupTargetsFromQuiz(answers) {
 }
 
 function equipmentSet(answers) {
-  const eq = Array.isArray(answers?.availableEquipment) ? [...answers.availableEquipment] : [];
-  if (!eq.includes('bodyweight')) eq.push('bodyweight');
-  return eq;
+  return resolveEffectiveQuizEquipment(answers);
 }
 
 function hasPullupBar(answers) {

@@ -362,18 +362,19 @@ const NutritionProgramForm = ({
       );
       const quizBodyFat = initialQuizPrefill?.nutrition?.bodyFatPercent;
       const quizActivityFactor = mapQuizActivityToFactor(initialQuizPrefill?.nutrition?.activityOutsideTraining);
+      const seed = initialQuizPrefill?.nutritionEnrichment?.programSeed;
       setFormData({
         name: '',
-        description: '',
-        creationMode: 'manual',
-        goal: suggestedGoal,
-        targetCalories: 2500,
-        targetProtein: 150,
-        targetCarbs: 300,
-        targetFat: 80,
-        adjustForWorkout: false,
-        workoutDayCalories: 2700,
-        restDayCalories: 2300,
+        description: seed?.mealStructureHint || '',
+        creationMode: seed ? 'generated' : 'manual',
+        goal: seed?.goal || suggestedGoal,
+        targetCalories: seed?.targetCalories ?? 2500,
+        targetProtein: seed?.targetProtein ?? 150,
+        targetCarbs: seed?.targetCarbs ?? 300,
+        targetFat: seed?.targetFat ?? 80,
+        adjustForWorkout: seed?.adjustForWorkout ?? false,
+        workoutDayCalories: seed?.workoutDayCalories ?? 2700,
+        restDayCalories: seed?.restDayCalories ?? 2300,
         duration: 30,
         startDate: DateHelper.getTodayLocal(),
         endDate: null,
@@ -399,8 +400,15 @@ const NutritionProgramForm = ({
         },
         mealPlanPreferences: {
           ...emptyMealPlanPreferences(),
-          maxWeeklyFoodVariety: hint,
-          selectedSportProgramId: activeTrainingProgram?.id ? String(activeTrainingProgram.id) : ''
+          maxWeeklyFoodVariety: seed?.mealPlanPreferences?.maxWeeklyFoodVariety ?? hint,
+          selectedSportProgramId: activeTrainingProgram?.id ? String(activeTrainingProgram.id) : '',
+          lovedFoodIds: seed?.mealPlanPreferences?.lovedFoodIds || [],
+          avoidedFoodIds: seed?.mealPlanPreferences?.avoidedFoodIds || [],
+          openFoodIds: seed?.mealPlanPreferences?.openFoodIds || [],
+          selectedBankFoodIds: seed?.mealPlanPreferences?.selectedBankFoodIds || [],
+          snacksPerDay: seed?.mealPlanPreferences?.snacksPerDay === 1 ? 1 : 2,
+          generatedMealPlan: seed?.mealPlanPreferences?.generatedMealPlan ?? null,
+          mealPlanByDay: seed?.mealPlanPreferences?.mealPlanByDay ?? null
         }
       });
     }

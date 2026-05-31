@@ -136,7 +136,25 @@ export function buildCoachEncartFromMeta(quizGenerationMeta) {
   }
   const nut = quizGenerationMeta.nutritionAlignment;
   if (nut?.summaryFr) {
-    bullets.push(`Nutrition (indicatif) : ${nut.summaryFr}`);
+    bullets.push(`Nutrition : ${nut.summaryFr}`);
+  }
+  if (nut?.linkModuleFr) {
+    bullets.push(nut.linkModuleFr);
+  }
+  const firstDay = nut?.byDay ? Object.values(nut.byDay)[0] : null;
+  if (firstDay?.meals?.length) {
+    const slotPreview = firstDay.meals
+      .filter((m) => m.foods?.length)
+      .slice(0, 2)
+      .map((m) => {
+        const foods = m.foods
+          .slice(0, 2)
+          .map((f) => `${f.name} ~${f.approximateGrams}g`)
+          .join(', ');
+        return `${m.label} : ${foods}`;
+      })
+      .join(' · ');
+    if (slotPreview) bullets.push(`Repas type (${firstDay.dayLabelFr}) : ${slotPreview}`);
   }
   if (quizGenerationMeta.progressionSummary) {
     bullets.push(quizGenerationMeta.progressionSummary);

@@ -19,6 +19,7 @@ import {
   applySpecializedSportPlacement,
   isSpecializedSportMission
 } from './quizSpecializedSportPlacement';
+import { hasProgramConstraint } from './quizProfileConstraints';
 
 const HYPERTROPHY_GOALS = new Set(['muscular_defined', 'lean_toned', 'bulk_mass']);
 
@@ -119,9 +120,88 @@ function pickCardioDayIndices(n, budgets, answers, deformers) {
 function canLongRun(answers) {
   const c = answers?.runningLongRunPossible;
   if (c === 'no') return false;
-  if (c === 'yes_weekend' || c === 'yes_weekday') return true;
-  const cons = Array.isArray(answers?.weeklyConstraints) ? answers.weeklyConstraints : [];
-  return cons.includes('can_long_run');
+  return c === 'yes_flexible' || c === 'yes_weekend' || c === 'yes_weekday';
+}
+
+/** Préférence jour pour la sortie longue (null = placement automatique). */
+function longRunDayPreference(answers) {
+  const c = answers?.runningLongRunPossible;
+  if (c === 'yes_weekend') return 'weekend';
+  if (c === 'yes_weekday') return 'weekday';
+  return null;
+}
+
+const WEEKEND_DAY_KEYS = new Set(['samedi', 'dimanche']);
+
+function dayIndexMatchesPreference(dayKey, activeDayKeys, preference) {
+  if (!preference || !dayKey) return true;
+  const isWeekend = WEEKEND_DAY_KEYS.has(String(dayKey).toLowerCase());
+  if (preference === 'weekend') return isWeekend;
+  if (preference === 'weekday') return !isWeekend;
+  return true;
+}
+
+/** Place `run_long` en priorité sur un jour cardio qui respecte la préférence. */
+function assignLongRunToPreferredDay(days, activeDayKeys, answers) {
+  const preference = longRunDayPreference(answers);
+  if (!preference) return;
+
+  let longDayKey = null;
+  let longDayIndex = -1;
+  activeDayKeys.forEach((dayKey, dayIndex) => {
+    const plan = days[dayKey];
+    if (!plan?.blocks?.includes('run_long')) return;
+    longDayKey = dayKey;
+    longDayIndex = dayIndex;
+  });
+  if (longDayKey == null || dayIndexMatchesPreference(longDayKey, activeDayKeys, preference)) return;
+
+  const swapKey = activeDayKeys.find(
+    (dayKey, dayIndex) =>
+      dayIndex !== longDayIndex &&
+      days[dayKey]?.modality === 'cardio' &&
+      days[dayKey]?.blocks?.some((b) => b.startsWith('run_')) &&
+      !days[dayKey]?.blocks?.includes('run_long') &&
+      dayIndexMatchesPreference(dayKey, activeDayKeys, preference)
+  );
+  if (!swapKey) return;
+
+  const longPlan = days[longDayKey];
+  const swapPlan = days[swapKey];
+  const swapBlock = swapPlan.blocks.find((b) => b.startsWith('run_')) || 'run_easy';
+  days[longDayKey] = {
+    ...longPlan,
+    blocks: longPlan.blocks.map((b) => (b === 'run_long' ? swapBlock : b)),
+    primaryBlock: longPlan.blocks.map((b) => (b === 'run_long' ? swapBlock : b))[0]
+  };
+  days[swapKey] = {
+    ...swapPlan,
+    blocks: swapPlan.blocks.map((b) => (b === swapBlock ? 'run_long' : b)),
+    primaryBlock: 'run_long'
+  };
+}
+
+/** Règle dure : pas de fractionné le lendemain d’un jour jambes lourdes. */
+function enforceNoIntervalAfterLegs(days, activeDayKeys, answers) {
+  if (!hasProgramConstraint(answers, 'no_interval_after_legs')) return;
+
+  for (let i = 0; i < activeDayKeys.length - 1; i += 1) {
+    const dayKey = activeDayKeys[i];
+    const nextKey = activeDayKeys[i + 1];
+    const plan = days[dayKey];
+    const nextPlan = days[nextKey];
+    if (!plan || !nextPlan) continue;
+
+    const legsHeavy =
+      plan.blocks?.includes('force_legs') || plan.blocks?.includes('force_lower');
+    if (!legsHeavy || !nextPlan.blocks?.includes('run_interval')) continue;
+
+    days[nextKey] = {
+      ...nextPlan,
+      blocks: nextPlan.blocks.map((b) => (b === 'run_interval' ? 'run_tempo' : b)),
+      primaryBlock: nextPlan.primaryBlock === 'run_interval' ? 'run_tempo' : nextPlan.primaryBlock
+    };
+  }
 }
 
 function buildRunBlockQueue(budgets, answers, runDayCount) {
@@ -133,7 +213,7 @@ function buildRunBlockQueue(budgets, answers, runDayCount) {
 
   const nEasy = Math.max(1, Math.round(runDayCount * easyW));
   const nQuality = Math.max(1, Math.round(runDayCount * (tempoW + intW)));
-  let nLong = canLongRun(answers) && runDayCount >= 3 ? 1 : 0;
+  const nLong = canLongRun(answers) && runDayCount >= 2 ? 1 : 0;
 
   for (let i = 0; i < nEasy; i += 1) queue.push('run_easy');
   for (let i = 0; i < nQuality; i += 1) {
@@ -144,7 +224,11 @@ function buildRunBlockQueue(budgets, answers, runDayCount) {
   while (queue.length < runDayCount && runDayCount > 0) {
     queue.push('run_easy');
   }
-  return queue.slice(0, runDayCount);
+  let out = queue.slice(0, runDayCount);
+  if (nLong && !out.includes('run_long')) {
+    out = out.length > 0 ? [...out.slice(0, -1), 'run_long'] : ['run_long'];
+  }
+  return out;
 }
 
 function strengthBlocksForSlot(slot, structure, ordered) {
@@ -242,6 +326,9 @@ export function buildWeekPlacement(activeDayKeys, answers, budgets, deformers = 
     `${strengthIndices.length} j force, ${cardioIndices.size} j cardio`,
     hasRun ? `${runBlocksPlaced} blocs course` : null
   ].filter(Boolean);
+
+  assignLongRunToPreferredDay(days, activeDayKeys, answers);
+  enforceNoIntervalAfterLegs(days, activeDayKeys, answers);
 
   let result = {
     structure,

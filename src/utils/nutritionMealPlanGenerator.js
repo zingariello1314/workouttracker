@@ -126,6 +126,89 @@ function buildSlotFoods(pool, slotKcal, used, variant = 0) {
 }
 
 /**
+ * Répartition kcal par repas selon créneau d’entraînement et charge du jour.
+ * @param {{ trainingWindow?: string, snacksPerDay?: 1|2, sportDay?: boolean }} opts
+ */
+export function resolveMealKcalShares(opts = {}) {
+  const snacksPerDay = Number(opts.snacksPerDay) === 1 ? 1 : 2;
+  let bShare = snacksPerDay === 1 ? 0.26 : 0.22;
+  let lShare = snacksPerDay === 1 ? 0.35 : 0.33;
+  let dShare = snacksPerDay === 1 ? 0.33 : 0.3;
+  let snackShare = snacksPerDay === 1 ? 0.06 : 0.15;
+
+  const w = opts.trainingWindow;
+  if (w === 'very_early_morning' || w === 'morning') {
+    bShare += 0.04;
+    lShare -= 0.02;
+    dShare -= 0.02;
+  } else if (w === 'midday') {
+    lShare += 0.05;
+    bShare -= 0.02;
+    dShare -= 0.03;
+  } else if (w === 'afternoon') {
+    lShare += 0.02;
+    snackShare += 0.02;
+    dShare -= 0.02;
+    bShare -= 0.02;
+  } else if (w === 'evening' || w === 'night') {
+    dShare += 0.05;
+    lShare -= 0.03;
+    bShare -= 0.02;
+  }
+
+  if (opts.sportDay) {
+    snackShare += 0.02;
+    dShare -= 0.01;
+    lShare -= 0.01;
+  }
+
+  const sum = bShare + lShare + dShare + snackShare;
+  return {
+    breakfast: bShare / sum,
+    lunch: lShare / sum,
+    dinner: dShare / sum,
+    snack: snackShare / sum,
+    snacksPerDay
+  };
+}
+
+function slotTimingHintFr(slot, trainingWindow) {
+  const map = {
+    breakfast: {
+      very_early_morning: 'Repas léger possible avant séance très tôt ; sinon après.',
+      morning: 'Petit-déjeuner renforcé si séance matinale.',
+      midday: 'Petit-déjeuner équilibré.',
+      afternoon: 'Petit-déjeuner classique.',
+      evening: 'Petit-déjeuner protéiné.',
+      night: 'Petit-déjeuner classique.'
+    },
+    lunch: {
+      midday: 'Déjeuner = repas principal autour de la séance.',
+      afternoon: 'Déjeuner solide ; collation avant séance si faim.',
+      default: 'Déjeuner équilibré.'
+    },
+    dinner: {
+      evening: 'Dîner post-séance : protéines + glucides modérés.',
+      night: 'Dîner plus tôt si séance tardive ; portion modérée.',
+      default: 'Dîner équilibré.'
+    }
+  };
+  if (slot.startsWith('snack')) {
+    if (trainingWindow === 'morning' || trainingWindow === 'very_early_morning') {
+      return 'Collation utile si écart avant/après séance matin.';
+    }
+    if (trainingWindow === 'evening' || trainingWindow === 'afternoon') {
+      return 'Collation post-séance ou goûter protéiné.';
+    }
+    return 'Collation selon faim.';
+  }
+  if (slot === 'breakfast') return map.breakfast[trainingWindow] || map.breakfast.midday;
+  if (slot === 'lunch') return map.lunch[trainingWindow] || map.lunch.default;
+  if (slot === 'dinner') return map.dinner[trainingWindow] || map.dinner.default;
+  return null;
+}
+
+/**
  * @param {{
  *   targetCalories: number,
  *   targetProtein: number,
@@ -136,11 +219,18 @@ function buildSlotFoods(pool, slotKcal, used, variant = 0) {
  *   openFoodIds?: string[],
  *   selectedBankFoodIds?: string[],
  *   snacksPerDay?: 1|2,
+ *   trainingWindow?: string,
+ *   sportDay?: boolean,
  * }} params
  */
 export function generateMealPlanOutline(params) {
   const kcal = Math.max(1200, Math.min(9000, Number(params.targetCalories) || 2200));
-  const snacksPerDay = Number(params.snacksPerDay) === 1 ? 1 : 2;
+  const shares = resolveMealKcalShares({
+    snacksPerDay: params.snacksPerDay,
+    trainingWindow: params.trainingWindow,
+    sportDay: params.sportDay
+  });
+  const snacksPerDay = shares.snacksPerDay;
 
   const pool = buildPool({
     foodBankItems: Array.isArray(params.foodBankItems) && params.foodBankItems.length ? params.foodBankItems : NUTRITION_FOOD_BANK_ITEMS,
@@ -167,30 +257,15 @@ export function generateMealPlanOutline(params) {
   }
 
   const used = new Set();
-
-  let bShare = 0.24;
-  let lShare = 0.34;
-  let dShare = 0.32;
-  let snackShare = 0.1;
-  if (snacksPerDay === 1) {
-    bShare = 0.26;
-    lShare = 0.35;
-    dShare = 0.33;
-    snackShare = 0.06;
-  } else {
-    bShare = 0.22;
-    lShare = 0.33;
-    dShare = 0.3;
-    snackShare = 0.15;
-  }
+  const trainingWindow = params.trainingWindow || null;
 
   const slots = [
-    { slot: 'breakfast', label: 'Petit-déjeuner', kcal: kcal * bShare },
-    { slot: 'lunch', label: 'Déjeuner', kcal: kcal * lShare },
-    { slot: 'dinner', label: 'Dîner', kcal: kcal * dShare }
+    { slot: 'breakfast', label: 'Petit-déjeuner', kcal: kcal * shares.breakfast },
+    { slot: 'lunch', label: 'Déjeuner', kcal: kcal * shares.lunch },
+    { slot: 'dinner', label: 'Dîner', kcal: kcal * shares.dinner }
   ];
 
-  const perSnack = (kcal * snackShare) / snacksPerDay;
+  const perSnack = (kcal * shares.snack) / snacksPerDay;
   for (let i = 0; i < snacksPerDay; i++) {
     slots.push({
       slot: `snack_${i + 1}`,
@@ -203,6 +278,8 @@ export function generateMealPlanOutline(params) {
   return slots.map(({ slot, label, kcal: slotKcal }, idx) => ({
     slot,
     label,
+    timingHintFr: slotTimingHintFr(slot, trainingWindow),
+    targetKcalRounded: Math.round(slotKcal),
     foods: buildSlotFoods(pool, slotKcal, used, idx)
       .map((row) => {
         const ff = foodById.get(row.foodId) || findBankFoodById(row.foodId);

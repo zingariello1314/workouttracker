@@ -2,8 +2,9 @@
  * Migration réponses quiz v11 → v12 (champs v6 + inférence mission).
  */
 
-import { resolvePrimaryMissionId } from './quizMissionResolver';
+import { normalizePrimaryMissionSelection, suggestPrimaryMissionsFromAnswers } from './quizMissionResolver';
 import { inferStreetSkillGoal, isStreetOrientedProfile } from './quizStreetSkillGoal';
+import { normalizeProgramConstraints } from './quizProfileConstraints';
 
 /**
  * @param {object} answers — déjà sanitizées
@@ -12,8 +13,11 @@ import { inferStreetSkillGoal, isStreetOrientedProfile } from './quizStreetSkill
 export function migrateAnswersToV12(answers) {
   const out = { ...answers };
 
-  if (!out.primaryMission) {
-    out.primaryMission = resolvePrimaryMissionId(answers);
+  const missionSel = normalizePrimaryMissionSelection(out);
+  if (!missionSel.length) {
+    out.primaryMission = suggestPrimaryMissionsFromAnswers(out);
+  } else if (typeof out.primaryMission === 'string') {
+    out.primaryMission = [out.primaryMission];
   }
 
   if (!out.runningGoal) {
@@ -50,8 +54,10 @@ export function migrateAnswersToV12(answers) {
     }
   }
 
-  if (!Array.isArray(out.weeklyConstraints)) {
-    out.weeklyConstraints = [];
+  out.weeklyConstraints = normalizeProgramConstraints(out);
+
+  if (!out.programDurationWeeks) {
+    out.programDurationWeeks = 'auto';
   }
 
   if (!out.streetSkillGoal && isStreetOrientedProfile(out)) {

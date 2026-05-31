@@ -9,10 +9,16 @@ import { TRIATHLON_DISTANCE_KEYS, TRIATHLON_WEAK_LEG_KEYS } from './data/mission
  * @returns {string|null} triathlon_sprint | triathlon_olympic | ...
  */
 export function resolveTriathlonMissionId(answers) {
-  const pm = answers?.primaryMission;
-  if (typeof pm === 'string' && pm.startsWith('triathlon_')) return pm;
+  const sel = Array.isArray(answers?.primaryMission)
+    ? answers.primaryMission
+    : typeof answers?.primaryMission === 'string'
+      ? [answers.primaryMission]
+      : [];
+  const triExplicit = sel.find((k) => typeof k === 'string' && k.startsWith('triathlon_'));
+  if (triExplicit) return triExplicit;
 
-  const hasTriIntent = pm === 'triathlon' || TRIATHLON_DISTANCE_KEYS.includes(answers?.triathlonDistance);
+  const hasTriIntent =
+    sel.includes('triathlon') || TRIATHLON_DISTANCE_KEYS.includes(answers?.triathlonDistance);
   if (!hasTriIntent) return null;
 
   const dist = answers?.triathlonDistance;

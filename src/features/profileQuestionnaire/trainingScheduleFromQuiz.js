@@ -24,6 +24,7 @@ import {
   applyWeekPlacementToProfiles,
   buildWeekPlacement
 } from './quizWeekPlacement';
+import { resolveProgramDurationWeeks } from './quizProfileConstraints';
 import {
   applyActiveDayCap,
   buildQuizCoachContext,
@@ -33,7 +34,7 @@ import {
 import { injectCircuitStylesIntoSchedule } from './circuitTrainingStyleUtils';
 import { attachQuizCircuitsToSchedule, planQuizCircuits } from './quizCircuitPlanner';
 import { injectQuizPlyometricsIntoSchedule } from './quizPlyometricPlanner';
-import { buildNutritionDayAlignment } from './quizNutritionDayAlignment';
+import { buildEnrichedNutritionPlan } from './quizMealPlanEnrichment';
 import { injectQuizDrillsIntoSchedule } from './quizDrillPlanner';
 import { pickQuizStretchesForMoment } from './quizStretchPicker';
 import { resolveStretchBudgetPlan } from './quizStretchBudget';
@@ -170,8 +171,8 @@ export function buildQuizAugmentedSchedule(schedule, answers, genOpts = {}) {
   }
 
   const durationWeeks = Math.max(
-    2,
-    Math.min(12, Number(genOpts.programDurationWeeks) || Number(answers?.programDurationWeeks) || 6)
+    3,
+    Math.min(16, Number(genOpts.programDurationWeeks) || resolveProgramDurationWeeks(answers))
   );
 
   let coachContext = buildQuizCoachContext(answers, {
@@ -368,7 +369,9 @@ export function buildQuizAugmentedSchedule(schedule, answers, genOpts = {}) {
     runWeeklySeriesAllocation(coachContext, schedule, activeDayKeys, answers);
     if (
       ['muscular_defined', 'lean_toned', 'bulk_mass'].includes(answers?.goalPhysique) ||
-      answers?.primaryMission === 'hypertrophy_street'
+      (Array.isArray(answers?.primaryMission)
+        ? answers.primaryMission.includes('hypertrophy_street')
+        : answers?.primaryMission === 'hypertrophy_street')
     ) {
       ensureMinimumPullWeeklySets(schedule, activeDayKeys, 10);
       const targets = coachContext.muscleVolumeRealized?.targets;
@@ -399,7 +402,7 @@ export function buildQuizAugmentedSchedule(schedule, answers, genOpts = {}) {
     missedVolumeFactor: missedFactor
   });
 
-  quizGenerationMeta.nutritionAlignment = buildNutritionDayAlignment(
+  quizGenerationMeta.nutritionAlignment = buildEnrichedNutritionPlan(
     answers,
     schedule,
     quizGenerationMeta.weeklyPlanner

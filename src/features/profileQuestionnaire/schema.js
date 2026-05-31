@@ -172,7 +172,8 @@ const V6_OPTIONAL_ANSWER_KEYS = {
     'hybrid_alternating',
     'bro_split'
   ],
-  runningLongRunPossible: ['yes_weekend', 'yes_weekday', 'no'],
+  runningLongRunPossible: ['yes_flexible', 'yes_weekend', 'yes_weekday', 'no'],
+  programDurationWeeks: ['auto', '4', '6', '8', '10', '12'],
   streetSkillGoal: [
     'first_pullup',
     'pullups_10',
@@ -188,12 +189,7 @@ const V6_OPTIONAL_ANSWER_KEYS = {
 };
 
 const V6_OPTIONAL_ARRAY_KEYS = {
-  weeklyConstraints: [
-    'can_long_run',
-    'no_interval_after_legs',
-    'travel_week',
-    'limited_equipment'
-  ]
+  weeklyConstraints: ['no_interval_after_legs', 'travel_week', 'limited_equipment']
 };
 
 function sanitizeV6OptionalKey(key, raw) {

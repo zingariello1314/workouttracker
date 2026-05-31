@@ -5,6 +5,7 @@
 
 import { BLOCK_LABELS_FR } from './quizWeekPlacement';
 import { applyWeekReplanSwaps } from './quizWeekReplan';
+import { getProfileConstraintEffects } from './quizProfileConstraints';
 
 /** @typedef {'same_day'|'adjacent'} CompatScope */
 
@@ -159,9 +160,12 @@ function applyModulators(compat, blockA, blockB, ctx) {
     c = clamp01(c - (1 - c) * 0.15);
   }
 
-  const cons = Array.isArray(answers?.weeklyConstraints) ? answers.weeklyConstraints : [];
-  if (cons.includes('no_interval_after_legs') && intervalLegsPair && ctx.scope === 'adjacent') {
-    c = clamp01(c - 0.2);
+  if (
+    getProfileConstraintEffects(answers).avoidIntervalAfterLegs &&
+    intervalLegsPair &&
+    ctx.scope === 'adjacent'
+  ) {
+    c = clamp01(c - 0.35);
   }
 
   return c;

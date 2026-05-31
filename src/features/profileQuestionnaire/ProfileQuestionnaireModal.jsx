@@ -7,6 +7,7 @@ import {
   QUESTION_SECTIONS
 } from './constants';
 import { filterActiveQuestions } from './quizQuestionVisibility';
+import { suggestPrimaryMissionsFromAnswers } from './quizMissionResolver';
 import { computeCompletion } from './schema';
 import { useProfileQuestionnaire } from './useProfileQuestionnaire';
 import { estimateTargetWeightFromQuiz } from './quizInfluence';
@@ -296,7 +297,11 @@ const QuestionCard = ({ question, value, onSelect, allAnswers, programs = [] }) 
   }
 
   if (question.type === 'multi') {
-    const selected = Array.isArray(value) ? value : [];
+    const selected = Array.isArray(value)
+      ? value
+      : typeof value === 'string' && value
+        ? [value]
+        : [];
     const max = Number(question.max) > 0 ? Number(question.max) : 999;
     return (
       <div className="space-y-2">
@@ -392,6 +397,26 @@ const ProfileQuestionnaireModal = ({ isOpen, onClose }) => {
   }, [activeQuestions.length, step]);
 
   const question = activeQuestions[step];
+
+  useEffect(() => {
+    if (!isOpen || question?.id !== 'primaryMission') return;
+    setAnswers((prev) => {
+      const cur = prev?.primaryMission;
+      const hasSelection =
+        (Array.isArray(cur) && cur.length > 0) || (typeof cur === 'string' && cur.length > 0);
+      if (hasSelection) return prev;
+      const suggested = suggestPrimaryMissionsFromAnswers(prev || {});
+      if (!suggested.length) return prev;
+      return { ...prev, primaryMission: suggested };
+    });
+  }, [isOpen, question?.id, step]);
+
+  useEffect(() => {
+    if (!isOpen || question?.id !== 'programDurationWeeks') return;
+    if (answers?.programDurationWeeks) return;
+    setAnswers((prev) => ({ ...prev, programDurationWeeks: 'auto' }));
+  }, [isOpen, question?.id, step, answers?.programDurationWeeks]);
+
   const stats = useMemo(() => computeCompletion(answers), [answers]);
   const progressPercent = activeQuestions.length
     ? Math.round(((step + 1) / activeQuestions.length) * 100)
@@ -407,6 +432,9 @@ const ProfileQuestionnaireModal = ({ isOpen, onClose }) => {
       return false;
     }
     const value = answers?.[q.id];
+    if (q.optional && (value == null || (Array.isArray(value) && value.length === 0))) {
+      return true;
+    }
     if (value == null) return false;
     if (Array.isArray(value)) return value.length > 0;
     return true;
@@ -469,7 +497,10 @@ const ProfileQuestionnaireModal = ({ isOpen, onClose }) => {
   };
 
   const handleSkipQuestion = () => {
-    const next = { ...answers, [question.id]: null };
+    const next = {
+      ...answers,
+      [question.id]: question.type === 'multi' || question.type === 'days' ? [] : null
+    };
     setAnswers(next);
     if (step < activeQuestions.length - 1) {
       setStep((s) => s + 1);

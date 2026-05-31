@@ -90,11 +90,12 @@ export const PROFILE_QUESTION_DEFS = [
   {
     id: 'primaryMission',
     sectionId: 'mission',
-    type: 'single',
+    type: 'multi',
+    max: 3,
     showWhen: 'mission_pick',
-    title: 'Quelle mission sportive te correspond le mieux ?',
+    title: 'Quelles missions sportives te correspondent ? (jusqu’à 3)',
     description:
-      'Affine le programme généré (volume course, structure de la semaine). Une valeur est proposée automatiquement depuis ton objectif physique — tu peux la confirmer ou la changer.',
+      'Tu peux en combiner plusieurs (ex. hypertrophie street + prépa 5 km). Le programme fusionne intelligemment volume muscu, course et structure de la semaine. Une suggestion est proposée depuis ton profil — ajuste si besoin.',
     options: [
       { key: 'hypertrophy', label: 'Hypertrophie / muscle', description: 'Priorité volume musculaire' },
       { key: 'hypertrophy_street', label: 'Hypertrophie + street', description: 'Tractions, dips, pompes' },
@@ -621,7 +622,10 @@ export const PROFILE_QUESTION_DEFS = [
     type: 'single',
     showWhen: 'run_module',
     title: 'Peux-tu placer une sortie longue ? (Q-R4)',
+    description:
+      'Si tu peux courir long mais sans préférence de jour, choisis « peu importe » : le plan place la sortie longue sur le créneau le plus adapté.',
     options: [
+      { key: 'yes_flexible', label: 'Oui, peu importe le jour', description: 'Le plan choisit le meilleur créneau' },
       { key: 'yes_weekend', label: 'Oui, plutôt le week-end' },
       { key: 'yes_weekday', label: 'Oui, en semaine' },
       { key: 'no', label: 'Non / pas pour l’instant' }
@@ -641,16 +645,47 @@ export const PROFILE_QUESTION_DEFS = [
     ]
   },
   {
-    id: 'weeklyConstraints',
-    sectionId: 'course',
-    type: 'multi',
-    showWhen: 'run_module',
-    title: 'Contraintes hebdomadaires (optionnel)',
+    id: 'programDurationWeeks',
+    sectionId: 'operations',
+    type: 'single',
+    showWhen: 'mission_pick',
+    title: 'Durée du programme (cycle en semaines)',
+    description:
+      'Ton plan progresse sur plusieurs semaines (montée en charge, semaine plus légère). « Automatique » s’appuie sur ton expérience et ta durée de séance — tu peux fixer une durée si tu prépares un objectif daté.',
     options: [
-      { key: 'can_long_run', label: 'Sortie longue possible' },
-      { key: 'no_interval_after_legs', label: 'Pas de fractionné lendemain jambes lourdes' },
-      { key: 'travel_week', label: 'Semaine voyage / matériel limité' },
-      { key: 'limited_equipment', label: 'Équipement réduit cette semaine' }
+      { key: 'auto', label: 'Automatique (recommandé)', description: '4 à 12 semaines selon ton profil' },
+      { key: '4', label: '4 semaines', description: 'Bloc court / test' },
+      { key: '6', label: '6 semaines', description: 'Standard débutant' },
+      { key: '8', label: '8 semaines', description: 'Progression intermédiaire' },
+      { key: '10', label: '10 semaines', description: 'Préparation structurée' },
+      { key: '12', label: '12 semaines', description: 'Cycle long (semi, recomposition)' }
+    ]
+  },
+  {
+    id: 'weeklyConstraints',
+    sectionId: 'operations',
+    type: 'multi',
+    optional: true,
+    showWhen: 'mission_pick',
+    title: 'Contraintes sur tout ton programme (optionnel)',
+    description:
+      'Coche seulement ce qui te concerne souvent. Si tu ne coches rien, le programme garde course, muscu et volume issus de tes autres réponses — rien n’est retiré.',
+    options: [
+      {
+        key: 'limited_equipment',
+        label: 'Souvent peu de matériel',
+        description: 'Priorité poids du corps, haltères, élastiques — pas de grosses machines'
+      },
+      {
+        key: 'travel_week',
+        label: 'Souvent en déplacement',
+        description: 'Séances un peu plus courtes, matériel léger, 1 jour de moins si besoin'
+      },
+      {
+        key: 'no_interval_after_legs',
+        label: 'Pas de fractionné juste après jambes lourdes',
+        description: 'Uniquement si tu fais aussi de la course'
+      }
     ]
   },
   {

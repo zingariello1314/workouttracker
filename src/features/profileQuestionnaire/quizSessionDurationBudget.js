@@ -2,6 +2,8 @@
  * Estimation du temps de séance et plafond d'exercices selon `preferredSessionDuration` (quiz).
  */
 
+import { getProfileConstraintEffects } from './quizProfileConstraints';
+
 const SESSION_BUDGET = {
   '15_30': { targetMin: 22, warmupMin: 5, reservePlyoMin: 4 },
   '30_45': { targetMin: 38, warmupMin: 6, reservePlyoMin: 5 },
@@ -103,7 +105,14 @@ export function estimateExerciseMinutes(exercise) {
 
 export function getSessionBudget(answers) {
   const key = answers?.preferredSessionDuration;
-  return SESSION_BUDGET[key] || DEFAULT_BUDGET;
+  const budget = { ...(SESSION_BUDGET[key] || DEFAULT_BUDGET) };
+  const cap = getProfileConstraintEffects(answers).maxSessionMinutesCap;
+  if (cap != null && budget.targetMin > cap) {
+    budget.targetMin = cap;
+    budget.warmupMin = Math.min(budget.warmupMin, Math.max(4, Math.round(cap * 0.15)));
+    budget.reservePlyoMin = Math.min(budget.reservePlyoMin, Math.max(3, Math.round(cap * 0.1)));
+  }
+  return budget;
 }
 
 export function getUsableStrengthMinutes(answers, { reservePlyo = false } = {}) {

@@ -191,7 +191,7 @@ export function buildQuizCoachContext(answers, opts = {}) {
 
 
 
-  const durationWeeks = Math.max(2, Math.min(12, Number(opts.programDurationWeeks) || 6));
+  const durationWeeks = Math.max(3, Math.min(16, Number(opts.programDurationWeeks) || 6));
 
   const progressionCycleFactor = progressionVolumeMulForWeek1(durationWeeks);
 
@@ -547,7 +547,7 @@ export function refineCoachContextAfterProfiles(coachContext, weekProfiles, acti
 
 export function buildQuizGenerationMeta(coachContext, opts = {}) {
 
-  const durationWeeks = Math.max(2, Math.min(12, Number(opts.programDurationWeeks) || 6));
+  const durationWeeks = Math.max(3, Math.min(16, Number(opts.programDurationWeeks) || 6));
 
   const regen = detectCoachRegenerationSignals(
 

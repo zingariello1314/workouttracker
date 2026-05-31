@@ -3,6 +3,7 @@
  */
 
 import { isStreetOrientedProfile } from './quizStreetSkillGoal';
+import { resolvePrimaryMissionIds } from './quizMissionResolver';
 
 export { isStreetOrientedProfile };
 
@@ -13,12 +14,8 @@ export { isStreetOrientedProfile };
  */
 export function isSpecializedSportProfile(answers) {
   if (!answers) return false;
-  const pm = answers.primaryMission;
-  return (
-    pm === 'sport_collective' ||
-    pm === 'combat_sport' ||
-    pm === 'military_prep'
-  );
+  const keys = resolvePrimaryMissionIds(answers);
+  return keys.some((k) => ['sport_collective', 'combat_sport', 'military_prep'].includes(k));
 }
 
 /**
@@ -26,8 +23,8 @@ export function isSpecializedSportProfile(answers) {
  */
 export function isTriathlonProfile(answers) {
   if (!answers) return false;
-  const pm = answers.primaryMission;
-  if (pm === 'triathlon' || (typeof pm === 'string' && pm.startsWith('triathlon_'))) return true;
+  const keys = resolvePrimaryMissionIds(answers);
+  if (keys.some((k) => k === 'triathlon' || k.startsWith('triathlon_'))) return true;
   return Boolean(answers.triathlonDistance);
 }
 
@@ -39,11 +36,11 @@ export function isRunOrientedProfile(answers) {
   const goal = answers.goalPhysique;
   if (goal === 'endurance_lean' || goal === 'athletic_performance') return true;
 
-  const mission = answers.primaryMission;
-  if (typeof mission === 'string' && (mission.startsWith('run_') || mission.startsWith('triathlon_'))) {
+  const keys = resolvePrimaryMissionIds(answers);
+  if (keys.some((k) => k.startsWith('run_') || k.startsWith('triathlon_') || k === 'hybrid_run_strength')) {
     return true;
   }
-  if (mission === 'triathlon' || answers.triathlonDistance) return true;
+  if (keys.includes('triathlon') || answers.triathlonDistance) return true;
 
   const cardio = answers.cardioTrainingDesire;
   if (cardio === 'high' || cardio === 'priority_hiit') return true;
@@ -59,12 +56,25 @@ export function isRunOrientedProfile(answers) {
  * @param {object} answers
  */
 export function isHybridRunAndStrength(answers) {
+  const keys = resolvePrimaryMissionIds(answers);
+  const hasRun = keys.some(
+    (k) => k.startsWith('run_') || k.startsWith('triathlon_') || k === 'hybrid_run_strength'
+  );
+  const hasStrength = keys.some(
+    (k) =>
+      !k.startsWith('run_') &&
+      !k.startsWith('triathlon_') &&
+      k !== 'hybrid_run_strength' &&
+      k !== 'general_health' &&
+      k !== 'run_health'
+  );
+  if (hasRun && hasStrength) return true;
   if (!isRunOrientedProfile(answers)) return false;
   const goal = answers.goalPhysique;
   if (['muscular_defined', 'lean_toned', 'bulk_mass', 'recomposition', 'strong_powerful'].includes(goal)) {
     return true;
   }
-  return answers.primaryMission === 'hybrid_run_strength';
+  return keys.includes('hybrid_run_strength');
 }
 
 /**

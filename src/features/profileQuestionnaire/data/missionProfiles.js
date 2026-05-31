@@ -128,4 +128,4 @@ export const MISSION_PROFILES_V6_MINIMAL = {
 export const MISSION_PROFILES_V6 = MISSION_PROFILES_V6_MINIMAL;
 
 export const WEEKLY_PLANNER_ENGINE_VERSION = 2;
-export const WEEKLY_PLANNER_PHASE = 'v6_3_nutrition_gate_replan';
+export const WEEKLY_PLANNER_PHASE = 'v6_4_meal_enrichment';

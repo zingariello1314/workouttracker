@@ -40,13 +40,42 @@ describe('quizWeekPlacement', () => {
     expect(strengthBlocks.some((b) => b === 'force_legs')).toBe(true);
   });
 
+  it('yes_flexible active une sortie longue comme week-end / semaine', () => {
+    const days = ['lundi', 'mercredi', 'vendredi', 'samedi'];
+    const answers = {
+      goalPhysique: 'endurance_lean',
+      runningWeeklyKmCurrent: 'km_20_40',
+      availableTrainingDays: days,
+      runningLongRunPossible: 'yes_flexible'
+    };
+    const budgets = buildWeeklyBudgets(answers, { activeDays: 4 });
+    const placement = buildWeekPlacement(days, answers, budgets);
+    const runBlocks = Object.values(placement.days).flatMap((d) => d.blocks);
+    expect(runBlocks).toContain('run_long');
+  });
+
+  it('yes_weekend place run_long sur samedi ou dimanche si possible', () => {
+    const days = ['lundi', 'mercredi', 'vendredi', 'samedi'];
+    const answers = {
+      goalPhysique: 'endurance_lean',
+      runningWeeklyKmCurrent: 'km_20_40',
+      availableTrainingDays: days,
+      runningLongRunPossible: 'yes_weekend'
+    };
+    const budgets = buildWeeklyBudgets(answers, { activeDays: 4 });
+    const placement = buildWeekPlacement(days, answers, budgets);
+    const longDay = Object.entries(placement.days).find(([, d]) => d.blocks.includes('run_long'));
+    expect(longDay).toBeTruthy();
+    expect(['samedi', 'dimanche']).toContain(longDay[0]);
+  });
+
   it('prep 10k : au moins 2 blocs course sur la semaine', () => {
     const days = ['lundi', 'mercredi', 'vendredi', 'samedi'];
     const answers = {
       goalPhysique: 'endurance_lean',
       runningWeeklyKmCurrent: 'km_20_40',
       availableTrainingDays: days,
-      weeklyConstraints: ['can_long_run']
+      runningLongRunPossible: 'yes_flexible'
     };
     const budgets = buildWeeklyBudgets(answers, { activeDays: 4 });
     const placement = buildWeekPlacement(days, answers, budgets);

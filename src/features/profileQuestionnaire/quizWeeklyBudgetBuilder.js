@@ -220,8 +220,10 @@ export function buildWeeklyBudgets(answers, opts = {}) {
   const arbitration = buildBudgetArbitration(answers, mission, recovery, strength, run);
 
   const weakLegFr = missionId.startsWith('triathlon_') ? triathlonWeakLegLabelFr(answers) : null;
+  const blendFr = mission.blendSummaryFr || null;
   const summaryParts = [
     `Mission : ${mission.labelFr}`,
+    blendFr,
     weakLegFr ? `Point faible tri : ${weakLegFr}` : null,
     `Récup. ×${recovery.recoveryBudget}`,
     `Force — tirage ${strength.pull} / poussée ${strength.push} / jambes ${strength.legs} séries`,
@@ -233,6 +235,8 @@ export function buildWeeklyBudgets(answers, opts = {}) {
     phase: WEEKLY_PLANNER_PHASE,
     missionId,
     missionLabelFr: mission.labelFr,
+    blendedMissionIds: mission.blendedMissionIds || null,
+    blendSummaryFr: mission.blendSummaryFr || null,
     missionSource: resolveMissionSource(answers),
     defaultStructure: mission.defaultStructure,
     maxStrengthDays: mission.maxStrengthDays,
