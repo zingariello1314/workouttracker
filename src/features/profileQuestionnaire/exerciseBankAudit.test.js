@@ -3,7 +3,12 @@ import { exerciseDatabase } from '../../data/exerciseDatabase';
 import { stretchDatabase } from '../../data/stretchDatabase';
 import { QUIZ_LEGACY_EXERCISE_TEMPLATES } from './quizExerciseTemplates';
 import { getMergedQuizExerciseTemplates, countExerciseDatabaseKeys } from './quizExercisePool';
-import { auditExerciseBank, auditStretchBank } from './exerciseBankAudit';
+import {
+  auditExerciseBank,
+  auditStretchBank,
+  evaluateExerciseBankFitnessGate,
+  FITNESS_GATE_AUTO_MIN_PCT
+} from './exerciseBankAudit';
 import { computeFitnessForGeneration } from './exerciseGenerationFitness';
 
 describe('exerciseBankAudit — préservation banques', () => {
@@ -38,6 +43,14 @@ describe('exerciseBankAudit — préservation banques', () => {
     expect(report.legacy.missingInDatabase).toEqual([]);
     expect(report.exerciseCount).toBe(Object.keys(exerciseDatabase).length);
     expect(report.mergedPoolSize).toBeGreaterThanOrEqual(QUIZ_LEGACY_EXERCISE_TEMPLATES.length);
+  });
+
+  it(`gate CI : ≥ ${FITNESS_GATE_AUTO_MIN_PCT} % candidats en auto-pool`, () => {
+    const gate = evaluateExerciseBankFitnessGate();
+    expect(gate.candidateCount).toBeGreaterThan(100);
+    expect(gate.passed).toBe(true);
+    expect(gate.pctAuto).toBeGreaterThanOrEqual(FITNESS_GATE_AUTO_MIN_PCT);
+    expect(gate.pctLow).toBeLessThanOrEqual(5);
   });
 
   it('chaque clé banque a un score fitness calculable', () => {

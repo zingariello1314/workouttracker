@@ -6,10 +6,11 @@ import { exerciseDatabase } from '../../data/exerciseDatabase';
 import { buildQuizTrainingSessionBlueprint } from './quizInfluence';
 import {
   resolveTargetExerciseCount,
-  trimExercisesToSessionBudget
+  trimExercisesToSessionBudget,
+  formatEstimatedSessionDuration
 } from './quizSessionDurationBudget';
 import { addonMinutes, planWeekSessionProfiles } from './quizSessionPlanner';
-import { applyBaselineToSeries, overallStrengthTier } from './quizVolumeFromBaselines';
+import { applyBaselineToSeries, effectiveStrengthTier } from './quizVolumeFromBaselines';
 import { trimExercisesForTendonLoad } from './quizRecoveryEngine';
 import { enforceSessionExerciseLimits } from './quizSessionLimits';
 import { calibrateSeriesFromProgramPatterns } from './quizProgressionApply';
@@ -22,6 +23,8 @@ import {
   scoreLegacyTieBonus,
   scoreVarietyVsUsed
 } from './quizExerciseSelectionScore';
+import { preferenceTieBreakDelta } from './quizExercisePreferenceScore';
+import { fillSessionFromProfileBlocks } from './quizExerciseFill';
 
 export { planWeekSessionProfiles };
 export { QUIZ_LEGACY_EXERCISE_TEMPLATES } from './quizExerciseTemplates';
@@ -44,6 +47,8 @@ const GOAL_GROUP_BOOST = {
   recomposition: { upper: 1, lower: 1, core: 1, cardio: 1 },
   endurance_lean: { upper: 0, lower: 1, core: 1, cardio: 3 }
 };
+
+const HYPERTROPHY_GOALS = new Set(['muscular_defined', 'lean_toned', 'bulk_mass']);
 
 export function isWeekAlternationEnabled(answers) {
   return answers?.weekAlternation === 'ab_enabled';
@@ -234,8 +239,9 @@ function scoreTemplate(
   weekStrengthUsedKeys,
   deformers,
   globalTier,
-  { eligibleCount = 99, sessionUsedKeys = null } = {}
+  { eligibleCount = 99, sessionUsedKeys = null, templateKeyBoosts = null } = {}
 ) {
+  const key = template.dbKey;
   const goal = answers?.goalPhysique || 'balanced_functional';
   const boosts = GOAL_GROUP_BOOST[goal] || GOAL_GROUP_BOOST.balanced_functional;
   let score = boosts[template.group] ?? 0;
@@ -260,15 +266,24 @@ function scoreTemplate(
   if (typePrefs.includes('cardio_endurance') && template.group === 'cardio') score += 3;
   if (typePrefs.includes('plyometrics') && template.group === 'cardio') score += 1;
   if (typePrefs.includes('isometric_core') && template.group === 'core') score += 3;
-  if (typePrefs.includes('strength_compounds') && template.tier === 'standard') score += 1;
+  if (typePrefs.includes('strength_compounds')) {
+    score += template.tier === 'standard' ? 3 : 1;
+    if (/traction|dips|pompe|squat|soulevé|rowing|développé|fente/.test(key)) score += 2;
+  }
   score += (dayIndex + template.dbKey.length) % 3;
   if (globalTier === 'beginner' && template.tier === 'classic') score += 2;
   if (globalTier === 'advanced' && template.tier === 'standard') score += 1;
 
+  const heritageBoosts = templateKeyBoosts || deformers?.templateKeyBoosts;
+  if (Array.isArray(heritageBoosts) && heritageBoosts.includes(template.dbKey)) score += 5;
+
+  const prefScores = deformers?.exercisePreferenceScore;
+  if (prefScores) score += preferenceTieBreakDelta(template.dbKey, prefScores);
+
   return score;
 }
 
-function pickExercisesForContext(answers, blueprint, {
+export function pickExercisesForContext(answers, blueprint, {
   groups,
   count,
   site,
@@ -278,7 +293,8 @@ function pickExercisesForContext(answers, blueprint, {
   weekUsedKeys,
   weekStrengthUsedKeys,
   deformers = null,
-  globalTier = 'intermediate'
+  globalTier = 'intermediate',
+  templateKeyBoosts = null
 }) {
   const quizEq = equipmentSet(answers);
   const strengthUsed = weekStrengthUsedKeys || weekUsedKeys;
@@ -287,8 +303,13 @@ function pickExercisesForContext(answers, blueprint, {
     templateMatches(t, { quizEq, site, modality, answers, weekUsedKeys })
   );
 
+  const modalityFiltered =
+    modality === 'cardio'
+      ? filtered.filter((t) => isCardioAppropriateDbKey(t.dbKey))
+      : filtered;
+
   const rng = seededRng(`${site || 'main'}:${dayIndex}:${answers?.goalPhysique || ''}`);
-  const eligible = filtered
+  const eligible = modalityFiltered
     .filter((t) => {
       if (!groups.includes(t.group)) return false;
       if (usedKeys.has(t.dbKey)) return false;
@@ -299,9 +320,13 @@ function pickExercisesForContext(answers, blueprint, {
     });
 
   const eligibleCount = eligible.length;
-  const scoreOpts = { eligibleCount, sessionUsedKeys: usedKeys };
+  const scoreOpts = {
+    eligibleCount,
+    sessionUsedKeys: usedKeys,
+    templateKeyBoosts: templateKeyBoosts || deformers?.templateKeyBoosts
+  };
 
-  const candidates = filtered
+  const candidates = modalityFiltered
     .map((t) => ({
       t,
       score: Math.max(
@@ -359,6 +384,194 @@ function pickExercisesForContext(answers, blueprint, {
   return picked;
 }
 
+const STREET_PILLAR_KEYS = ['tractions pronation', 'dips', 'pompes'];
+
+function isCardioAppropriateDbKey(dbKey) {
+  const k = String(dbKey || '').toLowerCase();
+  if (/farmer|cosaque|soulevé de terre|presse à cuisses/.test(k) && !/course|fractionné|corde|burpee|mountain/.test(k)) {
+    return false;
+  }
+  return /course|fractionné|fractionne|corde|burpee|mountain|endurance/.test(k);
+}
+
+function trimCardioSessionExercises(picked, weekUsedKeys, answers) {
+  let fractionneUsed = false;
+  if (weekUsedKeys) {
+    weekUsedKeys.forEach((key) => {
+      if (String(key).includes('fractionné') || String(key).includes('fractionne')) fractionneUsed = true;
+    });
+  }
+  let efUsed = weekUsedKeys?.has?.('course endurance fondamentale');
+
+  const out = [];
+  picked.forEach((ex) => {
+    const k = ex.exerciseBankKey || '';
+    if (!isCardioAppropriateDbKey(k)) return;
+    if (/fractionné|fractionne/.test(k)) {
+      if (fractionneUsed) return;
+      fractionneUsed = true;
+      weekUsedKeys?.add(k);
+    }
+    if (k === 'course endurance fondamentale') {
+      if (efUsed) return;
+      efUsed = true;
+      weekUsedKeys?.add(k);
+    }
+    out.push(ex);
+  });
+
+  const maxN = HYPERTROPHY_GOALS.has(answers?.goalPhysique) ? 3 : 5;
+  return out.slice(0, maxN);
+}
+
+function resolveAvailableStreetPillars(answers) {
+  const eq = equipmentSet(answers);
+  const out = [];
+  if (eq.includes('pullup_bar')) out.push('tractions pronation');
+  if (eq.includes('dip_station') || eq.includes('parallel_bars')) out.push('dips');
+  out.push('pompes');
+  return out.filter((k) => exerciseDatabase[k]);
+}
+
+function injectWeeklyStreetPillarIfMissing(schedule, activeDayKeys, answers, blueprint) {
+  const weekKeys = new Set();
+  activeDayKeys.forEach((dayKey) => {
+    (schedule[dayKey]?.exercises || []).forEach((ex) => {
+      if (ex?.exerciseBankKey) weekKeys.add(ex.exerciseBankKey);
+    });
+  });
+  if (STREET_PILLAR_KEYS.some((k) => weekKeys.has(k))) return;
+
+  const pillars = resolveAvailableStreetPillars(answers);
+  if (!pillars.length) return;
+
+  const targetKey = pillars[0];
+  for (const dayKey of activeDayKeys) {
+    const day = schedule[dayKey];
+    if (!day?.active) continue;
+    const ex = buildProgramExerciseFromDbKey(targetKey, answers, blueprint, {
+      idSuffix: `_week_pillar_${dayKey}`
+    });
+    if (!ex) continue;
+    day.exercises = [ex, ...(day.exercises || [])];
+    break;
+  }
+}
+
+const PULL_ANCHOR_KEYS = ['tractions pronation', 'rowing haltère', 'tractions australiennes'];
+const PUSH_ANCHOR_KEYS = ['pompes', 'dips', 'développé militaire'];
+
+function filterAnchorsByEquipment(keys, answers) {
+  const eq = equipmentSet(answers);
+  return keys.filter((dbKey) => {
+    if (!exerciseDatabase[dbKey]) return false;
+    if (dbKey.includes('traction') && !eq.includes('pullup_bar')) return false;
+    if (dbKey === 'dips' && !eq.includes('dip_station') && !eq.includes('parallel_bars')) return false;
+    if (dbKey === 'développé militaire' && !eq.includes('dumbbells') && !eq.includes('barbell_plates')) {
+      return false;
+    }
+    if (dbKey === 'rowing haltère' && !eq.includes('dumbbells')) return false;
+    return true;
+  });
+}
+
+/**
+ * Ancres street / haltères : jour tirage vs jour poussée (évite traction+dips identiques deux fois).
+ */
+function ensureStreetAnchorsForProfile(
+  picked,
+  answers,
+  blueprint,
+  groups,
+  dayIndex,
+  usedKeys,
+  weekStrengthUsedKeys,
+  anchorFocusOverride = null
+) {
+  if (!groups.includes('upper')) return picked;
+
+  const have = new Set(picked.map((e) => e.exerciseBankKey));
+  const focus = anchorFocusOverride ?? (dayIndex % 2 === 0 ? 'pull' : 'push');
+  const planKeys =
+    focus === 'pull'
+      ? filterAnchorsByEquipment(PULL_ANCHOR_KEYS, answers)
+      : filterAnchorsByEquipment(PUSH_ANCHOR_KEYS, answers);
+
+  const injected = [];
+  planKeys.forEach((dbKey, i) => {
+    if (have.has(dbKey) || usedKeys.has(dbKey)) return;
+    const lastDay = weekStrengthUsedKeys?.get?.(dbKey);
+    if (lastDay != null && lastDay !== dayIndex && dayIndex - lastDay < 2) return;
+    const ex = buildProgramExerciseFromDbKey(dbKey, answers, blueprint, {
+      idSuffix: `_anchor_${dayIndex}_${i}`
+    });
+    if (!ex) return;
+    usedKeys.add(dbKey);
+    have.add(dbKey);
+    injected.push(ex);
+    weekStrengthUsedKeys?.set?.(dbKey, dayIndex);
+  });
+
+  if (!injected.length) return picked;
+  return [...injected, ...picked];
+}
+
+const LOWER_FILL_KEYS = ['squat gobelet', 'fentes', 'squat cosaque'];
+
+function ensureMinimumStrengthExercises(
+  picked,
+  answers,
+  blueprint,
+  profile,
+  dayIndex,
+  usedKeys,
+  weekStrengthUsedKeys,
+  coachContext,
+  targetCount
+) {
+  if (profile?.modality === 'cardio') return picked;
+  const min =
+    HYPERTROPHY_GOALS.has(answers?.goalPhysique) ? Math.max(5, targetCount) : Math.max(4, targetCount);
+  if (picked.length >= min) return picked;
+
+  const groups = (profile?.groups || ['upper']).filter((g) => g !== 'cardio');
+  let out = [...picked];
+  let guard = 0;
+  while (out.length < min && guard < 12) {
+    guard += 1;
+    const extra = pickExercisesForContext(answers, blueprint, {
+      groups,
+      count: 1,
+      site: profile?.site,
+      dayIndex: dayIndex + guard * 3,
+      usedKeys,
+      modality: 'strength',
+      weekUsedKeys: null,
+      weekStrengthUsedKeys,
+      deformers: coachContext?.deformers,
+      globalTier: effectiveStrengthTier(answers)
+    });
+    if (!extra.length) {
+      if (groups.includes('lower')) {
+        for (const dbKey of LOWER_FILL_KEYS) {
+          if (usedKeys.has(dbKey)) continue;
+          const ex = buildProgramExerciseFromDbKey(dbKey, answers, blueprint, {
+            idSuffix: `_fill_${dayIndex}_${guard}`
+          });
+          if (ex) {
+            usedKeys.add(dbKey);
+            out.push(ex);
+            break;
+          }
+        }
+      }
+      continue;
+    }
+    out.push(...extra);
+  }
+  return out;
+}
+
 function planCardioSessionExercises(answers, blueprint, profile, dayIndex, weekUsedKeys, count) {
   const site = profile?.site || 'outdoor';
   const usedKeys = new Set();
@@ -403,13 +616,7 @@ function planCardioSessionExercises(answers, blueprint, profile, dayIndex, weekU
     });
   }
 
-  picked.forEach((ex) => {
-    if (ex.exerciseBankKey === 'course endurance fondamentale') {
-      weekUsedKeys?.add('course endurance fondamentale');
-    }
-  });
-
-  return picked;
+  return trimCardioSessionExercises(picked, weekUsedKeys, answers);
 }
 
 function planCardioAddonBlock(answers, blueprint, profile, dayIndex, usedKeys, weekUsedKeys) {
@@ -450,10 +657,50 @@ export function planMainSessionExercises(
   if (deformers?.volumeMul != null && deformers.volumeMul !== 1) {
     count = Math.max(3, Math.round(count * deformers.volumeMul));
   }
-  const globalTier = overallStrengthTier(answers);
+  const globalTier = effectiveStrengthTier(answers);
   const modality = profile?.modality || 'strength';
   const site = profile?.site ?? null;
   const usedKeys = new Set();
+
+  const blockFilled = fillSessionFromProfileBlocks(
+    answers,
+    blueprint,
+    dayIndex,
+    profile,
+    weekUsedKeys,
+    weekStrengthUsedKeys,
+    coachContext,
+    {
+      pickExercisesForContext,
+      buildProgramExerciseFromDbKey
+    }
+  );
+  if (blockFilled !== null) {
+    let picked = blockFilled;
+    picked = ensureMinimumStrengthExercises(
+      picked,
+      answers,
+      blueprint,
+      profile,
+      dayIndex,
+      usedKeys,
+      weekStrengthUsedKeys,
+      coachContext,
+      count
+    );
+    picked = trimExercisesToSessionBudget(picked, answers);
+    picked = trimExercisesForTendonLoad(picked, deformers);
+    const patterns = coachContext?.trainingEvidence?.referencedProgramAnalysis?.exercisePatterns;
+    if (patterns?.length) {
+      picked = picked.map((ex) => calibrateSeriesFromProgramPatterns(ex, patterns));
+    }
+    picked = enforceSessionExerciseLimits(picked, deformers, profile);
+    if (profile?.cardioAddon) {
+      const addon = planCardioAddonBlock(answers, blueprint, profile, dayIndex, usedKeys, weekUsedKeys);
+      picked = [...picked, ...addon];
+    }
+    return picked;
+  }
 
   if (modality === 'cardio') {
     return planCardioSessionExercises(answers, blueprint, profile, dayIndex, weekUsedKeys, count);
@@ -472,8 +719,39 @@ export function planMainSessionExercises(
     weekUsedKeys,
     weekStrengthUsedKeys,
     deformers,
-    globalTier
+    globalTier,
+    templateKeyBoosts: deformers?.templateKeyBoosts
   });
+  const anchorFocus =
+    profile?.blocks?.length > 0
+      ? (() => {
+          const b = profile.blocks;
+          if (b.includes('force_pull')) return 'pull';
+          if (b.includes('force_push')) return 'push';
+          return null;
+        })()
+      : null;
+  picked = ensureStreetAnchorsForProfile(
+    picked,
+    answers,
+    blueprint,
+    groups,
+    dayIndex,
+    usedKeys,
+    weekStrengthUsedKeys,
+    anchorFocus
+  );
+  picked = ensureMinimumStrengthExercises(
+    picked,
+    answers,
+    blueprint,
+    profile,
+    dayIndex,
+    usedKeys,
+    weekStrengthUsedKeys,
+    coachContext,
+    count
+  );
   picked = trimExercisesToSessionBudget(picked, answers);
   picked = trimExercisesForTendonLoad(picked, deformers);
 
@@ -483,6 +761,17 @@ export function planMainSessionExercises(
   }
 
   picked = enforceSessionExerciseLimits(picked, deformers, profile);
+  picked = ensureMinimumStrengthExercises(
+    picked,
+    answers,
+    blueprint,
+    profile,
+    dayIndex,
+    usedKeys,
+    weekStrengthUsedKeys,
+    coachContext,
+    count
+  );
 
   if (profile?.cardioAddon) {
     const addon = planCardioAddonBlock(answers, blueprint, profile, dayIndex, usedKeys, weekUsedKeys);
@@ -591,5 +880,13 @@ export function injectQuizExercisePlan(schedule, answers, activeDayKeys, weekPro
         profile
       )
     };
+  });
+
+  injectWeeklyStreetPillarIfMissing(schedule, activeDayKeys, answers, blueprint);
+
+  activeDayKeys.forEach((dayKey) => {
+    const slot = schedule[dayKey];
+    if (!slot?.active || !Array.isArray(slot.exercises) || !slot.exercises.length) return;
+    slot.duration = formatEstimatedSessionDuration(slot.exercises, answers);
   });
 }

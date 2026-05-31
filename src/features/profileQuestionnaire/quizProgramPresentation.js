@@ -75,6 +75,12 @@ export function buildProgramDescriptionFromQuiz(answers, schedule, quizGeneratio
 
   let sentence = `Programme ${goal} sur ${n} jour${n > 1 ? 's' : ''} par semaine (${dur}), axé ${style}`;
   if (loc) sentence += `, principalement en ${loc}`;
+  const wp = quizGenerationMeta?.weeklyPlanner;
+  if (wp?.runSummaryFr) {
+    sentence += `. ${wp.runSummaryFr}`;
+  } else if (wp?.strengthSummaryFr) {
+    sentence += `. ${wp.strengthSummaryFr}`;
+  }
   const why = quizGenerationMeta?.whyThisTemplate;
   if (Array.isArray(why) && why.length) {
     sentence += `. ${why[0]}`;
@@ -106,11 +112,40 @@ export function buildCoachEncartFromMeta(quizGenerationMeta) {
   const warnings = quizGenerationMeta.warnings;
   if (Array.isArray(warnings)) warnings.slice(0, 3).forEach((w) => bullets.push(w));
 
+  const wp = quizGenerationMeta.weeklyPlanner;
+  if (wp?.runSummaryFr) {
+    bullets.push(wp.runSummaryFr);
+  }
+  if (wp?.strengthSummaryFr) {
+    bullets.push(wp.strengthSummaryFr);
+  }
+  if (wp?.seriesAllocationFr) {
+    bullets.push(wp.seriesAllocationFr);
+  }
+  if (wp?.summaryFr) {
+    bullets.push(`Mission : ${wp.summaryFr}`);
+  }
+  if (wp?.cardioKmReasonFr && wp.cardioKmAligned === false) {
+    bullets.push(wp.cardioKmReasonFr);
+  }
+  if (wp?.placementSummaryFr) {
+    bullets.push(`Structure : ${wp.placementSummaryFr}`);
+  }
+  if (quizGenerationMeta.replanSummaryFr) {
+    bullets.push(quizGenerationMeta.replanSummaryFr);
+  }
+  const nut = quizGenerationMeta.nutritionAlignment;
+  if (nut?.summaryFr) {
+    bullets.push(`Nutrition (indicatif) : ${nut.summaryFr}`);
+  }
   if (quizGenerationMeta.progressionSummary) {
     bullets.push(quizGenerationMeta.progressionSummary);
   }
   if (quizGenerationMeta.regenerationHint) {
     bullets.push(quizGenerationMeta.regenerationHint);
+  }
+  if (quizGenerationMeta.exercisePreferenceCompareFr) {
+    bullets.push(quizGenerationMeta.exercisePreferenceCompareFr);
   }
 
   if (!bullets.length) return null;

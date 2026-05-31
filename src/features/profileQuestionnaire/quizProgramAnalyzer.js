@@ -146,7 +146,32 @@ const EMPHASIS_LABELS = {
   unknown: 'Type non classé (programme manuel ou ancien)'
 };
 
-function resolveExerciseLabel(exerciseId, getExerciseNameById) {
+function resolveExerciseLabelFromProgramSchedule(exerciseId, program) {
+  const idStr = String(exerciseId);
+  const schedule = program?.schedule;
+  if (!schedule) return null;
+  for (const day of Object.values(schedule)) {
+    const lists = [
+      day?.exercises,
+      day?.salleVariants?.semaineA?.exercises,
+      day?.salleVariants?.semaineB?.exercises
+    ];
+    for (const list of lists) {
+      if (!Array.isArray(list)) continue;
+      for (const ex of list) {
+        if (String(ex?.id) === idStr && ex?.name) return ex.name;
+        if (ex?.exerciseBankKey && String(ex.id) === idStr) {
+          return exerciseDatabase[ex.exerciseBankKey]?.name || ex.name;
+        }
+      }
+    }
+  }
+  return null;
+}
+
+function resolveExerciseLabel(exerciseId, getExerciseNameById, program = null) {
+  const fromSchedule = resolveExerciseLabelFromProgramSchedule(exerciseId, program);
+  if (fromSchedule) return fromSchedule;
   if (typeof getExerciseNameById === 'function') {
     const n = getExerciseNameById(exerciseId);
     if (n && !/^Exercice\s+\d+$/i.test(n)) return n;
@@ -166,7 +191,7 @@ function resolveExerciseLabel(exerciseId, getExerciseNameById) {
 /**
  * Moyennes de reps par exercice (clés programme) sur toute la période active.
  */
-export function aggregateExerciseRepPatterns(snapshot, program, getExerciseNameById) {
+export function aggregateExerciseRepPatterns(snapshot, program, getExerciseNameById, programForLabels = null) {
   const grouped = aggregateCheckedRepsByDateAndExerciseId(snapshot?.reps, snapshot?.checkedExercises);
   const byExercise = new Map();
 
@@ -187,7 +212,7 @@ export function aggregateExerciseRepPatterns(snapshot, program, getExerciseNameB
     const max = Math.max(...row.reps);
     patterns.push({
       exerciseId,
-      name: resolveExerciseLabel(exerciseId, getExerciseNameById),
+      name: resolveExerciseLabel(exerciseId, getExerciseNameById, programForLabels || program),
       sessions: row.count,
       avgReps: Math.round(avg * 10) / 10,
       maxReps: max
@@ -273,13 +298,48 @@ export function analyzeProgramForCoach(program, snapshot, getExerciseNameById, a
 /**
  * Ajustements deformers / evidence à partir de l’analyse programme quiz.
  */
-export function programAnalysisToCoachAdjustments(analysis, answers = {}) {
-  if (!analysis) return { volumeMulDelta: 0, maxExercisesDelta: 0, whyLines: [] };
+/**
+ * Familles de mouvements détectées dans le schedule (programmes manuels / legacy).
+ */
+export function inferScheduleMovementFamilies(program) {
+  const families = { pull: 0, push: 0, legs: 0, cardio: 0, street: 0 };
+  const scan = (list) => {
+    (list || []).forEach((ex) => {
+      const blob = `${ex?.name || ''} ${ex?.exerciseBankKey || ''}`.toLowerCase();
+      if (/course|fractionné|corde|burpee|endurance/.test(blob)) families.cardio += 1;
+      else if (/traction|pull|rowing|tirage|dos/.test(blob) && !/développé|press|pompe/.test(blob)) {
+        families.pull += 1;
+        families.street += 1;
+      } else if (/dip|pompe|push/.test(blob)) {
+        families.push += 1;
+        if (/dip|pompe|traction/.test(blob)) families.street += 1;
+      } else if (/squat|fente|presse|soulevé|mollet|jambe/.test(blob)) families.legs += 1;
+    });
+  };
+  const schedule = program?.schedule;
+  if (!schedule) return families;
+  Object.values(schedule).forEach((day) => {
+    if (!day?.active) return;
+    scan(day.exercises);
+    scan(day.salleVariants?.semaineA?.exercises);
+    scan(day.salleVariants?.semaineB?.exercises);
+  });
+  return families;
+}
+
+export function programAnalysisToCoachAdjustments(analysis, answers = {}, program = null) {
+  if (!analysis) return { volumeMulDelta: 0, maxExercisesDelta: 0, whyLines: [], templateKeyBoosts: [] };
   const whyLines = [...(analysis.coachHints || [])].slice(0, 3);
-  const adjustments = { volumeMulDelta: 0, maxExercisesDelta: 0, whyLines };
+  const adjustments = {
+    volumeMulDelta: 0,
+    maxExercisesDelta: 0,
+    whyLines,
+    templateKeyBoosts: []
+  };
 
   const goal = answers?.goalPhysique;
   const weeks = Math.floor((analysis.programAgeDays || 0) / 7);
+  const adherence = analysis.adherence?.adherencePct;
 
   if (
     weeks >= 5 &&
@@ -289,11 +349,25 @@ export function programAnalysisToCoachAdjustments(analysis, answers = {}) {
     adjustments.volumeMulDelta += 0.06;
     adjustments.maxExercisesDelta += 1;
   }
-  if (analysis.adherence?.adherencePct != null && analysis.adherence.adherencePct < 45) {
+  if (adherence != null && adherence < 45) {
     adjustments.volumeMulDelta -= 0.06;
   }
   if (analysis.emphasis === 'cardio_lean' && goal === 'strong_powerful') {
     adjustments.volumeMulDelta -= 0.03;
+  }
+
+  if (program && adherence != null && adherence >= 68) {
+    const fam = inferScheduleMovementFamilies(program);
+    if (analysis.emphasis === 'unknown' || analysis.emphasis === 'hybrid' || analysis.emphasis === 'balanced') {
+      if (fam.street >= 2 || fam.pull >= 2) {
+        adjustments.templateKeyBoosts.push('tractions pronation', 'dips', 'pompes');
+        whyLines.push(
+          'Programme actuel bien suivi : on conserve les familles street (tractions, dips, pompes) pour la suite.'
+        );
+      }
+      if (fam.pull >= 1) adjustments.templateKeyBoosts.push('rowing barre', 'rowing haltère');
+      if (fam.legs >= 2) adjustments.templateKeyBoosts.push('squat gobelet', 'fentes');
+    }
   }
 
   return adjustments;

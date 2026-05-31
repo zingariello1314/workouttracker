@@ -47,10 +47,14 @@ export function resolveDrillPlacement(answers, dayHasCardio) {
   return 'apres_echauffement';
 }
 
+const HYPERTROPHY_GOALS = new Set(['muscular_defined', 'lean_toned', 'bulk_mass']);
+
 function resolveDrillDaysCount(answers, activeDayCount) {
   const lvl = levelFromExperience(answers?.experienceLevel);
   let days = lvl === 'beginner' ? 1 : 2;
-  if (answers?.cardioTrainingDesire === 'high' || answers?.cardioTrainingDesire === 'priority_hiit') {
+  if (HYPERTROPHY_GOALS.has(answers?.goalPhysique)) {
+    days = 1;
+  } else if (answers?.cardioTrainingDesire === 'high' || answers?.cardioTrainingDesire === 'priority_hiit') {
     days = Math.min(3, days + 1);
   }
   if (answers?.cardioTrainingDesire === 'minimal') days = 1;

@@ -46,7 +46,9 @@ const BASELINE_MAP = {
   'squat gobelet': { field: 'squatGobletMax', unit: 'reps', setsByTier: { beginner: 3, intermediate: 3, advanced: 4 } },
   fentes: { field: 'lungesMax', unit: 'reps', setsByTier: { beginner: 3, intermediate: 3, advanced: 4 } },
   gainage: { field: 'plankSecMax', unit: 'sec', setsByTier: { beginner: 3, intermediate: 3, advanced: 3 } },
-  'gainage latéral': { field: 'plankSecMax', unit: 'sec', setsByTier: { beginner: 2, intermediate: 3, advanced: 3 } }
+  'gainage latéral': { field: 'plankSecMax', unit: 'sec', setsByTier: { beginner: 2, intermediate: 3, advanced: 3 } },
+  'rowing haltère': { field: 'australianPullupsMax', unit: 'reps', setsByTier: { beginner: 3, intermediate: 3, advanced: 4 } },
+  'développé militaire': { field: 'pushupsMax', unit: 'reps', setsByTier: { beginner: 3, intermediate: 3, advanced: 4 } }
 };
 
 function workPctForTier(tier) {
@@ -107,4 +109,21 @@ export function overallStrengthTier(answers) {
   if (tiers.filter((t) => t === 'beginner').length >= tiers.length / 2) return 'beginner';
   if (tiers.filter((t) => t === 'advanced').length >= Math.ceil(tiers.length / 3)) return 'advanced';
   return 'intermediate';
+}
+
+const TIER_RANK = { beginner: 0, intermediate: 1, advanced: 2 };
+
+/**
+ * Niveau effectif pour prescription : repères observables ≥ expérience déclarée seule.
+ */
+export function effectiveStrengthTier(answers) {
+  const fromBaselines = overallStrengthTier(answers);
+  if (!hasStrengthBaselines(answers)) return fromBaselines;
+
+  const exp = answers?.experienceLevel;
+  let fromExp = 'intermediate';
+  if (exp === 'beginner_total' || exp === 'beginner_0_3m') fromExp = 'beginner';
+  else if (exp === 'advanced_1_3y' || exp === 'expert_3y_plus') fromExp = 'advanced';
+
+  return TIER_RANK[fromBaselines] >= TIER_RANK[fromExp] ? fromBaselines : fromExp;
 }

@@ -5,7 +5,9 @@
 import { QUIZ_SCHEDULE_DAY_ORDER } from './trainingScheduleFromQuiz';
 import { scaleSeriesForProgressionPhase, resolveCycleWeekMeta } from './quizProgression';
 import { computeProgramWeekIndex1 } from './quizProgramWeek';
+import { detectBaselineStagnation } from './quizWeeklyBudgetLive';
 import { parseSetsCount, parseRepsMid } from './quizSessionLimits';
+import { applyBaselineToSeries } from './quizVolumeFromBaselines';
 
 const DAY_NAMES_FR = ['dimanche', 'lundi', 'mardi', 'mercredi', 'jeudi', 'vendredi', 'samedi'];
 
@@ -60,11 +62,13 @@ export function calibrateSeriesFromProgramPatterns(exercise, patterns = []) {
   const name = String(exercise.name || '').toLowerCase();
   const hit = patterns.find((p) => {
     const pn = String(p.name || '').toLowerCase();
-    return pn && (name.includes(pn.slice(0, 6)) || pn.includes(name.slice(0, 6)));
+    if (!pn || /exercice\s*:\s*\d+/i.test(pn)) return false;
+    if (p.sessions != null && p.sessions < 2) return false;
+    return name.includes(pn.slice(0, 6)) || pn.includes(name.slice(0, 6));
   });
-  if (!hit || !(hit.avgReps > 0)) return exercise;
+  if (!hit || !(hit.avgReps >= 4)) return exercise;
 
-  const sets = parseSetsCount(exercise.series);
+  const sets = Math.max(parseSetsCount(exercise.series), 3);
   const targetReps = Math.max(4, Math.min(20, Math.round(hit.avgReps)));
   const hi = Math.min(22, targetReps + 2);
   return {
@@ -76,7 +80,17 @@ export function calibrateSeriesFromProgramPatterns(exercise, patterns = []) {
   };
 }
 
-function scaleExerciseSeries(ex, weekMeta, missedFactor) {
+function floorStrengthSeries(current, baseline) {
+  const curSets = parseSetsCount(current);
+  const baseSets = parseSetsCount(baseline);
+  const curReps = parseRepsMid(current);
+  const baseReps = parseRepsMid(baseline);
+  const sets = Math.max(curSets, baseSets);
+  const reps = Math.max(curReps, baseReps);
+  return `${sets}×${reps}`;
+}
+
+function scaleExerciseSeries(ex, weekMeta, missedFactor, answers = null) {
   if (!ex?.series || /min|sec|course/i.test(String(ex.series))) return ex;
   let series = scaleSeriesForProgressionPhase(ex.series, weekMeta);
   if (missedFactor < 1) {
@@ -84,6 +98,13 @@ function scaleExerciseSeries(ex, weekMeta, missedFactor) {
       volumeFactor: missedFactor,
       phase: 'recovery'
     });
+  }
+  const dbKey = ex.exerciseBankKey;
+  if (answers && dbKey) {
+    const baseline = applyBaselineToSeries(dbKey, answers, series);
+    if (baseline && baseline !== series && /^\d+×\d+/.test(baseline)) {
+      series = floorStrengthSeries(series, baseline);
+    }
   }
   return { ...ex, series };
 }
@@ -98,16 +119,19 @@ export function applyCycleProgressionToSchedule(schedule, totalWeeks, opts = {})
     weekMeta.volumeFactor = Math.round(combinedFactor * (weekMeta.volumeFactor || 1) * 1000) / 1000;
   }
   const missedFactor = Number(opts.missedVolumeFactor) || 1;
+  const answers = opts.answers || null;
 
   QUIZ_SCHEDULE_DAY_ORDER.forEach((dayKey) => {
     const day = schedule?.[dayKey];
     if (!day?.active || !Array.isArray(day.exercises)) return;
-    day.exercises = day.exercises.map((ex) => scaleExerciseSeries(ex, weekMeta, missedFactor));
+    day.exercises = day.exercises.map((ex) => scaleExerciseSeries(ex, weekMeta, missedFactor, answers));
     if (day.salleVariants) {
       ['semaineA', 'semaineB'].forEach((vk) => {
         const list = day.salleVariants[vk]?.exercises;
         if (!Array.isArray(list)) return;
-        day.salleVariants[vk].exercises = list.map((ex) => scaleExerciseSeries(ex, weekMeta, missedFactor));
+        day.salleVariants[vk].exercises = list.map((ex) =>
+          scaleExerciseSeries(ex, weekMeta, missedFactor, answers)
+        );
       });
     }
   });
@@ -121,15 +145,18 @@ export function applyCycleProgressionToSchedule(schedule, totalWeeks, opts = {})
 export function applyProgressionForWeek(schedule, totalWeeks, weekIndex1, opts = {}) {
   const weekMeta = resolveCycleWeekMeta(totalWeeks, weekIndex1);
   const missedFactor = Number(opts.missedVolumeFactor) || 1;
+  const answers = opts.answers || null;
   QUIZ_SCHEDULE_DAY_ORDER.forEach((dayKey) => {
     const day = schedule?.[dayKey];
     if (!day?.active || !Array.isArray(day.exercises)) return;
-    day.exercises = day.exercises.map((ex) => scaleExerciseSeries(ex, weekMeta, missedFactor));
+    day.exercises = day.exercises.map((ex) => scaleExerciseSeries(ex, weekMeta, missedFactor, answers));
     if (day.salleVariants) {
       ['semaineA', 'semaineB'].forEach((vk) => {
         const list = day.salleVariants[vk]?.exercises;
         if (!Array.isArray(list)) return;
-        day.salleVariants[vk].exercises = list.map((ex) => scaleExerciseSeries(ex, weekMeta, missedFactor));
+        day.salleVariants[vk].exercises = list.map((ex) =>
+          scaleExerciseSeries(ex, weekMeta, missedFactor, answers)
+        );
       });
     }
   });
@@ -141,7 +168,12 @@ export { computeProgramWeekIndex1 };
 /**
  * Signaux Phase C : suggérer regénération (2 sem. faibles + stagnation repères).
  */
-export function detectCoachRegenerationSignals(snapshot, answers, trainingEvidence = null) {
+export function detectCoachRegenerationSignals(
+  snapshot,
+  answers,
+  trainingEvidence = null,
+  activeProgram = null
+) {
   const reasons = [];
   let score = 0;
 
@@ -166,6 +198,12 @@ export function detectCoachRegenerationSignals(snapshot, answers, trainingEviden
       score += 2;
       reasons.push('Adhérence faible sur le programme actuellement suivi.');
     }
+  }
+
+  const stagnation = detectBaselineStagnation(snapshot, activeProgram, answers);
+  if (stagnation.stagnant && stagnation.reasonFr) {
+    score += 2;
+    reasons.push(stagnation.reasonFr);
   }
 
   return {

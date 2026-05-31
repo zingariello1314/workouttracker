@@ -1,4 +1,6 @@
 import { PROFILE_QUESTION_DEFS, PROFILE_QUESTIONNAIRE_VERSION } from './constants';
+import { migrateAnswersToV12 } from './quizAnswersMigration';
+import { filterActiveQuestions } from './quizQuestionVisibility';
 
 const isObject = (v) => v && typeof v === 'object' && !Array.isArray(v);
 
@@ -10,7 +12,8 @@ export const buildEmptyAnswers = () =>
 
 export function computeCompletion(answers) {
   let completed = 0;
-  PROFILE_QUESTION_DEFS.forEach((q) => {
+  const activeDefs = filterActiveQuestions(PROFILE_QUESTION_DEFS, answers || {});
+  activeDefs.forEach((q) => {
     const v = answers?.[q.id];
     if (v == null) return;
     if (q.type === 'vitals') {
@@ -53,7 +56,7 @@ export function computeCompletion(answers) {
     }
     completed += 1;
   });
-  const total = PROFILE_QUESTION_DEFS.length;
+  const total = activeDefs.length;
   const completionPercent = total > 0 ? Math.round((completed / total) * 100) : 0;
   return { completedCount: completed, totalCount: total, completionPercent };
 }
@@ -103,11 +106,116 @@ function sanitizeVitalsValue(raw) {
   return { sex, age, weightKg, heightCm, targetWeightKg, targetWeightMode };
 }
 
+const V6_OPTIONAL_ANSWER_KEYS = {
+  primaryMission: [
+    'hypertrophy',
+    'hypertrophy_street',
+    'strength_max',
+    'recomposition',
+    'general_health',
+    'run_5k_10k',
+    'run_half',
+    'run_marathon',
+    'run_health',
+    'hybrid_run_strength',
+    'triathlon',
+    'triathlon_sprint',
+    'triathlon_olympic',
+    'triathlon_half_iron',
+    'triathlon_iron',
+    'sport_collective',
+    'combat_sport',
+    'military_prep'
+  ],
+  triathlonDistance: ['sprint', 'olympic', 'half_iron', 'iron'],
+  triathlonWeakLeg: ['swim', 'bike', 'run'],
+  sportConditioningFocus: ['balanced', 'conditioning_heavy', 'strength_heavy'],
+  runningGoal: [
+    'health',
+    '5k',
+    '10k',
+    'half_marathon',
+    'marathon',
+    'ultra_short',
+    'ultra_long',
+    'sprint',
+    'vo2max',
+    'return_to_run',
+    'trail_short',
+    'trail_long'
+  ],
+  runningWeeklyKmCurrent: [
+    'km_0',
+    'km_1_10',
+    'km_10_20',
+    'km_20_40',
+    'km_40_60',
+    'km_60_80',
+    'km_80_plus'
+  ],
+  runStrengthPriority: ['run_first', 'balanced', 'muscle_first', 'maintenance_only'],
+  conflictSacrificePriority: [
+    'keep_strength',
+    'keep_cardio',
+    'keep_legs',
+    'keep_upper',
+    'keep_mobility',
+    'sacrifice_nothing'
+  ],
+  neuralFatigueTolerance: ['low', 'moderate', 'high'],
+  volumeTolerance: ['low', 'moderate', 'high'],
+  preferredWeeklyStructure: [
+    'full_body',
+    'upper_lower',
+    'push_pull_legs',
+    'running_focus',
+    'hybrid_alternating',
+    'bro_split'
+  ],
+  runningLongRunPossible: ['yes_weekend', 'yes_weekday', 'no'],
+  streetSkillGoal: [
+    'first_pullup',
+    'pullups_10',
+    'pullups_20',
+    'muscle_up',
+    'front_lever',
+    'back_lever',
+    'planche',
+    'handstand',
+    'street_hypertrophy',
+    'street_general'
+  ]
+};
+
+const V6_OPTIONAL_ARRAY_KEYS = {
+  weeklyConstraints: [
+    'can_long_run',
+    'no_interval_after_legs',
+    'travel_week',
+    'limited_equipment'
+  ]
+};
+
+function sanitizeV6OptionalKey(key, raw) {
+  const allowed = V6_OPTIONAL_ANSWER_KEYS[key];
+  if (!allowed) return null;
+  const s = String(raw);
+  return allowed.includes(s) ? s : null;
+}
+
 export function sanitizeAnswersPayload(answersIn) {
   const answers = buildEmptyAnswers();
   const src = isObject(answersIn) ? answersIn : {};
   PROFILE_QUESTION_DEFS.forEach((q) => {
     answers[q.id] = sanitizeByQuestion(q, src[q.id]);
+  });
+  Object.keys(V6_OPTIONAL_ANSWER_KEYS).forEach((key) => {
+    if (src[key] != null) answers[key] = sanitizeV6OptionalKey(key, src[key]);
+  });
+  Object.keys(V6_OPTIONAL_ARRAY_KEYS).forEach((key) => {
+    if (!Array.isArray(src[key])) return;
+    const allowed = new Set(V6_OPTIONAL_ARRAY_KEYS[key]);
+    answers[key] = src[key].filter((v) => allowed.has(String(v)));
   });
   return answers;
 }
@@ -189,18 +297,19 @@ export function normalizeProfileQuestionnaire(raw) {
   const now = new Date().toISOString();
   const payload = isObject(raw) ? raw : {};
   const answersIn = isObject(payload.answers) ? payload.answers : {};
-  const answers = buildEmptyAnswers();
+  const storedVersion = Number(payload.version) || 0;
 
-  PROFILE_QUESTION_DEFS.forEach((q) => {
-    answers[q.id] = sanitizeByQuestion(q, answersIn[q.id]);
-  });
+  let answers = sanitizeAnswersPayload(answersIn);
+  if (storedVersion < PROFILE_QUESTIONNAIRE_VERSION) {
+    answers = migrateAnswersToV12(answers);
+  }
 
   const stats = computeCompletion(answers);
   const quizRoundHistory = sanitizeQuizRoundHistory(payload.quizRoundHistory);
   const lastCompletionRecap = sanitizeLastCompletionRecap(payload.lastCompletionRecap);
 
   return {
-    version: Number(payload.version) || PROFILE_QUESTIONNAIRE_VERSION,
+    version: Math.max(storedVersion, PROFILE_QUESTIONNAIRE_VERSION),
     createdAt: typeof payload.createdAt === 'string' ? payload.createdAt : now,
     lastUpdatedAt: typeof payload.lastUpdatedAt === 'string' ? payload.lastUpdatedAt : now,
     onboardingSkippedAt: typeof payload.onboardingSkippedAt === 'string' ? payload.onboardingSkippedAt : null,

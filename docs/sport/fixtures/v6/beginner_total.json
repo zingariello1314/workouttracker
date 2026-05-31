@@ -1,0 +1,681 @@
+{
+  "profileId": "beginner_total",
+  "exportedAt": "2026-05-31T03:49:46.736Z",
+  "schedule": {
+    "lundi": {
+      "active": true,
+      "exercises": [
+        {
+          "id": "quiz_ex_pompes_week_pillar_lundi_rtwem",
+          "name": "Pompes",
+          "series": "3×3-5",
+          "reps": "",
+          "rest": 75,
+          "intensity": "moderate",
+          "notes": "Exercice polyarticulaire de base pour le haut du corps",
+          "materiel": "Poids du corps",
+          "type": "standard",
+          "programCategory": "muscu",
+          "cardioKind": "",
+          "exerciseBankKey": "pompes"
+        },
+        {
+          "id": "quiz_ex_course_endurance_fondamentale_v6cardio_0_0_wy49o",
+          "name": "Course endurance fondamentale",
+          "series": "1×20–35 min",
+          "reps": "",
+          "rest": 0,
+          "intensity": "moderate",
+          "notes": "Sortie continue à allure conversationnelle (≈ zone 2, 65–75 % FCmax). Construit la base aérobie, la densité capillaire et l'efficacité musculaire sans casser la récupération. Volume long, intensité basse.",
+          "materiel": "Aucun (terrain plat)",
+          "type": "cardio",
+          "programCategory": "cardio",
+          "cardioKind": "running",
+          "exerciseBankKey": "course endurance fondamentale"
+        },
+        {
+          "id": "quiz_ex_corde_à_sauter_v6cardio_0_1_64in2",
+          "name": "Corde à sauter",
+          "series": "6×(30 s / 30 s)",
+          "reps": "",
+          "rest": 45,
+          "intensity": "moderate",
+          "notes": "Sauts pieds joints à cadence régulière (~140 sauts/min). Excellent travail de coordination, élasticité du mollet et endurance cardio. Démarrer par séries courtes pour préserver les tendons d'Achille.",
+          "materiel": "Corde à sauter",
+          "type": "cardio",
+          "programCategory": "cardio",
+          "cardioKind": "",
+          "exerciseBankKey": "corde à sauter"
+        }
+      ],
+      "etirements": {
+        "matin": [
+          {
+            "id": 9111,
+            "stretchKey": "mob_hanche_capsule_posterieure_glisse",
+            "duration": 72,
+            "name": "Glissement capsule postérieure de hanche (supine)",
+            "instructions": "Échauffement articulaire léger : rotations épaules, cercles hanches, chevilles ; puis 2 étirements statiques doux (ischios + dos) ~25–35 s chacun sans rebond."
+          },
+          {
+            "id": 9112,
+            "stretchKey": "mob_hanche_frog_stretch",
+            "duration": 72,
+            "name": "Frog stretch",
+            "instructions": "Échauffement articulaire léger : rotations épaules, cercles hanches, chevilles ; puis 2 étirements statiques doux (ischios + dos) ~25–35 s chacun sans rebond."
+          },
+          {
+            "id": 9113,
+            "stretchKey": "mob_hanche_seated_ir_drill",
+            "duration": 72,
+            "name": "Seated internal rotation drill",
+            "instructions": "Échauffement articulaire léger : rotations épaules, cercles hanches, chevilles ; puis 2 étirements statiques doux (ischios + dos) ~25–35 s chacun sans rebond."
+          },
+          {
+            "id": 9114,
+            "stretchKey": "pendule_bras_hanche",
+            "duration": 72,
+            "name": "Pendule bras + hanche",
+            "instructions": "Échauffement articulaire léger : rotations épaules, cercles hanches, chevilles ; puis 2 étirements statiques doux (ischios + dos) ~25–35 s chacun sans rebond."
+          },
+          {
+            "id": 9115,
+            "stretchKey": "mob_hanche_worlds_greatest",
+            "duration": 72,
+            "name": "World's Greatest Stretch",
+            "instructions": "Échauffement articulaire léger : rotations épaules, cercles hanches, chevilles ; puis 2 étirements statiques doux (ischios + dos) ~25–35 s chacun sans rebond."
+          }
+        ],
+        "midi": [],
+        "soir": [
+          {
+            "id": 9131,
+            "stretchKey": "posture_enfant",
+            "duration": 72,
+            "name": "Posture de l'enfant (balasana)",
+            "instructions": "Récup : chaîne postérieure (ischios allongé ou debout), pectoraux au cadre de porte, mollets marche. Après séance muscu ou journée statique."
+          },
+          {
+            "id": 9132,
+            "stretchKey": "mob_hanche_hip_cars",
+            "duration": 72,
+            "name": "Hip CARs",
+            "instructions": "Récup : chaîne postérieure (ischios allongé ou debout), pectoraux au cadre de porte, mollets marche. Après séance muscu ou journée statique."
+          },
+          {
+            "id": 9133,
+            "stretchKey": "appui_mur_4_points",
+            "duration": 72,
+            "name": "Appui contre mur (4 points : talons / fessiers / omoplates / tête)",
+            "instructions": "Récup : chaîne postérieure (ischios allongé ou debout), pectoraux au cadre de porte, mollets marche. Après séance muscu ou journée statique."
+          },
+          {
+            "id": 9134,
+            "stretchKey": "dead_hang_passif",
+            "duration": 72,
+            "name": "Dead hang passif (suspension à la barre)",
+            "instructions": "Récup : chaîne postérieure (ischios allongé ou debout), pectoraux au cadre de porte, mollets marche. Après séance muscu ou journée statique."
+          },
+          {
+            "id": 9135,
+            "stretchKey": "mob_hanche_kneeling_hip_opener",
+            "duration": 72,
+            "name": "Kneeling hip opener",
+            "instructions": "Récup : chaîne postérieure (ischios allongé ou debout), pectoraux au cadre de porte, mollets marche. Après séance muscu ou journée statique."
+          }
+        ]
+      },
+      "name": "Course — Cardio général",
+      "focus": "Bloc(s) : Cardio général · Cardio général · ~4 km",
+      "duration": "~46–58 min",
+      "quizSessionProfile": {
+        "modality": "cardio",
+        "site": "home_minimal",
+        "siteFamily": "cardio",
+        "groups": [
+          "cardio"
+        ],
+        "cardioAddon": false,
+        "title": "Course — Cardio général",
+        "focus": "Bloc(s) : Cardio général",
+        "durationLabel": "38 min",
+        "allowCourseEndurance": true,
+        "blocks": [
+          "cardio_general"
+        ],
+        "primaryBlock": "cardio_general",
+        "weeklyStructure": "full_body",
+        "remainingSets": null
+      },
+      "quizCoachMode": "minimal_viable",
+      "notes": "Fin de séance : 5–14 min cardio modéré — marche rapide ou montées de genoux si peu de matériel"
+    },
+    "mardi": {
+      "active": false,
+      "exercises": [],
+      "etirements": {
+        "matin": [],
+        "midi": [],
+        "soir": []
+      },
+      "name": "Repos",
+      "focus": "Hors jours choisis au quiz"
+    },
+    "mercredi": {
+      "active": true,
+      "exercises": [
+        {
+          "id": "quiz_ex_relevé_de_jambes_home_minimal_1_0_w72ih",
+          "name": "Relevé de jambes",
+          "series": "5×3-5",
+          "reps": "",
+          "rest": 75,
+          "intensity": "moderate",
+          "notes": "Exercice ciblant la partie basse des abdominaux",
+          "materiel": "Poids du corps",
+          "type": "standard",
+          "programCategory": "muscu",
+          "cardioKind": "",
+          "exerciseBankKey": "relevé de jambes"
+        },
+        {
+          "id": "quiz_ex_pompes_sur_poignées_home_minimal_1_1_b60qy",
+          "name": "Pompes sur poignées",
+          "series": "5×3-5",
+          "reps": "",
+          "rest": 75,
+          "intensity": "moderate",
+          "notes": "Pompes avec amplitude augmentée grâce aux poignées",
+          "materiel": "Poignées de pompes",
+          "type": "standard",
+          "programCategory": "muscu",
+          "cardioKind": "",
+          "exerciseBankKey": "pompes sur poignées"
+        }
+      ],
+      "etirements": {
+        "matin": [
+          {
+            "id": 9311,
+            "stretchKey": "mob_hanche_lizard_stretch",
+            "duration": 72,
+            "name": "Lizard stretch",
+            "instructions": "Échauffement articulaire léger : rotations épaules, cercles hanches, chevilles ; puis 2 étirements statiques doux (ischios + dos) ~25–35 s chacun sans rebond."
+          },
+          {
+            "id": 9312,
+            "stretchKey": "mob_hanche_bear_sit_transitions",
+            "duration": 72,
+            "name": "Bear sit transitions",
+            "instructions": "Échauffement articulaire léger : rotations épaules, cercles hanches, chevilles ; puis 2 étirements statiques doux (ischios + dos) ~25–35 s chacun sans rebond."
+          },
+          {
+            "id": 9313,
+            "stretchKey": "mob_hanche_er_couche",
+            "duration": 72,
+            "name": "Mobilité hanche — rotation externe allongé",
+            "instructions": "Échauffement articulaire léger : rotations épaules, cercles hanches, chevilles ; puis 2 étirements statiques doux (ischios + dos) ~25–35 s chacun sans rebond."
+          },
+          {
+            "id": 9314,
+            "stretchKey": "etirement_flechisseurs_hanche_passif",
+            "duration": 72,
+            "name": "Étirement passif des fléchisseurs de hanche",
+            "instructions": "Échauffement articulaire léger : rotations épaules, cercles hanches, chevilles ; puis 2 étirements statiques doux (ischios + dos) ~25–35 s chacun sans rebond."
+          },
+          {
+            "id": 9315,
+            "stretchKey": "mob_hanche_flexion_assis_banc",
+            "duration": 72,
+            "name": "Mobilité hanche — flexion assise sur banc",
+            "instructions": "Échauffement articulaire léger : rotations épaules, cercles hanches, chevilles ; puis 2 étirements statiques doux (ischios + dos) ~25–35 s chacun sans rebond."
+          }
+        ],
+        "midi": [],
+        "soir": [
+          {
+            "id": 9331,
+            "stretchKey": "decom_suspension_genoux_partiels",
+            "duration": 72,
+            "name": "Décompression — suspension partielle genoux fléchis",
+            "instructions": "Récup : chaîne postérieure (ischios allongé ou debout), pectoraux au cadre de porte, mollets marche. Après séance muscu ou journée statique."
+          },
+          {
+            "id": 9332,
+            "stretchKey": "mob_hanche_90_90_stretch",
+            "duration": 72,
+            "name": "90/90 stretch",
+            "instructions": "Récup : chaîne postérieure (ischios allongé ou debout), pectoraux au cadre de porte, mollets marche. Après séance muscu ou journée statique."
+          },
+          {
+            "id": 9333,
+            "stretchKey": "mob_hanche_leg_swings_lateral",
+            "duration": 72,
+            "name": "Leg swings latéraux",
+            "instructions": "Récup : chaîne postérieure (ischios allongé ou debout), pectoraux au cadre de porte, mollets marche. Après séance muscu ou journée statique."
+          },
+          {
+            "id": 9334,
+            "stretchKey": "etirement_actif_haut_du_dos",
+            "duration": 72,
+            "name": "Étirement actif du haut du dos (mains croisées loin devant)",
+            "instructions": "Récup : chaîne postérieure (ischios allongé ou debout), pectoraux au cadre de porte, mollets marche. Après séance muscu ou journée statique."
+          },
+          {
+            "id": 9335,
+            "stretchKey": "et_grand_dorsal_rouleau_lat",
+            "duration": 72,
+            "name": "Étirement grand dorsal sur rouleau latéral",
+            "instructions": "Récup : chaîne postérieure (ischios allongé ou debout), pectoraux au cadre de porte, mollets marche. Après séance muscu ou journée statique."
+          }
+        ]
+      },
+      "name": "Maison — Haut du corps + Jambes",
+      "focus": "Blocs : Haut du corps, Jambes · 45 min environ",
+      "duration": "~25 min",
+      "quizSessionProfile": {
+        "modality": "strength",
+        "site": "home_minimal",
+        "siteFamily": "home",
+        "groups": [
+          "upper",
+          "lower"
+        ],
+        "cardioAddon": false,
+        "title": "Maison — Haut du corps + Jambes",
+        "focus": "Blocs : Haut du corps, Jambes · 45 min environ",
+        "durationLabel": "38 min",
+        "allowCourseEndurance": false,
+        "blocks": [
+          "force_upper",
+          "force_legs"
+        ],
+        "primaryBlock": "force_upper",
+        "weeklyStructure": "full_body",
+        "remainingSets": {
+          "pull": 8,
+          "push": 8,
+          "legs": 10,
+          "core": 0
+        }
+      },
+      "quizCoachMode": "minimal_viable",
+      "notes": "Fin de séance : 5–14 min cardio modéré — marche rapide ou montées de genoux si peu de matériel"
+    },
+    "jeudi": {
+      "active": false,
+      "exercises": [],
+      "etirements": {
+        "matin": [],
+        "midi": [],
+        "soir": []
+      },
+      "name": "Repos",
+      "focus": "Hors jours choisis au quiz"
+    },
+    "vendredi": {
+      "active": false,
+      "exercises": [],
+      "etirements": {
+        "matin": [],
+        "midi": [],
+        "soir": []
+      },
+      "name": "Repos",
+      "focus": "Hors jours choisis au quiz"
+    },
+    "samedi": {
+      "active": false,
+      "exercises": [],
+      "etirements": {
+        "matin": [],
+        "midi": [],
+        "soir": []
+      },
+      "name": "Repos",
+      "focus": "Hors jours choisis au quiz"
+    },
+    "dimanche": {
+      "active": false,
+      "exercises": [],
+      "etirements": {
+        "matin": [],
+        "midi": [],
+        "soir": []
+      },
+      "name": "Repos",
+      "focus": "Hors jours choisis au quiz"
+    }
+  },
+  "quizGenerationMeta": {
+    "version": 3,
+    "loadEngineVersion": 5,
+    "generatedAt": "2026-05-31T03:49:46.736Z",
+    "archetypeId": "busy_minimum",
+    "generationMode": "minimal_viable",
+    "whyThisTemplate": [
+      "Peu de temps par séance : focus sur l’essentiel et des mouvements que tu peux répéter.",
+      "Cardio et plio réduits pour garder des séances tenables.",
+      "Phase du cycle (adaptation / deload) — canal séparé"
+    ],
+    "warnings": [
+      "pull : 0 séries réalisées vs 8 cibles (100 % d'écart — ajustement limité par la banque d'exercices).",
+      "legs : 5 séries réalisées vs 10 cibles (50 % d'écart — ajustement limité par la banque d'exercices).",
+      "core : 0 séries réalisées vs 4 cibles (100 % d'écart — ajustement limité par la banque d'exercices)."
+    ],
+    "recoveryScore": 64,
+    "adherenceRisk": 0.2,
+    "quizGoalAtGeneration": "balanced_functional",
+    "globalLoad": {
+      "factor": 0.78,
+      "structuralLoadFactor": 0.78,
+      "historyLoadFactor": 0.78,
+      "distributionFactor": 0.78,
+      "sessionLimitsFactor": 0.78,
+      "effectiveVolumeFactor": 0.624,
+      "progressionCycleFactor": 0.8,
+      "summaryFr": "Volume modéré (récupération ou adhérence)",
+      "decisionTrace": {
+        "scalar": 0.78,
+        "effective": 0.624,
+        "hierarchy": [
+          "globalLoadFactor=0.78",
+          "effectiveVolumeFactor=0.624"
+        ],
+        "trace": [
+          {
+            "layer": "envelope",
+            "key": "busy_minimum",
+            "value": 0.78,
+            "reason": "Enveloppe archétype (0.68–0.88)"
+          },
+          {
+            "layer": "channel",
+            "key": "structuralLoadFactor",
+            "value": 0.78,
+            "reason": "Canal structurel (récupération / mode)"
+          },
+          {
+            "layer": "channel",
+            "key": "historyLoadFactor",
+            "value": 0.78,
+            "reason": "Canal historique (logs Sport)"
+          },
+          {
+            "layer": "scalar",
+            "key": "globalLoadFactor",
+            "value": 0.78,
+            "reason": "Mix 55 % structurel + 45 % historique"
+          },
+          {
+            "layer": "derived",
+            "key": "distributionFactor",
+            "value": 0.78,
+            "reason": "Dérivé caps familles (√ structurel × historique)"
+          },
+          {
+            "layer": "derived",
+            "key": "sessionLimitsFactor",
+            "value": 0.78,
+            "reason": "Dérivé limites séance (min structurel, global)"
+          },
+          {
+            "layer": "cycle",
+            "key": "progressionCycleFactor",
+            "value": 0.8,
+            "reason": "Phase du cycle (adaptation / deload) — canal séparé"
+          }
+        ]
+      }
+    },
+    "shadowValidation": {
+      "passed": true,
+      "shadowScore": 0,
+      "liveBand": {
+        "min": 0.85,
+        "max": 1.05,
+        "allowUplift": false
+      },
+      "contradictions": []
+    },
+    "trainingEvidence": {
+      "maturity": "none",
+      "activeDays28": 0,
+      "tenureDays": 0,
+      "programWeeks": 0,
+      "forceBlockWeeks": false
+    },
+    "progressionPlan": [
+      {
+        "week": 1,
+        "phase": "adaptation",
+        "volumeFactor": 0.8,
+        "labelFr": "Semaine 1 — adaptation (80 %)"
+      },
+      {
+        "week": 2,
+        "phase": "load",
+        "volumeFactor": 1,
+        "labelFr": "Semaine 2 — charge"
+      },
+      {
+        "week": 3,
+        "phase": "load",
+        "volumeFactor": 1,
+        "labelFr": "Semaine 3 — charge"
+      },
+      {
+        "week": 4,
+        "phase": "load",
+        "volumeFactor": 1,
+        "labelFr": "Semaine 4 — charge"
+      },
+      {
+        "week": 5,
+        "phase": "load",
+        "volumeFactor": 1,
+        "labelFr": "Semaine 5 — charge"
+      },
+      {
+        "week": 6,
+        "phase": "deload",
+        "volumeFactor": 0.72,
+        "labelFr": "Semaine 6 — deload"
+      }
+    ],
+    "progressionSummary": "Cycle 6 sem. : 1 sem. adaptation · 4 sem. charge · 1 sem. deload.",
+    "missedVolumeFactor": 0.8,
+    "suggestRegeneration": false,
+    "regenerationHint": null,
+    "muscleCaps": {
+      "overloaded": [],
+      "caps": {
+        "pull": 9,
+        "push": 9,
+        "legs": 10,
+        "core": 5.2
+      }
+    },
+    "loadAnalysis": {
+      "nervousLoad": 5.6,
+      "rawNervousLoad": 5.8,
+      "recoveryCapacity": 10.5,
+      "nervousTolerance": 10.5,
+      "loadRatio": 0.53,
+      "marginalModel": true,
+      "overloaded": false
+    },
+    "liveCoachEnabled": true,
+    "weeklyPlanner": {
+      "engineVersion": 2,
+      "phase": "v6_3_nutrition_gate_replan",
+      "scheduleControlled": true,
+      "missionId": "general_health",
+      "missionLabelFr": "Santé / forme générale",
+      "missionSource": "inferred_goalPhysique",
+      "recoveryBudget": 0.902,
+      "strengthFamilies": {
+        "pull": 8,
+        "push": 8,
+        "legs": 10,
+        "core": 4
+      },
+      "run": null,
+      "arbitration": [],
+      "summaryFr": "Mission : Santé / forme générale · Récup. ×0.902 · Force — tirage 8 / poussée 8 / jambes 10 séries",
+      "defaultStructure": "full_body",
+      "placementSummaryFr": "Structure : full_body · 1 j force, 1 j cardio",
+      "weeklyStructure": "full_body",
+      "runBlocksPlaced": 0,
+      "compatDecisionCount": 0,
+      "replanApplied": false,
+      "replanSummaryFr": null,
+      "compatConflictsRemaining": 2,
+      "fillEngine": "v6_block_fill",
+      "plannedKmTotal": 4,
+      "plannedKmByDay": {
+        "lundi": 4
+      },
+      "runSummaryFr": null,
+      "strengthSummaryFr": "Force : dos ~8 séries, poussée ~8 séries, jambes ~10 séries / sem",
+      "cardioKmAligned": true,
+      "cardioKmReasonFr": "Pas de cible km hebdo (mission non course).",
+      "seriesAllocationFr": "Séries réalisées / cibles : pull 0/8 · push 8/8 · legs 5/10 · core 0/4",
+      "seriesWithinTolerance": false,
+      "seriesGaps": {
+        "pull": {
+          "target": 8,
+          "actual": 0,
+          "gapPct": 100
+        },
+        "push": {
+          "target": 8,
+          "actual": 8,
+          "gapPct": 0
+        },
+        "legs": {
+          "target": 10,
+          "actual": 5,
+          "gapPct": 50
+        },
+        "core": {
+          "target": 4,
+          "actual": 0,
+          "gapPct": 100
+        }
+      },
+      "dayBlocks": {
+        "lundi": [
+          "cardio_general"
+        ],
+        "mercredi": [
+          "force_upper",
+          "force_legs"
+        ]
+      },
+      "compatReasonsFr": [],
+      "liveBudgetBaseline": {
+        "missionId": "general_health",
+        "recoveryBudget": 0.902,
+        "strengthFamilies": {
+          "pull": 8,
+          "push": 8,
+          "legs": 10,
+          "core": 4
+        },
+        "runKmTarget": null,
+        "capturedAt": "2026-05-31T03:49:46.736Z"
+      },
+      "liveBudgetEnabled": true
+    },
+    "plannerEngine": "v6_hierarchical",
+    "muscleVolumeRealized": {
+      "targets": {
+        "pull": 8,
+        "push": 8,
+        "legs": 10,
+        "core": 4
+      },
+      "actual": {
+        "pull": 0,
+        "push": 8,
+        "legs": 5,
+        "core": 0
+      },
+      "gaps": {
+        "pull": {
+          "target": 8,
+          "actual": 0,
+          "gapPct": 100
+        },
+        "push": {
+          "target": 8,
+          "actual": 8,
+          "gapPct": 0
+        },
+        "legs": {
+          "target": 10,
+          "actual": 5,
+          "gapPct": 50
+        },
+        "core": {
+          "target": 4,
+          "actual": 0,
+          "gapPct": 100
+        }
+      },
+      "withinTolerance": false
+    },
+    "exercisePreferenceCompareFr": null,
+    "exercisePreferenceScores": null,
+    "planCost": 32,
+    "planCostSummaryFr": "Coût plan modéré (32) — plan aligné mission et récupération.",
+    "planCostBreakdown": [
+      {
+        "term": "MuscleIncoherence",
+        "weight": 5,
+        "raw": 0.66,
+        "value": 32,
+        "reasonFr": "Écart séries muscle vs budgets (voir séries réalisées / cibles)."
+      }
+    ],
+    "planCostHigh": false,
+    "planCostOperators": [],
+    "streetSkillGoal": null,
+    "streetSkillLabelFr": null,
+    "budgetFeedback": null,
+    "nutritionAlignment": {
+      "base": {
+        "suggestedGoal": "maintenance",
+        "bodyFatPercent": null,
+        "activityOutsideTraining": "moderately_active",
+        "estimatedMaintenanceKcal": null,
+        "targetKcalDaily": null,
+        "sportDayKcal": null,
+        "restDayKcal": null,
+        "proteinGPerKg": 1.9,
+        "timingHint": null,
+        "mealStructureHint": "Répartition équilibrée ; surplus modéré si prise de masse."
+      },
+      "byDay": {
+        "lundi": {
+          "dayLabelFr": "Lundi",
+          "kcalTarget": null,
+          "intensity": "sport",
+          "hintFr": "~null kcal — jour chargé (séance + marge)",
+          "timingFr": "Glucides autour de la séance"
+        },
+        "mercredi": {
+          "dayLabelFr": "Mercredi",
+          "kcalTarget": null,
+          "intensity": "sport",
+          "hintFr": "~null kcal — jour chargé (séance + marge)",
+          "timingFr": "Glucides autour de la séance"
+        }
+      },
+      "sportDayCount": 2,
+      "restDayCount": 0,
+      "summaryFr": "2 jours sport (~null kcal), 0 jour modéré (~null kcal). Répartition équilibrée ; surplus modéré si prise de masse."
+    }
+  }
+}

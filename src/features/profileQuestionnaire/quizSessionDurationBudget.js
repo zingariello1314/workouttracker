@@ -152,6 +152,24 @@ export function trimExercisesToSessionBudget(exercises, answers) {
   return list;
 }
 
+/**
+ * Durée estimée d’une séance à partir des exercices listés (+ échauffement).
+ */
+export function estimateSessionMinutesFromExercises(exercises, answers, { includeWarmup = true } = {}) {
+  const budget = getSessionBudget(answers);
+  const list = Array.isArray(exercises) ? exercises : [];
+  const work = list.reduce((s, ex) => s + estimateExerciseMinutes(ex), 0);
+  const warmup = includeWarmup ? budget.warmupMin : 0;
+  return Math.round(work + warmup);
+}
+
+export function formatEstimatedSessionDuration(exercises, answers) {
+  const min = estimateSessionMinutesFromExercises(exercises, answers);
+  if (min < 35) return `~${min} min`;
+  const hi = Math.min(120, min + 12);
+  return `~${min}–${hi} min`;
+}
+
 export function formatSessionDurationLabel(answers) {
   const map = {
     '15_30': '20–30 min',

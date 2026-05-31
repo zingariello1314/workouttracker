@@ -13,7 +13,9 @@ import { buildTotalStrengthRepsByDate, buildMergedStepsByDate } from '../../util
 import { aggregateLiftVolumeKgByDate } from '../../utils/exerciseLoadVolume';
 import { sumLiftVolumeKgBetween, sumRepsBetween } from '../../utils/sport/recapCrossCoachAggregate';
 import { computeQuizLevelWellnessModifier, getProgramGoalLabel } from './quizInfluence';
+import { resolveMissionProfile } from './quizMissionResolver';
 import { analyzeProgramForCoach } from './quizProgramAnalyzer';
+import { buildExercisePreferenceScore } from './quizExercisePreferenceScore';
 import {
   placementBandForScore,
   situateRunningKm,
@@ -299,15 +301,25 @@ export function buildQuizCompletionRecap({
   }));
 
   let existingProgramAnalysis = null;
+  let exercisePreferenceCompareFr = null;
   const progAns = answers?.existingProgramInApp;
+  let refProgram = null;
   if (progAns?.hasProgram === 'yes' && progAns?.programId) {
-    const prog = (programs || []).find((p) => String(p.id) === String(progAns.programId));
-    if (prog) {
-      existingProgramAnalysis = analyzeProgramForCoach(prog, data, getExerciseNameById, answers);
+    refProgram = (programs || []).find((p) => String(p.id) === String(progAns.programId)) || null;
+    if (refProgram) {
+      existingProgramAnalysis = analyzeProgramForCoach(refProgram, data, getExerciseNameById, answers);
     }
   }
+  const days28Active = countUniqueDaysWithActivityInWindow(data, window28Start, endYmd);
+  const preference = buildExercisePreferenceScore({
+    snapshot: data,
+    program: refProgram,
+    activeDays28: days28Active
+  });
+  if (preference.compareFr) exercisePreferenceCompareFr = preference.compareFr;
 
   const goalLabel = getProgramGoalLabel(answers?.goalPhysique || 'balanced_functional');
+  const missionProfile = resolveMissionProfile(answers || {});
 
   return {
     placement: {
@@ -317,12 +329,14 @@ export function buildQuizCompletionRecap({
       bandDescription: placement.description,
       experienceLabel: experienceLabels[answers?.experienceLevel] || '—',
       goalLabel,
+      missionLabelFr: missionProfile?.labelFr || null,
       dataTrust: hasLogs ? 'Historique Sport pris en compte' : 'Peu de saisies — placement surtout depuis le quiz'
     },
     quizSummary,
     metrics,
     journeyStartYmd: journeyStart,
     hasActivityLogs: hasLogs,
-    existingProgramAnalysis
+    existingProgramAnalysis,
+    exercisePreferenceCompareFr
   };
 }

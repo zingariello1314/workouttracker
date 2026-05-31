@@ -79,6 +79,11 @@ function hasConflictingGoals(answers) {
       `Beaucoup de jours cochés (${days}) alors que tu t’entraînes plutôt ${freq <= 1.5 ? '1–2×' : 'peu'} / sem — structure resserrée pour tenir sur la durée.`
     );
   }
+  if (freq >= 5 && days < 4) {
+    warnings.push(
+      `Tu déclares t’entraîner ~${Math.round(freq)} j/sem mais seulement ${days} jour(s) coché(s) — coche plus de jours disponibles ou le programme restera sur ${days} séance(s)/sem.`
+    );
+  }
   return warnings;
 }
 

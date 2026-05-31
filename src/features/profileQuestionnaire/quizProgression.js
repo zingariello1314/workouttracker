@@ -99,8 +99,10 @@ export function scaleSeriesForProgressionPhase(series, weekMeta) {
   const sets = Math.max(1, parseInt(m[1], 10));
   const lo = parseInt(m[2], 10);
   const hi = m[3] ? parseInt(m[3], 10) : lo;
-  const newSets = Math.max(1, Math.round(sets * factor));
-  const newLo = Math.max(1, Math.round(lo * factor));
+  const newSets =
+    sets >= 3 ? Math.max(3, Math.round(sets * factor)) : Math.max(1, Math.round(sets * factor));
+  const newLo =
+    lo >= 4 ? Math.max(3, Math.round(lo * factor)) : Math.max(1, Math.round(lo * factor));
   const newHi = Math.max(newLo, Math.round(hi * factor));
   if (m[3]) return `${newSets}×${newLo}-${newHi}`;
   return `${newSets}×${newLo}`;

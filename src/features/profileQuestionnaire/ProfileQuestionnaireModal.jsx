@@ -6,6 +6,7 @@ import {
   PROFILE_QUESTION_DEFS,
   QUESTION_SECTIONS
 } from './constants';
+import { filterActiveQuestions } from './quizQuestionVisibility';
 import { computeCompletion } from './schema';
 import { useProfileQuestionnaire } from './useProfileQuestionnaire';
 import { estimateTargetWeightFromQuiz } from './quizInfluence';
@@ -371,14 +372,8 @@ const ProfileQuestionnaireModal = ({ isOpen, onClose }) => {
   const [showRecap, setShowRecap] = useState(false);
 
   const activeQuestions = useMemo(
-    () =>
-      PROFILE_QUESTION_DEFS.filter((q) => {
-        if (q.id === 'weekAlternationSites') {
-          return answers?.weekAlternation === 'ab_enabled';
-        }
-        return true;
-      }),
-    [answers?.weekAlternation]
+    () => filterActiveQuestions(PROFILE_QUESTION_DEFS, answers || {}),
+    [answers]
   );
 
   const quizWasCompleted = Boolean(questionnaire.onboardingWizardCompletedAt);

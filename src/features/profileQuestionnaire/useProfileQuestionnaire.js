@@ -41,10 +41,10 @@ export const useProfileQuestionnaire = () => {
         ...(opts.lastCompletionRecap != null
           ? { lastCompletionRecap: sanitizeLastCompletionRecap(opts.lastCompletionRecap) }
           : {}),
-        answers: {
+        answers: sanitizeAnswersPayload({
           ...(questionnaire?.answers || {}),
           ...(partialAnswers || {})
-        }
+        })
       });
       return updateProfile({
         [QUESTIONNAIRE_STORAGE_FIELD]: merged

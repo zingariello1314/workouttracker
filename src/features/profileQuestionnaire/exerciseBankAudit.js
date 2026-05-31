@@ -44,6 +44,8 @@ export function auditExerciseBank() {
   const missingLegacy = legacyKeys.filter((k) => !exerciseDatabase[k]);
   const merged = getMergedQuizExerciseTemplates({ forceRefresh: true });
 
+  const gate = evaluateExerciseBankFitnessGate();
+
   return {
     exerciseCount: keys.length,
     stretchCount: Object.keys(stretchDatabase).length,
@@ -61,7 +63,54 @@ export function auditExerciseBank() {
     },
     mergedPoolSize: merged.length,
     mergedLegacyCount: merged.filter((t) => t.source === 'legacy').length,
-    mergedBankCount: merged.filter((t) => t.source === 'bank').length
+    mergedBankCount: merged.filter((t) => t.source === 'bank').length,
+    fitnessGate: gate
+  };
+}
+
+/** Gate release Phase B — SPEC §15.2 / plan v6.3 */
+export const FITNESS_GATE_AUTO_MIN_PCT = 85;
+export const FITNESS_GATE_LOW_MAX_PCT = 5;
+
+/**
+ * @returns {{
+ *   passed: boolean,
+ *   pctAuto: number,
+ *   pctLow: number,
+ *   candidateCount: number,
+ *   autoPool: number,
+ *   belowThreshold: number,
+ *   messageFr: string
+ * }}
+ */
+export function evaluateExerciseBankFitnessGate() {
+  const keys = Object.keys(exerciseDatabase);
+  const candidates = keys.filter((k) => !isExcludedFromQuizGeneration(k, exerciseDatabase[k]));
+  const n = candidates.length || 1;
+  let autoPool = 0;
+  let belowThreshold = 0;
+
+  candidates.forEach((k) => {
+    const fit = computeFitnessForGeneration(k, exerciseDatabase[k]);
+    if (fit.score >= FITNESS_THRESHOLD_AUTO) autoPool += 1;
+    if (fit.score < FITNESS_THRESHOLD_CONDITIONAL) belowThreshold += 1;
+  });
+
+  const pctAuto = Math.round((autoPool / n) * 1000) / 10;
+  const pctLow = Math.round((belowThreshold / n) * 1000) / 10;
+  const passed = pctAuto >= FITNESS_GATE_AUTO_MIN_PCT && pctLow <= FITNESS_GATE_LOW_MAX_PCT;
+  const messageFr = passed
+    ? `Banque OK : ${pctAuto} % ≥ ${FITNESS_THRESHOLD_AUTO} (seuil ${FITNESS_GATE_AUTO_MIN_PCT} %), ${pctLow} % < ${FITNESS_THRESHOLD_CONDITIONAL}.`
+    : `Gate banque : ${pctAuto} % auto (min ${FITNESS_GATE_AUTO_MIN_PCT} %), ${pctLow} % sous seuil (max ${FITNESS_GATE_LOW_MAX_PCT} %).`;
+
+  return {
+    passed,
+    pctAuto,
+    pctLow,
+    candidateCount: candidates.length,
+    autoPool,
+    belowThreshold,
+    messageFr
   };
 }
 

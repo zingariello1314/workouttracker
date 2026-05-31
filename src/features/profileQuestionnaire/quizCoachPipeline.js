@@ -35,6 +35,7 @@ import { aggregateHistoricalWeeklyFineSets, applyFineMuscleCapHints } from './qu
 import { QUIZ_SCHEDULE_DAY_ORDER } from './trainingScheduleFromQuiz';
 
 import { applyTrainingEvidenceToDeformers, buildTrainingEvidence } from './quizTrainingEvidence';
+import { applyGoalHierarchyToDeformers } from './quizGoalHierarchy';
 
 import {
 
@@ -51,6 +52,10 @@ import { detectCoachRegenerationSignals } from './quizProgressionApply';
 import { refineMaxActiveDaysFromHistory, buildAdherenceWarnings } from './quizAdherenceEngine';
 
 import { applyMuscleVolumeCaps } from './quizMuscleVolumeCaps';
+import { buildWeeklyPlan } from './quizWeeklyPlanner';
+import { applyBudgetFeedbackFromEvidence } from './quizBudgetFeedback';
+import { freezeLiveBudgetBaseline } from './quizWeeklyBudgetLive';
+import { isStreetOrientedProfile, resolveStreetSkillPlan } from './quizStreetSkillGoal';
 import { runShadowValidation } from './quizShadowValidation';
 
 
@@ -179,7 +184,10 @@ export function buildQuizCoachContext(answers, opts = {}) {
 
   let archetype = resolveProgramArchetype(answers || {}, constraints);
 
-  let deformers = { ...archetype.deformers, preferredGroupWeights: { ...archetype.deformers.preferredGroupWeights } };
+  let deformers = applyGoalHierarchyToDeformers(
+    { ...archetype.deformers, preferredGroupWeights: { ...archetype.deformers.preferredGroupWeights } },
+    answers || {}
+  );
 
 
 
@@ -266,7 +274,41 @@ export function buildQuizCoachContext(answers, opts = {}) {
 
   }
 
-
+  const weeklyPlan = buildWeeklyPlan(answers || {}, {
+    constraints,
+    globalLoadFactor: loadState?.effectiveVolumeFactor ?? loadState?.globalLoadFactor ?? 1,
+    activeDays: maxActiveDays
+  });
+  if (trainingEvidence?.maturity && trainingEvidence.maturity !== 'none') {
+    weeklyPlan.budgets = applyBudgetFeedbackFromEvidence(
+      weeklyPlan.budgets,
+      trainingEvidence,
+      answers || {}
+    );
+    (weeklyPlan.budgets.budgetFeedback || []).forEach((fb) => {
+      if (fb?.reasonFr && !whyThisTemplate.includes(fb.reasonFr)) whyThisTemplate.push(fb.reasonFr);
+    });
+  }
+  if (isStreetOrientedProfile(answers || {})) {
+    const street = resolveStreetSkillPlan(answers || {});
+    deformers = {
+      ...deformers,
+      templateKeyBoosts: [
+        ...new Set([...(deformers.templateKeyBoosts || []), ...street.boosts])
+      ],
+      streetSkillGoal: street.skillId,
+      streetSkillLabelFr: street.labelFr
+    };
+    if (street.labelFr && !whyThisTemplate.includes(`Objectif street : ${street.labelFr}`)) {
+      whyThisTemplate.push(`Objectif street : ${street.labelFr}`);
+    }
+  }
+  weeklyPlan.warnings.forEach((w) => {
+    if (w && !warnings.includes(w)) warnings.push(w);
+  });
+  weeklyPlan.whyLines.forEach((line) => {
+    if (line && !whyThisTemplate.includes(line)) whyThisTemplate.push(line);
+  });
 
   return {
 
@@ -291,6 +333,8 @@ export function buildQuizCoachContext(answers, opts = {}) {
     globalLoad: loadState,
 
     shadowValidation,
+
+    weeklyPlan,
 
     snapshot: opts.snapshot || null,
 
@@ -641,7 +685,69 @@ export function buildQuizGenerationMeta(coachContext, opts = {}) {
 
       : null,
 
-    liveCoachEnabled: true
+    liveCoachEnabled: true,
+
+    weeklyPlanner: coachContext.weeklyPlan
+      ? {
+          engineVersion: coachContext.weeklyPlan.engineVersion,
+          phase: coachContext.weeklyPlan.phase,
+          scheduleControlled: coachContext.weeklyPlan.scheduleControlled,
+          missionId: coachContext.weeklyPlan.budgets?.missionId,
+          missionLabelFr: coachContext.weeklyPlan.budgets?.missionLabelFr,
+          missionSource: coachContext.weeklyPlan.budgets?.missionSource,
+          recoveryBudget: coachContext.weeklyPlan.budgets?.recoveryBudget,
+          strengthFamilies: coachContext.weeklyPlan.budgets?.strengthFamilies,
+          run: coachContext.weeklyPlan.budgets?.run,
+          arbitration: coachContext.weeklyPlan.budgets?.arbitration,
+          summaryFr: coachContext.weeklyPlan.budgets?.summaryFr,
+          defaultStructure: coachContext.weeklyPlan.budgets?.defaultStructure,
+          placementSummaryFr: coachContext.weeklyPlan.placement?.placementSummaryFr,
+          weeklyStructure: coachContext.weeklyPlan.placement?.structure,
+          runBlocksPlaced: coachContext.weeklyPlan.placement?.runBlocksPlaced,
+          compatDecisionCount: coachContext.weeklyPlan.compatDecisions?.length ?? 0,
+          replanApplied: coachContext.weeklyPlan.replanApplied ?? false,
+          replanSummaryFr: coachContext.weeklyPlan.replanSummaryFr ?? null,
+          compatConflictsRemaining: coachContext.weeklyPlan.conflictsRemaining ?? 0,
+          fillEngine: coachContext.weeklyPlan.scheduleControlled ? 'v6_block_fill' : 'v5_legacy',
+          plannedKmTotal: coachContext.weeklyPlan.plannedKm?.totalKm ?? null,
+          plannedKmByDay: coachContext.weeklyPlan.plannedKm?.byDay ?? null,
+          runSummaryFr: coachContext.weeklyPlan.runSummaryFr ?? null,
+          strengthSummaryFr: coachContext.weeklyPlan.strengthSummaryFr ?? null,
+          cardioKmAligned: coachContext.weeklyPlan.cardioKmCheck?.aligned ?? null,
+          cardioKmReasonFr: coachContext.weeklyPlan.cardioKmCheck?.reasonFr ?? null,
+          seriesAllocationFr: coachContext.weeklyPlan.seriesAllocationFr ?? null,
+          seriesWithinTolerance: coachContext.muscleVolumeRealized?.withinTolerance ?? null,
+          seriesGaps: coachContext.muscleVolumeRealized?.gaps ?? null,
+          dayBlocks: coachContext.weeklyPlan.placement?.days
+            ? Object.fromEntries(
+                Object.entries(coachContext.weeklyPlan.placement.days).map(([k, d]) => [
+                  k,
+                  d?.blocks || []
+                ])
+              )
+            : null,
+          compatReasonsFr: (coachContext.weeklyPlan.compatDecisions || [])
+            .slice(0, 3)
+            .map((d) => d.reasonFr)
+            .filter(Boolean),
+          liveBudgetBaseline: freezeLiveBudgetBaseline(coachContext.weeklyPlan),
+          liveBudgetEnabled: true
+        }
+      : null,
+    plannerEngine: coachContext.weeklyPlan ? 'v6_hierarchical' : 'v5_day_first',
+    muscleVolumeRealized: coachContext.muscleVolumeRealized ?? null,
+    exercisePreferenceCompareFr:
+      coachContext.trainingEvidence?.exercisePreference?.compareFr ?? null,
+    exercisePreferenceScores:
+      coachContext.trainingEvidence?.exercisePreference?.scores ?? null,
+    planCost: coachContext.planCost?.planCost ?? null,
+    planCostSummaryFr: coachContext.planCost?.summaryFr ?? null,
+    planCostBreakdown: coachContext.planCost?.breakdown?.slice(0, 5) ?? null,
+    planCostHigh: coachContext.planCost?.highCost ?? false,
+    planCostOperators: coachContext.weeklyPlan?.planCostOperators ?? null,
+    streetSkillGoal: coachContext.deformers?.streetSkillGoal ?? null,
+    streetSkillLabelFr: coachContext.deformers?.streetSkillLabelFr ?? null,
+    budgetFeedback: coachContext.weeklyPlan?.budgets?.budgetFeedback ?? null
 
   };
 

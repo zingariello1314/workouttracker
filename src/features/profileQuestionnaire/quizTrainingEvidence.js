@@ -19,6 +19,10 @@ import {
   analyzeProgramForCoach,
   programAnalysisToCoachAdjustments
 } from './quizProgramAnalyzer';
+import {
+  buildExercisePreferenceScore,
+  mergePreferenceIntoAdjustments
+} from './quizExercisePreferenceScore';
 
 /** Semaines en bloc force avant pivot volume si l’objectif quiz le demande. */
 export const FORCE_BLOCK_WEEKS_THRESHOLD = 5;
@@ -242,21 +246,34 @@ export function buildTrainingEvidence({
     maxExercisesDelta: 0,
     repRangeOverride: null,
     suppressPlyo: false,
-    adherenceVolumeCut: false
+    adherenceVolumeCut: false,
+    templateKeyBoosts: [],
+    exercisePreferenceScore: null,
+    exercisePreferencePenalties: []
   };
 
   let referencedProgramAnalysis = null;
+  let exercisePreferenceBundle = null;
   const progAns = answers?.existingProgramInApp;
   if (progAns?.hasProgram === 'yes' && progAns?.programId) {
     const ref = (programs || []).find((p) => String(p.id) === String(progAns.programId));
     if (ref) {
       referencedProgramAnalysis = analyzeProgramForCoach(ref, data, getExerciseNameById, answers);
-      const progAdj = programAnalysisToCoachAdjustments(referencedProgramAnalysis, answers);
+      const progAdj = programAnalysisToCoachAdjustments(referencedProgramAnalysis, answers, ref);
       if (progAdj.volumeMulDelta) adjustments.volumeMulDelta += progAdj.volumeMulDelta;
       if (progAdj.maxExercisesDelta) adjustments.maxExercisesDelta += progAdj.maxExercisesDelta;
       progAdj.whyLines.forEach((line) => {
         if (line && !whyLines.includes(line)) whyLines.push(line);
       });
+      if (Array.isArray(progAdj.templateKeyBoosts)) {
+        adjustments.templateKeyBoosts = [...progAdj.templateKeyBoosts];
+      }
+      exercisePreferenceBundle = buildExercisePreferenceScore({
+        snapshot: data,
+        program: ref,
+        activeDays28
+      });
+      Object.assign(adjustments, mergePreferenceIntoAdjustments(adjustments, exercisePreferenceBundle));
       programWeeks = Math.max(programWeeks, Math.floor((referencedProgramAnalysis.programAgeDays || 0) / 7));
       if (referencedProgramAnalysis.emphasis === 'force') scheduleEmphasis = 'force';
       else if (referencedProgramAnalysis.emphasis === 'volume') scheduleEmphasis = 'volume';
@@ -362,6 +379,21 @@ export function buildTrainingEvidence({
     if (k >= start28 && k <= endYmd) vol28 += v;
   });
 
+  if (!exercisePreferenceBundle && maturity !== 'none') {
+    const programForPrefs = activeProgram || null;
+    exercisePreferenceBundle = buildExercisePreferenceScore({
+      snapshot: data,
+      program: programForPrefs,
+      activeDays28
+    });
+    if (exercisePreferenceBundle.maturity !== 'none') {
+      Object.assign(adjustments, mergePreferenceIntoAdjustments(adjustments, exercisePreferenceBundle));
+      if (exercisePreferenceBundle.compareFr && !whyLines.includes(exercisePreferenceBundle.compareFr)) {
+        whyLines.push(exercisePreferenceBundle.compareFr);
+      }
+    }
+  }
+
   return {
     maturity,
     journeyStartYmd: journeyStart,
@@ -382,6 +414,7 @@ export function buildTrainingEvidence({
     goalChanged,
     forceBlockWeeks,
     referencedProgramAnalysis,
+    exercisePreference: exercisePreferenceBundle,
     adjustments,
     whyLines: whyLines.slice(0, 6)
   };
@@ -415,6 +448,15 @@ export function applyTrainingEvidenceToDeformers(deformers, evidence) {
     const cur = next.maxDedicatedCardioDays;
     if (cur == null) next.maxDedicatedCardioDays = a.maxDedicatedCardioHint;
     else next.maxDedicatedCardioDays = Math.max(cur, a.maxDedicatedCardioHint);
+  }
+  if (Array.isArray(a.templateKeyBoosts) && a.templateKeyBoosts.length) {
+    next.templateKeyBoosts = [...a.templateKeyBoosts];
+  }
+  if (a.exercisePreferenceScore && typeof a.exercisePreferenceScore === 'object') {
+    next.exercisePreferenceScore = { ...a.exercisePreferenceScore };
+  }
+  if (Array.isArray(a.exercisePreferencePenalties) && a.exercisePreferencePenalties.length) {
+    next.exercisePreferencePenalties = [...a.exercisePreferencePenalties];
   }
   return next;
 }

@@ -6,6 +6,24 @@ import {
   resolveStretchMomentsFromQuiz
 } from './quizInfluence';
 import { injectQuizExercisePlan, planWeekSessionProfiles } from './quizExercisePlanner';
+import { resolvePlacementCompat } from './quizBlockCompat';
+import {
+  attachWeeklyCardioKmToCoachContext,
+  enrichScheduleDayFocusWithKm
+} from './quizCardioKmPlanner';
+import {
+  runWeeklySeriesAllocation,
+  ensureMinimumPullWeeklySets,
+  aggregateActualWeeklySets,
+  auditSeriesRealization
+} from './quizWeeklySeriesAllocator';
+import { computeQuizPlanCost } from './quizPlanCost';
+import { runPreFillPlanOptimization } from './quizPlanCostOperators';
+import { enrichShadowValidationFromWeeklyPlan } from './quizShadowValidation';
+import {
+  applyWeekPlacementToProfiles,
+  buildWeekPlacement
+} from './quizWeekPlacement';
 import {
   applyActiveDayCap,
   buildQuizCoachContext,
@@ -15,6 +33,7 @@ import {
 import { injectCircuitStylesIntoSchedule } from './circuitTrainingStyleUtils';
 import { attachQuizCircuitsToSchedule, planQuizCircuits } from './quizCircuitPlanner';
 import { injectQuizPlyometricsIntoSchedule } from './quizPlyometricPlanner';
+import { buildNutritionDayAlignment } from './quizNutritionDayAlignment';
 import { injectQuizDrillsIntoSchedule } from './quizDrillPlanner';
 import { pickQuizStretchesForMoment } from './quizStretchPicker';
 import { resolveStretchBudgetPlan } from './quizStretchBudget';
@@ -202,6 +221,82 @@ export function buildQuizAugmentedSchedule(schedule, answers, genOpts = {}) {
   }
 
   weekProfiles = planWeekSessionProfiles(activeDayKeys, answers, coachContext);
+  if (coachContext.weeklyPlan?.budgets) {
+    let placement = buildWeekPlacement(
+      activeDayKeys,
+      answers,
+      coachContext.weeklyPlan.budgets,
+      coachContext.deformers
+    );
+    const compatResolved = resolvePlacementCompat(
+      placement,
+      activeDayKeys,
+      answers,
+      coachContext.weeklyPlan.budgets,
+      coachContext.deformers
+    );
+    placement = compatResolved.placement;
+
+    const optimized = runPreFillPlanOptimization({
+      placement,
+      budgets: coachContext.weeklyPlan.budgets,
+      answers,
+      activeDayKeys,
+      coachContext,
+      schedule
+    });
+    placement = optimized.placement;
+    const budgetsAfterOps = optimized.budgets;
+
+    weekProfiles = applyWeekPlacementToProfiles(
+      weekProfiles,
+      placement,
+      answers,
+      coachContext.deformers,
+      { remainingSetsByDay: optimized.remainingSetsByDay }
+    );
+    const compatOpts = {
+      answers,
+      budgets: coachContext.weeklyPlan.budgets
+    };
+    const spacedAfterPlacement = applyNervousSpacingHints(
+      weekProfiles,
+      activeDayKeys,
+      coachContext.deformers,
+      compatOpts
+    );
+    weekProfiles = spacedAfterPlacement.weekProfiles;
+    if (spacedAfterPlacement.suppressFractionnéOnDays?.length) {
+      coachContext = {
+        ...coachContext,
+        deformers: { ...coachContext.deformers, allowFractionné: false },
+        warnings: [
+          ...coachContext.warnings,
+          'Fractionné ajusté après analyse compatibilité blocs (récupération / jambes).'
+        ]
+      };
+    }
+    coachContext = {
+      ...coachContext,
+      weeklyPlan: {
+        ...coachContext.weeklyPlan,
+        budgets: budgetsAfterOps,
+        placement: {
+          ...placement,
+          remainingSetsByDay: optimized.remainingSetsByDay,
+          seriesTargets: optimized.seriesTargets
+        },
+        compatDecisions: compatResolved.compatDecisions,
+        replanApplied: compatResolved.replanApplied ?? false,
+        replanSummaryFr: compatResolved.replanSummaryFr ?? null,
+        conflictsRemaining: compatResolved.conflictsRemaining?.length ?? 0,
+        planCostOperators: optimized.operatorTrace,
+        preFillPlanCost: optimized.preFillPlanCost,
+        phase: budgetsAfterOps?.phase || coachContext.weeklyPlan?.phase || 'v6_phase3_compat',
+        engineVersion: budgetsAfterOps?.engineVersion ?? coachContext.weeklyPlan?.engineVersion
+      }
+    };
+  }
   const circuitDefinitions = {};
   const coachOpts = { coachContext };
 
@@ -251,7 +346,8 @@ export function buildQuizAugmentedSchedule(schedule, answers, genOpts = {}) {
     1;
   applyCycleProgressionToSchedule(schedule, durationWeeks, {
     missedVolumeFactor: missedFactor,
-    volumeFactor: cycleVol
+    volumeFactor: cycleVol,
+    answers
   });
 
   activeDayKeys.forEach((dayKey) => {
@@ -266,6 +362,35 @@ export function buildQuizAugmentedSchedule(schedule, answers, genOpts = {}) {
     }
   });
 
+  if (coachContext.weeklyPlan?.budgets) {
+    attachWeeklyCardioKmToCoachContext(coachContext, schedule, activeDayKeys, weekProfiles);
+    enrichScheduleDayFocusWithKm(schedule, weekProfiles, activeDayKeys);
+    runWeeklySeriesAllocation(coachContext, schedule, activeDayKeys, answers);
+    if (
+      ['muscular_defined', 'lean_toned', 'bulk_mass'].includes(answers?.goalPhysique) ||
+      answers?.primaryMission === 'hypertrophy_street'
+    ) {
+      ensureMinimumPullWeeklySets(schedule, activeDayKeys, 10);
+      const targets = coachContext.muscleVolumeRealized?.targets;
+      if (targets) {
+        const audit = auditSeriesRealization(targets, schedule, activeDayKeys);
+        coachContext.muscleVolumeRealized = {
+          targets,
+          actual: audit.actual,
+          gaps: audit.gaps,
+          withinTolerance: audit.withinTolerance
+        };
+      }
+    }
+    coachContext.planCost = computeQuizPlanCost(coachContext, schedule, activeDayKeys, answers);
+    if (coachContext.shadowValidation) {
+      coachContext.shadowValidation = enrichShadowValidationFromWeeklyPlan(
+        coachContext.shadowValidation,
+        coachContext.weeklyPlan
+      );
+    }
+  }
+
   const quizGenerationMeta = buildQuizGenerationMeta(coachContext, {
     programDurationWeeks: durationWeeks,
     quizGoal: answers?.goalPhysique || null,
@@ -273,6 +398,18 @@ export function buildQuizAugmentedSchedule(schedule, answers, genOpts = {}) {
     snapshot: genOpts.snapshot,
     missedVolumeFactor: missedFactor
   });
+
+  quizGenerationMeta.nutritionAlignment = buildNutritionDayAlignment(
+    answers,
+    schedule,
+    quizGenerationMeta.weeklyPlanner
+  );
+  if (coachContext.weeklyPlan?.replanSummaryFr) {
+    quizGenerationMeta.replanSummaryFr = coachContext.weeklyPlan.replanSummaryFr;
+  } else if (quizGenerationMeta.weeklyPlanner?.replanSummaryFr) {
+    quizGenerationMeta.replanSummaryFr = quizGenerationMeta.weeklyPlanner.replanSummaryFr;
+  }
+
   return { schedule, circuitDefinitions, quizGenerationMeta };
 }
 

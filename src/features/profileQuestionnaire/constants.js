@@ -1,10 +1,12 @@
-export const PROFILE_QUESTIONNAIRE_VERSION = 11;
+export const PROFILE_QUESTIONNAIRE_VERSION = 12;
 
 export const QUESTION_SECTIONS = [
   { id: 'objectifs', label: 'Objectifs de la mission', color: 'violet' },
+  { id: 'mission', label: 'Mission sportive (v6)', color: 'blue' },
   { id: 'experience', label: 'Expérience de combat', color: 'yellow' },
   { id: 'operations', label: 'Opérations quotidiennes', color: 'green' },
   { id: 'mobilite', label: 'Mobilité, cardio & formats de séance', color: 'cyan' },
+  { id: 'course', label: 'Course à pied', color: 'sky' },
   { id: 'systeme', label: 'Paramètres système', color: 'white' }
 ];
 
@@ -83,6 +85,108 @@ export const PROFILE_QUESTION_DEFS = [
       { key: 'circuits_hiit', label: 'Circuits / HIIT' },
       { key: 'mobility_stretching', label: 'Mobilité / étirements' },
       { key: 'isometric_core', label: 'Isométrie / gainage' }
+    ]
+  },
+  {
+    id: 'primaryMission',
+    sectionId: 'mission',
+    type: 'single',
+    showWhen: 'mission_pick',
+    title: 'Quelle mission sportive te correspond le mieux ?',
+    description:
+      'Affine le programme généré (volume course, structure de la semaine). Une valeur est proposée automatiquement depuis ton objectif physique — tu peux la confirmer ou la changer.',
+    options: [
+      { key: 'hypertrophy', label: 'Hypertrophie / muscle', description: 'Priorité volume musculaire' },
+      { key: 'hypertrophy_street', label: 'Hypertrophie + street', description: 'Tractions, dips, pompes' },
+      { key: 'strength_max', label: 'Force max', description: 'Charges lourdes, peu de cardio' },
+      { key: 'recomposition', label: 'Recomposition', description: 'Muscle + perte de gras' },
+      { key: 'general_health', label: 'Santé & forme', description: 'Équilibre modéré' },
+      { key: 'run_5k_10k', label: 'Préparation 5 km / 10 km', description: 'Course + entretien force' },
+      { key: 'run_half', label: 'Semi-marathon', description: 'Volume course 40–80 km/sem' },
+      { key: 'run_marathon', label: 'Marathon', description: 'Volume course 55–95 km/sem' },
+      { key: 'run_health', label: 'Course loisir / retour', description: 'Endurance douce' },
+      { key: 'hybrid_run_strength', label: 'Hybride course + muscu', description: 'Les deux mondes' },
+      { key: 'triathlon', label: 'Triathlon', description: 'Multi-sport — course + force réduite' },
+      { key: 'sport_collective', label: 'Sport collectif', description: 'Foot, basket, hand…' },
+      { key: 'combat_sport', label: 'Sport de combat', description: 'Boxe, MMA, judo…' },
+      { key: 'military_prep', label: 'Préparation militaire', description: 'Force + cardio fonctionnel' }
+    ]
+  },
+  {
+    id: 'triathlonDistance',
+    sectionId: 'mission',
+    type: 'single',
+    showWhen: 'triathlon_module',
+    title: 'Distance triathlon visée',
+    description: 'Détermine le volume course hebdomadaire et la structure.',
+    options: [
+      { key: 'sprint', label: 'Sprint', description: '~22–38 km course/sem' },
+      { key: 'olympic', label: 'Olympique', description: '~32–52 km course/sem' },
+      { key: 'half_iron', label: 'Half iron (70.3)', description: '~45–70 km course/sem' },
+      { key: 'iron', label: 'Iron (140.6)', description: '~58–88 km course/sem' }
+    ]
+  },
+  {
+    id: 'sportConditioningFocus',
+    sectionId: 'mission',
+    type: 'single',
+    showWhen: 'sport_module',
+    title: 'Priorité conditioning (sport / combat / militaire)',
+    description: 'Affine le ratio circuits métaboliques vs force classique.',
+    options: [
+      { key: 'balanced', label: 'Équilibre', description: 'Force + circuits' },
+      { key: 'conditioning_heavy', label: 'Conditioning dominant', description: 'Plus de circuits HIIT' },
+      { key: 'strength_heavy', label: 'Force dominante', description: 'Moins de circuits, plus de muscu' }
+    ]
+  },
+  {
+    id: 'triathlonWeakLeg',
+    sectionId: 'mission',
+    type: 'single',
+    showWhen: 'triathlon_module',
+    title: 'Point faible à renforcer (triathlon)',
+    description: 'Affine la répartition des intensités course (natation/vélo = plus d’endurance fond).',
+    options: [
+      { key: 'swim', label: 'Natation' },
+      { key: 'bike', label: 'Vélo' },
+      { key: 'run', label: 'Course à pied' }
+    ]
+  },
+  {
+    id: 'streetSkillGoal',
+    sectionId: 'mission',
+    type: 'single',
+    showWhen: 'street_module',
+    title: 'Objectif street / barre (facultatif)',
+    description:
+      'Affine les mouvements prioritaires (tractions, dips, figures). Une suggestion est déduite de tes repères si tu laisses vide.',
+    options: [
+      { key: 'first_pullup', label: 'Premières tractions' },
+      { key: 'pullups_10', label: 'Viser 10 tractions' },
+      { key: 'pullups_20', label: 'Viser 20 tractions' },
+      { key: 'muscle_up', label: 'Muscle-up' },
+      { key: 'front_lever', label: 'Front lever' },
+      { key: 'back_lever', label: 'Back lever' },
+      { key: 'planche', label: 'Planche' },
+      { key: 'handstand', label: 'Handstand' },
+      { key: 'street_hypertrophy', label: 'Street hypertrophie' },
+      { key: 'street_general', label: 'Street général' }
+    ]
+  },
+  {
+    id: 'preferredWeeklyStructure',
+    sectionId: 'mission',
+    type: 'single',
+    showWhen: 'structure_pick',
+    title: 'Structure de semaine préférée',
+    description: 'Comment répartir les séances (le moteur peut ajuster selon tes jours cochés).',
+    options: [
+      { key: 'upper_lower', label: 'Haut / bas alternés', description: 'Classique hypertrophie' },
+      { key: 'push_pull_legs', label: 'Push / pull / legs', description: 'PPL' },
+      { key: 'full_body', label: 'Full body', description: 'Tout le corps chaque séance force' },
+      { key: 'running_focus', label: 'Priorité course', description: 'Majorité running' },
+      { key: 'hybrid_alternating', label: 'Hybride alterné', description: 'Course + force mélangés' },
+      { key: 'bro_split', label: 'Split muscle (bro)', description: 'Un groupe par jour' }
     ]
   },
   {
@@ -425,6 +529,32 @@ export const PROFILE_QUESTION_DEFS = [
     ]
   },
   {
+    id: 'neuralFatigueTolerance',
+    sectionId: 'operations',
+    type: 'single',
+    showWhen: 'recovery_pick',
+    title: 'Tolérance à la fatigue nerveuse (fractionné, charges lourdes)',
+    description:
+      'Influence l’espacement fractionné / jambes et les combinaisons de blocs dans le plan.',
+    options: [
+      { key: 'low', label: 'Faible', description: 'Je récupère lentement entre séances intenses' },
+      { key: 'moderate', label: 'Modérée', description: 'Équilibre standard' },
+      { key: 'high', label: 'Élevée', description: 'Je peux enchaîner qualité + jambes si le volume est raisonnable' }
+    ]
+  },
+  {
+    id: 'volumeTolerance',
+    sectionId: 'operations',
+    type: 'single',
+    showWhen: 'recovery_pick',
+    title: 'Tolérance au volume d’entraînement',
+    options: [
+      { key: 'low', label: 'Faible', description: 'Préfère des semaines plus légères' },
+      { key: 'moderate', label: 'Modérée' },
+      { key: 'high', label: 'Élevée', description: 'Supporte un gros volume si la récup suit' }
+    ]
+  },
+  {
     id: 'sleepQuality',
     sectionId: 'operations',
     type: 'single',
@@ -448,6 +578,94 @@ export const PROFILE_QUESTION_DEFS = [
       { key: 'moderate', label: 'Modéré' },
       { key: 'high', label: 'Élevé' },
       { key: 'very_high', label: 'Très élevé' }
+    ]
+  },
+  {
+    id: 'runningGoal',
+    sectionId: 'course',
+    type: 'single',
+    showWhen: 'run_module',
+    title: 'Objectif course principal (Q-R1)',
+    options: [
+      { key: 'health', label: 'Santé / footing', description: 'Sans compétition' },
+      { key: 'return_to_run', label: 'Reprise de la course', description: 'Retour progressif' },
+      { key: '5k', label: '5 km', description: 'Préparation ou test 5 km' },
+      { key: '10k', label: '10 km', description: 'Préparation 10 km' },
+      { key: 'half_marathon', label: 'Semi-marathon', description: '21 km' },
+      { key: 'marathon', label: 'Marathon', description: '42 km' },
+      { key: 'sprint', label: 'Sprint / vitesse', description: 'Courtes distances' },
+      { key: 'vo2max', label: 'VO₂ max / qualité', description: 'Fractionné, seuil' },
+      { key: 'trail_short', label: 'Trail court', description: 'Nature, dénivelé modéré' },
+      { key: 'trail_long', label: 'Trail long', description: 'Ultra trail court' }
+    ]
+  },
+  {
+    id: 'runningWeeklyKmCurrent',
+    sectionId: 'course',
+    type: 'single',
+    showWhen: 'run_module',
+    title: 'Volume course actuel par semaine (Q-R2)',
+    options: [
+      { key: 'km_0', label: '0 km / débutant', description: 'Je (re)commence' },
+      { key: 'km_1_10', label: '1–10 km / semaine' },
+      { key: 'km_10_20', label: '10–20 km / semaine' },
+      { key: 'km_20_40', label: '20–40 km / semaine' },
+      { key: 'km_40_60', label: '40–60 km / semaine' },
+      { key: 'km_60_80', label: '60–80 km / semaine' },
+      { key: 'km_80_plus', label: '80+ km / semaine' }
+    ]
+  },
+  {
+    id: 'runningLongRunPossible',
+    sectionId: 'course',
+    type: 'single',
+    showWhen: 'run_module',
+    title: 'Peux-tu placer une sortie longue ? (Q-R4)',
+    options: [
+      { key: 'yes_weekend', label: 'Oui, plutôt le week-end' },
+      { key: 'yes_weekday', label: 'Oui, en semaine' },
+      { key: 'no', label: 'Non / pas pour l’instant' }
+    ]
+  },
+  {
+    id: 'runStrengthPriority',
+    sectionId: 'course',
+    type: 'single',
+    showWhen: 'hybrid_priority',
+    title: 'En cas de conflit course vs muscu (Q-R5)',
+    options: [
+      { key: 'run_first', label: 'Priorité course', description: 'Km et qualité conservés' },
+      { key: 'balanced', label: 'Équilibre', description: 'Compromis' },
+      { key: 'muscle_first', label: 'Priorité musculation', description: 'Séries force maintenues' },
+      { key: 'maintenance_only', label: 'Muscu entretien seulement', description: 'Minimum force' }
+    ]
+  },
+  {
+    id: 'weeklyConstraints',
+    sectionId: 'course',
+    type: 'multi',
+    showWhen: 'run_module',
+    title: 'Contraintes hebdomadaires (optionnel)',
+    options: [
+      { key: 'can_long_run', label: 'Sortie longue possible' },
+      { key: 'no_interval_after_legs', label: 'Pas de fractionné lendemain jambes lourdes' },
+      { key: 'travel_week', label: 'Semaine voyage / matériel limité' },
+      { key: 'limited_equipment', label: 'Équipement réduit cette semaine' }
+    ]
+  },
+  {
+    id: 'conflictSacrificePriority',
+    sectionId: 'course',
+    type: 'single',
+    showWhen: 'hybrid_priority',
+    title: 'Si le plan doit sacrifier un pilier, tu préfères garder…',
+    options: [
+      { key: 'keep_strength', label: 'La force / muscu' },
+      { key: 'keep_cardio', label: 'Le cardio / course' },
+      { key: 'keep_legs', label: 'Le travail jambes' },
+      { key: 'keep_upper', label: 'Le haut du corps' },
+      { key: 'keep_mobility', label: 'Mobilité / étirements' },
+      { key: 'sacrifice_nothing', label: 'Rien — réduire le volume global' }
     ]
   },
   {

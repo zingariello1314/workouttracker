@@ -68,6 +68,42 @@ export function detectLoadContradictions(loadState, constraints = {}, trainingEv
 }
 
 /**
+ * Écart km planifié vs cible (phase 6).
+ * @param {object|null} cardioKmCheck
+ */
+export function detectKmPlanContradiction(cardioKmCheck) {
+  if (!cardioKmCheck?.targetKm || cardioKmCheck.aligned) return null;
+  return {
+    id: 'km_target_gap',
+    severity: 'warn',
+    message:
+      cardioKmCheck.warningFr ||
+      cardioKmCheck.reasonFr ||
+      'Volume course planifié éloigné de la cible hebdomadaire.'
+  };
+}
+
+/**
+ * Enrichit shadow post-génération (km, compat).
+ */
+export function enrichShadowValidationFromWeeklyPlan(shadow, weeklyPlan) {
+  if (!shadow) return shadow;
+  const contradictions = [...(shadow.contradictions || [])];
+  const km = detectKmPlanContradiction(weeklyPlan?.cardioKmCheck);
+  if (km) contradictions.push(km);
+  const userWarnings = [...(shadow.userWarnings || [])];
+  if (km?.message && !userWarnings.includes(km.message)) userWarnings.push(km.message);
+  const warnCount = contradictions.filter((c) => c.severity === 'warn').length + (shadow.flags || []).filter((f) => f.level === 'warn').length;
+  return {
+    ...shadow,
+    contradictions,
+    userWarnings: userWarnings.slice(0, 3),
+    passed: warnCount === 0,
+    shadowScore: warnCount
+  };
+}
+
+/**
  * @param {object} input
  */
 export function runShadowValidation(input = {}) {

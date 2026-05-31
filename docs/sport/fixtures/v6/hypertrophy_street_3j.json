@@ -1,0 +1,803 @@
+{
+  "profileId": "hypertrophy_street_3j",
+  "exportedAt": "2026-05-31T03:49:46.563Z",
+  "schedule": {
+    "lundi": {
+      "active": true,
+      "exercises": [
+        {
+          "id": "quiz_ex_tractions_pronation_week_pillar_lundi_nrm45",
+          "name": "Tractions pronation",
+          "series": "5×5",
+          "reps": "",
+          "rest": 75,
+          "intensity": "moderate",
+          "notes": "Tractions en prise pronation pour le développement global du dos",
+          "materiel": "Barre de traction",
+          "type": "standard",
+          "programCategory": "muscu",
+          "cardioKind": "",
+          "exerciseBankKey": "tractions pronation"
+        },
+        {
+          "id": "quiz_ex_tractions_australiennes_v6anchor_0_2_8sdnw",
+          "name": "Tractions australiennes",
+          "series": "5×4-6",
+          "reps": "",
+          "rest": 75,
+          "intensity": "moderate",
+          "notes": "Tractions horizontales au poids du corps, excellent pour débuter",
+          "materiel": "Barre basse",
+          "type": "standard",
+          "programCategory": "muscu",
+          "cardioKind": "",
+          "exerciseBankKey": "tractions australiennes"
+        }
+      ],
+      "etirements": {
+        "matin": [
+          {
+            "id": 9111,
+            "stretchKey": "mob_thoracic_open_book",
+            "duration": 72,
+            "name": "Open book thoracique (allongé sur le côté)",
+            "instructions": "Échauffement articulaire léger : rotations épaules, cercles hanches, chevilles ; puis 2 étirements statiques doux (ischios + dos) ~25–35 s chacun sans rebond."
+          },
+          {
+            "id": 9112,
+            "stretchKey": "mob_chevilles_cercles_debout",
+            "duration": 72,
+            "name": "Mobilité chevilles — cercles debout",
+            "instructions": "Échauffement articulaire léger : rotations épaules, cercles hanches, chevilles ; puis 2 étirements statiques doux (ischios + dos) ~25–35 s chacun sans rebond."
+          },
+          {
+            "id": 9113,
+            "stretchKey": "mob_t12_rotation_quadrupedie",
+            "duration": 72,
+            "name": "Rotation thoracique T12 en quadrupédie",
+            "instructions": "Échauffement articulaire léger : rotations épaules, cercles hanches, chevilles ; puis 2 étirements statiques doux (ischios + dos) ~25–35 s chacun sans rebond."
+          },
+          {
+            "id": 9114,
+            "stretchKey": "mob_genou_reverse_nordic",
+            "duration": 72,
+            "name": "Reverse Nordic curl",
+            "instructions": "Échauffement articulaire léger : rotations épaules, cercles hanches, chevilles ; puis 2 étirements statiques doux (ischios + dos) ~25–35 s chacun sans rebond."
+          },
+          {
+            "id": 9115,
+            "stretchKey": "mobilisation_cervicale",
+            "duration": 72,
+            "name": "Mobilisation cervicale (flexion / extension / rotation)",
+            "instructions": "Échauffement articulaire léger : rotations épaules, cercles hanches, chevilles ; puis 2 étirements statiques doux (ischios + dos) ~25–35 s chacun sans rebond."
+          }
+        ],
+        "midi": [],
+        "soir": [
+          {
+            "id": 9131,
+            "stretchKey": "elevations_demi_pointes",
+            "duration": 72,
+            "name": "Élévations sur demi-pointes",
+            "instructions": "Récup : chaîne postérieure (ischios allongé ou debout), pectoraux au cadre de porte, mollets marche. Après séance muscu ou journée statique."
+          },
+          {
+            "id": 9132,
+            "stretchKey": "mob_genou_spanish_squat",
+            "duration": 72,
+            "name": "Spanish squat",
+            "instructions": "Récup : chaîne postérieure (ischios allongé ou debout), pectoraux au cadre de porte, mollets marche. Après séance muscu ou journée statique."
+          },
+          {
+            "id": 9133,
+            "stretchKey": "mob_genou_tibialis_raises",
+            "duration": 72,
+            "name": "Tibialis raises",
+            "instructions": "Récup : chaîne postérieure (ischios allongé ou debout), pectoraux au cadre de porte, mollets marche. Après séance muscu ou journée statique."
+          },
+          {
+            "id": 9134,
+            "stretchKey": "mob_genou_quad_stretch_sol",
+            "duration": 72,
+            "name": "Étirement quadriceps au sol",
+            "instructions": "Récup : chaîne postérieure (ischios allongé ou debout), pectoraux au cadre de porte, mollets marche. Après séance muscu ou journée statique."
+          },
+          {
+            "id": 9135,
+            "stretchKey": "mob_orteils_extension_plancher",
+            "duration": 72,
+            "name": "Extension des orteils au sol (réveil voûte)",
+            "instructions": "Récup : chaîne postérieure (ischios allongé ou debout), pectoraux au cadre de porte, mollets marche. Après séance muscu ou journée statique."
+          }
+        ]
+      },
+      "name": "Street workout — Skills street (tractions, dips, figures) + Tirage / dos",
+      "focus": "Blocs : Skills street (tractions, dips, figures), Tirage / dos · 45–60 min",
+      "duration": "~22 min",
+      "quizSessionProfile": {
+        "modality": "strength",
+        "site": "outdoor",
+        "siteFamily": "home",
+        "groups": [
+          "upper"
+        ],
+        "cardioAddon": false,
+        "title": "Street workout — Skills street (tractions, dips, figures) + Tirage / dos",
+        "focus": "Blocs : Skills street (tractions, dips, figures), Tirage / dos · 45–60 min",
+        "durationLabel": "52 min",
+        "allowCourseEndurance": false,
+        "blocks": [
+          "skill_street",
+          "force_pull"
+        ],
+        "primaryBlock": "skill_street",
+        "weeklyStructure": "upper_lower",
+        "remainingSets": {
+          "pull": 11,
+          "push": 0,
+          "legs": 0,
+          "core": 0
+        }
+      },
+      "quizCoachMode": "balanced",
+      "notes": "Fin de séance : 5–14 min cardio modéré — marche rapide ou montées de genoux si peu de matériel\n\nCiblage quiz (muscles): upper_body, lower_body.\n\nCiblage quiz (types): strength_compounds."
+    },
+    "mardi": {
+      "active": true,
+      "exercises": [
+        {
+          "id": "quiz_ex_course_endurance_fondamentale_v6cardio_1_0_mrzuq",
+          "name": "Course endurance fondamentale",
+          "series": "1×20–35 min",
+          "reps": "",
+          "rest": 0,
+          "intensity": "moderate",
+          "notes": "Sortie continue à allure conversationnelle (≈ zone 2, 65–75 % FCmax). Construit la base aérobie, la densité capillaire et l'efficacité musculaire sans casser la récupération. Volume long, intensité basse.",
+          "materiel": "Aucun (terrain plat)",
+          "type": "cardio",
+          "programCategory": "cardio",
+          "cardioKind": "running",
+          "exerciseBankKey": "course endurance fondamentale"
+        },
+        {
+          "id": "quiz_ex_corde_à_sauter_v6cardio_1_1_oi2ml",
+          "name": "Corde à sauter",
+          "series": "6×(30 s / 30 s)",
+          "reps": "",
+          "rest": 45,
+          "intensity": "moderate",
+          "notes": "Sauts pieds joints à cadence régulière (~140 sauts/min). Excellent travail de coordination, élasticité du mollet et endurance cardio. Démarrer par séries courtes pour préserver les tendons d'Achille.",
+          "materiel": "Corde à sauter",
+          "type": "cardio",
+          "programCategory": "cardio",
+          "cardioKind": "",
+          "exerciseBankKey": "corde à sauter"
+        }
+      ],
+      "etirements": {
+        "matin": [
+          {
+            "id": 9211,
+            "stretchKey": "mob_genou_step_down_controle",
+            "duration": 72,
+            "name": "Step-down contrôlé",
+            "instructions": "Échauffement articulaire léger : rotations épaules, cercles hanches, chevilles ; puis 2 étirements statiques doux (ischios + dos) ~25–35 s chacun sans rebond."
+          },
+          {
+            "id": 9212,
+            "stretchKey": "mob_genou_wall_sit",
+            "duration": 72,
+            "name": "Wall sit",
+            "instructions": "Échauffement articulaire léger : rotations épaules, cercles hanches, chevilles ; puis 2 étirements statiques doux (ischios + dos) ~25–35 s chacun sans rebond."
+          },
+          {
+            "id": 9213,
+            "stretchKey": "mob_cou_oculosuivi_lent",
+            "duration": 72,
+            "name": "Mobilité cou — suivi oculaire lent",
+            "instructions": "Échauffement articulaire léger : rotations épaules, cercles hanches, chevilles ; puis 2 étirements statiques doux (ischios + dos) ~25–35 s chacun sans rebond."
+          },
+          {
+            "id": 9214,
+            "stretchKey": "mob_cheville_dorsiflexion_genou_mur",
+            "duration": 72,
+            "name": "Dorsiflexion cheville genou au mur (test mob)",
+            "instructions": "Échauffement articulaire léger : rotations épaules, cercles hanches, chevilles ; puis 2 étirements statiques doux (ischios + dos) ~25–35 s chacun sans rebond."
+          },
+          {
+            "id": 9215,
+            "stretchKey": "mob_genou_banded_knee_distraction",
+            "duration": 72,
+            "name": "Banded knee distraction",
+            "instructions": "Échauffement articulaire léger : rotations épaules, cercles hanches, chevilles ; puis 2 étirements statiques doux (ischios + dos) ~25–35 s chacun sans rebond."
+          }
+        ],
+        "midi": [],
+        "soir": [
+          {
+            "id": 9231,
+            "stretchKey": "mob_genou_ankle_dorsiflexion_genou",
+            "duration": 72,
+            "name": "Dorsiflexion cheville pour le genou",
+            "instructions": "Récup : chaîne postérieure (ischios allongé ou debout), pectoraux au cadre de porte, mollets marche. Après séance muscu ou journée statique."
+          },
+          {
+            "id": 9232,
+            "stretchKey": "mob_hanche_jefferson_curl_leger",
+            "duration": 72,
+            "name": "Jefferson curl léger",
+            "instructions": "Récup : chaîne postérieure (ischios allongé ou debout), pectoraux au cadre de porte, mollets marche. Après séance muscu ou journée statique."
+          },
+          {
+            "id": 9233,
+            "stretchKey": "mob_genou_heel_sit",
+            "duration": 72,
+            "name": "Heel sit — assis sur les talons",
+            "instructions": "Récup : chaîne postérieure (ischios allongé ou debout), pectoraux au cadre de porte, mollets marche. Après séance muscu ou journée statique."
+          },
+          {
+            "id": 9234,
+            "stretchKey": "mob_genou_squat_profond_assiste",
+            "duration": 72,
+            "name": "Squat profond assisté",
+            "instructions": "Récup : chaîne postérieure (ischios allongé ou debout), pectoraux au cadre de porte, mollets marche. Après séance muscu ou journée statique."
+          },
+          {
+            "id": 9235,
+            "stretchKey": "mob_genou_ischio_dynamique",
+            "duration": 72,
+            "name": "Étirement dynamique des ischios",
+            "instructions": "Récup : chaîne postérieure (ischios allongé ou debout), pectoraux au cadre de porte, mollets marche. Après séance muscu ou journée statique."
+          }
+        ]
+      },
+      "name": "Course — Cardio général",
+      "focus": "Bloc(s) : Cardio général · Cardio général · ~4 km",
+      "duration": "~43–55 min",
+      "quizSessionProfile": {
+        "modality": "cardio",
+        "site": "home_minimal",
+        "siteFamily": "cardio",
+        "groups": [
+          "cardio"
+        ],
+        "cardioAddon": false,
+        "title": "Course — Cardio général",
+        "focus": "Bloc(s) : Cardio général",
+        "durationLabel": "52 min",
+        "allowCourseEndurance": true,
+        "blocks": [
+          "cardio_general"
+        ],
+        "primaryBlock": "cardio_general",
+        "weeklyStructure": "upper_lower",
+        "remainingSets": null
+      },
+      "quizCoachMode": "balanced",
+      "notes": "Fin de séance : 5–14 min cardio modéré — marche rapide ou montées de genoux si peu de matériel\n\nCiblage quiz (muscles): upper_body, lower_body.\n\nCiblage quiz (types): strength_compounds."
+    },
+    "mercredi": {
+      "active": true,
+      "exercises": [
+        {
+          "id": "quiz_ex_soulevé_de_terre_sumo_home_minimal_2_0_qyd3j",
+          "name": "Soulevé de terre sumo",
+          "series": "5×4-6",
+          "reps": "",
+          "rest": 75,
+          "intensity": "moderate",
+          "notes": "Soulevé de terre prise large ciblant fortement adducteurs et fessiers",
+          "materiel": "Barre",
+          "type": "standard",
+          "programCategory": "muscu",
+          "cardioKind": "",
+          "exerciseBankKey": "soulevé de terre sumo"
+        },
+        {
+          "id": "quiz_ex_fentes_sautées_home_minimal_2_1_tzif3",
+          "name": "Fentes sautées",
+          "series": "5×4-6",
+          "reps": "",
+          "rest": 75,
+          "intensity": "moderate",
+          "notes": "Fentes alternées avec saut pour travail unilatéral explosif",
+          "materiel": "Poids du corps",
+          "type": "standard",
+          "programCategory": "muscu",
+          "cardioKind": "",
+          "exerciseBankKey": "fentes sautées"
+        }
+      ],
+      "etirements": {
+        "matin": [
+          {
+            "id": 9311,
+            "stretchKey": "mob_cheville_single_leg_balance",
+            "duration": 72,
+            "name": "Single leg balance",
+            "instructions": "Échauffement articulaire léger : rotations épaules, cercles hanches, chevilles ; puis 2 étirements statiques doux (ischios + dos) ~25–35 s chacun sans rebond."
+          },
+          {
+            "id": 9312,
+            "stretchKey": "assis_jambe_croisee_twist",
+            "duration": 72,
+            "name": "Assis jambe croisée (twist lent de la colonne)",
+            "instructions": "Échauffement articulaire léger : rotations épaules, cercles hanches, chevilles ; puis 2 étirements statiques doux (ischios + dos) ~25–35 s chacun sans rebond."
+          },
+          {
+            "id": 9313,
+            "stretchKey": "mob_genou_cossack_squat",
+            "duration": 72,
+            "name": "Cossack squat",
+            "instructions": "Échauffement articulaire léger : rotations épaules, cercles hanches, chevilles ; puis 2 étirements statiques doux (ischios + dos) ~25–35 s chacun sans rebond."
+          },
+          {
+            "id": 9314,
+            "stretchKey": "mob_cheville_calf_stretch_flechie",
+            "duration": 72,
+            "name": "Étirement mollet — jambe fléchie",
+            "instructions": "Échauffement articulaire léger : rotations épaules, cercles hanches, chevilles ; puis 2 étirements statiques doux (ischios + dos) ~25–35 s chacun sans rebond."
+          },
+          {
+            "id": 9315,
+            "stretchKey": "mob_genou_leg_swings_sagittal",
+            "duration": 72,
+            "name": "Leg swings avant / arrière",
+            "instructions": "Échauffement articulaire léger : rotations épaules, cercles hanches, chevilles ; puis 2 étirements statiques doux (ischios + dos) ~25–35 s chacun sans rebond."
+          }
+        ],
+        "midi": [],
+        "soir": [
+          {
+            "id": 9331,
+            "stretchKey": "mob_cheville_foot_rockers",
+            "duration": 72,
+            "name": "Foot rockers",
+            "instructions": "Récup : chaîne postérieure (ischios allongé ou debout), pectoraux au cadre de porte, mollets marche. Après séance muscu ou journée statique."
+          },
+          {
+            "id": 9332,
+            "stretchKey": "mob_genou_tke_elastique",
+            "duration": 72,
+            "name": "Terminal Knee Extensions (TKE)",
+            "instructions": "Récup : chaîne postérieure (ischios allongé ou debout), pectoraux au cadre de porte, mollets marche. Après séance muscu ou journée statique."
+          },
+          {
+            "id": 9333,
+            "stretchKey": "mob_hanche_pigeon_stretch",
+            "duration": 72,
+            "name": "Pigeon stretch",
+            "instructions": "Récup : chaîne postérieure (ischios allongé ou debout), pectoraux au cadre de porte, mollets marche. Après séance muscu ou journée statique."
+          },
+          {
+            "id": 9334,
+            "stretchKey": "mob_cheville_jump_rope_leger",
+            "duration": 72,
+            "name": "Jump rope léger",
+            "instructions": "Récup : chaîne postérieure (ischios allongé ou debout), pectoraux au cadre de porte, mollets marche. Après séance muscu ou journée statique."
+          },
+          {
+            "id": 9335,
+            "stretchKey": "mob_cheville_toe_walks",
+            "duration": 72,
+            "name": "Toe walks",
+            "instructions": "Récup : chaîne postérieure (ischios allongé ou debout), pectoraux au cadre de porte, mollets marche. Après séance muscu ou journée statique."
+          }
+        ]
+      },
+      "name": "Maison — Jambes",
+      "focus": "Blocs : Jambes · 45–60 min",
+      "duration": "~17 min",
+      "quizSessionProfile": {
+        "modality": "strength",
+        "site": "home_minimal",
+        "siteFamily": "home",
+        "groups": [
+          "lower"
+        ],
+        "cardioAddon": false,
+        "title": "Maison — Jambes",
+        "focus": "Blocs : Jambes · 45–60 min",
+        "durationLabel": "52 min",
+        "allowCourseEndurance": false,
+        "blocks": [
+          "force_legs"
+        ],
+        "primaryBlock": "force_legs",
+        "weeklyStructure": "upper_lower",
+        "remainingSets": {
+          "pull": 0,
+          "push": 0,
+          "legs": 10,
+          "core": 0
+        }
+      },
+      "quizCoachMode": "balanced",
+      "notes": "Fin de séance : 5–14 min cardio modéré — marche rapide ou montées de genoux si peu de matériel\n\nCiblage quiz (muscles): upper_body, lower_body.\n\nCiblage quiz (types): strength_compounds."
+    },
+    "jeudi": {
+      "active": false,
+      "exercises": [],
+      "etirements": {
+        "matin": [],
+        "midi": [],
+        "soir": []
+      },
+      "name": "Repos",
+      "focus": "Hors jours choisis au quiz"
+    },
+    "vendredi": {
+      "active": false,
+      "exercises": [],
+      "etirements": {
+        "matin": [],
+        "midi": [],
+        "soir": []
+      },
+      "name": "Repos",
+      "focus": "Hors jours choisis au quiz"
+    },
+    "samedi": {
+      "active": false,
+      "exercises": [],
+      "etirements": {
+        "matin": [],
+        "midi": [],
+        "soir": []
+      },
+      "name": "Repos",
+      "focus": "Hors jours choisis au quiz"
+    },
+    "dimanche": {
+      "active": false,
+      "exercises": [],
+      "etirements": {
+        "matin": [],
+        "midi": [],
+        "soir": []
+      },
+      "name": "Repos",
+      "focus": "Hors jours choisis au quiz"
+    }
+  },
+  "quizGenerationMeta": {
+    "version": 3,
+    "loadEngineVersion": 5,
+    "generatedAt": "2026-05-31T03:49:46.562Z",
+    "archetypeId": "street_intermediate",
+    "generationMode": "balanced",
+    "whyThisTemplate": [
+      "Priorité street workout : tirage, poussée et gainage avec progression sur les bases.",
+      "Volume tirage limité par séance pour protéger coudes et épaules.",
+      "Phase du cycle (adaptation / deload) — canal séparé"
+    ],
+    "warnings": [
+      "push : 0 séries réalisées vs 10.9 cibles (100 % d'écart — ajustement limité par la banque d'exercices).",
+      "core : 0 séries réalisées vs 5.7 cibles (100 % d'écart — ajustement limité par la banque d'exercices)."
+    ],
+    "recoveryScore": 74,
+    "adherenceRisk": 0.2,
+    "quizGoalAtGeneration": "muscular_defined",
+    "globalLoad": {
+      "factor": 1,
+      "structuralLoadFactor": 1,
+      "historyLoadFactor": 1,
+      "distributionFactor": 1,
+      "sessionLimitsFactor": 1,
+      "effectiveVolumeFactor": 0.8,
+      "progressionCycleFactor": 0.8,
+      "summaryFr": "Volume équilibré selon ton profil et tes logs",
+      "decisionTrace": {
+        "scalar": 1,
+        "effective": 0.8,
+        "hierarchy": [
+          "globalLoadFactor=1",
+          "effectiveVolumeFactor=0.8"
+        ],
+        "trace": [
+          {
+            "layer": "envelope",
+            "key": "street_intermediate",
+            "value": 1,
+            "reason": "Enveloppe archétype (0.88–1.08)"
+          },
+          {
+            "layer": "channel",
+            "key": "structuralLoadFactor",
+            "value": 1,
+            "reason": "Canal structurel (récupération / mode)"
+          },
+          {
+            "layer": "channel",
+            "key": "historyLoadFactor",
+            "value": 1,
+            "reason": "Canal historique (logs Sport)"
+          },
+          {
+            "layer": "scalar",
+            "key": "globalLoadFactor",
+            "value": 1,
+            "reason": "Mix 55 % structurel + 45 % historique"
+          },
+          {
+            "layer": "derived",
+            "key": "distributionFactor",
+            "value": 1,
+            "reason": "Dérivé caps familles (√ structurel × historique)"
+          },
+          {
+            "layer": "derived",
+            "key": "sessionLimitsFactor",
+            "value": 1,
+            "reason": "Dérivé limites séance (min structurel, global)"
+          },
+          {
+            "layer": "cycle",
+            "key": "progressionCycleFactor",
+            "value": 0.8,
+            "reason": "Phase du cycle (adaptation / deload) — canal séparé"
+          }
+        ]
+      }
+    },
+    "shadowValidation": {
+      "passed": true,
+      "shadowScore": 0,
+      "liveBand": {
+        "min": 0.85,
+        "max": 1.05,
+        "allowUplift": false
+      },
+      "contradictions": []
+    },
+    "trainingEvidence": {
+      "maturity": "none",
+      "activeDays28": 0,
+      "tenureDays": 0,
+      "programWeeks": 0,
+      "forceBlockWeeks": false
+    },
+    "progressionPlan": [
+      {
+        "week": 1,
+        "phase": "adaptation",
+        "volumeFactor": 0.8,
+        "labelFr": "Semaine 1 — adaptation (80 %)"
+      },
+      {
+        "week": 2,
+        "phase": "load",
+        "volumeFactor": 1,
+        "labelFr": "Semaine 2 — charge"
+      },
+      {
+        "week": 3,
+        "phase": "load",
+        "volumeFactor": 1,
+        "labelFr": "Semaine 3 — charge"
+      },
+      {
+        "week": 4,
+        "phase": "load",
+        "volumeFactor": 1,
+        "labelFr": "Semaine 4 — charge"
+      },
+      {
+        "week": 5,
+        "phase": "load",
+        "volumeFactor": 1,
+        "labelFr": "Semaine 5 — charge"
+      },
+      {
+        "week": 6,
+        "phase": "deload",
+        "volumeFactor": 0.72,
+        "labelFr": "Semaine 6 — deload"
+      }
+    ],
+    "progressionSummary": "Cycle 6 sem. : 1 sem. adaptation · 4 sem. charge · 1 sem. deload.",
+    "missedVolumeFactor": 0.8,
+    "suggestRegeneration": false,
+    "regenerationHint": null,
+    "muscleCaps": {
+      "overloaded": [],
+      "caps": {
+        "pull": 13.1,
+        "push": 13.1,
+        "legs": 13.1,
+        "core": 7.5
+      }
+    },
+    "loadAnalysis": {
+      "nervousLoad": 8.1,
+      "rawNervousLoad": 8.6,
+      "recoveryCapacity": 12.5,
+      "nervousTolerance": 12.5,
+      "loadRatio": 0.65,
+      "marginalModel": true,
+      "overloaded": false
+    },
+    "liveCoachEnabled": true,
+    "weeklyPlanner": {
+      "engineVersion": 2,
+      "phase": "v6_3_nutrition_gate_replan",
+      "scheduleControlled": true,
+      "missionId": "hypertrophy_street",
+      "missionLabelFr": "Hypertrophie + street",
+      "missionSource": "inferred_goalPhysique",
+      "recoveryBudget": 0.957,
+      "strengthFamilies": {
+        "pull": 11.3,
+        "push": 10.9,
+        "legs": 9.6,
+        "core": 5.7
+      },
+      "run": null,
+      "arbitration": [],
+      "summaryFr": "Mission : Hypertrophie + street · Récup. ×0.957 · Force — tirage 11.3 / poussée 10.9 / jambes 9.6 séries",
+      "defaultStructure": "upper_lower",
+      "placementSummaryFr": "Structure : upper_lower · 2 j force, 1 j cardio",
+      "weeklyStructure": "upper_lower",
+      "runBlocksPlaced": 0,
+      "compatDecisionCount": 0,
+      "replanApplied": false,
+      "replanSummaryFr": null,
+      "compatConflictsRemaining": 2,
+      "fillEngine": "v6_block_fill",
+      "plannedKmTotal": 4,
+      "plannedKmByDay": {
+        "mardi": 4
+      },
+      "runSummaryFr": null,
+      "strengthSummaryFr": "Force : dos ~11 séries, poussée ~11 séries, jambes ~10 séries / sem",
+      "cardioKmAligned": true,
+      "cardioKmReasonFr": "Pas de cible km hebdo (mission non course).",
+      "seriesAllocationFr": "Séries réalisées / cibles : pull 10/11.3 · push 0/10.9 · legs 10/9.6 · core 0/5.7 · Blocs street / circuit : budgets séries classiques non imposés sur ces jours.",
+      "seriesWithinTolerance": false,
+      "seriesGaps": {
+        "pull": {
+          "target": 11.3,
+          "actual": 10,
+          "gapPct": 12
+        },
+        "push": {
+          "target": 10.9,
+          "actual": 0,
+          "gapPct": 100
+        },
+        "legs": {
+          "target": 9.6,
+          "actual": 10,
+          "gapPct": 4
+        },
+        "core": {
+          "target": 5.7,
+          "actual": 0,
+          "gapPct": 100
+        }
+      },
+      "dayBlocks": {
+        "lundi": [
+          "skill_street",
+          "force_pull"
+        ],
+        "mardi": [
+          "cardio_general"
+        ],
+        "mercredi": [
+          "force_legs"
+        ]
+      },
+      "compatReasonsFr": [],
+      "liveBudgetBaseline": {
+        "missionId": "hypertrophy_street",
+        "recoveryBudget": 0.957,
+        "strengthFamilies": {
+          "pull": 11.3,
+          "push": 10.9,
+          "legs": 9.6,
+          "core": 5.7
+        },
+        "runKmTarget": null,
+        "capturedAt": "2026-05-31T03:49:46.563Z"
+      },
+      "liveBudgetEnabled": true
+    },
+    "plannerEngine": "v6_hierarchical",
+    "muscleVolumeRealized": {
+      "targets": {
+        "pull": 11.3,
+        "push": 10.9,
+        "legs": 9.6,
+        "core": 5.7
+      },
+      "actual": {
+        "pull": 10,
+        "push": 0,
+        "legs": 10,
+        "core": 0
+      },
+      "gaps": {
+        "pull": {
+          "target": 11.3,
+          "actual": 10,
+          "gapPct": 12
+        },
+        "push": {
+          "target": 10.9,
+          "actual": 0,
+          "gapPct": 100
+        },
+        "legs": {
+          "target": 9.6,
+          "actual": 10,
+          "gapPct": 4
+        },
+        "core": {
+          "target": 5.7,
+          "actual": 0,
+          "gapPct": 100
+        }
+      },
+      "withinTolerance": false
+    },
+    "exercisePreferenceCompareFr": null,
+    "exercisePreferenceScores": null,
+    "planCost": 32,
+    "planCostSummaryFr": "Coût plan modéré (32) — plan aligné mission et récupération.",
+    "planCostBreakdown": [
+      {
+        "term": "MuscleIncoherence",
+        "weight": 5,
+        "raw": 0.44,
+        "value": 32,
+        "reasonFr": "Écart séries muscle vs budgets (voir séries réalisées / cibles)."
+      }
+    ],
+    "planCostHigh": false,
+    "planCostOperators": [],
+    "streetSkillGoal": "pullups_10",
+    "streetSkillLabelFr": "Viser 10 tractions",
+    "budgetFeedback": null,
+    "nutritionAlignment": {
+      "base": {
+        "suggestedGoal": "lean_bulk",
+        "bodyFatPercent": null,
+        "activityOutsideTraining": "moderately_active",
+        "estimatedMaintenanceKcal": null,
+        "targetKcalDaily": null,
+        "sportDayKcal": null,
+        "restDayKcal": null,
+        "proteinGPerKg": 1.9,
+        "timingHint": null,
+        "mealStructureHint": "Répartition équilibrée ; surplus modéré si prise de masse."
+      },
+      "byDay": {
+        "lundi": {
+          "dayLabelFr": "Lundi",
+          "kcalTarget": null,
+          "intensity": "moderate",
+          "hintFr": "~null kcal — jour plus léger",
+          "timingFr": null
+        },
+        "mardi": {
+          "dayLabelFr": "Mardi",
+          "kcalTarget": null,
+          "intensity": "sport",
+          "hintFr": "~null kcal — jour chargé (séance + marge)",
+          "timingFr": "Glucides autour de la séance"
+        },
+        "mercredi": {
+          "dayLabelFr": "Mercredi",
+          "kcalTarget": null,
+          "intensity": "sport",
+          "hintFr": "~null kcal — jour chargé (séance + marge)",
+          "timingFr": "Glucides autour de la séance"
+        }
+      },
+      "sportDayCount": 2,
+      "restDayCount": 1,
+      "summaryFr": "2 jours sport (~null kcal), 1 jour modéré (~null kcal). Répartition équilibrée ; surplus modéré si prise de masse."
+    }
+  }
+}

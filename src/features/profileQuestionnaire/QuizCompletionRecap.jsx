@@ -31,7 +31,14 @@ const QuizCompletionRecap = ({
     garminDailyMetrics
   });
 
-  const { placement, metrics, quizSummary, existingProgramAnalysis, hasActivityLogs } = recap;
+  const {
+    placement,
+    metrics,
+    quizSummary,
+    existingProgramAnalysis,
+    exercisePreferenceCompareFr,
+    hasActivityLogs
+  } = recap;
 
   return (
     <div className="space-y-5 max-h-[min(70vh,720px)] overflow-y-auto pr-1">
@@ -71,6 +78,13 @@ const QuizCompletionRecap = ({
           ))}
         </ul>
       </section>
+
+      {exercisePreferenceCompareFr ? (
+        <section className="rounded-xl border border-cyan-500/30 bg-cyan-950/25 p-4">
+          <h4 className="text-sm font-semibold text-cyan-100 mb-2">Tes habitudes d’entraînement</h4>
+          <p className="text-sm text-cyan-50/95 leading-relaxed">{exercisePreferenceCompareFr}</p>
+        </section>
+      ) : null}
 
       {existingProgramAnalysis ? (
         <section className="rounded-xl border border-amber-500/25 bg-amber-950/20 p-4">

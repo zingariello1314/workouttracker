@@ -15,8 +15,10 @@ import {
 } from './quizSitePolicy';
 import { resolveSameDayCardioFromDeformers } from './quizArchetype';
 
+const HYPERTROPHY_GOALS = new Set(['muscular_defined', 'lean_toned', 'bulk_mass']);
+
 /** Jours dédiés cardio (1 → 5 max) selon `cardioTrainingDesire`, plafonné par les jours actifs. */
-function maxDedicatedCardioDays(activeCount, cardioDesire, deformers) {
+function maxDedicatedCardioDays(activeCount, cardioDesire, deformers, answers = null) {
   if (activeCount <= 0) return 0;
   const desireMap = {
     minimal: 1,
@@ -28,6 +30,11 @@ function maxDedicatedCardioDays(activeCount, cardioDesire, deformers) {
   let target = desireMap[cardioDesire] ?? desireMap.moderate;
   if (deformers?.maxDedicatedCardioDays != null) {
     target = Math.min(target, deformers.maxDedicatedCardioDays);
+  }
+  if (HYPERTROPHY_GOALS.has(answers?.goalPhysique) && activeCount >= 2) {
+    target = Math.min(target, Math.max(1, Math.floor(activeCount / 2)));
+    target = Math.min(target, activeCount - 1);
+    if (activeCount <= 3) target = Math.min(target, 1);
   }
   return Math.min(activeCount, Math.max(1, target));
 }
@@ -51,17 +58,43 @@ function muscleRotationGroups(answers) {
   return groups;
 }
 
-/** Un seul bloc muscle principal par jour pour éviter 3 séances identiques. */
-function groupsForDayIndex(muscleGroups, dayIndex) {
-  if (!muscleGroups.length) return ['upper'];
-  return [muscleGroups[dayIndex % muscleGroups.length]];
+/** upper / lower avant core quand peu de créneaux force. */
+export function orderedMuscleGroups(answers) {
+  const groups = muscleRotationGroups(answers);
+  const order = ['upper', 'lower', 'core'];
+  return order.filter((g) => groups.includes(g));
 }
 
-function addonCardioDayCount(activeCount, answers, deformers) {
+/**
+ * Répartit upper / lower sur les jours force (pas sur l’index calendaire brut).
+ * Évite upper–cardio–upper quand seuls upper+lower sont cochés (2 % 2 = upper ×2).
+ */
+export function buildStrengthGroupByDayIndex(n, answers, cardioIndices) {
+  const ordered = orderedMuscleGroups(answers);
+  if (!ordered.length) return new Map();
+
+  const map = new Map();
+  const strengthIndices = [];
+  for (let i = 0; i < n; i += 1) {
+    if (!cardioIndices.has(i)) strengthIndices.push(i);
+  }
+  strengthIndices.forEach((dayIdx, slot) => {
+    map.set(dayIdx, [ordered[slot % ordered.length]]);
+  });
+  return map;
+}
+
+function addonCardioDayCount(activeCount, answers, deformers, dedicatedCardioSlots) {
   if (!resolveSameDayCardioFromDeformers(answers, deformers)) return 0;
+  if (HYPERTROPHY_GOALS.has(answers?.goalPhysique) && dedicatedCardioSlots >= 1) return 0;
   const mode = answers?.sameDayCardioAddon || 'never';
-  if (mode === 'often') return Math.min(activeCount, Math.ceil(activeCount * 0.5));
-  return Math.min(activeCount, Math.max(1, Math.ceil(activeCount * 0.35)));
+  let slots = 0;
+  if (mode === 'often') slots = Math.min(activeCount, Math.ceil(activeCount * 0.5));
+  else slots = Math.min(activeCount, Math.max(1, Math.ceil(activeCount * 0.35)));
+  if (HYPERTROPHY_GOALS.has(answers?.goalPhysique)) {
+    slots = Math.min(slots, 1);
+  }
+  return slots;
 }
 
 export function addonMinutes(answers) {
@@ -85,9 +118,8 @@ export function planWeekSessionProfiles(activeDayKeys, answers, coachContext = n
   const deformers = coachContext?.deformers || null;
   const n = activeDayKeys.length;
   const cardioDesire = answers?.cardioTrainingDesire || 'moderate';
-  const dedicatedCardioSlots = maxDedicatedCardioDays(n, cardioDesire, deformers);
-  const muscleGroups = muscleRotationGroups(answers);
-  const addonSlots = addonCardioDayCount(n, answers, deformers);
+  const dedicatedCardioSlots = maxDedicatedCardioDays(n, cardioDesire, deformers, answers);
+  const addonSlots = addonCardioDayCount(n, answers, deformers, dedicatedCardioSlots);
 
   const cardioIndices = new Set();
   if (dedicatedCardioSlots > 0 && n > 0) {
@@ -112,6 +144,8 @@ export function planWeekSessionProfiles(activeDayKeys, answers, coachContext = n
     }
   }
 
+  const strengthGroupByDay = buildStrengthGroupByDayIndex(n, answers, cardioIndices);
+
   const profiles = {};
   activeDayKeys.forEach((dayKey, dayIndex) => {
     if (cardioIndices.has(dayIndex)) {
@@ -132,7 +166,7 @@ export function planWeekSessionProfiles(activeDayKeys, answers, coachContext = n
 
     const siteFamily = resolveStrengthFamilyForDay(dayIndex, answers);
     const site = pickStrengthSiteForDay(dayIndex, answers);
-    const groups = groupsForDayIndex(muscleGroups, dayIndex);
+    const groups = strengthGroupByDay.get(dayIndex) || ['upper'];
     const withAddon = addonSet.has(dayIndex) && resolveSameDayCardioFromDeformers(answers, deformers);
     const siteLabel = SITE_LABELS[site] || site;
     const focusParts = groups.map((g) => {

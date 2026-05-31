@@ -3,6 +3,7 @@
  */
 
 import { allowsSameDayCardioAddon } from './quizSitePolicy';
+import { enduranceArchetypePenalty } from './quizGoalHierarchy';
 
 /** @typedef {import('./quizCoachPipeline').ArchetypeDeformers} ArchetypeDeformers */
 
@@ -198,11 +199,11 @@ const ARCHETYPE_DEFS = {
       'Force maintenue sans surcharge inutile.'
     ],
     scoreBoost: (c, a) => {
-      let s = 0;
+      let s = enduranceArchetypePenalty(a);
       const g = a?.goalPhysique;
       if (g === 'endurance_lean' || g === 'athletic_performance') s += 5;
       if (a?.cardioTrainingDesire === 'high' || a?.cardioTrainingDesire === 'priority_hiit') s += 4;
-      if (Array.isArray(a?.priorityMuscleGroups) && a.priorityMuscleGroups.includes('cardio')) s += 3;
+      if (Array.isArray(a?.priorityMuscleGroups) && a.priorityMuscleGroups.includes('cardio')) s += 2;
       return s;
     }
   },
