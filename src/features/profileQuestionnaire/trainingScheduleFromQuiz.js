@@ -22,8 +22,26 @@ import { runPreFillPlanOptimization } from './quizPlanCostOperators';
 import { enrichShadowValidationFromWeeklyPlan } from './quizShadowValidation';
 import {
   applyWeekPlacementToProfiles,
-  buildWeekPlacement
+  buildWeekPlacement,
+  buildWeekPlacementFromAllocation
 } from './quizWeekPlacement';
+import { allocateObjectivesToWeek, selectActiveDaysForCap } from './quizWeekDayAllocator';
+import { auditObjectivesVsRealized } from './quizWeeklyObjectives';
+import {
+  ensureHypertrophyPlacementCoverage,
+  formatWeekAllocationFr,
+  replanStructureForFeasibility
+} from './quizHypertrophyGuard';
+import { consolidateCardioExercisesForSession } from './quizCardioSessionResolver';
+import {
+  buildSessionDurationNote,
+  finalizeSessionForDurationBudget
+} from './quizSessionDurationBudget';
+import {
+  pickExercisesForContext,
+  buildProgramExerciseFromDbKey
+} from './quizExercisePlanner';
+import { resolvePullupProgressionPlan } from './quizPullupProgressionPlan';
 import { resolveProgramDurationWeeks } from './quizProfileConstraints';
 import {
   applyActiveDayCap,
@@ -47,7 +65,6 @@ import {
   ensureMinDedicatedCardioDays,
   applyNervousSpacingHints
 } from './quizSessionPlannerExtras';
-import { enforceSessionExerciseLimits } from './quizSessionLimits';
 import { summarizeExercisesForDay } from './quizProgramPresentation';
 
 /** Jours français alignés avec le quiz (`availableTrainingDays`) et les clés `schedule`. */
@@ -186,7 +203,41 @@ export function buildQuizAugmentedSchedule(schedule, answers, genOpts = {}) {
     getExerciseNameById: genOpts.getExerciseNameById,
     programs: genOpts.programs
   });
-  applyActiveDayCap(schedule, coachContext.maxActiveDays);
+  const checkedDayKeys = QUIZ_SCHEDULE_DAY_ORDER.filter((day) => schedule?.[day]?.active);
+  let weekAllocation = null;
+  if (coachContext.weeklyObjectives && checkedDayKeys.length) {
+    weekAllocation = allocateObjectivesToWeek(
+      coachContext.weeklyObjectives,
+      checkedDayKeys,
+      answers
+    );
+    if (weekAllocation.coverageWarningFr) {
+      coachContext = {
+        ...coachContext,
+        warnings: [...(coachContext.warnings || []), weekAllocation.coverageWarningFr]
+      };
+    }
+  }
+
+  const capDays =
+    coachContext.prescribedActiveDays ?? coachContext.maxActiveDays;
+  if (weekAllocation) {
+    selectActiveDaysForCap(schedule, capDays, weekAllocation);
+  } else {
+    applyActiveDayCap(schedule, capDays);
+  }
+
+  const daysRemovedByCap = checkedDayKeys.filter((k) => !schedule?.[k]?.active);
+  if (daysRemovedByCap.length) {
+    coachContext = {
+      ...coachContext,
+      daysRemovedByCap,
+      warnings: [
+        ...(coachContext.warnings || []),
+        `Jours cochés retirés (${daysRemovedByCap.join(', ')}) — ${capDays} séance(s) prescrite(s) pour une charge tenable.`
+      ]
+    };
+  }
 
   const stretchBlocks = buildQuizStretchingBlocks(answers);
   const blueprint = buildQuizTrainingSessionBlueprint(answers);
@@ -223,11 +274,26 @@ export function buildQuizAugmentedSchedule(schedule, answers, genOpts = {}) {
 
   weekProfiles = planWeekSessionProfiles(activeDayKeys, answers, coachContext);
   if (coachContext.weeklyPlan?.budgets) {
-    let placement = buildWeekPlacement(
+    let placement =
+      weekAllocation && coachContext.weeklyObjectives
+        ? buildWeekPlacementFromAllocation(
+            activeDayKeys,
+            weekAllocation,
+            coachContext.weeklyPlan.budgets,
+            answers,
+            coachContext.deformers
+          )
+        : buildWeekPlacement(
+            activeDayKeys,
+            answers,
+            coachContext.weeklyPlan.budgets,
+            coachContext.deformers
+          );
+    placement = ensureHypertrophyPlacementCoverage(
+      placement,
       activeDayKeys,
-      answers,
-      coachContext.weeklyPlan.budgets,
-      coachContext.deformers
+      coachContext.weeklyObjectives,
+      answers
     );
     const compatResolved = resolvePlacementCompat(
       placement,
@@ -237,6 +303,23 @@ export function buildQuizAugmentedSchedule(schedule, answers, genOpts = {}) {
       coachContext.deformers
     );
     placement = compatResolved.placement;
+
+    const structureReplan = replanStructureForFeasibility(
+      placement,
+      activeDayKeys,
+      coachContext.weeklyPlan.budgets,
+      answers,
+      coachContext.weeklyObjectives
+    );
+    if (structureReplan.applied) {
+      placement = structureReplan.placement;
+      if (structureReplan.replanSummaryFr) {
+        coachContext = {
+          ...coachContext,
+          warnings: [...(coachContext.warnings || []), structureReplan.replanSummaryFr]
+        };
+      }
+    }
 
     const optimized = runPreFillPlanOptimization({
       placement,
@@ -277,8 +360,11 @@ export function buildQuizAugmentedSchedule(schedule, answers, genOpts = {}) {
         ]
       };
     }
+    const weekAllocationSummaryFr = formatWeekAllocationFr(placement, activeDayKeys);
     coachContext = {
       ...coachContext,
+      weekAllocation,
+      weekAllocationSummaryFr,
       weeklyPlan: {
         ...coachContext.weeklyPlan,
         budgets: budgetsAfterOps,
@@ -288,8 +374,13 @@ export function buildQuizAugmentedSchedule(schedule, answers, genOpts = {}) {
           seriesTargets: optimized.seriesTargets
         },
         compatDecisions: compatResolved.compatDecisions,
-        replanApplied: compatResolved.replanApplied ?? false,
-        replanSummaryFr: compatResolved.replanSummaryFr ?? null,
+        replanApplied:
+          (compatResolved.replanApplied ?? false) || structureReplan.applied,
+        replanSummaryFr:
+          [compatResolved.replanSummaryFr, structureReplan.replanSummaryFr]
+            .filter(Boolean)
+            .join(' · ') || null,
+        structureReplanApplied: structureReplan.applied ?? false,
         conflictsRemaining: compatResolved.conflictsRemaining?.length ?? 0,
         planCostOperators: optimized.operatorTrace,
         preFillPlanCost: optimized.preFillPlanCost,
@@ -340,6 +431,25 @@ export function buildQuizAugmentedSchedule(schedule, answers, genOpts = {}) {
   injectQuizDrillsIntoSchedule(schedule, answers, coachOpts);
   injectPreferredExerciseTypes(schedule, answers);
 
+  activeDayKeys.forEach((dayKey) => {
+    const day = schedule[dayKey];
+    if (!day?.active || !Array.isArray(day.exercises)) return;
+    const profile = weekProfiles[dayKey] || day.quizSessionProfile;
+    day.exercises = consolidateCardioExercisesForSession(day.exercises, profile, answers);
+  });
+
+  const pullPlan = resolvePullupProgressionPlan(answers, coachContext.weeklyObjectives);
+  if (pullPlan?.labelFr) {
+    coachContext = {
+      ...coachContext,
+      pullupProgressionPlan: pullPlan,
+      warnings: [
+        ...(coachContext.warnings || []),
+        ...(coachContext.warnings?.includes(pullPlan.labelFr) ? [] : [pullPlan.labelFr])
+      ]
+    };
+  }
+
   const missedFactor = detectMissedSessionVolumeFactor(genOpts.snapshot, schedule);
   const cycleVol =
     coachContext.globalLoad?.effectiveVolumeFactor ??
@@ -349,18 +459,6 @@ export function buildQuizAugmentedSchedule(schedule, answers, genOpts = {}) {
     missedVolumeFactor: missedFactor,
     volumeFactor: cycleVol,
     answers
-  });
-
-  activeDayKeys.forEach((dayKey) => {
-    const day = schedule[dayKey];
-    if (!day?.active || !Array.isArray(day.exercises)) return;
-    const profile = weekProfiles[dayKey] || day.quizSessionProfile;
-    day.exercises = enforceSessionExerciseLimits(day.exercises, coachContext.deformers, profile);
-    const summary = summarizeExercisesForDay(day.exercises);
-    if (summary) {
-      const note = `Vue compacte : ${summary}`;
-      day.notes = [typeof day.notes === 'string' ? day.notes : '', note].filter(Boolean).join('\n\n');
-    }
   });
 
   if (coachContext.weeklyPlan?.budgets) {
@@ -384,6 +482,19 @@ export function buildQuizAugmentedSchedule(schedule, answers, genOpts = {}) {
           withinTolerance: audit.withinTolerance
         };
       }
+      if (coachContext.weeklyObjectives) {
+        coachContext.objectivesVsRealized = auditObjectivesVsRealized(
+          coachContext.weeklyObjectives,
+          schedule,
+          activeDayKeys
+        );
+        if (coachContext.objectivesVsRealized?.warnings?.length) {
+          coachContext.warnings = [
+            ...coachContext.warnings,
+            ...coachContext.objectivesVsRealized.warnings
+          ];
+        }
+      }
     }
     coachContext.planCost = computeQuizPlanCost(coachContext, schedule, activeDayKeys, answers);
     if (coachContext.shadowValidation) {
@@ -393,6 +504,30 @@ export function buildQuizAugmentedSchedule(schedule, answers, genOpts = {}) {
       );
     }
   }
+
+  const durationBlueprint = buildQuizTrainingSessionBlueprint(answers);
+  activeDayKeys.forEach((dayKey) => {
+    const day = schedule[dayKey];
+    if (!day?.active || !Array.isArray(day.exercises)) return;
+    const profile = weekProfiles[dayKey] || day.quizSessionProfile;
+    day.exercises = finalizeSessionForDurationBudget(day.exercises, answers, {
+      coachContext,
+      profile,
+      blueprint: durationBlueprint,
+      dayIndex: activeDayKeys.indexOf(dayKey),
+      weekIndex: 1,
+      deps: { pickExercisesForContext, buildProgramExerciseFromDbKey }
+    });
+    const summary = summarizeExercisesForDay(day.exercises);
+    if (summary) {
+      const note = `Vue compacte : ${summary}`;
+      day.notes = [typeof day.notes === 'string' ? day.notes : '', note].filter(Boolean).join('\n\n');
+    }
+    const durationNote = buildSessionDurationNote(day.exercises, answers);
+    if (durationNote) {
+      day.duration = durationNote;
+    }
+  });
 
   const quizGenerationMeta = buildQuizGenerationMeta(coachContext, {
     programDurationWeeks: durationWeeks,

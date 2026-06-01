@@ -8,7 +8,8 @@ import { adjustSuggestedProgramWeeks } from './quizInfluence';
 export const PROGRAM_CONSTRAINT_KEYS = new Set([
   'no_interval_after_legs',
   'travel_week',
-  'limited_equipment'
+  'limited_equipment',
+  'max_session_45min'
 ]);
 
 /** @deprecated doublon Q-R4 — ignoré à la lecture */
@@ -86,7 +87,13 @@ export function getProfileConstraintEffects(answers) {
     avoidIntervalAfterLegs: keys.includes('no_interval_after_legs'),
     portableEquipmentOnly: travel || limited,
     maxActiveDaysDelta: travel ? -1 : 0,
-    maxSessionMinutesCap: travel ? 48 : limited ? 55 : null,
+    maxSessionMinutesCap: keys.includes('max_session_45min')
+      ? 45
+      : travel
+        ? 48
+        : limited
+          ? 55
+          : null,
     preferOutdoorCardio: travel,
     summaryFr: buildConstraintSummaryFr(keys)
   };
@@ -100,6 +107,7 @@ function buildConstraintSummaryFr(keys) {
   if (keys.includes('no_interval_after_legs')) {
     parts.push('pas de fractionné juste après jambes lourdes');
   }
+  if (keys.includes('max_session_45min')) parts.push('séances ~45 min max');
   return parts.length ? `Contraintes actives : ${parts.join(' · ')}.` : null;
 }
 

@@ -11,11 +11,15 @@ import { trimExercisesForTendonLoad } from './quizRecoveryEngine';
 import { enforceSessionExerciseLimits } from './quizSessionLimits';
 import { calibrateSeriesFromProgramPatterns } from './quizProgressionApply';
 import { effectiveStrengthTier } from './quizVolumeFromBaselines';
+import { isRunThenStrengthHybridPref } from './quizHybridLayoutPlacement';
 import { USE_WEEKLY_PLANNER_FOR_SCHEDULE } from './quizWeeklyPlanner';
 import { preferenceTieBreakDelta } from './quizExercisePreferenceScore';
 import { resolveStreetSkillPlan, isStreetOrientedProfile } from './quizStreetSkillGoal';
 import { classifyExerciseFamily } from './quizWeeklySeriesAllocator';
 import { parseSetsCount } from './quizSessionLimits';
+import { resolveSingleCardioStimulusForSession } from './quizCardioSessionResolver';
+import { applyPullupSeriesHints, pullupTemplateBoosts } from './quizPullupProgressionPlan';
+import { isStrengthExerciseAllowed } from './quizLegProgression';
 
 const HYPERTROPHY_GOALS = new Set(['muscular_defined', 'lean_toned', 'bulk_mass']);
 
@@ -25,7 +29,11 @@ const RUN_BLOCK_KEYS = {
   run_interval: ['fractionné', 'fractionné 30/30'],
   run_long: ['course endurance fondamentale'],
   cardio_general: ['course endurance fondamentale', 'corde à sauter'],
-  circuit_metabolic: ['burpees', 'mountain climbers', 'corde à sauter']
+  circuit_metabolic: ['burpees', 'mountain climbers', 'corde à sauter'],
+  swim_easy: ['natation'],
+  swim_technique: ['natation'],
+  bike_endurance: ['vélo de route', 'vélo elliptique'],
+  bike_tempo: ['vélo elliptique', 'vélo de route']
 };
 
 const METABOLIC_CIRCUIT_KEYS = ['burpees', 'mountain climbers', 'corde à sauter'];
@@ -65,6 +73,7 @@ export function shouldUseBlockAwareFill(profile, coachContext = null) {
  */
 export function resolveStreetAnchorFocus(profile) {
   const blocks = profile?.blocks || [];
+  if (blocks.includes('skill_street') && blocks.includes('force_pull')) return 'pull';
   if (blocks.includes('force_pull')) return 'pull';
   if (blocks.includes('force_push')) return 'push';
   if (profile?.primaryBlock === 'force_pull') return 'pull';
@@ -118,24 +127,15 @@ function exercisePreferenceBonus(dbKey, coachContext) {
   return 0;
 }
 
-function cardioKeysForBlocks(blocks, runMission) {
+function cardioKeysForBlocks(blocks, runMission, answers, budgets) {
   if (blocks.includes('circuit_metabolic')) {
     return METABOLIC_CIRCUIT_KEYS.filter((k) => exerciseDatabase[k]);
   }
-  const runBlocks = blocks.filter((b) => b.startsWith('run_'));
-  const primary = runBlocks[0] || (blocks.includes('cardio_general') ? 'cardio_general' : 'run_easy');
-  let keys = [...(RUN_BLOCK_KEYS[primary] || RUN_BLOCK_KEYS.cardio_general)];
-
+  const resolved = resolveSingleCardioStimulusForSession(blocks, answers, budgets);
+  let keys = [...resolved.dbKeys];
   if (runMission) {
     keys = keys.filter((k) => !/burpee|mountain|farmer/.test(k));
-    if (primary === 'run_easy' || primary === 'run_long' || primary === 'run_tempo') {
-      keys = ['course endurance fondamentale', ...keys.filter((k) => k.includes('course'))];
-    }
-    if (primary === 'run_interval') {
-      keys = ['fractionné', 'fractionné 30/30'].filter((k) => exerciseDatabase[k]);
-    }
   }
-
   return [...new Set(keys)].filter((k) => exerciseDatabase[k]);
 }
 
@@ -170,8 +170,7 @@ function buildCardioFromBlockKeys(
     picked.push(ex);
   });
 
-  const maxN = HYPERTROPHY_GOALS.has(answersGoal) ? 3 : 4;
-  return picked.slice(0, maxN);
+  return picked.slice(0, 1);
 }
 
 function fillCardioFromBlocks(
@@ -187,9 +186,10 @@ function fillCardioFromBlocks(
   const blocks =
     profile?.blocks?.filter((b) => b.startsWith('run_') || b === 'cardio_general') || ['cardio_general'];
   const runMission = hasRunMission(coachContext);
-  const { buildProgramExerciseFromDbKey, pickExercisesForContext } = deps;
-  let picked = buildCardioFromBlockKeys(
-    cardioKeysForBlocks(blocks, runMission),
+  const budgets = coachContext?.weeklyPlan?.budgets;
+  const { buildProgramExerciseFromDbKey } = deps;
+  const picked = buildCardioFromBlockKeys(
+    cardioKeysForBlocks(blocks, runMission, answers, budgets),
     answers,
     blueprint,
     dayIndex,
@@ -197,28 +197,6 @@ function fillCardioFromBlocks(
     answers?.goalPhysique,
     buildProgramExerciseFromDbKey
   );
-
-  if (picked.length < 2) {
-    const site = profile?.site || 'outdoor';
-    const fallback = pickExercisesForContext(answers, blueprint, {
-      groups: ['cardio'],
-      count: Math.max(2, targetCount),
-      site,
-      dayIndex,
-      usedKeys: new Set(),
-      modality: 'cardio',
-      weekUsedKeys,
-      deformers: mergeTemplateBoosts(coachContext?.deformers, cardioKeysForBlocks(blocks, runMission))
-    });
-    const seen = new Set(picked.map((e) => e.exerciseBankKey));
-    fallback.forEach((ex) => {
-      if (runMission && /burpee|mountain|farmer/.test(ex.exerciseBankKey || '')) return;
-      if (!seen.has(ex.exerciseBankKey) && picked.length < 4) {
-        picked.push(ex);
-        seen.add(ex.exerciseBankKey);
-      }
-    });
-  }
 
   return picked;
 }
@@ -235,7 +213,10 @@ function fillStrengthFromBlocks(
   deps
 ) {
   const { buildProgramExerciseFromDbKey, pickExercisesForContext } = deps;
-  const blocks = (profile?.blocks || []).filter((b) => b.startsWith('force_'));
+  let blocks = (profile?.blocks || []).filter((b) => b.startsWith('force_'));
+  if ((profile?.blocks || []).includes('skill_street') && !blocks.includes('force_pull')) {
+    blocks = ['force_pull', ...blocks];
+  }
   if (!blocks.length) return [];
 
   const usedKeys = new Set();
@@ -247,6 +228,10 @@ function fillStrengthFromBlocks(
   let streetBoosts = [];
   if (isStreetOrientedProfile(answers) && profile?.blocks?.includes('skill_street')) {
     streetBoosts = resolveStreetSkillPlan(answers).boosts;
+  }
+  const pullupBoosts = pullupTemplateBoosts(answers, coachContext?.weeklyObjectives);
+  if (pullupBoosts.length) {
+    streetBoosts = [...new Set([...pullupBoosts, ...streetBoosts])];
   }
 
   blocks.forEach((block, bi) => {
@@ -268,7 +253,7 @@ function fillStrengthFromBlocks(
       deformers,
       globalTier,
       templateKeyBoosts: deformers.templateKeyBoosts
-    });
+    }).filter((ex) => isStrengthExerciseAllowed(ex.exerciseBankKey, answers, 'strength'));
     picked.push(...chunk);
   });
 
@@ -292,7 +277,11 @@ function fillStrengthFromBlocks(
     });
   }
 
-  return applyRemainingSetsHint(picked, profile?.remainingSets);
+  let out = applyRemainingSetsHint(picked, profile?.remainingSets);
+  if (blocks.some((b) => b === 'force_pull' || b === 'skill_street')) {
+    out = applyPullupSeriesHints(out, answers, coachContext?.weeklyObjectives);
+  }
+  return out;
 }
 
 function fillMetabolicCircuitFromBlocks(
@@ -370,8 +359,62 @@ export function fillSessionFromProfileBlocks(
   const blocks = profile?.blocks || [];
   const hasMetabolic = blocks.includes('circuit_metabolic');
   const hasForce = blocks.some((b) => b.startsWith('force_'));
+  const hasRunBlock = blocks.some((b) => b.startsWith('run_') || b === 'cardio_general');
+  const hasStrengthBlock = hasForce || blocks.includes('skill_street');
 
-  if (modality === 'cardio' || blocks.some((b) => b.startsWith('run_') || b === 'cardio_general')) {
+  if (
+    (modality === 'hybrid' || modality === 'strength_plus_cardio') &&
+    hasRunBlock &&
+    hasStrengthBlock
+  ) {
+    const runFirst =
+      profile?.hybridExerciseOrder === 'run_then_strength' ||
+      isRunThenStrengthHybridPref(answers?.hybridLayoutPreference);
+    const strengthShare = runFirst ? 0.55 : 0.72;
+    const strengthCount = Math.max(4, Math.round(count * strengthShare));
+    const runCount = Math.max(2, count - strengthCount);
+
+    const strengthBlocks = blocks.filter(
+      (b) => !b.startsWith('run_') && b !== 'cardio_general'
+    );
+    const runBlocks = blocks.filter((b) => b.startsWith('run_') || b === 'cardio_general');
+
+    const strengthProfile = { ...profile, blocks: strengthBlocks, modality: 'strength' };
+    const runProfile = { ...profile, blocks: runBlocks.length ? runBlocks : ['run_easy'], modality: 'cardio' };
+
+    const strengthEx = fillStrengthFromBlocks(
+      answers,
+      blueprint,
+      dayIndex,
+      strengthProfile,
+      weekUsedKeys,
+      weekStrengthUsedKeys,
+      coachContext,
+      strengthCount,
+      deps
+    );
+    const runEx = fillCardioFromBlocks(
+      answers,
+      blueprint,
+      dayIndex,
+      runProfile,
+      weekUsedKeys,
+      coachContext,
+      runCount,
+      deps
+    );
+
+    const ordered = runFirst ? [...runEx, ...strengthEx] : [...strengthEx, ...runEx];
+    const seen = new Set();
+    return ordered.filter((ex) => {
+      const k = ex.exerciseBankKey;
+      if (seen.has(k)) return false;
+      seen.add(k);
+      return true;
+    });
+  }
+
+  if (modality === 'cardio' || (hasRunBlock && !hasStrengthBlock)) {
     return fillCardioFromBlocks(
       answers,
       blueprint,

@@ -21,6 +21,19 @@ function experienceIsLow(answers) {
   return e === 'beginner_total' || e === 'beginner_0_3m';
 }
 
+const HYPERTROPHY_GOALS = new Set(['muscular_defined', 'lean_toned', 'bulk_mass']);
+
+function isMotivatedHypertrophyProfile(answers) {
+  const days = countQuizAvailableDays(answers);
+  const freq = declaredFrequencyPerWeek(answers);
+  return (
+    HYPERTROPHY_GOALS.has(answers?.goalPhysique) &&
+    days >= 5 &&
+    freq >= 3.5 &&
+    answers?.weeklyTrainingFrequencyCurrent !== '1_2'
+  );
+}
+
 /** Risque d’adhérence 0–1 (plus haut = plus risqué). */
 export function computeAdherenceRiskFromQuiz(answers) {
   let risk = 0.2;
@@ -28,8 +41,9 @@ export function computeAdherenceRiskFromQuiz(answers) {
   const freq = declaredFrequencyPerWeek(answers);
   const dur = answers?.preferredSessionDuration;
 
-  if (daysChecked >= 6) risk += 0.22;
-  else if (daysChecked >= 5) risk += 0.12;
+  if (daysChecked >= 6) {
+    risk += isMotivatedHypertrophyProfile(answers) ? 0.08 : 0.22;
+  } else if (daysChecked >= 5) risk += 0.12;
 
   if (freq <= 1.5 && daysChecked >= 4) risk += 0.25;
   if (freq >= 5 && experienceIsLow(answers)) risk += 0.15;
@@ -46,23 +60,32 @@ export function computeAdherenceRiskFromQuiz(answers) {
 }
 
 /**
- * Plafond de jours actifs à partir du quiz seul.
+ * Plafond adhérence seul (sans minimum mission).
  */
-export function computeMaxActiveDaysFromQuiz(answers, adherenceRisk, recoveryScore) {
+export function computeAdherenceCap(answers, adherenceRisk, recoveryScore) {
   const daysAvailable = countQuizAvailableDays(answers) || 4;
-  let maxActiveDays = daysAvailable;
+  let cap = daysAvailable;
 
-  if (adherenceRisk >= 0.55) maxActiveDays = Math.min(maxActiveDays, 4);
-  if (adherenceRisk >= 0.7) maxActiveDays = Math.min(maxActiveDays, 3);
-  if (recoveryScore < 45) maxActiveDays = Math.min(maxActiveDays, 3);
-  if (recoveryScore < 35) maxActiveDays = Math.min(maxActiveDays, 2);
+  if (adherenceRisk >= 0.72) cap = Math.min(cap, 4);
+  if (adherenceRisk >= 0.85) cap = Math.min(cap, 3);
+  if (recoveryScore < 45) cap = Math.min(cap, 3);
+  if (recoveryScore < 35) cap = Math.min(cap, 2);
 
-  if (experienceIsLow(answers) && maxActiveDays > 4) maxActiveDays = 4;
-  if (answers?.preferredSessionDuration === '15_30' && maxActiveDays > 4) {
-    maxActiveDays = Math.min(maxActiveDays, 4);
+  if (experienceIsLow(answers) && !isMotivatedHypertrophyProfile(answers) && cap > 4) {
+    cap = 4;
+  }
+  if (answers?.preferredSessionDuration === '15_30' && cap > 4) {
+    cap = Math.min(cap, 4);
   }
 
-  return Math.max(2, maxActiveDays);
+  return Math.max(2, cap);
+}
+
+/**
+ * Plafond de jours actifs à partir du quiz seul (legacy).
+ */
+export function computeMaxActiveDaysFromQuiz(answers, adherenceRisk, recoveryScore) {
+  return computeAdherenceCap(answers, adherenceRisk, recoveryScore);
 }
 
 /**

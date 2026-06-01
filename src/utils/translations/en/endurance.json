@@ -301,7 +301,14 @@
       "elevation": "Elevation:",
       "notes": "Notes:",
       "type": "Type",
-      "typeSession": "Workout type:"
+      "typeSession": "Workout type:",
+      "kmSplitsTitle": "Pace per kilometer",
+      "kmSplitsColKm": "Kilometer",
+      "kmSplitsColPace": "Pace",
+      "kmSplitsColSpeed": "Speed",
+      "kmSplitsColTime": "Time",
+      "kmSplitsTotal": "Total",
+      "kmSplitsOverallPace": "overall pace"
     },
     "records": {
       "title": "Running records",

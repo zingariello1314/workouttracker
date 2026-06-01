@@ -5,8 +5,13 @@
 import { WEEKLY_PLANNER_ENGINE_VERSION, WEEKLY_PLANNER_PHASE } from './data/missionProfiles';
 import { buildWeeklyBudgets } from './quizWeeklyBudgetBuilder';
 
-/** Phase 5+ : fill exercices piloté par blocs v6. */
-export const USE_WEEKLY_PLANNER_FOR_SCHEDULE = true;
+/**
+ * Phase 5+ : fill exercices piloté par blocs v6.
+ * Rollback d’urgence : `VITE_USE_WEEKLY_PLANNER_FOR_SCHEDULE=false` dans `.env`.
+ */
+export const USE_WEEKLY_PLANNER_FOR_SCHEDULE =
+  typeof import.meta !== 'undefined' &&
+  import.meta.env?.VITE_USE_WEEKLY_PLANNER_FOR_SCHEDULE !== 'false';
 
 /**
  * @param {object} answers

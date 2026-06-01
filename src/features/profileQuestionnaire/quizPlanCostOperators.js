@@ -89,8 +89,10 @@ function swapAdjacentRunLegsConflict(placement, activeDayKeys) {
 /**
  * Pré-calcul séries/jour pour le fill (remainingSets).
  */
-export function buildRemainingSetsPreview(budgets, placement, answers, activeDayKeys) {
-  const feasibility = feasibilityCheck(budgets, placement, answers);
+export function buildRemainingSetsPreview(budgets, placement, answers, activeDayKeys, opts = {}) {
+  const feasibility = feasibilityCheck(budgets, placement, answers, {
+    weeklyObjectives: opts.weeklyObjectives
+  });
   const allocation = allocateSeriesToDays(feasibility.targets, placement, activeDayKeys);
   return {
     targets: feasibility.targets,
@@ -130,7 +132,9 @@ export function runPreFillPlanOptimization(input) {
       return r.applied;
     },
     () => {
-      const preview = buildRemainingSetsPreview(b, p, answers, activeDayKeys);
+      const preview = buildRemainingSetsPreview(b, p, answers, activeDayKeys, {
+        weeklyObjectives: coachContext?.weeklyObjectives
+      });
       const gaps = Object.values(preview.feasibility?.targets || {});
       const targets = preview.targets || {};
       const pull = targets.pull || 0;
@@ -168,7 +172,9 @@ export function runPreFillPlanOptimization(input) {
     if (op()) iter += 1;
   }
 
-  const remainingSets = buildRemainingSetsPreview(b, p, answers, activeDayKeys);
+  const remainingSets = buildRemainingSetsPreview(b, p, answers, activeDayKeys, {
+    weeklyObjectives: coachContext?.weeklyObjectives
+  });
 
   const costCtx = {
     ...coachContext,
@@ -184,7 +190,9 @@ export function runPreFillPlanOptimization(input) {
       factor: 0.9,
       reasonFr: `Coût plan ${cost.planCost} ≥ ${PLAN_COST_WARN_THRESHOLD} — volume force ajusté.`
     });
-    remainingSets.byDay = buildRemainingSetsPreview(b, p, answers, activeDayKeys).byDay;
+    remainingSets.byDay = buildRemainingSetsPreview(b, p, answers, activeDayKeys, {
+      weeklyObjectives: coachContext?.weeklyObjectives
+    }).byDay;
   }
 
   return {

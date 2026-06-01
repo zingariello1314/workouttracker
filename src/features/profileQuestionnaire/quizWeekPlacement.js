@@ -19,7 +19,10 @@ import {
   applySpecializedSportPlacement,
   isSpecializedSportMission
 } from './quizSpecializedSportPlacement';
+import { applyTriathlonMultisportPlacement } from './quizTriathlonPlacement';
+import { applyHybridLayoutPreference } from './quizHybridLayoutPlacement';
 import { hasProgramConstraint } from './quizProfileConstraints';
+import { buildWeeklyRunBlockQueue } from './quizCardioSessionResolver';
 
 const HYPERTROPHY_GOALS = new Set(['muscular_defined', 'lean_toned', 'bulk_mass']);
 
@@ -36,7 +39,11 @@ export const BLOCK_LABELS_FR = {
   run_long: 'Sortie longue',
   cardio_general: 'Cardio général',
   skill_street: 'Skills street (tractions, dips, figures)',
-  circuit_metabolic: 'Circuit métabolique / conditioning'
+  circuit_metabolic: 'Circuit métabolique / conditioning',
+  swim_easy: 'Natation — endurance / technique',
+  swim_technique: 'Natation — technique',
+  bike_endurance: 'Vélo — endurance',
+  bike_tempo: 'Vélo — tempo / seuil'
 };
 
 /** @typedef {'force_pull'|'force_push'|'force_legs'|'force_upper'|'force_lower'|'force_core'|'run_easy'|'run_tempo'|'run_interval'|'run_long'|'cardio_general'} BlockId */
@@ -68,6 +75,18 @@ function resolveStructure(answers, budgets) {
 
 function dedicatedCardioSlotCount(n, budgets, answers, deformers) {
   if (n <= 0) return 0;
+
+  const sessionsFromPlan = budgets?.run?.sessionsPerWeek;
+  if (sessionsFromPlan != null && sessionsFromPlan > 0) {
+    let slots = Math.min(sessionsFromPlan, Math.max(0, n - 1));
+    if (slots < 1 && (budgets?.run?.kmTarget || budgets?.cardioCapSessionsPerWeek)) {
+      slots = 1;
+    }
+    if (deformers?.maxDedicatedCardioDays != null) {
+      slots = Math.min(slots, deformers.maxDedicatedCardioDays);
+    }
+    return Math.max(0, Math.min(n, slots));
+  }
 
   if (isSpecializedSportMission(budgets?.missionId)) {
     const cap = budgets?.cardioCapSessionsPerWeek ?? 3;
@@ -205,30 +224,7 @@ function enforceNoIntervalAfterLegs(days, activeDayKeys, answers) {
 }
 
 function buildRunBlockQueue(budgets, answers, runDayCount) {
-  const queue = [];
-  const split = budgets?.run?.intensitySplit;
-  const easyW = split?.easy ?? 0.7;
-  const tempoW = split?.tempo ?? 0.2;
-  const intW = split?.intervals ?? 0.1;
-
-  const nEasy = Math.max(1, Math.round(runDayCount * easyW));
-  const nQuality = Math.max(1, Math.round(runDayCount * (tempoW + intW)));
-  const nLong = canLongRun(answers) && runDayCount >= 2 ? 1 : 0;
-
-  for (let i = 0; i < nEasy; i += 1) queue.push('run_easy');
-  for (let i = 0; i < nQuality; i += 1) {
-    queue.push(i % 2 === 0 ? 'run_interval' : 'run_tempo');
-  }
-  if (nLong) queue.push('run_long');
-
-  while (queue.length < runDayCount && runDayCount > 0) {
-    queue.push('run_easy');
-  }
-  let out = queue.slice(0, runDayCount);
-  if (nLong && !out.includes('run_long')) {
-    out = out.length > 0 ? [...out.slice(0, -1), 'run_long'] : ['run_long'];
-  }
-  return out;
+  return buildWeeklyRunBlockQueue(budgets, answers, runDayCount);
 }
 
 function strengthBlocksForSlot(slot, structure, ordered) {
@@ -340,9 +336,108 @@ export function buildWeekPlacement(activeDayKeys, answers, budgets, deformers = 
   };
 
   const missionId = budgets?.missionId;
+  if (missionId?.startsWith('triathlon_')) {
+    result = applyTriathlonMultisportPlacement(result, missionId, answers);
+  }
   if (isSpecializedSportMission(missionId)) {
     result = applySpecializedSportPlacement(result, missionId, answers);
   }
+  result = applyHybridLayoutPreference(result, answers);
+
+  return result;
+}
+
+function blocksToModality(blocks) {
+  const hasRun = blocks.some((b) => b.startsWith('run_') || b === 'cardio_general');
+  const hasStrength = blocks.some(
+    (b) =>
+      b.startsWith('force_') || b === 'skill_street' || b === 'circuit_metabolic'
+  );
+  if (hasRun && hasStrength) return 'hybrid';
+  if (hasRun) return 'cardio';
+  return 'strength';
+}
+
+/**
+ * Placement piloté par allocateObjectivesToWeek (planificateur objectifs-first).
+ * @param {string[]} activeDayKeys
+ * @param {object} allocationResult
+ * @param {object} budgets
+ * @param {object} answers
+ * @param {object} [deformers]
+ */
+export function buildWeekPlacementFromAllocation(
+  activeDayKeys,
+  allocationResult,
+  budgets,
+  answers,
+  deformers = null
+) {
+  const structure = resolveStructure(answers, budgets);
+  const days = {};
+  let cardioDayCount = 0;
+  let strengthDayCount = 0;
+  let runBlocksPlaced = 0;
+
+  activeDayKeys.forEach((dayKey, dayIndex) => {
+    const alloc = allocationResult?.days?.[dayKey];
+    const blocks = [...(alloc?.obligations || [])];
+    if (!blocks.length) {
+      blocks.push('force_upper');
+    }
+    const modality = blocksToModality(blocks);
+    if (modality === 'cardio') cardioDayCount += 1;
+    else if (modality === 'strength') strengthDayCount += 1;
+    else {
+      strengthDayCount += 1;
+      cardioDayCount += 1;
+    }
+    runBlocksPlaced += blocks.filter((b) => b.startsWith('run_')).length;
+
+    const primaryBlock =
+      blocks.find((b) => b.startsWith('force_')) ||
+      blocks.find((b) => b.startsWith('run_')) ||
+      blocks[0];
+
+    days[dayKey] = {
+      dayIndex,
+      blocks,
+      primaryBlock,
+      modality,
+      groups: blockToGroups(blocks),
+      structure,
+      hybridExerciseOrder:
+        alloc?.hybridOrder === 'strength_then_cardio' ? 'strength_then_run' : null
+    };
+  });
+
+  const parts = [
+    `Structure (objectifs) : ${structure}`,
+    `${strengthDayCount} j force, ${cardioDayCount} j cardio`,
+    allocationResult?.allocationSummaryFr || null
+  ].filter(Boolean);
+
+  let result = {
+    structure,
+    cardioDayCount,
+    strengthDayCount,
+    runBlocksPlaced,
+    days,
+    placementSummaryFr: parts.join(' · '),
+    fromWeeklyObjectives: true
+  };
+
+  assignLongRunToPreferredDay(result.days, activeDayKeys, answers);
+  enforceNoIntervalAfterLegs(result.days, activeDayKeys, answers);
+
+  const missionId = budgets?.missionId;
+  if (missionId?.startsWith('triathlon_')) {
+    result = applyTriathlonMultisportPlacement(result, missionId, answers);
+  }
+  if (isSpecializedSportMission(missionId)) {
+    result = applySpecializedSportPlacement(result, missionId, answers);
+  }
+  result = applyHybridLayoutPreference(result, answers);
 
   return result;
 }
@@ -357,7 +452,17 @@ function profileTitleForBlocks(blocks, site, withAddon, answers) {
   if (blocks.includes('circuit_metabolic') && !blocks.some((b) => b.startsWith('run_'))) {
     return `Conditioning — ${labels}`;
   }
-  if (blocks.some((b) => b.startsWith('run_') || b === 'cardio_general')) {
+  if (
+    blocks.some(
+      (b) =>
+        b.startsWith('run_') ||
+        b === 'cardio_general' ||
+        b.startsWith('swim_') ||
+        b.startsWith('bike_')
+    )
+  ) {
+    if (blocks.some((b) => b.startsWith('swim_'))) return `Natation — ${labels}`;
+    if (blocks.some((b) => b.startsWith('bike_'))) return `Vélo — ${labels}`;
     return `Course — ${labels}`;
   }
   if (withAddon) return `${prefix} + cardio — ${siteLabel}`;
@@ -388,6 +493,7 @@ export function applyWeekPlacementToProfiles(profiles, placement, answers, defor
         groups: plan.groups,
         blocks: plan.blocks,
         primaryBlock: plan.primaryBlock,
+        hybridExerciseOrder: plan.hybridExerciseOrder || null,
         weeklyStructure: placement.structure,
         site: siteNew,
         siteFamily:
@@ -413,11 +519,13 @@ export function applyWeekPlacementToProfiles(profiles, placement, answers, defor
       !plan.blocks.some((b) => b.startsWith('run_'));
 
     const modality =
-      plan.modality === 'cardio'
-        ? 'cardio'
-        : withAddon
-          ? 'strength_plus_cardio'
-          : 'strength';
+      plan.modality === 'hybrid'
+        ? 'strength_plus_cardio'
+        : plan.modality === 'cardio'
+          ? 'cardio'
+          : withAddon
+            ? 'strength_plus_cardio'
+            : 'strength';
 
     const focusLabels = plan.blocks.map((b) => BLOCK_LABELS_FR[b] || b).join(', ');
 
@@ -429,15 +537,20 @@ export function applyWeekPlacementToProfiles(profiles, placement, answers, defor
       groups: plan.groups,
       blocks: plan.blocks,
       primaryBlock: plan.primaryBlock,
+      hybridExerciseOrder: plan.hybridExerciseOrder || null,
       weeklyStructure: placement.structure,
       cardioAddon: withAddon,
       title: profileTitleForBlocks(plan.blocks, site, withAddon, answers),
       focus:
         modality === 'cardio'
           ? `Bloc(s) : ${focusLabels}`
-          : withAddon
-            ? `${focusLabels} puis cardio (~${Math.max(10, Math.round(getSessionBudget(answers).targetMin / 2))} min)`
-            : `Blocs : ${focusLabels} · ${formatSessionDurationLabel(answers)}`,
+          : plan.hybridExerciseOrder === 'strength_then_run'
+            ? `${focusLabels} — muscu/street d’abord, course en fin de séance`
+            : plan.hybridExerciseOrder === 'run_then_strength'
+              ? `${focusLabels} — course en début, muscu ensuite`
+              : withAddon
+                ? `${focusLabels} puis cardio (~${Math.max(10, Math.round(getSessionBudget(answers).targetMin / 2))} min)`
+                : `Blocs : ${focusLabels} · ${formatSessionDurationLabel(answers)}`,
       remainingSets: remainingByDay?.[dayKey] || null
     };
   });

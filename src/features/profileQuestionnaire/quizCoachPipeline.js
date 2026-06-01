@@ -53,8 +53,15 @@ import { refineMaxActiveDaysFromHistory, buildAdherenceWarnings } from './quizAd
 
 import { applyMuscleVolumeCaps } from './quizMuscleVolumeCaps';
 import { buildWeeklyPlan } from './quizWeeklyPlanner';
+import {
+  buildWeeklyTrainingObjectives,
+  applyObjectiveScaling,
+  derivePrescribedActiveDays,
+  formatWeeklyObjectivesSummaryFr
+} from './quizWeeklyObjectives';
 import { applyBudgetFeedbackFromEvidence } from './quizBudgetFeedback';
 import { freezeLiveBudgetBaseline } from './quizWeeklyBudgetLive';
+import { buildRecoveryBudget } from './quizRecoveryBudget';
 import { isStreetOrientedProfile, resolveStreetSkillPlan } from './quizStreetSkillGoal';
 import { runShadowValidation } from './quizShadowValidation';
 
@@ -193,7 +200,7 @@ export function buildQuizCoachContext(answers, opts = {}) {
 
   const durationWeeks = Math.max(3, Math.min(16, Number(opts.programDurationWeeks) || 6));
 
-  const progressionCycleFactor = progressionVolumeMulForWeek1(durationWeeks);
+  const progressionCycleFactor = progressionVolumeMulForWeek1(durationWeeks, answers || {});
 
 
 
@@ -264,20 +271,41 @@ export function buildQuizCoachContext(answers, opts = {}) {
 
 
 
-  if (maxActiveDays < constraints.daysAvailable) {
+  const weeklyObjectivesRaw = buildWeeklyTrainingObjectives(answers || {}, constraints);
+  const weeklyObjectives = applyObjectiveScaling(weeklyObjectivesRaw, {
+    recoveryBudget: weeklyObjectivesRaw
+      ? buildRecoveryBudget(answers || {}, constraints).recoveryBudget
+      : 1,
+    adherenceRisk: constraints.adherenceRisk,
+    globalLoadFactor: loadState?.effectiveVolumeFactor ?? loadState?.globalLoadFactor ?? 1,
+    answers: answers || {}
+  });
+  const { prescribedActiveDays, coverageWarningFr } = derivePrescribedActiveDays(
+    weeklyObjectives,
+    constraints
+  );
 
-    warnings.push(
-
-      `${constraints.daysAvailable} jour(s) coché(s) au quiz — structure calée sur ${maxActiveDays} séances / semaine pour une meilleure adhérence.`
-
-    );
-
+  const objectivesSummaryFr = formatWeeklyObjectivesSummaryFr(weeklyObjectives);
+  if (objectivesSummaryFr && !whyThisTemplate.includes(objectivesSummaryFr)) {
+    whyThisTemplate.unshift(objectivesSummaryFr);
   }
+  if (coverageWarningFr) {
+    warnings.push(coverageWarningFr);
+  } else if (prescribedActiveDays < constraints.daysAvailable) {
+    warnings.push(
+      `${constraints.daysAvailable} jour(s) coché(s) — répartition sur ${prescribedActiveDays} séances pour couvrir tes objectifs (adhérence / récup).`
+    );
+  }
+
+  const effectiveMaxActiveDays = Math.max(maxActiveDays, prescribedActiveDays);
 
   const weeklyPlan = buildWeeklyPlan(answers || {}, {
     constraints,
     globalLoadFactor: loadState?.effectiveVolumeFactor ?? loadState?.globalLoadFactor ?? 1,
-    activeDays: maxActiveDays
+    activeDays: prescribedActiveDays,
+    daysAvailable: constraints.daysAvailable,
+    prescribedActiveDays,
+    objectives: weeklyObjectives
   });
   if (trainingEvidence?.maturity && trainingEvidence.maturity !== 'none') {
     weeklyPlan.budgets = applyBudgetFeedbackFromEvidence(
@@ -326,7 +354,13 @@ export function buildQuizCoachContext(answers, opts = {}) {
 
     loadAnalysis: null,
 
-    maxActiveDays,
+    maxActiveDays: effectiveMaxActiveDays,
+
+    prescribedActiveDays,
+
+    weeklyObjectives,
+
+    objectivesSummaryFr,
 
     trainingEvidence,
 
@@ -747,7 +781,15 @@ export function buildQuizGenerationMeta(coachContext, opts = {}) {
     planCostOperators: coachContext.weeklyPlan?.planCostOperators ?? null,
     streetSkillGoal: coachContext.deformers?.streetSkillGoal ?? null,
     streetSkillLabelFr: coachContext.deformers?.streetSkillLabelFr ?? null,
-    budgetFeedback: coachContext.weeklyPlan?.budgets?.budgetFeedback ?? null
+    budgetFeedback: coachContext.weeklyPlan?.budgets?.budgetFeedback ?? null,
+    weeklyObjectives: coachContext.weeklyObjectives ?? null,
+    objectivesSummaryFr: coachContext.objectivesSummaryFr ?? null,
+    prescribedActiveDays: coachContext.prescribedActiveDays ?? null,
+    objectivesVsRealized: coachContext.objectivesVsRealized ?? null,
+    pullupProgressionPlan: coachContext.pullupProgressionPlan ?? null,
+    weekAllocationSummaryFr: coachContext.weekAllocationSummaryFr ?? null,
+    daysRemovedByCap: coachContext.daysRemovedByCap ?? null,
+    strengthImbalance: coachContext.weeklyObjectives?.strengthImbalance ?? null
 
   };
 

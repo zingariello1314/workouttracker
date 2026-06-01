@@ -11,6 +11,14 @@ import {
   adjustIntensitySplitForTriathlonWeakLeg,
   triathlonWeakLegLabelFr
 } from './quizTriathlonResolver';
+import {
+  adjustIntensitySplitForRunningProfile,
+  inferRunningSessionProfile
+} from './quizRunningSessionProfile';
+import { buildWeeklyKmProgressionRamp, kmProgressionSummaryFr } from './quizKmProgressionRamp';
+import { resolveProgramDurationWeeks } from './quizProfileConstraints';
+import { objectivesToStrengthFamilies } from './quizWeeklyObjectives';
+import { applyImbalanceToStrengthFamilies } from './quizStrengthBaselines';
 
 function clamp(n, lo, hi) {
   return Math.max(lo, Math.min(hi, n));
@@ -141,17 +149,22 @@ export function buildBudgetArbitration(answers, mission, recovery, strength, run
     strength.legs = round1((strength.legs || 10) * 0.9);
   }
 
-  if (answers?.runStrengthPriority === 'muscle_first' && run?.kmTarget) {
-    arbitration.push({
-      priority: 'P1',
-      action: 'cap_run_km',
-      factor: 0.88,
-      reason: 'Priorité musculation — volume course plafonné.'
-    });
-    run.kmTarget = Math.round(run.kmTarget * 0.88);
-    if (run.kmRange) {
-      run.kmRange = [run.kmRange[0], Math.round(run.kmRange[1] * 0.9)];
+  if (answers?.runStrengthPriority === 'muscle_first' && strength) {
+    if (run?.kmTarget) {
+      arbitration.push({
+        priority: 'P1',
+        action: 'cap_run_km',
+        factor: 0.88,
+        reason: 'Priorité musculation — volume course plafonné, séries force renforcées.'
+      });
+      run.kmTarget = Math.round(run.kmTarget * 0.88);
+      if (run.kmRange) {
+        run.kmRange = [run.kmRange[0], Math.round(run.kmRange[1] * 0.9)];
+      }
     }
+    strength.pull = round1((strength.pull || 12) * 1.05);
+    strength.push = round1((strength.push || 12) * 1.05);
+    strength.legs = round1((strength.legs || 10) * 1.03);
   }
 
   if (answers?.conflictSacrificePriority === 'keep_cardio' && strength) {
@@ -188,33 +201,75 @@ export function buildWeeklyBudgets(answers, opts = {}) {
   const mission = resolveMissionProfile(answers);
   const missionId = resolvePrimaryMissionId(answers);
   const recovery = buildRecoveryBudget(answers, opts.constraints);
-  const activeDays = opts.activeDays ?? countQuizAvailableDays(answers);
+  const daysAvailable = opts.daysAvailable ?? countQuizAvailableDays(answers);
+  const prescribedActiveDays =
+    opts.prescribedActiveDays ?? opts.activeDays ?? daysAvailable;
+  const activeDays = opts.objectives
+    ? daysAvailable
+    : opts.activeDays ?? daysAvailable;
   const gLoad = opts.globalLoadFactor ?? 1;
 
-  const baseCaps = computeWeeklyMuscleCaps(
-    answers,
-    recovery.recoveryScore,
-    activeDays,
-    gLoad * recovery.recoveryBudget
-  );
-
-  const mul = mission.strengthFamilyMul || {};
-  const strength = {};
-  Object.keys(baseCaps).forEach((fam) => {
-    const m = mul[fam] ?? 1;
-    strength[fam] = round1(baseCaps[fam] * m);
-  });
+  let strength = {};
+  if (opts.objectives) {
+    const fromObjectives = objectivesToStrengthFamilies(opts.objectives);
+    const mul = mission.strengthFamilyMul || {};
+    Object.keys(fromObjectives).forEach((fam) => {
+      const m = mul[fam] ?? 1;
+      strength[fam] = round1(fromObjectives[fam] * m);
+    });
+    strength = applyImbalanceToStrengthFamilies(strength, answers);
+  } else {
+    const baseCaps = computeWeeklyMuscleCaps(
+      answers,
+      recovery.recoveryScore,
+      activeDays,
+      gLoad * recovery.recoveryBudget
+    );
+    const mul = mission.strengthFamilyMul || {};
+    Object.keys(baseCaps).forEach((fam) => {
+      const m = mul[fam] ?? 1;
+      strength[fam] = round1(baseCaps[fam] * m);
+    });
+  }
 
   const fineBoosts = applyPriorityFineBoosts(strength, answers);
 
   let run = null;
-  if (mission.weeklyKmRange) {
+  if (mission.weeklyKmRange || opts.objectives?.runPlan) {
     const hint = KM_CURRENT_MAP[answers?.runningWeeklyKmCurrent];
-    run = resolveWeeklyKmTarget(mission.weeklyKmRange, recovery.recoveryBudget, hint ?? null);
-    run.intensitySplit = mission.intensitySplit || null;
+    const range = mission.weeklyKmRange || opts.objectives?.runPlan?.kmRange;
+    if (range) {
+      run = resolveWeeklyKmTarget(range, recovery.recoveryBudget, hint ?? null);
+    } else if (opts.objectives?.runPlan?.kmTarget) {
+      run = {
+        kmTarget: opts.objectives.runPlan.kmTarget,
+        kmRange: opts.objectives.runPlan.kmRange || [
+          opts.objectives.runPlan.kmTarget,
+          opts.objectives.runPlan.kmTarget
+        ]
+      };
+    }
+    if (!run) {
+      run = { kmTarget: null, kmRange: null };
+    }
+    run.intensitySplit = opts.objectives?.runPlan?.intensitySplit || mission.intensitySplit || null;
+    run.maxQualitySessions = opts.objectives?.runPlan?.maxQualitySessions ?? 1;
+    run.sessionsPerWeek = opts.objectives?.runPlan?.sessionsPerWeek ?? null;
+    const runProfile = inferRunningSessionProfile(answers);
+    if (runProfile) {
+      run.intensitySplit = adjustIntensitySplitForRunningProfile(run.intensitySplit, runProfile);
+      run.runningSessionProfile = runProfile;
+    }
     if (missionId.startsWith('triathlon_')) {
       run.intensitySplit = adjustIntensitySplitForTriathlonWeakLeg(run.intensitySplit, answers?.triathlonWeakLeg);
     }
+    const durationWeeks = resolveProgramDurationWeeks(answers);
+    run.kmProgressionRamp = buildWeeklyKmProgressionRamp(
+      run.kmTarget,
+      durationWeeks,
+      hint ?? null
+    );
+    run.kmProgressionSummaryFr = kmProgressionSummaryFr(run.kmProgressionRamp);
   }
 
   const arbitration = buildBudgetArbitration(answers, mission, recovery, strength, run);
@@ -227,7 +282,8 @@ export function buildWeeklyBudgets(answers, opts = {}) {
     weakLegFr ? `Point faible tri : ${weakLegFr}` : null,
     `Récup. ×${recovery.recoveryBudget}`,
     `Force — tirage ${strength.pull} / poussée ${strength.push} / jambes ${strength.legs} séries`,
-    run ? `Course ~${run.kmTarget} km/sem (cible ${run.kmRange[0]}–${run.kmRange[1]})` : null
+    run ? `Course ~${run.kmTarget} km/sem (cible ${run.kmRange[0]}–${run.kmRange[1]})` : null,
+    run?.kmProgressionSummaryFr || null
   ].filter(Boolean);
 
   return {
@@ -245,7 +301,10 @@ export function buildWeeklyBudgets(answers, opts = {}) {
     recoveryBudget: recovery.recoveryBudget,
     recoveryLabelFr: recovery.labelFr,
     activeDaysPerWeek: activeDays,
+    prescribedActiveDaysPerWeek: prescribedActiveDays,
+    daysAvailablePerWeek: daysAvailable,
     strengthFamilies: strength,
+    weeklyObjectivesVersion: opts.objectives?.version ?? null,
     fineMuscleBoosts: fineBoosts,
     run,
     arbitration,

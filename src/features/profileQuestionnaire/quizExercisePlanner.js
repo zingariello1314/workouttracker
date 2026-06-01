@@ -7,8 +7,10 @@ import { buildQuizTrainingSessionBlueprint } from './quizInfluence';
 import {
   resolveTargetExerciseCount,
   trimExercisesToSessionBudget,
-  formatEstimatedSessionDuration
+  formatEstimatedSessionDuration,
+  finalizeSessionForDurationBudget
 } from './quizSessionDurationBudget';
+import { isStrengthExerciseAllowed } from './quizLegProgression';
 import { addonMinutes, planWeekSessionProfiles } from './quizSessionPlanner';
 import { applyBaselineToSeries, effectiveStrengthTier } from './quizVolumeFromBaselines';
 import { trimExercisesForTendonLoad } from './quizRecoveryEngine';
@@ -305,7 +307,7 @@ export function pickExercisesForContext(answers, blueprint, {
   const modalityFiltered =
     modality === 'cardio'
       ? filtered.filter((t) => isCardioAppropriateDbKey(t.dbKey))
-      : filtered;
+      : filtered.filter((t) => isStrengthExerciseAllowed(t.dbKey, answers, modality));
 
   const rng = seededRng(`${site || 'main'}:${dayIndex}:${answers?.goalPhysique || ''}`);
   const eligible = modalityFiltered
@@ -693,7 +695,16 @@ export function planMainSessionExercises(
     if (patterns?.length) {
       picked = picked.map((ex) => calibrateSeriesFromProgramPatterns(ex, patterns));
     }
-    picked = enforceSessionExerciseLimits(picked, deformers, profile);
+    picked = finalizeSessionForDurationBudget(picked, answers, {
+      coachContext,
+      profile,
+      blueprint,
+      dayIndex,
+      weekIndex: 1,
+      weekUsedKeys,
+      weekStrengthUsedKeys,
+      deps: { pickExercisesForContext, buildProgramExerciseFromDbKey }
+    });
     if (profile?.cardioAddon) {
       const addon = planCardioAddonBlock(answers, blueprint, profile, dayIndex, usedKeys, weekUsedKeys);
       picked = [...picked, ...addon];
@@ -771,6 +782,14 @@ export function planMainSessionExercises(
     coachContext,
     count
   );
+  picked = finalizeSessionForDurationBudget(picked, answers, {
+    coachContext,
+    profile,
+    blueprint,
+    dayIndex,
+    weekIndex: 1,
+    deps: { pickExercisesForContext, buildProgramExerciseFromDbKey }
+  });
 
   if (profile?.cardioAddon) {
     const addon = planCardioAddonBlock(answers, blueprint, profile, dayIndex, usedKeys, weekUsedKeys);

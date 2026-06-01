@@ -17,6 +17,30 @@ import { resolveSameDayCardioFromDeformers } from './quizArchetype';
 
 const HYPERTROPHY_GOALS = new Set(['muscular_defined', 'lean_toned', 'bulk_mass']);
 
+/**
+ * Jours cardio dédiés : priorité `runPlan.sessionsPerWeek` (objectifs) puis désir quiz.
+ * @param {number} activeCount
+ * @param {object} answers
+ * @param {object|null} coachContext
+ */
+export function resolveDedicatedCardioSlotCount(activeCount, answers, coachContext = null) {
+  const deformers = coachContext?.deformers || null;
+  const runSessions =
+    coachContext?.weeklyObjectives?.runPlan?.sessionsPerWeek ??
+    coachContext?.weeklyPlan?.budgets?.run?.sessionsPerWeek ??
+    null;
+  if (runSessions != null && runSessions > 0 && activeCount > 0) {
+    let slots = Math.min(runSessions, Math.max(0, activeCount - 1));
+    if (slots < 1) slots = 1;
+    if (deformers?.maxDedicatedCardioDays != null) {
+      slots = Math.min(slots, deformers.maxDedicatedCardioDays);
+    }
+    return Math.max(0, Math.min(activeCount, slots));
+  }
+  const cardioDesire = answers?.cardioTrainingDesire || 'moderate';
+  return maxDedicatedCardioDays(activeCount, cardioDesire, deformers, answers);
+}
+
 /** Jours dédiés cardio (1 → 5 max) selon `cardioTrainingDesire`, plafonné par les jours actifs. */
 function maxDedicatedCardioDays(activeCount, cardioDesire, deformers, answers = null) {
   if (activeCount <= 0) return 0;
@@ -117,8 +141,7 @@ function mainMinutesLabel(answers, withAddon) {
 export function planWeekSessionProfiles(activeDayKeys, answers, coachContext = null) {
   const deformers = coachContext?.deformers || null;
   const n = activeDayKeys.length;
-  const cardioDesire = answers?.cardioTrainingDesire || 'moderate';
-  const dedicatedCardioSlots = maxDedicatedCardioDays(n, cardioDesire, deformers, answers);
+  const dedicatedCardioSlots = resolveDedicatedCardioSlotCount(n, answers, coachContext);
   const addonSlots = addonCardioDayCount(n, answers, deformers, dedicatedCardioSlots);
 
   const cardioIndices = new Set();

@@ -5,6 +5,7 @@
 import { normalizePrimaryMissionSelection, suggestPrimaryMissionsFromAnswers } from './quizMissionResolver';
 import { inferStreetSkillGoal, isStreetOrientedProfile } from './quizStreetSkillGoal';
 import { normalizeProgramConstraints } from './quizProfileConstraints';
+import { inferRunningSessionProfile } from './quizRunningSessionProfile';
 
 /**
  * @param {object} answers — déjà sanitizées
@@ -18,6 +19,15 @@ export function migrateAnswersToV12(answers) {
     out.primaryMission = suggestPrimaryMissionsFromAnswers(out);
   } else if (typeof out.primaryMission === 'string') {
     out.primaryMission = [out.primaryMission];
+  }
+
+  if (!out.runningSessionProfile) {
+    const inferred = inferRunningSessionProfile(out);
+    if (inferred) out.runningSessionProfile = inferred;
+  }
+
+  if (!out.hybridLayoutPreference && isRunAndForceGoal(out)) {
+    out.hybridLayoutPreference = 'separate_days';
   }
 
   if (!out.runningGoal) {

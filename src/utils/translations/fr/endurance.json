@@ -304,7 +304,14 @@
       "elevation": "Dénivelé:",
       "notes": "Notes:",
       "type": "Type",
-      "typeSession": "Type de séance :"
+      "typeSession": "Type de séance :",
+      "kmSplitsTitle": "Allure km par km",
+      "kmSplitsColKm": "Kilomètre",
+      "kmSplitsColPace": "Allure",
+      "kmSplitsColSpeed": "Vitesse",
+      "kmSplitsColTime": "Temps",
+      "kmSplitsTotal": "Total",
+      "kmSplitsOverallPace": "allure générale"
     },
     "records": {
       "title": "Records & stats course",

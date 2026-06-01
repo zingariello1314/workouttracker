@@ -23,7 +23,7 @@ describe('missions étendues v6.2b', () => {
     expect(budgets.run?.kmTarget).toBeGreaterThanOrEqual(50);
   });
 
-  it('triathlon olympique : profil + ≥ 2 blocs course', () => {
+  it('triathlon olympique : profil + blocs multi-sport', () => {
     const id = resolvePrimaryMissionId(triathlonOlympic);
     expect(id).toBe('triathlon_olympic');
     const profile = resolveMissionProfile(triathlonOlympic);
@@ -32,7 +32,9 @@ describe('missions étendues v6.2b', () => {
     const { quizGenerationMeta } = runV6AcceptanceProfile(triathlonOlympic);
     const wp = quizGenerationMeta?.weeklyPlanner;
     expect(wp?.missionId).toBe('triathlon_olympic');
-    expect(wp?.runBlocksPlaced ?? 0).toBeGreaterThanOrEqual(2);
+    const dayBlocks = Object.values(wp?.dayBlocks || {}).flat();
+    expect(dayBlocks.some((b) => String(b).startsWith('swim_'))).toBe(true);
+    expect(dayBlocks.some((b) => String(b).startsWith('bike_'))).toBe(true);
   });
 
   it('sport_collective : circuits métaboliques en placement', () => {

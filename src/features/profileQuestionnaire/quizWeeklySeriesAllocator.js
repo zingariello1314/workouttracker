@@ -79,7 +79,7 @@ function blockFamilyWeights(block) {
  * @param {object} placement
  * @param {object} answers
  */
-export function feasibilityCheck(budgets, placement, answers) {
+export function feasibilityCheck(budgets, placement, answers, opts = {}) {
   const targets = { ...(budgets?.strengthFamilies || {}) };
   const decisions = [];
   const patterns = countAvailableStrengthPatterns(answers);
@@ -116,6 +116,17 @@ export function feasibilityCheck(budgets, placement, answers) {
     });
   }
 
+  const pushBlocks = Object.values(placement?.days || {}).filter((d) =>
+    d?.blocks?.includes('force_push')
+  ).length;
+  const chestFine = opts?.weeklyObjectives?.muscleVolumeTargets?.chest || 0;
+  if (chestFine >= 8 && pushBlocks === 0) {
+    decisions.push({
+      action: 'missing_push_day',
+      reasonFr: 'Objectif pecs défini mais aucun jour poussée — replan ou garde-fou hypertrophie requis.'
+    });
+  }
+
   const pullBlocks = Object.values(placement?.days || {}).filter((d) =>
     d?.blocks?.includes('force_pull')
   ).length;
@@ -130,8 +141,10 @@ export function feasibilityCheck(budgets, placement, answers) {
     targets.pull = to;
   }
 
+  const critical = decisions.some((d) => d.action === 'missing_push_day');
+
   return {
-    feasible: decisions.length === 0,
+    feasible: !critical && decisions.filter((d) => d.action !== 'exempt_skill_blocks').length === 0,
     targets,
     decisions,
     patterns
@@ -313,7 +326,9 @@ export function runWeeklySeriesAllocation(coachContext, schedule, activeDayKeys,
   const placement = coachContext?.weeklyPlan?.placement;
   if (!budgets?.strengthFamilies) return null;
 
-  const feasibility = feasibilityCheck(budgets, placement, answers);
+  const feasibility = feasibilityCheck(budgets, placement, answers, {
+    weeklyObjectives: coachContext?.weeklyObjectives
+  });
   const allocation = allocateSeriesToDays(feasibility.targets, placement, activeDayKeys);
   applySeriesAllocationToSchedule(schedule, allocation, activeDayKeys);
   const audit = auditSeriesRealization(feasibility.targets, schedule, activeDayKeys);

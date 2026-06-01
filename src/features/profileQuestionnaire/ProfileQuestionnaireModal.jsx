@@ -13,6 +13,7 @@ import { useProfileQuestionnaire } from './useProfileQuestionnaire';
 import { estimateTargetWeightFromQuiz } from './quizInfluence';
 import QuizCompletionRecap from './QuizCompletionRecap.jsx';
 import { buildQuizCompletionRecap } from './buildQuizCompletionRecap.js';
+import { QUIZ_CURATED_NUTRITION_FOODS } from './quizCuratedNutritionFoods';
 
 const DAYS = ['lundi', 'mardi', 'mercredi', 'jeudi', 'vendredi', 'samedi', 'dimanche'];
 
@@ -243,6 +244,64 @@ const QuestionCard = ({ question, value, onSelect, allAnswers, programs = [] }) 
           Facultatif : laisse vide les mouvements que tu ne pratiques pas. Le programme ajustera séries/reps sur ceux
           renseignés.
         </p>
+      </div>
+    );
+  }
+
+  if (question.type === 'nutritionFoodPrefs') {
+    const prefs = value && typeof value === 'object' && !Array.isArray(value) ? value : {};
+    const loved = Array.isArray(prefs.lovedFoodIds) ? prefs.lovedFoodIds : [];
+    const avoided = Array.isArray(prefs.avoidedFoodIds) ? prefs.avoidedFoodIds : [];
+    const toggle = (id, listKey) => {
+      const list = listKey === 'loved' ? loved : avoided;
+      const otherKey = listKey === 'loved' ? 'avoidedFoodIds' : 'lovedFoodIds';
+      const other = listKey === 'loved' ? avoided : loved;
+      const next = list.includes(id) ? list.filter((x) => x !== id) : [...list, id];
+      const nextOther = other.filter((x) => x !== id);
+      onSelect({
+        lovedFoodIds: listKey === 'loved' ? next : nextOther,
+        avoidedFoodIds: listKey === 'avoided' ? next : nextOther,
+        openFoodIds: prefs.openFoodIds || [],
+        selectedBankFoodIds: prefs.selectedBankFoodIds || []
+      });
+    };
+    return (
+      <div className="space-y-3 max-h-64 overflow-y-auto pr-1">
+        {QUIZ_CURATED_NUTRITION_FOODS.map((food) => (
+          <div
+            key={food.id}
+            className="flex items-center justify-between gap-2 rounded-lg border border-slate-700/70 bg-slate-900/50 px-2 py-1.5"
+          >
+            <span className="text-xs text-slate-200 truncate">{food.name}</span>
+            <span className="flex gap-1 shrink-0">
+              <button
+                type="button"
+                title="J’aime"
+                onClick={() => toggle(food.id, 'loved')}
+                className={`px-2 py-0.5 text-xs rounded ${
+                  loved.includes(food.id)
+                    ? 'bg-emerald-600/40 border border-emerald-400'
+                    : 'border border-slate-600'
+                }`}
+              >
+                ♥
+              </button>
+              <button
+                type="button"
+                title="À éviter"
+                onClick={() => toggle(food.id, 'avoided')}
+                className={`px-2 py-0.5 text-xs rounded ${
+                  avoided.includes(food.id)
+                    ? 'bg-rose-600/40 border border-rose-400'
+                    : 'border border-slate-600'
+                }`}
+              >
+                ✕
+              </button>
+            </span>
+          </div>
+        ))}
+        <p className="text-[11px] text-slate-500">Facultatif — au plus quelques aliments de chaque côté.</p>
       </div>
     );
   }

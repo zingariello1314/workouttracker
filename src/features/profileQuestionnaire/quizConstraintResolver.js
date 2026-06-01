@@ -4,8 +4,8 @@
 
 import {
   buildAdherenceWarnings,
+  computeAdherenceCap,
   computeAdherenceRiskFromQuiz,
-  computeMaxActiveDaysFromQuiz,
   countQuizAvailableDays,
   declaredFrequencyPerWeek
 } from './quizAdherenceEngine';
@@ -98,8 +98,11 @@ export function resolveQuizConstraints(answers) {
   const daysAvailable = countQuizAvailableDays(answers);
   const warnings = hasConflictingGoals(answers);
 
-  let maxActiveDays = computeMaxActiveDaysFromQuiz(answers, adherenceRisk, recoveryScore);
-  maxActiveDays = applyConstraintMaxActiveDays(maxActiveDays, answers);
+  const adherenceCap = applyConstraintMaxActiveDays(
+    computeAdherenceCap(answers, adherenceRisk, recoveryScore),
+    answers
+  );
+  const maxActiveDays = adherenceCap;
 
   const constraintFx = getProfileConstraintEffects(answers);
   if (constraintFx.summaryFr) warnings.push(constraintFx.summaryFr);
@@ -114,6 +117,7 @@ export function resolveQuizConstraints(answers) {
   return {
     recoveryScore,
     adherenceRisk,
+    adherenceCap,
     maxActiveDays: Math.max(2, maxActiveDays),
     daysAvailable,
     declaredFrequency: declaredFrequencyPerWeek(answers),

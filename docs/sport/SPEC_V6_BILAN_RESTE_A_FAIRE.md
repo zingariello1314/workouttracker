@@ -1,7 +1,20 @@
 # Bilan SPEC v6 — plan de base vs réalisé
 
-*Audit ligne par ligne de [`SPEC_MOTEUR_V6_PLAN_MIGRATION.md`](SPEC_MOTEUR_V6_PLAN_MIGRATION.md) au **2026-05-27**.  
-**Tests moteur :** 152+ Vitest `profileQuestionnaire` · **Phase tag :** `v6_4_meal_enrichment`
+*Audit ligne par ligne de [`SPEC_MOTEUR_V6_PLAN_MIGRATION.md`](SPEC_MOTEUR_V6_PLAN_MIGRATION.md) au **2026-05-31**.  
+**Tests moteur :** 200 Vitest `profileQuestionnaire` · **Phase tag :** `v6_objectives_first` (clôturé)
+
+### Planificateur objectifs-first (INCOHERENCES doc)
+
+| Livrable | Statut | Fichiers |
+|----------|--------|----------|
+| Objectifs hebdo avant cap jours | ✅ | `quizWeeklyObjectives.js`, `quizCoachPipeline.js` |
+| Allocation → placement | ✅ | `quizWeekDayAllocator.js`, `buildWeekPlacementFromAllocation` |
+| Cap jours intelligent | ✅ | `selectActiveDaysForCap`, `derivePrescribedActiveDays` |
+| Garde-fou + replan push/pecs | ✅ | `quizHypertrophyGuard.js` |
+| Cardio = `sessionsPerWeek` objectifs | ✅ | `quizWeekPlacement.js`, `quizSessionPlanner.js` |
+| Encart objectifs + répartition | ✅ | `ProgramCoachEncart.jsx`, meta `weekAllocationSummaryFr` |
+| Profil doc e2e | ✅ | `fixtures/incoherenceDocProfile.js`, `quizPlanVisionDoc.test.js` (critères §14) |
+| Durée 60–90 min | ✅ | `finalizeSessionForDurationBudget` après allocation séries |
 
 Légende : ✅ fait · ⚠️ partiel · ❌ non fait / hors scope doc
 
@@ -71,7 +84,7 @@ Légende : ✅ fait · ⚠️ partiel · ❌ non fait / hors scope doc
 | **6.2** RUN Q-R1–R5 | ✅ | `runningGoal`, km, long run, runStrengthPriority |
 | **6.3** TRI | ✅ | `triathlonDistance`, `triathlonWeakLeg` |
 | **6.4** `preferredWeeklyStructure` | ✅ | |
-| **6.5** `hybridLayoutPreference` | ⚠️ | Schema / partiel ; pas de moteur dédié fort |
+| **6.5** `hybridLayoutPreference` | ✅ | Question quiz + `quizHybridLayoutPlacement.js` |
 | **6.6** Tolérances T1–T3 | ⚠️ | `neuralFatigueTolerance`, `volumeTolerance` en schema ; UI recovery_pick partielle |
 | **6.7** `streetSkillGoal` | ✅ | |
 | **6.8** `conflictSacrificePriority` | ✅ | |
@@ -168,17 +181,17 @@ Légende : ✅ fait · ⚠️ partiel · ❌ non fait / hors scope doc
 
 ### Produit / UX (non moteur pur)
 
-1. **UI replan calendrier** — permuter les jours à la main, voir suggestion coach.
-2. **Affichage repas dans Programme** — panneau jour par jour (meta `nutritionAlignment.byDay` existe ; UI à construire).
-3. **Questions quiz aliments** — `nutritionFoodPreferences` (aimés / évités) en UI quiz (schema optionnel à ajouter).
-4. **Triathlon natation / vélo** — blocs `swim_*` / `bike_*` + fill (aujourd’hui : course à pied proxy).
+1. ~~**UI replan calendrier**~~ — `ProgramWeekDaySwapPanel` (permutation manuelle + hint coach).
+2. ~~**Affichage repas dans Programme**~~ — `ProgramNutritionWeekPanel` dans l’encart coach.
+3. ~~**Questions quiz aliments**~~ — `nutritionFoodPreferences` (type `nutritionFoodPrefs`).
+4. ~~**Triathlon natation / vélo**~~ — `quizTriathlonPlacement.js` + fill natation/vélo.
 
 ### Moteur / qualité
 
-5. **Progression km multi-semaines** — rampes 12 sem, pas seulement cible hebdo.
-6. **`hybridLayoutPreference`** — impact placement explicite (A/B sites semaine).
-7. **Q-R3 `runningSessionProfile`** — si pas déjà branché sur split (vérifier mapping).
-8. **Flag `USE_WEEKLY_PLANNER_FOR_SCHEDULE=false`** — rollback d’urgence documenté.
+5. ~~**Progression km multi-semaines**~~ — `quizKmProgressionRamp.js` (meta `run.kmProgressionRamp`).
+6. ~~**`hybridLayoutPreference`**~~ — placement hybride même jour.
+7. ~~**Q-R3 `runningSessionProfile`**~~ — `quizRunningSessionProfile.js` → `intensitySplit`.
+8. ~~**Flag planner rollback**~~ — `VITE_USE_WEEKLY_PLANNER_FOR_SCHEDULE=false` dans `quizWeeklyPlanner.js`.
 9. **Snapshots JSON commités** — régénérer et committer `docs/sport/fixtures/v6/*.json` si souhaité.
 10. **Gate banque** — maintenir ≥ 85 % à chaque ajout massif d’exercices.
 
@@ -193,4 +206,4 @@ Légende : ✅ fait · ⚠️ partiel · ❌ non fait / hors scope doc
 
 ## Synthèse une phrase
 
-**Le plan de migration §8 (phases 0–8) et les extensions §14 sont en place.** Il reste surtout de l’**UX** (calendrier, vue repas), du **triathlon multi-sport complet**, et des **finesses produit** (hybride A/B, rampes km longues) — pas un trou dans le cœur ordonnanceur v6.
+**Le plan de migration §8 (phases 0–8), le planificateur objectifs-first (phases 0–E du doc INCOHERENCES), et les extensions §14 sont en place.** Il reste surtout des **finesses** (snapshots JSON commités, rampes km macro 12 sem, audit fine muscle post-fill 100 %), pas un trou dans le cœur ordonnanceur v6.

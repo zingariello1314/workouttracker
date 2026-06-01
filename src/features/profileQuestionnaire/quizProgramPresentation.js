@@ -106,8 +106,43 @@ export function buildProgramDescriptionFromQuiz(answers, schedule, quizGeneratio
 export function buildCoachEncartFromMeta(quizGenerationMeta) {
   if (!quizGenerationMeta) return null;
   const bullets = [];
+
+  if (quizGenerationMeta.weekAllocationSummaryFr) {
+    bullets.push(`Répartition : ${quizGenerationMeta.weekAllocationSummaryFr}`);
+  }
+
+  if (quizGenerationMeta.objectivesSummaryFr) {
+    bullets.push(quizGenerationMeta.objectivesSummaryFr);
+  } else if (quizGenerationMeta.weeklyObjectives) {
+    const o = quizGenerationMeta.weeklyObjectives;
+    const m = o.muscleVolumeTargets || {};
+    const parts = [];
+    if ((m.chest || 0) + (m.back || 0) > 0) {
+      parts.push(`dos ${m.back || 0} séries, pecs ${m.chest || 0}`);
+    }
+    if (o.pullupPlan) parts.push(`${o.pullupPlan.exposuresPerWeek} expositions traction`);
+    if (o.runPlan?.kmTarget) parts.push(`~${o.runPlan.kmTarget} km course`);
+    if (parts.length) bullets.push(`Cette semaine doit accomplir : ${parts.join(' · ')}`);
+  }
+
+  if (quizGenerationMeta.pullupProgressionPlan?.labelFr) {
+    bullets.push(quizGenerationMeta.pullupProgressionPlan.labelFr);
+  }
+
+  const objAudit = quizGenerationMeta.objectivesVsRealized;
+  if (objAudit?.warnings?.length) {
+    objAudit.warnings.slice(0, 2).forEach((w) => bullets.push(w));
+  } else if (objAudit?.summaryFr && objAudit.withinTolerance !== false) {
+    bullets.push(objAudit.summaryFr);
+  }
+
   const why = quizGenerationMeta.whyThisTemplate;
-  if (Array.isArray(why)) why.slice(0, 3).forEach((w) => bullets.push(w));
+  if (Array.isArray(why)) {
+    why
+      .filter((w) => !bullets.includes(w))
+      .slice(0, 4)
+      .forEach((w) => bullets.push(w));
+  }
 
   const warnings = quizGenerationMeta.warnings;
   if (Array.isArray(warnings)) warnings.slice(0, 3).forEach((w) => bullets.push(w));
@@ -127,6 +162,9 @@ export function buildCoachEncartFromMeta(quizGenerationMeta) {
   }
   if (wp?.cardioKmReasonFr && wp.cardioKmAligned === false) {
     bullets.push(wp.cardioKmReasonFr);
+  }
+  if (wp?.run?.kmProgressionSummaryFr) {
+    bullets.push(wp.run.kmProgressionSummaryFr);
   }
   if (wp?.placementSummaryFr) {
     bullets.push(`Structure : ${wp.placementSummaryFr}`);

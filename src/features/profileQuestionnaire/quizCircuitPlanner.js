@@ -7,6 +7,7 @@ import {
   hasCircuitTrainingStyle,
   normalizeCircuitTrainingStyles
 } from './circuitTrainingStyleUtils';
+import { isHypertrophyGoal } from './quizStrengthBaselines';
 
 const TEMPLATE_ABDOS = {
   name: 'Circuit abdos',
@@ -88,6 +89,11 @@ export function planQuizCircuits(activeDayKeys, answers, weekProfiles, coachOpts
     return { assignments, definitions };
   }
   let abDays = resolveAbCircuitDaysPerWeek(answers);
+  if (isHypertrophyGoal(answers)) {
+    const cardioHigh =
+      answers?.cardioTrainingDesire === 'high' || answers?.cardioTrainingDesire === 'priority_hiit';
+    if (!cardioHigh) abDays = Math.min(abDays, 1);
+  }
   if (!abDays) return { assignments, definitions };
   if (coachOpts?.coachContext?.loadAnalysis?.cuts?.reduceCircuitDays) {
     abDays = Math.max(0, abDays - 1);

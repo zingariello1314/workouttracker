@@ -111,9 +111,27 @@ export function scaleSeriesForProgressionPhase(series, weekMeta) {
 /**
  * Facteur volume appliqué aux deformers selon la semaine 1 du nouveau cycle.
  */
-export function progressionVolumeMulForWeek1(totalWeeks) {
+/**
+ * @param {number} totalWeeks
+ * @param {object} [answers]
+ */
+export function progressionVolumeMulForWeek1(totalWeeks, answers = null) {
   const meta = resolveCycleWeekMeta(totalWeeks, 1);
-  return meta?.volumeFactor ?? 1;
+  let factor = meta?.volumeFactor ?? 1;
+  if (answers) {
+    const days = Array.isArray(answers?.availableTrainingDays)
+      ? answers.availableTrainingDays.length
+      : 0;
+    const freqMap = { '0': 0, '1_2': 1.5, '3_4': 3.5, '5_6': 5.5, '7': 7 };
+    const freq = freqMap[answers?.weeklyTrainingFrequencyCurrent] ?? 3;
+    const hypertrophy = ['muscular_defined', 'lean_toned', 'bulk_mass'].includes(
+      answers?.goalPhysique
+    );
+    if (hypertrophy && days >= 5 && freq >= 3.5) {
+      factor = Math.max(factor, 0.9);
+    }
+  }
+  return factor;
 }
 
 /** @param {number} totalWeeks */

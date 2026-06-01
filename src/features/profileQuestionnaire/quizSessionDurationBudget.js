@@ -3,6 +3,7 @@
  */
 
 import { getProfileConstraintEffects } from './quizProfileConstraints';
+import { enforceSessionExerciseLimits } from './quizSessionLimits';
 
 const SESSION_BUDGET = {
   '15_30': { targetMin: 22, warmupMin: 5, reservePlyoMin: 4 },
@@ -177,6 +178,211 @@ export function formatEstimatedSessionDuration(exercises, answers) {
   if (min < 35) return `~${min} min`;
   const hi = Math.min(120, min + 12);
   return `~${min}–${hi} min`;
+}
+
+/**
+ * Minutes estimées minimales pour une séance force (aligné quiz 60–90 → ~48–50 min semaine 1).
+ * @param {object} answers
+ * @param {{ weekIndex?: number }} [opts]
+ */
+export function getStrengthSessionFloorMinutes(answers, opts = {}) {
+  const dur = answers?.preferredSessionDuration;
+  const weekFactor = opts.weekIndex === 1 ? 0.92 : 1;
+  const floors = {
+    '15_30': 18,
+    '30_45': 32,
+    '45_60': 42,
+    '60_90': 48
+  };
+  const base = floors[dur] ?? Math.round(getSessionBudget(answers).targetMin * 0.62);
+  return Math.round(base * weekFactor);
+}
+
+/**
+ * Plafonds assouplis pour remplir la durée sans couper à 7 exos / 25 séries.
+ */
+export function deformersForDurationFill(baseDeformers = {}, answers) {
+  const dur = answers?.preferredSessionDuration;
+  const mul = dur === '60_90' ? 1.35 : dur === '45_60' ? 1.22 : 1.1;
+  return {
+    ...baseDeformers,
+    maxExercisesPerSession: Math.min(
+      11,
+      Math.max(baseDeformers.maxExercisesPerSession ?? 7, Math.round(8 * mul))
+    ),
+    maxEffectiveSetsPerSession: Math.min(
+      36,
+      Math.max(baseDeformers.maxEffectiveSetsPerSession ?? 25, Math.round(28 * mul))
+    ),
+    maxPullingPatternsPerSession: Math.max(baseDeformers.maxPullingPatternsPerSession ?? 3, 4),
+    exerciseCountMul: Math.max(baseDeformers.exerciseCountMul ?? 1, 1.05)
+  };
+}
+
+function isCardioExercise(ex) {
+  return /cardio|course|fractionné|corde/i.test(`${ex.exerciseBankKey || ''} ${ex.name || ''}`);
+}
+
+/**
+ * Augmente les séries sur les exos force jusqu'à atteindre une durée cible.
+ */
+export function bumpStrengthSetsForDuration(exercises, answers, targetMin) {
+  const list = exercises.map((ex) => ({ ...ex }));
+  let est = estimateSessionMinutesFromExercises(list, answers);
+  let guard = 0;
+  while (est < targetMin && guard < 14) {
+    guard += 1;
+    const strengthEx = list.filter((ex) => !isCardioExercise(ex));
+    if (!strengthEx.length) break;
+    const ex = strengthEx[guard % strengthEx.length];
+    if (ex?.series) {
+      const m = String(ex.series).match(/^(\d+)×(.+)$/);
+      if (m) {
+        const sets = Math.min(6, Number(m[1]) + 1);
+        let repsPart = m[2];
+        const range = repsPart.match(/^(\d+)-(\d+)$/);
+        if (range) {
+          repsPart = `${Number(range[1]) + 1}-${Number(range[2]) + 2}`;
+        } else if (/^\d+$/.test(repsPart.trim())) {
+          repsPart = String(Math.min(15, Number(repsPart) + 2));
+        }
+        ex.series = `${sets}×${repsPart}`;
+      }
+    }
+    est = estimateSessionMinutesFromExercises(list, answers);
+  }
+  return list;
+}
+
+/**
+ * Complète la séance jusqu'au plancher durée quiz (force / hybride).
+ * @param {object[]} exercises
+ * @param {object} answers
+ * @param {object} [ctx]
+ * @param {object} [ctx.coachContext]
+ * @param {object} [ctx.profile]
+ * @param {object} [ctx.deps] — pickExercisesForContext, buildProgramExerciseFromDbKey
+ * @param {number} [ctx.minMinutes]
+ */
+export function fillUntilSessionBudget(exercises, answers, ctx = {}) {
+  if (!Array.isArray(exercises) || !exercises.length) return exercises;
+  const budget = getSessionBudget(answers);
+  const fillTarget =
+    ctx.minMinutes != null ? ctx.minMinutes : Math.round(budget.targetMin * 0.72);
+  const maxEx = ctx.coachContext?.deformers?.maxExercisesPerSession ?? 11;
+  let list = [...exercises];
+
+  const estimate = () => estimateSessionMinutesFromExercises(list, answers);
+
+  let minutes = estimate();
+  let guard = 0;
+  while (minutes < fillTarget && guard < 10 && list.length < maxEx) {
+    guard += 1;
+    const strengthEx = list.filter((ex) => !isCardioExercise(ex));
+    const targetEx = strengthEx[guard % strengthEx.length] || list[0];
+    if (targetEx?.series) {
+      const m = String(targetEx.series).match(/^(\d+)×(.+)$/);
+      if (m) {
+        const sets = Math.min(5, Number(m[1]) + 1);
+        targetEx.series = `${sets}×${m[2]}`;
+      }
+    }
+    minutes = estimate();
+    if (minutes >= fillTarget) break;
+
+    const { pickExercisesForContext, buildProgramExerciseFromDbKey } = ctx.deps || {};
+    const profile = ctx.profile;
+    if (!pickExercisesForContext || !buildProgramExerciseFromDbKey) break;
+    const used = new Set(list.map((e) => e.exerciseBankKey).filter(Boolean));
+    const groups = profile?.groups?.filter((g) => g !== 'cardio') || ['upper'];
+    const extra = pickExercisesForContext(answers, ctx.blueprint, {
+      groups,
+      count: 1,
+      site: profile?.site,
+      dayIndex: (ctx.dayIndex ?? 0) + guard,
+      usedKeys: used,
+      modality: 'strength',
+      weekUsedKeys: ctx.weekUsedKeys,
+      weekStrengthUsedKeys: ctx.weekStrengthUsedKeys,
+      deformers: ctx.coachContext?.deformers,
+      globalTier: 'intermediate'
+    });
+    let added = false;
+    extra.forEach((ex) => {
+      if (list.length < maxEx && !used.has(ex.exerciseBankKey)) {
+        list.push(ex);
+        used.add(ex.exerciseBankKey);
+        added = true;
+      }
+    });
+    if (!added) break;
+    minutes = estimate();
+  }
+
+  return list;
+}
+
+/**
+ * Pass final : remplit la durée après progression / limites, sans écraser les missions.
+ * @param {object[]} exercises
+ * @param {object} answers
+ * @param {object} [ctx]
+ */
+export function finalizeSessionForDurationBudget(exercises, answers, ctx = {}) {
+  if (!Array.isArray(exercises) || !exercises.length) return exercises;
+  const profile = ctx.profile || {};
+  if (profile.modality === 'cardio') return exercises;
+
+  const hasStrength =
+    exercises.some((ex) => !isCardioExercise(ex)) ||
+    profile.modality === 'strength' ||
+    profile.modality === 'strength_cardio';
+  if (!hasStrength) return exercises;
+
+  const floorMin = ctx.minMinutes ?? getStrengthSessionFloorMinutes(answers, {
+    weekIndex: ctx.weekIndex ?? 1
+  });
+  const relaxed = deformersForDurationFill(ctx.coachContext?.deformers || {}, answers);
+  const fillCtx = {
+    ...ctx,
+    minMinutes: floorMin,
+    coachContext: { ...(ctx.coachContext || {}), deformers: relaxed }
+  };
+
+  let list = fillUntilSessionBudget(
+    exercises.map((ex) => ({ ...ex })),
+    answers,
+    fillCtx
+  );
+  list = bumpStrengthSetsForDuration(list, answers, floorMin);
+  list = enforceSessionExerciseLimits(list, relaxed, profile);
+
+  if (estimateSessionMinutesFromExercises(list, answers) < floorMin * 0.9) {
+    list = bumpStrengthSetsForDuration(
+      fillUntilSessionBudget(list, answers, fillCtx),
+      answers,
+      floorMin
+    );
+    list = enforceSessionExerciseLimits(list, relaxed, profile);
+  }
+
+  return list;
+}
+
+/**
+ * Note durée honnête pour affichage jour.
+ */
+export function buildSessionDurationNote(exercises, answers) {
+  const budget = getSessionBudget(answers);
+  const est = estimateSessionMinutesFromExercises(exercises, answers);
+  const target = budget.targetMin;
+  if (est >= target * 0.75) {
+    return `~${est} min prévus (cible ${formatSessionDurationLabel(answers)})`;
+  }
+  if (est >= target * 0.5) {
+    return `~${est} min — volume modéré (récupération / semaine 1, cible ${formatSessionDurationLabel(answers)})`;
+  }
+  return `~${est} min — séance volontairement courte (cible ${formatSessionDurationLabel(answers)})`;
 }
 
 export function formatSessionDurationLabel(answers) {

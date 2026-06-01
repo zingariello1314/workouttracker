@@ -22,6 +22,8 @@ import { useFormatters } from '../../../../utils/translations/formatters-hook';
 import { classifyLapPhase } from '../../../../utils/garminRunningLaps';
 import { inferDisplayTypeFromGarminActivity, runningSessionTypeLabel } from '../../../../utils/runningSessionTypeLabel';
 import { isWalkingLikeRunningSession } from '../../../../utils/runningSessionMovementKind';
+import { buildKmSplitsForRunningSession } from '../../../../utils/runningKmSplits';
+import RunningKmSplitsTable from './RunningKmSplitsTable';
 
 function findCardioBySession(activities, session) {
   const cardio = activities?.cardio || [];
@@ -208,6 +210,11 @@ export default function RunningSessionDetailPage({ session, onBack }) {
   }, [session, garminFull, isIntervalLike]);
   const showIntervalBadge = effectiveSessionType === 'interval';
 
+  const kmSplits = useMemo(() => {
+    if (effectiveSessionType !== 'endurance') return null;
+    return buildKmSplitsForRunningSession(session, garminFull);
+  }, [effectiveSessionType, session, garminFull]);
+
   const filteredLaps = useMemo(() => {
     if (lapFilter === LAP_FILTER.ALL) return lapsWithPhase;
     if (lapFilter === LAP_FILTER.EFFORT) {
@@ -333,6 +340,8 @@ export default function RunningSessionDetailPage({ session, onBack }) {
             )}
           </div>
         </section>
+
+        {kmSplits && <RunningKmSplitsTable splits={kmSplits} />}
 
         {session.notes && (
           <p className="mt-6 rounded-2xl border border-teal-700/35 bg-black px-5 py-4 text-sm leading-relaxed text-teal-100/90">

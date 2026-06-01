@@ -106,7 +106,9 @@ describe('profil hypertrophie street (régression)', () => {
     });
     const pull = days
       .flatMap((d) => aug[d]?.exercises || [])
-      .find((e) => /tractions?\s*pronation/i.test(`${e.exerciseBankKey || ''} ${e.name || ''}`));
+      .find((e) =>
+        /tractions?\s*(pronation|australiennes)/i.test(`${e.exerciseBankKey || ''} ${e.name || ''}`)
+      );
     expect(pull).toBeTruthy();
     expect(parseSetsCount(pull.series)).toBeGreaterThanOrEqual(3);
     expect(parseRepsMid(pull.series)).toBeGreaterThanOrEqual(3);

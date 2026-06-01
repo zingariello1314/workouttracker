@@ -191,6 +191,42 @@ export const PROFILE_QUESTION_DEFS = [
     ]
   },
   {
+    id: 'hybridLayoutPreference',
+    sectionId: 'mission',
+    type: 'single',
+    showWhen: 'hybrid_priority',
+    title: 'Organisation course + muscu (hybride)',
+    description: 'Comment répartir course et musculation quand tu fais les deux.',
+    options: [
+      { key: 'separate_days', label: 'Jours séparés', description: 'Course un jour, muscu un autre' },
+      {
+        key: 'same_day_strength_then_run',
+        label: 'Muscu ou street, puis course en fin',
+        description: 'Séance force / figures d’abord, footing ou course facile à la fin (recommandé)'
+      },
+      {
+        key: 'same_day_easy_run',
+        label: 'Course facile + muscu le même jour',
+        description: 'Comme ci-dessus : course légère après la muscu'
+      },
+      {
+        key: 'same_day_run_then_lift',
+        label: 'Course puis muscu léger',
+        description: 'Course en début de séance, force allégée ensuite'
+      }
+    ]
+  },
+  {
+    id: 'nutritionFoodPreferences',
+    sectionId: 'operations',
+    type: 'nutritionFoodPrefs',
+    optional: true,
+    showWhen: 'mission_pick',
+    title: 'Aliments préférés / à éviter (optionnel)',
+    description:
+      'Affine les repas suggérés avec le module Nutrition. Tu peux passer cette étape.'
+  },
+  {
     id: 'strengthBaselineMaxes',
     sectionId: 'experience',
     type: 'strengthBaselines',
@@ -601,6 +637,21 @@ export const PROFILE_QUESTION_DEFS = [
     ]
   },
   {
+    id: 'runningSessionProfile',
+    sectionId: 'course',
+    type: 'single',
+    showWhen: 'run_module',
+    title: 'Profil de séances course (Q-R3)',
+    description: 'Répartition endurance / qualité / fractionné sur la semaine.',
+    options: [
+      { key: 'endurance', label: 'Endurance fondamentale', description: 'Majorité footing facile' },
+      { key: 'mixed', label: 'Mix équilibré', description: 'Défaut recommandé' },
+      { key: 'speed', label: 'Vitesse / fractionné', description: 'Plus de séances qualité' },
+      { key: 'return', label: 'Reprise prudente', description: 'Très progressif' },
+      { key: 'performance', label: 'Performance / chrono', description: 'Seuil et fractionné modérés' }
+    ]
+  },
+  {
     id: 'runningWeeklyKmCurrent',
     sectionId: 'course',
     type: 'single',
@@ -685,6 +736,11 @@ export const PROFILE_QUESTION_DEFS = [
         key: 'no_interval_after_legs',
         label: 'Pas de fractionné juste après jambes lourdes',
         description: 'Uniquement si tu fais aussi de la course'
+      },
+      {
+        key: 'max_session_45min',
+        label: 'Séances plafonnées à ~45 min',
+        description: 'Utile si tu manques souvent de temps'
       }
     ]
   },

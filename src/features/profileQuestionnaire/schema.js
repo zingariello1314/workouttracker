@@ -1,6 +1,9 @@
+import { NUTRITION_FOOD_BANK_ITEMS } from '../../data/nutritionFoodBank';
 import { PROFILE_QUESTION_DEFS, PROFILE_QUESTIONNAIRE_VERSION } from './constants';
 import { migrateAnswersToV12 } from './quizAnswersMigration';
 import { filterActiveQuestions } from './quizQuestionVisibility';
+
+const NUTRITION_BANK_IDS = new Set(NUTRITION_FOOD_BANK_ITEMS.map((f) => f.id));
 
 const isObject = (v) => v && typeof v === 'object' && !Array.isArray(v);
 
@@ -37,6 +40,21 @@ export function computeCompletion(answers) {
       if (v && typeof v === 'object' && !Array.isArray(v)) {
         const filled = Object.values(v).some((x) => x != null && Number(x) > 0);
         if (filled) completed += 1;
+      }
+      return;
+    }
+    if (q.type === 'nutritionFoodPrefs') {
+      if (q.optional && (v == null || (typeof v === 'object' && !Object.keys(v).length))) {
+        completed += 1;
+        return;
+      }
+      if (
+        v &&
+        typeof v === 'object' &&
+        ((Array.isArray(v.lovedFoodIds) && v.lovedFoodIds.length) ||
+          (Array.isArray(v.avoidedFoodIds) && v.avoidedFoodIds.length))
+      ) {
+        completed += 1;
       }
       return;
     }
@@ -173,6 +191,13 @@ const V6_OPTIONAL_ANSWER_KEYS = {
     'bro_split'
   ],
   runningLongRunPossible: ['yes_flexible', 'yes_weekend', 'yes_weekday', 'no'],
+  runningSessionProfile: ['endurance', 'mixed', 'speed', 'return', 'performance'],
+  hybridLayoutPreference: [
+    'separate_days',
+    'same_day_strength_then_run',
+    'same_day_easy_run',
+    'same_day_run_then_lift'
+  ],
   programDurationWeeks: ['auto', '4', '6', '8', '10', '12'],
   streetSkillGoal: [
     'first_pullup',
@@ -189,7 +214,12 @@ const V6_OPTIONAL_ANSWER_KEYS = {
 };
 
 const V6_OPTIONAL_ARRAY_KEYS = {
-  weeklyConstraints: ['no_interval_after_legs', 'travel_week', 'limited_equipment']
+  weeklyConstraints: [
+    'no_interval_after_legs',
+    'travel_week',
+    'limited_equipment',
+    'max_session_45min'
+  ]
 };
 
 function sanitizeV6OptionalKey(key, raw) {
@@ -276,6 +306,22 @@ function sanitizeByQuestion(question, rawValue) {
     const allowed = new Set((question.options || []).map((o) => String(o.key)));
     const set = Array.from(new Set(arr.map((x) => String(x)).filter((x) => allowed.has(x))));
     return set.slice(0, max);
+  }
+  if (question.type === 'nutritionFoodPrefs') {
+    if (!isObject(rawValue)) return null;
+    const filterIds = (arr) =>
+      Array.isArray(arr)
+        ? [...new Set(arr.map((x) => String(x)).filter((id) => NUTRITION_BANK_IDS.has(id)))].slice(0, 10)
+        : [];
+    const loved = filterIds(rawValue.lovedFoodIds);
+    const avoided = filterIds(rawValue.avoidedFoodIds);
+    if (!loved.length && !avoided.length) return null;
+    return {
+      lovedFoodIds: loved,
+      avoidedFoodIds: avoided,
+      openFoodIds: filterIds(rawValue.openFoodIds),
+      selectedBankFoodIds: filterIds(rawValue.selectedBankFoodIds)
+    };
   }
   if (question.type === 'slider') {
     const n = Number(rawValue);

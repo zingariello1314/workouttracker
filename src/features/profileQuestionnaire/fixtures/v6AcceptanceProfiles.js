@@ -3,6 +3,7 @@
  */
 
 import { buildQuizAugmentedSchedule, buildTrainingScheduleFromQuizDays } from '../trainingScheduleFromQuiz';
+import { incoherenceDocProfile6d } from './incoherenceDocProfile';
 
 export const hypertrophyStreet3j = {
   id: 'hypertrophy_street_3j',
@@ -128,7 +129,8 @@ export const V6_ACCEPTANCE_PROFILES = {
   combat_sport_3j: combatSport3j,
   military_prep_4j: militaryPrep4j,
   hybrid_strength_cardio: hybridStrengthCardio,
-  beginner_total: beginnerTotal
+  beginner_total: beginnerTotal,
+  incoherence_doc_6d: incoherenceDocProfile6d
 };
 
 /**

@@ -31,6 +31,7 @@ import { isWeekAlternationEnabled } from '../../features/profileQuestionnaire/qu
 import { copyEtirementsToProgramSchedule } from '../../utils/stretchUtils';
 import { buildExerciseDaysSet, countProgramUsageDays } from '../../utils/programUsageDays';
 import ProgramCoachEncart from '../../features/profileQuestionnaire/ProgramCoachEncart';
+import ProgramWeekDaySwapPanel from '../../features/profileQuestionnaire/ProgramWeekDaySwapPanel';
 
 const ProgramTab = () => {
   const {
@@ -533,12 +534,18 @@ const ProgramTab = () => {
               {activeProgramCoachMeta?.suggestRegeneration ||
               (Array.isArray(activeProgramCoachMeta?.whyThisTemplate) &&
                 activeProgramCoachMeta.whyThisTemplate.length > 0) ? (
-                <div className="mt-4">
+                <div className="mt-4 space-y-3">
                   <ProgramCoachEncart
                     quizGenerationMeta={activeProgramCoachMeta}
                     onSuggestRegenerate={handleRegenerateProgramFromQuiz}
                     compact
                   />
+                  {visibleActiveProgram?.quizGenerationMeta ? (
+                    <ProgramWeekDaySwapPanel
+                      program={visibleActiveProgram}
+                      onUpdateProgram={updateProgram}
+                    />
+                  ) : null}
                 </div>
               ) : null}
             </CardContent>
