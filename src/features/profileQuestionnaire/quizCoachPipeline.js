@@ -63,6 +63,7 @@ import { applyBudgetFeedbackFromEvidence } from './quizBudgetFeedback';
 import { freezeLiveBudgetBaseline } from './quizWeeklyBudgetLive';
 import { buildRecoveryBudget } from './quizRecoveryBudget';
 import { isStreetOrientedProfile, resolveStreetSkillPlan } from './quizStreetSkillGoal';
+import { resolveProgramStrengthFamily } from './quizSitePolicy';
 import { runShadowValidation } from './quizShadowValidation';
 
 
@@ -338,6 +339,12 @@ export function buildQuizCoachContext(answers, opts = {}) {
     if (line && !whyThisTemplate.includes(line)) whyThisTemplate.push(line);
   });
 
+  const programStrengthFamily = resolveProgramStrengthFamily(answers || {}, {
+    deformers,
+    weeklyObjectives
+  });
+  deformers = { ...deformers, programStrengthFamily };
+
   return {
 
     constraints,
@@ -345,6 +352,8 @@ export function buildQuizCoachContext(answers, opts = {}) {
     archetype: { ...archetype, deformers },
 
     deformers,
+
+    programStrengthFamily,
 
     generationMode: archetype.generationMode,
 

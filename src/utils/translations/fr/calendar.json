@@ -103,6 +103,31 @@
       "visualScore": "score visuel {{score}}/100",
       "steps": "{{n}} pas"
     },
+    "garminRecap": {
+      "title": "Récap Garmin",
+      "swimming": "Natation",
+      "jumpRope": "Corde à sauter",
+      "walk": "Marche à pied",
+      "run": "Course",
+      "cardio": "Cardio",
+      "sleep": "Sommeil",
+      "heartRate": "Fréquence cardiaque",
+      "hrRange": "{{min}} bpm · {{max}} bpm",
+      "stress": "Stress",
+      "stressAvg": "Moyenne : {{n}}",
+      "steps": "Pas",
+      "stepsDetail": "{{steps}} · {{pct}} % de l'objectif"
+    },
+    "stripes": {
+      "legendTitle": "Traits sous les cases",
+      "activity": "Course / cardio",
+      "walk": "Marche",
+      "sleep": "Sommeil",
+      "steps": "Pas",
+      "tooltipActivities": "{{count}} activité(s) Garmin",
+      "tooltipSleep": "Sommeil",
+      "tooltipSteps": "Pas"
+    },
     "colorMix": {
       "title": "Teinte de la case (multi-signaux)",
       "subtitle": "Le dégradé privilégie la charge street (exos cochés) et l’endurance saisie ; les kcal et les pas comptent moins ; les minutes Garmin modéré / soutenu sont pondérées (soutenu > modéré, marche atténue le modéré) ; le ressenti séance ajuste légèrement ; les journées très « marche » sont atténuées.",

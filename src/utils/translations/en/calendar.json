@@ -103,6 +103,31 @@
       "visualScore": "visual score {{score}}/100",
       "steps": "{{n}} steps"
     },
+    "garminRecap": {
+      "title": "Garmin recap",
+      "swimming": "Swimming",
+      "jumpRope": "Jump rope",
+      "walk": "Walking",
+      "run": "Running",
+      "cardio": "Cardio",
+      "sleep": "Sleep",
+      "heartRate": "Heart rate",
+      "hrRange": "{{min}} bpm · {{max}} bpm",
+      "stress": "Stress",
+      "stressAvg": "Average: {{n}}",
+      "steps": "Steps",
+      "stepsDetail": "{{steps}} · {{pct}}% of goal"
+    },
+    "stripes": {
+      "legendTitle": "Stripes under cells",
+      "activity": "Run / cardio",
+      "walk": "Walk",
+      "sleep": "Sleep",
+      "steps": "Steps",
+      "tooltipActivities": "{{count}} Garmin activity(ies)",
+      "tooltipSleep": "Sleep",
+      "tooltipSteps": "Steps"
+    },
     "colorMix": {
       "title": "Cell color (multi-signal)",
       "subtitle": "The gradient favors logged street load and endurance; kcal and steps weigh less; Garmin moderate vs vigorous minutes are weighted (vigorous > moderate; walking days damp moderate); session feel nudges slightly; heavy walking days are damped.",

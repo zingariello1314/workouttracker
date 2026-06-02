@@ -3,6 +3,7 @@ import {
   allowsSameDayCardioAddon,
   pickStrengthSiteForDay,
   resolveAvailableFamilies,
+  resolveProgramStrengthFamily,
   resolveStrengthFamilyForDay
 } from './quizSitePolicy';
 
@@ -13,18 +14,29 @@ describe('quizSitePolicy', () => {
     cardioTrainingDesire: 'moderate'
   };
 
-  it('alterne les familles street / home / gym — une par jour', () => {
-    const families = [0, 1, 2, 3, 4].map((i) => resolveStrengthFamilyForDay(i, hybridAnswers));
-    expect(new Set(families).size).toBeGreaterThan(1);
-    families.forEach((fam) => {
-      expect(['street', 'home', 'gym']).toContain(fam);
-    });
+  it('garde une seule famille force sur tout le programme (hybride)', () => {
+    const programFamily = resolveProgramStrengthFamily(hybridAnswers);
+    const families = [0, 1, 2, 3, 4].map((i) =>
+      resolveStrengthFamilyForDay(i, hybridAnswers, { programStrengthFamily: programFamily })
+    );
+    expect(new Set(families).size).toBe(1);
+    expect(families[0]).toBe(programFamily);
+  });
+
+  it('préfère street si objectif tractions / pullup plan', () => {
+    const fam = resolveProgramStrengthFamily(
+      { ...hybridAnswers, streetSkillGoal: 'pullups_10' },
+      { weeklyObjectives: { pullupPlan: { labelFr: '10 tractions' } } }
+    );
+    expect(fam).toBe('street');
   });
 
   it('ne mélange pas street et home sur le même dayIndex', () => {
+    const programFamily = resolveProgramStrengthFamily(hybridAnswers);
+    const siteOpts = { programStrengthFamily: programFamily };
     for (let i = 0; i < 7; i += 1) {
-      const site = pickStrengthSiteForDay(i, hybridAnswers);
-      const fam = resolveStrengthFamilyForDay(i, hybridAnswers);
+      const site = pickStrengthSiteForDay(i, hybridAnswers, siteOpts);
+      const fam = resolveStrengthFamilyForDay(i, hybridAnswers, siteOpts);
       if (fam === 'street') expect(['outdoor', 'track']).toContain(site);
       if (fam === 'home') expect(['home_minimal', 'home_gym']).toContain(site);
       if (fam === 'gym') expect(site).toBe('commercial_gym');

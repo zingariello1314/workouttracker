@@ -480,6 +480,10 @@ export function applyWeekPlacementToProfiles(profiles, placement, answers, defor
     resolveSameDayCardioFromDeformers(answers, deformers) &&
     !(HYPERTROPHY_GOALS.has(answers?.goalPhysique) && placement.cardioDayCount >= 1);
 
+  const siteOpts = deformers?.programStrengthFamily
+    ? { programStrengthFamily: deformers.programStrengthFamily }
+    : {};
+
   Object.keys(placement.days).forEach((dayKey) => {
     const plan = placement.days[dayKey];
     const prev = out[dayKey];
@@ -487,7 +491,7 @@ export function applyWeekPlacementToProfiles(profiles, placement, answers, defor
     if (!prev) {
       const siteNew = plan.blocks?.includes('skill_street')
         ? 'outdoor'
-        : pickStrengthSiteForDay(plan.dayIndex, answers);
+        : pickStrengthSiteForDay(plan.dayIndex, answers, siteOpts);
       out[dayKey] = {
         modality: plan.modality,
         groups: plan.groups,
@@ -501,15 +505,20 @@ export function applyWeekPlacementToProfiles(profiles, placement, answers, defor
             ? 'cardio'
             : plan.blocks?.includes('skill_street')
               ? 'street'
-              : resolveStrengthFamilyForDay(plan.dayIndex, answers),
-        title: profileTitleForBlocks(plan.blocks, pickStrengthSiteForDay(plan.dayIndex, answers), false, answers),
+              : resolveStrengthFamilyForDay(plan.dayIndex, answers, siteOpts),
+        title: profileTitleForBlocks(
+          plan.blocks,
+          pickStrengthSiteForDay(plan.dayIndex, answers, siteOpts),
+          false,
+          answers
+        ),
         focus: plan.blocks.map((b) => BLOCK_LABELS_FR[b] || b).join(', '),
         remainingSets: remainingByDay?.[dayKey] || null
       };
       return;
     }
 
-    let site = prev.site || pickStrengthSiteForDay(plan.dayIndex, answers);
+    let site = prev.site || pickStrengthSiteForDay(plan.dayIndex, answers, siteOpts);
     if (plan.blocks?.includes('skill_street')) {
       site = 'outdoor';
     }
@@ -533,7 +542,10 @@ export function applyWeekPlacementToProfiles(profiles, placement, answers, defor
       ...prev,
       modality,
       site,
-      siteFamily: plan.modality === 'cardio' ? 'cardio' : resolveStrengthFamilyForDay(plan.dayIndex, answers),
+      siteFamily:
+        plan.modality === 'cardio'
+          ? 'cardio'
+          : resolveStrengthFamilyForDay(plan.dayIndex, answers, siteOpts),
       groups: plan.groups,
       blocks: plan.blocks,
       primaryBlock: plan.primaryBlock,

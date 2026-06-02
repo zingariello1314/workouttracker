@@ -9,8 +9,7 @@ import {
   Award,
   Target,
   Clock,
-  Zap,
-  BarChart3
+  Zap
 } from 'lucide-react';
 import { useWorkout } from '../context/WorkoutContext';
 import { useAuth } from '../context/AuthContext';
@@ -30,9 +29,15 @@ import {
   getGarminCardioMinutesByKindForDate
 } from '../utils/garminCalendarUtils';
 import {
+  buildCalendarDayGarminStripes,
+  formatCalendarGarminStripesTooltip
+} from '../utils/calendarDayGarminStripes';
+import { buildGarminDayRecapRows } from '../utils/calendarGarminDayRecap';
+import CalendarDayDataStripes from './calendar/CalendarDayDataStripes';
+import CalendarGarminDayRecap from './calendar/CalendarGarminDayRecap';
+import {
   computeCalendarDayVisualContext,
   computeLiftVolumeRelativeVisualBoost01,
-  CALENDAR_VISUAL_CONSTANTS,
   calendarDayHasPaintSignal
 } from '../utils/calendarDayVisualModel';
 import {
@@ -189,9 +194,20 @@ function getIntensityColor(level, isToday = false) {
   return `${baseColors[safe]}${todayRing}`;
 }
 
-/** Texte du chiffre du jour : toujours noir (lisibilité uniforme sur toutes les teintes). */
+/** Texte du chiffre sur case repos / sans teinte composite. */
 function heatmapDayNumberTone() {
-  return 'text-black';
+  return 'text-sky-200/90';
+}
+
+/** Numéro du jour : noir, en haut de case (style Garmin). */
+function compositeDayNumberClass() {
+  return 'font-bold text-black tabular-nums leading-none';
+}
+
+function calendarDayNumberLayoutClass(compact) {
+  return compact
+    ? 'absolute left-[3px] top-[2px] z-[4] text-[10px]'
+    : 'absolute left-[4px] top-[3px] z-[4] text-sm';
 }
 
 /** Métriques Garmin quotidiennes : évite le panneau « choix » sur un jour déjà « vécu ». */
@@ -2486,10 +2502,14 @@ const CalendarHeatmap = ({
       };
     }
 
+    const bg = calendarHeatmapCompositeBackground(u);
+    /** Jaune / orange / rouge : numéro noir (lisibilité type Garmin). */
+    const useDarkNum = variant === 'sport' && (u >= 0.42 || level >= 2);
+
     return {
       className: `${borderTone} ${ring}`.trim(),
-      style: { backgroundColor: calendarHeatmapCompositeBackground(u) },
-      dayNumberClass: undefined,
+      style: { backgroundColor: bg },
+      dayNumberClass: useDarkNum ? compositeDayNumberClass() : 'text-sky-200/90'
     };
   };
 
@@ -2502,6 +2522,13 @@ const CalendarHeatmap = ({
       0: t('calendar.heatmap.intensityLabels.rest', 'Repos')
     };
     return labels[level];
+  };
+
+  const garminStripesForDate = (dateStr) => {
+    if (!garminData || !dateStr) return [];
+    const manualSteps =
+      normalizeManualDailyWalkByDate(allData?.enduranceData?.manualDailyWalkByDate)[dateStr]?.steps ?? 0;
+    return buildCalendarDayGarminStripes(garminData, dateStr, manualSteps);
   };
 
   const getDayTooltip = (day, intensity) => {
@@ -2523,7 +2550,18 @@ const CalendarHeatmap = ({
         : '';
     const stepsHint =
       intensity?.steps > 0 ? ` — ${t('calendar.heatmap.tooltip.steps', { n: intensity.steps })}` : '';
-    const baseTooltip = `${dateStr} - ${getIntensityLabel(intensity?.level || 0)}${intensity?.duration > 0 ? ` (${intensity.duration}min)` : ''}${intensity?.reps > 0 ? ` - ${intensity.reps} reps` : ''}${stepsHint}${scoreHint}`;
+    const stripeHint =
+      variant === 'sport' && garminData
+        ? (() => {
+            const stripeLine = formatCalendarGarminStripesTooltip(
+              garminStripesForDate(getDateStr(day.date)),
+              t
+            );
+            return stripeLine ? ` — ${stripeLine}` : '';
+          })()
+        : '';
+
+    const baseTooltip = `${dateStr} - ${getIntensityLabel(intensity?.level || 0)}${intensity?.duration > 0 ? ` (${intensity.duration}min)` : ''}${intensity?.reps > 0 ? ` - ${intensity.reps} reps` : ''}${stepsHint}${scoreHint}${stripeHint}`;
 
     if (intensity?.justification) {
       const reasonLabel = t(`justification.${intensity.justification.reason}`) || t('justification.autre');
@@ -2774,6 +2812,49 @@ const CalendarHeatmap = ({
                 </div>
               ))}
             </div>
+            {variant === 'sport' && garminData && (
+              <div
+                className={
+                  isSidebarEmbed
+                    ? 'flex flex-wrap items-center gap-x-2 gap-y-1 border-t border-blue-500/25 pt-1.5 mt-1 w-full'
+                    : 'flex flex-wrap items-center gap-x-3 gap-y-1 border-t border-blue-500/30 pt-2 mt-2'
+                }
+              >
+                <span
+                  className={
+                    isSidebarEmbed
+                      ? 'text-[9px] text-sky-500/90 shrink-0'
+                      : 'text-xs text-sky-500 shrink-0'
+                  }
+                >
+                  {t('calendar.heatmap.stripes.legendTitle')}
+                </span>
+                {[
+                  ['activity', '#16a34a', 'calendar.heatmap.stripes.activity'],
+                  ['walk', '#64748b', 'calendar.heatmap.stripes.walk'],
+                  ['sleep', '#a855f7', 'calendar.heatmap.stripes.sleep'],
+                  ['steps', '#0ea5e9', 'calendar.heatmap.stripes.steps']
+                ].map(([kind, color, labelKey]) => (
+                  <span
+                    key={kind}
+                    className={
+                      isSidebarEmbed
+                        ? 'inline-flex items-center gap-1 text-[9px] text-sky-300/90'
+                        : 'inline-flex items-center gap-1.5 text-xs text-sky-300/90'
+                    }
+                  >
+                    <span
+                      className={`shrink-0 rounded-[2px] ${isSidebarEmbed ? 'h-[4px] w-5' : 'h-[5px] w-7'}`}
+                      style={{
+                        backgroundColor: color,
+                        boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.2)'
+                      }}
+                    />
+                    {t(labelKey)}
+                  </span>
+                ))}
+              </div>
+            )}
           </div>
           {!isSidebarEmbed && (
             <button
@@ -2837,18 +2918,6 @@ const CalendarHeatmap = ({
               const dayHasPaint = calendarDayHasPaintSignal(day.intensity);
               const dayNumTone = cellColor.dayNumberClass ?? heatmapDayNumberTone();
               const dayDateStr = getDateStr(day.date);
-              const stepsCount =
-                day.intensity?.steps != null && Number.isFinite(Number(day.intensity.steps))
-                  ? Math.max(0, Math.round(Number(day.intensity.steps)))
-                  : 0;
-              const showStepsOnTile =
-                stepsCount > 0 && stepsRevealedByDateStr[dayDateStr] === true;
-              const stepsLocale = language === 'en' ? 'en-US' : 'fr-FR';
-              const stepsTileLabel = showStepsOnTile
-                ? t('calendar.heatmap.stepsOnCell', {
-                    count: stepsCount.toLocaleString(stepsLocale)
-                  })
-                : '';
               const questTileCount =
                 variant === 'quests'
                   ? day.intensity?.questData?.completedUnique ?? 0
@@ -2862,6 +2931,8 @@ const CalendarHeatmap = ({
                 ((variant === 'books' || variant === 'apprentissage') &&
                   questTileCount > 0 &&
                   dayHasPaint);
+              const dayGarminStripes =
+                variant === 'sport' && garminData ? garminStripesForDate(dayDateStr) : [];
               return (
               <div
                 key={index}
@@ -2889,7 +2960,7 @@ const CalendarHeatmap = ({
                   }
                 }}
                 className={`
-                  aspect-square rounded-lg ${isSidebarEmbed ? 'border' : 'border-2'} cursor-pointer transition-all duration-200 relative min-w-0
+                  aspect-square rounded-lg ${isSidebarEmbed ? 'border' : 'border-2'} cursor-pointer transition-all duration-200 relative min-w-0 overflow-hidden
                   ${cellColor.className}
                   ${day.isCurrentMonth ? 'border-transparent' : 'border-slate-600 opacity-30'}
                   ${selectedDate?.date.toDateString() === day.date.toDateString()
@@ -2922,68 +2993,15 @@ const CalendarHeatmap = ({
                 style={cellColor.style}
                   title={getDayTooltip(day, day.intensity)}
               >
-                <div className="w-full h-full flex flex-col items-center justify-center relative px-px">
-                  {isSidebarEmbed ? (
-                    <span
-                      className={`tabular-nums text-[10px] font-semibold leading-none text-center max-w-full truncate flex flex-col items-center gap-0 ${dayNumTone}`}
-                    >
-                      <span className="leading-none">
-                        {day.date.getDate()}
-                        {showQuestCountOnTile ? (
-                          <span className={`text-[7px] font-normal opacity-95 ${dayNumTone}`}>
-                            ·{questTileCount}
-                          </span>
-                        ) : (day.intensity.level > 0 || dayHasPaint) && Number(day.intensity.reps) > 0 ? (
-                          <span className={`text-[7px] font-normal opacity-95 ${dayNumTone}`}>
-                            ·{day.intensity.reps}
-                          </span>
-                        ) : null}
-                      </span>
-                      {showStepsOnTile ? (
-                        <span className={`text-[6px] font-medium leading-none mt-0.5 max-w-full truncate ${dayNumTone}`}>
-                          {stepsTileLabel}
-                        </span>
-                      ) : null}
-                    </span>
-                  ) : (
-                    <>
-                      <span className={`text-sm font-semibold ${dayNumTone}`}>
-                        {day.date.getDate()}
-                      </span>
-                      {showQuestCountOnTile ? (
-                        <div className={`text-xs leading-none opacity-95 ${dayNumTone}`}>
-                          {questTileCount}
-                        </div>
-                      ) : (
-                        (day.intensity.level > 0 || dayHasPaint) &&
-                        Number(day.intensity.reps) > 0 && (
-                          <div className={`text-xs leading-none opacity-95 ${dayNumTone}`}>
-                            {day.intensity.reps}
-                          </div>
-                        )
-                      )}
-                      {showStepsOnTile ? (
-                        <div className={`text-[10px] leading-tight font-medium mt-0.5 ${dayNumTone}`}>
-                          {stepsTileLabel}
-                        </div>
-                      ) : null}
-                    </>
-                  )}
-                  {/* PHASE 5.3 : Icônes Garmin (discret, en bas à droite) */}
-                  {day.intensity.garminIcons && day.intensity.garminIcons.length > 0 && !isSidebarEmbed && (
-                    <div className="absolute bottom-1 right-1 flex gap-0.5">
-                      {day.intensity.garminIcons.map((iconData, idx) => (
-                        <span
-                          key={idx}
-                          className="text-[10px] leading-none"
-                          title={iconData.label}
-                        >
-                          {iconData.icon}
-                        </span>
-                      ))}
-                    </div>
-                  )}
-                </div>
+                <span className={`${calendarDayNumberLayoutClass(isSidebarEmbed)} ${dayNumTone}`}>
+                  {day.date.getDate()}
+                  {showQuestCountOnTile ? (
+                    <span className="ml-0.5 text-[9px] font-normal opacity-90">·{questTileCount}</span>
+                  ) : null}
+                </span>
+                {dayGarminStripes.length > 0 && (
+                  <CalendarDayDataStripes stripes={dayGarminStripes} compact={isSidebarEmbed} />
+                )}
                 {day.isToday && (
                   <div
                     className={`absolute bg-blue-500 rounded-full ${isSidebarEmbed ? 'top-0 right-0 w-1.5 h-1.5' : '-top-1 -right-1 w-3 h-3'}`}
@@ -3296,23 +3314,13 @@ const CalendarHeatmap = ({
                         const yPaint = calendarDayHasPaintSignal(day.intensity);
                         const yDayNumTone = yCell.dayNumberClass ?? heatmapDayNumberTone();
                         const yDateStr = getDateStr(day.date);
-                        const yStepsCount =
-                          day.intensity?.steps != null && Number.isFinite(Number(day.intensity.steps))
-                            ? Math.max(0, Math.round(Number(day.intensity.steps)))
-                            : 0;
-                        const yShowSteps =
-                          yStepsCount > 0 && stepsRevealedByDateStr[yDateStr] === true;
-                        const yStepsLocale = language === 'en' ? 'en-US' : 'fr-FR';
-                        const yStepsLabel = yShowSteps
-                          ? t('calendar.heatmap.stepsOnCell', {
-                              count: yStepsCount.toLocaleString(yStepsLocale)
-                            })
-                          : '';
+                        const yGarminStripes =
+                          variant === 'sport' && garminData ? garminStripesForDate(yDateStr) : [];
                         return (
                         <div
                           key={dayIndex}
                           className={`
-                            aspect-square rounded-sm cursor-pointer transition-all text-xs flex flex-col items-center justify-center gap-0 py-0.5
+                            aspect-square rounded-sm cursor-pointer transition-all text-xs relative overflow-hidden
                             ${yCell.className}
                             ${day.isCurrentMonth ? '' : 'opacity-20'}
                             hover:ring-1 ${
@@ -3356,21 +3364,15 @@ const CalendarHeatmap = ({
                           title={getDayTooltip(day, day.intensity)}
                         >
                           <span
-                            className={`leading-none tabular-nums ${
-                              day.isCurrentMonth
-                                ? `text-xs font-bold ${yDayNumTone}`
-                                : `text-[10px] font-medium ${yDayNumTone}`
+                            className={`${calendarDayNumberLayoutClass(true)} ${
+                              day.isCurrentMonth ? yDayNumTone : `${yDayNumTone} opacity-50`
                             }`}
                           >
                             {day.date.getDate()}
                           </span>
-                          {yShowSteps ? (
-                            <span
-                              className={`leading-none text-[8px] font-medium text-center max-w-[95%] truncate mt-px ${yDayNumTone}`}
-                            >
-                              {yStepsLabel}
-                            </span>
-                          ) : null}
+                          {yGarminStripes.length > 0 && (
+                            <CalendarDayDataStripes stripes={yGarminStripes} compact />
+                          )}
                         </div>
                       );
                       })}
@@ -4591,6 +4593,9 @@ const CalendarHeatmap = ({
           const swimming = (garminData?.activities?.swimming || []).filter(a => a.date === selectedDateStr);
           const jumpRope = (garminData?.activities?.jumpRope || []).filter(a => a.date === selectedDateStr);
           const cardio = (garminData?.activities?.cardio || []).filter(a => a.date === selectedDateStr);
+          const garminRecapRows = garminData
+            ? buildGarminDayRecapRows(garminData, selectedDateStr, manualSel?.steps ?? 0, t)
+            : [];
           // ✅ NOUVEAU : Récupérer la justification pour ce jour
           const justification = selectedDate.intensity?.justification || getDayJustification(allData, selectedDateStr);
           
@@ -4608,83 +4613,6 @@ const CalendarHeatmap = ({
             }
           }
 
-          const vcDetail = selectedDate.intensity?.visualContext;
-          const colorMixRows = [
-            ['level', 'calendar.heatmap.colorMix.barLevel', 'bg-cyan-500'],
-            ['kcal', 'calendar.heatmap.colorMix.barKcal', 'bg-amber-500'],
-            ['steps', 'calendar.heatmap.colorMix.barSteps', 'bg-emerald-500'],
-            ['intensityMin', 'calendar.heatmap.colorMix.barIntMin', 'bg-violet-500'],
-            ['load', 'calendar.heatmap.colorMix.barLoad', 'bg-rose-500'],
-            ['repsHint', 'calendar.heatmap.colorMix.barReps', 'bg-slate-400']
-          ];
-          const dayFeedback = allData?.sessionFeedbacks?.[selectedDateStr];
-          const intenD = selectedDate.intensity;
-          const caAbs = vcDetail?.contribAbsolute || {};
-          const kcalRefD = intenD.kcalRefMedian || 0;
-          const stepsRefD = intenD.stepsRefMedian || 0;
-          const activeKD = intenD.activeKcal || 0;
-          const stepsVD = intenD.steps ?? 0;
-          const intMinD = intenD.intensityMinutesTotal ?? 0;
-          const pctKcalVsRef =
-            kcalRefD > 45
-              ? Math.round(((activeKD - kcalRefD) / Math.max(1, kcalRefD)) * 100)
-              : null;
-          const pctStepsVsRef =
-            stepsRefD > 600
-              ? Math.round(((stepsVD - stepsRefD * 0.72) / Math.max(1, stepsRefD * 0.35)) * 100)
-              : null;
-          const fmtU = (n) => (Number.isFinite(n) ? (Math.round(n * 1000) / 1000).toString() : '—');
-          const mixValueLine = (key) => {
-            switch (key) {
-              case 'level':
-                return `${intenD.level} / 4 · ${t('calendar.heatmap.colorMix.contribUnits', 'unités')} ${fmtU(
-                  caAbs.level
-                )}`;
-              case 'kcal':
-                return `${Math.round(activeKD)} kcal${
-                  kcalRefD ? ` · ${t('calendar.heatmap.colorMix.baselineKcal', { ref: Math.round(kcalRefD) })}` : ''
-                }${pctKcalVsRef != null ? ` (${pctKcalVsRef >= 0 ? '+' : ''}${pctKcalVsRef}%)` : ''} · ${fmtU(
-                  caAbs.kcal
-                )}`;
-              case 'steps':
-                return `${stepsVD} pas${
-                  stepsRefD
-                    ? ` · ${t('calendar.heatmap.colorMix.baselineSteps', { ref: Math.round(stepsRefD) })}`
-                    : ''
-                }${pctStepsVsRef != null ? ` (${pctStepsVsRef >= 0 ? '+' : ''}${pctStepsVsRef}%)` : ''} · ${fmtU(
-                  caAbs.steps
-                )}`;
-              case 'intensityMin': {
-                const baseLine = `${intMinD} min · ${fmtU(caAbs.intensityMin)}`;
-                if (
-                  intenD.intensityMinutesModerate != null &&
-                  intenD.intensityMinutesVigorous != null &&
-                  vcDetail?.intensityMinutesEffective != null
-                ) {
-                  return `${baseLine} · ${t('calendar.heatmap.colorMix.intensitySplit', {
-                    mod: intenD.intensityMinutesModerate,
-                    vig: intenD.intensityMinutesVigorous,
-                    effective: fmtU(vcDetail.intensityMinutesEffective)
-                  })}`;
-                }
-                return baseLine;
-              }
-              case 'load':
-                return `${t('calendar.heatmap.dayDetails.street')} ${fmtU(
-                  vcDetail.strengthLoad || 0
-                )} + ${t('calendar.heatmap.dayDetails.enduranceShort')} ${fmtU(
-                  vcDetail.enduranceLoad || 0
-                )} · ${fmtU(caAbs.load)}`;
-              case 'repsHint':
-                return `${intenD.reps ?? 0} reps · ${fmtU(caAbs.repsHint)}`;
-              default:
-                return '';
-            }
-          };
-          const cardioKindsD = garminData
-            ? getGarminCardioMinutesByKindForDate(garminData, selectedDateStr)
-            : { walk: 0, run: 0, other: 0, total: 0 };
-          
           return (
             <div className="space-y-6 rounded-xl border-2 border-blue-500/55 bg-black p-6">
             {/* En-tête */}
@@ -4731,6 +4659,15 @@ const CalendarHeatmap = ({
                 </button>
               </div>
             )}
+
+            {garminRecapRows.length > 0 && (
+              <div className="space-y-2">
+                <h4 className="text-sm font-medium text-slate-400">
+                  {t('calendar.heatmap.garminRecap.title', 'Récap Garmin')}
+                </h4>
+                <CalendarGarminDayRecap rows={garminRecapRows} />
+              </div>
+            )}
             
             {/* Statistiques principales - Masquer si jour justifié (sauf repos) */}
             {(!justification || justification.reason === JUSTIFICATION_REASONS.REPOS) && (
@@ -4765,102 +4702,6 @@ const CalendarHeatmap = ({
               </div>
             )}
 
-            {(!justification || justification.reason === JUSTIFICATION_REASONS.REPOS) && vcDetail && (
-              <div className="space-y-3 rounded-lg border-2 border-blue-500/45 bg-black p-4">
-                <h4 className="flex items-center gap-2 font-medium text-sky-100">
-                  <BarChart3 size={18} />
-                  {t('calendar.heatmap.colorMix.title')}
-                </h4>
-                <p className="text-xs text-sky-500">{t('calendar.heatmap.colorMix.subtitle')}</p>
-                <p className="rounded-md border border-blue-500/35 bg-black/80 px-2 py-1.5 text-[11px] leading-snug text-sky-300/90">
-                  {t(
-                    'calendar.heatmap.colorMix.scaleExplainer',
-                    'Couleur des cases : du vert clair (jour le plus calme sur la période affichée) au rouge foncé (jour le plus chargé). Les pourcentages = part du mélange ; à droite = tes valeurs réelles et unités internes.'
-                  )}
-                </p>
-                <div className="text-sm font-semibold text-sky-50">
-                  {t('calendar.heatmap.colorMix.score', { score: vcDetail.visualScore100 })}
-                </div>
-                {vcDetail.synergyStreetEndurance > 1.001 && (
-                  <p className="text-xs text-emerald-200/95">
-                    {t('calendar.heatmap.colorMix.synergyLine', {
-                      mult: Math.round(vcDetail.synergyStreetEndurance * 1000) / 1000
-                    })}
-                  </p>
-                )}
-                {garminData && (cardioKindsD.total > 0 || cardioKindsD.walk > 0) && (
-                  <p className="text-xs text-sky-200/90">
-                    {t('calendar.heatmap.colorMix.cardioSplit', {
-                      walk: Math.round(cardioKindsD.walk),
-                      run: Math.round(cardioKindsD.run),
-                      other: Math.round(cardioKindsD.other)
-                    })}
-                  </p>
-                )}
-                <div className="space-y-3">
-                  {colorMixRows.map(([key, labelKey, colorClass]) => {
-                    const pct = Math.round(((vcDetail.breakdownShares || {})[key] || 0) * 100);
-                    return (
-                      <div key={key} className="space-y-1">
-                        <div className="flex flex-wrap items-start justify-between gap-2 text-xs text-sky-500">
-                          <span className="min-w-0 flex-1">{t(labelKey)}</span>
-                          <span className="shrink-0 font-medium tabular-nums text-sky-100">{pct}%</span>
-                        </div>
-                        <div className="text-right text-[11px] leading-snug text-sky-300/90">
-                          {mixValueLine(key)}
-                        </div>
-                        <div className="h-2 overflow-hidden rounded-full border border-blue-500/25 bg-black">
-                          <div
-                            className={`h-full rounded-full ${colorClass}`}
-                            style={{ width: `${Math.min(100, Math.max(0, pct))}%` }}
-                          />
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-                {(vcDetail.walkHeavy || vcDetail.walkOnlyDay) && (
-                  <p className="text-xs text-amber-200/90">{t('calendar.heatmap.colorMix.walkNote')}</p>
-                )}
-                <div className="border-t border-blue-500/30 pt-3 text-xs text-sky-300/90">
-                  {dayFeedback?.difficulte != null && Number(dayFeedback.difficulte) >= 1 ? (
-                    <div>
-                      <div className="text-sky-500">
-                        {t('calendar.heatmap.colorMix.feedback', { n: dayFeedback.difficulte })}
-                      </div>
-                      {dayFeedback.note ? (
-                        <div className="mt-1 text-sky-100">
-                          <span className="text-sky-500">{t('calendar.heatmap.colorMix.feedbackNote')} </span>
-                          {dayFeedback.note}
-                        </div>
-                      ) : null}
-                    </div>
-                  ) : (
-                    <div className="text-sky-600">{t('calendar.heatmap.colorMix.feedbackNone')}</div>
-                  )}
-                </div>
-                <div className="rounded-md border border-blue-500/35 bg-black/80 p-3 text-xs text-sky-300/90">
-                  <div className="mb-1 font-medium text-sky-100">{t('calendar.heatmap.equiv.title')}</div>
-                  <p className="mt-1 text-sky-500">{t('calendar.heatmap.equiv.intro')}</p>
-                  <ul className="mt-2 list-disc space-y-1.5 pl-4 marker:text-sky-500">
-                    <li>{t('calendar.heatmap.equiv.b1', { kcal: CALENDAR_VISUAL_CONSTANTS.KCAL_PER_VISUAL_UNIT })}</li>
-                    <li>{t('calendar.heatmap.equiv.b2', { steps: CALENDAR_VISUAL_CONSTANTS.STEPS_PER_VISUAL_UNIT })}</li>
-                    <li>{t('calendar.heatmap.equiv.b3')}</li>
-                    <li>{t('calendar.heatmap.equiv.b4')}</li>
-                    <li>{t('calendar.heatmap.equiv.b5')}</li>
-                  </ul>
-                  {(vcDetail.approxRepEquivFromKcal > 0 || vcDetail.approxRepEquivFromSteps > 0) && (
-                    <p className="mt-2 text-sky-500">
-                      {t('calendar.heatmap.equiv.todayApprox', {
-                        kcalU: vcDetail.approxRepEquivFromKcal,
-                        stepU: vcDetail.approxRepEquivFromSteps
-                      })}
-                    </p>
-                  )}
-                </div>
-              </div>
-            )}
-            
             {/* ✅ NOUVEAU : Message si jour justifié (pas d'entraînement) - Sauf repos */}
             {justification && justification.reason !== JUSTIFICATION_REASONS.REPOS && (
               <div className="rounded-lg border border-blue-500/40 bg-black p-4 text-center">
@@ -4914,8 +4755,10 @@ const CalendarHeatmap = ({
               </div>
             )}
             
-            {/* Activités Garmin - Masquer si jour justifié (sauf repos) */}
-            {(!justification || justification.reason === JUSTIFICATION_REASONS.REPOS) && (swimming.length > 0 || jumpRope.length > 0 || cardio.length > 0 || dailyMetrics) && (
+            {/* Détail Garmin étendu (si pas déjà couvert par le récap liste) */}
+            {(!justification || justification.reason === JUSTIFICATION_REASONS.REPOS) &&
+              (swimming.length > 0 || jumpRope.length > 0 || cardio.length > 0 || dailyMetrics) &&
+              garminRecapRows.length === 0 && (
               <div>
                 <h4 className="text-white font-medium mb-3 flex items-center">
                   <Zap className="mr-2 text-amber-400" size={16} />

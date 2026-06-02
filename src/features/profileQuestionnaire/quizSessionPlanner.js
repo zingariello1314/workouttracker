@@ -187,8 +187,11 @@ export function planWeekSessionProfiles(activeDayKeys, answers, coachContext = n
       return;
     }
 
-    const siteFamily = resolveStrengthFamilyForDay(dayIndex, answers);
-    const site = pickStrengthSiteForDay(dayIndex, answers);
+    const siteOpts = coachContext?.programStrengthFamily
+      ? { programStrengthFamily: coachContext.programStrengthFamily }
+      : {};
+    const siteFamily = resolveStrengthFamilyForDay(dayIndex, answers, siteOpts);
+    const site = pickStrengthSiteForDay(dayIndex, answers, siteOpts);
     const groups = strengthGroupByDay.get(dayIndex) || ['upper'];
     const withAddon = addonSet.has(dayIndex) && resolveSameDayCardioFromDeformers(answers, deformers);
     const siteLabel = SITE_LABELS[site] || site;

@@ -41,11 +41,61 @@ export function resolveAvailableFamilies(answers) {
 }
 
 /**
- * Famille du jour (rotation) — une seule par jour calendaire.
+ * Famille force unique pour tout le programme (pas d’alternance maison / street entre les jours).
+ * @param {object} answers
+ * @param {object} [coachContext]
+ * @returns {'street'|'home'|'gym'}
+ */
+export function resolveProgramStrengthFamily(answers, coachContext = null) {
+  const cached =
+    coachContext?.programStrengthFamily || coachContext?.deformers?.programStrengthFamily;
+  if (cached) return cached;
+
+  const families = resolveAvailableFamilies(answers);
+  if (families.length <= 1) return families[0];
+
+  const eq = Array.isArray(answers?.availableEquipment) ? answers.availableEquipment : [];
+  const loc = Array.isArray(answers?.trainingLocation) ? answers.trainingLocation : [];
+  const hasStreetLoc = loc.some((l) => l === 'outdoor' || l === 'track');
+  const hasHomeLoc = loc.some((l) => l === 'home_minimal' || l === 'home_gym');
+
+  const streetSkill =
+    Boolean(answers?.streetSkillGoal) ||
+    Boolean(coachContext?.deformers?.streetSkillGoal) ||
+    Boolean(coachContext?.weeklyObjectives?.pullupPlan);
+
+  if (streetSkill && families.includes('street')) return 'street';
+
+  const mission = answers?.primaryMission;
+  const missionStreet =
+    mission === 'hypertrophy_street' ||
+    mission === 'street_strength' ||
+    (Array.isArray(mission) && mission.some((m) => String(m).includes('street')));
+
+  if (missionStreet && families.includes('street')) return 'street';
+
+  const homeGear =
+    (eq.includes('dumbbells') || eq.includes('bench') || eq.includes('barbell')) &&
+    !eq.includes('pullup_bar') &&
+    !eq.includes('dip_station');
+  if (homeGear && hasHomeLoc && families.includes('home') && !hasStreetLoc) return 'home';
+
+  if (eq.includes('pullup_bar') && families.includes('street')) return 'street';
+
+  if (families.includes('street') && !families.includes('home')) return 'street';
+  if (families.includes('home') && !families.includes('street')) return 'home';
+
+  return families.includes('street') ? 'street' : families[0];
+}
+
+/**
+ * Famille du jour — si `programStrengthFamily` est défini, même lieu toute la semaine.
  * @param {number} dayIndex
  * @param {object} answers
+ * @param {{ programStrengthFamily?: string }} [opts]
  */
-export function resolveStrengthFamilyForDay(dayIndex, answers) {
+export function resolveStrengthFamilyForDay(dayIndex, answers, opts = {}) {
+  if (opts.programStrengthFamily) return opts.programStrengthFamily;
   const families = resolveAvailableFamilies(answers);
   return families[dayIndex % families.length];
 }
@@ -76,11 +126,40 @@ export function pickSiteInFamily(family, answers) {
 }
 
 /**
- * Un seul site force par jour (famille unique).
+ * Un seul site force par jour (famille unique sur la semaine si programme défini).
+ * @param {number} dayIndex
+ * @param {object} answers
+ * @param {{ programStrengthFamily?: string }} [opts]
  */
-export function pickStrengthSiteForDay(dayIndex, answers) {
-  const family = resolveStrengthFamilyForDay(dayIndex, answers);
+export function pickStrengthSiteForDay(dayIndex, answers, opts = {}) {
+  const family = resolveStrengthFamilyForDay(dayIndex, answers, opts);
   return pickSiteInFamily(family, answers);
+}
+
+/**
+ * Filtre banque d’exos selon la famille programme (pas de haltères si tout le programme est street).
+ * @param {string} dbKey
+ * @param {{ quizEquipment?: string[], locations?: string[] }} template
+ * @param {'street'|'home'|'gym'|null} programFamily
+ */
+export function isTemplateAllowedForProgramFamily(dbKey, template, programFamily) {
+  if (!programFamily || !template) return true;
+  const eq = template.quizEquipment || [];
+  const locs = template.locations || [];
+  const outdoor = locs.some((l) => l === 'outdoor' || l === 'track');
+  const homeCapable = locs.some((l) =>
+    ['home_minimal', 'home_gym', 'commercial_gym'].includes(l)
+  );
+
+  if (programFamily === 'street') {
+    if (dbKey === 'rowing haltère' || dbKey === 'rowing barre') return false;
+    if (eq.includes('dumbbells') && !outdoor) return false;
+    if (eq.includes('bench') && !outdoor && !eq.includes('bodyweight')) return false;
+  }
+  if (programFamily === 'home' && !homeCapable && outdoor && !eq.includes('bodyweight')) {
+    return false;
+  }
+  return true;
 }
 
 export function isStreetSite(site) {

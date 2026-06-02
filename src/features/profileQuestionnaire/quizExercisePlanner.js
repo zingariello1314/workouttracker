@@ -17,6 +17,8 @@ import { trimExercisesForTendonLoad } from './quizRecoveryEngine';
 import { enforceSessionExerciseLimits } from './quizSessionLimits';
 import { calibrateSeriesFromProgramPatterns } from './quizProgressionApply';
 import { getMergedQuizExerciseTemplates } from './quizExercisePool';
+import { isTemplateAllowedForProgramFamily } from './quizSitePolicy';
+import { balancePullExercisesOnDay } from './quizPullRepPrescription';
 import {
   scoreFitnessForPick,
   scorePriorityMuscleAffinity,
@@ -101,8 +103,9 @@ function hasPullupBar(answers) {
   return eq.includes('pullup_bar');
 }
 
-function templateMatches(template, { quizEq, site, modality, answers, weekUsedKeys }) {
+function templateMatches(template, { quizEq, site, modality, answers, weekUsedKeys, programStrengthFamily }) {
   if (!exerciseDatabase[template.dbKey]) return false;
+  if (!isTemplateAllowedForProgramFamily(template.dbKey, template, programStrengthFamily)) return false;
   if (site && template.locations.length && !template.locations.includes(site)) return false;
   if (!template.quizEquipment.some((e) => quizEq.includes(e))) return false;
 
@@ -300,8 +303,16 @@ export function pickExercisesForContext(answers, blueprint, {
   const quizEq = equipmentSet(answers);
   const strengthUsed = weekStrengthUsedKeys || weekUsedKeys;
   const pool = getMergedQuizExerciseTemplates();
+  const programStrengthFamily = deformers?.programStrengthFamily || null;
   const filtered = pool.filter((t) =>
-    templateMatches(t, { quizEq, site, modality, answers, weekUsedKeys })
+    templateMatches(t, {
+      quizEq,
+      site,
+      modality,
+      answers,
+      weekUsedKeys,
+      programStrengthFamily
+    })
   );
 
   const modalityFiltered =
@@ -309,7 +320,9 @@ export function pickExercisesForContext(answers, blueprint, {
       ? filtered.filter((t) => isCardioAppropriateDbKey(t.dbKey))
       : filtered.filter((t) => isStrengthExerciseAllowed(t.dbKey, answers, modality));
 
-  const rng = seededRng(`${site || 'main'}:${dayIndex}:${answers?.goalPhysique || ''}`);
+  const rng = seededRng(
+    `${site || 'main'}:${dayIndex}:${groups.join('-')}:${answers?.goalPhysique || ''}`
+  );
   const eligible = modalityFiltered
     .filter((t) => {
       if (!groups.includes(t.group)) return false;

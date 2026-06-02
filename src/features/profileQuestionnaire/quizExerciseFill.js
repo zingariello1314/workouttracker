@@ -19,6 +19,13 @@ import { classifyExerciseFamily } from './quizWeeklySeriesAllocator';
 import { parseSetsCount } from './quizSessionLimits';
 import { resolveSingleCardioStimulusForSession } from './quizCardioSessionResolver';
 import { applyPullupSeriesHints, pullupTemplateBoosts } from './quizPullupProgressionPlan';
+function filterTemplateKeysForProgram(keys, programFamily) {
+  if (!programFamily) return keys;
+  if (programFamily === 'street') {
+    return keys.filter((k) => k !== 'rowing haltère' && k !== 'rowing barre');
+  }
+  return keys;
+}
 import { isStrengthExerciseAllowed } from './quizLegProgression';
 
 const HYPERTROPHY_GOALS = new Set(['muscular_defined', 'lean_toned', 'bulk_mass']);
@@ -161,7 +168,7 @@ function buildCardioFromBlockKeys(
       if (fractionneUsed) return;
       fractionneUsed = true;
     }
-    if (dbKey === 'course endurance fondamentale' && weekUsedKeys?.has?.(dbKey)) return;
+    // Plusieurs sorties course / semaine (EF, tempo, long) — ne pas bloquer après le 1er jour.
     const ex = buildProgramExerciseFromDbKey(dbKey, answers, blueprint, {
       idSuffix: `_v6cardio_${dayIndex}_${i}`
     });
@@ -229,14 +236,26 @@ function fillStrengthFromBlocks(
   if (isStreetOrientedProfile(answers) && profile?.blocks?.includes('skill_street')) {
     streetBoosts = resolveStreetSkillPlan(answers).boosts;
   }
-  const pullupBoosts = pullupTemplateBoosts(answers, coachContext?.weeklyObjectives);
+  const programFamily = coachContext?.programStrengthFamily || coachContext?.deformers?.programStrengthFamily;
+  const pullupBoosts = filterTemplateKeysForProgram(
+    pullupTemplateBoosts(answers, coachContext?.weeklyObjectives, programFamily),
+    programFamily
+  );
   if (pullupBoosts.length) {
     streetBoosts = [...new Set([...pullupBoosts, ...streetBoosts])];
   }
 
   blocks.forEach((block, bi) => {
     const groups = BLOCK_STRENGTH_GROUPS[block] || ['upper'];
-    const boosts = [...(BLOCK_TEMPLATE_BOOSTS[block] || []), ...streetBoosts]
+    const blockBoosts = filterTemplateKeysForProgram(BLOCK_TEMPLATE_BOOSTS[block] || [], programFamily);
+    const rotated =
+      blockBoosts.length > 1
+        ? [
+            ...blockBoosts.slice((dayIndex + bi) % blockBoosts.length),
+            ...blockBoosts.slice(0, (dayIndex + bi) % blockBoosts.length)
+          ]
+        : blockBoosts;
+    const boosts = [...rotated, ...streetBoosts]
       .filter((k) => exerciseDatabase[k])
       .sort((a, b) => exercisePreferenceBonus(b, coachContext) - exercisePreferenceBonus(a, coachContext));
     const deformers = mergeTemplateBoosts(coachContext?.deformers, boosts);
@@ -261,7 +280,10 @@ function fillStrengthFromBlocks(
     anchorFocus &&
     blocks.some((b) => ['force_pull', 'force_push', 'force_upper'].includes(b))
   ) {
-    const PULL = ['tractions pronation', 'rowing haltère', 'tractions australiennes'];
+    const PULL = filterTemplateKeysForProgram(
+      ['tractions pronation', 'tractions australiennes', 'rowing haltère'],
+      programFamily
+    );
     const PUSH = ['pompes', 'dips', 'développé militaire'];
     const planKeys = anchorFocus === 'pull' ? PULL : PUSH;
     const have = new Set(picked.map((e) => e.exerciseBankKey));

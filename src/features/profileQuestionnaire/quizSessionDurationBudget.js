@@ -4,6 +4,7 @@
 
 import { getProfileConstraintEffects } from './quizProfileConstraints';
 import { enforceSessionExerciseLimits } from './quizSessionLimits';
+import { balancePullExercisesOnDay } from './quizPullRepPrescription';
 
 const SESSION_BUDGET = {
   '15_30': { targetMin: 22, warmupMin: 5, reservePlyoMin: 4 },
@@ -365,6 +366,8 @@ export function finalizeSessionForDurationBudget(exercises, answers, ctx = {}) {
     );
     list = enforceSessionExerciseLimits(list, relaxed, profile);
   }
+
+  list = balancePullExercisesOnDay(list, answers);
 
   return list;
 }

@@ -24,19 +24,19 @@ export function resolvePullupProgressionPlan(answers, weeklyObjectives = null) {
 
   let variants;
   if (pullMax <= 2) {
-    variants = ['tractions australiennes', 'tractions pronation', 'rowing haltère'];
+    variants = ['tractions australiennes', 'tractions pronation'];
   } else if (pullMax <= 7) {
-    variants = ['tractions pronation', 'tractions australiennes', 'rowing haltère'];
+    variants = ['tractions pronation', 'tractions australiennes'];
   } else {
     variants = ['tractions pronation', 'tractions australiennes', 'dips'];
   }
 
   const setsPerExposure =
     pullMax <= 3
-      ? { heavy: 4, volume: 3, accessory: 3 }
+      ? { heavy: 3, volume: 3, accessory: 3 }
       : pullMax <= 7
-        ? { heavy: 4, volume: 4, accessory: 3 }
-        : { heavy: 5, volume: 4, accessory: 3 };
+        ? { heavy: 3, volume: 4, accessory: 3 }
+        : { heavy: 4, volume: 4, accessory: 3 };
 
   const weeklySetsTarget = Math.max(12, exposuresPerWeek * (setsPerExposure.heavy + setsPerExposure.volume));
 
@@ -58,9 +58,13 @@ export function resolvePullupProgressionPlan(answers, weeklyObjectives = null) {
  * @param {object} answers
  * @param {object} [weeklyObjectives]
  */
-export function pullupTemplateBoosts(answers, weeklyObjectives = null) {
+export function pullupTemplateBoosts(answers, weeklyObjectives = null, programFamily = null) {
   const plan = resolvePullupProgressionPlan(answers, weeklyObjectives);
-  return plan?.variants || [];
+  const variants = plan?.variants || [];
+  if (programFamily === 'street') {
+    return variants.filter((k) => k !== 'rowing haltère' && k !== 'rowing barre');
+  }
+  return variants;
 }
 
 /**
@@ -82,7 +86,21 @@ export function applyPullupSeriesHints(exercises, answers, weeklyObjectives = nu
     if (!/traction|pull|australien/i.test(blob)) return ex;
     const isHeavy = /pronation|pull-up/i.test(blob) && !/australien/i.test(blob);
     const sets = isHeavy ? heavySets : volSets;
-    const reps = pullMax <= 3 ? (isHeavy ? '4-6' : '6-10') : isHeavy ? '5-8' : '8-12';
+    let reps;
+    if (isHeavy) {
+      const strict = pullMax <= 3 ? 3 : pullMax <= 7 ? Math.max(3, pullMax - 1) : Math.max(4, Math.floor(pullMax * 0.7));
+      reps = String(strict);
+    } else if (/australien/i.test(blob)) {
+      const aus =
+        pullMax <= 5
+          ? '8-10'
+          : pullMax <= 10
+            ? '8-12'
+            : '10-14';
+      reps = aus;
+    } else {
+      reps = pullMax <= 3 ? '6-10' : '8-12';
+    }
     return { ...ex, series: `${sets}×${reps}` };
   });
 }

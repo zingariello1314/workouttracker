@@ -94,7 +94,11 @@ export function injectCircuitStylesIntoSchedule(schedule, answers, activeDayKeys
     });
   }
 
-  if (hasCircuitTrainingStyle(styles, 'ok_finisher') && !onlyStraight) {
+  if (
+    (hasCircuitTrainingStyle(styles, 'ok_finisher') ||
+      hasCircuitTrainingStyle(styles, 'like_supersets')) &&
+    !onlyStraight
+  ) {
     const finisherDays = activeDayKeys.filter((_, idx) => idx % 2 === 0).slice(0, 3);
     finisherDays.forEach((day, idx) => {
       const slot = schedule[day];

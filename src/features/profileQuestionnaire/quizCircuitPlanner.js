@@ -63,7 +63,7 @@ function resolveAbCircuitDaysPerWeek(answers) {
   else if (typePrefs.includes('circuits_hiit')) n = 2;
   else if (prio.includes('core') || typePrefs.includes('isometric_core')) n = 2;
   else if (hasCircuitTrainingStyle(styles, 'like_supersets') || hasCircuitTrainingStyle(styles, 'ok_finisher')) {
-    n = 1;
+    n = Math.max(n, 2);
   }
 
   if (exp === 'beginner_total' || exp === 'beginner_0_3m') n = Math.min(n, 2);

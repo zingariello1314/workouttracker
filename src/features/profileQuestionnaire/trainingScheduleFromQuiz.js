@@ -32,7 +32,11 @@ import {
   formatWeekAllocationFr,
   replanStructureForFeasibility
 } from './quizHypertrophyGuard';
-import { consolidateCardioExercisesForSession } from './quizCardioSessionResolver';
+import {
+  consolidateCardioExercisesForSession,
+  ensureRunDayExercises
+} from './quizCardioSessionResolver';
+import { applyPullRepPrescriptionToSchedule } from './quizPullRepPrescription';
 import {
   buildSessionDurationNote,
   finalizeSessionForDurationBudget
@@ -65,7 +69,6 @@ import {
   ensureMinDedicatedCardioDays,
   applyNervousSpacingHints
 } from './quizSessionPlannerExtras';
-import { summarizeExercisesForDay } from './quizProgramPresentation';
 
 /** Jours français alignés avec le quiz (`availableTrainingDays`) et les clés `schedule`. */
 export const QUIZ_SCHEDULE_DAY_ORDER = [...REST_WEEK_DAYS];
@@ -403,6 +406,14 @@ export function buildQuizAugmentedSchedule(schedule, answers, genOpts = {}) {
 
   injectQuizExercisePlan(schedule, answers, activeDayKeys, weekProfiles, coachOpts);
 
+  ensureRunDayExercises(
+    schedule,
+    activeDayKeys,
+    weekProfiles,
+    answers,
+    buildProgramExerciseFromDbKey
+  );
+
   const circuitPlan = planQuizCircuits(activeDayKeys, answers, weekProfiles, coachOpts);
   Object.assign(circuitDefinitions, circuitPlan.definitions);
   attachQuizCircuitsToSchedule(schedule, circuitDefinitions, circuitPlan.assignments);
@@ -419,9 +430,6 @@ export function buildQuizAugmentedSchedule(schedule, answers, genOpts = {}) {
       schedule[day] = { ...restDay, etirements: { matin: [], midi: [], soir: [] } };
       continue;
     }
-
-    const existingNotes = typeof d.notes === 'string' ? d.notes.trim() : '';
-    d.notes = [blueprint.cardioFinisherHint, existingNotes].filter(Boolean).join('\n\n');
 
     applyQuizStretchScheduleToDay(d, day, answers, stretchBlocks, usedStretchKeys);
   }
@@ -518,16 +526,13 @@ export function buildQuizAugmentedSchedule(schedule, answers, genOpts = {}) {
       weekIndex: 1,
       deps: { pickExercisesForContext, buildProgramExerciseFromDbKey }
     });
-    const summary = summarizeExercisesForDay(day.exercises);
-    if (summary) {
-      const note = `Vue compacte : ${summary}`;
-      day.notes = [typeof day.notes === 'string' ? day.notes : '', note].filter(Boolean).join('\n\n');
-    }
     const durationNote = buildSessionDurationNote(day.exercises, answers);
     if (durationNote) {
       day.duration = durationNote;
     }
   });
+
+  applyPullRepPrescriptionToSchedule(schedule, activeDayKeys, answers);
 
   const quizGenerationMeta = buildQuizGenerationMeta(coachContext, {
     programDurationWeeks: durationWeeks,
@@ -553,19 +558,9 @@ export function buildQuizAugmentedSchedule(schedule, answers, genOpts = {}) {
 
 function injectPreferredExerciseTypes(schedule, answers) {
   const typePrefs = Array.isArray(answers?.exerciseTypePreferences) ? answers.exerciseTypePreferences.slice(0, 3) : [];
-  const muscles = Array.isArray(answers?.priorityMuscleGroups) ? answers.priorityMuscleGroups.slice(0, 3) : [];
-  if (!typePrefs.length && !muscles.length) return;
+  if (!typePrefs.length) return;
   const activeDays = QUIZ_SCHEDULE_DAY_ORDER.filter((day) => schedule?.[day]?.active);
   if (!activeDays.length) return;
-
-  for (const day of activeDays) {
-    const slot = schedule[day];
-    const extraNotes = [];
-    if (muscles.length) extraNotes.push(`Ciblage quiz (muscles): ${muscles.join(', ')}.`);
-    if (typePrefs.length) extraNotes.push(`Ciblage quiz (types): ${typePrefs.join(', ')}.`);
-    const currentNotes = typeof slot.notes === 'string' ? slot.notes.trim() : '';
-    slot.notes = [currentNotes, ...extraNotes].filter(Boolean).join('\n\n');
-  }
 
   const firstDay = schedule[activeDays[0]];
   const current = Array.isArray(firstDay?.exercises) ? firstDay.exercises : [];

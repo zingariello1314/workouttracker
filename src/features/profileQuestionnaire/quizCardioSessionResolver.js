@@ -4,6 +4,7 @@
 
 import { exerciseDatabase } from '../../data/exerciseDatabase';
 import { inferRunningSessionProfile } from './quizRunningSessionProfile';
+import { buildQuizTrainingSessionBlueprint } from './quizInfluence';
 
 const CARDIO_DB_BY_STIMULUS = {
   run_easy: ['course endurance fondamentale'],
@@ -207,4 +208,49 @@ function dedupeCardioOnHybridDay(exercises, profile, answers) {
   const primary =
     cardio.find((ex) => dbKeys.includes(ex.exerciseBankKey)) || cardio[0];
   return [...strength, primary];
+}
+
+/**
+ * Sécurise les jours course : au moins un exercice cardio listé (bug weekUsedKeys EF).
+ */
+export function ensureRunDayExercises(
+  schedule,
+  activeDayKeys,
+  weekProfiles,
+  answers,
+  buildProgramExerciseFromDbKey
+) {
+  if (!schedule || !buildProgramExerciseFromDbKey) return;
+  const blueprint = buildQuizTrainingSessionBlueprint(answers);
+
+  activeDayKeys.forEach((dayKey, dayIndex) => {
+    const day = schedule[dayKey];
+    const profile = weekProfiles?.[dayKey];
+    if (!day?.active || !profile) return;
+
+    const runDay =
+      profile.modality === 'cardio' ||
+      (profile.blocks || []).some((b) => String(b).startsWith('run_'));
+    if (!runDay) return;
+
+    const hasCardio = (day.exercises || []).some((ex) =>
+      /course|fractionné|fractionne|natation|vélo|velo/i.test(
+        `${ex.exerciseBankKey || ''} ${ex.name || ''}`
+      )
+    );
+    if (hasCardio) return;
+
+    const { dbKeys } = resolveSingleCardioStimulusForSession(
+      profile.blocks?.length ? profile.blocks : ['run_easy'],
+      answers,
+      null
+    );
+    const dbKey = dbKeys[0] || 'course endurance fondamentale';
+    const ex = buildProgramExerciseFromDbKey(dbKey, answers, blueprint, {
+      idSuffix: `_run_guard_${dayIndex}`
+    });
+    if (ex) {
+      day.exercises = [...(day.exercises || []), ex];
+    }
+  });
 }
