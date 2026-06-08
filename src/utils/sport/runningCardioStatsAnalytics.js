@@ -18,6 +18,7 @@ import {
   defaultActivityRange,
   enumerateDatesInclusive,
   firstPositiveDate,
+  formatChartDateDayMonth,
   mapToNumberMap
 } from './dailyDenseTimeSeries';
 
@@ -439,7 +440,7 @@ export function buildCardioSessionSeries(rows, filter = 'all', period = 'all', n
   return filtered.map((r, i) => ({
     index: i,
     date: r.date,
-    label: r.date.slice(5),
+    label: formatChartDateDayMonth(r.date),
     avgHR: r.avgHR,
     maxHR: r.maxHR,
     pace: r.pace,

@@ -1,4 +1,5 @@
 import React, { useId, useMemo, useState, useCallback } from 'react';
+import { formatChartDateDayMonth } from '../../../utils/sport/dailyDenseTimeSeries';
 
 function buildYAxisTicks(minVal, maxVal, steps = 4) {
   const lo = Number.isFinite(minVal) ? minVal : 0;
@@ -104,7 +105,7 @@ const SessionSeriesLineChart = ({
       y: yA(p.value),
       v: Number(p.value) || 0,
       date: String(p.date || ''),
-      label: p.label || String(p.date || '').slice(5)
+      label: p.label || formatChartDateDayMonth(p.date)
     }));
     const pointsB = ptsB.map((p, i) => ({
       x: xAt(i),

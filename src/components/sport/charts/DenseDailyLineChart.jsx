@@ -1,4 +1,5 @@
 import React, { useId, useMemo, useState, useCallback } from 'react';
+import { formatChartDateDayMonth } from '../../../utils/sport/dailyDenseTimeSeries';
 
 function buildYAxisTicks(maxVal, steps = 4) {
   const hi = Number.isFinite(maxVal) && maxVal > 0 ? maxVal : 1;
@@ -129,7 +130,12 @@ const DenseDailyLineChart = ({
       maxB,
       yAxisA,
       yAxisB,
-      ticks: ptsA.map((p, i) => ({ i, x: xAt(i), short: String(p.date).slice(5), fullDate: String(p.date || '') })),
+      ticks: ptsA.map((p, i) => ({
+        i,
+        x: xAt(i),
+        short: formatChartDateDayMonth(p.date),
+        fullDate: String(p.date || '')
+      })),
       labelIndices,
       dual,
       pointsA,

@@ -3,6 +3,12 @@ import { useWorkout } from '../context/WorkoutContext';
 import { useAuth } from '../context/AuthContext';
 import { useAppLock } from '../context/AppLockContext';
 import { useHomepageImages } from '../hooks/useHomepageImages';
+import {
+  getVisibleHomepageImageIndices,
+  normalizeHomepageImage,
+  pickInitialHomepageImageIndex,
+  pickNextHomepageImageIndex
+} from '../utils/homepageImagePreferences';
 import { preloadAdjacentImages, preloadImage } from '../utils/imageLazyLoader';
 import logger from '../utils/logger';
 import LanguageSelector from './ui/LanguageSelector';
@@ -313,20 +319,12 @@ const HomePage = () => {
   // ✅ Phase 7: Fonction pour changer l'image avec double buffering
   // ✅ RANDOMISATION : Rotation aléatoire avec évitement répétition
   const changeBackgroundImage = async () => {
-    if (backgroundImages.length <= 1) return;
-    
-    // ✅ RANDOMISATION : Choisir index aléatoire, éviter l'actuel
-    let nextIndex;
-    if (backgroundImages.length === 2) {
-      // Si seulement 2 images, alterner (évite boucle infinie)
-      nextIndex = (currentImageIndex + 1) % backgroundImages.length;
-    } else {
-      // Sinon, choisir aléatoirement mais éviter l'actuel
-      do {
-        nextIndex = Math.floor(Math.random() * backgroundImages.length);
-      } while (nextIndex === currentImageIndex && backgroundImages.length > 1);
-    }
-    
+    const visible = getVisibleHomepageImageIndices(backgroundImages);
+    if (visible.length <= 1) return;
+
+    const nextIndex = pickNextHomepageImageIndex(backgroundImages, currentImageIndex);
+    if (nextIndex < 0) return;
+
     const nextImage = backgroundImages[nextIndex];
     
     if (!nextImage) return;
@@ -379,12 +377,21 @@ const HomePage = () => {
       return;
     }
 
-    // ✅ RANDOMISATION : Définir index initial aléatoire une seule fois
+    // Index initial pondéré (likées plus souvent), images masquées exclues
     if (!initialIndexSetRef.current && backgroundImages.length > 0) {
-      const randomIndex = Math.floor(Math.random() * backgroundImages.length);
+      const randomIndex = pickInitialHomepageImageIndex(backgroundImages);
       setCurrentImageIndex(randomIndex);
       initialIndexSetRef.current = true;
-      log.debug(`🎲 Index initial aléatoire: ${randomIndex}/${backgroundImages.length}`);
+      log.debug(`🎲 Index initial pondéré: ${randomIndex}/${backgroundImages.length}`);
+    }
+
+    const currentNorm = normalizeHomepageImage(backgroundImages[currentImageIndex], currentImageIndex);
+    if (currentNorm?.hidden) {
+      const nextVisible = pickNextHomepageImageIndex(backgroundImages, currentImageIndex);
+      if (nextVisible >= 0 && nextVisible !== currentImageIndex) {
+        setCurrentImageIndex(nextVisible);
+      }
+      return;
     }
 
     const currentImage = backgroundImages[currentImageIndex];
@@ -415,22 +422,20 @@ const HomePage = () => {
   // ✅ Phase 7: Préchargement proactif des images (adapté pour rotation aléatoire)
   // ✅ RANDOMISATION : Précharger images aléatoires au lieu de séquentielles
   useEffect(() => {
-    if (!backgroundImages || backgroundImages.length <= 1) return;
+    const visible = getVisibleHomepageImageIndices(backgroundImages);
+    if (!backgroundImages || visible.length <= 1) return;
 
     const currentImage = backgroundImages[currentImageIndex];
     if (!currentImage) return;
 
-    // ✅ RANDOMISATION : Précharger 3 images aléatoires (pas l'actuelle)
     const preloadRandomImages = async () => {
       const indicesToPreload = new Set();
-      const maxPreload = Math.min(3, backgroundImages.length - 1);
-      
-      // Générer indices aléatoires uniques (pas l'actuel)
-      while (indicesToPreload.size < maxPreload) {
-        const randomIndex = Math.floor(Math.random() * backgroundImages.length);
-        if (randomIndex !== currentImageIndex) {
-          indicesToPreload.add(randomIndex);
-        }
+      const candidates = visible.filter((i) => i !== currentImageIndex);
+      const maxPreload = Math.min(3, candidates.length);
+
+      while (indicesToPreload.size < maxPreload && candidates.length > 0) {
+        const pick = candidates[Math.floor(Math.random() * candidates.length)];
+        indicesToPreload.add(pick);
       }
       
       for (const index of indicesToPreload) {
@@ -466,14 +471,14 @@ const HomePage = () => {
 
   // Rotation automatique toutes les 2 minutes
   useEffect(() => {
-    if (backgroundImages.length <= 1) return;
+    if (getVisibleHomepageImageIndices(backgroundImages).length <= 1) return;
 
     const rotationInterval = setInterval(() => {
       changeBackgroundImage();
-    }, 2 * 60 * 1000); // 2 minutes
+    }, 2 * 60 * 1000);
 
     return () => clearInterval(rotationInterval);
-  }, [backgroundImages.length]);
+  }, [backgroundImages]);
 
   // Échelle pilotée par le nombre de lignes réelles (display) : une même phrase peut
   // faire 2 lignes en base (autosplit ~28 chars) tout en étant « longue » → l’ancien

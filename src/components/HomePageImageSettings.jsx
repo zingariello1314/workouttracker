@@ -1,23 +1,39 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useCallback } from 'react';
+import { Eye, EyeOff, Heart, X, ZoomIn } from 'lucide-react';
 import { useHomepageImages } from '../hooks/useHomepageImages';
 import { settingsTheme as S } from './tabs/SettingsTab/settingsThemeClasses';
 import StorageDiagnostic from './StorageDiagnostic';
 import QuotaIndicator from './QuotaIndicator';
 import { canUploadImages, formatBytes } from '../utils/quotaManager';
 import { processImageForStorage } from '../utils/imageFormatOptimizer';
+import {
+  getHomepageImageFullSrc,
+  getHomepageImageThumbSrc,
+  normalizeHomepageImage
+} from '../utils/homepageImagePreferences';
 import logger from '../utils/logger';
 
 const log = logger.component('HomePageImageSettings');
 
 const HomePageImageSettings = ({ onClose }) => {
-  const { backgroundImages, saveImages, loadImages, updateImagesRef, isLoading, systemHealth, checkSystemHealth } = useHomepageImages();
+  const {
+    backgroundImages,
+    saveImages,
+    loadImages,
+    updateImagesRef,
+    setBackgroundImages,
+    isLoading,
+    systemHealth,
+    checkSystemHealth
+  } = useHomepageImages();
   const [isUploading, setIsUploading] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [saveStatus, setSaveStatus] = useState(null);
   const [showDiagnostic, setShowDiagnostic] = useState(false);
-  const [quotaCheck, setQuotaCheck] = useState(null); // Résultat vérification quota
-  const [quotaWarning, setQuotaWarning] = useState(null); // Warning/Critical
-  const [batchUploadProgress, setBatchUploadProgress] = useState(null); // { current, total, fileName }
+  const [quotaCheck, setQuotaCheck] = useState(null);
+  const [quotaWarning, setQuotaWarning] = useState(null);
+  const [batchUploadProgress, setBatchUploadProgress] = useState(null);
+  const [previewIndex, setPreviewIndex] = useState(null);
   const fileInputRef = useRef(null);
 
   // Fonction pour nettoyer le localStorage
@@ -74,6 +90,34 @@ const HomePageImageSettings = ({ onClose }) => {
     }
   };
 
+  const applyImagePatch = useCallback(
+    async (index, patch) => {
+      const updated = backgroundImages.map((img, i) => {
+        const norm = normalizeHomepageImage(img, i);
+        return i === index ? { ...norm, ...patch } : norm;
+      });
+      setBackgroundImages(updated);
+      updateImagesRef(updated);
+      try {
+        cleanupLocalStorage();
+        await saveImages(updated, { force: true });
+      } catch (error) {
+        log.error('Erreur sauvegarde préférences image', error);
+      }
+    },
+    [backgroundImages, setBackgroundImages, updateImagesRef, saveImages]
+  );
+
+  const toggleLike = (index) => {
+    const norm = normalizeHomepageImage(backgroundImages[index], index);
+    applyImagePatch(index, { liked: !norm.liked });
+  };
+
+  const toggleHidden = (index) => {
+    const norm = normalizeHomepageImage(backgroundImages[index], index);
+    applyImagePatch(index, { hidden: !norm.hidden });
+  };
+
   // ✅ Phase 3: Traitement image optimisé (format optimal + thumbnail)
   // QUALITÉ FULL 100% PRÉSERVÉE
   const processImage = async (file) => {
@@ -100,7 +144,10 @@ const HomePageImageSettings = ({ onClose }) => {
         full: processed.full,
         thumbnail: processed.thumbnail,
         format: processed.format,
-        metadata: processed.metadata
+        metadata: processed.metadata,
+        id: `img_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`,
+        liked: false,
+        hidden: false
       };
     } catch (error) {
       log.error('❌ Erreur traitement image', error);
@@ -302,9 +349,9 @@ const HomePageImageSettings = ({ onClose }) => {
           <div>
             <h3 className="mb-4 text-lg font-semibold text-red-100">Images de fond</h3>
             <p className={`mb-4 text-sm ${S.muted}`}>
-              Ces images seront utilisées comme arrière-plan de la page d&apos;accueil et changeront automatiquement toutes les 2 minutes.
-              {' '}
-              Vous pouvez en sélectionner plusieurs à la fois (Ctrl/Cmd + clic) : elles sont traitées et enregistrées une par une.
+              Ces images servent d&apos;arrière-plan sur la page d&apos;accueil (rotation toutes les 2 minutes).
+              Cliquez sur une vignette pour l&apos;agrandir. Cœur = image favorisée (revient plus souvent).
+              Œil barré = masquée temporairement (hors rotation, sans suppression).
             </p>
             
             <div className="space-y-4">
@@ -405,32 +452,81 @@ const HomePageImageSettings = ({ onClose }) => {
               {/* Galerie des images de fond */}
               <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
                 {backgroundImages.map((image, index) => {
-                  // ✅ Phase 3: Utiliser thumbnail si disponible (format v3), sinon full (v2 ou v3 sans thumbnail)
-                  const imageSrc = typeof image === 'object' && image?.thumbnail
-                    ? image.thumbnail // Thumbnail pour galerie (léger)
-                    : typeof image === 'object' && image?.full
-                      ? image.full // Full si pas de thumbnail
-                      : image; // Format v2 (string)
-                  
+                  const norm = normalizeHomepageImage(image, index);
+                  const imageSrc = getHomepageImageThumbSrc(norm);
+
                   return (
-                    <div key={index} className="group relative">
-                      <img
-                        src={imageSrc}
-                        alt={`Fond ${index + 1}`}
-                        className="h-32 w-full rounded-lg border border-red-900/40 object-cover"
-                      />
+                    <div
+                      key={norm.id || index}
+                      className={`group relative overflow-hidden rounded-lg border ${
+                        norm.hidden
+                          ? 'border-zinc-600/60 opacity-55'
+                          : norm.liked
+                            ? 'border-rose-400/70 ring-1 ring-rose-500/30'
+                            : 'border-red-900/40'
+                      }`}
+                    >
+                      <button
+                        type="button"
+                        onClick={() => setPreviewIndex(index)}
+                        className="block w-full cursor-zoom-in text-left"
+                        aria-label={`Agrandir Fond ${index + 1}`}
+                      >
+                        <img
+                          src={imageSrc}
+                          alt={`Fond ${index + 1}`}
+                          className={`h-32 w-full object-cover transition group-hover:brightness-110 ${
+                            norm.hidden ? 'grayscale' : ''
+                          }`}
+                        />
+                        <span className="pointer-events-none absolute inset-0 flex items-center justify-center bg-black/0 opacity-0 transition group-hover:bg-black/25 group-hover:opacity-100">
+                          <ZoomIn className="h-8 w-8 text-white/90 drop-shadow" />
+                        </span>
+                      </button>
+
+                      <div className="absolute left-2 top-2 flex gap-1">
+                        <button
+                          type="button"
+                          onClick={() => toggleLike(index)}
+                          title={norm.liked ? 'Retirer des favoris' : 'Favori (plus souvent sur l\'accueil)'}
+                          className={`flex h-7 w-7 items-center justify-center rounded-full border backdrop-blur-sm transition ${
+                            norm.liked
+                              ? 'border-rose-400/70 bg-rose-950/90 text-rose-300'
+                              : 'border-red-900/50 bg-black/70 text-red-100/80 hover:text-rose-300'
+                          }`}
+                        >
+                          <Heart className={`h-3.5 w-3.5 ${norm.liked ? 'fill-current' : ''}`} />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => toggleHidden(index)}
+                          title={norm.hidden ? 'Réafficher sur l\'accueil' : 'Masquer temporairement'}
+                          className={`flex h-7 w-7 items-center justify-center rounded-full border backdrop-blur-sm transition ${
+                            norm.hidden
+                              ? 'border-amber-500/60 bg-amber-950/90 text-amber-200'
+                              : 'border-red-900/50 bg-black/70 text-red-100/80 hover:text-amber-200'
+                          }`}
+                        >
+                          {norm.hidden ? <EyeOff className="h-3.5 w-3.5" /> : <Eye className="h-3.5 w-3.5" />}
+                        </button>
+                      </div>
+
                       <button
                         type="button"
                         onClick={() => removeBackgroundImage(index)}
-                        className="absolute right-2 top-2 flex h-6 w-6 items-center justify-center rounded-full border border-red-800/60 bg-red-950/90 text-sm text-red-50 opacity-0 transition-opacity group-hover:opacity-100"
+                        className="absolute right-2 top-2 flex h-7 w-7 items-center justify-center rounded-full border border-red-800/60 bg-red-950/90 text-red-50 opacity-0 transition-opacity group-hover:opacity-100"
+                        title="Supprimer"
                       >
-                        ×
+                        <X className="h-3.5 w-3.5" />
                       </button>
+
                       <div className="absolute bottom-2 left-2 rounded border border-red-900/50 bg-black/70 px-2 py-1 text-xs text-red-100">
                         Fond {index + 1}
-                        {typeof image === 'object' && image?.format && (
-                          <span className="ml-1 text-red-300/90">({image.format.toUpperCase()})</span>
-                        )}
+                        {norm.liked ? <span className="ml-1 text-rose-300">♥</span> : null}
+                        {norm.hidden ? <span className="ml-1 text-amber-300/90">masqué</span> : null}
+                        {norm.format ? (
+                          <span className="ml-1 text-red-300/90">({norm.format.toUpperCase()})</span>
+                        ) : null}
                       </div>
                     </div>
                   );
@@ -513,6 +609,68 @@ const HomePageImageSettings = ({ onClose }) => {
           </button>
         </div>
       </div>
+
+      {/* Aperçu agrandi */}
+      {previewIndex != null && backgroundImages[previewIndex] && (
+        <div
+          className="fixed inset-0 z-[60] flex items-center justify-center bg-black/85 p-4 backdrop-blur-sm"
+          onClick={() => setPreviewIndex(null)}
+          role="dialog"
+          aria-modal="true"
+          aria-label="Aperçu image de fond"
+        >
+          <div
+            className="relative max-h-[90vh] max-w-5xl w-full"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <img
+              src={getHomepageImageFullSrc(backgroundImages[previewIndex])}
+              alt={`Aperçu Fond ${previewIndex + 1}`}
+              className="max-h-[85vh] w-full rounded-xl border border-red-900/50 object-contain shadow-2xl"
+            />
+            <div className="mt-3 flex flex-wrap items-center justify-between gap-3">
+              <p className="text-sm text-red-100/90">
+                Fond {previewIndex + 1}
+                {normalizeHomepageImage(backgroundImages[previewIndex], previewIndex).liked
+                  ? ' · Favori (rotation renforcée)'
+                  : ''}
+                {normalizeHomepageImage(backgroundImages[previewIndex], previewIndex).hidden
+                  ? ' · Masquée'
+                  : ''}
+              </p>
+              <div className="flex gap-2">
+                <button
+                  type="button"
+                  onClick={() => toggleLike(previewIndex)}
+                  className={`${S.btnSecondary} inline-flex items-center gap-1.5 text-xs`}
+                >
+                  <Heart className="h-3.5 w-3.5" />
+                  {normalizeHomepageImage(backgroundImages[previewIndex], previewIndex).liked
+                    ? 'Retirer favori'
+                    : 'Mettre en favori'}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => toggleHidden(previewIndex)}
+                  className={`${S.btnSecondary} inline-flex items-center gap-1.5 text-xs`}
+                >
+                  {normalizeHomepageImage(backgroundImages[previewIndex], previewIndex).hidden ? (
+                    <Eye className="h-3.5 w-3.5" />
+                  ) : (
+                    <EyeOff className="h-3.5 w-3.5" />
+                  )}
+                  {normalizeHomepageImage(backgroundImages[previewIndex], previewIndex).hidden
+                    ? 'Réafficher'
+                    : 'Masquer'}
+                </button>
+                <button type="button" onClick={() => setPreviewIndex(null)} className={S.btnPrimary}>
+                  Fermer
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Modal de diagnostic */}
       {showDiagnostic && (

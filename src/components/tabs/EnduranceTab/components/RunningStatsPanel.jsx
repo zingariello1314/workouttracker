@@ -26,6 +26,7 @@ import {
   EF_HR_PCT_MIN,
   EF_HR_PCT_MAX
 } from '../../../../utils/sport/runningCardioStatsAnalytics';
+import { formatChartDateDayMonth } from '../../../../utils/sport/dailyDenseTimeSeries';
 
 const CARDIO_FILTERS = [
   { id: 'all', labelKey: 'endurance.running.stats.filterAll' },
@@ -290,7 +291,7 @@ const RunningStatsPanel = ({ sessions = [], garminById = null }) => {
               seriesA={efRows.map((r) => ({
                 date: r.date,
                 value: r.pace,
-                label: r.date.slice(5)
+                label: formatChartDateDayMonth(r.date)
               }))}
               metaA={{ label: t('endurance.running.stats.pace'), color: '#34d399' }}
               valueFormatA={(v) => formatPaceMinPerKm(v)}

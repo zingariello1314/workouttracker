@@ -10,6 +10,12 @@ import {
   STORE_HOMEPAGE_IMAGES,
   applyHomepageImagesSchemaUpgrade,
 } from '../services/homepage/homepageImagesDbGateway.js';
+import {
+  applyHomepageImagePreferences,
+  normalizeHomepageImages,
+  readHomepagePreferencesFromStorage,
+  writeHomepagePreferencesToStorage,
+} from '../utils/homepageImagePreferences.js';
 
 const log = logger.module('useHomepageImages');
 
@@ -30,6 +36,19 @@ export const useHomepageImages = () => {
   const scopedEmergencyKey = useMemo(() => `homepage_images_emergency_${scopeKey}`, [scopeKey]);
   const scopedSyncEmergencyKey = useMemo(() => `homepage_images_sync_emergency_${scopeKey}`, [scopeKey]);
   const scopedMetadataKey = useMemo(() => `homepage_images_metadata_${scopeKey}`, [scopeKey]);
+
+  const finalizeLoadedImages = (rawImages) => {
+    const prefs = readHomepagePreferencesFromStorage(scopedMetadataKey);
+    return applyHomepageImagePreferences(normalizeHomepageImages(rawImages), prefs);
+  };
+
+  const persistImagePreferences = (images) => {
+    writeHomepagePreferencesToStorage(scopedMetadataKey, images, {
+      count: images.length,
+      timestamp: new Date().toISOString(),
+      version: '3.1'
+    });
+  };
 
   // Incrémenté à chaque changement de périmètre (guest ↔ utilisateur ou rechargement explicite) pour ignorer les chargements asynchrones obsolètes
   const homepageImagesLoadGenerationRef = useRef(0);
@@ -260,11 +279,13 @@ export const useHomepageImages = () => {
       if (indexedDBSuccess) {
         // IndexedDB fonctionne → Sauvegarde légère des métadonnées seulement
         try {
+          persistImagePreferences(validImages);
           const metadata = {
             count: validImages.length,
             timestamp: new Date().toISOString(),
-            version: '3.0', // ✅ Phase 6: Version 3.0
-            storage: 'indexeddb_primary'
+            version: '3.1',
+            storage: 'indexeddb_primary',
+            preferences: readHomepagePreferencesFromStorage(scopedMetadataKey)
           };
           localStorage.setItem(scopedMetadataKey, JSON.stringify(metadata));
           log.debug('✅ Métadonnées sauvegardées dans localStorage');
@@ -273,11 +294,12 @@ export const useHomepageImages = () => {
         }
         
         setSystemHealth('excellent');
-        // ✅ Phase 7: Mettre à jour la ref IMMÉDIATEMENT pour éviter race condition
-        backgroundImagesRef.current = validImages;
-        lastSaveTimeRef.current = Date.now(); // ✅ Phase 7: Enregistrer timestamp de sauvegarde
-        setBackgroundImages(validImages);
-        log.debug(`🎉 ${validImages.length} images sauvegardées dans IndexedDB avec succès`);
+        const normalized = normalizeHomepageImages(validImages);
+        persistImagePreferences(normalized);
+        backgroundImagesRef.current = normalized;
+        lastSaveTimeRef.current = Date.now();
+        setBackgroundImages(normalized);
+        log.debug(`🎉 ${normalized.length} images sauvegardées dans IndexedDB avec succès`);
         return;
       }
       
@@ -686,7 +708,8 @@ export const useHomepageImages = () => {
       if (images.length > 0) {
         log.debug('✅ Images récupérées depuis IndexedDB');
         setSystemHealth('excellent');
-        
+        images = finalizeLoadedImages(images);
+
         // ✅ RANDOMISATION : Shuffle une seule fois par session (cache dans ref)
         if (!shuffledImagesRef.current || shuffledImagesRef.current.length !== images.length) {
           shuffledImagesRef.current = images.length > 1 ? shuffleArray(images) : images;
@@ -724,7 +747,8 @@ export const useHomepageImages = () => {
         if (imagesLoadStale(generation)) return;
         if (images.length > 0) {
           setSystemHealth('good');
-          
+          images = finalizeLoadedImages(images);
+
           // ✅ RANDOMISATION : Shuffle une seule fois par session (cache dans ref)
           if (!shuffledImagesRef.current || shuffledImagesRef.current.length !== images.length) {
             shuffledImagesRef.current = images.length > 1 ? shuffleArray(images) : images;
@@ -787,7 +811,8 @@ export const useHomepageImages = () => {
         if (imagesLoadStale(generation)) return;
         if (images.length > 0) {
           setSystemHealth('good');
-          
+          images = finalizeLoadedImages(images);
+
           // ✅ RANDOMISATION : Shuffle une seule fois par session (cache dans ref)
           if (!shuffledImagesRef.current || shuffledImagesRef.current.length !== images.length) {
             shuffledImagesRef.current = images.length > 1 ? shuffleArray(images) : images;
@@ -850,6 +875,7 @@ export const useHomepageImages = () => {
         
         if (imagesLoadStale(generation)) return;
         if (images.length > 0) {
+          images = finalizeLoadedImages(images);
           // ✅ RANDOMISATION : Shuffle une seule fois par session (cache dans ref)
           if (!shuffledImagesRef.current || shuffledImagesRef.current.length !== images.length) {
             shuffledImagesRef.current = images.length > 1 ? shuffleArray(images) : images;
@@ -1126,8 +1152,17 @@ export const useHomepageImages = () => {
 
   // ✅ Phase 7: Fonction pour mettre à jour la ref directement (pour éviter race condition)
   const updateImagesRef = (images) => {
-    backgroundImagesRef.current = images;
+    const normalized = normalizeHomepageImages(images);
+    backgroundImagesRef.current = normalized;
     lastSaveTimeRef.current = Date.now();
+    persistImagePreferences(normalized);
+  };
+
+  const setBackgroundImagesWithPrefs = (images) => {
+    const normalized = normalizeHomepageImages(images);
+    backgroundImagesRef.current = normalized;
+    setBackgroundImages(normalized);
+    persistImagePreferences(normalized);
   };
 
   return {
@@ -1136,7 +1171,8 @@ export const useHomepageImages = () => {
     systemHealth,
     saveImages: saveImagesRobust,
     loadImages: reloadImagesFromStorage,
-    updateImagesRef, // ✅ Phase 7: Exposer fonction pour mettre à jour la ref
+    updateImagesRef,
+    setBackgroundImages: setBackgroundImagesWithPrefs,
     checkSystemHealth
   };
 };

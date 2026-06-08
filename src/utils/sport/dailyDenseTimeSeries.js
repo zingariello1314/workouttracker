@@ -74,3 +74,11 @@ export function defaultActivityRange(valueByDate, todayYmd) {
   const end = todayYmd >= start ? todayYmd : start;
   return { start, end };
 }
+
+/** Libellé axe graphique : jour-mois (ex. 2026-06-05 → 05-06). */
+export function formatChartDateDayMonth(ymd) {
+  const s = String(ymd ?? '').slice(0, 10);
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(s)) return s;
+  const [, month, day] = s.split('-');
+  return `${day}-${month}`;
+}
