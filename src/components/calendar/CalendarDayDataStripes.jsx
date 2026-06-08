@@ -1,13 +1,14 @@
 import React, { useMemo } from 'react';
+import { sortCalendarDayStripes } from '../../utils/calendarDayMomentumStripes';
 
-/** Vue année : cases ~20px — max 3 bandes fines ; mois : bandes plus épaisses. */
-const MAX_VISIBLE = { compact: 3, normal: 6 };
+/** Vue année : cases ~20px ; mois : place pour toutes les bandes demandées. */
+const MAX_VISIBLE = { compact: 4, normal: 10 };
 
 /** Hauteur réservée sous le numéro du jour (px). */
 export function calendarStripeReservePx(compact = false, stripeCount = 0) {
   const n = Math.min(stripeCount || 0, compact ? MAX_VISIBLE.compact : MAX_VISIBLE.normal);
   if (n <= 0) return 0;
-  const barH = compact ? 3 : 6;
+  const barH = compact ? 3 : 5;
   const gap = compact ? 1 : 2;
   return n * barH + (n - 1) * gap + (compact ? 3 : 6);
 }
@@ -21,10 +22,11 @@ export default function CalendarDayDataStripes({ stripes, compact = false }) {
       return { visible: [], extra: 0 };
     }
     const max = compact ? MAX_VISIBLE.compact : MAX_VISIBLE.normal;
+    const sorted = sortCalendarDayStripes(stripes);
     const filtered = compact
-      ? stripes.filter((s) => s.kind !== 'heartRate' && s.kind !== 'stress')
-      : stripes;
-    const list = (filtered.length ? filtered : stripes).slice(0, max);
+      ? sorted.filter((s) => s.kind !== 'heartRate' && s.kind !== 'stress')
+      : sorted;
+    const list = (filtered.length ? filtered : sorted).slice(0, max);
     return {
       visible: list,
       extra: Math.max(0, stripes.length - list.length)
@@ -33,7 +35,7 @@ export default function CalendarDayDataStripes({ stripes, compact = false }) {
 
   if (!visible.length) return null;
 
-  const barH = compact ? 3 : 6;
+  const barH = compact ? 3 : 5;
   const gap = compact ? 1 : 2;
   const insetX = compact ? 2 : 3;
   const insetBottom = compact ? 2 : 3;
@@ -59,8 +61,9 @@ export default function CalendarDayDataStripes({ stripes, compact = false }) {
               minHeight: barH,
               backgroundColor: stripe.color,
               borderRadius: compact ? 1 : 2,
-              boxShadow:
-                'inset 0 1px 0 rgba(255,255,255,0.35), 0 1px 2px rgba(0,0,0,0.45)'
+              border: '1px solid #000',
+              boxSizing: 'border-box',
+              boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.28)'
             }}
           />
         ))}

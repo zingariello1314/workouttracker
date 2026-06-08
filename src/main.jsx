@@ -60,6 +60,14 @@ if (typeof window !== 'undefined') {
       return;
     }
     
+    // Extensions navigateur (MetaMask, etc.) — contentscript.js, pas notre code
+    if (message.includes('MaxListenersExceededWarning') ||
+        message.includes('ObjectMultiplex') ||
+        message.includes('orphaned data for stream') ||
+        message.includes('malformed chunk without name')) {
+      return;
+    }
+
     // ✅ CORRECTION : Filtrer warnings Finance attendus (fallbacks normaux, cache stale)
     // Ces warnings sont normaux dans le fonctionnement du système
     if (message.includes('Alpha Vantage unexpected response structure') ||

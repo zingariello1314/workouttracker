@@ -48,7 +48,8 @@
     "weightUnit": "kg",
     "weightPerArm": "Saisie en kg par haltère (volume total ×2 si les deux bras)",
     "perSetOpen": "Poids par série",
-    "perSetReset": "Un seul poids pour l’exo"
+    "perSetReset": "Un seul poids pour l’exo",
+    "sessionEffortLabel": "Ressenti de la séance"
   },
   "recordDate": {
     "prevDay": "Jour précédent",

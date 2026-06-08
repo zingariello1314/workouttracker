@@ -31,6 +31,23 @@ export function getMomentumApiV1Base() {
   return 'http://127.0.0.1:8000';
 }
 
+const DEFAULT_API_FETCH_TIMEOUT_MS = 10000;
+
+/**
+ * @param {string} url
+ * @param {RequestInit} [options]
+ * @param {number} [timeoutMs]
+ */
+async function fetchWithTimeout(url, options = {}, timeoutMs = DEFAULT_API_FETCH_TIMEOUT_MS) {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
+  try {
+    return await fetch(url, { ...options, signal: controller.signal });
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
 /**
  * GET /api/v1/health — jalon « serveur Momentum » (optionnel : drapeaux Supabase).
  *
@@ -292,17 +309,21 @@ export async function fetchMomentumApiV1WorkoutAggregate(accessToken) {
   const token = String(accessToken || '').trim();
   if (!token) return null;
   const base = getMomentumApiV1Base();
-  const res = await fetch(`${base}/api/v1/workout/aggregate`, {
-    method: 'GET',
-    headers: {
-      Accept: 'application/json',
-      Authorization: `Bearer ${token}`
-    }
-  });
-  if (!res.ok) return null;
-  const json = await res.json().catch(() => null);
-  const parsed = safeParseWorkoutAggregateSnapshotGetV1(json);
-  return parsed.success ? parsed.data : null;
+  try {
+    const res = await fetchWithTimeout(`${base}/api/v1/workout/aggregate`, {
+      method: 'GET',
+      headers: {
+        Accept: 'application/json',
+        Authorization: `Bearer ${token}`
+      }
+    });
+    if (!res.ok) return null;
+    const json = await res.json().catch(() => null);
+    const parsed = safeParseWorkoutAggregateSnapshotGetV1(json);
+    return parsed.success ? parsed.data : null;
+  } catch {
+    return null;
+  }
 }
 
 /**
@@ -322,17 +343,21 @@ export async function putMomentumApiV1WorkoutAggregate(accessToken, body) {
   const parsedBody = safeParseWorkoutAggregateSnapshotPutBodyV1(raw);
   if (!parsedBody.success) return null;
   const base = getMomentumApiV1Base();
-  const res = await fetch(`${base}/api/v1/workout/aggregate`, {
-    method: 'PUT',
-    headers: {
-      Accept: 'application/json',
-      'Content-Type': 'application/json',
-      Authorization: `Bearer ${token}`
-    },
-    body: JSON.stringify(parsedBody.data)
-  });
-  if (!res.ok) return null;
-  const json = await res.json().catch(() => null);
-  const parsed = safeParseWorkoutAggregateSnapshotPutResponseV1(json);
-  return parsed.success ? parsed.data : null;
+  try {
+    const res = await fetchWithTimeout(`${base}/api/v1/workout/aggregate`, {
+      method: 'PUT',
+      headers: {
+        Accept: 'application/json',
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`
+      },
+      body: JSON.stringify(parsedBody.data)
+    });
+    if (!res.ok) return null;
+    const json = await res.json().catch(() => null);
+    const parsed = safeParseWorkoutAggregateSnapshotPutResponseV1(json);
+    return parsed.success ? parsed.data : null;
+  } catch {
+    return null;
+  }
 }

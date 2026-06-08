@@ -59,6 +59,20 @@ const RECOVERY_ATTEMPTS_KEY = 'nutrition_db_recovery_attempts';
 // ==================== DÉTECTION CORRUPTION ====================
 
 /**
+ * Connexion fermée par un autre module (ex. sport) — pas une corruption.
+ * @param {DOMException|Error} error
+ */
+export const isStaleDbConnectionError = (error) => {
+  if (!error) return false;
+  const msg = (error.message || '').toLowerCase();
+  return (
+    msg.includes('connection is closing') ||
+    msg.includes('database connection is closing') ||
+    msg.includes('idbdatabase') && msg.includes('closing')
+  );
+};
+
+/**
  * Détecte si une erreur indique une corruption IndexedDB
  * 
  * @param {DOMException|Error} error - Erreur à analyser
@@ -66,26 +80,54 @@ const RECOVERY_ATTEMPTS_KEY = 'nutrition_db_recovery_attempts';
  */
 export const isCorruptionError = (error) => {
   if (!error) return false;
-  
+  if (isStaleDbConnectionError(error)) return false;
+
   const errorName = error.name || error.constructor?.name || '';
-  
-  // Vérifier si erreur dans liste corruption
+
   if (CORRUPTION_ERROR_NAMES.includes(errorName)) {
     return true;
   }
-  
-  // Vérifier messages d'erreur typiques de corruption
+
   const errorMessage = (error.message || '').toLowerCase();
   const corruptionKeywords = [
     'corrupt',
     'invalid state',
-    'database',
     'object store',
-    'index',
-    'transaction'
+    'index'
   ];
-  
-  return corruptionKeywords.some(keyword => errorMessage.includes(keyword));
+
+  return corruptionKeywords.some((keyword) => errorMessage.includes(keyword));
+};
+
+/**
+ * Réouvre la connexion nutrition et propage aux singletons (repo, queue).
+ * @returns {Promise<IDBDatabase|null>}
+ */
+export const recoverStaleNutritionConnection = async () => {
+  try {
+    const { reopenNutritionDB } = await import('../../hooks/nutritionDataUtils.js');
+    const db = await reopenNutritionDB();
+    if (!db) return null;
+
+    try {
+      const { refreshNutritionRepositoryDb } = await import('./repository/repositoryFactory.js');
+      refreshNutritionRepositoryDb(db);
+    } catch {
+      // ignore
+    }
+    try {
+      const { refreshNutritionOfflineQueueDb } = await import('./nutritionOfflineQueue.js');
+      refreshNutritionOfflineQueueDb(db);
+    } catch {
+      // ignore
+    }
+
+    log.debug('[recoverStaleNutritionConnection] Connexion nutrition rétablie');
+    return db;
+  } catch (e) {
+    log.warn('[recoverStaleNutritionConnection] Échec réouverture:', e);
+    return null;
+  }
 };
 
 /**

@@ -485,3 +485,16 @@ export const getCacheStats = async () => {
   }
 };
 
+/** Ferme la connexion longue durée sur WorkoutTrackerDB (libère les transactions sport). */
+export const closePhotoPaginationCacheDb = () => {
+  if (dbInstance) {
+    try {
+      dbInstance.close();
+    } catch {
+      // ignore
+    }
+    dbInstance = null;
+  }
+  dbOpenPromise = null;
+};
+

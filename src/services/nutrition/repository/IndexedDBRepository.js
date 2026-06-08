@@ -41,6 +41,8 @@ import {
 // ✅ OPTIMISATION : Gestion corruption IndexedDB avec récupération automatique
 import {
   isCorruptionError,
+  isStaleDbConnectionError,
+  recoverStaleNutritionConnection,
   handleCorruption,
   verifyDatabaseIntegrity,
   clearCorruptionFlags
@@ -103,6 +105,23 @@ export class IndexedDBRepository extends NutritionRepository {
       log.warn('[isAvailable] Erreur vérification disponibilité:', error);
       return false;
     }
+  }
+
+  /**
+   * Réouvre la connexion si un autre module l’a fermée (sport, migration).
+   * @param {Error} error
+   * @returns {Promise<boolean>}
+   */
+  async tryRecoverStaleConnection(error) {
+    if (!isStaleDbConnectionError(error)) return false;
+    log.debug(`[${this.name}] Connexion IndexedDB périmée, réouverture…`);
+    const fresh = await recoverStaleNutritionConnection();
+    if (fresh) {
+      this.db = fresh;
+      this.corruptionHandled = false;
+      return true;
+    }
+    return false;
   }
 
   /**
@@ -171,23 +190,23 @@ export class IndexedDBRepository extends NutritionRepository {
 
       return result;
     } catch (error) {
-      // ✅ OPTIMISATION : Détecter et gérer corruption IndexedDB
+      if (await this.tryRecoverStaleConnection(error)) {
+        return this.getFromIndexedDB(store, key, operationName, quiet);
+      }
       if (isCorruptionError(error) && !this.corruptionHandled) {
         this.corruptionHandled = true;
         log.warn(`[${this.name}] Corruption détectée dans get, tentative récupération...`);
-        
+
         const recoveredDb = await handleCorruption(error, { autoRecover: true, autoReset: false });
         if (recoveredDb) {
           this.db = recoveredDb;
           this.corruptionHandled = false;
           clearCorruptionFlags();
           log.info(`[${this.name}] Récupération réussie, nouvelle tentative get...`);
-          // Retenter l'opération avec DB récupérée
-          return this.get(store, key, { ...options, quiet: true });
+          return this.getFromIndexedDB(store, key, operationName, quiet);
         }
       }
-      
-      // ✅ PHASE 12.2 : Convertir erreur IndexedDB en NutritionError standardisée
+
       const nutritionError = createNutritionErrorFromIndexedDB(
         error,
         operationName,
@@ -239,22 +258,23 @@ export class IndexedDBRepository extends NutritionRepository {
 
       return Array.isArray(results) ? results : [];
     } catch (error) {
-      // ✅ OPTIMISATION : Détecter et gérer corruption IndexedDB
+      if (await this.tryRecoverStaleConnection(error)) {
+        return this.getAll(store, { ...options, quiet: true });
+      }
       if (isCorruptionError(error) && !this.corruptionHandled) {
         this.corruptionHandled = true;
         log.warn(`[${this.name}] Corruption détectée dans getAll, tentative récupération...`);
-        
+
         const recoveredDb = await handleCorruption(error, { autoRecover: true, autoReset: false });
         if (recoveredDb) {
           this.db = recoveredDb;
           this.corruptionHandled = false;
           clearCorruptionFlags();
           log.info(`[${this.name}] Récupération réussie, nouvelle tentative getAll...`);
-          // Retenter l'opération avec DB récupérée
           return this.getAll(store, { ...options, quiet: true });
         }
       }
-      
+
       const nutritionError = createNutritionErrorFromIndexedDB(
         error,
         operationName,
@@ -465,12 +485,13 @@ export class IndexedDBRepository extends NutritionRepository {
         return true;
       }
     } catch (error) {
-      // ✅ PHASE 12.2 : Propager QuotaExceededError pour gestion UI
       if (error instanceof QuotaExceededError) {
         throw error;
       }
-      
-      // ✅ PHASE 12.2 : Convertir erreur IndexedDB en NutritionError standardisée
+      if (await this.tryRecoverStaleConnection(error)) {
+        return this.save(store, data, options);
+      }
+
       const nutritionError = error instanceof NutritionError
         ? error
         : createNutritionErrorFromIndexedDB(
@@ -526,22 +547,23 @@ export class IndexedDBRepository extends NutritionRepository {
       log.debug(`[${this.name}] Données supprimées`, { store, key });
       return true;
     } catch (error) {
-      // ✅ OPTIMISATION : Détecter et gérer corruption IndexedDB
+      if (await this.tryRecoverStaleConnection(error)) {
+        return this.delete(store, key, { ...options });
+      }
       if (isCorruptionError(error) && !this.corruptionHandled) {
         this.corruptionHandled = true;
         log.warn(`[${this.name}] Corruption détectée dans delete, tentative récupération...`);
-        
+
         const recoveredDb = await handleCorruption(error, { autoRecover: true, autoReset: false });
         if (recoveredDb) {
           this.db = recoveredDb;
           this.corruptionHandled = false;
           clearCorruptionFlags();
           log.info(`[${this.name}] Récupération réussie, nouvelle tentative delete...`);
-          // Retenter l'opération avec DB récupérée
           return this.delete(store, key, { ...options });
         }
       }
-      
+
       const nutritionError = createNutritionErrorFromIndexedDB(
         error,
         operationName,
@@ -798,22 +820,23 @@ export class IndexedDBRepository extends NutritionRepository {
 
       return { success, results, stats };
     } catch (error) {
-      // ✅ OPTIMISATION : Détecter et gérer corruption IndexedDB
+      if (await this.tryRecoverStaleConnection(error)) {
+        return this.batch(operations, { ...options, quiet: true });
+      }
       if (isCorruptionError(error) && !this.corruptionHandled) {
         this.corruptionHandled = true;
         log.warn(`[${this.name}] Corruption détectée dans batch, tentative récupération...`);
-        
+
         const recoveredDb = await handleCorruption(error, { autoRecover: true, autoReset: false });
         if (recoveredDb) {
           this.db = recoveredDb;
           this.corruptionHandled = false;
           clearCorruptionFlags();
           log.info(`[${this.name}] Récupération réussie, nouvelle tentative batch...`);
-          // Retenter l'opération avec DB récupérée
           return this.batch(operations, { ...options, quiet: true });
         }
       }
-      
+
       // ✅ PHASE 12.2 Étape 8 : Gestion explicite QuotaExceededError au niveau batch
       if (error instanceof QuotaExceededError) {
         const nutritionError = new NutritionError(

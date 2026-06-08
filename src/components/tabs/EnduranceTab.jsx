@@ -51,6 +51,7 @@ import PerformanceChallengesTab from './PerformanceChallengesTab.jsx';
 import CircuitsHubPanel from './EnduranceTab/components/CircuitsHubPanel.jsx';
 import PyramidTrainingPanel from '../sport/pyramid/PyramidTrainingPanel.jsx';
 import EnduranceDisciplineStatsPanel from '../sport/charts/EnduranceDisciplineStatsPanel.jsx';
+import RunningStatsPanel from './EnduranceTab/components/RunningStatsPanel.jsx';
 import {
   inferRunningSessionTypeFromGarminActivity,
   isGarminRunningLikeActivity,
@@ -58,6 +59,8 @@ import {
   shouldExcludeStoredGarminRunningSession
 } from '../../utils/garminRunningLaps';
 import { useGarminData } from '../../hooks/useGarminData';
+import { useGarminImport } from './GarminTab/hooks/useGarminImport';
+import { mergeGarminCardioIntoRunningSessions } from '../../utils/garminEnduranceSessionBridge';
 import { isWalkingLikeRunningSession } from '../../utils/runningSessionMovementKind';
 
 const EnduranceTab = () => {
@@ -108,6 +111,7 @@ const EnduranceTab = () => {
   };
   const challenges = enduranceState?.challenges || [];
   const { loadAllData, dbReady } = useGarminData();
+  const { importToEndurance } = useGarminImport();
   const [garminRunningKindByGarminId, setGarminRunningKindByGarminId] = useState(() => new Map());
   const [garminRunningById, setGarminRunningById] = useState(() => new Map());
   const ui = enduranceState?.ui || {
@@ -281,6 +285,33 @@ const EnduranceTab = () => {
       cancelled = true;
     };
   }, [dbReady, loadAllData, sessions.running]);
+
+  /** Importe les activités Garmin manquantes dans enduranceData (aligne historique ↔ stats km). */
+  useEffect(() => {
+    if (!dbReady || (activeTab !== 'running' && activeTab !== 'walking')) return;
+    let cancelled = false;
+    const runImport = async () => {
+      try {
+        const loaded = await loadAllData();
+        if (cancelled || !loaded?.activities) return;
+        await importToEndurance(loaded);
+      } catch (e) {
+        console.warn('[EnduranceTab] Import Garmin → endurance:', e);
+      }
+    };
+    runImport();
+    const onGarminUpdate = () => runImport();
+    window.addEventListener('garmin:data:updated', onGarminUpdate);
+    return () => {
+      cancelled = true;
+      window.removeEventListener('garmin:data:updated', onGarminUpdate);
+    };
+  }, [dbReady, activeTab, loadAllData, importToEndurance]);
+
+  const runningSessionsMerged = useMemo(() => {
+    const garminActs = garminRunningById ? [...garminRunningById.values()] : [];
+    return mergeGarminCardioIntoRunningSessions(sessions.running, garminActs);
+  }, [sessions.running, garminRunningById]);
 
   const saveEnduranceData = useCallback(async (newData) => {
     try {
@@ -1342,26 +1373,26 @@ const EnduranceTab = () => {
   }, [getEnduranceExercisesFromHistory]);
 
   const runningGarminCardioExcluded = useMemo(
-    () => (sessions.running || []).filter((s) => shouldExcludeStoredGarminRunningSession(s)),
-    [sessions.running]
+    () => runningSessionsMerged.filter((s) => shouldExcludeStoredGarminRunningSession(s)),
+    [runningSessionsMerged]
   );
   const walkingSessions = useMemo(
     () =>
-      (sessions.running || []).filter(
+      runningSessionsMerged.filter(
         (s) =>
           !shouldExcludeStoredGarminRunningSession(s) &&
           isWalkingLikeRunningSession(s, garminRunningById.get(String(s?.garminId ?? s?.id ?? '')) || null)
       ),
-    [sessions.running, garminRunningById]
+    [runningSessionsMerged, garminRunningById]
   );
   const runningSessionsNoWalk = useMemo(
     () =>
-      (sessions.running || []).filter(
+      runningSessionsMerged.filter(
         (s) =>
           !shouldExcludeStoredGarminRunningSession(s) &&
           !isWalkingLikeRunningSession(s, garminRunningById.get(String(s?.garminId ?? s?.id ?? '')) || null)
       ),
-    [sessions.running, garminRunningById]
+    [runningSessionsMerged, garminRunningById]
   );
 
   return (
@@ -2886,7 +2917,7 @@ const EnduranceTab = () => {
                   onEditSession={(type, id) => editSession(type, id)}
                 />
               ) : runningSubView === 'stats' ? (
-                <EnduranceDisciplineStatsPanel kind="running" sessions={runningSessionsNoWalk} />
+                <RunningStatsPanel sessions={runningSessionsNoWalk} garminById={garminRunningById} />
               ) : (
                 <>
               <RunningGarminSyncBlock />

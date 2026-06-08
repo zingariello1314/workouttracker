@@ -235,6 +235,20 @@ class NutritionOfflineQueue {
         request.onerror = () => reject(request.error);
       });
     } catch (error) {
+      try {
+        const { isStaleDbConnectionError, recoverStaleNutritionConnection } = await import(
+          './nutritionCorruptionHandler.js'
+        );
+        if (isStaleDbConnectionError(error)) {
+          const fresh = await recoverStaleNutritionConnection();
+          if (fresh) {
+            this.db = fresh;
+            return this.getPendingOperations(limit);
+          }
+        }
+      } catch {
+        // ignore
+      }
       log.error('[NutritionOfflineQueue] Erreur récupération opérations:', error);
       return [];
     }
@@ -539,6 +553,14 @@ export async function getNutritionOfflineQueue() {
  */
 export function resetNutritionOfflineQueue() {
   queueInstance = null;
+}
+
+/** Met à jour la connexion IndexedDB de la queue offline. */
+export function refreshNutritionOfflineQueueDb(db) {
+  if (queueInstance && db) {
+    queueInstance.db = db;
+    queueInstance.isInitialized = true;
+  }
 }
 
 // ==================== EXPORTS ====================

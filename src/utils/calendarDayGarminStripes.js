@@ -81,6 +81,15 @@ export function formatCalendarGarminStripesTooltip(stripes, t) {
   if (stripes.some((s) => s.kind === 'steps')) {
     parts.push(t('calendar.heatmap.stripes.tooltipSteps', 'Pas'));
   }
+  if (stripes.some((s) => s.kind === 'workout')) {
+    parts.push(t('calendar.heatmap.stripes.tooltipWorkout', 'Exercices cochés'));
+  }
+  if (stripes.some((s) => s.kind === 'stretch')) {
+    parts.push(t('calendar.heatmap.stripes.tooltipStretch', 'Étirements'));
+  }
+  if (stripes.some((s) => s.kind === 'momentumRun')) {
+    parts.push(t('calendar.heatmap.stripes.tooltipRunning', 'Course enregistrée'));
+  }
   const extras = stripes.filter((s) => s.kind === 'heartRate' || s.kind === 'stress').length;
   if (extras > 0) {
     parts.push(t('calendar.heatmap.stripes.tooltipMetrics', 'Autres métriques'));

@@ -4,62 +4,11 @@ import logger from '../../../../utils/logger';
 import {
   inferRunningSessionTypeFromGarminActivity,
   isGarminRunningLikeActivity,
-  isGarminWalkingLikeActivity,
-  garminMeetsEnduranceRunWalkImportThresholds
+  isGarminWalkingLikeActivity
 } from '../../../../utils/garminRunningLaps';
+import { buildEnduranceSessionFromGarminCardio } from '../../../../utils/garminEnduranceSessionBridge';
 
 const log = logger.hook('useGarminImport');
-
-function parseGarminActivityDateTime(gAct) {
-  const raw = gAct?.date;
-  if (!raw || typeof raw !== 'string') {
-    const d = new Date();
-    return { date: d.toISOString().slice(0, 10), time: d.toTimeString().slice(0, 8) };
-  }
-  if (raw.includes(' ')) {
-    const [dPart, tPart] = raw.split(/\s+/);
-    const date = dPart.length >= 10 ? dPart.slice(0, 10) : raw;
-    const time = (tPart || '00:00:00').slice(0, 8);
-    return { date, time };
-  }
-  if (raw.length >= 10) {
-    return {
-      date: raw.slice(0, 10),
-      time: String(gAct.time || '00:00:00').slice(0, 8)
-    };
-  }
-  const d = new Date();
-  return { date: d.toISOString().slice(0, 10), time: '00:00:00' };
-}
-
-function formatDurationHhMmSs(totalSeconds) {
-  const s = Math.max(0, Math.round(totalSeconds));
-  const h = Math.floor(s / 3600);
-  const m = Math.floor((s % 3600) / 60);
-  const sec = s % 60;
-  return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:${String(sec).padStart(2, '0')}`;
-}
-
-/** Allure min/km affichée comme dans l'UI Course (ex. 5:12) */
-function paceMinPerKm(distanceKm, totalSeconds) {
-  if (!distanceKm || distanceKm <= 0 || !totalSeconds || totalSeconds <= 0) return '';
-  const paceMin = (totalSeconds / 60) / distanceKm;
-  const mi = Math.floor(paceMin);
-  const se = Math.round((paceMin - mi) * 60);
-  return `${mi}:${String(se).padStart(2, '0')}`;
-}
-
-function distanceKmFromGarminActivity(gAct) {
-  const raw = gAct?.distance?.total ?? gAct?.distance?.value ?? gAct?.distance;
-  const d = Number(raw);
-  if (Number.isFinite(d) && d > 0) {
-    if (d > 400 && d < 200000) return d / 1000;
-    return d;
-  }
-  const m = Number(gAct?.distanceMeters ?? gAct?.running?.distanceMeters ?? gAct?.summaryDTO?.distanceMeters);
-  if (Number.isFinite(m) && m > 0) return m / 1000;
-  return 0;
-}
 
 /**
  * 🟡 FIX #21 : Hook pour gérer l'import automatique vers enduranceData.sessions
@@ -194,24 +143,10 @@ export function useGarminImport() {
               return;
             }
             if (isGarminRunningLikeActivity(gAct) || isGarminWalkingLikeActivity(gAct)) {
-              const durationSec = gAct.duration || 0;
-              const durationMinutes = durationSec / 60;
-              const distanceKm = distanceKmFromGarminActivity(gAct);
+              const session = buildEnduranceSessionFromGarminCardio(gAct);
+              if (!session) return;
+
               const isWalk = isGarminWalkingLikeActivity(gAct);
-
-              if (!garminMeetsEnduranceRunWalkImportThresholds(gAct, isWalk)) {
-                return;
-              }
-
-              if (durationMinutes >= 1440 || durationMinutes === 3600) {
-                log.warn(`Rejeté session running mock: durée excessive (${durationMinutes} min)`, gAct);
-                errors.push({ type: 'running', activity: gAct.id, error: `Durée excessive: ${durationMinutes} min` });
-                return;
-              }
-              if (distanceKm <= 0 || durationSec <= 0) {
-                return;
-              }
-
               const runType = isWalk ? 'walk' : inferRunningSessionTypeFromGarminActivity(gAct);
               const hasLaps = Array.isArray(gAct?.running?.laps) && gAct.running.laps.length > 0;
 
@@ -237,29 +172,10 @@ export function useGarminImport() {
               } else if (
                 !activityExists(gAct, { swimming: [], jumprope: existingJumpRope, running: existingRunning })
               ) {
-                const { date, time } = parseGarminActivityDateTime(gAct);
-                const pace = paceMinPerKm(distanceKm, durationSec);
-                const speed = (distanceKm / (durationSec / 3600)).toFixed(2);
-                const elevGain = gAct.elevation?.gain;
-                const name = gAct.activityName || (isWalk ? 'Marche' : 'Course');
-                const session = {
-                  id: gAct.id || Date.now() + Math.random(),
-                  garminId: gAct.garminId || gAct.id,
-                  date,
-                  time,
-                  distance: Math.round(distanceKm * 1000) / 1000,
-                  duration: formatDurationHhMmSs(durationSec),
-                  type: runType,
-                  pace,
-                  speed,
-                  elevation: elevGain != null && elevGain !== '' ? Math.round(elevGain) : '',
-                  avgHR: gAct.avgHR || 0,
-                  maxHR: gAct.maxHR || 0,
-                  calories: typeof gAct.calories === 'object' ? (gAct.calories?.total || 0) : (gAct.calories || 0),
-                  source: 'garmin',
-                  notes: `Garmin — ${name}`
-                };
-                existingRunning.push(session);
+                existingRunning.push({
+                  ...session,
+                  id: gAct.id || Date.now() + Math.random()
+                });
                 importedCount++;
               }
             }

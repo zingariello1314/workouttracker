@@ -197,3 +197,20 @@ export const getCachedNamespace = (language, namespace) => {
   return loadedNamespaces[language]?.[namespace] || null;
 };
 
+/** En dev : invalider le cache quand un fichier de traduction change (évite clés « manquantes » obsolètes). */
+if (import.meta.hot) {
+  import.meta.hot.on('vite:beforeUpdate', (payload) => {
+    const paths = (payload?.updates || [])
+      .map((u) => String(u.path || ''))
+      .concat(payload?.path ? [String(payload.path)] : []);
+    const touchesTranslations = paths.some((p) => p.includes('/translations/') || p.endsWith('.json'));
+    if (!touchesTranslations) return;
+    clearNamespaceCache();
+    import('./validator.js')
+      .then((m) => {
+        if (typeof m.resetMissingKeys === 'function') m.resetMissingKeys();
+      })
+      .catch(() => {});
+  });
+}
+

@@ -21,6 +21,41 @@
   <body>
     <div id="root"></div>
 
+    <!-- Filtre console le plus tôt possible (extensions type MetaMask → contentscript.js) -->
+    <script>
+      (function () {
+        function extNoise(text) {
+          return (
+            text.indexOf('MaxListenersExceededWarning') !== -1 ||
+            text.indexOf('ObjectMultiplex') !== -1 ||
+            text.indexOf('orphaned data for stream') !== -1 ||
+            text.indexOf('malformed chunk without name') !== -1 ||
+            text.indexOf('app-init-liveness') !== -1 ||
+            text.indexOf('background-liveness') !== -1
+          );
+        }
+        function flatten(args) {
+          return Array.from(args)
+            .map(function (a) {
+              if (typeof a === 'string') return a;
+              if (a && typeof a === 'object') {
+                try { return JSON.stringify(a); } catch (e) { return String(a); }
+              }
+              return String(a);
+            })
+            .join(' ');
+        }
+        ['warn', 'error', 'log'].forEach(function (level) {
+          var orig = console[level];
+          if (typeof orig !== 'function') return;
+          console[level] = function () {
+            if (extNoise(flatten(arguments))) return;
+            return orig.apply(console, arguments);
+          };
+        });
+      })();
+    </script>
+
     <script type="module" src="/src/main.jsx"></script>
   </body>
 </html>

@@ -5,7 +5,11 @@
  */
 
 import { parseDurationToMinutes } from './calendarUtils';
-import { isGarminWalkingLikeActivity, shouldExcludeStoredGarminRunningSession } from './garminRunningLaps';
+import {
+  isGarminRunningLikeActivity,
+  isGarminWalkingLikeActivity,
+  shouldExcludeStoredGarminRunningSession
+} from './garminRunningLaps';
 import { deriveCadenceSpmFromGarmin } from './runningGarminMetrics';
 
 function toNum(v, fb = 0) {
@@ -41,6 +45,11 @@ function avgSpeedKmh(session) {
  */
 export function isWalkingLikeRunningSession(session, garmin = null) {
   if (garmin && isGarminWalkingLikeActivity(garmin)) return true;
+  // Aligné sur GarminRunningStatsCard : une activité classée « course » côté Garmin
+  // ne doit pas être reléguée en marche uniquement à cause d'une allure lente (tapis, EF…).
+  if (garmin && isGarminRunningLikeActivity(garmin) && !isGarminWalkingLikeActivity(garmin)) {
+    return false;
+  }
 
   const typeStr = `${session?.type || ''} ${session?.notes || ''} ${session?.title || ''}`.toLowerCase();
   if (/\b(walk|walking|marche|rando|hike|hiking)\b/i.test(typeStr)) return true;

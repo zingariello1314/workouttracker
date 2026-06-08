@@ -3,10 +3,19 @@ import { cleanJustifications } from '../utils/dayJustificationUtils';
 import { DEFAULT_ADDICTION_QUIT_DATA } from '../utils/addictionQuitConstants';
 import { deriveJourneyStartYmd } from '../utils/sport/recapUserAssessment';
 import {
-  backupWorkoutToLocalStorage,
   hasWorkoutContent,
-  loadWorkoutFromLocalStorage,
 } from '../utils/workoutPersistence';
+import {
+  extractDaySliceFromAggregate,
+  mergeSessionDaysIntoAggregate,
+  workoutMetadataFingerprint,
+  listLegacySessionDatesInAggregate,
+} from '../utils/workoutSessionPersistence.js';
+import { persistWorkoutSessionDay } from '../services/workout/workoutDbGateway.js';
+import {
+  getAllWorkoutSessionsForScope,
+  migrateLegacySessionsFromAggregate,
+} from '../services/workout/workoutSessionDbGateway.js';
 import logger from '../utils/logger';
 import { readServerTokens } from '../utils/serverAuthApi.js';
 import { createWorkoutRepository } from '../services/workout/createWorkoutRepository.js';
@@ -230,8 +239,72 @@ export const useWorkoutData = (options = {}) => {
   // Tous les useRef doivent être déclarés avant les useCallback et useEffect
   const debounceTimerRef = useRef(null);
   const isInitialLoadRef = useRef(true);
+  /** File d’attente : une seule écriture IndexedDB à la fois (F-04). */
+  const saveChainRef = useRef(Promise.resolve());
+  /** Après sauvegarde manuelle, ignorer autoSave debounce (F-03). */
+  const suppressAutoSaveUntilRef = useRef(0);
+  /** Empreinte légère pour éviter JSON.stringify complet dans autoSave. */
+  const lastAutoSaveFingerprintRef = useRef('');
+  /** Dernier put métadonnées `workouts` (évite réécriture photos / endurance). */
+  const lastMetadataFingerprintRef = useRef('');
+  const sessionMigrationDoneRef = useRef(new Set());
   /** Repository Phase 1 — seule voie d’accès au store `workouts` (IndexedDB). */
   const workoutRepoRef = useRef(null);
+
+  const workoutDataFingerprint = (payload) => {
+    if (!payload || typeof payload !== 'object') return '0';
+    const ce = payload.checkedExercises || {};
+    const reps = payload.reps || {};
+    const cs = payload.checkedStretches || {};
+    let checkedCount = 0;
+    for (const v of Object.values(ce)) {
+      if (v === true) checkedCount += 1;
+    }
+    let repSum = 0;
+    for (const v of Object.values(reps)) {
+      repSum += parseInt(v, 10) || 0;
+    }
+    let stretchCount = 0;
+    for (const v of Object.values(cs)) {
+      if (v === true) stretchCount += 1;
+    }
+    return [
+      Object.keys(ce).length,
+      checkedCount,
+      Object.keys(reps).length,
+      repSum,
+      Object.keys(cs).length,
+      stretchCount,
+      payload.lastSaved || '',
+    ].join('|');
+  };
+
+  const runSerializedSave = useCallback((saveTask, options = {}) => {
+    if (options.priority) {
+      if (debounceTimerRef.current) {
+        clearTimeout(debounceTimerRef.current);
+        debounceTimerRef.current = null;
+      }
+      saveChainRef.current = Promise.resolve();
+    }
+    const task = saveChainRef.current.then(() => saveTask());
+    saveChainRef.current = task.catch(() => {});
+    return task;
+  }, []);
+
+  const enrichWorkoutStateWithSessions = useCallback(async (baseState) => {
+    let state = baseState && typeof baseState === 'object' ? { ...baseState } : { ...INITIAL_WORKOUT_DATA };
+    try {
+      const idbSessions = await getAllWorkoutSessionsForScope(storageKey);
+      if (idbSessions.length > 0) {
+        state = mergeSessionDaysIntoAggregate(state, idbSessions);
+      }
+    } catch (e) {
+      workoutDataLog.warn('Lecture workoutSessions ignorée', e);
+    }
+    return state;
+  }, [storageKey]);
+
   const getWorkoutRepo = useCallback(() => {
     if (typeof window === 'undefined') return null;
     if (!workoutRepoRef.current) {
@@ -561,15 +634,60 @@ export const useWorkoutData = (options = {}) => {
     };
   };
 
+  /** Valide uniquement les maps d’un jour (chemin incrémental). */
+  const sanitizeSessionDaySlice = (slice) => {
+    const mapFields = { ...(slice.mapFields || {}) };
+    if (mapFields.reps) {
+      const cleanReps = {};
+      for (const [key, value] of Object.entries(mapFields.reps)) {
+        if (value !== '' && value !== undefined && value !== null) {
+          const numValue = parseInt(value, 10);
+          if (!Number.isNaN(numValue) && numValue >= 0 && numValue <= 999) {
+            cleanReps[key] = numValue.toString();
+          }
+        } else if (value === '') {
+          cleanReps[key] = '';
+        }
+      }
+      mapFields.reps = cleanReps;
+    }
+    return { ...slice, mapFields };
+  };
+
+  const saveSessionDayIncremental = async (newData, effectiveKey, sessionDay) => {
+    const slice = sanitizeSessionDaySlice(extractDaySliceFromAggregate(newData, sessionDay));
+    await persistWorkoutSessionDay(effectiveKey, sessionDay, newData, slice);
+
+    if (!ephemeral && !generateTestData && isWorkoutAggregateCloudSyncEnabled()) {
+      const { accessToken } = readServerTokens();
+      const cloudRow = { ...newData, id: effectiveKey, lastSaved: new Date().toISOString() };
+      void flushWorkoutAggregateCloudPushNow({ accessToken, storageKey: effectiveKey, row: cloudRow });
+    }
+  };
+
   const saveToDB = async (newData, saveOptions = {}) => {
-    const { storageKeyOverride, forcePersist = false } = saveOptions;
+    const {
+      storageKeyOverride,
+      forcePersist = false,
+      incrementalSession = false,
+      sessionDay = null,
+    } = saveOptions;
     const effectiveKey = storageKeyOverride || storageKey;
 
     try {
-      
-      // Validation stricte des données avant sauvegarde
       if (!newData || typeof newData !== 'object') {
         throw new Error('Données invalides pour la sauvegarde');
+      }
+
+      if (
+        incrementalSession &&
+        sessionDay &&
+        /^\d{4}-\d{2}-\d{2}$/.test(sessionDay) &&
+        !ephemeral
+      ) {
+        await saveSessionDayIncremental(newData, effectiveKey, sessionDay);
+        workoutDataLog.debug(`✅ Séance incrémentale ${sessionDay} (${effectiveKey})`);
+        return;
       }
 
       // Validation de l'intégrité des propriétés critiques
@@ -731,8 +849,6 @@ export const useWorkoutData = (options = {}) => {
         newData.weekVariant = 'A';
       }
       
-      backupWorkoutToLocalStorage(effectiveKey, newData);
-
       if (ephemeral && !forcePersist) {
         return;
       }
@@ -863,108 +979,51 @@ export const useWorkoutData = (options = {}) => {
         dataVersion: '1.0' // Ajout d'une version pour la compatibilité future
       };
 
-      const writeScopedBackup = () => {
-        try {
-          localStorage.setItem(`workoutData_backup_${effectiveKey}`, JSON.stringify(newData));
-          localStorage.setItem(`workoutData_lastSaved_${effectiveKey}`, new Date().toISOString());
-        } catch (e) {
-          console.warn('⚠️ Impossible de sauvegarder en localStorage:', e);
-        }
-      };
-
       const repo = getWorkoutRepo();
       if (repo?.saveRawWorkoutRow) {
-        try {
-          await repo.saveRawWorkoutRow(effectiveKey, dataToSave);
-          writeScopedBackup();
-          if (!ephemeral && !generateTestData && isWorkoutAggregateCloudSyncEnabled()) {
-            const { accessToken } = readServerTokens();
-            void flushWorkoutAggregateCloudPushNow({ accessToken, storageKey: effectiveKey, row: dataToSave });
-          }
-          return;
-        } catch (repoErr) {
-          console.error('❌ Erreur lors de la sauvegarde IndexedDB (repository):', repoErr);
+        await repo.saveRawWorkoutRow(effectiveKey, dataToSave);
+        if (!ephemeral && !generateTestData && isWorkoutAggregateCloudSyncEnabled()) {
+          const { accessToken } = readServerTokens();
+          void flushWorkoutAggregateCloudPushNow({ accessToken, storageKey: effectiveKey, row: dataToSave });
         }
-      }
-
-      // IndexedDB indisponible ou échec : même repli qu’avant `openDB() === null`
-      try {
-        localStorage.setItem('workoutData_backup', JSON.stringify(newData));
-        writeScopedBackup();
         return;
-      } catch (localStorageError) {
-        console.error('❌ Échec de la sauvegarde localStorage:', localStorageError);
-        throw new Error('Impossible de sauvegarder les données');
       }
 
+      throw new Error('WORKOUT_DB_UNAVAILABLE');
     } catch (error) {
       console.error('❌ Erreur dans saveToDB:', error);
-      
-      // Fallback vers localStorage en cas d'erreur critique
-      try {
-        // Nettoyer d'abord pour libérer de l'espace
-        cleanupLocalStorage();
-        
-        localStorage.setItem(`workoutData_backup_${storageKey}`, JSON.stringify(newData));
-        localStorage.setItem(`workoutData_lastSaved_${storageKey}`, new Date().toISOString());
-        workoutDataLog.debug('✅ Sauvegarde de secours réussie dans localStorage');
-      } catch (localStorageError) {
-        console.error('❌ Échec de la sauvegarde de secours:', localStorageError);
-        
-        // Dernière tentative : sauvegarder seulement les données essentielles
-        try {
-          const essentialData = {
-            checkedExercises: newData.checkedExercises || {},
-            reps: newData.reps || {},
-            exerciseWeights: newData.exerciseWeights || {},
-            exerciseWeightPerArm: newData.exerciseWeightPerArm || {},
-            exerciseSetWeights: newData.exerciseSetWeights || {},
-            checkedStretches: newData.checkedStretches || {},
-            startDate: newData.startDate || null,
-            weekVariant: newData.weekVariant || 'A',
-            progressPhotos: [],
-            sessionFeedbacks: newData.sessionFeedbacks || {},
-            dailyVariations: newData.dailyVariations || {},
-            dailyVariationsVersion: newData.dailyVariationsVersion || '1.0',
-            homepageImages: {
-              backgroundImages: [],
-              bannerImages: [],
-              lastUpdated: new Date().toISOString()
-            },
-            lastSaved: new Date().toISOString(),
-            dataVersion: '1.0'
-          };
-          
-          localStorage.setItem(`workoutData_essential_${storageKey}`, JSON.stringify(essentialData));
-          workoutDataLog.debug('✅ Sauvegarde des données essentielles réussie');
-        } catch (essentialError) {
-          console.error('❌ Échec de la sauvegarde des données essentielles:', essentialError);
-          throw new Error('Impossible de sauvegarder les données - tous les systèmes de sauvegarde ont échoué');
-        }
-      }
+      throw error;
     }
   };
 
   // Fonction de sauvegarde automatique avec debounce optimisé et backup renforcé
   const autoSave = useCallback((newData) => {
+    if (Date.now() < suppressAutoSaveUntilRef.current) {
+      return;
+    }
+
     // Annuler le timer précédent s'il existe
     if (debounceTimerRef.current) {
       clearTimeout(debounceTimerRef.current);
     }
 
-    // Vérifier si les données ont réellement changé pour éviter les sauvegardes inutiles
-    const currentDataString = JSON.stringify(data);
-    const newDataString = JSON.stringify(newData);
-    
-    if (currentDataString === newDataString) {
+    const fingerprint = workoutDataFingerprint(newData);
+    if (fingerprint === lastAutoSaveFingerprintRef.current) {
       return;
     }
 
     // Programmer une nouvelle sauvegarde après 1 seconde d'inactivité
     debounceTimerRef.current = setTimeout(async () => {
+      if (Date.now() < suppressAutoSaveUntilRef.current) {
+        return;
+      }
+      const fpAtFire = workoutDataFingerprint(newData);
+      if (fpAtFire === lastAutoSaveFingerprintRef.current) {
+        return;
+      }
       try {
-        // Sauvegarde principale
-        await saveToDB(newData);
+        await runSerializedSave(() => saveToDB(newData));
+        lastAutoSaveFingerprintRef.current = fpAtFire;
         
         // Backup supplémentaire pour les images de la page d'accueil
         if (newData.homepageImages) {
@@ -1001,7 +1060,7 @@ export const useWorkoutData = (options = {}) => {
         console.error('❌ Erreur lors de la sauvegarde automatique:', error);
       }
     }, 1000);
-  }, [data]);
+  }, [runSerializedSave]);
 
   // Fonction de nettoyage automatique du localStorage
   const cleanupLocalStorage = () => {
@@ -1042,33 +1101,30 @@ export const useWorkoutData = (options = {}) => {
       }
 
       if (result) {
-        return materializeValidatedFromIdbRow(result);
+        let state = materializeValidatedFromIdbRow(result);
+        state = await enrichWorkoutStateWithSessions(state);
+        const legacyDates = listLegacySessionDatesInAggregate(result.data || result);
+        if (legacyDates.length > 0 && !sessionMigrationDoneRef.current.has(storageKey)) {
+          sessionMigrationDoneRef.current.add(storageKey);
+          void (async () => {
+            try {
+              const flat = result.data || result;
+              const n = await migrateLegacySessionsFromAggregate(storageKey, flat);
+              if (n > 0) {
+                workoutDataLog.debug(`📦 Migration ${n} séances → workoutSessions (${storageKey})`);
+              }
+            } catch (e) {
+              workoutDataLog.warn('Migration workoutSessions ignorée', e);
+              sessionMigrationDoneRef.current.delete(storageKey);
+            }
+          })();
+        }
+        return state;
       }
 
-      try {
-        const backupData = localStorage.getItem(`workoutData_backup_${storageKey}`);
-        if (backupData) {
-          return stateFromLsBackup(JSON.parse(backupData));
-        }
-      } catch (backupError) {
-        console.error('❌ Erreur lors de la récupération du backup:', backupError);
-      }
       return null;
     } catch (error) {
       console.error('❌ Erreur dans loadFromDB:', error);
-      
-      // Fallback vers localStorage en cas d'erreur critique
-      try {
-        const backupData = localStorage.getItem(`workoutData_backup_${storageKey}`);
-        if (backupData) {
-          const parsedBackup = JSON.parse(backupData);
-          // ✅ Migration automatique des données localStorage
-          return migrateDailyVariations(parsedBackup);
-        }
-      } catch (backupError) {
-        console.error('❌ Erreur lors de la récupération du backup après erreur critique:', backupError);
-      }
-      
       return null;
     }
   };
@@ -1076,29 +1132,7 @@ export const useWorkoutData = (options = {}) => {
   const loadData = async () => {
     let savedData = await loadFromDB();
 
-    const fromLocalBackup = loadWorkoutFromLocalStorage(storageKey);
-
-    if (!savedData || !hasWorkoutContent(savedData)) {
-      if (fromLocalBackup && hasWorkoutContent(fromLocalBackup)) {
-        savedData = fromLocalBackup;
-        if (!ephemeral) {
-          try {
-            await saveToDB(fromLocalBackup);
-          } catch {
-            // IndexedDB optionnel si localStorage a les données
-          }
-        }
-      }
-    } else if (fromLocalBackup) {
-      const idbDefs = savedData.circuitDefinitions || {};
-      const lsDefs = fromLocalBackup.circuitDefinitions || {};
-      if (Object.keys(lsDefs).length > Object.keys(idbDefs).length) {
-        savedData = {
-          ...savedData,
-          circuitDefinitions: { ...lsDefs, ...idbDefs }
-        };
-      }
-    }
+    savedData = await enrichWorkoutStateWithSessions(savedData || { ...INITIAL_WORKOUT_DATA });
 
     if (!ephemeral && !generateTestData && isWorkoutAggregateCloudSyncEnabled()) {
       const { accessToken } = readServerTokens();
@@ -1119,6 +1153,7 @@ export const useWorkoutData = (options = {}) => {
             const normalized = normalizeWorkoutAggregateRawForIdb(chosenRaw, storageKey);
             await repo.saveRawWorkoutRow(storageKey, normalized);
             savedData = materializeValidatedFromIdbRow(normalized);
+            savedData = await enrichWorkoutStateWithSessions(savedData);
           }
         } catch (e) {
           workoutDataLog.warn('Fusion snapshot workout cloud ignorée', e);
@@ -1128,6 +1163,7 @@ export const useWorkoutData = (options = {}) => {
 
     if (savedData && hasWorkoutContent(savedData)) {
       setData(savedData);
+      lastMetadataFingerprintRef.current = workoutMetadataFingerprint(savedData);
     } else {
       // Si aucune donnée n'existe
       if (generateTestData) {
@@ -1138,17 +1174,8 @@ export const useWorkoutData = (options = {}) => {
         // Sauvegarder les données de test
         await saveToDB(testData);
       } else {
-        const fromLocal = loadWorkoutFromLocalStorage(storageKey);
-        if (fromLocal && hasWorkoutContent(fromLocal)) {
-          workoutDataLog.debug(`🎯 Données restaurées depuis localStorage pour ${storageKey}`);
-          setData(fromLocal);
-          if (!ephemeral) {
-            await saveToDB(fromLocal);
-          }
-        } else {
-          workoutDataLog.debug(`🎯 Aucune donnée pour ${storageKey}, état vide en mémoire (sans écraser IndexedDB)`);
-          setData(INITIAL_WORKOUT_DATA);
-        }
+        workoutDataLog.debug(`🎯 Aucune donnée IndexedDB pour ${storageKey}, état vide en mémoire`);
+        setData(INITIAL_WORKOUT_DATA);
       }
     }
     // Marquer que le chargement initial est terminé pour ce storageKey
@@ -1156,7 +1183,7 @@ export const useWorkoutData = (options = {}) => {
   };
 
   const updateData = async (newData, options = {}) => {
-    const { strict = false } = options;
+    const { strict = false, sessionDay = null } = options;
     workoutDataLog.debug('🔄 updateData appelé avec:', newData);
     let toStore = newData;
     if (newData && typeof newData === 'object' && !newData.trainingPrefs?.journeyStartYmd) {
@@ -1171,26 +1198,33 @@ export const useWorkoutData = (options = {}) => {
         };
       }
     }
+    if (strict) {
+      if (debounceTimerRef.current) {
+        clearTimeout(debounceTimerRef.current);
+        debounceTimerRef.current = null;
+      }
+      suppressAutoSaveUntilRef.current = Date.now() + 3000;
+    }
     setData(toStore);
-    backupWorkoutToLocalStorage(storageKey, toStore);
 
     try {
-      // Sauvegarde manuelle immédiate (pour les boutons de sauvegarde existants)
-      await saveToDB(toStore);
+      const saveOpts = {
+        incrementalSession: Boolean(strict && sessionDay),
+        sessionDay: sessionDay || null,
+      };
+      if (strict && sessionDay) {
+        await saveToDB(toStore, saveOpts);
+      } else {
+        await runSerializedSave(() => saveToDB(toStore, saveOpts), { priority: Boolean(strict) });
+      }
+      lastAutoSaveFingerprintRef.current = workoutDataFingerprint(toStore);
       workoutDataLog.debug('✅ Données sauvegardées avec succès');
-      
-      // Notifier le contexte que des données ont été sauvegardées SEULEMENT si la sauvegarde a réussi
+
       if (window.workoutContextCallback) {
         window.workoutContextCallback();
       }
     } catch (error) {
       console.error('❌ Erreur lors de la sauvegarde dans updateData:', error);
-      try {
-        backupWorkoutToLocalStorage(storageKey, toStore);
-        workoutDataLog.debug('💾 Sauvegarde de secours localStorage (updateData)');
-      } catch (localStorageError) {
-        console.error('❌ Échec de la sauvegarde de secours:', localStorageError);
-      }
       if (strict) throw error;
     }
   };
@@ -1207,20 +1241,9 @@ export const useWorkoutData = (options = {}) => {
     cleanupLocalStorage();
   }, [storageKey, deferLoad]);
 
-  // Effet pour la sauvegarde automatique à chaque changement de données
-  useEffect(() => {
-    // Ne pas sauvegarder automatiquement lors du chargement initial
-    if (isInitialLoadRef.current) {
-      return;
-    }
-    // Déconnecté : ne pas écraser le backup IndexedDB avec l'état vide éphémère
-    if (ephemeral) {
-      return;
-    }
-
-    // Sauvegarder automatiquement avec debounce
-    autoSave(data);
-  }, [data, autoSave, ephemeral]);
+  // Pas d’autoSave sur chaque setData : bloquait la file d’attente (sauvegarde
+  // monolithique ~1 s après chaque chargement) et provoquait timeout Enregistrer.
+  // Persistance : updateData (strict), flush pagehide → IndexedDB.
 
   const dataRef = useRef(data);
   useEffect(() => {
@@ -1245,12 +1268,14 @@ export const useWorkoutData = (options = {}) => {
       }
       const latest = dataRef.current;
       if (!latest || !hasWorkoutContent(latest)) return;
-      saveToDB(latest, {
-        storageKeyOverride: key,
-        forcePersist: options.forcePersist === true,
-      }).catch(() => {});
+      runSerializedSave(() =>
+        saveToDB(latest, {
+          storageKeyOverride: key,
+          forcePersist: options.forcePersist === true,
+        })
+      ).catch(() => {});
     },
-    [storageKey, saveToDB]
+    [storageKey, runSerializedSave]
   );
 
   // Flush IndexedDB avant fermeture / rechargement (évite perte reps / cases cochées)
@@ -1328,6 +1353,7 @@ export const useWorkoutData = (options = {}) => {
     saveToDB,
     loadFromDB,
     saveSessionFeedback,
-    cancelPendingAutoSave
+    cancelPendingAutoSave,
+    flushPendingSaveNow,
   };
 };

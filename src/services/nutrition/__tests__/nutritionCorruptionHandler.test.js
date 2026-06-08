@@ -26,6 +26,7 @@ import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import 'fake-indexeddb/auto';
 import {
   isCorruptionError,
+  isStaleDbConnectionError,
   verifyDatabaseIntegrity,
   attemptRecovery,
   resetDatabase,
@@ -143,6 +144,15 @@ describe('nutritionCorruptionHandler', () => {
     it('ne devrait pas détecter null/undefined', () => {
       expect(isCorruptionError(null)).toBe(false);
       expect(isCorruptionError(undefined)).toBe(false);
+    });
+
+    it('ne devrait pas traiter une connexion en fermeture comme corruption', () => {
+      const error = createDOMException(
+        'InvalidStateError',
+        "Failed to execute 'transaction' on 'IDBDatabase': The database connection is closing."
+      );
+      expect(isStaleDbConnectionError(error)).toBe(true);
+      expect(isCorruptionError(error)).toBe(false);
     });
   });
 

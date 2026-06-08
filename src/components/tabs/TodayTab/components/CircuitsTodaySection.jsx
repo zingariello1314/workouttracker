@@ -194,7 +194,23 @@ const CircuitCard = ({ circuit, rounds, onIncrement, onDecrement }) => {
   );
 };
 
-const CircuitsTodaySection = ({ dayName, dateStr }) => {
+/**
+ * Circuits planifiés pour un jour de programme + suivi des tours sur une date calendaire.
+ * @param {string} dayName — jour du programme (lundi…)
+ * @param {string} dateStr — date YYYY-MM-DD pour la progression
+ * @param {object} [program] — programme (défaut : programme actif)
+ * @param {boolean} [embedded] — style intégré (calendrier) sans carte englobante
+ * @param {string} [title] — titre de section personnalisé
+ * @param {string} [hint] — sous-texte optionnel
+ */
+export const CircuitsDaySection = ({
+  dayName,
+  dateStr,
+  program: programProp,
+  embedded = false,
+  title,
+  hint
+}) => {
   const {
     data,
     activeProgram,
@@ -202,12 +218,13 @@ const CircuitsTodaySection = ({ dayName, dateStr }) => {
     decrementCircuitRound
   } = useWorkout();
 
+  const program = programProp ?? activeProgram;
   const circuitDefinitions = data?.circuitDefinitions || {};
   const circuitProgressForDay = data?.circuitProgress?.[dateStr] || {};
 
   const visibleCircuits = useMemo(() => {
     const ids = new Set();
-    getCircuitIdsForDay(activeProgram, dayName).forEach((id) => ids.add(id));
+    getCircuitIdsForDay(program, dayName).forEach((id) => ids.add(id));
     Object.keys(circuitProgressForDay).forEach((id) => ids.add(id));
     const out = [];
     ids.forEach((id) => {
@@ -215,39 +232,63 @@ const CircuitsTodaySection = ({ dayName, dateStr }) => {
       if (def) out.push(def);
     });
     return out.sort((a, b) => (a.name || '').localeCompare(b.name || '', 'fr'));
-  }, [activeProgram, dayName, circuitDefinitions, circuitProgressForDay]);
+  }, [program, dayName, circuitDefinitions, circuitProgressForDay]);
 
   if (visibleCircuits.length === 0) return null;
+
+  const sectionTitle = title || `Circuits du jour (${visibleCircuits.length})`;
+
+  const cards = (
+    <div className="space-y-3">
+      {visibleCircuits.map((c) => {
+        const rounds = Math.max(
+          0,
+          Math.round(Number(circuitProgressForDay[c.id]?.roundsCompleted) || 0)
+        );
+        return (
+          <CircuitCard
+            key={c.id}
+            circuit={c}
+            rounds={rounds}
+            onIncrement={() => incrementCircuitRound(dateStr, c.id)}
+            onDecrement={() => decrementCircuitRound(dateStr, c.id)}
+          />
+        );
+      })}
+    </div>
+  );
+
+  if (embedded) {
+    return (
+      <div className="space-y-3 border-t border-sky-500/35 pt-4">
+        <div>
+          <h4 className="flex items-center gap-2 text-sm font-semibold text-sky-200">
+            <Repeat className="h-4 w-4 text-sky-300" />
+            {sectionTitle}
+          </h4>
+          {hint ? <p className="mt-1 text-xs text-slate-400 leading-relaxed">{hint}</p> : null}
+        </div>
+        {cards}
+      </div>
+    );
+  }
 
   return (
     <Card variant="sport">
       <Card.Header variant="sport">
         <Card.Title tone="sport" className="flex items-center">
           <Repeat className="mr-2 text-sky-300" size={20} />
-          Circuits du jour ({visibleCircuits.length})
+          {sectionTitle}
         </Card.Title>
       </Card.Header>
       <Card.Content>
-        <div className="space-y-3">
-          {visibleCircuits.map((c) => {
-            const rounds = Math.max(
-              0,
-              Math.round(Number(circuitProgressForDay[c.id]?.roundsCompleted) || 0)
-            );
-            return (
-              <CircuitCard
-                key={c.id}
-                circuit={c}
-                rounds={rounds}
-                onIncrement={() => incrementCircuitRound(dateStr, c.id)}
-                onDecrement={() => decrementCircuitRound(dateStr, c.id)}
-              />
-            );
-          })}
-        </div>
+        {hint ? <p className="mb-3 text-xs text-teal-200/70 leading-relaxed">{hint}</p> : null}
+        {cards}
       </Card.Content>
     </Card>
   );
 };
+
+const CircuitsTodaySection = (props) => <CircuitsDaySection {...props} />;
 
 export default CircuitsTodaySection;

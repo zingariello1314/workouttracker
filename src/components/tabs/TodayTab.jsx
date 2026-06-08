@@ -29,16 +29,7 @@ import {
 import { normalizeStretchSlots, countStretchItems, resolveEtirementsForDay } from '../../utils/stretchUtils';
 import { syncStretchLinkedQuests } from '../../utils/questStretchSync';
 
-const SESSION_SAVE_TIMEOUT_MS = 25000;
-
-function withSessionSaveTimeout(promise) {
-  return Promise.race([
-    promise,
-    new Promise((_, reject) => {
-      setTimeout(() => reject(new Error('SESSION_SAVE_TIMEOUT')), SESSION_SAVE_TIMEOUT_MS);
-    })
-  ]);
-}
+import { withSessionSaveTimeout, isSessionSaveTimeoutError } from '../../utils/sessionSaveTimeout';
 import StretchList from './TodayTab/components/StretchList';
 import PlyometricBlock from '../program/PlyometricBlock';
 import RunningDrillsBlock from '../program/RunningDrillsBlock';
@@ -887,14 +878,14 @@ const TodayTab = () => {
     if (isSavingSessionDraft) return;
     const hadExercisesDraft = hasUnsavedExercises;
     const hadStretchesDraft = hasUnsavedStretches;
+    try {
+      await maybeApplyRestDaySwapBeforeSave();
+    } catch (error) {
+      console.error('Erreur swap repos avant sauvegarde:', error);
+    }
     setIsSavingSessionDraft(true);
     try {
-      await withSessionSaveTimeout(
-        (async () => {
-          await maybeApplyRestDaySwapBeforeSave();
-          await saveExerciseChanges();
-        })()
-      );
+      await withSessionSaveTimeout(saveExerciseChanges());
       collapseAllPerceivedPanels();
       if (hadExercisesDraft && hadStretchesDraft) {
         showSuccess(t('today.messages.sessionSaved'));
@@ -905,7 +896,7 @@ const TodayTab = () => {
       }
     } catch (error) {
       console.error('Erreur lors de la sauvegarde des exercices:', error);
-      if (error?.message === 'SESSION_SAVE_TIMEOUT') {
+      if (isSessionSaveTimeoutError(error)) {
         showError(
           t(
             'today.messages.saveTimeout',
@@ -933,14 +924,14 @@ const TodayTab = () => {
     if (isSavingSessionDraft) return;
     const hadExercisesDraft = hasUnsavedExercises;
     const hadStretchesDraft = hasUnsavedStretches;
+    try {
+      await maybeApplyRestDaySwapBeforeSave();
+    } catch (error) {
+      console.error('Erreur swap repos avant sauvegarde:', error);
+    }
     setIsSavingSessionDraft(true);
     try {
-      await withSessionSaveTimeout(
-        (async () => {
-          await maybeApplyRestDaySwapBeforeSave();
-          await saveStretchChanges();
-        })()
-      );
+      await withSessionSaveTimeout(saveStretchChanges());
       collapseAllPerceivedPanels();
       if (hadExercisesDraft && hadStretchesDraft) {
         showSuccess(t('today.messages.sessionSaved'));
@@ -951,7 +942,7 @@ const TodayTab = () => {
       }
     } catch (error) {
       console.error('Erreur lors de la sauvegarde des étirements:', error);
-      if (error?.message === 'SESSION_SAVE_TIMEOUT') {
+      if (isSessionSaveTimeoutError(error)) {
         showError(
           t(
             'today.messages.saveTimeout',

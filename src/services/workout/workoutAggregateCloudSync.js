@@ -28,6 +28,56 @@ function mergeShallowRecordMaps(localVal, cloudVal) {
 }
 
 /** `exerciseSetWeights[exId][setKey]` : fusion par exercice, valeurs cloud prioritaires sur conflit. */
+function mergeDailyVariations(localVal, cloudVal) {
+  const L = localVal && typeof localVal === 'object' && !Array.isArray(localVal) ? localVal : {};
+  const C = cloudVal && typeof cloudVal === 'object' && !Array.isArray(cloudVal) ? cloudVal : {};
+  const out = { ...L };
+  for (const [dateKey, cloudDay] of Object.entries(C)) {
+    if (out[dateKey] && typeof out[dateKey] === 'object' && cloudDay && typeof cloudDay === 'object') {
+      out[dateKey] = { ...out[dateKey], ...cloudDay };
+    } else {
+      out[dateKey] = cloudDay;
+    }
+  }
+  return out;
+}
+
+function mergeEnduranceData(localVal, cloudVal) {
+  const L = localVal && typeof localVal === 'object' ? localVal : {};
+  const C = cloudVal && typeof cloudVal === 'object' ? cloudVal : {};
+  const mergeSessions = (lArr, cArr) => {
+    const la = Array.isArray(lArr) ? lArr : [];
+    const ca = Array.isArray(cArr) ? cArr : [];
+    const byId = new Map();
+    for (const s of la) {
+      const id = s?.id || s?.date || JSON.stringify(s);
+      byId.set(String(id), s);
+    }
+    for (const s of ca) {
+      const id = s?.id || s?.date || JSON.stringify(s);
+      byId.set(String(id), s);
+    }
+    return [...byId.values()];
+  };
+  const lSessions = L.sessions && typeof L.sessions === 'object' ? L.sessions : {};
+  const cSessions = C.sessions && typeof C.sessions === 'object' ? C.sessions : {};
+  const sessionKeys = new Set([...Object.keys(lSessions), ...Object.keys(cSessions)]);
+  const sessions = {};
+  for (const k of sessionKeys) {
+    sessions[k] = mergeSessions(lSessions[k], cSessions[k]);
+  }
+  return {
+    ...L,
+    ...C,
+    sessions,
+    challenges: Array.isArray(C.challenges) && C.challenges.length > 0
+      ? C.challenges
+      : Array.isArray(L.challenges)
+        ? L.challenges
+        : [],
+  };
+}
+
 function mergeExerciseSetWeights(localVal, cloudVal) {
   const L = localVal && typeof localVal === 'object' && !Array.isArray(localVal) ? localVal : {};
   const C = cloudVal && typeof cloudVal === 'object' && !Array.isArray(cloudVal) ? cloudVal : {};
@@ -85,6 +135,15 @@ export function mergeCloudWinningRowOverLocal(localRaw, cloudAgg, storageKey) {
       L.stretchSessionEffortStars,
       C.stretchSessionEffortStars
     ),
+    exerciseSessionPerceived: mergeShallowRecordMaps(
+      L.exerciseSessionPerceived,
+      C.exerciseSessionPerceived
+    ),
+    dailyVariations: mergeDailyVariations(L.dailyVariations, C.dailyVariations),
+    dayJustifications: mergeShallowRecordMaps(L.dayJustifications, C.dayJustifications),
+    enduranceData: mergeEnduranceData(L.enduranceData, C.enduranceData),
+    restDaySwaps: mergeShallowRecordMaps(L.restDaySwaps, C.restDaySwaps),
+    circuitProgress: mergeShallowRecordMaps(L.circuitProgress, C.circuitProgress),
     lastSaved: C.lastSaved || L.lastSaved,
     dataVersion: C.dataVersion || L.dataVersion || '1.0'
   };

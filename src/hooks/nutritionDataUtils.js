@@ -273,6 +273,13 @@ export const closeNutritionDB = async () => {
     dbInstance = null;
     log.debug('Connexion IndexedDB fermée');
   }
+  openingPromise = null;
+};
+
+/** Ferme puis rouvre WorkoutTrackerDB (connexion périmée après fermeture externe). */
+export const reopenNutritionDB = async () => {
+  await closeNutritionDB();
+  return openNutritionDB();
 };
 
 /**

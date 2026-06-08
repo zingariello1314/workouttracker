@@ -263,6 +263,14 @@ export const getCurrentRepositoryType = () => {
  * 
  * @returns {Promise<void>}
  */
+/** Met à jour l’instance IndexedDB du repository singleton (connexion réouverte). */
+export const refreshNutritionRepositoryDb = (db) => {
+  if (repositoryInstance && db && typeof repositoryInstance === 'object' && 'db' in repositoryInstance) {
+    repositoryInstance.db = db;
+    log.debug('[refreshNutritionRepositoryDb] Connexion repository mise à jour');
+  }
+};
+
 export const resetRepository = async () => {
   if (repositoryInstance) {
     try {

@@ -1,4 +1,4 @@
-﻿/**
+/**
  * Hook pour la gestion des exercices et étirements
  *
  * Les coches / reps / étirements passent par un snapshot `tempData` jusqu'à
@@ -163,7 +163,11 @@ export const useWorkoutExercises = (
         cancelPendingAutoSave?.();
         const payload = cloneDraft(normalizeWorkoutDraft(td));
         sanitizeDraftForPersist(payload);
-        await updateData(payload, { strict: true });
+        const sessionDay =
+          sessionCalendarDateStr && /^\d{4}-\d{2}-\d{2}$/.test(sessionCalendarDateStr)
+            ? sessionCalendarDateStr
+            : getDateStr(new Date());
+        await updateData(payload, { strict: true, sessionDay });
         invalidateSportXpCache();
         clearDraftState();
 

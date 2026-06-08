@@ -219,17 +219,6 @@ export const detectExerciseUnit = (exercise) => {
                      series.match(/(\d+)[×x](\d+)\s*sec/i) ||
                      series.match(/(\d+)\s*sec/i);
   
-  // 🔴 DEBUG : Vérifier si le pattern match
-  if (name.includes('planche') && series.includes('sec')) {
-    console.log(`[detectExerciseUnit] Testing "${series}" for sec pattern`);
-    console.log(`[detectExerciseUnit] Pattern 1:`, series.match(/(\d+)\s*[×x]\s*(\d+)\s*sec/i));
-    console.log(`[detectExerciseUnit] Pattern 2:`, series.match(/(\d+)\s*[×x](\d+)\s*sec/i));
-    console.log(`[detectExerciseUnit] Pattern 3:`, series.match(/(\d+)[×x]\s*(\d+)\s*sec/i));
-    console.log(`[detectExerciseUnit] Pattern 4:`, series.match(/(\d+)[×x](\d+)\s*sec/i));
-    console.log(`[detectExerciseUnit] Pattern 5:`, series.match(/(\d+)\s*sec/i));
-    console.log(`[detectExerciseUnit] Final secPattern:`, !!secPattern);
-  }
-  
   // Pattern 2: "3x30 min", "3×30 min" (séries × temps en minutes)
   const minPattern = series.match(/(\d+)\s*[×x]\s*(\d+)\s*min/i) || 
                      series.match(/(\d+)\s*[×x](\d+)\s*min/i) ||
@@ -242,20 +231,8 @@ export const detectExerciseUnit = (exercise) => {
   const hasSec = /\bsec\b/i.test(series);
   const hasMin = /\bmin\b/i.test(series);
   
-  // 🔴 DEBUG : Logger pour vérifier la détection
-  if (name.includes('planche')) {
-    console.log(`[detectExerciseUnit] Exercise: ${name}`);
-    console.log(`[detectExerciseUnit] Series: "${series}"`);
-    console.log(`[detectExerciseUnit] secPattern:`, !!secPattern, secPattern);
-    console.log(`[detectExerciseUnit] hasSec:`, hasSec);
-    console.log(`[detectExerciseUnit] isIsometric:`, isIsometric);
-  }
-  
   // Priorité 1: Pattern explicite avec séries × temps
   if (secPattern) {
-    if (name.includes('planche')) {
-      console.log(`[detectExerciseUnit] ✅ Returning SEC (secPattern matched)`);
-    }
     return { unit: 'sec', isTimeBased: true };
   }
   
@@ -265,9 +242,6 @@ export const detectExerciseUnit = (exercise) => {
   
   // Priorité 2: Série contient "sec" ou "min" (fallback si pattern n'a pas match)
   if (hasSec) {
-    if (name.includes('planche')) {
-      console.log(`[detectExerciseUnit] ✅ Returning SEC (hasSec matched)`);
-    }
     return { unit: 'sec', isTimeBased: true };
   }
   
@@ -277,16 +251,9 @@ export const detectExerciseUnit = (exercise) => {
   
   // Priorité 3: Exercice isométrique (planche, gainage) → secondes par défaut
   if (isIsometric) {
-    if (name.includes('planche')) {
-      console.log(`[detectExerciseUnit] ✅ Returning SEC (isIsometric matched)`);
-    }
     return { unit: 'sec', isTimeBased: true };
   }
-  
-  // Par défaut, exercice basé sur répétitions
-  if (name.includes('planche')) {
-    console.log(`[detectExerciseUnit] ❌ Returning REPS (fallback)`);
-  }
+
   return { unit: 'reps', isTimeBased: false };
 };
 
