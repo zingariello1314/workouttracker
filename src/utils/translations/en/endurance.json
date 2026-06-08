@@ -406,6 +406,11 @@
       "noDataInPeriod": "No sessions in this period.",
       "coverageBanner": "{{sessions}} session(s) · {{withDistance}} with distance · {{withPace}} with pace · {{withAvgHr}} with HR · {{withGarmin}} linked to Garmin",
       "cardioSeriesHint": "Chart: {{count}} point(s) · {{withAvgHr}} session(s) with avg HR in period",
+      "axisKm": "Distance (km)",
+      "axisDate": "Date",
+      "axisSessionDate": "Session date",
+      "axisBpm": "Heart rate (bpm)",
+      "axisPace": "Pace (min/km)",
       "efCoverageHint": "{{efCount}} easy-run(s) detected out of {{total}} session(s) ({{min}}–{{max}}% max HR zone, endurance type, ≥ 2 km, ≥ 15 min)."
     },
     "historyFilter": {

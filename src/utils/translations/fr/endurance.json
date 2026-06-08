@@ -409,6 +409,11 @@
       "noDataInPeriod": "Aucune séance sur cette période.",
       "coverageBanner": "{{sessions}} séance(s) · {{withDistance}} avec distance · {{withPace}} avec allure · {{withAvgHr}} avec FC · {{withGarmin}} liées Garmin",
       "cardioSeriesHint": "Graphique : {{count}} point(s) · {{withAvgHr}} séance(s) avec FC moyenne sur la période",
+      "axisKm": "Distance (km)",
+      "axisDate": "Date",
+      "axisSessionDate": "Date de séance",
+      "axisBpm": "Fréquence cardiaque (bpm)",
+      "axisPace": "Allure (min/km)",
       "efCoverageHint": "{{efCount}} sortie(s) EF détectée(s) sur {{total}} séance(s) (zone {{min}}–{{max}} % FC max, endurance, ≥ 2 km, ≥ 15 min)."
     },
     "historyFilter": {

@@ -50,6 +50,12 @@ export function isWalkingLikeRunningSession(session, garmin = null) {
   if (garmin && isGarminRunningLikeActivity(garmin) && !isGarminWalkingLikeActivity(garmin)) {
     return false;
   }
+  // Session importée Garmin : ne pas exclure sur l'allure seule tant que l'activité n'est pas résolue.
+  if ((session?.source === 'garmin' || session?.__fromGarminBridge) && !garmin) {
+    const typeStr = `${session?.type || ''}`.toLowerCase();
+    if (typeStr === 'walk' || typeStr === 'walking') return true;
+    return false;
+  }
 
   const typeStr = `${session?.type || ''} ${session?.notes || ''} ${session?.title || ''}`.toLowerCase();
   if (/\b(walk|walking|marche|rando|hike|hiking)\b/i.test(typeStr)) return true;

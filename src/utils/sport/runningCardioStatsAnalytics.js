@@ -15,6 +15,7 @@ import {
 } from '../runningPersonalRecords';
 import {
   buildDenseDailyPoints,
+  defaultActivityRange,
   enumerateDatesInclusive,
   firstPositiveDate,
   mapToNumberMap
@@ -23,6 +24,44 @@ import {
 function toNum(v, fb = 0) {
   const n = Number(String(v ?? '').replace(',', '.'));
   return Number.isFinite(n) ? n : fb;
+}
+
+/** Date YYYY-MM-DD robuste (formats Garmin « 2026-06-05 20:22:00 », etc.). */
+function resolveSessionDateYmd(session) {
+  const normalized = normalizeDateString(session?.date);
+  if (normalized) return normalized;
+  const raw = String(session?.date ?? '').trim();
+  const m = raw.match(/^(\d{4}-\d{2}-\d{2})/);
+  return m ? m[1] : null;
+}
+
+/**
+ * Exclut les mocks structurels sans rejeter les séances Garmin crédibles
+ * que l'historique affiche déjà (ex. léger décalage de date / fuseau).
+ */
+function shouldSkipRunningStatsSession(session) {
+  if (!session || typeof session !== 'object') return true;
+  if (!resolveSessionDateYmd(session)) return true;
+
+  if (!isMockEnduranceSession(session)) return false;
+
+  const dist = toNum(session.distance, 0);
+  const durMin = parseRunningSessionDurationMinutes(session?.duration);
+  const garminLinked =
+    session.garminId != null || session.source === 'garmin' || session.__fromGarminBridge;
+
+  if (garminLinked && dist >= 0.3 && durMin >= 3) {
+    const ymd = resolveSessionDateYmd(session);
+    const sessionDay = new Date(`${ymd}T12:00:00`);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const graceEnd = new Date(today);
+    graceEnd.setDate(graceEnd.getDate() + 2);
+    graceEnd.setHours(23, 59, 59, 999);
+    if (sessionDay <= graceEnd) return false;
+  }
+
+  return true;
 }
 
 /** Plages disponibles pour chaque graphique (7 j → toujours). */
@@ -223,8 +262,8 @@ export function buildRunningSessionRows(sessions, garminById = null) {
   const rows = [];
 
   for (const session of sessions || []) {
-    if (isMockEnduranceSession(session)) continue;
-    const date = normalizeDateString(session?.date);
+    if (shouldSkipRunningStatsSession(session)) continue;
+    const date = resolveSessionDateYmd(session);
     if (!date) continue;
 
     const g = getGarminForRunningSession(session, garminById);
@@ -263,11 +302,15 @@ export function filterRowsByPeriod(rows, period, now = new Date()) {
   if (!startStr) return rows;
   const end = new Date(now);
   end.setHours(23, 59, 59, 999);
+  // Marge J+2 : séances Garmin récentes (fuseau / date du lendemain côté import).
+  const endGrace = new Date(end);
+  endGrace.setDate(endGrace.getDate() + 2);
+  endGrace.setHours(23, 59, 59, 999);
   return rows.filter((r) => {
     const d = new Date(`${r.date}T12:00:00`);
     if (Number.isNaN(d.getTime())) return false;
     const start = new Date(`${startStr}T00:00:00`);
-    return d >= start && d <= end;
+    return d >= start && d <= endGrace;
   });
 }
 
@@ -301,7 +344,6 @@ export function computePeriodVolumeSummary(rows, period, now = new Date()) {
 
 /** km/jour pour le graphique volume (données enrichies + période). */
 export function buildKmDailyChartFromRows(rows, period, now = new Date()) {
-  const end = getDateStr(now);
   const filtered = filterRowsByPeriod(rows, period, now);
   const raw = new Map();
 
@@ -309,6 +351,16 @@ export function buildKmDailyChartFromRows(rows, period, now = new Date()) {
     if (r.dist <= 0) continue;
     raw.set(r.date, Math.round(((raw.get(r.date) || 0) + r.dist) * 1000) / 1000);
   }
+
+  const todayYmd = getDateStr(now);
+  let latestYmd = todayYmd;
+  for (const r of filtered) {
+    if (r.date && r.date > latestYmd) latestYmd = r.date;
+  }
+  for (const date of raw.keys()) {
+    if (date > latestYmd) latestYmd = date;
+  }
+  const end = latestYmd >= todayYmd ? latestYmd : todayYmd;
 
   let start = periodStartDate(period, now);
   if (!start || period === 'all') {

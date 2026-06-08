@@ -162,6 +162,13 @@ export function normalizeDateString(dateInput) {
     if (dateInput.includes('T')) {
       return dateInput.split('T')[0];
     }
+    // Format Garmin courant : « 2026-06-05 20:22:00 »
+    if (dateInput.includes(' ')) {
+      const dayPart = dateInput.split(/\s+/)[0];
+      if (/^\d{4}-\d{2}-\d{2}$/.test(dayPart)) {
+        return dayPart;
+      }
+    }
     // Si c'est déjà au format "YYYY-MM-DD"
     if (/^\d{4}-\d{2}-\d{2}$/.test(dateInput)) {
       return dateInput;

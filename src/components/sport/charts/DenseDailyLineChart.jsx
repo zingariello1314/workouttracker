@@ -1,5 +1,14 @@
 import React, { useId, useMemo, useState, useCallback } from 'react';
 
+function buildYAxisTicks(maxVal, steps = 4) {
+  const hi = Number.isFinite(maxVal) && maxVal > 0 ? maxVal : 1;
+  const ticks = [];
+  for (let i = 0; i <= steps; i += 1) {
+    ticks.push((i / steps) * hi);
+  }
+  return { min: 0, max: hi, ticks };
+}
+
 function formatTooltipDate(ymd) {
   if (ymd == null) return '';
   const s = String(ymd).slice(0, 10);
@@ -32,6 +41,8 @@ const DenseDailyLineChart = ({
   valueFormatB = (v) => String(Math.round(v)),
   emptyMessage = 'Pas encore assez de données.',
   showTopLabels = false,
+  yAxisLabel = '',
+  xAxisLabel = '',
   /** Infobulle au survol des points */
   interactive = true
 }) => {
@@ -45,7 +56,7 @@ const DenseDailyLineChart = ({
     const ptsB = dual && seriesB.length === seriesA.length ? seriesB : [];
     const n = ptsA.length;
     const width = 720;
-    const pad = { top: 16, right: dual ? 24 : 14, bottom: 32, left: 24 };
+    const pad = { top: 16, right: dual ? 24 : 14, bottom: xAxisLabel ? 36 : 32, left: yAxisLabel ? 48 : 40 };
 
     if (n < 1) {
       return { empty: true };
@@ -53,6 +64,8 @@ const DenseDailyLineChart = ({
 
     const maxA = Math.max(1, ...ptsA.map((p) => Number(p.value) || 0));
     const maxB = dual ? Math.max(1, ...ptsB.map((p) => Number(p.value) || 0)) : 1;
+    const yAxisA = buildYAxisTicks(maxA, 4);
+    const yAxisB = dual ? buildYAxisTicks(maxB, 4) : null;
 
     const innerW = width - pad.left - pad.right;
     const innerH = height - pad.top - pad.bottom;
@@ -114,13 +127,15 @@ const DenseDailyLineChart = ({
       areaB,
       maxA,
       maxB,
+      yAxisA,
+      yAxisB,
       ticks: ptsA.map((p, i) => ({ i, x: xAt(i), short: String(p.date).slice(5), fullDate: String(p.date || '') })),
       labelIndices,
       dual,
       pointsA,
       pointsB
     };
-  }, [seriesA, seriesB, dual, metaB, height, seriesA?.length]);
+  }, [seriesA, seriesB, dual, metaB, height, seriesA?.length, xAxisLabel, yAxisLabel]);
 
   const showTipAtIndex = useCallback(
     (e, index) => {
@@ -185,6 +200,8 @@ const DenseDailyLineChart = ({
     areaB,
     maxA,
     maxB,
+    yAxisA,
+    yAxisB,
     ticks,
     labelIndices,
     dual: isDual,
@@ -238,6 +255,75 @@ const DenseDailyLineChart = ({
           strokeWidth="1"
         />
         <line x1={pad.left} y1={pad.top} x2={pad.left} y2={h - pad.bottom} stroke="#334155" strokeWidth="1" />
+        {yAxisA.ticks.map((tickVal) => {
+          const ratio = tickVal / Math.max(yAxisA.max, 1e-6);
+          const y = pad.top + (1 - ratio) * (h - pad.top - pad.bottom);
+          return (
+            <g key={`yt-a-${tickVal}`}>
+              <line
+                x1={pad.left}
+                x2={width - (isDual ? pad.right : pad.right)}
+                y1={y}
+                y2={y}
+                stroke="#0F4C5C"
+                strokeOpacity="0.28"
+                strokeWidth="1"
+              />
+              <text
+                x={pad.left - 6}
+                y={y + 3}
+                textAnchor="end"
+                fontSize="8"
+                fill="#64748b"
+                className="tabular-nums"
+              >
+                {valueFormatA(tickVal)}
+              </text>
+            </g>
+          );
+        })}
+        {isDual && yAxisB
+          ? yAxisB.ticks.map((tickVal) => {
+              const ratio = tickVal / Math.max(yAxisB.max, 1e-6);
+              const y = pad.top + (1 - ratio) * (h - pad.top - pad.bottom);
+              return (
+                <text
+                  key={`yt-b-${tickVal}`}
+                  x={width - pad.right + 6}
+                  y={y + 3}
+                  textAnchor="start"
+                  fontSize="8"
+                  fill="#94a3b8"
+                  className="tabular-nums"
+                >
+                  {valueFormatB(tickVal)}
+                </text>
+              );
+            })
+          : null}
+        {yAxisLabel ? (
+          <text
+            x={10}
+            y={pad.top + (h - pad.top - pad.bottom) / 2}
+            textAnchor="middle"
+            transform={`rotate(-90 10 ${pad.top + (h - pad.top - pad.bottom) / 2})`}
+            fontSize="9"
+            fill="#64748b"
+          >
+            {yAxisLabel}
+          </text>
+        ) : null}
+        {xAxisLabel ? (
+          <text
+            x={pad.left + (width - pad.left - pad.right) / 2}
+            y={h - 4}
+            textAnchor="middle"
+            fontSize="9"
+            fill="#64748b"
+          >
+            {xAxisLabel}
+          </text>
+        ) : null}
         {isDual ? (
           <line
             x1={width - pad.right}

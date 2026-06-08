@@ -187,9 +187,11 @@ const RunningStatsPanel = ({ sessions = [], garminById = null }) => {
         {hasKmChart ? (
           <DenseDailyLineChart
             seriesA={kmDailyChart}
-            metaA={{ label: 'km', color: '#38bdf8' }}
+            metaA={{ label: t('endurance.running.stats.axisKm'), color: '#38bdf8' }}
             valueFormatA={(v) => (Math.round(v * 100) / 100).toFixed(2)}
-            height={160}
+            yAxisLabel={t('endurance.running.stats.axisKm')}
+            xAxisLabel={t('endurance.running.stats.axisDate')}
+            height={180}
             emptyMessage={t('endurance.running.stats.noKmData')}
           />
         ) : (
@@ -240,8 +242,10 @@ const RunningStatsPanel = ({ sessions = [], garminById = null }) => {
               metaB={{ label: t('endurance.running.stats.maxHr'), color: '#fb7185' }}
               valueFormatA={(v) => `${Math.round(v)} bpm`}
               valueFormatB={(v) => `${Math.round(v)} bpm`}
+              yAxisLabel={t('endurance.running.stats.axisBpm')}
+              xAxisLabel={t('endurance.running.stats.axisSessionDate')}
               emptyMessage={t('endurance.running.stats.noHrData')}
-              height={170}
+              height={190}
             />
             <p className="mt-2 text-[11px] text-slate-500">
               {t('endurance.running.stats.cardioSeriesHint', {
@@ -290,7 +294,9 @@ const RunningStatsPanel = ({ sessions = [], garminById = null }) => {
               }))}
               metaA={{ label: t('endurance.running.stats.pace'), color: '#34d399' }}
               valueFormatA={(v) => formatPaceMinPerKm(v)}
-              height={200}
+              yAxisLabel={t('endurance.running.stats.axisPace')}
+              xAxisLabel={t('endurance.running.stats.axisSessionDate')}
+              height={210}
               emptyMessage={t('endurance.running.stats.noEfData')}
             />
             <p className="mb-3 mt-2 text-[11px] text-slate-500">

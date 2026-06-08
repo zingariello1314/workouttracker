@@ -24,10 +24,11 @@ export function inferRunningSessionTypeFromGarminActivity(gAct) {
   let recovery = 0;
   for (const lap of laps) {
     const phase = classifyLapPhase(lap);
-    if (phase === 'recovery' || phase === 'cooldown') recovery += 1;
-    else effort += 1;
+    // Seules les vraies récup comptent (pas le retour au calme final ni l'échauffement).
+    if (phase === 'recovery') recovery += 1;
+    else if (phase === 'effort') effort += 1;
   }
-  return recovery > 0 && effort > 0 ? 'interval' : 'endurance';
+  return recovery >= 1 && effort >= 2 ? 'interval' : 'endurance';
 }
 
 /** Clé type Garmin d’origine (à privilégier : activityType peut être forcé à « running » côté serveur). */

@@ -1,5 +1,16 @@
 import React, { useId, useMemo, useState, useCallback } from 'react';
 
+function buildYAxisTicks(minVal, maxVal, steps = 4) {
+  const lo = Number.isFinite(minVal) ? minVal : 0;
+  let hi = Number.isFinite(maxVal) && maxVal > lo ? maxVal : lo + 1;
+  if (hi <= lo) hi = lo + 1;
+  const ticks = [];
+  for (let i = 0; i <= steps; i += 1) {
+    ticks.push(lo + (i / steps) * (hi - lo));
+  }
+  return { min: lo, max: hi, ticks };
+}
+
 function formatTooltipDate(ymd) {
   if (!ymd) return '';
   const s = String(ymd).slice(0, 10);
@@ -28,6 +39,8 @@ const SessionSeriesLineChart = ({
   height = 180,
   valueFormatA = (v) => String(v),
   valueFormatB = (v) => String(v),
+  yAxisLabel = '',
+  xAxisLabel = '',
   emptyMessage = 'Pas assez de données.',
   interactive = true
 }) => {
@@ -40,17 +53,35 @@ const SessionSeriesLineChart = ({
     const ptsB = dual && seriesB.length === ptsA.length ? seriesB : [];
     const n = ptsA.length;
     const width = 720;
-    const pad = { top: 14, right: dual ? 22 : 12, bottom: 28, left: 22 };
+    const pad = { top: 18, right: dual ? 22 : 12, bottom: xAxisLabel ? 36 : 28, left: yAxisLabel ? 52 : 44 };
 
     if (n < 1) return { empty: true };
 
-    const maxA = Math.max(1, ...ptsA.map((p) => Number(p.value) || 0));
-    const maxB = dual ? Math.max(1, ...ptsB.map((p) => Number(p.value) || 0)) : 1;
+    const valsA = ptsA.map((p) => Number(p.value) || 0).filter((v) => v > 0);
+    const valsB = dual ? ptsB.map((p) => Number(p.value) || 0).filter((v) => v > 0) : [];
+    const rawMinA = valsA.length ? Math.min(...valsA) : 0;
+    const rawMaxA = valsA.length ? Math.max(...valsA) : 1;
+    const rawMinB = valsB.length ? Math.min(...valsB) : 0;
+    const rawMaxB = valsB.length ? Math.max(...valsB) : 1;
+
+    const sharedScale = dual && valsB.length > 0;
+    const rangeMin = sharedScale ? Math.min(rawMinA, rawMinB) : rawMinA;
+    const rangeMax = sharedScale ? Math.max(rawMaxA, rawMaxB) : rawMaxA;
+    const span = Math.max(rangeMax - rangeMin, rangeMax * 0.08, 1);
+    const yMin = Math.max(0, rangeMin - span * 0.08);
+    const yMax = rangeMax + span * 0.08;
+    const yAxis = buildYAxisTicks(yMin, yMax, 4);
+
     const innerW = width - pad.left - pad.right;
     const innerH = height - pad.top - pad.bottom;
     const xAt = (i) => pad.left + (n <= 1 ? innerW / 2 : (i / Math.max(1, n - 1)) * innerW);
-    const yA = (v) => pad.top + (1 - (Number(v) || 0) / maxA) * innerH;
-    const yB = (v) => pad.top + (1 - (Number(v) || 0) / maxB) * innerH;
+    const yScale = (v) => {
+      const val = Number(v) || 0;
+      const ratio = (val - yAxis.min) / Math.max(yAxis.max - yAxis.min, 1e-6);
+      return pad.top + (1 - Math.min(1, Math.max(0, ratio))) * innerH;
+    };
+    const yA = yScale;
+    const yB = yScale;
 
     let dA = '';
     ptsA.forEach((p, i) => {
@@ -95,14 +126,13 @@ const SessionSeriesLineChart = ({
       n,
       dA,
       dB,
-      maxA,
-      maxB,
+      yAxis,
       dual,
       pointsA,
       pointsB,
       labelIndices
     };
-  }, [seriesA, seriesB, dual, metaB, height]);
+  }, [seriesA, seriesB, dual, metaB, height, xAxisLabel, yAxisLabel]);
 
   const showTipAtIndex = useCallback(
     (e, index) => {
@@ -145,18 +175,61 @@ const SessionSeriesLineChart = ({
             <stop offset="100%" stopColor={metaA.color} stopOpacity="0" />
           </linearGradient>
         </defs>
-        {[0.25, 0.5, 0.75].map((t) => (
-          <line
-            key={t}
-            x1={pad.left}
-            x2={width - pad.right}
-            y1={pad.top + t * (h - pad.top - pad.bottom)}
-            y2={pad.top + t * (h - pad.top - pad.bottom)}
-            stroke="#0F4C5C"
-            strokeOpacity="0.35"
-            strokeWidth="1"
-          />
-        ))}
+        <line
+          x1={pad.left}
+          y1={h - pad.bottom}
+          x2={width - pad.right}
+          y2={h - pad.bottom}
+          stroke="#334155"
+          strokeWidth="1"
+        />
+        <line x1={pad.left} y1={pad.top} x2={pad.left} y2={h - pad.bottom} stroke="#334155" strokeWidth="1" />
+        {layout.yAxis.ticks.map((tickVal) => {
+          const ratio = (tickVal - layout.yAxis.min) / Math.max(layout.yAxis.max - layout.yAxis.min, 1e-6);
+          const y = pad.top + (1 - ratio) * (h - pad.top - pad.bottom);
+          return (
+            <g key={`yt-${tickVal}`}>
+              <line
+                x1={pad.left}
+                x2={width - pad.right}
+                y1={y}
+                y2={y}
+                stroke="#0F4C5C"
+                strokeOpacity="0.35"
+                strokeWidth="1"
+              />
+              <text
+                x={pad.left - 6}
+                y={y + 3}
+                textAnchor="end"
+                className="fill-slate-500 text-[8px] tabular-nums"
+              >
+                {valueFormatA(tickVal)}
+              </text>
+            </g>
+          );
+        })}
+        {yAxisLabel ? (
+          <text
+            x={10}
+            y={pad.top + (h - pad.top - pad.bottom) / 2}
+            textAnchor="middle"
+            transform={`rotate(-90 10 ${pad.top + (h - pad.top - pad.bottom) / 2})`}
+            className="fill-slate-500 text-[9px]"
+          >
+            {yAxisLabel}
+          </text>
+        ) : null}
+        {xAxisLabel ? (
+          <text
+            x={pad.left + (width - pad.left - pad.right) / 2}
+            y={h - 4}
+            textAnchor="middle"
+            className="fill-slate-500 text-[9px]"
+          >
+            {xAxisLabel}
+          </text>
+        ) : null}
         {dA && (
           <path d={dA} fill="none" stroke={metaA.color} strokeWidth="2" strokeLinejoin="round" />
         )}

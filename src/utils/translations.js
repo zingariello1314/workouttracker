@@ -2087,9 +2087,14 @@ export const useTranslation = () => {
       };
       
       // Utiliser tPluralFromNamespaces pour la pluralisation
-      const result = tPluralFromNamespaces(key, count, lang, getTranslation, fallback);
-      
-      // Mettre en cache
+      let result = tPluralFromNamespaces(key, count, lang, getTranslation, fallback);
+
+      const otherParams = { ...params };
+      delete otherParams.count;
+      if (Object.keys(otherParams).length > 0) {
+        result = interpolateTranslation(result, otherParams, lang);
+      }
+
       translationCache.set(cacheKey, result);
       return result;
     }
