@@ -197,6 +197,15 @@ const SportXPBar = () => {
               </span>
             </>
           ) : null}
+          {(breakdown.gtgXp ?? 0) > 0 ? (
+            <>
+              <span className="text-slate-600"> · </span>
+              <span className="tabular-nums text-slate-400">
+                {breakdown.gtgXp.toLocaleString('fr-FR')} GTG
+                {(breakdown.gtgReps ?? 0) > 0 ? ` (${breakdown.gtgReps} reps)` : ''}
+              </span>
+            </>
+          ) : null}
           {(breakdown.circuitsXp ?? 0) > 0 ? (
             <>
               <span className="text-slate-600"> · </span>

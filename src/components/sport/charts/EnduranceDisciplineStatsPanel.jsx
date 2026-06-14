@@ -9,15 +9,17 @@ import {
   aggregateJumpropeJumpsByDate,
   aggregateCircuitRoundsByDate
 } from '../../../utils/sport/enduranceDailyAggregates';
+import { aggregateGtgRepsByDate } from '../../../services/endurance/gtgService';
 
 const todayStr = () => getDateStr(new Date());
 
 /**
- * @param {'running'|'walking'|'pushups'|'jumprope'|'gainage'|'circuits'} kind
+ * @param {'running'|'walking'|'pushups'|'jumprope'|'gainage'|'circuits'|'gtg'} kind
  * @param {any[]} sessions — uniquement pour les types session-based
  * @param {object} [circuitPayload] — { circuitProgress, circuitDefinitions } pour circuits
+ * @param {object} [gtgPayload] — { gtgData, ctx } pour GTG
  */
-const EnduranceDisciplineStatsPanel = ({ kind, sessions = [], circuitPayload = null }) => {
+const EnduranceDisciplineStatsPanel = ({ kind, sessions = [], circuitPayload = null, gtgPayload = null }) => {
   const { points, meta } = useMemo(() => {
     const end = todayStr();
     let raw = new Map();
@@ -32,6 +34,8 @@ const EnduranceDisciplineStatsPanel = ({ kind, sessions = [], circuitPayload = n
       raw = aggregateJumpropeJumpsByDate(sessions);
     } else if (kind === 'circuits' && circuitPayload) {
       raw = aggregateCircuitRoundsByDate(circuitPayload.circuitProgress, circuitPayload.circuitDefinitions);
+    } else if (kind === 'gtg' && gtgPayload?.gtgData) {
+      raw = aggregateGtgRepsByDate(gtgPayload.gtgData, gtgPayload.ctx || {});
     }
 
     const { start, end: endClamped } = defaultActivityRange(raw, end);
@@ -43,14 +47,15 @@ const EnduranceDisciplineStatsPanel = ({ kind, sessions = [], circuitPayload = n
       pushups: { label: 'reps', color: '#f472b6', fmt: (v) => String(Math.round(v)) },
       gainage: { label: 'secondes', color: '#a78bfa', fmt: (v) => String(Math.round(v)) },
       jumprope: { label: 'sauts', color: '#fbbf24', fmt: (v) => String(Math.round(v)) },
-      circuits: { label: 'tours', color: '#22d3ee', fmt: (v) => String(Math.round(v)) }
+      circuits: { label: 'tours', color: '#22d3ee', fmt: (v) => String(Math.round(v)) },
+      gtg: { label: 'reps GTG', color: '#a78bfa', fmt: (v) => String(Math.round(v)) }
     };
 
     return {
       points: pts,
       meta: metaByKind[kind] || metaByKind.running
     };
-  }, [kind, sessions, circuitPayload]);
+  }, [kind, sessions, circuitPayload, gtgPayload]);
 
   const title =
     kind === 'running'
@@ -63,7 +68,9 @@ const EnduranceDisciplineStatsPanel = ({ kind, sessions = [], circuitPayload = n
             ? 'Gainage — secondes par jour'
             : kind === 'jumprope'
               ? 'Corde — sauts par jour'
-              : 'Circuits — tours par jour';
+              : kind === 'gtg'
+                ? 'Grease the Groove — reps par jour'
+                : 'Circuits — tours par jour';
 
   return (
     <div className="rounded-2xl border border-[#0F4C5C]/55 bg-black p-5">

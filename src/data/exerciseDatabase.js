@@ -554,13 +554,25 @@ export const exerciseDatabase = {
     variations: ["decline bench press", "decline barbell press", "dc décliné barre"]
   },
   "développé décliné haltères": {
-    name: "Développé décliné haltères",
+    name: "Développé couché décliné aux haltères",
     category: "Pectoraux",
     primaryMuscles: ["Pectoraux inférieurs"],
-    secondaryMuscles: ["Triceps", "Deltoïdes antérieurs"],
+    secondaryMuscles: ["Triceps brachial", "Deltoïdes antérieurs"],
     equipment: "Haltères + Banc décliné",
-    description: "Version haltères du développé décliné pour amplitude accrue",
-    variations: ["decline dumbbell press", "dc décliné haltères", "décliné haltères"]
+    difficulty: 2,
+    summary: "Développé décliné haltères — bas des pectoraux",
+    description:
+      "Exercice de musculation sur banc décliné (environ −15° à −30°) avec deux haltères. Cible la portion inférieure des pectoraux (bas des pecs), avec sollicitation des triceps et des deltoïdes antérieurs. Les haltères offrent une amplitude supérieure à la barre et corrigent les déséquilibres gauche/droite.\n\n" +
+      "Exécution : banc décliné modéré, pieds bien calés dans les supports, omoplates rapprochées et poitrine sortie. Monte les haltères au-dessus de la poitrine basse, bras tendus. Descends en 2–3 s, coudes à 45–60° du buste, jusqu'à la ligne des mamelons ou légèrement en dessous. Pousse vers le haut en contractant les pectoraux, sans décoller les épaules ni cambrer excessivement.\n\n" +
+      "Erreurs fréquentes : déclinaison excessive qui charge trop les épaules ; rebond en bas ; coudes ouverts à 90° ; perte de contrôle des haltères en bas de course.\n\n" +
+      "Tempo classique : 2-0-1-0 ou 3-0-1-0. Séries types : 3–4 × 8–12 reps. Difficulté intermédiaire (≈ 6/10) — légèrement plus technique qu'au plat à cause de la position déclinée.",
+    variations: [
+      "decline dumbbell press",
+      "dc décliné haltères",
+      "décliné haltères",
+      "développé décliné haltères",
+      "flat decline db press"
+    ]
   },
   "développé couché prise serrée": {
     name: "Développé couché prise serrée",
@@ -1125,22 +1137,99 @@ export const exerciseDatabase = {
 
   // EXERCICES SALLE SPÉCIALISÉS
   "développé incliné haltères": {
-    name: "Développé incliné haltères",
+    name: "Développé couché incliné aux haltères",
     category: "Pectoraux",
     primaryMuscles: ["Pectoraux supérieurs"],
-    secondaryMuscles: ["Triceps", "Deltoïdes antérieurs"],
+    secondaryMuscles: ["Triceps brachial", "Deltoïdes antérieurs"],
     equipment: "Haltères + Banc incliné",
-    description: "Développé incliné avec haltères pour amplitude maximale",
-    variations: ["incline dumbbell press", "di haltères"]
+    difficulty: 2,
+    summary: "Développé incliné haltères — haut des pectoraux",
+    description:
+      "Exercice de musculation sur banc incliné (15–30°) avec deux haltères. Cible principalement la portion claviculaire des pectoraux (haut des pecs), tout en sollicitant les deltoïdes antérieurs et les triceps. Amplitude et indépendance des bras supérieures à la barre.\n\n" +
+      "Exécution : banc à 15–30°, pieds au sol, omoplates rapprochées et poitrine sortie. Haltères au-dessus des épaules, bras tendus. Descends en 2–3 s, coudes à 45–60° du buste, jusqu'au niveau du haut des pectoraux. Pousse vers le haut sans décoller les épaules ; termine bras presque tendus sans verrouillage brutal.\n\n" +
+      "Erreurs fréquentes : banc trop incliné (45°+) qui transforme l'exercice en développé épaules ; rebond en bas ; coudes à 90° ; hausser les épaules.\n\n" +
+      "Tempo classique : 2-0-1-0 ou 3-0-1-0. Séries types : 3–4 × 8–12 reps. Difficulté intermédiaire (≈ 6,5/10) — stabilité des haltères plus exigeante qu'à la barre.",
+    variations: ["incline dumbbell press", "di haltères", "développé incliné haltères", "incline db press"]
+  },
+  "développé incliné haltères pause bas": {
+    name: "Développé couché incliné aux haltères avec pause",
+    category: "Pectoraux",
+    primaryMuscles: ["Pectoraux supérieurs"],
+    secondaryMuscles: ["Triceps brachial", "Deltoïdes antérieurs"],
+    equipment: "Haltères + Banc incliné",
+    difficulty: 3,
+    summary: "Pause en bas · haut des pectoraux · tempo 3-2-1-0",
+    description:
+      "Exercice de musculation sur banc incliné (15–30°) avec deux haltères et une pause contrôlée en position basse (1–3 s). Cible la portion claviculaire des pectoraux (haut des pecs), les deltoïdes antérieurs et les triceps. La pause supprime l'élan et le rebond naturel : tension musculaire accrue, meilleur recrutement des fibres du haut des pecs et développement de la force au point le plus difficile du mouvement — souvent plus efficace pour l'hypertrophie à charge égale qu'une exécution classique.\n\n" +
+      "Exécution : règle le banc à 15–30°, pieds fermement au sol, omoplates rapprochées et poitrine sortie. Haltères au-dessus des épaules, bras tendus. Descends lentement en 2–3 s, coudes à 45–60° par rapport au buste, jusqu'au niveau du haut des pectoraux ou légèrement en dessous. Marque une pause de 1–2 s sans relâcher la tension, puis pousse fort vers le haut sans décoller les épaules du banc. Termine bras presque tendus sans verrouiller brutalement les coudes.\n\n" +
+      "Erreurs fréquentes : banc trop incliné (45°+) qui transforme l'exercice en développé épaules ; faire rebondir les haltères en bas ; ouvrir les coudes à 90° ; monter les épaules vers les oreilles ; perdre le contrôle pendant la pause.\n\n" +
+      "Tempo recommandé pour le haut des pecs : 3-2-1-0 (3 s de descente, 2 s de pause en bas, 1 s de montée explosive, 0 s de repos en haut). Plus instable qu'à la barre, sans rebond ni élan : demande un bon contrôle scapulaire et une coordination solide — difficulté intermédiaire à avancée (≈ 7,5/10). Séries types : 3–4 × 8–12 reps.",
+    variations: [
+      "incline dumbbell press pause",
+      "pause incline dumbbell bench",
+      "di haltères pause bas",
+      "développé incliné haltères pause",
+      "incline db press with pause",
+      "pause bench incliné haltères",
+      "développé couché incliné haltères pause"
+    ]
   },
   "développé haltères plat": {
-    name: "Développé haltères plat",
+    name: "Développé couché aux haltères",
     category: "Pectoraux",
     primaryMuscles: ["Pectoraux"],
-    secondaryMuscles: ["Triceps", "Deltoïdes antérieurs"],
+    secondaryMuscles: ["Triceps brachial", "Deltoïdes antérieurs"],
     equipment: "Haltères + Banc",
-    description: "Développé couché avec haltères",
-    variations: ["flat dumbbell press", "dc haltères"]
+    difficulty: 2,
+    summary: "Développé couché haltères — polyarticulaire pectoraux",
+    description:
+      "Exercice de musculation sur banc plat avec deux haltères. Polyarticulaire de référence pour les pectoraux, avec sollicitation importante des triceps et des deltoïdes antérieurs. Amplitude supérieure à la barre et travail unilatéral indépendant.\n\n" +
+      "Exécution : banc plat, pieds au sol, omoplates rapprochées et poitrine sortie. Haltères au-dessus de la poitrine, bras tendus. Descends en 2–3 s, coudes à 45–60° du buste, jusqu'à la ligne des mamelons ou légèrement en dessous. Pousse vers le haut en contractant les pectoraux, sans décoller les épaules du banc ni cambrer excessivement.\n\n" +
+      "Erreurs fréquentes : rebond en bas ; coudes ouverts à 90° ; hausser les épaules ; amplitude incomplète ; haltères qui se touchent violemment en haut.\n\n" +
+      "Tempo classique : 2-0-1-0 ou 3-0-1-0. Séries types : 3–4 × 8–12 reps. Difficulté intermédiaire (≈ 6/10).",
+    variations: ["flat dumbbell press", "dc haltères", "développé haltères plat", "dumbbell bench press"]
+  },
+  "développé couché haltères pause bas": {
+    name: "Développé couché aux haltères avec pause",
+    category: "Pectoraux",
+    primaryMuscles: ["Pectoraux"],
+    secondaryMuscles: ["Triceps brachial", "Deltoïdes antérieurs"],
+    equipment: "Haltères + Banc",
+    difficulty: 3,
+    summary: "Pause en bas · pectoraux · tempo 3-2-1-0",
+    description:
+      "Exercice de musculation sur banc plat avec deux haltères et une pause contrôlée en position basse (1–3 s). Cible les pectoraux, les triceps et les deltoïdes antérieurs. La pause élimine l'élan et le rebond : tension musculaire accrue et meilleur recrutement à charge égale.\n\n" +
+      "Exécution : banc plat, pieds au sol, omoplates rapprochées et poitrine sortie. Haltères au-dessus de la poitrine, bras tendus. Descends lentement en 2–3 s, coudes à 45–60°, jusqu'à la poitrine. Marque une pause de 1–2 s sans relâcher la tension, puis pousse fort vers le haut sans décoller les épaules. Termine bras presque tendus sans verrouillage brutal.\n\n" +
+      "Erreurs fréquentes : rebondir les haltères en bas ; ouvrir les coudes à 90° ; monter les épaules ; perdre le contrôle pendant la pause.\n\n" +
+      "Tempo recommandé : 3-2-1-0 (3 s descente, 2 s pause, 1 s montée, 0 s en haut). Séries types : 3–4 × 6–10 reps. Difficulté intermédiaire à avancée (≈ 7/10).",
+    variations: [
+      "flat dumbbell press pause",
+      "pause dumbbell bench press",
+      "dc haltères pause",
+      "développé couché haltères pause",
+      "dumbbell bench press with pause"
+    ]
+  },
+  "développé décliné haltères pause bas": {
+    name: "Développé couché décliné aux haltères avec pause",
+    category: "Pectoraux",
+    primaryMuscles: ["Pectoraux inférieurs"],
+    secondaryMuscles: ["Triceps brachial", "Deltoïdes antérieurs"],
+    equipment: "Haltères + Banc décliné",
+    difficulty: 3,
+    summary: "Pause en bas · bas des pectoraux · tempo 3-2-1-0",
+    description:
+      "Exercice de musculation sur banc décliné (−15° à −30°) avec deux haltères et une pause contrôlée en position basse (1–3 s). Cible la portion inférieure des pectoraux, les triceps et les deltoïdes antérieurs. La pause supprime l'élan et intensifie le travail au point le plus difficile.\n\n" +
+      "Exécution : banc décliné modéré, pieds calés, omoplates rapprochées. Haltères au-dessus de la poitrine basse, bras tendus. Descends en 2–3 s, coudes à 45–60°, jusqu'à la ligne des mamelons ou légèrement en dessous. Pause 1–2 s en maintien actif, puis poussée explosive sans décoller les épaules.\n\n" +
+      "Erreurs fréquentes : déclinaison excessive ; rebond en bas ; coudes à 90° ; perte de contrôle des haltères pendant la pause ; cambrure lombaire excessive.\n\n" +
+      "Tempo recommandé : 3-2-1-0. Séries types : 3–4 × 6–10 reps. Difficulté avancée (≈ 7,5/10) — position déclinée + instabilité haltères + pause.",
+    variations: [
+      "decline dumbbell press pause",
+      "pause decline dumbbell bench",
+      "dc décliné haltères pause",
+      "développé décliné haltères pause",
+      "decline db press with pause"
+    ]
   },
   "écarté poulie": {
     name: "Écarté à la poulie",
@@ -2177,6 +2266,204 @@ export const exerciseDatabase = {
     description:
       "Gainage latéral avec la jambe supérieure posée sur un banc (cheville ou genou) et la jambe inférieure dans le vide. Sollicite intensément les adducteurs en isométrie : prévention majeure des blessures de hanche/aine en sport.",
     variations: ["copenhagen side plank", "adductor plank", "gainage adducteurs", "copenhagen hold", "adductor side plank"]
+  },
+  "monster walk": {
+    name: "Monster walk",
+    category: "Fessiers",
+    primaryMuscles: ["Grand fessier", "Moyen fessier"],
+    secondaryMuscles: ["Abducteurs", "Quadriceps"],
+    equipment: "Bande élastique (chevilles ou au-dessus des genoux)",
+    difficulty: 1,
+    description:
+      "Marche latérale genoux légèrement fléchis avec bande élastique. Active le moyen fessier — référence en prévention du syndrome de l'essuie-glace et des douleurs latérales de genou chez le coureur.",
+    variations: ["monster walks", "banded lateral walk", "marche latérale élastique", "crab walk band"]
+  },
+  "rotation externe élastique": {
+    name: "Rotation externe élastique",
+    category: "Épaules",
+    primaryMuscles: ["Coiffe des rotateurs", "Infraspinatus"],
+    secondaryMuscles: ["Trapèze moyen", "Deltoïde postérieur"],
+    equipment: "Bande élastique",
+    difficulty: 1,
+    description:
+      "Coude au corps à 90°, rotation externe contre élastique. Renforce la coiffe des rotateurs sans charge axiale — pilier de la rééducation épaule et prévention des conflits sous-acromiaux.",
+    variations: ["external rotation band", "rotateur externe élastique", "ER band", "rotation externe épaule"]
+  },
+  "pompes scapulaires": {
+    name: "Pompes scapulaires (push-up plus)",
+    category: "Épaules",
+    primaryMuscles: ["Serratus antérieur", "Trapèze inférieur"],
+    secondaryMuscles: ["Pectoraux", "Deltoïdes"],
+    equipment: "Poids du corps",
+    difficulty: 1,
+    description:
+      "Position haute de pompe : sans plier les coudes, laisse les omoplates se rapprocher puis s'éloigner (protraction/rétraction). Réactive le dentelé antérieur et stabilise la scapula.",
+    variations: ["push-up plus", "scapular push-up", "serratus push-up", "protraction scapulaire"]
+  },
+  "serratus punch": {
+    name: "Serratus punch",
+    category: "Épaules",
+    primaryMuscles: ["Serratus antérieur"],
+    secondaryMuscles: ["Trapèze inférieur", "Deltoïde antérieur"],
+    equipment: "Bande élastique ou câble",
+    difficulty: 1,
+    description:
+      "Bras tendu devant soi, pousse en avant (shadow boxing) en laissant l'omoplate glisser autour du thorax. Cible le dentelé antérieur — utile en scapula alata et instabilité scapulaire.",
+    variations: ["serratus punches", "protraction punch", "straight arm punch band"]
+  },
+  "squat décliné rééducation": {
+    name: "Squat décliné (rééducation genou)",
+    category: "Quadriceps",
+    primaryMuscles: ["Quadriceps"],
+    secondaryMuscles: ["Fessiers", "Mollets"],
+    equipment: "Planche inclinée / rampe",
+    difficulty: 2,
+    description:
+      "Squat avec talons surélevés (planche ou rampe) pour augmenter la flexion de genou sans charge lourde. Variante courante en tendinopathie rotulienne et Hoffite, souvent en complément du Spanish squat.",
+    variations: ["decline squat", "squat décliné", "heels elevated squat rehab"]
+  },
+  "descente excentrique mollet": {
+    name: "Descente excentrique mollet (Achille)",
+    category: "Mollets",
+    primaryMuscles: ["Gastrocnémiens", "Soléaire"],
+    secondaryMuscles: ["Tendon d'Achille"],
+    equipment: "Marche / step",
+    difficulty: 2,
+    description:
+      "Debout sur une marche, montée bilatérale puis descente lente sur une jambe (3 s minimum). Protocole Alfredson classique pour tendinopathie d'Achille — matin et soir.",
+    variations: ["eccentric heel drop", "alfredson protocol", "descente achille", "excentrique mollet"]
+  },
+  "éversion cheville élastique": {
+    name: "Éversion cheville élastique",
+    category: "Mollets",
+    primaryMuscles: ["Fibulaires", "Long fibulaire"],
+    secondaryMuscles: ["Stabilisateurs de cheville"],
+    equipment: "Bande élastique",
+    difficulty: 1,
+    description:
+      "Assis, élastique autour de l'avant-pied : pousse le pied vers l'extérieur contre résistance. Renforce les éverseurs après entorse ou tendinopathie des fibulaires.",
+    variations: ["ankle eversion band", "éversion élastique", "fibular strengthening"]
+  },
+  "inversion cheville élastique": {
+    name: "Inversion cheville élastique",
+    category: "Mollets",
+    primaryMuscles: ["Tibial postérieur", "Tibial antérieur"],
+    secondaryMuscles: ["Stabilisateurs de cheville"],
+    equipment: "Bande élastique",
+    difficulty: 1,
+    description:
+      "Assis, élastique : ramène la plante du pied vers l'intérieur contre résistance. Utile en tendinopathie du tibial postérieur et prévention entorses.",
+    variations: ["ankle inversion band", "inversion élastique", "tib post strengthening"]
+  },
+  "adduction hanche élastique": {
+    name: "Adduction hanche élastique",
+    category: "Quadriceps",
+    primaryMuscles: ["Adducteurs"],
+    secondaryMuscles: ["Fessiers", "Core"],
+    equipment: "Bande élastique",
+    difficulty: 1,
+    description:
+      "Debout, élastique autour de la cheville : ramène la jambe vers la ligne médiane contre résistance. Complément du Copenhagen plank pour pubalgie et adducteurs.",
+    variations: ["hip adduction band", "adduction élastique", "standing adduction band"]
+  },
+  "curl poignet excentrique": {
+    name: "Curl poignet excentrique",
+    category: "Avant-bras",
+    primaryMuscles: ["Extenseurs du poignet", "Extenseurs des doigts"],
+    secondaryMuscles: ["Brachioradial"],
+    equipment: "Haltère léger",
+    difficulty: 1,
+    description:
+      "Aide-toi de l'autre main pour monter, puis descends lentement (3–4 s) en contrôlant l'haltère. Protocole classique épicondylite latérale (tennis elbow).",
+    variations: ["eccentric wrist extension", "tyler twist", "excentrique extenseurs poignet"]
+  },
+  "flexion poignet excentrique": {
+    name: "Flexion poignet excentrique",
+    category: "Avant-bras",
+    primaryMuscles: ["Fléchisseurs du poignet"],
+    secondaryMuscles: ["Fléchisseurs des doigts"],
+    equipment: "Haltère léger",
+    difficulty: 1,
+    description:
+      "Montée assistée, descente lente en flexion de poignet. Cible les fléchisseurs en excentrique — référence en épitrochléite (golfer's elbow).",
+    variations: ["eccentric wrist flexion", "excentrique épitrochléite", "flexion poignet lente"]
+  },
+  "extension doigts élastique": {
+    name: "Extension doigts élastique",
+    category: "Avant-bras",
+    primaryMuscles: ["Extenseurs des doigts"],
+    secondaryMuscles: ["Extenseurs du poignet"],
+    equipment: "Bande élastique",
+    difficulty: 1,
+    description:
+      "Élastique autour des doigts : ouvre la main contre résistance. Rééquilibre extenseurs vs fléchisseurs après grip intensif (tractions, front lever, grimpe).",
+    variations: ["finger extension band", "rubber band finger ext", "extension doigts"]
+  },
+  "ouverture main élastique": {
+    name: "Ouverture main élastique",
+    category: "Avant-bras",
+    primaryMuscles: ["Interosseux", "Lombricaux", "Extenseurs des doigts"],
+    secondaryMuscles: ["Avant-bras"],
+    equipment: "Bande élastique",
+    difficulty: 1,
+    description:
+      "Élastique autour des doigts repliés : étends les doigts contre résistance. Prévention tendinopathies des fléchisseurs des doigts en street workout.",
+    variations: ["hand opener band", "finger spread band", "ouverture doigts élastique"]
+  },
+  "relevé genoux élastique": {
+    name: "Relevé de genoux élastique",
+    category: "Abdominaux",
+    primaryMuscles: ["Fléchisseurs de hanche", "Droit fémoral"],
+    secondaryMuscles: ["Core"],
+    equipment: "Bande élastique",
+    difficulty: 1,
+    description:
+      "Debout, élastique autour des chevilles : lève le genou vers la poitrine contre résistance légère. Renforce le droit fémoral en contexte de tendinopathie du droit fémoral chez le coureur.",
+    variations: ["knee drive band", "marcha genoux élastique", "hip flexor band march"]
+  },
+  "y raise debout": {
+    name: "Y raise debout",
+    category: "Épaules",
+    primaryMuscles: ["Trapèze inférieur", "Deltoïde postérieur"],
+    secondaryMuscles: ["Coiffe des rotateurs", "Serratus antérieur"],
+    equipment: "Haltères légers / élastique",
+    difficulty: 1,
+    description:
+      "Buste penché, bras en Y, élève les bras sans hausser les épaules. Active trapèzes inférieurs et rotateurs — complément du face pull en rééducation d'épaule.",
+    variations: ["standing y raise", "y raise", "trap y raise", "élévation Y debout"]
+  },
+  "équilibre unipodal": {
+    name: "Équilibre unipodal",
+    category: "Mollets",
+    primaryMuscles: ["Stabilisateurs de cheville", "Moyen fessier"],
+    secondaryMuscles: ["Mollets", "Core"],
+    equipment: "Aucun",
+    difficulty: 1,
+    description:
+      "Tenue sur une jambe, regard fixe, bassin niveau. Proprioception de base après entorse de cheville ou en prévention — yeux ouverts puis progresser yeux fermés.",
+    variations: ["single leg balance", "équilibre une jambe", "stance unipodale", "one leg stand"]
+  },
+  "abduction hanche debout élastique": {
+    name: "Abduction hanche debout élastique",
+    category: "Fessiers",
+    primaryMuscles: ["Moyen fessier", "Grand fessier"],
+    secondaryMuscles: ["Tensor fascia lata"],
+    equipment: "Bande élastique",
+    difficulty: 1,
+    description:
+      "Debout, élastique autour des chevilles : écarte la jambe latéralement sans basculer le bassin. Renforce le moyen fessier — essentiel en syndrome de l'essuie-glace et tendinopathie du moyen fessier.",
+    variations: ["hip abduction band", "abduction élastique", "lateral leg raise band"]
+  },
+  "ramassage serviette orteils": {
+    name: "Ramassage serviette (orteils)",
+    category: "Mollets",
+    primaryMuscles: ["Intrinsèques du pied", "Fléchisseurs des orteils"],
+    secondaryMuscles: ["Voûte plantaire"],
+    equipment: "Serviette",
+    difficulty: 1,
+    description:
+      "Assis, ramasse une serviette au sol avec les orteils. Renforce la voûte plantaire — protocole classique fasciite plantaire et prévention douleurs du pied.",
+    variations: ["towel scrunch", "toe curls towel", "ramasser serviette", "short foot towel"]
   }
 };
 

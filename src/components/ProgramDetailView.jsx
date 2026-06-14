@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
+import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
 import Card, { CardContent, CardHeader, CardTitle } from './ui/Card';
 import Button from './ui/Button';
 import { 
@@ -16,7 +17,8 @@ import {
   Search,
   Copy,
   CheckSquare,
-  Square
+  Square,
+  GripVertical
 } from 'lucide-react';
 import { typography } from '../styles/typography';
 import {
@@ -45,6 +47,7 @@ import { useTranslation } from '../utils/translations';
 import { useLanguage } from '../context/LanguageContext';
 import { LANGUAGES } from '../utils/translations/constants';
 import { exerciseDatabase } from '../data/exerciseDatabase';
+import { getExerciseProgramNotes, resolveProgramExerciseNotes } from '../utils/exerciseHeroContent';
 import StretchSlotsEditor from './program/StretchSlotsEditor';
 import PlyometricBlock from './program/PlyometricBlock';
 import RunningDrillsBlock from './program/RunningDrillsBlock';
@@ -112,6 +115,39 @@ const REST_DAY_LABELS = {
 };
 
 const STRETCH_MOMENTS = ['matin', 'midi', 'soir'];
+
+function isVisibleProgramExercise(ex) {
+  return !isLegacyCircuitSlotExercise(ex) && !isLegacyCircuitHeaderExercise(ex);
+}
+
+function reorderVisibleExercisesInList(exercises, sourceVisibleIndex, destVisibleIndex) {
+  if (!Array.isArray(exercises) || sourceVisibleIndex === destVisibleIndex) return exercises;
+  const visible = exercises.filter(isVisibleProgramExercise);
+  if (
+    sourceVisibleIndex < 0 ||
+    destVisibleIndex < 0 ||
+    sourceVisibleIndex >= visible.length ||
+    destVisibleIndex >= visible.length
+  ) {
+    return exercises;
+  }
+  const reorderedVisible = [...visible];
+  const [moved] = reorderedVisible.splice(sourceVisibleIndex, 1);
+  reorderedVisible.splice(destVisibleIndex, 0, moved);
+  let visibleIdx = 0;
+  return exercises.map((ex) => (isVisibleProgramExercise(ex) ? reorderedVisible[visibleIdx++] : ex));
+}
+
+function reorderArrayByIndex(list, sourceIndex, destIndex) {
+  if (!Array.isArray(list) || sourceIndex === destIndex) return list;
+  if (sourceIndex < 0 || destIndex < 0 || sourceIndex >= list.length || destIndex >= list.length) {
+    return list;
+  }
+  const next = [...list];
+  const [moved] = next.splice(sourceIndex, 1);
+  next.splice(destIndex, 0, moved);
+  return next;
+}
 
 const ProgramDetailView = ({ program, onBack, onUpdateProgram }) => {
   const normalizedProgram = useMemo(() => normalizeProgramRestConfig(program), [program]);
@@ -667,7 +703,7 @@ const ProgramDetailView = ({ program, onBack, onUpdateProgram }) => {
       rest: isFractionne ? 60 : pickerVolumeMode === 'reps' ? 90 : 30,
       intensity: isFractionne ? 'heavy' : pickerVolumeMode === 'reps' ? 'moderate' : 'light',
       materiel: dbEx.equipment || '',
-      notes: dbEx.description || '',
+      notes: getExerciseProgramNotes(dbEx),
       programCategory: category,
       programSubType: isFractionne ? 'running_interval' : '',
       cardioKind: category === 'cardio' ? 'running' : '',
@@ -754,7 +790,7 @@ const ProgramDetailView = ({ program, onBack, onUpdateProgram }) => {
       ...prev,
       name: dbEx.name || bankKey,
       materiel: dbEx.equipment || prev.materiel || '',
-      notes: prev.notes?.trim() ? prev.notes : dbEx.description || '',
+      notes: prev.notes?.trim() ? prev.notes : getExerciseProgramNotes(dbEx),
       programCategory: category,
       cardioKind: category === 'cardio' ? prev.cardioKind || 'running' : ''
     }));
@@ -1361,6 +1397,50 @@ const ProgramDetailView = ({ program, onBack, onUpdateProgram }) => {
     onUpdateProgram(updatedProgram);
   };
 
+  const handleReorderMainExercises = useCallback(
+    (dayKey, result) => {
+      if (!result.destination) return;
+      const sourceIndex = result.source.index;
+      const destIndex = result.destination.index;
+      if (sourceIndex === destIndex) return;
+
+      const updatedProgram = {
+        ...program,
+        updatedAt: new Date().toISOString(),
+        schedule: { ...program.schedule }
+      };
+      const day = { ...updatedProgram.schedule[dayKey] };
+      day.exercises = reorderVisibleExercisesInList(day.exercises, sourceIndex, destIndex);
+      updatedProgram.schedule[dayKey] = day;
+      onUpdateProgram(updatedProgram);
+    },
+    [program, onUpdateProgram]
+  );
+
+  const handleReorderVariantExercises = useCallback(
+    (dayKey, variantKey, result) => {
+      if (!result.destination) return;
+      const sourceIndex = result.source.index;
+      const destIndex = result.destination.index;
+      if (sourceIndex === destIndex) return;
+
+      const updatedProgram = {
+        ...program,
+        updatedAt: new Date().toISOString(),
+        schedule: { ...program.schedule }
+      };
+      const day = { ...updatedProgram.schedule[dayKey] };
+      const variants = { ...day.salleVariants };
+      const v = { ...variants[variantKey], exercises: [...(variants[variantKey].exercises || [])] };
+      v.exercises = reorderArrayByIndex(v.exercises, sourceIndex, destIndex);
+      variants[variantKey] = v;
+      day.salleVariants = variants;
+      updatedProgram.schedule[dayKey] = day;
+      onUpdateProgram(updatedProgram);
+    },
+    [program, onUpdateProgram]
+  );
+
   const toggleExerciseSelection = useCallback((dayKey, exerciseId, checked) => {
     setSelectedExerciseIdsByDay((prev) => {
       const current = new Set(prev[dayKey] || []);
@@ -1633,6 +1713,9 @@ const ProgramDetailView = ({ program, onBack, onUpdateProgram }) => {
         {PROGRAM_WEEK_DAYS.map((dayKey) => {
           const dayData = program.schedule[dayKey];
           if (!dayData) return null;
+          const visibleMainExercises = (dayData.exercises || []).filter(isVisibleProgramExercise);
+          const semaineAExercises = dayData.salleVariants?.semaineA?.exercises || [];
+          const semaineBExercises = dayData.salleVariants?.semaineB?.exercises || [];
 
           return (
             <Card key={dayKey} variant="sport" className="overflow-hidden !p-0 md:!p-0">
@@ -1804,13 +1887,14 @@ const ProgramDetailView = ({ program, onBack, onUpdateProgram }) => {
                 {/* Exercices */}
                 <div>
                   <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
-                    <h3 className={`${typography.presets.h3} flex items-center gap-2 text-teal-50`}>
+                    <h3 className={`${typography.presets.h3} flex flex-wrap items-center gap-2 text-teal-50`}>
                       <Dumbbell size={20} className="text-teal-400" />
-                      Exercices (
-                      {(dayData.exercises || []).filter(
-                        (ex) => !isLegacyCircuitSlotExercise(ex) && !isLegacyCircuitHeaderExercise(ex)
-                      ).length}
-                      )
+                      Exercices ({visibleMainExercises.length})
+                      {visibleMainExercises.length > 1 && (
+                        <span className="text-[10px] font-normal normal-case tracking-normal text-slate-500">
+                          · Glisser ↕ pour réordonner
+                        </span>
+                      )}
                     </h3>
                     <div className="flex items-center gap-2">
                       <button
@@ -1838,155 +1922,183 @@ const ProgramDetailView = ({ program, onBack, onUpdateProgram }) => {
                       </button>
                     </div>
                   </div>
-                  {(!dayData.exercises || dayData.exercises.length === 0) && (
+                  {visibleMainExercises.length === 0 && (
                     <p className="text-sm text-slate-500 mb-3">Aucun exercice pour ce jour — utilisez « Ajouter un exercice ».</p>
                   )}
-                  <div className="space-y-3">
-                    {(dayData.exercises || [])
-                      .filter(
-                        (ex) => !isLegacyCircuitSlotExercise(ex) && !isLegacyCircuitHeaderExercise(ex)
-                      )
-                      .map((exercise, index) => {
-                      const isEditing =
-                        editingExercise?.dayKey === dayKey &&
-                        editingExercise?.exerciseId === exercise.id &&
-                        !editingExercise?.variantKey;
-                      const mainAnchorId = getProgramExerciseAnchorId(dayKey, null, exercise.id);
+                  {visibleMainExercises.length > 0 && (
+                    <DragDropContext onDragEnd={(result) => handleReorderMainExercises(dayKey, result)}>
+                      <Droppable droppableId={`program-exercises-${dayKey}`}>
+                        {(dropProvided, dropSnapshot) => (
+                          <div
+                            ref={dropProvided.innerRef}
+                            {...dropProvided.droppableProps}
+                            className={`space-y-3 ${dropSnapshot.isDraggingOver ? 'rounded-lg ring-1 ring-teal-500/25' : ''}`}
+                          >
+                            {visibleMainExercises.map((exercise, index) => {
+                              const isEditing =
+                                editingExercise?.dayKey === dayKey &&
+                                editingExercise?.exerciseId === exercise.id &&
+                                !editingExercise?.variantKey;
+                              const mainAnchorId = getProgramExerciseAnchorId(dayKey, null, exercise.id);
 
-                      return (
-                        <div
-                          key={exercise.id}
-                          id={mainAnchorId}
-                          className={`rounded-lg border bg-black p-4 transition-shadow duration-300 border-[#0F4C5C]/50 ${
-                            flashExerciseAnchorId === mainAnchorId
-                              ? 'ring-2 ring-cyan-400/90 ring-offset-2 ring-offset-black'
-                              : ''
-                          }`}
-                        >
-                          <div className="flex items-start justify-between">
-                            <div className="flex-1">
-                              {isEditing ? (
-                                renderExerciseEditor()
-                              ) : (
-                                <div>
-                                  <div className="flex items-center gap-3 mb-2 flex-wrap">
-                                    <label className="inline-flex items-center">
-                                      <input
-                                        type="checkbox"
-                                        checked={(selectedExerciseIdsByDay[dayKey] || []).includes(exercise.id)}
-                                        onChange={(e) => toggleExerciseSelection(dayKey, exercise.id, e.target.checked)}
-                                        className="sr-only peer"
-                                      />
-                                      <span className="inline-flex items-center justify-center rounded border border-[#0F4C5C]/50 p-1 text-slate-400 peer-checked:text-teal-200 peer-checked:border-teal-500/60">
-                                        {(selectedExerciseIdsByDay[dayKey] || []).includes(exercise.id) ? (
-                                          <CheckSquare size={14} />
-                                        ) : (
-                                          <Square size={14} />
+                              return (
+                                <Draggable
+                                  key={exercise.id}
+                                  draggableId={`program-exercises-${dayKey}-${exercise.id}`}
+                                  index={index}
+                                  isDragDisabled={isEditing}
+                                >
+                                  {(dragProvided, dragSnapshot) => (
+                                    <div
+                                      ref={dragProvided.innerRef}
+                                      {...dragProvided.draggableProps}
+                                      id={mainAnchorId}
+                                      className={`rounded-lg border bg-black p-4 transition-shadow duration-300 border-[#0F4C5C]/50 ${
+                                        flashExerciseAnchorId === mainAnchorId
+                                          ? 'ring-2 ring-cyan-400/90 ring-offset-2 ring-offset-black'
+                                          : ''
+                                      } ${dragSnapshot.isDragging ? 'ring-2 ring-teal-400/50 shadow-lg shadow-black/60' : ''}`}
+                                    >
+                                      <div className="flex items-start justify-between">
+                                        <div className="flex-1">
+                                          {isEditing ? (
+                                            renderExerciseEditor()
+                                          ) : (
+                                            <div>
+                                              <div className="flex items-center gap-3 mb-2 flex-wrap">
+                                                <button
+                                                  type="button"
+                                                  {...dragProvided.dragHandleProps}
+                                                  className="inline-flex touch-none items-center justify-center rounded border border-[#0F4C5C]/40 p-1 text-slate-500 hover:border-teal-500/50 hover:text-teal-300 cursor-grab active:cursor-grabbing"
+                                                  title="Glisser pour réordonner"
+                                                  aria-label="Glisser pour réordonner"
+                                                >
+                                                  <GripVertical size={14} />
+                                                </button>
+                                                <label className="inline-flex items-center">
+                                                  <input
+                                                    type="checkbox"
+                                                    checked={(selectedExerciseIdsByDay[dayKey] || []).includes(exercise.id)}
+                                                    onChange={(e) => toggleExerciseSelection(dayKey, exercise.id, e.target.checked)}
+                                                    className="sr-only peer"
+                                                  />
+                                                  <span className="inline-flex items-center justify-center rounded border border-[#0F4C5C]/50 p-1 text-slate-400 peer-checked:text-teal-200 peer-checked:border-teal-500/60">
+                                                    {(selectedExerciseIdsByDay[dayKey] || []).includes(exercise.id) ? (
+                                                      <CheckSquare size={14} />
+                                                    ) : (
+                                                      <Square size={14} />
+                                                    )}
+                                                  </span>
+                                                </label>
+                                                <span className="rounded bg-[#0F5C45]/20 px-2 py-1 text-xs font-medium text-teal-100 ring-1 ring-[#0F4C5C]/45">
+                                                  {index + 1}
+                                                </span>
+                                                <h4 className="font-medium text-slate-200">{exercise.name}</h4>
+                                                <span className="bg-slate-600/60 text-slate-200 px-2 py-0.5 rounded text-xs">
+                                                  {getCategoryLabel(resolveProgramExerciseCategory(exercise))}
+                                                </span>
+                                                {exercise.type &&
+                                                  exercise.type !== 'standard' &&
+                                                  !String(exercise.type).includes('circuit_abdos') && (
+                                                  <span className="rounded border border-[#0F4C5C]/45 bg-[#0F4C5C]/20 px-2 py-1 text-xs text-teal-100">
+                                                    {exercise.type}
+                                                  </span>
+                                                )}
+                                              </div>
+                                              {resolveProgramExerciseCategory(exercise) === 'cardio' && exercise.meta && (
+                                                <p className="text-xs text-cyan-300/90 mb-2">
+                                                  {exercise.cardioKind === 'running' &&
+                                                    RUNNING_SUBTYPES.find((s) => s.id === exercise.programSubType)?.label}
+                                                  {exercise.cardioKind === 'running' &&
+                                                    exercise.meta.distanceKm != null &&
+                                                    ` · ${exercise.meta.distanceKm} km`}
+                                                  {exercise.meta?.durationMin != null && ` · ${exercise.meta.durationMin} min`}
+                                                  {exercise.cardioKind === 'jump_rope' &&
+                                                    exercise.meta?.jumpRopeMode === 'reps' &&
+                                                    exercise.meta?.jumpCount != null &&
+                                                    ` · ${exercise.meta.jumpCount} sauts`}
+                                                  {exercise.cardioKind === 'jump_rope' &&
+                                                    (exercise.meta?.jumpRopeMode === 'time' || !exercise.meta?.jumpRopeMode) &&
+                                                    exercise.meta?.jumpRopeDurationMin != null &&
+                                                    ` · ${exercise.meta.jumpRopeDurationMin} min`}
+                                                </p>
+                                              )}
+
+                                              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm text-slate-300 mb-2">
+                                                <div>
+                                                  <span className="text-slate-400">Séries:</span>
+                                                  <div className="font-medium">{exercise.series}</div>
+                                                </div>
+                                                <div>
+                                                  <span className="text-slate-400">Repos:</span>
+                                                  <div className="font-medium">{exercise.rest}s</div>
+                                                </div>
+                                                <div>
+                                                  <span className="text-slate-400">Intensité:</span>
+                                                  <div className="font-medium capitalize">{exercise.intensity}</div>
+                                                </div>
+                                                <div>
+                                                  <span className="text-slate-400">Matériel:</span>
+                                                  <div className="font-medium">{exercise.materiel}</div>
+                                                </div>
+                                              </div>
+
+                                              {resolveProgramExerciseNotes(exercise) && (
+                                                <div className="text-xs text-slate-400 italic mt-2">
+                                                  {resolveProgramExerciseNotes(exercise)}
+                                                </div>
+                                              )}
+                                            </div>
+                                          )}
+                                        </div>
+
+                                        {!isEditing && (
+                                          <div className="ml-3 flex flex-col items-end gap-2 shrink-0">
+                                            <Button
+                                              onClick={() => handleEditExercise(dayKey, exercise.id)}
+                                              className="p-2 h-auto bg-transparent hover:bg-slate-600/50 text-slate-400 hover:text-slate-200"
+                                            >
+                                              <Edit3 size={16} />
+                                            </Button>
+                                            <Button
+                                              type="button"
+                                              onClick={() =>
+                                                openDuplicateModal(dayKey, [
+                                                  { id: `exercise_${exercise.id}`, kind: 'exercise', label: exercise.name, payload: exercise }
+                                                ])
+                                              }
+                                              className="p-2 h-auto bg-transparent hover:bg-slate-600/50 text-slate-400 hover:text-slate-200"
+                                              title="Dupliquer vers d'autres jours"
+                                            >
+                                              <Copy size={14} />
+                                            </Button>
+                                            <Button
+                                              type="button"
+                                              onClick={() => {
+                                                if (window.confirm(DELETE_EXO_CONFIRM)) {
+                                                  handleDeleteExerciseFromProgram(dayKey, exercise.id);
+                                                }
+                                              }}
+                                              className="p-2 h-auto bg-transparent hover:bg-red-500/20 text-red-300 hover:text-red-100 text-xs whitespace-nowrap"
+                                              title="Supprimer du programme"
+                                            >
+                                              <Trash2 size={14} className="inline mr-1" />
+                                              Supprimer
+                                            </Button>
+                                          </div>
                                         )}
-                                      </span>
-                                    </label>
-                                    <span className="rounded bg-[#0F5C45]/20 px-2 py-1 text-xs font-medium text-teal-100 ring-1 ring-[#0F4C5C]/45">
-                                      {index + 1}
-                                    </span>
-                                    <h4 className="font-medium text-slate-200">{exercise.name}</h4>
-                                    <span className="bg-slate-600/60 text-slate-200 px-2 py-0.5 rounded text-xs">
-                                      {getCategoryLabel(resolveProgramExerciseCategory(exercise))}
-                                    </span>
-                                    {exercise.type &&
-                                      exercise.type !== 'standard' &&
-                                      !String(exercise.type).includes('circuit_abdos') && (
-                                      <span className="rounded border border-[#0F4C5C]/45 bg-[#0F4C5C]/20 px-2 py-1 text-xs text-teal-100">
-                                        {exercise.type}
-                                      </span>
-                                    )}
-                                  </div>
-                                  {resolveProgramExerciseCategory(exercise) === 'cardio' && exercise.meta && (
-                                    <p className="text-xs text-cyan-300/90 mb-2">
-                                      {exercise.cardioKind === 'running' &&
-                                        RUNNING_SUBTYPES.find((s) => s.id === exercise.programSubType)?.label}
-                                      {exercise.cardioKind === 'running' &&
-                                        exercise.meta.distanceKm != null &&
-                                        ` · ${exercise.meta.distanceKm} km`}
-                                      {exercise.meta?.durationMin != null && ` · ${exercise.meta.durationMin} min`}
-                                      {exercise.cardioKind === 'jump_rope' &&
-                                        exercise.meta?.jumpRopeMode === 'reps' &&
-                                        exercise.meta?.jumpCount != null &&
-                                        ` · ${exercise.meta.jumpCount} sauts`}
-                                      {exercise.cardioKind === 'jump_rope' &&
-                                        (exercise.meta?.jumpRopeMode === 'time' || !exercise.meta?.jumpRopeMode) &&
-                                        exercise.meta?.jumpRopeDurationMin != null &&
-                                        ` · ${exercise.meta.jumpRopeDurationMin} min`}
-                                    </p>
-                                  )}
-
-                                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm text-slate-300 mb-2">
-                                    <div>
-                                      <span className="text-slate-400">Séries:</span>
-                                      <div className="font-medium">{exercise.series}</div>
-                                    </div>
-                                    <div>
-                                      <span className="text-slate-400">Repos:</span>
-                                      <div className="font-medium">{exercise.rest}s</div>
-                                    </div>
-                                    <div>
-                                      <span className="text-slate-400">Intensité:</span>
-                                      <div className="font-medium capitalize">{exercise.intensity}</div>
-                                    </div>
-                                    <div>
-                                      <span className="text-slate-400">Matériel:</span>
-                                      <div className="font-medium">{exercise.materiel}</div>
-                                    </div>
-                                  </div>
-
-                                  {exercise.notes && (
-                                    <div className="text-xs text-slate-400 italic mt-2">
-                                      {exercise.notes}
+                                      </div>
                                     </div>
                                   )}
-                                </div>
-                              )}
-                            </div>
-
-                            {!isEditing && (
-                              <div className="ml-3 flex flex-col items-end gap-2 shrink-0">
-                                <Button
-                                  onClick={() => handleEditExercise(dayKey, exercise.id)}
-                                  className="p-2 h-auto bg-transparent hover:bg-slate-600/50 text-slate-400 hover:text-slate-200"
-                                >
-                                  <Edit3 size={16} />
-                                </Button>
-                                <Button
-                                  type="button"
-                                  onClick={() =>
-                                    openDuplicateModal(dayKey, [
-                                      { id: `exercise_${exercise.id}`, kind: 'exercise', label: exercise.name, payload: exercise }
-                                    ])
-                                  }
-                                  className="p-2 h-auto bg-transparent hover:bg-slate-600/50 text-slate-400 hover:text-slate-200"
-                                  title="Dupliquer vers d'autres jours"
-                                >
-                                  <Copy size={14} />
-                                </Button>
-                                <Button
-                                  type="button"
-                                  onClick={() => {
-                                    if (window.confirm(DELETE_EXO_CONFIRM)) {
-                                      handleDeleteExerciseFromProgram(dayKey, exercise.id);
-                                    }
-                                  }}
-                                  className="p-2 h-auto bg-transparent hover:bg-red-500/20 text-red-300 hover:text-red-100 text-xs whitespace-nowrap"
-                                  title="Supprimer du programme"
-                                >
-                                  <Trash2 size={14} className="inline mr-1" />
-                                  Supprimer
-                                </Button>
-                              </div>
-                            )}
+                                </Draggable>
+                              );
+                            })}
+                            {dropProvided.placeholder}
                           </div>
-                        </div>
-                      );
-                    })}
-                  </div>
+                        )}
+                      </Droppable>
+                    </DragDropContext>
+                  )}
                   {(selectedExerciseIdsByDay[dayKey] || []).length > 0 && (
                     <div className="mt-3 flex items-center justify-between rounded-lg border border-[#0F4C5C]/45 bg-black/60 px-3 py-2 text-xs">
                       <span className="text-teal-200">
@@ -2146,21 +2258,36 @@ const ProgramDetailView = ({ program, onBack, onUpdateProgram }) => {
                         </button>
                       </div>
                       <div className="space-y-3">
-                        {dayData.salleVariants.semaineA.exercises.map((exercise, index) => {
+                        {semaineAExercises.length > 1 && (
+                          <p className="text-[10px] text-slate-500">Glisser ↕ pour réordonner</p>
+                        )}
+                        <DragDropContext onDragEnd={(result) => handleReorderVariantExercises(dayKey, 'semaineA', result)}>
+                          <Droppable droppableId={`program-exercises-${dayKey}-semaineA`}>
+                            {(dropProvided) => (
+                              <div ref={dropProvided.innerRef} {...dropProvided.droppableProps} className="space-y-3">
+                                {semaineAExercises.map((exercise, index) => {
                           const isEditingVar =
                             editingExercise?.dayKey === dayKey &&
                             editingExercise?.exerciseId === exercise.id &&
                             editingExercise?.variantKey === 'semaineA';
                           const varAAnchorId = getProgramExerciseAnchorId(dayKey, 'semaineA', exercise.id);
                           return (
-                            <div
+                            <Draggable
                               key={exercise.id}
+                              draggableId={`program-exercises-${dayKey}-semaineA-${exercise.id}`}
+                              index={index}
+                              isDragDisabled={isEditingVar}
+                            >
+                              {(dragProvided, dragSnapshot) => (
+                            <div
+                              ref={dragProvided.innerRef}
+                              {...dragProvided.draggableProps}
                               id={varAAnchorId}
                               className={`rounded-lg border bg-black p-4 transition-shadow duration-300 border-[#0F4C5C]/55 ${
                                 flashExerciseAnchorId === varAAnchorId
                                   ? 'ring-2 ring-cyan-400/90 ring-offset-2 ring-offset-black'
                                   : ''
-                              }`}
+                              } ${dragSnapshot.isDragging ? 'ring-2 ring-teal-400/50 shadow-lg shadow-black/60' : ''}`}
                             >
                               {isEditingVar ? (
                                 renderExerciseEditor()
@@ -2168,6 +2295,15 @@ const ProgramDetailView = ({ program, onBack, onUpdateProgram }) => {
                                 <>
                                   <div className="flex items-start justify-between gap-2 mb-2">
                                     <div className="flex items-center gap-3 flex-wrap">
+                                      <button
+                                        type="button"
+                                        {...dragProvided.dragHandleProps}
+                                        className="inline-flex touch-none items-center justify-center rounded border border-[#0F4C5C]/40 p-1 text-slate-500 hover:border-teal-500/50 hover:text-teal-300 cursor-grab active:cursor-grabbing"
+                                        title="Glisser pour réordonner"
+                                        aria-label="Glisser pour réordonner"
+                                      >
+                                        <GripVertical size={14} />
+                                      </button>
                                       <span className="rounded bg-[#0F5C45]/20 px-2 py-1 text-xs font-medium text-teal-100 ring-1 ring-[#0F4C5C]/45">
                                         {index + 1}
                                       </span>
@@ -2215,14 +2351,21 @@ const ProgramDetailView = ({ program, onBack, onUpdateProgram }) => {
                                       <div className="font-medium">{exercise.materiel}</div>
                                     </div>
                                   </div>
-                                  {exercise.notes && (
-                                    <div className="text-xs text-slate-400 italic mt-2">{exercise.notes}</div>
+                                  {resolveProgramExerciseNotes(exercise) && (
+                                    <div className="text-xs text-slate-400 italic mt-2">{resolveProgramExerciseNotes(exercise)}</div>
                                   )}
                                 </>
                               )}
                             </div>
+                              )}
+                            </Draggable>
                           );
                         })}
+                                {dropProvided.placeholder}
+                              </div>
+                            )}
+                          </Droppable>
+                        </DragDropContext>
                       </div>
                     </div>
 
@@ -2244,21 +2387,36 @@ const ProgramDetailView = ({ program, onBack, onUpdateProgram }) => {
                         </button>
                       </div>
                       <div className="space-y-3">
-                        {dayData.salleVariants.semaineB.exercises.map((exercise, index) => {
+                        {semaineBExercises.length > 1 && (
+                          <p className="text-[10px] text-slate-500">Glisser ↕ pour réordonner</p>
+                        )}
+                        <DragDropContext onDragEnd={(result) => handleReorderVariantExercises(dayKey, 'semaineB', result)}>
+                          <Droppable droppableId={`program-exercises-${dayKey}-semaineB`}>
+                            {(dropProvided) => (
+                              <div ref={dropProvided.innerRef} {...dropProvided.droppableProps} className="space-y-3">
+                                {semaineBExercises.map((exercise, index) => {
                           const isEditingVar =
                             editingExercise?.dayKey === dayKey &&
                             editingExercise?.exerciseId === exercise.id &&
                             editingExercise?.variantKey === 'semaineB';
                           const varBAnchorId = getProgramExerciseAnchorId(dayKey, 'semaineB', exercise.id);
                           return (
-                            <div
+                            <Draggable
                               key={exercise.id}
+                              draggableId={`program-exercises-${dayKey}-semaineB-${exercise.id}`}
+                              index={index}
+                              isDragDisabled={isEditingVar}
+                            >
+                              {(dragProvided, dragSnapshot) => (
+                            <div
+                              ref={dragProvided.innerRef}
+                              {...dragProvided.draggableProps}
                               id={varBAnchorId}
                               className={`rounded-lg border bg-black p-4 transition-shadow duration-300 border-[#0F4C5C]/55 ${
                                 flashExerciseAnchorId === varBAnchorId
                                   ? 'ring-2 ring-cyan-400/90 ring-offset-2 ring-offset-black'
                                   : ''
-                              }`}
+                              } ${dragSnapshot.isDragging ? 'ring-2 ring-teal-400/50 shadow-lg shadow-black/60' : ''}`}
                             >
                               {isEditingVar ? (
                                 renderExerciseEditor()
@@ -2266,6 +2424,15 @@ const ProgramDetailView = ({ program, onBack, onUpdateProgram }) => {
                                 <>
                                   <div className="flex items-start justify-between gap-2 mb-2">
                                     <div className="flex items-center gap-3 flex-wrap">
+                                      <button
+                                        type="button"
+                                        {...dragProvided.dragHandleProps}
+                                        className="inline-flex touch-none items-center justify-center rounded border border-[#0F4C5C]/40 p-1 text-slate-500 hover:border-teal-500/50 hover:text-teal-300 cursor-grab active:cursor-grabbing"
+                                        title="Glisser pour réordonner"
+                                        aria-label="Glisser pour réordonner"
+                                      >
+                                        <GripVertical size={14} />
+                                      </button>
                                       <span className="rounded bg-[#0F5C45]/20 px-2 py-1 text-xs font-medium text-teal-100 ring-1 ring-[#0F4C5C]/45">
                                         {index + 1}
                                       </span>
@@ -2313,14 +2480,21 @@ const ProgramDetailView = ({ program, onBack, onUpdateProgram }) => {
                                       <div className="font-medium">{exercise.materiel}</div>
                                     </div>
                                   </div>
-                                  {exercise.notes && (
-                                    <div className="text-xs text-slate-400 italic mt-2">{exercise.notes}</div>
+                                  {resolveProgramExerciseNotes(exercise) && (
+                                    <div className="text-xs text-slate-400 italic mt-2">{resolveProgramExerciseNotes(exercise)}</div>
                                   )}
                                 </>
                               )}
                             </div>
+                              )}
+                            </Draggable>
                           );
                         })}
+                                {dropProvided.placeholder}
+                              </div>
+                            )}
+                          </Droppable>
+                        </DragDropContext>
                       </div>
                     </div>
                   </div>

@@ -4,6 +4,7 @@
 
 import { stretchDatabase } from '../data/stretchDatabase';
 import { exerciseDatabase } from '../data/exerciseDatabase';
+import { getExerciseProgramNotes } from './exerciseHeroContent';
 import {
   normalizeStretchSlots,
   buildDefaultStretchId,
@@ -112,7 +113,7 @@ export function appendExerciseBankKeyToProgramDay(program, dayKey, exerciseBankK
     rest: 90,
     intensity: 'moderate',
     materiel: dbEx.equipment || '',
-    notes: dbEx.description || '',
+    notes: getExerciseProgramNotes(dbEx),
     programCategory: category,
     cardioKind: category === 'cardio' ? 'other' : '',
     meta: normalizeExerciseMeta(newEx)
@@ -132,11 +133,13 @@ export function appendExerciseBankKeyToProgramDay(program, dayKey, exerciseBankK
 /**
  * Ajoute un étirement banque au moment du jour ; convertit les slots au format tableau persistant.
  */
-export function appendStretchKeyToProgramDay(program, dayKey, moment, stretchKey) {
+export function appendStretchKeyToProgramDay(program, dayKey, moment, stretchKey, opts = {}) {
   if (!stretchDatabase[stretchKey] || !program?.schedule?.[dayKey]) return { ok: false, error: 'invalid' };
   if (!STRETCH_MOMENTS.includes(moment)) return { ok: false, error: 'invalid_moment' };
 
   const db = stretchDatabase[stretchKey];
+  const durationOverride =
+    typeof opts.duration === 'number' && opts.duration > 0 ? opts.duration : null;
   const slots = normalizeStretchSlots(program.schedule[dayKey].etirements, dayKey);
   const next = {
     matin: [...(slots.matin || [])],
@@ -155,7 +158,7 @@ export function appendStretchKeyToProgramDay(program, dayKey, moment, stretchKey
     moment,
     stretchKey,
     name: db.name,
-    duration: db.defaultDuration || 60,
+    duration: durationOverride || db.defaultDuration || 60,
     instructions: db.instructions || '',
     bodyZone: db.bodyZone || 'full',
     primaryMuscles: db.primaryMuscles || [],

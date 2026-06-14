@@ -15,6 +15,7 @@ import {
 import { buildWeightByDateMap, getLatestWeightSnapshot } from './recapAssessmentSeries';
 import { normalizeProfileQuestionnaire } from '../../features/profileQuestionnaire/schema';
 import { computeCardioBiasMultiplier } from '../../features/profileQuestionnaire/quizInfluence';
+import { summarizeGtgWindow } from '../../services/endurance/gtgService';
 
 /** @typedef {'loading'|'ready'|'skipped'} NutritionBundleStatus */
 
@@ -365,6 +366,10 @@ export function buildRecapCrossCoachAggregate({
   const weightDelta7 = computeWeightDelta7FromSnapshot(snapshot, endYmd);
   const sla = assessment.sessionLoadAlignment28 || {};
   const qq = normalizeProfileQuestionnaire(profileQuestionnaireRaw || null);
+  const gtgCtx = { workoutData: snapshot, profileQuestionnaire: qq };
+  const gtg28 = summarizeGtgWindow(snapshot?.enduranceData?.gtg, start28, endYmd, gtgCtx);
+  const gtgLast7Start = DateHelper.addDays(endYmd, -6);
+  const gtg7 = summarizeGtgWindow(snapshot?.enduranceData?.gtg, gtgLast7Start, endYmd, gtgCtx);
 
   const garminOut =
     gp.status === 'loading'
@@ -443,6 +448,8 @@ export function buildRecapCrossCoachAggregate({
       programsOwnedCount: np.programsOwnedCount ?? null
     },
     quiz: assessment.quiz,
-    garmin: garminOut
+    garmin: garminOut,
+    gtg28,
+    gtg7
   };
 }

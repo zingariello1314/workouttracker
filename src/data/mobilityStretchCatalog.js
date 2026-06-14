@@ -1143,4 +1143,38 @@ export const mobilityStretchCatalog = {
     contraindications: ["Vertige"],
     variations: ["neck glides", "cervical retractions"]
   },
+  mob_cheville_achilles_eccentric: {
+    name: "Descente excentrique Achille (marche)",
+    category: "Mobilité chevilles",
+    bodyZone: "mollets",
+    primaryMuscles: ["Gastrocnémiens", "Soléaire", "Tendon d'Achille"],
+    secondaryMuscles: ["Mollets"],
+    equipment: "Marche / step",
+    defaultDuration: 90,
+    position: "Debout sur marche",
+    difficulty: 2,
+    description:
+      "Protocole excentrique Alfredson : montée à deux jambes, descente lente à une jambe. Référence tendinopathie d'Achille.",
+    instructions:
+      "Sur une marche, monte sur la pointe des deux pieds. Transfère le poids sur une jambe et descends le talon sous le niveau de la marche en 3 à 5 secondes. Remonte à deux jambes. 3×15 matin et soir si toléré.",
+    contraindications: ["Rupture Achille suspectée", "douleur aiguë au repos"],
+    variations: ["alfredson", "eccentric heel drop", "descente achille"]
+  },
+  mob_poignet_nerve_glide: {
+    name: "Glissement nerveux médian (poignet)",
+    category: "Mobilité",
+    bodyZone: "bras",
+    primaryMuscles: ["Nerf médian", "Fléchisseurs du poignet"],
+    secondaryMuscles: ["Avant-bras"],
+    equipment: "Aucun",
+    defaultDuration: 60,
+    position: "Assis ou debout",
+    difficulty: 1,
+    description:
+      "Mobilisation douce du nerf médian — utile en syndrome du canal carpien léger ou après appuis répétés (handstand, pompes).",
+    instructions:
+      "Bras tendu devant, paume vers le haut. Étends doucement le poignet et les doigts tout en inclinant la tête du côté opposé, puis reviens. 10 glissements lents sans douleur vive.",
+    contraindications: ["Fourmillements sévères", "atrophie thenar", "consultation médicale non faite"],
+    variations: ["nerve glide median", "glissement nerveux", "neural mobilization wrist"]
+  },
 };

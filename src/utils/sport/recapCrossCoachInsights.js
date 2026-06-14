@@ -539,6 +539,101 @@ export function computeRecapCrossCoachInsights(aggregate, opts = {}) {
     });
   }
 
+  const gtg28 = aggregate?.gtg28 || {};
+  const gtg7 = aggregate?.gtg7 || {};
+  const gtgDays = Number(gtg28.daysWithAny) || 0;
+  const gtgDays50 = Number(gtg28.daysAt50) || 0;
+  const gtgDays100 = Number(gtg28.daysAt100) || 0;
+  const gtgReps28 = Number(gtg28.totalReps) || 0;
+  const gtgDays7 = Number(gtg7.daysWithAny) || 0;
+
+  if (gtgDays >= 4 && gtgReps28 >= 30) {
+    raw.push({
+      id: 'sport.gtg_rhythm',
+      theme: 'gtg',
+      priority: 55,
+      pillar: 'sport',
+      templateKey: 'gtgBeneficialRhythm',
+      payload: { days: gtgDays, reps: gtgReps28 }
+    });
+  }
+
+  if (gtgDays50 >= 4) {
+    raw.push({
+      id: 'sport.gtg_half_plan',
+      theme: 'gtg',
+      priority: 53,
+      pillar: 'sport',
+      templateKey: 'gtgPlanHalfPlus',
+      payload: { days: gtgDays50 }
+    });
+  }
+
+  if (gtgDays100 >= 2) {
+    raw.push({
+      id: 'sport.gtg_full_days',
+      theme: 'gtg',
+      priority: 51,
+      pillar: 'sport',
+      templateKey: 'gtgFullDays',
+      payload: { days: gtgDays100 }
+    });
+  }
+
+  if (gtgDays >= 5 && gtgDays50 < 2 && gtgReps28 > 0) {
+    raw.push({
+      id: 'sport.gtg_adjust',
+      theme: 'gtg',
+      priority: 39,
+      pillar: 'sport',
+      templateKey: 'gtgAdjustVolume',
+      payload: {}
+    });
+  }
+
+  if (gtgDays >= 1 && gtgDays <= 3 && fit.tenureDays >= 14) {
+    raw.push({
+      id: 'sport.gtg_light',
+      theme: 'gtg',
+      priority: 36,
+      pillar: 'sport',
+      templateKey: 'gtgLightTouch',
+      payload: { days: gtgDays }
+    });
+  }
+
+  if (
+    gtgDays7 >= 5 &&
+    gm.status === 'ready' &&
+    Number(gm.totalSteps28) > 50000 &&
+    hasSportSignal
+  ) {
+    raw.push({
+      id: 'sport.gtg_with_cardio',
+      theme: 'gtg',
+      priority: 45,
+      pillar: 'combined',
+      templateKey: 'gtgRecoveryFriendly',
+      payload: {}
+    });
+  }
+
+  if (
+    gtgDays === 0 &&
+    hasSportSignal &&
+    Number(fit.tenureDays) >= 21 &&
+    (Number(fit.totalReps28) > 200 || Number(gm.totalSteps28) > 40000)
+  ) {
+    raw.push({
+      id: 'sport.gtg_optional',
+      theme: 'gtg',
+      priority: 28,
+      pillar: 'sport',
+      templateKey: 'gtgOptionalExplore',
+      payload: {}
+    });
+  }
+
   if (raw.length === 0) {
     if (hasSportSignal || hasNutritionSignal || hasBodySignal) {
       raw.push({

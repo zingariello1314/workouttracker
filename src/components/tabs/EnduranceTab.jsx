@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
-import { Calendar, Dumbbell, Waves, Activity, Play, Box, Plus, X, Trash2, Award, Edit, Save, Heart, Zap, Anchor, Footprints, Trophy, Repeat, Layers } from 'lucide-react';
+import { Calendar, Dumbbell, Waves, Activity, Play, Box, Plus, X, Trash2, Award, Edit, Save, Heart, Zap, Anchor, Footprints, Trophy, Repeat, Layers, Clock } from 'lucide-react';
 import { useWorkout } from '../../context/WorkoutContext';
 import StarRating from '../ui/StarRating';
 import { useTranslation } from '../../utils/translations';
@@ -49,6 +49,7 @@ import EnduranceCalendarModernPanel from './EnduranceTab/components/EnduranceCal
 import DefisDisciplineCalendarPanel from './EnduranceTab/components/DefisDisciplineCalendarPanel.jsx';
 import PerformanceChallengesTab from './PerformanceChallengesTab.jsx';
 import CircuitsHubPanel from './EnduranceTab/components/CircuitsHubPanel.jsx';
+import GtgPanel from './EnduranceTab/components/GtgPanel.jsx';
 import PyramidTrainingPanel from '../sport/pyramid/PyramidTrainingPanel.jsx';
 import EnduranceDisciplineStatsPanel from '../sport/charts/EnduranceDisciplineStatsPanel.jsx';
 import RunningStatsPanel from './EnduranceTab/components/RunningStatsPanel.jsx';
@@ -1331,6 +1332,7 @@ const EnduranceTab = () => {
       { id: 'boxing', label: t('endurance.menu.boxing'), icon: Box },
       { id: 'swimming', label: t('endurance.menu.swimming'), icon: Waves },
       { id: 'circuits', label: t('endurance.menu.circuits', 'Circuits'), icon: Repeat },
+      { id: 'gtg', label: t('endurance.menu.gtg', 'Grease the Groove'), icon: Clock },
       { id: 'pyramid', label: t('endurance.menu.pyramid', 'Pyramide'), icon: Layers },
       { id: 'trophies', label: t('endurance.menu.allTrophies', 'Tous mes trophées'), icon: Award },
       { id: 'performance', label: t('endurance.menu.performance', 'Performances'), icon: Trophy },
@@ -3350,6 +3352,9 @@ const EnduranceTab = () => {
 
           {/* SECTION CIRCUITS */}
           {activeTab === 'circuits' && <CircuitsHubPanel />}
+
+          {/* SECTION GREASE THE GROOVE */}
+          {activeTab === 'gtg' && <GtgPanel />}
 
           {/* SECTION PYRAMIDE */}
           {activeTab === 'pyramid' && <PyramidTrainingPanel />}

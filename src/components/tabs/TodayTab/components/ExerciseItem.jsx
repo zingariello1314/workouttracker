@@ -23,6 +23,7 @@ import {
   estimateSessionsPerWeek
 } from '../../../../services/trainingPatterns/pyramidUserSignals';
 import { intensityCoeffToStarCount, resolveExerciseIntensityCoeff } from '../../../../utils/trainingLoadUtils';
+import { resolveProgramExerciseNotes } from '../../../../utils/exerciseHeroContent';
 import LoadDifficultyStars from '../../../sport/LoadDifficultyStars';
 import SessionTriplePerceivedBlock from './SessionTriplePerceivedBlock';
 
@@ -96,6 +97,8 @@ const ExerciseItem = ({ exercise, date, isGymMode, onShowVariations }) => {
     () => intensityCoeffToStarCount(loadCoeff),
     [loadCoeff]
   );
+
+  const programNotesLine = useMemo(() => resolveProgramExerciseNotes(exercise), [exercise]);
 
   // Détecter l'unité de l'exercice (sec, min, ou reps)
   const exerciseUnit = useMemo(() => detectExerciseUnit(exercise), [exercise]);
@@ -180,7 +183,7 @@ const ExerciseItem = ({ exercise, date, isGymMode, onShowVariations }) => {
         <div className="text-sm text-gray-300">
           {exercise.series}
           {exercise.materiel && ` • ${exercise.materiel}`}
-          {exercise.notes && ` • ${exercise.notes}`}
+          {programNotesLine && ` • ${programNotesLine}`}
         </div>
         {trainingPattern ? (
           <div className="mt-2 rounded-md border border-amber-500/40 bg-amber-950/30 px-2 py-1.5 text-[11px] leading-snug text-amber-50/95">

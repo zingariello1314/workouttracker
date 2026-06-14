@@ -369,6 +369,39 @@
   "equipment": {
     "boxingGloves": "Boxing gloves",
     "pool": "Pool"
+  },
+  "pathologyTab": {
+    "bankSubTab": "Injuries",
+    "title": "Injury & rehab bank",
+    "subtitle": "Common running and street workout / strength injuries — symptoms, causes, bank-linked exercises, recovery timelines and prevention.",
+    "search": "Search injury, symptom…",
+    "allZones": "All body areas",
+    "empty": "No results for these filters.",
+    "back": "Back to injury bank",
+    "difficultRecovery": "Often long recovery",
+    "recovery": "Recovery",
+    "disclaimerTitle": "Important",
+    "disclaimer": "Educational content for athletes — not a diagnosis or medical advice. See a healthcare professional if pain persists, worsens at night or includes neurological signs.",
+    "symptoms": "Symptoms",
+    "causes": "Common causes",
+    "keyPoints": "Key points",
+    "prescriptionTitle": "Rehab & exercises",
+    "prescription": { "defaultGroup": "Exercises & care" },
+    "prevention": "Prevention",
+    "rehabNote": "Remember",
+    "notInBank": "Not linked to bank",
+    "typeExercise": "Exercise",
+    "typeStretch": "Stretch / mobility",
+    "sports": {
+      "running": "Running",
+      "strength": "Street workout & strength",
+      "prevention": "Prevention & guides"
+    },
+    "viewDetail": "Details",
+    "addAll": "Add all",
+    "addSelection": "Add to program",
+    "selectionLabel": "Pathology selection",
+    "noBankItems": "No bank exercise linked — see detail sheet for text-only advice."
   }
 }
 

@@ -45,8 +45,11 @@ export default function BankAddToProgramModal({ payload, onClose }) {
   const [moment, setMoment] = useState('soir');
   const [newProgramName, setNewProgramName] = useState('');
   const [activateAfterCreate, setActivateAfterCreate] = useState(true);
+  const [spreadWeek, setSpreadWeek] = useState(false);
 
   const open = Boolean(payload);
+  const isBulk = payload?.kind === 'bulk';
+  const bulkHasStretch = isBulk && (payload.items || []).some((it) => it.kind === 'stretch');
 
   useEffect(() => {
     if (!payload) return;
@@ -58,6 +61,7 @@ export default function BankAddToProgramModal({ payload, onClose }) {
     setMoment('soir');
     setNewProgramName('');
     setActivateAfterCreate(true);
+    setSpreadWeek(false);
   }, [payload, activeProgram, programs]);
 
   useEffect(() => {
@@ -71,6 +75,10 @@ export default function BankAddToProgramModal({ payload, onClose }) {
 
   const titleLabel = useMemo(() => {
     if (!payload) return '';
+    if (payload.kind === 'bulk') {
+      const n = payload.items?.length || 0;
+      return payload.label || `${n} élément${n > 1 ? 's' : ''}`;
+    }
     if (payload.kind === 'stretch') return payload.stretchLabel || payload.stretchKey || 'Étirement';
     return payload.exercise?.name || 'Exercice';
   }, [payload]);
@@ -133,8 +141,55 @@ export default function BankAddToProgramModal({ payload, onClose }) {
       }
     }
 
-    if (payload.kind === 'stretch') {
-      const r = appendStretchKeyToProgramDay(target, dayKey, moment, payload.stretchKey);
+    const dayIndex = WEEK_DAYS.indexOf(dayKey);
+
+    const applyOne = (program, item, offset) => {
+      const dk = spreadWeek
+        ? WEEK_DAYS[(dayIndex + offset) % WEEK_DAYS.length]
+        : dayKey;
+      if (item.kind === 'stretch') {
+        return appendStretchKeyToProgramDay(program, dk, moment, item.stretchKey, {
+          duration: item.duration
+        });
+      }
+      const exKey = item.exercise ? resolveExerciseBankKey(item.exercise) : null;
+      if (!exKey) return { ok: false, error: 'no_key' };
+      return appendExerciseBankKeyToProgramDay(program, dk, exKey, { series: item.series || '3×10' });
+    };
+
+    if (payload.kind === 'bulk') {
+      const items = payload.items || [];
+      if (items.length === 0) {
+        showError('Aucun élément à ajouter.');
+        return;
+      }
+      let program = target;
+      let added = 0;
+      let dupes = 0;
+      let failed = 0;
+      items.forEach((item, i) => {
+        const r = applyOne(program, item, i);
+        if (!r?.ok) {
+          failed += 1;
+          return;
+        }
+        program = r.program;
+        if (r.duplicate) dupes += 1;
+        else added += 1;
+      });
+      if (added === 0 && failed > 0) {
+        showError('Impossible d’ajouter la sélection au programme.');
+        return;
+      }
+      persistProgram(program);
+      const spreadHint = spreadWeek ? ' · réparti sur la semaine' : '';
+      showSuccess(
+        `${added} ajouté${added > 1 ? 's' : ''}${dupes ? ` (${dupes} déjà présent${dupes > 1 ? 's' : ''})` : ''}${spreadHint} · ${target.name}.`
+      );
+    } else if (payload.kind === 'stretch') {
+      const r = appendStretchKeyToProgramDay(target, dayKey, moment, payload.stretchKey, {
+        duration: payload.duration
+      });
       if (!r.ok) {
         showError('Impossible d’ajouter cet étirement (jour invalide).');
         return;
@@ -147,7 +202,9 @@ export default function BankAddToProgramModal({ payload, onClose }) {
       persistProgram(r.program);
       showSuccess(`Étirement ajouté · ${DAY_LABEL[dayKey]} (${MOMENT_LABEL[moment]}).`);
     } else {
-      const r = appendExerciseBankKeyToProgramDay(target, dayKey, resolvedExerciseKey);
+      const r = appendExerciseBankKeyToProgramDay(target, dayKey, resolvedExerciseKey, {
+        series: payload.series || '3×10'
+      });
       if (!r.ok) {
         showError('Impossible d’ajouter l’exercice.');
         return;
@@ -304,11 +361,11 @@ export default function BankAddToProgramModal({ payload, onClose }) {
               </select>
             </div>
 
-            {payload.kind === 'stretch' && (
+            {(payload.kind === 'stretch' || bulkHasStretch) && (
               <div>
                 <span className="mb-1.5 flex items-center gap-1 text-[11px] font-semibold uppercase tracking-wide text-teal-900">
                   <Sparkles className="h-3.5 w-3.5" />
-                  Créneau
+                  Créneau {isBulk ? '(étirements)' : ''}
                 </span>
                 <select
                   value={moment}
@@ -324,6 +381,32 @@ export default function BankAddToProgramModal({ payload, onClose }) {
               </div>
             )}
           </div>
+
+          {isBulk && (payload.items?.length || 0) > 1 && (
+            <label className="flex cursor-pointer items-start gap-2 rounded-xl border border-[#0F4C5C]/55 bg-black px-3 py-2.5 text-xs text-teal-200">
+              <input
+                type="checkbox"
+                className="mt-0.5 accent-teal-500"
+                checked={spreadWeek}
+                onChange={(e) => setSpreadWeek(e.target.checked)}
+              />
+              <span>
+                Répartir sur la semaine (un élément par jour à partir du jour choisi — exercices en
+                liste du jour, étirements au créneau sélectionné).
+              </span>
+            </label>
+          )}
+
+          {isBulk && (
+            <div className="rounded-xl border border-[#0F4C5C]/45 bg-black/80 px-3 py-2 text-[11px] text-slate-400">
+              {(payload.items || []).map((it, i) => (
+                <div key={`${it.kind}-${i}`} className="truncate">
+                  {it.kind === 'stretch' ? '◎' : '◆'} {it.stretchLabel || it.exercise?.name || '—'}
+                  {it.series ? ` · ${it.series}` : ''}
+                </div>
+              ))}
+            </div>
+          )}
         </div>
 
         <div className="flex items-center justify-end gap-2 border-t border-[#0F4C5C]/40 bg-black/95 px-5 py-3">

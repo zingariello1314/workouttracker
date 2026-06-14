@@ -113,6 +113,7 @@ const WorkoutProvider = ({ children }) => {
         'jumprope',
         'boxing',
         'circuits',
+        'gtg',
         'pyramid',
         'performance',
       ];

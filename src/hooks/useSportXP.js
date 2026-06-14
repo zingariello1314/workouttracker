@@ -19,6 +19,7 @@ import { getAllMeals } from './nutritionDataCRUD';
 import { getNutritionRepository } from '../services/nutrition/repository';
 import { STORE_MEALS } from './nutritionDataUtils';
 import { sumMergedDailyStepsTotal, manualDailyWalkChecksum } from '../utils/sport/manualDailyWalkUtils';
+import { gtgChecksum } from '../services/endurance/gtgService';
 import { stretchRatingChecksum } from '../utils/stretchPerceivedRatings';
 
 const DEFAULT_BREAKDOWN = {
@@ -58,6 +59,11 @@ const DEFAULT_BREAKDOWN = {
   circuitCompletedDays: 0,
   circuitTripleAchievedDays: 0,
   circuitBonusRounds: 0,
+  gtgXp: 0,
+  gtgReps: 0,
+  gtgDaysWithXp: 0,
+  gtgDaysAt50: 0,
+  gtgDaysAt100: 0,
   nutritionFoodItems: 0,
   nutritionFoodXp: 0,
   intervalTrainingSessions: 0,
@@ -351,6 +357,7 @@ export const useSportXP = () => {
     const nutritionFoodTally = countNutritionRegisteredFoodItems(nutritionMeals);
     const nutritionMealsLen = Array.isArray(nutritionMeals) ? nutritionMeals.length : 0;
     const manualWalkSig = manualDailyWalkChecksum(enduranceData?.manualDailyWalkByDate);
+    const gtgSig = gtgChecksum(enduranceData?.gtg);
 
     const signature = [
       totalReps,
@@ -385,7 +392,8 @@ export const useSportXP = () => {
       circuitDefChecksum,
       nutritionMealsLen,
       nutritionFoodTally,
-      manualWalkSig
+      manualWalkSig,
+      gtgSig
     ].join('|');
 
     if (cacheRef.current.signature === signature) {

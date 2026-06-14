@@ -36,6 +36,7 @@ import RunningDrillsBlock from '../program/RunningDrillsBlock';
 import CircuitsTodaySection from './TodayTab/components/CircuitsTodaySection.jsx';
 import { intensityCoeffToStarCount, resolveExerciseIntensityCoeff } from '../../utils/trainingLoadUtils';
 import { exerciseUsesExternalLoad } from '../../utils/programUtils';
+import { resolveProgramExerciseNotes } from '../../utils/exerciseHeroContent';
 import LoadDifficultyStars from '../sport/LoadDifficultyStars';
 import CollapsibleSessionPerceived from './TodayTab/components/CollapsibleSessionPerceived.jsx';
 import {
@@ -1986,7 +1987,7 @@ const TodayTab = () => {
                       <span>
                         {exercise.series}
                         {exercise.materiel && ` • ${exercise.materiel}`}
-                        {exercise.notes && ` • ${exercise.notes}`}
+                        {resolveProgramExerciseNotes(exercise) && ` • ${resolveProgramExerciseNotes(exercise)}`}
                       </span>
                       <button
                         type="button"
@@ -2205,7 +2206,7 @@ const TodayTab = () => {
                             </>
                           )}
                           {exercise.materiel && ` • ${exercise.materiel}`}
-                          {exercise.notes && ` • ${exercise.notes}`}
+                          {resolveProgramExerciseNotes(exercise) && ` • ${resolveProgramExerciseNotes(exercise)}`}
                         </div>
                         {exercise.completed && (
                           <div className="text-xs text-green-300 mt-1">

@@ -17,12 +17,13 @@ import BankAddToProgramModal from '../sport/BankAddToProgramModal';
 import ExerciseFilter from '../ExerciseFilter';
 import ProgramCard from '../ProgramCard';
 import Card, { CardHeader, CardTitle, CardContent } from '../ui/Card';
-import { Activity, Target, Dumbbell, Clock, Filter, RefreshCw, Zap, AlertCircle, ArrowLeft } from 'lucide-react';
+import { Activity, Target, Dumbbell, Clock, Filter, RefreshCw, Zap, AlertCircle, ArrowLeft, Stethoscope } from 'lucide-react';
 import { useTranslation } from '../../utils/translations';
 import { useLanguage } from '../../context/LanguageContext';
 import { useAuth } from '../../context/AuthContext';
 import ExerciseDetailPage from './exercises/ExerciseDetailPage';
 import StretchBankView from './exercises/StretchBankView';
+import PathologyBankView from './exercises/PathologyBankView';
 import MyProgramBankView from './exercises/MyProgramBankView';
 import ProgramDetailView from '../ProgramDetailView';
 import { loadTranslationNamespace } from '../../utils/translations/loader';
@@ -40,6 +41,7 @@ import {
 const BANK_SUB_TABS = {
   EXERCISES: 'exercises',  // Banque d'exercices (existant)
   STRETCHES: 'stretches',  // Banque d'étirements (nouveau)
+  PATHOLOGY: 'pathology',  // Pathologies & rééducation
   PROGRAM: 'program'       // Mon programme (exos + étirements du programme actif)
 };
 
@@ -619,6 +621,20 @@ const ExercisesTab = () => {
           <button
             type="button"
             role="tab"
+            aria-selected={bankSubTab === BANK_SUB_TABS.PATHOLOGY}
+            onClick={() => setBankSubTab(BANK_SUB_TABS.PATHOLOGY)}
+            className={`px-3 py-1.5 rounded-md text-sm font-medium transition border ${
+              bankSubTab === BANK_SUB_TABS.PATHOLOGY
+                ? 'bg-rose-600/30 border-rose-400/60 text-white'
+                : 'bg-slate-900/40 border-slate-700 text-slate-300 hover:bg-slate-800/60'
+            }`}
+          >
+            <Stethoscope className="inline w-3.5 h-3.5 mr-1.5 -mt-0.5" />
+            {t('exercisesTab.pathologyTab.bankSubTab', 'Pathologies')}
+          </button>
+          <button
+            type="button"
+            role="tab"
             aria-selected={bankSubTab === BANK_SUB_TABS.PROGRAM}
             onClick={() => setBankSubTab(BANK_SUB_TABS.PROGRAM)}
             className={`px-3 py-1.5 rounded-md text-sm font-medium transition border ${
@@ -641,6 +657,27 @@ const ExercisesTab = () => {
   );
 
   // Si le sous-onglet est Étirements ou Programme, on rend une vue dédiée et on s'arrête là.
+  if (bankSubTab === BANK_SUB_TABS.PATHOLOGY) {
+    return (
+      <div className="relative">
+        <BankAddToProgramModal payload={bankAddPayload} onClose={() => setBankAddPayload(null)} />
+        <div className="relative z-10 space-y-6 p-6">
+          {subTabsHeader}
+          <PathologyBankView
+            data={data}
+            updateData={updateData}
+            onOpenExercise={(ex) => setDetailExercise(ex)}
+            onRequestAddToProgram={isAuthenticated ? (p) => setBankAddPayload(p) : undefined}
+            intensityCoeffs={intensityCoeffs}
+            maxRecordsByExerciseId={maxRecordsByExerciseId}
+            isAuthenticated={isAuthenticated}
+            sportPrograms={visiblePrograms}
+          />
+        </div>
+      </div>
+    );
+  }
+
   if (bankSubTab === BANK_SUB_TABS.STRETCHES) {
     return (
       <div className="relative">

@@ -7,6 +7,11 @@ import {
   computeBestSustainedNonIntervalPace,
   computeBestWeightedIntervalSession
 } from '../../../../utils/runningCalendarSpecialRecords';
+import {
+  collectGtgMiniSetHistory,
+  getGtgExerciseLabel,
+  normalizeGtgData
+} from '../../../../services/endurance/gtgService';
 
 const MONTHS_FR = [
   'Janvier',
@@ -68,10 +73,29 @@ function levelClass(level) {
   return 'bg-red-500/55 border-red-400/85 text-white';
 }
 
+function mapGtgHistoryToRows(gtgData, ctx = {}) {
+  const normalized = normalizeGtgData(gtgData);
+  const keys = Object.keys(normalized.days || {}).sort();
+  if (!keys.length) return [];
+  const history = collectGtgMiniSetHistory(normalized, keys[0], keys[keys.length - 1], ctx);
+  return history.map((h, originalIndex) => ({
+    type: 'gtg',
+    id: `${h.dateStr}_${h.slotIndex}_${h.exerciseId}`,
+    originalIndex,
+    date: h.dateStr,
+    time: h.time || '',
+    title: getGtgExerciseLabel(h.exerciseId, normalized.config, ctx),
+    durationMin: 0,
+    details: `${h.reps} reps`,
+    perf: h.reps
+  }));
+}
+
 function buildRowConfig(activityKind) {
   const editType = activityKind === 'walking' ? 'running' : activityKind;
 
   const perf = (s) => {
+    if (activityKind === 'gtg') return Math.max(0, Number(s.perf) || 0);
     if (activityKind === 'pushups') return Math.max(0, Number(s.count) || 0);
     if (activityKind === 'gainage') return Math.max(0, Number(s.count) || 0);
     if (activityKind === 'jumprope') return Math.max(0, Number(s.jumps) || 0);
@@ -80,6 +104,7 @@ function buildRowConfig(activityKind) {
   };
 
   const details = (s) => {
+    if (activityKind === 'gtg') return String(s.details || `${Number(s.perf || 0)} reps`);
     if (activityKind === 'pushups') return `${Number(s.count || 0)} reps`;
     if (activityKind === 'gainage') return `${Number(s.count || 0)} sec`;
     if (activityKind === 'jumprope') return `${Number(s.jumps || 0)} sauts`;
@@ -96,15 +121,17 @@ function buildRowConfig(activityKind) {
   };
 
   const title =
-    activityKind === 'pushups'
-      ? 'Pompes'
-      : activityKind === 'gainage'
-        ? 'Gainage'
-        : activityKind === 'jumprope'
-          ? 'Corde'
-          : activityKind === 'walking'
-            ? 'Marche'
-            : 'Course';
+    activityKind === 'gtg'
+      ? 'GTG'
+      : activityKind === 'pushups'
+        ? 'Pompes'
+        : activityKind === 'gainage'
+          ? 'Gainage'
+          : activityKind === 'jumprope'
+            ? 'Corde'
+            : activityKind === 'walking'
+              ? 'Marche'
+              : 'Course';
 
   return { editType, perf, details, durationMin, title };
 }
@@ -209,6 +236,7 @@ function currentStreakStrict(todayKey, sortedDateKeysSet) {
 function formatPerfValue(activityKind, value) {
   const v = Number(value) || 0;
   if (activityKind === 'running' || activityKind === 'walking') return `${v.toFixed(2)} km`;
+  if (activityKind === 'gtg') return `${Math.round(v)} reps`;
   return `${Math.round(v)}`;
 }
 
@@ -226,7 +254,8 @@ export default function DefisDisciplineCalendarPanel({
   activityKind,
   sessions,
   garminById = null,
-  onEditSession
+  onEditSession,
+  gtgPayload = null
 }) {
   const t = useTranslation();
   const { formatDate } = useFormatters();
@@ -235,7 +264,12 @@ export default function DefisDisciplineCalendarPanel({
   const [selectedMonthIndex, setSelectedMonthIndex] = useState(() => new Date().getMonth());
   const [selectedDateKey, setSelectedDateKey] = useState(null);
 
-  const allRows = useMemo(() => mapSessionsToRows(sessions, activityKind), [sessions, activityKind]);
+  const allRows = useMemo(() => {
+    if (activityKind === 'gtg' && gtgPayload?.gtgData) {
+      return mapGtgHistoryToRows(gtgPayload.gtgData, gtgPayload.ctx || {});
+    }
+    return mapSessionsToRows(sessions, activityKind);
+  }, [sessions, activityKind, gtgPayload]);
 
   const rowsYear = useMemo(() => {
     const y = String(selectedYear);
@@ -320,7 +354,10 @@ export default function DefisDisciplineCalendarPanel({
     };
   }, [activityKind, sessions, garminById]);
 
-  const perfUnitKey = `endurance.disciplineCalendar.perfUnit.${activityKind}`;
+  const perfUnitKey =
+    activityKind === 'gtg'
+      ? 'endurance.gtg.calendar.perfUnit'
+      : `endurance.disciplineCalendar.perfUnit.${activityKind}`;
 
   return (
     <div className="space-y-5">
@@ -511,7 +548,11 @@ export default function DefisDisciplineCalendarPanel({
           </div>
         </div>
 
-        <p className="mb-3 text-xs text-teal-200/75">{t('endurance.disciplineCalendar.intensityHint')}</p>
+        <p className="mb-3 text-xs text-teal-200/75">
+          {activityKind === 'gtg'
+            ? t('endurance.gtg.calendar.intensityHint')
+            : t('endurance.disciplineCalendar.intensityHint')}
+        </p>
 
         <div className="mb-4 flex items-center gap-2 text-xs">
           <span className="text-slate-400">{t('endurance.disciplineCalendar.intensityLabel')}</span>
@@ -590,14 +631,16 @@ export default function DefisDisciplineCalendarPanel({
                       {row.details} · {Math.round(Number(row.durationMin || 0))} min
                     </div>
                   </div>
-                  <button
-                    type="button"
-                    onClick={() => onEditSession?.(row.type, row.id)}
-                    className="inline-flex items-center gap-1 rounded-lg border border-[#1E7FA3]/70 bg-[#1E7FA3]/20 px-2.5 py-1.5 text-xs font-medium text-white"
-                  >
-                    <Edit3 className="h-3.5 w-3.5" />
-                    {t('endurance.actions.edit')}
-                  </button>
+                  {activityKind !== 'gtg' && onEditSession ? (
+                    <button
+                      type="button"
+                      onClick={() => onEditSession(row.type, row.id)}
+                      className="inline-flex items-center gap-1 rounded-lg border border-[#1E7FA3]/70 bg-[#1E7FA3]/20 px-2.5 py-1.5 text-xs font-medium text-white"
+                    >
+                      <Edit3 className="h-3.5 w-3.5" />
+                      {t('endurance.actions.edit')}
+                    </button>
+                  ) : null}
                 </div>
               ))}
           </div>

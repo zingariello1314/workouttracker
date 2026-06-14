@@ -27,6 +27,7 @@ import {
 } from '../../utils/trainingLoadUtils';
 import { computeProgramCompletionBonusXp } from '../../utils/programCompletionBonus';
 import { computeCircuitsXp } from './circuitsXpService';
+import { computeGtgXp } from './gtgXpService';
 import { parseStretchItemKey } from '../../utils/exerciseKeyGenerator';
 import { buildPlannedStretchItemsForDateStr } from '../../utils/stretchUtils';
 import { workoutProgram } from '../../data/workoutProgram';
@@ -291,6 +292,11 @@ export const calculateSportXP = (workoutData, garminData, enduranceData, sportOp
     circuitCompletedDays: 0,
     circuitTripleAchievedDays: 0,
     circuitBonusRounds: 0,
+    gtgXp: 0,
+    gtgReps: 0,
+    gtgDaysWithXp: 0,
+    gtgDaysAt50: 0,
+    gtgDaysAt100: 0,
     nutritionFoodItems: 0,
     nutritionFoodXp: 0,
     intervalTrainingSessions: 0,
@@ -576,6 +582,14 @@ export const calculateSportXP = (workoutData, garminData, enduranceData, sportOp
   breakdown.circuitTripleAchievedDays = circuitsResult.tripleAchievedDays;
   breakdown.circuitBonusRounds = circuitsResult.bonusRoundsTotal;
   totalXP += circuitsResult.totalXp;
+
+  const gtgResult = computeGtgXp(enduranceData?.gtg, { workoutData });
+  breakdown.gtgXp = gtgResult.totalXp;
+  breakdown.gtgReps = gtgResult.totalReps;
+  breakdown.gtgDaysWithXp = gtgResult.daysWithXp;
+  breakdown.gtgDaysAt50 = gtgResult.daysAt50;
+  breakdown.gtgDaysAt100 = gtgResult.daysAt100;
+  totalXP += gtgResult.totalXp;
 
   return {
     totalXP: Math.round(totalXP),

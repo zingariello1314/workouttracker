@@ -20,7 +20,7 @@ Transformer l'interface du Planificateur Financier avec des animations fluides, 
    - Sliders interactifs avec animations Framer Motion
    - Graphique pie chart interactif
    - Indicateur équilibre animé
-   - Hover effects et transitions fluides
+   - Hover effects et transitions fluides 
 
 2. **LoisirsInterface.jsx** (550+ lignes)
    - 2 modes d'affichage (Timeline, Grille)

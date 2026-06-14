@@ -369,6 +369,39 @@
   "equipment": {
     "boxingGloves": "Gants de boxe",
     "pool": "Piscine"
+  },
+  "pathologyTab": {
+    "bankSubTab": "Pathologies",
+    "title": "Banque pathologies & rééducation",
+    "subtitle": "Syndromes et blessures fréquentes en course et en street workout / musculation — symptômes, causes, exercices liés à la banque, délais de récupération et prévention.",
+    "search": "Rechercher une pathologie, un symptôme…",
+    "allZones": "Toutes les zones",
+    "empty": "Aucun résultat pour ces filtres.",
+    "back": "Retour à la banque pathologies",
+    "difficultRecovery": "Récupération souvent longue",
+    "recovery": "Récupération",
+    "disclaimerTitle": "Important",
+    "disclaimer": "Contenu éducatif pour sportifs : il ne remplace pas un diagnostic ni un suivi médical. Consulte un professionnel de santé si la douleur persiste, s'aggrave la nuit ou s'accompagne de signes neurologiques.",
+    "symptoms": "Symptômes",
+    "causes": "Causes fréquentes",
+    "keyPoints": "Points clés",
+    "prescriptionTitle": "Rééducation & exercices",
+    "prescription": { "defaultGroup": "Exercices & soins" },
+    "prevention": "Prévention",
+    "rehabNote": "À retenir",
+    "notInBank": "Non lié à la banque",
+    "typeExercise": "Exercice",
+    "typeStretch": "Étirement / mobilité",
+    "sports": {
+      "running": "Course à pied",
+      "strength": "Street workout & musculation",
+      "prevention": "Prévention & repères"
+    },
+    "viewDetail": "Détails",
+    "addAll": "Ajouter tout",
+    "addSelection": "Ajouter au programme",
+    "selectionLabel": "Sélection pathologies",
+    "noBankItems": "Pas d'exercice banque lié — voir la fiche détail pour les consignes texte."
   }
 }
 

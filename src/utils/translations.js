@@ -554,6 +554,20 @@ export const translations = {
       'Conformité moyenne plus basse (~{{score}} / 100) sur les jours suivis ; vérifier faim, timings ou objectifs peut aider.',
     'recap.crossCoach.insight.calorieVariance':
       'Écarts caloriques jour à jour parfois marqués : une structure de repas simple réduit les yo-yos sans rigidité excessive.',
+    'recap.crossCoach.insight.gtgBeneficialRhythm':
+      'Tu pratiques le Grease the Groove ({{days}} j. sur 28, ~{{reps}} reps cumulées) : fréquence nerveuse sans grosse fatigue — un bon complément si tu veux monter en tractions/dips/pompes sans casser la course.',
+    'recap.crossCoach.insight.gtgPlanHalfPlus':
+      '{{days}} jours où tu as atteint au moins la moitié de ton plan GTG : régularité intelligente, sans obligation de tout cocher chaque fois.',
+    'recap.crossCoach.insight.gtgFullDays':
+      '{{days}} journées GTG complètes récemment — belle constance. Si ça reste facile plusieurs jours d’affilée, tu peux envisager +1 rep par série.',
+    'recap.crossCoach.insight.gtgLightTouch':
+      'Quelques touches GTG cette période ({{days}} j.) : c’est déjà utile, et ce n’est pas obligatoire tous les jours — l’idée est la qualité du geste, pas le volume.',
+    'recap.crossCoach.insight.gtgRecoveryFriendly':
+      'GTG actif cette semaine en parallèle d’une bonne activité cardio : les mini-séries légères encaissent bien si tu ne pousses pas à l’échec.',
+    'recap.crossCoach.insight.gtgOptionalExplore':
+      'Le Grease the Groove (Défis) peut aider tractions/dips/pompes avec très peu de fatigue — option intéressante si tu veux tester, sans pression.',
+    'recap.crossCoach.insight.gtgAdjustVolume':
+      'Tu coches parfois le GTG mais rarement la moitié du plan : peut-être trop de créneaux ou d’exercices — vise 4–6 mini-séries faciles plutôt que tout attraper d’un coup.',
     'recap.crossCoach.insight.trainingProgramAnchored':
       'Bonne trajectoire vs ton planning (~{{pct}} % des jours de séance touchés récemment).',
     'recap.crossCoach.insight.keepLogging':
@@ -1425,6 +1439,20 @@ export const translations = {
       'Average compliance softer (~{{score}} / 100) on tracked days — timing/portions/program fit may merit a tweak.',
     'recap.crossCoach.insight.calorieVariance':
       'Daily calorie swings are noticeable lately — repeatable meal templates tame yo-yos without rigidity.',
+    'recap.crossCoach.insight.gtgBeneficialRhythm':
+      'Grease the Groove showing up ({{days}} days in 28, ~{{reps}} reps total): neural practice without heavy fatigue — a solid add-on for pull-ups/dips/push-ups alongside running.',
+    'recap.crossCoach.insight.gtgPlanHalfPlus':
+      '{{days}} days at least halfway through your GTG plan: smart frequency without needing a perfect score every day.',
+    'recap.crossCoach.insight.gtgFullDays':
+      '{{days}} full GTG days lately — nice consistency. If sets feel trivial for several days, consider +1 rep per set.',
+    'recap.crossCoach.insight.gtgLightTouch':
+      'A light GTG touch this period ({{days}} days): already useful, and not mandatory daily — quality beats volume.',
+    'recap.crossCoach.insight.gtgRecoveryFriendly':
+      'Active GTG this week alongside solid cardio: easy mini-sets tend to sit well if you avoid failure.',
+    'recap.crossCoach.insight.gtgOptionalExplore':
+      'Grease the Groove (Challenges tab) can nudge pull-ups/dips/push-ups with minimal fatigue — worth a look if curious, zero pressure.',
+    'recap.crossCoach.insight.gtgAdjustVolume':
+      'GTG check-ins are sporadic and rarely past half the daily plan — maybe too many slots or exercises; aim for 4–6 easy mini-sets instead of catching up in one go.',
     'recap.crossCoach.insight.trainingProgramAnchored':
       'You are hitting planned training days (~{{pct}} %) more often lately — anchors progression.',
     'recap.crossCoach.insight.keepLogging':
