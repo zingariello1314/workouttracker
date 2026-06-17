@@ -41,19 +41,34 @@ const CalendarTab = () => {
   // Utiliser getCurrentData() pour inclure les données temporaires non sauvegardées
   const currentData = getCurrentData();
   
-  // PHASE 5.3 : Charger données Garmin
+  // PHASE 5.3 : Charger données Garmin (attendre le chargement pour éviter le flash de couleurs)
   const { loadAllData, dbReady } = useGarminData();
   const [garminData, setGarminData] = useState(null);
+  const [garminDataLoaded, setGarminDataLoaded] = useState(false);
   
   useEffect(() => {
-    if (dbReady) {
-      loadAllData()
-        .then(setGarminData)
-        .catch(err => {
-          console.error('[CalendarTab] Error loading Garmin data:', err);
-          setGarminData(null);
-        });
+    if (!dbReady) {
+      setGarminDataLoaded(false);
+      return;
     }
+    let cancelled = false;
+    setGarminDataLoaded(false);
+    loadAllData()
+      .then((data) => {
+        if (cancelled) return;
+        setGarminData(data);
+        setGarminDataLoaded(true);
+      })
+      .catch(err => {
+        console.error('[CalendarTab] Error loading Garmin data:', err);
+        if (!cancelled) {
+          setGarminData(null);
+          setGarminDataLoaded(true);
+        }
+      });
+    return () => {
+      cancelled = true;
+    };
   }, [dbReady, loadAllData]);
   
   // Créer une instance du hook avec les données actuelles
@@ -625,7 +640,11 @@ const CalendarTab = () => {
         volumeAllKg={calendarLiftVolumeWindow.allVol}
       />
 
-      <CalendarHeatmap workoutHistory={workoutHistory} garminData={garminData} />
+      <CalendarHeatmap
+        workoutHistory={workoutHistory}
+        garminData={garminData}
+        garminDataLoaded={garminDataLoaded}
+      />
       </div>
     </div>
   );

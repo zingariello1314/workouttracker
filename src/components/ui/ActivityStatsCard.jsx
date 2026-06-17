@@ -3,6 +3,13 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { ArrowRight, ArrowUpRight, ArrowDownRight } from 'lucide-react';
 import { cn } from '../../utils/cn';
 
+function formatKmLabel(km) {
+  const n = Number(km);
+  if (!Number.isFinite(n) || n <= 0) return '0 km';
+  if (n < 1) return `${Math.round(n * 1000)} m`;
+  return `${n.toLocaleString('fr-FR', { maximumFractionDigits: 2, minimumFractionDigits: 0 })} km`;
+}
+
 function CardHeader({ className, children, ...props }) {
   return (
     <div className={cn('flex flex-col space-y-1.5 p-5 pb-3', className)} {...props}>
@@ -28,7 +35,7 @@ function CardContent({ className, children, ...props }) {
 }
 
 /**
- * @typedef {{ label: string, currentValue: number, previousValue: number }} ChartDataPoint
+ * @typedef {{ label: string, currentValue: number, previousValue: number, currentKm?: number, previousKm?: number }} ChartDataPoint
  */
 
 /**
@@ -44,6 +51,8 @@ function CardContent({ className, children, ...props }) {
  *   secondaryBarClassName?: string,
  *   chartAxisDensity?: 'default' | 'compact',
  *   sportShell?: boolean,
+ *   currentBarSeriesLabel?: string,
+ *   previousBarSeriesLabel?: string,
  * }} ActivityStatsCardProps
  */
 
@@ -61,6 +70,8 @@ const ActivityStatsCard = React.forwardRef(function ActivityStatsCard(
     secondaryBarClassName,
     chartAxisDensity = 'default',
     sportShell = false,
+    currentBarSeriesLabel = 'Période actuelle',
+    previousBarSeriesLabel = 'Période précédente',
     ...props
   },
   ref
@@ -141,13 +152,32 @@ const ActivityStatsCard = React.forwardRef(function ActivityStatsCard(
                 chartAxisDensity === 'compact' ? 'gap-0.5 px-0.5' : 'gap-1 sm:gap-2'
               )}
             >
-              {(chartData || []).map((point) => (
+              {(chartData || []).map((point) => {
+                const currKm =
+                  typeof point.currentKm === 'number' ? point.currentKm : null;
+                const prevKm =
+                  typeof point.previousKm === 'number' ? point.previousKm : null;
+                const tooltip =
+                  currKm != null || prevKm != null
+                    ? `${point.label}\n${currentBarSeriesLabel} : ${currKm != null ? formatKmLabel(currKm) : '—'}\n${previousBarSeriesLabel} : ${prevKm != null ? formatKmLabel(prevKm) : '—'}`
+                    : point.label;
+                const currentBarTitle =
+                  currKm != null
+                    ? `${currentBarSeriesLabel} — ${formatKmLabel(currKm)}`
+                    : currentBarSeriesLabel;
+                const previousBarTitle =
+                  prevKm != null
+                    ? `${previousBarSeriesLabel} — ${formatKmLabel(prevKm)}`
+                    : previousBarSeriesLabel;
+
+                return (
                 <div
                   key={point.label}
                   className={cn(
                     'flex h-full min-w-0 flex-1 flex-col items-center justify-end',
                     chartAxisDensity === 'compact' ? 'gap-0' : 'gap-1'
                   )}
+                  title={tooltip}
                 >
                   <div className="relative flex h-full w-full items-end justify-center gap-0.5 sm:gap-1">
                     <motion.div
@@ -156,7 +186,8 @@ const ActivityStatsCard = React.forwardRef(function ActivityStatsCard(
                       initial="hidden"
                       animate="visible"
                       className={cn('w-full max-w-[14px] rounded-sm bg-violet-500 sm:max-w-[18px]', primaryBarClassName)}
-                      aria-hidden
+                      title={currentBarTitle}
+                      aria-label={currentBarTitle}
                     />
                     <motion.div
                       custom={point.previousValue}
@@ -167,7 +198,8 @@ const ActivityStatsCard = React.forwardRef(function ActivityStatsCard(
                         'w-full max-w-[14px] rounded-sm bg-violet-900/90 sm:max-w-[18px]',
                         secondaryBarClassName
                       )}
-                      aria-hidden
+                      title={previousBarTitle}
+                      aria-label={previousBarTitle}
                     />
                   </div>
                   <span
@@ -181,7 +213,8 @@ const ActivityStatsCard = React.forwardRef(function ActivityStatsCard(
                     {point.label}
                   </span>
                 </div>
-              ))}
+              );
+              })}
             </motion.div>
           </AnimatePresence>
         </div>

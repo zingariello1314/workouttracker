@@ -7,8 +7,10 @@ import { buildGarminDayRecapRows } from './calendarGarminDayRecap';
 import {
   buildMomentumDayRecapRows,
   buildMomentumDayStripes,
+  hasCalendarRunningForDate,
   sortCalendarDayStripes
 } from './calendarDayMomentumStripes';
+import { CALENDAR_PHYSICAL_ACTIVITY_COLOR } from './calendarPhysicalActivityStripes';
 
 /**
  * @param {object} opts
@@ -28,10 +30,24 @@ export function buildCalendarDayAllStripes({
   programs = []
 }) {
   if (!dateStr) return [];
-  const momentum = buildMomentumDayStripes(workoutData, dateStr);
+  const momentum = buildMomentumDayStripes(workoutData, dateStr, garminData);
+  const hasRunStripe = momentum.some((s) => s.kind === 'momentumRun');
   const garmin = garminData
-    ? buildCalendarDayGarminStripes(garminData, dateStr, manualSteps)
+    ? buildCalendarDayGarminStripes(garminData, dateStr, manualSteps, {
+        skipRunningCardio: hasRunStripe
+      })
     : [];
+  if (
+    !hasRunStripe &&
+    garminData &&
+    hasCalendarRunningForDate(workoutData, garminData, dateStr)
+  ) {
+    momentum.push({
+      kind: 'momentumRun',
+      color: CALENDAR_PHYSICAL_ACTIVITY_COLOR,
+      key: 'momentum-run-garmin'
+    });
+  }
   return sortCalendarDayStripes([...momentum, ...garmin]);
 }
 

@@ -1,9 +1,11 @@
 import { useWorkout } from '../context/WorkoutContext';
 import { workoutProgram } from '../data/workoutProgram';
 import { getDateStr } from '../utils/dateUtils';
-import { getDayJustification } from '../utils/dayJustificationUtils';
-import { isMockEnduranceSession } from '../utils/calendarUtils';
 import { resolveExerciseIntensityCoeff } from '../utils/trainingLoadUtils';
+import {
+  calculateCurrentTrainingStreak,
+  calculateLongestTrainingStreak,
+} from '../utils/trainingStreakUtils';
 
 export const useWorkoutStats = () => {
   const { getCurrentProgram, getDayName, getDateStr, getCurrentData, activeProgram } = useWorkout();
@@ -95,155 +97,9 @@ export const useWorkoutStats = () => {
     return sortedStats;
   };
 
-  const getCurrentStreak = () => {
-    let streak = 0;
-    const today = new Date();
-    const currentData = getCurrentData();
-    
-    // ✅ OPTIMISATION : Vérifier les sessions d'endurance une seule fois
-    const enduranceData = currentData?.enduranceData || {};
-    const enduranceSessions = enduranceData.sessions || {};
-    
-    for (let i = 0; i < 365; i++) {
-      const checkDate = new Date(today);
-      checkDate.setDate(today.getDate() - i);
-      const dateStr = getDateStr(checkDate);
-      
-      // ✅ Vérification 1 : Exercices cochés
-      const hasWorkout = Object.keys(currentData.checkedExercises || {}).some(key =>
-        key.startsWith(dateStr) && currentData.checkedExercises[key]
-      );
-      
-      // ✅ Vérification 2 : Sessions d'endurance (excluant mock)
-      let hasEndurance = false;
-      for (const activitySessions of Object.values(enduranceSessions)) {
-        if (Array.isArray(activitySessions)) {
-          if (activitySessions.some(session => {
-            if (!session.date) return false;
-            const sessionDateStr = getDateStr(new Date(session.date));
-            return sessionDateStr === dateStr;
-          })) {
-            hasEndurance = true;
-            break;
-          }
-        }
-      }
-      
-      // ✅ NOUVEAU : Vérification 3 : Justification (ne casse pas le streak)
-      const hasJustification = !!getDayJustification(currentData, dateStr);
-      
-      // Le streak continue si : workout OU endurance OU justification
-      if (hasWorkout || hasEndurance || hasJustification) {
-        streak++;
-      } else if (i > 0) {
-        // Si pas de workout, pas d'endurance, et pas de justification → arrêter le streak
-        break;
-      }
-    }
-    
-    return streak;
-  };
+  const getCurrentStreak = () => calculateCurrentTrainingStreak(getCurrentData());
 
-  const getLongestStreak = () => {
-    let maxStreak = 0;
-    let currentStreak = 0;
-    const currentData = getCurrentData();
-    
-    // ✅ OPTIMISATION : Collecter toutes les dates (exercices + endurance + justifications)
-    const allDates = new Set();
-    
-    // Dates des exercices
-    Object.keys(currentData.checkedExercises || {}).forEach(key => {
-      const dateStr = key.split('_')[0];
-      if (dateStr.match(/^\d{4}-\d{2}-\d{2}$/)) {
-        allDates.add(dateStr);
-      }
-    });
-    
-    // Dates des sessions d'endurance (excluant mock)
-    const enduranceData = currentData?.enduranceData || {};
-    const enduranceSessions = enduranceData.sessions || {};
-    Object.values(enduranceSessions).forEach(activitySessions => {
-      if (Array.isArray(activitySessions)) {
-        activitySessions.forEach(session => {
-          if (session.date && !isMockEnduranceSession(session)) {
-            const dateStr = getDateStr(new Date(session.date));
-            if (dateStr.match(/^\d{4}-\d{2}-\d{2}$/)) {
-              allDates.add(dateStr);
-            }
-          }
-        });
-      }
-    });
-    
-    // Dates des justifications
-    Object.keys(currentData.dayJustifications || {}).forEach(dateStr => {
-      if (dateStr.match(/^\d{4}-\d{2}-\d{2}$/)) {
-        allDates.add(dateStr);
-      }
-    });
-    
-    // Trier les dates
-    const sortedDates = Array.from(allDates).sort();
-    
-    // ✅ OPTIMISATION : Vérifier les sessions d'endurance une seule fois
-    for (let i = 0; i < sortedDates.length; i++) {
-      const dateStr = sortedDates[i];
-      
-      // ✅ Vérification 1 : Exercices cochés
-      const hasWorkout = Object.keys(currentData.checkedExercises || {}).some(key =>
-        key.startsWith(dateStr) && currentData.checkedExercises[key]
-      );
-      
-      // ✅ Vérification 2 : Sessions d'endurance (excluant mock)
-      let hasEndurance = false;
-      for (const activitySessions of Object.values(enduranceSessions)) {
-        if (Array.isArray(activitySessions)) {
-          if (activitySessions.some(session => {
-            if (!session.date || isMockEnduranceSession(session)) return false;
-            const sessionDateStr = getDateStr(new Date(session.date));
-            return sessionDateStr === dateStr;
-          })) {
-            hasEndurance = true;
-            break;
-          }
-        }
-      }
-      
-      // ✅ NOUVEAU : Vérification 3 : Justification
-      const hasJustification = !!getDayJustification(currentData, dateStr);
-      
-      // Le streak continue si : workout OU endurance OU justification
-      if (hasWorkout || hasEndurance || hasJustification) {
-        // Vérifier si c'est un jour consécutif
-        if (i > 0) {
-          const prevDateStr = sortedDates[i - 1];
-          const prevDate = new Date(prevDateStr);
-          const currentDate = new Date(dateStr);
-          const dayDiff = (currentDate - prevDate) / (1000 * 60 * 60 * 24);
-          
-          if (dayDiff === 1) {
-            // Jour consécutif → continuer streak
-            currentStreak++;
-            maxStreak = Math.max(maxStreak, currentStreak);
-          } else {
-            // Pas consécutif → nouveau streak
-            currentStreak = 1;
-            maxStreak = Math.max(maxStreak, currentStreak);
-          }
-        } else {
-          // Premier jour → commencer streak
-          currentStreak = 1;
-          maxStreak = Math.max(maxStreak, currentStreak);
-        }
-      } else {
-        // Pas d'activité ni justification → reset streak
-        currentStreak = 0;
-      }
-    }
-    
-    return maxStreak;
-  };
+  const getLongestStreak = () => calculateLongestTrainingStreak(getCurrentData());
 
   const getWorkoutHistory = () => {
     const currentData = getCurrentData();

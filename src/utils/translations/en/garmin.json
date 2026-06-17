@@ -56,6 +56,8 @@
   "runningCardP21": "21d",
   "runningCardP30": "30d",
   "runningCardP42": "42d",
+  "runningCardChartCurrent": "Current period",
+  "runningCardChartPrevious": "Previous period",
   "cardioActivity": {
     "continuousLapsTitle": "Continuous session (not intervals)",
     "continuousLapsBody": "Garmin split this workout into {{count}} auto “active” segments with no rest phase — typical for indoor/street cardio logged that way, not structured interval work.",

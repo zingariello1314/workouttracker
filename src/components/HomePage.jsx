@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useWorkout } from '../context/WorkoutContext';
 import { useAuth } from '../context/AuthContext';
 import { useAppLock } from '../context/AppLockContext';
+import { useLockWallpaperUrls } from '../hooks/useLockWallpaperUrls';
 import { useHomepageImages } from '../hooks/useHomepageImages';
 import {
   getVisibleHomepageImageIndices,
@@ -53,6 +54,7 @@ const HomePage = () => {
   const { setActiveTab, activeTab } = useWorkout();
   const { isAuthenticated } = useAuth();
   const { lockNow, lockReady } = useAppLock();
+  const lockWallpaperUrls = useLockWallpaperUrls();
   const t = useTranslation();
   // ✅ Récupérer la langue depuis useTranslation pour éviter le double appel de useLanguage
   // useTranslation utilise déjà useLanguage en interne
@@ -737,12 +739,17 @@ const HomePage = () => {
       {shouldShowLoading && (
         <MomentumWelcomeGate
           onUnlock={onUnlockHomeWelcome}
-          title={t('home.loading.title')}
-          subtitle={t('home.loading.subtitle')}
+          title={t(
+            isLoading || showLoadingScreen ? 'home.loading.title' : 'home.loading.titleReady'
+          )}
+          subtitle={t(
+            isLoading || showLoadingScreen ? 'home.loading.subtitle' : 'home.loading.subtitleReady'
+          )}
           unlockLabel={t('home.loading.unlock')}
           unlockHint={t('home.loading.unlockHint')}
           syncMessage={t('home.loading.sync')}
           isDataLoading={isLoading || showLoadingScreen}
+          lockBackgroundDataUrls={lockWallpaperUrls}
         />
       )}
 

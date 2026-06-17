@@ -16,7 +16,7 @@ import {
   sumRunningKmByDate,
   todayIsoLocal,
 } from '../../utils/sport/garminRunningPeriodStats';
-import { formatPacePerKm, formatSpeed } from '../tabs/GarminTab/utils/garminFormatters';
+import { formatPacePerKm, formatSpeed, normalizeGarminDate } from '../tabs/GarminTab/utils/garminFormatters';
 import {
   getGarminCardioActivityRunKind,
   getRunningPeakPaceFromEffortLaps,
@@ -149,9 +149,13 @@ export default function GarminRunningStatsCard({
     const bump = () => setGarminDataTick((n) => n + 1);
     window.addEventListener('garmin:data:updated', bump);
     window.addEventListener('garmin:refresh:request', bump);
+    window.addEventListener('garmin-cache-update', bump);
+    window.addEventListener('garmin-sync-complete', bump);
     return () => {
       window.removeEventListener('garmin:data:updated', bump);
       window.removeEventListener('garmin:refresh:request', bump);
+      window.removeEventListener('garmin-cache-update', bump);
+      window.removeEventListener('garmin-sync-complete', bump);
     };
   }, []);
 
@@ -256,11 +260,8 @@ export default function GarminRunningStatsCard({
       return null;
     }
 
-    const toDate = (act) => {
-      const raw = String(act?.date || act?.startTimeLocal || act?.startTimeGmt || '');
-      const match = raw.match(/\d{4}-\d{2}-\d{2}/);
-      return match ? match[0] : null;
-    };
+    const toDate = (act) =>
+      normalizeGarminDate(act?.date || act?.startTimeLocal || act?.startTimeGmt);
     const toDistanceKm = (act) => {
       let d = act?.distance;
       if (d != null && typeof d === 'object') {
@@ -380,6 +381,8 @@ export default function GarminRunningStatsCard({
         label: p.label,
         currentValue: Math.max(6, p.currentPct),
         previousValue: Math.max(4, p.previousPct),
+        currentKm: p.currentValue,
+        previousKm: p.previousValue,
       })),
     [built.chartData]
   );
@@ -495,6 +498,8 @@ export default function GarminRunningStatsCard({
                 : 'bg-violet-200/30 dark:bg-violet-900'
             }
             chartAxisDensity={variant === 'sidebar' ? 'compact' : 'default'}
+            currentBarSeriesLabel={t('garmin.runningCardChartCurrent', 'Période actuelle')}
+            previousBarSeriesLabel={t('garmin.runningCardChartPrevious', 'Période précédente')}
           />
           {variant !== 'sidebar' && runningStats ? (
             <div

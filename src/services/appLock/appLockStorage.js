@@ -29,7 +29,8 @@ const openDB = () =>
  * @property {boolean} lockOnBackground
  * @property {string|null} salt
  * @property {string|null} codeHash
- * @property {string|null} lockBackgroundDataUrl
+ * @property {string|null} lockBackgroundDataUrl — @deprecated premier fond (compat)
+ * @property {string[]} lockBackgroundDataUrls — fonds réservés au verrou (hors bibliothèque)
  * @property {number} failedAttempts
  * @property {string|null} lockoutUntil — ISO
  * @property {string} updatedAt
@@ -44,6 +45,7 @@ export const getDefaultAppLockRecord = (userId) => ({
   salt: null,
   codeHash: null,
   lockBackgroundDataUrl: null,
+  lockBackgroundDataUrls: [],
   failedAttempts: 0,
   lockoutUntil: null,
   updatedAt: new Date().toISOString(),
@@ -66,7 +68,17 @@ export const getAppLockRecord = async (userId) => {
     });
     db.close();
     if (!row) return getDefaultAppLockRecord(userId);
-    return { ...getDefaultAppLockRecord(userId), ...row, userId };
+    const merged = { ...getDefaultAppLockRecord(userId), ...row, userId };
+    if (
+      merged.lockBackgroundDataUrl &&
+      (!Array.isArray(merged.lockBackgroundDataUrls) || merged.lockBackgroundDataUrls.length === 0)
+    ) {
+      merged.lockBackgroundDataUrls = [merged.lockBackgroundDataUrl];
+    }
+    if (!Array.isArray(merged.lockBackgroundDataUrls)) {
+      merged.lockBackgroundDataUrls = [];
+    }
+    return merged;
   } catch {
     try {
       db.close();

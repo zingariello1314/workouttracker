@@ -18,6 +18,7 @@
 import { prepareTimeSeriesForDisplay } from '../utils/garminTimeSeriesUtils';
 import { getDecompressed, getTimeSeriesMetadata } from '../utils/garminTimeSeriesCache';
 import { decompressTimeSeriesDelta } from '../utils/garminTimeSeriesUtils';
+import { normalizeGarminDate } from '../components/tabs/GarminTab/utils/garminFormatters';
 
 // ==================== DÉDUPLICATION TIME SERIES ====================
 
@@ -348,7 +349,7 @@ export const mergeActivityRecord = (existing, newItem, type) => {
     return existing || newItem;
   }
 
-  return {
+  const merged = {
     ...existing,
     ...newItem,
     type,
@@ -367,6 +368,15 @@ export const mergeActivityRecord = (existing, newItem, type) => {
     trainingLoad: (newSync > existingSync ? newItem.trainingLoad : existing?.trainingLoad) ?? newItem.trainingLoad ?? existing?.trainingLoad,
     performanceCondition: (newSync > existingSync ? newItem.performanceCondition : existing?.performanceCondition) || newItem.performanceCondition || existing?.performanceCondition
   };
+
+  const effectiveDate = normalizeGarminDate(
+    merged.date || merged.startTimeLocal || merged.startTimeGmt
+  );
+  if (effectiveDate) {
+    merged.date = effectiveDate;
+  }
+
+  return merged;
 };
 
 // ==================== FUSION MÉTRIQUES SIMPLES ====================

@@ -4,27 +4,42 @@
 
 import { parseStretchItemKey } from './exerciseKeyGenerator';
 import { buildPlannedStretchListForDateStr } from './programCompletionBonus';
-import { collectEnduranceSessionsForCalendarDay } from './calendarUtils';
+import {
+  collectEnduranceSessionsForCalendarDay,
+  garminActivityMatchesCalendarDate,
+  isMockEnduranceSession,
+  normalizeDateString,
+  validateDate
+} from './calendarUtils';
+import { mergeGarminCardioIntoRunningSessions } from './garminEnduranceSessionBridge';
+import {
+  isGarminRunningLikeActivity,
+  isGarminWalkingLikeActivity,
+  shouldExcludeStoredGarminRunningSession
+} from './garminRunningLaps';
 import {
   paceMinPerKmFromSession,
   parseRunningSessionDurationMinutes,
   formatPaceMinPerKm
 } from './runningPersonalRecords';
+import { CALENDAR_PHYSICAL_ACTIVITY_COLOR } from './calendarPhysicalActivityStripes';
 
 export const CALENDAR_MOMENTUM_STRIPE_COLORS = {
-  workout: '#f59e0b',
-  stretch: '#ec4899',
-  momentumRun: '#0e7490'
+  /** Toutes les activités physiques Momentum partagent la même couleur. */
+  workout: CALENDAR_PHYSICAL_ACTIVITY_COLOR,
+  momentumRun: CALENDAR_PHYSICAL_ACTIVITY_COLOR,
+  stretch: '#ec4899'
 };
 
-/** Priorité d’affichage (compact) : entraînement / course / étirements avant Garmin. */
+/** Priorité d’affichage : activités d’abord, étirements après, puis Garmin (sommeil, pas…). */
 export const CALENDAR_STRIPE_PRIORITY = {
   workout: 0,
   momentumRun: 1,
-  stretch: 2,
-  activity: 3,
-  sleep: 4,
-  steps: 5,
+  activity: 2,
+  walk: 3,
+  stretch: 4,
+  sleep: 5,
+  steps: 6,
   heartRate: 8,
   stress: 9
 };
@@ -54,14 +69,57 @@ export function countMomentumCheckedStretches(workoutData, dateStr) {
   return n;
 }
 
-export function hasMomentumRunningForDate(workoutData, dateStr) {
+function mergedRunningSessionsForCalendar(workoutData, garminData) {
+  const stored = workoutData?.enduranceData?.sessions?.running || [];
+  const garminActs = (garminData?.activities?.cardio || []).filter((a) =>
+    isGarminRunningLikeActivity(a)
+  );
+  return mergeGarminCardioIntoRunningSessions(stored, garminActs);
+}
+
+function runningSessionMatchesCalendarDate(session, dateStr) {
+  if (!session || !dateStr) return false;
+  if (isMockEnduranceSession(session)) return false;
+  if (shouldExcludeStoredGarminRunningSession(session)) return false;
+  const normalized = normalizeDateString(session.date);
+  if (normalized === dateStr) return true;
+  const dv = validateDate(session.date, 'calendarRunning');
+  return dv.normalizedDate === dateStr;
+}
+
+/** Course saisie + séances Garmin fusionnées (même périmètre que l’historique Défis). */
+export function hasCalendarRunningForDate(workoutData, garminData, dateStr) {
+  if (!dateStr) return false;
+  const merged = mergedRunningSessionsForCalendar(workoutData, garminData);
+  if (merged.some((s) => runningSessionMatchesCalendarDate(s, dateStr))) return true;
   const { rows } = collectEnduranceSessionsForCalendarDay(workoutData, dateStr);
-  return rows.some((r) => r.activityType === 'running');
+  if (rows.some((r) => r.activityType === 'running')) return true;
+  return (garminData?.activities?.cardio || []).some((act) => {
+    if (!garminActivityMatchesCalendarDate(act, dateStr)) return false;
+    if (isGarminWalkingLikeActivity(act)) return false;
+    return isGarminRunningLikeActivity(act);
+  });
+}
+
+export function hasMomentumRunningForDate(workoutData, dateStr) {
+  return hasCalendarRunningForDate(workoutData, null, dateStr);
+}
+
+export function hasMomentumWorkoutForDate(workoutData, dateStr) {
+  if (!workoutData || !dateStr) return false;
+  if (countMomentumCheckedExercises(workoutData, dateStr) > 0) return true;
+  const reps = workoutData.reps || {};
+  return Object.entries(reps).some(([key, val]) => {
+    if (!key.startsWith(`${dateStr}_`)) return false;
+    if (key.includes('_complementary_')) return false;
+    return (parseInt(val, 10) || 0) > 0;
+  });
 }
 
 function buildWorkoutRecapRow(workoutData, dateStr, intensity, t) {
   const count = countMomentumCheckedExercises(workoutData, dateStr);
-  if (count <= 0) return null;
+  const hasWorkout = hasMomentumWorkoutForDate(workoutData, dateStr);
+  if (!hasWorkout) return null;
   const reps = intensity?.reps ?? 0;
   const duration = intensity?.duration ?? 0;
   const parts = [
@@ -149,17 +207,17 @@ function buildRunningRecapRows(workoutData, dateStr, t) {
     });
 }
 
-export function buildMomentumDayStripes(workoutData, dateStr) {
+export function buildMomentumDayStripes(workoutData, dateStr, garminData = null) {
   if (!workoutData || !dateStr) return [];
   const stripes = [];
-  if (countMomentumCheckedExercises(workoutData, dateStr) > 0) {
+  if (hasMomentumWorkoutForDate(workoutData, dateStr)) {
     stripes.push({
       kind: 'workout',
       color: CALENDAR_MOMENTUM_STRIPE_COLORS.workout,
       key: 'workout'
     });
   }
-  if (hasMomentumRunningForDate(workoutData, dateStr)) {
+  if (hasCalendarRunningForDate(workoutData, garminData, dateStr)) {
     stripes.push({
       kind: 'momentumRun',
       color: CALENDAR_MOMENTUM_STRIPE_COLORS.momentumRun,

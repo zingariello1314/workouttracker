@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useState } from 'react';
-import { Lock, Shield, Image as ImageIcon, Timer, Smartphone } from 'lucide-react';
+import { Lock, Shield, Timer, Smartphone } from 'lucide-react';
 import { useAppLock } from '../../context/AppLockContext';
 import Card, { CardHeader, CardTitle, CardContent } from '../ui/Card';
 import { settingsTheme as S } from '../tabs/SettingsTab/settingsThemeClasses';
@@ -17,16 +17,6 @@ const IDLE_OPTIONS = [
   { value: 120, label: '2 h' },
 ];
 
-const MAX_BG_BYTES = 4 * 1024 * 1024;
-
-const readFileAsDataUrl = (file) =>
-  new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = () => resolve(reader.result);
-    reader.onerror = () => reject(reader.error);
-    reader.readAsDataURL(file);
-  });
-
 /**
  * Bloc Paramètres : verrouillage d'application par compte.
  */
@@ -37,7 +27,6 @@ const AppLockSettingsPanel = () => {
     updateSettings,
     setNewCode,
     clearCodeAndDisable,
-    setLockBackground,
   } = useAppLock();
 
   const [modeDraft, setModeDraft] = useState(record.mode);
@@ -135,51 +124,6 @@ const AppLockSettingsPanel = () => {
       setSaving(false);
     }
   }, [clearCodeAndDisable]);
-
-  const onPickBackground = async (e) => {
-    const file = e.target.files?.[0];
-    e.target.value = '';
-    if (!file) return;
-    if (!file.type.startsWith('image/')) {
-      setErr('Choisissez une image (JPEG, PNG, WebP…).');
-      return;
-    }
-    if (file.size > MAX_BG_BYTES) {
-      setErr('Image trop volumineuse (max 4 Mo).');
-      return;
-    }
-    setSaving(true);
-    setErr('');
-    try {
-      const dataUrl = await readFileAsDataUrl(file);
-      if (typeof dataUrl === 'string' && dataUrl.length > 2_000_000) {
-        setErr('Image trop lourde après lecture — choisissez un fichier plus petit.');
-        setSaving(false);
-        return;
-      }
-      await setLockBackground(dataUrl);
-      setMsg('Fond de l’écran de verrouillage mis à jour.');
-      setTimeout(() => setMsg(''), 3000);
-    } catch {
-      setErr('Lecture du fichier impossible.');
-    } finally {
-      setSaving(false);
-    }
-  };
-
-  const clearBackground = async () => {
-    setSaving(true);
-    setErr('');
-    try {
-      await setLockBackground(null);
-      setMsg('Fond réinitialisé (dégradé par défaut).');
-      setTimeout(() => setMsg(''), 2500);
-    } catch {
-      setErr('Impossible d’effacer le fond.');
-    } finally {
-      setSaving(false);
-    }
-  };
 
   if (!canUseAppLock) {
     return (
@@ -364,34 +308,10 @@ const AppLockSettingsPanel = () => {
           </div>
         )}
 
-        <div className="space-y-3 rounded-xl border border-red-900/50 bg-red-950/15 p-4">
-          <h4 className="flex items-center gap-2 font-medium text-red-100">
-            <ImageIcon size={18} className="text-red-400" />
-            Fond de l’écran de verrouillage
-          </h4>
-          <p className={S.mutedXs}>Image affichée derrière le pavé (optionnel, max 4 Mo).</p>
-          {record.lockBackgroundDataUrl && (
-            <div className="max-h-40 w-full max-w-xs overflow-hidden rounded-lg border border-red-900/50">
-              <img src={record.lockBackgroundDataUrl} alt="" className="h-full w-full object-cover" />
-            </div>
-          )}
-          <div className="flex flex-wrap gap-2">
-            <label className={`cursor-pointer rounded-lg px-4 py-2 text-sm ${S.btnSecondary}`}>
-              Choisir une image
-              <input type="file" accept="image/*" className="hidden" onChange={onPickBackground} />
-            </label>
-            {record.lockBackgroundDataUrl && (
-              <button
-                type="button"
-                onClick={clearBackground}
-                disabled={saving}
-                className="rounded-lg border border-red-800/60 bg-black px-4 py-2 text-sm text-red-100/90 hover:bg-red-950/30 disabled:opacity-50"
-              >
-                Retirer le fond
-              </button>
-            )}
-          </div>
-        </div>
+        <p className={`rounded-lg border border-red-900/40 bg-red-950/15 p-3 text-xs ${S.muted}`}>
+          Les fonds d&apos;écran (accueil et verrouillage) se configurent dans la section{' '}
+          <strong className="text-red-200/90">Fonds d&apos;écran</strong> juste en dessous.
+        </p>
 
         {msg && <p className="text-sm text-emerald-300">{msg}</p>}
         {err && <p className="text-sm text-red-300">{err}</p>}

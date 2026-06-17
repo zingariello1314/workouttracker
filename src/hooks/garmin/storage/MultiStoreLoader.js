@@ -12,6 +12,7 @@ import {
   STORE_DAILY_METRICS,
   recordBelongsToCurrentScope
 } from '../../garminDataUtils';
+import { normalizeGarminDate } from '../../../components/tabs/GarminTab/utils/garminFormatters';
 import logger from '../../../utils/logger';
 
 const log = logger.module('MultiStoreLoader');
@@ -71,24 +72,44 @@ class MultiStoreLoader {
       }
     };
 
+    const effectiveActivityDate = (activity) =>
+      normalizeGarminDate(activity?.date || activity?.startTimeLocal || activity?.startTimeGmt);
+
+    const inRequestedRange = (activity) => {
+      if (!startDate || !endDate) return true;
+      const dk = effectiveActivityDate(activity);
+      if (!dk) return false;
+      return dk >= startDate && dk <= endDate;
+    };
+
     return new Promise((resolve, reject) => {
       let request;
+      let useFullScan = false;
       try {
         const dateIndex = store.index('date');
-        request = range ? dateIndex.openCursor(range) : dateIndex.openCursor();
+        // Plage récente : scan complet + date effective (évite les écarts date / startTimeLocal)
+        if (range && endDate) {
+          const today = new Date();
+          const todayIso = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+          const recentCutoff = new Date(today);
+          recentCutoff.setDate(recentCutoff.getDate() - 21);
+          const recentIso = `${recentCutoff.getFullYear()}-${String(recentCutoff.getMonth() + 1).padStart(2, '0')}-${String(recentCutoff.getDate()).padStart(2, '0')}`;
+          if (endDate >= recentIso && startDate <= todayIso) {
+            useFullScan = true;
+          }
+        }
+        request = useFullScan || !range ? store.openCursor() : dateIndex.openCursor(range);
       } catch (error) {
         log.warn('[MultiStoreLoader] Index "date" not available, falling back to full scan');
         request = store.openCursor();
+        useFullScan = true;
       }
 
       request.onsuccess = (event) => {
         const cursor = event.target.result;
         if (cursor) {
           const activity = cursor.value;
-          if (
-            recordBelongsToCurrentScope(activity) &&
-            (!range || (activity.date >= startDate && activity.date <= endDate))
-          ) {
+          if (recordBelongsToCurrentScope(activity) && inRequestedRange(activity)) {
             pushActivity(activity);
           }
           cursor.continue();

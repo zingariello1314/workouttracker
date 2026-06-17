@@ -11,21 +11,27 @@ const SidebarSportCalendarModule = memo(({ isExpanded, onToggle, setActiveTab })
   const { getWorkoutHistory, data } = useWorkout();
   const workoutHistory = useMemo(() => getWorkoutHistory(), [getWorkoutHistory, data]);
   const { dbReady, loadAllData } = useGarminData();
-  const [garminData, setGarminData] = useState({ dailyMetrics: {}, activities: {} });
+  const [garminData, setGarminData] = useState(null);
+  const [garminDataLoaded, setGarminDataLoaded] = useState(false);
 
   useEffect(() => {
     let alive = true;
-    if (!dbReady || !isExpanded) return undefined;
+    if (!dbReady || !isExpanded) {
+      setGarminDataLoaded(false);
+      return undefined;
+    }
+    setGarminDataLoaded(false);
     (async () => {
       try {
         const loaded = await loadAllData();
         if (!alive) return;
-        setGarminData({
-          dailyMetrics: loaded?.dailyMetrics || {},
-          activities: loaded?.activities || {}
-        });
+        setGarminData(loaded);
+        setGarminDataLoaded(true);
       } catch {
-        if (alive) setGarminData({ dailyMetrics: {}, activities: {} });
+        if (alive) {
+          setGarminData(null);
+          setGarminDataLoaded(true);
+        }
       }
     })();
     return () => {
@@ -80,6 +86,7 @@ const SidebarSportCalendarModule = memo(({ isExpanded, onToggle, setActiveTab })
               <CalendarHeatmap
                 workoutHistory={workoutHistory}
                 garminData={garminData}
+                garminDataLoaded={garminDataLoaded}
                 initialViewMode="month"
                 compact
                 embedInSidebar

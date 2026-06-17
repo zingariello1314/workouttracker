@@ -30,7 +30,9 @@ export function normalizeHomepageImage(image, index = 0) {
       full: image,
       id: getHomepageImageId(image, index),
       liked: false,
-      hidden: false
+      hidden: false,
+      useOnHome: true,
+      useOnLock: false
     };
   }
   if (typeof image === 'object' && image !== null && image.full) {
@@ -38,7 +40,9 @@ export function normalizeHomepageImage(image, index = 0) {
       ...image,
       id: image.id || getHomepageImageId(image, index),
       liked: Boolean(image.liked),
-      hidden: Boolean(image.hidden)
+      hidden: Boolean(image.hidden),
+      useOnHome: image.useOnHome !== false,
+      useOnLock: Boolean(image.useOnLock)
     };
   }
   return image;
@@ -72,7 +76,9 @@ export function applyHomepageImagePreferences(images, preferences = {}) {
     return {
       ...img,
       liked: Boolean(p.liked),
-      hidden: Boolean(p.hidden)
+      hidden: Boolean(p.hidden),
+      useOnHome: p.useOnHome !== false,
+      useOnLock: Boolean(p.useOnLock)
     };
   });
 }
@@ -82,8 +88,13 @@ export function extractHomepageImagePreferences(images) {
   const out = {};
   normalizeHomepageImages(images).forEach((img, i) => {
     const id = getHomepageImageId(img, i);
-    if (img.liked || img.hidden) {
-      out[id] = { liked: Boolean(img.liked), hidden: Boolean(img.hidden) };
+    if (img.liked || img.hidden || img.useOnHome === false || img.useOnLock) {
+      out[id] = {
+        liked: Boolean(img.liked),
+        hidden: Boolean(img.hidden),
+        useOnHome: img.useOnHome !== false,
+        useOnLock: Boolean(img.useOnLock)
+      };
     }
   });
   return out;
@@ -120,7 +131,7 @@ export function writeHomepagePreferencesToStorage(storageKey, images, baseMeta =
 /** Indices des images non masquées. */
 export function getVisibleHomepageImageIndices(images) {
   return normalizeHomepageImages(images)
-    .map((img, i) => (img.hidden ? -1 : i))
+    .map((img, i) => (img.hidden || img.useOnHome === false ? -1 : i))
     .filter((i) => i >= 0);
 }
 
@@ -131,7 +142,7 @@ export function getVisibleHomepageImageIndices(images) {
 export function buildHomepageWeightedPool(images) {
   const pool = [];
   normalizeHomepageImages(images).forEach((img, origIndex) => {
-    if (img.hidden) return;
+    if (img.hidden || img.useOnHome === false) return;
     pool.push({
       origIndex,
       weight: img.liked ? HOMEPAGE_LIKED_WEIGHT : HOMEPAGE_DEFAULT_WEIGHT

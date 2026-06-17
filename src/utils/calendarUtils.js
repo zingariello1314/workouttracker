@@ -194,6 +194,12 @@ export function normalizeDateString(dateInput) {
   return null;
 }
 
+/** Date YYYY-MM-DD d’une activité Garmin (gère « 2026-06-05 20:22:00 »). */
+export function garminActivityMatchesCalendarDate(activity, dateStr) {
+  if (!activity || !dateStr) return false;
+  return normalizeDateString(activity.date) === dateStr;
+}
+
 /**
  * Valide une durée et retourne un objet avec le résultat de validation
  * 

@@ -56,6 +56,8 @@
   "runningCardP21": "21 j.",
   "runningCardP30": "30 j.",
   "runningCardP42": "42 j.",
+  "runningCardChartCurrent": "Période actuelle",
+  "runningCardChartPrevious": "Période précédente",
   "cardioActivity": {
     "continuousLapsTitle": "Séance continue (pas du fractionné)",
     "continuousLapsBody": "Garmin a découpé cette séance en {{count}} segments « actifs » automatiques, sans phase repos : c’est typique du cardio indoor / street enregistré comme tel, pas d’un fractionné structuré.",

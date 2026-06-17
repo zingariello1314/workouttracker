@@ -61,9 +61,9 @@ const SETTINGS_SECTIONS = [
   { id: 'settings-github', label: 'GitHub', searchText: 'github code contributions calendrier oauth jeton pat développeur intégration module dashboard momentum' },
   { id: 'settings-spotify', label: 'Spotify', searchText: 'spotify musique premium oauth lecture player sidebar son en cours piste album api' },
   { id: 'settings-garmin', label: 'Garmin', searchText: 'garmin montre sync synchronisation backfill source comptes multi montres deviceid paramètres' },
-  { id: 'settings-verrou', label: 'Verrouillage', searchText: 'verrouillage cadenas code pin mot de passe inactivité arrière-plan sécurité confidentialité session' },
+  { id: 'settings-verrou', label: 'Verrouillage', searchText: 'verrouillage cadenas code pin mot de passe inactivité sécurité confidentialité session' },
+  { id: 'settings-fonds-ecran', label: 'Fonds d\'écran', searchText: 'fond écran accueil verrouillage arrière-plan wallpaper lock home rotation images bannière' },
   { id: 'settings-carte', label: 'Carte profil', searchText: 'carte profil image handle username bannière sidebar logo' },
-  { id: 'settings-accueil', label: 'Page d\'accueil', searchText: 'accueil page fond bannière rotation images home' },
   { id: 'settings-bannieres', label: 'Bannières', searchText: 'bannières bannière import export rotation' },
   { id: 'settings-citations', label: 'Citations', searchText: 'citations citation phrases phrase quote page accueil texte inspirant épinglé aléatoire' },
   { id: 'settings-export', label: 'Export', searchText: 'export sauvegarde backup données garmin nutrition workout' },
@@ -386,6 +386,47 @@ const SettingsTab = () => {
         </div>
         )}
 
+        {isSectionVisible('settings-fonds-ecran') && (
+        <div id="settings-fonds-ecran" className="scroll-mt-4">
+        <Card variant="settings">
+          <CardHeader variant="settings">
+            <CardTitle tone="settings" className="flex items-center normal-case tracking-normal">
+              <Image className="mr-2 text-red-400" size={20} />
+              Fonds d&apos;écran — accueil &amp; verrouillage
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              <p className="text-sm text-red-100/80">
+                Gérez vos images de fond pour la page d&apos;accueil et l&apos;écran de verrouillage.
+                Chaque image peut être assignée à l&apos;un ou aux deux écrans.
+              </p>
+
+              <div className={`${settingsUi.inset}`}>
+                <h4 className="mb-2 font-medium text-red-100">Fonctionnalités :</h4>
+                <ul className="space-y-1 text-sm text-red-100/75">
+                  <li>• Plusieurs images avec rotation automatique</li>
+                  <li>• Badges Accueil / Verrou par image</li>
+                  <li>• Images réservées au verrouillage uniquement</li>
+                  <li>• Favoris et masquage temporaire sur l&apos;accueil</li>
+                  <li>• Stockage local dans votre navigateur</li>
+                </ul>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => setShowHomePageSettings(true)}
+                className={`${settingsUi.btnPrimary} w-full`}
+              >
+                <Image className="w-5 h-5" />
+                Gérer les fonds d&apos;écran
+              </button>
+            </div>
+          </CardContent>
+        </Card>
+        </div>
+        )}
+
         {/* Section Carte de Profil - Image Centrale + Handle */}
         {isSectionVisible('settings-carte') && (
         <div id="settings-carte" className="scroll-mt-4">
@@ -455,47 +496,6 @@ const SettingsTab = () => {
               >
                 <User className="w-5 h-5" />
                 Gérer le Handle de la Carte
-              </button>
-            </div>
-          </CardContent>
-        </Card>
-        </div>
-        )}
-
-        {/* Section Page d'Accueil */}
-        {isSectionVisible('settings-accueil') && (
-        <div id="settings-accueil" className="scroll-mt-4">
-        <Card variant="settings">
-          <CardHeader variant="settings">
-            <CardTitle tone="settings" className="flex items-center normal-case tracking-normal">
-              <Image className="mr-2 text-red-400" size={20} />
-              Page d'Accueil
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              <p className="text-sm text-red-100/80">
-                Personnalisez les images de fond et les bannières de votre page d'accueil.
-              </p>
-              
-              <div className={`${settingsUi.inset}`}>
-                <h4 className="mb-2 font-medium text-red-100">Fonctionnalités :</h4>
-                <ul className="space-y-1 text-sm text-red-100/75">
-                  <li>• Rotation d'images de fond à chaque interaction</li>
-                  <li>• Rotation automatique des bannières toutes les 2 minutes</li>
-                  <li>• Import d'images JPG/JPEG depuis vos fichiers</li>
-                  <li>• Transitions fluides vers les autres onglets</li>
-                  <li>• Stockage local des images dans votre navigateur</li>
-                </ul>
-              </div>
-
-              <button
-                type="button"
-                onClick={() => setShowHomePageSettings(true)}
-                className={`${settingsUi.btnPrimary} w-full`}
-              >
-                <Image className="w-5 h-5" />
-                Gérer les Images de la Page d'Accueil
               </button>
             </div>
           </CardContent>

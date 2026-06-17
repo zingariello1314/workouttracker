@@ -45,6 +45,7 @@ import { useFormatters } from '../../utils/translations/formatters-hook';
 const JustificationModal = ({ 
   isOpen, 
   onClose, 
+  onSaved = null,
   date, 
   existingJustification = null 
 }) => {
@@ -160,6 +161,7 @@ const JustificationModal = ({
     try {
       await setDayJustification(dateStr, reason, note);
       showSuccess(t('justification.messages.saved'), t('justification.messages.savedWithReason', 'Jour justifié : {{reason}}', { reason: t(`justification.${reason}`) }));
+      onSaved?.();
       onClose();
     } catch (error) {
       console.error('[JustificationModal] Erreur lors de la sauvegarde:', error);
@@ -196,6 +198,7 @@ const JustificationModal = ({
     try {
       await removeDayJustification(dateStr);
       showSuccess(t('justification.messages.deleted'), t('justification.messages.deleted', 'La justification a été supprimée avec succès'));
+      onSaved?.();
       onClose();
     } catch (error) {
       console.error('[JustificationModal] Erreur lors de la suppression:', error);

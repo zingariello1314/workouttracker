@@ -56,7 +56,7 @@ describe('calendarDayMomentumStripes', () => {
     expect(run?.subtitle).toContain('8.2 km');
   });
 
-  it('fusionne avec bandes Garmin', () => {
+  it('ordonne activités avant étirements puis Garmin', () => {
     const garminData = {
       activities: { cardio: [], swimming: [], jumpRope: [] },
       dailyMetrics: {
@@ -68,8 +68,14 @@ describe('calendarDayMomentumStripes', () => {
       workoutData,
       dateStr: '2026-06-02'
     });
-    expect(all.some((s) => s.kind === 'workout')).toBe(true);
-    expect(all.some((s) => s.kind === 'steps')).toBe(true);
-    expect(all.some((s) => s.kind === 'sleep')).toBe(true);
+    const kinds = all.map((s) => s.kind);
+    const workoutIdx = kinds.indexOf('workout');
+    const runIdx = kinds.indexOf('momentumRun');
+    const stretchIdx = kinds.indexOf('stretch');
+    const sleepIdx = kinds.indexOf('sleep');
+    expect(workoutIdx).toBeGreaterThanOrEqual(0);
+    expect(runIdx).toBeGreaterThan(workoutIdx);
+    expect(stretchIdx).toBeGreaterThan(runIdx);
+    expect(sleepIdx).toBeGreaterThan(stretchIdx);
   });
 });

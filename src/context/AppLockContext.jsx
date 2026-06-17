@@ -209,7 +209,51 @@ export const AppLockProvider = ({ children }) => {
   const setLockBackground = useCallback(
     async (dataUrlOrNull) => {
       if (!userId) return { success: false, error: 'NO_USER' };
-      await persist({ lockBackgroundDataUrl: dataUrlOrNull });
+      const urls = dataUrlOrNull ? [dataUrlOrNull] : [];
+      await persist({
+        lockBackgroundDataUrl: dataUrlOrNull,
+        lockBackgroundDataUrls: urls
+      });
+      return { success: true };
+    },
+    [userId, persist],
+  );
+
+  const setLockBackgroundUrls = useCallback(
+    async (urls) => {
+      if (!userId) return { success: false, error: 'NO_USER' };
+      const list = Array.isArray(urls) ? urls.filter(Boolean) : [];
+      await persist({
+        lockBackgroundDataUrls: list,
+        lockBackgroundDataUrl: list[0] || null
+      });
+      return { success: true };
+    },
+    [userId, persist],
+  );
+
+  const addLockOnlyBackground = useCallback(
+    async (dataUrl) => {
+      if (!userId || !dataUrl) return { success: false, error: 'NO_USER' };
+      const prev = Array.isArray(recordRef.current.lockBackgroundDataUrls)
+        ? recordRef.current.lockBackgroundDataUrls
+        : recordRef.current.lockBackgroundDataUrl
+          ? [recordRef.current.lockBackgroundDataUrl]
+          : [];
+      const next = [...prev, dataUrl];
+      await persist({ lockBackgroundDataUrls: next, lockBackgroundDataUrl: next[0] || null });
+      return { success: true };
+    },
+    [userId, persist],
+  );
+
+  const removeLockOnlyBackgroundAt = useCallback(
+    async (index) => {
+      if (!userId) return { success: false, error: 'NO_USER' };
+      const prev = [...(recordRef.current.lockBackgroundDataUrls || [])];
+      if (index < 0 || index >= prev.length) return { success: false, error: 'BAD_INDEX' };
+      prev.splice(index, 1);
+      await persist({ lockBackgroundDataUrls: prev, lockBackgroundDataUrl: prev[0] || null });
       return { success: true };
     },
     [userId, persist],
@@ -383,6 +427,9 @@ export const AppLockProvider = ({ children }) => {
       setNewCode,
       clearCodeAndDisable,
       setLockBackground,
+      setLockBackgroundUrls,
+      addLockOnlyBackground,
+      removeLockOnlyBackgroundAt,
       bumpActivity,
       completeEmailRecovery,
       resetAppLockWithMainAccountPassword,
@@ -401,6 +448,9 @@ export const AppLockProvider = ({ children }) => {
       setNewCode,
       clearCodeAndDisable,
       setLockBackground,
+      setLockBackgroundUrls,
+      addLockOnlyBackground,
+      removeLockOnlyBackgroundAt,
       bumpActivity,
       completeEmailRecovery,
       resetAppLockWithMainAccountPassword,

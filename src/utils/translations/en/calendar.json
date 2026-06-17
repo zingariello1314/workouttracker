@@ -63,7 +63,15 @@
   "stats": {
     "reps_endurance": "reps + endurance",
     "total_time": "total time",
-    "sessions": "sessions"
+    "sessions": "sessions",
+    "monthReps": "Reps",
+    "monthRunningKm": "Km run",
+    "monthRunningTime": "Running time",
+    "monthOtherExerciseTime": "Other exercise time",
+    "monthTotalTime": "Total time",
+    "monthKgLifted": "Kg lifted",
+    "monthLongestStreak": "Best streak",
+    "yearRecord": "Best on displayed year"
   },
   "heatmap": {
     "viewModes": {
@@ -186,6 +194,7 @@
     },
     "stripes": {
       "legendTitle": "Stripes under cells",
+      "physical": "Physical activities",
       "workout": "Checked exercises",
       "momentumRun": "Logged run",
       "stretch": "Stretching",

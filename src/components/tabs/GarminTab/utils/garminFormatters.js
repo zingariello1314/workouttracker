@@ -11,29 +11,41 @@ const dateNormalizationCache = new Map();
 
 export function normalizeGarminDate(dateStr) {
   if (!dateStr) return null;
-  
+
   // 🟡 FIX #30: Utiliser le cache
   if (dateNormalizationCache.has(dateStr)) {
     return dateNormalizationCache.get(dateStr);
   }
-  
+
+  const raw = String(dateStr).trim();
+
   // Si déjà au format YYYY-MM-DD, retourner tel quel
-  if (/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) {
-    dateNormalizationCache.set(dateStr, dateStr);
-    return dateStr;
+  if (/^\d{4}-\d{2}-\d{2}$/.test(raw)) {
+    dateNormalizationCache.set(dateStr, raw);
+    return raw;
   }
-  
+
+  // Préfixe ISO / Garmin « 2026-06-12T… » ou « 2026-06-12 … » — date locale, pas UTC
+  const prefix = raw.match(/^(\d{4}-\d{2}-\d{2})/);
+  if (prefix) {
+    dateNormalizationCache.set(dateStr, prefix[1]);
+    return prefix[1];
+  }
+
   try {
-    const d = new Date(dateStr);
+    const d = new Date(raw);
     if (!isNaN(d.getTime())) {
-      const normalized = d.toISOString().split('T')[0];
+      const yy = d.getFullYear();
+      const mm = String(d.getMonth() + 1).padStart(2, '0');
+      const dd = String(d.getDate()).padStart(2, '0');
+      const normalized = `${yy}-${mm}-${dd}`;
       dateNormalizationCache.set(dateStr, normalized);
       return normalized;
     }
-  } catch (e) {
+  } catch {
     // Ignorer erreurs de parsing
   }
-  
+
   dateNormalizationCache.set(dateStr, null);
   return null;
 }

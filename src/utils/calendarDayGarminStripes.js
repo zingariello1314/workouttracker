@@ -4,6 +4,7 @@
  */
 
 import { mergedDailySteps } from './sport/manualDailyWalkUtils';
+import { garminActivityMatchesCalendarDate } from './calendarUtils';
 
 /** @typedef {'activity'|'sleep'|'steps'} CalendarStripeKind */
 
@@ -24,9 +25,15 @@ const STEPS_STRIPE_MIN = 180;
  */
 export function countGarminActivitiesForDate(garminData, dateStr) {
   if (!garminData?.activities || !dateStr) return 0;
-  const swimming = (garminData.activities.swimming || []).filter((a) => a.date === dateStr).length;
-  const jumpRope = (garminData.activities.jumpRope || []).filter((a) => a.date === dateStr).length;
-  const cardio = (garminData.activities.cardio || []).filter((a) => a.date === dateStr).length;
+  const swimming = (garminData.activities.swimming || []).filter((a) =>
+    garminActivityMatchesCalendarDate(a, dateStr)
+  ).length;
+  const jumpRope = (garminData.activities.jumpRope || []).filter((a) =>
+    garminActivityMatchesCalendarDate(a, dateStr)
+  ).length;
+  const cardio = (garminData.activities.cardio || []).filter((a) =>
+    garminActivityMatchesCalendarDate(a, dateStr)
+  ).length;
   return swimming + jumpRope + cardio;
 }
 

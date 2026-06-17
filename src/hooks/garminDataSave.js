@@ -39,6 +39,7 @@ import { batchStorageManager } from './garmin/storage/BatchStorageManager';
 import { retryWithBackoff } from './garminRetryUtils';
 import { logIndexedDBError } from './garminErrorHandler';
 import logger from '../utils/logger';
+import { dispatchGarminDataUpdated } from '../utils/garminDataEvents';
 
 const log = logger.module('garminDataSave');
 
@@ -243,6 +244,7 @@ export const saveActivities = async (activities, dbReady) => {
     } else {
       await saveActivitiesToIndexedDB(activities);
     }
+    dispatchGarminDataUpdated({ source: 'saveActivities' });
   });
 };
 
@@ -350,6 +352,7 @@ export const saveDailyMetrics = async (dailyMetrics, dbReady) => {
     } else {
       await saveDailyMetricsToIndexedDB(dailyMetrics);
     }
+    dispatchGarminDataUpdated({ source: 'saveDailyMetrics' });
   });
 };
 

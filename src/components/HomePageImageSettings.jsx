@@ -1,6 +1,8 @@
 import React, { useState, useRef, useCallback } from 'react';
-import { Eye, EyeOff, Heart, X, ZoomIn } from 'lucide-react';
+import { Eye, EyeOff, Heart, X, ZoomIn, Home, Lock } from 'lucide-react';
 import { useHomepageImages } from '../hooks/useHomepageImages';
+import { useAppLock } from '../context/AppLockContext';
+import { resolveLockWallpaperUrls } from '../utils/wallpaperTargets';
 import { settingsTheme as S } from './tabs/SettingsTab/settingsThemeClasses';
 import StorageDiagnostic from './StorageDiagnostic';
 import QuotaIndicator from './QuotaIndicator';
@@ -15,7 +17,23 @@ import logger from '../utils/logger';
 
 const log = logger.component('HomePageImageSettings');
 
+const MAX_LOCK_BG_BYTES = 4 * 1024 * 1024;
+
+const readFileAsDataUrl = (file) =>
+  new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result);
+    reader.onerror = () => reject(reader.error);
+    reader.readAsDataURL(file);
+  });
+
 const HomePageImageSettings = ({ onClose }) => {
+  const {
+    record: appLockRecord,
+    addLockOnlyBackground,
+    removeLockOnlyBackgroundAt,
+    setLockBackgroundUrls
+  } = useAppLock();
   const {
     backgroundImages,
     saveImages,
@@ -35,6 +53,9 @@ const HomePageImageSettings = ({ onClose }) => {
   const [batchUploadProgress, setBatchUploadProgress] = useState(null);
   const [previewIndex, setPreviewIndex] = useState(null);
   const fileInputRef = useRef(null);
+  const lockOnlyInputRef = useRef(null);
+  const lockOnlyUrls = appLockRecord?.lockBackgroundDataUrls || [];
+  const effectiveLockCount = resolveLockWallpaperUrls(backgroundImages, appLockRecord).length;
 
   // Fonction pour nettoyer le localStorage
   const cleanupLocalStorage = () => {
@@ -113,9 +134,52 @@ const HomePageImageSettings = ({ onClose }) => {
     applyImagePatch(index, { liked: !norm.liked });
   };
 
+  const toggleUseOnHome = (index) => {
+    const norm = normalizeHomepageImage(backgroundImages[index], index);
+    applyImagePatch(index, { useOnHome: !norm.useOnHome });
+  };
+
+  const toggleUseOnLock = (index) => {
+    const norm = normalizeHomepageImage(backgroundImages[index], index);
+    applyImagePatch(index, { useOnLock: !norm.useOnLock });
+  };
+
   const toggleHidden = (index) => {
     const norm = normalizeHomepageImage(backgroundImages[index], index);
     applyImagePatch(index, { hidden: !norm.hidden });
+  };
+
+  const handleLockOnlyUpload = async (event) => {
+    const files = Array.from(event.target.files || []);
+    event.target.value = '';
+    if (!files.length) return;
+    setIsUploading(true);
+    try {
+      for (const file of files) {
+        if (!file.type.startsWith('image/')) continue;
+        if (file.size > MAX_LOCK_BG_BYTES) {
+          alert(`${file.name} : trop volumineux (max 4 Mo).`);
+          continue;
+        }
+        const dataUrl = await readFileAsDataUrl(file);
+        if (typeof dataUrl === 'string' && dataUrl.length > 2_000_000) {
+          alert(`${file.name} : image trop lourde après lecture.`);
+          continue;
+        }
+        await addLockOnlyBackground(dataUrl);
+      }
+    } catch (e) {
+      log.error('Upload fond verrou', e);
+      alert('Impossible d’ajouter l’image au verrouillage.');
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
+  const clearAllLockOnly = async () => {
+    if (!lockOnlyUrls.length) return;
+    if (!window.confirm('Retirer toutes les images réservées au verrouillage ?')) return;
+    await setLockBackgroundUrls([]);
   };
 
   // ✅ Phase 3: Traitement image optimisé (format optimal + thumbnail)
@@ -147,7 +211,9 @@ const HomePageImageSettings = ({ onClose }) => {
         metadata: processed.metadata,
         id: `img_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`,
         liked: false,
-        hidden: false
+        hidden: false,
+        useOnHome: true,
+        useOnLock: false
       };
     } catch (error) {
       log.error('❌ Erreur traitement image', error);
@@ -289,7 +355,7 @@ const HomePageImageSettings = ({ onClose }) => {
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4 backdrop-blur-sm">
       <div className={`${S.modalPanel} max-w-4xl`}>
         <div className={`${S.modalHeader} flex-wrap gap-3`}>
-          <h2 className="text-2xl font-bold text-red-100">Paramètres de la page d'accueil</h2>
+          <h2 className="text-2xl font-bold text-red-100">Fonds d&apos;écran — accueil &amp; verrouillage</h2>
           <div className="flex flex-wrap items-center gap-3">
             <div className={`flex items-center gap-2 text-sm text-emerald-400/90`}>
               <div className="h-2 w-2 animate-pulse rounded-full bg-emerald-500" />
@@ -347,11 +413,18 @@ const HomePageImageSettings = ({ onClose }) => {
         <div className="p-6 space-y-8">
           {/* Images de fond uniquement - rotation automatique toutes les 2 minutes */}
           <div>
-            <h3 className="mb-4 text-lg font-semibold text-red-100">Images de fond</h3>
+            <h3 className="mb-2 text-lg font-semibold text-red-100">Bibliothèque d&apos;images</h3>
             <p className={`mb-4 text-sm ${S.muted}`}>
-              Ces images servent d&apos;arrière-plan sur la page d&apos;accueil (rotation toutes les 2 minutes).
-              Cliquez sur une vignette pour l&apos;agrandir. Cœur = image favorisée (revient plus souvent).
-              Œil barré = masquée temporairement (hors rotation, sans suppression).
+              Ajoutez des images puis choisissez pour chacune si elle s&apos;affiche sur l&apos;
+              <strong className="text-red-200/90">accueil</strong>, le{' '}
+              <strong className="text-red-200/90">verrouillage</strong>, ou les deux.
+              Rotation accueil ~2 min ; verrou ~90 s. Cœur = favori (plus souvent sur l&apos;accueil).
+              Œil barré = masquée temporairement (hors rotation accueil).
+              {effectiveLockCount > 0 ? (
+                <span className="mt-1 block text-emerald-300/90">
+                  {effectiveLockCount} image{effectiveLockCount > 1 ? 's' : ''} active{effectiveLockCount > 1 ? 's' : ''} sur le verrouillage.
+                </span>
+              ) : null}
             </p>
             
             <div className="space-y-4">
@@ -520,19 +593,106 @@ const HomePageImageSettings = ({ onClose }) => {
                         <X className="h-3.5 w-3.5" />
                       </button>
 
-                      <div className="absolute bottom-2 left-2 rounded border border-red-900/50 bg-black/70 px-2 py-1 text-xs text-red-100">
-                        Fond {index + 1}
+                      <div className="absolute bottom-2 left-2 right-2 flex flex-wrap items-center gap-1">
+                        <button
+                          type="button"
+                          onClick={() => toggleUseOnHome(index)}
+                          title={norm.useOnHome ? 'Retirer de l\'accueil' : 'Afficher sur l\'accueil'}
+                          className={`flex items-center gap-1 rounded border px-1.5 py-0.5 text-[10px] font-medium backdrop-blur-sm transition ${
+                            norm.useOnHome
+                              ? 'border-sky-400/60 bg-sky-950/90 text-sky-200'
+                              : 'border-red-900/50 bg-black/70 text-red-100/60 hover:text-sky-200'
+                          }`}
+                        >
+                          <Home className="h-3 w-3" />
+                          Accueil
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => toggleUseOnLock(index)}
+                          title={norm.useOnLock ? 'Retirer du verrouillage' : 'Afficher au verrouillage'}
+                          className={`flex items-center gap-1 rounded border px-1.5 py-0.5 text-[10px] font-medium backdrop-blur-sm transition ${
+                            norm.useOnLock
+                              ? 'border-violet-400/60 bg-violet-950/90 text-violet-200'
+                              : 'border-red-900/50 bg-black/70 text-red-100/60 hover:text-violet-200'
+                          }`}
+                        >
+                          <Lock className="h-3 w-3" />
+                          Verrou
+                        </button>
+                      </div>
+
+                      <div className="absolute bottom-10 left-2 rounded border border-red-900/50 bg-black/70 px-2 py-0.5 text-[10px] text-red-100">
+                        #{index + 1}
                         {norm.liked ? <span className="ml-1 text-rose-300">♥</span> : null}
                         {norm.hidden ? <span className="ml-1 text-amber-300/90">masqué</span> : null}
-                        {norm.format ? (
-                          <span className="ml-1 text-red-300/90">({norm.format.toUpperCase()})</span>
-                        ) : null}
                       </div>
                     </div>
                   );
                 })}
               </div>
             </div>
+          </div>
+
+          <div>
+            <h3 className="mb-2 text-lg font-semibold text-red-100">Images réservées au verrouillage</h3>
+            <p className={`mb-4 text-sm ${S.muted}`}>
+              Images affichées uniquement sur l&apos;écran de verrouillage et l&apos;écran d&apos;intro,
+              sans passer par la bibliothèque accueil (max 4 Mo, JPG/PNG).
+            </p>
+            <input
+              ref={lockOnlyInputRef}
+              type="file"
+              accept="image/jpeg,image/jpg,image/png"
+              multiple
+              onChange={handleLockOnlyUpload}
+              className="hidden"
+            />
+            <div className="mb-4 flex flex-wrap gap-2">
+              <button
+                type="button"
+                onClick={() => lockOnlyInputRef.current?.click()}
+                disabled={isUploading}
+                className={`${S.btnSecondary} disabled:opacity-50`}
+              >
+                Ajouter au verrouillage seulement
+              </button>
+              {lockOnlyUrls.length > 0 && (
+                <button
+                  type="button"
+                  onClick={clearAllLockOnly}
+                  disabled={isUploading}
+                  className="rounded-lg border border-red-800/60 bg-black px-4 py-2 text-sm text-red-100/90 hover:bg-red-950/30 disabled:opacity-50"
+                >
+                  Tout retirer ({lockOnlyUrls.length})
+                </button>
+              )}
+            </div>
+            {lockOnlyUrls.length > 0 ? (
+              <div className="grid grid-cols-2 gap-4 md:grid-cols-3">
+                {lockOnlyUrls.map((url, i) => (
+                  <div
+                    key={`lock-only-${i}`}
+                    className="group relative overflow-hidden rounded-lg border border-violet-900/50"
+                  >
+                    <img src={url} alt={`Verrou ${i + 1}`} className="h-32 w-full object-cover" />
+                    <div className="absolute left-2 top-2 rounded border border-violet-500/50 bg-black/70 px-2 py-0.5 text-[10px] text-violet-200">
+                      Verrou seul
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => removeLockOnlyBackgroundAt(i)}
+                      className="absolute right-2 top-2 flex h-7 w-7 items-center justify-center rounded-full border border-red-800/60 bg-red-950/90 text-red-50 opacity-0 transition-opacity group-hover:opacity-100"
+                      title="Supprimer"
+                    >
+                      <X className="h-3.5 w-3.5" />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className={`text-sm ${S.muted}`}>Aucune image verrou seule — utilisez les badges « Verrou » sur la bibliothèque ci-dessus.</p>
+            )}
           </div>
 
 

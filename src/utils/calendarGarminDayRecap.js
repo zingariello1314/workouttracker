@@ -2,10 +2,11 @@
  * Récap journalier style Garmin Connect pour le panneau détail calendrier.
  */
 
-import { parseDurationToMinutes } from './calendarUtils';
+import { parseDurationToMinutes, garminActivityMatchesCalendarDate } from './calendarUtils';
 import { mergedDailySteps } from './sport/manualDailyWalkUtils';
 import { isGarminRunningLikeActivity, isGarminWalkingLikeActivity } from './garminRunningLaps';
 import { CALENDAR_GARMIN_STRIPE_COLORS } from './calendarDayGarminStripes';
+import { CALENDAR_PHYSICAL_ACTIVITY_COLOR } from './calendarPhysicalActivityStripes';
 
 function formatDurationMin(min) {
   const m = Math.max(0, Math.round(Number(min) || 0));
@@ -60,11 +61,12 @@ function isWalkLikeActivity(act) {
 }
 
 function activityStripeColor(act, bucket) {
-  if (bucket === 'swimming') return '#0891b2';
-  if (bucket === 'jumpRope') return '#d97706';
   if (isWalkLikeActivity(act)) return '#64748b';
-  if (isGarminRunningLikeActivity(act)) return CALENDAR_GARMIN_STRIPE_COLORS.activity;
-  return '#22c55e';
+  return CALENDAR_PHYSICAL_ACTIVITY_COLOR;
+}
+
+function activityStripeKind(act) {
+  return isWalkLikeActivity(act) ? 'walk' : 'activity';
 }
 
 function activityTitle(act, bucket, t) {
@@ -108,9 +110,15 @@ export function buildGarminDayRecapRows(garminData, dateStr, manualSteps = 0, t 
   const rows = [];
   const dm = garminData.dailyMetrics?.[dateStr];
 
-  const swimming = (garminData.activities?.swimming || []).filter((a) => a.date === dateStr);
-  const jumpRope = (garminData.activities?.jumpRope || []).filter((a) => a.date === dateStr);
-  const cardio = (garminData.activities?.cardio || []).filter((a) => a.date === dateStr);
+  const swimming = (garminData.activities?.swimming || []).filter((a) =>
+    garminActivityMatchesCalendarDate(a, dateStr)
+  );
+  const jumpRope = (garminData.activities?.jumpRope || []).filter((a) =>
+    garminActivityMatchesCalendarDate(a, dateStr)
+  );
+  const cardio = (garminData.activities?.cardio || []).filter((a) =>
+    garminActivityMatchesCalendarDate(a, dateStr)
+  );
 
   pushActivityRows(rows, cardio, 'cardio', t);
   pushActivityRows(rows, swimming, 'swimming', t);
@@ -222,19 +230,31 @@ export function buildGarminDayRecapRows(garminData, dateStr, manualSteps = 0, t 
 /**
  * Bandes pour les cases calendrier (1 par activité + sommeil + pas + métriques optionnelles).
  */
-export function buildCalendarDayGarminStripes(garminData, dateStr, manualSteps = 0) {
+export function buildCalendarDayGarminStripes(
+  garminData,
+  dateStr,
+  manualSteps = 0,
+  { skipRunningCardio = false } = {}
+) {
   if (!dateStr) return [];
 
   const stripes = [];
   const dm = garminData?.dailyMetrics?.[dateStr];
 
-  const cardio = (garminData?.activities?.cardio || []).filter((a) => a.date === dateStr);
-  const swimming = (garminData?.activities?.swimming || []).filter((a) => a.date === dateStr);
-  const jumpRope = (garminData?.activities?.jumpRope || []).filter((a) => a.date === dateStr);
+  const cardio = (garminData?.activities?.cardio || []).filter((a) =>
+    garminActivityMatchesCalendarDate(a, dateStr)
+  );
+  const swimming = (garminData?.activities?.swimming || []).filter((a) =>
+    garminActivityMatchesCalendarDate(a, dateStr)
+  );
+  const jumpRope = (garminData?.activities?.jumpRope || []).filter((a) =>
+    garminActivityMatchesCalendarDate(a, dateStr)
+  );
 
   cardio.forEach((act, i) => {
+    if (skipRunningCardio && !isWalkLikeActivity(act) && isGarminRunningLikeActivity(act)) return;
     stripes.push({
-      kind: 'activity',
+      kind: activityStripeKind(act),
       color: activityStripeColor(act, 'cardio'),
       key: `cardio-${i}`
     });

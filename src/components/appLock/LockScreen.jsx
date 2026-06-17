@@ -3,6 +3,8 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useAppLock } from '../../context/AppLockContext';
 import { useAuth } from '../../context/AuthContext';
 import { GlslHills } from '../ui/glsl-hills';
+import { MomentumLockBackground } from '../ui/MomentumBrandedLoading';
+import { useLockWallpaperUrls } from '../../hooks/useLockWallpaperUrls';
 import LockForgotRecovery from './LockForgotRecovery';
 
 const keysPin = [
@@ -96,6 +98,7 @@ const LockScreen = () => {
   };
 
   const bg = record.lockBackgroundDataUrl;
+  const lockWallpaperUrls = useLockWallpaperUrls();
 
   return (
     <motion.div
@@ -106,21 +109,19 @@ const LockScreen = () => {
     >
       {/* WebGL hors de toute animation d’opacité parente (évite composite / tremblement à l’ouverture) */}
       <div className="absolute inset-0 overflow-hidden bg-zinc-950">
-        <GlslHills
-          cameraZ={125}
-          planeSize={256}
-          speed={0.5}
-          className="z-0"
-        />
-        {bg ? (
-          <div
-            className="absolute inset-0 z-[1] bg-cover bg-center opacity-[0.14]"
-            style={{ backgroundImage: `url(${bg})` }}
-            aria-hidden
-          />
+        {lockWallpaperUrls.length > 0 ? (
+          <MomentumLockBackground dataUrls={lockWallpaperUrls} variant="lock" />
+        ) : bg ? (
+          <MomentumLockBackground dataUrl={bg} variant="lock" />
+        ) : (
+          <GlslHills cameraZ={125} planeSize={256} speed={0.5} className="z-0" />
+        )}
+        {!bg ? (
+          <>
+            <div className="absolute inset-0 z-[2] bg-zinc-950/22" />
+            <div className="absolute inset-0 z-[3] bg-gradient-to-b from-transparent via-zinc-950/12 to-zinc-950/52 pointer-events-none" />
+          </>
         ) : null}
-        <div className="absolute inset-0 z-[2] bg-zinc-950/22" />
-        <div className="absolute inset-0 z-[3] bg-gradient-to-b from-transparent via-zinc-950/12 to-zinc-950/52 pointer-events-none" />
       </div>
 
       <motion.div

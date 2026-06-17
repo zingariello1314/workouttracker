@@ -3,6 +3,22 @@ import { isGarminRunningLikeActivity } from '../garminRunningLaps';
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 
+/** Libellé axe graphique course : JJ/MM (français). */
+export function formatRunningChartDayLabel(isoYmd) {
+  if (!isoYmd || typeof isoYmd !== 'string') return '';
+  const parts = isoYmd.split('-');
+  if (parts.length < 3) return isoYmd;
+  return `${parts[2]}/${parts[1]}`;
+}
+
+/** Affichage court distance pour infobulles graphique. */
+export function formatRunningKmShort(km) {
+  const n = Number(km);
+  if (!Number.isFinite(n) || n <= 0) return '0 km';
+  if (n < 1) return `${Math.round(n * 1000)} m`;
+  return `${n.toLocaleString('fr-FR', { maximumFractionDigits: 2, minimumFractionDigits: 0 })} km`;
+}
+
 /** @param {string} iso YYYY-MM-DD @param {number} delta jours (calendrier local) */
 export function addCalendarDays(iso, delta) {
   const [y, m, da] = String(iso).split('-').map(Number);
@@ -98,7 +114,7 @@ export function buildRunningCompareChartForWindow(kmByDate, currStart, currEnd, 
       }
     }
     const firstDay = addCalendarDays(currStart, c * daysPerChunk);
-    const label = firstDay.slice(5).replace('-', '/');
+    const label = formatRunningChartDayLabel(firstDay);
     chartData.push({
       label,
       currentValue,
@@ -160,7 +176,7 @@ export function buildRunningCompareChart(kmByDate, endStr, windowDays, numBars) 
       previousValue += kmByDate.get(pd) || 0;
     }
     const firstDay = addCalendarDays(currStart, c * daysPerChunk);
-    const label = firstDay.slice(5).replace('-', '/');
+    const label = formatRunningChartDayLabel(firstDay);
     chartData.push({
       label,
       currentValue,

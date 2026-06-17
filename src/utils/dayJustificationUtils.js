@@ -15,6 +15,8 @@
 
 import { isMockEnduranceSession } from './calendarUtils';
 import { getDateStr } from './dateUtils';
+import { countMomentumCheckedStretches } from './calendarDayMomentumStripes';
+import { normalizeGarminDate } from '../components/tabs/GarminTab/utils/garminFormatters';
 
 // ==================== CONSTANTES ====================
 
@@ -50,7 +52,7 @@ export const JUSTIFICATION_COLORS = {
   [JUSTIFICATION_REASONS.MALADIE]: 'bg-black border-2 border-red-500',
   [JUSTIFICATION_REASONS.FLEMME]: 'bg-black border-2 border-orange-500',
   [JUSTIFICATION_REASONS.PAS_LE_TEMPS]: 'bg-black border-2 border-amber-400',
-  [JUSTIFICATION_REASONS.REPOS]: 'bg-black border-2 border-sky-500',
+  [JUSTIFICATION_REASONS.REPOS]: 'bg-sky-950/90 border-2 border-sky-400/85',
   [JUSTIFICATION_REASONS.AUTRE]: 'bg-black border-2 border-slate-500',
 };
 
@@ -72,10 +74,18 @@ export const JUSTIFICATION_DAY_NUMBER_CLASS = {
   [JUSTIFICATION_REASONS.AUTRE]: 'text-slate-200',
 };
 
-/**
- * Icônes emoji pour chaque raison (pour affichage UI)
- * @constant {Object}
- */
+export function isRestDayJustificationFromIntensity(intensity) {
+  return intensity?.justification?.reason === JUSTIFICATION_REASONS.REPOS;
+}
+
+/** Style inline pour fond « repos » (rayures discrètes). */
+export function restDayCellBackgroundStyle() {
+  return {
+    backgroundImage:
+      'repeating-linear-gradient(-45deg, rgba(14,165,233,0.06) 0, rgba(14,165,233,0.06) 4px, transparent 4px, transparent 8px)',
+  };
+}
+
 export const JUSTIFICATION_ICONS = {
   [JUSTIFICATION_REASONS.MALADIE]: '🤒',
   [JUSTIFICATION_REASONS.FLEMME]: '😴',
@@ -225,11 +235,6 @@ export function isDayWithoutActivity(data, dateStr, intensityData = null) {
   const normalizedDate = normalizeDateString(dateStr);
   if (!normalizedDate) return false;
   
-  // ✅ OPTIMISATION : Si intensityData est fourni et level > 0, pas besoin de vérifier
-  if (intensityData && intensityData.level > 0) {
-    return false;
-  }
-  
   // ✅ Vérification 1 : Exercices cochés (checkedExercises)
   // C'est la source principale : si un exercice est coché, c'est une activité
   const checkedExercises = data.checkedExercises || {};
@@ -239,6 +244,8 @@ export function isDayWithoutActivity(data, dateStr, intensityData = null) {
   });
   
   if (hasExercises) return false; // Activité trouvée → pas de justification
+
+  if (countMomentumCheckedStretches(data, normalizedDate) > 0) return false;
   
   // ✅ Vérification 2 : Sessions d'endurance enregistrées (exclure mock)
   // Les sessions d'endurance sont des activités volontaires d'entraînement
@@ -267,6 +274,27 @@ export function isDayWithoutActivity(data, dateStr, intensityData = null) {
   // donc la justification reste possible même en présence de données Garmin.
   
   // Aucune activité trouvée → justification possible
+  return true;
+}
+
+/** Activité Garmin enregistrée (course, natation, corde…) — pas les pas / sommeil passifs. */
+export function dayHasGarminRecordedActivity(garminData, dateStr) {
+  const normalizedDate = normalizeDateString(dateStr);
+  if (!garminData?.activities || !normalizedDate) return false;
+  for (const bucket of ['cardio', 'swimming', 'jumpRope']) {
+    const list = garminData.activities[bucket] || [];
+    for (const act of list) {
+      const dk = normalizeGarminDate(act?.date || act?.startTimeLocal || act?.startTimeGmt);
+      if (dk === normalizedDate) return true;
+    }
+  }
+  return false;
+}
+
+/** Ouvrir le panneau « justifier / saisir » : aucune activité volontaire (pas, sommeil, teinte seule). */
+export function shouldOfferDayJustification(data, dateStr, garminData = null) {
+  if (!isDayWithoutActivity(data, dateStr, null)) return false;
+  if (dayHasGarminRecordedActivity(garminData, dateStr)) return false;
   return true;
 }
 
