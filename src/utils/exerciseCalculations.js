@@ -70,6 +70,26 @@ export const calculateAutoReps = (seriesText, options = {}) => {
   return null;
 };
 
+/** Série du type « 3×10 » ou « 3×10-12 » sans unité de temps. */
+function isRepBasedSeries(series) {
+  if (!series || typeof series !== 'string') return false;
+  const trimmed = series.trim();
+  if (/\b(sec|min)\b/i.test(trimmed)) return false;
+  return /^\d+\s*[×x]\s*\d+(?:\s*-\s*\d+)?\s*$/.test(trimmed);
+}
+
+/**
+ * Gainage / planche statique — exclut les variantes dynamiques (ex. pompes pseudo-planche).
+ */
+export function isIsometricExerciseByName(name) {
+  const n = String(name || '').toLowerCase();
+  if (!n) return false;
+  if (/pompe|push-up|push up|pushup/.test(n)) return false;
+  if (n.includes('statique') || n.includes('isométri') || n.includes('gainage')) return true;
+  if (n.includes('planche')) return true;
+  return false;
+}
+
 /**
  * Calcule la durée d'une session d'entraînement basée sur les exercices complétés.
  * 
@@ -114,8 +134,7 @@ export const calculateSessionDuration = (exercises = [], options = {}) => {
       const avgReps = (minReps + maxReps) / 2;
       
       // Détecter exercices isométriques
-      const isIsometric = exercise.name?.toLowerCase().includes('planche') || 
-                         exercise.name?.toLowerCase().includes('gainage');
+      const isIsometric = isIsometricExerciseByName(exercise.name) && !isRepBasedSeries(exercise.series);
       
       if (isIsometric) {
         // Exercices isométriques : temps en secondes/minutes directement
@@ -203,11 +222,6 @@ export const detectExerciseUnit = (exercise) => {
   const series = exercise.series || '';
   const name = (exercise.name || '').toLowerCase();
   
-  // Détecter exercices isométriques par nom (planche, gainage)
-  const isIsometric = name.includes('planche') || 
-                     name.includes('gainage') ||
-                     name.includes('isométri');
-  
   // 🔴 FIX : Détecter unité dans la série avec patterns plus robustes
   // Pattern 1: "3x30 sec", "3×30 sec", "3x30sec", "3×30sec" (séries × temps en secondes)
   // Supporte aussi "3x 30 sec", "3× 30 sec", etc.
@@ -248,9 +262,13 @@ export const detectExerciseUnit = (exercise) => {
   if (hasMin) {
     return { unit: 'min', isTimeBased: true };
   }
+
+  if (isRepBasedSeries(series)) {
+    return { unit: 'reps', isTimeBased: false };
+  }
   
-  // Priorité 3: Exercice isométrique (planche, gainage) → secondes par défaut
-  if (isIsometric) {
+  // Exercice isométrique (planche, gainage) → secondes par défaut
+  if (isIsometricExerciseByName(name)) {
     return { unit: 'sec', isTimeBased: true };
   }
 
