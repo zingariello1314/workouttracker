@@ -234,7 +234,7 @@ export function buildCalendarDayGarminStripes(
   garminData,
   dateStr,
   manualSteps = 0,
-  { skipRunningCardio = false } = {}
+  { skipRunningCardio = false, skipCardioStripes = false } = {}
 ) {
   if (!dateStr) return [];
 
@@ -252,6 +252,7 @@ export function buildCalendarDayGarminStripes(
   );
 
   cardio.forEach((act, i) => {
+    if (skipCardioStripes) return;
     if (skipRunningCardio && !isWalkLikeActivity(act) && isGarminRunningLikeActivity(act)) return;
     stripes.push({
       kind: activityStripeKind(act),

@@ -69,7 +69,7 @@ export function countMomentumCheckedStretches(workoutData, dateStr) {
   return n;
 }
 
-function mergedRunningSessionsForCalendar(workoutData, garminData) {
+export function mergedRunningSessionsForCalendar(workoutData, garminData) {
   const stored = workoutData?.enduranceData?.sessions?.running || [];
   const garminActs = (garminData?.activities?.cardio || []).filter((a) =>
     isGarminRunningLikeActivity(a)
@@ -77,7 +77,7 @@ function mergedRunningSessionsForCalendar(workoutData, garminData) {
   return mergeGarminCardioIntoRunningSessions(stored, garminActs);
 }
 
-function runningSessionMatchesCalendarDate(session, dateStr) {
+export function runningSessionMatchesCalendarDate(session, dateStr) {
   if (!session || !dateStr) return false;
   if (isMockEnduranceSession(session)) return false;
   if (shouldExcludeStoredGarminRunningSession(session)) return false;

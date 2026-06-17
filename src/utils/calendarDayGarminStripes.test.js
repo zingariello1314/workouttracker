@@ -23,7 +23,9 @@ describe('calendarDayGarminStripes', () => {
   it('une barre par activité + sommeil + pas', () => {
     const stripes = buildCalendarDayGarminStripes(garminData, '2026-06-02');
     const activities = stripes.filter((s) => s.kind === 'activity');
-    expect(activities).toHaveLength(2);
+    const walks = stripes.filter((s) => s.kind === 'walk');
+    expect(activities).toHaveLength(1);
+    expect(walks).toHaveLength(1);
     expect(new Set(activities.map((s) => s.color)).size).toBeGreaterThanOrEqual(1);
     expect(stripes.some((s) => s.kind === 'sleep')).toBe(true);
     expect(stripes.some((s) => s.kind === 'steps')).toBe(true);
