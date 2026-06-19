@@ -127,7 +127,8 @@ const RecapTab = () => {
     recapAssessment,
     recapState,
     enduranceDigest,
-    enrichment
+    enrichment,
+    programCoachAnalysis
   } = useRecapTabMetrics({
     snapshot: snapshotForRecap,
     deferredPeriod,
@@ -141,6 +142,7 @@ const RecapTab = () => {
     isAuthenticated,
     nutritionPartialForRecap,
     garminPartialForRecap,
+    garminDataForMetrics: garminBundle,
     periodWindow,
     programs
   });
@@ -204,6 +206,9 @@ const RecapTab = () => {
             profileQuestionnaireRaw={currentUser?.profileQuestionnaire}
             enrichment={enrichment}
             recapState={recapState}
+            programCoachAnalysis={programCoachAnalysis}
+            activeProgram={activeProgram}
+            period={deferredPeriod}
           />
         );
       case RECAP_VIEW_IDS.CORPS:

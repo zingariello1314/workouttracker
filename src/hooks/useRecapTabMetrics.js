@@ -3,6 +3,8 @@ import { computeRecapMuscleState } from '../utils/sport/recapMuscleLoadEngine';
 import { buildRecapEnduranceDigest } from '../utils/sport/recapPageDigest';
 import { buildRecapEnrichmentBundle } from '../utils/sport/recapEnrichmentMetrics';
 import { computeRecapUserAssessment } from '../utils/sport/recapUserAssessment';
+import { buildAdaptiveRecapInsights } from '../utils/sport/recapAdaptiveInsights';
+import { buildRecapProgramCoachAnalysis } from '../utils/sport/recapProgramCoachAnalysis';
 
 function scheduleHeavyWork(fn) {
   if (typeof requestIdleCallback !== 'undefined') {
@@ -35,6 +37,7 @@ export function useRecapTabMetrics({
   isAuthenticated,
   nutritionPartialForRecap,
   garminPartialForRecap,
+  garminDataForMetrics = null,
   periodWindow,
   programs
 }) {
@@ -89,8 +92,54 @@ export function useRecapTabMetrics({
           isAuthenticated
         });
 
+        const adaptive = buildAdaptiveRecapInsights({
+          legacyPistes: recapAssessment.insights || {},
+          enrichment,
+          assessment: recapAssessment,
+          recapState,
+          snapshot,
+          window: recapState.window,
+          garminData: garminDataForMetrics,
+          garminPartial: garminPartialForRecap,
+          garminDailyMetrics:
+            garminPartialForRecap?.status === 'ready' ? garminPartialForRecap.dailyMetrics : null,
+          period: deferredPeriod,
+          getExerciseNameById,
+          profileQuestionnaireRaw,
+          activeProgram
+        });
+
+        const recapAssessmentMerged = {
+          ...recapAssessment,
+          insights: adaptive.insights,
+          adaptiveKpis: adaptive.kpis
+        };
+
+        const programCoachAnalysis = buildRecapProgramCoachAnalysis({
+          activeProgram,
+          snapshot,
+          window: recapState.window,
+          enrichment,
+          assessment: recapAssessment,
+          recapState,
+          garminPartial: garminPartialForRecap,
+          garminData: garminDataForMetrics,
+          getExerciseNameById,
+          profileQuestionnaireRaw,
+          programs: Array.isArray(programs) ? programs : [],
+          getTodayWorkout: getTodayWorkoutForCompletion,
+          isAdmin,
+          isAuthenticated
+        });
+
         if (gen !== genRef.current) return;
-        setBundle({ recapState, enduranceDigest, recapAssessment, enrichment });
+        setBundle({
+          recapState,
+          enduranceDigest,
+          recapAssessment: recapAssessmentMerged,
+          enrichment,
+          programCoachAnalysis
+        });
         setComputing(false);
       } catch (err) {
         if (gen !== genRef.current) return;
@@ -119,6 +168,7 @@ export function useRecapTabMetrics({
     isAuthenticated,
     nutritionPartialForRecap,
     garminPartialForRecap,
+    garminDataForMetrics,
     periodWindow,
     programs
   ]);

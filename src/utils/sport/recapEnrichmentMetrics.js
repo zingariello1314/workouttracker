@@ -20,7 +20,7 @@ import { stretchDatabase } from '../../data/stretchDatabase';
 import { MuscleGroups } from '../../data/workoutProgramEnhanced';
 import { buildWeightByDateMap, getLatestWeightSnapshot } from './recapAssessmentSeries';
 import { aggregateCircuitRoundsByDate } from './enduranceDailyAggregates';
-import { computeGarminDailyStats } from './recapCrossCoachAggregate';
+import { computeGarminDailyStats, coachSleepHours } from './recapCrossCoachAggregate';
 import { buildDenseDailyPoints } from './dailyDenseTimeSeries';
 import { parseDurationToMinutes } from '../calendarUtils';
 import { computeLeastCheckedExercises } from './leastCheckedExercises';
@@ -523,12 +523,11 @@ export function buildDailySleepSeries(garminPartial, window) {
   const dates = DateHelper.getDateRange(window.start, window.end);
   return dates.map((dateStr) => {
     const day = dm[dateStr];
-    const raw = day?.sleep;
     let hours = null;
-    if (typeof raw === 'number' && raw > 0) hours = raw > 24 ? raw / 3600 : raw;
-    else if (raw && typeof raw === 'object') {
-      const sec = Number(raw.totalSeconds ?? raw.durationSeconds ?? raw.duration);
-      if (sec > 0) hours = sec / 3600;
+    if (day?.sleep != null) {
+      hours = coachSleepHours(
+        typeof day.sleep === 'object' ? day.sleep : { duration: day.sleep, totalSleep: day.sleep }
+      );
     }
     return { date: dateStr, value: hours != null ? round1(hours) : 0 };
   });

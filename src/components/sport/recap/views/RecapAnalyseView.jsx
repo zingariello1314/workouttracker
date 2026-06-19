@@ -1,6 +1,7 @@
 import React, { useMemo } from 'react';
 
-import { Dumbbell, Salad } from 'lucide-react';
+import { Dumbbell, Salad, Activity, CalendarDays, ClipboardList, Sparkles } from 'lucide-react';
+import CoachVisionPanel from '../CoachVisionPanel';
 
 import { useTranslation } from '../../../../utils/translations';
 
@@ -56,7 +57,7 @@ function InsightColumn({ title, items, horizonKey, accent }) {
 
   const pill = HORIZON_PILLS[horizonKey] || HORIZON_PILLS.medium;
 
-  const trimmed = (items || []).slice(0, 4);
+  const trimmed = (items || []).slice(0, 6);
 
   return (
 
@@ -128,16 +129,35 @@ function CoachCard({ icon: Icon, title, accentBorder, accentBg, children }) {
 
 
 
+function ProgramCoachBlock({ title, items, accent, emptyHint }) {
+  const list = (items || []).map((item) => (typeof item === 'string' ? item : item?.text)).filter(Boolean);
+  return (
+    <div className={`rounded-xl border p-4 ${accent}`}>
+      <h3 className="mb-2 text-[11px] font-semibold uppercase tracking-wide text-slate-200">{title}</h3>
+      {list.length === 0 ? (
+        <p className="text-[11px] text-slate-500">{emptyHint || '—'}</p>
+      ) : (
+        <ul className="space-y-2 text-[11px] leading-relaxed text-slate-200/95">
+          {list.map((text, i) => (
+            <li key={i} className="flex gap-2">
+              <span className="mt-1.5 h-1 w-1 shrink-0 rounded-full bg-current opacity-60" />
+              <span>{text}</span>
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
+  );
+}
+
 export default function RecapAnalyseView({
-
   assessment,
-
   synthesisCoach,
-
   profileQuestionnaireRaw,
-
-  enrichment
-
+  enrichment,
+  programCoachAnalysis,
+  activeProgram,
+  period = '30d'
 }) {
 
   const t = useTranslation();
@@ -158,6 +178,8 @@ export default function RecapAnalyseView({
 
   const coach = synthesisCoach;
 
+  const adaptiveKpis = assessment?.adaptiveKpis;
+
   const dataGaps = coach?.engine?.dataGaps || [];
 
   const quizIncomplete =
@@ -175,6 +197,114 @@ export default function RecapAnalyseView({
   );
 
   const nutritionCards = (coach?.engine?.cards || []).filter((c) => c.pillar === 'nutrition');
+
+  const cardioInsightLines = useMemo(() => {
+
+    const lines = [];
+
+    if (adaptiveKpis?.runningKm > 0) {
+
+      lines.push(
+
+        t('recap.analyse.cardioLineKm', {
+
+          km:
+
+            adaptiveKpis.runningKm < 10
+
+              ? adaptiveKpis.runningKm.toFixed(1)
+
+              : String(Math.round(adaptiveKpis.runningKm)),
+
+          n: adaptiveKpis.runningSessions,
+
+          defaultValue: `${adaptiveKpis.runningKm} km · ${adaptiveKpis.runningSessions} sortie(s) fusionnées.`
+
+        })
+
+      );
+
+    }
+
+    const digest = enrichment?.digest?.perActivity;
+
+    if (digest?.jumprope?.totals?.jumps > 0) {
+
+      lines.push(
+
+        t('recap.analyse.cardioLineJump', {
+
+          n: digest.jumprope.totals.jumps,
+
+          defaultValue: `Corde : ${digest.jumprope.totals.jumps} sauts sur la période.`
+
+        })
+
+      );
+
+    }
+
+    return lines.slice(0, 3);
+
+  }, [adaptiveKpis, enrichment?.digest, t]);
+
+  const calendarInsightLines = useMemo(() => {
+
+    const lines = [];
+
+    if (enrichment?.justifications?.total > 0) {
+
+      lines.push(
+
+        t('recap.analyse.calJustified', {
+
+          n: enrichment.justifications.total,
+
+          defaultValue: `${enrichment.justifications.total} jour(s) justifié(s) sur la période.`
+
+        })
+
+      );
+
+    }
+
+    if (enrichment?.completion?.daysFullyComplete > 0) {
+
+      lines.push(
+
+        t('recap.analyse.calFullDays', {
+
+          n: enrichment.completion.daysFullyComplete,
+
+          defaultValue: `${enrichment.completion.daysFullyComplete} jour(s) à 100 % complétion.`
+
+        })
+
+      );
+
+    }
+
+    (enrichment?.activeChallenges || []).slice(0, 2).forEach((ch) => {
+
+      const title = ch?.title || ch?.name || 'Défi';
+
+      lines.push(
+
+        t('recap.analyse.calChallenge', {
+
+          title,
+
+          defaultValue: `Défi actif : ${title}.`
+
+        })
+
+      );
+
+    });
+
+    return lines.slice(0, 3);
+
+  }, [enrichment, t]);
 
 
 
@@ -276,7 +406,16 @@ export default function RecapAnalyseView({
 
   const pushPull = enrichment?.pushPull;
 
-
+  const programLevels = programCoachAnalysis?.levels;
+  const programMuscleRows = useMemo(() => {
+    return (programCoachAnalysis?.muscleShareRows || []).map((r) => ({
+      key: r.groupId,
+      label: t(`recap.muscleGroup.${r.groupId}`, r.label),
+      value: r.volume,
+      display: `${r.volume} u.`,
+      color: MUSCLE_COLORS[r.groupId] || '#94a3b8'
+    }));
+  }, [programCoachAnalysis?.muscleShareRows, t]);
 
   return (
 
@@ -325,6 +464,87 @@ export default function RecapAnalyseView({
         </div>
 
       )}
+
+
+
+      {programCoachAnalysis ? (
+        <section className="space-y-4">
+          <div className="flex flex-wrap items-center gap-2">
+            <ClipboardList size={18} className="text-violet-300" />
+            <h2 className="text-sm font-semibold text-violet-100">
+              {t('recap.programCoach.title', 'Analyse du programme')}
+            </h2>
+            {activeProgram?.name ? (
+              <span className="rounded-full border border-violet-500/35 bg-violet-950/40 px-2 py-0.5 text-[10px] text-violet-200">
+                {activeProgram.name}
+              </span>
+            ) : null}
+          </div>
+
+          {programCoachAnalysis.coachVision ? (
+            <CoachVisionPanel
+              report={programCoachAnalysis.coachVisionReport}
+              fallbackText={programCoachAnalysis.coachVision}
+              periodLabel={t(`recap.period.${period}`, period)}
+            />
+          ) : null}
+
+          {programMuscleRows.length > 0 ? (
+            <RecapSection
+              title={t('recap.programCoach.musclePlan', 'Répartition musculaire (plan hebdo)')}
+              subtitle={
+                programCoachAnalysis.pushPullRatio != null
+                  ? t('recap.programCoach.pushPullRatio', {
+                      ratio: programCoachAnalysis.pushPullRatio,
+                      defaultValue: `Ratio push/pull planifié : ${programCoachAnalysis.pushPullRatio}`
+                    })
+                  : null
+              }
+            >
+              <RecapHorizontalBars rows={programMuscleRows} maxValue={Math.max(...programMuscleRows.map((r) => r.value), 1)} />
+            </RecapSection>
+          ) : null}
+
+          <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+            <ProgramCoachBlock
+              title={t('recap.programCoach.levelStructural', 'Structure & équilibre')}
+              items={programLevels?.structural}
+              accent="border-sky-500/35 bg-sky-950/20"
+              emptyHint={t('recap.programCoach.noProgram', 'Active un programme pour cette analyse.')}
+            />
+            <ProgramCoachBlock
+              title={t('recap.programCoach.levelProgression', 'Progression réelle')}
+              items={programLevels?.progression}
+              accent="border-cyan-500/35 bg-cyan-950/20"
+              emptyHint={t('recap.programCoach.noProgression', 'Coche tes séances pour comparer prévu vs réalisé.')}
+            />
+            <ProgramCoachBlock
+              title={t('recap.programCoach.levelRecovery', 'Récupération')}
+              items={programLevels?.recovery}
+              accent="border-indigo-500/35 bg-indigo-950/20"
+              emptyHint={t('recap.programCoach.noRecovery', 'Connecte Garmin ou saisis feedback pour enrichir.')}
+            />
+            <ProgramCoachBlock
+              title={t('recap.programCoach.levelTrends', 'Tendances détectées')}
+              items={programLevels?.trends}
+              accent="border-teal-500/35 bg-teal-950/20"
+              emptyHint={t('recap.programCoach.noTrends', 'Pas assez de données croisées sur la période.')}
+            />
+            <ProgramCoachBlock
+              title={t('recap.programCoach.levelCompliments', 'Points positifs')}
+              items={programLevels?.compliments}
+              accent="border-emerald-500/35 bg-emerald-950/20"
+              emptyHint={t('recap.programCoach.noCompliments', 'Continue à t’entraîner — les compliments viendront avec la régularité.')}
+            />
+            <ProgramCoachBlock
+              title={t('recap.programCoach.levelRecommendations', 'Recommandations')}
+              items={programLevels?.recommendations}
+              accent="border-amber-500/35 bg-amber-950/20"
+              emptyHint={t('recap.programCoach.noRecommendations', 'Programme déjà bien calibré sur les données actuelles.')}
+            />
+          </div>
+        </section>
+      ) : null}
 
 
 
@@ -432,6 +652,94 @@ export default function RecapAnalyseView({
 
         ) : null}
 
+        {adaptiveKpis?.runningKm > 0 ? (
+
+          <RecapSection title={t('recap.analyse.kpiRunning', 'Course (période)')}>
+
+            <p className="text-lg font-bold tabular-nums text-sky-300">
+
+              {adaptiveKpis.runningKm < 10
+
+                ? adaptiveKpis.runningKm.toFixed(1)
+
+                : Math.round(adaptiveKpis.runningKm)}{' '}
+
+              km
+
+            </p>
+
+            <p className="text-[11px] text-slate-500">
+
+              {adaptiveKpis.runningSessions} sortie{adaptiveKpis.runningSessions > 1 ? 's' : ''} · Momentum + Garmin
+
+            </p>
+
+          </RecapSection>
+
+        ) : null}
+
+        {(adaptiveKpis?.streakCurrent > 0 || adaptiveKpis?.streakLongest > 0) ? (
+
+          <RecapSection title={t('recap.analyse.kpiStreak', 'Série entraînement')}>
+
+            <p className="text-lg font-bold tabular-nums text-amber-200">{adaptiveKpis.streakCurrent} j</p>
+
+            <p className="text-[11px] text-slate-500">
+
+              {t('recap.analyse.kpiStreakBest', {
+
+                n: adaptiveKpis.streakLongest,
+
+                defaultValue: `Record ${adaptiveKpis.streakLongest} j`
+
+              })}
+
+            </p>
+
+          </RecapSection>
+
+        ) : null}
+
+        {adaptiveKpis?.activeChallenges > 0 ? (
+
+          <RecapSection title={t('recap.analyse.kpiChallenges', 'Défis actifs')}>
+
+            <p className="text-lg font-bold tabular-nums text-violet-300">{adaptiveKpis.activeChallenges}</p>
+
+          </RecapSection>
+
+        ) : null}
+
+        {adaptiveKpis?.gtgDays > 0 ? (
+
+          <RecapSection title={t('recap.analyse.kpiGtg', 'GTG')}>
+
+            <p className="text-lg font-bold tabular-nums text-cyan-200">
+
+              {adaptiveKpis.gtgDays} j · {adaptiveKpis.gtgReps} reps
+
+            </p>
+
+          </RecapSection>
+
+        ) : null}
+
+        {adaptiveKpis?.activeKcalSum > 0 ? (
+
+          <RecapSection title={t('recap.analyse.kpiActiveKcal', 'Kcal actives')}>
+
+            <p className="text-lg font-bold tabular-nums text-orange-200">
+
+              {Math.round(adaptiveKpis.activeKcalSum).toLocaleString('fr-FR')}
+
+            </p>
+
+            <p className="text-[11px] text-slate-500">Garmin · période</p>
+
+          </RecapSection>
+
+        ) : null}
+
       </div>
 
 
@@ -526,7 +834,7 @@ export default function RecapAnalyseView({
 
         <h2 className="mb-3 text-sm font-semibold text-teal-100">{t('recap.crossCoach.title')}</h2>
 
-        <div className="grid gap-3 md:grid-cols-2">
+        <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-2">
 
           <CoachCard
 
@@ -569,6 +877,66 @@ export default function RecapAnalyseView({
             ) : (
 
               <p className="text-slate-500">{t('recap.crossCoach.loadingChip')}</p>
+
+            )}
+
+          </CoachCard>
+
+
+
+          <CoachCard
+
+            icon={Activity}
+
+            title={t('recap.analyse.pillarCardio', 'Cardio & défis')}
+
+            accentBorder="border-sky-500/35"
+
+            accentBg="bg-sky-950/20 text-sky-100"
+
+          >
+
+            {cardioInsightLines.length > 0 ? (
+
+              cardioInsightLines.map((line, i) => <p key={i}>{line}</p>)
+
+            ) : (
+
+              <p className="text-slate-500">
+
+                {t('recap.analyse.noCardioData', 'Peu de cardio enregistré sur cette période.')}
+
+              </p>
+
+            )}
+
+          </CoachCard>
+
+
+
+          <CoachCard
+
+            icon={CalendarDays}
+
+            title={t('recap.analyse.pillarCalendar', 'Calendrier & défis')}
+
+            accentBorder="border-violet-500/35"
+
+            accentBg="bg-violet-950/20 text-violet-100"
+
+          >
+
+            {calendarInsightLines.length > 0 ? (
+
+              calendarInsightLines.map((line, i) => <p key={i}>{line}</p>)
+
+            ) : (
+
+              <p className="text-slate-500">
+
+                {t('recap.analyse.noCalendarData', 'Coche des séances pour alimenter le calendrier.')}
+
+              </p>
 
             )}
 
