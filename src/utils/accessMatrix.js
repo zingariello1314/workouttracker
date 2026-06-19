@@ -2,6 +2,7 @@ export const TAB_ACCESS_RULES = {
   program: { requiresAuth: true },
   exercises: { requiresAuth: true },
   'data-entry': { requiresAuth: true },
+  knowledge: { requiresAuth: true },
   // Garmin reste accessible en mode dégradé hors session.
   garmin: { requiresAuth: false }
 };

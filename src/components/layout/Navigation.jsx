@@ -60,6 +60,7 @@ const Navigation = () => {
       { id: 'quests', labelKey: 'nav.quests', icon: '⚡' },
       { id: 'apprentissage', labelKey: 'nav.apprentissage', icon: '📖' },
     { id: 'books', labelKey: 'nav.books', icon: '📚' },
+    { id: 'knowledge', labelKey: 'nav.knowledge', icon: '🧠' },
     { id: 'code', labelKey: 'nav.code', icon: '💻' },
     { id: 'finance', labelKey: 'nav.finance', icon: '💰' },
     { id: 'settings', labelKey: 'nav.settings', icon: '⚙️' }

@@ -972,3 +972,12 @@ try:
     register_meta_routes(app)
 except Exception as _meta_exc:
     print(f"[zlib_server] Routes méta Phase2 non chargées: {_meta_exc}", flush=True)
+
+try:
+    from knowledge_store import init_knowledge_db, db_conn as _knowledge_db_conn
+    from api_v1_knowledge import register_knowledge_routes
+
+    init_knowledge_db()
+    register_knowledge_routes(app, _auth_get_user_from_access_token, _knowledge_db_conn)
+except Exception as _knowledge_exc:
+    print(f"[zlib_server] Routes Base de connaissances non chargées: {_knowledge_exc}", flush=True)

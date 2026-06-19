@@ -37,6 +37,7 @@ const SportAnalyticsHubTab = lazy(() => import('./components/tabs/SportAnalytics
 const GarminTab = lazy(() => import('./components/tabs/GarminTab'));
 const NutritionTab = lazy(() => import('./components/tabs/NutritionTab'));
 const BooksTab = lazy(() => import('./components/tabs/BooksTab'));
+const KnowledgeTab = lazy(() => import('./components/tabs/KnowledgeTab/KnowledgeTab'));
 const FinanceTab = lazy(() => import('./components/tabs/FinanceTab'));
 const DashboardTab = lazy(() => import('./components/tabs/DashboardTab'));
 const CodeTab = lazy(() => import('./components/tabs/CodeTab'));
@@ -140,6 +141,7 @@ const WorkoutTrackerContent = () => {
     apprentissage: '-700px',
     quests: '-700px',
     books: '-720px',
+    knowledge: 'calc(-720px + 1cm)',
     // Onglets Sport : un peu moins de marge négative pour laisser la barre XP respirer sous la sous-nav
     recap: '-620px',
     today: '-620px',
@@ -328,6 +330,8 @@ const WorkoutTrackerContent = () => {
         return <CoachDashboard />;
       case 'books':
         return <BooksTab />;
+      case 'knowledge':
+        return <KnowledgeTab />;
       case 'dashboard':
         return <DashboardTab />;
       case 'finance':
