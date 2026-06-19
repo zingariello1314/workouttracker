@@ -181,6 +181,7 @@ export function buildDailyCompletionRatioSeries(snapshot, window, ctx = {}) {
 
 /**
  * Justifications dans la fenêtre.
+ */
 export function computeJustificationStatsForWindow(snapshot, window) {
   const justifications = snapshot?.dayJustifications || {};
   const byReason = {};

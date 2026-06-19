@@ -92,8 +92,11 @@ export function useRecapTabMetrics({
         if (gen !== genRef.current) return;
         setBundle({ recapState, enduranceDigest, recapAssessment, enrichment });
         setComputing(false);
-      } catch {
+      } catch (err) {
         if (gen !== genRef.current) return;
+        if (process.env.NODE_ENV === 'development') {
+          console.error('[useRecapTabMetrics]', err);
+        }
         setComputing(false);
       }
     };

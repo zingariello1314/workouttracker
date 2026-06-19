@@ -180,7 +180,7 @@ export default function RecapCorpsView({
 
           </div>
 
-          <BodyMap muscleColors={recapState.meshColors} uniformBodyColor={recapState.uniformBodyColor} />
+          <BodyMap muscleColors={recapState?.meshColors} uniformBodyColor={recapState?.uniformBodyColor} />
 
         </section>
 
