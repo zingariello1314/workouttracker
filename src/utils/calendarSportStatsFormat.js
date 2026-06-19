@@ -35,7 +35,8 @@ export function computeYearSportRecordHolders(months) {
     'otherExerciseMinutes',
     'totalMinutes',
     'totalKg',
-    'longestStreak'
+    'longestStreak',
+    'activeKcal'
   ];
   const holders = {};
   metrics.forEach((metric) => {

@@ -16,6 +16,12 @@ import RecapCorpsView from '../sport/recap/views/RecapCorpsView';
 import RecapTendancesView from '../sport/recap/views/RecapTendancesView';
 import RecapSessionsView from '../sport/recap/views/RecapSessionsView';
 import { isAdminUser } from '../../utils/accessControl';
+import { useGarminData } from '../../hooks/useGarminData';
+import {
+  buildGarminCardioById,
+  computeRunningVolumeTotals,
+  mergeRunningSessionsWithGarmin
+} from '../../utils/sport/runningVolumeTruth';
 import {
   RECAP_VIEW_IDS,
   readStoredRecapView,
@@ -95,6 +101,27 @@ const RecapTab = () => {
     enabled: true
   });
 
+  const { loadAllData, dbReady } = useGarminData();
+  const [garminBundle, setGarminBundle] = useState(null);
+
+  useEffect(() => {
+    if (!dbReady || !isAuthenticated) {
+      setGarminBundle(null);
+      return undefined;
+    }
+    let cancelled = false;
+    loadAllData()
+      .then((bundle) => {
+        if (!cancelled) setGarminBundle(bundle);
+      })
+      .catch(() => {
+        if (!cancelled) setGarminBundle(null);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [dbReady, loadAllData, isAuthenticated, data]);
+
   const {
     computing: metricsComputing,
     recapAssessment,
@@ -143,7 +170,12 @@ const RecapTab = () => {
     }
   }, [activeView]);
 
-  const runningKm = enduranceDigest?.perActivity?.running?.totals?.distanceKm ?? 0;
+  const runningKm = useMemo(() => {
+    const stored = snapshotForRecap?.enduranceData?.sessions?.running || [];
+    const garminById = buildGarminCardioById(garminBundle?.activities?.cardio);
+    const merged = mergeRunningSessionsWithGarmin(stored, garminById);
+    return computeRunningVolumeTotals(merged, garminById, { period: deferredPeriod }).totalKm;
+  }, [snapshotForRecap, garminBundle, deferredPeriod]);
 
   const enduranceSessions = useMemo(() => {
     const snapshot = getCurrentData();

@@ -2,11 +2,14 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { useWorkout } from '../../../context/WorkoutContext';
 import { useGarminData } from '../../../hooks/useGarminData';
 import { useAuth } from '../../../context/AuthContext';
-import { isAdminUser } from '../../../utils/accessControl';
 import DenseDailyLineChart from '../charts/DenseDailyLineChart';
-import { shouldExcludeStoredGarminRunningSession } from '../../../utils/garminRunningLaps';
 import { buildDenseDailyPoints, defaultActivityRange } from '../../../utils/sport/dailyDenseTimeSeries';
-import { aggregateRunningKmByDate } from '../../../utils/sport/enduranceDailyAggregates';
+import {
+  buildGarminCardioById,
+  buildKmByDateFromRows,
+  computeRunningVolumeTotals,
+  mergeRunningSessionsWithGarmin
+} from '../../../utils/sport/runningVolumeTruth';
 import { aggregateLiftVolumeKgByDate } from '../../../utils/exerciseLoadVolume';
 import {
   buildMergedStepsByDate,
@@ -23,12 +26,11 @@ import {
 const RecapDailyTrendChartsBlock = ({ compact = false, layout = 'stack', chartHeight }) => {
   const { data, getCurrentData } = useWorkout();
   const { dbReady, loadAllData } = useGarminData();
-  const { currentUser, isAuthenticated } = useAuth();
-  const isAdmin = isAdminUser(currentUser);
+  const { isAuthenticated } = useAuth();
 
   const [garminBundle, setGarminBundle] = useState(null);
   useEffect(() => {
-    if (!dbReady || !isAuthenticated || !isAdmin) {
+    if (!dbReady || !isAuthenticated) {
       setGarminBundle(null);
       return;
     }
@@ -43,17 +45,19 @@ const RecapDailyTrendChartsBlock = ({ compact = false, layout = 'stack', chartHe
     return () => {
       cancelled = true;
     };
-  }, [data, dbReady, loadAllData, isAuthenticated, isAdmin]);
+  }, [data, dbReady, loadAllData, isAuthenticated]);
 
   const chartModel = useMemo(() => {
     const snap = getCurrentData();
     const end = todayYmd();
 
-    const runningRaw = Array.isArray(snap?.enduranceData?.sessions?.running) ? snap.enduranceData.sessions.running : [];
-    const runningSessions = runningRaw.filter(
-      (s) => !shouldExcludeStoredGarminRunningSession(s) && String(s?.type || '').toLowerCase() !== 'walk'
-    );
-    const kmByDate = aggregateRunningKmByDate(runningSessions);
+    const runningRaw = Array.isArray(snap?.enduranceData?.sessions?.running)
+      ? snap.enduranceData.sessions.running
+      : [];
+    const garminById = buildGarminCardioById(garminBundle?.activities?.cardio);
+    const merged = mergeRunningSessionsWithGarmin(runningRaw, garminById);
+    const { rows } = computeRunningVolumeTotals(merged, garminById, { period: 'all' });
+    const kmByDate = buildKmByDateFromRows(rows);
     const runRange = defaultActivityRange(kmByDate, end);
     const runPoints = buildDenseDailyPoints(kmByDate, runRange.start, runRange.end);
 

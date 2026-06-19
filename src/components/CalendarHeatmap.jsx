@@ -1566,63 +1566,9 @@ const CalendarHeatmap = ({
     // ✅ CORRECTION PB 2: Calculer la durée réelle avec PRIORITÉ Garmin > Programme
     // Principe: Si Garmin a une durée pour cette date, utiliser Garmin (plus précis), sinon utiliser la durée prévue du programme
     const calculateRealDuration = () => {
-      // ✅ PRIORITÉ 1.1: Vérifier les dailyMetrics Garmin (durée totale d'activité de la journée)
-      if (garminData?.dailyMetrics && typeof garminData.dailyMetrics === 'object') {
-        // dailyMetrics est un objet avec clés de date: { "YYYY-MM-DD": {...metrics} }
-        const dailyMetric = garminData.dailyMetrics[dateStr];
-        
-        if (dailyMetric) {
-          let metricsDurationMinutes = 0;
-          
-          // Vérifier activeTime (durée d'activité active en minutes)
-          if (dailyMetric.activeTime !== undefined && dailyMetric.activeTime !== null) {
-            const rawActiveTime = typeof dailyMetric.activeTime === 'number' 
-              ? dailyMetric.activeTime 
-              : parseInt(dailyMetric.activeTime) || 0;
-            // ✅ PHASE 4 : Valider la durée (vérifier > 24h)
-            const activeTimeValidation = validateDuration(rawActiveTime, `calculateRealDuration.GarminDailyMetrics.${dateStr}.activeTime`);
-            metricsDurationMinutes = activeTimeValidation.clampedValue;
-          }
-          // Sinon vérifier activeDurationMinutes
-          else if (dailyMetric.activeDurationMinutes !== undefined && dailyMetric.activeDurationMinutes !== null) {
-            const rawActiveDurationMinutes = typeof dailyMetric.activeDurationMinutes === 'number'
-              ? dailyMetric.activeDurationMinutes
-              : parseInt(dailyMetric.activeDurationMinutes) || 0;
-            // ✅ PHASE 4 : Valider la durée (vérifier > 24h)
-            const activeDurationValidation = validateDuration(rawActiveDurationMinutes, `calculateRealDuration.GarminDailyMetrics.${dateStr}.activeDurationMinutes`);
-            metricsDurationMinutes = activeDurationValidation.clampedValue;
-          }
-          // Sinon vérifier totalActivityDuration (en secondes généralement)
-          else if (dailyMetric.totalActivityDuration !== undefined && dailyMetric.totalActivityDuration !== null) {
-            const totalActivityDuration = typeof dailyMetric.totalActivityDuration === 'number'
-              ? dailyMetric.totalActivityDuration
-              : parseInt(dailyMetric.totalActivityDuration) || 0;
-            // ✅ PHASE 3 : Utiliser parseDurationToMinutes pour cohérence absolue
-            const parsedDuration = parseDurationToMinutes(totalActivityDuration, `calculateRealDuration.GarminDailyMetrics.${dateStr}`);
-            // ✅ PHASE 4 : Valider la durée (vérifier > 24h)
-            const durationValidation = validateDuration(parsedDuration, `calculateRealDuration.GarminDailyMetrics.${dateStr}.totalActivityDuration`);
-            metricsDurationMinutes = durationValidation.clampedValue;
-          }
-          
-          // Si durée trouvée dans dailyMetrics, l'utiliser (plus précise)
-          if (metricsDurationMinutes > 0) {
-            // ✅ LOGS DÉSACTIVÉS pour réduire le bruit (33k messages)
-            // console.log(`✅ [calculateRealDuration] Retour depuis dailyMetrics: ${metricsDurationMinutes} min`);
-            return Math.round(metricsDurationMinutes);
-          } else {
-            // ✅ LOGS DÉSACTIVÉS pour réduire le bruit (33k messages)
-            // console.log(`🔍 [calculateRealDuration] dailyMetrics trouvé pour ${dateStr} mais aucune durée valide`);
-          }
-        }
-      }
-      
-      // ✅ PRIORITÉ 1.2: Vérifier les activités Garmin détaillées pour cette date
+      // Somme des séances Garmin + endurance (aligné récap jour / barres orange / temps exos)
       if (garminData?.activities) {
-        // Calculer la durée totale des activités Garmin pour cette date
-        let garminDurationMinutes = 0;
-        
-        // Cardio — street + courses dédoublonnées (aligné récap jour / barres orange)
-        garminDurationMinutes += computeDedupedPhysicalDurationMin(currentData, garminData, dateStr);
+        let garminDurationMinutes = computeDedupedPhysicalDurationMin(currentData, garminData, dateStr);
         
         // Natation
         const activitésNatation = (garminData.activities.swimming || []).filter(act => {
@@ -3594,6 +3540,11 @@ const CalendarHeatmap = ({
                           'longestStreak',
                           String(month.sportStats.longestStreak),
                           'calendar.stats.monthLongestStreak'
+                        ],
+                        [
+                          'activeKcal',
+                          `${Math.round(month.sportStats.activeKcal || 0).toLocaleString('fr-FR')} kcal`,
+                          'calendar.stats.monthActiveKcal'
                         ]
                       ].map(([metric, value, labelKey]) => {
                         const isRecord = sportRecordHolders[metric] === monthIndex;

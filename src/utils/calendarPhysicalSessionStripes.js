@@ -4,7 +4,11 @@
  * « Pessac Course à pied » + course Endurance).
  */
 
-import { collectEnduranceSessionsForCalendarDay, garminActivityMatchesCalendarDate } from './calendarUtils';
+import {
+  collectEnduranceSessionsForCalendarDay,
+  garminActivityMatchesCalendarDate,
+  parseDurationToMinutes
+} from './calendarUtils';
 import {
   hasMomentumWorkoutForDate,
   runningSessionMatchesCalendarDate
@@ -93,6 +97,42 @@ export function getStreetWorkoutDurationMinForDate(workoutData, garminData, date
     return street.reduce((sum, act) => sum + activityDurationMin(act), 0);
   }
   return 0;
+}
+
+function momentumEnduranceDurationMin(session, activityType) {
+  if (activityType === 'running') return 0;
+  if (session?.duration) {
+    return parseDurationToMinutes(session.duration, `otherExercise.${activityType}`);
+  }
+  return 0;
+}
+
+/**
+ * Temps « exos » d’un jour : somme des durées de séances (Garmin cardio street +
+ * natation + corde + endurance Momentum hors course). Exclut course et marche.
+ */
+export function computeNonRunningExerciseMinutesForDate(workoutData, garminData, dateStr) {
+  if (!dateStr) return 0;
+
+  let min = getStreetWorkoutDurationMinForDate(workoutData, garminData, dateStr);
+
+  for (const act of garminData?.activities?.swimming || []) {
+    if (!garminActivityMatchesCalendarDate(act, dateStr)) continue;
+    min += activityDurationMin(act);
+  }
+  for (const act of garminData?.activities?.jumpRope || []) {
+    if (!garminActivityMatchesCalendarDate(act, dateStr)) continue;
+    min += activityDurationMin(act);
+  }
+
+  const { rows } = collectEnduranceSessionsForCalendarDay(workoutData, dateStr);
+  for (const { activityType, session } of rows) {
+    if (activityType === 'running') continue;
+    const dur = momentumEnduranceDurationMin(session, activityType);
+    if (dur > 0) min += dur;
+  }
+
+  return Math.max(0, Math.round(min));
 }
 
 /** Calories actives Garmin d'une activité (street, course, etc.). */
