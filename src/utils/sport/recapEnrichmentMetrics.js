@@ -4,8 +4,7 @@
  */
 
 import DateHelper from '../dateHelper';
-import { computeProgramCompletionCheckedRatio, buildPlannedExerciseListForDateStr } from '../programCompletionBonus';
-import { collectCalendarRepKeysForExercise } from '../exerciseKeyGenerator';
+import { computeProgramCompletionCheckedRatio } from '../programCompletionBonus';
 import { isDateInRecapWindow } from './recapMuscleLoadEngine';
 import { buildRecapEnduranceDigest } from './recapPageDigest';
 import {
@@ -24,6 +23,9 @@ import { aggregateCircuitRoundsByDate } from './enduranceDailyAggregates';
 import { computeGarminDailyStats } from './recapCrossCoachAggregate';
 import { buildDenseDailyPoints } from './dailyDenseTimeSeries';
 import { parseDurationToMinutes } from '../calendarUtils';
+import { computeLeastCheckedExercises } from './leastCheckedExercises';
+
+export { computeLeastCheckedExercises } from './leastCheckedExercises';
 const WEEKDAY_LABELS = ['Dim', 'Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam'];
 
 function pct(checked, total) {
@@ -178,54 +180,7 @@ export function buildDailyCompletionRatioSeries(snapshot, window, ctx = {}) {
 }
 
 /**
- * Exercices les moins cochés sur la période (occurrences planifiées vs coches).
- * @returns {{ id: number|string, name: string, planned: number, checked: number, pct: number }[]}
- */
-export function computeLeastCheckedExercises(snapshot, window, ctx = {}, limit = 8) {
-  const dates = enumerateWindowDates(window, snapshot);
-  const byId = new Map();
-  const { getExerciseNameById } = ctx;
-
-  dates.forEach((dateStr) => {
-    let exoList = buildPlannedExerciseListForDateStr(dateStr, snapshot, ctx);
-    const dv = snapshot?.dailyVariations?.[dateStr];
-    const suppressed = new Set(
-      Array.isArray(dv?.suppressedExercises)
-        ? dv.suppressedExercises.filter((id) => typeof id === 'number' && !Number.isNaN(id))
-        : []
-    );
-    if (suppressed.size > 0) {
-      exoList = exoList.filter((ex) => !suppressed.has(ex.id));
-    }
-    const chk = snapshot?.checkedExercises || {};
-
-    exoList.forEach((exercise) => {
-      const id = exercise.id;
-      const keys = collectCalendarRepKeysForExercise(dateStr, exercise);
-      const isChecked = keys.some((k) => chk[k] === true);
-      const name =
-        exercise.name ||
-        (typeof getExerciseNameById === 'function' ? getExerciseNameById(id) : null) ||
-        `Exercice ${id}`;
-      const prev = byId.get(id) || { id, name, planned: 0, checked: 0 };
-      prev.planned += 1;
-      if (isChecked) prev.checked += 1;
-      prev.name = name;
-      byId.set(id, prev);
-    });
-  });
-
-  return [...byId.values()]
-    .filter((e) => e.planned >= 2)
-    .map((e) => ({
-      ...e,
-      pct: Math.round((e.checked / e.planned) * 1000) / 10
-    }))
-    .sort((a, b) => a.pct - b.pct || a.planned - b.planned)
-    .slice(0, limit);
-}
-
-/** Justifications dans la fenêtre. */
+ * Justifications dans la fenêtre.
 export function computeJustificationStatsForWindow(snapshot, window) {
   const justifications = snapshot?.dayJustifications || {};
   const byReason = {};

@@ -21,14 +21,11 @@ import {
 } from '../../../../utils/sport/recapIntensityColors';
 
 import RecapKpiCard, {
-
   RecapSection,
-
   RecapChallengePills,
-
   RecapHorizontalBars
-
 } from '../components/RecapUiBlocks';
+import RecapLeastCheckedList from '../components/RecapLeastCheckedList';
 
 import { JUSTIFICATION_REASONS, JUSTIFICATION_LABELS } from '../../../../utils/dayJustificationUtils';
 
@@ -597,42 +594,11 @@ export default function RecapSnapshotView({
           title={t('recap.enrichment.leastChecked', 'Exercices les moins cochés')}
 
           subtitle={t(
-
             'recap.enrichment.leastCheckedHint',
-
-            'Taux de coche sur les jours où l’exercice était prévu (min. 2 occurrences).'
-
+            'Taux de coche lors de vos séances effectuées (min. 2 séances). Les circuits sont regroupés ; les exos ajoutés récemment ne comptent qu’à partir de leur date d’ajout.'
           )}
-
         >
-
-          <RecapHorizontalBars
-
-            rows={enrichment.leastCheckedExercises.map((ex) => ({
-
-              key: ex.id,
-
-              label: ex.name,
-
-              value: ex.pct,
-
-              display: t('recap.enrichment.leastCheckedRow', {
-
-                checked: ex.checked,
-
-                planned: ex.planned,
-
-                pct: ex.pct
-
-              }),
-
-              color: ex.pct >= 70 ? '#34d399' : ex.pct >= 40 ? '#fbbf24' : '#fb7185'
-
-            }))}
-
-            maxValue={100}
-
-          />
+          <RecapLeastCheckedList items={enrichment.leastCheckedExercises} />
 
         </RecapSection>
 

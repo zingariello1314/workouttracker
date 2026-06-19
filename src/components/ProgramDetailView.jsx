@@ -718,7 +718,8 @@ const ProgramDetailView = ({ program, onBack, onUpdateProgram }) => {
     const pushBuiltExercise = (targetList) => {
       const clone = {
         ...built,
-        id: `ex_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`
+        id: `ex_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`,
+        addedToProgramAt: new Date().toISOString().slice(0, 10)
       };
       targetList.push(clone);
       return clone;

@@ -404,7 +404,7 @@ export const translations = {
     'recap.enrichment.challengesTitle': 'Défis endurance actifs',
     'recap.enrichment.justifications': 'Justifications (période)',
     'recap.enrichment.leastChecked': 'Exercices les moins cochés',
-    'recap.enrichment.leastCheckedHint': 'Taux de coche sur les jours où l’exercice était prévu (min. 2 occurrences).',
+    'recap.enrichment.leastCheckedHint': 'Taux de coche lors de vos séances effectuées (min. 2 séances). Circuits regroupés ; exos récents comptés depuis leur ajout au programme.',
     'recap.enrichment.leastCheckedRow': '{{checked}}/{{planned}} · {{pct}} %',
     'recap.snapshot.repsPeriod': 'Reps (période)',
     'recap.breadcrumbSport': 'Sport',

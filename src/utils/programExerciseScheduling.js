@@ -10,16 +10,17 @@
  * @returns {boolean}
  */
 export function isExerciseIncludedForSessionDate(exercise, sessionDateStr) {
-  void sessionDateStr;
   if (!exercise || !sessionDateStr || typeof sessionDateStr !== 'string') {
     return true;
+  }
+  const added = exercise.addedToProgramAt;
+  if (added && typeof added === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(added)) {
+    if (sessionDateStr < added) return false;
   }
   const removed = exercise.removedFromProgramAt;
   if (!removed || typeof removed !== 'string') {
     return true;
   }
-  // Nouveau comportement : toute suppression marquée est considérée définitive.
-  // On court-circuite l'ancien mécanisme "visible jusqu'à telle date".
   return false;
 }
 
