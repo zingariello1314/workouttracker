@@ -293,12 +293,30 @@
       "long_run": "Sortie longue",
       "long": "Sortie longue",
       "endurance": "Course classique",
+      "speed": "Vitesse",
       "fartlek": "Fartlek",
       "interval": "Fractionné",
       "threshold": "Seuil",
       "tempo": "Tempo",
       "sprint": "Sprint",
-      "walking": "Marche"
+      "walking": "Marche",
+      "race": "Compétition",
+      "competition": "Compétition",
+      "hike": "Randonnée",
+      "trail": "Trail / nature",
+      "hill": "Côtes / montées"
+    },
+    "hrZones": {
+      "z1": "Zone 1 — Récupération",
+      "z1Short": "Z1 récup",
+      "z2": "Zone 2 — Endurance fondamentale",
+      "z2Short": "Z2 EF",
+      "z3": "Zone 3 — Aérobie / tempo",
+      "z3Short": "Z3 tempo",
+      "z4": "Zone 4 — Seuil",
+      "z4Short": "Z4 seuil",
+      "z5": "Zone 5 — VMA / max",
+      "z5Short": "Z5 VMA"
     },
     "details": {
       "distance": "Distance:",
@@ -365,7 +383,8 @@
       "totalSessions": "Séances enregistrées",
       "sessionsCount": "{{count}} séance(s)",
       "fcMaxEst": "FC max estimée",
-      "fcMaxEstHint": "Max observée sur tes sorties",
+      "fcMaxEstHint": "Toutes tes sorties · pics récents + plafond fréquent ajusté",
+      "hrZonesTitle": "Tes zones FC (personnalisées)",
       "noKmData": "Aucune distance enregistrée.",
       "cardioTitle": "Cardio (informatif)",
       "cardioHint": "Les valeurs dépendent fortement du type d’entraînement. Zones basées sur % FC max, pas sur des plages BPM fixes.",
@@ -417,10 +436,36 @@
       "axisPace": "Allure (min/km)",
       "efCoverageHint": "{{efCount}} sortie(s) EF détectée(s) sur {{total}} séance(s) (zone {{min}}–{{max}} % FC max, endurance, ≥ 2 km, ≥ 15 min)."
     },
+    "insights": {
+      "title": "Volume & répartition",
+      "subtitle": "Toutes tes séances course (hors marche), sur l’historique complet.",
+      "empty": "Aucune séance course enregistrée pour l’instant.",
+      "bestWeek": "Plus grosse semaine",
+      "bestDay": "Jour le plus chargé",
+      "distributionTitle": "Répartition par type de séance",
+      "distributionHint": "{{km}} km cumulés · {{sessions}} séance(s)",
+      "macroSummaryTitle": "Vue macro (cibles profil)",
+      "typeDetailTitle": "Détail par type de sortie",
+      "idealShort": "idéal {{pct}} %",
+      "idealMarker": "Cible idéale : {{pct}} %",
+      "deltaOk": "proche de l’idéal",
+      "deltaOver": "{{delta}} pts vs idéal",
+      "deltaUnder": "{{delta}} pts vs idéal",
+      "idealFootnote": "Cibles basées sur ton profil course (questionnaire) :",
+      "idealFootnoteEnd": " — règle 80/20 adaptée (endurance fondamentale / vitesse / fractionné).",
+      "profile": {
+        "endurance": "profil endurance / fond",
+        "speed": "profil vitesse / VO₂",
+        "return": "profil retour à la course",
+        "performance": "profil performance 5–10 km",
+        "mixed": "profil mixte par défaut"
+      }
+    },
     "historyFilter": {
       "title": "Filtrer l’historique course",
       "kind": {
         "endurance": "Course classique",
+        "speed": "Vitesse",
         "interval": "Fractionné",
         "walking": "Marche",
         "other": "Autre type"

@@ -33,6 +33,18 @@ export const CALENDAR_VISUAL_CONSTANTS = {
  * Indique si la case a un signal visuel (Garmin, pas, charge, etc.) :
  * sert à ne pas ouvrir le panneau « justifier / saisir » quand la case est déjà teintée.
  */
+/** Séance muscu / charge enregistrée (hors simple teinte Garmin passive). */
+export function calendarDayHasWorkoutActivity(intensity) {
+  if (!intensity || typeof intensity !== 'object') return false;
+  if ((intensity.level ?? 0) > 0) return true;
+  if ((intensity.completedCount ?? 0) > 0) return true;
+  if ((intensity.reps ?? 0) > 0) return true;
+  if ((intensity.strengthLoad ?? 0) > 0.5) return true;
+  if ((intensity.trainingLoad ?? 0) > 0.75) return true;
+  if (intensity.session?.exercises?.length > 0) return true;
+  return false;
+}
+
 export function calendarDayHasPaintSignal(intensity) {
   if (!intensity || typeof intensity !== 'object') return false;
   if (intensity.justification) return true;

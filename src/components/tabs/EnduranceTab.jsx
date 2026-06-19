@@ -53,12 +53,15 @@ import GtgPanel from './EnduranceTab/components/GtgPanel.jsx';
 import PyramidTrainingPanel from '../sport/pyramid/PyramidTrainingPanel.jsx';
 import EnduranceDisciplineStatsPanel from '../sport/charts/EnduranceDisciplineStatsPanel.jsx';
 import RunningStatsPanel from './EnduranceTab/components/RunningStatsPanel.jsx';
+import RunningTrainingInsightsPanel from './EnduranceTab/components/RunningTrainingInsightsPanel.jsx';
 import {
-  inferRunningSessionTypeFromGarminActivity,
   isGarminRunningLikeActivity,
   isGarminWalkingLikeActivity,
   shouldExcludeStoredGarminRunningSession
 } from '../../utils/garminRunningLaps';
+import { inferRunningSessionKindFromGarminActivity } from '../../utils/runningSessionClassification';
+import { useAuth } from '../../context/AuthContext';
+import { normalizeProfileQuestionnaire } from '../../features/profileQuestionnaire/schema';
 import { useGarminData } from '../../hooks/useGarminData';
 import { useGarminImport } from './GarminTab/hooks/useGarminImport';
 import { mergeGarminCardioIntoRunningSessions } from '../../utils/garminEnduranceSessionBridge';
@@ -75,6 +78,12 @@ const EnduranceTab = () => {
     formatEnduranceSessionDate
   } = useFormatters();
   const { language } = useLanguage();
+  const { currentUser } = useAuth();
+  const runningClassificationCtx = useMemo(() => {
+    const q = normalizeProfileQuestionnaire(currentUser?.profileQuestionnaire);
+    const age = q?.answers?.vitalsSelfReport?.age;
+    return { age: Number.isFinite(Number(age)) ? Number(age) : null };
+  }, [currentUser?.profileQuestionnaire]);
   
   // État unifié pour toutes les sessions d'endurance
   const [enduranceState, setEnduranceState] = useState({
@@ -266,8 +275,8 @@ const EnduranceTab = () => {
         for (const act of loaded.activities.cardio) {
           const id = act.garminId ?? act.id;
           if (id == null) continue;
-          if (Array.isArray(act.running?.laps) && act.running.laps.length > 0) {
-            m.set(String(id), inferRunningSessionTypeFromGarminActivity(act));
+          if (isGarminRunningLikeActivity(act)) {
+            m.set(String(id), inferRunningSessionKindFromGarminActivity(act, runningClassificationCtx));
           }
           if (isGarminRunningLikeActivity(act) || isGarminWalkingLikeActivity(act)) {
             full.set(String(id), act);
@@ -285,7 +294,7 @@ const EnduranceTab = () => {
     return () => {
       cancelled = true;
     };
-  }, [dbReady, loadAllData, sessions.running]);
+  }, [dbReady, loadAllData, sessions.running, runningClassificationCtx]);
 
   /** Importe les activités Garmin manquantes dans enduranceData (aligne historique ↔ stats km). */
   useEffect(() => {
@@ -2919,10 +2928,21 @@ const EnduranceTab = () => {
                   onEditSession={(type, id) => editSession(type, id)}
                 />
               ) : runningSubView === 'stats' ? (
-                <RunningStatsPanel sessions={runningSessionsNoWalk} garminById={garminRunningById} />
+                <RunningStatsPanel
+                  sessions={runningSessionsNoWalk}
+                  garminById={garminRunningById}
+                  garminRunningKindByGarminId={garminRunningKindByGarminId}
+                  classificationCtx={runningClassificationCtx}
+                />
               ) : (
                 <>
               <RunningGarminSyncBlock />
+
+              <RunningTrainingInsightsPanel
+                sessions={runningSessionsNoWalk}
+                garminById={garminRunningById}
+                garminRunningKindByGarminId={garminRunningKindByGarminId}
+              />
 
               <RunningPersonalRecordsPanel sessions={runningSessionsNoWalk} garminById={garminRunningById} />
 
@@ -3113,6 +3133,7 @@ const EnduranceTab = () => {
                       sessions={runningSessionsNoWalk}
                       garminById={garminRunningById}
                       garminRunningKindByGarminId={garminRunningKindByGarminId}
+                      classificationCtx={runningClassificationCtx}
                       mode="running"
                       onOpenDetail={setRunningDetailSession}
                       onEdit={(id) => editSession('running', id)}

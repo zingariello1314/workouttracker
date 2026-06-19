@@ -18,8 +18,9 @@ import {
 
 /**
  * Tendances quotidiennes pour le Récap (et réutilisable dans le Dashboard).
+ * @param {{ compact?: boolean, layout?: 'stack'|'grid', chartHeight?: number }} props
  */
-const RecapDailyTrendChartsBlock = ({ compact = false }) => {
+const RecapDailyTrendChartsBlock = ({ compact = false, layout = 'stack', chartHeight }) => {
   const { data, getCurrentData } = useWorkout();
   const { dbReady, loadAllData } = useGarminData();
   const { currentUser, isAuthenticated } = useAuth();
@@ -89,71 +90,97 @@ const RecapDailyTrendChartsBlock = ({ compact = false }) => {
   const padClass = compact ? 'p-3' : 'p-4';
   const chartCardClass =
     'rounded-xl border border-[#0F4C5C]/45 bg-gradient-to-b from-slate-950/70 to-black p-3 shadow-[inset_0_0_24px_rgba(15,76,92,0.12)]';
+  const h = chartHeight ?? (compact ? 160 : 200);
+  const isGrid = layout === 'grid';
+
+  const runChart = (
+    <div className={chartCardClass}>
+      <h3 className="mb-2 text-xs font-semibold uppercase tracking-wide text-sky-200/90">Course (km / jour)</h3>
+      <DenseDailyLineChart
+        seriesA={runPoints.map((p) => ({ date: p.date, value: p.value }))}
+        metaA={{ label: 'km', color: '#38bdf8' }}
+        valueFormatA={(v) => (Math.round(v * 100) / 100).toFixed(2)}
+        height={h}
+      />
+    </div>
+  );
+
+  const repsChart = (
+    <div className={chartCardClass}>
+      <h3 className="mb-2 text-xs font-semibold uppercase tracking-wide text-fuchsia-200/90">
+        Reps totaux / jour
+      </h3>
+      <DenseDailyLineChart
+        seriesA={repsPoints.map((p) => ({ date: p.date, value: p.value }))}
+        metaA={{ label: 'reps', color: '#e879f9' }}
+        height={h}
+      />
+    </div>
+  );
+
+  const volumeChart = (
+    <div className={chartCardClass}>
+      <h3 className="mb-2 text-xs font-semibold uppercase tracking-wide text-emerald-200/90">
+        Volume (kg×reps) / jour
+      </h3>
+      <DenseDailyLineChart
+        seriesA={volPts.map((p) => ({ date: p.date, value: p.value }))}
+        metaA={{ label: 'kg×reps', color: '#34d399' }}
+        valueFormatA={(v) => (Math.round(v * 10) / 10).toFixed(1)}
+        height={h}
+      />
+    </div>
+  );
+
+  const stepsChart = (
+    <div className={chartCardClass}>
+      <h3 className="mb-2 text-xs font-semibold uppercase tracking-wide text-amber-200/90">Pas / jour</h3>
+      <DenseDailyLineChart
+        seriesA={stepsPoints.map((p) => ({ date: p.date, value: p.value }))}
+        metaA={{ label: 'pas', color: '#fcd34d' }}
+        height={h}
+      />
+    </div>
+  );
 
   return (
-    <section className={`rounded-xl border-2 border-[#0F4C5C]/70 bg-black ${padClass} space-y-8`}>
-      <div>
-        <h2 className="text-sm font-semibold text-teal-100">
-          {compact ? 'Tendances (aperçu)' : 'Tendances quotidiennes'}
-        </h2>
-        {!compact ? (
-          <p className="mt-1 text-xs text-teal-700 leading-relaxed">
-            Courbes denses : chaque jour calendaire apparaît ; les jours sans activité sont à 0. Volume = kg×reps des
-            exercices cochés (comme ailleurs dans l&apos;app). Les pas = max(Garmin, saisie manuelle).
-          </p>
-        ) : null}
-      </div>
-
-      <div className="grid gap-4 xl:grid-cols-2">
-        <div className={chartCardClass}>
-          <h3 className="mb-2 text-xs font-semibold uppercase tracking-wide text-sky-200/90">Course (km / jour)</h3>
-          <DenseDailyLineChart
-            seriesA={runPoints.map((p) => ({ date: p.date, value: p.value }))}
-            metaA={{ label: 'km', color: '#38bdf8' }}
-            valueFormatA={(v) => (Math.round(v * 100) / 100).toFixed(2)}
-            height={compact ? 160 : 200}
-          />
-        </div>
-
-        <div className={chartCardClass}>
-          <h3 className="mb-2 text-xs font-semibold uppercase tracking-wide text-fuchsia-200/90">
-            Reps totaux / jour (programme + pompes endurance)
-          </h3>
-          <DenseDailyLineChart
-            seriesA={repsPoints.map((p) => ({ date: p.date, value: p.value }))}
-            metaA={{ label: 'reps', color: '#e879f9' }}
-            height={compact ? 160 : 200}
-          />
-        </div>
-      </div>
-
-      <div className={chartCardClass}>
-        <h3 className="mb-2 text-xs font-semibold uppercase tracking-wide text-emerald-200/90">
-          Volume soulevé (kg×reps) et reps le même jour
-        </h3>
-        <p className="mb-3 text-[11px] text-slate-500">
-          La série commence au premier jour où du volume pondéré est enregistré (sinon au premier jour avec des reps).
-        </p>
-        <DenseDailyLineChart
-          seriesA={volPts.map((p) => ({ date: p.date, value: p.value }))}
-          seriesB={repPtsAligned.map((p) => ({ date: p.date, value: p.value }))}
-          metaA={{ label: 'kg×reps', color: '#34d399' }}
-          metaB={{ label: 'reps', color: '#f472b6' }}
-          valueFormatA={(v) => (Math.round(v * 10) / 10).toFixed(1)}
-          height={compact ? 180 : 220}
-        />
-      </div>
-
+    <section className={`rounded-xl border-2 border-[#0F4C5C]/70 bg-black ${padClass} space-y-4`}>
       {!compact ? (
-        <div className={chartCardClass}>
-          <h3 className="mb-2 text-xs font-semibold uppercase tracking-wide text-amber-200/90">Pas / jour</h3>
-          <DenseDailyLineChart
-            seriesA={stepsPoints.map((p) => ({ date: p.date, value: p.value }))}
-            metaA={{ label: 'pas', color: '#fcd34d' }}
-            height={compact ? 160 : 200}
-          />
+        <div>
+          <h2 className="text-sm font-semibold text-teal-100">Tendances quotidiennes</h2>
+          <p className="mt-1 text-xs text-teal-700 leading-relaxed">
+            Courbes denses : chaque jour calendaire apparaît ; les jours sans activité sont à 0.
+          </p>
         </div>
       ) : null}
+
+      {isGrid ? (
+        <div className="grid gap-4 sm:grid-cols-2">{runChart}{repsChart}{volumeChart}{stepsChart}</div>
+      ) : (
+        <>
+          <div className="grid gap-4 xl:grid-cols-2">
+            {runChart}
+            {repsChart}
+          </div>
+          <div className={chartCardClass}>
+            <h3 className="mb-2 text-xs font-semibold uppercase tracking-wide text-emerald-200/90">
+              Volume soulevé (kg×reps) et reps le même jour
+            </h3>
+            <p className="mb-3 text-[11px] text-slate-500">
+              La série commence au premier jour où du volume pondéré est enregistré.
+            </p>
+            <DenseDailyLineChart
+              seriesA={volPts.map((p) => ({ date: p.date, value: p.value }))}
+              seriesB={repPtsAligned.map((p) => ({ date: p.date, value: p.value }))}
+              metaA={{ label: 'kg×reps', color: '#34d399' }}
+              metaB={{ label: 'reps', color: '#f472b6' }}
+              valueFormatA={(v) => (Math.round(v * 10) / 10).toFixed(1)}
+              height={compact ? 180 : 220}
+            />
+          </div>
+          {!compact ? stepsChart : null}
+        </>
+      )}
     </section>
   );
 };

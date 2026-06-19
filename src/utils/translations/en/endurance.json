@@ -290,12 +290,30 @@
       "long_run": "Long run",
       "long": "Long run",
       "endurance": "Steady run",
+      "speed": "Speed",
       "fartlek": "Fartlek",
       "interval": "Intervals",
       "threshold": "Threshold",
       "tempo": "Tempo",
       "sprint": "Sprint",
-      "walking": "Walk"
+      "walking": "Walk",
+      "race": "Race",
+      "competition": "Race",
+      "hike": "Hike",
+      "trail": "Trail",
+      "hill": "Hill repeats"
+    },
+    "hrZones": {
+      "z1": "Zone 1 — Recovery",
+      "z1Short": "Z1 easy",
+      "z2": "Zone 2 — Base endurance",
+      "z2Short": "Z2 base",
+      "z3": "Zone 3 — Aerobic / tempo",
+      "z3Short": "Z3 tempo",
+      "z4": "Zone 4 — Threshold",
+      "z4Short": "Z4 threshold",
+      "z5": "Zone 5 — VO₂max",
+      "z5Short": "Z5 max"
     },
     "details": {
       "distance": "Distance:",
@@ -362,7 +380,8 @@
       "totalSessions": "Logged sessions",
       "sessionsCount": "{{count}} session(s)",
       "fcMaxEst": "Estimated max HR",
-      "fcMaxEstHint": "Peak observed across your runs",
+      "fcMaxEstHint": "All runs · recent peaks + frequent ceiling adjustment",
+      "hrZonesTitle": "Your HR zones (personalized)",
       "noKmData": "No distance logged yet.",
       "cardioTitle": "Cardio (informational)",
       "cardioHint": "Values depend heavily on workout type. Zones use % of estimated max HR, not fixed BPM bands.",
@@ -413,6 +432,31 @@
       "axisBpm": "Heart rate (bpm)",
       "axisPace": "Pace (min/km)",
       "efCoverageHint": "{{efCount}} easy-run(s) detected out of {{total}} session(s) ({{min}}–{{max}}% max HR zone, endurance type, ≥ 2 km, ≥ 15 min)."
+    },
+    "insights": {
+      "title": "Volume & balance",
+      "subtitle": "All your runs (walking excluded), full history.",
+      "empty": "No running sessions logged yet.",
+      "bestWeek": "Biggest week",
+      "bestDay": "Highest-volume day",
+      "distributionTitle": "Split by session type",
+      "distributionHint": "{{km}} km total · {{sessions}} session(s)",
+      "macroSummaryTitle": "Macro view (profile targets)",
+      "typeDetailTitle": "Breakdown by run type",
+      "idealShort": "ideal {{pct}}%",
+      "idealMarker": "Ideal target: {{pct}}%",
+      "deltaOk": "close to ideal",
+      "deltaOver": "{{delta}} pts vs ideal",
+      "deltaUnder": "{{delta}} pts vs ideal",
+      "idealFootnote": "Targets from your running profile (questionnaire):",
+      "idealFootnoteEnd": " — adapted 80/20 rule (easy / speed / intervals).",
+      "profile": {
+        "endurance": "endurance / base profile",
+        "speed": "speed / VO₂ profile",
+        "return": "return-to-run profile",
+        "performance": "5–10 km performance profile",
+        "mixed": "default mixed profile"
+      }
     },
     "historyFilter": {
       "title": "Filter run history",

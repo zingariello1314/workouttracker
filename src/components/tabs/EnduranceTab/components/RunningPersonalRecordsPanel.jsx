@@ -104,7 +104,14 @@ const RunningPersonalRecordsPanel = ({ sessions = [], garminById = null }) => {
       ) : (
         <div className="space-y-4">
           <div className="rounded-2xl border-2 border-[#0F4C5C]/55 bg-black p-4">
-            <GarminRunningStatsCard variant="embedded" />
+            <GarminRunningStatsCard
+              variant="embedded"
+              sessions={filtered}
+              garminById={garminById}
+              sessionsPreFiltered
+              timeBand={timeBand}
+              showPeriodSelector={false}
+            />
           </div>
           <div className="grid gap-4 md:grid-cols-3">
             <div className={cardClass}>

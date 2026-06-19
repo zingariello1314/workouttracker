@@ -1,6 +1,7 @@
 import React, { useMemo, useState, useEffect, useRef } from 'react';
-import { Calendar, Activity, Target, Flame, Zap, Clock, Dumbbell, Repeat } from 'lucide-react';
+import { Calendar, Activity, Target, Flame, Zap, Clock, Dumbbell, Repeat, Crown } from 'lucide-react';
 import { useWorkout } from '../../context/WorkoutContext';
+import { useAuth } from '../../context/AuthContext';
 import { useWorkoutStats } from '../../hooks/useWorkoutStats';
 import { useGarminData } from '../../hooks/useGarminData';
 import CalendarHeatmap from '../CalendarHeatmap';
@@ -17,6 +18,11 @@ import {
   isPushupExerciseName,
   parseDurationToMinutes
 } from '../../utils/calendarUtils';
+import {
+  buildGarminCardioById,
+  computeRunningVolumeTotals,
+  mergeRunningSessionsWithGarmin
+} from '../../utils/sport/runningVolumeTruth';
 import { getTotalRepsFromData } from '../../context/WorkoutContext/utils/workoutHistoryUtils';
 import {
   JUSTIFICATION_REASONS,
@@ -26,6 +32,12 @@ import {
 } from '../../utils/dayJustificationUtils';
 import { useTranslation } from '../../utils/translations';
 import { calendarHeatmapCompositeBackground } from '../../utils/calendarHeatmapTint';
+import { normalizeProfileQuestionnaire } from '../../features/profileQuestionnaire/schema';
+import {
+  computeCalendarChampionAnalysis,
+  formatPctVsAverage
+} from '../../utils/calendarDayChampion';
+import { calculateLongestTrainingStreakRange } from '../../utils/trainingStreakUtils';
 
 const CalendarTab = () => {
   // Récupérer les données directement du contexte pour la réactivité
@@ -36,7 +48,15 @@ const CalendarTab = () => {
     getExerciseNameById,
     requestOpenEnduranceSubTab
   } = useWorkout();
+  const { currentUser } = useAuth();
   const t = useTranslation();
+  const [jumpToCalendarDate, setJumpToCalendarDate] = useState(null);
+
+  const profileAge = useMemo(() => {
+    const q = normalizeProfileQuestionnaire(currentUser?.profileQuestionnaire);
+    const age = q?.answers?.vitalsSelfReport?.age;
+    return Number.isFinite(Number(age)) ? Number(age) : null;
+  }, [currentUser?.profileQuestionnaire]);
   
   // Utiliser getCurrentData() pour inclure les données temporaires non sauvegardées
   const currentData = getCurrentData();
@@ -212,8 +232,14 @@ const CalendarTab = () => {
     });
     stats.totalStreetVolumeKg = totalStreetVolumeKg;
 
+    const garminById = buildGarminCardioById(garminData?.activities?.cardio);
+    const mergedRunning = mergeRunningSessionsWithGarmin(sessions.running || [], garminById);
+    const runningVolume = computeRunningVolumeTotals(mergedRunning, garminById, { period: 'all' });
+    stats.byActivity.running.distance = runningVolume.totalKm;
+    stats.byActivity.running.sessions = runningVolume.sessionCount;
+
     return stats;
-  }, [currentData, getExerciseNameById]);
+  }, [currentData, getExerciseNameById, garminData]);
 
   const calendarLiftVolumeWindow = useMemo(() => {
     const wd = currentData || {};
@@ -276,7 +302,36 @@ const CalendarTab = () => {
     });
     
     return sessionsCount;
-  }, [currentData.checkedExercises]);
+  }, [currentData?.checkedExercises]);
+
+  const championAnalysis = useMemo(
+    () =>
+      computeCalendarChampionAnalysis({
+        workoutData: currentData,
+        garminData,
+        getExerciseNameById,
+        classificationCtx: { age: profileAge }
+      }),
+    [currentData, garminData, getExerciseNameById, profileAge]
+  );
+
+  const longestStreakRange = useMemo(
+    () => calculateLongestTrainingStreakRange(currentData),
+    [currentData]
+  );
+
+  const formatChampionDate = (ymd) => {
+    if (!ymd) return '—';
+    try {
+      return new Date(`${ymd}T12:00:00`).toLocaleDateString('fr-FR', {
+        day: 'numeric',
+        month: 'long',
+        year: 'numeric'
+      });
+    } catch {
+      return ymd;
+    }
+  };
 
   // Calculer les statistiques des séances
   const sessionStats = useMemo(() => {
@@ -350,6 +405,76 @@ const CalendarTab = () => {
           </CardTitle>
         </CardHeader>
         <CardContent>
+          {(championAnalysis.champion || longestStreakRange.length > 0) && (
+            <div className="mb-6 grid grid-cols-1 gap-4 lg:grid-cols-2">
+              {championAnalysis.champion ? (
+                <button
+                  type="button"
+                  onClick={() => setJumpToCalendarDate(championAnalysis.champion.date)}
+                  className="rounded-lg border-2 border-amber-500/55 bg-gradient-to-br from-amber-950/50 to-black p-4 text-left shadow-inner shadow-black/40 transition hover:border-amber-400/70"
+                >
+                  <div className="mb-2 flex items-center gap-2 text-amber-200">
+                    <Crown className="h-5 w-5 text-amber-300" aria-hidden />
+                    <span className="text-sm font-semibold uppercase tracking-wide">
+                      Meilleur jour
+                    </span>
+                  </div>
+                  <div className="text-lg font-bold text-white">
+                    {formatChampionDate(championAnalysis.champion.date)}
+                  </div>
+                  <div className="mt-2 grid grid-cols-2 gap-x-3 gap-y-1 text-xs text-amber-100/90">
+                    <span>
+                      Reps {championAnalysis.champion.breakdown.reps}{' '}
+                      <span className="text-amber-400">
+                        ({formatPctVsAverage(championAnalysis.champion.vsAverage?.reps)})
+                      </span>
+                    </span>
+                    <span>
+                      Volume {championAnalysis.champion.breakdown.volumeKg} kg{' '}
+                      <span className="text-amber-400">
+                        ({formatPctVsAverage(championAnalysis.champion.vsAverage?.volumeKg)})
+                      </span>
+                    </span>
+                    <span>
+                      Course {championAnalysis.champion.breakdown.runningKm} km{' '}
+                      <span className="text-amber-400">
+                        ({formatPctVsAverage(championAnalysis.champion.vsAverage?.runningKm)})
+                      </span>
+                    </span>
+                    <span>
+                      Kcal {championAnalysis.champion.breakdown.activeKcal}{' '}
+                      <span className="text-amber-400">
+                        ({formatPctVsAverage(championAnalysis.champion.vsAverage?.activeKcal)})
+                      </span>
+                    </span>
+                  </div>
+                  <p className="mt-2 text-[11px] text-amber-500/90">
+                    Touchez pour ouvrir ce jour sur le calendrier (couronne sur la case).
+                  </p>
+                </button>
+              ) : null}
+              {longestStreakRange.length > 0 ? (
+                <div className="rounded-lg border-2 border-sky-600/45 bg-black p-4 text-center shadow-inner shadow-black/40">
+                  <div className="mb-2 flex items-center justify-center gap-2 text-sky-200">
+                    <Flame className="h-5 w-5 text-orange-400" aria-hidden />
+                    <span className="text-sm font-semibold uppercase tracking-wide">
+                      Meilleure série
+                    </span>
+                  </div>
+                  <div className="text-3xl font-bold text-white tabular-nums">
+                    {longestStreakRange.length} j
+                  </div>
+                  {longestStreakRange.startDate && longestStreakRange.endDate ? (
+                    <div className="mt-2 text-sm text-sky-300/90">
+                      {formatChampionDate(longestStreakRange.startDate)} →{' '}
+                      {formatChampionDate(longestStreakRange.endDate)}
+                    </div>
+                  ) : null}
+                </div>
+              ) : null}
+            </div>
+          )}
+
           {/* Statistiques principales */}
           <div className="mb-6 grid grid-cols-1 gap-4 md:grid-cols-4">
             {/* Total des séances */}
@@ -644,6 +769,10 @@ const CalendarTab = () => {
         workoutHistory={workoutHistory}
         garminData={garminData}
         garminDataLoaded={garminDataLoaded}
+        championDayDate={championAnalysis.champion?.date ?? null}
+        championDetail={championAnalysis.champion}
+        externalSelectDate={jumpToCalendarDate}
+        onExternalSelectHandled={() => setJumpToCalendarDate(null)}
       />
       </div>
     </div>

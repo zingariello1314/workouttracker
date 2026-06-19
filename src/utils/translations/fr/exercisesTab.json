@@ -319,6 +319,60 @@
       "calendarExplain": "Type sprint avec fort multiplicateur ; allure très rapide augmente encore la charge estimée.",
       "garminExplain": ""
     },
+    "cardio_run_speed": {
+      "musclesPrimary": "Chaîne postérieure et quadriceps en contraction rapide, système cardio à haute intensité.",
+      "musclesSecondary": "Core, mollets, grand dorsal.",
+      "execution": "Blocs rapides ou sortie entière soutenue ; reste lucide sur la technique de foulée.",
+      "coeffExplain": "Indice élevé, proche du fractionné sur des formats courts.",
+      "notesExplain": "Distance des blocs, récup, terrain plat de préférence.",
+      "calendarExplain": "Type speed / vitesse dans la formule dynamique.",
+      "garminExplain": "La FC max et moyenne Garmin aident à classer vitesse vs endurance."
+    },
+    "cardio_run_recovery": {
+      "musclesPrimary": "Endurance très légère, circulation et relance musculaire.",
+      "musclesSecondary": "Core, posture.",
+      "execution": "Allure très facile ; tu dois pouvoir parler sans effort.",
+      "coeffExplain": "Indice bas — volume utile sans surcharge.",
+      "notesExplain": "Contexte : lendemain de séance dure, reprise post-blessure.",
+      "calendarExplain": "Type recovery / easy, faible multiplicateur d'intensité.",
+      "garminExplain": ""
+    },
+    "cardio_run_race": {
+      "musclesPrimary": "Effort maximal tolérable, jambes et cardio au plafond prolongé.",
+      "musclesSecondary": "Core, mental, gestion du pacing.",
+      "execution": "Échauffement structuré, stratégie d'allure, récupération active après.",
+      "coeffExplain": "Indice très élevé pour la durée — compter comme pic de charge.",
+      "notesExplain": "Distance officielle, objectif chrono, conditions météo.",
+      "calendarExplain": "Type race / competition.",
+      "garminExplain": "Import Garmin recommandé pour analyse post-course."
+    },
+    "cardio_run_trail": {
+      "musclesPrimary": "Quadriceps excentrique en descente, fessiers en montée, chevilles stabilisatrices.",
+      "musclesSecondary": "Core, grand dorsal, deltoïdes.",
+      "execution": "Adapter la foulée au terrain ; descentes courtes et contrôlées si débutant.",
+      "coeffExplain": "Indice modéré à élevé selon D+ et durée.",
+      "notesExplain": "Dénivelé, technicité, chaussures.",
+      "calendarExplain": "D+ augmente la charge calendrier.",
+      "garminExplain": ""
+    },
+    "cardio_run_hill": {
+      "musclesPrimary": "Quadriceps et fessiers en concentrique (montée), mollets.",
+      "musclesSecondary": "Core, ischios en descente.",
+      "execution": "Montées répétées ou sortie vallonnée ; récup en descente ou marche.",
+      "coeffExplain": "Indice intermédiaire à élevé selon pente et durée.",
+      "notesExplain": "Pente %, nombre de répétitions.",
+      "calendarExplain": "D+ et type côte dans la formule.",
+      "garminExplain": ""
+    },
+    "cardio_run_walk": {
+      "musclesPrimary": "Marche rapide : quadriceps, fessiers, mollets, tibial antérieur.",
+      "musclesSecondary": "Core, cardio léger.",
+      "execution": "Foulée active, bras engagés ; idéal récup ou reprise.",
+      "coeffExplain": "Indice bas — complément au volume course.",
+      "notesExplain": "Durée, dénivelé, alternance course-marche.",
+      "calendarExplain": "Classé marche dans l'historique ; charge modérée.",
+      "garminExplain": "Garmin distingue souvent marche et course automatiquement."
+    },
     "cardio_rope": {
       "musclesPrimary": "Mollets, endurance des épaules, cardio.",
       "musclesSecondary": "Avant-bras, coordination.",

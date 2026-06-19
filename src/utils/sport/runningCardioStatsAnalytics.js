@@ -9,6 +9,11 @@ import { isMockEnduranceSession, normalizeDateString } from '../calendarUtils';
 import { getGarminForRunningSession } from '../runningGarminMetrics';
 import { inferRunningSessionTypeFromGarminActivity } from '../garminRunningLaps';
 import { resolveRunningSessionDisplayType } from '../runningSessionTypeLabel';
+import { inferRunningSessionKindFromSession } from '../runningSessionClassification';
+import {
+  adjustIntensitySplitForRunningProfile,
+  inferRunningSessionProfile
+} from '../../features/profileQuestionnaire/quizRunningSessionProfile';
 import {
   parseRunningSessionDurationMinutes,
   formatPaceMinPerKm
@@ -21,6 +26,15 @@ import {
   formatChartDateDayMonth,
   mapToNumberMap
 } from './dailyDenseTimeSeries';
+import { isGarminRunningLikeActivity } from '../garminRunningLaps';
+import {
+  EF_HR_PCT_MAX,
+  EF_HR_PCT_MIN,
+  estimateUserMaxHeartRateFromPeaks,
+  hrPercentOfMax
+} from '../runningHeartRateModel';
+
+export { EF_HR_PCT_MIN, EF_HR_PCT_MAX, hrPercentOfMax };
 
 function toNum(v, fb = 0) {
   const n = Number(String(v ?? '').replace(',', '.'));
@@ -182,15 +196,50 @@ export function resolveEnrichedSessionMetrics(session, garmin = null) {
   };
 }
 
-/** FCmax estimée = max des FC max observées sur les séances (fallback 190). */
-export function estimateMaxHeartRate(sessions, garminById = null) {
-  let max = 0;
-  for (const s of sessions || []) {
-    const g = getGarminForRunningSession(s, garminById);
-    const hr = resolveSessionHeartRate(s, g);
-    if (hr.maxHR > max) max = hr.maxHR;
+/** Collecte les pics FC max de toutes les sorties (sessions + Garmin course non liées). */
+export function collectRunningHeartRatePeaks(sessions, garminById = null, options = {}) {
+  const peaks = [];
+  const seenGarmin = new Set();
+  const { garminCardioActivities = null } = options;
+
+  for (const session of sessions || []) {
+    const g = getGarminForRunningSession(session, garminById);
+    const gid = g?.garminId ?? g?.id ?? session?.garminId;
+    if (gid != null) seenGarmin.add(String(gid));
+    const hr = resolveSessionHeartRate(session, g);
+    if (hr.maxHR > 0) {
+      peaks.push({
+        maxHR: hr.maxHR,
+        avgHR: hr.avgHR,
+        date: resolveSessionDateYmd(session)
+      });
+    }
   }
-  return max > 0 ? Math.round(max) : 190;
+
+  const extra = garminCardioActivities || (garminById instanceof Map ? [...garminById.values()] : []);
+  for (const g of extra) {
+    if (!g || (g.jumps && g.jumps > 0)) continue;
+    if (!isGarminRunningLikeActivity(g)) continue;
+    const gid = String(g.garminId ?? g.id ?? '');
+    if (gid && seenGarmin.has(gid)) continue;
+    const hr = resolveSessionHeartRate(null, g);
+    if (hr.maxHR > 0) {
+      const raw = String(g.date || '');
+      const date = raw.match(/^(\d{4}-\d{2}-\d{2})/)?.[1] || null;
+      peaks.push({ maxHR: hr.maxHR, avgHR: hr.avgHR, date });
+    }
+  }
+
+  return peaks;
+}
+
+/** FC max personnelle : tous les pics + ajustement plafond + âge profil. */
+export function estimateMaxHeartRate(sessions, garminById = null, options = {}) {
+  const peaks = collectRunningHeartRatePeaks(sessions, garminById, options);
+  return estimateUserMaxHeartRateFromPeaks(peaks, {
+    ageYears: options?.ageYears ?? options?.age ?? null,
+    profileFcMax: options?.profileFcMax ?? null
+  });
 }
 
 export function resolveSessionHeartRate(session, garmin = null) {
@@ -231,15 +280,6 @@ export function resolveRunningStatsCategory(session, garminById = null) {
   return 'endurance';
 }
 
-export function hrPercentOfMax(avgHR, fcMax) {
-  if (!avgHR || !fcMax || fcMax <= 0) return null;
-  return (avgHR / fcMax) * 100;
-}
-
-/** Zone EF : 65–75 % FCmax (endurance fondamentale). */
-export const EF_HR_PCT_MIN = 65;
-export const EF_HR_PCT_MAX = 75;
-
 export function isFundamentalEnduranceSession(row, fcMax) {
   if (!row || row.category !== 'endurance') return false;
   if (row.pace == null || row.avgHR == null) return false;
@@ -258,8 +298,16 @@ export function isFundamentalEnduranceSession(row, fcMax) {
  *   avgHR: number|null, maxHR: number|null, hrPct: number|null
  * }>}
  */
-export function buildRunningSessionRows(sessions, garminById = null) {
-  const fcMax = estimateMaxHeartRate(sessions, garminById);
+export function buildRunningSessionRows(
+  sessions,
+  garminById = null,
+  classificationCtx = {},
+  garminRunningKindByGarminId = null
+) {
+  const fcMax = estimateMaxHeartRate(sessions, garminById, {
+    ageYears: classificationCtx?.age ?? null,
+    garminCardioActivities: garminById instanceof Map ? [...garminById.values()] : null
+  });
   const rows = [];
 
   for (const session of sessions || []) {
@@ -270,11 +318,19 @@ export function buildRunningSessionRows(sessions, garminById = null) {
     const g = getGarminForRunningSession(session, garminById);
     const enriched = resolveEnrichedSessionMetrics(session, g);
     const category = resolveRunningStatsCategory(session, garminById);
+    const gid = session?.garminId ?? session?.id;
+    const inferredKind =
+      gid != null && garminRunningKindByGarminId?.get
+        ? garminRunningKindByGarminId.get(String(gid))
+        : undefined;
+    const kind =
+      inferredKind ?? inferRunningSessionKindFromSession(session, g, classificationCtx);
 
     rows.push({
       session,
       date,
       category,
+      kind,
       dist: enriched.dist,
       durMin: enriched.durMin,
       pace: enriched.pace,
@@ -531,6 +587,132 @@ export function computeRunningStatsRecords(rows, period = 'all', now = new Date(
     best10k,
     longest,
     bestWeek
+  };
+}
+
+/** Lundi de la semaine ISO (année + numéro de semaine). */
+export function isoWeekToMonday(year, week) {
+  const jan4 = new Date(year, 0, 4);
+  const day = jan4.getDay() || 7;
+  const mondayWeek1 = new Date(jan4);
+  mondayWeek1.setDate(jan4.getDate() - day + 1);
+  const monday = new Date(mondayWeek1);
+  monday.setDate(mondayWeek1.getDate() + (week - 1) * 7);
+  monday.setHours(0, 0, 0, 0);
+  return monday;
+}
+
+/** Libellé lisible pour une clé ISO `2026-W24`. */
+export function formatIsoWeekRangeLabel(weekKey, locale = 'fr-FR') {
+  const m = String(weekKey || '').match(/^(\d{4})-W(\d{2})$/);
+  if (!m) return weekKey || '—';
+  const year = parseInt(m[1], 10);
+  const week = parseInt(m[2], 10);
+  const start = isoWeekToMonday(year, week);
+  const end = new Date(start);
+  end.setDate(start.getDate() + 6);
+  const fmt = (d) =>
+    d.toLocaleDateString(locale, { day: 'numeric', month: 'short', year: 'numeric' });
+  return `${fmt(start)} – ${fmt(end)}`;
+}
+
+/**
+ * Records volume : meilleure semaine (km ISO) et meilleur jour (km cumulés).
+ * @param {ReturnType<typeof buildRunningSessionRows>} rows
+ */
+export function computeRunningVolumeHighlights(rows) {
+  const weekKm = new Map();
+  const dayKm = new Map();
+
+  for (const r of rows || []) {
+    if (!r?.dist || r.dist <= 0) continue;
+    const wk = isoWeekKey(r.date);
+    if (wk) weekKm.set(wk, (weekKm.get(wk) || 0) + r.dist);
+    dayKm.set(r.date, (dayKm.get(r.date) || 0) + r.dist);
+  }
+
+  let bestWeek = null;
+  weekKm.forEach((km, week) => {
+    const rounded = Math.round(km * 100) / 100;
+    if (!bestWeek || rounded > bestWeek.km) {
+      bestWeek = { week, km: rounded, weekLabel: formatIsoWeekRangeLabel(week) };
+    }
+  });
+
+  let bestDay = null;
+  dayKm.forEach((km, date) => {
+    const rounded = Math.round(km * 100) / 100;
+    if (!bestDay || rounded > bestDay.km) {
+      bestDay = { date, km: rounded };
+    }
+  });
+
+  const totalKm = Math.round(
+    [...(rows || [])].reduce((s, r) => s + (r.dist > 0 ? r.dist : 0), 0) * 100
+  ) / 100;
+
+  return { bestWeek, bestDay, totalKm, sessionCount: (rows || []).length };
+}
+
+const DEFAULT_KIND_SPLIT = { easy: 0.7, tempo: 0.15, intervals: 0.15 };
+
+/**
+ * Répartition idéale course classique / vitesse / fractionné selon le profil quiz.
+ * @param {object|null} profileAnswers — `answers` du questionnaire profil
+ */
+export function resolveIdealRunningKindSplit(profileAnswers = null) {
+  const profile = inferRunningSessionProfile(profileAnswers || {});
+  const split = adjustIntensitySplitForRunningProfile(DEFAULT_KIND_SPLIT, profile);
+  const endurance = split.easy ?? DEFAULT_KIND_SPLIT.easy;
+  const speed = split.tempo ?? DEFAULT_KIND_SPLIT.tempo;
+  const interval = split.intervals ?? DEFAULT_KIND_SPLIT.intervals;
+  const sum = endurance + speed + interval || 1;
+  return {
+    profile,
+    endurance: Math.round((endurance / sum) * 1000) / 10,
+    speed: Math.round((speed / sum) * 1000) / 10,
+    interval: Math.round((interval / sum) * 1000) / 10
+  };
+}
+
+/**
+ * Répartition réelle des km et séances par type (endurance | speed | interval).
+ */
+export function computeRunningKindDistribution(rows) {
+  const kmByKind = { endurance: 0, speed: 0, interval: 0 };
+  const sessionsByKind = { endurance: 0, speed: 0, interval: 0 };
+
+  for (const r of rows || []) {
+    const kind = r.kind === 'speed' || r.kind === 'interval' ? r.kind : 'endurance';
+    const km = r.dist > 0 ? r.dist : 0;
+    kmByKind[kind] += km;
+    sessionsByKind[kind] += 1;
+  }
+
+  const totalKm = kmByKind.endurance + kmByKind.speed + kmByKind.interval;
+  const totalSessions = sessionsByKind.endurance + sessionsByKind.speed + sessionsByKind.interval;
+
+  const pct = (n, total) => (total > 0 ? Math.round((n / total) * 1000) / 10 : 0);
+
+  return {
+    kmByKind: {
+      endurance: Math.round(kmByKind.endurance * 100) / 100,
+      speed: Math.round(kmByKind.speed * 100) / 100,
+      interval: Math.round(kmByKind.interval * 100) / 100
+    },
+    sessionsByKind,
+    kmPct: {
+      endurance: pct(kmByKind.endurance, totalKm),
+      speed: pct(kmByKind.speed, totalKm),
+      interval: pct(kmByKind.interval, totalKm)
+    },
+    sessionPct: {
+      endurance: pct(sessionsByKind.endurance, totalSessions),
+      speed: pct(sessionsByKind.speed, totalSessions),
+      interval: pct(sessionsByKind.interval, totalSessions)
+    },
+    totalKm: Math.round(totalKm * 100) / 100,
+    totalSessions
   };
 }
 

@@ -364,7 +364,7 @@ export function buildRecapCrossCoachAggregate({
 
   const distinctExercises28 = countDistinctCheckedExerciseIds28(snapshot, start28, endYmd);
   const weightDelta7 = computeWeightDelta7FromSnapshot(snapshot, endYmd);
-  const sla = assessment.sessionLoadAlignment28 || {};
+  const sla = assessment?.sessionLoadAlignment28 || {};
   const qq = normalizeProfileQuestionnaire(profileQuestionnaireRaw || null);
   const gtgCtx = { workoutData: snapshot, profileQuestionnaire: qq };
   const gtg28 = summarizeGtgWindow(snapshot?.enduranceData?.gtg, start28, endYmd, gtgCtx);

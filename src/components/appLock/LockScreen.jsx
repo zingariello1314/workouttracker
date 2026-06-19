@@ -4,6 +4,10 @@ import { useAppLock } from '../../context/AppLockContext';
 import { useAuth } from '../../context/AuthContext';
 import { GlslHills } from '../ui/glsl-hills';
 import { MomentumLockBackground } from '../ui/MomentumBrandedLoading';
+import {
+  resolveLockWallpaperRotationMs,
+  resolveLockWallpaperAdvanceOnClick
+} from '../../utils/lockWallpaperImage';
 import { useLockWallpaperUrls } from '../../hooks/useLockWallpaperUrls';
 import LockForgotRecovery from './LockForgotRecovery';
 
@@ -99,6 +103,14 @@ const LockScreen = () => {
 
   const bg = record.lockBackgroundDataUrl;
   const lockWallpaperUrls = useLockWallpaperUrls();
+  const bgRef = useRef(null);
+  const advanceOnClick = resolveLockWallpaperAdvanceOnClick(record);
+  const hasCustomBg = lockWallpaperUrls.length > 0 || Boolean(bg);
+
+  const handleBackdropClick = useCallback(() => {
+    if (!advanceOnClick) return;
+    bgRef.current?.advance?.();
+  }, [advanceOnClick]);
 
   return (
     <motion.div
@@ -106,17 +118,23 @@ const LockScreen = () => {
       initial={false}
       exit={{ opacity: 0 }}
       transition={{ duration: 0.2 }}
+      onClick={handleBackdropClick}
     >
       {/* WebGL hors de toute animation d’opacité parente (évite composite / tremblement à l’ouverture) */}
       <div className="absolute inset-0 overflow-hidden bg-zinc-950">
-        {lockWallpaperUrls.length > 0 ? (
-          <MomentumLockBackground dataUrls={lockWallpaperUrls} variant="lock" />
-        ) : bg ? (
-          <MomentumLockBackground dataUrl={bg} variant="lock" />
+        {hasCustomBg ? (
+          <MomentumLockBackground
+            ref={bgRef}
+            dataUrls={lockWallpaperUrls.length > 0 ? lockWallpaperUrls : undefined}
+            dataUrl={lockWallpaperUrls.length > 0 ? undefined : bg}
+            variant="lock"
+            rotationMs={resolveLockWallpaperRotationMs(record)}
+            pauseAutoRotation={advanceOnClick}
+          />
         ) : (
           <GlslHills cameraZ={125} planeSize={256} speed={0.5} className="z-0" />
         )}
-        {!bg ? (
+        {!hasCustomBg ? (
           <>
             <div className="absolute inset-0 z-[2] bg-zinc-950/22" />
             <div className="absolute inset-0 z-[3] bg-gradient-to-b from-transparent via-zinc-950/12 to-zinc-950/52 pointer-events-none" />
@@ -129,6 +147,7 @@ const LockScreen = () => {
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.22, ease: [0.22, 1, 0.36, 1] }}
         className="relative z-10 w-full max-w-md"
+        onClick={(e) => e.stopPropagation()}
       >
         <motion.div
           key={shakeToken}

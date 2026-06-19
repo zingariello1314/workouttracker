@@ -48,6 +48,7 @@
     "todayNotInDataSimple": "Today ({{today}}) is not in available data. Sync recommended."
   },
   "runningCardTitle": "Running (Garmin)",
+  "runningCardTitleUnified": "Running",
   "runningCardVsPrev": "vs previous period",
   "runningCardLoading": "Loading runs…",
   "runningCardNoData": "No runs in these windows. Sync Garmin or pick a longer period.",

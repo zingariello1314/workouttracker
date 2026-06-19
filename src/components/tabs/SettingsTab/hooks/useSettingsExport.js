@@ -38,10 +38,15 @@ import {
 import { 
   compressNutritionExport 
 } from '../../../../utils/nutritionCompression';
-import { 
-  buildEnduranceExportStats 
-} from '../utils/exportUtils';
 import { ENDURANCE_SCHEMA_VERSION } from '../../../../services/endurance/enduranceDataService';
+import {
+  loadSportProgramContext,
+  prepareSportExportBundle
+} from '../utils/sportExportBundle';
+import {
+  buildGarminDailyIndex,
+  buildGarminExportSummary
+} from '../utils/garminExportSummary';
 
 /**
  * Hook pour gérer tous les exports
@@ -52,7 +57,13 @@ import { ENDURANCE_SCHEMA_VERSION } from '../../../../services/endurance/enduran
  * @param {Function} exportNutritionData - Fonction pour exporter Nutrition
  * @returns {Object} États et handlers pour tous les exports
  */
-export const useSettingsExport = (data, loadFromDB, exportGarminData, exportNutritionData) => {
+export const useSettingsExport = (
+  data,
+  loadFromDB,
+  exportGarminData,
+  exportNutritionData,
+  { storageKey = 'anonymous', currentUser = null } = {}
+) => {
   // États pour chaque type d'export
   const [exportStatus, setExportStatus] = useState(null);
   const [garminExportStatus, setGarminExportStatus] = useState(null);
@@ -102,7 +113,21 @@ export const useSettingsExport = (data, loadFromDB, exportGarminData, exportNutr
       
       const currentData = await loadFromDB();
       const dataToExport = currentData || data;
-      
+      const programContext = await loadSportProgramContext(storageKey);
+      const sportBundle = prepareSportExportBundle({
+        workoutData: dataToExport,
+        programContext,
+        userProfile: currentUser
+      });
+
+      // Garmin complet (activités + métriques quotidiennes FC, pas, etc.)
+      let garminData = null;
+      try {
+        garminData = await exportGarminData();
+      } catch (error) {
+        console.warn('⚠️ Erreur récupération données Garmin pour export global:', error);
+      }
+
       // Récupérer données Nutrition
       let nutritionData = null;
       try {
@@ -129,84 +154,85 @@ export const useSettingsExport = (data, loadFromDB, exportGarminData, exportNutr
         includeMetadata: true
       });
 
-      // Construire l'objet d'export complet
       const exportObject = {
-        version: '1.0',
+        version: '2.0',
         exportDate: new Date().toISOString(),
-        appName: 'Workout Tracker',
-        data: dataToExport,
+        exportType: 'Sport Complete',
+        appName: 'Momentum',
+        data: sportBundle.data,
+        sportExport: {
+          ...sportBundle.sportExport,
+          ...(garminData
+            ? { garminDailyIndex: buildGarminDailyIndex(garminData) }
+            : {})
+        },
         metadata: {
-          totalExercises: Object.keys(dataToExport.checkedExercises || {}).length,
-          totalReps: Object.keys(dataToExport.reps || {}).length,
-          totalStretches: Object.keys(dataToExport.checkedStretches || {}).length,
-          loadTracking: {
-            exerciseWeightKeys: Object.keys(dataToExport.exerciseWeights || {}).length,
-            exercisePerArmKeys: Object.keys(dataToExport.exerciseWeightPerArm || {}).filter(
-              (k) => dataToExport.exerciseWeightPerArm[k] === true
-            ).length,
-            exerciseSetWeightKeys: Object.keys(dataToExport.exerciseSetWeights || {}).length
-          },
-          historyReps: Object.keys(dataToExport.historyReps || {}).length,
+          ...sportBundle.metadata,
+          enduranceSchemaVersion: dataToExport.enduranceData?.schemaVersion || ENDURANCE_SCHEMA_VERSION,
+          enduranceChallenges: (dataToExport.enduranceData?.challenges || []).length,
           progressPhotos: (dataToExport.progressPhotos || []).length,
           progressEntries: (dataToExport.progressEntries || []).length,
           bodyTrackingReminders: (dataToExport.bodyTrackingReminders || []).length,
           bodyTrackingLastUpdated: dataToExport.bodyTrackingLastUpdated || null,
           bodyTrackingStats: {
-            photosWithWeight: (dataToExport.progressPhotos || []).filter(p => p.weight).length,
-            photosWithNotes: (dataToExport.progressPhotos || []).filter(p => p.notes).length,
-            photosWithMeasurements: (dataToExport.progressPhotos || []).filter(p => p.measurements && Object.keys(p.measurements).length > 0).length,
+            photosWithWeight: (dataToExport.progressPhotos || []).filter((p) => p.weight).length,
+            photosWithNotes: (dataToExport.progressPhotos || []).filter((p) => p.notes).length,
+            photosWithMeasurements: (dataToExport.progressPhotos || []).filter(
+              (p) => p.measurements && Object.keys(p.measurements).length > 0
+            ).length,
             entriesByType: (dataToExport.progressEntries || []).reduce((acc, entry) => {
               acc[entry.type] = (acc[entry.type] || 0) + 1;
               return acc;
             }, {}),
             dateRange: {
-              earliest: (dataToExport.progressPhotos || []).concat(dataToExport.progressEntries || [])
-                .map(item => item.date).sort()[0] || null,
-              latest: (dataToExport.progressPhotos || []).concat(dataToExport.progressEntries || [])
-                .map(item => item.date).sort().reverse()[0] || null
+              earliest:
+                (dataToExport.progressPhotos || [])
+                  .concat(dataToExport.progressEntries || [])
+                  .map((item) => item.date)
+                  .sort()[0] || null,
+              latest:
+                (dataToExport.progressPhotos || [])
+                  .concat(dataToExport.progressEntries || [])
+                  .map((item) => item.date)
+                  .sort()
+                  .reverse()[0] || null
             }
           },
-          enduranceSummary: buildEnduranceExportStats(dataToExport.enduranceData || {}),
-          enduranceLastUpdated: dataToExport.enduranceData?.lastUpdated || null,
-          enduranceSchemaVersion: dataToExport.enduranceData?.schemaVersion || ENDURANCE_SCHEMA_VERSION,
-          enduranceChallenges: (dataToExport.enduranceData?.challenges || []).length,
-          dayJustifications: {
+          dayJustificationsDetail: {
             total: Object.keys(dataToExport.dayJustifications || {}).length,
             byReason: Object.values(dataToExport.dayJustifications || {}).reduce((acc, justification) => {
               const reason = justification?.reason || 'autre';
               acc[reason] = (acc[reason] || 0) + 1;
               return acc;
             }, {}),
-            dateRange: (() => {
-              const dates = Object.keys(dataToExport.dayJustifications || {}).sort();
-              return {
-                earliest: dates[0] || null,
-                latest: dates[dates.length - 1] || null
-              };
-            })(),
             version: dataToExport.dayJustificationsVersion || '1.0'
           },
           startDate: dataToExport.startDate,
-          weekVariant: dataToExport.weekVariant,
-          programHistory: (dataToExport.programHistory || []).length,
-          nutritionSummary: nutritionData ? {
-            totalDailyMeals: nutritionData.metadata?.totalDailyMeals || 0,
-            totalMeals: nutritionData.metadata?.totalMeals || 0,
-            totalPrograms: nutritionData.metadata?.totalPrograms || 0,
-            totalFavoriteFoods: nutritionData.metadata?.totalFavoriteFoods || 0,
-            dateRange: nutritionData.metadata?.dateRange || null,
-            activeProgram: nutritionData.programs?.find(p => p.isActive)?.name || null
-          } : null,
+          nutritionSummary: nutritionData
+            ? {
+                totalDailyMeals: nutritionData.metadata?.totalDailyMeals || 0,
+                totalMeals: nutritionData.metadata?.totalMeals || 0,
+                totalPrograms: nutritionData.metadata?.totalPrograms || 0,
+                totalFavoriteFoods: nutritionData.metadata?.totalFavoriteFoods || 0,
+                dateRange: nutritionData.metadata?.dateRange || null,
+                activeProgram: nutritionData.programs?.find((p) => p.isActive)?.name || null
+              }
+            : null,
           booksSummary: {
             totalBooks: booksExport.metadata?.totalBooks || 0,
             totalSessions: booksExport.metadata?.totalSessions || 0,
             statuses: booksExport.metadata?.statuses || { 'in-progress': 0, completed: 0 },
             dateRange: booksExport.metadata?.dateRange || { earliest: null, latest: null },
             estimatedSizeKB: booksExport.metadata?.estimatedSizeKB || 0
-          }
+          },
+          garminSummary: garminData ? buildGarminExportSummary(garminData) : null
         }
       };
-      
+
+      if (garminData) {
+        exportObject.data.garminData = garminData;
+      }
+
       if (nutritionData) {
         exportObject.data.nutritionData = nutritionData;
       }
@@ -238,7 +264,7 @@ export const useSettingsExport = (data, loadFromDB, exportGarminData, exportNutr
       const url = URL.createObjectURL(blob);
       const link = document.createElement('a');
       link.href = url;
-      link.download = `workout-tracker-backup-${new Date().toISOString().split('T')[0]}.json`;
+      link.download = `momentum-sport-backup-${new Date().toISOString().split('T')[0]}.json`;
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
@@ -251,7 +277,7 @@ export const useSettingsExport = (data, loadFromDB, exportGarminData, exportNutr
       setExportStatus('error');
       setTimeout(() => setExportStatus(null), 3000);
     }
-  }, [data, loadFromDB, exportNutritionData]);
+  }, [data, loadFromDB, exportNutritionData, exportGarminData, storageKey, currentUser]);
 
   // Export Garmin
   const handleExportGarminData = useCallback(async () => {

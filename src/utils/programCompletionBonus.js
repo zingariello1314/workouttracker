@@ -12,6 +12,7 @@
 import { workoutProgram } from '../data/workoutProgram';
 import { collectCalendarRepKeysForExercise, generateStretchItemKey } from './exerciseKeyGenerator';
 import { buildPlannedStretchItemsForDateStr } from './stretchUtils';
+import { getPlannedExercisesForCalendarDate } from './calendarProgramExercises';
 
 const DAY_NAMES = ['dimanche', 'lundi', 'mardi', 'mercredi', 'jeudi', 'vendredi', 'samedi'];
 
@@ -38,16 +39,28 @@ function stableStringIdToNumericId(str) {
  * @param {object} [ctx]
  * @param {Array} [ctx.programs]
  * @param {(id: number|string) => string} [ctx.getExerciseNameById]
+ * @param {object} [ctx.activeProgram] programme actif (alignement calendrier / Aujourd'hui)
+ * @param {(date: Date, isGymMode?: boolean) => object} [ctx.getTodayWorkout]
+ * @param {boolean} [ctx.isAdmin]
+ * @param {boolean} [ctx.isAuthenticated]
  */
 export function buildPlannedExerciseListForDateStr(dateStr, workoutData, ctx = {}) {
-  const { programs = [], getExerciseNameById } = ctx;
+  const {
+    programs = [],
+    getExerciseNameById,
+    activeProgram = null,
+    getTodayWorkout = null,
+    isAdmin = false,
+    isAuthenticated = false,
+    alignWithCalendar = true
+  } = ctx;
   const dayName = dayNameFromDateStr(dateStr);
   if (!dayName) return [];
 
   const allExercises = [];
   const seen = new Set();
 
-  const pushEx = (ex, meta) => {
+  const pushEx = (ex, meta = {}) => {
     if (!ex || ex.id == null) return;
     const id = typeof ex.id === 'number' ? ex.id : stableStringIdToNumericId(String(ex.id));
     if (seen.has(id)) return;
@@ -59,34 +72,52 @@ export function buildPlannedExerciseListForDateStr(dateStr, workoutData, ctx = {
       type: ex.type || 'standard',
       materiel: ex.materiel || ex.equipment || '',
       notes: ex.notes || '',
-      originalId: ex.originalId,
+      originalId: ex.originalId ?? ex.id,
       ...meta
     });
   };
 
-  const defaultWorkout = workoutProgram[dayName];
-  if (defaultWorkout?.exercices) {
-    defaultWorkout.exercices.forEach((ex) =>
-      pushEx(ex, { programName: 'Cycle 3+1', programId: 'default' })
+  if (alignWithCalendar && (getTodayWorkout || activeProgram)) {
+    const date = new Date(`${dateStr}T12:00:00`);
+    getPlannedExercisesForCalendarDate({
+      date,
+      dayName,
+      dateStr,
+      getTodayWorkout,
+      activeProgram,
+      isAdmin,
+      isAuthenticated
+    }).forEach((ex) =>
+      pushEx(ex, {
+        programName: ex.programName || activeProgram?.name || 'Programme actif',
+        programId: ex.programId || activeProgram?.id || 'active'
+      })
     );
-  }
+  } else {
+    const defaultWorkout = workoutProgram[dayName];
+    if (defaultWorkout?.exercices) {
+      defaultWorkout.exercices.forEach((ex) =>
+        pushEx(ex, { programName: 'Cycle 3+1', programId: 'default' })
+      );
+    }
 
-  if (Array.isArray(programs)) {
-    programs.forEach((program) => {
-      if (!program?.schedule?.[dayName]?.exercises) return;
-      program.schedule[dayName].exercises.forEach((ex) => {
-        let numericId;
-        if (typeof ex.id === 'string') {
-          numericId = stableStringIdToNumericId(ex.id);
-        } else {
-          numericId = ex.id;
-        }
-        pushEx(
-          { ...ex, id: numericId },
-          { programName: program.name || 'Programme', programId: program.id }
-        );
+    if (Array.isArray(programs)) {
+      programs.forEach((program) => {
+        if (!program?.schedule?.[dayName]?.exercises) return;
+        program.schedule[dayName].exercises.forEach((ex) => {
+          let numericId;
+          if (typeof ex.id === 'string') {
+            numericId = stableStringIdToNumericId(ex.id);
+          } else {
+            numericId = ex.id;
+          }
+          pushEx(
+            { ...ex, id: numericId },
+            { programName: program.name || 'Programme', programId: program.id }
+          );
+        });
       });
-    });
+    }
   }
 
   const prefix = `${dateStr}_`;
@@ -102,14 +133,14 @@ export function buildPlannedExerciseListForDateStr(dateStr, workoutData, ctx = {
     if (!match) return;
     const id = parseInt(match[1], 10);
     if (!Number.isFinite(id) || seen.has(id)) return;
-    seen.add(id);
-    allExercises.push({
+    pushEx({
       id,
       name: nameFor(id),
       series: '',
       type: 'standard',
       materiel: '',
-      notes: '',
+      notes: ''
+    }, {
       programName: 'Séance enregistrée',
       programId: 'recorded'
     });
@@ -123,7 +154,10 @@ export function buildPlannedExerciseListForDateStr(dateStr, workoutData, ctx = {
  */
 export function buildPlannedStretchListForDateStr(dateStr, ctx = {}) {
   const programs = Array.isArray(ctx?.programs) ? ctx.programs : [];
-  return buildPlannedStretchItemsForDateStr(dateStr, workoutProgram, { programs });
+  const activeProgram = ctx?.activeProgram ?? null;
+  const stretchPrograms =
+    activeProgram && ctx?.alignWithCalendar !== false ? [activeProgram] : programs;
+  return buildPlannedStretchItemsForDateStr(dateStr, workoutProgram, { programs: stretchPrograms });
 }
 
 /**

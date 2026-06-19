@@ -138,7 +138,7 @@ const ProfileSettings = ({
       </CardHeader>
       <CardContent>
         <div className="space-y-6">
-          <div className="space-y-3 rounded-xl border border-violet-800/40 bg-violet-950/20 p-4">
+          <div id="settings-profil-quiz" className="scroll-mt-6 space-y-3 rounded-xl border border-violet-800/40 bg-violet-950/20 p-4">
             <div className="flex flex-wrap items-center justify-between gap-2">
               <p className="text-sm font-medium text-violet-100">Profil onboarding & personnalisation</p>
               <span className="rounded-full border border-violet-600/50 bg-violet-900/35 px-2.5 py-0.5 text-[11px] text-violet-100/90">

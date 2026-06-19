@@ -399,9 +399,21 @@ export function isMockEnduranceSession(session) {
     }
   }
 
-  // Pattern 2 : Distance très faible (1.5m) avec durée élevée (Natation mock)
-  // ✅ AMÉLIORATION : Détecter aussi distances très faibles (< 5m) avec durée > 30 min
-  if ((distance === 1.5 || (distance > 0 && distance < 5)) && durationMinutes > 30) {
+  const hasCredibleGarminLink =
+    session.garminId != null ||
+    session.__fromGarminBridge === true ||
+    String(session.source || '').toLowerCase() === 'garmin';
+  const isRunningLikeSession =
+    /run|course|jog/i.test(String(session.type || '')) ||
+    String(session.activityType || '').toLowerCase() === 'running' ||
+    (hasCredibleGarminLink && distance >= 0.75);
+
+  // Pattern 2 : Distance très faible (mètres) avec durée élevée — natation mock, pas la course en km
+  if (
+    !isRunningLikeSession &&
+    (distance === 1.5 || (distance > 0 && distance < 1)) &&
+    durationMinutes > 30
+  ) {
     return true;
   }
 
@@ -436,8 +448,8 @@ export function isMockEnduranceSession(session) {
     return true; // Sauts élevés + durée ronde = mock probable
   }
 
-  // Pattern 5 : Date future
-  if (session.date) {
+  // Pattern 5 : Date future (sauf séances Garmin identifiées — sync légitime)
+  if (session.date && !hasCredibleGarminLink) {
     const normalizedDate = normalizeDateString(session.date);
     if (normalizedDate) {
       try {

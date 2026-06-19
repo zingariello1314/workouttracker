@@ -53,7 +53,11 @@ export default function AnatomyBankCardPreview({
     [primaryMuscles, secondaryMuscles, mode, exerciseDatabaseKey, stretchDatabaseKey]
   );
 
-  const useLiveWebGl = shouldUseLiveAnatomyWebGl({ stretchDatabaseKey, mode });
+  const useLiveWebGl = shouldUseLiveAnatomyWebGl({
+    stretchDatabaseKey,
+    mode,
+    exerciseDatabaseKey: exerciseDatabaseKey || undefined
+  });
 
   if (layout === 'gridFill' && useLiveWebGl) {
     return (

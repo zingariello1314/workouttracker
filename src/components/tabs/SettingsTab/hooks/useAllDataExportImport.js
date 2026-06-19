@@ -19,6 +19,14 @@ import {
 import { 
   saveBooksToIndexedDB 
 } from '../../../../utils/booksIndexedDB';
+import {
+  extractSportProgramContextFromImport,
+  loadSportProgramContext,
+  mergeProfileQuestionnaire,
+  mergeSportProgramContext,
+  mergeWorkoutMapFields,
+  persistSportProgramContext
+} from '../utils/sportExportBundle';
 
 /**
  * Hook pour gérer l'import/export complet de toutes les données
@@ -29,7 +37,13 @@ import {
  * @param {Function} validateAllWorkoutData - Fonction de validation (depuis useDataValidation)
  * @returns {Object} États et handlers pour l'import/export complet
  */
-export const useAllDataExportImport = (data, loadFromDB, updateData, validateAllWorkoutData) => {
+export const useAllDataExportImport = (
+  data,
+  loadFromDB,
+  updateData,
+  validateAllWorkoutData,
+  { storageKey = 'anonymous', updateProfile = null, currentUser = null, importGarminData = null } = {}
+) => {
   // États pour Body Tracking uniquement
   const [importStatus, setImportStatus] = useState(null);
   const [importData, setImportData] = useState('');
@@ -187,8 +201,17 @@ export const useAllDataExportImport = (data, loadFromDB, updateData, validateAll
       
       const validation = validateAllWorkoutData(parsedData);
       if (!validation.isValid) {
-        setAllDataImportStatus('error');
-        console.error('Erreurs de validation:', validation.errors);
+        setAllDataPreviewData({
+          data: null,
+          rawExport: parsedData,
+          stats: validation.stats,
+          warnings: validation.warnings,
+          errors: validation.errors,
+          isExportFormat: !!parsedData.data || !!parsedData.metadata,
+          booksPreview: null
+        });
+        setShowAllDataImportPreview(true);
+        setAllDataImportStatus('preview');
         return;
       }
 
@@ -224,6 +247,7 @@ export const useAllDataExportImport = (data, loadFromDB, updateData, validateAll
 
       setAllDataPreviewData({
         data: validation.data,
+        rawExport: parsedData,
         stats: validation.stats,
         warnings: combinedWarnings,
         errors: validation.errors,
@@ -287,21 +311,12 @@ export const useAllDataExportImport = (data, loadFromDB, updateData, validateAll
       }));
       
       const importedData = allDataPreviewData.data;
-      
+      const mapMerged = mergeWorkoutMapFields(backupData, importedData);
+
       // Fusion intelligente : Fusionner avec données existantes
       const mergedData = {
-        checkedExercises: {
-          ...(backupData.checkedExercises || {}),
-          ...(importedData.checkedExercises || {})
-        },
-        reps: {
-          ...(backupData.reps || {}),
-          ...(importedData.reps || {})
-        },
-        checkedStretches: {
-          ...(backupData.checkedStretches || {}),
-          ...(importedData.checkedStretches || {})
-        },
+        ...backupData,
+        ...mapMerged,
         enduranceData: {
           sessions: {
             boxing: mergeSessionsWithoutDuplicates(
@@ -378,62 +393,6 @@ export const useAllDataExportImport = (data, loadFromDB, updateData, validateAll
           }),
           ...(importedData.progressEntries || [])
         ],
-        historyReps: {
-          ...(backupData.historyReps || {}),
-          ...(importedData.historyReps || {})
-        },
-        dailyVariations: {
-          ...(backupData.dailyVariations || {}),
-          ...(importedData.dailyVariations || {})
-        },
-        sessionFeedbacks: {
-          ...(backupData.sessionFeedbacks || {}),
-          ...(importedData.sessionFeedbacks || {})
-        },
-        exerciseWeights: {
-          ...(backupData.exerciseWeights || {}),
-          ...(importedData.exerciseWeights || {})
-        },
-        exerciseWeightPerArm: {
-          ...(backupData.exerciseWeightPerArm || {}),
-          ...(importedData.exerciseWeightPerArm || {})
-        },
-        exerciseSetWeights: {
-          ...(backupData.exerciseSetWeights || {}),
-          ...(importedData.exerciseSetWeights || {})
-        },
-        exerciseIntensityCoeffs: {
-          ...(backupData.exerciseIntensityCoeffs || {}),
-          ...(importedData.exerciseIntensityCoeffs || {})
-        },
-        exercisePerceivedRatings: {
-          ...(backupData.exercisePerceivedRatings || {}),
-          ...(importedData.exercisePerceivedRatings || {})
-        },
-        exercisePersonalNotes: {
-          ...(backupData.exercisePersonalNotes || {}),
-          ...(importedData.exercisePersonalNotes || {})
-        },
-        exerciseSessionEffortStars: {
-          ...(backupData.exerciseSessionEffortStars || {}),
-          ...(importedData.exerciseSessionEffortStars || {})
-        },
-        exerciseSessionPleasureStars: {
-          ...(backupData.exerciseSessionPleasureStars || {}),
-          ...(importedData.exerciseSessionPleasureStars || {})
-        },
-        stretchPerceivedRatings: {
-          ...(backupData.stretchPerceivedRatings || {}),
-          ...(importedData.stretchPerceivedRatings || {})
-        },
-        stretchPersonalNotes: {
-          ...(backupData.stretchPersonalNotes || {}),
-          ...(importedData.stretchPersonalNotes || {})
-        },
-        stretchSessionEffortStars: {
-          ...(backupData.stretchSessionEffortStars || {}),
-          ...(importedData.stretchSessionEffortStars || {})
-        },
         programHistory: [
           ...(backupData.programHistory || []),
           ...(importedData.programHistory || []).filter(imported => {
@@ -443,8 +402,27 @@ export const useAllDataExportImport = (data, loadFromDB, updateData, validateAll
             );
           })
         ],
+        exerciseMaxRecords: [
+          ...(backupData.exerciseMaxRecords || []),
+          ...(importedData.exerciseMaxRecords || [])
+        ],
+        exerciseMaxHistory: [
+          ...(backupData.exerciseMaxHistory || []),
+          ...(importedData.exerciseMaxHistory || [])
+        ],
+        performanceRetestPlans: [
+          ...(backupData.performanceRetestPlans || []),
+          ...(importedData.performanceRetestPlans || [])
+        ],
+        pyramidSessionLog: [
+          ...(backupData.pyramidSessionLog || []),
+          ...(importedData.pyramidSessionLog || [])
+        ],
         startDate: importedData.startDate || backupData.startDate || null,
         weekVariant: importedData.weekVariant || backupData.weekVariant || 'A',
+        dailyVariationsVersion: importedData.dailyVariationsVersion || backupData.dailyVariationsVersion || '1.0',
+        dayJustificationsVersion: importedData.dayJustificationsVersion || backupData.dayJustificationsVersion || '1.0',
+        circuitDefinitionsVersion: importedData.circuitDefinitionsVersion || backupData.circuitDefinitionsVersion || '1.0',
         bodyTrackingReminders: importedData.bodyTrackingReminders || backupData.bodyTrackingReminders || [],
         bodyTrackingLastUpdated: new Date().toISOString()
       };
@@ -552,6 +530,42 @@ export const useAllDataExportImport = (data, loadFromDB, updateData, validateAll
       // Sauvegarder les données fusionnées et nettoyées
       await updateData(mergedData);
 
+      const programCtx = extractSportProgramContextFromImport(importedData);
+      if (programCtx) {
+        const existingCtx = await loadSportProgramContext(storageKey);
+        const mergedCtx = mergeSportProgramContext(existingCtx, programCtx);
+        await persistSportProgramContext(storageKey, mergedCtx);
+      }
+
+      const questionnaire = importedData.profileQuestionnaire
+        ?? importedData.userProfileSnapshot?.profileQuestionnaire;
+      if (questionnaire && updateProfile && currentUser?.id) {
+        try {
+          const mergedQuestionnaire = mergeProfileQuestionnaire(
+            currentUser.profileQuestionnaire,
+            questionnaire
+          );
+          await updateProfile(currentUser.id, {
+            profileQuestionnaire: mergedQuestionnaire
+          });
+        } catch (profileErr) {
+          console.warn('[Settings] Import questionnaire profil ignoré:', profileErr);
+        }
+      }
+
+      // Importer Garmin si présent dans l'export
+      const garminPayload =
+        allDataPreviewData?.rawExport?.data?.garminData
+        || allDataPreviewData?.rawExport?.garminData;
+      if (garminPayload && importGarminData) {
+        try {
+          await importGarminData(garminPayload);
+          console.log('[Settings] ✅ Import Garmin réussi depuis export complet');
+        } catch (garminErr) {
+          console.warn('[Settings] Import Garmin depuis export complet ignoré:', garminErr);
+        }
+      }
+
       // Importer les livres si présents dans l'export
       const booksPreview = allDataPreviewData?.booksPreview;
       if (booksPreview && booksPreview.valid && Array.isArray(booksPreview.books)) {
@@ -590,7 +604,7 @@ export const useAllDataExportImport = (data, loadFromDB, updateData, validateAll
       setAllDataImportStatus('error');
       setTimeout(() => setAllDataImportStatus(null), 5000);
     }
-  }, [allDataPreviewData, data, loadFromDB, updateData]);
+  }, [allDataPreviewData, data, loadFromDB, updateData, storageKey, updateProfile, currentUser, importGarminData]);
 
   // Restaurer le backup pré-import
   const restorePreImportBackup = useCallback(async () => {

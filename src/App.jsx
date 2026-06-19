@@ -56,7 +56,9 @@ import GlassFilter from './components/ui/GlassFilter';
 import ErrorBoundary from './components/ui/ErrorBoundary';
 import GitHubOAuthLanding from './components/github/GitHubOAuthLanding';
 import SpotifyOAuthLanding from './components/spotify/SpotifyOAuthLanding';
-import { MomentumTabLoadOverlay, MomentumModalLoadCard } from './components/ui/MomentumBrandedLoading';
+import { MomentumTabLoadOverlay, MomentumTabInlineLoader, MomentumModalLoadCard } from './components/ui/MomentumBrandedLoading';
+import RecapTabSkeleton from './components/sport/recap/shell/RecapTabSkeleton';
+import { preloadRecapTab } from './utils/preloadTabs';
 import SportXPBar from './components/tabs/TodayTab/components/SportXPBar';
 import CodeXPBar from './components/code/CodeXPBar';
 import { isSportSubTab } from './constants/sportSubTabs';
@@ -69,6 +71,13 @@ import SettingsUiRemoteSyncEffects from './components/sync/SettingsUiRemoteSyncE
 import AuthPersistenceGate from './components/AuthPersistenceGate';
 import QuestStretchSyncBridge from './components/quests/QuestStretchSyncBridge';
 import AppPersistenceFlushBridge from './components/persistence/AppPersistenceFlushBridge';
+
+function TabSuspenseFallback({ tabId }) {
+  if (tabId === 'recap') {
+    return <RecapTabSkeleton />;
+  }
+  return <MomentumTabInlineLoader message="Chargement…" />;
+}
 
 const WorkoutTrackerApp = () => {
   return (
@@ -456,7 +465,7 @@ const WorkoutTrackerContent = () => {
                 title={`Erreur dans l'onglet ${activeTab}`}
                 onGoHome={() => setActiveTab('home')}
               >
-                <Suspense fallback={<MomentumTabLoadOverlay message="Chargement…" />}>
+              <Suspense fallback={<TabSuspenseFallback tabId={activeTab} />}>
                   <div className="container mx-auto px-4">
                     {isSportSubTab(activeTab) && (
                       <div className="mb-5 mt-5 scroll-mt-40 pt-1">

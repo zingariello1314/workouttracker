@@ -1709,6 +1709,105 @@ export const exerciseDatabase = {
       "Sortie continue à allure conversationnelle (≈ zone 2, 65–75 % FCmax). Construit la base aérobie, la densité capillaire et l'efficacité musculaire sans casser la récupération. Volume long, intensité basse.",
     variations: ["footing", "endurance fondamentale", "EF", "easy run", "zone 2 run", "course lente continue"]
   },
+  "course récupération active": {
+    name: "Course récupération active",
+    category: "Activités Complémentaires",
+    primaryMuscles: ["Mollets", "Quadriceps", "Ischio-jambiers"],
+    secondaryMuscles: ["Fessiers", "Core", "Système cardio-respiratoire"],
+    equipment: "Aucun",
+    difficulty: 1,
+    description:
+      "Footing très léger (zone 1, < 65 % FCmax) pour relancer la circulation sans creuser la fatigue. Allure libre, respiration nasale si possible.",
+    variations: ["recovery run", "récup active", "zone 1", "footing ultra léger"]
+  },
+  "course sortie longue": {
+    name: "Course sortie longue",
+    category: "Activités Complémentaires",
+    primaryMuscles: ["Quadriceps", "Ischio-jambiers", "Mollets", "Fessiers"],
+    secondaryMuscles: ["Core", "Grand dorsal", "Système cardio-respiratoire"],
+    equipment: "Aucun",
+    difficulty: 2,
+    description:
+      "Sortie longue à intensité modérée (souvent zone 2–3) pour développer l'endurance musculaire et la gestion du glycogène. Hydratation et nutrition à prévoir.",
+    variations: ["long run", "sortie longue", "longue distance", "endurance longue"]
+  },
+  "course vitesse": {
+    name: "Course vitesse",
+    category: "Activités Complémentaires",
+    primaryMuscles: ["Quadriceps", "Fessiers", "Mollets", "Ischio-jambiers"],
+    secondaryMuscles: ["Core", "Grand dorsal", "Système cardio-respiratoire"],
+    equipment: "Chrono / Garmin",
+    difficulty: 3,
+    description:
+      "Séance à allure rapide soutenue (zone 4–5) : blocs VMA, 1 km rapides ou sortie tempo courte. Développe la vitesse et la tolérance à l'effort élevé.",
+    variations: ["vitesse", "speed run", "allure rapide", "VMA", "zone 5"]
+  },
+  "course tempo": {
+    name: "Course tempo",
+    category: "Activités Complémentaires",
+    primaryMuscles: ["Quadriceps", "Ischio-jambiers", "Mollets"],
+    secondaryMuscles: ["Fessiers", "Core", "Système cardio-respiratoire"],
+    equipment: "Aucun",
+    difficulty: 3,
+    description:
+      "Bloc continu « confortablement dur » (zone 3–4), souvent 20–40 min. Améliore le seuil aérobie et l'économie de course à allure soutenue.",
+    variations: ["tempo run", "allure tempo", "zone 3", "steady state"]
+  },
+  "course seuil": {
+    name: "Course seuil",
+    category: "Activités Complémentaires",
+    primaryMuscles: ["Quadriceps", "Ischio-jambiers", "Mollets", "Fessiers"],
+    secondaryMuscles: ["Core", "Grand dorsal", "Système cardio-respiratoire"],
+    equipment: "Chrono / capteur FC",
+    difficulty: 3,
+    description:
+      "Travail au seuil lactique (zone 4, ~80–90 % FCmax) : blocs de 8–20 min ou course continue exigeante. Retarde l'apparition de l'acidité musculaire.",
+    variations: ["threshold run", "seuil lactique", "STS", "zone 4", "allure seuil"]
+  },
+  "course fartlek": {
+    name: "Course fartlek",
+    category: "Activités Complémentaires",
+    primaryMuscles: ["Quadriceps", "Fessiers", "Mollets", "Ischio-jambiers"],
+    secondaryMuscles: ["Core", "Système cardio-respiratoire"],
+    equipment: "Aucun",
+    difficulty: 2,
+    description:
+      "Jeu libre de changements d'allure sur le terrain (arbres, lampadaires, côtes). Mélange aérobie et neuromusculaire sans structure rigide.",
+    variations: ["fartlek", "jeu d'allure", "speed play", "fartlek libre"]
+  },
+  "course compétition": {
+    name: "Course compétition",
+    category: "Activités Complémentaires",
+    primaryMuscles: ["Quadriceps", "Ischio-jambiers", "Mollets", "Fessiers"],
+    secondaryMuscles: ["Core", "Grand dorsal", "Deltoïdes", "Système cardio-respiratoire"],
+    equipment: "Dossard / chrono",
+    difficulty: 3,
+    description:
+      "Course officielle ou chronométrée à intensité maximale tolérable. Gestion du pacing, adrenaline et récupération post-course prolongée.",
+    variations: ["compétition", "course officielle", "race", "chrono", "10 km", "semi", "marathon"]
+  },
+  "course trail": {
+    name: "Course trail",
+    category: "Activités Complémentaires",
+    primaryMuscles: ["Quadriceps", "Fessiers", "Mollets", "Ischio-jambiers"],
+    secondaryMuscles: ["Core", "Tibial antérieur", "Grand dorsal", "Deltoïdes"],
+    equipment: "Chaussures trail",
+    difficulty: 3,
+    description:
+      "Course en nature avec dénivelé : montées, descentes techniques, surfaces instables. Sollicite stabilisateurs, excentrique des quadriceps en descente.",
+    variations: ["trail", "trail running", "sentier", "nature", "ultra trail"]
+  },
+  "marche active": {
+    name: "Marche active",
+    category: "Activités Complémentaires",
+    primaryMuscles: ["Quadriceps", "Fessiers", "Mollets", "Tibial antérieur"],
+    secondaryMuscles: ["Core", "Ischio-jambiers", "Système cardio-respiratoire"],
+    equipment: "Aucun",
+    difficulty: 1,
+    description:
+      "Marche rapide ou marche-course à basse intensité (zone 1–2). Idéal récupération, reprise post-blessure ou volume sans impact élevé.",
+    variations: ["marche rapide", "power walk", "marche-course", "walk", "rando légère"]
+  },
   "fractionné": {
     name: "Fractionné",
     category: "Activités Complémentaires",

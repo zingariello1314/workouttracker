@@ -10,6 +10,16 @@ function shouldUseBareExerciseMuscles(exercise) {
   return typeof id === 'string' && id.startsWith('cardio_');
 }
 
+/** Toutes les fiches `cardio_run_*` partagent l’aperçu 3D du footing (même hash .webp / même mesh). */
+const CARDIO_RUN_PREVIEW_KEY = 'cardio_run_easy';
+
+function resolveCardioPreviewDatabaseKey(exercise) {
+  const id = exercise?.id != null ? String(exercise.id) : '';
+  if (id.startsWith('cardio_run_')) return CARDIO_RUN_PREVIEW_KEY;
+  if (id.startsWith('cardio_')) return id;
+  return null;
+}
+
 /** Aperçu 3D sur carte exercice (données référentiel + objet programme). */
 export default function AnatomyExerciseCardPreview({ exercise, previewLayout = 'compact' }) {
   const bareMuscles = useMemo(() => shouldUseBareExerciseMuscles(exercise), [exercise]);
@@ -27,6 +37,7 @@ export default function AnatomyExerciseCardPreview({ exercise, previewLayout = '
 
   /** Aligné sur `anatomyPreviewManifest.mjs` : stem .webp inclut vue / tuning banque selon cette clé. */
   const exerciseDatabaseKey =
+    resolveCardioPreviewDatabaseKey(exercise) ||
     getExerciseDatabaseKey(exercise) ||
     (typeof exercise?.id === 'string' && exercise.id.startsWith('cardio_') ? exercise.id : null);
 

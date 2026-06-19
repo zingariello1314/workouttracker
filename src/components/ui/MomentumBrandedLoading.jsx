@@ -1,13 +1,49 @@
-import React, { memo, useEffect, useMemo, useState } from 'react';
+import React, {
+  forwardRef,
+  memo,
+  useCallback,
+  useEffect,
+  useImperativeHandle,
+  useMemo,
+  useRef,
+  useState
+} from 'react';
 import { motion } from 'framer-motion';
+import { Loader2 } from 'lucide-react';
+import { DEFAULT_LOCK_WALLPAPER_ROTATION_MS } from '../../utils/lockWallpaperImage';
+import {
+  pickRandomWallpaperIndex,
+  preloadImageUrl,
+  preloadRandomLockWallpaper,
+  isLockWallpaperDecoded
+} from '../../utils/lockWallpaperPreload';
+import { LoadingStepsPanel } from './MomentumWelcomeGateSteps';
 
-/** Fond personnalisé — ne capture jamais les clics. Supporte une ou plusieurs images. */
-export function MomentumLockBackground({
-  dataUrl = null,
-  dataUrls = null,
-  variant = 'gate',
-  rotationMs = 90_000
-}) {
+const CARD_EASE = [0.22, 1, 0.36, 1];
+
+function GateFallbackGradient() {
+  return (
+    <div className="pointer-events-none absolute inset-0 overflow-hidden" aria-hidden>
+      <div className="absolute inset-0 bg-gradient-to-b from-[#0a0a10] via-[#07070c] to-[#040408]" />
+      <div className="absolute inset-0 bg-[radial-gradient(ellipse_90%_60%_at_50%_0%,rgba(56,189,248,0.12),transparent_55%)]" />
+      <div className="absolute inset-0 bg-[radial-gradient(ellipse_50%_40%_at_100%_100%,rgba(14,165,233,0.08),transparent_50%)]" />
+    </div>
+  );
+}
+
+export const MomentumLockBackground = forwardRef(function MomentumLockBackground(
+  {
+    dataUrl = null,
+    dataUrls = null,
+    variant = 'gate',
+    rotationMs = DEFAULT_LOCK_WALLPAPER_ROTATION_MS,
+    pauseAutoRotation = false
+  },
+  ref
+) {
+  const CROSSFADE_MS = 800;
+  const CROSSFADE_EASING = 'cubic-bezier(0.4, 0, 0.2, 1)';
+
   const urls = useMemo(() => {
     if (Array.isArray(dataUrls) && dataUrls.length > 0) {
       return dataUrls.filter(Boolean);
@@ -15,44 +51,146 @@ export function MomentumLockBackground({
     return dataUrl ? [dataUrl] : [];
   }, [dataUrl, dataUrls]);
 
-  const [index, setIndex] = useState(0);
+  const indexRef = useRef(0);
+  const [activeLayer, setActiveLayer] = useState(0);
+  const [layer0Src, setLayer0Src] = useState(null);
+  const [layer1Src, setLayer1Src] = useState(null);
+  const [layer0Opacity, setLayer0Opacity] = useState(1);
+  const [layer1Opacity, setLayer1Opacity] = useState(0);
+
+  const showLayer = useCallback((url, idx) => {
+    indexRef.current = idx;
+    setLayer0Src(url);
+    setLayer1Src(null);
+    setLayer0Opacity(1);
+    setLayer1Opacity(0);
+    setActiveLayer(0);
+  }, []);
+
+  const crossfadeToUrl = useCallback(
+    (nextUrl, nextIdx) => {
+      if (!nextUrl) return;
+      indexRef.current = nextIdx;
+      if (!layer0Src && !layer1Src) {
+        showLayer(nextUrl, nextIdx);
+        return;
+      }
+      if (urls.length <= 1) {
+        showLayer(nextUrl, nextIdx);
+        return;
+      }
+      setActiveLayer((prev) => {
+        const inactive = prev === 0 ? 1 : 0;
+        if (inactive === 1) {
+          setLayer1Src(nextUrl);
+          setLayer1Opacity(1);
+          setLayer0Opacity(0);
+          return 1;
+        }
+        setLayer0Src(nextUrl);
+        setLayer0Opacity(1);
+        setLayer1Opacity(0);
+        return 0;
+      });
+    },
+    [urls.length, layer0Src, layer1Src, showLayer]
+  );
+
+  const loadRandom = useCallback(
+    async (excludeIdx = -1) => {
+      if (!urls.length) return;
+      const { index, url } = await preloadRandomLockWallpaper(urls, excludeIdx);
+      if (url) crossfadeToUrl(url, index);
+    },
+    [urls, crossfadeToUrl]
+  );
+
+  const advance = useCallback(() => {
+    if (urls.length <= 1) return;
+    const current = indexRef.current;
+    const nextIdx = pickRandomWallpaperIndex(urls, current);
+    const nextUrl = urls[nextIdx];
+    preloadImageUrl(nextUrl)
+      .then(() => crossfadeToUrl(nextUrl, nextIdx))
+      .catch(() => crossfadeToUrl(nextUrl, nextIdx));
+  }, [urls, crossfadeToUrl]);
+
+  useImperativeHandle(ref, () => ({ advance }), [advance]);
 
   useEffect(() => {
-    setIndex(Math.floor(Math.random() * urls.length));
-  }, [urls]);
+    if (!urls.length) {
+      setLayer0Src(null);
+      setLayer1Src(null);
+      return undefined;
+    }
+    let cancelled = false;
+
+    const decodedIdx = urls.findIndex((u) => isLockWallpaperDecoded(u));
+    const instantIdx = decodedIdx >= 0 ? decodedIdx : 0;
+    const instantUrl = urls[instantIdx];
+
+    showLayer(instantUrl, instantIdx);
+    preloadImageUrl(instantUrl).catch(() => {});
+
+    if (urls.length > 1 && decodedIdx < 0) {
+      preloadRandomLockWallpaper(urls, instantIdx)
+        .then(({ index, url }) => {
+          if (cancelled || !url || index === instantIdx) return;
+          crossfadeToUrl(url, index);
+        })
+        .catch(() => {});
+    }
+
+    return () => {
+      cancelled = true;
+    };
+  }, [urls, showLayer, crossfadeToUrl]);
 
   useEffect(() => {
-    if (urls.length <= 1) return undefined;
+    if (pauseAutoRotation || urls.length <= 1) return undefined;
+    const interval = Number(rotationMs);
+    if (!Number.isFinite(interval) || interval < 1000) return undefined;
     const id = window.setInterval(() => {
-      setIndex((i) => (i + 1) % urls.length);
-    }, rotationMs);
+      loadRandom(indexRef.current).catch(() => {});
+    }, interval);
     return () => window.clearInterval(id);
-  }, [urls, rotationMs]);
+  }, [urls, rotationMs, pauseAutoRotation, loadRandom]);
 
   if (!urls.length) return null;
 
-  const current = urls[index % urls.length];
   const overlay =
     variant === 'lock'
       ? 'bg-gradient-to-b from-black/30 via-black/45 to-black/65'
-      : 'bg-gradient-to-b from-black/20 via-black/40 to-black/70';
+      : 'bg-gradient-to-b from-black/25 via-black/45 to-black/75';
+
+  const layerStyle = (src, opacity, zIndex) =>
+    src
+      ? {
+          backgroundImage: `url(${src})`,
+          opacity,
+          zIndex,
+          transition: `opacity ${CROSSFADE_MS}ms ${CROSSFADE_EASING}`,
+          willChange: 'opacity'
+        }
+      : { opacity: 0, zIndex: 0, pointerEvents: 'none' };
 
   return (
     <div className="pointer-events-none absolute inset-0 overflow-hidden" aria-hidden>
+      {variant === 'gate' ? <GateFallbackGradient /> : <div className="absolute inset-0 bg-zinc-950" />}
       <div
-        key={current}
-        className="absolute inset-0 scale-105 bg-cover bg-center bg-no-repeat transition-opacity duration-1000"
-        style={{ backgroundImage: `url(${current})` }}
+        className="absolute inset-0 scale-105 bg-cover bg-center bg-no-repeat"
+        style={layerStyle(layer0Src, layer0Opacity, activeLayer === 0 ? 2 : 0)}
       />
-      <div className={`absolute inset-0 ${overlay}`} />
-      <div className="absolute inset-0 bg-[radial-gradient(ellipse_80%_60%_at_50%_40%,transparent_0%,rgba(0,0,0,0.55)_100%)]" />
+      <div
+        className="absolute inset-0 scale-105 bg-cover bg-center bg-no-repeat"
+        style={layerStyle(layer1Src, layer1Opacity, activeLayer === 1 ? 2 : 0)}
+      />
+      <div className={`absolute inset-0 z-[3] ${overlay}`} />
+      <div className="absolute inset-0 z-[3] bg-[radial-gradient(ellipse_80%_60%_at_50%_40%,transparent_0%,rgba(0,0,0,0.55)_100%)]" />
     </div>
   );
-}
+});
 
-/**
- * Écran d’accueil plein écran : même langage visuel que LockScreen / home (verre, dégradés, logo).
- */
 export const MomentumWelcomeGate = memo(function MomentumWelcomeGate({
   onUnlock,
   title,
@@ -60,147 +198,166 @@ export const MomentumWelcomeGate = memo(function MomentumWelcomeGate({
   unlockLabel,
   unlockHint,
   syncMessage,
-  isDataLoading,
+  stepSignals = [],
   lockBackgroundDataUrl = null,
   lockBackgroundDataUrls = null,
+  lockWallpaperRotationMs = DEFAULT_LOCK_WALLPAPER_ROTATION_MS,
+  lockWallpaperAdvanceOnClick = false
 }) {
+  const bgRef = useRef(null);
+  const [opening, setOpening] = useState(false);
+  const [sequenceReady, setSequenceReady] = useState(false);
+
   const hasCustomBg = Boolean(
-    (Array.isArray(lockBackgroundDataUrls) && lockBackgroundDataUrls.length > 0) || lockBackgroundDataUrl
+    (Array.isArray(lockBackgroundDataUrls) && lockBackgroundDataUrls.length > 0) ||
+      lockBackgroundDataUrl
   );
+
+  const handleBackdropClick = useCallback(() => {
+    if (!lockWallpaperAdvanceOnClick) return;
+    bgRef.current?.advance?.();
+  }, [lockWallpaperAdvanceOnClick]);
+
+  const handleUnlock = useCallback(() => {
+    if (opening || !sequenceReady) return;
+    setOpening(true);
+    window.setTimeout(() => onUnlock?.(), 380);
+  }, [opening, onUnlock, sequenceReady]);
+
+  const canUnlock = sequenceReady && !opening;
 
   return (
     <motion.div
       className="fixed inset-0 z-[100] flex flex-col text-white"
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
-      transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
+      transition={{ duration: 0.35, ease: CARD_EASE }}
       role="dialog"
       aria-modal="true"
       aria-labelledby="welcome-gate-title"
-      aria-describedby="welcome-gate-desc"
+      onClick={handleBackdropClick}
     >
+      {!hasCustomBg ? <GateFallbackGradient /> : null}
       {hasCustomBg ? (
         <MomentumLockBackground
+          ref={bgRef}
           dataUrl={lockBackgroundDataUrl}
           dataUrls={lockBackgroundDataUrls}
           variant="gate"
+          rotationMs={lockWallpaperRotationMs}
+          pauseAutoRotation={lockWallpaperAdvanceOnClick}
         />
-      ) : (
-        <div className="pointer-events-none absolute inset-0 overflow-hidden" aria-hidden>
-          <div className="absolute inset-0 bg-gradient-to-b from-[#0c0c12] via-[#08080d] to-[#050507]" />
-          <div className="absolute inset-0 bg-[radial-gradient(ellipse_85%_55%_at_50%_-15%,rgba(56,189,248,0.14),transparent_55%)]" />
-          <div className="absolute inset-0 bg-[radial-gradient(ellipse_50%_45%_at_100%_80%,rgba(167,139,250,0.09),transparent_50%)]" />
-          <div className="absolute inset-0 bg-[radial-gradient(ellipse_40%_35%_at_0%_60%,rgba(34,211,238,0.06),transparent_45%)]" />
-        </div>
-      )}
+      ) : null}
 
-      <div className="relative z-10 flex min-h-0 flex-1 flex-col items-center justify-center px-4 py-10">
+      <div
+        className="relative z-10 flex min-h-0 flex-1 flex-col items-center justify-center px-4 py-10"
+        onClick={(e) => e.stopPropagation()}
+      >
         <motion.div
-          className="w-full max-w-[420px]"
-          initial={{ y: 20, opacity: 0 }}
-          animate={{ y: 0, opacity: 1 }}
-          transition={{ delay: 0.08, duration: 0.45, ease: [0.22, 1, 0.36, 1] }}
+          className="w-full max-w-[400px]"
+          initial={{ opacity: 0, scale: 0.98 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ duration: 0.42, ease: CARD_EASE }}
         >
-          <div className="relative overflow-hidden rounded-[28px] border border-white/20 bg-slate-950/55 p-8 shadow-[0_24px_80px_rgba(0,0,0,0.65)] backdrop-blur-2xl sm:p-10">
+          <div className="relative overflow-hidden rounded-[22px] border border-white/[0.08] bg-[#0d1117]/75 p-6 shadow-[0_24px_64px_rgba(0,0,0,0.55)] backdrop-blur-xl sm:p-7">
             <div
-              className="pointer-events-none absolute inset-x-8 top-0 h-px bg-gradient-to-r from-transparent via-white/35 to-transparent"
+              className="pointer-events-none absolute inset-x-6 top-0 h-px bg-gradient-to-r from-transparent via-white/20 to-transparent"
               aria-hidden
             />
             <div
-              className="pointer-events-none absolute -right-16 -top-16 h-40 w-40 rounded-full bg-sky-400/10 blur-3xl"
-              aria-hidden
-            />
-            <div
-              className="pointer-events-none absolute -bottom-12 -left-12 h-36 w-36 rounded-full bg-violet-500/10 blur-3xl"
+              className="pointer-events-none absolute -bottom-20 left-1/2 h-40 w-[120%] -translate-x-1/2 bg-[radial-gradient(ellipse,rgba(56,189,248,0.15),transparent_70%)]"
               aria-hidden
             />
 
-            <div className="relative mb-7 flex flex-col items-center text-center">
-              <div className="mb-5 rounded-2xl border border-white/15 bg-slate-900/60 p-2 shadow-lg shadow-black/40">
-                <img
-                  src="/logo.png"
-                  alt=""
-                  width={64}
-                  height={64}
-                  className="h-16 w-16 rounded-xl object-contain"
-                />
-              </div>
-              <p className="mb-2 text-[10px] font-semibold uppercase tracking-[0.32em] text-sky-300/85">
-                Momentum
-              </p>
-              <h1
-                id="welcome-gate-title"
-                className="text-[1.65rem] font-semibold leading-tight tracking-tight text-white sm:text-[1.75rem]"
-              >
-                <motion.span
-                  key={title}
-                  initial={{ opacity: 0, y: 6 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
-                  className="block"
-                >
-                  {title}
-                </motion.span>
-              </h1>
-              <p id="welcome-gate-desc" className="mt-3 max-w-[28ch] text-sm leading-relaxed text-slate-300/95">
-                <motion.span
-                  key={subtitle}
-                  initial={{ opacity: 0, y: 4 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.35, delay: 0.05, ease: [0.22, 1, 0.36, 1] }}
-                  className="block"
-                >
-                  {subtitle}
-                </motion.span>
-              </p>
-            </div>
-
-            {isDataLoading ? (
-              <div className="relative mb-7 flex flex-col items-center gap-3 rounded-2xl border border-white/8 bg-black/25 px-4 py-5" aria-live="polite">
-                <div className="relative h-11 w-11">
-                  <div className="absolute inset-0 animate-spin rounded-full border-2 border-sky-400/15 border-t-sky-400" />
-                  <div className="absolute inset-[3px] rounded-full border border-white/5" />
-                </div>
-                {syncMessage ? (
-                  <p className="text-center text-xs text-slate-400">{syncMessage}</p>
-                ) : null}
-              </div>
-            ) : (
-              <div
-                className="mb-6 h-px w-full bg-gradient-to-r from-transparent via-white/12 to-transparent"
-                aria-hidden
-              />
-            )}
-
-            <button
-              type="button"
-              onClick={onUnlock}
-              className="group relative z-20 w-full cursor-pointer overflow-hidden rounded-2xl border border-sky-300/25 bg-gradient-to-br from-sky-500 via-cyan-500 to-sky-600 px-6 py-4 text-base font-semibold text-white shadow-[0_12px_40px_rgba(14,165,233,0.35)] transition duration-200 hover:scale-[1.02] hover:border-sky-200/40 hover:shadow-[0_16px_48px_rgba(56,189,248,0.45)] active:scale-[0.98] focus:outline-none focus-visible:ring-2 focus-visible:ring-sky-300 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-950"
+            <motion.div
+              className="relative mb-5"
+              initial={{ opacity: 0, y: 14 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.05, duration: 0.42, ease: CARD_EASE }}
             >
-              <span className="relative z-10 flex items-center justify-center gap-2.5">
-                <span className="flex h-8 w-8 items-center justify-center rounded-full bg-white/15 ring-1 ring-white/20">
-                  <svg
-                    className="h-4 w-4"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2.2"
-                    aria-hidden
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      d="M8 11V7a4 4 0 118 0m-4 8v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2z"
-                    />
-                  </svg>
+              <div className="mb-3 flex items-center gap-3">
+                <div className="flex h-10 w-10 items-center justify-center overflow-hidden rounded-xl border border-sky-500/30 bg-slate-900/80 shadow-[0_0_16px_rgba(56,189,248,0.2)]">
+                  <img
+                    src="/logo.png"
+                    alt=""
+                    width={28}
+                    height={28}
+                    className="h-7 w-7 rounded-md object-contain"
+                  />
+                </div>
+                <div>
+                  <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-slate-500">
+                    Momentum
+                  </p>
+                  <h1 id="welcome-gate-title" className="text-lg font-bold tracking-tight text-white">
+                    {title}
+                  </h1>
+                </div>
+              </div>
+              {subtitle ? (
+                <p className="text-sm leading-relaxed text-slate-400">{subtitle}</p>
+              ) : null}
+            </motion.div>
+
+            <LoadingStepsPanel
+              stepSignals={stepSignals}
+              syncMessage={syncMessage}
+              onReadyChange={setSequenceReady}
+            />
+
+            <motion.div
+              initial={{ opacity: 0, y: 12 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.65, duration: 0.4, ease: CARD_EASE }}
+            >
+              <button
+                type="button"
+                onClick={handleUnlock}
+                disabled={!canUnlock}
+                className="group relative w-full overflow-hidden rounded-xl px-5 py-3.5 text-[15px] font-semibold transition-all duration-500 focus:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400 focus-visible:ring-offset-2 focus-visible:ring-offset-[#0d1117] disabled:cursor-not-allowed disabled:border disabled:border-slate-600/40 disabled:bg-slate-700/50 disabled:text-slate-500 disabled:shadow-none enabled:bg-gradient-to-r enabled:from-sky-500 enabled:to-cyan-400 enabled:text-slate-950 enabled:shadow-[0_0_18px_rgba(56,189,248,0.45),0_8px_28px_rgba(56,189,248,0.3)] enabled:hover:brightness-110 enabled:hover:shadow-[0_0_26px_rgba(56,189,248,0.7),0_0_52px_rgba(34,211,238,0.35),0_8px_32px_rgba(56,189,248,0.45)] enabled:active:scale-[0.98] enabled:active:shadow-[0_0_14px_rgba(56,189,248,0.55)]"
+              >
+                <span
+                  className="pointer-events-none absolute inset-0 opacity-0 transition-opacity duration-500 group-enabled:group-hover:opacity-100"
+                  aria-hidden
+                >
+                  <span className="absolute -inset-px rounded-xl bg-gradient-to-r from-sky-400/0 via-cyan-300/40 to-sky-400/0 blur-[2px]" />
+                  <span className="absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/30 to-transparent transition-transform duration-700 ease-out group-enabled:group-hover:translate-x-full" />
                 </span>
-                {unlockLabel}
-              </span>
-              <span className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/10 via-white/10 to-white/20 opacity-0 transition group-hover:opacity-100" />
-            </button>
+                <span className="relative z-10 flex items-center justify-center gap-2.5">
+                  {opening ? (
+                    <Loader2 size={18} className="animate-spin text-slate-900" aria-hidden />
+                  ) : (
+                    <span className="flex h-7 w-7 items-center justify-center rounded-full bg-black/15">
+                      <svg
+                        className="h-3.5 w-3.5"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2.2"
+                        aria-hidden
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          d="M8 11V7a4 4 0 118 0m-4 8v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2z"
+                        />
+                      </svg>
+                    </span>
+                  )}
+                  {opening ? 'Ouverture…' : unlockLabel}
+                </span>
+              </button>
+            </motion.div>
 
             {unlockHint ? (
-              <p className="relative mt-5 text-center text-xs leading-relaxed text-slate-400/90">{unlockHint}</p>
+              <motion.p
+                className="mt-4 text-center text-[11px] leading-relaxed text-white/35"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ delay: 0.85, duration: 0.35 }}
+              >
+                {unlockHint}
+              </motion.p>
             ) : null}
           </div>
         </motion.div>
@@ -209,7 +366,6 @@ export const MomentumWelcomeGate = memo(function MomentumWelcomeGate({
   );
 });
 
-/** Chargement d’onglet lazy — plein écran, même palette que l’app. */
 export function MomentumTabLoadOverlay({ message = 'Chargement…' }) {
   return (
     <div className="fixed inset-0 z-[200] flex flex-col items-center justify-center bg-gradient-to-b from-[#0c0c12] via-[#08080d] to-[#050507] px-4">
@@ -221,14 +377,27 @@ export function MomentumTabLoadOverlay({ message = 'Chargement…' }) {
   );
 }
 
-/** Carte compacte pour Suspense derrière un fond flouté (modales). */
+/** Chargement dans la zone de contenu — sidebar et fond restent visibles. */
+export function MomentumTabInlineLoader({ message = 'Chargement…' }) {
+  return (
+    <div className="flex min-h-[45vh] items-center justify-center px-4 py-12">
+      <div className="w-full max-w-sm rounded-2xl border border-white/10 bg-slate-900/35 px-8 py-9 text-center backdrop-blur-sm">
+        <div className="mx-auto mb-5 h-10 w-10 animate-spin rounded-full border-2 border-sky-400/25 border-t-sky-400" />
+        <p className="text-xs font-semibold uppercase tracking-[0.22em] text-slate-400">{message}</p>
+      </div>
+    </div>
+  );
+}
+
 export function MomentumModalLoadCard({ borderAccentClass = 'border-t-violet-400' }) {
   return (
     <div className="rounded-2xl border border-white/15 bg-slate-900/85 px-10 py-12 shadow-2xl backdrop-blur-xl">
       <div
         className={`mx-auto h-11 w-11 animate-spin rounded-full border-2 border-white/15 ${borderAccentClass}`}
       />
-      <p className="mt-5 text-center text-xs font-medium uppercase tracking-[0.2em] text-slate-400">Chargement…</p>
+      <p className="mt-5 text-center text-xs font-medium uppercase tracking-[0.2em] text-slate-400">
+        Chargement…
+      </p>
     </div>
   );
 }

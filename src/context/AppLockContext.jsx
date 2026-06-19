@@ -10,6 +10,8 @@ import React, {
 import { useAuth } from './AuthContext';
 import { generateSalt, hashPassword, verifyPassword } from '../utils/authCrypto';
 import { getAppLockRecord, saveAppLockRecord, getDefaultAppLockRecord } from '../services/appLock/appLockStorage';
+import { preloadLockWallpaperUrls } from '../utils/lockWallpaperPreload';
+import { getLockOnlyWallpaperUrls } from '../utils/wallpaperTargets';
 import { consumeAppLockResetToken } from '../services/appLock/appLockRecoveryApi';
 import { getUserById } from '../utils/authIndexedDB';
 
@@ -76,6 +78,7 @@ export const AppLockProvider = ({ children }) => {
       const r = await getAppLockRecord(userId);
       if (cancelled) return;
       setRecord(r);
+      preloadLockWallpaperUrls(getLockOnlyWallpaperUrls(r));
       // Pas de verrouillage au chargement : l’écran PIN s’affiche après action sur le bouton cadenas
       // (Header ou barre d’accueil), ou selon inactivité / retour depuis l’arrière-plan si activé dans les réglages.
       setIsLocked(false);

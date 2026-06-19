@@ -19,6 +19,7 @@ import {
   getTotalRepsFromData,
 } from './WorkoutContext/utils/workoutHistoryUtils';
 import { isMockEnduranceSession } from '../utils/calendarUtils';
+import { JUSTIFICATION_REASONS } from '../utils/dayJustificationUtils';
 // ✅ PHASE 4 : Les utilitaires de justification sont maintenant dans useWorkoutJustifications
 import { useAuth } from './AuthContext';
 import { registerAppPersistenceFlush } from '../services/persistence/appPersistenceFlush';
@@ -514,8 +515,15 @@ const WorkoutProvider = ({ children }) => {
       const weekKey = getWeekStartKey(date);
       if (!weekKey) return false;
       const currentData = getCurrentData();
+      const swapDateStr = getDateStr(date);
+      const dayJustifications = { ...(currentData.dayJustifications || {}) };
+      const fromJust = dayJustifications[swapDateStr];
+      if (fromJust?.reason === JUSTIFICATION_REASONS.REPOS) {
+        delete dayJustifications[swapDateStr];
+      }
       const nextData = {
         ...currentData,
+        dayJustifications,
         restDaySwaps: {
           ...(currentData.restDaySwaps || {}),
           [programId]: {
@@ -535,15 +543,18 @@ const WorkoutProvider = ({ children }) => {
   );
 
   // Fonction wrapper pour getTodayWorkout qui utilise activeProgram si disponible
-  const getTodayWorkoutWrapper = useCallback((currentDate, isGymMode = false) => {
+  const getTodayWorkoutWrapper = useCallback((requestedDate, isGymMode = false) => {
     // Si un programme actif existe, utiliser son schedule
     if (activeProgram && activeProgram.schedule) {
-      const dayName = workoutDayOverride || getDayName(currentDate);
+      const sessionDateStr = getDateStr(requestedDate);
+      const todayStr = getDateStr(currentDate);
+      const useDayOverride =
+        workoutDayOverride && sessionDateStr === todayStr;
+      const dayName = (useDayOverride ? workoutDayOverride : null) || getDayName(requestedDate);
       const daySchedule = activeProgram.schedule[dayName];
-      const sessionDateStr = getDateStr(currentDate);
       
       if (daySchedule) {
-        const currentWeekVariant = getAutoWeekVariant(currentDate);
+        const currentWeekVariant = getAutoWeekVariant(requestedDate);
 
         // Programmes créés depuis le quiz : jours hors disponibilité = repos (vide), sans casser les anciens programmes
         // où tous les jours ont `active: false` par défaut.
@@ -655,14 +666,19 @@ const WorkoutProvider = ({ children }) => {
     
     // Fallback vers la fonction originale de workoutLogic (avec jour override si besoin)
     if (workoutLogic && workoutLogic.getTodayWorkout) {
-      const dayToUse = workoutDayOverride || getDayName(currentDate);
-      const virtualDate = new Date(currentDate);
+      const sessionDateStr = getDateStr(requestedDate);
+      const todayStr = getDateStr(currentDate);
+      const useDayOverride =
+        workoutDayOverride && sessionDateStr === todayStr;
+      const dayToUse =
+        (useDayOverride ? workoutDayOverride : null) || getDayName(requestedDate);
+      const virtualDate = new Date(requestedDate);
       const dayIndex = ['dimanche', 'lundi', 'mardi', 'mercredi', 'jeudi', 'vendredi', 'samedi'].indexOf(dayToUse);
       if (dayIndex >= 0) {
         virtualDate.setDate(virtualDate.getDate() - virtualDate.getDay() + dayIndex);
         return workoutLogic.getTodayWorkout(virtualDate, isGymMode);
       }
-      return workoutLogic.getTodayWorkout(currentDate, isGymMode);
+      return workoutLogic.getTodayWorkout(requestedDate, isGymMode);
     }
     
     // Dernier fallback
@@ -672,9 +688,9 @@ const WorkoutProvider = ({ children }) => {
         exercices: [],
         etirements: undefined,
         isGymMode: false,
-        weekVariant: getAutoWeekVariant(currentDate)
+        weekVariant: getAutoWeekVariant(requestedDate)
       };
-  }, [activeProgram, workoutLogic, convertToStableNumericId, makeUniqueNumericId, workoutDayOverride, getCurrentData]);
+  }, [activeProgram, workoutLogic, convertToStableNumericId, makeUniqueNumericId, workoutDayOverride, currentDate, getCurrentData]);
 
   // ✅ PHASE 4 : addProgressEntry, updateProgressEntry, deleteProgressEntry, deleteProgressEntryField,
   // addProgressPhoto, updateProgressPhoto, deleteProgressPhoto sont maintenant dans useWorkoutProgress

@@ -37,7 +37,7 @@ function garminTypeKeyLower(gAct) {
 }
 
 function displayActivityTypeLower(gAct) {
-  return String(gAct?.activityType || '').toLowerCase();
+  return String(gAct?.activityType || gAct?.displayActivityType || '').toLowerCase();
 }
 
 function toFiniteNumber(value) {
@@ -47,7 +47,10 @@ function toFiniteNumber(value) {
 
 function getActivityDistanceKm(gAct) {
   const distance = toFiniteNumber(gAct?.distance);
-  if (distance != null && distance > 0) return distance;
+  if (distance != null && distance > 0) {
+    // Garmin stocke souvent des mètres bruts dans `distance` (ex. 4200) — pas des km.
+    return distance > 400 ? distance / 1000 : distance;
+  }
   const meters = toFiniteNumber(gAct?.running?.distanceMeters ?? gAct?.distanceMeters);
   if (meters != null && meters > 0) return meters / 1000;
   return 0;

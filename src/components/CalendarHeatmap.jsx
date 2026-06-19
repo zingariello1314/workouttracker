@@ -19,7 +19,11 @@ import { useToast } from './ui/Toast';
 import { getDateStr, getDayName } from '../utils/dateUtils';
 import JustificationModal from './modals/JustificationModal';
 import { workoutProgram } from '../data/workoutProgram';
-import { calculateAutoReps, detectExerciseUnit } from '../utils/exerciseCalculations';
+import {
+  calculateAutoReps,
+  detectExerciseUnit,
+  formatCalendarExerciseRecordedValue
+} from '../utils/exerciseCalculations';
 import Input, { Checkbox } from './ui/Input';
 import Button from './ui/Button';
 import { Check, Save, Plus, X, Trash2, Pencil } from 'lucide-react';
@@ -37,6 +41,8 @@ import {
 } from '../utils/calendarDayAllStripes';
 import { CALENDAR_MOMENTUM_STRIPE_COLORS } from '../utils/calendarDayMomentumStripes';
 import { CALENDAR_PHYSICAL_ACTIVITY_COLOR } from '../utils/calendarPhysicalActivityStripes';
+import { computeDedupedPhysicalDurationMin } from '../utils/calendarPhysicalSessionStripes';
+import { normalizeProfileQuestionnaire } from '../features/profileQuestionnaire/schema';
 import { computeCalendarMonthSportStats } from '../utils/calendarMonthSportStats';
 import {
   computeYearSportRecordHolders,
@@ -46,10 +52,12 @@ import CalendarDayDataStripes from './calendar/CalendarDayDataStripes';
 import CalendarRestDayMarker from './calendar/CalendarRestDayMarker';
 import CalendarGarminDayRecap from './calendar/CalendarGarminDayRecap';
 import CalendarDayRecapDetailPanel from './calendar/CalendarDayRecapDetailPanel';
+import { formatPctVsAverage } from '../utils/calendarDayChampion';
 import {
   computeCalendarDayVisualContext,
   computeLiftVolumeRelativeVisualBoost01,
-  calendarDayHasPaintSignal
+  calendarDayHasPaintSignal,
+  calendarDayHasWorkoutActivity
 } from '../utils/calendarDayVisualModel';
 import {
   withSessionSaveTimeout,
@@ -330,6 +338,11 @@ const CalendarHeatmap = ({
   booksCalendarContext = null,
   /** Requis si variant === 'apprentissage' : { sessionsByDate?: Map, sessionsHistory?: array } */
   apprentissageCalendarContext = null,
+  /** Jour le plus intense (couronne sur le calendrier sport). */
+  championDayDate = null,
+  championDetail = null,
+  externalSelectDate = null,
+  onExternalSelectHandled = null,
 }) => {
   const isSidebarEmbed = Boolean(compact && embedInSidebar);
   const isQuestsOrBooks =
@@ -376,6 +389,7 @@ const CalendarHeatmap = ({
     getExerciseNameById,
     activeProgram,
     getEffectiveRestDayForDate,
+    workoutDayOverride,
     updateReps,
     toggleCheck,
     updateData,
@@ -388,6 +402,11 @@ const CalendarHeatmap = ({
   const { currentUser, isAuthenticated } = useAuth();
   const { showSuccess, showError } = useToast();
   const isAdmin = isAdminUser(currentUser);
+  const runningClassificationCtx = useMemo(() => {
+    const q = normalizeProfileQuestionnaire(currentUser?.profileQuestionnaire);
+    const age = q?.answers?.vitalsSelfReport?.age;
+    return { age: Number.isFinite(Number(age)) ? Number(age) : null };
+  }, [currentUser?.profileQuestionnaire]);
   
   // ✅ Initialiser le programme actif quand on entre en mode workout-entry
   useEffect(() => {
@@ -399,6 +418,26 @@ const CalendarHeatmap = ({
       }
     }
   }, [panelMode, selectedProgramId, activeProgram, isAdmin, isAuthenticated]);
+
+  useEffect(() => {
+    if (!externalSelectDate) return;
+    const d = new Date(`${externalSelectDate}T12:00:00`);
+    if (Number.isNaN(d.getTime())) {
+      onExternalSelectHandled?.();
+      return;
+    }
+    setCurrentDate(d);
+    setViewMode('month');
+    setSelectedDate({
+      date: d,
+      intensity: null,
+      isCurrentMonth: true,
+      isToday: getDateStr(new Date()) === externalSelectDate
+    });
+    setPanelMode('details');
+    setPanelDate(null);
+    onExternalSelectHandled?.();
+  }, [externalSelectDate, onExternalSelectHandled]);
 
   useEffect(() => {
     if (!selectedDate) {
@@ -718,8 +757,10 @@ const CalendarHeatmap = ({
     allData,
     garminData,
     allData?.dayJustifications,
+    allData?.restDaySwaps,
     allData?.sessionFeedbacks,
     activeProgram,
+    workoutDayOverride,
     variant,
     questIntensityMap,
     booksIntensityMap,
@@ -1580,57 +1621,8 @@ const CalendarHeatmap = ({
         // Calculer la durée totale des activités Garmin pour cette date
         let garminDurationMinutes = 0;
         
-        // Cardio
-        const activitésCardio = (garminData.activities.cardio || []).filter(act => {
-          // ✅ PHASE 4 : Valider la date de l'activité (exclure dates futures)
-          const actDateInput = act.date || act.startTime || act.start;
-          const dateValidation = validateDate(actDateInput, `calculateRealDuration.Cardio.filter`);
-          if (!dateValidation.isValid || dateValidation.isFuture) {
-            return false; // Ignorer les activités avec dates invalides ou futures
-          }
-          return dateValidation.normalizedDate === dateStr;
-        });
-        // ✅ LOGS DÉSACTIVÉS pour réduire le bruit (33k messages)
-        // console.log(`🔍 [calculateRealDuration] Trouvé ${activitésCardio.length} activité(s) cardio pour ${dateStr}`);
-        activitésCardio.forEach((act, idx) => {
-          // ✅ PHASE 1 : Utiliser parseDurationToMinutes pour cohérence absolue
-          const actId = act.id || act.activityId || `cardio-${idx}`;
-          const actDate = act.date || act.startTime || act.start || 'unknown';
-          
-          let actDurationMinutes = 0;
-          
-          // Priorité : duration > totalTime > elapsedTime
-          if (act.duration) {
-            actDurationMinutes = parseDurationToMinutes(act.duration, `calculateRealDuration.Cardio[${idx}].${actId}`);
-          } else if (act.totalTime) {
-            // totalTime généralement en secondes (convertir en minutes)
-            actDurationMinutes = parseDurationToMinutes(act.totalTime, `calculateRealDuration.Cardio[${idx}].${actId}.totalTime`);
-          } else if (act.elapsedTime) {
-            // elapsedTime généralement en secondes (convertir en minutes)
-            actDurationMinutes = parseDurationToMinutes(act.elapsedTime, `calculateRealDuration.Cardio[${idx}].${actId}.elapsedTime`);
-          } else {
-            // ✅ LOGS DÉSACTIVÉS pour réduire le bruit (33k messages) - Garder uniquement les warnings critiques
-            // console.log(`⚠️ [calculateRealDuration] Cardio[${idx}] (${actId}) - Aucune durée trouvée`);
-          }
-          
-          // ✅ PHASE 4 : Utiliser la fonction centralisée de validation
-          const durationValidation = validateDuration(actDurationMinutes, `calculateRealDuration.Cardio[${idx}].${actId}`);
-          if (!durationValidation.isValid && durationValidation.warnings.length > 0) {
-            // Ajouter les détails de l'activité aux warnings
-            console.warn(`⚠️ [calculateRealDuration] Cardio[${idx}] (${actId}) - Données brutes:`, {
-              duration: act.duration,
-              totalTime: act.totalTime,
-              elapsedTime: act.elapsedTime,
-              date: actDate,
-              name: act.name || act.activityName || 'unknown'
-            });
-          }
-          actDurationMinutes = durationValidation.clampedValue;
-          
-          garminDurationMinutes += actDurationMinutes;
-        });
-        // ✅ LOGS DÉSACTIVÉS pour réduire le bruit (33k messages)
-        // console.log(`🔍 [calculateRealDuration] Durée totale cardio (après ${activitésCardio.length} activité(s)): ${garminDurationMinutes} min`);
+        // Cardio — street + courses dédoublonnées (aligné récap jour / barres orange)
+        garminDurationMinutes += computeDedupedPhysicalDurationMin(currentData, garminData, dateStr);
         
         // Natation
         const activitésNatation = (garminData.activities.swimming || []).filter(act => {
@@ -2028,7 +2020,12 @@ const CalendarHeatmap = ({
       ...(justification && { justification }),
       feedbackBoost01: sessionFeedbackVisualBoost01(fbRaw),
       weightedFeedbackScore10: computeSessionFeedbackWeightedScore10(fbRaw),
-      isPlannedRestDay,
+      isPlannedRestDay:
+        isPlannedRestDay &&
+        completedExercises === 0 &&
+        totalReps === 0 &&
+        strengthLoad <= 0 &&
+        enduranceLoadForCalendar <= 0,
       // ✅ CORRECTION : Utiliser la même logique que pour le calcul du total
       // (chercher les variantes _semaineA, _semaineB, et vérifier reps > 0)
       session: completedExercises > 0 ? {
@@ -2380,10 +2377,13 @@ const CalendarHeatmap = ({
     currentDate,
     allData,
     allData?.dayJustifications,
+    allData?.restDaySwaps,
     garminData,
     garminDataLoaded,
     garminKcalMedianRef,
     garminStepsMedianRef,
+    activeProgram,
+    workoutDayOverride,
     variant,
     questIntensityMap,
     booksIntensityMap,
@@ -2409,10 +2409,13 @@ const CalendarHeatmap = ({
     currentDate,
     allData,
     allData?.dayJustifications,
+    allData?.restDaySwaps,
     garminData,
     garminDataLoaded,
     garminKcalMedianRef,
     garminStepsMedianRef,
+    activeProgram,
+    workoutDayOverride,
     variant,
     questIntensityMap,
     booksIntensityMap,
@@ -2428,7 +2431,11 @@ const CalendarHeatmap = ({
    * Couleur case : dégradé direct depuis l’indice composite (sans recalage « teinte » sur la période).
    */
   const getDayColorStyle = (intensity, isToday = false) => {
-    if (intensity?.isPlannedRestDay && !intensity?.justification) {
+    if (
+      intensity?.isPlannedRestDay &&
+      !intensity?.justification &&
+      !calendarDayHasWorkoutActivity(intensity)
+    ) {
       const todayRing = isToday ? ' ring-2 ring-amber-300/95' : '';
       return {
         className: `bg-black border-2 border-violet-500/85${todayRing}`,
@@ -3006,6 +3013,11 @@ const CalendarHeatmap = ({
                   ? dayStripesForDate(dayDateStr, intensityForCell)
                   : [];
               const isRestDay = day.isCurrentMonth && isRestDayJustificationFromIntensity(intensityForCell);
+              const isChampionDay =
+                variant === 'sport' &&
+                championDayDate &&
+                day.isCurrentMonth &&
+                dayDateStr === championDayDate;
               return (
               <div
                 key={index}
@@ -3073,6 +3085,12 @@ const CalendarHeatmap = ({
                   <CalendarDayDataStripes stripes={dayGarminStripes} compact={isSidebarEmbed} />
                 )}
                 {isRestDay && <CalendarRestDayMarker compact={isSidebarEmbed} />}
+                {isChampionDay ? (
+                  <Crown
+                    className={`absolute z-[5] text-amber-300 drop-shadow pointer-events-none ${isSidebarEmbed ? 'right-0.5 top-0.5 h-3 w-3' : 'right-1 top-1 h-4 w-4'}`}
+                    aria-label="Meilleur jour"
+                  />
+                ) : null}
                 {day.isToday && (
                   <div
                     className={`absolute bg-blue-500 rounded-full ${isSidebarEmbed ? 'top-0 right-0 w-1.5 h-1.5' : '-top-1 -right-1 w-3 h-3'}`}
@@ -3402,6 +3420,11 @@ const CalendarHeatmap = ({
                             ? dayStripesForDate(yDateStr, yIntensity)
                             : [];
                         const yIsRestDay = day.isCurrentMonth && isRestDayJustificationFromIntensity(yIntensity);
+                        const yIsChampionDay =
+                          variant === 'sport' &&
+                          championDayDate &&
+                          day.isCurrentMonth &&
+                          yDateStr === championDayDate;
                         return (
                         <div
                           key={dayIndex}
@@ -3457,6 +3480,12 @@ const CalendarHeatmap = ({
                             <CalendarDayDataStripes stripes={yGarminStripes} compact physicalOnly />
                           )}
                           {yIsRestDay && <CalendarRestDayMarker compact />}
+                          {yIsChampionDay ? (
+                            <Crown
+                              className="pointer-events-none absolute right-[1px] top-[1px] z-[5] h-2 w-2 text-amber-300 drop-shadow"
+                              aria-label="Meilleur jour"
+                            />
+                          ) : null}
                         </div>
                       );
                       })}
@@ -4882,6 +4911,7 @@ const CalendarHeatmap = ({
             manualSteps: manualSel?.steps ?? 0,
             intensity: selectedDate.intensity,
             programs: Array.isArray(programs) ? programs : [],
+            classificationCtx: runningClassificationCtx,
             t
           });
           // ✅ NOUVEAU : Récupérer la justification pour ce jour
@@ -4921,6 +4951,53 @@ const CalendarHeatmap = ({
               </button>
             </div>
             
+            {championDetail && selectedDateStr === championDayDate ? (
+              <div className="mb-4 rounded-lg border-2 border-amber-500/50 bg-amber-950/30 p-4">
+                <div className="mb-2 flex items-center gap-2 font-semibold text-amber-200">
+                  <Crown className="h-5 w-5 text-amber-300" aria-hidden />
+                  Meilleur jour — vs moyenne des autres jours actifs
+                </div>
+                <div className="grid grid-cols-2 gap-2 text-sm text-amber-50/95">
+                  <div>
+                    Reps : <strong>{championDetail.breakdown.reps}</strong>{' '}
+                    <span className="text-amber-400">
+                      ({formatPctVsAverage(championDetail.vsAverage?.reps)})
+                    </span>
+                  </div>
+                  <div>
+                    Volume : <strong>{championDetail.breakdown.volumeKg} kg</strong>{' '}
+                    <span className="text-amber-400">
+                      ({formatPctVsAverage(championDetail.vsAverage?.volumeKg)})
+                    </span>
+                  </div>
+                  <div>
+                    Exercices : <strong>{championDetail.breakdown.exercises}</strong>{' '}
+                    <span className="text-amber-400">
+                      ({formatPctVsAverage(championDetail.vsAverage?.exercises)})
+                    </span>
+                  </div>
+                  <div>
+                    Endurance : <strong>{championDetail.breakdown.enduranceMinutes} min</strong>{' '}
+                    <span className="text-amber-400">
+                      ({formatPctVsAverage(championDetail.vsAverage?.enduranceMinutes)})
+                    </span>
+                  </div>
+                  <div>
+                    Course : <strong>{championDetail.breakdown.runningKm} km</strong>{' '}
+                    <span className="text-amber-400">
+                      ({formatPctVsAverage(championDetail.vsAverage?.runningKm)})
+                    </span>
+                  </div>
+                  <div>
+                    Kcal actives : <strong>{championDetail.breakdown.activeKcal}</strong>{' '}
+                    <span className="text-amber-400">
+                      ({formatPctVsAverage(championDetail.vsAverage?.activeKcal)})
+                    </span>
+                  </div>
+                </div>
+              </div>
+            ) : null}
+
             {/* ✅ NOUVEAU : Bandeau de justification si le jour est justifié */}
             {justification && (
               <div className={`mb-4 flex items-start gap-3 rounded-lg border-2 p-4 ${JUSTIFICATION_COLORS[justification.reason] || JUSTIFICATION_COLORS[JUSTIFICATION_REASONS.AUTRE]} ${JUSTIFICATION_TEXT[justification.reason] || JUSTIFICATION_TEXT[JUSTIFICATION_REASONS.AUTRE]}`}>
@@ -5514,6 +5591,20 @@ const CalendarHeatmap = ({
                       },
                       userCoeffs
                     );
+                    const recordedDisplay = formatCalendarExerciseRecordedValue(
+                      {
+                        name: exerciseName,
+                        series: exercise.series || '',
+                        type: exercise.type || ''
+                      },
+                      exercise.reps
+                    );
+                    const editUnitLabel =
+                      recordedDisplay.unit === 'min'
+                        ? t('calendar.heatmap.dayDetails.minutesShort', 'min')
+                        : recordedDisplay.unit === 'sec'
+                          ? t('calendar.heatmap.dayDetails.secondsShort', 'sec')
+                          : t('calendar.heatmap.dayDetails.reps');
                     
                     return (
                       <div key={rowStorageKey || index} className="bg-slate-700/30 rounded p-2">
@@ -5564,6 +5655,7 @@ const CalendarHeatmap = ({
                                   className="h-8 w-[4.5rem] px-1 text-center text-sm font-semibold bg-slate-800/80 border-slate-500 text-white"
                                   autoFocus
                                 />
+                                <span className="text-xs text-slate-400">{editUnitLabel}</span>
                                 <button
                                   type="button"
                                   onClick={() =>
@@ -5588,7 +5680,8 @@ const CalendarHeatmap = ({
                               </div>
                             ) : (
                               <span className="text-white font-medium">
-                                {exercise.reps} {t('calendar.heatmap.dayDetails.reps')}
+                                {recordedDisplay.displayText ||
+                                  `${exercise.reps} ${t('calendar.heatmap.dayDetails.reps')}`}
                               </span>
                             )}
                             <button

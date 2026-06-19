@@ -17,6 +17,11 @@ import {
   computePushupTrophiesXpDetailed
 } from '../endurance/pushupTrophiesService';
 import { isGarminRunningLikeActivity, shouldExcludeStoredGarminRunningSession } from '../../utils/garminRunningLaps';
+import { mergeGarminCardioIntoRunningSessions } from '../../utils/garminEnduranceSessionBridge';
+import {
+  buildGarminCardioById,
+  computeRunningVolumeTotals
+} from '../../utils/sport/runningVolumeTruth';
 import { averageCriteriaScore } from '../../utils/bookReadingRatings';
 import { calculateQuestXP } from '../../utils/questXpCore';
 import SessionAggregator from '../statistics/SessionAggregator.js';
@@ -514,13 +519,15 @@ export const calculateSportXP = (workoutData, garminData, enduranceData, sportOp
     totalXP += breakdown.sessionsFeedbackXp;
   }
 
-  const runningSessions = (Array.isArray(sessionsByType.running) ? sessionsByType.running : []).filter(
-    (r) => !shouldExcludeStoredGarminRunningSession(r)
-  );
-  const runningTotalDistanceKm = runningSessions.reduce((acc, r) => acc + (Number(r?.distance) || 0), 0);
-  breakdown.runningTotalDistanceKm = Math.round(runningTotalDistanceKm * 100) / 100;
-  breakdown.runningSessionCount = runningSessions.length;
   const garminById = buildGarminRunningByIdForTrophies(garminData);
+  const mergedRunning = mergeGarminCardioIntoRunningSessions(
+    Array.isArray(sessionsByType.running) ? sessionsByType.running : [],
+    [...buildGarminCardioById(garminData?.activities?.cardio).values()]
+  );
+  const runningSessions = mergedRunning.filter((r) => !shouldExcludeStoredGarminRunningSession(r));
+  const runningVolume = computeRunningVolumeTotals(runningSessions, garminById, { period: 'all' });
+  breakdown.runningTotalDistanceKm = runningVolume.totalKm;
+  breakdown.runningSessionCount = runningVolume.sessionCount;
   const runningTrophyEval = evaluateRunningTrophies({ runningSessions, garminById });
   const rt = computeRunningTrophiesXpDetailed(runningTrophyEval.results);
   breakdown.runningTrophies = rt.xp;

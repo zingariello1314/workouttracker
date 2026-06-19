@@ -78,6 +78,13 @@ function isRepBasedSeries(series) {
   return /^\d+\s*[×x]\s*\d+(?:\s*-\s*\d+)?\s*$/.test(trimmed);
 }
 
+/** Holds longs saisis en minutes (wall sit, chaise murale…). */
+function exerciseNameUsesMinutesByDefault(name) {
+  const n = String(name || '').toLowerCase();
+  if (!n) return false;
+  return /wall\s*sit|chaise\s*(murale|au mur)|chair\s*hold|isometric\s*(wall\s*)?squat/.test(n);
+}
+
 /**
  * Gainage / planche statique — exclut les variantes dynamiques (ex. pompes pseudo-planche).
  */
@@ -85,9 +92,40 @@ export function isIsometricExerciseByName(name) {
   const n = String(name || '').toLowerCase();
   if (!n) return false;
   if (/pompe|push-up|push up|pushup/.test(n)) return false;
+  if (exerciseNameUsesMinutesByDefault(n)) return true;
   if (n.includes('statique') || n.includes('isométri') || n.includes('gainage')) return true;
   if (n.includes('planche')) return true;
   return false;
+}
+
+/**
+ * Libellé d’affichage calendrier / récap pour une valeur enregistrée (reps, sec ou min).
+ *
+ * @param {Object} exercise — { name?, series?, type? }
+ * @param {string|number|null|undefined} rawValue — valeur stockée dans reps[key]
+ * @returns {{ value: number, unit: 'reps'|'sec'|'min', label: string, displayText: string, isTimeBased: boolean }}
+ */
+export function formatCalendarExerciseRecordedValue(exercise, rawValue) {
+  const value = Math.max(0, Math.floor(Number(rawValue) || 0));
+  const unitInfo = detectExerciseUnit(exercise) || { unit: 'reps', isTimeBased: false };
+  let unit = unitInfo.unit === 'min' || unitInfo.unit === 'sec' ? unitInfo.unit : 'reps';
+  let isTimeBased = unitInfo.isTimeBased === true;
+
+  if (unit === 'sec' && exerciseNameUsesMinutesByDefault(exercise?.name)) {
+    unit = 'min';
+  }
+
+  if (value <= 0) {
+    return { value: 0, unit, label: unit, displayText: '', isTimeBased };
+  }
+
+  return {
+    value,
+    unit,
+    label: unit,
+    displayText: `${value} ${unit}`,
+    isTimeBased
+  };
 }
 
 /**
@@ -265,6 +303,10 @@ export const detectExerciseUnit = (exercise) => {
 
   if (isRepBasedSeries(series)) {
     return { unit: 'reps', isTimeBased: false };
+  }
+
+  if (exerciseNameUsesMinutesByDefault(name)) {
+    return { unit: 'min', isTimeBased: true };
   }
   
   // Exercice isométrique (planche, gainage) → secondes par défaut

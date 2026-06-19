@@ -9,6 +9,7 @@ import {
   buildMomentumDayStripes,
   sortCalendarDayStripes
 } from './calendarDayMomentumStripes';
+import { buildDedupedPhysicalActivityRecapRows } from './calendarPhysicalSessionStripes';
 import { buildDedupedPhysicalActivityStripes } from './calendarPhysicalSessionStripes';
 
 /**
@@ -52,17 +53,31 @@ export function buildCalendarDayAllRecapRows({
   manualSteps = 0,
   intensity = null,
   programs = [],
+  classificationCtx = null,
   t = (k, d) => d || k
 }) {
   if (!dateStr) return [];
-  const momentumRows = buildMomentumDayRecapRows(
+
+  const physical = buildDedupedPhysicalActivityRecapRows(
+    workoutData,
+    garminData,
+    dateStr,
+    { intensity, classificationCtx },
+    t
+  );
+
+  const stretchRows = buildMomentumDayRecapRows(
     workoutData,
     dateStr,
     { intensity, programs },
     t
-  );
+  ).filter((r) => r.kind === 'stretch');
+
   const garminRows = garminData
-    ? buildGarminDayRecapRows(garminData, dateStr, manualSteps, t)
+    ? buildGarminDayRecapRows(garminData, dateStr, manualSteps, t, {
+        includeCardioActivities: false
+      })
     : [];
-  return [...momentumRows, ...garminRows];
+
+  return [...physical, ...stretchRows, ...garminRows];
 }

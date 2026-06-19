@@ -3,6 +3,7 @@ import { useWorkout } from '../context/WorkoutContext';
 import { useAuth } from '../context/AuthContext';
 import { useAppLock } from '../context/AppLockContext';
 import { useLockWallpaperUrls } from '../hooks/useLockWallpaperUrls';
+import { useWelcomeGateSignals } from '../hooks/useWelcomeGateSignals';
 import { useHomepageImages } from '../hooks/useHomepageImages';
 import {
   getVisibleHomepageImageIndices,
@@ -21,6 +22,7 @@ import { getSettings } from '../services/swipeNavigationSettings';
 import { useQuoteDisplay } from '../hooks/useQuoteDisplay';
 import { SplineScene } from './ui/SplineScene';
 import { MomentumWelcomeGate } from './ui/MomentumBrandedLoading';
+import { resolveLockWallpaperRotationMs, resolveLockWallpaperAdvanceOnClick } from '../utils/lockWallpaperImage';
 
 const log = logger.component('HomePage');
 
@@ -52,8 +54,8 @@ function getQuoteFontCapRem(lineCount, sandwichBold = false) {
 
 const HomePage = () => {
   const { setActiveTab, activeTab } = useWorkout();
-  const { isAuthenticated } = useAuth();
-  const { lockNow, lockReady } = useAppLock();
+  const { isAuthenticated, loading: authLoading } = useAuth();
+  const { lockNow, lockReady, record: appLockRecord } = useAppLock();
   const lockWallpaperUrls = useLockWallpaperUrls();
   const t = useTranslation();
   // ✅ Récupérer la langue depuis useTranslation pour éviter le double appel de useLanguage
@@ -132,12 +134,17 @@ const HomePage = () => {
   
   // ✅ Chargement initial : État pour savoir si l'image initiale est chargée
   const [isInitialImageLoaded, setIsInitialImageLoaded] = useState(false);
-  const [showLoadingScreen, setShowLoadingScreen] = useState(true);
-  /** L’utilisateur a validé l’écran d’accueil (bouton déverrouiller). */
+  const welcomeStepSignals = useWelcomeGateSignals({
+    layer0Src,
+    layer0Loaded,
+    isInitialImageLoaded,
+    backgroundImages,
+    homeImagesLoading: isLoading,
+    lockWallpaperUrls
+  });
   const [introPlaybackDone, setIntroPlaybackDone] = useState(false);
   const onUnlockHomeWelcome = useCallback(() => {
     setIntroPlaybackDone(true);
-    setShowLoadingScreen(false);
     // Si un code app lock est défini : afficher tout de suite l’écran PIN (LockScreen au-dessus).
     if (lockReady) {
       queueMicrotask(() => {
@@ -229,10 +236,6 @@ const HomePage = () => {
           if (isInitialLoad && !initialImageLoadedRef.current) {
             initialImageLoadedRef.current = true;
             setIsInitialImageLoaded(true);
-            // Masquer l'écran de chargement avec un léger délai pour transition fluide
-            setTimeout(() => {
-              setShowLoadingScreen(false);
-            }, 300);
           }
         } else {
           setLayer1Src(thumbnail);
@@ -247,9 +250,6 @@ const HomePage = () => {
             if (!initialImageLoadedRef.current) {
               initialImageLoadedRef.current = true;
               setIsInitialImageLoaded(true);
-              setTimeout(() => {
-                setShowLoadingScreen(false);
-              }, 300);
             }
           }, 100);
         }
@@ -269,9 +269,6 @@ const HomePage = () => {
             if (isInitialLoad && !initialImageLoadedRef.current) {
               initialImageLoadedRef.current = true;
               setIsInitialImageLoaded(true);
-              setTimeout(() => {
-                setShowLoadingScreen(false);
-              }, 300);
             }
           } else {
             setLayer1Src(fullData);
@@ -292,9 +289,6 @@ const HomePage = () => {
               if (isInitialLoad && !initialImageLoadedRef.current) {
                 initialImageLoadedRef.current = true;
                 setIsInitialImageLoaded(true);
-                setTimeout(() => {
-                  setShowLoadingScreen(false);
-                }, 300);
               }
             } else {
               setLayer1Src(thumbnail);
@@ -310,9 +304,6 @@ const HomePage = () => {
       if (isInitialLoad && layerIndex === 0 && !initialImageLoadedRef.current) {
         initialImageLoadedRef.current = true;
         setIsInitialImageLoaded(true);
-        setTimeout(() => {
-          setShowLoadingScreen(false);
-        }, 300);
       }
       return null;
     }
@@ -371,9 +362,6 @@ const HomePage = () => {
       if (isFirstLoadRef.current) {
         initialImageLoadedRef.current = true;
         setIsInitialImageLoaded(true);
-        setTimeout(() => {
-          setShowLoadingScreen(false);
-        }, 300);
         isFirstLoadRef.current = false;
       }
       return;
@@ -402,9 +390,6 @@ const HomePage = () => {
       if (isFirstLoadRef.current) {
         initialImageLoadedRef.current = true;
         setIsInitialImageLoaded(true);
-        setTimeout(() => {
-          setShowLoadingScreen(false);
-        }, 300);
         isFirstLoadRef.current = false;
       }
       return;
@@ -669,8 +654,7 @@ const HomePage = () => {
 
   // ✅ Chargement initial : Déterminer si on doit afficher l'écran de chargement
   // Ne s'affiche que si on est vraiment sur home ET que le chargement est en cours
-  const shouldShowLoading =
-    activeTab === 'home' && (isLoading || showLoadingScreen || !introPlaybackDone);
+  const shouldShowLoading = activeTab === 'home' && !introPlaybackDone;
 
   // ✅ Screen reader announcement state
   const [screenReaderAnnouncement, setScreenReaderAnnouncement] = useState('');
@@ -739,17 +723,15 @@ const HomePage = () => {
       {shouldShowLoading && (
         <MomentumWelcomeGate
           onUnlock={onUnlockHomeWelcome}
-          title={t(
-            isLoading || showLoadingScreen ? 'home.loading.title' : 'home.loading.titleReady'
-          )}
-          subtitle={t(
-            isLoading || showLoadingScreen ? 'home.loading.subtitle' : 'home.loading.subtitleReady'
-          )}
+          title={t('home.loading.title')}
+          subtitle={t('home.loading.subtitle')}
           unlockLabel={t('home.loading.unlock')}
           unlockHint={t('home.loading.unlockHint')}
           syncMessage={t('home.loading.sync')}
-          isDataLoading={isLoading || showLoadingScreen}
+          stepSignals={welcomeStepSignals}
           lockBackgroundDataUrls={lockWallpaperUrls}
+          lockWallpaperRotationMs={resolveLockWallpaperRotationMs(appLockRecord)}
+          lockWallpaperAdvanceOnClick={resolveLockWallpaperAdvanceOnClick(appLockRecord)}
         />
       )}
 

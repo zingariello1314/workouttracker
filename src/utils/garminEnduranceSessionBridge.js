@@ -9,6 +9,7 @@ import {
   isGarminWalkingLikeActivity,
   garminMeetsEnduranceRunWalkImportThresholds
 } from './garminRunningLaps';
+import { parseRunningSessionDurationMinutes } from './runningPersonalRecords';
 
 function parseGarminActivityDateTime(gAct) {
   const raw = gAct?.date;
@@ -137,4 +138,81 @@ export function mergeGarminCardioIntoRunningSessions(sessions, garminActivities)
   }
 
   return merged;
+}
+
+function momentumSessionDistanceKm(session) {
+  const km = parseFloat(String(session?.distance ?? '').replace(',', '.')) || 0;
+  return km > 400 ? km / 1000 : km;
+}
+
+function garminActivityDurationMin(gAct) {
+  const sec = Number(gAct?.duration) || 0;
+  return sec > 0 ? Math.round(sec / 60) : 0;
+}
+
+/** Même sortie saisie à la main et importée Garmin (même jour). */
+export function momentumRunLikelyMatchesGarminActivity(session, gAct) {
+  if (!session || !gAct) return false;
+
+  const kmS = momentumSessionDistanceKm(session);
+  const kmG = distanceKmFromGarminActivity(gAct);
+  if (kmS > 0.05 && kmG > 0.05) {
+    const diff = Math.abs(kmS - kmG);
+    if (diff <= 0.25 || diff / Math.max(kmS, kmG, 0.01) <= 0.06) return true;
+  }
+
+  const durS = parseRunningSessionDurationMinutes(session?.duration);
+  const durG = garminActivityDurationMin(gAct);
+  if (durS >= 5 && durG >= 5) {
+    const diff = Math.abs(durS - durG);
+    if (diff <= 4 || diff / Math.max(durS, durG) <= 0.06) return true;
+  }
+
+  return false;
+}
+
+/**
+ * Apparie les séances course du jour (Momentum + Garmin) sans compter deux fois la même sortie.
+ * Les activités Garmin sans équivalent manuel restent importées.
+ */
+export function pairMomentumRunsWithGarminForDate(momentumRuns, garminRuns) {
+  const pairedGarminIds = new Set();
+  const pairs = [];
+
+  for (const mSession of momentumRuns || []) {
+    let garminAct = null;
+    const existingGid = mSession?.garminId ?? null;
+
+    if (existingGid != null) {
+      garminAct =
+        (garminRuns || []).find((g) => String(g.garminId ?? g.id) === String(existingGid)) || null;
+      if (garminAct) pairedGarminIds.add(String(existingGid));
+    } else {
+      for (const gAct of garminRuns || []) {
+        const gid = String(gAct.garminId ?? gAct.id);
+        if (pairedGarminIds.has(gid)) continue;
+        if (momentumRunLikelyMatchesGarminActivity(mSession, gAct)) {
+          garminAct = gAct;
+          pairedGarminIds.add(gid);
+          break;
+        }
+      }
+    }
+
+    const session =
+      garminAct && existingGid == null
+        ? { ...mSession, garminId: garminAct.garminId ?? garminAct.id }
+        : mSession;
+    pairs.push({ session, garmin: garminAct });
+  }
+
+  for (const gAct of garminRuns || []) {
+    const gid = String(gAct.garminId ?? gAct.id);
+    if (pairedGarminIds.has(gid)) continue;
+    const session = buildEnduranceSessionFromGarminCardio(gAct);
+    if (!session) continue;
+    pairs.push({ session, garmin: gAct });
+  }
+
+  return pairs;
 }

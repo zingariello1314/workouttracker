@@ -259,15 +259,39 @@ export default function CalendarDayRecapDetailPanel({
       }
 
       case 'workout': {
-        const ctx = buildWorkoutDetailContext(workoutData, dateStr, intensity);
+        const ctx = buildWorkoutDetailContext(workoutData, dateStr, intensity, garminData);
         return {
           title: t('calendar.heatmap.momentumRecap.workout', 'Entraînement'),
           body: (
             <>
-              <div className="grid grid-cols-3 gap-3">
+              <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
                 <StatTile label={t('calendar.heatmap.recapDetail.exercises', 'Exercices')} value={String(ctx.count)} />
                 <StatTile label={t('calendar.heatmap.recapDetail.totalReps', 'Reps totales')} value={String(ctx.totalReps)} />
                 <StatTile label={t('calendar.heatmap.recapDetail.duration', 'Durée')} value={`${ctx.durationMin} min`} />
+                {ctx.caloriesKcal != null ? (
+                  <StatTile
+                    label={t('calendar.heatmap.recapDetail.streetCalories', 'Calories (Garmin)')}
+                    value={`${formatLocale(ctx.caloriesKcal, locale)} kcal`}
+                    hint={
+                      ctx.avgCaloriesKcal != null
+                        ? t('calendar.heatmap.recapDetail.streetCaloriesAvg', {
+                            avg: formatLocale(ctx.avgCaloriesKcal, locale),
+                            count: ctx.avgSampleCount,
+                            defaultValue: `Moy. street : ${ctx.avgCaloriesKcal} kcal (${ctx.avgSampleCount} séance(s))`
+                          })
+                        : t('calendar.heatmap.recapDetail.streetCaloriesNoAvg', 'Pas assez d’autres séances street pour une moyenne')
+                    }
+                  />
+                ) : (
+                  <StatTile
+                    label={t('calendar.heatmap.recapDetail.streetCalories', 'Calories (Garmin)')}
+                    value="—"
+                    hint={t(
+                      'calendar.heatmap.recapDetail.streetCaloriesMissing',
+                      'Synchronise Garmin ou vérifie l’activité « Cardio » du jour'
+                    )}
+                  />
+                )}
               </div>
               {ctx.exercises.length > 0 && (
                 <Section title={t('calendar.heatmap.recapDetail.exerciseList', 'Exercices cochés')}>
@@ -276,7 +300,9 @@ export default function CalendarDayRecapDetailPanel({
                       <li key={`${ex.name}-${i}`} className="flex items-center justify-between px-3 py-2.5 text-sm">
                         <span className="text-white truncate pr-2">{ex.name}</span>
                         <span className="shrink-0 tabular-nums text-sky-400">
-                          {ex.reps > 0 ? `${ex.reps} reps` : t('calendar.heatmap.recapDetail.checked', 'Coché')}
+                          {ex.reps > 0
+                            ? (ex.displayValue || `${ex.reps} reps`)
+                            : t('calendar.heatmap.recapDetail.checked', 'Coché')}
                         </span>
                       </li>
                     ))}

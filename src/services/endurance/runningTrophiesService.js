@@ -4,6 +4,8 @@ import {
   shouldExcludeStoredGarminRunningSession
 } from '../../utils/garminRunningLaps';
 import { isWalkingLikeRunningSession } from '../../utils/runningSessionMovementKind';
+import { mergeGarminCardioIntoRunningSessions } from '../../utils/garminEnduranceSessionBridge';
+import { resolveEnrichedSessionMetrics } from '../../utils/sport/runningCardioStatsAnalytics';
 
 const DIFFICULTY_POINTS = {
   simple: 10,
@@ -131,21 +133,31 @@ function startHour(session) {
   return Number.isFinite(hh) ? hh : null;
 }
 
-function normalizeRuns(sessions = []) {
+function normalizeRuns(sessions = [], garminById = null) {
   return sessions
     .map((s) => {
       const date = s?.date ? new Date(`${s.date}T${s.time || '00:00:00'}`) : null;
+      const garminId = s?.garminId != null ? String(s.garminId) : String(s?.id ?? '');
+      const garmin = garminById?.get?.(garminId) || null;
+      const enriched = resolveEnrichedSessionMetrics(s, garmin);
+      const durMin =
+        enriched.durMin > 0 ? enriched.durMin : parseDurationToMinutes(s?.duration);
       return {
         ...s,
         __date: date,
-        __distance: toNumber(s?.distance, 0),
-        __durationMin: parseDurationToMinutes(s?.duration),
-        __paceSec: getPaceSec(s),
+        __distance: enriched.dist > 0 ? enriched.dist : toNumber(s?.distance, 0),
+        __durationMin: durMin,
+        __paceSec: getPaceSec({ ...s, distance: enriched.dist > 0 ? enriched.dist : s?.distance }),
         __avgHR: toNumber(s?.avgHR, 0),
         __maxHR: toNumber(s?.maxHR, 0)
       };
     })
-    .filter((s) => s.__date instanceof Date && !Number.isNaN(s.__date.getTime()) && s.__distance > 0)
+    .filter(
+      (s) =>
+        s.__date instanceof Date &&
+        !Number.isNaN(s.__date.getTime()) &&
+        s.__distance > 0
+    )
     .sort((a, b) => a.__date - b.__date);
 }
 
@@ -2718,7 +2730,11 @@ export function collectContributingSessions(trophy, runs, stats) {
 }
 
 export function evaluateRunningTrophies({ runningSessions = [], garminById = new Map() }) {
-  const runsNorm = normalizeRuns(runningSessions);
+  const merged = mergeGarminCardioIntoRunningSessions(
+    runningSessions,
+    garminById instanceof Map ? [...garminById.values()] : []
+  );
+  const runsNorm = normalizeRuns(merged, garminById);
   runsNorm.forEach((run) => {
     const garminId = run.garminId != null ? String(run.garminId) : String(run.id);
     run.garmin = garminById.get(garminId) || null;

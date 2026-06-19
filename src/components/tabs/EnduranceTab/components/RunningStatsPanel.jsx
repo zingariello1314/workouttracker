@@ -26,6 +26,11 @@ import {
   EF_HR_PCT_MIN,
   EF_HR_PCT_MAX
 } from '../../../../utils/sport/runningCardioStatsAnalytics';
+import {
+  RUNNING_HR_ZONES,
+  heartRateZoneBoundsBpm
+} from '../../../../utils/runningHeartRateModel';
+import RunningTrainingInsightsPanel from './RunningTrainingInsightsPanel';
 import { formatChartDateDayMonth } from '../../../../utils/sport/dailyDenseTimeSeries';
 
 const CARDIO_FILTERS = [
@@ -88,7 +93,12 @@ function SectionHeader({ icon: Icon, iconClass, title, hint, period, onPeriodCha
   );
 }
 
-const RunningStatsPanel = ({ sessions = [], garminById = null }) => {
+const RunningStatsPanel = ({
+  sessions = [],
+  garminById = null,
+  garminRunningKindByGarminId = null,
+  classificationCtx = null
+}) => {
   const t = useTranslation();
   const { formatDate } = useFormatters();
   const [cardioFilter, setCardioFilter] = useState('all');
@@ -98,11 +108,31 @@ const RunningStatsPanel = ({ sessions = [], garminById = null }) => {
   const [recordsPeriod, setRecordsPeriod] = useState('all');
 
   const rows = useMemo(
-    () => buildRunningSessionRows(sessions, garminById),
-    [sessions, garminById]
+    () =>
+      buildRunningSessionRows(
+        sessions,
+        garminById,
+        classificationCtx || {},
+        garminRunningKindByGarminId
+      ),
+    [sessions, garminById, garminRunningKindByGarminId, classificationCtx]
   );
 
-  const fcMax = useMemo(() => estimateMaxHeartRate(sessions, garminById), [sessions, garminById]);
+  const fcMax = useMemo(
+    () =>
+      estimateMaxHeartRate(sessions, garminById, {
+        ageYears: classificationCtx?.age ?? null,
+        garminCardioActivities: garminById instanceof Map ? [...garminById.values()] : null
+      }),
+    [sessions, garminById, classificationCtx]
+  );
+
+  const hrZonesLegend = useMemo(() => {
+    return RUNNING_HR_ZONES.map((z) => {
+      const bounds = heartRateZoneBoundsBpm(fcMax, z.zone);
+      return { ...z, bounds };
+    });
+  }, [fcMax]);
 
   const volumeSummary = useMemo(
     () => computePeriodVolumeSummary(rows, volumePeriod),
@@ -151,6 +181,11 @@ const RunningStatsPanel = ({ sessions = [], garminById = null }) => {
 
   return (
     <div className="space-y-6">
+      <RunningTrainingInsightsPanel
+        sessions={sessions}
+        garminById={garminById}
+        garminRunningKindByGarminId={garminRunningKindByGarminId}
+      />
       {/* Bloc 1 — Volume */}
       <section className={sectionClass}>
         <SectionHeader
@@ -184,6 +219,24 @@ const RunningStatsPanel = ({ sessions = [], garminById = null }) => {
             value={`${fcMax} bpm`}
             sub={t('endurance.running.stats.fcMaxEstHint')}
           />
+        </div>
+        <div className="mb-4 rounded-xl border border-rose-500/20 bg-rose-950/10 p-4">
+          <p className="mb-2 text-xs font-medium uppercase tracking-wide text-rose-300/90">
+            {t('endurance.running.stats.hrZonesTitle')}
+          </p>
+          <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-5">
+            {hrZonesLegend.map((z) => (
+              <div
+                key={z.zone}
+                className="rounded-lg border border-[#0F4C5C]/40 bg-black/50 px-3 py-2 text-[11px]"
+              >
+                <div className="font-semibold text-white">{t(z.labelKey)}</div>
+                <div className="mt-0.5 tabular-nums text-slate-400">
+                  {z.pctMin}–{z.pctMax} % · {z.bounds?.min}–{z.bounds?.max} bpm
+                </div>
+              </div>
+            ))}
+          </div>
         </div>
         {hasKmChart ? (
           <DenseDailyLineChart

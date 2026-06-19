@@ -3,6 +3,7 @@ import { useWorkout } from '../../context/WorkoutContext';
 import { useTranslation } from '../../utils/translations';
 import { useAuth } from '../../context/AuthContext';
 import { canAccessTab } from '../../utils/accessMatrix';
+import { preloadRecapTab } from '../../utils/preloadTabs';
 
 const Navigation = () => {
   const { activeTab, setActiveTab } = useWorkout();
@@ -100,6 +101,7 @@ const Navigation = () => {
       return;
     }
     if (tabId === 'sport') {
+      preloadRecapTab();
       // Aller au dernier sous-onglet Sport visité (fallback: Aujourd'hui)
       setActiveTab(getLastSportSubTab());
       return;
@@ -140,6 +142,9 @@ const Navigation = () => {
           {tabs.map((tab) => (
             <button
               key={tab.id}
+              onMouseEnter={() => {
+                if (tab.id === 'sport') preloadRecapTab();
+              }}
               onClick={() => handleClick(tab.id)}
               role="tab"
               aria-selected={isTabActive(tab.id)}
@@ -165,6 +170,9 @@ const Navigation = () => {
             {sportTabs.map((tab) => (
               <button
                 key={tab.id}
+                onMouseEnter={() => {
+                  if (tab.id === 'recap') preloadRecapTab();
+                }}
                 onClick={() => {
                   if (!canAccessTab(tab.id, { isAuthenticated })) {
                     setActiveTab('auth');

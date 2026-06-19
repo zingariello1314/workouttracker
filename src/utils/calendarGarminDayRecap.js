@@ -34,7 +34,7 @@ function formatSleepDuration(sleep) {
   return `${Math.round(min)} min`;
 }
 
-function activityDurationMin(act) {
+export function activityDurationMin(act) {
   if (act.duration != null) return parseDurationToMinutes(act.duration, 'garminRecap.duration');
   if (act.totalTime != null) {
     const n = Number(act.totalTime);
@@ -104,7 +104,13 @@ function pushActivityRows(rows, acts, bucket, t) {
  * @param {number} [manualSteps]
  * @param {(key: string, def?: string) => string} t
  */
-export function buildGarminDayRecapRows(garminData, dateStr, manualSteps = 0, t = (k, d) => d || k) {
+export function buildGarminDayRecapRows(
+  garminData,
+  dateStr,
+  manualSteps = 0,
+  t = (k, d) => d || k,
+  { includeCardioActivities = true } = {}
+) {
   if (!garminData || !dateStr) return [];
 
   const rows = [];
@@ -120,7 +126,9 @@ export function buildGarminDayRecapRows(garminData, dateStr, manualSteps = 0, t 
     garminActivityMatchesCalendarDate(a, dateStr)
   );
 
-  pushActivityRows(rows, cardio, 'cardio', t);
+  if (includeCardioActivities) {
+    pushActivityRows(rows, cardio, 'cardio', t);
+  }
   pushActivityRows(rows, swimming, 'swimming', t);
   pushActivityRows(rows, jumpRope, 'jumpRope', t);
 

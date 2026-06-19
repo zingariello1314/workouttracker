@@ -12,6 +12,12 @@ const CARDIO_ID_TO_PROFILE = {
   cardio_run_threshold: 'cardio_run_threshold',
   cardio_run_tempo: 'cardio_run_tempo',
   cardio_run_sprint: 'cardio_run_sprint',
+  cardio_run_speed: 'cardio_run_speed',
+  cardio_run_recovery: 'cardio_run_recovery',
+  cardio_run_race: 'cardio_run_race',
+  cardio_run_trail: 'cardio_run_trail',
+  cardio_run_hill: 'cardio_run_hill',
+  cardio_run_walk: 'cardio_run_walk',
   cardio_jumprope: 'cardio_rope',
   cardio_swimming: 'cardio_swim',
   cardio_boxing: 'cardio_box'
@@ -26,7 +32,13 @@ export const RUNNING_TYPES_BY_PROFILE = {
   cardio_run_interval: ['interval'],
   cardio_run_threshold: ['threshold'],
   cardio_run_tempo: ['tempo'],
-  cardio_run_sprint: ['sprint']
+  cardio_run_sprint: ['sprint'],
+  cardio_run_speed: ['speed'],
+  cardio_run_recovery: ['recovery'],
+  cardio_run_race: ['race', 'competition'],
+  cardio_run_trail: ['trail', 'hike'],
+  cardio_run_hill: ['hill'],
+  cardio_run_walk: ['walk', 'walking']
 };
 
 /** Clé `enduranceData.sessions` pour charger l’aperçu des séances */
@@ -39,6 +51,12 @@ export const PROFILE_ENDURANCE_ACTIVITY = {
   cardio_run_threshold: 'running',
   cardio_run_tempo: 'running',
   cardio_run_sprint: 'running',
+  cardio_run_speed: 'running',
+  cardio_run_recovery: 'running',
+  cardio_run_race: 'running',
+  cardio_run_trail: 'running',
+  cardio_run_hill: 'running',
+  cardio_run_walk: 'running',
   cardio_rope: 'jumprope',
   cardio_swim: 'swimming',
   cardio_box: 'boxing',

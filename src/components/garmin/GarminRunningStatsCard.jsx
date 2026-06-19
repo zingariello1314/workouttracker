@@ -3,6 +3,7 @@ import { Footprints } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useWorkout } from '../../context/WorkoutContext';
 import { useLanguage } from '../../context/LanguageContext';
+import { normalizeProfileQuestionnaire } from '../../features/profileQuestionnaire/schema';
 import { useGarminData } from '../../hooks/useGarminData';
 import { useTranslation } from '../../utils/translations';
 import { loadTranslationNamespace } from '../../utils/translations/loader';
@@ -22,6 +23,12 @@ import {
   getRunningPeakPaceFromEffortLaps,
   isGarminRunningLikeActivity,
 } from '../../utils/garminRunningLaps';
+import { inferRunningSessionKindFromGarminActivity } from '../../utils/runningSessionClassification';
+import {
+  computeRunningDistanceRecordsFromGarminActivities,
+  formatDurationHms,
+} from '../../utils/runningDistanceRecords';
+import { computeCadenceByRunKind } from '../../utils/runningCadenceAnalytics';
 import { deriveCadenceSpmFromGarmin, deriveVo2FromGarmin, estimateVo2FromAcsm } from '../../utils/runningGarminMetrics';
 import {
   computeFundamentalEndurancePaceSummary,
@@ -33,6 +40,12 @@ import {
   readStoredRecapViewPeriod,
   RECAP_VIEW_PERIODS,
 } from '../../utils/sport/recapViewPeriods';
+import {
+  buildGarminCardioById,
+  buildKmByDateFromRows,
+  computeRunningVolumeTotals,
+  mergeRunningSessionsWithGarmin
+} from '../../utils/sport/runningVolumeTruth';
 
 const PERIODS = [
   { days: 7, key: 'p7' },
@@ -87,18 +100,22 @@ const NUM_BARS_SIDEBAR = 5;
 /**
  * Carte stats course Garmin (comparaison fenêtre / fenêtre précédente).
  * En `embedded` / `sidebar` : pastilles Aujourd’hui … Toujours (période propre à cette carte, localStorage).
- * @param {{ variant?: 'default' | 'embedded' | 'sidebar' }} props
+ * @param {{ variant?: 'default' | 'embedded' | 'sidebar', period?: string, onPeriodChange?: Function, showPeriodSelector?: boolean, sessions?: object[], garminById?: Map|null, sessionsPreFiltered?: boolean, timeBand?: string }} props
  */
 export default function GarminRunningStatsCard({
   variant = 'default',
   period: controlledPeriod = null,
   onPeriodChange = null,
   showPeriodSelector = true,
+  sessions: sessionsProp = null,
+  garminById: garminByIdProp = null,
+  sessionsPreFiltered = false,
+  timeBand = 'all',
 }) {
   const t = useTranslation();
   const { language } = useLanguage();
-  const { isAuthenticated } = useAuth();
-  const { setActiveTab } = useWorkout();
+  const { isAuthenticated, currentUser } = useAuth();
+  const { setActiveTab, getCurrentData, data: workoutData } = useWorkout();
   const { dbReady, loadDataByRange, loadAllData } = useGarminData();
   const recapStyleLayout = variant === 'embedded' || variant === 'sidebar';
   const [internalCardPeriod, setInternalCardPeriod] = useState(() =>
@@ -108,7 +125,14 @@ export default function GarminRunningStatsCard({
   const [loading, setLoading] = useState(true);
   const [kmByDate, setKmByDate] = useState(() => new Map());
   const [runningActivities, setRunningActivities] = useState([]);
+  const [allTimeRunningActivities, setAllTimeRunningActivities] = useState([]);
   const [garminDataTick, setGarminDataTick] = useState(0);
+
+  const profileAge = useMemo(() => {
+    const q = normalizeProfileQuestionnaire(currentUser?.profileQuestionnaire);
+    const age = q?.answers?.vitalsSelfReport?.age;
+    return Number.isFinite(Number(age)) ? Number(age) : null;
+  }, [currentUser?.profileQuestionnaire]);
 
   useEffect(() => {
     loadTranslationNamespace(language || 'fr', 'garmin').catch(() => {});
@@ -144,6 +168,64 @@ export default function GarminRunningStatsCard({
   }, [recapStyleLayout, cardPeriod, controlledPeriod]);
 
   const activeRecapPeriod = recapStyleLayout ? cardPeriod : null;
+
+  const garminByIdFromActivities = useMemo(
+    () => buildGarminCardioById(allTimeRunningActivities),
+    [allTimeRunningActivities]
+  );
+
+  const garminById = garminByIdProp || garminByIdFromActivities;
+
+  const storedRunningSessions = useMemo(() => {
+    const live = getCurrentData?.() || workoutData || {};
+    return live?.enduranceData?.sessions?.running || [];
+  }, [getCurrentData, workoutData]);
+
+  const unifiedScopeSessions = useMemo(() => {
+    if (sessionsProp) return sessionsProp;
+    return mergeRunningSessionsWithGarmin(storedRunningSessions, garminById);
+  }, [sessionsProp, storedRunningSessions, garminById]);
+
+  const volumePeriod = useMemo(() => {
+    if (sessionsPreFiltered) return 'all';
+    if (activeRecapPeriod) return activeRecapPeriod;
+    if (controlledPeriod) return controlledPeriod;
+    return String(windowDays);
+  }, [sessionsPreFiltered, activeRecapPeriod, controlledPeriod, windowDays]);
+
+  const unifiedAllVolume = useMemo(() => {
+    if (!unifiedScopeSessions.length && garminById.size === 0) return null;
+    return computeRunningVolumeTotals(unifiedScopeSessions, garminById, {
+      period: 'all',
+      timeBand: sessionsPreFiltered ? timeBand : 'all',
+      preFiltered: sessionsPreFiltered
+    });
+  }, [unifiedScopeSessions, garminById, sessionsPreFiltered, timeBand]);
+
+  const unifiedVolume = useMemo(() => {
+    if (!unifiedAllVolume) return null;
+    if (sessionsPreFiltered || volumePeriod === 'all') return unifiedAllVolume;
+    return computeRunningVolumeTotals(unifiedScopeSessions, garminById, {
+      period: volumePeriod,
+      timeBand,
+      preFiltered: false
+    });
+  }, [
+    unifiedAllVolume,
+    unifiedScopeSessions,
+    garminById,
+    volumePeriod,
+    timeBand,
+    sessionsPreFiltered
+  ]);
+
+  const unifiedKmByDate = useMemo(() => {
+    if (!unifiedAllVolume?.rows?.length) return null;
+    return buildKmByDateFromRows(unifiedAllVolume.rows);
+  }, [unifiedAllVolume]);
+
+  const effectiveKmByDate = unifiedKmByDate ?? kmByDate;
+  const usesUnifiedVolume = Boolean(unifiedKmByDate?.size);
 
   useEffect(() => {
     const bump = () => setGarminDataTick((n) => n + 1);
@@ -221,6 +303,31 @@ export default function GarminRunningStatsCard({
     };
   }, [dbReady, isAuthenticated, loadDataByRange, loadAllData, windowDays, garminDataTick, activeRecapPeriod]);
 
+  useEffect(() => {
+    if (!dbReady || !isAuthenticated) {
+      setAllTimeRunningActivities([]);
+      return;
+    }
+    let cancelled = false;
+    loadAllData()
+      .then((all) => {
+        if (cancelled) return;
+        const cardio = Array.isArray(all?.activities?.cardio) ? all.activities.cardio : [];
+        setAllTimeRunningActivities(cardio.filter((act) => isGarminRunningLikeActivity(act)));
+      })
+      .catch(() => {
+        if (!cancelled) setAllTimeRunningActivities([]);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [dbReady, isAuthenticated, loadAllData, garminDataTick]);
+
+  const distanceRecords = useMemo(
+    () => computeRunningDistanceRecordsFromGarminActivities(allTimeRunningActivities),
+    [allTimeRunningActivities]
+  );
+
   const endStr = todayIsoLocal();
   const numBars = variant === 'sidebar' ? NUM_BARS_SIDEBAR : NUM_BARS;
 
@@ -230,27 +337,27 @@ export default function GarminRunningStatsCard({
     const rangeEnd = w.end;
     const currStart =
       activeRecapPeriod === 'all'
-        ? earliestDateInKmByDate(kmByDate, rangeEnd) || rangeEnd
+        ? earliestDateInKmByDate(effectiveKmByDate, rangeEnd) || rangeEnd
         : w.start || rangeEnd;
     return {
       currStart,
       rangeEnd,
       omitPrev: activeRecapPeriod === 'all',
     };
-  }, [activeRecapPeriod, kmByDate]);
+  }, [activeRecapPeriod, effectiveKmByDate]);
 
   const built = useMemo(() => {
     if (activeRecapPeriod && recapChartWindow) {
       return buildRunningCompareChartForWindow(
-        kmByDate,
+        effectiveKmByDate,
         recapChartWindow.currStart,
         recapChartWindow.rangeEnd,
         numBars,
         { omitPreviousComparison: recapChartWindow.omitPrev }
       );
     }
-    return buildRunningCompareChart(kmByDate, endStr, windowDays, numBars);
-  }, [activeRecapPeriod, recapChartWindow, kmByDate, endStr, windowDays, numBars]);
+    return buildRunningCompareChart(effectiveKmByDate, endStr, windowDays, numBars);
+  }, [activeRecapPeriod, recapChartWindow, effectiveKmByDate, endStr, windowDays, numBars]);
 
   const runningStats = useMemo(() => {
     const currStart =
@@ -289,7 +396,9 @@ export default function GarminRunningStatsCard({
     let maxSingleDistanceKm = 0;
     let bestCadence = null;
     let bestVo2 = null;
-    const syntheticForEf = [];
+    let bestSpeedPaceSec = null;
+    let maxObservedHr = 0;
+    const periodActs = [];
 
     for (const act of runningActivities) {
       const dk = toDate(act);
@@ -297,7 +406,52 @@ export default function GarminRunningStatsCard({
       const km = toDistanceKm(act);
       const sec = toDurationSec(act);
       if (km <= 0 || sec <= 0) continue;
+      periodActs.push(act);
+      maxObservedHr = Math.max(maxObservedHr, activityMaxHr(act), activityAvgHr(act));
+    }
+
+    const provisionalEf = [];
+    for (const act of periodActs) {
+      const dk = toDate(act);
+      const km = toDistanceKm(act);
+      const sec = toDurationSec(act);
+      const durMin = sec / 60;
+      const ah = activityAvgHr(act);
+      if (
+        getGarminCardioActivityRunKind(act) !== 'interval' &&
+        ah > 0 &&
+        km >= 2.5 - 1e-6 &&
+        durMin >= 18 - 1e-6
+      ) {
+        provisionalEf.push({
+          date: dk,
+          time: activityClockTime(act),
+          distance: km,
+          duration: durMin,
+          avgHR: ah,
+          maxHR: activityMaxHr(act) || ah,
+          type: 'endurance',
+          source: 'garmin'
+        });
+      }
+    }
+    const provisionalEfZ2 = computeFundamentalEndurancePaceSummary(provisionalEf, null);
+    const classCtx = {
+      age: profileAge,
+      habitualEfPaceMinPerKm: provisionalEfZ2?.paceMinPerKm ?? null,
+      maxObservedHr
+    };
+
+    const syntheticForEf = [];
+
+    for (const act of periodActs) {
+      const dk = toDate(act);
+      const km = toDistanceKm(act);
+      const sec = toDurationSec(act);
       const paceSecPerKm = sec / km;
+      const kind = inferRunningSessionKindFromGarminActivity(act, classCtx);
+      const durMin = sec / 60;
+
       totalDistanceKm += km;
       totalDurationSec += sec;
       if (km > maxSingleDistanceKm) maxSingleDistanceKm = km;
@@ -307,7 +461,7 @@ export default function GarminRunningStatsCard({
       if (!longest || sec > longest.durationSec) {
         longest = { durationSec: sec, distanceKm: km };
       }
-      if (getGarminCardioActivityRunKind(act) === 'interval') {
+      if (kind === 'interval') {
         const lapPeak = getRunningPeakPaceFromEffortLaps(act);
         if (lapPeak) {
           if (bestIntervalPaceSec == null || lapPeak.bestPaceSecPerKm < bestIntervalPaceSec) {
@@ -318,11 +472,15 @@ export default function GarminRunningStatsCard({
           }
         }
       }
+      if (kind === 'speed') {
+        if (bestSpeedPaceSec == null || paceSecPerKm < bestSpeedPaceSec) {
+          bestSpeedPaceSec = paceSecPerKm;
+        }
+      }
       const cad = deriveCadenceSpmFromGarmin(act);
       if (cad && (!bestCadence || cad.spm > bestCadence.spm)) {
         bestCadence = { spm: cad.spm, source: cad.source };
       }
-      const durMin = sec / 60;
       const gVo2 = deriveVo2FromGarmin(act);
       const estVo2 = estimateVo2FromAcsm(km, durMin);
       const vo2Pick =
@@ -336,10 +494,10 @@ export default function GarminRunningStatsCard({
       }
       const ah = activityAvgHr(act);
       if (
+        kind === 'endurance' &&
         ah > 0 &&
         km >= 2.5 - 1e-6 &&
-        durMin >= 18 - 1e-6 &&
-        getGarminCardioActivityRunKind(act) !== 'interval'
+        durMin >= 18 - 1e-6
       ) {
         syntheticForEf.push({
           date: dk,
@@ -356,15 +514,18 @@ export default function GarminRunningStatsCard({
 
     const averagePaceSec = totalDistanceKm > 0 ? totalDurationSec / totalDistanceKm : null;
     const efZ2 = computeFundamentalEndurancePaceSummary(syntheticForEf, null);
+    const cadenceByKind = computeCadenceByRunKind(periodActs, classCtx);
     return {
       bestPaceSec,
       longest,
       bestIntervalPaceSec,
+      bestSpeedPaceSec,
       averagePaceSec,
       bestIntervalAvgSpeedKmh: bestIntervalAvgSpeedKmh > 0 ? bestIntervalAvgSpeedKmh : null,
       maxSingleDistanceKm: maxSingleDistanceKm > 0 ? maxSingleDistanceKm : null,
       bestCadence,
       bestVo2,
+      cadenceByKind,
       efZ2PaceLabel:
         efZ2 && efZ2.paceMinPerKm != null ? formatPaceMinPerKm(efZ2.paceMinPerKm) : null,
       efZ2Sample: efZ2?.sampleSize ?? 0,
@@ -373,7 +534,7 @@ export default function GarminRunningStatsCard({
           ? `${efZ2.zone2.min}–${efZ2.zone2.max} bpm`
           : null
     };
-  }, [runningActivities, built?.currStart, endStr, activeRecapPeriod, recapChartWindow]);
+  }, [runningActivities, built?.currStart, endStr, activeRecapPeriod, recapChartWindow, profileAge]);
 
   const chartData = useMemo(
     () =>
@@ -388,10 +549,13 @@ export default function GarminRunningStatsCard({
   );
 
   const mainValue = useMemo(() => {
-    const v = built.totalCurrKm;
+    const v =
+      usesUnifiedVolume && unifiedVolume?.totalKm != null
+        ? unifiedVolume.totalKm
+        : built.totalCurrKm;
     if (v < 1) return `${Math.round(v * 1000)} m`;
     return `${v.toLocaleString(undefined, { maximumFractionDigits: 2, minimumFractionDigits: 0 })} km`;
-  }, [built.totalCurrKm]);
+  }, [usesUnifiedVolume, unifiedVolume, built.totalCurrKm]);
 
   const onGarmin = useCallback(() => {
     setActiveTab?.('garmin');
@@ -466,7 +630,7 @@ export default function GarminRunningStatsCard({
         >
           {t('garmin.runningCardLoading', 'Chargement des courses…')}
         </div>
-      ) : built.totalCurrKm <= 0 && built.totalPrevKm <= 0 ? (
+      ) : built.totalCurrKm <= 0 && built.totalPrevKm <= 0 && !(unifiedVolume?.totalKm > 0) ? (
         <div
           className={`w-full max-w-full rounded-xl p-4 text-sm ${
             variant === 'embedded'
@@ -483,7 +647,11 @@ export default function GarminRunningStatsCard({
         <div className="space-y-3">
           <ActivityStatsCard
             className={wrap}
-            title={t('garmin.runningCardTitle', 'Course (Garmin)')}
+            title={
+              usesUnifiedVolume
+                ? t('garmin.runningCardTitleUnified', 'Course')
+                : t('garmin.runningCardTitle', 'Course (Garmin)')
+            }
             icon={<Footprints className="h-6 w-6" />}
             mainValue={mainValue}
             changeValue={Number(built.changeValue.toFixed(2))}
@@ -657,7 +825,107 @@ export default function GarminRunningStatsCard({
                       : '—'}
                   </div>
                 </div>
+                <div
+                  className={`rounded-lg border p-2 ${
+                    recapStyleLayout
+                      ? 'border-amber-900/50 bg-amber-950/20'
+                      : 'border-amber-700/40 bg-amber-950/30'
+                  }`}
+                >
+                  <div className={recapStyleLayout ? 'text-amber-600' : 'text-amber-500/90'}>
+                    Meilleure allure « Vitesse »
+                  </div>
+                  <div className="font-semibold text-white">
+                    {runningStats.bestSpeedPaceSec
+                      ? formatPacePerKm(runningStats.bestSpeedPaceSec)
+                      : '—'}
+                  </div>
+                  <div className="mt-0.5 text-[10px] leading-relaxed text-amber-600/90">
+                    Effort continu soutenu (hors fractionné), allure stable &gt;10 % plus rapide que votre EF.
+                  </div>
+                </div>
+                <div
+                  className={`rounded-lg border p-2 ${
+                    recapStyleLayout
+                      ? 'border-[#0F4C5C]/45 bg-black'
+                      : 'border-slate-700/70 bg-slate-950/60'
+                  }`}
+                >
+                  <div className={recapStyleLayout ? 'text-teal-700' : 'text-slate-500'}>
+                    Cadence EF (moyenne)
+                  </div>
+                  <div className="font-semibold text-white">
+                    {runningStats.cadenceByKind?.enduranceFundamental?.spm
+                      ? `${runningStats.cadenceByKind.enduranceFundamental.spm} pas/min`
+                      : '—'}
+                  </div>
+                  {runningStats.cadenceByKind?.enduranceFundamental?.sampleSize > 0 ? (
+                    <div className="mt-0.5 text-[10px] text-teal-600">
+                      {runningStats.cadenceByKind.enduranceFundamental.sampleSize} sortie(s) Z2
+                    </div>
+                  ) : null}
+                </div>
+                <div
+                  className={`rounded-lg border p-2 ${
+                    recapStyleLayout
+                      ? 'border-amber-900/50 bg-amber-950/20'
+                      : 'border-amber-700/40 bg-amber-950/30'
+                  }`}
+                >
+                  <div className={recapStyleLayout ? 'text-amber-600' : 'text-amber-500/90'}>
+                    Cadence vitesse (moyenne)
+                  </div>
+                  <div className="font-semibold text-white">
+                    {runningStats.cadenceByKind?.speed?.spm
+                      ? `${runningStats.cadenceByKind.speed.spm} pas/min`
+                      : '—'}
+                  </div>
+                  {runningStats.cadenceByKind?.speed?.sampleSize > 0 ? (
+                    <div className="mt-0.5 text-[10px] text-amber-600/90">
+                      {runningStats.cadenceByKind.speed.sampleSize} sortie(s) vitesse
+                    </div>
+                  ) : null}
+                </div>
               </div>
+              {distanceRecords.records.length > 0 ? (
+                <div className="mt-3 border-t border-white/10 pt-3">
+                  <div
+                    className={`mb-2 text-[11px] font-semibold uppercase tracking-wide ${
+                      recapStyleLayout ? 'text-teal-700' : 'text-slate-500'
+                    }`}
+                  >
+                    Records de distance (tous temps)
+                  </div>
+                  <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-4">
+                    {distanceRecords.records.map((rec) => {
+                      const distLabel =
+                        rec.distanceKm === 42.195
+                          ? '42,2 km'
+                          : `${rec.distanceKm % 1 === 0 ? rec.distanceKm : rec.distanceKm.toFixed(1).replace('.', ',')} km`;
+                      return (
+                        <div
+                          key={rec.distanceKm}
+                          className={`rounded-lg border p-2 ${
+                            recapStyleLayout
+                              ? 'border-[#0F4C5C]/45 bg-black'
+                              : 'border-slate-700/70 bg-slate-950/60'
+                          }`}
+                        >
+                          <div className={recapStyleLayout ? 'text-teal-700' : 'text-slate-500'}>
+                            {distLabel}
+                          </div>
+                          <div className="font-semibold text-white tabular-nums">
+                            {rec.timeSec ? formatDurationHms(rec.timeSec) : '—'}
+                          </div>
+                          <div className="text-[10px] text-teal-600">
+                            {rec.paceLabel !== '—' ? rec.paceLabel : ''}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              ) : null}
             </div>
           ) : null}
         </div>

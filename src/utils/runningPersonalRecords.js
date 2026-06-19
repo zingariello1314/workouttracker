@@ -11,6 +11,8 @@ import {
   getGarminForRunningSession
 } from './runningGarminMetrics';
 import { filterRunningSessionsExcludingWalk } from './runningSessionMovementKind';
+import { estimateMaxHeartRate } from './sport/runningCardioStatsAnalytics';
+import { EF_HR_PCT_MAX, EF_HR_PCT_MIN } from './runningHeartRateModel';
 
 export const RUNNING_RECORD_PERIODS = ['all', 'year', '365', '90', '30', '7'];
 
@@ -132,12 +134,12 @@ function toNum(v, fb = 0) {
   return Number.isFinite(n) ? n : fb;
 }
 
-function inferZone2BoundsFromSessions(sessions) {
-  const maxHr = (sessions || []).reduce((acc, s) => Math.max(acc, toNum(s?.maxHR, 0)), 0);
-  const fallbackMax = maxHr > 0 ? maxHr : 190;
+function inferZone2BoundsFromSessions(sessions, garminById = null) {
+  const fcMax = estimateMaxHeartRate(sessions, garminById);
   return {
-    min: Math.round(fallbackMax * 0.6),
-    max: Math.round(fallbackMax * 0.75)
+    min: Math.round((fcMax * EF_HR_PCT_MIN) / 100),
+    max: Math.round((fcMax * EF_HR_PCT_MAX) / 100),
+    fcMax
   };
 }
 
@@ -148,7 +150,7 @@ function inferZone2BoundsFromSessions(sessions) {
  */
 export function computeFundamentalEndurancePaceSummary(sessions, garminById = null) {
   const pool = filterRunningSessionsExcludingWalk(sessions || [], garminById);
-  const zone2 = inferZone2BoundsFromSessions(pool);
+  const zone2 = inferZone2BoundsFromSessions(pool, garminById);
   const paces = [];
   pool.forEach((session) => {
     const hr = toNum(session?.avgHR, 0);

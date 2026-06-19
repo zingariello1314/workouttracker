@@ -319,6 +319,60 @@
       "calendarExplain": "Sprint type with strong multiplier; very fast pace increases estimated load further.",
       "garminExplain": ""
     },
+    "cardio_run_speed": {
+      "musclesPrimary": "Fast-twitch legs and high cardiac output.",
+      "musclesSecondary": "Core, calves, back.",
+      "execution": "Fast blocks or sustained fast run; keep form under fatigue.",
+      "coeffExplain": "High index, close to intervals on short formats.",
+      "notesExplain": "Block distance, recovery, flat terrain preferred.",
+      "calendarExplain": "Speed type in the dynamic load formula.",
+      "garminExplain": "Garmin HR helps separate speed vs base endurance."
+    },
+    "cardio_run_recovery": {
+      "musclesPrimary": "Very light endurance, circulation.",
+      "musclesSecondary": "Core, posture.",
+      "execution": "Very easy — you should hold a conversation.",
+      "coeffExplain": "Low index — useful volume without overload.",
+      "notesExplain": "Day after hard session, return from injury.",
+      "calendarExplain": "Recovery / easy type, low intensity multiplier.",
+      "garminExplain": ""
+    },
+    "cardio_run_race": {
+      "musclesPrimary": "Max tolerable effort, legs and cardio for the full duration.",
+      "musclesSecondary": "Core, pacing, mental load.",
+      "execution": "Structured warm-up, pacing strategy, active cool-down.",
+      "coeffExplain": "Very high index for duration — count as a peak load day.",
+      "notesExplain": "Official distance, time goal, weather.",
+      "calendarExplain": "Race / competition type.",
+      "garminExplain": "Garmin import recommended for post-race analysis."
+    },
+    "cardio_run_trail": {
+      "musclesPrimary": "Quads eccentric on descents, glutes on climbs, ankle stabilizers.",
+      "musclesSecondary": "Core, back, shoulders.",
+      "execution": "Adapt stride to terrain; control descents if new to trail.",
+      "coeffExplain": "Moderate to high depending on elevation and duration.",
+      "notesExplain": "Elevation gain, technicality, shoes.",
+      "calendarExplain": "Elevation gain increases calendar load.",
+      "garminExplain": ""
+    },
+    "cardio_run_hill": {
+      "musclesPrimary": "Quads and glutes concentric on climbs, calves.",
+      "musclesSecondary": "Core, hamstrings on descents.",
+      "execution": "Repeated climbs or hilly route; recover on descent or walk.",
+      "coeffExplain": "Intermediate to high depending on grade and duration.",
+      "notesExplain": "Grade %, number of reps.",
+      "calendarExplain": "Elevation and hill type in the formula.",
+      "garminExplain": ""
+    },
+    "cardio_run_walk": {
+      "musclesPrimary": "Power walk: quads, glutes, calves, tibialis anterior.",
+      "musclesSecondary": "Core, light cardio.",
+      "execution": "Active stride, arm drive; ideal for recovery or return to run.",
+      "coeffExplain": "Low index — complements run volume.",
+      "notesExplain": "Duration, hills, run-walk intervals.",
+      "calendarExplain": "Classified as walk in history; moderate load.",
+      "garminExplain": "Garmin often auto-detects walk vs run."
+    },
     "cardio_rope": {
       "musclesPrimary": "Calves, shoulder endurance, cardio.",
       "musclesSecondary": "Forearms, coordination.",

@@ -4,15 +4,23 @@ import { useTranslation } from '../../../../utils/translations';
 import { useFormatters } from '../../../../utils/translations/formatters-hook';
 import { paceMinPerKmFromSession, parseRunningSessionDurationMinutes, formatPaceMinPerKm } from '../../../../utils/runningPersonalRecords';
 import { isWalkingLikeRunningSession } from '../../../../utils/runningSessionMovementKind';
-import { resolveRunningSessionDisplayType, runningSessionTypeLabel } from '../../../../utils/runningSessionTypeLabel';
+import { inferRunningSessionKindFromSession } from '../../../../utils/runningSessionClassification';
+import { resolveRunningSessionDisplayType } from '../../../../utils/runningSessionTypeLabel';
+import { resolveRunningSessionPresentation } from '../../../../utils/runningSessionPresentation';
+import { estimateMaxHeartRate } from '../../../../utils/sport/runningCardioStatsAnalytics';
 
-const KIND_KEYS_RUNNING = ['endurance', 'interval', 'other'];
+const KIND_KEYS_RUNNING = ['endurance', 'speed', 'interval', 'other'];
 const KIND_KEYS_WALKING = ['walking'];
 
 function sessionKind(session, garminActivity, inferredFromGarmin) {
   if (isWalkingLikeRunningSession(session, garminActivity)) return 'walking';
-  const disp = resolveRunningSessionDisplayType(session, inferredFromGarmin);
+  const resolved =
+    inferredFromGarmin ?? inferRunningSessionKindFromSession(session, garminActivity, {});
+  if (resolved === 'interval') return 'interval';
+  if (resolved === 'speed') return 'speed';
+  const disp = resolveRunningSessionDisplayType(session, resolved);
   if (disp === 'interval') return 'interval';
+  if (disp === 'speed') return 'speed';
   if (!session?.type || session.type === 'endurance') return 'endurance';
   return 'other';
 }
@@ -21,6 +29,7 @@ export default function RunningSessionsHistory({
   sessions = [],
   garminById = null,
   garminRunningKindByGarminId = null,
+  classificationCtx = null,
   mode = 'running',
   title = null,
   onOpenDetail,
@@ -57,6 +66,15 @@ export default function RunningSessionsHistory({
       return next;
     });
   };
+
+  const fcMax = useMemo(
+    () =>
+      estimateMaxHeartRate(sessions, garminById, {
+        ageYears: classificationCtx?.age ?? null,
+        garminCardioActivities: garminById instanceof Map ? [...garminById.values()] : null
+      }),
+    [sessions, garminById, classificationCtx]
+  );
 
   const filtered = useMemo(() => {
     const list = Array.isArray(sessions) ? [...sessions] : [];
@@ -198,7 +216,20 @@ export default function RunningSessionsHistory({
               const g = getG(session);
               const inferredFromGarmin = gid != null ? garminRunningKindByGarminId?.get(String(gid)) : undefined;
               const isWalk = isWalkingLikeRunningSession(session, g);
-              const displayRunType = isWalk ? 'walking' : resolveRunningSessionDisplayType(session, inferredFromGarmin);
+              const presentation = isWalk
+                ? {
+                    primaryLabel: t('endurance.running.sessionTypes.walking'),
+                    primaryType: 'walking',
+                    hrSubtitle: null,
+                    zone: null
+                  }
+                : resolveRunningSessionPresentation(session, g, {
+                    fcMax,
+                    inferredKind: inferredFromGarmin,
+                    classificationCtx: classificationCtx || {},
+                    t
+                  });
+              const displayRunType = presentation.primaryType;
               const paceNum = paceMinPerKmFromSession(session);
               const paceStr = paceNum != null ? formatPaceMinPerKm(paceNum) : String(session.pace || '—');
               const dist = parseFloat(String(session.distance ?? '').replace(',', '.')) || 0;
@@ -226,13 +257,20 @@ export default function RunningSessionsHistory({
                           className={`text-lg font-bold tracking-tight ${
                             displayRunType === 'interval'
                               ? 'text-amber-200'
+                              : displayRunType === 'speed'
+                                ? 'text-rose-300'
                               : displayRunType === 'walking'
                                 ? 'text-sky-300'
                                 : 'text-emerald-200'
                           }`}
                         >
-                          {runningSessionTypeLabel(displayRunType, t)}
+                          {presentation.primaryLabel}
                         </span>
+                        {presentation.hrSubtitle ? (
+                          <span className="rounded-md border border-rose-500/25 bg-rose-950/30 px-2 py-0.5 text-xs font-medium text-rose-200/90">
+                            {presentation.hrSubtitle}
+                          </span>
+                        ) : null}
                         <span className="hidden text-slate-500 sm:inline" aria-hidden>
                           ·
                         </span>

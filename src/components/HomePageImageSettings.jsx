@@ -13,26 +13,23 @@ import {
   getHomepageImageThumbSrc,
   normalizeHomepageImage
 } from '../utils/homepageImagePreferences';
+import {
+  LOCK_WALLPAPER_ROTATION_OPTIONS,
+  processLockWallpaperFile,
+  resolveLockWallpaperRotationMs,
+  resolveLockWallpaperAdvanceOnClick
+} from '../utils/lockWallpaperImage';
 import logger from '../utils/logger';
 
 const log = logger.component('HomePageImageSettings');
-
-const MAX_LOCK_BG_BYTES = 4 * 1024 * 1024;
-
-const readFileAsDataUrl = (file) =>
-  new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = () => resolve(reader.result);
-    reader.onerror = () => reject(reader.error);
-    reader.readAsDataURL(file);
-  });
 
 const HomePageImageSettings = ({ onClose }) => {
   const {
     record: appLockRecord,
     addLockOnlyBackground,
     removeLockOnlyBackgroundAt,
-    setLockBackgroundUrls
+    setLockBackgroundUrls,
+    updateSettings
   } = useAppLock();
   const {
     backgroundImages,
@@ -56,6 +53,9 @@ const HomePageImageSettings = ({ onClose }) => {
   const lockOnlyInputRef = useRef(null);
   const lockOnlyUrls = appLockRecord?.lockBackgroundDataUrls || [];
   const effectiveLockCount = resolveLockWallpaperUrls(backgroundImages, appLockRecord).length;
+  const [lockBatchProgress, setLockBatchProgress] = useState(null);
+  const lockRotationMs = resolveLockWallpaperRotationMs(appLockRecord);
+  const lockAdvanceOnClick = resolveLockWallpaperAdvanceOnClick(appLockRecord);
 
   // Fonction pour nettoyer le localStorage
   const cleanupLocalStorage = () => {
@@ -154,25 +154,55 @@ const HomePageImageSettings = ({ onClose }) => {
     event.target.value = '';
     if (!files.length) return;
     setIsUploading(true);
+    setLockBatchProgress(null);
+    const failedFiles = [];
     try {
-      for (const file of files) {
-        if (!file.type.startsWith('image/')) continue;
-        if (file.size > MAX_LOCK_BG_BYTES) {
-          alert(`${file.name} : trop volumineux (max 4 Mo).`);
-          continue;
+      const total = files.length;
+      for (let i = 0; i < files.length; i++) {
+        const file = files[i];
+        setLockBatchProgress({ current: i + 1, total, fileName: file.name });
+        try {
+          if (!file.type.startsWith('image/')) {
+            failedFiles.push(`${file.name} (format non supporté)`);
+            continue;
+          }
+          const dataUrl = await processLockWallpaperFile(file);
+          await addLockOnlyBackground(dataUrl);
+        } catch (fileErr) {
+          log.error(`Échec verrou « ${file.name} »`, fileErr);
+          failedFiles.push(`${file.name} (${fileErr.message || 'erreur'})`);
         }
-        const dataUrl = await readFileAsDataUrl(file);
-        if (typeof dataUrl === 'string' && dataUrl.length > 2_000_000) {
-          alert(`${file.name} : image trop lourde après lecture.`);
-          continue;
-        }
-        await addLockOnlyBackground(dataUrl);
+      }
+      if (failedFiles.length > 0) {
+        alert(
+          `Certaines images n’ont pas pu être ajoutées :\n\n${failedFiles.join('\n')}\n\n` +
+            `Les autres ont bien été enregistrées.`
+        );
       }
     } catch (e) {
       log.error('Upload fond verrou', e);
-      alert('Impossible d’ajouter l’image au verrouillage.');
+      alert('Impossible d’ajouter les images au verrouillage.');
     } finally {
       setIsUploading(false);
+      setLockBatchProgress(null);
+    }
+  };
+
+  const handleLockRotationChange = async (event) => {
+    const value = Number(event.target.value);
+    if (!Number.isFinite(value)) return;
+    try {
+      await updateSettings({ lockWallpaperRotationMs: value });
+    } catch (e) {
+      log.error('Rotation verrou', e);
+    }
+  };
+
+  const handleLockAdvanceOnClickChange = async (event) => {
+    try {
+      await updateSettings({ lockWallpaperAdvanceOnClick: event.target.checked });
+    } catch (e) {
+      log.error('Clic fond verrou', e);
     }
   };
 
@@ -638,12 +668,54 @@ const HomePageImageSettings = ({ onClose }) => {
             <h3 className="mb-2 text-lg font-semibold text-red-100">Images réservées au verrouillage</h3>
             <p className={`mb-4 text-sm ${S.muted}`}>
               Images affichées uniquement sur l&apos;écran de verrouillage et l&apos;écran d&apos;intro,
-              sans passer par la bibliothèque accueil (max 4 Mo, JPG/PNG).
+              sans passer par la bibliothèque accueil. Les fichiers lourds sont optimisés automatiquement
+              (comme pour l&apos;accueil, sans modifier la bibliothèque).
             </p>
+            <div className={`mb-4 rounded-lg border border-violet-900/40 bg-violet-950/20 p-3 ${S.inset}`}>
+              <label htmlFor="lock-rotation-interval" className="mb-1 block text-sm font-medium text-violet-100">
+                Rotation des fonds verrouillage
+              </label>
+              <p className={`mb-2 text-xs ${S.muted}`}>
+                S&apos;applique à toutes les images du verrou (bibliothèque + verrou seul). Transition identique
+                à l&apos;accueil (fondu 0,8 s).
+              </p>
+              <select
+                id="lock-rotation-interval"
+                value={lockRotationMs}
+                onChange={handleLockRotationChange}
+                className={`w-full max-w-md ${S.input}`}
+              >
+                {LOCK_WALLPAPER_ROTATION_OPTIONS.map((opt) => (
+                  <option key={String(opt.value)} value={opt.value}>
+                    {opt.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div className={`mb-4 rounded-lg border border-violet-900/40 bg-violet-950/20 p-3 ${S.inset}`}>
+              <label className="flex cursor-pointer items-start gap-3">
+                <input
+                  type="checkbox"
+                  checked={lockAdvanceOnClick}
+                  onChange={handleLockAdvanceOnClickChange}
+                  className="mt-1 h-4 w-4 rounded border-violet-600 bg-slate-900 text-violet-500 focus:ring-violet-400"
+                />
+                <span>
+                  <span className="block text-sm font-medium text-violet-100">
+                    Changer le fond au clic
+                  </span>
+                  <span className={`mt-1 block text-xs ${S.muted}`}>
+                    Sur l&apos;écran d&apos;intro et le verrouillage : touchez le fond (hors carte) pour
+                    afficher une autre image au hasard. Désactive la rotation automatique tant que cette
+                    option est active.
+                  </span>
+                </span>
+              </label>
+            </div>
             <input
               ref={lockOnlyInputRef}
               type="file"
-              accept="image/jpeg,image/jpg,image/png"
+              accept="image/jpeg,image/jpg,image/png,image/webp,image/*"
               multiple
               onChange={handleLockOnlyUpload}
               className="hidden"
@@ -655,8 +727,18 @@ const HomePageImageSettings = ({ onClose }) => {
                 disabled={isUploading}
                 className={`${S.btnSecondary} disabled:opacity-50`}
               >
-                Ajouter au verrouillage seulement
+                {isUploading && lockBatchProgress
+                  ? `Optimisation ${lockBatchProgress.current}/${lockBatchProgress.total}…`
+                  : isUploading
+                    ? 'Optimisation…'
+                    : 'Ajouter au verrouillage (plusieurs fichiers, JPG/PNG/WebP)'}
               </button>
+              {lockBatchProgress && (
+                <p className={`text-xs ${S.muted}`}>
+                  Fichier en cours :{' '}
+                  <span className="text-violet-200/90 truncate block max-w-full">{lockBatchProgress.fileName}</span>
+                </p>
+              )}
               {lockOnlyUrls.length > 0 && (
                 <button
                   type="button"

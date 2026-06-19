@@ -31,6 +31,8 @@ const openDB = () =>
  * @property {string|null} codeHash
  * @property {string|null} lockBackgroundDataUrl — @deprecated premier fond (compat)
  * @property {string[]} lockBackgroundDataUrls — fonds réservés au verrou (hors bibliothèque)
+ * @property {number} lockWallpaperRotationMs — intervalle rotation fonds verrou (0 = off, défaut 120000)
+ * @property {boolean} lockWallpaperAdvanceOnClick — passer au fond suivant au clic sur l’écran
  * @property {number} failedAttempts
  * @property {string|null} lockoutUntil — ISO
  * @property {string} updatedAt
@@ -46,6 +48,8 @@ export const getDefaultAppLockRecord = (userId) => ({
   codeHash: null,
   lockBackgroundDataUrl: null,
   lockBackgroundDataUrls: [],
+  lockWallpaperRotationMs: 120_000,
+  lockWallpaperAdvanceOnClick: false,
   failedAttempts: 0,
   lockoutUntil: null,
   updatedAt: new Date().toISOString(),

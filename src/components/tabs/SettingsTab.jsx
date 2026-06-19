@@ -8,7 +8,7 @@
  * @module components/tabs/SettingsTab
  */
 
-import React, { useState, useCallback, useMemo } from 'react';
+import React, { useState, useCallback, useMemo, useEffect } from 'react';
 import { Settings, Image, User, Search, Watch } from 'lucide-react';
 import { useWorkout } from '../../context/WorkoutContext';
 import { useAuth } from '../../context/AuthContext';
@@ -30,6 +30,7 @@ import { useDataMigration } from './SettingsTab/hooks/useDataMigration';
 import { useSettingsExport } from './SettingsTab/hooks/useSettingsExport';
 import { useSettingsImport } from './SettingsTab/hooks/useSettingsImport';
 import { useAllDataExportImport } from './SettingsTab/hooks/useAllDataExportImport';
+import { useSportExportPreview } from './SettingsTab/hooks/useSportExportPreview';
 
 // Composants
 import ProfileSettings from './SettingsTab/components/ProfileSettings';
@@ -54,10 +55,12 @@ import ProfileCardSettings from '../sidebar/ProfileCardSettings';
 import AppLockSettingsPanel from '../appLock/AppLockSettingsPanel';
 import GithubIntegrationSettings from '../settings/GithubIntegrationSettings';
 import SpotifyIntegrationSettings from '../settings/SpotifyIntegrationSettings';
+import { consumePendingSettingsScrollSection } from '../../utils/settingsNavigation';
+import { isAdminUser } from '../../utils/accessControl';
 
 /** Sections paramètres : ancres + texte indexé pour la recherche (synonymes / termes courants) */
 const SETTINGS_SECTIONS = [
-  { id: 'settings-profil', label: 'Profil', searchText: 'profil avatar email vérification code mot de passe compte utilisateur migration données anonyme invité' },
+  { id: 'settings-profil', label: 'Profil', searchText: 'profil avatar email vérification code mot de passe compte utilisateur migration données anonyme invité quiz onboarding questionnaire personnalisation' },
   { id: 'settings-github', label: 'GitHub', searchText: 'github code contributions calendrier oauth jeton pat développeur intégration module dashboard momentum' },
   { id: 'settings-spotify', label: 'Spotify', searchText: 'spotify musique premium oauth lecture player sidebar son en cours piste album api' },
   { id: 'settings-garmin', label: 'Garmin', searchText: 'garmin montre sync synchronisation backfill source comptes multi montres deviceid paramètres' },
@@ -112,12 +115,25 @@ const SettingsTab = () => {
   const { exportAll: exportGarminData, importAll: importGarminData } = useGarminData();
   const { exportAll: exportNutritionData } = useNutritionData();
 
+  const storageKey = useMemo(() => {
+    if (isAdminUser(currentUser)) return 'main';
+    if (currentUser?.id) return `user-${currentUser.id}`;
+    return 'anonymous';
+  }, [currentUser]);
+
   const scrollToSection = useCallback((id) => {
     const el = document.getElementById(id);
     if (el) {
       el.scrollIntoView({ behavior: 'smooth', block: 'start' });
     }
   }, []);
+
+  useEffect(() => {
+    const pendingId = consumePendingSettingsScrollSection();
+    if (!pendingId) return;
+    const t = window.setTimeout(() => scrollToSection(pendingId), 150);
+    return () => window.clearTimeout(t);
+  }, [scrollToSection]);
 
   const [settingsSearchQuery, setSettingsSearchQuery] = useState('');
 
@@ -165,8 +181,20 @@ const SettingsTab = () => {
     data,
     loadFromDB,
     exportGarminData,
-    exportNutritionData
+    exportNutritionData,
+    { storageKey, currentUser }
   );
+
+  const {
+    sportPreview,
+    sportPreviewLoading,
+    garminSummary,
+    garminDailyIndex,
+    nutritionSummary
+  } = useSportExportPreview(data, storageKey, currentUser, {
+    exportGarminData,
+    exportNutritionData
+  });
 
   const importSettings = useSettingsImport(importGarminData);
 
@@ -174,7 +202,8 @@ const SettingsTab = () => {
     data,
     loadFromDB,
     updateData,
-    validateAllWorkoutData
+    validateAllWorkoutData,
+    { storageKey, updateProfile, currentUser, importGarminData }
   );
 
   // Fonction debug pour les sessions mockées (à extraire si nécessaire)
@@ -526,6 +555,11 @@ const SettingsTab = () => {
           data={data}
           stats={stats}
           exportSettings={exportSettings}
+          sportPreview={sportPreview}
+          sportPreviewLoading={sportPreviewLoading}
+          garminSummary={garminSummary}
+          garminDailyIndex={garminDailyIndex}
+          nutritionSummary={nutritionSummary}
         />
         </div>
         )}

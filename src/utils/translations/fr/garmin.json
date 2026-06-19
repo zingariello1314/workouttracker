@@ -48,6 +48,7 @@
     "todayNotInDataSimple": "Aujourd'hui ({{today}}) n'est pas dans les données disponibles. Synchronisation recommandée."
   },
   "runningCardTitle": "Course (Garmin)",
+  "runningCardTitleUnified": "Course",
   "runningCardVsPrev": "vs période précédente",
   "runningCardLoading": "Chargement des courses…",
   "runningCardNoData": "Aucune course sur ces fenêtres. Synchronise Garmin ou choisis une période plus longue.",

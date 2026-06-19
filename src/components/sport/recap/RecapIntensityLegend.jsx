@@ -18,6 +18,16 @@ const INTENSITY_STEPS = [
   { key: 'recap.legend.level.critical', color: '#3f0f14' }
 ];
 
+/** 6 paliers pour la vue Corps (sans nuances intermédiaires). */
+const COMPACT_INTENSITY_STEPS = [
+  { key: 'recap.legend.level.rest', color: '#cbd5e1' },
+  { key: 'recap.legend.level.veryLow', color: '#7dd3fc' },
+  { key: 'recap.legend.level.optimal', color: '#22c55e' },
+  { key: 'recap.legend.level.moderateHigh', color: '#facc15' },
+  { key: 'recap.legend.level.high', color: '#fb923c' },
+  { key: 'recap.legend.level.overload', color: '#f87171' }
+];
+
 function hexToRgb(hex) {
   const h = String(hex || '').replace('#', '');
   if (h.length !== 6) return { r: 203, g: 213, b: 226 };
@@ -62,8 +72,9 @@ function buildExpandedLegendRows() {
 
 /**
  * Légende charge / intensité pour le Récap (spectre continu + paliers détaillés).
+ * @param {{ compact?: boolean }} props — mode 6 paliers sans nuances intermédiaires
  */
-const RecapIntensityLegend = () => {
+const RecapIntensityLegend = ({ compact = false }) => {
   const t = useTranslation();
 
   const expandedRows = useMemo(() => buildExpandedLegendRows(), []);
@@ -72,6 +83,34 @@ const RecapIntensityLegend = () => {
     () => `linear-gradient(90deg, ${spectrumStops.map((s) => `${s.color} ${(s.offset * 100).toFixed(2)}%`).join(', ')})`,
     [spectrumStops]
   );
+
+  if (compact) {
+    return (
+      <div className="space-y-3">
+        <p className="text-xs text-teal-200/70 leading-relaxed">{t('recap.legendIntro')}</p>
+        <ul className="space-y-1.5">
+          {COMPACT_INTENSITY_STEPS.map((row) => (
+            <li key={row.key} className="flex items-center gap-2.5 text-xs leading-snug text-slate-200">
+              <span
+                className="h-3.5 w-3.5 shrink-0 rounded-sm border border-white/20 shadow-sm"
+                style={{ backgroundColor: row.color }}
+                aria-hidden
+              />
+              <span>{t(row.key)}</span>
+            </li>
+          ))}
+        </ul>
+        <div className="mt-3 pt-3 border-t border-[#0F4C5C]/40">
+          <p className="text-xs font-semibold text-teal-100 mb-2">{t('recap.legendRecoveryTitle')}</p>
+          <ul className="space-y-1 text-xs text-teal-50/95">
+            <li>🟢 {t('recap.legendRecovery.ready')}</li>
+            <li>🟡 {t('recap.legendRecovery.inProgress')}</li>
+            <li>🔴 {t('recap.legendRecovery.fatigued')}</li>
+          </ul>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-3">

@@ -14,6 +14,12 @@ import {
 import { prepareTimeSeriesForDisplay } from './garminTimeSeriesUtils';
 import { parseDurationToMinutes } from './calendarUtils';
 import { isGarminRunningLikeActivity, isGarminWalkingLikeActivity } from './garminRunningLaps';
+import {
+  computeStreetWorkoutCaloriesAverageKcal,
+  getStreetWorkoutCaloriesKcalForDate,
+  getStreetWorkoutDurationMinForDate
+} from './calendarPhysicalSessionStripes';
+import { formatCalendarExerciseRecordedValue } from './exerciseCalculations';
 
 function parseNum(v) {
   const n = Number(v);
@@ -253,19 +259,39 @@ export function buildBodyBatteryDetailContext(garminData, dateStr) {
   return { charged, drained, current, chartPoints, hasChart: chartPoints.length >= 3 };
 }
 
-export function buildWorkoutDetailContext(workoutData, dateStr, intensity) {
+export function buildWorkoutDetailContext(workoutData, dateStr, intensity, garminData = null) {
   const exercises = intensity?.session?.exercises || [];
-  const list = exercises.map((ex) => ({
-    name: ex.name,
-    reps: parseNum(ex.reps) ?? 0,
-    series: ex.series || '',
-    type: ex.type || '',
-    programName: ex.programName || ''
-  }));
+  const list = exercises.map((ex) => {
+    const reps = parseNum(ex.reps) ?? 0;
+    const formatted = formatCalendarExerciseRecordedValue(ex, reps);
+    return {
+      name: ex.name,
+      reps,
+      series: ex.series || '',
+      type: ex.type || '',
+      programName: ex.programName || '',
+      displayValue: formatted.displayText,
+      isTimeBased: formatted.isTimeBased
+    };
+  });
+  const streetDur =
+    garminData && dateStr ? getStreetWorkoutDurationMinForDate(workoutData, garminData, dateStr) : 0;
+  const durationMin =
+    streetDur > 0 ? Math.round(streetDur) : Math.round(Number(intensity?.duration) || 0);
+  const caloriesKcal =
+    garminData && dateStr ? getStreetWorkoutCaloriesKcalForDate(garminData, dateStr) : null;
+  const avgStats =
+    garminData && workoutData && dateStr
+      ? computeStreetWorkoutCaloriesAverageKcal(garminData, workoutData, dateStr)
+      : { average: null, sampleCount: 0 };
+
   return {
     count: intensity?.completedCount ?? list.length,
     totalReps: intensity?.reps ?? 0,
-    durationMin: intensity?.duration ?? 0,
+    durationMin,
+    caloriesKcal,
+    avgCaloriesKcal: avgStats.average,
+    avgSampleCount: avgStats.sampleCount,
     completionRate: intensity?.completionRate ?? null,
     exercises: list
   };

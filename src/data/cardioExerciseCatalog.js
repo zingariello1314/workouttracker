@@ -7,6 +7,12 @@ import { ExerciseCategories, MuscleGroups, Equipment, Difficulty } from './worko
 
 const hint = 'Séances réelles : Sport → Endurance (date, durée, distance, type).';
 
+/** Muscles banque — alignés sur les cartes course qui ont déjà un aperçu 3D / .webp stable. */
+const RUNNING_CARDIO_MUSCLES = {
+  primaryMuscles: ['Mollets', 'Quadriceps', 'Fessiers', 'Ischio-jambiers'],
+  secondaryMuscles: ['Core', 'Mollets', 'Grand dorsal', 'Deltoïdes antérieurs', 'Triceps']
+};
+
 const CARDIO_REFERENCE_EXERCISES_RAW = [
   {
     id: 'cardio_run_easy',
@@ -17,8 +23,7 @@ const CARDIO_REFERENCE_EXERCISES_RAW = [
     muscleGroup: MuscleGroups.FULL_BODY,
     equipment: Equipment.BODYWEIGHT,
     notes: 'Allure confortable, conversation possible.',
-    primaryMuscles: ['Mollets', 'Quadriceps', 'Fessiers', 'Ischio-jambiers'],
-    secondaryMuscles: ['Core', 'Mollets', 'Grand dorsal', 'Deltoïdes antérieurs', 'Triceps'],
+    ...RUNNING_CARDIO_MUSCLES,
     isCardioReference: true
   },
   {
@@ -30,8 +35,7 @@ const CARDIO_REFERENCE_EXERCISES_RAW = [
     muscleGroup: MuscleGroups.FULL_BODY,
     equipment: Equipment.BODYWEIGHT,
     notes: 'Volume long à intensité modérée.',
-    primaryMuscles: ['Mollets', 'Quadriceps', 'Fessiers', 'Ischio-jambiers'],
-    secondaryMuscles: ['Core', 'Mollets', 'Grand dorsal', 'Deltoïdes antérieurs', 'Triceps'],
+    ...RUNNING_CARDIO_MUSCLES,
     isCardioReference: true
   },
   {
@@ -43,8 +47,7 @@ const CARDIO_REFERENCE_EXERCISES_RAW = [
     muscleGroup: MuscleGroups.FULL_BODY,
     equipment: Equipment.BODYWEIGHT,
     notes: 'Séance continue hors zone seuil.',
-    primaryMuscles: ['Mollets', 'Quadriceps', 'Fessiers', 'Ischio-jambiers'],
-    secondaryMuscles: ['Core', 'Mollets', 'Grand dorsal', 'Deltoïdes antérieurs', 'Triceps'],
+    ...RUNNING_CARDIO_MUSCLES,
     isCardioReference: true
   },
   {
@@ -56,8 +59,7 @@ const CARDIO_REFERENCE_EXERCISES_RAW = [
     muscleGroup: MuscleGroups.FULL_BODY,
     equipment: Equipment.BODYWEIGHT,
     notes: 'Jeux de vitesses libres sur le terrain.',
-    primaryMuscles: ['Mollets', 'Quadriceps', 'Fessiers', 'Ischio-jambiers'],
-    secondaryMuscles: ['Core', 'Mollets', 'Grand dorsal', 'Deltoïdes antérieurs', 'Triceps'],
+    ...RUNNING_CARDIO_MUSCLES,
     isCardioReference: true
   },
   {
@@ -69,8 +71,7 @@ const CARDIO_REFERENCE_EXERCISES_RAW = [
     muscleGroup: MuscleGroups.FULL_BODY,
     equipment: Equipment.BODYWEIGHT,
     notes: 'Alternance efforts intenses / récup.',
-    primaryMuscles: ['Mollets', 'Quadriceps', 'Fessiers', 'Ischio-jambiers'],
-    secondaryMuscles: ['Core', 'Mollets', 'Grand dorsal', 'Deltoïdes antérieurs', 'Triceps'],
+    ...RUNNING_CARDIO_MUSCLES,
     isCardioReference: true
   },
   {
@@ -82,8 +83,7 @@ const CARDIO_REFERENCE_EXERCISES_RAW = [
     muscleGroup: MuscleGroups.FULL_BODY,
     equipment: Equipment.BODYWEIGHT,
     notes: 'Allure tenable ~1 h en course continue.',
-    primaryMuscles: ['Mollets', 'Quadriceps', 'Fessiers', 'Ischio-jambiers'],
-    secondaryMuscles: ['Core', 'Mollets', 'Grand dorsal', 'Deltoïdes antérieurs', 'Triceps'],
+    ...RUNNING_CARDIO_MUSCLES,
     isCardioReference: true
   },
   {
@@ -95,8 +95,7 @@ const CARDIO_REFERENCE_EXERCISES_RAW = [
     muscleGroup: MuscleGroups.FULL_BODY,
     equipment: Equipment.BODYWEIGHT,
     notes: 'Bloc soutenu sous le seuil maximal.',
-    primaryMuscles: ['Mollets', 'Quadriceps', 'Fessiers', 'Ischio-jambiers'],
-    secondaryMuscles: ['Core', 'Mollets', 'Grand dorsal', 'Deltoïdes antérieurs', 'Triceps'],
+    ...RUNNING_CARDIO_MUSCLES,
     isCardioReference: true
   },
   {
@@ -108,8 +107,79 @@ const CARDIO_REFERENCE_EXERCISES_RAW = [
     muscleGroup: MuscleGroups.FULL_BODY,
     equipment: Equipment.BODYWEIGHT,
     notes: 'Répetitions courtes très intenses.',
-    primaryMuscles: ['Mollets', 'Quadriceps', 'Fessiers', 'Grand dorsal', "Grand droit de l'abdomen"],
-    secondaryMuscles: ['Ischio-jambiers', 'Mollets', 'Deltoïdes antérieurs', 'Avant-bras'],
+    ...RUNNING_CARDIO_MUSCLES,
+    isCardioReference: true
+  },
+  {
+    id: 'cardio_run_speed',
+    name: 'Course — vitesse / allure rapide',
+    series: hint,
+    materiel: 'Course à pied',
+    category: ExerciseCategories.CARDIO,
+    muscleGroup: MuscleGroups.FULL_BODY,
+    equipment: Equipment.BODYWEIGHT,
+    notes: 'Sortie ou blocs rapides sous la VMA, zone 4–5.',
+    ...RUNNING_CARDIO_MUSCLES,
+    isCardioReference: true
+  },
+  {
+    id: 'cardio_run_recovery',
+    name: 'Course — récupération active',
+    series: hint,
+    materiel: 'Course à pied',
+    category: ExerciseCategories.CARDIO,
+    muscleGroup: MuscleGroups.FULL_BODY,
+    equipment: Equipment.BODYWEIGHT,
+    notes: 'Très facile, zone 1 — relance sans fatigue.',
+    ...RUNNING_CARDIO_MUSCLES,
+    isCardioReference: true
+  },
+  {
+    id: 'cardio_run_race',
+    name: 'Course — compétition',
+    series: hint,
+    materiel: 'Course à pied',
+    category: ExerciseCategories.CARDIO,
+    muscleGroup: MuscleGroups.FULL_BODY,
+    equipment: Equipment.BODYWEIGHT,
+    notes: 'Course chronométrée ou événement officiel.',
+    ...RUNNING_CARDIO_MUSCLES,
+    isCardioReference: true
+  },
+  {
+    id: 'cardio_run_trail',
+    name: 'Course — trail / nature',
+    series: hint,
+    materiel: 'Sentiers, dénivelé',
+    category: ExerciseCategories.CARDIO,
+    muscleGroup: MuscleGroups.FULL_BODY,
+    equipment: Equipment.BODYWEIGHT,
+    notes: 'Terrain varié, gestion du D+ et descentes.',
+    ...RUNNING_CARDIO_MUSCLES,
+    isCardioReference: true
+  },
+  {
+    id: 'cardio_run_hill',
+    name: 'Course — côtes / montées',
+    series: hint,
+    materiel: 'Pente modérée à forte',
+    category: ExerciseCategories.CARDIO,
+    muscleGroup: MuscleGroups.FULL_BODY,
+    equipment: Equipment.BODYWEIGHT,
+    notes: 'Montées répétées ou sortie vallonnée.',
+    ...RUNNING_CARDIO_MUSCLES,
+    isCardioReference: true
+  },
+  {
+    id: 'cardio_run_walk',
+    name: 'Marche active / footing marche',
+    series: hint,
+    materiel: 'Course à pied',
+    category: ExerciseCategories.CARDIO,
+    muscleGroup: MuscleGroups.FULL_BODY,
+    equipment: Equipment.BODYWEIGHT,
+    notes: 'Marche rapide ou alternance marche-course.',
+    ...RUNNING_CARDIO_MUSCLES,
     isCardioReference: true
   },
   {

@@ -13,6 +13,7 @@ import { Download, Upload, FileText, BookOpen, CheckCircle, AlertTriangle, Rotat
 import Card, { CardHeader, CardTitle, CardContent } from '../../../ui/Card';
 import { useTranslation } from '../../../../utils/translations';
 import { settingsTheme as S } from '../settingsThemeClasses';
+import { SportExportPreviewContent } from './SportExportPreviewContent';
 
 /**
  * Section Export - Tous les exports
@@ -23,7 +24,16 @@ import { settingsTheme as S } from '../settingsThemeClasses';
  * @param {Object} exportSettings - Données du hook useSettingsExport
  * @returns {JSX.Element}
  */
-export const ExportSection = ({ data, stats, exportSettings }) => {
+export const ExportSection = ({
+  data,
+  stats,
+  exportSettings,
+  sportPreview = null,
+  sportPreviewLoading = false,
+  garminSummary = null,
+  garminDailyIndex = null,
+  nutritionSummary = null
+}) => {
   const t = useTranslation();
   const {
     exportStatus,
@@ -64,62 +74,14 @@ export const ExportSection = ({ data, stats, exportSettings }) => {
                 <span className="mr-2">🏋️</span>
                 Sport
               </h4>
-              <div className={`${S.inset} space-y-3`}>
-                <div className="space-y-1">
-                  <h5 className="text-sm font-medium text-rose-300">🏋️ Entraînement</h5>
-                  <ul className="space-y-1 text-sm text-red-100/80">
-                    <li>• Exercices cochés : {Object.keys(data.checkedExercises || {}).length} entrées</li>
-                    <li>• Répétitions : {Object.keys(data.reps || {}).length} entrées</li>
-                    <li>• Étirements : {Object.keys(data.checkedStretches || {}).length} entrées</li>
-                    <li>• Historique répétitions : {Object.keys(data.historyReps || {}).length} entrées</li>
-                  </ul>
-                </div>
-                <div className={`space-y-1 border-t pt-2 ${S.divide}`}>
-                  <h5 className="text-sm font-medium text-red-300">📊 Suivi Corporel</h5>
-                  <ul className="space-y-1 text-sm text-red-100/80">
-                    <li>• Photos de progression : {(data.progressPhotos || []).length} photos</li>
-                    <li>• Entrées de progression : {(data.progressEntries || []).length} entrées</li>
-                    <li>• Rappels configurés : {(data.bodyTrackingReminders || []).length} rappels</li>
-                    <li>• Photos avec poids : {(data.progressPhotos || []).filter(p => p.weight).length}</li>
-                    <li>• Photos avec notes : {(data.progressPhotos || []).filter(p => p.notes).length}</li>
-                    <li>• Photos avec mesures : {(data.progressPhotos || []).filter(p => p.measurements && Object.keys(p.measurements).length > 0).length}</li>
-                    <li>• Dernière mise à jour : {data.bodyTrackingLastUpdated ? new Date(data.bodyTrackingLastUpdated).toLocaleDateString('fr-FR') : 'Jamais'}</li>
-                  </ul>
-                </div>
-                <div className={`space-y-1 border-t pt-2 ${S.divide}`}>
-                  <h5 className="text-sm font-medium text-rose-200">🏃 Endurance</h5>
-                  <ul className="space-y-1 text-sm text-red-100/80">
-                    <li>• Sessions boxe : {(data.enduranceData?.sessions?.boxing || data.enduranceData?.boxingSessions || []).length} sessions</li>
-                    <li>• Sessions pompes : {(data.enduranceData?.sessions?.pushups || data.enduranceData?.pushupSessions || []).length} sessions</li>
-                    <li>• Sessions natation : {(data.enduranceData?.sessions?.swimming || data.enduranceData?.swimmingSessions || []).length} sessions</li>
-                    <li>• Sessions corde à sauter : {(data.enduranceData?.sessions?.jumprope || data.enduranceData?.jumpropeSessions || []).length} sessions</li>
-                    <li>• Sessions course : {(data.enduranceData?.sessions?.running || data.enduranceData?.runningSessions || []).length} sessions</li>
-                    <li>• Défis actifs : {(data.enduranceData?.challenges || []).length} défis</li>
-                  </ul>
-                </div>
-                <div className={`space-y-1 border-t pt-2 ${S.divide}`}>
-                  <h5 className="text-sm font-medium text-red-200">⌚ Garmin</h5>
-                  <ul className="space-y-1 text-sm text-red-100/80">
-                    <li>• Données synchronisées Garmin</li>
-                    <li>• Activités et statistiques</li>
-                  </ul>
-                </div>
-                <div className={`space-y-1 border-t pt-2 ${S.divide}`}>
-                  <h5 className="text-sm font-medium text-rose-300">🍎 Nutrition</h5>
-                  <ul className="space-y-1 text-sm text-red-100/80">
-                    <li>• Repas et calories</li>
-                    <li>• Suivi nutritionnel complet</li>
-                  </ul>
-                </div>
-                <div className={`space-y-1 border-t pt-2 ${S.divide}`}>
-                  <h5 className="text-sm font-medium text-red-300">⚙️ Configuration</h5>
-                  <ul className="space-y-1 text-sm text-red-100/80">
-                    <li>• Date de début : {data.startDate ? new Date(data.startDate).toLocaleDateString('fr-FR') : 'Non définie'}</li>
-                    <li>• Variante de semaine : {data.weekVariant || 'A'}</li>
-                    <li>• Historique programmes : {(data.programHistory || []).length} entrées</li>
-                  </ul>
-                </div>
-              </div>
+              <SportExportPreviewContent
+                preview={sportPreview}
+                loading={sportPreviewLoading}
+                garminSummary={garminSummary}
+                garminDailyIndex={garminDailyIndex}
+                nutritionSummary={nutritionSummary}
+                data={data}
+              />
 
               <div className="grid grid-cols-1 gap-3">
                 <button

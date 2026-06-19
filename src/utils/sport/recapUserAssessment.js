@@ -359,7 +359,8 @@ function computeProgramDayCompletion28(data, activeProgram, startYmd, endYmd) {
  * @param {(date: Date) => object|null} [input.getWorkoutForDate] — ex. `getTodayWorkout(date, isGymMode)`
  * @param {boolean} [input.isGymMode]
  * @param {object} [input.nutritionPartial] — signaux nutrition 28 j (hook Récap)
- * @param {object} [input.garminPartial] — signaux Garmin 28 j (hook Récap)
+ * @param {object} [input.garminPartial] — signaux Garmin sur la fenêtre (hook Récap)
+ * @param {{ start: string|null, end: string }|null} [input.periodWindow] — plage Récap sélectionnée
  */
 export function computeRecapUserAssessment({
   snapshot,
@@ -369,13 +370,18 @@ export function computeRecapUserAssessment({
   getWorkoutForDate,
   isGymMode = false,
   nutritionPartial = null,
-  garminPartial = null
+  garminPartial = null,
+  periodWindow = null
 }) {
   const data = snapshot || {};
   const today = new Date();
-  const endYmd = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+  const endYmd =
+    periodWindow?.end && /^\d{4}-\d{2}-\d{2}$/.test(periodWindow.end)
+      ? periodWindow.end
+      : `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+
   const d28 = new Date(today.getTime() - 27 * MS_DAY);
-  const start28 = `${d28.getFullYear()}-${String(d28.getMonth() + 1).padStart(2, '0')}-${String(d28.getDate()).padStart(2, '0')}`;
+  const defaultStart28 = `${d28.getFullYear()}-${String(d28.getMonth() + 1).padStart(2, '0')}-${String(d28.getDate()).padStart(2, '0')}`;
 
   const persisted = data?.trainingPrefs?.journeyStartYmd;
   const derived = deriveJourneyStartYmd(data);
@@ -384,13 +390,28 @@ export function computeRecapUserAssessment({
       ? String(persisted).slice(0, 10)
       : derived;
 
+  let startYmd = defaultStart28;
+  if (periodWindow) {
+    if (periodWindow.start != null) {
+      startYmd = periodWindow.start;
+    } else {
+      startYmd = journeyStart || derived || defaultStart28;
+    }
+  }
+
+  const daySpan = Math.max(1, daysBetweenInclusive(startYmd, endYmd));
+
   const tenureDays = journeyStart ? daysBetweenInclusive(journeyStart, endYmd) : 0;
 
+  /** Fenêtre effective pour boucles jour-par-jour coûteuses (getWorkoutForDate). */
+  const heavyLoopStart =
+    daySpan > 366 ? ymdAddDaysLocal(endYmd, -365) : startYmd;
+
   const liftAll = aggregateLiftVolumeKgByDate(data);
-  const lift28 = filterMapToWindow(liftAll, start28, endYmd);
+  const liftWindow = filterMapToWindow(liftAll, startYmd, endYmd);
   let weightedDayCount28 = 0;
   let volumeKgRepsSum28 = 0;
-  lift28.forEach((v) => {
+  liftWindow.forEach((v) => {
     if (v > 0) {
       weightedDayCount28 += 1;
       volumeKgRepsSum28 += v;
@@ -400,22 +421,22 @@ export function computeRecapUserAssessment({
     weightedDayCount28 > 0 ? volumeKgRepsSum28 / weightedDayCount28 : 0;
 
   const repsMap = buildTotalStrengthRepsByDate(data);
-  const reps28 = filterMapToWindow(repsMap, start28, endYmd);
+  const repsWindow = filterMapToWindow(repsMap, startYmd, endYmd);
   let totalReps28 = 0;
-  reps28.forEach((v) => {
+  repsWindow.forEach((v) => {
     totalReps28 += Number(v) || 0;
   });
   const avgRepsPerActiveStrengthDay28 =
-    reps28.size > 0 ? totalReps28 / Math.max(1, reps28.size) : 0;
+    repsWindow.size > 0 ? totalReps28 / Math.max(1, repsWindow.size) : 0;
 
-  const activeDays28 = countUniqueDaysWithActivityInWindow(data, start28, endYmd);
+  const activeDays28 = countUniqueDaysWithActivityInWindow(data, startYmd, endYmd);
   const qq = normalizeProfileQuestionnaire(profileQuestionnaireRaw || null);
   const answers = qq.answers || {};
   const expectedPerWeek = quizExpectedSessionsPerWeek(answers);
-  const expectedSessionsOver28 = Math.max(1, (expectedPerWeek * 28) / 7);
+  const expectedSessionsOver28 = Math.max(1, (expectedPerWeek * daySpan) / 7);
   const regularityScore = Math.min(1, activeDays28 / expectedSessionsOver28);
 
-  const program28 = computeProgramDayCompletion28(data, activeProgram, start28, endYmd);
+  const program28 = computeProgramDayCompletion28(data, activeProgram, startYmd, endYmd);
   let programAdherenceDetail = { mode: 'none', ratio: null, label: 'Aucun programme actif avec jours planifiés sur cette fenêtre.' };
   if (program28) {
     programAdherenceDetail = {
@@ -424,7 +445,7 @@ export function computeRecapUserAssessment({
       plannedDays: program28.plannedDays,
       completedDays: program28.completedDays,
       pct: program28.pct,
-      label: `${program28.completedDays}/${program28.plannedDays} jours de séance prévus complétés (28 derniers jours)`
+      label: `${program28.completedDays}/${program28.plannedDays} jours de séance prévus complétés (${daySpan} j.)`
     };
   } else if (activeProgram?.schedule) {
     programAdherenceDetail = {
@@ -437,7 +458,7 @@ export function computeRecapUserAssessment({
 
   const sessionLoadAlignment28 = aggregateSessionLoadAlignment28(
     data,
-    start28,
+    heavyLoopStart,
     endYmd,
     getWorkoutForDate,
     isGymMode
@@ -445,7 +466,7 @@ export function computeRecapUserAssessment({
 
   const avgDifficulty = avgDifficultyFromCheckedExercises(
     data,
-    start28,
+    startYmd,
     endYmd,
     getExerciseNameById
   );
@@ -459,7 +480,7 @@ export function computeRecapUserAssessment({
   const weightByDay = buildWeightByDateMap(data.progressEntries);
   const weightIn28 = [];
   weightByDay.forEach((w, d) => {
-    if (d >= start28 && d <= endYmd) weightIn28.push({ d, w });
+    if (d >= startYmd && d <= endYmd) weightIn28.push({ d, w });
   });
   weightIn28.sort((a, b) => a.d.localeCompare(b.d));
 
@@ -469,8 +490,8 @@ export function computeRecapUserAssessment({
     weightDelta28 = weightIn28[weightIn28.length - 1].w - weightIn28[0].w;
   }
 
-  const startSecond14 = ymdAddDaysLocal(start28, 14);
-  const repsFirst14 = filterMapToWindow(repsMapFull, start28, ymdAddDaysLocal(start28, 13));
+  const startSecond14 = ymdAddDaysLocal(startYmd, 14);
+  const repsFirst14 = filterMapToWindow(repsMapFull, startYmd, ymdAddDaysLocal(startYmd, 13));
   const repsSecond14 = filterMapToWindow(repsMapFull, startSecond14, endYmd);
   let sumFirst = 0;
   let sumSecond = 0;
@@ -635,7 +656,7 @@ export function computeRecapUserAssessment({
   });
   const richness = {
     sparseLogging:
-      countUniqueDaysWithActivityInWindow(data, start28, endYmd) <= 4 &&
+      countUniqueDaysWithActivityInWindow(data, startYmd, endYmd) <= 4 &&
       activeDays28 <= 4 &&
       stepsSum > 4000,
     hasSteps: stepsSum > 2000
@@ -699,7 +720,8 @@ export function computeRecapUserAssessment({
   return {
     journeyStartYmd: journeyStart,
     tenureDays,
-    window28: { startYmd: start28, endYmd },
+    window28: { startYmd, endYmd },
+    windowPeriod: { startYmd, endYmd, daySpan },
     weightedDays28: weightedDayCount28,
     volumeKgRepsSum28: Math.round(volumeKgRepsSum28),
     avgKgRepsPerWeightedDay28: Math.round(avgKgRepsPerWeightedDay28),

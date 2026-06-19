@@ -109,14 +109,21 @@ export function calculateDayIntensityWithGarmin(date, workoutIntensity, garminDa
   // ==========================================
   const tempsPrévu = workoutIntensity.duration || 0;
   
-  // Calculer le temps réel d'activité cardio Garmin pour cette date
-  const activitésCardio = (garminData.activities?.cardio || []).filter(act => act.date === date);
+  // Calculer le temps réel d'activité cardio Garmin pour cette date (durées en secondes côté Garmin)
+  const activitésCardio = (garminData.activities?.cardio || []).filter((act) => act.date === date);
   const tempsRéel = activitésCardio.reduce((sum, act) => {
-    // Essayer différents champs pour la durée (en minutes)
-    const duration = act.duration || 
-                     (act.totalTime ? act.totalTime / 60 : 0) ||
-                     (act.elapsedTime ? act.elapsedTime / 60 : 0);
-    return sum + duration;
+    if (act.duration != null) {
+      return sum + parseDurationToMinutes(act.duration, 'garminCalendarUtils.timeReal.duration');
+    }
+    if (act.totalTime != null) {
+      const n = Number(act.totalTime);
+      return sum + (Number.isFinite(n) ? (n > 200 ? Math.round(n / 60) : n) : 0);
+    }
+    if (act.elapsedTime != null) {
+      const n = Number(act.elapsedTime);
+      return sum + (Number.isFinite(n) ? Math.round(n / 60) : 0);
+    }
+    return sum;
   }, 0);
 
   if (tempsRéel > 0 && tempsPrévu > 0) {

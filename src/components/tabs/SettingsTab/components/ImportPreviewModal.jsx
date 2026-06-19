@@ -5,6 +5,7 @@
 import React from 'react';
 import { X, Save, CheckCircle, AlertTriangle } from 'lucide-react';
 import { settingsTheme as S } from '../settingsThemeClasses';
+import { SportImportStatsGrid } from './SportExportPreviewContent';
 
 const overlayClass =
   'fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4 backdrop-blur-sm';
@@ -156,43 +157,43 @@ export const AllDataImportPreviewModal = ({
         </div>
 
         <div className="space-y-4 p-6">
+          {(allDataPreviewData.stats?.exportType) && (
+            <div className="rounded-lg border border-emerald-800/40 bg-emerald-950/25 p-3 text-sm text-emerald-300">
+              Format détecté : {allDataPreviewData.stats.exportType}
+              {allDataPreviewData.stats.exportVersion ? ` (v${allDataPreviewData.stats.exportVersion})` : ''}
+            </div>
+          )}
+
           <div className={S.inset}>
             <h4 className="mb-3 font-medium text-red-100">Statistiques des données à importer</h4>
-            <div className="grid grid-cols-2 gap-4 text-sm md:grid-cols-4">
-              <div>
-                <span className={S.muted}>Exercices :</span>
-                <span className="ml-2 font-semibold text-red-50">{allDataPreviewData.stats?.exercises || 0}</span>
-              </div>
-              <div>
-                <span className={S.muted}>Répétitions :</span>
-                <span className="ml-2 font-semibold text-red-50">{allDataPreviewData.stats?.reps || 0}</span>
-              </div>
-              <div>
-                <span className={S.muted}>Étirements :</span>
-                <span className="ml-2 font-semibold text-red-50">{allDataPreviewData.stats?.stretches || 0}</span>
-              </div>
-              <div>
-                <span className={S.muted}>Sessions endurance :</span>
-                <span className="ml-2 font-semibold text-red-50">{allDataPreviewData.stats?.enduranceSessions || 0}</span>
-              </div>
-              <div>
-                <span className={S.muted}>Photos :</span>
-                <span className="ml-2 font-semibold text-red-50">{allDataPreviewData.stats?.photos || 0}</span>
-              </div>
-              <div>
-                <span className={S.muted}>Entrées progression :</span>
-                <span className="ml-2 font-semibold text-red-50">{allDataPreviewData.stats?.progressEntries || 0}</span>
-              </div>
-              <div>
-                <span className={S.muted}>Historique reps :</span>
-                <span className="ml-2 font-semibold text-red-50">{allDataPreviewData.stats?.historyReps || 0}</span>
-              </div>
-              <div>
-                <span className={S.muted}>Variations journalières :</span>
-                <span className="ml-2 font-semibold text-red-50">{allDataPreviewData.stats?.dailyVariations || 0}</span>
-              </div>
-            </div>
+            <SportImportStatsGrid stats={allDataPreviewData.stats} />
           </div>
+
+          {allDataPreviewData.stats?.garminPresent && (
+            <div className="rounded-lg border border-red-800/40 bg-red-950/30 p-4">
+              <h4 className="mb-2 flex items-center font-medium text-red-200">
+                <CheckCircle className="mr-2" size={16} />
+                Garmin détecté
+              </h4>
+              <p className={`text-sm ${S.muted}`}>
+                {allDataPreviewData.stats.garminActivities} activité(s),{' '}
+                {allDataPreviewData.stats.garminMetricsDays} jour(s) de métriques (FC, pas, sommeil…)
+                seront restaurés avec l&apos;import complet.
+              </p>
+            </div>
+          )}
+
+          {allDataPreviewData.stats?.nutritionPresent && (
+            <div className="rounded-lg border border-red-800/40 bg-red-950/30 p-4">
+              <h4 className="mb-2 flex items-center font-medium text-red-200">
+                <CheckCircle className="mr-2" size={16} />
+                Nutrition détectée
+              </h4>
+              <p className={`text-sm ${S.muted}`}>
+                {allDataPreviewData.stats.nutritionMeals} repas dans le fichier (utilisez Export Nutrition pour une restauration dédiée).
+              </p>
+            </div>
+          )}
 
           {allDataPreviewData.booksPreview && allDataPreviewData.booksPreview.valid && (
             <div className="rounded-lg border border-red-800/40 bg-red-950/30 p-4">
@@ -245,7 +246,11 @@ export const AllDataImportPreviewModal = ({
             <button
               type="button"
               onClick={confirmImportAllData}
-              disabled={allDataImportStatus === 'loading'}
+              disabled={
+                allDataImportStatus === 'loading'
+                || (allDataPreviewData.errors && allDataPreviewData.errors.length > 0)
+                || !allDataPreviewData.data
+              }
               className={`${S.btnPrimary} flex-1 disabled:cursor-not-allowed`}
             >
               <Save className="h-4 w-4" />
