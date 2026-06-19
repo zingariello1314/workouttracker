@@ -8,23 +8,7 @@ import {
   touchRecentlyWatched
 } from '../../../../services/knowledge/knowledgeApi';
 import { KnowledgeEmptyState } from './KnowledgeUiBlocks';
-
-function makeFeedBatch(pool, size, avoidVideoId = null) {
-  if (!pool.length) return [];
-  const result = [];
-  for (let i = 0; i < size; i += 1) {
-    let pick = pool[Math.floor(Math.random() * pool.length)];
-    if (i === 0 && avoidVideoId && pick.id === avoidVideoId && pool.length > 1) {
-      const alt = pool.find((v) => v.id !== avoidVideoId);
-      if (alt) pick = alt;
-    }
-    result.push({
-      key: `${pick.id}_${Date.now()}_${i}_${Math.random().toString(36).slice(2, 7)}`,
-      video: pick
-    });
-  }
-  return result;
-}
+import { buildSpacedFeedBatch } from '../utils/knowledgeShortsShuffle';
 
 function ShortSlide({ item, index, isActive, userId, setSlideRef, muted, onMutedChange }) {
   const videoRef = useRef(null);
@@ -163,6 +147,7 @@ export default function KnowledgeShortsFeed({
   const t = useTranslation();
   const scrollerRef = useRef(null);
   const slideRefs = useRef([]);
+  const recentVideoIdsRef = useRef([]);
   const [pool, setPool] = useState([]);
   const [feedItems, setFeedItems] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -198,7 +183,10 @@ export default function KnowledgeShortsFeed({
       .then((videos) => {
         if (cancelled) return;
         setPool(videos);
-        setFeedItems(makeFeedBatch(videos, Math.max(8, videos.length * 2)));
+        const batchSize = Math.max(10, videos.length * 2);
+        const { items, recentIds } = buildSpacedFeedBatch(videos, batchSize, []);
+        recentVideoIdsRef.current = recentIds;
+        setFeedItems(items);
         setActiveIndex(0);
         if (scrollerRef.current) scrollerRef.current.scrollTop = 0;
       })
@@ -212,9 +200,10 @@ export default function KnowledgeShortsFeed({
 
   const appendMore = useCallback(() => {
     if (!pool.length) return;
-    const lastId = feedItems[feedItems.length - 1]?.video?.id;
-    setFeedItems((prev) => [...prev, ...makeFeedBatch(pool, 6, lastId)]);
-  }, [pool, feedItems]);
+    const { items, recentIds } = buildSpacedFeedBatch(pool, 8, recentVideoIdsRef.current);
+    recentVideoIdsRef.current = recentIds;
+    setFeedItems((prev) => [...prev, ...items]);
+  }, [pool]);
 
   useEffect(() => {
     if (activeIndex >= feedItems.length - 3) appendMore();
