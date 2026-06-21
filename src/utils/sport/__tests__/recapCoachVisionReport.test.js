@@ -46,6 +46,7 @@ describe('recapCoachVisionReport', () => {
     expect(report.sections.length).toBeGreaterThan(1);
     expect(report.sections.some((s) => s.id === 'temporal')).toBe(true);
     expect(report.lead).toBeTruthy();
+    expect(report.paragraphs?.length).toBeGreaterThan(0);
     expect(report.sections.every((s) => !/2024/.test(s.bullets?.join(' ') || ''))).toBe(true);
   });
 });

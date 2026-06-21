@@ -33,7 +33,7 @@ import {
   findExerciseSessions
 } from './recapInsightHelpers';
 
-const HORIZON_LIMITS = { short: 6, medium: 5, long: 4 };
+const HORIZON_LIMITS = { short: 8, medium: 7, long: 6 };
 
 function inWindow(dateStr, window) {
   return dateStr && isDateInRecapWindow(dateStr, window);

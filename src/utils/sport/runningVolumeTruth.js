@@ -123,3 +123,27 @@ export function computeRunningVolumeTotals(sessions, garminById = null, options 
     rows
   };
 }
+
+/**
+ * Km + nb sorties course sur une fenêtre Récap (manuel + Garmin fusionnés).
+ * @param {object} snapshot
+ * @param {object|null} garminData
+ * @param {{ start: string|null, end: string }} window
+ * @returns {{ distanceKm: number, sessions: number }}
+ */
+export function resolveRunningPeriodStats(snapshot, garminData, window) {
+  if (!window?.end) return { distanceKm: 0, sessions: 0 };
+  const garminById = buildGarminCardioById(garminData?.activities?.cardio);
+  const stored = snapshot?.enduranceData?.sessions?.running || [];
+  const merged = mergeRunningSessionsWithGarmin(stored, garminById);
+  const rows =
+    computeRunningVolumeTotals(merged, garminById, { period: 'all', preFiltered: false }).rows || [];
+  const filtered = rows.filter((r) => {
+    const d = r?.date || r?.dateYmd;
+    return d && isDateInRecapWindow(d, window);
+  });
+  return {
+    distanceKm: sumRunningKmFromRows(filtered),
+    sessions: filtered.length
+  };
+}

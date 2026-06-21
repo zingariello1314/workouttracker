@@ -1,20 +1,25 @@
 /**
- * Rapport Vision Coach structuré — KPIs, synthèse, sections filtrées (2025+ en 2026).
+ * Rapport Vision Coach structuré — KPIs, synthèse dense, sections filtrées (2025+ en 2026).
  */
 
 import DateHelper from '../dateHelper';
 import { JUSTIFICATION_REASONS } from '../dayJustificationUtils';
-import { buildCoachVisionNarrative } from './recapCoachVision';
+import { buildCoachVisionNarrative, computeGarminSleepAverage } from './recapCoachVision';
 import {
   buildMonthlyCoachStats,
   findBestMonthFromMonths,
   monthLabelFr,
-  relevantMonthCutoff
+  relevantMonthCutoff,
+  discoverSnapshotDateBounds,
+  computeMonthCoachSnapshot
 } from './recapCoachVisionTemporal';
-import { getCompletionForWindow } from './recapCompletionTruth';
+import { getCompletionForWindow, compareExoCompletionWeekBlocks } from './recapCompletionTruth';
+import { countTrainingDaysInRange } from './recapTrainingDayTruth';
 import { resolveStreetSkillPlan } from '../../features/profileQuestionnaire/quizStreetSkillGoal';
 import { normalizeProfileQuestionnaire } from '../../features/profileQuestionnaire/schema';
 import { challengeProgressPct } from './recapInsightHelpers';
+import { resolveRunningPeriodStats } from './runningVolumeTruth';
+import { buildIntegratedCoachVisionProse } from './recapCoachVisionDenseProse';
 
 const WEEKDAY_FR = ['dimanche', 'lundi', 'mardi', 'mercredi', 'jeudi', 'vendredi', 'samedi'];
 
@@ -33,6 +38,13 @@ function round1(n) {
 
 function formatMonthYear(mk) {
   return mk ? `${monthLabelFr(mk)} ${mk.slice(0, 4)}` : '';
+}
+
+function priorMonthKey(mk) {
+  const y = parseInt(mk.slice(0, 4), 10);
+  const m = parseInt(mk.slice(5, 7), 10);
+  if (m <= 1) return `${y - 1}-12`;
+  return `${y}-${String(m - 1).padStart(2, '0')}`;
 }
 
 /** Supprime insights trop anciens (ex. creux 2024 quand on est en 2026). */
@@ -83,7 +95,11 @@ function topDayOfWeek(dayOfWeek) {
   };
 }
 
-function buildEnrichmentExtras(enrichment, assessment, snapshot) {
+function paragraphExists(paragraphs, pattern) {
+  return paragraphs.some((p) => pattern.test(p));
+}
+
+function buildEnrichmentExtras(enrichment, assessment, snapshot, garminData, window, denseAnalytics) {
   const extras = { adherence: [], load: [], endurance: [], recovery: [] };
   const comp = enrichment?.completion;
   const just = enrichment?.justifications;
@@ -114,7 +130,7 @@ function buildEnrichmentExtras(enrichment, assessment, snapshot) {
 
   const pp = enrichment?.pushPull;
   if (pp?.pushPct != null && (pp.push || 0) + (pp.pull || 0) >= 80) {
-    extras.load.push(`Push/pull : ${pp.pushPct} % / ${pp.pullPct} %.`);
+    extras.load.push(`Push/pull : ${pp.pushPct} % / ${pp.pullPct} % (${pp.push} vs ${pp.pull} reps).`);
   }
 
   const muscles = enrichment?.muscleShareRows?.slice(0, 2) || [];
@@ -122,10 +138,14 @@ function buildEnrichmentExtras(enrichment, assessment, snapshot) {
     extras.load.push(`Dominante : ${muscles.map((m) => m.groupId).join(', ')}.`);
   }
 
-  const per = enrichment?.digest?.perActivity || {};
-  const run = per.running?.totals;
-  if (run?.distanceKm >= 5) {
-    extras.endurance.push(`${round1(run.distanceKm)} km · ${run.sessions || 0} sortie(s).`);
+  const runStats =
+    denseAnalytics?.runningPeriod || resolveRunningPeriodStats(snapshot, garminData, window);
+  if (runStats.distanceKm >= 5) {
+    const avgKm =
+      runStats.sessions >= 1 ? round1(runStats.distanceKm / runStats.sessions) : null;
+    extras.endurance.push(
+      `${round1(runStats.distanceKm)} km · ${runStats.sessions} sortie(s)${avgKm != null ? ` (~${avgKm} km/sortie)` : ''}.`
+    );
   }
 
   const completed = (enrichment?.digest?.challenges || []).filter((c) => c?.status === 'completed');
@@ -133,14 +153,19 @@ function buildEnrichmentExtras(enrichment, assessment, snapshot) {
     extras.endurance.push(`${completed.length} défi(s) validé(s).`);
   }
 
-  if (fb?.fatigue != null && fb.count >= 3) {
-    extras.recovery.push(`Fatigue ~${fb.fatigue}/10.`);
-  }
-
   return extras;
 }
 
-function buildLead({ periodComp, bestMonth, currentMk, streak, enrichment, answers, endYmd }) {
+function buildLead({
+  periodComp,
+  bestMonth,
+  currentMk,
+  streak,
+  enrichment,
+  answers,
+  endYmd,
+  trainingDaysInPeriod
+}) {
   const parts = [];
   const street = resolveStreetSkillPlan(answers || {});
 
@@ -155,7 +180,7 @@ function buildLead({ periodComp, bestMonth, currentMk, streak, enrichment, answe
   if (bestMonth?.monthKey === currentMk) {
     parts.push(`${formatMonthYear(currentMk)} est ton meilleur mois récent (${bestMonth.trainedDays} j.)`);
   } else if (bestMonth) {
-    parts.push(`meilleur mois récent : ${formatMonthYear(bestMonth.monthKey)}`);
+    parts.push(`meilleur mois récent : ${formatMonthYear(bestMonth.monthKey)} (${bestMonth.trainedDays} j.)`);
   }
 
   if ((streak?.current ?? 0) >= 3) {
@@ -167,13 +192,165 @@ function buildLead({ periodComp, bestMonth, currentMk, streak, enrichment, answe
 
   if (street.labelFr) parts.push(`cap « ${street.labelFr} »`);
 
+  if (trainingDaysInPeriod >= 5 && !parts.some((p) => /j\./.test(p))) {
+    parts.push(`${trainingDaysInPeriod} j. d'activité enregistrés`);
+  }
+
   if (!parts.length) return null;
   const year = endYmd.slice(0, 4);
   return `En ${year}, ${parts.join(' · ')}.`;
 }
 
+function buildDenseVisionParagraphs(opts) {
+  const {
+    text,
+    snapshot,
+    endYmd,
+    windowStart,
+    ctx,
+    garminData,
+    garminPartial,
+    periodComp,
+    enrichment,
+    assessment,
+    activeProgram,
+    trainingDaysInPeriod,
+    ytdTrainingDays
+  } = opts;
+
+  const paragraphs = text
+    .split('\n\n')
+    .map((p) => p.trim())
+    .filter((p) => p.length > 0 && !isStaleInsight(p, endYmd));
+
+  const currentYear = parseInt(endYmd.slice(0, 4), 10);
+  const bounds = discoverSnapshotDateBounds(snapshot);
+  const histStartYear = bounds?.start ? parseInt(bounds.start.slice(0, 4), 10) : currentYear;
+
+  if (ytdTrainingDays >= 1 && !paragraphExists(paragraphs, /cumule|d'entraînement enregistr|j\. d'activité/i)) {
+    let line = `${currentYear} : ${ytdTrainingDays} j. d'entraînement enregistrés (muscu, endurance, circuits ou activité Garmin hors marche)`;
+    if (histStartYear >= currentYear - 1) {
+      line += ` · historique ${currentYear - 1} encore limité dans Momentum`;
+    }
+    paragraphs.unshift(`${line}.`);
+  }
+
+  if (
+    periodComp?.exoPct != null &&
+    !paragraphExists(paragraphs, /complétion exos|exos cochés|exos sur les jours/i)
+  ) {
+    let line = `Complétion sur les jours entraînés : ~${periodComp.exoPct} % exos`;
+    if (periodComp.exoCheckedPerDay != null && periodComp.exoPlannedPerDay != null) {
+      line += ` (~${periodComp.exoCheckedPerDay}/${periodComp.exoPlannedPerDay}/j · ${periodComp.exoChecked}/${periodComp.exoTotal})`;
+    }
+    if (periodComp.globalPct != null && periodComp.globalPct < periodComp.exoPct - 10) {
+      line += `. Score programme complet ~${periodComp.globalPct} % (étirements rarement cochés).`;
+    } else {
+      line += '.';
+    }
+    paragraphs.push(line);
+  }
+
+  const weekCmp = compareExoCompletionWeekBlocks(snapshot, endYmd, windowStart, ctx);
+  if (weekCmp && !paragraphExists(paragraphs, /semaine.*%|Semaine récente/i)) {
+    paragraphs.push(
+      `Semaine récente : ~${weekCmp.recentPct} % complétion exos vs ~${weekCmp.priorPct} % la semaine précédente.`
+    );
+  }
+
+  const streak = enrichment?.streak;
+  if (streak?.current >= 3 && !paragraphExists(paragraphs, /série.*j\./i)) {
+    paragraphs.push(
+      `Série en cours : ${streak.current} j.${streak.longest ? ` (record ${streak.longest} j.)` : ''}.`
+    );
+  }
+
+  const pp = enrichment?.pushPull;
+  if (pp?.ratio != null && (pp.push || 0) + (pp.pull || 0) >= 100 && !paragraphExists(paragraphs, /push.*pull|68\.|push\/pull/i)) {
+    paragraphs.push(
+      `Répartition cochée ~${pp.pushPct} % push / ${pp.pullPct} % pull (${pp.push} vs ${pp.pull} reps, ratio ${pp.ratio}).`
+    );
+  }
+
+  const mom = assessment?.repsMomentumRatio;
+  if (mom != null && (mom >= 1.1 || mom <= 0.9) && !paragraphExists(paragraphs, /volume street|quinzaine/i)) {
+    paragraphs.push(
+      mom >= 1.1
+        ? `Volume street +${Math.round((mom - 1) * 100)} % vs la quinzaine précédente.`
+        : `Volume street en retrait (~${Math.round((1 - mom) * 100)} % vs la quinzaine précédente).`
+    );
+  }
+
+  const sleepStart = windowStart || DateHelper.addDays(endYmd, -27);
+  const sleepWnd = computeGarminSleepAverage(garminPartial, sleepStart, endYmd);
+  if (sleepWnd?.avgHours != null && sleepWnd.sampleDays >= 3 && !paragraphExists(paragraphs, /sommeil/i)) {
+    paragraphs.push(
+      `Garmin sommeil : ~${sleepWnd.avgHours.toFixed(1)} h/j (${sleepWnd.sampleDays} nuit${sleepWnd.sampleDays > 1 ? 's' : ''} mesurée${sleepWnd.sampleDays > 1 ? 's' : ''}).`
+    );
+  }
+
+  if (periodComp?.stretchPct != null && periodComp.exoPct != null && periodComp.exoPct - periodComp.stretchPct >= 15) {
+    if (!paragraphExists(paragraphs, /étirement/i)) {
+      paragraphs.push(
+        `Étirements ~${periodComp.stretchPct} % vs exos ~${periodComp.exoPct} % — le gap mobilité peut freiner la récup si le volume monte.`
+      );
+    }
+  }
+
+  const stretchZone = enrichment?.stretchZones?.rows?.[0];
+  if (stretchZone && !paragraphs.some((p) => p.includes(stretchZone.zone))) {
+    paragraphs.push(`Zone d'étirement la plus cochée : ${stretchZone.zone} (${stretchZone.count}×).`);
+  }
+
+  const currentMk = endYmd.slice(0, 7);
+  const priorMk = priorMonthKey(currentMk);
+  const currentMonth = computeMonthCoachSnapshot(snapshot, currentMk, endYmd, ctx, garminData);
+  const priorMonth = computeMonthCoachSnapshot(
+    snapshot,
+    priorMk,
+    `${priorMk}-${String(new Date(parseInt(priorMk.slice(0, 4), 10), parseInt(priorMk.slice(5, 7), 10), 0).getDate()).padStart(2, '0')}`,
+    ctx,
+    garminData
+  );
+  if (
+    currentMonth &&
+    priorMonth &&
+    priorMonth.trainedDays >= 2 &&
+    !paragraphExists(paragraphs, /vs.*mois|progression nette/i)
+  ) {
+    paragraphs.push(
+      `${monthLabelFr(currentMk)} ${currentYear} (${currentMonth.calendarDays} j. écoulés) : ${currentMonth.trainedDays} j. entraînés` +
+        (currentMonth.exoPct != null ? `, ~${currentMonth.exoPct} % exos` : '') +
+        (currentMonth.runningKm >= 5 ? `, ~${round1(currentMonth.runningKm)} km course` : '') +
+        ` vs ${monthLabelFr(priorMk)} (${priorMonth.trainedDays} j.` +
+        (priorMonth.exoPct != null ? `, ~${priorMonth.exoPct} % exos` : '') +
+        (priorMonth.runningKm >= 5 ? `, ~${round1(priorMonth.runningKm)} km` : '') +
+        ').'
+    );
+  }
+
+  if (activeProgram?.name && !paragraphExists(paragraphs, /cadre la suite|Programme actif/i)) {
+    const street = resolveStreetSkillPlan(normalizeProfileQuestionnaire(opts.profileQuestionnaireRaw).answers || {});
+    let fwd = `« ${activeProgram.name} » cadre la suite`;
+    if (street.labelFr) fwd += ` avec « ${street.labelFr} » comme fil rouge`;
+    const load = assessment?.sessionLoadAlignment28;
+    if (load?.avgScore0to100 != null && load.avgScore0to100 < 60) {
+      fwd += ' — priorité court terme : exécuter le plan tel qu’écrit plutôt que d’ajouter du volume.';
+    } else {
+      fwd += ' — l’enjeu est surtout de tenir ce rythme sans brûler la régularité.';
+    }
+    paragraphs.push(`${fwd}`);
+  }
+
+  if (trainingDaysInPeriod >= 1 && trainingDaysInPeriod !== ytdTrainingDays && !paragraphExists(paragraphs, /fenêtre affichée|sur la période/i)) {
+    paragraphs.push(`Sur la fenêtre affichée : ${trainingDaysInPeriod} j. d'activité · ${periodComp?.exoChecked ?? '—'} exos cochés au total.`);
+  }
+
+  return dedupeSimilar(paragraphs);
+}
+
 /**
- * @returns {{ kpis, sections, lead, text }}
+ * @returns {{ kpis, sections, lead, text, paragraphs }}
  */
 export function buildCoachVisionReport(opts = {}) {
   const text = buildCoachVisionNarrative(opts);
@@ -188,7 +365,9 @@ export function buildCoachVisionReport(opts = {}) {
     getTodayWorkout = null,
     isAdmin = false,
     isAuthenticated = false,
-    garminData = null
+    garminData = null,
+    garminPartial = null,
+    denseAnalytics = null
   } = opts;
 
   const endYmd = window?.end || DateHelper.getTodayLocal();
@@ -204,6 +383,16 @@ export function buildCoachVisionReport(opts = {}) {
   const answers = normalizeProfileQuestionnaire(profileQuestionnaireRaw).answers || {};
   const periodComp =
     enrichment?.completion || getCompletionForWindow(snapshot, { start: windowStart, end: endYmd }, ctx);
+
+  const effectiveStart =
+    windowStart ?? discoverSnapshotDateBounds(snapshot)?.start ?? DateHelper.addDays(endYmd, -365);
+  const trainingDaysInPeriod = countTrainingDaysInRange(snapshot, effectiveStart, endYmd, garminData);
+  const ytdTrainingDays = countTrainingDaysInRange(
+    snapshot,
+    `${endYmd.slice(0, 4)}-01-01`,
+    endYmd,
+    garminData
+  );
 
   const months = buildMonthlyCoachStats(snapshot, endYmd, ctx, {
     windowStart,
@@ -233,21 +422,18 @@ export function buildCoachVisionReport(opts = {}) {
     });
   });
 
-  const extras = buildEnrichmentExtras(enrichment, assessment, snapshot);
+  const extras = buildEnrichmentExtras(
+    enrichment,
+    assessment,
+    snapshot,
+    garminData,
+    window,
+    denseAnalytics
+  );
   Object.keys(extras).forEach((k) => {
     extras[k].forEach((line) => {
       if (!grouped[k].some((x) => x.includes(line.slice(0, 20)))) grouped[k].push(line);
     });
-  });
-
-  const lead = buildLead({
-    periodComp,
-    bestMonth,
-    currentMk,
-    streak: enrichment?.streak,
-    enrichment,
-    answers,
-    endYmd
   });
 
   const sectionMeta = {
@@ -301,11 +487,12 @@ export function buildCoachVisionReport(opts = {}) {
       accent: 'teal'
     });
   }
-  if (periodComp?.activeTrainingDays >= 1) {
+  if (trainingDaysInPeriod >= 1) {
     kpis.push({
       id: 'days',
       label: 'Jours',
-      value: String(periodComp.activeTrainingDays),
+      value: String(trainingDaysInPeriod),
+      note: 'activité',
       accent: 'cyan'
     });
   }
@@ -319,15 +506,87 @@ export function buildCoachVisionReport(opts = {}) {
       accent: 'violet'
     });
   }
-  const runKm = enrichment?.digest?.perActivity?.running?.totals?.distanceKm;
-  if (runKm >= 1) {
+  const runStats =
+    denseAnalytics?.runningPeriod || resolveRunningPeriodStats(snapshot, garminData, window);
+  if (runStats.distanceKm >= 1) {
     kpis.push({
       id: 'run',
       label: 'Course',
-      value: `${round1(runKm)} km`,
+      value: `${round1(runStats.distanceKm)} km`,
+      note: runStats.sessions >= 1 ? `${runStats.sessions} sortie${runStats.sessions > 1 ? 's' : ''}` : undefined,
       accent: 'sky'
     });
   }
+  const wLoad = denseAnalytics?.weeklyLoad?.avgKgRepsPerWeek;
+  if (wLoad >= 100) {
+    kpis.push({
+      id: 'load',
+      label: 'Charge',
+      value: `~${Math.round(wLoad).toLocaleString('fr-FR')}`,
+      note: 'kg×reps/sem',
+      accent: 'amber'
+    });
+  }
+  const legReps = denseAnalytics?.legReps;
+  if (legReps >= 50 && kpis.length < 5) {
+    kpis.push({
+      id: 'legs',
+      label: 'Jambes',
+      value: String(Math.round(legReps)),
+      note: 'reps',
+      accent: 'lime'
+    });
+  }
 
-  return { kpis: kpis.slice(0, 4), sections, lead, text };
+  const integratedProse = buildIntegratedCoachVisionProse({
+    snapshot,
+    window,
+    enrichment,
+    assessment,
+    denseAnalytics,
+    garminPartial,
+    garminData,
+    activeProgram,
+    profileQuestionnaireRaw,
+    getExerciseNameById: opts.getExerciseNameById,
+    programs,
+    getTodayWorkout,
+    isAdmin,
+    isAuthenticated,
+    trainingDaysInPeriod,
+    periodComp
+  });
+
+  const paragraphs =
+    integratedProse.paragraphs.length > 0
+      ? integratedProse.paragraphs
+      : buildDenseVisionParagraphs({
+          text,
+          snapshot,
+          endYmd,
+          windowStart,
+          ctx,
+          garminData,
+          garminPartial,
+          periodComp,
+          enrichment,
+          assessment,
+          activeProgram,
+          profileQuestionnaireRaw,
+          trainingDaysInPeriod,
+          ytdTrainingDays
+        });
+
+  const lead = integratedProse.lead || buildLead({
+    periodComp,
+    bestMonth,
+    currentMk,
+    streak: enrichment?.streak,
+    enrichment,
+    answers,
+    endYmd,
+    trainingDaysInPeriod
+  });
+
+  return { kpis: kpis.slice(0, 5), sections, lead, text, paragraphs };
 }

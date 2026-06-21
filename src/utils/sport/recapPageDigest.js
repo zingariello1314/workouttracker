@@ -89,6 +89,7 @@ export function buildRecapEnduranceDigest(allData, window) {
     perActivity[activityType].sessions.sort((a, b) =>
       String(b.dateYmd).localeCompare(String(a.dateYmd))
     );
+    perActivity[activityType].totals.sessions = perActivity[activityType].sessions.length;
   });
 
   const filteredChallenges = challenges.filter((ch) => challengeTouchesRecapWindow(ch, window));

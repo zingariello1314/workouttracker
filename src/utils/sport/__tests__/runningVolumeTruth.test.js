@@ -4,6 +4,7 @@ import {
   computeRunningVolumeTotals,
   filterSessionsForRunningVolume,
   mergeRunningSessionsWithGarmin,
+  resolveRunningPeriodStats,
   sumRunningKmFromRows
 } from '../runningVolumeTruth';
 import { buildRunningSessionRows } from '../runningCardioStatsAnalytics';
@@ -63,5 +64,26 @@ describe('runningVolumeTruth', () => {
     const map = buildKmByDateFromRows(rows);
     expect(map.get('2026-01-01')).toBeCloseTo(5.5, 2);
     expect(map.get('2026-01-02')).toBe(6);
+  });
+
+  it('resolveRunningPeriodStats fusionne Garmin et filtre la fenêtre', () => {
+    const snapshot = {
+      enduranceData: {
+        sessions: {
+          running: [{ id: 'local1', date: '2026-01-11', distance: 5, duration: '28:00' }]
+        }
+      }
+    };
+    const garminData = {
+      activities: {
+        cardio: [garminA, garminB]
+      }
+    };
+    const stats = resolveRunningPeriodStats(snapshot, garminData, {
+      start: '2026-01-01',
+      end: '2026-01-31'
+    });
+    expect(stats.sessions).toBe(3);
+    expect(stats.distanceKm).toBeCloseTo(18.2, 1);
   });
 });

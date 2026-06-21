@@ -5,7 +5,7 @@
 
 import DateHelper from '../dateHelper';
 import { JUSTIFICATION_REASONS } from '../dayJustificationUtils';
-import { dayHasCheckedWorkout } from '../trainingStreakUtils';
+import { countTrainingDaysInRange } from './recapTrainingDayTruth';
 import { getCompletionForWindow, averageExoCompletionPct } from './recapCompletionTruth';
 import { collectCheckedExerciseRepHistory } from './recapAdaptiveInsights';
 import { pctChange, magnitudeWord } from './recapInsightHelpers';
@@ -158,9 +158,8 @@ export function discoverSnapshotDateBounds(snapshot) {
   return { start: sorted[0], end: sorted[sorted.length - 1] };
 }
 
-function trainedDaysInRange(snapshot, startYmd, endYmd) {
-  if (!startYmd || !endYmd) return 0;
-  return DateHelper.getDateRange(startYmd, endYmd).filter((d) => dayHasCheckedWorkout(snapshot, d)).length;
+function trainedDaysInRange(snapshot, startYmd, endYmd, garminData = null) {
+  return countTrainingDaysInRange(snapshot, startYmd, endYmd, garminData);
 }
 
 /** Stats d'un mois calendaire (partiel si endCap avant fin de mois). */
@@ -171,7 +170,7 @@ export function computeMonthCoachSnapshot(snapshot, monthKey, endCapYmd, ctx, ga
   if (start > end) return null;
 
   const comp = getCompletionForWindow(snapshot, { start, end }, ctx);
-  const trainedDays = trainedDaysInRange(snapshot, start, end);
+  const trainedDays = trainedDaysInRange(snapshot, start, end, garminData);
   if (trainedDays === 0 && (comp?.activeTrainingDays || 0) === 0) return null;
 
   return {
@@ -261,7 +260,7 @@ function buildYearBlockStats(snapshot, year, endYmd, ctx, garminData, windowStar
   if (start > ytdEnd) return null;
 
   const comp = getCompletionForWindow(snapshot, { start, end: ytdEnd }, ctx);
-  const trainedDays = trainedDaysInRange(snapshot, start, ytdEnd);
+  const trainedDays = trainedDaysInRange(snapshot, start, ytdEnd, garminData);
   if (trainedDays < 2) return null;
 
   return {

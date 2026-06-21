@@ -15,6 +15,7 @@ import {
 } from './recapCompletionTruth';
 import { isDateInRecapWindow } from './recapMuscleLoadEngine';
 import { dayHasCheckedWorkout } from '../trainingStreakUtils';
+import { countTrainingDaysInRange } from './recapTrainingDayTruth';
 import { normalizeProfileQuestionnaire } from '../../features/profileQuestionnaire/schema';
 import { resolveStreetSkillPlan } from '../../features/profileQuestionnaire/quizStreetSkillGoal';
 import { collectCheckedExerciseRepHistory } from './recapAdaptiveInsights';
@@ -87,16 +88,15 @@ function completionPctForRange(snapshot, startYmd, endYmd, ctx) {
   return averageExoCompletionPct(snapshot, startYmd, endYmd, ctx);
 }
 
-function trainedDaysInRange(snapshot, startYmd, endYmd) {
-  if (!startYmd || !endYmd) return 0;
-  const dates = DateHelper.getDateRange(startYmd, endYmd);
-  return dates.filter((d) => dayHasCheckedWorkout(snapshot, d)).length;
+function trainedDaysInRange(snapshot, startYmd, endYmd, garminData = null) {
+  return countTrainingDaysInRange(snapshot, startYmd, endYmd, garminData);
 }
 
 /** Analyse calendrier : creux, maladie, notes blessure (fenêtre extensible). */
 export function analyzeCalendarYearArc(snapshot, endYmd, opts = {}) {
   const end = endYmd || DateHelper.getTodayLocal();
   const maxDays = opts.maxDays ?? 365;
+  const garminData = opts.garminData ?? null;
   let start = DateHelper.addDays(end, -(maxDays - 1));
   if (opts.windowStart && opts.windowStart > start) start = opts.windowStart;
   const just = snapshot?.dayJustifications || {};
@@ -113,7 +113,7 @@ export function analyzeCalendarYearArc(snapshot, endYmd, opts = {}) {
       });
     }
     const row = byMonth.get(mk);
-    if (dayHasCheckedWorkout(snapshot, d)) row.trained += 1;
+    if (countTrainingDaysInRange(snapshot, d, d, garminData) > 0) row.trained += 1;
     const j = just[d];
     if (j?.reason === JUSTIFICATION_REASONS.MALADIE) {
       row.maladie += 1;
@@ -223,7 +223,8 @@ export function buildCoachVisionNarrative(opts = {}) {
     programs = [],
     getTodayWorkout = null,
     isAdmin = false,
-    isAuthenticated = false
+    isAuthenticated = false,
+    denseAnalytics = null
   } = opts;
 
   const endYmd = window?.end || DateHelper.getTodayLocal();
@@ -281,7 +282,7 @@ export function buildCoachVisionNarrative(opts = {}) {
     horizonMode !== 'all' &&
     (horizonMode === 'long' || (windowDays != null && windowDays >= 90));
   if (showYearArc && !composer.has('season_arc')) {
-    const arc = analyzeCalendarYearArc(snapshot, endYmd, { maxDays: arcMaxDays, windowStart });
+    const arc = analyzeCalendarYearArc(snapshot, endYmd, { maxDays: arcMaxDays, windowStart, garminData });
     const arcParts = [];
     const currentMk = monthKey(endYmd);
     const minYear = parseInt(endYmd.slice(0, 4), 10) - 1;
@@ -437,6 +438,24 @@ export function buildCoachVisionNarrative(opts = {}) {
   }
   if (perfLines.length) {
     composer.add(`Charge & performance ${windowLabel} : ${perfLines.join(' · ')}.`, ['performance']);
+  }
+
+  const dense = denseAnalytics?.narrativeSnippets;
+  if (dense) {
+    const habitBits = [...(dense.adherence || []), ...(dense.load || [])].filter(Boolean);
+    if (habitBits.length) {
+      composer.add(habitBits.join(' '), ['dense_habits', 'performance']);
+    }
+    if (dense.legs?.length) {
+      composer.add(dense.legs.join(' '), ['dense_legs', 'structure']);
+    }
+    if (dense.endurance?.length) {
+      composer.add(`Endurance & défis : ${dense.endurance.join(' · ')}.`, ['dense_endurance', 'endurance']);
+    }
+    if (dense.recovery?.length) {
+      const rec = dense.recovery.join(' ');
+      composer.add(rec, ['dense_recovery', 'recovery']);
+    }
   }
 
   const sleepStart = windowStart || DateHelper.addDays(endYmd, -13);

@@ -34,7 +34,16 @@ import { buildRunningSessionRows } from './runningCardioStatsAnalytics';
 import { balanceCoachProgramLevels } from './recapProgramCoachDedup';
 import { buildCoachVisionNarrative, computeGarminSleepAverage } from './recapCoachVision';
 import { buildCoachVisionReport } from './recapCoachVisionReport';
+import { buildProgramStructureReport } from './recapProgramStructureReport';
 import { compareExoCompletionWeekBlocks } from './recapCompletionTruth';
+import {
+  classifyMovement,
+  iterateProgramExercises,
+  parseSeriesVolume,
+  scanDedicatedPlanExposure,
+  scanStructuralLegPlan
+} from './recapMovementClassification';
+import { buildRecapDenseAnalytics } from './recapDenseAnalytics';
 
 const MUSCLE_LABEL_FR = {
   [MuscleGroups.CHEST]: 'pectoraux',
@@ -59,73 +68,6 @@ const LEG_GROUPS = new Set([
   MuscleGroups.TIBIALIS_ANTERIOR
 ]);
 
-function parseSeriesVolume(seriesStr) {
-  const s = String(seriesStr || '').toLowerCase();
-  const m = s.match(/(\d+)\s*[×x*]\s*(\d+)/);
-  if (m) return { sets: Number(m[1]) || 1, reps: Number(m[2]) || 0, volume: (Number(m[1]) || 1) * (Number(m[2]) || 0) };
-  const repsOnly = s.match(/(\d+)\s*rep/);
-  if (repsOnly) return { sets: 1, reps: Number(repsOnly[1]), volume: Number(repsOnly[1]) };
-  if (/min|course|cardio|corde/.test(s)) return { sets: 1, reps: 0, volume: 8, cardio: true };
-  return { sets: 1, reps: 0, volume: 4 };
-}
-
-function iterateProgramExercises(program, fn) {
-  const schedule = program?.schedule;
-  if (!schedule) return;
-  Object.entries(schedule).forEach(([dayName, day]) => {
-    if (!day?.active) return;
-    [
-      day.exercises,
-      day.exercices,
-      day.salleVariants?.semaineA?.exercises,
-      day.salleVariants?.semaineA?.exercices,
-      day.salleVariants?.semaineB?.exercises,
-      day.salleVariants?.semaineB?.exercices
-    ].forEach((list) => {
-      (list || []).forEach((ex) => fn(ex, dayName));
-    });
-  });
-}
-
-function classifyProgramExercise(ex, getExerciseNameById) {
-  const blob = exerciseMovementBlob(ex, getExerciseNameById);
-  const id = parseInt(String(ex?.id), 10);
-  const groups = inferMuscleGroupsForExercise(ex);
-  const isPullup = isVerticalPullExercise(id, getExerciseNameById, ex);
-  const isPushup = isPushupExercise(id, getExerciseNameById, ex);
-  const isPull =
-    isPullup ||
-    groups.includes(MuscleGroups.BACK) ||
-    (/traction|pull|tirage|rowing|chin|australien/.test(blob) && !/d[ée]velopp|press|pompe/.test(blob));
-  const isPush =
-    isPushup ||
-    groups.includes(MuscleGroups.CHEST) ||
-    (/pompe|push|dip|d[ée]velopp/.test(blob) && !/traction|tirage|rowing/.test(blob));
-  const isLeg =
-    groups.some((g) => LEG_GROUPS.has(g)) ||
-    /squat|fente|presse|mollet|jambe|soulevé|hip thrust|fessier/.test(blob);
-  return { isPullup, isPushup, isPull, isPush, isLeg };
-}
-
-function scanWeeklyMovementExposure(program, getExerciseNameById) {
-  const days = { pull: new Set(), push: new Set(), legs: new Set(), pullups: new Set(), pushups: new Set() };
-  iterateProgramExercises(program, (ex, dayName) => {
-    const { isPullup, isPushup, isPull, isPush, isLeg } = classifyProgramExercise(ex, getExerciseNameById);
-    if (isPull) days.pull.add(dayName);
-    if (isPullup) days.pullups.add(dayName);
-    if (isPush) days.push.add(dayName);
-    if (isPushup) days.pushups.add(dayName);
-    if (isLeg) days.legs.add(dayName);
-  });
-  return {
-    pullDays: days.pull.size,
-    pushDays: days.push.size,
-    legDays: days.legs.size,
-    pullupDays: days.pullups.size,
-    pushupDays: days.pushups.size
-  };
-}
-
 /** Exposition réelle (coches) sur la fenêtre récap, ramenée en j./sem. */
 function scanActualMovementExposure(snapshot, window, getExerciseNameById) {
   const byEx = collectCheckedExerciseRepHistory(snapshot, window);
@@ -133,18 +75,17 @@ function scanActualMovementExposure(snapshot, window, getExerciseNameById) {
   const pushupDates = new Set();
   const pullDates = new Set();
   const pushDates = new Set();
+  const legDates = new Set();
   let pullupReps = 0;
 
   for (const [exId, sessions] of byEx) {
     const exLike = { id: exId };
-    const isPullup = isVerticalPullExercise(exId, getExerciseNameById, exLike);
-    const isPushup = isPushupExercise(exId, getExerciseNameById, exLike);
+    const { isPullup, isPushup, isPull, isPush, isLeg } = classifyMovement(exLike, getExerciseNameById);
     const blob = exerciseMovementBlob(exLike, getExerciseNameById);
-    const isPull =
-      isPullup ||
-      /traction|pull|tirage|rowing|chin|australien/.test(blob);
-    const isPush =
-      isPushup || (/pompe|push|dip|d[ée]velopp/.test(blob) && !/traction|tirage/.test(blob));
+    const isPullMove =
+      isPull || /traction|pull|tirage|rowing|chin|australien/.test(blob);
+    const isPushMove =
+      isPush || (/pompe|push|dip|d[ée]velopp/.test(blob) && !/traction|tirage/.test(blob));
 
     sessions.forEach((s) => {
       if (isPullup) {
@@ -152,8 +93,9 @@ function scanActualMovementExposure(snapshot, window, getExerciseNameById) {
         pullupReps += s.reps;
       }
       if (isPushup) pushupDates.add(s.date);
-      if (isPull) pullDates.add(s.date);
-      if (isPush) pushDates.add(s.date);
+      if (isPullMove) pullDates.add(s.date);
+      if (isPushMove) pushDates.add(s.date);
+      if (isLeg) legDates.add(s.date);
     });
   }
 
@@ -164,25 +106,39 @@ function scanActualMovementExposure(snapshot, window, getExerciseNameById) {
     pushupDaysWeekly: weeklyRateFromSessionDays(pushupDates.size, window),
     pullupReps,
     pullSessionDays: pullDates.size,
-    pushSessionDays: pushDates.size
+    pushSessionDays: pushDates.size,
+    legSessionDays: legDates.size,
+    legDaysWeeklyActual: weeklyRateFromSessionDays(legDates.size, window)
   };
 }
 
-function mergeMovementExposure(planExp, actualExp) {
+function mergeMovementExposure(planExp, actualExp, structuralLeg = null) {
   const plan = planExp || {};
   const actual = actualExp || {};
   const pullupWeekly = Math.max(plan.pullupDays || 0, actual.pullupDaysWeekly || 0);
   const pushupWeekly = Math.max(plan.pushupDays || 0, actual.pushupDaysWeekly || 0);
+  const legWeekly = Math.max(plan.legDays || 0, actual.legDaysWeeklyActual || 0);
+  const legStructural = structuralLeg?.legSlotsPerWeek ?? 0;
   return {
     ...plan,
     pullupDaysPlan: plan.pullupDays || 0,
     pushupDaysPlan: plan.pushupDays || 0,
+    pushDaysPlan: plan.pushDays || 0,
+    pullDaysPlan: plan.pullDays || 0,
+    legDaysPlan: plan.legDays || 0,
+    legSlotsPlan: legStructural,
+    dedicatedLegDaysPlan: structuralLeg?.dedicatedLegDays ?? 0,
+    optionalLegSlotsPlan: structuralLeg?.optionalLegSlots ?? 0,
+    mixedDaysPlan: plan.mixedDays || 0,
     pullupDaysWeeklyActual: actual.pullupDaysWeekly || 0,
     pushupDaysWeeklyActual: actual.pushupDaysWeekly || 0,
+    legDaysWeeklyActual: actual.legDaysWeeklyActual || 0,
+    legSessionDays: actual.legSessionDays || 0,
     pullupSessionDays: actual.pullupSessionDays || 0,
     pullupRepsActual: actual.pullupReps || 0,
     pullupDays: pullupWeekly,
     pushupDays: pushupWeekly,
+    legDays: legWeekly,
     actual
   };
 }
@@ -1068,10 +1024,25 @@ export function buildRecapProgramCoachAnalysis(opts = {}) {
 
   const muscleVol = activeProgram ? scanProgramMuscleVolume(activeProgram) : {};
   const planExposure = activeProgram
-    ? scanWeeklyMovementExposure(activeProgram, getExerciseNameById)
+    ? scanDedicatedPlanExposure(activeProgram, getExerciseNameById)
     : {};
+  const structuralLeg = activeProgram ? scanStructuralLegPlan(activeProgram) : null;
   const actualExposure = scanActualMovementExposure(snapshot, window, getExerciseNameById);
-  const exposure = mergeMovementExposure(planExposure, actualExposure);
+  const exposure = mergeMovementExposure(planExposure, actualExposure, structuralLeg);
+
+  const denseAnalytics = buildRecapDenseAnalytics({
+    snapshot,
+    window,
+    recapState,
+    enrichment: { ...enrichment, movementExposure: exposure },
+    assessment,
+    getExerciseNameById,
+    activeProgram,
+    ctx,
+    garminPartial,
+    garminData
+  });
+
   const pushPull = {
     push: sumGroupVolume(muscleVol, PUSH_GROUPS),
     pull: sumGroupVolume(muscleVol, PULL_GROUPS),
@@ -1139,10 +1110,27 @@ export function buildRecapProgramCoachAnalysis(opts = {}) {
     getTodayWorkout,
     isAdmin,
     isAuthenticated,
-    recapState
+    recapState,
+    denseAnalytics
   });
 
   const coachVision = coachVisionReport.text;
+
+  const structureReport = buildProgramStructureReport({
+    activeProgram,
+    programCoachAnalysis: {
+      hasProgram: Boolean(activeProgram?.schedule),
+      programName: activeProgram?.name,
+      exposure,
+      pushPullRatio: pushPull.pull > 0 ? Math.round((pushPull.push / pushPull.pull) * 10) / 10 : null,
+      levels
+    },
+    enrichment,
+    assessment,
+    profileQuestionnaireRaw,
+    window,
+    denseAnalytics
+  });
 
   const muscleShareRows = Object.entries(muscleVol)
     .filter(([g, v]) => v > 0 && g !== MuscleGroups.FULL_BODY)
@@ -1162,6 +1150,8 @@ export function buildRecapProgramCoachAnalysis(opts = {}) {
     exposure,
     levels,
     coachVision,
-    coachVisionReport
+    coachVisionReport,
+    structureReport,
+    denseAnalytics
   };
 }

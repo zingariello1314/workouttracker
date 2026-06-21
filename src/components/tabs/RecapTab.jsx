@@ -209,6 +209,7 @@ const RecapTab = () => {
             programCoachAnalysis={programCoachAnalysis}
             activeProgram={activeProgram}
             period={deferredPeriod}
+            garminData={garminBundle}
           />
         );
       case RECAP_VIEW_IDS.CORPS:
