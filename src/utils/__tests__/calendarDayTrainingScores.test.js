@@ -70,4 +70,32 @@ describe('calendarDayTrainingScores', () => {
     expect(withGarminNoSleep.score).toBeGreaterThan(0);
     expect(withGarminNoSleep.loggedDimensions).toBeGreaterThan(base.loggedDimensions);
   });
+
+  it('note globale : étirements et repas augmentent les dimensions comptées', () => {
+    const withExtras = computeCalendarDayHolisticScore({
+      dateStr: '2026-06-17',
+      workoutData: {
+        ...workoutData,
+        checkedStretches: { '2026-06-17_morning_1': true },
+        progressEntries: [{ date: '2026-06-17', weight: 75, type: 'metrics' }]
+      },
+      garminData: null,
+      programs: [],
+      nutritionMeals: [
+        {
+          type: 'lunch',
+          totalCalories: 650,
+          foods: [{ name: 'Poulet', calories: 400 }, { name: 'Riz', calories: 250 }]
+        }
+      ]
+    });
+    const base = computeCalendarDayHolisticScore({
+      dateStr: '2026-06-17',
+      workoutData,
+      garminData: null
+    });
+    expect(withExtras.loggedDimensions).toBeGreaterThan(base.loggedDimensions);
+    expect(withExtras.nutrition).not.toBeNull();
+    expect(withExtras.weight?.weightKg).toBe(75);
+  });
 });

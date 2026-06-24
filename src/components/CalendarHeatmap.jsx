@@ -58,6 +58,10 @@ import CalendarDayQuickActions from './calendar/CalendarDayQuickActions';
 import CalendarDayTopBadges from './calendar/CalendarDayTopBadges';
 import CalendarDayTrainingScorePanel from './calendar/CalendarDayTrainingScorePanel';
 import CalendarDayBadgesExplainer from './calendar/CalendarDayBadgesExplainer';
+import CalendarDayHolisticScoreChip from './calendar/CalendarDayHolisticScoreChip';
+import CalendarDayNutritionSummary from './calendar/CalendarDayNutritionSummary';
+import CalendarDayWeightBanner from './calendar/CalendarDayWeightBanner';
+import { useNutritionData } from '../hooks/useNutritionData';
 import { formatPctVsAverage } from '../utils/calendarDayChampion';
 import {
   syncExerciseSetLogTotalReps,
@@ -437,8 +441,12 @@ const CalendarHeatmap = ({
     markExceptionalExerciseComplete,
     hasUnsavedExercises,
     hasUnsavedStretches,
-    replaceDraftWorkoutData
+    replaceDraftWorkoutData,
+    setActiveTab
   } = useWorkout();
+  const { dbReady: nutritionDbReady, getMealsByDateRange } = useNutritionData();
+  const [nutritionMealsByDate, setNutritionMealsByDate] = useState({});
+  const holisticDetailRef = useRef(null);
   const { currentUser, isAuthenticated } = useAuth();
   const { showSuccess, showError } = useToast();
   const isAdmin = isAdminUser(currentUser);
@@ -485,6 +493,32 @@ const CalendarHeatmap = ({
       return;
     }
   }, [selectedDate]);
+
+  useEffect(() => {
+    if (!nutritionDbReady || variant !== 'sport') return undefined;
+    const year = currentDate.getFullYear();
+    const start = `${year}-01-01`;
+    const end = `${year}-12-31`;
+    let cancelled = false;
+    getMealsByDateRange(start, end)
+      .then((meals) => {
+        if (cancelled) return;
+        const map = {};
+        (meals || []).forEach((m) => {
+          const d = String(m.date || '').slice(0, 10);
+          if (!/^\d{4}-\d{2}-\d{2}$/.test(d)) return;
+          if (!map[d]) map[d] = [];
+          map[d].push(m);
+        });
+        setNutritionMealsByDate(map);
+      })
+      .catch(() => {
+        if (!cancelled) setNutritionMealsByDate({});
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [nutritionDbReady, variant, currentDate.getFullYear(), getMealsByDateRange]);
 
   useEffect(() => {
     if (!selectedDate) {
@@ -2481,7 +2515,8 @@ const CalendarHeatmap = ({
       dateStr,
       manualSteps,
       intensity,
-      programs: Array.isArray(programs) ? programs : []
+      programs: Array.isArray(programs) ? programs : [],
+      nutritionMeals: nutritionMealsByDate[dateStr] || null
     });
   };
 
@@ -4879,6 +4914,7 @@ const CalendarHeatmap = ({
             intensity: selectedDate.intensity,
             programs: Array.isArray(programs) ? programs : [],
             classificationCtx: runningClassificationCtx,
+            nutritionMeals: nutritionMealsByDate[selectedDateStr] || null,
             t
           });
           // ✅ NOUVEAU : Récupérer la justification pour ce jour
@@ -4900,9 +4936,19 @@ const CalendarHeatmap = ({
                   workoutData: allData,
                   garminData,
                   getExerciseNameById,
-                  strengthRefs: strengthScoreRefs
+                  strengthRefs: strengthScoreRefs,
+                  programs: Array.isArray(programs) ? programs : [],
+                  nutritionMeals: nutritionMealsByDate[selectedDateStr] || null,
+                  progressEntries: allData?.progressEntries
                 })
               : { score: null, criteria: [] };
+
+          const scrollToHolisticDetail = () => {
+            const el = holisticDetailRef.current;
+            if (el?.scrollIntoView) {
+              el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }
+          };
 
           const dayBadgeDetails =
             variant === 'sport'
@@ -5019,6 +5065,26 @@ const CalendarHeatmap = ({
 
             {dayBadgeDetails.length > 0 ? (
               <CalendarDayBadgesExplainer badgeDetails={dayBadgeDetails} t={t} />
+            ) : null}
+
+            <CalendarDayWeightBanner weightKg={dayHolisticScore?.weight?.weightKg} t={t} />
+
+            {variant === 'sport' && dayHolisticScore?.score != null ? (
+              <CalendarDayHolisticScoreChip
+                score={dayHolisticScore.score}
+                onScrollToDetail={scrollToHolisticDetail}
+                t={t}
+              />
+            ) : null}
+
+            {nutritionMealsByDate[selectedDateStr]?.length > 0 ? (
+              <CalendarDayNutritionSummary
+                meals={nutritionMealsByDate[selectedDateStr]}
+                onOpenNutrition={
+                  typeof setActiveTab === 'function' ? () => setActiveTab('nutrition') : undefined
+                }
+                t={t}
+              />
             ) : null}
 
             {garminRecapRows.length > 0 && (
@@ -5712,11 +5778,14 @@ const CalendarHeatmap = ({
               />
 
               {variant === 'sport' ? (
-                <CalendarDayTrainingScorePanel
-                  strength={dayStrengthScore}
-                  holistic={dayHolisticScore}
-                  t={t}
-                />
+                <div ref={holisticDetailRef}>
+                  <CalendarDayTrainingScorePanel
+                    strength={dayStrengthScore}
+                    holistic={dayHolisticScore}
+                    holisticDetailId="calendar-day-holistic-detail"
+                    t={t}
+                  />
+                </div>
               ) : null}
             </div>
 

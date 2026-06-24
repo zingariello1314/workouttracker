@@ -106,6 +106,7 @@ export function useRecapCrossCoachNutrition(opts = {}) {
         setPartial({
           status: 'ready',
           daysWithLoggedMeals28,
+          mealsByDate: byDate,
           avgComplianceScore:
             avgComplianceScore != null ? Math.round(avgComplianceScore * 10) / 10 : null,
           meanPctCaloriesVsTarget:

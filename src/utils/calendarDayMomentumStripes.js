@@ -38,6 +38,7 @@ export const CALENDAR_STRIPE_PRIORITY = {
   momentumRun: 1,
   activity: 2,
   walk: 3,
+  nutrition: 3,
   stretch: 4,
   sleep: 5,
   steps: 6,

@@ -17,6 +17,11 @@ import {
   mergeRecapSuggestions
 } from './recapContextualSuggestions';
 import { buildRecapPistes, filterSuggestionsForTone } from './recapDeepInsights';
+import {
+  buildDayScoreRecapSuggestions,
+  buildRecapHolisticDayScoreWindow,
+  deriveDayScoreNorms
+} from './recapHolisticDayScores';
 
 const MS_DAY = 86400000;
 
@@ -360,6 +365,8 @@ function computeProgramDayCompletion28(data, activeProgram, startYmd, endYmd) {
  * @param {boolean} [input.isGymMode]
  * @param {object} [input.nutritionPartial] — signaux nutrition 28 j (hook Récap)
  * @param {object} [input.garminPartial] — signaux Garmin sur la fenêtre (hook Récap)
+ * @param {object|null} [input.garminData] — données Garmin complètes (activités + métriques)
+ * @param {unknown[]} [input.programs] — programmes perso (étirements planifiés)
  * @param {{ start: string|null, end: string }|null} [input.periodWindow] — plage Récap sélectionnée
  */
 export function computeRecapUserAssessment({
@@ -371,6 +378,8 @@ export function computeRecapUserAssessment({
   isGymMode = false,
   nutritionPartial = null,
   garminPartial = null,
+  garminData = null,
+  programs = [],
   periodWindow = null
 }) {
   const data = snapshot || {};
@@ -531,6 +540,26 @@ export function computeRecapUserAssessment({
 
   const log1p = (x) => Math.log1p(Math.max(0, x));
 
+  const garminForDayScores =
+    garminData ||
+    (garminPartial?.status === 'ready' && garminPartial.dailyMetrics
+      ? {
+          dailyMetrics: garminPartial.dailyMetrics,
+          activities: garminPartial.activities || {}
+        }
+      : null);
+
+  const dayScoreWindow = buildRecapHolisticDayScoreWindow({
+    snapshot: data,
+    garminData: garminForDayScores,
+    getExerciseNameById,
+    startYmd: heavyLoopStart,
+    endYmd,
+    programs: Array.isArray(programs) ? programs : [],
+    mealsByDate: nutritionPartial?.mealsByDate || null
+  });
+  const dayScoreNorms = deriveDayScoreNorms(dayScoreWindow);
+
   const V_REF = 320;
   const V_CEIL = 14000;
   const volNorm =
@@ -554,8 +583,37 @@ export function computeRecapUserAssessment({
     log1p(lifetimeReps / 1500) / log1p(120000 / 1500)
   );
 
+  let wVol = 0.22;
+  let wReps = 0.2;
+  let wReg = 0.24;
+  let wDiff = 0.09;
+  let wTenure = 0.16;
+  let wHolistic = 0.16;
+  let wStrengthDay = 0.07;
+
+  if (!dayScoreNorms.hasHolistic && !dayScoreNorms.hasStrengthDay) {
+    wVol += 0.1;
+    wReps += 0.08;
+    wReg += 0.05;
+    wHolistic = 0;
+    wStrengthDay = 0;
+  } else if (!dayScoreNorms.hasHolistic) {
+    wHolistic = 0;
+    wStrengthDay = 0.1;
+    wVol += 0.06;
+  } else if (!dayScoreNorms.hasStrengthDay) {
+    wStrengthDay = 0;
+    wHolistic = 0.18;
+  }
+
   const baseBlend =
-    0.24 * volNorm + 0.22 * repsNorm + 0.26 * regNorm + 0.1 * diffNorm + 0.18 * tenureNorm;
+    wVol * volNorm +
+    wReps * repsNorm +
+    wReg * regNorm +
+    wDiff * diffNorm +
+    wTenure * tenureNorm +
+    wHolistic * dayScoreNorms.holisticNorm +
+    wStrengthDay * dayScoreNorms.strengthDayNorm;
 
   let base0to70 = 70 * Math.min(1, baseBlend * (0.88 + 0.12 * (1 - 0.35 * dataMaturity)));
   const quizBoostRaw = mapExperienceToLevelBoost(answers) + computeQuizLevelWellnessModifier(answers);
@@ -649,6 +707,10 @@ export function computeRecapUserAssessment({
       text: 'Bonne adéquation entre prévu et réalisé récemment (séries adaptées prises en compte) : la trajectoire reflète bien ce que tu enregistres.'
     });
   }
+
+  buildDayScoreRecapSuggestions(dayScoreWindow, activeDays28).forEach((row) => {
+    legacySuggestions.push(row);
+  });
 
   const contextualSuggestions = buildRecapContextualSuggestions({
     snapshot: data,
@@ -781,13 +843,26 @@ export function computeRecapUserAssessment({
       repsNorm,
       regNorm,
       diffNorm,
-      tenureNorm
+      tenureNorm,
+      holisticDayNorm: Math.round(dayScoreNorms.holisticNorm * 100) / 100,
+      strengthDayNorm: Math.round(dayScoreNorms.strengthDayNorm * 100) / 100
     },
+    dayScoreWindow,
     disclaimers: [
       'Niveau estimé : heuristique locale (données Momentum), pas un test physiologique.',
       'Les exercices absents du référentiel ou sans champ difficulté sont exclus du calcul de complexité moyenne.',
       'Volume et kg : uniquement les jours où au moins une charge a été enregistrée pour un exercice.',
       'Après de très gros volumes cumulés, le score est volontairement stabilisé (rendements décroissants) pour rester interprétable.',
+      ...(dayScoreWindow.daysWithHolistic >= 2
+        ? [
+            `Notes globales calendrier : moyenne ${dayScoreWindow.avgHolistic}/100 sur ${dayScoreWindow.daysWithHolistic} j. (${Math.round(dayScoreWindow.holisticFreq * 100)} % de la période) — intégrées au niveau sans remplacer volume/régularité.`
+          ]
+        : []),
+      ...(dayScoreWindow.daysWithStrength >= 2
+        ? [
+            `Notes musculation calendrier : moyenne ${dayScoreWindow.avgStrength}/100 sur ${dayScoreWindow.daysWithStrength} j. — complémentaire au volume kg×reps.`
+          ]
+        : []),
       ...(sessionLoadAlignment28.sessionDaysScored > 0
         ? [
             'Écart prévu / réalisé (charge) : moyenne des scores journaliers ; le prévu intègre les séries/reps du jour si tu les as renseignées — reste une approximation (pas de science du laboratoire).'

@@ -75,6 +75,8 @@ export function useRecapTabMetrics({
           isGymMode,
           nutritionPartial: nutritionPartialForRecap,
           garminPartial: garminPartialForRecap,
+          garminData: garminDataForMetrics,
+          programs: Array.isArray(programs) ? programs : [],
           periodWindow
         });
         const enrichment = buildRecapEnrichmentBundle({

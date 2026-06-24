@@ -22,6 +22,9 @@ import { mergedDailySteps, normalizeManualDailyWalkByDate } from './sport/manual
 import { isMockEnduranceSession, collectEnduranceSessionsForCalendarDay, parseDurationToMinutes } from './calendarUtils';
 import { normalizeDifficultyForCalendarModel } from './sessionFeedbackUtils';
 import { parseRunningSessionDurationMinutes } from './runningPersonalRecords';
+import { computeProgramCompletionCheckedRatio } from './programCompletionBonus';
+import { buildWeightByDateMap } from './sport/recapAssessmentSeries';
+import { computeNutritionDayScore } from './calendarNutritionDay';
 
 const STRENGTH_REF_LOAD = 420;
 const ENDURANCE_REF_LOAD = 95;
@@ -389,6 +392,38 @@ function sleepBonusScore(garminData, dateStr) {
   return 2;
 }
 
+function stretchScoreForDate(dateStr, workoutData, programs = []) {
+  const ratio = computeProgramCompletionCheckedRatio(dateStr, workoutData, { programs });
+  if (ratio.stretchTotal === 0) {
+    return {
+      score: null,
+      planned: false,
+      stretchChecked: 0,
+      stretchTotal: 0,
+      pct: null
+    };
+  }
+  const pct = ratio.stretchChecked / ratio.stretchTotal;
+  const score = clampScore(28 + pct * 72);
+  return {
+    score,
+    planned: true,
+    stretchChecked: ratio.stretchChecked,
+    stretchTotal: ratio.stretchTotal,
+    pct: Math.round(pct * 100)
+  };
+}
+
+function weightScoreForDate(dateStr, progressEntries) {
+  const entries = progressEntries ?? [];
+  const weightKg = buildWeightByDateMap(entries).get(dateStr);
+  if (weightKg == null || !Number.isFinite(Number(weightKg))) return null;
+  return {
+    score: 74,
+    weightKg: Math.round(Number(weightKg) * 10) / 10
+  };
+}
+
 /**
  * Note globale : plus de paramètres saisis = mieux récompensé ; pas de malus si sommeil/stress absents.
  */
@@ -397,7 +432,10 @@ export function computeCalendarDayHolisticScore({
   workoutData,
   garminData,
   getExerciseNameById,
-  strengthRefs = {}
+  strengthRefs = {},
+  programs = [],
+  nutritionMeals = null,
+  progressEntries = null
 }) {
   const strength = computeCalendarDayStrengthScore(
     dateStr,
@@ -413,8 +451,12 @@ export function computeCalendarDayHolisticScore({
   const garmin = garminActivityScore(dateStr, garminData, workoutData);
   const feedbackScore = sessionFeedbackScore(workoutData, dateStr);
   const sleepBonus = sleepBonusScore(garminData, dateStr);
+  const stretch = stretchScoreForDate(dateStr, workoutData, programs);
+  const nutrition = computeNutritionDayScore(nutritionMeals);
+  const weight = weightScoreForDate(dateStr, progressEntries ?? workoutData?.progressEntries);
 
   const criteria = [];
+  const absentCriteria = [];
 
   if (strength.score != null) {
     criteria.push({
@@ -466,7 +508,56 @@ export function computeCalendarDayHolisticScore({
       id: 'sleep',
       label: 'Sommeil (bonus)',
       score: clampScore(sleepBonus * 12.5),
-      detail: 'Bonus optionnel si sommeil Garmin présent — aucun malus si absent.'
+      detail: 'Bonus optionnel si sommeil Garmin présent — aucun malus si absent.',
+      active: true
+    });
+  }
+
+  if (stretch.planned && stretch.score != null) {
+    criteria.push({
+      id: 'stretch',
+      label: 'Étirements',
+      score: stretch.score,
+      detail: `${stretch.stretchChecked}/${stretch.stretchTotal} cochés (${stretch.pct} %) — le pourcentage complété influence directement cette note.`,
+      active: true
+    });
+  } else if (stretch.planned) {
+    absentCriteria.push({
+      id: 'stretch',
+      label: 'Étirements',
+      detail: `${stretch.stretchTotal} prévus ce jour — aucun coché pour l'instant.`
+    });
+  }
+
+  if (nutrition) {
+    criteria.push({
+      id: 'nutrition',
+      label: 'Nutrition / repas',
+      score: nutrition.score,
+      detail: `${nutrition.mealCount} repas · ${Math.round(nutrition.totalKcal)} kcal · ${nutrition.foodCount} aliment(s) — visible dans l'onglet Nutrition.`,
+      active: true
+    });
+  } else {
+    absentCriteria.push({
+      id: 'nutrition',
+      label: 'Nutrition / repas',
+      detail: 'Aucun repas saisi — ajoutez un repas dans Nutrition pour enrichir la note globale.'
+    });
+  }
+
+  if (weight) {
+    criteria.push({
+      id: 'weight',
+      label: 'Pesée',
+      score: weight.score,
+      detail: `Pesée réalisée : ${weight.weightKg} kg — suivi corps pris en compte.`,
+      active: true
+    });
+  } else {
+    absentCriteria.push({
+      id: 'weight',
+      label: 'Pesée',
+      detail: 'Pas de pesée ce jour — optionnel, sans malus.'
     });
   }
 
@@ -475,14 +566,36 @@ export function computeCalendarDayHolisticScore({
     running != null || enduranceScore != null,
     garmin.score != null,
     feedbackScore != null,
-    sleepBonus != null
+    sleepBonus != null,
+    stretch.score != null,
+    nutrition != null,
+    weight != null
   ].filter(Boolean).length;
 
   if (loggedDimensions === 0) {
-    return { score: null, criteria: [], completenessBonus: 0, loggedDimensions: 0 };
+    return {
+      score: null,
+      criteria: [],
+      absentCriteria,
+      completenessBonus: 0,
+      loggedDimensions: 0,
+      stretch,
+      nutrition,
+      weight
+    };
   }
 
-  const weights = { strength: 0.34, running: 0.24, endurance: 0.14, garmin: 0.18, feedback: 0.07, sleep: 0.03 };
+  const weights = {
+    strength: 0.26,
+    running: 0.18,
+    endurance: 0.1,
+    garmin: 0.14,
+    stretch: 0.1,
+    nutrition: 0.12,
+    weight: 0.04,
+    feedback: 0.04,
+    sleep: 0.02
+  };
   let sum = 0;
   let wSum = 0;
   if (strength.score != null) {
@@ -500,6 +613,18 @@ export function computeCalendarDayHolisticScore({
     sum += garmin.score * weights.garmin;
     wSum += weights.garmin;
   }
+  if (stretch.score != null) {
+    sum += stretch.score * weights.stretch;
+    wSum += weights.stretch;
+  }
+  if (nutrition) {
+    sum += nutrition.score * weights.nutrition;
+    wSum += weights.nutrition;
+  }
+  if (weight) {
+    sum += weight.score * weights.weight;
+    wSum += weights.weight;
+  }
   if (feedbackScore != null) {
     sum += feedbackScore * weights.feedback;
     wSum += weights.feedback;
@@ -510,25 +635,30 @@ export function computeCalendarDayHolisticScore({
   }
 
   const base = wSum > 0 ? sum / wSum : 0;
-  const completenessBonus = clampScore(Math.min(8, (loggedDimensions - 1) * 2.5));
-  const score = clampScore(base + completenessBonus * 0.35);
+  const completenessBonus = clampScore(Math.min(10, (loggedDimensions - 1) * 2.8));
+  const score = clampScore(base + completenessBonus * 0.38);
 
   criteria.push({
     id: 'completeness',
     label: 'Complétude du jour',
-    score: clampScore(40 + loggedDimensions * 12),
-    detail: `${loggedDimensions} type(s) de données enregistrées — plus vous complétez, mieux la note reflète votre journée (sans pénaliser l'absence de sommeil/stress).`
+    score: clampScore(38 + loggedDimensions * 11),
+    detail: `${loggedDimensions} dimension(s) active(s) sur 8 possibles — chaque donnée saisie (étirements, repas, pesée…) augmente le poids et la fiabilité de la note.`,
+    active: true
   });
 
   return {
     score,
     criteria,
+    absentCriteria,
     completenessBonus,
     loggedDimensions,
     strength,
     enduranceScore,
     garmin,
-    feedbackScore
+    feedbackScore,
+    stretch,
+    nutrition,
+    weight
   };
 }
 

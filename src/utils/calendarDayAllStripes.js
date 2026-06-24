@@ -10,7 +10,9 @@ import {
   sortCalendarDayStripes
 } from './calendarDayMomentumStripes';
 import { buildDedupedPhysicalActivityRecapRows } from './calendarPhysicalSessionStripes';
+import { buildNutritionDayRecapRows } from './calendarNutritionDay';
 import { buildDedupedPhysicalActivityStripes } from './calendarPhysicalSessionStripes';
+import { buildNutritionDayStripe } from './calendarNutritionDay';
 
 /**
  * @param {object} opts
@@ -20,6 +22,7 @@ import { buildDedupedPhysicalActivityStripes } from './calendarPhysicalSessionSt
  * @param {number} [opts.manualSteps]
  * @param {object|null} [opts.intensity]
  * @param {unknown[]} [opts.programs]
+ * @param {Array|null} [opts.nutritionMeals] repas du jour (IndexedDB nutrition)
  */
 export function buildCalendarDayAllStripes({
   garminData,
@@ -27,20 +30,23 @@ export function buildCalendarDayAllStripes({
   dateStr,
   manualSteps = 0,
   intensity = null,
-  programs = []
+  programs = [],
+  nutritionMeals = null
 }) {
   if (!dateStr) return [];
   const stretchOnly = buildMomentumDayStripes(workoutData, dateStr, garminData).filter(
     (s) => s.kind === 'stretch'
   );
   const physical = buildDedupedPhysicalActivityStripes(workoutData, garminData, dateStr);
+  const nutritionStripe = buildNutritionDayStripe(nutritionMeals);
   const garmin = garminData
     ? buildCalendarDayGarminStripes(garminData, dateStr, manualSteps, {
         skipCardioStripes: true,
         workoutData
       })
     : [];
-  return sortCalendarDayStripes([...physical, ...stretchOnly, ...garmin]);
+  const nutrition = nutritionStripe ? [nutritionStripe] : [];
+  return sortCalendarDayStripes([...physical, ...nutrition, ...stretchOnly, ...garmin]);
 }
 
 /**
@@ -55,6 +61,7 @@ export function buildCalendarDayAllRecapRows({
   intensity = null,
   programs = [],
   classificationCtx = null,
+  nutritionMeals = null,
   t = (k, d) => d || k
 }) {
   if (!dateStr) return [];
@@ -66,6 +73,8 @@ export function buildCalendarDayAllRecapRows({
     { intensity, classificationCtx },
     t
   );
+
+  const nutritionRows = buildNutritionDayRecapRows(nutritionMeals, t);
 
   const stretchRows = buildMomentumDayRecapRows(
     workoutData,
@@ -81,5 +90,5 @@ export function buildCalendarDayAllRecapRows({
       })
     : [];
 
-  return [...physical, ...stretchRows, ...garminRows];
+  return [...physical, ...nutritionRows, ...stretchRows, ...garminRows];
 }
