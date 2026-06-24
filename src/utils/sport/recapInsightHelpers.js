@@ -34,10 +34,11 @@ export function findExerciseSessions(byEx, exerciseId) {
   return [];
 }
 
-/** IDs connus tractions verticales / australiennes (street + GTG). */
-export const VERTICAL_PULL_EXERCISE_IDS = new Set([
-  101, 501, 102, 502, 1001, 5001, 1002, 5002
-]);
+/** IDs tractions strictes (barre / pronation / supination verticale). */
+export const VERTICAL_PULL_EXERCISE_IDS = new Set([101, 501, 1001, 5001]);
+
+/** IDs tractions australiennes / rowing horizontal. */
+export const AUSTRALIAN_PULL_EXERCISE_IDS = new Set([102, 502, 1002, 5002, 7002]);
 
 export const PUSHUP_EXERCISE_IDS = new Set([104, 105, 201, 204, 1104, 1105]);
 
@@ -50,14 +51,28 @@ export function exerciseMovementBlob(exLike, getExerciseNameById) {
   return `${exLike?.name || exLike?.nom || nameFromId || ''} ${exLike?.exerciseBankKey || ''}`.toLowerCase();
 }
 
+export function isAustralianPullExercise(exerciseId, getExerciseNameById, exLike = null) {
+  const id = parseInt(String(exerciseId), 10);
+  if (AUSTRALIAN_PULL_EXERCISE_IDS.has(id)) return true;
+  const blob = exerciseMovementBlob({ id: exerciseId, ...(exLike || {}) }, getExerciseNameById);
+  return (
+    (/australien|inverted row|body row|rowing australien/.test(blob) ||
+      (/rowing/.test(blob) && !/barre|haltère|haltere|cable|poulie/.test(blob))) &&
+    !/d[ée]velopp|bench press|dip\b/.test(blob)
+  );
+}
+
 export function isVerticalPullExercise(exerciseId, getExerciseNameById, exLike = null) {
+  if (isAustralianPullExercise(exerciseId, getExerciseNameById, exLike)) return false;
   const id = parseInt(String(exerciseId), 10);
   if (VERTICAL_PULL_EXERCISE_IDS.has(id)) return true;
   const blob = exerciseMovementBlob({ id: exerciseId, ...(exLike || {}) }, getExerciseNameById);
   return (
-    /traction|pull[- ]?up|pullup|chin[- ]?up|chinup|tirage vertical|tirage pronation|tirage supination|australien/.test(
+    /traction|pull[- ]?up|pullup|chin[- ]?up|chinup|tirage vertical|tirage pronation|tirage supination/.test(
       blob
-    ) && !/d[ée]velopp|bench|press|pector|coude/.test(blob)
+    ) &&
+    !/australien|rowing/.test(blob) &&
+    !/d[ée]velopp|bench|press|pector|coude/.test(blob)
   );
 }
 

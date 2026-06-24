@@ -4,6 +4,7 @@ import { Dumbbell, Salad, Sparkles } from 'lucide-react';
 import CoachVisionPanel from '../CoachVisionPanel';
 import ProgramStructurePanel from '../ProgramStructurePanel';
 import RecapDenseInsightsPanel from '../RecapDenseInsightsPanel';
+import RecapBenchmarkCoachPanel from '../RecapBenchmarkCoachPanel';
 
 import { useTranslation } from '../../../../utils/translations';
 
@@ -154,7 +155,7 @@ export default function RecapAnalyseView({
 
   const t = useTranslation();
 
-  const { setActiveTab, getCurrentData } = useWorkout();
+  const { setActiveTab, getCurrentData, getExerciseNameById } = useWorkout();
 
 
 
@@ -313,6 +314,28 @@ export default function RecapAnalyseView({
         </div>
 
       ) : null}
+
+
+
+      <RecapBenchmarkCoachPanel
+
+        snapshot={getCurrentData()}
+
+        enrichment={enrichment}
+
+        garminData={garminData}
+
+        assessment={assessment}
+
+        getExerciseNameById={getExerciseNameById}
+
+        profileQuestionnaireRaw={profileQuestionnaireRaw}
+
+        period={period}
+
+        t={t}
+
+      />
 
 
 

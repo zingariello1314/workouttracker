@@ -43,6 +43,18 @@ function pctDelta(prev, curr) {
 }
 
 /**
+ * Schéma reps/série : force (≤6), hypertrophie (7–12), volume (13–20), endurance (21+).
+ */
+export function classifyRepScheme(setCount, totalReps) {
+  const sets = Math.max(1, setCount || 1);
+  const avg = (totalReps || 0) / sets;
+  if (avg <= 6) return 'strength';
+  if (avg <= 12) return 'hypertrophy';
+  if (avg <= 20) return 'volume';
+  return 'endurance';
+}
+
+/**
  * @param {object} workoutData
  * @param {string} storageKey
  * @returns {ExerciseSessionSummary|null}
@@ -101,6 +113,10 @@ export function interpretExerciseProgression(prev, curr) {
   const wCurr = curr.avgWeight || 0;
   const setsPrev = prev.setCount || 1;
   const setsCurr = curr.setCount || 1;
+  const avgRepsPrev = repsPrev / setsPrev;
+  const avgRepsCurr = repsCurr / setsCurr;
+  const schemePrev = classifyRepScheme(setsPrev, repsPrev);
+  const schemeCurr = classifyRepScheme(setsCurr, repsCurr);
 
   const metrics = {
     volumeDeltaPct: Math.round(pctDelta(volPrev, volCurr)),
@@ -113,8 +129,40 @@ export function interpretExerciseProgression(prev, curr) {
     exerciseId: curr.exerciseId,
     prevDate: prev.dateYmd,
     currDate: curr.dateYmd,
-    metrics
+    metrics,
+    schemePrev,
+    schemeCurr
   };
+
+  if (
+    schemePrev !== schemeCurr &&
+    schemeCurr === 'strength' &&
+    avgRepsCurr < avgRepsPrev - 1 &&
+    (wCurr >= wPrev * 0.95 || wPrev <= 0)
+  ) {
+    return {
+      ...base,
+      progressionType: 'strength',
+      confidence: curr.source === 'structured' ? 0.9 : 0.76,
+      explanation: `Schéma orienté force (${setsCurr}×~${Math.round(avgRepsCurr)} vs ${setsPrev}×~${Math.round(avgRepsPrev)} avant)${
+        wCurr > wPrev * 1.02 ? ` — charge montée à ~${Math.round(wCurr)} kg` : wCurr < wPrev * 0.98 ? ` — charge allégée à ~${Math.round(wCurr)} kg` : ''
+      }`
+    };
+  }
+
+  if (
+    schemePrev === 'strength' &&
+    schemeCurr === 'hypertrophy' &&
+    repsCurr > repsPrev * 1.05 &&
+    Math.abs(wCurr - wPrev) / Math.max(wPrev, 1) <= 0.08
+  ) {
+    return {
+      ...base,
+      progressionType: 'hypertrophy',
+      confidence: curr.source === 'structured' ? 0.86 : 0.74,
+      explanation: `Passage vers plus de reps par série (${setsCurr}×~${Math.round(avgRepsCurr)} vs ${setsPrev}×~${Math.round(avgRepsPrev)}) à charge stable`
+    };
+  }
 
   if (wPrev > 0 && wCurr >= wPrev * 1.05 && repsCurr <= repsPrev * 0.95 && volCurr >= volPrev * 0.85) {
     return {
@@ -251,8 +299,66 @@ export function computeProgressionInsights(workoutData, window, getExerciseNameB
         if (label && String(label).trim()) exerciseName = String(label).trim();
       }
     }
-    insights.push({ ...insight, exerciseName });
+    insights.push({
+      ...insight,
+      exerciseName,
+      currStorageKey: curr.storageKey,
+      prevStorageKey: prev.storageKey
+    });
   }
 
   return insights.sort((a, b) => (b.confidence || 0) - (a.confidence || 0));
+}
+
+/** Progression utile au panneau Repères — pas les messages « stable / neutre ». */
+export function isActionableProgressionInsight(insight) {
+  if (!insight?.explanation) return false;
+  const type = insight.progressionType;
+  const conf = insight.confidence || 0;
+  if (type === 'neutral' || type === 'stall') return false;
+  if (conf < 0.72) return false;
+  const m = insight.metrics || {};
+  if (type === 'regression' && conf < 0.78) return false;
+  if (type === 'volume' && Math.abs(m.volumeDeltaPct ?? 0) < 8) return false;
+  if (
+    type !== 'strength' &&
+    type !== 'hypertrophy' &&
+    Math.abs(m.setCountDelta ?? 0) === 0 &&
+    Math.abs(m.volumeDeltaPct ?? 0) < 8 &&
+    Math.abs(m.avgWeightDeltaPct ?? 0) < 5 &&
+    Math.abs(m.avgRepsDeltaPct ?? 0) < 6
+  ) {
+    return false;
+  }
+  return true;
+}
+
+/**
+ * Texte coach lisible pour le panneau Repères Récap.
+ * @param {ProgressionInsight} insight
+ */
+export function formatProgressionCoachText(insight) {
+  if (!insight?.explanation) return null;
+  const name = insight.exerciseName || `Exercice ${insight.exerciseId}`;
+  const m = insight.metrics || {};
+  const parts = [insight.explanation];
+
+  if (m.setCountDelta != null || m.avgWeightDeltaPct != null || m.volumeDeltaPct != null) {
+    if (m.setCountDelta != null && m.setCountDelta !== 0) {
+      parts.push(
+        m.setCountDelta > 0
+          ? `${Math.abs(m.setCountDelta)} série(s) de plus`
+          : `${Math.abs(m.setCountDelta)} série(s) de moins`
+      );
+    }
+    if (m.avgWeightDeltaPct != null && Math.abs(m.avgWeightDeltaPct) >= 3) {
+      parts.push(`charge ${m.avgWeightDeltaPct > 0 ? '+' : ''}${m.avgWeightDeltaPct} %`);
+    }
+    if (m.volumeDeltaPct != null && Math.abs(m.volumeDeltaPct) >= 5) {
+      parts.push(`tonnage ${m.volumeDeltaPct > 0 ? '+' : ''}${m.volumeDeltaPct} %`);
+    }
+  }
+
+  const detail = parts.length > 1 ? ` (${parts.slice(1).join(' · ')})` : '';
+  return `${name} : ${parts[0]}${detail}.`;
 }

@@ -366,6 +366,8 @@ const CalendarHeatmap = ({
   calendarDayBadges = null,
   externalSelectDate = null,
   onExternalSelectHandled = null,
+  externalScrollAnchor = null,
+  onExternalScrollHandled = null,
 }) => {
   const isSidebarEmbed = Boolean(compact && embedInSidebar);
   const isQuestsOrBooks =
@@ -447,6 +449,7 @@ const CalendarHeatmap = ({
   const { dbReady: nutritionDbReady, getMealsByDateRange } = useNutritionData();
   const [nutritionMealsByDate, setNutritionMealsByDate] = useState({});
   const holisticDetailRef = useRef(null);
+  const exerciseDetailRef = useRef(null);
   const { currentUser, isAuthenticated } = useAuth();
   const { showSuccess, showError } = useToast();
   const isAdmin = isAdminUser(currentUser);
@@ -486,6 +489,23 @@ const CalendarHeatmap = ({
     setPanelDate(null);
     onExternalSelectHandled?.();
   }, [externalSelectDate, onExternalSelectHandled]);
+
+  useEffect(() => {
+    if (!externalScrollAnchor || !selectedDate || panelMode !== 'details') return;
+    const anchorId = externalScrollAnchor;
+    const timer = window.setTimeout(() => {
+      const byId = document.getElementById(anchorId);
+      const target = byId || exerciseDetailRef.current || holisticDetailRef.current;
+      target?.scrollIntoView?.({ behavior: 'smooth', block: 'start' });
+      onExternalScrollHandled?.();
+    }, 280);
+    return () => window.clearTimeout(timer);
+  }, [
+    externalScrollAnchor,
+    selectedDate,
+    panelMode,
+    onExternalScrollHandled
+  ]);
 
   useEffect(() => {
     if (!selectedDate) {
@@ -5118,7 +5138,7 @@ const CalendarHeatmap = ({
 
             {/* Statistiques principales - Masquer si jour justifié (sauf repos) */}
             {(!justification || justification.reason === JUSTIFICATION_REASONS.REPOS) && (
-              <div>
+              <div id="calendar-day-exercise-detail" ref={exerciseDetailRef}>
                 <h4 className="mb-3 flex items-center font-medium text-sky-100">
                   <Activity className="mr-2" size={16} />
                   {t('calendar.heatmap.dayDetails.workoutStats')}

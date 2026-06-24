@@ -74,6 +74,8 @@ const WorkoutProvider = ({ children }) => {
   const [activeTab, setActiveTabState] = useState('home');
   /** Sous-onglet cible (Course, Pompes, etc.) à appliquer au prochain affichage de l’onglet Défis */
   const [pendingEnduranceSubTab, setPendingEnduranceSubTab] = useState(null);
+  /** Navigation calendrier depuis Récap / benchmarks : { dateYmd, scrollAnchor? } */
+  const [pendingCalendarDeepLink, setPendingCalendarDeepLink] = useState(null);
   const [previousTab, setPreviousTab] = useState(null);
   const [weekVariant, setWeekVariant] = useState('A');
   const [statsPeriod, setStatsPeriod] = useState('week');
@@ -123,6 +125,27 @@ const WorkoutProvider = ({ children }) => {
       if (activeTab !== 'endurance') {
         setPreviousTab(activeTab);
         setActiveTabState('endurance');
+      }
+    },
+    [activeTab]
+  );
+
+  const clearPendingCalendarDeepLink = useCallback(() => {
+    setPendingCalendarDeepLink(null);
+  }, []);
+
+  const requestOpenCalendarDay = useCallback(
+    (dateYmd, scrollAnchor = 'calendar-day-exercise-detail') => {
+      if (!dateYmd || !/^\d{4}-\d{2}-\d{2}$/.test(String(dateYmd))) return;
+      setPendingCalendarDeepLink({ dateYmd: String(dateYmd), scrollAnchor });
+      try {
+        localStorage.setItem('sport.lastSubTab', 'calendar');
+      } catch {
+        /* ignore */
+      }
+      if (activeTab !== 'calendar') {
+        setPreviousTab(activeTab);
+        setActiveTabState('calendar');
       }
     },
     [activeTab]
@@ -1499,6 +1522,9 @@ const WorkoutProvider = ({ children }) => {
     pendingEnduranceSubTab,
     requestOpenEnduranceSubTab,
     clearPendingEnduranceSubTab,
+    pendingCalendarDeepLink,
+    requestOpenCalendarDay,
+    clearPendingCalendarDeepLink,
     previousTab,
     weekVariant,
     setWeekVariant,

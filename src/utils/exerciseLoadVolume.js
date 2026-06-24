@@ -8,6 +8,7 @@ import { workoutProgram } from '../data/workoutProgram';
 import { enrichExercise } from './programUtils';
 import { Equipment } from '../data/workoutProgramEnhanced';
 import { collectDedupedCheckedVolumeKeys } from './trainingLoadUtils';
+import { getOrBuildExerciseSetLog } from './exerciseSetLogUtils';
 
 const norm = (s) =>
   String(s || '')
@@ -266,6 +267,13 @@ export function getExerciseVolumeFromLog(workoutData, storageKey) {
   const r = parseInt(String(reps), 10) || 0;
   if (r <= 0) return empty;
 
+  const built = getOrBuildExerciseSetLog(workoutData, storageKey, exercise);
+  const sets = (built?.sets || []).map((set) => ({
+    reps: Math.max(0, Math.floor(Number(set?.reps) || 0)),
+    weight: set?.weight != null && Number.isFinite(Number(set.weight)) ? Number(set.weight) : null,
+    weightMode: set?.weightMode
+  }));
+
   const single = workoutData.exerciseWeights?.[storageKey];
   const perArm = workoutData.exerciseWeightPerArm?.[storageKey] === true;
   const setArr = workoutData.exerciseSetWeights?.[storageKey];
@@ -277,7 +285,7 @@ export function getExerciseVolumeFromLog(workoutData, storageKey) {
     setWeightStrs: Array.isArray(setArr) ? setArr : null
   });
 
-  return { sets: [], volumeKgReps, source: 'legacy' };
+  return { sets, volumeKgReps, source: 'legacy' };
 }
 
 /**

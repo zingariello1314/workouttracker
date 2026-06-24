@@ -55,11 +55,21 @@ const CalendarTab = () => {
     getCurrentData,
     deleteMockEnduranceSessions,
     getExerciseNameById,
-    requestOpenEnduranceSubTab
+    requestOpenEnduranceSubTab,
+    pendingCalendarDeepLink,
+    clearPendingCalendarDeepLink
   } = useWorkout();
   const { currentUser } = useAuth();
   const t = useTranslation();
   const [jumpToCalendarDate, setJumpToCalendarDate] = useState(null);
+  const [calendarScrollAnchor, setCalendarScrollAnchor] = useState(null);
+
+  useEffect(() => {
+    if (!pendingCalendarDeepLink?.dateYmd) return;
+    setJumpToCalendarDate(pendingCalendarDeepLink.dateYmd);
+    setCalendarScrollAnchor(pendingCalendarDeepLink.scrollAnchor || 'calendar-day-exercise-detail');
+    clearPendingCalendarDeepLink();
+  }, [pendingCalendarDeepLink, clearPendingCalendarDeepLink]);
 
   const profileAge = useMemo(() => {
     const q = normalizeProfileQuestionnaire(currentUser?.profileQuestionnaire);
@@ -885,6 +895,8 @@ const CalendarTab = () => {
         calendarDayBadges={yearDayBadges}
         externalSelectDate={jumpToCalendarDate}
         onExternalSelectHandled={() => setJumpToCalendarDate(null)}
+        externalScrollAnchor={calendarScrollAnchor}
+        onExternalScrollHandled={() => setCalendarScrollAnchor(null)}
       />
       </div>
     </div>

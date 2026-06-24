@@ -2,7 +2,9 @@ import { describe, expect, it } from 'vitest';
 import {
   interpretExerciseProgression,
   summarizeExerciseSession,
-  computeProgressionInsights
+  computeProgressionInsights,
+  classifyRepScheme,
+  isActionableProgressionInsight
 } from '../volumeProgressionEngine';
 
 describe('volumeProgressionEngine', () => {
@@ -52,15 +54,50 @@ describe('volumeProgressionEngine', () => {
     expect(summary.source).toBe('structured');
   });
 
-  it('produit des insights pour exos avec 2+ séances', () => {
-    const data = {
-      checkedExercises: { [key1]: true, [key2]: true },
-      reps: { [key1]: '40', [key2]: '36' },
-      exerciseWeights: { [key1]: '12', [key2]: '18' },
-      exerciseWeightPerArm: { [key1]: true, [key2]: true }
+  it('détecte passage 4×12 → 5×5 (schéma force)', () => {
+    const prev = {
+      exerciseId: '42',
+      dateYmd: '2026-05-01',
+      totalReps: 48,
+      setCount: 4,
+      avgWeight: 10,
+      volumeKgReps: 480,
+      source: 'structured'
     };
-    const insights = computeProgressionInsights(data, null);
-    expect(insights.length).toBeGreaterThanOrEqual(1);
-    expect(insights[0].exerciseId).toBe('42');
+    const curr = {
+      exerciseId: '42',
+      dateYmd: '2026-05-08',
+      totalReps: 25,
+      setCount: 5,
+      avgWeight: 12,
+      volumeKgReps: 300,
+      source: 'structured'
+    };
+    const insight = interpretExerciseProgression(prev, curr);
+    expect(insight.progressionType).toBe('strength');
+    expect(insight.explanation).toMatch(/force|5×/i);
+  });
+
+  it('classifie schéma hypertrophie vs force', () => {
+    expect(classifyRepScheme(4, 48)).toBe('hypertrophy');
+    expect(classifyRepScheme(5, 25)).toBe('strength');
+  });
+
+  it('exclut les progressions « stables » du panneau Repères', () => {
+    expect(
+      isActionableProgressionInsight({
+        progressionType: 'stall',
+        confidence: 0.9,
+        explanation: 'Performances stables sur les deux dernières séances comparables'
+      })
+    ).toBe(false);
+    expect(
+      isActionableProgressionInsight({
+        progressionType: 'strength',
+        confidence: 0.85,
+        explanation: 'Schéma orienté force',
+        metrics: { setCountDelta: 1, volumeDeltaPct: 12 }
+      })
+    ).toBe(true);
   });
 });

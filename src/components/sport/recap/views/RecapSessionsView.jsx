@@ -4,6 +4,7 @@ import { useTranslation } from '../../../../utils/translations';
 import { useFormatters } from '../../../../utils/translations/formatters-hook';
 import { analyzeRunningSessionFactors } from '../../../../utils/trainingLoadUtils';
 import { formatTimelineRowSummary } from '../../../../utils/sport/recapEnrichmentMetrics';
+import RecapExerciseProgressionPanel from '../RecapExerciseProgressionPanel';
 
 const FILTER_ALL = 'all';
 const PAGE_SIZE = 15;
@@ -29,7 +30,15 @@ function groupByDate(rows) {
   return [...map.entries()].sort((a, b) => b[0].localeCompare(a[0]));
 }
 
-export default function RecapSessionsView({ digest, enrichment, period, onOpenEndurance }) {
+export default function RecapSessionsView({
+  digest,
+  enrichment,
+  period,
+  periodWindow,
+  snapshot,
+  getExerciseNameById,
+  onOpenEndurance
+}) {
   const t = useTranslation();
   const { formatDate } = useFormatters();
   const [filter, setFilter] = useState(FILTER_ALL);
@@ -84,6 +93,15 @@ export default function RecapSessionsView({ digest, enrichment, period, onOpenEn
           </div>
         </div>
       </header>
+
+      {snapshot && getExerciseNameById ? (
+        <RecapExerciseProgressionPanel
+          snapshot={snapshot}
+          window={periodWindow}
+          getExerciseNameById={getExerciseNameById}
+          periodLabel={periodLabel}
+        />
+      ) : null}
 
       {activityFilters.length > 1 ? (
         <div className="flex flex-wrap gap-1.5">

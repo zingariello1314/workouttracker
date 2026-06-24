@@ -237,6 +237,9 @@ const RecapTab = () => {
             digest={enduranceDigest}
             enrichment={enrichment}
             period={deferredPeriod}
+            periodWindow={periodWindow}
+            snapshot={snapshotForRecap}
+            getExerciseNameById={getExerciseNameById}
             onOpenEndurance={(id) => requestOpenEnduranceSubTab?.(id)}
           />
         );
@@ -266,7 +269,10 @@ const RecapTab = () => {
     runningKm,
     enrichment,
     handlePeriodChange,
-    requestOpenEnduranceSubTab
+    requestOpenEnduranceSubTab,
+    snapshotForRecap,
+    getExerciseNameById,
+    periodWindow
   ]);
 
   return (
