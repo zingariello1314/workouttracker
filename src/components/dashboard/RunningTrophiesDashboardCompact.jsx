@@ -49,8 +49,8 @@ export default function RunningTrophiesDashboardCompact({ onOpenEndurance, garmi
   const sessions = live?.enduranceData?.sessions?.running || [];
 
   const evaluation = useMemo(
-    () => evaluateRunningTrophies({ runningSessions: sessions, garminById }),
-    [sessions, garminById]
+    () => evaluateRunningTrophies({ runningSessions: sessions, garminById, workoutAggregate: live }),
+    [sessions, garminById, live]
   );
 
   const { results: trophyRows = [], stats: runStats } = evaluation || {};

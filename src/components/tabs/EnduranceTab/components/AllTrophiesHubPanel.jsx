@@ -66,24 +66,39 @@ export default function AllTrophiesHubPanel({
   }, [dbReady, loadAllData, workoutData?.enduranceData?.manualDailyWalkByDate]);
 
   const runningEval = useMemo(
-    () => evaluateRunningTrophies({ runningSessions: sessions?.running || [], garminById: garminRunningById || new Map() }),
-    [sessions?.running, garminRunningById]
+    () =>
+      evaluateRunningTrophies({
+        runningSessions: sessions?.running || [],
+        garminById: garminRunningById || new Map(),
+        workoutAggregate: workoutData
+      }),
+    [sessions?.running, garminRunningById, workoutData]
   );
   const walkingEval = useMemo(
     () => evaluateWalkingTrophies(sessions?.running || [], walkingSupplemental),
     [sessions?.running, walkingSupplemental]
   );
   const pushupsEval = useMemo(
-    () => evaluatePushupTrophies({ sessions: sessions?.pushups || [] }),
-    [sessions?.pushups]
+    () => evaluatePushupTrophies({ sessions: sessions?.pushups || [], workoutAggregate: workoutData }),
+    [sessions?.pushups, workoutData]
   );
   const jumpropeEval = useMemo(
-    () => evaluateSimpleEnduranceTrophies({ activityType: 'jumprope', sessions: sessions?.jumprope || [] }),
-    [sessions?.jumprope]
+    () =>
+      evaluateSimpleEnduranceTrophies({
+        activityType: 'jumprope',
+        sessions: sessions?.jumprope || [],
+        workoutAggregate: workoutData
+      }),
+    [sessions?.jumprope, workoutData]
   );
   const gainageEval = useMemo(
-    () => evaluateSimpleEnduranceTrophies({ activityType: 'gainage', sessions: sessions?.gainage || [] }),
-    [sessions?.gainage]
+    () =>
+      evaluateSimpleEnduranceTrophies({
+        activityType: 'gainage',
+        sessions: sessions?.gainage || [],
+        workoutAggregate: workoutData
+      }),
+    [sessions?.gainage, workoutData]
   );
 
   const categories = useMemo(

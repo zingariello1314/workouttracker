@@ -108,8 +108,8 @@ export default function DashboardSportPeriodInsights({
   const winAllTime = useMemo(() => getRecapDateWindow('all', refDate), [refDate]);
 
   const cardio = useMemo(
-    () => summarizeCardioLoadInWindow(activities, snapshot?.enduranceData || {}, winAllTime, dailyMetrics),
-    [activities, snapshot?.enduranceData, winAllTime, dailyMetrics]
+    () => summarizeCardioLoadInWindow(activities, snapshot?.enduranceData || {}, winAllTime, dailyMetrics, snapshot),
+    [activities, snapshot, winAllTime, dailyMetrics]
   );
 
   const strength = useMemo(

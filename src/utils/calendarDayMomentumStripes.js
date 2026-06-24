@@ -11,6 +11,7 @@ import {
   normalizeDateString,
   validateDate
 } from './calendarUtils';
+import { coerceGarminDateOverrides, resolveSessionCalendarDate } from './sessionCalendarDate';
 import { mergeGarminCardioIntoRunningSessions } from './garminEnduranceSessionBridge';
 import {
   isGarminRunningLikeActivity,
@@ -77,10 +78,13 @@ export function mergedRunningSessionsForCalendar(workoutData, garminData) {
   return mergeGarminCardioIntoRunningSessions(stored, garminActs);
 }
 
-export function runningSessionMatchesCalendarDate(session, dateStr) {
+export function runningSessionMatchesCalendarDate(session, dateStr, overridesSource = {}) {
   if (!session || !dateStr) return false;
   if (isMockEnduranceSession(session)) return false;
   if (shouldExcludeStoredGarminRunningSession(session)) return false;
+  const overrides = coerceGarminDateOverrides(overridesSource);
+  const logical = resolveSessionCalendarDate(session, overrides);
+  if (logical === dateStr) return true;
   const normalized = normalizeDateString(session.date);
   if (normalized === dateStr) return true;
   const dv = validateDate(session.date, 'calendarRunning');
@@ -90,12 +94,13 @@ export function runningSessionMatchesCalendarDate(session, dateStr) {
 /** Course saisie + séances Garmin fusionnées (même périmètre que l’historique Défis). */
 export function hasCalendarRunningForDate(workoutData, garminData, dateStr) {
   if (!dateStr) return false;
+  const overrides = coerceGarminDateOverrides(workoutData);
   const merged = mergedRunningSessionsForCalendar(workoutData, garminData);
-  if (merged.some((s) => runningSessionMatchesCalendarDate(s, dateStr))) return true;
+  if (merged.some((s) => runningSessionMatchesCalendarDate(s, dateStr, overrides))) return true;
   const { rows } = collectEnduranceSessionsForCalendarDay(workoutData, dateStr);
   if (rows.some((r) => r.activityType === 'running')) return true;
   return (garminData?.activities?.cardio || []).some((act) => {
-    if (!garminActivityMatchesCalendarDate(act, dateStr)) return false;
+    if (!garminActivityMatchesCalendarDate(act, dateStr, overrides)) return false;
     if (isGarminWalkingLikeActivity(act)) return false;
     return isGarminRunningLikeActivity(act);
   });

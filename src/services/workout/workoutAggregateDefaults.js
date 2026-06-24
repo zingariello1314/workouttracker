@@ -13,6 +13,8 @@ export function createEmptyWorkoutAggregate() {
     exerciseWeights: {},
     exerciseWeightPerArm: {},
     exerciseSetWeights: {},
+    /** Log structuré reps/charge par série — clé = même schéma que reps */
+    exerciseSetLogs: {},
     checkedStretches: {},
     startDate: null,
     weekVariant: 'A',
@@ -43,6 +45,7 @@ export function createEmptyWorkoutAggregate() {
     circuitDefinitionsVersion: '1.0',
     trainingPrefs: { swapRestConfirmEnabled: true },
     restDaySwaps: {},
+    garminActivityDateOverrides: {},
     enduranceData: {
       sessions: {
         boxing: [],
@@ -51,7 +54,8 @@ export function createEmptyWorkoutAggregate() {
         jumprope: [],
         running: []
       },
-      challenges: []
+      challenges: [],
+      manualDailyWalkByDate: {}
     },
     dataVersion: '1.0'
   };

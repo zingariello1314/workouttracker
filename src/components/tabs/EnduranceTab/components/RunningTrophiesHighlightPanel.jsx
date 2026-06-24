@@ -1,5 +1,6 @@
 import React, { useMemo } from 'react';
 import { Award } from 'lucide-react';
+import { useWorkout } from '../../../../context/WorkoutContext';
 import {
   evaluateRunningTrophies,
   describeRunningTrophyCurrentProgress,
@@ -86,9 +87,15 @@ function topThreePerCategory(results, stats) {
  * Aperçu des trophées course les plus avancés par catégorie (3 max / catégorie).
  */
 const RunningTrophiesHighlightPanel = ({ sessions = [], garminById = null }) => {
+  const { data: workoutAggregate } = useWorkout();
   const evaluation = useMemo(
-    () => evaluateRunningTrophies({ runningSessions: sessions || [], garminById: garminById || new Map() }),
-    [sessions, garminById]
+    () =>
+      evaluateRunningTrophies({
+        runningSessions: sessions || [],
+        garminById: garminById || new Map(),
+        workoutAggregate
+      }),
+    [sessions, garminById, workoutAggregate]
   );
 
   const sections = useMemo(

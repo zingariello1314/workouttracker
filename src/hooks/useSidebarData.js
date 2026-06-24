@@ -20,6 +20,7 @@ import { useSidebarEvents, SIDEBAR_EVENTS } from '../utils/sidebarEvents';
 import { useDebouncedCallback } from './useDebouncedCallback';
 import { measureAsync, measureSync, SIDEBAR_OPERATIONS } from '../utils/performanceMonitor';
 import garminEnhancedDataService from '../services/garmin/garminEnhancedDataService';
+import { getDaySteps } from '../services/sport/WalkingMetricsService';
 import logger from '../utils/logger';
 import { canAccessPrivateData } from '../utils/accessControl';
 
@@ -43,7 +44,7 @@ const sidebarDataLog = logger.module('useSidebarData');
 export const useSidebarData = () => {
   const { isAuthenticated, currentUser } = useAuth();
   const canAccessData = canAccessPrivateData({ user: currentUser, isAuthenticated });
-  const { getWorkoutHistory } = useWorkout();
+  const { getWorkoutHistory, getCurrentData } = useWorkout();
   const { 
     userData, 
     dailyPerformances, 
@@ -349,11 +350,15 @@ export const useSidebarData = () => {
       
       const weeklyWorkouts = history ? history.filter(w => w && w.date >= weekAgoStr).length : 0;
       const todayMetrics = garminData?.dailyMetrics?.[today];
+      const workoutSnapshot = typeof getCurrentData === 'function' ? getCurrentData() : null;
+      const manualEntry =
+        workoutSnapshot?.enduranceData?.manualDailyWalkByDate?.[today] ?? null;
+      const resolvedSteps = getDaySteps(todayMetrics, manualEntry).total;
       
       return {
         weeklyWorkouts,
         todayCalories: todayMetrics?.totalCaloriesBurned || garminData?.sport?.todayMetrics?.calories?.total || 0,
-        todaySteps: todayMetrics?.steps || garminData?.sport?.todayMetrics?.steps || 0,
+        todaySteps: resolvedSteps || todayMetrics?.steps || garminData?.sport?.todayMetrics?.steps || 0,
         avgHeartRate: todayMetrics?.restingHeartRate || garminData?.sport?.todayMetrics?.heartRate?.resting || 72,
         hasGarminData: garminData !== null,
         stepsGoal: garminData?.stepsGoal ?? 8500,
@@ -380,7 +385,7 @@ export const useSidebarData = () => {
         hasGarminData: false
       };
     }
-  }, [getWorkoutHistory, garminData, today, refreshTriggers.workout]);
+  }, [getWorkoutHistory, getCurrentData, garminData, today, refreshTriggers.workout]);
 
   // Finances - Optimisé avec gestion d'erreur
   const finance = useMemo(() => {

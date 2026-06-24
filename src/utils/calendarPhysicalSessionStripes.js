@@ -9,6 +9,7 @@ import {
   garminActivityMatchesCalendarDate,
   parseDurationToMinutes
 } from './calendarUtils';
+import { coerceGarminDateOverrides } from './sessionCalendarDate';
 import {
   hasMomentumWorkoutForDate,
   runningSessionMatchesCalendarDate
@@ -39,15 +40,17 @@ export function isGarminStreetCardioActivity(act) {
   return true;
 }
 
-export function getGarminStreetCardioActivitiesForDate(garminData, dateStr) {
+export function getGarminStreetCardioActivitiesForDate(garminData, dateStr, workoutData = null) {
+  const overrides = coerceGarminDateOverrides(workoutData);
   return (garminData?.activities?.cardio || []).filter(
-    (act) => garminActivityMatchesCalendarDate(act, dateStr) && isGarminStreetCardioActivity(act)
+    (act) => garminActivityMatchesCalendarDate(act, dateStr, overrides) && isGarminStreetCardioActivity(act)
   );
 }
 
-export function getGarminRunActivitiesForDate(garminData, dateStr) {
+export function getGarminRunActivitiesForDate(garminData, dateStr, workoutData = null) {
+  const overrides = coerceGarminDateOverrides(workoutData);
   return (garminData?.activities?.cardio || []).filter((act) => {
-    if (!garminActivityMatchesCalendarDate(act, dateStr)) return false;
+    if (!garminActivityMatchesCalendarDate(act, dateStr, overrides)) return false;
     if (isGarminWalkActivity(act)) return false;
     return isGarminRunningLikeActivity(act);
   });
@@ -73,15 +76,16 @@ function formatDurationMinLabel(min) {
 export function enumerateDedupedRunSessionsForDate(workoutData, garminData, dateStr) {
   if (!dateStr) return [];
 
-  const garminRuns = getGarminRunActivitiesForDate(garminData, dateStr);
+  const garminRuns = getGarminRunActivitiesForDate(garminData, dateStr, workoutData);
   const momentumRuns = getMomentumRunsForDate(workoutData, dateStr);
   const paired = pairMomentumRunsWithGarminForDate(momentumRuns, garminRuns);
+  const overrides = coerceGarminDateOverrides(workoutData);
 
   const seen = new Set();
   const out = [];
 
   for (const { session, garmin } of paired) {
-    if (!runningSessionMatchesCalendarDate(session, dateStr)) continue;
+    if (!runningSessionMatchesCalendarDate(session, dateStr, overrides)) continue;
     const rowKey = String(session?.garminId ?? session?.id ?? `${session?.date}_${session?.time}`);
     if (seen.has(rowKey)) continue;
     seen.add(rowKey);
@@ -92,7 +96,7 @@ export function enumerateDedupedRunSessionsForDate(workoutData, garminData, date
 }
 
 export function getStreetWorkoutDurationMinForDate(workoutData, garminData, dateStr) {
-  const street = getGarminStreetCardioActivitiesForDate(garminData, dateStr);
+  const street = getGarminStreetCardioActivitiesForDate(garminData, dateStr, workoutData);
   if (street.length > 0) {
     return street.reduce((sum, act) => sum + activityDurationMin(act), 0);
   }
@@ -113,15 +117,16 @@ function momentumEnduranceDurationMin(session, activityType) {
  */
 export function computeNonRunningExerciseMinutesForDate(workoutData, garminData, dateStr) {
   if (!dateStr) return 0;
+  const overrides = coerceGarminDateOverrides(workoutData);
 
   let min = getStreetWorkoutDurationMinForDate(workoutData, garminData, dateStr);
 
   for (const act of garminData?.activities?.swimming || []) {
-    if (!garminActivityMatchesCalendarDate(act, dateStr)) continue;
+    if (!garminActivityMatchesCalendarDate(act, dateStr, overrides)) continue;
     min += activityDurationMin(act);
   }
   for (const act of garminData?.activities?.jumpRope || []) {
-    if (!garminActivityMatchesCalendarDate(act, dateStr)) continue;
+    if (!garminActivityMatchesCalendarDate(act, dateStr, overrides)) continue;
     min += activityDurationMin(act);
   }
 

@@ -12,7 +12,7 @@ import { getAutoWeekVariant, getDateStr as dateToYmd } from '../../utils/dateUti
 import { calculateAutoReps, detectExerciseUnit } from '../../utils/exerciseCalculations';
 import { useTodayExercises } from '../../hooks/useTodayExercises';
 import AddExceptionalExerciseModal from '../modals/AddExceptionalExerciseModal';
-import { isMockEnduranceSession } from '../../utils/calendarUtils';
+import { isMockEnduranceSession, collectEnduranceSessionsForCalendarDay } from '../../utils/calendarUtils';
 import { shouldExcludeStoredGarminRunningSession } from '../../utils/garminRunningLaps';
 import DayJustificationButton from './TodayTab/components/DayJustificationButton.jsx';
 import { isDayWithoutActivity } from '../../utils/dayJustificationUtils';
@@ -39,6 +39,7 @@ import { exerciseUsesExternalLoad } from '../../utils/programUtils';
 import { resolveProgramExerciseNotes } from '../../utils/exerciseHeroContent';
 import LoadDifficultyStars from '../sport/LoadDifficultyStars';
 import CollapsibleSessionPerceived from './TodayTab/components/CollapsibleSessionPerceived.jsx';
+import ExerciseSetDetailPanel from './TodayTab/components/ExerciseSetDetailPanel.jsx';
 import {
   computeOverallSessionStars,
   pickStoredSessionPerceived,
@@ -59,6 +60,7 @@ import {
   computeVolumeKgForWorkoutKey
 } from '../../utils/exerciseLoadVolume';
 import { collectWorkoutLoadSubsetForDate } from '../../utils/workoutLoadPersistence';
+import { stripExerciseSetLogForKeys } from '../../utils/exerciseSetLogUtils';
 import {
   getExerciseSeriesOverrides,
   mergeSeriesIntoProgramExercises,
@@ -602,6 +604,11 @@ const TodayTab = () => {
           if (isCurrentlyChecked) delete o[fallbackKey];
           return o;
         })(),
+        exerciseSetLogs: (() => {
+          const o = { ...(currentData.exerciseSetLogs || {}) };
+          if (isCurrentlyChecked) delete o[fallbackKey];
+          return o;
+        })(),
         ...perceivedStrip
       });
       if (isCurrentlyChecked) {
@@ -651,15 +658,18 @@ const TodayTab = () => {
         currentData.exerciseWeightPerArm || {},
         currentData.exerciseSetWeights || {}
       );
-      const nextSnapshot = {
-        ...currentData,
-        checkedExercises: nextChecked,
-        reps: nextReps,
-        exerciseWeights: nextWeights,
-        exerciseWeightPerArm: nextPerArm,
-        exerciseSetWeights: nextSetW,
-        ...stripSessionPerceivedForKeys(currentData, keys)
-      };
+      const nextSnapshot = stripExerciseSetLogForKeys(
+        {
+          ...currentData,
+          checkedExercises: nextChecked,
+          reps: nextReps,
+          exerciseWeights: nextWeights,
+          exerciseWeightPerArm: nextPerArm,
+          exerciseSetWeights: nextSetW,
+          ...stripSessionPerceivedForKeys(currentData, keys)
+        },
+        keys
+      );
       updateTempExerciseData(nextSnapshot);
       syncSportLinkedQuestsWithProgramSnapshot(date, nextSnapshot);
       setExpandedPerceivedIds((prev) => {
@@ -702,6 +712,13 @@ const TodayTab = () => {
       if (prevKeyForWeight && Array.isArray(currentData.exerciseSetWeights?.[prevKeyForWeight])) {
         nextSetW[primaryKey] = [...currentData.exerciseSetWeights[prevKeyForWeight]];
       }
+      const nextSetLogs = { ...(currentData.exerciseSetLogs || {}) };
+      keys.forEach((k) => {
+        delete nextSetLogs[k];
+      });
+      if (prevKeyForWeight && currentData.exerciseSetLogs?.[prevKeyForWeight]) {
+        nextSetLogs[primaryKey] = { ...currentData.exerciseSetLogs[prevKeyForWeight] };
+      }
       const nextSnapshot = {
         ...currentData,
         checkedExercises: nextChecked,
@@ -709,6 +726,7 @@ const TodayTab = () => {
         exerciseWeights: nextWeights,
         exerciseWeightPerArm: nextPerArm,
         exerciseSetWeights: nextSetW,
+        exerciseSetLogs: nextSetLogs
       };
       updateTempExerciseData(nextSnapshot);
       syncSportLinkedQuestsWithProgramSnapshot(date, nextSnapshot);
@@ -737,6 +755,13 @@ const TodayTab = () => {
     if (prevKey && Array.isArray(currentData.exerciseSetWeights?.[prevKey])) {
       nextSetW[primaryKey] = [...currentData.exerciseSetWeights[prevKey]];
     }
+    const nextSetLogs = { ...(currentData.exerciseSetLogs || {}) };
+    keys.forEach((k) => {
+      delete nextSetLogs[k];
+    });
+    if (prevKey && currentData.exerciseSetLogs?.[prevKey]) {
+      nextSetLogs[primaryKey] = { ...currentData.exerciseSetLogs[prevKey] };
+    }
     const nextSnapshot = {
       ...currentData,
       checkedExercises: nextChecked,
@@ -744,6 +769,7 @@ const TodayTab = () => {
       exerciseWeights: nextWeights,
       exerciseWeightPerArm: nextPerArm,
       exerciseSetWeights: nextSetW,
+      exerciseSetLogs: nextSetLogs
     };
     updateTempExerciseData(nextSnapshot);
     syncSportLinkedQuestsWithProgramSnapshot(date, nextSnapshot);
@@ -2140,6 +2166,21 @@ const TodayTab = () => {
                     </div>
                   )}
 
+                  {isChecked && inferDefaultSetCount(exercise, 0) > 1 && (
+                    <ExerciseSetDetailPanel
+                      storageKey={readKey}
+                      exercise={exercise}
+                      getWorkoutData={getCurrentData}
+                      onApply={updateTempExerciseData}
+                      perArm={resolveExerciseWeightPerArm(currentData, keys, readKey)}
+                      onPerArmChange={(checked) =>
+                        updateLocalExerciseWeightPerArm(exercise.id, checked, currentDate)
+                      }
+                      isChecked={isChecked}
+                      t={t}
+                    />
+                  )}
+
                   {isChecked && (
                     <CollapsibleSessionPerceived
                       label={t('today.exercises.sessionEffortLabel', 'Ressenti de la séance')}
@@ -2439,38 +2480,20 @@ const TodayTab = () => {
 
       {/* Sessions d'endurance du jour */}
       {(() => {
-        const sessions = normalizedEndurance.sessions || {};
-        const todayEnduranceSessions = [];
-        
-        // ✅ PHASE 1 : Utiliser la fonction centralisée depuis calendarUtils
-        // isMockSession remplacé par isMockEnduranceSession (importée)
-        
-        // Collecter toutes les sessions d'endurance du jour (FILTRER LES MOCK)
-        Object.entries(sessions).forEach(([activityType, activitySessions]) => {
-          if (Array.isArray(activitySessions)) {
-            activitySessions.forEach(session => {
-              if (session.date === dateStr) {
-                // ✅ PHASE 1 : Filtrer les sessions mock (fonction centralisée)
-                if (!isMockEnduranceSession(session)) {
-                  if (activityType === 'running' && shouldExcludeStoredGarminRunningSession(session)) {
-                    return;
-                  }
-                  todayEnduranceSessions.push({
-                    ...session,
-                    activityType,
-                    activityName: {
-                      boxing: t('today.endurance.activities.boxing'),
-                      pushups: t('today.endurance.activities.pushups'),
-                      swimming: t('today.endurance.activities.swimming'),
-                      jumprope: t('today.endurance.activities.jumprope'),
-                      running: t('today.endurance.activities.running')
-                    }[activityType] || activityType
-                  });
-                }
-              }
-            });
-          }
-        });
+        const currentData = getCurrentData();
+        const dataForCalendar = { ...currentData, enduranceData: normalizedEndurance };
+        const { rows } = collectEnduranceSessionsForCalendarDay(dataForCalendar, dateStr);
+        const todayEnduranceSessions = rows.map(({ activityType, session }) => ({
+          ...session,
+          activityType,
+          activityName: {
+            boxing: t('today.endurance.activities.boxing'),
+            pushups: t('today.endurance.activities.pushups'),
+            swimming: t('today.endurance.activities.swimming'),
+            jumprope: t('today.endurance.activities.jumprope'),
+            running: t('today.endurance.activities.running')
+          }[activityType] || activityType
+        }));
         
         if (todayEnduranceSessions.length === 0) return null;
         

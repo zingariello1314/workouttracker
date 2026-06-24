@@ -14,6 +14,7 @@ import { useTranslation } from '../../utils/translations';
 import { useFormatters } from '../../utils/translations/formatters-hook';
 import { useToast } from '../ui/Toast';
 import { isAdminUser } from '../../utils/accessControl';
+import { collectEnduranceSessionsForCalendarDay } from '../../utils/calendarUtils';
 
 const DataEntryTab = () => {
   const { data, updateReps, toggleCheck, getDateStr, getDayName, getCurrentData, getTodayWorkout, activeProgram } = useWorkout();
@@ -772,30 +773,18 @@ const DataEntryTab = () => {
       
       {/* Sessions d'endurance pour la date sélectionnée */}
       {(() => {
-        const enduranceData = data?.enduranceData || {};
-        const sessions = enduranceData.sessions || {};
-        const selectedDateEnduranceSessions = [];
-        
-        // Collecter toutes les sessions d'endurance pour la date sélectionnée
-        Object.entries(sessions).forEach(([activityType, activitySessions]) => {
-          if (Array.isArray(activitySessions)) {
-            activitySessions.forEach(session => {
-              if (session.date === dateStr) {
-                selectedDateEnduranceSessions.push({
-                  ...session,
-                  activityType,
-                  activityName: {
-                    boxing: 'Boxe',
-                    pushups: 'Pompes',
-                    swimming: 'Natation',
-                    jumprope: 'Corde à sauter',
-                    running: 'Course'
-                  }[activityType] || activityType
-                });
-              }
-            });
-          }
-        });
+        const { rows } = collectEnduranceSessionsForCalendarDay(data, dateStr);
+        const selectedDateEnduranceSessions = rows.map(({ activityType, session }) => ({
+          ...session,
+          activityType,
+          activityName: {
+            boxing: 'Boxe',
+            pushups: 'Pompes',
+            swimming: 'Natation',
+            jumprope: 'Corde à sauter',
+            running: 'Course'
+          }[activityType] || activityType
+        }));
         
         if (selectedDateEnduranceSessions.length === 0) return null;
         

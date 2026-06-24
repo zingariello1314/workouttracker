@@ -26,6 +26,7 @@ import {
   normalizeWorkoutAggregateRawForIdb,
   flushWorkoutAggregateCloudPushNow
 } from '../services/workout/workoutAggregateCloudSync.js';
+import { normalizeExerciseSetLog } from '../utils/exerciseSetLogUtils';
 
 const workoutDataLog = logger.module('useWorkoutData');
 
@@ -37,6 +38,7 @@ const generateTestWorkoutData = () => {
     exerciseWeights: {},
     exerciseWeightPerArm: {},
     exerciseSetWeights: {},
+    exerciseSetLogs: {},
     checkedStretches: {},
     startDate: null,
     weekVariant: 'A',
@@ -146,6 +148,7 @@ const INITIAL_WORKOUT_DATA = {
   exerciseWeightPerArm: {},
   /** Poids (kg) par série, même clé — tableau de chaînes même longueur que le nombre de séries */
   exerciseSetWeights: {},
+  exerciseSetLogs: {},
   checkedStretches: {},
   startDate: null,
   weekVariant: 'A',
@@ -501,6 +504,10 @@ export const useWorkoutData = (options = {}) => {
         migratedData.exerciseSetWeights && typeof migratedData.exerciseSetWeights === 'object'
           ? { ...migratedData.exerciseSetWeights }
           : {},
+      exerciseSetLogs:
+        migratedData.exerciseSetLogs && typeof migratedData.exerciseSetLogs === 'object'
+          ? { ...migratedData.exerciseSetLogs }
+          : {},
       checkedStretches: migratedData.checkedStretches || {},
       startDate: migratedData.startDate || null,
       weekVariant: migratedData.weekVariant || 'A',
@@ -697,7 +704,8 @@ export const useWorkoutData = (options = {}) => {
         'checkedStretches',
         'exerciseWeights',
         'exerciseWeightPerArm',
-        'exerciseSetWeights'
+        'exerciseSetWeights',
+        'exerciseSetLogs'
       ];
       for (const prop of requiredProperties) {
         if (newData[prop] && typeof newData[prop] !== 'object') {
@@ -766,6 +774,15 @@ export const useWorkoutData = (options = {}) => {
           if (row.some((c) => c !== '')) cleanSets[key] = row;
         }
         newData.exerciseSetWeights = cleanSets;
+      }
+
+      if (newData.exerciseSetLogs && typeof newData.exerciseSetLogs === 'object') {
+        const cleanLogs = {};
+        for (const [key, raw] of Object.entries(newData.exerciseSetLogs)) {
+          const normalized = normalizeExerciseSetLog(raw);
+          if (normalized) cleanLogs[key] = normalized;
+        }
+        newData.exerciseSetLogs = cleanLogs;
       }
 
       if (
@@ -870,6 +887,10 @@ export const useWorkoutData = (options = {}) => {
         exerciseSetWeights:
           newData && newData.exerciseSetWeights && typeof newData.exerciseSetWeights === 'object'
             ? { ...newData.exerciseSetWeights }
+            : {},
+        exerciseSetLogs:
+          newData && newData.exerciseSetLogs && typeof newData.exerciseSetLogs === 'object'
+            ? { ...newData.exerciseSetLogs }
             : {},
         checkedStretches: newData && newData.checkedStretches ? { ...newData.checkedStretches } : {},
         startDate: newData && newData.startDate ? newData.startDate : null,

@@ -2,7 +2,7 @@
  * Données agrégées pour les vues détail du récap calendrier (clic sur une ligne).
  */
 
-import { mergedDailySteps } from './sport/manualDailyWalkUtils';
+import { getDaySteps } from '../services/sport/WalkingMetricsService';
 import { parseStretchItemKey } from './exerciseKeyGenerator';
 import { buildPlannedStretchListForDateStr } from './programCompletionBonus';
 import { collectEnduranceSessionsForCalendarDay } from './calendarUtils';
@@ -14,6 +14,10 @@ import {
 import { prepareTimeSeriesForDisplay } from './garminTimeSeriesUtils';
 import { parseDurationToMinutes } from './calendarUtils';
 import { isGarminRunningLikeActivity, isGarminWalkingLikeActivity } from './garminRunningLaps';
+import {
+  resolveGarminActivityCalendarDate,
+  readGarminActivityDateOverrides
+} from './sessionCalendarDate';
 import {
   computeStreetWorkoutCaloriesAverageKcal,
   getStreetWorkoutCaloriesKcalForDate,
@@ -62,8 +66,14 @@ function addDays(dateStr, delta) {
 
 function stepsForDate(garminData, dateStr, manualWalkByDate) {
   const dm = garminData?.dailyMetrics?.[dateStr];
-  const manual = manualWalkByDate?.[dateStr]?.steps ?? 0;
-  return mergedDailySteps(dm?.steps, manual);
+  const manualEntry = manualWalkByDate?.[dateStr] ?? null;
+  return getDaySteps(dm, manualEntry).total;
+}
+
+function stepsBreakdownForDate(garminData, dateStr, manualWalkByDate) {
+  const dm = garminData?.dailyMetrics?.[dateStr];
+  const manualEntry = manualWalkByDate?.[dateStr] ?? null;
+  return getDaySteps(dm, manualEntry);
 }
 
 /**
@@ -108,6 +118,7 @@ export function buildStepsDetailContext(garminData, dateStr, manualWalkByDate = 
     today,
     goal,
     pct,
+    stepsBreakdown: stepsBreakdownForDate(garminData, dateStr, manualWalkByDate),
     weekAvg: weekCount > 0 ? Math.round(weekSum / weekCount) : null,
     weekDays: weekCount,
     monthAvg: monthCount > 0 ? Math.round(monthSum / monthCount) : null,
@@ -352,30 +363,32 @@ export function buildRunningDetailContext(workoutData, dateStr, rowId) {
   };
 }
 
-export function buildGarminActivityDetailContext(garminData, dateStr, rowId) {
+export function buildGarminActivityDetailContext(garminData, dateStr, rowId, workoutData = null) {
   if (!garminData?.activities || !rowId) return null;
+  const overrides = readGarminActivityDateOverrides(workoutData);
   const buckets = ['cardio', 'swimming', 'jumpRope'];
   for (const bucket of buckets) {
-    const acts = (garminData.activities[bucket] || []).filter((a) => a.date === dateStr);
+    const acts = garminData.activities[bucket] || [];
     for (let i = 0; i < acts.length; i += 1) {
       const act = acts[i];
       const id = `${bucket}-${i}-${act.garminId ?? act.id ?? i}`;
-      if (id === rowId || rowId.endsWith(String(act.garminId ?? act.id))) {
-        const dur = act.duration != null ? parseDurationToMinutes(act.duration, 'activity') : 0;
-        const cal = act.calories?.active ?? act.calories?.total ?? act.calories;
-        return {
-          act,
-          bucket,
-          title: act.activityName || act.name || bucket,
-          durationMin: dur,
-          calories: parseNum(typeof cal === 'object' ? cal?.active : cal),
-          distanceM: parseNum(act.distance),
-          avgHR: parseNum(act.avgHR ?? act.averageHR),
-          maxHR: parseNum(act.maxHR),
-          isRun: isGarminRunningLikeActivity(act),
-          isWalk: isGarminWalkingLikeActivity(act)
-        };
-      }
+      const matchesId = id === rowId || rowId.endsWith(String(act.garminId ?? act.id));
+      if (!matchesId) continue;
+      if (resolveGarminActivityCalendarDate(act, overrides) !== dateStr) continue;
+      const dur = act.duration != null ? parseDurationToMinutes(act.duration, 'activity') : 0;
+      const cal = act.calories?.active ?? act.calories?.total ?? act.calories;
+      return {
+        act,
+        bucket,
+        title: act.activityName || act.name || bucket,
+        durationMin: dur,
+        calories: parseNum(typeof cal === 'object' ? cal?.active : cal),
+        distanceM: parseNum(act.distance),
+        avgHR: parseNum(act.avgHR ?? act.averageHR),
+        maxHR: parseNum(act.maxHR),
+        isRun: isGarminRunningLikeActivity(act),
+        isWalk: isGarminWalkingLikeActivity(act)
+      };
     }
   }
   return null;

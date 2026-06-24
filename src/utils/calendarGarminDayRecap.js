@@ -3,6 +3,7 @@
  */
 
 import { parseDurationToMinutes, garminActivityMatchesCalendarDate } from './calendarUtils';
+import { coerceGarminDateOverrides } from './sessionCalendarDate';
 import { mergedDailySteps } from './sport/manualDailyWalkUtils';
 import { isGarminRunningLikeActivity, isGarminWalkingLikeActivity } from './garminRunningLaps';
 import { CALENDAR_GARMIN_STRIPE_COLORS } from './calendarDayGarminStripes';
@@ -109,21 +110,22 @@ export function buildGarminDayRecapRows(
   dateStr,
   manualSteps = 0,
   t = (k, d) => d || k,
-  { includeCardioActivities = true } = {}
+  { includeCardioActivities = true, workoutData = null } = {}
 ) {
   if (!garminData || !dateStr) return [];
 
   const rows = [];
   const dm = garminData.dailyMetrics?.[dateStr];
+  const overrides = coerceGarminDateOverrides(workoutData);
 
   const swimming = (garminData.activities?.swimming || []).filter((a) =>
-    garminActivityMatchesCalendarDate(a, dateStr)
+    garminActivityMatchesCalendarDate(a, dateStr, overrides)
   );
   const jumpRope = (garminData.activities?.jumpRope || []).filter((a) =>
-    garminActivityMatchesCalendarDate(a, dateStr)
+    garminActivityMatchesCalendarDate(a, dateStr, overrides)
   );
   const cardio = (garminData.activities?.cardio || []).filter((a) =>
-    garminActivityMatchesCalendarDate(a, dateStr)
+    garminActivityMatchesCalendarDate(a, dateStr, overrides)
   );
 
   if (includeCardioActivities) {
@@ -242,21 +244,22 @@ export function buildCalendarDayGarminStripes(
   garminData,
   dateStr,
   manualSteps = 0,
-  { skipRunningCardio = false, skipCardioStripes = false } = {}
+  { skipRunningCardio = false, skipCardioStripes = false, workoutData = null } = {}
 ) {
   if (!dateStr) return [];
 
   const stripes = [];
   const dm = garminData?.dailyMetrics?.[dateStr];
+  const overrides = coerceGarminDateOverrides(workoutData);
 
   const cardio = (garminData?.activities?.cardio || []).filter((a) =>
-    garminActivityMatchesCalendarDate(a, dateStr)
+    garminActivityMatchesCalendarDate(a, dateStr, overrides)
   );
   const swimming = (garminData?.activities?.swimming || []).filter((a) =>
-    garminActivityMatchesCalendarDate(a, dateStr)
+    garminActivityMatchesCalendarDate(a, dateStr, overrides)
   );
   const jumpRope = (garminData?.activities?.jumpRope || []).filter((a) =>
-    garminActivityMatchesCalendarDate(a, dateStr)
+    garminActivityMatchesCalendarDate(a, dateStr, overrides)
   );
 
   cardio.forEach((act, i) => {

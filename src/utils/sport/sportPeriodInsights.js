@@ -8,6 +8,10 @@ import {
 import { isWalkingLikeRunningSession } from '../runningSessionMovementKind';
 import { aggregateCheckedRepsByDateAndExerciseId } from '../trainingLoadUtils';
 import { buildAllTimeWalkingFromSteps } from './walkingFromSteps';
+import {
+  resolveSessionCalendarDate,
+  readGarminActivityDateOverrides
+} from '../sessionCalendarDate';
 
 function activityDateKey(act) {
   const raw = act?.date || act?.startTimeLocal || act?.startTimeGmt;
@@ -62,24 +66,27 @@ function jumpRopeMinutesFromSession(s) {
   return parseDurationToMinutes(raw, 'sportPeriodInsights.jumpRope');
 }
 
-function normalizedSessionDate(s) {
+function normalizedSessionDate(s, workoutAggregate = null) {
+  const overrides = readGarminActivityDateOverrides(workoutAggregate);
+  const logical = resolveSessionCalendarDate(s, overrides);
+  if (logical) return logical;
   return normalizeDateString(s?.date || s?.startTimeLocal || s?.startTimeGmt || s?.startTime);
 }
 
-function runningSessionIdentityKey(s) {
+function runningSessionIdentityKey(s, workoutAggregate = null) {
   if (s?.garminId != null && s.garminId !== '') return `garmin:${s.garminId}`;
   if (s?.id != null && s.id !== '') return `id:${s.id}`;
-  const ds = normalizedSessionDate(s);
+  const ds = normalizedSessionDate(s, workoutAggregate);
   const dist = parseDistanceKmFromRunningSession(s).toFixed(3);
   const dur = parseDurationToMinutes(s?.duration ?? s?.movingDuration ?? s?.totalTime, 'sportPeriodInsights.running');
   return `d:${ds}:dist:${dist}:dur:${dur}:type:${String(s?.type || '').toLowerCase()}`;
 }
 
-function uniqueSessionsByIdOrSignature(list) {
+function uniqueSessionsByIdOrSignature(list, workoutAggregate = null) {
   const seen = new Set();
   const out = [];
   (Array.isArray(list) ? list : []).forEach((s) => {
-    const ds = normalizedSessionDate(s);
+    const ds = normalizedSessionDate(s, workoutAggregate);
     const dur = parseDurationToMinutes(s?.duration ?? s?.totalTime ?? s?.movingDuration, 'sportPeriodInsights.unique');
     const key =
       s?.id != null && s.id !== ''
@@ -214,7 +221,13 @@ export function summarizeStrengthLoadInWindow(snapshot = {}, win) {
  * @param {{ sessions?: { running?: unknown[], jumpRope?: unknown[] } }} enduranceData
  * @param {{ start: string, end: string }} win
  */
-export function summarizeCardioLoadInWindow(activities = {}, enduranceData = {}, win, dailyMetrics = {}) {
+export function summarizeCardioLoadInWindow(
+  activities = {},
+  enduranceData = {},
+  win,
+  dailyMetrics = {},
+  workoutAggregate = null
+) {
   const cardioActivities = Array.isArray(activities.cardio) ? activities.cardio : [];
   const garminById = new Map();
   cardioActivities.forEach((act) => {
@@ -226,10 +239,10 @@ export function summarizeCardioLoadInWindow(activities = {}, enduranceData = {},
   const runningSessions = uniqueSessionsByIdOrSignature([
     ...(Array.isArray(enduranceData?.sessions?.running) ? enduranceData.sessions.running : []),
     ...(Array.isArray(enduranceData?.runningSessions) ? enduranceData.runningSessions : [])
-  ]).filter((s) => !shouldExcludeStoredGarminRunningSession(s));
+  ], workoutAggregate).filter((s) => !shouldExcludeStoredGarminRunningSession(s));
   const runningByGarminId = new Map();
   runningSessions.forEach((s) => {
-    const dk = normalizedSessionDate(s);
+    const dk = normalizedSessionDate(s, workoutAggregate);
     if (!dk || !isDateInRecapWindow(dk, win)) return;
     const gId = s?.garminId != null && s.garminId !== '' ? String(s.garminId) : null;
     if (!gId) return;
@@ -291,7 +304,7 @@ export function summarizeCardioLoadInWindow(activities = {}, enduranceData = {},
     ...(Array.isArray(enduranceData?.jumpRopeSessions) ? enduranceData.jumpRopeSessions : [])
   ]);
   sessionsJr.forEach((s) => {
-    const dk = normalizedSessionDate(s);
+    const dk = normalizedSessionDate(s, workoutAggregate);
     if (!dk || !isDateInRecapWindow(dk, win)) return;
     const mins = jumpRopeMinutesFromSession(s);
     jumpMin += mins;
@@ -305,10 +318,10 @@ export function summarizeCardioLoadInWindow(activities = {}, enduranceData = {},
   let sessionWalkKm = 0;
   const seenRunningKeys = new Set();
   runningSessions.forEach((s) => {
-    const key = runningSessionIdentityKey(s);
+    const key = runningSessionIdentityKey(s, workoutAggregate);
     if (seenRunningKeys.has(key)) return;
     seenRunningKeys.add(key);
-    const dk = normalizedSessionDate(s);
+    const dk = normalizedSessionDate(s, workoutAggregate);
     if (!dk || !isDateInRecapWindow(dk, win)) return;
     const km = parseDistanceKmFromRunningSession(s);
     if (!Number.isFinite(km) || km <= 0) return;
@@ -366,7 +379,8 @@ export function summarizeCardioLoadInWindow(activities = {}, enduranceData = {},
   try {
     const walkingNet = buildAllTimeWalkingFromSteps({
       dailyMetrics: dailyMetrics || {},
-      activities: { cardio }
+      activities: { cardio },
+      manualStepsByDate: workoutAggregate?.enduranceData?.manualDailyWalkByDate
     });
     const points = Array.isArray(walkingNet?.points) ? walkingNet.points : [];
     const walkKmNetInWindow = points.reduce((sum, p) => {

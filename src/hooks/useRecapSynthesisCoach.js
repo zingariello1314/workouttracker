@@ -24,7 +24,8 @@ export function useRecapSynthesisCoach({ snapshot, assessment, activeProgram, pr
   const garminPartial = useRecapCrossCoachGarmin({
     startYmd: win?.startYmd,
     endYmd: win?.endYmd,
-    enabled: enabled && Boolean(win?.startYmd && win?.endYmd)
+    enabled: enabled && Boolean(win?.startYmd && win?.endYmd),
+    manualWalkByDate: snapshot?.enduranceData?.manualDailyWalkByDate ?? null
   });
 
   const aggregate = useMemo(() => {

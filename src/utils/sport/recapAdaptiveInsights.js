@@ -23,6 +23,8 @@ import {
   summarizeGtgWindow
 } from '../../services/endurance/gtgService';
 import { normalizeProfileQuestionnaire } from '../../features/profileQuestionnaire/schema';
+import { computeProgressionInsights } from './volumeProgressionEngine';
+import { applyTrainingIntentToInsights } from './trainingIntentClassifier';
 import {
   magnitudeWord,
   pctChange,
@@ -305,6 +307,30 @@ function buildExerciseRepCandidates(opts) {
   }
 
   return candidates;
+}
+
+function buildProgressionInsightCandidates(opts) {
+  const { snapshot, window, getExerciseNameById } = opts;
+  const raw = computeProgressionInsights(snapshot, window, getExerciseNameById);
+  const insights = applyTrainingIntentToInsights(raw, snapshot);
+  const out = [];
+  for (const p of insights.slice(0, 4)) {
+    if (!p.explanation || p.confidence < 0.65 || p.progressionType === 'neutral') continue;
+    const horizon =
+      p.progressionType === 'stall' || p.progressionType === 'regression' ? 'long' : 'medium';
+    let weight = 55 + Math.round((p.confidence || 0) * 25);
+    if (p.progressionType === 'strength' || p.progressionType === 'hypertrophy') weight += 8;
+    if (p.progressionType === 'regression' && (p.confidence || 0) < 0.8) weight -= 15;
+    const name = p.exerciseName ? `${p.exerciseName} : ` : '';
+    out.push({
+      id: `prog.${p.exerciseId}.${p.progressionType}`,
+      horizon,
+      pillar: 'training',
+      weight,
+      text: `${name}${p.explanation}.`
+    });
+  }
+  return out;
 }
 
 function buildGtgCandidates(opts) {
@@ -1165,6 +1191,7 @@ export function buildAdaptiveRecapInsights(opts = {}) {
   const candidates = [
     ...legacyToCandidates(legacyPistes),
     ...buildExerciseRepCandidates({ snapshot, window, getExerciseNameById }),
+    ...buildProgressionInsightCandidates({ snapshot, window, getExerciseNameById }),
     ...buildGtgCandidates({ snapshot, window, profileQuestionnaireRaw }),
     ...buildGtgMaxLinkCandidates({ snapshot, window, profileQuestionnaireRaw, getExerciseNameById }),
     ...buildEnduranceAndChallengeCandidates({ enrichment, snapshot, garminData, window }),

@@ -4,10 +4,10 @@ import { computeGarminDailyStats } from '../utils/sport/recapCrossCoachAggregate
 
 /**
  * Charge les métriques Garmin quotidiennes sur la fenêtre Récap (phase 2, non bloquant).
- * @param {{ startYmd?: string, endYmd?: string, enabled?: boolean }} opts
+ * @param {{ startYmd?: string, endYmd?: string, enabled?: boolean, manualWalkByDate?: Record<string, object>|null }} opts
  */
 export function useRecapCrossCoachGarmin(opts = {}) {
-  const { startYmd, endYmd, enabled = true } = opts;
+  const { startYmd, endYmd, enabled = true, manualWalkByDate = null } = opts;
   const { dbReady, loadDataByRange } = useGarminData();
 
   const readyRange = useMemo(() => {
@@ -30,7 +30,12 @@ export function useRecapCrossCoachGarmin(opts = {}) {
       try {
         const { dailyMetrics } = await loadDataByRange(readyRange.startYmd, readyRange.endYmd);
         if (cancelled) return;
-        const stats = computeGarminDailyStats(dailyMetrics, readyRange.startYmd, readyRange.endYmd);
+        const stats = computeGarminDailyStats(
+          dailyMetrics,
+          readyRange.startYmd,
+          readyRange.endYmd,
+          manualWalkByDate
+        );
         setPartial({ status: 'ready', ...stats, dailyMetrics: dailyMetrics || {} });
       } catch {
         if (!cancelled) {
@@ -47,7 +52,7 @@ export function useRecapCrossCoachGarmin(opts = {}) {
     return () => {
       cancelled = true;
     };
-  }, [enabled, readyRange, dbReady, loadDataByRange]);
+  }, [enabled, readyRange, dbReady, loadDataByRange, manualWalkByDate]);
 
   return partial;
 }

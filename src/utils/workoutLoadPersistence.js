@@ -26,10 +26,22 @@ export function collectWorkoutLoadSubsetForDate(workoutData, dateStr) {
   Object.entries(exerciseSetWeights).forEach(([k, arr]) => {
     setCopy[k] = Array.isArray(arr) ? [...arr] : arr;
   });
+  const exerciseSetLogs = pick(workoutData.exerciseSetLogs);
+  const logsCopy = {};
+  Object.entries(exerciseSetLogs).forEach(([k, log]) => {
+    logsCopy[k] =
+      log && typeof log === 'object'
+        ? {
+            ...log,
+            sets: Array.isArray(log.sets) ? log.sets.map((s) => ({ ...s })) : []
+          }
+        : log;
+  });
   return {
     dateStr,
     exerciseWeights: pick(workoutData.exerciseWeights),
     exerciseWeightPerArm: pick(workoutData.exerciseWeightPerArm),
-    exerciseSetWeights: setCopy
+    exerciseSetWeights: setCopy,
+    exerciseSetLogs: logsCopy
   };
 }

@@ -6,6 +6,10 @@ import {
 import { isWalkingLikeRunningSession } from '../../utils/runningSessionMovementKind';
 import { mergeGarminCardioIntoRunningSessions } from '../../utils/garminEnduranceSessionBridge';
 import { resolveEnrichedSessionMetrics } from '../../utils/sport/runningCardioStatsAnalytics';
+import {
+  resolveSessionCalendarDate,
+  readGarminActivityDateOverrides
+} from '../../utils/sessionCalendarDate';
 
 const DIFFICULTY_POINTS = {
   simple: 10,
@@ -133,10 +137,16 @@ function startHour(session) {
   return Number.isFinite(hh) ? hh : null;
 }
 
-function normalizeRuns(sessions = [], garminById = null) {
+function normalizeRuns(sessions = [], garminById = null, workoutAggregate = null) {
+  const overrides = readGarminActivityDateOverrides(workoutAggregate);
   return sessions
     .map((s) => {
-      const date = s?.date ? new Date(`${s.date}T${s.time || '00:00:00'}`) : null;
+      const ymd = resolveSessionCalendarDate(s, overrides);
+      const date = ymd
+        ? new Date(`${ymd}T${s?.time || '00:00:00'}`)
+        : s?.date
+          ? new Date(`${s.date}T${s.time || '00:00:00'}`)
+          : null;
       const garminId = s?.garminId != null ? String(s.garminId) : String(s?.id ?? '');
       const garmin = garminById?.get?.(garminId) || null;
       const enriched = resolveEnrichedSessionMetrics(s, garmin);
@@ -2729,12 +2739,16 @@ export function collectContributingSessions(trophy, runs, stats) {
   return { items: [], moreCount: 0, hint: null };
 }
 
-export function evaluateRunningTrophies({ runningSessions = [], garminById = new Map() }) {
+export function evaluateRunningTrophies({
+  runningSessions = [],
+  garminById = new Map(),
+  workoutAggregate = null
+}) {
   const merged = mergeGarminCardioIntoRunningSessions(
     runningSessions,
     garminById instanceof Map ? [...garminById.values()] : []
   );
-  const runsNorm = normalizeRuns(merged, garminById);
+  const runsNorm = normalizeRuns(merged, garminById, workoutAggregate);
   runsNorm.forEach((run) => {
     const garminId = run.garminId != null ? String(run.garminId) : String(run.id);
     run.garmin = garminById.get(garminId) || null;

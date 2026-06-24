@@ -221,26 +221,84 @@ export function lookupProgramExerciseStub(exerciseId) {
  * @returns {number}
  */
 export function computeVolumeKgForWorkoutKey(key, workoutData) {
-  if (!key || !workoutData || typeof workoutData !== 'object') return 0;
-  const checked = workoutData.checkedExercises?.[key];
-  if (!checked) return 0;
-  const reps = workoutData.reps?.[key];
-  const r = parseInt(String(reps), 10) || 0;
-  if (r <= 0) return 0;
+  return getExerciseVolumeFromLog(workoutData, key).volumeKgReps;
+}
 
-  const rawId = String(key).slice(11).replace(/_semaineA$|_semaineB$/, '');
+/**
+ * @typedef {'structured' | 'legacy'} ExerciseVolumeSource
+ */
+
+/**
+ * @typedef {object} ExerciseVolumeFromLog
+ * @property {Array<{ reps: number, weight: number | null, weightMode?: string }>} sets
+ * @property {number} volumeKgReps
+ * @property {ExerciseVolumeSource} source
+ */
+
+/**
+ * Volume kg×reps depuis log structuré (`exerciseSetLogs`) ou champs legacy.
+ * @param {object | null | undefined} workoutData
+ * @param {string} storageKey — YYYY-MM-DD_exId[_variant]
+ * @returns {ExerciseVolumeFromLog}
+ */
+export function getExerciseVolumeFromLog(workoutData, storageKey) {
+  const empty = { sets: [], volumeKgReps: 0, source: 'legacy' };
+  if (!storageKey || !workoutData || typeof workoutData !== 'object') return empty;
+
+  const checked = workoutData.checkedExercises?.[storageKey];
+  if (!checked) return empty;
+
+  const structured = workoutData.exerciseSetLogs?.[storageKey];
+  const rawId = String(storageKey).slice(11).replace(/_semaineA$|_semaineB$/, '');
   const exercise = lookupProgramExerciseStub(rawId);
 
-  const single = workoutData.exerciseWeights?.[key];
-  const perArm = workoutData.exerciseWeightPerArm?.[key] === true;
-  const setArr = workoutData.exerciseSetWeights?.[key];
-  return computeVolumeKgReps({
+  if (structured?.sets?.length) {
+    const sets = structured.sets.map((set) => ({
+      reps: Math.max(0, Math.floor(Number(set?.reps) || 0)),
+      weight: set?.weight != null && Number.isFinite(Number(set.weight)) ? Number(set.weight) : null,
+      weightMode: set?.weightMode
+    }));
+    const volumeKgReps = computeVolumeKgRepsFromStructuredSets(sets, exercise);
+    return { sets, volumeKgReps, source: 'structured' };
+  }
+
+  const reps = workoutData.reps?.[storageKey];
+  const r = parseInt(String(reps), 10) || 0;
+  if (r <= 0) return empty;
+
+  const single = workoutData.exerciseWeights?.[storageKey];
+  const perArm = workoutData.exerciseWeightPerArm?.[storageKey] === true;
+  const setArr = workoutData.exerciseSetWeights?.[storageKey];
+  const volumeKgReps = computeVolumeKgReps({
     exercise,
     totalReps: r,
     singleWeightStr: single,
     perArm,
     setWeightStrs: Array.isArray(setArr) ? setArr : null
   });
+
+  return { sets: [], volumeKgReps, source: 'legacy' };
+}
+
+/**
+ * @param {Array<{ reps: number, weight: number | null, weightMode?: string }>} sets
+ * @param {object} exercise
+ * @returns {number}
+ */
+export function computeVolumeKgRepsFromStructuredSets(sets, exercise) {
+  if (!Array.isArray(sets) || sets.length === 0) return 0;
+  let vol = 0;
+  sets.forEach((set) => {
+    const reps = Math.max(0, Math.floor(Number(set?.reps) || 0));
+    if (reps <= 0) return;
+    const w = set?.weight;
+    if (w == null || !Number.isFinite(Number(w)) || Number(w) <= 0) return;
+    const mode = String(set?.weightMode || '');
+    const perArm = mode === 'perHand' || mode === 'perSide';
+    const eff = effectiveKgMovedPerRep(Number(w), { perArm, exercise });
+    vol += eff * reps;
+  });
+  return vol;
 }
 
 /**

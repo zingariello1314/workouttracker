@@ -12,14 +12,10 @@ import {
 import { buildRunningSessionRows } from './runningCardioStatsAnalytics';
 import { getRecapDateWindow, isDateInRecapWindow } from './recapMuscleLoadEngine';
 import { RECAP_VIEW_PERIOD_IDS } from './recapViewPeriods';
-import { normalizeDateString } from '../calendarUtils';
+import { resolveSessionCalendarDate, readGarminActivityDateOverrides } from '../sessionCalendarDate';
 
-function sessionDateYmd(session) {
-  const normalized = normalizeDateString(session?.date);
-  if (normalized) return normalized;
-  const raw = String(session?.date ?? '').trim();
-  const m = raw.match(/^(\d{4}-\d{2}-\d{2})/);
-  return m ? m[1] : null;
+function sessionDateYmd(session, overrides = {}) {
+  return resolveSessionCalendarDate(session, overrides) || null;
 }
 
 /** @param {object[]|null|undefined} cardio */
@@ -46,7 +42,7 @@ export function isRecapViewPeriod(period) {
 export function filterSessionsForRunningVolume(
   sessions,
   garminById = null,
-  { period = 'all', timeBand = 'all', now = new Date() } = {}
+  { period = 'all', timeBand = 'all', now = new Date(), dateOverrides = {} } = {}
 ) {
   let list = Array.isArray(sessions) ? sessions : [];
   list = list.filter((s) => !shouldExcludeStoredGarminRunningSession(s));
@@ -55,7 +51,7 @@ export function filterSessionsForRunningVolume(
   if (isRecapViewPeriod(period)) {
     const window = getRecapDateWindow(period, now);
     list = list.filter((s) => {
-      const d = sessionDateYmd(s);
+      const d = sessionDateYmd(s, dateOverrides);
       return d && isDateInRecapWindow(d, window);
     });
   } else {
@@ -104,16 +100,27 @@ export function computeRunningVolumeTotals(sessions, garminById = null, options 
     now = new Date(),
     preFiltered = false,
     classificationCtx = {},
-    garminRunningKindByGarminId = null
+    garminRunningKindByGarminId = null,
+    dateOverrides: dateOverridesOpt = null,
+    snapshot = null,
+    workoutData = null
   } = options;
+
+  const dateOverrides =
+    dateOverridesOpt ?? readGarminActivityDateOverrides(snapshot ?? workoutData ?? {});
 
   const filtered = preFiltered
     ? filterRunningSessionsBase(sessions, garminById)
-    : filterSessionsForRunningVolume(sessions, garminById, { period, timeBand, now });
+    : filterSessionsForRunningVolume(sessions, garminById, {
+        period,
+        timeBand,
+        now,
+        dateOverrides
+      });
   const rows = buildRunningSessionRows(
     filtered,
     garminById,
-    classificationCtx,
+    { ...classificationCtx, dateOverrides },
     garminRunningKindByGarminId
   );
 
@@ -137,7 +144,11 @@ export function resolveRunningPeriodStats(snapshot, garminData, window) {
   const stored = snapshot?.enduranceData?.sessions?.running || [];
   const merged = mergeRunningSessionsWithGarmin(stored, garminById);
   const rows =
-    computeRunningVolumeTotals(merged, garminById, { period: 'all', preFiltered: false }).rows || [];
+    computeRunningVolumeTotals(merged, garminById, {
+      period: 'all',
+      preFiltered: false,
+      snapshot
+    }).rows || [];
   const filtered = rows.filter((r) => {
     const d = r?.date || r?.dateYmd;
     return d && isDateInRecapWindow(d, window);

@@ -4,6 +4,21 @@
  */
 export const MANUAL_WALK_MAX_STEPS_PER_DAY = 55000;
 export const MANUAL_WALK_MAX_DISTANCE_KM = 90;
+/** Complément seul (mode « après montre ») — plafond journalier. */
+export const MANUAL_WALK_MAX_SUPPLEMENT_STEPS_PER_DAY = 25000;
+
+/** Facteur XP sur la part déclarative (montre = 100 %). */
+export const DECLARATIVE_STEPS_XP_FACTOR = 0.5;
+
+/** @typedef {'verified' | 'mixed' | 'self_reported'} StepsReliability */
+
+/**
+ * @typedef {object} ResolvedDailySteps
+ * @property {number} garmin — pas montre (source fiable)
+ * @property {number} declarative — apport manuel au total (source déclarative)
+ * @property {number} total — pas affichés / trophées
+ * @property {StepsReliability} reliability
+ */
 
 function clampInt(value, min, max) {
   const n = Math.round(Number(value));
@@ -11,11 +26,71 @@ function clampInt(value, min, max) {
   return Math.max(min, Math.min(max, n));
 }
 
-/** Pas effectifs pour un jour : on prend le maximum montre vs saisie (évite doublons si tu recopies la même journée). */
+function normalizeGarminSteps(garminSteps) {
+  return Math.max(0, Math.round(Number(garminSteps) || 0));
+}
+
+/**
+ * Résolveur central — pas du jour par source.
+ * @param {number} garminSteps
+ * @param {number | { steps?: number, entryMode?: 'total' | 'supplement' } | null | undefined} manualInput
+ * @returns {ResolvedDailySteps}
+ */
+export function resolveDailySteps(garminSteps, manualInput) {
+  const g = normalizeGarminSteps(garminSteps);
+
+  let manualEntry = null;
+  if (manualInput != null && typeof manualInput === 'object' && !Array.isArray(manualInput)) {
+    manualEntry = manualInput;
+  } else {
+    const m = Math.max(0, Math.round(Number(manualInput) || 0));
+    if (m > 0) manualEntry = { steps: m };
+  }
+
+  if (!manualEntry?.steps || manualEntry.steps <= 0) {
+    return { garmin: g, declarative: 0, total: g, reliability: 'verified' };
+  }
+
+  const rawManual = clampInt(manualEntry.steps, 0, MANUAL_WALK_MAX_STEPS_PER_DAY);
+  let total;
+
+  if (manualEntry.entryMode === 'supplement') {
+    const supplement = clampInt(rawManual, 0, MANUAL_WALK_MAX_SUPPLEMENT_STEPS_PER_DAY);
+    total = Math.min(MANUAL_WALK_MAX_STEPS_PER_DAY, g + supplement);
+  } else {
+    total = Math.min(MANUAL_WALK_MAX_STEPS_PER_DAY, Math.max(g, rawManual));
+  }
+
+  const declarative = Math.max(0, total - g);
+  /** @type {StepsReliability} */
+  let reliability = 'verified';
+  if (declarative > 0) {
+    reliability = g > 0 ? 'mixed' : 'self_reported';
+  }
+
+  return { garmin: g, declarative, total, reliability };
+}
+
+/** Pas effectifs pour un jour : max(montre, saisie) — rétrocompat ; préférer resolveDailySteps. */
 export function mergedDailySteps(garminSteps, manualSteps) {
-  const g = Math.max(0, Math.round(Number(garminSteps) || 0));
-  const m = Math.max(0, Math.round(Number(manualSteps) || 0));
-  return Math.max(g, m);
+  return resolveDailySteps(garminSteps, manualSteps).total;
+}
+
+/**
+ * XP pas : Garmin 100 %, déclaratif 50 %.
+ * @param {ResolvedDailySteps} resolved
+ * @returns {{ stepsXp: number, stepsXpVerified: number, stepsXpDeclarative: number }}
+ */
+export function computeStepsXpFromResolved(resolved) {
+  const g = resolved?.garmin ?? 0;
+  const d = resolved?.declarative ?? 0;
+  const stepsXpVerified = Math.round(g * 0.01);
+  const stepsXpDeclarative = Math.round(d * 0.01 * DECLARATIVE_STEPS_XP_FACTOR);
+  return {
+    stepsXp: stepsXpVerified + stepsXpDeclarative,
+    stepsXpVerified,
+    stepsXpDeclarative
+  };
 }
 
 /**
@@ -38,8 +113,10 @@ export function normalizeManualDailyWalkByDate(raw) {
     }
     const updatedAt =
       typeof entry?.updatedAt === 'string' && entry.updatedAt ? entry.updatedAt : new Date().toISOString();
+    const entryMode = entry?.entryMode === 'supplement' ? 'supplement' : undefined;
     out[dateKey] = {
       steps,
+      ...(entryMode ? { entryMode } : {}),
       ...(distanceKm != null && distanceKm > 0 ? { distanceKm } : {}),
       updatedAt
     };
@@ -61,8 +138,8 @@ export function sumMergedDailyStepsTotal(dailyMetrics, manualByDateRaw) {
     const dm = gm[dateKey];
     const gSteps =
       dm?.steps != null && Number.isFinite(Number(dm.steps)) ? Math.max(0, Math.round(Number(dm.steps))) : 0;
-    const mSteps = manual[dateKey]?.steps || 0;
-    total += mergedDailySteps(gSteps, mSteps);
+    const manualEntry = manual[dateKey] || null;
+    total += resolveDailySteps(gSteps, manualEntry).total;
   });
   return total;
 }

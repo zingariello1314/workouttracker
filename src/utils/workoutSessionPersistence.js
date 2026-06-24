@@ -11,6 +11,7 @@ export const SESSION_MAP_FIELDS = [
   'exerciseWeights',
   'exerciseWeightPerArm',
   'exerciseSetWeights',
+  'exerciseSetLogs',
   'checkedStretches',
   'exerciseSessionEffortStars',
   'exerciseSessionPleasureStars',

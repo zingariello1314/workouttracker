@@ -419,7 +419,7 @@ export default function RecapSnapshotView({
 
         <RecapKpiCard
 
-          label={t('recap.enrichment.steps', 'Pas moy. (Garmin)')}
+          label={t('recap.enrichment.steps', 'Pas moy. (fusionnés)')}
 
           value={garmin?.avgSteps != null ? garmin.avgSteps.toLocaleString('fr-FR') : '—'}
 
@@ -431,7 +431,11 @@ export default function RecapSnapshotView({
 
               : garmin?.hasSignal
 
-                ? t('recap.enrichment.garminPartial', 'Signal Garmin partiel')
+                ? garmin?.daysWithStepsData > 0
+
+                  ? `${garmin.daysWithStepsData} j. avec pas (Garmin + compléments)`
+
+                  : t('recap.enrichment.garminPartial', 'Signal Garmin partiel')
 
                 : undefined
 

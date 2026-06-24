@@ -162,12 +162,22 @@ export function useGarminImport() {
               });
 
               if (existingRunningIdx >= 0) {
-                if (existingRunning[existingRunningIdx].type !== runType && (hasLaps || isWalk)) {
+                const prev = existingRunning[existingRunningIdx];
+                if (prev.type !== runType && (hasLaps || isWalk)) {
                   existingRunning[existingRunningIdx] = {
-                    ...existingRunning[existingRunningIdx],
+                    ...prev,
                     type: runType
                   };
                   importedCount++;
+                } else {
+                  existingRunning[existingRunningIdx] = {
+                    ...session,
+                    ...prev,
+                    id: prev.id,
+                    logicalDate: prev.logicalDate,
+                    date: prev.date ?? session.date,
+                    garminId: prev.garminId ?? session.garminId
+                  };
                 }
               } else if (
                 !activityExists(gAct, { swimming: [], jumprope: existingJumpRope, running: existingRunning })
@@ -192,6 +202,7 @@ export function useGarminImport() {
       try {
         await updateData({
           ...workoutData,
+          garminActivityDateOverrides: workoutData?.garminActivityDateOverrides ?? {},
           enduranceData: {
             ...currentEndurance,
             sessions: newSessions,

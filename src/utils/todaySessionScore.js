@@ -15,7 +15,7 @@ import {
 } from './trainingLoadUtils';
 import { detectExerciseUnit, calculateAutoReps } from './exerciseCalculations';
 import { exerciseUsesExternalLoad } from './programUtils';
-import { computeVolumeKgReps } from './exerciseLoadVolume';
+import { computeVolumeKgReps, getExerciseVolumeFromLog } from './exerciseLoadVolume';
 import { getDateStr } from './dateUtils';
 import {
   getExerciseSeriesOverrides,
@@ -96,13 +96,17 @@ export function computeTodaySessionComplexity(date, workout, currentData, isGymM
       completedCount += 1;
       const perArm = pickPerArmForKeys();
       const setArr = pickSetWeightsForKeys();
-      const volumeKg = computeVolumeKgReps({
-        exercise,
-        totalReps: reps,
-        singleWeightStr: pickWeightStrForKeys(),
-        perArm,
-        setWeightStrs: Array.isArray(setArr) ? setArr : null
-      });
+      const volFromLog = getExerciseVolumeFromLog(currentData, readKey);
+      let volumeKg = volFromLog.volumeKgReps;
+      if (volumeKg <= 0) {
+        volumeKg = computeVolumeKgReps({
+          exercise,
+          totalReps: reps,
+          singleWeightStr: pickWeightStrForKeys(),
+          perArm,
+          setWeightStrs: Array.isArray(setArr) ? setArr : null
+        });
+      }
       const rNum = parseInt(String(reps), 10) || 0;
       const wKg = rNum > 0 && volumeKg > 0 ? volumeKg / rNum : 0;
       const wMult = computeExternalLoadMultiplier(usesLoad, wKg, medianKg);

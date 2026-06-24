@@ -7,6 +7,7 @@
 
 import { isMockEnduranceSession, parseDurationToMinutes } from './calendarUtils';
 import { shouldExcludeStoredGarminRunningSession } from './garminRunningLaps';
+import { resolveSessionCalendarDate, readGarminActivityDateOverrides } from './sessionCalendarDate';
 
 /**
  * Infère un coefficient à partir du nom / série / type (sans surcharge utilisateur).
@@ -227,7 +228,9 @@ export function computeStrengthCalendarContribution(exerciseLike, reps, coeff, w
   return r * coeffN * mult;
 }
 
-function normalizeSessionDate(session) {
+function normalizeSessionDate(session, overrides = {}) {
+  const resolved = resolveSessionCalendarDate(session, overrides);
+  if (resolved) return resolved;
   let d = session?.date;
   if (!d) return null;
   if (typeof d === 'string' && d.includes('T')) {
@@ -382,11 +385,12 @@ export function enduranceSessionCalendarLoad(activityType, session) {
  */
 export function getEnduranceLoadForDate(dateStr, allData) {
   const sessions = allData?.enduranceData?.sessions || {};
+  const overrides = readGarminActivityDateOverrides(allData);
   let sum = 0;
   Object.entries(sessions).forEach(([activityType, activitySessions]) => {
     if (!Array.isArray(activitySessions)) return;
     activitySessions.forEach((session) => {
-      const ds = normalizeSessionDate(session);
+      const ds = normalizeSessionDate(session, overrides);
       if (!ds || ds !== dateStr) return;
       sum += enduranceSessionCalendarLoad(activityType, session);
     });

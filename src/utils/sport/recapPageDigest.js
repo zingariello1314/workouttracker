@@ -4,6 +4,7 @@
 import { normalizeDateString, isMockEnduranceSession } from '../calendarUtils';
 import { parseDurationToMinutes } from '../calendarUtils';
 import { enduranceSessionCalendarLoad, analyzeRunningSessionFactors } from '../trainingLoadUtils';
+import { enduranceSessionCalendarYmd } from '../../services/sport/TrainingDayTruthService';
 
 export const RECAP_ENDURANCE_ACTIVITY_ORDER = [
   'running',
@@ -58,7 +59,7 @@ export function buildRecapEnduranceDigest(allData, window) {
     if (!Array.isArray(list)) return;
     list.forEach((session) => {
       if (isMockEnduranceSession(session)) return;
-      const ds = normalizeDateString(session?.date);
+      const ds = enduranceSessionCalendarYmd(session, allData);
       if (!ds || !inRecapWindow(ds, window)) return;
       const load = enduranceSessionCalendarLoad(activityType, session);
       const minutes = parseDurationToMinutes(session.duration);

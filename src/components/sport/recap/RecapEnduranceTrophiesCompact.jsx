@@ -73,25 +73,36 @@ export default function RecapEnduranceTrophiesCompact({ sessions = {}, onOpenCat
     () =>
       evaluateRunningTrophies({
         runningSessions: sessions?.running || [],
-        garminById
+        garminById,
+        workoutAggregate: workoutData
       }),
-    [sessions?.running, garminById]
+    [sessions?.running, garminById, workoutData]
   );
   const walkingEval = useMemo(
     () => evaluateWalkingTrophies(sessions?.running || [], walkingSupplemental),
     [sessions?.running, walkingSupplemental]
   );
   const pushupsEval = useMemo(
-    () => evaluatePushupTrophies({ sessions: sessions?.pushups || [] }),
-    [sessions?.pushups]
+    () => evaluatePushupTrophies({ sessions: sessions?.pushups || [], workoutAggregate: workoutData }),
+    [sessions?.pushups, workoutData]
   );
   const jumpropeEval = useMemo(
-    () => evaluateSimpleEnduranceTrophies({ activityType: 'jumprope', sessions: sessions?.jumprope || [] }),
-    [sessions?.jumprope]
+    () =>
+      evaluateSimpleEnduranceTrophies({
+        activityType: 'jumprope',
+        sessions: sessions?.jumprope || [],
+        workoutAggregate: workoutData
+      }),
+    [sessions?.jumprope, workoutData]
   );
   const gainageEval = useMemo(
-    () => evaluateSimpleEnduranceTrophies({ activityType: 'gainage', sessions: sessions?.gainage || [] }),
-    [sessions?.gainage]
+    () =>
+      evaluateSimpleEnduranceTrophies({
+        activityType: 'gainage',
+        sessions: sessions?.gainage || [],
+        workoutAggregate: workoutData
+      }),
+    [sessions?.gainage, workoutData]
   );
 
   const categories = useMemo(

@@ -4,7 +4,7 @@
 
 import { getDateStr } from './dateUtils';
 import { getDayJustification, JUSTIFICATION_REASONS } from './dayJustificationUtils';
-import { isMockEnduranceSession } from './calendarUtils';
+import { collectEnduranceSessionsForCalendarDay } from './calendarUtils';
 
 export function isRestDayJustification(data, dateStr) {
   const j = getDayJustification(data, dateStr);
@@ -19,19 +19,9 @@ export function dayHasCheckedWorkout(data, dateStr) {
 }
 
 export function dayHasEnduranceSession(data, dateStr) {
-  const enduranceSessions = data?.enduranceData?.sessions || {};
-  for (const activitySessions of Object.values(enduranceSessions)) {
-    if (!Array.isArray(activitySessions)) continue;
-    if (
-      activitySessions.some((session) => {
-        if (!session?.date || isMockEnduranceSession(session)) return false;
-        return getDateStr(new Date(session.date)) === dateStr;
-      })
-    ) {
-      return true;
-    }
-  }
-  return false;
+  if (!data || !dateStr) return false;
+  const { rows } = collectEnduranceSessionsForCalendarDay(data, dateStr);
+  return rows.length > 0;
 }
 
 /** Jour qui compte pour la série (entraînement, course saisie ou repos justifié). */

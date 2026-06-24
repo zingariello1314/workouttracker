@@ -1,7 +1,9 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
 import { ChevronLeft } from 'lucide-react';
 import SleepPhasesChart from '../Charts/SleepPhasesChart';
 import CalendarDayMetricSparkline from './CalendarDayMetricSparkline';
+import CalendarManualWalkEditor from './CalendarManualWalkEditor';
+import CalendarSessionDateReassign from './CalendarSessionDateReassign';
 import {
   buildBodyBatteryDetailContext,
   buildGarminActivityDetailContext,
@@ -48,10 +50,12 @@ export default function CalendarDayRecapDetailPanel({
   programs = [],
   language = 'fr',
   t,
-  onBack
+  onBack,
+  updateData
 }) {
   const locale = language === 'en' ? 'en-US' : 'fr-FR';
   const manualWalk = normalizeManualDailyWalkByDate(workoutData?.enduranceData?.manualDailyWalkByDate);
+  const [showWalkEditor, setShowWalkEditor] = useState(false);
 
   const content = useMemo(() => {
     if (!row?.kind || !dateStr) return null;
@@ -170,6 +174,35 @@ export default function CalendarDayRecapDetailPanel({
                   style={{ width: `${Math.min(100, ctx.pct)}%` }}
                 />
               </div>
+              {ctx.stepsBreakdown?.declarative > 0 && (
+                <p className="text-xs text-slate-500">
+                  {formatLocale(ctx.stepsBreakdown.garmin, locale)} Garmin
+                  {ctx.stepsBreakdown.declarative > 0
+                    ? ` + ${formatLocale(ctx.stepsBreakdown.declarative, locale)} complément`
+                    : ''}
+                </p>
+              )}
+              {typeof updateData === 'function' && (
+                <>
+                  <button
+                    type="button"
+                    onClick={() => setShowWalkEditor((v) => !v)}
+                    className="text-xs text-sky-400 underline hover:text-sky-200"
+                  >
+                    {t('calendar.heatmap.recapDetail.editSteps', 'Compléter les pas')}
+                  </button>
+                  {showWalkEditor && (
+                    <CalendarManualWalkEditor
+                      dateStr={dateStr}
+                      garminSteps={ctx.stepsBreakdown?.garmin ?? 0}
+                      currentData={workoutData}
+                      updateData={updateData}
+                      onClose={() => setShowWalkEditor(false)}
+                      t={t}
+                    />
+                  )}
+                </>
+              )}
             </>
           )
         };
@@ -365,6 +398,15 @@ export default function CalendarDayRecapDetailPanel({
               {ctx.notes && (
                 <p className="rounded-lg border border-slate-700/50 bg-black/80 px-3 py-2 text-sm text-slate-300">{ctx.notes}</p>
               )}
+              {typeof updateData === 'function' && ctx.session && (
+                <CalendarSessionDateReassign
+                  session={ctx.session}
+                  activityType="running"
+                  workoutData={workoutData}
+                  updateData={updateData}
+                  t={t}
+                />
+              )}
               {ctx.allSessions.length > 1 && (
                 <p className="text-xs text-slate-500">
                   {t('calendar.heatmap.recapDetail.multiRun', {
@@ -379,28 +421,47 @@ export default function CalendarDayRecapDetailPanel({
       }
 
       case 'activity': {
-        const ctx = buildGarminActivityDetailContext(garminData, dateStr, row.id);
+        const ctx = buildGarminActivityDetailContext(garminData, dateStr, row.id, workoutData);
         if (!ctx) return { empty: t('calendar.heatmap.recapDetail.noActivity', 'Activité introuvable.') };
+        const garminSession = ctx.act
+          ? {
+              ...ctx.act,
+              garminId: ctx.act.garminId ?? ctx.act.id,
+              source: 'garmin',
+              date: ctx.act.date
+            }
+          : null;
         return {
           title: ctx.title,
           body: (
-            <div className="grid grid-cols-2 gap-3 md:grid-cols-3">
-              {ctx.durationMin > 0 && (
-                <StatTile label={t('calendar.heatmap.recapDetail.duration', 'Durée')} value={`${ctx.durationMin} min`} />
+            <>
+              <div className="grid grid-cols-2 gap-3 md:grid-cols-3">
+                {ctx.durationMin > 0 && (
+                  <StatTile label={t('calendar.heatmap.recapDetail.duration', 'Durée')} value={`${ctx.durationMin} min`} />
+                )}
+                {ctx.calories != null && (
+                  <StatTile label={t('calendar.heatmap.recapDetail.calories', 'Calories')} value={`${ctx.calories} kcal`} />
+                )}
+                {ctx.distanceM != null && ctx.distanceM > 0 && (
+                  <StatTile label={t('calendar.heatmap.recapDetail.distance', 'Distance')} value={`${(ctx.distanceM / 1000).toFixed(2)} km`} />
+                )}
+                {ctx.avgHR != null && (
+                  <StatTile label={t('calendar.heatmap.recapDetail.avgHr', 'FC moy.')} value={`${ctx.avgHR} bpm`} />
+                )}
+                {ctx.maxHR != null && (
+                  <StatTile label={t('calendar.heatmap.recapDetail.maxHr', 'FC max')} value={`${ctx.maxHR} bpm`} />
+                )}
+              </div>
+              {typeof updateData === 'function' && garminSession?.garminId != null && (
+                <CalendarSessionDateReassign
+                  session={garminSession}
+                  activityType={ctx.isRun ? 'running' : 'cardio'}
+                  workoutData={workoutData}
+                  updateData={updateData}
+                  t={t}
+                />
               )}
-              {ctx.calories != null && (
-                <StatTile label={t('calendar.heatmap.recapDetail.calories', 'Calories')} value={`${ctx.calories} kcal`} />
-              )}
-              {ctx.distanceM != null && ctx.distanceM > 0 && (
-                <StatTile label={t('calendar.heatmap.recapDetail.distance', 'Distance')} value={`${(ctx.distanceM / 1000).toFixed(2)} km`} />
-              )}
-              {ctx.avgHR != null && (
-                <StatTile label={t('calendar.heatmap.recapDetail.avgHr', 'FC moy.')} value={`${ctx.avgHR} bpm`} />
-              )}
-              {ctx.maxHR != null && (
-                <StatTile label={t('calendar.heatmap.recapDetail.maxHr', 'FC max')} value={`${ctx.maxHR} bpm`} />
-              )}
-            </div>
+            </>
           )
         };
       }
@@ -408,7 +469,7 @@ export default function CalendarDayRecapDetailPanel({
       default:
         return { empty: t('calendar.heatmap.recapDetail.unsupported', 'Détail non disponible.') };
     }
-  }, [row, dateStr, garminData, workoutData, intensity, programs, manualWalk, locale, t]);
+  }, [row, dateStr, garminData, workoutData, intensity, programs, manualWalk, locale, t, updateData, showWalkEditor]);
 
   if (!content) return null;
 

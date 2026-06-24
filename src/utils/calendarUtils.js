@@ -1,4 +1,10 @@
 import { shouldExcludeStoredGarminRunningSession } from './garminRunningLaps';
+import {
+  resolveSessionCalendarDate,
+  readGarminActivityDateOverrides,
+  resolveGarminActivityCalendarDate,
+  coerceGarminDateOverrides
+} from './sessionCalendarDate';
 
 /**
  * Utilitaires pour l'onglet Calendrier
@@ -194,10 +200,11 @@ export function normalizeDateString(dateInput) {
   return null;
 }
 
-/** Date YYYY-MM-DD d’une activité Garmin (gère « 2026-06-05 20:22:00 »). */
-export function garminActivityMatchesCalendarDate(activity, dateStr) {
+/** Date YYYY-MM-DD d’une activité Garmin (gère « 2026-06-05 20:22:00 » + overrides). */
+export function garminActivityMatchesCalendarDate(activity, dateStr, overridesSource = {}) {
   if (!activity || !dateStr) return false;
-  return normalizeDateString(activity.date) === dateStr;
+  const overrides = coerceGarminDateOverrides(overridesSource);
+  return resolveGarminActivityCalendarDate(activity, overrides) === dateStr;
 }
 
 /**
@@ -588,8 +595,9 @@ export function collectEnduranceSessionsForCalendarDay(allData, dateStr) {
     sessions.forEach((session) => {
       if (isMockEnduranceSession(session)) return;
       if (activityType === 'running' && shouldExcludeStoredGarminRunningSession(session)) return;
-      const dv = validateDate(session.date, `collectEnduranceSessionsForCalendarDay.${activityType}`);
-      if (!dv.normalizedDate || dv.normalizedDate !== dateStr) return;
+      const overrides = readGarminActivityDateOverrides(allData);
+      const calendarDate = resolveSessionCalendarDate(session, overrides);
+      if (!calendarDate || calendarDate !== dateStr) return;
 
       rows.push({ activityType, session });
 
@@ -624,6 +632,101 @@ export function collectEnduranceSessionsForCalendarDay(allData, dateStr) {
     rows,
     runningDistanceKm: Math.round(runningDistanceKm * 10) / 10,
     swimmingDistanceM: Math.round(swimmingDistanceM * 10) / 10
+  };
+}
+
+/**
+ * Agrège reps / durée / distance / sauts pour le calendrier (date logique des séances).
+ * @param {object|null|undefined} allData
+ * @param {string} dateStr
+ */
+export function computeEnduranceDayMetricsForCalendar(allData, dateStr) {
+  const { rows } = collectEnduranceSessionsForCalendarDay(allData, dateStr);
+  let enduranceReps = 0;
+  let enduranceDuration = 0;
+  let enduranceDistance = 0;
+  let enduranceJumps = 0;
+
+  rows.forEach(({ activityType, session }) => {
+    if (activityType !== 'jumprope') {
+      const rawReps =
+        session.count !== undefined && session.count !== null
+          ? session.count
+          : session.reps !== undefined && session.reps !== null
+            ? session.reps
+            : 0;
+      const repsValidation = validateNumericValue(
+        rawReps,
+        `computeEnduranceDayMetrics.${dateStr}.${activityType}.reps`,
+        false
+      );
+      if (repsValidation.normalizedValue > 0) {
+        enduranceReps += repsValidation.normalizedValue;
+      }
+    }
+
+    if (session.duration) {
+      const durationMinutes = parseDurationToMinutes(session.duration, `computeEnduranceDayMetrics.${dateStr}`);
+      const durationValidation = validateDuration(
+        durationMinutes,
+        `computeEnduranceDayMetrics.${dateStr}.${activityType}`
+      );
+      enduranceDuration += Math.round(durationValidation.clampedValue);
+    }
+
+    if (session.distance) {
+      const distValidation = validateNumericValue(
+        session.distance,
+        `computeEnduranceDayMetrics.${dateStr}.${activityType}.distance`,
+        false
+      );
+      if (distValidation.normalizedValue > 0) {
+        enduranceDistance += distValidation.normalizedValue;
+      }
+    }
+    if (session.laps && Array.isArray(session.laps)) {
+      session.laps.forEach((lap, lapIdx) => {
+        const lapDistValidation = validateNumericValue(
+          lap.distance,
+          `computeEnduranceDayMetrics.${dateStr}.${activityType}.lap[${lapIdx}]`,
+          false
+        );
+        if (lapDistValidation.normalizedValue > 0) {
+          enduranceDistance += lapDistValidation.normalizedValue;
+        }
+      });
+    }
+
+    if (activityType === 'jumprope') {
+      const rawJumps = session.jumps || session.reps || 0;
+      const jumpsValidation = validateNumericValue(
+        rawJumps,
+        `computeEnduranceDayMetrics.${dateStr}.jumprope.jumps`,
+        false
+      );
+      if (jumpsValidation.normalizedValue > 0) {
+        enduranceJumps += jumpsValidation.normalizedValue;
+      }
+    } else if (session.jumps) {
+      const jumpsValidation = validateNumericValue(
+        session.jumps,
+        `computeEnduranceDayMetrics.${dateStr}.${activityType}.jumps`,
+        false
+      );
+      if (jumpsValidation.normalizedValue > 0) {
+        enduranceJumps += jumpsValidation.normalizedValue;
+      }
+    }
+  });
+
+  enduranceDistance = Math.round(enduranceDistance * 10) / 10;
+
+  return {
+    reps: enduranceReps,
+    duration: enduranceDuration,
+    distance: enduranceDistance,
+    jumps: enduranceJumps,
+    sessions: rows.length
   };
 }
 

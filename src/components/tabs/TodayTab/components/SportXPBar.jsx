@@ -176,7 +176,10 @@ const SportXPBar = () => {
           </span>
           <span className="text-slate-600"> · </span>
           <span className="tabular-nums text-slate-400">
-            {(breakdown.stepsXp ?? 0).toLocaleString('fr-FR')} pas (0,01×pas cumulés)
+            {(breakdown.stepsXp ?? 0).toLocaleString('fr-FR')} pas
+            {(breakdown.stepsXpDeclarative ?? 0) > 0
+              ? ` (${(breakdown.stepsXpVerified ?? breakdown.stepsXp ?? 0).toLocaleString('fr-FR')} montre + ${(breakdown.stepsXpDeclarative ?? 0).toLocaleString('fr-FR')} déclaratif ×50 %)`
+              : ' (0,01×pas cumulés)'}
           </span>
           {(breakdown.exercisesXp ?? 0) > 0 ? (
             <>

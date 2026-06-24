@@ -98,7 +98,8 @@ const RecapTab = () => {
   const garminPartialForRecap = useRecapCrossCoachGarmin({
     startYmd: periodWindow.start ?? DateHelper.addDays(periodWindow.end, -365),
     endYmd: periodWindow.end,
-    enabled: true
+    enabled: true,
+    manualWalkByDate: snapshotForRecap?.enduranceData?.manualDailyWalkByDate ?? null
   });
 
   const { loadAllData, dbReady } = useGarminData();

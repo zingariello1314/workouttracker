@@ -268,6 +268,15 @@ function buildLoadParagraph(opts) {
     sentences.push(`le tirage progresse de façon régulière (${pullTrends.join(', ')})`);
   }
 
+  const progressionInsights = denseAnalytics?.progressionInsights || [];
+  const topProg = progressionInsights.find(
+    (p) => p.confidence >= 0.72 && p.explanation && p.progressionType !== 'neutral'
+  );
+  if (topProg) {
+    const label = topProg.exerciseName ? `${topProg.exerciseName} — ` : '';
+    sentences.push(`${label}${topProg.explanation}`);
+  }
+
   const sleepCorr = denseAnalytics?.sleepCorrelations?.[0];
   const kickback = findExercisesByPattern(byEx, /kickback/i, getExerciseNameById)[0];
   if (kickback?.sessions?.length >= 3) {

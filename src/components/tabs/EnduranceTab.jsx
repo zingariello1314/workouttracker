@@ -66,6 +66,7 @@ import { useGarminData } from '../../hooks/useGarminData';
 import { useGarminImport } from './GarminTab/hooks/useGarminImport';
 import { mergeGarminCardioIntoRunningSessions } from '../../utils/garminEnduranceSessionBridge';
 import { isWalkingLikeRunningSession } from '../../utils/runningSessionMovementKind';
+import { flattenEnduranceSessionsWithCalendarDate } from '../../services/sport/TrainingDayTruthService';
 
 const EnduranceTab = () => {
   const { data, updateData, getWorkoutHistory, pendingEnduranceSubTab, clearPendingEnduranceSubTab } =
@@ -530,11 +531,13 @@ const EnduranceTab = () => {
 
       const evaluation = evaluateChallenges(challenges, normalizedSessionInput, activityType, {
         logger: enduranceLogger,
-        relatedPushupSessions
+        relatedPushupSessions,
+        workoutAggregate: data
       });
       const badgeIds = listMatchingChallengeIds(challenges, normalizedSessionInput, activityType, {
         logger: enduranceLogger,
-        relatedPushupSessions
+        relatedPushupSessions,
+        workoutAggregate: data
       });
 
       const newSession = {
@@ -562,7 +565,7 @@ const EnduranceTab = () => {
       console.error(`❌ [EnduranceTab] Erreur lors de l'ajout de la session ${activityType}:`, error);
       return { success: false, error: error.message };
     }
-  }, [challenges, enduranceLogger, enduranceState.sessions, saveEnduranceData]);
+  }, [challenges, data, enduranceLogger, enduranceState.sessions, saveEnduranceData]);
 
   const updateSession = useCallback(async (activityType, sessionId, updatedData) => {
     try {
@@ -580,7 +583,8 @@ const EnduranceTab = () => {
       const withBadges = updatedSessions.map((session) => {
         const badgeIds = listMatchingChallengeIds(challenges, session, activityType, {
           logger: enduranceLogger,
-          relatedPushupSessions
+          relatedPushupSessions,
+          workoutAggregate: data
         });
         return { ...session, validatedChallenges: badgeIds };
       });
@@ -605,7 +609,7 @@ const EnduranceTab = () => {
       console.error('❌ [EnduranceTab] Erreur lors de la modification de la session:', error);
       return { success: false, error: error.message };
     }
-  }, [challenges, enduranceLogger, enduranceState.sessions, saveEnduranceData, setUI]);
+  }, [challenges, data, enduranceLogger, enduranceState.sessions, saveEnduranceData, setUI]);
 
   // Fonctions de reset des formulaires
   const resetPushupForm = useCallback(() => {
@@ -1106,67 +1110,53 @@ const EnduranceTab = () => {
   }, [enduranceState?.sessions]);
 
   const getCurrentStreak = useMemo(() => {
-    const currentSessions = enduranceState?.sessions || {};
-    const allSessions = Object.entries(currentSessions).flatMap(([type, activitySessions]) =>
-      Array.isArray(activitySessions) ? activitySessions.map(s => ({ ...s, type })) : []
-    );
-    
+    const flat = flattenEnduranceSessionsWithCalendarDate(enduranceState?.sessions || {}, data);
+    const calendarDates = new Set(flat.map((s) => s.calendarDate).filter(Boolean));
+
     const today = new Date();
     let streak = 0;
-    
+
     for (let i = 0; i < 365; i++) {
       const checkDate = new Date(today);
       checkDate.setDate(today.getDate() - i);
       const dateStr = checkDate.toISOString().split('T')[0];
-      
-      const hasActivity = allSessions.some(session => session.date === dateStr);
-      if (hasActivity) {
+
+      if (calendarDates.has(dateStr)) {
         streak++;
       } else {
         break;
       }
     }
-    
+
     return streak;
-  }, [enduranceState?.sessions]);
+  }, [enduranceState?.sessions, data]);
 
   const getBestStreak = useMemo(() => {
-    const currentSessions = enduranceState?.sessions || {};
-    const allSessions = Object.entries(currentSessions).flatMap(([type, activitySessions]) =>
-      Array.isArray(activitySessions) ? activitySessions.map(s => ({ ...s, type })) : []
-    );
-    
-    if (allSessions.length === 0) return 0;
-    
-    const sortedSessions = allSessions.sort((a, b) => new Date(a.date) - new Date(b.date));
-    let maxStreak = 0;
-    let currentStreak = 1;
-    
-    for (let i = 1; i < sortedSessions.length; i++) {
-      const prevDate = new Date(sortedSessions[i-1].date);
-      const currDate = new Date(sortedSessions[i].date);
-      const diffDays = (currDate - prevDate) / (1000 * 60 * 60 * 24);
-      
+    const flat = flattenEnduranceSessionsWithCalendarDate(enduranceState?.sessions || {}, data);
+    const uniqueDays = [...new Set(flat.map((s) => s.calendarDate).filter(Boolean))].sort();
+    if (uniqueDays.length === 0) return 0;
+
+    let best = 1;
+    let cur = 1;
+    for (let i = 1; i < uniqueDays.length; i++) {
+      const prev = new Date(`${uniqueDays[i - 1]}T12:00:00`);
+      const curr = new Date(`${uniqueDays[i]}T12:00:00`);
+      const diffDays = Math.round((curr - prev) / (24 * 60 * 60 * 1000));
       if (diffDays === 1) {
-        currentStreak++;
-      } else {
-        maxStreak = Math.max(maxStreak, currentStreak);
-        currentStreak = 1;
+        cur += 1;
+        best = Math.max(best, cur);
+      } else if (diffDays > 1) {
+        cur = 1;
       }
     }
-    
-    return Math.max(maxStreak, currentStreak);
-  }, [enduranceState?.sessions]);
+
+    return best;
+  }, [enduranceState?.sessions, data]);
 
   const getActiveDays = useMemo(() => {
-    const currentSessions = enduranceState?.sessions || {};
-    const allSessions = Object.entries(currentSessions).flatMap(([type, activitySessions]) =>
-      Array.isArray(activitySessions) ? activitySessions.map(s => ({ ...s, type })) : []
-    );
-    
-    const uniqueDays = new Set(allSessions.map(session => session.date));
-    return uniqueDays.size;
-  }, [enduranceState?.sessions]);
+    const flat = flattenEnduranceSessionsWithCalendarDate(enduranceState?.sessions || {}, data);
+    return new Set(flat.map((s) => s.calendarDate).filter(Boolean)).size;
+  }, [enduranceState?.sessions, data]);
 
   const getMonthLabels = useMemo(() => {
     // Récupérer directement depuis le namespace pour obtenir l'array
@@ -1774,7 +1764,7 @@ const EnduranceTab = () => {
                               {challenge.type === 'pushups_cumul' && (
                                 <p className="text-teal-200/95 text-sm">
                                   {t('endurance.challenges.details.cumulProgress', {
-                                    current: sumPushupRepsInChallengeWindow(challenge, sessions.pushups || []),
+                                    current: sumPushupRepsInChallengeWindow(challenge, sessions.pushups || [], data),
                                     goal: challenge.goalTotalCount ?? 0
                                   })}
                                 </p>

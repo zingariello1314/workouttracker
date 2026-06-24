@@ -36,7 +36,7 @@ import { computeGtgXp } from './gtgXpService';
 import { parseStretchItemKey } from '../../utils/exerciseKeyGenerator';
 import { buildPlannedStretchItemsForDateStr } from '../../utils/stretchUtils';
 import { workoutProgram } from '../../data/workoutProgram';
-import { normalizeManualDailyWalkByDate, mergedDailySteps } from '../../utils/sport/manualDailyWalkUtils';
+import { computeLifetimeStepsMetrics } from '../sport/WalkingMetricsService';
 import { computeStretchXpFromRating, computeStretchXpFromGlobal5 } from '../../utils/stretchPerceivedRatings';
 import { collectFractionneIntervalXp } from '../../utils/intervalTrainingUtils';
 
@@ -272,6 +272,8 @@ export const calculateSportXP = (workoutData, garminData, enduranceData, sportOp
     caloriesXp: 0,
     steps: 0,
     stepsXp: 0,
+    stepsXpVerified: 0,
+    stepsXpDeclarative: 0,
     challenges: 0,
     challengesXp: 0,
     sessions: 0,
@@ -445,22 +447,15 @@ export const calculateSportXP = (workoutData, garminData, enduranceData, sportOp
     totalXP += breakdown.caloriesXp;
   }
   
-  // 4. XP des pas (Garmin ∪ saisie manuelle téléphone par jour max(montre, saisie)) : 0.01 XP par pas
+  // 4. XP des pas : Garmin 100 %, déclaratif 50 % (via WalkingMetricsService)
   {
-    const manualByDate = normalizeManualDailyWalkByDate(enduranceData?.manualDailyWalkByDate);
     const dm =
       garminData?.dailyMetrics && typeof garminData.dailyMetrics === 'object' ? garminData.dailyMetrics : {};
-    let totalSteps = 0;
-    const keys = new Set([...Object.keys(dm), ...Object.keys(manualByDate)]);
-    keys.forEach((dateKey) => {
-      const row = dm[dateKey];
-      const gSteps =
-        row?.steps != null && Number.isFinite(Number(row.steps)) ? Math.max(0, Math.round(Number(row.steps))) : 0;
-      const mSteps = manualByDate[dateKey]?.steps || 0;
-      totalSteps += mergedDailySteps(gSteps, mSteps);
-    });
-    breakdown.steps = totalSteps;
-    breakdown.stepsXp = Math.round(totalSteps * 0.01);
+    const stepsMetrics = computeLifetimeStepsMetrics(dm, enduranceData?.manualDailyWalkByDate);
+    breakdown.steps = stepsMetrics.totalSteps;
+    breakdown.stepsXp = stepsMetrics.stepsXp;
+    breakdown.stepsXpVerified = stepsMetrics.stepsXpVerified;
+    breakdown.stepsXpDeclarative = stepsMetrics.stepsXpDeclarative;
     totalXP += breakdown.stepsXp;
   }
   
@@ -496,7 +491,8 @@ export const calculateSportXP = (workoutData, garminData, enduranceData, sportOp
         if (!activityType) return innerSum;
         const relatedPushupSessions = activityType === 'pushups' && Array.isArray(list) ? list : undefined;
         const evaluation = evaluateChallenges(evaluationChallenges, session, activityType, {
-          relatedPushupSessions
+          relatedPushupSessions,
+          workoutAggregate: workoutData
         });
         return innerSum + (evaluation.validatedIds?.length || 0);
       }, 0)
@@ -528,7 +524,11 @@ export const calculateSportXP = (workoutData, garminData, enduranceData, sportOp
   const runningVolume = computeRunningVolumeTotals(runningSessions, garminById, { period: 'all' });
   breakdown.runningTotalDistanceKm = runningVolume.totalKm;
   breakdown.runningSessionCount = runningVolume.sessionCount;
-  const runningTrophyEval = evaluateRunningTrophies({ runningSessions, garminById });
+  const runningTrophyEval = evaluateRunningTrophies({
+    runningSessions,
+    garminById,
+    workoutAggregate: workoutData
+  });
   const rt = computeRunningTrophiesXpDetailed(runningTrophyEval.results);
   breakdown.runningTrophies = rt.xp;
   breakdown.runningTrophyTiers = rt.unlockedTierCount;
@@ -537,14 +537,22 @@ export const calculateSportXP = (workoutData, garminData, enduranceData, sportOp
 
   const jumpRopeSessions = Array.isArray(sessionsByType.jumprope) ? sessionsByType.jumprope : [];
   const gainageSessions = Array.isArray(sessionsByType.gainage) ? sessionsByType.gainage : [];
-  const jrEval = evaluateSimpleEnduranceTrophies({ activityType: 'jumprope', sessions: jumpRopeSessions });
+  const jrEval = evaluateSimpleEnduranceTrophies({
+    activityType: 'jumprope',
+    sessions: jumpRopeSessions,
+    workoutAggregate: workoutData
+  });
   const jrXp = computeSimpleEnduranceTrophiesXpDetailed(jrEval.results);
   breakdown.jumpRopeTrophies = jrXp.xp;
   breakdown.jumpRopeTrophyTiers = jrXp.unlockedTierCount;
   breakdown.jumpRopeTrophiesUnlocked = jrXp.trophiesWithTier;
   totalXP += jrXp.xp;
 
-  const gaEval = evaluateSimpleEnduranceTrophies({ activityType: 'gainage', sessions: gainageSessions });
+  const gaEval = evaluateSimpleEnduranceTrophies({
+    activityType: 'gainage',
+    sessions: gainageSessions,
+    workoutAggregate: workoutData
+  });
   const gaXp = computeSimpleEnduranceTrophiesXpDetailed(gaEval.results);
   breakdown.gainageTrophies = gaXp.xp;
   breakdown.gainageTrophyTiers = gaXp.unlockedTierCount;
@@ -552,7 +560,7 @@ export const calculateSportXP = (workoutData, garminData, enduranceData, sportOp
   totalXP += gaXp.xp;
 
   const pushupSessions = Array.isArray(sessionsByType.pushups) ? sessionsByType.pushups : [];
-  const puEval = evaluatePushupTrophies({ sessions: pushupSessions });
+  const puEval = evaluatePushupTrophies({ sessions: pushupSessions, workoutAggregate: workoutData });
   const puXp = computePushupTrophiesXpDetailed(puEval.results);
   breakdown.pushupTrophies = puXp.xp;
   breakdown.pushupTrophyTiers = puXp.unlockedTierCount;
@@ -733,6 +741,8 @@ export const calculateXPForAllCategories = (data) => {
           caloriesXp: 0,
           steps: 0,
           stepsXp: 0,
+          stepsXpVerified: 0,
+          stepsXpDeclarative: 0,
           challenges: 0,
           challengesXp: 0,
           sessions: 0,

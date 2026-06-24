@@ -1,6 +1,7 @@
 import React, { useCallback, useMemo, useState } from 'react';
 import { Trophy, Sparkles, Search } from 'lucide-react';
 import { useTranslation } from '../../../../utils/translations';
+import { useWorkout } from '../../../../context/WorkoutContext';
 import {
   evaluatePushupTrophies,
   computePushupTrophiesXpDetailed,
@@ -68,11 +69,15 @@ function buildUnlockedEntries(results) {
 
 export default function PushupTrophiesPanel({ sessions = [] }) {
   const t = useTranslation();
+  const { data: workoutAggregate } = useWorkout();
   const [subTab, setSubTab] = useState('all');
   const [search, setSearch] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('all');
 
-  const evaluation = useMemo(() => evaluatePushupTrophies({ sessions }), [sessions]);
+  const evaluation = useMemo(
+    () => evaluatePushupTrophies({ sessions, workoutAggregate }),
+    [sessions, workoutAggregate]
+  );
 
   const grouped = useMemo(() => groupByCategory(evaluation.results), [evaluation.results]);
   const unlockedCount = evaluation.results.filter((r) => r.highestLevel && r.auto !== false).length;

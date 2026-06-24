@@ -123,7 +123,8 @@ export function challengeProgressPct(challenge, snapshot, perActivity = {}) {
     if (goal <= 0) return null;
     const current = sumPushupRepsInChallengeWindow(
       challenge,
-      snapshot?.enduranceData?.sessions?.pushups || []
+      snapshot?.enduranceData?.sessions?.pushups || [],
+      snapshot
     );
     return Math.min(100, Math.round((current / goal) * 100));
   }

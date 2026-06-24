@@ -507,6 +507,28 @@ export function computeRecapUserAssessment({
   let repsMomentumRatio = meanDailySecond14 / safeDenom;
   repsMomentumRatio = Math.min(2.4, Math.max(0.4, repsMomentumRatio));
 
+  const sumKgRepsInRange = (liftMap, repsMap, from, to) => {
+    let vol = 0;
+    let reps = 0;
+    liftMap.forEach((v, k) => {
+      if (k >= from && k <= to) vol += Number(v) || 0;
+    });
+    repsMap.forEach((v, k) => {
+      if (k >= from && k <= to) reps += Number(v) || 0;
+    });
+    return { vol, reps };
+  };
+  const first14Lift = sumKgRepsInRange(liftAll, repsMapFull, startYmd, ymdAddDaysLocal(startYmd, 13));
+  const second14Lift = sumKgRepsInRange(liftAll, repsMapFull, startSecond14, endYmd);
+  const intensityFirst14 =
+    first14Lift.reps > 0 ? first14Lift.vol / first14Lift.reps : 0;
+  const intensitySecond14 =
+    second14Lift.reps > 0 ? second14Lift.vol / second14Lift.reps : 0;
+  const avgKgPerRep28 = totalReps28 > 0 ? volumeKgRepsSum28 / totalReps28 : 0;
+  let intensityMomentum =
+    intensityFirst14 > 0 ? intensitySecond14 / intensityFirst14 : 1;
+  intensityMomentum = Math.min(2.4, Math.max(0.4, intensityMomentum));
+
   const log1p = (x) => Math.log1p(Math.max(0, x));
 
   const V_REF = 320;
@@ -751,6 +773,8 @@ export function computeRecapUserAssessment({
     lifetimeReps: Math.round(lifetimeReps),
     weightDelta28,
     repsMomentumRatio: Math.round(repsMomentumRatio * 100) / 100,
+    avgKgPerRep28: Math.round(avgKgPerRep28 * 10) / 10,
+    intensityMomentum: Math.round(intensityMomentum * 100) / 100,
     dataMaturity: Math.round(dataMaturity * 100) / 100,
     components: {
       volNorm,

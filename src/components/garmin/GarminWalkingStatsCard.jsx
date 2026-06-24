@@ -161,7 +161,8 @@ export default function GarminWalkingStatsCard({
         if (cancelled) return;
         const built = buildAllTimeWalkingFromSteps({
           dailyMetrics: loaded?.dailyMetrics || {},
-          activities: loaded?.activities || {}
+          activities: loaded?.activities || {},
+          manualStepsByDate: data?.enduranceData?.manualDailyWalkByDate
         });
         setDataset(built);
         const cardio = Array.isArray(loaded?.activities?.cardio) ? loaded.activities.cardio : [];
@@ -178,7 +179,7 @@ export default function GarminWalkingStatsCard({
     return () => {
       cancelled = true;
     };
-  }, [dbReady, isAuthenticated, loadAllData]);
+  }, [dbReady, isAuthenticated, loadAllData, data?.enduranceData?.manualDailyWalkByDate]);
 
   const periodPoints = useMemo(() => {
     const points = Array.isArray(dataset?.points) ? dataset.points : [];

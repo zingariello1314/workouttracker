@@ -6,6 +6,7 @@
 
 import { getDateStr } from '../dateUtils';
 import { isMockEnduranceSession, normalizeDateString } from '../calendarUtils';
+import { resolveSessionCalendarDate, coerceGarminDateOverrides } from '../sessionCalendarDate';
 import { getGarminForRunningSession } from '../runningGarminMetrics';
 import { inferRunningSessionTypeFromGarminActivity } from '../garminRunningLaps';
 import { resolveRunningSessionDisplayType } from '../runningSessionTypeLabel';
@@ -42,7 +43,9 @@ function toNum(v, fb = 0) {
 }
 
 /** Date YYYY-MM-DD robuste (formats Garmin « 2026-06-05 20:22:00 », etc.). */
-function resolveSessionDateYmd(session) {
+function resolveSessionDateYmd(session, dateOverrides = {}) {
+  const logical = resolveSessionCalendarDate(session, dateOverrides);
+  if (logical) return logical;
   const normalized = normalizeDateString(session?.date);
   if (normalized) return normalized;
   const raw = String(session?.date ?? '').trim();
@@ -54,9 +57,9 @@ function resolveSessionDateYmd(session) {
  * Exclut les mocks structurels sans rejeter les séances Garmin crédibles
  * que l'historique affiche déjà (ex. léger décalage de date / fuseau).
  */
-function shouldSkipRunningStatsSession(session) {
+function shouldSkipRunningStatsSession(session, dateOverrides = {}) {
   if (!session || typeof session !== 'object') return true;
-  if (!resolveSessionDateYmd(session)) return true;
+  if (!resolveSessionDateYmd(session, dateOverrides)) return true;
 
   if (!isMockEnduranceSession(session)) return false;
 
@@ -66,7 +69,7 @@ function shouldSkipRunningStatsSession(session) {
     session.garminId != null || session.source === 'garmin' || session.__fromGarminBridge;
 
   if (garminLinked && dist >= 0.3 && durMin >= 3) {
-    const ymd = resolveSessionDateYmd(session);
+    const ymd = resolveSessionDateYmd(session, dateOverrides);
     const sessionDay = new Date(`${ymd}T12:00:00`);
     const today = new Date();
     today.setHours(0, 0, 0, 0);
@@ -304,6 +307,9 @@ export function buildRunningSessionRows(
   classificationCtx = {},
   garminRunningKindByGarminId = null
 ) {
+  const dateOverrides = coerceGarminDateOverrides(
+    classificationCtx?.dateOverrides ?? classificationCtx?.workoutData ?? classificationCtx?.snapshot ?? {}
+  );
   const fcMax = estimateMaxHeartRate(sessions, garminById, {
     ageYears: classificationCtx?.age ?? null,
     garminCardioActivities: garminById instanceof Map ? [...garminById.values()] : null
@@ -311,8 +317,8 @@ export function buildRunningSessionRows(
   const rows = [];
 
   for (const session of sessions || []) {
-    if (shouldSkipRunningStatsSession(session)) continue;
-    const date = resolveSessionDateYmd(session);
+    if (shouldSkipRunningStatsSession(session, dateOverrides)) continue;
+    const date = resolveSessionDateYmd(session, dateOverrides);
     if (!date) continue;
 
     const g = getGarminForRunningSession(session, garminById);

@@ -13,6 +13,7 @@ import { workoutProgram } from '../data/workoutProgram';
 import { collectCalendarRepKeysForExercise, generateStretchItemKey } from './exerciseKeyGenerator';
 import { buildPlannedStretchItemsForDateStr } from './stretchUtils';
 import { getPlannedExercisesForCalendarDate } from './calendarProgramExercises';
+import { applyRunningCompletionCredit } from '../services/sport/ProgramCompletionService';
 
 const DAY_NAMES = ['dimanche', 'lundi', 'mardi', 'mercredi', 'jeudi', 'vendredi', 'samedi'];
 
@@ -200,19 +201,17 @@ export function computeProgramCompletionCheckedRatio(dateStr, workoutData, ctx =
   }
 
   // ── Ratio combiné ─────────────────────────────────────────────────────────
-  const total = exoTotal + stretchTotal;
-  const checked = exoChecked + stretchChecked;
-  const ratio = total === 0 ? 0 : checked / total;
-
-  return {
-    checked,
-    total,
-    ratio,
+  const partial = {
+    checked: exoChecked + stretchChecked,
+    total: exoTotal + stretchTotal,
+    ratio: exoTotal + stretchTotal === 0 ? 0 : (exoChecked + stretchChecked) / (exoTotal + stretchTotal),
     exoChecked,
     exoTotal,
     stretchChecked,
     stretchTotal
   };
+
+  return applyRunningCompletionCredit(dateStr, workoutData, partial, ctx);
 }
 
 /**

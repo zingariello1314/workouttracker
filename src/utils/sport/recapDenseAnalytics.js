@@ -5,7 +5,9 @@
 
 import DateHelper from '../dateHelper';
 import { MuscleGroups } from '../../data/workoutProgramEnhanced';
-import { aggregateLiftVolumeKgByDate } from '../exerciseLoadVolume';
+import { getDailyLiftVolumeKgMap } from '../../services/sport/VolumeAnalyticsService';
+import { computeProgressionInsights } from './volumeProgressionEngine';
+import { applyTrainingIntentToInsights } from './trainingIntentClassifier';
 import { isDateInRecapWindow } from './recapMuscleLoadEngine';
 import { collectCheckedExerciseRepHistory } from './recapAdaptiveInsights';
 import { isStructuralLegExercise } from './recapMovementClassification';
@@ -61,7 +63,7 @@ export function sumLegRepsFromRecapState(recapState) {
 /** kg×reps par semaine calendaire (lundi) sur la fenêtre. */
 export function computeWeeklyLoadStats(snapshot, window) {
   if (!window?.start || !window?.end) return null;
-  const liftMap = aggregateLiftVolumeKgByDate(snapshot);
+  const liftMap = getDailyLiftVolumeKgMap(snapshot);
   const byWeek = new Map();
   liftMap.forEach((vol, dateStr) => {
     if (!isDateInRecapWindow(dateStr, window) || vol <= 0) return;
@@ -329,7 +331,8 @@ function buildNarrativeSnippets(opts) {
     garminCalendar = null,
     sleepCorrelations = [],
     challengeRows = [],
-    runningPeriod = null
+    runningPeriod = null,
+    progressionInsights = []
   } = opts;
 
   const snippets = { adherence: [], load: [], legs: [], endurance: [], recovery: [] };
@@ -362,6 +365,14 @@ function buildNarrativeSnippets(opts) {
       }
     }
     snippets.load.push(`${line}.`);
+  }
+
+  const topProgression = (progressionInsights || []).find(
+    (p) => p.confidence >= 0.7 && p.explanation && p.progressionType !== 'neutral'
+  );
+  if (topProgression?.explanation) {
+    const name = topProgression.exerciseName ? `${topProgression.exerciseName} : ` : '';
+    snippets.load.push(`${name}${topProgression.explanation}.`);
   }
 
   const volSum = assessment?.volumeKgRepsSum28;
@@ -474,6 +485,9 @@ export function buildRecapDenseAnalytics(opts = {}) {
   const challengeRows = buildChallengeDetailRows(snapshot, enrichment);
   const runningPeriod = resolveRunningPeriodStats(snapshot, garminData, window);
 
+  const rawProgressionInsights = computeProgressionInsights(snapshot, window, getExerciseNameById);
+  const progressionInsights = applyTrainingIntentToInsights(rawProgressionInsights, snapshot);
+
   const exposure = enrichment?.movementExposure || {};
   const legWeeklyPlan = exposure.legDaysPlan ?? exposure.legDays ?? 0;
   const legWeeklyActual = actualLeg.legDaysWeeklyActual ?? exposure.legDaysWeeklyActual ?? 0;
@@ -494,7 +508,8 @@ export function buildRecapDenseAnalytics(opts = {}) {
     garminCalendar,
     sleepCorrelations,
     challengeRows,
-    runningPeriod
+    runningPeriod,
+    progressionInsights
   });
 
   return {
@@ -506,6 +521,7 @@ export function buildRecapDenseAnalytics(opts = {}) {
     mostRegularExercises: mostRegular,
     verticalPull,
     narrativeSnippets,
+    progressionInsights,
     actualLeg,
     garminCalendar,
     sleepCorrelations,

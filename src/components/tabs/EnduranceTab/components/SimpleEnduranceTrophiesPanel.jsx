@@ -1,5 +1,6 @@
 import React, { useCallback, useMemo, useState } from 'react';
 import { Trophy, Sparkles, Search } from 'lucide-react';
+import { useWorkout } from '../../../../context/WorkoutContext';
 import {
   evaluateSimpleEnduranceTrophies,
   computeSimpleEnduranceTrophiesXpDetailed,
@@ -60,13 +61,14 @@ function buildUnlockedEntries(results) {
  * @param {{ activityType: 'jumprope'|'gainage', sessions?: object[], title: string, subtitle?: string }} props
  */
 export default function SimpleEnduranceTrophiesPanel({ activityType, sessions = [], title, subtitle }) {
+  const { data: workoutAggregate } = useWorkout();
   const [subTab, setSubTab] = useState('all');
   const [search, setSearch] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('all');
 
   const evaluation = useMemo(
-    () => evaluateSimpleEnduranceTrophies({ activityType, sessions }),
-    [activityType, sessions]
+    () => evaluateSimpleEnduranceTrophies({ activityType, sessions, workoutAggregate }),
+    [activityType, sessions, workoutAggregate]
   );
 
   const grouped = useMemo(() => groupByCategory(evaluation.results), [evaluation.results]);

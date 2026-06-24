@@ -48,11 +48,27 @@ import {
   computeYearSportRecordHolders,
   formatCalendarSportDuration
 } from '../utils/calendarSportStatsFormat';
-import CalendarDayDataStripes from './calendar/CalendarDayDataStripes';
+import CalendarDayDataStripes, {
+  calendarStripeReservePx
+} from './calendar/CalendarDayDataStripes';
 import CalendarRestDayMarker from './calendar/CalendarRestDayMarker';
 import CalendarGarminDayRecap from './calendar/CalendarGarminDayRecap';
 import CalendarDayRecapDetailPanel from './calendar/CalendarDayRecapDetailPanel';
+import CalendarDayQuickActions from './calendar/CalendarDayQuickActions';
+import CalendarDayTopBadges from './calendar/CalendarDayTopBadges';
+import CalendarDayTrainingScorePanel from './calendar/CalendarDayTrainingScorePanel';
+import CalendarDayBadgesExplainer from './calendar/CalendarDayBadgesExplainer';
 import { formatPctVsAverage } from '../utils/calendarDayChampion';
+import {
+  syncExerciseSetLogTotalReps,
+  stripExerciseSetLogForKeys
+} from '../utils/exerciseSetLogUtils';
+import { calendarBadgesForDate, calendarBadgeDetailsForDate, calendarBadgeSizeScale } from '../utils/calendarYearDayBadges';
+import {
+  buildYearStrengthLoadReference,
+  computeCalendarDayStrengthScore,
+  computeCalendarDayHolisticScore
+} from '../utils/calendarDayTrainingScores';
 import {
   computeCalendarDayVisualContext,
   computeLiftVolumeRelativeVisualBoost01,
@@ -72,7 +88,8 @@ import {
   validateDuration,
   validateDate,
   validateNumericValue,
-  collectEnduranceSessionsForCalendarDay
+  collectEnduranceSessionsForCalendarDay,
+  computeEnduranceDayMetricsForCalendar
 } from '../utils/calendarUtils';
 import {
   paceMinPerKmFromSession,
@@ -341,6 +358,8 @@ const CalendarHeatmap = ({
   /** Jour le plus intense (couronne sur le calendrier sport). */
   championDayDate = null,
   championDetail = null,
+  /** Badges année (champion, pas, kcal, volume, course, intensité). */
+  calendarDayBadges = null,
   externalSelectDate = null,
   onExternalSelectHandled = null,
 }) => {
@@ -379,6 +398,27 @@ const CalendarHeatmap = ({
   const [editingRepsDraft, setEditingRepsDraft] = useState('');
   /** Ligne du récap jour ouverte en détail (sommeil, pas, FC…). */
   const [recapDetailRow, setRecapDetailRow] = useState(null);
+
+  const YEAR_VIEW_COLS_KEY = 'momentum.calendar.yearViewColumns';
+  const [yearViewColumns, setYearViewColumns] = useState(() => {
+    try {
+      const v = parseInt(localStorage.getItem(YEAR_VIEW_COLS_KEY), 10);
+      return v >= 1 && v <= 5 ? v : 3;
+    } catch {
+      return 3;
+    }
+  });
+
+  const yearGridColsClass = useMemo(() => {
+    const map = {
+      1: 'grid-cols-1',
+      2: 'grid-cols-1 md:grid-cols-2',
+      3: 'grid-cols-1 md:grid-cols-2 lg:grid-cols-3',
+      4: 'grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4',
+      5: 'grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5'
+    };
+    return map[yearViewColumns] || map[3];
+  }, [yearViewColumns]);
 
   // Récupérer les données du contexte pour le calcul du temps réel
   const {
@@ -534,6 +574,15 @@ const CalendarHeatmap = ({
     if (variant !== 'sport') return null;
     return aggregateLiftVolumeKgByDate(allData);
   }, [variant, allData]);
+
+  const strengthScoreRefs = useMemo(() => {
+    if (variant !== 'sport') return { p90Load: 420 };
+    return buildYearStrengthLoadReference(
+      allData,
+      getExerciseNameById,
+      currentDate.getFullYear()
+    );
+  }, [variant, allData, getExerciseNameById, currentDate]);
   
   // ✅ NOUVEAU : Traductions
   const t = useTranslation();
@@ -1120,114 +1169,7 @@ const CalendarHeatmap = ({
     // Calculer les données d'endurance pour cette date
     // NOTE: Les sessions d'endurance détaillées n'impactent PAS l'intensité du calendrier
     // Elles servent uniquement à fournir des détails sur ce qui s'est passé
-    const getEnduranceDataForDate = () => {
-      const enduranceData = currentData?.enduranceData || {};
-      const sessions = enduranceData.sessions || {};
-      
-      let enduranceReps = 0;
-      let enduranceDuration = 0;
-      let enduranceDistance = 0;
-      let enduranceJumps = 0;
-      let enduranceSessions = 0;
-      
-      // Parcourir toutes les activités d'endurance (pour les détails uniquement)
-      // ✅ FIX : Filtrer les sessions mock
-      Object.entries(sessions).forEach(([activityType, activitySessions]) => {
-        if (Array.isArray(activitySessions)) {
-          activitySessions.forEach(session => {
-            // ✅ PHASE 1 : Exclure les sessions mock (fonction centralisée)
-            if (isMockEnduranceSession(session)) {
-              return; // Ignorer cette session mock
-            }
-            if (activityType === 'running' && shouldExcludeStoredGarminRunningSession(session)) {
-              return;
-            }
-            // ✅ PHASE 4 : Valider la date (vérifier si future et normaliser)
-            const dateValidation = validateDate(session.date, `getEnduranceDataForDate.${activityType}.${session.id || 'unknown'}`);
-            const sessionDateStr = dateValidation.normalizedDate;
-            
-            // Ignorer les sessions avec dates futures (sauf si on veut les inclure pour le futur)
-            if (dateValidation.isFuture) {
-              return; // Ignorer cette session (date future)
-            }
-              
-            // Comparer les dates normalisées
-            if (sessionDateStr && sessionDateStr === dateStr) {
-              enduranceSessions++;
-              
-              // ✅ CORRECTION : Ajouter les répétitions (pompes, boxe) - EXCLURE jumprope
-              // Les sauts (jumprope) ne sont PAS des répétitions d'exercices, ils sont comptés séparément dans enduranceJumps
-              // Seulement les activités avec count (pushups, boxing) ou reps (boxing) sont des répétitions
-              // ✅ Les sessions créées depuis les défis (TodayTab) ont maintenant count ET reps (normalisé)
-              // ✅ Les sessions créées depuis EnduranceTab ont count
-              // ✅ Cette logique gère les deux cas : count (prioritaire) ou reps (fallback)
-              if (activityType !== 'jumprope') {
-                // Priorité : count > reps (pour éviter d'ajouter les deux si les deux existent)
-                // Si count existe, l'utiliser (priorité pour cohérence avec EnduranceTab)
-                // Sinon, utiliser reps (fallback pour compatibilité avec anciennes sessions ou défis)
-                const rawReps = session.count !== undefined && session.count !== null
-                  ? session.count
-                  : (session.reps !== undefined && session.reps !== null ? session.reps : 0);
-                // ✅ PHASE 4 : Valider la valeur numérique (rejette négatif, NaN)
-                const repsValidation = validateNumericValue(rawReps, `getEnduranceDataForDate.${dateStr}.${activityType}.reps`, false);
-                if (repsValidation.normalizedValue > 0) {
-                  enduranceReps += repsValidation.normalizedValue;
-                }
-              }
-              // ✅ PHASE 4 : Utiliser parseDurationToMinutes + validation centralisée
-              if (session.duration) {
-                const durationMinutes = parseDurationToMinutes(session.duration, `getEnduranceDataForDate.${dateStr}`);
-                const durationValidation = validateDuration(durationMinutes, `getEnduranceDataForDate.${dateStr}.${activityType}.${session.id || 'unknown'}`);
-                enduranceDuration += Math.round(durationValidation.clampedValue);
-              }
-              
-              // ✅ PHASE 4 : Ajouter la distance avec validation
-              if (session.distance) {
-                const distValidation = validateNumericValue(session.distance, `getEnduranceDataForDate.${dateStr}.${activityType}.distance`, false);
-                if (distValidation.normalizedValue > 0) {
-                  enduranceDistance += distValidation.normalizedValue;
-                }
-              }
-              if (session.laps && Array.isArray(session.laps)) {
-                session.laps.forEach((lap, lapIdx) => {
-                  const lapDistValidation = validateNumericValue(lap.distance, `getEnduranceDataForDate.${dateStr}.${activityType}.lap[${lapIdx}].distance`, false);
-                  if (lapDistValidation.normalizedValue > 0) {
-                    enduranceDistance += lapDistValidation.normalizedValue;
-                  }
-                });
-              }
-              
-              // ✅ PHASE 4 : Ajouter les sauts avec validation
-              // ✅ CORRECTION : Pour jumprope, les sauts peuvent être dans jumps OU reps
-              if (activityType === 'jumprope') {
-                const rawJumps = session.jumps || session.reps || 0;
-                const jumpsValidation = validateNumericValue(rawJumps, `getEnduranceDataForDate.${dateStr}.jumprope.jumps`, false);
-                if (jumpsValidation.normalizedValue > 0) {
-                  enduranceJumps += jumpsValidation.normalizedValue;
-                }
-              } else if (session.jumps) {
-                // Pour les autres activités, utiliser jumps si présent
-                const jumpsValidation = validateNumericValue(session.jumps, `getEnduranceDataForDate.${dateStr}.${activityType}.jumps`, false);
-                if (jumpsValidation.normalizedValue > 0) {
-                  enduranceJumps += jumpsValidation.normalizedValue;
-                }
-              }
-            }
-          });
-        }
-      });
-      
-      // Arrondir la distance pour éviter les erreurs de précision flottante
-      enduranceDistance = Math.round(enduranceDistance * 10) / 10;
-      
-      return {
-        reps: enduranceReps,
-        duration: enduranceDuration,
-        distance: enduranceDistance,
-        jumps: enduranceJumps,
-        sessions: enduranceSessions
-      };
-    };
+    const getEnduranceDataForDate = () => computeEnduranceDayMetricsForCalendar(currentData, dateStr);
     
     const enduranceData = getEnduranceDataForDate();
     
@@ -1443,31 +1385,25 @@ const CalendarHeatmap = ({
       console.warn(`⚠️ [getIntensityForDate] ${dateStr} - enduranceRepsValue suspect: ${enduranceRepsValue}`);
       // Tracer chaque session d'endurance pour cette date pour identifier la source
       const enduranceDataRawDebug = allData?.enduranceData || {};
-      const sessionsDebug = enduranceDataRawDebug.sessions || {};
       const problematicSessions = [];
-      Object.entries(sessionsDebug).forEach(([activityType, activitySessions]) => {
-        if (Array.isArray(activitySessions)) {
-          activitySessions.forEach(session => {
-            if (isMockEnduranceSession(session)) return;
-            const sessionDateStr = normalizeDateString(session.date);
-            if (sessionDateStr && sessionDateStr === dateStr) {
-              // ✅ CORRECTION : Exclure jumprope du calcul des reps (comme dans getEnduranceDataForDate)
-              if (activityType !== 'jumprope') {
-                const sessionReps = session.count !== undefined && session.count !== null
-                  ? parseInt(session.count) || 0
-                  : (session.reps !== undefined && session.reps !== null ? parseInt(session.reps) || 0 : 0);
-                if (sessionReps > 0) {
-                  problematicSessions.push({
-                    activityType,
-                    count: session.count,
-                    reps: session.reps,
-                    sessionReps,
-                    session: session // Session complète pour inspection
-                  });
-                }
-              }
-            }
-          });
+      const { rows: enduranceRowsDebug } = collectEnduranceSessionsForCalendarDay(allData, dateStr);
+      enduranceRowsDebug.forEach(({ activityType, session }) => {
+        if (activityType !== 'jumprope') {
+          const sessionReps =
+            session.count !== undefined && session.count !== null
+              ? parseInt(session.count, 10) || 0
+              : session.reps !== undefined && session.reps !== null
+                ? parseInt(session.reps, 10) || 0
+                : 0;
+          if (sessionReps > 0) {
+            problematicSessions.push({
+              activityType,
+              count: session.count,
+              reps: session.reps,
+              sessionReps,
+              session
+            });
+          }
         }
       });
       console.warn(`   Sessions d'endurance trouvées pour ${dateStr}:`, problematicSessions);
@@ -1517,31 +1453,25 @@ const CalendarHeatmap = ({
       
       // 🔍 DEBUG DÉTAILLÉ : Tracer chaque session d'endurance
       const enduranceSessionsDetails = [];
-      const sessions = enduranceDataRaw.sessions || {};
-      Object.entries(sessions).forEach(([activityType, activitySessions]) => {
-        if (Array.isArray(activitySessions)) {
-          activitySessions.forEach(session => {
-            if (isMockEnduranceSession(session)) return;
-            const sessionDateStr = normalizeDateString(session.date);
-            if (sessionDateStr && sessionDateStr === dateStr) {
-              // ✅ CORRECTION : Exclure jumprope du calcul des reps (comme dans getEnduranceDataForDate)
-              if (activityType !== 'jumprope') {
-                const sessionReps = session.count !== undefined && session.count !== null
-                  ? parseInt(session.count) || 0
-                  : (session.reps !== undefined && session.reps !== null ? parseInt(session.reps) || 0 : 0);
-                if (sessionReps > 0) {
-                  enduranceSessionsDetails.push({
-                    activityType: activityType || session.activityType || 'unknown',
-                    count: session.count,
-                    reps: session.reps,
-                    sessionReps,
-                    duration: session.duration,
-                    validatedChallenges: session.validatedChallenges
-                  });
-                }
-              }
-            }
-          });
+      const { rows: enduranceRowsDetail } = collectEnduranceSessionsForCalendarDay(currentData, dateStr);
+      enduranceRowsDetail.forEach(({ activityType, session }) => {
+        if (activityType !== 'jumprope') {
+          const sessionReps =
+            session.count !== undefined && session.count !== null
+              ? parseInt(session.count, 10) || 0
+              : session.reps !== undefined && session.reps !== null
+                ? parseInt(session.reps, 10) || 0
+                : 0;
+          if (sessionReps > 0) {
+            enduranceSessionsDetails.push({
+              activityType: activityType || session.activityType || 'unknown',
+              count: session.count,
+              reps: session.reps,
+              sessionReps,
+              duration: session.duration,
+              validatedChallenges: session.validatedChallenges
+            });
+          }
         }
       });
       
@@ -2106,11 +2036,18 @@ const CalendarHeatmap = ({
 
       nextReps[storageKey] = capped;
 
-      const payload = {
+      let payload = {
         ...latestData,
         checkedExercises: nextChecked,
         reps: nextReps
       };
+
+      const exerciseForLog = {
+        id: exercise.exerciseId ?? exercise.id,
+        series: exercise.series,
+        name: exercise.name
+      };
+      payload = syncExerciseSetLogTotalReps(payload, storageKey, exerciseForLog, capped);
 
       await updateData(payload, { strict: true, sessionDay: dateStr });
 
@@ -2391,18 +2328,32 @@ const CalendarHeatmap = ({
     }
     if (intensity?.justification) {
       const reason = intensity.justification.reason;
-      const baseColor = JUSTIFICATION_COLORS[reason] || JUSTIFICATION_COLORS[JUSTIFICATION_REASONS.AUTRE];
-      const todayRing = isToday ? ' ring-2 ring-amber-300/95' : '';
-      const dayNum =
-        JUSTIFICATION_DAY_NUMBER_CLASS[reason] ||
-        JUSTIFICATION_DAY_NUMBER_CLASS[JUSTIFICATION_REASONS.AUTRE];
-      const restStyle =
-        reason === JUSTIFICATION_REASONS.REPOS ? restDayCellBackgroundStyle() : undefined;
+      if (reason === JUSTIFICATION_REASONS.REPOS) {
+        const todayRing = isToday ? ' ring-2 ring-amber-300/95' : '';
+        const dayNum =
+          JUSTIFICATION_DAY_NUMBER_CLASS[reason] ||
+          JUSTIFICATION_DAY_NUMBER_CLASS[JUSTIFICATION_REASONS.AUTRE];
+        return {
+          className: `${JUSTIFICATION_COLORS[reason]}${todayRing}`,
+          style: restDayCellBackgroundStyle(),
+          dayNumberClass: dayNum,
+          isRestDay: true
+        };
+      }
+      const { justification: _j, ...intensitySansJustif } = intensity;
+      const base = getDayColorStyle({ ...intensitySansJustif }, isToday);
+      const ringByReason = {
+        [JUSTIFICATION_REASONS.MALADIE]: 'ring-2 ring-red-500/70',
+        [JUSTIFICATION_REASONS.FLEMME]: 'ring-2 ring-orange-500/70',
+        [JUSTIFICATION_REASONS.PAS_LE_TEMPS]: 'ring-2 ring-amber-400/70',
+        [JUSTIFICATION_REASONS.AUTRE]: 'ring-2 ring-slate-400/70'
+      };
+      const justRing = ringByReason[reason] || ringByReason[JUSTIFICATION_REASONS.AUTRE];
       return {
-        className: `${baseColor}${todayRing}`,
-        style: restStyle,
-        dayNumberClass: dayNum,
-        isRestDay: reason === JUSTIFICATION_REASONS.REPOS,
+        ...base,
+        className: `${base.className} ${justRing}`.trim(),
+        hasJustification: true,
+        justificationReason: reason
       };
     }
     const level = Math.max(0, Math.min(4, intensity?.level || 0));
@@ -2959,11 +2910,15 @@ const CalendarHeatmap = ({
                   ? dayStripesForDate(dayDateStr, intensityForCell)
                   : [];
               const isRestDay = day.isCurrentMonth && isRestDayJustificationFromIntensity(intensityForCell);
-              const isChampionDay =
-                variant === 'sport' &&
-                championDayDate &&
-                day.isCurrentMonth &&
-                dayDateStr === championDayDate;
+              const dayTopBadges =
+                variant === 'sport' && day.isCurrentMonth
+                  ? calendarBadgesForDate(dayDateStr, calendarDayBadges)
+                  : [];
+              const dayStripeReserve = calendarStripeReservePx(
+                isSidebarEmbed,
+                dayGarminStripes.length
+              );
+              const monthBadgeScale = calendarBadgeSizeScale({ isMonthView: true });
               return (
               <div
                 key={index}
@@ -3031,12 +2986,12 @@ const CalendarHeatmap = ({
                   <CalendarDayDataStripes stripes={dayGarminStripes} compact={isSidebarEmbed} />
                 )}
                 {isRestDay && <CalendarRestDayMarker compact={isSidebarEmbed} />}
-                {isChampionDay ? (
-                  <Crown
-                    className={`absolute z-[5] text-amber-300 drop-shadow pointer-events-none ${isSidebarEmbed ? 'right-0.5 top-0.5 h-3 w-3' : 'right-1 top-1 h-4 w-4'}`}
-                    aria-label="Meilleur jour"
-                  />
-                ) : null}
+                <CalendarDayTopBadges
+                  badges={dayTopBadges}
+                  compact={isSidebarEmbed}
+                  sizeScale={monthBadgeScale}
+                  stripeReservePx={dayStripeReserve}
+                />
                 {day.isToday && (
                   <div
                     className={`absolute bg-blue-500 rounded-full ${isSidebarEmbed ? 'top-0 right-0 w-1.5 h-1.5' : '-top-1 -right-1 w-3 h-3'}`}
@@ -3283,7 +3238,37 @@ const CalendarHeatmap = ({
 
           {/* Grille des mois */}
           <div className={heatmapModuleShell(variant, isSidebarEmbed, 'wide')}>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+            {variant === 'sport' ? (
+              <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+                <span className="text-sm text-slate-400">
+                  {t('calendar.heatmap.yearColumnsLabel', 'Colonnes par ligne')}
+                </span>
+                <div className="flex gap-1">
+                  {[1, 2, 3, 4, 5].map((n) => (
+                    <button
+                      key={n}
+                      type="button"
+                      onClick={() => {
+                        setYearViewColumns(n);
+                        try {
+                          localStorage.setItem(YEAR_VIEW_COLS_KEY, String(n));
+                        } catch {
+                          /* ignore */
+                        }
+                      }}
+                      className={`min-w-[2.25rem] rounded-lg border px-2.5 py-1 text-sm tabular-nums transition ${
+                        yearViewColumns === n
+                          ? 'border-sky-400 bg-sky-950/50 font-semibold text-sky-100'
+                          : 'border-slate-600/60 bg-black/40 text-slate-400 hover:border-slate-500'
+                      }`}
+                    >
+                      {n}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            ) : null}
+            <div className={`grid ${yearGridColsClass} gap-6`}>
               {yearMonths.map((month, monthIndex) => (
                 <div key={monthIndex} className="space-y-3">
                   <div className="flex items-center justify-between">
@@ -3366,11 +3351,15 @@ const CalendarHeatmap = ({
                             ? dayStripesForDate(yDateStr, yIntensity)
                             : [];
                         const yIsRestDay = day.isCurrentMonth && isRestDayJustificationFromIntensity(yIntensity);
-                        const yIsChampionDay =
-                          variant === 'sport' &&
-                          championDayDate &&
-                          day.isCurrentMonth &&
-                          yDateStr === championDayDate;
+                        const yTopBadges =
+                          variant === 'sport' && day.isCurrentMonth
+                            ? calendarBadgesForDate(yDateStr, calendarDayBadges)
+                            : [];
+                        const yStripeReserve = calendarStripeReservePx(true, yGarminStripes.length);
+                        const yearBadgeScale = calendarBadgeSizeScale({
+                          compact: true,
+                          yearColumns: yearViewColumns
+                        });
                         return (
                         <div
                           key={dayIndex}
@@ -3426,12 +3415,12 @@ const CalendarHeatmap = ({
                             <CalendarDayDataStripes stripes={yGarminStripes} compact physicalOnly />
                           )}
                           {yIsRestDay && <CalendarRestDayMarker compact />}
-                          {yIsChampionDay ? (
-                            <Crown
-                              className="pointer-events-none absolute right-[1px] top-[1px] z-[5] h-2 w-2 text-amber-300 drop-shadow"
-                              aria-label="Meilleur jour"
-                            />
-                          ) : null}
+                          <CalendarDayTopBadges
+                            badges={yTopBadges}
+                            compact
+                            sizeScale={yearBadgeScale}
+                            stripeReservePx={yStripeReserve}
+                          />
                         </div>
                       );
                       })}
@@ -3995,10 +3984,37 @@ const CalendarHeatmap = ({
                 exerciseSetWeights: updatedSetWeights,
               };
 
-              await updateData(payload, { strict: true, sessionDay: saveDateStr });
+              let payloadWithSetLogs = payload;
+              savedKeys.forEach((key) => {
+                const exerciseIdPart = key.replace(`${saveDateStr}_`, '').replace(/_semaine[AB]$/, '');
+                const exercise = currentWorkout.exercices.find(
+                  (ex) => String(ex.id) === String(exerciseIdPart)
+                );
+                if (!exercise) return;
+                const repsVal = parseInt(String(updatedReps[key] ?? ''), 10);
+                if (!Number.isFinite(repsVal) || repsVal < 0) return;
+                payloadWithSetLogs = syncExerciseSetLogTotalReps(
+                  payloadWithSetLogs,
+                  key,
+                  exercise,
+                  repsVal
+                );
+              });
+
+              const removedKeys = Object.keys(latestData.reps || {}).filter(
+                (k) =>
+                  k.startsWith(saveDateStr) &&
+                  !savedKeys.includes(k) &&
+                  (latestData.checkedExercises?.[k] || latestData.reps?.[k] != null)
+              );
+              if (removedKeys.length > 0) {
+                payloadWithSetLogs = stripExerciseSetLogForKeys(payloadWithSetLogs, removedKeys);
+              }
+
+              await updateData(payloadWithSetLogs, { strict: true, sessionDay: saveDateStr });
 
               if (hasUnsavedExercises || hasUnsavedStretches) {
-                replaceDraftWorkoutData(payload);
+                replaceDraftWorkoutData(payloadWithSetLogs);
               }
 
               // ✅ NOUVEAU : Invalider le cache d'intensité pour cette date pour forcer le recalcul
@@ -4867,6 +4883,31 @@ const CalendarHeatmap = ({
           });
           // ✅ NOUVEAU : Récupérer la justification pour ce jour
           const justification = selectedDate.intensity?.justification || getDayJustification(allData, selectedDateStr);
+
+          const dayStrengthScore =
+            variant === 'sport'
+              ? computeCalendarDayStrengthScore(
+                  selectedDateStr,
+                  allData,
+                  getExerciseNameById,
+                  strengthScoreRefs
+                )
+              : { score: null, criteria: [] };
+          const dayHolisticScore =
+            variant === 'sport'
+              ? computeCalendarDayHolisticScore({
+                  dateStr: selectedDateStr,
+                  workoutData: allData,
+                  garminData,
+                  getExerciseNameById,
+                  strengthRefs: strengthScoreRefs
+                })
+              : { score: null, criteria: [] };
+
+          const dayBadgeDetails =
+            variant === 'sport'
+              ? calendarBadgeDetailsForDate(selectedDateStr, calendarDayBadges)
+              : [];
           
           // Calculer les ajustements Garmin pour cette date
           let garminAdjustments = null;
@@ -4976,6 +5017,10 @@ const CalendarHeatmap = ({
               </div>
             )}
 
+            {dayBadgeDetails.length > 0 ? (
+              <CalendarDayBadgesExplainer badgeDetails={dayBadgeDetails} t={t} />
+            ) : null}
+
             {garminRecapRows.length > 0 && (
               <div className="space-y-2">
                 {recapDetailRow ? (
@@ -4988,6 +5033,7 @@ const CalendarHeatmap = ({
                     programs={Array.isArray(programs) ? programs : []}
                     language={language}
                     t={t}
+                    updateData={updateData}
                     onBack={() => setRecapDetailRow(null)}
                   />
                 ) : (
@@ -5003,7 +5049,7 @@ const CalendarHeatmap = ({
                 )}
               </div>
             )}
-            
+
             {/* Statistiques principales - Masquer si jour justifié (sauf repos) */}
             {(!justification || justification.reason === JUSTIFICATION_REASONS.REPOS) && (
               <div>
@@ -5033,15 +5079,6 @@ const CalendarHeatmap = ({
                       </div>
                     )}
                   </div>
-                </div>
-              </div>
-            )}
-
-            {/* ✅ NOUVEAU : Message si jour justifié (pas d'entraînement) - Sauf repos */}
-            {justification && justification.reason !== JUSTIFICATION_REASONS.REPOS && (
-              <div className="rounded-lg border border-blue-500/40 bg-black p-4 text-center">
-                <div className="text-sm text-sky-500">
-                  {t('calendar.heatmap.dayDetails.noWorkoutJustified')}
                 </div>
               </div>
             )}
@@ -5091,8 +5128,7 @@ const CalendarHeatmap = ({
             )}
             
             {/* Détail Garmin étendu (si pas déjà couvert par le récap liste) */}
-            {(!justification || justification.reason === JUSTIFICATION_REASONS.REPOS) &&
-              (swimming.length > 0 || jumpRope.length > 0 || cardio.length > 0 || dailyMetrics) &&
+            {(swimming.length > 0 || jumpRope.length > 0 || cardio.length > 0 || dailyMetrics) &&
               garminRecapRows.length === 0 && (
               <div>
                 <h4 className="text-white font-medium mb-3 flex items-center">
@@ -5658,45 +5694,32 @@ const CalendarHeatmap = ({
                 </div>
               </div>
             )}
-            
-            {/* ✅ NOUVEAU : Bouton pour saisir/modifier la séance - Toujours disponible */}
-            {(!justification || justification.reason === JUSTIFICATION_REASONS.REPOS) && (
-              <div className="bg-emerald-900/20 border border-emerald-500/30 rounded-lg p-4">
-                <div className="flex items-center justify-between">
-                  <div className="flex-1">
-                    <h4 className="text-emerald-300 font-medium mb-1 flex items-center gap-2">
-                      <Activity className="w-5 h-5" />
-                      {selectedDate.intensity.completedCount === 0 
-                        ? t('calendar.heatmap.dayDetails.garminActivityDetected', 'Activité Garmin détectée')
-                        : t('calendar.heatmap.dayDetails.modifyWorkout', 'Modifier ma séance')
-                      }
-                    </h4>
-                    <p className="text-slate-300 text-sm">
-                      {selectedDate.intensity.completedCount === 0 
-                        ? t('calendar.heatmap.dayDetails.noExercisesButActivity', 'Une activité a été enregistrée sur votre montre Garmin mais aucun exercice n\'a été saisi. Souhaitez-vous enregistrer votre séance maintenant ?')
-                        : t('calendar.heatmap.dayDetails.modifyWorkoutMessage', 'Vous pouvez modifier ou compléter votre séance enregistrée.')
-                      }
-                    </p>
-                  </div>
-                  <Button
-                    variant="primary"
-                    size="md"
-                    onClick={() => {
-                      setPanelMode('workout-entry');
-                      setPanelDate(selectedDate.date);
-                      setSelectedDate(null);
-                    }}
-                    icon={Save}
-                    className="ml-4"
-                  >
-                    {selectedDate.intensity.completedCount === 0
-                      ? t('calendar.heatmap.dayDetails.enterWorkout', 'Saisir ma séance')
-                      : t('calendar.heatmap.dayDetails.modifyWorkout', 'Modifier ma séance')
-                    }
-                  </Button>
-                </div>
-              </div>
-            )}
+
+            <div className="mt-6 space-y-4 border-t border-slate-700/60 pt-6">
+              <CalendarDayQuickActions
+                dateStr={selectedDateStr}
+                selectedDate={selectedDate}
+                intensity={selectedDate.intensity}
+                workoutData={allData}
+                garminData={garminData}
+                updateData={updateData}
+                t={t}
+                onOpenWorkoutEntry={() => {
+                  setPanelMode('workout-entry');
+                  setPanelDate(selectedDate.date);
+                  setSelectedDate(null);
+                }}
+              />
+
+              {variant === 'sport' ? (
+                <CalendarDayTrainingScorePanel
+                  strength={dayStrengthScore}
+                  holistic={dayHolisticScore}
+                  t={t}
+                />
+              ) : null}
+            </div>
+
             </div>
           );
         }

@@ -36,7 +36,8 @@ export function buildCalendarDayAllStripes({
   const physical = buildDedupedPhysicalActivityStripes(workoutData, garminData, dateStr);
   const garmin = garminData
     ? buildCalendarDayGarminStripes(garminData, dateStr, manualSteps, {
-        skipCardioStripes: true
+        skipCardioStripes: true,
+        workoutData
       })
     : [];
   return sortCalendarDayStripes([...physical, ...stretchOnly, ...garmin]);
@@ -75,7 +76,8 @@ export function buildCalendarDayAllRecapRows({
 
   const garminRows = garminData
     ? buildGarminDayRecapRows(garminData, dateStr, manualSteps, t, {
-        includeCardioActivities: false
+        includeCardioActivities: false,
+        workoutData
       })
     : [];
 

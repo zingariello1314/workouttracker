@@ -16,6 +16,7 @@ import { buildWeightByDateMap, getLatestWeightSnapshot } from './recapAssessment
 import { normalizeProfileQuestionnaire } from '../../features/profileQuestionnaire/schema';
 import { computeCardioBiasMultiplier } from '../../features/profileQuestionnaire/quizInfluence';
 import { summarizeGtgWindow } from '../../services/endurance/gtgService';
+import { resolveDailySteps } from './manualDailyWalkUtils';
 
 /** @typedef {'loading'|'ready'|'skipped'} NutritionBundleStatus */
 
@@ -182,10 +183,15 @@ export function computeWeightDelta7FromSnapshot(snapshot, endYmd) {
 
 /**
  * Synthèse légère Garmin sur [startYmd,endYmd] inclusive (pour panneau coach Récap).
+ * @param {Record<string, object>|null} [manualWalkByDate] — fusion pas manuels (optionnel)
  * @returns {object} champs utilisés par computeRecapCrossCoachInsights.
  */
-export function computeGarminDailyStats(dailyMetrics, startYmd, endYmd) {
+export function computeGarminDailyStats(dailyMetrics, startYmd, endYmd, manualWalkByDate = null) {
   const dm = dailyMetrics && typeof dailyMetrics === 'object' ? dailyMetrics : {};
+  const manual =
+    manualWalkByDate && typeof manualWalkByDate === 'object' && !Array.isArray(manualWalkByDate)
+      ? manualWalkByDate
+      : null;
   const range = DateHelper.getDateRange(startYmd, endYmd);
 
   let totalSteps28 = 0;
@@ -195,12 +201,21 @@ export function computeGarminDailyStats(dailyMetrics, startYmd, endYmd) {
 
   for (const d of range) {
     const day = dm[d];
-    if (!day || typeof day !== 'object') continue;
-    const stp = coachToNum(day.steps);
+    const manualEntry = manual?.[d] ?? null;
+    let stp = null;
+    if (manualEntry) {
+      const g =
+        day?.steps != null && Number.isFinite(Number(day.steps)) ? Math.max(0, Math.round(Number(day.steps))) : 0;
+      const { total } = resolveDailySteps(g, manualEntry);
+      stp = total;
+    } else if (day && typeof day === 'object') {
+      stp = coachToNum(day.steps);
+    }
     if (stp != null && stp >= 0) {
       totalSteps28 += stp;
       daysWithStepsData += 1;
     }
+    if (!day || typeof day !== 'object') continue;
     const s = coachStressFromDay(day.stress ?? day.stressLevel ?? day.avgStress);
     if (s != null && Number.isFinite(s)) stressVals.push(s);
     const sh = coachSleepHours(day.sleep);
@@ -219,7 +234,16 @@ export function computeGarminDailyStats(dailyMetrics, startYmd, endYmd) {
     const dr = DateHelper.getDateRange(hit.startYmd, hit.endYmd);
     let sumSteps = 0;
     dr.forEach((d) => {
-      const x = coachToNum(dm[d]?.steps);
+      const day = dm[d];
+      const manualEntry = manual?.[d] ?? null;
+      let x = null;
+      if (manualEntry) {
+        const g =
+          day?.steps != null && Number.isFinite(Number(day.steps)) ? Math.max(0, Math.round(Number(day.steps))) : 0;
+        x = resolveDailySteps(g, manualEntry).total;
+      } else {
+        x = coachToNum(day?.steps);
+      }
       if (x != null && x >= 0) sumSteps += x;
     });
     segments.push({ sumSteps, daySpan: dr.length });

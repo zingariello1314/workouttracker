@@ -4,6 +4,7 @@
  * Données alignées sur les champs réellement saisis (enduranceFormSchema + enrichissements session).
  */
 import { isMockEnduranceSession } from '../../utils/calendarUtils';
+import { enduranceSessionCalendarYmd } from '../../services/sport/TrainingDayTruthService';
 import { computeRunningTrophiesXpDetailed } from './runningTrophiesService';
 
 const LEVEL_MULTIPLIERS = {
@@ -68,7 +69,9 @@ function parseMmSsToSec(str) {
   return toNumber(str, 0);
 }
 
-function sessionDateKey(session) {
+function sessionDateKey(session, workoutAggregate = null) {
+  const logical = enduranceSessionCalendarYmd(session, workoutAggregate);
+  if (logical) return logical;
   if (typeof session?.date === 'string') {
     const m = session.date.match(/^\d{4}-\d{2}-\d{2}/);
     if (m) return m[0];
@@ -76,8 +79,8 @@ function sessionDateKey(session) {
   return null;
 }
 
-function parseSessionDateTime(session) {
-  const dk = sessionDateKey(session);
+function parseSessionDateTime(session, workoutAggregate = null) {
+  const dk = sessionDateKey(session, workoutAggregate);
   if (!dk) return null;
   const t = session?.time && String(session.time).trim() ? String(session.time).trim() : '12:00:00';
   const iso = `${dk}T${t.length === 5 ? `${t}:00` : t}`;
@@ -175,11 +178,11 @@ function evaluateSingle(trophy, stats, level) {
   return { value, target, progress, unlocked };
 }
 
-function buildJumpRopeStats(sessions = []) {
+function buildJumpRopeStats(sessions = [], workoutAggregate = null) {
   const rows = (sessions || [])
     .filter((s) => s && !isMockEnduranceSession(s))
     .map((s) => {
-      const dateKey = sessionDateKey(s);
+      const dateKey = sessionDateKey(s, workoutAggregate);
       if (!dateKey) return null;
       let durationSec = toNumber(s.durationSec, NaN);
       if (!Number.isFinite(durationSec) || durationSec < 0) {
@@ -191,7 +194,7 @@ function buildJumpRopeStats(sessions = []) {
       }
       const durationMin = durationSec > 0 ? durationSec / 60 : 0;
       const jumps = Math.max(0, Math.floor(toNumber(s.jumps, 0)));
-      const d = parseSessionDateTime(s) || new Date(`${dateKey}T12:00:00`);
+      const d = parseSessionDateTime(s, workoutAggregate) || new Date(`${dateKey}T12:00:00`);
       return {
         raw: s,
         dateKey,
@@ -286,15 +289,15 @@ function buildJumpRopeStats(sessions = []) {
   };
 }
 
-function buildGainageStats(sessions = []) {
+function buildGainageStats(sessions = [], workoutAggregate = null) {
   const rows = (sessions || [])
     .filter((s) => s && !isMockEnduranceSession(s))
     .map((s) => {
-      const dateKey = sessionDateKey(s);
+      const dateKey = sessionDateKey(s, workoutAggregate);
       if (!dateKey) return null;
       const plankSec = Math.max(0, Math.floor(toNumber(s.count, 0)));
       const sessionMin = Math.max(0, toNumber(s.duration, 0));
-      const d = parseSessionDateTime(s) || new Date(`${dateKey}T12:00:00`);
+      const d = parseSessionDateTime(s, workoutAggregate) || new Date(`${dateKey}T12:00:00`);
       return {
         raw: s,
         dateKey,
@@ -376,9 +379,9 @@ function buildGainageStats(sessions = []) {
   };
 }
 
-export function buildSimpleEnduranceStats(activityType, sessions) {
-  if (activityType === 'gainage') return buildGainageStats(sessions);
-  return buildJumpRopeStats(sessions);
+export function buildSimpleEnduranceStats(activityType, sessions, workoutAggregate = null) {
+  if (activityType === 'gainage') return buildGainageStats(sessions, workoutAggregate);
+  return buildJumpRopeStats(sessions, workoutAggregate);
 }
 
 function buildJumpRopeCatalog() {
@@ -521,8 +524,8 @@ function scoreFromResults(results) {
   return { scoreRaw: raw, scoreMax: max, scoreComposite: composite };
 }
 
-export function evaluateSimpleEnduranceTrophies({ activityType, sessions }) {
-  const stats = buildSimpleEnduranceStats(activityType, sessions);
+export function evaluateSimpleEnduranceTrophies({ activityType, sessions, workoutAggregate = null }) {
+  const stats = buildSimpleEnduranceStats(activityType, sessions, workoutAggregate);
   const catalog = buildSimpleEnduranceTrophiesCatalog(activityType);
   const results = catalog.map((trophy) => {
     const levels = LEVELS.map((level) => {

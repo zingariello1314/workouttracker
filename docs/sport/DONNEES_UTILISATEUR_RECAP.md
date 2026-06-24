@@ -74,8 +74,11 @@ Schéma par défaut : `workoutAggregateDefaults.js`.
 | `stretchSessionEffortStars` | clé jour+étirement | **Jour** | Effort étirement |
 | `circuitProgress` | `{ "YYYY-MM-DD": { circuitId: rounds } }` | **Jour** | Tours de circuit complétés |
 | `circuitDefinitions` | définitions circuits | — | Schéma circuits |
-| `enduranceData.sessions` | `{ boxing, pushups, swimming, jumprope, running, gainage }[]` | **Session** (date + champs) | Cardio / endurance manuelle |
+| `enduranceData.sessions` | `{ boxing, pushups, swimming, jumprope, running, gainage }[]` | **Session** (`date` = enregistré ; `logicalDate?` = jour programme) | Cardio / endurance ; filtres calendrier via `resolveSessionCalendarDate` |
 | `enduranceData.challenges` | défis en cours | — | Défis endurance |
+| `enduranceData.manualDailyWalkByDate` | `{ "YYYY-MM-DD": { steps, entryMode?, distanceKm?, updatedAt } }` | **Jour** | Pas manuels / complément après montre (`entryMode`: `total` \| `supplement`) |
+| `garminActivityDateOverrides` | `{ [garminId]: { logicalDate, updatedAt, reason? } }` | Par activité | Réaffectation date logique (ne mute pas `activity.date` Garmin IDB) |
+| `exerciseSetLogs` | `{ "YYYY-MM-DD_exId": { sets: [{reps, weight, weightMode}], schemaVersion } }` | **Jour + exo** | Log structuré séries (fallback legacy `reps` + `exerciseWeights`) |
 | `progressEntries` | tableau | **Entrée datée** | Poids corps, mensurations (Body Tracking) |
 | `progressPhotos` | photos | Datées | |
 | `exerciseMaxRecords` / `exerciseMaxHistory` | PRs | Datés | Records personnels |

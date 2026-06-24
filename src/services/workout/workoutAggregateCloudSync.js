@@ -42,6 +42,37 @@ function mergeDailyVariations(localVal, cloudVal) {
   return out;
 }
 
+function mergeManualDailyWalkByDate(localVal, cloudVal) {
+  const L = localVal && typeof localVal === 'object' && !Array.isArray(localVal) ? localVal : {};
+  const C = cloudVal && typeof cloudVal === 'object' && !Array.isArray(cloudVal) ? cloudVal : {};
+  const out = { ...L };
+  for (const [dateKey, cloudEntry] of Object.entries(C)) {
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(dateKey)) continue;
+    const localEntry = out[dateKey];
+    const localAt = localEntry?.updatedAt ? Date.parse(localEntry.updatedAt) : 0;
+    const cloudAt = cloudEntry?.updatedAt ? Date.parse(cloudEntry.updatedAt) : 0;
+    if (!localEntry || cloudAt >= localAt) {
+      out[dateKey] = cloudEntry;
+    }
+  }
+  return out;
+}
+
+function mergeGarminActivityDateOverrides(localVal, cloudVal) {
+  const L = localVal && typeof localVal === 'object' && !Array.isArray(localVal) ? localVal : {};
+  const C = cloudVal && typeof cloudVal === 'object' && !Array.isArray(cloudVal) ? cloudVal : {};
+  const out = { ...L };
+  for (const [gid, cloudEntry] of Object.entries(C)) {
+    const localEntry = out[gid];
+    const localAt = localEntry?.updatedAt ? Date.parse(localEntry.updatedAt) : 0;
+    const cloudAt = cloudEntry?.updatedAt ? Date.parse(cloudEntry.updatedAt) : 0;
+    if (!localEntry || cloudAt >= localAt) {
+      out[gid] = cloudEntry;
+    }
+  }
+  return out;
+}
+
 function mergeEnduranceData(localVal, cloudVal) {
   const L = localVal && typeof localVal === 'object' ? localVal : {};
   const C = cloudVal && typeof cloudVal === 'object' ? cloudVal : {};
@@ -70,6 +101,7 @@ function mergeEnduranceData(localVal, cloudVal) {
     ...L,
     ...C,
     sessions,
+    manualDailyWalkByDate: mergeManualDailyWalkByDate(L.manualDailyWalkByDate, C.manualDailyWalkByDate),
     challenges: Array.isArray(C.challenges) && C.challenges.length > 0
       ? C.challenges
       : Array.isArray(L.challenges)
@@ -104,6 +136,22 @@ function mergeExerciseSetWeights(localVal, cloudVal) {
   return out;
 }
 
+/** `exerciseSetLogs[key]` : entrée la plus récente (`loggedAt`) l’emporte. */
+function mergeExerciseSetLogs(localVal, cloudVal) {
+  const L = localVal && typeof localVal === 'object' && !Array.isArray(localVal) ? localVal : {};
+  const C = cloudVal && typeof cloudVal === 'object' && !Array.isArray(cloudVal) ? cloudVal : {};
+  const out = { ...L };
+  for (const [key, cloudEntry] of Object.entries(C)) {
+    const localEntry = out[key];
+    const localAt = localEntry?.loggedAt ? Date.parse(localEntry.loggedAt) : 0;
+    const cloudAt = cloudEntry?.loggedAt ? Date.parse(cloudEntry.loggedAt) : 0;
+    if (!localEntry || cloudAt >= localAt) {
+      out[key] = cloudEntry;
+    }
+  }
+  return out;
+}
+
 /**
  * Quand le cloud « gagne » sur `lastSaved`, fusionner les maps de séance pour ne pas perdre
  * des clés présentes uniquement en IndexedDB (reps / coches / poids du jour).
@@ -123,6 +171,7 @@ export function mergeCloudWinningRowOverLocal(localRaw, cloudAgg, storageKey) {
     exerciseWeights: mergeShallowRecordMaps(L.exerciseWeights, C.exerciseWeights),
     exerciseWeightPerArm: mergeShallowRecordMaps(L.exerciseWeightPerArm, C.exerciseWeightPerArm),
     exerciseSetWeights: mergeExerciseSetWeights(L.exerciseSetWeights, C.exerciseSetWeights),
+    exerciseSetLogs: mergeExerciseSetLogs(L.exerciseSetLogs, C.exerciseSetLogs),
     exerciseSessionEffortStars: mergeShallowRecordMaps(
       L.exerciseSessionEffortStars,
       C.exerciseSessionEffortStars
@@ -142,6 +191,10 @@ export function mergeCloudWinningRowOverLocal(localRaw, cloudAgg, storageKey) {
     dailyVariations: mergeDailyVariations(L.dailyVariations, C.dailyVariations),
     dayJustifications: mergeShallowRecordMaps(L.dayJustifications, C.dayJustifications),
     enduranceData: mergeEnduranceData(L.enduranceData, C.enduranceData),
+    garminActivityDateOverrides: mergeGarminActivityDateOverrides(
+      L.garminActivityDateOverrides,
+      C.garminActivityDateOverrides
+    ),
     restDaySwaps: mergeShallowRecordMaps(L.restDaySwaps, C.restDaySwaps),
     circuitProgress: mergeShallowRecordMaps(L.circuitProgress, C.circuitProgress),
     lastSaved: C.lastSaved || L.lastSaved,

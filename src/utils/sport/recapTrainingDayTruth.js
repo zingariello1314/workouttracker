@@ -13,6 +13,11 @@ import { getDateStr } from '../dateUtils';
 import { isMockEnduranceSession } from '../calendarUtils';
 import { dayHasCheckedWorkout } from '../trainingStreakUtils';
 import { isGarminWalkingLikeActivity } from '../garminRunningLaps';
+import {
+  resolveSessionCalendarDate,
+  resolveGarminActivityCalendarDate,
+  readGarminActivityDateOverrides
+} from '../sessionCalendarDate';
 
 const MIN_GARMIN_DURATION_SEC = 60;
 
@@ -23,7 +28,10 @@ function parseActivityDateYmd(raw) {
   return /^\d{4}-\d{2}-\d{2}$/.test(d) ? d : null;
 }
 
-function sessionDateYmd(session) {
+function sessionDateYmd(session, snapshot) {
+  const overrides = readGarminActivityDateOverrides(snapshot);
+  const resolved = resolveSessionCalendarDate(session, overrides);
+  if (resolved) return resolved;
   if (!session?.date) return null;
   try {
     return getDateStr(new Date(session.date));
@@ -48,7 +56,7 @@ export function dayHasMomentumEnduranceSession(data, dateStr) {
     if (!Array.isArray(list)) continue;
     for (const session of list) {
       if (isMockEnduranceSession(session)) continue;
-      if (sessionDateYmd(session) !== dateStr) continue;
+      if (sessionDateYmd(session, data) !== dateStr) continue;
       if (looksLikeWalkSession(session)) continue;
       return true;
     }
@@ -89,12 +97,13 @@ function forEachGarminActivity(garminData, fn) {
   });
 }
 
-/** Dates YYYY-MM-DD avec ≥1 activité Garmin entraînement. */
-export function collectGarminTrainingDates(garminData) {
+/** Dates YYYY-MM-DD avec ≥1 activité Garmin entraînement (date logique). */
+export function collectGarminTrainingDates(garminData, snapshot = null) {
+  const overrides = readGarminActivityDateOverrides(snapshot);
   const set = new Set();
   forEachGarminActivity(garminData, (act) => {
     if (!isGarminTrainingActivity(act)) return;
-    const d = parseActivityDateYmd(act.date);
+    const d = resolveGarminActivityCalendarDate(act, overrides);
     if (d) set.add(d);
   });
   return set;
@@ -109,7 +118,7 @@ export function dayHasTrainingActivity(snapshot, dateStr, garminData = null) {
   if (dayHasMomentumEnduranceSession(snapshot, dateStr)) return true;
   if (dayHasCircuitProgress(snapshot, dateStr)) return true;
   if (garminData) {
-    const garminDates = collectGarminTrainingDates(garminData);
+    const garminDates = collectGarminTrainingDates(garminData, snapshot);
     if (garminDates.has(dateStr)) return true;
   }
   return false;
@@ -120,7 +129,7 @@ export function dayHasTrainingActivity(snapshot, dateStr, garminData = null) {
  */
 export function countTrainingDaysInRange(snapshot, startYmd, endYmd, garminData = null) {
   if (!startYmd || !endYmd || startYmd > endYmd) return 0;
-  const garminDates = garminData ? collectGarminTrainingDates(garminData) : new Set();
+  const garminDates = garminData ? collectGarminTrainingDates(garminData, snapshot) : new Set();
   let count = 0;
   for (const d of DateHelper.getDateRange(startYmd, endYmd)) {
     if (dayHasCheckedWorkout(snapshot, d)) {

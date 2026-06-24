@@ -37,6 +37,15 @@ import {
   computeCalendarChampionAnalysis,
   formatPctVsAverage
 } from '../../utils/calendarDayChampion';
+import {
+  stepsLeaderEmoji,
+  formatStepsRankLabel
+} from '../../utils/calendarStepsLeaders';
+import {
+  computeCalendarYearDayBadges,
+  calendarBadgeLegendItems,
+  CALENDAR_BADGE_EMOJI
+} from '../../utils/calendarYearDayBadges';
 import { calculateLongestTrainingStreakRange } from '../../utils/trainingStreakUtils';
 
 const CalendarTab = () => {
@@ -315,6 +324,22 @@ const CalendarTab = () => {
     [currentData, garminData, getExerciseNameById, profileAge]
   );
 
+  const calendarYear = new Date().getFullYear();
+
+  const yearDayBadges = useMemo(
+    () =>
+      computeCalendarYearDayBadges({
+        workoutData: currentData,
+        garminData,
+        getExerciseNameById,
+        classificationCtx: { age: profileAge },
+        year: calendarYear
+      }),
+    [currentData, garminData, getExerciseNameById, profileAge, calendarYear]
+  );
+
+  const championForYear = yearDayBadges.championTopThree[0] ?? championAnalysis.champion;
+
   const longestStreakRange = useMemo(
     () => calculateLongestTrainingStreakRange(currentData),
     [currentData]
@@ -405,52 +430,138 @@ const CalendarTab = () => {
           </CardTitle>
         </CardHeader>
         <CardContent>
-          {(championAnalysis.champion || longestStreakRange.length > 0) && (
+          {(championForYear ||
+            longestStreakRange.length > 0 ||
+            yearDayBadges.stepsTopThree.length > 0) && (
             <div className="mb-6 grid grid-cols-1 gap-4 lg:grid-cols-2">
-              {championAnalysis.champion ? (
+              {championForYear ? (
                 <button
                   type="button"
-                  onClick={() => setJumpToCalendarDate(championAnalysis.champion.date)}
+                  onClick={() => setJumpToCalendarDate(championForYear.date)}
                   className="rounded-lg border-2 border-amber-500/55 bg-gradient-to-br from-amber-950/50 to-black p-4 text-left shadow-inner shadow-black/40 transition hover:border-amber-400/70"
                 >
-                  <div className="mb-2 flex items-center gap-2 text-amber-200">
-                    <Crown className="h-5 w-5 text-amber-300" aria-hidden />
-                    <span className="text-sm font-semibold uppercase tracking-wide">
+                  <div className="mb-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-amber-200">
+                    <span className="flex items-center gap-2 text-sm font-semibold uppercase tracking-wide">
+                      <Crown className="h-5 w-5 text-amber-300" aria-hidden />
                       Meilleur jour
+                    </span>
+                    <span className="text-[11px] font-normal normal-case text-amber-100/75">
+                      {calendarBadgeLegendItems().map((item, idx) => (
+                        <span key={item.key}>
+                          {idx > 0 ? ' · ' : ''}
+                          {item.crown ? (
+                            <>
+                              <Crown className="mr-0.5 inline h-3 w-3 text-amber-300" aria-hidden />
+                              {item.label}
+                            </>
+                          ) : (
+                            <>
+                              {item.emoji} {item.label}
+                            </>
+                          )}
+                        </span>
+                      ))}
                     </span>
                   </div>
                   <div className="text-lg font-bold text-white">
-                    {formatChampionDate(championAnalysis.champion.date)}
+                    {formatChampionDate(championForYear.date)}
                   </div>
                   <div className="mt-2 grid grid-cols-2 gap-x-3 gap-y-1 text-xs text-amber-100/90">
                     <span>
-                      Reps {championAnalysis.champion.breakdown.reps}{' '}
+                      Reps {championForYear.breakdown.reps}{' '}
                       <span className="text-amber-400">
-                        ({formatPctVsAverage(championAnalysis.champion.vsAverage?.reps)})
+                        ({formatPctVsAverage(championForYear.vsAverage?.reps)})
                       </span>
                     </span>
                     <span>
-                      Volume {championAnalysis.champion.breakdown.volumeKg} kg{' '}
+                      Volume {championForYear.breakdown.volumeKg} kg{' '}
                       <span className="text-amber-400">
-                        ({formatPctVsAverage(championAnalysis.champion.vsAverage?.volumeKg)})
+                        ({formatPctVsAverage(championForYear.vsAverage?.volumeKg)})
                       </span>
                     </span>
                     <span>
-                      Course {championAnalysis.champion.breakdown.runningKm} km{' '}
+                      Course {championForYear.breakdown.runningKm} km{' '}
                       <span className="text-amber-400">
-                        ({formatPctVsAverage(championAnalysis.champion.vsAverage?.runningKm)})
+                        ({formatPctVsAverage(championForYear.vsAverage?.runningKm)})
                       </span>
                     </span>
                     <span>
-                      Kcal {championAnalysis.champion.breakdown.activeKcal}{' '}
+                      Kcal {championForYear.breakdown.activeKcal}{' '}
                       <span className="text-amber-400">
-                        ({formatPctVsAverage(championAnalysis.champion.vsAverage?.activeKcal)})
+                        ({formatPctVsAverage(championForYear.vsAverage?.activeKcal)})
                       </span>
                     </span>
                   </div>
+                  {yearDayBadges.championTopThree[1] || yearDayBadges.championTopThree[2] ? (
+                    <p className="mt-2 text-[11px] text-amber-400/90">
+                      {yearDayBadges.championTopThree[1]
+                        ? `${CALENDAR_BADGE_EMOJI.champion2} ${formatChampionDate(yearDayBadges.championTopThree[1].date)}`
+                        : ''}
+                      {yearDayBadges.championTopThree[1] && yearDayBadges.championTopThree[2]
+                        ? ' — '
+                        : ''}
+                      {yearDayBadges.championTopThree[2]
+                        ? `${CALENDAR_BADGE_EMOJI.champion3} ${formatChampionDate(yearDayBadges.championTopThree[2].date)}`
+                        : ''}
+                    </p>
+                  ) : null}
                   <p className="mt-2 text-[11px] text-amber-500/90">
-                    Touchez pour ouvrir ce jour sur le calendrier (couronne sur la case).
+                    Touchez pour ouvrir ce jour sur le calendrier (symboles en haut à droite des cases).
                   </p>
+                </button>
+              ) : yearDayBadges.stepsTopThree.length > 0 ? (
+                <div className="rounded-lg border-2 border-sky-600/45 bg-black p-4 shadow-inner shadow-black/40">
+                  <div className="mb-2 text-[11px] text-sky-200/80">
+                    {calendarBadgeLegendItems().map((item, idx) => (
+                      <span key={item.key}>
+                        {idx > 0 ? ' · ' : ''}
+                        {item.crown ? (
+                          <>
+                            <Crown className="mr-0.5 inline h-3 w-3 text-amber-300" aria-hidden />
+                            {item.label}
+                          </>
+                        ) : (
+                          <>
+                            {item.emoji} {item.label}
+                          </>
+                        )}
+                      </span>
+                    ))}
+                  </div>
+                  <p className="text-sm text-slate-400">Symboles sur les cases du calendrier ci-dessous.</p>
+                </div>
+              ) : null}
+              {yearDayBadges.stepsTopThree[0] ? (
+                <button
+                  type="button"
+                  onClick={() => setJumpToCalendarDate(yearDayBadges.stepsTopThree[0].date)}
+                  className="rounded-lg border-2 border-sky-500/50 bg-gradient-to-br from-sky-950/45 to-black p-4 text-left shadow-inner shadow-black/40 transition hover:border-sky-400/65"
+                >
+                  <div className="mb-2 flex items-center gap-2 text-sky-200">
+                    <span className="text-lg" aria-hidden>
+                      {stepsLeaderEmoji(1)}
+                    </span>
+                    <span className="text-sm font-semibold uppercase tracking-wide">
+                      Jour le plus de pas
+                    </span>
+                  </div>
+                  <div className="text-lg font-bold text-white">
+                    {formatChampionDate(yearDayBadges.stepsTopThree[0].date)}
+                  </div>
+                  <p className="mt-2 text-sm text-sky-200/90">
+                    {yearDayBadges.stepsTopThree[0].steps.toLocaleString('fr-FR')} pas
+                  </p>
+                  {yearDayBadges.stepsTopThree[1] || yearDayBadges.stepsTopThree[2] ? (
+                    <p className="mt-2 text-[11px] text-sky-400/90">
+                      {yearDayBadges.stepsTopThree[1]
+                        ? `${formatStepsRankLabel(2)} : ${formatChampionDate(yearDayBadges.stepsTopThree[1].date)} · ${yearDayBadges.stepsTopThree[1].steps.toLocaleString('fr-FR')} pas`
+                        : ''}
+                      {yearDayBadges.stepsTopThree[1] && yearDayBadges.stepsTopThree[2] ? ' — ' : ''}
+                      {yearDayBadges.stepsTopThree[2]
+                        ? `${formatStepsRankLabel(3)} : ${formatChampionDate(yearDayBadges.stepsTopThree[2].date)} · ${yearDayBadges.stepsTopThree[2].steps.toLocaleString('fr-FR')} pas`
+                        : ''}
+                    </p>
+                  ) : null}
                 </button>
               ) : null}
               {longestStreakRange.length > 0 ? (
@@ -769,8 +880,9 @@ const CalendarTab = () => {
         workoutHistory={workoutHistory}
         garminData={garminData}
         garminDataLoaded={garminDataLoaded}
-        championDayDate={championAnalysis.champion?.date ?? null}
-        championDetail={championAnalysis.champion}
+        championDayDate={yearDayBadges.championDate ?? championAnalysis.champion?.date ?? null}
+        championDetail={championForYear ?? championAnalysis.champion}
+        calendarDayBadges={yearDayBadges}
         externalSelectDate={jumpToCalendarDate}
         onExternalSelectHandled={() => setJumpToCalendarDate(null)}
       />

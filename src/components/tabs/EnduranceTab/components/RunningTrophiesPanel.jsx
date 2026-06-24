@@ -2,6 +2,7 @@ import React, { useCallback, useMemo, useState } from 'react';
 import { Trophy, Sparkles, Search } from 'lucide-react';
 import { useTranslation } from '../../../../utils/translations';
 import { useFormatters } from '../../../../utils/translations/formatters-hook';
+import { useWorkout } from '../../../../context/WorkoutContext';
 import {
   evaluateRunningTrophies,
   computeRunningTrophiesXp,
@@ -87,13 +88,19 @@ function buildUnlockedEntries(results) {
 export default function RunningTrophiesPanel({ sessions = [], garminById }) {
   const t = useTranslation();
   const { formatEnduranceSessionDate } = useFormatters();
+  const { data: workoutAggregate } = useWorkout();
   const [subTab, setSubTab] = useState('all');
   const [search, setSearch] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('all');
 
   const evaluation = useMemo(
-    () => evaluateRunningTrophies({ runningSessions: sessions, garminById: garminById || new Map() }),
-    [sessions, garminById]
+    () =>
+      evaluateRunningTrophies({
+        runningSessions: sessions,
+        garminById: garminById || new Map(),
+        workoutAggregate
+      }),
+    [sessions, garminById, workoutAggregate]
   );
 
   const grouped = useMemo(() => groupByCategory(evaluation.results), [evaluation.results]);

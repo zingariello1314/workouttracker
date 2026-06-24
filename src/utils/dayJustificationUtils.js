@@ -13,7 +13,8 @@
  * @module dayJustificationUtils
  */
 
-import { isMockEnduranceSession } from './calendarUtils';
+import { isMockEnduranceSession, garminActivityMatchesCalendarDate } from './calendarUtils';
+import { resolveSessionCalendarDate, readGarminActivityDateOverrides } from './sessionCalendarDate';
 import { getDateStr } from './dateUtils';
 import { countMomentumCheckedStretches } from './calendarDayMomentumStripes';
 import { normalizeGarminDate } from '../components/tabs/GarminTab/utils/garminFormatters';
@@ -251,6 +252,7 @@ export function isDayWithoutActivity(data, dateStr, intensityData = null) {
   // Les sessions d'endurance sont des activités volontaires d'entraînement
   const enduranceData = data.enduranceData || {};
   const sessions = enduranceData.sessions || {};
+  const overrides = readGarminActivityDateOverrides(data);
   
   // Parcours optimisé avec early return
   for (const activitySessions of Object.values(sessions)) {
@@ -260,7 +262,7 @@ export function isDayWithoutActivity(data, dateStr, intensityData = null) {
       // Exclure les sessions mock
       if (isMockEnduranceSession(session)) continue;
       
-      const sessionDateStr = normalizeDateString(session.date);
+      const sessionDateStr = resolveSessionCalendarDate(session, overrides);
       if (sessionDateStr === normalizedDate) {
         return false; // Activité trouvée, early return
       }
@@ -277,15 +279,15 @@ export function isDayWithoutActivity(data, dateStr, intensityData = null) {
   return true;
 }
 
-/** Activité Garmin enregistrée (course, natation, corde…) — pas les pas / sommeil passifs. */
-export function dayHasGarminRecordedActivity(garminData, dateStr) {
+/** Activité Garmin enregistrée (course, natation, corde…) — date logique. */
+export function dayHasGarminRecordedActivity(garminData, dateStr, workoutData = null) {
   const normalizedDate = normalizeDateString(dateStr);
   if (!garminData?.activities || !normalizedDate) return false;
+  const overrides = readGarminActivityDateOverrides(workoutData);
   for (const bucket of ['cardio', 'swimming', 'jumpRope']) {
     const list = garminData.activities[bucket] || [];
     for (const act of list) {
-      const dk = normalizeGarminDate(act?.date || act?.startTimeLocal || act?.startTimeGmt);
-      if (dk === normalizedDate) return true;
+      if (garminActivityMatchesCalendarDate(act, normalizedDate, overrides)) return true;
     }
   }
   return false;

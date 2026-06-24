@@ -3,6 +3,7 @@
  * Même logique de paliers que course / corde / gainage (réutilise l’XP course).
  */
 import { isMockEnduranceSession } from '../../utils/calendarUtils';
+import { enduranceSessionCalendarYmd } from '../../services/sport/TrainingDayTruthService';
 import { computeRunningTrophiesXpDetailed } from './runningTrophiesService';
 
 const LEVEL_MULTIPLIERS = {
@@ -46,7 +47,9 @@ function toNumber(value, fallback = 0) {
   return Number.isFinite(n) ? n : fallback;
 }
 
-function sessionDateKey(session) {
+function sessionDateKey(session, workoutAggregate = null) {
+  const logical = enduranceSessionCalendarYmd(session, workoutAggregate);
+  if (logical) return logical;
   if (typeof session?.date === 'string') {
     const m = session.date.match(/^\d{4}-\d{2}-\d{2}/);
     if (m) return m[0];
@@ -54,8 +57,8 @@ function sessionDateKey(session) {
   return null;
 }
 
-function parseSessionDateTime(session) {
-  const dk = sessionDateKey(session);
+function parseSessionDateTime(session, workoutAggregate = null) {
+  const dk = sessionDateKey(session, workoutAggregate);
   if (!dk) return null;
   const t = session?.time && String(session.time).trim() ? String(session.time).trim() : '12:00:00';
   const iso = `${dk}T${t.length === 5 ? `${t}:00` : t}`;
@@ -174,15 +177,15 @@ function longestStreakDateKeys(sortedUniqueDays) {
   return keys;
 }
 
-export function buildPushupStats(sessions = []) {
+export function buildPushupStats(sessions = [], workoutAggregate = null) {
   const rows = (sessions || [])
     .filter((s) => s && !isMockEnduranceSession(s))
     .map((s) => {
-      const dateKey = sessionDateKey(s);
+      const dateKey = sessionDateKey(s, workoutAggregate);
       if (!dateKey) return null;
       const reps = Math.max(0, Math.floor(toNumber(s.count, 0)));
       const durationMin = Math.max(0, toNumber(s.duration, 0));
-      const d = parseSessionDateTime(s) || new Date(`${dateKey}T12:00:00`);
+      const d = parseSessionDateTime(s, workoutAggregate) || new Date(`${dateKey}T12:00:00`);
       return {
         raw: s,
         dateKey,
@@ -569,8 +572,8 @@ function scoreFromResults(results) {
   return { scoreRaw: raw, scoreMax: max, scoreComposite: composite };
 }
 
-export function evaluatePushupTrophies({ sessions = [] } = {}) {
-  const stats = buildPushupStats(sessions);
+export function evaluatePushupTrophies({ sessions = [], workoutAggregate = null } = {}) {
+  const stats = buildPushupStats(sessions, workoutAggregate);
 
   const catalog = buildPushupTrophiesCatalog();
   const results = [];
