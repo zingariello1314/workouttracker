@@ -7,6 +7,10 @@ import {
   inferDefaultSetCount,
   parseSeriesSetCount
 } from './exerciseLoadVolume';
+import {
+  getExercisePrescriptionStruct,
+  getPlannedSetRepsArray
+} from './programPrescriptionNormalizer';
 
 export const EXERCISE_SET_LOG_SCHEMA_VERSION = 1;
 
@@ -223,6 +227,56 @@ export function syncExerciseSetLogTotalReps(workoutData, storageKey, exercise, n
     return workoutData;
   }
   return applyExerciseSetLog(workoutData, storageKey, built.sets, { perArm });
+}
+
+/**
+ * Construit un log structuré depuis la prescription programme (meta Cycle 3+1 ou series parsée).
+ * @param {object} exercise
+ * @param {{ totalReps?: number, workoutData?: object, storageKey?: string }} [opts]
+ */
+export function buildSetLogFromPrescription(exercise, opts = {}) {
+  const p = getExercisePrescriptionStruct(exercise);
+  if (!p) return null;
+
+  const totalOverride =
+    opts.totalReps != null ? Math.max(0, Math.floor(Number(opts.totalReps) || 0)) : null;
+  const storageKey = opts.storageKey;
+  const workoutData = opts.workoutData;
+  const perArm = storageKey && workoutData?.exerciseWeightPerArm?.[storageKey] === true;
+  const singleW = storageKey ? parseWeightCell(workoutData?.exerciseWeights?.[storageKey]) : null;
+  const setWeightsArr = storageKey ? workoutData?.exerciseSetWeights?.[storageKey] : null;
+
+  const mkSet = (reps, idx) => {
+    let weight = singleW;
+    if (Array.isArray(setWeightsArr) && setWeightsArr[idx] != null) {
+      weight = parseWeightCell(setWeightsArr[idx]) ?? weight;
+    }
+    return {
+      reps: Math.max(0, Math.floor(reps)),
+      weight,
+      weightMode: normalizeWeightMode(perArm, weight != null)
+    };
+  };
+
+  if (p.volumeMode === 'seconds' || p.volumeMode === 'minutes') {
+    const perSet = p.repsMin;
+    const sets = Array.from({ length: Math.max(1, p.setCount) }, (_, i) => mkSet(perSet, i));
+    return {
+      sets,
+      schemaVersion: EXERCISE_SET_LOG_SCHEMA_VERSION,
+      loggedAt: new Date().toISOString()
+    };
+  }
+
+  const repsArray =
+    getPlannedSetRepsArray(exercise, totalOverride) ||
+    distributeRepsToSets(totalOverride || p.setCount * p.repsMin, Math.max(1, p.setCount));
+
+  return {
+    sets: repsArray.map((r, i) => mkSet(r, i)),
+    schemaVersion: EXERCISE_SET_LOG_SCHEMA_VERSION,
+    loggedAt: new Date().toISOString()
+  };
 }
 
 /**

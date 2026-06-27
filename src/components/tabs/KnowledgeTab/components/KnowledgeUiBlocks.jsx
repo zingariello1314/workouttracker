@@ -124,8 +124,6 @@ export function KnowledgeStorageBadge({ stats }) {
       <span>
         {t('knowledge.storageStats', {
           videos: stats.videoCount,
-          articles: stats.articleCount,
-          notes: stats.noteCount,
           size: stats.videoSizeLabel
         })}
       </span>

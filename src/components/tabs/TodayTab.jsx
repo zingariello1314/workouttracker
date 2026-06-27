@@ -9,7 +9,7 @@ import { Input, Checkbox } from '../ui/Input';
 import ChallengeCard from '../ui/ChallengeCard';
 import { typography } from '../../styles/typography';
 import { getAutoWeekVariant, getDateStr as dateToYmd } from '../../utils/dateUtils';
-import { calculateAutoReps, detectExerciseUnit } from '../../utils/exerciseCalculations';
+import { calculateAutoReps, detectExerciseUnit, resolvePrescriptionAutofillValue } from '../../utils/exerciseCalculations';
 import { useTodayExercises } from '../../hooks/useTodayExercises';
 import AddExceptionalExerciseModal from '../modals/AddExceptionalExerciseModal';
 import { isMockEnduranceSession, collectEnduranceSessionsForCalendarDay } from '../../utils/calendarUtils';
@@ -60,7 +60,11 @@ import {
   computeVolumeKgForWorkoutKey
 } from '../../utils/exerciseLoadVolume';
 import { collectWorkoutLoadSubsetForDate } from '../../utils/workoutLoadPersistence';
-import { stripExerciseSetLogForKeys } from '../../utils/exerciseSetLogUtils';
+import { stripExerciseSetLogForKeys, buildSetLogFromPrescription } from '../../utils/exerciseSetLogUtils';
+import {
+  evaluateVolumeCompletion,
+  getPlannedTotalFromPrescription
+} from '../../utils/programPrescriptionNormalizer';
 import {
   getExerciseSeriesOverrides,
   mergeSeriesIntoProgramExercises,
@@ -425,9 +429,6 @@ const TodayTab = () => {
   const handleInputFocus = (exerciseId, exercise) => {
     const currentData = getCurrentData();
     const workoutForDay = getTodayWorkout(currentDate, isGymMode);
-    const exerciseUnit = detectExerciseUnit(exercise);
-    if (exerciseUnit?.isTimeBased) return;
-
     const keys = collectExerciseKeysForWorkoutExercise(currentDate, exercise, {
       isGymMode,
       workoutIsGymMode: workoutForDay?.isGymMode
@@ -436,7 +437,9 @@ const TodayTab = () => {
     const currentValue = String(currentData.reps?.[readKey] ?? '').trim();
 
     if (!currentValue && exercise.series) {
-      const autoReps = calculateAutoReps(exercise.series, { round: true });
+      const planned = getPlannedTotalFromPrescription(exercise);
+      const autoReps =
+        planned != null ? planned : resolvePrescriptionAutofillValue(exercise, { round: true });
       if (autoReps != null) {
         updateLocalReps(exerciseId, autoReps.toString(), currentDate);
       }
@@ -681,17 +684,18 @@ const TodayTab = () => {
     }
 
     if (exercise.series) {
-      const seriesText = exercise.series;
-      let autoReps = null;
-      if (seriesText.includes('×')) {
-        const match = seriesText.match(/(\d+)×(\d+)(?:-(\d+))?/);
-        if (match) {
-          const sets = parseInt(match[1], 10);
-          const minReps = parseInt(match[2], 10);
-          const maxReps = match[3] ? parseInt(match[3], 10) : minReps;
-          autoReps = sets * Math.round((minReps + maxReps) / 2);
-        }
+      const prevKeyForReps = resolveBestRepsStorageKey(currentData, keys);
+      const manualReps =
+        prevKeyForReps && currentData.reps?.[prevKeyForReps] != null
+          ? String(currentData.reps[prevKeyForReps]).trim()
+          : '';
+
+      let repsVal = manualReps;
+      if (!repsVal) {
+        const autoVal = resolvePrescriptionAutofillValue(exercise, { round: true });
+        if (autoVal != null) repsVal = autoVal.toString();
       }
+
       const { nextChecked, nextReps, nextWeights, nextPerArm, nextSetW } = stripKeys(
         currentData.checkedExercises,
         currentData.reps,
@@ -700,7 +704,7 @@ const TodayTab = () => {
         currentData.exerciseSetWeights || {}
       );
       nextChecked[primaryKey] = true;
-      nextReps[primaryKey] = autoReps != null ? autoReps.toString() : '';
+      nextReps[primaryKey] = repsVal;
       const prevKeyForWeight = resolveBestRepsStorageKey(currentData, keys);
       nextWeights[primaryKey] =
         prevKeyForWeight && currentData.exerciseWeights?.[prevKeyForWeight] != null
@@ -716,7 +720,19 @@ const TodayTab = () => {
       keys.forEach((k) => {
         delete nextSetLogs[k];
       });
-      if (prevKeyForWeight && currentData.exerciseSetLogs?.[prevKeyForWeight]) {
+      const builtLog = buildSetLogFromPrescription(exercise, {
+        totalReps: repsVal ? parseInt(repsVal, 10) : undefined,
+        workoutData: {
+          ...currentData,
+          exerciseWeights: nextWeights,
+          exerciseWeightPerArm: nextPerArm,
+          exerciseSetWeights: nextSetW
+        },
+        storageKey: primaryKey
+      });
+      if (builtLog?.sets?.length) {
+        nextSetLogs[primaryKey] = builtLog;
+      } else if (prevKeyForWeight && currentData.exerciseSetLogs?.[prevKeyForWeight]) {
         nextSetLogs[primaryKey] = { ...currentData.exerciseSetLogs[prevKeyForWeight] };
       }
       const nextSnapshot = {
@@ -1988,6 +2004,12 @@ const TodayTab = () => {
             const inputLabel =
               exerciseUnit?.unit === 'sec' ? 'sec' : exerciseUnit?.unit === 'min' ? 'min' : 'Reps';
 
+            const volumeCompletion = (() => {
+              const val = parseInt(String(reps || ''), 10);
+              if (!Number.isFinite(val) || val <= 0) return null;
+              return evaluateVolumeCompletion(exercise, val);
+            })();
+
             const primaryKeyForStars = generateSmartExerciseKey(currentDate, exercise.id, {
               isGymMode,
               workoutIsGymMode: workout.isGymMode
@@ -2075,6 +2097,19 @@ const TodayTab = () => {
                         size="sm"
                       />
                       <span className="text-teal-700 text-xs whitespace-nowrap">{inputLabel}</span>
+                      {volumeCompletion?.status === 'complete' ? (
+                        <span className="text-[10px] text-green-400 whitespace-nowrap">✓ objectif</span>
+                      ) : null}
+                      {volumeCompletion?.status === 'near' ? (
+                        <span className="text-[10px] text-amber-400 whitespace-nowrap">
+                          −{volumeCompletion.gap} {inputLabel}
+                        </span>
+                      ) : null}
+                      {volumeCompletion?.status === 'below' && volumeCompletion.planned ? (
+                        <span className="text-[10px] text-slate-500 whitespace-nowrap">
+                          {volumeCompletion.done}/{volumeCompletion.planned}
+                        </span>
+                      ) : null}
                     </div>
                     {showWeightField && (
                       <div className="flex items-center gap-1">

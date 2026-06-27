@@ -8,9 +8,7 @@ export const KNOWLEDGE_VIEW_IDS = {
 };
 
 export const KNOWLEDGE_VIEWS = [
-  { id: KNOWLEDGE_VIEW_IDS.VIDEOS, labelKey: 'knowledge.views.videos', icon: '🎥' },
-  { id: KNOWLEDGE_VIEW_IDS.ARTICLES, labelKey: 'knowledge.views.articles', icon: '📖' },
-  { id: KNOWLEDGE_VIEW_IDS.NOTES, labelKey: 'knowledge.views.notes', icon: '📝' }
+  { id: KNOWLEDGE_VIEW_IDS.VIDEOS, labelKey: 'knowledge.views.videos', icon: '🎥' }
 ];
 
 export const KNOWLEDGE_ACTIVE_VIEW_LS = 'knowledge.activeView';

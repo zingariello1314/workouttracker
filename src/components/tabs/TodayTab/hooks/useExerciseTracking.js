@@ -12,7 +12,7 @@ import {
   generateSmartExerciseKey,
   collectExerciseKeysForWorkoutExercise
 } from '../../../../utils/exerciseKeyGenerator';
-import { calculateAutoReps } from '../../../../utils/exerciseCalculations';
+import { resolvePrescriptionAutofillValue } from '../../../../utils/exerciseCalculations';
 import { getDateStr } from '../../../../utils/dateUtils';
 import { resolveExercisePyramidPattern } from '../../../../services/trainingPatterns/resolveExercisePyramidPattern';
 import { appendPyramidSessionLogEntry } from '../../../../services/trainingPatterns/pyramidSessionLog';
@@ -125,7 +125,10 @@ export const useExerciseTracking = (options = {}) => {
 
         let repsVal = '';
         if (seriesSource) {
-          const autoReps = calculateAutoReps(seriesSource, { round: true });
+          const autoReps = resolvePrescriptionAutofillValue(
+            { ...exercise, series: seriesSource },
+            { round: true }
+          );
           if (autoReps !== null) repsVal = autoReps.toString();
         }
         if (!repsVal) {

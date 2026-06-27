@@ -18,7 +18,8 @@ import {
   Copy,
   CheckSquare,
   Square,
-  GripVertical
+  GripVertical,
+  Wand2
 } from 'lucide-react';
 import { typography } from '../styles/typography';
 import {
@@ -65,6 +66,12 @@ import {
   buildIntervalSeriesLabel
 } from '../utils/intervalTrainingUtils';
 import { workoutProgram } from '../data/workoutProgram';
+import {
+  getPrescriptionDisplayParts,
+  isCycle31Program,
+  normalizeProgramSchedulePrescriptions,
+  normalizeExercisePrescription
+} from '../utils/programPrescriptionNormalizer';
 import {
   resolveEtirementsForDay,
   copyEtirementsToProgramSchedule,
@@ -115,6 +122,22 @@ const REST_DAY_LABELS = {
 };
 
 const STRETCH_MOMENTS = ['matin', 'midi', 'soir'];
+
+function PrescriptionDisplayGrid({ exercise }) {
+  const { setsLabel, repsLabel } = getPrescriptionDisplayParts(exercise);
+  return (
+    <>
+      <div>
+        <span className="text-slate-400">Séries:</span>
+        <div className="font-medium">{setsLabel}</div>
+      </div>
+      <div>
+        <span className="text-slate-400">Reps:</span>
+        <div className="font-medium">{repsLabel}</div>
+      </div>
+    </>
+  );
+}
 
 function isVisibleProgramExercise(ex) {
   return !isLegacyCircuitSlotExercise(ex) && !isLegacyCircuitHeaderExercise(ex);
@@ -193,6 +216,15 @@ const ProgramDetailView = ({ program, onBack, onUpdateProgram }) => {
       });
     }
   }, [normalizedProgram?.id]);
+
+  const [normalizeResult, setNormalizeResult] = useState(null);
+  const cycle31Program = isCycle31Program(program);
+
+  const handleNormalizePrescriptions = () => {
+    const { program: next, stats } = normalizeProgramSchedulePrescriptions(program);
+    onUpdateProgram(next);
+    setNormalizeResult(stats);
+  };
 
   /** Édition exo : { dayKey, exerciseId, variantKey?: 'semaineA'|'semaineB' } */
   const [editingExercise, setEditingExercise] = useState(null);
@@ -565,10 +597,11 @@ const ProgramDetailView = ({ program, onBack, onUpdateProgram }) => {
       const v = { ...variants[vk], exercises: [...(variants[vk].exercises || [])] };
       const idx = v.exercises.findIndex((ex) => ex.id === editingExercise.exerciseId);
       if (idx !== -1) {
+        const merged = { ...v.exercises[idx], ...editedData };
+        const { exercise: savedExercise } = normalizeExercisePrescription(merged);
         v.exercises[idx] = {
-          ...v.exercises[idx],
-          ...editedData,
-          meta: normalizeExerciseMeta(editedData)
+          ...savedExercise,
+          meta: normalizeExerciseMeta(savedExercise)
         };
         variants[vk] = v;
         day.salleVariants = variants;
@@ -577,10 +610,11 @@ const ProgramDetailView = ({ program, onBack, onUpdateProgram }) => {
       day.exercises = [...(day.exercises || [])];
       const exerciseIndex = day.exercises.findIndex((ex) => ex.id === editingExercise.exerciseId);
       if (exerciseIndex !== -1) {
+        const merged = { ...day.exercises[exerciseIndex], ...editedData };
+        const { exercise: savedExercise } = normalizeExercisePrescription(merged);
         day.exercises[exerciseIndex] = {
-          ...day.exercises[exerciseIndex],
-          ...editedData,
-          meta: normalizeExerciseMeta(editedData)
+          ...savedExercise,
+          meta: normalizeExerciseMeta(savedExercise)
         };
       }
     }
@@ -1555,12 +1589,39 @@ const ProgramDetailView = ({ program, onBack, onUpdateProgram }) => {
           <ArrowLeft size={20} />
           Retour
         </Button>
+        {cycle31Program ? (
+          <Button
+            type="button"
+            onClick={() => {
+              if (
+                window.confirm(
+                  'Organiser toutes les séries et reps du programme Cycle 3+1 ?\n\nLes formats hétérogènes (ex. « 12-15 par bras », « 15 ») seront convertis en séries × reps structurées avec métadonnées pour l’analyse Récap.'
+                )
+              ) {
+                handleNormalizePrescriptions();
+              }
+            }}
+            className="flex items-center gap-2 border border-violet-500/50 bg-violet-950/40 text-violet-100 hover:border-violet-400/60 hover:bg-violet-900/50"
+            title="Uniformiser séries × reps sur tout le programme"
+          >
+            <Wand2 size={18} />
+            Organiser séries & reps
+          </Button>
+        ) : null}
         <div className="flex-1 min-w-0">
           {!editingProgramMeta ? (
             <div className="flex items-start gap-3">
               <div className="min-w-0 flex-1">
                 <h1 className={`${typography.presets.h1} mb-2 break-words`}>{program.name}</h1>
                 <p className="whitespace-pre-wrap text-teal-100/85">{program.description}</p>
+                {normalizeResult ? (
+                  <p className="mt-2 text-sm text-emerald-300/90">
+                    Prescriptions organisées : {normalizeResult.updated} exercice(s) mis à jour
+                    {normalizeResult.skipped > 0
+                      ? ` · ${normalizeResult.skipped} laissé(s) tel(s) (AMRAP, formats spéciaux)`
+                      : ''}
+                  </p>
+                ) : null}
               </div>
               <button
                 type="button"
@@ -2025,11 +2086,8 @@ const ProgramDetailView = ({ program, onBack, onUpdateProgram }) => {
                                                 </p>
                                               )}
 
-                                              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm text-slate-300 mb-2">
-                                                <div>
-                                                  <span className="text-slate-400">Séries:</span>
-                                                  <div className="font-medium">{exercise.series}</div>
-                                                </div>
+                                              <div className="grid grid-cols-2 md:grid-cols-5 gap-4 text-sm text-slate-300 mb-2">
+                                                <PrescriptionDisplayGrid exercise={exercise} />
                                                 <div>
                                                   <span className="text-slate-400">Repos:</span>
                                                   <div className="font-medium">{exercise.rest}s</div>
@@ -2334,11 +2392,8 @@ const ProgramDetailView = ({ program, onBack, onUpdateProgram }) => {
                                       </button>
                                     </div>
                                   </div>
-                                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm text-slate-300 mb-2">
-                                    <div>
-                                      <span className="text-slate-400">Séries:</span>
-                                      <div className="font-medium">{exercise.series}</div>
-                                    </div>
+                                  <div className="grid grid-cols-2 md:grid-cols-5 gap-4 text-sm text-slate-300 mb-2">
+                                    <PrescriptionDisplayGrid exercise={exercise} />
                                     <div>
                                       <span className="text-slate-400">Repos:</span>
                                       <div className="font-medium">{exercise.rest}s</div>
@@ -2463,11 +2518,8 @@ const ProgramDetailView = ({ program, onBack, onUpdateProgram }) => {
                                       </button>
                                     </div>
                                   </div>
-                                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm text-slate-300 mb-2">
-                                    <div>
-                                      <span className="text-slate-400">Séries:</span>
-                                      <div className="font-medium">{exercise.series}</div>
-                                    </div>
+                                  <div className="grid grid-cols-2 md:grid-cols-5 gap-4 text-sm text-slate-300 mb-2">
+                                    <PrescriptionDisplayGrid exercise={exercise} />
                                     <div>
                                       <span className="text-slate-400">Repos:</span>
                                       <div className="font-medium">{exercise.rest}s</div>

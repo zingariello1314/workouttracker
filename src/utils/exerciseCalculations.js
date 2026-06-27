@@ -8,6 +8,98 @@
  */
 
 /**
+ * Normalise le texte de série pour le parsing (tirets unicode, x → ×, notes entre parenthèses).
+ * @param {string} seriesText
+ * @returns {string}
+ */
+export function normalizeSeriesForParsing(seriesText) {
+  if (!seriesText || typeof seriesText !== 'string') return '';
+  return seriesText
+    .replace(/\([^)]*\)/g, '')
+    .replace(/[\u2013\u2014\u2212]/g, '-')
+    .replace(/(\d)\s*[xX]\s*(\d)/g, '$1×$2')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+/** IDs des programmes embarqués Cycle 3+1. */
+export const CYCLE_31_PROGRAM_IDS = new Set(['default-program', 'optimized-program']);
+
+export function isCycle31EmbeddedProgram(programId) {
+  return CYCLE_31_PROGRAM_IDS.has(String(programId || ''));
+}
+
+/**
+ * Valeur à préremplir dans le champ Aujourd'hui (reps, sec ou min selon l'exercice).
+ * Couvre les formats du programme Cycle 3+1 : 4×10-12, 30 sec, 1 min, 3×30 sec, 20×, 5 cycles, etc.
+ *
+ * @param {Object} exercise — { series, name?, type? }
+ * @param {{ round?: boolean }} [options]
+ * @returns {number|null}
+ */
+export function resolvePrescriptionAutofillValue(exercise, options = {}) {
+  const { round = true } = options;
+  const rawSeries = exercise?.series;
+  if (!rawSeries || typeof rawSeries !== 'string') return null;
+  if (/\bmax\b/i.test(rawSeries)) return null;
+
+  const series = normalizeSeriesForParsing(rawSeries);
+  const unitInfo = detectExerciseUnit({ ...exercise, series: rawSeries });
+
+  if (unitInfo?.isTimeBased) {
+    const setsTimeMatch = series.match(/(\d+)\s*×\s*(\d+)\s*(sec|min)/i);
+    if (setsTimeMatch) return parseInt(setsTimeMatch[2], 10);
+
+    const loneSec = series.match(/(\d+)\s*sec/i);
+    if (loneSec) return parseInt(loneSec[1], 10);
+
+    const loneMin = series.match(/(\d+)\s*min/i);
+    if (loneMin) return parseInt(loneMin[1], 10);
+
+    const setsOnly = series.match(/^(\d+)\s*×\s*(\d+)\s*$/);
+    if (setsOnly && unitInfo.unit === 'sec') return parseInt(setsOnly[2], 10);
+
+    return null;
+  }
+
+  const cyclesMatch = series.match(/(\d+)\s*cycles?/i);
+  if (cyclesMatch) return parseInt(cyclesMatch[1], 10);
+
+  const trailingMatch = series.match(/^(\d+)\s*×\s*$/);
+  if (trailingMatch) return parseInt(trailingMatch[1], 10);
+
+  const cleaned = series
+    .replace(/\s*par\s+bras/gi, '')
+    .replace(/\s*chaque\s+c[ôo]t[ée]/gi, '')
+    .trim();
+
+  const fullRangeMatch = cleaned.match(/(\d+)\s*×\s*(\d+)\s*-\s*(\d+)/);
+  if (fullRangeMatch) {
+    const sets = parseInt(fullRangeMatch[1], 10);
+    const minReps = parseInt(fullRangeMatch[2], 10);
+    const maxReps = parseInt(fullRangeMatch[3], 10);
+    const total = sets * ((minReps + maxReps) / 2);
+    return round ? Math.round(total) : total;
+  }
+
+  const seriesMatch = cleaned.match(/(\d+)\s*×\s*(\d+)/);
+  if (seriesMatch) {
+    return parseInt(seriesMatch[1], 10) * parseInt(seriesMatch[2], 10);
+  }
+
+  const rangeMatch = cleaned.match(/^(\d+)\s*-\s*(\d+)/);
+  if (rangeMatch) {
+    const avg = (parseInt(rangeMatch[1], 10) + parseInt(rangeMatch[2], 10)) / 2;
+    return round ? Math.round(avg) : avg;
+  }
+
+  const singleMatch = cleaned.match(/^(\d+)/);
+  if (singleMatch) return parseInt(singleMatch[1], 10);
+
+  return null;
+}
+
+/**
  * Calcule automatiquement le nombre total de répétitions à partir d'une série.
  * 
  * Formats supportés :
@@ -28,13 +120,19 @@
  */
 export const calculateAutoReps = (seriesText, options = {}) => {
   const { round = false } = options;
-  
+
   if (!seriesText || typeof seriesText !== 'string') {
     return null;
   }
-  
+
+  const normalized = normalizeSeriesForParsing(seriesText);
+  const unitInfo = detectExerciseUnit({ series: seriesText });
+  if (unitInfo?.isTimeBased) {
+    return resolvePrescriptionAutofillValue({ series: seriesText }, { round });
+  }
+
   // Pattern 1: "4×10-12" (séries × range)
-  const fullRangeMatch = seriesText.match(/(\d+)×(\d+)-(\d+)/);
+  const fullRangeMatch = normalized.match(/(\d+)\s*×\s*(\d+)\s*-\s*(\d+)/);
   if (fullRangeMatch) {
     const sets = parseInt(fullRangeMatch[1], 10);
     const minReps = parseInt(fullRangeMatch[2], 10);
@@ -43,30 +141,36 @@ export const calculateAutoReps = (seriesText, options = {}) => {
     const total = sets * avgReps;
     return round ? Math.round(total) : total;
   }
-  
+
   // Pattern 2: "4×10" (séries × reps fixes)
-  const seriesMatch = seriesText.match(/(\d+)×(\d+)/);
+  const seriesMatch = normalized.match(/(\d+)\s*×\s*(\d+)/);
   if (seriesMatch) {
     const sets = parseInt(seriesMatch[1], 10);
     const reps = parseInt(seriesMatch[2], 10);
     return sets * reps;
   }
-  
-  // Pattern 3: "10-12" (range sans séries - pour compatibilité)
-  const rangeMatch = seriesText.match(/(\d+)-(\d+)/);
+
+  // Pattern trailing: "20×"
+  const trailingMatch = normalized.match(/^(\d+)\s*×\s*$/);
+  if (trailingMatch) {
+    return parseInt(trailingMatch[1], 10);
+  }
+
+  // Pattern 3: "10-12" (range sans séries)
+  const rangeMatch = normalized.match(/^(\d+)\s*-\s*(\d+)/);
   if (rangeMatch) {
     const min = parseInt(rangeMatch[1], 10);
     const max = parseInt(rangeMatch[2], 10);
     const average = (min + max) / 2;
     return round ? Math.round(average) : average;
   }
-  
-  // Pattern 4: "10" (nombre simple - pour compatibilité)
-  const singleMatch = seriesText.match(/(\d+)/);
+
+  // Pattern 4: "10" (nombre simple)
+  const singleMatch = normalized.match(/^(\d+)/);
   if (singleMatch) {
     return parseInt(singleMatch[1], 10);
   }
-  
+
   return null;
 };
 
@@ -226,17 +330,18 @@ export const parseSeries = (seriesText) => {
   if (!seriesText || typeof seriesText !== 'string') {
     return null;
   }
-  
-  const match = seriesText.match(/(\d+)×(\d+)(?:-(\d+))?/);
+
+  const normalized = normalizeSeriesForParsing(seriesText);
+  const match = normalized.match(/(\d+)\s*×\s*(\d+)(?:\s*-\s*(\d+))?/);
   if (!match) {
     return null;
   }
-  
+
   const sets = parseInt(match[1], 10);
   const minReps = parseInt(match[2], 10);
   const maxReps = match[3] ? parseInt(match[3], 10) : minReps;
   const avgReps = (minReps + maxReps) / 2;
-  
+
   return { sets, minReps, maxReps, avgReps };
 };
 

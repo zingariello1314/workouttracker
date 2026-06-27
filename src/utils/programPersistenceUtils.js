@@ -1,6 +1,7 @@
 import { workoutProgram } from '../data/workoutProgram';
 import { workoutProgramOptimized } from '../data/workoutProgramOptimized';
 import { convertProgramToSchedule } from './programConverter';
+import { normalizeProgramSchedulePrescriptions } from './programPrescriptionNormalizer';
 import {
   resolveProgramExerciseCategory,
   resolveCardioKindForExercise
@@ -124,7 +125,10 @@ export function buildTemplateProgramsForFirstLaunch() {
   optimizedProgram.status = 'inactive';
   optimizedProgram.startDate = null;
 
-  return { defaultProgram, optimizedProgram };
+  const { program: normDefault } = normalizeProgramSchedulePrescriptions(defaultProgram);
+  const { program: normOptimized } = normalizeProgramSchedulePrescriptions(optimizedProgram);
+
+  return { defaultProgram: normDefault, optimizedProgram: normOptimized };
 }
 
 /**

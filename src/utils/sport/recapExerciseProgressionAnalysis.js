@@ -9,7 +9,9 @@ import {
   interpretExerciseProgression,
   classifyRepScheme
 } from './volumeProgressionEngine';
-import { analyzeStructuredSession } from './strengthBenchmarkExtractors';
+import { buildExerciseRepInsights } from './repSetSemanticAnalysis';
+import { getExercisePrescriptionStruct } from '../programPrescriptionNormalizer';
+import { lookupProgramExerciseStub } from '../exerciseLoadVolume';
 
 function exerciseIdFromStorageKey(storageKey) {
   const m = String(storageKey || '').match(/^\d{4}-\d{2}-\d{2}_(.+)$/);
@@ -247,6 +249,38 @@ export function analyzeExerciseProgressionHistory(sessions) {
       ? `${prVal >= 60 ? `${Math.floor(prVal / 60)} min ${prVal % 60 ? `${prVal % 60} s` : ''}`.trim() : `${prVal} s`}`
       : `${prVal} reps${prSession.schemeLabel ? ` (${prSession.schemeLabel})` : ''}`;
     bullets.unshift(`Record période : ${prLabel} le ${prSession.dateYmd}`);
+  }
+
+  const lastSetReps = (last.sets || []).map((s) => s.reps).filter((r) => r != null && r > 0);
+  const prevSession = sessions.length >= 2 ? sessions[sessions.length - 2] : null;
+  const prevSetReps = prevSession
+    ? (prevSession.sets || []).map((s) => s.reps).filter((r) => r != null && r > 0)
+    : [];
+  if (lastSetReps.length >= 2 && !isHold) {
+    const stub = lookupProgramExerciseStub(last.exerciseId);
+    const prescription = getExercisePrescriptionStruct(stub);
+    const plannedPerSet =
+      prescription?.repsMax != null
+        ? prescription.repsMax
+        : prescription?.repsMin != null
+          ? prescription.repsMin
+          : undefined;
+    const plannedTotal =
+      prescription?.setCount && prescription?.repsMin != null
+        ? prescription.setCount *
+          (prescription.repsMin === prescription.repsMax
+            ? prescription.repsMin
+            : Math.round((prescription.repsMin + prescription.repsMax) / 2))
+        : undefined;
+
+    buildExerciseRepInsights({
+      currentSetReps: lastSetReps,
+      previousSetReps: prevSetReps.length >= 2 ? prevSetReps : undefined,
+      plannedTotalReps: plannedTotal,
+      plannedRepsPerSet: plannedPerSet
+    }).forEach((line) => {
+      if (line && !bullets.includes(line)) bullets.push(line);
+    });
   }
 
   return {
