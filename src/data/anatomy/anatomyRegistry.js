@@ -3,6 +3,11 @@
  * Le contenu long vit dans `muscleContent/`.
  */
 import { MuscleGroups } from '../workoutProgramEnhanced';
+import { HAUT_DOS_FAMILY_SECTIONS } from './familySections/haut-dos';
+import { HAUT_DOS_SYNTHESE_SECTIONS } from './familySections/haut-dos-synthese';
+import { BAS_DOS_FAMILY_SECTIONS } from './familySections/bas-dos';
+import { CUISSES_JAMBES_FAMILY_SECTIONS } from './familySections/cuisses-jambes';
+import { ABDOMINAUX_FAMILY_SECTIONS } from './familySections/abdominaux-famille';
 
 /** @typedef {'high'|'medium'|'low'} ImportanceLevel */
 
@@ -26,8 +31,11 @@ import { MuscleGroups } from '../workoutProgramEnhanced';
  * @property {string} name
  * @property {string} summary
  * @property {string} intro — paragraphe d’accueil famille
+ * @property {string} [outro] — encadré de synthèse (ex. vision produit)
  * @property {string[]} muscleIds
  * @property {string[]} [visualGroupIds]
+ * @property {'upper'|'lower'} [anatomyBackRegion] — sous-zone dos sur le modèle 3D
+ * @property {{ id: string, title: string, blocks: object[] }[]} [sections]
  * @property {string[]} [searchAliases]
  */
 
@@ -36,9 +44,11 @@ export const ANATOMY_FAMILIES = {
   pectoraux: {
     id: 'pectoraux',
     name: 'Pectoraux',
-    summary: 'Poussée, stabilité d’épaule et volume thoracique.',
+    summary: 'Poussée, épaisseur du torse et stabilité de l’épaule.',
     intro:
-      'Les pectoraux recouvrent l’avant du thorax et assurent la majorité des mouvements de poussée. Le grand pectoral représente le volume visible ; le petit pectoral, profond, stabilise l’omoplate.',
+      'Les pectoraux représentent l’un des groupes musculaires les plus importants du haut du corps. Situés sur la face antérieure du thorax, ils recouvrent une grande partie de la cage thoracique et jouent un rôle central dans tous les mouvements où le bras doit pousser, rapprocher un objet du corps ou exercer une force vers l’avant.\n\nD’un point de vue esthétique, ils constituent l’un des principaux éléments qui donnent une apparence athlétique au haut du corps. Une poitrine développée modifie fortement la silhouette en créant une transition plus marquée entre les épaules, les bras et le tronc.\n\nLeur importance dépasse l’apparence : l’articulation gléno-humérale est très mobile mais peu stable, et dépend fortement des muscles qui contrôlent le bras. Le grand pectoral agit comme un puissant moteur de force ; le petit pectoral contrôle l’omoplate et le placement de l’épaule.\n\nDans la vie quotidienne, ouvrir une porte lourde, pousser un objet, se relever du sol ou porter quelque chose devant soi sollicite en permanence cette famille. En sport, elle est essentielle en musculation, gymnastique, street workout, sports de combat, lancers et escalade.\n\nOrganisation : le grand pectoral constitue la masse visible et le principal producteur de force en poussée ; le petit pectoral, plus profond, ne contribue presque pas au volume esthétique mais stabilise la mécanique de l’épaule.',
+    outro:
+      'Dans Momentum, la famille Pectoraux relie la force de poussée et le développement du torse à des connexions fortes avec les triceps, les deltoïdes antérieurs, le dos, la posture et les mouvements de street workout. Un développement optimal repose sur l’équilibre entre force, amplitude, contrôle, mobilité et tirage.',
     muscleIds: ['grand-pectoral', 'petit-pectoral'],
     visualGroupIds: [MuscleGroups.CHEST],
     searchAliases: ['poitrine', 'pecs', 'chest', 'développé couché']
@@ -46,9 +56,11 @@ export const ANATOMY_FAMILIES = {
   epaules: {
     id: 'epaules',
     name: 'Épaules',
-    summary: 'Mobilité, largeur du haut du corps et coiffe des rotateurs.',
+    summary: 'Mobilité, puissance, largeur du haut du corps et stabilité articulaire.',
     intro:
-      'L’épaule est l’articulation la plus mobile du corps. Le deltoïde produit la puissance visible ; la coiffe des rotateurs centre l’humérus et limite les blessures.',
+      'L’épaule est probablement l’une des régions les plus fascinantes du corps humain : un compromis permanent entre une liberté de mouvement exceptionnelle et la stabilité nécessaire pour transmettre de grandes forces. Contrairement à la hanche, l’architecture gléno-humérale est ouverte — tête humérale volumineuse, surface de contact réduite avec la scapula — ce qui impose un système complexe de muscles et de tendons pour centrer l’articulation.\n\nC’est l’articulation la plus mobile du corps, et l’une des plus vulnérables. Elle permet de lever le bras au-dessus de la tête, lancer, pousser, tirer, porter et exécuter des gestes précis. En musculation, elle intervient dans presque tous les mouvements du haut du corps ; en street workout encore plus (pompes, dips, tractions, handstand, planche, muscle-up). Une épaule performante n’est pas seulement « grosse » : elle produit de la force tout en restant stable et mobile.\n\nOrganisation Momentum : les muscles moteurs superficiels (surtout le deltoïde, trois faisceaux) créent le mouvement et le volume esthétique ; les stabilisateurs profonds (coiffe des rotateurs : supra-épineux, infra-épineux, petit rond, subscapulaire) maintiennent la tête de l’humérus en place. L’épaule ne fonctionne jamais seule : le rythme scapulo-huméral combine montée de l’humérus, rotation de la scapula et mouvement de la clavicule. Une mauvaise coordination peut comprimer ou sursolliciter certaines structures.\n\nEsthétiquement, les épaules déterminent la largeur du haut du corps, la forme en V et l’impression de puissance — influencées par la longueur des clavicules, le faisceau moyen du deltoïde et l’équilibre avec le dos. L’élévateur de la scapula complète la mécanique cervico-scapulaire avec le trapèze.',
+    outro:
+      'Dans Momentum, la famille Épaules relie largeur, poussée verticale, street workout et durabilité articulaire. Un développement optimal combine faisceau moyen, arrière d’épaule, coiffe des rotateurs, mobilité et tirage — pas seulement des développés lourds.',
     muscleIds: ['deltoide', 'coiffe-rotateurs', 'elevateur-scapula'],
     visualGroupIds: [MuscleGroups.SHOULDERS],
     searchAliases: ['deltoïde', 'deltoides', 'shoulders', 'épaule']
@@ -56,9 +68,13 @@ export const ANATOMY_FAMILIES = {
   'haut-dos': {
     id: 'haut-dos',
     name: 'Haut du dos',
-    summary: 'Largeur, épaisseur, posture, tractions et tirages.',
+    summary: 'Largeur, épaisseur, posture, tractions et contrôle scapulaire.',
     intro:
-      'Le haut du dos regroupe la grande chaîne de tirage du corps : largeur (grand dorsal), épaisseur et posture (trapèze, rhomboïdes), esthétique du haut du dos (grand rond) et contrôle scapulaire (dentelé antérieur, petit rond). C’est une famille centrale pour les tractions, les rowings, la santé des épaules et l’équilibre avec les pectoraux.',
+      'Le haut du dos est l’une des régions les plus complexes du corps : contrairement aux pectoraux (poussée dominante), il regroupe des muscles qui produisent, contrôlent et stabilisent des mouvements dans plusieurs directions. C’est la grande chaîne opposée à l’avant du corps — pectoraux, deltoïdes antérieurs, triceps poussent ; le haut du dos tire, stabilise et oriente les épaules.\n\nIl influence la largeur du physique, l’épaisseur du torse, la posture, la force en traction, la stabilité des poussées et la santé de l’épaule. Un dos « large » sans densité ni contrôle scapulaire reste incomplet ; un haut du dos solide améliore souvent posture, force relative et progression globale du haut du corps.\n\nEsthétiquement, il crée le V taper : grand dorsal pour l’ouverture latérale, trapèzes pour la profondeur, rhomboïdes pour la densité. Organisation Momentum : largeur (grand dorsal), épaisseur et structure (grand rond, trapèze, rhomboïdes), stabilité (dentelé antérieur, petit rond / coiffe).\n\nLe haut du dos contrôle surtout la scapula — rythme scapulo-huméral avec humérus, coiffe et muscles du dos. Il sert aussi de plateforme en développé couché et militaire : les meilleurs pousseurs ont souvent un dos très développé.',
+    outro:
+      'Dans Momentum, combine tirages verticaux (largeur), horizontaux (épaisseur) et travail scapulaire (durabilité). Un dos complet est large, dense, stable et capable de produire de la force — pas seulement des tractions répétées.',
+    anatomyBackRegion: 'upper',
+    sections: [...HAUT_DOS_FAMILY_SECTIONS, ...HAUT_DOS_SYNTHESE_SECTIONS],
     muscleIds: [
       'grand-dorsal',
       'grand-rond',
@@ -83,8 +99,12 @@ export const ANATOMY_FAMILIES = {
     id: 'bas-dos',
     name: 'Bas du dos',
     summary: 'Stabilité du rachis, transmission de force et lombaires.',
+    anatomyBackRegion: 'lower',
     intro:
-      'Le bas du dos n’est pas qu’« un muscle » : érecteurs du rachis, carré des lombes (lié aussi à la sangle) et multifides forment une plateforme de stabilisation. Rôle prioritaire en squat, soulevé de terre, course et gainage — la performance et la prévention passent par force progressive, contrôle moteur et mobilité (hanches, thorax), pas par la peur du mouvement.',
+      'Le bas du dos est l’une des régions les plus importantes et les plus mal comprises du corps : pilier mécanique où transitent les forces des jambes, des hanches et du haut du corps. Courir, sauter, porter, tirer ou rester debout sollicite en permanence cette zone.\n\nUn bas du dos développé améliore stabilité de la colonne, transmission de force, posture, endurance et résistance à la fatigue. L’objectif n’est pas une masse visible maximale mais un système de stabilité et d’endurance musculaire — on peut être très fort sans lombaires « esthétiques ».\n\nFamille Momentum : érecteurs du rachis (extension, posture), multifides (contrôle segmentaire profond), carré des lombes (stabilité latérale — voir aussi Abdominaux). Le grand dorsal et le fascia thoraco-lombaire relient le bas du dos au haut du corps.\n\nLa lombaire doit surtout rester stable pendant que les autres articulations bougent — pas être la zone la plus mobile du corps.',
+    outro:
+      'Dans Momentum, le bas du dos est la fondation : érecteurs puissants, multifides fonctionnels, gainage global et progression intelligente. Un haut du corps puissant repose toujours sur une base solide.',
+    sections: BAS_DOS_FAMILY_SECTIONS,
     muscleIds: ['erecteurs-rachis', 'multifides'],
     visualGroupIds: [MuscleGroups.BACK],
     searchAliases: ['lombaires', 'lower back', 'érecteurs', 'soulevé de terre', 'extensions lombaires']
@@ -92,9 +112,11 @@ export const ANATOMY_FAMILIES = {
   bras: {
     id: 'bras',
     name: 'Bras',
-    summary: 'Flexion, extension du coude et volume du membre supérieur.',
+    summary: 'Flexion, extension du coude, volume et transmission de la force.',
     intro:
-      'Le bras regroupe biceps, triceps, brachial, brachio-radial, avant-bras et préhension. Le triceps forme environ les deux tiers du volume visible ; les avant-bras transforment la force du dos et des bras en prise réelle (tractions, street workout, carries).',
+      'Les bras ne se résument pas au biceps : le triceps représente environ les deux tiers du volume du bras ; le brachial et le brachio-radial donnent l’épaisseur ; les avant-bras transmettent la force jusqu’à la prise.\n\nLe biceps intervient en flexion, supination et tractions ; le triceps est le moteur des pompes, dips, développés et mouvements de street workout avancés. Le brachial fléchit le coude quelle que soit la position de la main ; le coraco-brachial (petit muscle du processus coracoïde) stabilise l’épaule en poussée.\n\nUn bras complet = biceps + brachial + triceps + avant-bras + prise — pas des curls isolés.',
+    outro:
+      'Dans Momentum, les bras relient esthétique, tractions, poussées et street workout : équilibre triceps / biceps, épaisseur (brachial, marteau), extensions overhead (chef long) et prise (avant-bras).',
     muscleIds: [
       'biceps-brachial',
       'brachial',
@@ -120,7 +142,10 @@ export const ANATOMY_FAMILIES = {
     name: 'Abdominaux & sangle',
     summary: 'Core, pression intra-abdominale et transmission de force.',
     intro:
-      'La sangle abdominale stabilise la colonne et le bassin : grand droit, obliques, transverse, carré des lombes (stabilité latérale), psoas (flexion hanche / L-sit). Équilibre avec érecteurs et multifides (famille Bas du dos).',
+      'Les abdominaux ne servent pas seulement aux tablettes visibles : la sangle est le système qui transmet la force entre haut et bas du corps (tractions, squats, sprints, pompes, développés, figures). Le « core » inclut grand droit, obliques, transverse, carré des lombes, érecteurs et diaphragme (érecteurs : famille Bas du dos). Trois rôles : stabiliser le tronc, transmettre la puissance (pied → hanche → tronc → membres), protéger la colonne sous charge. Un programme complet combine flexion, anti-extension, anti-rotation et contrôle du bassin — pas seulement des crunchs ou des planches longues.',
+    outro:
+      'Dans Momentum : relevés suspendus, L-sit, hollow body, ab wheel, Pallof et side plank s’articulent avec le psoas (flexion hanche) et le carré des lombes (anti-inclinaison). Visibilité du six-pack = masse grasse et génétique ; performance = stabilité et tension.',
+    sections: ABDOMINAUX_FAMILY_SECTIONS,
     muscleIds: [
       'grand-droit',
       'oblique-externe',
@@ -138,7 +163,9 @@ export const ANATOMY_FAMILIES = {
     name: 'Fessiers',
     summary: 'Extension de hanche, puissance et stabilité du bassin.',
     intro:
-      'Les fessiers sont le groupe le plus volumineux du corps : grand fessier (puissance, sprint, sauts), moyen fessier (abduction et stabilité unipodale), petit fessier (contrôle profond). Indissociables des cuisses et de la chaîne postérieure.',
+      'La chaîne postérieure ne se limite pas aux ischio-jambiers : le grand fessier est le muscle le plus volumineux du corps — extension de hanche, sprint, saut, squat et soulevé. Le moyen fessier stabilise en appui unipodal (abduction) ; le petit fessier contrôle en profondeur. Vie sédentative ou trop de quadriceps sans postérieur : risque de compensations lombaires et de genou moins stable. Les fessiers complètent la famille Cuisses (quadriceps, ischios, adducteurs) et les mollets pour toute la puissance du bas du corps.',
+    outro:
+      'Prioriser extension de hanche (hip thrust, fentes, RDL), le travail unilatéral et une amplitude réelle plutôt que cambrer les lombaires. Voir ischio-jambiers et adducteurs dans Cuisses pour l’équilibre complet de la jambe.',
     muscleIds: ['grand-fessier', 'moyen-fessier', 'petit-fessier'],
     visualGroupIds: [MuscleGroups.HAMSTRINGS],
     searchAliases: ['glutes', 'hip thrust', 'fessiers']
@@ -148,7 +175,10 @@ export const ANATOMY_FAMILIES = {
     name: 'Cuisses',
     summary: 'Quadriceps, ischios, adducteurs — base de force et athlétisme.',
     intro:
-      'Les cuisses regroupent les muscles les plus volumineux du corps. Une jambe équilibrée développe l’avant (quadriceps), l’arrière (ischio-jambiers), l’intérieur (adducteurs) et s’articule avec les fessiers et la stabilité de hanche. Base de squat, sprint, sauts et posture.',
+      'Les jambes sont la base mécanique du corps : marcher, courir, sauter, freiner, porter une charge. Chaque déplacement repose sur une chaîne antérieure (quadriceps), postérieure (ischio-jambiers + fessiers, famille voisine), médiale (adducteurs) et inférieure (mollets, tibia). Un haut du corps fort avec des jambes faibles limite puissance, stabilité et explosivité. Les cuisses concentrent quadriceps, ischio-jambiers et adducteurs — les plus grands volumes musculaires, une forte demande cardiovasculaire et une récupération souvent plus longue qu’en haut du corps.',
+    outro:
+      'Équilibrer avant / arrière / intérieur, inclure du unilatéral et progresser volume et charge sans sacrifier la technique du genou et de la hanche. Fessiers, mollets et tibial antérieur complètent la vision « jambes » dans Momentum.',
+    sections: CUISSES_JAMBES_FAMILY_SECTIONS,
     muscleIds: ['quadriceps-femoral', 'ischio-jambiers', 'adducteurs-ensemble'],
     visualGroupIds: [MuscleGroups.QUADS, MuscleGroups.HAMSTRINGS],
     searchAliases: ['quads', 'ischios', 'squat', 'jambes', 'cuisses', 'leg extension']
@@ -158,7 +188,9 @@ export const ANATOMY_FAMILIES = {
     name: 'Mollets',
     summary: 'Propulsion, rebond et stabilité de cheville.',
     intro:
-      'Triceps sural : gastrocnémien (superficie, genou tendu) + soléaire (profond, genou fléchi), unis par le tendon d’Achille — flexion plantaire, course, saut, restitution élastique. Cheville stable + pied (équilibre, tibial antérieur) complètent la chaîne. Volume, amplitude et fréquence souvent nécessaires.',
+      'Les mollets ne sont pas un détail esthétique de fin de séance : à chaque pas, saut et changement de direction, ils transmettent la force sol → corps. Gastrocnémien (visible, genou tendu) et soléaire (profond, genou fléchi) convergent vers le tendon d’Achille, ressort biologique pour sprint et pliométrie. Habitués à des milliers de contractions quotidiennes, ils demandent souvent amplitude complète, charge progressive et duo debout + assis. Muscles du pied et tibial antérieur (famille Tibia) complètent l’équilibre cheville-pied.',
+    outro:
+      'Ne pas confondre répétitions rapides et court amplitude avec un vrai stimulus : pause basse, montée contrôlée, unilatéral si déséquilibre. Prévention Achille = progression, pas volume brutal de sauts ou de course.',
     muscleIds: ['gastrocnemien', 'soleaire'],
     visualGroupIds: [MuscleGroups.CALVES],
     searchAliases: ['calves', 'mollet', 'calf raise']
@@ -168,7 +200,9 @@ export const ANATOMY_FAMILIES = {
     name: 'Tibia & cheville',
     summary: 'Flexion dorsale et stabilité antérieure de jambe.',
     intro:
-      'Tibial antérieur (dorsiflexion) et fibulaires : équilibre avec les mollets pour la course, les réceptions de saut et la prévention des blessures de cheville.',
+      'Le pied est le premier contact avec le sol ; un mauvais contrôle peut modifier pied → cheville → genou → hanche. Le tibial antérieur (dorsiflexion) équilibre les mollets : propulsion arrière, contrôle avant. Indispensable en course, réception de saut et prévention des entorses. Chaîne inférieure complète = mollets + tibial + qualité d’appui, pas seulement quadriceps et fessiers.',
+    outro:
+      'Renforcement léger mais régulier (tibialis raise, marche sur talons) en complément des mollets debout et assis.',
     muscleIds: ['tibial-anterieur'],
     visualGroupIds: [MuscleGroups.TIBIALIS_ANTERIOR],
     searchAliases: ['shin', 'tibialis', 'tibialis raise']
@@ -213,7 +247,7 @@ export const ANATOMY_MUSCLES = {
     id: 'deltoide',
     familyId: 'epaules',
     name: 'Deltoïde',
-    summary: 'Trois faisceaux — antérieur, moyen et postérieur — pour la mobilité et la largeur d’épaule.',
+    summary: 'Muscle principal de l’épaule — trois faisceaux pour poussée, largeur et équilibre postérieur.',
     functionalImportance: 'high',
     aestheticImportance: 'high',
     visualGroupId: MuscleGroups.SHOULDERS,
@@ -650,14 +684,27 @@ export function getFamilyForMuscle(muscleId) {
 }
 
 /** Cible navigation après clic mesh 3D (groupe visuel Récap). */
-export function resolveAnatomyTargetFromVisualGroup(groupId) {
-  if (!groupId) return null;
-  const family = Object.values(ANATOMY_FAMILIES).find((f) =>
-    (f.visualGroupIds || []).includes(groupId)
-  );
+export function anatomyTargetForFamily(familyId) {
+  const family = getAnatomyFamily(familyId);
   if (!family) return null;
   const featured =
     family.muscleIds.map((id) => getAnatomyMuscle(id)).find((m) => m?.contentReady) ||
     getAnatomyMuscle(family.muscleIds[0]);
   return { familyId: family.id, muscleId: featured?.id || family.muscleIds[0] };
+}
+
+export function resolveAnatomyTargetFromVisualGroup(groupId) {
+  if (!groupId) return null;
+  if (groupId === MuscleGroups.BACK) {
+    return { kind: 'backChoice', familyIds: ['haut-dos', 'bas-dos'] };
+  }
+  const matches = Object.values(ANATOMY_FAMILIES).filter((f) =>
+    (f.visualGroupIds || []).includes(groupId)
+  );
+  const family =
+    matches.find((f) => f.id === 'haut-dos') ||
+    matches.find((f) => !f.anatomyBackRegion) ||
+    matches[0];
+  if (!family) return null;
+  return anatomyTargetForFamily(family.id);
 }

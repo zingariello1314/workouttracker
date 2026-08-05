@@ -34,10 +34,13 @@ export default function AnatomyBankCardPreview({
   exerciseDatabaseKey = null,
   /** Clé entrée `stretchDatabase`. */
   stretchDatabaseKey = null,
-  className = ''
+  className = '',
+  /** Résultat `resolveAnatomyMusclePreviewAnatomy` ou autre anatomy déjà résolu. */
+  precomputedAnatomy = null
 }) {
   const anatomy = useMemo(
     () =>
+      precomputedAnatomy ??
       resolveBankItemAnatomy(
         {
           primaryMuscles: Array.isArray(primaryMuscles) ? primaryMuscles : [],
@@ -50,7 +53,7 @@ export default function AnatomyBankCardPreview({
             ? { stretchDatabaseKey }
             : undefined
       ),
-    [primaryMuscles, secondaryMuscles, mode, exerciseDatabaseKey, stretchDatabaseKey]
+    [primaryMuscles, secondaryMuscles, mode, exerciseDatabaseKey, stretchDatabaseKey, precomputedAnatomy]
   );
 
   const useLiveWebGl = shouldUseLiveAnatomyWebGl({
@@ -58,6 +61,12 @@ export default function AnatomyBankCardPreview({
     mode,
     exerciseDatabaseKey: exerciseDatabaseKey || undefined
   });
+
+  if (layout === 'anatomyRow') {
+    return (
+      <AnatomyBankCardPreviewGl anatomy={anatomy} className={className} anatomyRow fastSettle />
+    );
+  }
 
   if (layout === 'gridFill' && useLiveWebGl) {
     return (
@@ -88,7 +97,13 @@ export default function AnatomyBankCardPreview({
   );
 }
 
-function AnatomyBankCardPreviewGl({ anatomy, className, fillContainer = false, fastSettle = false }) {
+function AnatomyBankCardPreviewGl({
+  anatomy,
+  className,
+  fillContainer = false,
+  fastSettle = false,
+  anatomyRow = false
+}) {
   const hostRef = useRef(null);
   const heldSlotRef = useRef(false);
   const inViewRef = useRef(false);
@@ -248,17 +263,24 @@ function AnatomyBankCardPreviewGl({ anatomy, className, fillContainer = false, f
         ? anatomy.uniformBodyColor
         : '#334155';
 
-  const innerScale = fillContainer ? 'scale-[1.02]' : 'scale-[1.12]';
-  const minCanvas = fillContainer ? 'min-h-0' : 'min-h-[188px]';
+  const innerScale = fillContainer ? 'scale-[1.02]' : anatomyRow ? '' : 'scale-[1.12]';
+  const minCanvas = fillContainer || anatomyRow ? 'min-h-0' : 'min-h-[188px]';
   const frameClass = fillContainer
     ? `h-full w-full min-h-0 rounded-xl overflow-hidden ${PREVIEW_FRAME} outline-none`
-    : `w-full max-w-[148px] rounded-xl overflow-hidden ${PREVIEW_FRAME} outline-none`;
-  const frameStyle = fillContainer ? undefined : { aspectRatio: '3 / 5', minHeight: 168, maxHeight: 220 };
+    : anatomyRow
+      ? `h-[108px] w-[84px] sm:h-[112px] sm:w-[88px] shrink-0 rounded-lg overflow-hidden ${PREVIEW_FRAME} outline-none`
+      : `w-full max-w-[148px] rounded-xl overflow-hidden ${PREVIEW_FRAME} outline-none`;
+  const frameStyle =
+    fillContainer || anatomyRow
+      ? undefined
+      : { aspectRatio: '3 / 5', minHeight: 168, maxHeight: 220 };
 
   return (
     <div
       ref={hostRef}
-      className={`flex shrink-0 pointer-events-none select-none ${fillContainer ? 'h-full w-full min-h-0 justify-stretch' : 'justify-center'} ${className}`}
+      className={`flex shrink-0 pointer-events-none select-none ${
+        fillContainer ? 'h-full w-full min-h-0 justify-stretch' : anatomyRow ? 'justify-start' : 'justify-center'
+      } ${className}`}
       aria-hidden
     >
       <div className={frameClass} style={frameStyle}
@@ -291,6 +313,7 @@ function AnatomyBankCardPreviewGl({ anatomy, className, fillContainer = false, f
                   onStaticCameraSettled={() => setCameraVisible(true)}
                   boundsMargin={anatomy.cameraTuningOverride?.boundsMargin ?? 0.82}
                   cameraDistanceFactor={anatomy.cameraTuningOverride?.cameraDistanceFactor ?? 1}
+                  cameraTargetOffsetY={anatomy.cameraTuningOverride?.targetOffsetY ?? 0}
                   className={`h-full w-full ${minCanvas}`}
                 />
               </div>

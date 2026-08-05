@@ -1,21 +1,28 @@
 /** Disposition par section pour éviter le « mur de tirets » vertical. */
 export function layoutKindForSection(sectionId) {
   switch (sectionId) {
-    case 'portions':
     case 'anatomie':
       return 'cards';
+    case 'portions':
+      return 'portions';
     case 'fonctions':
-    case 'erreurs':
+    case 'morphologie':
     case 'blessures':
+    case 'saviez-vous':
+    case 'faq':
+      return 'cards';
+    case 'coraco-brachial':
+      return 'prose';
+    case 'muscles':
+      return 'cards';
     case 'renforcement':
-      return 'chips';
+      return 'prose';
     case 'exercices':
       return 'exercises';
     case 'presentation':
     case 'recrutement':
     case 'volume':
     case 'mobilite':
-    case 'saviez-vous':
     default:
       return 'prose';
   }

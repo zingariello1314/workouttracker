@@ -3,23 +3,33 @@ const transverse = {
   sections: [
     {
       id: 'presentation',
-      title: 'Présentation',
+      title: 'Introduction — La ceinture naturelle',
       blocks: [
         {
           type: 'p',
           text:
-            'Couche la plus profonde, fibres horizontales en ceinture. Rôle prioritaire : stabiliser, pas produire un grand mouvement visible. Anticipation posturale avant l’effort — base du « gainer ».'
+            'Le transverse de l’abdomen est probablement le muscle abdominal le plus important pour la stabilité : invisible, fibres horizontales en véritable ceinture autour du ventre. Origines : côtes inférieures, fascias lombaires, crête iliaque → ligne blanche.'
+        },
+        {
+          type: 'p',
+          text:
+            'Rôle prioritaire : compression abdominale, stabilisation du tronc, gestion de la pression interne — pas un grand mouvement visible. Avant un effort lourd, le corps augmente la pression dans l’abdomen ; le transverse y participe fortement (avec diaphragme et plancher pelvien).'
         }
       ]
     },
     {
       id: 'fonctions',
-      title: 'Pression intra-abdominale',
+      title: 'Respiration et rigidité',
       blocks: [
         {
           type: 'p',
           text:
-            'Rigidifie le tronc, améliore le transfert de force et protège les structures passives. Mal développé avec des crunchs seuls : préférer gainage, anti-extension et anti-rotation.'
+            'Diaphragme, transverse et plancher pelvien fonctionnent ensemble. Effort intense : pression interne qui rigidifie le tronc (principe de la manœuvre de Valsalva en force maximale très courte). Course, endurance, technique et répétitions : respiration adaptée, pas blocage permanent.'
+        },
+        {
+          type: 'p',
+          text:
+            'Mal développé avec des crunchs seuls — combiner gainage, anti-extension, anti-rotation, hollow body, dead bug.'
         }
       ]
     },
@@ -29,9 +39,15 @@ const transverse = {
       blocks: [
         {
           type: 'exerciseBlock',
-          category: 'Contrôle',
+          category: 'Contrôle & stabilité',
           stars: 5,
-          items: ['Vacuum abdominal', 'Dead bug', 'Hollow body hold', 'Planche']
+          items: ['Vacuum abdominal', 'Dead bug', 'Hollow body hold', 'Planche (RKC, qualité > durée)', 'Ab wheel']
+        },
+        {
+          type: 'exerciseBlock',
+          category: 'Anti-rotation',
+          stars: 5,
+          items: ['Pallof press', 'Farmer / suitcase carry']
         }
       ]
     },
@@ -40,12 +56,9 @@ const transverse = {
       title: 'Types de gainage',
       blocks: [
         {
-          type: 'ul',
-          items: [
-            'Anti-extension : planche, hollow, dead bug',
-            'Anti-rotation : pallof, farmer unilatéral',
-            'Anti-inclinaison : side plank, carries'
-          ]
+          type: 'p',
+          text:
+            'Anti-extension : planche, hollow, dead bug, roue abdominale. Anti-rotation : Pallof, carry unilatéral. Anti-inclinaison : side plank. Un bon gainage intense et court peut surpasser une planche relâchée de plusieurs minutes.'
         }
       ]
     }

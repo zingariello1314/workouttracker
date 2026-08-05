@@ -3,17 +3,23 @@ const psoasIliaque = {
   sections: [
     {
       id: 'presentation',
-      title: 'Présentation',
+      title: 'Présentation — Flexion de hanche et figures',
       blocks: [
         {
           type: 'p',
           text:
-            'Psoas majeur + iliaque : vertèbres lombaires / fosse iliaque → petit trochanter. Principal fléchisseur de hanche — colonne, bassin, fémur. L-sit, relevés suspendus, course (retour de jambe).'
-        },
+            'Psoas majeur et iliaque : vertèbres lombaires / fosse iliaque → petit trochanter. Principal fléchisseur de hanche — lien colonne, bassin et cuisses. L-sit, relevés suspendus, retour de jambe en course. Le L-sit n’est pas « que des abdos » : coordination abdominaux, quadriceps, psoas, épaules, triceps ; échec souvent = mobilité ischios, compression ou force de hanche.'
+        }
+      ]
+    },
+    {
+      id: 'fonctions',
+      title: 'Relevés de jambes : abdos ou psoas ?',
+      blocks: [
         {
-          type: 'callout',
-          tone: 'tip',
-          text: 'Autres fléchisseurs de hanche : droit fémoral (voir Quadriceps), sartorius, tenseur du fascia lata (bandelette ilio-tibiale, stabilité genou avec moyen/petit fessier).'
+          type: 'p',
+          text:
+            'Les fléchisseurs de hanche participent naturellement aux relevés. Pour maximiser les abdominaux : rétroversion du bassin, enroulement, éviter de monter les pieds haut avec cambrure et élan. Voir aussi droit fémoral (Quadriceps) pour la flexion de hanche.'
         }
       ]
     },
@@ -25,7 +31,13 @@ const psoasIliaque = {
           type: 'exerciseBlock',
           category: 'Street workout',
           stars: 5,
-          items: ['Hanging knee raise', 'Hanging leg raise', 'Tuck L-sit / L-sit', 'Compression drill', 'Mountain climber contrôlé']
+          items: [
+            'Hanging knee raise (bassin contrôlé)',
+            'Hanging leg raise / toes to bar',
+            'Tuck sit → L-sit → V-sit',
+            'Compression drills',
+            'Mountain climber contrôlé'
+          ]
         },
         {
           type: 'exerciseBlock',
@@ -40,13 +52,24 @@ const psoasIliaque = {
       title: 'Erreurs',
       blocks: [
         {
-          type: 'ul',
-          items: [
-            'Relevés jambes = souvent psoas si bassin non rétroversé',
-            'Toujours étirer sans renforcer actif',
-            'Déséquilibre fessiers / extenseurs de hanche',
-            'Posture assise prolongée sans gainage ni mobilité'
-          ]
+          type: 'p',
+          text:
+            'Relevés = psoas dominant si bassin non rétroversé. Toujours étirer sans renforcement actif. Déséquilibre fessiers / extenseurs de hanche. Posture assise prolongée sans gainage ni mobilité.'
+        }
+      ]
+    },
+    {
+      id: 'faq',
+      title: 'Questions fréquentes',
+      blocks: [
+        {
+          type: 'h3',
+          text: 'Pourquoi je sens les fléchisseurs de hanche en relevés ?'
+        },
+        {
+          type: 'p',
+          text:
+            'Ils participent au mouvement ; augmenter le travail abdominal par contrôle du bassin et rétroversion, pas seulement la hauteur des pieds.'
         }
       ]
     }

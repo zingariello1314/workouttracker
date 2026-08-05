@@ -1,3 +1,4 @@
+/** @type {{ sections: { id: string, title: string, blocks: object[] }[] }} */
 const petitPectoral = {
   sections: [
     {
@@ -7,12 +8,29 @@ const petitPectoral = {
         {
           type: 'p',
           text:
-            'Muscle triangulaire situé sous le grand pectoral. Invisible chez la plupart des pratiquants, mais essentiel au mouvement et à la stabilité de l’omoplate.'
+            'Le petit pectoral est un muscle plus profond situé sous le grand pectoral. Il n’a pratiquement aucun impact esthétique mais il est essentiel pour la mécanique de l’épaule.'
+        }
+      ]
+    },
+    {
+      id: 'anatomie',
+      title: 'Origine et insertion',
+      blocks: [
+        {
+          type: 'h3',
+          text: 'Origine'
         },
         {
           type: 'p',
-          text:
-            'Origine : 3e, 4e et 5e côtes. Insertion : processus coracoïde de la scapula.'
+          text: 'Il prend naissance sur la troisième, la quatrième et la cinquième côtes.'
+        },
+        {
+          type: 'h3',
+          text: 'Insertion'
+        },
+        {
+          type: 'p',
+          text: 'Il se termine sur le processus coracoïde de la scapula.'
         }
       ]
     },
@@ -21,47 +39,42 @@ const petitPectoral = {
       title: 'Fonctions',
       blocks: [
         {
-          type: 'ul',
-          items: [
-            'Tire l’omoplate vers l’avant et vers le bas',
-            'Stabilise la scapula pendant la poussée',
-            'Inspirateur accessoire lorsque les épaules sont fixes'
-          ]
-        }
-      ]
-    },
-    {
-      id: 'exercices',
-      title: 'Recrutement en entraînement',
-      blocks: [
-        {
-          type: 'exerciseBlock',
-          category: 'Renforcement scapulaire',
-          stars: 5,
-          items: ['Scapular push-up', 'Push-up plus', 'Dips contrôlés (mobilité épaule)']
-        },
-        {
-          type: 'exerciseBlock',
-          category: 'Mobilité',
-          stars: 5,
-          items: ['Étirement petit pectoral au mur', 'Ouverture cage thoracique']
+          type: 'p',
+          text:
+            'Son rôle principal est de contrôler l’omoplate. Il participe à l’abaissement de la scapula, à la projection de l’omoplate vers l’avant et à la rotation vers le bas.'
         },
         {
           type: 'p',
           text:
-            'Pompes, développés et dips sollicitent aussi le petit pectoral — équilibrer avec trapèze inférieur, dentelé et rhomboïdes.'
+            'Il intervient également légèrement dans la respiration forcée lorsque les épaules sont fixes.'
         }
       ]
     },
     {
       id: 'mobilite',
-      title: 'Mobilité & équilibre',
+      title: 'Importance posturale',
       blocks: [
         {
-          type: 'callout',
-          tone: 'warn',
+          type: 'p',
           text:
-            'Un petit pectoral trop raide favorise les épaules enroulées et limite la mobilité gléno-humérale. Étirements doux et équilibre avec le haut du dos sont importants (bureau, musculation poussée-dominante).'
+            'Un petit pectoral trop raide peut contribuer à une position d’épaule enroulée vers l’avant. C’est fréquent chez les personnes assises longtemps ou chez les pratiquants qui font beaucoup de poussées mais peu de tirages. Cela peut limiter certains mouvements au-dessus de la tête.'
+        }
+      ]
+    },
+    {
+      id: 'recrutement',
+      title: 'Exercices et entretien',
+      blocks: [
+        {
+          type: 'p',
+          text:
+            'Il n’est pas réellement isolable par un exercice classique. Il est cependant influencé par le travail global de poussée (pompes, dips, développés) et par la qualité du contrôle scapulaire.'
+        },
+        {
+          type: 'exerciseBlock',
+          category: 'Entretien recommandé',
+          stars: 5,
+          items: ['Face pull', 'Rowing avec bonne rétraction scapulaire', 'Mobilité thoracique', 'Étirement du petit pectoral']
         }
       ]
     }

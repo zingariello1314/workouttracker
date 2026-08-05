@@ -3,31 +3,33 @@ const grandFessier = {
   sections: [
     {
       id: 'presentation',
-      title: 'Présentation',
+      title: 'Introduction — Le muscle le plus volumineux du corps',
       blocks: [
         {
           type: 'p',
           text:
-            'Muscle le plus volumineux du corps — ilium, sacrum, coccyx → bandelette ilio-tibiale et tubérosité glutéale du fémur. Extension de hanche, rotation externe, stabilisation du bassin : sprint, saut, squat, soulevé de terre, hip thrust.'
+            'Le grand fessier est le plus gros muscle humain — lié à la bipédie, à la stabilité du bassin debout et à l’extension puissante de hanche. Il recouvre l’arrière du bassin (ilium, sacrum, coccyx) et s’insère via le tractus ilio-tibial et la tubérosité glutéale du fémur.'
         },
         {
           type: 'p',
           text:
-            'Faisceaux supérieurs (abduction/stabilité) et inférieurs (extension puissante). Faiblesse → compensation lombaires / quadriceps, genou en valgus dynamique.'
+            'Extension de hanche (marche, sprint, saut, hip thrust), rotation externe, stabilisation du bassin et contribution à la stabilité du genou. Puissance au sol en accélération : les premières foulées de sprint dépendent fortement des fessiers.'
         }
       ]
     },
     {
-      id: 'momentum',
-      title: 'Momentum & sport',
+      id: 'fonctions',
+      title: 'Sport, posture et chaîne postérieure',
       blocks: [
         {
-          type: 'ul',
-          items: [
-            'Muscle-up explosif : chaîne postérieure + hanches',
-            'Front lever : contrôle du bassin (éviter cambrure)',
-            'Transfert avec ischio-jambiers et mollets'
-          ]
+          type: 'p',
+          text:
+            'Un grand fessier puissant améliore course, sauts, force en jambes et protection articulaire. Vie sédentative : fessiers souvent sous-utilisés — manque d’activation de la chaîne postérieure peut modifier les compensations (lombaires, quadriceps dominants).'
+        },
+        {
+          type: 'p',
+          text:
+            'Complément indispensable aux ischio-jambiers (famille Cuisses) et aux mollets pour une chaîne inférieure complète.'
         }
       ]
     },
@@ -39,25 +41,24 @@ const grandFessier = {
           type: 'exerciseBlock',
           category: 'Poids du corps',
           stars: 5,
-          items: ['Hip thrust au sol', 'Bulgarian split squat', 'Fente arrière', 'Step-up']
+          items: [
+            'Hip thrust au sol',
+            'Ponts de hanche / une jambe',
+            'Fentes bulgares',
+            'Extensions de hanche',
+            'Sprints et sauts (puissance)'
+          ]
         },
         {
           type: 'exerciseBlock',
           category: 'Salle',
           stars: 5,
-          items: ['Hip thrust chargé', 'Squat profond', 'Soulevé de terre / RDL', 'Pull-through poulie', 'Fentes marchées']
-        }
-      ]
-    },
-    {
-      id: 'programme',
-      title: 'Programme indicatif',
-      blocks: [
-        {
-          type: 'ul',
           items: [
-            'PDC : Bulgarian 4×8–15, hip thrust PDC 4×15–25',
-            'Salle : hip thrust 3–5×6–12, RDL 3–4×8–12, squat 3–5×6–12'
+            'Hip thrust chargé',
+            'Squat profond (selon morphologie)',
+            'Soulevé de terre / RDL',
+            'Fentes marchées',
+            'Pull-through poulie'
           ]
         }
       ]
@@ -67,12 +68,44 @@ const grandFessier = {
       title: 'Erreurs fréquentes',
       blocks: [
         {
-          type: 'ul',
-          items: [
-            'Amplitude courte (peu de flexion hanche)',
-            'Uniquement squat sans extension directe (hip thrust, pull-through)',
-            'Extension de hanche par cambrure lombaire au lieu du bassin'
-          ]
+          type: 'p',
+          text:
+            'Croire que le hip thrust suffit à tout : le fessier travaille sous plusieurs angles. Squat uniquement sans extension directe (hip thrust, pull-through) ou amplitude courte (peu de flexion hanche). Extension par cambrure lombaire au lieu du bassin.'
+        }
+      ]
+    },
+    {
+      id: 'momentum',
+      title: 'Application Momentum',
+      blocks: [
+        {
+          type: 'p',
+          text:
+            'Muscle-up explosif, front lever (contrôle du bassin sans cambrure excessive), transfert avec ischio-jambiers et mollets. Moyen et petit fessier (autres fiches) complètent abduction et stabilité unipodale.'
+        }
+      ]
+    },
+    {
+      id: 'faq',
+      title: 'Questions fréquentes',
+      blocks: [
+        {
+          type: 'h3',
+          text: 'Développer les fessiers sans squat ?'
+        },
+        {
+          type: 'p',
+          text:
+            'Oui : hip thrust, fentes, extensions de hanche, sprints — la tension mécanique compte plus qu’un exercice unique.'
+        },
+        {
+          type: 'h3',
+          text: 'Quadriceps progressent, pas les fessiers ?'
+        },
+        {
+          type: 'p',
+          text:
+            'Souvent technique favorisant flexion du genou sans extension de hanche — ajuster amplitude, inclinaison et exercices d’extension ciblée.'
         }
       ]
     }

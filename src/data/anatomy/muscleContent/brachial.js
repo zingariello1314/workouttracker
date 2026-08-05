@@ -3,27 +3,28 @@ const brachial = {
   sections: [
     {
       id: 'presentation',
-      title: 'Présentation',
+      title: 'Présentation — Brachial antérieur',
       blocks: [
         {
           type: 'p',
           text:
-            'Le brachial est situé sous le biceps. En se développant, il pousse le biceps vers l’extérieur et augmente l’épaisseur du bras. Il ne croise pas l’épaule et ne supine pas — c’est un fléchisseur pur du coude.'
+            'Le brachial antérieur est sous le biceps, sans attache sur l’omoplate : fléchisseur « pur » du coude — flexion en supination, pronation ou prise neutre. En grossissant, il pousse le biceps vers l’extérieur et épaissit le bras.'
         },
         {
-          type: 'callout',
-          tone: 'tip',
-          text: 'Esthétique ★★★★☆ · Hypertrophie ★★★★★ · Recrutement ★★★★★ — souvent sous-estimé.'
+          type: 'p',
+          text:
+            'Origine sur la face antérieure distale de l’humérus ; insertion sur la tubérosité de l’ulna — efficace quelle que soit la rotation de la main.'
         }
       ]
     },
     {
-      id: 'fonctions',
-      title: 'Fonctions',
+      id: 'recrutement',
+      title: 'Street workout et épaisseur',
       blocks: [
         {
           type: 'p',
-          text: 'Flexion du coude en pronation, supination ou prise neutre — d’où l’efficacité des curls marteau et des tractions neutres.'
+          text:
+            'Très sollicité en tractions pronation, prise neutre, escalade et suspension — là où le biceps est moins avantagé mécaniquement.'
         }
       ]
     },
@@ -32,16 +33,105 @@ const brachial = {
       title: 'Exercices',
       blocks: [
         {
-          type: 'exerciseBlock',
-          category: 'Curl marteau',
-          stars: 5,
-          items: ['Curl marteau haltères', 'Curl marteau corde poulie']
+          type: 'h3',
+          text: 'Tractions et curls'
+        },
+        {
+          type: 'p',
+          text:
+            'Tractions pronation et neutre ; chin-up descente lente ; curl marteau, pupitre neutre, reverse curl.'
         },
         {
           type: 'exerciseBlock',
-          category: 'Tractions',
+          category: 'Incontournables',
+          stars: 5,
+          items: ['Tractions pronation', 'Tractions prise neutre', 'Curl marteau', 'Curl pupitre neutre']
+        },
+        {
+          type: 'exerciseBlock',
+          category: 'Complément',
           stars: 4,
-          items: ['Tractions prise neutre', 'Tractions marteau']
+          items: ['Reverse curl', 'Chin-up tempo lent']
+        }
+      ]
+    },
+    {
+      id: 'erreurs',
+      title: 'Erreurs et blessures',
+      blocks: [
+        {
+          type: 'p',
+          text:
+            'Uniquement curls supination : privilégier neutre/pronation pour l’épaisseur. Progression trop rapide tractions/curls → tendinites fléchisseurs coude.'
+        }
+      ]
+    },
+    {
+      id: 'saviez-vous',
+      title: 'Le saviez-vous ?',
+      blocks: [
+        {
+          type: 'p',
+          text:
+            'Il peut faire paraître le biceps plus gros sans augmenter son volume ; facteur limitant en traction ; grimpeurs souvent très développés.'
+        }
+      ]
+    },
+    {
+      id: 'faq',
+      title: 'FAQ brachial',
+      blocks: [
+        {
+          type: 'h3',
+          text: 'Isolation complète ?'
+        },
+        {
+          type: 'p',
+          text: 'Non — prise neutre et pronation augmentent son implication relative.'
+        },
+        {
+          type: 'h3',
+          text: 'Bras fin de profil ?'
+        },
+        {
+          type: 'p',
+          text: 'Développer brachial, triceps et brachio-radial — pas seulement biceps.'
+        }
+      ]
+    },
+    {
+      id: 'coraco-brachial',
+      title: 'Coraco-brachial',
+      blocks: [
+        {
+          type: 'p',
+          text:
+            'Petit muscle antérieur du bras : origine processus coracoïde (même carrefour que chef court biceps et petit pectoral), insertion face médiale humérus.'
+        },
+        {
+          type: 'p',
+          text:
+            'Flexion d’épaule, adduction légère, stabilisation humérus — sollicité en dips, développé militaire, pompes profondes. Rarement ciblé directement ; équilibre poussée/tirage/mobilité suffit.'
+        },
+        {
+          type: 'ul',
+          items: ['Dips', 'Développé militaire', 'Pompes profondes']
+        },
+        {
+          type: 'p',
+          text:
+            'Douleurs antérieures épaule ou tensions coracoïde possibles avec excès de poussée sans tirage.'
+        }
+      ]
+    },
+    {
+      id: 'momentum',
+      title: 'Analyse Momentum',
+      blocks: [
+        {
+          type: 'p',
+          text:
+            'Brachial = épaisseur et tractions ; coraco-brachial = stabilité épaule en poussée. Bras complet : biceps puissant, brachial développé, épaule stable.'
         }
       ]
     }

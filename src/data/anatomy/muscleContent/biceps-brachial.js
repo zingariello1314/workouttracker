@@ -3,19 +3,17 @@ const bicepsBrachial = {
   sections: [
     {
       id: 'presentation',
-      title: 'Présentation',
+      title: 'Présentation générale',
       blocks: [
         {
           type: 'p',
           text:
-            'Le biceps brachial est le muscle le plus connu de la face antérieure du bras. Deux chefs (long et court) convergent vers un tendon commun inséré sur le radius — d’où son rôle majeur en flexion du coude et supination.'
+            'Le biceps brachial est le muscle le plus connu de l’avant-bras — « bi » = deux chefs. Ils convergent vers un tendon commun sur le radius. Il ne représente qu’une partie du volume du bras (le triceps en forme la majorité), mais il est central en flexion, supination et tractions.'
         },
         {
-          type: 'callout',
-          tone: 'tip',
-          title: 'Profil Momentum',
+          type: 'p',
           text:
-            'Esthétique ★★★★★ · Fonctionnel ★★★★☆ · Hypertrophie ★★★★★ · Tirages ★★★★★ — le volume total du bras dépend surtout du triceps.'
+            'En street workout, il joue un rôle majeur : tractions, tirages, port de charges. Un bras complet associe fléchisseurs, extenseurs et avant-bras.'
         }
       ]
     },
@@ -24,48 +22,58 @@ const bicepsBrachial = {
       title: 'Chef long et chef court',
       blocks: [
         {
+          type: 'p',
+          text:
+            'Deux chefs, un muscle — la position du bras modifie la tension ; on ne isole pas totalement l’un sans l’autre.'
+        },
+        {
           type: 'h3',
-          text: 'Chef long'
+          text: 'Chef long — Tubercule supraglénoïdal'
         },
         {
           type: 'p',
           text:
-            'Partie externe, origine sur le tubercule supraglénoïdal (tendon traverse l’épaule). Souvent associé au « pic » du biceps ; mieux étiré en curl incliné.'
+            'Portion externe, tendon traverse l’épaule — « pic » du biceps selon génétique (longueur tendon, ventre musculaire). Flexion d’épaule légère ; tendinopathie du chef long possible avec volume élevé de tractions et développés.'
+        },
+        {
+          type: 'ul',
+          items: ['Curl incliné', 'Curl supination forte', 'Chin-ups']
         },
         {
           type: 'h3',
-          text: 'Chef court'
+          text: 'Chef court — Processus coracoïde'
         },
         {
           type: 'p',
           text:
-            'Partie interne, origine sur le processus coracoïde. Contribue à l’épaisseur du bras. Flexion et supination comme le chef long.'
+            'Portion interne, épaisseur du bras. Même flexion et supination que le chef long.'
         }
       ]
     },
     {
-      id: 'fonctions',
-      title: 'Fonctions',
+      id: 'anatomie',
+      title: 'Insertion',
       blocks: [
         {
-          type: 'ul',
-          items: [
-            'Flexion du coude',
-            'Supination de l’avant-bras (paume vers le haut)',
-            'Aide aux tractions (secondaire vs dos)',
-            'Stabilisation de l’épaule (chef long)'
-          ]
+          type: 'p',
+          text:
+            'Tubérosité du radius ; aponévrose bicipitale vers l’avant-bras. Trois fonctions : flexion du coude, supination (paume vers le haut), participation à la flexion d’épaule (chef long).'
         }
       ]
     },
     {
       id: 'recrutement',
-      title: 'Développement',
+      title: 'Comment le développer',
       blocks: [
         {
           type: 'p',
           text:
-            'Combiner charges lourdes progressives, positions étirées (curl incliné) et exécution stricte. L’élan réduit la tension réelle — petit muscle, grande sensibilité à la technique.'
+            'Tension mécanique, amplitude, progression, proximité de l’échec, variété d’angles. Bras derrière le corps (curl incliné) étire le chef long ; bras devant le raccourcit l’épaule côté biceps.'
+        },
+        {
+          type: 'p',
+          text:
+            'Erreurs : charge excessive avec élan du dos et des épaules ; négliger la phase négative ; croire que le pic en haut suffit sans étirement et répétitions efficaces.'
         }
       ]
     },
@@ -74,31 +82,127 @@ const bicepsBrachial = {
       title: 'Exercices',
       blocks: [
         {
-          type: 'exerciseBlock',
-          category: 'Poids du corps',
-          stars: 5,
-          items: ['Tractions supination (chin-ups)', 'Curl barre basse / anneaux']
+          type: 'h3',
+          text: 'Poids du corps'
+        },
+        {
+          type: 'p',
+          text:
+            'Chin-ups (supination) : charge relative élevée ; tractions australiennes supination pour le volume ; curl sur barre basse.'
+        },
+        {
+          type: 'h3',
+          text: 'Salle'
+        },
+        {
+          type: 'p',
+          text:
+            'Curl incliné (chef long), curl pupitre, curl barre. Curl marteau surtout brachial/brachio-radial mais complète l’épaisseur.'
         },
         {
           type: 'exerciseBlock',
-          category: 'Salle — fondamentaux',
+          category: 'Poids du corps — incontournables',
           stars: 5,
-          items: ['Curl incliné haltères', 'Curl barre', 'Curl pupitre']
+          items: ['Tractions supination', 'Tractions australiennes supination', 'Curl barre basse']
+        },
+        {
+          type: 'exerciseBlock',
+          category: 'Salle — incontournables',
+          stars: 5,
+          items: ['Curl incliné haltères', 'Curl pupitre', 'Curl barre']
         }
       ]
     },
     {
-      id: 'erreurs',
-      title: 'Erreurs & morphologie',
+      id: 'blessures',
+      title: 'Blessures',
       blocks: [
         {
-          type: 'ul',
-          items: [
-            'Balancer le corps pour soulever plus lourd',
-            'Négliger les positions étirées',
-            'Uniquement des curls sans triceps ni brachial',
-            'Rendu visuel : longueur du tendon distal et du ventre musculaire (génétique)'
-          ]
+          type: 'h3',
+          text: 'Tendinopathie chef long'
+        },
+        {
+          type: 'p',
+          text: 'Douleur avant épaule, gêne curls ou bras levé — volume tractions + développés.'
+        },
+        {
+          type: 'h3',
+          text: 'Déchirure'
+        },
+        {
+          type: 'p',
+          text: 'Effort brutal, charge qui chute — fatigue et préparation insuffisantes.'
+        }
+      ]
+    },
+    {
+      id: 'saviez-vous',
+      title: 'Le saviez-vous ?',
+      blocks: [
+        {
+          type: 'h3',
+          text: 'Pas le plus gros muscle du bras'
+        },
+        {
+          type: 'p',
+          text: 'Le triceps domine le volume — maximiser le tour de bras exige un triceps développé.'
+        },
+        {
+          type: 'h3',
+          text: 'Génétique et forme'
+        },
+        {
+          type: 'p',
+          text: 'Insertions et longueur du ventre modifient l’aspect ; l’entraînement développe, ne change pas les attaches.'
+        },
+        {
+          type: 'h3',
+          text: 'Tractions = vrai travail biceps'
+        },
+        {
+          type: 'p',
+          text: 'Les chin-ups peuvent être le principal exercice biceps en street workout.'
+        }
+      ]
+    },
+    {
+      id: 'faq',
+      title: 'Questions fréquentes',
+      blocks: [
+        {
+          type: 'h3',
+          text: 'Isoler chef long ou court ?'
+        },
+        {
+          type: 'p',
+          text: 'Non totalement — les deux travaillent ensemble ; certains angles modifient la proportion de recrutement.'
+        },
+        {
+          type: 'h3',
+          text: 'Fréquence hebdomadaire ?'
+        },
+        {
+          type: 'p',
+          text: 'Souvent deux stimulations suffisent avec le volume indirect du dos.'
+        },
+        {
+          type: 'h3',
+          text: 'Curls obligatoires ?'
+        },
+        {
+          type: 'p',
+          text: 'Non — tractions suffisent pour beaucoup ; les curls ajoutent volume et ciblage.'
+        }
+      ]
+    },
+    {
+      id: 'momentum',
+      title: 'Analyse Momentum',
+      blocks: [
+        {
+          type: 'p',
+          text:
+            'Biceps = esthétique, force, street workout, tractions — mais bras complet = biceps + brachial épais + triceps dominant + avant-bras solides.'
         }
       ]
     }

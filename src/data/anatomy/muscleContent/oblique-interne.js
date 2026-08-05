@@ -3,12 +3,12 @@ const obliqueInterne = {
   sections: [
     {
       id: 'presentation',
-      title: 'Présentation',
+      title: 'Introduction — Couche profonde complémentaire',
       blocks: [
         {
           type: 'p',
           text:
-            'Sous l’oblique externe, couche intermédiaire orientée vers la stabilité profonde, le contrôle du bassin et la compression abdominale. Très sollicité en anti-rotation plutôt qu’en twists isolés.'
+            'Les obliques internes se situent sous les obliques externes, fibres orientées différemment — grande complémentarité entre les deux couches. Un grand droit développé sans musculature profonde = tronc incomplet ; la vraie force du centre = stabilité multidirectionnelle.'
         }
       ]
     },
@@ -17,12 +17,9 @@ const obliqueInterne = {
       title: 'Fonctions',
       blocks: [
         {
-          type: 'ul',
-          items: [
-            'Rotation (travail complémentaire avec l’externe)',
-            'Anti-rotation (farmer walk unilatéral, pallof)',
-            'Pression intra-abdominale'
-          ]
+          type: 'p',
+          text:
+            'Rotation du tronc, flexion latérale, compression abdominale, stabilisation. Travail étroit avec le transverse pour une ceinture autour du tronc — surtout sollicités en anti-rotation et contrôle du bassin plutôt qu’en twists isolés à répétition.'
         }
       ]
     },
@@ -32,9 +29,9 @@ const obliqueInterne = {
       blocks: [
         {
           type: 'exerciseBlock',
-          category: 'Anti-rotation',
+          category: 'Anti-rotation & gainage',
           stars: 5,
-          items: ['Pallof press', 'Farmer walk unilatéral', 'Side plank dynamique']
+          items: ['Pallof press', 'Side plank (statique et dynamique)', 'Farmer walk unilatéral', 'Dead bug']
         }
       ]
     },
@@ -45,7 +42,7 @@ const obliqueInterne = {
         {
           type: 'p',
           text:
-            'Peu besoin d’isolation « esthétique » : gainage, mouvements unilatéraux et suspension les renforcent déjà. Objectif : tronc solide et fonctionnel.'
+            'Peu besoin d’isolation esthétique : suspension, carries, planches latérales et mouvements unilatéraux renforcent déjà obliques internes et transverse. Objectif : tronc solide pour sport et street workout.'
         }
       ]
     }

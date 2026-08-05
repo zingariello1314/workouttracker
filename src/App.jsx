@@ -479,7 +479,7 @@ const WorkoutTrackerContent = () => {
               >
               <Suspense fallback={<TabSuspenseFallback tabId={activeTab} />}>
                   <div className="container mx-auto px-4">
-                    {isSportSubTab(activeTab) && (
+                    {isSportSubTab(activeTab) && activeTab !== 'anatomy' && (
                       <div className="mb-5 mt-5 scroll-mt-40 pt-1">
                         <SportXPBar />
                       </div>

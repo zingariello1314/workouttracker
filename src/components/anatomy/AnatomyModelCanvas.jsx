@@ -3,6 +3,7 @@ import * as THREE from 'three';
 import { Canvas, useFrame, useThree } from '@react-three/fiber';
 import { Bounds, Center, OrbitControls, useGLTF } from '@react-three/drei';
 import { ANATOMY_MODEL_URL } from '../../utils/anatomy/anatomyModelConstants';
+import { visualGroupFromMesh } from '../../services/anatomy/resolveMeshToAnatomy';
 import { BODY_VIEW_PRESETS, ANATOMY_VIEW_PRESET_KEYS } from './anatomyViewPresets';
 
 useGLTF.preload(ANATOMY_MODEL_URL);
@@ -28,23 +29,33 @@ export function applyViewPreset(camera, controls, presetKey, distanceOverride = 
   controls.update();
 }
 
-export function BodyMapCameraApplier({ preset, distanceFactor = 1, onSettledOnce }) {
+export function BodyMapCameraApplier({
+  preset,
+  distanceFactor = 1,
+  onSettledOnce,
+  /** Décale le point visé vers le haut (buste) ou le bas (jambes), en unités modèle. */
+  targetOffsetY = 0
+}) {
   const camera = useThree((s) => s.camera);
   const controls = useThree((s) => s.controls);
   const invalidate = useThree((s) => s.invalidate);
   const presetRef = useRef(preset);
   const factorRef = useRef(distanceFactor);
+  const offsetYRef = useRef(targetOffsetY);
   const frame = useRef(0);
   const fittedDistRef = useRef(null);
   const settledFiredRef = useRef(false);
+  const baseTargetYRef = useRef(null);
 
   useEffect(() => {
     presetRef.current = preset;
     factorRef.current = distanceFactor;
+    offsetYRef.current = targetOffsetY;
     frame.current = 0;
     fittedDistRef.current = null;
     settledFiredRef.current = false;
-  }, [preset, distanceFactor]);
+    baseTargetYRef.current = null;
+  }, [preset, distanceFactor, targetOffsetY]);
 
   useFrame(() => {
     frame.current += 1;
@@ -65,6 +76,14 @@ export function BodyMapCameraApplier({ preset, distanceFactor = 1, onSettledOnce
     const liveDist = camera.position.distanceTo(target);
     if (fittedDistRef.current === null && frame.current === 11 && liveDist > 0.02) {
       fittedDistRef.current = liveDist;
+      if (baseTargetYRef.current === null) {
+        baseTargetYRef.current = target.y;
+      }
+    }
+
+    const offY = offsetYRef.current;
+    if (baseTargetYRef.current !== null && Number.isFinite(offY) && offY !== 0) {
+      target.y = baseTargetYRef.current + offY;
     }
 
     const scale = BODY_VIEW_PRESETS[presetRef.current]?.distanceScale ?? 1;
@@ -98,6 +117,11 @@ function meshKey(name) {
   return String(name || '')
     .trim()
     .replace(/\./g, '_');
+}
+
+function meshIsAnatomyPickTarget(object) {
+  if (!object?.isMesh || !object.name) return false;
+  return Boolean(visualGroupFromMesh(object.name));
 }
 
 export function AnatomyModel({
@@ -173,11 +197,12 @@ export function AnatomyModel({
       object={root}
       onPointerOver={(e) => {
         if (!pickMode && !onMuscleHover) return;
+        if (pickMode && !meshIsAnatomyPickTarget(e.object)) return;
         e.stopPropagation();
         const name = e.object?.name;
         if (name && onMuscleHover) onMuscleHover(name);
         if (pickMode && typeof document !== 'undefined') {
-          document.body.style.cursor = name ? 'pointer' : '';
+          document.body.style.cursor = 'pointer';
         }
       }}
       onPointerOut={(e) => {
@@ -189,6 +214,7 @@ export function AnatomyModel({
         }
       }}
       onPointerDown={(e) => {
+        if (pickMode && !meshIsAnatomyPickTarget(e.object)) return;
         e.stopPropagation();
         const name = e.object?.name;
         if (name && onMuscleClick) onMuscleClick(name);
@@ -279,7 +305,9 @@ export function AnatomyCardStaticScene({
   /** Plus grand = plus de marge autour du maillage (moins de coupures épaules / bras). */
   boundsMargin = 0.82,
   /** >1 éloigne légèrement la caméra après le fit Bounds. */
-  cameraDistanceFactor = 1
+  cameraDistanceFactor = 1,
+  /** Vise plus haut (buste) ou plus bas (jambes) après le cadrage Bounds. */
+  cameraTargetOffsetY = 0
 }) {
   return (
     <>
@@ -304,6 +332,7 @@ export function AnatomyCardStaticScene({
         preset={viewPreset}
         distanceFactor={cameraDistanceFactor}
         onSettledOnce={onCameraSettledOnce}
+        targetOffsetY={cameraTargetOffsetY}
       />
       <OrbitControls
         makeDefault
@@ -341,6 +370,7 @@ export function AnatomyModelCanvas({
   cardDemandSignature = '',
   boundsMargin,
   cameraDistanceFactor,
+  cameraTargetOffsetY = 0,
   controlsEnableZoom = true,
   /** Mode carte : après stabilisation caméra (anti-flash). */
   onStaticCameraSettled
@@ -358,6 +388,7 @@ export function AnatomyModelCanvas({
         onCameraSettledOnce={onStaticCameraSettled}
         boundsMargin={boundsMargin ?? 0.82}
         cameraDistanceFactor={cameraDistanceFactor ?? 1}
+        cameraTargetOffsetY={cameraTargetOffsetY}
       />
     ) : (
       <AnatomyInteractiveScene

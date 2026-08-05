@@ -8,20 +8,8 @@ const multifides = {
         {
           type: 'p',
           text:
-            'Les multifides sont des muscles profonds au contact de la colonne. Ils ne produisent pas de grands mouvements visibles : ils ajustent finement la position de chaque vertèbre pour maintenir une colonne stable et efficace.'
+            'Muscles profonds segment par segment — « réglage » vertébral là où les érecteurs produisent la force globale. Peuvent perdre fonction après douleurs lombaires prolongées : renforcer force globale et contrôle profond.'
         },
-        {
-          type: 'p',
-          text:
-            'Indispensables en course, sauts, soulevés lourds et gainage : un déficit de contrôle profond peut faire compenser certaines zones et augmenter les contraintes mécaniques.'
-        },
-        {
-          type: 'callout',
-          tone: 'tip',
-          title: 'Profil Momentum',
-          text:
-            'Fonctionnel ★★★★★ · Prévention ★★★★★ · Esthétique visible ★☆☆☆☆ · Recrutement conscient souvent nécessaire.'
-        }
       ]
     },
     {

@@ -27,6 +27,8 @@ const EXACT_TO_GROUP = {
   pectoraux: G.CHEST,
   'pectoral': G.CHEST,
   'petit pectoral': G.CHEST,
+  'grand pectoral': G.CHEST,
+  'pectoral majeur': G.CHEST,
   'pectoral superieur': G.CHEST,
   'pectoral inferieur': G.CHEST,
   core: G.CORE,

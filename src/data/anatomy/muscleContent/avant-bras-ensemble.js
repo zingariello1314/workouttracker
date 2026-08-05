@@ -3,32 +3,50 @@ const avantBrasEnsemble = {
   sections: [
     {
       id: 'presentation',
-      title: 'Présentation',
+      title: 'Présentation générale',
       blocks: [
         {
           type: 'p',
           text:
-            'L’avant-bras regroupe de nombreux muscles : flexion/extension du poignet, pronation, supination, préhension. Indispensables en musculation, escalade, gymnastique, street workout et sports de combat.'
+            'Les avant-bras sont le lien entre la force produite (dos, bras) et la main qui tient barre, anneaux ou adversaire. Sans prise solide, dorsaux et biceps plafonnent — facteur limitant fréquent en tractions, muscle-up, soulevés et escalade.'
         },
         {
-          type: 'callout',
-          tone: 'tip',
-          text: 'Esthétique ★★★★☆ · Fonctionnel ★★★★★ · Tractions ★★★★★ — la prise limite souvent la progression avant le dos.'
+          type: 'p',
+          text:
+            'Plus d’une vingtaine de muscles : fléchisseurs (paume), extenseurs (dos main), pronateurs/supinateurs, brachio-radial (transition coude, prise neutre).'
         }
       ]
     },
     {
       id: 'anatomie',
-      title: 'Organisation',
+      title: 'Muscles clés',
       blocks: [
         {
-          type: 'ul',
-          items: [
-            'Fléchisseurs du poignet (face interne)',
-            'Extenseurs du poignet (face externe)',
-            'Pronateurs et supinateurs',
-            'Muscles de la préhension'
-          ]
+          type: 'h3',
+          text: 'Fléchisseurs des doigts'
+        },
+        {
+          type: 'p',
+          text:
+            'Profond et superficiel — fermeture main, suspension, escalade. Fatigue prise avant le dos sur les tractions.'
+        },
+        {
+          type: 'h3',
+          text: 'Fléchisseurs et extenseurs du poignet'
+        },
+        {
+          type: 'p',
+          text:
+            'Stabilisation du poignet en curl et en maintien de barre ; extenseurs équilibrent fléchisseurs (prévention épicondylalgies).'
+        },
+        {
+          type: 'h3',
+          text: 'Brachio-radial'
+        },
+        {
+          type: 'p',
+          text:
+            'Flexion coude en prise neutre — curl marteau ; visible sur le côté externe. Voir aussi fiche Brachio-radial (famille Bras).'
         }
       ]
     },
@@ -37,54 +55,108 @@ const avantBrasEnsemble = {
       title: 'Exercices',
       blocks: [
         {
-          type: 'exerciseBlock',
-          category: 'Fléchisseurs',
-          stars: 5,
-          items: ['Wrist curl', 'Tractions (prise)', 'Dead hang']
+          type: 'h3',
+          text: 'Poids du corps'
+        },
+        {
+          type: 'p',
+          text:
+            'Tractions, dead hang (endurance prise), tractions serviette, marche ours / appuis mains.'
+        },
+        {
+          type: 'h3',
+          text: 'Salle'
+        },
+        {
+          type: 'p',
+          text:
+            'Farmer walk, curl marteau, wrist curl, reverse wrist curl, reverse curl.'
         },
         {
           type: 'exerciseBlock',
-          category: 'Extenseurs',
+          category: 'Préhension & suspension',
           stars: 5,
-          items: ['Reverse wrist curl', 'Extensions doigts', 'Équilibre coude']
+          items: ['Tractions', 'Dead hang', 'Dead hang lesté', 'Farmer walk']
         },
         {
           type: 'exerciseBlock',
-          category: 'Préhension (grip)',
+          category: 'Poignet et équilibre',
           stars: 5,
-          items: ['Farmer walk', 'Dead hang / lesté', 'Plate pinch', 'Crushing / supporting grip']
+          items: ['Wrist curl', 'Reverse wrist curl', 'Reverse curl', 'Curl marteau']
         }
       ]
     },
     {
-      id: 'brachio-radial',
-      title: 'Brachio-radial',
+      id: 'erreurs',
+      title: 'Erreurs fréquentes',
       blocks: [
         {
           type: 'p',
-          text: 'Lien bras–avant-bras — curl marteau, flexion coude en prise neutre. Voir fiche Brachio-radial (famille Bras).'
+          text:
+            'Négliger extenseurs ; sangles systématiques (moins de travail prise) ; croire que poignets fins empêchent gros avant-bras — les muscles peuvent beaucoup grossir.'
         }
       ]
     },
     {
-      id: 'programme',
-      title: 'Programme Momentum (2×/sem.)',
+      id: 'blessures',
+      title: 'Blessures',
       blocks: [
         {
-          type: 'ul',
-          items: ['Dead hang : 3 séries', 'Farmer walk : 4 séries', 'Wrist curl / reverse : 3×15', 'Extensions doigts : 3×20']
+          type: 'p',
+          text:
+            'Tendinopathies coude, épicondylalgie latérale (grimpeurs, tractions), douleurs poignet (pompes, anneaux) — progression et équilibre fléchisseurs/extenseurs.'
         }
       ]
     },
     {
       id: 'saviez-vous',
-      title: 'Vision Momentum',
+      title: 'Le saviez-vous ?',
       blocks: [
         {
-          type: 'callout',
-          tone: 'tip',
+          type: 'p',
           text:
-            'Un bras « complet » équilibre biceps, brachial, brachio-radial, triceps et avant-bras — la prise solidifie tout le haut du corps en tirage.'
+            'Force de préhension corrélée à marqueurs de condition ; grimpeurs = avant-bras extrêmes ; tendons récupèrent plus lentement que muscles.'
+        }
+      ]
+    },
+    {
+      id: 'faq',
+      title: 'Questions fréquentes',
+      blocks: [
+        {
+          type: 'h3',
+          text: 'Tractions suffisent ?'
+        },
+        {
+          type: 'p',
+          text: 'Souvent oui jusqu’à intermédiaire ; travail spécifique pour maximiser.'
+        },
+        {
+          type: 'h3',
+          text: 'Avant-bras brûlent avant le dos ?'
+        },
+        {
+          type: 'p',
+          text: 'La prise est souvent le maillon faible — normal, pas forcément un dos faible.'
+        },
+        {
+          type: 'h3',
+          text: 'Augmenter taille poignets ?'
+        },
+        {
+          type: 'p',
+          text: 'Non osseusement ; oui pour muscles autour.'
+        }
+      ]
+    },
+    {
+      id: 'momentum',
+      title: 'Analyse Momentum',
+      blocks: [
+        {
+          type: 'p',
+          text:
+            'Esthétique, performance (tractions, carries, anneaux), santé poignet — bras complet = biceps + brachial + triceps + avant-bras + prise.'
         }
       ]
     }

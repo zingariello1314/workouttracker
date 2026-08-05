@@ -2,6 +2,8 @@
  * Teintes « écorché » par zone Récap — base visible même sans survol.
  */
 import { GLB_MESH_TO_MUSCLE_ID } from '../../utils/sport/recapMeshBinding';
+import { meshInAnatomyBackRegion, normalizeAnatomyMeshName } from '../../utils/anatomy/anatomyBackMeshRegions';
+import { getAnatomyFamily } from '../../data/anatomy/anatomyRegistry';
 
 /** Couleur de surbrillance au survol (lisible sur fond muscle). */
 export const ECORCHE_HOVER_ACCENT = '#5eead4';
@@ -60,13 +62,18 @@ function brightenHex(hex, factor = 1.35) {
 }
 
 /** Surbrillance d’une famille (plusieurs groupes visuels) — reste en palette écorché. */
-export function buildFamilyFocusMeshColors(visualGroupIds = [], { dimOthers = true } = {}) {
+export function buildFamilyFocusMeshColors(visualGroupIds = [], { dimOthers = true, familyId = null } = {}) {
   const focus = new Set((visualGroupIds || []).filter(Boolean));
+  const backRegion = familyId ? getAnatomyFamily(familyId)?.anatomyBackRegion : null;
   const colors = {};
   Object.entries(GLB_MESH_TO_MUSCLE_ID).forEach(([meshName, groupId]) => {
-    const key = normalizeMeshName(meshName);
+    const key = normalizeAnatomyMeshName(meshName);
     const base = baseForGroup(groupId);
-    if (focus.has(groupId)) {
+    let inFocus = focus.has(groupId);
+    if (groupId === 'back' && backRegion) {
+      inFocus = meshInAnatomyBackRegion(key, backRegion);
+    }
+    if (inFocus) {
       colors[key] = brightenHex(base, 1.42);
     } else {
       colors[key] = dimOthers ? darkenHex(base, 0.48) : base;

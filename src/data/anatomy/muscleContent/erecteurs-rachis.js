@@ -3,24 +3,27 @@ const erecteursRachis = {
   sections: [
     {
       id: 'presentation',
-      title: 'Présentation',
+      title: 'Présentation approfondie',
       blocks: [
         {
           type: 'p',
           text:
-            'Les érecteurs du rachis forment deux longues colonnes musculaires de chaque côté de la colonne, du bassin jusqu’à la région cervicale. Ils permettent de rester debout et interviennent dès que le tronc doit être maintenu ou redressé.'
+            'Les érecteurs du rachis (muscles spinaux) forment la colonne musculaire principale de la chaîne postérieure, du bassin à la région cervicale — leur portion lombaire stabilise le bas du dos.'
         },
         {
           type: 'p',
           text:
-            'En musculation, leur travail est souvent surtout isométrique : lors d’un squat, d’un soulevé de terre ou d’un rowing lourd, ils empêchent la colonne de s’arrondir sous la charge.'
+            'Trois faisceaux : ilio-costal (latéral, extension/inclinaison), longissimus (central, volumineux), épineux (près colonne, posture). Origines larges : sacrum, crête iliaque, vertèbres lombaires ; insertions vers côtes et vertèbres supérieures.'
         },
         {
-          type: 'callout',
-          tone: 'tip',
-          title: 'Profil Momentum',
+          type: 'p',
           text:
-            'Fonctionnel ★★★★★ · Sportif ★★★★★ · Esthétique ★★★☆☆ · Prévention blessures ★★★★★ · Fréquence indicative : 2–3 stimulations / semaine selon le volume global.'
+            'Extension de la colonne, maintien postural permanent (marche, debout, assis), contrôle de la flexion — freiner la descente en hip hinge. En musculation : isométrie sous squat, soulevé, rowing.'
+        },
+        {
+          type: 'p',
+          text:
+            'Esthétique secondaire mais chaîne postérieure dense chez haltérophiles et gymnastes. Répondent aux tensions prolongées ; progression graduelle pour la colonne.'
         }
       ]
     },
@@ -68,10 +71,28 @@ const erecteursRachis = {
       title: 'Exercices',
       blocks: [
         {
+          type: 'h3',
+          text: 'Extensions lombaires et superman'
+        },
+        {
+          type: 'p',
+          text:
+            'Au sol ou sur banc : extension contrôlée, pas d’amplitude excessive. Superman : contraction dos, pas monter au maximum.'
+        },
+        {
+          type: 'h3',
+          text: 'Soulevé de terre et good morning'
+        },
+        {
+          type: 'p',
+          text:
+            'Soulevé : chaîne postérieure complète. Good morning chargé : technique exigeante, hip hinge.'
+        },
+        {
           type: 'exerciseBlock',
-          category: 'Poids du corps — apprentissage',
+          category: 'Poids du corps',
           stars: 5,
-          items: ['Superman', 'Extensions lombaires au sol', 'Bird dog (stabilité)', 'Hip hinge au poids du corps']
+          items: ['Extensions lombaires au sol', 'Superman', 'Hip hinge', 'Bird dog']
         },
         {
           type: 'exerciseBlock',

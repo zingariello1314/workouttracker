@@ -3,32 +3,33 @@ const carreLombes = {
   sections: [
     {
       id: 'presentation',
-      title: 'Présentation',
+      title: 'Introduction — Stabilisateur latéral du bassin',
       blocks: [
         {
           type: 'p',
           text:
-            'Muscle profond quadrangulaire de chaque côté de la colonne lombaire (12e côte, vertèbres L1–L4, crête iliaque). Stabilisateur entre bassin, colonne et cage thoracique — peu visible, essentiel en marche, course, appui unilatéral et street workout (L-sit, front lever, handstand).'
+            'Le carré des lombes (quadratus lumborum) est un muscle profond de la région lombaire : relie la dernière côte, les vertèbres lombaires et le bassin (crête iliaque). Peu visible, central dans la ceinture abdominale et lombaire avec transverse, obliques et érecteurs (famille Bas du dos).'
         },
         {
-          type: 'callout',
-          tone: 'tip',
-          text: 'Abdominaux → stabilité latérale et lombaire. Voir aussi : Bas du dos (érecteurs, multifides), transverse et obliques (ceinture profonde).'
+          type: 'p',
+          text:
+            'Flexion latérale du tronc, stabilisation du bassin, maintien de la posture. Exemple : porter une valise lourde d’une main — le carré des lombes empêche le corps de basculer complètement de l’autre côté.'
         }
       ]
     },
     {
       id: 'fonctions',
-      title: 'Fonctions',
+      title: 'Ceinture lombaire et douleurs',
       blocks: [
         {
-          type: 'ul',
-          items: [
-            'Inclinaison latérale du tronc (un côté)',
-            'Stabilisation du bassin en appui unipodal (anti-basculement)',
-            'Contrôle des contraintes asymétriques sur la colonne lombaire',
-            'Aide respiratoire accessoire (attache 12e côte)'
-          ]
+          type: 'p',
+          text:
+            'Les douleurs lombaires sont multifactorielles : charge, fatigue, contrôle moteur, mobilité, stress, habitudes — pas toujours un muscle « faible ». Un dos douloureux n’est pas forcément un dos fragile ; douleur et capacité mécanique ne sont pas toujours liées.'
+        },
+        {
+          type: 'p',
+          text:
+            'Érecteurs du rachis : extension et stabilisation sur toute la colonne (soulevé, squat, rowing) — voir fiche Érecteurs du rachis (Bas du dos).'
         }
       ]
     },
@@ -37,12 +38,9 @@ const carreLombes = {
       title: 'Mouvements Momentum',
       blocks: [
         {
-          type: 'ul',
-          items: [
-            'L-sit / front lever : éviter rotation ou inclinaison du bassin',
-            'Farmer carry / suitcase : résistance à l’inclinaison latérale',
-            'Handstand : ligne droite bassin–colonne'
-          ]
+          type: 'p',
+          text:
+            'L-sit, front lever, handstand : éviter rotation ou inclinaison du bassin. Farmer / suitcase carry : résistance à l’inclinaison latérale. Side plank sollicite obliques, transverse, carré des lombes et hanche.'
         }
       ]
     },
@@ -54,33 +52,19 @@ const carreLombes = {
           type: 'exerciseBlock',
           category: 'Stabilité',
           stars: 5,
-          items: ['Side plank', 'Bird dog', 'Dead bug']
+          items: ['Side plank', 'Bird dog', 'Dead bug', 'Pallof press']
         },
         {
           type: 'exerciseBlock',
           category: 'Force fonctionnelle',
           stars: 5,
-          items: ['Suitcase carry', 'Farmer walk (bilatéral)', 'Rowing unilatéral anti-rotation']
+          items: ['Suitcase carry', 'Farmer walk', 'Rowing unilatéral anti-rotation']
         },
         {
           type: 'exerciseBlock',
-          category: 'Salle',
+          category: 'Salle (modéré)',
           stars: 4,
-          items: ['Side bend haltère contrôlé']
-        }
-      ]
-    },
-    {
-      id: 'programme',
-      title: 'Programme indicatif',
-      blocks: [
-        {
-          type: 'ul',
-          items: [
-            'Side plank : 3×30–60 s',
-            'Bird dog : 3×10/côté',
-            'Suitcase carry : 3–5 séries'
-          ]
+          items: ['Side bend haltère contrôlé — éviter volume excessif si crainte d’épaissir le tronc']
         }
       ]
     },
@@ -89,17 +73,20 @@ const carreLombes = {
       title: 'Erreurs fréquentes',
       blocks: [
         {
-          type: 'ul',
-          items: [
-            'Uniquement étirer sans endurance ni contrôle',
-            'Flexions latérales lourdes sans travail anti-inclinaison',
-            'Négliger moyen fessier / grand fessier (bassin mal contrôlé → surcharge QL)'
-          ]
-        },
+          type: 'p',
+          text:
+            'Étirer sans endurance ni contrôle. Flexions latérales lourdes sans anti-inclinaison. Négliger fessiers (bassin mal contrôlé → surcharge du carré des lombes). Renforcer les lombaires sans abdominaux, fessiers et ischios crée un déséquilibre du core.'
+        }
+      ]
+    },
+    {
+      id: 'blessures',
+      title: 'Contexte lombaire',
+      blocks: [
         {
-          type: 'callout',
-          tone: 'warn',
-          text: 'Douleur lombaire latérale ≠ muscle « trop court » : fatigue, faiblesse voisins, mobilité hanche ou charge mal gérée.'
+          type: 'p',
+          text:
+            'Lombalgies mécaniques, élongations, hernie discale (avis médical si irradiation) — reprise progressive souvent préférable au repos total prolongé. Renforcement lombaire progressif rend les tissus plus résistants, ce n’est pas intrinsèquement dangereux.'
         }
       ]
     }

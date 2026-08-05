@@ -3,17 +3,32 @@ const petitRond = {
   sections: [
     {
       id: 'presentation',
-      title: 'Présentation',
+      title: 'Présentation générale',
       blocks: [
         {
           type: 'p',
           text:
-            'Le petit rond fait partie de la coiffe des rotateurs mais joue aussi un rôle dans le haut du dos : il stabilise la tête de l’humérus dans la glène et participe à la rotation externe et à l’adduction de l’épaule.'
+            'Le petit rond appartient à la coiffe des rotateurs mais possède un lien fort avec le haut du dos : il stabilise l’arrière de l’articulation et participe à la rotation externe.'
         },
         {
           type: 'p',
           text:
-            'Pour une fiche détaillée sur l’ensemble supra-épineux, infra-épineux, subscapulaire et petit rond, voir aussi la fiche « Coiffe des rotateurs » (famille Épaules).'
+            'Situé dans la partie postérieure de l’épaule, il complète le système rhomboïdes–trapèze–dorsaux pour une épaule saine en tirage et en poussée. Fiche coiffe complète : famille Épaules.'
+        }
+      ]
+    },
+    {
+      id: 'anatomie',
+      title: 'Anatomie',
+      blocks: [
+        {
+          type: 'h3',
+          text: 'Origine et insertion'
+        },
+        {
+          type: 'p',
+          text:
+            'Origine sur le bord latéral de la scapula ; insertion sur le tubercule majeur de l’humérus.'
         }
       ]
     },
@@ -22,12 +37,9 @@ const petitRond = {
       title: 'Fonctions',
       blocks: [
         {
-          type: 'ul',
-          items: [
-            'Rotation externe de l’épaule',
-            'Adduction de l’épaule',
-            'Stabilisation de l’humérus lors des tirages et développés'
-          ]
+          type: 'p',
+          text:
+            'Rotation externe de l’épaule et stabilisation de la tête humérale — équilibre face aux rotateurs internes renforcés par développés, pompes et dips.'
         }
       ]
     },
@@ -37,15 +49,15 @@ const petitRond = {
       blocks: [
         {
           type: 'exerciseBlock',
-          category: 'Renforcement coiffe',
+          category: 'Coiffe & arrière d’épaule',
           stars: 5,
-          items: ['Face pull', 'Rotation externe élastique / câble', 'Cuban rotation légère']
+          items: ['Rotation externe élastique / poulie', 'Face pull', 'Cuban rotation légère']
         },
         {
           type: 'exerciseBlock',
           category: 'Tirages',
           stars: 4,
-          items: ['Rowing avec pause en rétraction', 'Tractions contrôlées']
+          items: ['Rowing rétraction pause', 'Tractions contrôlées']
         }
       ]
     },
@@ -54,11 +66,9 @@ const petitRond = {
       title: 'Blessures',
       blocks: [
         {
-          type: 'ul',
-          items: [
-            'Syndrome d’accrochage si coiffe faible et épaule enroulée',
-            'Tendinopathie du petit rond (moins fréquente que supra-épineux)'
-          ]
+          type: 'p',
+          text:
+            'Rarement blessé seul ; problèmes dans un contexte de coiffe faible, déséquilibre poussée/tirage ou surcharge de poussée. Syndrome d’accrochage si épaule enroulée et coiffe déficiente.'
         }
       ]
     }

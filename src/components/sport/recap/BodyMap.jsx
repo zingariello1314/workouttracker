@@ -43,19 +43,49 @@ const BodyMap = ({
   pickMode = false,
   hoverOverlayLabel = null,
   detailSidebar = false,
-  anatomyExplorerLayout = false
+  anatomyExplorerLayout = false,
+  /** Colonne accueil Anatomie : le canvas remplit la hauteur du conteneur parent. */
+  explorerFillHeight = false,
+  /** Vue contrôlée (ignore localStorage, ex. face par défaut à l’accueil Anatomie). */
+  controlledViewPreset = null,
+  onViewPresetChange = null
 }) => {
   const t = useTranslation();
   const viewLocked = Boolean(forcedViewPreset && PRESET_KEYS.includes(forcedViewPreset));
-  const [viewPreset, setViewPreset] = useState(() =>
-    viewLocked ? forcedViewPreset : readStoredPreset()
-  );
+  const isControlled =
+    typeof controlledViewPreset === 'string' && PRESET_KEYS.includes(controlledViewPreset);
+  const [viewPreset, setViewPreset] = useState(() => {
+    if (viewLocked) return forcedViewPreset;
+    if (isControlled) return controlledViewPreset;
+    if (pickMode && anatomyExplorerLayout) return 'frontLow';
+    return readStoredPreset();
+  });
 
   useEffect(() => {
     if (viewLocked) {
       setViewPreset(forcedViewPreset);
     }
   }, [viewLocked, forcedViewPreset]);
+
+  useEffect(() => {
+    if (isControlled && controlledViewPreset !== viewPreset) {
+      setViewPreset(controlledViewPreset);
+    }
+  }, [isControlled, controlledViewPreset, viewPreset]);
+
+  const activePreset = isControlled ? controlledViewPreset : viewPreset;
+
+  const commitPreset = useCallback(
+    (key) => {
+      if (!PRESET_KEYS.includes(key)) return;
+      if (isControlled && onViewPresetChange) {
+        onViewPresetChange(key);
+      } else {
+        setViewPreset(key);
+      }
+    },
+    [isControlled, onViewPresetChange]
+  );
 
   useEffect(() => {
     if (viewLocked || pickMode) return;
@@ -66,9 +96,7 @@ const BodyMap = ({
     }
   }, [viewPreset, viewLocked, pickMode]);
 
-  const setPreset = useCallback((key) => {
-    if (PRESET_KEYS.includes(key)) setViewPreset(key);
-  }, []);
+  const setPreset = commitPreset;
 
   const handleHover = useCallback(
     (meshName) => {
@@ -77,9 +105,11 @@ const BodyMap = ({
     [onMuscleHover]
   );
 
-  const canvasHeight = anatomyExplorerLayout
-    ? 'min(440px, 52vh)'
-    : detailSidebar
+  const canvasHeight = explorerFillHeight
+    ? '100%'
+    : anatomyExplorerLayout
+      ? 'min(440px, 52vh)'
+      : detailSidebar
       ? 'min(240px, 32vh)'
       : compactCanvas
         ? 'min(34vh, 220px)'
@@ -102,20 +132,24 @@ const BodyMap = ({
   return (
     <div
       className={
-        anatomyExplorerLayout
-          ? 'w-full max-w-full'
-          : compactCanvas
-            ? 'w-full max-w-full mx-auto'
-            : 'w-full max-w-lg mx-auto'
+        explorerFillHeight
+          ? 'flex flex-col flex-1 min-h-0 w-full h-full'
+          : anatomyExplorerLayout
+            ? 'w-full max-w-full'
+            : compactCanvas
+              ? 'w-full max-w-full mx-auto'
+              : 'w-full max-w-lg mx-auto'
       }
     >
       <div
         className={`relative w-full rounded-xl overflow-hidden border shadow-inner touch-manipulation ${
+          explorerFillHeight ? 'flex-1 min-h-[280px]' : ''
+        } ${
           pickMode
-            ? 'border-slate-700/50 cursor-crosshair bg-[#060708]'
+            ? 'border-slate-700/50 cursor-default bg-[#060708]'
             : 'border-slate-600/60 cursor-grab active:cursor-grabbing bg-slate-950/80'
         }`}
-        style={{ height: canvasHeight }}
+        style={explorerFillHeight ? undefined : { height: canvasHeight }}
       >
         {showCompactPresets ? (
           <div className="absolute top-2 right-2 z-10 flex gap-1 pointer-events-auto">
@@ -125,7 +159,7 @@ const BodyMap = ({
                 type="button"
                 onClick={() => setPreset(key)}
                 className={`rounded-md px-2 py-1 text-[10px] font-medium border backdrop-blur-sm ${
-                  viewPreset === key
+                  activePreset === key
                     ? 'border-cyan-500/70 bg-black/80 text-cyan-100'
                     : 'border-slate-600/50 bg-black/55 text-slate-400 hover:text-slate-200'
                 }`}
@@ -149,7 +183,7 @@ const BodyMap = ({
             onMuscleClick={onMuscleClick}
             onMuscleHover={pickMode || onMuscleHover ? handleHover : undefined}
             pickMode={pickMode}
-            viewPreset={viewPreset}
+            viewPreset={activePreset}
             autoRotate={!pickMode}
             autoRotateSpeed={0.5}
             sceneBackground="#060708"
@@ -174,7 +208,7 @@ const BodyMap = ({
               type="button"
               onClick={() => setPreset(key)}
               className={`rounded-lg border px-2.5 py-1 text-[11px] font-medium transition ${
-                viewPreset === key
+                activePreset === key
                   ? 'border-sky-500/80 bg-sky-950/70 text-sky-100'
                   : 'border-slate-600/70 bg-slate-900/60 text-slate-400 hover:border-slate-500 hover:text-slate-200'
               }`}
@@ -197,7 +231,7 @@ const BodyMap = ({
               type="button"
               onClick={() => setPreset(key)}
               className={
-                viewPreset === key
+                activePreset === key
                   ? 'font-medium text-slate-100'
                   : 'text-slate-500 hover:text-slate-300'
               }

@@ -3,12 +3,17 @@ const soleaire = {
   sections: [
     {
       id: 'presentation',
-      title: 'Présentation',
+      title: 'Introduction — Masse profonde du mollet',
       blocks: [
         {
           type: 'p',
           text:
-            'Muscle profond sous le gastrocnémien — uniquement cheville (pas le genou). Genou fléchi (mollets assis) : soléaire prioritaire. Endurance debout, marche longue, fibres résistantes à la fatigue. Partie majeure du volume réel du triceps sural + tendon d’Achille.'
+            'Le soléaire est sous le gastrocnémien, souvent invisible mais parfois majoritaire en volume du triceps sural. Origines sur tibia et fibula, tendon d’Achille commun — flexion plantaire. Une seule articulation (cheville) : genou fléchi, le gastrocnémien est raccourci et perd de l’efficacité ; le soléaire prend le relais.'
+        },
+        {
+          type: 'p',
+          text:
+            'Endurance debout, marche longue, fibres résistantes à la fatigue. Mollet « complet » = debout (gastroc) + assis (soléaire).'
         }
       ]
     },
@@ -18,20 +23,70 @@ const soleaire = {
       blocks: [
         {
           type: 'exerciseBlock',
-          category: 'Mollets assis',
+          category: 'Poids du corps',
+          stars: 4,
+          items: ['Mollets assis sur banc (charge sur genoux)', 'Tempo lent debout + assis en superset']
+        },
+        {
+          type: 'exerciseBlock',
+          category: 'Salle',
           stars: 5,
-          items: ['Seated calf raise', 'Mollets assis barre/haltères']
+          items: ['Seated calf raise', 'Presse à mollets genoux fléchis']
         }
       ]
     },
     {
-      id: 'programme',
-      title: 'Complément debout',
+      id: 'saviez-vous',
+      title: 'Le saviez-vous ?',
       blocks: [
         {
-          type: 'callout',
-          tone: 'tip',
-          text: 'Développement complet : mollets debout (gastroc) + assis (soléaire) 2–4×/sem., amplitude complète. Voir Tibial antérieur (famille Tibia) pour l’équilibre cheville.'
+          type: 'p',
+          text:
+            'Les mollets participent au retour veineux (« deuxième cœur »). Force et volume ne sont pas toujours corrélés : fibres, nerveux, tendons comptent pour la performance.'
+        }
+      ]
+    },
+    {
+      id: 'faq',
+      title: 'Questions fréquentes — mollets',
+      blocks: [
+        {
+          type: 'h3',
+          text: 'Mollets qui ne grossissent pas ?'
+        },
+        {
+          type: 'p',
+          text:
+            'Volume insuffisant, mauvaise amplitude, charges légères sans progression. Cent répétitions sans surcharge progressive perdent souvent face à un plan structuré.'
+        },
+        {
+          type: 'h3',
+          text: 'Tous les jours ?'
+        },
+        {
+          type: 'p',
+          text:
+            'Récupération rapide possible, mais surcharge progressive et exécution restent la priorité.'
+        },
+        {
+          type: 'h3',
+          text: 'Changer la forme des mollets ?'
+        },
+        {
+          type: 'p',
+          text:
+            'On peut gagner volume, densité et force ; les insertions et la longueur du tendon d’Achille restent largement génétiques.'
+        }
+      ]
+    },
+    {
+      id: 'momentum',
+      title: 'Vision Momentum',
+      blocks: [
+        {
+          type: 'p',
+          text:
+            'Course, sauts, équilibre, prévention cheville : compléter avec la famille Tibia (tibial antérieur) pour l’équilibre avant/arrière de jambe. Voir aussi Gastrocnémien pour le duo debout/assis.'
         }
       ]
     }

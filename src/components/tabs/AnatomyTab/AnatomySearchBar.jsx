@@ -2,6 +2,7 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Search } from 'lucide-react';
 import { useTranslation } from '../../../utils/translations';
 import { searchAnatomy } from '../../../services/anatomy/anatomySearch';
+import { ANATOMY } from './anatomyTheme';
 
 export default function AnatomySearchBar({ onNavigate, placeholder }) {
   const t = useTranslation();
@@ -30,8 +31,8 @@ export default function AnatomySearchBar({ onNavigate, placeholder }) {
 
   return (
     <div ref={wrapRef} className="relative w-full max-w-2xl mx-auto">
-      <div className="flex items-center gap-2 rounded-xl border border-teal-700/40 bg-black/60 px-4 py-3 shadow-lg">
-        <Search className="h-5 w-5 text-teal-400 shrink-0" />
+      <div className={`flex items-center gap-2 ${ANATOMY.card} px-4 py-3`}>
+        <Search className={`h-5 w-5 shrink-0 ${ANATOMY.accent}`} />
         <input
           type="search"
           value={query}
@@ -47,21 +48,21 @@ export default function AnatomySearchBar({ onNavigate, placeholder }) {
               'Muscle, exercice, objectif (ex. haut des pectoraux, développé couché…)'
             )
           }
-          className="flex-1 bg-transparent text-white placeholder:text-slate-500 outline-none text-sm"
+          className={`flex-1 bg-transparent text-white placeholder:text-[#8E8E93] outline-none text-sm`}
           autoComplete="off"
         />
       </div>
       {open && query.trim().length > 0 && hits.length > 0 ? (
-        <ul className="absolute z-30 mt-2 w-full rounded-xl border border-slate-700/80 bg-slate-950 shadow-2xl overflow-hidden">
+        <ul className={`absolute z-30 mt-2 w-full ${ANATOMY.card} shadow-2xl overflow-hidden`}>
           {hits.map((hit) => (
             <li key={`${hit.kind}-${hit.id}`}>
               <button
                 type="button"
-                className="w-full text-left px-4 py-2.5 hover:bg-teal-950/50 flex justify-between gap-3 text-sm"
+                className="w-full text-left px-4 py-2.5 hover:bg-white/[0.04] flex justify-between gap-3 text-sm"
                 onClick={() => pick(hit)}
               >
-                <span className="text-slate-100">{hit.label}</span>
-                <span className="text-[10px] uppercase tracking-wide text-slate-500 shrink-0">
+                <span className="text-white">{hit.label}</span>
+                <span className={`text-[10px] uppercase tracking-wide shrink-0 ${ANATOMY.muted}`}>
                   {hit.kind === 'muscle'
                     ? t('anatomy.hitMuscle', 'Muscle')
                     : hit.kind === 'family'
