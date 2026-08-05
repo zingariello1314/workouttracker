@@ -598,7 +598,7 @@ export const calculateSportXP = (workoutData, garminData, enduranceData, sportOp
   breakdown.circuitBonusRounds = circuitsResult.bonusRoundsTotal;
   totalXP += circuitsResult.totalXp;
 
-  const gtgResult = computeGtgXp(enduranceData?.gtg, { workoutData });
+  const gtgResult = computeGtgXp(enduranceData?.gtg, { workoutData, repsInWorkout: true });
   breakdown.gtgXp = gtgResult.totalXp;
   breakdown.gtgReps = gtgResult.totalReps;
   breakdown.gtgDaysWithXp = gtgResult.daysWithXp;

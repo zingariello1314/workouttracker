@@ -19,6 +19,7 @@ import { isDayWithoutActivity } from '../../utils/dayJustificationUtils';
 import { useTranslation } from '../../utils/translations';
 import { useLanguage, LANGUAGES } from '../../context/LanguageContext';
 import { loadEnduranceData as loadEnduranceDataService } from '../../services/endurance/enduranceDataService';
+import { applyWorkoutRepIntegrations } from '../../services/endurance/workoutRepIntegrations';
 import { useNutritionData } from '../../hooks/useNutritionData';
 import {
   collectExerciseKeysForWorkoutExercise,
@@ -35,8 +36,14 @@ import PlyometricBlock from '../program/PlyometricBlock';
 import RunningDrillsBlock from '../program/RunningDrillsBlock';
 import CircuitsTodaySection from './TodayTab/components/CircuitsTodaySection.jsx';
 import { intensityCoeffToStarCount, resolveExerciseIntensityCoeff } from '../../utils/trainingLoadUtils';
-import { exerciseUsesExternalLoad } from '../../utils/programUtils';
+import PushupChallengeTodayPanel from './TodayTab/components/PushupChallengeTodayPanel.jsx';
+import GtgTodaySchedulePanel from './TodayTab/components/GtgTodaySchedulePanel.jsx';
+import {
+  getExerciseWeightUiMode,
+  exerciseShowsWeightField
+} from '../../utils/exerciseWeightEligibility';
 import { resolveProgramExerciseNotes } from '../../utils/exerciseHeroContent';
+import { hasExerciseVariations } from '../../utils/exerciseVariationResolver';
 import LoadDifficultyStars from '../sport/LoadDifficultyStars';
 import CollapsibleSessionPerceived from './TodayTab/components/CollapsibleSessionPerceived.jsx';
 import ExerciseSetDetailPanel from './TodayTab/components/ExerciseSetDetailPanel.jsx';
@@ -321,6 +328,7 @@ const TodayTab = () => {
     const now = new Date();
     
     return challenges.filter(challenge => {
+      if (challenge.activityType === 'pushups') return false;
       // Cas récurrent: afficher si non réalisé aujourd'hui
       if (challenge.type === 'recurrent') {
         const doneToday = challenge.lastCompletedDate === todayStr;
@@ -396,15 +404,20 @@ const TodayTab = () => {
       });
 
       // Sauvegarder
-      await updateData({
-        ...data,
-        enduranceData: {
-          ...enduranceData,
-          sessions: updatedSessions,
-          challenges: updatedChallenges,
-          lastUpdated: new Date().toISOString()
-        }
-      });
+      const mergedPayload = applyWorkoutRepIntegrations(
+        {
+          ...data,
+          enduranceData: {
+            ...enduranceData,
+            sessions: updatedSessions,
+            challenges: updatedChallenges,
+            lastUpdated: new Date().toISOString()
+          }
+        },
+        { workoutAggregate: data }
+      );
+
+      await updateData(mergedPayload);
 
       showSuccess(t('today.challenges.completed'));
     } catch (error) {
@@ -447,7 +460,6 @@ const TodayTab = () => {
   };
 
   const handleWeightInputFocus = (exerciseId, exercise) => {
-    if (!exerciseUsesExternalLoad(exercise)) return;
     const currentData = getCurrentData();
     const workoutForDay = getTodayWorkout(currentDate, isGymMode);
     const keys = collectExerciseKeysForWorkoutExercise(currentDate, exercise, {
@@ -455,6 +467,8 @@ const TodayTab = () => {
       workoutIsGymMode: workoutForDay?.isGymMode
     });
     const readKey = resolveBestRepsStorageKey(currentData, keys) || keys[0];
+    const markedWeighted = currentData.exerciseMarkedWeighted?.[readKey] === true;
+    if (!exerciseShowsWeightField(exercise, markedWeighted)) return;
     const displayed = resolveExerciseWeightDisplay(currentData, keys, readKey).trim();
     if (displayed) return;
     const ids = [exerciseId, exercise?.originalId].filter((x) => x != null);
@@ -851,6 +865,15 @@ const TodayTab = () => {
           weekVariant: getAutoWeekVariant(date)
         })
       : `${dateStr}_${exerciseId}`;
+  };
+
+  const updateLocalExerciseMarkedWeighted = (exerciseId, checked, date) => {
+    const currentData = getCurrentData();
+    const key = getExercisePrimaryStorageKey(exerciseId, date);
+    const next = { ...(currentData.exerciseMarkedWeighted || {}) };
+    if (checked) next[key] = true;
+    else delete next[key];
+    updateTempExerciseData({ ...currentData, exerciseMarkedWeighted: next });
   };
 
   const updateLocalExerciseWeightPerArm = (exerciseId, checked, date) => {
@@ -1336,6 +1359,7 @@ const TodayTab = () => {
   // ✅ NOUVEAU : Utiliser le hook useTodayExercises pour obtenir exercices avec variations
   const {
     programExercises,
+    supplementalExercises,
     additionalExercises,
     suppressedExerciseIds,
     metadata: exercisesMetadata
@@ -1346,8 +1370,18 @@ const TodayTab = () => {
   /** Modal « adapter le prévu du jour » (séries × reps) pour un exo du programme */
   const [seriesAdaptDialog, setSeriesAdaptDialog] = useState(null);
 
-  /** Conserver strictement l'ordre du programme pour éviter toute confusion dans Aujourd'hui. */
+  /** Exercices du programme uniquement (hors GTG). */
   const orderedProgramExercises = useMemo(() => programExercises || [], [programExercises]);
+
+  const orderedSupplementalExercises = useMemo(
+    () => supplementalExercises || [],
+    [supplementalExercises]
+  );
+
+  const exercisesForTodayList = useMemo(
+    () => [...orderedProgramExercises, ...orderedSupplementalExercises],
+    [orderedProgramExercises, orderedSupplementalExercises]
+  );
 
   const todaySessionComplexity = useMemo(
     () => computeTodaySessionComplexity(currentDate, workout, getCurrentData(), isGymMode),
@@ -1957,7 +1991,8 @@ const TodayTab = () => {
         ) : (
           <div className="space-y-3">
             {/* ✅ NOUVEAU : Exercices du programme (filtrés selon variations) */}
-            {orderedProgramExercises.map((exercise) => {
+            {exercisesForTodayList.map((exercise) => {
+            const isProgramExercise = !exercise.source;
             const currentData = getCurrentData();
             const keys = collectExerciseKeysForWorkoutExercise(currentDate, exercise, {
               isGymMode,
@@ -1969,7 +2004,11 @@ const TodayTab = () => {
               currentData.reps?.[readKey] !== undefined && currentData.reps?.[readKey] !== null
                 ? String(currentData.reps[readKey])
                 : '';
-            const showWeightField = exerciseUsesExternalLoad(exercise);
+            const weightUiMode = isProgramExercise ? getExerciseWeightUiMode(exercise) : null;
+            const markedWeighted =
+              isProgramExercise && currentData.exerciseMarkedWeighted?.[readKey] === true;
+            const showWeightField =
+              isProgramExercise && exerciseShowsWeightField(exercise, markedWeighted);
             const weightStr = showWeightField
               ? resolveExerciseWeightDisplay(currentData, keys, readKey)
               : '';
@@ -2027,6 +2066,11 @@ const TodayTab = () => {
                   <div className="flex-1 min-w-0 space-y-1">
                     <div className="flex flex-wrap items-center gap-x-2 gap-y-1 min-w-0">
                       <div className="font-medium text-white break-words">{exercise.name}</div>
+                      {exercise.supplementalLabel ? (
+                        <span className="text-[10px] uppercase tracking-wide text-purple-300/90 border border-purple-500/40 rounded px-1.5 py-0.5">
+                          {exercise.supplementalLabel}
+                        </span>
+                      ) : null}
                       <span className="inline-flex items-center text-amber-300 shrink-0">
                         <LoadDifficultyStars coeff={loadCoeff} className="scale-95" />
                       </span>
@@ -2063,6 +2107,7 @@ const TodayTab = () => {
                         ✓ {t('today.exercises.completed')}
                       </span>
                     )}
+                    {hasExerciseVariations(exercise) ? (
                     <button
                       type="button"
                       onClick={() => {
@@ -2070,9 +2115,11 @@ const TodayTab = () => {
                         setShowExerciseVariations(true);
                       }}
                       className="gradient-button-premium gradient-button-premium-sm gradient-button-premium-variant rounded-lg flex items-center gap-2 shrink-0"
+                      title={t('today.exercises.variations', 'Variations')}
                     >
                       <Zap className="w-4 h-4" />
                     </button>
+                    ) : null}
                     <button
                       type="button"
                       onClick={() => handleSuppressExercise(exercise.id)}
@@ -2111,6 +2158,19 @@ const TodayTab = () => {
                         </span>
                       ) : null}
                     </div>
+                    {weightUiMode?.mode === 'optional' && (
+                      <label className="flex items-center gap-2 text-[11px] text-slate-500 cursor-pointer select-none">
+                        <Checkbox
+                          checked={markedWeighted}
+                          onChange={(e) =>
+                            updateLocalExerciseMarkedWeighted(exercise.id, e.target.checked, currentDate)
+                          }
+                          className="scale-90 text-violet-400"
+                          name={`weighted_${exercise.id}`}
+                        />
+                        {t('today.exercises.optionalWeighted', 'Lesté')}
+                      </label>
+                    )}
                     {showWeightField && (
                       <div className="flex items-center gap-1">
                         <Input
@@ -2436,6 +2496,11 @@ const TodayTab = () => {
             </div>
           </div>
         )}
+      </div>
+
+      <div className="mt-4 space-y-4">
+        <PushupChallengeTodayPanel date={currentDate} />
+        <GtgTodaySchedulePanel date={currentDate} />
       </div>
 
       {/* Étirements — UNE carte par étirement individuel, groupé par moment.

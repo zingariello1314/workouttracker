@@ -28,6 +28,7 @@ import {
   updateGtgExerciseConfig
 } from '../../../../services/endurance/gtgService';
 import { syncGtgDayToWorkoutData } from '../../../../services/endurance/gtgWorkoutSync';
+import { applyWorkoutRepIntegrations } from '../../../../services/endurance/workoutRepIntegrations';
 import {
   computeGtgXpForDayPlan,
   GTG_BONUS_100_PCT_EXTRA_XP,
@@ -61,7 +62,10 @@ export default function GtgSessionsPanel() {
   );
 
   const dayPlan = useMemo(() => buildGtgDayPlan(gtgData, today, ctx), [gtgData, today, ctx]);
-  const todayXp = useMemo(() => computeGtgXpForDayPlan(dayPlan), [dayPlan]);
+  const todayXp = useMemo(
+    () => computeGtgXpForDayPlan(dayPlan, { repsInWorkout: true }),
+    [dayPlan]
+  );
 
   const bankExercises = useMemo(() => listGtgBankExercises(), []);
   const filteredBank = useMemo(() => {
@@ -94,7 +98,10 @@ export default function GtgSessionsPanel() {
           ...data,
           enduranceData: { ...(data.enduranceData || {}), gtg: nextGtg }
         };
-        const merged = syncGtgDayToWorkoutData(base, nextGtg, syncDate, ctx);
+        const merged = applyWorkoutRepIntegrations(
+          syncGtgDayToWorkoutData(base, nextGtg, syncDate, ctx),
+          ctx
+        );
         await updateData(merged);
         invalidateSportXpCache();
       } finally {
@@ -484,6 +491,12 @@ export default function GtgSessionsPanel() {
                 {expanded && (
                   <div className="space-y-4 border-t border-slate-700/50 px-4 pb-4 pt-3">
                     <label className="block text-[11px] text-slate-400">{t('endurance.gtg.manualMax')}</label>
+                    <p className="mb-1 text-[10px] text-violet-300/80">
+                      {t('endurance.gtg.performanceMaxHint', {
+                        max: plan?.maxReps ?? '—',
+                        defaultValue: `Suggestion (Performances / historique) : ${plan?.maxReps ?? '—'} reps max — modifiable, non obligatoire.`
+                      })}
+                    </p>
                     <input
                       type="number"
                       min={1}

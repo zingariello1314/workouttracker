@@ -189,6 +189,13 @@
       "midday": "Midi",
       "evening": "Soir"
     },
+    "pushupSchedule": {
+      "daily": "Chaque jour (1 séance / jour max dans Aujourd’hui)",
+      "everyOther": "Un jour sur deux",
+      "everyNDays": "Tous les N jours",
+      "weekdays": "Jours fixes de la semaine",
+      "weeklyQuota": "X séances par semaine (visible chaque jour jusqu’au quota)"
+    },
     "modal": {
       "title": "Créer un défi",
       "name": "Nom du défi",
@@ -201,12 +208,26 @@
       "startDate": "Date début",
       "endDate": "Date fin",
       "goalCount": {
+        "pushups": "Total de pompes par séance",
         "swimming": "Distance (mètres)",
         "running": "Distance (km)",
         "jumprope": "Nombre de sauts",
         "gainage": "Secondes cumulées en planche (objectif)",
         "default": "Nombre"
       },
+      "pushupSchedule": "Quand faire le défi ?",
+      "pushupGoalSection": "Objectif par séance",
+      "pushupGoalModeTotal": "Un total de reps (ex. 100 pompes)",
+      "pushupGoalModeSets": "Des séries × reps (ex. 20 × 5)",
+      "pushupGoalTotalLabel": "Nombre total de pompes",
+      "pushupGoalSetsLabel": "Nombre de séries",
+      "pushupGoalRepsLabel": "Reps par série",
+      "pushupGoalPreview": "Équivaut à {{total}} pompes par séance",
+      "goalSetCount": "Séries",
+      "goalRepsPerSet": "Reps / série",
+      "weeklySessionTarget": "Séances à valider par semaine",
+      "weeklySessionHint": "Le défi reste visible chaque jour dans Aujourd’hui jusqu’à {{n}} séance(s) validée(s) dans la semaine (lun–dim).",
+      "intervalDaysLabel": "Tous les combien de jours ?",
       "goalDuration": "Durée max (minutes)",
       "goalTotalCount": "Objectif total de pompes (cumul sur la période)",
       "optional": "Optionnel",
@@ -539,6 +560,7 @@
     "fetchError": "Erreur lors de la récupération des exercices d'endurance",
     "unknownExercise": "Exercice inconnu",
     "nameAndTypeRequired": "Nom et type d'activité requis",
+    "pushupChallengeGoal": "Indique un objectif par séance : total de pompes ou séries × reps.",
     "pushupsCumulDates": "Défi cumul : renseigne la date de début et de fin.",
     "pushupsCumulGoal": "Défi cumul : indique un objectif total de pompes (> 0).",
     "updateError": "Erreur lors de la modification du défi"
@@ -564,6 +586,7 @@
     },
     "repsHint": "{{reps}} reps/série (fourchette {{low}}–{{high}}, max {{max}})",
     "manualMax": "Max manuel (optionnel)",
+    "performanceMaxHint": "Suggestion (Performances / historique) : {{max}} reps max — modifiable, non obligatoire.",
     "slotsCount": "Créneaux par jour : {{count}}",
     "slotsHint": "4 à 8 créneaux/jour est idéal ; au-delà de 12, la récupération suit rarement.",
     "slotTimes": "Horaires des créneaux",

@@ -271,7 +271,7 @@ export function getPlannedTotalFromPrescription(exercise) {
   const p = getExercisePrescriptionStruct(exercise);
   if (!p) return null;
   if (p.volumeMode === 'seconds' || p.volumeMode === 'minutes') {
-    return p.setCount > 1 ? p.repsMin : p.repsMin;
+    return p.setCount * p.repsMin;
   }
   const avg = p.repsMin === p.repsMax ? p.repsMin : Math.round((p.repsMin + p.repsMax) / 2);
   return p.setCount * avg;

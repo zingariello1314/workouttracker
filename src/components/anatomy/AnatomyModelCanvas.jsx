@@ -92,13 +92,23 @@ function DemandInvalidateOnChange({ signature }) {
   return null;
 }
 
+import { isEcorcheHoverColor } from '../../services/anatomy/ecorcheMeshColors';
+
 function meshKey(name) {
   return String(name || '')
     .trim()
     .replace(/\./g, '_');
 }
 
-export function AnatomyModel({ muscleColors = {}, uniformBodyColor, onMuscleClick, neutralUnmapped = '#64748b' }) {
+export function AnatomyModel({
+  muscleColors = {},
+  uniformBodyColor,
+  onMuscleClick,
+  onMuscleHover,
+  pickMode = false,
+  neutralUnmapped = '#64748b',
+  ecorcheFallback = '#7a3838'
+}) {
   const { scene } = useGLTF(ANATOMY_MODEL_URL);
   const root = useMemo(() => {
     const c = scene.clone(true);
@@ -121,7 +131,9 @@ export function AnatomyModel({ muscleColors = {}, uniformBodyColor, onMuscleClic
       const mappedColor =
         muscleColors[child.name] ||
         muscleColors[meshKey(child.name)];
-      const override = mappedColor || (hasPerMuscleColors ? neutralUnmapped : uniformBodyColor);
+      const override =
+        mappedColor ||
+        (hasPerMuscleColors ? (pickMode ? ecorcheFallback : neutralUnmapped) : uniformBodyColor);
       mats.forEach((mat) => {
         if (!mat || !override) return;
         const isMapped = Boolean(mappedColor);
@@ -142,17 +154,40 @@ export function AnatomyModel({ muscleColors = {}, uniformBodyColor, onMuscleClic
         if (mat.color) {
           mat.color.set(override);
         }
-        if ('roughness' in mat) mat.roughness = isMapped ? 0.62 : 0.85;
-        if ('metalness' in mat) mat.metalness = isMapped ? 0.08 : 0.02;
-        if ('emissive' in mat) mat.emissive.set(isMapped ? '#0f172a' : '#000000');
+        const emissiveHover = isMapped && isEcorcheHoverColor(mappedColor);
+        if ('roughness' in mat) mat.roughness = isMapped ? (emissiveHover ? 0.48 : 0.58) : 0.72;
+        if ('metalness' in mat) mat.metalness = isMapped ? 0.06 : 0.02;
+        if ('emissive' in mat) {
+          mat.emissive.set(emissiveHover ? '#0f766e' : isMapped ? '#0f172a' : '#000000');
+        }
+        if ('emissiveIntensity' in mat) {
+          mat.emissiveIntensity = emissiveHover ? 0.45 : isMapped ? 0.08 : 0;
+        }
         mat.needsUpdate = true;
       });
     });
-  }, [root, muscleColors, uniformBodyColor, neutralUnmapped]);
+  }, [root, muscleColors, uniformBodyColor, neutralUnmapped, pickMode, ecorcheFallback]);
 
   return (
     <primitive
       object={root}
+      onPointerOver={(e) => {
+        if (!pickMode && !onMuscleHover) return;
+        e.stopPropagation();
+        const name = e.object?.name;
+        if (name && onMuscleHover) onMuscleHover(name);
+        if (pickMode && typeof document !== 'undefined') {
+          document.body.style.cursor = name ? 'pointer' : '';
+        }
+      }}
+      onPointerOut={(e) => {
+        if (!pickMode && !onMuscleHover) return;
+        e.stopPropagation();
+        onMuscleHover?.(null);
+        if (pickMode && typeof document !== 'undefined') {
+          document.body.style.cursor = '';
+        }
+      }}
       onPointerDown={(e) => {
         e.stopPropagation();
         const name = e.object?.name;
@@ -169,6 +204,8 @@ export function AnatomyInteractiveScene({
   muscleColors = {},
   uniformBodyColor,
   onMuscleClick,
+  onMuscleHover,
+  pickMode = false,
   viewPreset = 'frontLow',
   autoRotate = true,
   autoRotateSpeed = 0.5,
@@ -199,7 +236,10 @@ export function AnatomyInteractiveScene({
               muscleColors={muscleColors}
               uniformBodyColor={uniformBodyColor}
               onMuscleClick={onMuscleClick}
+              onMuscleHover={onMuscleHover}
+              pickMode={pickMode}
               neutralUnmapped={neutralUnmapped}
+              ecorcheFallback="#7a3838"
             />
           </Center>
         </Bounds>

@@ -3589,6 +3589,11 @@ const CalendarHeatmap = ({
                           'activeKcal',
                           `${Math.round(month.sportStats.activeKcal || 0).toLocaleString('fr-FR')} kcal`,
                           'calendar.stats.monthActiveKcal'
+                        ],
+                        [
+                          'trainingDays',
+                          String(month.sportStats.trainingDays ?? 0),
+                          'calendar.stats.monthTrainingDays'
                         ]
                       ].map(([metric, value, labelKey]) => {
                         const isRecord = sportRecordHolders[metric] === monthIndex;
@@ -5672,6 +5677,17 @@ const CalendarHeatmap = ({
                       },
                       exercise.reps
                     );
+                    const weightRaw = coeffData?.exerciseWeights?.[rowStorageKey];
+                    const weightKg = weightRaw != null && String(weightRaw).trim() !== ''
+                      ? parseFloat(String(weightRaw).replace(',', '.'))
+                      : 0;
+                    const markedWeighted = coeffData?.exerciseMarkedWeighted?.[rowStorageKey] === true;
+                    const weightLabel =
+                      Number.isFinite(weightKg) && weightKg > 0
+                        ? ` · ${String(weightRaw).trim()} kg`
+                        : markedWeighted
+                          ? ` · ${t('today.exercises.optionalWeighted', 'Lesté')}`
+                          : '';
                     const editUnitLabel =
                       recordedDisplay.unit === 'min'
                         ? t('calendar.heatmap.dayDetails.minutesShort', 'min')
@@ -5755,6 +5771,7 @@ const CalendarHeatmap = ({
                               <span className="text-white font-medium">
                                 {recordedDisplay.displayText ||
                                   `${exercise.reps} ${t('calendar.heatmap.dayDetails.reps')}`}
+                                {weightLabel}
                               </span>
                             )}
                             <button

@@ -18,6 +18,8 @@ import {
   pctChange,
   weeklyRateFromSessionDays
 } from './recapInsightHelpers';
+import { buildWeightedTrainingRecapSnippets } from './weightedTrainingRecapInsights';
+import { buildPushupChallengeRecapSnippets } from './pushupChallengeRecapInsights';
 import { computeLeastCheckedExercises } from './leastCheckedExercises';
 import { summarizeGtgWindow } from '../../services/endurance/gtgService';
 import { coachSleepHours } from './recapCrossCoachAggregate';
@@ -336,6 +338,15 @@ function buildNarrativeSnippets(opts) {
   } = opts;
 
   const snippets = { adherence: [], load: [], legs: [], endurance: [], recovery: [] };
+
+  if (snapshot && window?.start && window?.end) {
+    buildWeightedTrainingRecapSnippets(snapshot, window, getExerciseNameById).forEach((line) => {
+      snippets.load.push(line);
+    });
+    buildPushupChallengeRecapSnippets(snapshot, window).forEach((line) => {
+      snippets.adherence.push(line);
+    });
+  }
 
   if (mostRegular.length >= 2) {
     snippets.adherence.push(

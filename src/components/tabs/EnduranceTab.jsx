@@ -19,6 +19,10 @@ import {
 } from '../../services/endurance/enduranceChallengesService';
 import { PUSHUP_CHALLENGE_PRESET_DEFS, buildPushupPresetChallenge } from '../../services/endurance/pushupChallengePresets';
 import {
+  normalizePushupRecurrentChallengeFields
+} from '../../services/endurance/pushupChallengeSchedule';
+import { resolvePushupChallengePlannedReps } from '../../services/endurance/pushupSessionUtils';
+import {
   GAINAGE_CHALLENGE_PRESET_DEFS,
   JUMPROPE_CHALLENGE_PRESET_DEFS,
   buildGainagePresetChallenge,
@@ -836,10 +840,54 @@ const EnduranceTab = () => {
 
       const newChallenge = {
         ...challengeForm,
+        id: challengeForm.id || `challenge-${Date.now()}`,
         status: 'active',
         createdAt: new Date().toISOString(),
         progress: 0
       };
+
+      if (newChallenge.activityType === 'pushups' && newChallenge.type === 'recurrent') {
+        const today = new Date().toISOString().slice(0, 10);
+        if (!newChallenge.startDate) newChallenge.startDate = today;
+
+        const normalized = normalizePushupRecurrentChallengeFields(newChallenge);
+        Object.assign(newChallenge, normalized);
+
+        const goal = resolvePushupChallengePlannedReps(newChallenge);
+        if (!goal || goal <= 0) {
+          throw new Error(
+            t(
+              'endurance.errors.pushupChallengeGoal',
+              'Indique un objectif par séance : total de pompes ou séries × reps.'
+            )
+          );
+        }
+
+        const pattern = newChallenge.schedulePattern || 'daily';
+        if (pattern === 'every_other_day') {
+          newChallenge.frequency = 'every_n_days';
+          newChallenge.intervalDays = 2;
+        } else if (pattern === 'every_n_days') {
+          newChallenge.frequency = 'every_n_days';
+          newChallenge.intervalDays = Math.max(1, Number(newChallenge.intervalDays) || 2);
+        } else if (pattern === 'weekdays') {
+          newChallenge.frequency = 'weekly';
+          if (
+            !Array.isArray(newChallenge.scheduleWeekdays) ||
+            newChallenge.scheduleWeekdays.length === 0
+          ) {
+            newChallenge.scheduleWeekdays = [1, 3, 5];
+          }
+        } else if (pattern === 'weekly_quota') {
+          newChallenge.frequency = 'weekly_quota';
+          newChallenge.weeklySessionTarget = Math.min(
+            7,
+            Math.max(1, parseInt(String(newChallenge.weeklySessionTarget || 3), 10) || 3)
+          );
+        } else {
+          newChallenge.frequency = 'daily';
+        }
+      }
 
       const currentChallenges = Array.isArray(enduranceState.challenges) ? enduranceState.challenges : [];
       const updatedChallenges = [...currentChallenges, newChallenge];
@@ -3465,6 +3513,233 @@ const EnduranceTab = () => {
 
               {challengeForm.type === 'recurrent' && (
                 <div className="grid grid-cols-2 gap-4">
+                  {challengeForm.activityType === 'pushups' ? (
+                    <>
+                      <div className="col-span-2">
+                        <label className="block text-slate-300 text-sm font-medium mb-2">
+                          {t('endurance.challenges.modal.pushupSchedule', 'Quand ?')}
+                        </label>
+                        <select
+                          value={challengeForm.schedulePattern || 'daily'}
+                          onChange={(e) =>
+                            setChallengeForm({ ...challengeForm, schedulePattern: e.target.value })
+                          }
+                          className="w-full px-4 py-3 bg-black border border-[#0F4C5C]/50 rounded-xl text-white"
+                        >
+                          <option value="daily">{t('endurance.challenges.pushupSchedule.daily')}</option>
+                          <option value="every_other_day">
+                            {t('endurance.challenges.pushupSchedule.everyOther')}
+                          </option>
+                          <option value="every_n_days">
+                            {t('endurance.challenges.pushupSchedule.everyNDays')}
+                          </option>
+                          <option value="weekdays">{t('endurance.challenges.pushupSchedule.weekdays')}</option>
+                          <option value="weekly_quota">
+                            {t('endurance.challenges.pushupSchedule.weeklyQuota')}
+                          </option>
+                        </select>
+                        {challengeForm.schedulePattern === 'weekly_quota' && (
+                          <p className="mt-2 text-[11px] text-amber-200/80 leading-relaxed">
+                            {t('endurance.challenges.modal.weeklySessionHint', {
+                              n: challengeForm.weeklySessionTarget || 3,
+                              defaultValue: `Visible chaque jour dans Aujourd’hui jusqu’à ${challengeForm.weeklySessionTarget || 3} séance(s) validée(s) cette semaine (lun–dim).`
+                            })}
+                          </p>
+                        )}
+                      </div>
+                      {challengeForm.schedulePattern === 'every_n_days' && (
+                        <div className="col-span-2">
+                          <label className="block text-slate-300 text-sm font-medium mb-2">
+                            {t('endurance.challenges.modal.intervalDaysLabel', 'Tous les combien de jours ?')}
+                          </label>
+                          <input
+                            type="number"
+                            min={2}
+                            max={14}
+                            value={challengeForm.intervalDays || 2}
+                            onChange={(e) =>
+                              setChallengeForm({ ...challengeForm, intervalDays: e.target.value })
+                            }
+                            className="w-full px-4 py-3 bg-black border border-[#0F4C5C]/50 rounded-xl text-white"
+                          />
+                        </div>
+                      )}
+                      {challengeForm.schedulePattern === 'weekly_quota' && (
+                        <div className="col-span-2">
+                          <label className="block text-slate-300 text-sm font-medium mb-2">
+                            {t('endurance.challenges.modal.weeklySessionTarget', 'Séances par semaine')}
+                          </label>
+                          <input
+                            type="number"
+                            min={1}
+                            max={7}
+                            value={challengeForm.weeklySessionTarget ?? 3}
+                            onChange={(e) =>
+                              setChallengeForm({
+                                ...challengeForm,
+                                weeklySessionTarget: e.target.value
+                              })
+                            }
+                            className="w-full px-4 py-3 bg-black border border-[#0F4C5C]/50 rounded-xl text-white"
+                          />
+                        </div>
+                      )}
+                      {challengeForm.schedulePattern === 'weekdays' && (
+                        <div className="col-span-2 flex flex-wrap gap-2">
+                          {[
+                            [1, 'Lun'],
+                            [2, 'Mar'],
+                            [3, 'Mer'],
+                            [4, 'Jeu'],
+                            [5, 'Ven'],
+                            [6, 'Sam'],
+                            [0, 'Dim']
+                          ].map(([dow, label]) => {
+                            const sel = (challengeForm.scheduleWeekdays || []).map(Number).includes(dow);
+                            return (
+                              <button
+                                key={dow}
+                                type="button"
+                                onClick={() => {
+                                  const cur = (challengeForm.scheduleWeekdays || []).map(Number);
+                                  const next = sel ? cur.filter((x) => x !== dow) : [...cur, dow];
+                                  setChallengeForm({ ...challengeForm, scheduleWeekdays: next });
+                                }}
+                                className={`rounded-lg px-3 py-1 text-xs border ${
+                                  sel
+                                    ? 'border-amber-400 bg-amber-500/20 text-amber-100'
+                                    : 'border-slate-600 text-slate-400'
+                                }`}
+                              >
+                                {label}
+                              </button>
+                            );
+                          })}
+                        </div>
+                      )}
+                      <div>
+                        <label className="block text-slate-300 text-sm font-medium mb-2">
+                          {t('endurance.challenges.modal.startDate')}
+                        </label>
+                        <input
+                          type="date"
+                          value={challengeForm.startDate}
+                          onChange={(e) => setChallengeForm({ ...challengeForm, startDate: e.target.value })}
+                          className="w-full px-4 py-3 bg-black border border-[#0F4C5C]/50 rounded-xl text-white"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-slate-300 text-sm font-medium mb-2">
+                          {t('endurance.challenges.modal.endDate')} ({t('endurance.challenges.modal.optional', 'opt.')})
+                        </label>
+                        <input
+                          type="date"
+                          value={challengeForm.endDate}
+                          onChange={(e) => setChallengeForm({ ...challengeForm, endDate: e.target.value })}
+                          className="w-full px-4 py-3 bg-black border border-[#0F4C5C]/50 rounded-xl text-white"
+                        />
+                      </div>
+                      <div className="col-span-2 rounded-xl border border-[#0F4C5C]/45 bg-black/50 p-4 space-y-3">
+                        <div className="text-sm font-medium text-teal-100">
+                          {t('endurance.challenges.modal.pushupGoalSection', 'Objectif par séance')}
+                        </div>
+                        <div className="flex flex-wrap gap-4 text-sm text-slate-300">
+                          <label className="flex items-center gap-2 cursor-pointer">
+                            <input
+                              type="radio"
+                              name="pushupGoalMode"
+                              checked={(challengeForm.goalMode || 'total') === 'total'}
+                              onChange={() => setChallengeForm({ ...challengeForm, goalMode: 'total' })}
+                            />
+                            {t('endurance.challenges.modal.pushupGoalModeTotal', 'Total de reps')}
+                          </label>
+                          <label className="flex items-center gap-2 cursor-pointer">
+                            <input
+                              type="radio"
+                              name="pushupGoalMode"
+                              checked={challengeForm.goalMode === 'sets'}
+                              onChange={() => setChallengeForm({ ...challengeForm, goalMode: 'sets' })}
+                            />
+                            {t('endurance.challenges.modal.pushupGoalModeSets', 'Séries × reps')}
+                          </label>
+                        </div>
+                        {(challengeForm.goalMode || 'total') === 'total' ? (
+                          <div>
+                            <label className="block text-slate-400 text-xs mb-1">
+                              {t('endurance.challenges.modal.pushupGoalTotalLabel', 'Nombre total de pompes')}
+                            </label>
+                            <input
+                              type="number"
+                              min={1}
+                              value={challengeForm.goalCount || ''}
+                              onChange={(e) =>
+                                setChallengeForm({ ...challengeForm, goalCount: e.target.value })
+                              }
+                              className="w-full px-4 py-3 bg-black border border-[#0F4C5C]/50 rounded-xl text-white"
+                              placeholder="100"
+                            />
+                          </div>
+                        ) : (
+                          <div className="grid grid-cols-2 gap-4">
+                            <div>
+                              <label className="block text-slate-400 text-xs mb-1">
+                                {t('endurance.challenges.modal.pushupGoalSetsLabel', 'Séries')}
+                              </label>
+                              <input
+                                type="number"
+                                min={1}
+                                value={challengeForm.goalSetCount || ''}
+                                onChange={(e) =>
+                                  setChallengeForm({ ...challengeForm, goalSetCount: e.target.value })
+                                }
+                                className="w-full px-4 py-3 bg-black border border-[#0F4C5C]/50 rounded-xl text-white"
+                                placeholder="20"
+                              />
+                            </div>
+                            <div>
+                              <label className="block text-slate-400 text-xs mb-1">
+                                {t('endurance.challenges.modal.pushupGoalRepsLabel', 'Reps / série')}
+                              </label>
+                              <input
+                                type="number"
+                                min={1}
+                                value={challengeForm.goalRepsPerSet || ''}
+                                onChange={(e) =>
+                                  setChallengeForm({ ...challengeForm, goalRepsPerSet: e.target.value })
+                                }
+                                className="w-full px-4 py-3 bg-black border border-[#0F4C5C]/50 rounded-xl text-white"
+                                placeholder="5"
+                              />
+                            </div>
+                          </div>
+                        )}
+                        {resolvePushupChallengePlannedReps(challengeForm) > 0 ? (
+                          <p className="text-[11px] text-teal-300/90">
+                            {t('endurance.challenges.modal.pushupGoalPreview', {
+                              total: resolvePushupChallengePlannedReps(challengeForm),
+                              defaultValue: `Équivaut à ${resolvePushupChallengePlannedReps(challengeForm)} pompes par séance validée.`
+                            })}
+                          </p>
+                        ) : null}
+                        <div>
+                          <label className="block text-slate-400 text-xs mb-1">
+                            {t('endurance.challenges.modal.goalDuration')} ({t('endurance.challenges.modal.optional')})
+                          </label>
+                          <input
+                            type="number"
+                            step="0.5"
+                            value={challengeForm.goalDuration || ''}
+                            onChange={(e) =>
+                              setChallengeForm({ ...challengeForm, goalDuration: e.target.value })
+                            }
+                            className="w-full px-4 py-3 bg-black border border-[#0F4C5C]/50 rounded-xl text-white"
+                            placeholder="15"
+                          />
+                        </div>
+                      </div>
+                    </>
+                  ) : (
+                    <>
                   <div>
                     <label className="block text-slate-300 text-sm font-medium mb-2">{t('endurance.challenges.modal.frequency')}</label>
                     <select
@@ -3488,6 +3763,8 @@ const EnduranceTab = () => {
                       <option value="soir">{t('endurance.challenges.moments.evening')}</option>
                     </select>
                   </div>
+                    </>
+                  )}
                 </div>
               )}
 
@@ -3556,11 +3833,12 @@ const EnduranceTab = () => {
                 </div>
               )}
 
-              {challengeForm.type !== 'pushups_cumul' && (
+              {challengeForm.type !== 'pushups_cumul' &&
+                !(challengeForm.activityType === 'pushups' && challengeForm.type === 'recurrent') && (
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="block text-slate-300 text-sm font-medium mb-2">
-                    {t(`endurance.challenges.modal.goalCount.${challengeForm.activityType}`, { fallback: t('endurance.challenges.modal.goalCount.default') })}
+                    {t(`endurance.challenges.modal.goalCount.${challengeForm.activityType}`, t('endurance.challenges.modal.goalCount.default'))}
                   </label>
                   <input
                     type="number"

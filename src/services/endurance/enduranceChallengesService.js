@@ -3,6 +3,8 @@ import {
   resolveSessionCalendarDate,
   readGarminActivityDateOverrides
 } from '../../utils/sessionCalendarDate';
+import { resolvePushupSessionTotalReps } from './pushupSessionUtils';
+import { isWeeklyQuotaChallenge } from './pushupChallengeSchedule';
 
 const DEFAULT_LOGGER = {
   debug: () => {},
@@ -115,6 +117,14 @@ export function evaluateChallenges(challenges = [], sessionData = {}, activityTy
     validatedChallengeIds.push(challenge.id);
 
     if (challenge.type === 'recurrent') {
+      if (isWeeklyQuotaChallenge(challenge)) {
+        return {
+          ...challenge,
+          status: 'active',
+          lastSessionDate: challengeSessionYmd(sessionData, options) || sessionData.date || null,
+          completedSessionId: sessionData.id || null
+        };
+      }
       return {
         ...challenge,
         status: 'active',
@@ -212,6 +222,8 @@ function validateRecurrentChallenge(challenge, sessionData, logger = DEFAULT_LOG
   }
 
   switch (challenge.frequency) {
+    case 'weekly_quota':
+      break;
     case 'daily':
       if (challenge.timeOfDay && challenge.timeOfDay !== sessionData.timeOfDay) {
         return false;
@@ -275,7 +287,7 @@ export function sumPushupRepsInChallengeWindow(challenge, pushupSessions = [], w
   sortedPushupSessionsForCumul(pushupSessions, workoutAggregate).forEach((s) => {
     const ymd = resolveSessionCalendarDate(s, overrides);
     const d = ymd ? toDate(ymd) : toDate(s.date);
-    if (d >= start && d <= end) sum += toNumber(s.count, 0);
+    if (d >= start && d <= end) sum += resolvePushupSessionTotalReps(s);
   });
   return sum;
 }
@@ -312,7 +324,7 @@ function validatePushupsCumulSessionIsCompletion(
     const ymd = resolveSessionCalendarDate(s, overrides);
     const d = ymd ? toDate(ymd) : toDate(s.date);
     if (d < start || d > end) return;
-    cum += toNumber(s.count, 0);
+    cum += resolvePushupSessionTotalReps(s);
     if (completionId == null && cum >= goal) {
       completionId = s.id != null ? String(s.id) : null;
     }

@@ -259,8 +259,15 @@ export function buildSetLogFromPrescription(exercise, opts = {}) {
   };
 
   if (p.volumeMode === 'seconds' || p.volumeMode === 'minutes') {
-    const perSet = p.repsMin;
-    const sets = Array.from({ length: Math.max(1, p.setCount) }, (_, i) => mkSet(perSet, i));
+    const setCount = Math.max(1, p.setCount);
+    let perSet = p.repsMin;
+    if (totalOverride != null && totalOverride > 0) {
+      perSet =
+        setCount > 1
+          ? Math.max(1, Math.round(totalOverride / setCount))
+          : totalOverride;
+    }
+    const sets = Array.from({ length: setCount }, (_, i) => mkSet(perSet, i));
     return {
       sets,
       schemaVersion: EXERCISE_SET_LOG_SCHEMA_VERSION,

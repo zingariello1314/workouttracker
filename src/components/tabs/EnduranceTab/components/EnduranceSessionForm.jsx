@@ -3,6 +3,7 @@ import PropTypes from 'prop-types';
 import { Zap } from 'lucide-react';
 import StarRating from '../../../ui/StarRating';
 import { getFormConfig } from '../../../../services/endurance/enduranceFormSchema';
+import PushupSessionSetsFields from './PushupSessionSetsFields';
 
 const buildInputProps = (activityType, field, value, onChange) => ({
   id: `${activityType}-${field.key}`,
@@ -13,7 +14,7 @@ const buildInputProps = (activityType, field, value, onChange) => ({
   placeholder: field.placeholder || ''
 });
 
-const EnduranceSessionForm = ({ activityType, formState, setFormState }) => {
+const EnduranceSessionForm = ({ activityType, formState, setFormState, pushupPlannedHint }) => {
   const config = useMemo(() => getFormConfig(activityType), [activityType]);
 
   const handleInputChange = useCallback(
@@ -65,6 +66,13 @@ const EnduranceSessionForm = ({ activityType, formState, setFormState }) => {
 
   return (
     <>
+      {activityType === 'pushups' && (
+        <PushupSessionSetsFields
+          formState={formState}
+          setFormState={setFormState}
+          plannedHint={pushupPlannedHint}
+        />
+      )}
       {config.fields?.length > 0 && (
         <div className={`grid grid-cols-1 ${columnsClass} gap-6`}>
           {config.fields.map((field) => (

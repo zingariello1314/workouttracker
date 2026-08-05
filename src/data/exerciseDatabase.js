@@ -361,7 +361,7 @@ export const exerciseDatabase = {
     secondaryMuscles: ["Triceps", "Deltoïdes antérieurs"],
     equipment: "Support",
     description: "Pompes pieds surélevés ciblant le haut des pectoraux",
-    variations: ["decline push-ups", "pompes pieds hauts"]
+    variations: ["decline push-ups", "pompes pieds hauts", "pompes en tension continue déclinées"]
   },
   "pompes pseudo-planche": {
     name: "Pompes pseudo-planche",
@@ -380,6 +380,38 @@ export const exerciseDatabase = {
     equipment: "Poignées de pompes",
     description: "Pompes avec amplitude augmentée grâce aux poignées",
     variations: ["push-up handles", "pompes profondes"]
+  },
+  "pompes en tension continue": {
+    name: "Pompes en tension continue",
+    category: "Pectoraux",
+    primaryMuscles: ["Pectoraux", "Triceps brachial", "Deltoïde antérieur"],
+    secondaryMuscles: [
+      "Dentelé antérieur",
+      "Abdominaux",
+      "Obliques",
+      "Transverse",
+      "Fessiers",
+      "Lombaires",
+      "Avant-bras"
+    ],
+    equipment: "Poids du corps",
+    difficulty: 2,
+    summary: "Sans verrouillage · congestion · temps sous tension élevé",
+    description:
+      "Objectif : maintenir les pectoraux sous tension du début à la fin de la série — pas de repos en position haute (pas de verrouillage des coudes). Maximise la congestion, le stress métabolique et le temps sous tension (TUT), avec une excellente connexion cerveau-muscle.\n\n" +
+      "Exécution : mains légèrement plus larges que les épaules, poignets sous les épaules, corps gainé, fessiers et abdos serrés. Descente lente (2–3 s), coudes à 30–60° du buste, presque jusqu’au sol. Remontée jusqu’à environ 80–90 % de l’amplitude seulement — les coudes restent légèrement fléchis, les pectoraux ne se relâchent jamais. Respiration : inspirer en descendant, expirer en montant. Rythme type 2-0-1-0 ou 3-0-1-0, sans pause en haut.\n\n" +
+      "Variantes d’angle (même principe sans lockout) : mains sur support → accent bas des pectoraux ; pieds surélevés → accent haut des pectoraux ; prise large → étirement / faisceau externe ; prise serrée → triceps et portion interne.\n\n" +
+      "Erreurs : verrouiller les bras en haut ; remonter trop vite ; amplitude de descente insuffisante ; creuser le dos ; coudes à 90°.\n\n" +
+      "Idéal en finition (12–25 reps), débutant à avancé. Moins orienté force max / explosivité ; très efficace pour hypertrophie et endurance musculaire par congestion.",
+    variations: [
+      "constant tension push-ups",
+      "continuous tension push-ups",
+      "no lockout push-ups",
+      "pompes tension continue",
+      "pompes sans verrouillage",
+      "pompes petite amplitude",
+      "pompes en tension continue déclinées"
+    ]
   },
 
   // ABDOMINAUX & CORE AVANCÉS
@@ -485,6 +517,28 @@ export const exerciseDatabase = {
     equipment: "Haltère",
     description: "Extension triceps un bras pour correction des déséquilibres",
     variations: ["extension triceps 1 bras", "overhead extension"]
+  },
+  "extension triceps debout haltère": {
+    name: "Extension triceps debout avec haltère",
+    category: "Triceps",
+    primaryMuscles: ["Triceps"],
+    secondaryMuscles: [],
+    equipment: "Haltère",
+    difficulty: 2,
+    description:
+      "Extension des triceps debout, haltère tenu au-dessus de la tête à deux mains (ou un haltère par bras). Étire la longue portion en position haute puis fléchit les coudes derrière la tête avant d'étendre complètement les bras sans verrouiller les articulations.\n\n" +
+      "Exécution : pieds largeur hanches, gainage actif, coudes pointés vers le plafond et rapprochés de la tête. Descends l'haltère lentement derrière la nuque en gardant les épaules basses, puis remonte en contractant les triceps. Évite d'arquer le bas du dos : serre les abdominaux et fléchis légèrement les genoux si besoin.\n\n" +
+      "Erreurs fréquentes : écarter les coudes sur les côtés, cambrer le dos, utiliser l'élan du buste, amplitude trop courte en bas.\n\n" +
+      "Séries types : 3–4 × 10–15 reps. Difficulté intermédiaire (≈ 6/10) — demande une bonne mobilité d'épaule et un contrôle du tronc.",
+    variations: [
+      "extension triceps debout avec haltère",
+      "extension triceps debout avec une haltère",
+      "extension triceps debout haltère",
+      "standing dumbbell tricep extension",
+      "overhead tricep extension standing",
+      "extension nuque debout haltère",
+      "two arm dumbbell tricep extension"
+    ]
   },
   "kickbacks triceps": {
     name: "Kickbacks triceps",

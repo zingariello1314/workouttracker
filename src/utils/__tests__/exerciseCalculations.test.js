@@ -33,8 +33,16 @@ describe('resolvePrescriptionAutofillValue — formats Cycle 3+1', () => {
     expect(resolvePrescriptionAutofillValue({ series: '1 min', name: 'Planche' }, { round: true })).toBe(1);
   });
 
-  it('3×30 sec → 30 (durée par série)', () => {
-    expect(resolvePrescriptionAutofillValue({ series: '3×30 sec', name: 'Planche bras tendus' }, { round: true })).toBe(30);
+  it('3×30 sec → 90 (total secondes)', () => {
+    expect(
+      resolvePrescriptionAutofillValue({ series: '3×30 sec', name: 'Planche bras tendus' }, { round: true })
+    ).toBe(90);
+  });
+
+  it('3×1 min wall sit → 3 (total minutes)', () => {
+    expect(
+      resolvePrescriptionAutofillValue({ series: '3×1 min', name: 'Wall sit' }, { round: true })
+    ).toBe(3);
   });
 
   it('20× → 20', () => {

@@ -11,6 +11,7 @@ export function createEmptyWorkoutAggregate() {
     checkedExercises: {},
     reps: {},
     exerciseWeights: {},
+    exerciseMarkedWeighted: {},
     exerciseWeightPerArm: {},
     exerciseSetWeights: {},
     /** Log structuré reps/charge par série — clé = même schéma que reps */

@@ -124,6 +124,32 @@ export function dayHasTrainingActivity(snapshot, dateStr, garminData = null) {
   return false;
 }
 
+/** Reps saisies (Aujourd'hui) pour ce jour, même si l'exercice n'est pas coché. */
+export function dayHasRecordedReps(snapshot, dateStr) {
+  if (!snapshot?.reps || !dateStr) return false;
+  return Object.entries(snapshot.reps).some(([key, val]) => {
+    if (!key.startsWith(`${dateStr}_`)) return false;
+    const n = parseInt(String(val), 10);
+    return Number.isFinite(n) && n > 0;
+  });
+}
+
+/**
+ * Jour « entraîné » pour le calendrier : reps enregistrées OU activité (hors pas seuls).
+ */
+export function dayCountsAsCalendarTrainingDay(snapshot, dateStr, garminData = null) {
+  if (!dateStr) return false;
+  if (dayHasRecordedReps(snapshot, dateStr)) return true;
+  if (dayHasCheckedWorkout(snapshot, dateStr)) return true;
+  if (dayHasMomentumEnduranceSession(snapshot, dateStr)) return true;
+  if (dayHasCircuitProgress(snapshot, dateStr)) return true;
+  if (garminData) {
+    const garminDates = collectGarminTrainingDates(garminData, snapshot);
+    if (garminDates.has(dateStr)) return true;
+  }
+  return false;
+}
+
 /**
  * Nombre de jours d'entraînement sur [startYmd, endYmd] inclusive.
  */

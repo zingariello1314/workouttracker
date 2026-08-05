@@ -49,7 +49,11 @@
     "weightPerArm": "Saisie en kg par haltère (volume total ×2 si les deux bras)",
     "perSetOpen": "Poids par série",
     "perSetReset": "Un seul poids pour l’exo",
-    "sessionEffortLabel": "Ressenti de la séance"
+    "sessionEffortLabel": "Ressenti de la séance",
+    "optionalWeighted": "Lesté",
+    "optionalWeightedTitle": "Marquer comme lesté (charge externe optionnelle)",
+    "variations": "Variations d'exercice",
+    "variationsShort": "Variations"
   },
   "recordDate": {
     "prevDay": "Jour précédent",
@@ -165,5 +169,24 @@
     "matin": "Matin",
     "midi": "Midi",
     "soir": "Soir"
+  },
+  "supplemental": {
+    "gtgBadge": "GTG",
+    "gtgSeries": "GTG — mini-séries",
+    "gtgMaterial": "Poids du corps / GTG",
+    "challengeBadge": "Défi",
+    "challengeSeries": "Défi répétitions",
+    "pushups": "Pompes"
+  },
+  "gtg": {
+    "scheduleTitle": "Grease the Groove — emploi du temps",
+    "scheduleHint": "Coche chaque mini-série une fois faite (facile, sans forcer). Les reps alimentent le journal du jour et le Récap.",
+    "noSlots": "Aucun créneau prévu — configure GTG dans l’onglet Défis."
+  },
+  "pushupChallenge": {
+    "title": "Défis pompes — aujourd’hui",
+    "hint": "Enregistre ta séance (séries × reps modifiables). Sync calendrier, Aujourd’hui et Récap.",
+    "save": "Enregistrer la séance",
+    "weeklyProgress": "Semaine : {{done}} / {{target}} séance(s) validée(s)"
   }
 }

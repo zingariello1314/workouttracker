@@ -3,6 +3,7 @@
  * Utilisé pour afficher la barre XP sport sur chaque sous-onglet.
  */
 export const SPORT_SUB_TAB_IDS = [
+  'anatomy',
   'recap',
   'today',
   'data-entry',

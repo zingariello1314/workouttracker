@@ -10,6 +10,15 @@ const VIEW_STORAGE_KEY = 'sport.recap.bodyMapView';
 
 const PRESET_KEYS = ANATOMY_VIEW_PRESET_KEYS;
 
+/** Vues compactes onglet Anatomie (évite la rangée de 8 boutons). */
+const PICK_MODE_PRESETS = ['frontLow', 'back', 'side'];
+
+const PICK_PRESET_SHORT = {
+  frontLow: 'Face',
+  back: 'Dos',
+  side: 'Profil'
+};
+
 function readStoredPreset() {
   try {
     const v = localStorage.getItem(VIEW_STORAGE_KEY);
@@ -21,17 +30,20 @@ function readStoredPreset() {
 }
 
 /**
- * Corps 3D (GLB) — rotation libre + auto-rotation lente + préréglages de vue.
- * Meshes GLB ↔ groupes : `src/utils/sport/recapMeshBinding.js` (`GLB_MESH_TO_MUSCLE_ID`).
- *
- * @param {{ forcedViewPreset?: keyof typeof BODY_VIEW_PRESETS | null, compactCanvas?: boolean }} props
+ * Corps 3D (GLB) — rotation libre + préréglages de vue.
+ * En `pickMode` (Anatomie) : pas d’auto-rotation, écorché coloré, vues compactes.
  */
 const BodyMap = ({
   muscleColors = {},
   uniformBodyColor,
   onMuscleClick,
+  onMuscleHover,
   forcedViewPreset = null,
-  compactCanvas = false
+  compactCanvas = false,
+  pickMode = false,
+  hoverOverlayLabel = null,
+  detailSidebar = false,
+  anatomyExplorerLayout = false
 }) => {
   const t = useTranslation();
   const viewLocked = Boolean(forcedViewPreset && PRESET_KEYS.includes(forcedViewPreset));
@@ -46,44 +58,115 @@ const BodyMap = ({
   }, [viewLocked, forcedViewPreset]);
 
   useEffect(() => {
-    if (viewLocked) return;
+    if (viewLocked || pickMode) return;
     try {
       localStorage.setItem(VIEW_STORAGE_KEY, viewPreset);
     } catch {
       /* ignore */
     }
-  }, [viewPreset, viewLocked]);
+  }, [viewPreset, viewLocked, pickMode]);
 
   const setPreset = useCallback((key) => {
     if (PRESET_KEYS.includes(key)) setViewPreset(key);
   }, []);
 
-  const canvasHeight = compactCanvas ? 'min(34vh, 220px)' : 'min(62vh, 520px)';
+  const handleHover = useCallback(
+    (meshName) => {
+      onMuscleHover?.(meshName);
+    },
+    [onMuscleHover]
+  );
+
+  const canvasHeight = anatomyExplorerLayout
+    ? 'min(440px, 52vh)'
+    : detailSidebar
+      ? 'min(240px, 32vh)'
+      : compactCanvas
+        ? 'min(34vh, 220px)'
+        : 'min(62vh, 520px)';
+
+  const explorerPresets = ['frontLow', 'back'];
+
+  const presetKeys = anatomyExplorerLayout
+    ? explorerPresets
+    : detailSidebar
+      ? PICK_MODE_PRESETS
+      : pickMode
+        ? PICK_MODE_PRESETS
+        : PRESET_KEYS;
+
+  const showFullPresetRow = !viewLocked && !pickMode;
+  const showCompactPresets = !viewLocked && pickMode && !anatomyExplorerLayout;
+  const showExplorerBottomPresets = !viewLocked && pickMode && anatomyExplorerLayout;
 
   return (
-    <div className={compactCanvas ? 'w-full max-w-full mx-auto' : 'w-full max-w-lg mx-auto'}>
+    <div
+      className={
+        anatomyExplorerLayout
+          ? 'w-full max-w-full'
+          : compactCanvas
+            ? 'w-full max-w-full mx-auto'
+            : 'w-full max-w-lg mx-auto'
+      }
+    >
       <div
-        className="relative w-full rounded-xl overflow-hidden border border-slate-600/60 bg-slate-950/80 shadow-inner cursor-grab active:cursor-grabbing touch-manipulation"
+        className={`relative w-full rounded-xl overflow-hidden border shadow-inner touch-manipulation ${
+          pickMode
+            ? 'border-slate-700/50 cursor-crosshair bg-[#060708]'
+            : 'border-slate-600/60 cursor-grab active:cursor-grabbing bg-slate-950/80'
+        }`}
         style={{ height: canvasHeight }}
       >
+        {showCompactPresets ? (
+          <div className="absolute top-2 right-2 z-10 flex gap-1 pointer-events-auto">
+            {presetKeys.map((key) => (
+              <button
+                key={key}
+                type="button"
+                onClick={() => setPreset(key)}
+                className={`rounded-md px-2 py-1 text-[10px] font-medium border backdrop-blur-sm ${
+                  viewPreset === key
+                    ? 'border-cyan-500/70 bg-black/80 text-cyan-100'
+                    : 'border-slate-600/50 bg-black/55 text-slate-400 hover:text-slate-200'
+                }`}
+              >
+                {PICK_PRESET_SHORT[key] || key}
+              </button>
+            ))}
+          </div>
+        ) : null}
+
         <Canvas
           shadows={false}
           dpr={[1, 2]}
           gl={{ antialias: true, alpha: false, powerPreference: 'high-performance' }}
           camera={{ position: [0, -0.3, 2.51], fov: 35, near: 0.05, far: 500 }}
+          onPointerMissed={() => handleHover(null)}
         >
           <AnatomyInteractiveScene
             muscleColors={muscleColors}
             uniformBodyColor={uniformBodyColor}
             onMuscleClick={onMuscleClick}
+            onMuscleHover={pickMode || onMuscleHover ? handleHover : undefined}
+            pickMode={pickMode}
             viewPreset={viewPreset}
-            autoRotate
+            autoRotate={!pickMode}
             autoRotateSpeed={0.5}
+            sceneBackground="#060708"
           />
         </Canvas>
+
+        {pickMode && hoverOverlayLabel ? (
+          <div className="absolute bottom-3 left-1/2 z-10 max-w-[92%] -translate-x-1/2 pointer-events-none">
+            <div className="rounded-full border border-cyan-500/40 bg-black/90 px-4 py-2 text-center text-xs text-slate-100 shadow-lg">
+              <span className="font-semibold text-cyan-100">{hoverOverlayLabel}</span>
+              <span className="text-slate-400"> — {t('anatomy.clickToOpen', 'cliquer pour ouvrir')}</span>
+            </div>
+          </div>
+        ) : null}
       </div>
 
-      {!viewLocked ? (
+      {showFullPresetRow ? (
         <div className="mt-2 flex flex-wrap items-center justify-center gap-1.5 px-1">
           {PRESET_KEYS.map((key) => (
             <button
@@ -102,7 +185,36 @@ const BodyMap = ({
         </div>
       ) : null}
 
-      {!viewLocked ? <p className="mt-2 text-center text-xs text-slate-500 px-2">{t('recap.bodyHint')}</p> : null}
+      {showFullPresetRow ? (
+        <p className="mt-2 text-center text-xs text-slate-500 px-2">{t('recap.bodyHint')}</p>
+      ) : null}
+
+      {showExplorerBottomPresets ? (
+        <div className="mt-3 flex items-center justify-center gap-4 text-xs">
+          {explorerPresets.map((key) => (
+            <button
+              key={key}
+              type="button"
+              onClick={() => setPreset(key)}
+              className={
+                viewPreset === key
+                  ? 'font-medium text-slate-100'
+                  : 'text-slate-500 hover:text-slate-300'
+              }
+            >
+              {key === 'frontLow'
+                ? t('anatomy.viewFront', 'Vue avant')
+                : t('anatomy.viewBack', 'Vue arrière')}
+            </button>
+          ))}
+        </div>
+      ) : null}
+
+      {pickMode && detailSidebar ? (
+        <p className="mt-1.5 text-center text-[10px] text-slate-600 px-1">
+          {t('anatomy.modelPickHintShort', 'Survol · clic · glisser · molette')}
+        </p>
+      ) : null}
     </div>
   );
 };

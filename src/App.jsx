@@ -16,6 +16,7 @@ import AuthPage from './components/AuthPage';
 
 // Lazy loading des onglets (chargés à la demande)
 const RecapTab = lazy(() => import('./components/tabs/RecapTab'));
+const AnatomyTab = lazy(() => import('./components/tabs/AnatomyTab/AnatomyTab'));
 const TodayTab = lazy(() => import('./components/tabs/TodayTab'));
 const DataEntryTab = lazy(() => import('./components/tabs/DataEntryTab'));
 const ProgressTab = lazy(() => import('./components/tabs/ProgressTab'));
@@ -65,6 +66,7 @@ import CodeXPBar from './components/code/CodeXPBar';
 import { isSportSubTab } from './constants/sportSubTabs';
 import { isCodeSubTab } from './constants/codeSubTabs';
 import { isAdminUser } from './utils/accessControl';
+import { getDateStr } from './utils/dateUtils';
 import ProfileQuestionnaireModal, { registerProfileQuestionnaireOpenHandler } from './features/profileQuestionnaire/ProfileQuestionnaireModal';
 import { useProfileQuestionnaire } from './features/profileQuestionnaire/useProfileQuestionnaire';
 import Phase3SyncEffects from './components/sync/Phase3SyncEffects';
@@ -113,6 +115,9 @@ const WorkoutTrackerContent = () => {
     showExerciseVariations, 
     selectedExercise, 
     setShowExerciseVariations,
+    setSelectedExercise,
+    currentDate,
+    updateExerciseVariationOverrideForDate,
     showAdvancedStats,
     setShowAdvancedStats,
     showSessionFeedback,
@@ -162,6 +167,7 @@ const WorkoutTrackerContent = () => {
     'sport-analytics': '-620px',
     // Sous-onglet Sport : Garmin aligné comme les autres sous-onglets
     garmin: '-620px',
+    anatomy: '-620px',
     'code-calendar': '-620px',
     'code-journal': '-620px',
     'code-stats': '-620px',
@@ -269,6 +275,8 @@ const WorkoutTrackerContent = () => {
         return <HomePage />;
       case 'auth':
         return <AuthPage />;
+      case 'anatomy':
+        return <AnatomyTab />;
       case 'recap':
         return <RecapTab />;
       case 'today':
@@ -500,7 +508,20 @@ const WorkoutTrackerContent = () => {
           >
             <ExerciseVariations
               baseExercise={selectedExercise}
-              onClose={() => setShowExerciseVariations(false)}
+              onClose={() => {
+                setShowExerciseVariations(false);
+                setSelectedExercise(null);
+              }}
+              onApplyVariation={async (variation) => {
+                if (!selectedExercise || typeof selectedExercise.id !== 'number') return;
+                const dateStr = getDateStr(currentDate);
+                if (!dateStr || !variation?.databaseKey) return;
+                await updateExerciseVariationOverrideForDate(
+                  dateStr,
+                  selectedExercise.id,
+                  variation.databaseKey
+                );
+              }}
             />
           </Suspense>
         )}

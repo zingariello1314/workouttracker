@@ -9,6 +9,8 @@
  * de l’appel.
  */
 
+import { normalizePushupSessionFields } from './pushupSessionUtils';
+
 const ACTIVITY_TYPES = ['boxing', 'pushups', 'gainage', 'swimming', 'jumprope', 'running'];
 export const ENDURANCE_SCHEMA_VERSION = '2.0.0';
 
@@ -65,6 +67,8 @@ export function loadEnduranceData(rawEnduranceData = {}, options = {}) {
  * @param {Object} [params.logger] - Logger optionnel.
  * @returns {Promise<Object>} - Les données complètes après sauvegarde.
  */
+import { applyWorkoutRepIntegrations } from './workoutRepIntegrations';
+
 export async function persistEnduranceData({ currentData = {}, patch = {}, updateData, logger = DEFAULT_LOGGER }) {
   if (typeof updateData !== 'function') {
     throw new Error('[enduranceDataService] persistEnduranceData requiert updateData');
@@ -79,10 +83,12 @@ export async function persistEnduranceData({ currentData = {}, patch = {}, updat
     schemaVersion: ENDURANCE_SCHEMA_VERSION
   };
 
-  const nextData = {
+  let nextData = {
     ...currentData,
     enduranceData: nextEndurance
   };
+
+  nextData = applyWorkoutRepIntegrations(nextData, { workoutAggregate: nextData });
 
   logger.debug?.('[enduranceDataService] persistEnduranceData', { patch, nextEndurance });
 
@@ -281,6 +287,10 @@ function normalizeSession(activityType, session = {}) {
 
   if (normalized.laps && Array.isArray(normalized.laps)) {
     normalized.laps = normalized.laps.map((lap) => ({ ...lap }));
+  }
+
+  if (activityType === 'pushups') {
+    return normalizePushupSessionFields(normalized);
   }
 
   return normalized;

@@ -12,6 +12,7 @@ import {
   mergeRunningSessionsWithGarmin
 } from './sport/runningVolumeTruth';
 import { computeNonRunningExerciseMinutesForDate } from './calendarPhysicalSessionStripes';
+import { dayCountsAsCalendarTrainingDay } from './sport/recapTrainingDayTruth';
 
 function activeKcalFromGarminDaily(garminData, dateStr) {
   const daily = garminData?.dailyMetrics?.[dateStr];
@@ -72,6 +73,7 @@ export function computeCalendarMonthSportStats(
   let otherExerciseMinutes = 0;
   let totalKg = 0;
   let activeKcal = 0;
+  let trainingDays = 0;
 
   const currentMonthDays = (monthDays || []).filter((d) => d.isCurrentMonth);
   let year = new Date().getFullYear();
@@ -94,6 +96,9 @@ export function computeCalendarMonthSportStats(
     runningMinutes += runStats.min;
     otherExerciseMinutes += computeNonRunningExerciseMinutesForDate(workoutData, garminData, dateStr);
     activeKcal += activeKcalFromGarminDaily(garminData, dateStr);
+    if (dayCountsAsCalendarTrainingDay(workoutData, dateStr, garminData)) {
+      trainingDays += 1;
+    }
   });
 
   runningKm = Math.round(runningKm * 10) / 10;
@@ -109,6 +114,7 @@ export function computeCalendarMonthSportStats(
     totalMinutes: runningMinutes + otherExerciseMinutes,
     totalKg,
     activeKcal,
-    longestStreak: calculateLongestTrainingStreakInMonth(workoutData, year, monthIndex)
+    longestStreak: calculateLongestTrainingStreakInMonth(workoutData, year, monthIndex),
+    trainingDays
   };
 }

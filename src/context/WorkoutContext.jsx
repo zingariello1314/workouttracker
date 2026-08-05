@@ -2,7 +2,7 @@ import React, { createContext, useContext, useState, useEffect, useRef, useCallb
 import { useWorkoutData } from '../hooks/useWorkoutData';
 import { useWorkoutLogic } from '../hooks/useWorkoutLogic';
 import { workoutProgram } from '../data/workoutProgram';
-import { findExerciseInDatabase } from '../data/exerciseDatabase';
+import { findExerciseInDatabase, exerciseDatabase } from '../data/exerciseDatabase';
 import { getDateStr, getDayName, getAutoWeekVariant } from '../utils/dateUtils';
 // ✅ PHASE 4 : Import des utilitaires de l'historique
 import { 
@@ -983,7 +983,72 @@ const WorkoutProvider = ({ children }) => {
   };
 
   /**
-   * Génère un ID unique pour un exercice exceptionnel
+   * Remplace l’affichage / la fiche d’un exercice programme pour un jour (variation banque).
+   * @param {string|null} databaseKey — null pour revenir au programme
+   */
+  const updateExerciseVariationOverrideForDate = async (dateStr, exerciseId, databaseKey) => {
+    if (!dateStr || typeof dateStr !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) {
+      throw new Error('Date invalide');
+    }
+    if (typeof exerciseId !== 'number' || Number.isNaN(exerciseId) || exerciseId <= 0) {
+      throw new Error('ID d\'exercice invalide');
+    }
+    const currentData = getCurrentData();
+    const existing = currentData.dailyVariations?.[dateStr];
+    const prevOverrides = { ...(existing?.exerciseVariationOverrides || {}) };
+    const key = String(exerciseId);
+
+    if (!databaseKey) {
+      delete prevOverrides[key];
+    } else {
+      const entry = exerciseDatabase[databaseKey];
+      if (!entry) throw new Error('Variation inconnue');
+      prevOverrides[key] = {
+        name: entry.name || databaseKey,
+        databaseKey,
+        materiel: entry.equipment || undefined
+      };
+    }
+
+    const hasVar = Object.keys(prevOverrides).length > 0;
+    const updatedVariation = {
+      date: dateStr,
+      suppressedExercises: existing?.suppressedExercises || [],
+      additionalExercises: existing?.additionalExercises || [],
+      reason: existing?.reason,
+      createdAt: existing?.createdAt || new Date(),
+      lastModifiedAt: new Date(),
+      modificationCount: (existing?.modificationCount || 0) + 1,
+      version: existing?.version || '1.0',
+      schemaVersion: existing?.schemaVersion ?? 1,
+      lastExceptionalIdCounter: existing?.lastExceptionalIdCounter || 0,
+      ...(existing?.exerciseSeriesOverrides
+        ? { exerciseSeriesOverrides: { ...existing.exerciseSeriesOverrides } }
+        : {}),
+      ...(existing?.exerciseTrainingPatterns
+        ? { exerciseTrainingPatterns: { ...existing.exerciseTrainingPatterns } }
+        : {}),
+      ...(hasVar ? { exerciseVariationOverrides: prevOverrides } : {})
+    };
+    if (!hasVar) delete updatedVariation.exerciseVariationOverrides;
+
+    const hasAny =
+      (updatedVariation.suppressedExercises?.length || 0) > 0 ||
+      (updatedVariation.additionalExercises?.length || 0) > 0 ||
+      (updatedVariation.exerciseSeriesOverrides &&
+        Object.keys(updatedVariation.exerciseSeriesOverrides).length > 0) ||
+      hasVar ||
+      (updatedVariation.exerciseTrainingPatterns &&
+        Object.keys(updatedVariation.exerciseTrainingPatterns).length > 0);
+
+    const nextDaily = { ...(currentData.dailyVariations || {}) };
+    if (hasAny) nextDaily[dateStr] = updatedVariation;
+    else delete nextDaily[dateStr];
+
+    await updateData({ ...currentData, dailyVariations: nextDaily });
+  };
+
+  /**
    * @param {string} dateStr - Date au format YYYY-MM-DD
    * @param {object} variation - Variation existante (optionnelle)
    * @returns {string} ID unique au format exceptional_YYYY-MM-DD_NNNN
@@ -1635,6 +1700,7 @@ const WorkoutProvider = ({ children }) => {
     suppressExerciseForToday,
     restoreExerciseForToday,
     updateExerciseSeriesOverrideForDate,
+    updateExerciseVariationOverrideForDate,
     
     // Fonctions de statistiques
     getWorkoutHistory,

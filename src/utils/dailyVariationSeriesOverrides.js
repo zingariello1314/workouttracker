@@ -50,3 +50,42 @@ export function normalizeSeriesInputForStorage(raw) {
   s = s.replace(/\s+/g, '').replace(/[xX]/g, '×');
   return s;
 }
+
+/**
+ * @returns {Record<string, { name: string, databaseKey: string, materiel?: string }>}
+ */
+export function getExerciseVariationOverrides(dailyVariations, dateStr) {
+  const raw = dailyVariations?.[dateStr]?.exerciseVariationOverrides;
+  if (!raw || typeof raw !== 'object') return {};
+  const out = {};
+  for (const [k, v] of Object.entries(raw)) {
+    if (!v || typeof v !== 'object') continue;
+    const name = String(v.name || '').trim();
+    const databaseKey = String(v.databaseKey || '').trim();
+    if (!name) continue;
+    out[String(k)] = {
+      name,
+      databaseKey: databaseKey || undefined,
+      materiel: v.materiel != null ? String(v.materiel) : undefined
+    };
+  }
+  return out;
+}
+
+export function mergeVariationOverridesIntoProgramExercises(exercises, overrides) {
+  if (!Array.isArray(exercises) || !overrides || Object.keys(overrides).length === 0) {
+    return exercises || [];
+  }
+  return exercises.map((ex) => {
+    if (!ex || typeof ex.id !== 'number') return ex;
+    const ov = overrides[String(ex.id)] ?? overrides[ex.id];
+    if (!ov) return ex;
+    return {
+      ...ex,
+      name: ov.name,
+      ...(ov.materiel ? { materiel: ov.materiel } : {}),
+      variationDatabaseKey: ov.databaseKey,
+      notes: ex.notes
+    };
+  });
+}

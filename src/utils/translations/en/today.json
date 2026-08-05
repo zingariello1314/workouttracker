@@ -49,7 +49,9 @@
     "weightPerArm": "Weight per dumbbell (total volume ×2 when using both arms)",
     "perSetOpen": "Weight per set",
     "perSetReset": "Single weight for exercise",
-    "sessionEffortLabel": "Session feeling"
+    "sessionEffortLabel": "Session feeling",
+    "optionalWeighted": "Weighted",
+    "optionalWeightedTitle": "Mark as weighted (optional external load)"
   },
   "sessionScore": {
     "title": "Session load (strength)",
@@ -164,5 +166,24 @@
     "matin": "Morning",
     "midi": "Noon",
     "soir": "Evening"
+  },
+  "supplemental": {
+    "gtgBadge": "GTG",
+    "gtgSeries": "GTG — mini-sets",
+    "gtgMaterial": "Bodyweight / GTG",
+    "challengeBadge": "Challenge",
+    "challengeSeries": "Rep challenge",
+    "pushups": "Push-ups"
+  },
+  "gtg": {
+    "scheduleTitle": "Grease the Groove — daily schedule",
+    "scheduleHint": "Check each mini-set when done (easy, no grinding). Reps feed Today’s log and Recap.",
+    "noSlots": "No slots planned — set up GTG in the Challenges tab."
+  },
+  "pushupChallenge": {
+    "title": "Push-up challenges — today",
+    "hint": "Log your session (editable sets × reps). Syncs calendar, Today, and Recap.",
+    "save": "Save session",
+    "weeklyProgress": "Week: {{done}} / {{target}} validated session(s)"
   }
 }

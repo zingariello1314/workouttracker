@@ -48,16 +48,17 @@ export function resolvePrescriptionAutofillValue(exercise, options = {}) {
 
   if (unitInfo?.isTimeBased) {
     const setsTimeMatch = series.match(/(\d+)\s*×\s*(\d+)\s*(sec|min)/i);
-    if (setsTimeMatch) return parseInt(setsTimeMatch[2], 10);
+    if (setsTimeMatch) {
+      const sets = parseInt(setsTimeMatch[1], 10);
+      const per = parseInt(setsTimeMatch[2], 10);
+      return sets * per;
+    }
 
     const loneSec = series.match(/(\d+)\s*sec/i);
     if (loneSec) return parseInt(loneSec[1], 10);
 
     const loneMin = series.match(/(\d+)\s*min/i);
     if (loneMin) return parseInt(loneMin[1], 10);
-
-    const setsOnly = series.match(/^(\d+)\s*×\s*(\d+)\s*$/);
-    if (setsOnly && unitInfo.unit === 'sec') return parseInt(setsOnly[2], 10);
 
     return null;
   }

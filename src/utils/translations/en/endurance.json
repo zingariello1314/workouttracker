@@ -186,6 +186,13 @@
       "midday": "Midday",
       "evening": "Evening"
     },
+    "pushupSchedule": {
+      "daily": "Every day (max one session per day in Today)",
+      "everyOther": "Every other day",
+      "everyNDays": "Every N days",
+      "weekdays": "Fixed weekdays",
+      "weeklyQuota": "X sessions per week (shown daily until quota met)"
+    },
     "modal": {
       "title": "Create a challenge",
       "name": "Challenge name",
@@ -198,12 +205,26 @@
       "startDate": "Start date",
       "endDate": "End date",
       "goalCount": {
+        "pushups": "Total push-ups per session",
         "swimming": "Distance (meters)",
         "running": "Distance (km)",
         "jumprope": "Number of jumps",
         "gainage": "Cumulative plank seconds (goal)",
         "default": "Number"
       },
+      "pushupSchedule": "When to do the challenge?",
+      "pushupGoalSection": "Goal per session",
+      "pushupGoalModeTotal": "A total rep count (e.g. 100 push-ups)",
+      "pushupGoalModeSets": "Sets × reps (e.g. 20 × 5)",
+      "pushupGoalTotalLabel": "Total push-ups",
+      "pushupGoalSetsLabel": "Number of sets",
+      "pushupGoalRepsLabel": "Reps per set",
+      "pushupGoalPreview": "Equals {{total}} push-ups per validated session",
+      "goalSetCount": "Sets",
+      "goalRepsPerSet": "Reps / set",
+      "weeklySessionTarget": "Sessions to complete per week",
+      "weeklySessionHint": "Stays visible every day in Today until {{n}} session(s) are validated this week (Mon–Sun).",
+      "intervalDaysLabel": "Every how many days?",
       "goalDuration": "Max duration (minutes)",
       "goalTotalCount": "Total push-ups goal (sum over the period)",
       "optional": "Optional",
@@ -535,6 +556,7 @@
     "fetchError": "Error retrieving endurance exercises",
     "unknownExercise": "Unknown exercise",
     "nameAndTypeRequired": "Name and activity type required",
+    "pushupChallengeGoal": "Set a per-session goal: total push-ups or sets × reps.",
     "pushupsCumulDates": "Cumulative challenge: set start and end dates.",
     "pushupsCumulGoal": "Cumulative challenge: set a total rep goal (> 0).",
     "updateError": "Error updating challenge"
@@ -560,6 +582,7 @@
     },
     "repsHint": "{{reps}} reps/set (range {{low}}–{{high}}, max {{max}})",
     "manualMax": "Manual max (optional)",
+    "performanceMaxHint": "Suggested (Performances / history): {{max}} rep max — editable, not required.",
     "slotsCount": "Slots per day: {{count}}",
     "slotsHint": "4–8 slots/day is ideal; beyond 12, recovery rarely keeps up.",
     "slotTimes": "Slot times",

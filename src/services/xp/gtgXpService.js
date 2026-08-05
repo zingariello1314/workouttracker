@@ -23,7 +23,11 @@ export const GTG_DAILY_XP_CAP = 72;
  * @param {object} dayPlan résultat buildGtgDayPlan
  * @returns {{ xp: number, repsXp: number, bonus50: number, bonus100: number, doneReps: number, progressPct: number }}
  */
-export function computeGtgXpForDayPlan(dayPlan) {
+/**
+ * @param {object} dayPlan
+ * @param {{ repsInWorkout?: boolean }} [options] — si true, les reps GTG ne génèrent plus d’XP ici (déjà via reps programme).
+ */
+export function computeGtgXpForDayPlan(dayPlan, options = {}) {
   if (!dayPlan || dayPlan.plannedMiniSets <= 0) {
     return {
       xp: 0,
@@ -36,7 +40,8 @@ export function computeGtgXpForDayPlan(dayPlan) {
   }
 
   const doneReps = dayPlan.doneReps || 0;
-  let repsXp = Math.round(doneReps * GTG_XP_PER_REP);
+  const repsInWorkout = options.repsInWorkout !== false;
+  let repsXp = repsInWorkout ? 0 : Math.round(doneReps * GTG_XP_PER_REP);
   let bonus50 = 0;
   let bonus100 = 0;
 
@@ -65,6 +70,7 @@ export function computeGtgXpForDayPlan(dayPlan) {
 export function computeGtgXp(gtgData, ctx = {}) {
   const normalized = normalizeGtgData(gtgData);
   const days = normalized.days || {};
+  const gtgXpOpts = { repsInWorkout: ctx.repsInWorkout !== false };
   let totalXp = 0;
   let totalReps = 0;
   let daysWithXp = 0;
@@ -74,7 +80,7 @@ export function computeGtgXp(gtgData, ctx = {}) {
   Object.keys(days).forEach((dateStr) => {
     const plan = buildGtgDayPlan(normalized, dateStr, ctx);
     if (plan.doneMiniSets <= 0) return;
-    const dayXp = computeGtgXpForDayPlan(plan);
+    const dayXp = computeGtgXpForDayPlan(plan, gtgXpOpts);
     totalXp += dayXp.xp;
     totalReps += dayXp.doneReps;
     daysWithXp += 1;
@@ -83,7 +89,7 @@ export function computeGtgXp(gtgData, ctx = {}) {
   });
 
   const todayPlan = buildGtgDayPlan(normalized, todayYmd(), ctx);
-  const todayXp = computeGtgXpForDayPlan(todayPlan);
+  const todayXp = computeGtgXpForDayPlan(todayPlan, gtgXpOpts);
 
   return {
     totalXp,

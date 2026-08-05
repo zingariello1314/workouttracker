@@ -8,12 +8,20 @@
  */
 
 import { useMemo } from 'react';
+import { useTranslation } from '../utils/translations';
 import { useWorkout } from '../context/WorkoutContext';
 import { getDateStr } from '../utils/dateUtils';
 import {
   getExerciseSeriesOverrides,
-  mergeSeriesIntoProgramExercises
+  getExerciseVariationOverrides,
+  mergeSeriesIntoProgramExercises,
+  mergeVariationOverridesIntoProgramExercises
 } from '../utils/dailyVariationSeriesOverrides';
+import {
+  buildSupplementalExercisesForDate,
+  mergeSupplementalWithProgram
+} from '../utils/todaySupplementalExercises';
+import { shouldHideProgramExerciseOnTodayTab } from '../utils/gtgProgramExerciseFilter';
 
 /**
  * Hook pour obtenir les exercices du jour avec variations journalières
@@ -35,6 +43,8 @@ export const useTodayExercises = (options = {}) => {
     getDateStr: contextGetDateStr
   } = useWorkout();
 
+  const t = useTranslation();
+
   const date = options.date || contextCurrentDate;
   const isGymMode = options.isGymMode !== undefined ? options.isGymMode : contextIsGymMode;
 
@@ -54,6 +64,7 @@ export const useTodayExercises = (options = {}) => {
         console.warn('⚠️ Date invalide dans useTodayExercises:', date);
         return {
           programExercises: [],
+          supplementalExercises: [],
           additionalExercises: [],
           suppressedExerciseIds: [],
           metadata: {
@@ -79,6 +90,7 @@ export const useTodayExercises = (options = {}) => {
         console.warn('⚠️ Workout invalide dans useTodayExercises:', baseWorkout);
         return {
           programExercises: [],
+          supplementalExercises: [],
           additionalExercises: [],
           suppressedExerciseIds: [],
           metadata: {
@@ -110,8 +122,10 @@ export const useTodayExercises = (options = {}) => {
       // ✅ FILTRAGE INTELLIGENT : Préserver l'ordre original du programme
       // + Validation que chaque exercice a un ID valide
       const seriesOverrides = getExerciseSeriesOverrides(data?.dailyVariations, dateStr);
+      const variationOverrides = getExerciseVariationOverrides(data?.dailyVariations, dateStr);
 
-      const programExercises = mergeSeriesIntoProgramExercises(
+      const programExercises = mergeVariationOverridesIntoProgramExercises(
+        mergeSeriesIntoProgramExercises(
         baseWorkout.exercices.filter((ex) => {
         // ✅ Protection contre exercices invalides
         if (!ex || typeof ex !== 'object') {
@@ -122,10 +136,13 @@ export const useTodayExercises = (options = {}) => {
           console.warn('⚠️ Exercice invalide dans programme (invalid ID):', ex);
           return false;
         }
+        if (shouldHideProgramExerciseOnTodayTab(ex)) return false;
         // ✅ Filtrer les exercices supprimés (lookup O(1))
         return !suppressedIdsSet.has(ex.id);
         }),
         seriesOverrides
+        ),
+        variationOverrides
       );
 
       // ✅ VALIDATION RENFORCÉE : S'assurer que les exercices exceptionnels sont bien formés
@@ -217,8 +234,18 @@ export const useTodayExercises = (options = {}) => {
       // ✅ Calculer total exercices (programme + exceptionnels)
       const totalExercises = programExercises.length + additionalCount;
 
+      const supplementalExercises = mergeSupplementalWithProgram(
+        programExercises,
+        buildSupplementalExercisesForDate({
+          dateStr,
+          challenges: data?.enduranceData?.challenges,
+          t
+        })
+      );
+
       return {
         programExercises,
+        supplementalExercises,
         additionalExercises,
         suppressedExerciseIds: Array.from(suppressedIdsSet),
         // ✅ Métadonnées ultra-enrichies
@@ -230,7 +257,7 @@ export const useTodayExercises = (options = {}) => {
           // ✅ Statistiques avancées
           completionRate,
           completedExceptional,
-          totalExercises,
+          totalExercises: totalExercises + supplementalExercises.length,
           variationDate: dailyVariation?.createdAt || null,
           lastModified: dailyVariation?.lastModifiedAt || null
         }
@@ -240,6 +267,7 @@ export const useTodayExercises = (options = {}) => {
       console.error('❌ Erreur dans useTodayExercises:', error);
       return {
         programExercises: [],
+        supplementalExercises: [],
         additionalExercises: [],
         suppressedExerciseIds: [],
         metadata: {
@@ -256,7 +284,7 @@ export const useTodayExercises = (options = {}) => {
         }
       };
     }
-  }, [date, isGymMode, data?.dailyVariations, dateStr, getTodayWorkout]);
+  }, [date, isGymMode, data?.dailyVariations, data?.enduranceData?.challenges, dateStr, getTodayWorkout, t]);
 
   return result;
 };

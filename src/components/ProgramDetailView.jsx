@@ -50,6 +50,7 @@ import { LANGUAGES } from '../utils/translations/constants';
 import { exerciseDatabase } from '../data/exerciseDatabase';
 import { getExerciseProgramNotes, resolveProgramExerciseNotes } from '../utils/exerciseHeroContent';
 import StretchSlotsEditor from './program/StretchSlotsEditor';
+import ProgramPrescriptionPickers from './program/ProgramPrescriptionPickers';
 import PlyometricBlock from './program/PlyometricBlock';
 import RunningDrillsBlock from './program/RunningDrillsBlock';
 import ExerciseBankNameAutocomplete from './program/ExerciseBankNameAutocomplete';
@@ -838,19 +839,16 @@ const ProgramDetailView = ({ program, onBack, onUpdateProgram }) => {
 
     return (
       <div className="space-y-3">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+        <div className="grid grid-cols-1 gap-3">
           <ExerciseBankNameAutocomplete
             value={editedData.name || ''}
             onChange={(name) => setEditedData((prev) => ({ ...prev, name }))}
             onSelectBankExercise={applyBankExerciseToEditedData}
             exerciseBankRows={exerciseBankRows}
           />
-          <input
-            type="text"
-            value={editedData.series || ''}
-            onChange={(e) => setEditedData({ ...editedData, series: e.target.value })}
-            className="bg-black border border-[#0F4C5C]/50 rounded px-3 py-2 text-sm"
-            placeholder="Séries (ex: 4×12, 30 min, etc.)"
+          <ProgramPrescriptionPickers
+            exercise={editedData}
+            onExerciseChange={(next) => setEditedData({ ...next, meta: normalizeExerciseMeta(next) })}
           />
         </div>
 
@@ -2814,13 +2812,17 @@ const ProgramDetailView = ({ program, onBack, onUpdateProgram }) => {
                   <div className="grid grid-cols-2 gap-3">
                   <label className="text-xs text-slate-400">
                     Séries
-                    <input
-                      type="number"
-                      min="1"
+                    <select
                       value={pickerSets}
                       onChange={(e) => setPickerSets(e.target.value)}
                       className="mt-1 w-full rounded border border-[#0F4C5C]/55 bg-black px-2 py-2 text-sm text-white"
-                    />
+                    >
+                      {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((n) => (
+                        <option key={n} value={String(n)}>
+                          {n}
+                        </option>
+                      ))}
+                    </select>
                   </label>
                   <label className="text-xs text-slate-400">
                     {pickerRepsScope === REPS_SCOPES.PER_HAND
@@ -2828,33 +2830,28 @@ const ProgramDetailView = ({ program, onBack, onUpdateProgram }) => {
                       : pickerRepsScope === REPS_SCOPES.PER_SIDE
                         ? 'Reps par côté'
                         : 'Reps'}
-                    {pickerRepsScope === REPS_SCOPES.TOTAL && (
-                      <input
-                        type="number"
-                        min="1"
-                        value={pickerReps}
-                        onChange={(e) => setPickerReps(e.target.value)}
-                        className="mt-1 w-full rounded border border-[#0F4C5C]/55 bg-black px-2 py-2 text-sm text-white"
-                      />
-                    )}
-                    {pickerRepsScope === REPS_SCOPES.PER_HAND && (
-                      <input
-                        type="number"
-                        min="1"
-                        value={pickerRepsPerHand}
-                        onChange={(e) => setPickerRepsPerHand(e.target.value)}
-                        className="mt-1 w-full rounded border border-[#0F4C5C]/55 bg-black px-2 py-2 text-sm text-white"
-                      />
-                    )}
-                    {pickerRepsScope === REPS_SCOPES.PER_SIDE && (
-                      <input
-                        type="number"
-                        min="1"
-                        value={pickerRepsPerSide}
-                        onChange={(e) => setPickerRepsPerSide(e.target.value)}
-                        className="mt-1 w-full rounded border border-[#0F4C5C]/55 bg-black px-2 py-2 text-sm text-white"
-                      />
-                    )}
+                    <select
+                      value={
+                        pickerRepsScope === REPS_SCOPES.PER_HAND
+                          ? pickerRepsPerHand
+                          : pickerRepsScope === REPS_SCOPES.PER_SIDE
+                            ? pickerRepsPerSide
+                            : pickerReps
+                      }
+                      onChange={(e) => {
+                        const v = e.target.value;
+                        if (pickerRepsScope === REPS_SCOPES.PER_HAND) setPickerRepsPerHand(v);
+                        else if (pickerRepsScope === REPS_SCOPES.PER_SIDE) setPickerRepsPerSide(v);
+                        else setPickerReps(v);
+                      }}
+                      className="mt-1 w-full rounded border border-[#0F4C5C]/55 bg-black px-2 py-2 text-sm text-white"
+                    >
+                      {Array.from({ length: 30 }, (_, i) => i + 1).map((n) => (
+                        <option key={n} value={String(n)}>
+                          {n}
+                        </option>
+                      ))}
+                    </select>
                   </label>
                 </div>
                 </div>
@@ -2862,25 +2859,33 @@ const ProgramDetailView = ({ program, onBack, onUpdateProgram }) => {
               {!pickerIsFractionne && pickerVolumeMode === 'seconds' && (
                 <label className="text-xs text-slate-400 block">
                   Durée (secondes)
-                  <input
-                    type="number"
-                    min="1"
+                  <select
                     value={pickerSeconds}
                     onChange={(e) => setPickerSeconds(e.target.value)}
                     className="mt-1 w-full rounded border border-[#0F4C5C]/55 bg-black px-2 py-2 text-sm text-white"
-                  />
+                  >
+                    {[10, 15, 20, 30, 45, 60, 90, 120, 180].map((n) => (
+                      <option key={n} value={String(n)}>
+                        {n}
+                      </option>
+                    ))}
+                  </select>
                 </label>
               )}
               {!pickerIsFractionne && pickerVolumeMode === 'minutes' && (
                 <label className="text-xs text-slate-400 block">
                   Durée (minutes)
-                  <input
-                    type="number"
-                    min="1"
+                  <select
                     value={pickerMinutes}
                     onChange={(e) => setPickerMinutes(e.target.value)}
                     className="mt-1 w-full rounded border border-[#0F4C5C]/55 bg-black px-2 py-2 text-sm text-white"
-                  />
+                  >
+                    {[1, 2, 3, 5, 10, 15, 20, 30, 45, 60, 90].map((n) => (
+                      <option key={n} value={String(n)}>
+                        {n}
+                      </option>
+                    ))}
+                  </select>
                 </label>
               )}
             </div>

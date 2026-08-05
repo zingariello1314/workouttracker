@@ -19,6 +19,8 @@ const activityFactories = {
   pushups: () => ({
     date: getCurrentDateStr(),
     time: getCurrentTimeStr(),
+    setCount: '',
+    repsPerSet: '',
     count: '',
     duration: '',
     notes: '',
@@ -89,16 +91,23 @@ const activityFactories = {
 
 const challengeFactory = (activityType = 'pushups') => ({
   name: '',
-  type: 'ponctuel',
+  type: activityType === 'pushups' ? 'recurrent' : 'ponctuel',
   activityType,
   targetDate: '',
   startDate: '',
   endDate: '',
   frequency: 'daily',
-  moment: 'matin',
+  schedulePattern: 'daily',
+  goalMode: 'total',
+  weeklySessionTarget: 3,
+  intervalDays: 2,
+  moment: 'soir',
   timeOfDay: '',
   dayOfWeek: undefined,
   goalCount: '',
+  goalSetCount: '',
+  goalRepsPerSet: '',
+  scheduleWeekdays: [],
   goalDuration: '',
   goalDistance: '',
   goalJumps: '',
@@ -116,7 +125,6 @@ const formConfig = {
     fields: [
       { key: 'date', type: 'date', label: 'Date' },
       { key: 'time', type: 'time', label: 'Heure' },
-      { key: 'count', type: 'number', label: 'Nombre de pompes', placeholder: 'Ex: 50' },
       { key: 'duration', type: 'number', label: 'Durée (minutes)', step: 0.5, placeholder: 'Ex: 5' },
       { key: 'notes', type: 'textarea', label: 'Notes', placeholder: 'Commentaires optionnels...', colSpan: 2, rows: 3 }
     ],

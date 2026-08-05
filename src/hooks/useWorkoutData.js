@@ -26,6 +26,7 @@ import {
   normalizeWorkoutAggregateRawForIdb,
   flushWorkoutAggregateCloudPushNow
 } from '../services/workout/workoutAggregateCloudSync.js';
+import { applyWorkoutRepIntegrations, needsWorkoutRepIntegration } from '../services/endurance/workoutRepIntegrations';
 import { normalizeExerciseSetLog } from '../utils/exerciseSetLogUtils';
 
 const workoutDataLog = logger.module('useWorkoutData');
@@ -36,6 +37,7 @@ const generateTestWorkoutData = () => {
     checkedExercises: {},
     reps: {},
     exerciseWeights: {},
+  exerciseMarkedWeighted: {},
     exerciseWeightPerArm: {},
     exerciseSetWeights: {},
     exerciseSetLogs: {},
@@ -144,6 +146,7 @@ const INITIAL_WORKOUT_DATA = {
   reps: {},
   /** Poids saisis (kg) par clé d’exercice — même schéma de clés que `reps` */
   exerciseWeights: {},
+  exerciseMarkedWeighted: {},
   /** Haltères : true = la saisie est le kg par haltère (volume ×2 si bilatéral deux haltères) */
   exerciseWeightPerArm: {},
   /** Poids (kg) par série, même clé — tableau de chaînes même longueur que le nombre de séries */
@@ -495,6 +498,10 @@ export const useWorkoutData = (options = {}) => {
       exerciseWeights:
         migratedData.exerciseWeights && typeof migratedData.exerciseWeights === 'object'
           ? { ...migratedData.exerciseWeights }
+          : {},
+      exerciseMarkedWeighted:
+        migratedData.exerciseMarkedWeighted && typeof migratedData.exerciseMarkedWeighted === 'object'
+          ? { ...migratedData.exerciseMarkedWeighted }
           : {},
       exerciseWeightPerArm:
         migratedData.exerciseWeightPerArm && typeof migratedData.exerciseWeightPerArm === 'object'
@@ -880,6 +887,12 @@ export const useWorkoutData = (options = {}) => {
           newData && newData.exerciseWeights && typeof newData.exerciseWeights === 'object'
             ? { ...newData.exerciseWeights }
             : {},
+        exerciseMarkedWeighted:
+          newData &&
+          newData.exerciseMarkedWeighted &&
+          typeof newData.exerciseMarkedWeighted === 'object'
+            ? { ...newData.exerciseMarkedWeighted }
+            : {},
         exerciseWeightPerArm:
           newData && newData.exerciseWeightPerArm && typeof newData.exerciseWeightPerArm === 'object'
             ? { ...newData.exerciseWeightPerArm }
@@ -1183,6 +1196,10 @@ export const useWorkoutData = (options = {}) => {
     }
 
     if (savedData && hasWorkoutContent(savedData)) {
+      if (needsWorkoutRepIntegration(savedData)) {
+        savedData = applyWorkoutRepIntegrations(savedData, { workoutAggregate: savedData });
+        await saveToDB(savedData);
+      }
       setData(savedData);
       lastMetadataFingerprintRef.current = workoutMetadataFingerprint(savedData);
     } else {

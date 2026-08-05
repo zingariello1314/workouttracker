@@ -640,6 +640,8 @@ export function collectEnduranceSessionsForCalendarDay(allData, dateStr) {
  * @param {object|null|undefined} allData
  * @param {string} dateStr
  */
+import { ENDURANCE_REP_ACTIVITIES } from '../services/endurance/enduranceRepsWorkoutSync';
+
 export function computeEnduranceDayMetricsForCalendar(allData, dateStr) {
   const { rows } = collectEnduranceSessionsForCalendarDay(allData, dateStr);
   let enduranceReps = 0;
@@ -649,6 +651,9 @@ export function computeEnduranceDayMetricsForCalendar(allData, dateStr) {
 
   rows.forEach(({ activityType, session }) => {
     if (activityType !== 'jumprope') {
+      if (ENDURANCE_REP_ACTIVITIES.includes(activityType)) {
+        return;
+      }
       const rawReps =
         session.count !== undefined && session.count !== null
           ? session.count

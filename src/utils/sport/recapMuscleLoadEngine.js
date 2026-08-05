@@ -16,6 +16,8 @@ import { recapScoreToHexRelative, recapZoneBlendHueScore } from './recapIntensit
 import { MuscleGroups } from '../../data/workoutProgramEnhanced';
 import { getMeshesForMuscleGroup } from './recapMeshBinding';
 import { weightsForRunningSession, weightsForJumpRopeSession } from './enduranceMuscleDistribution';
+import { computeVolumeKgForWorkoutKey } from '../exerciseLoadVolume';
+import { weightedRecapLoadMultiplier } from './weightedTrainingRecapInsights';
 import { exerciseDatabase } from '../../data/exerciseDatabase';
 
 export const DECAY_LAMBDA_PER_DAY = 0.11;
@@ -312,8 +314,15 @@ export function computeRecapMuscleState(allData, period, getExerciseNameById, re
 
     if (contrib <= 0) return;
 
+    let weightedMul = 1;
+    const storageKey = `${dateStr}_${idStr}`;
+    const volKg = computeVolumeKgForWorkoutKey(storageKey, allData);
+    if (volKg > 0 && rInt > 0) {
+      weightedMul = weightedRecapLoadMultiplier(rInt, volKg);
+    }
+
     const groups = inferMuscleGroupsForExercise(exLike);
-    const share = contrib / groups.length;
+    const share = (contrib * weightedMul) / groups.length;
     const w = decayFactor(dateStr, refYmd);
     groups.forEach((g) => {
       if (!accum[g]) accum[g] = { strength: 0, cardio: 0 };
