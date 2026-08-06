@@ -16,7 +16,9 @@ import { buildMuscleFamilyQuickChips } from '../../../utils/anatomy/anatomyMuscl
 
 import { ANATOMY } from './anatomyTheme';
 
-import { AnatomySectionPanel } from './AnatomyContentRenderer';
+import { AnatomySectionPanel, FamilyTextDigest } from './AnatomyContentRenderer';
+import { kickerForFamilyIntro } from './anatomyDigestLayout';
+import { layoutFamilySectionRows } from './familySectionRows';
 
 import AnatomyMuscleThumbPreview from '../../anatomy/AnatomyMuscleThumbPreview';
 
@@ -187,37 +189,38 @@ export default function AnatomyFamilyView({ familyId, onOpenMuscle }) {
 
   const muscles = useMemo(() => listMusclesForFamily(familyId), [familyId]);
 
-
+  const sectionRows = useMemo(
+    () => layoutFamilySectionRows(fam?.sections, fam?.id),
+    [fam?.sections, fam?.id]
+  );
 
   if (!fam) return null;
 
-
-
   const chips = FAMILY_CHIPS[fam.id] || [fam.summary];
-
-
 
   return (
 
-    <div className="space-y-8 pb-16">
+    <div className="space-y-10 pb-16 max-w-6xl">
 
       <header>
 
-        <h1 className="text-2xl md:text-3xl font-bold text-white">{fam.name}</h1>
+        <h1 className="text-2xl md:text-3xl font-bold text-white tracking-tight">{fam.name}</h1>
 
       </header>
 
 
 
-      <div className={`${ANATOMY.panel} space-y-4`}>
-
-        <p className={`text-sm leading-relaxed whitespace-pre-line ${ANATOMY.body}`}>{fam.intro}</p>
+      <div className="space-y-4">
+        <FamilyTextDigest text={fam.intro} kicker={kickerForFamilyIntro(fam.name)} />
 
         <div className="flex flex-wrap gap-2">
 
           {chips.map((c) => (
 
-            <span key={c} className={`rounded-full border border-white/10 px-3 py-1 text-[11px] ${ANATOMY.muted}`}>
+            <span
+              key={c}
+              className="rounded-full border border-[#3897F0]/40 bg-[#3897F0]/15 px-3 py-1 text-[11px] font-medium text-slate-100"
+            >
 
               {c}
 
@@ -231,11 +234,25 @@ export default function AnatomyFamilyView({ familyId, onOpenMuscle }) {
 
 
 
-      {(fam.sections || []).map((section) => (
-
-        <AnatomySectionPanel key={section.id} section={section} compact />
-
-      ))}
+      {sectionRows.map((row) =>
+        row.type === 'pair' ? (
+          <div
+            key={`${row.sections[0].id}-${row.sections[1].id}`}
+            className="grid gap-5 md:grid-cols-2 md:items-stretch"
+          >
+            {row.sections.map((section) => (
+              <AnatomySectionPanel
+                key={section.id}
+                section={section}
+                variant="family"
+                columnWidth="half"
+              />
+            ))}
+          </div>
+        ) : (
+          <AnatomySectionPanel key={row.section.id} section={row.section} variant="family" />
+        )
+      )}
 
 
 
@@ -263,15 +280,15 @@ export default function AnatomyFamilyView({ familyId, onOpenMuscle }) {
 
       {fam.outro ? (
 
-        <div className={`${ANATOMY.panel} border-[#3897F0]/20 space-y-2`}>
+        <div className="space-y-3 max-w-3xl">
 
-          <h2 className={`${ANATOMY.labelUpper}`}>
+          <h2 className="text-[11px] font-semibold uppercase tracking-[0.2em] text-[#5eb0ff]">
 
             {t('anatomy.familyVision', 'Vision Momentum')}
 
           </h2>
 
-          <p className={`text-sm leading-relaxed whitespace-pre-line ${ANATOMY.body}`}>{fam.outro}</p>
+          <FamilyTextDigest text={fam.outro} vision />
 
         </div>
 

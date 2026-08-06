@@ -1,30 +1,38 @@
-/** Disposition par section pour éviter le « mur de tirets » vertical. */
+/** Disposition par section — le rendu s’adapte aussi au contenu (h3 ou paragraphes seuls). */
 export function layoutKindForSection(sectionId) {
   switch (sectionId) {
-    case 'anatomie':
-      return 'cards';
     case 'portions':
       return 'portions';
-    case 'fonctions':
+    case 'anatomie':
     case 'morphologie':
     case 'blessures':
     case 'saviez-vous':
     case 'faq':
-      return 'cards';
-    case 'coraco-brachial':
-      return 'prose';
     case 'muscles':
       return 'cards';
-    case 'renforcement':
-      return 'prose';
+    case 'erreurs':
+    case 'erreurs-generales':
+      return 'points';
     case 'exercices':
       return 'exercises';
     case 'presentation':
     case 'recrutement':
     case 'volume':
     case 'mobilite':
+    case 'momentum':
+    case 'programme':
+    case 'renforcement':
+    case 'coraco-brachial':
+    case 'chaines-jambes':
+    case 'biomecanique-jambes':
+    case 'ceinture-lombaire':
+    case 'exercices-core':
+    case 'principes-entrainement':
+    case 'core-concept':
+    case 'trois-roles':
+    case 'fonctions':
     default:
-      return 'prose';
+      return 'narrative';
   }
 }
 
@@ -50,4 +58,17 @@ export function groupSectionsForLayout(sections) {
     i += 1;
   }
   return out;
+}
+
+/** Priorité au contenu : titres h3 → cartes FAQ ; paragraphes seuls → narratif ou points. */
+export function resolveSectionLayoutKind(section) {
+  const blocks = section?.blocks || [];
+  const id = section?.id;
+  const fromId = layoutKindForSection(id);
+
+  if (fromId === 'portions' || fromId === 'exercises') return fromId;
+  if (blocks.some((b) => b.type === 'h3')) return 'cards';
+  if (fromId === 'points') return 'points';
+  if (fromId === 'cards') return 'narrative';
+  return 'narrative';
 }

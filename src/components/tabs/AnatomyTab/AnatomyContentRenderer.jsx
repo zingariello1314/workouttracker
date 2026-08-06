@@ -1,6 +1,18 @@
 import React, { useMemo } from 'react';
-import { layoutKindForSection } from './anatomyMuscleSectionLayout';
+import { MuscleSectionComposer } from './MuscleSectionLayouts';
 import { ANATOMY } from './anatomyTheme';
+import {
+  accentClassForIndex,
+  kickerForFamilyIntro,
+  splitAnatomyParagraphs
+} from './anatomyDigestLayout';
+import { familySectionShellClass, familySectionTitleAccent, familySectionGlow } from './familySectionArt';
+import {
+  muscleSectionBorderClass,
+  muscleSectionGlow,
+  muscleSectionTitleBorder
+} from './anatomyVisualTokens';
+import { FamilySectionComposer } from './FamilySectionLayouts';
 
 function Stars({ count = 5 }) {
   const n = Math.min(5, Math.max(0, count));
@@ -58,6 +70,191 @@ function ProseBlocks({ blocks }) {
         }
         return null;
       })}
+    </div>
+  );
+}
+
+/** Texte continu : un seul encadré, paragraphes espacés (présentation, recrutement, intro famille…). */
+function NarrativeFlow({ blocks, inset = true, kicker }) {
+  const paragraphs = (blocks || []).filter((b) => b.type === 'p' && b.text);
+  const rest = (blocks || []).filter((b) => b.type !== 'p');
+  if (paragraphs.length === 0 && rest.length === 0) return null;
+
+  const inner = (
+    <>
+      {paragraphs.map((b, i) => (
+        <p key={i} className="text-sm leading-[1.65] text-slate-200/95">
+          {b.text}
+        </p>
+      ))}
+      {rest.length > 0 ? <ProseBlocks blocks={rest} /> : null}
+    </>
+  );
+
+  if (!inset) {
+    return <div className="space-y-4">{inner}</div>;
+  }
+
+  return (
+    <div className="rounded-xl border border-white/[0.07] bg-slate-950/40 px-4 py-4 sm:px-5 sm:py-5 space-y-4">
+      {kicker ? (
+        <p className="text-[10px] font-semibold uppercase tracking-widest text-[#3897F0]/90 -mb-1">
+          {kicker}
+        </p>
+      ) : null}
+      {inner}
+    </div>
+  );
+}
+
+/** Plusieurs idées distinctes sans titre (erreurs…) : cartes légères, sans numérotation. */
+function PointGridLayout({ blocks }) {
+  const paragraphs = (blocks || []).filter((b) => b.type === 'p' && b.text);
+  const extras = (blocks || []).filter((b) => b.type !== 'p');
+  if (paragraphs.length === 0) return <ProseBlocks blocks={blocks} />;
+
+  const oddLast = paragraphs.length % 2 === 1;
+
+  return (
+    <div className="space-y-4">
+      <div className="grid gap-3 sm:grid-cols-2">
+        {paragraphs.map((b, i) => {
+          const isLastOdd = oddLast && i === paragraphs.length - 1;
+          return (
+            <article
+              key={i}
+              className={`${ANATOMY.card} border-l-[3px] p-4 sm:p-4 ${accentClassForIndex(i)} ${
+                isLastOdd ? 'sm:col-span-2' : ''
+              }`}
+            >
+              <p className="text-sm leading-[1.65] text-slate-200/95">{b.text}</p>
+            </article>
+          );
+        })}
+      </div>
+      {extras.length > 0 ? <ProseBlocks blocks={extras} /> : null}
+    </div>
+  );
+}
+
+/** FAQ, saviez-vous, morpho (h3 + texte) : titre visible, numéro discret en filigrane. */
+function TitledInsightGrid({ blocks }) {
+  const cards = useMemo(() => blocksToCards(blocks), [blocks]);
+  const lead = cards.find((c) => !c.title && c.body.length);
+  const titled = cards.filter((c) => c.title);
+
+  if (titled.length === 0) {
+    return <NarrativeFlow blocks={blocks} />;
+  }
+
+  return (
+    <div className="space-y-4">
+      {lead ? (
+        <NarrativeFlow
+          blocks={lead.body.map((text) => ({ type: 'p', text }))}
+          inset
+        />
+      ) : null}
+      <div className="grid gap-3 sm:grid-cols-2">
+        {titled.map((card, i) => {
+          const accent = accentClassForIndex(i);
+          const num = String(i + 1).padStart(2, '0');
+          const spanFull = titled.length % 2 === 1 && i === titled.length - 1;
+          return (
+            <article
+              key={i}
+              className={`${ANATOMY.card} relative overflow-hidden border-l-[3px] p-4 sm:p-5 ${accent} ${
+                spanFull ? 'sm:col-span-2' : ''
+              }`}
+            >
+              <span
+                className="pointer-events-none absolute top-2 left-3 select-none text-2xl sm:text-3xl font-bold tabular-nums leading-none text-white/[0.06]"
+                aria-hidden
+              >
+                {num}
+              </span>
+              <div className="relative pt-1">
+                <h4 className="text-sm font-semibold text-white leading-snug mb-2.5 pr-2">{card.title}</h4>
+                {card.body.map((t, j) => (
+                  <p key={j} className="text-sm leading-[1.65] text-slate-200/90 mb-2 last:mb-0">
+                    {t}
+                  </p>
+                ))}
+                {card.items?.length > 0 ? (
+                  <ul className="mt-2 space-y-1.5">
+                    {card.items.map((item, j) => (
+                      <li key={j} className={`text-xs leading-relaxed ${ANATOMY.muted}`}>
+                        {item}
+                      </li>
+                    ))}
+                  </ul>
+                ) : null}
+              </div>
+            </article>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+
+function SectionBody({ section, variant = 'muscle', columnWidth = 'full' }) {
+  const isFamily = variant === 'family';
+
+  if (isFamily) {
+    return <FamilySectionComposer section={section} columnWidth={columnWidth} />;
+  }
+
+  return <MuscleSectionComposer section={section} />;
+}
+
+/** Intro / outro famille — hero ou vision ; paragraphes en colonne ou grille si texte long. */
+export function FamilyTextDigest({ text, kicker, vision }) {
+  const paragraphs = useMemo(() => splitAnatomyParagraphs(text), [text]);
+  if (paragraphs.length === 0) return null;
+
+  const shell = vision ? ANATOMY.familyVision : ANATOMY.familyHero;
+  const useGrid = !vision && paragraphs.length >= 3;
+
+  return (
+    <div className={`${shell} space-y-5 w-full relative overflow-hidden`}>
+      <div
+        className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_90%_70%_at_20%_0%,rgba(56,151,240,0.14),transparent_55%)]"
+        aria-hidden
+      />
+      <div className="relative z-[1] space-y-4">
+      {kicker ? (
+        <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-[#5eb0ff]">
+          {kicker}
+        </p>
+      ) : null}
+      {useGrid ? (
+        <div className="grid gap-4 md:grid-cols-2">
+          {paragraphs.map((para, i) => (
+            <p
+              key={i}
+              className={`text-sm md:text-[15px] leading-[1.75] text-slate-100/95 ${
+                i === paragraphs.length - 1 && paragraphs.length % 2 === 1 ? 'md:col-span-2' : ''
+              }`}
+            >
+              {para}
+            </p>
+          ))}
+        </div>
+      ) : (
+        paragraphs.map((para, i) => (
+          <p
+            key={i}
+            className={`text-sm md:text-[15px] leading-[1.75] text-slate-100/95 ${
+              i > 0 ? 'pt-4 border-t border-white/10' : ''
+            }`}
+          >
+            {para}
+          </p>
+        ))
+      )}
+      </div>
     </div>
   );
 }
@@ -182,39 +379,6 @@ function PortionsLayout({ blocks }) {
   );
 }
 
-function CardGridBlocks({ blocks }) {
-  const cards = useMemo(() => blocksToCards(blocks), [blocks]);
-  if (cards.length === 0) return <ProseBlocks blocks={blocks} />;
-  return (
-    <div className="grid gap-3 sm:grid-cols-2">
-      {cards.map((card, i) => (
-        <div
-          key={i}
-          className={`${ANATOMY.card} p-4 hover:border-white/10 transition-colors`}
-        >
-          {card.title ? (
-            <h4 className="text-sm font-semibold text-slate-100 mb-2">{card.title}</h4>
-          ) : null}
-          {card.body.map((t, j) => (
-            <p key={j} className="text-sm leading-relaxed mb-2 last:mb-0 text-slate-200/90">
-              {t}
-            </p>
-          ))}
-          {card.items.length > 0 ? (
-            <div className="mt-2 space-y-2">
-              {card.items.map((item, j) => (
-                <p key={j} className={`text-xs leading-relaxed ${ANATOMY.muted}`}>
-                  {item}
-                </p>
-              ))}
-            </div>
-          ) : null}
-        </div>
-      ))}
-    </div>
-  );
-}
-
 function ChipGridBlocks({ blocks }) {
   const items = useMemo(() => {
     const all = [];
@@ -241,18 +405,21 @@ function ChipGridBlocks({ blocks }) {
 }
 
 function ExerciseMasonry({ blocks }) {
-  const leadBlocks = (blocks || []).filter((b) => b.type === 'p' || b.type === 'h3');
+  const leadBlocks = (blocks || []).filter((b) => b.type === 'p');
   const exerciseBlocks = (blocks || []).filter((b) => b.type === 'exerciseBlock');
   const portion = (blocks || []).find((b) => b.type === 'portionTable');
+  const structured = (blocks || []).some((b) => b.type === 'h3');
+
   return (
     <div className="space-y-4">
-      {leadBlocks.length > 0 ? <ProseBlocks blocks={leadBlocks} /> : null}
+      {structured ? (
+        <TitledInsightGrid blocks={blocks.filter((b) => b.type === 'h3' || b.type === 'p')} />
+      ) : leadBlocks.length > 0 ? (
+        <NarrativeFlow blocks={leadBlocks} inset={leadBlocks.length > 1} />
+      ) : null}
       <div className="grid gap-3 md:grid-cols-2">
         {exerciseBlocks.map((block, i) => (
-          <div
-            key={i}
-            className={`${ANATOMY.card} p-4`}
-          >
+          <div key={i} className={`${ANATOMY.card} p-4`}>
             <div className="flex flex-wrap items-center justify-between gap-2 mb-3">
               <span className="text-xs font-medium text-slate-200">{block.category}</span>
               {block.stars ? <Stars count={block.stars} /> : null}
@@ -303,28 +470,38 @@ function ExerciseMasonry({ blocks }) {
   );
 }
 
-export function AnatomySectionPanel({ section, compact }) {
+export function AnatomySectionPanel({ section, compact, variant, columnWidth = 'full' }) {
   if (!section) return null;
-  const kind = layoutKindForSection(section.id);
-  const inner = (() => {
-    switch (kind) {
-      case 'portions':
-        return <PortionsLayout blocks={section.blocks} />;
-      case 'cards':
-        return <CardGridBlocks blocks={section.blocks} />;
-      case 'chips':
-        return <ChipGridBlocks blocks={section.blocks} />;
-      case 'exercises':
-        return <ExerciseMasonry blocks={section.blocks} />;
-      default:
-        return <ProseBlocks blocks={section.blocks} />;
-    }
-  })();
+  const isFamily = variant === 'family' || compact;
+  const sectionId = section.id || '';
+  const isHalf = isFamily && columnWidth === 'half';
+
+  const familyShell = isFamily
+    ? `rounded-2xl border bg-[#0f1419]/95 flex flex-col h-full min-h-0 relative overflow-hidden ${
+        isHalf ? 'p-4 md:p-5' : 'p-5 md:p-6'
+      } ${familySectionShellClass(sectionId)}`
+    : `${ANATOMY.musclePanel} ${muscleSectionBorderClass(sectionId)}`;
+  const familyTitle = isFamily
+    ? `${
+        isHalf ? 'text-base' : 'text-lg'
+      } font-semibold text-white tracking-tight border-b pb-3 mb-4 ${familySectionTitleAccent(sectionId)}`
+    : `text-lg font-semibold text-white tracking-tight border-b pb-3 mb-5 relative z-[1] ${muscleSectionTitleBorder(sectionId)}`;
 
   return (
-    <section className={compact ? `${ANATOMY.panel} !p-4` : ANATOMY.panel}>
-      <h2 className="text-base font-semibold text-white mb-4">{section.title}</h2>
-      {inner}
+    <section className={familyShell}>
+      {!isFamily ? (
+        <div className={`pointer-events-none absolute inset-0 ${muscleSectionGlow(sectionId)}`} aria-hidden />
+      ) : (
+        <div className={`pointer-events-none absolute inset-0 ${familySectionGlow(sectionId)}`} aria-hidden />
+      )}
+      <h2 className={`${familyTitle} relative z-[1]`}>{section.title}</h2>
+      <div className="flex-1 min-h-0 relative z-[1]">
+        <SectionBody
+          section={section}
+          variant={isFamily ? 'family' : 'muscle'}
+          columnWidth={columnWidth}
+        />
+      </div>
     </section>
   );
 }
