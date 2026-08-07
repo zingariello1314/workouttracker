@@ -1,8 +1,12 @@
 /**
  * Teintes « écorché » par zone Récap — base visible même sans survol.
  */
-import { GLB_MESH_TO_MUSCLE_ID } from '../../utils/sport/recapMeshBinding';
-import { meshInAnatomyBackRegion, normalizeAnatomyMeshName } from '../../utils/anatomy/anatomyBackMeshRegions';
+import { GLB_MESH_TO_MUSCLE_ID, getAllMappedAnatomyMeshKeys } from '../../utils/sport/recapMeshBinding';
+import {
+  meshInAnatomyBackRegion,
+  normalizeAnatomyMeshName
+} from '../../utils/anatomy/anatomyBackMeshRegions';
+import { resolvePreviewFocusMeshKeys } from '../../utils/anatomy/anatomyMuscleMeshFocus';
 import { getAnatomyFamily } from '../../data/anatomy/anatomyRegistry';
 
 /** Couleur de surbrillance au survol (lisible sur fond muscle). */
@@ -20,6 +24,8 @@ export const ECORCHE_GROUP_BASE = {
   hamstrings: '#4f2828',
   calves: '#452424',
   tibialis_anterior: '#4a2626',
+  forearms: '#503030',
+  glutes: '#4a2828',
   legs: '#5c2e2e',
   full_body: '#8b4040'
 };
@@ -116,4 +122,23 @@ export function mergeEcorcheHoverHighlight(existingColors, hoveredGroupId) {
 
 export function isEcorcheHoverColor(hex) {
   return hex === ECORCHE_HOVER_ACCENT;
+}
+
+const PREVIEW_PRIMARY = '#dc2626';
+const PREVIEW_DIM = '#334155';
+
+/** Surbrillance rouge ciblée pour une fiche muscle (vignettes / rail). */
+export function buildMuscleFocusMeshColors(muscleId, visualGroupId, { dimOthers = true } = {}) {
+  const focusSet = new Set(resolvePreviewFocusMeshKeys(muscleId, visualGroupId) || []);
+  if (focusSet.size === 0) return null;
+
+  const colors = {};
+  getAllMappedAnatomyMeshKeys().forEach((key) => {
+    if (focusSet.has(key)) {
+      colors[key] = PREVIEW_PRIMARY;
+    } else if (dimOthers) {
+      colors[key] = PREVIEW_DIM;
+    }
+  });
+  return Object.keys(colors).length ? colors : null;
 }

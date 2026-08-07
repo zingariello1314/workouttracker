@@ -514,6 +514,8 @@ export const translations = {
     'recap.bodyMapStats.reps': '{{n}} reps muscu (cochées)',
     'recap.bodyMapStats.iso': '{{s}} s gainage / holds',
     'recap.bodyMapStats.minutes': '{{m}} min (endurance + holds)',
+    'recap.bodyMapHoverLine': '{{label}} — {{reps}} reps cochées · {{recovery}}',
+    'recap.bodyMapClickHint': 'Cliquer pour voir les exercices de la zone',
     'recap.legendHeading': 'Légende & détails',
     'recap.legendPlaceholder':
       'Les couleurs par muscle, le score d’équilibre et les suggestions apparaîtront ici une fois le moteur d’agrégation branché.',
@@ -850,6 +852,8 @@ export const translations = {
     'recap.muscleGroup.shoulders': 'Épaules',
     'recap.muscleGroup.biceps': 'Biceps',
     'recap.muscleGroup.triceps': 'Triceps',
+    'recap.muscleGroup.forearms': 'Avant-bras',
+    'recap.muscleGroup.glutes': 'Fessiers',
     'recap.muscleGroup.legs': 'Jambes',
     'recap.muscleGroup.quads': 'Quadriceps',
     'recap.muscleGroup.hamstrings': 'Ischio-jambiers',
@@ -883,10 +887,12 @@ export const translations = {
     'recap.zones.detail.core': 'Gainage, abdos, obliques — tout ce qui est mappé « tronc / core » dans le programme.',
     'recap.zones.detail.biceps': 'Biceps et brachial antérieur (même groupe de charge).',
     'recap.zones.detail.triceps': 'Triceps (long, latéral, médial) regroupés.',
+    'recap.zones.detail.forearms': 'Avant-bras — poignet, prise, extenseurs / fléchisseurs.',
     'recap.zones.detail.quads':
       'Quadriceps (vaste interne / externe / droit) — course, squats, sauts ; répartition cardio selon type de séance (ex. fractionné > fondamental).',
     'recap.zones.detail.hamstrings':
       'Ischio-jambiers — chaîne postérieure ; plus sollicités sur les sorties longues et le rythme modéré que sur sprints très courts.',
+    'recap.zones.detail.glutes': 'Fessiers — extension de hanche, hip thrust, sprint.',
     'recap.zones.detail.calves':
       'Mollets (jumeaux / soléaire) — impulsions, corde à sauter, stabilisation en course.',
     'recap.zones.detail.tibialis_anterior':
@@ -1609,6 +1615,8 @@ export const translations = {
     'recap.bodyMapStats.reps': '{{n}} strength reps (checked)',
     'recap.bodyMapStats.iso': '{{s}} s planks / holds',
     'recap.bodyMapStats.minutes': '{{m}} min (endurance + holds)',
+    'recap.bodyMapHoverLine': '{{label}} — {{reps}} checked reps · {{recovery}}',
+    'recap.bodyMapClickHint': 'Click to jump to exercises for this zone',
     'recap.legendHeading': 'Legend & details',
     'recap.legendPlaceholder':
       'Per-muscle colors, balance score and suggestions will show here once the aggregation engine is wired.',
@@ -1921,6 +1929,8 @@ export const translations = {
     'recap.muscleGroup.shoulders': 'Shoulders',
     'recap.muscleGroup.biceps': 'Biceps',
     'recap.muscleGroup.triceps': 'Triceps',
+    'recap.muscleGroup.forearms': 'Forearms',
+    'recap.muscleGroup.glutes': 'Glutes',
     'recap.muscleGroup.legs': 'Legs',
     'recap.muscleGroup.quads': 'Quadriceps',
     'recap.muscleGroup.hamstrings': 'Hamstrings',
@@ -1954,10 +1964,12 @@ export const translations = {
     'recap.zones.detail.core': 'Planks, abs, obliques — anything mapped as “core” in the program.',
     'recap.zones.detail.biceps': 'Biceps + brachialis (single load bucket).',
     'recap.zones.detail.triceps': 'Triceps heads grouped together.',
+    'recap.zones.detail.forearms': 'Forearms — wrist, grip, flexors / extensors.',
     'recap.zones.detail.quads':
       'Quadriceps — running, squats, jumps; cardio split varies by session type (e.g. intervals vs easy).',
     'recap.zones.detail.hamstrings':
       'Hamstrings — posterior chain; relatively more on long runs and steady rhythm.',
+    'recap.zones.detail.glutes': 'Glutes — hip extension, thrusts, sprint power.',
     'recap.zones.detail.calves':
       'Calves — push-off, jump rope, running stability.',
     'recap.zones.detail.tibialis_anterior':

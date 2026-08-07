@@ -2,7 +2,7 @@
 export function muscleSectionGlow(sectionId) {
   switch (sectionId) {
     case 'presentation':
-      return 'bg-[radial-gradient(ellipse_80%_60%_at_0%_0%,rgba(56,151,240,0.12),transparent_55%)]';
+      return 'bg-[radial-gradient(ellipse_70%_50%_at_0%_0%,rgba(56,151,240,0.06),transparent_55%)]';
     case 'portions':
       return 'bg-[radial-gradient(ellipse_70%_50%_at_100%_0%,rgba(99,102,241,0.14),transparent_50%)]';
     case 'anatomie':
@@ -35,7 +35,7 @@ export function muscleSectionGlow(sectionId) {
 export function muscleSectionBorderClass(sectionId) {
   switch (sectionId) {
     case 'presentation':
-      return 'border-[#3897F0]/30 shadow-[0_12px_40px_rgba(0,0,0,0.35),inset_0_1px_0_rgba(255,255,255,0.04)]';
+      return 'border-[#3897F0]/28 shadow-[0_8px_28px_rgba(0,0,0,0.35),inset_0_1px_0_rgba(255,255,255,0.03)]';
     case 'portions':
       return 'border-indigo-400/35 shadow-[0_12px_36px_rgba(99,102,241,0.08)]';
     case 'anatomie':

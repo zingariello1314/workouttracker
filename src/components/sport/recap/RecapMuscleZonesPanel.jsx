@@ -31,13 +31,15 @@ const ZONE_SECTIONS = [
     titleKey: 'recap.zones.section.arms',
     rows: [
       { groupId: MuscleGroups.BICEPS, detailKey: 'recap.zones.detail.biceps' },
-      { groupId: MuscleGroups.TRICEPS, detailKey: 'recap.zones.detail.triceps' }
+      { groupId: MuscleGroups.TRICEPS, detailKey: 'recap.zones.detail.triceps' },
+      { groupId: MuscleGroups.FOREARMS, detailKey: 'recap.zones.detail.forearms' }
     ]
   },
   {
     titleKey: 'recap.zones.section.legs',
     rows: [
       { groupId: MuscleGroups.QUADS, detailKey: 'recap.zones.detail.quads' },
+      { groupId: MuscleGroups.GLUTES, detailKey: 'recap.zones.detail.glutes' },
       { groupId: MuscleGroups.HAMSTRINGS, detailKey: 'recap.zones.detail.hamstrings' },
       { groupId: MuscleGroups.CALVES, detailKey: 'recap.zones.detail.calves' },
       { groupId: MuscleGroups.TIBIALIS_ANTERIOR, detailKey: 'recap.zones.detail.tibialis_anterior' }
@@ -114,7 +116,10 @@ function ZoneRow({
   const [open, setOpen] = useState(!accordionDefaultClosed);
 
   return (
-    <div className={`rounded-lg border border-[#0F4C5C]/55 bg-black ${accordionDefaultClosed ? 'overflow-hidden' : 'px-3 py-2.5'}`}>
+    <div
+      id={`recap-zone-${groupId}`}
+      className={`rounded-lg border border-[#0F4C5C]/55 bg-black scroll-mt-24 ${accordionDefaultClosed ? 'overflow-hidden' : 'px-3 py-2.5'}`}
+    >
       {accordionDefaultClosed ? (
         <button
           type="button"

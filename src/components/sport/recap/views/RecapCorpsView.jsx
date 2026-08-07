@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useState, useCallback } from 'react';
 
 import { useTranslation } from '../../../../utils/translations';
 
@@ -13,6 +13,10 @@ import RecapEnduranceTrophiesCompact from '../RecapEnduranceTrophiesCompact';
 import { CARDIO_BLEND, DECAY_LAMBDA_PER_DAY } from '../../../../utils/sport/recapMuscleLoadEngine';
 
 import { RecapSection, RecapDonutChart, RecapHorizontalBars } from '../components/RecapUiBlocks';
+
+import { visualGroupFromMesh } from '../../../../services/anatomy/resolveMeshToAnatomy';
+
+import { recapDisplayRecoveryBand } from '../../../../utils/sport/recapIntensityColors';
 
 
 
@@ -61,6 +65,37 @@ export default function RecapCorpsView({
 }) {
 
   const t = useTranslation();
+
+  const [hoverGroupId, setHoverGroupId] = useState(null);
+
+  const onRecapMuscleHover = useCallback((meshName) => {
+    if (!meshName) {
+      setHoverGroupId(null);
+      return;
+    }
+    setHoverGroupId(visualGroupFromMesh(meshName));
+  }, []);
+
+  const onRecapMuscleClick = useCallback((meshName) => {
+    const groupId = visualGroupFromMesh(meshName);
+    if (!groupId) return;
+    document.getElementById(`recap-zone-${groupId}`)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }, []);
+
+  const recapHoverOverlay = useMemo(() => {
+    if (!hoverGroupId || !recapState?.byGroup) return null;
+    const label = t(`recap.muscleGroup.${hoverGroupId}`, hoverGroupId);
+    const reps = Math.round(Number(recapState.repShareByGroup?.[hoverGroupId]) || 0);
+    const score = Number(recapState.byGroup[hoverGroupId]?.displayScore) || 0;
+    const band = recapDisplayRecoveryBand(score);
+    const recovery = t(`recap.zones.recovery.${band}`, band);
+    return t('recap.bodyMapHoverLine', {
+      label,
+      reps: String(reps),
+      recovery,
+      defaultValue: `${label} — ${reps} reps cochées · ${recovery}`
+    });
+  }, [hoverGroupId, recapState, t]);
 
   const vt = recapState?.volumeTotals || {
 
@@ -180,7 +215,15 @@ export default function RecapCorpsView({
 
           </div>
 
-          <BodyMap muscleColors={recapState?.meshColors} uniformBodyColor={recapState?.uniformBodyColor} />
+          <BodyMap
+            muscleColors={recapState?.meshColors}
+            uniformBodyColor={recapState?.uniformBodyColor}
+            onMuscleHover={onRecapMuscleHover}
+            onMuscleClick={onRecapMuscleClick}
+            showHoverOverlay
+            hoverOverlayLabel={recapHoverOverlay}
+            hoverOverlayHint={t('recap.bodyMapClickHint', 'Cliquer pour voir les exercices de la zone')}
+          />
 
         </section>
 

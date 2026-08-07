@@ -134,7 +134,7 @@ export const ANATOMY_FAMILIES = {
     intro:
       'Les avant-bras regroupent de nombreux muscles : fléchisseurs et extenseurs du poignet, pronateurs, supinateurs et muscles de la préhension. Essentiels en tractions, escalade, street workout et carries — souvent le facteur limitant avant le dos ou les biceps.',
     muscleIds: ['avant-bras-ensemble'],
-    visualGroupIds: [MuscleGroups.BICEPS],
+    visualGroupIds: [MuscleGroups.FOREARMS],
     searchAliases: ['forearms', 'grip', 'prise', 'farmer walk', 'avant-bras']
   },
   abdominaux: {
@@ -167,7 +167,7 @@ export const ANATOMY_FAMILIES = {
     outro:
       'Prioriser extension de hanche (hip thrust, fentes, RDL), le travail unilatéral et une amplitude réelle plutôt que cambrer les lombaires. Voir ischio-jambiers et adducteurs dans Cuisses pour l’équilibre complet de la jambe.',
     muscleIds: ['grand-fessier', 'moyen-fessier', 'petit-fessier'],
-    visualGroupIds: [MuscleGroups.HAMSTRINGS],
+    visualGroupIds: [MuscleGroups.GLUTES],
     searchAliases: ['glutes', 'hip thrust', 'fessiers']
   },
   cuisses: {
@@ -404,7 +404,7 @@ export const ANATOMY_MUSCLES = {
     summary: 'Fléchisseurs, extenseurs du poignet, pronation/supination et préhension.',
     functionalImportance: 'high',
     aestheticImportance: 'high',
-    visualGroupId: MuscleGroups.BICEPS,
+    visualGroupId: MuscleGroups.FOREARMS,
     contentReady: true,
     searchAliases: ['forearm', 'wrist curl', 'farmer walk', 'dead hang', 'prise']
   },
@@ -525,7 +525,7 @@ export const ANATOMY_MUSCLES = {
     summary: 'Extension de hanche — puissance, sprint, hip thrust.',
     functionalImportance: 'high',
     aestheticImportance: 'high',
-    visualGroupId: MuscleGroups.HAMSTRINGS,
+    visualGroupId: MuscleGroups.GLUTES,
     contentReady: true,
     searchAliases: ['glute max', 'hip thrust', 'fessier']
   },
@@ -536,7 +536,7 @@ export const ANATOMY_MUSCLES = {
     summary: 'Abduction et stabilisation du bassin en appui unilatéral.',
     functionalImportance: 'high',
     aestheticImportance: 'medium',
-    visualGroupId: MuscleGroups.HAMSTRINGS,
+    visualGroupId: MuscleGroups.GLUTES,
     contentReady: true,
     searchAliases: ['glute med', 'abduction', 'clamshell']
   },
@@ -547,7 +547,7 @@ export const ANATOMY_MUSCLES = {
     summary: 'Stabilisation profonde de la hanche.',
     functionalImportance: 'high',
     aestheticImportance: 'low',
-    visualGroupId: MuscleGroups.HAMSTRINGS,
+    visualGroupId: MuscleGroups.GLUTES,
     contentReady: true,
     searchAliases: ['glute min']
   },

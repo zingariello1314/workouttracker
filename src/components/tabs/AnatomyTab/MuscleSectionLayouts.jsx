@@ -63,47 +63,51 @@ function Stars({ count = 5 }) {
   );
 }
 
-/** Présentation : chapeau pleine largeur + grille si texte long. */
+/** Texte présentation : guillemets « … » en emphase blanche. */
+function PresentationText({ text, muted = false }) {
+  const parts = String(text).split(/(«[^»]+»)/g);
+  return (
+    <p
+      className={
+        muted
+          ? 'text-sm md:text-[15px] leading-[1.78] text-slate-400/95'
+          : 'text-sm md:text-[15px] leading-[1.78] text-slate-50/98'
+      }
+    >
+      {parts.map((part, i) =>
+        part.startsWith('«') ? (
+          <strong key={i} className="font-semibold text-white">
+            {part}
+          </strong>
+        ) : (
+          <span key={i}>{part}</span>
+        )
+      )}
+    </p>
+  );
+}
+
+/** Présentation approfondie — intro encadrée + paragraphes continus (colonne unique). */
 function MusclePresentationEditorial({ blocks }) {
   const paras = paragraphsFromBlocks(blocks);
   if (paras.length === 0) return <FamilyNarrativeFlow blocks={blocks} />;
 
-  if (paras.length >= 4) {
-    return (
-      <div className="space-y-5">
-        <article className="rounded-xl border border-[#3897F0]/25 bg-gradient-to-br from-[#3897F0]/[0.1] to-[#0a0e14]/80 px-4 py-4 sm:px-6 sm:py-5 shadow-[inset_0_1px_0_rgba(255,255,255,0.05)]">
-          <p className="text-[15px] md:text-base leading-[1.78] text-slate-50/95">{paras[0]}</p>
-        </article>
-        <div className="grid gap-3 md:grid-cols-2">
-          {paras.slice(1).map((text, i, arr) => (
-            <p
-              key={i}
-              className={`text-sm leading-[1.72] text-slate-200/88 rounded-lg border border-white/[0.06] bg-[#121820]/60 px-3.5 py-3 ${
-                i === arr.length - 1 && arr.length % 2 === 1 ? 'md:col-span-2' : ''
-              }`}
-            >
-              {text}
-            </p>
-          ))}
-        </div>
-      </div>
-    );
-  }
+  const [lead, ...rest] = paras;
 
   return (
-    <div className="space-y-3">
-      {paras.map((text, i) => (
-        <p
-          key={i}
-          className={`text-sm md:text-[15px] leading-[1.75] text-slate-100/92 ${
-            i === 0
-              ? 'text-[15px] rounded-xl border border-[#3897F0]/20 bg-[#3897F0]/[0.06] px-4 py-3.5'
-              : 'pt-3 border-t border-white/[0.07]'
-          }`}
-        >
-          {text}
-        </p>
-      ))}
+    <div className="space-y-5 sm:space-y-6">
+      <article className="rounded-xl border border-[#3897F0]/30 bg-[#1a2332]/90 px-4 py-4 sm:px-5 sm:py-5 shadow-[inset_0_1px_0_rgba(255,255,255,0.04)]">
+        <div className="border-l-[3px] border-[#3897F0] pl-4 sm:pl-5">
+          <PresentationText text={lead} />
+        </div>
+      </article>
+      {rest.length > 0 ? (
+        <div className="space-y-5 sm:space-y-6 px-0.5">
+          {rest.map((text, i) => (
+            <PresentationText key={i} text={text} muted />
+          ))}
+        </div>
+      ) : null}
     </div>
   );
 }

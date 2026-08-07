@@ -1,26 +1,15 @@
+import presentationBlocks from './grand-pectoral/presentationBlocks.js';
+import recrutementBlocks from './grand-pectoral/recrutementBlocks.js';
+import morphologieBlocks from './grand-pectoral/morphologieBlocks.js';
+import fonctionsBlocks from './grand-pectoral/fonctionsBlocks.js';
+
 /** @type {{ sections: { id: string, title: string, blocks: object[] }[] }} */
 const grandPectoral = {
   sections: [
     {
       id: 'presentation',
-      title: 'Présentation approfondie',
-      blocks: [
-        {
-          type: 'p',
-          text:
-            'Le grand pectoral est un muscle large en forme d’éventail. Cette forme particulière n’est pas un hasard : elle permet au muscle de produire de la force dans plusieurs directions.'
-        },
-        {
-          type: 'p',
-          text:
-            'Contrairement à certains muscles qui possèdent une action très spécifique, le grand pectoral possède plusieurs faisceaux orientés différemment. Selon la position du bras, certaines fibres vont être davantage sollicitées que d’autres.'
-        },
-        {
-          type: 'p',
-          text:
-            'Il ne faut cependant pas tomber dans une vision trop simpliste : on ne peut pas réellement « isoler » complètement une partie du pectoral. Lors d’une pompe, d’un développé couché ou d’un dip, l’ensemble du muscle participe toujours au mouvement. Ce qui change est simplement la répartition de la tension.'
-        }
-      ]
+      title: 'Présentation approfondie du grand pectoral',
+      blocks: presentationBlocks
     },
     {
       id: 'portions',
@@ -129,99 +118,17 @@ const grandPectoral = {
     {
       id: 'fonctions',
       title: 'Fonctions principales',
-      blocks: [
-        {
-          type: 'h3',
-          text: 'Adduction horizontale'
-        },
-        {
-          type: 'p',
-          text:
-            'C’est probablement son rôle le plus important. Elle correspond au mouvement où les bras se rapprochent devant le corps — comme faire un câlin. C’est précisément ce mouvement qui explique pourquoi les exercices où l’on cherche à « rapprocher les mains » recrutent fortement les pectoraux.'
-        },
-        {
-          type: 'h3',
-          text: 'Adduction du bras'
-        },
-        {
-          type: 'p',
-          text: 'Le pectoral rapproche le bras vers le corps, par exemple pour ramener un objet vers soi.'
-        },
-        {
-          type: 'h3',
-          text: 'Rotation interne de l’épaule'
-        },
-        {
-          type: 'p',
-          text:
-            'Il participe à la rotation du bras vers l’intérieur. Cette fonction explique pourquoi un excès de développement pectoral sans travail du dos peut favoriser des épaules projetées vers l’avant.'
-        },
-        {
-          type: 'h3',
-          text: 'Flexion de l’épaule'
-        },
-        {
-          type: 'p',
-          text: 'Principalement grâce au faisceau claviculaire — par exemple lever le bras devant soi.'
-        },
-        {
-          type: 'h3',
-          text: 'Extension depuis une position élevée'
-        },
-        {
-          type: 'p',
-          text: 'Les fibres inférieures peuvent aider à ramener le bras vers le bas, notamment visible dans les dips.'
-        }
-      ]
+      blocks: fonctionsBlocks
     },
     {
       id: 'recrutement',
-      title: 'Comment réellement développer ses pectoraux',
-      blocks: [
-        {
-          type: 'p',
-          text:
-            'Le développement du grand pectoral repose sur plusieurs principes. Le premier est la tension mécanique : un muscle grossit lorsqu’il est exposé à une tension suffisante et progressive — charges, répétitions, exécution et volume d’entraînement.'
-        },
-        {
-          type: 'p',
-          text:
-            'Le deuxième élément est l’amplitude. Un pectoral travaille particulièrement bien lorsqu’il est placé en position étirée ; les mouvements avec une bonne descente sont souvent plus efficaces que des répétitions courtes avec beaucoup d’élan.'
-        },
-        {
-          type: 'p',
-          text:
-            'Le troisième élément est la connexion avec le mouvement. Plutôt que de penser uniquement à pousser la charge, il est souvent préférable de penser « rapprocher les bras et contracter la poitrine ». Le coude qui se tend n’est qu’une conséquence du mouvement.'
-        }
-      ]
+      title: 'Comment réellement développer le grand pectoral',
+      blocks: recrutementBlocks
     },
     {
       id: 'morphologie',
-      title: 'Morphologie et développement',
-      blocks: [
-        {
-          type: 'p',
-          text: 'Tous les individus ne développent pas leurs pectoraux de la même manière. La génétique influence plusieurs éléments.'
-        },
-        {
-          type: 'h3',
-          text: 'Longueur du muscle et insertions'
-        },
-        {
-          type: 'p',
-          text:
-            'Certaines personnes possèdent des insertions qui donnent une poitrine très pleine près du sternum ; d’autres auront naturellement un espace plus visible entre les deux pectoraux. Cela ne signifie pas que le muscle est moins développé.'
-        },
-        {
-          type: 'h3',
-          text: 'Cage thoracique et clavicules'
-        },
-        {
-          type: 'p',
-          text:
-            'Une cage thoracique large peut donner une impression de poitrine plus massive ; une cage plus plate modifie l’aspect même avec une quantité similaire de muscle. Des clavicules longues influencent la silhouette globale du haut du corps.'
-        }
-      ]
+      title: 'Morphologie et développement du grand pectoral',
+      blocks: morphologieBlocks
     },
     {
       id: 'exercices',

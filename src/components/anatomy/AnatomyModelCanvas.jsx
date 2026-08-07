@@ -197,11 +197,13 @@ export function AnatomyModel({
       object={root}
       onPointerOver={(e) => {
         if (!pickMode && !onMuscleHover) return;
-        if (pickMode && !meshIsAnatomyPickTarget(e.object)) return;
+        if (!meshIsAnatomyPickTarget(e.object)) return;
         e.stopPropagation();
         const name = e.object?.name;
         if (name && onMuscleHover) onMuscleHover(name);
         if (pickMode && typeof document !== 'undefined') {
+          document.body.style.cursor = 'pointer';
+        } else if (onMuscleClick && typeof document !== 'undefined') {
           document.body.style.cursor = 'pointer';
         }
       }}
@@ -214,7 +216,7 @@ export function AnatomyModel({
         }
       }}
       onPointerDown={(e) => {
-        if (pickMode && !meshIsAnatomyPickTarget(e.object)) return;
+        if (!meshIsAnatomyPickTarget(e.object)) return;
         e.stopPropagation();
         const name = e.object?.name;
         if (name && onMuscleClick) onMuscleClick(name);

@@ -28,7 +28,7 @@ const FRENCH_LABEL_TO_GROUP = new Map(
     'érecteurs du rachis': MuscleGroups.BACK,
     dorsaux: MuscleGroups.BACK,
     dos: MuscleGroups.BACK,
-    fessiers: MuscleGroups.HAMSTRINGS,
+    fessiers: MuscleGroups.GLUTES,
     quadriceps: MuscleGroups.QUADS,
     'ischio-jambiers': MuscleGroups.HAMSTRINGS,
     mollets: MuscleGroups.CALVES,
@@ -40,7 +40,10 @@ const FRENCH_LABEL_TO_GROUP = new Map(
     obliques: MuscleGroups.CORE,
     "grand droit de l'abdomen": MuscleGroups.CORE,
     abdominaux: MuscleGroups.CORE,
-    abdomen: MuscleGroups.CORE
+    abdomen: MuscleGroups.CORE,
+    'avant-bras': MuscleGroups.FOREARMS,
+    avantbras: MuscleGroups.FOREARMS,
+    forearms: MuscleGroups.FOREARMS
   }).map(([k, v]) => [k.toLowerCase(), v])
 );
 
@@ -90,12 +93,14 @@ function heuristicGroupsFromName(name) {
   if (/pomp|push-up|pushup|développé couch|developpe couche|bench|pec|écarté|ecarte|dip/.test(n)) {
     s.add(MuscleGroups.CHEST);
   }
-  if (/curl|biceps/.test(n)) s.add(MuscleGroups.BICEPS);
+  if (/curl|biceps/.test(n) && !/wrist|poignet|avant[- ]?bras|forearm/.test(n)) s.add(MuscleGroups.BICEPS);
+  if (/wrist|poignet|avant[- ]?bras|forearm|farmer|dead hang|prise|grip/.test(n)) s.add(MuscleGroups.FOREARMS);
   if (/triceps|extension.*coude|kickback|skull/.test(n)) s.add(MuscleGroups.TRICEPS);
   if (/épaule|elevation|élévation|militaire|développé.*militaire|lateral|latéral|oiseau|face pull/.test(n)) {
     s.add(MuscleGroups.SHOULDERS);
   }
-  if (/squat|fente|presse|leg curl|leg extension|mollet|hip thrust|good morning|ischio|quad|jambe|fessier|rdl|deadlift/.test(n)) {
+  if (/hip thrust|fessier|glute bridge/.test(n)) s.add(MuscleGroups.GLUTES);
+  if (/squat|fente|presse|leg curl|leg extension|mollet|good morning|ischio|quad|jambe|rdl|deadlift/.test(n)) {
     s.add(MuscleGroups.QUADS);
     s.add(MuscleGroups.HAMSTRINGS);
     s.add(MuscleGroups.CALVES);

@@ -41,7 +41,11 @@ const BodyMap = ({
   forcedViewPreset = null,
   compactCanvas = false,
   pickMode = false,
+  /** Infobulle survol (Récap ou Anatomie). */
   hoverOverlayLabel = null,
+  /** Afficher l’infobulle sans mode pick (carte Récap interactive). */
+  showHoverOverlay = false,
+  hoverOverlayHint = null,
   detailSidebar = false,
   anatomyExplorerLayout = false,
   /** Colonne accueil Anatomie : le canvas remplit la hauteur du conteneur parent. */
@@ -190,11 +194,15 @@ const BodyMap = ({
           />
         </Canvas>
 
-        {pickMode && hoverOverlayLabel ? (
+        {((pickMode && hoverOverlayLabel) || (showHoverOverlay && hoverOverlayLabel)) ? (
           <div className="absolute bottom-3 left-1/2 z-10 max-w-[92%] -translate-x-1/2 pointer-events-none">
-            <div className="rounded-full border border-cyan-500/40 bg-black/90 px-4 py-2 text-center text-xs text-slate-100 shadow-lg">
-              <span className="font-semibold text-cyan-100">{hoverOverlayLabel}</span>
-              <span className="text-slate-400"> — {t('anatomy.clickToOpen', 'cliquer pour ouvrir')}</span>
+            <div className="rounded-lg border border-teal-500/40 bg-black/90 px-4 py-2 text-center text-xs text-slate-100 shadow-lg">
+              <span className="font-semibold text-teal-100">{hoverOverlayLabel}</span>
+              {pickMode ? (
+                <span className="text-slate-400"> — {t('anatomy.clickToOpen', 'cliquer pour ouvrir')}</span>
+              ) : hoverOverlayHint ? (
+                <span className="block text-[10px] text-slate-400 mt-0.5">{hoverOverlayHint}</span>
+              ) : null}
             </div>
           </div>
         ) : null}

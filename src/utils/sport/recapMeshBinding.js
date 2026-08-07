@@ -1,57 +1,54 @@
 /**
- * Liaison mesh GLB -> groupe musculaire Récap (enum `MuscleGroups`).
+ * Liaison mesh GLB → groupe musculaire Récap (enum `MuscleGroups`).
  *
- * Nouveau modèle découpé (`ecorche-muscles-decoupes.glb`) :
- * - les noms "métier" (chest, back, shoulders...) sont sur les nodes,
- * - les meshes ont des noms techniques (`Object_*`).
- * Cette table mappe donc `Object_*` vers les groupes pour que la couleur dépende
- * bien des reps/charges calculées.
- *
- * Notes de correspondance :
- * - `glutes` est rapproché de `hamstrings` (pas de groupe "glutes" séparé dans `MuscleGroups`).
- * - `tibialis_anterior` est maintenant un groupe dédié.
- * - `forearms` est rapproché de `biceps` (proxy bras ; pas de groupe forearms dédié).
+ * Modèle `ecorche-muscles-decoupes.glb` : meshes techniques `Object_*` ;
+ * nœuds scène portent les noms métier (biceps, triceps, forearms…).
  */
 export const GLB_MESH_TO_MUSCLE_ID = {
-  // Chest / Core
+  // Chest / core (noms métier + meshes)
   Chest_002: 'chest',
   pecs: 'chest',
   abs: 'core',
   sideofabs: 'core',
-  Object_10_003: 'chest', // node: Chest.002
-  Object_10_001: 'chest', // node: pecs
-  Object_10_002: 'core', // node: abs
-  Object_10: 'core', // node: sideofabs
+  Object_10_003: 'chest',
+  Object_10_001: 'chest',
+  Object_10_002: 'core',
+  Object_10: 'core',
 
-  // Back / Shoulders
+  // Dos / épaules
   back: 'back',
   shoulders: 'shoulders',
-  Object_5: 'back', // node: back
-  Object_5_001: 'back', // node: Object_13.001 (back segment)
-  Object_5_003: 'back', // node: Object_13.003 (back segment)
-  Object_1: 'shoulders', // node: shoulders
+  Object_5: 'back',
+  Object_5_001: 'back',
+  Object_5_003: 'back',
+  Object_13_001: 'back',
+  Object_13_002: 'back',
+  Object_1: 'shoulders',
+  Object_8: 'shoulders',
+  Object_8_001: 'shoulders',
 
-  // Arms
+  // Bras (découpés)
   biceps: 'biceps',
   triceps: 'triceps',
-  forearms: 'biceps',
-  forearms_2: 'biceps',
-  Object_15_001: 'biceps', // node: biceps
-  Object_15: 'triceps', // node: triceps
-  Object_14: 'biceps', // node: forearms
-  Object_9: 'biceps', // node: forearms 2
+  forearms: 'forearms',
+  forearms_2: 'forearms',
+  Object_15_001: 'biceps',
+  Object_15: 'triceps',
+  Object_14: 'forearms',
+  Object_9: 'forearms',
 
-  // Legs
+  // Jambes
   quads: 'quads',
   hamstrings: 'hamstrings',
-  glutes: 'hamstrings',
+  glutes: 'glutes',
   calves: 'calves',
   tibialis_anterior: 'tibialis_anterior',
-  Object_7: 'quads', // node: quads
-  Object_3: 'hamstrings', // node: hamstrings
-  Object_0: 'hamstrings', // node: glutes (mapped to posterior chain)
-  Object_2: 'calves', // node: calves
-  Object_11: 'tibialis_anterior' // node: tibialis_anterior
+  Object_7: 'quads',
+  Object_12: 'quads',
+  Object_3: 'hamstrings',
+  Object_0: 'glutes',
+  Object_2: 'calves',
+  Object_11: 'tibialis_anterior'
 };
 
 function normalizeMeshName(name) {
@@ -64,4 +61,18 @@ export function getMeshesForMuscleGroup(groupId) {
   return Object.entries(GLB_MESH_TO_MUSCLE_ID)
     .filter(([, g]) => g === groupId)
     .map(([meshName]) => normalizeMeshName(meshName));
+}
+
+/** Meshes mappés (pour teintes focus / aperçus). */
+export function getAllMappedAnatomyMeshKeys() {
+  const keys = new Set();
+  Object.keys(GLB_MESH_TO_MUSCLE_ID).forEach((meshName) => {
+    keys.add(normalizeMeshName(meshName));
+  });
+  return [...keys];
+}
+
+export function muscleGroupFromMeshName(meshName) {
+  const norm = normalizeMeshName(meshName);
+  return GLB_MESH_TO_MUSCLE_ID[norm] || GLB_MESH_TO_MUSCLE_ID[meshName] || null;
 }

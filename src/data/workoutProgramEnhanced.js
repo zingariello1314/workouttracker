@@ -18,6 +18,8 @@ export const MuscleGroups = {
   SHOULDERS: 'shoulders',
   BICEPS: 'biceps',
   TRICEPS: 'triceps',
+  FOREARMS: 'forearms',
+  GLUTES: 'glutes',
   /** @deprecated Préférer QUADS / HAMSTRINGS / CALVES pour le Récap ; conservé pour filtres / legacy. */
   LEGS: 'legs',
   QUADS: 'quads',

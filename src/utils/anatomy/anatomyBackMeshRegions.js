@@ -1,6 +1,6 @@
 /** Segmentation anatomie 3D : haut vs bas du dos (mesh GLB découpé). */
 
-const UPPER_BACK_MESHES = new Set(['back', 'Object_5']);
+const UPPER_BACK_MESHES = new Set(['back', 'Object_5', 'Object_13_001', 'Object_13_002']);
 
 const LOWER_BACK_MESHES = new Set(['Object_5_001', 'Object_5_003']);
 

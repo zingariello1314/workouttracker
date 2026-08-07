@@ -8,7 +8,7 @@ import {
   RECAP_SYNTHETIC_ENDURANCE_PUSHUPS_ID
 } from '../../../utils/sport/recapMuscleLoadEngine';
 import { getAnatomyMuscle } from '../../../data/anatomy/anatomyRegistry';
-import { buildFamilyFocusMeshColors } from '../../../services/anatomy/ecorcheMeshColors';
+import { buildFamilyFocusMeshColors, buildMuscleFocusMeshColors } from '../../../services/anatomy/ecorcheMeshColors';
 import { ANATOMY } from './anatomyTheme';
 
 function formatExerciseLabel(row, t) {
@@ -49,9 +49,11 @@ export default function AnatomyMuscleRail({ muscleId, relatedMuscles = [] }) {
   }, [groupId, getCurrentData, getExerciseNameById]);
 
   const locColors = useMemo(() => {
+    const focused = buildMuscleFocusMeshColors(muscleId, groupId, { dimOthers: true });
+    if (focused) return focused;
     if (!groupId) return {};
     return buildFamilyFocusMeshColors([groupId], { dimOthers: true });
-  }, [groupId]);
+  }, [muscleId, groupId]);
 
   if (!muscle) return null;
 

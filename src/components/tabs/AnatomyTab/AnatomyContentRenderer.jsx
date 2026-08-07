@@ -481,11 +481,17 @@ export function AnatomySectionPanel({ section, compact, variant, columnWidth = '
         isHalf ? 'p-4 md:p-5' : 'p-5 md:p-6'
       } ${familySectionShellClass(sectionId)}`
     : `${ANATOMY.musclePanel} ${muscleSectionBorderClass(sectionId)}`;
+  const isPresentationMuscle = !isFamily && sectionId === 'presentation';
+
+  const muscleTitle = isPresentationMuscle
+    ? `text-lg font-semibold text-white tracking-tight pb-3 mb-5 relative z-[1] flex items-center gap-3 border-b ${muscleSectionTitleBorder(sectionId)}`
+    : `text-lg font-semibold text-white tracking-tight border-b pb-3 mb-5 relative z-[1] ${muscleSectionTitleBorder(sectionId)}`;
+
   const familyTitle = isFamily
     ? `${
         isHalf ? 'text-base' : 'text-lg'
       } font-semibold text-white tracking-tight border-b pb-3 mb-4 ${familySectionTitleAccent(sectionId)}`
-    : `text-lg font-semibold text-white tracking-tight border-b pb-3 mb-5 relative z-[1] ${muscleSectionTitleBorder(sectionId)}`;
+    : muscleTitle;
 
   return (
     <section className={familyShell}>
@@ -494,7 +500,16 @@ export function AnatomySectionPanel({ section, compact, variant, columnWidth = '
       ) : (
         <div className={`pointer-events-none absolute inset-0 ${familySectionGlow(sectionId)}`} aria-hidden />
       )}
-      <h2 className={`${familyTitle} relative z-[1]`}>{section.title}</h2>
+      <h2 className={`${familyTitle} relative z-[1]`}>
+        {isPresentationMuscle ? (
+          <>
+            <span className="w-1 shrink-0 self-stretch min-h-[1.25rem] rounded-full bg-[#3897F0]" aria-hidden />
+            {section.title}
+          </>
+        ) : (
+          section.title
+        )}
+      </h2>
       <div className="flex-1 min-h-0 relative z-[1]">
         <SectionBody
           section={section}
