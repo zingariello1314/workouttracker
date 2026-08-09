@@ -1,7 +1,8 @@
 import { describe, it, expect } from 'vitest';
 import {
   isRecurrentChallengeOccurrenceOnDate,
-  listPushupChallengesDueOnDate
+  listPushupChallengesDueOnDate,
+  partitionPushupChallengesForTodayPanel
 } from '../challengeScheduleUtils';
 
 describe('challengeScheduleUtils', () => {
@@ -44,5 +45,18 @@ describe('challengeScheduleUtils', () => {
     const c = { ...baseChallenge, frequency: 'daily', lastCompletedDate: '2026-03-05' };
     expect(listPushupChallengesDueOnDate([c], '2026-03-05', {})).toHaveLength(0);
     expect(listPushupChallengesDueOnDate([c], '2026-03-06', {})).toHaveLength(1);
+  });
+
+  it('partition exposes off-schedule recurrent pushup challenges', () => {
+    const c = {
+      ...baseChallenge,
+      frequency: 'every_n_days',
+      intervalDays: 2,
+      startDate: '2026-03-02'
+    };
+    const { due, offSchedule } = partitionPushupChallengesForTodayPanel([c], '2026-03-03', {});
+    expect(due).toHaveLength(0);
+    expect(offSchedule).toHaveLength(1);
+    expect(offSchedule[0].id).toBe('c1');
   });
 });

@@ -2,7 +2,12 @@ import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { AnatomyModelCanvas } from './AnatomyModelCanvas';
 import AnatomyBankGridPreview from './AnatomyBankGridPreview';
 import { resolveBankItemAnatomy } from '../../utils/anatomy/resolveBankItemAnatomy';
-import { buildCardDemandSignature } from '../../utils/anatomy/anatomyPreviewRasterKey';
+import { buildCardDemandSignature, anatomyRasterFileBase } from '../../utils/anatomy/anatomyPreviewRasterKey';
+import {
+  anatomyPreviewStemHasFile,
+  loadAnatomyPreviewStemSet,
+  peekAnatomyPreviewStemSet
+} from '../../utils/anatomy/anatomyPreviewStemIndex';
 import {
   registerAnatomyPreviewWaiter,
   releaseAnatomyPreviewSlot,
@@ -72,11 +77,69 @@ export default function AnatomyBankCardPreview({
 
   if (layout === 'gridFill') {
     const modeStr = mode === 'stretch' ? 'stretch' : 'exercise';
-    return <AnatomyBankGridPreview anatomy={anatomy} mode={modeStr} className={className} />;
+    return (
+      <AnatomyBankGridFillPreview anatomy={anatomy} mode={modeStr} className={className} />
+    );
   }
 
   return (
     <AnatomyBankCardPreviewGl anatomy={anatomy} className={className} />
+  );
+}
+
+/** Grille banque : WebP si index à jour, sinon WebGL direct (évite spinner infini si capture / index obsolète). */
+function AnatomyBankGridFillPreview({ anatomy, mode, className }) {
+  const [forceWebGl, setForceWebGl] = useState(false);
+  const [indexReady, setIndexReady] = useState(() => peekAnatomyPreviewStemSet() != null);
+
+  useEffect(() => {
+    let cancelled = false;
+    loadAnatomyPreviewStemSet().then(() => {
+      if (!cancelled) setIndexReady(true);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const rasterStem = useMemo(() => {
+    if (!indexReady) return '';
+    return anatomyRasterFileBase(anatomy, mode);
+  }, [anatomy, mode, indexReady]);
+
+  const canTryRaster =
+    !forceWebGl && indexReady && rasterStem && anatomyPreviewStemHasFile(rasterStem);
+
+  if (canTryRaster) {
+    return (
+      <AnatomyBankGridPreview
+        anatomy={anatomy}
+        mode={mode}
+        className={className}
+        onRasterUnavailable={() => setForceWebGl(true)}
+      />
+    );
+  }
+
+  if (!indexReady && !forceWebGl) {
+    return (
+      <div
+        className={`flex h-full w-full min-h-0 items-center justify-center bg-black ${className}`}
+        aria-hidden
+      >
+        <div className="h-8 w-8 animate-pulse rounded-full bg-teal-900/40" />
+      </div>
+    );
+  }
+
+  return (
+    <AnatomyBankCardPreviewGl
+      anatomy={anatomy}
+      className={`h-full w-full min-h-0 ${className}`}
+      fillContainer
+      gridFill
+      persistPreview
+    />
   );
 }
 

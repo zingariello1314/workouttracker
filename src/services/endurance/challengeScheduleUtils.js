@@ -90,6 +90,41 @@ export function isChallengeScheduledOnDate(challenge, dateStr) {
   }
 }
 
+function isPushupRecurrentInDateWindow(challenge, dateStr) {
+  if (!challenge || challenge.type !== 'recurrent') return false;
+  const end = ymdOnly(challenge.endDate);
+  const start = ymdOnly(challenge.startDate);
+  if (end && dateStr > end) return false;
+  if (start && dateStr < start) return false;
+  return true;
+}
+
+/** Défis pompes récurrents actifs ce jour-là, y compris hors jours prévus (pour Aujourd’hui). */
+export function partitionPushupChallengesForTodayPanel(challenges, dateStr, options = {}) {
+  const due = listPushupChallengesDueOnDate(challenges, dateStr, options);
+  const dueIds = new Set(due.map((c) => String(c.id)));
+  const workoutData = options.workoutData || null;
+  const pushupSessions = workoutData?.enduranceData?.sessions?.pushups || [];
+
+  const offSchedule = (challenges || []).filter((c) => {
+    if (dueIds.has(String(c.id))) return false;
+    if (!c || c.activityType !== 'pushups' || c.type !== 'recurrent') return false;
+    if (c.status === 'completed') return false;
+    if (!isPushupRecurrentInDateWindow(c, dateStr)) return false;
+    if (c.lastCompletedDate === dateStr) return false;
+
+    if (isWeeklyQuotaChallenge(c)) {
+      const target = weeklySessionTarget(c);
+      const done = countPushupSessionsMeetingChallengeInWeek(c, pushupSessions, dateStr, workoutData);
+      return done < target;
+    }
+
+    return !isRecurrentChallengeOccurrenceOnDate(c, dateStr);
+  });
+
+  return { due, offSchedule };
+}
+
 export function listPushupChallengesDueOnDate(challenges, dateStr, options = {}) {
   if (!Array.isArray(challenges) || !dateStr) return [];
   const workoutData = options.workoutData || null;

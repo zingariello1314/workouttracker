@@ -182,8 +182,15 @@
   },
   "pushupChallenge": {
     "title": "Push-up challenges — today",
-    "hint": "Log your session (editable sets × reps). Syncs calendar, Today, and Recap.",
+    "hint": "Log your session (editable sets × reps). You can train on a rest day and realign the rhythm.",
     "save": "Save session",
-    "weeklyProgress": "Week: {{done}} / {{target}} validated session(s)"
+    "weeklyProgress": "Week: {{done}} / {{target}} validated session(s)",
+    "offScheduleBadge": "Off schedule",
+    "offScheduleHint": "This isn’t a planned day for this challenge — you can still log a session.",
+    "offScheduleSection": "Off schedule — session allowed",
+    "realignOnSave": "Realign rhythm from this day (e.g. tomorrow becomes rest if you train today on every-other-day)",
+    "rhythmTitle": "Change challenge rhythm",
+    "realignFromToday": "Recalculate schedule from this displayed day",
+    "applyRhythm": "Apply rhythm"
   }
 }

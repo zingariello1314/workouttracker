@@ -139,6 +139,10 @@ export function BodyMapCameraApplier({
         settledFiredRef.current = true;
         onSettledOnce?.();
       }
+      if (frame.current >= 96 && !settledFiredRef.current) {
+        settledFiredRef.current = true;
+        onSettledOnce?.();
+      }
       invalidate();
       return;
     }

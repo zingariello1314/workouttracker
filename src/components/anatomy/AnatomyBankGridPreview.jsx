@@ -20,7 +20,7 @@ const PREVIEW_FRAME =
 /**
  * Grille banque : image statique (WebP disque ou cache session), un seul WebGL global pour les manquants.
  */
-export default function AnatomyBankGridPreview({ anatomy, mode = 'exercise', className = '' }) {
+export default function AnatomyBankGridPreview({ anatomy, mode = 'exercise', className = '', onRasterUnavailable }) {
   const capture = useAnatomyPreviewCapture();
   const modeStr = mode === 'stretch' ? 'stretch' : 'exercise';
   const stem = useMemo(() => anatomyRasterFileBase(anatomy, modeStr), [anatomy, modeStr]);
@@ -80,6 +80,14 @@ export default function AnatomyBankGridPreview({ anatomy, mode = 'exercise', cla
     };
   }, [stem, fileSrc, anatomy, indexReady, capture, capturePass]);
 
+  useEffect(() => {
+    if (!onRasterUnavailable || displaySrc) return undefined;
+    const failId = window.setTimeout(() => {
+      if (!getSessionPreviewUrl(stem)) onRasterUnavailable();
+    }, 6500);
+    return () => window.clearTimeout(failId);
+  }, [stem, displaySrc, onRasterUnavailable, capturePass]);
+
   const frameClass = `h-full w-full min-h-0 rounded-xl overflow-hidden ${PREVIEW_FRAME} outline-none isolate [contain:paint]`;
 
   return (
@@ -96,6 +104,7 @@ export default function AnatomyBankGridPreview({ anatomy, mode = 'exercise', cla
             decoding="async"
             draggable={false}
             className="h-full w-full object-cover object-center bg-black"
+            onError={() => onRasterUnavailable?.()}
           />
         ) : (
           <div className="flex h-full w-full min-h-[180px] flex-col items-center justify-center gap-2 bg-gradient-to-b from-slate-950 to-black px-4 text-center">

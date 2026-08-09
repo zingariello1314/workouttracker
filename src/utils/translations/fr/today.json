@@ -185,8 +185,15 @@
   },
   "pushupChallenge": {
     "title": "Défis pompes — aujourd’hui",
-    "hint": "Enregistre ta séance (séries × reps modifiables). Sync calendrier, Aujourd’hui et Récap.",
+    "hint": "Enregistre ta séance (séries × reps modifiables). Tu peux aussi t’entraîner un jour « repos » et recaler le rythme.",
     "save": "Enregistrer la séance",
-    "weeklyProgress": "Semaine : {{done}} / {{target}} séance(s) validée(s)"
+    "weeklyProgress": "Semaine : {{done}} / {{target}} séance(s) validée(s)",
+    "offScheduleBadge": "Hors planning",
+    "offScheduleHint": "Ce n’est pas un jour prévu pour ce défi — tu peux quand même enregistrer une séance.",
+    "offScheduleSection": "Hors planning — séance possible",
+    "realignOnSave": "Recaler le rythme à partir de ce jour (ex. demain devient repos si tu t’entraînes aujourd’hui en 1 jour sur 2)",
+    "rhythmTitle": "Changer le rythme du défi",
+    "realignFromToday": "Recalculer le planning à partir de ce jour affiché",
+    "applyRhythm": "Appliquer le rythme"
   }
 }
