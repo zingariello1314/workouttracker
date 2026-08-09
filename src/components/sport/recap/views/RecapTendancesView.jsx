@@ -5,6 +5,7 @@ import { useGarminData } from '../../../../hooks/useGarminData';
 import { isAdminUser } from '../../../../utils/accessControl';
 import { useTranslation } from '../../../../utils/translations';
 import RecapDailyTrendChartsBlock from '../RecapDailyTrendChartsBlock';
+import RecapCalendarMonthTrendCharts from '../RecapCalendarMonthTrendCharts';
 import RecapExtendedTrendCharts from '../RecapExtendedTrendCharts';
 import GarminRunningStatsCard from '../../../garmin/GarminRunningStatsCard';
 import GarminWalkingStatsCard from '../../../garmin/GarminWalkingStatsCard';
@@ -45,7 +46,13 @@ function RecordsGrid({ records, t }) {
   );
 }
 
-export default function RecapTendancesView({ period, onPeriodChange, enrichment }) {
+export default function RecapTendancesView({
+  period,
+  onPeriodChange,
+  enrichment,
+  periodWindow = null,
+  garminData = null
+}) {
   const t = useTranslation();
   const { getCurrentData, data } = useWorkout();
   const { dbReady, loadAllData } = useGarminData();
@@ -82,6 +89,13 @@ export default function RecapTendancesView({ period, onPeriodChange, enrichment 
 
   return (
     <div className="space-y-5">
+      <RecapCalendarMonthTrendCharts
+        period={period}
+        periodWindow={periodWindow ?? enrichment?.window}
+        garminData={garminData}
+        chartHeight={160}
+      />
+
       <RecapDailyTrendChartsBlock layout="grid" chartHeight={160} />
 
       <RecapExtendedTrendCharts enrichment={enrichment} chartHeight={160} />

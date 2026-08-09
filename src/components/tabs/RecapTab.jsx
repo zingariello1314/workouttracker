@@ -28,6 +28,8 @@ import {
   RECAP_ACTIVE_VIEW_LS
 } from '../../utils/sport/recapViewConfig';
 
+const RECAP_BODY_MAP_VIEW_LS = 'sport.recap.bodyMapView';
+
 const PERIOD_STORAGE_KEY = 'sport.recap.periodView';
 
 function RecapPeriodPendingBar({ visible }) {
@@ -72,6 +74,15 @@ const RecapTab = () => {
   );
 
   const isAdmin = isAdminUser(currentUser);
+
+  /** Carte corporelle : vue face à chaque ouverture de l’onglet Récap. */
+  useEffect(() => {
+    try {
+      localStorage.setItem(RECAP_BODY_MAP_VIEW_LS, 'frontLow');
+    } catch {
+      /* ignore */
+    }
+  }, []);
 
   const snapshotForRecap = useMemo(() => getCurrentData(), [data, getCurrentData]);
   const nutritionPartialForRecap = useRecapCrossCoachNutrition({ enabled: true });
@@ -211,6 +222,7 @@ const RecapTab = () => {
             activeProgram={activeProgram}
             period={deferredPeriod}
             garminData={garminBundle}
+            periodWindow={periodWindow}
           />
         );
       case RECAP_VIEW_IDS.CORPS:
@@ -229,6 +241,8 @@ const RecapTab = () => {
             period={deferredPeriod}
             onPeriodChange={handlePeriodChange}
             enrichment={enrichment}
+            periodWindow={periodWindow}
+            garminData={garminBundle}
           />
         );
       case RECAP_VIEW_IDS.SESSIONS:
@@ -272,7 +286,10 @@ const RecapTab = () => {
     requestOpenEnduranceSubTab,
     snapshotForRecap,
     getExerciseNameById,
-    periodWindow
+    periodWindow,
+    programCoachAnalysis,
+    garminBundle,
+    activeProgram
   ]);
 
   return (

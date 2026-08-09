@@ -1,79 +1,183 @@
-import { p, h3, ul } from './blocks.js';
+import {
+  p,
+  h3,
+  takeaway,
+  pullquote,
+  splitCards,
+  pCallout,
+  exerciseGrid
+} from './blocks.js';
 
 export default [
-  p('Le grand pectoral est le principal muscle superficiel situé sur la partie antérieure du thorax. Large, épais et relativement plat, il recouvre une grande partie de la cage thoracique et contribue fortement à l’apparence de la poitrine. Sa forme générale est souvent décrite comme celle d’un éventail : sa zone d’origine est très étendue, notamment sur la clavicule, le sternum et les structures costales, tandis que ses différentes fibres convergent vers une insertion beaucoup plus réduite sur l’humérus. Cette architecture n’est pas anodine : elle permet au muscle de produire une force dans plusieurs directions et d’adapter sa contribution en fonction de la position du bras.'),
-  p('Le grand pectoral n’est donc pas simplement un muscle chargé de « pousser ». Ses fibres sont orientées différemment les unes des autres et ne possèdent pas exactement les mêmes lignes de traction. Selon la position de l’humérus par rapport au thorax et la direction dans laquelle celui-ci se déplace, certaines régions du muscle disposent d’un avantage mécanique plus important que d’autres. C’est cette organisation qui explique notamment pourquoi modifier l’angle d’un mouvement peut changer la contribution relative des différentes portions du pectoral. (NCBI)'),
-  h3('Une architecture en éventail'),
-  p('Le grand pectoral est généralement décrit à travers deux grandes portions fonctionnelles : la portion claviculaire et la portion sternocostale. La première prend principalement naissance sur la partie médiale de la clavicule, tandis que la seconde possède une origine beaucoup plus étendue sur le sternum et les structures costales. Malgré cette distinction, il ne faut pas les imaginer comme deux muscles indépendants : elles appartiennent au même grand pectoral, convergent vers la même région d’insertion humérale et peuvent fonctionner simultanément.'),
-  p('La portion claviculaire contribue notamment à la flexion du bras, à l’adduction horizontale et à la rotation médiale. La portion sternocostale participe fortement à l’adduction et à l’adduction horizontale, à la rotation médiale et peut également contribuer à ramener le bras vers le bas lorsqu’il part d’une position élevée. Les différentes régions du muscle possèdent donc des lignes de traction différentes, mais leurs actions se chevauchent largement. (NCBI)'),
-  p('Cette organisation explique pourquoi il est plus juste de considérer le grand pectoral comme un ensemble de faisceaux fonctionnellement complémentaires que comme un bloc uniforme.'),
-  h3('Pourquoi la position du bras change le travail du muscle'),
-  p('Le grand pectoral reste évidemment le même muscle lorsque l’on change d’exercice. Ce qui change, c’est principalement la relation entre ses fibres, l’humérus et la résistance.'),
-  p('Imagine plusieurs câbles attachés à différents endroits d’une même structure et convergeant vers un même point. Tous peuvent tirer sur ce point, mais la direction exacte de leur force n’est pas identique. Le grand pectoral fonctionne selon un principe comparable : ses différents faisceaux convergent vers l’humérus, mais leur orientation varie selon leur zone d’origine.'),
-  p('Lorsque la position du bras change, la relation entre ces fibres et le mouvement change elle aussi. Certaines fibres peuvent alors avoir une ligne de traction plus favorable et contribuer davantage au mouvement, tandis que d’autres continuent de travailler mais dans une proportion différente.'),
-  p('C’est pourquoi la position du bras permet de modifier la répartition du travail au sein du grand pectoral sans transformer l’exercice en mouvement d’isolation parfaite.'),
-  h3('Le grand pectoral ne fait pas simplement « pousser »'),
-  p('Dans le langage de la musculation, on classe souvent le grand pectoral parmi les muscles de poussée. C’est pratique, mais anatomiquement incomplet. Le muscle participe notamment à l’adduction du bras, à son adduction horizontale et à sa rotation médiale. Sa portion claviculaire intervient également dans la flexion du bras, tandis que certaines fibres sternocostales peuvent contribuer à son extension lorsqu’il part d’une position élevée.'),
-  p('L’adduction horizontale est particulièrement importante pour comprendre les exercices de poitrine. Elle correspond au mouvement qui consiste à amener le bras vers l’intérieur devant le corps. C’est une fonction essentielle du grand pectoral dans les mouvements comme les presses, les pompes ou les écartés.'),
-  p('Le grand pectoral ne se contente donc pas de produire une force vers l’avant. Il participe à un ensemble de mouvements permettant de rapprocher, abaisser, faire pivoter ou déplacer le bras selon sa position initiale.'),
-  h3('Peut-on réellement isoler une partie du pectoral ?'),
-  p('C’est ici qu’il faut se méfier des simplifications très courantes en musculation. On parle souvent du « haut », du « milieu » et du « bas » des pectoraux comme s’il s’agissait de trois muscles distincts. Ce n’est pas le cas.'),
-  p('Il est possible de modifier la contribution relative de certaines régions du grand pectoral en changeant la position du bras, l’angle de poussée ou la trajectoire du mouvement. Mais cela ne signifie jamais que les autres régions cessent complètement de travailler.'),
-  p('Un développé incliné peut par exemple favoriser davantage la contribution de la portion claviculaire. Des études comparant différents angles de poussée montrent effectivement une augmentation de l’activité de cette portion lorsque l’angle augmente, tandis que le deltoïde antérieur participe lui aussi davantage aux angles élevés. À l’inverse, une poussée horizontale favorise davantage la contribution des régions sternocostales. (PubMed)'),
-  p('Il serait donc plus juste de dire :'),
-  p('On peut accentuer la contribution d’une région du grand pectoral, mais on ne peut pas complètement l’isoler.'),
-  p('Cette nuance est importante, car elle évite de transformer des différences de recrutement en prétendue séparation anatomique.'),
-  h3('Pourquoi les différents exercices ne produisent pas exactement le même stimulus'),
-  p('Un développé couché, une pompe, un développé incliné, un écarté ou un dip font tous intervenir le grand pectoral, mais ils ne lui imposent pas exactement les mêmes contraintes.'),
-  p('Dans un développé, le grand pectoral travaille avec le triceps et le deltoïde antérieur pour déplacer le membre supérieur contre la résistance. Le coude se déplace lui aussi, ce qui implique une contribution importante du triceps.'),
-  p('Dans un écarté, au contraire, le coude reste relativement fixe tandis que le bras se rapproche du plan médian. Le mouvement correspond donc davantage à la fonction d’adduction horizontale du grand pectoral et sollicite moins directement l’extension du coude.'),
-  p('Les pompes reposent sur un principe mécanique comparable au développé, mais c’est cette fois le corps qui constitue la charge déplacée. La position des mains, l’orientation du corps et la hauteur des pieds peuvent modifier les contraintes imposées au mouvement.'),
-  p('Les dips placent quant à eux l’épaule dans une configuration différente. La profondeur, l’inclinaison du torse, la trajectoire des coudes et la morphologie du pratiquant peuvent modifier la contribution relative du grand pectoral et des triceps.'),
-  p('Ces exercices ne sont donc pas simplement des variantes esthétiques les uns des autres. Ils modifient la géométrie du mouvement et la manière dont la résistance est appliquée au système épaule-bras.'),
+  p(
+    'Le grand pectoral est le principal muscle superficiel situé sur la partie antérieure du thorax. Large, épais et relativement plat, il recouvre une grande partie de la cage thoracique et contribue fortement à l’apparence de la poitrine. Sa forme générale est souvent décrite comme celle d’un éventail : sa zone d’origine est très étendue, notamment sur la clavicule, le sternum et les structures costales, tandis que ses différentes fibres convergent vers une insertion beaucoup plus réduite sur l’humérus. Cette architecture n’est pas anodine : elle permet au muscle de produire une force dans plusieurs directions et d’adapter sa contribution en fonction de la position du bras.'
+  ),
+  h3('Deux portions, un seul muscle'),
+  p(
+    'Le grand pectoral n’est donc pas simplement un muscle chargé de « pousser ». Ses fibres sont orientées différemment les unes des autres et ne possèdent pas exactement les mêmes lignes de traction. Selon la position de l’humérus par rapport au thorax et la direction dans laquelle celui-ci se déplace, certaines régions du muscle disposent d’un avantage mécanique plus important que d’autres. C’est cette organisation qui explique notamment pourquoi modifier l’angle d’un mouvement peut changer la contribution relative des différentes portions du pectoral. (NCBI)'
+  ),
+  p(
+    'Le grand pectoral est généralement décrit à travers deux grandes portions fonctionnelles : la portion claviculaire et la portion sternocostale. La première prend principalement naissance sur la partie médiale de la clavicule, tandis que la seconde possède une origine beaucoup plus étendue sur le sternum et les structures costales. Malgré cette distinction, il ne faut pas les imaginer comme deux muscles indépendants : elles appartiennent au même grand pectoral, convergent vers la même région d’insertion humérale et peuvent fonctionner simultanément.'
+  ),
+  splitCards(
+    [
+      {
+        tag: 'Portion claviculaire',
+        text:
+          'La portion claviculaire contribue notamment à la flexion du bras, à l’adduction horizontale et à la rotation médiale.'
+      },
+      {
+        tag: 'Portion sternocostale',
+        text:
+          'La portion sternocostale participe fortement à l’adduction et à l’adduction horizontale, à la rotation médiale et peut également contribuer à ramener le bras vers le bas lorsqu’il part d’une position élevée.'
+      }
+    ],
+    'Les différentes régions du muscle possèdent donc des lignes de traction différentes, mais leurs actions se chevauchent largement. (NCBI)'
+  ),
+  takeaway(
+    'Cette organisation explique pourquoi il est plus juste de considérer le grand pectoral comme un ensemble de faisceaux fonctionnellement complémentaires que comme un bloc uniforme.'
+  ),
+  h3('Le même muscle, une mécanique qui varie'),
+  p(
+    'Le grand pectoral reste évidemment le même muscle lorsque l’on change d’exercice. Ce qui change, c’est principalement la relation entre ses fibres, l’humérus et la résistance.'
+  ),
+  pCallout(
+    'analogy',
+    'Analogie',
+    'Imagine plusieurs câbles attachés à différents endroits d’une même structure et convergeant vers un même point. Tous peuvent tirer sur ce point, mais la direction exacte de leur force n’est pas identique. Le grand pectoral fonctionne selon un principe comparable : ses différents faisceaux convergent vers l’humérus, mais leur orientation varie selon leur zone d’origine.'
+  ),
+  p(
+    'Lorsque la position du bras change, la relation entre ces fibres et le mouvement change elle aussi. Certaines fibres peuvent alors avoir une ligne de traction plus favorable et contribuer davantage au mouvement, tandis que d’autres continuent de travailler mais dans une proportion différente.'
+  ),
+  p(
+    'C’est pourquoi la position du bras permet de modifier la répartition du travail au sein du grand pectoral sans transformer l’exercice en mouvement d’isolation parfaite.'
+  ),
+  h3('Plus qu’un simple muscle de poussée'),
+  p(
+    'Dans le langage de la musculation, on classe souvent le grand pectoral parmi les muscles de poussée. C’est pratique, mais anatomiquement incomplet. Le muscle participe notamment à l’adduction du bras, à son adduction horizontale et à sa rotation médiale. Sa portion claviculaire intervient également dans la flexion du bras, tandis que certaines fibres sternocostales peuvent contribuer à son extension lorsqu’il part d’une position élevée.'
+  ),
+  pCallout(
+    'definition',
+    'Définition clé',
+    'L’adduction horizontale est particulièrement importante pour comprendre les exercices de poitrine. Elle correspond au mouvement qui consiste à amener le bras vers l’intérieur devant le corps. C’est une fonction essentielle du grand pectoral dans les mouvements comme les presses, les pompes ou les écartés.'
+  ),
+  p(
+    'Le grand pectoral ne se contente donc pas de produire une force vers l’avant. Il participe à un ensemble de mouvements permettant de rapprocher, abaisser, faire pivoter ou déplacer le bras selon sa position initiale.'
+  ),
+  pCallout(
+    'warning',
+    'Idée reçue à corriger',
+    'C’est ici qu’il faut se méfier des simplifications très courantes en musculation. On parle souvent du « haut », du « milieu » et du « bas » des pectoraux comme s’il s’agissait de trois muscles distincts. Ce n’est pas le cas.'
+  ),
+  p(
+    'Il est possible de modifier la contribution relative de certaines régions du grand pectoral en changeant la position du bras, l’angle de poussée ou la trajectoire du mouvement. Mais cela ne signifie jamais que les autres régions cessent complètement de travailler.'
+  ),
+  pCallout(
+    'study',
+    'Étude · PubMed',
+    'Un développé incliné peut par exemple favoriser davantage la contribution de la portion claviculaire. Des études comparant différents angles de poussée montrent effectivement une augmentation de l’activité de cette portion lorsque l’angle augmente, tandis que le deltoïde antérieur participe lui aussi davantage aux angles élevés. À l’inverse, une poussée horizontale favorise davantage la contribution des régions sternocostales. (PubMed)'
+  ),
+  pullquote(
+    'Il serait donc plus juste de dire :',
+    'On peut accentuer la contribution d’une région du grand pectoral, mais on ne peut pas complètement l’isoler.'
+  ),
+  p(
+    'Cette nuance est importante, car elle évite de transformer des différences de recrutement en prétendue séparation anatomique.'
+  ),
+  h3('Comparer les exercices'),
+  p(
+    'Un développé couché, une pompe, un développé incliné, un écarté ou un dip font tous intervenir le grand pectoral, mais ils ne lui imposent pas exactement les mêmes contraintes.'
+  ),
+  exerciseGrid([
+    {
+      title: 'Développé',
+      text:
+        'Dans un développé, le grand pectoral travaille avec le triceps et le deltoïde antérieur pour déplacer le membre supérieur contre la résistance. Le coude se déplace lui aussi, ce qui implique une contribution importante du triceps.'
+    },
+    {
+      title: 'Écarté',
+      text:
+        'Dans un écarté, au contraire, le coude reste relativement fixe tandis que le bras se rapproche du plan médian. Le mouvement correspond donc davantage à la fonction d’adduction horizontale du grand pectoral et sollicite moins directement l’extension du coude.'
+    },
+    {
+      title: 'Pompes',
+      text:
+        'Les pompes reposent sur un principe mécanique comparable au développé, mais c’est cette fois le corps qui constitue la charge déplacée. La position des mains, l’orientation du corps et la hauteur des pieds peuvent modifier les contraintes imposées au mouvement.'
+    },
+    {
+      title: 'Dips',
+      text:
+        'Les dips placent quant à eux l’épaule dans une configuration différente. La profondeur, l’inclinaison du torse, la trajectoire des coudes et la morphologie du pratiquant peuvent modifier la contribution relative du grand pectoral et des triceps.'
+    }
+  ]),
+  p(
+    'Ces exercices ne sont donc pas simplement des variantes esthétiques les uns des autres. Ils modifient la géométrie du mouvement et la manière dont la résistance est appliquée au système épaule-bras.'
+  ),
+  p(
+    'La position du bras ne change pas seulement la direction du mouvement : elle modifie également la longueur à laquelle travaillent les fibres du grand pectoral. Lorsque le bras est amené en arrière du corps, certaines fibres sont placées dans une position plus longue ; lorsqu’il revient devant le torse, le muscle se raccourcit progressivement — et c’est souvent dans ces zones de longueur intermédiaire ou allongée que le stimulus hypertrophique devient particulièrement intéressant, à condition de garder le contrôle du mouvement.'
+  ),
   h3('L’importance de la longueur du muscle'),
-  p('La position du bras ne change pas seulement la direction du mouvement : elle modifie également la longueur à laquelle travaillent les fibres du grand pectoral.'),
-  p('Lorsque le bras est amené en arrière du corps, certaines fibres sont placées dans une position plus longue. Lorsqu’il revient devant le torse et se rapproche de l’autre bras, le muscle se raccourcit progressivement.'),
-  p('Cette variation de longueur est particulièrement importante lorsqu’on cherche à comprendre l’hypertrophie. Un exercice ne doit donc pas être évalué uniquement selon la sensation de contraction qu’il procure en position finale. Il faut également regarder dans quelles positions le muscle doit produire de la force et à quelle longueur il se trouve lorsqu’il le fait.'),
-  p('C’est notamment pour cette raison que l’amplitude d’un exercice mérite une attention particulière. Une amplitude importante peut permettre au muscle de produire de la force dans des positions où il est davantage allongé, à condition que cette amplitude soit adaptée à la morphologie et puisse être réalisée avec contrôle.'),
+  p(
+    'Lorsque le bras est amené en arrière du corps, certaines fibres sont placées dans une position plus longue. Lorsqu’il revient devant le torse et se rapproche de l’autre bras, le muscle se raccourcit progressivement.'
+  ),
+  p(
+    'Cette variation de longueur est particulièrement importante lorsqu’on cherche à comprendre l’hypertrophie. Un exercice ne doit donc pas être évalué uniquement selon la sensation de contraction qu’il procure en position finale. Il faut également regarder dans quelles positions le muscle doit produire de la force et à quelle longueur il se trouve lorsqu’il le fait.'
+  ),
+  p(
+    'C’est notamment pour cette raison que l’amplitude d’un exercice mérite une attention particulière. Une amplitude importante peut permettre au muscle de produire de la force dans des positions où il est davantage allongé, à condition que cette amplitude soit adaptée à la morphologie et puisse être réalisée avec contrôle.'
+  ),
   h3('Le grand pectoral fonctionne avec toute la ceinture scapulaire'),
-  p('Le mouvement de poitrine ne concerne pas uniquement le pectoral et le bras. La scapula, l’humérus, le coude et les muscles stabilisateurs de l’épaule participent tous à la mécanique globale.'),
-  p('Lors d’une pompe, par exemple, la scapula peut se déplacer relativement librement sur la cage thoracique. Lors d’un développé couché, elle est davantage stabilisée contre le banc. Ces différences changent la mécanique de l’épaule et les conditions dans lesquelles le grand pectoral doit produire sa force.'),
-  p('Le grand pectoral travaille ainsi avec le triceps brachial, le deltoïde antérieur, le dentelé antérieur et différents muscles stabilisateurs de l’épaule. L’importance relative de chacun varie selon le mouvement et la technique utilisée.'),
-  p('Il est donc préférable de considérer un exercice pectoral comme un mouvement coordonné de toute la ceinture scapulaire, plutôt que comme une simple contraction isolée de la poitrine.'),
+  p(
+    'Le mouvement de poitrine ne concerne pas uniquement le pectoral et le bras. La scapula, l’humérus, le coude et les muscles stabilisateurs de l’épaule participent tous à la mécanique globale.'
+  ),
+  p(
+    'Lors d’une pompe, par exemple, la scapula peut se déplacer relativement librement sur la cage thoracique. Lors d’un développé couché, elle est davantage stabilisée contre le banc. Ces différences changent la mécanique de l’épaule et les conditions dans lesquelles le grand pectoral doit produire sa force.'
+  ),
+  p(
+    'Le grand pectoral travaille ainsi avec le triceps brachial, le deltoïde antérieur, le dentelé antérieur et différents muscles stabilisateurs de l’épaule. L’importance relative de chacun varie selon le mouvement et la technique utilisée.'
+  ),
+  p(
+    'Il est donc préférable de considérer un exercice pectoral comme un mouvement coordonné de toute la ceinture scapulaire, plutôt que comme une simple contraction isolée de la poitrine.'
+  ),
   h3('La morphologie modifie encore cette mécanique'),
-  p('C’est ici que l’anatomie rejoint directement la section consacrée à la morphologie.'),
-  p('Deux personnes peuvent réaliser exactement le même développé couché avec la même charge et le même nombre de répétitions, tout en ayant une mécanique légèrement différente. La longueur des bras, la longueur et l’orientation des clavicules, la largeur et la profondeur de la cage thoracique, la position de l’épaule et la mobilité articulaire peuvent modifier la trajectoire naturelle du mouvement.'),
-  p('Une personne peut ainsi avoir besoin d’une trajectoire légèrement différente d’une autre pour trouver une position confortable et efficace.'),
-  p('Cela ne signifie pas qu’une morphologie donnée est « faite » pour un exercice et qu’une autre ne l’est pas. Il faut plutôt chercher une trajectoire qui permette au grand pectoral de produire une forte tension, avec une amplitude adaptée, tout en conservant une bonne stabilité et une bonne tolérance articulaire.'),
-  p('La morphologie ne change donc pas les fonctions fondamentales du grand pectoral, mais elle peut modifier la manière dont ces fonctions sont réalisées par chaque individu.'),
+  p(
+    'C’est ici que l’anatomie rejoint directement la section consacrée à la morphologie.'
+  ),
+  p(
+    'Deux personnes peuvent réaliser exactement le même développé couché avec la même charge et le même nombre de répétitions, tout en ayant une mécanique légèrement différente. La longueur des bras, la longueur et l’orientation des clavicules, la largeur et la profondeur de la cage thoracique, la position de l’épaule et la mobilité articulaire peuvent modifier la trajectoire naturelle du mouvement.'
+  ),
+  p(
+    'Une personne peut ainsi avoir besoin d’une trajectoire légèrement différente d’une autre pour trouver une position confortable et efficace.'
+  ),
+  p(
+    'Cela ne signifie pas qu’une morphologie donnée est « faite » pour un exercice et qu’une autre ne l’est pas. Il faut plutôt chercher une trajectoire qui permette au grand pectoral de produire une forte tension, avec une amplitude adaptée, tout en conservant une bonne stabilité et une bonne tolérance articulaire.'
+  ),
+  p(
+    'La morphologie ne change donc pas les fonctions fondamentales du grand pectoral, mais elle peut modifier la manière dont ces fonctions sont réalisées par chaque individu.'
+  ),
   h3('Comprendre le grand pectoral plutôt que mémoriser une liste d’exercices'),
-  p('La meilleure façon de comprendre les exercices de poitrine n’est finalement pas de mémoriser :'),
-  p('développé couché = milieu'),
-  p('développé incliné = haut'),
-  p('dips = bas'),
-  p('Cette classification est trop simpliste.'),
-  p('Il est plus pertinent de raisonner à partir de plusieurs paramètres qui interagissent :'),
-  p(':'),
-  p('position du bras'),
-  p('→ influence l’orientation et la longueur des fibres ;'),
-  p('direction de la résistance'),
-  p('→ influence la direction dans laquelle le muscle doit produire sa force ;'),
-  p('trajectoire du mouvement'),
-  p('→ modifie la contribution relative des différentes portions ;'),
-  p('amplitude'),
-  p('→ modifie les longueurs musculaires rencontrées ;'),
-  p('morphologie'),
-  p('→ influence la trajectoire et la mécanique individuelle ;'),
-  p('charge et effort'),
-  p('→ déterminent l’importance du stimulus auquel le muscle est exposé.'),
-  p('Le grand pectoral doit donc être compris comme un muscle en éventail dont les différentes fibres travaillent ensemble, mais dont la contribution relative peut changer en fonction de la position et du mouvement du bras.'),
-  h3('À retenir'),
-  p('Le grand pectoral est un muscle unique, mais son architecture est complexe. Sa large origine sur la clavicule, le sternum et les structures costales donne naissance à des fibres orientées dans différentes directions qui convergent vers une insertion humérale commune.'),
-  p('Cette organisation lui permet de participer à plusieurs mouvements du bras, notamment l’adduction, l’adduction horizontale, la rotation médiale et, selon la position du bras, la flexion ou l’extension.'),
-  p('Les différentes portions du muscle ne doivent donc pas être considérées comme des muscles indépendants. Un exercice peut favoriser davantage certaines fibres ou certaines portions, mais il ne peut pas complètement isoler une région du grand pectoral.'),
-  p('La bonne représentation mentale n’est donc pas :'),
-  p('HAUT | MILIEU | BAS'),
-  p('mais plutôt :'),
-  p('un grand éventail de fibres orientées différemment, dont la contribution varie selon la position du bras, la trajectoire, la résistance, l’amplitude et la morphologie du pratiquant.'),
-  p('C’est cette organisation qui permet au grand pectoral d’être à la fois un muscle puissant, polyvalent et particulièrement adaptable aux différentes formes de mouvements de poussée et d’adduction.')
+  p(
+    'La meilleure façon de comprendre les exercices de poitrine n’est finalement pas de mémoriser : développé couché = milieu, développé incliné = haut, dips = bas. Cette classification est trop simpliste.'
+  ),
+  pCallout(
+    'definition',
+    'Logique utile',
+    'Position du bras → orientation et longueur des fibres ; direction de la résistance → axe de la force produite ; trajectoire et amplitude → longueurs rencontrées ; morphologie et charge → faisabilité et intensité du stimulus. Ces paramètres interagissent — aucun ne suffit seul à « cibler » une zone.'
+  ),
+  p(
+    'Le grand pectoral doit donc être compris comme un muscle en éventail dont les différentes fibres travaillent ensemble, mais dont la contribution relative peut changer en fonction de la position et du mouvement du bras.'
+  ),
+  h3('Synthèse'),
+  p(
+    'Le grand pectoral est un muscle unique, mais son architecture est complexe. Sa large origine sur la clavicule, le sternum et les structures costales donne naissance à des fibres orientées dans différentes directions qui convergent vers une insertion humérale commune.'
+  ),
+  p(
+    'Cette organisation lui permet de participer à plusieurs mouvements du bras, notamment l’adduction, l’adduction horizontale, la rotation médiale et, selon la position du bras, la flexion ou l’extension.'
+  ),
+  p(
+    'Les différentes portions du muscle ne doivent donc pas être considérées comme des muscles indépendants. Un exercice peut favoriser davantage certaines fibres ou certaines portions, mais il ne peut pas complètement isoler une région du grand pectoral.'
+  ),
+  takeaway(
+    'Un grand éventail de fibres orientées différemment, dont la contribution varie selon la position du bras, la trajectoire, la résistance, l’amplitude et la morphologie du pratiquant — plutôt que HAUT | MILIEU | BAS.'
+  )
 ];

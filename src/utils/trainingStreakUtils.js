@@ -104,6 +104,40 @@ export function calculateLongestTrainingStreakRange(data, lookbackDays = 365) {
 }
 
 /**
+ * Plus longue série sur une plage YYYY-MM-DD (inclusive).
+ * @returns {{ length: number, startDate: string|null, endDate: string|null }}
+ */
+export function calculateLongestTrainingStreakInRange(data, startYmd, endYmd) {
+  if (!data || !startYmd || !endYmd || startYmd > endYmd) {
+    return { length: 0, startDate: null, endDate: null };
+  }
+  let max = 0;
+  let current = 0;
+  let maxStart = null;
+  let maxEnd = null;
+  let curStart = null;
+
+  const start = new Date(`${startYmd}T12:00:00`);
+  const end = new Date(`${endYmd}T12:00:00`);
+  for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
+    const dateStr = getDateStr(d);
+    if (dayPreservesTrainingStreak(data, dateStr)) {
+      if (current === 0) curStart = dateStr;
+      current += 1;
+      if (current > max) {
+        max = current;
+        maxStart = curStart;
+        maxEnd = dateStr;
+      }
+    } else {
+      current = 0;
+      curStart = null;
+    }
+  }
+  return { length: max, startDate: maxStart, endDate: maxEnd };
+}
+
+/**
  * Plus longue série d'entraînement sur un mois calendaire (YYYY-MM).
  * @param {object} data
  * @param {number} year

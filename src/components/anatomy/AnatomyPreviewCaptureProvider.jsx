@@ -42,11 +42,17 @@ export function AnatomyPreviewCaptureProvider({ children }) {
 
   const finishJob = useCallback(
     (dataUrl) => {
-      if (job?.stem && dataUrl) {
-        setSessionPreviewUrl(job.stem, dataUrl);
+      const current = job;
+      if (current?.stem && dataUrl) {
+        setSessionPreviewUrl(current.stem, dataUrl);
+      } else if (current && (current.retries ?? 0) < 4) {
+        queueRef.current.unshift({
+          ...current,
+          retries: (current.retries ?? 0) + 1
+        });
       }
       setJob(null);
-      window.setTimeout(pump, 0);
+      window.setTimeout(pump, dataUrl ? 0 : 350);
     },
     [job, pump]
   );
@@ -54,18 +60,24 @@ export function AnatomyPreviewCaptureProvider({ children }) {
   const handleSettled = useCallback(() => {
     window.requestAnimationFrame(() => {
       window.requestAnimationFrame(() => {
-        const wrap = canvasWrapRef.current;
-        const canvas = wrap?.querySelector('canvas');
-        if (!canvas || typeof canvas.toDataURL !== 'function') {
-          finishJob(null);
-          return;
-        }
-        try {
-          const url = canvas.toDataURL('image/jpeg', 0.88);
-          finishJob(url);
-        } catch {
-          finishJob(null);
-        }
+        window.setTimeout(() => {
+          const wrap = canvasWrapRef.current;
+          const canvas = wrap?.querySelector('canvas');
+          if (!canvas || typeof canvas.toDataURL !== 'function') {
+            finishJob(null);
+            return;
+          }
+          try {
+            const url = canvas.toDataURL('image/jpeg', 0.88);
+            if (!url || url.length < 1200) {
+              finishJob(null);
+              return;
+            }
+            finishJob(url);
+          } catch {
+            finishJob(null);
+          }
+        }, 80);
       });
     });
   }, [finishJob]);

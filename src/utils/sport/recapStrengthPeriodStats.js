@@ -9,7 +9,7 @@ import {
 } from './recapMuscleLoadEngine';
 import { inferMuscleGroupsForExercise } from './recapMuscleInference';
 import { addCalendarDays, inclusiveCalendarSpanDays } from './garminRunningPeriodStats';
-import { computeVolumeKgForWorkoutKey } from '../exerciseLoadVolume';
+import { computeVolumeKgForWorkoutKey, lookupProgramExerciseStub } from '../exerciseLoadVolume';
 
 const makeDbExerciseId = (key) =>
   `db_${String(key)
@@ -55,11 +55,28 @@ function maxRecordedWeightKgInWindow(allData, window) {
 const resolveExerciseNameForRecap = (exerciseId, getExerciseNameById) => {
   const idStr = String(exerciseId || '').trim();
   if (!idStr) return '';
+  if (idStr === RECAP_SYNTHETIC_ENDURANCE_PUSHUPS_ID) return 'Pompes (endurance)';
   if (EXERCISE_DB_NAME_BY_ID[idStr]) return EXERCISE_DB_NAME_BY_ID[idStr];
+
+  const rawId = idStr.replace(/_semaineA$|_semaineB$/, '');
+
   if (typeof getExerciseNameById === 'function') {
-    const byGetter = getExerciseNameById(idStr);
-    if (byGetter && !/^Exercice\s+/i.test(String(byGetter))) return byGetter;
+    for (const candidate of [idStr, rawId, Number(rawId)]) {
+      if (candidate === '' || (typeof candidate === 'number' && !Number.isFinite(candidate))) continue;
+      const byGetter = getExerciseNameById(candidate);
+      const label = String(byGetter || '').trim();
+      if (label && !/^Exercice\s*$/i.test(label) && !/^Exercice\s+\d+$/i.test(label)) {
+        return label;
+      }
+    }
   }
+
+  for (const candidate of [idStr, rawId]) {
+    const stub = lookupProgramExerciseStub(candidate);
+    const stubName = String(stub?.name || '').trim();
+    if (stubName && stubName !== 'Exercice') return stubName;
+  }
+
   return '';
 };
 
@@ -172,15 +189,9 @@ export function buildRecapStrengthCompareModel(allData, period, getExerciseNameB
   const exercisesRanked = [];
   byExerciseCurr.forEach((entry, exId) => {
     const sumReps = Number(entry?.reps || 0);
-    const numericId = Number(exId);
-    let name = String(entry?.name || '').trim();
-    if (exId === RECAP_SYNTHETIC_ENDURANCE_PUSHUPS_ID) {
-      name = '';
-    } else if (!name && Number.isFinite(numericId) && typeof getExerciseNameById === 'function') {
-      name = getExerciseNameById(numericId) || `Exercice ${exId}`;
-    } else if (!name) {
-      name = `Exercice ${exId}`;
-    }
+    let name =
+      String(entry?.name || '').trim() || resolveExerciseNameForRecap(exId, getExerciseNameById);
+    if (!name) name = `Mouvement (${String(exId).slice(0, 12)}…)`;
     exercisesRanked.push({
       id: exId,
       name,

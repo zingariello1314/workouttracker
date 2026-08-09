@@ -19,14 +19,14 @@ const PICK_PRESET_SHORT = {
   side: 'Profil'
 };
 
-function readStoredPreset() {
+function readStoredPreset(fallback = 'frontLow') {
   try {
     const v = localStorage.getItem(VIEW_STORAGE_KEY);
     if (v && PRESET_KEYS.includes(v)) return v;
   } catch {
     /* ignore */
   }
-  return 'frontLow';
+  return fallback;
 }
 
 /**
@@ -54,7 +54,9 @@ const BodyMap = ({
   controlledViewPreset = null,
   onViewPresetChange = null,
   /** Molette / pinch sur l’explorateur accueil Anatomie. */
-  controlsEnableZoom = true
+  controlsEnableZoom = true,
+  /** Vue par défaut si rien en localStorage (Récap : dos). */
+  defaultViewPreset = 'frontLow'
 }) => {
   const t = useTranslation();
   const viewLocked = Boolean(forcedViewPreset && PRESET_KEYS.includes(forcedViewPreset));
@@ -64,7 +66,9 @@ const BodyMap = ({
     if (viewLocked) return forcedViewPreset;
     if (isControlled) return controlledViewPreset;
     if (pickMode && anatomyExplorerLayout) return 'frontLow';
-    return readStoredPreset();
+    return readStoredPreset(
+      PRESET_KEYS.includes(defaultViewPreset) ? defaultViewPreset : 'frontLow'
+    );
   });
 
   useEffect(() => {
@@ -192,7 +196,7 @@ const BodyMap = ({
             viewPreset={activePreset}
             autoRotate={!pickMode}
             autoRotateSpeed={0.5}
-            sceneBackground="#060708"
+            sceneBackground="#0c0d10"
             controlsEnableZoom={controlsEnableZoom}
           />
         </Canvas>

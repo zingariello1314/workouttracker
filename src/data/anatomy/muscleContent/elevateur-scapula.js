@@ -1,21 +1,12 @@
+import presentationBlocks from './elevateur-scapula/presentationBlocks.js';
+
 /** @type {{ sections: { id: string, title: string, blocks: object[] }[] }} */
 const elevateurScapula = {
   sections: [
     {
       id: 'presentation',
       title: 'Présentation',
-      blocks: [
-        {
-          type: 'p',
-          text:
-            'L’élévateur de la scapula est un muscle du cou et du haut du dos qui relie les vertèbres cervicales (C1 à C4) à l’angle supérieur de l’omoplate. Il participe à l’élévation de la scapula et travaille en lien étroit avec le trapèze supérieur.'
-        },
-        {
-          type: 'p',
-          text:
-            'Il n’est pas le muscle « star » de l’esthétique d’épaule, mais il influence la posture cervico-scapulaire. Posture bureau prolongée, stress et shrugs mal exécutés peuvent le raccourcir et contribuer à une sensation de cou tendu ou d’épaules remontées en permanence.'
-        }
-      ]
+      blocks: presentationBlocks
     },
     {
       id: 'fonctions',

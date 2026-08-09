@@ -35,8 +35,12 @@ export function BodyMapCameraApplier({
   onSettledOnce,
   /** Décale le point visé vers le haut (buste) ou le bas (jambes), en unités modèle. */
   targetOffsetY = 0,
+  /** Vignette famille : décalage horizontal du cadrage (m). */
+  targetOffsetX = 0,
   /** Carte banque : cadrage fixe après Bounds (sans animation de zoom). */
   staticCard = false,
+  /** Vignette famille : vise l’origine (modèle centré par `<Center>`). */
+  familyRowThumb = false,
   /** Anatomie pick : ne recadre que si la vue face/dos change (pas au survol des familles). */
   presetOnly = false
 }) {
@@ -46,27 +50,35 @@ export function BodyMapCameraApplier({
   const presetRef = useRef(preset);
   const factorRef = useRef(distanceFactor);
   const offsetYRef = useRef(targetOffsetY);
+  const offsetXRef = useRef(targetOffsetX);
+  const familyRowRef = useRef(familyRowThumb);
   const frame = useRef(0);
   const fittedDistRef = useRef(null);
   const settledFiredRef = useRef(false);
   const baseTargetYRef = useRef(null);
+  const prevLiveDistRef = useRef(null);
+  const stableDistFramesRef = useRef(0);
 
   useEffect(() => {
     presetRef.current = preset;
     factorRef.current = distanceFactor;
     offsetYRef.current = targetOffsetY;
+    offsetXRef.current = targetOffsetX;
+    familyRowRef.current = familyRowThumb;
     frame.current = 0;
     fittedDistRef.current = null;
     settledFiredRef.current = false;
     baseTargetYRef.current = null;
-  }, presetOnly ? [preset] : [preset, distanceFactor, targetOffsetY]);
+    prevLiveDistRef.current = null;
+    stableDistFramesRef.current = 0;
+  }, presetOnly ? [preset] : [preset, distanceFactor, targetOffsetY, targetOffsetX, familyRowThumb]);
 
   useFrame(() => {
     frame.current += 1;
 
     if (!controls?.target) {
       invalidate();
-      const fallbackFrame = staticCard ? 14 : 48;
+      const fallbackFrame = staticCard ? 52 : 48;
       if (!settledFiredRef.current && frame.current >= fallbackFrame) {
         settledFiredRef.current = true;
         onSettledOnce?.();
@@ -79,33 +91,54 @@ export function BodyMapCameraApplier({
     if (staticCard) {
       if (settledFiredRef.current) return;
 
-      if (baseTargetYRef.current === null && controls?.target) {
-        baseTargetYRef.current = controls.target.y;
-      }
-
-      const offY = offsetYRef.current;
-      if (controls?.target && baseTargetYRef.current !== null && Number.isFinite(offY) && offY !== 0) {
-        controls.target.y = baseTargetYRef.current + offY;
-      }
-
-      const target = controls?.target;
       const liveDist = target ? camera.position.distanceTo(target) : 0;
 
-      if (frame.current >= 1 && liveDist > 0.02) {
-        const scale = BODY_VIEW_PRESETS[presetRef.current]?.distanceScale ?? 1;
-        const f = factorRef.current;
-        const dist = liveDist * scale * (Number.isFinite(f) && f > 0 ? f : 1);
-        applyViewPreset(camera, controls, presetRef.current, dist);
-      }
-
-      if (frame.current >= 1) {
-        if (!settledFiredRef.current) {
-          settledFiredRef.current = true;
-          onSettledOnce?.();
+      // 1) Attendre le fit Bounds (sans préréglage vue — évite la dérive d’angle).
+      if (fittedDistRef.current === null) {
+        if (liveDist > 0.02) {
+          if (prevLiveDistRef.current != null && Math.abs(liveDist - prevLiveDistRef.current) < 0.012) {
+            stableDistFramesRef.current += 1;
+          } else {
+            stableDistFramesRef.current = 0;
+          }
+          prevLiveDistRef.current = liveDist;
         }
-        return;
+        if (frame.current >= 12 && stableDistFramesRef.current >= 5 && liveDist > 0.02) {
+          fittedDistRef.current = liveDist;
+          baseTargetYRef.current = target.y;
+        } else {
+          invalidate();
+          return;
+        }
       }
 
+      // 2) Cadrage fixe : vue symétrique + distance figée après Bounds.
+      const offY = offsetYRef.current;
+      if (familyRowRef.current) {
+        const offX = offsetXRef.current;
+        target.x = Number.isFinite(offX) ? offX : 0;
+        target.z = 0;
+        target.y = Number.isFinite(offY) ? offY : 0;
+      } else if (baseTargetYRef.current !== null && Number.isFinite(offY) && offY !== 0) {
+        target.y = baseTargetYRef.current + offY;
+      }
+
+      const scale = BODY_VIEW_PRESETS[presetRef.current]?.distanceScale ?? 1;
+      const f = factorRef.current;
+      const dist =
+        fittedDistRef.current * scale * (Number.isFinite(f) && f > 0 ? f : 1);
+      applyViewPreset(camera, controls, presetRef.current, dist);
+      if (familyRowRef.current) {
+        camera.up.set(0, 1, 0);
+        camera.lookAt(target);
+        controls.update();
+      }
+
+      const minSettle = familyRowRef.current ? 26 : 18;
+      if (frame.current >= minSettle && !settledFiredRef.current) {
+        settledFiredRef.current = true;
+        onSettledOnce?.();
+      }
       invalidate();
       return;
     }
@@ -141,6 +174,17 @@ export function BodyMapCameraApplier({
   return null;
 }
 
+function AnatomySceneLights({ explorer = false, familyRowThumb = false }) {
+  const L = anatomySceneLightIntensity({ explorer, familyRowThumb });
+  return (
+    <>
+      <ambientLight intensity={L.ambient} />
+      <directionalLight position={[4, 6, 5]} intensity={L.key} castShadow={false} />
+      <directionalLight position={[-3, 2, -4]} intensity={L.fill} />
+    </>
+  );
+}
+
 /** Redessine une scène en `frameloop="demand"` quand les couleurs / vue changent. */
 function DemandInvalidateOnChange({ signature }) {
   const invalidate = useThree((s) => s.invalidate);
@@ -151,7 +195,8 @@ function DemandInvalidateOnChange({ signature }) {
 }
 
 import { isEcorcheHoverColor, isEcorchePreviewFocusColor, isEcorcheFamilyFocusColor, ECORCHE_FAMILY_FOCUS } from '../../services/anatomy/ecorcheMeshColors';
-import { lookupMeshColor, ECORCHE_IDLE_UNIFORM, resolveAnatomyMeshPaintName, resolveMeshHighlightColor } from '../../utils/anatomy/anatomyMeshColorLookup';
+import { lookupMeshColor, ECORCHE_IDLE_UNIFORM, ECORCHE_IDLE_EMISSIVE, ECORCHE_IDLE_EMISSIVE_INTENSITY, ECORCHE_FAMILY_ROW_IDLE_EMISSIVE, ECORCHE_FAMILY_ROW_IDLE_EMISSIVE_INTENSITY, isEcorcheIdlePaint, isEcorcheFamilyRowIdlePaint, resolveAnatomyMeshPaintName, resolveMeshHighlightColor } from '../../utils/anatomy/anatomyMeshColorLookup';
+import { anatomySceneLightIntensity } from '../../utils/anatomy/anatomyModelDisplay';
 
 function meshKey(name) {
   return String(name || '')
@@ -212,7 +257,8 @@ export function AnatomyModel({
           !familyFocus &&
           !emissiveHover &&
           mappedColor !== ECORCHE_IDLE_UNIFORM &&
-          mappedColor !== ECORCHE_FAMILY_FOCUS;
+          mappedColor !== ECORCHE_FAMILY_FOCUS &&
+          !isEcorcheFamilyRowIdlePaint(override);
 
         if ('map' in mat && mat.map) {
           mat.map = null;
@@ -234,17 +280,33 @@ export function AnatomyModel({
           mat.color.set(override);
         }
         if ('roughness' in mat) {
-          mat.roughness = previewFocus || familyFocus || bankAccent ? 0.42 : isMapped ? (emissiveHover ? 0.48 : 0.58) : 0.72;
+          const idleRest = !isMapped || isEcorcheIdlePaint(override);
+          mat.roughness = previewFocus || familyFocus || bankAccent ? 0.42 : isMapped && !idleRest ? (emissiveHover ? 0.48 : 0.58) : 0.64;
         }
         if ('metalness' in mat) mat.metalness = isMapped ? 0.06 : 0.02;
         if ('emissive' in mat) {
           if (previewFocus) mat.emissive.set('#991b1b');
           else if (familyFocus) mat.emissive.set('#9f1239');
           else if (bankAccent) mat.emissive.set('#7c2d12');
-          else mat.emissive.set(emissiveHover ? '#0f766e' : '#000000');
+          else if (emissiveHover) mat.emissive.set('#0f766e');
+          else if (isEcorcheFamilyRowIdlePaint(override)) mat.emissive.set(ECORCHE_FAMILY_ROW_IDLE_EMISSIVE);
+          else if (isEcorcheIdlePaint(override)) mat.emissive.set(ECORCHE_IDLE_EMISSIVE);
+          else mat.emissive.set('#000000');
         }
         if ('emissiveIntensity' in mat) {
-          mat.emissiveIntensity = previewFocus ? 0.55 : familyFocus ? 0.48 : bankAccent ? 0.38 : emissiveHover ? 0.45 : 0;
+          mat.emissiveIntensity = previewFocus
+            ? 0.55
+            : familyFocus
+              ? 0.48
+              : bankAccent
+                ? 0.38
+                : emissiveHover
+                  ? 0.45
+                  : isEcorcheFamilyRowIdlePaint(override)
+                    ? ECORCHE_FAMILY_ROW_IDLE_EMISSIVE_INTENSITY
+                  : isEcorcheIdlePaint(override)
+                    ? ECORCHE_IDLE_EMISSIVE_INTENSITY
+                    : 0;
         }
         if (familyFocus || previewFocus) {
           child.renderOrder = 50;
@@ -319,9 +381,7 @@ export function AnatomyInteractiveScene({
   return (
     <>
       <color attach="background" args={[sceneBackground]} />
-      <ambientLight intensity={0.55} />
-      <directionalLight position={[4, 6, 5]} intensity={1.05} castShadow={false} />
-      <directionalLight position={[-3, 2, -4]} intensity={0.35} />
+      <AnatomySceneLights explorer={pickMode} />
       <Suspense fallback={null}>
         {/*
           observe={false} : évite les re-fit Bounds au scroll/layout (resize observer),
@@ -383,17 +443,18 @@ export function AnatomyCardStaticScene({
   /** >1 éloigne légèrement la caméra après le fit Bounds. */
   cameraDistanceFactor = 1,
   /** Vise plus haut (buste) ou plus bas (jambes) après le cadrage Bounds. */
-  cameraTargetOffsetY = 0
+  cameraTargetOffsetY = 0,
+  cameraTargetOffsetX = 0,
+  /** Vignettes liste famille : éclairage + corps atténué plus lisible. */
+  familyRowThumb = false
 }) {
   return (
     <>
       <color attach="background" args={[sceneBackground]} />
-      <ambientLight intensity={0.55} />
-      <directionalLight position={[4, 6, 5]} intensity={1.05} castShadow={false} />
-      <directionalLight position={[-3, 2, -4]} intensity={0.35} />
+      <AnatomySceneLights explorer={false} familyRowThumb={familyRowThumb} />
       <DemandInvalidateOnChange signature={demandSignature} />
       <Suspense fallback={null}>
-        <Bounds fit clip observe={false} margin={boundsMargin} maxDuration={0}>
+        <Bounds fit clip={!familyRowThumb} observe={false} margin={boundsMargin} maxDuration={0}>
           <Center>
             <AnatomyModel
               muscleColors={muscleColors}
@@ -410,7 +471,9 @@ export function AnatomyCardStaticScene({
         distanceFactor={cameraDistanceFactor}
         onSettledOnce={onCameraSettledOnce}
         targetOffsetY={cameraTargetOffsetY}
+        targetOffsetX={cameraTargetOffsetX}
         staticCard
+        familyRowThumb={familyRowThumb}
       />
       <OrbitControls
         makeDefault
@@ -450,6 +513,9 @@ export function AnatomyModelCanvas({
   cameraDistanceFactor,
   cameraTargetOffsetY = 0,
   controlsEnableZoom = true,
+  /** Vignettes « Muscles de cette famille ». */
+  familyRowThumb = false,
+  cameraTargetOffsetX = 0,
   /** Mode carte : après stabilisation caméra (anti-flash). */
   onStaticCameraSettled
 }) {
@@ -467,6 +533,8 @@ export function AnatomyModelCanvas({
         boundsMargin={boundsMargin ?? 0.82}
         cameraDistanceFactor={cameraDistanceFactor ?? 1}
         cameraTargetOffsetY={cameraTargetOffsetY}
+        cameraTargetOffsetX={cameraTargetOffsetX}
+        familyRowThumb={familyRowThumb}
       />
     ) : (
       <AnatomyInteractiveScene
@@ -498,7 +566,7 @@ export function AnatomyModelCanvas({
           powerPreference: 'high-performance',
           stencil: false,
           depth: true,
-          preserveDrawingBuffer: false
+          preserveDrawingBuffer: isCard
         }}
         style={{ background: '#000000', display: 'block' }}
         camera={defaultCamera}

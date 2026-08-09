@@ -247,7 +247,11 @@ export function isEcorcheFamilyFocusColor(hex) {
 
 /** Surbrillance rouge ciblée pour une fiche muscle (vignettes / rail). */
 
-export function buildMuscleFocusMeshColors(muscleId, visualGroupId, { dimOthers = true } = {}) {
+export function buildMuscleFocusMeshColors(
+  muscleId,
+  visualGroupId,
+  { dimOthers = true, idleBodyColor = ECORCHE_IDLE_UNIFORM } = {}
+) {
 
   const focusKeys = resolvePreviewFocusMeshKeys(muscleId, visualGroupId) || [];
 
@@ -272,7 +276,7 @@ export function buildMuscleFocusMeshColors(muscleId, visualGroupId, { dimOthers 
 
     } else if (dimOthers) {
 
-      stampMeshColorVariants(colors, key, ECORCHE_IDLE_UNIFORM);
+      stampMeshColorVariants(colors, key, idleBodyColor);
 
     }
 

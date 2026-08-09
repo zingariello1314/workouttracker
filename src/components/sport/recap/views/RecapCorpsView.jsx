@@ -221,6 +221,7 @@ export default function RecapCorpsView({
             onMuscleHover={onRecapMuscleHover}
             onMuscleClick={onRecapMuscleClick}
             showHoverOverlay
+            defaultViewPreset="frontLow"
             hoverOverlayLabel={recapHoverOverlay}
             hoverOverlayHint={t('recap.bodyMapClickHint', 'Cliquer pour voir les exercices de la zone')}
           />

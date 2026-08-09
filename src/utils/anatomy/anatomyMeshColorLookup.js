@@ -1,7 +1,14 @@
 import { GLB_MESH_TO_MUSCLE_ID } from '../sport/recapMeshBinding';
 
-/** Teinte de repos unique (la plus sombre) — tout le corps au même niveau sans sélection. */
-export const ECORCHE_IDLE_UNIFORM = '#3a2222';
+export {
+  ECORCHE_IDLE_UNIFORM,
+  ECORCHE_IDLE_EMISSIVE,
+  ECORCHE_IDLE_EMISSIVE_INTENSITY,
+  ECORCHE_FAMILY_ROW_IDLE_EMISSIVE,
+  ECORCHE_FAMILY_ROW_IDLE_EMISSIVE_INTENSITY,
+  isEcorcheIdlePaint,
+  isEcorcheFamilyRowIdlePaint
+} from './anatomyModelDisplay';
 
 export function normalizeMeshColorKey(name) {
   return String(name || '')

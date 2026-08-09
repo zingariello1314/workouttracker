@@ -10,7 +10,6 @@ import {
 } from '../../utils/anatomy/anatomyPreviewStemIndex';
 import {
   getSessionPreviewUrl,
-  setSessionPreviewUrl,
   subscribeSessionPreviewCache
 } from '../../utils/anatomy/anatomyPreviewSessionCache';
 import { useAnatomyPreviewCapture } from './AnatomyPreviewCaptureProvider';
@@ -45,6 +44,8 @@ export default function AnatomyBankGridPreview({ anatomy, mode = 'exercise', cla
     };
   }, []);
 
+  const [capturePass, setCapturePass] = useState(0);
+
   useEffect(() => {
     const cached = getSessionPreviewUrl(stem);
     if (cached) {
@@ -67,8 +68,17 @@ export default function AnatomyBankGridPreview({ anatomy, mode = 'exercise', cla
 
     capture?.enqueueCapture?.({ stem, anatomy });
 
-    return unsub;
-  }, [stem, fileSrc, anatomy, indexReady, capture]);
+    const retryId = window.setTimeout(() => {
+      if (!getSessionPreviewUrl(stem)) {
+        setCapturePass((p) => p + 1);
+      }
+    }, 4500);
+
+    return () => {
+      window.clearTimeout(retryId);
+      unsub();
+    };
+  }, [stem, fileSrc, anatomy, indexReady, capture, capturePass]);
 
   const frameClass = `h-full w-full min-h-0 rounded-xl overflow-hidden ${PREVIEW_FRAME} outline-none isolate [contain:paint]`;
 

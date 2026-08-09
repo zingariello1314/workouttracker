@@ -48,7 +48,8 @@ export function inferMusclePreviewTargetOffsetY(visualGroupId) {
     case MuscleGroups.CHEST:
     case MuscleGroups.SHOULDERS:
     case MuscleGroups.BICEPS:
-      return 0.13;
+    case MuscleGroups.FOREARMS:
+      return 0.12;
     case MuscleGroups.CORE:
       return 0.07;
     case MuscleGroups.BACK:
@@ -65,9 +66,50 @@ export function inferMusclePreviewTargetOffsetY(visualGroupId) {
   }
 }
 
-/** Marges par défaut liste famille : corps entier lisible, pas de zoom ventre. */
+/** Zone cadrée dans la vignette (évite le « mini corps entier » dans un cadre portrait). */
+export function inferFamilyRowPreviewRegion(visualGroupId) {
+  switch (visualGroupId) {
+    case MuscleGroups.CHEST:
+    case MuscleGroups.SHOULDERS:
+    case MuscleGroups.BICEPS:
+    case MuscleGroups.TRICEPS:
+    case MuscleGroups.BACK:
+    case MuscleGroups.CORE:
+    case MuscleGroups.FOREARMS:
+      return 'upper';
+    case MuscleGroups.QUADS:
+    case MuscleGroups.HAMSTRINGS:
+    case MuscleGroups.CALVES:
+    case MuscleGroups.TIBIALIS_ANTERIOR:
+    case MuscleGroups.GLUTES:
+      return 'lower';
+    default:
+      return 'full';
+  }
+}
+
+/** Ajustement caméra par région (× distance, × marge Bounds). */
+export const ANATOMY_ROW_REGION_FRAME = {
+  upper: { distanceMul: 0.76, boundsMul: 0.94 },
+  lower: { distanceMul: 0.8, boundsMul: 0.95 },
+  full: { distanceMul: 1, boundsMul: 1 }
+};
+
+/** Marges liste famille — base avant région / zoom global. */
 export const ANATOMY_ROW_PREVIEW_CAMERA_DEFAULT = {
   boundsMargin: 1.04,
-  cameraDistanceFactor: 1.2,
+  cameraDistanceFactor: 1.22,
   targetOffsetY: null
 };
+
+/** Ajustement vignette portrait (~94×118 px). */
+export const ANATOMY_ROW_PREVIEW_CAMERA_ROW_BOOST = {
+  boundsMarginMul: 1.02,
+  cameraDistanceFactorMul: 1.06
+};
+
+/** Multiplicateur distance global (+5 % d’éloignement vs 0,98, sans toucher au cadrage région). */
+export const ANATOMY_ROW_PREVIEW_DISTANCE_ZOOM = 1.03;
+
+/** Décalage horizontal du point visé (m) — corps ~2 mm à gauche dans la vignette. */
+export const ANATOMY_ROW_PREVIEW_TARGET_OFFSET_X = 0.002;

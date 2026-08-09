@@ -12,7 +12,13 @@ import {
   muscleSectionGlow,
   muscleSectionTitleBorder
 } from './anatomyVisualTokens';
+import { hasFunctionMagazine } from './functionSectionLayout';
+import { isSaviezVousMuscleSection } from './saviezVousSectionLayout';
 import { FamilySectionComposer } from './FamilySectionLayouts';
+
+function isMusclePresentationPanel(isFamily, sectionId) {
+  return !isFamily && sectionId === 'presentation';
+}
 
 function Stars({ count = 5 }) {
   const n = Math.min(5, Math.max(0, count));
@@ -474,17 +480,29 @@ export function AnatomySectionPanel({ section, compact, variant, columnWidth = '
   if (!section) return null;
   const isFamily = variant === 'family' || compact;
   const sectionId = section.id || '';
+  const blocks = section.blocks || [];
+  const isFunctionsMagazine = !isFamily && sectionId === 'fonctions' && hasFunctionMagazine(blocks);
+  const isSaviezVousAccordion = !isFamily && isSaviezVousMuscleSection(sectionId);
   const isHalf = isFamily && columnWidth === 'half';
+  const presentationLayout =
+    isMusclePresentationPanel(isFamily, sectionId) || isFunctionsMagazine || isSaviezVousAccordion;
+
+  const sectionForBody = isFunctionsMagazine
+    ? { ...section, _functionsMagazine: true }
+    : section;
+
+  const muscleShell = presentationLayout
+    ? 'relative overflow-visible border-0 bg-transparent p-0 shadow-none'
+    : `${ANATOMY.musclePanel} ${muscleSectionBorderClass(sectionId)}`;
 
   const familyShell = isFamily
     ? `rounded-2xl border bg-[#0f1419]/95 flex flex-col h-full min-h-0 relative overflow-hidden ${
         isHalf ? 'p-4 md:p-5' : 'p-5 md:p-6'
       } ${familySectionShellClass(sectionId)}`
-    : `${ANATOMY.musclePanel} ${muscleSectionBorderClass(sectionId)}`;
-  const isPresentationMuscle = !isFamily && sectionId === 'presentation';
+    : muscleShell;
 
-  const muscleTitle = isPresentationMuscle
-    ? `text-lg font-semibold text-white tracking-tight pb-3 mb-5 relative z-[1] flex items-center gap-3 border-b ${muscleSectionTitleBorder(sectionId)}`
+  const muscleTitle = presentationLayout
+    ? 'text-sm font-semibold text-white/90 tracking-tight pb-3 mb-4 relative z-[1] flex items-center gap-3 border-b border-white/[0.07]'
     : `text-lg font-semibold text-white tracking-tight border-b pb-3 mb-5 relative z-[1] ${muscleSectionTitleBorder(sectionId)}`;
 
   const familyTitle = isFamily
@@ -495,24 +513,17 @@ export function AnatomySectionPanel({ section, compact, variant, columnWidth = '
 
   return (
     <section className={familyShell}>
-      {!isFamily ? (
-        <div className={`pointer-events-none absolute inset-0 ${muscleSectionGlow(sectionId)}`} aria-hidden />
-      ) : (
+      {isFamily ? (
         <div className={`pointer-events-none absolute inset-0 ${familySectionGlow(sectionId)}`} aria-hidden />
+      ) : presentationLayout ? null : (
+        <div className={`pointer-events-none absolute inset-0 ${muscleSectionGlow(sectionId)}`} aria-hidden />
       )}
-      <h2 className={`${familyTitle} relative z-[1]`}>
-        {isPresentationMuscle ? (
-          <>
-            <span className="w-1 shrink-0 self-stretch min-h-[1.25rem] rounded-full bg-[#3897F0]" aria-hidden />
-            {section.title}
-          </>
-        ) : (
-          section.title
-        )}
-      </h2>
+      {!presentationLayout ? (
+        <h2 className={`${familyTitle} relative z-[1]`}>{section.title}</h2>
+      ) : null}
       <div className="flex-1 min-h-0 relative z-[1]">
         <SectionBody
-          section={section}
+          section={sectionForBody}
           variant={isFamily ? 'family' : 'muscle'}
           columnWidth={columnWidth}
         />

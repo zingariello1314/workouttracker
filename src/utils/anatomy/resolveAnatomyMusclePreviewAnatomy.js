@@ -4,8 +4,14 @@
 import { resolveBankItemAnatomy } from './resolveBankItemAnatomy';
 import { visualGroupToBankLabel } from './visualGroupBankLabel';
 import { buildMuscleFocusMeshColors, buildEcorcheBaseMeshColors } from '../../services/anatomy/ecorcheMeshColors';
+import { ECORCHE_FAMILY_ROW_IDLE } from './anatomyModelDisplay';
 import {
   ANATOMY_ROW_PREVIEW_CAMERA_DEFAULT,
+  ANATOMY_ROW_PREVIEW_CAMERA_ROW_BOOST,
+  ANATOMY_ROW_PREVIEW_DISTANCE_ZOOM,
+  ANATOMY_ROW_PREVIEW_TARGET_OFFSET_X,
+  ANATOMY_ROW_REGION_FRAME,
+  inferFamilyRowPreviewRegion,
   inferMusclePreviewTargetOffsetY
 } from './anatomyMuscleQuickFacts';
 
@@ -15,11 +21,11 @@ import {
 export const ANATOMY_MUSCLE_PREVIEW_TUNING = {
   'grand-pectoral': {
     inferredView: 'front',
-    camera: { boundsMargin: 1.08, cameraDistanceFactor: 1.24, targetOffsetY: 0.15 }
+    camera: { boundsMargin: 1.0, cameraDistanceFactor: 1.18, targetOffsetY: 0.07 }
   },
   'petit-pectoral': {
     inferredView: 'front',
-    camera: { boundsMargin: 1.06, cameraDistanceFactor: 1.22, targetOffsetY: 0.14 }
+    camera: { boundsMargin: 1.0, cameraDistanceFactor: 1.16, targetOffsetY: 0.06 }
   },
   deltoide: {
     inferredView: 'frontLow',
@@ -84,6 +90,14 @@ export const ANATOMY_MUSCLE_PREVIEW_TUNING = {
   'grand-droit': {
     inferredView: 'frontHighWide',
     camera: { boundsMargin: 1.02, cameraDistanceFactor: 1.16, targetOffsetY: 0.08 }
+  },
+  'avant-bras-ensemble': {
+    inferredView: 'frontLow',
+    camera: { boundsMargin: 1.02, cameraDistanceFactor: 1.14, targetOffsetY: 0.11 }
+  },
+  'brachio-radial': {
+    inferredView: 'frontLow',
+    camera: { boundsMargin: 1.0, cameraDistanceFactor: 1.12, targetOffsetY: 0.11 }
   }
 };
 
@@ -101,7 +115,8 @@ export function resolveAnatomyMusclePreviewAnatomy(muscle) {
   );
 
   const focusedColors = buildMuscleFocusMeshColors(muscle?.id, muscle?.visualGroupId, {
-    dimOthers: true
+    dimOthers: true,
+    idleBodyColor: ECORCHE_FAMILY_ROW_IDLE
   });
 
   const meshColors = focusedColors
@@ -115,14 +130,24 @@ export function resolveAnatomyMusclePreviewAnatomy(muscle) {
     def.targetOffsetY ??
     0.06;
 
+  const boost = ANATOMY_ROW_PREVIEW_CAMERA_ROW_BOOST;
+  const distanceZoom = ANATOMY_ROW_PREVIEW_DISTANCE_ZOOM;
+  const region = inferFamilyRowPreviewRegion(muscle?.visualGroupId);
+  const regionFrame = ANATOMY_ROW_REGION_FRAME[region] || ANATOMY_ROW_REGION_FRAME.full;
+
   const boundsMargin =
-    tune?.camera?.boundsMargin ??
-    base.cameraTuningOverride?.boundsMargin ??
-    def.boundsMargin;
+    (tune?.camera?.boundsMargin ??
+      base.cameraTuningOverride?.boundsMargin ??
+      def.boundsMargin) *
+    boost.boundsMarginMul *
+    regionFrame.boundsMul;
   const cameraDistanceFactor =
-    tune?.camera?.cameraDistanceFactor ??
-    base.cameraTuningOverride?.cameraDistanceFactor ??
-    def.cameraDistanceFactor;
+    (tune?.camera?.cameraDistanceFactor ??
+      base.cameraTuningOverride?.cameraDistanceFactor ??
+      def.cameraDistanceFactor) *
+    boost.cameraDistanceFactorMul *
+    distanceZoom *
+    regionFrame.distanceMul;
   const targetOffsetY =
     tune?.camera?.targetOffsetY ?? defaultOffset;
 
@@ -134,7 +159,8 @@ export function resolveAnatomyMusclePreviewAnatomy(muscle) {
     cameraTuningOverride: {
       boundsMargin,
       cameraDistanceFactor,
-      targetOffsetY
+      targetOffsetY,
+      targetOffsetX: ANATOMY_ROW_PREVIEW_TARGET_OFFSET_X
     }
   };
 }

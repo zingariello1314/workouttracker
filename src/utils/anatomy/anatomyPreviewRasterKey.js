@@ -21,6 +21,9 @@ function cameraTuneSuffix(anatomy) {
   if (typeof o.cameraDistanceFactor === 'number' && Number.isFinite(o.cameraDistanceFactor)) {
     chunks.push(`df${o.cameraDistanceFactor}`);
   }
+  if (typeof o.targetOffsetX === 'number' && Number.isFinite(o.targetOffsetX)) {
+    chunks.push(`tx${o.targetOffsetX}`);
+  }
   return chunks.length ? `|${chunks.join(':')}` : '';
 }
 

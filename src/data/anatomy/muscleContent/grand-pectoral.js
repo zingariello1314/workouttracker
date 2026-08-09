@@ -2,6 +2,11 @@ import presentationBlocks from './grand-pectoral/presentationBlocks.js';
 import recrutementBlocks from './grand-pectoral/recrutementBlocks.js';
 import morphologieBlocks from './grand-pectoral/morphologieBlocks.js';
 import fonctionsBlocks from './grand-pectoral/fonctionsBlocks.js';
+import erreursBlocks from './grand-pectoral/erreursBlocks.js';
+import saviezVousBlocks from './grand-pectoral/saviezVousBlocks.js';
+import anatomieBlocks from './grand-pectoral/anatomieBlocks.js';
+import blessuresBlocks from './grand-pectoral/blessuresBlocks.js';
+import volumeBlocks from './grand-pectoral/volumeBlocks.js';
 
 /** @type {{ sections: { id: string, title: string, blocks: object[] }[] }} */
 const grandPectoral = {
@@ -84,36 +89,7 @@ const grandPectoral = {
     {
       id: 'anatomie',
       title: 'Origines et insertion',
-      blocks: [
-        {
-          type: 'h3',
-          text: 'Origines'
-        },
-        {
-          type: 'p',
-          text:
-            'Le grand pectoral possède plusieurs points d’origine : moitié médiale de la clavicule, face antérieure du sternum, cartilages des premières côtes et partie supérieure de la gaine du muscle droit de l’abdomen.'
-        },
-        {
-          type: 'p',
-          text:
-            'Cette origine très large explique pourquoi le muscle peut produire une force importante dans plusieurs directions.'
-        },
-        {
-          type: 'h3',
-          text: 'Insertion'
-        },
-        {
-          type: 'p',
-          text:
-            'Toutes les fibres convergent vers une insertion commune située sur la lèvre latérale du sillon intertuberculaire de l’humérus.'
-        },
-        {
-          type: 'p',
-          text:
-            'Cette convergence est un élément central de la biomécanique du muscle : même si les fibres commencent à plusieurs endroits différents, elles se rejoignent toutes pour déplacer l’humérus.'
-        }
-      ]
+      blocks: anatomieBlocks
     },
     {
       id: 'fonctions',
@@ -257,56 +233,12 @@ const grandPectoral = {
     {
       id: 'erreurs',
       title: 'Les erreurs les plus fréquentes',
-      blocks: [
-        {
-          type: 'p',
-          text:
-            'La première erreur consiste à utiliser des charges trop lourdes au détriment de l’amplitude. Beaucoup de pratiquants transforment alors le mouvement en un exercice principalement réalisé par les épaules et les triceps.'
-        },
-        {
-          type: 'p',
-          text:
-            'Une autre erreur est de laisser les épaules partir vers l’avant pendant les développés, ce qui réduit l’implication des pectoraux et augmente les contraintes sur l’articulation de l’épaule.'
-        },
-        {
-          type: 'p',
-          text:
-            'Enfin, beaucoup pensent pouvoir isoler totalement le haut ou le bas des pectoraux. En réalité, les différents faisceaux travaillent presque toujours ensemble ; seuls leur niveau de participation varie selon l’angle du mouvement.'
-        }
-      ]
+      blocks: erreursBlocks
     },
     {
       id: 'blessures',
-      title: 'Blessures fréquentes',
-      blocks: [
-        {
-          type: 'h3',
-          text: 'Déchirure du grand pectoral'
-        },
-        {
-          type: 'p',
-          text:
-            'C’est la blessure la plus connue. Elle survient principalement lors d’efforts très lourds, notamment au développé couché, avec le bras en position très ouverte. La partie la plus souvent touchée est l’insertion proche de l’humérus.'
-        },
-        {
-          type: 'h3',
-          text: 'Tendinopathies'
-        },
-        {
-          type: 'p',
-          text:
-            'Irritation progressive du tendon, souvent lorsque le volume augmente trop rapidement, que la technique se dégrade ou que la récupération est insuffisante.'
-        },
-        {
-          type: 'h3',
-          text: 'Douleurs d’épaule associées'
-        },
-        {
-          type: 'p',
-          text:
-            'Un déséquilibre entre pectoraux dominants et muscles du haut du dos insuffisants peut modifier la position de l’omoplate et augmenter les contraintes sur l’épaule.'
-        }
-      ]
+      title: 'Blessures et problèmes fréquents',
+      blocks: blessuresBlocks
     },
     {
       id: 'prevention',
@@ -322,51 +254,12 @@ const grandPectoral = {
     {
       id: 'volume',
       title: 'Fréquence et programmation',
-      blocks: [
-        {
-          type: 'p',
-          text:
-            'Les pectoraux répondent généralement très bien à une fréquence de deux stimulations par semaine. Un débutant peut progresser avec peu de volume, tandis qu’un pratiquant avancé peut nécessiter davantage.'
-        },
-        {
-          type: 'p',
-          text:
-            'Une fourchette courante pour l’hypertrophie est d’environ 10 à 20 séries efficaces par semaine. La qualité des séries compte plus que le nombre : amplitude complète, proximité de l’échec et bonne technique valent mieux qu’une série supplémentaire bâclée.'
-        }
-      ]
+      blocks: volumeBlocks
     },
     {
       id: 'saviez-vous',
       title: 'Le saviez-vous ?',
-      blocks: [
-        {
-          type: 'h3',
-          text: 'Les « pectoraux internes » n’existent pas'
-        },
-        {
-          type: 'p',
-          text:
-            'On entend souvent « je veux travailler l’intérieur des pecs ». Aucune portion musculaire indépendante située près du sternum ne peut être isolée : le grand pectoral possède une insertion unique sur l’humérus. La séparation visible dépend surtout de la génétique, de la forme du sternum, de la masse musculaire et du taux de graisse.'
-        },
-        {
-          type: 'h3',
-          text: 'Les pompes peuvent développer une vraie poitrine'
-        },
-        {
-          type: 'p',
-          text:
-            'Le muscle ne distingue pas barre, haltère ou poids du corps : il répond à la tension. Une pompe devient exigeante quand les répétitions augmentent, le mouvement ralentit, on ajoute du lest ou des variantes avancées.'
-        },
-        {
-          type: 'h3',
-          text: 'Les dips ne sont pas seulement un exercice de triceps'
-        },
-        {
-          type: 'p',
-          text:
-            'Selon l’inclinaison du corps : buste droit → davantage triceps ; buste penché en avant → davantage pectoraux. La position de l’épaule modifie fortement la répartition de la charge.'
-        }
-      ]
+      blocks: saviezVousBlocks
     }
   ]
 };

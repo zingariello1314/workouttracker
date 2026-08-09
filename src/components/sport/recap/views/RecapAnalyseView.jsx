@@ -5,6 +5,7 @@ import CoachVisionPanel from '../CoachVisionPanel';
 import ProgramStructurePanel from '../ProgramStructurePanel';
 import RecapDenseInsightsPanel from '../RecapDenseInsightsPanel';
 import RecapBenchmarkCoachPanel from '../RecapBenchmarkCoachPanel';
+import RecapPeriodHighlightsPanel from '../RecapPeriodHighlightsPanel';
 
 import { useTranslation } from '../../../../utils/translations';
 
@@ -149,7 +150,11 @@ export default function RecapAnalyseView({
 
   period = '30d',
 
-  garminData = null
+  garminData = null,
+
+  periodWindow = null,
+
+  recapState = null
 
 }) {
 
@@ -270,6 +275,13 @@ export default function RecapAnalyseView({
   return (
 
     <div className="space-y-5">
+
+      <RecapPeriodHighlightsPanel
+        period={period}
+        periodWindow={periodWindow ?? enrichment?.window}
+        garminData={garminData}
+        recapState={recapState}
+      />
 
       {hasInsightColumns ? (
 

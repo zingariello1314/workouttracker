@@ -5,6 +5,8 @@ import { getMuscleContent, hasMuscleContent } from '../../../data/anatomy/anatom
 import { AnatomySectionPanel } from './AnatomyContentRenderer';
 import AnatomyMuscleRail from './AnatomyMuscleRail';
 import { ANATOMY } from './anatomyTheme';
+import { hasFunctionMagazine } from './functionSectionLayout';
+import { sectionKicker } from './anatomyVisualTokens';
 
 function extractRelatedLines(content) {
   const rec = content?.sections?.find((s) => s.id === 'recrutement');
@@ -32,6 +34,10 @@ export default function AnatomyMuscleView({ muscleId, onOpenMuscle }) {
     if (found) return found;
     return null;
   }, [activeSectionId, content?.sections, t]);
+
+  const sectionAsPageTitle = activeSectionId !== 'presentation';
+  const functionsMagazineLayout =
+    activeSection?.id === 'fonctions' && hasFunctionMagazine(activeSection.blocks);
 
   const relatedMuscles = useMemo(() => extractRelatedLines(content), [content]);
 
@@ -65,12 +71,36 @@ export default function AnatomyMuscleView({ muscleId, onOpenMuscle }) {
         </nav>
 
         <div className="min-w-0 space-y-5">
-          <header className="space-y-2">
-            <p className={ANATOMY.sheetKicker}>
+          <header className="space-y-2 mb-1">
+            <p className="text-xs font-semibold uppercase tracking-[0.06em] text-[#4a9eff]">
               {t('anatomy.sheetLabel', 'Fiche muscle')} · {family?.name}
+              {sectionAsPageTitle && activeSection?.title
+                ? ` · ${activeSection.title.toUpperCase()}`
+                : ''}
             </p>
-            <h1 className="text-2xl md:text-3xl font-bold text-white">{muscle.name}</h1>
-            <p className={ANATOMY.summary}>{muscle.summary}</p>
+            <h1 className="text-[28px] md:text-[32px] font-bold text-white leading-tight">
+              {sectionAsPageTitle && activeSection?.title ? activeSection.title : muscle.name}
+            </h1>
+            {!sectionAsPageTitle ? (
+              <p className="text-[15px] leading-[1.5] text-[#6c7688]">{muscle.summary}</p>
+            ) : null}
+            {functionsMagazineLayout ? (
+              <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-[#6c7688] pt-0.5">
+                {sectionKicker('fonctions')}
+              </p>
+            ) : null}
+            {muscle.presentationChips?.length && activeSectionId === 'presentation' ? (
+              <div className="flex flex-wrap gap-2 pt-2 pb-1">
+                {muscle.presentationChips.map((label) => (
+                  <span
+                    key={label}
+                    className="rounded-full border border-[rgba(74,158,255,0.25)] bg-[rgba(74,158,255,0.1)] px-3 py-1 text-xs text-[#7cb4ff]"
+                  >
+                    {label}
+                  </span>
+                ))}
+              </div>
+            ) : null}
           </header>
 
           <div className="lg:hidden flex gap-2 overflow-x-auto pb-1 -mx-1 px-1">

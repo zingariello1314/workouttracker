@@ -294,12 +294,16 @@ function AnatomyBankCardPreviewGl({
         ? anatomy.uniformBodyColor
         : undefined;
 
-  const innerScale = fillContainer ? 'scale-[1.02]' : anatomyRow ? '' : 'scale-[1.12]';
+  const innerScale = fillContainer
+    ? 'scale-[1.02]'
+    : anatomyRow
+      ? 'scale-[1.14] origin-center'
+      : 'scale-[1.12]';
   const minCanvas = fillContainer || anatomyRow ? 'min-h-0' : 'min-h-[188px]';
   const frameClass = fillContainer
     ? `h-full w-full min-h-0 rounded-xl overflow-hidden ${PREVIEW_FRAME} outline-none`
     : anatomyRow
-      ? `h-[108px] w-[84px] sm:h-[112px] sm:w-[88px] shrink-0 rounded-lg overflow-hidden ${PREVIEW_FRAME} outline-none`
+      ? `h-[108px] w-[108px] sm:h-[112px] sm:w-[112px] shrink-0 rounded-lg overflow-hidden ${PREVIEW_FRAME} outline-none`
       : `w-full max-w-[148px] rounded-xl overflow-hidden ${PREVIEW_FRAME} outline-none`;
   const frameStyle =
     fillContainer || anatomyRow
@@ -310,13 +314,13 @@ function AnatomyBankCardPreviewGl({
     <div
       ref={hostRef}
       className={`flex shrink-0 pointer-events-none select-none ${
-        fillContainer ? 'h-full w-full min-h-0 justify-stretch' : anatomyRow ? 'justify-start' : 'justify-center'
+        fillContainer ? 'h-full w-full min-h-0 justify-stretch' : anatomyRow ? 'justify-center' : 'justify-center'
       } ${className}`}
       aria-hidden
     >
       <div className={`${frameClass} isolate [contain:paint]`} style={frameStyle}
       >
-        <div className="relative h-full w-full bg-black overflow-hidden">
+        <div className="relative h-full w-full bg-black overflow-hidden flex items-center justify-center">
           <div className={`absolute inset-0 flex items-center justify-center origin-center ${innerScale}`}>
             <div
               className={`absolute inset-0 z-0 bg-black transition-opacity duration-150 ${
@@ -333,6 +337,7 @@ function AnatomyBankCardPreviewGl({
                 }`}
               >
                 <AnatomyModelCanvas
+                  key={anatomyRow ? cardDemandSignature : undefined}
                   variant="cardStatic"
                   muscleColors={anatomy.meshColors}
                   uniformBodyColor={anatomy.uniformBodyColor}
@@ -345,6 +350,8 @@ function AnatomyBankCardPreviewGl({
                   boundsMargin={anatomy.cameraTuningOverride?.boundsMargin ?? 0.82}
                   cameraDistanceFactor={anatomy.cameraTuningOverride?.cameraDistanceFactor ?? 1}
                   cameraTargetOffsetY={anatomy.cameraTuningOverride?.targetOffsetY ?? 0}
+                  cameraTargetOffsetX={anatomy.cameraTuningOverride?.targetOffsetX ?? 0}
+                  familyRowThumb={anatomyRow}
                   className={`h-full w-full ${minCanvas}`}
                 />
               </div>

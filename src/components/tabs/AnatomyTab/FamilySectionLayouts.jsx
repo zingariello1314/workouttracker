@@ -156,10 +156,19 @@ export function FamilyInsightFeature({ blocks, narrow = false }) {
 }
 
 /** FAQ : 2 questions en haut, réponse longue en bandeau bas (répété par groupe de 3). */
-export function FamilyFaqBento({ blocks, narrow = false }) {
+export function FamilyFaqBento({ blocks, narrow = false, encyclopedia = false }) {
   const cards = useMemo(() => cardsFromBlocks(blocks), [blocks]);
   const titled = cards.filter((c) => c.title);
+  const callouts = (blocks || []).filter((b) => b.type === 'callout');
   if (titled.length === 0) return <FamilyNarrativeFlow blocks={blocks} />;
+
+  const cardBorder = encyclopedia
+    ? 'border-violet-400/35 bg-[#0a0814]/95 shadow-[inset_0_1px_0_rgba(167,139,250,0.08)]'
+    : 'border-[#3897F0]/35 bg-[#0a121c]/95 shadow-[inset_0_1px_0_rgba(56,151,240,0.08)]';
+  const accentBar = encyclopedia
+    ? 'bg-gradient-to-b from-violet-400 to-fuchsia-400/50'
+    : 'bg-gradient-to-b from-[#3897F0] to-cyan-400/50';
+  const kickerClass = encyclopedia ? 'text-violet-300/90' : 'text-[#5eb0ff]/90';
 
   const chunks = [];
   for (let i = 0; i < titled.length; i += 3) {
@@ -178,21 +187,29 @@ export function FamilyFaqBento({ blocks, narrow = false }) {
                 {top.map((card, i) => (
                   <article
                     key={i}
-                    className="rounded-xl border border-[#3897F0]/35 bg-[#0a121c]/95 px-4 py-4 sm:px-5 relative pl-5 sm:pl-6 min-h-[6.5rem] shadow-[inset_0_1px_0_rgba(56,151,240,0.08)]"
+                    className={`rounded-xl border ${cardBorder} px-4 py-4 sm:px-5 relative pl-5 sm:pl-6 min-h-[6.5rem]`}
                   >
+                    {!encyclopedia ? (
+                      <span
+                        className="pointer-events-none absolute right-3 top-3 text-3xl font-serif text-[#3897F0]/[0.12] select-none"
+                        aria-hidden
+                      >
+                        ?
+                      </span>
+                    ) : null}
                     <span
-                      className="pointer-events-none absolute right-3 top-3 text-3xl font-serif text-[#3897F0]/[0.12] select-none"
-                      aria-hidden
-                    >
-                      ?
-                    </span>
-                    <span
-                      className="absolute left-3 top-4 bottom-4 w-0.5 rounded-full bg-gradient-to-b from-[#3897F0] to-cyan-400/50"
+                      className={`absolute left-3 top-4 bottom-4 w-0.5 rounded-full ${accentBar}`}
                       aria-hidden
                     />
-                    <p className="text-[11px] font-semibold uppercase tracking-wide text-[#5eb0ff]/90 mb-2">
-                      Question
-                    </p>
+                    {!encyclopedia ? (
+                      <p className={`text-[11px] font-semibold uppercase tracking-wide ${kickerClass} mb-2`}>
+                        Question
+                      </p>
+                    ) : gi === 0 && i === 0 ? (
+                      <p className={`text-[10px] font-bold uppercase tracking-[0.2em] ${kickerClass} mb-2`}>
+                        Le saviez-vous ?
+                      </p>
+                    ) : null}
                     <h4 className="text-sm font-semibold text-white leading-snug mb-2.5">{card.title}</h4>
                     <TitledCardBody card={card} />
                   </article>
@@ -202,7 +219,11 @@ export function FamilyFaqBento({ blocks, narrow = false }) {
             {bottom.map((card, i) => (
               <article
                 key={`faq-${gi}-${i}`}
-                className="rounded-xl border border-[#3897F0]/25 bg-gradient-to-r from-[#3897F0]/[0.1] to-transparent px-4 py-4 sm:px-6 sm:py-5"
+                className={`rounded-xl border ${
+                  encyclopedia
+                    ? 'border-violet-500/25 bg-gradient-to-r from-violet-600/[0.1] to-transparent'
+                    : 'border-[#3897F0]/25 bg-gradient-to-r from-[#3897F0]/[0.1] to-transparent'
+                } px-4 py-4 sm:px-6 sm:py-5`}
               >
                 <div className="flex flex-col sm:flex-row sm:gap-6 sm:items-start">
                   <h4 className="text-sm font-semibold text-white leading-snug sm:w-[38%] shrink-0 mb-2 sm:mb-0">
@@ -221,6 +242,27 @@ export function FamilyFaqBento({ blocks, narrow = false }) {
           </div>
         );
       })}
+      {callouts.map((block, i) => (
+        <div
+          key={`callout-${i}`}
+          className={`rounded-2xl border px-5 py-4 sm:px-6 sm:py-5 ${
+            block.tone === 'warn'
+              ? 'border-amber-500/40 bg-gradient-to-br from-amber-950/40 via-[#0c0a08] to-black'
+              : 'border-violet-400/40 bg-gradient-to-br from-violet-950/30 to-black'
+          }`}
+        >
+          {block.title ? (
+            <p
+              className={`text-[10px] font-bold uppercase tracking-widest mb-2 ${
+                block.tone === 'warn' ? 'text-amber-200/95' : 'text-violet-200/95'
+              }`}
+            >
+              {block.title}
+            </p>
+          ) : null}
+          <p className="text-sm leading-[1.72] text-slate-50/95 whitespace-pre-line">{block.text}</p>
+        </div>
+      ))}
     </div>
   );
 }
