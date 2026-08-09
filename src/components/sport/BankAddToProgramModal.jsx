@@ -17,6 +17,7 @@ import {
   appendStretchKeyToProgramDay,
   resolveExerciseBankKey
 } from '../../utils/bankProgramMutations';
+import { getDayName } from '../../utils/dateUtils';
 import { STRETCH_MOMENTS } from '../../utils/stretchUtils';
 
 const DAY_LABEL = {
@@ -57,7 +58,7 @@ export default function BankAddToProgramModal({ payload, onClose }) {
     setProgramIdOther(
       programs?.some((p) => p?.id === activeProgram?.id) ? String(activeProgram.id) : String(programs?.[0]?.id || '')
     );
-    setDayKey('lundi');
+    setDayKey(getDayName(new Date()) || 'lundi');
     setMoment('soir');
     setNewProgramName('');
     setActivateAfterCreate(true);
@@ -210,7 +211,14 @@ export default function BankAddToProgramModal({ payload, onClose }) {
         return;
       }
       persistProgram(r.program);
-      showSuccess(`Exercice ajouté · ${DAY_LABEL[dayKey]} · ${target.name}.`);
+      const todayKey = getDayName(new Date());
+      const dayHint =
+        dayKey !== todayKey
+          ? ` Ouvre Aujourd’hui et va au ${DAY_LABEL[dayKey]} (flèches date) pour le voir.`
+          : activeProgram?.id === target.id
+            ? ' Visible dans Aujourd’hui pour ce jour.'
+            : '';
+      showSuccess(`Exercice ajouté · ${DAY_LABEL[dayKey]} · ${target.name}.${dayHint}`);
     }
 
     onClose?.();

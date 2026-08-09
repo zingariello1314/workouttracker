@@ -16,8 +16,12 @@ export const VISUAL_GROUP_SURFACE_BIAS = {
   [MuscleGroups.QUADS]: 'anterior',
   [MuscleGroups.HAMSTRINGS]: 'posterior',
   [MuscleGroups.CALVES]: 'posterior',
-  [MuscleGroups.TIBIALIS_ANTERIOR]: 'anterior',
+  [MuscleGroups.FOREARMS]: 'anterior',
+  [MuscleGroups.NECK]: 'lateral',
+  [MuscleGroups.ADDUCTORS]: 'anterior',
+  [MuscleGroups.GLUTES]: 'posterior',
   /** Abdos / gainage : favorise une vue avant cohérente avec les muscles visibles ventre. */
   [MuscleGroups.CORE]: 'anterior',
+  [MuscleGroups.TIBIALIS_ANTERIOR]: 'anterior',
   [MuscleGroups.FULL_BODY]: 'global'
 };

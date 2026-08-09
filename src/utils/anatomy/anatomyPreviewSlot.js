@@ -6,7 +6,7 @@
  */
 
 const MOBILE_MAX = 4;
-const DESKTOP_MAX = 6;
+const DESKTOP_MAX = 8;
 
 function resolveMaxActive() {
   if (typeof window === 'undefined') return DESKTOP_MAX;

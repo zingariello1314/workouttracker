@@ -1,4 +1,4 @@
-import React, { useCallback, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 
 import { ChevronRight } from 'lucide-react';
 
@@ -31,22 +31,6 @@ import {
 import { VISUAL_GROUP_SURFACE_BIAS } from '../../../utils/anatomy/visualGroupMeta';
 
 import { ANATOMY } from './anatomyTheme';
-
-
-
-const QUICK_TAGS = [
-
-  'haut des pectoraux',
-
-  'douleur épaule',
-
-  'tractions larges',
-
-  'grand dorsal'
-
-];
-
-
 
 /** Hauteur d’une ligne famille (px) — alignée sur py-3.5 + deux lignes texte. */
 
@@ -89,6 +73,15 @@ export default function AnatomyAccueilView({ onOpenFamily, onOpenMuscle, onSearc
     []
 
   );
+
+  useEffect(() => {
+    const el = document.getElementById('anatomy-explorer');
+    if (!el) return;
+    const t = window.setTimeout(() => {
+      el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }, 120);
+    return () => window.clearTimeout(t);
+  }, []);
 
 
 
@@ -262,35 +255,7 @@ export default function AnatomyAccueilView({ onOpenFamily, onOpenMuscle, onSearc
 
       />
 
-
-
-      <div className="flex flex-wrap gap-2">
-
-        {QUICK_TAGS.map((tag) => (
-
-          <button
-
-            key={tag}
-
-            type="button"
-
-            className={`rounded-full px-3 py-1 text-[11px] ${ANATOMY.chip}`}
-
-            onClick={() => handleSearch({ kind: 'family', id: 'pectoraux', label: tag, score: 5 })}
-
-          >
-
-            « {tag} »
-
-          </button>
-
-        ))}
-
-      </div>
-
-
-
-      <div className="grid lg:grid-cols-2 gap-4 items-stretch">
+      <div id="anatomy-explorer" className="scroll-mt-28 grid lg:grid-cols-2 gap-4 items-stretch">
 
         <div
 
@@ -321,6 +286,8 @@ export default function AnatomyAccueilView({ onOpenFamily, onOpenMuscle, onSearc
               controlledViewPreset={explorerView}
 
               onViewPresetChange={setExplorerView}
+
+              controlsEnableZoom
 
             />
 

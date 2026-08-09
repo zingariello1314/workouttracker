@@ -13,10 +13,9 @@ export function isExerciseIncludedForSessionDate(exercise, sessionDateStr) {
   if (!exercise || !sessionDateStr || typeof sessionDateStr !== 'string') {
     return true;
   }
-  const added = exercise.addedToProgramAt;
-  if (added && typeof added === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(added)) {
-    if (sessionDateStr < added) return false;
-  }
+  // Le programme est hebdomadaire : Aujourd’hui affiche le contenu actuel du jour (lundi… dimanche)
+  // pour la date naviguée, y compris si l’exo a été ajouté un jour calendaire ultérieur.
+  // `addedToProgramAt` sert aux stats (ex. leastCheckedExercises), pas au masquage séance.
   const removed = exercise.removedFromProgramAt;
   if (!removed || typeof removed !== 'string') {
     return true;

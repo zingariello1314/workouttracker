@@ -579,18 +579,29 @@ const WorkoutProvider = ({ children }) => {
       if (daySchedule) {
         const currentWeekVariant = getAutoWeekVariant(requestedDate);
 
-        // Programmes créés depuis le quiz : jours hors disponibilité = repos (vide), sans casser les anciens programmes
-        // où tous les jours ont `active: false` par défaut.
+        // Programmes quiz : jour `active: false` = repos, sauf si des exercices / étirements y sont planifiés (ex. ajout banque).
         if (activeProgram.availabilitySource === 'quiz' && daySchedule.active === false) {
-          return {
-            name: daySchedule.name || 'Repos',
-            focus: daySchedule.focus || '',
-            duree: daySchedule.duration || '',
-            exercices: [],
-            etirements: undefined,
-            isGymMode,
-            weekVariant: currentWeekVariant
-          };
+          const hasExercises =
+            Array.isArray(daySchedule.exercises) && daySchedule.exercises.length > 0;
+          const et = daySchedule.etirements;
+          const hasStretches =
+            et &&
+            typeof et === 'object' &&
+            ['matin', 'midi', 'soir'].some((m) => {
+              const slot = et[m];
+              return Array.isArray(slot) ? slot.length > 0 : Boolean(slot);
+            });
+          if (!hasExercises && !hasStretches) {
+            return {
+              name: daySchedule.name || 'Repos',
+              focus: daySchedule.focus || '',
+              duree: daySchedule.duration || '',
+              exercices: [],
+              etirements: undefined,
+              isGymMode,
+              weekVariant: currentWeekVariant
+            };
+          }
         }
 
         // ✅ FIX : Gérer les variations salle (maison/salle) si disponibles
@@ -601,8 +612,12 @@ const WorkoutProvider = ({ children }) => {
         if (isGymMode && daySchedule.salleVariants) {
           const weekVariantKey = currentWeekVariant === 'A' ? 'semaineA' : 'semaineB';
           const gymVariant = daySchedule.salleVariants[weekVariantKey];
-          
-          if (gymVariant && gymVariant.exercises) {
+
+          if (
+            gymVariant &&
+            Array.isArray(gymVariant.exercises) &&
+            gymVariant.exercises.length > 0
+          ) {
             exercisesToUse = gymVariant.exercises;
             variantName = gymVariant.name || variantName;
           }

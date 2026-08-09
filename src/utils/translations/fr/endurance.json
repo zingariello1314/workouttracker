@@ -593,6 +593,8 @@
     "scheduleTitle": "Emploi du temps du jour",
     "scheduleHint": "Coche chaque mini-série quand elle est faite — facile, sans forcer.",
     "progress": "Avancement du jour",
+    "dayProgress": "Avancement du jour",
+    "miniSetsShort": "séries",
     "slotDone": "Créneau complet",
     "repsShort": "reps",
     "checked": "fait",

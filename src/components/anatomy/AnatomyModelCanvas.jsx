@@ -34,7 +34,11 @@ export function BodyMapCameraApplier({
   distanceFactor = 1,
   onSettledOnce,
   /** Décale le point visé vers le haut (buste) ou le bas (jambes), en unités modèle. */
-  targetOffsetY = 0
+  targetOffsetY = 0,
+  /** Carte banque : cadrage fixe après Bounds (sans animation de zoom). */
+  staticCard = false,
+  /** Anatomie pick : ne recadre que si la vue face/dos change (pas au survol des familles). */
+  presetOnly = false
 }) {
   const camera = useThree((s) => s.camera);
   const controls = useThree((s) => s.controls);
@@ -55,15 +59,15 @@ export function BodyMapCameraApplier({
     fittedDistRef.current = null;
     settledFiredRef.current = false;
     baseTargetYRef.current = null;
-  }, [preset, distanceFactor, targetOffsetY]);
+  }, presetOnly ? [preset] : [preset, distanceFactor, targetOffsetY]);
 
   useFrame(() => {
     frame.current += 1;
 
     if (!controls?.target) {
       invalidate();
-      /* OrbitControls peut arriver après les premiers ticks : sans ça frame reste bloqué et l’aperçu carte reste à opacity-0. */
-      if (!settledFiredRef.current && frame.current >= 48) {
+      const fallbackFrame = staticCard ? 14 : 48;
+      if (!settledFiredRef.current && frame.current >= fallbackFrame) {
         settledFiredRef.current = true;
         onSettledOnce?.();
       }
@@ -71,6 +75,41 @@ export function BodyMapCameraApplier({
     }
 
     const target = controls.target;
+
+    if (staticCard) {
+      if (settledFiredRef.current) return;
+
+      if (baseTargetYRef.current === null && controls?.target) {
+        baseTargetYRef.current = controls.target.y;
+      }
+
+      const offY = offsetYRef.current;
+      if (controls?.target && baseTargetYRef.current !== null && Number.isFinite(offY) && offY !== 0) {
+        controls.target.y = baseTargetYRef.current + offY;
+      }
+
+      const target = controls?.target;
+      const liveDist = target ? camera.position.distanceTo(target) : 0;
+
+      if (frame.current >= 1 && liveDist > 0.02) {
+        const scale = BODY_VIEW_PRESETS[presetRef.current]?.distanceScale ?? 1;
+        const f = factorRef.current;
+        const dist = liveDist * scale * (Number.isFinite(f) && f > 0 ? f : 1);
+        applyViewPreset(camera, controls, presetRef.current, dist);
+      }
+
+      if (frame.current >= 1) {
+        if (!settledFiredRef.current) {
+          settledFiredRef.current = true;
+          onSettledOnce?.();
+        }
+        return;
+      }
+
+      invalidate();
+      return;
+    }
+
     if (frame.current > 28) return;
 
     const liveDist = camera.position.distanceTo(target);
@@ -111,7 +150,8 @@ function DemandInvalidateOnChange({ signature }) {
   return null;
 }
 
-import { isEcorcheHoverColor } from '../../services/anatomy/ecorcheMeshColors';
+import { isEcorcheHoverColor, isEcorchePreviewFocusColor, isEcorcheFamilyFocusColor, ECORCHE_FAMILY_FOCUS } from '../../services/anatomy/ecorcheMeshColors';
+import { lookupMeshColor, ECORCHE_IDLE_UNIFORM, resolveAnatomyMeshPaintName, resolveMeshHighlightColor } from '../../utils/anatomy/anatomyMeshColorLookup';
 
 function meshKey(name) {
   return String(name || '')
@@ -130,8 +170,8 @@ export function AnatomyModel({
   onMuscleClick,
   onMuscleHover,
   pickMode = false,
-  neutralUnmapped = '#64748b',
-  ecorcheFallback = '#7a3838'
+  neutralUnmapped = ECORCHE_IDLE_UNIFORM,
+  ecorcheFallback = ECORCHE_IDLE_UNIFORM
 }) {
   const { scene } = useGLTF(ANATOMY_MODEL_URL);
   const root = useMemo(() => {
@@ -151,16 +191,28 @@ export function AnatomyModel({
     const hasPerMuscleColors = Object.keys(muscleColors || {}).length > 0;
     root.traverse((child) => {
       if (!child.isMesh) return;
+      const paintName = resolveAnatomyMeshPaintName(child);
       const mats = Array.isArray(child.material) ? child.material : [child.material];
       const mappedColor =
-        muscleColors[child.name] ||
-        muscleColors[meshKey(child.name)];
+        resolveMeshHighlightColor(child, muscleColors) || lookupMeshColor(paintName, muscleColors);
+      const defaultPaint = hasPerMuscleColors ? ECORCHE_IDLE_UNIFORM : uniformBodyColor;
       const override =
         mappedColor ||
-        (hasPerMuscleColors ? (pickMode ? ecorcheFallback : neutralUnmapped) : uniformBodyColor);
+        (hasPerMuscleColors ? (pickMode ? ecorcheFallback : ECORCHE_IDLE_UNIFORM) : uniformBodyColor) ||
+        defaultPaint;
       mats.forEach((mat) => {
         if (!mat || !override) return;
         const isMapped = Boolean(mappedColor);
+        const emissiveHover = isMapped && isEcorcheHoverColor(mappedColor);
+        const previewFocus = isMapped && isEcorchePreviewFocusColor(mappedColor);
+        const familyFocus = isMapped && isEcorcheFamilyFocusColor(mappedColor);
+        const bankAccent =
+          isMapped &&
+          !previewFocus &&
+          !familyFocus &&
+          !emissiveHover &&
+          mappedColor !== ECORCHE_IDLE_UNIFORM &&
+          mappedColor !== ECORCHE_FAMILY_FOCUS;
 
         if ('map' in mat && mat.map) {
           mat.map = null;
@@ -174,18 +226,33 @@ export function AnatomyModel({
         if ('roughnessMap' in mat && mat.roughnessMap) {
           mat.roughnessMap = null;
         }
+        if ('vertexColors' in mat) {
+          mat.vertexColors = false;
+        }
 
         if (mat.color) {
           mat.color.set(override);
         }
-        const emissiveHover = isMapped && isEcorcheHoverColor(mappedColor);
-        if ('roughness' in mat) mat.roughness = isMapped ? (emissiveHover ? 0.48 : 0.58) : 0.72;
+        if ('roughness' in mat) {
+          mat.roughness = previewFocus || familyFocus || bankAccent ? 0.42 : isMapped ? (emissiveHover ? 0.48 : 0.58) : 0.72;
+        }
         if ('metalness' in mat) mat.metalness = isMapped ? 0.06 : 0.02;
         if ('emissive' in mat) {
-          mat.emissive.set(emissiveHover ? '#0f766e' : isMapped ? '#0f172a' : '#000000');
+          if (previewFocus) mat.emissive.set('#991b1b');
+          else if (familyFocus) mat.emissive.set('#9f1239');
+          else if (bankAccent) mat.emissive.set('#7c2d12');
+          else mat.emissive.set(emissiveHover ? '#0f766e' : '#000000');
         }
         if ('emissiveIntensity' in mat) {
-          mat.emissiveIntensity = emissiveHover ? 0.45 : isMapped ? 0.08 : 0;
+          mat.emissiveIntensity = previewFocus ? 0.55 : familyFocus ? 0.48 : bankAccent ? 0.38 : emissiveHover ? 0.45 : 0;
+        }
+        if (familyFocus || previewFocus) {
+          child.renderOrder = 50;
+          mats.forEach((mat) => {
+            if (mat && 'depthWrite' in mat) mat.depthWrite = true;
+          });
+        } else {
+          child.renderOrder = 0;
         }
         mat.needsUpdate = true;
       });
@@ -245,7 +312,9 @@ export function AnatomyInteractiveScene({
   /** Multiplicateur distance caméra après fit (plus petit = zoom avant). */
   cameraDistanceFactor = 1,
   /** Molette / pinch zoom (désactivé sur fiches banque anatomie calibrées). */
-  controlsEnableZoom = true
+  controlsEnableZoom = true,
+  /** Vise plus haut (buste) ou plus bas (jambes) après le cadrage Bounds. */
+  cameraTargetOffsetY = 0
 }) {
   return (
     <>
@@ -267,12 +336,17 @@ export function AnatomyInteractiveScene({
               onMuscleHover={onMuscleHover}
               pickMode={pickMode}
               neutralUnmapped={neutralUnmapped}
-              ecorcheFallback="#7a3838"
+              ecorcheFallback={ECORCHE_IDLE_UNIFORM}
             />
           </Center>
         </Bounds>
       </Suspense>
-      <BodyMapCameraApplier preset={viewPreset} distanceFactor={cameraDistanceFactor} />
+      <BodyMapCameraApplier
+        preset={viewPreset}
+        distanceFactor={cameraDistanceFactor}
+        targetOffsetY={cameraTargetOffsetY}
+        presetOnly={pickMode}
+      />
       <OrbitControls
         makeDefault
         enableZoom={controlsEnableZoom}
@@ -326,6 +400,7 @@ export function AnatomyCardStaticScene({
               uniformBodyColor={uniformBodyColor}
               onMuscleClick={onMuscleClick}
               neutralUnmapped={neutralUnmapped}
+              ecorcheFallback={ECORCHE_IDLE_UNIFORM}
             />
           </Center>
         </Bounds>
@@ -335,6 +410,7 @@ export function AnatomyCardStaticScene({
         distanceFactor={cameraDistanceFactor}
         onSettledOnce={onCameraSettledOnce}
         targetOffsetY={cameraTargetOffsetY}
+        staticCard
       />
       <OrbitControls
         makeDefault
@@ -411,7 +487,7 @@ export function AnatomyModelCanvas({
   const isCard = variant === 'cardStatic';
 
   return (
-    <div className={className} style={style}>
+    <div className={className} style={{ background: '#000000', ...style }}>
       <Canvas
         shadows={false}
         dpr={dpr}
@@ -421,8 +497,10 @@ export function AnatomyModelCanvas({
           alpha: false,
           powerPreference: 'high-performance',
           stencil: false,
-          depth: true
+          depth: true,
+          preserveDrawingBuffer: false
         }}
+        style={{ background: '#000000', display: 'block' }}
         camera={defaultCamera}
       >
         {sceneEl}

@@ -30,6 +30,7 @@
     "i18n:extract": "node scripts/extract-translations.js",
     "fix:three": "node scripts/fix-three-warnings.js",
     "anatomy:preview-keys": "vite-node scripts/list-anatomy-preview-keys.mjs",
+    "anatomy:preview-index": "node scripts/write-anatomy-preview-index.mjs",
     "anatomy:preview-render": "vite-node scripts/render-anatomy-previews.mjs"
   },
   "dependencies": {

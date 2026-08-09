@@ -40,6 +40,13 @@ function writeHashRoute(route) {
 export default function AnatomyTab() {
   const [route, setRoute] = useState(() => parseHashRoute());
 
+  /** À chaque ouverture de l’onglet : accueil + ancre explorateur (scroll dans AccueilView). */
+  useEffect(() => {
+    const home = { view: 'home' };
+    setRoute(home);
+    writeHashRoute(home);
+  }, []);
+
   useEffect(() => {
     const onHash = () => setRoute(parseHashRoute());
     window.addEventListener('hashchange', onHash);

@@ -1,12 +1,23 @@
 import { MuscleGroups } from '../../data/workoutProgramEnhanced';
 import { ANATOMY_MODEL_ECORCHE_V1, getRenderableMeshNamesForVisualGroup } from './modelAdapterEcorche';
+import { buildEcorcheBaseMeshColors } from '../../services/anatomy/ecorcheMeshColors';
+import { normalizeMeshColorKey, stampMeshColorVariants } from './anatomyMeshColorLookup';
 
 const NEUTRAL_BASE = '#475569';
 
 const PALETTE = {
-  exercise: { primary: '#dc2626', secondary: '#ea580c' },
+  exercise: { primary: '#ef4444', secondary: '#ea580c' },
   stretch: { primary: '#0c4a6e', secondary: '#075985' }
 };
+
+function paintGroupMeshes(target, visualGroupId, hex, skipKeys) {
+  getRenderableMeshNamesForVisualGroup(ANATOMY_MODEL_ECORCHE_V1, visualGroupId).forEach((meshName) => {
+    const key = normalizeMeshColorKey(meshName);
+    if (skipKeys.has(key)) return;
+    stampMeshColorVariants(target, key, hex);
+    skipKeys.add(key);
+  });
+}
 
 /**
  * @param {{ primaryIds: Set<string>, secondaryIds: Set<string>, mode: 'exercise'|'stretch' }} param0
@@ -26,26 +37,31 @@ export function buildAnatomyHighlightColors({ primaryIds, secondaryIds, mode }) 
     };
   }
 
-  const meshColors = {};
+  if (primary.size === 0 && secondary.size === 0) {
+    return {
+      meshColors: {},
+      uniformBodyColor: NEUTRAL_BASE,
+      usedFullBodyUniform: true
+    };
+  }
+
+  const meshColors = { ...buildEcorcheBaseMeshColors() };
   const primaryMeshes = new Set();
-  const secondaryEffective = new Set();
+
   primary.forEach((id) => {
-    getRenderableMeshNamesForVisualGroup(ANATOMY_MODEL_ECORCHE_V1, id).forEach((m) => {
-      meshColors[m] = palette.primary;
-      primaryMeshes.add(m);
-    });
+    paintGroupMeshes(meshColors, id, palette.primary, primaryMeshes);
   });
+
   secondary.forEach((id) => {
-    getRenderableMeshNamesForVisualGroup(ANATOMY_MODEL_ECORCHE_V1, id).forEach((m) => {
-      if (!primaryMeshes.has(m)) {
-        meshColors[m] = palette.secondary;
-      }
+    getRenderableMeshNamesForVisualGroup(ANATOMY_MODEL_ECORCHE_V1, id).forEach((meshName) => {
+      const key = normalizeMeshColorKey(meshName);
+      if (primaryMeshes.has(key)) return;
+      stampMeshColorVariants(meshColors, key, palette.secondary);
     });
   });
 
-  const hasAny = Object.keys(meshColors).length > 0;
   return {
-    meshColors: hasAny ? meshColors : {},
+    meshColors,
     uniformBodyColor: NEUTRAL_BASE,
     usedFullBodyUniform: false
   };

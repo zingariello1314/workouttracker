@@ -6,9 +6,21 @@ import {
   getAnatomyFamily,
   getAnatomyMuscle
 } from '../../data/anatomy/anatomyRegistry';
+import {
+  excerptAroundTokens,
+  listSearchableFamilyTextChunks,
+  listSearchableMuscleTextChunks,
+  muscleFamilyLabel,
+  muscleLabel,
+  textMatchesTokens
+} from './anatomySearchTextIndex';
 
 /**
  * @typedef {{ kind: 'muscle'|'family'|'exercise', id: string, label: string, hint?: string, score: number }} AnatomySearchHit
+ */
+
+/**
+ * @typedef {{ kind: 'snippet', muscleId?: string, familyId?: string, sectionTitle: string, excerpt: string, highlightFrom: number, highlightTo: number, score: number }} AnatomySnippetHit
  */
 
 function tokenize(q) {
@@ -21,6 +33,7 @@ function scoreTokens(haystack, tokens) {
   let s = 0;
   tokens.forEach((t) => {
     if (h === t) s += 12;
+    else if (h.startsWith(t)) s += 9;
     else if (h.includes(t)) s += 6;
     else if (t.length >= 4 && h.includes(t.slice(0, 4))) s += 2;
   });
@@ -29,15 +42,28 @@ function scoreTokens(haystack, tokens) {
 
 /** @param {string} query @param {{ limit?: number }} [opts] */
 export function searchAnatomy(query, opts = {}) {
+  const rich = searchAnatomyRich(query, opts);
+  return rich.hits;
+}
+
+/**
+ * @param {string} query
+ * @param {{ limit?: number, snippetLimit?: number, muscleChipLimit?: number }} [opts]
+ */
+export function searchAnatomyRich(query, opts = {}) {
   const limit = opts.limit ?? 12;
+  const snippetLimit = opts.snippetLimit ?? 14;
+  const muscleChipLimit = opts.muscleChipLimit ?? 8;
   const tokens = tokenize(query);
-  if (tokens.length === 0) return [];
+  if (tokens.length === 0) {
+    return { hits: [], muscleChips: [], snippets: [] };
+  }
 
   /** @type {AnatomySearchHit[]} */
   const hits = [];
 
   Object.values(ANATOMY_MUSCLES).forEach((m) => {
-    const blob = [m.name, m.summary, ...(m.searchAliases || [])].join(' ');
+    const blob = [m.name, m.summary, ...(m.searchAliases || []), m.id.replace(/-/g, ' ')].join(' ');
     const score = scoreTokens(blob, tokens);
     if (score > 0) {
       hits.push({
@@ -51,7 +77,7 @@ export function searchAnatomy(query, opts = {}) {
   });
 
   Object.values(ANATOMY_FAMILIES).forEach((f) => {
-    const blob = [f.name, f.summary, f.intro, ...(f.searchAliases || [])].join(' ');
+    const blob = [f.name, f.summary, f.intro, f.outro, ...(f.searchAliases || [])].join(' ');
     const score = scoreTokens(blob, tokens);
     if (score > 0) {
       hits.push({
@@ -94,7 +120,64 @@ export function searchAnatomy(query, opts = {}) {
     out.push(h);
     if (out.length >= limit) break;
   }
-  return out;
+
+  const muscleChips = out
+    .filter((h) => h.kind === 'muscle')
+    .slice(0, muscleChipLimit)
+    .map((h) => ({
+      muscleId: h.id,
+      label: h.label,
+      familyName: getAnatomyFamily(getAnatomyMuscle(h.id)?.familyId)?.name || '',
+      score: h.score
+    }));
+
+  /** @type {AnatomySnippetHit[]} */
+  const snippets = [];
+  const snippetSeen = new Set();
+
+  listSearchableMuscleTextChunks().forEach((chunk) => {
+    if (!textMatchesTokens(chunk.plain, tokens)) return;
+    const ex = excerptAroundTokens(chunk.plain, tokens);
+    if (!ex) return;
+    const key = `${chunk.muscleId}:${chunk.sectionId}:${ex.excerpt.slice(0, 40)}`;
+    if (snippetSeen.has(key)) return;
+    snippetSeen.add(key);
+    snippets.push({
+      kind: 'snippet',
+      muscleId: chunk.muscleId,
+      sectionTitle: chunk.sectionTitle,
+      excerpt: ex.excerpt,
+      highlightFrom: ex.highlightFrom,
+      highlightTo: ex.highlightTo,
+      score: scoreTokens(chunk.plain, tokens) + 3
+    });
+  });
+
+  listSearchableFamilyTextChunks().forEach((chunk) => {
+    if (!textMatchesTokens(chunk.plain, tokens)) return;
+    const ex = excerptAroundTokens(chunk.plain, tokens);
+    if (!ex) return;
+    const key = `fam:${chunk.familyId}:${ex.excerpt.slice(0, 40)}`;
+    if (snippetSeen.has(key)) return;
+    snippetSeen.add(key);
+    snippets.push({
+      kind: 'snippet',
+      familyId: chunk.familyId,
+      sectionTitle: chunk.sectionTitle,
+      excerpt: ex.excerpt,
+      highlightFrom: ex.highlightFrom,
+      highlightTo: ex.highlightTo,
+      score: scoreTokens(chunk.plain, tokens) + 1
+    });
+  });
+
+  snippets.sort((a, b) => b.score - a.score);
+
+  return {
+    hits: out,
+    muscleChips,
+    snippets: snippets.slice(0, snippetLimit)
+  };
 }
 
 /** Exercices Momentum liés à un muscle (heuristique labels). */
@@ -136,3 +219,5 @@ export function listExercisesForMuscle(muscleId, max = 24) {
 
   return out.slice(0, max);
 }
+
+export { muscleLabel, muscleFamilyLabel };

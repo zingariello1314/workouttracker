@@ -54,7 +54,7 @@ export function resolveBankItemAnatomy(muscleLists, mode, ctx) {
   });
 
   const hasMappedMeshes =
-    usedFullBodyUniform || (meshColors && Object.keys(meshColors).length > 0);
+    usedFullBodyUniform || primaryIds.size > 0 || secondaryIds.size > 0;
 
   /**
    * Toujours afficher le modèle : si aucun libellé ne mappe vers un mesh,

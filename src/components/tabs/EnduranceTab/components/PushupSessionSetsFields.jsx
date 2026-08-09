@@ -1,7 +1,7 @@
 import React, { useMemo } from 'react';
 import PropTypes from 'prop-types';
 import {
-  normalizePushupSessionFields,
+  parsePositiveInt,
   resolvePushupSessionTotalReps
 } from '../../../../services/endurance/pushupSessionUtils';
 
@@ -13,7 +13,12 @@ export default function PushupSessionSetsFields({ formState, setFormState, plann
 
   const patch = (key, value) => {
     setFormState((prev) => {
-      const next = normalizePushupSessionFields({ ...prev, [key]: value });
+      const next = { ...prev, [key]: value };
+      const sets = parsePositiveInt(next.setCount);
+      const per = parsePositiveInt(next.repsPerSet);
+      if (sets > 0 && per > 0) {
+        next.count = String(sets * per);
+      }
       return next;
     });
   };

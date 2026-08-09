@@ -589,6 +589,8 @@
     "scheduleTitle": "Today's schedule",
     "scheduleHint": "Check off each mini-set when done — easy, no grinding.",
     "progress": "Today's progress",
+    "dayProgress": "Today's progress",
+    "miniSetsShort": "sets",
     "slotDone": "Slot complete",
     "repsShort": "reps",
     "checked": "done",

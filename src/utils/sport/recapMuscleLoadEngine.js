@@ -11,7 +11,7 @@ import {
   enduranceRepsForSession,
   exerciseNameLooksIsometricForCalendar
 } from '../trainingLoadUtils';
-import { inferMuscleGroupsForExercise } from './recapMuscleInference';
+import { inferMuscleGroupsForExercise, inferMuscleLoadRolesForExercise } from './recapMuscleInference';
 import { recapScoreToHexRelative, recapZoneBlendHueScore } from './recapIntensityColors';
 import { MuscleGroups } from '../../data/workoutProgramEnhanced';
 import { getMeshesForMuscleGroup } from './recapMeshBinding';
@@ -60,7 +60,9 @@ const ALL_GROUPS = [
   MuscleGroups.BICEPS,
   MuscleGroups.TRICEPS,
   MuscleGroups.FOREARMS,
+  MuscleGroups.NECK,
   MuscleGroups.QUADS,
+  MuscleGroups.ADDUCTORS,
   MuscleGroups.HAMSTRINGS,
   MuscleGroups.GLUTES,
   MuscleGroups.CALVES,
@@ -175,6 +177,50 @@ function weightsForActivity(activityType) {
  * retourne exactement pecs / triceps / épaules / core (cas « Pompes » base en base exercices).
  * Sinon parts égales (autres variantes en base).
  */
+const PRIMARY_REP_SHARE = 0.74;
+const SECONDARY_REP_SHARE = 0.26;
+
+function distributeRepShareAcrossRoles(rInt, roles, pushW) {
+  const primary = roles?.primary || [];
+  const secondary = (roles?.secondary || []).filter((g) => !primary.includes(g));
+  const shares = {};
+
+  if (pushW) {
+    Object.entries(pushW).forEach(([g, frac]) => {
+      shares[g] = (shares[g] || 0) + rInt * frac;
+    });
+    return shares;
+  }
+
+  if (primary.length === 0 && secondary.length === 0) {
+    return { [MuscleGroups.FULL_BODY]: rInt };
+  }
+
+  if (primary.length > 0) {
+    const part = (rInt * PRIMARY_REP_SHARE) / primary.length;
+    primary.forEach((g) => {
+      shares[g] = (shares[g] || 0) + part;
+    });
+  } else {
+    const part = rInt / Math.max(1, secondary.length);
+    secondary.forEach((g) => {
+      shares[g] = (shares[g] || 0) + part;
+    });
+    return shares;
+  }
+
+  if (secondary.length > 0) {
+    const part = (rInt * SECONDARY_REP_SHARE) / secondary.length;
+    secondary.forEach((g) => {
+      shares[g] = (shares[g] || 0) + part;
+    });
+  } else if (primary.length === 1) {
+    shares[primary[0]] = (shares[primary[0]] || 0) + rInt * (1 - PRIMARY_REP_SHARE);
+  }
+
+  return shares;
+}
+
 const PUSHUP_REP_SHARE_TEMPLATE = {
   [MuscleGroups.CHEST]: 0.42,
   [MuscleGroups.TRICEPS]: 0.24,
@@ -294,10 +340,11 @@ export function computeRecapMuscleState(allData, period, getExerciseNameById, re
     if (rInt > 0) {
       if (isIso) volumeTotals.isoSeconds += rInt;
       else volumeTotals.strengthReps += rInt;
+      const roles = inferMuscleLoadRolesForExercise(exLike);
       const groupsForReps = inferMuscleGroupsForExercise(exLike);
       const pushW = pushupRepShareWeights(groupsForReps);
-      groupsForReps.forEach((g) => {
-        const repShare = pushW ? rInt * pushW[g] : rInt / groupsForReps.length;
+      const repShares = distributeRepShareAcrossRoles(rInt, roles, pushW);
+      Object.entries(repShares).forEach(([g, repShare]) => {
         repShareByGroup[g] = (repShareByGroup[g] || 0) + repShare;
         if (!exerciseAccByGroup[g]) exerciseAccByGroup[g] = new Map();
         const prev = exerciseAccByGroup[g].get(idStr) || {
@@ -323,12 +370,38 @@ export function computeRecapMuscleState(allData, period, getExerciseNameById, re
       weightedMul = weightedRecapLoadMultiplier(rInt, volKg);
     }
 
+    const roles = inferMuscleLoadRolesForExercise(exLike);
     const groups = inferMuscleGroupsForExercise(exLike);
-    const share = (contrib * weightedMul) / groups.length;
+    const roleWeights = {};
+    const primary = roles.primary || [];
+    const secondary = (roles.secondary || []).filter((g) => !primary.includes(g));
+    if (primary.length) {
+      const w = 0.74 / primary.length;
+      primary.forEach((g) => {
+        roleWeights[g] = (roleWeights[g] || 0) + w;
+      });
+    }
+    if (secondary.length) {
+      const w = 0.26 / secondary.length;
+      secondary.forEach((g) => {
+        roleWeights[g] = (roleWeights[g] || 0) + w;
+      });
+    } else if (primary.length === 1) {
+      roleWeights[primary[0]] = (roleWeights[primary[0]] || 0) + 0.26;
+    }
+    if (!Object.keys(roleWeights).length && groups.length) {
+      const w = 1 / groups.length;
+      groups.forEach((g) => {
+        roleWeights[g] = w;
+      });
+    }
+    const weightSum = Object.values(roleWeights).reduce((a, b) => a + b, 0) || 1;
+
+    const share = (contrib * weightedMul) / weightSum;
     const w = decayFactor(dateStr, refYmd);
-    groups.forEach((g) => {
+    Object.entries(roleWeights).forEach(([g, frac]) => {
       if (!accum[g]) accum[g] = { strength: 0, cardio: 0 };
-      accum[g].strength += share * w;
+      accum[g].strength += share * frac * w;
     });
   });
 

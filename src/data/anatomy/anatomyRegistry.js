@@ -109,23 +109,29 @@ export const ANATOMY_FAMILIES = {
     visualGroupIds: [MuscleGroups.BACK],
     searchAliases: ['lombaires', 'lower back', 'érecteurs', 'soulevé de terre', 'extensions lombaires']
   },
-  bras: {
-    id: 'bras',
-    name: 'Bras',
-    summary: 'Flexion, extension du coude, volume et transmission de la force.',
+  biceps: {
+    id: 'biceps',
+    name: 'Biceps',
+    summary: 'Flexion du coude, supination et volume avant du bras.',
     intro:
-      'Les bras ne se résument pas au biceps : le triceps représente environ les deux tiers du volume du bras ; le brachial et le brachio-radial donnent l’épaisseur ; les avant-bras transmettent la force jusqu’à la prise.\n\nLe biceps intervient en flexion, supination et tractions ; le triceps est le moteur des pompes, dips, développés et mouvements de street workout avancés. Le brachial fléchit le coude quelle que soit la position de la main ; le coraco-brachial (petit muscle du processus coracoïde) stabilise l’épaule en poussée.\n\nUn bras complet = biceps + brachial + triceps + avant-bras + prise — pas des curls isolés.',
+      'Le biceps brachial (deux chefs) est le muscle le plus visible à l’avant du bras : flexion du coude, supination de l’avant-bras et aide aux tractions en supination. Le brachial, plus profond, épaissit le bras en flexion pure (curl marteau, prise neutre) — souvent le facteur limitant esthétique quand seul le biceps est entraîné.\n\nUn biceps complet ne se limite pas aux curls : tractions, chin-ups, rows en supination et travail de prise complètent le développement fonctionnel.',
     outro:
-      'Dans Momentum, les bras relient esthétique, tractions, poussées et street workout : équilibre triceps / biceps, épaisseur (brachial, marteau), extensions overhead (chef long) et prise (avant-bras).',
-    muscleIds: [
-      'biceps-brachial',
-      'brachial',
-      'brachio-radial',
-      'triceps-brachial',
-      'avant-bras-ensemble'
-    ],
-    visualGroupIds: [MuscleGroups.BICEPS, MuscleGroups.TRICEPS],
-    searchAliases: ['arms', 'curl', 'triceps', 'biceps', 'dips', 'bras']
+      'Dans Momentum : curls variés, tractions supination, marteau pour le brachial, équilibre avec triceps et avant-bras pour un bras harmonieux.',
+    muscleIds: ['biceps-brachial', 'brachial'],
+    visualGroupIds: [MuscleGroups.BICEPS],
+    searchAliases: ['biceps', 'curl', 'chin-up', 'flexion coude', 'brachial']
+  },
+  triceps: {
+    id: 'triceps',
+    name: 'Triceps',
+    summary: 'Extension du coude — environ les deux tiers du volume du bras.',
+    intro:
+      'Le triceps brachial possède trois chefs (long, latéral, médial) convergent vers l’olécrâne : extension du coude, pilier des pompes, dips, développés, HSPU et figures de street workout. Le chef long est sensible à la position du bras (extensions overhead vs pushdown).\n\nNégliger le triceps au profit du seul biceps limite volume, force de poussée et esthétique de profil.',
+    outro:
+      'Dans Momentum : dips, pompes, extensions overhead, pushdown et poussées lourdes pour un triceps complet — compléter avec biceps et avant-bras.',
+    muscleIds: ['triceps-brachial'],
+    visualGroupIds: [MuscleGroups.TRICEPS],
+    searchAliases: ['triceps', 'extension coude', 'dips', 'pompes', 'pushdown']
   },
   'avant-bras': {
     id: 'avant-bras',
@@ -133,7 +139,7 @@ export const ANATOMY_FAMILIES = {
     summary: 'Poignet, pronation/supination et force de préhension.',
     intro:
       'Les avant-bras regroupent de nombreux muscles : fléchisseurs et extenseurs du poignet, pronateurs, supinateurs et muscles de la préhension. Essentiels en tractions, escalade, street workout et carries — souvent le facteur limitant avant le dos ou les biceps.',
-    muscleIds: ['avant-bras-ensemble'],
+    muscleIds: ['avant-bras-ensemble', 'brachio-radial'],
     visualGroupIds: [MuscleGroups.FOREARMS],
     searchAliases: ['forearms', 'grip', 'prise', 'farmer walk', 'avant-bras']
   },
@@ -180,7 +186,7 @@ export const ANATOMY_FAMILIES = {
       'Équilibrer avant / arrière / intérieur, inclure du unilatéral et progresser volume et charge sans sacrifier la technique du genou et de la hanche. Fessiers, mollets et tibial antérieur complètent la vision « jambes » dans Momentum.',
     sections: CUISSES_JAMBES_FAMILY_SECTIONS,
     muscleIds: ['quadriceps-femoral', 'ischio-jambiers', 'adducteurs-ensemble'],
-    visualGroupIds: [MuscleGroups.QUADS, MuscleGroups.HAMSTRINGS],
+    visualGroupIds: [MuscleGroups.QUADS, MuscleGroups.HAMSTRINGS, MuscleGroups.ADDUCTORS],
     searchAliases: ['quads', 'ischios', 'squat', 'jambes', 'cuisses', 'leg extension']
   },
   mollets: {
@@ -214,7 +220,7 @@ export const ANATOMY_FAMILIES = {
     intro:
       'SCM et splénius pour le mouvement et l’esthétique latérale/postérieure du cou ; trapèzes (Haut du dos) pour la transition cou–épaules. Muscles profonds (chin tucks, isométriques) pour la posture. Handstand et carries : stabilité axiale. Progression prudente sur le cou.',
     muscleIds: ['sterno-cleido-mastoidien', 'splenius'],
-    visualGroupIds: [MuscleGroups.SHOULDERS],
+    visualGroupIds: [MuscleGroups.NECK],
     searchAliases: ['neck', 'nuque', 'SCM', 'cou', 'chin tuck', 'isométrique cervical']
   }
 };
@@ -355,7 +361,7 @@ export const ANATOMY_MUSCLES = {
   },
   'biceps-brachial': {
     id: 'biceps-brachial',
-    familyId: 'bras',
+    familyId: 'biceps',
     name: 'Biceps brachial',
     summary: 'Deux chefs — flexion du coude, supination et aide aux tractions.',
     functionalImportance: 'high',
@@ -366,7 +372,7 @@ export const ANATOMY_MUSCLES = {
   },
   brachial: {
     id: 'brachial',
-    familyId: 'bras',
+    familyId: 'biceps',
     name: 'Brachial',
     summary: 'Sous le biceps — épaisseur du bras, flexion pure du coude.',
     functionalImportance: 'high',
@@ -377,7 +383,7 @@ export const ANATOMY_MUSCLES = {
   },
   'brachio-radial': {
     id: 'brachio-radial',
-    familyId: 'bras',
+    familyId: 'avant-bras',
     name: 'Brachio-radial',
     summary: 'Jonction bras/avant-bras — flexion du coude en prise neutre ou pronation.',
     functionalImportance: 'high',
@@ -388,7 +394,7 @@ export const ANATOMY_MUSCLES = {
   },
   'triceps-brachial': {
     id: 'triceps-brachial',
-    familyId: 'bras',
+    familyId: 'triceps',
     name: 'Triceps brachial',
     summary: 'Trois chefs — ~⅔ du volume du bras, extension du coude et poussée.',
     functionalImportance: 'high',
@@ -514,7 +520,7 @@ export const ANATOMY_MUSCLES = {
     summary: 'Face interne cuisse — adduction, stabilité bassin, squat profond.',
     functionalImportance: 'high',
     aestheticImportance: 'medium',
-    visualGroupId: MuscleGroups.QUADS,
+    visualGroupId: MuscleGroups.ADDUCTORS,
     contentReady: true,
     searchAliases: ['adducteurs', 'Copenhagen plank', 'presse large', 'sumo squat']
   },
@@ -591,7 +597,7 @@ export const ANATOMY_MUSCLES = {
     summary: 'Bandes latérales du cou — flexion et rotation de la tête.',
     functionalImportance: 'high',
     aestheticImportance: 'high',
-    visualGroupId: MuscleGroups.SHOULDERS,
+    visualGroupId: MuscleGroups.NECK,
     contentReady: true,
     searchAliases: ['SCM', 'cou', 'flexion cervicale']
   },
@@ -602,7 +608,7 @@ export const ANATOMY_MUSCLES = {
     summary: 'Extension et rotation postérieure du cou.',
     functionalImportance: 'high',
     aestheticImportance: 'low',
-    visualGroupId: MuscleGroups.SHOULDERS,
+    visualGroupId: MuscleGroups.NECK,
     contentReady: true,
     searchAliases: ['nuque', 'extension cervicale']
   },
@@ -654,7 +660,8 @@ export const ANATOMY_FAMILY_ORDER = [
   'epaules',
   'haut-dos',
   'bas-dos',
-  'bras',
+  'biceps',
+  'triceps',
   'avant-bras',
   'abdominaux',
   'fessiers',
@@ -665,6 +672,7 @@ export const ANATOMY_FAMILY_ORDER = [
 ];
 
 export function getAnatomyFamily(id) {
+  if (id === 'bras') return ANATOMY_FAMILIES.biceps || null;
   return ANATOMY_FAMILIES[id] || null;
 }
 
@@ -695,6 +703,7 @@ export function anatomyTargetForFamily(familyId) {
 
 export function resolveAnatomyTargetFromVisualGroup(groupId) {
   if (!groupId) return null;
+  if (groupId === 'head') return anatomyTargetForFamily('cou');
   if (groupId === MuscleGroups.BACK) {
     return { kind: 'backChoice', familyIds: ['haut-dos', 'bas-dos'] };
   }

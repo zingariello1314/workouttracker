@@ -36,6 +36,7 @@ import {
   getExerciseFamilyLabel,
   getExerciseMuscleCategory
 } from '../../utils/bankFamilySort';
+import { AnatomyPreviewCaptureProvider } from '../anatomy/AnatomyPreviewCaptureProvider';
 
 /** Sous-onglets de la vue "Banque" (anciennement "Exercices"). */
 const BANK_SUB_TABS = {
@@ -45,7 +46,7 @@ const BANK_SUB_TABS = {
   PROGRAM: 'program'       // Mon programme (exos + étirements du programme actif)
 };
 
-const ExercisesTab = () => {
+const ExercisesTabBody = () => {
   const { data, updateData } = useWorkout();
   const { programs, activeProgram, updateProgram } = useContext(WorkoutContext);
   const t = useTranslation();
@@ -1115,5 +1116,11 @@ const ExercisesTab = () => {
     </div>
   );
 };
+
+const ExercisesTab = () => (
+  <AnatomyPreviewCaptureProvider>
+    <ExercisesTabBody />
+  </AnatomyPreviewCaptureProvider>
+);
 
 export default ExercisesTab;

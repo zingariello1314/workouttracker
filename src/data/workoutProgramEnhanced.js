@@ -26,6 +26,8 @@ export const MuscleGroups = {
   HAMSTRINGS: 'hamstrings',
   CALVES: 'calves',
   TIBIALIS_ANTERIOR: 'tibialis_anterior',
+  NECK: 'neck',
+  ADDUCTORS: 'adductors',
   CORE: 'core',
   FULL_BODY: 'full_body'
 };

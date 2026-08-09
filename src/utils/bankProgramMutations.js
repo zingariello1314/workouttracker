@@ -124,6 +124,7 @@ export function appendExerciseBankKeyToProgramDay(program, dayKey, exerciseBankK
     schedule: { ...program.schedule }
   };
   const day = { ...updatedProgram.schedule[dayKey] };
+  day.active = true;
   day.exercises = [...(day.exercises || [])];
   day.exercises.push(built);
   updatedProgram.schedule[dayKey] = day;
@@ -173,6 +174,7 @@ export function appendStretchKeyToProgramDay(program, dayKey, moment, stretchKey
       ...program.schedule,
       [dayKey]: {
         ...program.schedule[dayKey],
+        active: true,
         etirements: raw
       }
     }

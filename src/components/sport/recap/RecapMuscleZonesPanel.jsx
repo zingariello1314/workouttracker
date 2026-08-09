@@ -24,6 +24,7 @@ const ZONE_SECTIONS = [
       { groupId: MuscleGroups.CHEST, detailKey: 'recap.zones.detail.chest' },
       { groupId: MuscleGroups.BACK, detailKey: 'recap.zones.detail.back' },
       { groupId: MuscleGroups.SHOULDERS, detailKey: 'recap.zones.detail.shoulders' },
+      { groupId: MuscleGroups.NECK, detailKey: 'recap.zones.detail.neck' },
       { groupId: MuscleGroups.CORE, detailKey: 'recap.zones.detail.core' }
     ]
   },
@@ -39,6 +40,7 @@ const ZONE_SECTIONS = [
     titleKey: 'recap.zones.section.legs',
     rows: [
       { groupId: MuscleGroups.QUADS, detailKey: 'recap.zones.detail.quads' },
+      { groupId: MuscleGroups.ADDUCTORS, detailKey: 'recap.zones.detail.adductors' },
       { groupId: MuscleGroups.GLUTES, detailKey: 'recap.zones.detail.glutes' },
       { groupId: MuscleGroups.HAMSTRINGS, detailKey: 'recap.zones.detail.hamstrings' },
       { groupId: MuscleGroups.CALVES, detailKey: 'recap.zones.detail.calves' },

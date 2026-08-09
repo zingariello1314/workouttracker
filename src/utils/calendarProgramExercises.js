@@ -67,7 +67,19 @@ export function buildWorkoutVariantsForProgramDay(program, dayName, sessionDateS
   const daySchedule = program.schedule[dayName];
 
   if (program.availabilitySource === 'quiz' && daySchedule.active === false) {
-    return [];
+    const hasExercises =
+      Array.isArray(daySchedule.exercises) && daySchedule.exercises.length > 0;
+    const et = daySchedule.etirements;
+    const hasStretches =
+      et &&
+      typeof et === 'object' &&
+      ['matin', 'midi', 'soir'].some((m) => {
+        const slot = et[m];
+        return Array.isArray(slot) ? slot.length > 0 : Boolean(slot);
+      });
+    if (!hasExercises && !hasStretches) {
+      return [];
+    }
   }
 
   const variants = [];

@@ -1,144 +1,289 @@
 /**
- * Teintes « écorché » par zone Récap — base visible même sans survol.
- */
-import { GLB_MESH_TO_MUSCLE_ID, getAllMappedAnatomyMeshKeys } from '../../utils/sport/recapMeshBinding';
-import {
-  meshInAnatomyBackRegion,
-  normalizeAnatomyMeshName
-} from '../../utils/anatomy/anatomyBackMeshRegions';
-import { resolvePreviewFocusMeshKeys } from '../../utils/anatomy/anatomyMuscleMeshFocus';
-import { getAnatomyFamily } from '../../data/anatomy/anatomyRegistry';
 
+ * Teintes « écorché » par zone Récap — base visible même sans survol.
+
+ */
+
+import { GLB_MESH_TO_MUSCLE_ID, getAllMappedAnatomyMeshKeys } from '../../utils/sport/recapMeshBinding';
+
+import { ECORCHE_IDLE_UNIFORM, normalizeMeshColorKey, stampMeshColorVariants } from '../../utils/anatomy/anatomyMeshColorLookup';
+
+import { normalizeAnatomyMeshName } from '../../utils/anatomy/anatomyBackMeshRegions';
+
+import { resolvePreviewFocusMeshKeys, getFocusMeshKeysForVisualGroup } from '../../utils/anatomy/anatomyMuscleMeshFocus';
+
+import { getAnatomyFamilyFocusMeshKeys, GLB_TIBIALIS_ANTERIOR_NODE } from '../../utils/anatomy/anatomyFamilyFocusMeshes';
 /** Couleur de surbrillance au survol (lisible sur fond muscle). */
+
 export const ECORCHE_HOVER_ACCENT = '#5eead4';
 
+
+
+/** Surbrillance famille / explorateur. */
+
+export const ECORCHE_FAMILY_FOCUS = '#b85454';
+
+
+
 /** @type {Record<string, string>} */
+
 export const ECORCHE_GROUP_BASE = {
-  chest: '#b84a4a',
-  back: '#9a4040',
-  shoulders: '#a84545',
-  biceps: '#8f3d3d',
-  triceps: '#7a3636',
-  core: '#6d3333',
-  quads: '#5c2e2e',
-  hamstrings: '#4f2828',
-  calves: '#452424',
-  tibialis_anterior: '#4a2626',
-  forearms: '#503030',
-  glutes: '#4a2828',
-  legs: '#5c2e2e',
-  full_body: '#8b4040'
+
+  chest: ECORCHE_IDLE_UNIFORM,
+
+  back: ECORCHE_IDLE_UNIFORM,
+
+  shoulders: ECORCHE_IDLE_UNIFORM,
+
+  biceps: ECORCHE_IDLE_UNIFORM,
+
+  triceps: ECORCHE_IDLE_UNIFORM,
+
+  core: ECORCHE_IDLE_UNIFORM,
+
+  quads: ECORCHE_IDLE_UNIFORM,
+
+  hamstrings: ECORCHE_IDLE_UNIFORM,
+
+  calves: ECORCHE_IDLE_UNIFORM,
+
+  tibialis_anterior: ECORCHE_IDLE_UNIFORM,
+
+  forearms: ECORCHE_IDLE_UNIFORM,
+
+  glutes: ECORCHE_IDLE_UNIFORM,
+
+  neck: ECORCHE_IDLE_UNIFORM,
+
+  adductors: ECORCHE_IDLE_UNIFORM,
+
+  legs: ECORCHE_IDLE_UNIFORM,
+
+  full_body: ECORCHE_IDLE_UNIFORM
+
 };
 
-function normalizeMeshName(name) {
-  return String(name || '')
-    .trim()
-    .replace(/\./g, '_');
+
+
+const MESH_KEY_TO_GROUP = (() => {
+
+  /** @type {Record<string, string>} */
+
+  const map = {};
+
+  Object.entries(GLB_MESH_TO_MUSCLE_ID).forEach(([meshName, groupId]) => {
+
+    map[normalizeAnatomyMeshName(meshName)] = groupId;
+
+  });
+
+  return map;
+
+})();
+
+
+
+function focusSetHasKey(focusSet, meshKey) {
+
+  if (focusSet.has(meshKey)) return true;
+
+  const dotted = meshKey.replace(/_/g, '.');
+
+  if (focusSet.has(dotted)) return true;
+
+  for (const f of focusSet) {
+
+    if (normalizeMeshColorKey(f) === meshKey) return true;
+
+  }
+
+  return false;
+
 }
 
-function baseForGroup(groupId) {
-  return ECORCHE_GROUP_BASE[groupId] || '#7a3838';
-}
 
-/** Toutes les meshes du GLB avec leur couleur écorché. */
+
+/** Toutes les meshes du GLB avec la même teinte de repos. */
+
 export function buildEcorcheBaseMeshColors() {
+
   const colors = {};
-  Object.entries(GLB_MESH_TO_MUSCLE_ID).forEach(([meshName, groupId]) => {
-    colors[normalizeMeshName(meshName)] = baseForGroup(groupId);
+
+  getAllMappedAnatomyMeshKeys().forEach((key) => {
+
+    colors[key] = ECORCHE_IDLE_UNIFORM;
+
   });
+
   return colors;
+
 }
 
-function darkenHex(hex, factor = 0.55) {
-  const h = hex.replace('#', '');
-  if (h.length !== 6) return hex;
-  const r = Math.round(parseInt(h.slice(0, 2), 16) * factor);
-  const g = Math.round(parseInt(h.slice(2, 4), 16) * factor);
-  const b = Math.round(parseInt(h.slice(4, 6), 16) * factor);
-  return `#${[r, g, b].map((x) => x.toString(16).padStart(2, '0')).join('')}`;
-}
 
-function brightenHex(hex, factor = 1.35) {
-  const h = hex.replace('#', '');
-  if (h.length !== 6) return hex;
-  const r = Math.min(255, Math.round(parseInt(h.slice(0, 2), 16) * factor));
-  const g = Math.min(255, Math.round(parseInt(h.slice(2, 4), 16) * factor));
-  const b = Math.min(255, Math.round(parseInt(h.slice(4, 6), 16) * factor));
-  return `#${[r, g, b].map((x) => x.toString(16).padStart(2, '0')).join('')}`;
-}
 
-/** Surbrillance d’une famille (plusieurs groupes visuels) — reste en palette écorché. */
+/** Surbrillance d’une famille (explorateur) — listes explicites par `familyId`. */
 export function buildFamilyFocusMeshColors(visualGroupIds = [], { dimOthers = true, familyId = null } = {}) {
-  const focus = new Set((visualGroupIds || []).filter(Boolean));
-  const backRegion = familyId ? getAnatomyFamily(familyId)?.anatomyBackRegion : null;
   const colors = {};
-  Object.entries(GLB_MESH_TO_MUSCLE_ID).forEach(([meshName, groupId]) => {
-    const key = normalizeAnatomyMeshName(meshName);
-    const base = baseForGroup(groupId);
-    let inFocus = focus.has(groupId);
-    if (groupId === 'back' && backRegion) {
-      inFocus = meshInAnatomyBackRegion(key, backRegion);
-    }
-    if (inFocus) {
-      colors[key] = brightenHex(base, 1.42);
-    } else {
-      colors[key] = dimOthers ? darkenHex(base, 0.48) : base;
-    }
+  const idle = dimOthers ? ECORCHE_IDLE_UNIFORM : null;
+
+  let focusKeys = [];
+  if (familyId) {
+    focusKeys = getAnatomyFamilyFocusMeshKeys(familyId);
+  } else {
+    const focus = new Set((visualGroupIds || []).filter(Boolean));
+    getAllMappedAnatomyMeshKeys().forEach((key) => {
+      const groupId = MESH_KEY_TO_GROUP[key];
+      if (groupId && focus.has(groupId)) focusKeys.push(key);
+    });
+  }
+
+  const focusSet = new Set(focusKeys.map((k) => normalizeMeshColorKey(k)));
+
+  getAllMappedAnatomyMeshKeys().forEach((key) => {
+    const norm = normalizeMeshColorKey(key);
+    const inFocus = focusSetHasKey(focusSet, norm);
+    const hex = inFocus ? ECORCHE_FAMILY_FOCUS : idle;
+    if (hex) stampMeshColorVariants(colors, key, hex);
   });
+
+  focusSet.forEach((k) => stampMeshColorVariants(colors, k, ECORCHE_FAMILY_FOCUS));
+
+  if (familyId === 'tibia') {
+    colors[GLB_TIBIALIS_ANTERIOR_NODE] = ECORCHE_FAMILY_FOCUS;
+    colors['@group:tibialis_anterior'] = ECORCHE_FAMILY_FOCUS;
+    stampMeshColorVariants(colors, GLB_TIBIALIS_ANTERIOR_NODE, ECORCHE_FAMILY_FOCUS);
+  }
+
   return colors;
 }
+
+
 
 /** @deprecated — préférer buildFamilyFocusMeshColors via famille */
+
 export function buildPickModeEcorcheMeshColors(hoveredGroupId) {
+
   const colors = buildEcorcheBaseMeshColors();
+
   if (!hoveredGroupId) return colors;
 
-  Object.entries(GLB_MESH_TO_MUSCLE_ID).forEach(([meshName, groupId]) => {
-    const key = normalizeMeshName(meshName);
-    if (groupId === hoveredGroupId) {
+
+
+  getAllMappedAnatomyMeshKeys().forEach((key) => {
+
+    const g = MESH_KEY_TO_GROUP[key];
+
+    if (g === hoveredGroupId) {
+
       colors[key] = ECORCHE_HOVER_ACCENT;
+
     } else {
-      colors[key] = darkenHex(baseForGroup(groupId), 0.42);
+
+      colors[key] = ECORCHE_IDLE_UNIFORM;
+
     }
+
   });
+
   return colors;
+
 }
+
+
 
 export function mergeEcorcheHoverHighlight(existingColors, hoveredGroupId) {
+
   if (!hoveredGroupId) return existingColors || buildEcorcheBaseMeshColors();
+
   const base = { ...(existingColors || buildEcorcheBaseMeshColors()) };
-  Object.entries(GLB_MESH_TO_MUSCLE_ID).forEach(([meshName, groupId]) => {
-    const key = normalizeMeshName(meshName);
-    if (groupId === hoveredGroupId) {
+
+  getAllMappedAnatomyMeshKeys().forEach((key) => {
+
+    const g = MESH_KEY_TO_GROUP[key];
+
+    if (g === hoveredGroupId) {
+
       base[key] = ECORCHE_HOVER_ACCENT;
-    } else if (!existingColors?.[key]) {
-      base[key] = darkenHex(baseForGroup(groupId), 0.42);
+
     } else {
-      base[key] = darkenHex(existingColors[key], 0.55);
+
+      base[key] = ECORCHE_IDLE_UNIFORM;
+
     }
+
   });
+
   return base;
+
 }
+
+
 
 export function isEcorcheHoverColor(hex) {
+
   return hex === ECORCHE_HOVER_ACCENT;
+
 }
 
-const PREVIEW_PRIMARY = '#dc2626';
-const PREVIEW_DIM = '#334155';
+
+
+/** Rouge vif des vignettes « muscle de la famille ». */
+export const ECORCHE_PREVIEW_FOCUS = '#ef4444';
+
+
+
+export function isEcorchePreviewFocusColor(hex) {
+
+  return hex === ECORCHE_PREVIEW_FOCUS || hex === '#dc2626';
+
+}
+
+export function isEcorcheFamilyFocusColor(hex) {
+
+  return hex === ECORCHE_FAMILY_FOCUS;
+
+}
+
 
 /** Surbrillance rouge ciblée pour une fiche muscle (vignettes / rail). */
+
 export function buildMuscleFocusMeshColors(muscleId, visualGroupId, { dimOthers = true } = {}) {
-  const focusSet = new Set(resolvePreviewFocusMeshKeys(muscleId, visualGroupId) || []);
+
+  const focusKeys = resolvePreviewFocusMeshKeys(muscleId, visualGroupId) || [];
+
+  const focusSet = new Set(focusKeys.map((k) => normalizeMeshColorKey(k)));
+
+  if (focusSet.size === 0 && visualGroupId) {
+    getFocusMeshKeysForVisualGroup(visualGroupId).forEach((k) => focusSet.add(normalizeMeshColorKey(k)));
+  }
   if (focusSet.size === 0) return null;
 
+
+
   const colors = {};
+
   getAllMappedAnatomyMeshKeys().forEach((key) => {
-    if (focusSet.has(key)) {
-      colors[key] = PREVIEW_PRIMARY;
+
+    const isFocus = focusSetHasKey(focusSet, key);
+
+    if (isFocus) {
+
+      stampMeshColorVariants(colors, key, ECORCHE_PREVIEW_FOCUS);
+
     } else if (dimOthers) {
-      colors[key] = PREVIEW_DIM;
+
+      stampMeshColorVariants(colors, key, ECORCHE_IDLE_UNIFORM);
+
     }
+
   });
+
+  focusSet.forEach((key) => {
+    stampMeshColorVariants(colors, key, ECORCHE_PREVIEW_FOCUS);
+  });
+
   return Object.keys(colors).length ? colors : null;
+
 }
+
+

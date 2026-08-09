@@ -3,7 +3,7 @@
  */
 import { resolveBankItemAnatomy } from './resolveBankItemAnatomy';
 import { visualGroupToBankLabel } from './visualGroupBankLabel';
-import { buildMuscleFocusMeshColors } from '../../services/anatomy/ecorcheMeshColors';
+import { buildMuscleFocusMeshColors, buildEcorcheBaseMeshColors } from '../../services/anatomy/ecorcheMeshColors';
 import {
   ANATOMY_ROW_PREVIEW_CAMERA_DEFAULT,
   inferMusclePreviewTargetOffsetY
@@ -104,6 +104,10 @@ export function resolveAnatomyMusclePreviewAnatomy(muscle) {
     dimOthers: true
   });
 
+  const meshColors = focusedColors
+    ? { ...buildEcorcheBaseMeshColors(), ...focusedColors }
+    : base.meshColors;
+
   const tune = muscle?.id ? ANATOMY_MUSCLE_PREVIEW_TUNING[muscle.id] : null;
   const def = ANATOMY_ROW_PREVIEW_CAMERA_DEFAULT;
   const defaultOffset =
@@ -124,7 +128,8 @@ export function resolveAnatomyMusclePreviewAnatomy(muscle) {
 
   return {
     ...base,
-    ...(focusedColors ? { meshColors: focusedColors, usedFullBodyUniform: false } : {}),
+    meshColors,
+    usedFullBodyUniform: focusedColors ? false : base.usedFullBodyUniform,
     inferredView: tune?.inferredView ?? base.inferredView,
     cameraTuningOverride: {
       boundsMargin,

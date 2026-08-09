@@ -8,12 +8,6 @@ import {
 } from '../../data/anatomy/anatomyRegistry';
 import { meshInAnatomyBackRegion, normalizeAnatomyMeshName } from '../../utils/anatomy/anatomyBackMeshRegions';
 
-function normalizeMeshName(name) {
-  return String(name || '')
-    .trim()
-    .replace(/\./g, '_');
-}
-
 /** Clic sur le modèle 3D → famille + muscle mis en avant, ou choix haut/bas du dos. */
 export function resolveAnatomyFromMeshClick(meshName) {
   const norm = normalizeAnatomyMeshName(meshName);
@@ -34,7 +28,7 @@ export function resolveAnatomyFromMeshClick(meshName) {
 }
 
 export function visualGroupFromMesh(meshName) {
-  const norm = normalizeMeshName(meshName);
+  const norm = normalizeAnatomyMeshName(meshName);
   return GLB_MESH_TO_MUSCLE_ID[norm] || GLB_MESH_TO_MUSCLE_ID[meshName] || null;
 }
 

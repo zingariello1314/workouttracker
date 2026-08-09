@@ -49,7 +49,9 @@ const FAMILY_CHIPS = {
 
   ],
 
-  bras: ['Biceps + triceps', 'Street workout', 'Tractions & poussée', 'Esthétique : forte'],
+  biceps: ['Curl & tractions', 'Supination', 'Brachial & épaisseur', 'Esthétique : forte'],
+
+  triceps: ['Pompes & dips', 'Extension coude', 'Street workout', 'Volume arrière bras'],
 
   'avant-bras': ['Préhension', 'Tractions', 'Carries', 'Fonctionnel : essentiel'],
 

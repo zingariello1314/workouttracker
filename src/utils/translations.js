@@ -251,6 +251,9 @@ export const translations = {
       'Comprends ton corps pour t’entraîner plus intelligemment. Cherche un muscle, un exercice, un objectif — ou explore le modèle 3D.',
     'anatomy.searchPlaceholderLong':
       'Rechercher un muscle, un exercice, une douleur, un objectif…',
+    'anatomy.searchMuscles': 'Muscles',
+    'anatomy.searchInContent': 'Dans les fiches',
+    'anatomy.searchAlso': 'Familles & exercices',
     'anatomy.explorerHint': 'Survole une famille à droite — ou touche directement le corps.',
     'anatomy.viewFront': 'Vue avant',
     'anatomy.viewBack': 'Vue arrière',
@@ -853,6 +856,8 @@ export const translations = {
     'recap.muscleGroup.biceps': 'Biceps',
     'recap.muscleGroup.triceps': 'Triceps',
     'recap.muscleGroup.forearms': 'Avant-bras',
+    'recap.muscleGroup.neck': 'Cou',
+    'recap.muscleGroup.adductors': 'Adducteurs',
     'recap.muscleGroup.glutes': 'Fessiers',
     'recap.muscleGroup.legs': 'Jambes',
     'recap.muscleGroup.quads': 'Quadriceps',
@@ -888,6 +893,8 @@ export const translations = {
     'recap.zones.detail.biceps': 'Biceps et brachial antérieur (même groupe de charge).',
     'recap.zones.detail.triceps': 'Triceps (long, latéral, médial) regroupés.',
     'recap.zones.detail.forearms': 'Avant-bras — poignet, prise, extenseurs / fléchisseurs.',
+    'recap.zones.detail.neck': 'Cou — SCM, splénius, isométriques cervicaux.',
+    'recap.zones.detail.adductors': 'Adducteurs — face interne cuisse, sumo, Copenhagen.',
     'recap.zones.detail.quads':
       'Quadriceps (vaste interne / externe / droit) — course, squats, sauts ; répartition cardio selon type de séance (ex. fractionné > fondamental).',
     'recap.zones.detail.hamstrings':
@@ -1930,6 +1937,8 @@ export const translations = {
     'recap.muscleGroup.biceps': 'Biceps',
     'recap.muscleGroup.triceps': 'Triceps',
     'recap.muscleGroup.forearms': 'Forearms',
+    'recap.muscleGroup.neck': 'Neck',
+    'recap.muscleGroup.adductors': 'Adductors',
     'recap.muscleGroup.glutes': 'Glutes',
     'recap.muscleGroup.legs': 'Legs',
     'recap.muscleGroup.quads': 'Quadriceps',
@@ -1965,6 +1974,8 @@ export const translations = {
     'recap.zones.detail.biceps': 'Biceps + brachialis (single load bucket).',
     'recap.zones.detail.triceps': 'Triceps heads grouped together.',
     'recap.zones.detail.forearms': 'Forearms — wrist, grip, flexors / extensors.',
+    'recap.zones.detail.neck': 'Neck — SCM, splenius, cervical isometrics.',
+    'recap.zones.detail.adductors': 'Adductors — inner thigh, sumo, Copenhagen.',
     'recap.zones.detail.quads':
       'Quadriceps — running, squats, jumps; cardio split varies by session type (e.g. intervals vs easy).',
     'recap.zones.detail.hamstrings':

@@ -7,7 +7,8 @@ const LOWER_BACK_MESHES = new Set(['Object_5_001', 'Object_5_003']);
 export function normalizeAnatomyMeshName(name) {
   return String(name || '')
     .trim()
-    .replace(/\./g, '_');
+    .replace(/\./g, '_')
+    .replace(/\s+/g, '_');
 }
 
 /** @param {'upper'|'lower'} region */

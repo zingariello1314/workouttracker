@@ -1,6 +1,7 @@
 import { buildAnatomyHighlightColors } from '../../utils/anatomy/buildAnatomyHighlightColors';
 import { buildEcorcheBaseMeshColors } from './ecorcheMeshColors';
 import { getMeshesForMuscleGroup } from '../../utils/sport/recapMeshBinding';
+import { stampMeshColorVariants } from '../../utils/anatomy/anatomyMeshColorLookup';
 import { ECORCHE_GROUP_BASE } from './ecorcheMeshColors';
 
 export function highlightColorsForVisualGroups(groupIds = []) {
@@ -10,7 +11,7 @@ export function highlightColorsForVisualGroups(groupIds = []) {
     const accent = ECORCHE_GROUP_BASE[gid];
     if (!accent) return;
     getMeshesForMuscleGroup(gid).forEach((m) => {
-      meshColors[m] = accent;
+      stampMeshColorVariants(meshColors, m, accent);
     });
   });
   if (primaryIds.size === 0) {

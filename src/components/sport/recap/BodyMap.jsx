@@ -52,7 +52,9 @@ const BodyMap = ({
   explorerFillHeight = false,
   /** Vue contrôlée (ignore localStorage, ex. face par défaut à l’accueil Anatomie). */
   controlledViewPreset = null,
-  onViewPresetChange = null
+  onViewPresetChange = null,
+  /** Molette / pinch sur l’explorateur accueil Anatomie. */
+  controlsEnableZoom = true
 }) => {
   const t = useTranslation();
   const viewLocked = Boolean(forcedViewPreset && PRESET_KEYS.includes(forcedViewPreset));
@@ -191,6 +193,7 @@ const BodyMap = ({
             autoRotate={!pickMode}
             autoRotateSpeed={0.5}
             sceneBackground="#060708"
+            controlsEnableZoom={controlsEnableZoom}
           />
         </Canvas>
 

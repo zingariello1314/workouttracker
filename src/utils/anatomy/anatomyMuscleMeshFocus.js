@@ -1,35 +1,40 @@
 /**
  * Meshes GLB à surligner pour une fiche muscle (aperçus famille / rail).
- * Clés = noms normalisés (`.` → `_`), alignés sur `recapMeshBinding`.
+ * Noms alignés sur le GLB courant (`public/models/ecorche-muscles-decoupes.glb`).
  */
 import { normalizeAnatomyMeshName } from './anatomyBackMeshRegions';
 import { MuscleGroups } from '../../data/workoutProgramEnhanced';
 import { getMeshesForMuscleGroup } from '../sport/recapMeshBinding';
 
+const n = normalizeAnatomyMeshName;
+
 const M = {
-  chestMain: normalizeAnatomyMeshName('Object_10.003'),
-  pecs: normalizeAnatomyMeshName('Object_10.001'),
-  abs: normalizeAnatomyMeshName('Object_10.002'),
-  sideAbs: normalizeAnatomyMeshName('Object_10'),
-  backUpper: normalizeAnatomyMeshName('Object_5'),
-  backUpperA: normalizeAnatomyMeshName('Object_13.001'),
-  backUpperB: normalizeAnatomyMeshName('Object_13.002'),
-  backLowerA: normalizeAnatomyMeshName('Object_5.001'),
-  backLowerB: normalizeAnatomyMeshName('Object_5.003'),
-  shoulders: normalizeAnatomyMeshName('Object_1'),
-  biceps: normalizeAnatomyMeshName('Object_15.001'),
-  triceps: normalizeAnatomyMeshName('Object_15'),
-  forearmA: normalizeAnatomyMeshName('Object_14'),
-  forearmB: normalizeAnatomyMeshName('Object_9'),
-  quads: normalizeAnatomyMeshName('Object_7'),
-  adductor: normalizeAnatomyMeshName('Object_12'),
-  hamstrings: normalizeAnatomyMeshName('Object_3'),
-  glutes: normalizeAnatomyMeshName('Object_0'),
-  calves: normalizeAnatomyMeshName('Object_2'),
-  tibialis: normalizeAnatomyMeshName('Object_11'),
-  neckA: normalizeAnatomyMeshName('Object_8'),
-  neckB: normalizeAnatomyMeshName('Object_8.001')
+  chestMain: n('Chest.002'),
+  pecs: n('pecs'),
+  abs: n('abs'),
+  sideAbs: n('sideofabs'),
+  backUpper: n('back'),
+  backUpperA: n('Object_13.001'),
+  backUpperB: n('Object_13.003'),
+  shoulders: n('shoulders'),
+  biceps: n('biceps'),
+  triceps: n('triceps'),
+  forearmA: n('forearms'),
+  forearmB: n('forearms 2'),
+  forearmHandA: n('forearms'),
+  quads: n('quads'),
+  adductorA: n('Object_29.001'),
+  adductorB: n('Object_29.002'),
+  hamstrings: n('hamstrings'),
+  glutes: n('glutes'),
+  calves: n('calves'),
+  tibialis: n('tibialis_anterior'),
+  neckA: n('Object_19'),
+  neckB: n('Object_19.001'),
+  head: n('Tête')
 };
+
+const ALL_BACK = [M.backUpper, M.backUpperA, M.backUpperB, n('back')];
 
 /** @type {Record<string, string[]>} */
 export const ANATOMY_MUSCLE_FOCUS_MESHES = {
@@ -42,33 +47,33 @@ export const ANATOMY_MUSCLE_FOCUS_MESHES = {
   'dentele-anterieur': [M.chestMain],
   'grand-dorsal': [M.backUpper, M.backUpperA, M.backUpperB],
   trapezes: [M.backUpper, M.backUpperA, M.backUpperB],
-  rhomboides: [M.backUpper],
+  rhomboides: [M.backUpper, M.backUpperA],
   splenius: [M.neckA, M.neckB],
   'elevateur-scapula': [M.backUpper, M.shoulders],
   'sterno-cleido-mastoidien': [M.neckA, M.neckB],
-  'erecteurs-rachis': [M.backLowerA, M.backLowerB],
-  multifides: [M.backLowerA, M.backLowerB],
+  'erecteurs-rachis': ALL_BACK,
+  multifides: ALL_BACK,
   'biceps-brachial': [M.biceps],
   brachial: [M.biceps],
-  'brachio-radial': [M.forearmA, M.forearmB],
+  'brachio-radial': [M.forearmA, M.forearmB, M.forearmHandA],
   'triceps-brachial': [M.triceps],
-  'avant-bras-ensemble': [M.forearmA, M.forearmB],
+  'avant-bras-ensemble': [M.forearmA, M.forearmB, M.forearmHandA],
   'grand-droit': [M.abs],
   'oblique-externe': [M.sideAbs],
   'oblique-interne': [M.sideAbs],
   transverse: [M.abs, M.sideAbs],
   pyramidal: [M.abs],
-  'carre-lombes': [M.sideAbs, M.backLowerA],
+  'carre-lombes': [M.sideAbs, ...ALL_BACK],
   'psoas-iliaque': [M.abs],
   'quadriceps-femoral': [M.quads],
   'ischio-jambiers': [M.hamstrings],
-  'adducteurs-ensemble': [M.adductor],
+  'adducteurs-ensemble': [M.adductorA, M.adductorB, n('Object_27')],
   'grand-fessier': [M.glutes],
   'moyen-fessier': [M.glutes],
   'petit-fessier': [M.glutes],
   gastrocnemien: [M.calves],
   soleaire: [M.calves],
-  'tibial-anterieur': [M.tibialis]
+  'tibial-anterieur': [M.tibialis, n('Object_11.002'), n('Object_11.001'), n('Object_11')]
 };
 
 /**

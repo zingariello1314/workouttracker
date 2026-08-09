@@ -13,6 +13,11 @@ describe('pushupSessionUtils', () => {
     expect(n.count).toBe(100);
   });
 
+  it('conserve une seule dimension tant que la paire séries×reps est incomplète', () => {
+    expect(resolvePushupSessionTotalReps({ setCount: '10', repsPerSet: '' })).toBe(0);
+    expect(resolvePushupSessionTotalReps({ setCount: '10', repsPerSet: '5' })).toBe(50);
+  });
+
   it('objectif défi depuis goalSetCount', () => {
     expect(resolvePushupChallengePlannedReps({ goalSetCount: 20, goalRepsPerSet: 5 })).toBe(100);
   });

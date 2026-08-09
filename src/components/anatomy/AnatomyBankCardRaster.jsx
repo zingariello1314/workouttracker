@@ -8,7 +8,14 @@ const PREVIEW_FRAME =
  * Aperçu banque grille : image WebP pré-générée depuis le GLB (zéro WebGl par carte).
  * Fallback visuel si le fichier absente tant que le batch de rendu n’est pas passé.
  */
-export default function AnatomyBankCardRaster({ anatomy, mode = 'exercise', className = '', webglFallback = null }) {
+export default function AnatomyBankCardRaster({
+  anatomy,
+  mode = 'exercise',
+  className = '',
+  webglFallback = null,
+  /** Grille banque : charger toutes les images dès l’affichage (pas de lazy viewport). */
+  eagerLoad = false
+}) {
   const src = useMemo(() => getAnatomyPreviewRasterSrc(anatomy, mode === 'stretch' ? 'stretch' : 'exercise'), [anatomy, mode]);
   const [broken, setBroken] = useState(false);
 
@@ -22,7 +29,7 @@ export default function AnatomyBankCardRaster({ anatomy, mode = 'exercise', clas
           <img
             src={src}
             alt=""
-            loading="lazy"
+            loading={eagerLoad ? 'eager' : 'lazy'}
             decoding="async"
             draggable={false}
             className="h-full w-full object-cover object-center bg-black"

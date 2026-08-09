@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { AnatomyModelCanvas } from './AnatomyModelCanvas';
-import AnatomyBankCardRaster from './AnatomyBankCardRaster';
+import AnatomyBankGridPreview from './AnatomyBankGridPreview';
 import { resolveBankItemAnatomy } from '../../utils/anatomy/resolveBankItemAnatomy';
 import { buildCardDemandSignature } from '../../utils/anatomy/anatomyPreviewRasterKey';
 import {
@@ -9,12 +9,20 @@ import {
   tryAcquireAnatomyPreviewSlot,
   unregisterAnatomyPreviewWaiter
 } from '../../utils/anatomy/anatomyPreviewSlot';
-import { shouldUseLiveAnatomyWebGl } from '../../utils/anatomy/anatomyPreviewLiveWebGl';
 
-/** Délai avant destruction du canvas hors viewport (aperçus « compact » seulement). */
+/** Délai avant destruction du canvas hors viewport (fiches compactes hors grille). */
 const RELEASE_DELAY_MS = 38000;
 
-/** Attente après sortie de l’écran avant de libérer. */
+/** Grille banque : libérer le slot WebGL dès que la carte sort de l’écran. */
+const RELEASE_DELAY_GRID_MS = 500;
+
+/** Grille exercices : délai plus long avant destruction (évite flash au scroll). */
+const RELEASE_DELAY_GRID_FILL_MS = 12000;
+
+/** Grille : marge IO modérée (évite de monter toute la liste d’un coup). */
+const GRID_IO_ROOT_MARGIN = '180px 0px 180px 0px';
+
+/** Attente après sortie de l’écran avant de libérer (hors persistance grille). */
 const OUT_VIEW_DEBOUNCE_MS = 380;
 
 /** Bordure / halo alignés sur `Card variant="sport"` (#0F4C5C / #0F5C45). */
@@ -22,8 +30,8 @@ const PREVIEW_FRAME =
   'border-2 border-[#0F4C5C]/90 bg-black shadow-[0_0_18px_-5px_rgba(15,76,92,0.75),0_0_28px_-12px_rgba(15,92,69,0.35)]';
 
 /**
- * Banque grille / carrousels (`gridFill`) : image WebP pré-rendue — voir `/public/anatomy-previews/` + HOWTO.txt.
- * Liste / ExerciseCard (`compact`) : WebGL léger avec file de slots WebGL.
+ * Banque grille : WebGL direct (GLB + surbrillance muscles).
+ * Liste compacte : WebGL avec file de slots.
  */
 export default function AnatomyBankCardPreview({
   primaryMuscles = [],
@@ -56,40 +64,15 @@ export default function AnatomyBankCardPreview({
     [primaryMuscles, secondaryMuscles, mode, exerciseDatabaseKey, stretchDatabaseKey, precomputedAnatomy]
   );
 
-  const useLiveWebGl = shouldUseLiveAnatomyWebGl({
-    stretchDatabaseKey,
-    mode,
-    exerciseDatabaseKey: exerciseDatabaseKey || undefined
-  });
-
   if (layout === 'anatomyRow') {
     return (
       <AnatomyBankCardPreviewGl anatomy={anatomy} className={className} anatomyRow fastSettle />
     );
   }
 
-  if (layout === 'gridFill' && useLiveWebGl) {
-    return (
-      <AnatomyBankCardPreviewGl
-        anatomy={anatomy}
-        className={className}
-        fillContainer
-        fastSettle
-      />
-    );
-  }
-
   if (layout === 'gridFill') {
-    return (
-      <AnatomyBankCardRaster
-        anatomy={anatomy}
-        mode={mode === 'stretch' ? 'stretch' : 'exercise'}
-        className={className}
-        webglFallback={
-          <AnatomyBankCardPreviewGl anatomy={anatomy} className="h-full w-full min-h-0" fillContainer />
-        }
-      />
-    );
+    const modeStr = mode === 'stretch' ? 'stretch' : 'exercise';
+    return <AnatomyBankGridPreview anatomy={anatomy} mode={modeStr} className={className} />;
   }
 
   return (
@@ -102,11 +85,17 @@ function AnatomyBankCardPreviewGl({
   className,
   fillContainer = false,
   fastSettle = false,
-  anatomyRow = false
+  anatomyRow = false,
+  bankGrid = false,
+  /** Grille banque exercices / étirements (300px). */
+  gridFill = false,
+  /** Grille banque : une fois chargé, ne pas démonter le canvas au scroll (évite rechargement ~1 s). */
+  persistPreview = false
 }) {
   const hostRef = useRef(null);
   const heldSlotRef = useRef(false);
   const inViewRef = useRef(false);
+  const persistLockedRef = useRef(false);
   const [inView, setInView] = useState(false);
   const [slotOk, setSlotOk] = useState(false);
   const [cameraVisible, setCameraVisible] = useState(false);
@@ -132,6 +121,11 @@ function AnatomyBankCardPreviewGl({
 
   useEffect(() => {
     const el = hostRef.current;
+    if (persistPreview && anatomyRow) {
+      persistLockedRef.current = true;
+      setInView(true);
+      return undefined;
+    }
     if (!el) return;
     if (typeof IntersectionObserver === 'undefined') {
       setInView(true);
@@ -139,13 +133,17 @@ function AnatomyBankCardPreviewGl({
     }
     let hideT;
     const ob = new IntersectionObserver(
-      ([entry]) => {
-        const vis = Boolean(entry?.isIntersecting);
+      (entries) => {
+        const entry = entries[0];
+        const vis =
+          Boolean(entry?.isIntersecting) &&
+          (entry.intersectionRatio > 0 || (entry.intersectionRect?.height ?? 0) > 1);
         if (vis) {
+          if (persistPreview) persistLockedRef.current = true;
           if (hideT != null) window.clearTimeout(hideT);
           hideT = null;
           setInView(true);
-        } else {
+        } else if (!persistLockedRef.current) {
           if (hideT != null) window.clearTimeout(hideT);
           hideT = window.setTimeout(() => {
             hideT = null;
@@ -153,14 +151,18 @@ function AnatomyBankCardPreviewGl({
           }, OUT_VIEW_DEBOUNCE_MS);
         }
       },
-      { root: null, rootMargin: '280px 0px 280px 0px', threshold: 0 }
+      {
+        root: null,
+        rootMargin: gridFill || bankGrid ? GRID_IO_ROOT_MARGIN : '280px 0px 280px 0px',
+        threshold: [0, 0.01, 0.05]
+      }
     );
     ob.observe(el);
     return () => {
       ob.disconnect();
       if (hideT != null) window.clearTimeout(hideT);
     };
-  }, []);
+  }, [bankGrid, gridFill, persistPreview, anatomyRow]);
 
   const clearReleaseTimer = () => {
     if (releaseTimerRef.current != null) {
@@ -182,20 +184,48 @@ function AnatomyBankCardPreviewGl({
 
   useEffect(() => {
     const { bound } = waiterRef.current;
+    const releaseDelay = gridFill
+      ? RELEASE_DELAY_GRID_FILL_MS
+      : bankGrid || fillContainer
+        ? RELEASE_DELAY_GRID_MS
+        : RELEASE_DELAY_MS;
 
     if (inView) {
       clearReleaseTimer();
-      bound();
-      if (!heldSlotRef.current) {
-        registerAnatomyPreviewWaiter(bound);
+      if (anatomyRow || bankGrid || gridFill || persistPreview) {
+        if (!heldSlotRef.current) {
+          if (tryAcquireAnatomyPreviewSlot()) {
+            heldSlotRef.current = true;
+          } else {
+            registerAnatomyPreviewWaiter(bound);
+          }
+        }
+        if (anatomyRow) {
+          setSlotOk(true);
+        } else {
+          setSlotOk(heldSlotRef.current);
+        }
+      } else {
+        bound();
+        if (!heldSlotRef.current) {
+          registerAnatomyPreviewWaiter(bound);
+        }
       }
       return undefined;
     }
 
     unregisterAnatomyPreviewWaiter(bound);
+    if (persistPreview || persistLockedRef.current) {
+      return () => {};
+    }
     if (!heldSlotRef.current) {
       setSlotOk(false);
       setCameraVisible(false);
+      return () => {};
+    }
+
+    if (bankGrid || (fillContainer && !gridFill)) {
+      fullReleaseSlot();
       return () => {};
     }
 
@@ -203,12 +233,12 @@ function AnatomyBankCardPreviewGl({
     releaseTimerRef.current = window.setTimeout(() => {
       fullReleaseSlot();
       releaseTimerRef.current = null;
-    }, RELEASE_DELAY_MS);
+    }, releaseDelay);
 
     return () => {
       clearReleaseTimer();
     };
-  }, [inView]);
+  }, [inView, bankGrid, gridFill, fillContainer, anatomyRow, persistPreview]);
 
   useEffect(() => {
     if (!inView || slotOk) return undefined;
@@ -219,9 +249,9 @@ function AnatomyBankCardPreviewGl({
       if (!heldSlotRef.current) registerAnatomyPreviewWaiter(bound);
     };
     tick();
-    const id = window.setInterval(tick, 1100);
+    const id = window.setInterval(tick, bankGrid || gridFill ? 280 : 1100);
     return () => window.clearInterval(id);
-  }, [inView, slotOk]);
+  }, [inView, slotOk, bankGrid, gridFill]);
 
   useEffect(
     () => () => {
@@ -238,11 +268,11 @@ function AnatomyBankCardPreviewGl({
 
   const cardDemandSignature = useMemo(() => buildCardDemandSignature(anatomy), [anatomy]);
 
-  useEffect(() => {
-    setCameraVisible(false);
-  }, [cardDemandSignature]);
-
   const shouldMountGl = inView && slotOk;
+
+  useEffect(() => {
+    if (!persistPreview) setCameraVisible(false);
+  }, [cardDemandSignature, persistPreview]);
 
   useEffect(() => {
     if (!shouldMountGl) setCameraVisible(false);
@@ -250,18 +280,19 @@ function AnatomyBankCardPreviewGl({
 
   useEffect(() => {
     if (!shouldMountGl) return undefined;
+    if (bankGrid || fastSettle || gridFill) return undefined;
     const tid = window.setTimeout(() => {
       setCameraVisible(true);
-    }, fastSettle ? 450 : 1400);
+    }, 1400);
     return () => window.clearTimeout(tid);
-  }, [shouldMountGl, cardDemandSignature, fastSettle]);
+  }, [shouldMountGl, cardDemandSignature, fastSettle, bankGrid, gridFill]);
 
   const neutralUnmapped =
     anatomy.usedFullBodyUniform && !anatomy.anatomyFallback
       ? undefined
       : anatomy.anatomyFallback
         ? anatomy.uniformBodyColor
-        : '#334155';
+        : undefined;
 
   const innerScale = fillContainer ? 'scale-[1.02]' : anatomyRow ? '' : 'scale-[1.12]';
   const minCanvas = fillContainer || anatomyRow ? 'min-h-0' : 'min-h-[188px]';
@@ -283,7 +314,7 @@ function AnatomyBankCardPreviewGl({
       } ${className}`}
       aria-hidden
     >
-      <div className={frameClass} style={frameStyle}
+      <div className={`${frameClass} isolate [contain:paint]`} style={frameStyle}
       >
         <div className="relative h-full w-full bg-black overflow-hidden">
           <div className={`absolute inset-0 flex items-center justify-center origin-center ${innerScale}`}>
@@ -297,7 +328,7 @@ function AnatomyBankCardPreviewGl({
             </div>
             {shouldMountGl ? (
               <div
-                className={`relative z-10 h-full w-full ${minCanvas} transition-opacity duration-150 ease-out ${
+                className={`relative z-10 h-full w-full ${minCanvas} transition-opacity duration-75 ease-out ${
                   cameraVisible ? 'opacity-100' : 'opacity-0'
                 }`}
               >
