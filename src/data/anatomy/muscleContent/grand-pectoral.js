@@ -7,6 +7,7 @@ import saviezVousBlocks from './grand-pectoral/saviezVousBlocks.js';
 import anatomieBlocks from './grand-pectoral/anatomieBlocks.js';
 import blessuresBlocks from './grand-pectoral/blessuresBlocks.js';
 import volumeBlocks from './grand-pectoral/volumeBlocks.js';
+import portionsBlocks from './grand-pectoral/portionsBlocks.js';
 
 /** @type {{ sections: { id: string, title: string, blocks: object[] }[] }} */
 const grandPectoral = {
@@ -19,72 +20,7 @@ const grandPectoral = {
     {
       id: 'portions',
       title: 'Les différentes portions',
-      blocks: [
-        {
-          type: 'p',
-          text:
-            'Le grand pectoral est un seul muscle, mais il est organisé en plusieurs faisceaux. Cette organisation explique pourquoi certains exercices donnent davantage de sensation dans certaines zones — sans qu’une portion puisse être totalement isolée des autres.'
-        },
-        {
-          type: 'h3',
-          text: 'Faisceau claviculaire — Le haut des pectoraux'
-        },
-        {
-          type: 'p',
-          text:
-            'Le faisceau claviculaire correspond à la partie supérieure du grand pectoral. Ses fibres prennent naissance au niveau de la clavicule et descendent légèrement vers l’humérus.'
-        },
-        {
-          type: 'p',
-          text:
-            'Son orientation lui permet de participer davantage aux mouvements où le bras monte devant le corps. C’est cette portion qui contribue à donner un aspect de poitrine « pleine » sous les clavicules.'
-        },
-        {
-          type: 'p',
-          text:
-            'Chez beaucoup de pratiquants, cette zone paraît moins développée car les mouvements classiques comme le développé couché horizontal sollicitent davantage les fibres sternales. Pour accentuer son développement, il faut généralement utiliser des mouvements où le bras pousse légèrement vers le haut.'
-        },
-        {
-          type: 'ul',
-          items: ['Développé incliné', 'Pompes pieds surélevés', 'Écartés inclinés']
-        },
-        {
-          type: 'h3',
-          text: 'Faisceau sterno-costal — Le volume principal de la poitrine'
-        },
-        {
-          type: 'p',
-          text:
-            'Il représente la majorité de la masse du grand pectoral. Ses fibres prennent naissance au niveau du sternum et des cartilages costaux.'
-        },
-        {
-          type: 'p',
-          text:
-            'C’est la partie la plus sollicitée lors des mouvements de poussée horizontale. Elle intervient énormément dans le développé couché, les pompes classiques et les dips contrôlés. C’est généralement cette portion qui donne l’épaisseur générale de la poitrine.'
-        },
-        {
-          type: 'ul',
-          items: ['Développé couché', 'Pompes classiques', 'Dips contrôlés']
-        },
-        {
-          type: 'h3',
-          text: 'Faisceau abdominal — La partie inférieure'
-        },
-        {
-          type: 'p',
-          text:
-            'Cette portion est souvent appelée « bas des pectoraux ». Ses fibres prennent naissance au niveau de la gaine du muscle droit de l’abdomen.'
-        },
-        {
-          type: 'p',
-          text:
-            'Elle participe davantage aux mouvements où le bras descend ou revient depuis une position haute.'
-        },
-        {
-          type: 'ul',
-          items: ['Dips penchés en avant', 'Développé décliné', 'Cross-over de haut vers le bas']
-        }
-      ]
+      blocks: portionsBlocks
     },
     {
       id: 'anatomie',

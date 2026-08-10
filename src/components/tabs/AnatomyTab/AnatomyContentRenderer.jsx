@@ -15,6 +15,7 @@ import {
 import { hasFunctionMagazine } from './functionSectionLayout';
 import { isSaviezVousMuscleSection } from './saviezVousSectionLayout';
 import { FamilySectionComposer } from './FamilySectionLayouts';
+import AnatomyContentFigure from './AnatomyContentFigure';
 
 function isMusclePresentationPanel(isFamily, sectionId) {
   return !isFamily && sectionId === 'presentation';
@@ -57,6 +58,17 @@ function ProseBlocks({ blocks }) {
                 </p>
               ))}
             </div>
+          );
+        }
+        if (block.type === 'figure') {
+          return (
+            <AnatomyContentFigure
+              key={i}
+              src={block.src}
+              alt={block.alt}
+              caption={block.caption}
+              layout={block.layout}
+            />
           );
         }
         if (block.type === 'callout') {

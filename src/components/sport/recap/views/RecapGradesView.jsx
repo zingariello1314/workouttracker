@@ -1,16 +1,16 @@
-import React, { useState } from 'react';
-import { CheckCircle2, Circle, Lock } from 'lucide-react';
+import React, { useMemo, useState } from 'react';
+import { CheckCircle2 } from 'lucide-react';
 import { useTranslation } from '../../../../utils/translations';
 import { useSportGrade } from '../../../../hooks/useSportGrade';
 import { useWorkout } from '../../../../context/WorkoutContext';
 import { useSportGradeMilestones } from '../../../../hooks/useSportGradeMilestones';
 import SportGradeRecapHero from '../../grades/SportGradeRecapHero';
-import { sportGradeLabel, sportPalierLabel } from '../../grades/SportGradeIdentity';
+import { sportGradeLabel } from '../../grades/SportGradeIdentity';
 import SportGradeEmblem from '../../grades/SportGradeEmblem';
 import SportGradeLadderGallery from '../../grades/SportGradeLadderGallery';
 import SportGradeDetailPage from '../../grades/SportGradeDetailPage';
+import RecapExerciseGradesView from '../../grades/RecapExerciseGradesView';
 import {
-  SPORT_GRADE_GATES,
   SPORT_TIER_ROMAN
 } from '../../../../services/xp/sportGradeCatalog';
 
@@ -44,11 +44,17 @@ function PathRow({ pathKey, data }) {
 
 export default function RecapGradesView() {
   const t = useTranslation();
-  const { totalXP, level, masteryScore, grades, progress, isLoading, aggregates } = useSportGrade();
+  const { totalXP, level, masteryScore, grades, progress, isLoading, aggregates, dailyInsights } = useSportGrade();
   const { getCurrentData } = useWorkout();
   const workoutData = getCurrentData();
   const timeline = useSportGradeMilestones({ level, grades, totalXP });
+  const timelineCurrentId = useMemo(() => {
+    const prog = grades?.progression;
+    if (!prog?.gradeId || !prog?.tier) return null;
+    return `tier:${prog.gradeId}:${prog.tier}`;
+  }, [grades?.progression?.gradeId, grades?.progression?.tier]);
   const [selectedGradeId, setSelectedGradeId] = useState(null);
+  const [gradesSubTab, setGradesSubTab] = useState('sport');
 
   /** Ne pas masquer les grades pendant le chargement Garmin si l’XP workout est déjà calculée. */
   const gradesDataPending = isLoading && (totalXP ?? 0) <= 0;
@@ -85,19 +91,54 @@ export default function RecapGradesView() {
           {t('recap.grades.title', 'Grades & progression')}
         </h2>
         <p className="text-xs text-slate-500 max-w-2xl">
-          {t(
-            'recap.grades.intro',
-            'Le niveau monte avec toute ton XP Sport. Les paliers I / II / III suivent le niveau. Passer au grade supérieur exige aussi une preuve d’activité (maîtrise, séances, reps ou kcal).'
-          )}
+          {gradesSubTab === 'sport'
+            ? t(
+                'recap.grades.intro',
+                'Le niveau monte avec toute ton XP Sport. Les paliers I / II / III suivent le niveau. Passer au grade supérieur exige aussi une preuve d’activité (maîtrise, séances, reps ou kcal).'
+              )
+            : t(
+                'recap.exerciseGrades.introShort',
+                'Grades par mouvement (Bois → Platine) selon ton pic du jour, ton volume total et ton profil physique.'
+              )}
         </p>
+        <div className="mt-3 flex flex-wrap gap-2">
+          <button
+            type="button"
+            onClick={() => setGradesSubTab('sport')}
+            className={`rounded-lg px-3 py-1.5 text-xs font-semibold transition-colors ${
+              gradesSubTab === 'sport'
+                ? 'bg-[#0F4C5C] text-white'
+                : 'border border-[#0F4C5C]/45 text-slate-400 hover:text-white'
+            }`}
+          >
+            {t('recap.grades.subTabSport', 'Grades Sport (XP)')}
+          </button>
+          <button
+            type="button"
+            onClick={() => setGradesSubTab('exercises')}
+            className={`rounded-lg px-3 py-1.5 text-xs font-semibold transition-colors ${
+              gradesSubTab === 'exercises'
+                ? 'bg-[#0F4C5C] text-white'
+                : 'border border-[#0F4C5C]/45 text-slate-400 hover:text-white'
+            }`}
+          >
+            {t('recap.grades.subTabExercises', 'Grades exercices')}
+          </button>
+        </div>
       </section>
 
+      {gradesSubTab === 'exercises' ? (
+        <RecapExerciseGradesView />
+      ) : (
+        <>
       <SportGradeRecapHero
         progressionGradeId={prog?.gradeId}
         progressionTier={prog?.tier}
         meritedGradeId={mer?.gradeId}
         meritedTier={mer?.tier}
         level={level}
+        totalXP={totalXP}
+        dailyInsights={dailyInsights}
       />
 
       <section className="rounded-xl border border-[#0F4C5C]/50 bg-black/80 p-4">
@@ -138,7 +179,8 @@ export default function RecapGradesView() {
         <p className="text-[11px] text-slate-500 mb-4 max-w-2xl">
           {t(
             'recap.grades.timelineIntro',
-            'Dates enregistrées à partir de maintenant ; les grades déjà obtenus avant cette mise à jour peuvent apparaître sans date.'
+            `Parcours reconstitué d’après ton niveau ${level} : du premier palier jusqu’à ta position actuelle. Les dates sont enregistrées à chaque nouveau palier ou grade débloqué.`,
+            { level }
           )}
         </p>
         {timeline.length === 0 ? (
@@ -147,34 +189,49 @@ export default function RecapGradesView() {
           <ol className="relative border-l border-teal-800/60 ml-3 space-y-4 pl-5">
             {timeline.map((ev) => {
               const gradeName = sportGradeLabel(ev.gradeId, t);
+              const roman = SPORT_TIER_ROMAN[ev.tier] || ev.tier;
+              const isCurrent = ev.id === timelineCurrentId;
               const dateLabel = ev.at
                 ? new Date(ev.at).toLocaleDateString('fr-FR', {
                     day: 'numeric',
                     month: 'long',
                     year: 'numeric'
                   })
-                : t('recap.grades.timelineNoDate', 'Date non enregistrée');
+                : null;
               const title =
                 ev.kind === 'gate'
                   ? t('recap.grades.timelineGate', `Passage au grade ${gradeName}`, { grade: gradeName })
-                  : t('recap.grades.timelineTier', `Palier ${SPORT_TIER_ROMAN[ev.tier] || ev.tier} — ${gradeName}`, {
+                  : t('recap.grades.timelineTier', `Palier ${roman} — ${gradeName}`, {
                       grade: gradeName,
-                      palier: sportPalierLabel(ev.tier, t)
+                      palier: roman
                     });
+              const levelLine =
+                ev.levelMin != null
+                  ? t('sport.grades.levelShort', `Niveau ${ev.levelMin}`, { level: ev.levelMin })
+                  : null;
               return (
                 <li key={ev.id} className="relative">
-                  <span className="absolute -left-[1.35rem] top-1.5 h-2.5 w-2.5 rounded-full border-2 border-teal-500 bg-black" />
+                  <span
+                    className={`absolute -left-[1.35rem] top-1.5 h-2.5 w-2.5 rounded-full border-2 ${
+                      isCurrent ? 'border-emerald-400 bg-emerald-500/30' : 'border-teal-500 bg-black'
+                    }`}
+                  />
                   <div className="flex flex-wrap items-start gap-2 gap-y-1">
                     <SportGradeEmblem gradeId={ev.gradeId} layout="chip" />
                     <div className="min-w-0 flex-1">
-                      <div className="text-sm font-medium text-teal-50">{title}</div>
+                      <div className={`text-sm font-medium ${isCurrent ? 'text-emerald-100' : 'text-teal-50'}`}>
+                        {title}
+                        {isCurrent ? (
+                          <span className="ml-2 text-[10px] font-semibold uppercase tracking-wide text-emerald-400/90">
+                            {t('recap.grades.timelineYouAreHere', 'Actuel')}
+                          </span>
+                        ) : null}
+                      </div>
                       <div className="text-[10px] text-slate-500">
-                        {dateLabel}
+                        {levelLine}
+                        {dateLabel ? ` · ${dateLabel}` : null}
                         {ev.kind === 'gate' && ev.path
                           ? ` · ${t('recap.grades.timelinePath', `Voie ${ev.path}`, { path: ev.path })}`
-                          : null}
-                        {ev.kind === 'tier' && ev.levelMin
-                          ? ` · ${t('sport.grades.levelShort', `Niveau ${ev.levelMin}`, { level: ev.levelMin })}`
                           : null}
                       </div>
                     </div>
@@ -222,52 +279,14 @@ export default function RecapGradesView() {
         </section>
       ) : null}
 
-      <section>
-        <h3 className="text-sm font-semibold text-white mb-3">
-          {t('recap.grades.history', 'Grades débloqués')}
-        </h3>
-        <ul className="space-y-2">
-          {SPORT_GRADE_GATES.map((gate) => {
-            const hist = grades?.gateHistory?.find((h) => h.toGradeId === gate.toGradeId);
-            const passed = hist?.passed;
-            const levelOk = level >= gate.levelMin;
-            return (
-              <li
-                key={gate.toGradeId}
-                className="flex items-center gap-3 rounded-lg border border-[#0F4C5C]/35 bg-black/50 px-3 py-2"
-              >
-                <SportGradeEmblem gradeId={gate.toGradeId} layout="chip" />
-                <div className="min-w-0 flex-1">
-                  <div className="text-sm font-medium text-teal-50">
-                    {sportGradeLabel(gate.toGradeId, t)}
-                  </div>
-                  <div className="text-[10px] text-slate-500">
-                    {passed
-                      ? t('recap.grades.gateOk', `Validé (voie ${hist.path})`, { path: hist.path })
-                      : levelOk
-                        ? t('recap.grades.gatePending', 'Niveau OK — preuve d’activité manquante')
-                        : t('recap.grades.gateLocked', 'Verrouillé')}
-                  </div>
-                </div>
-                {passed ? (
-                  <CheckCircle2 className="h-5 w-5 text-emerald-400 shrink-0" />
-                ) : levelOk ? (
-                  <Circle className="h-5 w-5 text-amber-500 shrink-0" />
-                ) : (
-                  <Lock className="h-5 w-5 text-slate-600 shrink-0" />
-                )}
-              </li>
-            );
-          })}
-        </ul>
-      </section>
-
       <SportGradeLadderGallery
         level={level}
         progressionGradeId={prog?.gradeId}
         progressionTier={prog?.tier}
         onSelectGrade={setSelectedGradeId}
       />
+        </>
+      )}
     </div>
   );
 }

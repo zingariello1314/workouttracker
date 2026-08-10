@@ -582,7 +582,8 @@ export const translations = {
     'recap.grades.tierNote': 'Repères XP niveau {{level}} : {{cumul}} cumulés.',
     'recap.grades.timelineTitle': 'Historique des grades',
     'recap.grades.timelineIntro':
-      'Dates enregistrées à partir de maintenant ; les grades déjà obtenus avant cette mise à jour peuvent apparaître sans date.',
+      'Parcours reconstitué d’après ton niveau {{level}} : du premier palier jusqu’à ta position actuelle. Les dates seront enregistrées pour les prochains paliers.',
+    'recap.grades.timelineYouAreHere': 'Actuel',
     'recap.grades.timelineGate': 'Passage au grade {{grade}}',
     'recap.grades.timelineTier': 'Palier {{palier}} — {{grade}}',
     'recap.grades.timelinePath': 'Voie {{path}}',
@@ -1756,7 +1757,8 @@ export const translations = {
     'recap.grades.tierNote': 'Level {{level}} XP reference: {{cumul}} cumulative.',
     'recap.grades.timelineTitle': 'Grade history',
     'recap.grades.timelineIntro':
-      'Dates are recorded from now on; grades earned before this update may show without a date.',
+      'Path reconstructed from your level {{level}}: from the first tier to where you are now. Dates will be recorded for upcoming tiers.',
+    'recap.grades.timelineYouAreHere': 'Current',
     'recap.grades.timelineGate': 'Reached grade {{grade}}',
     'recap.grades.timelineTier': 'Tier {{palier}} — {{grade}}',
     'recap.grades.timelinePath': 'Path {{path}}',

@@ -22,6 +22,7 @@ import { sumMergedDailyStepsTotal, manualDailyWalkChecksum } from '../utils/spor
 import { gtgChecksum } from '../services/endurance/gtgService';
 import { stretchRatingChecksum } from '../utils/stretchPerceivedRatings';
 import { sportXpProgressInLevel } from '../services/xp/sportLevelCurve';
+import { computeSportXpDailyInsights } from '../services/xp/sportXpDailyAnalytics';
 
 const DEFAULT_BREAKDOWN = {
   reps: 0,
@@ -432,11 +433,32 @@ export const useSportXP = () => {
     };
   }, [calculated.totalXP]);
 
+  const dailyInsights = useMemo(() => {
+    if (!canAccessData) {
+      return { daysWithXp: 0, averageDailyXp: 0, breakdownRows: [] };
+    }
+    return computeSportXpDailyInsights({
+      totalXP: calculated.totalXP || 0,
+      breakdown: calculated.breakdown || DEFAULT_BREAKDOWN,
+      workoutData,
+      garminData,
+      nutritionMeals
+    });
+  }, [
+    calculated.totalXP,
+    calculated.breakdown,
+    workoutData,
+    garminData,
+    nutritionMeals,
+    canAccessData
+  ]);
+
   return {
     totalXP: calculated.totalXP || 0,
     level: levelInfo.level,
     breakdown: calculated.breakdown || DEFAULT_BREAKDOWN,
     progress: levelInfo.progress,
+    dailyInsights,
     isLoading
   };
 };

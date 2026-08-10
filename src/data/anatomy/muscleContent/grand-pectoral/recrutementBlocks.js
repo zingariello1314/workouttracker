@@ -1,4 +1,4 @@
-import { p, h3, ul } from './blocks.js';
+import { p, h3, ul, figure } from './blocks.js';
 
 export default [
   p('Le développement du grand pectoral ne dépend pas d’un exercice « magique ». Il repose sur la capacité à exposer régulièrement le muscle à une tension suffisante, à travers une amplitude contrôlée, avec suffisamment d’effort et de volume, tout en faisant progressivement augmenter la difficulté.'),
@@ -55,6 +55,14 @@ export default [
     'écartés ou mouvements de rapprochement des bras'
   ]),
   p('Il ne faut cependant pas interpréter cela comme une séparation absolue : les différentes portions travaillent ensemble, avec une contribution qui varie selon la position du bras et la trajectoire utilisée.'),
+  figure(
+    'developpe-couche-halteres.jpg',
+    'Développé couché haltères : poussée horizontale majeure pour le sterno-costal — l’amplitude et la trajectoire comptent autant que la charge.'
+  ),
+  figure(
+    'prises-developpe-couche.png',
+    'Prise plus large ou plus serrée : deltoïde, triceps et portions du grand pectoral ne réagissent pas pareil — variation utile, pas recette magique par zone.'
+  ),
   h3('6. Choisir plusieurs exercices plutôt que chercher « le meilleur »'),
   p('Un programme pectoraux efficace n’a pas besoin de dix exercices.'),
   p('Il est généralement plus intéressant de combiner quelques mouvements complémentaires :'),

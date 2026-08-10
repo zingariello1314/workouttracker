@@ -12,6 +12,15 @@ export function resolveMuscleArtDirection(section) {
   const paras = paragraphsFromBlocks(blocks);
   const hasH3 = blocksHaveHeadings(blocks);
 
+  const hasFigures = blocks.some((b) => b.type === 'figure');
+  if (hasFigures && (id === 'morphologie' || id === 'recrutement' || id === 'blessures')) {
+    if (titled.length >= 2 || id === 'recrutement') return 'anatomy-chapters';
+    return 'narrative-flow';
+  }
+  if (hasFigures && id === 'fonctions' && titled.length >= 2) {
+    return 'anatomy-chapters';
+  }
+
   const byId = {
     presentation: 'presentation-magazine',
     portions: hasH3 ? 'portions-faisceaux' : 'portions-zones',

@@ -1,4 +1,4 @@
-import { h3, p, ul } from './blocks.js';
+import { h3, p, ul, figure } from './blocks.js';
 
 export default [
   p(
@@ -17,6 +17,10 @@ export default [
   ),
   p(
     'Cette fonction est particulièrement intéressante dans les mouvements où les bras se déplacent vers l’avant. Elle explique pourquoi le petit pectoral intervient dans la mécanique de mouvements tels que les pompes, même si son rôle ne se confond pas avec celui du grand pectoral.'
+  ),
+  figure(
+    'pompes.jpg',
+    'Pompe : le grand pectoral pousse l’humérus, tandis que la scapula doit protracter et rester stable — le petit pectoral participe à cette mécanique, avec le dentelé antérieur.'
   ),
   p(
     'Il faut toutefois éviter de lui attribuer seul la protraction : le dentelé antérieur est un acteur majeur de ce mouvement.'

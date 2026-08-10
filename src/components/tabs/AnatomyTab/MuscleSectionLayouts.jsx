@@ -16,6 +16,8 @@ import {
 import { progressionFromBlocks } from './progressionSectionLayout';
 import MuscleSaviezVousAccordion from './MuscleSaviezVousAccordion';
 import { AnatomyPortionsLayout } from './AnatomyPortionsLayout';
+import MuscleBlockStream from './MuscleBlockStream';
+import AnatomyContentFigure from './AnatomyContentFigure';
 import {
   FamilyAlertStack,
   FamilyCalloutVision,
@@ -138,6 +140,11 @@ function MusclePresentationMagazine({ blocks }) {
         i += 1;
         continue;
       }
+      if (b.type === 'figure') {
+        out.push({ kind: 'figure', block: b });
+        i += 1;
+        continue;
+      }
       if (b.type === 'callout') {
         out.push({ kind: 'editorialCallout', title: b.title, text: b.text, tone: b.tone });
         i += 1;
@@ -237,6 +244,7 @@ function MusclePresentationMagazine({ blocks }) {
     if (cur === 'callout' && pk === 'card') return 'mt-4 sm:mt-5';
     if (cur === 'card' && pk === 'callout') return 'mt-4 sm:mt-5';
     if (cur === 'callout' || pk === 'callout') return 'mt-4 sm:mt-5';
+    if (cur === 'figure' || pk === 'figure') return 'mt-5 sm:mt-6';
     if (cur === 'comparisonTable' || cur === 'trajet' || cur === 'list') return 'mt-4 sm:mt-5';
     if (cur === 'editorialCallout' || pk === 'editorialCallout') return 'mt-5 sm:mt-6';
 
@@ -314,6 +322,17 @@ function MusclePresentationMagazine({ blocks }) {
                 </p>
               ) : null}
             </div>
+          );
+        }
+        if (node.kind === 'figure') {
+          const b = node.block;
+          return wrap(
+            <AnatomyContentFigure
+              src={b.src}
+              alt={b.alt}
+              caption={b.caption}
+              layout={b.layout}
+            />
           );
         }
         if (node.kind === 'callout') {
@@ -476,6 +495,11 @@ function MuscleChapterFlow({ blocks, sectionId, accent = 'teal' }) {
         i += 1;
         continue;
       }
+      if (b.type === 'figure') {
+        out.push({ kind: 'figure', block: b });
+        i += 1;
+        continue;
+      }
       if (b.type === 'takeaway') {
         out.push({ kind: 'takeaway', label: b.label, text: b.text });
         i += 1;
@@ -501,20 +525,27 @@ function MuscleChapterFlow({ blocks, sectionId, accent = 'teal' }) {
         const body = [];
         const items = [];
         const trajets = [];
+        const segments = [];
         while (
           i < list.length &&
-          (list[i].type === 'p' || list[i].type === 'ul' || list[i].type === 'trajet')
+          (list[i].type === 'p' ||
+            list[i].type === 'ul' ||
+            list[i].type === 'trajet' ||
+            list[i].type === 'figure')
         ) {
           if (list[i].type === 'ul') {
             items.push(...(list[i].items || []));
           } else if (list[i].type === 'trajet') {
             trajets.push(list[i].text);
+          } else if (list[i].type === 'figure') {
+            segments.push({ kind: 'figure', block: list[i] });
           } else {
             body.push(list[i].text);
+            segments.push({ kind: 'p', text: list[i].text });
           }
           i += 1;
         }
-        out.push({ kind: 'chapter', title, body, items, trajets });
+        out.push({ kind: 'chapter', title, body, items, trajets, segments });
         continue;
       }
       i += 1;
@@ -560,18 +591,45 @@ function MuscleChapterFlow({ blocks, sectionId, accent = 'teal' }) {
             </div>
           );
         }
+        if (node.kind === 'figure') {
+          const b = node.block;
+          return (
+            <AnatomyContentFigure
+              key={ni}
+              src={b.src}
+              alt={b.alt}
+              caption={b.caption}
+              layout={b.layout}
+            />
+          );
+        }
         if (node.kind === 'chapter') {
+          const chapterBody =
+            node.segments?.length > 0
+              ? node.segments
+              : node.body.map((t) => ({ kind: 'p', text: t }));
           return (
             <article
               key={ni}
               className={`rounded-r-xl border border-white/[0.06] bg-[#0e141c]/90 py-3.5 pl-4 sm:pl-5 pr-4 border-l-[4px] ${border}`}
             >
               <h4 className="text-sm font-semibold text-white mb-2 leading-snug">{node.title}</h4>
-              {node.body.map((t, j) => (
-                <p key={j} className="text-sm leading-[1.68] text-slate-200/88 mb-2 last:mb-0">
-                  {t}
-                </p>
-              ))}
+              {chapterBody.map((seg, j) =>
+                seg.kind === 'figure' ? (
+                  <AnatomyContentFigure
+                    key={j}
+                    src={seg.block.src}
+                    alt={seg.block.alt}
+                    caption={seg.block.caption}
+                    layout={seg.block.layout}
+                    className="my-3"
+                  />
+                ) : (
+                  <p key={j} className="text-sm leading-[1.68] text-slate-200/88 mb-2 last:mb-0">
+                    {seg.text}
+                  </p>
+                )
+              )}
               {node.trajets?.map((t, j) => (
                 <p
                   key={`tr-${j}`}
@@ -652,21 +710,31 @@ function MuscleChapterFlow({ blocks, sectionId, accent = 'teal' }) {
 
 /** Anatomie : fiche technique 2 colonnes, listes en tags. */
 function MuscleAnatomySheet({ blocks, sectionId }) {
-  const cards = useMemo(() => cardsFromBlocks(blocks), [blocks]);
+  const { leadBlocks, cardBlocks } = useMemo(() => {
+    const list = blocks || [];
+    const idx = list.findIndex((b) => b.type === 'h3');
+    if (idx < 0) return { leadBlocks: list, cardBlocks: [] };
+    return { leadBlocks: list.slice(0, idx), cardBlocks: list.slice(idx) };
+  }, [blocks]);
+
+  const cards = useMemo(() => cardsFromBlocks(cardBlocks.length ? cardBlocks : blocks), [blocks, cardBlocks]);
   const titled = cards.filter((c) => c.title);
-  const lead = cards.find((c) => !c.title && c.body.length);
+  const leadHasFigure = leadBlocks.some((b) => b.type === 'figure');
 
   if (titled.length === 0) {
-    return <FamilyNarrativeFlow blocks={blocks} />;
+    return (
+      <div className="space-y-4">
+        <ContentKicker sectionId={sectionId} />
+        <MuscleBlockStream blocks={blocks} />
+      </div>
+    );
   }
 
   return (
     <div className="space-y-4">
       <ContentKicker sectionId={sectionId} />
-      {lead ? (
-        <p className="text-sm leading-relaxed text-slate-200/90 border-l-2 border-teal-400/50 pl-4 italic">
-          {lead.body.join(' ')}
-        </p>
+      {leadHasFigure || leadBlocks.some((b) => b.type === 'p') ? (
+        <MuscleBlockStream blocks={leadBlocks} />
       ) : null}
       <div className={`grid gap-4 ${titled.length >= 2 ? 'md:grid-cols-2' : ''}`}>
         {titled.map((card, i) => (
@@ -992,6 +1060,16 @@ function MuscleProgressionTimeline({ blocks, sectionId }) {
                 <p key={j} className="text-sm leading-[1.68] text-[#b8c0d0] m-0 mb-3 last:mb-0">
                   {t}
                 </p>
+              ))}
+              {step.figures?.map((fig, fi) => (
+                <AnatomyContentFigure
+                  key={`fig-${fi}`}
+                  src={fig.src}
+                  alt={fig.alt}
+                  caption={fig.caption}
+                  layout={fig.layout}
+                  className="my-4"
+                />
               ))}
               {step.quotes.length > 0 ? (
                 <div className="my-4 space-y-2">

@@ -1,4 +1,4 @@
-import { p, h3, ul } from './blocks.js';
+import { p, h3, ul, figure } from './blocks.js';
 
 export default [
   p('Tous les individus ne possèdent pas exactement la même morphologie. Le développement du grand pectoral dépend de l’entraînement, mais son apparence, sa forme et la manière dont son volume se répartit sont également influencées par la génétique et la structure du thorax.'),
@@ -45,6 +45,10 @@ export default [
   p('Cela peut modifier la trajectoire de la barre ou des haltères, la position du coude, l’amplitude disponible, la position de l’épaule, le degré d’étirement ressenti et la répartition du travail entre pectoral, deltoïde et triceps.'),
   p('Cela ne signifie pas qu’une morphologie donnée possède un exercice obligatoire. Le meilleur exercice est plutôt celui qui permet à l’individu de produire une forte tension avec le grand pectoral, sur une amplitude adaptée, avec une bonne stabilité et sans douleur.'),
   p('Deux personnes peuvent ainsi réaliser le même développé couché avec la même charge et le même nombre de répétitions, tout en ayant une mécanique et des sensations différentes. L’une peut ressentir davantage le couple pectoraux → triceps, tandis qu’une autre peut ressentir davantage le couple pectoraux → deltoïde antérieur → triceps, sans que l’une des deux exécutions soit nécessairement mauvaise.'),
+  figure(
+    'morphologies-developpe-couche.jpg',
+    'Même mouvement, morphologies différentes : trajectoire, amplitude et répartition deltoïde / pectoral / triceps varient — d’où l’intérêt d’adapter la technique, pas de copier une seule forme « idéale ».'
+  ),
   p('C’est pourquoi une compréhension avancée du grand pectoral ne devrait pas seulement chercher à répondre à la question « Quel exercice travaille les pectoraux ? », mais également à la question « Comment cet exercice interagit-il avec la morphologie de la personne qui l’exécute ? »'),
   h3('Les angles de développé et les différentes portions'),
   p('La position du bras et l’angle de poussée peuvent modifier la contribution relative des différentes portions du grand pectoral. Une poussée horizontale sollicite fortement le grand pectoral dans son ensemble, avec une contribution importante des régions sternocostales. Une poussée inclinée augmente relativement la contribution de la portion claviculaire, particulièrement lorsque l’inclinaison augmente.'),

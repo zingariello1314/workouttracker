@@ -17,6 +17,25 @@ export const pCallout = (variant, tag, text) => ({
 });
 export const exerciseGrid = (items) => ({ type: 'exerciseGrid', items });
 
+const GRAND_PEC_FIG = '/anatomy/grand-pectoral';
+
+/** @param {'landscape'|'portrait'} [layout] */
+export const figure = (file, caption, alt = '', layout = 'landscape') => ({
+  type: 'figure',
+  src: `${GRAND_PEC_FIG}/${file}`,
+  caption,
+  alt: alt || caption,
+  layout
+});
+
+export const figureAt = (folder, file, caption, alt = '', layout = 'landscape') => ({
+  type: 'figure',
+  src: `/anatomy/${folder}/${file}`,
+  caption,
+  alt: alt || caption,
+  layout
+});
+
 /** Fonctions principales — cartes magazine */
 export const functionEyebrow = (text) => ({ type: 'functionEyebrow', text });
 export const functionNuance = (text) => ({ type: 'functionNuance', text });

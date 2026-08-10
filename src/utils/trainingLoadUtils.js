@@ -228,7 +228,7 @@ export function computeStrengthCalendarContribution(exerciseLike, reps, coeff, w
   return r * coeffN * mult;
 }
 
-function normalizeSessionDate(session, overrides = {}) {
+export function normalizeSessionDate(session, overrides = {}) {
   const resolved = resolveSessionCalendarDate(session, overrides);
   if (resolved) return resolved;
   let d = session?.date;

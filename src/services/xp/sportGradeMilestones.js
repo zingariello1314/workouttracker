@@ -2,9 +2,13 @@
  * Historique local des passages de grade / palier (dates enregistrées côté client).
  */
 
-import { SPORT_GRADE_TIER_ROWS } from './sportGradeCatalog';
+import { SPORT_GRADE_GATES, SPORT_GRADE_TIER_ROWS } from './sportGradeCatalog';
 
 const LS_KEY = 'sport.gradeMilestones.v1';
+
+function gateLevelMin(gradeId) {
+  return SPORT_GRADE_GATES.find((g) => g.toGradeId === gradeId)?.levelMin ?? 0;
+}
 
 function readStore() {
   try {
@@ -38,13 +42,35 @@ function eventId(kind, payload) {
   return `${kind}:${JSON.stringify(payload)}`;
 }
 
-function sortEvents(events) {
+function sortEventsNewestFirst(events) {
   return [...events].sort((a, b) => {
     const ta = a.at ? Date.parse(a.at) : 0;
     const tb = b.at ? Date.parse(b.at) : 0;
     if (tb !== ta) return tb - ta;
     return (b.levelMin || 0) - (a.levelMin || 0);
   });
+}
+
+/** Parcours naturel : du premier palier → niveau actuel (lecture haut → bas). */
+export function sortMilestonesChronological(events) {
+  return [...events].sort((a, b) => {
+    const la = a.levelMin ?? gateLevelMin(a.gradeId) ?? 0;
+    const lb = b.levelMin ?? gateLevelMin(b.gradeId) ?? 0;
+    if (la !== lb) return la - lb;
+    if (a.kind === 'gate' && b.kind === 'tier') return -1;
+    if (a.kind === 'tier' && b.kind === 'gate') return 1;
+    return String(a.id).localeCompare(String(b.id));
+  });
+}
+
+function milestoneSortLevel(ev, maxLevel) {
+  const lm = ev.levelMin ?? (ev.kind === 'gate' ? gateLevelMin(ev.gradeId) : 0);
+  return lm <= maxLevel;
+}
+
+export function filterMilestonesUpToLevel(events, level) {
+  const L = Math.max(1, Math.floor(Number(level) || 1));
+  return events.filter((ev) => milestoneSortLevel(ev, L));
 }
 
 /**
@@ -68,50 +94,46 @@ export function syncSportGradeMilestones({ level, grades }) {
       kind: 'gate',
       gradeId: h.toGradeId,
       path: h.path || null,
+      levelMin: gateLevelMin(h.toGradeId),
       at: isFirstSync ? null : now
     });
     known.add(id);
   }
 
-  if (isFirstSync) {
-    for (const row of SPORT_GRADE_TIER_ROWS) {
-      if (L < row.levelMin) continue;
-      const id = eventId('tier', { gradeId: row.gradeId, tier: row.tier });
-      if (known.has(id)) continue;
-      store.events.push({
-        id,
-        kind: 'tier',
-        gradeId: row.gradeId,
-        tier: row.tier,
-        levelMin: row.levelMin,
-        at: null
-      });
-      known.add(id);
+  for (const row of SPORT_GRADE_TIER_ROWS) {
+    if (L < row.levelMin) continue;
+    const id = eventId('tier', { gradeId: row.gradeId, tier: row.tier });
+    if (known.has(id)) continue;
+    let at = null;
+    if (!isFirstSync && prevMax > 0 && row.levelMin > prevMax && row.levelMin <= L) {
+      at = now;
     }
-    store.maxLevelRecorded = L;
-  } else if (L > prevMax) {
-    for (const row of SPORT_GRADE_TIER_ROWS) {
-      if (row.levelMin <= prevMax || row.levelMin > L) continue;
-      const id = eventId('tier', { gradeId: row.gradeId, tier: row.tier });
-      if (known.has(id)) continue;
-      store.events.push({
-        id,
-        kind: 'tier',
-        gradeId: row.gradeId,
-        tier: row.tier,
-        levelMin: row.levelMin,
-        at: now
-      });
-      known.add(id);
-    }
-    store.maxLevelRecorded = L;
+    store.events.push({
+      id,
+      kind: 'tier',
+      gradeId: row.gradeId,
+      tier: row.tier,
+      levelMin: row.levelMin,
+      at
+    });
+    known.add(id);
   }
 
-  store.events = sortEvents(store.events);
+  if (isFirstSync || L > prevMax) {
+    store.maxLevelRecorded = Math.max(store.maxLevelRecorded || 0, L);
+  }
+
+  store.events = sortEventsNewestFirst(store.events);
   writeStore(store);
   return store.events;
 }
 
-export function getSportGradeMilestones() {
-  return sortEvents(readStore().events);
+export function getSportGradeMilestones(level) {
+  const raw = sortEventsNewestFirst(readStore().events).map((ev) =>
+    ev.kind === 'gate' && ev.levelMin == null
+      ? { ...ev, levelMin: gateLevelMin(ev.gradeId) }
+      : ev
+  );
+  if (level == null) return raw;
+  return sortMilestonesChronological(filterMilestonesUpToLevel(raw, level));
 }

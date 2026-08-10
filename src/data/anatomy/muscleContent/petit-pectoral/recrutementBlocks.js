@@ -1,4 +1,4 @@
-import { h3, p, ul, callout, takeaway } from './blocks.js';
+import { h3, p, ul, callout, takeaway, figure } from './blocks.js';
 
 export default [
   p(
@@ -13,6 +13,10 @@ export default [
   ),
   p(
     'Cependant, il faut éviter de dire qu’un développé « entraîne le petit pectoral » de la même manière qu’il entraîne le grand pectoral. Le petit pectoral n’est pas le principal producteur de force du mouvement : son rôle est davantage lié au positionnement et au contrôle de la scapula.'
+  ),
+  figure(
+    'dips.jpg',
+    'Dips : forte demande de poussée et de position scapulaire — le petit pectoral intervient dans le contrôle de l’omoplate, pas comme moteur principal du dip.'
   ),
   h3('Le contrôle scapulaire est plus pertinent que l’isolation'),
   p(

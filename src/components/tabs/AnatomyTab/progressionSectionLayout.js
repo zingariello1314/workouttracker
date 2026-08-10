@@ -196,6 +196,11 @@ export function progressionFromBlocks(blocks) {
     }
 
     if (currentStep) {
+      if (block.type === 'figure') {
+        currentStep.figures = currentStep.figures || [];
+        currentStep.figures.push(block);
+        return;
+      }
       if (block.type === 'p') {
         if (/^(Un mouvement|Éventuellement)/i.test(block.text)) {
           pendingExerciseLabel = block.text;

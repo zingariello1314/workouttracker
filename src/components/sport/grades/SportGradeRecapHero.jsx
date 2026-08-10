@@ -2,6 +2,7 @@ import React from 'react';
 import { useTranslation } from '../../../utils/translations';
 import SportGradeEmblem from './SportGradeEmblem';
 import { sportGradeLabel, sportPalierLabel } from './SportGradeIdentity';
+import SportGradeXpInsights from './SportGradeXpInsights';
 
 /**
  * Carte Récap unique : grande illustration du grade de progression + grade mérité en texte.
@@ -11,7 +12,9 @@ export default function SportGradeRecapHero({
   progressionTier,
   meritedGradeId,
   meritedTier,
-  level
+  level,
+  totalXP,
+  dailyInsights
 }) {
   const t = useTranslation();
   if (!progressionGradeId) return null;
@@ -63,6 +66,7 @@ export default function SportGradeRecapHero({
               })}
             </p>
           )}
+          <SportGradeXpInsights dailyInsights={dailyInsights} totalXP={totalXP} />
         </div>
       </div>
     </section>

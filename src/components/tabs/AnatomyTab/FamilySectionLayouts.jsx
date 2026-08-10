@@ -5,6 +5,8 @@ import {
   paragraphsFromBlocks,
   resolveFamilyArtDirection
 } from './familySectionArt';
+import MuscleBlockStream from './MuscleBlockStream';
+import AnatomyContentFigure from './AnatomyContentFigure';
 
 function ProseExtras({ blocks }) {
   const rest = (blocks || []).filter((b) => b.type !== 'p' && b.type !== 'h3');
@@ -21,6 +23,17 @@ function ProseExtras({ blocks }) {
                 </li>
               ))}
             </ul>
+          );
+        }
+        if (block.type === 'figure') {
+          return (
+            <AnatomyContentFigure
+              key={i}
+              src={block.src}
+              alt={block.alt}
+              caption={block.caption}
+              layout={block.layout}
+            />
           );
         }
         return null;
@@ -503,8 +516,12 @@ export function FamilyPrinciplesMix({ blocks }) {
 }
 
 export function FamilyNarrativeFlow({ blocks }) {
-  const paragraphs = paragraphsFromBlocks(blocks);
-  const rest = (blocks || []).filter((b) => b.type !== 'p');
+  const list = blocks || [];
+  if (list.some((b) => b.type === 'figure')) {
+    return <MuscleBlockStream blocks={list} className="flex flex-col gap-4" />;
+  }
+  const paragraphs = paragraphsFromBlocks(list);
+  const rest = list.filter((b) => b.type !== 'p');
   if (paragraphs.length === 0 && rest.length === 0) return null;
 
   return (

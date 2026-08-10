@@ -14,6 +14,13 @@ const brachial = {
           type: 'p',
           text:
             'Origine sur la face antérieure distale de l’humérus ; insertion sur la tubérosité de l’ulna — efficace quelle que soit la rotation de la main.'
+        },
+        {
+          type: 'figure',
+          src: '/anatomy/brachial/planche-anatomie-bras.jpg',
+          caption:
+            'Planche « Les bras » : le brachial est visible en profondeur sous le biceps ; il n’attache pas sur la scapula et fléchit le coude quelle que soit la prise.',
+          alt: 'Anatomie des muscles du bras, brachial sous le biceps'
         }
       ]
     },
@@ -25,6 +32,13 @@ const brachial = {
           type: 'p',
           text:
             'Très sollicité en tractions pronation, prise neutre, escalade et suspension — là où le biceps est moins avantagé mécaniquement.'
+        },
+        {
+          type: 'figure',
+          src: '/anatomy/biceps/flechisseurs-prise-neutre.jpg',
+          caption:
+            'Curl marteau (prise neutre) : le brachial et le brachio-radial montent en contribution ; le biceps reste actif mais n’est plus seul moteur de la flexion.',
+          alt: 'Curl marteau, brachial et biceps'
         }
       ]
     },

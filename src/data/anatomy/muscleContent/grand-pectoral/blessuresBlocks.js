@@ -1,4 +1,4 @@
-import { h3, p, ul } from './blocks.js';
+import { h3, p, ul, figure } from './blocks.js';
 
 export default [
   p(
@@ -13,6 +13,10 @@ export default [
   ),
   p(
     'La lésion se produit fréquemment au niveau de la partie tendineuse proche de l’humérus. Les ruptures peuvent cependant toucher différentes régions du complexe musculotendineux et leur gravité dépend notamment de l’étendue de la rupture.'
+  ),
+  figure(
+    'blessure-dechirure-grand-pectoral.jpg',
+    'Mécanisme classique : forte charge en phase excentrique, bras en abduction — le complexe musculotendineux du grand pectoral est alors très sollicité (schéma éducatif, pas un diagnostic).'
   ),
   p('Signes évocateurs :'),
   ul([
