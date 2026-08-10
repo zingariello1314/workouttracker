@@ -558,7 +558,89 @@ export const translations = {
     'recap.nav.corps': 'Corps',
     'recap.nav.tendances': 'Tendances',
     'recap.nav.sessions': 'Séances',
+    'recap.nav.grades': 'Grades',
     'recap.nav.mobile': 'Navigation Récap',
+    'recap.grades.title': 'Grades & progression',
+    'recap.grades.intro':
+      'Le niveau monte avec toute ton XP Sport. Les paliers I / II / III suivent le niveau. Passer au grade supérieur exige aussi une preuve d’activité (maîtrise, séances, reps ou kcal).',
+    'recap.grades.xpBlock': 'XP & niveau',
+    'recap.grades.levelLine': 'Niveau {{level}} — {{current}} / {{max}} XP sur ce palier',
+    'recap.grades.masteryLine': 'Score de maîtrise : {{score}}',
+    'recap.grades.nextGate': 'Prochain grade : {{grade}}',
+    'recap.grades.nextGateLevel': 'Niveau minimum : {{n}} (actuel : {{level}})',
+    'recap.grades.pathEHint':
+      'Voie E (polyvalence) : atteindre 70 % sur A, B, C et D simultanément.',
+    'recap.grades.history': 'Grades débloqués',
+    'recap.grades.gateOk': 'Validé (voie {{path}})',
+    'recap.grades.gatePending': 'Niveau OK — preuve d’activité manquante',
+    'recap.grades.gateLocked': 'Verrouillé',
+    'recap.grades.tierLadder': 'Échelle des paliers (niveau)',
+    'recap.grades.colGrade': 'Grade',
+    'recap.grades.colPalier': 'Palier',
+    'recap.grades.colLevel': 'Niv. min',
+    'recap.grades.colXp': 'XP cumulé',
+    'recap.grades.tierNote': 'Repères XP niveau {{level}} : {{cumul}} cumulés.',
+    'recap.grades.timelineTitle': 'Historique des grades',
+    'recap.grades.timelineIntro':
+      'Dates enregistrées à partir de maintenant ; les grades déjà obtenus avant cette mise à jour peuvent apparaître sans date.',
+    'recap.grades.timelineGate': 'Passage au grade {{grade}}',
+    'recap.grades.timelineTier': 'Palier {{palier}} — {{grade}}',
+    'recap.grades.timelinePath': 'Voie {{path}}',
+    'recap.grades.timelineNoDate': 'Date non enregistrée',
+    'recap.grades.timelineEmpty': 'Aucun événement enregistré pour l’instant.',
+    'recap.grades.openGradesHint': 'Voir le détail dans Récap → Grades',
+    'recap.grades.meritedLine': '{{grade}} · {{palier}}',
+    'recap.grades.meritedSameAsProgression':
+      'Identique à ta progression — toutes les conditions de grade sont remplies pour ce palier.',
+    'recap.grades.ladderGalleryTitle': 'Parcours des grades',
+    'recap.grades.ladderGalleryIntro':
+      'Chaque grade comporte trois paliers (I, II, III), débloqués par le niveau. Les illustrations apparaissent au fur et à mesure.',
+    'recap.grades.ladderYouAreHere': 'Tu es ici',
+    'recap.grades.ladderLevelFrom': 'Dès le niveau {{n}}',
+    'recap.grades.ladderTierProgress': 'Palier atteint : {{palier}}',
+    'recap.grades.ladderTapDetail': 'Appuyer pour le détail',
+    'recap.grades.detailBack': 'Retour au parcours des grades',
+    'recap.grades.detailPathsTitle': 'Tes voies — où tu en es',
+    'recap.grades.detailPathRemaining': '{{n}} restants',
+    'recap.grades.detailPathE': 'Polyvalence (≥ 70 % sur A, B, C et D)',
+    'recap.grades.detailPathEProgress':
+      'Axe le plus en retard : {{pct}} % (objectif 70 % sur chaque voie)',
+    'recap.grades.detailGateNextTitle': 'Frontière suivante : {{grade}}',
+    'recap.grades.detailStatusMerited': 'Grade mérité obtenu',
+    'recap.grades.detailStatusProgression': 'Grade de progression (niveau)',
+    'recap.grades.detailStatusBoth': 'Progression & grade mérité',
+    'recap.grades.detailStatusBlocked': 'Niveau OK — preuve d’activité manquante',
+    'recap.grades.detailStatusFuture': 'Grade à venir',
+    'recap.grades.detailXpLine': '{{xp}} XP cumulés · Niveau {{level}}',
+    'recap.grades.detailTiersTitle': 'Paliers (niveau & XP)',
+    'recap.grades.detailTiersHint':
+      'Les paliers I / II / III se débloquent uniquement avec ton niveau Sport (XP totale).',
+    'recap.grades.detailTierReq': 'Niv. {{n}} · {{xp}} XP',
+    'recap.grades.detailNextTier': 'Prochain palier ici : niveau {{n}} ({{xp}} XP cumulés)',
+    'recap.grades.detailXpRemaining': '{{left}} XP restants',
+    'recap.grades.detailTiersMax': 'Tous les paliers de ce grade sont débloqués par le niveau.',
+    'recap.grades.detailNovice':
+      'Grade de départ : aucune épreuve. Pour le grade Adepte, vois la fiche Adepte (niveau + preuve d’activité).',
+    'recap.grades.detailGateTitle': 'Accès au grade (grade mérité)',
+    'recap.grades.detailGateHint':
+      'En plus du niveau minimum, une voie A, B, C, D ou E (70 % partout) valide le passage.',
+    'recap.grades.detailLevelXp': '{{xp}} XP cumulés requis',
+    'recap.grades.detailNextGrade': 'Grade suivant',
+    'sport.grades.novice': 'Novice',
+    'sport.grades.adepte': 'Adepte',
+    'sport.grades.disciple': 'Disciple',
+    'sport.grades.athlete': 'Athlète',
+    'sport.grades.champion': 'Champion',
+    'sport.grades.elite': 'Élite',
+    'sport.grades.maitre': 'Maître',
+    'sport.grades.grand_maitre': 'Grand Maître',
+    'sport.grades.olympien': 'Olympien',
+    'sport.grades.parangon': 'Parangon',
+    'sport.grades.palier': 'Palier {{roman}}',
+    'sport.grades.levelShort': 'Niveau {{level}}',
+    'sport.grades.progressionLabel': 'Progression',
+    'sport.grades.meritedLabel': 'Grade mérité',
+    'sport.grades.meritedSameShort': 'identique à la progression',
     'recap.tendances.records': 'Records course',
     'recap.tendances.noRecords': 'Aucun record course enregistré.',
     'recap.snapshot.regularity': 'Régularité',
@@ -1651,7 +1733,68 @@ export const translations = {
     'recap.nav.corps': 'Body',
     'recap.nav.tendances': 'Trends',
     'recap.nav.sessions': 'Sessions',
+    'recap.nav.grades': 'Grades',
     'recap.nav.mobile': 'Recap navigation',
+    'recap.grades.title': 'Grades & progression',
+    'recap.grades.intro':
+      'Level rises with all Sport XP. Tiers I / II / III follow level alone. Moving up a grade also requires proof of activity (mastery, sessions, reps, or kcal).',
+    'recap.grades.xpBlock': 'XP & level',
+    'recap.grades.levelLine': 'Level {{level}} — {{current}} / {{max}} XP on this tier',
+    'recap.grades.masteryLine': 'Mastery score: {{score}}',
+    'recap.grades.nextGate': 'Next grade: {{grade}}',
+    'recap.grades.nextGateLevel': 'Minimum level: {{n}} (current: {{level}})',
+    'recap.grades.pathEHint': 'Path E (well-rounded): reach 70% on A, B, C, and D at once.',
+    'recap.grades.history': 'Unlocked grades',
+    'recap.grades.gateOk': 'Unlocked (path {{path}})',
+    'recap.grades.gatePending': 'Level OK — activity proof missing',
+    'recap.grades.gateLocked': 'Locked',
+    'recap.grades.tierLadder': 'Tier ladder (level)',
+    'recap.grades.colGrade': 'Grade',
+    'recap.grades.colPalier': 'Tier',
+    'recap.grades.colLevel': 'Min lvl',
+    'recap.grades.colXp': 'Cumulative XP',
+    'recap.grades.tierNote': 'Level {{level}} XP reference: {{cumul}} cumulative.',
+    'recap.grades.timelineTitle': 'Grade history',
+    'recap.grades.timelineIntro':
+      'Dates are recorded from now on; grades earned before this update may show without a date.',
+    'recap.grades.timelineGate': 'Reached grade {{grade}}',
+    'recap.grades.timelineTier': 'Tier {{palier}} — {{grade}}',
+    'recap.grades.timelinePath': 'Path {{path}}',
+    'recap.grades.timelineNoDate': 'Date not recorded',
+    'recap.grades.timelineEmpty': 'No events recorded yet.',
+    'recap.grades.openGradesHint': 'See details in Recap → Grades',
+    'recap.grades.meritedLine': '{{grade}} · {{palier}}',
+    'recap.grades.meritedSameAsProgression':
+      'Same as your progression — all grade conditions are met for this tier.',
+    'recap.grades.ladderGalleryTitle': 'Grade journey',
+    'recap.grades.ladderGalleryIntro':
+      'Each grade has three tiers (I, II, III), unlocked by level. Artwork appears as you add images.',
+    'recap.grades.ladderYouAreHere': 'You are here',
+    'recap.grades.ladderLevelFrom': 'From level {{n}}',
+    'recap.grades.ladderTierProgress': 'Tier reached: {{palier}}',
+    'recap.grades.ladderTapDetail': 'Tap for details',
+    'recap.grades.detailBack': 'Back to grade journey',
+    'recap.grades.detailPathsTitle': 'Your paths — where you stand',
+    'recap.grades.detailPathRemaining': '{{n}} remaining',
+    'recap.grades.detailPathE': 'Versatility (≥ 70% on A, B, C and D)',
+    'recap.grades.detailPathEProgress':
+      'Slowest axis: {{pct}}% (70% required on each path)',
+    'recap.grades.detailGateNextTitle': 'Next boundary: {{grade}}',
+    'sport.grades.novice': 'Novice',
+    'sport.grades.adepte': 'Adept',
+    'sport.grades.disciple': 'Disciple',
+    'sport.grades.athlete': 'Athlete',
+    'sport.grades.champion': 'Champion',
+    'sport.grades.elite': 'Elite',
+    'sport.grades.maitre': 'Master',
+    'sport.grades.grand_maitre': 'Grand Master',
+    'sport.grades.olympien': 'Olympian',
+    'sport.grades.parangon': 'Paragon',
+    'sport.grades.palier': 'Tier {{roman}}',
+    'sport.grades.levelShort': 'Level {{level}}',
+    'sport.grades.progressionLabel': 'Progression',
+    'sport.grades.meritedLabel': 'Earned rank',
+    'sport.grades.meritedSameShort': 'same as progression',
     'recap.tendances.records': 'Running records',
     'recap.tendances.noRecords': 'No running records logged.',
     'recap.snapshot.regularity': 'Consistency',
@@ -2387,7 +2530,8 @@ export const useTranslation = () => {
       'nutritionAnalyses',
       'messages',
       'sessionFeedback',
-      'books'
+      'books',
+      'sport'
     ];
     
     // Si le premier segment est un namespace connu, l'utiliser
@@ -2534,9 +2678,13 @@ export const useTranslation = () => {
     let params = {};
     
     if (typeof fallbackOrParams === 'object' && fallbackOrParams !== null && !Array.isArray(fallbackOrParams)) {
-      // Le deuxième argument est un objet → c'est params, pas fallback
-      params = fallbackOrParams;
-      fallback = key; // Utiliser la clé comme fallback par défaut
+      params = { ...fallbackOrParams };
+      if (typeof params.defaultValue === 'string') {
+        fallback = params.defaultValue;
+        delete params.defaultValue;
+      } else {
+        fallback = key;
+      }
     } else {
       // Le deuxième argument est une string → c'est fallback
       fallback = fallbackOrParams;

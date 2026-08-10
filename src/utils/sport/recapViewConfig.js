@@ -5,7 +5,8 @@ export const RECAP_VIEW_IDS = {
   ANALYSE: 'analyse',
   CORPS: 'corps',
   TENDANCES: 'tendances',
-  SESSIONS: 'sessions'
+  SESSIONS: 'sessions',
+  GRADES: 'grades'
 };
 
 export const RECAP_ACTIVE_VIEW_LS = 'sport.recap.activeView';
@@ -15,7 +16,8 @@ export const RECAP_NAV_SECTIONS = [
     id: 'synthesis',
     items: [
       { id: RECAP_VIEW_IDS.SNAPSHOT, labelKey: 'recap.nav.snapshot', defaultLabel: 'Snapshot' },
-      { id: RECAP_VIEW_IDS.ANALYSE, labelKey: 'recap.nav.analyse', defaultLabel: 'Analyse' }
+      { id: RECAP_VIEW_IDS.ANALYSE, labelKey: 'recap.nav.analyse', defaultLabel: 'Analyse' },
+      { id: RECAP_VIEW_IDS.GRADES, labelKey: 'recap.nav.grades', defaultLabel: 'Grades' }
     ]
   },
   {
@@ -36,4 +38,18 @@ export function readStoredRecapView(fallback = RECAP_VIEW_IDS.SNAPSHOT) {
     /* ignore */
   }
   return fallback;
+}
+
+/** Ouvre le sous-onglet Récap → Grades (à appeler avant setActiveTab('recap')). */
+export function openSportRecapGradesView() {
+  try {
+    localStorage.setItem(RECAP_ACTIVE_VIEW_LS, RECAP_VIEW_IDS.GRADES);
+  } catch {
+    /* ignore */
+  }
+  if (typeof window !== 'undefined') {
+    window.dispatchEvent(
+      new CustomEvent('sport:recap-view', { detail: { view: RECAP_VIEW_IDS.GRADES } })
+    );
+  }
 }

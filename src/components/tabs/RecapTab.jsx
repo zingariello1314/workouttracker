@@ -15,6 +15,7 @@ import RecapAnalyseView from '../sport/recap/views/RecapAnalyseView';
 import RecapCorpsView from '../sport/recap/views/RecapCorpsView';
 import RecapTendancesView from '../sport/recap/views/RecapTendancesView';
 import RecapSessionsView from '../sport/recap/views/RecapSessionsView';
+import RecapGradesView from '../sport/recap/views/RecapGradesView';
 import { isAdminUser } from '../../utils/accessControl';
 import { useGarminData } from '../../hooks/useGarminData';
 import {
@@ -184,6 +185,17 @@ const RecapTab = () => {
     }
   }, [activeView]);
 
+  useEffect(() => {
+    const handler = (event) => {
+      const view = event.detail?.view;
+      if (view && Object.values(RECAP_VIEW_IDS).includes(view)) {
+        setActiveView(view);
+      }
+    };
+    window.addEventListener('sport:recap-view', handler);
+    return () => window.removeEventListener('sport:recap-view', handler);
+  }, []);
+
   const runningKm = useMemo(() => {
     const stored = snapshotForRecap?.enduranceData?.sessions?.running || [];
     const garminById = buildGarminCardioById(garminBundle?.activities?.cardio);
@@ -202,7 +214,11 @@ const RecapTab = () => {
     };
   }, [data, getCurrentData]);
 
-  const showMetricsSkeleton = metricsComputing && !enrichment;
+  const showMetricsSkeleton =
+    activeView !== RECAP_VIEW_IDS.GRADES && metricsComputing && !enrichment;
+
+  const metricsOverlayActive =
+    activeView !== RECAP_VIEW_IDS.GRADES && (isPeriodStale || metricsComputing);
 
   const viewContent = useMemo(() => {
     if (showMetricsSkeleton) {
@@ -210,6 +226,8 @@ const RecapTab = () => {
     }
 
     switch (activeView) {
+      case RECAP_VIEW_IDS.GRADES:
+        return <RecapGradesView />;
       case RECAP_VIEW_IDS.ANALYSE:
         return (
           <RecapAnalyseView
@@ -301,11 +319,14 @@ const RecapTab = () => {
       scoreLevel={recapAssessment?.level0to100}
       scoreTier={recapAssessment?.tier}
     >
-      <RecapPeriodPendingBar visible={isPeriodStale || (metricsComputing && !isPeriodStale)} />
-      <div
-        className={
-          isPeriodStale || metricsComputing ? 'pointer-events-none opacity-70 transition-opacity' : ''
+      <RecapPeriodPendingBar
+        visible={
+          activeView !== RECAP_VIEW_IDS.GRADES &&
+          (isPeriodStale || (metricsComputing && !isPeriodStale))
         }
+      />
+      <div
+        className={metricsOverlayActive ? 'pointer-events-none opacity-70 transition-opacity' : ''}
       >
         {viewContent}
       </div>

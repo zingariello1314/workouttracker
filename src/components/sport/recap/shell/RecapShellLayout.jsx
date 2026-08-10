@@ -4,7 +4,8 @@ import {
   BarChart3,
   Brain,
   Footprints,
-  LayoutDashboard
+  LayoutDashboard,
+  Medal
 } from 'lucide-react';
 import { useTranslation } from '../../../../utils/translations';
 import { RECAP_NAV_SECTIONS, RECAP_VIEW_IDS } from '../../../../utils/sport/recapViewConfig';
@@ -13,6 +14,7 @@ import { RECAP_VIEW_PERIODS } from '../../../../utils/sport/recapViewPeriods';
 const VIEW_ICONS = {
   [RECAP_VIEW_IDS.SNAPSHOT]: LayoutDashboard,
   [RECAP_VIEW_IDS.ANALYSE]: Brain,
+  [RECAP_VIEW_IDS.GRADES]: Medal,
   [RECAP_VIEW_IDS.CORPS]: Activity,
   [RECAP_VIEW_IDS.TENDANCES]: BarChart3,
   [RECAP_VIEW_IDS.SESSIONS]: Footprints
@@ -35,6 +37,7 @@ export default function RecapShellLayout({
   onPeriodChange,
   scoreLevel,
   scoreTier,
+  gradeHeader,
   children
 }) {
   const t = useTranslation();
@@ -49,6 +52,10 @@ export default function RecapShellLayout({
             </p>
             <h1 className="text-lg font-bold tracking-tight text-white sm:text-xl">{t('recap.title')}</h1>
           </div>
+
+          {gradeHeader ? (
+            <div className="w-full sm:w-auto order-last sm:order-none">{gradeHeader}</div>
+          ) : null}
 
           {scoreLevel != null ? (
             <div

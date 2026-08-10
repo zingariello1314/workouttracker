@@ -1,0 +1,18 @@
+{
+  "grades": {
+    "novice": "Novice",
+    "adepte": "Adept",
+    "disciple": "Disciple",
+    "athlete": "Athlete",
+    "champion": "Champion",
+    "elite": "Elite",
+    "maitre": "Master",
+    "grand_maitre": "Grand Master",
+    "olympien": "Olympian",
+    "parangon": "Paragon",
+    "palier": "Tier {{roman}}",
+    "progressionLabel": "Progression",
+    "meritedLabel": "Earned rank",
+    "levelShort": "Level {{level}}"
+  }
+}

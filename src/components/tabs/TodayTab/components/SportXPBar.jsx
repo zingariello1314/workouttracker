@@ -17,16 +17,27 @@ import {
   Repeat,
   Salad
 } from 'lucide-react';
-import { useSportXP } from '../../../../hooks/useSportXP';
+import { useSportGrade } from '../../../../hooks/useSportGrade';
+import SportGradeBarSummary from '../../../sport/grades/SportGradeBarSummary';
+import { openSportRecapGradesView } from '../../../../utils/sport/recapViewConfig';
+import { useWorkout } from '../../../../context/WorkoutContext';
 import {
   SPORT_XP_PER_TOTAL_KG_VOLUME,
   SPORT_XP_LIFTED_VOLUME_CAP,
   SPORT_XP_PER_NUTRITION_FOOD_REGISTERED,
   sportXpReferenceTenRepsTwoStarBodyweight
 } from '../../../../services/xp/xpCalculations';
+import { useTranslation } from '../../../../utils/translations';
 
 const SportXPBar = () => {
-  const { totalXP, level, breakdown, progress } = useSportXP();
+  const { totalXP, level, breakdown, progress, grades } = useSportGrade();
+  const { setActiveTab } = useWorkout();
+  const t = useTranslation();
+  const goRecapGrades = () => {
+    openSportRecapGradesView();
+    setActiveTab('recap');
+  };
+  const gradesHint = t('recap.grades.openGradesHint', 'Voir le détail dans Récap → Grades');
   const xpOnLevel = progress.xpOnLevel ?? 0;
   const xpForLevel = progress.xpForLevel ?? 1000;
   const xpNeeded = progress.xpNeeded ?? 0;
@@ -35,8 +46,18 @@ const SportXPBar = () => {
   const refTwoStarTenReps = sportXpReferenceTenRepsTwoStarBodyweight();
 
   return (
-    <div className="rounded-xl border-2 border-[#0F4C5C]/85 bg-black p-4 shadow-lg shadow-black/40">
-      <div className="mb-3 flex flex-wrap items-start justify-between gap-3">
+    <div className="rounded-xl border-2 border-[#0F4C5C]/85 bg-black p-4 shadow-lg shadow-black/40 space-y-4">
+      <SportGradeBarSummary
+        progressionGradeId={grades?.progression?.gradeId}
+        progressionTier={grades?.progression?.tier}
+        meritedGradeId={grades?.merited?.gradeId}
+        meritedTier={grades?.merited?.tier}
+        level={level}
+        onClick={goRecapGrades}
+        title={gradesHint}
+      />
+
+      <div className="mb-1 flex flex-wrap items-start justify-between gap-3 border-t border-[#0F4C5C]/35 pt-3">
         <div className="flex min-w-0 flex-1 items-start gap-2">
           <Dumbbell className="mt-0.5 h-5 w-5 shrink-0 text-teal-300" />
           <div className="min-w-0">

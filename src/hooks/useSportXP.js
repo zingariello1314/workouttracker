@@ -21,6 +21,7 @@ import { STORE_MEALS } from './nutritionDataUtils';
 import { sumMergedDailyStepsTotal, manualDailyWalkChecksum } from '../utils/sport/manualDailyWalkUtils';
 import { gtgChecksum } from '../services/endurance/gtgService';
 import { stretchRatingChecksum } from '../utils/stretchPerceivedRatings';
+import { sportXpProgressInLevel } from '../services/xp/sportLevelCurve';
 
 const DEFAULT_BREAKDOWN = {
   reps: 0,
@@ -120,7 +121,9 @@ export const useSportXP = () => {
   const [garminData, setGarminData] = useState(sportXpCache.garminData || null);
   /** Repas nutrition (tous les jours) pour XP aliments enregistrés */
   const [nutritionMeals, setNutritionMeals] = useState([]);
-  const [isLoading, setIsLoading] = useState(!sportXpCache.garminData);
+  const [isLoading, setIsLoading] = useState(
+    () => !sportXpCache.garminData && !(sportXpCache.result?.totalXP > 0)
+  );
   const cacheRef = useRef({ signature: null, result: { totalXP: 0, breakdown: DEFAULT_BREAKDOWN } });
 
   useEffect(() => {
@@ -417,23 +420,15 @@ export const useSportXP = () => {
 
   const levelInfo = useMemo(() => {
     const totalXP = calculated.totalXP || 0;
-    /** Palier Sport : 1000 XP par niveau (aligné avec categoryLevels / barre globale). */
-    const xpPerLevel = 1000;
-    const level = Math.floor(totalXP / xpPerLevel) + 1;
-    const xpAtLevelStart = (level - 1) * xpPerLevel;
-    const xpOnLevel = totalXP - xpAtLevelStart;
-    const xpForLevel = xpPerLevel;
-    const xpNeeded = Math.max(0, xpAtLevelStart + xpPerLevel - totalXP);
-    const percent = (xpOnLevel / xpForLevel) * 100;
-
+    const prog = sportXpProgressInLevel(totalXP);
     return {
-      level,
+      level: prog.level,
       progress: {
-        percent: Math.min(100, Math.max(0, percent)),
-        xpNeeded,
-        xpOnLevel,
-        xpForLevel,
-      },
+        percent: prog.percent,
+        xpNeeded: prog.xpNeeded,
+        xpOnLevel: prog.xpOnLevel,
+        xpForLevel: prog.xpForLevel
+      }
     };
   }, [calculated.totalXP]);
 
