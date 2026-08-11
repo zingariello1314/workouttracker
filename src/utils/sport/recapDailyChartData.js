@@ -73,7 +73,7 @@ export function firstPositiveDateInMap(map) {
 }
 
 /**
- * Pas du jour : max(Garmin, saisie manuelle), aligné XP.
+ * Pas du jour comptabilisés : Garmin prioritaire, manuel en fallback (aligné XP).
  */
 export function buildMergedStepsByDate(dailyMetrics, manualRaw) {
   const manual = normalizeManualDailyWalkByDate(manualRaw || {});

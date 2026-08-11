@@ -6,18 +6,27 @@ import {
   gateForGradeId,
   tierRowsForGrade,
   gradeIndex,
-  SPORT_GRADE_ACCENT
+  SPORT_GRADE_ACCENT,
+  hasConditionalTierRequirements
 } from '../../../services/xp/sportGradeCatalog';
 import { cumulXpForLevel } from '../../../services/xp/sportLevelCurve';
-import { evaluateGateProgress } from '../../../services/xp/sportGradeResolution';
+import { evaluateGateProgress, evaluateTierRowConditions } from '../../../services/xp/sportGradeResolution';
 import SportGradeEmblem from './SportGradeEmblem';
+import GradeMechanicsIntro from './GradeMechanicsIntro';
 import { sportGradeLabel, sportPalierLabel } from './SportGradeIdentity';
 import {
   RECAP_GRADE_DETAIL_FOCUS_ID,
   scrollToRecapGradeDetail
 } from '../../../utils/sport/recapGradesScroll';
 
-const PATH_KEYS = ['A', 'B', 'C', 'D'];
+const PATH_KEYS = ['A', 'B', 'C', 'D', 'F'];
+
+function formatPathValue(data) {
+  if (data?.unit === 'km') {
+    return `${Number(data.current).toLocaleString('fr-FR', { maximumFractionDigits: 1 })} / ${Number(data.target).toLocaleString('fr-FR', { maximumFractionDigits: 0 })} km`;
+  }
+  return `${Number(data.current).toLocaleString('fr-FR')} / ${Number(data.target).toLocaleString('fr-FR')}`;
+}
 
 function PathRow({ pathKey, data, passedPath, t }) {
   if (!data) return null;
@@ -51,7 +60,7 @@ function PathRow({ pathKey, data, passedPath, t }) {
         />
       </div>
       <p className="mt-1 text-[10px] text-slate-500 tabular-nums">
-        {Number(data.current).toLocaleString('fr-FR')} / {Number(data.target).toLocaleString('fr-FR')}
+        {formatPathValue(data)}
         {!data.met && pct < 100 ? (
           <span className="text-slate-600">
             {' '}
@@ -66,18 +75,19 @@ function PathRow({ pathKey, data, passedPath, t }) {
   );
 }
 
-function PathERow({ paths, passed, pathEThresholdPct = 70, pathsRequired = 1, pathsFullCount = 0, t }) {
+function PathERow({ paths, pathKeys = PATH_KEYS, passed, pathEThresholdPct = 70, pathsRequired = 1, pathsFullCount = 0, t }) {
   if (!paths) return null;
-  const minPct = Math.min(...PATH_KEYS.map((k) => paths[k]?.pct ?? 0));
+  const keys = pathKeys.filter((k) => paths[k]);
+  const minPct = Math.min(...keys.map((k) => paths[k]?.pct ?? 0));
   const met =
     passed?.ok &&
     (passed?.path === 'E' || passed?.path === 'multi' || passed?.path === 'all')
       ? true
       : pathsRequired >= 4
-        ? PATH_KEYS.every((k) => (paths[k]?.pct ?? 0) >= 100)
+        ? keys.every((k) => (paths[k]?.pct ?? 0) >= 100)
         : pathsRequired >= 2
           ? pathsFullCount >= 2 || minPct >= pathEThresholdPct
-          : PATH_KEYS.every((k) => (paths[k]?.pct ?? 0) >= pathEThresholdPct);
+          : keys.every((k) => (paths[k]?.pct ?? 0) >= pathEThresholdPct);
   const displayPct = Math.round(Math.min(100, minPct));
   return (
     <div
@@ -90,21 +100,27 @@ function PathERow({ paths, passed, pathEThresholdPct = 70, pathsRequired = 1, pa
           <span className="text-amber-500/90 font-bold mr-1">E</span>
           {pathsRequired >= 4
             ? t(
-                'recap.grades.detailPathEFinal',
-                'Polyvalence (4 voies à 100 % ou ≥ {{pct}} % partout)',
+                'recap.grades.detailPathEFinalWithF',
+                'Polyvalence (4 voies à 100 % ou ≥ {{pct}} % partout, A–F)',
                 { pct: pathEThresholdPct }
               )
             : pathsRequired >= 2
               ? t(
-                  'recap.grades.detailPathEPenultimate',
-                  'Polyvalence (2 voies à 100 % ou ≥ {{pct}} % partout)',
+                  'recap.grades.detailPathEPenultimateWithF',
+                  'Polyvalence (2 voies à 100 % ou ≥ {{pct}} % partout, A–F)',
                   { pct: pathEThresholdPct }
                 )
-              : t(
-                  'recap.grades.detailPathE',
-                  'Polyvalence (≥ {{pct}} % sur A, B, C et D)',
-                  { pct: pathEThresholdPct }
-                )}
+              : keys.includes('F')
+                ? t(
+                    'recap.grades.detailPathEWithF',
+                    'Polyvalence (≥ {{pct}} % sur A, B, C, D et F)',
+                    { pct: pathEThresholdPct }
+                  )
+                : t(
+                    'recap.grades.detailPathE',
+                    'Polyvalence (≥ {{pct}} % sur A, B, C et D)',
+                    { pct: pathEThresholdPct }
+                  )}
         </span>
         {met ? (
           <CheckCircle2 className="h-4 w-4 text-emerald-400 shrink-0" aria-hidden />
@@ -167,7 +183,12 @@ export default function SportGradeDetailPage({
     const gateProgress = meritGate
       ? evaluateGateProgress(meritGate, masteryScore, aggregates, workoutData)
       : null;
-    const nextTierInGrade = tiers.find((row) => level < row.levelMin);
+    const nextTierInGrade = tiers.find((row) => {
+      if (hasConditionalTierRequirements(gradeId)) {
+        return !evaluateTierRowConditions(row, { level, masteryScore, aggregates }).met;
+      }
+      return level < row.levelMin;
+    });
     const nextTierXp = nextTierInGrade ? nextTierInGrade.cumulXp : null;
 
     let status = 'future';
@@ -241,6 +262,7 @@ export default function SportGradeDetailPage({
           >
             <SportGradeEmblem gradeId={gradeId} layout="detail" className="border-0 !max-w-none w-full" />
           </div>
+          <GradeMechanicsIntro variant="sport" sportGradeId={gradeId} />
           <div className="mt-3 text-center lg:text-left">
             <h1 className="text-2xl font-bold text-white tracking-tight">
               {sportGradeLabel(gradeId, t)}
@@ -258,17 +280,30 @@ export default function SportGradeDetailPage({
         <div className="min-w-0 flex-1 space-y-4">
           <section className="rounded-xl border border-[#0F4C5C]/45 bg-black/70 p-4">
             <h2 className="text-xs font-semibold uppercase tracking-wider text-teal-600 mb-2">
-              {t('recap.grades.detailTiersTitle', 'Paliers (niveau & XP)')}
+              {hasConditionalTierRequirements(gradeId)
+                ? t('recap.grades.detailTiersConditionalTitle', 'Paliers (niveau + conditions)')
+                : t('recap.grades.detailTiersTitle', 'Paliers (niveau & XP)')}
             </h2>
-            <ul className="space-y-1.5">
+            {hasConditionalTierRequirements(gradeId) ? (
+              <p className="mb-3 text-[11px] text-amber-200/80">
+                {t(
+                  'recap.grades.detailTiersConditionalHint',
+                  'Chaque palier exige le niveau XP et des preuves d’activité — de plus en plus strictes jusqu’au Palier III.'
+                )}
+              </p>
+            ) : null}
+            <ul className="space-y-2">
               {detail.tiers.map((row) => {
-                const reached = level >= row.levelMin;
+                const tierEval = hasConditionalTierRequirements(gradeId)
+                  ? evaluateTierRowConditions(row, { level, masteryScore, aggregates })
+                  : null;
+                const reached = tierEval ? tierEval.met : level >= row.levelMin;
                 const isProg =
                   grades?.progression?.gradeId === gradeId && grades?.progression?.tier === row.tier;
                 return (
                   <li
                     key={row.tier}
-                    className={`flex items-center justify-between gap-2 rounded-lg border px-3 py-2 text-sm ${
+                    className={`rounded-lg border px-3 py-2 text-sm ${
                       isProg
                         ? 'border-emerald-500/40 bg-emerald-950/20'
                         : reached
@@ -276,15 +311,34 @@ export default function SportGradeDetailPage({
                           : 'border-slate-800/80 bg-black/20 text-slate-500'
                     }`}
                   >
-                    <span className="font-medium text-teal-100/90">{sportPalierLabel(row.tier, t)}</span>
-                    <span className="tabular-nums text-slate-400 text-xs">
-                      {t('recap.grades.detailTierReq', 'Niv. {{n}} · {{xp}} XP', {
-                        n: row.levelMin,
-                        xp: row.cumulXp.toLocaleString('fr-FR')
-                      })}
-                    </span>
-                    {reached ? (
-                      <CheckCircle2 className="h-4 w-4 text-emerald-500 shrink-0" aria-hidden />
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="font-medium text-teal-100/90">{sportPalierLabel(row.tier, t)}</span>
+                      <span className="tabular-nums text-slate-400 text-xs">
+                        {t('recap.grades.detailTierReq', 'Niv. {{n}} · {{xp}} XP', {
+                          n: row.levelMin,
+                          xp: row.cumulXp.toLocaleString('fr-FR')
+                        })}
+                      </span>
+                      {reached ? (
+                        <CheckCircle2 className="h-4 w-4 text-emerald-500 shrink-0" aria-hidden />
+                      ) : null}
+                    </div>
+                    {tierEval?.checks?.length ? (
+                      <ul className="mt-2 space-y-1 border-t border-[#0F4C5C]/25 pt-2">
+                        {tierEval.checks.map((check) => (
+                          <li key={check.key} className="flex items-center justify-between gap-2 text-[10px]">
+                            <span className={check.met ? 'text-emerald-300/90' : 'text-slate-500'}>
+                              {check.label}
+                            </span>
+                            <span className="tabular-nums text-slate-400">
+                              {check.unit === 'km'
+                                ? `${Number(check.current).toLocaleString('fr-FR', { maximumFractionDigits: 1 })} / ${Number(check.target).toLocaleString('fr-FR')} km`
+                                : `${Number(check.current).toLocaleString('fr-FR')} / ${Number(check.target).toLocaleString('fr-FR')}`}
+                              {check.met ? ' ✓' : ` · ${Math.round(check.pct)} %`}
+                            </span>
+                          </li>
+                        ))}
+                      </ul>
                     ) : null}
                   </li>
                 );
@@ -296,14 +350,30 @@ export default function SportGradeDetailPage({
                   n: detail.nextTierInGrade.levelMin,
                   xp: detail.nextTierXp?.toLocaleString('fr-FR')
                 })}
-                {' — '}
-                {t('recap.grades.detailXpRemaining', '{{left}} XP restants', {
-                  left: Math.max(0, (detail.nextTierXp ?? 0) - (totalXP ?? 0)).toLocaleString('fr-FR')
-                })}
+                {hasConditionalTierRequirements(gradeId) ? (
+                  <span className="block mt-1 text-[11px] text-slate-500">
+                    {t(
+                      'recap.grades.detailNextTierConditions',
+                      'Conditions supplémentaires requises — voir le palier ci-dessus.'
+                    )}
+                  </span>
+                ) : (
+                  <>
+                    {' — '}
+                    {t('recap.grades.detailXpRemaining', '{{left}} XP restants', {
+                      left: Math.max(0, (detail.nextTierXp ?? 0) - (totalXP ?? 0)).toLocaleString('fr-FR')
+                    })}
+                  </>
+                )}
               </p>
             ) : (
               <p className="mt-2 text-xs text-emerald-400/90">
-                {t('recap.grades.detailTiersMax', 'Tous les paliers de ce grade sont débloqués par le niveau.')}
+                {hasConditionalTierRequirements(gradeId)
+                  ? t(
+                      'recap.grades.detailTiersMaxConditional',
+                      'Tous les paliers de ce grade sont validés (niveau + conditions).'
+                    )
+                  : t('recap.grades.detailTiersMax', 'Tous les paliers de ce grade sont débloqués par le niveau.')}
               </p>
             )}
           </section>
@@ -315,10 +385,15 @@ export default function SportGradeDetailPage({
                   {meritGateTitle}
                 </h2>
                 <p className="mt-1 text-[11px] text-slate-500">
-                  {t(
-                    'recap.grades.detailGateHint',
-                    'En plus du niveau minimum, une voie A, B, C, D ou E (70 % partout) valide le passage.'
-                  )}
+                  {meritGate.kmMin
+                    ? t(
+                        'recap.grades.detailGateHintWithF',
+                        'Niveau + voie A, B, C, D, F (km courus) ou E (polyvalence sur A–F).'
+                      )
+                    : t(
+                        'recap.grades.detailGateHint',
+                        'En plus du niveau minimum, une voie A, B, C, D ou E (70 % partout) valide le passage.'
+                      )}
                 </p>
               </div>
               <p className="text-sm text-slate-300">
@@ -346,7 +421,7 @@ export default function SportGradeDetailPage({
                 <p className="text-[10px] font-semibold uppercase tracking-wide text-slate-500">
                   {t('recap.grades.detailPathsTitle', 'Tes voies — où tu en es')}
                 </p>
-                {PATH_KEYS.map((key) => (
+                {PATH_KEYS.filter((key) => gateProgress.paths[key]).map((key) => (
                   <PathRow
                     key={key}
                     pathKey={key}
@@ -357,6 +432,7 @@ export default function SportGradeDetailPage({
                 ))}
                 <PathERow
                   paths={gateProgress.paths}
+                  pathKeys={gateProgress.pathKeys ?? PATH_KEYS}
                   passed={gateProgress.passed}
                   pathEThresholdPct={gateProgress.pathEThresholdPct ?? 70}
                   pathsRequired={gateProgress.pathsRequired ?? 1}

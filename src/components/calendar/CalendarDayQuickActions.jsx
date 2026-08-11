@@ -4,7 +4,11 @@ import Button from '../ui/Button';
 import CalendarManualWalkEditor from './CalendarManualWalkEditor';
 import CalendarSessionDateReassign from './CalendarSessionDateReassign';
 import { collectEnduranceSessionsForCalendarDay } from '../../utils/calendarUtils';
-import { mergedDailySteps, normalizeManualDailyWalkByDate } from '../../utils/sport/manualDailyWalkUtils';
+import {
+  formatStepsProvenance,
+  normalizeManualDailyWalkByDate,
+  resolveDailySteps
+} from '../../utils/sport/manualDailyWalkUtils';
 
 /**
  * Actions rapides sous le détail jour : séance, pas manuels, réaffectation Garmin.
@@ -31,7 +35,8 @@ export default function CalendarDayQuickActions({
     Number.isFinite(Number(garminData.dailyMetrics[dateStr].steps))
       ? Math.round(Number(garminData.dailyMetrics[dateStr].steps))
       : 0;
-  const mergedSteps = mergedDailySteps(garminSteps, manualEntry);
+  const resolvedSteps = resolveDailySteps(garminSteps, manualEntry);
+  const stepsProvenance = formatStepsProvenance(resolvedSteps, tr);
 
   const reassignableSessions = useMemo(() => {
     const { rows } = collectEnduranceSessionsForCalendarDay(workoutData, dateStr);
@@ -88,10 +93,19 @@ export default function CalendarDayQuickActions({
             <Footprints className="h-4 w-4" />
             {tr('calendar.heatmap.recapDetail.editSteps', 'Compléter les pas')}
           </h4>
-          {mergedSteps > 0 ? (
-            <span className="text-xs tabular-nums text-sky-300/90">
-              {mergedSteps.toLocaleString('fr-FR')} {tr('calendar.heatmap.tooltip.stepsShort', 'pas')}
-            </span>
+          {resolvedSteps.total > 0 ? (
+            <div className="text-right text-xs text-sky-300/90">
+              <div className="tabular-nums">
+                {resolvedSteps.total.toLocaleString('fr-FR')}{' '}
+                {tr('calendar.heatmap.tooltip.stepsShort', 'pas')}
+              </div>
+              {stepsProvenance.label ? (
+                <div className="text-slate-400">
+                  {stepsProvenance.badge ? `${stepsProvenance.badge} ` : ''}
+                  {stepsProvenance.label}
+                </div>
+              ) : null}
+            </div>
           ) : null}
         </div>
         {typeof updateData === 'function' ? (

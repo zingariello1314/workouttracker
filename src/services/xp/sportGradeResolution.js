@@ -7,7 +7,9 @@ import {
   SPORT_GRADE_GATES,
   progressionTierFromLevel,
   maxTierInGradeForLevel,
-  gateForGradeId
+  gateForGradeId,
+  tierRowsForGrade,
+  hasConditionalTierRequirements
 } from './sportGradeCatalog';
 import { sessionsMeetMinutesMin } from './sportActivityAggregates';
 
@@ -39,11 +41,17 @@ export function pathsRequiredForGate(gate) {
   return 1;
 }
 
+export function pathKeysForGate(gate) {
+  const keys = ['A', 'B', 'C', 'D'];
+  if (gate?.kmMin) keys.push('F');
+  return keys;
+}
+
 function buildPathStates(gate, masteryScore, aggregates, workoutData) {
   const agg = aggregates || {};
   const m = Number(masteryScore) || 0;
   const sessionsOk = sessionsMeetMinutesMin(workoutData, gate.minutesMin);
-  return {
+  const paths = {
     A: {
       label: 'Maîtrise',
       current: m,
@@ -73,6 +81,20 @@ function buildPathStates(gate, masteryScore, aggregates, workoutData) {
       met: (agg.lifetimeActiveKcal ?? 0) >= gate.kcalMin
     }
   };
+
+  if (gate.kmMin) {
+    const km = agg.lifetimeRunningKm ?? 0;
+    paths.F = {
+      label: 'Kilomètres courus',
+      current: km,
+      target: gate.kmMin,
+      pct: gate.kmMin ? Math.min(100, (km / gate.kmMin) * 100) : 0,
+      met: km >= gate.kmMin,
+      unit: 'km'
+    };
+  }
+
+  return paths;
 }
 
 export function gatePassed(gate, masteryScore, aggregates, workoutData) {
@@ -80,14 +102,14 @@ export function gatePassed(gate, masteryScore, aggregates, workoutData) {
 
   const paths = buildPathStates(gate, masteryScore, aggregates, workoutData);
   const tier = gateTierForGate(gate);
-  const pathKeys = ['A', 'B', 'C', 'D'];
-  const countFull = pathKeys.filter((k) => paths[k].met).length;
-  const minPct = Math.min(...pathKeys.map((k) => paths[k].pct ?? 0));
+  const pathKeys = pathKeysForGate(gate);
+  const countFull = pathKeys.filter((k) => paths[k]?.met).length;
+  const minPct = Math.min(...pathKeys.map((k) => paths[k]?.pct ?? 0));
   const pathEThreshold = pathEThresholdPctForGate(gate);
 
   if (tier === 'standard') {
     for (const k of pathKeys) {
-      if (paths[k].met) return { ok: true, path: k };
+      if (paths[k]?.met) return { ok: true, path: k };
     }
     if (minPct >= pathEThreshold) return { ok: true, path: 'E' };
     return { ok: false, path: null };
@@ -111,9 +133,9 @@ export function gatePassed(gate, masteryScore, aggregates, workoutData) {
 export function evaluateGateProgress(gate, masteryScore, aggregates, workoutData) {
   if (!gate) return null;
   const paths = buildPathStates(gate, masteryScore, aggregates, workoutData);
-  const pathKeys = ['A', 'B', 'C', 'D'];
-  const pathsFullCount = pathKeys.filter((k) => paths[k].met).length;
-  const minPathPct = Math.min(...pathKeys.map((k) => paths[k].pct ?? 0));
+  const pathKeys = pathKeysForGate(gate);
+  const pathsFullCount = pathKeys.filter((k) => paths[k]?.met).length;
+  const minPathPct = Math.min(...pathKeys.map((k) => paths[k]?.pct ?? 0));
   const pathEThresholdPct = pathEThresholdPctForGate(gate);
   const pathsRequired = pathsRequiredForGate(gate);
   const tier = gateTierForGate(gate);
@@ -122,6 +144,7 @@ export function evaluateGateProgress(gate, masteryScore, aggregates, workoutData
     gate,
     tier,
     paths,
+    pathKeys,
     pathsFullCount,
     pathsRequired,
     pathEThresholdPct,
@@ -130,8 +153,105 @@ export function evaluateGateProgress(gate, masteryScore, aggregates, workoutData
   };
 }
 
+/** Conditions d’un palier (Olympien / Parangon). */
+export function evaluateTierRowConditions(row, { level, masteryScore, aggregates }) {
+  const agg = aggregates || {};
+  const checks = [];
+  const L = Math.max(1, Math.floor(Number(level) || 1));
+
+  checks.push({
+    key: 'level',
+    label: 'Niveau',
+    current: L,
+    target: row.levelMin,
+    pct: row.levelMin ? Math.min(100, (L / row.levelMin) * 100) : 0,
+    met: L >= row.levelMin
+  });
+
+  if (row.kmMin) {
+    const km = agg.lifetimeRunningKm ?? 0;
+    checks.push({
+      key: 'km',
+      label: 'Kilomètres courus',
+      current: km,
+      target: row.kmMin,
+      pct: row.kmMin ? Math.min(100, (km / row.kmMin) * 100) : 0,
+      met: km >= row.kmMin,
+      unit: 'km'
+    });
+  }
+  if (row.sessionsMin) {
+    const s = agg.qualifiedSessions ?? 0;
+    checks.push({
+      key: 'sessions',
+      label: 'Séances qualifiées',
+      current: s,
+      target: row.sessionsMin,
+      pct: row.sessionsMin ? Math.min(100, (s / row.sessionsMin) * 100) : 0,
+      met: s >= row.sessionsMin
+    });
+  }
+  if (row.repsMin) {
+    const r = agg.lifetimeReps ?? 0;
+    checks.push({
+      key: 'reps',
+      label: 'Reps cumulées',
+      current: r,
+      target: row.repsMin,
+      pct: row.repsMin ? Math.min(100, (r / row.repsMin) * 100) : 0,
+      met: r >= row.repsMin
+    });
+  }
+  if (row.kcalMin) {
+    const k = agg.lifetimeActiveKcal ?? 0;
+    checks.push({
+      key: 'kcal',
+      label: 'kcal actives',
+      current: k,
+      target: row.kcalMin,
+      pct: row.kcalMin ? Math.min(100, (k / row.kcalMin) * 100) : 0,
+      met: k >= row.kcalMin
+    });
+  }
+
+  const met = checks.every((c) => c.met);
+  return { row, checks, met };
+}
+
+export function maxTierInGradeWithConditions(gradeId, level, { masteryScore, aggregates }) {
+  if (!hasConditionalTierRequirements(gradeId)) {
+    return maxTierInGradeForLevel(gradeId, level);
+  }
+  const rows = tierRowsForGrade(gradeId);
+  let tier = 0;
+  for (const row of rows) {
+    const ev = evaluateTierRowConditions(row, { level, masteryScore, aggregates });
+    if (ev.met) tier = row.tier;
+  }
+  return tier > 0 ? tier : maxTierInGradeForLevel(gradeId, level) > 0 ? 1 : 0;
+}
+
+export function resolveProgressionTier({ level, masteryScore, aggregates, workoutData }) {
+  const base = progressionTierFromLevel(level);
+  if (!hasConditionalTierRequirements(base.gradeId)) {
+    return base;
+  }
+  const tier = maxTierInGradeWithConditions(base.gradeId, level, {
+    masteryScore,
+    aggregates,
+    workoutData
+  });
+  const row = tierRowsForGrade(base.gradeId).find((r) => r.tier === tier) || base;
+  return {
+    gradeId: base.gradeId,
+    tier,
+    levelMin: row.levelMin ?? base.levelMin,
+    cumulXp: row.cumulXp ?? base.cumulXp
+  };
+}
+
 export function resolveSportGrades({ level, masteryScore, aggregates, workoutData }) {
-  const progression = progressionTierFromLevel(level);
+  const progression = resolveProgressionTier({ level, masteryScore, aggregates, workoutData });
 
   let meritedGradeIndex = 0;
   const gateHistory = [];
@@ -156,7 +276,11 @@ export function resolveSportGrades({ level, masteryScore, aggregates, workoutDat
   }
 
   const meritedGradeId = SPORT_GRADE_IDS[meritedGradeIndex];
-  const meritedTier = maxTierInGradeForLevel(meritedGradeId, level);
+  const meritedTier = maxTierInGradeWithConditions(meritedGradeId, level, {
+    masteryScore,
+    aggregates,
+    workoutData
+  });
 
   const nextGradeId =
     meritedGradeIndex < SPORT_GRADE_IDS.length - 1

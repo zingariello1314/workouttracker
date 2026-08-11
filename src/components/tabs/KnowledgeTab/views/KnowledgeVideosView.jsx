@@ -1,12 +1,15 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Loader2, Trash2, Upload, X } from 'lucide-react';
+import { Loader2, Tags, Trash2, Upload, X, Maximize, Minimize } from 'lucide-react';
 import { useTranslation } from '../../../../utils/translations';
 import {
   KNOWLEDGE_SECTION,
   KNOWLEDGE_VIDEO_SECTION_LS,
   KNOWLEDGE_VIDEO_SECTIONS,
+  KNOWLEDGE_LIBRARY_SORT,
   persistFeedCategoryFilters,
+  persistLibrarySort,
   readStoredFeedCategoryFilters,
+  readStoredLibrarySort,
   readStoredSection
 } from '../constants';
 import {
@@ -15,13 +18,22 @@ import {
   fetchKnowledgeLibraryGrouped,
   fetchKnowledgeVideoPlayUrl,
   revokeKnowledgePlayUrl,
-  touchRecentlyWatched
+  touchRecentlyWatched,
+  updateKnowledgeVideo
 } from '../../../../services/knowledge/knowledgeApi';
 import KnowledgeCategoriesPanel from '../components/KnowledgeCategoriesPanel';
+import KnowledgeVideoCategoriesModal from '../components/KnowledgeVideoCategoriesModal';
 import KnowledgeVideoThumbnail from '../components/KnowledgeVideoThumbnail';
 import KnowledgeVideoUploadModal from '../components/KnowledgeVideoUploadModal';
 import KnowledgeShortsFeed from '../components/KnowledgeShortsFeed';
 import KnowledgeShortsCategoryFilter from '../components/KnowledgeShortsCategoryFilter';
+import {
+  DEFAULT_VIDEO_ASPECT,
+  fitVideoContainerStyle,
+  isElementFullscreen,
+  readVideoAspectRatio,
+  toggleElementFullscreen
+} from '../utils/knowledgeVideoFrame';
 import {
   KnowledgeCategoryChips,
   KnowledgeEmptyState,
@@ -29,6 +41,7 @@ import {
   KnowledgeSearchBar,
   KnowledgeSectionTabs
 } from '../components/KnowledgeUiBlocks';
+import { sortLibraryGroupsByDate, sortLibraryVideosFlat } from '../utils/librarySort';
 
 function formatDuration(sec) {
   const n = Number(sec);
@@ -38,8 +51,11 @@ function formatDuration(sec) {
   return `${m}:${String(s).padStart(2, '0')}`;
 }
 
-function VideoCardGrid({ video, onPlay, isAdmin, onDelete }) {
+function VideoCardGrid({ video, categories, onPlay, isAdmin, onDelete, onEditCategories }) {
   const t = useTranslation();
+  const videoCategories = (video.categoryIds || [])
+    .map((id) => categories.find((c) => c.id === id))
+    .filter(Boolean);
 
   return (
     <article className="group overflow-hidden rounded-xl border border-violet-500/20 bg-black/80 ring-1 ring-white/5 transition hover:border-violet-400/40 hover:shadow-lg hover:shadow-violet-950/30">
@@ -57,10 +73,32 @@ function VideoCardGrid({ video, onPlay, isAdmin, onDelete }) {
           {video.description ? (
             <p className="mt-1 line-clamp-2 text-xs text-slate-500">{video.description}</p>
           ) : null}
+          {videoCategories.length > 0 ? (
+            <div className="mt-2 flex flex-wrap gap-1">
+              {videoCategories.map((cat) => (
+                <span
+                  key={cat.id}
+                  className="rounded-full border border-violet-500/25 bg-violet-950/30 px-2 py-0.5 text-[9px] text-violet-200/90"
+                >
+                  {cat.name}
+                </span>
+              ))}
+            </div>
+          ) : (
+            <p className="mt-2 text-[10px] text-slate-600">{t('knowledge.uncategorized')}</p>
+          )}
         </div>
       </button>
       {isAdmin ? (
-        <div className="border-t border-violet-500/10 px-3 py-2">
+        <div className="flex items-center gap-3 border-t border-violet-500/10 px-3 py-2">
+          <button
+            type="button"
+            onClick={() => onEditCategories(video)}
+            className="flex items-center gap-1 text-[11px] text-violet-300/90 hover:text-violet-200"
+          >
+            <Tags size={12} />
+            {t('knowledge.editCategories')}
+          </button>
           <button
             type="button"
             onClick={() => onDelete(video)}
@@ -77,16 +115,36 @@ function VideoCardGrid({ video, onPlay, isAdmin, onDelete }) {
 
 function VideoPlayerModal({ video, playUrl, onClose, onPrev, onNext, hasPrev, hasNext }) {
   const t = useTranslation();
+  const frameRef = useRef(null);
+  const [aspectRatio, setAspectRatio] = useState(DEFAULT_VIDEO_ASPECT);
+  const [isFullscreen, setIsFullscreen] = useState(false);
 
   useEffect(() => {
     const onKey = (e) => {
-      if (e.key === 'Escape') onClose();
+      if (e.key === 'Escape' && !document.fullscreenElement) onClose();
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
   }, [onClose]);
 
+  useEffect(() => {
+    const onFullscreenChange = () => {
+      setIsFullscreen(isElementFullscreen(frameRef.current));
+    };
+    document.addEventListener('fullscreenchange', onFullscreenChange);
+    return () => document.removeEventListener('fullscreenchange', onFullscreenChange);
+  }, []);
+
+  useEffect(() => {
+    setAspectRatio(DEFAULT_VIDEO_ASPECT);
+  }, [playUrl]);
+
   if (!video) return null;
+
+  const handleToggleFullscreen = async (e) => {
+    e.stopPropagation();
+    await toggleElementFullscreen(frameRef.current);
+  };
 
   return (
     <div
@@ -96,8 +154,17 @@ function VideoPlayerModal({ video, playUrl, onClose, onPrev, onNext, hasPrev, ha
       aria-label={video.title}
       onClick={onClose}
     >
-      <div className="relative w-full max-w-4xl" onClick={(e) => e.stopPropagation()}>
-        <div className="relative overflow-hidden rounded-xl bg-black shadow-2xl">
+      <div
+        className={`relative flex w-full flex-col items-center ${isFullscreen ? 'h-full max-w-none' : 'max-w-4xl'}`}
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div
+          ref={frameRef}
+          className={`relative flex w-full items-center justify-center overflow-hidden bg-black shadow-2xl ${
+            isFullscreen ? 'h-full rounded-none' : 'max-h-[85vh] rounded-xl'
+          }`}
+          style={isFullscreen ? { width: '100%', height: '100%' } : fitVideoContainerStyle(aspectRatio)}
+        >
           <button
             type="button"
             onClick={onClose}
@@ -108,41 +175,60 @@ function VideoPlayerModal({ video, playUrl, onClose, onPrev, onNext, hasPrev, ha
             <X size={20} strokeWidth={2.5} />
           </button>
           {playUrl ? (
-            <video
-              key={playUrl}
-              src={playUrl}
-              controls
-              autoPlay
-              playsInline
-              className="w-full max-h-[80vh] bg-black"
-            />
+            <>
+              <video
+                key={playUrl}
+                src={playUrl}
+                controls
+                autoPlay
+                playsInline
+                className="max-h-[85vh] w-full object-contain bg-black"
+                onLoadedMetadata={(e) => {
+                  const ratio = readVideoAspectRatio(e.target);
+                  if (ratio) setAspectRatio(ratio);
+                }}
+              />
+              <button
+                type="button"
+                onClick={handleToggleFullscreen}
+                className="absolute right-3 top-14 z-10 flex h-9 w-9 items-center justify-center rounded-full border border-white/20 bg-black/70 text-white shadow-lg backdrop-blur-sm transition hover:bg-black/90"
+                aria-label={
+                  isFullscreen ? t('knowledge.exitFullscreen') : t('knowledge.fullscreen')
+                }
+                title={isFullscreen ? t('knowledge.exitFullscreen') : t('knowledge.fullscreen')}
+              >
+                {isFullscreen ? <Minimize size={18} /> : <Maximize size={18} />}
+              </button>
+            </>
           ) : (
-            <div className="flex h-48 items-center justify-center text-slate-400">
+            <div className="flex h-48 w-full items-center justify-center text-slate-400">
               <Loader2 className="animate-spin" />
             </div>
           )}
         </div>
-        <div className="mt-3 flex items-center justify-between gap-2 pr-1">
-          <h2 className="text-lg font-semibold text-white">{video.title}</h2>
-          <div className="flex gap-2">
-            <button
-              type="button"
-              disabled={!hasPrev}
-              onClick={onPrev}
-              className="rounded-lg border border-white/15 px-3 py-1.5 text-sm disabled:opacity-30"
-            >
-              ←
-            </button>
-            <button
-              type="button"
-              disabled={!hasNext}
-              onClick={onNext}
-              className="rounded-lg border border-white/15 px-3 py-1.5 text-sm disabled:opacity-30"
-            >
-              →
-            </button>
+        {!isFullscreen ? (
+          <div className="mt-3 flex w-full items-center justify-between gap-2 pr-1">
+            <h2 className="text-lg font-semibold text-white">{video.title}</h2>
+            <div className="flex gap-2">
+              <button
+                type="button"
+                disabled={!hasPrev}
+                onClick={onPrev}
+                className="rounded-lg border border-white/15 px-3 py-1.5 text-sm disabled:opacity-30"
+              >
+                ←
+              </button>
+              <button
+                type="button"
+                disabled={!hasNext}
+                onClick={onNext}
+                className="rounded-lg border border-white/15 px-3 py-1.5 text-sm disabled:opacity-30"
+              >
+                →
+              </button>
+            </div>
           </div>
-        </div>
+        ) : null}
       </div>
     </div>
   );
@@ -172,8 +258,10 @@ export default function KnowledgeVideosView({
   const [includeCategoryIds, setIncludeCategoryIds] = useState(() => feedFiltersInit.includeCategoryIds);
   const [excludeCategoryIds, setExcludeCategoryIds] = useState(() => feedFiltersInit.excludeCategoryIds);
   const playUrlRef = useRef(null);
-  const [uploading, setUploading] = useState(false);
   const [showUpload, setShowUpload] = useState(false);
+  const [librarySort, setLibrarySort] = useState(() => readStoredLibrarySort());
+  const [editingVideo, setEditingVideo] = useState(null);
+  const [savingCategories, setSavingCategories] = useState(false);
 
   useEffect(() => {
     try {
@@ -197,6 +285,22 @@ export default function KnowledgeVideosView({
   useEffect(() => {
     persistFeedCategoryFilters(userId, includeCategoryIds, excludeCategoryIds);
   }, [userId, includeCategoryIds, excludeCategoryIds]);
+
+  useEffect(() => {
+    persistLibrarySort(librarySort);
+  }, [librarySort]);
+
+  const sortedLibraryGroups = useMemo(
+    () => sortLibraryGroupsByDate(libraryGroups, librarySort),
+    [libraryGroups, librarySort]
+  );
+
+  const flatLibraryVideos = useMemo(
+    () => sortLibraryVideosFlat(libraryGroups, librarySort),
+    [libraryGroups, librarySort]
+  );
+
+  const useFlatLibrary = !categoryId;
 
   const feedCategories = useMemo(
     () => categories.filter((c) => !hiddenCategoryIds.includes(c.id)),
@@ -273,24 +377,19 @@ export default function KnowledgeVideosView({
   };
 
   const handleUpload = async (payload) => {
-    setUploading(true);
-    try {
-      await createKnowledgeVideo(payload);
-      setShowUpload(false);
-      setCategoryId('');
-      setSearch('');
-      if (section === KNOWLEDGE_SECTION.CATEGORIES) {
-        setSection(KNOWLEDGE_SECTION.FEED);
-      }
-      setShortsRefreshKey((k) => k + 1);
-      await loadLibrary();
-      onCatalogReload?.();
-    } catch (e) {
-      console.error('[Knowledge] upload failed', e);
-      throw e;
-    } finally {
-      setUploading(false);
+    await createKnowledgeVideo(payload);
+  };
+
+  const handleUploadBatchComplete = async () => {
+    setShowUpload(false);
+    setCategoryId('');
+    setSearch('');
+    if (section === KNOWLEDGE_SECTION.CATEGORIES) {
+      setSection(KNOWLEDGE_SECTION.FEED);
     }
+    setShortsRefreshKey((k) => k + 1);
+    await loadLibrary();
+    onCatalogReload?.();
   };
 
   const handleDelete = async (video) => {
@@ -306,6 +405,29 @@ export default function KnowledgeVideosView({
     );
     setShortsRefreshKey((k) => k + 1);
     onCatalogReload?.();
+  };
+
+  const handleSaveCategories = async (video, categoryIds) => {
+    setSavingCategories(true);
+    try {
+      await updateKnowledgeVideo(video.id, { categoryIds });
+      setLibraryGroups((prev) =>
+        prev.map((g) => ({
+          ...g,
+          items: g.items.map((it) =>
+            it.id === video.id ? { ...it, categoryIds: [...categoryIds] } : it
+          )
+        }))
+      );
+      setEditingVideo(null);
+      setShortsRefreshKey((k) => k + 1);
+      await loadLibrary();
+      onCatalogReload?.();
+    } catch (e) {
+      console.error('[Knowledge] update categories failed', e);
+    } finally {
+      setSavingCategories(false);
+    }
   };
 
   const uploadButton = isAdmin ? (
@@ -344,6 +466,31 @@ export default function KnowledgeVideosView({
             onSelect={setCategoryId}
             hiddenIds={hiddenCategoryIds}
           />
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="text-[11px] text-slate-500">{t('knowledge.librarySortLabel')}</span>
+            <button
+              type="button"
+              onClick={() => setLibrarySort(KNOWLEDGE_LIBRARY_SORT.NEWEST)}
+              className={`rounded-full border px-3 py-1 text-[11px] font-medium transition ${
+                librarySort === KNOWLEDGE_LIBRARY_SORT.NEWEST
+                  ? 'border-violet-400 bg-violet-600/30 text-violet-100'
+                  : 'border-slate-600 text-slate-500 hover:border-slate-500'
+              }`}
+            >
+              {t('knowledge.librarySortNewest')}
+            </button>
+            <button
+              type="button"
+              onClick={() => setLibrarySort(KNOWLEDGE_LIBRARY_SORT.OLDEST)}
+              className={`rounded-full border px-3 py-1 text-[11px] font-medium transition ${
+                librarySort === KNOWLEDGE_LIBRARY_SORT.OLDEST
+                  ? 'border-violet-400 bg-violet-600/30 text-violet-100'
+                  : 'border-slate-600 text-slate-500 hover:border-slate-500'
+              }`}
+            >
+              {t('knowledge.librarySortOldest')}
+            </button>
+          </div>
         </>
       ) : null}
 
@@ -378,9 +525,23 @@ export default function KnowledgeVideosView({
         <KnowledgeLoading />
       ) : libraryGroups.length === 0 ? (
         <KnowledgeEmptyState title={t('knowledge.emptyLibrary')} hint={t('knowledge.emptyVideosHint')} />
+      ) : useFlatLibrary ? (
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
+          {flatLibraryVideos.map((video, index) => (
+            <VideoCardGrid
+              key={video.id}
+              video={video}
+              categories={categories}
+              isAdmin={isAdmin}
+              onPlay={(v) => openPlayer(v, index, flatLibraryVideos)}
+              onDelete={handleDelete}
+              onEditCategories={setEditingVideo}
+            />
+          ))}
+        </div>
       ) : (
         <div className="space-y-8">
-          {libraryGroups.map((group) => (
+          {sortedLibraryGroups.map((group) => (
             <section key={group.categoryId ?? '__none'}>
               <h2 className="mb-3 flex items-center gap-2 text-sm font-semibold text-violet-200">
                 <span className="h-px flex-1 bg-violet-500/20" />
@@ -392,9 +553,11 @@ export default function KnowledgeVideosView({
                   <VideoCardGrid
                     key={video.id}
                     video={video}
+                    categories={categories}
                     isAdmin={isAdmin}
                     onPlay={(v) => openPlayer(v, index, group.items)}
                     onDelete={handleDelete}
+                    onEditCategories={setEditingVideo}
                   />
                 ))}
               </div>
@@ -423,9 +586,19 @@ export default function KnowledgeVideosView({
         open={showUpload && isAdmin}
         onClose={() => setShowUpload(false)}
         onSubmit={handleUpload}
-        uploading={uploading}
+        onBatchComplete={handleUploadBatchComplete}
         categories={categories}
         onCategoryCreated={onCatalogReload}
+        userId={userId}
+      />
+
+      <KnowledgeVideoCategoriesModal
+        open={Boolean(editingVideo)}
+        video={editingVideo}
+        categories={categories}
+        saving={savingCategories}
+        onClose={() => setEditingVideo(null)}
+        onSave={handleSaveCategories}
       />
     </div>
   );

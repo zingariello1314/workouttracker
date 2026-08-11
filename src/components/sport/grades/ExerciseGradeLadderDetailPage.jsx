@@ -10,6 +10,7 @@ import {
 } from '../../../services/xp/exerciseGradeLadderUtils';
 import { exerciseGradeById } from '../../../services/xp/exerciseGradeLadder';
 import ExerciseGradeEmblem from './ExerciseGradeEmblem';
+import GradeMechanicsIntro from './GradeMechanicsIntro';
 import {
   RECAP_GRADE_DETAIL_FOCUS_ID,
   scrollToRecapGradeDetail
@@ -86,6 +87,7 @@ export default function ExerciseGradeLadderDetailPage({ material, rows, onBack, 
               className="border-0 !max-w-none w-full rounded-none"
             />
           </div>
+          <GradeMechanicsIntro variant="exercise-material" exerciseMaterial={material} />
           <div className="mt-3 text-center lg:text-left">
             <h1 className="text-2xl font-bold text-white tracking-tight">
               {exerciseMaterialLabelFr(material)}

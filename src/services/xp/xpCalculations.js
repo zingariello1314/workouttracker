@@ -47,6 +47,16 @@ export {
   computeStretchXpFromRating
 } from '../../utils/stretchPerceivedRatings';
 
+/** Incrémenter quand la formule XP Sport change (invalidation cache `useSportXP`). */
+export const SPORT_XP_FORMULA_REVISION = 2;
+
+/** Reps pondérées : XP = charge pondérée cumulée × ce facteur. */
+export const SPORT_XP_WEIGHTED_LOAD_FACTOR = 0.68;
+/** XP par paire (date, exercice) cochée — aligné dedup fractionné. */
+export const SPORT_XP_PER_CHECKED_EXERCISE = 19;
+/** XP par kcal active Garmin cumulée. */
+export const SPORT_XP_PER_ACTIVE_CALORIE = 0.21;
+
 /** XP additionnelle liée au volume total cumulé (kg×reps), en complément du bonus déjà présent dans les reps pondérées. */
 export const SPORT_XP_PER_TOTAL_KG_VOLUME = 0.04;
 /** Plafond sur ce seul poste pour que l’historique ne fasse pas exploser l’XP globale. */
@@ -64,7 +74,7 @@ const TWO_STAR_INTENSITY_COEFF_UPPER = 1.34;
  */
 export function sportXpReferenceTenRepsTwoStarBodyweight() {
   const weightedLoad = 10 * TWO_STAR_INTENSITY_COEFF_UPPER * 1;
-  return Math.round(weightedLoad * 0.1);
+  return Math.round(weightedLoad * SPORT_XP_WEIGHTED_LOAD_FACTOR);
 }
 
 /**
@@ -357,7 +367,7 @@ export const calculateSportXP = (workoutData, garminData, enduranceData, sportOp
 
   breakdown.reps = totalReps;
   breakdown.weightedRepsLoad = Math.round(weightedLoad * 100) / 100;
-  breakdown.weightedRepsXp = Math.round(weightedLoad * 0.1);
+  breakdown.weightedRepsXp = Math.round(weightedLoad * SPORT_XP_WEIGHTED_LOAD_FACTOR);
   totalXP += breakdown.weightedRepsXp;
 
   breakdown.liftedVolumeKg = Math.round(totalLiftedVolumeKg * 10) / 10;
@@ -367,20 +377,23 @@ export const calculateSportXP = (workoutData, garminData, enduranceData, sportOp
   );
   totalXP += breakdown.liftedVolumeKgXp;
   
-  // 2. XP des exercices cochés : 5 XP par (date, exercice) dédupliqué — pas les clés fantômes
+  // 2. XP des exercices cochés — par (date, exercice) dédupliqué
   const checkedMap = workoutData.checkedExercises || {};
   const repsMapForDedup = workoutData.reps || {};
   const exerciseDedup = aggregateCheckedRepsByDateAndExerciseId(repsMapForDedup, checkedMap);
   const checkedExercises = exerciseDedup.size;
   breakdown.exercises = checkedExercises;
-  breakdown.exercisesXp = checkedExercises * 5;
+  breakdown.exercisesXp = checkedExercises * SPORT_XP_PER_CHECKED_EXERCISE;
   totalXP += breakdown.exercisesXp;
 
   const fractionneXp = collectFractionneIntervalXp(workoutData, garminData, sportOptions);
   if (fractionneXp.totalXp > 0) {
     breakdown.intervalTrainingSessions = fractionneXp.sessions;
     breakdown.intervalTrainingXp = fractionneXp.totalXp;
-    const genericOverlap = Math.min(breakdown.exercisesXp, fractionneXp.sessions * 5);
+    const genericOverlap = Math.min(
+      breakdown.exercisesXp,
+      fractionneXp.sessions * SPORT_XP_PER_CHECKED_EXERCISE
+    );
     breakdown.exercisesXp -= genericOverlap;
     breakdown.exercises = Math.max(0, breakdown.exercises - fractionneXp.sessions);
     totalXP += fractionneXp.totalXp - genericOverlap;
@@ -434,7 +447,7 @@ export const calculateSportXP = (workoutData, garminData, enduranceData, sportOp
     totalXP += stretchesXp;
   }
   
-  // 3. XP des calories (Garmin) : 0.5 XP par calorie active
+  // 3. XP des calories actives Garmin
   if (garminData?.dailyMetrics) {
     let totalCalories = 0;
     Object.values(garminData.dailyMetrics).forEach(day => {
@@ -443,11 +456,11 @@ export const calculateSportXP = (workoutData, garminData, enduranceData, sportOp
       }
     });
     breakdown.calories = totalCalories;
-    breakdown.caloriesXp = Math.round(totalCalories * 0.5);
+    breakdown.caloriesXp = Math.round(totalCalories * SPORT_XP_PER_ACTIVE_CALORIE);
     totalXP += breakdown.caloriesXp;
   }
   
-  // 4. XP des pas : Garmin 100 %, déclaratif 50 % (via WalkingMetricsService)
+  // 4. XP des pas : montre / déclaratif (via WalkingMetricsService)
   {
     const dm =
       garminData?.dailyMetrics && typeof garminData.dailyMetrics === 'object' ? garminData.dailyMetrics : {};

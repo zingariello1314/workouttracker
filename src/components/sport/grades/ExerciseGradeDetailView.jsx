@@ -11,6 +11,7 @@ import { removeExerciseGradeCheckAndReconcile } from '../../../services/xp/exerc
 import { invalidateSportXpCache } from '../../../hooks/useSportXP';
 import ExerciseGradeEmblem from './ExerciseGradeEmblem';
 import ExerciseGradeProgressBars from './ExerciseGradeProgressBars';
+import GradeMechanicsIntro from './GradeMechanicsIntro';
 import {
   RECAP_GRADE_DETAIL_FOCUS_ID,
   scrollToRecapGradeDetail
@@ -360,13 +361,20 @@ export default function ExerciseGradeDetailView({
         id={RECAP_GRADE_DETAIL_FOCUS_ID}
         className="scroll-mt-28 overflow-hidden rounded-2xl border border-[#0F4C5C]/55 bg-gradient-to-br from-black via-[#041a14]/95 to-black p-4 sm:p-5"
       >
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-stretch">
-          <div className="flex shrink-0 justify-center sm:w-[min(38%,220px)]">
-            <ExerciseGradeEmblem
-              gradeId={g.gradeId}
-              gradeLabel={g.gradeLabel}
-              layout="hero"
-              className="w-full max-w-[200px]"
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-start">
+          <div className="flex shrink-0 flex-col sm:w-[min(38%,220px)]">
+            <div className="flex justify-center">
+              <ExerciseGradeEmblem
+                gradeId={g.gradeId}
+                gradeLabel={g.gradeLabel}
+                layout="hero"
+                className="w-full max-w-[200px]"
+              />
+            </div>
+            <GradeMechanicsIntro
+              variant="exercise-grade"
+              exerciseSortIndex={g.sortIndex}
+              className="max-w-[200px] mx-auto sm:max-w-none sm:mx-0"
             />
           </div>
           <div className="flex min-w-0 flex-1 flex-col justify-center gap-2">

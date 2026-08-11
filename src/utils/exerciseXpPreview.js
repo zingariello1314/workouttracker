@@ -3,8 +3,13 @@
  * @module exerciseXpPreview
  */
 
+import {
+  SPORT_XP_WEIGHTED_LOAD_FACTOR,
+  SPORT_XP_PER_CHECKED_EXERCISE
+} from '../services/xp/xpCalculations';
+
 /**
- * Contribution XP liée uniquement aux reps pondérées (×0.1), hors bonus volume global et +5 complété.
+ * Contribution XP liée uniquement aux reps pondérées, hors bonus volume global et flat coché.
  * @param {number} reps
  * @param {number} intensityCoeff — coefficient utilisé pour cet exercice
  * @param {number} weightKgPerRep — kg déplacés en moyenne par rep (optionnel ; 0 = neutre comme dans le calc global)
@@ -21,9 +26,11 @@ export function previewWeightedRepsXpContribution(reps, intensityCoeff, weightKg
   const weightedLoad = r * coeff * weightMultiplier;
   return {
     weightedLoad: Math.round(weightedLoad * 100) / 100,
-    weightedRepsXp: Math.round(weightedLoad * 0.1)
+    weightedRepsXp: Math.round(weightedLoad * SPORT_XP_WEIGHTED_LOAD_FACTOR)
   };
 }
 
-/** +5 XP par exercice coché dans le calcul sport actuel */
-export const SPORT_FLAT_COMPLETED_EXERCISE_XP = 5;
+/** @deprecated Préférer SPORT_XP_PER_CHECKED_EXERCISE */
+export const SPORT_FLAT_COMPLETED_EXERCISE_XP = SPORT_XP_PER_CHECKED_EXERCISE;
+
+export { SPORT_XP_PER_CHECKED_EXERCISE };

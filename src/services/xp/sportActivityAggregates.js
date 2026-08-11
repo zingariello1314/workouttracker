@@ -3,6 +3,22 @@
  */
 
 import { aggregateCheckedRepsByDateAndExerciseId } from '../../utils/trainingLoadUtils';
+import {
+  buildGarminCardioById,
+  computeRunningVolumeTotals,
+  mergeRunningSessionsWithGarmin
+} from '../../utils/sport/runningVolumeTruth';
+
+function computeLifetimeRunningKm(workoutData) {
+  const garminData = workoutData?.garminData;
+  const garminById = buildGarminCardioById(garminData?.activities?.cardio);
+  const stored = workoutData?.enduranceData?.sessions?.running || [];
+  const merged = mergeRunningSessionsWithGarmin(stored, garminById);
+  return computeRunningVolumeTotals(merged, garminById, {
+    period: 'all',
+    workoutData
+  }).totalKm;
+}
 
 function enduranceSessionMinutes(session) {
   if (!session) return 0;
@@ -60,13 +76,18 @@ export function computeSportActivityAggregates(workoutData, breakdown) {
   const qualifiedSessions = enduranceSessionCount + workoutDaySessions;
   const lifetimeReps = Math.max(0, Number(breakdown?.reps) || 0);
   const lifetimeActiveKcal = Math.max(0, Number(breakdown?.calories) || 0);
+  const lifetimeRunningKm = Math.max(
+    0,
+    Number(breakdown?.runningTotalDistanceKm) || computeLifetimeRunningKm(workoutData) || 0
+  );
 
   return {
     qualifiedSessions,
     enduranceSessionCount,
     workoutDaySessions,
     lifetimeReps,
-    lifetimeActiveKcal
+    lifetimeActiveKcal,
+    lifetimeRunningKm
   };
 }
 

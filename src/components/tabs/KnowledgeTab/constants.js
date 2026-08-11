@@ -32,6 +32,32 @@ export const KNOWLEDGE_TEXT_SECTIONS = [
 ];
 
 export const KNOWLEDGE_VIDEO_SECTION_LS = 'knowledge.videos.section';
+export const KNOWLEDGE_LIBRARY_SORT_LS = 'knowledge.library.sort';
+
+/** Tri bibliothèque vidéos par date d'import. */
+export const KNOWLEDGE_LIBRARY_SORT = {
+  NEWEST: 'newest',
+  OLDEST: 'oldest'
+};
+
+export function readStoredLibrarySort() {
+  try {
+    const v = localStorage.getItem(KNOWLEDGE_LIBRARY_SORT_LS);
+    if (v === KNOWLEDGE_LIBRARY_SORT.OLDEST) return KNOWLEDGE_LIBRARY_SORT.OLDEST;
+  } catch {
+    /* ignore */
+  }
+  return KNOWLEDGE_LIBRARY_SORT.NEWEST;
+}
+
+export function persistLibrarySort(sort) {
+  try {
+    localStorage.setItem(KNOWLEDGE_LIBRARY_SORT_LS, sort);
+  } catch {
+    /* ignore */
+  }
+}
+
 export const KNOWLEDGE_ARTICLE_SECTION_LS = 'knowledge.articles.section';
 export const KNOWLEDGE_NOTE_SECTION_LS = 'knowledge.notes.section';
 

@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { ChevronDown, Loader2, Volume2, VolumeX } from 'lucide-react';
+import { ChevronDown, Loader2, Maximize, Minimize, Volume2, VolumeX } from 'lucide-react';
 import { useTranslation } from '../../../../utils/translations';
 import {
   fetchKnowledgeVideoPlayUrl,
@@ -9,12 +9,31 @@ import {
 } from '../../../../services/knowledge/knowledgeApi';
 import { KnowledgeEmptyState } from './KnowledgeUiBlocks';
 import { buildSpacedFeedBatch } from '../utils/knowledgeShortsShuffle';
+import {
+  DEFAULT_VIDEO_ASPECT,
+  fitVideoContainerStyle,
+  isElementFullscreen,
+  readVideoAspectRatio,
+  toggleElementFullscreen
+} from '../utils/knowledgeVideoFrame';
 
 function ShortSlide({ item, index, isActive, userId, setSlideRef, muted, onMutedChange }) {
+  const t = useTranslation();
   const videoRef = useRef(null);
+  const frameRef = useRef(null);
   const playUrlRef = useRef(null);
   const [playUrl, setPlayUrl] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [aspectRatio, setAspectRatio] = useState(DEFAULT_VIDEO_ASPECT);
+  const [isFullscreen, setIsFullscreen] = useState(false);
+
+  useEffect(() => {
+    const onFullscreenChange = () => {
+      setIsFullscreen(isElementFullscreen(frameRef.current));
+    };
+    document.addEventListener('fullscreenchange', onFullscreenChange);
+    return () => document.removeEventListener('fullscreenchange', onFullscreenChange);
+  }, []);
 
   useEffect(() => {
     const el = videoRef.current;
@@ -41,6 +60,7 @@ function ShortSlide({ item, index, isActive, userId, setSlideRef, muted, onMuted
         }
         playUrlRef.current = url;
         setPlayUrl(url);
+        setAspectRatio(DEFAULT_VIDEO_ASPECT);
         touchRecentlyWatched(userId, item.video.id).catch(() => {});
       })
       .catch(() => {
@@ -83,6 +103,16 @@ function ShortSlide({ item, index, isActive, userId, setSlideRef, muted, onMuted
     else el.pause();
   };
 
+  const handleLoadedMetadata = (e) => {
+    const ratio = readVideoAspectRatio(e.target);
+    if (ratio) setAspectRatio(ratio);
+  };
+
+  const handleToggleFullscreen = async (e) => {
+    e.stopPropagation();
+    await toggleElementFullscreen(frameRef.current);
+  };
+
   return (
     <article
       ref={setSlideRef}
@@ -90,46 +120,67 @@ function ShortSlide({ item, index, isActive, userId, setSlideRef, muted, onMuted
       data-index={index}
       className="relative flex h-full min-h-full w-full items-center justify-center bg-black"
     >
-      <div className="relative flex h-full w-full max-w-[min(100%,28rem)] flex-col items-center justify-center">
-        <div className="relative aspect-[9/16] h-full max-h-full w-auto max-w-full overflow-hidden rounded-lg bg-black shadow-2xl shadow-black/80">
+      <div className="relative flex h-full w-full max-w-full items-center justify-center px-2">
+        <div
+          ref={frameRef}
+          className={`relative overflow-hidden bg-black shadow-2xl shadow-black/80 ${
+            isFullscreen ? 'rounded-none' : 'rounded-lg'
+          }`}
+          style={fitVideoContainerStyle(aspectRatio, { fullscreen: isFullscreen })}
+        >
           {loading ? (
-            <div className="flex h-full w-full items-center justify-center">
+            <div className="flex aspect-[9/16] h-full min-h-[240px] w-full items-center justify-center">
               <Loader2 className="h-10 w-10 animate-spin text-violet-400" />
             </div>
           ) : playUrl ? (
             <video
               ref={videoRef}
               src={playUrl}
-              className="h-full w-full object-cover"
+              className="h-full w-full object-contain"
               playsInline
               loop
               muted={muted}
               onClick={togglePlay}
+              onLoadedMetadata={handleLoadedMetadata}
             />
           ) : (
-            <div className="flex h-full w-full items-center justify-center text-xs text-slate-500">
+            <div className="flex aspect-[9/16] h-full min-h-[240px] w-full items-center justify-center text-xs text-slate-500">
               —
             </div>
           )}
 
-          <div className="pointer-events-none absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/85 via-black/35 to-transparent px-4 pb-5 pt-16">
-            <p className="line-clamp-2 text-sm font-semibold text-white drop-shadow-md">
-              {item.video.title}
-            </p>
-          </div>
+          {playUrl && !loading ? (
+            <>
+              <div className="pointer-events-none absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/85 via-black/35 to-transparent px-4 pb-5 pt-16">
+                <p className="line-clamp-2 text-sm font-semibold text-white drop-shadow-md">
+                  {item.video.title}
+                </p>
+              </div>
 
-          {playUrl ? (
-            <button
-              type="button"
-              onClick={(e) => {
-                e.stopPropagation();
-                onMutedChange(!muted);
-              }}
-              className="absolute right-3 top-3 flex h-9 w-9 items-center justify-center rounded-full bg-black/50 text-white backdrop-blur-sm transition hover:bg-black/70"
-              aria-label={muted ? 'Activer le son' : 'Couper le son'}
-            >
-              {muted ? <VolumeX size={18} /> : <Volume2 size={18} />}
-            </button>
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onMutedChange(!muted);
+                }}
+                className="absolute right-3 top-3 flex h-9 w-9 items-center justify-center rounded-full bg-black/50 text-white backdrop-blur-sm transition hover:bg-black/70"
+                aria-label={muted ? t('knowledge.unmute') : t('knowledge.mute')}
+              >
+                {muted ? <VolumeX size={18} /> : <Volume2 size={18} />}
+              </button>
+
+              <button
+                type="button"
+                onClick={handleToggleFullscreen}
+                className="absolute right-3 top-14 flex h-9 w-9 items-center justify-center rounded-full bg-black/50 text-white backdrop-blur-sm transition hover:bg-black/70"
+                aria-label={
+                  isFullscreen ? t('knowledge.exitFullscreen') : t('knowledge.fullscreen')
+                }
+                title={isFullscreen ? t('knowledge.exitFullscreen') : t('knowledge.fullscreen')}
+              >
+                {isFullscreen ? <Minimize size={18} /> : <Maximize size={18} />}
+              </button>
+            </>
           ) : null}
         </div>
       </div>

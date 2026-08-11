@@ -1,22 +1,24 @@
 /**
  * Saisie manuelle des pas du jour (téléphone ou autre) quand la montre n’a pas la journée.
- * Plafonds anti-abus : pas trop permissifs mais suffisants pour une journée très active réelle.
+ * Garmin = source prioritaire ; le manuel ne remplace que l’absence de données montre.
  */
 export const MANUAL_WALK_MAX_STEPS_PER_DAY = 55000;
 export const MANUAL_WALK_MAX_DISTANCE_KM = 90;
-/** Complément seul (mode « après montre ») — plafond journalier. */
+/** @deprecated Conservé pour données legacy — ignoré par resolveDailySteps. */
 export const MANUAL_WALK_MAX_SUPPLEMENT_STEPS_PER_DAY = 25000;
 
-/** Facteur XP sur la part déclarative (montre = 100 %). */
-export const DECLARATIVE_STEPS_XP_FACTOR = 0.5;
+export const STEPS_XP_RATE_VERIFIED = 0.0042;
+/** 50 % du taux montre — jours sans Garmin exploitable. */
+export const STEPS_XP_RATE_DECLARATIVE = 0.0021;
+export const STEPS_XP_DAILY_CAP = 100;
 
 /** @typedef {'verified' | 'mixed' | 'self_reported'} StepsReliability */
 
 /**
  * @typedef {object} ResolvedDailySteps
  * @property {number} garmin — pas montre (source fiable)
- * @property {number} declarative — apport manuel au total (source déclarative)
- * @property {number} total — pas affichés / trophées
+ * @property {number} declarative — pas saisis manuellement (affichage ; non additionnés si Garmin > 0)
+ * @property {number} total — pas comptabilisés (XP, trophées, calendrier)
  * @property {StepsReliability} reliability
  */
 
@@ -30,67 +32,109 @@ function normalizeGarminSteps(garminSteps) {
   return Math.max(0, Math.round(Number(garminSteps) || 0));
 }
 
+function parseManualEntry(manualInput) {
+  if (manualInput == null) return null;
+  if (typeof manualInput === 'object' && !Array.isArray(manualInput)) {
+    return manualInput;
+  }
+  const m = Math.max(0, Math.round(Number(manualInput) || 0));
+  return m > 0 ? { steps: m } : null;
+}
+
 /**
  * Résolveur central — pas du jour par source.
+ * Garmin prioritaire ; le manuel ne s’additionne pas à une journée déjà couverte par la montre.
  * @param {number} garminSteps
  * @param {number | { steps?: number, entryMode?: 'total' | 'supplement' } | null | undefined} manualInput
  * @returns {ResolvedDailySteps}
  */
 export function resolveDailySteps(garminSteps, manualInput) {
   const g = normalizeGarminSteps(garminSteps);
-
-  let manualEntry = null;
-  if (manualInput != null && typeof manualInput === 'object' && !Array.isArray(manualInput)) {
-    manualEntry = manualInput;
-  } else {
-    const m = Math.max(0, Math.round(Number(manualInput) || 0));
-    if (m > 0) manualEntry = { steps: m };
-  }
+  const manualEntry = parseManualEntry(manualInput);
 
   if (!manualEntry?.steps || manualEntry.steps <= 0) {
     return { garmin: g, declarative: 0, total: g, reliability: 'verified' };
   }
 
-  const rawManual = clampInt(manualEntry.steps, 0, MANUAL_WALK_MAX_STEPS_PER_DAY);
-  let total;
+  const declarative = clampInt(manualEntry.steps, 0, MANUAL_WALK_MAX_STEPS_PER_DAY);
 
-  if (manualEntry.entryMode === 'supplement') {
-    const supplement = clampInt(rawManual, 0, MANUAL_WALK_MAX_SUPPLEMENT_STEPS_PER_DAY);
-    total = Math.min(MANUAL_WALK_MAX_STEPS_PER_DAY, g + supplement);
-  } else {
-    total = Math.min(MANUAL_WALK_MAX_STEPS_PER_DAY, Math.max(g, rawManual));
+  if (g > 0) {
+    return { garmin: g, declarative, total: g, reliability: 'mixed' };
   }
 
-  const declarative = Math.max(0, total - g);
-  /** @type {StepsReliability} */
-  let reliability = 'verified';
-  if (declarative > 0) {
-    reliability = g > 0 ? 'mixed' : 'self_reported';
-  }
-
-  return { garmin: g, declarative, total, reliability };
+  return { garmin: 0, declarative, total: declarative, reliability: 'self_reported' };
 }
 
-/** Pas effectifs pour un jour : max(montre, saisie) — rétrocompat ; préférer resolveDailySteps. */
+/** Pas effectifs pour un jour — préférer resolveDailySteps pour le détail source. */
 export function mergedDailySteps(garminSteps, manualSteps) {
   return resolveDailySteps(garminSteps, manualSteps).total;
 }
 
 /**
- * XP pas : Garmin 100 %, déclaratif 50 %.
+ * XP pas : montre 0,0042 XP/pas, manuel 0,0021 XP/pas (plafond 100/j chacun).
+ * Si Garmin et manuel coexistent, seule la part Garmin génère de l’XP.
  * @param {ResolvedDailySteps} resolved
  * @returns {{ stepsXp: number, stepsXpVerified: number, stepsXpDeclarative: number }}
  */
 export function computeStepsXpFromResolved(resolved) {
+  const reliability = resolved?.reliability ?? 'verified';
   const g = resolved?.garmin ?? 0;
-  const d = resolved?.declarative ?? 0;
-  const stepsXpVerified = Math.round(g * 0.01);
-  const stepsXpDeclarative = Math.round(d * 0.01 * DECLARATIVE_STEPS_XP_FACTOR);
-  return {
-    stepsXp: stepsXpVerified + stepsXpDeclarative,
-    stepsXpVerified,
-    stepsXpDeclarative
-  };
+
+  if (reliability === 'self_reported') {
+    const d = resolved?.total ?? resolved?.declarative ?? 0;
+    const stepsXpDeclarative = Math.min(
+      STEPS_XP_DAILY_CAP,
+      Math.round(d * STEPS_XP_RATE_DECLARATIVE)
+    );
+    return { stepsXp: stepsXpDeclarative, stepsXpVerified: 0, stepsXpDeclarative };
+  }
+
+  const stepsXpVerified = Math.min(STEPS_XP_DAILY_CAP, Math.round(g * STEPS_XP_RATE_VERIFIED));
+  return { stepsXp: stepsXpVerified, stepsXpVerified, stepsXpDeclarative: 0 };
+}
+
+/**
+ * Libellés d’affichage pour la provenance des pas (calendrier, endurance, récap).
+ * @param {ResolvedDailySteps | null | undefined} resolved
+ * @param {(key: string, defaultValue: string, vars?: object) => string} [t]
+ */
+export function formatStepsProvenance(resolved, t) {
+  const tr = typeof t === 'function' ? t : (_k, d) => d;
+  const r = resolved?.reliability ?? 'verified';
+  const garmin = resolved?.garmin ?? 0;
+  const declarative = resolved?.declarative ?? 0;
+  const total = resolved?.total ?? 0;
+
+  if (r === 'self_reported' && total > 0) {
+    return {
+      badge: '✏️',
+      label: tr('endurance.stepsProvenance.declared', 'Déclarés manuellement'),
+      detail: null
+    };
+  }
+
+  if (r === 'mixed' && garmin > 0) {
+    return {
+      badge: '🟢',
+      label: tr('endurance.stepsProvenance.verifiedGarmin', 'Vérifiés par Garmin'),
+      detail: declarative > 0
+        ? tr('endurance.stepsProvenance.manualNotCounted', {
+            count: declarative,
+            defaultValue: `✏️ +${declarative.toLocaleString('fr-FR')} déclarés manuellement (non comptés)`
+          })
+        : null
+    };
+  }
+
+  if (garmin > 0) {
+    return {
+      badge: '🟢',
+      label: tr('endurance.stepsProvenance.verifiedGarmin', 'Vérifiés par Garmin'),
+      detail: null
+    };
+  }
+
+  return { badge: null, label: null, detail: null };
 }
 
 /**
@@ -113,10 +157,8 @@ export function normalizeManualDailyWalkByDate(raw) {
     }
     const updatedAt =
       typeof entry?.updatedAt === 'string' && entry.updatedAt ? entry.updatedAt : new Date().toISOString();
-    const entryMode = entry?.entryMode === 'supplement' ? 'supplement' : undefined;
     out[dateKey] = {
       steps,
-      ...(entryMode ? { entryMode } : {}),
       ...(distanceKm != null && distanceKm > 0 ? { distanceKm } : {}),
       updatedAt
     };
@@ -125,7 +167,7 @@ export function normalizeManualDailyWalkByDate(raw) {
 }
 
 /**
- * Total de pas utilisé pour l’XP (et cohérent avec affichage calendrier) : par jour max(Garmin, saisie manuelle).
+ * Total de pas comptabilisés (Garmin prioritaire, manuel en fallback).
  * @param {Record<string,{steps?:number}>} dailyMetrics
  * @param {Record<string,any>} manualByDateRaw — sera normalisé
  */

@@ -1,13 +1,13 @@
 import React, { useCallback, useState } from 'react';
 import {
   MANUAL_WALK_MAX_STEPS_PER_DAY,
-  MANUAL_WALK_MAX_SUPPLEMENT_STEPS_PER_DAY,
   normalizeManualDailyWalkByDate
 } from '../../utils/sport/manualDailyWalkUtils';
 import { persistEnduranceData } from '../../services/endurance/enduranceDataService';
 
 /**
  * Saisie / édition pas manuels depuis le calendrier (modal léger).
+ * Fallback si pas de Garmin ; note informative si Garmin déjà présent.
  */
 export default function CalendarManualWalkEditor({
   dateStr,
@@ -19,10 +19,10 @@ export default function CalendarManualWalkEditor({
 }) {
   const tr = t || ((k, d) => d);
   const existing = normalizeManualDailyWalkByDate(currentData?.enduranceData?.manualDailyWalkByDate)[dateStr];
-  const [entryMode, setEntryMode] = useState(existing?.entryMode === 'supplement' ? 'supplement' : 'total');
   const [stepsDraft, setStepsDraft] = useState(existing?.steps ? String(existing.steps) : '');
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
+  const hasGarmin = garminSteps > 0;
 
   const onSave = useCallback(async () => {
     setError('');
@@ -31,9 +31,13 @@ export default function CalendarManualWalkEditor({
       setError(tr('endurance.manualDailyWalk.errorSteps', 'Nombre de pas invalide'));
       return;
     }
-    const max = entryMode === 'supplement' ? MANUAL_WALK_MAX_SUPPLEMENT_STEPS_PER_DAY : MANUAL_WALK_MAX_STEPS_PER_DAY;
-    if (steps > max) {
-      setError(tr('endurance.manualDailyWalk.errorStepsMax', `Maximum ${max} pas`));
+    if (steps > MANUAL_WALK_MAX_STEPS_PER_DAY) {
+      setError(
+        tr('endurance.manualDailyWalk.errorStepsMax', {
+          max: MANUAL_WALK_MAX_STEPS_PER_DAY,
+          defaultValue: `Maximum ${MANUAL_WALK_MAX_STEPS_PER_DAY} pas`
+        })
+      );
       return;
     }
     if (typeof updateData !== 'function') return;
@@ -44,7 +48,6 @@ export default function CalendarManualWalkEditor({
         ...prev,
         [dateStr]: {
           steps,
-          entryMode,
           updatedAt: new Date().toISOString()
         }
       };
@@ -55,7 +58,7 @@ export default function CalendarManualWalkEditor({
     } finally {
       setSaving(false);
     }
-  }, [stepsDraft, entryMode, dateStr, currentData, updateData, onClose, tr]);
+  }, [stepsDraft, dateStr, currentData, updateData, onClose, tr]);
 
   const onRemove = useCallback(async () => {
     if (typeof updateData !== 'function') return;
@@ -74,26 +77,13 @@ export default function CalendarManualWalkEditor({
   return (
     <div className="mt-3 space-y-3 rounded-lg border border-sky-900/50 bg-slate-950/80 p-3">
       <p className="text-xs text-slate-400">
-        {garminSteps > 0
-          ? tr('calendar.heatmap.recapDetail.stepsGarminHint', { count: garminSteps, defaultValue: `${garminSteps.toLocaleString('fr-FR')} pas Garmin ce jour` })
-          : tr('calendar.heatmap.recapDetail.stepsNoGarmin', 'Pas Garmin non disponibles ce jour')}
+        {hasGarmin
+          ? tr('endurance.manualDailyWalk.garminPresentHint', {
+              count: garminSteps,
+              defaultValue: `${garminSteps.toLocaleString('fr-FR')} pas Garmin ce jour — la montre fait foi. Une saisie manuelle reste visible mais ne s’ajoute pas au total.`
+            })
+          : tr('endurance.manualDailyWalk.noGarminHint', 'Pas Garmin non disponibles — indique tes pas pour cette journée (source déclarative).')}
       </p>
-      <div className="flex flex-wrap gap-2 text-xs">
-        <button
-          type="button"
-          onClick={() => setEntryMode('total')}
-          className={`rounded-md px-2 py-1 border ${entryMode === 'total' ? 'border-sky-500 text-sky-300' : 'border-slate-700 text-slate-400'}`}
-        >
-          {tr('endurance.manualDailyWalk.modeTotal', 'Total estimé')}
-        </button>
-        <button
-          type="button"
-          onClick={() => setEntryMode('supplement')}
-          className={`rounded-md px-2 py-1 border ${entryMode === 'supplement' ? 'border-sky-500 text-sky-300' : 'border-slate-700 text-slate-400'}`}
-        >
-          {tr('endurance.manualDailyWalk.modeSupplement', 'Complément après montre')}
-        </button>
-      </div>
       <input
         type="text"
         inputMode="numeric"

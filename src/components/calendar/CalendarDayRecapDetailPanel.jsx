@@ -15,7 +15,10 @@ import {
   buildStressDetailContext,
   buildWorkoutDetailContext
 } from '../../utils/calendarDayRecapDetail';
-import { normalizeManualDailyWalkByDate } from '../../utils/sport/manualDailyWalkUtils';
+import {
+  formatStepsProvenance,
+  normalizeManualDailyWalkByDate
+} from '../../utils/sport/manualDailyWalkUtils';
 
 function StatTile({ label, value, hint }) {
   return (
@@ -174,14 +177,21 @@ export default function CalendarDayRecapDetailPanel({
                   style={{ width: `${Math.min(100, ctx.pct)}%` }}
                 />
               </div>
-              {ctx.stepsBreakdown?.declarative > 0 && (
-                <p className="text-xs text-slate-500">
-                  {formatLocale(ctx.stepsBreakdown.garmin, locale)} Garmin
-                  {ctx.stepsBreakdown.declarative > 0
-                    ? ` + ${formatLocale(ctx.stepsBreakdown.declarative, locale)} complément`
-                    : ''}
-                </p>
-              )}
+              {(() => {
+                const provenance = formatStepsProvenance(ctx.stepsBreakdown, t);
+                if (!provenance.label && !provenance.detail) return null;
+                return (
+                  <div className="space-y-0.5 text-xs text-slate-500">
+                    {provenance.label ? (
+                      <p>
+                        {provenance.badge ? `${provenance.badge} ` : ''}
+                        {provenance.label}
+                      </p>
+                    ) : null}
+                    {provenance.detail ? <p>{provenance.detail}</p> : null}
+                  </div>
+                );
+              })()}
               {typeof updateData === 'function' && (
                 <>
                   <button

@@ -279,18 +279,19 @@ export default function RecapGradesView() {
             <PathRow pathKey="B" data={next.paths.B} />
             <PathRow pathKey="C" data={next.paths.C} />
             <PathRow pathKey="D" data={next.paths.D} />
+            {next.paths.F ? <PathRow pathKey="F" data={next.paths.F} /> : null}
           </div>
           <p className="text-[10px] text-slate-600">
             {next.pathsRequired >= 4
               ? t(
-                  'recap.grades.pathEHintFinal',
-                  'Voie E : les 4 voies à 100 % ou ≥ {{pct}} % sur A, B, C et D simultanément.',
+                  'recap.grades.pathEHintFinalWithF',
+                  'Voie E : 4 voies à 100 % ou ≥ {{pct}} % sur A, B, C, D et F simultanément.',
                   { pct: next.pathEThresholdPct ?? 90 }
                 )
               : next.pathsRequired >= 2
                 ? t(
-                    'recap.grades.pathEHintPenultimate',
-                    'Voie E : 2 voies à 100 % ou ≥ {{pct}} % sur A, B, C et D simultanément.',
+                    'recap.grades.pathEHintPenultimateWithF',
+                    'Voie E : 2 voies à 100 % ou ≥ {{pct}} % sur A, B, C, D et F simultanément.',
                     { pct: next.pathEThresholdPct ?? 80 }
                   )
                 : t(
@@ -307,6 +308,8 @@ export default function RecapGradesView() {
         progressionGradeId={prog?.gradeId}
         progressionTier={prog?.tier}
         onSelectGrade={setSelectedGradeId}
+        aggregates={aggregates}
+        masteryScore={masteryScore}
       />
         </>
       )}

@@ -106,12 +106,21 @@ export const SPORT_GRADE_TIER_ROWS = [
   { gradeId: 'grand_maitre', tier: 1, levelMin: 85, cumulXp: 146580 },
   { gradeId: 'grand_maitre', tier: 2, levelMin: 92, cumulXp: 168350 },
   { gradeId: 'grand_maitre', tier: 3, levelMin: 98, cumulXp: 188180 },
-  { gradeId: 'olympien', tier: 1, levelMin: 105, cumulXp: 212680 },
-  { gradeId: 'olympien', tier: 2, levelMin: 113, cumulXp: 242480 },
-  { gradeId: 'olympien', tier: 3, levelMin: 121, cumulXp: 274200 },
-  { gradeId: 'parangon', tier: 1, levelMin: 129, cumulXp: 307840 },
-  { gradeId: 'parangon', tier: 2, levelMin: 137, cumulXp: 343400 },
-  { gradeId: 'parangon', tier: 3, levelMin: 144, cumulXp: 376090 }
+  { gradeId: 'olympien', tier: 1, levelMin: 105, cumulXp: 212680, kmMin: 450 },
+  { gradeId: 'olympien', tier: 2, levelMin: 113, cumulXp: 242480, kmMin: 620, sessionsMin: 215 },
+  { gradeId: 'olympien', tier: 3, levelMin: 121, cumulXp: 274200, kmMin: 850, kcalMin: 58000 },
+  { gradeId: 'parangon', tier: 1, levelMin: 129, cumulXp: 307840, kmMin: 1000 },
+  { gradeId: 'parangon', tier: 2, levelMin: 137, cumulXp: 343400, kmMin: 1320, sessionsMin: 270, repsMin: 175000 },
+  {
+    gradeId: 'parangon',
+    tier: 3,
+    levelMin: 144,
+    cumulXp: 376090,
+    kmMin: 1750,
+    kcalMin: 75000,
+    sessionsMin: 290,
+    repsMin: 180000
+  }
 ];
 
 /** Frontière pour entrer dans gradeId (index 0 = adepte …). */
@@ -186,7 +195,8 @@ export const SPORT_GRADE_GATES = [
     sessionsMin: 230,
     minutesMin: 35,
     repsMin: 145000,
-    kcalMin: 60000
+    kcalMin: 60000,
+    kmMin: 450
   },
   {
     toGradeId: 'parangon',
@@ -195,9 +205,17 @@ export const SPORT_GRADE_GATES = [
     sessionsMin: 280,
     minutesMin: 40,
     repsMin: 185000,
-    kcalMin: 78000
+    kcalMin: 78000,
+    kmMin: 1000
   }
 ];
+
+/** Grades dont les paliers exigent niveau + preuves d’activité (pas XP seul). */
+export const CONDITIONAL_TIER_GRADE_IDS = new Set(['olympien', 'parangon']);
+
+export function hasConditionalTierRequirements(gradeId) {
+  return CONDITIONAL_TIER_GRADE_IDS.has(gradeId);
+}
 
 export function progressionTierFromLevel(level) {
   const L = Math.max(1, Math.floor(Number(level) || 1));

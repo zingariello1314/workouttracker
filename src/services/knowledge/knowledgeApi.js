@@ -28,9 +28,11 @@ import {
   listKnowledgeVideosLocal,
   revokeKnowledgePlayUrl,
   saveKnowledgeUserPrefsLocal,
+  saveKnowledgeLastUploadCategoryIdsLocal,
   touchRecentlyWatchedLocal,
   updateKnowledgeArticleLocal,
   updateKnowledgeNoteLocal,
+  updateKnowledgeVideoLocal,
   probeVideoDurationSec
 } from './knowledgeIndexedDB';
 
@@ -143,6 +145,11 @@ export function deleteKnowledgeVideo(videoId) {
   return deleteKnowledgeVideoLocal(videoId);
 }
 
+/** Met à jour les métadonnées vidéo (titre, description, categoryIds). */
+export function updateKnowledgeVideo(videoId, payload) {
+  return updateKnowledgeVideoLocal(videoId, payload);
+}
+
 export function fetchKnowledgeArticles(opts = {}) {
   return listKnowledgeArticlesLocal(opts);
 }
@@ -199,4 +206,8 @@ export function fetchKnowledgeUserPrefs(userId) {
 
 export function saveKnowledgeUserPrefs(userId, hiddenCategoryIds) {
   return saveKnowledgeUserPrefsLocal(userId, hiddenCategoryIds);
+}
+
+export function saveKnowledgeLastUploadCategoryIds(userId, categoryIds) {
+  return saveKnowledgeLastUploadCategoryIdsLocal(userId, categoryIds);
 }

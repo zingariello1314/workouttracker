@@ -25,8 +25,11 @@ import {
   SPORT_XP_PER_TOTAL_KG_VOLUME,
   SPORT_XP_LIFTED_VOLUME_CAP,
   SPORT_XP_PER_NUTRITION_FOOD_REGISTERED,
+  SPORT_XP_PER_ACTIVE_CALORIE,
+  SPORT_XP_PER_CHECKED_EXERCISE,
   sportXpReferenceTenRepsTwoStarBodyweight
 } from '../../../../services/xp/xpCalculations';
+import { STEPS_XP_RATE_VERIFIED, STEPS_XP_RATE_DECLARATIVE } from '../../../../utils/sport/manualDailyWalkUtils';
 import { useTranslation } from '../../../../utils/translations';
 
 const SportXPBar = () => {
@@ -193,20 +196,25 @@ const SportXPBar = () => {
           </span>
           <span className="text-slate-600"> · </span>
           <span className="tabular-nums text-slate-400">
-            {(breakdown.caloriesXp ?? 0).toLocaleString('fr-FR')} cal (0,5×kcal actives Garmin cumulées)
+            {(breakdown.caloriesXp ?? 0).toLocaleString('fr-FR')} cal (
+            {SPORT_XP_PER_ACTIVE_CALORIE.toLocaleString('fr-FR', {
+              minimumFractionDigits: 2,
+              maximumFractionDigits: 2
+            })}
+            × kcal actives Garmin cumulées)
           </span>
           <span className="text-slate-600"> · </span>
           <span className="tabular-nums text-slate-400">
             {(breakdown.stepsXp ?? 0).toLocaleString('fr-FR')} pas
             {(breakdown.stepsXpDeclarative ?? 0) > 0
               ? ` (${(breakdown.stepsXpVerified ?? breakdown.stepsXp ?? 0).toLocaleString('fr-FR')} montre + ${(breakdown.stepsXpDeclarative ?? 0).toLocaleString('fr-FR')} déclaratif ×50 %)`
-              : ' (0,01×pas cumulés)'}
+              : ` (${STEPS_XP_RATE_VERIFIED.toLocaleString('fr-FR', { minimumFractionDigits: 4, maximumFractionDigits: 4 })}× pas montre, ${STEPS_XP_RATE_DECLARATIVE.toLocaleString('fr-FR', { minimumFractionDigits: 4, maximumFractionDigits: 4 })}× déclaratif)`}
           </span>
           {(breakdown.exercisesXp ?? 0) > 0 ? (
             <>
               <span className="text-slate-600"> · </span>
               <span className="tabular-nums text-slate-400">
-                {breakdown.exercisesXp.toLocaleString('fr-FR')} ex. cochés (5×)
+                {breakdown.exercisesXp.toLocaleString('fr-FR')} ex. cochés ({SPORT_XP_PER_CHECKED_EXERCISE}×)
               </span>
             </>
           ) : null}

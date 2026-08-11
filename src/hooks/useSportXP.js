@@ -8,7 +8,8 @@ import { useGarminData } from './useGarminData';
 import {
   calculateSportXP,
   computeNutritionRegisteredFoodSportXp,
-  countNutritionRegisteredFoodItems
+  countNutritionRegisteredFoodItems,
+  SPORT_XP_FORMULA_REVISION
 } from '../services/xp/xpCalculations';
 import { computeProgramCompletionBonusXp } from '../utils/programCompletionBonus';
 import { computeVolumeKgForWorkoutKey } from '../utils/exerciseLoadVolume';
@@ -78,7 +79,7 @@ let sportXpCache = {
   garminData: null
 };
 
-/** Invalide le cache module après modification reps / coches. */
+/** Invalide le cache module après modification reps / coches / formule XP. */
 export const invalidateSportXpCache = () => {
   sportXpCache = {
     ...sportXpCache,
@@ -364,6 +365,7 @@ export const useSportXP = () => {
     const gtgSig = gtgChecksum(enduranceData?.gtg);
 
     const signature = [
+      SPORT_XP_FORMULA_REVISION,
       totalReps,
       coeffs.length,
       Math.round(coeffsChecksum * 1000),

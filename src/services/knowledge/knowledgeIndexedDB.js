@@ -371,6 +371,24 @@ export async function createKnowledgeVideoLocal({
   return { ...meta, hasThumbnail: savedWithThumbnail };
 }
 
+export async function updateKnowledgeVideoLocal(videoId, patch) {
+  const existing = await getKnowledgeVideoLocal(videoId);
+  if (!existing) return null;
+  const record = {
+    ...existing,
+    title: patch.title != null ? String(patch.title).trim() : existing.title,
+    description: patch.description !== undefined ? patch.description : existing.description,
+    categoryIds: patch.categoryIds != null ? [...patch.categoryIds] : existing.categoryIds,
+    updatedAt: nowIso()
+  };
+  const db = await openKnowledgeDb();
+  if (!db) return null;
+  await txPromise(db, STORE_VIDEOS, 'readwrite', (stores) => {
+    stores[STORE_VIDEOS].put(record);
+  });
+  return record;
+}
+
 export async function deleteKnowledgeVideoLocal(videoId) {
   const db = await openKnowledgeDb();
   if (!db) return false;
@@ -462,6 +480,7 @@ export async function touchRecentlyWatchedLocal(userId, videoId) {
       ...row,
       userId,
       recentVideoIds: recent,
+      lastUploadCategoryIds: row.lastUploadCategoryIds || [],
       updatedAt: nowIso()
     });
   });
@@ -625,8 +644,27 @@ export async function getKnowledgeUserPrefsLocal(userId) {
   return {
     userId,
     hiddenCategoryIds: row?.hiddenCategoryIds || [],
-    recentVideoIds: row?.recentVideoIds || []
+    recentVideoIds: row?.recentVideoIds || [],
+    lastUploadCategoryIds: row?.lastUploadCategoryIds || []
   };
+}
+
+export async function saveKnowledgeLastUploadCategoryIdsLocal(userId, categoryIds) {
+  const db = await openKnowledgeDb();
+  if (!db) return null;
+  const existing = (await getOne(STORE_USER_PREFS, userId)) || { userId };
+  const record = {
+    ...existing,
+    userId,
+    hiddenCategoryIds: existing.hiddenCategoryIds || [],
+    recentVideoIds: existing.recentVideoIds || [],
+    lastUploadCategoryIds: [...(categoryIds || [])],
+    updatedAt: nowIso()
+  };
+  await txPromise(db, STORE_USER_PREFS, 'readwrite', (stores) => {
+    stores[STORE_USER_PREFS].put(record);
+  });
+  return record;
 }
 
 export async function saveKnowledgeUserPrefsLocal(userId, hiddenCategoryIds) {
@@ -637,6 +675,7 @@ export async function saveKnowledgeUserPrefsLocal(userId, hiddenCategoryIds) {
     userId,
     hiddenCategoryIds: [...(hiddenCategoryIds || [])],
     recentVideoIds: existing.recentVideoIds || [],
+    lastUploadCategoryIds: existing.lastUploadCategoryIds || [],
     updatedAt: nowIso()
   };
   await txPromise(db, STORE_USER_PREFS, 'readwrite', (stores) => {

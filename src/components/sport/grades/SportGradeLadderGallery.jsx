@@ -3,8 +3,10 @@ import { useTranslation } from '../../../utils/translations';
 import {
   SPORT_GRADE_IDS,
   SPORT_GRADE_ACCENT,
-  tierRowsForGrade
+  tierRowsForGrade,
+  hasConditionalTierRequirements
 } from '../../../services/xp/sportGradeCatalog';
+import { evaluateTierRowConditions } from '../../../services/xp/sportGradeResolution';
 import SportGradeEmblem from './SportGradeEmblem';
 import { sportGradeLabel, sportPalierLabel } from './SportGradeIdentity';
 
@@ -15,19 +17,24 @@ export default function SportGradeLadderGallery({
   level,
   progressionGradeId,
   progressionTier,
-  onSelectGrade
+  onSelectGrade,
+  aggregates,
+  masteryScore = 0
 }) {
   const t = useTranslation();
 
   const cards = SPORT_GRADE_IDS.map((gradeId) => {
     const tiers = tierRowsForGrade(gradeId);
-    const maxTierRow = tiers.reduce(
-      (best, row) => (level >= row.levelMin ? row : best),
-      tiers[0]
-    );
+    const conditional = hasConditionalTierRequirements(gradeId);
+    const maxTierRow = tiers.reduce((best, row) => {
+      const reached = conditional
+        ? evaluateTierRowConditions(row, { level, masteryScore, aggregates }).met
+        : level >= row.levelMin;
+      return reached ? row : best;
+    }, null) || tiers[0];
     const isCurrentGrade = progressionGradeId === gradeId;
     const unlocked = level >= (tiers[0]?.levelMin ?? 1);
-    return { gradeId, tiers, maxTierRow, isCurrentGrade, unlocked };
+    return { gradeId, tiers, maxTierRow, isCurrentGrade, unlocked, conditional };
   });
 
   return (
@@ -42,7 +49,7 @@ export default function SportGradeLadderGallery({
         )}
       </p>
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
-        {cards.map(({ gradeId, tiers, maxTierRow, isCurrentGrade, unlocked }) => {
+        {cards.map(({ gradeId, tiers, maxTierRow, isCurrentGrade, unlocked, conditional }) => {
           const accent = SPORT_GRADE_ACCENT[gradeId] || '#2dd4bf';
           return (
             <button
@@ -77,7 +84,9 @@ export default function SportGradeLadderGallery({
                 </p>
                 <div className="mt-2 flex flex-wrap gap-1.5">
                   {tiers.map((row) => {
-                    const tierReached = level >= row.levelMin;
+                    const tierReached = conditional
+                      ? evaluateTierRowConditions(row, { level, masteryScore, aggregates }).met
+                      : level >= row.levelMin;
                     const isActiveTier =
                       isCurrentGrade && progressionTier === row.tier && tierReached;
                     return (
