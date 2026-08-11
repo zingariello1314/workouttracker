@@ -85,8 +85,11 @@ const RecapTab = () => {
     }
   }, []);
 
+  const [activeView, setActiveView] = useState(() => readStoredRecapView());
+  const isGradesView = activeView === RECAP_VIEW_IDS.GRADES;
+
   const snapshotForRecap = useMemo(() => getCurrentData(), [data, getCurrentData]);
-  const nutritionPartialForRecap = useRecapCrossCoachNutrition({ enabled: true });
+  const nutritionPartialForRecap = useRecapCrossCoachNutrition({ enabled: !isGradesView });
 
   const [period, setPeriod] = useState(() => {
     try {
@@ -110,7 +113,7 @@ const RecapTab = () => {
   const garminPartialForRecap = useRecapCrossCoachGarmin({
     startYmd: periodWindow.start ?? DateHelper.addDays(periodWindow.end, -365),
     endYmd: periodWindow.end,
-    enabled: true,
+    enabled: !isGradesView,
     manualWalkByDate: snapshotForRecap?.enduranceData?.manualDailyWalkByDate ?? null
   });
 
@@ -118,8 +121,8 @@ const RecapTab = () => {
   const [garminBundle, setGarminBundle] = useState(null);
 
   useEffect(() => {
-    if (!dbReady || !isAuthenticated) {
-      setGarminBundle(null);
+    if (isGradesView || !dbReady || !isAuthenticated) {
+      if (isGradesView) setGarminBundle(null);
       return undefined;
     }
     let cancelled = false;
@@ -133,7 +136,7 @@ const RecapTab = () => {
     return () => {
       cancelled = true;
     };
-  }, [dbReady, loadAllData, isAuthenticated, data]);
+  }, [isGradesView, dbReady, loadAllData, isAuthenticated, data]);
 
   const {
     computing: metricsComputing,
@@ -157,17 +160,16 @@ const RecapTab = () => {
     garminPartialForRecap,
     garminDataForMetrics: garminBundle,
     periodWindow,
-    programs
+    programs,
+    enabled: !isGradesView
   });
 
   const synthesisCoach = useRecapSynthesisCoach({
     snapshot: snapshotForRecap,
-    assessment: recapAssessment ?? null,
+    assessment: isGradesView ? null : recapAssessment ?? null,
     activeProgram: activeProgram ?? null,
     profileQuestionnaireRaw: currentUser?.profileQuestionnaire
   });
-
-  const [activeView, setActiveView] = useState(() => readStoredRecapView());
 
   useEffect(() => {
     try {
@@ -316,8 +318,9 @@ const RecapTab = () => {
       onViewChange={setActiveView}
       period={period}
       onPeriodChange={handlePeriodChange}
-      scoreLevel={recapAssessment?.level0to100}
-      scoreTier={recapAssessment?.tier}
+      scoreLevel={isGradesView ? undefined : recapAssessment?.level0to100}
+      scoreTier={isGradesView ? undefined : recapAssessment?.tier}
+      showTopMetrics={!isGradesView}
     >
       <RecapPeriodPendingBar
         visible={

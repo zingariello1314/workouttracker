@@ -38,6 +38,7 @@ export default function RecapShellLayout({
   scoreLevel,
   scoreTier,
   gradeHeader,
+  showTopMetrics = true,
   children
 }) {
   const t = useTranslation();
@@ -57,7 +58,7 @@ export default function RecapShellLayout({
             <div className="w-full sm:w-auto order-last sm:order-none">{gradeHeader}</div>
           ) : null}
 
-          {scoreLevel != null ? (
+          {showTopMetrics && scoreLevel != null ? (
             <div
               className="flex items-center gap-2 rounded-full border border-[#0F4C5C]/50 bg-[#041a14]/90 px-3 py-1.5"
               title={t('recap.assessment.scoreHint')}
@@ -71,22 +72,24 @@ export default function RecapShellLayout({
             </div>
           ) : null}
 
-          <div className="flex flex-wrap gap-1.5 sm:ml-auto">
-            {RECAP_VIEW_PERIODS.map((p) => (
-              <button
-                key={p.id}
-                type="button"
-                onClick={() => onPeriodChange(p.id)}
-                className={`rounded-full border px-2.5 py-1 text-[11px] font-medium transition-colors ${
-                  period === p.id
-                    ? 'border-[#0F5C45]/90 bg-[#0F5C45]/90 text-white shadow-md shadow-black/30'
-                    : 'border-[#0F4C5C]/55 bg-black text-teal-100/90 hover:border-[#0F5C45]/70'
-                }`}
-              >
-                {t(p.labelKey)}
-              </button>
-            ))}
-          </div>
+          {showTopMetrics ? (
+            <div className="flex flex-wrap gap-1.5 sm:ml-auto">
+              {RECAP_VIEW_PERIODS.map((p) => (
+                <button
+                  key={p.id}
+                  type="button"
+                  onClick={() => onPeriodChange(p.id)}
+                  className={`rounded-full border px-2.5 py-1 text-[11px] font-medium transition-colors ${
+                    period === p.id
+                      ? 'border-[#0F5C45]/90 bg-[#0F5C45]/90 text-white shadow-md shadow-black/30'
+                      : 'border-[#0F4C5C]/55 bg-black text-teal-100/90 hover:border-[#0F5C45]/70'
+                  }`}
+                >
+                  {t(p.labelKey)}
+                </button>
+              ))}
+            </div>
+          ) : null}
         </div>
       </header>
 

@@ -39,13 +39,19 @@ export function useRecapTabMetrics({
   garminPartialForRecap,
   garminDataForMetrics = null,
   periodWindow,
-  programs
+  programs,
+  enabled = true
 }) {
   const [bundle, setBundle] = useState(null);
-  const [computing, setComputing] = useState(true);
+  const [computing, setComputing] = useState(enabled);
   const genRef = useRef(0);
 
   useEffect(() => {
+    if (!enabled) {
+      setComputing(false);
+      return undefined;
+    }
+
     if (!snapshot) {
       setBundle(null);
       setComputing(false);
@@ -172,7 +178,8 @@ export function useRecapTabMetrics({
     garminPartialForRecap,
     garminDataForMetrics,
     periodWindow,
-    programs
+    programs,
+    enabled
   ]);
 
   return { computing, ...bundle };

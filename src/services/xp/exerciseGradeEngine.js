@@ -38,7 +38,8 @@ import {
   mergeGradeSortIndex,
   parallelLevelFromWeightedLifetime,
   parallelLevelProgress,
-  describeGradePaths
+  describeGradePaths,
+  capSortIndexByHighTierRules
 } from './exerciseGradePaths';
 
 /** @type {Record<string, string>} */
@@ -265,13 +266,24 @@ export function resolveExerciseGradeForMetrics(metrics, def, vitals, context = {
   }
 
   const voieEIdx = highestSortIndexViaVoieE(metrics, metric, vitals);
-  const sortIndex = mergeGradeSortIndex({
+  const rawSortIndex = mergeGradeSortIndex({
     peakIdx,
     lifeIdx,
     checkIdx,
     averageIdx,
     voieEIdx,
     levelIdx
+  });
+  const sortIndex = capSortIndexByHighTierRules(rawSortIndex, {
+    metrics,
+    metric,
+    vitals,
+    peakIdx,
+    lifeIdx,
+    checkIdx,
+    voieEIdx,
+    levelIdx,
+    parallelLevel
   });
 
   const grade = exerciseGradeFromSortIndex(sortIndex);

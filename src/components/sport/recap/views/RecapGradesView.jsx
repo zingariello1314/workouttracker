@@ -10,6 +10,8 @@ import SportGradeEmblem from '../../grades/SportGradeEmblem';
 import SportGradeLadderGallery from '../../grades/SportGradeLadderGallery';
 import SportGradeDetailPage from '../../grades/SportGradeDetailPage';
 import RecapExerciseGradesView from '../../grades/RecapExerciseGradesView';
+import { useExerciseGradeVitalsRefresh } from '../../grades/ExerciseGradeVitalsForm';
+import { useExerciseGrades } from '../../../../hooks/useExerciseGrades';
 import {
   SPORT_TIER_ROMAN
 } from '../../../../services/xp/sportGradeCatalog';
@@ -55,15 +57,16 @@ export default function RecapGradesView() {
   }, [grades?.progression?.gradeId, grades?.progression?.tier]);
   const [selectedGradeId, setSelectedGradeId] = useState(null);
   const [gradesSubTab, setGradesSubTab] = useState('sport');
+  const [exerciseSortMode, setExerciseSortMode] = useState('grade');
+  const { tick, bump } = useExerciseGradeVitalsRefresh();
+  const exerciseGrades = useExerciseGrades({
+    sortMode: exerciseSortMode,
+    vitalsRefreshKey: tick,
+    enabled: true
+  });
 
-  /** Ne pas masquer les grades pendant le chargement Garmin si l’XP workout est déjà calculée. */
+  /** Ne pas bloquer les sous-onglets : seul le contenu Sport attend l’XP initiale. */
   const gradesDataPending = isLoading && (totalXP ?? 0) <= 0;
-
-  if (gradesDataPending) {
-    return (
-      <div className="animate-pulse space-y-4 rounded-xl border border-[#0F4C5C]/40 bg-black p-6 h-64" />
-    );
-  }
 
   const prog = grades?.progression;
   const mer = grades?.merited;
@@ -113,7 +116,18 @@ export default function RecapGradesView() {
       </section>
 
       {gradesSubTab === 'exercises' ? (
-        <RecapExerciseGradesView />
+        <RecapExerciseGradesView
+          sortMode={exerciseSortMode}
+          onSortModeChange={setExerciseSortMode}
+          vitals={exerciseGrades.vitals}
+          rows={exerciseGrades.rows}
+          totalGradedExercises={exerciseGrades.totalGradedExercises}
+          isComputing={exerciseGrades.isComputing}
+          onVitalsSaved={bump}
+          vitalsRefreshKey={tick}
+        />
+      ) : gradesDataPending ? (
+        <div className="animate-pulse space-y-4 rounded-xl border border-[#0F4C5C]/40 bg-black p-6 h-64" />
       ) : selectedGradeId ? (
         <SportGradeDetailPage
           gradeId={selectedGradeId}
@@ -267,10 +281,23 @@ export default function RecapGradesView() {
             <PathRow pathKey="D" data={next.paths.D} />
           </div>
           <p className="text-[10px] text-slate-600">
-            {t(
-              'recap.grades.pathEHint',
-              'Voie E (polyvalence) : atteindre 70 % sur A, B, C et D simultanément.'
-            )}
+            {next.pathsRequired >= 4
+              ? t(
+                  'recap.grades.pathEHintFinal',
+                  'Voie E : les 4 voies à 100 % ou ≥ {{pct}} % sur A, B, C et D simultanément.',
+                  { pct: next.pathEThresholdPct ?? 90 }
+                )
+              : next.pathsRequired >= 2
+                ? t(
+                    'recap.grades.pathEHintPenultimate',
+                    'Voie E : 2 voies à 100 % ou ≥ {{pct}} % sur A, B, C et D simultanément.',
+                    { pct: next.pathEThresholdPct ?? 80 }
+                  )
+                : t(
+                    'recap.grades.pathEHint',
+                    'Voie E (polyvalence) : atteindre {{pct}} % sur A, B, C et D simultanément.',
+                    { pct: next.pathEThresholdPct ?? 70 }
+                  )}
           </p>
         </section>
       ) : null}

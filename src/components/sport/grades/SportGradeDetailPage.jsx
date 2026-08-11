@@ -66,13 +66,18 @@ function PathRow({ pathKey, data, passedPath, t }) {
   );
 }
 
-function PathERow({ paths, passed, t }) {
+function PathERow({ paths, passed, pathEThresholdPct = 70, pathsRequired = 1, pathsFullCount = 0, t }) {
   if (!paths) return null;
   const minPct = Math.min(...PATH_KEYS.map((k) => paths[k]?.pct ?? 0));
   const met =
-    passed?.ok && passed?.path === 'E'
+    passed?.ok &&
+    (passed?.path === 'E' || passed?.path === 'multi' || passed?.path === 'all')
       ? true
-      : PATH_KEYS.every((k) => (paths[k]?.pct ?? 0) >= 70);
+      : pathsRequired >= 4
+        ? PATH_KEYS.every((k) => (paths[k]?.pct ?? 0) >= 100)
+        : pathsRequired >= 2
+          ? pathsFullCount >= 2 || minPct >= pathEThresholdPct
+          : PATH_KEYS.every((k) => (paths[k]?.pct ?? 0) >= pathEThresholdPct);
   const displayPct = Math.round(Math.min(100, minPct));
   return (
     <div
@@ -83,7 +88,23 @@ function PathERow({ paths, passed, t }) {
       <div className="flex items-center justify-between gap-2 text-xs">
         <span className="font-medium text-amber-100/90">
           <span className="text-amber-500/90 font-bold mr-1">E</span>
-          {t('recap.grades.detailPathE', 'Polyvalence (≥ 70 % sur A, B, C et D)')}
+          {pathsRequired >= 4
+            ? t(
+                'recap.grades.detailPathEFinal',
+                'Polyvalence (4 voies à 100 % ou ≥ {{pct}} % partout)',
+                { pct: pathEThresholdPct }
+              )
+            : pathsRequired >= 2
+              ? t(
+                  'recap.grades.detailPathEPenultimate',
+                  'Polyvalence (2 voies à 100 % ou ≥ {{pct}} % partout)',
+                  { pct: pathEThresholdPct }
+                )
+              : t(
+                  'recap.grades.detailPathE',
+                  'Polyvalence (≥ {{pct}} % sur A, B, C et D)',
+                  { pct: pathEThresholdPct }
+                )}
         </span>
         {met ? (
           <CheckCircle2 className="h-4 w-4 text-emerald-400 shrink-0" aria-hidden />
@@ -100,10 +121,18 @@ function PathERow({ paths, passed, t }) {
       <p className="mt-1 text-[10px] text-slate-500">
         {t(
           'recap.grades.detailPathEProgress',
-          'Axe le plus en retard : {{pct}} % (objectif 70 % sur chaque voie)',
-          { pct: displayPct }
+          'Axe le plus en retard : {{pct}} % (objectif {{target}} % sur chaque voie)',
+          { pct: displayPct, target: pathEThresholdPct }
         )}
       </p>
+      {pathsRequired >= 2 ? (
+        <p className="mt-0.5 text-[10px] text-slate-600">
+          {t('recap.grades.detailPathsFull', 'Voies complètes : {{n}} / {{required}}', {
+            n: pathsFullCount,
+            required: pathsRequired
+          })}
+        </p>
+      ) : null}
     </div>
   );
 }
@@ -326,7 +355,14 @@ export default function SportGradeDetailPage({
                     t={t}
                   />
                 ))}
-                <PathERow paths={gateProgress.paths} passed={gateProgress.passed} t={t} />
+                <PathERow
+                  paths={gateProgress.paths}
+                  passed={gateProgress.passed}
+                  pathEThresholdPct={gateProgress.pathEThresholdPct ?? 70}
+                  pathsRequired={gateProgress.pathsRequired ?? 1}
+                  pathsFullCount={gateProgress.pathsFullCount ?? 0}
+                  t={t}
+                />
               </div>
             </section>
           ) : null}

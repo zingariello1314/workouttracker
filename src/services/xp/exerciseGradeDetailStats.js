@@ -28,6 +28,8 @@ import {
 } from './exerciseGradeCheckHistory';
 import { emptyPushupChannels } from './exerciseGradePushupChannels';
 import { computeExerciseGradeProgressBars } from './exerciseGradeProgress';
+import { resolvePerformancePeakForCatalog } from './exerciseGradePerformancePeak';
+import { minParallelLevelForSortIndex } from './exerciseGradePaths';
 import {
   mergeExerciseGradeMilestoneAliases,
   syncExerciseGradeMilestones,
@@ -91,6 +93,24 @@ export function computeExerciseGradeDetail(catalogKey, snapshot, getExerciseName
   syncExerciseGradeMilestones(catalogKey, grade.sortIndex);
   const timeline = getExerciseGradeMilestones(catalogKey);
   const progress = computeExerciseGradeProgressBars(metrics, def, vitals, grade.sortIndex, grade);
+  const performancePeak = resolvePerformancePeakForCatalog(
+    snapshot,
+    catalogKey,
+    getExerciseNameById,
+    def.metric
+  );
+  const levelProgress = {
+    currentLevel: grade.parallelLevel,
+    nextLevel: (grade.parallelLevel ?? 1) + 1,
+    repEq: grade.weightedLifetimeValue,
+    repEqToNextLevel: Math.max(
+      0,
+      Math.round((grade.parallelLevelProgress?.nextAt ?? 0) - (grade.weightedLifetimeValue ?? 0))
+    ),
+    nextAt: grade.parallelLevelProgress?.nextAt,
+    pct: grade.parallelLevelProgress?.pct,
+    minLevelForNextGrade: minParallelLevelForSortIndex(Math.min(14, grade.sortIndex + 1))
+  };
 
   const checkHistoryRaw = collectCatalogCheckHistory(snapshot, catalogKey, getExerciseNameById);
   const periodRecords = computeCatalogPeriodRecords(snapshot, catalogKey, getExerciseNameById);
@@ -173,6 +193,9 @@ export function computeExerciseGradeDetail(catalogKey, snapshot, getExerciseName
     grade,
     metrics,
     progress,
+    levelProgress,
+    performancePeak,
+    nextGradeGate: progress?.voieE ?? null,
     timeline,
     totalReps,
     totalChecks,

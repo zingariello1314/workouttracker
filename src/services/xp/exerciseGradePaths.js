@@ -6,6 +6,25 @@ import { EXERCISE_GRADE_LADDER, exerciseGradeFromSortIndex } from './exerciseGra
 import { LADDER_PROGRESS_GATES } from './exerciseGradeDiscovery';
 
 export const VOIE_E_MIN_PCT = 70;
+export const VOIE_E_MIN_PCT_PENULTIMATE = 80;
+export const VOIE_E_MIN_PCT_FINAL = 90;
+
+export const EXERCISE_PENULTIMATE_SORT_INDEX = EXERCISE_GRADE_LADDER.length - 2;
+export const EXERCISE_FINAL_SORT_INDEX = EXERCISE_GRADE_LADDER.length - 1;
+
+export function voieEMinPctForTargetSortIndex(targetSortIndex) {
+  const t = Math.floor(Number(targetSortIndex) || 0);
+  if (t >= EXERCISE_FINAL_SORT_INDEX) return VOIE_E_MIN_PCT_FINAL;
+  if (t >= EXERCISE_PENULTIMATE_SORT_INDEX) return VOIE_E_MIN_PCT_PENULTIMATE;
+  return VOIE_E_MIN_PCT;
+}
+
+export function pathsRequiredForTargetSortIndex(targetSortIndex) {
+  const t = Math.floor(Number(targetSortIndex) || 0);
+  if (t >= EXERCISE_FINAL_SORT_INDEX) return 3;
+  if (t >= EXERCISE_PENULTIMATE_SORT_INDEX) return 2;
+  return 1;
+}
 
 /** Seuils cumulés en rep-équivalent pompes pour monter de niveau. */
 const PARALLEL_LEVEL_THRESHOLDS = [
@@ -87,16 +106,31 @@ export function progressTowardSortIndex(metrics, metric, vitals, targetSortIndex
   };
 }
 
-/** Voie E : palier le plus élevé où pic + volume + coches ≥ 70 % simultanément. */
+function pathsFullCountFromProgress(p) {
+  return [p.peakPct >= 100, p.lifePct >= 100, p.checksPct >= 100].filter(Boolean).length;
+}
+
+/** Voie E / multi-voies : règles selon le palier visé. */
+export function qualifiesViaVoieEAtTarget(metrics, metric, vitals, targetSortIndex) {
+  const target = Math.floor(Number(targetSortIndex) || 0);
+  const p = progressTowardSortIndex(metrics, metric, vitals, target);
+  const minPct = Math.min(p.peakPct, p.lifePct, p.checksPct);
+  const pathsFull = pathsFullCountFromProgress(p);
+
+  if (target >= EXERCISE_FINAL_SORT_INDEX) {
+    return pathsFull >= 3 || minPct >= VOIE_E_MIN_PCT_FINAL;
+  }
+  if (target >= EXERCISE_PENULTIMATE_SORT_INDEX) {
+    return pathsFull >= 2 || minPct >= VOIE_E_MIN_PCT_PENULTIMATE;
+  }
+  return minPct >= VOIE_E_MIN_PCT;
+}
+
+/** Voie E : palier le plus élevé où les conditions cumulées sont remplies. */
 export function highestSortIndexViaVoieE(metrics, metric, vitals) {
   let best = -1;
   for (let target = 1; target < EXERCISE_GRADE_LADDER.length; target += 1) {
-    const p = progressTowardSortIndex(metrics, metric, vitals, target);
-    if (
-      p.peakPct >= VOIE_E_MIN_PCT &&
-      p.lifePct >= VOIE_E_MIN_PCT &&
-      p.checksPct >= VOIE_E_MIN_PCT
-    ) {
+    if (qualifiesViaVoieEAtTarget(metrics, metric, vitals, target)) {
       best = target;
     }
   }
@@ -107,13 +141,59 @@ export function voieEProgressForNextGrade(metrics, metric, vitals, currentSortIn
   const next = Math.min(EXERCISE_GRADE_LADDER.length - 1, (currentSortIndex ?? 0) + 1);
   const p = progressTowardSortIndex(metrics, metric, vitals, next);
   const minPct = Math.min(p.peakPct, p.lifePct, p.checksPct);
+  const pathsFull = pathsFullCountFromProgress(p);
+  const voieEMinPct = voieEMinPctForTargetSortIndex(next);
+  const pathsRequired = pathsRequiredForTargetSortIndex(next);
+  const met = qualifiesViaVoieEAtTarget(metrics, metric, vitals, next);
+
   return {
     ...p,
     minPct,
-    met: minPct >= VOIE_E_MIN_PCT,
+    met,
+    voieEMinPct,
+    pathsFull,
+    pathsRequired,
     targetSortIndex: next,
     nextGradeLabel: exerciseGradeFromSortIndex(next).label
   };
+}
+
+/** Niveau parallèle minimal pour un palier d’échelle (condition voie N). */
+export function minParallelLevelForSortIndex(targetSortIndex) {
+  const t = Math.max(0, Math.floor(Number(targetSortIndex) || 0));
+  return t * 7 + 1;
+}
+
+/** Cappe le grade si les règles strictes Platine II / III ne sont pas remplies. */
+export function capSortIndexByHighTierRules(rawSortIndex, ctx) {
+  let idx = Math.max(0, Math.floor(Number(rawSortIndex) || 0));
+  while (idx >= EXERCISE_PENULTIMATE_SORT_INDEX) {
+    if (qualifiesForExerciseGradeSortIndex(idx, ctx)) break;
+    idx -= 1;
+  }
+  return idx;
+}
+
+export function qualifiesForExerciseGradeSortIndex(targetSortIndex, ctx) {
+  const target = Math.floor(Number(targetSortIndex) || 0);
+  const { metrics, metric, vitals, peakIdx, lifeIdx, checkIdx, voieEIdx, levelIdx } = ctx || {};
+
+  if (target < EXERCISE_PENULTIMATE_SORT_INDEX) {
+    return (
+      peakIdx >= target ||
+      lifeIdx >= target ||
+      checkIdx >= target ||
+      levelIdx >= target ||
+      (voieEIdx >= 0 && voieEIdx >= target)
+    );
+  }
+
+  if (qualifiesViaVoieEAtTarget(metrics, metric, vitals, target)) return true;
+
+  const p = progressTowardSortIndex(metrics, metric, vitals, target);
+  const pathsFull = pathsFullCountFromProgress(p);
+  const required = pathsRequiredForTargetSortIndex(target);
+  return pathsFull >= required;
 }
 
 /**

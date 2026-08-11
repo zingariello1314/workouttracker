@@ -10,6 +10,7 @@ import ChallengeCard from '../ui/ChallengeCard';
 import { typography } from '../../styles/typography';
 import { getAutoWeekVariant, getDateStr as dateToYmd } from '../../utils/dateUtils';
 import { calculateAutoReps, detectExerciseUnit, resolvePrescriptionAutofillValue } from '../../utils/exerciseCalculations';
+import { mergeExerciseDisplayName } from '../../utils/workoutExerciseIdResolve';
 import { useTodayExercises } from '../../hooks/useTodayExercises';
 import AddExceptionalExerciseModal from '../modals/AddExceptionalExerciseModal';
 import { isMockEnduranceSession, collectEnduranceSessionsForCalendarDay } from '../../utils/calendarUtils';
@@ -749,15 +750,19 @@ const TodayTab = () => {
       } else if (prevKeyForWeight && currentData.exerciseSetLogs?.[prevKeyForWeight]) {
         nextSetLogs[primaryKey] = { ...currentData.exerciseSetLogs[prevKeyForWeight] };
       }
-      const nextSnapshot = {
-        ...currentData,
-        checkedExercises: nextChecked,
-        reps: nextReps,
-        exerciseWeights: nextWeights,
-        exerciseWeightPerArm: nextPerArm,
-        exerciseSetWeights: nextSetW,
-        exerciseSetLogs: nextSetLogs
-      };
+      const nextSnapshot = mergeExerciseDisplayName(
+        {
+          ...currentData,
+          checkedExercises: nextChecked,
+          reps: nextReps,
+          exerciseWeights: nextWeights,
+          exerciseWeightPerArm: nextPerArm,
+          exerciseSetWeights: nextSetW,
+          exerciseSetLogs: nextSetLogs
+        },
+        exercise.id,
+        exercise.name
+      );
       updateTempExerciseData(nextSnapshot);
       syncSportLinkedQuestsWithProgramSnapshot(date, nextSnapshot);
       expandPerceivedPanel(exercise.id);
@@ -792,15 +797,19 @@ const TodayTab = () => {
     if (prevKey && currentData.exerciseSetLogs?.[prevKey]) {
       nextSetLogs[primaryKey] = { ...currentData.exerciseSetLogs[prevKey] };
     }
-    const nextSnapshot = {
-      ...currentData,
-      checkedExercises: nextChecked,
-      reps: nextReps,
-      exerciseWeights: nextWeights,
-      exerciseWeightPerArm: nextPerArm,
-      exerciseSetWeights: nextSetW,
-      exerciseSetLogs: nextSetLogs
-    };
+    const nextSnapshot = mergeExerciseDisplayName(
+      {
+        ...currentData,
+        checkedExercises: nextChecked,
+        reps: nextReps,
+        exerciseWeights: nextWeights,
+        exerciseWeightPerArm: nextPerArm,
+        exerciseSetWeights: nextSetW,
+        exerciseSetLogs: nextSetLogs
+      },
+      exercise.id,
+      exercise.name
+    );
     updateTempExerciseData(nextSnapshot);
     syncSportLinkedQuestsWithProgramSnapshot(date, nextSnapshot);
     expandPerceivedPanel(exercise.id);

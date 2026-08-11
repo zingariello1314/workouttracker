@@ -54,7 +54,9 @@ export default function ExerciseGradeProgressBars({ progress, compact = false })
         <div className="rounded-md border border-violet-500/30 bg-violet-950/20 px-2 py-1.5">
           <div className="flex justify-between gap-2 text-[9px]">
             <span className="font-semibold text-violet-200">
-              {t('recap.exerciseGrades.voieE', 'Voie E — équilibre 70 %')}
+              {t('recap.exerciseGrades.voieE', 'Voie E — équilibre {{pct}} %', {
+                pct: progress.voieEMinPct ?? 70
+              })}
             </span>
             <span className="tabular-nums text-violet-300/90">
               {voieE.minPct.toLocaleString('fr-FR')} %
@@ -67,12 +69,29 @@ export default function ExerciseGradeProgressBars({ progress, compact = false })
             />
           </div>
           <p className="mt-1 text-[8px] leading-snug text-slate-500">
-            {t(
-              'recap.exerciseGrades.voieEHint',
-              'Pic, volume et coches ≥ {{pct}} % en même temps → grade suivant',
-              { pct: progress.voieEMinPct ?? 70 }
-            )}
+            {(progress.pathsRequired ?? 0) >= 2
+              ? t(
+                  'recap.exerciseGrades.voieEHintStrict',
+                  'Platine : {{required}} voies à 100 % ou équilibre ≥ {{pct}} % (pic, volume, coches)',
+                  {
+                    required: progress.pathsRequired,
+                    pct: progress.voieEMinPct ?? 70
+                  }
+                )
+              : t(
+                  'recap.exerciseGrades.voieEHint',
+                  'Pic, volume et coches ≥ {{pct}} % en même temps → grade suivant',
+                  { pct: progress.voieEMinPct ?? 70 }
+                )}
           </p>
+          {(progress.pathsRequired ?? 0) >= 2 ? (
+            <p className="mt-0.5 text-[8px] text-slate-600 tabular-nums">
+              {t('recap.exerciseGrades.voieEPathsFull', 'Voies complètes : {{n}} / {{required}}', {
+                n: progress.pathsFull ?? voieE.pathsFull ?? 0,
+                required: progress.pathsRequired
+              })}
+            </p>
+          ) : null}
         </div>
       ) : null}
     </div>

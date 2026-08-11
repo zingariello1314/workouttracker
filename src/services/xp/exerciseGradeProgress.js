@@ -4,8 +4,15 @@ import {
   metricTripletForGates,
   voieEProgressForNextGrade,
   progressTowardSortIndex,
-  VOIE_E_MIN_PCT
+  voieEMinPctForTargetSortIndex,
+  minParallelLevelForSortIndex,
+  qualifiesViaVoieEAtTarget,
+  pathsRequiredForTargetSortIndex
 } from './exerciseGradePaths';
+
+function pathsFullFromProgress(p) {
+  return [p.peakPct >= 100, p.lifePct >= 100, p.checksPct >= 100].filter(Boolean).length;
+}
 
 function gateForSortIndex(targetIndex) {
   const i = Math.max(0, Math.min(LADDER_PROGRESS_GATES.length - 1, targetIndex));
@@ -63,10 +70,12 @@ export function computeExerciseGradeProgressBars(metrics, def, vitals, currentSo
     bar(vals.checks, gate.checks, 'sport.exerciseGrade.progressChecks', 'Séances cochées')
   ].filter(Boolean);
 
-  if (atLadderMax && gradeExtra?.parallelLevelProgress?.nextAt != null) {
-    const w = Math.max(0, Number(gradeExtra.weightedLifetimeValue) || 0);
+  const parallelLevel = gradeExtra?.parallelLevel;
+  const weightedLife = Math.max(0, Number(gradeExtra?.weightedLifetimeValue) || 0);
+
+  if (gradeExtra?.parallelLevelProgress?.nextAt != null) {
     const parallelBar = bar(
-      w,
+      weightedLife,
       gradeExtra.parallelLevelProgress.nextAt,
       'recap.exerciseGrades.parallelRepEq',
       'Rep eq. (niveau)'
@@ -74,22 +83,38 @@ export function computeExerciseGradeProgressBars(metrics, def, vitals, currentSo
     if (parallelBar) bars.unshift(parallelBar);
   }
 
+  if (parallelLevel != null && !atLadderMax) {
+    const minLevel = minParallelLevelForSortIndex(nextSortIndex);
+    if (parallelLevel < minLevel) {
+      const levelBar = bar(
+        parallelLevel,
+        minLevel,
+        'recap.exerciseGrades.levelGate',
+        'Niveau requis (grade)'
+      );
+      if (levelBar) bars.push(levelBar);
+    }
+  }
+
   let voieE;
+  const voieTarget = atLadderMax ? targetGateIndex : nextSortIndex;
+  const voieEMinPct = voieEMinPctForTargetSortIndex(voieTarget);
   if (atLadderMax) {
     const p = progressTowardSortIndex(metrics, metric, vitals, targetGateIndex);
     const minPct = Math.min(p.peakPct, p.lifePct, p.checksPct);
     voieE = {
       ...p,
       minPct,
-      met: minPct >= VOIE_E_MIN_PCT,
+      met: qualifiesViaVoieEAtTarget(metrics, metric, vitals, targetGateIndex),
+      voieEMinPct,
+      pathsFull: pathsFullFromProgress(p),
+      pathsRequired: pathsRequiredForTargetSortIndex(targetGateIndex),
       targetSortIndex: targetGateIndex,
       nextGradeLabel: null
     };
   } else {
     voieE = voieEProgressForNextGrade(metrics, metric, vitals, sortIdx);
   }
-
-  const parallelLevel = gradeExtra?.parallelLevel;
   let nextGradeLabel = nextGrade.label;
   if (atLadderMax && parallelLevel != null) {
     nextGradeLabel = `Niv. ${parallelLevel + 1}`;
@@ -100,9 +125,11 @@ export function computeExerciseGradeProgressBars(metrics, def, vitals, currentSo
     nextSortIndex: atLadderMax ? null : nextSortIndex,
     bars,
     voieE,
-    voieEMinPct: VOIE_E_MIN_PCT,
+    voieEMinPct: voieE?.voieEMinPct ?? voieEMinPct,
+    pathsRequired: voieE?.pathsRequired ?? 0,
+    pathsFull: voieE?.pathsFull ?? 0,
     parallelLevel,
-    weightedLifetime: gradeExtra?.weightedLifetimeValue,
+    weightedLifetime: weightedLife,
     ladderMaxed: atLadderMax,
     maxed: false
   };

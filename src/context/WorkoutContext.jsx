@@ -3,6 +3,11 @@ import { useWorkoutData } from '../hooks/useWorkoutData';
 import { useWorkoutLogic } from '../hooks/useWorkoutLogic';
 import { workoutProgram } from '../data/workoutProgram';
 import { findExerciseInDatabase, exerciseDatabase } from '../data/exerciseDatabase';
+import {
+  buildExerciseNameIndexFromPrograms,
+  isFallbackExerciseLabel,
+  resolveExerciseNameFromIndex
+} from '../utils/workoutExerciseIdResolve';
 import { getDateStr, getDayName, getAutoWeekVariant } from '../utils/dateUtils';
 // ✅ PHASE 4 : Import des utilitaires de l'historique
 import { 
@@ -347,6 +352,11 @@ const WorkoutProvider = ({ children }) => {
 
   // Mapping pour stocker la correspondance entre IDs numériques et exercices du programme actif
   const exerciseIdMappingRef = useRef(new Map()); // Map<numericId, {name, originalId}>
+  const programNameIndexRef = useRef(new Map());
+
+  useEffect(() => {
+    programNameIndexRef.current = buildExerciseNameIndexFromPrograms(programs);
+  }, [programs]);
 
   // Fonction utilitaire pour convertir un ID (string ou number) en ID numérique stable
   const convertToStableNumericId = useCallback((id, index = 0) => {
@@ -427,8 +437,18 @@ const WorkoutProvider = ({ children }) => {
     
     // ✅ PRIORITÉ 1 : Chercher dans le mapping du programme actif (plus rapide)
     const mappedExercise = exerciseIdMappingRef.current.get(searchId);
-    if (mappedExercise) {
+    if (mappedExercise?.name) {
       return mappedExercise.name;
+    }
+
+    const snapName = getCurrentData()?.exerciseDisplayNames?.[String(searchId)];
+    if (snapName && !isFallbackExerciseLabel(snapName)) {
+      return snapName;
+    }
+
+    const fromPrograms = resolveExerciseNameFromIndex(searchId, programNameIndexRef.current);
+    if (fromPrograms) {
+      return fromPrograms;
     }
     
     // ✅ PRIORITÉ 2 : Chercher dans le programme actif si disponible (fallback)
@@ -495,7 +515,7 @@ const WorkoutProvider = ({ children }) => {
     
     // Dernier fallback
     return `Exercice ${exerciseId}`;
-  }, [activeProgram, convertToStableNumericId]);
+  }, [activeProgram, convertToStableNumericId, getCurrentData]);
 
   // ✅ PHASE 4 : Utilisation du hook pour l'historique (après getExerciseNameById)
   const {

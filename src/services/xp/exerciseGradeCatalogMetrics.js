@@ -37,6 +37,8 @@ import {
   emptyPushupChannels,
   mergePushupChannels
 } from './exerciseGradePushupChannels';
+import { mergePerformancePeakIntoMetrics } from './exerciseGradePerformancePeak';
+import { resolveCatalogDef } from './exerciseGradeDiscovery';
 
 
 
@@ -359,10 +361,16 @@ export function extractMetricsForCatalogKey(snapshot, catalogKey, getExerciseNam
 
   metrics.lifetimeVolumeKg = metrics.totalVolumeKg;
 
+  const def = resolveCatalogDef(catalogKey, getExerciseNameById);
+  const merged = mergePerformancePeakIntoMetrics(
+    metrics,
+    snapshot,
+    catalogKey,
+    getExerciseNameById,
+    def?.metric || 'max_set_reps'
+  );
 
-
-  return metrics;
-
+  return merged.metrics;
 }
 
 

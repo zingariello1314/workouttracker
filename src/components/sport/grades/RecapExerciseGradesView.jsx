@@ -1,7 +1,6 @@
 import React, { useMemo, useState } from 'react';
 import { useTranslation } from '../../../utils/translations';
-import { useExerciseGrades } from '../../../hooks/useExerciseGrades';
-import ExerciseGradeVitalsForm, { useExerciseGradeVitalsRefresh } from './ExerciseGradeVitalsForm';
+import ExerciseGradeVitalsForm from './ExerciseGradeVitalsForm';
 import ExerciseGradeEmblem from './ExerciseGradeEmblem';
 import ExerciseGradeProgressBars from './ExerciseGradeProgressBars';
 import ExerciseGradeDetailView from './ExerciseGradeDetailView';
@@ -65,18 +64,20 @@ function ExerciseGradeCard({ row, t, onSelect }) {
   );
 }
 
-export default function RecapExerciseGradesView() {
+export default function RecapExerciseGradesView({
+  sortMode,
+  onSortModeChange,
+  vitals,
+  rows,
+  totalGradedExercises,
+  isComputing = false,
+  onVitalsSaved,
+  vitalsRefreshKey = 0
+}) {
   const t = useTranslation();
-  const [sortMode, setSortMode] = useState('grade');
   const [selectedKey, setSelectedKey] = useState(null);
   const [selectedMaterial, setSelectedMaterial] = useState(null);
-  const { tick, bump } = useExerciseGradeVitalsRefresh();
-  const { vitals, rows, totalGradedExercises } = useExerciseGrades({
-    sortMode,
-    vitalsRefreshKey: tick
-  });
-
-  const vitalsForForm = useMemo(() => vitals, [vitals, tick]);
+  const vitalsForForm = useMemo(() => vitals, [vitals]);
 
   if (selectedMaterial) {
     return (
@@ -97,15 +98,30 @@ export default function RecapExerciseGradesView() {
       <ExerciseGradeDetailView
         benchmarkKey={selectedKey}
         onBack={() => setSelectedKey(null)}
-        vitalsRefreshKey={tick}
+        vitalsRefreshKey={vitalsRefreshKey}
         onGradeRemoved={() => setSelectedKey(null)}
       />
     );
   }
 
+  if (isComputing && rows.length === 0) {
+    return (
+      <div
+        className="flex min-h-[240px] flex-col items-center justify-center gap-3 rounded-xl border border-[#0F4C5C]/45 bg-black/70 p-8"
+        role="status"
+        aria-live="polite"
+      >
+        <span className="h-8 w-8 animate-spin rounded-full border-2 border-teal-400/30 border-t-teal-400" />
+        <p className="text-sm text-slate-400">
+          {t('recap.exerciseGrades.loading', 'Calcul des grades exercices…')}
+        </p>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-5">
-      <ExerciseGradeVitalsForm vitals={vitalsForForm} onSaved={bump} />
+      <ExerciseGradeVitalsForm vitals={vitalsForForm} onSaved={onVitalsSaved} />
 
       <section className="rounded-xl border border-[#0F4C5C]/45 bg-black/70 p-4">
         <div className="flex flex-wrap items-center justify-between gap-3 mb-3">
@@ -116,13 +132,18 @@ export default function RecapExerciseGradesView() {
             <p className="text-[10px] text-slate-500">
               {totalGradedExercises}{' '}
               {t('recap.exerciseGrades.withData', 'exercices suivis')}
+              {isComputing ? (
+                <span className="ml-2 text-teal-500/80">
+                  · {t('recap.exerciseGrades.updating', 'mise à jour…')}
+                </span>
+              ) : null}
             </p>
           </div>
           <label className="flex items-center gap-2 text-[11px] text-slate-400">
             {t('recap.exerciseGrades.sort', 'Trier')}
             <select
               value={sortMode}
-              onChange={(e) => setSortMode(e.target.value)}
+              onChange={(e) => onSortModeChange(e.target.value)}
               className="rounded-md border border-[#0F4C5C]/50 bg-black px-2 py-1.5 text-xs text-white"
             >
               <option value="grade">{t('recap.exerciseGrades.sortGrade', 'Meilleur → pire grade')}</option>

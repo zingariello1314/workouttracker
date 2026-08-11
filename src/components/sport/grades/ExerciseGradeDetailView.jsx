@@ -407,6 +407,62 @@ export default function ExerciseGradeDetailView({
               </p>
             ) : null}
             <ExerciseGradeProgressBars progress={detail.progress} />
+            {detail.levelProgress ? (
+              <div className="mt-3 rounded-lg border border-cyan-500/25 bg-cyan-950/15 px-3 py-2 space-y-1.5">
+                <p className="text-[10px] font-semibold uppercase tracking-wide text-cyan-400/90">
+                  {t('recap.exerciseGrades.levelEvolutionTitle', 'Évolution du niveau')}
+                </p>
+                <p className="text-[11px] text-slate-300">
+                  {t('recap.exerciseGrades.levelEvolutionLine', 'Niveau {{cur}} → {{next}} · {{eq}} rep eq.', {
+                    cur: detail.levelProgress.currentLevel,
+                    next: detail.levelProgress.nextLevel,
+                    eq: fmt(Math.round(detail.levelProgress.repEq || 0))
+                  })}
+                </p>
+                {detail.levelProgress.repEqToNextLevel > 0 ? (
+                  <p className="text-[10px] text-slate-500">
+                    {t(
+                      'recap.exerciseGrades.levelRepEqNeeded',
+                      'Encore {{n}} rep eq. pour le prochain niveau',
+                      { n: fmt(detail.levelProgress.repEqToNextLevel) }
+                    )}
+                  </p>
+                ) : null}
+                {detail.nextGradeGate?.gate ? (
+                  <p className="text-[10px] text-slate-500">
+                    {t(
+                      'recap.exerciseGrades.nextGradeTargets',
+                      'Prochain grade — pic {{peak}}, volume {{life}}, coches {{checks}}',
+                      {
+                        peak: fmt(detail.nextGradeGate.gate.peak),
+                        life: fmt(detail.nextGradeGate.gate.life),
+                        checks: fmt(detail.nextGradeGate.gate.checks)
+                      }
+                    )}
+                  </p>
+                ) : null}
+              </div>
+            ) : null}
+            {detail.performancePeak?.value ? (
+              <div className="mt-2 rounded-lg border border-emerald-500/25 bg-emerald-950/10 px-3 py-2">
+                <p className="text-[10px] font-semibold uppercase tracking-wide text-emerald-400/90">
+                  {t('recap.exerciseGrades.performanceMaxTitle', 'Max Performances (défis)')}
+                </p>
+                <p className="text-sm font-bold tabular-nums text-white">
+                  {fmt(detail.performancePeak.value)}{' '}
+                  <span className="text-xs font-normal text-slate-400">
+                    {detail.metric === 'hold_seconds'
+                      ? t('recap.exerciseGrades.secondsShort', 's')
+                      : detail.metric === 'max_weight_kg'
+                        ? 'kg'
+                        : t('recap.exerciseGrades.repsShort', 'reps')}
+                  </span>
+                </p>
+                <p className="text-[10px] text-slate-500">
+                  {t('recap.exerciseGrades.performanceMaxHint', 'Synchronisé avec l’onglet Performances / défis')}
+                </p>
+              </div>
+            ) : null}
             {detail.description ? (
               <p className="mt-3 text-[11px] leading-relaxed text-slate-400">{detail.description}</p>
             ) : null}
