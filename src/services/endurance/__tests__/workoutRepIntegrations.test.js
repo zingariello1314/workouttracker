@@ -1,12 +1,13 @@
 import { describe, it, expect } from 'vitest';
 import { syncEnduranceRepsDayToWorkoutData, sumEnduranceRepSessionsOnDay } from '../enduranceRepsWorkoutSync';
+import { ENDURANCE_PUSHUPS_WORKOUT_EXERCISE_ID } from '../pushupEnduranceWorkoutKeys';
 import { syncGtgDayToWorkoutData } from '../gtgWorkoutSync';
 import { applyWorkoutRepIntegrations } from '../workoutRepIntegrations';
 import { computeGtgXpForDayPlan } from '../../xp/gtgXpService';
 import { isChallengeScheduledOnDate } from '../challengeScheduleUtils';
 
 describe('workoutRepIntegrations', () => {
-  it('sync endurance pushups vers reps programme', () => {
+  it('sync endurance pushups vers clé défis dédiée', () => {
     const base = {
       reps: { '2026-03-01_104': '20' },
       checkedExercises: {},
@@ -19,8 +20,10 @@ describe('workoutRepIntegrations', () => {
     const sum = sumEnduranceRepSessionsOnDay(base.enduranceData, '2026-03-01', 'pushups');
     expect(sum).toBe(30);
     const next = syncEnduranceRepsDayToWorkoutData(base, base.enduranceData, '2026-03-01');
-    expect(next.reps['2026-03-01_104']).toBe('50');
-    expect(next.checkedExercises['2026-03-01_104']).toBe(true);
+    const defiKey = `2026-03-01_${ENDURANCE_PUSHUPS_WORKOUT_EXERCISE_ID}`;
+    expect(next.reps[defiKey]).toBe('30');
+    expect(next.checkedExercises[defiKey]).toBe(true);
+    expect(next.reps['2026-03-01_104']).toBe('20');
     expect(next.enduranceData.repWorkoutSync['2026-03-01'].pushups).toBe(30);
   });
 
@@ -50,8 +53,11 @@ describe('workoutRepIntegrations', () => {
       }
     };
     data = applyWorkoutRepIntegrations(data);
-    const reps = parseInt(data.reps['2026-03-02_104'], 10);
-    expect(reps).toBeGreaterThanOrEqual(10);
+    const gtgReps = parseInt(data.reps['2026-03-02_104'], 10);
+    const defiKey = `2026-03-02_${ENDURANCE_PUSHUPS_WORKOUT_EXERCISE_ID}`;
+    const defiReps = parseInt(data.reps[defiKey], 10);
+    expect(gtgReps).toBeGreaterThan(0);
+    expect(defiReps).toBe(10);
   });
 
   it('GTG XP sans double comptage reps (bonus seulement si repsInWorkout)', () => {

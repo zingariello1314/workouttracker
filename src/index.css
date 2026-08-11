@@ -3,6 +3,7 @@
 
 /* Import Module Highlight Styles */
 @import './styles/module-highlight.css';
+@import './styles/calendar-record-spotlight.css';
 
 /* Import Historical Modules Unified - SUPPRIME TOUS LES STYLES SPÉCIFIQUES */
 @import './styles/historical-modules-unified.css';

@@ -42,12 +42,30 @@ export const EXERCISE_BENCHMARK_REGISTRY = [
     benchmark: STRENGTH_EXERCISE_BENCHMARKS.pullups_strict
   },
   {
+    key: 'face_pull',
+    label: 'Face pull',
+    metric: 'max_set_reps',
+    match: (id, getName) =>
+      matchBlob(exerciseMovementBlob({ id }, getName), [
+        /face[\s-]?pull/,
+        /rear delt pull/,
+        /tirage visage/
+      ]),
+    benchmark: {
+      ...STRENGTH_EXERCISE_BENCHMARKS.dips,
+      label: 'Face pull'
+    }
+  },
+  {
     key: 'dips',
     label: STRENGTH_EXERCISE_BENCHMARKS.dips.label,
     metric: 'max_set_reps',
     match: (id, getName) => {
       const blob = exerciseMovementBlob({ id }, getName);
-      return matchBlob(blob, [/dip\b/, /barre parallèle/, /paralleles/]) && !/traction|pull/.test(blob);
+      return (
+        matchBlob(blob, [/dips?\b/, /dip aux/, /barre parallèle/, /paralleles/, /parallele/]) &&
+        !/traction|pull-up|pull up|australien|face pull/.test(blob)
+      );
     },
     benchmark: STRENGTH_EXERCISE_BENCHMARKS.dips
   },

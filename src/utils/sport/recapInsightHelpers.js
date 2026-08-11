@@ -40,7 +40,8 @@ export const VERTICAL_PULL_EXERCISE_IDS = new Set([101, 501, 1001, 5001]);
 /** IDs tractions australiennes / rowing horizontal. */
 export const AUSTRALIAN_PULL_EXERCISE_IDS = new Set([102, 502, 1002, 5002, 7002]);
 
-export const PUSHUP_EXERCISE_IDS = new Set([104, 105, 201, 204, 1104, 1105]);
+/** IDs pompes lorsque le nom programme n’est pas résolu (204 = curl marteau, ne pas inclure). */
+export const PUSHUP_EXERCISE_IDS = new Set([104, 105, 504, 1104, 1105]);
 
 export function exerciseMovementBlob(exLike, getExerciseNameById) {
   const id = parseInt(String(exLike?.id ?? exLike?.exerciseId), 10);
@@ -78,8 +79,11 @@ export function isVerticalPullExercise(exerciseId, getExerciseNameById, exLike =
 
 export function isPushupExercise(exerciseId, getExerciseNameById, exLike = null) {
   const id = parseInt(String(exerciseId), 10);
-  if (PUSHUP_EXERCISE_IDS.has(id)) return true;
   const blob = exerciseMovementBlob({ id: exerciseId, ...(exLike || {}) }, getExerciseNameById);
+  if (/curl|marteau|hammer curl|biceps|triceps|haltère|haltere|d[ée]velopp|bench|traction|pull-up|pull up|rowing|squat|dip\b|dips\b/.test(blob)) {
+    return false;
+  }
+  if (PUSHUP_EXERCISE_IDS.has(id)) return true;
   return /pompe|push[- ]?up|pushup/.test(blob) && !/dip|dips/.test(blob);
 }
 

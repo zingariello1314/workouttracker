@@ -413,7 +413,9 @@ export function aggregateCheckedRepsByDateAndExerciseId(reps, checked) {
     const dateStr = m[1];
     let exerciseId = m[2];
     exerciseId = exerciseId.replace(/_(semaineA|semaineB)$/, '');
-    if (!exerciseId || exerciseId.startsWith('complementary_')) return;
+    if (!exerciseId || exerciseId.startsWith('complementary_')) {
+      if (exerciseId !== 'complementary_endurance_pushups') return;
+    }
     const gkey = `${dateStr}::${exerciseId}`;
 
     const r = parseInt(reps[key], 10) || 0;

@@ -11,7 +11,7 @@ import {
   syncEnduranceRepsDayToWorkoutData
 } from './enduranceRepsWorkoutSync';
 
-export const WORKOUT_REP_INTEGRATION_VERSION = 1;
+export const WORKOUT_REP_INTEGRATION_VERSION = 2;
 
 function collectGtgDates(gtgData) {
   const normalized = normalizeGtgData(gtgData);
@@ -29,8 +29,6 @@ export function applyWorkoutRepIntegrations(workoutData, ctx = {}) {
   let next = { ...workoutData };
   const gtg = next.enduranceData?.gtg;
   const gtgDates = collectGtgDates(gtg);
-  const aggregate = ctx.workoutAggregate ?? next;
-
   gtgDates.forEach((dateStr) => {
     next = syncGtgDayToWorkoutData(next, next.enduranceData?.gtg, dateStr, {
       ...ctx,
@@ -38,9 +36,10 @@ export function applyWorkoutRepIntegrations(workoutData, ctx = {}) {
     });
   });
 
+  const aggregate = ctx.workoutAggregate ?? next;
   const enduranceDates = collectEnduranceRepSessionDates(next.enduranceData, aggregate);
   enduranceDates.forEach((dateStr) => {
-    next = syncEnduranceRepsDayToWorkoutData(next, next.enduranceData, dateStr, aggregate);
+    next = syncEnduranceRepsDayToWorkoutData(next, next.enduranceData, dateStr, aggregate, ctx);
   });
 
   return {

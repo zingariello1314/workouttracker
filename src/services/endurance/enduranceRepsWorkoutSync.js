@@ -4,12 +4,20 @@
  */
 
 import { loadEnduranceData } from './enduranceDataService';
+import { normalizeGtgData } from './gtgService';
 import { resolvePushupSessionTotalReps } from './pushupSessionUtils';
 import { resolveSessionCalendarDate, readGarminActivityDateOverrides } from '../../utils/sessionCalendarDate';
+import {
+  ENDURANCE_PUSHUPS_WORKOUT_EXERCISE_ID,
+  migrateLegacyEndurancePushupsOffProgramId,
+  stripPhantomPushupEnduranceDuplicates
+} from './pushupEnduranceWorkoutKeys';
+
+export { ENDURANCE_PUSHUPS_WORKOUT_EXERCISE_ID };
 
 /** Activités dont les reps comptent comme reps programme + clé d’exercice. */
 export const ENDURANCE_REP_ACTIVITY_WORKOUT_ID = {
-  pushups: 104
+  pushups: ENDURANCE_PUSHUPS_WORKOUT_EXERCISE_ID
 };
 
 export const ENDURANCE_REP_ACTIVITIES = Object.keys(ENDURANCE_REP_ACTIVITY_WORKOUT_ID);
@@ -73,9 +81,17 @@ export function collectEnduranceRepSessionDates(enduranceData, workoutAggregate 
 /**
  * Met à jour reps/checked pour la part endurance (préserve programme + GTG).
  */
-export function syncEnduranceRepsDayToWorkoutData(workoutData, enduranceData, dateStr, workoutAggregate = null) {
+export function syncEnduranceRepsDayToWorkoutData(
+  workoutData,
+  enduranceData,
+  dateStr,
+  workoutAggregate = null,
+  ctx = {}
+) {
   const d = String(dateStr || '').slice(0, 10);
   if (!d) return workoutData;
+
+  const getExerciseNameById = ctx.getExerciseNameById;
 
   const ed = { ...(workoutData?.enduranceData || {}), ...(enduranceData || {}) };
   const syncRoot =
@@ -95,6 +111,15 @@ export function syncEnduranceRepsDayToWorkoutData(workoutData, enduranceData, da
     const baseWithout = Math.max(0, currentTotal - prevEndurance);
     const newTotal = baseWithout + enduranceReps;
 
+    if (activityType === 'pushups') {
+      const gtgLedger =
+        normalizeGtgData(workoutData?.enduranceData?.gtg).workoutSync?.[d] || {};
+      const gtgPushupsOnLegacyId = Number(gtgLedger.pushups) || 0;
+      migrateLegacyEndurancePushupsOffProgramId(nextReps, nextChecked, d, enduranceReps, key, {
+        gtgPushupsOnLegacyId
+      });
+    }
+
     if (newTotal > 0) {
       nextReps[key] = String(newTotal);
       nextChecked[key] = true;
@@ -106,6 +131,21 @@ export function syncEnduranceRepsDayToWorkoutData(workoutData, enduranceData, da
       nextChecked[key] = false;
     }
     dayLedger[activityType] = enduranceReps;
+
+    if (activityType === 'pushups' && enduranceReps > 0) {
+      const gtgLedger =
+        normalizeGtgData(workoutData?.enduranceData?.gtg).workoutSync?.[d] || {};
+      const gtgPushupsOnLegacyId = Number(gtgLedger.pushups) || 0;
+      stripPhantomPushupEnduranceDuplicates(
+        nextReps,
+        nextChecked,
+        d,
+        enduranceReps,
+        key,
+        getExerciseNameById,
+        { gtgPushupsOnLegacyId }
+      );
+    }
   });
 
   syncRoot[d] = dayLedger;
@@ -122,11 +162,17 @@ export function syncEnduranceRepsDayToWorkoutData(workoutData, enduranceData, da
   };
 }
 
-export function syncAllEnduranceRepsToWorkoutData(workoutData, workoutAggregate = null) {
+export function syncAllEnduranceRepsToWorkoutData(workoutData, workoutAggregate = null, ctx = {}) {
   let next = workoutData || {};
   const dates = collectEnduranceRepSessionDates(next.enduranceData, workoutAggregate ?? next);
   dates.forEach((dateStr) => {
-    next = syncEnduranceRepsDayToWorkoutData(next, next.enduranceData, dateStr, workoutAggregate ?? next);
+    next = syncEnduranceRepsDayToWorkoutData(
+      next,
+      next.enduranceData,
+      dateStr,
+      workoutAggregate ?? next,
+      ctx
+    );
   });
   return next;
 }

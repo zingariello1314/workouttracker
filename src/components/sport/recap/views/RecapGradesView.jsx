@@ -69,24 +69,9 @@ export default function RecapGradesView() {
   const mer = grades?.merited;
   const next = grades?.nextGateProgress;
 
-  if (selectedGradeId) {
-    return (
-      <SportGradeDetailPage
-        gradeId={selectedGradeId}
-        onBack={() => setSelectedGradeId(null)}
-        level={level}
-        totalXP={totalXP}
-        masteryScore={masteryScore}
-        aggregates={aggregates}
-        workoutData={workoutData}
-        grades={grades}
-      />
-    );
-  }
-
   return (
     <div className="space-y-6">
-      <section>
+      <section id="recap-grades-section" className="scroll-mt-28">
         <h2 className="text-base font-bold text-white mb-1">
           {t('recap.grades.title', 'Grades & progression')}
         </h2>
@@ -129,6 +114,17 @@ export default function RecapGradesView() {
 
       {gradesSubTab === 'exercises' ? (
         <RecapExerciseGradesView />
+      ) : selectedGradeId ? (
+        <SportGradeDetailPage
+          gradeId={selectedGradeId}
+          onBack={() => setSelectedGradeId(null)}
+          level={level}
+          totalXP={totalXP}
+          masteryScore={masteryScore}
+          aggregates={aggregates}
+          workoutData={workoutData}
+          grades={grades}
+        />
       ) : (
         <>
       <SportGradeRecapHero

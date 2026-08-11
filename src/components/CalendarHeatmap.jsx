@@ -17,6 +17,12 @@ import { useAuth } from '../context/AuthContext';
 import { isAdminUser } from '../utils/accessControl';
 import { useToast } from './ui/Toast';
 import { getDateStr, getDayName } from '../utils/dateUtils';
+import {
+  calendarExerciseRecordElementId,
+  calendarEnduranceHistoryElementId,
+  resolveEnduranceHistoryRowId,
+  scrollToCalendarRecordAnchor
+} from '../utils/sport/calendarExerciseDeepLink';
 import JustificationModal from './modals/JustificationModal';
 import { workoutProgram } from '../data/workoutProgram';
 import {
@@ -492,19 +498,25 @@ const CalendarHeatmap = ({
 
   useEffect(() => {
     if (!externalScrollAnchor || !selectedDate || panelMode !== 'details') return;
-    const anchorId = externalScrollAnchor;
-    const timer = window.setTimeout(() => {
-      const byId = document.getElementById(anchorId);
-      const target = byId || exerciseDetailRef.current || holisticDetailRef.current;
-      target?.scrollIntoView?.({ behavior: 'smooth', block: 'start' });
-      onExternalScrollHandled?.();
-    }, 280);
-    return () => window.clearTimeout(timer);
+    const cleanup = scrollToCalendarRecordAnchor(externalScrollAnchor, {
+      onSettled: ({ foundExact } = {}) => {
+        if (foundExact) {
+          onExternalScrollHandled?.();
+          return;
+        }
+        if (selectedDate?.intensity != null) {
+          onExternalScrollHandled?.();
+        }
+      }
+    });
+    return cleanup;
   }, [
     externalScrollAnchor,
     selectedDate,
     panelMode,
-    onExternalScrollHandled
+    onExternalScrollHandled,
+    dataUpdateTrigger,
+    selectedDate?.intensity
   ]);
 
   useEffect(() => {
@@ -2308,6 +2320,17 @@ const CalendarHeatmap = ({
     
     return { months, yearStats };
   };
+
+  /** Deep link / ouverture externe : hydrater l’intensité avant le panneau détail. */
+  useEffect(() => {
+    if (!selectedDate?.date || selectedDate.intensity != null) return;
+    const intensity = getIntensityForDate(selectedDate.date);
+    setSelectedDate((prev) => {
+      if (!prev?.date || prev.intensity != null) return prev;
+      if (getDateStr(prev.date) !== getDateStr(selectedDate.date)) return prev;
+      return { ...prev, intensity };
+    });
+  }, [selectedDate?.date, selectedDate?.intensity, dataUpdateTrigger, garminData, allData]);
 
   // Données calculées
   const monthDays = useMemo(() => generateMonthDays(currentDate), [
@@ -4982,7 +5005,7 @@ const CalendarHeatmap = ({
           
           // Calculer les ajustements Garmin pour cette date
           let garminAdjustments = null;
-          if (garminData && selectedDate.intensity.level > 0) {
+          if (garminData && (selectedDate.intensity?.level ?? 0) > 0) {
             const workoutIntensity = {
               level: selectedDate.intensity.level,
               duration: selectedDate.intensity.duration,
@@ -5143,7 +5166,7 @@ const CalendarHeatmap = ({
 
             {/* Statistiques principales - Masquer si jour justifié (sauf repos) */}
             {(!justification || justification.reason === JUSTIFICATION_REASONS.REPOS) && (
-              <div id="calendar-day-exercise-detail" ref={exerciseDetailRef}>
+              <div id="calendar-day-exercise-detail" ref={exerciseDetailRef} className="scroll-mt-28">
                 <h4 className="mb-3 flex items-center font-medium text-sky-100">
                   <Activity className="mr-2" size={16} />
                   {t('calendar.heatmap.dayDetails.workoutStats')}
@@ -5562,10 +5585,18 @@ const CalendarHeatmap = ({
                             : activityType;
                     const repsVal =
                       session.count ?? session.reps ?? session.jumps ?? 0;
+                    const pushupHistoryRowId =
+                      activityType === 'pushups'
+                        ? resolveEnduranceHistoryRowId(allData, session, 'pushups')
+                        : null;
+                    const enduranceRecordDomId = pushupHistoryRowId
+                      ? calendarEnduranceHistoryElementId(pushupHistoryRowId)
+                      : null;
                     return (
                       <div
                         key={`cal-end-${activityType}-${session.id ?? idx}`}
-                        className="rounded-xl border border-slate-600/40 bg-slate-950/80 p-4"
+                        id={enduranceRecordDomId || undefined}
+                        className="rounded-xl border border-slate-600/40 bg-slate-950/80 p-4 scroll-mt-28"
                       >
                         <div className="mb-2 flex flex-wrap items-baseline gap-x-2 gap-y-1">
                           <span className="text-base font-bold text-slate-200">{strengthLabel}</span>
@@ -5695,8 +5726,14 @@ const CalendarHeatmap = ({
                           ? t('calendar.heatmap.dayDetails.secondsShort', 'sec')
                           : t('calendar.heatmap.dayDetails.reps');
                     
+                    const exerciseRecordDomId = calendarExerciseRecordElementId(rowStorageKey);
+
                     return (
-                      <div key={rowStorageKey || index} className="bg-slate-700/30 rounded p-2">
+                      <div
+                        key={rowStorageKey || index}
+                        id={exerciseRecordDomId || undefined}
+                        className="bg-slate-700/30 rounded p-2 scroll-mt-28"
+                      >
                         <div className="flex justify-between items-start gap-2 mb-1">
                           <div className="min-w-0">
                             <div className="flex flex-wrap items-center gap-2">

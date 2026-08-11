@@ -5,6 +5,8 @@ import ExerciseGradeVitalsForm, { useExerciseGradeVitalsRefresh } from './Exerci
 import ExerciseGradeEmblem from './ExerciseGradeEmblem';
 import ExerciseGradeProgressBars from './ExerciseGradeProgressBars';
 import ExerciseGradeDetailView from './ExerciseGradeDetailView';
+import ExerciseGradeLadderGallery from './ExerciseGradeLadderGallery';
+import ExerciseGradeLadderDetailPage from './ExerciseGradeLadderDetailPage';
 
 function headlineForRow(row) {
   const { metric, metrics, grade } = row;
@@ -37,6 +39,11 @@ function ExerciseGradeCard({ row, t, onSelect }) {
             </p>
             <p className="mt-1 text-[10px] font-bold tabular-nums" style={{ color: g.accent }}>
               {g.gradeLabel}
+              {g.parallelLevel ? (
+                <span className="ml-1.5 font-normal text-slate-500">
+                  · {t('recap.exerciseGrades.levelShort', 'Niv. {{n}}', { n: g.parallelLevel })}
+                </span>
+              ) : null}
             </p>
           </div>
         </div>
@@ -62,6 +69,7 @@ export default function RecapExerciseGradesView() {
   const t = useTranslation();
   const [sortMode, setSortMode] = useState('grade');
   const [selectedKey, setSelectedKey] = useState(null);
+  const [selectedMaterial, setSelectedMaterial] = useState(null);
   const { tick, bump } = useExerciseGradeVitalsRefresh();
   const { vitals, rows, totalGradedExercises } = useExerciseGrades({
     sortMode,
@@ -70,12 +78,27 @@ export default function RecapExerciseGradesView() {
 
   const vitalsForForm = useMemo(() => vitals, [vitals, tick]);
 
+  if (selectedMaterial) {
+    return (
+      <ExerciseGradeLadderDetailPage
+        material={selectedMaterial}
+        rows={rows}
+        onBack={() => setSelectedMaterial(null)}
+        onOpenExercise={(key) => {
+          setSelectedMaterial(null);
+          setSelectedKey(key);
+        }}
+      />
+    );
+  }
+
   if (selectedKey) {
     return (
       <ExerciseGradeDetailView
         benchmarkKey={selectedKey}
         onBack={() => setSelectedKey(null)}
         vitalsRefreshKey={tick}
+        onGradeRemoved={() => setSelectedKey(null)}
       />
     );
   }
@@ -114,6 +137,8 @@ export default function RecapExerciseGradesView() {
           ))}
         </ul>
       </section>
+
+      <ExerciseGradeLadderGallery rows={rows} onSelectMaterial={setSelectedMaterial} />
     </div>
   );
 }

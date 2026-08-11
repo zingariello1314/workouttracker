@@ -12,6 +12,10 @@ import { cumulXpForLevel } from '../../../services/xp/sportLevelCurve';
 import { evaluateGateProgress } from '../../../services/xp/sportGradeResolution';
 import SportGradeEmblem from './SportGradeEmblem';
 import { sportGradeLabel, sportPalierLabel } from './SportGradeIdentity';
+import {
+  RECAP_GRADE_DETAIL_FOCUS_ID,
+  scrollToRecapGradeDetail
+} from '../../../utils/sport/recapGradesScroll';
 
 const PATH_KEYS = ['A', 'B', 'C', 'D'];
 
@@ -118,7 +122,7 @@ export default function SportGradeDetailPage({
   const t = useTranslation();
 
   useEffect(() => {
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    scrollToRecapGradeDetail();
   }, [gradeId]);
 
   const detail = useMemo(() => {
@@ -197,7 +201,10 @@ export default function SportGradeDetailPage({
         {t('recap.grades.detailBack', 'Retour au parcours des grades')}
       </button>
 
-      <div className="flex flex-col gap-5 lg:flex-row lg:items-start lg:gap-6">
+      <div
+        id={RECAP_GRADE_DETAIL_FOCUS_ID}
+        className="flex flex-col gap-5 scroll-mt-28 lg:flex-row lg:items-start lg:gap-6"
+      >
         <div className="mx-auto w-full max-w-[300px] shrink-0 lg:mx-0 lg:sticky lg:top-4">
           <div
             className="overflow-hidden rounded-2xl border border-[#0F4C5C]/55 bg-black/90 shadow-lg"

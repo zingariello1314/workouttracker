@@ -13,11 +13,27 @@ import {
   parseExerciseIdFromCatalogKey
 } from './exerciseGradeDiscovery';
 import {
+  collectCatalogActivityByDate,
   extractMetricsForCatalogKey,
-  collectCatalogActivityByDate
+  isPushupsCatalogKey,
+  mergePushupChannels,
+  exerciseMatchesCatalogKey
 } from './exerciseGradeCatalogMetrics';
+import {
+  collectCatalogCheckHistory,
+  computeCatalogPeriodRecords,
+  annotateCheckHistory,
+  groupCheckHistoryByMonth,
+  pushupBreakdownDisplayLines
+} from './exerciseGradeCheckHistory';
+import { emptyPushupChannels } from './exerciseGradePushupChannels';
 import { computeExerciseGradeProgressBars } from './exerciseGradeProgress';
-import { getExerciseGradeMilestones, syncExerciseGradeMilestones } from './exerciseGradeMilestones';
+import {
+  mergeExerciseGradeMilestoneAliases,
+  syncExerciseGradeMilestones,
+  getExerciseGradeMilestones
+} from './exerciseGradeMilestones';
+import { legacyCatalogAliasKeysForCanonical } from './exerciseGradeCanonicalCatalog';
 
 function ymdToDate(ymd) {
   const [y, m, d] = String(ymd).split('-').map(Number);
@@ -52,9 +68,7 @@ function plannedCatalogOnDate(dateStr, catalogKey, getExerciseNameById, ctx) {
   return planned.some((ex) => {
     const id = ex.originalId ?? ex.id;
     if (targetExId && String(id) === String(targetExId)) return true;
-    const matchDef = resolveExerciseBenchmark(id, getExerciseNameById);
-    if (targetExId) return false;
-    return matchDef?.key === catalogKey || def.match?.(String(id), getExerciseNameById);
+    return exerciseMatchesCatalogKey(catalogKey, id, getExerciseNameById);
   });
 }
 
@@ -66,10 +80,29 @@ export function computeExerciseGradeDetail(catalogKey, snapshot, getExerciseName
   if (!def) return null;
 
   const metrics = extractMetricsForCatalogKey(snapshot, catalogKey, getExerciseNameById);
-  const grade = resolveExerciseGradeForMetrics(metrics, def, vitals);
+  const grade = resolveExerciseGradeForMetrics(metrics, def, vitals, {
+    catalogKey,
+    getExerciseNameById
+  });
+  mergeExerciseGradeMilestoneAliases(
+    catalogKey,
+    legacyCatalogAliasKeysForCanonical(catalogKey, snapshot, getExerciseNameById)
+  );
   syncExerciseGradeMilestones(catalogKey, grade.sortIndex);
   const timeline = getExerciseGradeMilestones(catalogKey);
-  const progress = computeExerciseGradeProgressBars(metrics, def, vitals, grade.sortIndex);
+  const progress = computeExerciseGradeProgressBars(metrics, def, vitals, grade.sortIndex, grade);
+
+  const checkHistoryRaw = collectCatalogCheckHistory(snapshot, catalogKey, getExerciseNameById);
+  const periodRecords = computeCatalogPeriodRecords(snapshot, catalogKey, getExerciseNameById);
+  periodRecords.peakMatchesMetrics =
+    (periodRecords.bestDay.reps || 0) === (metrics.maxDailyTotalReps || 0);
+  const checkHistory = annotateCheckHistory(checkHistoryRaw, periodRecords);
+  const checkHistoryByMonth = groupCheckHistoryByMonth(checkHistory);
+  const firstCheckDate = checkHistory.length ? checkHistory[checkHistory.length - 1].dateStr : null;
+  const lastCheckDate = checkHistory.length ? checkHistory[0].dateStr : null;
+
+  const trackPushups = isPushupsCatalogKey(catalogKey, getExerciseNameById);
+  let pushupBreakdownLifetime = trackPushups ? emptyPushupChannels() : null;
 
   const byDate = collectCatalogActivityByDate(snapshot, catalogKey, getExerciseNameById);
 
@@ -79,6 +112,7 @@ export function computeExerciseGradeDetail(catalogKey, snapshot, getExerciseName
   byDate.forEach((v, d) => {
     totalReps += v.reps;
     totalChecks += v.checks;
+    if (trackPushups) pushupBreakdownLifetime = mergePushupChannels(pushupBreakdownLifetime, v.pushupChannels);
     if (v.checks > 0 || v.reps > 0) activeDays.push(d);
   });
   activeDays.sort();
@@ -153,6 +187,13 @@ export function computeExerciseGradeDetail(catalogKey, snapshot, getExerciseName
     peakDailyReps: metrics.maxDailyTotalReps || 0,
     headlineValue,
     headlineLabel,
-    metric
+    metric,
+    checkHistory,
+    checkHistoryByMonth,
+    periodRecords,
+    firstCheckDate,
+    lastCheckDate,
+    isPushupsCatalog: trackPushups,
+    pushupBreakdownLifetime: trackPushups ? pushupBreakdownDisplayLines(pushupBreakdownLifetime) : []
   };
 }

@@ -3,8 +3,9 @@
  */
 
 import { EXERCISE_BENCHMARK_REGISTRY, resolveExerciseBenchmark } from '../../utils/sport/exerciseBenchmarkRegistry';
-import { isPushupExercise } from '../../utils/sport/recapInsightHelpers';
-import { ENDURANCE_BENCHMARK_BRIDGE, forEachEnduranceBenchmarkSession } from './exerciseGradeEnduranceBridge';
+import { isNameCatalogKey } from './exerciseGradeCanonicalCatalog';
+import { discoverCanonicalExerciseGradeCatalogKeys } from './exerciseGradeCanonicalCatalog';
+import { canonicalPushupGradeDisplayLabel } from './exerciseGradePushupVariants';
 
 export const GENERIC_EXERCISE_BENCHMARK = {
   metric: 'max_set_reps',
@@ -76,6 +77,33 @@ export function discoverActiveExerciseIds(snapshot) {
 }
 
 export function resolveCatalogDef(catalogKey, getExerciseNameById) {
+  if (isNameCatalogKey(catalogKey)) {
+    const slug = catalogKey.slice(5);
+    const mergedLabel = canonicalPushupGradeDisplayLabel(catalogKey);
+    const label = slug.replace(/-/g, ' ');
+    const displayLabel = mergedLabel || label.charAt(0).toUpperCase() + label.slice(1);
+    const pushupsReg = EXERCISE_BENCHMARK_REGISTRY.find((d) => d.key === 'pushups');
+    const pullupsReg = EXERCISE_BENCHMARK_REGISTRY.find((d) => d.key === 'pullups_strict');
+    const isPushupSlug = /\bpompe|push-up|pushup/.test(slug);
+    const isPullSlug = /\btraction|pull-up|pullup|chin-up|chinup/.test(slug);
+    const registryKey = isPushupSlug ? 'pushups' : isPullSlug ? 'pullups_strict' : null;
+    const tierBenchmark =
+      isPushupSlug && pushupsReg?.benchmark
+        ? { ...pushupsReg.benchmark, label: displayLabel }
+        : isPullSlug && pullupsReg?.benchmark
+          ? { ...pullupsReg.benchmark, label: displayLabel }
+          : { ...GENERIC_EXERCISE_BENCHMARK, label: displayLabel };
+    return {
+      key: catalogKey,
+      registryKey,
+      label: displayLabel,
+      metric: 'max_set_reps',
+      benchmark: tierBenchmark,
+      exerciseId: null,
+      match: () => false
+    };
+  }
+
   const exId = parseExerciseIdFromCatalogKey(catalogKey);
   if (exId) {
     const reg = resolveExerciseBenchmark(exId, getExerciseNameById);
@@ -121,31 +149,14 @@ export function resolveCatalogDef(catalogKey, getExerciseNameById) {
   return null;
 }
 
+import { catalogKeyReceivesPushupDefis } from './exerciseGradePushupVariants';
+
 export function shouldAttachEnduranceToExercise(catalogKey, getExerciseNameById) {
-  const exId = parseExerciseIdFromCatalogKey(catalogKey);
-  if (!exId) return null;
-  if (isPushupExercise(exId, getExerciseNameById)) return 'pushups';
+  void getExerciseNameById;
+  if (catalogKeyReceivesPushupDefis(catalogKey)) return 'pushups';
   return null;
 }
 
 export function discoverExerciseGradeCatalogKeys(snapshot, getExerciseNameById) {
-  const keys = new Set();
-  discoverActiveExerciseIds(snapshot).forEach((id) => {
-    keys.add(catalogKeyForExerciseId(id));
-  });
-  Object.keys(ENDURANCE_BENCHMARK_BRIDGE).forEach((bk) => {
-    let n = 0;
-    forEachEnduranceBenchmarkSession(snapshot, bk, () => {
-      n += 1;
-    });
-    if (n > 0) {
-      const hasWorkoutPush =
-        bk === 'pushups' &&
-        discoverActiveExerciseIds(snapshot).some((id) =>
-          isPushupExercise(id, getExerciseNameById)
-        );
-      if (!hasWorkoutPush) keys.add(bk);
-    }
-  });
-  return [...keys];
+  return discoverCanonicalExerciseGradeCatalogKeys(snapshot, getExerciseNameById);
 }

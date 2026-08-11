@@ -23,7 +23,23 @@ import {
 } from './exerciseGradeDiscovery';
 import { extractMetricsForCatalogKey } from './exerciseGradeCatalogMetrics';
 import { computeExerciseGradeProgressBars } from './exerciseGradeProgress';
-import { syncExerciseGradeMilestones } from './exerciseGradeMilestones';
+import { syncExerciseGradeMilestones, mergeExerciseGradeMilestoneAliases } from './exerciseGradeMilestones';
+import {
+  legacyCatalogAliasKeysForCanonical
+} from './exerciseGradeCanonicalCatalog';
+import { canonicalPushupGradeDisplayLabel } from './exerciseGradePushupVariants';
+import {
+  applyDifficultyWeightToMetrics,
+  resolveExerciseDifficultyProfile
+} from './exerciseGradeDifficulty';
+import {
+  gradeSortIndexFromParallelLevel,
+  highestSortIndexViaVoieE,
+  mergeGradeSortIndex,
+  parallelLevelFromWeightedLifetime,
+  parallelLevelProgress,
+  describeGradePaths
+} from './exerciseGradePaths';
 
 /** @type {Record<string, string>} */
 export const EXERCISE_BENCHMARK_MUSCLE_GROUP = {
@@ -31,6 +47,14 @@ export const EXERCISE_BENCHMARK_MUSCLE_GROUP = {
   pullups_australian: 'dos',
   dips: 'poitrine',
   pushups: 'poitrine',
+  pushups_feet_bench: 'poitrine',
+  pushups_hands_bench: 'poitrine',
+  pushups_pseudo_planche: 'poitrine',
+  pushups_declined: 'poitrine',
+  pushups_incline: 'poitrine',
+  pushups_handles: 'poitrine',
+  pushups_weighted: 'poitrine',
+  pushups_classic: 'poitrine',
   muscle_up: 'dos',
   bench_press: 'poitrine',
   overhead_press: 'épaules',
@@ -184,15 +208,36 @@ function tierListToLadderIndex(tier, tiers) {
  * @param {object} def registry def
  * @param {object} vitals
  */
-export function resolveExerciseGradeForMetrics(metrics, def, vitals) {
+export function resolveExerciseGradeForMetrics(metrics, def, vitals, context = {}) {
   const wrapped = def.benchmark ? def : { benchmark: def.benchmark, metric: def.metric };
   const bench = wrapped.benchmark || def.benchmark;
   const metric = def.metric;
+  const catalogKey = context.catalogKey || def.key;
+
+  const difficulty = resolveExerciseDifficultyProfile(
+    catalogKey,
+    def,
+    context.getExerciseNameById
+  );
+  const weighted = applyDifficultyWeightToMetrics(metrics, metric, difficulty);
+  const parallelLevel = parallelLevelFromWeightedLifetime(weighted.weightedLife);
+  const levelProgress = parallelLevelProgress(weighted.weightedLife, parallelLevel);
+  const levelIdx = gradeSortIndexFromParallelLevel(parallelLevel);
+
+  const weightedMetrics = {
+    ...metrics,
+    maxDailyTotalReps: weighted.weightedPeak,
+    maxSetReps: weighted.weightedPeak,
+    totalReps: weighted.weightedLife,
+    maxHoldSeconds: weighted.weightedPeak,
+    lifetimeHoldSeconds: weighted.weightedLife
+  };
+
   const peakTiers = scaledPeakTiers(bench, metric, vitals);
   const lifetimeTiers = buildLifetimeTiers(peakTiers);
 
-  const peakVal = peakMetricValue(metrics, metric, vitals.weightKg);
-  const lifeVal = lifetimeMetricValue(metrics, metric);
+  const peakVal = peakMetricValue(weightedMetrics, metric, vitals.weightKg);
+  const lifeVal = lifetimeMetricValue(weightedMetrics, metric);
 
   const peakTier = peakVal > 0 ? tierForValue(peakTiers, peakVal) : null;
   const lifeTier = lifeVal > 0 ? tierForValue(lifetimeTiers, lifeVal) : null;
@@ -200,22 +245,53 @@ export function resolveExerciseGradeForMetrics(metrics, def, vitals) {
   const checkTier =
     checkCount > 0 ? tierForValue(CHECK_COUNT_TIERS, checkCount) : null;
 
-  let sortIndex = 0;
+  let peakIdx = 0;
+  let lifeIdx = 0;
+  let checkIdx = 0;
+  let averageIdx = 0;
+
   if (peakTier || lifeTier || checkCount > 0) {
-    const peakIdx = peakTier ? tierListToLadderIndex(peakTier, peakTiers) : 0;
-    const lifeIdx = lifeTier ? tierListToLadderIndex(lifeTier, lifetimeTiers) : 0;
-    const checkIdx = checkCountToLadderIndex(checkCount);
+    peakIdx = peakTier ? tierListToLadderIndex(peakTier, peakTiers) : 0;
+    lifeIdx = lifeTier ? tierListToLadderIndex(lifeTier, lifetimeTiers) : 0;
+    checkIdx = checkCountToLadderIndex(checkCount);
     const parts = [];
     if (peakTier) parts.push(peakIdx);
     if (lifeTier) parts.push(lifeIdx);
     if (checkCount > 0) parts.push(checkIdx);
-    sortIndex =
+    averageIdx =
       parts.length > 0
         ? Math.round(parts.reduce((s, v) => s + v, 0) / parts.length)
         : checkIdx;
   }
 
+  const voieEIdx = highestSortIndexViaVoieE(metrics, metric, vitals);
+  const sortIndex = mergeGradeSortIndex({
+    peakIdx,
+    lifeIdx,
+    checkIdx,
+    averageIdx,
+    voieEIdx,
+    levelIdx
+  });
+
   const grade = exerciseGradeFromSortIndex(sortIndex);
+  const gradePaths = {
+    peakIdx,
+    lifeIdx,
+    checkIdx,
+    averageIdx,
+    voieEIdx,
+    levelIdx,
+    sortIndex,
+    activeLabels: describeGradePaths({
+      peakIdx,
+      lifeIdx,
+      checkIdx,
+      voieEIdx,
+      levelIdx,
+      sortIndex
+    })
+  };
 
   return {
     gradeId: grade.id,
@@ -227,10 +303,16 @@ export function resolveExerciseGradeForMetrics(metrics, def, vitals) {
     lifetimeTierLabel: lifeTier?.label || null,
     checkTierLabel: checkTier?.label || null,
     checkCount,
-    peakValue: peakVal,
-    lifetimeValue: lifeVal,
+    peakValue: peakMetricValue(metrics, metric, vitals.weightKg),
+    lifetimeValue: lifetimeMetricValue(metrics, metric),
+    weightedPeakValue: weighted.weightedPeak,
+    weightedLifetimeValue: weighted.weightedLife,
     metric,
-    hasActivity: peakVal > 0 || lifeVal > 0 || checkCount > 0
+    hasActivity: peakVal > 0 || lifeVal > 0 || checkCount > 0,
+    parallelLevel,
+    parallelLevelProgress: levelProgress,
+    difficulty,
+    gradePaths
   };
 }
 
@@ -331,20 +413,31 @@ export function extractLifetimeBenchmarkMetrics(snapshot, getExerciseNameById) {
 export function buildExerciseGradeCatalog(snapshot, getExerciseNameById, vitals) {
   const keys = discoverExerciseGradeCatalogKeys(snapshot, getExerciseNameById);
   const rows = [];
+  const seen = new Set();
 
   keys.forEach((catalogKey) => {
+    if (seen.has(catalogKey)) return;
+    seen.add(catalogKey);
+
     const def = resolveCatalogDef(catalogKey, getExerciseNameById);
     if (!def) return;
 
+    const aliasKeys = legacyCatalogAliasKeysForCanonical(catalogKey, snapshot, getExerciseNameById);
+    mergeExerciseGradeMilestoneAliases(catalogKey, aliasKeys);
+
     const metrics = extractMetricsForCatalogKey(snapshot, catalogKey, getExerciseNameById);
-    const grade = resolveExerciseGradeForMetrics(metrics, def, vitals);
+    const grade = resolveExerciseGradeForMetrics(metrics, def, vitals, {
+      catalogKey,
+      getExerciseNameById
+    });
     syncExerciseGradeMilestones(catalogKey, grade.sortIndex);
 
     const progress = computeExerciseGradeProgressBars(
       metrics,
       def,
       vitals,
-      grade.sortIndex
+      grade.sortIndex,
+      grade
     );
 
     const muscleGroup =
@@ -354,7 +447,7 @@ export function buildExerciseGradeCatalog(snapshot, getExerciseNameById, vitals)
 
     rows.push({
       benchmarkKey: catalogKey,
-      label: def.label,
+      label: canonicalPushupGradeDisplayLabel(catalogKey) || metrics.bestExerciseName || def.label,
       muscleGroup,
       metric: def.metric,
       grade,

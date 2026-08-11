@@ -56,7 +56,7 @@ describe('buildExerciseGradeCatalog', () => {
       heightCm: 175,
       age: 30
     });
-    expect(rows.some((r) => r.benchmarkKey === 'ex:99999')).toBe(true);
+    expect(rows.some((r) => r.benchmarkKey === 'name:presse-a-cuisses' || r.benchmarkKey === 'ex:99999')).toBe(true);
   });
 });
 

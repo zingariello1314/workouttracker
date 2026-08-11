@@ -28,6 +28,36 @@ function writeStore(store) {
   }
 }
 
+export function mergeExerciseGradeMilestoneAliases(canonicalKey, aliasKeys) {
+  if (!canonicalKey || !aliasKeys?.length) return;
+  const store = readStore();
+  const canonical = store.byCatalog[canonicalKey] || { maxSortIndex: -1, events: [] };
+  let maxSortIndex = canonical.maxSortIndex ?? -1;
+  const eventsById = new Map((canonical.events || []).map((e) => [e.id, e]));
+
+  aliasKeys.forEach((alias) => {
+    const row = store.byCatalog[alias];
+    if (!row) return;
+    maxSortIndex = Math.max(maxSortIndex, row.maxSortIndex ?? -1);
+    (row.events || []).forEach((ev) => {
+      const id = `${canonicalKey}:${ev.gradeId}`;
+      if (eventsById.has(id)) return;
+      eventsById.set(id, {
+        ...ev,
+        id,
+        catalogKey: canonicalKey,
+        at: ev.at
+      });
+    });
+  });
+
+  store.byCatalog[canonicalKey] = {
+    maxSortIndex,
+    events: [...eventsById.values()].sort((a, b) => (a.sortIndex ?? 0) - (b.sortIndex ?? 0))
+  };
+  writeStore(store);
+}
+
 export function syncExerciseGradeMilestones(catalogKey, sortIndex) {
   if (!catalogKey) return [];
   const store = readStore();
@@ -63,6 +93,33 @@ export function getExerciseGradeMilestones(catalogKey) {
   const row = store.byCatalog[catalogKey];
   if (!row || !Array.isArray(row.events)) return [];
   return [...row.events].sort((a, b) => (a.sortIndex ?? 0) - (b.sortIndex ?? 0));
+}
+
+export function clearExerciseGradeMilestones(catalogKey) {
+  if (!catalogKey) return;
+  const store = readStore();
+  if (!store.byCatalog[catalogKey]) return;
+  delete store.byCatalog[catalogKey];
+  writeStore(store);
+}
+
+/** Réaligne l’historique local après suppression de coches (grade peut baisser ou disparaître). */
+export function reconcileExerciseGradeMilestones(catalogKey, sortIndex, hasActivity) {
+  if (!catalogKey) return [];
+  if (!hasActivity || sortIndex == null || sortIndex < 0) {
+    clearExerciseGradeMilestones(catalogKey);
+    return [];
+  }
+  const L = Math.max(0, Math.floor(Number(sortIndex) || 0));
+  const store = readStore();
+  const prev = store.byCatalog[catalogKey] || { maxSortIndex: -1, events: [] };
+  const events = (prev.events || []).filter((e) => (e.sortIndex ?? 0) <= L);
+  store.byCatalog[catalogKey] = { maxSortIndex: L, events };
+  writeStore(store);
+  if (L > prev.maxSortIndex) {
+    return syncExerciseGradeMilestones(catalogKey, L);
+  }
+  return getExerciseGradeMilestones(catalogKey);
 }
 
 /** Backfill paliers déjà atteints sans date. */
