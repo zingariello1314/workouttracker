@@ -55,7 +55,13 @@ export const SPORT_GRADE_ACCENT = {
  */
 export const SPORT_GRADE_ART = {
   novice: '/sport-grades/novice.png',
+  adepte: '/sport-grades/adepte.png',
+  disciple: '/sport-grades/disciple.png',
+  athlete: '/sport-grades/athlete.png',
   champion: '/sport-grades/champion.png',
+  elite: '/sport-grades/elite.png',
+  maitre: '/sport-grades/maitre.png',
+  grand_maitre: '/sport-grades/grand_maitre.png',
   olympien: '/sport-grades/olympien.png',
   parangon: '/sport-grades/parangon.png'
 };
@@ -63,7 +69,13 @@ export const SPORT_GRADE_ART = {
 /** Point de focus object-cover (grades au format portrait / scène). */
 export const SPORT_GRADE_ART_FOCUS = {
   novice: 'center 20%',
+  adepte: 'center 18%',
+  disciple: 'center 18%',
+  athlete: 'center 20%',
   champion: 'center 22%',
+  elite: 'center 16%',
+  maitre: 'center 14%',
+  grand_maitre: 'center 12%',
   olympien: 'center 18%',
   parangon: 'center 12%'
 };
