@@ -32,6 +32,9 @@ const ICONS = {
   Sparkles
 };
 
+/** Affichage portrait complet — uniquement fiche détail Grand Maître. */
+const GRAND_MAITRE_DETAIL_GRADE_ID = 'grand_maitre';
+
 /**
  * Tailles d’illustration pixel-art par contexte UI.
  * @typedef {'bar'|'recap'|'chip'|'icon'} SportGradeEmblemLayout
@@ -98,15 +101,21 @@ export default function SportGradeEmblem({
   const [artFailed, setArtFailed] = useState(false);
 
   const color = SPORT_GRADE_ACCENT[gradeId] || '#2dd4bf';
+  const isGrandMaitreDetail =
+    gradeId === GRAND_MAITRE_DETAIL_GRADE_ID && layout === 'detail';
 
-  const fluidAspect = box.tall ? '' : 'aspect-[3/4]';
-  const fluidImgFit = box.tall ? 'object-contain' : 'object-cover';
+  const fluidAspect = box.tall ? '' : isGrandMaitreDetail ? 'aspect-[2/3]' : 'aspect-[3/4]';
+  const fluidImgFit = isGrandMaitreDetail || box.tall ? 'object-contain' : 'object-cover';
+  const imgRenderStyle = isGrandMaitreDetail ? 'auto' : 'pixelated';
+  const fluidSizeClass = isGrandMaitreDetail
+    ? 'w-full aspect-[2/3] max-w-[min(100%,360px)]'
+    : box.sizeClass || 'max-h-[24rem] max-w-[min(100%,320px)]';
 
   if (!useArt || artFailed || !artUrl) {
     if (box.fluid) {
       return (
         <div
-          className={`relative mx-auto flex w-full ${fluidAspect} items-center justify-center border border-[#0F4C5C]/60 bg-black/80 ${box.sizeClass || 'max-h-[24rem] max-w-[min(100%,320px)]'} ${box.rounded} ${className}`}
+          className={`relative mx-auto flex w-full ${fluidAspect} items-center justify-center border border-[#0F4C5C]/60 bg-black/80 ${fluidSizeClass} ${box.rounded} ${className}`}
         >
           <LucideFallback
             gradeId={gradeId}
@@ -122,7 +131,7 @@ export default function SportGradeEmblem({
   if (box.fluid) {
     return (
       <div
-        className={`relative mx-auto w-full ${fluidAspect} overflow-hidden border border-[#0F4C5C]/70 bg-black/90 ${box.sizeClass || 'max-h-[24rem] max-w-[min(100%,320px)]'} ${box.rounded} ${className}`}
+        className={`relative mx-auto w-full ${fluidAspect} overflow-hidden border border-[#0F4C5C]/70 bg-black/90 ${fluidSizeClass} ${box.rounded} ${className}`}
         style={{ boxShadow: `0 0 32px -12px ${color}88` }}
       >
         <img
@@ -130,9 +139,9 @@ export default function SportGradeEmblem({
           alt=""
           role="presentation"
           decoding="async"
-          className={`absolute inset-0 h-full w-full ${fluidImgFit} image-rendering-pixelated`}
+          className={`absolute inset-0 h-full w-full ${fluidImgFit}${isGrandMaitreDetail ? '' : ' image-rendering-pixelated'}`}
           style={{
-            imageRendering: 'pixelated',
+            imageRendering: imgRenderStyle,
             objectPosition: sportGradeArtObjectPosition(gradeId)
           }}
           onError={() => setArtFailed(true)}

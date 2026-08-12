@@ -241,6 +241,8 @@ export const useWorkoutData = (options = {}) => {
   } = options;
 
   const [data, setData] = useState(INITIAL_WORKOUT_DATA);
+  /** true tant que loadData n’a pas fini pour le storageKey courant (évite flash XP/grades partiels). */
+  const [isDataLoading, setIsDataLoading] = useState(() => !ephemeral);
 
   // Tous les useRef doivent être déclarés avant les useCallback et useEffect
   const debounceTimerRef = useRef(null);
@@ -1218,6 +1220,7 @@ export const useWorkoutData = (options = {}) => {
     }
     // Marquer que le chargement initial est terminé pour ce storageKey
     isInitialLoadRef.current = false;
+    setIsDataLoading(false);
   };
 
   const updateData = async (newData, options = {}) => {
@@ -1269,15 +1272,23 @@ export const useWorkoutData = (options = {}) => {
 
   // Effet pour le chargement initial des données
   useEffect(() => {
-    if (deferLoad) return;
+    if (deferLoad) {
+      setIsDataLoading(true);
+      return;
+    }
+    if (ephemeral) {
+      setIsDataLoading(false);
+      return;
+    }
     // À chaque changement de storageKey (changement d'utilisateur), recharger les données correspondant à cette clé
     isInitialLoadRef.current = true;
+    setIsDataLoading(true);
     // Réinitialiser immédiatement l'état en mémoire pour éviter d'afficher les données de l'utilisateur précédent.
     setData(INITIAL_WORKOUT_DATA);
     loadData();
 
     cleanupLocalStorage();
-  }, [storageKey, deferLoad]);
+  }, [storageKey, deferLoad, ephemeral]);
 
   // Pas d’autoSave sur chaque setData : bloquait la file d’attente (sauvegarde
   // monolithique ~1 s après chaque chargement) et provoquait timeout Enregistrer.
@@ -1387,6 +1398,7 @@ export const useWorkoutData = (options = {}) => {
 
   return {
     data,
+    isDataLoading,
     updateData,
     saveToDB,
     loadFromDB,

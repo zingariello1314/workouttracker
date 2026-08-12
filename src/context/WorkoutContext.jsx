@@ -198,6 +198,7 @@ const WorkoutProvider = ({ children }) => {
   // - lorsque l'utilisateur est déconnecté, les données sont éphémères (pas de lecture/écriture IndexedDB).
   const {
     data,
+    isDataLoading: isWorkoutDataLoading,
     updateData,
     loadFromDB,
     saveToDB,
@@ -1641,6 +1642,7 @@ const WorkoutProvider = ({ children }) => {
     
     // Données et fonctions de données
     data,
+    isWorkoutDataLoading,
     updateData,
     loadFromDB,
     saveToDB,

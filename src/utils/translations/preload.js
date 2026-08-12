@@ -54,6 +54,7 @@ export const SECONDARY_NAMESPACES = [
   'charts',      // Onglet Graphiques
   'nutrition',   // Onglet Nutrition
   'garmin',      // Onglet Garmin
+  'sport',       // Grades / XP sport (barre récap)
   'bodyTracking', // Suivi corporel
   'nutritionAnalyses', // Analyses nutritionnelles
   'sessionFeedback' // Feedback de séance

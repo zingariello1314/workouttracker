@@ -33,6 +33,7 @@ export function useSportGrade() {
     sport.breakdown,
     sport.progress,
     sport.isLoading,
+    sport.isSportXpReady,
     workoutData
   ]);
 }

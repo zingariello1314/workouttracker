@@ -65,8 +65,8 @@ export default function RecapGradesView() {
     enabled: true
   });
 
-  /** Ne pas bloquer les sous-onglets : seul le contenu Sport attend l’XP initiale. */
-  const gradesDataPending = isLoading && (totalXP ?? 0) <= 0;
+  /** Attendre la fin du bootstrap XP (workout + Garmin + nutrition), pas seulement totalXP === 0. */
+  const gradesDataPending = isLoading;
 
   const prog = grades?.progression;
   const mer = grades?.merited;
@@ -182,6 +182,65 @@ export default function RecapGradesView() {
         </p>
       </section>
 
+      {next ? (
+        <section className="rounded-xl border border-amber-600/30 bg-amber-950/10 p-4 space-y-3">
+          <h3 className="text-sm font-semibold text-amber-100">
+            {t(
+              'recap.grades.nextGate',
+              `Prochain grade : ${sportGradeLabel(next.gate.toGradeId, t)}`,
+              { grade: sportGradeLabel(next.gate.toGradeId, t) }
+            )}
+          </h3>
+          <p className="text-[11px] text-slate-400">
+            {t(
+              'recap.grades.nextGateLevel',
+              `Niveau minimum : ${next.gate.levelMin} (actuel : ${level})`,
+              { n: next.gate.levelMin, level }
+            )}
+            {level >= next.gate.levelMin ? (
+              <span className="text-emerald-400 ml-1">✓</span>
+            ) : (
+              <span className="text-amber-400 ml-1">—</span>
+            )}
+          </p>
+          <div className="grid gap-2 sm:grid-cols-2">
+            <PathRow pathKey="A" data={next.paths.A} />
+            <PathRow pathKey="B" data={next.paths.B} />
+            <PathRow pathKey="C" data={next.paths.C} />
+            <PathRow pathKey="D" data={next.paths.D} />
+            {next.paths.F ? <PathRow pathKey="F" data={next.paths.F} /> : null}
+          </div>
+          <p className="text-[10px] text-slate-600">
+            {next.pathsRequired >= 4
+              ? t(
+                  'recap.grades.pathEHintFinalWithF',
+                  'Voie E : 4 voies à 100 % ou ≥ {{pct}} % sur A, B, C, D et F simultanément.',
+                  { pct: next.pathEThresholdPct ?? 90 }
+                )
+              : next.pathsRequired >= 2
+                ? t(
+                    'recap.grades.pathEHintPenultimateWithF',
+                    'Voie E : 2 voies à 100 % ou ≥ {{pct}} % sur A, B, C, D et F simultanément.',
+                    { pct: next.pathEThresholdPct ?? 80 }
+                  )
+                : t(
+                    'recap.grades.pathEHint',
+                    'Voie E (polyvalence) : atteindre {{pct}} % sur A, B, C et D simultanément.',
+                    { pct: next.pathEThresholdPct ?? 70 }
+                  )}
+          </p>
+        </section>
+      ) : null}
+
+      <SportGradeLadderGallery
+        level={level}
+        progressionGradeId={prog?.gradeId}
+        progressionTier={prog?.tier}
+        onSelectGrade={setSelectedGradeId}
+        aggregates={aggregates}
+        masteryScore={masteryScore}
+      />
+
       <section className="rounded-xl border border-[#0F4C5C]/45 bg-black/70 p-4">
         <h3 className="text-sm font-semibold text-white mb-1">
           {t('recap.grades.timelineTitle', 'Historique des grades')}
@@ -252,65 +311,6 @@ export default function RecapGradesView() {
           </ol>
         )}
       </section>
-
-      {next ? (
-        <section className="rounded-xl border border-amber-600/30 bg-amber-950/10 p-4 space-y-3">
-          <h3 className="text-sm font-semibold text-amber-100">
-            {t(
-              'recap.grades.nextGate',
-              `Prochain grade : ${sportGradeLabel(next.gate.toGradeId, t)}`,
-              { grade: sportGradeLabel(next.gate.toGradeId, t) }
-            )}
-          </h3>
-          <p className="text-[11px] text-slate-400">
-            {t(
-              'recap.grades.nextGateLevel',
-              `Niveau minimum : ${next.gate.levelMin} (actuel : ${level})`,
-              { n: next.gate.levelMin, level }
-            )}
-            {level >= next.gate.levelMin ? (
-              <span className="text-emerald-400 ml-1">✓</span>
-            ) : (
-              <span className="text-amber-400 ml-1">—</span>
-            )}
-          </p>
-          <div className="grid gap-2 sm:grid-cols-2">
-            <PathRow pathKey="A" data={next.paths.A} />
-            <PathRow pathKey="B" data={next.paths.B} />
-            <PathRow pathKey="C" data={next.paths.C} />
-            <PathRow pathKey="D" data={next.paths.D} />
-            {next.paths.F ? <PathRow pathKey="F" data={next.paths.F} /> : null}
-          </div>
-          <p className="text-[10px] text-slate-600">
-            {next.pathsRequired >= 4
-              ? t(
-                  'recap.grades.pathEHintFinalWithF',
-                  'Voie E : 4 voies à 100 % ou ≥ {{pct}} % sur A, B, C, D et F simultanément.',
-                  { pct: next.pathEThresholdPct ?? 90 }
-                )
-              : next.pathsRequired >= 2
-                ? t(
-                    'recap.grades.pathEHintPenultimateWithF',
-                    'Voie E : 2 voies à 100 % ou ≥ {{pct}} % sur A, B, C, D et F simultanément.',
-                    { pct: next.pathEThresholdPct ?? 80 }
-                  )
-                : t(
-                    'recap.grades.pathEHint',
-                    'Voie E (polyvalence) : atteindre {{pct}} % sur A, B, C et D simultanément.',
-                    { pct: next.pathEThresholdPct ?? 70 }
-                  )}
-          </p>
-        </section>
-      ) : null}
-
-      <SportGradeLadderGallery
-        level={level}
-        progressionGradeId={prog?.gradeId}
-        progressionTier={prog?.tier}
-        onSelectGrade={setSelectedGradeId}
-        aggregates={aggregates}
-        masteryScore={masteryScore}
-      />
         </>
       )}
     </div>

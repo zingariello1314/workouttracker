@@ -33,7 +33,7 @@ import { STEPS_XP_RATE_VERIFIED, STEPS_XP_RATE_DECLARATIVE } from '../../../../u
 import { useTranslation } from '../../../../utils/translations';
 
 const SportXPBar = () => {
-  const { totalXP, level, breakdown, progress, grades } = useSportGrade();
+  const { totalXP, level, breakdown, progress, grades, isLoading } = useSportGrade();
   const { setActiveTab } = useWorkout();
   const t = useTranslation();
   const goRecapGrades = () => {
@@ -50,21 +50,34 @@ const SportXPBar = () => {
 
   return (
     <div className="rounded-xl border-2 border-[#0F4C5C]/85 bg-black p-4 shadow-lg shadow-black/40 space-y-4">
-      <SportGradeBarSummary
-        progressionGradeId={grades?.progression?.gradeId}
-        progressionTier={grades?.progression?.tier}
-        meritedGradeId={grades?.merited?.gradeId}
-        meritedTier={grades?.merited?.tier}
-        level={level}
-        onClick={goRecapGrades}
-        title={gradesHint}
-      />
+      {isLoading ? (
+        <div className="flex w-full min-w-0 items-stretch gap-3 rounded-lg px-0.5 py-0.5" aria-hidden="true">
+          <div className="h-14 w-14 shrink-0 animate-pulse rounded-lg bg-[#0F4C5C]/40" />
+          <div className="min-w-0 flex-1 space-y-2 py-0.5">
+            <div className="h-3 w-24 animate-pulse rounded bg-[#0F4C5C]/35" />
+            <div className="h-5 w-36 animate-pulse rounded bg-[#0F4C5C]/45" />
+            <div className="h-3 w-28 animate-pulse rounded bg-[#0F4C5C]/30" />
+          </div>
+        </div>
+      ) : (
+        <SportGradeBarSummary
+          progressionGradeId={grades?.progression?.gradeId}
+          progressionTier={grades?.progression?.tier}
+          meritedGradeId={grades?.merited?.gradeId}
+          meritedTier={grades?.merited?.tier}
+          level={level}
+          onClick={goRecapGrades}
+          title={gradesHint}
+        />
+      )}
 
       <div className="mb-1 flex flex-wrap items-start justify-between gap-3 border-t border-[#0F4C5C]/35 pt-3">
         <div className="flex min-w-0 flex-1 items-start gap-2">
           <Dumbbell className="mt-0.5 h-5 w-5 shrink-0 text-teal-300" />
           <div className="min-w-0">
-            <div className="font-semibold text-sky-50">Niveau {level}</div>
+            <div className={`font-semibold text-sky-50 ${isLoading ? 'animate-pulse text-transparent bg-[#0F4C5C]/45 rounded w-20 h-5' : ''}`}>
+              {isLoading ? '·' : `Niveau ${level}`}
+            </div>
             <p className="mt-0.5 text-xs text-teal-200/75">
               XP sur le palier niveau {level} :{' '}
               <span className="font-semibold tabular-nums text-cyan-300">

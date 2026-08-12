@@ -15,7 +15,7 @@ import { computeProgramCompletionBonusXp } from '../utils/programCompletionBonus
 import { computeVolumeKgForWorkoutKey } from '../utils/exerciseLoadVolume';
 import { collectDedupedCheckedVolumeKeys } from '../utils/trainingLoadUtils';
 import { useAuth } from '../context/AuthContext';
-import { canAccessPrivateData } from '../utils/accessControl';
+import { canAccessPrivateData, isAdminUser } from '../utils/accessControl';
 import { getAllMeals } from './nutritionDataCRUD';
 import { getNutritionRepository } from '../services/nutrition/repository';
 import { STORE_MEALS } from './nutritionDataUtils';
@@ -76,21 +76,92 @@ const DEFAULT_BREAKDOWN = {
 let sportXpCache = {
   signature: null,
   result: { totalXP: 0, breakdown: DEFAULT_BREAKDOWN },
-  garminData: null
+  garminData: null,
+  storageKey: null
 };
 
 /** Invalide le cache module après modification reps / coches / formule XP. */
-export const invalidateSportXpCache = () => {
+export const invalidateSportXpCache = (storageKey = sportXpCache.storageKey) => {
   sportXpCache = {
     ...sportXpCache,
     signature: null,
     result: { totalXP: 0, breakdown: DEFAULT_BREAKDOWN }
   };
+  if (storageKey) clearSportXpSessionSnapshot(storageKey);
 };
 
+function hasStableSportXpCache(storageKey) {
+  return sportXpCacheMatchesScope(storageKey) && (sportXpCache.result?.totalXP ?? 0) > 0;
+}
+
+function hasWarmSportXpDisplay(storageKey) {
+  return hasStableSportXpCache(storageKey) || Boolean(readSportXpSessionSnapshot(storageKey));
+}
+
+function resolveBootstrapSportXpResult(storageKey) {
+  if (hasStableSportXpCache(storageKey)) return sportXpCache.result;
+  const session = readSportXpSessionSnapshot(storageKey);
+  if (session) return session;
+  return { totalXP: 0, breakdown: DEFAULT_BREAKDOWN };
+}
+
+function sportXpCacheMatchesScope(storageKey) {
+  return Boolean(storageKey) && sportXpCache.storageKey === storageKey;
+}
+
+function sportXpSnapshotKey(storageKey) {
+  return `momentum:sportXp:v1:${storageKey}`;
+}
+
+function readSportXpSessionSnapshot(storageKey) {
+  if (typeof sessionStorage === 'undefined' || !storageKey) return null;
+  try {
+    const raw = sessionStorage.getItem(sportXpSnapshotKey(storageKey));
+    if (!raw) return null;
+    const parsed = JSON.parse(raw);
+    if (parsed?.formulaRevision !== SPORT_XP_FORMULA_REVISION) return null;
+    if (parsed.storageKey !== storageKey) return null;
+    if (!parsed.result || typeof parsed.result.totalXP !== 'number') return null;
+    return parsed.result;
+  } catch {
+    return null;
+  }
+}
+
+function writeSportXpSessionSnapshot(storageKey, result) {
+  if (typeof sessionStorage === 'undefined' || !storageKey || !result) return;
+  try {
+    sessionStorage.setItem(
+      sportXpSnapshotKey(storageKey),
+      JSON.stringify({
+        formulaRevision: SPORT_XP_FORMULA_REVISION,
+        storageKey,
+        result,
+        savedAt: Date.now()
+      })
+    );
+  } catch {
+    /* quota / mode privé */
+  }
+}
+
+function clearSportXpSessionSnapshot(storageKey) {
+  if (typeof sessionStorage === 'undefined' || !storageKey) return;
+  try {
+    sessionStorage.removeItem(sportXpSnapshotKey(storageKey));
+  } catch {
+    /* ignore */
+  }
+}
+
 export const useSportXP = () => {
-  const { currentUser, isAuthenticated } = useAuth();
+  const { currentUser, isAuthenticated, loading: authLoading } = useAuth();
   const canAccessData = canAccessPrivateData({ user: currentUser, isAuthenticated });
+  const storageKey = useMemo(() => {
+    if (isAdminUser(currentUser)) return 'main';
+    if (currentUser?.id) return `user-${currentUser.id}`;
+    return 'anonymous';
+  }, [currentUser]);
   const {
     data,
     tempData,
@@ -99,7 +170,8 @@ export const useSportXP = () => {
     getCurrentData,
     programs,
     activeProgram,
-    getExerciseNameById
+    getExerciseNameById,
+    isWorkoutDataLoading = false
   } = useWorkout();
 
   /** Brouillon cochages / reps : la barre XP doit suivre tout de suite (pas seulement après « Enregistrer »). */
@@ -120,26 +192,51 @@ export const useSportXP = () => {
     return arr;
   }, [programs, activeProgram]);
   const { dbReady, loadAllData } = useGarminData();
-  const [garminData, setGarminData] = useState(sportXpCache.garminData || null);
+  const [garminData, setGarminData] = useState(() =>
+    sportXpCacheMatchesScope(storageKey) ? sportXpCache.garminData || null : null
+  );
   /** Repas nutrition (tous les jours) pour XP aliments enregistrés */
   const [nutritionMeals, setNutritionMeals] = useState([]);
-  const [isLoading, setIsLoading] = useState(
-    () => !sportXpCache.garminData && !(sportXpCache.result?.totalXP > 0)
-  );
+  const [nutritionLoading, setNutritionLoading] = useState(true);
+  const [garminLoading, setGarminLoading] = useState(() => true);
   const cacheRef = useRef({ signature: null, result: { totalXP: 0, breakdown: DEFAULT_BREAKDOWN } });
+
+  const sportXpBootstrapPending =
+    authLoading || isWorkoutDataLoading || garminLoading || (canAccessData && nutritionLoading);
+  const warmSportXpDisplay = hasWarmSportXpDisplay(storageKey);
+
+  useEffect(() => {
+    if (sportXpCache.storageKey && sportXpCache.storageKey !== storageKey) {
+      sportXpCache = {
+        signature: null,
+        result: { totalXP: 0, breakdown: DEFAULT_BREAKDOWN },
+        garminData: null,
+        storageKey: null
+      };
+      setGarminData(null);
+      setGarminLoading(true);
+      cacheRef.current = { signature: null, result: { totalXP: 0, breakdown: DEFAULT_BREAKDOWN } };
+    }
+  }, [storageKey]);
 
   useEffect(() => {
     let cancelled = false;
     const loadNutrition = async () => {
       if (!canAccessData) {
-        setNutritionMeals([]);
+        if (!cancelled) {
+          setNutritionMeals([]);
+          setNutritionLoading(false);
+        }
         return;
       }
+      setNutritionLoading(true);
       try {
         const meals = await getAllMeals();
         if (!cancelled) setNutritionMeals(Array.isArray(meals) ? meals : []);
       } catch {
         if (!cancelled) setNutritionMeals([]);
+      } finally {
+        if (!cancelled) setNutritionLoading(false);
       }
     };
     loadNutrition();
@@ -168,17 +265,22 @@ export const useSportXP = () => {
     let isMounted = true;
 
     const loadGarmin = async () => {
-      if (!canAccessData || !dbReady) {
+      if (!canAccessData) {
         if (isMounted) {
           setGarminData(null);
-          setIsLoading(false);
+          setGarminLoading(false);
         }
         return;
       }
-      if (sportXpCache.garminData) {
+      // IndexedDB Garmin pas prête : ne pas marquer « chargé » (évite un calcul XP partiel).
+      if (!dbReady) {
+        if (isMounted) setGarminLoading(true);
+        return;
+      }
+      if (sportXpCacheMatchesScope(storageKey) && sportXpCache.garminData) {
         if (isMounted) {
           setGarminData(sportXpCache.garminData);
-          setIsLoading(false);
+          setGarminLoading(false);
         }
         return;
       }
@@ -186,13 +288,13 @@ export const useSportXP = () => {
         const data = await loadAllData();
         if (isMounted) {
           setGarminData(data || null);
-          sportXpCache.garminData = data || null;
+          sportXpCache = { ...sportXpCache, garminData: data || null, storageKey };
         }
       } catch (error) {
         console.error('[useSportXP] Erreur chargement Garmin:', error);
       } finally {
         if (isMounted) {
-          setIsLoading(false);
+          setGarminLoading(false);
         }
       }
     };
@@ -202,11 +304,15 @@ export const useSportXP = () => {
     return () => {
       isMounted = false;
     };
-  }, [dbReady, loadAllData, canAccessData]);
+  }, [dbReady, loadAllData, canAccessData, storageKey]);
 
   const calculated = useMemo(() => {
     if (!canAccessData) {
       return { totalXP: 0, breakdown: DEFAULT_BREAKDOWN };
+    }
+    // Tant que les sources ne sont pas prêtes : snapshot session (survit au F5) ou cache module, jamais un calcul partiel.
+    if (sportXpBootstrapPending) {
+      return resolveBootstrapSportXpResult(storageKey);
     }
     if (!workoutData) {
       const nutOnly = computeNutritionRegisteredFoodSportXp(nutritionMeals);
@@ -405,7 +511,7 @@ export const useSportXP = () => {
     if (cacheRef.current.signature === signature) {
       return cacheRef.current.result;
     }
-    if (sportXpCache.signature === signature) {
+    if (sportXpCache.signature === signature && sportXpCacheMatchesScope(storageKey)) {
       cacheRef.current = { signature, result: sportXpCache.result };
       return sportXpCache.result;
     }
@@ -417,9 +523,10 @@ export const useSportXP = () => {
       nutritionMeals
     });
     cacheRef.current = { signature, result };
-    sportXpCache = { ...sportXpCache, signature, result };
+    sportXpCache = { ...sportXpCache, signature, result, storageKey };
+    writeSportXpSessionSnapshot(storageKey, result);
     return result;
-  }, [workoutData, garminData, canAccessData, programsForCompletionXp, getExerciseNameById, activeProgram, nutritionMeals]);
+  }, [workoutData, garminData, canAccessData, programsForCompletionXp, getExerciseNameById, activeProgram, nutritionMeals, sportXpBootstrapPending, storageKey]);
 
   const levelInfo = useMemo(() => {
     const totalXP = calculated.totalXP || 0;
@@ -461,6 +568,7 @@ export const useSportXP = () => {
     breakdown: calculated.breakdown || DEFAULT_BREAKDOWN,
     progress: levelInfo.progress,
     dailyInsights,
-    isLoading
+    isLoading: sportXpBootstrapPending && !warmSportXpDisplay,
+    isSportXpReady: !sportXpBootstrapPending
   };
 };

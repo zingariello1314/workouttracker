@@ -255,7 +255,11 @@ export default function SportGradeDetailPage({
         id={RECAP_GRADE_DETAIL_FOCUS_ID}
         className="flex flex-col gap-5 scroll-mt-28 lg:flex-row lg:items-start lg:gap-6"
       >
-        <div className="mx-auto w-full max-w-[300px] shrink-0 lg:mx-0 lg:sticky lg:top-4">
+        <div
+          className={`mx-auto w-full shrink-0 lg:mx-0 lg:sticky lg:top-4 ${
+            gradeId === 'grand_maitre' ? 'max-w-[360px]' : 'max-w-[300px]'
+          }`}
+        >
           <div
             className="overflow-hidden rounded-2xl border border-[#0F4C5C]/55 bg-black/90 shadow-lg"
             style={{ boxShadow: `0 12px 40px -16px ${accent}55` }}
