@@ -144,6 +144,12 @@ import {
   JUSTIFICATION_TEXT,
   JUSTIFICATION_ICONS
 } from '../utils/dayJustificationUtils';
+import {
+  dayHasLoggedVoluntaryWorkout,
+  getRecordedGarminWorkoutForDate
+} from '../utils/calendarDayWorkoutTruth';
+import { persistEnduranceData } from '../services/endurance/enduranceDataService';
+import { applyWorkoutRepIntegrations } from '../services/endurance/workoutRepIntegrations';
 import { useTranslation } from '../utils/translations';
 import { useLanguage } from '../context/LanguageContext';
 import { loadTranslationNamespace } from '../utils/translations/loader';
@@ -1662,10 +1668,13 @@ const CalendarHeatmap = ({
         }
       }
       
-      // ✅ PRIORITÉ 2: Si PAS de données Garmin, utiliser la durée prévue du programme
-      // Ne PAS ajouter enduranceData.duration car cela peut inclure des valeurs mock
-      // Le programme est la source de vérité quand Garmin n'est pas disponible
-      if (workout) {
+      // ✅ PRIORITÉ 2: Durée programme — uniquement si une activité volontaire a été enregistrée ce jour
+      const hasPartialLoggedWork =
+        completedExercises > 0 ||
+        (enduranceData.sessions ?? 0) > 0 ||
+        adHocCompletedExercises.length > 0;
+
+      if (workout && hasPartialLoggedWork) {
         let programDurationMinutes = 0;
         
         // Priorité 1: workout.duration (nombre en minutes)
@@ -1731,21 +1740,43 @@ const CalendarHeatmap = ({
       return 0;
     };
 
-    let realDuration = calculateRealDuration();
-    
-    // Vérifier si une activité complémentaire est cochée (depuis le programme par défaut ou actif)
+    // Activité complémentaire cochée (avant calcul durée / intensité)
     const defaultWorkout = workoutProgram[dayName];
     const activeWorkoutRaw = getTodayWorkout ? getTodayWorkout(date, false) : null;
-    const activeWorkout = activeWorkoutRaw ? {
-      ...activeWorkoutRaw,
-      exercices: activeWorkoutRaw.exercices || activeWorkoutRaw.exercises || [],
-      complementaryActivity: activeWorkoutRaw.complementaryActivity
-    } : null;
-    
-    const complementaryActivity = activeWorkout?.complementaryActivity || defaultWorkout?.complementaryActivity;
-    const isComplementaryChecked = complementaryActivity && 
-      currentData?.checkedExercises?.[`${dateStr}_complementary_${complementaryActivity.name.toLowerCase()}`];
-    
+    const activeWorkout = activeWorkoutRaw
+      ? {
+          ...activeWorkoutRaw,
+          exercices: activeWorkoutRaw.exercices || activeWorkoutRaw.exercises || [],
+          complementaryActivity: activeWorkoutRaw.complementaryActivity
+        }
+      : null;
+
+    const complementaryActivity =
+      activeWorkout?.complementaryActivity || defaultWorkout?.complementaryActivity;
+    const isComplementaryChecked =
+      complementaryActivity &&
+      currentData?.checkedExercises?.[
+        `${dateStr}_complementary_${complementaryActivity.name.toLowerCase()}`
+      ];
+
+    let realDuration = calculateRealDuration();
+
+    const hasLoggedVoluntaryWorkout = dayHasLoggedVoluntaryWorkout({
+      completedExercises,
+      enduranceSessionCount: enduranceData.sessions,
+      isComplementaryChecked,
+      adHocCompletedCount: adHocCompletedExercises.length
+    });
+
+    const recordedGarminWorkout = getRecordedGarminWorkoutForDate(garminData, dateStr, {
+      parseDurationToMinutes,
+      calculateTimeIntensityLevel,
+      dynamicTimeThresholds
+    });
+
+    if (!hasLoggedVoluntaryWorkout) {
+      realDuration = recordedGarminWorkout.duration || 0;
+    }
         // Les sessions d'endurance détaillées n'impactent PAS l'intensité du calendrier
         // Seules les activités complémentaires de l'onglet Aujourd'hui comptent
         const totalActivities = completedExercises + (isComplementaryChecked ? 1 : 0);
@@ -1803,19 +1834,11 @@ const CalendarHeatmap = ({
             // }
           }
         } else {
-          // ✅ NOUVEAU : Si pas d'exercices mais vraie activité Garmin détectée, utiliser Garmin
-          const garminActivity = detectRealGarminActivity(dateStr, garminData);
-          if (garminActivity.hasActivity && garminActivity.intensity !== null) {
-            let gLevel = garminActivity.intensity;
-            // Sans street ni charge endurance saisie : éviter des niveaux « extrêmes » surtout passifs
-            if (completedExercises === 0 && enduranceLoadForCalendar <= 0) {
-              gLevel = Math.min(3, gLevel);
-              gLevel = Math.max(0, Math.round(gLevel * 0.86));
-            }
-            intensityLevel = gLevel;
-            // Mettre à jour realDuration avec la durée détectée depuis Garmin
-            if (garminActivity.duration > realDuration) {
-              realDuration = garminActivity.duration;
+          // Sans séance enregistrée : uniquement une activité Garmin enregistrée (pas le passif quotidien)
+          if (recordedGarminWorkout.hasActivity) {
+            intensityLevel = recordedGarminWorkout.intensity;
+            if (recordedGarminWorkout.duration > realDuration) {
+              realDuration = recordedGarminWorkout.duration;
             }
           }
         }
@@ -1834,7 +1857,11 @@ const CalendarHeatmap = ({
         }
 
         const sessionFbForDay = currentData.sessionFeedbacks?.[dateStr];
-        if (sessionFbForDay && isSessionFeedbackFilled(sessionFbForDay)) {
+        if (
+          sessionFbForDay &&
+          isSessionFeedbackFilled(sessionFbForDay) &&
+          hasLoggedVoluntaryWorkout
+        ) {
           const diff5 = normalizeDifficultyForCalendarModel(sessionFbForDay);
           if (diff5 != null) {
             const bump = Math.round((diff5 - 3) * 0.35);
@@ -1842,7 +1869,7 @@ const CalendarHeatmap = ({
           }
         }
 
-        if (exercisesListForCompletion.length > 0) {
+        if (exercisesListForCompletion.length > 0 && completedExercises > 0) {
           adjustedIntensity = Math.min(
             4,
             adjustedIntensity + Math.round(programCompletionRatio * 2)
@@ -2014,6 +2041,64 @@ const CalendarHeatmap = ({
     }
     
     return result;
+  };
+
+  const handleDeleteEnduranceSessionFromCalendar = async (activityType, session, rowIndex = null) => {
+    if (!selectedDate?.date || !activityType || !session) return;
+    const dateStr = getDateStr(selectedDate.date);
+
+    try {
+      const latestData = getCurrentData();
+      const endurance = latestData?.enduranceData || {};
+      const sessionsByType = { ...(endurance.sessions || {}) };
+      const list = Array.isArray(sessionsByType[activityType]) ? [...sessionsByType[activityType]] : [];
+      const sessionId = session.id ?? session.sessionId ?? null;
+      let nextList;
+      if (Number.isInteger(rowIndex) && rowIndex >= 0 && rowIndex < list.length) {
+        nextList = list.filter((_, index) => index !== rowIndex);
+      } else {
+        nextList = list.filter((row) => {
+          if (sessionId != null && (row.id === sessionId || row.sessionId === sessionId)) return false;
+          return row !== session;
+        });
+      }
+      if (nextList.length === list.length) return;
+
+      sessionsByType[activityType] = nextList;
+      const nextEndurance = { ...endurance, sessions: sessionsByType };
+
+      let payload = {
+        ...latestData,
+        enduranceData: nextEndurance
+      };
+      payload = applyWorkoutRepIntegrations(payload, { getExerciseNameById });
+
+      await updateData(payload, { strict: true, sessionDay: dateStr });
+
+      if (hasUnsavedExercises || hasUnsavedStretches) {
+        replaceDraftWorkoutData(payload);
+      }
+
+      delete intensityCache.current[dateStr];
+      Object.keys(intensityCache.current)
+        .filter((key) => key.startsWith(dateStr))
+        .forEach((key) => delete intensityCache.current[key]);
+
+      setDataUpdateTrigger((p) => p + 1);
+      const updatedDay = {
+        date: selectedDate.date,
+        intensity: getIntensityForDate(selectedDate.date, payload)
+      };
+      setSelectedDate(updatedDay);
+      showSuccess(
+        t('calendar.heatmap.dayDetails.enduranceDeleteSuccess', 'Session endurance supprimée')
+      );
+    } catch (error) {
+      console.error('[CalendarHeatmap] Erreur suppression session endurance:', error);
+      showError(
+        t('calendar.heatmap.dayDetails.enduranceDeleteError', 'Impossible de supprimer cette session')
+      );
+    }
   };
 
   const handleDeleteExerciseRecordFromCalendar = async (exercise) => {
@@ -5420,6 +5505,21 @@ const CalendarHeatmap = ({
                           {session.notes}
                         </div>
                       ) : null;
+                    const enduranceDeleteBtn =
+                      typeof updateData === 'function' ? (
+                        <div className="mt-3 flex justify-end">
+                          <button
+                            type="button"
+                            onClick={() =>
+                              handleDeleteEnduranceSessionFromCalendar(activityType, session, idx)
+                            }
+                            className="inline-flex items-center gap-1 rounded border border-red-500/40 bg-red-950/30 px-2 py-1 text-xs text-red-200 hover:bg-red-900/40"
+                          >
+                            <Trash2 size={12} />
+                            {t('calendar.heatmap.dayDetails.deleteShort', 'Supprimer')}
+                          </button>
+                        </div>
+                      ) : null;
 
                     if (activityType === 'running') {
                       const isWalk = isWalkingLikeRunningSession(session, gAct);
@@ -5485,6 +5585,7 @@ const CalendarHeatmap = ({
                               <span className="ml-2 font-semibold text-white">{speedLabel}</span>
                             </div>
                           </div>
+                          {enduranceDeleteBtn}
                           {notesLine}
                         </div>
                       );
@@ -5539,6 +5640,7 @@ const CalendarHeatmap = ({
                               </div>
                             ) : null}
                           </div>
+                          {enduranceDeleteBtn}
                           {notesLine}
                         </div>
                       );
@@ -5570,6 +5672,7 @@ const CalendarHeatmap = ({
                               <span className="ml-2 font-semibold text-white">{session.duration || '—'}</span>
                             </div>
                           </div>
+                          {enduranceDeleteBtn}
                           {notesLine}
                         </div>
                       );
@@ -5615,6 +5718,7 @@ const CalendarHeatmap = ({
                             <span className="ml-2 font-semibold text-white">{session.duration || '—'}</span>
                           </div>
                         </div>
+                        {enduranceDeleteBtn}
                         {notesLine}
                       </div>
                     );
@@ -5849,6 +5953,11 @@ const CalendarHeatmap = ({
                   setPanelDate(selectedDate.date);
                   setSelectedDate(null);
                 }}
+                onJustifyAbsence={
+                  isDayWithoutActivity(allData, selectedDateStr)
+                    ? () => setJustificationModalDate(selectedDate.date)
+                    : null
+                }
               />
 
               {variant === 'sport' ? (

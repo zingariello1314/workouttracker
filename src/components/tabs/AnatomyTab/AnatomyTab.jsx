@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useLayoutEffect, useMemo, useState } from 'react';
 import AnatomyAccueilView from './AnatomyAccueilView';
 import AnatomyFamiliesIndexView from './AnatomyFamiliesIndexView';
 import AnatomyFamilyView from './AnatomyFamilyView';
@@ -37,6 +37,16 @@ function writeHashRoute(route) {
   }
 }
 
+function scrollAnatomyViewToTop() {
+  if (typeof window !== 'undefined') {
+    window.scrollTo({ top: 0, left: 0, behavior: 'auto' });
+  }
+  if (typeof document !== 'undefined') {
+    const main = document.querySelector('main');
+    if (main) main.scrollTop = 0;
+  }
+}
+
 export default function AnatomyTab() {
   const [route, setRoute] = useState(() => parseHashRoute());
 
@@ -52,6 +62,19 @@ export default function AnatomyTab() {
     window.addEventListener('hashchange', onHash);
     return () => window.removeEventListener('hashchange', onHash);
   }, []);
+
+  const routeScrollKey = useMemo(() => {
+    if (route.view === 'muscle') return `muscle:${route.muscleId}`;
+    if (route.view === 'family') return `family:${route.familyId}`;
+    if (route.view === 'families') return 'families';
+    return null;
+  }, [route]);
+
+  /** L’accueil scroll vers #anatomy-explorer ; sans reset, une fiche muscle s’ouvre en bas de page. */
+  useLayoutEffect(() => {
+    if (!routeScrollKey) return;
+    scrollAnatomyViewToTop();
+  }, [routeScrollKey]);
 
   const goHome = useCallback(() => {
     setRoute({ view: 'home' });

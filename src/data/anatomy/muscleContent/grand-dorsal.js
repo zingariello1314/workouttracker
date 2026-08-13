@@ -1,36 +1,12 @@
+import presentationBlocks from './grand-dorsal/presentationBlocks.js';
+
 /** @type {{ sections: { id: string, title: string, blocks: object[] }[] }} */
 const grandDorsal = {
   sections: [
     {
       id: 'presentation',
-      title: 'Présentation approfondie',
-      blocks: [
-        {
-          type: 'p',
-          text:
-            'Lorsqu’on imagine un dos puissant et esthétique, le premier muscle qui vient généralement à l’esprit est le grand dorsal. C’est lui qui donne cette impression de dos large, cette forme en « aile » qui transforme visuellement la silhouette en créant un contraste entre une taille relativement étroite et un haut du corps développé.'
-        },
-        {
-          type: 'p',
-          text:
-            'Réduire le grand dorsal à un simple muscle esthétique serait une erreur : son rôle dépasse largement l’apparence. C’est l’un des muscles les plus importants du corps humain pour produire de la force avec les membres supérieurs. Il intervient dans presque tous les mouvements où le bras doit être ramené vers le corps, tiré vers l’arrière ou rapproché du tronc.'
-        },
-        {
-          type: 'p',
-          text:
-            'Il est essentiel dans les tractions, l’escalade, la natation, l’aviron, les mouvements de grimpe, certains mouvements de lancer et le port de charges. C’est un muscle qui relie le membre supérieur au tronc : une véritable passerelle entre la puissance du bras et la stabilité du corps.'
-        },
-        {
-          type: 'p',
-          text:
-            'Le grand dorsal est un muscle extrêmement large et plat qui recouvre une grande partie de la partie inférieure et moyenne du dos. Il possède une architecture particulière : ses fibres convergent progressivement vers une zone d’insertion commune située sur l’humérus. Cette forme en éventail lui permet d’avoir plusieurs directions d’action selon l’angle du bras.'
-        },
-        {
-          type: 'p',
-          text:
-            'C’est également pour cette raison que différents exercices peuvent donner des sensations différentes : une traction avec les bras au-dessus de la tête ne sollicite pas exactement le même secteur fonctionnel qu’un rowing où le bras est ramené vers l’arrière.'
-        }
-      ]
+      title: 'Présentation',
+      blocks: presentationBlocks
     },
     {
       id: 'portions',

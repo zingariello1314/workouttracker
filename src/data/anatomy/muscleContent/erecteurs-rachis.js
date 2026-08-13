@@ -1,70 +1,27 @@
+import presentationBlocks from './erecteurs-rachis/presentationBlocks.js';
+import anatomieBlocks from './erecteurs-rachis/anatomieBlocks.js';
+import fonctionsBlocks from './erecteurs-rachis/fonctionsBlocks.js';
+import momentumBlocks from './erecteurs-rachis/momentumBlocks.js';
+import erreursBlocks from './erecteurs-rachis/erreursBlocks.js';
+import blessuresBlocks from './erecteurs-rachis/blessuresBlocks.js';
+
 /** @type {{ sections: { id: string, title: string, blocks: object[] }[] }} */
 const erecteursRachis = {
   sections: [
     {
       id: 'presentation',
       title: 'Présentation approfondie',
-      blocks: [
-        {
-          type: 'p',
-          text:
-            'Les érecteurs du rachis (muscles spinaux) forment la colonne musculaire principale de la chaîne postérieure, du bassin à la région cervicale — leur portion lombaire stabilise le bas du dos.'
-        },
-        {
-          type: 'p',
-          text:
-            'Trois faisceaux : ilio-costal (latéral, extension/inclinaison), longissimus (central, volumineux), épineux (près colonne, posture). Origines larges : sacrum, crête iliaque, vertèbres lombaires ; insertions vers côtes et vertèbres supérieures.'
-        },
-        {
-          type: 'p',
-          text:
-            'Extension de la colonne, maintien postural permanent (marche, debout, assis), contrôle de la flexion — freiner la descente en hip hinge. En musculation : isométrie sous squat, soulevé, rowing.'
-        },
-        {
-          type: 'p',
-          text:
-            'Esthétique secondaire mais chaîne postérieure dense chez haltérophiles et gymnastes. Répondent aux tensions prolongées ; progression graduelle pour la colonne.'
-        }
-      ]
+      blocks: presentationBlocks
     },
     {
       id: 'anatomie',
       title: 'Anatomie',
-      blocks: [
-        {
-          type: 'p',
-          text: 'Trois muscles principaux : ilio-costal, longissimus et épineux — organisation parallèle le long de la colonne.'
-        },
-        {
-          type: 'ul',
-          items: [
-            'Origines : bassin, sacrum, vertèbres, côtes',
-            'Insertions : vertèbres supérieures, côtes, structures du crâne',
-            'Architecture en « armature » autour du rachis'
-          ]
-        }
-      ]
+      blocks: anatomieBlocks
     },
     {
       id: 'fonctions',
       title: 'Fonctions',
-      blocks: [
-        {
-          type: 'ul',
-          items: [
-            'Extension de la colonne (redresser le tronc)',
-            'Stabilisation sous charge (rôle prioritaire en force)',
-            'Inclinaisons latérales lorsque les deux côtés ne travaillent pas symétriquement'
-          ]
-        },
-        {
-          type: 'callout',
-          tone: 'tip',
-          title: 'Développement',
-          text:
-            'Répondent bien aux tensions prolongées. La congestion n’est pas toujours un bon indicateur ; la progression doit rester graduelle pour la colonne.'
-        }
-      ]
+      blocks: fonctionsBlocks
     },
     {
       id: 'exercices',
@@ -123,55 +80,17 @@ const erecteursRachis = {
     {
       id: 'momentum',
       title: 'Street workout & tronc',
-      blocks: [
-        {
-          type: 'ul',
-          items: [
-            'Front lever / handstand : colonne alignée sans hypercambrure',
-            'L-sit : érecteurs + abdominaux + fléchisseurs de hanche',
-            'Tractions strictes : limiter balancement et extension excessive'
-          ]
-        },
-        {
-          type: 'callout',
-          tone: 'tip',
-          text: 'Ceinture abdominale complète : abdominaux (avant) + érecteurs (arrière). Voir fiche Carré des lombes et Transverse (famille Abdominaux).'
-        }
-      ]
+      blocks: momentumBlocks
     },
     {
       id: 'erreurs',
       title: 'Erreurs fréquentes',
-      blocks: [
-        {
-          type: 'ul',
-          items: [
-            'Hyperextension excessive en fin d’extensions lombaires — viser la contraction, pas forcer la colonne.',
-            'Progression trop rapide sur le soulevé de terre sans technique ni mobilité hanche.',
-            'Renforcer les lombaires sans abdominaux, fessiers et ischio-jambiers (déséquilibre du core).'
-          ]
-        }
-      ]
+      blocks: erreursBlocks
     },
     {
       id: 'blessures',
       title: 'Blessures & prévention',
-      blocks: [
-        {
-          type: 'ul',
-          items: [
-            'Lombalgie mécanique (surcharge, manque de contrôle, progression rapide)',
-            'Fatigue des érecteurs qui compensent des fessiers ou une mauvaise mobilité de hanche',
-            'Irritation par perte de neutralité sous charge'
-          ]
-        },
-        {
-          type: 'callout',
-          tone: 'tip',
-          text:
-            'Mobilité hanches et extension thoracique, contrôle du bassin : souvent aussi important que « plus de lombaires ».'
-        }
-      ]
+      blocks: blessuresBlocks
     },
     {
       id: 'saviez-vous',

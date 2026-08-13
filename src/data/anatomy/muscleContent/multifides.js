@@ -1,41 +1,26 @@
+import presentationBlocks from './multifides/presentationBlocks.js';
+import anatomieBlocks from './multifides/anatomieBlocks.js';
+import fonctionsBlocks from './multifides/fonctionsBlocks.js';
+import recrutementBlocks from './multifides/recrutementBlocks.js';
+import blessuresBlocks from './multifides/blessuresBlocks.js';
+
 /** @type {{ sections: { id: string, title: string, blocks: object[] }[] }} */
 const multifides = {
   sections: [
     {
       id: 'presentation',
       title: 'Présentation',
-      blocks: [
-        {
-          type: 'p',
-          text:
-            'Muscles profonds segment par segment — « réglage » vertébral là où les érecteurs produisent la force globale. Peuvent perdre fonction après douleurs lombaires prolongées : renforcer force globale et contrôle profond.'
-        },
-      ]
+      blocks: presentationBlocks
     },
     {
       id: 'anatomie',
       title: 'Anatomie',
-      blocks: [
-        {
-          type: 'p',
-          text:
-            'Groupe transverso-épineux : nombreux petits faisceaux reliant vertèbres adjacentes, action locale segment par segment (contrairement aux longs érecteurs).'
-        }
-      ]
+      blocks: anatomieBlocks
     },
     {
       id: 'fonctions',
       title: 'Fonctions',
-      blocks: [
-        {
-          type: 'ul',
-          items: [
-            'Extension bilatérale de la colonne',
-            'Rotation et inclinaison unilatérales',
-            'Stabilisation intervertébrale (fonction prioritaire)'
-          ]
-        }
-      ]
+      blocks: fonctionsBlocks
     },
     {
       id: 'exercices',
@@ -64,41 +49,12 @@ const multifides = {
     {
       id: 'recrutement',
       title: 'Core & chaîne postérieure',
-      blocks: [
-        {
-          type: 'p',
-          text:
-            'Les multifides travaillent avec le transverse, les obliques, le diaphragme, les érecteurs et le plancher pelvien. La stabilité du tronc = pression et contrôle globaux, pas un muscle isolé.'
-        },
-        {
-          type: 'ul',
-          items: [
-            'Équilibre chaîne antérieure / postérieure',
-            'Fessiers et ischio-jambiers actifs pour ne pas sur-solliciter les lombaires',
-            'Haut du dos (rétraction) pour une posture globale cohérente'
-          ]
-        }
-      ]
+      blocks: recrutementBlocks
     },
     {
       id: 'blessures',
       title: 'Mobilité & santé',
-      blocks: [
-        {
-          type: 'ul',
-          items: [
-            'Hanches raides → compensation lombaire',
-            'Thorax raide → contraintes sur les lombaires',
-            'Fessiers peu actifs → érecteurs surmenés'
-          ]
-        },
-        {
-          type: 'callout',
-          tone: 'tip',
-          text:
-            'Un bon entraînement du bas du dos combine renforcement, contrôle moteur, mobilité et progression — pas un exercice miracle ni l’évitement systématique des lombaires.'
-        }
-      ]
+      blocks: blessuresBlocks
     }
   ]
 };

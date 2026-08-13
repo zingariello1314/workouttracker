@@ -1,4 +1,4 @@
-import React, { useCallback, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useTranslation } from '../../../utils/translations';
 import { getAnatomyFamily, getAnatomyMuscle } from '../../../data/anatomy/anatomyRegistry';
 import { getMuscleContent, hasMuscleContent } from '../../../data/anatomy/anatomyContent';
@@ -23,17 +23,25 @@ export default function AnatomyMuscleView({ muscleId, onOpenMuscle }) {
   const family = muscle ? getAnatomyFamily(muscle.familyId) : null;
   const content = getMuscleContent(muscleId);
 
-  const navItems = useMemo(() => {
-    return (content?.sections || []).map((s) => ({ id: s.id, title: s.title }));
+  const visibleSections = useMemo(() => {
+    return (content?.sections || []).filter((s) => s.id !== 'saviez-vous');
   }, [content?.sections]);
+
+  const navItems = useMemo(() => {
+    return visibleSections.map((s) => ({ id: s.id, title: s.title }));
+  }, [visibleSections]);
 
   const [activeSectionId, setActiveSectionId] = useState(() => navItems[0]?.id || 'presentation');
 
+  useEffect(() => {
+    setActiveSectionId(navItems[0]?.id || 'presentation');
+  }, [muscleId, navItems]);
+
   const activeSection = useMemo(() => {
-    const found = content?.sections?.find((s) => s.id === activeSectionId);
+    const found = visibleSections.find((s) => s.id === activeSectionId);
     if (found) return found;
-    return null;
-  }, [activeSectionId, content?.sections, t]);
+    return visibleSections[0] || null;
+  }, [activeSectionId, visibleSections]);
 
   const sectionAsPageTitle = activeSectionId !== 'presentation';
   const functionsMagazineLayout =

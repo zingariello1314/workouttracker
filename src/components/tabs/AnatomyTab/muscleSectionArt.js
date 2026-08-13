@@ -45,6 +45,9 @@ export function resolveMuscleArtDirection(section) {
   if (id === 'anatomie') {
     return titled.length >= 3 ? 'anatomy-chapters' : 'anatomy-sheet';
   }
+  if (id === 'momentum' && (hasH3 || titled.length >= 2)) {
+    return 'anatomy-chapters';
+  }
   if (id === 'blessures') {
     return titled.length >= 3 ? 'blessures-chapters' : 'alert-stack';
   }
