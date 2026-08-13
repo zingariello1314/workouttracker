@@ -7,6 +7,11 @@
  * @module exerciseCalculations
  */
 
+import {
+  formatStoredTimeLabel,
+  storedTimeToTotalSeconds
+} from './sport/exerciseTimeValueUtils';
+
 /**
  * Normalise le texte de série pour le parsing (tirets unicode, x → ×, notes entre parenthèses).
  * @param {string} seriesText
@@ -183,11 +188,17 @@ function isRepBasedSeries(series) {
   return /^\d+\s*[×x]\s*\d+(?:\s*-\s*\d+)?\s*$/.test(trimmed);
 }
 
-/** Holds longs saisis en minutes (wall sit, chaise murale…). */
+/** Holds longs + cardio programme saisis en minutes. */
 function exerciseNameUsesMinutesByDefault(name) {
   const n = String(name || '').toLowerCase();
   if (!n) return false;
-  return /wall\s*sit|chaise\s*(murale|au mur)|chair\s*hold|isometric\s*(wall\s*)?squat/.test(n);
+  if (/wall\s*sit|chaise\s*(murale|au mur)|chair\s*hold|isometric\s*(wall\s*)?squat/.test(n)) {
+    return true;
+  }
+  if (/course|footing|running|endurance\s+fondamentale|corde\s*[àa]\s*sauter|double under corde|boxe|natation|marche\s+active/.test(n)) {
+    return true;
+  }
+  return false;
 }
 
 /**
@@ -211,7 +222,6 @@ export function isIsometricExerciseByName(name) {
  * @returns {{ value: number, unit: 'reps'|'sec'|'min', label: string, displayText: string, isTimeBased: boolean }}
  */
 export function formatCalendarExerciseRecordedValue(exercise, rawValue) {
-  const value = Math.max(0, Math.floor(Number(rawValue) || 0));
   const unitInfo = detectExerciseUnit(exercise) || { unit: 'reps', isTimeBased: false };
   let unit = unitInfo.unit === 'min' || unitInfo.unit === 'sec' ? unitInfo.unit : 'reps';
   let isTimeBased = unitInfo.isTimeBased === true;
@@ -220,16 +230,28 @@ export function formatCalendarExerciseRecordedValue(exercise, rawValue) {
     unit = 'min';
   }
 
-  if (value <= 0) {
+  const n = Number(rawValue);
+  if (!Number.isFinite(n) || n <= 0) {
     return { value: 0, unit, label: unit, displayText: '', isTimeBased };
   }
 
+  if (isTimeBased) {
+    return {
+      value: storedTimeToTotalSeconds(n, unit),
+      unit,
+      label: unit,
+      displayText: formatStoredTimeLabel(n, unit),
+      isTimeBased: true
+    };
+  }
+
+  const value = Math.max(0, Math.floor(n));
   return {
     value,
     unit,
     label: unit,
     displayText: `${value} ${unit}`,
-    isTimeBased
+    isTimeBased: false
   };
 }
 

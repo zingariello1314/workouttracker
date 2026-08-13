@@ -17,7 +17,16 @@ const EXERCISE_VARIATION_FAMILIES = {
     'pompes en tension continue'
   ],
   pullups: ['tractions pronation', 'tractions supination', 'tractions australiennes'],
-  dips: ['dips']
+  dips: ['dips'],
+  calves: [
+    'mollets debout',
+    'mollets assis',
+    'mollets presse',
+    'mollets unilatéraux',
+    'mollets debout unilatéral machine',
+    'élévations de mollets pointes extérieur',
+    'élévations de mollets pointes intérieur'
+  ]
 };
 
 function normalizeName(exercise) {
@@ -32,6 +41,7 @@ function detectFamilyId(exercise) {
   if (/pomp|push[- ]?up/i.test(n)) return 'pushups';
   if (/traction|pull[- ]?up|chin/i.test(n)) return 'pullups';
   if (/dip|répulsion/i.test(n)) return 'dips';
+  if (/mollet|calf raise|élévation.*mollet|elevation.*mollet/i.test(n)) return 'calves';
   const key = getExerciseDatabaseKey(exercise);
   if (!key) return null;
   for (const [family, keys] of Object.entries(EXERCISE_VARIATION_FAMILIES)) {

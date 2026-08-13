@@ -39,6 +39,8 @@ const gastrocnemien = {
           items: [
             'Élévations mollets debout sur marche (amplitude)',
             'Élévations mollets une jambe',
+            'Élévations mollets pointes vers l’extérieur (accent chef médial)',
+            'Élévations mollets pointes vers l’intérieur (variation, pas isolation du chef latéral)',
             'Sauts / pliométrie (puissance élastique)'
           ]
         },

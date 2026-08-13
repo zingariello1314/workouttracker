@@ -32,16 +32,26 @@ export function getExerciseDatabaseKey(exercise) {
       .trim()
       .toLowerCase();
     if (vn && vn === raw) return k;
+  }
+  let bestKey = null;
+  let bestScore = 0;
+  for (const [k, v] of Object.entries(exerciseDatabase)) {
     const vars = Array.isArray(v.variations) ? v.variations : [];
-    const hitVar = vars.some((x) => {
+    for (const x of vars) {
       const t = String(x || '')
         .toLowerCase()
         .trim();
-      return t && (raw.includes(t) || t.includes(raw));
-    });
-    if (hitVar) return k;
+      if (!t) continue;
+      if (t === raw) return k;
+      if (raw.includes(t) || t.includes(raw)) {
+        if (t.length > bestScore) {
+          bestScore = t.length;
+          bestKey = k;
+        }
+      }
+    }
   }
-  return null;
+  return bestKey;
 }
 
 /**

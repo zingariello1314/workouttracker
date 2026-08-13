@@ -5,6 +5,7 @@ import { workoutProgram } from '../../data/workoutProgram';
 import { exerciseDatabase } from '../../data/exerciseDatabase';
 import { convertLegacyProgram, filterExercises, enrichExercise, inferTrainingDiscipline } from '../../utils/programUtils';
 import { CARDIO_REFERENCE_EXERCISES } from '../../data/cardioExerciseCatalog';
+import { ALL_SCORING_ENTRIES } from '../../data/exerciseScoring/index';
 import { 
   syncExercisesFromPrograms, 
   detectProgramChanges,
@@ -310,6 +311,44 @@ const ExercisesTabBody = () => {
           notes: ex.description || enriched.notes || '',
           categoryLabel: ex.category,
           databaseKey: key
+        });
+      });
+
+      ALL_SCORING_ENTRIES.forEach((entry) => {
+        const name = entry.name;
+        const normalizedName = normalizeName(name);
+        if (seenNames.has(normalizedName)) return;
+
+        const id = `score_${String(entry.key).replace(/\s+/g, '_')}`;
+        if (seenIds.has(id)) return;
+
+        const enriched = enrichExercise({
+          id,
+          name,
+          materiel: '',
+          notes: '',
+          scoringKey: entry.key
+        });
+
+        seenIds.add(id);
+        seenNames.add(normalizedName);
+        out.push({
+          ...enriched,
+          scoringKey: entry.key,
+          category:
+            entry.scoringType === 'isometric'
+              ? ExerciseCategories.ISOMETRIC
+              : ExerciseCategories.STRENGTH,
+          muscleGroup: entry.muscleGroup || t('exercisesTab.misc.notSpecified'),
+          muscleCategory: entry.muscleGroup || '',
+          difficulty: entry.difficultyStars || 1,
+          trainingDiscipline: inferTrainingDiscipline(enriched),
+          sourceDay: t(
+            'exercisesTab.misc.scoringCatalogSource',
+            'Référentiel scoring musculation'
+          ),
+          equipment: t('exercisesTab.misc.notSpecified'),
+          notes: ''
         });
       });
 

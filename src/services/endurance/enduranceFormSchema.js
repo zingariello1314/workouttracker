@@ -125,7 +125,7 @@ const formConfig = {
     fields: [
       { key: 'date', type: 'date', label: 'Date' },
       { key: 'time', type: 'time', label: 'Heure' },
-      { key: 'duration', type: 'number', label: 'Durée (minutes)', step: 0.5, placeholder: 'Ex: 5' },
+      { key: 'duration', type: 'duration_minutes', label: 'Durée (minutes + secondes)' },
       { key: 'notes', type: 'textarea', label: 'Notes', placeholder: 'Commentaires optionnels...', colSpan: 2, rows: 3 }
     ],
     ratings: [
@@ -142,7 +142,7 @@ const formConfig = {
     fields: [
       { key: 'date', type: 'date', label: 'Date' },
       { key: 'time', type: 'time', label: 'Heure' },
-      { key: 'duration', type: 'number', label: 'Durée (minutes)', step: 5, placeholder: 'Ex: 60', colSpan: 2 },
+      { key: 'duration', type: 'duration_minutes', label: 'Durée (minutes + secondes)', colSpan: 2 },
       { key: 'notes', type: 'textarea', label: 'Notes', placeholder: 'Type d\'entraînement, sparring, sac...', colSpan: 2, rows: 3 }
     ],
     ratings: [
@@ -229,11 +229,16 @@ const formConfig = {
       { key: 'time', type: 'time', label: 'Heure' },
       {
         key: 'count',
-        type: 'number',
-        label: 'Secondes cumulées en planche',
-        placeholder: 'Ex: 180'
+        type: 'duration_seconds',
+        label: 'Temps total en planche',
+        hint: 'Minutes + secondes cumulées sur la séance (ex. 3 séries de 1 min → 3 min 0 s).'
       },
-      { key: 'duration', type: 'number', label: 'Durée séance (minutes)', step: 0.5, placeholder: 'Ex: 12' },
+      {
+        key: 'duration',
+        type: 'duration_minutes',
+        label: 'Durée totale de la séance',
+        hint: 'Temps écoulé entre le début et la fin (repos inclus).'
+      },
       { key: 'notes', type: 'textarea', label: 'Notes', placeholder: 'Variante, planche latérale…', colSpan: 2, rows: 3 }
     ],
     ratings: [

@@ -27,8 +27,11 @@ import { computeSportXpDailyInsights } from '../services/xp/sportXpDailyAnalytic
 
 const DEFAULT_BREAKDOWN = {
   reps: 0,
+  timeMinutes: 0,
   weightedRepsLoad: 0,
   weightedRepsXp: 0,
+  weightedTimeLoad: 0,
+  weightedTimeXp: 0,
   exercises: 0,
   exercisesXp: 0,
   stretches: 0,

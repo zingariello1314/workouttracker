@@ -45,9 +45,11 @@ import {
 } from '../../utils/exerciseWeightEligibility';
 import { resolveProgramExerciseNotes } from '../../utils/exerciseHeroContent';
 import { hasExerciseVariations } from '../../utils/exerciseVariationResolver';
-import LoadDifficultyStars from '../sport/LoadDifficultyStars';
+import ReferenceDifficultyStars from '../sport/ReferenceDifficultyStars';
+import { resolveExerciseScoring } from '../../utils/exerciseScoringResolver';
 import CollapsibleSessionPerceived from './TodayTab/components/CollapsibleSessionPerceived.jsx';
 import ExerciseSetDetailPanel from './TodayTab/components/ExerciseSetDetailPanel.jsx';
+import ExerciseTimeInput from '../ui/ExerciseTimeInput.jsx';
 import {
   computeOverallSessionStars,
   pickStoredSessionPerceived,
@@ -359,9 +361,12 @@ const TodayTab = () => {
       // Pour pushups : s'assurer que count existe (utilisé par défaut dans CalendarHeatmap)
       // Si reps existe mais pas count, copier reps dans count pour cohérence
       const normalizedData = { ...completionData };
-      if (activityType === 'pushups' || activityType === 'boxing') {
-        if (normalizedData.reps && !normalizedData.count) {
+      if (activityType === 'pushups' || activityType === 'boxing' || activityType === 'gainage') {
+        if (normalizedData.reps != null && normalizedData.count == null) {
           normalizedData.count = normalizedData.reps;
+        }
+        if (normalizedData.count != null && normalizedData.reps == null) {
+          normalizedData.reps = normalizedData.count;
         }
       }
       
@@ -2053,7 +2058,7 @@ const TodayTab = () => {
               exerciseUnit?.unit === 'sec' ? 'sec' : exerciseUnit?.unit === 'min' ? 'min' : 'Reps';
 
             const volumeCompletion = (() => {
-              const val = parseInt(String(reps || ''), 10);
+              const val = Number(reps);
               if (!Number.isFinite(val) || val <= 0) return null;
               return evaluateVolumeCompletion(exercise, val);
             })();
@@ -2064,7 +2069,8 @@ const TodayTab = () => {
             });
             const sessionEffortStars = pickExerciseSessionEffortStars(currentData, keys, primaryKeyForStars);
             const sessionPleasureStars = pickExerciseSessionPleasureStars(currentData, keys, primaryKeyForStars);
-            const coefStarCount = intensityCoeffToStarCount(loadCoeff);
+            const scoring = resolveExerciseScoring(exercise);
+            const coefStarCount = scoring?.difficultyStars ?? intensityCoeffToStarCount(loadCoeff);
 
             return (
               <div
@@ -2080,9 +2086,24 @@ const TodayTab = () => {
                           {exercise.supplementalLabel}
                         </span>
                       ) : null}
-                      <span className="inline-flex items-center text-amber-300 shrink-0">
-                        <LoadDifficultyStars coeff={loadCoeff} className="scale-95" />
-                      </span>
+                      {scoring ? (
+                        <ReferenceDifficultyStars
+                          stars={scoring.difficultyStars}
+                          intensityCoeff={scoring.intensityCoeff}
+                          variant="pill"
+                          size="sm"
+                          showCoeff
+                        />
+                      ) : (
+                        <ReferenceDifficultyStars
+                          stars={Math.min(8, Math.max(1, coefStarCount))}
+                          intensityCoeff={loadCoeff}
+                          variant="pill"
+                          size="sm"
+                          showCoeff
+                          title="Difficulté estimée (hors référentiel)"
+                        />
+                      )}
                     </div>
                     <div className="text-sm text-gray-300 break-words flex flex-wrap items-center gap-x-2 gap-y-1">
                       <span>
@@ -2143,16 +2164,33 @@ const TodayTab = () => {
                 <div className="flex flex-col gap-3 pt-1 border-t border-[#0F4C5C]/35 min-w-0">
                   <div className="flex flex-wrap items-end gap-x-4 gap-y-2">
                     <div className="flex items-center gap-1">
-                      <Input
-                        type="number"
-                        placeholder={inputPlaceholder}
-                        value={reps}
-                        onChange={(e) => updateLocalReps(exercise.id, e.target.value, currentDate)}
-                        onFocus={() => handleInputFocus(exercise.id, exercise)}
-                        className={`w-20 text-center ${isChecked ? 'bg-green-600/20 border-green-500 text-green-300' : 'bg-black border-[#0F4C5C]/50 text-white'}`}
-                        size="sm"
-                      />
-                      <span className="text-teal-700 text-xs whitespace-nowrap">{inputLabel}</span>
+                      {exerciseUnit?.isTimeBased ? (
+                        <ExerciseTimeInput
+                          unit={exerciseUnit.unit === 'min' ? 'min' : 'sec'}
+                          value={reps}
+                          onChange={(next) =>
+                            updateLocalReps(exercise.id, next === '' ? '' : String(next), currentDate)
+                          }
+                          className={
+                            isChecked
+                              ? '[&_input]:bg-green-600/20 [&_input]:border-green-500 [&_input]:text-green-300'
+                              : ''
+                          }
+                        />
+                      ) : (
+                        <>
+                          <Input
+                            type="number"
+                            placeholder={inputPlaceholder}
+                            value={reps}
+                            onChange={(e) => updateLocalReps(exercise.id, e.target.value, currentDate)}
+                            onFocus={() => handleInputFocus(exercise.id, exercise)}
+                            className={`w-20 text-center ${isChecked ? 'bg-green-600/20 border-green-500 text-green-300' : 'bg-black border-[#0F4C5C]/50 text-white'}`}
+                            size="sm"
+                          />
+                          <span className="text-teal-700 text-xs whitespace-nowrap">{inputLabel}</span>
+                        </>
+                      )}
                       {volumeCompletion?.status === 'complete' ? (
                         <span className="text-[10px] text-green-400 whitespace-nowrap">✓ objectif</span>
                       ) : null}
@@ -2270,7 +2308,7 @@ const TodayTab = () => {
                     </div>
                   )}
 
-                  {isChecked && inferDefaultSetCount(exercise, 0) > 1 && (
+                  {isChecked && inferDefaultSetCount(exercise, 0) > 1 && !exerciseUnit?.isTimeBased && (
                     <ExerciseSetDetailPanel
                       storageKey={readKey}
                       exercise={exercise}
@@ -2442,19 +2480,23 @@ const TodayTab = () => {
                   name={`complementary_${workout.complementaryActivity.name.toLowerCase()}`}
                 />
                 
-                {/* Champ de saisie pour les minutes */}
+                {/* Saisie durée (min + sec) */}
                 <div className="flex items-center space-x-2">
-                  <Input
-                    type="number"
-                    placeholder={t('today.exercises.minutes')}
-                    value={getCurrentData().reps[`${dateStr}_complementary_${workout.complementaryActivity.name.toLowerCase()}_minutes`] || ''}
-                    onChange={(e) => updateReps(`complementary_${workout.complementaryActivity.name.toLowerCase()}_minutes`, e.target.value, currentDate)}
-                    onFocus={() => handleInputFocus(`complementary_${workout.complementaryActivity.name.toLowerCase()}_minutes`, { series: `1×${workout.complementaryActivity.duration}min` })}
-                    className="w-16 text-center"
-                    min="0"
-                    max="300"
+                  <ExerciseTimeInput
+                    unit="min"
+                    value={
+                      getCurrentData().reps[
+                        `${dateStr}_complementary_${workout.complementaryActivity.name.toLowerCase()}_minutes`
+                      ] || ''
+                    }
+                    onChange={(next) =>
+                      updateReps(
+                        `complementary_${workout.complementaryActivity.name.toLowerCase()}_minutes`,
+                        next === '' ? '' : String(next),
+                        currentDate
+                      )
+                    }
                   />
-                  <span className="text-teal-200 text-sm font-medium">{t('today.exercises.minutesLabel')}</span>
                 </div>
                 
                 <button

@@ -2,6 +2,7 @@ import React, { useMemo, useCallback } from 'react';
 import PropTypes from 'prop-types';
 import { Zap } from 'lucide-react';
 import StarRating from '../../../ui/StarRating';
+import DurationMinSecInput from '../../../ui/DurationMinSecInput';
 import { getFormConfig } from '../../../../services/endurance/enduranceFormSchema';
 import PushupSessionSetsFields from './PushupSessionSetsFields';
 
@@ -59,6 +60,26 @@ const EnduranceSessionForm = ({ activityType, formState, setFormState, pushupPla
         return <input {...inputProps} type="time" />;
       case 'date':
         return <input {...inputProps} type="date" />;
+      case 'duration_seconds':
+        return (
+          <DurationMinSecInput
+            storageUnit="seconds"
+            value={formState[field.key]}
+            onChange={handleInputChange(field.key)}
+            minutesLabel="Minutes"
+            secondsLabel="Secondes"
+          />
+        );
+      case 'duration_minutes':
+        return (
+          <DurationMinSecInput
+            storageUnit="minutes"
+            value={formState[field.key]}
+            onChange={handleInputChange(field.key)}
+            minutesLabel="Minutes"
+            secondsLabel="Secondes"
+          />
+        );
       default:
         return <input {...inputProps} type={field.type || 'text'} />;
     }
@@ -86,6 +107,9 @@ const EnduranceSessionForm = ({ activityType, formState, setFormState, pushupPla
               >
                 {field.label}
               </label>
+              {field.hint ? (
+                <p className="mb-2 text-xs text-slate-500">{field.hint}</p>
+              ) : null}
               {renderFieldInput(field)}
             </div>
           ))}

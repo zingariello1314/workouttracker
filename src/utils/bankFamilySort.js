@@ -34,15 +34,21 @@ const MUSCLE_GROUP_TO_FR = {
 /** Libellés français canoniques pour les sous-sections banque. */
 export const CANONICAL_MUSCLE_CATEGORIES = [
   'Abdominaux',
+  'Adducteurs',
+  'Avant-bras',
   'Biceps',
+  'Carries',
   'Cardio',
+  'Cheville / pied',
   'Corps entier',
   'Dorsaux',
   'Épaules',
   'Fessiers',
+  'Haltérophilie',
   'Ischio-jambiers',
   'Mollets',
   'Pectoraux',
+  'Puissance',
   'Quadriceps',
   'Triceps',
   'Autres'
@@ -61,6 +67,12 @@ function titleCaseMuscleLabel(raw) {
   if (/^fessiers$/i.test(s)) return 'Fessiers';
   if (/^biceps$/i.test(s)) return 'Biceps';
   if (/^triceps$/i.test(s)) return 'Triceps';
+  if (/^adducteurs$/i.test(s)) return 'Adducteurs';
+  if (/^avant.?bras$/i.test(s)) return 'Avant-bras';
+  if (/^carries$/i.test(s)) return 'Carries';
+  if (/^puissance$/i.test(s)) return 'Puissance';
+  if (/^halterophilie$/i.test(s) || /^haltérophilie$/i.test(s)) return 'Haltérophilie';
+  if (/^cheville/i.test(s)) return 'Cheville / pied';
   if (/^abdos$/i.test(s) || /^core$/i.test(s)) return 'Abdominaux';
   if (/^cardio/i.test(s)) return 'Cardio';
   if (/^corps entier$/i.test(s)) return 'Corps entier';

@@ -1,6 +1,6 @@
 /**
  * Charge d'entraînement pondérée (reps × coefficient) pour le calendrier et l'historique.
- * Les coefficients par défaut sont heuristiques ; l'utilisateur peut surcharger par id d'exercice.
+ * Les coefficients par défaut viennent du référentiel `exerciseScoring` ; fallback heuristique legacy.
  *
  * @module trainingLoadUtils
  */
@@ -8,6 +8,12 @@
 import { isMockEnduranceSession, parseDurationToMinutes } from './calendarUtils';
 import { shouldExcludeStoredGarminRunningSession } from './garminRunningLaps';
 import { resolveSessionCalendarDate, readGarminActivityDateOverrides } from './sessionCalendarDate';
+import {
+  resolveCatalogIntensityCoeff,
+  resolveExerciseScoring
+} from './exerciseScoringResolver';
+import { exerciseUsesExternalLoad } from './programUtils';
+import { getExerciseWeightUiMode } from './exerciseWeightEligibility';
 
 /**
  * Infère un coefficient à partir du nom / série / type (sans surcharge utilisateur).
@@ -122,12 +128,16 @@ export function inferExerciseIntensityCoeff(exercise) {
 }
 
 /**
- * Coefficient effectif pour un exercice (surcharge utilisateur > inférence).
+ * Coefficient effectif pour un exercice.
+ * Priorité : référentiel catalogue → surcharge manuelle legacy → heuristique.
  * @param {Object} exercise — au minimum { id, name? }
- * @param {Record<string, number>} userCoeffs — ex. data.exerciseIntensityCoeffs
+ * @param {Record<string, number>} userCoeffs — ex. data.exerciseIntensityCoeffs (legacy)
  * @returns {number}
  */
 export function resolveExerciseIntensityCoeff(exercise, userCoeffs = {}) {
+  const catalogCoeff = resolveCatalogIntensityCoeff(exercise);
+  if (catalogCoeff != null) return catalogCoeff;
+
   const coeffs = userCoeffs && typeof userCoeffs === 'object' ? userCoeffs : {};
   const idStr = exercise?.id != null ? String(exercise.id) : '';
   if (idStr) {
@@ -165,6 +175,16 @@ export function tieredIsometricRawUnits(seconds) {
 }
 
 const TIERED_ISO_CALIBRATION = 0.575;
+
+/** Charge scoring XP / calendrier pour holds isométriques (secondes → paliers × coeff). */
+export function computeIsometricScoringLoad(seconds, coeff, weightMultiplier = 1) {
+  const raw = tieredIsometricRawUnits(seconds);
+  const c = Number(coeff);
+  const coeffN = Number.isFinite(c) && c > 0 ? c : 1;
+  const wm = Number(weightMultiplier);
+  const mult = Number.isFinite(wm) && wm > 0 ? wm : 1;
+  return raw * coeffN * TIERED_ISO_CALIBRATION * mult;
+}
 
 /**
  * Médiane des poids (kg) saisis pour un id d’exercice (toutes dates, clés `YYYY-MM-DD_id…`).
@@ -210,22 +230,52 @@ export function computeExternalLoadMultiplier(usesExternalLoad, weightKg, median
 }
 
 /**
+ * Multiplicateur kg pour XP / calendrier — distinct du coeff variante catalogue (ex. Pompes lestées ×1,25 + kg saisi).
+ * Sans charge saisie : 1 (le coeff variante seul s’applique).
+ */
+export function resolveExerciseWeightMultiplier(exercise, weightKg, medianKg) {
+  const w = Number(weightKg);
+  if (!Number.isFinite(w) || w <= 0) return 1;
+  const med = Number(medianKg);
+  const medianRef = Number.isFinite(med) && med > 0 ? med : w;
+
+  const combined = `${exercise?.name || ''} ${exercise?.nom || ''} ${exercise?.materiel || ''} ${exercise?.equipment || ''}`.toLowerCase();
+  const looksWeightedVariant = /lest|weighted|avec gilet|ceinture lest/i.test(combined);
+
+  if (
+    looksWeightedVariant ||
+    exerciseUsesExternalLoad(exercise) ||
+    getExerciseWeightUiMode(exercise)
+  ) {
+    return computeExternalLoadMultiplier(true, w, medianRef);
+  }
+
+  return 1;
+}
+
+/**
  * Contribution calendrier musculation : reps × coeff, ou paliers secondes × coeff pour holds détectés.
  * @param {number} [weightMultiplier] — ex. charge externe (défaut 1)
  */
 export function computeStrengthCalendarContribution(exerciseLike, reps, coeff, weightMultiplier = 1) {
   const name = exerciseLike?.name || exerciseLike?.nom || '';
-  const r = Math.max(0, Math.floor(Number(reps) || 0));
+  const r = Math.max(0, Number(reps) || 0);
   if (r <= 0) return 0;
   const c = Number(coeff);
   const coeffN = Number.isFinite(c) && c > 0 ? c : inferExerciseIntensityCoeff(exerciseLike);
   const wm = Number(weightMultiplier);
   const mult = Number.isFinite(wm) && wm > 0 ? wm : 1;
-  if (exerciseNameLooksIsometricForCalendar(name)) {
+
+  const scoring = resolveExerciseScoring(exerciseLike);
+  const isIsometric =
+    scoring?.scoringType === 'isometric' ||
+    (!scoring && exerciseNameLooksIsometricForCalendar(name));
+
+  if (isIsometric) {
     const raw = tieredIsometricRawUnits(r);
     return raw * coeffN * TIERED_ISO_CALIBRATION * mult;
   }
-  return r * coeffN * mult;
+  return Math.floor(r) * coeffN * mult;
 }
 
 export function normalizeSessionDate(session, overrides = {}) {

@@ -282,7 +282,11 @@ export function getPlannedTotalFromPrescription(exercise) {
  */
 export function evaluateVolumeCompletion(exercise, doneTotal) {
   const planned = getPlannedTotalFromPrescription(exercise);
-  const done = Math.max(0, Math.floor(Number(doneTotal) || 0));
+  const unitInfo = detectExerciseUnit(exercise);
+  const isTime = unitInfo?.isTimeBased === true;
+  const done = isTime
+    ? Math.max(0, Number(doneTotal) || 0)
+    : Math.max(0, Math.floor(Number(doneTotal) || 0));
   if (planned == null || planned <= 0) {
     return { status: 'unknown', planned: null, done, gap: null };
   }

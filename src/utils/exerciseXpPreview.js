@@ -7,26 +7,38 @@ import {
   SPORT_XP_WEIGHTED_LOAD_FACTOR,
   SPORT_XP_PER_CHECKED_EXERCISE
 } from '../services/xp/xpCalculations';
+import { computeExternalLoadMultiplier } from './trainingLoadUtils';
 
 /**
  * Contribution XP liée uniquement aux reps pondérées, hors bonus volume global et flat coché.
  * @param {number} reps
- * @param {number} intensityCoeff — coefficient utilisé pour cet exercice
- * @param {number} weightKgPerRep — kg déplacés en moyenne par rep (optionnel ; 0 = neutre comme dans le calc global)
+ * @param {number} intensityCoeff — coefficient variante catalogue (ex. 1,25 pompes lestées)
+ * @param {number} weightKgPerRep — kg déplacés en moyenne par rep (0 = pas de multiplicateur charge)
+ * @param {number|null} [medianKg] — médiane perso pour `computeExternalLoadMultiplier`
  */
-export function previewWeightedRepsXpContribution(reps, intensityCoeff, weightKgPerRep = 0) {
+export function previewWeightedRepsXpContribution(
+  reps,
+  intensityCoeff,
+  weightKgPerRep = 0,
+  medianKg = null
+) {
   const r = Math.max(0, Math.round(Number(reps) || 0));
   const coeff =
     Number.isFinite(Number(intensityCoeff)) && Number(intensityCoeff) > 0
       ? Number(intensityCoeff)
       : 1;
   const w = Number(weightKgPerRep);
+  const med = Number(medianKg);
+  const medianRef = Number.isFinite(med) && med > 0 ? med : w;
   const weightMultiplier =
-    Number.isFinite(w) && w > 0 ? 1 + Math.min(1.5, w / 100) : 1;
+    Number.isFinite(w) && w > 0
+      ? computeExternalLoadMultiplier(true, w, medianRef)
+      : 1;
   const weightedLoad = r * coeff * weightMultiplier;
   return {
     weightedLoad: Math.round(weightedLoad * 100) / 100,
-    weightedRepsXp: Math.round(weightedLoad * SPORT_XP_WEIGHTED_LOAD_FACTOR)
+    weightedRepsXp: Math.round(weightedLoad * SPORT_XP_WEIGHTED_LOAD_FACTOR),
+    weightMultiplier
   };
 }
 

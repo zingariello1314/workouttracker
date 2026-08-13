@@ -33,6 +33,7 @@ import {
   createDefaultChallengeFormState
 } from '../../services/endurance/enduranceFormSchema';
 import EnduranceSessionForm from './EnduranceTab/components/EnduranceSessionForm.jsx';
+import DurationMinSecInput from '../ui/DurationMinSecInput.jsx';
 import SwimmingSessionExtras from './EnduranceTab/components/SwimmingSessionExtras.jsx';
 import RunningSessionExtras from './EnduranceTab/components/RunningSessionExtras.jsx';
 import { handleSubmitSession } from '../../services/endurance/enduranceSubmitUtils';
@@ -3725,15 +3726,14 @@ const EnduranceTab = () => {
                           <label className="block text-slate-400 text-xs mb-1">
                             {t('endurance.challenges.modal.goalDuration')} ({t('endurance.challenges.modal.optional')})
                           </label>
-                          <input
-                            type="number"
-                            step="0.5"
+                          <DurationMinSecInput
+                            storageUnit="minutes"
                             value={challengeForm.goalDuration || ''}
-                            onChange={(e) =>
-                              setChallengeForm({ ...challengeForm, goalDuration: e.target.value })
+                            onChange={(v) =>
+                              setChallengeForm({ ...challengeForm, goalDuration: v === 0 ? '' : v })
                             }
-                            className="w-full px-4 py-3 bg-black border border-[#0F4C5C]/50 rounded-xl text-white"
-                            placeholder="15"
+                            minutesLabel="Min"
+                            secondsLabel="Sec"
                           />
                         </div>
                       </div>
@@ -3835,28 +3835,42 @@ const EnduranceTab = () => {
 
               {challengeForm.type !== 'pushups_cumul' &&
                 !(challengeForm.activityType === 'pushups' && challengeForm.type === 'recurrent') && (
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                 <div>
                   <label className="block text-slate-300 text-sm font-medium mb-2">
-                    {t(`endurance.challenges.modal.goalCount.${challengeForm.activityType}`, t('endurance.challenges.modal.goalCount.default'))}
+                    {challengeForm.activityType === 'gainage'
+                      ? t('endurance.challenges.modal.goalCount.gainage', 'Temps total en planche (objectif)')
+                      : t(`endurance.challenges.modal.goalCount.${challengeForm.activityType}`, t('endurance.challenges.modal.goalCount.default'))}
                   </label>
-                  <input
-                    type="number"
-                    value={challengeForm.goalCount}
-                    onChange={(e) => setChallengeForm({...challengeForm, goalCount: e.target.value})}
-                    className="w-full px-4 py-3 bg-black border border-[#0F4C5C]/50 rounded-xl text-white focus:outline-none focus:border-[#0F5C45] transition-colors"
-                    placeholder={t('endurance.challenges.modal.optional')}
-                  />
+                  {challengeForm.activityType === 'gainage' ? (
+                    <DurationMinSecInput
+                      storageUnit="seconds"
+                      value={challengeForm.goalCount || ''}
+                      onChange={(v) =>
+                        setChallengeForm({ ...challengeForm, goalCount: v === 0 ? '' : v })
+                      }
+                    />
+                  ) : (
+                    <input
+                      type="number"
+                      value={challengeForm.goalCount}
+                      onChange={(e) => setChallengeForm({ ...challengeForm, goalCount: e.target.value })}
+                      className="w-full px-4 py-3 bg-black border border-[#0F4C5C]/50 rounded-xl text-white focus:outline-none focus:border-[#0F5C45] transition-colors"
+                      placeholder={t('endurance.challenges.modal.optional')}
+                    />
+                  )}
                 </div>
                 <div>
-                  <label className="block text-slate-300 text-sm font-medium mb-2">{t('endurance.challenges.modal.goalDuration')}</label>
-                  <input
-                    type="number"
-                    step="0.5"
-                    value={challengeForm.goalDuration}
-                    onChange={(e) => setChallengeForm({...challengeForm, goalDuration: e.target.value})}
-                    className="w-full px-4 py-3 bg-black border border-[#0F4C5C]/50 rounded-xl text-white focus:outline-none focus:border-[#0F5C45] transition-colors"
-                    placeholder={t('endurance.challenges.modal.optional')}
+                  <label className="block text-slate-300 text-sm font-medium mb-2">
+                    {t('endurance.challenges.modal.goalDuration')}
+                    {challengeForm.activityType === 'gainage' ? ' (max séance)' : ''}
+                  </label>
+                  <DurationMinSecInput
+                    storageUnit="minutes"
+                    value={challengeForm.goalDuration || ''}
+                    onChange={(v) =>
+                      setChallengeForm({ ...challengeForm, goalDuration: v === 0 ? '' : v })
+                    }
                   />
                 </div>
               </div>

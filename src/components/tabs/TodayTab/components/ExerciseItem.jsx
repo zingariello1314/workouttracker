@@ -12,6 +12,7 @@ import { Zap } from 'lucide-react';
 import { Checkbox } from '../../ui/Input';
 import { Input } from '../../ui/Input';
 import Button from '../../ui/Button';
+import ExerciseTimeInput from '../../ui/ExerciseTimeInput';
 import { useExerciseTracking } from '../hooks/useExerciseTracking';
 import { useWorkout } from '../../../../context/WorkoutContext';
 import { calculateAutoReps, detectExerciseUnit } from '../../../../utils/exerciseCalculations';
@@ -24,7 +25,8 @@ import {
 } from '../../../../services/trainingPatterns/pyramidUserSignals';
 import { intensityCoeffToStarCount, resolveExerciseIntensityCoeff } from '../../../../utils/trainingLoadUtils';
 import { resolveProgramExerciseNotes } from '../../../../utils/exerciseHeroContent';
-import LoadDifficultyStars from '../../../sport/LoadDifficultyStars';
+import ReferenceDifficultyStars from '../../../sport/ReferenceDifficultyStars';
+import { resolveExerciseScoring } from '../../../../utils/exerciseScoringResolver';
 import SessionTriplePerceivedBlock from './SessionTriplePerceivedBlock';
 
 /**
@@ -93,9 +95,11 @@ const ExerciseItem = ({ exercise, date, isGymMode, onShowVariations }) => {
     return a;
   }, [exercise, data?.exerciseIntensityCoeffs, getCurrentData]);
 
+  const scoring = useMemo(() => resolveExerciseScoring(exercise), [exercise]);
+
   const coefStarCount = useMemo(
-    () => intensityCoeffToStarCount(loadCoeff),
-    [loadCoeff]
+    () => scoring?.difficultyStars ?? intensityCoeffToStarCount(loadCoeff),
+    [scoring, loadCoeff]
   );
 
   const programNotesLine = useMemo(() => resolveProgramExerciseNotes(exercise), [exercise]);
@@ -141,10 +145,17 @@ const ExerciseItem = ({ exercise, date, isGymMode, onShowVariations }) => {
     toggleExercise(exercise);
   }, [exercise, toggleExercise]);
 
-  // Handler pour changement reps
+  // Handler pour changement reps / temps
   const handleRepsChange = useCallback((e) => {
     updateReps(exercise, e.target.value);
   }, [exercise, updateReps]);
+
+  const handleTimeChange = useCallback(
+    (next) => {
+      updateReps(exercise, next === '' ? '' : String(next));
+    },
+    [exercise, updateReps]
+  );
 
   // Handler pour afficher variations
   const handleShowVariations = useCallback(() => {
@@ -165,8 +176,24 @@ const ExerciseItem = ({ exercise, date, isGymMode, onShowVariations }) => {
       <div className="flex-1 min-w-0">
         <div className="flex flex-wrap items-center gap-2 min-w-0">
           <div className="font-medium text-white shrink-0">{exercise.name}</div>
-          <span className="shrink-0 inline-flex items-center text-sky-400" title="Indice charge (auto, avant « Fait »)">
-            <LoadDifficultyStars coeff={loadCoeff} className="scale-95" />
+          <span className="shrink-0 inline-flex items-center" title="Difficulté référentiel (fixe)">
+            {scoring ? (
+              <ReferenceDifficultyStars
+                stars={scoring.difficultyStars}
+                intensityCoeff={scoring.intensityCoeff}
+                variant="pill"
+                size="sm"
+                showCoeff
+              />
+            ) : (
+              <ReferenceDifficultyStars
+                stars={Math.min(8, Math.max(1, coefStarCount))}
+                intensityCoeff={loadCoeff}
+                variant="pill"
+                size="sm"
+                showCoeff
+              />
+            )}
           </span>
         </div>
         {isChecked && (
@@ -214,19 +241,30 @@ const ExerciseItem = ({ exercise, date, isGymMode, onShowVariations }) => {
           aria-label={`Marquer ${exercise.name} comme complété`}
         />
         <div className="flex items-center gap-1">
-          <Input
-            type="number"
-            placeholder={inputPlaceholder}
-            value={reps}
-            onChange={handleRepsChange}
-            onFocus={handleInputFocus}
-            className={`w-20 text-center ${isChecked ? 'bg-green-600/20 border-green-500 text-green-300' : 'bg-slate-800 border-slate-600 text-white'}`}
-            size="sm"
-            aria-label={`${exerciseUnit?.isTimeBased ? 'Temps' : 'Répétitions'} pour ${exercise.name}`}
-          />
-          <span className="text-slate-400 text-xs min-w-[35px]">
-            {inputLabel}
-          </span>
+          {exerciseUnit?.isTimeBased ? (
+            <ExerciseTimeInput
+              unit={exerciseUnit.unit === 'min' ? 'min' : 'sec'}
+              value={reps}
+              onChange={handleTimeChange}
+              className={isChecked ? '[&_input]:bg-green-600/20 [&_input]:border-green-500 [&_input]:text-green-300' : ''}
+            />
+          ) : (
+            <>
+              <Input
+                type="number"
+                placeholder={inputPlaceholder}
+                value={reps}
+                onChange={handleRepsChange}
+                onFocus={handleInputFocus}
+                className={`w-20 text-center ${isChecked ? 'bg-green-600/20 border-green-500 text-green-300' : 'bg-slate-800 border-slate-600 text-white'}`}
+                size="sm"
+                aria-label={`Répétitions pour ${exercise.name}`}
+              />
+              <span className="text-slate-400 text-xs min-w-[35px]">
+                {inputLabel}
+              </span>
+            </>
+          )}
         </div>
         {isChecked && (
           <div className="text-green-400 text-sm font-medium" aria-label="Exercice complété">

@@ -4,7 +4,8 @@ import { useTranslation } from '../utils/translations';
 import { summarizeExerciseSeries } from '../utils/exerciseSeriesSummary';
 import Badge from './ui/Badge';
 import Card, { CardContent, CardHeader, CardTitle } from './ui/Card';
-import LoadDifficultyStars from './sport/LoadDifficultyStars';
+import ReferenceDifficultyStars from './sport/ReferenceDifficultyStars';
+import { resolveExerciseScoring } from '../utils/exerciseScoringResolver';
 import AnatomyExerciseCardPreview from './anatomy/AnatomyExerciseCardPreview';
 import { 
   ExerciseCategories, 
@@ -27,6 +28,7 @@ const ExerciseCard = ({
 }) => {
   const t = useTranslation();
   const seriesSummary = useMemo(() => summarizeExerciseSeries(exercise), [exercise]);
+  const scoring = useMemo(() => resolveExerciseScoring(exercise), [exercise]);
   const trainingDiscipline = exercise.trainingDiscipline || exercise.metadata?.trainingDiscipline || null;
   // Fonction pour obtenir la couleur selon la catégorie
   /** Pastilles catégorie : nuances bleu / teal (charte Sport) */
@@ -241,17 +243,33 @@ const ExerciseCard = ({
             {exercise.name}
           </CardTitle>
 
-          {typeof effectiveLoadCoeff === 'number' && !Number.isNaN(effectiveLoadCoeff) && (
+          {(scoring || (typeof effectiveLoadCoeff === 'number' && !Number.isNaN(effectiveLoadCoeff))) && (
             <div className="flex items-center gap-2 shrink-0">
-              <LoadDifficultyStars coeff={effectiveLoadCoeff} className="scale-90" />
+              {scoring ? (
+                <ReferenceDifficultyStars
+                  stars={scoring.difficultyStars}
+                  intensityCoeff={scoring.intensityCoeff}
+                  variant="pill"
+                  size="sm"
+                  showCoeff
+                />
+              ) : (
+                <ReferenceDifficultyStars
+                  stars={3}
+                  intensityCoeff={effectiveLoadCoeff}
+                  variant="pill"
+                  size="sm"
+                  showCoeff
+                />
+              )}
               <div className="flex items-center gap-1.5 rounded-lg border border-[#0F4C5C]/50 bg-black px-2.5 py-1">
                 <Gauge className="h-4 w-4 text-sky-400" />
                 <div className="text-right">
                   <div className="text-[9px] uppercase leading-none text-teal-700">
-                    {t('exercisesTab.card.loadShort', 'Diff. charge')}
+                    {t('exercisesTab.card.loadShort', 'Coeff.')}
                   </div>
                   <div className="text-sm font-bold tabular-nums leading-tight text-sky-200">
-                    {Math.round(effectiveLoadCoeff * 100) / 100}
+                    {Math.round((scoring?.intensityCoeff ?? effectiveLoadCoeff) * 100) / 100}
                   </div>
                 </div>
               </div>

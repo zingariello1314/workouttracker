@@ -28,7 +28,11 @@ import SessionAggregator from '../statistics/SessionAggregator.js';
 import { computeVolumeKgForWorkoutKey } from '../../utils/exerciseLoadVolume';
 import {
   aggregateCheckedRepsByDateAndExerciseId,
-  collectDedupedCheckedVolumeKeys
+  collectDedupedCheckedVolumeKeys,
+  computeMedianWeightKgForExercise,
+  computeStrengthCalendarContribution,
+  resolveExerciseIntensityCoeff,
+  resolveExerciseWeightMultiplier
 } from '../../utils/trainingLoadUtils';
 import { computeProgramCompletionBonusXp } from '../../utils/programCompletionBonus';
 import { computeCircuitsXp } from './circuitsXpService';
@@ -39,6 +43,11 @@ import { workoutProgram } from '../../data/workoutProgram';
 import { computeLifetimeStepsMetrics } from '../sport/WalkingMetricsService';
 import { computeStretchXpFromRating, computeStretchXpFromGlobal5 } from '../../utils/stretchPerceivedRatings';
 import { collectFractionneIntervalXp } from '../../utils/intervalTrainingUtils';
+import { detectExerciseUnit } from '../../utils/exerciseCalculations';
+import {
+  storedTimeToDisplayMinutes
+} from '../../utils/sport/exerciseTimeValueUtils';
+import { resolveExerciseScoring } from '../../utils/exerciseScoringResolver';
 
 export {
   STRETCH_XP_MIN,
@@ -48,7 +57,7 @@ export {
 } from '../../utils/stretchPerceivedRatings';
 
 /** Incrémenter quand la formule XP Sport change (invalidation cache `useSportXP`). */
-export const SPORT_XP_FORMULA_REVISION = 2;
+export const SPORT_XP_FORMULA_REVISION = 5;
 
 /** Reps pondérées : XP = charge pondérée cumulée × ce facteur. */
 export const SPORT_XP_WEIGHTED_LOAD_FACTOR = 0.68;
@@ -274,8 +283,11 @@ export const calculateSportXP = (workoutData, garminData, enduranceData, sportOp
   let totalXP = 0;
   const breakdown = {
     reps: 0,
+    timeMinutes: 0,
     weightedRepsLoad: 0,
     weightedRepsXp: 0,
+    weightedTimeLoad: 0,
+    weightedTimeXp: 0,
     exercises: 0,
     exercisesXp: 0,
     calories: 0,
@@ -337,38 +349,89 @@ export const calculateSportXP = (workoutData, garminData, enduranceData, sportOp
       .replace(/_semaineA$|_semaineB$/, '');
   };
 
-  // 1. XP des répétitions pondéré difficulté + charge
+  const resolveVolumeKeyScoring = (key) => {
+    const exerciseId = extractExerciseIdFromStorageKey(key);
+    const name =
+      typeof sportOptions?.getExerciseNameById === 'function'
+        ? sportOptions.getExerciseNameById(exerciseId) || ''
+        : '';
+    return resolveExerciseScoring({ name, id: exerciseId });
+  };
+
+  // 1. XP pondérée : reps dynamiques · isométriques (paliers) · temps cardio/min séparé
   const repsMap = workoutData.reps || {};
   const coeffs = workoutData.exerciseIntensityCoeffs || {};
   let totalReps = 0;
+  let totalTimeMinutes = 0;
   let weightedLoad = 0;
+  let weightedTimeLoad = 0;
   let totalLiftedVolumeKg = 0;
 
   const volumeKeys = collectDedupedCheckedVolumeKeys(workoutData);
   volumeKeys.forEach((key) => {
-    const reps = parseInt(repsMap[key], 10) || 0;
-    if (reps <= 0) return;
-    totalReps += reps;
+    const raw = Number(repsMap[key]);
+    if (!Number.isFinite(raw) || raw <= 0) return;
 
+    const scoring = resolveVolumeKeyScoring(key);
     const exerciseId = extractExerciseIdFromStorageKey(key);
-    const coeffRaw = Number(coeffs[String(exerciseId)] ?? coeffs[String(key)] ?? 1);
-    const coeff = Number.isFinite(coeffRaw) && coeffRaw > 0 ? coeffRaw : 1;
+    const name =
+      typeof sportOptions?.getExerciseNameById === 'function'
+        ? sportOptions.getExerciseNameById(exerciseId) || ''
+        : '';
+    const unitInfo = detectExerciseUnit({ name, series: '' });
+
+    const coeff = resolveExerciseIntensityCoeff({ name, id: exerciseId }, coeffs);
 
     const volumeKg = computeVolumeKgForWorkoutKey(key, workoutData);
     totalLiftedVolumeKg += volumeKg;
-    const weightKg = reps > 0 && volumeKg > 0 ? volumeKg / reps : 0;
-    // Bonus charge progressif: +0% à 0kg, cap à +150% vers ~150kg (kg moyen déplacés par rep)
-    const weightMultiplier = Number.isFinite(weightKg) && weightKg > 0
-      ? 1 + Math.min(1.5, weightKg / 100)
-      : 1;
+    const exerciseLike = { name, id: exerciseId };
+    const countForWeight =
+      scoring?.scoringType === 'isometric' ? raw : Math.floor(raw);
+    const weightKg = countForWeight > 0 && volumeKg > 0 ? volumeKg / countForWeight : 0;
+    const medianKg = computeMedianWeightKgForExercise(
+      workoutData.exerciseWeights,
+      exerciseId
+    );
+    const weightMultiplier = resolveExerciseWeightMultiplier(
+      exerciseLike,
+      weightKg,
+      medianKg
+    );
 
-    weightedLoad += reps * coeff * weightMultiplier;
+    if (scoring?.scoringType === 'isometric' && scoring?.unit === 'seconds') {
+      weightedLoad += computeStrengthCalendarContribution(
+        exerciseLike,
+        raw,
+        coeff,
+        weightMultiplier
+      );
+      return;
+    }
+
+    const isTime = unitInfo?.isTimeBased === true && scoring?.scoringType !== 'dynamic';
+    if (isTime) {
+      totalTimeMinutes += storedTimeToDisplayMinutes(raw, unitInfo.unit);
+      weightedTimeLoad += raw * coeff;
+      return;
+    }
+
+    const reps = Math.floor(raw);
+    totalReps += reps;
+    weightedLoad += computeStrengthCalendarContribution(
+      exerciseLike,
+      reps,
+      coeff,
+      weightMultiplier
+    );
   });
 
   breakdown.reps = totalReps;
+  breakdown.timeMinutes = Math.round(totalTimeMinutes * 10) / 10;
   breakdown.weightedRepsLoad = Math.round(weightedLoad * 100) / 100;
   breakdown.weightedRepsXp = Math.round(weightedLoad * SPORT_XP_WEIGHTED_LOAD_FACTOR);
-  totalXP += breakdown.weightedRepsXp;
+  breakdown.weightedTimeLoad = Math.round(weightedTimeLoad * 100) / 100;
+  breakdown.weightedTimeXp = Math.round(weightedTimeLoad * SPORT_XP_WEIGHTED_LOAD_FACTOR);
+  totalXP += breakdown.weightedRepsXp + breakdown.weightedTimeXp;
 
   breakdown.liftedVolumeKg = Math.round(totalLiftedVolumeKg * 10) / 10;
   breakdown.liftedVolumeKgXp = Math.min(

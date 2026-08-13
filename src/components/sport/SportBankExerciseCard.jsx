@@ -1,14 +1,15 @@
 import React, { useMemo } from 'react';
-import { computeBlendedExerciseEffortStars } from '../../utils/exerciseSessionEffortBlend';
+import { collectCompletedSessionsForExercise } from '../../utils/exerciseSessionHistory';
+import { resolveExerciseScoring, summarizeUserSessionHistory } from '../../utils/exerciseScoringResolver';
 import { Gauge, Plus, ChevronRight, Award } from 'lucide-react';
 import { useTranslation } from '../../utils/translations';
+import ReferenceDifficultyStars from './ReferenceDifficultyStars';
+import AnatomyExerciseCardPreview from '../anatomy/AnatomyExerciseCardPreview';
 import {
   ExerciseCategories,
   MuscleGroups,
   Equipment
 } from '../../data/workoutProgramEnhanced';
-import LoadDifficultyStars from './LoadDifficultyStars';
-import AnatomyExerciseCardPreview from '../anatomy/AnatomyExerciseCardPreview';
 
 function getCategoryLabel(category, t) {
   switch (category) {
@@ -94,10 +95,13 @@ export default function SportBankExerciseCard({
 }) {
   const t = useTranslation();
 
-  const effortBlend = useMemo(() => {
+  const scoring = useMemo(() => resolveExerciseScoring(exercise), [exercise]);
+
+  const userHistory = useMemo(() => {
     if (!workoutData || !exercise) return null;
     try {
-      return computeBlendedExerciseEffortStars(workoutData, exercise);
+      const sessions = collectCompletedSessionsForExercise(workoutData, exercise);
+      return summarizeUserSessionHistory(sessions);
     } catch {
       return null;
     }
@@ -145,23 +149,32 @@ export default function SportBankExerciseCard({
             {exercise.name}
           </h4>
         </div>
-        <div className="flex shrink-0 flex-col items-end gap-1" title="Étoiles = difficulté estimée (séances / ressenti / auto) lorsque tes données sont disponibles">
-          <LoadDifficultyStars
-            coeff={coeffSafe}
-            starCountOverride={
-              effortBlend?.displayStars != null ? effortBlend.displayStars : undefined
-            }
-            className="scale-90"
-          />
+        <div className="flex shrink-0 flex-col items-end gap-1" title="Étoiles = difficulté référentiel officielle (fixe)">
+          {scoring ? (
+            <ReferenceDifficultyStars
+              stars={scoring.difficultyStars}
+              intensityCoeff={scoring.intensityCoeff}
+              variant="pill"
+              size="sm"
+              showCoeff
+            />
+          ) : (
+            <span className="text-[10px] text-slate-500">—</span>
+          )}
           <div
             className="flex items-center gap-1 rounded-md border border-[#0F4C5C]/50 bg-black px-2 py-0.5"
-            title="Indice charge calendrier (réglage fiche)"
+            title="Coefficient référentiel (XP / charge)"
           >
             <Gauge className="h-3.5 w-3.5 text-sky-400" />
             <span className="text-[10px] font-bold tabular-nums text-sky-200">
-              {Math.round(coeffSafe * 100) / 100}
+              {scoring ? Math.round(scoring.intensityCoeff * 100) / 100 : Math.round(coeffSafe * 100) / 100}
             </span>
           </div>
+          {userHistory?.avgUserStars != null ? (
+            <span className="text-[9px] text-slate-500 tabular-nums" title="Ressenti moyen (indicatif)">
+              ressenti ~{userHistory.avgUserStars}/5
+            </span>
+          ) : null}
         </div>
       </div>
 

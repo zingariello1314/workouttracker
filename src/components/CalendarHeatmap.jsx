@@ -32,6 +32,7 @@ import {
 } from '../utils/exerciseCalculations';
 import Input, { Checkbox } from './ui/Input';
 import Button from './ui/Button';
+import ExerciseTimeInput from './ui/ExerciseTimeInput.jsx';
 import { Check, Save, Plus, X, Trash2, Pencil } from 'lucide-react';
 import AddExceptionalExerciseModal from './modals/AddExceptionalExerciseModal';
 import { CircuitsDaySection } from './tabs/TodayTab/components/CircuitsTodaySection';
@@ -131,13 +132,15 @@ import {
   exerciseIsDumbbellEquipment,
   inferDefaultSetCount
 } from '../utils/exerciseLoadVolume';
-import LoadDifficultyStars from './sport/LoadDifficultyStars';
+import ReferenceDifficultyStars from './sport/ReferenceDifficultyStars';
+import { resolveExerciseScoring } from '../utils/exerciseScoringResolver';
 import {
   getDayJustification,
-  isDayWithoutActivity,
-  shouldOfferDayJustification,
+  shouldOpenWorkoutChoicePanel,
   isRestDayJustificationFromIntensity,
   restDayCellBackgroundStyle,
+  calendarDayUsesMinimalDetailView,
+  shouldOfferDayJustificationInDetail,
   JUSTIFICATION_REASONS,
   JUSTIFICATION_COLORS,
   JUSTIFICATION_DAY_NUMBER_CLASS,
@@ -3095,7 +3098,7 @@ const CalendarHeatmap = ({
                     setPanelDate(null);
                     return;
                   }
-                  if (shouldOfferDayJustification(allData, dateStr, garminData)) {
+                  if (shouldOpenWorkoutChoicePanel(allData, dateStr, garminData, intensityForCell)) {
                     setPanelDate(day.date);
                     setPanelMode('choice');
                     setSelectedDate(null);
@@ -3555,7 +3558,7 @@ const CalendarHeatmap = ({
                               setPanelDate(null);
                               return;
                             }
-                            if (shouldOfferDayJustification(allData, dateStr, garminData)) {
+                            if (shouldOpenWorkoutChoicePanel(allData, dateStr, garminData, yIntensity)) {
                               setPanelDate(day.date);
                               setPanelMode('choice');
                               setSelectedDate(null);
@@ -4550,22 +4553,35 @@ const CalendarHeatmap = ({
                             <div className="flex flex-col gap-3 border-t border-slate-700/60 pt-3 pl-8">
                               <div className="flex flex-wrap items-end gap-x-4 gap-y-2">
                                 <div className="flex items-center gap-1">
-                                  <Input
-                                    type="number"
-                                    placeholder={inputPlaceholder}
-                                    value={currentReps}
-                                    onChange={(e) => handleRepsChange(exerciseId, e.target.value)}
-                                    onFocus={() => handleInputFocus(exerciseId, exercise)}
-                                    disabled={isSaving}
-                                    className={`w-20 text-center font-semibold ${
-                                      isChecked 
-                                        ? 'bg-emerald-600/30 border-emerald-500 text-emerald-200 focus:ring-emerald-500' 
-                                        : 'bg-slate-800/50 border-slate-600 text-white'
-                                    }`}
-                                    min="0"
-                                    max="999"
-                                  />
-                                  <span className="text-slate-400 text-xs whitespace-nowrap">{inputLabel}</span>
+                                  {exerciseUnit?.isTimeBased ? (
+                                    <ExerciseTimeInput
+                                      unit={exerciseUnit.unit === 'min' ? 'min' : 'sec'}
+                                      value={currentReps}
+                                      onChange={(next) =>
+                                        handleRepsChange(exerciseId, next === '' ? '' : String(next))
+                                      }
+                                      disabled={isSaving}
+                                    />
+                                  ) : (
+                                    <>
+                                      <Input
+                                        type="number"
+                                        placeholder={inputPlaceholder}
+                                        value={currentReps}
+                                        onChange={(e) => handleRepsChange(exerciseId, e.target.value)}
+                                        onFocus={() => handleInputFocus(exerciseId, exercise)}
+                                        disabled={isSaving}
+                                        className={`w-20 text-center font-semibold ${
+                                          isChecked 
+                                            ? 'bg-emerald-600/30 border-emerald-500 text-emerald-200 focus:ring-emerald-500' 
+                                            : 'bg-slate-800/50 border-slate-600 text-white'
+                                        }`}
+                                        min="0"
+                                        max="999"
+                                      />
+                                      <span className="text-slate-400 text-xs whitespace-nowrap">{inputLabel}</span>
+                                    </>
+                                  )}
                                 </div>
                                 {showWeightField && (
                                   <div className="flex items-center gap-1">
@@ -5052,6 +5068,40 @@ const CalendarHeatmap = ({
           });
           // ✅ NOUVEAU : Récupérer la justification pour ce jour
           const justification = selectedDate.intensity?.justification || getDayJustification(allData, selectedDateStr);
+          const showMinimalDayView =
+            !!justification ||
+            calendarDayUsesMinimalDetailView(
+              selectedDate.intensity,
+              allData,
+              selectedDateStr
+            );
+          const canJustifyThisDay = shouldOfferDayJustificationInDetail(
+            selectedDate.intensity,
+            allData,
+            selectedDateStr
+          );
+
+          const openWorkoutEntryFromDayDetail = () => {
+            setPanelMode('workout-entry');
+            setPanelDate(selectedDate.date);
+            setSelectedDate(null);
+          };
+          const openJustificationModalFromDayDetail = () => {
+            setJustificationModalDate(selectedDate.date);
+          };
+          const dayQuickActionsProps = {
+            dateStr: selectedDateStr,
+            selectedDate,
+            intensity: selectedDate.intensity,
+            workoutData: allData,
+            garminData,
+            updateData,
+            t,
+            justification,
+            onOpenWorkoutEntry: openWorkoutEntryFromDayDetail,
+            onJustifyAbsence: canJustifyThisDay ? openJustificationModalFromDayDetail : null,
+            onModifyJustification: justification ? openJustificationModalFromDayDetail : null
+          };
 
           const dayStrengthScore =
             variant === 'sport'
@@ -5122,7 +5172,7 @@ const CalendarHeatmap = ({
               </button>
             </div>
             
-            {championDetail && selectedDateStr === championDayDate ? (
+            {championDetail && selectedDateStr === championDayDate && !showMinimalDayView ? (
               <div className="mb-4 rounded-lg border-2 border-amber-500/50 bg-amber-950/30 p-4">
                 <div className="mb-2 flex items-center gap-2 font-semibold text-amber-200">
                   <Crown className="h-5 w-5 text-amber-300" aria-hidden />
@@ -5183,26 +5233,18 @@ const CalendarHeatmap = ({
                     </div>
                   )}
                 </div>
-                <button
-                  onClick={() => {
-                    setSelectedDate(null);
-                    setJustificationModalDate(selectedDate.date);
-                  }}
-                  className="text-sm underline opacity-80 hover:opacity-100"
-                  title={t('calendar.heatmap.dayDetails.modifyJustification')}
-                >
-                  {t('calendar.heatmap.dayDetails.modify')}
-                </button>
               </div>
             )}
 
-            {dayBadgeDetails.length > 0 ? (
+            {dayBadgeDetails.length > 0 && !showMinimalDayView ? (
               <CalendarDayBadgesExplainer badgeDetails={dayBadgeDetails} t={t} />
             ) : null}
 
-            <CalendarDayWeightBanner weightKg={dayHolisticScore?.weight?.weightKg} t={t} />
+            {!showMinimalDayView ? (
+              <CalendarDayWeightBanner weightKg={dayHolisticScore?.weight?.weightKg} t={t} />
+            ) : null}
 
-            {variant === 'sport' && dayHolisticScore?.score != null ? (
+            {variant === 'sport' && dayHolisticScore?.score != null && !showMinimalDayView ? (
               <CalendarDayHolisticScoreChip
                 score={dayHolisticScore.score}
                 onScrollToDetail={scrollToHolisticDetail}
@@ -5210,7 +5252,7 @@ const CalendarHeatmap = ({
               />
             ) : null}
 
-            {nutritionMealsByDate[selectedDateStr]?.length > 0 ? (
+            {nutritionMealsByDate[selectedDateStr]?.length > 0 && !showMinimalDayView ? (
               <CalendarDayNutritionSummary
                 meals={nutritionMealsByDate[selectedDateStr]}
                 onOpenNutrition={
@@ -5220,7 +5262,7 @@ const CalendarHeatmap = ({
               />
             ) : null}
 
-            {garminRecapRows.length > 0 && (
+            {garminRecapRows.length > 0 ? (
               <div className="space-y-2">
                 {recapDetailRow ? (
                   <CalendarDayRecapDetailPanel
@@ -5247,10 +5289,17 @@ const CalendarHeatmap = ({
                   </>
                 )}
               </div>
-            )}
+            ) : showMinimalDayView ? (
+              <div className="rounded-lg border border-slate-700/60 bg-slate-900/30 p-4 text-sm text-slate-400">
+                {t(
+                  'calendar.heatmap.dayRecap.noWellnessData',
+                  'Aucune donnée Garmin pour ce jour (sommeil, pas, fréquence cardiaque…). Tu peux compléter tes pas manuellement ci-dessous.'
+                )}
+              </div>
+            ) : null}
 
-            {/* Statistiques principales - Masquer si jour justifié (sauf repos) */}
-            {(!justification || justification.reason === JUSTIFICATION_REASONS.REPOS) && (
+            {/* Statistiques d'entraînement — masquées en vue minimale (repos / absence / jour vide) */}
+            {!showMinimalDayView && (
               <div id="calendar-day-exercise-detail" ref={exerciseDetailRef} className="scroll-mt-28">
                 <h4 className="mb-3 flex items-center font-medium text-sky-100">
                   <Activity className="mr-2" size={16} />
@@ -5282,8 +5331,13 @@ const CalendarHeatmap = ({
               </div>
             )}
 
-            {/* Ajustements Garmin appliqués - Masquer si jour justifié (sauf repos) */}
-            {(!justification || justification.reason === JUSTIFICATION_REASONS.REPOS) && garminAdjustments && (
+            {!showMinimalDayView && canJustifyThisDay ? (
+              <div className="mt-4 space-y-3">
+                <CalendarDayQuickActions {...dayQuickActionsProps} />
+              </div>
+            ) : null}
+
+            {!showMinimalDayView && garminAdjustments && (
               <div className="bg-slate-800/40 border border-amber-500/25 rounded-lg p-4">
                 <h4 className="text-amber-300 font-medium mb-2 flex items-center">
                   <Target className="mr-2" size={16} />
@@ -5327,7 +5381,8 @@ const CalendarHeatmap = ({
             )}
             
             {/* Détail Garmin étendu (si pas déjà couvert par le récap liste) */}
-            {(swimming.length > 0 || jumpRope.length > 0 || cardio.length > 0 || dailyMetrics) &&
+            {!showMinimalDayView &&
+              (swimming.length > 0 || jumpRope.length > 0 || cardio.length > 0 || dailyMetrics) &&
               garminRecapRows.length === 0 && (
               <div>
                 <h4 className="text-white font-medium mb-3 flex items-center">
@@ -5483,7 +5538,7 @@ const CalendarHeatmap = ({
               </div>
             )}
 
-            {(!justification || justification.reason === JUSTIFICATION_REASONS.REPOS) &&
+            {!showMinimalDayView &&
               enduranceDay.rows.length > 0 && (
               <div className="rounded-xl border border-emerald-600/40 bg-black/90 p-4">
                 <h4 className="mb-3 flex items-center font-medium text-emerald-100">
@@ -5728,7 +5783,9 @@ const CalendarHeatmap = ({
             )}
 
             {/* Données d'endurance détaillées */}
-            {selectedDate.intensity.enduranceData && selectedDate.intensity.enduranceData.sessions > 0 && (
+            {!showMinimalDayView &&
+              selectedDate.intensity.enduranceData &&
+              selectedDate.intensity.enduranceData.sessions > 0 && (
               <div>
                 <h4 className="text-white font-medium mb-3 flex items-center">
                   <Activity className="mr-2" size={16} />
@@ -5779,7 +5836,9 @@ const CalendarHeatmap = ({
             )}
           
             {/* Exercices réalisés - Masquer si jour justifié (sauf repos) */}
-            {(!justification || justification.reason === JUSTIFICATION_REASONS.REPOS) && selectedDate.intensity.session && selectedDate.intensity.session.exercises.length > 0 && (
+            {!showMinimalDayView &&
+              selectedDate.intensity.session &&
+              selectedDate.intensity.session.exercises.length > 0 && (
               <div>
                 <h4 className="text-white font-medium mb-2">{t('calendar.heatmap.dayDetails.exercisesCompleted')}</h4>
                 <div className="space-y-2">
@@ -5812,6 +5871,11 @@ const CalendarHeatmap = ({
                       },
                       exercise.reps
                     );
+                    const editExerciseUnit = detectExerciseUnit({
+                      name: exerciseName,
+                      series: exercise.series || '',
+                      type: exercise.type || ''
+                    });
                     const weightRaw = coeffData?.exerciseWeights?.[rowStorageKey];
                     const weightKg = weightRaw != null && String(weightRaw).trim() !== ''
                       ? parseFloat(String(weightRaw).replace(',', '.'))
@@ -5860,32 +5924,57 @@ const CalendarHeatmap = ({
                               >
                                 <Pencil size={14} />
                               </button>
-                              <LoadDifficultyStars coeff={loadCoeff} className="scale-90" />
+                              <ReferenceDifficultyStars
+                                stars={
+                                  resolveExerciseScoring({
+                                    name: exerciseName,
+                                    series: exercise.series || '',
+                                    id: exercise.exerciseId ?? exercise.id
+                                  })?.difficultyStars ?? 3
+                                }
+                                intensityCoeff={loadCoeff}
+                                variant="pill"
+                                size="sm"
+                                showCoeff
+                              />
                             </div>
                           </div>
                           <div className="flex items-center gap-2 shrink-0">
                             {isEditingReps ? (
                               <div className="flex flex-wrap items-center justify-end gap-1">
-                                <Input
-                                  type="number"
-                                  min={1}
-                                  max={99999}
-                                  value={editingRepsDraft}
-                                  onChange={(e) => setEditingRepsDraft(e.target.value)}
-                                  onKeyDown={(e) => {
-                                    if (e.key === 'Enter') {
-                                      e.preventDefault();
-                                      handleUpdateExerciseRepsFromCalendar(exercise, editingRepsDraft);
+                                {editExerciseUnit?.isTimeBased ? (
+                                  <ExerciseTimeInput
+                                    unit={editExerciseUnit.unit === 'min' ? 'min' : 'sec'}
+                                    value={editingRepsDraft}
+                                    onChange={(next) =>
+                                      setEditingRepsDraft(next === '' ? '' : String(next))
                                     }
-                                    if (e.key === 'Escape') {
-                                      setEditingRepsStorageKey(null);
-                                      setEditingRepsDraft('');
-                                    }
-                                  }}
-                                  className="h-8 w-[4.5rem] px-1 text-center text-sm font-semibold bg-slate-800/80 border-slate-500 text-white"
-                                  autoFocus
-                                />
-                                <span className="text-xs text-slate-400">{editUnitLabel}</span>
+                                    compact
+                                  />
+                                ) : (
+                                  <>
+                                    <Input
+                                      type="number"
+                                      min={1}
+                                      max={99999}
+                                      value={editingRepsDraft}
+                                      onChange={(e) => setEditingRepsDraft(e.target.value)}
+                                      onKeyDown={(e) => {
+                                        if (e.key === 'Enter') {
+                                          e.preventDefault();
+                                          handleUpdateExerciseRepsFromCalendar(exercise, editingRepsDraft);
+                                        }
+                                        if (e.key === 'Escape') {
+                                          setEditingRepsStorageKey(null);
+                                          setEditingRepsDraft('');
+                                        }
+                                      }}
+                                      className="h-8 w-[4.5rem] px-1 text-center text-sm font-semibold bg-slate-800/80 border-slate-500 text-white"
+                                      autoFocus
+                                    />
+                                    <span className="text-xs text-slate-400">{editUnitLabel}</span>
+                                  </>
+                                )}
                                 <button
                                   type="button"
                                   onClick={() =>
@@ -5939,38 +6028,32 @@ const CalendarHeatmap = ({
               </div>
             )}
 
-            <div className="mt-6 space-y-4 border-t border-slate-700/60 pt-6">
-              <CalendarDayQuickActions
-                dateStr={selectedDateStr}
-                selectedDate={selectedDate}
-                intensity={selectedDate.intensity}
-                workoutData={allData}
-                garminData={garminData}
-                updateData={updateData}
-                t={t}
-                onOpenWorkoutEntry={() => {
-                  setPanelMode('workout-entry');
-                  setPanelDate(selectedDate.date);
-                  setSelectedDate(null);
-                }}
-                onJustifyAbsence={
-                  isDayWithoutActivity(allData, selectedDateStr)
-                    ? () => setJustificationModalDate(selectedDate.date)
-                    : null
-                }
-              />
-
-              {variant === 'sport' ? (
-                <div ref={holisticDetailRef}>
-                  <CalendarDayTrainingScorePanel
-                    strength={dayStrengthScore}
-                    holistic={dayHolisticScore}
-                    holisticDetailId="calendar-day-holistic-detail"
-                    t={t}
+            {showMinimalDayView ? (
+              <div className="mt-4 space-y-3 border-t border-slate-700/60 pt-4">
+                <CalendarDayQuickActions {...dayQuickActionsProps} />
+              </div>
+            ) : (
+              <div className="mt-6 space-y-4 border-t border-slate-700/60 pt-6">
+                {!canJustifyThisDay ? (
+                  <CalendarDayQuickActions
+                    {...dayQuickActionsProps}
+                    onJustifyAbsence={null}
+                    onModifyJustification={null}
                   />
-                </div>
-              ) : null}
-            </div>
+                ) : null}
+
+                {variant === 'sport' ? (
+                  <div ref={holisticDetailRef}>
+                    <CalendarDayTrainingScorePanel
+                      strength={dayStrengthScore}
+                      holistic={dayHolisticScore}
+                      holisticDetailId="calendar-day-holistic-detail"
+                      t={t}
+                    />
+                  </div>
+                ) : null}
+              </div>
+            )}
 
             </div>
           );
@@ -5988,6 +6071,13 @@ const CalendarHeatmap = ({
           onSaved={() => {
             intensityCache.current = {};
             setDataUpdateTrigger((n) => n + 1);
+            setSelectedDate((prev) => {
+              if (!prev?.date) return prev;
+              return {
+                ...prev,
+                intensity: getIntensityForDate(prev.date)
+              };
+            });
           }}
           date={justificationModalDate}
           existingJustification={getDayJustification(allData, getDateStr(justificationModalDate))}

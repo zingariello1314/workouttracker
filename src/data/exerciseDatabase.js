@@ -1,6 +1,8 @@
 // Base de données complète des exercices avec définitions techniques
 // Chaque exercice contient : nom, catégorie, muscles primaires/secondaires, équipement, description et variations
 
+import { EXERCISE_DATABASE_ENRICHMENT } from './exerciseDatabaseEnrichment.js';
+
 export const exerciseDatabase = {
   // PECTORAUX
   "pompes": {
@@ -286,6 +288,64 @@ export const exerciseDatabase = {
     equipment: "Machine mollets assis",
     description: "Mollets en position assise ciblant les soléaires",
     variations: ["seated calf raises", "mollets machine"]
+  },
+  "élévations de mollets pointes extérieur": {
+    name: "Élévations de mollets — pointes de pieds vers l’extérieur",
+    category: "Mollets",
+    primaryMuscles: ["Gastrocnémien médial", "Gastrocnémiens", "Soléaire"],
+    secondaryMuscles: ["Tibial postérieur", "Fléchisseurs des orteils"],
+    equipment: "Poids du corps / Haltères",
+    difficulty: 1,
+    summary: "Calf raise toes-out · accent chef médial · flexion plantaire contrôlée",
+    description:
+      "Variante du calf raise avec une légère rotation externe des pieds : les orteils s’éloignent l’un de l’autre (petit « V ») tandis que les talons restent relativement plus proches. Le mouvement reste une flexion plantaire de la cheville : depuis une position basse, pousser dans l’avant-pied pour décoller les talons et monter le plus haut possible sur les orteils, puis redescendre lentement sous contrôle. La rotation ne constitue pas le mouvement : elle oriente simplement le pied. Une rotation légère et naturelle suffit ; forcer fortement les pieds vers l’extérieur n’est pas nécessaire. Corps droit, genoux stables, effort principalement à la cheville. Un support tenu légèrement avec les mains peut supprimer les problèmes d’équilibre. Réalisable au poids du corps, sur une marche pour l’amplitude, ou avec une charge lorsque le poids du corps devient insuffisant.\n\n" +
+      "Muscles ciblés : comme toute élévation de mollets, le gastrocnémien et le soléaire (triceps sural) sont les moteurs principaux. Le gastrocnémien, muscle superficiel à deux chefs (médial et latéral), traverse genou et cheville ; le soléaire, plus profond, ne traverse que la cheville. Debout genou relativement tendu, les deux participent, avec une contribution importante du gastrocnémien. Le tibial postérieur et certains fléchisseurs des orteils aident à la flexion plantaire et à la stabilisation, sans être la cible principale.\n\n" +
+      "Ce que change réellement la rotation vers l’extérieur : ce n’est pas qu’une sensation. L’EMG montre qu’une position toes-out augmente relativement l’activité du gastrocnémien médial par rapport au chef latéral, tandis que toes-in tend à favoriser le chef latéral. Des travaux sur la commande des unités motrices retrouvent aussi une augmentation de la commande neurale du chef médial pieds tournés vers l’extérieur, avec une diminution relative du chef latéral. C’est une accentuation, pas une isolation : le chef latéral et le soléaire restent fortement impliqués.\n\n" +
+      "Exécution : debout, pieds approximativement à largeur de bassin, pointes légèrement vers l’extérieur. Poids réparti de manière stable sur l’avant-pied, sans écraser volontairement le bord interne ou externe. Pousse progressivement dans l’avant-pied et élève les talons aussi haut que possible — le mouvement est initié par la cheville, le corps monte verticalement. En haut, contraction volontaire du mollet, courte pause si utile. Descente lente : chaque répétition est une flexion plantaire contrôlée, pas un rebond de tout le corps. Tempo type 2-0-1-1 ou 3-1-1-1.\n\n" +
+      "Amplitude : depuis une dorsiflexion confortable en bas, flexion plantaire complète en haut. Sur une marche, le talon peut descendre légèrement sous le niveau de l’avant-pied — sans chercher un étirement douloureux du tendon d’Achille. Le complexe gastrocnémien–soléaire–tendon d’Achille a une forte composante élastique : un rebond déplace de la charge sans le même travail musculaire volontaire qu’une répétition contrôlée.\n\n" +
+      "Intérêt : développer le mollet en orientant davantage le stimulus vers le chef médial (partie interne, volume visible). Une étude d’entraînement de neuf semaines a observé une augmentation plus importante de l’épaisseur du gastrocnémien médial en position vers l’extérieur, et l’inverse pour le chef latéral en position vers l’intérieur. À interpréter avec prudence (groupe restreint, protocole spécifique) : ce n’est pas un moyen magique de remodeler le mollet. Le facteur déterminant reste tension progressive, amplitude maîtrisée et volume. Le soléaire continue de participer quelle que soit l’orientation du pied ; pour le cibler davantage, la variable pertinente est le genou fléchi (mollets assis).\n\n" +
+      "Erreurs : tourner excessivement les pieds ; laisser les genoux rentrer ou partir ; rouler sur le bord interne du pied ; rebondir en bas ; n’effectuer que la partie haute ; chercher une sensation interne à tout prix au détriment de la stabilité.\n\n" +
+      "Programmation : variation ciblée au sein d’un travail complet des mollets, pas un remplacement de l’élévation classique. 3–4 × 10–20 reps, charge progressive. La position des pieds est un outil supplémentaire, pas le facteur principal d’hypertrophie.\n\n" +
+      "À retenir : légère rotation externe, pied stable, genoux contrôlés, montée complète, contraction haute, descente lente. Accentue le chef médial au sein d’un mouvement qui continue de solliciter l’ensemble du complexe du mollet.",
+    variations: [
+      "élévations de mollets — pointes de pieds vers l’extérieur",
+      "élévations de mollets pointes extérieur",
+      "mollets pointes extérieur",
+      "mollets pointes dehors",
+      "toes out calf raise",
+      "toes-out calf raises",
+      "calf raise toes out",
+      "standing calf raise toes out"
+    ]
+  },
+  "élévations de mollets pointes intérieur": {
+    name: "Élévations de mollets — pointes de pieds vers l’intérieur",
+    category: "Mollets",
+    primaryMuscles: ["Gastrocnémien latéral", "Gastrocnémiens", "Soléaire"],
+    secondaryMuscles: ["Fibulaires", "Tibial postérieur"],
+    equipment: "Poids du corps / Haltères",
+    difficulty: 1,
+    summary: "Calf raise toes-in · variation d’orientation · pas une isolation du chef latéral",
+    description:
+      "Variante du calf raise classique avec une légère rotation interne : les orteils se rapprochent l’un de l’autre tandis que les talons restent légèrement plus éloignés. Le mouvement principal reste identique : flexion plantaire de la cheville — pousser l’avant-pied vers le sol et élever le talon. Debout, généralement jambes tendues, poids sur l’avant-pied ; depuis une position basse, pousser progressivement à travers les orteils jusqu’à monter le plus haut possible, puis redescendre sous contrôle. La rotation n’est pas le mouvement : elle modifie seulement l’orientation du pied pendant l’élévation.\n\n" +
+      "Muscles principalement sollicités : le triceps sural (gastrocnémien médial et latéral + soléaire), qui converge vers le tendon d’Achille et le calcanéus. Fonction commune : flexion plantaire. Debout genou relativement tendu, le gastrocnémien est dans une position favorable, sans que le soléaire soit « désactivé ». À l’inverse, genou fortement fléchi (mollets assis), le gastrocnémien est désavantagé et le soléaire prend davantage d’importance. Le tibial postérieur (inversion + flexion plantaire) et les fibulaires (contrôle latéral) participent à la stabilisation du pied.\n\n" +
+      "Ce que change réellement la position vers l’intérieur : l’affirmation « pointes vers l’intérieur = mollet externe » est trop simplifiée. Les deux chefs restent impliqués avec le soléaire. La rotation interne modifie la mécanique pied-cheville et peut légèrement changer sensations et répartition d’activité, mais elle n’isole pas le chef latéral. Pour la masse du mollet, amplitude, charge, proximité de l’échec et progression comptent bien plus que quelques degrés de rotation. La distinction genou tendu / genou fléchi a beaucoup plus de valeur.\n\n" +
+      "Exécution : debout, pieds environ à largeur de bassin, pointes légèrement vers l’intérieur — une position naturelle suffit, pas les orteils face à face. Jambes stables, tronc droit. Si tu tiens un support, sers-t’en pour l’équilibre, pas pour te tirer vers le haut. Pousse activement l’avant-pied : imagine éloigner le corps du sol uniquement par la cheville. Monte réellement haut sur les orteils sans déformer le pied, courte contraction en haut, descente contrôlée. Les genoux ne fléchissent pas à chaque répétition ; le bassin ne rebondit pas ; on ne déplace pas volontairement la pression sur le bord du pied pour « trouver » un chef.\n\n" +
+      "Amplitude et contrôle : une erreur fréquente consiste à ne faire que la partie haute, charger lourd et rebondir. Une bonne répétition commence bas, contrôlée, puis monte complètement. Sur une marche, le talon peut descendre sous l’avant-pied si la mobilité le permet, sans transformer le mouvement en étirement brutal du tendon d’Achille. Montée dynamique mais maîtrisée, descente contrôlée : plus le mouvement rebondit, plus le travail bascule vers les structures élastiques.\n\n" +
+      "Intérêt : force et masse des fléchisseurs plantaires (marche, course, sauts, accélérations, propulsion), au-delà de l’esthétique. Exercice simple à charger progressivement (poids du corps, unilatéral, haltère, machine). Le mollet, habitué au travail quotidien répétitif, a généralement besoin d’une résistance suffisante et de séries proches de la limite technique. Cette variante propose une variation d’orientation, pas un ciblage magique de l’extérieur du mollet.\n\n" +
+      "Erreurs : tourner excessivement les pieds ; rebondir en bas ; ne faire que la moitié haute ; charger trop lourd et tricher avec genoux, bassin ou élan ; écraser le bord externe de l’avant-pied ; négliger le genou tendu si l’objectif est le gastrocnémien.\n\n" +
+      "Programmation : complément d’une élévation classique pieds naturels, pas une obsession d’angle. 3–4 × 10–20 reps. Pour un mollet complet, combiner genou tendu (gastrocnémien) et genou fléchi (soléaire) reste plus déterminant que l’orientation des orteils.\n\n" +
+      "À retenir : pieds légèrement tournés vers l’intérieur → genoux stables → talons abaissés sous contrôle → poussée forte dans l’avant-pied → montée maximale → courte contraction → descente lente. Variation d’angle ≠ isolation musculaire.",
+    variations: [
+      "élévations de mollets — pointes de pieds vers l’intérieur",
+      "élévations de mollets pointes intérieur",
+      "mollets pointes intérieur",
+      "mollets pointes dedans",
+      "toes in calf raise",
+      "toes-in calf raises",
+      "calf raise toes in",
+      "standing calf raise toes in"
+    ]
   },
 
   // ABDOMINAUX
@@ -2620,26 +2680,41 @@ export const exerciseDatabase = {
   }
 };
 
+Object.assign(exerciseDatabase, EXERCISE_DATABASE_ENRICHMENT);
+
 // Fonctions utilitaires pour la recherche et la catégorisation
 export function findExerciseInDatabase(exerciseName) {
-  const normalizedName = exerciseName.toLowerCase().trim();
-  
-  // Recherche directe par nom
+  const normalizedName = String(exerciseName || '').toLowerCase().trim();
+  if (!normalizedName) return null;
+
   if (exerciseDatabase[normalizedName]) {
     return exerciseDatabase[normalizedName];
   }
-  
-  // Recherche par variations
-  for (const [key, exercise] of Object.entries(exerciseDatabase)) {
-    if (exercise.variations.some(variation => 
-      normalizedName.includes(variation.toLowerCase()) || 
-      variation.toLowerCase().includes(normalizedName)
-    )) {
+
+  for (const exercise of Object.values(exerciseDatabase)) {
+    if (String(exercise.name || '').toLowerCase().trim() === normalizedName) {
       return exercise;
     }
   }
-  
-  return null;
+
+  let best = null;
+  let bestScore = 0;
+  for (const exercise of Object.values(exerciseDatabase)) {
+    const vars = Array.isArray(exercise.variations) ? exercise.variations : [];
+    for (const variation of vars) {
+      const v = String(variation || '').toLowerCase().trim();
+      if (!v) continue;
+      if (v === normalizedName) return exercise;
+      if (normalizedName.includes(v) || v.includes(normalizedName)) {
+        if (v.length > bestScore) {
+          bestScore = v.length;
+          best = exercise;
+        }
+      }
+    }
+  }
+
+  return best;
 }
 
 export function getExercisesByCategory(category) {

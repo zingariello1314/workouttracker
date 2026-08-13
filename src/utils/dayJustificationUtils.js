@@ -18,6 +18,7 @@ import { resolveSessionCalendarDate, readGarminActivityDateOverrides } from './s
 import { getDateStr } from './dateUtils';
 import { countMomentumCheckedStretches } from './calendarDayMomentumStripes';
 import { normalizeGarminDate } from '../components/tabs/GarminTab/utils/garminFormatters';
+import { calendarDayHasWorkoutActivity } from './calendarDayVisualModel';
 
 // ==================== CONSTANTES ====================
 
@@ -293,11 +294,54 @@ export function dayHasGarminRecordedActivity(garminData, dateStr, workoutData = 
   return false;
 }
 
+/**
+ * Stats muscu affichées vides dans le détail calendrier (0 reps, 0 exos classiques, 0 min).
+ * Indépendant des étirements cochés ou de la teinte Garmin passive.
+ */
+export function calendarDayHasEmptyWorkoutStats(intensity) {
+  if (!intensity || typeof intensity !== 'object') return true;
+  return (
+    (intensity.reps ?? 0) === 0 &&
+    (intensity.completedCount ?? 0) === 0 &&
+    (intensity.duration ?? 0) === 0
+  );
+}
+
 /** Ouvrir le panneau « justifier / saisir » : aucune activité volontaire (pas, sommeil, teinte seule). */
 export function shouldOfferDayJustification(data, dateStr, garminData = null) {
   if (!isDayWithoutActivity(data, dateStr, null)) return false;
-  if (dayHasGarminRecordedActivity(garminData, dateStr)) return false;
+  if (dayHasGarminRecordedActivity(garminData, dateStr, data)) return false;
   return true;
+}
+
+/** Proposer « Justifier l'absence » dans le détail jour (aligné sur les stats affichées). */
+export function shouldOfferDayJustificationInDetail(intensity, data, dateStr) {
+  if (hasDayJustification(data, dateStr)) return false;
+  return calendarDayHasEmptyWorkoutStats(intensity);
+}
+
+/**
+ * Panneau intermédiaire « Justifier OU Saisir » au clic sur une case.
+ * Les jours déjà justifiés, repos planifiés ou sans stats muscu ouvrent directement le détail.
+ */
+export function shouldOpenWorkoutChoicePanel(data, dateStr, garminData = null, intensity = null) {
+  if (calendarDayUsesMinimalDetailView(intensity, data, dateStr)) return false;
+  if (calendarDayHasEmptyWorkoutStats(intensity)) return false;
+  return shouldOfferDayJustification(data, dateStr, garminData);
+}
+
+/**
+ * Détail jour calendrier réduit : repos planifié, absence justifiée, ou jour sans séance enregistrée.
+ * Affiche uniquement le récap principal (Garmin, sommeil…) sans stats muscu / notes détaillées.
+ */
+export function calendarDayUsesMinimalDetailView(intensity, data, dateStr) {
+  if (!intensity) return true;
+  if (intensity.justification) return true;
+  if (data && dateStr && hasDayJustification(data, dateStr)) return true;
+  const hasWorkout = calendarDayHasWorkoutActivity(intensity);
+  if (intensity.isPlannedRestDay && !hasWorkout) return true;
+  if (!hasWorkout && isDayWithoutActivity(data, dateStr)) return true;
+  return false;
 }
 
 /**

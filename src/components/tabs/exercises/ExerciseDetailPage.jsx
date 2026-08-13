@@ -12,7 +12,13 @@ import {
   computeExternalLoadMultiplier,
   intensityCoeffToStarCount
 } from '../../../utils/trainingLoadUtils';
-import { computeBlendedExerciseEffortStars } from '../../../utils/exerciseSessionEffortBlend';
+import { collectCompletedSessionsForExercise } from '../../../utils/exerciseSessionHistory';
+import {
+  resolveExerciseScoring,
+  formatScoringUnitLabel
+} from '../../../utils/exerciseScoringResolver';
+import ReferenceDifficultyStars from '../../sport/ReferenceDifficultyStars';
+import ExerciseSessionHistoryPanel from './ExerciseSessionHistoryPanel';
 import {
   previewWeightedRepsXpContribution,
   SPORT_FLAT_COMPLETED_EXERCISE_XP
@@ -24,7 +30,6 @@ import {
   getExerciseVolumeModeTranslationKey,
   formatMuscleList
 } from '../../../utils/exerciseHeroContent';
-import LoadDifficultyStars from '../../sport/LoadDifficultyStars';
 import AnatomyBankHighlight from '../../anatomy/AnatomyBankHighlight';
 import ExercisePerceivedRessentiPanel from './ExercisePerceivedRessentiPanel';
 import ExerciseSimilarSection from './ExerciseSimilarSection';
@@ -196,17 +201,21 @@ const ExerciseDetailPage = ({
     [applyPersistedCoefficient, readOnly]
   );
 
-  const effortBlend = useMemo(
-    () => computeBlendedExerciseEffortStars(data || {}, exercise),
+  const scoring = useMemo(() => resolveExerciseScoring(exercise), [exercise]);
+  const catalogLocked = scoring?.source === 'catalog';
+
+  const completedSessions = useMemo(
+    () => collectCompletedSessionsForExercise(data || {}, exercise),
     [data, exercise]
   );
 
   const coefficientForPreview = useMemo(() => {
+    if (catalogLocked && scoring?.intensityCoeff != null) return scoring.intensityCoeff;
     const t = draftCoeff.trim().replace(',', '.');
     const parsedDraft = parseFloat(t);
     if (!Number.isNaN(parsedDraft) && parsedDraft >= 0.05) return parsedDraft;
     return effectiveCoeff;
-  }, [draftCoeff, effectiveCoeff]);
+  }, [catalogLocked, scoring, draftCoeff, effectiveCoeff]);
 
   const sliderDisplayCoeff = useMemo(() => {
     const parsed = parseFloat(String(draftCoeff).trim().replace(',', '.'));
@@ -259,7 +268,8 @@ const ExerciseDetailPage = ({
     const fromRepsOnly = previewWeightedRepsXpContribution(
       repsPreviewExample,
       coefficientForPreview,
-      wPerRep
+      wPerRep,
+      medKg
     ).weightedRepsXp;
     const exampleTotalXp = fromRepsOnly + SPORT_FLAT_COMPLETED_EXERCISE_XP;
     return {
@@ -268,37 +278,6 @@ const ExerciseDetailPage = ({
       usedKgPerRep: wPerRep
     };
   }, [coefficientForPreview, externalLoadWeightExplain?.median, repsPreviewExample]);
-
-  const effortBlendHintFr = useMemo(() => {
-    let msg;
-    switch (effortBlend.source) {
-      case 'blend_stars_history':
-      case 'blend_stars_history_perceived':
-        msg =
-          'Combine tes étoiles « séance » récentes, une tendance des reps (en ignorant les séries où la charge monte fort) et l’indice auto.';
-        break;
-      case 'blend_stars_auto':
-      case 'blend_stars_auto_perceived':
-        msg =
-          'Mélange de tes dernières étoiles séance et de l’indice auto (il manque encore assez d’historique pour la tendance reps).';
-        break;
-      case 'blend_reps_trend':
-      case 'blend_reps_trend_perceived':
-        msg = 'Surtout la tendance des reps + l’indice auto (peu ou pas d’étoiles séance enregistrées).';
-        break;
-      case 'perceived_auto':
-        msg =
-          'Bloc « Ressenti » de la fiche + indice automatique ; complète avec les étoiles sur Aujourd’hui pour encore affiner.';
-        break;
-      default:
-        msg =
-          'Indice automatique seul : ajoute des étoiles sur Aujourd’hui quand tu coches l’exercice pour affiner.';
-    }
-    if (effortBlend.perceivedStars != null && !msg.includes('Ressenti')) {
-      msg += ' Les curseurs « Ressenti » sont pris en compte.';
-    }
-    return msg;
-  }, [effortBlend.source, effortBlend.perceivedStars]);
 
   const txt = (field) => profileText(t, pid, field, profileText(t, 'strength_default', field, ''));
 
@@ -376,14 +355,30 @@ const ExerciseDetailPage = ({
             {exercise.name || exercise.nom}
           </h1>
           <div className="mt-2 flex flex-wrap items-center gap-2">
-            <LoadDifficultyStars coeff={effectiveCoeff} maxStars={5} />
+            {scoring ? (
+              <ReferenceDifficultyStars
+                stars={scoring.difficultyStars}
+                intensityCoeff={scoring.intensityCoeff}
+                variant="pill"
+                size="sm"
+                showCoeff
+              />
+            ) : (
+              <ReferenceDifficultyStars
+                stars={3}
+                intensityCoeff={effectiveCoeff}
+                variant="pill"
+                size="sm"
+                showCoeff
+              />
+            )}
             <span className="text-xs text-slate-500">
               <span className={`${SPORT_SECTION_LABEL}`}>
-                {t('exercisesTab.detail.loadIndex', 'Indice charge')}
+                {t('exercisesTab.detail.loadIndex', 'Coeff. référentiel')}
               </span>{' '}
-              ≈{' '}
+              ×{' '}
               <span className="text-slate-200 tabular-nums font-medium">
-                {Math.round(effectiveCoeff * 100) / 100}
+                {Math.round((scoring?.intensityCoeff ?? effectiveCoeff) * 100) / 100}
               </span>
             </span>
             <span className="text-[10px] uppercase tracking-wide rounded-full border border-[#0F4C5C]/65 bg-black text-teal-200/95 px-2 py-0.5 shadow-sm shadow-black/40 ring-1 ring-[#0F5C45]/35">
@@ -765,26 +760,43 @@ const ExerciseDetailPage = ({
         <CardContent className="space-y-4 text-sm text-slate-300 bg-black">
           <div className={`rounded-lg p-3 ${SPORT_SURFACE} ${SPORT_BORDER_SOFT}`}>
             <div className={`text-xs font-semibold uppercase tracking-wide ${SPORT_SECTION_LABEL} mb-2`}>
-              {t('exercisesTab.detail.blendedEffortLabel', 'Note estimée (historique + séances)')}
+              {t('exercisesTab.detail.referenceScoringLabel', 'Référentiel officiel (fixe)')}
             </div>
-            <div className="flex flex-wrap items-center gap-3">
-              <span className="text-amber-300 text-lg tabular-nums" aria-hidden>
-                {'★'.repeat(effortBlend.displayStars)}
-              </span>
-              <span className="text-slate-700 text-lg" aria-hidden>
-                {'☆'.repeat(Math.max(0, 5 - effortBlend.displayStars))}
-              </span>
-              <span className="text-slate-400 text-xs">
-                ({effortBlend.displayStars}/5 · indice auto ≈{' '}
-                {intensityCoeffToStarCount(effortBlend.autoCoeff)}/5)
-              </span>
-            </div>
-            <p className="text-xs text-slate-500 mt-2 leading-relaxed">{effortBlendHintFr}</p>
+            {scoring ? (
+              <div className="flex flex-wrap items-center gap-3">
+                <ReferenceDifficultyStars
+                  stars={scoring.difficultyStars}
+                  intensityCoeff={scoring.intensityCoeff}
+                  variant="pill"
+                  size="sm"
+                  showCoeff
+                />
+                <span className="text-slate-400 text-xs tabular-nums">
+                  ×{Math.round(scoring.intensityCoeff * 100) / 100} ·{' '}
+                  {formatScoringUnitLabel(scoring.unit)} ·{' '}
+                  {scoring.scoringType === 'isometric' ? 'isométrique' : 'dynamique'}
+                </span>
+              </div>
+            ) : (
+              <p className="text-xs text-slate-500">
+                {t(
+                  'exercisesTab.detail.noCatalogEntry',
+                  'Pas encore dans le référentiel musculation — coefficient heuristique legacy.'
+                )}
+              </p>
+            )}
+            <p className="text-xs text-slate-500 mt-2 leading-relaxed">
+              {t(
+                'exercisesTab.detail.referenceScoringHint',
+                'Cette note et ce coefficient ne changent pas avec ton ressenti. Ils servent au calcul XP et à la charge calendrier.'
+              )}
+            </p>
           </div>
 
+          {!catalogLocked ? (
           <div>
             <label className={`block text-xs font-semibold ${SPORT_SECTION_LABEL} mb-2`}>
-              {t('exercisesTab.detail.loadSliderLabel', 'Régler l’indice de charge')}
+              {t('exercisesTab.detail.loadSliderLabel', 'Régler l’indice de charge (legacy)')}
             </label>
             <input
               type="range"
@@ -809,6 +821,7 @@ const ExerciseDetailPage = ({
               <span>8</span>
             </div>
           </div>
+          ) : null}
 
           <div className={`rounded-lg p-3 text-xs leading-relaxed ${SPORT_BORDER_SOFT} bg-black/60`}>
             <div className={`font-semibold ${SPORT_SECTION_LABEL} mb-1`}>
@@ -834,6 +847,21 @@ const ExerciseDetailPage = ({
               </p>
             ) : null}
           </div>
+        </CardContent>
+      </Card>
+
+      <Card variant="sport" className="ring-1 ring-teal-500/15 border border-teal-500/10">
+        <CardHeader variant="sport" className="pb-2">
+          <CardTitle tone="sport" className={`text-lg normal-case ${SPORT_SECTION_LABEL} tracking-tight`}>
+            {t('exercisesTab.detail.sessionHistoryTitle', 'Ton historique (ressenti & volume)')}
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="bg-black">
+          <ExerciseSessionHistoryPanel
+            exercise={exercise}
+            sessions={completedSessions}
+            scoringUnit={scoring?.unit || 'reps'}
+          />
         </CardContent>
       </Card>
 
