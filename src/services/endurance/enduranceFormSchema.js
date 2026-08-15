@@ -187,7 +187,7 @@ const formConfig = {
     fields: [
       { key: 'date', type: 'date', label: 'Date' },
       { key: 'time', type: 'time', label: 'Heure' },
-      { key: 'duration', type: 'text', label: 'Durée (mm:ss)', placeholder: 'Ex: 10:00' },
+      { key: 'duration', type: 'duration_minutes', label: 'Durée (minutes + secondes)' },
       {
         key: 'type',
         type: 'select',
@@ -262,7 +262,7 @@ const formConfig = {
         placeholder: 'Ex: 5.2',
         step: 0.1
       },
-      { key: 'duration', type: 'text', label: 'Durée (hh:mm:ss)', placeholder: 'Ex: 00:28:30' },
+      { key: 'duration', type: 'duration_hms', label: 'Durée (heures + minutes + secondes)' },
       {
         key: 'type',
         type: 'select',

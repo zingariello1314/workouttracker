@@ -367,7 +367,11 @@ export function buildCoachVisionReport(opts = {}) {
     isAuthenticated = false,
     garminData = null,
     garminPartial = null,
-    denseAnalytics = null
+    denseAnalytics = null,
+    trainingState = null,
+    composedInterpretations = [],
+    trainingEvents = null,
+    stateTransitions = []
   } = opts;
 
   const endYmd = window?.end || DateHelper.getTodayLocal();
@@ -554,7 +558,11 @@ export function buildCoachVisionReport(opts = {}) {
     isAdmin,
     isAuthenticated,
     trainingDaysInPeriod,
-    periodComp
+    periodComp,
+    trainingState,
+    composedInterpretations,
+    trainingEvents,
+    stateTransitions: opts.stateTransitions
   });
 
   const paragraphs =

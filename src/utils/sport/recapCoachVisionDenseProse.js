@@ -19,6 +19,7 @@ import { compareExoCompletionWeekBlocks } from './recapCompletionTruth';
 import { resolveStreetSkillPlan } from '../../features/profileQuestionnaire/quizStreetSkillGoal';
 import { normalizeProfileQuestionnaire } from '../../features/profileQuestionnaire/schema';
 import { resolveRunningPeriodStats } from './runningVolumeTruth';
+import { buildCoachStateProse } from './buildCoachStateProse';
 
 const WEEKDAY_FR = [
   'dimanche',
@@ -485,7 +486,11 @@ export function buildIntegratedCoachVisionProse(opts = {}) {
     isAdmin = false,
     isAuthenticated = false,
     trainingDaysInPeriod = 0,
-    periodComp = null
+    periodComp = null,
+    trainingState = null,
+    composedInterpretations = [],
+    trainingEvents = null,
+    stateTransitions = []
   } = opts;
 
   const endYmd = window?.end || DateHelper.getTodayLocal();
@@ -525,8 +530,24 @@ export function buildIntegratedCoachVisionProse(opts = {}) {
   const recovery = buildRecoveryParagraph(shared);
   const endurance = buildEnduranceParagraph(shared);
 
+  const stateProse = buildCoachStateProse({
+    trainingState,
+    composedInterpretations,
+    trainingEvents: trainingEvents ? { events: trainingEvents } : null,
+    stateTransitions
+  });
+
+  const paragraphs = [load, recovery, endurance].filter(Boolean);
+  if (stateProse) {
+    if (paragraphs[0]) {
+      paragraphs[0] = `${stateProse} ${paragraphs[0]}`;
+    } else {
+      paragraphs.unshift(stateProse);
+    }
+  }
+
   return {
     lead: adherence,
-    paragraphs: [load, recovery, endurance].filter(Boolean)
+    paragraphs
   };
 }

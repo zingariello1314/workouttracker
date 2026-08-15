@@ -5,6 +5,7 @@
 import { forEachEnduranceBenchmarkSession } from '../../services/xp/exerciseGradeEnduranceBridge';
 
 export const CALENDAR_DAY_EXERCISES_SECTION_ID = 'calendar-day-exercise-detail';
+export const CALENDAR_DAY_TOTAL_REPS_ID = 'calendar-day-total-reps';
 export const CALENDAR_RECORD_SPOTLIGHT_CLASS = 'calendar-record-spotlight';
 
 const FALLBACK_ANCHOR_IDS = [
@@ -15,6 +16,11 @@ const FALLBACK_ANCHOR_IDS = [
 export function calendarExerciseRecordElementId(storageKey) {
   if (!storageKey) return null;
   return `cal-ex-${String(storageKey).replace(/[^a-zA-Z0-9_-]/g, '_')}`;
+}
+
+export function calendarMomentumRecapRowElementId(rowId) {
+  if (!rowId) return null;
+  return `cal-recap-${String(rowId).replace(/[^a-zA-Z0-9_:.-]/g, '_')}`;
 }
 
 export function calendarEnduranceHistoryElementId(historyRowId) {

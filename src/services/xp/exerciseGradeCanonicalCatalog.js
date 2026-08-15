@@ -13,11 +13,13 @@ import { catalogKeyForExerciseId, discoverActiveExerciseIds } from './exerciseGr
 import { resolveCanonicalCatalogKey } from './exerciseGradeNameAliases';
 import { normalizeExerciseNameLabel, slugFromExerciseName } from './exerciseGradeNameNormalize';
 import { ENDURANCE_BENCHMARK_BRIDGE, forEachEnduranceBenchmarkSession } from './exerciseGradeEnduranceBridge';
+import { ENDURANCE_PUSHUPS_WORKOUT_EXERCISE_ID } from '../endurance/pushupEnduranceWorkoutKeys';
 import {
   defaultPlainPushupsGradeCatalogKey,
   catalogKeyReceivesPushupDefis,
   exerciseRollsUpToPlainPushups,
-  canonicalPushupGradeNameSlug
+  canonicalPushupGradeNameSlug,
+  pushupCatalogKeyFromExerciseName
 } from './exerciseGradePushupVariants';
 
 export { normalizeExerciseNameLabel, slugFromExerciseName };
@@ -31,8 +33,15 @@ export { normalizeExerciseNameLabel, slugFromExerciseName };
  */
 
 export function canonicalCatalogKeyForExerciseId(exerciseId, getExerciseNameById) {
+  if (String(exerciseId) === ENDURANCE_PUSHUPS_WORKOUT_EXERCISE_ID) {
+    return defaultPlainPushupsGradeCatalogKey();
+  }
+
   const rawName =
     typeof getExerciseNameById === 'function' ? getExerciseNameById(exerciseId) : '';
+  const namePushupKey = pushupCatalogKeyFromExerciseName(rawName);
+  if (namePushupKey) return namePushupKey;
+
   const reg = resolveExerciseBenchmark(exerciseId, getExerciseNameById);
 
   if (reg?.key === 'pushups') {
@@ -53,7 +62,7 @@ export function canonicalCatalogKeyForExerciseId(exerciseId, getExerciseNameById
   const alias = resolveCanonicalCatalogKey(exerciseId, getExerciseNameById, reg?.key);
   if (alias) return alias;
 
-  const slug = slugFromExerciseName(rawName);
+  const slug = canonicalPushupGradeNameSlug(rawName) || slugFromExerciseName(rawName);
   if (slug) return `name:${slug}`;
 
   return catalogKeyForExerciseId(exerciseId);

@@ -5,6 +5,7 @@
 import { parseDurationToMinutes, garminActivityMatchesCalendarDate } from './calendarUtils';
 import { coerceGarminDateOverrides } from './sessionCalendarDate';
 import { mergedDailySteps } from './sport/manualDailyWalkUtils';
+import { activeKcalFromDaily } from './calendarKcalLeader';
 import { isGarminRunningLikeActivity, isGarminWalkingLikeActivity } from './garminRunningLaps';
 import { CALENDAR_GARMIN_STRIPE_COLORS } from './calendarDayGarminStripes';
 import { CALENDAR_PHYSICAL_ACTIVITY_COLOR } from './calendarPhysicalActivityStripes';
@@ -212,6 +213,22 @@ export function buildGarminDayRecapRows(
         defaultValue: `Moyenne : ${Math.round(Number(stress))}`
       }),
       stripeColor: '#f97316'
+    });
+  }
+
+  const activeKcal = activeKcalFromDaily(dm);
+  if (activeKcal > 0) {
+    rows.push({
+      id: 'activeKcal',
+      kind: 'activeKcal',
+      iconBg: '#f59e0b',
+      icon: '🔥',
+      title: t('calendar.heatmap.garminRecap.activeKcal', 'Kcal actives'),
+      subtitle: t('calendar.heatmap.garminRecap.activeKcalDetail', {
+        kcal: activeKcal.toLocaleString('fr-FR'),
+        defaultValue: `${activeKcal.toLocaleString('fr-FR')} kcal`
+      }),
+      stripeColor: '#f59e0b'
     });
   }
 

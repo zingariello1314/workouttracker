@@ -19,6 +19,7 @@ export function readExerciseGradeVitalsOverride() {
       weightKg: numOrNull(p.weightKg),
       heightCm: numOrNull(p.heightCm),
       age: numOrNull(p.age),
+      sex: p.sex || null,
       source: 'manual'
     };
   } catch {
@@ -34,6 +35,7 @@ export function writeExerciseGradeVitalsOverride(vitals) {
         weightKg: numOrNull(vitals?.weightKg),
         heightCm: numOrNull(vitals?.heightCm),
         age: numOrNull(vitals?.age),
+        sex: vitals?.sex || null,
         updatedAt: new Date().toISOString()
       })
     );
@@ -69,17 +71,19 @@ export function resolveExerciseGradeVitals(ctx = {}) {
 
   const heightCm = manual?.heightCm ?? impedance?.heightCm ?? numOrNull(quiz.heightCm);
   const age = manual?.age ?? impedance?.age ?? numOrNull(quiz.age);
+  const sex = manual?.sex ?? quiz.sex ?? impedance?.sex ?? null;
 
   let source = 'default';
-  if (manual?.weightKg || manual?.heightCm || manual?.age) source = 'manual';
+  if (manual?.weightKg || manual?.heightCm || manual?.age || manual?.sex) source = 'manual';
   else if (impedance?.weightKg || impedance?.heightCm) source = 'impedance';
-  else if (quiz.weightKg || quiz.heightCm) source = 'questionnaire';
+  else if (quiz.weightKg || quiz.heightCm || quiz.sex) source = 'questionnaire';
   else if (weightKg) source = 'body_tracking';
 
   return {
     weightKg: weightKg ?? REF.weightKg,
     heightCm: heightCm ?? REF.heightCm,
     age: age ?? REF.age,
+    sex,
     source,
     isComplete: Boolean(weightKg && heightCm && age),
     usedDefaults: !(weightKg && heightCm && age)

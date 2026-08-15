@@ -243,6 +243,7 @@ const RecapTab = () => {
             period={deferredPeriod}
             garminData={garminBundle}
             periodWindow={periodWindow}
+            isAdmin={isAdmin}
           />
         );
       case RECAP_VIEW_IDS.CORPS:

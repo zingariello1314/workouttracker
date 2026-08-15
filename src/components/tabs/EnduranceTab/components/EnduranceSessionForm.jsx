@@ -3,6 +3,7 @@ import PropTypes from 'prop-types';
 import { Zap } from 'lucide-react';
 import StarRating from '../../../ui/StarRating';
 import DurationMinSecInput from '../../../ui/DurationMinSecInput';
+import DurationHmsInput from '../../../ui/DurationHmsInput';
 import { getFormConfig } from '../../../../services/endurance/enduranceFormSchema';
 import PushupSessionSetsFields from './PushupSessionSetsFields';
 
@@ -78,6 +79,13 @@ const EnduranceSessionForm = ({ activityType, formState, setFormState, pushupPla
             onChange={handleInputChange(field.key)}
             minutesLabel="Minutes"
             secondsLabel="Secondes"
+          />
+        );
+      case 'duration_hms':
+        return (
+          <DurationHmsInput
+            value={formState[field.key]}
+            onChange={handleInputChange(field.key)}
           />
         );
       default:

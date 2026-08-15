@@ -34,6 +34,7 @@ import {
 } from '../../services/endurance/enduranceFormSchema';
 import EnduranceSessionForm from './EnduranceTab/components/EnduranceSessionForm.jsx';
 import DurationMinSecInput from '../ui/DurationMinSecInput.jsx';
+import { resolveEnduranceDurationSeconds } from '../../utils/sport/durationInputUtils';
 import SwimmingSessionExtras from './EnduranceTab/components/SwimmingSessionExtras.jsx';
 import RunningSessionExtras from './EnduranceTab/components/RunningSessionExtras.jsx';
 import { handleSubmitSession } from '../../services/endurance/enduranceSubmitUtils';
@@ -707,20 +708,7 @@ const EnduranceTab = () => {
   }, [resetSwimmingForm, submitSession, swimmingForm]);
 
   const addJumpropeSession = useCallback(async () => {
-    // Calculs sécurisés
-    const parseMmSs = (str) => {
-      if (!str) return 0;
-      const parts = String(str).split(':');
-      if (parts.length === 2) {
-        const m = parseInt(parts[0]) || 0;
-        const s = parseInt(parts[1]) || 0;
-        return m * 60 + s;
-      }
-      const asNum = parseInt(str);
-      return Number.isFinite(asNum) ? asNum : 0;
-    };
-
-    const durationSec = parseMmSs(jumpropeForm.duration);
+    const durationSec = resolveEnduranceDurationSeconds(jumpropeForm.duration);
     let jumpsPerMin = parseFloat(jumpropeForm.jumpsPerMin);
     if ((!jumpsPerMin || isNaN(jumpsPerMin)) && durationSec > 0 && jumpropeForm.jumps) {
       jumpsPerMin = (Number(jumpropeForm.jumps) || 0) / (durationSec / 60);

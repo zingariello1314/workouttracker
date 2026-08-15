@@ -34,6 +34,18 @@ import {
   challengeInsightText,
   findExerciseSessions
 } from './recapInsightHelpers';
+import { buildComposedInterpretationPipeline } from './recapInterpretationPipeline';
+import {
+  applyNoveltyWeights,
+  themeFromCandidateId
+} from './insightNoveltyEngine';
+import {
+  loadInsightHistory,
+  recordShownInsights,
+  saveInsightHistory,
+  loadLastInsightSignature,
+  saveLastInsightSignature
+} from './insightNoveltyStore';
 
 const HORIZON_LIMITS = { short: 8, medium: 7, long: 6 };
 
@@ -1131,8 +1143,9 @@ function legacyToCandidates(legacyPistes) {
 
 /**
  * Sélection diversifiée : poids + pénalité pilier déjà pris + tie-break signature.
+ * @returns {Array<{ id: string, horizon: string, pillar: string, weight: number, text: string }>}
  */
-export function selectBalancedInsightTexts(candidates, horizon, limit, signature) {
+export function selectBalancedCandidates(candidates, horizon, limit, signature) {
   const pool = candidates.filter((c) => c.horizon === horizon && c.text);
   const picked = [];
   const usedPillars = new Set();
@@ -1153,6 +1166,9 @@ export function selectBalancedInsightTexts(candidates, horizon, limit, signature
         if (picked.some((p) => p.pillar === 'legacy')) score -= 22;
         if (picked.length >= 2) score -= 10;
       }
+      if (c.pillar === 'interpretation' && picked.some((p) => p.pillar === 'interpretation')) {
+        score -= 6;
+      }
       score += (hashSig(`${signature}:${c.id}`) % 17) * 0.3;
       if (score > bestScore) {
         bestScore = score;
@@ -1165,11 +1181,21 @@ export function selectBalancedInsightTexts(candidates, horizon, limit, signature
     usedPillars.add(best.pillar);
   }
 
-  return picked.map((p) => p.text);
+  return picked;
+}
+
+export function selectBalancedInsightTexts(candidates, horizon, limit, signature) {
+  return selectBalancedCandidates(candidates, horizon, limit, signature).map((p) => p.text);
 }
 
 /**
- * @returns {{ insights: { shortTerm, mediumTerm, longTerm }, kpis: object, signature: string }}
+ * @returns {{
+ *   insights: { shortTerm, mediumTerm, longTerm },
+ *   kpis: object,
+ *   signature: string,
+ *   trainingState?: object|null,
+ *   composedInterpretations?: object[]
+ * }}
  */
 export function buildAdaptiveRecapInsights(opts = {}) {
   const {
@@ -1188,7 +1214,37 @@ export function buildAdaptiveRecapInsights(opts = {}) {
     activeProgram = null
   } = opts;
 
+  const gtgEnd = window?.end || DateHelper.getTodayLocal();
+  const gtgStart = window?.start || DateHelper.addDays(gtgEnd, -27);
+  const gtgSum = summarizeGtgWindow(snapshot?.enduranceData?.gtg, gtgStart, gtgEnd, {
+    workoutData: snapshot,
+    profileQuestionnaire: normalizeProfileQuestionnaire(profileQuestionnaireRaw)
+  });
+
+  const assessmentForPipeline = assessment
+    ? {
+        ...assessment,
+        adaptiveKpis: {
+          gtgDays: gtgSum.daysWithAny,
+          gtgReps: gtgSum.totalReps
+        }
+      }
+    : null;
+
+  const composed = buildComposedInterpretationPipeline({
+    snapshot,
+    window,
+    enrichment,
+    assessment: assessmentForPipeline,
+    garminData,
+    garminPartial,
+    garminDailyMetrics,
+    getExerciseNameById,
+    profileQuestionnaireRaw
+  });
+
   const candidates = [
+    ...composed.candidates,
     ...legacyToCandidates(legacyPistes),
     ...buildExerciseRepCandidates({ snapshot, window, getExerciseNameById }),
     ...buildProgressionInsightCandidates({ snapshot, window, getExerciseNameById }),
@@ -1219,12 +1275,6 @@ export function buildAdaptiveRecapInsights(opts = {}) {
     garminDailyMetrics || garminPartial?.dailyMetrics,
     window
   );
-  const gtgEnd = window?.end || DateHelper.getTodayLocal();
-  const gtgStart = window?.start || DateHelper.addDays(gtgEnd, -27);
-  const gtgSum = summarizeGtgWindow(snapshot?.enduranceData?.gtg, gtgStart, gtgEnd, {
-    workoutData: snapshot,
-    profileQuestionnaire: normalizeProfileQuestionnaire(profileQuestionnaireRaw)
-  });
 
   const signature = [
     period,
@@ -1239,11 +1289,44 @@ export function buildAdaptiveRecapInsights(opts = {}) {
     hashSig(JSON.stringify(candidates.map((c) => `${c.id}:${c.weight}`).slice(0, 12)))
   ].join('|');
 
+  const insightHistory = loadInsightHistory();
+  const weightedCandidates = applyNoveltyWeights(candidates, insightHistory);
+
+  const pickedShort = selectBalancedCandidates(
+    weightedCandidates,
+    'short',
+    HORIZON_LIMITS.short,
+    signature
+  );
+  const pickedMedium = selectBalancedCandidates(
+    weightedCandidates,
+    'medium',
+    HORIZON_LIMITS.medium,
+    signature
+  );
+  const pickedLong = selectBalancedCandidates(
+    weightedCandidates,
+    'long',
+    HORIZON_LIMITS.long,
+    signature
+  );
+  const allPicked = [...pickedShort, ...pickedMedium, ...pickedLong];
+
+  const prevSig = loadLastInsightSignature();
+  if (prevSig !== signature && allPicked.length > 0) {
+    const nextHistory = recordShownInsights(
+      insightHistory,
+      allPicked.map((c) => ({ id: c.id, theme: c.noveltyTheme || themeFromCandidateId(c.id) }))
+    );
+    saveInsightHistory(nextHistory);
+    saveLastInsightSignature(signature);
+  }
+
   return {
     insights: {
-      shortTerm: selectBalancedInsightTexts(candidates, 'short', HORIZON_LIMITS.short, signature),
-      mediumTerm: selectBalancedInsightTexts(candidates, 'medium', HORIZON_LIMITS.medium, signature),
-      longTerm: selectBalancedInsightTexts(candidates, 'long', HORIZON_LIMITS.long, signature)
+      shortTerm: pickedShort.map((p) => p.text),
+      mediumTerm: pickedMedium.map((p) => p.text),
+      longTerm: pickedLong.map((p) => p.text)
     },
     kpis: {
       runningKm: vol.totalKm,
@@ -1255,6 +1338,13 @@ export function buildAdaptiveRecapInsights(opts = {}) {
       gtgDays: gtgSum.daysWithAny,
       gtgReps: gtgSum.totalReps
     },
-    signature
+    signature,
+    trainingState: composed.trainingState,
+    priorState: composed.priorState,
+    stateTransitions: composed.stateTransitions,
+    performanceRobustness: composed.performanceRobustness,
+    populationComparisons: composed.populationComparisons,
+    trainingEvents: composed.trainingEvents,
+    composedInterpretations: composed.interpretations
   };
 }

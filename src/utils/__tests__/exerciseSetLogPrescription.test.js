@@ -12,7 +12,7 @@ describe('buildSetLogFromPrescription', () => {
     expect(log.sets.every((s) => s.reps === 10)).toBe(true);
   });
 
-  it('redistribue un total saisi', () => {
+  it('redistribue un total saisi sous le plan (fatigue)', () => {
     const log = buildSetLogFromPrescription(
       {
         series: '3×10',
@@ -21,6 +21,19 @@ describe('buildSetLogFromPrescription', () => {
       { totalReps: 28 }
     );
     expect(log.sets.reduce((s, x) => s + x.reps, 0)).toBe(28);
+    expect(log.inference.method).toBe('fatigue_fallback');
+  });
+
+  it('4×5 · 17 reps → fatigue fallback (pas division égale 5/4/4/4)', () => {
+    const log = buildSetLogFromPrescription(
+      {
+        series: '4×5',
+        meta: { setCount: 4, repsMin: 5, repsMax: 5, volumeMode: 'reps', repsScope: 'total' }
+      },
+      { totalReps: 17 }
+    );
+    expect(log.sets.map((s) => s.reps)).toEqual([5, 5, 5, 2]);
+    expect(log.inference.method).toBe('fatigue_fallback');
   });
 });
 

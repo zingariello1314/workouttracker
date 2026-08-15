@@ -57,7 +57,6 @@ export function syncBenchmarkTotalsFromActivity(byBenchmarkKey, snapshot, getExe
       checks += v.checks;
     });
     prev.maxDailyTotalReps = maxDay;
-    prev.maxSetReps = Math.max(prev.maxSetReps || 0, maxDay);
     prev.totalReps = total;
     prev.checkCount = checks;
   });

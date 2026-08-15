@@ -3,6 +3,7 @@
  */
 
 import { EXERCISE_BENCHMARK_REGISTRY, resolveExerciseBenchmark } from '../../utils/sport/exerciseBenchmarkRegistry';
+import { ENDURANCE_PUSHUPS_WORKOUT_EXERCISE_ID } from '../endurance/pushupEnduranceWorkoutKeys';
 import { isNameCatalogKey } from './exerciseGradeCanonicalCatalog';
 import { discoverCanonicalExerciseGradeCatalogKeys } from './exerciseGradeCanonicalCatalog';
 import { canonicalPushupGradeDisplayLabel } from './exerciseGradePushupVariants';
@@ -54,7 +55,9 @@ function exerciseIdFromStorageKey(key) {
   const m = String(key || '').match(/^(\d{4}-\d{2}-\d{2})_(.+)$/);
   if (!m) return null;
   let id = m[2].replace(/_semaineA$|_semaineB$/, '');
-  if (id.startsWith('complementary_')) return null;
+  if (id.startsWith('complementary_')) {
+    return id === ENDURANCE_PUSHUPS_WORKOUT_EXERCISE_ID ? id : null;
+  }
   return id;
 }
 

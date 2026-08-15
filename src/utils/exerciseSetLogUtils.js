@@ -8,11 +8,15 @@ import {
   parseSeriesSetCount
 } from './exerciseLoadVolume';
 import {
-  getExercisePrescriptionStruct,
-  getPlannedSetRepsArray
+  getExercisePrescriptionStruct
 } from './programPrescriptionNormalizer';
+import {
+  inferSetRepsDistribution,
+  resolveSetWeightsForLog,
+  SET_INFERENCE_METHOD
+} from './sport/exerciseSetInference';
 
-export const EXERCISE_SET_LOG_SCHEMA_VERSION = 1;
+export const EXERCISE_SET_LOG_SCHEMA_VERSION = 2;
 
 function parseWeightCell(raw) {
   const n = parseFloat(String(raw ?? '').trim().replace(',', '.'));
@@ -26,7 +30,7 @@ function normalizeWeightMode(perArm, hasWeight) {
 
 /**
  * @param {object|null|undefined} raw
- * @returns {{ sets: Array<{ reps: number, weight: number|null, weightMode: string }>, schemaVersion: number, loggedAt?: string }|null}
+ * @returns {{ sets: Array<{ reps: number, weight: number|null, weightMode: string }>, schemaVersion: number, loggedAt?: string, inference?: object, weightInference?: object }|null}
  */
 export function normalizeExerciseSetLog(raw) {
   if (!raw || typeof raw !== 'object' || !Array.isArray(raw.sets)) return null;
@@ -43,8 +47,12 @@ export function normalizeExerciseSetLog(raw) {
   if (sets.length === 0) return null;
   return {
     sets,
-    schemaVersion: EXERCISE_SET_LOG_SCHEMA_VERSION,
-    ...(typeof raw.loggedAt === 'string' ? { loggedAt: raw.loggedAt } : {})
+    schemaVersion: raw.schemaVersion || EXERCISE_SET_LOG_SCHEMA_VERSION,
+    ...(typeof raw.loggedAt === 'string' ? { loggedAt: raw.loggedAt } : {}),
+    ...(raw.inference && typeof raw.inference === 'object' ? { inference: raw.inference } : {}),
+    ...(raw.weightInference && typeof raw.weightInference === 'object'
+      ? { weightInference: raw.weightInference }
+      : {})
   };
 }
 
@@ -62,25 +70,32 @@ export function buildSetLogFromLegacy(workoutData, storageKey, exercise) {
   const count = Math.max(1, setCount, fromSeries || 1);
   const repsEach = distributeRepsToSets(repsTotal, count);
   const perArm = workoutData?.exerciseWeightPerArm?.[storageKey] === true;
-  const singleW = parseWeightCell(workoutData?.exerciseWeights?.[storageKey]);
-  const hasWeight = singleW != null || (Array.isArray(setWeightsArr) && setWeightsArr.some((c) => parseWeightCell(c)));
+  const { weights, weightInference } = resolveSetWeightsForLog(
+    workoutData,
+    storageKey,
+    count,
+    perArm
+  );
+  const hasWeight = weights.some((w) => w != null);
 
-  const sets = Array.from({ length: count }, (_, i) => {
-    let weight = singleW;
-    if (Array.isArray(setWeightsArr) && setWeightsArr[i] != null && String(setWeightsArr[i]).trim() !== '') {
-      weight = parseWeightCell(setWeightsArr[i]) ?? weight;
-    }
-    return {
-      reps: repsEach[i] || 0,
-      weight,
-      weightMode: normalizeWeightMode(perArm, weight != null)
-    };
-  });
+  const sets = Array.from({ length: count }, (_, i) => ({
+    reps: repsEach[i] || 0,
+    weight: weights[i] ?? null,
+    weightMode: normalizeWeightMode(perArm, weights[i] != null)
+  }));
 
   return {
     sets,
     schemaVersion: EXERCISE_SET_LOG_SCHEMA_VERSION,
-    loggedAt: new Date().toISOString()
+    loggedAt: new Date().toISOString(),
+    inference: {
+      method: SET_INFERENCE_METHOD.LEGACY,
+      confidence: 0.4,
+      plannedTotal: null,
+      actualTotal: repsTotal,
+      setCount: count
+    },
+    weightInference
   };
 }
 
@@ -135,10 +150,26 @@ export function applyExerciseSetLog(workoutData, storageKey, sets, opts = {}) {
     };
   });
 
+  const totalReps = normalizedSets.reduce((s, x) => s + x.reps, 0);
+  const weightResolved = resolveSetWeightsForLog(
+    workoutData,
+    storageKey,
+    normalizedSets.length,
+    perArm
+  );
+
   const setLog = {
     sets: normalizedSets,
     schemaVersion: EXERCISE_SET_LOG_SCHEMA_VERSION,
-    loggedAt: new Date().toISOString()
+    loggedAt: new Date().toISOString(),
+    inference: opts.inferenceMeta || {
+      method: SET_INFERENCE_METHOD.MANUAL,
+      confidence: 1,
+      plannedTotal: null,
+      actualTotal: totalReps,
+      setCount: normalizedSets.length
+    },
+    weightInference: opts.weightInference || weightResolved.weightInference
   };
 
   const legacy = legacyFieldsFromSetLog(setLog);
@@ -189,7 +220,7 @@ export function syncExerciseSetLogTotalReps(workoutData, storageKey, exercise, n
   const perArm = workoutData?.exerciseWeightPerArm?.[storageKey] === true;
   const existing = normalizeExerciseSetLog(workoutData?.exerciseSetLogs?.[storageKey]);
 
-  if (existing && existing.sets.length > 0) {
+  if (existing?.inference?.method === SET_INFERENCE_METHOD.MANUAL) {
     const oldTotal = existing.sets.reduce((sum, set) => sum + Math.max(0, set.reps), 0);
     let sets = existing.sets.map((set) => {
       if (oldTotal <= 0) {
@@ -218,15 +249,15 @@ export function syncExerciseSetLogTotalReps(workoutData, storageKey, exercise, n
     return applyExerciseSetLog(workoutData, storageKey, sets, { perArm });
   }
 
-  const tempData = {
-    ...workoutData,
-    reps: { ...(workoutData?.reps || {}), [storageKey]: String(total) }
-  };
-  const built = buildSetLogFromLegacy(tempData, storageKey, exercise);
+  const built = buildSetLogFromPrescription(exercise, {
+    totalReps: total,
+    workoutData,
+    storageKey
+  });
   if (!built?.sets?.length) {
     return workoutData;
   }
-  return applyExerciseSetLog(workoutData, storageKey, built.sets, { perArm });
+  return applyExerciseSetLog(workoutData, storageKey, built.sets, { perArm, inferenceMeta: built.inference, weightInference: built.weightInference });
 }
 
 /**
@@ -243,20 +274,6 @@ export function buildSetLogFromPrescription(exercise, opts = {}) {
   const storageKey = opts.storageKey;
   const workoutData = opts.workoutData;
   const perArm = storageKey && workoutData?.exerciseWeightPerArm?.[storageKey] === true;
-  const singleW = storageKey ? parseWeightCell(workoutData?.exerciseWeights?.[storageKey]) : null;
-  const setWeightsArr = storageKey ? workoutData?.exerciseSetWeights?.[storageKey] : null;
-
-  const mkSet = (reps, idx) => {
-    let weight = singleW;
-    if (Array.isArray(setWeightsArr) && setWeightsArr[idx] != null) {
-      weight = parseWeightCell(setWeightsArr[idx]) ?? weight;
-    }
-    return {
-      reps: Math.max(0, Math.floor(reps)),
-      weight,
-      weightMode: normalizeWeightMode(perArm, weight != null)
-    };
-  };
 
   if (p.volumeMode === 'seconds' || p.volumeMode === 'minutes') {
     const setCount = Math.max(1, p.setCount);
@@ -267,22 +284,64 @@ export function buildSetLogFromPrescription(exercise, opts = {}) {
           ? Math.max(1, Math.round(totalOverride / setCount))
           : totalOverride;
     }
-    const sets = Array.from({ length: setCount }, (_, i) => mkSet(perSet, i));
+    const { weights, weightInference } = resolveSetWeightsForLog(
+      workoutData,
+      storageKey,
+      setCount,
+      perArm
+    );
+    const sets = Array.from({ length: setCount }, (_, i) => ({
+      reps: Math.max(0, Math.floor(perSet)),
+      weight: weights[i] ?? null,
+      weightMode: normalizeWeightMode(perArm, weights[i] != null)
+    }));
     return {
       sets,
       schemaVersion: EXERCISE_SET_LOG_SCHEMA_VERSION,
-      loggedAt: new Date().toISOString()
+      loggedAt: new Date().toISOString(),
+      inference: {
+        method: SET_INFERENCE_METHOD.PRESCRIPTION,
+        confidence: 0.88,
+        plannedTotal: setCount * p.repsMin,
+        actualTotal: sets.reduce((s, x) => s + x.reps, 0),
+        setCount
+      },
+      weightInference
     };
   }
 
-  const repsArray =
-    getPlannedSetRepsArray(exercise, totalOverride) ||
-    distributeRepsToSets(totalOverride || p.setCount * p.repsMin, Math.max(1, p.setCount));
+  const actualTotal =
+    totalOverride != null && totalOverride > 0
+      ? totalOverride
+      : p.setCount *
+        (p.repsMin === p.repsMax ? p.repsMin : Math.round((p.repsMin + p.repsMax) / 2));
+
+  const { setReps, inference } = inferSetRepsDistribution({
+    exercise,
+    totalReps: actualTotal,
+    workoutData,
+    storageKey
+  });
+
+  const { weights, weightInference } = resolveSetWeightsForLog(
+    workoutData,
+    storageKey,
+    setReps.length,
+    perArm
+  );
+
+  const sets = setReps.map((reps, i) => ({
+    reps: Math.max(0, Math.floor(reps)),
+    weight: weights[i] ?? null,
+    weightMode: normalizeWeightMode(perArm, weights[i] != null)
+  }));
 
   return {
-    sets: repsArray.map((r, i) => mkSet(r, i)),
+    sets,
     schemaVersion: EXERCISE_SET_LOG_SCHEMA_VERSION,
-    loggedAt: new Date().toISOString()
+    loggedAt: new Date().toISOString(),
+    inference,
+    weightInference
   };
 }
 

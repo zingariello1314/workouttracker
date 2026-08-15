@@ -49,6 +49,9 @@ export default function ExerciseGradeVitalsForm({ vitals, onSaved }) {
       </p>
       <p className="mt-1 text-[10px] text-teal-600/90">
         {t('recap.exerciseGrades.vitalsSource', `Source actuelle : ${sourceLabel}`, { source: sourceLabel })}
+        {vitals?.sex
+          ? ` · ${t('recap.exerciseGrades.vitalsSex', 'Sexe')}: ${vitals.sex === 'female' ? 'Femme' : vitals.sex === 'male' ? 'Homme' : vitals.sex}`
+          : ` · ${t('recap.exerciseGrades.vitalsSexMissing', 'Sexe : questionnaire profil (homme par défaut pour les seuils pompes)')}`}
         {vitals?.usedDefaults
           ? ` · ${t('recap.exerciseGrades.vitalsDefaults', 'complète les champs pour un calcul précis')}`
           : null}

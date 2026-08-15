@@ -121,7 +121,6 @@ export function mergePerformancePeakIntoMetrics(metrics, snapshot, catalogKey, g
     next.maxWeightKg = Math.max(next.maxWeightKg || 0, perf.value);
   } else {
     next.maxSetReps = Math.max(next.maxSetReps || 0, perf.value);
-    next.maxDailyTotalReps = Math.max(next.maxDailyTotalReps || 0, perf.value);
   }
 
   return { metrics: next, performancePeak: perf };

@@ -10,6 +10,10 @@ import {
   classifyRepScheme
 } from './volumeProgressionEngine';
 import { buildExerciseRepInsights } from './repSetSemanticAnalysis';
+import { formatSetInferenceLabel } from './exerciseSetInference';
+import { resolveExerciseSetsForAnalysis } from './exerciseSessionSetsResolver';
+import { analyzeExerciseSetHabits } from './exerciseSetHabitAnalytics';
+import { analyzeStructuredSession } from './strengthBenchmarkExtractors';
 import { getExercisePrescriptionStruct } from '../programPrescriptionNormalizer';
 import { lookupProgramExerciseStub } from '../exerciseLoadVolume';
 
@@ -127,7 +131,11 @@ export function collectEnrichedExerciseHistory(workoutData, exerciseId, window, 
 /**
  * Analyse multi-séances avec interprétation coach.
  */
-export function analyzeExerciseProgressionHistory(sessions) {
+export function analyzeExerciseProgressionHistory(
+  sessions,
+  workoutData = null,
+  getExerciseNameById = null
+) {
   if (!sessions?.length) {
     return { status: 'insufficient', headline: null, detail: null, bullets: [] };
   }
@@ -281,7 +289,35 @@ export function analyzeExerciseProgressionHistory(sessions) {
     }).forEach((line) => {
       if (line && !bullets.includes(line)) bullets.push(line);
     });
+
+    const lastKey = last.storageKey;
+    if (lastKey && workoutData) {
+      const resolved = resolveExerciseSetsForAnalysis(
+        workoutData,
+        lastKey,
+        getExerciseNameById
+      );
+      const infLabel = formatSetInferenceLabel(resolved?.inference);
+      if (
+        infLabel &&
+        resolved?.inference?.method &&
+        resolved.inference.method !== 'manual' &&
+        !bullets.some((b) => String(b).includes('estimée') || String(b).includes('prescription'))
+      ) {
+        bullets.push(`${infLabel} : ${lastSetReps.join(' / ')} (confiance ${Math.round((resolved.inference.confidence || 0) * 100)} %).`);
+      }
+    }
   }
+
+  const setHabits = analyzeExerciseSetHabits(sessions, workoutData, getExerciseNameById, {
+    weightTrendPct,
+    volTrendPct,
+    repScheme: classifyRepScheme(last.setCount, last.totalReps)
+  });
+
+  setHabits.bullets.forEach((line) => {
+    if (line && !bullets.some((b) => String(b) === String(line))) bullets.push(line);
+  });
 
   return {
     status,
@@ -294,7 +330,8 @@ export function analyzeExerciseProgressionHistory(sessions) {
     repsTrendPct,
     weightTrendPct,
     sessionCount: sessions.length,
-    dateRange: { start: first.dateYmd, end: last.dateYmd }
+    dateRange: { start: first.dateYmd, end: last.dateYmd },
+    setHabits
   };
 }
 

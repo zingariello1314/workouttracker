@@ -14,7 +14,7 @@ import {
 } from './sportGradeResolution';
 import { cumulXpForLevel } from './sportLevelCurve';
 import { LADDER_PROGRESS_GATES } from './exerciseGradeDiscovery';
-import { exerciseGradeFromSortIndex } from './exerciseGradeLadder';
+import { exerciseGradeFromSortIndex, EXERCISE_GRADE_LADDER } from './exerciseGradeLadder';
 import {
   EXERCISE_PENULTIMATE_SORT_INDEX,
   EXERCISE_FINAL_SORT_INDEX,

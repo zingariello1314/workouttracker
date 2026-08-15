@@ -48,3 +48,58 @@ export function formatMinSecLabel(totalSeconds, emptyLabel = '—') {
   if (seconds === 0) return `${minutes} min`;
   return `${minutes} min ${seconds} s`;
 }
+
+/** Décompose une chaîne HH:MM:SS ou MM:SS → { hours, minutes, seconds }. */
+export function splitHmsString(hms) {
+  const raw = String(hms ?? '').trim();
+  if (!raw.includes(':')) {
+    return { hours: 0, minutes: 0, seconds: 0 };
+  }
+  const parts = raw.split(':').map((p) => parseInt(p, 10) || 0);
+  if (parts.length === 3) {
+    return {
+      hours: Math.max(0, parts[0]),
+      minutes: Math.max(0, parts[1]),
+      seconds: clampSecPart(parts[2])
+    };
+  }
+  if (parts.length === 2) {
+    return { hours: 0, minutes: Math.max(0, parts[0]), seconds: clampSecPart(parts[1]) };
+  }
+  return { hours: 0, minutes: 0, seconds: 0 };
+}
+
+/** Formate HH:MM:SS (compatible stockage course). */
+export function formatHmsString(hours, minutes, seconds) {
+  const h = Math.max(0, parseInt(hours, 10) || 0);
+  const m = Math.max(0, parseInt(minutes, 10) || 0);
+  const sec = clampSecPart(seconds);
+  return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:${String(sec).padStart(2, '0')}`;
+}
+
+/** HH:MM:SS → secondes totales. */
+export function hmsStringToTotalSeconds(hms) {
+  const { hours, minutes, seconds } = splitHmsString(hms);
+  return hours * 3600 + minutes * 60 + seconds;
+}
+
+/**
+ * Durée endurance : minutes décimales, MM:SS, HH:MM:SS ou secondes brutes (legacy).
+ * @returns {number} secondes
+ */
+export function resolveEnduranceDurationSeconds(raw) {
+  if (raw == null || raw === '') return 0;
+  if (typeof raw === 'number' && Number.isFinite(raw)) {
+    if (raw >= 1000) return Math.round(raw);
+    return storedMinutesToTotalSeconds(raw);
+  }
+  const s = String(raw).trim();
+  if (s.includes(':')) {
+    const parts = s.split(':').map((p) => parseInt(p, 10) || 0);
+    if (parts.length === 3) return hmsStringToTotalSeconds(s);
+    if (parts.length === 2) return parts[0] * 60 + clampSecPart(parts[1]);
+  }
+  const n = parseFloat(s.replace(',', '.'));
+  if (Number.isFinite(n) && n > 0) return storedMinutesToTotalSeconds(n);
+  return 0;
+}

@@ -1,5 +1,5 @@
 /** Kcal actives journalières Garmin (même logique que calendarDayChampion). */
-function activeKcalFromDaily(daily) {
+export function activeKcalFromDaily(daily) {
   if (!daily) return 0;
   if (daily.calories && typeof daily.calories === 'object') {
     const n = Number(daily.calories.active);

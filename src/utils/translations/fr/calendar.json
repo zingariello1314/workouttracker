@@ -73,7 +73,17 @@
     "monthLongestStreak": "Streak max",
     "monthActiveKcal": "Kcal actives",
     "monthTrainingDays": "Jours entraînés",
-    "yearRecord": "Record sur l'année affichée"
+    "yearRecord": "Record sur l'année affichée",
+    "monthBestReps": "Meilleur jour reps",
+    "monthBestDayVolume": "Meilleur jour volume",
+    "monthBestRun": "Meilleure course",
+    "monthBestKcal": "Record kcal",
+    "monthAvgKcal": "Kcal moy. / jour",
+    "monthAvgSteps": "Pas moy. (jours actifs)",
+    "monthRestRatio": "Repos cochés / prévus",
+    "monthStretches": "Étirements",
+    "monthTopMuscles": "Top muscles",
+    "openDayHint": "Ouvrir le jour concerné dans la vue mois"
   },
   "heatmap": {
     "viewModes": {
@@ -125,6 +135,8 @@
       "hrRange": "{{min}} bpm · {{max}} bpm",
       "stress": "Stress",
       "stressAvg": "Moyenne : {{n}}",
+      "activeKcal": "Kcal actives",
+      "activeKcalDetail": "{{kcal}} kcal",
       "steps": "Pas",
       "stepsDetail": "{{steps}} · {{pct}} % de l'objectif"
     },

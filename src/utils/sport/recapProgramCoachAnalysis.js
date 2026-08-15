@@ -1003,7 +1003,11 @@ export function buildRecapProgramCoachAnalysis(opts = {}) {
     programs = [],
     getTodayWorkout = null,
     isAdmin = false,
-    isAuthenticated = false
+    isAuthenticated = false,
+    trainingState = null,
+    composedInterpretations = [],
+    trainingEvents = null,
+    stateTransitions = []
   } = opts;
 
   const qq = normalizeProfileQuestionnaire(profileQuestionnaireRaw);
@@ -1111,7 +1115,11 @@ export function buildRecapProgramCoachAnalysis(opts = {}) {
     isAdmin,
     isAuthenticated,
     recapState,
-    denseAnalytics
+    denseAnalytics,
+    trainingState,
+    composedInterpretations,
+    trainingEvents,
+    stateTransitions
   });
 
   const coachVision = coachVisionReport.text;

@@ -3,12 +3,13 @@
  */
 
 import { normalizeDateString, isMockEnduranceSession } from '../../utils/calendarUtils';
+import { resolvePushupSessionTotalReps } from '../endurance/pushupSessionUtils';
 
 /** @type {Record<string, { sessionsKey: string, reps: (s: object) => number }>} */
 export const ENDURANCE_BENCHMARK_BRIDGE = {
   pushups: {
     sessionsKey: 'pushups',
-    reps: (s) => Math.max(0, Math.floor(Number(s?.count ?? s?.reps) || 0))
+    reps: (s) => resolvePushupSessionTotalReps(s)
   }
 };
 

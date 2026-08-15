@@ -2,7 +2,11 @@
  * Ventilation pompes : classiques, poignées, défis endurance.
  */
 
-import { catalogKeyUsesPushupChannelBreakdown } from './exerciseGradePushupVariants';
+import { ENDURANCE_PUSHUPS_WORKOUT_EXERCISE_ID } from '../endurance/pushupEnduranceWorkoutKeys';
+import {
+  catalogKeyUsesPushupChannelBreakdown,
+  exerciseRollsUpToPlainPushups
+} from './exerciseGradePushupVariants';
 
 const HANDLES_IDS = new Set([105, 1105]);
 
@@ -12,6 +16,8 @@ export function isPushupsCatalogKey(catalogKey, getExerciseNameById) {
 }
 
 export function classifyPushupWorkoutChannel(exerciseId, getExerciseNameById) {
+  if (String(exerciseId) === ENDURANCE_PUSHUPS_WORKOUT_EXERCISE_ID) return 'defis';
+  if (exerciseRollsUpToPlainPushups(exerciseId, getExerciseNameById)) return 'handles';
   const id = parseInt(String(exerciseId), 10);
   if (HANDLES_IDS.has(id)) return 'handles';
   const name = String(

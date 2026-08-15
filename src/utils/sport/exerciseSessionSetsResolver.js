@@ -208,6 +208,8 @@ export function resolveExerciseSetsForAnalysis(workoutData, storageKey, getExerc
     isTimeBased,
     setCount,
     schemeLabel,
-    source: hasStructured ? 'structured' : 'legacy'
+    source: hasStructured ? 'structured' : 'legacy',
+    inference: structured?.inference || log?.inference || null,
+    weightInference: structured?.weightInference || log?.weightInference || null
   };
 }

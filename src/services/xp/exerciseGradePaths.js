@@ -4,6 +4,7 @@
 
 import { EXERCISE_GRADE_LADDER, exerciseGradeFromSortIndex } from './exerciseGradeLadder';
 import { LADDER_PROGRESS_GATES } from './exerciseGradeDiscovery';
+import { demographicPeakRepsForMetrics } from './demographicGradeResolver';
 
 export const VOIE_E_MIN_PCT = 70;
 export const VOIE_E_MIN_PCT_PENULTIMATE = 80;
@@ -63,7 +64,7 @@ function pctToward(current, target) {
   return Math.min(100, Math.round((c / t) * 1000) / 10);
 }
 
-export function metricTripletForGates(metrics, metric, bodyWeightKg) {
+export function metricTripletForGates(metrics, metric, bodyWeightKg, demographic = null) {
   if (metric === 'hold_seconds') {
     return {
       peak: metrics.maxHoldSeconds || 0,
@@ -82,6 +83,14 @@ export function metricTripletForGates(metrics, metric, bodyWeightKg) {
       checks: metrics.checkCount || 0
     };
   }
+  if (demographic?.ladder) {
+    const peak = demographicPeakRepsForMetrics(metrics, demographic, { weightKg: bodyWeightKg });
+    return {
+      peak,
+      life: metrics.maxDailyTotalReps || 0,
+      checks: metrics.checkCount || 0
+    };
+  }
   return {
     peak: metrics.maxDailyTotalReps || metrics.maxSetReps || 0,
     life: metrics.totalReps || 0,
@@ -89,14 +98,18 @@ export function metricTripletForGates(metrics, metric, bodyWeightKg) {
   };
 }
 
-function gateForSortIndex(targetIndex) {
+function gateForSortIndex(targetIndex, demographic = null) {
+  if (demographic?.gates?.length) {
+    const i = Math.max(0, Math.min(demographic.gates.length - 1, targetIndex));
+    return demographic.gates[i];
+  }
   const i = Math.max(0, Math.min(LADDER_PROGRESS_GATES.length - 1, targetIndex));
   return LADDER_PROGRESS_GATES[i];
 }
 
-export function progressTowardSortIndex(metrics, metric, vitals, targetSortIndex) {
-  const gate = gateForSortIndex(targetSortIndex);
-  const vals = metricTripletForGates(metrics, metric, vitals?.weightKg);
+export function progressTowardSortIndex(metrics, metric, vitals, targetSortIndex, demographic = null) {
+  const gate = gateForSortIndex(targetSortIndex, demographic);
+  const vals = metricTripletForGates(metrics, metric, vitals?.weightKg, demographic);
   return {
     peakPct: pctToward(vals.peak, gate.peak),
     lifePct: pctToward(vals.life, gate.life),
@@ -111,9 +124,9 @@ function pathsFullCountFromProgress(p) {
 }
 
 /** Voie E / multi-voies : règles selon le palier visé. */
-export function qualifiesViaVoieEAtTarget(metrics, metric, vitals, targetSortIndex) {
+export function qualifiesViaVoieEAtTarget(metrics, metric, vitals, targetSortIndex, demographic = null) {
   const target = Math.floor(Number(targetSortIndex) || 0);
-  const p = progressTowardSortIndex(metrics, metric, vitals, target);
+  const p = progressTowardSortIndex(metrics, metric, vitals, target, demographic);
   const minPct = Math.min(p.peakPct, p.lifePct, p.checksPct);
   const pathsFull = pathsFullCountFromProgress(p);
 
@@ -127,24 +140,24 @@ export function qualifiesViaVoieEAtTarget(metrics, metric, vitals, targetSortInd
 }
 
 /** Voie E : palier le plus élevé où les conditions cumulées sont remplies. */
-export function highestSortIndexViaVoieE(metrics, metric, vitals) {
+export function highestSortIndexViaVoieE(metrics, metric, vitals, demographic = null) {
   let best = -1;
   for (let target = 1; target < EXERCISE_GRADE_LADDER.length; target += 1) {
-    if (qualifiesViaVoieEAtTarget(metrics, metric, vitals, target)) {
+    if (qualifiesViaVoieEAtTarget(metrics, metric, vitals, target, demographic)) {
       best = target;
     }
   }
   return best;
 }
 
-export function voieEProgressForNextGrade(metrics, metric, vitals, currentSortIndex) {
+export function voieEProgressForNextGrade(metrics, metric, vitals, currentSortIndex, demographic = null) {
   const next = Math.min(EXERCISE_GRADE_LADDER.length - 1, (currentSortIndex ?? 0) + 1);
-  const p = progressTowardSortIndex(metrics, metric, vitals, next);
+  const p = progressTowardSortIndex(metrics, metric, vitals, next, demographic);
   const minPct = Math.min(p.peakPct, p.lifePct, p.checksPct);
   const pathsFull = pathsFullCountFromProgress(p);
   const voieEMinPct = voieEMinPctForTargetSortIndex(next);
   const pathsRequired = pathsRequiredForTargetSortIndex(next);
-  const met = qualifiesViaVoieEAtTarget(metrics, metric, vitals, next);
+  const met = qualifiesViaVoieEAtTarget(metrics, metric, vitals, next, demographic);
 
   return {
     ...p,
@@ -176,7 +189,8 @@ export function capSortIndexByHighTierRules(rawSortIndex, ctx) {
 
 export function qualifiesForExerciseGradeSortIndex(targetSortIndex, ctx) {
   const target = Math.floor(Number(targetSortIndex) || 0);
-  const { metrics, metric, vitals, peakIdx, lifeIdx, checkIdx, voieEIdx, levelIdx } = ctx || {};
+  const { metrics, metric, vitals, peakIdx, lifeIdx, checkIdx, voieEIdx, levelIdx, demographic } =
+    ctx || {};
 
   if (target < EXERCISE_PENULTIMATE_SORT_INDEX) {
     return (
@@ -188,9 +202,9 @@ export function qualifiesForExerciseGradeSortIndex(targetSortIndex, ctx) {
     );
   }
 
-  if (qualifiesViaVoieEAtTarget(metrics, metric, vitals, target)) return true;
+  if (qualifiesViaVoieEAtTarget(metrics, metric, vitals, target, demographic)) return true;
 
-  const p = progressTowardSortIndex(metrics, metric, vitals, target);
+  const p = progressTowardSortIndex(metrics, metric, vitals, target, demographic);
   const pathsFull = pathsFullCountFromProgress(p);
   const required = pathsRequiredForTargetSortIndex(target);
   return pathsFull >= required;

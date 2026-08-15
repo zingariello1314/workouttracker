@@ -3,6 +3,7 @@ import { slugFromExerciseName } from '../exerciseGradeCanonicalCatalog';
 import { exerciseMatchesCatalogKey } from '../exerciseGradeCatalogMetrics';
 import { extractMetricsForCatalogKey } from '../exerciseGradeCatalogMetrics';
 import { canonicalCatalogKeyForExerciseId } from '../exerciseGradeCanonicalCatalog';
+import { canonicalPushupGradeNameSlug } from '../exerciseGradePushupVariants';
 
 describe('grades pompes — intitulé strict', () => {
   const getName = (id) =>
@@ -120,6 +121,88 @@ describe('grades pompes — intitulé strict', () => {
     const metrics = extractMetricsForCatalogKey(snapshot, plainKey, getName);
     expect(metrics.totalReps).toBe(80);
     expect(metrics.checkCount).toBe(3);
+  });
+
+  it('fusionne Pompes classiques dans name:pompes', () => {
+    const plainKey = 'name:pompes';
+    expect(canonicalPushupGradeNameSlug('Pompes classiques')).toBe('pompes');
+    const getName = (id) => (String(id) === '102' ? 'Pompes classiques' : '');
+
+    expect(canonicalCatalogKeyForExerciseId('102', getName)).toBe(plainKey);
+
+    const snapshot = {
+      checkedExercises: {
+        '2026-01-10_102': true,
+        '2026-01-11_100': true
+      },
+      reps: {
+        '2026-01-10_102': '50',
+        '2026-01-11_100': '22'
+      }
+    };
+    const getBoth = (id) =>
+      ({
+        100: 'Pompes',
+        102: 'Pompes classiques'
+      })[String(id)] || '';
+
+    const metrics = extractMetricsForCatalogKey(snapshot, plainKey, getBoth);
+    expect(metrics.totalReps).toBe(72);
+    expect(metrics.checkCount).toBe(2);
+  });
+
+  it('compte les défis sync sur complementary_endurance_pushups', () => {
+    const plainKey = 'name:pompes';
+    const snapshot = {
+      checkedExercises: {
+        '2026-01-10_100': true,
+        '2026-01-11_complementary_endurance_pushups': true
+      },
+      reps: {
+        '2026-01-10_100': '30',
+        '2026-01-11_complementary_endurance_pushups': '200'
+      }
+    };
+    const getName = (id) => (String(id) === '100' ? 'Pompes' : '');
+    const metrics = extractMetricsForCatalogKey(snapshot, plainKey, getName);
+    expect(metrics.totalReps).toBe(230);
+    expect(metrics.checkCount).toBe(2);
+  });
+
+  it('ne double-compte pas défis sync + sessions endurance même jour', () => {
+    const plainKey = 'name:pompes';
+    const snapshot = {
+      checkedExercises: {
+        '2026-01-10_complementary_endurance_pushups': true
+      },
+      reps: {
+        '2026-01-10_complementary_endurance_pushups': '150'
+      },
+      enduranceData: {
+        sessions: {
+          pushups: [{ date: '2026-01-10', count: 150, id: 'defi1' }]
+        }
+      }
+    };
+    const metrics = extractMetricsForCatalogKey(snapshot, plainKey, () => '');
+    expect(metrics.totalReps).toBe(150);
+    expect(metrics.checkCount).toBe(1);
+  });
+
+  it('compte les défis en séries × reps (setCount × repsPerSet)', () => {
+    const plainKey = 'name:pompes';
+    const snapshot = {
+      checkedExercises: {},
+      reps: {},
+      enduranceData: {
+        sessions: {
+          pushups: [{ date: '2026-01-12', setCount: 10, repsPerSet: 20, id: 'defi2' }]
+        }
+      }
+    };
+    const metrics = extractMetricsForCatalogKey(snapshot, plainKey, () => '');
+    expect(metrics.totalReps).toBe(200);
+    expect(metrics.checkCount).toBe(1);
   });
 
   it('fusionne toutes les pompes inclinées en une fiche', () => {

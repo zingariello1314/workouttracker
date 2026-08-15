@@ -8,6 +8,7 @@ import {
   isFallbackExerciseLabel,
   resolveExerciseNameFromIndex
 } from '../utils/workoutExerciseIdResolve';
+import { configureProgramExerciseLookup } from '../utils/programExerciseRegistry';
 import { getDateStr, getDayName, getAutoWeekVariant } from '../utils/dateUtils';
 // ✅ PHASE 4 : Import des utilitaires de l'historique
 import { 
@@ -358,6 +359,13 @@ const WorkoutProvider = ({ children }) => {
   useEffect(() => {
     programNameIndexRef.current = buildExerciseNameIndexFromPrograms(programs);
   }, [programs]);
+
+  useEffect(() => {
+    configureProgramExerciseLookup({
+      userPrograms: programs,
+      activeProgramId: activeProgram?.id ?? null
+    });
+  }, [programs, activeProgram?.id]);
 
   // Fonction utilitaire pour convertir un ID (string ou number) en ID numérique stable
   const convertToStableNumericId = useCallback((id, index = 0) => {

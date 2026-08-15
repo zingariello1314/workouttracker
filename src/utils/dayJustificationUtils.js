@@ -55,7 +55,7 @@ export const JUSTIFICATION_COLORS = {
   [JUSTIFICATION_REASONS.FLEMME]: 'bg-black border-2 border-orange-500',
   [JUSTIFICATION_REASONS.PAS_LE_TEMPS]: 'bg-black border-2 border-amber-400',
   [JUSTIFICATION_REASONS.REPOS]: 'bg-sky-950/90 border-2 border-sky-400/85',
-  [JUSTIFICATION_REASONS.AUTRE]: 'bg-black border-2 border-slate-500',
+  [JUSTIFICATION_REASONS.AUTRE]: 'bg-violet-950/90 border-2 border-violet-400/85',
 };
 
 /** Texte principal sur fond noir (légende, stats, bouton justification). */
@@ -64,7 +64,7 @@ export const JUSTIFICATION_TEXT = {
   [JUSTIFICATION_REASONS.FLEMME]: 'text-orange-100',
   [JUSTIFICATION_REASONS.PAS_LE_TEMPS]: 'text-amber-100',
   [JUSTIFICATION_REASONS.REPOS]: 'text-sky-100',
-  [JUSTIFICATION_REASONS.AUTRE]: 'text-slate-100',
+  [JUSTIFICATION_REASONS.AUTRE]: 'text-violet-100',
 };
 
 /** Couleur du chiffre du jour sur case « justification » (fond noir). */
@@ -73,11 +73,23 @@ export const JUSTIFICATION_DAY_NUMBER_CLASS = {
   [JUSTIFICATION_REASONS.FLEMME]: 'text-orange-200',
   [JUSTIFICATION_REASONS.PAS_LE_TEMPS]: 'text-amber-200',
   [JUSTIFICATION_REASONS.REPOS]: 'text-sky-200',
-  [JUSTIFICATION_REASONS.AUTRE]: 'text-slate-200',
+  [JUSTIFICATION_REASONS.AUTRE]: 'text-violet-200',
 };
 
 export function isRestDayJustificationFromIntensity(intensity) {
   return intensity?.justification?.reason === JUSTIFICATION_REASONS.REPOS;
+}
+
+export function isAutreDayJustificationFromIntensity(intensity) {
+  return intensity?.justification?.reason === JUSTIFICATION_REASONS.AUTRE;
+}
+
+/** Jours justifiés avec fond rayé (repos, autre…). */
+export function isPatternJustificationDayFromIntensity(intensity) {
+  const reason = intensity?.justification?.reason;
+  return (
+    reason === JUSTIFICATION_REASONS.REPOS || reason === JUSTIFICATION_REASONS.AUTRE
+  );
 }
 
 /** Style inline pour fond « repos » (rayures discrètes). */
@@ -86,6 +98,20 @@ export function restDayCellBackgroundStyle() {
     backgroundImage:
       'repeating-linear-gradient(-45deg, rgba(14,165,233,0.06) 0, rgba(14,165,233,0.06) 4px, transparent 4px, transparent 8px)',
   };
+}
+
+/** Style inline pour fond « autre » (rayures violettes, même principe que repos). */
+export function autreDayCellBackgroundStyle() {
+  return {
+    backgroundImage:
+      'repeating-linear-gradient(-45deg, rgba(139,92,246,0.08) 0, rgba(139,92,246,0.08) 4px, transparent 4px, transparent 8px)',
+  };
+}
+
+export function justificationCellBackgroundStyle(reason) {
+  if (reason === JUSTIFICATION_REASONS.REPOS) return restDayCellBackgroundStyle();
+  if (reason === JUSTIFICATION_REASONS.AUTRE) return autreDayCellBackgroundStyle();
+  return undefined;
 }
 
 export const JUSTIFICATION_ICONS = {

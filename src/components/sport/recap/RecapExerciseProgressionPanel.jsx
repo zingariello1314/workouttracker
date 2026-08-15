@@ -46,20 +46,29 @@ const STATUS_STYLES = {
   }
 };
 
-function formatSessionLine(session) {
+function formatSessionLine(session, profile) {
+  const pattern = profile?.pattern;
+  const inferenceHint = profile?.isEstimated ? ' · estimé' : profile?.inferenceLabel === 'Séries saisies' ? '' : '';
+
   if (session.isHold) {
     const sec = session.maxHoldSeconds || session.totalReps;
     const hold =
       sec >= 60
         ? `${Math.floor(sec / 60)} min${sec % 60 ? ` ${sec % 60} s` : ''}`
         : `${sec} s`;
+    if (pattern) return `${pattern}${inferenceHint}`;
     return session.schemeLabel ? `${session.schemeLabel} · ${hold}` : hold;
   }
-  if (session.schemeLabel) return session.schemeLabel;
-  if (session.avgWeight > 0) {
-    return `${session.setCount}×${Math.round(session.totalReps / Math.max(1, session.setCount))} @ ~${Math.round(session.avgWeight)} kg`;
+
+  if (pattern && pattern.includes(' - ')) {
+    const weightSuffix = session.avgWeight > 0 ? ` @ ~${Math.round(session.avgWeight)} kg` : '';
+    return `${pattern.replace(/ - /g, ' / ')}${weightSuffix}${inferenceHint}`;
   }
-  return `${session.totalReps} reps · ${session.setCount} série${session.setCount > 1 ? 's' : ''}`;
+  if (session.schemeLabel) return `${session.schemeLabel}${inferenceHint}`;
+  if (session.avgWeight > 0) {
+    return `${session.setCount}×${Math.round(session.totalReps / Math.max(1, session.setCount))} @ ~${Math.round(session.avgWeight)} kg${inferenceHint}`;
+  }
+  return `${session.totalReps} reps · ${session.setCount} série${session.setCount > 1 ? 's' : ''}${inferenceHint}`;
 }
 
 export default function RecapExerciseProgressionPanel({
@@ -94,7 +103,10 @@ export default function RecapExerciseProgressionPanel({
     return collectEnrichedExerciseHistory(snapshot, selectedId, window, getExerciseNameById);
   }, [selectedId, snapshot, window, getExerciseNameById]);
 
-  const analysis = useMemo(() => analyzeExerciseProgressionHistory(history), [history]);
+  const analysis = useMemo(
+    () => analyzeExerciseProgressionHistory(history, snapshot, getExerciseNameById),
+    [history, snapshot, getExerciseNameById]
+  );
   const chart = useMemo(() => buildExerciseChartSeries(history), [history]);
 
   const statusStyle = STATUS_STYLES[analysis.status] || STATUS_STYLES.insufficient;
@@ -196,6 +208,24 @@ export default function RecapExerciseProgressionPanel({
               ) : null}
             </div>
 
+            {analysis.setHabits?.metrics?.length > 0 ? (
+              <div className="flex flex-wrap gap-1.5">
+                {analysis.setHabits.profileLabel ? (
+                  <span className="rounded-full border border-teal-500/35 bg-teal-950/40 px-2 py-0.5 text-[10px] font-medium text-teal-100">
+                    {analysis.setHabits.profileLabel}
+                  </span>
+                ) : null}
+                {analysis.setHabits.metrics.map((m) => (
+                  <span
+                    key={m.key}
+                    className="rounded-full border border-[#0F4C5C]/45 bg-black/50 px-2 py-0.5 text-[10px] text-slate-300"
+                  >
+                    {m.label} : <span className="font-medium text-slate-100">{m.value}</span>
+                  </span>
+                ))}
+              </div>
+            ) : null}
+
             {analysis.detail ? (
               <div className={`rounded-lg border px-3 py-2.5 text-xs leading-relaxed ${statusStyle.border} ${statusStyle.bg} ${statusStyle.text}`}>
                 {analysis.detail}
@@ -238,14 +268,24 @@ export default function RecapExerciseProgressionPanel({
                 Historique séances
               </div>
               <ul className="max-h-44 divide-y divide-[#0F4C5C]/20 overflow-y-auto text-[11px]">
-                {[...history].reverse().map((s) => (
-                  <li key={s.storageKey} className="flex items-center justify-between gap-2 px-3 py-2">
-                    <span className="tabular-nums text-slate-400">{s.dateYmd}</span>
-                    <span className="min-w-0 truncate text-right font-medium text-teal-100">
-                      {formatSessionLine(s)}
-                    </span>
-                  </li>
-                ))}
+                {[...history].reverse().map((s) => {
+                  const profile = analysis.setHabits?.sessionProfiles?.find(
+                    (p) => p.storageKey === s.storageKey
+                  );
+                  return (
+                    <li key={s.storageKey} className="flex items-center justify-between gap-2 px-3 py-2">
+                      <span className="shrink-0 tabular-nums text-slate-400">{s.dateYmd}</span>
+                      <div className="flex min-w-0 flex-col items-end gap-0.5">
+                        <span className="truncate text-right font-medium text-teal-100">
+                          {formatSessionLine(s, profile)}
+                        </span>
+                        {profile?.isEstimated && profile.inferenceLabel ? (
+                          <span className="text-[9px] text-amber-400/90">{profile.inferenceLabel}</span>
+                        ) : null}
+                      </div>
+                    </li>
+                  );
+                })}
               </ul>
             </div>
           </div>

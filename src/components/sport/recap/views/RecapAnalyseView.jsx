@@ -18,6 +18,8 @@ import { countTrainingDaysInRange } from '../../../../utils/sport/recapTrainingD
 
 import { RecapSection } from '../components/RecapUiBlocks';
 
+import RecapTrainingStateDebugPanel from '../RecapTrainingStateDebugPanel';
+
 
 
 const HORIZON_PILLS = {
@@ -154,7 +156,9 @@ export default function RecapAnalyseView({
 
   periodWindow = null,
 
-  recapState = null
+  recapState = null,
+
+  isAdmin = false
 
 }) {
 
@@ -270,6 +274,8 @@ export default function RecapAnalyseView({
 
   const hasInsightColumns = shortTerm.length > 0 || mediumTerm.length > 0 || longTerm.length > 0;
 
+  const showInterpretationDebug = import.meta.env.DEV || isAdmin;
+
 
 
   return (
@@ -324,6 +330,32 @@ export default function RecapAnalyseView({
           />
 
         </div>
+
+      ) : null}
+
+
+
+      {showInterpretationDebug ? (
+
+        <RecapTrainingStateDebugPanel
+
+          trainingState={assessment?.trainingState}
+
+          priorState={assessment?.priorState}
+
+          stateTransitions={assessment?.stateTransitions}
+
+          trainingEvents={assessment?.trainingEvents}
+
+          performanceRobustness={assessment?.performanceRobustness}
+
+          populationComparisons={assessment?.populationComparisons}
+
+          composedInterpretations={assessment?.composedInterpretations}
+
+          insightSignature={assessment?.insightSignature}
+
+        />
 
       ) : null}
 

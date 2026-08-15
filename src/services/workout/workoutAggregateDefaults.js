@@ -46,6 +46,8 @@ export function createEmptyWorkoutAggregate() {
     circuitDefinitionsVersion: '1.0',
     trainingPrefs: { swapRestConfirmEnabled: true },
     restDaySwaps: {},
+    /** Snapshots figés repos planifiés par mois (YYYY-MM). */
+    calendarMonthPlanSnapshots: {},
     garminActivityDateOverrides: {},
     enduranceData: {
       sessions: {

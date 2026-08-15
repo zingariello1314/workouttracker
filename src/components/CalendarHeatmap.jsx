@@ -20,6 +20,7 @@ import { getDateStr, getDayName } from '../utils/dateUtils';
 import {
   calendarExerciseRecordElementId,
   calendarEnduranceHistoryElementId,
+  CALENDAR_DAY_TOTAL_REPS_ID,
   resolveEnduranceHistoryRowId,
   scrollToCalendarRecordAnchor
 } from '../utils/sport/calendarExerciseDeepLink';
@@ -51,6 +52,7 @@ import { CALENDAR_PHYSICAL_ACTIVITY_COLOR } from '../utils/calendarPhysicalActiv
 import { computeDedupedPhysicalDurationMin } from '../utils/calendarPhysicalSessionStripes';
 import { normalizeProfileQuestionnaire } from '../features/profileQuestionnaire/schema';
 import { computeCalendarMonthSportStats } from '../utils/calendarMonthSportStats';
+import { computeCalendarMonthHighlights } from '../utils/calendarMonthHighlights';
 import {
   computeYearSportRecordHolders,
   formatCalendarSportDuration
@@ -59,6 +61,7 @@ import CalendarDayDataStripes, {
   calendarStripeReservePx
 } from './calendar/CalendarDayDataStripes';
 import CalendarRestDayMarker from './calendar/CalendarRestDayMarker';
+import CalendarOtherDayMarker from './calendar/CalendarOtherDayMarker';
 import CalendarGarminDayRecap from './calendar/CalendarGarminDayRecap';
 import CalendarDayRecapDetailPanel from './calendar/CalendarDayRecapDetailPanel';
 import CalendarDayQuickActions from './calendar/CalendarDayQuickActions';
@@ -138,7 +141,11 @@ import {
   getDayJustification,
   shouldOpenWorkoutChoicePanel,
   isRestDayJustificationFromIntensity,
+  isAutreDayJustificationFromIntensity,
+  isPatternJustificationDayFromIntensity,
   restDayCellBackgroundStyle,
+  autreDayCellBackgroundStyle,
+  justificationCellBackgroundStyle,
   calendarDayUsesMinimalDetailView,
   shouldOfferDayJustificationInDetail,
   JUSTIFICATION_REASONS,
@@ -419,6 +426,8 @@ const CalendarHeatmap = ({
   const [editingRepsDraft, setEditingRepsDraft] = useState('');
   /** Ligne du récap jour ouverte en détail (sommeil, pas, FC…). */
   const [recapDetailRow, setRecapDetailRow] = useState(null);
+  /** Scroll interne (clic record mensuel dans vue année). */
+  const [internalScrollAnchor, setInternalScrollAnchor] = useState(null);
 
   const YEAR_VIEW_COLS_KEY = 'momentum.calendar.yearViewColumns';
   const [yearViewColumns, setYearViewColumns] = useState(() => {
@@ -506,27 +515,49 @@ const CalendarHeatmap = ({
   }, [externalSelectDate, onExternalSelectHandled]);
 
   useEffect(() => {
-    if (!externalScrollAnchor || !selectedDate || panelMode !== 'details') return;
-    const cleanup = scrollToCalendarRecordAnchor(externalScrollAnchor, {
+    const anchor = externalScrollAnchor || internalScrollAnchor;
+    if (!anchor || !selectedDate || panelMode !== 'details') return;
+    const cleanup = scrollToCalendarRecordAnchor(anchor, {
       onSettled: ({ foundExact } = {}) => {
         if (foundExact) {
           onExternalScrollHandled?.();
+          setInternalScrollAnchor(null);
           return;
         }
         if (selectedDate?.intensity != null) {
           onExternalScrollHandled?.();
+          setInternalScrollAnchor(null);
         }
       }
     });
     return cleanup;
   }, [
     externalScrollAnchor,
+    internalScrollAnchor,
     selectedDate,
     panelMode,
     onExternalScrollHandled,
     dataUpdateTrigger,
     selectedDate?.intensity
   ]);
+
+  const openCalendarHighlight = (dateYmd, scrollAnchor) => {
+    if (!dateYmd) return;
+    const d = new Date(`${dateYmd}T12:00:00`);
+    if (Number.isNaN(d.getTime())) return;
+    setCurrentDate(d);
+    setViewMode('month');
+    setSelectedDate({
+      date: d,
+      intensity: null,
+      isCurrentMonth: true,
+      isToday: getDateStr(new Date()) === dateYmd
+    });
+    setPanelMode('details');
+    setPanelDate(null);
+    setRecapDetailRow(null);
+    if (scrollAnchor) setInternalScrollAnchor(scrollAnchor);
+  };
 
   useEffect(() => {
     if (!selectedDate) {
@@ -2372,6 +2403,18 @@ const CalendarHeatmap = ({
           ? computeCalendarMonthSportStats(monthDays, allData, garminData, getDateStr)
           : null;
 
+      const monthHighlights =
+        variant === 'sport'
+          ? computeCalendarMonthHighlights(monthDays, allData, garminData, getDateStr, {
+              program: activeProgram,
+              getEffectiveRestDayForDate,
+              getExerciseNameById,
+              restPlanSnapshot: allData?.calendarMonthPlanSnapshots?.[
+                `${year}-${String(month + 1).padStart(2, '0')}`
+              ]
+            })
+          : null;
+
       const monthData = {
         date: monthDate,
         days: monthDays,
@@ -2382,7 +2425,8 @@ const CalendarHeatmap = ({
         bestDay: monthSessions.reduce((best, day) => 
           day.intensity.intensityScore > (best?.intensity.intensityScore || 0) ? day : best, null
         ),
-        sportStats: monthSportStats
+        sportStats: monthSportStats,
+        monthHighlights
       };
       
       months.push(monthData);
@@ -2426,6 +2470,7 @@ const CalendarHeatmap = ({
     allData,
     allData?.dayJustifications,
     allData?.restDaySwaps,
+    allData?.calendarMonthPlanSnapshots,
     garminData,
     garminDataLoaded,
     garminKcalMedianRef,
@@ -2458,6 +2503,7 @@ const CalendarHeatmap = ({
     allData,
     allData?.dayJustifications,
     allData?.restDaySwaps,
+    allData?.calendarMonthPlanSnapshots,
     garminData,
     garminDataLoaded,
     garminKcalMedianRef,
@@ -2474,6 +2520,32 @@ const CalendarHeatmap = ({
     if (variant !== 'sport' || !yearMonths?.length) return {};
     return computeYearSportRecordHolders(yearMonths);
   }, [variant, yearMonths]);
+
+  /** Figé : capture le plan repos du mois à la première consultation (ne change plus ensuite). */
+  useEffect(() => {
+    if (variant !== 'sport' || !activeProgram || !yearMonths?.length || typeof updateData !== 'function') {
+      return;
+    }
+    const current = getCurrentData();
+    const pending = {};
+    yearMonths.forEach((month) => {
+      const y = month.date.getFullYear();
+      const m = month.date.getMonth();
+      const key = `${y}-${String(m + 1).padStart(2, '0')}`;
+      if (current?.calendarMonthPlanSnapshots?.[key]?.plannedRestDates) return;
+      const snap = month.monthHighlights?.restPlanSnapshot;
+      if (snap?.plannedRestDates) pending[key] = snap;
+    });
+    const keys = Object.keys(pending);
+    if (!keys.length) return;
+    updateData({
+      ...current,
+      calendarMonthPlanSnapshots: {
+        ...(current.calendarMonthPlanSnapshots || {}),
+        ...pending
+      }
+    });
+  }, [variant, activeProgram, yearMonths, allData?.calendarMonthPlanSnapshots, updateData, getCurrentData]);
 
   /**
    * Couleur case : dégradé direct depuis l’indice composite (sans recalage « teinte » sur la période).
@@ -2493,16 +2565,17 @@ const CalendarHeatmap = ({
     }
     if (intensity?.justification) {
       const reason = intensity.justification.reason;
-      if (reason === JUSTIFICATION_REASONS.REPOS) {
+      if (reason === JUSTIFICATION_REASONS.REPOS || reason === JUSTIFICATION_REASONS.AUTRE) {
         const todayRing = isToday ? ' ring-2 ring-amber-300/95' : '';
         const dayNum =
           JUSTIFICATION_DAY_NUMBER_CLASS[reason] ||
           JUSTIFICATION_DAY_NUMBER_CLASS[JUSTIFICATION_REASONS.AUTRE];
         return {
           className: `${JUSTIFICATION_COLORS[reason]}${todayRing}`,
-          style: restDayCellBackgroundStyle(),
+          style: justificationCellBackgroundStyle(reason),
           dayNumberClass: dayNum,
-          isRestDay: true
+          isRestDay: reason === JUSTIFICATION_REASONS.REPOS,
+          isAutreDay: reason === JUSTIFICATION_REASONS.AUTRE
         };
       }
       const { justification: _j, ...intensitySansJustif } = intensity;
@@ -3072,10 +3145,11 @@ const CalendarHeatmap = ({
                   questTileCount > 0 &&
                   dayHasPaint);
               const dayGarminStripes =
-                variant === 'sport' && day.isCurrentMonth && !isRestDayJustificationFromIntensity(intensityForCell)
+                variant === 'sport' && day.isCurrentMonth && !isPatternJustificationDayFromIntensity(intensityForCell)
                   ? dayStripesForDate(dayDateStr, intensityForCell)
                   : [];
               const isRestDay = day.isCurrentMonth && isRestDayJustificationFromIntensity(intensityForCell);
+              const isAutreDay = day.isCurrentMonth && isAutreDayJustificationFromIntensity(intensityForCell);
               const dayTopBadges =
                 variant === 'sport' && day.isCurrentMonth
                   ? calendarBadgesForDate(dayDateStr, calendarDayBadges)
@@ -3152,6 +3226,7 @@ const CalendarHeatmap = ({
                   <CalendarDayDataStripes stripes={dayGarminStripes} compact={isSidebarEmbed} />
                 )}
                 {isRestDay && <CalendarRestDayMarker compact={isSidebarEmbed} />}
+                {isAutreDay && <CalendarOtherDayMarker compact={isSidebarEmbed} />}
                 <CalendarDayTopBadges
                   badges={dayTopBadges}
                   compact={isSidebarEmbed}
@@ -3513,10 +3588,11 @@ const CalendarHeatmap = ({
                           : paddingDayCellStyle();
                         const yDayNumTone = yCell.dayNumberClass ?? compositeDayNumberClass();
                         const yGarminStripes =
-                          variant === 'sport' && day.isCurrentMonth && !isRestDayJustificationFromIntensity(yIntensity)
+                          variant === 'sport' && day.isCurrentMonth && !isPatternJustificationDayFromIntensity(yIntensity)
                             ? dayStripesForDate(yDateStr, yIntensity)
                             : [];
                         const yIsRestDay = day.isCurrentMonth && isRestDayJustificationFromIntensity(yIntensity);
+                        const yIsAutreDay = day.isCurrentMonth && isAutreDayJustificationFromIntensity(yIntensity);
                         const yTopBadges =
                           variant === 'sport' && day.isCurrentMonth
                             ? calendarBadgesForDate(yDateStr, calendarDayBadges)
@@ -3581,6 +3657,7 @@ const CalendarHeatmap = ({
                             <CalendarDayDataStripes stripes={yGarminStripes} compact physicalOnly />
                           )}
                           {yIsRestDay && <CalendarRestDayMarker compact />}
+                          {yIsAutreDay && <CalendarOtherDayMarker compact />}
                           <CalendarDayTopBadges
                             badges={yTopBadges}
                             compact
@@ -3671,61 +3748,201 @@ const CalendarHeatmap = ({
                       </div>
                     </div>
                   ) : variant === 'sport' && month.sportStats ? (
-                    <div className="grid grid-cols-3 gap-1 text-[10px]">
-                      {[
-                        ['totalReps', String(month.sportStats.totalReps), 'calendar.stats.monthReps'],
-                        ['runningKm', `${month.sportStats.runningKm} km`, 'calendar.stats.monthRunningKm'],
-                        [
-                          'runningMinutes',
-                          formatCalendarSportDuration(month.sportStats.runningMinutes),
-                          'calendar.stats.monthRunningTime'
-                        ],
-                        [
-                          'otherExerciseMinutes',
-                          formatCalendarSportDuration(month.sportStats.otherExerciseMinutes),
-                          'calendar.stats.monthOtherExerciseTime'
-                        ],
-                        [
-                          'totalMinutes',
-                          formatCalendarSportDuration(month.sportStats.totalMinutes),
-                          'calendar.stats.monthTotalTime'
-                        ],
-                        ['totalKg', `${month.sportStats.totalKg} kg`, 'calendar.stats.monthKgLifted'],
-                        [
-                          'longestStreak',
-                          String(month.sportStats.longestStreak),
-                          'calendar.stats.monthLongestStreak'
-                        ],
-                        [
-                          'activeKcal',
-                          `${Math.round(month.sportStats.activeKcal || 0).toLocaleString('fr-FR')} kcal`,
-                          'calendar.stats.monthActiveKcal'
-                        ],
-                        [
-                          'trainingDays',
-                          String(month.sportStats.trainingDays ?? 0),
-                          'calendar.stats.monthTrainingDays'
-                        ]
-                      ].map(([metric, value, labelKey]) => {
-                        const isRecord = sportRecordHolders[metric] === monthIndex;
-                        return (
-                          <div
-                            key={metric}
-                            className={`relative rounded p-1.5 text-center ${
-                              isRecord ? 'bg-amber-900/35 ring-1 ring-amber-400/50' : 'bg-slate-700/50'
-                            }`}
-                          >
-                            {isRecord ? (
-                              <Crown
-                                className="absolute right-1 top-0.5 h-3 w-3 text-amber-300"
-                                aria-label={t('calendar.stats.yearRecord', 'Record annuel')}
-                              />
-                            ) : null}
-                            <div className="font-bold tabular-nums text-white">{value}</div>
-                            <div className="leading-tight text-slate-400">{t(labelKey)}</div>
-                          </div>
-                        );
-                      })}
+                    <div className="space-y-1.5">
+                      <div className="grid grid-cols-3 gap-1 text-[10px]">
+                        {[
+                          ['totalReps', String(month.sportStats.totalReps), 'calendar.stats.monthReps'],
+                          ['runningKm', `${month.sportStats.runningKm} km`, 'calendar.stats.monthRunningKm'],
+                          [
+                            'runningMinutes',
+                            formatCalendarSportDuration(month.sportStats.runningMinutes),
+                            'calendar.stats.monthRunningTime'
+                          ],
+                          [
+                            'otherExerciseMinutes',
+                            formatCalendarSportDuration(month.sportStats.otherExerciseMinutes),
+                            'calendar.stats.monthOtherExerciseTime'
+                          ],
+                          [
+                            'totalMinutes',
+                            formatCalendarSportDuration(month.sportStats.totalMinutes),
+                            'calendar.stats.monthTotalTime'
+                          ],
+                          ['totalKg', `${month.sportStats.totalKg} kg`, 'calendar.stats.monthKgLifted'],
+                          [
+                            'longestStreak',
+                            String(month.sportStats.longestStreak),
+                            'calendar.stats.monthLongestStreak'
+                          ],
+                          [
+                            'activeKcal',
+                            `${Math.round(month.sportStats.activeKcal || 0).toLocaleString('fr-FR')} kcal`,
+                            'calendar.stats.monthActiveKcal'
+                          ],
+                          [
+                            'trainingDays',
+                            String(month.sportStats.trainingDays ?? 0),
+                            'calendar.stats.monthTrainingDays'
+                          ]
+                        ].map(([metric, value, labelKey]) => {
+                          const isRecord = sportRecordHolders[metric] === monthIndex;
+                          return (
+                            <div
+                              key={metric}
+                              className={`relative rounded p-1.5 text-center ${
+                                isRecord ? 'bg-amber-900/35 ring-1 ring-amber-400/50' : 'bg-slate-700/50'
+                              }`}
+                            >
+                              {isRecord ? (
+                                <Crown
+                                  className="absolute right-1 top-0.5 h-3 w-3 text-amber-300"
+                                  aria-label={t('calendar.stats.yearRecord', 'Record annuel')}
+                                />
+                              ) : null}
+                              <div className="font-bold tabular-nums text-white">{value}</div>
+                              <div className="leading-tight text-slate-400">{t(labelKey)}</div>
+                            </div>
+                          );
+                        })}
+                      </div>
+
+                      {month.monthHighlights ? (
+                        <div className="grid grid-cols-3 gap-1 text-[10px] border-t border-slate-700/40 pt-1.5">
+                          {month.monthHighlights.bestDayReps ? (
+                            <button
+                              type="button"
+                              onClick={() =>
+                                openCalendarHighlight(
+                                  month.monthHighlights.bestDayReps.dateYmd,
+                                  month.monthHighlights.bestDayReps.scrollAnchor
+                                )
+                              }
+                              className="rounded bg-teal-900/35 p-1.5 text-center ring-1 ring-teal-500/30 transition hover:bg-teal-900/55 hover:ring-teal-400/50"
+                              title={t('calendar.stats.openDayHint', 'Ouvrir le jour concerné')}
+                            >
+                              <div className="font-bold tabular-nums text-teal-100">
+                                {month.monthHighlights.bestDayReps.value}
+                              </div>
+                              <div className="leading-tight text-teal-300/80">
+                                {t('calendar.stats.monthBestReps', 'Meilleur jour reps')}
+                              </div>
+                            </button>
+                          ) : null}
+                          {month.monthHighlights.bestDayVolumeKg ? (
+                            <button
+                              type="button"
+                              onClick={() =>
+                                openCalendarHighlight(
+                                  month.monthHighlights.bestDayVolumeKg.dateYmd,
+                                  month.monthHighlights.bestDayVolumeKg.scrollAnchor
+                                )
+                              }
+                              className="rounded bg-amber-900/30 p-1.5 text-center ring-1 ring-amber-500/30 transition hover:bg-amber-900/50 hover:ring-amber-400/50"
+                              title={t('calendar.stats.openDayHint', 'Ouvrir le jour concerné')}
+                            >
+                              <div className="font-bold tabular-nums text-amber-100">
+                                {month.monthHighlights.bestDayVolumeKg.valueKg.toLocaleString('fr-FR')} kg
+                              </div>
+                              <div className="leading-tight text-amber-300/80">
+                                {t('calendar.stats.monthBestDayVolume', 'Meilleur jour volume')}
+                              </div>
+                            </button>
+                          ) : null}
+                          {month.monthHighlights.bestRun ? (
+                            <button
+                              type="button"
+                              onClick={() =>
+                                openCalendarHighlight(
+                                  month.monthHighlights.bestRun.dateYmd,
+                                  month.monthHighlights.bestRun.scrollAnchor
+                                )
+                              }
+                              className="rounded bg-sky-900/35 p-1.5 text-center ring-1 ring-sky-500/30 transition hover:bg-sky-900/55 hover:ring-sky-400/50"
+                              title={t('calendar.stats.openDayHint', 'Ouvrir le jour concerné')}
+                            >
+                              <div className="font-bold tabular-nums text-sky-100">
+                                {month.monthHighlights.bestRun.km} km
+                              </div>
+                              <div className="leading-tight text-sky-300/80">
+                                {t('calendar.stats.monthBestRun', 'Meilleure course')}
+                              </div>
+                            </button>
+                          ) : null}
+                          {month.monthHighlights.bestKcalDay ? (
+                            <button
+                              type="button"
+                              onClick={() =>
+                                openCalendarHighlight(
+                                  month.monthHighlights.bestKcalDay.dateYmd,
+                                  month.monthHighlights.bestKcalDay.scrollAnchor
+                                )
+                              }
+                              className="rounded bg-orange-900/35 p-1.5 text-center ring-1 ring-orange-500/35 transition hover:bg-orange-900/55 hover:ring-orange-400/50"
+                              title={t('calendar.stats.openDayHint', 'Ouvrir le jour concerné')}
+                            >
+                              <div className="font-bold tabular-nums text-orange-100">
+                                {month.monthHighlights.bestKcalDay.value.toLocaleString('fr-FR')}
+                              </div>
+                              <div className="leading-tight text-orange-300/80">
+                                {t('calendar.stats.monthBestKcal', 'Record kcal')}
+                              </div>
+                            </button>
+                          ) : null}
+                          {month.monthHighlights.avgKcalPerDay != null ? (
+                            <div className="rounded bg-slate-800/55 p-1.5 text-center ring-1 ring-slate-600/35">
+                              <div className="font-bold tabular-nums text-slate-100">
+                                {month.monthHighlights.avgKcalPerDay.toLocaleString('fr-FR')}
+                              </div>
+                              <div className="leading-tight text-slate-400">
+                                {t('calendar.stats.monthAvgKcal', 'Kcal moy. / jour')}
+                              </div>
+                            </div>
+                          ) : null}
+                          {month.monthHighlights.avgStepsPerDay != null ? (
+                            <div className="rounded bg-slate-800/55 p-1.5 text-center ring-1 ring-slate-600/35">
+                              <div className="font-bold tabular-nums text-slate-100">
+                                {month.monthHighlights.avgStepsPerDay.toLocaleString('fr-FR')}
+                              </div>
+                              <div className="leading-tight text-slate-400">
+                                {t('calendar.stats.monthAvgSteps', 'Pas moy. (jours actifs)')}
+                              </div>
+                            </div>
+                          ) : null}
+                          {(month.monthHighlights.restDaysPlanned > 0 ||
+                            month.monthHighlights.restDaysChecked > 0) && (
+                            <div className="rounded bg-violet-950/40 p-1.5 text-center ring-1 ring-violet-500/25">
+                              <div className="font-bold tabular-nums text-violet-100">
+                                {month.monthHighlights.restDaysChecked}/{month.monthHighlights.restDaysPlanned}
+                              </div>
+                              <div className="leading-tight text-violet-300/80">
+                                {t('calendar.stats.monthRestRatio', 'Repos cochés / prévus')}
+                              </div>
+                            </div>
+                          )}
+                          {month.monthHighlights.stretchCount > 0 ? (
+                            <div className="rounded bg-pink-950/35 p-1.5 text-center ring-1 ring-pink-500/25">
+                              <div className="font-bold tabular-nums text-pink-100">
+                                {month.monthHighlights.stretchCount}
+                              </div>
+                              <div className="leading-tight text-pink-300/80">
+                                {t('calendar.stats.monthStretches', 'Étirements')}
+                              </div>
+                            </div>
+                          ) : null}
+                          {month.monthHighlights.topMuscles?.length > 0 ? (
+                            <div className="col-span-3 rounded bg-slate-800/60 p-1.5 text-center ring-1 ring-slate-600/40">
+                              <div className="text-[9px] font-medium uppercase tracking-wide text-slate-500">
+                                {t('calendar.stats.monthTopMuscles', 'Top muscles')}
+                              </div>
+                              <div className="mt-0.5 text-[10px] leading-snug text-slate-200">
+                                {month.monthHighlights.topMuscles
+                                  .map((m, i) => `${i + 1}. ${m.label}`)
+                                  .join(' · ')}
+                              </div>
+                            </div>
+                          ) : null}
+                        </div>
+                      ) : null}
                     </div>
                   ) : (
                     <div className="grid grid-cols-2 gap-2 text-xs">
@@ -5306,7 +5523,7 @@ const CalendarHeatmap = ({
                   {t('calendar.heatmap.dayDetails.workoutStats')}
                 </h4>
                 <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
-                  <div className="rounded-lg border border-blue-500/40 bg-black p-4 text-center">
+                  <div id={CALENDAR_DAY_TOTAL_REPS_ID} className="rounded-lg border border-blue-500/40 bg-black p-4 text-center scroll-mt-28">
                     <div className="text-2xl font-bold text-sky-50">{selectedDate.intensity.reps}</div>
                     <div className="text-sm text-sky-500">{t('calendar.heatmap.dayDetails.totalReps')}</div>
                   </div>

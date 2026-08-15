@@ -28,6 +28,20 @@ function isInclinePushupName(n) {
 }
 
 /**
+ * Si le libellé est une variante pompes (hors inclinées/déclinées), retourne name:pompes…
+ * @returns {string|null}
+ */
+export function pushupCatalogKeyFromExerciseName(rawName) {
+  const n = normalizedPushupName(rawName);
+  if (!isPushupName(n) || /traction|pull-up|pullup|chin-up|chinup/.test(n)) return null;
+  if (/poignee|\bhandles\b|sur poign/.test(n) && !/gilet|lest|weighted|avec gilet/.test(n)) {
+    return defaultPlainPushupsGradeCatalogKey();
+  }
+  const slug = canonicalPushupGradeNameSlug(rawName);
+  return slug ? `name:${slug}` : null;
+}
+
+/**
  * Synonymes pompes → un seul slug catalogue.
  * @returns {string}
  */
@@ -42,6 +56,10 @@ export function canonicalPushupGradeNameSlug(rawName) {
 
   if (isInclinePushupName(n)) {
     return 'pompes-inclinees';
+  }
+
+  if (slug === 'pompes-classiques' || slug === 'pompes') {
+    return 'pompes';
   }
 
   return slug;

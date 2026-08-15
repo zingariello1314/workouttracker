@@ -4,11 +4,15 @@
  * - poids différents par série (pyramide / séries dégressives).
  */
 
-import { workoutProgram } from '../data/workoutProgram';
+
 import { enrichExercise } from './programUtils';
 import { Equipment } from '../data/workoutProgramEnhanced';
 import { collectDedupedCheckedVolumeKeys } from './trainingLoadUtils';
 import { getOrBuildExerciseSetLog } from './exerciseSetLogUtils';
+import {
+  lookupProgramExerciseFromRegistry,
+  configureProgramExerciseLookup
+} from './programExerciseRegistry';
 
 const norm = (s) =>
   String(s || '')
@@ -172,47 +176,16 @@ export function computeRepresentativeKgPerRep(opts) {
   return v / reps;
 }
 
-let programExerciseByIdCache = null;
-
-function buildProgramExerciseById() {
-  const map = new Map();
-  const visitList = (list) => {
-    if (!Array.isArray(list)) return;
-    list.forEach((ex) => {
-      if (ex && ex.id != null) map.set(String(ex.id), ex);
-    });
-  };
-  Object.values(workoutProgram || {}).forEach((day) => {
-    visitList(day?.exercices);
-    const vars = day?.salleVariants;
-    if (vars && typeof vars === 'object') {
-      Object.values(vars).forEach((v) => visitList(v?.exercices));
-    }
-  });
-  return map;
-}
+export { configureProgramExerciseLookup };
 
 /**
- * Résout un stub exercice depuis l’id programme (stats année / clés seules).
+ * Résout un stub exercice depuis l'id programme (embarqué + programmes utilisateur).
  * @param {string|number} exerciseId
- * @returns {{ id: string|number, name: string, materiel: string, series: string, notes?: string }}
+ * @param {{ userPrograms?: object[], activeProgramId?: string|null, registry?: Map<string, object> }} [options]
+ * @returns {{ id: string|number, name: string, materiel: string, series: string, notes?: string, meta?: object }}
  */
-export function lookupProgramExerciseStub(exerciseId) {
-  if (programExerciseByIdCache == null) {
-    programExerciseByIdCache = buildProgramExerciseById();
-  }
-  const id = exerciseId != null ? String(exerciseId) : '';
-  const hit = programExerciseByIdCache.get(id);
-  if (hit) {
-    return {
-      id: hit.id,
-      name: hit.name || 'Exercice',
-      materiel: hit.materiel || hit.equipment || '',
-      series: hit.series || '',
-      notes: hit.notes || ''
-    };
-  }
-  return { id: exerciseId, name: 'Exercice', materiel: '', series: '', notes: '' };
+export function lookupProgramExerciseStub(exerciseId, options) {
+  return lookupProgramExerciseFromRegistry(exerciseId, options);
 }
 
 /**

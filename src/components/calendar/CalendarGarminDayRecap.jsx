@@ -1,6 +1,7 @@
 import React from 'react';
 import { ChevronRight } from 'lucide-react';
 import { canDrillDownRecapRow } from '../../utils/calendarDayRecapDetail';
+import { calendarMomentumRecapRowElementId } from '../../utils/sport/calendarExerciseDeepLink';
 
 /**
  * Liste type Garmin Connect (activités, sommeil, FC, pas…).
@@ -14,12 +15,14 @@ export default function CalendarGarminDayRecap({ rows, onRowClick }) {
       {rows.map((row, index) => {
         const clickable = Boolean(onRowClick) && canDrillDownRecapRow(row);
         const Tag = clickable ? 'button' : 'div';
+        const rowDomId = calendarMomentumRecapRowElementId(row.id);
         return (
           <Tag
             key={row.id}
+            id={rowDomId || undefined}
             type={clickable ? 'button' : undefined}
             onClick={clickable ? () => onRowClick(row) : undefined}
-            className={`flex w-full items-center gap-3 px-4 py-3.5 text-left transition-colors ${
+            className={`scroll-mt-28 flex w-full items-center gap-3 px-4 py-3.5 text-left transition-colors ${
               index < rows.length - 1 ? 'border-b border-slate-700/60' : ''
             } ${clickable ? 'cursor-pointer hover:bg-slate-900/80 focus-visible:outline focus-visible:outline-2 focus-visible:outline-sky-500/70' : ''}`}
           >

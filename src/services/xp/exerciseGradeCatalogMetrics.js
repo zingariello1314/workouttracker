@@ -39,6 +39,7 @@ import {
 } from './exerciseGradePushupChannels';
 import { mergePerformancePeakIntoMetrics } from './exerciseGradePerformancePeak';
 import { resolveCatalogDef } from './exerciseGradeDiscovery';
+import { ENDURANCE_PUSHUPS_WORKOUT_EXERCISE_ID } from '../endurance/pushupEnduranceWorkoutKeys';
 
 
 
@@ -50,10 +51,19 @@ function exerciseIdFromStorageKey(key) {
 
   let id = m[2].replace(/_semaineA$|_semaineB$/, '');
 
-  if (id.startsWith('complementary_')) return null;
+  if (id.startsWith('complementary_')) {
+    return id === ENDURANCE_PUSHUPS_WORKOUT_EXERCISE_ID ? id : null;
+  }
 
   return id;
 
+}
+
+
+
+function endurancePushupsAlreadySyncedOnDay(snapshot, dateStr) {
+  const key = `${dateStr}_${ENDURANCE_PUSHUPS_WORKOUT_EXERCISE_ID}`;
+  return snapshot?.checkedExercises?.[key] === true;
 }
 
 
@@ -63,6 +73,7 @@ function exerciseIdFromStorageKey(key) {
 export function exerciseMatchesCatalogKey(catalogKey, exId, getExerciseNameById) {
 
   if (catalogKeyReceivesPushupDefis(catalogKey)) {
+    if (String(exId) === ENDURANCE_PUSHUPS_WORKOUT_EXERCISE_ID) return true;
     if (exerciseRollsUpToPlainPushups(exId, getExerciseNameById)) return true;
   }
 
@@ -251,6 +262,8 @@ function bumpFromWorkout(snapshot, catalogKey, getExerciseNameById, metrics, dai
 
     metrics.sessionCount += checks;
 
+    metrics.maxSetReps = Math.max(metrics.maxSetReps, reps);
+
     if (!metrics.bestExerciseName && getExerciseNameById) {
 
       metrics.bestExerciseName = getExerciseNameById(exId);
@@ -314,6 +327,7 @@ function applyEndurance(snapshot, catalogKey, getExerciseNameById, metrics, dail
 
 
   forEachEnduranceBenchmarkSession(snapshot, enduranceKey, ({ dateStr, reps }) => {
+    if (endurancePushupsAlreadySyncedOnDay(snapshot, dateStr)) return;
 
     metrics.checkCount += 1;
 
@@ -356,8 +370,6 @@ export function extractMetricsForCatalogKey(snapshot, catalogKey, getExerciseNam
   });
 
   metrics.maxDailyTotalReps = maxDay;
-
-  metrics.maxSetReps = Math.max(metrics.maxSetReps, maxDay);
 
   metrics.lifetimeVolumeKg = metrics.totalVolumeKg;
 
@@ -408,6 +420,7 @@ export function collectCatalogActivityByDate(snapshot, catalogKey, getExerciseNa
   if (shouldIncludeEnduranceForCatalog(catalogKey, getExerciseNameById)) {
 
     forEachEnduranceBenchmarkSession(snapshot, enduranceKey, ({ dateStr, reps: r }) => {
+      if (endurancePushupsAlreadySyncedOnDay(snapshot, dateStr)) return;
 
       bumpDay(byDate, dateStr, r, 1, catalogKey, getExerciseNameById, 'defis');
 

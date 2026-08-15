@@ -120,7 +120,15 @@ export function useRecapTabMetrics({
         const recapAssessmentMerged = {
           ...recapAssessment,
           insights: adaptive.insights,
-          adaptiveKpis: adaptive.kpis
+          adaptiveKpis: adaptive.kpis,
+          insightSignature: adaptive.signature ?? null,
+          trainingState: adaptive.trainingState ?? null,
+          priorState: adaptive.priorState ?? null,
+          stateTransitions: adaptive.stateTransitions ?? [],
+          performanceRobustness: adaptive.performanceRobustness ?? [],
+          populationComparisons: adaptive.populationComparisons ?? [],
+          composedInterpretations: adaptive.composedInterpretations ?? [],
+          trainingEvents: adaptive.trainingEvents ?? null
         };
 
         const programCoachAnalysis = buildRecapProgramCoachAnalysis({
@@ -137,7 +145,11 @@ export function useRecapTabMetrics({
           programs: Array.isArray(programs) ? programs : [],
           getTodayWorkout: getTodayWorkoutForCompletion,
           isAdmin,
-          isAuthenticated
+          isAuthenticated,
+          trainingState: adaptive.trainingState ?? null,
+          composedInterpretations: adaptive.composedInterpretations ?? [],
+          trainingEvents: adaptive.trainingEvents ?? null,
+          stateTransitions: adaptive.stateTransitions ?? []
         });
 
         if (gen !== genRef.current) return;
