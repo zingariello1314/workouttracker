@@ -67,6 +67,8 @@ export default function RubiksSettingsView() {
           <span className="tabular-nums text-emerald-200">×{prefs.playSpeed}</span>
         </label>
       </section>
+
+      <section className="space-y-3 rounded-xl border border-slate-800 p-4 text-sm text-slate-300">
         <h3 className="font-semibold text-white">Ce n&apos;est pas tout à fait les échecs</h3>
         <p>
           Aux échecs, « Nf3 » dit <em>quelle pièce</em> va <em>sur quelle case</em>. Sur un cube, « R » ne déplace pas

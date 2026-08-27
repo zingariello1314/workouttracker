@@ -54,8 +54,7 @@ import { normalizeProfileQuestionnaire } from '../features/profileQuestionnaire/
 import { computeCalendarMonthSportStats } from '../utils/calendarMonthSportStats';
 import { computeCalendarMonthHighlights } from '../utils/calendarMonthHighlights';
 import {
-  computeYearSportRecordHolders,
-  formatCalendarSportDuration
+  computeYearSportRecordHolders
 } from '../utils/calendarSportStatsFormat';
 import CalendarDayDataStripes, {
   calendarStripeReservePx
@@ -66,6 +65,7 @@ import CalendarGarminDayRecap from './calendar/CalendarGarminDayRecap';
 import CalendarDayRecapDetailPanel from './calendar/CalendarDayRecapDetailPanel';
 import CalendarDayQuickActions from './calendar/CalendarDayQuickActions';
 import CalendarDayTopBadges from './calendar/CalendarDayTopBadges';
+import CalendarMonthSportTiles from './calendar/CalendarMonthSportTiles';
 import CalendarDayTrainingScorePanel from './calendar/CalendarDayTrainingScorePanel';
 import CalendarDayBadgesExplainer from './calendar/CalendarDayBadgesExplainer';
 import CalendarDayHolisticScoreChip from './calendar/CalendarDayHolisticScoreChip';
@@ -160,6 +160,10 @@ import {
 } from '../utils/calendarDayWorkoutTruth';
 import { persistEnduranceData } from '../services/endurance/enduranceDataService';
 import { applyWorkoutRepIntegrations } from '../services/endurance/workoutRepIntegrations';
+import {
+  ENDURANCE_PUSHUPS_WORKOUT_EXERCISE_ID,
+  isEndurancePushupsWorkoutStorageKey
+} from '../services/endurance/pushupEnduranceWorkoutKeys';
 import { useTranslation } from '../utils/translations';
 import { useLanguage } from '../context/LanguageContext';
 import { loadTranslationNamespace } from '../utils/translations/loader';
@@ -1398,11 +1402,39 @@ const CalendarHeatmap = ({
       if (!isCompleted) return;
       if (!String(key).startsWith(`${dateStr}_`)) return;
       if (plannedResolvedKeys.has(key)) return;
-      if (String(key).includes('_complementary_')) return; // déjà traité via enduranceData
+      // Autres complementary déjà via enduranceData ; les pompes défis sont
+      // volontairement exclus de computeEnduranceDayMetricsForCalendar (sync workout).
+      if (String(key).includes('_complementary_') && !isEndurancePushupsWorkoutStorageKey(key)) {
+        return;
+      }
 
       const rawReps = repsMap[key];
       const repsValidation = validateNumericValue(rawReps, `getIntensityForDate.${dateStr}.adhoc.${key}`, false);
       const reps = repsValidation.normalizedValue;
+
+      if (isEndurancePushupsWorkoutStorageKey(key)) {
+        if (reps > 0) {
+          exercisesReps += reps;
+          totalReps += reps;
+          const coeff = resolveExerciseIntensityCoeff(
+            { id: ENDURANCE_PUSHUPS_WORKOUT_EXERCISE_ID, name: 'Pompes (endurance)', series: '', type: 'standard' },
+            currentData?.exerciseIntensityCoeffs || {}
+          );
+          strengthLoad += computeStrengthCalendarContribution(
+            {
+              id: ENDURANCE_PUSHUPS_WORKOUT_EXERCISE_ID,
+              name: 'Pompes (endurance)',
+              nom: 'Pompes (endurance)',
+              series: '',
+              type: 'standard'
+            },
+            reps,
+            coeff,
+            1
+          );
+        }
+        return;
+      }
 
       const rawId = String(key).slice(`${dateStr}_`.length).replace(/_semaineA$|_semaineB$/, '');
       const dayVariation = currentData?.dailyVariations?.[dateStr];
@@ -2538,13 +2570,13 @@ const CalendarHeatmap = ({
     });
     const keys = Object.keys(pending);
     if (!keys.length) return;
-    updateData({
-      ...current,
+    updateData((prev) => ({
+      ...(prev || {}),
       calendarMonthPlanSnapshots: {
-        ...(current.calendarMonthPlanSnapshots || {}),
+        ...(prev?.calendarMonthPlanSnapshots || {}),
         ...pending
       }
-    });
+    }));
   }, [variant, activeProgram, yearMonths, allData?.calendarMonthPlanSnapshots, updateData, getCurrentData]);
 
   /**
@@ -3225,7 +3257,12 @@ const CalendarHeatmap = ({
                 {dayGarminStripes.length > 0 && (
                   <CalendarDayDataStripes stripes={dayGarminStripes} compact={isSidebarEmbed} />
                 )}
-                {isRestDay && <CalendarRestDayMarker compact={isSidebarEmbed} />}
+                {isRestDay && (
+                  <CalendarRestDayMarker
+                    compact={isSidebarEmbed}
+                    corner={dayTopBadges.length > 0 ? 'bottom-right' : 'top-right'}
+                  />
+                )}
                 {isAutreDay && <CalendarOtherDayMarker compact={isSidebarEmbed} />}
                 <CalendarDayTopBadges
                   badges={dayTopBadges}
@@ -3656,7 +3693,12 @@ const CalendarHeatmap = ({
                           {yGarminStripes.length > 0 && (
                             <CalendarDayDataStripes stripes={yGarminStripes} compact physicalOnly />
                           )}
-                          {yIsRestDay && <CalendarRestDayMarker compact />}
+                          {yIsRestDay && (
+                            <CalendarRestDayMarker
+                              compact
+                              corner={yTopBadges.length > 0 ? 'bottom-right' : 'top-right'}
+                            />
+                          )}
                           {yIsAutreDay && <CalendarOtherDayMarker compact />}
                           <CalendarDayTopBadges
                             badges={yTopBadges}
@@ -3748,202 +3790,14 @@ const CalendarHeatmap = ({
                       </div>
                     </div>
                   ) : variant === 'sport' && month.sportStats ? (
-                    <div className="space-y-1.5">
-                      <div className="grid grid-cols-3 gap-1 text-[10px]">
-                        {[
-                          ['totalReps', String(month.sportStats.totalReps), 'calendar.stats.monthReps'],
-                          ['runningKm', `${month.sportStats.runningKm} km`, 'calendar.stats.monthRunningKm'],
-                          [
-                            'runningMinutes',
-                            formatCalendarSportDuration(month.sportStats.runningMinutes),
-                            'calendar.stats.monthRunningTime'
-                          ],
-                          [
-                            'otherExerciseMinutes',
-                            formatCalendarSportDuration(month.sportStats.otherExerciseMinutes),
-                            'calendar.stats.monthOtherExerciseTime'
-                          ],
-                          [
-                            'totalMinutes',
-                            formatCalendarSportDuration(month.sportStats.totalMinutes),
-                            'calendar.stats.monthTotalTime'
-                          ],
-                          ['totalKg', `${month.sportStats.totalKg} kg`, 'calendar.stats.monthKgLifted'],
-                          [
-                            'longestStreak',
-                            String(month.sportStats.longestStreak),
-                            'calendar.stats.monthLongestStreak'
-                          ],
-                          [
-                            'activeKcal',
-                            `${Math.round(month.sportStats.activeKcal || 0).toLocaleString('fr-FR')} kcal`,
-                            'calendar.stats.monthActiveKcal'
-                          ],
-                          [
-                            'trainingDays',
-                            String(month.sportStats.trainingDays ?? 0),
-                            'calendar.stats.monthTrainingDays'
-                          ]
-                        ].map(([metric, value, labelKey]) => {
-                          const isRecord = sportRecordHolders[metric] === monthIndex;
-                          return (
-                            <div
-                              key={metric}
-                              className={`relative rounded p-1.5 text-center ${
-                                isRecord ? 'bg-amber-900/35 ring-1 ring-amber-400/50' : 'bg-slate-700/50'
-                              }`}
-                            >
-                              {isRecord ? (
-                                <Crown
-                                  className="absolute right-1 top-0.5 h-3 w-3 text-amber-300"
-                                  aria-label={t('calendar.stats.yearRecord', 'Record annuel')}
-                                />
-                              ) : null}
-                              <div className="font-bold tabular-nums text-white">{value}</div>
-                              <div className="leading-tight text-slate-400">{t(labelKey)}</div>
-                            </div>
-                          );
-                        })}
-                      </div>
-
-                      {month.monthHighlights ? (
-                        <div className="grid grid-cols-3 gap-1 text-[10px] border-t border-slate-700/40 pt-1.5">
-                          {month.monthHighlights.bestDayReps ? (
-                            <button
-                              type="button"
-                              onClick={() =>
-                                openCalendarHighlight(
-                                  month.monthHighlights.bestDayReps.dateYmd,
-                                  month.monthHighlights.bestDayReps.scrollAnchor
-                                )
-                              }
-                              className="rounded bg-teal-900/35 p-1.5 text-center ring-1 ring-teal-500/30 transition hover:bg-teal-900/55 hover:ring-teal-400/50"
-                              title={t('calendar.stats.openDayHint', 'Ouvrir le jour concerné')}
-                            >
-                              <div className="font-bold tabular-nums text-teal-100">
-                                {month.monthHighlights.bestDayReps.value}
-                              </div>
-                              <div className="leading-tight text-teal-300/80">
-                                {t('calendar.stats.monthBestReps', 'Meilleur jour reps')}
-                              </div>
-                            </button>
-                          ) : null}
-                          {month.monthHighlights.bestDayVolumeKg ? (
-                            <button
-                              type="button"
-                              onClick={() =>
-                                openCalendarHighlight(
-                                  month.monthHighlights.bestDayVolumeKg.dateYmd,
-                                  month.monthHighlights.bestDayVolumeKg.scrollAnchor
-                                )
-                              }
-                              className="rounded bg-amber-900/30 p-1.5 text-center ring-1 ring-amber-500/30 transition hover:bg-amber-900/50 hover:ring-amber-400/50"
-                              title={t('calendar.stats.openDayHint', 'Ouvrir le jour concerné')}
-                            >
-                              <div className="font-bold tabular-nums text-amber-100">
-                                {month.monthHighlights.bestDayVolumeKg.valueKg.toLocaleString('fr-FR')} kg
-                              </div>
-                              <div className="leading-tight text-amber-300/80">
-                                {t('calendar.stats.monthBestDayVolume', 'Meilleur jour volume')}
-                              </div>
-                            </button>
-                          ) : null}
-                          {month.monthHighlights.bestRun ? (
-                            <button
-                              type="button"
-                              onClick={() =>
-                                openCalendarHighlight(
-                                  month.monthHighlights.bestRun.dateYmd,
-                                  month.monthHighlights.bestRun.scrollAnchor
-                                )
-                              }
-                              className="rounded bg-sky-900/35 p-1.5 text-center ring-1 ring-sky-500/30 transition hover:bg-sky-900/55 hover:ring-sky-400/50"
-                              title={t('calendar.stats.openDayHint', 'Ouvrir le jour concerné')}
-                            >
-                              <div className="font-bold tabular-nums text-sky-100">
-                                {month.monthHighlights.bestRun.km} km
-                              </div>
-                              <div className="leading-tight text-sky-300/80">
-                                {t('calendar.stats.monthBestRun', 'Meilleure course')}
-                              </div>
-                            </button>
-                          ) : null}
-                          {month.monthHighlights.bestKcalDay ? (
-                            <button
-                              type="button"
-                              onClick={() =>
-                                openCalendarHighlight(
-                                  month.monthHighlights.bestKcalDay.dateYmd,
-                                  month.monthHighlights.bestKcalDay.scrollAnchor
-                                )
-                              }
-                              className="rounded bg-orange-900/35 p-1.5 text-center ring-1 ring-orange-500/35 transition hover:bg-orange-900/55 hover:ring-orange-400/50"
-                              title={t('calendar.stats.openDayHint', 'Ouvrir le jour concerné')}
-                            >
-                              <div className="font-bold tabular-nums text-orange-100">
-                                {month.monthHighlights.bestKcalDay.value.toLocaleString('fr-FR')}
-                              </div>
-                              <div className="leading-tight text-orange-300/80">
-                                {t('calendar.stats.monthBestKcal', 'Record kcal')}
-                              </div>
-                            </button>
-                          ) : null}
-                          {month.monthHighlights.avgKcalPerDay != null ? (
-                            <div className="rounded bg-slate-800/55 p-1.5 text-center ring-1 ring-slate-600/35">
-                              <div className="font-bold tabular-nums text-slate-100">
-                                {month.monthHighlights.avgKcalPerDay.toLocaleString('fr-FR')}
-                              </div>
-                              <div className="leading-tight text-slate-400">
-                                {t('calendar.stats.monthAvgKcal', 'Kcal moy. / jour')}
-                              </div>
-                            </div>
-                          ) : null}
-                          {month.monthHighlights.avgStepsPerDay != null ? (
-                            <div className="rounded bg-slate-800/55 p-1.5 text-center ring-1 ring-slate-600/35">
-                              <div className="font-bold tabular-nums text-slate-100">
-                                {month.monthHighlights.avgStepsPerDay.toLocaleString('fr-FR')}
-                              </div>
-                              <div className="leading-tight text-slate-400">
-                                {t('calendar.stats.monthAvgSteps', 'Pas moy. (jours actifs)')}
-                              </div>
-                            </div>
-                          ) : null}
-                          {(month.monthHighlights.restDaysPlanned > 0 ||
-                            month.monthHighlights.restDaysChecked > 0) && (
-                            <div className="rounded bg-violet-950/40 p-1.5 text-center ring-1 ring-violet-500/25">
-                              <div className="font-bold tabular-nums text-violet-100">
-                                {month.monthHighlights.restDaysChecked}/{month.monthHighlights.restDaysPlanned}
-                              </div>
-                              <div className="leading-tight text-violet-300/80">
-                                {t('calendar.stats.monthRestRatio', 'Repos cochés / prévus')}
-                              </div>
-                            </div>
-                          )}
-                          {month.monthHighlights.stretchCount > 0 ? (
-                            <div className="rounded bg-pink-950/35 p-1.5 text-center ring-1 ring-pink-500/25">
-                              <div className="font-bold tabular-nums text-pink-100">
-                                {month.monthHighlights.stretchCount}
-                              </div>
-                              <div className="leading-tight text-pink-300/80">
-                                {t('calendar.stats.monthStretches', 'Étirements')}
-                              </div>
-                            </div>
-                          ) : null}
-                          {month.monthHighlights.topMuscles?.length > 0 ? (
-                            <div className="col-span-3 rounded bg-slate-800/60 p-1.5 text-center ring-1 ring-slate-600/40">
-                              <div className="text-[9px] font-medium uppercase tracking-wide text-slate-500">
-                                {t('calendar.stats.monthTopMuscles', 'Top muscles')}
-                              </div>
-                              <div className="mt-0.5 text-[10px] leading-snug text-slate-200">
-                                {month.monthHighlights.topMuscles
-                                  .map((m, i) => `${i + 1}. ${m.label}`)
-                                  .join(' · ')}
-                              </div>
-                            </div>
-                          ) : null}
-                        </div>
-                      ) : null}
-                    </div>
+                    <CalendarMonthSportTiles
+                      sportStats={month.sportStats}
+                      highlights={month.monthHighlights || {}}
+                      holders={sportRecordHolders}
+                      monthIndex={monthIndex}
+                      t={t}
+                      onOpenHighlight={openCalendarHighlight}
+                    />
                   ) : (
                     <div className="grid grid-cols-2 gap-2 text-xs">
                       <div className="bg-slate-700/50 rounded p-2 text-center">

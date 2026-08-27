@@ -19,6 +19,10 @@ import { weightsForRunningSession, weightsForJumpRopeSession } from './endurance
 import { computeVolumeKgForWorkoutKey } from '../exerciseLoadVolume';
 import { weightedRecapLoadMultiplier } from './weightedTrainingRecapInsights';
 import { exerciseDatabase } from '../../data/exerciseDatabase';
+import {
+  ENDURANCE_PUSHUPS_WORKOUT_EXERCISE_ID,
+  endurancePushupsAlreadyInWorkoutTotals
+} from '../../services/endurance/pushupEnduranceWorkoutKeys';
 
 export const DECAY_LAMBDA_PER_DAY = 0.11;
 /** Poids du canal cardio sur la charge « affichée » (plafonné par groupe). */
@@ -45,6 +49,9 @@ const EXERCISE_DB_NAME_BY_ID = Object.entries(exerciseDatabase).reduce((acc, [ke
 function resolveExerciseNameForRecap(exerciseId, getExerciseNameById) {
   const idStr = String(exerciseId || '').trim();
   if (!idStr) return '';
+  if (idStr === RECAP_SYNTHETIC_ENDURANCE_PUSHUPS_ID || idStr === ENDURANCE_PUSHUPS_WORKOUT_EXERCISE_ID) {
+    return 'Pompes (endurance)';
+  }
   if (EXERCISE_DB_NAME_BY_ID[idStr]) return EXERCISE_DB_NAME_BY_ID[idStr];
   if (typeof getExerciseNameById === 'function') {
     const byGetter = getExerciseNameById(idStr);
@@ -271,6 +278,7 @@ function applyEndurancePushupsRepShares({ allData, window, repShareByGroup, exer
     if (isMockEnduranceSession(session)) return;
     const ds = normalizeDateString(session?.date);
     if (!ds || !isDateInRecapWindow(ds, window)) return;
+    if (endurancePushupsAlreadyInWorkoutTotals(allData, ds)) return;
     const n = enduranceRepsForSession('pushups', session);
     if (n <= 0) return;
 

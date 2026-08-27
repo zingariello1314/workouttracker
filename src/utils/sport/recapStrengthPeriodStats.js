@@ -10,6 +10,10 @@ import {
 import { inferMuscleGroupsForExercise } from './recapMuscleInference';
 import { addCalendarDays, inclusiveCalendarSpanDays } from './garminRunningPeriodStats';
 import { computeVolumeKgForWorkoutKey, lookupProgramExerciseStub } from '../exerciseLoadVolume';
+import {
+  ENDURANCE_PUSHUPS_WORKOUT_EXERCISE_ID,
+  endurancePushupsAlreadyInWorkoutTotals
+} from '../../services/endurance/pushupEnduranceWorkoutKeys';
 
 const makeDbExerciseId = (key) =>
   `db_${String(key)
@@ -55,7 +59,12 @@ function maxRecordedWeightKgInWindow(allData, window) {
 const resolveExerciseNameForRecap = (exerciseId, getExerciseNameById) => {
   const idStr = String(exerciseId || '').trim();
   if (!idStr) return '';
-  if (idStr === RECAP_SYNTHETIC_ENDURANCE_PUSHUPS_ID) return 'Pompes (endurance)';
+  if (
+    idStr === RECAP_SYNTHETIC_ENDURANCE_PUSHUPS_ID ||
+    idStr === ENDURANCE_PUSHUPS_WORKOUT_EXERCISE_ID
+  ) {
+    return 'Pompes (endurance)';
+  }
   if (EXERCISE_DB_NAME_BY_ID[idStr]) return EXERCISE_DB_NAME_BY_ID[idStr];
 
   const rawId = idStr.replace(/_semaineA$|_semaineB$/, '');
@@ -163,6 +172,7 @@ export function buildRecapStrengthCompareModel(allData, period, getExerciseNameB
     if (isMockEnduranceSession(session)) return;
     const ds = normalizeDateString(session?.date);
     if (!ds) return;
+    if (endurancePushupsAlreadyInWorkoutTotals(allData, ds)) return;
     const n = enduranceRepsForSession('pushups', session);
     if (n <= 0) return;
 
@@ -196,7 +206,9 @@ export function buildRecapStrengthCompareModel(allData, period, getExerciseNameB
       id: exId,
       name,
       reps: sumReps,
-      isEndurancePushups: exId === RECAP_SYNTHETIC_ENDURANCE_PUSHUPS_ID
+      isEndurancePushups:
+        exId === RECAP_SYNTHETIC_ENDURANCE_PUSHUPS_ID ||
+        exId === ENDURANCE_PUSHUPS_WORKOUT_EXERCISE_ID
     });
   });
   exercisesRanked.sort((a, b) => b.reps - a.reps);
@@ -218,7 +230,9 @@ export function buildRecapStrengthCompareModel(allData, period, getExerciseNameB
   const muscleTotals = new Map();
   exercisesRanked.forEach(({ id, name, reps }) => {
     const exLike =
-      id === RECAP_SYNTHETIC_ENDURANCE_PUSHUPS_ID ? { name: 'Pompes (endurance)' } : { name: name || `Exercice ${id}` };
+      id === RECAP_SYNTHETIC_ENDURANCE_PUSHUPS_ID || id === ENDURANCE_PUSHUPS_WORKOUT_EXERCISE_ID
+        ? { name: 'Pompes (endurance)' }
+        : { name: name || `Exercice ${id}` };
     const groups = inferMuscleGroupsForExercise(exLike);
     const n = Math.max(1, groups.length);
     const share = reps / n;

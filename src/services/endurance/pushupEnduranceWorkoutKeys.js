@@ -37,6 +37,13 @@ export function isEndurancePushupsSyncedOnWorkoutDay(snapshot, dateStr) {
   return snapshot?.checkedExercises?.[key] === true;
 }
 
+/** Coche + reps défis pompes déjà dans les totaux workout — ne pas recompter la session. */
+export function endurancePushupsAlreadyInWorkoutTotals(snapshot, dateStr) {
+  const key = `${String(dateStr || '').slice(0, 10)}_${ENDURANCE_PUSHUPS_WORKOUT_EXERCISE_ID}`;
+  const r = parseInt(String(snapshot?.reps?.[key] ?? ''), 10) || 0;
+  return snapshot?.checkedExercises?.[key] === true && r > 0;
+}
+
 /**
  * Retire les coches « pompes programme » qui ne reflètent que le défis (même reps exactes).
  * Conditions strictes : même jour, reps cochées === total défis du jour, exercice = variante pompes.

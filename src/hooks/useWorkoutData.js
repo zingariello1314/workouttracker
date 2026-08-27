@@ -230,6 +230,7 @@ const INITIAL_WORKOUT_DATA = {
   },
   /** Swap hebdo du jour de repos : { [programId]: { [weekStartDate]: { fromDay, toDay, updatedAt } } } */
   restDaySwaps: {},
+  calendarMonthPlanSnapshots: {},
   // homepageImages supprimé - maintenant géré par useHomepageImages indépendant
 };
 
@@ -590,6 +591,10 @@ export const useWorkoutData = (options = {}) => {
       restDaySwaps:
         migratedData.restDaySwaps && typeof migratedData.restDaySwaps === 'object'
           ? { ...migratedData.restDaySwaps }
+          : {},
+      calendarMonthPlanSnapshots:
+        migratedData.calendarMonthPlanSnapshots && typeof migratedData.calendarMonthPlanSnapshots === 'object'
+          ? { ...migratedData.calendarMonthPlanSnapshots }
           : {},
       enduranceData: migratedData.enduranceData || result.enduranceData || {
         sessions: {
@@ -1004,6 +1009,10 @@ export const useWorkoutData = (options = {}) => {
           newData && newData.restDaySwaps && typeof newData.restDaySwaps === 'object'
             ? { ...newData.restDaySwaps }
             : {},
+        calendarMonthPlanSnapshots:
+          newData && newData.calendarMonthPlanSnapshots && typeof newData.calendarMonthPlanSnapshots === 'object'
+            ? { ...newData.calendarMonthPlanSnapshots }
+            : {},
         // Données d'endurance - CRUCIAL pour la persistance
         enduranceData: (() => {
           const incoming = newData && newData.enduranceData ? newData.enduranceData : null;
@@ -1242,15 +1251,16 @@ export const useWorkoutData = (options = {}) => {
 
   const updateData = async (newData, options = {}) => {
     const { strict = false, sessionDay = null } = options;
-    workoutDataLog.debug('🔄 updateData appelé avec:', newData);
-    let toStore = newData;
-    if (newData && typeof newData === 'object' && !newData.trainingPrefs?.journeyStartYmd) {
-      const derivedStart = deriveJourneyStartYmd(newData);
+    const resolved = typeof newData === 'function' ? newData(dataRef.current) : newData;
+    workoutDataLog.debug('🔄 updateData appelé avec:', resolved);
+    let toStore = resolved;
+    if (toStore && typeof toStore === 'object' && !toStore.trainingPrefs?.journeyStartYmd) {
+      const derivedStart = deriveJourneyStartYmd(toStore);
       if (derivedStart) {
         toStore = {
-          ...newData,
+          ...toStore,
           trainingPrefs: {
-            ...(newData.trainingPrefs || {}),
+            ...(toStore.trainingPrefs || {}),
             journeyStartYmd: derivedStart
           }
         };
@@ -1264,6 +1274,7 @@ export const useWorkoutData = (options = {}) => {
       suppressAutoSaveUntilRef.current = Date.now() + 3000;
     }
     setData(toStore);
+    dataRef.current = toStore;
 
     try {
       const saveOpts = {

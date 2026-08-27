@@ -38,19 +38,19 @@ export const useWorkoutJustifications = (getCurrentData, updateData) => {
         throw new Error(`Note trop longue (max 200 caractères)`);
       }
       
-      const currentData = getCurrentData();
-      const existingJustification = currentData.dayJustifications?.[dateStr];
-      
-      const justification = existingJustification
-        ? updateJustification(existingJustification, reason, note)
-        : createJustification(reason, note);
-      
-      await updateData({
-        ...currentData,
-        dayJustifications: {
-          ...(currentData.dayJustifications || {}),
-          [dateStr]: justification
-        }
+      await updateData((prev) => {
+        const currentData = prev || getCurrentData() || {};
+        const existingJustification = currentData.dayJustifications?.[dateStr];
+        const justification = existingJustification
+          ? updateJustification(existingJustification, reason, note)
+          : createJustification(reason, note);
+        return {
+          ...currentData,
+          dayJustifications: {
+            ...(currentData.dayJustifications || {}),
+            [dateStr]: justification
+          }
+        };
       });
       
       return { success: true };
@@ -62,18 +62,16 @@ export const useWorkoutJustifications = (getCurrentData, updateData) => {
 
   const removeDayJustification = useCallback(async (dateStr) => {
     try {
-      const currentData = getCurrentData();
-      const dayJustifications = currentData.dayJustifications || {};
-      
-      if (!dayJustifications[dateStr]) {
-        return { success: false, message: 'Aucune justification trouvée pour cette date' };
-      }
-      
-      const { [dateStr]: removed, ...rest } = dayJustifications;
-      
-      await updateData({
-        ...currentData,
-        dayJustifications: rest
+      await updateData((prev) => {
+        const currentData = prev || getCurrentData() || {};
+        const dayJustifications = currentData.dayJustifications || {};
+        if (!dayJustifications[dateStr]) return currentData;
+        const { [dateStr]: removed, ...rest } = dayJustifications;
+        void removed;
+        return {
+          ...currentData,
+          dayJustifications: rest
+        };
       });
       
       return { success: true };

@@ -73,7 +73,22 @@
     "monthLongestStreak": "Best streak",
     "monthActiveKcal": "Active kcal",
     "monthTrainingDays": "Training days",
-    "yearRecord": "Best on displayed year"
+    "yearRecord": "Best on displayed year",
+    "monthBestReps": "Best reps day",
+    "monthBestDayVolume": "Best volume day",
+    "monthBestRun": "Best run",
+    "monthBestKcal": "Peak kcal",
+    "monthAvgKcal": "Avg kcal / day",
+    "monthAvgSteps": "Avg steps (active days)",
+    "monthBestSteps": "Most steps day",
+    "monthTotalSteps": "Monthly steps",
+    "monthWeekSteps": "W{{n}} avg steps",
+    "monthAvgSleep": "Avg sleep",
+    "monthRunSessions": "Runs",
+    "monthRestRatio": "Rest taken / planned",
+    "monthStretches": "Stretches",
+    "monthTopMuscles": "Top muscles",
+    "openDayHint": "Open that day in month view"
   },
   "heatmap": {
     "viewModes": {

@@ -198,6 +198,10 @@ export function mergeCloudWinningRowOverLocal(localRaw, cloudAgg, storageKey) {
       C.garminActivityDateOverrides
     ),
     restDaySwaps: mergeShallowRecordMaps(L.restDaySwaps, C.restDaySwaps),
+    calendarMonthPlanSnapshots: mergeShallowRecordMaps(
+      L.calendarMonthPlanSnapshots,
+      C.calendarMonthPlanSnapshots
+    ),
     circuitProgress: mergeShallowRecordMaps(L.circuitProgress, C.circuitProgress),
     lastSaved: C.lastSaved || L.lastSaved,
     dataVersion: C.dataVersion || L.dataVersion || '1.0'

@@ -13,6 +13,16 @@ import {
 } from './sport/runningVolumeTruth';
 import { computeNonRunningExerciseMinutesForDate } from './calendarPhysicalSessionStripes';
 import { dayCountsAsCalendarTrainingDay } from './sport/recapTrainingDayTruth';
+import { mergedDailySteps, normalizeManualDailyWalkByDate } from './sport/manualDailyWalkUtils';
+
+function stepsForDate(garminData, workoutData, dateStr) {
+  const manualMap = normalizeManualDailyWalkByDate(
+    workoutData?.enduranceData?.manualDailyWalkByDate
+  );
+  const manualSteps = manualMap?.[dateStr]?.steps ?? 0;
+  const dm = garminData?.dailyMetrics?.[dateStr];
+  return mergedDailySteps(dm?.steps, manualSteps);
+}
 
 function activeKcalFromGarminDaily(garminData, dateStr) {
   const daily = garminData?.dailyMetrics?.[dateStr];
@@ -74,6 +84,7 @@ export function computeCalendarMonthSportStats(
   let totalKg = 0;
   let activeKcal = 0;
   let trainingDays = 0;
+  let totalSteps = 0;
 
   const currentMonthDays = (monthDays || []).filter((d) => d.isCurrentMonth);
   let year = new Date().getFullYear();
@@ -96,10 +107,23 @@ export function computeCalendarMonthSportStats(
     runningMinutes += runStats.min;
     otherExerciseMinutes += computeNonRunningExerciseMinutesForDate(workoutData, garminData, dateStr);
     activeKcal += activeKcalFromGarminDaily(garminData, dateStr);
+    totalSteps += stepsForDate(garminData, workoutData, dateStr);
     if (dayCountsAsCalendarTrainingDay(workoutData, dateStr, garminData)) {
       trainingDays += 1;
     }
   });
+
+  const runningSessionCount = (() => {
+    const garminById = buildGarminCardioById(garminData?.activities?.cardio);
+    const stored = workoutData?.enduranceData?.sessions?.running || [];
+    const merged = mergeRunningSessionsWithGarmin(stored, garminById);
+    const filtered = filterRunningSessionsBase(merged, garminById);
+    const rows = buildRunningSessionRows(filtered, garminById);
+    const monthDates = new Set(
+      currentMonthDays.map((day) => getDateStrFn(day.date)).filter(Boolean)
+    );
+    return rows.filter((row) => row?.date && monthDates.has(row.date)).length;
+  })();
 
   runningKm = Math.round(runningKm * 10) / 10;
   runningMinutes = roundSportMinutes(runningMinutes);
@@ -115,6 +139,8 @@ export function computeCalendarMonthSportStats(
     totalKg,
     activeKcal,
     longestStreak: calculateLongestTrainingStreakInMonth(workoutData, year, monthIndex),
-    trainingDays
+    trainingDays,
+    runningSessionCount,
+    totalSteps
   };
 }

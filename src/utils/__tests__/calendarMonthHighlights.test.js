@@ -81,4 +81,21 @@ describe('computeCalendarMonthHighlights', () => {
     expect(h.bestKcalDay?.dateYmd).toBe('2026-05-10');
     expect(h.avgStepsPerDay).toBe(8000);
   });
+
+  it('calcule le jour le plus de pas, les semaines et le sommeil moyen', () => {
+    const garminData = {
+      dailyMetrics: {
+        '2026-05-03': { steps: 4000, sleep: { duration: 7 } },
+        '2026-05-10': { steps: 12000, sleep: { duration: 8 } },
+        '2026-05-20': { steps: 6000, sleep: { duration: 6 } }
+      }
+    };
+    const h = computeCalendarMonthHighlights(monthDays, {}, garminData, getDateStr, {});
+    expect(h.bestDaySteps?.steps).toBe(12000);
+    expect(h.bestDaySteps?.dateYmd).toBe('2026-05-10');
+    expect(h.weekStepAvgs[0]).toBe(4000);
+    expect(h.weekStepAvgs[1]).toBe(12000);
+    expect(h.avgSleepHours).toBe(7);
+    expect(h.totalSteps).toBe(22000);
+  });
 });

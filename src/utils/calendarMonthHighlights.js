@@ -9,6 +9,7 @@ import { inferMuscleGroupsForExercise } from './sport/recapMuscleInference';
 import { aggregateCheckedRepsByDateAndExerciseId } from './trainingLoadUtils';
 import { lookupProgramExerciseStub, aggregateLiftVolumeKgByDate } from './exerciseLoadVolume';
 import { activeKcalFromDaily } from './calendarKcalLeader';
+import { coachSleepHours } from './sport/recapCrossCoachAggregate';
 import { mergedDailySteps, normalizeManualDailyWalkByDate } from './sport/manualDailyWalkUtils';
 import {
   buildGarminCardioById,
@@ -96,9 +97,86 @@ function findBestDayVolumeKg(workoutData, window) {
   return best;
 }
 
+function weekBucketForDayOfMonth(dayNum) {
+  if (dayNum <= 7) return 0;
+  if (dayNum <= 14) return 1;
+  if (dayNum <= 21) return 2;
+  return 3;
+}
+
+export function formatCalendarHighlightDayLabel(dateYmd, language = 'fr') {
+  const m = String(dateYmd || '').match(/^(\d{4})-(\d{2})-(\d{2})/);
+  if (!m) return dateYmd || '—';
+  const d = new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3]));
+  return d.toLocaleDateString(language === 'en' ? 'en-GB' : 'fr-FR', {
+    day: 'numeric',
+    month: 'short'
+  });
+}
+
+/** Jour du mois avec le plus de pas (Garmin + saisie manuelle). */
+export function findBestDaySteps(garminData, workoutData, window) {
+  if (!window) return null;
+  let best = null;
+  enumerateDatesInWindow(window).forEach((dateYmd) => {
+    const steps = stepsForDate(garminData, workoutData, dateYmd);
+    if (steps <= 0) return;
+    if (!best || steps > best.steps) {
+      best = {
+        steps,
+        dateYmd,
+        scrollAnchor: calendarMomentumRecapRowElementId('steps')
+      };
+    }
+  });
+  return best;
+}
+
+function computeWeekStepAverages(garminData, workoutData, window) {
+  const sums = [0, 0, 0, 0];
+  const counts = [0, 0, 0, 0];
+  enumerateDatesInWindow(window).forEach((dateYmd) => {
+    const dayNum = Number(String(dateYmd).slice(8, 10));
+    if (!Number.isFinite(dayNum)) return;
+    const bucket = weekBucketForDayOfMonth(dayNum);
+    const steps = stepsForDate(garminData, workoutData, dateYmd);
+    if (steps > 0) {
+      sums[bucket] += steps;
+      counts[bucket] += 1;
+    }
+  });
+  return sums.map((sum, i) => (counts[i] > 0 ? Math.round(sum / counts[i]) : 0));
+}
+
+function computeAvgSleepHours(garminData, window) {
+  if (!window) return { avgSleepHours: 0, sleepSampleDays: 0 };
+  const hours = [];
+  enumerateDatesInWindow(window).forEach((dateYmd) => {
+    const sh = coachSleepHours(garminData?.dailyMetrics?.[dateYmd]?.sleep);
+    if (sh != null && sh > 0 && sh <= 24) hours.push(sh);
+  });
+  if (!hours.length) return { avgSleepHours: 0, sleepSampleDays: 0 };
+  const avg = hours.reduce((a, b) => a + b, 0) / hours.length;
+  return {
+    avgSleepHours: Math.round(avg * 10) / 10,
+    sleepSampleDays: hours.length
+  };
+}
+
 function computeGarminMonthAggregates(garminData, workoutData, window) {
   if (!window) {
-    return { avgKcalPerDay: null, avgStepsPerDay: null, bestKcalDay: null };
+    return {
+      avgKcalPerDay: 0,
+      avgStepsPerDay: 0,
+      bestKcalDay: null,
+      bestDaySteps: null,
+      weekStepAvgs: [0, 0, 0, 0],
+      avgSleepHours: 0,
+      sleepSampleDays: 0,
+      kcalDaysWithData: 0,
+      stepsDaysWithData: 0,
+      totalSteps: 0
+    };
   }
 
   let kcalSum = 0;
@@ -128,12 +206,19 @@ function computeGarminMonthAggregates(garminData, workoutData, window) {
     }
   });
 
+  const sleep = computeAvgSleepHours(garminData, window);
+
   return {
-    avgKcalPerDay: kcalDays > 0 ? Math.round(kcalSum / kcalDays) : null,
-    avgStepsPerDay: stepsDays > 0 ? Math.round(stepsSum / stepsDays) : null,
+    avgKcalPerDay: kcalDays > 0 ? Math.round(kcalSum / kcalDays) : 0,
+    avgStepsPerDay: stepsDays > 0 ? Math.round(stepsSum / stepsDays) : 0,
     kcalDaysWithData: kcalDays,
     stepsDaysWithData: stepsDays,
-    bestKcalDay: bestKcal
+    bestKcalDay: bestKcal,
+    bestDaySteps: findBestDaySteps(garminData, workoutData, window),
+    weekStepAvgs: computeWeekStepAverages(garminData, workoutData, window),
+    avgSleepHours: sleep.avgSleepHours,
+    sleepSampleDays: sleep.sleepSampleDays,
+    totalSteps: stepsSum
   };
 }
 
@@ -256,7 +341,6 @@ export function computeCalendarMonthHighlights(
   getDateStrFn,
   options = {}
 ) {
-  const window = monthWindowFromDays(monthDays, getDateStrFn);
   const currentMonthDays = (monthDays || []).filter((d) => d.isCurrentMonth);
   let year = new Date().getFullYear();
   let monthIndex = 0;
@@ -264,6 +348,15 @@ export function computeCalendarMonthHighlights(
     year = currentMonthDays[0].date.getFullYear();
     monthIndex = currentMonthDays[0].date.getMonth();
   }
+
+  const window = currentMonthDays[0]?.date
+    ? {
+        start: `${year}-${String(monthIndex + 1).padStart(2, '0')}-01`,
+        end: `${year}-${String(monthIndex + 1).padStart(2, '0')}-${String(
+          new Date(year, monthIndex + 1, 0).getDate()
+        ).padStart(2, '0')}`
+      }
+    : monthWindowFromDays(monthDays, getDateStrFn);
 
   const restSnapshot =
     options.restPlanSnapshot ||
@@ -293,6 +386,11 @@ export function computeCalendarMonthHighlights(
     avgKcalPerDay: garminAgg.avgKcalPerDay,
     avgStepsPerDay: garminAgg.avgStepsPerDay,
     bestKcalDay: garminAgg.bestKcalDay,
+    bestDaySteps: garminAgg.bestDaySteps,
+    weekStepAvgs: garminAgg.weekStepAvgs,
+    totalSteps: garminAgg.totalSteps || 0,
+    avgSleepHours: garminAgg.avgSleepHours,
+    sleepSampleDays: garminAgg.sleepSampleDays,
     restDaysChecked,
     restDaysPlanned,
     restPlanSnapshot: restSnapshot,

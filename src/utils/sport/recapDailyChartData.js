@@ -7,6 +7,7 @@ import { normalizeDateString, isMockEnduranceSession } from '../calendarUtils';
 import { aggregateLiftVolumeKgByDate } from '../exerciseLoadVolume';
 import { normalizeManualDailyWalkByDate, mergedDailySteps } from './manualDailyWalkUtils';
 import { getDateStr } from '../dateUtils';
+import { endurancePushupsAlreadyInWorkoutTotals } from '../../services/endurance/pushupEnduranceWorkoutKeys';
 
 export function buildProgramCheckedRepsByDate(allData) {
   const map = new Map();
@@ -27,6 +28,7 @@ export function buildEndurancePushupRepsByDate(allData) {
     if (isMockEnduranceSession(session)) return;
     const ds = normalizeDateString(session?.date);
     if (!ds) return;
+    if (endurancePushupsAlreadyInWorkoutTotals(allData, ds)) return;
     const n = enduranceRepsForSession('pushups', session);
     if (n <= 0) return;
     map.set(ds, (map.get(ds) || 0) + n);

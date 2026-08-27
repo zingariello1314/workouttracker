@@ -249,9 +249,8 @@ export const todayRepository = {
     const nextDayJustifications = { ...(safeBase.dayJustifications || {}) };
     if (normalized.dayJustification?.reason) {
       nextDayJustifications[dateStr] = normalized.dayJustification;
-    } else {
-      delete nextDayJustifications[dateStr];
     }
+    // Ne pas supprimer une justification calendrier si le payload Aujourd’hui n’en contient pas.
 
     const nextSessionFeedbacks = { ...(safeBase.sessionFeedbacks || {}) };
     if (normalized.sessionFeedback) {

@@ -37,7 +37,9 @@ export function computeYearSportRecordHolders(months) {
     'totalKg',
     'longestStreak',
     'activeKcal',
-    'trainingDays'
+    'trainingDays',
+    'runningSessionCount',
+    'totalSteps'
   ];
   const holders = {};
   metrics.forEach((metric) => {

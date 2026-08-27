@@ -39,6 +39,7 @@ describe('computeCalendarMonthSportStats', () => {
     ];
     const stats = computeCalendarMonthSportStats(monthDays, workoutData, garminData, getDateStr);
     expect(stats.runningKm).toBeCloseTo(5.2, 1);
+    expect(stats.runningSessionCount).toBe(1);
   });
 
   it('inclut une sortie Garmin orpheline sans session endurance', () => {

@@ -2,9 +2,11 @@ import { computeCalendarChampionAnalysis } from './calendarDayChampion';
 import { computeCalendarStepsLeaders } from './calendarStepsLeaders';
 import { computeCalendarKcalLeader } from './calendarKcalLeader';
 import { computeDayStrengthWeightedLoad } from './calendarDayTrainingScores';
+import { findBestDaySteps } from './calendarMonthHighlights';
 
 export const CALENDAR_BADGE_EMOJI = {
   steps: '👣',
+  monthSteps: '🚶',
   kcal: '🔥',
   volume: '🏋️',
   run: '🏃',
@@ -125,6 +127,16 @@ export function computeCalendarYearDayBadges({
   });
 
   const stepsLeaders = computeCalendarStepsLeaders(workoutData, garminData, year);
+  const monthStepsLeaderDates = [];
+  for (let m = 0; m < 12; m += 1) {
+    const last = new Date(year, m + 1, 0).getDate();
+    const mm = String(m + 1).padStart(2, '0');
+    const best = findBestDaySteps(garminData, workoutData, {
+      start: `${year}-${mm}-01`,
+      end: `${year}-${mm}-${String(last).padStart(2, '0')}`
+    });
+    if (best?.dateYmd) monthStepsLeaderDates.push(best.dateYmd);
+  }
   const kcalLeader = computeCalendarKcalLeader(garminData, year);
   const volumeLeader = maxStrengthLoadLeader(workoutData, getExerciseNameById, year);
   const runLeader = maxMetricLeader(yearScored, 'runningKm');
@@ -140,6 +152,7 @@ export function computeCalendarYearDayBadges({
     championDate: championTopThree[0]?.date ?? null,
     stepsTopThree: stepsLeaders.topThree,
     stepsLeaderDate: stepsLeaders.topThree[0]?.date ?? null,
+    monthStepsLeaderDates,
     kcalLeaderDate: kcalLeader.leaderDate,
     volumeLeaderDate: volumeLeader?.date ?? null,
     runLeaderDate: runLeader?.date ?? null,
@@ -167,6 +180,8 @@ export function calendarBadgesForDate(dateStr, badges) {
 
   if (badges.stepsLeaderDate === dateStr) {
     items.push({ emoji: CALENDAR_BADGE_EMOJI.steps, title: 'Jour le plus de pas' });
+  } else if (Array.isArray(badges.monthStepsLeaderDates) && badges.monthStepsLeaderDates.includes(dateStr)) {
+    items.push({ emoji: CALENDAR_BADGE_EMOJI.monthSteps, title: 'Jour le plus de pas du mois' });
   }
   if (badges.kcalLeaderDate === dateStr) {
     items.push({ emoji: CALENDAR_BADGE_EMOJI.kcal, title: 'Jour le plus de kcal actives' });
@@ -240,6 +255,8 @@ export function calendarBadgeDetailsForDate(dateStr, badges) {
       description = hit
         ? `Record de pas ${year} : ${formatSteps(hit.steps)} pas (Garmin + saisie manuelle).`
         : `Jour avec le plus de pas sur ${year}.`;
+    } else if (item.emoji === CALENDAR_BADGE_EMOJI.monthSteps) {
+      description = `Jour avec le plus de pas de ce mois (hors record annuel, déjà marqué 👣).`;
     } else if (item.emoji === CALENDAR_BADGE_EMOJI.kcal) {
       description = `Record de kcal actives Garmin sur ${year} pour cette date.`;
     } else if (item.emoji === CALENDAR_BADGE_EMOJI.volume) {
@@ -271,7 +288,8 @@ export function calendarBadgeLegendItems() {
     { key: 'crown', label: '1er jour', crown: true },
     { key: 'champion2', emoji: CALENDAR_BADGE_EMOJI.champion2, label: '2e jour' },
     { key: 'champion3', emoji: CALENDAR_BADGE_EMOJI.champion3, label: '3e jour' },
-    { key: 'steps', emoji: CALENDAR_BADGE_EMOJI.steps, label: 'pas' },
+    { key: 'steps', emoji: CALENDAR_BADGE_EMOJI.steps, label: 'pas (année)' },
+    { key: 'monthSteps', emoji: CALENDAR_BADGE_EMOJI.monthSteps, label: 'pas (mois)' },
     { key: 'kcal', emoji: CALENDAR_BADGE_EMOJI.kcal, label: 'kcal' },
     { key: 'volume', emoji: CALENDAR_BADGE_EMOJI.volume, label: 'volume' },
     { key: 'run', emoji: CALENDAR_BADGE_EMOJI.run, label: 'course' },
