@@ -3,7 +3,8 @@ import {
   resolveExerciseGradeForMetrics,
   countCheckedSessionsByBenchmark,
   extractLifetimeBenchmarkMetrics,
-  buildExerciseGradeCatalog
+  buildExerciseGradeCatalog,
+  sortExerciseGradeRows
 } from '../exerciseGradeEngine';
 import { EXERCISE_BENCHMARK_REGISTRY } from '../../../utils/sport/exerciseBenchmarkRegistry';
 
@@ -20,6 +21,59 @@ describe('countCheckedSessionsByBenchmark', () => {
     };
     const map = countCheckedSessionsByBenchmark(snapshot, getName);
     expect(map.get('pushups')).toBe(2);
+  });
+
+  it('compte les défis sync sur complementary_endurance_pushups', () => {
+    const snapshot = {
+      checkedExercises: {
+        '2026-08-10_complementary_endurance_pushups': true,
+        '2026-08-11_complementary_endurance_pushups': true
+      },
+      reps: {}
+    };
+    const map = countCheckedSessionsByBenchmark(snapshot, () => '');
+    expect(map.get('pushups')).toBe(2);
+  });
+
+  it('ne double-compte pas défis sync + sessions endurance', () => {
+    const snapshot = {
+      checkedExercises: {
+        '2026-08-10_complementary_endurance_pushups': true
+      },
+      reps: {},
+      enduranceData: {
+        sessions: {
+          pushups: [{ date: '2026-08-10', count: 100 }]
+        }
+      }
+    };
+    const map = countCheckedSessionsByBenchmark(snapshot, () => '');
+    expect(map.get('pushups')).toBe(1);
+  });
+});
+
+describe('sortExerciseGradeRows', () => {
+  const rows = [
+    {
+      label: 'Pompes',
+      muscleGroup: 'pectoraux',
+      metric: 'max_set_reps',
+      grade: { sortIndex: 5 },
+      metrics: { totalReps: 500 }
+    },
+    {
+      label: 'Dips',
+      muscleGroup: 'triceps',
+      metric: 'max_set_reps',
+      grade: { sortIndex: 8 },
+      metrics: { totalReps: 1200 }
+    }
+  ];
+
+  it('trie par reps décroissantes', () => {
+    const sorted = sortExerciseGradeRows(rows, 'reps');
+    expect(sorted[0].label).toBe('Dips');
+    expect(sorted[1].label).toBe('Pompes');
   });
 });
 

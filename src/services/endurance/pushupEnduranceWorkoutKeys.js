@@ -26,6 +26,17 @@ function exerciseIdFromStorageKey(key) {
   return id;
 }
 
+/** Id exercice depuis une clé `YYYY-MM-DD_<id>` (défis pompes inclus). */
+export function parseWorkoutExerciseIdFromStorageKey(key) {
+  return exerciseIdFromStorageKey(key);
+}
+
+/** Défis pompes déjà reflétés dans reps/coches du jour (sync endurance). */
+export function isEndurancePushupsSyncedOnWorkoutDay(snapshot, dateStr) {
+  const key = `${String(dateStr || '').slice(0, 10)}_${ENDURANCE_PUSHUPS_WORKOUT_EXERCISE_ID}`;
+  return snapshot?.checkedExercises?.[key] === true;
+}
+
 /**
  * Retire les coches « pompes programme » qui ne reflètent que le défis (même reps exactes).
  * Conditions strictes : même jour, reps cochées === total défis du jour, exercice = variante pompes.

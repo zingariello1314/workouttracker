@@ -39,31 +39,23 @@ import {
 } from './exerciseGradePushupChannels';
 import { mergePerformancePeakIntoMetrics } from './exerciseGradePerformancePeak';
 import { resolveCatalogDef } from './exerciseGradeDiscovery';
-import { ENDURANCE_PUSHUPS_WORKOUT_EXERCISE_ID } from '../endurance/pushupEnduranceWorkoutKeys';
+import {
+  parseWorkoutExerciseIdFromStorageKey,
+  isEndurancePushupsSyncedOnWorkoutDay,
+  ENDURANCE_PUSHUPS_WORKOUT_EXERCISE_ID
+} from '../endurance/pushupEnduranceWorkoutKeys';
+import { estimateOneRmKgFromSets } from './oneRmEstimate';
 
 
 
 function exerciseIdFromStorageKey(key) {
-
-  const m = String(key || '').match(/^(\d{4}-\d{2}-\d{2})_(.+)$/);
-
-  if (!m) return null;
-
-  let id = m[2].replace(/_semaineA$|_semaineB$/, '');
-
-  if (id.startsWith('complementary_')) {
-    return id === ENDURANCE_PUSHUPS_WORKOUT_EXERCISE_ID ? id : null;
-  }
-
-  return id;
-
+  return parseWorkoutExerciseIdFromStorageKey(key);
 }
 
 
 
 function endurancePushupsAlreadySyncedOnDay(snapshot, dateStr) {
-  const key = `${dateStr}_${ENDURANCE_PUSHUPS_WORKOUT_EXERCISE_ID}`;
-  return snapshot?.checkedExercises?.[key] === true;
+  return isEndurancePushupsSyncedOnWorkoutDay(snapshot, dateStr);
 }
 
 
@@ -232,9 +224,13 @@ function emptyMetrics() {
 
     maxWeightKg: 0,
 
+    estimatedOneRmKg: 0,
+
     totalReps: 0,
 
     totalVolumeKg: 0,
+
+    maxDailyVolumeKg: 0,
 
     lifetimeHoldSeconds: 0,
 
@@ -250,7 +246,7 @@ function emptyMetrics() {
 
 
 
-function bumpFromWorkout(snapshot, catalogKey, getExerciseNameById, metrics, dailyReps) {
+function bumpFromWorkout(snapshot, catalogKey, getExerciseNameById, metrics, dailyReps, dailyVolume) {
 
   forEachCatalogWorkoutDayTotals(snapshot, catalogKey, getExerciseNameById, ({ dateStr, exId, reps, checks }) => {
 
@@ -296,7 +292,23 @@ function bumpFromWorkout(snapshot, catalogKey, getExerciseNameById, metrics, dai
 
     metrics.maxWeightKg = Math.max(metrics.maxWeightKg, analysis.maxSetWeight || 0);
 
-    metrics.totalVolumeKg += analysis.volumeKgReps || 0;
+    metrics.estimatedOneRmKg = Math.max(
+      metrics.estimatedOneRmKg || 0,
+      estimateOneRmKgFromSets(analysis.sets),
+      analysis.maxSetWeight || 0
+    );
+
+    const vol = analysis.volumeKgReps || 0;
+
+    metrics.totalVolumeKg += vol;
+
+    const dateStr = storageKey.slice(0, 10);
+
+    if (vol > 0 && dateStr) {
+
+      dailyVolume.set(dateStr, (dailyVolume.get(dateStr) || 0) + vol);
+
+    }
 
     if (analysis.isHold) metrics.lifetimeHoldSeconds += analysis.maxHoldSeconds || 0;
 
@@ -352,10 +364,9 @@ export function extractMetricsForCatalogKey(snapshot, catalogKey, getExerciseNam
   const metrics = emptyMetrics();
 
   const dailyReps = new Map();
+  const dailyVolume = new Map();
 
-
-
-  bumpFromWorkout(snapshot, catalogKey, getExerciseNameById, metrics, dailyReps);
+  bumpFromWorkout(snapshot, catalogKey, getExerciseNameById, metrics, dailyReps, dailyVolume);
 
   applyEndurance(snapshot, catalogKey, getExerciseNameById, metrics, dailyReps);
 
@@ -371,6 +382,12 @@ export function extractMetricsForCatalogKey(snapshot, catalogKey, getExerciseNam
 
   metrics.maxDailyTotalReps = maxDay;
 
+  let maxVolDay = 0;
+  dailyVolume.forEach((v) => {
+    maxVolDay = Math.max(maxVolDay, v);
+  });
+  metrics.maxDailyVolumeKg = maxVolDay;
+
   metrics.lifetimeVolumeKg = metrics.totalVolumeKg;
 
   const def = resolveCatalogDef(catalogKey, getExerciseNameById);
@@ -380,6 +397,10 @@ export function extractMetricsForCatalogKey(snapshot, catalogKey, getExerciseNam
     catalogKey,
     getExerciseNameById,
     def?.metric || 'max_set_reps'
+  );
+  merged.metrics.estimatedOneRmKg = Math.max(
+    merged.metrics.estimatedOneRmKg || 0,
+    merged.metrics.maxWeightKg || 0
   );
 
   return merged.metrics;

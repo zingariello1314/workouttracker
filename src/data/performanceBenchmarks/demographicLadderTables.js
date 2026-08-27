@@ -186,3 +186,78 @@ export const PULLUPS_SUPINATION_MALE = {
   '40-44': PULLUPS_SUPINATION_MALE_ALL,
   '45-50': PULLUPS_SUPINATION_MALE_ALL
 };
+
+// ─── Curl haltère (perf = 1RM kg / haltère, vol = kg×reps / jour) ─────────────
+
+const CURL_DB_VOL = [100, 120, 150, 175, 210, 240, 270, 315, 350, 400, 440, 495, 540, 600, 650];
+
+function curlRows(perfs, volumes = CURL_DB_VOL) {
+  return rowsFromTuples(perfs.map((p, i) => [p, volumes[i]]));
+}
+
+export const CURL_DB_MALE_18_24 = curlRows([5, 7, 9, 12, 15, 18, 21, 24, 27, 30, 33, 36, 39, 42, 45]);
+export const CURL_DB_MALE_25_39 = curlRows([5, 7, 10, 13, 16, 19, 21, 24, 27, 30, 33, 36, 39, 42, 45]);
+export const CURL_DB_MALE_40_44 = curlRows([5, 7, 9, 12, 15, 18, 21, 24, 27, 30, 33, 36, 39, 41, 44]);
+export const CURL_DB_MALE_45_50 = curlRows([5, 7, 9, 12, 15, 18, 20, 23, 26, 29, 32, 35, 38, 41, 43]);
+
+export const CURL_DUMBBELL_MALE = {
+  '18-20': CURL_DB_MALE_18_24,
+  '21-24': CURL_DB_MALE_18_24,
+  '25-29': CURL_DB_MALE_25_39,
+  '30-34': CURL_DB_MALE_25_39,
+  '35-39': CURL_DB_MALE_25_39,
+  '40-44': CURL_DB_MALE_40_44,
+  '45-50': CURL_DB_MALE_45_50
+};
+
+export const CURL_HAMMER_MALE_18_24 = CURL_DB_MALE_18_24;
+export const CURL_HAMMER_MALE_25_39 = curlRows([5, 7, 10, 13, 16, 19, 22, 25, 28, 31, 34, 37, 40, 43, 45]);
+export const CURL_HAMMER_MALE_40_44 = curlRows([5, 7, 9, 12, 15, 18, 21, 24, 27, 30, 33, 36, 39, 42, 44]);
+export const CURL_HAMMER_MALE_45_50 = curlRows([5, 7, 9, 12, 15, 18, 21, 24, 27, 30, 33, 36, 39, 42, 45]);
+
+export const CURL_HAMMER_MALE = {
+  '18-20': CURL_HAMMER_MALE_18_24,
+  '21-24': CURL_HAMMER_MALE_18_24,
+  '25-29': CURL_HAMMER_MALE_25_39,
+  '30-34': CURL_HAMMER_MALE_25_39,
+  '35-39': CURL_HAMMER_MALE_25_39,
+  '40-44': CURL_HAMMER_MALE_40_44,
+  '45-50': CURL_HAMMER_MALE_45_50
+};
+
+const CURL_ZOTTMAN_VOL = [80, 100, 125, 150, 180, 210, 240, 280, 315, 360, 400, 450, 495, 550, 600];
+
+export const CURL_ZOTTMAN_MALE_18_24 = curlRows(
+  [4, 6, 8, 10, 12, 15, 18, 21, 24, 27, 30, 33, 35, 38, 40],
+  CURL_ZOTTMAN_VOL
+);
+export const CURL_ZOTTMAN_MALE_25_29 = curlRows(
+  [4, 6, 8, 10, 13, 15, 18, 21, 24, 27, 30, 33, 35, 38, 40],
+  CURL_ZOTTMAN_VOL
+);
+export const CURL_ZOTTMAN_MALE_30_34 = curlRows(
+  [4, 6, 8, 10, 13, 15, 18, 21, 24, 27, 30, 33, 35, 37, 40],
+  CURL_ZOTTMAN_VOL
+);
+export const CURL_ZOTTMAN_MALE_35_39 = curlRows(
+  [4, 6, 8, 10, 13, 15, 18, 21, 24, 27, 30, 33, 35, 37, 39],
+  CURL_ZOTTMAN_VOL
+);
+export const CURL_ZOTTMAN_MALE_40_44 = curlRows(
+  [4, 6, 8, 10, 12, 15, 18, 21, 24, 27, 30, 33, 35, 37, 39],
+  CURL_ZOTTMAN_VOL
+);
+export const CURL_ZOTTMAN_MALE_45_50 = curlRows(
+  [4, 6, 8, 10, 12, 15, 18, 21, 24, 27, 30, 33, 35, 37, 38],
+  CURL_ZOTTMAN_VOL
+);
+
+export const CURL_ZOTTMAN_MALE = {
+  '18-20': CURL_ZOTTMAN_MALE_18_24,
+  '21-24': CURL_ZOTTMAN_MALE_18_24,
+  '25-29': CURL_ZOTTMAN_MALE_25_29,
+  '30-34': CURL_ZOTTMAN_MALE_30_34,
+  '35-39': CURL_ZOTTMAN_MALE_35_39,
+  '40-44': CURL_ZOTTMAN_MALE_40_44,
+  '45-50': CURL_ZOTTMAN_MALE_45_50
+};

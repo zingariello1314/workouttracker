@@ -9,9 +9,12 @@ import {
   resolveDemographicAgeBand,
   resolveDemographicExerciseId,
   demographicExerciseUsesWeightAdjustedPeak,
-  weightAdjustExponentForExercise
+  weightAdjustExponentForExercise,
+  demographicExerciseUsesLoaded1Rm,
+  loadedOneRmAdjustExponentForExercise
 } from '../../data/performanceBenchmarks/demographicGradeLadders';
 import { adjustBodyweightPeakReps, PULLUP_REFERENCE_WEIGHT_KG } from './pullupPerformanceAdjust';
+import { adjustLoadedOneRmToRef, LOADED_1RM_REFERENCE_KG } from './loadedOneRmAdjust';
 import { EXERCISE_GRADE_LADDER } from './exerciseGradeLadder';
 
 /**
@@ -58,9 +61,22 @@ export function resolveDemographicGradeIndices(peakReps, maxDailyVolume, ladder)
 }
 
 /**
- * Perf série utilisée pour le grade (ajustée poids si tractions / pompes déclinées).
+ * Pic utilisé pour le grade : reps (ajustées poids si traction / pompe déclinée)
+ * ou 1RM haltère équivalent 75 kg pour les curls chargés.
  */
 export function demographicPeakRepsForMetrics(metrics, demographic, vitals = {}) {
+  if (demographicExerciseUsesLoaded1Rm(demographic?.exerciseId)) {
+    const raw = Math.max(
+      0,
+      Number(metrics.estimatedOneRmKg) || 0,
+      Number(metrics.maxWeightKg) || 0
+    );
+    const exponent = loadedOneRmAdjustExponentForExercise(demographic.exerciseId);
+    return adjustLoadedOneRmToRef(raw, vitals.weightKg, {
+      refKg: demographic.weightRefKg || LOADED_1RM_REFERENCE_KG,
+      exponent
+    });
+  }
   const raw = Math.max(0, Number(metrics.maxSetReps) || 0);
   if (!demographic?.exerciseId) return raw;
   if (demographicExerciseUsesWeightAdjustedPeak(demographic.exerciseId)) {
@@ -71,6 +87,13 @@ export function demographicPeakRepsForMetrics(metrics, demographic, vitals = {})
     });
   }
   return raw;
+}
+
+export function demographicVolumeForMetrics(metrics, demographic) {
+  if (demographicExerciseUsesLoaded1Rm(demographic?.exerciseId)) {
+    return Math.max(0, Number(metrics.maxDailyVolumeKg) || 0);
+  }
+  return Math.max(0, Number(metrics.maxDailyTotalReps) || 0);
 }
 
 export function resolveDemographicGradeContext(catalogKey, def, vitals) {
@@ -86,23 +109,26 @@ export function resolveDemographicGradeContext(catalogKey, def, vitals) {
     exerciseId,
     sex: normalizeDemographicSex(vitals.sex),
     ageBand: resolveDemographicAgeBand(vitals.age),
-    weightRefKg: PULLUP_REFERENCE_WEIGHT_KG,
+    weightRefKg: demographicExerciseUsesLoaded1Rm(exerciseId)
+      ? LOADED_1RM_REFERENCE_KG
+      : PULLUP_REFERENCE_WEIGHT_KG,
     weightAdjustExponent: weightAdjustExponentForExercise(exerciseId),
-    weightAdjustsPeak: demographicExerciseUsesWeightAdjustedPeak(exerciseId)
+    loadedOneRmAdjustExponent: loadedOneRmAdjustExponentForExercise(exerciseId),
+    weightAdjustsPeak: demographicExerciseUsesWeightAdjustedPeak(exerciseId),
+    usesLoaded1Rm: demographicExerciseUsesLoaded1Rm(exerciseId)
   };
 }
 
 export function resolveDemographicGradeFromMetrics(metrics, demographic, vitals = {}) {
   if (!demographic?.ladder) return null;
   const peakReps = demographicPeakRepsForMetrics(metrics, demographic, vitals);
-  const indices = resolveDemographicGradeIndices(
-    peakReps,
-    metrics.maxDailyTotalReps || 0,
-    demographic.ladder
-  );
+  const volume = demographicVolumeForMetrics(metrics, demographic);
+  const indices = resolveDemographicGradeIndices(peakReps, volume, demographic.ladder);
   return {
     ...indices,
-    rawPeakReps: Math.max(0, Number(metrics.maxSetReps) || 0),
+    rawPeakReps: demographicExerciseUsesLoaded1Rm(demographic.exerciseId)
+      ? Math.max(0, Number(metrics.estimatedOneRmKg) || 0, Number(metrics.maxWeightKg) || 0)
+      : Math.max(0, Number(metrics.maxSetReps) || 0),
     adjustedPeakReps: peakReps
   };
 }

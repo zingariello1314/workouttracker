@@ -93,6 +93,13 @@ const NavigationHeader = () => {
           >
             {t('nav.apprentissage')}
           </button>
+          <button
+            onClick={() => navigateToTab('rubiks')}
+            className="w-full md:w-auto bg-white/5 backdrop-blur-2xl border border-white/10 text-white px-2 py-2 md:px-4 md:py-3 rounded-xl md:rounded-2xl transition-all duration-500 hover:bg-white/15 hover:border-white/25 hover:shadow-2xl hover:shadow-white/10 hover:scale-105 whitespace-nowrap"
+            aria-label="Navigate to Rubik's cube"
+          >
+            {t('nav.rubiks')}
+          </button>
           {/* Livres */}
           <button 
             onClick={() => navigateToTab('books')}

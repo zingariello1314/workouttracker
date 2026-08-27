@@ -102,11 +102,13 @@ function mergeEnduranceData(localVal, cloudVal) {
     ...C,
     sessions,
     manualDailyWalkByDate: mergeManualDailyWalkByDate(L.manualDailyWalkByDate, C.manualDailyWalkByDate),
-    challenges: Array.isArray(C.challenges) && C.challenges.length > 0
-      ? C.challenges
-      : Array.isArray(L.challenges)
-        ? L.challenges
-        : [],
+    challenges: Array.isArray(C.challenges) && Array.isArray(L.challenges)
+      ? mergeSessions(L.challenges, C.challenges)
+      : Array.isArray(C.challenges) && C.challenges.length > 0
+        ? C.challenges
+        : Array.isArray(L.challenges)
+          ? L.challenges
+          : [],
   };
 }
 

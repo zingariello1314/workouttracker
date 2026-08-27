@@ -33,6 +33,7 @@ const SettingsTab = lazy(() => import('./components/tabs/SettingsTab'));
 const PredictionsTab = lazy(() => import('./components/PredictionsTab'));
 const QuestsTab = lazy(() => import('./components/tabs/QuestsTab'));
 const ApprentissageTab = lazy(() => import('./components/tabs/ApprentissageTab'));
+const RubiksTab = lazy(() => import('./components/tabs/RubiksTab'));
 const SmartBalancingTab = lazy(() => import('./components/SmartBalancingTab'));
 const SportAnalyticsHubTab = lazy(() => import('./components/tabs/SportAnalyticsHubTab'));
 const GarminTab = lazy(() => import('./components/tabs/GarminTab'));
@@ -144,6 +145,7 @@ const WorkoutTrackerContent = () => {
     finance: '-720px',
     // Quêtes & Apprentissage un tout petit peu plus bas
     apprentissage: '-700px',
+    rubiks: '-700px',
     quests: '-700px',
     books: '-720px',
     knowledge: 'calc(-720px + 1cm)',
@@ -286,6 +288,8 @@ const WorkoutTrackerContent = () => {
         return <QuestsTab />;
       case 'apprentissage':
         return <ApprentissageTab />;
+      case 'rubiks':
+        return <RubiksTab />;
       case 'data-entry':
         return <DataEntryTab />;
       case 'progress':

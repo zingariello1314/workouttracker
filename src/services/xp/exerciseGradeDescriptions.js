@@ -22,9 +22,11 @@ export const EXERCISE_GRADE_DESCRIPTIONS = {
   overhead_press:
     'Développé militaire debout. Force d’épaules et stabilité du tronc.',
   dumbbell_curl:
-    'Flexion biceps aux haltères. Grade basé sur la charge max par bras (série la plus lourde).',
+    'Curl haltère classique. Performance = 1RM par haltère (record validé ou estimé depuis un set), normalisé au poids de corps. Volume = tonnage quotidien (reps × kg, les deux bras).',
   hammer_curl:
-    'Curl prise neutre (marteau). Brachial et avant-bras.',
+    'Curl marteau (prise neutre). Référentiel propre, distinct du curl classique. 1RM par haltère + tonnage quotidien.',
+  zottman_curl:
+    'Curl Zottman (montée supinée, descente pronée). Plus exigeant techniquement : Platine III à 40 kg × 1 par haltère, pas un coefficient du curl classique.',
   bodyweight_squat:
     'Squat au poids du corps, amplitude contrôlée. Endurance et force relative des jambes.',
   crunches:

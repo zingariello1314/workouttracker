@@ -68,6 +68,10 @@ export function loadEnduranceData(rawEnduranceData = {}, options = {}) {
  * @returns {Promise<Object>} - Les données complètes après sauvegarde.
  */
 import { applyWorkoutRepIntegrations } from './workoutRepIntegrations';
+import {
+  mergeEnduranceWithoutSilentWipe,
+  writeEnduranceLocalBackup
+} from './enduranceWipeGuard';
 
 export async function persistEnduranceData({ currentData = {}, patch = {}, updateData, logger = DEFAULT_LOGGER }) {
   if (typeof updateData !== 'function') {
@@ -76,12 +80,21 @@ export async function persistEnduranceData({ currentData = {}, patch = {}, updat
 
   const currentEndurance = currentData.enduranceData || {};
 
-  const nextEndurance = {
+  const patched = {
     ...currentEndurance,
     ...patch,
     lastUpdated: new Date().toISOString(),
     schemaVersion: ENDURANCE_SCHEMA_VERSION
   };
+
+  const nextEndurance = mergeEnduranceWithoutSilentWipe(currentEndurance, patched, {
+    sessionTypesTouched: patch.sessionTypesTouched,
+    allowEmptyChallenges: patch.allowEmptyChallenges === true,
+    allowWipe: patch.allowWipe === true
+  });
+  delete nextEndurance.sessionTypesTouched;
+  delete nextEndurance.allowEmptyChallenges;
+  delete nextEndurance.allowWipe;
 
   let nextData = {
     ...currentData,
@@ -93,6 +106,7 @@ export async function persistEnduranceData({ currentData = {}, patch = {}, updat
   logger.debug?.('[enduranceDataService] persistEnduranceData', { patch, nextEndurance });
 
   await updateData(nextData);
+  writeEnduranceLocalBackup(currentData.storageKey || currentData._storageKey, nextEndurance);
   return nextData;
 }
 
@@ -125,7 +139,8 @@ export async function persistSessions({ currentData = {}, activityType, sessions
   }, { logger });
 
   const patch = {
-    sessions: deduped
+    sessions: deduped,
+    sessionTypesTouched: [activityType]
   };
 
   const data = await persistEnduranceData({ currentData, patch, updateData, logger });
@@ -153,7 +168,8 @@ export async function persistChallenges({ currentData = {}, challenges = [], upd
   const { challenges: deduped, duplicateCount } = dedupeChallenges(normalized, { logger });
 
   const patch = {
-    challenges: deduped
+    challenges: deduped,
+    allowEmptyChallenges: true
   };
 
   const data = await persistEnduranceData({ currentData, patch, updateData, logger });

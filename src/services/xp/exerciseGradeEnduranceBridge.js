@@ -4,6 +4,7 @@
 
 import { normalizeDateString, isMockEnduranceSession } from '../../utils/calendarUtils';
 import { resolvePushupSessionTotalReps } from '../endurance/pushupSessionUtils';
+import { isEndurancePushupsSyncedOnWorkoutDay } from '../endurance/pushupEnduranceWorkoutKeys';
 
 /** @type {Record<string, { sessionsKey: string, reps: (s: object) => number }>} */
 export const ENDURANCE_BENCHMARK_BRIDGE = {
@@ -78,7 +79,8 @@ export function mergeEnduranceIntoBenchmarkMetrics(byBenchmarkKey, snapshot) {
 export function mergeEnduranceIntoCheckCounts(counts, snapshot) {
   Object.keys(ENDURANCE_BENCHMARK_BRIDGE).forEach((benchmarkKey) => {
     let n = 0;
-    forEachEnduranceBenchmarkSession(snapshot, benchmarkKey, () => {
+    forEachEnduranceBenchmarkSession(snapshot, benchmarkKey, ({ dateStr }) => {
+      if (benchmarkKey === 'pushups' && isEndurancePushupsSyncedOnWorkoutDay(snapshot, dateStr)) return;
       n += 1;
     });
     if (n > 0) counts.set(benchmarkKey, (counts.get(benchmarkKey) || 0) + n);

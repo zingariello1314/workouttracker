@@ -72,25 +72,29 @@ export function computeExerciseGradeProgressBars(
   const peakLabel =
     metric === 'hold_seconds'
       ? 'Maintien max (s)'
-      : metric === 'max_weight_kg'
-        ? 'Charge / pic'
-        : demographic?.weightAdjustsPeak
-          ? 'Max série (reps eq. poids)'
-          : demographic?.ladder
-            ? 'Max série (reps)'
-            : 'Pic jour (reps)';
+      : demographic?.usesLoaded1Rm
+        ? '1RM haltère (kg eq.)'
+        : metric === 'max_weight_kg'
+          ? 'Charge / pic'
+          : demographic?.weightAdjustsPeak
+            ? 'Max série (reps eq. poids)'
+            : demographic?.ladder
+              ? 'Max série (reps)'
+              : 'Pic jour (reps)';
   const lifeLabel =
     metric === 'hold_seconds'
       ? 'Temps cumulé (s)'
-      : metric === 'max_weight_kg'
-        ? 'Volume cumulé (kg×reps)'
-        : demographic?.ladder
-          ? 'Volume jour (reps)'
-          : 'Reps totales';
+      : demographic?.usesLoaded1Rm
+        ? 'Volume jour (kg×reps)'
+        : metric === 'max_weight_kg'
+          ? 'Volume cumulé (kg×reps)'
+          : demographic?.ladder
+            ? 'Volume jour (reps)'
+            : 'Reps totales';
 
   const bars = [
     bar(
-      demographic?.weightAdjustsPeak ? peakRepsAdj : vals.peak,
+      demographic?.ladder ? peakRepsAdj : vals.peak,
       gate.peak,
       'sport.exerciseGrade.progressPeak',
       peakLabel

@@ -27,6 +27,11 @@ import {
   flushWorkoutAggregateCloudPushNow
 } from '../services/workout/workoutAggregateCloudSync.js';
 import { applyWorkoutRepIntegrations, needsWorkoutRepIntegration } from '../services/endurance/workoutRepIntegrations';
+import {
+  restoreEnduranceIfWiped,
+  writeEnduranceLocalBackup,
+  mergeEnduranceWithoutSilentWipe
+} from '../services/endurance/enduranceWipeGuard';
 import { normalizeExerciseSetLog } from '../utils/exerciseSetLogUtils';
 
 const workoutDataLog = logger.module('useWorkoutData');
@@ -1000,16 +1005,25 @@ export const useWorkoutData = (options = {}) => {
             ? { ...newData.restDaySwaps }
             : {},
         // Données d'endurance - CRUCIAL pour la persistance
-        enduranceData: newData && newData.enduranceData ? { ...newData.enduranceData } : {
-          sessions: {
-            boxing: [],
-            pushups: [],
-            swimming: [],
-            jumprope: [],
-            running: []
-          },
-          challenges: []
-        },
+        enduranceData: (() => {
+          const incoming = newData && newData.enduranceData ? newData.enduranceData : null;
+          const previous = data?.enduranceData;
+          if (!incoming) {
+            return previous && typeof previous === 'object'
+              ? { ...previous }
+              : {
+                  sessions: {
+                    boxing: [],
+                    pushups: [],
+                    swimming: [],
+                    jumprope: [],
+                    running: []
+                  },
+                  challenges: []
+                };
+          }
+          return mergeEnduranceWithoutSilentWipe(previous || {}, incoming);
+        })(),
         // homepageImages supprimé - maintenant géré par useHomepageImages indépendant
         lastSaved: new Date().toISOString(),
         dataVersion: '1.0' // Ajout d'une version pour la compatibilité future
@@ -1018,6 +1032,7 @@ export const useWorkoutData = (options = {}) => {
       const repo = getWorkoutRepo();
       if (repo?.saveRawWorkoutRow) {
         await repo.saveRawWorkoutRow(effectiveKey, dataToSave);
+        writeEnduranceLocalBackup(effectiveKey, dataToSave.enduranceData);
         if (!ephemeral && !generateTestData && isWorkoutAggregateCloudSyncEnabled()) {
           const { accessToken } = readServerTokens();
           void flushWorkoutAggregateCloudPushNow({ accessToken, storageKey: effectiveKey, row: dataToSave });
@@ -1169,6 +1184,7 @@ export const useWorkoutData = (options = {}) => {
     let savedData = await loadFromDB();
 
     savedData = await enrichWorkoutStateWithSessions(savedData || { ...INITIAL_WORKOUT_DATA });
+    savedData = restoreEnduranceIfWiped(savedData, storageKey);
 
     if (!ephemeral && !generateTestData && isWorkoutAggregateCloudSyncEnabled()) {
       const { accessToken } = readServerTokens();
@@ -1190,6 +1206,7 @@ export const useWorkoutData = (options = {}) => {
             await repo.saveRawWorkoutRow(storageKey, normalized);
             savedData = materializeValidatedFromIdbRow(normalized);
             savedData = await enrichWorkoutStateWithSessions(savedData);
+            savedData = restoreEnduranceIfWiped(savedData, storageKey);
           }
         } catch (e) {
           workoutDataLog.warn('Fusion snapshot workout cloud ignorée', e);

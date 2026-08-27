@@ -31,6 +31,7 @@ const ApprentissageTab = () => {
   const [currentSubView, setCurrentSubView] = useState(() => {
     try {
       const saved = localStorage.getItem('apprentissage.activeSubView');
+      if (saved === 'rubiks') return 'matieres';
       return saved || 'matieres';
     } catch (error) {
       console.warn('[ApprentissageTab] Erreur lecture localStorage:', error);
@@ -56,10 +57,10 @@ const ApprentissageTab = () => {
 
   // Navigation sous-onglets
   const subViews = [
-    { id: 'matieres', label: 'Matières', icon: '📚' },
-    { id: 'sessions', label: 'Sessions', icon: '⏱️' },
-    { id: 'trophees', label: 'Trophées', icon: '🏆' },
-    { id: 'calendrier', label: 'Calendrier', icon: '📆' },
+    { id: 'matieres', label: t('apprentissage.subTabs.matieres', 'Matières'), icon: '📚' },
+    { id: 'sessions', label: t('apprentissage.subTabs.sessions', 'Sessions'), icon: '⏱️' },
+    { id: 'trophees', label: t('apprentissage.subTabs.trophees', 'Trophées'), icon: '🏆' },
+    { id: 'calendrier', label: t('apprentissage.subTabs.calendrier', 'Calendrier'), icon: '📆' }
   ];
 
   const switchToSubView = (subView) => {

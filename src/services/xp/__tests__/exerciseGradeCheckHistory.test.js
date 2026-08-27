@@ -28,6 +28,41 @@ describe('collectCatalogCheckHistory', () => {
     expect(rows[0].source).toBe('workout');
   });
 
+  it('inclut les défis sync cochés dans l’historique pompes', () => {
+    const snapshot = {
+      checkedExercises: {
+        '2026-08-10_complementary_endurance_pushups': true
+      },
+      reps: {
+        '2026-08-10_complementary_endurance_pushups': '120'
+      }
+    };
+    const rows = collectCatalogCheckHistory(snapshot, 'name:pompes', () => '');
+    expect(rows).toHaveLength(1);
+    expect(rows[0].source).toBe('workout');
+    expect(rows[0].sourceLabel).toBe('Défis pompes');
+    expect(rows[0].reps).toBe(120);
+  });
+
+  it('ne double-compte pas défis sync + session endurance même jour', () => {
+    const snapshot = {
+      checkedExercises: {
+        '2026-08-10_complementary_endurance_pushups': true
+      },
+      reps: {
+        '2026-08-10_complementary_endurance_pushups': '120'
+      },
+      enduranceData: {
+        sessions: {
+          pushups: [{ date: '2026-08-10', count: 120 }]
+        }
+      }
+    };
+    const rows = collectCatalogCheckHistory(snapshot, 'name:pompes', () => '');
+    expect(rows).toHaveLength(1);
+    expect(rows[0].reps).toBe(120);
+  });
+
   it('inclut les défis pompes uniquement sur la fiche pompes tout court', () => {
     const snapshot = {
       checkedExercises: {},

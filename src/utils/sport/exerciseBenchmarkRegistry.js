@@ -117,12 +117,22 @@ export const EXERCISE_BENCHMARK_REGISTRY = [
     benchmark: STRENGTH_EXERCISE_BENCHMARKS.bodyweight_squat
   },
   {
+    key: 'zottman_curl',
+    label: STRENGTH_EXERCISE_BENCHMARKS.zottman_curl.label,
+    metric: 'max_weight_kg',
+    match: (id, getName) =>
+      matchBlob(exerciseMovementBlob({ id }, getName), [/zottman/]),
+    benchmark: STRENGTH_EXERCISE_BENCHMARKS.zottman_curl
+  },
+  {
     key: 'dumbbell_curl',
     label: STRENGTH_EXERCISE_BENCHMARKS.dumbbell_curl.label,
     metric: 'max_weight_kg',
     match: (id, getName) =>
-      matchBlob(exerciseMovementBlob({ id }, getName), [/curl/, /biceps/]) &&
-      !/marteau|hammer|pupitre|preacher/.test(exerciseMovementBlob({ id }, getName)),
+      matchBlob(exerciseMovementBlob({ id }, getName), [/curl/]) &&
+      !/marteau|hammer|zottman|pupitre|preacher|leg curl|nordic|wrist|poignet|ischio/.test(
+        exerciseMovementBlob({ id }, getName)
+      ),
     benchmark: STRENGTH_EXERCISE_BENCHMARKS.dumbbell_curl
   },
   {

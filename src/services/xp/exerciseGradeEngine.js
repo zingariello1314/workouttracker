@@ -18,6 +18,10 @@ import {
 } from './exerciseGradeEnduranceBridge';
 import { syncBenchmarkTotalsFromActivity } from './exerciseGradeActivityByDate';
 import {
+  ENDURANCE_PUSHUPS_WORKOUT_EXERCISE_ID,
+  parseWorkoutExerciseIdFromStorageKey
+} from '../endurance/pushupEnduranceWorkoutKeys';
+import {
   discoverExerciseGradeCatalogKeys,
   resolveCatalogDef
 } from './exerciseGradeDiscovery';
@@ -65,6 +69,7 @@ export const EXERCISE_BENCHMARK_MUSCLE_GROUP = {
   overhead_press: 'épaules',
   dumbbell_curl: 'biceps',
   hammer_curl: 'biceps',
+  zottman_curl: 'biceps',
   barbell_squat: 'quadriceps',
   deadlift: 'ischios',
   bodyweight_squat: 'quadriceps',
@@ -90,12 +95,7 @@ const CHECK_COUNT_TIERS = [
 ];
 
 function exerciseIdFromStorageKey(key) {
-  const m = String(key || '').match(/^(\d{4}-\d{2}-\d{2})_(.+)$/);
-  if (!m) return null;
-  let id = m[2];
-  id = id.replace(/_semaineA$|_semaineB$/, '');
-  if (id.startsWith('complementary_')) return null;
-  return id;
+  return parseWorkoutExerciseIdFromStorageKey(key);
 }
 
 /**
@@ -110,6 +110,10 @@ export function countCheckedSessionsByBenchmark(snapshot, getExerciseNameById) {
     if (val !== true) continue;
     const exId = exerciseIdFromStorageKey(key);
     if (!exId) continue;
+    if (exId === ENDURANCE_PUSHUPS_WORKOUT_EXERCISE_ID) {
+      counts.set('pushups', (counts.get('pushups') || 0) + 1);
+      continue;
+    }
     const def = resolveExerciseBenchmark(exId, getExerciseNameById);
     if (!def) continue;
     counts.set(def.key, (counts.get(def.key) || 0) + 1);
@@ -527,6 +531,17 @@ export function buildExerciseGradeCatalog(snapshot, getExerciseNameById, vitals)
   return rows;
 }
 
+export function sortValueForExerciseGradeRow(row) {
+  const { metric, metrics, grade } = row;
+  if (metric === 'hold_seconds') {
+    return metrics.lifetimeHoldSeconds || grade.peakValue || 0;
+  }
+  if (metric === 'max_weight_kg') {
+    return metrics.totalVolumeKg || grade.lifetimeValue || 0;
+  }
+  return metrics.totalReps ?? grade.lifetimeValue ?? 0;
+}
+
 export function sortExerciseGradeRows(rows, sortMode) {
   const list = [...rows];
   if (sortMode === 'alpha') {
@@ -538,6 +553,14 @@ export function sortExerciseGradeRows(rows, sortMode) {
       const g = a.muscleGroup.localeCompare(b.muscleGroup, 'fr');
       if (g !== 0) return g;
       return b.grade.sortIndex - a.grade.sortIndex;
+    });
+    return list;
+  }
+  if (sortMode === 'reps') {
+    list.sort((a, b) => {
+      const diff = sortValueForExerciseGradeRow(b) - sortValueForExerciseGradeRow(a);
+      if (diff !== 0) return diff;
+      return a.label.localeCompare(b.label, 'fr');
     });
     return list;
   }

@@ -4,7 +4,7 @@
 
 import { exerciseDatabase } from '../../data/exerciseDatabase';
 import { resolveCatalogDef } from './exerciseGradeDiscovery';
-import { exerciseMatchesCatalogKey } from './exerciseGradeCatalogMetrics';
+import { estimateOneRmKg } from './oneRmEstimate';
 
 function normalizeName(value) {
   return String(value || '')
@@ -74,7 +74,10 @@ function peakValueFromRecord(record, metric) {
     return Math.max(0, Number(record.durationSec) || 0);
   }
   if (metric === 'max_weight_kg' || type === 'weight_reps') {
-    return Math.max(0, Number(record.weightKg) || 0);
+    const w = Math.max(0, Number(record.weightKg) || 0);
+    const r = Math.max(0, Math.floor(Number(record.reps) || 0));
+    if (r > 1) return Math.max(w, estimateOneRmKg(w, r));
+    return w;
   }
   return Math.max(0, Number(record.reps) || 0);
 }
@@ -119,6 +122,7 @@ export function mergePerformancePeakIntoMetrics(metrics, snapshot, catalogKey, g
     next.maxHoldSeconds = Math.max(next.maxHoldSeconds || 0, perf.value);
   } else if (metric === 'max_weight_kg') {
     next.maxWeightKg = Math.max(next.maxWeightKg || 0, perf.value);
+    next.estimatedOneRmKg = Math.max(next.estimatedOneRmKg || 0, perf.value);
   } else {
     next.maxSetReps = Math.max(next.maxSetReps || 0, perf.value);
   }

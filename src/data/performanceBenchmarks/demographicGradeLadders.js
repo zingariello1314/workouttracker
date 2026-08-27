@@ -10,7 +10,10 @@ import {
   PUSHUPS_TENSION_MALE,
   PUSHUPS_INCLINE_MALE,
   PUSHUPS_DECLINE_MALE,
-  PULLUPS_SUPINATION_MALE
+  PULLUPS_SUPINATION_MALE,
+  CURL_DUMBBELL_MALE,
+  CURL_HAMMER_MALE,
+  CURL_ZOTTMAN_MALE
 } from './demographicLadderTables';
 
 /** @typedef {{ sortIndex: number, gradeId: string, performanceRequired: number, volumePerDay: number }} DemographicLadderRow */
@@ -59,6 +62,12 @@ export const MOMENTUM_V1_PUSHUPS_DECLINE_MALE = PUSHUPS_DECLINE_MALE;
 export const MOMENTUM_V1_PUSHUPS_DECLINE_FEMALE = scaleLadderTables(PUSHUPS_DECLINE_MALE);
 export const MOMENTUM_V1_PULLUPS_SUPINATION_MALE = PULLUPS_SUPINATION_MALE;
 export const MOMENTUM_V1_PULLUPS_SUPINATION_FEMALE = scaleLadderTables(PULLUPS_SUPINATION_MALE);
+export const MOMENTUM_V1_CURL_DUMBBELL_MALE = CURL_DUMBBELL_MALE;
+export const MOMENTUM_V1_CURL_DUMBBELL_FEMALE = scaleLadderTables(CURL_DUMBBELL_MALE);
+export const MOMENTUM_V1_CURL_HAMMER_MALE = CURL_HAMMER_MALE;
+export const MOMENTUM_V1_CURL_HAMMER_FEMALE = scaleLadderTables(CURL_HAMMER_MALE);
+export const MOMENTUM_V1_CURL_ZOTTMAN_MALE = CURL_ZOTTMAN_MALE;
+export const MOMENTUM_V1_CURL_ZOTTMAN_FEMALE = scaleLadderTables(CURL_ZOTTMAN_MALE);
 
 /** @type {Record<string, { male: Record<string, DemographicLadderRow[]>, female: Record<string, DemographicLadderRow[]> }>} */
 export const DEMOGRAPHIC_LADDER_REGISTRY = {
@@ -68,7 +77,10 @@ export const DEMOGRAPHIC_LADDER_REGISTRY = {
   pushups_tension: { male: MOMENTUM_V1_PUSHUPS_TENSION_MALE, female: MOMENTUM_V1_PUSHUPS_TENSION_FEMALE },
   pullups_pronation: { male: MOMENTUM_V1_PULLUPS_MALE, female: MOMENTUM_V1_PULLUPS_FEMALE },
   pullups_supination: { male: MOMENTUM_V1_PULLUPS_SUPINATION_MALE, female: MOMENTUM_V1_PULLUPS_SUPINATION_FEMALE },
-  dips: { male: MOMENTUM_V1_DIPS_MALE, female: MOMENTUM_V1_DIPS_FEMALE }
+  dips: { male: MOMENTUM_V1_DIPS_MALE, female: MOMENTUM_V1_DIPS_FEMALE },
+  dumbbell_curl: { male: MOMENTUM_V1_CURL_DUMBBELL_MALE, female: MOMENTUM_V1_CURL_DUMBBELL_FEMALE },
+  hammer_curl: { male: MOMENTUM_V1_CURL_HAMMER_MALE, female: MOMENTUM_V1_CURL_HAMMER_FEMALE },
+  zottman_curl: { male: MOMENTUM_V1_CURL_ZOTTMAN_MALE, female: MOMENTUM_V1_CURL_ZOTTMAN_FEMALE }
 };
 
 /** Exposants ajustement poids → reps équivalent référence (75 kg). */
@@ -76,6 +88,13 @@ export const WEIGHT_ADJUST_EXPONENT = {
   pullups_pronation: 0.65,
   pullups_supination: 0.65,
   pushups_decline: 0.5
+};
+
+/** Exposants 1RM chargé → équivalent 75 kg (curl haltère / marteau / Zottman). */
+export const LOADED_1RM_ADJUST_EXPONENT = {
+  dumbbell_curl: 0.45,
+  hammer_curl: 0.45,
+  zottman_curl: 0.45
 };
 
 export function normalizeDemographicSex(raw) {
@@ -122,6 +141,22 @@ export function isDipsCatalogKey(catalogKey) {
   return String(catalogKey || '') === 'dips';
 }
 
+export function isZottmanCurlCatalogKey(catalogKey) {
+  const k = String(catalogKey || '');
+  return k === 'zottman_curl' || k.startsWith('name:zottman') || k.startsWith('name:curl-zottman');
+}
+
+export function isHammerCurlCatalogKey(catalogKey) {
+  const k = String(catalogKey || '');
+  return k === 'hammer_curl' || k.startsWith('name:curl-marteau') || k.startsWith('name:hammer-curl');
+}
+
+export function isDumbbellCurlCatalogKey(catalogKey) {
+  const k = String(catalogKey || '');
+  if (isZottmanCurlCatalogKey(k) || isHammerCurlCatalogKey(k)) return false;
+  return k === 'dumbbell_curl' || k === 'name:curl-halteres' || k === 'name:curl-haltères';
+}
+
 /**
  * @param {string} catalogKey
  * @param {string|null} [registryKey]
@@ -135,6 +170,9 @@ export function resolveDemographicExerciseId(catalogKey, registryKey) {
   if (catalogKey === 'pushups' || catalogKey === 'pushups_classic') return 'pushups';
   if (catalogKeyReceivesPushupDefis(catalogKey)) return 'pushups';
   if (isDipsCatalogKey(catalogKey)) return 'dips';
+  if (isZottmanCurlCatalogKey(catalogKey)) return 'zottman_curl';
+  if (isHammerCurlCatalogKey(catalogKey)) return 'hammer_curl';
+  if (isDumbbellCurlCatalogKey(catalogKey)) return 'dumbbell_curl';
   if (isPullupSupinationCatalogKey(catalogKey)) return 'pullups_supination';
   if (isPullupPronationCatalogKey(catalogKey)) return 'pullups_pronation';
   return null;
@@ -150,6 +188,14 @@ export function demographicExerciseUsesWeightAdjustedPeak(exerciseId) {
 
 export function weightAdjustExponentForExercise(exerciseId) {
   return WEIGHT_ADJUST_EXPONENT[exerciseId] ?? null;
+}
+
+export function demographicExerciseUsesLoaded1Rm(exerciseId) {
+  return exerciseId != null && exerciseId in LOADED_1RM_ADJUST_EXPONENT;
+}
+
+export function loadedOneRmAdjustExponentForExercise(exerciseId) {
+  return LOADED_1RM_ADJUST_EXPONENT[exerciseId] ?? null;
 }
 
 export function getDemographicLadderForExercise(catalogKey, registryKey, vitals = {}) {

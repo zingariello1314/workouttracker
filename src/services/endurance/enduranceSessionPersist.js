@@ -55,8 +55,9 @@ export async function buildWorkoutAfterEnduranceSession({
   }
 
   const nextEndurance = {
+    ...enduranceRaw,
     ...normalized,
-    sessions: { ...sessionsMap, [activityType]: nextList },
+    sessions: { ...(enduranceRaw.sessions || {}), ...sessionsMap, [activityType]: nextList },
     challenges: evaluation.updatedChallenges,
     lastUpdated: new Date().toISOString()
   };

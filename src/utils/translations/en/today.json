@@ -51,7 +51,8 @@
     "perSetReset": "Single weight for exercise",
     "sessionEffortLabel": "Session feeling",
     "optionalWeighted": "Weighted",
-    "optionalWeightedTitle": "Mark as weighted (optional external load)"
+    "optionalWeightedTitle": "Mark as weighted (optional external load)",
+    "noExercises": "No exercises planned for today"
   },
   "sessionScore": {
     "title": "Session load (strength)",

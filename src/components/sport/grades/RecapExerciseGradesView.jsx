@@ -147,6 +147,7 @@ export default function RecapExerciseGradesView({
               className="rounded-md border border-[#0F4C5C]/50 bg-black px-2 py-1.5 text-xs text-white"
             >
               <option value="grade">{t('recap.exerciseGrades.sortGrade', 'Meilleur → pire grade')}</option>
+              <option value="reps">{t('recap.exerciseGrades.sortReps', 'Plus → moins de reps')}</option>
               <option value="muscle">{t('recap.exerciseGrades.sortMuscle', 'Groupe musculaire')}</option>
               <option value="alpha">{t('recap.exerciseGrades.sortAlpha', 'Alphabétique')}</option>
             </select>

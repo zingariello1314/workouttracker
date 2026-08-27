@@ -336,14 +336,32 @@ const EnduranceTab = () => {
         throw new Error(t('endurance.errors.invalidData'));
       }
 
+      const persistedSessions = data?.enduranceData?.sessions || {};
+      const localSessions = enduranceState.sessions || {};
       const mergedSessions = {
-        boxing: Array.isArray(enduranceState.sessions?.boxing) ? enduranceState.sessions.boxing : [],
-        pushups: Array.isArray(enduranceState.sessions?.pushups) ? enduranceState.sessions.pushups : [],
-        gainage: Array.isArray(enduranceState.sessions?.gainage) ? enduranceState.sessions.gainage : [],
-        swimming: Array.isArray(enduranceState.sessions?.swimming) ? enduranceState.sessions.swimming : [],
-        jumprope: Array.isArray(enduranceState.sessions?.jumprope) ? enduranceState.sessions.jumprope : [],
-        running: Array.isArray(enduranceState.sessions?.running) ? enduranceState.sessions.running : []
+        boxing: [],
+        pushups: [],
+        gainage: [],
+        swimming: [],
+        jumprope: [],
+        running: []
       };
+
+      Object.keys(mergedSessions).forEach((activityType) => {
+        const fromPatch =
+          newData.sessions && Array.isArray(newData.sessions[activityType])
+            ? newData.sessions[activityType]
+            : null;
+        if (fromPatch) {
+          mergedSessions[activityType] = fromPatch;
+          return;
+        }
+        const local = Array.isArray(localSessions[activityType]) ? localSessions[activityType] : [];
+        const persisted = Array.isArray(persistedSessions[activityType])
+          ? persistedSessions[activityType]
+          : [];
+        mergedSessions[activityType] = local.length > 0 ? local : persisted;
+      });
 
       if (newData.sessions && typeof newData.sessions === 'object') {
         Object.entries(newData.sessions).forEach(([activityType, value]) => {
@@ -353,14 +371,21 @@ const EnduranceTab = () => {
         });
       }
 
+      const persistedChallenges = Array.isArray(data?.enduranceData?.challenges)
+        ? data.enduranceData.challenges
+        : [];
+      const localChallenges = Array.isArray(enduranceState.challenges)
+        ? enduranceState.challenges
+        : [];
       const mergedChallenges = Array.isArray(newData.challenges)
         ? newData.challenges
-        : Array.isArray(enduranceState.challenges)
-          ? enduranceState.challenges
-          : [];
+        : localChallenges.length > 0
+          ? localChallenges
+          : persistedChallenges;
 
       const normalized = loadEnduranceDataService(
         {
+          ...(data?.enduranceData || {}),
           sessions: mergedSessions,
           challenges: mergedChallenges,
           schemaVersion: ENDURANCE_SCHEMA_VERSION
@@ -368,11 +393,17 @@ const EnduranceTab = () => {
         { logger: enduranceLogger }
       );
 
+      const sessionTypesTouched = newData.sessions && typeof newData.sessions === 'object'
+        ? Object.keys(newData.sessions).filter((k) => Array.isArray(newData.sessions[k]))
+        : undefined;
+
       const result = await persistEnduranceData({
         currentData: data || {},
         patch: {
           sessions: normalized.sessions,
-          challenges: normalized.challenges
+          challenges: normalized.challenges,
+          sessionTypesTouched,
+          allowEmptyChallenges: Array.isArray(newData.challenges)
         },
         updateData,
         logger: enduranceLogger

@@ -13,15 +13,15 @@ import {
 import { shouldAttachEnduranceToExercise } from './exerciseGradeDiscovery';
 import { forEachEnduranceBenchmarkSession } from './exerciseGradeEnduranceBridge';
 import { emptyPushupChannels, pushupBreakdownDisplayLines, classifyPushupWorkoutChannel } from './exerciseGradePushupChannels';
+import {
+  isEndurancePushupsSyncedOnWorkoutDay,
+  parseWorkoutExerciseIdFromStorageKey
+} from '../endurance/pushupEnduranceWorkoutKeys';
 
 export { pushupBreakdownDisplayLines, isPushupsCatalogKey };
 
 function exerciseIdFromStorageKey(key) {
-  const m = String(key || '').match(/^(\d{4}-\d{2}-\d{2})_(.+)$/);
-  if (!m) return null;
-  let id = m[2].replace(/_semaineA$|_semaineB$/, '');
-  if (id.startsWith('complementary_')) return null;
-  return id;
+  return parseWorkoutExerciseIdFromStorageKey(key);
 }
 
 function weekStartYmd(dateStr) {
@@ -84,7 +84,8 @@ export function collectCatalogCheckHistory(snapshot, catalogKey, getExerciseName
     let sourceLabel = name || 'Programme';
     if (trackPushups) {
       const ch = classifyPushupWorkoutChannel(exId, getExerciseNameById);
-      if (ch === 'handles') sourceLabel = name ? `${name} (poignées)` : 'Pompes poignées';
+      if (ch === 'defis') sourceLabel = 'Défis pompes';
+      else if (ch === 'handles') sourceLabel = name ? `${name} (poignées)` : 'Pompes poignées';
       else if (ch === 'classic') sourceLabel = name ? `${name} (classiques)` : 'Pompes classiques';
     }
     rows.push({
@@ -103,6 +104,7 @@ export function collectCatalogCheckHistory(snapshot, catalogKey, getExerciseName
   if (shouldIncludeEnduranceForCatalog(catalogKey, getExerciseNameById)) {
     let idx = 0;
     forEachEnduranceBenchmarkSession(snapshot, enduranceKey, ({ dateStr, reps: r, session }) => {
+      if (isEndurancePushupsSyncedOnWorkoutDay(snapshot, dateStr)) return;
       rows.push({
         id: `e:${dateStr}:${idx}:${session?.id ?? idx}`,
         dateStr,

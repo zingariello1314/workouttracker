@@ -4,7 +4,7 @@
 
 import { EXERCISE_GRADE_LADDER, exerciseGradeFromSortIndex } from './exerciseGradeLadder';
 import { LADDER_PROGRESS_GATES } from './exerciseGradeDiscovery';
-import { demographicPeakRepsForMetrics } from './demographicGradeResolver';
+import { demographicPeakRepsForMetrics, demographicVolumeForMetrics } from './demographicGradeResolver';
 
 export const VOIE_E_MIN_PCT = 70;
 export const VOIE_E_MIN_PCT_PENULTIMATE = 80;
@@ -65,6 +65,14 @@ function pctToward(current, target) {
 }
 
 export function metricTripletForGates(metrics, metric, bodyWeightKg, demographic = null) {
+  if (demographic?.ladder) {
+    const peak = demographicPeakRepsForMetrics(metrics, demographic, { weightKg: bodyWeightKg });
+    return {
+      peak,
+      life: demographicVolumeForMetrics(metrics, demographic),
+      checks: metrics.checkCount || 0
+    };
+  }
   if (metric === 'hold_seconds') {
     return {
       peak: metrics.maxHoldSeconds || 0,
@@ -80,14 +88,6 @@ export function metricTripletForGates(metrics, metric, bodyWeightKg, demographic
     return {
       peak,
       life: metrics.totalVolumeKg || metrics.lifetimeVolumeKg || 0,
-      checks: metrics.checkCount || 0
-    };
-  }
-  if (demographic?.ladder) {
-    const peak = demographicPeakRepsForMetrics(metrics, demographic, { weightKg: bodyWeightKg });
-    return {
-      peak,
-      life: metrics.maxDailyTotalReps || 0,
       checks: metrics.checkCount || 0
     };
   }

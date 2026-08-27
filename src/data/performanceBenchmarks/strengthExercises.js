@@ -134,6 +134,17 @@ export const STRENGTH_EXERCISE_BENCHMARKS = {
       { id: 'elite_amateur', label: 'élite amateur', min: 26, max: 999 }
     ]
   },
+  zottman_curl: {
+    label: 'Curl Zottman',
+    metric: 'max_weight_kg',
+    tiers: [
+      { id: 'beginner', label: 'débutant', min: 0, max: 8 },
+      { id: 'novice', label: 'novice', min: 8, max: 12 },
+      { id: 'intermediate', label: 'intermédiaire', min: 12, max: 18 },
+      { id: 'advanced', label: 'avancé', min: 18, max: 24 },
+      { id: 'elite_amateur', label: 'élite amateur', min: 24, max: 999 }
+    ]
+  },
   bench_press: {
     label: 'Développé couché',
     metric: 'max_weight_kg',

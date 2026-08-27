@@ -61,7 +61,8 @@ function patchEnduranceChallenges(workoutData, challengeId, mapFn) {
   return {
     ...workoutData,
     enduranceData: {
-      ...normalized,
+      ...(workoutData?.enduranceData || {}),
+      sessions: normalized.sessions,
       challenges,
       lastUpdated: new Date().toISOString()
     }

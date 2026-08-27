@@ -50,12 +50,22 @@ const SUBTAB_CONFIGURATIONS = {
   },
   
   apprentissage: {
-    default: 'main',
+    default: 'matieres',
     subtabs: {
-      main: { selector: '[data-subtab="main"]', fallback: '[data-tab="learning-main"]' },
-      subjects: { selector: '[data-subtab="subjects"]', fallback: '[data-tab="subjects"]' },
-      progress: { selector: '[data-subtab="progress"]', fallback: '[data-tab="learning-progress"]' },
-      calendrier: { selector: '[data-subtab="calendrier"]', fallback: '[data-tab="learning-calendar"]' },
+      matieres: { selector: '[data-subtab="matieres"]', fallback: '[data-tab="subjects"]' },
+      sessions: { selector: '[data-subtab="sessions"]', fallback: '[data-tab="learning-sessions"]' },
+      trophees: { selector: '[data-subtab="trophees"]', fallback: '[data-tab="learning-progress"]' },
+      calendrier: { selector: '[data-subtab="calendrier"]', fallback: '[data-tab="learning-calendar"]' }
+    }
+  },
+
+  rubiks: {
+    default: 'solve',
+    subtabs: {
+      solve: { selector: '[data-subtab="solve"]', fallback: '[data-tab="rubiks-solve"]' },
+      timer: { selector: '[data-subtab="timer"]', fallback: '[data-tab="rubiks-timer"]' },
+      methods: { selector: '[data-subtab="methods"]', fallback: '[data-tab="rubiks-methods"]' },
+      settings: { selector: '[data-subtab="settings"]', fallback: '[data-tab="rubiks-settings"]' }
     }
   },
   

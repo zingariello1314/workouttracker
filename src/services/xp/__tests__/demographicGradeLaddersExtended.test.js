@@ -7,6 +7,8 @@ import {
   MOMENTUM_V1_PUSHUPS_DECLINE_MALE,
   MOMENTUM_V1_PULLUPS_SUPINATION_MALE,
   MOMENTUM_V1_PUSHUPS_MALE,
+  MOMENTUM_V1_CURL_DUMBBELL_MALE,
+  MOMENTUM_V1_CURL_ZOTTMAN_MALE,
   resolveDemographicExerciseId,
   getDemographicLadderForExercise
 } from '../../../data/performanceBenchmarks/demographicGradeLadders';
@@ -189,5 +191,86 @@ describe('tractions supination V1', () => {
       catalogKey: 'name:tractions-supination'
     });
     expect(grade.gradeLabel).toBe('Or I');
+  });
+});
+
+describe('curls haltère V1', () => {
+  const curlDef = EXERCISE_BENCHMARK_REGISTRY.find((d) => d.key === 'dumbbell_curl');
+  const hammerDef = EXERCISE_BENCHMARK_REGISTRY.find((d) => d.key === 'hammer_curl');
+  const zottmanDef = EXERCISE_BENCHMARK_REGISTRY.find((d) => d.key === 'zottman_curl');
+
+  it('catalogue séparé classique / marteau / Zottman', () => {
+    expect(resolveDemographicExerciseId('dumbbell_curl')).toBe('dumbbell_curl');
+    expect(resolveDemographicExerciseId('hammer_curl')).toBe('hammer_curl');
+    expect(resolveDemographicExerciseId('zottman_curl')).toBe('zottman_curl');
+    expect(zottmanDef).toBeTruthy();
+  });
+
+  it('Platine III curl classique 25–29 = 45 kg / 650 kg vol', () => {
+    const ladder = MOMENTUM_V1_CURL_DUMBBELL_MALE['25-29'];
+    expect(ladder[14]).toMatchObject({ performanceRequired: 45, volumePerDay: 650 });
+  });
+
+  it('Platine III Zottman 18–20 = 40 kg / 600 kg vol (plus exigeant)', () => {
+    const ladder = MOMENTUM_V1_CURL_ZOTTMAN_MALE['18-20'];
+    expect(ladder[14]).toMatchObject({ performanceRequired: 40, volumePerDay: 600 });
+  });
+
+  it('ne mélange pas curl 36 kg et marteau 36 kg', () => {
+    const vitals = { weightKg: 75, heightCm: 175, age: 27, sex: 'male' };
+    const metrics = {
+      estimatedOneRmKg: 36,
+      maxWeightKg: 36,
+      maxDailyVolumeKg: 495,
+      checkCount: 10
+    };
+    const classic = resolveExerciseGradeForMetrics(metrics, curlDef, vitals, {
+      catalogKey: 'dumbbell_curl'
+    });
+    const hammer = resolveExerciseGradeForMetrics(metrics, hammerDef, vitals, {
+      catalogKey: 'hammer_curl'
+    });
+    expect(classic.gradeLabel).toBe('Or III');
+    expect(hammer.gradeLabel).toBe('Or II');
+  });
+
+  it('normalise le 1RM au poids — 30 kg à 70 kg > 30 kg à 100 kg', () => {
+    const metrics = {
+      estimatedOneRmKg: 30,
+      maxWeightKg: 30,
+      maxDailyVolumeKg: 400,
+      checkCount: 8
+    };
+    const light = resolveExerciseGradeForMetrics(
+      metrics,
+      curlDef,
+      { weightKg: 70, heightCm: 175, age: 27, sex: 'male' },
+      { catalogKey: 'dumbbell_curl' }
+    );
+    const heavy = resolveExerciseGradeForMetrics(
+      metrics,
+      curlDef,
+      { weightKg: 100, heightCm: 180, age: 27, sex: 'male' },
+      { catalogKey: 'dumbbell_curl' }
+    );
+    expect(light.demographic?.adjustedPeakReps).toBeGreaterThan(heavy.demographic?.adjustedPeakReps);
+  });
+
+  it('volume = tonnage jour, pas les reps brutes', () => {
+    const vitals = { weightKg: 75, heightCm: 175, age: 22, sex: 'male' };
+    const highTonnage = resolveExerciseGradeForMetrics(
+      { estimatedOneRmKg: 30, maxDailyVolumeKg: 400, maxDailyTotalReps: 10, checkCount: 5 },
+      curlDef,
+      vitals,
+      { catalogKey: 'dumbbell_curl' }
+    );
+    const lowTonnage = resolveExerciseGradeForMetrics(
+      { estimatedOneRmKg: 30, maxDailyVolumeKg: 100, maxDailyTotalReps: 400, checkCount: 5 },
+      curlDef,
+      vitals,
+      { catalogKey: 'dumbbell_curl' }
+    );
+    expect(highTonnage.gradeLabel).toBe('Or I');
+    expect(lowTonnage.sortIndex).toBeLessThan(highTonnage.sortIndex);
   });
 });

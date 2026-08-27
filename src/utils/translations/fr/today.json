@@ -53,7 +53,8 @@
     "optionalWeighted": "Lesté",
     "optionalWeightedTitle": "Marquer comme lesté (charge externe optionnelle)",
     "variations": "Variations d'exercice",
-    "variationsShort": "Variations"
+    "variationsShort": "Variations",
+    "noExercises": "Aucun exercice prévu pour aujourd'hui"
   },
   "recordDate": {
     "prevDay": "Jour précédent",
