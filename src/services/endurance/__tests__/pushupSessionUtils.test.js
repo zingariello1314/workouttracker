@@ -2,7 +2,8 @@ import { describe, expect, it } from 'vitest';
 import {
   normalizePushupSessionFields,
   resolvePushupSessionTotalReps,
-  resolvePushupChallengePlannedReps
+  resolvePushupChallengePlannedReps,
+  hasRecordedPushupSessionTime
 } from '../pushupSessionUtils.js';
 import { isRecurrentChallengeOccurrenceOnDate } from '../challengeScheduleUtils.js';
 
@@ -20,6 +21,11 @@ describe('pushupSessionUtils', () => {
 
   it('objectif défi depuis goalSetCount', () => {
     expect(resolvePushupChallengePlannedReps({ goalSetCount: 20, goalRepsPerSet: 5 })).toBe(100);
+  });
+
+  it('masque l’heure des séances recollées depuis les grades', () => {
+    expect(hasRecordedPushupSessionTime({ time: '18:30' })).toBe(true);
+    expect(hasRecordedPushupSessionTime({ time: '12:00', recoveredFromWorkoutMirror: true })).toBe(false);
   });
 });
 

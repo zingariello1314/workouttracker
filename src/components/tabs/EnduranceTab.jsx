@@ -17,6 +17,7 @@ import {
   listMatchingChallengeIds,
   sumPushupRepsInChallengeWindow
 } from '../../services/endurance/enduranceChallengesService';
+import { hydratePushupSessionsFromWorkoutMirrors } from '../../services/endurance/enduranceWipeGuard';
 import { PUSHUP_CHALLENGE_PRESET_DEFS, buildPushupPresetChallenge } from '../../services/endurance/pushupChallengePresets';
 import {
   normalizePushupRecurrentChallengeFields
@@ -47,6 +48,7 @@ import RunningTrophiesPanel from './EnduranceTab/components/RunningTrophiesPanel
 import SimpleEnduranceTrophiesPanel from './EnduranceTab/components/SimpleEnduranceTrophiesPanel.jsx';
 import PushupTrophiesPanel from './EnduranceTab/components/PushupTrophiesPanel.jsx';
 import RunningSessionsHistory from './EnduranceTab/components/RunningSessionsHistory.jsx';
+import PushupSessionsHistory from './EnduranceTab/components/PushupSessionsHistory.jsx';
 import WalkingStatsPanel from './EnduranceTab/components/WalkingStatsPanel.jsx';
 import WalkingTrophiesPanel from './EnduranceTab/components/WalkingTrophiesPanel.jsx';
 import ManualDailyWalkPanel from './EnduranceTab/components/ManualDailyWalkPanel.jsx';
@@ -212,7 +214,8 @@ const EnduranceTab = () => {
 
   const loadEnduranceState = useCallback(async () => {
     try {
-      const rawEnduranceData = data?.enduranceData || {};
+      const hydratedWorkout = hydratePushupSessionsFromWorkoutMirrors(data || {});
+      const rawEnduranceData = hydratedWorkout.enduranceData || {};
       const {
         sessions: normalizedSessions,
         challenges: normalizedChallenges,
@@ -1889,77 +1892,11 @@ const EnduranceTab = () => {
                 </div>
               )}
 
-              {/* Historique */}
-              <div>
-                <h3 className="text-2xl font-bold text-white mb-6">{t('endurance.history.title')}</h3>
-                <div className="bg-black border border-[#0F4C5C]/50 rounded-2xl overflow-hidden">
-                  {sessions.pushups.length === 0 ? (
-                    <div className="p-12 text-center">
-                      <Dumbbell className="w-16 h-16 text-slate-600 mx-auto mb-4" />
-                      <p className="text-slate-400 text-lg">{t('endurance.history.noSessions')}</p>
-                      <p className="text-slate-500 text-sm mt-2">{t('endurance.history.noSessionsHint')}</p>
-                    </div>
-                  ) : (
-                    <div className="overflow-x-auto">
-                      <table className="w-full">
-                        <thead>
-                          <tr className="border-b border-[#0F4C5C]/45">
-                            <th className="px-6 py-4 text-left text-sm font-semibold text-slate-300">Date</th>
-                            <th className="px-6 py-4 text-left text-sm font-semibold text-slate-300">Heure</th>
-                            <th className="px-6 py-4 text-left text-sm font-semibold text-slate-300">{t('endurance.table.headers.pushups')}</th>
-                            <th className="px-6 py-4 text-left text-sm font-semibold text-slate-300">Durée</th>
-                            <th className="px-6 py-4 text-left text-sm font-semibold text-slate-300">Notes</th>
-                            <th className="px-6 py-4 text-left text-sm font-semibold text-slate-300">Actions</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {sessions.pushups.sort((a, b) => new Date(b.date + ' ' + b.time) - new Date(a.date + ' ' + a.time)).map((session, idx) => {
-                            // ✅ FIX DOUBLONS : Trouver l'index réel dans le tableau non-trié pour la suppression
-                            const originalIndex = sessions.pushups.findIndex(s => s === session);
-                            return (
-                            <tr 
-                              key={`pushups-${session.id}-${idx}`} 
-                              className="border-b border-[#0F4C5C]/25 hover:bg-[#0F4C5C]/12 transition-colors"
-                            >
-                              <td className="px-6 py-4 text-slate-300">{formatEnduranceSessionDateOnly(session.date)}</td>
-                              <td className="px-6 py-4 text-slate-300">{formatEnduranceTime(session.time) || '—'}</td>
-                              <td className="px-6 py-4">
-                                <span className="text-white font-bold text-lg">{session.count}</span>
-                              </td>
-                              <td className="px-6 py-4 text-slate-300">{session.duration} min</td>
-                              <td className="px-6 py-4 text-slate-400 text-sm">{session.notes || '-'}</td>
-                              <td className="px-6 py-4">
-                                <div className="flex items-center gap-2">
-                                  {session.validatedChallenges?.length > 0 && (
-                                    <span className="bg-gradient-to-r from-green-500/20 to-emerald-500/20 border border-green-500/30 text-green-400 px-3 py-1 rounded-lg text-xs font-medium">
-                                      {t('endurance.challenges.validated')}
-                                    </span>
-                                  )}
-                                  <button
-                                    onClick={() => editSession('pushups', session.id)}
-                                    className="gradient-button-premium gradient-button-premium-sm gradient-button-premium-variant rounded-lg p-2"
-                                    title={t('endurance.session.edit')}
-                                  >
-                                    <Edit className="w-4 h-4" />
-                                  </button>
-                                  <button
-                                    onClick={() => deletePushupSession(session.id, originalIndex)}
-                                    className="gradient-button-premium gradient-button-premium-sm rounded-lg p-2"
-                                    title={t('endurance.session.delete')}
-                                  >
-                                    <Trash2 className="w-4 h-4" />
-                                  </button>
-                                </div>
-                              </td>
-                            </tr>
-                            );
-                          })}
-                        </tbody>
-                      </table>
-                    </div>
-                  )}
-                </div>
-              </div>
+              <PushupSessionsHistory
+                sessions={sessions.pushups}
+                onEdit={(id) => editSession('pushups', id)}
+                onDelete={(id, index) => deletePushupSession(id, index)}
+              />
                 </>
               )}
             </>

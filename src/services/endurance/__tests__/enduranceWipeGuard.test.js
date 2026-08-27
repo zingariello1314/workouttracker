@@ -2,7 +2,8 @@ import { describe, expect, it, beforeEach } from 'vitest';
 import {
   mergeEnduranceWithoutSilentWipe,
   restoreEnduranceIfWiped,
-  writeEnduranceLocalBackup
+  writeEnduranceLocalBackup,
+  hydratePushupSessionsFromWorkoutMirrors
 } from '../enduranceWipeGuard';
 
 describe('mergeEnduranceWithoutSilentWipe', () => {
@@ -75,11 +76,51 @@ describe('restoreEnduranceIfWiped', () => {
     });
     const current = {
       enduranceData: {
-        sessions: { pushups: [{ id: 'live', count: 40 }] },
+        sessions: { pushups: [{ id: 'live', count: 40, date: '2026-08-10' }] },
         challenges: [{ id: 'live-c' }]
       }
     };
     const out = restoreEnduranceIfWiped(current, 'main');
     expect(out.enduranceData.sessions.pushups[0].id).toBe('live');
+  });
+
+  it('restaure les pompes même si course/défis existent déjà', () => {
+    const restored = restoreEnduranceIfWiped(
+      {
+        checkedExercises: { '2026-07-30_complementary_endurance_pushups': true },
+        reps: { '2026-07-30_complementary_endurance_pushups': '100' },
+        enduranceData: {
+          sessions: {
+            pushups: [],
+            running: [{ id: 'r1', date: '2026-07-30' }]
+          },
+          challenges: [{ id: 'c1' }]
+        }
+      },
+      'scope-with-running'
+    );
+    expect(restored.enduranceData.sessions.pushups[0].count).toBe(100);
+    expect(restored.enduranceData.sessions.running[0].id).toBe('r1');
+    expect(restored.reps['2026-07-30_complementary_endurance_pushups']).toBe('100');
+  });
+
+  it('recoller les pompes depuis les coches même si d’autres défis existent déjà', () => {
+    const restored = hydratePushupSessionsFromWorkoutMirrors({
+      checkedExercises: { '2026-08-12_complementary_endurance_pushups': true },
+      reps: { '2026-08-12_complementary_endurance_pushups': '100' },
+      enduranceData: {
+        sessions: {
+          pushups: [],
+          running: [{ id: 'run1', date: '2026-08-12', distance: 5 }]
+        },
+        challenges: [{ id: 'c1', status: 'active' }]
+      }
+    });
+    expect(restored.reps['2026-08-12_complementary_endurance_pushups']).toBe('100');
+    expect(restored.checkedExercises['2026-08-12_complementary_endurance_pushups']).toBe(true);
+    expect(restored.enduranceData.sessions.pushups).toHaveLength(1);
+    expect(restored.enduranceData.sessions.pushups[0].count).toBe(100);
+    expect(restored.enduranceData.sessions.running).toHaveLength(1);
+    expect(restored.enduranceData.repWorkoutSync['2026-08-12'].pushups).toBe(100);
   });
 });

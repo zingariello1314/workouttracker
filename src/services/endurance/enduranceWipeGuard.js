@@ -137,75 +137,106 @@ function readLegacyWorkoutBackupEndurance(storageKey) {
   return null;
 }
 
-function reconstructPushupSessionsFromWorkoutMirrors(workoutData) {
+export function reconstructPushupSessionsFromWorkoutMirrors(workoutData) {
   const checked = workoutData?.checkedExercises || {};
   const reps = workoutData?.reps || {};
-  const recovered = [];
+  const byDate = new Map();
   Object.entries(checked).forEach(([key, val]) => {
     if (val !== true) return;
     if (!String(key).includes('complementary_endurance_pushups')) return;
     const date = String(key).slice(0, 10);
     const count = Math.max(0, parseInt(String(reps[key]), 10) || 0);
     if (!date || count <= 0) return;
-    recovered.push({
+    byDate.set(date, (byDate.get(date) || 0) + count);
+  });
+  return [...byDate.entries()]
+    .sort((a, b) => b[0].localeCompare(a[0]))
+    .map(([date, count]) => ({
       id: `recovered_pushups_${date}_${count}`,
       date,
+      time: '',
       count,
       reps: count,
+      duration: 0,
       activityType: 'pushups',
       recoveredFromWorkoutMirror: true
-    });
-  });
-  return recovered;
+    }));
 }
 
 /**
- * Si enduranceData est vide, tente backup local puis miroir reps défis pompes.
+ * Recolle l’historique Défis > Pompes sur les coches grades, sans toucher à reps/checkedExercises.
+ * Met à jour repWorkoutSync pour ne pas recompter les mêmes pompes au prochain sync.
  */
-export function restoreEnduranceIfWiped(workoutData, storageKey) {
+export function hydratePushupSessionsFromWorkoutMirrors(workoutData) {
   if (!workoutData || typeof workoutData !== 'object') return workoutData;
-  const current = workoutData.enduranceData;
-  if (!isEnduranceEffectivelyEmpty(current)) {
-    writeEnduranceLocalBackup(storageKey, current);
-    return workoutData;
-  }
+  const recovered = reconstructPushupSessionsFromWorkoutMirrors(workoutData);
+  if (recovered.length === 0) return workoutData;
 
-  const backup =
-    readEnduranceLocalBackup(storageKey) || readLegacyWorkoutBackupEndurance(storageKey);
-  if (backup && !isEnduranceEffectivelyEmpty(backup)) {
-    return {
-      ...workoutData,
-      enduranceData: {
-        ...current,
-        ...backup,
-        restoredFromBackup: true,
-        lastUpdated: new Date().toISOString()
-      }
-    };
-  }
+  const current = workoutData.enduranceData && typeof workoutData.enduranceData === 'object'
+    ? workoutData.enduranceData
+    : {};
+  const sessions = { ...(current.sessions && typeof current.sessions === 'object' ? current.sessions : {}) };
+  const existing = Array.isArray(sessions.pushups) ? sessions.pushups : [];
+  const existingDates = new Set(
+    existing.map((s) => String(s?.date || '').slice(0, 10)).filter(Boolean)
+  );
+  const toAdd = recovered.filter((s) => !existingDates.has(s.date));
+  if (toAdd.length === 0) return workoutData;
 
-  const recoveredPushups = reconstructPushupSessionsFromWorkoutMirrors(workoutData);
-  if (recoveredPushups.length === 0) return workoutData;
-
-  const sessions = {
-    boxing: [],
-    pushups: recoveredPushups,
-    gainage: [],
-    swimming: [],
-    jumprope: [],
-    running: [],
-    ...(current?.sessions || {})
-  };
-  sessions.pushups = recoveredPushups;
+  const nextSync =
+    current.repWorkoutSync && typeof current.repWorkoutSync === 'object'
+      ? { ...current.repWorkoutSync }
+      : {};
+  toAdd.forEach((session) => {
+    const day = nextSync[session.date] && typeof nextSync[session.date] === 'object'
+      ? { ...nextSync[session.date] }
+      : {};
+    const alreadyLedged = Math.max(0, Number(day.pushups) || 0);
+    day.pushups = Math.max(alreadyLedged, session.count);
+    nextSync[session.date] = day;
+  });
 
   return {
     ...workoutData,
     enduranceData: {
-      ...(current || {}),
-      sessions,
-      challenges: Array.isArray(current?.challenges) ? current.challenges : [],
+      ...current,
+      sessions: {
+        ...sessions,
+        pushups: [...existing, ...toAdd]
+      },
+      repWorkoutSync: nextSync,
       restoredFromWorkoutMirror: true,
       lastUpdated: new Date().toISOString()
     }
   };
+}
+
+/**
+ * Si enduranceData est vide, tente backup local puis miroir reps défis pompes.
+ * Les sessions pompes manquantes sont toujours recollées depuis les coches grades.
+ */
+export function restoreEnduranceIfWiped(workoutData, storageKey) {
+  if (!workoutData || typeof workoutData !== 'object') return workoutData;
+  let next = workoutData;
+  const current = next.enduranceData;
+
+  if (!isEnduranceEffectivelyEmpty(current)) {
+    writeEnduranceLocalBackup(storageKey, current);
+  } else {
+    const backup =
+      readEnduranceLocalBackup(storageKey) || readLegacyWorkoutBackupEndurance(storageKey);
+    if (backup && !isEnduranceEffectivelyEmpty(backup)) {
+      next = {
+        ...next,
+        enduranceData: {
+          ...current,
+          ...backup,
+          restoredFromBackup: true,
+          lastUpdated: new Date().toISOString()
+        }
+      };
+    }
+  }
+
+  return hydratePushupSessionsFromWorkoutMirrors(next);
 }

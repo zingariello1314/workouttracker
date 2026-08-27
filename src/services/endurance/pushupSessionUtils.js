@@ -53,6 +53,12 @@ export function formatPushupSessionBreakdown(session) {
   return total > 0 ? `${total} reps` : '';
 }
 
+/** Heure saisie par l’utilisateur (pas une séance recollée depuis les grades). */
+export function hasRecordedPushupSessionTime(session) {
+  if (!session || session.recoveredFromWorkoutMirror) return false;
+  return Boolean(String(session.time || '').trim());
+}
+
 /** Objectif défi : séries × reps planifiées si renseignées. */
 export function resolvePushupChallengePlannedReps(challenge) {
   if (!challenge) return 0;

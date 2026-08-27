@@ -2,6 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { syncEnduranceRepsDayToWorkoutData } from '../enduranceRepsWorkoutSync';
 import { ENDURANCE_PUSHUPS_WORKOUT_EXERCISE_ID } from '../pushupEnduranceWorkoutKeys';
 import { applyWorkoutRepIntegrations } from '../workoutRepIntegrations';
+import { hydratePushupSessionsFromWorkoutMirrors } from '../enduranceWipeGuard';
 
 describe('endurance pushups workout sync', () => {
   it('stocke les défis sur complementary_endurance_pushups, pas sur 104', () => {
@@ -67,5 +68,21 @@ describe('endurance pushups workout sync', () => {
     const defiKey = `2026-03-01_${ENDURANCE_PUSHUPS_WORKOUT_EXERCISE_ID}`;
     expect(data.reps[defiKey]).toBe('30');
     expect(data.checkedExercises['2026-03-01_104']).toBe(false);
+  });
+
+  it('hydrate + sync ne double pas les coches défis pompes', () => {
+    const key = `2026-08-12_${ENDURANCE_PUSHUPS_WORKOUT_EXERCISE_ID}`;
+    const base = {
+      reps: { [key]: '100' },
+      checkedExercises: { [key]: true },
+      enduranceData: {
+        sessions: { pushups: [], running: [{ id: 'r' }] },
+        challenges: [{ id: 'c' }]
+      }
+    };
+    const hydrated = hydratePushupSessionsFromWorkoutMirrors(base);
+    const next = applyWorkoutRepIntegrations(hydrated);
+    expect(next.reps[key]).toBe('100');
+    expect(next.checkedExercises[key]).toBe(true);
   });
 });
