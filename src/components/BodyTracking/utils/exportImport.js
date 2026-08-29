@@ -198,13 +198,27 @@ export const prepareExportData = (bodyTrackingData = {}, options = {}) => {
         notes: entry.notes || ''
       }),
       ...(entry.type === 'impedance' && {
+        weight: entry.weight,
+        heightCm: entry.heightCm,
+        chronologicalAge: entry.chronologicalAge,
+        biologicalSex: entry.biologicalSex,
+        bmi: entry.bmi,
         bodyFatMass: entry.bodyFatMass,
         bodyFatPercentage: entry.bodyFatPercentage,
-        muscleMass: entry.muscleMass,
+        muscleMass: entry.muscleMass ?? entry.skeletalMuscle,
+        skeletalMuscle: entry.skeletalMuscle,
         bodyWater: entry.bodyWater,
         boneMass: entry.boneMass,
         visceralFat: entry.visceralFat,
+        visceralFatIndex: entry.visceralFatIndex,
+        bodyFatIndex: entry.bodyFatIndex,
+        obesityLevel: entry.obesityLevel,
+        fatFreeWeight: entry.fatFreeWeight,
+        proteinPercentage: entry.proteinPercentage ?? entry.protein,
+        basalMetabolism: entry.basalMetabolism,
+        basalMetabolismSource: entry.basalMetabolismSource,
         metabolicAge: entry.metabolicAge,
+        bodyType: entry.bodyType,
         bmr: entry.bmr,
         notes: entry.notes || ''
       }),
@@ -229,6 +243,11 @@ export const prepareExportData = (bodyTrackingData = {}, options = {}) => {
   } else {
     exportData.bodyTrackingReminders = [];
   }
+
+  exportData.bodyTrackingPrefs =
+    bodyTrackingData.bodyTrackingPrefs && typeof bodyTrackingData.bodyTrackingPrefs === 'object'
+      ? { ...bodyTrackingData.bodyTrackingPrefs }
+      : {};
   
   // Metadata
   if (opts.includeMetadata) {

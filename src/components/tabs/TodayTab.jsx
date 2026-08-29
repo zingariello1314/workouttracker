@@ -62,6 +62,7 @@ import {
   weighInReminderMessageFr,
   weighInReminderTitleFr
 } from '../../utils/bodyTracking/weeklyWeighInReminder';
+import ImpedanceQuickCapture from './nutrition/components/ImpedanceQuickCapture';
 import RecordPerformanceModal from '../sport/performance/RecordPerformanceModal';
 import { applyPerformanceEntryToData } from '../../utils/exercisePerformanceUtils';
 import {
@@ -241,6 +242,7 @@ const TodayTab = () => {
     markExceptionalExerciseComplete,
     updateExerciseSeriesOverrideForDate,
     setActiveTab,
+    addProgressEntry,
     activeProgram,
     getEffectiveRestDayForDate,
     applyWeeklyRestDaySwap
@@ -1351,16 +1353,26 @@ const TodayTab = () => {
   const weighInReminder = useMemo(() => {
     const entries = getCurrentData()?.progressEntries || data?.progressEntries || [];
     return computeWeeklyWeighInReminder({
+      prefs: data?.bodyTrackingPrefs,
       weeklyWeighInDay: data?.bodyTrackingPrefs?.weeklyWeighInDay,
       viewDate: currentDate,
       progressEntries: entries
     });
   }, [
-    data?.bodyTrackingPrefs?.weeklyWeighInDay,
+    data?.bodyTrackingPrefs,
     currentDate,
     getCurrentData,
     data?.progressEntries
   ]);
+
+  const lastImpedanceEntry = useMemo(() => {
+    const entries = getCurrentData()?.progressEntries || data?.progressEntries || [];
+    return (
+      [...entries]
+        .filter((e) => e?.type === 'impedance')
+        .sort((a, b) => String(b.date).localeCompare(String(a.date)))[0] || null
+    );
+  }, [getCurrentData, data?.progressEntries]);
 
   // Calculer la variante de semaine automatique (toujours basée sur la date)
   const currentWeekVariant = getAutoWeekVariant(currentDate);
@@ -1847,44 +1859,68 @@ const TodayTab = () => {
 
       {/* Rappel pesée hebdomadaire (jour configuré dans Impédancemètre) */}
       {weighInReminder.show ? (
-        <button
-          type="button"
-          onClick={() => {
-            try {
-              sessionStorage.setItem(PENDING_PROGRESS_SECTION_KEY, 'impedance');
-            } catch {
-              /* ignore */
-            }
-            setActiveTab?.('progress');
-          }}
-          className="mb-3 flex w-full items-start gap-3 rounded-xl border-2 border-amber-500/50 bg-amber-950/40 p-4 text-left transition hover:border-amber-400/70 hover:bg-amber-950/55"
-        >
-          <Scale className="mt-0.5 h-8 w-8 shrink-0 text-amber-300" />
-          <div className="min-w-0 flex-1">
-            <div className="text-base font-semibold text-amber-100">
-              {t(
-                'today.weighIn.title',
-                weighInReminderTitleFr(weighInReminder.daysOverdue)
-              )}
+        <div className="mb-3 rounded-xl border-2 border-amber-500/50 bg-amber-950/40 p-4">
+          <div className="flex items-start gap-3">
+            <Scale className="mt-0.5 h-8 w-8 shrink-0 text-amber-300" />
+            <div className="min-w-0 flex-1">
+              <div className="text-base font-semibold text-amber-100">
+                {weighInReminderTitleFr(weighInReminder)}
+              </div>
+              <p className="mt-1 text-sm text-amber-200/85">{weighInReminderMessageFr(weighInReminder)}</p>
+              {weighInReminder.weekStartYmd && weighInReminder.perWeek > 0 ? (
+                <p className="mt-1 text-xs text-amber-300/70">
+                  Semaine du{' '}
+                  {new Date(`${weighInReminder.weekStartYmd}T12:00:00`).toLocaleDateString('fr-FR', {
+                    day: 'numeric',
+                    month: 'long'
+                  })}
+                  {weighInReminder.weekEndYmd
+                    ? ` au ${new Date(`${weighInReminder.weekEndYmd}T12:00:00`).toLocaleDateString('fr-FR', {
+                        day: 'numeric',
+                        month: 'long'
+                      })}`
+                    : ''}{' '}
+                  · {weighInReminder.doneThisWeek}/{weighInReminder.perWeek} pesée
+                  {weighInReminder.perWeek > 1 ? 's' : ''}
+                </p>
+              ) : weighInReminder.dueDateYmd ? (
+                <p className="mt-1 text-xs text-amber-300/70">
+                  Jour de pesée prévu :{' '}
+                  {new Date(`${weighInReminder.dueDateYmd}T12:00:00`).toLocaleDateString('fr-FR', {
+                    weekday: 'long',
+                    day: 'numeric',
+                    month: 'long'
+                  })}
+                </p>
+              ) : null}
             </div>
-            <p className="mt-1 text-sm text-amber-200/85">
-              {t(
-                'today.weighIn.hint',
-                weighInReminderMessageFr(weighInReminder.daysOverdue)
-              )}
-            </p>
-            {weighInReminder.dueDateYmd ? (
-              <p className="mt-1 text-xs text-amber-300/70">
-                Jour de pesée prévu :{' '}
-                {new Date(`${weighInReminder.dueDateYmd}T12:00:00`).toLocaleDateString('fr-FR', {
-                  weekday: 'long',
-                  day: 'numeric',
-                  month: 'long'
-                })}
-              </p>
-            ) : null}
           </div>
-        </button>
+          <div className="mt-4">
+            <ImpedanceQuickCapture
+              addProgressEntry={addProgressEntry}
+              entryDate={dateStr}
+              lastEntry={lastImpedanceEntry}
+              notes="Saisie depuis Aujourd’hui (rappel pesée)"
+              title="Enregistrer la pesée maintenant"
+              hint="Poids, taille et âge suffisent. Le formulaire complet reste dans Suivi corporel → Impédancemètre."
+              onSuccess={() => showSuccess('Mesure impédance enregistrée')}
+            />
+            <button
+              type="button"
+              onClick={() => {
+                try {
+                  sessionStorage.setItem(PENDING_PROGRESS_SECTION_KEY, 'impedance');
+                } catch {
+                  /* ignore */
+                }
+                setActiveTab?.('progress');
+              }}
+              className="mt-2 text-xs text-amber-200/80 underline"
+            >
+              Ouvrir le formulaire complet (toutes les lignes de l’impédancemètre)
+            </button>
+          </div>
+        </div>
       ) : null}
 
       {Array.isArray(activeNutritionProgram?.mealPlanPreferences?.generatedMealPlan) &&

@@ -44,6 +44,7 @@ export function SportExportPreviewContent({
     photos: (fallback.progressPhotos || []).length,
     progressEntries: (fallback.progressEntries || []).length,
     reminders: (fallback.bodyTrackingReminders || []).length,
+    weighInPrefs: Boolean(fallback.bodyTrackingPrefs?.weighInsPerWeek || fallback.bodyTrackingPrefs?.weeklyWeighInDay != null),
     photosWithWeight: (fallback.progressPhotos || []).filter((x) => x.weight).length,
     photosWithNotes: (fallback.progressPhotos || []).filter((x) => x.notes).length,
     photosWithMeasurements: (fallback.progressPhotos || []).filter(
@@ -58,7 +59,13 @@ export function SportExportPreviewContent({
     swimming: (fallback.enduranceData?.sessions?.swimming || fallback.enduranceData?.swimmingSessions || []).length,
     jumprope: (fallback.enduranceData?.sessions?.jumprope || fallback.enduranceData?.jumpropeSessions || []).length,
     running: (fallback.enduranceData?.sessions?.running || fallback.enduranceData?.runningSessions || []).length,
-    challenges: (fallback.enduranceData?.challenges || []).length
+    challenges: (fallback.enduranceData?.challenges || []).length,
+    gtgDays: fallback.enduranceData?.gtg?.days
+      ? Object.keys(fallback.enduranceData.gtg.days).length
+      : 0,
+    gtgExercises: Array.isArray(fallback.enduranceData?.gtg?.config?.selectedIds)
+      ? fallback.enduranceData.gtg.config.selectedIds.length
+      : 0
   };
 
   const cfg = p?.configuration || {
@@ -152,6 +159,7 @@ export function SportExportPreviewContent({
           <li>• Photos de progression : {bt.photos} photos</li>
           <li>• Entrées de progression : {bt.progressEntries} entrées</li>
           <li>• Rappels configurés : {bt.reminders} rappels</li>
+          <li>• Régime de pesée : {bt.weighInPrefs ? 'oui' : 'non'}</li>
           <li>• Photos avec poids : {bt.photosWithWeight}</li>
           <li>• Photos avec notes : {bt.photosWithNotes}</li>
           <li>• Photos avec mesures : {bt.photosWithMeasurements}</li>
@@ -168,6 +176,10 @@ export function SportExportPreviewContent({
           <li>• Sessions corde à sauter : {endurance.jumprope} sessions</li>
           <li>• Sessions course : {endurance.running} sessions</li>
           <li>• Défis actifs : {endurance.challenges} défis</li>
+          <li>
+            • GTG : {endurance.gtgExercises ?? 0} exercice(s) suivi(s), {endurance.gtgDays ?? 0} jour(s)
+            enregistré(s)
+          </li>
         </ul>
       </div>
 

@@ -5,6 +5,7 @@ import ErrorBoundary from '../ui/ErrorBoundary';
 const RubiksCubeView = lazy(() => import('../apprentissage/RubiksCubeView'));
 const RubiksTimerView = lazy(() => import('../cube/RubiksTimerView'));
 const RubiksMethodsView = lazy(() => import('../cube/RubiksMethodsView'));
+const RubiksMethodPage = lazy(() => import('../cube/RubiksMethodPage'));
 const RubiksSettingsView = lazy(() => import('../cube/RubiksSettingsView'));
 
 const LoadingFallback = () => (
@@ -18,6 +19,7 @@ const LoadingFallback = () => (
 
 const RubiksTab = () => {
   const t = useTranslation();
+  const [methodPageId, setMethodPageId] = useState(null);
   const [currentSubView, setCurrentSubView] = useState(() => {
     try {
       const saved = localStorage.getItem('rubiks.activeSubView');
@@ -56,7 +58,10 @@ const RubiksTab = () => {
       case 'timer':
         return <RubiksTimerView />;
       case 'methods':
-        return <RubiksMethodsView />;
+        if (methodPageId) {
+          return <RubiksMethodPage methodId={methodPageId} onBack={() => setMethodPageId(null)} />;
+        }
+        return <RubiksMethodsView onOpenMethod={setMethodPageId} />;
       case 'settings':
         return <RubiksSettingsView />;
       default:
@@ -67,6 +72,7 @@ const RubiksTab = () => {
   return (
     <div className="relative min-h-screen">
       <div className="relative z-10 min-h-screen">
+        {!methodPageId ? (
         <div className="sticky top-0 z-30">
           <div className="mx-auto max-w-7xl px-4 py-3">
             <div className="flex gap-2 overflow-x-auto scrollbar-hide">
@@ -74,7 +80,10 @@ const RubiksTab = () => {
                 <button
                   key={subView.id}
                   type="button"
-                  onClick={() => setCurrentSubView(subView.id)}
+                  onClick={() => {
+                    setMethodPageId(null);
+                    setCurrentSubView(subView.id);
+                  }}
                   data-subtab={subView.id}
                   data-tab={`rubiks-${subView.id}`}
                   className={`flex flex-shrink-0 items-center space-x-2 whitespace-nowrap rounded-lg border-2 px-4 py-2 text-sm font-semibold transition-all ${
@@ -90,6 +99,7 @@ const RubiksTab = () => {
             </div>
           </div>
         </div>
+        ) : null}
 
         <div className="py-6">
           <ErrorBoundary

@@ -193,5 +193,11 @@
     "rhythmTitle": "Change challenge rhythm",
     "realignFromToday": "Recalculate schedule from this displayed day",
     "applyRhythm": "Apply rhythm"
+  },
+  "sportXp": {
+    "sessionTimeLabel": "{{dur}} sessions",
+    "sessionTimeHint": "Session time: Garmin (strength, cardio, running) and endurance challenges (push-ups, etc.).",
+    "heldTimeLabel": "{{dur}} timed moves",
+    "heldTimeHint": "Journal exercises logged in minutes or seconds (jump rope, timed cardio…), not rep sets."
   }
 }

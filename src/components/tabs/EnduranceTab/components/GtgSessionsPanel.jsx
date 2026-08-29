@@ -29,6 +29,7 @@ import {
 } from '../../../../services/endurance/gtgService';
 import { syncGtgDayToWorkoutData } from '../../../../services/endurance/gtgWorkoutSync';
 import { applyWorkoutRepIntegrations } from '../../../../services/endurance/workoutRepIntegrations';
+import { applyGtgDeclaredMaxToData } from '../../../../services/endurance/gtgMaxPerformance';
 import {
   computeGtgXpForDayPlan,
   GTG_BONUS_100_PCT_EXTRA_XP,
@@ -90,18 +91,27 @@ export default function GtgSessionsPanel() {
   );
 
   const persistGtg = useCallback(
-    async (nextGtg, syncDate = today) => {
+    async (nextGtg, syncDate = today, declaredMax = null) => {
       if (typeof updateData !== 'function') return;
       setSaving(true);
       try {
         const base = {
           ...data,
-          enduranceData: { ...(data.enduranceData || {}), gtg: nextGtg }
+          enduranceData: { ...(data.enduranceData || {}), gtg: nextGtg, lastUpdated: new Date().toISOString() }
         };
-        const merged = applyWorkoutRepIntegrations(
+        let merged = applyWorkoutRepIntegrations(
           syncGtgDayToWorkoutData(base, nextGtg, syncDate, ctx),
           ctx
         );
+        if (declaredMax?.exerciseId && Number(declaredMax.reps) > 0) {
+          merged = applyGtgDeclaredMaxToData(merged, {
+            gtgExerciseId: declaredMax.exerciseId,
+            reps: declaredMax.reps,
+            config: nextGtg.config,
+            dateStr: todayYmd(),
+            ctx
+          });
+        }
         await updateData(merged);
         invalidateSportXpCache();
       } finally {
@@ -175,7 +185,8 @@ export default function GtgSessionsPanel() {
         updateGtgExerciseConfig(gtgData, exerciseId, {
           manualMax: Number.isFinite(n) && n > 0 ? n : null
         }),
-        today
+        today,
+        Number.isFinite(n) && n > 0 ? { exerciseId, reps: n } : null
       );
     },
     [gtgData, persistGtg, today]

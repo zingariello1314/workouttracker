@@ -59,6 +59,14 @@ export const buildEnduranceExportStats = (enduranceData = {}) => {
     { total: challenges.length, byStatus: {} }
   );
 
+  const gtgDays =
+    enduranceData.gtg?.days && typeof enduranceData.gtg.days === 'object'
+      ? Object.keys(enduranceData.gtg.days).length
+      : 0;
+  const gtgExercises = Array.isArray(enduranceData.gtg?.config?.selectedIds)
+    ? enduranceData.gtg.config.selectedIds.length
+    : 0;
+
   return {
     schemaVersion: enduranceData.schemaVersion || ENDURANCE_SCHEMA_VERSION,
     lastUpdated: enduranceData.lastUpdated || null,
@@ -66,6 +74,10 @@ export const buildEnduranceExportStats = (enduranceData = {}) => {
     perTypeCounts,
     swimmingDetail,
     jumpropeDetail,
-    challenges: challengeStats
+    challenges: challengeStats,
+    gtg: {
+      days: gtgDays,
+      exercises: gtgExercises
+    }
   };
 };

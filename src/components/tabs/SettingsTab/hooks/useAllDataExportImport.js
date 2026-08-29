@@ -27,6 +27,7 @@ import {
   mergeWorkoutMapFields,
   persistSportProgramContext
 } from '../utils/sportExportBundle';
+import { mergeGtgData } from '../../../../services/endurance/gtgDataMerge';
 
 /**
  * Hook pour gérer l'import/export complet de toutes les données
@@ -91,7 +92,8 @@ export const useAllDataExportImport = (
           progressPhotos: dataToImport.progressPhotos || [],
           progressEntries: dataToImport.progressEntries || [],
           bodyTrackingReminders: dataToImport.bodyTrackingReminders || [],
-          bodyTrackingLastUpdated: dataToImport.metadata?.lastUpdate || new Date().toISOString()
+          bodyTrackingLastUpdated: dataToImport.metadata?.lastUpdate || new Date().toISOString(),
+          bodyTrackingPrefs: dataToImport.bodyTrackingPrefs || {}
         };
       } else if (dataToImport.data) {
         const fullData = dataToImport.data;
@@ -99,7 +101,8 @@ export const useAllDataExportImport = (
           progressPhotos: fullData.progressPhotos || [],
           progressEntries: fullData.progressEntries || [],
           bodyTrackingReminders: fullData.bodyTrackingReminders || [],
-          bodyTrackingLastUpdated: fullData.bodyTrackingLastUpdated || null
+          bodyTrackingLastUpdated: fullData.bodyTrackingLastUpdated || null,
+          bodyTrackingPrefs: fullData.bodyTrackingPrefs || {}
         };
       }
       
@@ -164,7 +167,8 @@ export const useAllDataExportImport = (
           ...(importedData.progressEntries || [])
         ],
         bodyTrackingReminders: importedData.bodyTrackingReminders || existingData.bodyTrackingReminders || [],
-        bodyTrackingLastUpdated: new Date().toISOString()
+        bodyTrackingLastUpdated: new Date().toISOString(),
+        bodyTrackingPrefs: importedData.bodyTrackingPrefs || existingData.bodyTrackingPrefs || {}
       };
 
       await updateData(mergedData);
@@ -313,36 +317,41 @@ export const useAllDataExportImport = (
       const importedData = allDataPreviewData.data;
       const mapMerged = mergeWorkoutMapFields(backupData, importedData);
 
+      const backupEd = backupData.enduranceData || {};
+      const importedEd = importedData.enduranceData || {};
+      const backupSessions = backupEd.sessions || {};
+      const importedSessions = importedEd.sessions || {};
+      const sessionTypeKeys = new Set([
+        ...Object.keys(backupSessions),
+        ...Object.keys(importedSessions),
+        'boxing',
+        'pushups',
+        'gainage',
+        'swimming',
+        'jumprope',
+        'running'
+      ]);
+      const mergedSessions = {};
+      sessionTypeKeys.forEach((type) => {
+        const legacyBackup = backupEd[`${type}Sessions`];
+        const legacyImported = importedEd[`${type}Sessions`];
+        mergedSessions[type] = mergeSessionsWithoutDuplicates(
+          backupSessions[type] || (Array.isArray(legacyBackup) ? legacyBackup : []) || [],
+          importedSessions[type] || (Array.isArray(legacyImported) ? legacyImported : []) || []
+        );
+      });
+
       // Fusion intelligente : Fusionner avec données existantes
       const mergedData = {
         ...backupData,
         ...mapMerged,
         enduranceData: {
-          sessions: {
-            boxing: mergeSessionsWithoutDuplicates(
-              backupData.enduranceData?.sessions?.boxing || backupData.enduranceData?.boxingSessions || [],
-              importedData.enduranceData?.sessions?.boxing || importedData.enduranceData?.boxingSessions || []
-            ),
-            pushups: mergeSessionsWithoutDuplicates(
-              backupData.enduranceData?.sessions?.pushups || backupData.enduranceData?.pushupSessions || [],
-              importedData.enduranceData?.sessions?.pushups || importedData.enduranceData?.pushupSessions || []
-            ),
-            swimming: mergeSessionsWithoutDuplicates(
-              backupData.enduranceData?.sessions?.swimming || backupData.enduranceData?.swimmingSessions || [],
-              importedData.enduranceData?.sessions?.swimming || importedData.enduranceData?.swimmingSessions || []
-            ),
-            jumprope: mergeSessionsWithoutDuplicates(
-              backupData.enduranceData?.sessions?.jumprope || backupData.enduranceData?.jumpropeSessions || [],
-              importedData.enduranceData?.sessions?.jumprope || importedData.enduranceData?.jumpropeSessions || []
-            ),
-            running: mergeSessionsWithoutDuplicates(
-              backupData.enduranceData?.sessions?.running || backupData.enduranceData?.runningSessions || [],
-              importedData.enduranceData?.sessions?.running || importedData.enduranceData?.runningSessions || []
-            )
-          },
+          ...backupEd,
+          ...importedEd,
+          sessions: mergedSessions,
           challenges: (() => {
-            const existingChallenges = backupData.enduranceData?.challenges || [];
-            const importedChallenges = importedData.enduranceData?.challenges || [];
+            const existingChallenges = backupEd.challenges || [];
+            const importedChallenges = importedEd.challenges || [];
             
             const existingChallengeIds = new Set(existingChallenges.map(c => String(c.id)));
             const existingChallengeKeys = new Map();
@@ -371,7 +380,8 @@ export const useAllDataExportImport = (
             });
             
             return [...existingChallenges, ...newChallenges];
-          })()
+          })(),
+          gtg: mergeGtgData(backupEd.gtg, importedEd.gtg)
         },
         progressPhotos: [
           ...(backupData.progressPhotos || []).filter(existingPhoto => {
@@ -424,7 +434,8 @@ export const useAllDataExportImport = (
         dayJustificationsVersion: importedData.dayJustificationsVersion || backupData.dayJustificationsVersion || '1.0',
         circuitDefinitionsVersion: importedData.circuitDefinitionsVersion || backupData.circuitDefinitionsVersion || '1.0',
         bodyTrackingReminders: importedData.bodyTrackingReminders || backupData.bodyTrackingReminders || [],
-        bodyTrackingLastUpdated: new Date().toISOString()
+        bodyTrackingLastUpdated: new Date().toISOString(),
+        bodyTrackingPrefs: importedData.bodyTrackingPrefs || backupData.bodyTrackingPrefs || {}
       };
 
       // Nettoyer les IDs dupliqués dans les sessions après fusion

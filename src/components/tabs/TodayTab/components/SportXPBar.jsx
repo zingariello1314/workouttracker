@@ -16,6 +16,7 @@ import {
   Sparkles,
   Repeat,
   Salad,
+  Timer,
   Clock
 } from 'lucide-react';
 import { useSportGrade } from '../../../../hooks/useSportGrade';
@@ -32,6 +33,7 @@ import {
 } from '../../../../services/xp/xpCalculations';
 import { STEPS_XP_RATE_VERIFIED, STEPS_XP_RATE_DECLARATIVE } from '../../../../utils/sport/manualDailyWalkUtils';
 import { useTranslation } from '../../../../utils/translations';
+import { formatCalendarSportDuration } from '../../../../utils/calendarSportStatsFormat';
 
 const SportXPBar = () => {
   const { totalXP, level, breakdown, progress, grades, isLoading } = useSportGrade();
@@ -127,11 +129,37 @@ const SportXPBar = () => {
           <Dumbbell className="h-3 w-3 shrink-0 text-sky-400" />
           <span className="text-sky-400/95">{breakdown.reps.toLocaleString('fr-FR')} reps</span>
         </div>
-        <div className="flex items-center gap-1">
-          <Clock className="h-3 w-3 shrink-0 text-teal-400" />
-          <span className="text-sky-400/95">
-            {(breakdown.timeMinutes ?? 0).toLocaleString('fr-FR', { maximumFractionDigits: 1 })} min
-          </span>
+        <div
+          className="flex min-w-0 flex-col gap-0.5"
+          title={t(
+            'today.sportXp.sessionTimeHint',
+            'Durée des séances : Garmin (muscu, cardio, course) et défis endurance (pompes, etc.).'
+          )}
+        >
+          <div className="flex items-center gap-1">
+            <Clock className="h-3 w-3 shrink-0 text-teal-400" />
+            <span className="text-sky-400/95">
+              {t('today.sportXp.sessionTimeLabel', '{{dur}} séances', {
+                dur: formatCalendarSportDuration(breakdown.sessionMinutes ?? 0)
+              })}
+            </span>
+          </div>
+        </div>
+        <div
+          className="flex min-w-0 flex-col gap-0.5"
+          title={t(
+            'today.sportXp.heldTimeHint',
+            'Exercices du journal saisis en minutes ou secondes (corde, cardio au minuteur…), pas les séries de reps.'
+          )}
+        >
+          <div className="flex items-center gap-1">
+            <Timer className="h-3 w-3 shrink-0 text-cyan-400" />
+            <span className="text-sky-400/95">
+              {t('today.sportXp.heldTimeLabel', '{{dur}} exos en durée', {
+                dur: formatCalendarSportDuration(breakdown.timeMinutes ?? 0)
+              })}
+            </span>
+          </div>
         </div>
         <div className="flex min-w-0 flex-col gap-0.5">
           <div className="flex items-center gap-1">

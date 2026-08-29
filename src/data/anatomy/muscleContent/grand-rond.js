@@ -1,83 +1,34 @@
+import presentationBlocks from './grand-rond/presentationBlocks.js';
+import anatomieBlocks from './grand-rond/anatomieBlocks.js';
+import fonctionsBlocks from './grand-rond/fonctionsBlocks.js';
+import recrutementBlocks from './grand-rond/recrutementBlocks.js';
+import erreursBlocks from './grand-rond/erreursBlocks.js';
+import blessuresBlocks from './grand-rond/blessuresBlocks.js';
+import familleBlocks from './grand-rond/familleBlocks.js';
+import faqBlocks from './grand-rond/faqBlocks.js';
+
 /** @type {{ sections: { id: string, title: string, blocks: object[] }[] }} */
 const grandRond = {
   sections: [
     {
       id: 'presentation',
-      title: 'Présentation générale',
-      blocks: [
-        {
-          type: 'p',
-          text:
-            'Le grand rond est un petit muscle comparé au grand dorsal ou au trapèze, mais son importance esthétique et fonctionnelle dépasse largement sa taille. Il se situe dans la partie postérieure de l’épaule, juste sous le petit rond, au niveau de l’angle inférieur de la scapula.'
-        },
-        {
-          type: 'p',
-          text:
-            'Sa position explique pourquoi il est souvent confondu avec le grand dorsal. Visuellement, il participe à la zone de transition entre l’arrière de l’épaule, le haut du dos et le début du grand dorsal — cette région « épaisse » sous le deltoïde postérieur chez les pratiquants très développés.'
-        }
-      ]
+      title: 'Présentation',
+      blocks: presentationBlocks
     },
     {
       id: 'anatomie',
-      title: 'Anatomie',
-      blocks: [
-        {
-          type: 'h3',
-          text: 'Origine'
-        },
-        {
-          type: 'p',
-          text: 'Face postérieure de l’angle inférieur de la scapula — lien direct avec les mouvements de l’omoplate et du bras.'
-        },
-        {
-          type: 'h3',
-          text: 'Trajet et insertion'
-        },
-        {
-          type: 'p',
-          text:
-            'Ses fibres se dirigent vers l’extérieur et l’avant, longent en partie le bord inférieur du grand dorsal et se terminent sur la lèvre médiale du sillon intertuberculaire de l’humérus — insertion proche du grand dorsal, d’où leur complémentarité.'
-        }
-      ]
+      title: 'Origines et insertion',
+      blocks: anatomieBlocks
     },
     {
       id: 'fonctions',
       title: 'Fonctions',
-      blocks: [
-        {
-          type: 'h3',
-          text: 'Extension du bras'
-        },
-        {
-          type: 'p',
-          text: 'Il aide à ramener le bras vers l’arrière — tirages, rame, phases de traction.'
-        },
-        {
-          type: 'h3',
-          text: 'Adduction et rotation interne'
-        },
-        {
-          type: 'p',
-          text:
-            'Il rapproche le bras du corps et oriente l’humérus vers l’intérieur, en synergie avec grand dorsal, grand pectoral et subscapulaire.'
-        }
-      ]
+      blocks: fonctionsBlocks
     },
     {
       id: 'recrutement',
       title: 'Grand rond et grand dorsal',
-      blocks: [
-        {
-          type: 'p',
-          text:
-            'Le grand dorsal produit la grande force de tirage ; le grand rond agit comme muscle complémentaire de l’épaule. On pourrait résumer : le grand dorsal donne l’aile, le grand rond renforce la jonction entre l’aile et l’épaule.'
-        },
-        {
-          type: 'p',
-          text:
-            'Il est rarement isolé volontairement : il se développe avec les mouvements combinant extension, tirage et adduction, surtout lorsque les coudes restent proches du corps.'
-        }
-      ]
+      blocks: recrutementBlocks
     },
     {
       id: 'exercices',
@@ -122,19 +73,18 @@ const grandRond = {
     },
     {
       id: 'erreurs',
+      title: 'Erreurs fréquentes',
+      blocks: erreursBlocks
+    },
+    {
+      id: 'blessures',
       title: 'Blessures et déséquilibres',
-      blocks: [
-        {
-          type: 'p',
-          text:
-            'Surcharge lors de mouvements explosifs (muscle-up, tractions explosives, lancers) : progression trop rapide → irritation musculaire ou tendineuse au complexe grand rond–grand dorsal.'
-        },
-        {
-          type: 'p',
-          text:
-            'Excès de poussée sans tirage équilibré : le grand rond participe à la rotation interne — déséquilibre possible avec la posture.'
-        }
-      ]
+      blocks: blessuresBlocks
+    },
+    {
+      id: 'mobilite',
+      title: 'Liens avec la famille épaule et dos',
+      blocks: familleBlocks
     },
     {
       id: 'saviez-vous',
@@ -162,26 +112,7 @@ const grandRond = {
     {
       id: 'faq',
       title: 'Questions fréquentes',
-      blocks: [
-        {
-          type: 'h3',
-          text: 'Exercice spécifique pour le grand rond ?'
-        },
-        {
-          type: 'p',
-          text:
-            'Dans la majorité des cas, non : tractions, tirages et rowings bien exécutés suffisent. L’objectif reste la qualité des mouvements globaux.'
-        },
-        {
-          type: 'h3',
-          text: 'Haut du dos « vide » malgré de bons dorsaux ?'
-        },
-        {
-          type: 'p',
-          text:
-            'Souvent trapèzes moyens, rhomboïdes et grand rond insuffisants : la largeur seule ne crée pas un dos tridimensionnel.'
-        }
-      ]
+      blocks: faqBlocks
     }
   ]
 };

@@ -1,13 +1,14 @@
 import React, { useId, useMemo, useState, useCallback } from 'react';
 import { formatChartDateDayMonth } from '../../../utils/sport/dailyDenseTimeSeries';
 
-function buildYAxisTicks(maxVal, steps = 4) {
-  const hi = Number.isFinite(maxVal) && maxVal > 0 ? maxVal : 1;
+function buildYAxisTicks(maxVal, steps = 4, minVal = 0) {
+  const lo = Number.isFinite(minVal) ? minVal : 0;
+  const hi = Number.isFinite(maxVal) && maxVal > lo ? maxVal : lo + 1;
   const ticks = [];
   for (let i = 0; i <= steps; i += 1) {
-    ticks.push((i / steps) * hi);
+    ticks.push(lo + (i / steps) * (hi - lo));
   }
-  return { min: 0, max: hi, ticks };
+  return { min: lo, max: hi, ticks };
 }
 
 function formatTooltipDate(ymd) {
@@ -45,7 +46,9 @@ const DenseDailyLineChart = ({
   yAxisLabel = '',
   xAxisLabel = '',
   /** Infobulle au survol des points */
-  interactive = true
+  interactive = true,
+  /** Échelle Y collée aux valeurs (utile pour le poids, évite une courbe collée en haut). */
+  fitYToData = false
 }) => {
   const gradId = useId().replace(/:/g, '');
   const dual = Boolean(seriesB && Array.isArray(seriesB) && seriesB.length && metaB);
@@ -63,17 +66,30 @@ const DenseDailyLineChart = ({
       return { empty: true };
     }
 
-    const maxA = Math.max(1, ...ptsA.map((p) => Number(p.value) || 0));
+    const rawMaxA = Math.max(...ptsA.map((p) => Number(p.value) || 0), 0);
+    const rawMinA = Math.min(...ptsA.map((p) => Number(p.value) || 0), rawMaxA);
+    let minA = 0;
+    let maxA = Math.max(1, rawMaxA);
+    if (fitYToData && ptsA.length) {
+      const span = Math.max(rawMaxA - rawMinA, rawMaxA * 0.02, 0.4);
+      const padY = span * 0.25;
+      minA = Math.max(0, rawMinA - padY);
+      maxA = rawMaxA + padY;
+    }
     const maxB = dual ? Math.max(1, ...ptsB.map((p) => Number(p.value) || 0)) : 1;
-    const yAxisA = buildYAxisTicks(maxA, 4);
-    const yAxisB = dual ? buildYAxisTicks(maxB, 4) : null;
+    const yAxisA = buildYAxisTicks(maxA, 4, minA);
+    const yAxisB = dual ? buildYAxisTicks(maxB, 4, 0) : null;
 
     const innerW = width - pad.left - pad.right;
     const innerH = height - pad.top - pad.bottom;
 
     const xAt = (i) => pad.left + (n <= 1 ? innerW / 2 : (i / Math.max(1, n - 1)) * innerW);
-    const yA = (v) => pad.top + (1 - (Number(v) || 0) / maxA) * innerH;
-    const yB = (v) => pad.top + (1 - (Number(v) || 0) / maxB) * innerH;
+    const yFromAxis = (v, axis) => {
+      const span = axis.max - axis.min || 1;
+      return pad.top + (1 - (Number(v) - axis.min) / span) * innerH;
+    };
+    const yA = (v) => yFromAxis(v, yAxisA);
+    const yB = (v) => yFromAxis(v, yAxisB || { min: 0, max: maxB });
 
     let dA = '';
     ptsA.forEach((p, i) => {
@@ -141,7 +157,7 @@ const DenseDailyLineChart = ({
       pointsA,
       pointsB
     };
-  }, [seriesA, seriesB, dual, metaB, height, seriesA?.length, xAxisLabel, yAxisLabel]);
+  }, [seriesA, seriesB, dual, metaB, height, seriesA?.length, xAxisLabel, yAxisLabel, fitYToData]);
 
   const showTipAtIndex = useCallback(
     (e, index) => {
@@ -262,7 +278,8 @@ const DenseDailyLineChart = ({
         />
         <line x1={pad.left} y1={pad.top} x2={pad.left} y2={h - pad.bottom} stroke="#334155" strokeWidth="1" />
         {yAxisA.ticks.map((tickVal) => {
-          const ratio = tickVal / Math.max(yAxisA.max, 1e-6);
+          const span = Math.max(yAxisA.max - yAxisA.min, 1e-6);
+          const ratio = (tickVal - yAxisA.min) / span;
           const y = pad.top + (1 - ratio) * (h - pad.top - pad.bottom);
           return (
             <g key={`yt-a-${tickVal}`}>

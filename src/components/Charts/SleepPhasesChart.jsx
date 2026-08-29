@@ -14,9 +14,10 @@ const SleepPhasesChart = memo(({
   showGrid = true,
   showLegend = true,
   showObjectives = true,
-  sleepObjective = 480, // 8h en minutes par défaut
+  sleepObjective = 480,
   enableAnimations = true,
-  className = ''
+  className = '',
+  hideTitle = false
 }) => {
   // État pour les interactions
   const [selectedPhase, setSelectedPhase] = useState(null);
@@ -104,11 +105,12 @@ const SleepPhasesChart = memo(({
       return {
         ...night,
         totalSleep,
-        formattedDate: night.date ? new Date(night.date).toLocaleDateString('fr-FR', { 
-          month: 'short', 
-          day: 'numeric' 
-        }) : night.label,
-        // Calculer les pourcentages pour les recommandations
+        formattedDate: night.date
+          ? new Date(`${String(night.date).slice(0, 10)}T12:00:00`).toLocaleDateString('fr-FR', {
+              month: 'short',
+              day: 'numeric'
+            })
+          : night.label || night.name || '',
         lightPercent: totalSleep > 0 ? Math.round((night.light / totalSleep) * 100) : 0,
         deepPercent: totalSleep > 0 ? Math.round((night.deep / totalSleep) * 100) : 0,
         remPercent: totalSleep > 0 ? Math.round((night.rem / totalSleep) * 100) : 0,
@@ -184,54 +186,35 @@ const SleepPhasesChart = memo(({
     const qualityStatus = getQualityStatus(qualityScore);
 
     return (
-      <div className="sleep-phases-tooltip">
-        <div className="tooltip-header">
-          <span className="tooltip-date">{label}</span>
-          <span className="tooltip-total">{formatDuration(totalSleep)}</span>
+      <div className="min-w-[200px] rounded-xl border border-violet-800/50 bg-slate-950 px-3 py-2.5 text-xs text-slate-200 shadow-xl">
+        <div className="mb-2 flex items-center justify-between gap-3 border-b border-slate-800 pb-1.5">
+          <span className="font-medium text-white">{label}</span>
+          <span className="tabular-nums text-violet-200">{formatDuration(totalSleep)}</span>
         </div>
-        
-        <div className="tooltip-content">
-          {SLEEP_PHASES.map(phase => {
+        <div className="space-y-1">
+          {SLEEP_PHASES.map((phase) => {
             const duration = data[phase.id] || 0;
             const percent = data[`${phase.id}Percent`] || 0;
-            
             if (duration === 0) return null;
-            
             return (
-              <div key={phase.id} className="tooltip-phase">
-                <div className="phase-info">
-                  <span 
-                    className="phase-color-indicator" 
-                    style={{ backgroundColor: phase.color }}
-                  />
-                  <span className="phase-name">{phase.shortName}</span>
-                  <span className="phase-duration">{formatDuration(duration)}</span>
-                  <span className="phase-percent">({percent}%)</span>
-                </div>
+              <div key={phase.id} className="flex items-center gap-2">
+                <span className="h-2 w-2 shrink-0 rounded-sm" style={{ backgroundColor: phase.color }} />
+                <span className="flex-1 text-slate-300">{phase.shortName}</span>
+                <span className="tabular-nums text-slate-100">{formatDuration(duration)}</span>
+                <span className="w-10 text-right tabular-nums text-slate-500">{percent}%</span>
               </div>
             );
           })}
         </div>
-
-        {/* Qualité du sommeil */}
-        <div className="tooltip-quality">
-          <div className="quality-header">
-            <span className="quality-icon">{qualityStatus.icon}</span>
-            <span className="quality-text">Qualité: {qualityStatus.text}</span>
-            <span className="quality-score" style={{ color: qualityStatus.color }}>
-              {qualityScore}/100
-            </span>
-          </div>
+        <div className="mt-2 flex items-center justify-between border-t border-slate-800 pt-1.5">
+          <span className="text-slate-400">Qualité estimée</span>
+          <span className="font-semibold tabular-nums" style={{ color: qualityStatus.color }}>
+            {qualityScore}/100 · {qualityStatus.text}
+          </span>
         </div>
-
-        {/* Objectif */}
         {showObjectives && sleepObjective > 0 && (
-          <div className="tooltip-objective">
-            <span className="objective-label">Objectif:</span>
-            <span className="objective-progress">
-              {Math.round((totalSleep / sleepObjective) * 100)}% 
-              ({formatDuration(sleepObjective)})
-            </span>
+          <div className="mt-1 text-[10px] text-emerald-400/90">
+            Objectif {formatDuration(sleepObjective)} · {Math.round((totalSleep / sleepObjective) * 100)}%
           </div>
         )}
       </div>
@@ -242,32 +225,30 @@ const SleepPhasesChart = memo(({
   const CustomLegend = ({ payload }) => {
     if (!payload || !payload.length) return null;
 
-    const handleLegendClick = useCallback((dataKey) => {
-      setSelectedPhase(prev => prev === dataKey ? null : dataKey);
-    }, []);
-
     return (
-      <div className="sleep-phases-legend">
+      <div className="mt-2 flex flex-wrap justify-center gap-2">
         {payload.map((entry, index) => {
-          const phase = SLEEP_PHASES.find(p => p.id === entry.dataKey);
+          const phase = SLEEP_PHASES.find((p) => p.id === entry.dataKey);
           if (!phase) return null;
-
           const isSelected = selectedPhase === entry.dataKey;
           const isDimmed = selectedPhase && selectedPhase !== entry.dataKey;
-
           return (
-            <div 
-              key={index} 
-              className={`legend-item ${isSelected ? 'selected' : ''} ${isDimmed ? 'dimmed' : ''}`}
-              onClick={() => handleLegendClick(entry.dataKey)}
+            <button
+              key={index}
+              type="button"
+              onClick={() => setSelectedPhase((prev) => (prev === entry.dataKey ? null : entry.dataKey))}
+              className={`flex flex-col items-center rounded-lg border px-2 py-1.5 transition ${
+                isSelected
+                  ? 'border-violet-400/70 bg-violet-500/15'
+                  : 'border-slate-700/70 bg-black/40 hover:border-slate-500'
+              } ${isDimmed ? 'opacity-40' : ''}`}
             >
-              <span 
-                className="legend-color" 
-                style={{ backgroundColor: entry.color }}
-              />
-              <span className="legend-label">{phase.shortName}</span>
-              <span className="legend-ideal">{phase.idealPercent.min}-{phase.idealPercent.max}%</span>
-            </div>
+              <span className="mb-0.5 h-2 w-2 rounded-sm" style={{ backgroundColor: entry.color }} />
+              <span className="text-[10px] font-medium text-slate-200">{phase.shortName}</span>
+              <span className="text-[9px] text-slate-500">
+                {phase.idealPercent.min}–{phase.idealPercent.max}%
+              </span>
+            </button>
           );
         })}
       </div>
@@ -276,34 +257,28 @@ const SleepPhasesChart = memo(({
 
   if (!chartData || chartData.length === 0) {
     return (
-      <div className={`sleep-phases-container ${className}`}>
-        {title && (
-          <div className="chart-header">
-            <h3 className="chart-title">{title}</h3>
-            {subtitle && <p className="chart-subtitle">{subtitle}</p>}
+      <div className={`rounded-xl border border-slate-800 bg-black/50 p-4 ${className}`}>
+        {!hideTitle && title ? (
+          <div className="mb-3">
+            <h3 className="text-sm font-semibold text-white">{title}</h3>
+            {subtitle ? <p className="text-xs text-slate-500">{subtitle}</p> : null}
           </div>
-        )}
-        <div className="chart-empty-state">
-          <div className="empty-chart-icon">😴</div>
-          <div className="empty-chart-message">Aucune donnée de sommeil</div>
-          <div className="empty-chart-suggestion">
-            Portez votre montre Garmin la nuit pour analyser votre sommeil
-          </div>
-        </div>
+        ) : null}
+        <div className="py-6 text-center text-sm text-slate-500">Aucune donnée de sommeil</div>
       </div>
     );
   }
 
   return (
-    <div className={`sleep-phases-container ${className}`}>
-      {title && (
-        <div className="chart-header">
-          <h3 className="chart-title">{title}</h3>
-          {subtitle && <p className="chart-subtitle">{subtitle}</p>}
+    <div className={`rounded-xl border border-violet-900/40 bg-black/40 p-3 ${className}`}>
+      {!hideTitle && title ? (
+        <div className="mb-2">
+          <h3 className="text-sm font-semibold text-white">{title}</h3>
+          {subtitle ? <p className="text-xs text-slate-500">{subtitle}</p> : null}
         </div>
-      )}
+      ) : null}
       
-      <div className="chart-wrapper">
+      <div className="w-full">
         <ResponsiveContainer width="100%" height={height}>
           <BarChart 
             data={chartData} 
@@ -398,45 +373,48 @@ const SleepPhasesChart = memo(({
       
       {/* Statistiques moyennes avec recommandations */}
       {sleepStats && (
-        <div className="sleep-phases-stats">
-          <div className="stats-header">
-            <span className="stats-title">Moyennes sur {sleepStats.totalNights} nuits</span>
-            <div className="quality-indicator">
-              <span className="quality-label">Qualité:</span>
-              <span 
-                className="quality-score"
-                style={{ 
-                  color: sleepStats.qualityScore >= 85 ? '#10B981' : 
-                         sleepStats.qualityScore >= 70 ? '#F59E0B' : 
-                         sleepStats.qualityScore >= 50 ? '#F97316' : '#EF4444'
-                }}
-              >
-                {sleepStats.qualityScore}/100
-              </span>
-            </div>
+        <div className="mt-4 space-y-3 rounded-xl border border-slate-800 bg-slate-950/70 p-3">
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <span className="text-xs font-medium text-slate-400">
+              {sleepStats.totalNights === 1
+                ? 'Répartition de cette nuit'
+                : `Moyennes sur ${sleepStats.totalNights} nuits`}
+            </span>
+            <span
+              className="text-xs font-semibold tabular-nums"
+              style={{
+                color:
+                  sleepStats.qualityScore >= 85
+                    ? '#10B981'
+                    : sleepStats.qualityScore >= 70
+                      ? '#F59E0B'
+                      : sleepStats.qualityScore >= 50
+                        ? '#F97316'
+                        : '#EF4444'
+              }}
+            >
+              Qualité {sleepStats.qualityScore}/100
+            </span>
           </div>
-          
-          <div className="phases-breakdown">
-            {SLEEP_PHASES.map(phase => {
+          <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+            {SLEEP_PHASES.map((phase) => {
               const avgPercent = sleepStats[`avg${phase.id.charAt(0).toUpperCase() + phase.id.slice(1)}Percent`];
               const avgDuration = sleepStats[`avg${phase.id.charAt(0).toUpperCase() + phase.id.slice(1)}`];
               const isInRange = avgPercent >= phase.idealPercent.min && avgPercent <= phase.idealPercent.max;
-              
               return (
-                <div key={phase.id} className="phase-stat">
-                  <div className="phase-stat-header">
-                    <span 
-                      className="phase-color" 
-                      style={{ backgroundColor: phase.color }}
-                    />
-                    <span className="phase-name">{phase.shortName}</span>
-                    <span className={`phase-status ${isInRange ? 'good' : 'warning'}`}>
-                      {avgPercent}% {isInRange ? '✓' : '⚠️'}
-                    </span>
+                <div
+                  key={phase.id}
+                  className="rounded-lg border border-slate-800 bg-black/60 px-2.5 py-2"
+                >
+                  <div className="mb-1 flex items-center gap-1.5">
+                    <span className="h-2 w-2 rounded-sm" style={{ backgroundColor: phase.color }} />
+                    <span className="text-[11px] font-medium text-slate-200">{phase.shortName}</span>
                   </div>
-                  <div className="phase-details">
-                    <span className="phase-duration">{formatDuration(avgDuration)}</span>
-                    <span className="phase-ideal">Idéal: {phase.idealPercent.min}-{phase.idealPercent.max}%</span>
+                  <div className={`text-sm font-semibold tabular-nums ${isInRange ? 'text-emerald-300' : 'text-amber-200'}`}>
+                    {avgPercent}%
+                  </div>
+                  <div className="mt-0.5 text-[10px] text-slate-500">
+                    {formatDuration(avgDuration)} · idéal {phase.idealPercent.min}–{phase.idealPercent.max}%
                   </div>
                 </div>
               );

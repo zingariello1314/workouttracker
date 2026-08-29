@@ -85,7 +85,7 @@ export default function CalendarDayRecapDetailPanel({
               </div>
               {ctx.sleepChartData.length > 0 && (
                 <Section title={t('calendar.heatmap.recapDetail.phases', 'Phases de sommeil')}>
-                  <SleepPhasesChart data={ctx.sleepChartData} height={180} showObjectives={false} />
+                  <SleepPhasesChart data={ctx.sleepChartData} height={200} showObjectives={false} hideTitle />
                 </Section>
               )}
               <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
@@ -114,6 +114,41 @@ export default function CalendarDayRecapDetailPanel({
                   />
                 )}
               </div>
+              {ctx.heartRate &&
+              (ctx.heartRate.sleepAvg != null ||
+                ctx.heartRate.resting != null ||
+                ctx.heartRate.dayAvg != null ||
+                ctx.heartRate.sleepMin != null) ? (
+                <Section title={t('calendar.heatmap.recapDetail.sleepHr', 'Fréquence cardiaque')}>
+                  <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
+                    {ctx.heartRate.sleepAvg != null && (
+                      <StatTile label="FC sommeil (moy.)" value={`${Math.round(ctx.heartRate.sleepAvg)} bpm`} />
+                    )}
+                    {ctx.heartRate.sleepMin != null && (
+                      <StatTile label="FC sommeil (min)" value={`${Math.round(ctx.heartRate.sleepMin)} bpm`} />
+                    )}
+                    {ctx.heartRate.sleepMax != null && (
+                      <StatTile label="FC sommeil (max)" value={`${Math.round(ctx.heartRate.sleepMax)} bpm`} />
+                    )}
+                    {ctx.heartRate.resting != null && (
+                      <StatTile
+                        label="FC repos (journée)"
+                        value={`${Math.round(ctx.heartRate.resting)} bpm`}
+                        hint="Meilleur proxy si Garmin n’envoie pas la FC de nuit"
+                      />
+                    )}
+                    {ctx.heartRate.dayAvg != null && (
+                      <StatTile label="FC moy. journée" value={`${Math.round(ctx.heartRate.dayAvg)} bpm`} />
+                    )}
+                    {ctx.heartRate.dayMin != null && ctx.heartRate.dayMax != null && (
+                      <StatTile
+                        label="Plage journée"
+                        value={`${Math.round(ctx.heartRate.dayMin)}–${Math.round(ctx.heartRate.dayMax)}`}
+                      />
+                    )}
+                  </div>
+                </Section>
+              ) : null}
               {ctx.respiration && (
                 <Section title={t('calendar.heatmap.recapDetail.respiration', 'Respiration (sommeil)')}>
                   <div className="grid grid-cols-3 gap-3">
@@ -130,8 +165,52 @@ export default function CalendarDayRecapDetailPanel({
                 </Section>
               )}
               {ctx.spo2 != null && (
-                <StatTile label="SpO₂" value={`${ctx.spo2} %`} />
+                <Section title="SpO₂">
+                  <StatTile
+                    label="Saturation en oxygène"
+                    value={`${Math.round(ctx.spo2)} %`}
+                    hint={ctx.spo2 >= 95 ? 'Dans la zone habituelle au repos' : ctx.spo2 >= 90 ? 'Un peu bas — à recouper avec la sensation' : 'Valeur basse'}
+                  />
+                </Section>
               )}
+              <Section title="Lexique">
+                <div className="grid gap-2 sm:grid-cols-2">
+                  {[
+                    {
+                      term: 'Léger',
+                      text: 'Transition et début de récupération. Souvent la plus grande part de la nuit (environ 45–55 %).'
+                    },
+                    {
+                      term: 'Profond',
+                      text: 'Récupération physique (muscles, système immunitaire). Cible souvent 15–20 % du temps de sommeil.'
+                    },
+                    {
+                      term: 'REM',
+                      text: 'Sommeil paradoxal : rêves, mémoire, récupération mentale. Cible souvent 20–25 %.'
+                    },
+                    {
+                      term: 'Éveils',
+                      text: 'Micro-réveils ou temps éveillé au lit. Quelques minutes sont normales ; trop d’éveils fragmentent la nuit.'
+                    },
+                    {
+                      term: 'SpO₂',
+                      text: 'Saturation du sang en oxygène, mesurée au poignet. Autour de 95–100 % au repos chez la plupart des gens.'
+                    },
+                    {
+                      term: 'FC repos',
+                      text: 'Pouls au calme. La nuit, il est souvent plus bas que la moyenne de journée. Garmin n’envoie pas toujours la FC de sommeil : on affiche alors la FC repos du jour.'
+                    }
+                  ].map((item) => (
+                    <div
+                      key={item.term}
+                      className="rounded-lg border border-slate-800 bg-slate-950/80 px-3 py-2.5"
+                    >
+                      <p className="text-xs font-semibold text-violet-200">{item.term}</p>
+                      <p className="mt-1 text-[11px] leading-relaxed text-slate-400">{item.text}</p>
+                    </div>
+                  ))}
+                </div>
+              </Section>
             </>
           )
         };

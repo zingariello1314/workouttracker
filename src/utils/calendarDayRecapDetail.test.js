@@ -21,8 +21,10 @@ describe('calendarDayRecapDetail', () => {
           awake: 0.3,
           quality: 82,
           bedTime: '22:15',
-          wakeTime: '11:17'
+          wakeTime: '11:17',
+          avgHR: 54
         },
+        spo2: { average: 96, min: 93 },
         heartRate: {
           resting: 50,
           min: 50,
@@ -49,6 +51,9 @@ describe('calendarDayRecapDetail', () => {
     expect(ctx?.totalLabel).toContain('h');
     expect(ctx?.bedTime).toBe('22:15');
     expect(ctx?.sleepChartData.length).toBe(1);
+    expect(ctx?.spo2).toBe(96);
+    expect(ctx?.heartRate.sleepAvg).toBe(54);
+    expect(ctx?.heartRate.resting).toBe(50);
   });
 
   it('buildStepsDetailContext calcule moyennes et objectif', () => {

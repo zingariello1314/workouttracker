@@ -570,6 +570,10 @@
     "updateError": "Error updating challenge"
   },
   "gtg": {
+    "mainTabs": {
+      "practice": "Practice",
+      "protocol": "Protocol"
+    },
     "title": "Challenges · Grease the Groove",
     "subtitle": "Easy mini-sets spread through the day — neural strength without muscle fatigue.",
     "methodTitle": "Understanding GTG",

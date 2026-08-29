@@ -11,3 +11,9 @@ export {
   comparisonTable,
   trajet
 } from '../petit-pectoral/blocks.js';
+
+export {
+  functionEyebrow,
+  functionNuance,
+  functionSynthèse
+} from '../grand-pectoral/blocks.js';

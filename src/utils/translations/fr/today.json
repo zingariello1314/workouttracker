@@ -196,5 +196,11 @@
     "rhythmTitle": "Changer le rythme du défi",
     "realignFromToday": "Recalculer le planning à partir de ce jour affiché",
     "applyRhythm": "Appliquer le rythme"
+  },
+  "sportXp": {
+    "sessionTimeLabel": "{{dur}} séances",
+    "sessionTimeHint": "Durée des séances : Garmin (muscu, cardio, course) et défis endurance (pompes, etc.).",
+    "heldTimeLabel": "{{dur}} exos en durée",
+    "heldTimeHint": "Exercices du journal saisis en minutes ou secondes (corde, cardio au minuteur…), pas les séries de reps."
   }
 }

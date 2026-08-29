@@ -23,7 +23,11 @@ export function countEnduranceSessions(enduranceData) {
 
 export function isEnduranceEffectivelyEmpty(enduranceData) {
   const challenges = Array.isArray(enduranceData?.challenges) ? enduranceData.challenges.length : 0;
-  return countEnduranceSessions(enduranceData) === 0 && challenges === 0;
+  const gtgDays =
+    enduranceData?.gtg?.days && typeof enduranceData.gtg.days === 'object'
+      ? Object.keys(enduranceData.gtg.days).length
+      : 0;
+  return countEnduranceSessions(enduranceData) === 0 && challenges === 0 && gtgDays === 0;
 }
 
 /**

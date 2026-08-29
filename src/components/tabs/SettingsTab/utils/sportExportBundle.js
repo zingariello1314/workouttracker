@@ -188,6 +188,12 @@ function collectSportDates(workoutData) {
     }
   }
 
+  if (workoutData.enduranceData?.gtg?.days && typeof workoutData.enduranceData.gtg.days === 'object') {
+    for (const d of Object.keys(workoutData.enduranceData.gtg.days)) {
+      if (/^\d{4}-\d{2}-\d{2}$/.test(d)) dates.add(d);
+    }
+  }
+
   return [...dates].sort();
 }
 
@@ -570,12 +576,15 @@ export function buildSportExportPreview(workoutData = {}, programCtx = {}, userP
       swimming: (sessions.swimming || ed.swimmingSessions || []).length,
       jumprope: (sessions.jumprope || ed.jumpropeSessions || []).length,
       running: (sessions.running || ed.runningSessions || []).length,
-      challenges: (ed.challenges || []).length
+      challenges: (ed.challenges || []).length,
+      gtgDays: ed.gtg?.days ? Object.keys(ed.gtg.days).length : 0,
+      gtgExercises: Array.isArray(ed.gtg?.config?.selectedIds) ? ed.gtg.config.selectedIds.length : 0
     },
     bodyTracking: {
       photos: (workoutData.progressPhotos || []).length,
       progressEntries: (workoutData.progressEntries || []).length,
       reminders: (workoutData.bodyTrackingReminders || []).length,
+      weighInPrefs: Boolean(workoutData.bodyTrackingPrefs?.weighInsPerWeek || workoutData.bodyTrackingPrefs?.weeklyWeighInDay != null),
       photosWithWeight: (workoutData.progressPhotos || []).filter((p) => p.weight).length,
       photosWithNotes: (workoutData.progressPhotos || []).filter((p) => p.notes).length,
       photosWithMeasurements: (workoutData.progressPhotos || []).filter(

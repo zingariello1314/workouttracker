@@ -85,7 +85,8 @@ export const useSettingsExport = (
         progressPhotos: dataToExport.progressPhotos || [],
         progressEntries: dataToExport.progressEntries || [],
         bodyTrackingReminders: dataToExport.bodyTrackingReminders || [],
-        bodyTrackingLastUpdated: dataToExport.bodyTrackingLastUpdated || null
+        bodyTrackingLastUpdated: dataToExport.bodyTrackingLastUpdated || null,
+        bodyTrackingPrefs: dataToExport.bodyTrackingPrefs || {}
       };
       
       const exportData = prepareExportData(bodyTrackingData, {

@@ -29,6 +29,11 @@ export function resolveGtgWorkoutStorageKey(dateStr, gtgExerciseId, config = {})
   return `${d}_gtg_${gtgExerciseId}`;
 }
 
+export function resolveGtgCanonicalExerciseId(gtgExerciseId, config = {}) {
+  const key = resolveGtgWorkoutStorageKey('2000-01-01', gtgExerciseId, config);
+  return key.slice('2000-01-01_'.length);
+}
+
 export function sumGtgRepsForExerciseOnDay(gtgData, dateStr, exerciseId, ctx = {}) {
   const plan = buildGtgDayPlan(gtgData, dateStr, ctx);
   const ep = (plan.exercisePlans || []).find((e) => e.exerciseId === exerciseId);

@@ -1,4 +1,12 @@
 import presentationBlocks from './grand-dorsal/presentationBlocks.js';
+import portionsBlocks from './grand-dorsal/portionsBlocks.js';
+import anatomieBlocks from './grand-dorsal/anatomieBlocks.js';
+import fonctionsBlocks from './grand-dorsal/fonctionsBlocks.js';
+import morphologieBlocks from './grand-dorsal/morphologieBlocks.js';
+import recrutementBlocks from './grand-dorsal/recrutementBlocks.js';
+import erreursBlocks from './grand-dorsal/erreursBlocks.js';
+import blessuresBlocks from './grand-dorsal/blessuresBlocks.js';
+import faqBlocks from './grand-dorsal/faqBlocks.js';
 
 /** @type {{ sections: { id: string, title: string, blocks: object[] }[] }} */
 const grandDorsal = {
@@ -11,160 +19,27 @@ const grandDorsal = {
     {
       id: 'portions',
       title: 'Les différentes zones',
-      blocks: [
-        {
-          type: 'p',
-          text:
-            'On parle régulièrement de « haut du dorsal » et de « bas du dorsal ». C’est un sujet souvent mal compris : il ne s’agit pas de muscles séparés. Le grand dorsal est un seul muscle.'
-        },
-        {
-          type: 'p',
-          text:
-            'Il est possible de modifier légèrement la participation de certaines fibres selon l’angle du bras, la trajectoire ou la position du buste. Mais il est impossible d’isoler complètement une zone comme on pourrait le faire avec plusieurs muscles différents. Seul le niveau de participation des fibres varie selon le mouvement — exactement comme pour les faisceaux du grand pectoral.'
-        }
-      ]
+      blocks: portionsBlocks
     },
     {
       id: 'anatomie',
       title: 'Origines et insertion',
-      blocks: [
-        {
-          type: 'h3',
-          text: 'Origines'
-        },
-        {
-          type: 'p',
-          text:
-            'Le grand dorsal possède l’une des origines les plus étendues du corps humain. Il prend naissance sur plusieurs structures : les dernières vertèbres thoraciques, les vertèbres lombaires, le sacrum, la crête iliaque du bassin et certaines côtes inférieures. Il possède également une connexion importante avec le fascia thoraco-lombaire, une structure fibreuse qui relie différents éléments de la chaîne postérieure.'
-        },
-        {
-          type: 'ul',
-          items: [
-            'Dernières vertèbres thoraciques',
-            'Vertèbres lombaires',
-            'Sacrum',
-            'Crête iliaque du bassin',
-            'Côtes inférieures',
-            'Fascia thoraco-lombaire (connexion avec la chaîne postérieure)',
-            'Angle inférieur de l’omoplate (petite portion)'
-          ]
-        },
-        {
-          type: 'p',
-          text:
-            'Cette vaste origine explique pourquoi le grand dorsal peut produire une force importante : il ne fonctionne pas comme un petit muscle isolé. Il agit comme un lien entre le bassin, la colonne, les côtes et l’humérus, et participe à la transmission des forces entre le haut et le bas du corps. Lors d’un mouvement puissant comme une traction explosive ou un lancer, il contribue à la coordination globale du corps.'
-        },
-        {
-          type: 'h3',
-          text: 'Insertion'
-        },
-        {
-          type: 'p',
-          text:
-            'Toutes les fibres du grand dorsal convergent vers une insertion située sur le sillon intertuberculaire de l’humérus (gouttière bicipitale). Les fibres tournent sur elles-mêmes avant insertion, d’où la forme caractéristique en « aile de mouette ».'
-        },
-        {
-          type: 'p',
-          text:
-            'Même s’il possède une origine très étendue dans le dos, son action principale concerne le mouvement de l’humérus : le muscle agit directement sur le bras plutôt que sur la colonne.'
-        }
-      ]
+      blocks: anatomieBlocks
     },
     {
       id: 'fonctions',
       title: 'Fonctions principales',
-      blocks: [
-        {
-          type: 'p',
-          text: 'Le grand dorsal possède principalement trois fonctions moteurs, complétées par une contribution à l’extension du tronc avec les érecteurs dans certains contextes.'
-        },
-        {
-          type: 'h3',
-          text: 'Adduction du bras'
-        },
-        {
-          type: 'p',
-          text:
-            'L’adduction correspond au mouvement où l’on rapproche le bras du corps. C’est l’une des fonctions majeures du grand dorsal. Lors d’une traction, le bras part d’une position élevée et revient vers le tronc : le grand dorsal participe fortement à ce mouvement.'
-        },
-        {
-          type: 'h3',
-          text: 'Extension du bras'
-        },
-        {
-          type: 'p',
-          text:
-            'L’extension correspond au fait d’amener le bras vers l’arrière — le mouvement réalisé lorsque l’on ramène le bras derrière soi. On la retrouve dans le rowing, le tirage bras tendus ou certains gestes de nage.'
-        },
-        {
-          type: 'h3',
-          text: 'Rotation interne de l’épaule'
-        },
-        {
-          type: 'p',
-          text:
-            'Le grand dorsal participe à la rotation interne : il aide à orienter le bras vers l’intérieur. Il travaille souvent en synergie avec le grand pectoral, le subscapulaire et le deltoïde antérieur. Cette fonction explique en partie pourquoi un volume excessif de tirage sans équilibre avec le dos profond et la coiffe peut participer à des déséquilibres d’épaule.'
-        }
-      ]
+      blocks: fonctionsBlocks
     },
     {
       id: 'morphologie',
       title: 'Morphologie et physique en V',
-      blocks: [
-        {
-          type: 'p',
-          text:
-            'Le grand dorsal est un excellent exemple de muscle où la génétique joue un rôle important. Deux personnes peuvent avoir la même masse musculaire mais un rendu complètement différent.'
-        },
-        {
-          type: 'h3',
-          text: 'Longueur des insertions'
-        },
-        {
-          type: 'p',
-          text:
-            'Un grand dorsal qui descend bas vers la taille donne souvent une impression de dos plus rempli. À l’inverse, des insertions plus hautes peuvent donner un aspect plus « triangulaire ».'
-        },
-        {
-          type: 'h3',
-          text: 'Cage thoracique et clavicules'
-        },
-        {
-          type: 'p',
-          text:
-            'Une cage thoracique plus large offre une base visuelle différente : le même développement musculaire peut produire des silhouettes différentes. Même si les clavicules concernent surtout les épaules, elles influencent la perception du dos ; une grande largeur d’épaules associée à de grands dorsaux amplifie fortement l’effet en V.'
-        },
-        {
-          type: 'h3',
-          text: 'Esthétique et silhouette'
-        },
-        {
-          type: 'p',
-          text:
-            'Un grand dorsal développé augmente la largeur du haut du corps, le contraste épaules/taille, la profondeur du torse vu de face et l’impression de puissance. C’est notamment pour cela que les poses de bodybuilding mettent énormément en avant le dos : le « double biceps de dos » révèle directement la qualité des dorsaux, des trapèzes et de toute la chaîne postérieure.'
-        }
-      ]
+      blocks: morphologieBlocks
     },
     {
       id: 'recrutement',
       title: 'Comment développer efficacement le grand dorsal',
-      blocks: [
-        {
-          type: 'p',
-          text:
-            'Le développement du grand dorsal repose principalement sur trois principes. Le premier est de comprendre le mouvement : beaucoup de pratiquants pensent que tirer plus lourd signifie automatiquement mieux travailler le dos. Le grand dorsal fonctionne lorsque l’humérus réalise correctement son mouvement. Si l’on pense uniquement à ramener la barre ou la poignée, on risque d’utiliser excessivement les biceps et les trapèzes supérieurs. L’objectif est plutôt de penser « amener les coudes vers les hanches » — cette intention favorise souvent un meilleur recrutement.'
-        },
-        {
-          type: 'p',
-          text:
-            'Le deuxième principe est d’utiliser une amplitude suffisante. Le grand dorsal répond particulièrement bien lorsqu’il est placé sous tension sur une grande amplitude. Une traction partielle ou un tirage raccourci limite souvent son développement ; la position étirée place les fibres dans une situation favorable pour produire de la tension.'
-        },
-        {
-          type: 'p',
-          text:
-            'Le troisième principe est la progression progressive. Comme tous les muscles, le grand dorsal répond à une surcharge progressive : plus de répétitions, plus de charge, plus de séries, meilleure technique ou meilleure amplitude. L’objectif n’est pas simplement de déplacer une charge mais d’augmenter progressivement le stimulus musculaire.'
-        }
-      ]
+      blocks: recrutementBlocks
     },
     {
       id: 'exercices',
@@ -305,68 +180,12 @@ const grandDorsal = {
     {
       id: 'erreurs',
       title: 'Les erreurs les plus fréquentes',
-      blocks: [
-        {
-          type: 'h3',
-          text: 'Utiliser trop les bras'
-        },
-        {
-          type: 'p',
-          text:
-            'C’est probablement l’erreur numéro un. Le pratiquant possède souvent une excellente connexion avec ses biceps mais une moins bonne perception du dos : les bras fatiguent avant le dos. La solution est souvent de diminuer légèrement la charge, ralentir l’exécution et apprendre à initier le mouvement avec les épaules.'
-        },
-        {
-          type: 'h3',
-          text: 'Chercher uniquement la charge maximale'
-        },
-        {
-          type: 'p',
-          text:
-            'Le grand dorsal apprécie la tension mécanique, mais une charge trop lourde dégrade rapidement la technique. Un mouvement où les épaules remontent, où le corps se balance et où les bras dominent peut produire moins de stimulation malgré une charge supérieure.'
-        },
-        {
-          type: 'h3',
-          text: 'Négliger la position des épaules'
-        },
-        {
-          type: 'p',
-          text:
-            'Un grand dorsal efficace fonctionne avec une scapula correctement contrôlée. Une épaule constamment remontée vers les oreilles peut favoriser une domination du trapèze supérieur au détriment du dorsal.'
-        }
-      ]
+      blocks: erreursBlocks
     },
     {
       id: 'blessures',
       title: 'Blessures fréquentes',
-      blocks: [
-        {
-          type: 'h3',
-          text: 'Tendinopathies et douleurs de l’épaule'
-        },
-        {
-          type: 'p',
-          text:
-            'Le grand dorsal participe à la rotation interne et à l’adduction. Un volume excessif de tirage combiné à beaucoup de mouvements de poussée peut parfois créer des déséquilibres et des inconforts à l’épaule.'
-        },
-        {
-          type: 'h3',
-          text: 'Douleurs à l’insertion humérale'
-        },
-        {
-          type: 'p',
-          text:
-            'La zone où le grand dorsal rejoint l’humérus peut devenir sensible lors de volumes importants de tractions, muscle-up ou mouvements explosifs.'
-        },
-        {
-          type: 'h3',
-          text: 'Élongations du grand dorsal'
-        },
-        {
-          type: 'p',
-          text:
-            'Elles apparaissent généralement lors d’un effort explosif, d’une amplitude inhabituelle ou d’une charge trop importante. Les mouvements comme le muscle-up ou certains sports de lancer sont particulièrement concernés.'
-        }
-      ]
+      blocks: blessuresBlocks
     },
     {
       id: 'saviez-vous',
@@ -404,35 +223,7 @@ const grandDorsal = {
     {
       id: 'faq',
       title: 'Questions fréquentes',
-      blocks: [
-        {
-          type: 'h3',
-          text: 'Est-ce que les tractions larges développent mieux les dorsaux ?'
-        },
-        {
-          type: 'p',
-          text:
-            'Pas forcément. Une prise très large peut parfois réduire l’amplitude et augmenter la contrainte sur l’épaule. Une prise légèrement plus large que les épaules permet souvent un excellent compromis entre amplitude, confort et recrutement.'
-        },
-        {
-          type: 'h3',
-          text: 'Pourquoi je sens toujours mes biceps avant mon dos ?'
-        },
-        {
-          type: 'p',
-          text:
-            'Les biceps sont des muscles plus faciles à ressentir : ils participent directement à la flexion du coude. Le dos dépend davantage du contrôle scapulaire et de la position de l’humérus ; une meilleure technique et un apprentissage moteur sont souvent nécessaires.'
-        },
-        {
-          type: 'h3',
-          text: 'Peut-on avoir un gros dos uniquement avec le poids du corps ?'
-        },
-        {
-          type: 'p',
-          text:
-            'Oui. Gymnastes, grimpeurs et pratiquants de street workout montrent qu’un développement important est possible. Cela demande généralement beaucoup de volume, une progression des variantes, des exercices difficiles et une maîtrise technique.'
-        }
-      ]
+      blocks: faqBlocks
     },
     {
       id: 'momentum',

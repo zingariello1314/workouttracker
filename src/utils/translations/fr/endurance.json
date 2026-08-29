@@ -574,6 +574,10 @@
     "updateError": "Erreur lors de la modification du défi"
   },
   "gtg": {
+    "mainTabs": {
+      "practice": "Pratique",
+      "protocol": "Protocole"
+    },
     "title": "Défis · Grease the Groove",
     "subtitle": "Mini-séries faciles réparties dans la journée — force nerveuse sans fatigue musculaire.",
     "methodTitle": "Comprendre la méthode GTG",

@@ -70,10 +70,11 @@ export default function RecapExtendedTrendCharts({ enrichment, chartHeight = 160
       ? {
           key: 'weight',
           title: 'Poids (kg)',
-          series: weight.series,
+          series: (weight.series || []).filter((p) => Number(p.value) > 0),
           color: '#fbbf24',
           label: 'kg',
-          format: (v) => (v > 0 ? v.toFixed(1) : '—')
+          format: (v) => (v > 0 ? v.toFixed(1) : '—'),
+          fitYToData: true
         }
       : null,
     sleepDaily.length > 0 && sleepDaily.some((p) => p.value > 0)
@@ -109,6 +110,7 @@ export default function RecapExtendedTrendCharts({ enrichment, chartHeight = 160
                 metaA={{ label: c.label, color: c.color }}
                 valueFormatA={c.format}
                 height={chartHeight}
+                fitYToData={Boolean(c.fitYToData)}
               />
             </div>
           ))}

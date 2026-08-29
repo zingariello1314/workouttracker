@@ -23,6 +23,7 @@ export function createEmptyWorkoutAggregate() {
     progressEntries: [],
     bodyTrackingReminders: [],
     bodyTrackingLastUpdated: null,
+    bodyTrackingPrefs: {},
     sessionFeedbacks: {},
     dailyVariations: {},
     dailyVariationsVersion: '1.0',

@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from 'react';
-import { BarChart3, Calendar, Clock, Zap } from 'lucide-react';
+import { BarChart3, BookOpen, Calendar, Clock, Zap } from 'lucide-react';
 import { useWorkout } from '../../../../context/WorkoutContext';
 import { useProfileQuestionnaire } from '../../../../features/profileQuestionnaire/useProfileQuestionnaire';
 import { useTranslation } from '../../../../utils/translations';
@@ -8,18 +8,28 @@ import { computeGtgXp } from '../../../../services/xp/gtgXpService';
 import DefisDisciplineCalendarPanel from './DefisDisciplineCalendarPanel.jsx';
 import GtgSessionsPanel from './GtgSessionsPanel.jsx';
 import GtgStatsPanel from './GtgStatsPanel.jsx';
+import GtgProtocolGuide from './GtgProtocolGuide.jsx';
 
-const tabBtn = (active) =>
-  `rounded-xl border px-4 py-2 text-sm font-medium transition ${
+const tabBtn = (active, tone = 'violet') => {
+  if (tone === 'chalk') {
+    return `rounded-xl border px-4 py-2 text-sm font-medium transition ${
+      active
+        ? 'border-amber-400/70 bg-amber-950/40 text-amber-100'
+        : 'border-[#0F4C5C]/45 bg-black text-teal-100 hover:border-amber-500/40'
+    }`;
+  }
+  return `rounded-xl border px-4 py-2 text-sm font-medium transition ${
     active
       ? 'border-violet-500/70 bg-violet-500/15 text-violet-100'
       : 'border-[#0F4C5C]/45 bg-black text-teal-100 hover:border-violet-500/40'
   }`;
+};
 
 export default function GtgPanel() {
   const { data, activeProgram } = useWorkout();
   const { questionnaire: profileQuestionnaire } = useProfileQuestionnaire();
   const t = useTranslation();
+  const [mainTab, setMainTab] = useState('practice');
   const [view, setView] = useState('sessions');
 
   const gtgData = useMemo(() => normalizeGtgData(data?.enduranceData?.gtg), [data?.enduranceData?.gtg]);
@@ -37,6 +47,33 @@ export default function GtgPanel() {
 
   return (
     <div className="space-y-6">
+      <div className="flex flex-wrap gap-2">
+        <button
+          type="button"
+          onClick={() => setMainTab('practice')}
+          className={tabBtn(mainTab === 'practice')}
+        >
+          <span className="inline-flex items-center gap-1.5">
+            <Clock size={14} />
+            {t('endurance.gtg.mainTabs.practice')}
+          </span>
+        </button>
+        <button
+          type="button"
+          onClick={() => setMainTab('protocol')}
+          className={tabBtn(mainTab === 'protocol', 'chalk')}
+        >
+          <span className="inline-flex items-center gap-1.5">
+            <BookOpen size={14} />
+            {t('endurance.gtg.mainTabs.protocol')}
+          </span>
+        </button>
+      </div>
+
+      {mainTab === 'protocol' && <GtgProtocolGuide />}
+
+      {mainTab === 'practice' && (
+      <>
       <div className="rounded-2xl border-2 border-[#0F4C5C]/70 bg-black p-6">
         <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
           <div className="flex items-start gap-3">
@@ -82,6 +119,8 @@ export default function GtgPanel() {
           sessions={[]}
           gtgPayload={{ gtgData, ctx }}
         />
+      )}
+      </>
       )}
     </div>
   );

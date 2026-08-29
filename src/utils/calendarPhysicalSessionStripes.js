@@ -140,6 +140,45 @@ export function computeNonRunningExerciseMinutesForDate(workoutData, garminData,
   return Math.max(0, Math.round(min));
 }
 
+function addCalendarYmd(set, raw) {
+  const m = String(raw || '').match(/^(\d{4}-\d{2}-\d{2})/);
+  if (m) set.add(m[1]);
+}
+
+function collectLifetimeSportActivityDates(workoutData, garminData) {
+  const dates = new Set();
+  Object.keys(garminData?.dailyMetrics || {}).forEach((d) => addCalendarYmd(dates, d));
+  (garminData?.activities?.cardio || []).forEach((act) => addCalendarYmd(dates, act?.date));
+  (garminData?.activities?.swimming || []).forEach((act) => addCalendarYmd(dates, act?.date));
+  (garminData?.activities?.jumpRope || []).forEach((act) => addCalendarYmd(dates, act?.date));
+  const sessions = workoutData?.enduranceData?.sessions || {};
+  Object.values(sessions).forEach((list) => {
+    if (!Array.isArray(list)) return;
+    list.forEach((session) => addCalendarYmd(dates, session?.date));
+  });
+  Object.keys(workoutData?.checkedExercises || {}).forEach((key) => {
+    addCalendarYmd(dates, String(key).slice(0, 10));
+  });
+  return dates;
+}
+
+/**
+ * Temps cumulé aligné calendrier : séances montre (hors marche) + durées défis endurance (pompes…) + course dédupliquée.
+ */
+export function computeLifetimeExerciseAndChallengeMinutes(workoutData, garminData) {
+  let min = 0;
+  collectLifetimeSportActivityDates(workoutData, garminData).forEach((ymd) => {
+    min += computeNonRunningExerciseMinutesForDate(workoutData, garminData, ymd);
+    enumerateDedupedRunSessionsForDate(workoutData, garminData, ymd).forEach((row) => {
+      const dur =
+        parseRunningSessionDurationMinutes(row.session?.duration) ||
+        (row.garmin ? activityDurationMin(row.garmin) : 0);
+      if (dur > 0) min += dur;
+    });
+  });
+  return Math.max(0, min);
+}
+
 /** Calories actives Garmin d'une activité (street, course, etc.). */
 export function extractGarminActivityCaloriesKcal(act) {
   if (!act) return null;

@@ -18,6 +18,7 @@ import {
   firstPositiveDateInMap,
   todayYmd
 } from '../../../utils/sport/recapDailyChartData';
+import { buildWeightByDateMap } from '../../../utils/sport/recapAssessmentSeries';
 
 /**
  * Tendances quotidiennes pour le Récap (et réutilisable dans le Dashboard).
@@ -80,16 +81,22 @@ const RecapDailyTrendChartsBlock = ({ compact = false, layout = 'stack', chartHe
     const stepsRange = defaultActivityRange(stepsMap, end);
     const stepsPoints = buildDenseDailyPoints(stepsMap, stepsRange.start, stepsRange.end);
 
+    const weightMap = buildWeightByDateMap(snap?.progressEntries);
+    const weightPoints = [...weightMap.entries()]
+      .sort((a, b) => a[0].localeCompare(b[0]))
+      .map(([date, value]) => ({ date, value }));
+
     return {
       runPoints,
       repsPoints,
       volPts,
       repPtsAligned,
-      stepsPoints
+      stepsPoints,
+      weightPoints
     };
   }, [data, getCurrentData, garminBundle]);
 
-  const { runPoints, repsPoints, volPts, repPtsAligned, stepsPoints } = chartModel;
+  const { runPoints, repsPoints, volPts, repPtsAligned, stepsPoints, weightPoints } = chartModel;
 
   const padClass = compact ? 'p-3' : 'p-4';
   const chartCardClass =
@@ -136,6 +143,26 @@ const RecapDailyTrendChartsBlock = ({ compact = false, layout = 'stack', chartHe
     </div>
   );
 
+  const weightChart =
+    weightPoints.length > 0 ? (
+      <div className={chartCardClass}>
+        <h3 className="mb-2 text-xs font-semibold uppercase tracking-wide text-amber-100/90">
+          Poids (kg) — pesées
+        </h3>
+        <p className="mb-2 text-[10px] text-slate-500">
+          Un point par mesure (impédance ou mensurations). L’échelle est zoomée sur tes variations.
+        </p>
+        <DenseDailyLineChart
+          seriesA={weightPoints}
+          metaA={{ label: 'kg', color: '#fbbf24' }}
+          valueFormatA={(v) => (v > 0 ? Number(v).toFixed(1) : '—')}
+          height={h}
+          fitYToData
+          emptyMessage="Ajoute une pesée dans Suivi corporel."
+        />
+      </div>
+    ) : null;
+
   const stepsChart = (
     <div className={chartCardClass}>
       <h3 className="mb-2 text-xs font-semibold uppercase tracking-wide text-amber-200/90">Pas / jour</h3>
@@ -159,7 +186,13 @@ const RecapDailyTrendChartsBlock = ({ compact = false, layout = 'stack', chartHe
       ) : null}
 
       {isGrid ? (
-        <div className="grid gap-4 sm:grid-cols-2">{runChart}{repsChart}{volumeChart}{stepsChart}</div>
+        <div className="grid gap-4 sm:grid-cols-2">
+          {weightChart}
+          {runChart}
+          {repsChart}
+          {volumeChart}
+          {stepsChart}
+        </div>
       ) : (
         <>
           <div className="grid gap-4 xl:grid-cols-2">
@@ -183,6 +216,7 @@ const RecapDailyTrendChartsBlock = ({ compact = false, layout = 'stack', chartHe
             />
           </div>
           {!compact ? stepsChart : null}
+          {!compact ? weightChart : null}
         </>
       )}
     </section>

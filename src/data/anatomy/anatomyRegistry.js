@@ -292,7 +292,8 @@ export const ANATOMY_MUSCLES = {
     id: 'grand-rond',
     familyId: 'haut-dos',
     name: 'Grand rond',
-    summary: 'Petit muscle superficiel — arrondi esthétique du haut du dos sous l’épaule.',
+    summary:
+      'Petit muscle superficiel — épaisseur de l’arrière de l’épaule et transition entre scapula, bras et grand dorsal.',
     functionalImportance: 'medium',
     aestheticImportance: 'high',
     visualGroupId: MuscleGroups.BACK,

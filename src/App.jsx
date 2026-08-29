@@ -145,7 +145,7 @@ const WorkoutTrackerContent = () => {
     finance: '-720px',
     // Quêtes & Apprentissage un tout petit peu plus bas
     apprentissage: '-700px',
-    rubiks: '-700px',
+    rubiks: 'calc(-700px + 1cm)',
     quests: '-700px',
     books: '-720px',
     knowledge: 'calc(-720px + 1cm)',

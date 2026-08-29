@@ -3,24 +3,36 @@
  * Enregistre une entrée progress `type: impedance` comme le formulaire complet.
  */
 
-import React, { useState, useMemo, useCallback } from 'react';
+import React, { useState, useMemo, useCallback, useEffect } from 'react';
 import { Scale, Calendar } from 'lucide-react';
 import Button from '../../../ui/Button';
 import Input from '../../../ui/Input';
 import { validateImpedanceForm } from '../../../BodyTracking/utils/validation';
 
-const defaultDate = () => new Date().toISOString().slice(0, 10);
-
-export default function ImpedanceQuickCapture({ addProgressEntry, onSuccess }) {
+export default function ImpedanceQuickCapture({
+  addProgressEntry,
+  onSuccess,
+  entryDate,
+  lastEntry = null,
+  notes = 'Saisie rapide depuis Nutrition (programme généré)',
+  title = 'Mesure impédance (minimale)',
+  hint = 'Pour un programme généré par l’app, enregistre au moins une mesure avec poids, taille et âge réel — les lignes détaillées de l’impédancemètre restent optionnelles ici.'
+}) {
   const [form, setForm] = useState({
-    date: defaultDate(),
+    date: entryDate || new Date().toISOString().slice(0, 10),
     weight: '',
-    heightCm: '',
-    chronologicalAge: '',
+    heightCm: lastEntry?.heightCm != null ? String(lastEntry.heightCm) : '',
+    chronologicalAge: lastEntry?.chronologicalAge != null ? String(lastEntry.chronologicalAge) : '',
     bodyFatPercentage: ''
   });
   const [errors, setErrors] = useState({});
   const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    if (entryDate) {
+      setForm((f) => (f.date === entryDate ? f : { ...f, date: entryDate }));
+    }
+  }, [entryDate]);
 
   const formPayload = useMemo(
     () => ({
@@ -38,9 +50,9 @@ export default function ImpedanceQuickCapture({ addProgressEntry, onSuccess }) {
       basalMetabolism: '',
       metabolicAge: '',
       bodyType: '',
-      notes: 'Saisie rapide depuis Nutrition (programme généré)'
+      notes
     }),
-    [form]
+    [form, notes]
   );
 
   const submit = useCallback(async () => {
@@ -88,12 +100,9 @@ export default function ImpedanceQuickCapture({ addProgressEntry, onSuccess }) {
     <div className="rounded-lg border border-teal-700/50 bg-slate-900/70 p-4 space-y-3">
       <div className="flex items-center gap-2 text-sm font-medium text-teal-100">
         <Scale className="h-4 w-4 text-sky-400" />
-        Mesure impédance (minimale)
+        {title}
       </div>
-      <p className="text-[11px] text-slate-400">
-        Pour un programme généré par l’app, enregistre au moins une mesure avec poids, taille et âge réel — les
-        lignes détaillées de l’impédancemètre restent optionnelles ici.
-      </p>
+      <p className="text-[11px] text-slate-400">{hint}</p>
       <div className="grid grid-cols-2 md:grid-cols-5 gap-2">
         <div>
           <label className="text-[10px] text-slate-500 flex items-center gap-1">

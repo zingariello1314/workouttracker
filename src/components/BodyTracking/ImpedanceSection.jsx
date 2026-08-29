@@ -36,6 +36,11 @@ import { formatDate } from '../../utils/dateUtils';
 import { validateImpedanceForm } from './utils/validation'; // ✅ Déjà importé
 import { useToast } from './hooks/useToast';
 import logger from '../../utils/logger';
+import {
+  WEEKDAY_LABELS_FR,
+  defaultWeighInWeekdays,
+  normalizeWeighInPrefs
+} from '../../utils/bodyTracking/weeklyWeighInReminder';
 
 const log = logger.component('ImpedanceSection');
 
@@ -680,49 +685,131 @@ const ImpedanceSection = () => {
               />
             </div>
 
-            <div className="rounded-lg border border-[#0F4C5C]/45 bg-black/50 p-3">
-              <label className="mb-2 block text-sm font-medium text-teal-100">
-                Jour de pesée hebdomadaire (rappel sur l’onglet Aujourd’hui)
+            <div className="rounded-lg border border-[#0F4C5C]/45 bg-black/50 p-3 space-y-3">
+              <label className="block text-sm font-medium text-teal-100">
+                Régime de pesée (rappel sur Aujourd’hui)
               </label>
-              <select
-                value={
-                  data?.bodyTrackingPrefs?.weeklyWeighInDay === undefined ||
-                  data?.bodyTrackingPrefs?.weeklyWeighInDay === null
-                    ? ''
-                    : String(data.bodyTrackingPrefs.weeklyWeighInDay)
-                }
-                onChange={async (e) => {
-                  const raw = e.target.value;
-                  const v = raw === '' ? null : Number(raw);
+              <p className="text-xs text-teal-700">
+                Choisis une date de début et combien de mesures tu vises par semaine. L’alerte reste jusqu’à ce que le
+                quota de la semaine (lundi–dimanche) soit atteint. Tu peux peser depuis Aujourd’hui.
+              </p>
+              {(() => {
+                const prefs = normalizeWeighInPrefs(data?.bodyTrackingPrefs || {});
+                const savePrefs = async (patch) => {
+                  const next = normalizeWeighInPrefs({
+                    ...(data.bodyTrackingPrefs || {}),
+                    ...patch
+                  });
                   try {
                     await updateData({
                       ...data,
-                      bodyTrackingPrefs: {
-                        ...(data.bodyTrackingPrefs || {}),
-                        weeklyWeighInDay: v
-                      }
+                      bodyTrackingPrefs: next
                     });
-                    showSuccess('Jour de rappel enregistré');
+                    showSuccess('Régime de pesée enregistré');
                   } catch (err) {
-                    log.error('bodyTrackingPrefs.weeklyWeighInDay', err);
-                    showError('Impossible d’enregistrer le jour de pesée.');
+                    log.error('bodyTrackingPrefs', err);
+                    showError('Impossible d’enregistrer le régime de pesée.');
                   }
-                }}
-                className="w-full rounded-lg border border-[#0F4C5C]/55 bg-black px-3 py-2 text-teal-100 focus:outline-none focus:ring-2 focus:ring-[#0F5C45]/40"
-              >
-                <option value="">— Pas de rappel —</option>
-                <option value="0">Dimanche</option>
-                <option value="1">Lundi</option>
-                <option value="2">Mardi</option>
-                <option value="3">Mercredi</option>
-                <option value="4">Jeudi</option>
-                <option value="5">Vendredi</option>
-                <option value="6">Samedi</option>
-              </select>
-              <p className="mt-2 text-xs text-teal-700">
-                Un bandeau sur l’onglet Aujourd’hui apparaît à partir de ce jour tant qu’aucune mesure impédance n’a été
-                enregistrée pour la semaine (avec le nombre de jours de retard si tu passes le jour choisi).
-              </p>
+                };
+                const weekdayOrder = [1, 2, 3, 4, 5, 6, 0];
+                return (
+                  <>
+                    <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                      <div>
+                        <label className="mb-1 block text-xs text-teal-500">Date de début du régime</label>
+                        <input
+                          type="date"
+                          value={prefs.weighInAnchorDate || ''}
+                          onChange={(e) => {
+                            const ymd = e.target.value || null;
+                            const n = prefs.weighInsPerWeek || 1;
+                            savePrefs({
+                              weighInAnchorDate: ymd,
+                              weighInsPerWeek: n || 1,
+                              weighInWeekdays:
+                                prefs.weighInWeekdays.length > 0
+                                  ? prefs.weighInWeekdays
+                                  : ymd
+                                    ? defaultWeighInWeekdays(ymd, n || 1)
+                                    : prefs.weighInWeekdays
+                            });
+                          }}
+                          className="w-full rounded-lg border border-[#0F4C5C]/55 bg-black px-3 py-2 text-teal-100 focus:outline-none focus:ring-2 focus:ring-[#0F5C45]/40"
+                        />
+                      </div>
+                      <div>
+                        <label className="mb-1 block text-xs text-teal-500">Pesées par semaine</label>
+                        <select
+                          value={String(prefs.weighInsPerWeek || (prefs.weeklyWeighInDay != null ? 1 : 0))}
+                          onChange={(e) => {
+                            const n = Number(e.target.value);
+                            if (!n) {
+                              savePrefs({
+                                weighInAnchorDate: null,
+                                weighInsPerWeek: 0,
+                                weighInWeekdays: [],
+                                weeklyWeighInDay: null
+                              });
+                              return;
+                            }
+                            const anchor =
+                              prefs.weighInAnchorDate || new Date().toISOString().slice(0, 10);
+                            savePrefs({
+                              weighInAnchorDate: anchor,
+                              weighInsPerWeek: n,
+                              weighInWeekdays: defaultWeighInWeekdays(anchor, n),
+                              weeklyWeighInDay: defaultWeighInWeekdays(anchor, n)[0]
+                            });
+                          }}
+                          className="w-full rounded-lg border border-[#0F4C5C]/55 bg-black px-3 py-2 text-teal-100 focus:outline-none focus:ring-2 focus:ring-[#0F5C45]/40"
+                        >
+                          <option value="0">— Pas de rappel —</option>
+                          <option value="1">1 fois / semaine</option>
+                          <option value="2">2 fois / semaine</option>
+                          <option value="3">3 fois / semaine</option>
+                          <option value="4">4 fois / semaine</option>
+                          <option value="5">5 fois / semaine</option>
+                          <option value="6">6 fois / semaine</option>
+                          <option value="7">Tous les jours</option>
+                        </select>
+                      </div>
+                    </div>
+                    {prefs.weighInsPerWeek > 0 ? (
+                      <div>
+                        <p className="mb-2 text-xs text-teal-500">Jours visés</p>
+                        <div className="flex flex-wrap gap-2">
+                          {weekdayOrder.map((wd) => {
+                            const on = prefs.weighInWeekdays.includes(wd);
+                            return (
+                              <button
+                                key={wd}
+                                type="button"
+                                onClick={() => {
+                                  let nextDays = on
+                                    ? prefs.weighInWeekdays.filter((d) => d !== wd)
+                                    : [...prefs.weighInWeekdays, wd].sort((a, b) => a - b);
+                                  if (nextDays.length === 0) nextDays = [wd];
+                                  savePrefs({
+                                    weighInWeekdays: nextDays,
+                                    weeklyWeighInDay: nextDays[0]
+                                  });
+                                }}
+                                className={`rounded-lg border px-2 py-1 text-xs ${
+                                  on
+                                    ? 'border-emerald-400 bg-emerald-500/20 text-white'
+                                    : 'border-slate-700 text-teal-400'
+                                }`}
+                              >
+                                {WEEKDAY_LABELS_FR[wd].slice(0, 3)}
+                              </button>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    ) : null}
+                  </>
+                );
+              })()}
             </div>
 
             {/* Métriques par catégorie */}

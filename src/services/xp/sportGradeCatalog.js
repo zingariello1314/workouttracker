@@ -51,7 +51,7 @@ export const SPORT_GRADE_ACCENT = {
 
 /**
  * Illustrations pixel-art (public/sport-grades/{id}.png).
- * Ajouter une entrée dès qu’un fichier est disponible.
+ * Sources `imagesgradesgenerale/` : elitee.png → elite, maitree.png → maitre, grandmaitre.png → grand_maitre.
  */
 export const SPORT_GRADE_ART = {
   novice: '/sport-grades/novice.png',
@@ -59,9 +59,9 @@ export const SPORT_GRADE_ART = {
   disciple: '/sport-grades/disciple.png',
   athlete: '/sport-grades/athlete.png',
   champion: '/sport-grades/champion.png',
-  elite: '/sport-grades/elite.png',
-  maitre: '/sport-grades/maitre.png',
-  grand_maitre: '/sport-grades/grand_maitre.png',
+  elite: '/sport-grades/elite.png?v=20260829',
+  maitre: '/sport-grades/maitre.png?v=20260829',
+  grand_maitre: '/sport-grades/grand_maitre.png?v=20260829',
   olympien: '/sport-grades/olympien.png',
   parangon: '/sport-grades/parangon.png'
 };

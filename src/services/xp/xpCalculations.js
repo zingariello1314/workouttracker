@@ -43,6 +43,8 @@ import { workoutProgram } from '../../data/workoutProgram';
 import { computeLifetimeStepsMetrics } from '../sport/WalkingMetricsService';
 import { computeStretchXpFromRating, computeStretchXpFromGlobal5 } from '../../utils/stretchPerceivedRatings';
 import { collectFractionneIntervalXp } from '../../utils/intervalTrainingUtils';
+import { computeLifetimeExerciseAndChallengeMinutes } from '../../utils/calendarPhysicalSessionStripes';
+import { resolvePushupSessionTotalReps } from '../endurance/pushupSessionUtils';
 import { detectExerciseUnit } from '../../utils/exerciseCalculations';
 import {
   storedTimeToDisplayMinutes
@@ -57,7 +59,7 @@ export {
 } from '../../utils/stretchPerceivedRatings';
 
 /** Incrémenter quand la formule XP Sport change (invalidation cache `useSportXP`). */
-export const SPORT_XP_FORMULA_REVISION = 5;
+export const SPORT_XP_FORMULA_REVISION = 7;
 
 /** Reps pondérées : XP = charge pondérée cumulée × ce facteur. */
 export const SPORT_XP_WEIGHTED_LOAD_FACTOR = 0.68;
@@ -76,6 +78,34 @@ export const SPORT_XP_PER_NUTRITION_FOOD_REGISTERED = 50;
 
 /** Borne haute du coefficient « ~2 étoiles » (voir `intensityCoeffToStarCount`). */
 const TWO_STAR_INTENSITY_COEFF_UPPER = 1.34;
+
+const ENDURANCE_CHALLENGE_SESSION_TYPES = ['pushups', 'gainage', 'jumprope', 'swimming', 'boxing'];
+
+/** Séances Défis / endurance loggées (même sans fiche défi `challenges[]` validée). */
+export function countLoggedEnduranceChallengeSessions(sessionsByType) {
+  let n = 0;
+  ENDURANCE_CHALLENGE_SESSION_TYPES.forEach((type) => {
+    const list = sessionsByType?.[type];
+    if (!Array.isArray(list)) return;
+    list.forEach((session) => {
+      if (!session || typeof session !== 'object') return;
+      if (type === 'pushups') {
+        if (resolvePushupSessionTotalReps(session) > 0) n += 1;
+        return;
+      }
+      if (type === 'gainage') {
+        if ((Number(session.count) || 0) > 0 || session.duration) n += 1;
+        return;
+      }
+      if (type === 'jumprope') {
+        if ((Number(session.jumps ?? session.reps) || 0) > 0 || session.duration) n += 1;
+        return;
+      }
+      if (session.duration || Number(session.distance) > 0 || Number(session.count) > 0) n += 1;
+    });
+  });
+  return n;
+}
 
 /**
  * Charge de référence « 10 reps × difficulté ~2★ » dans la formule reps pondérées (sans charge additionnelle).
@@ -284,6 +314,7 @@ export const calculateSportXP = (workoutData, garminData, enduranceData, sportOp
   const breakdown = {
     reps: 0,
     timeMinutes: 0,
+    sessionMinutes: 0,
     weightedRepsLoad: 0,
     weightedRepsXp: 0,
     weightedTimeLoad: 0,
@@ -427,6 +458,13 @@ export const calculateSportXP = (workoutData, garminData, enduranceData, sportOp
 
   breakdown.reps = totalReps;
   breakdown.timeMinutes = Math.round(totalTimeMinutes * 10) / 10;
+  const snapshotForTime = {
+    ...workoutData,
+    enduranceData: enduranceData || workoutData.enduranceData
+  };
+  breakdown.sessionMinutes = Math.round(
+    computeLifetimeExerciseAndChallengeMinutes(snapshotForTime, garminData) * 10
+  ) / 10;
   breakdown.weightedRepsLoad = Math.round(weightedLoad * 100) / 100;
   breakdown.weightedRepsXp = Math.round(weightedLoad * SPORT_XP_WEIGHTED_LOAD_FACTOR);
   breakdown.weightedTimeLoad = Math.round(weightedTimeLoad * 100) / 100;
@@ -576,8 +614,13 @@ export const calculateSportXP = (workoutData, garminData, enduranceData, sportOp
   }, 0);
   
   const completedChallenges = allChallenges.filter(c => c.status === 'completed').length;
-  
-  const totalChallengeCompletions = sessionValidations > 0 ? sessionValidations : completedChallenges;
+  const loggedChallengeSessions = countLoggedEnduranceChallengeSessions(sessionsByType);
+
+  const totalChallengeCompletions = Math.max(
+    sessionValidations,
+    completedChallenges,
+    loggedChallengeSessions
+  );
   
   breakdown.challenges = totalChallengeCompletions;
   breakdown.challengesXp = totalChallengeCompletions * 50;

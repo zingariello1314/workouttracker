@@ -28,6 +28,7 @@ import { computeSportXpDailyInsights } from '../services/xp/sportXpDailyAnalytic
 const DEFAULT_BREAKDOWN = {
   reps: 0,
   timeMinutes: 0,
+  sessionMinutes: 0,
   weightedRepsLoad: 0,
   weightedRepsXp: 0,
   weightedTimeLoad: 0,
@@ -426,7 +427,10 @@ export const useSportXP = () => {
     const gainageList = Array.isArray(sessionsByType.gainage) ? sessionsByType.gainage : [];
     const gainageSig = `${gainageList.length}|${gainageList.reduce((s, r) => s + (Number(r?.count) || 0), 0)}`;
     const pushupList = Array.isArray(sessionsByType.pushups) ? sessionsByType.pushups : [];
-    const pushupSig = `${pushupList.length}|${pushupList.reduce((s, r) => s + (Number(r?.count) || 0), 0)}`;
+    const pushupSig = `${pushupList.length}|${pushupList.reduce(
+      (s, r) => s + (Number(r?.count) || 0) + (Number(r?.duration) || 0),
+      0
+    )}`;
     const cardioLen = Array.isArray(garminData?.activities?.cardio) ? garminData.activities.cardio.length : 0;
     let garminLapTally = 0;
     if (Array.isArray(garminData?.activities?.cardio)) {

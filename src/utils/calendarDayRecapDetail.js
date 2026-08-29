@@ -26,6 +26,9 @@ import {
 import { formatCalendarExerciseRecordedValue } from './exerciseCalculations';
 
 function parseNum(v) {
+  if (v != null && typeof v === 'object' && !Array.isArray(v)) {
+    return parseNum(v.average ?? v.avg ?? v.value ?? v.min ?? v.max);
+  }
   const n = Number(v);
   return Number.isFinite(n) ? n : null;
 }
@@ -140,7 +143,20 @@ export function buildSleepDetailContext(garminData, dateStr) {
   const awakeMin = parseHoursToMinutes(sleep.awake);
 
   const respSleep = dm?.respiration?.sleep;
-  const spo2 = parseNum(dm?.spo2);
+  const spo2 = parseNum(dm?.spo2) ?? parseNum(sleep.avgSpO2) ?? parseNum(sleep.spo2);
+  const sleepHrAvg =
+    parseNum(sleep.avgHR) ??
+    parseNum(sleep.averageHeartRate) ??
+    parseNum(sleep.heartRate) ??
+    parseNum(sleep.avgHeartRate) ??
+    parseNum(sleep.averageHR);
+  const sleepHrMin = parseNum(sleep.minHR) ?? parseNum(sleep.minHeartRate);
+  const sleepHrMax = parseNum(sleep.maxHR) ?? parseNum(sleep.maxHeartRate);
+  const dayHr = dm?.heartRate || {};
+  const restingHr = parseNum(dayHr.resting);
+  const dayHrAvg = parseNum(dayHr.avg ?? dayHr.average);
+  const dayHrMin = parseNum(dayHr.min);
+  const dayHrMax = parseNum(dayHr.max);
 
   return {
     totalLabel: formatSleepDetailDuration(sleep),
@@ -160,11 +176,22 @@ export function buildSleepDetailContext(garminData, dateStr) {
         }
       : null,
     spo2,
+    heartRate: {
+      sleepAvg: sleepHrAvg,
+      sleepMin: sleepHrMin,
+      sleepMax: sleepHrMax,
+      resting: restingHr,
+      dayAvg: dayHrAvg,
+      dayMin: dayHrMin,
+      dayMax: dayHrMax
+    },
     sleepChartData:
       deepMin || lightMin || remMin || awakeMin
         ? [
             {
+              date: dateStr,
               name: dateStr,
+              label: dateStr,
               deep: deepMin || 0,
               light: lightMin || 0,
               rem: remMin || 0,

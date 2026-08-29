@@ -131,6 +131,7 @@ export const WORKOUT_METADATA_FIELDS = [
   'progressEntries',
   'bodyTrackingReminders',
   'bodyTrackingLastUpdated',
+  'bodyTrackingPrefs',
   'sessionFeedbacks',
   'dailyVariationsVersion',
   'dayJustifications',

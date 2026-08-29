@@ -164,6 +164,7 @@ const INITIAL_WORKOUT_DATA = {
   progressEntries: [],
   bodyTrackingReminders: [],
   bodyTrackingLastUpdated: null,
+  bodyTrackingPrefs: {},
   sessionFeedbacks: {}, // Stockage des feedbacks de session par date
   // ✅ NOUVEAU : Système de variations journalières pour l'onglet "Aujourd'hui"
   dailyVariations: {}, // Format: { "YYYY-MM-DD": DailyVariation }
@@ -530,6 +531,10 @@ export const useWorkoutData = (options = {}) => {
       progressEntries: Array.isArray(migratedData.progressEntries) ? migratedData.progressEntries : [],
       bodyTrackingReminders: Array.isArray(migratedData.bodyTrackingReminders) ? migratedData.bodyTrackingReminders : [],
       bodyTrackingLastUpdated: migratedData.bodyTrackingLastUpdated || null,
+      bodyTrackingPrefs:
+        migratedData.bodyTrackingPrefs && typeof migratedData.bodyTrackingPrefs === 'object'
+          ? { ...migratedData.bodyTrackingPrefs }
+          : {},
       sessionFeedbacks: migratedData.sessionFeedbacks || {},
       dailyVariations: migratedData.dailyVariations || {},
       dailyVariationsVersion: migratedData.dailyVariationsVersion || '1.0',
@@ -924,6 +929,10 @@ export const useWorkoutData = (options = {}) => {
         progressEntries: newData && newData.progressEntries ? [...newData.progressEntries] : [],
         bodyTrackingReminders: newData && newData.bodyTrackingReminders ? [...newData.bodyTrackingReminders] : [],
         bodyTrackingLastUpdated: newData && newData.bodyTrackingLastUpdated ? newData.bodyTrackingLastUpdated : null,
+        bodyTrackingPrefs:
+          newData && newData.bodyTrackingPrefs && typeof newData.bodyTrackingPrefs === 'object'
+            ? { ...newData.bodyTrackingPrefs }
+            : {},
         sessionFeedbacks: newData && newData.sessionFeedbacks ? { ...newData.sessionFeedbacks } : {},
         // ✅ NOUVEAU : dailyVariations avec validation
         dailyVariations: newData && newData.dailyVariations && typeof newData.dailyVariations === 'object' 

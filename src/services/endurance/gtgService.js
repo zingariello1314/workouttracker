@@ -164,6 +164,11 @@ export function normalizeGtgConfig(raw = {}) {
     };
   });
 
+  const protocolByExercise =
+    raw.protocolByExercise && typeof raw.protocolByExercise === 'object'
+      ? { ...raw.protocolByExercise }
+      : {};
+
   return {
     selectedIds: safeSelected,
     slotsCount,
@@ -174,7 +179,8 @@ export function normalizeGtgConfig(raw = {}) {
     scheduleTo,
     intervalHours,
     slotMode,
-    perExercise
+    perExercise,
+    protocolByExercise
   };
 }
 
@@ -380,6 +386,62 @@ export function resolveGtgMaxReps(exerciseId, { workoutData = {}, profileQuestio
 
   const best = Math.max(fromRecords, fromQuiz, GTG_DEFAULT_MAX[exerciseId] || 1);
   return Math.max(1, best);
+}
+
+/**
+ * Prescription GTG (protocole) : reps loin de l’échec + fourchette de passages/jour.
+ * ~25 % du max (ex. 2 reps pour un max de 9), 4–8 passages (jusqu’à 10 si l’écart d’objectif est grand).
+ */
+export function estimateGtgProtocolDay(currentMax, goal) {
+  const max = Math.max(1, Math.round(Number(currentMax) || 1));
+  const defaultGoal = Math.max(max + 1, Math.round(max * 1.67));
+  const target = Math.max(max + 1, Math.round(Number(goal) || defaultGoal));
+  const reps = Math.max(1, Math.round(max * 0.25));
+  let minPassages = 4;
+  let maxPassages = 8;
+  if (target >= max * 1.8) maxPassages = 10;
+  const effort = reps / max;
+  const fatiguePct = Math.round(Math.min(40, Math.max(8, effort * 72)));
+  const stimulusPct = Math.round(Math.min(82, Math.max(50, 90 - fatiguePct)));
+  return {
+    currentMax: max,
+    goal: target,
+    reps,
+    minPassages,
+    maxPassages,
+    stimulusPct,
+    fatiguePct
+  };
+}
+
+export function defaultGtgProtocolGoal(currentMax) {
+  const max = Math.max(1, Math.round(Number(currentMax) || 1));
+  return Math.max(max + 1, Math.round(max * 1.67));
+}
+
+export function updateGtgProtocolExercise(gtgData, exerciseId, patch = {}) {
+  const normalized = normalizeGtgData(gtgData);
+  const prev = normalized.config.protocolByExercise?.[exerciseId] || {};
+  const nextEntry = { ...prev };
+  if ('enabled' in patch) nextEntry.enabled = Boolean(patch.enabled);
+  if ('currentMax' in patch) {
+    const n = Number(patch.currentMax);
+    nextEntry.currentMax = Number.isFinite(n) && n > 0 ? Math.round(n) : null;
+  }
+  if ('goal' in patch) {
+    const n = Number(patch.goal);
+    nextEntry.goal = Number.isFinite(n) && n > 0 ? Math.round(n) : null;
+  }
+  const extra = {
+    protocolByExercise: {
+      ...normalized.config.protocolByExercise,
+      [exerciseId]: nextEntry
+    }
+  };
+  if ('currentMax' in patch && nextEntry.currentMax > 0) {
+    extra.manualMax = { ...normalized.config.manualMax, [exerciseId]: nextEntry.currentMax };
+  }
+  return updateGtgConfig(normalized, extra);
 }
 
 /**
