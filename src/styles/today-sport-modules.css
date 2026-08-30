@@ -1,0 +1,892 @@
+@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap');
+
+/**
+ * Esthétique des modules Sport → Aujourd’hui.
+ * Scopé à .today-sport-shell (pas le fond du site, pas les autres onglets).
+ */
+.today-sport-shell {
+  --today-surface: rgba(14, 22, 21, 0.72);
+  --today-surface-2: rgba(18, 28, 26, 0.5);
+  --today-border: rgba(255, 255, 255, 0.07);
+  --today-border-strong: rgba(74, 158, 255, 0.28);
+  --today-blue: #4a9eff;
+  --today-green: #2bd9a3;
+  --today-amber: #f2c14e;
+  --today-purple: #a970ff;
+  --today-pink: #ec6fa8;
+  --today-text: #e9f4f1;
+  --today-text-dim: #8ea39d;
+  --today-text-faint: #5b6f6a;
+  --today-radius: 16px;
+  font-family: Inter, ui-sans-serif, system-ui, sans-serif !important;
+  color: var(--today-text);
+}
+
+.today-sport-shell,
+.today-sport-shell button,
+.today-sport-shell input,
+.today-sport-shell textarea,
+.today-sport-shell select,
+.today-sport-shell p,
+.today-sport-shell span,
+.today-sport-shell label,
+.today-sport-shell div {
+  font-family: Inter, ui-sans-serif, system-ui, sans-serif;
+}
+
+.today-sport-shell h1,
+.today-sport-shell h2,
+.today-sport-shell h3,
+.today-sport-shell h4,
+.today-sport-shell .today-filter,
+.today-sport-shell .today-tag,
+.today-sport-shell .today-eyebrow {
+  font-family: 'Space Grotesk', Inter, sans-serif !important;
+}
+
+.today-sport-shell .today-eyebrow,
+.today-sport-shell .font-mono,
+.today-sport-shell [class*='tabular-nums'] {
+  font-family: 'JetBrains Mono', ui-monospace, monospace !important;
+}
+
+.today-sport-shell .today-eyebrow {
+  font-size: 11px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--today-text-faint) !important;
+  margin-bottom: 8px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.today-sport-shell .today-eyebrow::before {
+  content: '';
+  width: 14px;
+  height: 1px;
+  background: var(--today-text-faint);
+}
+
+/* Neutralise teal / cyan / sky hérités des utilitaires Tailwind */
+.today-sport-shell [class*='text-teal'],
+.today-sport-shell [class*='text-cyan'],
+.today-sport-shell [class*='text-sky-'],
+.today-sport-shell [class*='text-violet-'],
+.today-sport-shell [class*='text-amber-1'],
+.today-sport-shell [class*='text-amber-2'],
+.today-sport-shell [class*='text-amber-3'] {
+  color: var(--today-text-dim) !important;
+}
+
+.today-sport-shell h1,
+.today-sport-shell h2,
+.today-sport-shell h3,
+.today-sport-shell h4,
+.today-sport-shell .text-white,
+.today-sport-shell [class*='text-white'] {
+  color: var(--today-text) !important;
+}
+
+.today-sport-shell .text-amber-300,
+.today-sport-shell .text-amber-400,
+.today-sport-shell .text-yellow-400 {
+  color: var(--today-amber) !important;
+}
+
+.today-sport-shell .text-emerald-200,
+.today-sport-shell .text-emerald-300,
+.today-sport-shell .text-green-300 {
+  color: var(--today-green) !important;
+}
+
+.today-sport-shell .text-blue-400,
+.today-sport-shell [class*='text-blue-'] {
+  color: var(--today-blue) !important;
+}
+
+.today-sport-shell [class*='border-[#0F4C5C]'],
+.today-sport-shell [class*='border-[#0F5C45]'],
+.today-sport-shell [class*='border-violet-'],
+.today-sport-shell [class*='border-amber-500'],
+.today-sport-shell [class*='ring-[#0F4C5C]'] {
+  border-color: var(--today-border) !important;
+}
+
+.today-sport-shell .today-module,
+.today-sport-shell .today-hero,
+.today-sport-shell .today-bento > *,
+.today-sport-shell .today-xp-wrap > div,
+.today-sport-shell .today-module-card {
+  background: var(--today-surface) !important;
+  border-color: var(--today-border) !important;
+  border-width: 1px !important;
+  border-style: solid !important;
+  backdrop-filter: blur(18px);
+  box-shadow: none !important;
+}
+
+.today-sport-shell .today-hero {
+  display: grid;
+  grid-template-columns: 1.3fr 1fr;
+  gap: 22px;
+  border-radius: 20px !important;
+  padding: 24px 26px !important;
+}
+
+.today-sport-shell .today-hero-controls {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  justify-content: center;
+}
+
+.today-sport-shell .today-control-row {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.today-sport-shell .today-control-label {
+  font-size: 11px;
+  color: var(--today-text-faint) !important;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  margin: 0;
+}
+
+.today-sport-shell .today-mode-chip {
+  font-size: 13px;
+  font-weight: 500;
+  padding: 7px 14px;
+  border-radius: 10px;
+  border: 1px solid var(--today-border);
+  cursor: pointer;
+}
+
+.today-sport-shell .today-mode-chip.today-mode-home {
+  background: var(--today-surface-2);
+  color: var(--today-text-dim) !important;
+}
+
+.today-sport-shell .today-mode-chip.today-mode-home.is-on {
+  background: linear-gradient(135deg, #1c3f7a, #2e6fd6) !important;
+  color: #fff !important;
+  border-color: transparent !important;
+}
+
+.today-sport-shell .today-mode-chip.today-mode-gym {
+  background: var(--today-surface-2);
+  color: var(--today-text-dim) !important;
+}
+
+.today-sport-shell .today-mode-chip.today-mode-gym.is-on {
+  background: linear-gradient(135deg, #7a1c3f, #d62e6f) !important;
+  color: #fff !important;
+  border-color: transparent !important;
+}
+
+.today-sport-shell .today-week-pill {
+  font-size: 12px;
+  padding: 6px 10px;
+  border-radius: 10px;
+  border: 1px solid var(--today-border);
+  color: var(--today-text-faint) !important;
+  opacity: 0.7;
+}
+
+.today-sport-shell .today-day-row {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.today-sport-shell .today-day-pill {
+  font-size: 12px;
+  padding: 6px 10px;
+  border-radius: 8px;
+  border: 1px solid var(--today-border);
+  color: var(--today-text-dim) !important;
+  background: var(--today-surface-2);
+  cursor: pointer;
+}
+
+.today-sport-shell .today-day-pill.is-today {
+  background: rgba(43, 217, 163, 0.14) !important;
+  border-color: var(--today-green) !important;
+  color: var(--today-green) !important;
+  font-weight: 600;
+}
+
+.today-sport-shell .today-btn-ghost {
+  background: transparent !important;
+  border: 1px solid var(--today-border) !important;
+  color: var(--today-text-dim) !important;
+}
+
+.today-sport-shell .today-date-sub {
+  font-size: 11px;
+  color: var(--today-text-faint) !important;
+  margin-top: 4px;
+}
+
+.today-sport-shell .today-load-num-row {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  margin: 8px 0 12px;
+}
+
+.today-sport-shell .today-load-num {
+  font-size: 30px;
+  font-weight: 700;
+  color: var(--today-green) !important;
+  font-family: 'Space Grotesk', Inter, sans-serif !important;
+}
+
+.today-sport-shell .today-load-sub {
+  font-size: 12px;
+  color: var(--today-text-dim) !important;
+}
+
+.today-sport-shell .today-bar {
+  height: 8px;
+  border-radius: 6px;
+  background: var(--today-surface-2);
+  overflow: hidden;
+  margin-bottom: 10px;
+}
+
+.today-sport-shell .today-bar-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--today-green), var(--today-blue));
+  border-radius: 6px;
+}
+
+.today-sport-shell .today-stat-line {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  font-size: 12px;
+  color: var(--today-text-dim) !important;
+  flex-wrap: wrap;
+}
+
+.today-sport-shell .today-empty-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--today-text-faint);
+  flex-shrink: 0;
+}
+
+.today-sport-shell .today-b-activity {
+  min-height: 100%;
+}
+
+.today-sport-shell .today-activity-card {
+  height: 100%;
+  min-height: 108px;
+}
+
+.today-sport-shell .today-hero-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+  margin: 10px 0 14px;
+}
+
+.today-sport-shell .today-tag {
+  font-size: 12px;
+  padding: 4px 10px;
+  border-radius: 20px;
+  background: var(--today-surface-2);
+  border: 1px solid var(--today-border);
+  color: var(--today-text-dim) !important;
+}
+
+.today-sport-shell .today-btn {
+  font-size: 13px;
+  font-weight: 600;
+  padding: 10px 16px;
+  border-radius: 10px;
+  border: 1px solid var(--today-border-strong) !important;
+  background: rgba(74, 158, 255, 0.1) !important;
+  color: var(--today-blue) !important;
+}
+
+.today-sport-shell .today-btn:hover {
+  background: rgba(74, 158, 255, 0.18) !important;
+}
+
+.today-sport-shell .today-bento {
+  display: grid;
+  grid-template-columns: repeat(12, 1fr);
+  gap: 14px;
+}
+
+.today-sport-shell .today-b-date {
+  grid-column: span 3;
+}
+
+.today-sport-shell .today-b-load {
+  grid-column: span 5;
+}
+
+.today-sport-shell .today-b-load [class*='text-teal'] {
+  color: var(--today-green) !important;
+}
+
+.today-sport-shell .today-b-activity {
+  grid-column: span 4;
+}
+
+.today-sport-shell .today-b-activity:empty {
+  display: none;
+}
+
+.today-sport-shell .today-b-nutrition {
+  grid-column: span 12;
+}
+
+.today-sport-shell .today-section-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-bottom: 16px;
+}
+
+.today-sport-shell .today-filters {
+  display: flex;
+  gap: 7px;
+  flex-wrap: wrap;
+}
+
+.today-sport-shell .today-filter {
+  font-size: 12px;
+  padding: 6px 12px;
+  border-radius: 20px;
+  cursor: pointer;
+  border: 1px solid var(--today-border);
+  color: var(--today-text-dim) !important;
+  background: var(--today-surface-2);
+}
+
+.today-sport-shell .today-filter[data-today-filter='all'].is-on {
+  background: rgba(255, 255, 255, 0.14);
+  color: #fff !important;
+  border-color: transparent;
+}
+
+.today-sport-shell .today-filter[data-today-filter='pecs'].is-on {
+  background: rgba(74, 158, 255, 0.22);
+  color: var(--today-blue) !important;
+  border-color: var(--today-blue);
+}
+
+.today-sport-shell .today-filter[data-today-filter='epaules'].is-on {
+  background: rgba(169, 112, 255, 0.22);
+  color: var(--today-purple) !important;
+  border-color: var(--today-purple);
+}
+
+.today-sport-shell .today-filter[data-today-filter='triceps'].is-on {
+  background: rgba(242, 193, 78, 0.2);
+  color: var(--today-amber) !important;
+  border-color: var(--today-amber);
+}
+
+.today-sport-shell .today-filter[data-today-filter='biceps'].is-on,
+.today-sport-shell .today-filter[data-today-filter='dos'].is-on {
+  background: rgba(74, 158, 255, 0.18);
+  color: var(--today-blue) !important;
+  border-color: var(--today-blue);
+}
+
+.today-sport-shell .today-filter[data-today-filter='core'].is-on {
+  background: rgba(43, 217, 163, 0.16);
+  color: var(--today-green) !important;
+  border-color: var(--today-green);
+}
+
+.today-sport-shell .today-filter[data-today-filter='cardio'].is-on,
+.today-sport-shell .today-filter[data-today-filter='default'].is-on {
+  background: rgba(236, 111, 168, 0.16);
+  color: var(--today-pink) !important;
+  border-color: var(--today-pink);
+}
+
+.today-sport-shell .today-ex-masonry {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 16px;
+  align-items: start;
+}
+
+.today-sport-shell .today-ex-card {
+  margin-bottom: 0;
+  width: 100%;
+  background: var(--today-surface) !important;
+  border: 1px solid var(--today-border) !important;
+  border-radius: 14px;
+  position: relative;
+  overflow: visible;
+  contain: layout;
+  transition: border-color 0.15s ease;
+}
+
+.today-sport-shell .today-ex-card.is-filtered-out {
+  display: none !important;
+}
+
+.today-sport-shell .today-ex-card:hover {
+  border-color: var(--today-border-strong) !important;
+}
+
+.today-sport-shell .today-ex-card::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 3px;
+  background: var(--today-blue);
+}
+
+.today-sport-shell .today-ex-card[data-today-group='pecs']::before,
+.today-sport-shell .today-ex-card[data-today-group='dos']::before,
+.today-sport-shell .today-ex-card[data-today-group='biceps']::before {
+  background: var(--today-blue);
+}
+
+.today-sport-shell .today-ex-card[data-today-group='epaules']::before {
+  background: var(--today-purple);
+}
+
+.today-sport-shell .today-ex-card[data-today-group='triceps']::before {
+  background: var(--today-amber);
+}
+
+.today-sport-shell .today-section-title {
+  font-size: 19px;
+  font-weight: 600;
+  color: var(--today-text) !important;
+}
+
+.today-sport-shell .today-section-count {
+  color: var(--today-text-faint) !important;
+  font-weight: 500;
+  font-size: 15px;
+}
+
+.today-sport-shell .today-ex-section {
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  padding: 0 !important;
+}
+
+.today-sport-shell .today-ex-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 10px;
+}
+
+.today-sport-shell .today-ex-name {
+  font-size: 14.5px;
+  font-weight: 600;
+  line-height: 1.3;
+  color: var(--today-text) !important;
+  font-family: 'Space Grotesk', Inter, sans-serif !important;
+}
+
+.today-sport-shell .today-ex-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.today-sport-shell .today-ex-check {
+  transition: none !important;
+}
+
+.today-sport-shell .today-ex-icon {
+  width: 26px;
+  height: 26px;
+  border-radius: 7px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: none !important;
+  cursor: pointer;
+  padding: 0 !important;
+}
+
+.today-sport-shell .today-ex-icon.zap {
+  background: rgba(74, 158, 255, 0.12) !important;
+  color: var(--today-blue) !important;
+}
+
+.today-sport-shell .today-ex-icon.del {
+  background: rgba(236, 111, 168, 0.12) !important;
+  color: var(--today-pink) !important;
+}
+
+.today-sport-shell .today-ex-badge {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.today-sport-shell .today-ref-stars {
+  display: inline-flex !important;
+  flex-direction: row !important;
+  align-items: center !important;
+  gap: 8px !important;
+}
+
+.today-sport-shell .today-ref-stars > span:first-of-type {
+  border: none !important;
+  background: transparent !important;
+  padding: 0 !important;
+  gap: 6px;
+}
+
+.today-sport-shell .today-ex-meta {
+  font-size: 12.5px;
+  color: var(--today-text-dim) !important;
+  line-height: 1.45;
+}
+
+.today-sport-shell .today-ex-meta b {
+  color: var(--today-text) !important;
+  font-weight: 600;
+}
+
+.today-sport-shell .today-ex-fields {
+  display: flex;
+  gap: 8px;
+}
+
+.today-sport-shell .today-field {
+  flex: 1;
+  min-width: 0;
+}
+
+.today-sport-shell .today-field label {
+  font-size: 10px;
+  color: var(--today-text-faint) !important;
+  display: block;
+  margin-bottom: 4px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.today-sport-shell .today-ex-subcheck {
+  display: flex;
+  align-items: flex-start;
+  gap: 7px;
+  font-size: 11px;
+  color: var(--today-text-dim) !important;
+  cursor: pointer;
+}
+
+.today-sport-shell .today-btn-wide {
+  width: 100%;
+  text-align: center;
+  padding: 12px 16px !important;
+}
+
+.today-sport-shell .today-goal-strip {
+  background: var(--today-surface-2) !important;
+  border: 1px solid var(--today-border) !important;
+  border-radius: 10px;
+  padding: 14px;
+}
+
+.today-sport-shell .today-endurance-form {
+  min-width: 0;
+  max-width: 100%;
+  overflow: visible;
+}
+
+.today-sport-shell .today-endurance-form,
+.today-sport-shell .today-endurance-form * {
+  min-width: 0;
+  box-sizing: border-box;
+}
+
+.today-sport-shell .today-endurance-form label {
+  font-size: 10px !important;
+  letter-spacing: 0.05em;
+  color: var(--today-text-faint) !important;
+  font-weight: 500 !important;
+  margin-bottom: 4px !important;
+  text-transform: none;
+  white-space: normal;
+  line-height: 1.35;
+}
+
+.today-sport-shell .today-endurance-form .grid > div > label {
+  text-transform: uppercase;
+}
+
+.today-sport-shell .today-goal-strip {
+  min-width: 0;
+  overflow: visible;
+  word-wrap: break-word;
+}
+
+.today-sport-shell .today-goal-strip .flex {
+  flex-wrap: wrap;
+}
+
+.today-sport-shell .today-endurance-form input,
+.today-sport-shell .today-endurance-form textarea,
+.today-sport-shell .today-endurance-form select {
+  padding: 8px 10px !important;
+  border-radius: 8px !important;
+  font-size: 13px !important;
+}
+
+.today-sport-shell .today-endurance-form .grid {
+  gap: 10px !important;
+}
+
+.today-sport-shell .today-ex-card[data-today-group='core']::before {
+  background: var(--today-green);
+}
+
+.today-sport-shell .today-ex-card[data-today-group='cardio']::before {
+  background: var(--today-pink);
+}
+
+.today-sport-shell .today-ex-link,
+.today-sport-shell a.today-ex-link,
+.today-sport-shell button.today-ex-link {
+  font-size: 11.5px;
+  color: var(--today-blue) !important;
+  text-decoration: none;
+  border: none !important;
+  border-bottom: 1px dotted rgba(74, 158, 255, 0.4) !important;
+  background: transparent !important;
+  padding: 0;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  width: fit-content;
+  border-radius: 0 !important;
+}
+
+/* Défis + GTG : côte à côte, même hauteur */
+.today-sport-shell .today-challenge-row {
+  display: flex !important;
+  flex-direction: row !important;
+  flex-wrap: nowrap;
+  align-items: stretch !important;
+  gap: 16px;
+  width: 100%;
+}
+
+.today-sport-shell .today-challenge-row:empty {
+  display: none !important;
+}
+
+.today-sport-shell .today-challenge-row > * {
+  flex: 1 1 0;
+  min-width: 0;
+  width: auto !important;
+  max-width: none;
+  display: flex !important;
+  flex-direction: column;
+  background: var(--today-surface) !important;
+  border-color: var(--today-border) !important;
+  border-width: 1px !important;
+  backdrop-filter: blur(18px);
+  box-shadow: none !important;
+  border-radius: var(--today-radius) !important;
+}
+
+.today-sport-shell .today-pushup-panel,
+.today-sport-shell .today-gtg-panel {
+  height: 100%;
+  min-height: 100%;
+}
+
+.today-sport-shell .today-gtg-slots-wrap {
+  flex: 1 1 auto;
+  display: flex;
+  flex-direction: column;
+}
+
+.today-sport-shell .today-gtg-slots {
+  flex: 1;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  align-content: start;
+}
+
+.today-sport-shell .today-gtg-slot {
+  background: var(--today-surface-2) !important;
+  border: 1px solid var(--today-border) !important;
+  border-radius: 10px;
+  padding: 10px 12px;
+}
+
+.today-sport-shell .today-gtg-pills {
+  display: flex;
+  gap: 5px;
+  flex-wrap: wrap;
+}
+
+.today-sport-shell .today-gtg-pill {
+  flex: 1;
+  min-width: 64px;
+  text-align: center;
+  font-size: 10.5px !important;
+  padding: 6px 4px !important;
+  border-radius: 7px !important;
+  background: var(--today-surface) !important;
+  border: 1px solid var(--today-border) !important;
+  color: var(--today-text-dim) !important;
+}
+
+.today-sport-shell .today-gtg-pill b,
+.today-sport-shell .today-gtg-pill .today-gtg-pill-name {
+  display: block;
+  color: var(--today-text) !important;
+  font-size: 11.5px;
+  font-weight: 600;
+}
+
+.today-sport-shell .today-gtg-pill.is-done {
+  border-color: rgba(43, 217, 163, 0.45) !important;
+  background: rgba(43, 217, 163, 0.12) !important;
+  color: var(--today-green) !important;
+}
+
+.today-sport-shell .today-stretch-cols {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 18px;
+}
+
+.today-sport-shell .today-stretch-col-head {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--today-text-dim) !important;
+  margin-bottom: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.today-sport-shell .today-stretch-item {
+  background: var(--today-surface-2) !important;
+  border: 1px solid var(--today-border) !important;
+  border-left: 1px solid var(--today-border) !important;
+  border-radius: 10px !important;
+  padding: 10px 12px !important;
+  margin-bottom: 8px;
+  box-shadow: none !important;
+}
+
+.today-sport-shell .today-stretch-item.is-done {
+  background: rgba(43, 217, 163, 0.08) !important;
+  border-color: rgba(43, 217, 163, 0.28) !important;
+}
+
+.today-sport-shell .today-stretch-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: rgba(43, 217, 163, 0.12) !important;
+  color: var(--today-green) !important;
+  padding: 1px 7px;
+  border-radius: 20px;
+  font-size: 10px !important;
+}
+
+.today-sport-shell .today-cta-add {
+  background: linear-gradient(120deg, var(--today-purple), var(--today-pink)) !important;
+  color: #fff !important;
+  border: none !important;
+  box-shadow: 0 8px 24px rgba(169, 112, 255, 0.22) !important;
+}
+
+.today-sport-shell .today-btn-feedback {
+  border: 1px solid var(--today-border-strong) !important;
+  background: var(--today-surface) !important;
+  color: var(--today-blue) !important;
+}
+
+.today-sport-shell .today-xp-wrap .h-2\.5 > div,
+.today-sport-shell .today-module-card .h-2 > div {
+  background: linear-gradient(90deg, var(--today-green), var(--today-blue)) !important;
+}
+
+.today-sport-shell .today-xp-wrap .grid.grid-cols-2 > div {
+  background: var(--today-surface-2);
+  border: 1px solid var(--today-border);
+  border-radius: 10px;
+  padding: 8px 12px;
+}
+
+.today-sport-shell input[type='text'],
+.today-sport-shell input[type='number'],
+.today-sport-shell input:not([type]),
+.today-sport-shell textarea,
+.today-sport-shell select {
+  background: var(--today-surface-2) !important;
+  border-color: var(--today-border) !important;
+  color: var(--today-text) !important;
+  border-radius: 8px;
+  font-family: 'JetBrains Mono', ui-monospace, monospace;
+}
+
+@media (max-width: 980px) {
+  .today-sport-shell .today-ex-masonry {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 720px) {
+  .today-sport-shell .today-challenge-row {
+    flex-wrap: wrap;
+  }
+
+  .today-sport-shell .today-challenge-row > * {
+    flex: 1 1 100%;
+  }
+
+  .today-sport-shell .today-stretch-cols,
+  .today-sport-shell .today-gtg-slots {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 680px) {
+  .today-sport-shell .today-hero,
+  .today-sport-shell .today-bento {
+    grid-template-columns: 1fr;
+  }
+
+  .today-sport-shell .today-b-date,
+  .today-sport-shell .today-b-load,
+  .today-sport-shell .today-b-activity,
+  .today-sport-shell .today-b-nutrition {
+    grid-column: span 1;
+  }
+
+  .today-sport-shell .today-ex-masonry {
+    grid-template-columns: 1fr;
+  }
+}

@@ -43,6 +43,7 @@ import {
   loadSportProgramContext,
   prepareSportExportBundle
 } from '../utils/sportExportBundle';
+import { resolveLatestProgramContext } from '../../../../utils/programVersionUtils';
 import {
   buildGarminDailyIndex,
   buildGarminExportSummary
@@ -62,7 +63,7 @@ export const useSettingsExport = (
   loadFromDB,
   exportGarminData,
   exportNutritionData,
-  { storageKey = 'anonymous', currentUser = null } = {}
+  { storageKey = 'anonymous', currentUser = null, liveProgramContext = null } = {}
 ) => {
   // États pour chaque type d'export
   const [exportStatus, setExportStatus] = useState(null);
@@ -114,7 +115,8 @@ export const useSettingsExport = (
       
       const currentData = await loadFromDB();
       const dataToExport = currentData || data;
-      const programContext = await loadSportProgramContext(storageKey);
+      const storedProgramContext = await loadSportProgramContext(storageKey);
+      const programContext = resolveLatestProgramContext(storedProgramContext, liveProgramContext);
       const sportBundle = prepareSportExportBundle({
         workoutData: dataToExport,
         programContext,
@@ -278,7 +280,7 @@ export const useSettingsExport = (
       setExportStatus('error');
       setTimeout(() => setExportStatus(null), 3000);
     }
-  }, [data, loadFromDB, exportNutritionData, exportGarminData, storageKey, currentUser]);
+  }, [data, loadFromDB, exportNutritionData, exportGarminData, storageKey, currentUser, liveProgramContext]);
 
   // Export Garmin
   const handleExportGarminData = useCallback(async () => {

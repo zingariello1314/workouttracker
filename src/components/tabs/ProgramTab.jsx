@@ -326,8 +326,15 @@ const ProgramTab = () => {
 
   const handleUpdateProgram = (updatedProgram) => {
     updateProgram(updatedProgram);
-    setSelectedProgram(updatedProgram);
   };
+
+  useEffect(() => {
+    if (!selectedProgram?.id) return;
+    const live = programs.find((p) => p.id === selectedProgram.id);
+    if (live && live !== selectedProgram) {
+      setSelectedProgram(live);
+    }
+  }, [programs, selectedProgram?.id, selectedProgram?.updatedAt]);
 
   const handleDeactivateProgram = () => {
     deactivateProgram();

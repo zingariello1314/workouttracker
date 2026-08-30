@@ -116,13 +116,7 @@ function PushupChallengeCard({
   }, [challenge, dateStr, onSave, realignOnRhythmApply, rhythmDraft]);
 
   return (
-    <div
-      className={`rounded-lg border p-4 space-y-3 ${
-        offSchedule
-          ? 'border-slate-600/40 bg-slate-900/50'
-          : 'border-amber-600/30 bg-slate-950/60'
-      }`}
-    >
+    <div className="today-goal-strip">
       <div className="flex flex-wrap items-start justify-between gap-2">
         <div>
           <div className="flex flex-wrap items-center gap-2">
@@ -159,7 +153,7 @@ function PushupChallengeCard({
               setSelectedExercise(variationProbe);
               setShowExerciseVariations(true);
             }}
-            className="inline-flex items-center gap-1 rounded-lg border border-violet-500/40 bg-violet-600/15 px-2.5 py-1.5 text-[11px] text-violet-100 hover:bg-violet-600/25"
+            className="today-btn inline-flex items-center gap-1 rounded-lg px-2.5 py-1.5 text-[11px]"
             title={t('today.exercises.variations', 'Variations pompes')}
           >
             <Zap className="h-3.5 w-3.5" />
@@ -168,6 +162,7 @@ function PushupChallengeCard({
         ) : null}
       </div>
 
+      <div className="today-endurance-form">
       <EnduranceSessionForm
         activityType="pushups"
         formState={form}
@@ -179,6 +174,7 @@ function PushupChallengeCard({
         }
         pushupPlannedHint={hint}
       />
+      </div>
 
       {!isWeeklyQuotaChallenge(challenge) ? (
         <label className="flex items-start gap-2 text-[11px] text-slate-400 cursor-pointer">
@@ -334,7 +330,7 @@ function PushupChallengeCard({
           type="button"
           disabled={saving || rhythmSaving}
           onClick={() => onSave(challenge, { realignOnSave: realignOnSave && !isWeeklyQuotaChallenge(challenge) })}
-          className="inline-flex items-center gap-2 rounded-lg border border-amber-500/50 bg-amber-600/20 px-4 py-2 text-sm text-amber-100 hover:bg-amber-600/35 disabled:opacity-50"
+          className="today-btn today-btn-wide inline-flex w-full items-center justify-center gap-2 rounded-lg px-4 py-2 text-sm disabled:opacity-50"
         >
           <Save className="h-4 w-4" />
           {t('today.pushupChallenge.save', 'Enregistrer la séance')}
@@ -423,12 +419,12 @@ export default function PushupChallengeTodayPanel({ date }) {
   if (allShown.length === 0) return null;
 
   return (
-    <div className="rounded-xl border-2 border-amber-500/35 bg-black p-5 shadow-lg space-y-4">
+    <div className="today-module-card today-pushup-panel rounded-xl border-2 border-amber-500/35 bg-black p-5 shadow-lg space-y-4">
       <div className="flex items-center gap-2">
         <Award className="h-5 w-5 text-amber-300" />
-        <h3 className="text-lg font-semibold text-amber-100">
-          {t('today.pushupChallenge.title', 'Défis pompes — aujourd’hui')}
-        </h3>
+          <h3 className="text-lg font-semibold text-white">
+            {t('today.pushupChallenge.title', 'Défis pompes — aujourd’hui')}
+          </h3>
       </div>
       <p className="text-xs text-slate-400 max-w-2xl">
         {t(

@@ -274,9 +274,10 @@ const Checkbox = ({
   helperText,
   fullWidth = false,
   className = '',
+  id,
   ...props
 }) => {
-  const checkboxId = props.id || `checkbox-${Math.random().toString(36).substring(2, 9)}`;
+  const checkboxId = id || (typeof props.name === 'string' && props.name ? `checkbox-${props.name}` : 'checkbox-field');
 
   return (
     <div className={fullWidth ? 'w-full' : ''}>
@@ -284,7 +285,7 @@ const Checkbox = ({
         <input
           type="checkbox"
           id={checkboxId}
-          className={`h-4 w-4 rounded border-2 border-[#0F4C5C]/70 bg-black accent-teal-500 text-teal-500 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-teal-500/40 ${error ? 'border-red-500/50' : ''} ${className}`}
+          className={`h-4 w-4 rounded border-2 border-[#0F4C5C]/70 bg-black accent-teal-500 text-teal-500 focus:outline-none focus:ring-2 focus:ring-teal-500/40 ${error ? 'border-red-500/50' : ''} ${className}`}
           aria-invalid={error ? 'true' : 'false'}
           aria-describedby={error ? `${checkboxId}-error` : helperText ? `${checkboxId}-helper` : undefined}
           {...props}

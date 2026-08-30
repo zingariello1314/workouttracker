@@ -28,7 +28,6 @@ import {
   X,
   Pencil
 } from 'lucide-react';
-import Button from '../ui/Button';
 import {
   stretchDatabase,
   searchStretches,
@@ -104,7 +103,7 @@ function slotsToRawEtirements(slots) {
 
 const stretchEditKey = (moment, id) => `${moment}::${id}`;
 
-const StretchSlotsEditor = memo(({ dayKey, etirements, onChange }) => {
+const StretchSlotsEditor = memo(({ dayKey, etirements, onChange, stacked = false }) => {
   const slots = useMemo(() => normalizeStretchSlots(etirements, dayKey), [etirements, dayKey]);
   const [pickerMoment, setPickerMoment] = useState(null);
   /** Édition nom + consignes (clé moment::id) */
@@ -212,7 +211,7 @@ const StretchSlotsEditor = memo(({ dayKey, etirements, onChange }) => {
 
   return (
     <div>
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+      <div className={stacked ? 'flex flex-col gap-5' : 'grid grid-cols-1 lg:grid-cols-3 gap-4'}>
         {STRETCH_MOMENTS.map((moment) => {
           const items = slots[moment] || [];
           const meta = MOMENT_META[moment];
@@ -220,22 +219,26 @@ const StretchSlotsEditor = memo(({ dayKey, etirements, onChange }) => {
           return (
             <div
               key={moment}
-              className="rounded-lg border border-[#0F4C5C]/50 bg-black p-4 flex flex-col"
+              className={
+                stacked
+                  ? 'flex flex-col min-w-0'
+                  : 'rounded-lg border border-[#0F4C5C]/50 bg-black p-4 flex flex-col'
+              }
             >
-              <div className="flex items-center justify-between mb-3">
-                <h4 className="font-medium text-white flex items-center gap-2">
-                  <Icon size={16} className={meta.accent} />
-                  {meta.label}
-                  <span className="text-xs text-slate-400 font-normal">({items.length})</span>
+              <div className="flex items-center justify-between gap-2 mb-3 min-w-0">
+                <h4 className="font-medium text-white flex items-center gap-2 min-w-0">
+                  <Icon size={16} className={`${meta.accent} shrink-0`} />
+                  <span className="truncate">{meta.label}</span>
+                  <span className="text-xs text-slate-400 font-normal shrink-0">({items.length})</span>
                 </h4>
-                <Button
+                <button
                   type="button"
                   onClick={() => setPickerMoment(moment)}
-                  className="bg-teal-700/30 hover:bg-teal-600/40 border border-teal-500/40 text-teal-100 px-2 py-1 text-xs flex items-center gap-1"
+                  className="prog-stretch-add shrink-0 inline-flex items-center gap-1 rounded-md border border-teal-500/35 bg-teal-950/40 px-2 py-1 text-[11px] font-medium normal-case tracking-normal text-teal-100 hover:bg-teal-900/50"
                 >
                   <Plus size={12} />
                   Ajouter
-                </Button>
+                </button>
               </div>
 
               {items.length === 0 ? (
@@ -253,7 +256,10 @@ const StretchSlotsEditor = memo(({ dayKey, etirements, onChange }) => {
                       <div className="flex items-start justify-between gap-2">
                         <div className="flex-1 min-w-0">
                           {!isEditing ? (
-                            <div className="text-sm font-medium text-slate-100 leading-snug truncate" title={item.name}>
+                            <div
+                              className={`text-sm font-medium text-slate-100 leading-snug ${stacked ? 'break-words' : 'truncate'}`}
+                              title={item.name}
+                            >
                               {item.name}
                             </div>
                           ) : (

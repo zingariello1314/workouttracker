@@ -20,6 +20,11 @@ import {
   computeVolumeKgForWorkoutKey
 } from '../../../../utils/exerciseLoadVolume';
 import { collectDedupedCheckedVolumeKeys } from '../../../../utils/trainingLoadUtils';
+import {
+  mergeProgramListsByLatest,
+  pickLatestProgram,
+  resolveLatestProgramContext
+} from '../../../../utils/programVersionUtils';
 
 const DAY_KEY_RE = /^(\d{4}-\d{2}-\d{2})_/;
 
@@ -467,12 +472,19 @@ export function buildSportExportMetadata(workoutData, programCtx = {}, userProfi
  * @param {{ workoutData: Record<string, unknown>, programContext?: object|null, userProfile?: object|null }} input
  */
 export function prepareSportExportBundle({ workoutData, programContext = null, userProfile = null }) {
-  const ctx = programContext || {};
-  const programs = ctx.programs ?? workoutData.programs ?? [];
-  const activeProgram = ctx.activeProgram ?? workoutData.activeProgram ?? null;
-  const programHistory = ctx.programHistory ?? workoutData.programHistory ?? [];
-  const weekVariant = ctx.weekVariant ?? workoutData.weekVariant ?? 'A';
-  const isGymMode = ctx.isGymMode ?? workoutData.isGymMode ?? false;
+  const fromWorkout = {
+    programs: workoutData.programs,
+    activeProgram: workoutData.activeProgram,
+    programHistory: workoutData.programHistory,
+    weekVariant: workoutData.weekVariant,
+    isGymMode: workoutData.isGymMode
+  };
+  const ctx = resolveLatestProgramContext(fromWorkout, programContext);
+  const programs = ctx.programs || [];
+  const activeProgram = ctx.activeProgram ?? null;
+  const programHistory = ctx.programHistory || [];
+  const weekVariant = ctx.weekVariant ?? 'A';
+  const isGymMode = ctx.isGymMode ?? false;
 
   const userSnapshot = sanitizeUserProfileForExport(userProfile);
   const profileQuestionnaire =
@@ -528,7 +540,11 @@ export const WORKOUT_MAP_MERGE_FIELDS = [
   'circuitProgress',
   'trainingPrefs',
   'restDaySwaps',
-  'addictionQuitData'
+  'addictionQuitData',
+  'exerciseSetLogs',
+  'exerciseMarkedWeighted',
+  'calendarMonthPlanSnapshots',
+  'garminActivityDateOverrides'
 ];
 
 /**
@@ -629,12 +645,12 @@ export function mergeProfileQuestionnaire(existing, imported) {
 export function mergeSportProgramContext(existing, imported) {
   const base = existing || {};
   const imp = imported || {};
-  const mergedPrograms = [...(base.programs || [])];
-  for (const p of imp.programs || []) {
-    const idx = mergedPrograms.findIndex((x) => x?.id != null && x.id === p?.id);
-    if (idx >= 0) mergedPrograms[idx] = { ...mergedPrograms[idx], ...p };
-    else mergedPrograms.push(p);
-  }
+  const mergedPrograms = mergeProgramListsByLatest(base.programs, imp.programs);
+  const activeCandidate = pickLatestProgram(base.activeProgram, imp.activeProgram, {
+    preferSecondIfTie: Boolean(imp.activeProgram)
+  });
+  const activeFromList =
+    activeCandidate?.id != null ? mergedPrograms.find((p) => p.id === activeCandidate.id) : null;
   const mergedHistory = [...(base.programHistory || [])];
   for (const h of imp.programHistory || []) {
     const dup = mergedHistory.some(
@@ -644,7 +660,7 @@ export function mergeSportProgramContext(existing, imported) {
   }
   return {
     programs: mergedPrograms,
-    activeProgram: imp.activeProgram ?? base.activeProgram ?? null,
+    activeProgram: activeFromList || activeCandidate || null,
     programHistory: mergedHistory,
     weekVariant: imp.weekVariant ?? base.weekVariant,
     isGymMode: imp.isGymMode ?? base.isGymMode

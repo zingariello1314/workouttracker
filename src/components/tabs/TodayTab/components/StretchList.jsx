@@ -38,7 +38,7 @@ const StretchList = memo(({ stretches, date, onAfterStretchDataChange }) => {
   if (isEmpty) return null;
 
   return (
-    <div className="space-y-5">
+    <div className="today-stretch-cols">
       {STRETCH_MOMENTS.map((moment) => {
         const items = slots[moment];
         if (!items || items.length === 0) return null;
@@ -68,7 +68,7 @@ const MomentBlock = memo(({ moment, items, date, onAfterStretchDataChange }) => 
   return (
     <div>
       <div className="flex items-center justify-between mb-2">
-        <h4 className="font-semibold text-white text-sm flex items-center gap-2">
+        <h4 className="today-stretch-col-head font-semibold text-white text-sm flex items-center gap-2">
           <Icon className={`w-4 h-4 ${meta.color}`} aria-hidden="true" />
           {meta.label}
           <span className="text-[11px] font-normal text-slate-400">

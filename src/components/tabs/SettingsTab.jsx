@@ -101,7 +101,24 @@ function sectionMatchesQuery(query, label, searchText) {
 }
 
 const SettingsTab = () => {
-  const { data, updateData, loadFromDB, deleteMockEnduranceSessions, setActiveTab, setSwapRestConfirmEnabled } = useWorkout();
+  const {
+    data,
+    updateData,
+    loadFromDB,
+    deleteMockEnduranceSessions,
+    setActiveTab,
+    setSwapRestConfirmEnabled,
+    programs,
+    activeProgram,
+    programHistory,
+    weekVariant,
+    isGymMode,
+    setPrograms,
+    setActiveProgram,
+    setProgramHistory,
+    setWeekVariant,
+    setIsGymMode
+  } = useWorkout();
   const {
     currentUser,
     updateAvatar,
@@ -177,12 +194,35 @@ const SettingsTab = () => {
     rollbackAnonymousMigration
   );
 
+  const liveProgramContext = useMemo(
+    () => ({
+      programs,
+      activeProgram,
+      programHistory,
+      weekVariant,
+      isGymMode
+    }),
+    [programs, activeProgram, programHistory, weekVariant, isGymMode]
+  );
+
+  const applyImportedProgramContext = useCallback(
+    (ctx) => {
+      if (!ctx) return;
+      if (Array.isArray(ctx.programs)) setPrograms(ctx.programs);
+      if (ctx.activeProgram !== undefined) setActiveProgram(ctx.activeProgram);
+      if (Array.isArray(ctx.programHistory)) setProgramHistory(ctx.programHistory);
+      if (ctx.weekVariant != null) setWeekVariant(ctx.weekVariant);
+      if (ctx.isGymMode != null) setIsGymMode(ctx.isGymMode);
+    },
+    [setPrograms, setActiveProgram, setProgramHistory, setWeekVariant, setIsGymMode]
+  );
+
   const exportSettings = useSettingsExport(
     data,
     loadFromDB,
     exportGarminData,
     exportNutritionData,
-    { storageKey, currentUser }
+    { storageKey, currentUser, liveProgramContext }
   );
 
   const {
@@ -193,7 +233,8 @@ const SettingsTab = () => {
     nutritionSummary
   } = useSportExportPreview(data, storageKey, currentUser, {
     exportGarminData,
-    exportNutritionData
+    exportNutritionData,
+    liveProgramContext
   });
 
   const importSettings = useSettingsImport(importGarminData);
@@ -203,7 +244,7 @@ const SettingsTab = () => {
     loadFromDB,
     updateData,
     validateAllWorkoutData,
-    { storageKey, updateProfile, currentUser, importGarminData }
+    { storageKey, updateProfile, currentUser, importGarminData, onApplyProgramContext: applyImportedProgramContext }
   );
 
   // Fonction debug pour les sessions mockées (à extraire si nécessaire)

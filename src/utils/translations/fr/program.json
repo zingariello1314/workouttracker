@@ -81,6 +81,18 @@
     "weekB": "Variante salle — semaine B",
     "weekAWithName": "Variante salle — semaine A ({{name}})",
     "weekBWithName": "Variante salle — semaine B ({{name}})"
+  },
+  "weekB": {
+    "toolbarTitle": "Semaine B",
+    "toolbarHint": "Tu peux vider seulement les exercices de la semaine B, ou supprimer la semaine B entière. La séance principale n’est pas touchée.",
+    "clearAll": "Vider les exercices de la semaine B",
+    "removeAll": "Supprimer la semaine B",
+    "clearDay": "Vider les exos",
+    "removeDay": "Retirer B",
+    "clearAllConfirm": "Vider tous les exercices de la semaine B ?\n\nLe programme et la semaine A restent. L’alternance A/B est conservée, les créneaux B restent vides.",
+    "removeAllConfirm": "Supprimer la semaine B du programme ?\n\nLa séance principale et la semaine A restent. L’alternance A/B sera désactivée.",
+    "clearDayConfirm": "Vider les exercices de la semaine B pour {{day}} ?\n\nLa séance principale et la semaine A restent. Tu pourras rajouter des exercices B.",
+    "removeDayConfirm": "Retirer la variante semaine B de {{day}} ?\n\nLa séance principale et la semaine A restent."
   }
 }
 

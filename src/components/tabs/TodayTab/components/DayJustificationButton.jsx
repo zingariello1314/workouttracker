@@ -91,7 +91,7 @@ const DayJustificationButton = memo(({ date }) => {
         <div className={`
           flex items-center justify-between gap-3 rounded-lg border-2 p-4 transition-all duration-200
           ${colorClasses} ${textClass}
-          hover:shadow-lg hover:scale-[1.02]
+          hover:shadow-lg
         `}>
           <div className="flex items-center gap-3 flex-1">
             <span className="text-2xl" aria-hidden="true">{reasonIcon}</span>
@@ -129,24 +129,19 @@ const DayJustificationButton = memo(({ date }) => {
   // Sinon, afficher le bouton pour justifier
   return (
     <>
-      <div className="rounded-xl border-2 border-[#0F4C5C]/70 bg-black p-4">
-        <div className="flex items-center justify-between gap-4">
-          <div className="flex items-center gap-3">
-            <Calendar className="text-teal-400" size={20} />
-            <div>
-              <p className="text-sm font-medium text-teal-100">{t('justification.button.noActivity')}</p>
-              <p className="text-xs text-teal-700">{t('justification.button.justifyHint')}</p>
-            </div>
-          </div>
-          <button
-            type="button"
-            onClick={handleOpenModal}
-            className="flex shrink-0 items-center gap-2 rounded-lg border-2 border-[#0F5C45]/60 bg-[#0F4C5C]/35 px-4 py-2 text-sm font-semibold text-white transition hover:border-[#0F5C45] hover:bg-[#0F4C5C]/50"
-          >
-            <Calendar className="h-4 w-4" />
-            {t('justification.button.justify')}
-          </button>
+      <div className="rounded-xl border p-4 today-activity-card h-full flex flex-col justify-between gap-4">
+        <div className="flex items-center gap-3">
+          <span className="today-empty-dot" aria-hidden />
+          <p className="text-sm font-medium m-0">{t('justification.button.noActivity')}</p>
         </div>
+        <button
+          type="button"
+          onClick={handleOpenModal}
+          className="today-btn today-btn-ghost w-full flex items-center justify-center gap-2"
+        >
+          <Calendar className="h-4 w-4" />
+          {t('justification.button.justify')}
+        </button>
       </div>
       
       <JustificationModal

@@ -1,4 +1,4 @@
-import React, { useMemo, useState, useEffect, useCallback } from 'react';
+import React, { useMemo, useState, useEffect, useCallback, useRef } from 'react';
 import { Play, Square, CheckCircle, Clock, Target, Flame, Zap, MessageSquare, Save, X, Award, Plus, Trash2, BarChart3, PenLine, Scale, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useWorkout } from '../../context/WorkoutContext';
 import { useToast } from '../../components/ui/Toast';
@@ -37,6 +37,7 @@ import PlyometricBlock from '../program/PlyometricBlock';
 import RunningDrillsBlock from '../program/RunningDrillsBlock';
 import CircuitsTodaySection from './TodayTab/components/CircuitsTodaySection.jsx';
 import { intensityCoeffToStarCount, resolveExerciseIntensityCoeff } from '../../utils/trainingLoadUtils';
+import { todayExerciseVisualGroup, todayFocusTags, uniqueTodayExerciseGroups } from './TodayTab/utils/todayExerciseVisualGroup';
 import PushupChallengeTodayPanel from './TodayTab/components/PushupChallengeTodayPanel.jsx';
 import GtgTodaySchedulePanel from './TodayTab/components/GtgTodaySchedulePanel.jsx';
 import {
@@ -262,6 +263,7 @@ const TodayTab = () => {
   } = useQuietQuestEngine();
   const nutritionData = useNutritionData();
   const [showPerformanceModal, setShowPerformanceModal] = useState(false);
+  const [exerciseGroupFilter, setExerciseGroupFilter] = useState('all');
   const [activeNutritionProgram, setActiveNutritionProgram] = useState(null);
 
   const maybeApplyRestDaySwapBeforeSave = useCallback(async () => {
@@ -567,17 +569,11 @@ const TodayTab = () => {
 
   const [expandedPerceivedIds, setExpandedPerceivedIds] = useState(() => new Set());
   const [isSavingSessionDraft, setIsSavingSessionDraft] = useState(false);
+  const [optimisticCheckedById, setOptimisticCheckedById] = useState({});
+  const latestCheckIntentRef = useRef({});
 
   const collapseAllPerceivedPanels = useCallback(() => {
     setExpandedPerceivedIds(new Set());
-  }, []);
-
-  const expandPerceivedPanel = useCallback((exerciseId) => {
-    setExpandedPerceivedIds((prev) => {
-      const next = new Set(prev);
-      next.add(String(exerciseId));
-      return next;
-    });
   }, []);
 
   const togglePerceivedPanel = useCallback((exerciseId) => {
@@ -590,61 +586,71 @@ const TodayTab = () => {
     });
   }, []);
 
-  // Fonction pour gérer le clic sur une case à cocher avec auto-remplissage
-  const handleExerciseCheck = (exerciseId, date) => {
+  const applyExerciseCheck = (exerciseId, date, shouldCheck) => {
     const currentData = getCurrentData();
     const dateStr = getDateStr(date);
     const workout = getTodayWorkout(date, isGymMode);
     const exercise = resolveProgramExerciseFromWorkout(workout, currentData.dailyVariations, dateStr, exerciseId);
     const fallbackKey = `${dateStr}_${exerciseId}`;
+    const finishOptimistic = () => {
+      setOptimisticCheckedById((prev) => {
+        if (!(String(exerciseId) in prev)) return prev;
+        const next = { ...prev };
+        delete next[String(exerciseId)];
+        return next;
+      });
+    };
 
     if (!exercise) {
       const isCurrentlyChecked = !!currentData.checkedExercises?.[fallbackKey];
-      const perceivedStrip = isCurrentlyChecked
+      if (isCurrentlyChecked === shouldCheck) {
+        finishOptimistic();
+        return;
+      }
+      const perceivedStrip = !shouldCheck
         ? stripSessionPerceivedForKeys(currentData, [fallbackKey])
         : {};
       updateTempExerciseData({
         ...currentData,
         checkedExercises: {
           ...currentData.checkedExercises,
-          [fallbackKey]: !isCurrentlyChecked
+          [fallbackKey]: shouldCheck
         },
         reps: {
           ...currentData.reps,
-          [fallbackKey]: !isCurrentlyChecked ? currentData.reps?.[fallbackKey] || '' : undefined
+          [fallbackKey]: shouldCheck ? currentData.reps?.[fallbackKey] || '' : undefined
         },
         exerciseWeights: {
           ...(currentData.exerciseWeights || {}),
-          [fallbackKey]: !isCurrentlyChecked
+          [fallbackKey]: shouldCheck
             ? currentData.exerciseWeights?.[fallbackKey] ?? ''
             : undefined
         },
         exerciseWeightPerArm: (() => {
           const o = { ...(currentData.exerciseWeightPerArm || {}) };
-          if (isCurrentlyChecked) delete o[fallbackKey];
+          if (!shouldCheck) delete o[fallbackKey];
           return o;
         })(),
         exerciseSetWeights: (() => {
           const o = { ...(currentData.exerciseSetWeights || {}) };
-          if (isCurrentlyChecked) delete o[fallbackKey];
+          if (!shouldCheck) delete o[fallbackKey];
           return o;
         })(),
         exerciseSetLogs: (() => {
           const o = { ...(currentData.exerciseSetLogs || {}) };
-          if (isCurrentlyChecked) delete o[fallbackKey];
+          if (!shouldCheck) delete o[fallbackKey];
           return o;
         })(),
         ...perceivedStrip
       });
-      if (isCurrentlyChecked) {
+      if (!shouldCheck) {
         setExpandedPerceivedIds((prev) => {
           const next = new Set(prev);
           next.delete(String(exerciseId));
           return next;
         });
-      } else {
-        expandPerceivedPanel(exerciseId);
       }
+      finishOptimistic();
       return;
     }
 
@@ -658,6 +664,10 @@ const TodayTab = () => {
       weekVariant: getAutoWeekVariant(date)
     });
     const isCurrentlyChecked = keys.some((k) => currentData.checkedExercises?.[k] === true);
+    if (isCurrentlyChecked === shouldCheck) {
+      finishOptimistic();
+      return;
+    }
 
     const stripKeys = (checkedObj, repsObj, weightsObj, perArmObj, setWObj) => {
       const nextChecked = { ...checkedObj };
@@ -675,7 +685,7 @@ const TodayTab = () => {
       return { nextChecked, nextReps, nextWeights, nextPerArm, nextSetW };
     };
 
-    if (isCurrentlyChecked) {
+    if (!shouldCheck) {
       const { nextChecked, nextReps, nextWeights, nextPerArm, nextSetW } = stripKeys(
         currentData.checkedExercises,
         currentData.reps,
@@ -696,12 +706,13 @@ const TodayTab = () => {
         keys
       );
       updateTempExerciseData(nextSnapshot);
-      syncSportLinkedQuestsWithProgramSnapshot(date, nextSnapshot);
+      queueMicrotask(() => syncSportLinkedQuestsWithProgramSnapshot(date, nextSnapshot));
       setExpandedPerceivedIds((prev) => {
         const next = new Set(prev);
         next.delete(String(exercise.id));
         return next;
       });
+      finishOptimistic();
       return;
     }
 
@@ -771,8 +782,8 @@ const TodayTab = () => {
         exercise.name
       );
       updateTempExerciseData(nextSnapshot);
-      syncSportLinkedQuestsWithProgramSnapshot(date, nextSnapshot);
-      expandPerceivedPanel(exercise.id);
+      queueMicrotask(() => syncSportLinkedQuestsWithProgramSnapshot(date, nextSnapshot));
+      finishOptimistic();
       return;
     }
 
@@ -818,8 +829,29 @@ const TodayTab = () => {
       exercise.name
     );
     updateTempExerciseData(nextSnapshot);
-    syncSportLinkedQuestsWithProgramSnapshot(date, nextSnapshot);
-    expandPerceivedPanel(exercise.id);
+    queueMicrotask(() => syncSportLinkedQuestsWithProgramSnapshot(date, nextSnapshot));
+    finishOptimistic();
+  };
+
+  const handleExerciseCheck = (exerciseId, date, currentlyChecked) => {
+    const optKey = String(exerciseId);
+    const currently = typeof currentlyChecked === 'boolean' ? currentlyChecked : false;
+    const shouldCheck = !currently;
+    latestCheckIntentRef.current[optKey] = shouldCheck;
+    setOptimisticCheckedById((prev) => ({ ...prev, [optKey]: shouldCheck }));
+
+    const run = () => {
+      const intended = latestCheckIntentRef.current[optKey];
+      if (typeof intended !== 'boolean') return;
+      applyExerciseCheck(exerciseId, date, intended);
+    };
+    if (typeof requestAnimationFrame === 'function') {
+      requestAnimationFrame(() => {
+        requestAnimationFrame(run);
+      });
+    } else {
+      setTimeout(run, 0);
+    }
   };
 
   const updateLocalReps = (exerciseId, reps, date) => {
@@ -1156,9 +1188,9 @@ const TodayTab = () => {
   const formattedSportSessionDate = useMemo(
     () =>
       currentDate.toLocaleDateString(uiLocale, {
-        weekday: 'long',
+        weekday: 'short',
         day: 'numeric',
-        month: 'long',
+        month: 'short',
         year: 'numeric'
       }),
     [currentDate, uiLocale]
@@ -1208,7 +1240,7 @@ const TodayTab = () => {
 
   const sportSessionDateNavRow = (
     <div
-      className="flex flex-wrap items-center justify-center gap-3 rounded-xl border-2 border-[#0F5C45]/45 bg-black px-4 py-3"
+      className="today-b-date flex flex-wrap items-center justify-center gap-3 rounded-xl border-2 border-[#0F5C45]/45 bg-black px-4 py-3"
       role="group"
       aria-label="Date de la séance"
     >
@@ -1222,8 +1254,10 @@ const TodayTab = () => {
         <ChevronLeft className="h-5 w-5" aria-hidden />
       </button>
       <div className="min-w-0 flex-1 text-center">
-        <p className="text-sm font-medium capitalize text-white sm:text-base">{formattedSportSessionDate}</p>
-        {!isRecordingRealToday ? (
+        <p className="today-date-label text-sm font-medium capitalize text-white sm:text-base">{formattedSportSessionDate}</p>
+        {isRecordingRealToday ? (
+          <div className="today-date-sub">Aujourd'hui</div>
+        ) : (
           <button
             type="button"
             onClick={() => goToSportSessionToday()}
@@ -1231,7 +1265,7 @@ const TodayTab = () => {
           >
             {t('today.dateNav.backToToday', "Revenir à aujourd'hui")}
           </button>
-        ) : null}
+        )}
       </div>
       <button
         type="button"
@@ -1408,6 +1442,15 @@ const TodayTab = () => {
     () => [...orderedProgramExercises, ...orderedSupplementalExercises],
     [orderedProgramExercises, orderedSupplementalExercises]
   );
+
+  const todayExerciseFilterGroups = useMemo(
+    () => uniqueTodayExerciseGroups(exercisesForTodayList),
+    [exercisesForTodayList]
+  );
+
+  useEffect(() => {
+    setExerciseGroupFilter('all');
+  }, [dateStr, workoutDayOverride]);
 
   const todaySessionComplexity = useMemo(
     () => computeTodaySessionComplexity(currentDate, workout, getCurrentData(), isGymMode),
@@ -1663,7 +1706,7 @@ const TodayTab = () => {
     const hasNoActivity = isDayWithoutActivity(currentData, dateStr);
     
     return (
-      <div className="max-w-4xl mx-auto px-4 py-6 space-y-6">
+      <div className="today-sport-shell max-w-[1240px] mx-auto px-4 py-6 space-y-6">
         {sportSessionDateNavRow}
         <div className="text-center py-12 bg-black rounded-xl border-2 border-[#0F4C5C]/70">
           <div className="text-teal-200/80 mb-4">
@@ -1705,62 +1748,66 @@ const TodayTab = () => {
   }
 
   return (
-    <div className="relative min-h-screen">
+    <div className="relative min-h-screen today-sport-shell">
       {/* Contenu avec z-index relatif */}
-      <div className="relative z-10 max-w-4xl mx-auto px-4 py-6 space-y-6">
+      <div className="relative z-10 max-w-[1240px] mx-auto px-4 py-6 space-y-6">
         {/* Workout Header */}
-      <div className={`p-6 rounded-xl shadow-xl border-2 ${
+      <div className={`today-hero p-6 rounded-xl shadow-xl border-2 ${
         workout.focus?.includes('Repos')
           ? 'border-[#0F5C45]/60 bg-black'
           : 'border-[#0F4C5C]/70 bg-black'
       }`}>
+        <div className="today-hero-title">
+        <div className="today-eyebrow">{t('today.workout.sessionEyebrow', 'Séance du jour')}</div>
         <h2 className="text-2xl font-bold text-white">{workout.name}</h2>
-        <p className="text-sm text-gray-200 opacity-90 mt-1">{workout.focus}</p>
+        {todayFocusTags(workout.focus).length > 0 ? (
+          <div className="today-hero-tags">
+            {todayFocusTags(workout.focus).map((tag) => (
+              <span key={tag} className="today-tag">{tag}</span>
+            ))}
+          </div>
+        ) : workout.focus ? (
+          <p className="text-sm text-gray-200 opacity-90 mt-1">{workout.focus}</p>
+        ) : null}
         {workout.duree ? (
           <p className="text-xs text-gray-300 mt-2">⏱️ {workout.duree}</p>
         ) : null}
+        </div>
+        <div className="today-hero-controls">
         
         {/* Toggle Gym/Maison - seulement pour samedi et dimanche */}
         {hasGymVariants && (
-          <div className="mt-4 flex items-center gap-3">
-            <span className="text-sm text-gray-200">{t('today.workout.trainingMode')}</span>
-            <div className="flex items-center bg-black/80 rounded-lg p-1 ring-1 ring-[#0F4C5C]/45">
+          <div className="today-control-row">
+            <span className="today-control-label">{t('today.workout.trainingMode')}</span>
+            <div className="flex items-center gap-2 flex-wrap">
               <button
                 type="button"
                 onClick={() => setIsGymMode(false)}
-                className={`gradient-button-premium gradient-button-premium-sm rounded-lg ${
-                  !isGymMode 
-                    ? 'gradient-button-premium-variant' 
-                    : ''
-                }`}
+                className={`today-mode-chip today-mode-home ${!isGymMode ? 'is-on' : ''}`}
               >
                 {t('today.workout.home')}
               </button>
               <button
                 type="button"
                 onClick={() => setIsGymMode(true)}
-                className={`gradient-button-premium gradient-button-premium-sm rounded-lg ${
-                  isGymMode 
-                    ? 'gradient-button-premium-variant' 
-                    : ''
-                }`}
+                className={`today-mode-chip today-mode-gym ${isGymMode ? 'is-on' : ''}`}
               >
                 {t('today.workout.gym')}
               </button>
-            </div>
             {data.weekVariant && (
-              <span className="text-xs text-teal-200/80 bg-black/60 px-2 py-1 rounded border border-[#0F4C5C]/40">
+              <span className="today-week-pill">
                 {t('today.workout.week', 'Semaine {{week}}', { week: currentWeekVariant })}
               </span>
             )}
+            </div>
           </div>
         )}
-        {/* Choix d'afficher l'entraînement d'un autre jour (ex. faire lundi un vendredi) */}
-        <div className="mt-4 pt-4 border-t border-[#0F4C5C]/40">
-          <p className="text-xs text-teal-200/75 mb-2">{t('today.workout.useWorkoutOf', "Utiliser l'entraînement de :")}</p>
-          <div className="flex flex-wrap gap-1.5">
+        <div className="today-control-row">
+          <p className="today-control-label">{t('today.workout.useWorkoutOf', "Utiliser l'entraînement de :")}</p>
+          <div className="today-day-row">
             {['lundi', 'mardi', 'mercredi', 'jeudi', 'vendredi', 'samedi', 'dimanche'].map((d) => {
-              const label = d.charAt(0).toUpperCase() + d.slice(1);
+              const shorts = { lundi: 'Lun', mardi: 'Mar', mercredi: 'Mer', jeudi: 'Jeu', vendredi: 'Ven', samedi: 'Sam', dimanche: 'Dim' };
+              const label = shorts[d] || d;
               const isCurrentDay = d === dayName;
               const isSelected = workoutDayOverride ? workoutDayOverride === d : isCurrentDay;
               return (
@@ -1768,12 +1815,8 @@ const TodayTab = () => {
                   key={d}
                   type="button"
                   onClick={() => setWorkoutDayOverride(isCurrentDay ? null : d)}
-                  className={`px-2.5 py-1 rounded-lg text-xs font-medium transition-colors ${
-                    isSelected
-                      ? 'bg-emerald-500/30 text-emerald-200 border border-emerald-400/50'
-                      : 'bg-black text-teal-100/85 border border-[#0F4C5C]/50 hover:border-[#0F5C45]/55'
-                  }`}
-                  title={isCurrentDay ? t('today.workout.todayWorkout', "Entraînement du jour") : t('today.workout.useDayWorkout', "Afficher et faire l'entraînement du {{day}}", { day: label })}
+                  className={`today-day-pill ${isSelected ? 'is-today' : ''}`}
+                  title={isCurrentDay ? t('today.workout.todayWorkout', "Entraînement du jour") : t('today.workout.useDayWorkout', "Afficher et faire l'entraînement du {{day}}", { day: d.charAt(0).toUpperCase() + d.slice(1) })}
                 >
                   {isCurrentDay
                     ? isRecordingRealToday
@@ -1806,41 +1849,46 @@ const TodayTab = () => {
             </p>
           )}
         </div>
+        <div className="flex items-center justify-end">
+          <button
+            type="button"
+            onClick={() => setShowPerformanceModal(true)}
+            className="today-btn rounded-lg border border-[#0F5C45]/55 bg-[#0F5C45]/30 px-4 py-2 text-sm text-white"
+          >
+            Enregistrer un max
+          </button>
+        </div>
+        </div>
       </div>
 
-      <div className="flex items-center justify-end">
-        <button
-          type="button"
-          onClick={() => setShowPerformanceModal(true)}
-          className="rounded-lg border border-[#0F5C45]/55 bg-[#0F5C45]/30 px-4 py-2 text-sm text-white"
-        >
-          Enregistrer un max
-        </button>
-      </div>
-
+      <div className="today-bento">
       {sportSessionDateNavRow}
 
       {workout?.exercices?.length > 0 && (
-        <div className="flex flex-wrap items-center gap-3 rounded-xl border-2 border-[#0F5C45]/45 bg-black px-4 py-3 text-sm text-teal-100/90">
-          <BarChart3 className="h-5 w-5 shrink-0 text-teal-400" />
-          <div className="min-w-0 flex-1">
-            <span className="font-medium text-white">{t('today.sessionScore.title')}</span>
+        <div className="today-b-load rounded-xl border-2 border-[#0F5C45]/45 bg-black px-5 py-4">
+          <div className="today-eyebrow">{t('today.sessionScore.title')}</div>
+          <div className="today-load-num-row">
+            <span className="today-load-num">
+              {todaySessionComplexity.score0to100 != null ? `${todaySessionComplexity.score0to100}%` : t('today.sessionScore.na')}
+            </span>
             {todaySessionComplexity.score0to100 != null ? (
-              <span className="ml-2 text-teal-200">
-                {t('today.sessionScore.score', { score: todaySessionComplexity.score0to100 })}
-              </span>
-            ) : (
-              <span className="ml-2 text-teal-700">{t('today.sessionScore.na')}</span>
-            )}
-            <span className="mx-2 text-teal-800">·</span>
-            <span className="text-teal-200/80">
+              <span className="today-load-sub">{t('today.sessionScore.scoreSub', 'du volume estimatif')}</span>
+            ) : null}
+          </div>
+          <div className="today-bar">
+            <div
+              className="today-bar-fill"
+              style={{ width: `${Math.min(100, Math.max(0, todaySessionComplexity.score0to100 ?? 0))}%` }}
+            />
+          </div>
+          <div className="today-stat-line">
+            <span>
               {t('today.sessionScore.load', {
                 done: todaySessionComplexity.completedLoad,
                 ref: todaySessionComplexity.plannedLoadEstimate
               })}
             </span>
-            <span className="mx-2 text-teal-800">·</span>
-            <span className="text-teal-200/80">
+            <span>
               {t('today.sessionScore.doneCount', {
                 n: todaySessionComplexity.completedCount,
                 total: todaySessionComplexity.plannedCount
@@ -1851,11 +1899,30 @@ const TodayTab = () => {
       )}
 
       {/* ✅ NOUVEAU : Bouton/Badge de justification si jour sans activité (même avec exercices prévus) */}
+      <div className="today-b-activity">
       {(() => {
         const currentData = getCurrentData();
         const hasNoActivity = isDayWithoutActivity(currentData, dateStr);
         return hasNoActivity ? <DayJustificationButton date={currentDate} /> : null;
       })()}
+      </div>
+
+      {Array.isArray(activeNutritionProgram?.mealPlanPreferences?.generatedMealPlan) &&
+      activeNutritionProgram.mealPlanPreferences.generatedMealPlan.length > 0 ? null : (
+        <div className="today-b-nutrition today-module flex items-center justify-between gap-4 rounded-xl border px-5 py-3">
+          <p className="text-[13px] m-0">
+            🍽 Aucun plan repas généré actif pour aujourd'hui — crée ou active un programme nutritionnel avec plan journalier.
+          </p>
+          <button
+            type="button"
+            onClick={() => setActiveTab?.('nutrition')}
+            className="today-btn today-btn-ghost shrink-0"
+          >
+            Configurer
+          </button>
+        </div>
+      )}
+      </div>
 
       {/* Rappel pesée hebdomadaire (jour configuré dans Impédancemètre) */}
       {weighInReminder.show ? (
@@ -1925,7 +1992,7 @@ const TodayTab = () => {
 
       {Array.isArray(activeNutritionProgram?.mealPlanPreferences?.generatedMealPlan) &&
       activeNutritionProgram.mealPlanPreferences.generatedMealPlan.length > 0 ? (
-        <div className="mb-3 rounded-xl border-2 border-[#0F5C45]/45 bg-black p-4">
+        <div className="today-module mb-3 rounded-xl border-2 border-[#0F5C45]/45 bg-black p-4">
           <div className="flex items-center justify-between gap-2 mb-3">
             <h3 className="text-white font-semibold">
               Nutrition du jour - {activeNutritionProgram.name}
@@ -2020,26 +2087,48 @@ const TodayTab = () => {
             ))}
           </div>
         </div>
-      ) : (
-        <div className="mb-3 rounded-xl border border-[#0F4C5C]/55 bg-black/70 p-3 text-xs text-teal-200/80">
-          Aucun plan repas généré actif pour aujourd'hui. Crée/active un programme nutritionnel avec plan journalier.
-        </div>
-      )}
+      ) : null}
 
       {/* Exercices */}
-      <div className="bg-black p-6 rounded-xl shadow-xl border-2 border-[#0F4C5C]/70">
-        <h3 className="font-semibold text-white mb-4 flex items-center gap-2">
+      <div className="today-ex-section">
+        <div className="today-section-head">
+        <h3 className="font-semibold text-white mb-0 flex items-center gap-2">
           {t('today.exercises.title')}
           {orderedProgramExercises.length > 0 && (
-            <span className="text-sm text-teal-600">({orderedProgramExercises.length})</span>
+            <span className="today-section-count">· {orderedProgramExercises.length}</span>
           )}
         </h3>
+        {todayExerciseFilterGroups.length > 0 && (
+          <div className="today-filters" role="tablist" aria-label={t('today.exerciseFilters.label', 'Filtrer par muscle')}>
+            <button
+              type="button"
+              data-today-filter="all"
+              className={`today-filter ${exerciseGroupFilter === 'all' ? 'is-on' : ''}`}
+              onClick={() => setExerciseGroupFilter('all')}
+            >
+              {t('today.exerciseFilters.all', 'Tous')}
+            </button>
+            {todayExerciseFilterGroups.map((groupId) => (
+              <button
+                type="button"
+                key={groupId}
+                data-today-filter={groupId}
+                className={`today-filter ${exerciseGroupFilter === groupId ? 'is-on' : ''}`}
+                onClick={() => setExerciseGroupFilter(groupId)}
+              >
+                {t(`today.exerciseFilters.${groupId}`, groupId)}
+              </button>
+            ))}
+          </div>
+        )}
+        </div>
         {orderedProgramExercises.length === 0 && additionalExercises.length === 0 ? (
           <div className="text-center py-8 text-teal-700">
             <p>{t('today.exercises.noExercises', 'Aucun exercice prévu pour aujourd\'hui')}</p>
           </div>
         ) : (
-          <div className="space-y-3">
+          <>
+          <div className="today-ex-masonry">
             {/* ✅ NOUVEAU : Exercices du programme (filtrés selon variations) */}
             {exercisesForTodayList.map((exercise) => {
             const isProgramExercise = !exercise.source;
@@ -2049,7 +2138,11 @@ const TodayTab = () => {
               workoutIsGymMode: workout.isGymMode
             });
             const readKey = resolveBestRepsStorageKey(currentData, keys) || keys[0];
-            const isChecked = keys.some((k) => currentData.checkedExercises?.[k] === true);
+            const dataChecked = keys.some((k) => currentData.checkedExercises?.[k] === true);
+            const optimisticCheck = optimisticCheckedById[String(exercise.id)];
+            const checkboxChecked =
+              typeof optimisticCheck === 'boolean' ? optimisticCheck : dataChecked;
+            const isChecked = dataChecked;
             const reps =
               currentData.reps?.[readKey] !== undefined && currentData.reps?.[readKey] !== null
                 ? String(currentData.reps[readKey])
@@ -2108,71 +2201,33 @@ const TodayTab = () => {
             const scoring = resolveExerciseScoring(exercise);
             const coefStarCount = scoring?.difficultyStars ?? intensityCoeffToStarCount(loadCoeff);
 
+            const visualGroup = todayExerciseVisualGroup(exercise);
+
             return (
               <div
                 key={exercise.id}
-                className="flex flex-col gap-3 p-4 bg-black rounded-lg border border-[#0F4C5C]/45 hover:border-[#0F5C45]/50 transition-all duration-200 w-full min-w-0"
+                data-today-group={visualGroup}
+                className={`today-ex-card flex flex-col gap-2 p-4 bg-black rounded-lg border border-[#0F4C5C]/45 w-full min-w-0 ${
+                  exerciseGroupFilter !== 'all' && visualGroup !== exerciseGroupFilter
+                    ? 'is-filtered-out'
+                    : ''
+                }`}
               >
-                <div className="flex flex-col sm:flex-row sm:items-start gap-3 min-w-0">
-                  <div className="flex-1 min-w-0 space-y-1">
-                    <div className="flex flex-wrap items-center gap-x-2 gap-y-1 min-w-0">
-                      <div className="font-medium text-white break-words">{exercise.name}</div>
-                      {exercise.supplementalLabel ? (
-                        <span className="text-[10px] uppercase tracking-wide text-purple-300/90 border border-purple-500/40 rounded px-1.5 py-0.5">
-                          {exercise.supplementalLabel}
-                        </span>
-                      ) : null}
-                      {scoring ? (
-                        <ReferenceDifficultyStars
-                          stars={scoring.difficultyStars}
-                          intensityCoeff={scoring.intensityCoeff}
-                          variant="pill"
-                          size="sm"
-                          showCoeff
-                        />
-                      ) : (
-                        <ReferenceDifficultyStars
-                          stars={Math.min(8, Math.max(1, coefStarCount))}
-                          intensityCoeff={loadCoeff}
-                          variant="pill"
-                          size="sm"
-                          showCoeff
-                          title="Difficulté estimée (hors référentiel)"
-                        />
-                      )}
-                    </div>
-                    <div className="text-sm text-gray-300 break-words flex flex-wrap items-center gap-x-2 gap-y-1">
-                      <span>
-                        {exercise.series}
-                        {exercise.materiel && ` • ${exercise.materiel}`}
-                        {resolveProgramExerciseNotes(exercise) && ` • ${resolveProgramExerciseNotes(exercise)}`}
-                      </span>
-                      <button
-                        type="button"
-                        onClick={() => openSeriesAdaptForExercise(exercise)}
-                        className="inline-flex items-center gap-1 rounded-md border border-teal-700/50 bg-[#0F4C5C]/20 px-2 py-0.5 text-[11px] font-medium text-teal-200 hover:border-teal-500/60 hover:bg-[#0F4C5C]/35"
-                        title={t(
-                          'today.seriesAdapt.openTitle',
-                          'Modifier séries × reps pour aujourd’hui'
-                        )}
-                      >
-                        <PenLine className="w-3.5 h-3.5 shrink-0" />
-                        {t('today.seriesAdapt.short', 'Séries & reps du jour')}
-                      </button>
-                    </div>
+                <div className="today-ex-top">
+                  <div className="today-ex-name min-w-0">
+                    {exercise.name}
+                    {exercise.supplementalLabel ? (
+                      <span className="today-tag ml-2 align-middle">{exercise.supplementalLabel}</span>
+                    ) : null}
                   </div>
-                  <div className="flex items-center gap-2 shrink-0 self-start sm:self-center">
+                  <div className="today-ex-actions">
                     <Checkbox
-                      checked={isChecked}
-                      onChange={() => handleExerciseCheck(exercise.id, currentDate)}
-                      className="text-green-400"
+                      checked={checkboxChecked}
+                      onChange={() => handleExerciseCheck(exercise.id, currentDate, checkboxChecked)}
+                      className="today-ex-check text-green-400"
                       name={`exercise_${exercise.id}`}
+                      id={`today-ex-check-${exercise.id}`}
                     />
-                    {isChecked && (
-                      <span className="text-green-400 text-sm font-medium whitespace-nowrap">
-                        ✓ {t('today.exercises.completed')}
-                      </span>
-                    )}
                     {hasExerciseVariations(exercise) ? (
                     <button
                       type="button"
@@ -2180,26 +2235,74 @@ const TodayTab = () => {
                         setSelectedExercise(exercise);
                         setShowExerciseVariations(true);
                       }}
-                      className="gradient-button-premium gradient-button-premium-sm gradient-button-premium-variant rounded-lg flex items-center gap-2 shrink-0"
+                      className="today-ex-icon zap"
                       title={t('today.exercises.variations', 'Variations')}
                     >
-                      <Zap className="w-4 h-4" />
+                      <Zap className="w-3.5 h-3.5" />
                     </button>
                     ) : null}
                     <button
                       type="button"
                       onClick={() => handleSuppressExercise(exercise.id)}
-                      className="gradient-button-premium gradient-button-premium-sm rounded-lg flex items-center gap-2 shrink-0"
+                      className="today-ex-icon del"
                       title={t('today.exercises.suppressTitle')}
                     >
-                      <Trash2 className="w-4 h-4" />
+                      <Trash2 className="w-3.5 h-3.5" />
                     </button>
                   </div>
                 </div>
+                {isChecked ? (
+                  <span className="text-[11px] text-emerald-300">✓ {t('today.exercises.completed')}</span>
+                ) : null}
 
-                <div className="flex flex-col gap-3 pt-1 border-t border-[#0F4C5C]/35 min-w-0">
-                  <div className="flex flex-wrap items-end gap-x-4 gap-y-2">
-                    <div className="flex items-center gap-1">
+                <div className="today-ex-badge">
+                  {scoring ? (
+                    <ReferenceDifficultyStars
+                      stars={scoring.difficultyStars}
+                      intensityCoeff={scoring.intensityCoeff}
+                      variant="pill"
+                      size="sm"
+                      showCoeff
+                      className="today-ref-stars"
+                    />
+                  ) : (
+                    <ReferenceDifficultyStars
+                      stars={Math.min(8, Math.max(1, coefStarCount))}
+                      intensityCoeff={loadCoeff}
+                      variant="pill"
+                      size="sm"
+                      showCoeff
+                      className="today-ref-stars"
+                      title="Difficulté estimée (hors référentiel)"
+                    />
+                  )}
+                </div>
+
+                <div className="today-ex-meta">
+                  <b>{exercise.series}</b>
+                  {exercise.materiel ? ` · ${exercise.materiel}` : ''}
+                  {resolveProgramExerciseNotes(exercise)
+                    ? ` · ${resolveProgramExerciseNotes(exercise)}`
+                    : ''}
+                </div>
+                <button
+                  type="button"
+                  onClick={() => openSeriesAdaptForExercise(exercise)}
+                  className="today-ex-link"
+                  title={t(
+                    'today.seriesAdapt.openTitle',
+                    'Modifier séries × reps pour aujourd’hui'
+                  )}
+                >
+                  <PenLine className="w-3.5 h-3.5 shrink-0 inline" />
+                  {' '}
+                  {t('today.seriesAdapt.short', 'Séries & reps du jour')}
+                </button>
+
+                <div className="flex flex-col gap-2 min-w-0">
+                  <div className="today-ex-fields">
+                    <div className="today-field">
+                      <label>{String(inputLabel).toUpperCase()}</label>
                       {exerciseUnit?.isTimeBased ? (
                         <ExerciseTimeInput
                           unit={exerciseUnit.unit === 'min' ? 'min' : 'sec'}
@@ -2214,35 +2317,50 @@ const TodayTab = () => {
                           }
                         />
                       ) : (
-                        <>
-                          <Input
-                            type="number"
-                            placeholder={inputPlaceholder}
-                            value={reps}
-                            onChange={(e) => updateLocalReps(exercise.id, e.target.value, currentDate)}
-                            onFocus={() => handleInputFocus(exercise.id, exercise)}
-                            className={`w-20 text-center ${isChecked ? 'bg-green-600/20 border-green-500 text-green-300' : 'bg-black border-[#0F4C5C]/50 text-white'}`}
-                            size="sm"
-                          />
-                          <span className="text-teal-700 text-xs whitespace-nowrap">{inputLabel}</span>
-                        </>
+                        <Input
+                          type="number"
+                          placeholder={inputPlaceholder}
+                          value={reps}
+                          onChange={(e) => updateLocalReps(exercise.id, e.target.value, currentDate)}
+                          onFocus={() => handleInputFocus(exercise.id, exercise)}
+                          className={`w-full text-center ${isChecked ? 'bg-green-600/20 border-green-500 text-green-300' : 'bg-black border-[#0F4C5C]/50 text-white'}`}
+                          size="sm"
+                        />
                       )}
-                      {volumeCompletion?.status === 'complete' ? (
-                        <span className="text-[10px] text-green-400 whitespace-nowrap">✓ objectif</span>
-                      ) : null}
-                      {volumeCompletion?.status === 'near' ? (
-                        <span className="text-[10px] text-amber-400 whitespace-nowrap">
-                          −{volumeCompletion.gap} {inputLabel}
-                        </span>
-                      ) : null}
-                      {volumeCompletion?.status === 'below' && volumeCompletion.planned ? (
-                        <span className="text-[10px] text-slate-500 whitespace-nowrap">
-                          {volumeCompletion.done}/{volumeCompletion.planned}
-                        </span>
-                      ) : null}
                     </div>
+                    {showWeightField && (
+                      <div className="today-field">
+                        <label>{t('today.exercises.weightFieldLabel', 'Poids')}</label>
+                        <Input
+                          type="text"
+                          inputMode="decimal"
+                          placeholder="kg"
+                          value={weightStr}
+                          onChange={(e) =>
+                            updateLocalExerciseWeight(exercise.id, e.target.value, currentDate)
+                          }
+                          onFocus={() => handleWeightInputFocus(exercise.id, exercise)}
+                          className={`w-full text-center ${isChecked ? 'bg-green-600/20 border-green-500 text-green-300' : 'bg-black border-[#0F4C5C]/50 text-white'}`}
+                          size="sm"
+                        />
+                      </div>
+                    )}
+                  </div>
+                  {volumeCompletion?.status === 'complete' ? (
+                    <span className="text-[10px] text-green-400 whitespace-nowrap">✓ objectif</span>
+                  ) : null}
+                  {volumeCompletion?.status === 'near' ? (
+                    <span className="text-[10px] text-amber-400 whitespace-nowrap">
+                      −{volumeCompletion.gap} {inputLabel}
+                    </span>
+                  ) : null}
+                  {volumeCompletion?.status === 'below' && volumeCompletion.planned ? (
+                    <span className="text-[10px] text-slate-500 whitespace-nowrap">
+                      {volumeCompletion.done}/{volumeCompletion.planned}
+                    </span>
+                  ) : null}
                     {weightUiMode?.mode === 'optional' && (
-                      <label className="flex items-center gap-2 text-[11px] text-slate-500 cursor-pointer select-none">
+                      <label className="today-ex-subcheck">
                         <Checkbox
                           checked={markedWeighted}
                           onChange={(e) =>
@@ -2254,29 +2372,9 @@ const TodayTab = () => {
                         {t('today.exercises.optionalWeighted', 'Lesté')}
                       </label>
                     )}
-                    {showWeightField && (
-                      <div className="flex items-center gap-1">
-                        <Input
-                          type="text"
-                          inputMode="decimal"
-                          placeholder={t('today.exercises.weightPlaceholder')}
-                          value={weightStr}
-                          onChange={(e) =>
-                            updateLocalExerciseWeight(exercise.id, e.target.value, currentDate)
-                          }
-                          onFocus={() => handleWeightInputFocus(exercise.id, exercise)}
-                          className={`w-[4.5rem] text-center ${isChecked ? 'bg-green-600/20 border-green-500 text-green-300' : 'bg-black border-[#0F4C5C]/50 text-white'}`}
-                          size="sm"
-                        />
-                        <span className="text-teal-700 text-xs whitespace-nowrap">
-                          {t('today.exercises.weightUnit')}
-                        </span>
-                      </div>
-                    )}
-                  </div>
 
                   {showWeightField && exerciseIsDumbbellEquipment(exercise) && (
-                    <label className="flex items-start gap-3 text-sm text-teal-600 cursor-pointer w-full max-w-xl">
+                    <label className="today-ex-subcheck">
                       <Checkbox
                         checked={resolveExerciseWeightPerArm(currentData, keys, readKey)}
                         onChange={(e) =>
@@ -2327,7 +2425,7 @@ const TodayTab = () => {
                           <button
                             type="button"
                             onClick={() => clearExerciseSetWeightsForExercise(exercise.id, currentDate)}
-                            className="text-left text-xs text-teal-500 hover:text-teal-300 underline w-fit"
+                          className="today-ex-link text-left w-fit"
                           >
                             {t('today.exercises.perSetReset')}
                           </button>
@@ -2336,7 +2434,7 @@ const TodayTab = () => {
                         <button
                           type="button"
                           onClick={() => initExerciseSetWeightsFromSeries(exercise.id, currentDate, exercise)}
-                          className="text-left text-xs text-teal-500 hover:text-teal-300 underline w-fit"
+                          className="today-ex-link text-left w-fit"
                         >
                           {t('today.exercises.perSetOpen')}
                         </button>
@@ -2378,6 +2476,8 @@ const TodayTab = () => {
               </div>
             );
           })}
+          </div>
+          <div>
 
           {/* ✅ NOUVEAU : Section Exercices Exceptionnels */}
           {additionalExercises.length > 0 && (
@@ -2483,7 +2583,7 @@ const TodayTab = () => {
               <button
                 type="button"
                 onClick={() => setShowAddExceptionalModal(true)}
-                className="gradient-button-premium gradient-button-premium-md rounded-lg w-full flex items-center justify-center gap-2"
+                className="today-cta-add gradient-button-premium gradient-button-premium-md rounded-lg w-full flex items-center justify-center gap-2"
               >
                 <Plus className="w-4 h-4" />
                 {t('today.exercises.addExceptional')}
@@ -2509,12 +2609,21 @@ const TodayTab = () => {
               </div>
               
               <div className="flex items-center space-x-2">
+                {(() => {
+                  const complementaryId = `complementary_${workout.complementaryActivity.name.toLowerCase()}`;
+                  const complementaryDataChecked = !!getCurrentData().checkedExercises[`${dateStr}_${complementaryId}`];
+                  const complementaryOpt = optimisticCheckedById[complementaryId];
+                  const complementaryChecked =
+                    typeof complementaryOpt === 'boolean' ? complementaryOpt : complementaryDataChecked;
+                  return (
                 <Checkbox
-                  checked={getCurrentData().checkedExercises[`${dateStr}_complementary_${workout.complementaryActivity.name.toLowerCase()}`] || false}
-                  onChange={() => handleExerciseCheck(`complementary_${workout.complementaryActivity.name.toLowerCase()}`, currentDate)}
+                  checked={complementaryChecked}
+                  onChange={() => handleExerciseCheck(complementaryId, currentDate, complementaryChecked)}
                   className="text-teal-400"
-                  name={`complementary_${workout.complementaryActivity.name.toLowerCase()}`}
+                  name={complementaryId}
                 />
+                  );
+                })()}
                 
                 {/* Saisie durée (min + sec) */}
                 <div className="flex items-center space-x-2">
@@ -2549,6 +2658,7 @@ const TodayTab = () => {
             </div>
           )}
           </div>
+          </>
         )}
 
         {/* Boutons de sauvegarde exercices (même action persiste tout le brouillon si étirements aussi modifiés) */}
@@ -2585,22 +2695,29 @@ const TodayTab = () => {
         )}
       </div>
 
-      <div className="mt-4 space-y-4">
+      <div>
+        <div className="today-section-head">
+          <h2 className="today-section-title">
+            {t('today.challengesSection.title', 'Défis & routines complémentaires')}
+          </h2>
+        </div>
+        <div className="today-challenge-row">
         <PushupChallengeTodayPanel date={currentDate} />
         <GtgTodaySchedulePanel date={currentDate} />
+        </div>
       </div>
 
       {/* Étirements — UNE carte par étirement individuel, groupé par moment.
          La granularité est par item (id stable depuis stretchDatabase) :
          chaque coche déclenche XP + complétion calendrier. */}
       {hasStretchesContent && (
-        <div className="bg-black p-6 rounded-xl shadow-xl border-2 border-[#0F4C5C]/70">
+        <div className="today-module bg-black p-6 rounded-xl shadow-xl border-2 border-[#0F4C5C]/70">
           <div className="flex items-center justify-between mb-4">
             <h3 className="font-semibold text-white flex items-center gap-2">
               <span className="text-teal-400">🧘‍♂️</span>
               {t('today.stretches.titleOfDay')}
-              <span className="text-xs font-normal text-slate-400">
-                ({countStretchItems(normalizedTodayStretches)})
+              <span className="today-section-count">
+                · {countStretchItems(normalizedTodayStretches)}
               </span>
             </h3>
           </div>
@@ -2775,7 +2892,7 @@ const TodayTab = () => {
         <button
           type="button"
           onClick={handleSessionFeedback}
-          className="mx-auto flex items-center justify-center gap-2 rounded-xl border-2 border-[#0F5C45]/55 bg-black px-8 py-3 text-base font-semibold text-teal-50 shadow-lg shadow-black/40 transition hover:border-[#0F5C45] hover:bg-[#0F4C5C]/25"
+          className="today-btn-feedback mx-auto flex items-center justify-center gap-2 rounded-xl border-2 border-[#0F5C45]/55 bg-black px-8 py-3 text-base font-semibold text-teal-50 shadow-lg shadow-black/40 transition hover:border-[#0F5C45] hover:bg-[#0F4C5C]/25"
         >
           <MessageSquare className="h-5 w-5 text-teal-400" />
           {t('today.sessionFeedback.button')}

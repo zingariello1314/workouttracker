@@ -9,7 +9,7 @@
  * @module context/WorkoutContext/hooks/useWorkoutExercises
  */
 
-import { useState, useCallback, useRef, useEffect } from 'react';
+import { useState, useCallback, useRef, useEffect, startTransition } from 'react';
 import { getDateStr } from '../../../utils/dateUtils';
 import { sidebarEvents, SIDEBAR_EVENTS } from '../../../utils/sidebarEvents';
 import { invalidateSportXpCache } from '../../../hooks/useSportXP';
@@ -269,9 +269,10 @@ export const useWorkoutExercises = (
     const normalized = normalizeWorkoutDraft(newData);
     tempDataRef.current = normalized;
     dirtyFlagsRef.current = { ...dirtyFlagsRef.current, exercises: true };
-    setTempData(normalized);
-    setHasUnsavedExercises(true);
-    invalidateSportXpCache();
+    startTransition(() => {
+      setTempData(normalized);
+      setHasUnsavedExercises(true);
+    });
   }, []);
 
   const updateTempStretchData = useCallback((newData) => {
@@ -279,9 +280,10 @@ export const useWorkoutExercises = (
     const normalized = normalizeWorkoutDraft(newData);
     tempDataRef.current = normalized;
     dirtyFlagsRef.current = { ...dirtyFlagsRef.current, stretches: true };
-    setTempData(normalized);
-    setHasUnsavedStretches(true);
-    invalidateSportXpCache();
+    startTransition(() => {
+      setTempData(normalized);
+      setHasUnsavedStretches(true);
+    });
   }, []);
 
   /**

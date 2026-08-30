@@ -8,6 +8,7 @@ import {
   loadSportProgramContext,
   buildSportExportPreview
 } from '../utils/sportExportBundle';
+import { resolveLatestProgramContext } from '../../../../utils/programVersionUtils';
 import {
   buildGarminDailyIndex,
   buildGarminExportSummary
@@ -23,7 +24,7 @@ export function useSportExportPreview(
   data,
   storageKey,
   currentUser,
-  { exportGarminData = null, exportNutritionData = null } = {}
+  { exportGarminData = null, exportNutritionData = null, liveProgramContext = null } = {}
 ) {
   const [programContext, setProgramContext] = useState(null);
   const [ctxLoaded, setCtxLoaded] = useState(false);
@@ -95,8 +96,9 @@ export function useSportExportPreview(
 
   const sportPreview = useMemo(() => {
     if (!ctxLoaded) return null;
-    return buildSportExportPreview(data || {}, programContext || {}, currentUser);
-  }, [data, programContext, currentUser, ctxLoaded]);
+    const merged = resolveLatestProgramContext(programContext, liveProgramContext);
+    return buildSportExportPreview(data || {}, merged, currentUser);
+  }, [data, programContext, liveProgramContext, currentUser, ctxLoaded]);
 
   return {
     sportPreview,

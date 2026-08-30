@@ -43,7 +43,7 @@ export const useAllDataExportImport = (
   loadFromDB,
   updateData,
   validateAllWorkoutData,
-  { storageKey = 'anonymous', updateProfile = null, currentUser = null, importGarminData = null } = {}
+  { storageKey = 'anonymous', updateProfile = null, currentUser = null, importGarminData = null, onApplyProgramContext = null } = {}
 ) => {
   // États pour Body Tracking uniquement
   const [importStatus, setImportStatus] = useState(null);
@@ -308,9 +308,11 @@ export const useAllDataExportImport = (
       
       const currentData = await loadFromDB();
       const backupData = currentData || data || {};
+      const existingProgramCtx = await loadSportProgramContext(storageKey);
       
       localStorage.setItem('workoutData_preImport_backup', JSON.stringify({
         data: backupData,
+        programContext: existingProgramCtx,
         backupDate: new Date().toISOString()
       }));
       
@@ -546,6 +548,7 @@ export const useAllDataExportImport = (
         const existingCtx = await loadSportProgramContext(storageKey);
         const mergedCtx = mergeSportProgramContext(existingCtx, programCtx);
         await persistSportProgramContext(storageKey, mergedCtx);
+        onApplyProgramContext?.(mergedCtx);
       }
 
       const questionnaire = importedData.profileQuestionnaire
@@ -615,7 +618,7 @@ export const useAllDataExportImport = (
       setAllDataImportStatus('error');
       setTimeout(() => setAllDataImportStatus(null), 5000);
     }
-  }, [allDataPreviewData, data, loadFromDB, updateData, storageKey, updateProfile, currentUser, importGarminData]);
+  }, [allDataPreviewData, data, loadFromDB, updateData, storageKey, updateProfile, currentUser, importGarminData, onApplyProgramContext]);
 
   // Restaurer le backup pré-import
   const restorePreImportBackup = useCallback(async () => {
@@ -624,13 +627,17 @@ export const useAllDataExportImport = (
       if (backup) {
         const parsedBackup = JSON.parse(backup);
         await updateData(parsedBackup.data);
+        if (parsedBackup.programContext) {
+          await persistSportProgramContext(storageKey, parsedBackup.programContext);
+          onApplyProgramContext?.(parsedBackup.programContext);
+        }
         setImportStatus('restored');
         setTimeout(() => setImportStatus(null), 3000);
       }
     } catch (error) {
       console.error('Erreur lors de la restauration du backup:', error);
     }
-  }, [updateData]);
+  }, [updateData, storageKey, onApplyProgramContext]);
 
   return {
     // États Body Tracking

@@ -11,6 +11,7 @@
   },
   "workout": {
     "trainingMode": "Mode d'entraînement:",
+    "sessionEyebrow": "Séance du jour",
     "home": "🏠 Maison",
     "gym": "🏋️ Salle",
     "week": "Semaine {{week}}",
@@ -20,6 +21,21 @@
     "useDayWorkout": "Afficher et faire l'entraînement du {{day}}",
     "overrideHint": "Tu affiches l'entraînement du {{day}}. Coches et reps sont enregistrées pour aujourd'hui.",
     "overrideHintForDate": "Tu affiches l'entraînement du {{day}}. Coches et reps sont enregistrées pour le {{date}}."
+  },
+  "challengesSection": {
+    "title": "Défis & routines complémentaires"
+  },
+  "exerciseFilters": {
+    "label": "Filtrer par muscle",
+    "all": "Tous",
+    "pecs": "Pectoraux",
+    "epaules": "Épaules",
+    "triceps": "Triceps",
+    "biceps": "Biceps",
+    "dos": "Dos",
+    "core": "Core",
+    "cardio": "Cardio",
+    "default": "Autre"
   },
   "exercises": {
     "title": "Exercices",
@@ -45,6 +61,7 @@
     "minutes": "Min",
     "minutesLabel": "min",
     "weightPlaceholder": "Poids",
+    "weightFieldLabel": "Poids",
     "weightUnit": "kg",
     "weightPerArm": "Saisie en kg par haltère (volume total ×2 si les deux bras)",
     "perSetOpen": "Poids par série",
@@ -64,6 +81,7 @@
   "sessionScore": {
     "title": "Charge séance (street)",
     "score": "{{score}} % du volume estimatif",
+    "scoreSub": "du volume estimatif",
     "na": "—",
     "load": "Charge réalisée {{done}} / ref. {{ref}}",
     "doneCount": "{{n}} / {{total}} exos cochés"

@@ -11,6 +11,7 @@
   },
   "workout": {
     "trainingMode": "Training mode:",
+    "sessionEyebrow": "Today’s session",
     "home": "🏠 Home",
     "gym": "🏋️ Gym",
     "week": "Week {{week}}",
@@ -20,6 +21,21 @@
     "useDayWorkout": "Show and follow {{day}}’s workout",
     "overrideHint": "You’re viewing {{day}}’s workout. The session will be saved for today.",
     "overrideHintForDate": "You’re viewing {{day}}’s workout. The session will be saved for {{date}}."
+  },
+  "challengesSection": {
+    "title": "Challenges & complementary routines"
+  },
+  "exerciseFilters": {
+    "label": "Filter by muscle",
+    "all": "All",
+    "pecs": "Chest",
+    "epaules": "Shoulders",
+    "triceps": "Triceps",
+    "biceps": "Biceps",
+    "dos": "Back",
+    "core": "Core",
+    "cardio": "Cardio",
+    "default": "Other"
   },
   "exercises": {
     "title": "Exercises",
@@ -45,6 +61,7 @@
     "minutes": "Min",
     "minutesLabel": "min",
     "weightPlaceholder": "Weight",
+    "weightFieldLabel": "Weight",
     "weightUnit": "kg",
     "weightPerArm": "Weight per dumbbell (total volume ×2 when using both arms)",
     "perSetOpen": "Weight per set",
@@ -57,6 +74,7 @@
   "sessionScore": {
     "title": "Session load (strength)",
     "score": "{{score}} % of estimated volume",
+    "scoreSub": "of estimated volume",
     "na": "—",
     "load": "Load done {{done}} / ref. {{ref}}",
     "doneCount": "{{n}} / {{total}} exercises checked"

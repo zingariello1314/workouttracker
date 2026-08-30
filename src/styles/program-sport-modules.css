@@ -1,0 +1,460 @@
+@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap');
+
+/**
+ * Esthétique Sport → Programme (détail).
+ * Scopé à .program-sport-shell — pas le fond du site.
+ * Tokens alignés sur Aujourd’hui (couleurs muscles identiques).
+ */
+.program-sport-shell {
+  --today-surface: rgba(14, 22, 21, 0.72);
+  --today-surface-2: rgba(18, 28, 26, 0.5);
+  --today-border: rgba(255, 255, 255, 0.07);
+  --today-border-strong: rgba(74, 158, 255, 0.28);
+  --today-blue: #4a9eff;
+  --today-green: #2bd9a3;
+  --today-amber: #f2c14e;
+  --today-purple: #a970ff;
+  --today-pink: #ec6fa8;
+  --today-text: #e9f4f1;
+  --today-text-dim: #8ea39d;
+  --today-text-faint: #5b6f6a;
+  --today-radius: 16px;
+  font-family: Inter, ui-sans-serif, system-ui, sans-serif !important;
+  color: var(--today-text);
+}
+
+.program-sport-shell,
+.program-sport-shell button,
+.program-sport-shell input,
+.program-sport-shell textarea,
+.program-sport-shell select,
+.program-sport-shell p,
+.program-sport-shell span,
+.program-sport-shell label,
+.program-sport-shell div,
+.program-sport-shell h1,
+.program-sport-shell h2,
+.program-sport-shell h3,
+.program-sport-shell h4 {
+  font-family: Inter, ui-sans-serif, system-ui, sans-serif;
+}
+
+.program-sport-shell h1,
+.program-sport-shell h2,
+.program-sport-shell h3,
+.program-sport-shell h4 {
+  font-family: 'Space Grotesk', Inter, sans-serif !important;
+  color: var(--today-text) !important;
+}
+
+.program-sport-shell [class*='text-teal'],
+.program-sport-shell [class*='text-cyan'],
+.program-sport-shell [class*='text-sky-'] {
+  color: var(--today-text-dim) !important;
+}
+
+.program-sport-shell .text-white,
+.program-sport-shell [class*='text-white'] {
+  color: var(--today-text) !important;
+}
+
+.program-sport-shell [class*='border-[#0F4C5C]'],
+.program-sport-shell [class*='border-[#0F5C45]'] {
+  border-color: var(--today-border) !important;
+}
+
+.program-sport-shell .prog-day-board {
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  padding: 0 !important;
+}
+
+.program-sport-shell .prog-days {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 8px;
+  margin-bottom: 18px;
+}
+
+.program-sport-shell .prog-day-chip {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+  min-height: 64px;
+  padding: 10px 10px 12px;
+  border-radius: 12px;
+  border: 1px solid var(--today-border);
+  background: var(--today-surface);
+  color: var(--today-text);
+  text-align: left;
+  cursor: pointer;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.program-sport-shell .prog-day-chip:hover {
+  border-color: var(--today-border-strong);
+}
+
+.program-sport-shell .prog-day-chip.is-active {
+  border-color: var(--today-blue);
+  box-shadow: 0 0 0 1px rgba(74, 158, 255, 0.35);
+  background: rgba(74, 158, 255, 0.06);
+}
+
+.program-sport-shell .prog-day-chip.is-rest {
+  opacity: 0.72;
+}
+
+.program-sport-shell .prog-day-chip-abbr {
+  font-family: 'Space Grotesk', Inter, sans-serif !important;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--today-text) !important;
+}
+
+.program-sport-shell .prog-day-chip-sub {
+  font-size: 10px;
+  line-height: 1.25;
+  color: var(--today-text-faint) !important;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.program-sport-shell .prog-day-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.program-sport-shell .prog-day-title {
+  font-size: 28px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: var(--today-text) !important;
+  font-family: 'Space Grotesk', Inter, sans-serif !important;
+}
+
+.program-sport-shell .prog-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 8px;
+}
+
+.program-sport-shell .prog-tag {
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  padding: 3px 8px;
+  border-radius: 999px;
+  border: 1px solid var(--today-border);
+  color: var(--today-text-dim) !important;
+}
+
+.program-sport-shell .prog-tag.is-green {
+  background: rgba(43, 217, 163, 0.12);
+  border-color: rgba(43, 217, 163, 0.28);
+  color: var(--today-green) !important;
+}
+
+.program-sport-shell .prog-day-meta {
+  font-size: 12px;
+  color: var(--today-text-faint) !important;
+  text-align: right;
+}
+
+.program-sport-shell .prog-workspace {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(300px, 360px);
+  gap: 20px;
+  align-items: start;
+}
+
+.program-sport-shell .prog-day-main {
+  grid-column: 1;
+  grid-row: 1;
+}
+
+.program-sport-shell .prog-stretch-col {
+  grid-column: 2;
+  grid-row: 1;
+  min-width: 0;
+  max-width: 100%;
+  overflow: visible;
+  background: var(--today-surface);
+  border: 1px solid var(--today-border);
+  border-radius: var(--today-radius);
+  padding: 16px;
+}
+
+.program-sport-shell .prog-stretch-col .prog-section-label {
+  margin-right: auto;
+}
+
+.program-sport-shell .prog-stretch-panel {
+  min-width: 0;
+  overflow: visible;
+}
+
+.program-sport-shell .prog-stretch-panel .grid {
+  display: flex !important;
+  flex-direction: column !important;
+  grid-template-columns: minmax(0, 1fr) !important;
+  gap: 18px !important;
+}
+
+.program-sport-shell .prog-stretch-add {
+  text-transform: none !important;
+  letter-spacing: 0 !important;
+  min-height: 0 !important;
+  height: auto !important;
+}
+
+.program-sport-shell .prog-stretch-panel li .break-words {
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+.program-sport-shell .prog-stretch-dup {
+  white-space: normal;
+  text-align: right;
+  line-height: 1.25;
+  max-width: 100%;
+}
+
+.program-sport-shell .prog-section-label {
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--today-text-dim) !important;
+  font-family: 'Space Grotesk', Inter, sans-serif !important;
+}
+
+.program-sport-shell .prog-link {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--today-blue) !important;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+}
+
+.program-sport-shell .prog-ex-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.program-sport-shell .prog-ex-card {
+  position: relative;
+  background: var(--today-surface) !important;
+  border: 1px solid var(--today-border) !important;
+  border-radius: 14px;
+  padding: 14px 14px 12px 16px;
+  overflow: visible;
+  contain: layout;
+}
+
+.program-sport-shell .prog-ex-card::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 3px;
+  border-radius: 14px 0 0 14px;
+  background: var(--today-blue);
+}
+
+.program-sport-shell .prog-ex-card[data-today-group='pecs']::before,
+.program-sport-shell .prog-ex-card[data-today-group='dos']::before,
+.program-sport-shell .prog-ex-card[data-today-group='biceps']::before {
+  background: var(--today-blue);
+}
+
+.program-sport-shell .prog-ex-card[data-today-group='epaules']::before {
+  background: var(--today-purple);
+}
+
+.program-sport-shell .prog-ex-card[data-today-group='triceps']::before {
+  background: var(--today-amber);
+}
+
+.program-sport-shell .prog-ex-card[data-today-group='core']::before {
+  background: var(--today-green);
+}
+
+.program-sport-shell .prog-ex-card[data-today-group='cardio']::before {
+  background: var(--today-pink);
+}
+
+.program-sport-shell .prog-ex-card.is-editing {
+  grid-column: 1 / -1;
+}
+
+.program-sport-shell .prog-chip {
+  display: inline-flex;
+  align-items: center;
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  padding: 2px 7px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--today-text-dim) !important;
+}
+
+.program-sport-shell .prog-chip.street {
+  background: rgba(43, 217, 163, 0.14);
+  color: var(--today-green) !important;
+}
+
+.program-sport-shell .prog-chip.muscu {
+  background: rgba(169, 112, 255, 0.16);
+  color: var(--today-purple) !important;
+}
+
+.program-sport-shell .prog-chip.cardio {
+  background: rgba(74, 158, 255, 0.16);
+  color: var(--today-blue) !important;
+}
+
+.program-sport-shell .prog-chip.core {
+  background: rgba(43, 217, 163, 0.1);
+  color: var(--today-green) !important;
+}
+
+.program-sport-shell .prog-ex-stats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px 14px;
+  margin-top: 10px;
+  font-size: 12px;
+  font-family: 'JetBrains Mono', ui-monospace, monospace !important;
+  color: var(--today-text-dim) !important;
+}
+
+.program-sport-shell .prog-intensity {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 8px;
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: capitalize;
+}
+
+.program-sport-shell .prog-dots {
+  display: flex;
+  gap: 3px;
+}
+
+.program-sport-shell .prog-dots i {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.18);
+}
+
+.program-sport-shell .prog-dots i.on.heavy {
+  background: #ef6b6b;
+}
+
+.program-sport-shell .prog-dots i.on.moderate {
+  background: var(--today-amber);
+}
+
+.program-sport-shell .prog-dots i.on.light {
+  background: var(--today-green);
+}
+
+.program-sport-shell .prog-ex-foot {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 12px;
+  padding-top: 10px;
+  border-top: 1px solid var(--today-border);
+}
+
+.program-sport-shell .prog-ex-foot .prog-edit {
+  flex: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  height: 32px;
+  border-radius: 8px;
+  border: 1px solid var(--today-border);
+  background: rgba(255, 255, 255, 0.03);
+  color: var(--today-text-dim) !important;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.program-sport-shell .prog-icon-btn {
+  width: 32px;
+  height: 32px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 8px;
+  border: 1px solid var(--today-border);
+  background: transparent;
+  color: var(--today-text-dim);
+  cursor: pointer;
+}
+
+.program-sport-shell .prog-icon-btn.danger {
+  color: #f07178;
+  border-color: rgba(240, 113, 120, 0.25);
+}
+
+@media (max-width: 1100px) {
+  .program-sport-shell .prog-days {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+
+  .program-sport-shell .prog-workspace {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .program-sport-shell .prog-day-main {
+    order: 1;
+  }
+
+  .program-sport-shell .prog-stretch-col {
+    order: 2;
+    max-width: none;
+  }
+
+  .program-sport-shell .prog-day-main,
+  .program-sport-shell .prog-stretch-col {
+    grid-column: auto;
+    grid-row: auto;
+  }
+
+  .program-sport-shell .prog-ex-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 640px) {
+  .program-sport-shell .prog-days {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}

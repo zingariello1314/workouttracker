@@ -52,10 +52,8 @@ const StretchItem = memo(({ item, date, defaultExpanded = false, onAfterStretchD
   return (
     <div
       className={[
-        'border-l-4 pl-4 pr-3 py-3 rounded-r-lg transition-colors',
-        isChecked
-          ? 'border-emerald-400/80 bg-emerald-950/30 ring-1 ring-emerald-500/30'
-          : 'border-teal-500/60 bg-slate-900/50 ring-1 ring-slate-700/40 hover:bg-slate-900/70'
+        'today-stretch-item',
+        isChecked ? 'is-done' : ''
       ].join(' ')}
     >
       <div className="flex items-start justify-between gap-3">
@@ -77,7 +75,7 @@ const StretchItem = memo(({ item, date, defaultExpanded = false, onAfterStretchD
               </span>
             )}
             {item.bodyZone && item.bodyZone !== 'full' && (
-              <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-teal-900/40 text-teal-200 capitalize">
+              <span className="today-stretch-tag capitalize">
                 <Target className="w-3 h-3" aria-hidden="true" />
                 {item.bodyZone}
               </span>
@@ -111,7 +109,7 @@ const StretchItem = memo(({ item, date, defaultExpanded = false, onAfterStretchD
                 <button
                   type="button"
                   onClick={toggleExpand}
-                  className="mt-1 text-[11px] text-teal-300 hover:text-teal-200 inline-flex items-center gap-1"
+                  className="today-ex-link mt-1 inline-flex items-center gap-1"
                 >
                   <ChevronDown className="w-3 h-3" />
                   Voir les instructions

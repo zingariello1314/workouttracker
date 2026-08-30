@@ -5,14 +5,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useWorkout } from '../context/WorkoutContext';
 import { useGarminData } from './useGarminData';
-import {
-  calculateSportXP,
-  computeNutritionRegisteredFoodSportXp,
-  countNutritionRegisteredFoodItems,
-  SPORT_XP_FORMULA_REVISION
-} from '../services/xp/xpCalculations';
-import { computeProgramCompletionBonusXp } from '../utils/programCompletionBonus';
-import { computeVolumeKgForWorkoutKey } from '../utils/exerciseLoadVolume';
+import { calculateSportXP, computeNutritionRegisteredFoodSportXp, countNutritionRegisteredFoodItems, SPORT_XP_FORMULA_REVISION } from '../services/xp/xpCalculations';
 import { collectDedupedCheckedVolumeKeys } from '../utils/trainingLoadUtils';
 import { useAuth } from '../context/AuthContext';
 import { canAccessPrivateData, isAdminUser } from '../utils/accessControl';
@@ -84,15 +77,29 @@ let sportXpCache = {
   storageKey: null
 };
 
-/** Invalide le cache module après modification reps / coches / formule XP. */
-export const invalidateSportXpCache = (storageKey = sportXpCache.storageKey) => {
+/** Invalide le cache module après modification reps / coches / formule XP.
+ *  On garde le dernier résultat affiché (pas de flash à 0 XP / skeleton). */
+export const invalidateSportXpCache = () => {
   sportXpCache = {
     ...sportXpCache,
-    signature: null,
-    result: { totalXP: 0, breakdown: DEFAULT_BREAKDOWN }
+    signature: null
   };
-  if (storageKey) clearSportXpSessionSnapshot(storageKey);
 };
+
+function scheduleSportXpAfterPaint(fn) {
+  if (typeof requestAnimationFrame !== 'function') {
+    const t = setTimeout(fn, 0);
+    return () => clearTimeout(t);
+  }
+  let innerId = 0;
+  const outerId = requestAnimationFrame(() => {
+    innerId = requestAnimationFrame(fn);
+  });
+  return () => {
+    cancelAnimationFrame(outerId);
+    if (innerId) cancelAnimationFrame(innerId);
+  };
+}
 
 function hasStableSportXpCache(storageKey) {
   return sportXpCacheMatchesScope(storageKey) && (sportXpCache.result?.totalXP ?? 0) > 0;
@@ -204,6 +211,7 @@ export const useSportXP = () => {
   const [nutritionLoading, setNutritionLoading] = useState(true);
   const [garminLoading, setGarminLoading] = useState(() => true);
   const cacheRef = useRef({ signature: null, result: { totalXP: 0, breakdown: DEFAULT_BREAKDOWN } });
+  const [publishedXp, setPublishedXp] = useState(() => resolveBootstrapSportXpResult(storageKey));
 
   const sportXpBootstrapPending =
     authLoading || isWorkoutDataLoading || garminLoading || (canAccessData && nutritionLoading);
@@ -310,24 +318,12 @@ export const useSportXP = () => {
     };
   }, [dbReady, loadAllData, canAccessData, storageKey]);
 
-  const calculated = useMemo(() => {
-    if (!canAccessData) {
-      return { totalXP: 0, breakdown: DEFAULT_BREAKDOWN };
-    }
-    // Tant que les sources ne sont pas prêtes : snapshot session (survit au F5) ou cache module, jamais un calcul partiel.
-    if (sportXpBootstrapPending) {
-      return resolveBootstrapSportXpResult(storageKey);
-    }
+  const xpSignature = useMemo(() => {
+    if (!canAccessData) return 'no-access';
+    if (sportXpBootstrapPending) return `boot:${storageKey}`;
     if (!workoutData) {
-      const nutOnly = computeNutritionRegisteredFoodSportXp(nutritionMeals);
-      return {
-        totalXP: nutOnly.nutritionFoodXp,
-        breakdown: {
-          ...DEFAULT_BREAKDOWN,
-          nutritionFoodItems: nutOnly.nutritionFoodItems,
-          nutritionFoodXp: nutOnly.nutritionFoodXp
-        }
-      };
+      const nutOnly = countNutritionRegisteredFoodItems(nutritionMeals);
+      return `nut:${Array.isArray(nutritionMeals) ? nutritionMeals.length : 0}:${nutOnly}`;
     }
     let totalReps = 0;
     collectDedupedCheckedVolumeKeys(workoutData).forEach((key) => {
@@ -348,17 +344,12 @@ export const useSportXP = () => {
     }
     const sessionsWithFeedback = workoutData.sessionFeedbacks ? Object.keys(workoutData.sessionFeedbacks).length : 0;
 
-    // Étirements : on intègre le nombre cochés + un checksum des notes perçues dans la
-    // signature du cache. Sans ça, cocher un étirement laissait le résultat précédent
-    // en cache (les autres clés restant identiques) → l'XP n'apparaissait pas.
     const checkedStretches = workoutData.checkedStretches || {};
     let checkedStretchCount = 0;
     let stretchKeysChecksum = 0;
     for (const [k, v] of Object.entries(checkedStretches)) {
       if (v !== true) continue;
       checkedStretchCount += 1;
-      // Petit hash positionnel sans dépendance pour distinguer rapidement deux ensembles
-      // de clés cochées ; la valeur exacte importe peu, seules les variations comptent.
       for (let i = 0; i < k.length; i++) {
         stretchKeysChecksum = (stretchKeysChecksum * 31 + k.charCodeAt(i)) | 0;
       }
@@ -399,7 +390,7 @@ export const useSportXP = () => {
 
     let totalCalories = 0;
     if (garminData?.dailyMetrics) {
-      Object.values(garminData.dailyMetrics).forEach(day => {
+      Object.values(garminData.dailyMetrics).forEach((day) => {
         if (day.calories?.active) totalCalories += day.calories.active;
       });
     }
@@ -439,18 +430,6 @@ export const useSportXP = () => {
       });
     }
 
-    const programCompletionBonusXp = computeProgramCompletionBonusXp(workoutData, {
-      programs: programsForCompletionXp,
-      getExerciseNameById
-    });
-
-    let liftedVolumeChecksum = 0;
-    collectDedupedCheckedVolumeKeys(workoutData).forEach((k) => {
-      liftedVolumeChecksum += computeVolumeKgForWorkoutKey(k, workoutData);
-    });
-
-    // Circuits : signature = total tours par jour + nb de définitions actives.
-    // Force la recompute lorsqu'on incrémente un tour ou qu'on ajoute / modifie un circuit.
     const circuitProgress = workoutData.circuitProgress || {};
     const circuitDefinitions = workoutData.circuitDefinitions || {};
     let circuitProgressChecksum = 0;
@@ -477,7 +456,7 @@ export const useSportXP = () => {
     const manualWalkSig = manualDailyWalkChecksum(enduranceData?.manualDailyWalkByDate);
     const gtgSig = gtgChecksum(enduranceData?.gtg);
 
-    const signature = [
+    return [
       SPORT_XP_FORMULA_REVISION,
       totalReps,
       coeffs.length,
@@ -497,8 +476,6 @@ export const useSportXP = () => {
       pushupSig,
       cardioLen,
       garminLapTally,
-      programCompletionBonusXp,
-      Math.round(liftedVolumeChecksum * 10),
       checkedStretchCount,
       stretchKeysChecksum,
       stretchRatingsChecksum,
@@ -514,26 +491,78 @@ export const useSportXP = () => {
       manualWalkSig,
       gtgSig
     ].join('|');
+  }, [workoutData, garminData, canAccessData, nutritionMeals, sportXpBootstrapPending, storageKey]);
 
-    if (cacheRef.current.signature === signature) {
-      return cacheRef.current.result;
+  useEffect(() => {
+    if (!canAccessData) {
+      const empty = { totalXP: 0, breakdown: DEFAULT_BREAKDOWN };
+      cacheRef.current = { signature: 'no-access', result: empty };
+      setPublishedXp(empty);
+      return undefined;
     }
-    if (sportXpCache.signature === signature && sportXpCacheMatchesScope(storageKey)) {
-      cacheRef.current = { signature, result: sportXpCache.result };
-      return sportXpCache.result;
+    if (sportXpBootstrapPending) {
+      const boot = resolveBootstrapSportXpResult(storageKey);
+      cacheRef.current = { signature: `boot:${storageKey}`, result: boot };
+      setPublishedXp(boot);
+      return undefined;
+    }
+    if (cacheRef.current.signature === xpSignature) {
+      setPublishedXp(cacheRef.current.result);
+      return undefined;
+    }
+    if (sportXpCache.signature === xpSignature && sportXpCacheMatchesScope(storageKey)) {
+      cacheRef.current = { signature: xpSignature, result: sportXpCache.result };
+      setPublishedXp(sportXpCache.result);
+      return undefined;
     }
 
-    const result = calculateSportXP(workoutData, garminData, enduranceData, {
-      programs: programsForCompletionXp,
-      activeProgram,
-      getExerciseNameById,
-      nutritionMeals
+    let cancelled = false;
+    const cancelPaint = scheduleSportXpAfterPaint(() => {
+      if (cancelled) return;
+      let result;
+      if (!workoutData) {
+        const nutOnly = computeNutritionRegisteredFoodSportXp(nutritionMeals);
+        result = {
+          totalXP: nutOnly.nutritionFoodXp,
+          breakdown: {
+            ...DEFAULT_BREAKDOWN,
+            nutritionFoodItems: nutOnly.nutritionFoodItems,
+            nutritionFoodXp: nutOnly.nutritionFoodXp
+          }
+        };
+      } else {
+        const enduranceData = workoutData?.enduranceData || {};
+        result = calculateSportXP(workoutData, garminData, enduranceData, {
+          programs: programsForCompletionXp,
+          activeProgram,
+          getExerciseNameById,
+          nutritionMeals
+        });
+      }
+      if (cancelled) return;
+      cacheRef.current = { signature: xpSignature, result };
+      sportXpCache = { ...sportXpCache, signature: xpSignature, result, storageKey };
+      writeSportXpSessionSnapshot(storageKey, result);
+      setPublishedXp(result);
     });
-    cacheRef.current = { signature, result };
-    sportXpCache = { ...sportXpCache, signature, result, storageKey };
-    writeSportXpSessionSnapshot(storageKey, result);
-    return result;
-  }, [workoutData, garminData, canAccessData, programsForCompletionXp, getExerciseNameById, activeProgram, nutritionMeals, sportXpBootstrapPending, storageKey]);
+    return () => {
+      cancelled = true;
+      cancelPaint();
+    };
+  }, [
+    xpSignature,
+    workoutData,
+    garminData,
+    canAccessData,
+    programsForCompletionXp,
+    getExerciseNameById,
+    activeProgram,
+    nutritionMeals,
+    sportXpBootstrapPending,
+    storageKey
+  ]);
+
+  const calculated = publishedXp;
 
   const levelInfo = useMemo(() => {
     const totalXP = calculated.totalXP || 0;

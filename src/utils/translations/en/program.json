@@ -81,6 +81,18 @@
     "weekB": "Gym variant — week B",
     "weekAWithName": "Gym variant — week A ({{name}})",
     "weekBWithName": "Gym variant — week B ({{name}})"
+  },
+  "weekB": {
+    "toolbarTitle": "Week B",
+    "toolbarHint": "You can clear only week B exercises, or remove week B entirely. The main session is left untouched.",
+    "clearAll": "Clear week B exercises",
+    "removeAll": "Remove week B",
+    "clearDay": "Clear exercises",
+    "removeDay": "Remove B",
+    "clearAllConfirm": "Clear all week B exercises?\n\nThe program and week A stay. A/B alternation remains, week B slots stay empty.",
+    "removeAllConfirm": "Remove week B from this program?\n\nThe main session and week A stay. A/B alternation will be turned off.",
+    "clearDayConfirm": "Clear week B exercises for {{day}}?\n\nThe main session and week A stay. You can add B exercises again.",
+    "removeDayConfirm": "Remove the week B variant for {{day}}?\n\nThe main session and week A stay."
   }
 }
 

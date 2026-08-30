@@ -16,6 +16,8 @@
 
 /* Import Global Performance Module Styles */
 @import './styles/global-performance-module.css';
+@import './styles/today-sport-modules.css';
+@import './styles/program-sport-modules.css';
 
 @tailwind base;
 @tailwind components;

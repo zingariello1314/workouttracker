@@ -89,10 +89,10 @@ export default function GtgTodaySchedulePanel({ date }) {
   const progressBarPct = Math.min(100, Math.max(0, dayPlan.progressPct));
 
   return (
-    <div className="rounded-xl border-2 border-violet-500/35 bg-black p-5 shadow-lg">
+    <div className="today-module-card today-gtg-panel rounded-xl border-2 border-violet-500/35 bg-black p-5 shadow-lg">
       <div className="mb-4 flex flex-wrap items-start justify-between gap-3">
         <div>
-          <h3 className="text-lg font-semibold text-violet-100">
+          <h3 className="text-lg font-semibold text-white">
             {t('today.gtg.scheduleTitle', 'Grease the Groove — emploi du temps')}
           </h3>
           <p className="mt-1 max-w-2xl text-xs text-slate-400 leading-relaxed">
@@ -132,11 +132,12 @@ export default function GtgTodaySchedulePanel({ date }) {
           {t('today.gtg.noSlots', 'Aucun créneau prévu — configure GTG dans l’onglet Défis.')}
         </p>
       ) : (
-        <div className="space-y-3">
+        <div className="today-gtg-slots-wrap">
+        <div className="today-gtg-slots">
           {dayPlan.slots.map((slot) => (
             <div
               key={slot.index}
-              className={`rounded-xl border p-4 ${
+              className={`today-gtg-slot rounded-xl border p-4 ${
                 slot.isComplete
                   ? 'border-emerald-600/50 bg-emerald-950/20'
                   : 'border-[#0F4C5C]/50 bg-slate-950/40'
@@ -157,29 +158,25 @@ export default function GtgTodaySchedulePanel({ date }) {
                   </span>
                 )}
               </div>
-              <div className="flex flex-wrap gap-2">
+              <div className="today-gtg-pills">
                 {slot.items.map((item) => (
                   <button
                     key={`${item.exerciseId}-${item.slotIndex}`}
                     type="button"
                     disabled={saving}
                     onClick={() => onToggleMiniSet(item.slotIndex, item.exerciseId)}
-                    className={`rounded-xl border px-3 py-2 text-left text-sm transition disabled:opacity-50 ${
-                      item.done
-                        ? 'border-emerald-500/60 bg-emerald-950/40 text-emerald-100'
-                        : 'border-slate-600 bg-black text-slate-200 hover:border-violet-400/50'
-                    }`}
+                    className={`today-gtg-pill ${item.done ? 'is-done' : ''}`}
                   >
-                    <div className="font-medium">{labelFor(item.exerciseId)}</div>
-                    <div className="text-[11px] opacity-80">
+                    <span className="today-gtg-pill-name">{labelFor(item.exerciseId)}</span>
+                    <b>
                       {item.reps} {t('endurance.gtg.repsShort')}
-                      {item.done ? ` · ${t('endurance.gtg.checked')}` : ''}
-                    </div>
+                    </b>
                   </button>
                 ))}
               </div>
             </div>
           ))}
+        </div>
         </div>
       )}
     </div>
