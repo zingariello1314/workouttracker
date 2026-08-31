@@ -1,5 +1,5 @@
-import React, { useMemo } from 'react';
-import { Sparkles } from 'lucide-react';
+import React, { useMemo, useState } from 'react';
+import { ChevronDown, ChevronUp, Sparkles } from 'lucide-react';
 import { useTranslation } from '../../../utils/translations';
 import { useWorkout } from '../../../context/WorkoutContext';
 import {
@@ -56,8 +56,10 @@ export default function RecapPeriodHighlightsPanel({
 }) {
   const t = useTranslation();
   const { getCurrentData, data, getExerciseNameById } = useWorkout();
+  const [open, setOpen] = useState(false);
 
   const analytics = useMemo(() => {
+    if (!open) return null;
     const snap = getCurrentData();
     if (!periodWindow?.start || !periodWindow?.end) return null;
     return buildRecapPeriodCalendarAnalytics({
@@ -68,17 +70,25 @@ export default function RecapPeriodHighlightsPanel({
       getExerciseNameById,
       recapState
     });
-  }, [data, getCurrentData, garminData, period, periodWindow, recapState, getExerciseNameById]);
+  }, [open, data, getCurrentData, garminData, period, periodWindow, recapState, getExerciseNameById]);
 
-  if (!analytics?.periodStats) return null;
-
-  const { periodStats, bestMonthsByMetric, topExercises, streakRange, topMuscleGroups, running } =
-    analytics;
+  const periodStats = analytics?.periodStats;
+  const bestMonthsByMetric = analytics?.bestMonthsByMetric;
+  const topExercises = analytics?.topExercises || [];
+  const streakRange = analytics?.streakRange;
+  const topMuscleGroups = analytics?.topMuscleGroups || [];
+  const running = analytics?.running;
 
   const periodLabel = t(`recap.period.${period}`, period);
+  const windowStart = analytics?.window?.start || periodWindow?.start;
+  const windowEnd = analytics?.window?.end || periodWindow?.end;
 
   return (
-    <section className="relative mb-2 overflow-hidden rounded-2xl border border-violet-500/55 bg-gradient-to-br from-violet-950/90 via-[#120a1c] to-black px-4 py-5 shadow-[0_24px_64px_rgba(124,58,237,0.22),inset_0_1px_0_rgba(255,255,255,0.07)] ring-1 ring-violet-400/25 sm:px-6 sm:py-6">
+    <section
+      className={`relative mb-2 overflow-hidden rounded-2xl border border-violet-500/55 bg-gradient-to-br from-violet-950/90 via-[#120a1c] to-black shadow-[0_24px_64px_rgba(124,58,237,0.22),inset_0_1px_0_rgba(255,255,255,0.07)] ring-1 ring-violet-400/25 ${
+        open ? 'px-4 py-5 sm:px-6 sm:py-6' : 'px-4 py-3 sm:px-5 sm:py-3.5'
+      }`}
+    >
       <div
         className="pointer-events-none absolute -right-24 -top-24 h-56 w-56 rounded-full bg-violet-500/15 blur-3xl"
         aria-hidden
@@ -88,22 +98,36 @@ export default function RecapPeriodHighlightsPanel({
         aria-hidden
       />
 
-      <header className="relative mb-5 border-b border-violet-500/25 pb-4">
-        <div className="flex items-start gap-3">
+      <header className={`relative ${open ? 'mb-5 border-b border-violet-500/25 pb-4' : ''}`}>
+        <button
+          type="button"
+          onClick={() => setOpen((v) => !v)}
+          aria-expanded={open}
+          className="flex w-full items-start gap-3 rounded-xl text-left transition-colors hover:bg-violet-500/10"
+        >
           <span className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-violet-400/40 bg-violet-500/20 text-violet-100">
             <Sparkles size={18} aria-hidden />
           </span>
-          <div>
+          <div className="min-w-0 flex-1">
             <h2 className="text-sm font-bold uppercase tracking-widest text-violet-100 sm:text-base">
               {t('recap.analyse.periodHighlights.title', 'Récap sur la période')}
             </h2>
             <p className="mt-1 text-[11px] leading-snug text-violet-200/70">
-              {periodLabel} · {formatYmdFr(analytics.window.start)} → {formatYmdFr(analytics.window.end)}
+              {periodLabel}
+              {windowStart && windowEnd
+                ? ` · ${formatYmdFr(windowStart)} → ${formatYmdFr(windowEnd)}`
+                : null}
             </p>
           </div>
-        </div>
+          {open ? (
+            <ChevronUp className="mt-1.5 h-5 w-5 shrink-0 text-violet-200/80" aria-hidden />
+          ) : (
+            <ChevronDown className="mt-1.5 h-5 w-5 shrink-0 text-violet-200/80" aria-hidden />
+          )}
+        </button>
       </header>
 
+      {open && periodStats ? (
       <div className="relative space-y-6">
         <div className="grid grid-cols-3 gap-2 sm:gap-2.5">
           {RECAP_CALENDAR_SPORT_METRIC_KEYS.map((metric) => (
@@ -161,7 +185,7 @@ export default function RecapPeriodHighlightsPanel({
           </div>
         ) : null}
 
-        {streakRange.length > 0 ? (
+        {streakRange?.length > 0 ? (
           <div className="rounded-xl border border-emerald-400/35 bg-emerald-950/25 px-3 py-2.5 text-[11px] text-emerald-50/95">
             <span className="font-semibold">
               {t('recap.analyse.bestStreak', 'Meilleure série')} : {streakRange.length} j.
@@ -258,6 +282,11 @@ export default function RecapPeriodHighlightsPanel({
           </div>
         ) : null}
       </div>
+      ) : open ? (
+        <p className="relative mt-1 text-[11px] text-violet-200/65">
+          {t('recap.analyse.periodHighlights.empty', 'Pas assez de données sur cette période.')}
+        </p>
+      ) : null}
     </section>
   );
 }

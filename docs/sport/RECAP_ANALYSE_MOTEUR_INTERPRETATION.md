@@ -102,6 +102,7 @@ Les relations ponctuelles (discontinuité, écart programme…) restent en **sec
 | Fichier | Rôle |
 |---------|------|
 | `src/utils/sport/recapTrainingFeatures.js` | Chiffres comparables, **pas de texte UI** |
+| `src/utils/sport/athleteTrainingIdentity.js` | Identité : fréquence habituelle ± variance, intervalles par qualité, confiance |
 | `src/utils/sport/userTrainingState.js` | État athlète ; charge primaire = **28 j. vs 28 j.** |
 | `src/utils/sport/recapExposureNarratives.js` | Fenêtres période / habitude / 90 j., muscles, classification des baisses d’exos |
 | `src/utils/sport/recapTrainingTimeline.js` | Dernière occurrence, jours écoulés, séances entre-temps |
@@ -130,21 +131,24 @@ On est passé à : **garder 3 colonnes**, mais **plusieurs lectures indépendant
 | `absence` | Dernière date d’une qualité, séances entre-temps |
 | `performance` | Momentum / PR / variantes ≠ perte de capacité |
 | `push_share` | Mix poussée + **conséquence selon l’objectif** |
+| `specialization` | Ce qui se *construit* sur le cycle (moyen terme) — **chevauche** `push_share` (groupes sémantiques distincts → les deux peuvent sortir) |
 | `pull_hold` | Tirage vertical qui tient alors que le volume dos baisse |
 | `unknown_fatigue` | Dire qu’on **ne sait pas** |
-| `specialization` | Ce qui se *construit* sur le cycle (moyen terme) |
 | `efficiency` | Rendement lu **avec** la fréquence |
 | `goal_gap` | Objectif vs comportement |
 | `capacity_vs_exposure` | Risque si le trou de rythme dure |
 | `continuity_level` | Sur 90 j., ce qui progresse parce que ça revient |
 | `recent_vs_identity` | Le rythme actuel casse-t-il la trajectoire des mois ? |
+| `identity` | Écart à la **variabilité habituelle** (moyenne ± σ), pas seulement au mois d’avant |
 
 Remplissage interdit : plus de pavé « tu as maintenant des références personnelles » juste pour occuper le long terme. Seuil de pertinence (~0,76) : les lectures trop faibles ne sortent pas.
 
 ### 4.2 Les chiffres sont des preuves, pas le contenu
 
 Ligne de bas de carte du type `14 séances · 3,5/sem. · 4,7/sem. avant`.  
-Le corps dit : *tu t’entraînes moins souvent, mais pas moins longtemps quand tu t’y mets*.
+Le corps vise : *tu t’entraînes moins souvent, mais pas moins longtemps quand tu t’y mets*.
+
+**Piège vérifié :** « longtemps » n’est **pas** mesuré. `continuity` compare `avgExercisesPerSession` (nombre d’exercices cochés), pas une durée de séance. Sur le dump du 31 août : « 7 exercices contre 6,7 » — c’est de la **densité d’items**, pas du temps. Formuler ça comme « pas moins longtemps » serait une affirmation non prouvée. L’identité a déjà changé le titre quand le rythme est *dans* la plage habituelle ; il reste à ne plus parler de durée sans horodatage.
 
 Langage visé : sujet → verbe → conséquence. Interdits de facto : « le réalisé », « le profil se lit en parts relatives », « Conclusion : ».
 
@@ -204,22 +208,27 @@ Historique local (`insightNoveltyStore`) + groupes sémantiques. Si la poussée 
 
 ## 5. Où on en est aujourd’hui (état au 31 août 2026)
 
-**Ce qui marche**
+**Ce qui marche** (y compris sur le dump réel de ce jour)
 
 - Les colonnes racontent des **histoires distinctes**, plus un inventaire musculaire.
-- Croisements fréquents : fréquence × densité ; 7 j. × 28 j. ; prévu × commencé × blocs ignorés ; volume dos × tractions qui tiennent ; PR bras × fréquence en baisse.
-- Le panneau dev est **documenté** pour ne plus faire croire que −89 % est « la » charge.
-- Les tests empêchent de réinjecter NEAT / kcal / « 1re moitié » comme contenu de colonne, et vérifient plusieurs lectures par horizon, le français « naturel » (pas « le réalisé »), et l’ignorance des +703 %.
+- Croisements fréquents : fréquence × densité ; 7 j. × 28 j. ; prévu × commencé × blocs ignorés.
+- **Identité vivante sur ce dump** : ~3,3 séances/sem. lu comme *dans* la plage habituelle ~4,1 (2,6–5,5), pas comme une rupture. `volume_traj` a bien opposé −38 % (28 j.) et +61 % (7 j.). `absence` course : 24/06, 68 j., 39 séances entre-temps.
+- Charge du panneau = **28 j. vs 28 j.** (−38 %), pas le −66 % de moitié de période (affiché et écarté).
+- Fatigue `unknown` (35 %) : pas de carte « tu es fatigué ». Événements / robustesse vides **sur ce snapshot** (les détecteurs n’ont rien émis — ce n’est pas que le code n’existe pas).
 
-**Limites honnêtes (pas encore au niveau « analyste sportif complet »)**
+**Le cap franchi, et ce qui manque encore**
 
-1. **Population âge / poids / sexe** — volontairement secondaire ; pas de « tu es mieux que 73 % des gens » sur des bases fragiles. Toi vs toi d’abord.
-2. **Trou progressif semaine par semaine** (course 5 → 4 → 3 → 0) — la dernière occurrence existe ; la **série de semaines** n’est pas encore un détecteur dédié.
-3. **Organisation du programme** (course collée aux jours lourds) — hypothèse textuelle sur les blocs sacrifiés, pas encore un vrai graphe « jour prévu × récup × sommeil ».
-4. **Charge / séries / tonnage / RIR** — beaucoup d’analyses restent en **reps cochées**.
-5. **Confiance qui réécrit le langage** à chaque phrase — partiel.
-6. **Quotas** 4 / 3 / 2 — encore un maximum, plus un minimum : on peut avoir 2 excellentes lectures courtes et un long terme presque vide, c’est voulu, mais la sélection par poids peut encore faire remonter des cartes « moyennes ».
-7. Coach Vision / Dense / Benchmarks **ne consomment pas encore** ces lectures comme source unique.
+Le moteur n’est plus un générateur de stats reformulées. Il produit des phrases intelligentes à partir de **plusieurs signaux**. Il ne construit pas encore une **représentation unique de la situation** avant d’écrire. Détail recoupé code + captures : **§ 10**.
+
+**Limites honnêtes**
+
+1. Unité d’analyse = encore la **dimension** (une carte volume, une programme, une push…) pas le **phénomène**.
+2. « Volume » dans les features = **reps cochées**, pas le travail (charge × séries × RIR × durée).
+3. Titre long terme `continuity_level` trop **générique** (« ce qui revient souvent ») ; le dump nomme des exos mais pas la forme de la trajectoire.
+4. `performance` / axe Perf. du panneau = **momentum de reps agrégé** (−60 %) alors que le corps de la carte dit déjà que ce n’est pas la capacité.
+5. Objectif = 3 portes de texte, pas un système de priorités.
+6. Population (~3 vs 0,9 séances) : **dans le panneau dev seulement** (`isColumnInterpretation` écarte `hierarchical_comparison`). Ne pollue pas les colonnes utilisateur — mais parasite le debug.
+7. Quotas 4 / 3 / 2 ; le dump listait ~12 lectures composées, les colonnes n’en montrent qu’une fraction. La sélection peut cacher le meilleur signal (identité/continuité) derrière `program` ou `specialization`.
 
 ---
 
@@ -238,13 +247,16 @@ Ce n’est **pas** un LLM à l’inférence. C’est du **texte déterministe** 
 
 ## 7. Si on continue
 
-Priorité cohérente avec ce qui manque encore, sans tout rouvrir :
+Le prochain saut **n’est pas** d’ajouter 30 `coach_reading`. C’est de changer l’unité : **phénomène** (situation cohérente) plutôt que **dimension** (une carte par métrique). Ordre, recoupé avec le dump réel du 31 août :
 
-1. Détecteur de **trou progressif** (qualité qui s’éteint sur N semaines).
-2. Croiser **planning prévu** (jour de course vs jours muscu) pour l’hypothèse récupération — toujours comme hypothèse.
-3. Brancher Coach Vision / autres onglets sur les **mêmes** `coach_reading`.
-4. Faire varier les **verbes** selon la confiance (clair / semble / trop tôt / silence).
-5. Mémoire de thème plus riche (première fois / persiste / devenu structurel).
+1. **Phénomènes composés** — regrouper fréquence ↓ + volume 28 j. ↓ + semaine ↑ + identité « dans la plage » + programme 33 % en *une* situation, au lieu de 4 cartes qui se répètent.
+2. **Dose réelle** — le « volume » des features est un **somme de reps cochées** (`sumCheckedRepsInWindow`). Séries, charge, RIR, durée : souvent déjà dans le snapshot / Garmin, **pas** dans les lectures Analyse.
+3. **Trajectoire** — pas seulement première vs dernière valeur sur 90 j. (`continuity_level`). Direction, plateau, dents de scie, expo ↓ vs perf stable.
+4. **Objectif comme priorités** — aujourd’hui 3 portes de texte (`goalPushConsequence`, cardio street, `goal_gap`). Pas : quelles qualités sont prioritaires / maintenues / secondaires.
+5. **Comportement quand ça dévie** — identité = *comment tu t’entraînes d’habitude*. Il manque *ce que tu sacrifies* quand le rythme casse (blocs abandonnés en cours de séance vs jamais commencés).
+6. **Mémoire de phénomène** — `insightNoveltyStore` sait « poussée déjà dite → reste dominante ». Pas : aggravation 62 % → 74 %, résolution, réapparition.
+
+Chantiers **secondaires** (gardés, pas en tête) : trou progressif semaine par semaine ; planning jour prévu × récup ; brancher Coach Vision sur les mêmes lectures ; verbes selon confiance.
 
 Le problème n’est plus « collecter 50 variables de plus ». C’est de faire **travailler ensemble** celles qu’on a, et de **se taire** quand la comparaison n’est pas la bonne.
 
@@ -314,10 +326,10 @@ Exemples concrets dans le code :
 | Émission `push_share` | push ≥ ~60 % | Fixe. |
 | Filtre des lectures | `relevance ≥ ~0,76` | Fixe. |
 | Quotas colonnes | 4 / 3 / 2 | Fixe. |
-| Fenêtres | 7 / 28 / 90 jours calendaires | Pas une « normalité » estimée sur 6 mois (moyenne, variance, intervalle habituel entre deux tractions). |
-| `LEVEL_ESTABLISHED` | heuristique sur les dernières séances (écart-type, proximité du max) | Dit « le niveau est lisible », **pas** « intervalle habituel 2,8×/sem., tolérance d’interruption 7 jours ». |
+| Fenêtres | 7 / 28 / 90 jours calendaires | Toujours là. **En plus** : identité ~18 sem. (moyenne/σ). |
+| `LEVEL_ESTABLISHED` | heuristique sur les dernières séances (écart-type, proximité du max) | Dit « le niveau est lisible ». L’identité ajoute une **plage de reps** par qualité, sans recalibrer ce seuil. |
 
-Personne A (3→4 séances) et personne B (6→4) : les **pourcentages** seront opposés, donc les textes de `continuity` / `volume_traj` différeront. En revanche le moteur **ne sait pas** que ±15 % est du bruit *pour A* et une rupture *pour B* au-delà du simple signe du delta. Il n’a pas appris la variabilité habituelle.
+Personne A (3→4 séances) et personne B (6→4) : les **pourcentages** seront opposés, donc les textes de `continuity` / `volume_traj` différeront. **Depuis l’identité**, si la confiance est haute, A à 3 séances dans une plage 3–4 n’est plus crié comme une rupture ; B à 3 hors d’une plage ~6 l’est. Ce que le moteur **ne fait toujours pas** : recalibrer `classifyTrendFromPct` (±8 %) ni les crash −18 % — l’identité densifie le *texte*, elle ne change pas les *états* Charge / Perf. du panneau.
 
 ### 8.4 Tableau de maturité (aligné sur le code, pas sur l’intention)
 
@@ -334,11 +346,13 @@ Personne A (3→4 séances) et personne B (6→4) : les **pourcentages** seront 
 | Chronologie | Bonne base | Dernière date, pas encore série 5→4→3→0 |
 | Trajectoires longues | À développer | Pas de détecteur de trou progressif |
 | Compréhension du planning | À développer | Blocs peu cochés ≠ « course après deux jours de push » |
-| Baseline dynamique « normal pour toi » | À développer | Fenêtres fixes, pas identité (moyenne, variance, habitude par exo) |
-| Population | Faible / prudent | Secondaire ; pas de percentile solide âge×poids |
+| Baseline dynamique « normal pour toi » | **Amorcé** | `athleteTrainingIdentity.js` : moyenne/σ fréquence ~18 sem., intervalles par qualité. Pas encore persisté. |
+| Unité « phénomène » vs dimension | **Faible** | Une carte par `kind` ; pas de graphe qui fusionne contraction + semaine + identité |
+| Dose (≠ reps) | **Faible** | `sumCheckedRepsInWindow` appelé « volume » dans le texte |
+| Population | Dev seulement | Filtré des colonnes (`hierarchical_comparison`) ; encore dans le panneau |
 | Mémoire des thèmes | Début | Reformulation « reste dominante », pas fiche thème (date, intensité, résolution) |
-| Apprentissage individuel | **Non** | Aucune MAJ de seuils selon l’historique de *cette* personne |
-| Auto-adaptation des règles | **Non** | Constantes dans le source |
+| Apprentissage individuel | **Partiel** | Comparaison à l’identité recalculée ; **pas** de MAJ de seuils globaux (±8 %, crash −18 %) |
+| Auto-adaptation des règles | **Non** | Constantes dans le source (`classifyTrendFromPct`, etc.) |
 
 ### 8.5 Ce qu’il faudrait pour « apprendre l’athlète » (sans 50 règles de plus)
 
@@ -378,30 +392,29 @@ Objectif × exercice × fréquence × performance × programme × chronologie. C
 
 Limite : l’objectif ne **classe** pas encore les absences (« parmi ce que tu veux développer, le tirage est le moins exposé »). C’est un assemblage de cartes, pas un jugeur unique centré objectif.
 
-### Niveau 3 — Adaptation à l’identité de l’athlète — pas encore là
+### Niveau 3 — Adaptation à l’identité de l’athlète — **amorcé** (31 août 2026)
 
-Le trou n’est pas « 7 / 28 / 90 ». Ce sont des **fenêtres**. Il manque : *quelle est la manière habituelle de s’entraîner de cette personne ?*
+Le trou n’est plus « il n’y a que 7 / 28 / 90 ». Une couche `athleteTrainingIdentity` estime :
 
-Exemple que les fenêtres ne couvrent pas :
+- fréquence habituelle (moyenne, σ, plage) sur ~18 semaines, **avec confiance** ;
+- par qualité (tractions, pompes, dips, course) : intervalle médian / P80, trou actuel, plage de reps.
 
-- A oscille **naturellement** 3 → 4 → 3 → 4. Il fait 3. Le moteur voit souvent « stable vs les 28 j. d’avant ». Il n’a **pas** la phrase interne : « cet athlète oscille entre 3 et 4 ».
-- Tractions : l’un tous les ~2,8 jours, l’autre tous les jours. **5 jours sans traction** est inhabituel pour le premier, normal pour le second. Aujourd’hui on sait dire « dernière traction il y a 5 jours, N séances entre-temps ». On ne sait pas dire « ça dépasse **ton** intervalle habituel ».
+Ça densifie les lectures existantes (`continuity` ne crie plus « moins souvent » si 3 séances est dans ta plage 3–4 ; `absence` peut dire « 12 jours vs tes ~3 jours habituels »). Une carte **nouvelle** `identity` ne sort que si tu sors de la plage **et** que la confiance est haute. Moins de 6 semaines lisibles → silence.
 
-Même idée pour la course à 18 jours : déjà excellent en chronologie. Avec une identité (habitude 2,1×/sem., intervalle 3–5 j., plus longue pause habituelle 8 j.), 18 jours devient « hors rythme habituel », pas seulement « 18 jours et de la muscu entre-temps ».
+Il manque encore : tolérance aux interruptions *observée* (comment tes perfs réagissent après une pause), réponse à la charge, fiche persistante d’un Recap à l’autre. Les seuils globaux (±8 %, crash −18 %) ne se recalibrent pas.
 
-Idem performances : `LEVEL_ESTABLISHED` distingue PR isolé et niveau lisible. Il manque **plage habituelle + variance**. 8 reps n’est rien si on vit à 8–10 ; c’est un événement si on vit à 12–14. Et 8 reps après 10 jours sans traction ≠ 8 reps après 3 séances cette semaine.
-
-### Identité d’entraînement (cible, pas implémentée)
+### Identité d’entraînement (état)
 
 ```
 ATHLÈTE
-├── Fréquence habituelle (séances/sem., variabilité, tendance) + confiance
-├── Densité habituelle (exos/séance, volume/séance)
-├── Qualités (tractions, dips, pompes, course, …)
-│     fréquence, niveau (plage), intervalle, variabilité, tolérance à une pause
-├── Tolérance aux interruptions (globale et par qualité)
-├── Niveau établi (déjà amorcé)
-└── Objectifs
+├── Fréquence habituelle (séances/sem., variabilité, confiance)     ← fait
+├── Densité habituelle (exos/séance, volume/séance)                 ← pas encore
+├── Qualités (tractions, dips, pompes, course)
+│     fréquence, niveau (plage), intervalle, variabilité            ← fait
+│     tolérance à une pause (réaction observée)                     ← pas encore
+├── Tolérance aux interruptions (globale)                           ← pas encore
+├── Niveau établi                                                   ← déjà amorcé (robustesse)
+└── Objectifs                                                       ← déjà (3 portes)
 ```
 
 Chaque nouvelle observation s’évalue **contre cette identité**, avec incertitude. 10 jours d’historique → on **ne prétend pas** connaître la normalité (même philosophie que la fatigue unknown).
@@ -415,10 +428,122 @@ Exemple : habitude 4,2 ± 0,7 séances/sem. (confiance élevée). Actuel 3,5 →
 
 ### Prochaine priorité (pas l’âge / poids / sexe)
 
-1. **Baseline dynamique personnelle** (identité + variabilité), globale puis **par qualité**.  
-2. Puis : « inhabituel pour *toi* ».  
-3. Encore après : « comment *tu* réagis d’habitude à ça » (tolérance aux interruptions, réponse à la charge).  
-4. Population pertinente seulement si les références sont solides.
+Voir **§ 7** et **§ 10.6** : phénomènes composés d’abord, pas plus de détecteurs. L’identité fréquence/qualité est **amorcée** ; la suite est comportement + dose + trajectoire, pas la population.
 
-C’est cette troisième couche qui ferait passer d’un **excellent système d’interprétation déterministe** à quelque chose qui commence à se comporter comme un **coach personnel longitudinal**.
+---
+
+## 10. Audit critique (31 août 2026) — dump Recap + panneau dev + code
+
+Pas une recopie d’un avis externe. Chaque point ci-dessous a été **tenu ou recalé** en regardant (a) les colonnes Analyse, (b) le dump « Interprétations composées » / Features, (c) les fichiers cités.
+
+### 10.1 Ce que ce snapshot raconte vraiment
+
+Les features du panneau, ce jour-là :
+
+| Signal | Valeur | Dans le code |
+|--------|--------|----------------|
+| Volume 28 j. | −38 % | `volumeDelta28Pct` — c’est **la** charge (`userTrainingState` ne prend plus le max abs. de moitié de période) |
+| Volume 7 j. | +61 % | `volumeDelta7Pct` — autre question |
+| Moitié de période | −66 % | `periodHalfDeltaPct` — **affichée** dans le panneau, **écartée** des colonnes |
+| Volume 90 j. | +590 % | `plausiblePct` le jette du récit (seuil ~160 %) |
+| Fréquence | −35 % vs fenêtre précédente ; 13 séances / 28 j. | `frequencyDeltaPct`, `sessions28d` |
+| Identité | actuel ~3,3 / habitude ~4,1 / plage 2,6–5,5 | `athleteTrainingIdentity` — **status inside** |
+| Programme | ~33 %, alignement 22/100, 3 commencées / 7 prévues, 0 au bout | `recapCompletionTruth` + lecture `program` |
+| Momentum reps | −60 % | `repsMomentumRatio` → axe Perf. `declining` **et** titre `performance` |
+| Push | ~74 % / ratio ~2,8 (était ~2,11) | `push_share` + `specialization` (deux kinds) |
+| Course | 24/06, 68 j., 39 séances entre-temps | `recapTrainingTimeline` + `absence` |
+| Fatigue | unknown 35 % | pas de carte fatigue — correct |
+| Robustesse / événements | vides **sur ce dump** | `analyzePerformanceRobustness` / `detectTrainingEvents` n’ont rien émis ici |
+
+Situation globale (ce qu’un coach lirait en une fois) : **contraction récente de la pratique, pas une rupture d’identité ; la semaine rebondit ; le programme n’est presque plus le guide ; la poussée s’installe ; la course est sortie ; le −60 % de reps n’est pas une mesure de capacité.**
+
+Le moteur a **tous ces signaux**. Il les sort en **cartes séparées**. C’est le vrai écart « interpréteur contextualisé » vs « analyste ».
+
+### 10.2 Ce qui est vraiment bon (garder)
+
+Vérifié dans ce dump, pas seulement dans l’intention :
+
+- Toi vs toi, 28 j. vs 28 j., 7 j. cité **parce qu’il diverge**.
+- Refus du −66 % / +590 % comme tendance des colonnes.
+- Exposition ≠ performance (le corps de `performance` le dit ; le **titre** et l’axe Perf. le trahissent encore — § 10.4).
+- Chronologie course : date + délai + séances entre-temps. Excellent.
+- Identité : 3,3 lu comme *dans* 2,6–5,5, pas « tu t’entraînes moins » comme verdict. La carte `identity` **n’est pas sortie** (statut `inside`, comme prévu : silence si ce n’est pas inhabituel).
+- `unknown_fatigue` : silence. Les listes de causes (« récupération serrée, choix, oubli ») restent une **énumération**, pas un raisonnement probabiliste — mais au moins on n’affirme pas la fatigue.
+- Preuves chiffrées sous le texte ; pas de remplissage Garmin / kcal dans les colonnes.
+- Novelty : « La poussée **reste** dominante » — première couche réelle (`insightHistory`).
+
+### 10.3 Ce que l’audit externe a raison de frapper — et où c’est dans le code
+
+**Narration > analyse.** Une lecture = `signal A + signal B → phrase plausible` (`recapHorizonEssays.js`). Pas : état → phénomène → causes → enjeu objectif → surveillance. Les `kind` sont des **dimensions** (`continuity`, `volume_traj`, `program`…) sélectionnées ensuite (`selectBalancedCandidates`, quotas 4/3/2, pénalité de groupe sémantique). Un coach inverse l’ordre : d’abord « qu’est-ce qui se passe ? ».
+
+**Redondance push.** `push_share` (groupe `reading_push`) et `specialization` (groupe `reading_specialization`) : **deux groupes**, donc les deux peuvent cohabiter. Sur le dump : 74 % poussée **et** « devient plus spécialisé » avec les mêmes % triceps/épaules. Le système de nouveauté ne fusionne pas le phénomène.
+
+**Long terme faible.** `continuity_level` titre une **règle d’entraînement** (« ce qui progresse, c’est ce qui revient »), pas une observation. Le corps liste des noms (australiennes, dips) dès que `lastReps >= firstReps + 2` ou `longShifts.rising`. Pas : plateau vs dents de scie vs expo↓/perf stable. Robustesse vide sur ce dump → on n’a même pas « niveau établi » pour étayer.
+
+**« Volume » trompeur.** `sumCheckedRepsInWindow` / `dailyRepsMap` : ce sont des **reps cochées**. Le mot « volume −38 % » dans `volume_traj` et l’axe Charge peut se lire « 38 % moins de travail ». Faux si les charges, séries, RIR, durées ont changé. `progressionEfficiency = perfDelta / |volDelta|` (−1,58 ici) est le ratio de **deux pourcentages de reps**. `adaptationCost: high` en découle. Trop abstrait pour un athlète.
+
+**Perf −60 % dangereux.** `derivePerformance` pose `declining` si `repsMomentumRatio <= 0.9`. La carte dit ensuite que le momentum mélange exo moins touchés / variantes / suivis. **Contradiction assumée** : le framing « PERF / performances » est plus affirmatif que la preuve. À traiter comme un bug de **vocabulaire d’état**, pas comme un nouveau détecteur.
+
+**Course : gravité trop nette.** Phrase hardcodée : « au-delà de deux semaines, la première séance de retour n’est plus comparable à ton meilleur niveau ». 68 jours + 39 séances = absence **massive**, le constat date+trou est juste ; la frontière « 2 semaines = plus comparable » est une règle pratique vendue comme physiologie. Distinguer : inhabituel (identité) / perte de spécificité *probable* / capacité mesurée / comparabilité.
+
+**Programme : hypothèse non départagée.** « trop chargé **ou** mal placé » — le code a `leastCheckedExercises` et jours commencés vs prévus. Il n’a pas : séance commencée puis coupée vs jour jamais ouvert ; pas le graphe lundi push → mardi jambes. `leastCheckedPct` ≠ « systématiquement sacrifié en fin de séance ».
+
+**Objectif décoratif.** Confirmé § 8.2 : 3 portes. Pas de classement « parmi ce que tu vises, quoi est exposé / entretenu / sorti ».
+
+**Dose, durée, planning, familles, muscles %.** Absents des essays. `avgExercisesPerSession` ≠ durée. % triceps = parts du **modèle de comptage**, pas une stimulation mesurée. `redundancy` (variantes pompes) existe mais n’a pas sorti ici.
+
+**Contradictions / renforcements.** `volume_traj` est le seul vrai croisement 7 vs 28. Il n’y a pas d’objet « phénomène » qui dirait : *le signal principal est la contraction ; la semaine l’atténue ; l’identité dit que ce n’est pas hors-norme ; le −60 % reste indéterminé ; le programme est un autre sujet (adhérence), pas la même cause.* À l’inverse, fréquence↓ + volume↓ + course absente + push↑ **pourraient** se renforcer : aujourd’hui 4 cartes.
+
+**« Rien d’inquiétant » pas systématique.** L’identité le fait pour la fréquence. Pas : volume↓ mais niveau maintenu (robustesse vide ici) ; exo absent mais famille couverte.
+
+**Panneau = états, colonnes = relations.** Charge falling / Perf declining / Adhérence low ressemble à un diagnostic. Les colonnes racontent autre chose (identité inside, semaine +61 %). Risque de debugger les axes au lieu des lectures. Population ~3 vs 0,9 : **hors colonnes** (`isColumnInterpretation` refuse `hierarchical_comparison`) — utile à retirer du panneau ou à reléguer, pas à « corriger » l’UI utilisateur.
+
+**Stabilité ≠ moyenne.** L’identité a déjà σ de fréquence hebdo (plage 2,6–5,5). Ce qui manque : distribution intra-semaine (4 séances lun–jeu vs étalées) et « 0 / 8 / 1 / 7 » vs « 4 / 4 / 4 / 4 » comme *continuité*, pas seulement comme variance de totaux hebdo.
+
+### 10.4 Ce que l’audit externe force un peu trop, ou qui est déjà là
+
+| Claim | Recalage |
+|-------|----------|
+| « Le moteur ne sait pas ce qui est normal » | **Faux sur la fréquence**, sur ce dump. Identité inside. Encore vrai pour : réaction à une pause, dose, comportement de sacrifice. |
+| « Population parasite les lectures » | Parasite le **dev**, pas les colonnes. |
+| « Il manque toute notion de maintien » | `pull_hold` + `LEVEL_ESTABLISHED` existent ; **non centraux** et muets ici. |
+| « Efficiency n’existe pas » | `progressionEfficiency` existe ; le problème est **sémantique** (−1,58 illisible), pas l’absence de variable. |
+| « Pas de contradictions du tout » | `volume_traj` et `unknown_fatigue` en sont. Il manque un **moteur** de contradictions, pas le premier exemple. |
+| « 4 niveaux d’apprentissage » | Utile. On est au **niveau 2** (vs habitude) pour la fréquence. Niveau 3 (quand ça dévie, que fait-il) : quasi absent. Niveau 4 (seuils qui bougent) : non, et **volontaire**. |
+
+### 10.5 Formulation : trois niveaux, et le ton méta
+
+Sur ce dump, plusieurs cartes sautent constat → hypothèse (« programme trop chargé ou mal placé », « début de reprise », « pas comparable après 2 semaines »).
+
+Les garde-fous (« ce n’est pas une régression », « hypothèse à vérifier, pas un verdict », « le 33 % tout seul ne dit rien ») sont **répétés**. Ils enseignent le moteur au lieu de parler de l’athlète. La prudence devrait être **dans le verbe**, les preuves dans la ligne du bas / le panneau.
+
+Titres à bannir du type **leçon** : « Ce qui progresse durablement, c’est ce qui revient souvent ». Remplacer par ce que **ses** données montrent (ex. « Tes dips et australiennes ont assez de séances pour être lisibles ; le reste du trimestre ne l’est pas »).
+
+### 10.6 Six angles morts — au-dessus de « plus de cartes »
+
+1. **Phénomènes composés** — une situation « contraction récente, identité respectée, semaine qui rebondit, programme décroché ». Features → phénomène → 1–2 lectures, pas 4 dimensions.
+2. **Dose** — cesser d’appeler reps « volume » dans le texte utilisateur ; brancher séries / charge / RIR / durée **quand ça existe déjà** dans le snapshot.
+3. **Trajectoire** — forme sur 90 j., pas first vs last. Expo × perf (↑↑, ↑↓, maintien à expo basse).
+4. **Objectif-priorités** — pas une phrase A/B/C. Quelles qualités sont à développer / à entretenir / acceptables en retrait.
+5. **Comportement de déviation** — blocs jamais commencés vs commencés-abandonnés ; ce qui survit quand le temps manque ; reprise comme **événement** (déjà dans `trainingEventDetector`, vide ici).
+6. **Mémoire de phénomène** — première fois / persiste / s’aggrave (62→74 %) / se stabilise / se résout / réapparaît. Au-delà de « reste dominante ».
+
+### 10.7 Notes de maturité (code + ce dump, pas un barème marketing)
+
+| Couche | Note | Pourquoi |
+|--------|------|----------|
+| Données / 7-28-90 / soi | 8–8,5 | Snapshot riche ; comparaisons justes |
+| Détection de signaux | 8 | Course, push, programme, 7 vs 28 : ça sort |
+| Identité / personnalisation fréquence | 7 | Vivante ici ; pas persistée ; seuils globaux inchangés |
+| Prudence | 7 | Silence fatigue OK ; trop de disclaimers ; −60 % mal nommé |
+| Chronologie | 7,5 | Date+trou exemplaire ; gravité 2 semaines trop nette |
+| Robustesse / trajectoire | 5–6 | Code là, **muet sur ce dump** ; long terme générique |
+| Objectif | 5,5 | 3 portes |
+| Programme / planning | 5 | 33 % + least-checked, pas l’organisation de la semaine |
+| Dose | 4 | Reps = volume |
+| Phénomènes / contradictions | 4 | Une carte 7/28, pas de graphe |
+| Comportement / mémoire longue | 3–3,5 | Novelty poussée seulement |
+| **Analyste de CET athlète** | **~6** | Excellent interpréteur de dimensions ; pas encore un récit de situation |
+
+Le cap « plus un tableau de stats » est **franchi**. Le prochain n’est pas une 13ᵉ `coach_reading`. C’est que le moteur **choisisse le phénomène** avant d’écrire, et que Charge / Perf. du panneau cessent de contredire ce que les cartes ont appris à nuancer.
 
