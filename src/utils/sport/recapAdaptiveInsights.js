@@ -35,6 +35,7 @@ import {
   findExerciseSessions
 } from './recapInsightHelpers';
 import { buildComposedInterpretationPipeline } from './recapInterpretationPipeline';
+import { semanticGroupFromCandidateId } from './insightSemanticThemes';
 import {
   applyNoveltyWeights,
   themeFromCandidateId
@@ -47,7 +48,8 @@ import {
   saveLastInsightSignature
 } from './insightNoveltyStore';
 
-const HORIZON_LIMITS = { short: 8, medium: 7, long: 6 };
+const HORIZON_LIMITS = { short: 4, medium: 3, long: 2 };
+const MIN_COLUMN_WEIGHT = 32;
 
 function inWindow(dateStr, window) {
   return dateStr && isDateInRecapWindow(dateStr, window);
@@ -1150,13 +1152,16 @@ export function selectBalancedCandidates(candidates, horizon, limit, signature) 
   const picked = [];
   const usedPillars = new Set();
   const usedIds = new Set();
+  const usedGroups = new Set();
 
   while (picked.length < limit && pool.length > 0) {
     let best = null;
     let bestScore = -Infinity;
     for (const c of pool) {
       if (usedIds.has(c.id)) continue;
+      const group = semanticGroupFromCandidateId(c.id);
       let score = c.weight;
+      if (usedGroups.has(group) && group !== 'misc') score -= 16;
       if (usedPillars.has(c.pillar)) {
         const samePillarBest = picked.find((p) => p.pillar === c.pillar);
         if (samePillarBest && c.weight - samePillarBest.weight < 14) score -= 14;
@@ -1167,7 +1172,7 @@ export function selectBalancedCandidates(candidates, horizon, limit, signature) 
         if (picked.length >= 2) score -= 10;
       }
       if (c.pillar === 'interpretation' && picked.some((p) => p.pillar === 'interpretation')) {
-        score -= 6;
+        score -= 3;
       }
       score += (hashSig(`${signature}:${c.id}`) % 17) * 0.3;
       if (score > bestScore) {
@@ -1175,10 +1180,11 @@ export function selectBalancedCandidates(candidates, horizon, limit, signature) 
         best = c;
       }
     }
-    if (!best) break;
+    if (!best || bestScore < MIN_COLUMN_WEIGHT) break;
     picked.push(best);
     usedIds.add(best.id);
     usedPillars.add(best.pillar);
+    usedGroups.add(semanticGroupFromCandidateId(best.id));
   }
 
   return picked;
@@ -1186,6 +1192,22 @@ export function selectBalancedCandidates(candidates, horizon, limit, signature) 
 
 export function selectBalancedInsightTexts(candidates, horizon, limit, signature) {
   return selectBalancedCandidates(candidates, horizon, limit, signature).map((p) => p.text);
+}
+
+function toInsightCard(p) {
+  const ctx = p.interpretation?.context || {};
+  if (ctx.title && ctx.body) {
+    return {
+      title: ctx.title,
+      body: ctx.body,
+      evidence: ctx.evidenceLine || '',
+      confidence: ctx.confidenceLabel
+        ? `Confiance : ${ctx.confidenceLabel}${ctx.sampleDays ? ` · Échantillon : ${ctx.sampleDays} j` : ''}`
+        : '',
+      text: p.text
+    };
+  }
+  return p.text;
 }
 
 /**
@@ -1211,7 +1233,8 @@ export function buildAdaptiveRecapInsights(opts = {}) {
     period = 'all',
     getExerciseNameById = null,
     profileQuestionnaireRaw = null,
-    activeProgram = null
+    activeProgram = null,
+    programs = null
   } = opts;
 
   const gtgEnd = window?.end || DateHelper.getTodayLocal();
@@ -1231,6 +1254,7 @@ export function buildAdaptiveRecapInsights(opts = {}) {
       }
     : null;
 
+  const insightHistory = loadInsightHistory();
   const composed = buildComposedInterpretationPipeline({
     snapshot,
     window,
@@ -1240,35 +1264,14 @@ export function buildAdaptiveRecapInsights(opts = {}) {
     garminPartial,
     garminDailyMetrics,
     getExerciseNameById,
-    profileQuestionnaireRaw
+    profileQuestionnaireRaw,
+    period,
+    activeProgram,
+    programs,
+    insightHistory
   });
 
-  const candidates = [
-    ...composed.candidates,
-    ...legacyToCandidates(legacyPistes),
-    ...buildExerciseRepCandidates({ snapshot, window, getExerciseNameById }),
-    ...buildProgressionInsightCandidates({ snapshot, window, getExerciseNameById }),
-    ...buildGtgCandidates({ snapshot, window, profileQuestionnaireRaw }),
-    ...buildGtgMaxLinkCandidates({ snapshot, window, profileQuestionnaireRaw, getExerciseNameById }),
-    ...buildEnduranceAndChallengeCandidates({ enrichment, snapshot, garminData, window }),
-    ...buildCalendarCandidates({ enrichment, assessment }),
-    ...buildGarminAndCorrelationCandidates({
-      enrichment,
-      garminPartial,
-      garminDailyMetrics,
-      assessment,
-      snapshot,
-      window
-    }),
-    ...buildRecapMuscleAndMomentumCandidates({
-      recapState,
-      assessment,
-      enrichment,
-      snapshot,
-      window
-    }),
-    ...buildSupplementaryCandidates({ enrichment, assessment, activeProgram })
-  ];
+  const candidates = composed.candidates || [];
 
   const vol = runningVolumeForWindow(snapshot, garminData, window);
   const kcalSum = activeKcalSumForWindow(
@@ -1289,7 +1292,6 @@ export function buildAdaptiveRecapInsights(opts = {}) {
     hashSig(JSON.stringify(candidates.map((c) => `${c.id}:${c.weight}`).slice(0, 12)))
   ].join('|');
 
-  const insightHistory = loadInsightHistory();
   const weightedCandidates = applyNoveltyWeights(candidates, insightHistory);
 
   const pickedShort = selectBalancedCandidates(
@@ -1324,9 +1326,9 @@ export function buildAdaptiveRecapInsights(opts = {}) {
 
   return {
     insights: {
-      shortTerm: pickedShort.map((p) => p.text),
-      mediumTerm: pickedMedium.map((p) => p.text),
-      longTerm: pickedLong.map((p) => p.text)
+      shortTerm: pickedShort.map(toInsightCard),
+      mediumTerm: pickedMedium.map(toInsightCard),
+      longTerm: pickedLong.map(toInsightCard)
     },
     kpis: {
       runningKm: vol.totalKm,

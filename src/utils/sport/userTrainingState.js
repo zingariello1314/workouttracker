@@ -9,6 +9,7 @@ import { computeWindowHalfTrend } from './strengthBenchmarkExtractors';
 import { acuteChronicRepsRatio, garminStatsForWindow } from './recapInsightHelpers';
 import { isDateInRecapWindow } from './recapMuscleLoadEngine';
 import { computeRepsWeeklyVelocity } from './trainingProgressionVelocity';
+import { buildRecapTrainingFeatures } from './recapTrainingFeatures';
 
 /** @typedef {'rising'|'stable'|'falling'|'unknown'} TrendDir */
 /** @typedef {'high'|'medium'|'low'|'unknown'} LevelBand */
@@ -225,6 +226,7 @@ export function buildUserTrainingState(opts = {}) {
     assessment = null,
     garminPartial = null,
     garminDailyMetrics = null,
+    garminData = null,
     getExerciseNameById = null,
     profileQuestionnaireRaw = null
   } = opts;
@@ -236,16 +238,29 @@ export function buildUserTrainingState(opts = {}) {
   const goal = answers.goalPhysique || answers.streetSkillGoal || null;
   const tier = assessment?.tier || null;
 
+  const trainingFeatures = buildRecapTrainingFeatures({
+    snapshot,
+    window,
+    enrichment,
+    assessment,
+    garminData
+  });
+
   const halfTrend = computeWindowHalfTrend(snapshot, window);
   const acuteLoad = acuteChronicRepsRatio(snapshot, window);
-  const loadDeltaPct =
+  const halfDelta =
     halfTrend != null
       ? halfTrend.volFirst > 0 || halfTrend.volSecond > 0
         ? halfTrend.volDeltaPct
         : halfTrend.repsDeltaPct
-      : acuteLoad?.ratio != null
-        ? Math.round((acuteLoad.ratio - 1) * 100)
-        : null;
+      : null;
+  const plausibleLoadPct = (n, cap = 160) =>
+    n != null && Number.isFinite(n) && Math.abs(n) <= cap ? n : null;
+  const d28 = plausibleLoadPct(trainingFeatures?.volume?.delta28Pct);
+  const d7 = plausibleLoadPct(trainingFeatures?.volume?.delta7Pct);
+  // La moitié de période n'est pas comparable à 28 j. vs 28 j. — ne pilote la charge que si les baselines manquent.
+  const halfOk = plausibleLoadPct(halfDelta, 90);
+  const loadDeltaPct = d28 ?? d7 ?? halfOk;
 
   let loadTrend = classifyTrendFromPct(loadDeltaPct);
   if (loadTrend === 'unknown' && acuteLoad?.ratio != null) {
@@ -255,7 +270,16 @@ export function buildUserTrainingState(opts = {}) {
   }
 
   const loadEvidence = [];
-  if (loadDeltaPct != null) loadEvidence.push(`volume ${loadDeltaPct >= 0 ? '+' : ''}${loadDeltaPct} %`);
+  if (d28 != null) {
+    loadEvidence.push(`volume ${d28 >= 0 ? '+' : ''}${d28} % vs 28 j. précédents`);
+  } else if (loadDeltaPct != null) {
+    loadEvidence.push(
+      `volume ${loadDeltaPct >= 0 ? '+' : ''}${loadDeltaPct} % ${d7 != null ? 'vs 7 j. précédents' : 'sur la période affichée'}`
+    );
+  }
+  if (d28 != null && d7 != null && Math.sign(d28) !== Math.sign(d7) && Math.abs(d7) >= 8) {
+    loadEvidence.push(`7 j. ${d7 > 0 ? '+' : ''}${d7} % (rythme récent distinct du mois)`);
+  }
   if (acuteLoad?.ratio != null) {
     loadEvidence.push(`ratio aigu/chronique ${Math.round(acuteLoad.ratio * 100) / 100}`);
   }
@@ -264,8 +288,15 @@ export function buildUserTrainingState(opts = {}) {
   if (loadTrend === 'rising') loadValue = loadDeltaPct != null && loadDeltaPct >= 20 ? 'high_rising' : 'rising';
   else if (loadTrend === 'falling') loadValue = 'falling';
 
-  const load = axis(loadValue, loadTrend, loadEvidence.length ? 0.78 : 0.35, loadEvidence, {
+  const loadConf = Math.max(
+    loadEvidence.length ? 0.72 : 0.35,
+    trainingFeatures?.volume?.confidence ?? 0
+  );
+  const load = axis(loadValue, loadTrend, loadConf, loadEvidence, {
     deltaPct: loadDeltaPct,
+    delta7Pct: trainingFeatures?.volume?.delta7Pct ?? null,
+    delta28Pct: trainingFeatures?.volume?.delta28Pct ?? null,
+    delta90Pct: trainingFeatures?.volume?.delta90Pct ?? null,
     acuteChronicRatio: acuteLoad?.ratio ?? null
   });
 
@@ -422,7 +453,22 @@ export function buildUserTrainingState(opts = {}) {
     adaptationCost,
     context: { goal, tier },
     features: {
+      periodHalfDeltaPct: halfDelta,
       volumeDeltaPct: loadDeltaPct,
+      volumeDelta7Pct: trainingFeatures?.volume?.delta7Pct ?? null,
+      volumeDelta28Pct: trainingFeatures?.volume?.delta28Pct ?? null,
+      volumeDelta90Pct: trainingFeatures?.volume?.delta90Pct ?? null,
+      frequencyDeltaPct: trainingFeatures?.frequency?.deltaPct ?? null,
+      sessions28d: trainingFeatures?.frequency?.sessions28d ?? null,
+      prevSessions28d: trainingFeatures?.frequency?.prevSessions28d ?? null,
+      decliningExerciseCount: trainingFeatures?.decliningExerciseCount ?? 0,
+      sessionAlignment: trainingFeatures?.adherence?.sessionAlignment ?? sla ?? null,
+      justifiedDays: trainingFeatures?.adherence?.justifiedDays ?? 0,
+      leastCheckedPct: trainingFeatures?.adherence?.leastCheckedPct ?? null,
+      leastCheckedName: trainingFeatures?.adherence?.leastCheckedName ?? null,
+      pushPullRatio: enrichment?.pushPull?.ratio ?? null,
+      pushPct: enrichment?.pushPull?.pushPct ?? null,
+      pullPct: enrichment?.pushPull?.pullPct ?? null,
       performanceMomentumPct: performance.metrics.repsMomentumDeltaPct ?? null,
       sleepDeltaPct: sleepHalf.deltaPct,
       difficultyDeltaPct: diffHalf.deltaPct,
@@ -430,7 +476,9 @@ export function buildUserTrainingState(opts = {}) {
       acuteChronicRatio: acuteLoad?.ratio ?? null,
       progressionEfficiency,
       progressionVelocityPerWeek: repsVelocity.velocityPerWeek,
-      progressionAcceleration: repsVelocity.acceleration
+      progressionAcceleration: repsVelocity.acceleration,
+      volume: trainingFeatures?.volume || null,
+      frequency: trainingFeatures?.frequency || null
     }
   };
 }

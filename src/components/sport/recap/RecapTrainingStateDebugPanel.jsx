@@ -26,7 +26,7 @@ function ChipList({ items, empty = '—' }) {
   if (!items?.length) return <p className="text-[10px] text-slate-500">{empty}</p>;
   return (
     <ul className="space-y-1 text-[10px] text-slate-300">
-      {items.slice(0, 6).map((item, i) => (
+      {items.slice(0, 8).map((item, i) => (
         <li key={item.id || i} className="rounded border border-slate-700/50 bg-slate-900/30 px-2 py-1">
           <span className="font-medium text-violet-200">{item.type || item.kind || item.axis}</span>
           {item.narrative ? <span> — {item.narrative}</span> : null}
@@ -97,6 +97,13 @@ export default function RecapTrainingStateDebugPanel({
             ) : null}
           </div>
 
+          <p className="text-[10px] leading-relaxed text-slate-500">
+            Charge lue sur 28 j. vs 28 j. (et 7 j. si le mois et la semaine divergent). La moitié de période
+            ({features.periodHalfDeltaPct != null ? `${features.periodHalfDeltaPct} %` : 'n/a'}) n’est pas la
+            même question. Les colonnes n’affichent que les lectures les plus importantes, pas toute la liste
+            ci-dessous.
+          </p>
+
           <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
             <AxisRow label="Charge" axis={trainingState.load} />
             <AxisRow label="Perf." axis={trainingState.performance} />
@@ -143,8 +150,20 @@ export default function RecapTrainingStateDebugPanel({
               <ChipList items={trainingEvents} />
             </div>
             <div>
-              <p className="mb-1 text-[10px] font-semibold uppercase tracking-wide text-slate-500">Robustesse</p>
-              <ChipList items={performanceRobustness} />
+            <p className="mb-1 text-[10px] font-semibold uppercase tracking-wide text-slate-500">
+              Robustesse
+            </p>
+            <ChipList
+              items={(() => {
+                const seen = new Set();
+                return (performanceRobustness || []).filter((r) => {
+                  const k = r.exerciseName || r.exerciseId;
+                  if (!k || seen.has(k)) return false;
+                  seen.add(k);
+                  return true;
+                });
+              })()}
+            />
             </div>
           </div>
 

@@ -15,6 +15,9 @@ import {
 /** Extrait un thème stable depuis l'id candidat. */
 export function themeFromCandidateId(id) {
   const s = String(id || '');
+  if (s.startsWith('relation.reading.')) {
+    return s.split('.').slice(2).join('.') || s;
+  }
   if (s.startsWith('relation.')) return s.slice('relation.'.length).split('.')[0] || s;
   if (s.startsWith('event.')) return s.split('.').slice(1, 3).join('.') || s;
   const parts = s.split('.');

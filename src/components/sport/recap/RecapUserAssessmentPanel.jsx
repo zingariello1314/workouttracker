@@ -388,12 +388,18 @@ function InsightColumn({ title, items, accent }) {
         <p className="text-[11px] text-slate-500">—</p>
       ) : (
         <ul className="space-y-2.5 text-[11px] leading-relaxed text-slate-200/95">
-          {items.map((text, i) => (
-            <li key={i} className="flex gap-2">
-              <span className="mt-1.5 h-1 w-1 shrink-0 rounded-full bg-teal-500/70" />
-              <span>{text}</span>
-            </li>
-          ))}
+          {items.map((item, i) => {
+            const card = typeof item === 'object' && item ? item : { body: String(item || '') };
+            return (
+              <li key={i} className="space-y-1">
+                {card.title ? (
+                  <div className="text-[11px] font-semibold text-teal-100/90">{card.title}</div>
+                ) : null}
+                <div className="whitespace-pre-line">{card.body || card.text}</div>
+                {card.evidence ? <div className="text-[10px] text-slate-500">{card.evidence}</div> : null}
+              </li>
+            );
+          })}
         </ul>
       )}
     </div>

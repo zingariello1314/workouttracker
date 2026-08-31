@@ -53,6 +53,17 @@ function relationConfidence(...axes) {
   return Math.min(...vals);
 }
 
+function relationConfidenceMean(...axes) {
+  const vals = axes.map((a) => a?.confidence ?? 0).filter((v) => v > 0);
+  if (!vals.length) return 0.45;
+  if (vals.length === 1) return vals[0] * 0.9;
+  return vals.reduce((a, b) => a + b, 0) / vals.length;
+}
+
+function assessmentLifetime(meta) {
+  return meta?.assessment?.lifetimeReps ?? 0;
+}
+
 function pushEvidence(state) {
   const bits = [];
   ['load', 'performance', 'recovery', 'fatigue', 'adherence', 'programResponse'].forEach((k) => {
@@ -79,8 +90,17 @@ export function detectTrainingRelations(state, eventBundle = null, meta = {}) {
   const prEvent = events.find((e) => e.type === 'pr_reps' || e.type === 'pr_outlier');
   const levelEstablished = performanceRobustness.find((r) => r.kind === 'LEVEL_ESTABLISHED');
 
-  const { load, performance, recovery, fatigue, adherence, programResponse, lifePhase, context, features } =
+  const { load, performance, recovery, fatigue, adherence, programResponse, lifePhase, context } =
     state;
+  const features = {
+    ...(state.features || {}),
+    pushPullRatio: state.features?.pushPullRatio ?? meta.enrichment?.pushPull?.ratio ?? null,
+    pushPct: state.features?.pushPct ?? meta.enrichment?.pushPull?.pushPct ?? null,
+    pullPct: state.features?.pullPct ?? meta.enrichment?.pushPull?.pullPct ?? null,
+    leastCheckedPct: state.features?.leastCheckedPct ?? meta.enrichment?.leastCheckedExercises?.[0]?.pct ?? null,
+    leastCheckedName:
+      state.features?.leastCheckedName ?? meta.enrichment?.leastCheckedExercises?.[0]?.name ?? null
+  };
   const out = [];
   const ctx = { ...context, phase: lifePhase };
 
@@ -102,6 +122,195 @@ export function detectTrainingRelations(state, eventBundle = null, meta = {}) {
   const fatigueUp =
     fatigue.trend === 'rising' || fatigue.value === 'high' || (features.difficultyDeltaPct ?? 0) >= 12;
   const adherenceHigh = adherence.value === 'high';
+  const adherenceLow = adherence.value === 'low';
+  const adherenceWeak = adherenceLow || adherence.value === 'medium';
+  const freqDown = (features.frequencyDeltaPct ?? 0) <= -18;
+  const drops = features.decliningExerciseCount ?? 0;
+  const volCrash = volDown && (features.volumeDeltaPct ?? 0) <= -18;
+
+  if (volCrash && (adherenceWeak || freqDown || drops >= 1 || (features.volumeDeltaPct ?? 0) <= -25)) {
+    out.push(
+      candidate({
+        id: 'relation.training_discontinuity',
+        type: 'training_discontinuity',
+        horizon: 'short',
+        state: 'TRAINING_DISCONTINUITY',
+        evidence: [
+          ...load.evidence.slice(0, 1),
+          ...adherence.evidence.slice(0, 1),
+          drops >= 2 ? `${drops} exercices en baisse vs séance précédente` : null
+        ].filter(Boolean),
+        metrics: {
+          volumeDeltaPct: features.volumeDeltaPct,
+          frequencyDeltaPct: features.frequencyDeltaPct,
+          programCompletionPct: features.programCompletionPct,
+          decliningExerciseCount: drops,
+          performanceMomentumPct: features.performanceMomentumPct
+        },
+        confidence: relationConfidenceMean(load, adherence, performance),
+        relevance: 0.96,
+        novelty: 0.9,
+        actionability: 0.82,
+        severity: 0.55,
+        context: ctx
+      })
+    );
+  }
+
+  const sla = features.sessionAlignment;
+  const programPct = features.programCompletionPct;
+  if (programPct != null && programPct < 72) {
+    const missedDays =
+      sla != null && sla >= 68 && (freqDown || (features.sessions28d ?? 99) <= (features.prevSessions28d ?? 0) * 0.75);
+    const incompleteSessions =
+      sla != null && sla < 58 && (features.sessions28d ?? 0) >= 3;
+    const gapType = missedDays
+      ? 'program_gap_adherence'
+      : incompleteSessions
+        ? 'program_gap_completion'
+        : 'program_gap_mixed';
+    out.push(
+      candidate({
+        id: `relation.${gapType}`,
+        type: gapType,
+        horizon: 'short',
+        state: 'program_mismatch',
+        evidence: [
+          `prévu/réalisé ~${programPct} %`,
+          sla != null ? `alignement séance ~${Math.round(sla)}/100` : null,
+          features.justifiedDays ? `${features.justifiedDays} j. justifiés` : null
+        ].filter(Boolean),
+        metrics: {
+          programCompletionPct: programPct,
+          sessionAlignment: sla,
+          frequencyDeltaPct: features.frequencyDeltaPct,
+          justifiedDays: features.justifiedDays
+        },
+        confidence: relationConfidenceMean(adherence, load),
+        relevance: gapType === 'program_gap_mixed' ? 0.82 : 0.9,
+        novelty: 0.86,
+        actionability: 0.78,
+        severity: 0.4,
+        context: ctx
+      })
+    );
+  }
+
+  const leastPct = features.leastCheckedPct;
+  if (
+    leastPct != null &&
+    leastPct < 20 &&
+    (features.sessionAlignment == null || features.sessionAlignment >= 55) &&
+    (features.sessions28d ?? 0) >= 3
+  ) {
+    out.push(
+      candidate({
+        id: 'relation.exercise_specific_abandonment',
+        type: 'exercise_specific_abandonment',
+        horizon: 'short',
+        state: 'exercise_gap',
+        evidence: [
+          `${features.leastCheckedName || 'Un exercice'} ~${leastPct} % coché`,
+          'reste de séance davantage réalisé'
+        ],
+        metrics: {
+          leastCheckedPct: leastPct,
+          sessionAlignment: features.sessionAlignment
+        },
+        confidence: Math.max(0.62, adherence.confidence * 0.95),
+        relevance: 0.84,
+        novelty: 0.88,
+        actionability: 0.75,
+        severity: 0.28,
+        context: { ...ctx, exerciseName: features.leastCheckedName }
+      })
+    );
+  }
+
+  const ppRatio = features.pushPullRatio;
+  if (ppRatio != null && (ppRatio >= 1.65 || ppRatio <= 0.75)) {
+    out.push(
+      candidate({
+        id: 'relation.push_pull_stimulus',
+        type: 'push_pull_stimulus',
+        horizon: 'medium',
+        state: 'structural_imbalance',
+        evidence: [
+          `push/pull ${ppRatio} (${features.pushPct} % push)`,
+          perfHolding ? 'performances de tirage non effondrées' : null
+        ].filter(Boolean),
+        metrics: {
+          pushPullRatio: ppRatio,
+          pushPct: features.pushPct,
+          pullPct: features.pullPct,
+          performanceMomentumPct: features.performanceMomentumPct
+        },
+        confidence: 0.74,
+        relevance: 0.88,
+        novelty: 0.8,
+        actionability: 0.62,
+        severity: 0.32,
+        context: ctx
+      })
+    );
+  }
+
+  if (
+    volDown &&
+    perfHolding &&
+    (features.volumeDeltaPct ?? 0) <= -12 &&
+    !adherenceWeak
+  ) {
+    out.push(
+      candidate({
+        id: 'relation.exposure_vs_capacity',
+        type: 'exposure_vs_capacity',
+        horizon: 'medium',
+        state: 'exposure',
+        evidence: [...load.evidence.slice(0, 1), ...performance.evidence.slice(0, 1)],
+        metrics: {
+          volumeDeltaPct: features.volumeDeltaPct,
+          performanceMomentumPct: features.performanceMomentumPct
+        },
+        confidence: relationConfidenceMean(load, performance),
+        relevance: 0.86,
+        novelty: 0.82,
+        actionability: 0.55,
+        severity: 0.2,
+        context: ctx
+      })
+    );
+  }
+
+  if (
+    (adherenceWeak || freqDown) &&
+    volDown &&
+    ((assessmentLifetime(meta) >= 8000) || (meta.enrichment?.streak?.longest || 0) >= 10)
+  ) {
+    out.push(
+      candidate({
+        id: 'relation.continuity_over_capacity',
+        type: 'continuity_over_capacity',
+        horizon: 'long',
+        state: 'continuity',
+        evidence: [
+          ...adherence.evidence.slice(0, 1),
+          ...load.evidence.slice(0, 1)
+        ],
+        metrics: {
+          volumeDeltaPct: features.volumeDeltaPct,
+          frequencyDeltaPct: features.frequencyDeltaPct,
+          programCompletionPct: features.programCompletionPct
+        },
+        confidence: relationConfidenceMean(adherence, load),
+        relevance: 0.87,
+        novelty: 0.84,
+        actionability: 0.7,
+        severity: 0.35,
+        context: ctx
+      })
+    );
+  }
 
   if (volUp && perfHolding && recoveryDown && fatigueUp) {
     out.push(
@@ -289,7 +498,7 @@ export function detectTrainingRelations(state, eventBundle = null, meta = {}) {
     );
   }
 
-  if (volDown && perfHolding && programResponse.value === 'deloading') {
+  if (volDown && perfHolding && !adherenceWeak && (features.volumeDeltaPct ?? 0) > -40 && (features.volumeDeltaPct ?? 0) <= -10) {
     out.push(
       candidate({
         id: 'relation.natural_deload',
@@ -507,10 +716,11 @@ export function detectTrainingRelations(state, eventBundle = null, meta = {}) {
   const graphHits = evaluateRelationGraph(graphCtx);
   const existingIds = new Set(out.map((r) => r.id));
   graphHits.forEach((hit) => {
-    if (!existingIds.has(hit.id)) {
-      out.push(hit);
-      existingIds.add(hit.id);
-    }
+    if (existingIds.has(hit.id)) return;
+    if (hit.id === 'relation.push_pull_imbalance' && existingIds.has('relation.push_pull_stimulus')) return;
+    if (hit.id === 'relation.undertraining_signal' && existingIds.has('relation.training_discontinuity')) return;
+    out.push(hit);
+    existingIds.add(hit.id);
   });
 
   return out.filter(Boolean).sort((a, b) => b.relevance * b.confidence - a.relevance * a.confidence);
@@ -523,9 +733,12 @@ export function detectTrainingRelations(state, eventBundle = null, meta = {}) {
  */
 export function interpretationToLegacyCandidate(interp) {
   if (!interp?.text) return null;
-  const weight = Math.round(
+  let weight = Math.round(
     62 + interp.relevance * 22 + interp.confidence * 12 + (interp.novelty ?? 0) * 6
   );
+  if (interp.type === 'composed_horizon_read' || interp.type === 'coach_reading') {
+    weight = Math.min(92, 80 + Math.round((interp.relevance || 0.8) * 12));
+  }
   return {
     id: interp.id,
     horizon: interp.horizon,

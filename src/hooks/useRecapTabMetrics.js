@@ -114,7 +114,8 @@ export function useRecapTabMetrics({
           period: deferredPeriod,
           getExerciseNameById,
           profileQuestionnaireRaw,
-          activeProgram
+          activeProgram,
+          programs: Array.isArray(programs) ? programs : []
         });
 
         const recapAssessmentMerged = {

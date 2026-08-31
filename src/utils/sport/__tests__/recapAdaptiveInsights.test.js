@@ -6,7 +6,7 @@ import {
 } from '../recapAdaptiveInsights';
 
 describe('recapAdaptiveInsights', () => {
-  it('détecte une micro-progression sur habitude stable (20 → 21 tractions)', () => {
+  it('ne remplit plus les colonnes avec des faits d’exercice isolés', () => {
     const snapshot = { reps: {}, checkedExercises: {} };
     const exId = '101';
     for (let w = 0; w < 4; w += 1) {
@@ -27,14 +27,16 @@ describe('recapAdaptiveInsights', () => {
     expect(hist.get('101')?.length).toBeGreaterThanOrEqual(5);
 
     const result = buildAdaptiveRecapInsights({
-      legacyPistes: { shortTerm: [], mediumTerm: [], longTerm: [] },
+      legacyPistes: { shortTerm: ['Volume -89 % vs ta 1re moitié'], mediumTerm: [], longTerm: [] },
       snapshot,
       window,
       getExerciseNameById: (id) => (id === 101 ? 'Tractions pronation' : `Ex ${id}`)
     });
 
     const all = [...result.insights.shortTerm, ...result.insights.mediumTerm, ...result.insights.longTerm];
-    expect(all.some((t) => /21|Tractions|\+1|micro/i.test(t))).toBe(true);
+    expect(result.insights.shortTerm.length).toBeLessThanOrEqual(5);
+    const flat = all.map((t) => (typeof t === 'string' ? t : `${t.title || ''} ${t.body || ''} ${t.text || ''}`)).join('\n');
+    expect(/Volume -89|1re moitié/i.test(flat)).toBe(false);
   });
 
   it('diversifie les piliers dans la sélection', () => {

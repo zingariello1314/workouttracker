@@ -11,8 +11,44 @@ export const SEMANTIC_INSIGHT_GROUPS = {
   ],
   overreach: ['possible_overreach', 'costly_progression', 'recovery_limiting', 'pr_under_fatigue'],
   stagnation: ['effort_without_return', 'plateau_despite_volume'],
-  progression: ['efficient_progression', 'successful_return', 'natural_deload'],
+  progression: ['efficient_progression', 'successful_return', 'exposure_vs_capacity'],
+  discontinuity: [
+    'training_discontinuity',
+    'natural_deload',
+    'undertraining',
+    'continuity_over_capacity'
+  ],
+  program_gap: [
+    'program_gap_adherence',
+    'program_gap_completion',
+    'program_gap_mixed',
+    'exercise_specific_abandonment'
+  ],
+  structure: ['structural_imbalance', 'push_pull_stimulus'],
   contradiction: ['contradiction_sleep_perf'],
+  exposure: ['exposure_rhythm'],
+  composed: ['composed'],
+  reading_continuity: ['continuity'],
+  reading_program: ['program'],
+  reading_volume: ['volume_traj'],
+  reading_performance: ['performance'],
+  reading_push: ['push_share'],
+  reading_absence: ['absence'],
+  reading_fatigue: ['unknown_fatigue'],
+  reading_specialization: ['specialization'],
+  reading_redundancy: ['redundancy'],
+  reading_established: ['established'],
+  reading_efficiency: ['efficiency'],
+  reading_goal: ['goal_gap'],
+  reading_capacity: ['capacity_vs_exposure'],
+  reading_identity: ['identity'],
+  reading_long_cont: ['continuity_level'],
+  reading_recent: ['recent_vs_identity'],
+  reading_level: ['level_ref'],
+  reading_vol90: ['volume_90'],
+  muscle: ['muscle_coverage_shift', 'muscle_vs_quarter'],
+  exercise_up: ['exercise_strengths', 'exercise_long_arc'],
+  exercise_down: ['exercise_watchlist'],
   load: ['load.acute.up', 'load.deload', 'event.volume_spike'],
   sleep: ['garmin.sleep.low', 'garmin.sleep.good'],
   gtg: ['gtg.week.active', 'gtg.month.rhythm', 'gtg.streak'],
@@ -28,6 +64,11 @@ Object.entries(SEMANTIC_INSIGHT_GROUPS).forEach(([group, themes]) => {
 export function semanticGroupFromCandidateId(candidateId) {
   const s = String(candidateId || '');
   if (s.startsWith('cmp.')) return 'comparison';
+  if (s.startsWith('relation.reading.')) {
+    const kind = s.split('.')[3] || s.split('.')[2];
+    if (themeToGroup.has(kind)) return themeToGroup.get(kind);
+    return `reading.${kind}`;
+  }
   const theme = s.replace(/^relation\./, '').split('.')[0];
   if (themeToGroup.has(theme)) return themeToGroup.get(theme);
   const base = String(candidateId || '').split('.').slice(0, 2).join('.');

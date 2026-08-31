@@ -29,8 +29,10 @@ export function getCompletionForWindow(snapshot, window, ctx = {}) {
     exoTotal: m.exoTotal,
     exoCheckedPerDay: m.exoCheckedPerDay,
     exoPlannedPerDay: m.exoPlannedPerDay,
+    plannedDays: m.plannedDays,
     activeTrainingDays: m.activeTrainingDays,
     daysFullyComplete: m.daysFullyComplete,
+    daysPartial: m.daysPartial,
     exoDetailLabel: m.exoDetailLabel,
     detailLabel: m.detailLabel
   };

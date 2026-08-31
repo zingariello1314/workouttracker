@@ -7,6 +7,12 @@
  * @typedef {import('./userTrainingState.js').UserTrainingState} UserTrainingState
  */
 
+function cap(s) {
+  const t = String(s || '').trim();
+  if (!t) return '';
+  return t.charAt(0).toUpperCase() + t.slice(1);
+}
+
 function fmtPct(n) {
   if (n == null || !Number.isFinite(n)) return null;
   const sign = n > 0 ? '+' : '';
@@ -208,11 +214,210 @@ export function renderInterpretationText(c, state = null) {
         '.'
       ].join('');
 
-    default:
-      if (c.text) return c.text;
-      if (c.evidence?.length) {
-        return `${c.evidence.join(' ; ')}${goalBit ? ` ${goalBit}` : ''}.`;
+    case 'training_discontinuity':
+      return [
+        'La période récente est marquée par une forte baisse d\'exposition à l\'entraînement',
+        vol ? ` (volume ${vol}` : '',
+        m.frequencyDeltaPct != null ? `, fréquence ${fmtPct(m.frequencyDeltaPct)}` : '',
+        vol ? ')' : '',
+        m.decliningExerciseCount >= 2
+          ? `. Plusieurs exercices reculent en même temps, mais la baisse de régularité est trop nette pour y lire déjà une perte de capacité`
+          : '. Le signal principal n\'est pas la performance brute, mais la continuité',
+        '. Avant d\'augmenter le stimulus, retrouver une fréquence plus stable permettra de distinguer une vraie régression d\'un simple manque d\'exposition.',
+        goalBit
+      ].join('');
+
+    case 'program_gap_adherence':
+      return [
+        m.programCompletionPct != null
+          ? `Le volume réalisé reste inférieur au plan (~${m.programCompletionPct} %)`
+          : 'Le réalisé reste en deçà du plan',
+        '. L\'écart vient surtout de séances manquées plutôt que d\'exercices abandonnés en cours de séance',
+        m.justifiedDays ? ` (${m.justifiedDays} jour(s) justifié(s) sur la période)` : '',
+        ' : le levier est la régularité, pas forcément une prescription trop élevée.',
+        goalBit
+      ].join('');
+
+    case 'program_gap_mixed':
+      return [
+        m.programCompletionPct != null
+          ? `Le réalisé reste nettement sous le plan (~${m.programCompletionPct} %)`
+          : 'Le réalisé reste nettement sous le plan',
+        '. On ne tranche pas encore entre jours manqués et séances raccourcies',
+        m.sessionAlignment != null ? ` (alignement séance ~${Math.round(m.sessionAlignment)}/100)` : '',
+        ' : le signal utile est l\'écart d\'exécution, pas un chiffre isolé de volume.',
+        goalBit
+      ].join('');
+
+    case 'program_gap_completion':
+      return [
+        m.programCompletionPct != null
+          ? `Le réalisé est inférieur au prévu (~${m.programCompletionPct} %)`
+          : 'Le réalisé est inférieur au prévu',
+        m.sessionAlignment != null ? ` avec des séances souvent incomplètes (alignement ~${Math.round(m.sessionAlignment)}/100)` : '',
+        '. La différence vient surtout de séances commencées mais raccourcies, plutôt que de journées entièrement sautées.',
+        goalBit
+      ].join('');
+
+    case 'exercise_specific_abandonment': {
+      const ex = c.context?.exerciseName || 'Un exercice du programme';
+      return [
+        `${ex} est régulièrement laissé de côté alors que le reste de la séance est davantage réalisé`,
+        m.leastCheckedPct != null ? ` (~${m.leastCheckedPct} % de coches)` : '',
+        '. Ce n\'est probablement pas un problème général d\'adhérence, mais un bloc mal placé, trop lourd, ou peu utile à tes yeux.',
+        goalBit
+      ].join('');
+    }
+
+    case 'push_pull_stimulus':
+    case 'structural_imbalance':
+      return [
+        m.pushPct != null
+          ? `Le haut du corps reste nettement plus exposé en poussée (~${m.pushPct} % push, ratio ${m.pushPullRatio ?? '—'})`
+          : 'Le volume de poussée domine nettement le tirage',
+        '. Tant que les performances de tirage tiennent, le problème n\'est pas une faiblesse évidente du dos : c\'est surtout une répartition du stimulus qui peut limiter l\'équilibre à moyen terme.',
+        goalBit
+      ].join('');
+
+    case 'exposure_vs_capacity':
+      return [
+        vol ? `La charge a diminué (${vol})` : 'La charge d\'entraînement a diminué',
+        ' alors que tes performances sur les mouvements suivis ne s\'effondrent pas',
+        perf ? ` (${perf})` : '',
+        '. Ça ressemble davantage à une baisse d\'exposition qu\'à une perte de capacité : la priorité est de retransformer ce niveau en travail régulier, pas d\'ajouter du volume d\'emblée.',
+        goalBit
+      ].join('');
+
+    case 'continuity_over_capacity':
+      return [
+        'Ton historique parle davantage d\'une difficulté de continuité que d\'un manque de capacité',
+        vol ? ` (charge récente ${vol}` : '',
+        m.frequencyDeltaPct != null ? `, fréquence ${fmtPct(m.frequencyDeltaPct)}` : '',
+        vol ? ')' : '',
+        '. Les ruptures de rythme pèsent plus que le volume absolu : le levier à long terme est la stabilité de la fréquence, pas une hausse permanente de charge.',
+        goalBit
+      ].join('');
+
+    case 'adherence_gap':
+      return [
+        m.exoPct != null && m.stretchPct != null
+          ? `Les séances d'exercices sont bien plus tenues (~${m.exoPct} %) que les étirements (~${m.stretchPct} %)`
+          : 'Les étirements restent nettement moins tenus que le travail de force',
+        '. Sur la durée, cet écart de pratique pèse davantage qu\'un déficit de capacité : la mobilité prévue n\'entre presque pas dans l\'exposition réelle.',
+        goalBit
+      ].join('');
+
+    case 'exposure_rhythm': {
+      const x = c.context || {};
+      const rateNow = m.currWeekRate != null ? `soit ~${m.currWeekRate} séance(s)/sem` : '';
+      const rateHabit = m.habitWeekRate != null ? `~${m.habitWeekRate}/sem` : '';
+      let conclusion =
+        'Conclusion : le signal utile est la densité de pratique, pas seulement le volume d\'une séance isolée.';
+      if (x.rarer) {
+        conclusion =
+          'Conclusion : tu t\'exposes moins souvent et probablement moins complètement — retrouver 1–2 séances, même plus courtes, rendrait la lecture de tes progrès beaucoup plus fiable.';
+      } else if (x.denser) {
+        conclusion =
+          'Conclusion : la période affichée est plus dense que ton rythme d\'avant ; surveille récupération et qualité d\'exécution plutôt que d\'ajouter encore du volume.';
       }
+      return [
+        `${cap(x.nowLabel)} tu t'es entraîné ${m.sessionsCurrent ?? 0} fois`,
+        m.avgExCurrent ? ` (${m.avgExCurrent} exercices en moyenne par séance)` : '',
+        x.currentMuscles ? `, surtout ${x.currentMuscles}` : '',
+        `. ${cap(x.beforeLabel)} c'était ${m.sessionsHabit ?? 0} séances`,
+        rateHabit ? ` (${rateHabit})` : '',
+        m.avgExHabit ? ` avec ~${m.avgExHabit} exercices/séance` : '',
+        x.habitMuscles ? `, davantage autour de ${x.habitMuscles}` : '',
+        `. ${rateNow ? `${cap(x.nowLabel)} ${rateNow}. ` : ''}${conclusion}`,
+        goalBit
+      ].join('');
+    }
+
+    case 'muscle_coverage_shift': {
+      const x = c.context || {};
+      const drop = x.droppedLabels
+        ? ` Des zones présentes ${x.beforeLabel} reculent nettement ici (${x.droppedLabels}).`
+        : '';
+      return [
+        `${cap(x.nowLabel)} l'exposition musculaire se concentre sur ${x.currentList || 'quelques groupes'}.`,
+        ` ${cap(x.beforeLabel)} la couverture était ${x.habitList || 'plus large'}.`,
+        drop,
+        ' Conclusion : ce n\'est pas seulement « moins de sport » — le mélange de muscles travaillés a changé, donc une baisse de reps sur un mouvement peut venir d\'un calendrier plus étroit plutôt que d\'une régression isolée.',
+        goalBit
+      ].join('');
+    }
+
+    case 'exercise_strengths': {
+      const items = c.context?.items || [];
+      const list = items
+        .map((e) => `${e.name} (${e.first} → ${e.last} reps sur ${e.sessions} séances)`)
+        .join(' ; ');
+      return [
+        `${cap(c.context?.nowLabel)} tes meilleurs signaux de progression sont : ${list || 'quelques mouvements suivis'}.`,
+        ' Conclusion : ces exercices tiennent ou montent malgré le reste du tableau — c\'est la base à préserver (fréquence et technique) avant de chercher à tout augmenter.',
+        goalBit
+      ].join('');
+    }
+
+    case 'exercise_watchlist': {
+      const items = c.context?.items || [];
+      const list = items.map((e) => `${e.name} (${e.first} → ${e.last} reps)`).join(' ; ');
+      const hold = (c.context?.holdingNames || []).join(', ');
+      return [
+        `${cap(c.context?.nowLabel)} plusieurs mouvements reculent sur leurs dernières séances : ${list}.`,
+        hold
+          ? ` D'autres restent stables (${hold}), donc le signal n'est pas forcément une fatigue générale.`
+          : ' Sans contre-exemple clair sur d\'autres exos, il faut croiser avec la fréquence des séances.',
+        ' Conclusion : traite ces baisses comme un cluster local tant que le reste tient ; ne « rattrape » pas les reps d\'emblée si les séances sont plus rares.',
+        goalBit
+      ].join('');
+    }
+
+    case 'exercise_long_arc': {
+      const x = c.context || {};
+      const up = (x.improving || []).join(' ; ');
+      const down = (x.fading || []).join(' ; ');
+      return [
+        `Sur ~90 jours (${x.longSessions ?? '—'} séances), `,
+        up ? `la trajectoire monte surtout sur ${up}` : 'peu de mouvements montrent une hausse nette',
+        down ? `, tandis que ${down} s'essoufflent` : '',
+        '. Conclusion : le long terme distingue les habitudes qui construisent un niveau de celles qui ne font que passer — priorise la fréquence des premiers avant d\'empiler de nouveaux exercices.',
+        goalBit
+      ].join('');
+    }
+
+    case 'muscle_vs_quarter': {
+      const x = c.context || {};
+      return [
+        `Sur 90 jours tes zones les plus chargées sont ${x.longList || 'réparties'}.`,
+        ` ${cap(x.nowLabel)} tu es plutôt sur ${x.currentList || 'un mix plus étroit'}`,
+        x.longTop ? ` (le ${x.longTop} domine souvent le trimestre)` : '',
+        '. Conclusion : si la période courte ne ressemble plus au trimestre, interprète les PR et les baisses à l\'échelle de ce mix récent, pas comme un verdict sur tout ton profil musculaire.',
+        goalBit
+      ].join('');
+    }
+
+    case 'composed_horizon_read': {
+      const body = String(c.context?.body || '').trim();
+      if (!body) return null;
+      const label = c.context?.confidenceLabel || 'modérée';
+      const days = c.context?.sampleDays || 30;
+      return `${body}\n\nConfiance : ${label} · Échantillon : ${days} j`;
+    }
+
+    case 'coach_reading': {
+      const title = String(c.context?.title || '').trim();
+      const body = String(c.context?.body || '').trim();
+      if (!body) return null;
+      const ev = String(c.context?.evidenceLine || '').trim();
+      const confLine =
+        c.context?.confidenceLabel && c.context?.sampleDays
+          ? `Confiance : ${c.context.confidenceLabel} · Échantillon : ${c.context.sampleDays} j`
+          : '';
+      return [title, body, ev, confLine].filter(Boolean).join('\n\n');
+    }
+
+    default:
       return null;
   }
 }
@@ -233,7 +438,7 @@ export function renderInterpretations(interpretations, state = null) {
   if (!Array.isArray(interpretations)) return [];
     return interpretations
     .map((c) => {
-      const text = renderInterpretationText(c, state) || c.text;
+      const text = renderInterpretationText(c, state);
       if (!text) return null;
       return { ...c, text };
     })

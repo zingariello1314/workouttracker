@@ -143,15 +143,33 @@ export function buildHierarchicalComparisons(opts = {}) {
     }
   }
 
-  if (features.volumeDeltaPct != null && Math.abs(features.volumeDeltaPct) >= 10) {
+  const vol28 = features.volumeDelta28Pct ?? features.volume?.delta28Pct ?? null;
+  const volHalf = features.periodHalfDeltaPct;
+  if (vol28 != null && Number.isFinite(vol28) && Math.abs(vol28) >= 10 && Math.abs(vol28) <= 160) {
     out.push({
       id: 'cmp.personal.volume_delta',
       level: 'personal',
       domain: 'volume',
-      text: `Volume ${features.volumeDeltaPct >= 0 ? '+' : ''}${features.volumeDeltaPct} % vs ta 1re moitié de période — référence personnelle directe.`,
+      text: `Volume ${vol28 >= 0 ? '+' : ''}${vol28} % vs tes 28 jours précédents — toi contre toi, même durée.`,
       confidence: 0.76,
       relevance: 0.82,
-      metrics: { volumeDeltaPct: features.volumeDeltaPct }
+      metrics: { volumeDelta28Pct: vol28 }
+    });
+  } else if (
+    volHalf != null &&
+    Number.isFinite(volHalf) &&
+    Math.abs(volHalf) >= 20 &&
+    Math.abs(volHalf) <= 90 &&
+    (vol28 == null || Math.abs(vol28) < 10)
+  ) {
+    out.push({
+      id: 'cmp.personal.volume_half',
+      level: 'personal',
+      domain: 'volume',
+      text: `Volume ${volHalf >= 0 ? '+' : ''}${volHalf} % entre la 1re et la 2e moitié de la période affichée — autre question que 28 j. vs 28 j.`,
+      confidence: 0.62,
+      relevance: 0.55,
+      metrics: { periodHalfDeltaPct: volHalf }
     });
   }
 

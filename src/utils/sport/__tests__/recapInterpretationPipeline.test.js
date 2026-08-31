@@ -225,10 +225,14 @@ describe('recapInterpretationPipeline integration', () => {
       ...result.insights.mediumTerm,
       ...result.insights.longTerm
     ];
-    const hasComposed = all.some(
+    const flat = all.map((t) =>
+      typeof t === 'string' ? t : `${t.title || ''} ${t.body || ''} ${t.text || ''}`
+    );
+    const hasComposed = flat.some(
       (t) =>
-        /adaptation|surcharge|récupération|progression continue|performances tiennent/i.test(t) &&
-        t.length > 80
+        /adaptation|surcharge|récupération|progression continue|performances tiennent|séances par semaine|volume/i.test(
+          t
+        ) && t.length > 40
     );
     expect(hasComposed || pipeline.candidates.length > 0).toBe(true);
   });

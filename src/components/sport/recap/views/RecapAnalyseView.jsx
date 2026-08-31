@@ -38,7 +38,7 @@ function InsightColumn({ title, items, horizonKey, accent }) {
 
   const pill = HORIZON_PILLS[horizonKey] || HORIZON_PILLS.medium;
 
-  const trimmed = (items || []).slice(0, 8);
+  const trimmed = (items || []).slice(0, 5);
 
   return (
 
@@ -56,25 +56,55 @@ function InsightColumn({ title, items, horizonKey, accent }) {
 
       {trimmed.length === 0 ? (
 
-        <p className="text-[11px] text-slate-500">—</p>
+        <p className="text-[12px] leading-relaxed text-slate-500">Aucun signal assez robuste sur cet horizon.</p>
 
       ) : (
 
-        <ul className="space-y-2.5 text-[11px] leading-relaxed text-slate-200/95">
+        <div className="space-y-4">
 
-          {trimmed.map((text, i) => (
+          {trimmed.map((item, i) => {
 
-            <li key={i} className="flex gap-2">
+            const card = typeof item === 'object' && item ? item : { body: String(item || '') };
 
-              <span className="mt-1.5 h-1 w-1 shrink-0 rounded-full bg-teal-500/70" />
+            return (
 
-              <span>{text}</span>
+              <article key={i} className="border-t border-white/10 pt-3 first:border-t-0 first:pt-0">
 
-            </li>
+                {card.title ? (
 
-          ))}
+                  <h4 className="mb-1.5 text-[12px] font-semibold leading-snug text-teal-100/95">
 
-        </ul>
+                    {card.title}
+
+                  </h4>
+
+                ) : null}
+
+                <p className="whitespace-pre-line text-[12px] leading-relaxed text-slate-200/95">
+
+                  {card.body || card.text}
+
+                </p>
+
+                {card.evidence ? (
+
+                  <p className="mt-1.5 text-[10px] tracking-wide text-slate-500">{card.evidence}</p>
+
+                ) : null}
+
+                {card.confidence ? (
+
+                  <p className="mt-0.5 text-[10px] text-slate-500">{card.confidence}</p>
+
+                ) : null}
+
+              </article>
+
+            );
+
+          })}
+
+        </div>
 
       )}
 
@@ -272,7 +302,7 @@ export default function RecapAnalyseView({
 
 
 
-  const hasInsightColumns = shortTerm.length > 0 || mediumTerm.length > 0 || longTerm.length > 0;
+  const hasInsightColumns = true;
 
   const showInterpretationDebug = import.meta.env.DEV || isAdmin;
 
