@@ -547,3 +547,60 @@ Titres à bannir du type **leçon** : « Ce qui progresse durablement, c’est c
 
 Le cap « plus un tableau de stats » est **franchi**. Le prochain n’est pas une 13ᵉ `coach_reading`. C’est que le moteur **choisisse le phénomène** avant d’écrire, et que Charge / Perf. du panneau cessent de contredire ce que les cartes ont appris à nuancer.
 
+---
+
+## 11. Verdict produit : interprétation contextuelle ≠ analyse athlète
+
+Le moteur sait relier des signaux (fréquence ↓ + expo 28 j. ↓ + semaine ↑ + identité inside). Il ne construit pas encore une **représentation unique de la situation**, puis n’écrit qu’à partir d’elle.
+
+### 11.1 Quatre niveaux (ce qui manque encore en entier)
+
+| Niveau | Unité | Exemple |
+|--------|--------|---------|
+| 1. Signal | Observation brute | `frequencyDelta28 = −35 %` |
+| 2. Relation | Deux signaux liés | fréquence ↓ + reps suivies ↓ → contraction de pratique |
+| 3. Phénomène | Relation + contexte | contraction récente + semaine en reprise + identité inside → **non installée** |
+| 4. Lecture | Projection UI | un texte, pas trois cartes |
+
+Au-dessus : un **état athlète** (exposition, performance comparable, consistance, récupération, alignement objectif, trajectoire) dont les phénomènes émergent. Pas encore construit comme objet unique.
+
+### 11.2 Anomalie ≠ importance
+
+L’identité dit : *est-ce différent de l’habitude ?* (observée, **jamais** « optimale »).
+L’objectif dit : *est-ce important ?*
+Course absente + objectif street → inhabituel, peu prioritaire. Tractions absentes + objectif street → inhabituel **et** important. La priorité d’affichage doit croiser les deux, pas un `relevance` isolé.
+
+### 11.3 Ce qui a été posé (sans exploser le graphe de fichiers)
+
+Un seul module, `trainingPhenomenonEngine.js` : objets phénomène, **pas de texte**. Une cause ne produit plus trois cartes (continuité + volume_traj + capacité vs expo). Le panneau DEV sépare brut / phénomènes / cartes. L’axe « Perf. » n’est plus `declining` sur un momentum de reps agrégées (`indeterminate`). Le vocabulaire utilisateur parle de **répétitions suivies / exposition**, pas de « volume » au sens dose.
+
+Seuils globaux (±8 %, crash −18 %) : **inchangés**. Pas d’apprentissage adaptatif des seuils.
+
+### 11.4 Ordre de chantier (pas 50 détecteurs)
+
+1. Qualité du moteur actuel (perf, vocabulaire, titres, DEV) — amorcé.
+2. Représentation d’état + dose réelle (séries / charge quand elles existent) + phénomènes.
+3. Objectif → qualités prioritaires.
+4. Trajectoires 90 j. (forme, pas first vs last) ; expo × perf.
+5. Comportement (blocs sacrifiés, structure de séance, régularité intra-semaine).
+6. Mémoire des phénomènes (nouveau / persistant / résolu).
+7. Apprentissage personnel **ensuite seulement**.
+
+Règle : beaucoup de raisonnement interne → peu de conclusions affichées. Sur un dump type 31 août, viser **3–4 phénomènes** (contraction+rebond, déplacement vers la poussée, qualité sortie, niveau indéterminé) plutôt que 6–12 cartes.
+
+### 11.5 Notes recalées
+
+| Couche | Avis | Pourquoi |
+|--------|------|----------|
+| Données / comparaisons 7-28-90 | 8,5 | Déjà solides |
+| Prudence | 7 | Disclaimers réduits ; perf trop forte corrigée |
+| Performance réelle | 5 | Indéterminée tant que non comparable |
+| Dose | 4 | Toujours des reps cochées |
+| Objectif | 5 | Encore 3 portes + un axe anomalie/importance amorcé |
+| Phénomènes | 5 | Un moteur mince, pas encore AthleteState |
+| Mémoire | 3 | Inchangé |
+| **Modèle de l’athlète** | **~6** | Les briques y sont ; l’abstraction qui les fait coopérer commence à peine |
+
+Le texte « plus intelligent » n’est plus le levier. La représentation interne l’est.
+
+

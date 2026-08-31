@@ -11,6 +11,12 @@ import {
   STRETCH_MOMENTS
 } from './stretchUtils';
 import { createDefaultExercise, normalizeExerciseMeta } from './programExerciseTypes';
+import {
+  defaultEditorPrescriptionForExercise,
+  buildSeriesFromEditorPrescription,
+  editorPrescriptionToMeta,
+  seriesToEditorPrescription
+} from './prescriptionPickerUtils';
 
 const WEEK_DAYS = ['lundi', 'mardi', 'mercredi', 'jeudi', 'vendredi', 'samedi', 'dimanche'];
 
@@ -103,20 +109,26 @@ export function appendExerciseBankKeyToProgramDay(program, dayKey, exerciseBankK
   if (!dbEx || !program?.schedule?.[dayKey]) return { ok: false, error: 'invalid' };
 
   const newEx = createDefaultExercise();
-  const series = opts.series || '3×10';
+  const prescription = opts.series
+    ? seriesToEditorPrescription({ series: opts.series, name: dbEx.name })
+    : defaultEditorPrescriptionForExercise({ name: dbEx.name });
+  const series = opts.series || buildSeriesFromEditorPrescription(prescription);
   const category = inferProgramCategoryFromBankExercise(dbEx);
   const built = {
     ...newEx,
     id: `ex_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`,
     name: dbEx.name || exerciseBankKey,
     series,
-    rest: 90,
-    intensity: 'moderate',
+    rest: prescription.volumeMode === 'reps' ? 90 : 30,
+    intensity: prescription.volumeMode === 'reps' ? 'moderate' : 'light',
     materiel: dbEx.equipment || '',
     notes: getExerciseProgramNotes(dbEx),
     programCategory: category,
     cardioKind: category === 'cardio' ? 'other' : '',
-    meta: normalizeExerciseMeta(newEx)
+    meta: {
+      ...normalizeExerciseMeta(newEx),
+      ...editorPrescriptionToMeta(prescription)
+    }
   };
 
   const updatedProgram = {

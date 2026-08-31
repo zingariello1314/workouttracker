@@ -51,6 +51,14 @@ import { exerciseDatabase } from '../data/exerciseDatabase';
 import { getExerciseProgramNotes, resolveProgramExerciseNotes } from '../utils/exerciseHeroContent';
 import StretchSlotsEditor from './program/StretchSlotsEditor';
 import ProgramPrescriptionPickers from './program/ProgramPrescriptionPickers';
+import {
+  PRESCRIPTION_MINUTE_OPTIONS,
+  PRESCRIPTION_SET_OPTIONS,
+  PRESCRIPTION_TIME_OPTIONS,
+  buildSeriesFromEditorPrescription,
+  defaultEditorPrescriptionForExercise,
+  editorPrescriptionToMeta
+} from '../utils/prescriptionPickerUtils';
 import PlyometricBlock from './program/PlyometricBlock';
 import RunningDrillsBlock from './program/RunningDrillsBlock';
 import ExerciseBankNameAutocomplete from './program/ExerciseBankNameAutocomplete';
@@ -86,6 +94,19 @@ import {
   normalizeStretchSlots,
   countStretchItems
 } from '../utils/stretchUtils';
+import {
+  PROGRAM_EXERCISE_SLOTS,
+  appendDuplicateExercisesToDay,
+  buildDuplicateItemsFromSelection,
+  buildSingleDuplicateItem,
+  deleteSelectedExercisesFromDay,
+  dropSlotFromSelection,
+  isExerciseSelected,
+  normalizeSelectedKeys,
+  removeExerciseFromSelection,
+  selectionTouchesEditing,
+  toggleExerciseSelectionKeys
+} from '../utils/programExerciseSelection';
 
 const PROGRAM_WEEK_DAYS = ['lundi', 'mardi', 'mercredi', 'jeudi', 'vendredi', 'samedi', 'dimanche'];
 const REPS_SCOPES = {
@@ -109,6 +130,28 @@ const getProgramExerciseAnchorId = (dayKey, variantKey, exerciseId) => {
   const slot = variantKey == null ? 'main' : variantKey;
   return `program-exercise-${dayKey}-${slot}-${exerciseId}`;
 };
+
+function ProgramExerciseSelectCheckbox({ checked, onChange, label }) {
+  return (
+    <label
+      className="inline-flex items-center shrink-0"
+      title="Sélectionner"
+      onPointerDown={(e) => e.stopPropagation()}
+      onClick={(e) => e.stopPropagation()}
+    >
+      <input
+        type="checkbox"
+        checked={checked}
+        onChange={(e) => onChange(e.target.checked)}
+        className="sr-only peer"
+        aria-label={label ? `Sélectionner ${label}` : 'Sélectionner'}
+      />
+      <span className="inline-flex items-center justify-center rounded border border-[#0F4C5C]/50 p-1 text-slate-400 peer-checked:text-teal-200 peer-checked:border-teal-500/60">
+        {checked ? <CheckSquare size={14} /> : <Square size={14} />}
+      </span>
+    </label>
+  );
+}
 const PROGRAM_DAY_SHORT = {
   lundi: 'LUN',
   mardi: 'MAR',
@@ -309,7 +352,7 @@ const ProgramDetailView = ({ program, onBack, onUpdateProgram }) => {
   const [pickerIntervalActiveMin, setPickerIntervalActiveMin] = useState('1');
   const [pickerIntervalRecoveryMin, setPickerIntervalRecoveryMin] = useState('1');
   const [pickerIntervalRounds, setPickerIntervalRounds] = useState('8');
-  /** Sélection en lot (dupliquer plusieurs exos à la fois) */
+  /** Sélection en lot : clés `main:id` / `semaineA:id` / `semaineB:id` (dupliquer ou supprimer). */
   const [selectedExerciseIdsByDay, setSelectedExerciseIdsByDay] = useState({});
   /** Modale duplication cross-jours */
   const [duplicateModal, setDuplicateModal] = useState({
@@ -712,8 +755,8 @@ const ProgramDetailView = ({ program, onBack, onUpdateProgram }) => {
     setPickerReps('10');
     setPickerRepsPerHand('10');
     setPickerRepsPerSide('10');
-    setPickerSeconds('');
-    setPickerMinutes('');
+    setPickerSeconds('30');
+    setPickerMinutes('1');
     setPickerWeight('');
     setShowExerciseBankPicker(true);
   };
@@ -728,8 +771,21 @@ const ProgramDetailView = ({ program, onBack, onUpdateProgram }) => {
       });
       return label || 'Fractionné';
     }
-    if (pickerVolumeMode === 'seconds') return `${Math.max(1, parseInt(pickerSeconds || '0', 10))} sec`;
-    if (pickerVolumeMode === 'minutes') return `${Math.max(1, parseInt(pickerMinutes || '0', 10))} min`;
+    if (pickerVolumeMode === 'seconds' || pickerVolumeMode === 'minutes') {
+      const sets = Math.max(1, parseInt(pickerSets || '1', 10) || 1);
+      const duration =
+        pickerVolumeMode === 'seconds'
+          ? Math.max(1, parseInt(pickerSeconds || '30', 10) || 30)
+          : Math.max(1, parseInt(pickerMinutes || '1', 10) || 1);
+      return buildSeriesFromEditorPrescription({
+        volumeMode: pickerVolumeMode,
+        setCount: sets,
+        repsMin: duration,
+        repsMax: duration,
+        repsScope: 'total',
+        useRange: false
+      });
+    }
     const sets = Math.max(1, parseInt(pickerSets || '0', 10));
     if (pickerRepsScope === REPS_SCOPES.PER_HAND) {
       const repsPerHand = Math.max(1, parseInt(pickerRepsPerHand || '0', 10));
@@ -759,6 +815,24 @@ const ProgramDetailView = ({ program, onBack, onUpdateProgram }) => {
     const newEx = createDefaultExercise();
     const series = buildSeriesFromPicker();
     const isFractionne = pickerIsFractionne;
+    const timeSets = Math.max(1, parseInt(pickerSets || '1', 10) || 1);
+    const timeDuration =
+      pickerVolumeMode === 'seconds'
+        ? Math.max(1, parseInt(pickerSeconds || '30', 10) || 30)
+        : pickerVolumeMode === 'minutes'
+          ? Math.max(1, parseInt(pickerMinutes || '1', 10) || 1)
+          : null;
+    const timePrescription =
+      !isFractionne && (pickerVolumeMode === 'seconds' || pickerVolumeMode === 'minutes')
+        ? {
+            volumeMode: pickerVolumeMode,
+            setCount: timeSets,
+            repsMin: timeDuration,
+            repsMax: timeDuration,
+            repsScope: 'total',
+            useRange: false
+          }
+        : null;
     const category = isFractionne ? 'cardio' : inferProgramCategoryFromDatabase(dbEx);
     const intervalConfig = isFractionne
       ? normalizeIntervalConfig({
@@ -781,6 +855,13 @@ const ProgramDetailView = ({ program, onBack, onUpdateProgram }) => {
         pickerVolumeMode === 'reps' && pickerRepsScope === REPS_SCOPES.PER_SIDE
           ? Math.max(1, parseInt(pickerRepsPerSide || '0', 10))
           : '',
+      ...(timePrescription ? editorPrescriptionToMeta(timePrescription) : {}),
+      ...(pickerVolumeMode === 'reps'
+        ? {
+            setCount: Math.max(1, parseInt(pickerSets || '1', 10) || 1),
+            prescriptionNormalized: true
+          }
+        : {}),
       ...(intervalConfig
         ? { intervalConfig, intervalPreset: pickerSelectedKey }
         : {})
@@ -1457,6 +1538,46 @@ const ProgramDetailView = ({ program, onBack, onUpdateProgram }) => {
     "Supprimer définitivement cet exercice du programme ?\n\n" +
     "Les reps et séances déjà enregistrées dans le calendrier ne sont pas effacées.";
 
+  const deleteSelectionConfirm = (count) =>
+    count === 1
+      ? DELETE_EXO_CONFIRM
+      : `Supprimer définitivement ${count} exercices du programme ?\n\nLes reps et séances déjà enregistrées dans le calendrier ne sont pas effacées.`;
+
+  const pruneExerciseFromSelection = useCallback((dayKey, slot, exerciseId) => {
+    setSelectedExerciseIdsByDay((prev) => ({
+      ...prev,
+      [dayKey]: removeExerciseFromSelection(prev[dayKey], slot, exerciseId)
+    }));
+  }, []);
+
+  const pruneSlotFromDaySelection = useCallback((dayKey, slot) => {
+    setSelectedExerciseIdsByDay((prev) => ({
+      ...prev,
+      [dayKey]: dropSlotFromSelection(prev[dayKey], slot)
+    }));
+  }, []);
+
+  const pruneSlotFromAllDaysSelection = useCallback((slot) => {
+    setSelectedExerciseIdsByDay((prev) => {
+      const next = {};
+      Object.keys(prev).forEach((dayKey) => {
+        next[dayKey] = dropSlotFromSelection(prev[dayKey], slot);
+      });
+      return next;
+    });
+  }, []);
+
+  const cancelEditIfExerciseRemoved = (dayKey, slot, exerciseId) => {
+    const editingSlot = editingExercise?.variantKey || PROGRAM_EXERCISE_SLOTS.MAIN;
+    if (
+      editingExercise?.dayKey === dayKey &&
+      String(editingExercise?.exerciseId) === String(exerciseId) &&
+      editingSlot === slot
+    ) {
+      cancelEdit();
+    }
+  };
+
   const handleDeleteExerciseFromProgram = (dayKey, exerciseId) => {
     const base = programRef.current;
     const updatedProgram = {
@@ -1468,6 +1589,8 @@ const ProgramDetailView = ({ program, onBack, onUpdateProgram }) => {
     day.exercises = (day.exercises || []).filter((ex) => ex.id !== exerciseId);
     updatedProgram.schedule[dayKey] = day;
     commitProgram(updatedProgram);
+    pruneExerciseFromSelection(dayKey, PROGRAM_EXERCISE_SLOTS.MAIN, exerciseId);
+    cancelEditIfExerciseRemoved(dayKey, PROGRAM_EXERCISE_SLOTS.MAIN, exerciseId);
   };
 
   const handleDeleteVariantExercise = (dayKey, variantKey, exerciseId) => {
@@ -1485,6 +1608,29 @@ const ProgramDetailView = ({ program, onBack, onUpdateProgram }) => {
     day.salleVariants = variants;
     updatedProgram.schedule[dayKey] = day;
     commitProgram(updatedProgram);
+    pruneExerciseFromSelection(dayKey, variantKey, exerciseId);
+    cancelEditIfExerciseRemoved(dayKey, variantKey, exerciseId);
+  };
+
+  const handleDeleteSelectedExercises = (dayKey) => {
+    const keys = normalizeSelectedKeys(selectedExerciseIdsByDay[dayKey] || []);
+    if (!keys.length) return;
+    if (!window.confirm(deleteSelectionConfirm(keys.length))) return;
+
+    const base = programRef.current;
+    const updatedProgram = {
+      ...base,
+      updatedAt: new Date().toISOString(),
+      schedule: { ...base.schedule }
+    };
+    const day = updatedProgram.schedule[dayKey];
+    if (!day) return;
+    updatedProgram.schedule[dayKey] = deleteSelectedExercisesFromDay(day, keys);
+    if (selectionTouchesEditing(keys, editingExercise, dayKey)) {
+      cancelEdit();
+    }
+    commitProgram(updatedProgram);
+    setSelectedExerciseIdsByDay((prev) => ({ ...prev, [dayKey]: [] }));
   };
 
   const handleClearWeekBExercisesForDay = (dayKey) => {
@@ -1501,6 +1647,7 @@ const ProgramDetailView = ({ program, onBack, onUpdateProgram }) => {
       return;
     }
     commitProgram(clearWeekBExercisesForDay(programRef.current, dayKey));
+    pruneSlotFromDaySelection(dayKey, PROGRAM_EXERCISE_SLOTS.SEMAINE_B);
   };
 
   const handleRemoveWeekBVariantForDay = (dayKey) => {
@@ -1517,6 +1664,7 @@ const ProgramDetailView = ({ program, onBack, onUpdateProgram }) => {
       return;
     }
     commitProgram(removeWeekBVariantForDay(programRef.current, dayKey));
+    pruneSlotFromDaySelection(dayKey, PROGRAM_EXERCISE_SLOTS.SEMAINE_B);
   };
 
   const handleClearAllWeekBExercises = () => {
@@ -1531,6 +1679,7 @@ const ProgramDetailView = ({ program, onBack, onUpdateProgram }) => {
       return;
     }
     commitProgram(clearAllWeekBExercises(programRef.current));
+    pruneSlotFromAllDaysSelection(PROGRAM_EXERCISE_SLOTS.SEMAINE_B);
   };
 
   const handleRemoveWeekBEntirely = () => {
@@ -1545,6 +1694,7 @@ const ProgramDetailView = ({ program, onBack, onUpdateProgram }) => {
       return;
     }
     commitProgram(removeWeekBFromProgram(programRef.current));
+    pruneSlotFromAllDaysSelection(PROGRAM_EXERCISE_SLOTS.SEMAINE_B);
   };
 
   const handleReorderMainExercises = useCallback(
@@ -1593,13 +1743,11 @@ const ProgramDetailView = ({ program, onBack, onUpdateProgram }) => {
     [commitProgram]
   );
 
-  const toggleExerciseSelection = useCallback((dayKey, exerciseId, checked) => {
-    setSelectedExerciseIdsByDay((prev) => {
-      const current = new Set(prev[dayKey] || []);
-      if (checked) current.add(exerciseId);
-      else current.delete(exerciseId);
-      return { ...prev, [dayKey]: Array.from(current) };
-    });
+  const toggleExerciseSelection = useCallback((dayKey, slot, exerciseId, checked) => {
+    setSelectedExerciseIdsByDay((prev) => ({
+      ...prev,
+      [dayKey]: toggleExerciseSelectionKeys(prev[dayKey], slot, exerciseId, checked)
+    }));
   }, []);
 
   const clearExerciseSelectionForDay = useCallback((dayKey) => {
@@ -1675,9 +1823,9 @@ const ProgramDetailView = ({ program, onBack, onUpdateProgram }) => {
       };
 
       if (byType.exercise.length > 0) {
-        const list = Array.isArray(targetDay.exercises) ? [...targetDay.exercises] : [];
-        byType.exercise.forEach((item) => list.push(duplicateAsNew(item.payload)));
-        targetDay.exercises = list;
+        const nextDay = appendDuplicateExercisesToDay(targetDay, byType.exercise, duplicateAsNew);
+        targetDay.exercises = nextDay.exercises;
+        if (nextDay.salleVariants) targetDay.salleVariants = nextDay.salleVariants;
       }
 
       if (byType.stretch.length > 0) {
@@ -1951,6 +2099,11 @@ const ProgramDetailView = ({ program, onBack, onUpdateProgram }) => {
           const visibleMainExercises = (dayData.exercises || []).filter(isVisibleProgramExercise);
           const semaineAExercises = dayData.salleVariants?.semaineA?.exercises || [];
           const semaineBExercises = dayData.salleVariants?.semaineB?.exercises || [];
+          const daySelectedKeys = selectedExerciseIdsByDay[dayKey] || [];
+          const daySelectedCount = normalizeSelectedKeys(daySelectedKeys).length;
+          const openDayDuplicateSelection = () => {
+            openDuplicateModal(dayKey, buildDuplicateItemsFromSelection(dayData, daySelectedKeys));
+          };
 
           return (
             <Card key={dayKey} variant="sport" className="overflow-hidden !p-0 md:!p-0 prog-day-board">
@@ -2143,18 +2296,21 @@ const ProgramDetailView = ({ program, onBack, onUpdateProgram }) => {
                     <div className="flex items-center gap-2">
                       <button
                         type="button"
-                        onClick={() => {
-                          const selectedIds = new Set(selectedExerciseIdsByDay[dayKey] || []);
-                          const items = (dayData.exercises || [])
-                            .filter((ex) => selectedIds.has(ex.id))
-                            .map((ex) => ({ id: `exercise_${ex.id}`, kind: 'exercise', label: ex.name, payload: ex }));
-                          openDuplicateModal(dayKey, items);
-                        }}
-                        disabled={!(selectedExerciseIdsByDay[dayKey] || []).length}
+                        onClick={openDayDuplicateSelection}
+                        disabled={!daySelectedCount}
                         className="inline-flex items-center gap-1.5 rounded-lg border border-[#0F4C5C]/55 bg-black px-3 py-1.5 text-xs font-medium text-teal-100 hover:border-[#0F5C45]/60 hover:bg-[#0F4C5C]/15 disabled:opacity-40"
                       >
                         <CheckSquare size={14} />
                         Dupliquer la sélection
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => handleDeleteSelectedExercises(dayKey)}
+                        disabled={!daySelectedCount}
+                        className="inline-flex items-center gap-1.5 rounded-lg border border-red-500/40 bg-black px-3 py-1.5 text-xs font-medium text-red-200 hover:bg-red-950/35 disabled:opacity-40"
+                      >
+                        <Trash2 size={14} />
+                        Supprimer la sélection
                       </button>
                       <button
                         type="button"
@@ -2187,6 +2343,11 @@ const ProgramDetailView = ({ program, onBack, onUpdateProgram }) => {
                               const cat = resolveProgramExerciseCategory(exercise);
                               const lvl = intensityLevel(exercise.intensity);
                               const dotsOn = lvl === 'heavy' ? 3 : lvl === 'moderate' ? 2 : 1;
+                              const isSelected = isExerciseSelected(
+                                daySelectedKeys,
+                                PROGRAM_EXERCISE_SLOTS.MAIN,
+                                exercise.id
+                              );
 
                               return (
                                 <Draggable
@@ -2205,7 +2366,7 @@ const ProgramDetailView = ({ program, onBack, onUpdateProgram }) => {
                                         flashExerciseAnchorId === mainAnchorId
                                           ? 'ring-2 ring-cyan-400/90 ring-offset-2 ring-offset-black'
                                           : ''
-                                      } ${dragSnapshot.isDragging ? 'ring-2 ring-teal-400/50 shadow-lg shadow-black/60' : ''}`}
+                                      } ${isSelected ? 'ring-1 ring-teal-500/45' : ''} ${dragSnapshot.isDragging ? 'ring-2 ring-teal-400/50 shadow-lg shadow-black/60' : ''}`}
                                     >
                                       {isEditing ? (
                                         renderExerciseEditor()
@@ -2221,21 +2382,18 @@ const ProgramDetailView = ({ program, onBack, onUpdateProgram }) => {
                                             >
                                               <GripVertical size={14} />
                                             </button>
-                                            <label className="inline-flex items-center shrink-0">
-                                              <input
-                                                type="checkbox"
-                                                checked={(selectedExerciseIdsByDay[dayKey] || []).includes(exercise.id)}
-                                                onChange={(e) => toggleExerciseSelection(dayKey, exercise.id, e.target.checked)}
-                                                className="sr-only peer"
-                                              />
-                                              <span className="inline-flex items-center justify-center rounded border border-[#0F4C5C]/50 p-1 text-slate-400 peer-checked:text-teal-200 peer-checked:border-teal-500/60">
-                                                {(selectedExerciseIdsByDay[dayKey] || []).includes(exercise.id) ? (
-                                                  <CheckSquare size={14} />
-                                                ) : (
-                                                  <Square size={14} />
-                                                )}
-                                              </span>
-                                            </label>
+                                            <ProgramExerciseSelectCheckbox
+                                              checked={isSelected}
+                                              label={exercise.name}
+                                              onChange={(checked) =>
+                                                toggleExerciseSelection(
+                                                  dayKey,
+                                                  PROGRAM_EXERCISE_SLOTS.MAIN,
+                                                  exercise.id,
+                                                  checked
+                                                )
+                                              }
+                                            />
                                             <div className="min-w-0 flex-1">
                                               <h4 className="font-semibold text-[14.5px] leading-snug">
                                                 {index + 1} {exercise.name}
@@ -2302,7 +2460,7 @@ const ProgramDetailView = ({ program, onBack, onUpdateProgram }) => {
                                               className="prog-icon-btn"
                                               onClick={() =>
                                                 openDuplicateModal(dayKey, [
-                                                  { id: `exercise_${exercise.id}`, kind: 'exercise', label: exercise.name, payload: exercise }
+                                                  buildSingleDuplicateItem(exercise, PROGRAM_EXERCISE_SLOTS.MAIN)
                                                 ])
                                               }
                                               title="Dupliquer vers d'autres jours"
@@ -2335,10 +2493,10 @@ const ProgramDetailView = ({ program, onBack, onUpdateProgram }) => {
                       </Droppable>
                     </DragDropContext>
                   )}
-                  {(selectedExerciseIdsByDay[dayKey] || []).length > 0 && (
+                  {daySelectedCount > 0 && (
                     <div className="mt-3 flex items-center justify-between rounded-lg border border-[#0F4C5C]/45 bg-black/60 px-3 py-2 text-xs">
                       <span className="text-teal-200">
-                        {(selectedExerciseIdsByDay[dayKey] || []).length} exercice(s) sélectionné(s)
+                        {daySelectedCount} exercice(s) sélectionné(s)
                       </span>
                       <button
                         type="button"
@@ -2485,6 +2643,23 @@ const ProgramDetailView = ({ program, onBack, onUpdateProgram }) => {
                           </span>
                           {dayData.salleVariants.semaineA?.name}
                         </h4>
+                        <div className="flex flex-wrap items-center gap-1.5">
+                        <button
+                          type="button"
+                          onClick={openDayDuplicateSelection}
+                          disabled={!daySelectedCount}
+                          className="inline-flex items-center gap-1 rounded-lg border border-[#0F4C5C]/55 bg-black px-2 py-1 text-xs text-teal-100 hover:border-[#0F5C45]/60 hover:bg-[#0F4C5C]/15 disabled:opacity-40"
+                        >
+                          <CheckSquare size={12} /> Dupliquer la sélection
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleDeleteSelectedExercises(dayKey)}
+                          disabled={!daySelectedCount}
+                          className="inline-flex items-center gap-1 rounded-lg border border-red-500/40 bg-black px-2 py-1 text-xs text-red-200 hover:bg-red-950/35 disabled:opacity-40"
+                        >
+                          <Trash2 size={12} /> Supprimer la sélection
+                        </button>
                         <button
                           type="button"
                           onClick={() => openExerciseBankPicker(dayKey, 'semaineA')}
@@ -2492,6 +2667,7 @@ const ProgramDetailView = ({ program, onBack, onUpdateProgram }) => {
                         >
                           <Plus size={12} /> Ajouter
                         </button>
+                        </div>
                       </div>
                       <div className="space-y-3">
                         {semaineAExercises.length > 1 && (
@@ -2507,6 +2683,11 @@ const ProgramDetailView = ({ program, onBack, onUpdateProgram }) => {
                             editingExercise?.exerciseId === exercise.id &&
                             editingExercise?.variantKey === 'semaineA';
                           const varAAnchorId = getProgramExerciseAnchorId(dayKey, 'semaineA', exercise.id);
+                          const isSelectedVarA = isExerciseSelected(
+                            daySelectedKeys,
+                            PROGRAM_EXERCISE_SLOTS.SEMAINE_A,
+                            exercise.id
+                          );
                           return (
                             <Draggable
                               key={exercise.id}
@@ -2524,7 +2705,7 @@ const ProgramDetailView = ({ program, onBack, onUpdateProgram }) => {
                                 flashExerciseAnchorId === varAAnchorId
                                   ? 'ring-2 ring-cyan-400/90 ring-offset-2 ring-offset-black'
                                   : ''
-                              } ${dragSnapshot.isDragging ? 'ring-2 ring-teal-400/50 shadow-lg shadow-black/60' : ''}`}
+                              } ${isSelectedVarA ? 'ring-1 ring-teal-500/45' : ''} ${dragSnapshot.isDragging ? 'ring-2 ring-teal-400/50 shadow-lg shadow-black/60' : ''}`}
                             >
                               {isEditingVar ? (
                                 renderExerciseEditor()
@@ -2541,6 +2722,18 @@ const ProgramDetailView = ({ program, onBack, onUpdateProgram }) => {
                                       >
                                         <GripVertical size={14} />
                                       </button>
+                                      <ProgramExerciseSelectCheckbox
+                                        checked={isSelectedVarA}
+                                        label={exercise.name}
+                                        onChange={(checked) =>
+                                          toggleExerciseSelection(
+                                            dayKey,
+                                            PROGRAM_EXERCISE_SLOTS.SEMAINE_A,
+                                            exercise.id,
+                                            checked
+                                          )
+                                        }
+                                      />
                                       <span className="rounded bg-[#0F5C45]/20 px-2 py-1 text-xs font-medium text-teal-100 ring-1 ring-[#0F4C5C]/45">
                                         {index + 1}
                                       </span>
@@ -2556,6 +2749,18 @@ const ProgramDetailView = ({ program, onBack, onUpdateProgram }) => {
                                         className="p-1.5 text-slate-400 hover:text-white"
                                       >
                                         <Edit3 size={14} />
+                                      </button>
+                                      <button
+                                        type="button"
+                                        className="p-1.5 text-slate-400 hover:text-white"
+                                        onClick={() =>
+                                          openDuplicateModal(dayKey, [
+                                            buildSingleDuplicateItem(exercise, PROGRAM_EXERCISE_SLOTS.SEMAINE_A)
+                                          ])
+                                        }
+                                        title="Dupliquer vers d'autres jours (semaine A)"
+                                      >
+                                        <Copy size={14} />
                                       </button>
                                       <button
                                         type="button"
@@ -2616,6 +2821,22 @@ const ProgramDetailView = ({ program, onBack, onUpdateProgram }) => {
                         <div className="flex flex-wrap items-center gap-1.5">
                         <button
                           type="button"
+                          onClick={openDayDuplicateSelection}
+                          disabled={!daySelectedCount}
+                          className="inline-flex items-center gap-1 rounded-lg border border-[#0F4C5C]/55 bg-black px-2 py-1 text-xs text-teal-100 hover:border-[#0F5C45]/60 hover:bg-[#0F4C5C]/15 disabled:opacity-40"
+                        >
+                          <CheckSquare size={12} /> Dupliquer la sélection
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleDeleteSelectedExercises(dayKey)}
+                          disabled={!daySelectedCount}
+                          className="inline-flex items-center gap-1 rounded-lg border border-red-500/40 bg-black px-2 py-1 text-xs text-red-200 hover:bg-red-950/35 disabled:opacity-40"
+                        >
+                          <Trash2 size={12} /> Supprimer la sélection
+                        </button>
+                        <button
+                          type="button"
                           onClick={() => openExerciseBankPicker(dayKey, 'semaineB')}
                           className="inline-flex items-center gap-1 rounded-lg border border-[#0F4C5C]/55 bg-black px-2 py-1 text-xs text-teal-100 hover:border-[#0F5C45]/60 hover:bg-[#0F4C5C]/15"
                         >
@@ -2652,6 +2873,11 @@ const ProgramDetailView = ({ program, onBack, onUpdateProgram }) => {
                             editingExercise?.exerciseId === exercise.id &&
                             editingExercise?.variantKey === 'semaineB';
                           const varBAnchorId = getProgramExerciseAnchorId(dayKey, 'semaineB', exercise.id);
+                          const isSelectedVarB = isExerciseSelected(
+                            daySelectedKeys,
+                            PROGRAM_EXERCISE_SLOTS.SEMAINE_B,
+                            exercise.id
+                          );
                           return (
                             <Draggable
                               key={exercise.id}
@@ -2669,7 +2895,7 @@ const ProgramDetailView = ({ program, onBack, onUpdateProgram }) => {
                                 flashExerciseAnchorId === varBAnchorId
                                   ? 'ring-2 ring-cyan-400/90 ring-offset-2 ring-offset-black'
                                   : ''
-                              } ${dragSnapshot.isDragging ? 'ring-2 ring-teal-400/50 shadow-lg shadow-black/60' : ''}`}
+                              } ${isSelectedVarB ? 'ring-1 ring-teal-500/45' : ''} ${dragSnapshot.isDragging ? 'ring-2 ring-teal-400/50 shadow-lg shadow-black/60' : ''}`}
                             >
                               {isEditingVar ? (
                                 renderExerciseEditor()
@@ -2686,6 +2912,18 @@ const ProgramDetailView = ({ program, onBack, onUpdateProgram }) => {
                                       >
                                         <GripVertical size={14} />
                                       </button>
+                                      <ProgramExerciseSelectCheckbox
+                                        checked={isSelectedVarB}
+                                        label={exercise.name}
+                                        onChange={(checked) =>
+                                          toggleExerciseSelection(
+                                            dayKey,
+                                            PROGRAM_EXERCISE_SLOTS.SEMAINE_B,
+                                            exercise.id,
+                                            checked
+                                          )
+                                        }
+                                      />
                                       <span className="rounded bg-[#0F5C45]/20 px-2 py-1 text-xs font-medium text-teal-100 ring-1 ring-[#0F4C5C]/45">
                                         {index + 1}
                                       </span>
@@ -2701,6 +2939,18 @@ const ProgramDetailView = ({ program, onBack, onUpdateProgram }) => {
                                         className="p-1.5 text-slate-400 hover:text-white"
                                       >
                                         <Edit3 size={14} />
+                                      </button>
+                                      <button
+                                        type="button"
+                                        className="p-1.5 text-slate-400 hover:text-white"
+                                        onClick={() =>
+                                          openDuplicateModal(dayKey, [
+                                            buildSingleDuplicateItem(exercise, PROGRAM_EXERCISE_SLOTS.SEMAINE_B)
+                                          ])
+                                        }
+                                        title="Dupliquer vers d'autres jours (semaine B)"
+                                      >
+                                        <Copy size={14} />
                                       </button>
                                       <button
                                         type="button"
@@ -2748,6 +2998,36 @@ const ProgramDetailView = ({ program, onBack, onUpdateProgram }) => {
                       </div>
                     </div>
                     ) : null}
+                    {daySelectedCount > 0 && (
+                      <div className="mt-3 flex items-center justify-between rounded-lg border border-[#0F4C5C]/45 bg-black/60 px-3 py-2 text-xs">
+                        <span className="text-teal-200">
+                          {daySelectedCount} exercice(s) sélectionné(s) (principale + semaines A/B)
+                        </span>
+                        <div className="flex items-center gap-3">
+                          <button
+                            type="button"
+                            onClick={openDayDuplicateSelection}
+                            className="text-teal-200 hover:text-white"
+                          >
+                            Dupliquer
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => handleDeleteSelectedExercises(dayKey)}
+                            className="text-red-300 hover:text-red-100"
+                          >
+                            Supprimer
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => clearExerciseSelectionForDay(dayKey)}
+                            className="text-slate-300 hover:text-white"
+                          >
+                            Vider
+                          </button>
+                        </div>
+                      </div>
+                    )}
                   </div>
                 )}
 
@@ -2868,7 +3148,22 @@ const ProgramDetailView = ({ program, onBack, onUpdateProgram }) => {
                   <button
                     key={row.key}
                     type="button"
-                    onClick={() => setPickerSelectedKey(row.key)}
+                    onClick={() => {
+                      setPickerSelectedKey(row.key);
+                      const dbEx = exerciseDatabase[row.key];
+                      const p = defaultEditorPrescriptionForExercise({
+                        name: dbEx?.name || row.name
+                      });
+                      setPickerVolumeMode(p.volumeMode);
+                      setPickerSets(String(p.setCount));
+                      if (p.volumeMode === 'minutes') {
+                        setPickerMinutes(String(p.repsMin));
+                      } else if (p.volumeMode === 'seconds') {
+                        setPickerSeconds(String(p.repsMin));
+                      } else {
+                        setPickerReps(String(p.repsMin));
+                      }
+                    }}
                     className={`w-full border-b border-[#0F4C5C]/20 px-3 py-2 text-left text-sm ${
                       pickerSelectedKey === row.key ? 'bg-[#0F5C45]/25 text-white' : 'text-slate-300 hover:bg-[#0F4C5C]/15'
                     }`}
@@ -2974,6 +3269,11 @@ const ProgramDetailView = ({ program, onBack, onUpdateProgram }) => {
                       if (mode !== 'reps') {
                         setPickerRepsScope(REPS_SCOPES.TOTAL);
                       }
+                      if (mode === 'minutes') {
+                        setPickerMinutes((prev) => prev || '1');
+                      } else if (mode === 'seconds') {
+                        setPickerSeconds((prev) => prev || '30');
+                      }
                     }}
                     className="mt-1 w-full rounded border border-[#0F4C5C]/55 bg-black px-2 py-2 text-sm text-white"
                   >
@@ -3059,36 +3359,70 @@ const ProgramDetailView = ({ program, onBack, onUpdateProgram }) => {
                 </div>
               )}
               {!pickerIsFractionne && pickerVolumeMode === 'seconds' && (
-                <label className="text-xs text-slate-400 block">
-                  Durée (secondes)
-                  <select
-                    value={pickerSeconds}
-                    onChange={(e) => setPickerSeconds(e.target.value)}
-                    className="mt-1 w-full rounded border border-[#0F4C5C]/55 bg-black px-2 py-2 text-sm text-white"
-                  >
-                    {[10, 15, 20, 30, 45, 60, 90, 120, 180].map((n) => (
-                      <option key={n} value={String(n)}>
-                        {n}
-                      </option>
-                    ))}
-                  </select>
-                </label>
+                <div className="grid grid-cols-2 gap-3">
+                  <label className="text-xs text-slate-400">
+                    Séries
+                    <select
+                      value={pickerSets}
+                      onChange={(e) => setPickerSets(e.target.value)}
+                      className="mt-1 w-full rounded border border-[#0F4C5C]/55 bg-black px-2 py-2 text-sm text-white"
+                    >
+                      {PRESCRIPTION_SET_OPTIONS.map((n) => (
+                        <option key={n} value={String(n)}>
+                          {n}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                  <label className="text-xs text-slate-400">
+                    Durée (secondes)
+                    <select
+                      value={pickerSeconds || '30'}
+                      onChange={(e) => setPickerSeconds(e.target.value)}
+                      className="mt-1 w-full rounded border border-[#0F4C5C]/55 bg-black px-2 py-2 text-sm text-white"
+                    >
+                      {PRESCRIPTION_TIME_OPTIONS.map((n) => (
+                        <option key={n} value={String(n)}>
+                          {n}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                  <p className="col-span-2 text-xs text-teal-200/90">Aperçu : {buildSeriesFromPicker()}</p>
+                </div>
               )}
               {!pickerIsFractionne && pickerVolumeMode === 'minutes' && (
-                <label className="text-xs text-slate-400 block">
-                  Durée (minutes)
-                  <select
-                    value={pickerMinutes}
-                    onChange={(e) => setPickerMinutes(e.target.value)}
-                    className="mt-1 w-full rounded border border-[#0F4C5C]/55 bg-black px-2 py-2 text-sm text-white"
-                  >
-                    {[1, 2, 3, 5, 10, 15, 20, 30, 45, 60, 90].map((n) => (
-                      <option key={n} value={String(n)}>
-                        {n}
-                      </option>
-                    ))}
-                  </select>
-                </label>
+                <div className="grid grid-cols-2 gap-3">
+                  <label className="text-xs text-slate-400">
+                    Séries
+                    <select
+                      value={pickerSets}
+                      onChange={(e) => setPickerSets(e.target.value)}
+                      className="mt-1 w-full rounded border border-[#0F4C5C]/55 bg-black px-2 py-2 text-sm text-white"
+                    >
+                      {PRESCRIPTION_SET_OPTIONS.map((n) => (
+                        <option key={n} value={String(n)}>
+                          {n}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                  <label className="text-xs text-slate-400">
+                    Durée (minutes)
+                    <select
+                      value={pickerMinutes || '1'}
+                      onChange={(e) => setPickerMinutes(e.target.value)}
+                      className="mt-1 w-full rounded border border-[#0F4C5C]/55 bg-black px-2 py-2 text-sm text-white"
+                    >
+                      {PRESCRIPTION_MINUTE_OPTIONS.map((n) => (
+                        <option key={n} value={String(n)}>
+                          {n}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                  <p className="col-span-2 text-xs text-teal-200/90">Aperçu : {buildSeriesFromPicker()}</p>
+                </div>
               )}
             </div>
             <div className="border-t border-[#0F4C5C]/55 p-4 flex items-center justify-end gap-2">

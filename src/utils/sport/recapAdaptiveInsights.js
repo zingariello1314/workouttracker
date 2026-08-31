@@ -1347,6 +1347,8 @@ export function buildAdaptiveRecapInsights(opts = {}) {
     performanceRobustness: composed.performanceRobustness,
     populationComparisons: composed.populationComparisons,
     trainingEvents: composed.trainingEvents,
-    composedInterpretations: composed.interpretations
+    composedInterpretations: composed.interpretations,
+    athleteIdentity: composed.athleteIdentity,
+    phenomena: composed.phenomena
   };
 }

@@ -57,6 +57,23 @@ describe('userTrainingState', () => {
     expect(state.load.trend).not.toBe('unknown');
     expect(state.adherence.value).toBe('high');
   });
+
+  it('ne déclare pas declining à partir du seul momentum de reps agrégées', () => {
+    const snapshot = { reps: {}, checkedExercises: {} };
+    const window = { start: '2026-08-01', end: '2026-08-31' };
+    snapshot.reps['2026-08-10_101'] = 20;
+    snapshot.checkedExercises['2026-08-10_101'] = true;
+    snapshot.reps['2026-08-24_101'] = 18;
+    snapshot.checkedExercises['2026-08-24_101'] = true;
+    const state = buildUserTrainingState({
+      snapshot,
+      window,
+      assessment: { repsMomentumRatio: 0.4 }
+    });
+    expect(state.performance.value).not.toBe('declining');
+    expect(['indeterminate', 'unknown', 'stable']).toContain(state.performance.value);
+    expect(state.features.repExposureDelta28Pct).toBe(state.features.volumeDelta28Pct);
+  });
 });
 
 describe('trainingRelationEngine', () => {

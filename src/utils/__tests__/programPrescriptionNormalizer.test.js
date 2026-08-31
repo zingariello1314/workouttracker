@@ -36,6 +36,15 @@ describe('parsePrescriptionFromSeries', () => {
   it('3×max → skip', () => {
     expect(parsePrescriptionFromSeries('3×max').skip).toBe(true);
   });
+
+  it('4×1 min wall sit', () => {
+    const p = parsePrescriptionFromSeries('4×1 min', { name: 'Wall sit' });
+    expect(p.skip).toBeFalsy();
+    expect(p.volumeMode).toBe('minutes');
+    expect(p.setCount).toBe(4);
+    expect(p.repsMin).toBe(1);
+    expect(p.displaySeries).toBe('4×1 min');
+  });
 });
 
 describe('normalizeExercisePrescription', () => {

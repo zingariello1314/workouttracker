@@ -22,7 +22,7 @@ export function scoringEntry(name, unit, stars, coeff, opts = {}) {
   const scoringType =
     opts.scoringType || (unit === 'seconds' ? 'isometric' : 'dynamic');
   return {
-    key: slugifyScoringKey(name),
+    key: slugifyScoringKey(opts.key || name),
     name,
     unit,
     difficultyStars: stars,

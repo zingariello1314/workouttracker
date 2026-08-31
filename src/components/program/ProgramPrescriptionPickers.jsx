@@ -1,5 +1,6 @@
 import React from 'react';
 import {
+  PRESCRIPTION_MINUTE_OPTIONS,
   PRESCRIPTION_REP_OPTIONS,
   PRESCRIPTION_REP_RANGE_PRESETS,
   PRESCRIPTION_SET_OPTIONS,
@@ -193,10 +194,7 @@ export default function ProgramPrescriptionPickers({ exercise, onExerciseChange 
             }}
             className={selectClass}
           >
-            {(p.volumeMode === 'minutes'
-              ? [1, 2, 3, 5, 10, 15, 20, 30, 45, 60, 90]
-              : PRESCRIPTION_TIME_OPTIONS
-            ).map((n) => (
+            {(p.volumeMode === 'minutes' ? PRESCRIPTION_MINUTE_OPTIONS : PRESCRIPTION_TIME_OPTIONS).map((n) => (
               <option key={n} value={n}>
                 {n}
               </option>

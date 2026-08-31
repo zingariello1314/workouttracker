@@ -155,7 +155,9 @@ export default function BankAddToProgramModal({ payload, onClose }) {
       }
       const exKey = item.exercise ? resolveExerciseBankKey(item.exercise) : null;
       if (!exKey) return { ok: false, error: 'no_key' };
-      return appendExerciseBankKeyToProgramDay(program, dk, exKey, { series: item.series || '3×10' });
+      return appendExerciseBankKeyToProgramDay(program, dk, exKey, {
+        ...(item.series ? { series: item.series } : {})
+      });
     };
 
     if (payload.kind === 'bulk') {
@@ -204,7 +206,7 @@ export default function BankAddToProgramModal({ payload, onClose }) {
       showSuccess(`Étirement ajouté · ${DAY_LABEL[dayKey]} (${MOMENT_LABEL[moment]}).`);
     } else {
       const r = appendExerciseBankKeyToProgramDay(target, dayKey, resolvedExerciseKey, {
-        series: payload.series || '3×10'
+        ...(payload.series ? { series: payload.series } : {})
       });
       if (!r.ok) {
         showError('Impossible d’ajouter l’exercice.');

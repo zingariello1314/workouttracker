@@ -88,9 +88,30 @@ export const CATALOG_DORSAUX = [
     muscleGroup: 'Dorsaux',
     aliases: ['archer pull up']
   }),
-  scoringEntry('Tractions australiennes', 'reps', 2, 0.75, {
+  scoringEntry('Tractions australiennes — prise pronation', 'reps', 2, 0.75, {
+    key: 'tractions australiennes',
     muscleGroup: 'Dorsaux',
-    aliases: ['inverted row', 'rowing australien']
+    aliases: ['tractions australiennes', 'inverted row', 'rowing australien', 'australian pull-up']
+  }),
+  scoringEntry('Tractions australiennes — prise serrée pronation', 'reps', 2, 0.78, {
+    muscleGroup: 'Dorsaux',
+    aliases: ['australian pull-up close grip', 'inverted row close grip']
+  }),
+  scoringEntry('Tractions australiennes — prise large pronation', 'reps', 3, 0.88, {
+    muscleGroup: 'Dorsaux',
+    aliases: ['australian pull-up wide grip', 'inverted row wide']
+  }),
+  scoringEntry('Tractions australiennes — prise large supination', 'reps', 2, 0.8, {
+    muscleGroup: 'Dorsaux',
+    aliases: ['australian chin-up wide', 'inverted row wide supinated']
+  }),
+  scoringEntry('Tractions australiennes — prise serrée supination', 'reps', 2, 0.72, {
+    muscleGroup: 'Dorsaux',
+    aliases: ['australian chin-up close', 'inverted row close supinated']
+  }),
+  scoringEntry('Tractions australiennes — prise neutre', 'reps', 2, 0.76, {
+    muscleGroup: 'Dorsaux',
+    aliases: ['australian pull-up neutral', 'inverted row hammer grip']
   }),
   scoringEntry('Tractions commando', 'reps', 4, 1.3, {
     muscleGroup: 'Dorsaux',

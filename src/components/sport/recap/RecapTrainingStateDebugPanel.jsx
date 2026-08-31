@@ -52,7 +52,9 @@ export default function RecapTrainingStateDebugPanel({
   performanceRobustness = [],
   populationComparisons = [],
   composedInterpretations = [],
-  insightSignature = null
+  insightSignature = null,
+  athleteIdentity = null,
+  phenomena = []
 }) {
   const [open, setOpen] = useState(false);
 
@@ -98,15 +100,50 @@ export default function RecapTrainingStateDebugPanel({
           </div>
 
           <p className="text-[10px] leading-relaxed text-slate-500">
-            Charge lue sur 28 j. vs 28 j. (et 7 j. si le mois et la semaine divergent). La moitié de période
-            ({features.periodHalfDeltaPct != null ? `${features.periodHalfDeltaPct} %` : 'n/a'}) n’est pas la
-            même question. Les colonnes n’affichent que les lectures les plus importantes, pas toute la liste
-            ci-dessous.
+            Trois couches distinctes : <span className="text-slate-300">état brut</span> (features, reps
+            cochées) → <span className="text-slate-300">interprétation</span> (phénomènes) →{' '}
+            <span className="text-slate-300">conclusion</span> (cartes). « Volume » = nombre de
+            répétitions suivies, pas une dose mécanique. Identité = habitude observée, pas un rythme
+            optimal. Les colonnes n’affichent que les lectures retenues.
           </p>
 
+          {athleteIdentity?.ready ? (
+            <p className="rounded-lg border border-slate-700/50 bg-slate-900/40 px-2.5 py-2 text-[10px] text-slate-300">
+              Identité fréquence : {athleteIdentity.frequency?.status} · actuel{' '}
+              {athleteIdentity.frequency?.currentPerWeek} /sem. · habitude{' '}
+              {athleteIdentity.frequency?.meanPerWeek} (plage {athleteIdentity.frequency?.bandLow}–
+              {athleteIdentity.frequency?.bandHigh}) — comportement observé, pas un optimum.
+            </p>
+          ) : null}
+
+          <div>
+            <p className="mb-1 text-[10px] font-semibold uppercase tracking-wide text-slate-500">
+              Phénomènes ({(phenomena || []).length})
+            </p>
+            <ChipList
+              items={(phenomena || []).map((p) => ({
+                id: p.id,
+                type: p.type,
+                narrative: (p.signals || []).join(', '),
+                text: [
+                  p.interpretation ? JSON.stringify(p.interpretation) : null,
+                  p.priority
+                    ? `anomalie ${p.priority.unusual ? 'oui' : 'non'} · importance objectif ${
+                        p.priority.goalRelevant ? 'oui' : 'non'
+                      }`
+                    : null
+                ]
+                  .filter(Boolean)
+                  .join(' · '),
+                confidence: p.confidence
+              }))}
+              empty="Aucun phénomène composé sur cette fenêtre"
+            />
+          </div>
+
           <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
-            <AxisRow label="Charge" axis={trainingState.load} />
-            <AxisRow label="Perf." axis={trainingState.performance} />
+            <AxisRow label="Exposition (reps)" axis={trainingState.load} />
+            <AxisRow label="Sortie observée" axis={trainingState.performance} />
             <AxisRow label="Récup." axis={trainingState.recovery} />
             <AxisRow label="Fatigue" axis={trainingState.fatigue} />
             <AxisRow label="Adhérence" axis={trainingState.adherence} />

@@ -129,7 +129,9 @@ export function useRecapTabMetrics({
           performanceRobustness: adaptive.performanceRobustness ?? [],
           populationComparisons: adaptive.populationComparisons ?? [],
           composedInterpretations: adaptive.composedInterpretations ?? [],
-          trainingEvents: adaptive.trainingEvents ?? null
+          trainingEvents: adaptive.trainingEvents ?? null,
+          athleteIdentity: adaptive.athleteIdentity ?? null,
+          phenomena: adaptive.phenomena ?? []
         };
 
         const programCoachAnalysis = buildRecapProgramCoachAnalysis({

@@ -42,13 +42,15 @@ export function buildCoachStateProse(opts = {}) {
   if (load.trend === 'rising' && load.metrics?.deltaPct != null) {
     bits.push(`charge en hausse (~${load.metrics.deltaPct >= 0 ? '+' : ''}${load.metrics.deltaPct} %)`);
   } else if (load.trend === 'falling') {
-    bits.push('volume en baisse');
+    bits.push('exposition (reps suivies) en baisse');
   }
 
   if (performance.value === 'improving' || performance.trend === 'rising') {
     bits.push('progression en cours');
   } else if (performance.value === 'declining') {
     bits.push('performances en retrait');
+  } else if (performance.value === 'indeterminate') {
+    bits.push('niveau actuellement indéterminé');
   } else if (performance.value === 'stable') {
     bits.push('performances stables');
   }

@@ -167,18 +167,20 @@ function aggregatePerformance(progressionInsights, assessment) {
 
   const mom = assessment?.repsMomentumRatio;
   if (mom != null && Number.isFinite(mom)) {
-    if (mom >= 1.1 && trend !== 'falling') {
-      trend = trend === 'unknown' ? 'rising' : trend;
-      value = value === 'unknown' ? 'improving' : value;
-      confidence = Math.max(confidence, 0.62);
-      evidence.push(`momentum reps +${Math.round((mom - 1) * 100)} % vs période précédente`);
-      metrics.repsMomentumDeltaPct = Math.round((mom - 1) * 100);
+    metrics.repsMomentumDeltaPct = Math.round((mom - 1) * 100);
+    metrics.observedOutput = mom >= 1.1 ? 'up' : mom <= 0.9 ? 'down' : 'flat';
+    // Momentum de reps agrégées ≠ performance : mélange exposition, variantes, absences.
+    if (value === 'unknown') {
+      value = 'indeterminate';
+      evidence.push(
+        `production de reps observée ${Math.round((mom - 1) * 100)} % — pas une mesure de capacité comparable`
+      );
+      confidence = Math.max(confidence, 0.5);
+      metrics.comparable = false;
     } else if (mom <= 0.9 && trend !== 'rising') {
-      trend = trend === 'unknown' ? 'falling' : trend;
-      value = value === 'unknown' ? 'declining' : value;
-      confidence = Math.max(confidence, 0.58);
-      evidence.push(`momentum reps ${Math.round((mom - 1) * 100)} % vs période précédente`);
-      metrics.repsMomentumDeltaPct = Math.round((mom - 1) * 100);
+      evidence.push(`production de reps observée ${Math.round((mom - 1) * 100)} % (contexte d'exposition)`);
+    } else if (mom >= 1.1 && trend !== 'falling') {
+      evidence.push(`production de reps observée +${Math.round((mom - 1) * 100)} % (contexte d'exposition)`);
     }
   }
 
@@ -205,7 +207,7 @@ function deriveProgramResponse(load, performance, recovery, fatigue) {
   } else if (load.trend === 'falling' && performance.trend === 'stable') {
     value = 'deloading';
     confidence = 0.65;
-    evidence.push('volume en baisse, performances maintenues');
+    evidence.push('exposition (reps) en baisse, performances maintenues');
   }
 
   return axis(value, performance.trend, confidence, evidence, {
@@ -271,10 +273,10 @@ export function buildUserTrainingState(opts = {}) {
 
   const loadEvidence = [];
   if (d28 != null) {
-    loadEvidence.push(`volume ${d28 >= 0 ? '+' : ''}${d28} % vs 28 j. précédents`);
+    loadEvidence.push(`reps suivies ${d28 >= 0 ? '+' : ''}${d28} % vs 28 j. précédents`);
   } else if (loadDeltaPct != null) {
     loadEvidence.push(
-      `volume ${loadDeltaPct >= 0 ? '+' : ''}${loadDeltaPct} % ${d7 != null ? 'vs 7 j. précédents' : 'sur la période affichée'}`
+      `reps suivies ${loadDeltaPct >= 0 ? '+' : ''}${loadDeltaPct} % ${d7 != null ? 'vs 7 j. précédents' : 'sur la période affichée'}`
     );
   }
   if (d28 != null && d7 != null && Math.sign(d28) !== Math.sign(d7) && Math.abs(d7) >= 8) {
@@ -335,17 +337,16 @@ export function buildUserTrainingState(opts = {}) {
   const performance = aggregatePerformance(progressionInsights, assessment);
   const repsVelocity = computeRepsWeeklyVelocity(snapshot, window);
 
-  if (repsVelocity.velocityPerWeek != null && performance.trend === 'unknown') {
-    if (repsVelocity.velocityPerWeek >= 8) {
-      performance.trend = 'rising';
-      performance.value = performance.value === 'unknown' ? 'improving' : performance.value;
-      performance.confidence = Math.max(performance.confidence, repsVelocity.confidence * 0.9);
-      performance.evidence.push(`vitesse reps ~+${repsVelocity.velocityPerWeek}/sem`);
-    } else if (repsVelocity.velocityPerWeek <= -8) {
-      performance.trend = 'falling';
-      performance.value = performance.value === 'unknown' ? 'declining' : performance.value;
-      performance.confidence = Math.max(performance.confidence, repsVelocity.confidence * 0.85);
-      performance.evidence.push(`vitesse reps ~${repsVelocity.velocityPerWeek}/sem`);
+  if (repsVelocity.velocityPerWeek != null && (performance.value === 'unknown' || performance.value === 'indeterminate')) {
+    const dir = repsVelocity.velocityPerWeek >= 8 ? 'up' : repsVelocity.velocityPerWeek <= -8 ? 'down' : null;
+    if (dir) {
+      performance.value = 'indeterminate';
+      performance.confidence = Math.max(performance.confidence, (repsVelocity.confidence || 0.5) * 0.7);
+      performance.evidence.push(
+        `vitesse de reps observées ~${repsVelocity.velocityPerWeek}/sem (exposition agrégée, pas une référence comparable)`
+      );
+      performance.metrics.observedOutput = dir;
+      performance.metrics.comparable = false;
     }
   }
 
@@ -458,6 +459,10 @@ export function buildUserTrainingState(opts = {}) {
       volumeDelta7Pct: trainingFeatures?.volume?.delta7Pct ?? null,
       volumeDelta28Pct: trainingFeatures?.volume?.delta28Pct ?? null,
       volumeDelta90Pct: trainingFeatures?.volume?.delta90Pct ?? null,
+      repExposureDeltaPct: loadDeltaPct,
+      repExposureDelta7Pct: trainingFeatures?.volume?.delta7Pct ?? null,
+      repExposureDelta28Pct: trainingFeatures?.volume?.delta28Pct ?? null,
+      repExposureDelta90Pct: trainingFeatures?.volume?.delta90Pct ?? null,
       frequencyDeltaPct: trainingFeatures?.frequency?.deltaPct ?? null,
       sessions28d: trainingFeatures?.frequency?.sessions28d ?? null,
       prevSessions28d: trainingFeatures?.frequency?.prevSessions28d ?? null,

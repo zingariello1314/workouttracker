@@ -3,6 +3,10 @@
 
 import { EXERCISE_DATABASE_ENRICHMENT } from './exerciseDatabaseEnrichment.js';
 
+/** Inclinaison > prise : commun à toutes les tractions australiennes. */
+const AUSTRALIAN_ROW_DIFFICULTY =
+  "Difficulté : ce n'est pas la prise qui rend le mouvement dur, c'est l'inclinaison. Corps à ~45° → plus facile ; presque horizontal → difficile ; pieds surélevés → très difficile ; lest → encore plus dur. Toutes ces prises restent un tirage horizontal : elles n'isolent pas un muscle, elles changent surtout la contribution relative (dos vs bras) et le chemin des coudes.";
+
 export const exerciseDatabase = {
   // PECTORAUX
   "pompes": {
@@ -379,13 +383,144 @@ export const exerciseDatabase = {
 
   // EXERCICES STREET WORKOUT & CALISTHENICS
   "tractions australiennes": {
-    name: "Tractions australiennes",
+    name: "Tractions australiennes — prise pronation",
     category: "Dorsaux",
-    primaryMuscles: ["Grand dorsal", "Rhomboïdes", "Trapèzes moyens"],
-    secondaryMuscles: ["Biceps", "Deltoïdes postérieurs"],
+    primaryMuscles: ["Grand dorsal", "Trapèzes moyens", "Rhomboïdes"],
+    secondaryMuscles: ["Grand rond", "Biceps", "Brachial antérieur", "Deltoïdes postérieurs", "Abdominaux"],
     equipment: "Barre basse",
-    description: "Tractions horizontales au poids du corps, excellent pour débuter",
-    variations: ["rowing inversé", "body rows", "tractions horizontales"]
+    difficulty: 2,
+    summary: "Paumes vers le bas · largeur un peu plus large que les épaules · dos global + dorsaux",
+    description:
+      "Objectif : tirage horizontal de référence. Sensation visée : milieu du dos + dorsaux, biceps en assistance. Plus le corps est horizontal, plus c'est difficile.\n\n" +
+      "Prise : paumes vers le bas, largeur légèrement supérieure aux épaules. Barre assez basse pour garder les pieds au sol.\n\n" +
+      "Exécution : corps aligné chevilles → hanches → épaules, abdos et fessiers contractés. Pars bras tendus, épaules contrôlées. Tire la poitrine vers la barre (pas seulement le menton), rapproche légèrement les omoplates en haut, redescends lentement jusqu'aux bras tendus.\n\n" +
+      "Erreurs : tirer uniquement avec les bras ; casser la hanche ; hausser les épaules ; s'arrêter au menton.\n\n" +
+      AUSTRALIAN_ROW_DIFFICULTY,
+    variations: [
+      "tractions australiennes",
+      "traction australienne",
+      "australian pull-up",
+      "inverted row",
+      "rowing inversé",
+      "body rows",
+      "tractions horizontales",
+      "prise pronation classique"
+    ]
+  },
+  "tractions australiennes prise serrée pronation": {
+    name: "Tractions australiennes — prise serrée pronation",
+    category: "Dorsaux",
+    primaryMuscles: ["Grand dorsal", "Biceps", "Brachial antérieur"],
+    secondaryMuscles: ["Rhomboïdes", "Trapèzes moyens", "Grand rond"],
+    equipment: "Barre basse",
+    difficulty: 2,
+    summary: "Mains rapprochées · paumes vers le bas · dorsaux + bras · coudes près du corps",
+    description:
+      "Objectif : garder les coudes proches du corps pour travailler davantage la dépression et l'adduction du bras, avec une participation importante du grand dorsal, des biceps et du brachial.\n\n" +
+      "Prise : mains rapprochées, paumes vers le bas. Même alignement que la prise pronation classique.\n\n" +
+      "Exécution : tire la poitrine vers la barre, coudes près du corps, épaules basses (pas vers les oreilles), bassin aligné. Le mouvement part du dos et des bras, avec les omoplates qui bougent naturellement.\n\n" +
+      "Erreurs : transformer le tirage en curl horizontal en avançant uniquement les coudes ; laisser les épaules monter.\n\n" +
+      AUSTRALIAN_ROW_DIFFICULTY,
+    variations: [
+      "australian pull-up close grip",
+      "inverted row close grip pronated",
+      "rowing inversé prise serrée",
+      "tractions australiennes serrées pronation",
+      "tractions australiennes prise serrée pronation",
+      "prise serrée pronation"
+    ]
+  },
+  "tractions australiennes prise large pronation": {
+    name: "Tractions australiennes — prise large pronation",
+    category: "Dorsaux",
+    primaryMuscles: ["Grand dorsal", "Grand rond", "Trapèzes moyens", "Rhomboïdes"],
+    secondaryMuscles: ["Deltoïdes postérieurs", "Biceps"],
+    equipment: "Barre basse",
+    difficulty: 3,
+    summary: "Mains nettement plus larges que les épaules · haut/milieu du dos + grand rond",
+    description:
+      "Objectif : développer le haut et le milieu du dos plutôt que d'accumuler des répétitions faciles. Les biceps participent toujours, mais avec moins de facilité mécanique qu'en prise serrée.\n\n" +
+      "Prise : nettement plus large que les épaules, paumes vers le bas.\n\n" +
+      "Exécution : corps gainé, bras tendus, tire la poitrine vers la barre. Laisse les coudes partir davantage vers l'extérieur. Contrôle la descente jusqu'aux bras tendus.\n\n" +
+      "Erreurs : forcer le contact poitrine-barre au prix de l'alignement. Priorité : corps stable → omoplates contrôlées → tirage puissant → descente complète.\n\n" +
+      AUSTRALIAN_ROW_DIFFICULTY,
+    variations: [
+      "australian pull-up wide grip",
+      "inverted row wide pronated",
+      "rowing inversé prise large",
+      "tractions australiennes larges",
+      "tractions australiennes prise large pronation",
+      "prise large pronation"
+    ]
+  },
+  "tractions australiennes prise large supination": {
+    name: "Tractions australiennes — prise large supination",
+    category: "Dorsaux",
+    primaryMuscles: ["Grand dorsal", "Biceps", "Brachial antérieur"],
+    secondaryMuscles: ["Grand rond", "Rhomboïdes", "Trapèzes moyens", "Deltoïdes postérieurs"],
+    equipment: "Barre basse",
+    difficulty: 2,
+    summary: "Paumes vers toi · mains larges · dos + biceps, sans l'aide max d'une prise serrée",
+    description:
+      "Objectif : combiner supination et largeur. La supination facilite la contribution du biceps, mais la largeur limite un peu cet avantage par rapport à une supination serrée.\n\n" +
+      "Prise : paumes vers toi, largeur supérieure aux épaules.\n\n" +
+      "Exécution : gaine fortement, tire la poitrine vers la barre, épaules basses, descente sous contrôle. Pense poitrine vers barre + coudes vers l'arrière + corps rigide.\n\n" +
+      "Erreurs : se contenter de ramener les coudes en arrière en laissant les épaules partir vers l'avant.\n\n" +
+      AUSTRALIAN_ROW_DIFFICULTY,
+    variations: [
+      "australian chin-up wide",
+      "inverted row wide supinated",
+      "rowing inversé supination large",
+      "tractions australiennes supination large",
+      "tractions australiennes prise large supination",
+      "prise large supination"
+    ]
+  },
+  "tractions australiennes prise serrée supination": {
+    name: "Tractions australiennes — prise serrée supination",
+    category: "Dorsaux",
+    primaryMuscles: ["Biceps brachial", "Grand dorsal", "Brachial antérieur"],
+    secondaryMuscles: ["Grand rond", "Rhomboïdes", "Trapèzes moyens"],
+    equipment: "Barre basse",
+    difficulty: 2,
+    summary: "Paumes vers toi · mains rapprochées · le plus d'aide aux bras (biceps + dorsaux)",
+    description:
+      "Objectif : variante australienne qui aide le plus les bras. La supination place le biceps dans une position très favorable pour la flexion du coude ; la prise serrée permet de garder les coudes proches du corps. Combinaison dorsaux + biceps.\n\n" +
+      "Prise : paumes vers toi, mains rapprochées.\n\n" +
+      "Exécution : tire en pensant « je ramène mes coudes vers mes hanches » — souvent plus efficace pour recruter les dorsaux que de simplement tirer avec les mains.\n\n" +
+      "Erreurs : curl horizontal (coudes qui avancent) ; perdre l'alignement du bassin.\n\n" +
+      AUSTRALIAN_ROW_DIFFICULTY,
+    variations: [
+      "australian chin-up close grip",
+      "inverted row close supinated",
+      "rowing inversé supination serrée",
+      "tractions australiennes chin-up",
+      "tractions australiennes prise serrée supination",
+      "prise serrée supination"
+    ]
+  },
+  "tractions australiennes prise neutre": {
+    name: "Tractions australiennes — prise neutre",
+    category: "Dorsaux",
+    primaryMuscles: ["Grand dorsal", "Brachial antérieur", "Biceps"],
+    secondaryMuscles: ["Grand rond", "Rhomboïdes", "Trapèzes moyens", "Deltoïdes postérieurs"],
+    equipment: "Barre basse / poignées parallèles",
+    difficulty: 2,
+    summary: "Paumes qui se font face · confort d'épaule · dorsaux + biceps/brachial",
+    description:
+      "Objectif : tirage naturel pour l'épaule, coudes relativement proches du corps. Excellente variante pour apprendre à tirer fort avec le dos tout en utilisant efficacement les bras. Utilise deux poignées parallèles si tu en as.\n\n" +
+      "Prise : paumes qui se font face.\n\n" +
+      "Exécution : corps gainé, bras tendus, tire la poitrine vers les poignées. Coudes vers l'arrière et légèrement vers les hanches. Marque brièvement la position haute, descends complètement.\n\n" +
+      "Erreurs : laisser les épaules monter ; couper l'amplitude en bas.\n\n" +
+      AUSTRALIAN_ROW_DIFFICULTY,
+    variations: [
+      "australian pull-up neutral grip",
+      "inverted row hammer grip",
+      "rowing inversé prise neutre",
+      "tractions australiennes marteau",
+      "tractions australiennes prise neutre",
+      "prise neutre"
+    ]
   },
   "pompes inclinées": {
     name: "Pompes inclinées",
@@ -784,7 +919,8 @@ export const exerciseDatabase = {
     primaryMuscles: ["Grand dorsal", "Rhomboïdes", "Trapèzes moyens"],
     secondaryMuscles: ["Biceps", "Deltoïdes postérieurs"],
     equipment: "Barre basse + Support",
-    description: "Variante plus difficile des tractions australiennes avec pieds surélevés",
+    description:
+      "Même tirage horizontal que les tractions australiennes, mais les pieds sont surélevés : le corps se rapproche de l'horizontale, la charge sur le dos augmente. La prise (pronation, supination, neutre, large ou serrée) reste libre — c'est l'inclinaison qui durcit le mouvement, pas le nom de l'exercice.",
     variations: ["feet elevated australian rows", "inverted row avancé", "rowing inversé pieds hauts"]
   },
   "front lever tuck rows": {

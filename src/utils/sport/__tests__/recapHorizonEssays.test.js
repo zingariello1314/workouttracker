@@ -113,9 +113,12 @@ describe('lectures de coach', () => {
     expect(allText).not.toMatch(/le profil se lit/i);
     expect(allText).not.toMatch(/\+703/);
     expect(allText).toMatch(/semaine|séances par semaine/i);
-    expect(cands.some((c) => c.id.includes('volume_traj'))).toBe(true);
-    const vol = renderInterpretationText(cands.find((c) => c.id.includes('volume_traj')));
-    expect(vol).toMatch(/7 derniers jours|semaine/i);
+    expect(cands.some((c) => c.id.includes('continuity'))).toBe(true);
+    expect(cands.some((c) => c.id.includes('volume_traj'))).toBe(false);
+    const cont = renderInterpretationText(cands.find((c) => c.id.includes('continuity')));
+    expect(cont).toMatch(/rebond|reprend|7 derniers jours|semaine/i);
+    expect(allText).not.toMatch(/Tes performances baissent/i);
+    expect(cands.some((c) => c.id.includes('specialization'))).toBe(false);
     const push = cands.find((c) => c.id.includes('push_share'));
     if (push) {
       expect(blob(push)).toMatch(/hypertrophie|street|force|qualités/i);

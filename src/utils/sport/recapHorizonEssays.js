@@ -25,6 +25,7 @@ import {
   identityCanClaimUnusual,
   identityFrequencyStatus
 } from './athleteTrainingIdentity';
+import { buildTrainingPhenomena, phenomenonSuppresses, primaryPhenomenon } from './trainingPhenomenonEngine';
 
 function sampleDays(window) {
   if (!window?.end) return 30;
@@ -153,7 +154,7 @@ function goalPushConsequence(goal) {
     return "Pour un objectif street / tractions, ça laisse relativement peu d'exposition au tirage : ce n'est pas anodin.";
   }
   if (goal === 'muscular_defined') {
-    return "Pour une hypertrophie ou une définition générales, ce déséquilibre pèse davantage que la baisse de volume total : tu n'exposes plus les mêmes qualités.";
+    return "Pour une hypertrophie ou une définition générales, ce déséquilibre pèse davantage que la baisse d'exposition totale : tu n'exposes plus les mêmes qualités.";
   }
   if (goal === 'strength_lean') {
     return 'Pour un objectif de force sèche, concentrer le travail restant sur la poussée peut être voulu — encore faut-il que le tirage de référence tienne.';
@@ -297,6 +298,16 @@ export function buildHorizonEssayCandidates(opts = {}) {
   const timeline = buildExerciseTimeline(snapshot, getExerciseNameById);
   const absences = findSpecificAbsences(timeline, endYmd, { minGap: 8, minSessionsSince: 3 });
   const cardioGone = pickCardioAbsence(absences, least);
+  const phenomena = buildTrainingPhenomena({
+    features: f,
+    identity,
+    goal: trainingState?.context?.goal,
+    extras: { cardioGone, mom }
+  });
+  const skipKind = (kind) => phenomenonSuppresses(phenomena, kind);
+  const contraction =
+    primaryPhenomenon(phenomena, 'contraction_with_rebound') ||
+    primaryPhenomenon(phenomena, 'contraction');
   const established = dedupeEstablished(
     (performanceRobustness || []).filter((r) => r.kind === 'LEVEL_ESTABLISHED')
   );
@@ -322,12 +333,55 @@ export function buildHorizonEssayCandidates(opts = {}) {
   const long = (kind, title, body, evidence, relevance, extra) =>
     out.push(reading({ horizon: 'long', kind, title, body, evidence, relevance, conf: longConf, days: 90, extra }));
 
-  // ——— COURT TERME : ce qui vient de changer ———
+  // ——— COURT TERME : projection des phénomènes, pas une carte par métrique ———
   if (current.sessions + habit.sessions >= 1) {
     const denser =
       current.avgExercisesPerSession &&
       habit.avgExercisesPerSession &&
       current.avgExercisesPerSession >= habit.avgExercisesPerSession - 0.25;
+    if (contraction) {
+      const rebound = contraction.interpretation.recentDirection === 'recovering';
+      const stillFalling = contraction.interpretation.recentDirection === 'still_falling';
+      const inside = contraction.interpretation.identityStatus === 'normal';
+      const title = rebound && inside
+        ? "Ta pratique s'est contractée, mais elle rebondit déjà"
+        : rebound
+          ? "Ta pratique s'est contractée, avec un rebond récent"
+          : inside
+            ? "Ta pratique s'est contractée, sans sortir de ton rythme habituel"
+            : "Ta pratique s'est contractée sur la période";
+      const freqBit = freqDelta != null
+        ? `Tu es passé d'environ ${habitRate} à ${currRate} séances par semaine (${pctPhrase(freqDelta)}).`
+        : `Tu es autour de ${currRate} séances par semaine.`;
+      const expoBit = d28 != null
+        ? ` Les répétitions suivies sur 28 jours sont ${pctPhrase(d28)} que le mois comparable.`
+        : '';
+      const weekBit = rebound && d7 != null
+        ? ` Les 7 derniers jours repartent pourtant (${pctPhrase(d7)}).`
+        : stillFalling && d7 != null
+          ? ` Les 7 derniers jours ne corrigent pas encore (${pctPhrase(d7)}).`
+          : '';
+      const idBit = inside && identity?.ready
+        ? ` ${formatRateFr(identity.frequency.currentPerWeek)} séances/sem. reste dans ta variabilité habituelle (${identityBandPhrase(identity)}) : c'est ce que tu fais généralement, pas une rupture de profil.`
+        : idFreqNote;
+      const densBit = denser
+        ? ` Quand une séance a lieu, elle reste dans le même ordre de grandeur (environ ${current.avgExercisesPerSession} exercices).`
+        : current.avgExercisesPerSession
+          ? ` Tes séances sont aussi un peu moins chargées (${current.avgExercisesPerSession} exercices contre ${habit.avgExercisesPerSession || '—'}).`
+          : '';
+      const close = rebound
+        ? ` Le principal changement est une contraction récente de l'exposition, déjà en reprise — pas une perte de capacité démontrée.`
+        : ` Tant que le rythme court reste orienté à la baisse, le signal concerne encore la pratique, pas forcément le niveau.`;
+      short(
+        'continuity',
+        title,
+        `${freqBit}${expoBit}${weekBit}${idBit}${densBit}${close}`,
+        `${started} séance${started > 1 ? 's' : ''} · ${currRate}/sem. · ${habitRate}/sem. avant${
+          identity?.ready ? ` · habitude ${formatRateFr(identity.frequency.meanPerWeek)}` : ''
+        }`,
+        0.97
+      );
+    } else {
     let continuityTitle = "Tu t'entraînes moins souvent, mais pas moins longtemps quand tu t'y mets";
     if (identity?.ready && idStatus === 'inside') {
       continuityTitle = 'Ton rythme actuel reste dans ta variabilité habituelle';
@@ -344,42 +398,34 @@ export function buildHorizonEssayCandidates(opts = {}) {
         denser
           ? identity?.ready && idStatus === 'inside'
             ? `Quand une séance a lieu, elle reste dans le même ordre de grandeur qu'avant (environ ${current.avgExercisesPerSession} exercices contre ${habit.avgExercisesPerSession}).`
-            : `En revanche, quand une séance a lieu, elle reste proche de ton habitude : environ ${current.avgExercisesPerSession} exercices contre ${habit.avgExercisesPerSession} auparavant. Tu n'as donc pas « allégé » tes entraînements : tu en as simplement fait moins. C'est un changement de comportement, pas une preuve que tu es devenu incapable de tenir une séance dense.`
+            : `En revanche, quand une séance a lieu, elle reste proche de ton habitude : environ ${current.avgExercisesPerSession} exercices contre ${habit.avgExercisesPerSession} auparavant. Tu n'as donc pas « allégé » tes entraînements : tu en as simplement fait moins.`
           : current.avgExercisesPerSession
-            ? `Tes séances sont aussi un peu moins chargées (${current.avgExercisesPerSession} exercices contre ${habit.avgExercisesPerSession || '—'} auparavant). Ici, fréquence et contenu baissent ensemble : il faudra regarder si c'est voulu ou si les séances sont coupées.`
+            ? `Tes séances sont aussi un peu moins chargées (${current.avgExercisesPerSession} exercices contre ${habit.avgExercisesPerSession || '—'} auparavant). Fréquence et contenu baissent ensemble.`
             : 'Le rythme des séances a changé ; la densité par séance n’est pas assez claire pour en dire plus.',
-        idFreqNote,
-        '\n\n',
-        denser
-          ? identity?.ready && idStatus === 'inside'
-            ? `Pas besoin d'en faire un signal de rupture : le premier levier, s'il y en a un, c'est de rester dans cette plage, pas de « corriger » un rythme qui est déjà le tien.`
-            : `Conséquence : une partie du volume perdu vient du calendrier (jours sans séance), pas d'une séance plus pauvre. Tant que cette densité tient, le premier levier pour remonter le volume, c'est de revenir plus souvent — pas d'empiler encore des exercices le jour où tu t'entraînes.`
-          : 'À surveiller : si les séances continuent de s’alléger en plus d’être plus rares, le signal devient plus sérieux qu’une simple baisse de fréquence.'
+        idFreqNote
       ].join(''),
       `${started} séance${started > 1 ? 's' : ''} · ${currRate}/sem. · ${habitRate}/sem. avant${
         identity?.ready ? ` · habitude ${formatRateFr(identity.frequency.meanPerWeek)}` : ''
       }`,
       identity?.ready && idStatus === 'inside' ? 0.93 : 0.97
     );
+    }
   }
 
-  if (d7 != null || d28 != null) {
+  if ((d7 != null || d28 != null) && !skipKind('volume_traj')) {
     let body;
     if (d28 != null && d28 < -12 && d7 != null && d7 > 4) {
-      body = `Sur un mois comparable (28 jours contre 28 jours), tu as fait ${pctPhrase(d28)} de volume que sur le mois d'avant. Les 7 derniers jours repartent pourtant à ${pctPhrase(d7)} par rapport à la semaine précédente. Ces deux fenêtres ne se contredisent pas : le mois reste creux, mais la contraction ne s'accélère plus — le rythme le plus récent ressemble à une stabilisation, voire à un début de reprise.\n\nCe n'est pas encore une reconstruction confirmée. Une seule semaine plus chargée peut être un rattrapage, un week-end plus libre, ou le début d'un vrai retour. À surveiller : si la semaine suivante reste au-dessus du creux du mois, le signal de reprise se solidifie ; si elle retombe, le +${Math.round(d7)} % n'était qu'un à-coup.`;
+      body = `Sur un mois comparable, tu as coché ${pctPhrase(d28)} de répétitions que le mois d'avant. Les 7 derniers jours repartent pourtant (${pctPhrase(d7)}). Le mois reste creux, mais la contraction ne s'accélère plus.`;
     } else if (d28 != null && d28 < -12 && d7 != null && d7 < -8) {
-      body = `Le volume est en retrait sur le mois (${pctPhrase(d28)}) et les 7 derniers jours ne corrigent pas encore la tendance (${pctPhrase(d7)}). Ici, la baisse n'est pas qu'une photo du mois : elle se prolonge encore sur la semaine récente.\n\nÇa mérite plus d'attention qu'un mois creux suivi d'une semaine qui remonte. Tant que le rythme court reste orienté à la baisse, il est trop tôt pour parler de simple « creux déjà derrière toi ».`;
+      body = `Les répétitions suivies sont en retrait sur le mois (${pctPhrase(d28)}) et les 7 derniers jours ne corrigent pas encore (${pctPhrase(d7)}). La baisse se prolonge encore sur la semaine récente.`;
     } else if (d28 != null) {
-      body = `Ton volume des 28 derniers jours est ${pctPhrase(d28)} que sur les 28 jours d'avant${d7 != null ? `, tandis que la dernière semaine est ${pctPhrase(d7)}` : ''}. Il faut lire ces deux fenêtres ensemble : un mois creux et une semaine qui remonte (ou l'inverse) ne racontent pas la même histoire.\n\nLa comparaison 28 j. vs 28 j. décrit la tendance de fond. Les 7 jours disent seulement si cette tendance est encore en train de s'écrire. Ni l'une ni l'autre ne dit, à elle seule, si tu perds de la capacité.`;
+      body = `Tes répétitions suivies sur 28 jours sont ${pctPhrase(d28)} que sur les 28 jours d'avant${d7 != null ? `, tandis que la dernière semaine est ${pctPhrase(d7)}` : ''}. Ni l'une ni l'autre ne dit, à elle seule, si tu perds de la capacité.`;
     } else {
-      body = `Sur 7 jours, ton volume est ${pctPhrase(d7)} que la semaine précédente. C'est trop court pour un verdict de mois, mais ça dit déjà si le rythme récent accélère ou ralentit. Avec si peu de jours, une ou deux séances suffisent à faire bouger le pourcentage : on le note, on ne le transforme pas en conclusion de cycle.`;
-    }
-    if (idFreqNote) {
-      body += `\n\n${idFreqNote.trim()}`;
+      body = `Sur 7 jours, tes répétitions suivies sont ${pctPhrase(d7)} que la semaine précédente. Trop court pour un verdict de mois : une ou deux séances suffisent à faire bouger le pourcentage.`;
     }
     short(
       'volume_traj',
-      'Le volume du mois et celui de la semaine ne racontent pas la même chose',
+      'Les répétitions du mois et celles de la semaine ne racontent pas la même chose',
       body,
       [d28 != null ? `28 j. ${d28 > 0 ? '+' : ''}${Math.round(d28)} %` : null, d7 != null ? `7 j. ${d7 > 0 ? '+' : ''}${Math.round(d7)} %` : null]
         .filter(Boolean)
@@ -401,16 +447,16 @@ export function buildHorizonEssayCandidates(opts = {}) {
           ? `. Parmi les séances commencées, ${finished} vont au bout${partial ? ` et ${partial} restent partielles` : ''}`
           : '';
     const skipBit = least.length
-      ? `. Les mêmes blocs reviennent souvent dans ce qui n'est pas fait : ${fmtList(least)}. Ce n'est pas un abandon uniforme : tu sélectionnes. Hypothèse à vérifier — pas une certitude : leur place dans la séance ou dans la semaine les rend peut-être trop faciles à sacrifier.`
+      ? `. Les mêmes blocs reviennent souvent dans ce qui n'est pas fait : ${fmtList(least)} — tu sélectionnes plutôt que d'abandonner uniformément.`
       : '.';
     const alignBit =
       alignment != null && alignment < 45
-        ? ` L'alignement avec le contenu prévu reste bas (~${Math.round(alignment)}/100) : quand tu t'entraînes, tu ne suis pas forcément le plan dans l'ordre ou jusqu'au bout.`
+        ? ` L'alignement avec le contenu prévu reste bas (~${Math.round(alignment)}/100) : quand tu t'entraînes, tu ne suis pas forcément le plan jusqu'au bout.`
         : '';
     short(
       'program',
       'Le programme est davantage laissé de côté que tes séances ne sont allégées',
-      `${startBit}${missBit}. Sur la période, ça représente ${half} du plan (~${programPct} %).${skipBit}${alignBit}\n\nLe chiffre de ${programPct} % tout seul ne dit presque rien : ce qui compte, c'est la structure de ce qui manque. Des jours non commencés, ce n'est pas la même chose que des séances systématiquement coupées à la fin. Si les mêmes blocs reviennent dans les non-faits, le programme est peut-être trop chargé pour la fréquence actuelle — ou mal placé dans la semaine. Hypothèse à vérifier, pas un verdict.`,
+      `${startBit}${missBit}. Sur la période, ça représente ${half} du plan (~${programPct} %).${skipBit}${alignBit}`,
       `~${programPct} % du plan${alignment != null ? ` · alignement ${Math.round(alignment)}/100` : ''}`,
       0.94
     );
@@ -427,10 +473,15 @@ export function buildHorizonEssayCandidates(opts = {}) {
         : `. Les autres séances continuent ; l'absence est spécifique.`;
     const goalBit =
       goal === 'street_skills'
-        ? " Si l'endurance n'est pas ta priorité, ça peut rester secondaire."
-        : " Si tu voulais garder de l'endurance, le sujet n'est pas le volume de musculation : c'est la place réelle de la course.";
+        ? " Pour un objectif street, cette absence est surtout inhabituelle : elle pèse moins que le tirage ou les dips, tant que ceux-ci restent exposés."
+        : goal === 'muscular_defined'
+          ? " Pour une hypertrophie générale, l'endurance n'est pas la priorité — l'absence compte surtout si tu voulais la garder."
+          : " Si tu voulais garder de l'endurance, le sujet n'est pas les répétitions de musculation : c'est la place réelle de la course.";
     const gapQ = matchingIdentityQuality(identity, cardioGone.name) || (unusualGapQ?.key === 'run' ? unusualGapQ : null);
-    const body = `${last}${gap}${mid}${goalBit}${identityGapParagraph(gapQ)}\n\nCe n'est pas forcément un problème en soi. Mais une qualité sans exposition ne se maintient pas indéfiniment : au-delà de deux semaines, la première séance de retour n'est plus comparable à ton meilleur niveau — c'est une reprise. Les données ne disent pas encore pourquoi elle a disparu (récupération serrée autour des jours de musculation, choix, oubli, ou séance trop proche d'un gros jour).`;
+    const repriseBit = cardioGone.daysSince >= 21
+      ? ' Après un trou aussi long, la prochaine séance se lira comme une reprise, pas comme une comparaison à ton meilleur niveau récent.'
+      : '';
+    const body = `${last}${gap}${mid}${goalBit}${identityGapParagraph(gapQ)}${repriseBit}`;
     const horizonAbs = cardioGone.daysSince >= 45 ? 'long' : 'short';
     const fn = horizonAbs === 'long' ? long : short;
     fn(
@@ -448,7 +499,7 @@ export function buildHorizonEssayCandidates(opts = {}) {
     short(
       'absence',
       `${a.name} est sorti de la rotation, alors que tu continues`,
-      `Tu n'as plus fait ${a.name} depuis ${a.daysSince} jours (dernière fois le ${formatDayFr(a.lastDate, true)}), alors que ${a.sessionsSince} autres séances ont eu lieu. L'absence est ciblée : ce n'est pas un arrêt d'entraînement.${identityGapParagraph(gapQ)}\n\nCertaines zones ou certains mouvements sortent progressivement du calendrier pendant que d'autres restent. Si ${a.name} faisait partie de ce que tu voulais développer, le trou n'est plus un oubli d'une séance : c'est une qualité qui n'est plus dans la rotation. La prochaine fois que tu le refais, lis-le comme un retour, pas comme une régression par rapport à ton meilleur souvenir.`,
+      `Tu n'as plus fait ${a.name} depuis ${a.daysSince} jours (dernière fois le ${formatDayFr(a.lastDate, true)}), alors que ${a.sessionsSince} autres séances ont eu lieu. L'absence est ciblée : ce n'est pas un arrêt d'entraînement.${identityGapParagraph(gapQ)} La prochaine fois que tu le refais, lis-le comme un retour, pas comme une régression par rapport à ton meilleur souvenir.`,
       `${formatDayFr(a.lastDate)} · ${a.daysSince} j. · ${a.sessionsSince} séances entre-temps`,
       gapQ?.unusualGap ? 0.94 : 0.88
     );
@@ -483,10 +534,10 @@ export function buildHorizonEssayCandidates(opts = {}) {
     short(
       'performance',
       mom != null && mom < -12
-        ? 'Tes performances baissent en moyenne, mais pas partout'
-        : 'Tes performances ne racontent pas la même histoire que le volume',
-      `${momBit}${holdBit}${prBit}${varBit}${identityPerfParagraph(unusualPerfQ)}\n\nTu travailles moins souvent, mais sur les séries que tu fais encore, le niveau ne s'effondre pas partout. Le momentum global mélange des exercices que tu as moins touchés, des variantes que tu as remplacées, et ceux que tu suis vraiment. Pour l'instant ça ressemble davantage à moins d'exposition (et parfois à un changement de sélection) qu'à une perte générale de capacité. Une régression, ça se dirait si tes mouvements de référence reculaient alors qu'ils restent pratiqués — ce n'est pas le tableau actuel.`,
-      [mom != null ? `momentum ${Math.round(mom)} %` : null, prEvents[0]?.exerciseName || risingNames[0] || null]
+        ? 'La production de répétitions observée recule — le niveau n’est pas encore lisible'
+        : 'Les répétitions observées et l’exposition ne racontent pas la même chose',
+      `${momBit}${holdBit}${prBit}${varBit}${identityPerfParagraph(unusualPerfQ)} Sans le même exercice, la même variante et assez de séances comparables, on ne peut pas parler de baisse de performance : seulement d'une production observée en retrait.`,
+      [mom != null ? `reps observées ${Math.round(mom)} %` : null, prEvents[0]?.exerciseName || risingNames[0] || null]
         .filter(Boolean)
         .join(' · '),
       0.92
@@ -500,7 +551,7 @@ export function buildHorizonEssayCandidates(opts = {}) {
     const shThen = muscleShare(habitP, 'épaule');
     const rel =
       triNow && triThen
-        ? ` Tes triceps pèsent maintenant ~${triNow.sharePct} % de ton volume, contre ~${triThen.sharePct} % sur la période d'avant.`
+        ? ` Tes triceps pèsent maintenant ~${triNow.sharePct} % des répétitions suivies, contre ~${triThen.sharePct} % sur la période d'avant.`
         : '';
     const sh =
       shNow && shThen
@@ -518,7 +569,7 @@ export function buildHorizonEssayCandidates(opts = {}) {
     short(
       'push_share',
       persist ? 'La poussée reste dominante' : 'La poussée prend de plus en plus de place',
-      `Environ ${Math.round(pushPct || currP.pushPct)} % de ton volume récent vient de mouvements de poussée, contre ~${Math.round(pullPct || currP.pullPct || 0)} % de tirage${ratioEnr != null ? ` (à peu près ${ratioEnr} pour 1)` : ''}.${rel}${sh}${legs}\n\nÇa vient surtout de ce que tu continues à faire — triceps et épaules — pas d'une hausse générale du volume. Le volume restant s'est recomposé : tu n'as pas « tout baissé pareil ». ${goalPushConsequence(goal)}${persist} À surveiller : pas le pourcentage d'un muscle isolé, mais si le tirage de référence et le bas du corps restent assez exposés pour ne pas sortir de la rotation.`,
+      `Environ ${Math.round(pushPct || currP.pushPct)} % de tes répétitions récentes vient de mouvements de poussée, contre ~${Math.round(pullPct || currP.pullPct || 0)} % de tirage${ratioEnr != null ? ` (à peu près ${ratioEnr} pour 1)` : ''}.${rel}${sh}${legs} Ça vient surtout de ce que tu continues à faire — triceps et épaules. Le travail restant s'est recomposé : tu n'as pas tout baissé pareil. ${goalPushConsequence(goal)}${persist} À surveiller : si le tirage de référence et le bas du corps restent assez exposés pour ne pas sortir de la rotation.`,
       ratioEnr != null ? `push/pull ~${ratioEnr} · ~${Math.round(pushPct)} % poussée` : `~${Math.round(pushPct)} % poussée`,
       persist ? 0.93 : 0.9
     );
@@ -548,7 +599,7 @@ export function buildHorizonEssayCandidates(opts = {}) {
   }
 
   // ——— MOYEN TERME : ce qui se construit ———
-  if (currP.total >= 40 || habitP.total >= 40) {
+  if ((currP.total >= 40 || habitP.total >= 40) && !skipKind('specialization')) {
     const triNow = muscleShare(currP, 'triceps');
     const shNow = muscleShare(currP, 'épaule');
     const biNow = muscleShare(currP, 'biceps');
@@ -557,15 +608,13 @@ export function buildHorizonEssayCandidates(opts = {}) {
       'Ton entraînement devient progressivement plus spécialisé',
       [
         `Sur un cycle de quelques semaines, tu consacres une part croissante du travail aux épaules et aux triceps`,
-        triNow && shNow ? ` (~${shNow.sharePct} % et ~${triNow.sharePct} % du volume)` : '',
+        triNow && shNow ? ` (~${shNow.sharePct} % et ~${triNow.sharePct} % des répétitions)` : '',
         biNow ? `, avec encore les biceps autour de ${biNow.sharePct} %` : '',
         '. ',
         ratioEnr != null && ratioThen != null
           ? `Le rapport poussée/tirage passe d'environ ${ratioThen} à ${ratioEnr}.`
           : '',
-        '\n\n',
-        'Ce qui se construit, ce n’est pas « plus de sport partout » : c’est une spécialisation. Certaines qualités reçoivent beaucoup plus d’exposition que d’autres, séance après séance. Ça peut être cohérent si tu priorises volontairement le haut du corps / la poussée. Ça le devient moins si tu visais un développement plus équilibré : alors le déséquilibre du mix pèse autant que la quantité totale.\n\n',
-        'À ne pas confondre avec une régression générale. Une spécialisation, c’est un déplacement du travail. Le jugement utile, c’est : est-ce que les qualités laissées de côté (tirage, jambes, endurance) font encore partie de ce que tu veux garder ?'
+        ' Certaines qualités reçoivent beaucoup plus d’exposition que d’autres. Ça peut être cohérent si tu priorises la poussée ; moins si tu visais un développement plus équilibré.'
       ].join(''),
       shareEvidence(currP),
       0.94
@@ -597,7 +646,7 @@ export function buildHorizonEssayCandidates(opts = {}) {
     medium(
       'efficiency',
       'Le rendement de progression se lit avec la fréquence, pas tout seul',
-      `La progression récente est moins favorable : tu investis du volume pour un retour de performances plutôt négatif (efficacité autour de ${efficiency}). Une partie de ce ralentissement peut venir du simple fait que tu t'exposes moins souvent, pas d'une incapacité à progresser. Moins de séances, c'est moins d'occasions d'améliorer un mouvement — le « rendement » baisse mécaniquement.\n\nTant que la fréquence reste plus basse, juger ce chiffre comme un plafond de niveau serait trop tôt. Il redevient intéressant si tu retrouves un rythme régulier et que les performances de référence ne suivent toujours pas : là, on pourrait parler de réponse à l'entraînement plus faible, pas seulement de calendrier.`,
+      `La progression récente est moins favorable : tu investis de l'exposition pour un retour plutôt négatif (efficacité autour de ${efficiency}). Une partie de ce ralentissement peut venir du simple fait que tu t'exposes moins souvent. Le chiffre redevient intéressant si tu retrouves un rythme régulier et que les références ne suivent toujours pas.`,
       efficiency != null ? `efficacité ~${efficiency}` : '',
       0.84
     );
@@ -612,17 +661,17 @@ export function buildHorizonEssayCandidates(opts = {}) {
     medium(
       'goal_gap',
       'Ton objectif demande de la régularité, ta pratique récente en donne moins',
-      `Un objectif d'hypertrophie, de définition ou de force sèche s'appuie sur une exposition répétée : les muscles et les mouvements progressent si tu les retravailles assez souvent, assez longtemps. Or tu fais moins de séances et tu t'éloignes du plan (~${programPct} % réalisé).\n\nLe premier levier n'est probablement pas d'ajouter des variantes ni de « mieux choisir » les exercices. C'est de retrouver assez souvent le travail déjà prévu. Ce n'est pas un verdict de motivation — c'est un écart entre ce que tu vises et ce qui est réellement fait. Si cet écart dure, l'objectif reste affiché, mais la pratique construit autre chose : moins de volume, plus de spécialisation sur ce que tu continues de cocher.`,
+      `Un objectif d'hypertrophie, de définition ou de force sèche s'appuie sur une exposition répétée. Or tu fais moins de séances et tu t'éloignes du plan (~${programPct} % réalisé). Le premier levier, c'est de retrouver assez souvent le travail déjà prévu. Si l'écart dure, l'objectif reste affiché, mais la pratique construit autre chose : moins d'exposition, plus de spécialisation sur ce que tu continues de cocher.`,
       `objectif · ~${programPct} % du plan · fréquence ${freqDelta}%`,
       0.86
     );
   }
 
-  if (loadFalling && current.avgExercisesPerSession && habit.avgExercisesPerSession) {
+  if (loadFalling && current.avgExercisesPerSession && habit.avgExercisesPerSession && !skipKind('capacity_vs_exposure')) {
     medium(
       'capacity_vs_exposure',
       "Le risque actuel ressemble davantage à un trou de rythme qu'à un manque de capacité",
-      `Ta fréquence a reculé, mais l'historique montre que tu es encore capable de tenir des séances relativement denses quand tu les fais (~${current.avgExercisesPerSession} exercices). La capacité à enchaîner une séance n'est pas le problème observé : c'est la régularité d'exposition.${idFreqNote}\n\nSi ça continue, le premier risque n'est pas forcément de tout perdre d'un coup. Les mouvements établis tiennent souvent quelques semaines. Ce qui souffre d'abord, c'est la progression de ce que tu n'exposes plus assez souvent, et les qualités déjà en marge (course, jambes, accessoires). À surveiller sur les prochaines semaines : est-ce un creux, ou le début d'un rythme plus bas qui devient ta nouvelle normale ?`,
+      `Ta fréquence a reculé, mais tu es encore capable de tenir des séances relativement denses (~${current.avgExercisesPerSession} exercices). Le signal observé, c'est la régularité d'exposition, pas un manque de capacité à enchaîner une séance.${idFreqNote}`,
       `${currRate}/sem. · densité ${current.avgExercisesPerSession}`,
       0.88,
       { showConfidence: true }
@@ -636,16 +685,19 @@ export function buildHorizonEssayCandidates(opts = {}) {
       : longTerm.exercises.filter((e) => e.sessions >= 4 && e.lastReps >= e.firstReps + 2)
     ).slice(0, 3);
     if (durable.length) {
+      const names = durable.map((e) => e.name);
       long(
         'continuity_level',
-        'Ce qui progresse durablement, c’est ce qui revient souvent',
-        `${fmtList(durable.map((e) => e.name))} tiennent ou montent sur le trimestre, surtout parce qu'ils reviennent régulièrement. Un PR isolé sur un exercice rare dit peu : trop peu de séances, trop de hasard. Une hausse lente sur un mouvement que tu répètes dit davantage — le niveau devient comparable d'une semaine à l'autre.\n\nSur plusieurs mois, c'est ça qui caractérise vraiment ta pratique : tu construis un niveau là où tu reviens. Les mouvements intermittents peuvent afficher une belle séance sans produire de trajectoire. Si tu veux qu'une qualité progresse durablement, la question n'est pas d'abord d'ajouter un exercice, c'est de lui laisser une place répétée dans le calendrier.`,
-        durable.map((e) => e.name).join(' · '),
+        names.length === 1
+          ? `${names[0]} tient sur le trimestre parce que tu y reviens`
+          : `${fmtList(names)} tiennent sur le trimestre parce que tu y reviens`,
+        `${fmtList(names)} tiennent ou montent sur le trimestre, surtout parce qu'ils reviennent régulièrement. Un PR isolé sur un exercice rare dit peu. Une hausse lente sur un mouvement que tu répètes dit davantage : le niveau devient comparable d'une semaine à l'autre.`,
+        names.join(' · '),
         0.9
       );
     }
 
-    if (currRate && longRate && currRate < longRate * 0.85) {
+    if (currRate && longRate && currRate < longRate * 0.85 && !skipKind('recent_vs_identity')) {
       const idBit = identity?.ready
         ? ` Ton rythme habituel, lui, se situe autour de ${formatRateFr(identity.frequency.meanPerWeek)} séances/sem. (souvent ${identityBandPhrase(identity)})${
             idStatus === 'low'
@@ -660,7 +712,7 @@ export function buildHorizonEssayCandidates(opts = {}) {
         identity?.ready && idStatus === 'low'
           ? 'La période actuelle s’écarte de ton rythme habituel, pas seulement des 90 jours'
           : 'La période actuelle s’écarte de ta trajectoire des mois précédents',
-        `Tu es autour de ${currRate} séances par semaine, contre plutôt ${longRate} sur ~90 jours.${idBit} La question n'est pas seulement « moins de volume ». C'est de savoir si ce creux est une parenthèse, ou le début d'un autre rythme — un entraînement encore dense les jours où tu y vas, mais plus rare.\n\nTes mouvements établis peuvent tenir un moment : l'historique long sert précisément à ça. Ce qui souffre d'abord, c'est la progression de ce que tu n'exposes plus assez, et les qualités déjà sorties de la rotation. Si dans trois ou quatre semaines tu es encore autour de ${currRate}/sem., ce n'est plus un accident de calendrier : c'est un changement de trajectoire. Si tu reviens vers ${longRate}, le trimestre reste ta référence, et la période actuelle n'aura été qu'un creux.`,
+        `Tu es autour de ${currRate} séances par semaine, contre plutôt ${longRate} sur ~90 jours.${idBit} La question n'est pas seulement « moins de répétitions suivies ». C'est de savoir si ce creux est une parenthèse, ou le début d'un autre rythme. Si dans trois ou quatre semaines tu es encore autour de ${currRate}/sem., ce n'est plus un accident de calendrier.`,
         `${currRate}/sem. maintenant · ${longRate}/sem. sur 90 j.${
           identity?.ready ? ` · habitude ${formatRateFr(identity.frequency.meanPerWeek)}` : ''
         }`,
@@ -678,7 +730,7 @@ export function buildHorizonEssayCandidates(opts = {}) {
     medium(
       'identity',
       'Ce rythme n’est plus le tien : il sort de ta variabilité habituelle',
-      `Sur ${identity.weeksUsed} semaines de pratique lisible, tu t'entraînes d'habitude autour de ${formatRateFr(identity.frequency.meanPerWeek)} séances par semaine (souvent ${identityBandPhrase(identity)}, confiance ${identity.confidenceLabel}). La période actuelle est à ${formatRateFr(identity.frequency.currentPerWeek)} — en dehors de cette plage, pas seulement en dessous du mois d'avant.\n\n${qBits.length ? `${qBits.join(' ')}\n\n` : ''}Ce n'est pas un verdict de motivation. C'est un écart à ce que tu fais généralement, avec assez d'historique pour le dire. Si ça se recale dans la plage d'ici deux ou trois semaines, ce n'était qu'un creux. Si ${formatRateFr(identity.frequency.currentPerWeek)}/sem. devient le nouveau rythme, ce n'est plus ta variabilité : c'est un autre profil.`,
+      `Sur ${identity.weeksUsed} semaines de pratique lisible, tu t'entraînes d'habitude autour de ${formatRateFr(identity.frequency.meanPerWeek)} séances par semaine (souvent ${identityBandPhrase(identity)}). C'est une habitude observée, pas un rythme optimal. La période actuelle est à ${formatRateFr(identity.frequency.currentPerWeek)} — en dehors de cette plage, pas seulement en dessous du mois d'avant.${qBits.length ? ` ${qBits.join(' ')}` : ''} Si ça se recale d'ici deux ou trois semaines, ce n'était qu'un creux. Si ${formatRateFr(identity.frequency.currentPerWeek)}/sem. s'installe, c'est un autre profil de pratique.`,
       `habitude ${formatRateFr(identity.frequency.meanPerWeek)} · actuel ${formatRateFr(identity.frequency.currentPerWeek)} · ${identity.weeksUsed} sem.`,
       0.93
     );

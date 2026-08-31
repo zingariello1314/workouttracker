@@ -189,7 +189,7 @@ export default function PathologyBankView({
       onRequestAddToProgram?.({
         kind: 'exercise',
         exercise: payload.exercise,
-        series: payload.series || '3×10'
+        ...(payload.series ? { series: payload.series } : {})
       });
     },
     [onRequestAddToProgram]

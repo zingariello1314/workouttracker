@@ -8,6 +8,7 @@ import { parsePrescriptionFromSeries } from './programPrescriptionNormalizer';
 export const PRESCRIPTION_SET_OPTIONS = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
 export const PRESCRIPTION_REP_OPTIONS = Array.from({ length: 30 }, (_, i) => i + 1);
 export const PRESCRIPTION_TIME_OPTIONS = [10, 15, 20, 30, 45, 60, 90, 120, 180];
+export const PRESCRIPTION_MINUTE_OPTIONS = [1, 2, 3, 5, 10, 15, 20, 30, 45, 60, 90];
 
 export const PRESCRIPTION_REP_RANGE_PRESETS = [
   { min: 4, max: 6 },
@@ -95,6 +96,61 @@ export function buildSeriesFromEditorPrescription(p) {
     p.repsScope === 'per_hand' ? '/main' : p.repsScope === 'per_side' ? '/côté' : '';
   const repsPart = p.useRange ? `${p.repsMin}-${p.repsMax}` : String(p.repsMin);
   return `${p.setCount}×${repsPart}${scopeSuffix}`;
+}
+
+/**
+ * Prescription par défaut à l’ajout d’un exercice (banque → programme).
+ * Holds type wall sit → séries × minutes ; planche → séries × secondes ; cardio bloc → 1 × N min.
+ * @param {object} exercise
+ * @returns {EditorPrescription}
+ */
+export function defaultEditorPrescriptionForExercise(exercise) {
+  const unit = detectExerciseUnit(exercise);
+  if (unit?.isTimeBased) {
+    const name = String(exercise?.name || '').toLowerCase();
+    const isCardioBlock =
+      /course|footing|running|endurance|corde|boxe|natation|marche\s+active/.test(name);
+    if (unit.unit === 'min') {
+      if (isCardioBlock) {
+        return {
+          volumeMode: 'minutes',
+          setCount: 1,
+          repsMin: 20,
+          repsMax: 20,
+          repsScope: 'total',
+          useRange: false
+        };
+      }
+      return {
+        volumeMode: 'minutes',
+        setCount: 3,
+        repsMin: 1,
+        repsMax: 1,
+        repsScope: 'total',
+        useRange: false
+      };
+    }
+    return {
+      volumeMode: 'seconds',
+      setCount: 3,
+      repsMin: 30,
+      repsMax: 30,
+      repsScope: 'total',
+      useRange: false
+    };
+  }
+  return {
+    volumeMode: 'reps',
+    setCount: 3,
+    repsMin: 10,
+    repsMax: 10,
+    repsScope: 'total',
+    useRange: false
+  };
+}
+
+export function defaultSeriesForExercise(exercise) {
+  return buildSeriesFromEditorPrescription(defaultEditorPrescriptionForExercise(exercise));
 }
 
 /**

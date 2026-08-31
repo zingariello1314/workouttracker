@@ -17,6 +17,15 @@ const EXERCISE_VARIATION_FAMILIES = {
     'pompes en tension continue'
   ],
   pullups: ['tractions pronation', 'tractions supination', 'tractions australiennes'],
+  australianRows: [
+    'tractions australiennes',
+    'tractions australiennes prise serrée pronation',
+    'tractions australiennes prise large pronation',
+    'tractions australiennes prise large supination',
+    'tractions australiennes prise serrée supination',
+    'tractions australiennes prise neutre',
+    'rowing australien pieds surélevés'
+  ],
   dips: ['dips'],
   calves: [
     'mollets debout',
@@ -39,6 +48,7 @@ function detectFamilyId(exercise) {
   const n = normalizeName(exercise);
   if (!n) return null;
   if (/pomp|push[- ]?up/i.test(n)) return 'pushups';
+  if (/australien|inverted row|body row|rowing invers/i.test(n)) return 'australianRows';
   if (/traction|pull[- ]?up|chin/i.test(n)) return 'pullups';
   if (/dip|répulsion/i.test(n)) return 'dips';
   if (/mollet|calf raise|élévation.*mollet|elevation.*mollet/i.test(n)) return 'calves';

@@ -22,6 +22,7 @@ import { analyzePerformanceRobustness } from './performanceRobustness';
 import { buildHierarchicalComparisons } from './populationComparisonEngine';
 import { buildHorizonEssayCandidates } from './recapHorizonEssays';
 import { buildAthleteTrainingIdentity } from './athleteTrainingIdentity';
+import { buildTrainingPhenomena } from './trainingPhenomenonEngine';
 
 /** Candidat affichable dans les 3 colonnes (pas un fait isolé). */
 export function isColumnInterpretation(c) {
@@ -45,6 +46,11 @@ export function buildComposedInterpretationPipeline(opts = {}) {
     snapshot: opts.snapshot,
     window: opts.window,
     getExerciseNameById: opts.getExerciseNameById
+  });
+  const phenomena = buildTrainingPhenomena({
+    features: trainingState?.features,
+    identity: athleteIdentity,
+    goal: trainingState?.context?.goal
   });
 
   const eventBundle = detectTrainingEvents({
@@ -74,7 +80,8 @@ export function buildComposedInterpretationPipeline(opts = {}) {
     performanceRobustness,
     trainingEvents: eventBundle.events,
     insightHistory: opts.insightHistory || null,
-    athleteIdentity
+    athleteIdentity,
+    phenomena
   });
 
   const renderedEssays = renderInterpretations(essayDrafts, trainingState);
@@ -106,7 +113,8 @@ export function buildComposedInterpretationPipeline(opts = {}) {
     eventBundle,
     interpretations: allInterpretations,
     candidates,
-    athleteIdentity
+    athleteIdentity,
+    phenomena
   };
 }
 

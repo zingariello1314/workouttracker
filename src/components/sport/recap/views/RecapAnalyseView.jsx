@@ -383,6 +383,10 @@ export default function RecapAnalyseView({
 
           composedInterpretations={assessment?.composedInterpretations}
 
+          athleteIdentity={assessment?.athleteIdentity}
+
+          phenomena={assessment?.phenomena}
+
           insightSignature={assessment?.insightSignature}
 
         />

@@ -2,7 +2,8 @@ import { describe, it, expect } from 'vitest';
 import {
   buildSeriesFromEditorPrescription,
   seriesToEditorPrescription,
-  applyEditorPrescriptionToExercise
+  applyEditorPrescriptionToExercise,
+  defaultEditorPrescriptionForExercise
 } from '../prescriptionPickerUtils';
 import { dayCountsAsCalendarTrainingDay } from '../sport/recapTrainingDayTruth';
 
@@ -18,6 +19,34 @@ describe('prescriptionPickerUtils', () => {
     const next = applyEditorPrescriptionToExercise({ series: '3×10' }, { setCount: 5 });
     expect(next.series).toBe('5×10');
     expect(next.meta.setCount).toBe(5);
+  });
+
+  it('produit 4×1 min pour un hold en minutes', () => {
+    expect(
+      buildSeriesFromEditorPrescription({
+        volumeMode: 'minutes',
+        setCount: 4,
+        repsMin: 1,
+        repsMax: 1,
+        repsScope: 'total',
+        useRange: false
+      })
+    ).toBe('4×1 min');
+  });
+
+  it('propose 3×1 min par défaut pour un wall sit', () => {
+    const p = defaultEditorPrescriptionForExercise({ name: 'Wall sit' });
+    expect(p.volumeMode).toBe('minutes');
+    expect(p.setCount).toBe(3);
+    expect(p.repsMin).toBe(1);
+    expect(buildSeriesFromEditorPrescription(p)).toBe('3×1 min');
+  });
+
+  it('relit 4×1 min depuis series', () => {
+    const p = seriesToEditorPrescription({ series: '4×1 min', name: 'Wall sit' });
+    expect(p.volumeMode).toBe('minutes');
+    expect(p.setCount).toBe(4);
+    expect(p.repsMin).toBe(1);
   });
 });
 

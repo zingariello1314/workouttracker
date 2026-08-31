@@ -1,6 +1,9 @@
 /**
  * Mesures normalisées + baselines personnelles (7 / 28 / 90 j.).
  * Une métrique n'est pas une analyse — ce fichier ne produit aucun texte UI.
+ *
+ * « volume » ici = somme des reps cochées (repVolume / checkedRepCount), pas une dose mécanique
+ * (séries × charge × RIR). Ne pas le lire comme une charge d'entraînement réelle.
  */
 
 import DateHelper from '../dateHelper';
