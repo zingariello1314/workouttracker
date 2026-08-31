@@ -1,9 +1,15 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useEffect } from 'react';
 import { useWorkout } from '../../context/WorkoutContext';
 import { useTranslation } from '../../utils/translations';
 import { useAuth } from '../../context/AuthContext';
 import { canAccessTab } from '../../utils/accessMatrix';
-import { preloadRecapTab } from '../../utils/preloadTabs';
+import { preloadCoreSportTabs } from '../../utils/preloadTabs';
+import { loadAllData, peekGarminAllDataCache } from '../../hooks/garminDataLoad';
+
+function warmCalendarGarmin() {
+  if (peekGarminAllDataCache()) return;
+  loadAllData(true).catch(() => {});
+}
 
 const Navigation = () => {
   const { activeTab, setActiveTab } = useWorkout();
@@ -40,6 +46,11 @@ const Navigation = () => {
     () => sportTabs.map((tab) => tab.id),
     [sportTabs]
   );
+
+  useEffect(() => {
+    if (!sportSubTabs.includes(activeTab)) return;
+    warmCalendarGarmin();
+  }, [activeTab, sportSubTabs]);
 
   const codeTabs = useMemo(
     () => [
@@ -104,7 +115,7 @@ const Navigation = () => {
       return;
     }
     if (tabId === 'sport') {
-      preloadRecapTab();
+      preloadCoreSportTabs();
       // Aller au dernier sous-onglet Sport visité (fallback: Aujourd'hui)
       setActiveTab(getLastSportSubTab());
       return;
@@ -146,7 +157,7 @@ const Navigation = () => {
             <button
               key={tab.id}
               onMouseEnter={() => {
-                if (tab.id === 'sport') preloadRecapTab();
+                if (tab.id === 'sport') preloadCoreSportTabs();
               }}
               onClick={() => handleClick(tab.id)}
               role="tab"
@@ -174,7 +185,12 @@ const Navigation = () => {
               <button
                 key={tab.id}
                 onMouseEnter={() => {
-                  if (tab.id === 'recap') preloadRecapTab();
+                  if (tab.id === 'recap' || tab.id === 'today' || tab.id === 'calendar') {
+                    preloadCoreSportTabs();
+                  }
+                  if (tab.id === 'calendar') {
+                    warmCalendarGarmin();
+                  }
                 }}
                 onClick={() => {
                   if (!canAccessTab(tab.id, { isAuthenticated })) {

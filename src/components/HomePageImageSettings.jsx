@@ -16,9 +16,16 @@ import {
 import {
   LOCK_WALLPAPER_ROTATION_OPTIONS,
   processLockWallpaperFile,
+  resolveLockWallpaperOrder,
   resolveLockWallpaperRotationMs,
   resolveLockWallpaperAdvanceOnClick
 } from '../utils/lockWallpaperImage';
+import {
+  WALLPAPER_ORDER_OPTIONS,
+  WALLPAPER_ROTATION_OPTIONS
+} from '../utils/wallpaperPlayback';
+import { normalizeLockBackgroundItems } from '../utils/wallpaperTargets';
+import { useHomeWallpaperPlayback } from '../hooks/useHomeWallpaperPlayback';
 import logger from '../utils/logger';
 
 const log = logger.component('HomePageImageSettings');
@@ -28,9 +35,11 @@ const HomePageImageSettings = ({ onClose }) => {
     record: appLockRecord,
     addLockOnlyBackground,
     removeLockOnlyBackgroundAt,
+    patchLockOnlyBackgroundAt,
     setLockBackgroundUrls,
     updateSettings
   } = useAppLock();
+  const { playback: homePlayback, updatePlayback: updateHomePlayback } = useHomeWallpaperPlayback();
   const {
     backgroundImages,
     saveImages,
@@ -51,11 +60,13 @@ const HomePageImageSettings = ({ onClose }) => {
   const [previewIndex, setPreviewIndex] = useState(null);
   const fileInputRef = useRef(null);
   const lockOnlyInputRef = useRef(null);
-  const lockOnlyUrls = appLockRecord?.lockBackgroundDataUrls || [];
+  const lockOnlyItems = normalizeLockBackgroundItems(appLockRecord);
+  const lockOnlyUrls = lockOnlyItems.map((item) => item.dataUrl);
   const effectiveLockCount = resolveLockWallpaperUrls(backgroundImages, appLockRecord).length;
   const [lockBatchProgress, setLockBatchProgress] = useState(null);
   const lockRotationMs = resolveLockWallpaperRotationMs(appLockRecord);
   const lockAdvanceOnClick = resolveLockWallpaperAdvanceOnClick(appLockRecord);
+  const lockOrder = resolveLockWallpaperOrder(appLockRecord);
 
   // Fonction pour nettoyer le localStorage
   const cleanupLocalStorage = () => {
@@ -204,6 +215,40 @@ const HomePageImageSettings = ({ onClose }) => {
     } catch (e) {
       log.error('Clic fond verrou', e);
     }
+  };
+
+  const handleLockOrderChange = async (event) => {
+    try {
+      await updateSettings({ lockWallpaperOrder: event.target.value });
+    } catch (e) {
+      log.error('Ordre verrou', e);
+    }
+  };
+
+  const handleHomeRotationChange = (event) => {
+    const value = Number(event.target.value);
+    if (!Number.isFinite(value)) return;
+    updateHomePlayback({ rotationMs: value });
+  };
+
+  const handleHomeOrderChange = (event) => {
+    updateHomePlayback({ order: event.target.value });
+  };
+
+  const handleHomeAdvanceOnClickChange = (event) => {
+    updateHomePlayback({ advanceOnClick: event.target.checked });
+  };
+
+  const toggleLockOnlyLike = async (index) => {
+    const item = lockOnlyItems[index];
+    if (!item) return;
+    await patchLockOnlyBackgroundAt(index, { liked: !item.liked });
+  };
+
+  const toggleLockOnlyHidden = async (index) => {
+    const item = lockOnlyItems[index];
+    if (!item) return;
+    await patchLockOnlyBackgroundAt(index, { hidden: !item.hidden });
   };
 
   const clearAllLockOnly = async () => {
@@ -448,14 +493,62 @@ const HomePageImageSettings = ({ onClose }) => {
               Ajoutez des images puis choisissez pour chacune si elle s&apos;affiche sur l&apos;
               <strong className="text-red-200/90">accueil</strong>, le{' '}
               <strong className="text-red-200/90">verrouillage</strong>, ou les deux.
-              Rotation accueil ~2 min ; verrou ~90 s. Cœur = favori (plus souvent sur l&apos;accueil).
-              Œil barré = masquée temporairement (hors rotation accueil).
+              Cœur = favori (plus souvent en mode aléatoire). Œil barré = hors rotation
+              (accueil et verrou si l&apos;image y est assignée).
               {effectiveLockCount > 0 ? (
                 <span className="mt-1 block text-emerald-300/90">
                   {effectiveLockCount} image{effectiveLockCount > 1 ? 's' : ''} active{effectiveLockCount > 1 ? 's' : ''} sur le verrouillage.
                 </span>
               ) : null}
             </p>
+            <div className={`mb-4 rounded-lg border border-sky-900/40 bg-sky-950/15 p-3 ${S.inset}`}>
+              <h4 className="mb-2 text-sm font-medium text-sky-100">Lecture — page d&apos;accueil</h4>
+              <label htmlFor="home-rotation-interval" className="mb-1 block text-sm font-medium text-red-100">
+                Vitesse de défilement
+              </label>
+              <select
+                id="home-rotation-interval"
+                value={homePlayback.rotationMs}
+                onChange={handleHomeRotationChange}
+                className={`mb-3 w-full max-w-md ${S.input}`}
+              >
+                {WALLPAPER_ROTATION_OPTIONS.map((opt) => (
+                  <option key={`home-${opt.value}`} value={opt.value}>
+                    {opt.label}
+                  </option>
+                ))}
+              </select>
+              <label htmlFor="home-rotation-order" className="mb-1 block text-sm font-medium text-red-100">
+                Ordre
+              </label>
+              <select
+                id="home-rotation-order"
+                value={homePlayback.order}
+                onChange={handleHomeOrderChange}
+                className={`mb-3 w-full max-w-md ${S.input}`}
+              >
+                {WALLPAPER_ORDER_OPTIONS.map((opt) => (
+                  <option key={`home-order-${opt.value}`} value={opt.value}>
+                    {opt.label}
+                  </option>
+                ))}
+              </select>
+              <label className="flex cursor-pointer items-start gap-3">
+                <input
+                  type="checkbox"
+                  checked={homePlayback.advanceOnClick}
+                  onChange={handleHomeAdvanceOnClickChange}
+                  className="mt-1 h-4 w-4 rounded border-sky-600 bg-slate-900 text-sky-500 focus:ring-sky-400"
+                />
+                <span>
+                  <span className="block text-sm font-medium text-sky-100">Changer le fond au clic</span>
+                  <span className={`mt-1 block text-xs ${S.muted}`}>
+                    Un clic sur la page d&apos;accueil passe à l&apos;image suivante (en plus de la
+                    rotation automatique).
+                  </span>
+                </span>
+              </label>
+            </div>
             
             <div className="space-y-4">
               <input
@@ -591,7 +684,7 @@ const HomePageImageSettings = ({ onClose }) => {
                         <button
                           type="button"
                           onClick={() => toggleLike(index)}
-                          title={norm.liked ? 'Retirer des favoris' : 'Favori (plus souvent sur l\'accueil)'}
+                          title={norm.liked ? 'Retirer des favoris' : 'Favori (plus souvent en aléatoire)'}
                           className={`flex h-7 w-7 items-center justify-center rounded-full border backdrop-blur-sm transition ${
                             norm.liked
                               ? 'border-rose-400/70 bg-rose-950/90 text-rose-300'
@@ -603,7 +696,7 @@ const HomePageImageSettings = ({ onClose }) => {
                         <button
                           type="button"
                           onClick={() => toggleHidden(index)}
-                          title={norm.hidden ? 'Réafficher sur l\'accueil' : 'Masquer temporairement'}
+                          title={norm.hidden ? 'Réafficher dans la rotation' : 'Masquer (hors rotation accueil et verrou)'}
                           className={`flex h-7 w-7 items-center justify-center rounded-full border backdrop-blur-sm transition ${
                             norm.hidden
                               ? 'border-amber-500/60 bg-amber-950/90 text-amber-200'
@@ -683,10 +776,25 @@ const HomePageImageSettings = ({ onClose }) => {
                 id="lock-rotation-interval"
                 value={lockRotationMs}
                 onChange={handleLockRotationChange}
-                className={`w-full max-w-md ${S.input}`}
+                className={`mb-3 w-full max-w-md ${S.input}`}
               >
                 {LOCK_WALLPAPER_ROTATION_OPTIONS.map((opt) => (
                   <option key={String(opt.value)} value={opt.value}>
+                    {opt.label}
+                  </option>
+                ))}
+              </select>
+              <label htmlFor="lock-rotation-order" className="mb-1 block text-sm font-medium text-violet-100">
+                Ordre
+              </label>
+              <select
+                id="lock-rotation-order"
+                value={lockOrder}
+                onChange={handleLockOrderChange}
+                className={`w-full max-w-md ${S.input}`}
+              >
+                {WALLPAPER_ORDER_OPTIONS.map((opt) => (
+                  <option key={`lock-order-${opt.value}`} value={opt.value}>
                     {opt.label}
                   </option>
                 ))}
@@ -705,9 +813,14 @@ const HomePageImageSettings = ({ onClose }) => {
                     Changer le fond au clic
                   </span>
                   <span className={`mt-1 block text-xs ${S.muted}`}>
-                    Sur l&apos;écran d&apos;intro et le verrouillage : touchez le fond (hors carte) pour
-                    afficher une autre image au hasard. Désactive la rotation automatique tant que cette
-                    option est active.
+                    Sur l&apos;écran d&apos;intro et le PIN : cliquez le fond autour de la carte pour
+                    passer à l&apos;image suivante. La rotation automatique continue en parallèle.
+                    {effectiveLockCount < 2 ? (
+                      <span className="mt-1 block text-amber-300/90">
+                        Il faut au moins 2 images actives sur le verrou (badge Verrou ou « verrou seul »)
+                        pour que le clic et la rotation changent le fond.
+                      </span>
+                    ) : null}
                   </span>
                 </span>
               </label>
@@ -750,16 +863,54 @@ const HomePageImageSettings = ({ onClose }) => {
                 </button>
               )}
             </div>
-            {lockOnlyUrls.length > 0 ? (
+            {lockOnlyItems.length > 0 ? (
               <div className="grid grid-cols-2 gap-4 md:grid-cols-3">
-                {lockOnlyUrls.map((url, i) => (
+                {lockOnlyItems.map((item, i) => (
                   <div
                     key={`lock-only-${i}`}
-                    className="group relative overflow-hidden rounded-lg border border-violet-900/50"
+                    className={`group relative overflow-hidden rounded-lg border ${
+                      item.hidden
+                        ? 'border-zinc-600/60 opacity-55'
+                        : item.liked
+                          ? 'border-rose-400/70 ring-1 ring-rose-500/30'
+                          : 'border-violet-900/50'
+                    }`}
                   >
-                    <img src={url} alt={`Verrou ${i + 1}`} className="h-32 w-full object-cover" />
-                    <div className="absolute left-2 top-2 rounded border border-violet-500/50 bg-black/70 px-2 py-0.5 text-[10px] text-violet-200">
+                    <img
+                      src={item.dataUrl}
+                      alt={`Verrou ${i + 1}`}
+                      className={`h-32 w-full object-cover ${item.hidden ? 'grayscale' : ''}`}
+                    />
+                    <div className="absolute left-2 top-2 flex gap-1">
+                      <button
+                        type="button"
+                        onClick={() => toggleLockOnlyLike(i)}
+                        title={item.liked ? 'Retirer des favoris' : 'Favori (plus souvent en aléatoire)'}
+                        className={`flex h-7 w-7 items-center justify-center rounded-full border backdrop-blur-sm transition ${
+                          item.liked
+                            ? 'border-rose-400/70 bg-rose-950/90 text-rose-300'
+                            : 'border-violet-900/50 bg-black/70 text-violet-100/80 hover:text-rose-300'
+                        }`}
+                      >
+                        <Heart className={`h-3.5 w-3.5 ${item.liked ? 'fill-current' : ''}`} />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => toggleLockOnlyHidden(i)}
+                        title={item.hidden ? 'Réafficher au verrouillage' : 'Masquer du verrouillage'}
+                        className={`flex h-7 w-7 items-center justify-center rounded-full border backdrop-blur-sm transition ${
+                          item.hidden
+                            ? 'border-amber-500/60 bg-amber-950/90 text-amber-200'
+                            : 'border-violet-900/50 bg-black/70 text-violet-100/80 hover:text-amber-200'
+                        }`}
+                      >
+                        {item.hidden ? <EyeOff className="h-3.5 w-3.5" /> : <Eye className="h-3.5 w-3.5" />}
+                      </button>
+                    </div>
+                    <div className="absolute left-2 bottom-2 rounded border border-violet-500/50 bg-black/70 px-2 py-0.5 text-[10px] text-violet-200">
                       Verrou seul
+                      {item.liked ? <span className="ml-1 text-rose-300">♥</span> : null}
+                      {item.hidden ? <span className="ml-1 text-amber-300/90">masqué</span> : null}
                     </div>
                     <button
                       type="button"

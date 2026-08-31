@@ -12,11 +12,11 @@ import { motion } from 'framer-motion';
 import { Loader2 } from 'lucide-react';
 import { DEFAULT_LOCK_WALLPAPER_ROTATION_MS } from '../../utils/lockWallpaperImage';
 import {
-  pickRandomWallpaperIndex,
-  preloadImageUrl,
-  preloadRandomLockWallpaper,
-  isLockWallpaperDecoded
+  pickInitialLockWallpaperIndex,
+  preloadImageUrl
 } from '../../utils/lockWallpaperPreload';
+import { pickInitialWallpaperIndex, pickNextWallpaperIndex } from '../../utils/wallpaperPlayback';
+import { sameWallpaperUrlList } from '../../utils/wallpaperTargets';
 import { LoadingStepsPanel } from './MomentumWelcomeGateSteps';
 
 const CARD_EASE = [0.22, 1, 0.36, 1];
@@ -37,7 +37,9 @@ export const MomentumLockBackground = forwardRef(function MomentumLockBackground
     dataUrls = null,
     variant = 'gate',
     rotationMs = DEFAULT_LOCK_WALLPAPER_ROTATION_MS,
-    pauseAutoRotation = false
+    pauseAutoRotation = false,
+    order = 'random',
+    weights = null
   },
   ref
 ) {
@@ -52,11 +54,17 @@ export const MomentumLockBackground = forwardRef(function MomentumLockBackground
   }, [dataUrl, dataUrls]);
 
   const indexRef = useRef(0);
+  const prevUrlsRef = useRef([]);
+  const layer0SrcRef = useRef(null);
+  const layer1SrcRef = useRef(null);
   const [activeLayer, setActiveLayer] = useState(0);
   const [layer0Src, setLayer0Src] = useState(null);
   const [layer1Src, setLayer1Src] = useState(null);
   const [layer0Opacity, setLayer0Opacity] = useState(1);
   const [layer1Opacity, setLayer1Opacity] = useState(0);
+
+  layer0SrcRef.current = layer0Src;
+  layer1SrcRef.current = layer1Src;
 
   const showLayer = useCallback((url, idx) => {
     indexRef.current = idx;
@@ -71,7 +79,7 @@ export const MomentumLockBackground = forwardRef(function MomentumLockBackground
     (nextUrl, nextIdx) => {
       if (!nextUrl) return;
       indexRef.current = nextIdx;
-      if (!layer0Src && !layer1Src) {
+      if (!layer0SrcRef.current && !layer1SrcRef.current) {
         showLayer(nextUrl, nextIdx);
         return;
       }
@@ -93,68 +101,67 @@ export const MomentumLockBackground = forwardRef(function MomentumLockBackground
         return 0;
       });
     },
-    [urls.length, layer0Src, layer1Src, showLayer]
+    [urls.length, showLayer]
   );
 
-  const loadRandom = useCallback(
+  const loadNext = useCallback(
     async (excludeIdx = -1) => {
       if (!urls.length) return;
-      const { index, url } = await preloadRandomLockWallpaper(urls, excludeIdx);
-      if (url) crossfadeToUrl(url, index);
+      const index = pickNextWallpaperIndex(urls.length, excludeIdx, { order, weights });
+      const url = urls[index];
+      if (!url) return;
+      try {
+        await preloadImageUrl(url);
+      } catch {
+        /* afficher quand même */
+      }
+      crossfadeToUrl(url, index);
     },
-    [urls, crossfadeToUrl]
+    [urls, crossfadeToUrl, order, weights]
   );
 
   const advance = useCallback(() => {
     if (urls.length <= 1) return;
-    const current = indexRef.current;
-    const nextIdx = pickRandomWallpaperIndex(urls, current);
-    const nextUrl = urls[nextIdx];
-    preloadImageUrl(nextUrl)
-      .then(() => crossfadeToUrl(nextUrl, nextIdx))
-      .catch(() => crossfadeToUrl(nextUrl, nextIdx));
-  }, [urls, crossfadeToUrl]);
+    loadNext(indexRef.current).catch(() => {});
+  }, [urls, loadNext]);
 
   useImperativeHandle(ref, () => ({ advance }), [advance]);
 
   useEffect(() => {
     if (!urls.length) {
+      prevUrlsRef.current = [];
       setLayer0Src(null);
       setLayer1Src(null);
+      setLayer0Opacity(1);
+      setLayer1Opacity(0);
+      setActiveLayer(0);
       return undefined;
     }
-    let cancelled = false;
 
-    const decodedIdx = urls.findIndex((u) => isLockWallpaperDecoded(u));
-    const instantIdx = decodedIdx >= 0 ? decodedIdx : 0;
-    const instantUrl = urls[instantIdx];
-
-    showLayer(instantUrl, instantIdx);
-    preloadImageUrl(instantUrl).catch(() => {});
-
-    if (urls.length > 1 && decodedIdx < 0) {
-      preloadRandomLockWallpaper(urls, instantIdx)
-        .then(({ index, url }) => {
-          if (cancelled || !url || index === instantIdx) return;
-          crossfadeToUrl(url, index);
-        })
-        .catch(() => {});
+    if (sameWallpaperUrlList(prevUrlsRef.current, urls)) {
+      return undefined;
     }
+    prevUrlsRef.current = urls;
 
-    return () => {
-      cancelled = true;
-    };
-  }, [urls, showLayer, crossfadeToUrl]);
+    const startIdx =
+      order === 'sequential'
+        ? pickInitialWallpaperIndex(urls.length, { order, weights })
+        : pickInitialLockWallpaperIndex(urls);
+    const startUrl = urls[startIdx];
+    showLayer(startUrl, startIdx);
+    preloadImageUrl(startUrl).catch(() => {});
+    return undefined;
+  }, [urls, showLayer, order, weights]);
 
   useEffect(() => {
     if (pauseAutoRotation || urls.length <= 1) return undefined;
     const interval = Number(rotationMs);
     if (!Number.isFinite(interval) || interval < 1000) return undefined;
     const id = window.setInterval(() => {
-      loadRandom(indexRef.current).catch(() => {});
+      loadNext(indexRef.current).catch(() => {});
     }, interval);
     return () => window.clearInterval(id);
-  }, [urls, rotationMs, pauseAutoRotation, loadRandom]);
+  }, [urls, rotationMs, pauseAutoRotation, loadNext]);
 
   if (!urls.length) return null;
 
@@ -202,7 +209,9 @@ export const MomentumWelcomeGate = memo(function MomentumWelcomeGate({
   lockBackgroundDataUrl = null,
   lockBackgroundDataUrls = null,
   lockWallpaperRotationMs = DEFAULT_LOCK_WALLPAPER_ROTATION_MS,
-  lockWallpaperAdvanceOnClick = false
+  lockWallpaperAdvanceOnClick = false,
+  lockWallpaperOrder = 'random',
+  lockWallpaperWeights = null
 }) {
   const bgRef = useRef(null);
   const [opening, setOpening] = useState(false);
@@ -245,19 +254,19 @@ export const MomentumWelcomeGate = memo(function MomentumWelcomeGate({
           dataUrls={lockBackgroundDataUrls}
           variant="gate"
           rotationMs={lockWallpaperRotationMs}
-          pauseAutoRotation={lockWallpaperAdvanceOnClick}
+          pauseAutoRotation={false}
+          order={lockWallpaperOrder}
+          weights={lockWallpaperWeights}
         />
       ) : null}
 
-      <div
-        className="relative z-10 flex min-h-0 flex-1 flex-col items-center justify-center px-4 py-10"
-        onClick={(e) => e.stopPropagation()}
-      >
+      <div className="pointer-events-none relative z-10 flex min-h-0 flex-1 flex-col items-center justify-center px-4 py-10">
         <motion.div
-          className="w-full max-w-[400px]"
+          className="pointer-events-auto w-full max-w-[400px]"
           initial={{ opacity: 0, scale: 0.98 }}
           animate={{ opacity: 1, scale: 1 }}
           transition={{ duration: 0.42, ease: CARD_EASE }}
+          onClick={(e) => e.stopPropagation()}
         >
           <div className="relative overflow-hidden rounded-[22px] border border-white/[0.08] bg-[#0d1117]/75 p-6 shadow-[0_24px_64px_rgba(0,0,0,0.55)] backdrop-blur-xl sm:p-7">
             <div

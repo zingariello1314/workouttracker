@@ -14,7 +14,11 @@ const isIsoDate = (value) => /^\d{4}-\d{2}-\d{2}$/.test(String(value || ''));
 
 const toIsoDate = (value) => {
   if (value instanceof Date) {
-    return value.toISOString().slice(0, 10);
+    if (Number.isNaN(value.getTime())) return null;
+    const year = value.getFullYear();
+    const month = String(value.getMonth() + 1).padStart(2, '0');
+    const day = String(value.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
   }
   const s = String(value || '').trim();
   return isIsoDate(s) ? s : null;

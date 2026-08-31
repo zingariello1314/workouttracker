@@ -12,6 +12,7 @@ import {
 } from '../services/homepage/homepageImagesDbGateway.js';
 import {
   applyHomepageImagePreferences,
+  hydrateHomepageImageFromDbItem,
   normalizeHomepageImages,
   readHomepagePreferencesFromStorage,
   writeHomepagePreferencesToStorage,
@@ -63,17 +64,6 @@ export const useHomepageImages = () => {
   useEffect(() => {
     backgroundImagesRef.current = backgroundImages;
   }, [backgroundImages]);
-
-  // ✅ RANDOMISATION : Fonction shuffle optimisée (Fisher-Yates)
-  const shuffleArray = (array) => {
-    if (!array || array.length <= 1) return array;
-    const shuffled = [...array]; // Copie pour éviter mutation
-    for (let i = shuffled.length - 1; i > 0; i--) {
-      const j = Math.floor(Math.random() * (i + 1));
-      [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
-    }
-    return shuffled;
-  };
 
   // Validation stricte des données Base64
   const validateBase64Image = (base64) => {
@@ -433,19 +423,7 @@ export const useHomepageImages = () => {
                 // ✅ Phase 3: Charger images (format v3 avec thumbnail ou v2 string)
                 const sortedImages = results
                   .sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp))
-                  .map(item => {
-                    // Format v3 : retourner objet { full, thumbnail }, Format v2 : retourner string
-                    if (item.version === '3.0' && item.thumbnail) {
-                      return {
-                        full: item.data,
-                        thumbnail: item.thumbnail,
-                        format: item.format,
-                        metadata: item.metadata
-                      };
-                    }
-                    // Format v2 ou v3 sans thumbnail : retourner string (compatibilité)
-                    return item.data;
-                  })
+                  .map((item, index) => hydrateHomepageImageFromDbItem(item, index))
                   .filter(img => {
                     // Valider : string Base64 ou objet avec full Base64
                     if (typeof img === 'string') {
@@ -546,19 +524,7 @@ export const useHomepageImages = () => {
               // ✅ Phase 3: Charger images (format v3 avec thumbnail ou v2 string)
               const sortedImages = filteredResults
                 .sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp))
-                .map(item => {
-                  // Format v3 : retourner objet { full, thumbnail }, Format v2 : retourner string
-                  if (item.version === '3.0' && item.thumbnail) {
-                    return {
-                      full: item.data,
-                      thumbnail: item.thumbnail,
-                      format: item.format,
-                      metadata: item.metadata
-                    };
-                  }
-                  // Format v2 ou v3 sans thumbnail : retourner string (compatibilité)
-                  return item.data;
-                })
+                .map((item, index) => hydrateHomepageImageFromDbItem(item, index))
                 .filter(img => {
                   // Valider : string Base64 ou objet avec full Base64
                   if (typeof img === 'string') {
@@ -712,7 +678,7 @@ export const useHomepageImages = () => {
 
         // ✅ RANDOMISATION : Shuffle une seule fois par session (cache dans ref)
         if (!shuffledImagesRef.current || shuffledImagesRef.current.length !== images.length) {
-          shuffledImagesRef.current = images.length > 1 ? shuffleArray(images) : images;
+          shuffledImagesRef.current = images;
           log.debug(`🎲 Images mélangées (${shuffledImagesRef.current.length} images)`);
         }
         
@@ -751,7 +717,7 @@ export const useHomepageImages = () => {
 
           // ✅ RANDOMISATION : Shuffle une seule fois par session (cache dans ref)
           if (!shuffledImagesRef.current || shuffledImagesRef.current.length !== images.length) {
-            shuffledImagesRef.current = images.length > 1 ? shuffleArray(images) : images;
+            shuffledImagesRef.current = images;
             log.debug(`🎲 Images mélangées depuis localStorage (${shuffledImagesRef.current.length} images)`);
           }
           
@@ -815,7 +781,7 @@ export const useHomepageImages = () => {
 
           // ✅ RANDOMISATION : Shuffle une seule fois par session (cache dans ref)
           if (!shuffledImagesRef.current || shuffledImagesRef.current.length !== images.length) {
-            shuffledImagesRef.current = images.length > 1 ? shuffleArray(images) : images;
+            shuffledImagesRef.current = images;
             log.debug(`🎲 Images mélangées depuis sessionStorage (${shuffledImagesRef.current.length} images)`);
           }
           
@@ -878,7 +844,7 @@ export const useHomepageImages = () => {
           images = finalizeLoadedImages(images);
           // ✅ RANDOMISATION : Shuffle une seule fois par session (cache dans ref)
           if (!shuffledImagesRef.current || shuffledImagesRef.current.length !== images.length) {
-            shuffledImagesRef.current = images.length > 1 ? shuffleArray(images) : images;
+            shuffledImagesRef.current = images;
             log.debug(`🎲 Images mélangées depuis ancien système (${shuffledImagesRef.current.length} images)`);
           }
           

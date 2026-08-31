@@ -104,6 +104,7 @@
     "legendBlendHigh": "Jour le plus chargé dans la période affichée",
     "showStats": "Afficher stats",
     "hideStats": "Masquer stats",
+    "loadingGarmin": "Chargement des données du calendrier…",
     "monthlyJustifications": "Justifications du mois :",
     "yearSummary": "Résumé {{year}}",
     "bestMonth": "Meilleur mois",

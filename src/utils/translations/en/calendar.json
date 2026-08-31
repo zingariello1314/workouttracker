@@ -104,6 +104,7 @@
     "legendBlendHigh": "Busiest day in the displayed period",
     "showStats": "Show stats",
     "hideStats": "Hide stats",
+    "loadingGarmin": "Loading calendar data…",
     "monthlyJustifications": "Monthly justifications:",
     "yearSummary": "{{year}} Summary",
     "bestMonth": "Best month",

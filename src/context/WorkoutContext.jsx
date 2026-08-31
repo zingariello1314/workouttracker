@@ -263,7 +263,7 @@ const WorkoutProvider = ({ children }) => {
     cancelStretchChanges,
     resetDay,
     flushDirtySessionDraft,
-  } = useWorkoutExercises(data, updateData, getDateStr(currentDate), cancelPendingAutoSave);
+  } = useWorkoutExercises(data, updateData, getDateStr(currentDate), cancelPendingAutoSave, storageKey);
 
   const getCurrentData = getWorkoutDataForSession;
 

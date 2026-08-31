@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Check } from 'lucide-react';
 
-const MIN_STEP_MS = 520;
+const MIN_STEP_MS = 140;
 const STEP_END_PROGRESS = [14, 30, 46, 62, 80, 100];
 
 export const LOADING_STEPS = [
@@ -84,7 +84,7 @@ function easeOutCubic(t) {
   return 1 - (1 - t) ** 3;
 }
 
-function timeCreep(startedAt, cap = 0.88, durationMs = 5000) {
+function timeCreep(startedAt, cap = 0.88, durationMs = 1800) {
   const t = clamp((Date.now() - startedAt) / durationMs, 0, 1);
   return cap * easeOutCubic(t);
 }

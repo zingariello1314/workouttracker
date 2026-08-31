@@ -13,6 +13,10 @@ import { useState, useCallback, useRef, useEffect, startTransition } from 'react
 import { getDateStr } from '../../../utils/dateUtils';
 import { sidebarEvents, SIDEBAR_EVENTS } from '../../../utils/sidebarEvents';
 import { invalidateSportXpCache } from '../../../hooks/useSportXP';
+import {
+  overlayPersistedDayJustifications,
+  stripJustificationsSupersededByActivity
+} from '../../../utils/dayJustificationUtils';
 
 function cloneDraft(source) {
   try {
@@ -117,12 +121,14 @@ function sanitizeDraftForPersist(payload) {
  * @param {Function} updateData
  * @param {string} sessionCalendarDateStr
  * @param {Function} [cancelPendingAutoSave]
+ * @param {string} [storageKey]
  */
 export const useWorkoutExercises = (
   persistedData,
   updateData,
   sessionCalendarDateStr = '',
-  cancelPendingAutoSave = null
+  cancelPendingAutoSave = null,
+  storageKey = ''
 ) => {
   const [hasUnsavedExercises, setHasUnsavedExercises] = useState(false);
   const [hasUnsavedStretches, setHasUnsavedStretches] = useState(false);
@@ -140,12 +146,16 @@ export const useWorkoutExercises = (
     setTempData(null);
   }, []);
 
+  useEffect(() => {
+    clearDraftState();
+  }, [storageKey, clearDraftState]);
+
   /** Données affichées : brouillon seulement si les flags « sale » le disent (évite barre / lecture fantômes). */
   const getWorkoutDataForSession = useCallback(() => {
     const dirty = dirtyFlagsRef.current;
     const td = tempDataRef.current;
     if (td && (dirty.exercises || dirty.stretches)) {
-      return td;
+      return overlayPersistedDayJustifications(td, persistedData);
     }
     return persistedData;
   }, [persistedData, tempData]);
@@ -161,7 +171,9 @@ export const useWorkoutExercises = (
       isPersistingSessionRef.current = true;
       try {
         cancelPendingAutoSave?.();
-        const payload = cloneDraft(normalizeWorkoutDraft(td));
+        const payload = stripJustificationsSupersededByActivity(
+          overlayPersistedDayJustifications(cloneDraft(normalizeWorkoutDraft(td)), persistedData)
+        );
         sanitizeDraftForPersist(payload);
         const sessionDay =
           sessionCalendarDateStr && /^\d{4}-\d{2}-\d{2}$/.test(sessionCalendarDateStr)
@@ -193,7 +205,7 @@ export const useWorkoutExercises = (
         isPersistingSessionRef.current = false;
       }
     },
-    [updateData, sessionCalendarDateStr, clearDraftState, cancelPendingAutoSave]
+    [updateData, sessionCalendarDateStr, clearDraftState, cancelPendingAutoSave, persistedData]
   );
 
   persistFullDraftRef.current = persistFullDraft;

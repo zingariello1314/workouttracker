@@ -2,7 +2,8 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useWorkout } from '../context/WorkoutContext';
 import { useAuth } from '../context/AuthContext';
 import { useAppLock } from '../context/AppLockContext';
-import { useLockWallpaperUrls } from '../hooks/useLockWallpaperUrls';
+import { useLockWallpaperPlayback } from '../hooks/useLockWallpaperUrls';
+import { useHomeWallpaperPlayback } from '../hooks/useHomeWallpaperPlayback';
 import { useWelcomeGateSignals } from '../hooks/useWelcomeGateSignals';
 import { useHomepageImages } from '../hooks/useHomepageImages';
 import {
@@ -22,7 +23,6 @@ import { getSettings } from '../services/swipeNavigationSettings';
 import { useQuoteDisplay } from '../hooks/useQuoteDisplay';
 import { SplineScene } from './ui/SplineScene';
 import { MomentumWelcomeGate } from './ui/MomentumBrandedLoading';
-import { resolveLockWallpaperRotationMs, resolveLockWallpaperAdvanceOnClick } from '../utils/lockWallpaperImage';
 
 const log = logger.component('HomePage');
 
@@ -55,8 +55,10 @@ function getQuoteFontCapRem(lineCount, sandwichBold = false) {
 const HomePage = () => {
   const { setActiveTab, activeTab } = useWorkout();
   const { isAuthenticated, loading: authLoading } = useAuth();
-  const { lockNow, lockReady, record: appLockRecord } = useAppLock();
-  const lockWallpaperUrls = useLockWallpaperUrls();
+  const { lockNow, lockReady } = useAppLock();
+  const lockPlayback = useLockWallpaperPlayback();
+  const lockWallpaperUrls = lockPlayback.urls;
+  const { playback: homePlayback } = useHomeWallpaperPlayback();
   const t = useTranslation();
   // ✅ Récupérer la langue depuis useTranslation pour éviter le double appel de useLanguage
   // useTranslation utilise déjà useLanguage en interne
@@ -80,6 +82,11 @@ const HomePage = () => {
         ? lastStableQuoteRef.current
         : null;
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
+  const currentImageIndexRef = useRef(0);
+  const activeLayerRef = useRef(0);
+  const homeOrderRef = useRef(homePlayback.order);
+  currentImageIndexRef.current = currentImageIndex;
+  homeOrderRef.current = homePlayback.order;
   const [userLocation, setUserLocation] = useState('');
   
   // ✅ Load swipe navigation settings from localStorage
@@ -315,7 +322,11 @@ const HomePage = () => {
     const visible = getVisibleHomepageImageIndices(backgroundImages);
     if (visible.length <= 1) return;
 
-    const nextIndex = pickNextHomepageImageIndex(backgroundImages, currentImageIndex);
+    const nextIndex = pickNextHomepageImageIndex(
+      backgroundImages,
+      currentImageIndexRef.current,
+      { order: homeOrderRef.current }
+    );
     if (nextIndex < 0) return;
 
     const nextImage = backgroundImages[nextIndex];
@@ -323,7 +334,7 @@ const HomePage = () => {
     if (!nextImage) return;
     
     // Déterminer le layer inactif
-    const inactiveLayer = activeLayer === 0 ? 1 : 0;
+    const inactiveLayer = activeLayerRef.current === 0 ? 1 : 0;
     
     // Charger la nouvelle image dans le layer inactif (thumbnail d'abord, puis full)
     await loadImageIntoLayer(nextImage, inactiveLayer, true);
@@ -332,18 +343,21 @@ const HomePage = () => {
     // Puis faire le cross-fade immédiatement (l'image full se chargera en arrière-plan)
     // Layer actif : opacity 1 → 0
     // Layer inactif : opacity 0 → 1
-    if (activeLayer === 0) {
+    if (activeLayerRef.current === 0) {
       setLayer1Opacity(1); // Afficher layer 1 (avec thumbnail ou full)
       setLayer0Opacity(0); // Masquer layer 0
       setActiveLayer(1);
+      activeLayerRef.current = 1;
     } else {
       setLayer0Opacity(1); // Afficher layer 0 (avec thumbnail ou full)
       setLayer1Opacity(0); // Masquer layer 1
       setActiveLayer(0);
+      activeLayerRef.current = 0;
     }
     
     // Mettre à jour l'index
     setCurrentImageIndex(nextIndex);
+    currentImageIndexRef.current = nextIndex;
   };
 
   // ✅ Phase 7: Charger image actuelle dans layer 0 (au montage et quand images changent)
@@ -369,17 +383,23 @@ const HomePage = () => {
 
     // Index initial pondéré (likées plus souvent), images masquées exclues
     if (!initialIndexSetRef.current && backgroundImages.length > 0) {
-      const randomIndex = pickInitialHomepageImageIndex(backgroundImages);
+      const randomIndex = pickInitialHomepageImageIndex(backgroundImages, {
+        order: homeOrderRef.current
+      });
       setCurrentImageIndex(randomIndex);
+      currentImageIndexRef.current = randomIndex;
       initialIndexSetRef.current = true;
       log.debug(`🎲 Index initial pondéré: ${randomIndex}/${backgroundImages.length}`);
     }
 
     const currentNorm = normalizeHomepageImage(backgroundImages[currentImageIndex], currentImageIndex);
     if (currentNorm?.hidden) {
-      const nextVisible = pickNextHomepageImageIndex(backgroundImages, currentImageIndex);
+      const nextVisible = pickNextHomepageImageIndex(backgroundImages, currentImageIndex, {
+        order: homeOrderRef.current
+      });
       if (nextVisible >= 0 && nextVisible !== currentImageIndex) {
         setCurrentImageIndex(nextVisible);
+        currentImageIndexRef.current = nextVisible;
       }
       return;
     }
@@ -456,16 +476,18 @@ const HomePage = () => {
     preloadRandomImages();
   }, [currentImageIndex, backgroundImages]);
 
-  // Rotation automatique toutes les 2 minutes
+  // Rotation automatique (vitesse réglable ; le clic n’arrête pas le minuteur)
   useEffect(() => {
-    if (getVisibleHomepageImageIndices(backgroundImages).length <= 1) return;
+    if (getVisibleHomepageImageIndices(backgroundImages).length <= 1) return undefined;
+    const interval = Number(homePlayback.rotationMs);
+    if (!Number.isFinite(interval) || interval < 1000) return undefined;
 
     const rotationInterval = setInterval(() => {
       changeBackgroundImage();
-    }, 2 * 60 * 1000);
+    }, interval);
 
     return () => clearInterval(rotationInterval);
-  }, [backgroundImages]);
+  }, [backgroundImages, homePlayback.rotationMs]);
 
   // Échelle pilotée par le nombre de lignes réelles (display) : une même phrase peut
   // faire 2 lignes en base (autosplit ~28 chars) tout en étant « longue » → l’ancien
@@ -603,6 +625,10 @@ const HomePage = () => {
   // plusieurs fonds différents pour une même phrase (sensation de flash hors-sujet).
   const handleInteraction = () => {
     const quoteWillAdvance = tryAdvanceQuoteFromInteraction();
+    if (homePlayback.advanceOnClick) {
+      changeBackgroundImage();
+      return;
+    }
     if (quoteWillAdvance) {
       changeBackgroundImage();
     }
@@ -730,8 +756,10 @@ const HomePage = () => {
           syncMessage={t('home.loading.sync')}
           stepSignals={welcomeStepSignals}
           lockBackgroundDataUrls={lockWallpaperUrls}
-          lockWallpaperRotationMs={resolveLockWallpaperRotationMs(appLockRecord)}
-          lockWallpaperAdvanceOnClick={resolveLockWallpaperAdvanceOnClick(appLockRecord)}
+          lockWallpaperRotationMs={lockPlayback.rotationMs}
+          lockWallpaperAdvanceOnClick={lockPlayback.advanceOnClick}
+          lockWallpaperOrder={lockPlayback.order}
+          lockWallpaperWeights={lockPlayback.weights}
         />
       )}
 

@@ -478,24 +478,31 @@ const loadDailyMetricsFromIndexedDB = async (db, startDate = null, endDate = nul
 
 // ==================== FONCTIONS PUBLIQUES ====================
 
-/**
- * Charge toutes les données depuis IndexedDB ou localStorage
- * 
- * ⚠️ ATTENTION : Cette fonction charge TOUTES les données, ce qui peut être coûteux.
- * Préférer `loadDataByRange` ou `loadDataForTab` pour optimiser la performance.
- * 
- * @param {boolean} dbReady - Si la base de données est prête
- * @returns {Promise<Object>} { activities, dailyMetrics }
- * @returns {Object} returns.activities - Activités par type { swimming, jumpRope, cardio }
- * @returns {Object} returns.dailyMetrics - Métriques quotidiennes par date (YYYY-MM-DD)
- * 
- * @example
- * const data = await loadAllData(true);
- * console.log(data.activities.swimming.length); // Nombre d'activités natation
- */
-export const loadAllData = async (dbReady) => {
+const EMPTY_ALL_DATA = { activities: { swimming: [], jumpRope: [], cardio: [] }, dailyMetrics: {} };
+
+let allDataMemoryCache = null;
+let allDataMemoryScope = null;
+let allDataInflight = null;
+let allDataInflightScope = null;
+
+export function invalidateGarminAllDataCache() {
+  allDataMemoryCache = null;
+  allDataMemoryScope = null;
+  allDataInflight = null;
+  allDataInflightScope = null;
+}
+
+export function peekGarminAllDataCache() {
+  const scope = getGarminScope();
+  if (allDataMemoryCache && allDataMemoryScope === scope) {
+    return allDataMemoryCache;
+  }
+  return null;
+}
+
+async function loadAllDataFromStorage(dbReady) {
   if (!dbReady) {
-    return { activities: { swimming: [], jumpRope: [], cardio: [] }, dailyMetrics: {} };
+    return EMPTY_ALL_DATA;
   }
   
   const useFallback = getUseFallback();
@@ -534,6 +541,52 @@ export const loadAllData = async (dbReady) => {
     setUseFallback(true);
     return { activities: { swimming: [], jumpRope: [], cardio: [] }, dailyMetrics: {} };
   }
+}
+
+/**
+ * Charge toutes les données depuis IndexedDB ou localStorage
+ *
+ * ⚠️ ATTENTION : Cette fonction charge TOUTES les données, ce qui peut être coûteux.
+ * Préférer `loadDataByRange` ou `loadDataForTab` pour optimiser la performance.
+ *
+ * Un cache mémoire de session évite de relire IndexedDB quand l'accueil,
+ * le calendrier et le récap demandent le même snapshot.
+ *
+ * @param {boolean} dbReady - Si la base de données est prête
+ * @returns {Promise<Object>} { activities, dailyMetrics }
+ *
+ * @example
+ * const data = await loadAllData(true);
+ * console.log(data.activities.swimming.length);
+ */
+export const loadAllData = async (dbReady) => {
+  if (!dbReady) {
+    return EMPTY_ALL_DATA;
+  }
+
+  const scope = getGarminScope();
+  if (allDataMemoryCache && allDataMemoryScope === scope) {
+    return allDataMemoryCache;
+  }
+  if (allDataInflight && allDataInflightScope === scope) {
+    return allDataInflight;
+  }
+
+  allDataInflightScope = scope;
+  allDataInflight = loadAllDataFromStorage(true)
+    .then((data) => {
+      allDataMemoryCache = data;
+      allDataMemoryScope = scope;
+      return data;
+    })
+    .finally(() => {
+      if (allDataInflightScope === scope) {
+        allDataInflight = null;
+        allDataInflightScope = null;
+      }
+    });
+
+  return allDataInflight;
 };
 
 /**

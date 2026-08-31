@@ -1,9 +1,10 @@
-import React, { useMemo, useState, useEffect, useRef } from 'react';
+import React, { useMemo, useState, useEffect, useRef, startTransition } from 'react';
 import { Calendar, Activity, Target, Flame, Zap, Clock, Dumbbell, Repeat, Crown } from 'lucide-react';
 import { useWorkout } from '../../context/WorkoutContext';
 import { useAuth } from '../../context/AuthContext';
 import { useWorkoutStats } from '../../hooks/useWorkoutStats';
 import { useGarminData } from '../../hooks/useGarminData';
+import { peekGarminAllDataCache } from '../../hooks/garminDataLoad';
 import CalendarHeatmap from '../CalendarHeatmap';
 import Card, { CardHeader, CardTitle, CardContent } from '../ui/Card';
 import { getDateStr, addCalendarDays } from '../../utils/dateUtils';
@@ -34,7 +35,6 @@ import { useTranslation } from '../../utils/translations';
 import { calendarHeatmapCompositeBackground } from '../../utils/calendarHeatmapTint';
 import { normalizeProfileQuestionnaire } from '../../features/profileQuestionnaire/schema';
 import {
-  computeCalendarChampionAnalysis,
   formatPctVsAverage
 } from '../../utils/calendarDayChampion';
 import {
@@ -82,16 +82,21 @@ const CalendarTab = () => {
   
   // PHASE 5.3 : Charger données Garmin (attendre le chargement pour éviter le flash de couleurs)
   const { loadAllData, dbReady } = useGarminData();
-  const [garminData, setGarminData] = useState(null);
-  const [garminDataLoaded, setGarminDataLoaded] = useState(false);
+  const garminPeek = peekGarminAllDataCache();
+  const [garminData, setGarminData] = useState(garminPeek);
+  const [garminDataLoaded, setGarminDataLoaded] = useState(() => garminPeek != null);
   
   useEffect(() => {
     if (!dbReady) {
-      setGarminDataLoaded(false);
+      if (!peekGarminAllDataCache()) setGarminDataLoaded(false);
       return;
     }
     let cancelled = false;
-    setGarminDataLoaded(false);
+    const cached = peekGarminAllDataCache();
+    if (cached) {
+      setGarminData(cached);
+      setGarminDataLoaded(true);
+    }
     loadAllData()
       .then((data) => {
         if (cancelled) return;
@@ -112,18 +117,46 @@ const CalendarTab = () => {
   
   // Créer une instance du hook avec les données actuelles
   const { getWorkoutHistory } = useWorkoutStats();
+
+  const [headerReady, setHeaderReady] = useState(false);
+  useEffect(() => {
+    let raf2 = 0;
+    const raf1 = window.requestAnimationFrame(() => {
+      raf2 = window.requestAnimationFrame(() => setHeaderReady(true));
+    });
+    return () => {
+      window.cancelAnimationFrame(raf1);
+      if (raf2) window.cancelAnimationFrame(raf2);
+    };
+  }, []);
   
   // Utiliser useMemo pour recalculer l'historique quand les données changent
   const workoutHistory = useMemo(() => {
-    const history = getWorkoutHistory();
-    return history;
-  }, [currentData.reps, currentData.checkedExercises, getWorkoutHistory]);
-
-  // ✅ PHASE 1 : Utiliser la fonction centralisée depuis calendarUtils
-  // Plus besoin de useCallback car la fonction est stable (importée)
+    if (!headerReady) return [];
+    return getWorkoutHistory();
+  }, [headerReady, currentData.reps, currentData.checkedExercises, getWorkoutHistory]);
 
   // 🏃 Calculer les statistiques d'endurance (FILTRER LES MOCK)
+
   const enduranceStats = useMemo(() => {
+    if (!headerReady) {
+      return {
+        totalSessions: 0,
+        totalReps: 0,
+        totalJumps: 0,
+        totalEnduranceMinutes: 0,
+        totalRunningMinutes: 0,
+        totalStreetReps: 0,
+        totalStreetVolumeKg: 0,
+        byActivity: {
+          boxing: { sessions: 0, reps: 0, duration: 0, distance: 0, jumps: 0 },
+          pushups: { sessions: 0, reps: 0, duration: 0, distance: 0, jumps: 0 },
+          swimming: { sessions: 0, distance: 0, duration: 0, jumps: 0 },
+          jumprope: { sessions: 0, jumps: 0, duration: 0, distance: 0 },
+          running: { sessions: 0, distance: 0, duration: 0, jumps: 0 }
+        }
+      };
+    }
     const enduranceData = currentData?.enduranceData || {};
     const sessions = enduranceData.sessions || {};
 
@@ -258,9 +291,10 @@ const CalendarTab = () => {
     stats.byActivity.running.sessions = runningVolume.sessionCount;
 
     return stats;
-  }, [currentData, getExerciseNameById, garminData]);
+  }, [headerReady, currentData, getExerciseNameById, garminData]);
 
   const calendarLiftVolumeWindow = useMemo(() => {
+    if (!headerReady) return { vol7: 0, allVol: 0 };
     const wd = currentData || {};
     const byDate = aggregateLiftVolumeKgByDate(wd);
     const todayStr = getDateStr(new Date());
@@ -274,7 +308,7 @@ const CalendarTab = () => {
       allVol += v;
     });
     return { vol7, allVol };
-  }, [currentData]);
+  }, [headerReady, currentData]);
 
   const runningTimeCumulativeLabel = useMemo(() => {
     const m = Math.max(0, Math.round(enduranceStats.totalRunningMinutes));
@@ -304,7 +338,7 @@ const CalendarTab = () => {
 
   // Fonction pour compter les séances par jour
   const getSessionsCount = useMemo(() => {
-    if (!currentData?.checkedExercises) return {};
+    if (!headerReady || !currentData?.checkedExercises) return {};
     
     const sessionsCount = {};
     
@@ -321,38 +355,54 @@ const CalendarTab = () => {
     });
     
     return sessionsCount;
-  }, [currentData?.checkedExercises]);
-
-  const championAnalysis = useMemo(
-    () =>
-      computeCalendarChampionAnalysis({
-        workoutData: currentData,
-        garminData,
-        getExerciseNameById,
-        classificationCtx: { age: profileAge }
-      }),
-    [currentData, garminData, getExerciseNameById, profileAge]
-  );
+  }, [headerReady, currentData?.checkedExercises]);
 
   const calendarYear = new Date().getFullYear();
+  const [yearDayBadges, setYearDayBadges] = useState({
+    championTopThree: [],
+    championRankByDate: {},
+    championDate: null,
+    stepsTopThree: [],
+    stepsLeaderDate: null,
+    monthStepsLeaderDates: [],
+    kcalLeaderDate: null,
+    volumeLeaderDate: null,
+    runLeaderDate: null,
+    intensityLeaderDate: null
+  });
 
-  const yearDayBadges = useMemo(
-    () =>
-      computeCalendarYearDayBadges({
-        workoutData: currentData,
-        garminData,
-        getExerciseNameById,
-        classificationCtx: { age: profileAge },
-        year: calendarYear
-      }),
-    [currentData, garminData, getExerciseNameById, profileAge, calendarYear]
-  );
+  useEffect(() => {
+    if (!garminDataLoaded) return undefined;
+    const timerId = window.setTimeout(() => {
+      startTransition(() => {
+        setYearDayBadges(
+          computeCalendarYearDayBadges({
+            workoutData: currentData,
+            garminData,
+            getExerciseNameById,
+            classificationCtx: { age: profileAge },
+            year: calendarYear
+          })
+        );
+      });
+    }, 0);
+    return () => window.clearTimeout(timerId);
+  }, [
+    garminDataLoaded,
+    currentData,
+    garminData,
+    getExerciseNameById,
+    profileAge,
+    calendarYear
+  ]);
 
-  const championForYear = yearDayBadges.championTopThree[0] ?? championAnalysis.champion;
+  const championForYear = yearDayBadges.championTopThree[0] ?? null;
 
   const longestStreakRange = useMemo(
-    () => calculateLongestTrainingStreakRange(currentData),
-    [currentData]
+    () => (headerReady
+      ? calculateLongestTrainingStreakRange(currentData)
+      : { length: 0, startDate: null, endDate: null }),
+    [headerReady, currentData]
   );
 
   const formatChampionDate = (ymd) => {
@@ -431,6 +481,19 @@ const CalendarTab = () => {
     <div className="relative min-h-screen">
       {/* Contenu avec z-index relatif */}
       <div className="relative z-10 p-6 space-y-6">
+      <CalendarHeatmap
+        workoutHistory={workoutHistory}
+        garminData={garminData}
+        garminDataLoaded={garminDataLoaded}
+        championDayDate={yearDayBadges.championDate ?? championForYear?.date ?? null}
+        championDetail={championForYear}
+        calendarDayBadges={yearDayBadges}
+        externalSelectDate={jumpToCalendarDate}
+        onExternalSelectHandled={() => setJumpToCalendarDate(null)}
+        externalScrollAnchor={calendarScrollAnchor}
+        onExternalScrollHandled={() => setCalendarScrollAnchor(null)}
+      />
+
         {/* Module Compteur de Séances */}
       <Card variant="sport" className="shadow-inner shadow-black/25">
         <CardHeader className="border-b border-[#0F4C5C]/40">
@@ -884,19 +947,6 @@ const CalendarTab = () => {
         t={t}
         volume7dKg={calendarLiftVolumeWindow.vol7}
         volumeAllKg={calendarLiftVolumeWindow.allVol}
-      />
-
-      <CalendarHeatmap
-        workoutHistory={workoutHistory}
-        garminData={garminData}
-        garminDataLoaded={garminDataLoaded}
-        championDayDate={yearDayBadges.championDate ?? championAnalysis.champion?.date ?? null}
-        championDetail={championForYear ?? championAnalysis.champion}
-        calendarDayBadges={yearDayBadges}
-        externalSelectDate={jumpToCalendarDate}
-        onExternalSelectHandled={() => setJumpToCalendarDate(null)}
-        externalScrollAnchor={calendarScrollAnchor}
-        onExternalScrollHandled={() => setCalendarScrollAnchor(null)}
       />
       </div>
     </div>

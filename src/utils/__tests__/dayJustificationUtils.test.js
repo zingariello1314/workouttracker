@@ -2,8 +2,10 @@ import { describe, expect, it } from 'vitest';
 import {
   calendarDayHasEmptyWorkoutStats,
   calendarDayUsesMinimalDetailView,
+  overlayPersistedDayJustifications,
   shouldOfferDayJustificationInDetail,
-  shouldOpenWorkoutChoicePanel
+  shouldOpenWorkoutChoicePanel,
+  stripJustificationsSupersededByActivity
 } from '../dayJustificationUtils';
 
 describe('calendarDayHasEmptyWorkoutStats', () => {
@@ -93,5 +95,42 @@ describe('shouldOfferDayJustificationInDetail', () => {
         '2026-08-11'
       )
     ).toBe(false);
+  });
+});
+
+describe('overlayPersistedDayJustifications', () => {
+  it('remplace les justifications figées du brouillon par celles persistées', () => {
+    const draft = {
+      checkedExercises: { '2026-08-31_1': true },
+      dayJustifications: {
+        '2026-08-10': { reason: 'repos', createdAt: '2026-08-10T12:00:00.000Z' }
+      }
+    };
+    const persisted = {
+      dayJustifications: {
+        '2026-08-30': { reason: 'maladie', createdAt: '2026-08-30T12:00:00.000Z' }
+      },
+      dayJustificationsVersion: '1.0'
+    };
+    const next = overlayPersistedDayJustifications(draft, persisted);
+    expect(next.checkedExercises).toEqual(draft.checkedExercises);
+    expect(next.dayJustifications).toEqual(persisted.dayJustifications);
+    expect(next.dayJustifications).not.toHaveProperty('2026-08-10');
+  });
+});
+
+describe('stripJustificationsSupersededByActivity', () => {
+  it('retire la justification d’un jour qui a une séance cochée', () => {
+    const data = {
+      checkedExercises: { '2026-08-31_101': true },
+      enduranceData: { sessions: {} },
+      dayJustifications: {
+        '2026-08-31': { reason: 'repos', createdAt: '2026-08-31T12:00:00.000Z' },
+        '2026-08-30': { reason: 'flemme', createdAt: '2026-08-30T12:00:00.000Z' }
+      }
+    };
+    const next = stripJustificationsSupersededByActivity(data);
+    expect(next.dayJustifications).not.toHaveProperty('2026-08-31');
+    expect(next.dayJustifications['2026-08-30'].reason).toBe('flemme');
   });
 });

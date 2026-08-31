@@ -475,10 +475,10 @@ const SettingsTab = () => {
               <div className={`${settingsUi.inset}`}>
                 <h4 className="mb-2 font-medium text-red-100">Fonctionnalités :</h4>
                 <ul className="space-y-1 text-sm text-red-100/75">
-                  <li>• Plusieurs images avec rotation automatique</li>
+                  <li>• Plusieurs images avec rotation (vitesse, aléatoire ou dans l&apos;ordre)</li>
                   <li>• Badges Accueil / Verrou par image</li>
                   <li>• Images réservées au verrouillage uniquement</li>
-                  <li>• Favoris et masquage temporaire sur l&apos;accueil</li>
+                  <li>• Favoris, masquage et changement au clic (accueil et verrou)</li>
                   <li>• Stockage local dans votre navigateur</li>
                 </ul>
               </div>

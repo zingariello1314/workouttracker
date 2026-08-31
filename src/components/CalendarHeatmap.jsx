@@ -332,6 +332,72 @@ const resolveExerciseSetWeightsDisplay = (currentData, keys, readKey) => {
   return null;
 };
 
+const EMPTY_YEAR_STATS = {
+  totalSessions: 0,
+  totalReps: 0,
+  totalDuration: 0,
+  avgIntensity: 0,
+  bestMonth: null,
+  bestDay: null
+};
+
+const EMPTY_YEAR_PACK = {
+  months: [],
+  yearStats: EMPTY_YEAR_STATS
+};
+
+let yearPackSessionCache = {
+  year: null,
+  data: null,
+  garminData: null,
+  garminDataLoaded: false,
+  variant: null,
+  activeProgramId: null,
+  workoutDayOverride: null,
+  pack: null
+};
+
+function yearPackCacheProbe({
+  year,
+  data,
+  garminData,
+  garminDataLoaded,
+  variant,
+  activeProgramId,
+  workoutDayOverride
+}) {
+  return {
+    year,
+    data,
+    garminData,
+    garminDataLoaded,
+    variant,
+    activeProgramId,
+    workoutDayOverride
+  };
+}
+
+function readYearPackSessionCache(probe) {
+  const c = yearPackSessionCache;
+  if (
+    c.pack?.months?.length === 12 &&
+    c.year === probe.year &&
+    c.data === probe.data &&
+    c.garminData === probe.garminData &&
+    c.garminDataLoaded === probe.garminDataLoaded &&
+    c.variant === probe.variant &&
+    c.activeProgramId === probe.activeProgramId &&
+    c.workoutDayOverride === probe.workoutDayOverride
+  ) {
+    return c.pack;
+  }
+  return null;
+}
+
+function writeYearPackSessionCache(probe, pack) {
+  yearPackSessionCache = { ...probe, pack };
+}
+
 function paddingDayCellStyle() {
   return {
     className: 'bg-black/25 border border-slate-800/55',
@@ -353,13 +419,7 @@ function mergeLiveJustification(intensity, allData, dateStr) {
 }
 
 function withFreshJustification(cached, currentData, dateStr) {
-  const justification = getDayJustification(currentData, dateStr);
-  if (justification) return { ...cached, justification };
-  if (cached.justification) {
-    const { justification: _j, ...rest } = cached;
-    return rest;
-  }
-  return cached;
+  return mergeLiveJustification(cached, currentData, dateStr);
 }
 
 const resolveExerciseWeightPerArm = (currentData, keys, readKey) => {
@@ -680,19 +740,31 @@ const CalendarHeatmap = ({
   // ✅ NOUVEAU : Recalculer allData quand dataUpdateTrigger change pour avoir les données les plus récentes
   const allData = useMemo(() => getCurrentData(), [dataUpdateTrigger, getCurrentData, data]);
 
+  const [paintReady, setPaintReady] = useState(false);
+  useEffect(() => {
+    let raf2 = 0;
+    const raf1 = window.requestAnimationFrame(() => {
+      raf2 = window.requestAnimationFrame(() => setPaintReady(true));
+    });
+    return () => {
+      window.cancelAnimationFrame(raf1);
+      if (raf2) window.cancelAnimationFrame(raf2);
+    };
+  }, []);
+
   const liftVolumeByDateMap = useMemo(() => {
-    if (variant !== 'sport') return null;
+    if (!paintReady || variant !== 'sport') return null;
     return aggregateLiftVolumeKgByDate(allData);
-  }, [variant, allData]);
+  }, [paintReady, variant, allData]);
 
   const strengthScoreRefs = useMemo(() => {
-    if (variant !== 'sport') return { p90Load: 420 };
+    if (!paintReady || variant !== 'sport') return { p90Load: 420 };
     return buildYearStrengthLoadReference(
       allData,
       getExerciseNameById,
       currentDate.getFullYear()
     );
-  }, [variant, allData, getExerciseNameById, currentDate]);
+  }, [paintReady, variant, allData, getExerciseNameById, currentDate]);
   
   // ✅ NOUVEAU : Traductions
   const t = useTranslation();
@@ -909,12 +981,13 @@ const CalendarHeatmap = ({
 
   // ✅ PHASE 2.3 : Invalider le cache lorsque les données sources changent
   useEffect(() => {
-    // Vider le cache lorsque allData change (les données sources ont changé)
-    // ✅ NOUVEAU : Invalider aussi si les justifications changent
     intensityCache.current = {};
   }, [
-    allData,
     garminData,
+    allData?.reps,
+    allData?.checkedExercises,
+    allData?.checkedStretches,
+    allData?.enduranceData,
     allData?.dayJustifications,
     allData?.restDaySwaps,
     allData?.sessionFeedbacks,
@@ -935,7 +1008,7 @@ const CalendarHeatmap = ({
   // ✅ PHASE 2.1 : Mémoriser les seuils dynamiques basés sur toutes les données existantes
   // Recalcul uniquement si allData.reps change (évite les recalculs inutiles)
   const dynamicThresholds = useMemo(() => {
-    if (!allData?.reps) return { min: 0, max: 100, thresholds: [0, 25, 50, 75, 100] };
+    if (!paintReady || !allData?.reps) return { min: 0, max: 100, thresholds: [0, 25, 50, 75, 100] };
     
     // Récupérer toutes les répétitions par jour
     const dailyReps = {};
@@ -970,10 +1043,13 @@ const CalendarHeatmap = ({
     ];
     
     return { min, max, thresholds, dailyReps };
-  }, [allData?.reps]);
+  }, [paintReady, allData?.reps]);
 
   // Seuils dynamiques basés sur la charge pondérée (alignés sur buildDailyTrainingLoadByDate)
   const dynamicLoadThresholds = useMemo(() => {
+    if (!paintReady) {
+      return { min: 0, max: 100, thresholds: [0, 25, 50, 75, 100], dailyLoad: {} };
+    }
     const dailyLoad = buildDailyTrainingLoadByDate(allData, getExerciseNameById);
     const values = Object.values(dailyLoad).filter((v) => v > 0);
     if (values.length === 0) {
@@ -984,7 +1060,7 @@ const CalendarHeatmap = ({
     const range = max - min || 1;
     const thresholds = [0, min, min + range * 0.33, min + range * 0.66, max];
     return { min, max, thresholds, dailyLoad };
-  }, [allData, getExerciseNameById]);
+  }, [paintReady, allData, getExerciseNameById]);
 
   // ✅ PHASE 1 : Utiliser la fonction centralisée depuis calendarUtils
   // calculateDynamicIntensityLevel remplacé par calculateIntensityLevel (importée)
@@ -992,7 +1068,7 @@ const CalendarHeatmap = ({
   // ✅ PHASE 2.2 : Mémoriser les seuils dynamiques pour la durée (temps)
   // Recalcul uniquement si allData.checkedExercises, allData.enduranceData.sessions, ou allData.reps change
   const dynamicTimeThresholds = useMemo(() => {
-    if (!allData) return { min: 0, max: 0, thresholds: [0, 30, 60, 90] };
+    if (!paintReady || !allData) return { min: 0, max: 0, thresholds: [0, 30, 60, 90] };
     
     const durations = [];
     
@@ -1067,7 +1143,7 @@ const CalendarHeatmap = ({
     ];
     
     return { min, max, thresholds };
-  }, [allData?.checkedExercises, allData?.enduranceData?.sessions, allData?.reps]);
+  }, [paintReady, allData?.checkedExercises, allData?.enduranceData?.sessions, allData?.reps]);
 
   /** Médiane des kcal actives Garmin (référence pour teintes calendrier). */
   const garminKcalMedianRef = useMemo(() => {
@@ -1285,6 +1361,7 @@ const CalendarHeatmap = ({
     
     // Si pas d'exercices pour ce jour ET pas de données d'endurance, retourner des valeurs par défaut
     if (allExercisesForDate.length === 0 && enduranceData.sessions === 0) {
+      const emptyDayJustification = getDayJustification(currentData, dateStr);
       return {
         level: 0,
         reps: 0,
@@ -1304,7 +1381,8 @@ const CalendarHeatmap = ({
         stepsRefMedian: garminStepsMedianRef,
         intensityMinutesTotal: 0,
         visualContext: null,
-        isPlannedRestDay
+        isPlannedRestDay,
+        ...(emptyDayJustification && { justification: emptyDayJustification })
       };
     }
 
@@ -2402,42 +2480,34 @@ const CalendarHeatmap = ({
     return stats;
   };
 
-  // Génération complète de l'année avec statistiques
-  const generateYearData = (date) => {
-    const year = date.getFullYear();
-    const months = [];
-    let yearStats = {
-      totalSessions: 0,
-      totalReps: 0,
-      totalDuration: 0,
-      avgIntensity: 0,
-      bestMonth: null,
-      bestDay: null
-    };
-    
-    for (let month = 0; month < 12; month++) {
-      const monthDate = new Date(year, month, 1);
-      const monthDays = generateMonthDays(monthDate);
-      
-      // Calculer les stats du mois
-      const monthSessions = monthDays.filter(day => 
-        day.isCurrentMonth && day.intensity.level > 0
-      );
-      
-      const monthTotalReps = monthSessions.reduce((sum, day) => sum + day.intensity.reps, 0);
-      const monthTotalDuration = monthSessions.reduce((sum, day) => sum + day.intensity.duration, 0);
-      const avgIntensity = monthSessions.length > 0 
-        ? monthSessions.reduce((sum, day) => sum + day.intensity.level, 0) / monthSessions.length
-        : 0;
-      
-      const monthSportStats =
+  const buildYearMonth = (year, month) => {
+    const monthDate = new Date(year, month, 1);
+    const days = generateMonthDays(monthDate);
+    const monthSessions = days.filter((day) => day.isCurrentMonth && day.intensity.level > 0);
+    const monthTotalReps = monthSessions.reduce((sum, day) => sum + day.intensity.reps, 0);
+    const monthTotalDuration = monthSessions.reduce((sum, day) => sum + day.intensity.duration, 0);
+    const avgIntensity = monthSessions.length > 0
+      ? monthSessions.reduce((sum, day) => sum + day.intensity.level, 0) / monthSessions.length
+      : 0;
+    return {
+      date: monthDate,
+      days,
+      sessionsCount: monthSessions.length,
+      totalReps: monthTotalReps,
+      totalDuration: monthTotalDuration,
+      avgIntensity: Math.round(avgIntensity * 10) / 10,
+      bestDay: monthSessions.reduce(
+        (best, day) =>
+          day.intensity.intensityScore > (best?.intensity.intensityScore || 0) ? day : best,
+        null
+      ),
+      sportStats:
         variant === 'sport'
-          ? computeCalendarMonthSportStats(monthDays, allData, garminData, getDateStr)
-          : null;
-
-      const monthHighlights =
+          ? computeCalendarMonthSportStats(days, allData, garminData, getDateStr)
+          : null,
+      monthHighlights:
         variant === 'sport'
-          ? computeCalendarMonthHighlights(monthDays, allData, garminData, getDateStr, {
+          ? computeCalendarMonthHighlights(days, allData, garminData, getDateStr, {
               program: activeProgram,
               getEffectiveRestDayForDate,
               getExerciseNameById,
@@ -2445,44 +2515,31 @@ const CalendarHeatmap = ({
                 `${year}-${String(month + 1).padStart(2, '0')}`
               ]
             })
-          : null;
+          : null
+    };
+  };
 
-      const monthData = {
-        date: monthDate,
-        days: monthDays,
-        sessionsCount: monthSessions.length,
-        totalReps: monthTotalReps,
-        totalDuration: monthTotalDuration,
-        avgIntensity: Math.round(avgIntensity * 10) / 10,
-        bestDay: monthSessions.reduce((best, day) => 
-          day.intensity.intensityScore > (best?.intensity.intensityScore || 0) ? day : best, null
-        ),
-        sportStats: monthSportStats,
-        monthHighlights
-      };
-      
-      months.push(monthData);
-      
-      // Mettre à jour les stats annuelles
+  const accumulateYearStats = (months) => {
+    const yearStats = { ...EMPTY_YEAR_STATS };
+    months.forEach((monthData) => {
       yearStats.totalSessions += monthData.sessionsCount;
       yearStats.totalReps += monthData.totalReps;
       yearStats.totalDuration += monthData.totalDuration;
-      
       if (!yearStats.bestMonth || monthData.totalReps > yearStats.bestMonth.totalReps) {
         yearStats.bestMonth = monthData;
       }
-      
-      if (monthData.bestDay && (!yearStats.bestDay || 
-          monthData.bestDay.intensity.intensityScore > yearStats.bestDay.intensity.intensityScore)) {
+      if (
+        monthData.bestDay &&
+        (!yearStats.bestDay ||
+          monthData.bestDay.intensity.intensityScore > yearStats.bestDay.intensity.intensityScore)
+      ) {
         yearStats.bestDay = monthData.bestDay;
       }
-    }
-    
-    yearStats.avgIntensity = yearStats.totalSessions > 0 
+    });
+    yearStats.avgIntensity = yearStats.totalSessions > 0
       ? Math.round((yearStats.totalReps / yearStats.totalSessions) * 10) / 10
       : 0;
-    
-    return { months, yearStats };
+    return yearStats;
   };
 
   /** Deep link / ouverture externe : hydrater l’intensité avant le panneau détail. */
@@ -2496,8 +2553,13 @@ const CalendarHeatmap = ({
     });
   }, [selectedDate?.date, selectedDate?.intensity, dataUpdateTrigger, garminData, allData]);
 
-  // Données calculées
-  const monthDays = useMemo(() => generateMonthDays(currentDate), [
+  const monthDays = useMemo(() => {
+    if (!compact && viewMode === 'year') return [];
+    if (!compact && viewMode === 'streaks') return [];
+    return generateMonthDays(currentDate);
+  }, [
+    compact,
+    viewMode,
     currentDate,
     allData,
     allData?.dayJustifications,
@@ -2514,28 +2576,84 @@ const CalendarHeatmap = ({
     booksIntensityMap,
     learningIntensityMap,
   ]);
-  const { months: yearMonths, yearStats } = useMemo(() => {
-    if (isSidebarEmbed) {
-      return {
-        months: [],
-        yearStats: {
-          totalSessions: 0,
-          totalReps: 0,
-          totalDuration: 0,
-          avgIntensity: 0,
-          bestMonth: null,
-          bestDay: null
-        }
-      };
+
+  const [yearPack, setYearPack] = useState(() => {
+    if (isSidebarEmbed || viewMode !== 'year') return EMPTY_YEAR_PACK;
+    if (variant === 'sport' && !garminDataLoaded) return EMPTY_YEAR_PACK;
+    return (
+      readYearPackSessionCache(
+        yearPackCacheProbe({
+          year: currentDate.getFullYear(),
+          data,
+          garminData,
+          garminDataLoaded,
+          variant,
+          activeProgramId: activeProgram?.id ?? null,
+          workoutDayOverride
+        })
+      ) || EMPTY_YEAR_PACK
+    );
+  });
+  const yearMonths = yearPack.months;
+  const yearStats = yearPack.yearStats;
+  const yearViewYear = currentDate.getFullYear();
+
+  useEffect(() => {
+    if (isSidebarEmbed || viewMode !== 'year') {
+      return undefined;
     }
-    return generateYearData(currentDate);
+    if (!paintReady) {
+      return undefined;
+    }
+    if (variant === 'sport' && !garminDataLoaded) {
+      return undefined;
+    }
+
+    const probe = yearPackCacheProbe({
+      year: yearViewYear,
+      data,
+      garminData,
+      garminDataLoaded,
+      variant,
+      activeProgramId: activeProgram?.id ?? null,
+      workoutDayOverride
+    });
+    const cached = readYearPackSessionCache(probe);
+    if (cached) {
+      setYearPack(cached);
+      return undefined;
+    }
+
+    let cancelled = false;
+    const year = yearViewYear;
+    let rafId = window.requestAnimationFrame(() => {
+      if (cancelled) return;
+      const months = [];
+      for (let month = 0; month < 12; month += 1) {
+        months.push(buildYearMonth(year, month));
+      }
+      if (cancelled) return;
+      const pack = { months, yearStats: accumulateYearStats(months) };
+      writeYearPackSessionCache(probe, pack);
+      setYearPack(pack);
+    });
+    return () => {
+      cancelled = true;
+      window.cancelAnimationFrame(rafId);
+    };
   }, [
     isSidebarEmbed,
-    currentDate,
-    allData,
+    viewMode,
+    yearViewYear,
+    paintReady,
+    data,
+    allData?.reps,
+    allData?.checkedExercises,
+    allData?.checkedStretches,
+    allData?.enduranceData,
     allData?.dayJustifications,
     allData?.restDaySwaps,
-    allData?.calendarMonthPlanSnapshots,
+    allData?.sessionFeedbacks,
     garminData,
     garminDataLoaded,
     garminKcalMedianRef,
@@ -2545,7 +2663,7 @@ const CalendarHeatmap = ({
     variant,
     questIntensityMap,
     booksIntensityMap,
-    learningIntensityMap,
+    learningIntensityMap
   ]);
 
   const sportRecordHolders = useMemo(() => {
@@ -2555,7 +2673,7 @@ const CalendarHeatmap = ({
 
   /** Figé : capture le plan repos du mois à la première consultation (ne change plus ensuite). */
   useEffect(() => {
-    if (variant !== 'sport' || !activeProgram || !yearMonths?.length || typeof updateData !== 'function') {
+    if (variant !== 'sport' || !activeProgram || yearMonths.length !== 12 || typeof updateData !== 'function') {
       return;
     }
     const current = getCurrentData();
@@ -3341,7 +3459,7 @@ const CalendarHeatmap = ({
       {/* Vue annuelle complète */}
       {!compact && viewMode === 'year' && (
         <div className="space-y-6">
-          {sportGarminPending ? (
+          {sportGarminPending || yearMonths.length < 12 ? (
             <div className="flex h-56 items-center justify-center rounded-xl border border-blue-500/40 bg-black/80 text-sm text-sky-400">
               {t('calendar.heatmap.loadingGarmin', 'Chargement des données du calendrier…')}
             </div>
@@ -6144,9 +6262,12 @@ const CalendarHeatmap = ({
             setDataUpdateTrigger((n) => n + 1);
             setSelectedDate((prev) => {
               if (!prev?.date) return prev;
+              const dateStr = getDateStr(prev.date);
+              const intensity = getIntensityForDate(prev.date);
+              const live = getDayJustification(getCurrentData(), dateStr);
               return {
                 ...prev,
-                intensity: getIntensityForDate(prev.date)
+                intensity: live ? { ...intensity, justification: live } : intensity
               };
             });
           }}

@@ -3,12 +3,43 @@
  * @module homepageImagePreferences
  */
 
-export const HOMEPAGE_LIKED_WEIGHT = 3;
-export const HOMEPAGE_DEFAULT_WEIGHT = 1;
+import {
+  DEFAULT_WALLPAPER_WEIGHT,
+  LIKED_WALLPAPER_WEIGHT,
+  pickInitialWallpaperIndex,
+  pickNextWallpaperIndex
+} from './wallpaperPlayback';
+
+export const HOMEPAGE_LIKED_WEIGHT = LIKED_WALLPAPER_WEIGHT;
+export const HOMEPAGE_DEFAULT_WEIGHT = DEFAULT_WALLPAPER_WEIGHT;
 
 function hashPrefix(str, len = 40) {
   if (!str || typeof str !== 'string') return 'empty';
   return str.slice(22, 22 + len);
+}
+
+function getImageFullSrc(image) {
+  if (typeof image === 'string') return image;
+  if (typeof image === 'object' && image?.full) return image.full;
+  return '';
+}
+
+/** Clé stable liée au contenu (survit à la perte de `id` au reload IndexedDB). */
+export function homepageImageContentPrefKey(image) {
+  return `src_${hashPrefix(getImageFullSrc(image), 48)}`;
+}
+
+function snapshotDisplayPrefs(img) {
+  return {
+    liked: Boolean(img.liked),
+    hidden: Boolean(img.hidden),
+    useOnHome: img.useOnHome !== false,
+    useOnLock: Boolean(img.useOnLock)
+  };
+}
+
+function hasNonDefaultDisplayPrefs(img) {
+  return Boolean(img.liked || img.hidden || img.useOnHome === false || img.useOnLock);
 }
 
 /** Identifiant stable pour lier like / masquage à une image. */
@@ -66,12 +97,12 @@ export function getHomepageImageFullSrc(image) {
   return typeof norm === 'string' ? norm : '';
 }
 
-/** Applique les préférences persistées (map id → { liked, hidden }). */
+/** Applique les préférences persistées (map id / src → { liked, hidden, useOnHome, useOnLock }). */
 export function applyHomepageImagePreferences(images, preferences = {}) {
   const prefs = preferences && typeof preferences === 'object' ? preferences : {};
   return normalizeHomepageImages(images).map((img, i) => {
     const id = getHomepageImageId(img, i);
-    const p = prefs[id];
+    const p = prefs[id] || prefs[homepageImageContentPrefKey(img)];
     if (!p) return img;
     return {
       ...img,
@@ -87,17 +118,50 @@ export function applyHomepageImagePreferences(images, preferences = {}) {
 export function extractHomepageImagePreferences(images) {
   const out = {};
   normalizeHomepageImages(images).forEach((img, i) => {
-    const id = getHomepageImageId(img, i);
-    if (img.liked || img.hidden || img.useOnHome === false || img.useOnLock) {
-      out[id] = {
-        liked: Boolean(img.liked),
-        hidden: Boolean(img.hidden),
-        useOnHome: img.useOnHome !== false,
-        useOnLock: Boolean(img.useOnLock)
-      };
-    }
+    if (!hasNonDefaultDisplayPrefs(img)) return;
+    const prefs = snapshotDisplayPrefs(img);
+    out[getHomepageImageId(img, i)] = prefs;
+    out[homepageImageContentPrefKey(img)] = prefs;
   });
   return out;
+}
+
+/**
+ * Reconstruit un objet image v3 depuis un enregistrement HomepageImagesDB.
+ * Restaure id / liked / hidden / useOnHome / useOnLock s’ils ont été persistés.
+ */
+export function hydrateHomepageImageFromDbItem(item, index = 0) {
+  if (!item) return null;
+
+  const base =
+    item.version === '3.0' && item.thumbnail
+      ? {
+          full: item.data,
+          thumbnail: item.thumbnail,
+          format: item.format,
+          metadata: item.metadata
+        }
+      : typeof item.data === 'string'
+        ? { full: item.data }
+        : item.data && typeof item.data === 'object'
+          ? item.data
+          : null;
+
+  if (!base || !base.full) {
+    return typeof item.data === 'string' ? item.data : null;
+  }
+
+  return normalizeHomepageImage(
+    {
+      ...base,
+      id: item.imageId || base.id,
+      liked: item.liked ?? base.liked,
+      hidden: item.hidden ?? base.hidden,
+      useOnHome: item.useOnHome ?? base.useOnHome,
+      useOnLock: item.useOnLock ?? base.useOnLock
+    },
+    index
+  );
 }
 
 export function readHomepagePreferencesFromStorage(storageKey) {
@@ -152,37 +216,26 @@ export function buildHomepageWeightedPool(images) {
 }
 
 /** Prochain index (dans le tableau complet) selon les poids ; évite la répétition si possible. */
-export function pickNextHomepageImageIndex(images, currentIndex) {
+export function pickNextHomepageImageIndex(images, currentIndex, options = {}) {
   const pool = buildHomepageWeightedPool(images);
   if (pool.length === 0) return -1;
   if (pool.length === 1) return pool[0].origIndex;
 
-  const totalWeight = pool.reduce((s, p) => s + p.weight, 0);
-
-  for (let attempt = 0; attempt < 12; attempt += 1) {
-    let r = Math.random() * totalWeight;
-    for (const item of pool) {
-      r -= item.weight;
-      if (r <= 0) {
-        if (item.origIndex !== currentIndex) return item.origIndex;
-        break;
-      }
-    }
-  }
-
-  const alt = pool.find((p) => p.origIndex !== currentIndex);
-  return alt ? alt.origIndex : pool[0].origIndex;
+  const poolIdx = pickNextWallpaperIndex(
+    pool.length,
+    pool.findIndex((p) => p.origIndex === currentIndex),
+    { order: options.order, weights: pool.map((p) => p.weight) }
+  );
+  return pool[poolIdx]?.origIndex ?? pool[0].origIndex;
 }
 
-/** Index initial aléatoire pondéré parmi les images visibles. */
-export function pickInitialHomepageImageIndex(images) {
+/** Index initial parmi les images visibles (aléatoire pondéré ou premier selon l’ordre). */
+export function pickInitialHomepageImageIndex(images, options = {}) {
   const pool = buildHomepageWeightedPool(images);
   if (pool.length === 0) return images?.length > 0 ? 0 : -1;
-  const totalWeight = pool.reduce((s, p) => s + p.weight, 0);
-  let r = Math.random() * totalWeight;
-  for (const item of pool) {
-    r -= item.weight;
-    if (r <= 0) return item.origIndex;
-  }
-  return pool[0].origIndex;
+  const poolIdx = pickInitialWallpaperIndex(pool.length, {
+    order: options.order,
+    weights: pool.map((p) => p.weight)
+  });
+  return pool[poolIdx]?.origIndex ?? pool[0].origIndex;
 }

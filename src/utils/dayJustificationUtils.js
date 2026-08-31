@@ -232,6 +232,39 @@ export function getDayJustification(data, dateStr) {
 }
 
 /**
+ * Le brouillon Aujourd’hui est un clone complet : sans ça, les justifications
+ * figées au moment de la 1re coche écrasent (ou ressuscitent) celles du calendrier.
+ */
+export function overlayPersistedDayJustifications(draft, persisted) {
+  if (!draft || typeof draft !== 'object') return draft;
+  if (!persisted || typeof persisted !== 'object') return draft;
+  if (persisted.dayJustifications === undefined) return draft;
+  return {
+    ...draft,
+    dayJustifications: { ...(persisted.dayJustifications || {}) },
+    dayJustificationsVersion: persisted.dayJustificationsVersion || draft.dayJustificationsVersion || '1.0'
+  };
+}
+
+/** Retire les justifications des jours qui ont maintenant une activité volontaire. */
+export function stripJustificationsSupersededByActivity(data) {
+  if (!data || typeof data !== 'object') return data;
+  const justs = data.dayJustifications;
+  if (!justs || typeof justs !== 'object') return data;
+  const next = {};
+  let removed = false;
+  for (const [dateStr, justification] of Object.entries(justs)) {
+    if (isDayWithoutActivity(data, dateStr)) {
+      next[dateStr] = justification;
+    } else {
+      removed = true;
+    }
+  }
+  if (!removed) return data;
+  return { ...data, dayJustifications: next };
+}
+
+/**
  * Vérifie si un jour n'a aucune activité enregistrée
  * 
  * ⚠️ IMPORTANT : Les données Garmin NE SONT PAS vérifiées ici.

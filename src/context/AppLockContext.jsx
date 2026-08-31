@@ -11,7 +11,7 @@ import { useAuth } from './AuthContext';
 import { generateSalt, hashPassword, verifyPassword } from '../utils/authCrypto';
 import { getAppLockRecord, saveAppLockRecord, getDefaultAppLockRecord } from '../services/appLock/appLockStorage';
 import { preloadLockWallpaperUrls } from '../utils/lockWallpaperPreload';
-import { getLockOnlyWallpaperUrls } from '../utils/wallpaperTargets';
+import { getLockOnlyWallpaperUrls, lockItemsToPersist, normalizeLockBackgroundItems } from '../utils/wallpaperTargets';
 import { consumeAppLockResetToken } from '../services/appLock/appLockRecoveryApi';
 import { getUserById } from '../utils/authIndexedDB';
 
@@ -212,11 +212,8 @@ export const AppLockProvider = ({ children }) => {
   const setLockBackground = useCallback(
     async (dataUrlOrNull) => {
       if (!userId) return { success: false, error: 'NO_USER' };
-      const urls = dataUrlOrNull ? [dataUrlOrNull] : [];
-      await persist({
-        lockBackgroundDataUrl: dataUrlOrNull,
-        lockBackgroundDataUrls: urls
-      });
+      const items = dataUrlOrNull ? [{ dataUrl: dataUrlOrNull, liked: false, hidden: false }] : [];
+      await persist(lockItemsToPersist(items));
       return { success: true };
     },
     [userId, persist],
@@ -226,10 +223,7 @@ export const AppLockProvider = ({ children }) => {
     async (urls) => {
       if (!userId) return { success: false, error: 'NO_USER' };
       const list = Array.isArray(urls) ? urls.filter(Boolean) : [];
-      await persist({
-        lockBackgroundDataUrls: list,
-        lockBackgroundDataUrl: list[0] || null
-      });
+      await persist(lockItemsToPersist(list.map((dataUrl) => ({ dataUrl, liked: false, hidden: false }))));
       return { success: true };
     },
     [userId, persist],
@@ -238,13 +232,9 @@ export const AppLockProvider = ({ children }) => {
   const addLockOnlyBackground = useCallback(
     async (dataUrl) => {
       if (!userId || !dataUrl) return { success: false, error: 'NO_USER' };
-      const prev = Array.isArray(recordRef.current.lockBackgroundDataUrls)
-        ? recordRef.current.lockBackgroundDataUrls
-        : recordRef.current.lockBackgroundDataUrl
-          ? [recordRef.current.lockBackgroundDataUrl]
-          : [];
-      const next = [...prev, dataUrl];
-      await persist({ lockBackgroundDataUrls: next, lockBackgroundDataUrl: next[0] || null });
+      const prev = normalizeLockBackgroundItems(recordRef.current);
+      const next = [...prev, { dataUrl, liked: false, hidden: false }];
+      await persist(lockItemsToPersist(next));
       return { success: true };
     },
     [userId, persist],
@@ -253,10 +243,22 @@ export const AppLockProvider = ({ children }) => {
   const removeLockOnlyBackgroundAt = useCallback(
     async (index) => {
       if (!userId) return { success: false, error: 'NO_USER' };
-      const prev = [...(recordRef.current.lockBackgroundDataUrls || [])];
+      const prev = [...normalizeLockBackgroundItems(recordRef.current)];
       if (index < 0 || index >= prev.length) return { success: false, error: 'BAD_INDEX' };
       prev.splice(index, 1);
-      await persist({ lockBackgroundDataUrls: prev, lockBackgroundDataUrl: prev[0] || null });
+      await persist(lockItemsToPersist(prev));
+      return { success: true };
+    },
+    [userId, persist],
+  );
+
+  const patchLockOnlyBackgroundAt = useCallback(
+    async (index, patch) => {
+      if (!userId) return { success: false, error: 'NO_USER' };
+      const prev = [...normalizeLockBackgroundItems(recordRef.current)];
+      if (index < 0 || index >= prev.length) return { success: false, error: 'BAD_INDEX' };
+      prev[index] = { ...prev[index], ...patch };
+      await persist(lockItemsToPersist(prev));
       return { success: true };
     },
     [userId, persist],
@@ -433,6 +435,7 @@ export const AppLockProvider = ({ children }) => {
       setLockBackgroundUrls,
       addLockOnlyBackground,
       removeLockOnlyBackgroundAt,
+      patchLockOnlyBackgroundAt,
       bumpActivity,
       completeEmailRecovery,
       resetAppLockWithMainAccountPassword,
@@ -454,6 +457,7 @@ export const AppLockProvider = ({ children }) => {
       setLockBackgroundUrls,
       addLockOnlyBackground,
       removeLockOnlyBackgroundAt,
+      patchLockOnlyBackgroundAt,
       bumpActivity,
       completeEmailRecovery,
       resetAppLockWithMainAccountPassword,

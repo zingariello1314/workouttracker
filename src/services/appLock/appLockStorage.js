@@ -31,8 +31,10 @@ const openDB = () =>
  * @property {string|null} codeHash
  * @property {string|null} lockBackgroundDataUrl — @deprecated premier fond (compat)
  * @property {string[]} lockBackgroundDataUrls — fonds réservés au verrou (hors bibliothèque)
+ * @property {{ dataUrl: string, liked?: boolean, hidden?: boolean }[]} lockBackgroundItems
  * @property {number} lockWallpaperRotationMs — intervalle rotation fonds verrou (0 = off, défaut 120000)
  * @property {boolean} lockWallpaperAdvanceOnClick — passer au fond suivant au clic sur l’écran
+ * @property {'random'|'sequential'} lockWallpaperOrder
  * @property {number} failedAttempts
  * @property {string|null} lockoutUntil — ISO
  * @property {string} updatedAt
@@ -48,8 +50,10 @@ export const getDefaultAppLockRecord = (userId) => ({
   codeHash: null,
   lockBackgroundDataUrl: null,
   lockBackgroundDataUrls: [],
+  lockBackgroundItems: [],
   lockWallpaperRotationMs: 120_000,
   lockWallpaperAdvanceOnClick: false,
+  lockWallpaperOrder: 'random',
   failedAttempts: 0,
   lockoutUntil: null,
   updatedAt: new Date().toISOString(),
@@ -81,6 +85,21 @@ export const getAppLockRecord = async (userId) => {
     }
     if (!Array.isArray(merged.lockBackgroundDataUrls)) {
       merged.lockBackgroundDataUrls = [];
+    }
+    if (!Array.isArray(merged.lockBackgroundItems) || merged.lockBackgroundItems.length === 0) {
+      merged.lockBackgroundItems = merged.lockBackgroundDataUrls.map((dataUrl) => ({
+        dataUrl,
+        liked: false,
+        hidden: false
+      }));
+    } else {
+      merged.lockBackgroundDataUrls = merged.lockBackgroundItems
+        .map((item) => (typeof item === 'string' ? item : item?.dataUrl))
+        .filter(Boolean);
+      merged.lockBackgroundDataUrl = merged.lockBackgroundDataUrls[0] || merged.lockBackgroundDataUrl || null;
+    }
+    if (merged.lockWallpaperOrder !== 'sequential') {
+      merged.lockWallpaperOrder = 'random';
     }
     return merged;
   } catch {

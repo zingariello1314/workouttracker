@@ -61,7 +61,7 @@ import GitHubOAuthLanding from './components/github/GitHubOAuthLanding';
 import SpotifyOAuthLanding from './components/spotify/SpotifyOAuthLanding';
 import { MomentumTabLoadOverlay, MomentumTabInlineLoader, MomentumModalLoadCard } from './components/ui/MomentumBrandedLoading';
 import RecapTabSkeleton from './components/sport/recap/shell/RecapTabSkeleton';
-import { preloadRecapTab } from './utils/preloadTabs';
+import { preloadCoreSportTabs } from './utils/preloadTabs';
 import SportXPBar from './components/tabs/TodayTab/components/SportXPBar';
 import CodeXPBar from './components/code/CodeXPBar';
 import { isSportSubTab } from './constants/sportSubTabs';
@@ -210,6 +210,11 @@ const WorkoutTrackerContent = () => {
     }));
   }, [activeTab]);
 
+  React.useEffect(() => {
+    if (authLoading) return;
+    preloadCoreSportTabs();
+  }, [authLoading]);
+
   // ✅ Charger les données Garmin pour les calories
   // - admin connecté : charge les vraies données
   // - non authentifié : pas de chargement, garminData reste null (vue "0 partout")
@@ -218,14 +223,11 @@ const WorkoutTrackerContent = () => {
   const [garminData, setGarminData] = React.useState(null);
   
   React.useEffect(() => {
-    // Si personne n'est connecté, ne rien charger (Garmin affichera une vue vide)
     if (!isAuthenticated) {
       setGarminData(null);
       return;
     }
 
-    // Pour les comptes non-admin (utilisateurs classiques), on évite pour l'instant tout chargement
-    // des données historiques tant que la séparation par utilisateur n'est pas en place.
     if (!isAdmin) {
       setGarminData(null);
       return;
@@ -234,7 +236,7 @@ const WorkoutTrackerContent = () => {
     if (dbReady) {
       loadAllData()
         .then(setGarminData)
-        .catch(err => {
+        .catch((err) => {
           console.error('[App] Error loading Garmin data:', err);
           setGarminData(null);
         });

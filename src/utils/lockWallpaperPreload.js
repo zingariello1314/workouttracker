@@ -29,6 +29,20 @@ export function pickRandomWallpaperIndex(urls, excludeIdx = -1) {
   return idx;
 }
 
+/** Index de départ : aléatoire parmi les images déjà décodées, sinon aléatoire. */
+export function pickInitialLockWallpaperIndex(urls) {
+  if (!Array.isArray(urls) || urls.length === 0) return 0;
+  if (urls.length === 1) return 0;
+  const ready = [];
+  for (let i = 0; i < urls.length; i += 1) {
+    if (isLockWallpaperDecoded(urls[i])) ready.push(i);
+  }
+  if (ready.length > 0) {
+    return ready[Math.floor(Math.random() * ready.length)];
+  }
+  return pickRandomWallpaperIndex(urls);
+}
+
 export function isLockWallpaperDecoded(url) {
   return Boolean(url && decodedCache.has(url));
 }

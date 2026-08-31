@@ -53,7 +53,8 @@ function calculateImagesHash(images) {
       // Format v3 : utiliser full + thumbnail si disponible
       const full = img.full || '';
       const thumb = img.thumbnail || '';
-      return `${index}_${full.substring(0, 50)}_${thumb.substring(0, 50)}`;
+      const flags = `${img.liked ? 1 : 0}${img.hidden ? 1 : 0}${img.useOnHome === false ? 0 : 1}${img.useOnLock ? 1 : 0}`;
+      return `${index}_${full.substring(0, 50)}_${thumb.substring(0, 50)}_${flags}`;
     }
     return `${index}_unknown`;
   });
@@ -207,6 +208,11 @@ async function saveBatchToIndexedDB(db, images, options = {}) {
             version: isV3Format ? '3.0' : '2.0',
             format: isV3Format ? (image.format || null) : null,
             metadata: isV3Format ? (image.metadata || null) : null,
+            imageId: isV3Format ? (image.id || null) : null,
+            liked: isV3Format ? Boolean(image.liked) : false,
+            hidden: isV3Format ? Boolean(image.hidden) : false,
+            useOnHome: isV3Format ? image.useOnHome !== false : true,
+            useOnLock: isV3Format ? Boolean(image.useOnLock) : false,
             // ✅ Phase 4: Versions optionnelles (seulement si activé)
             ...(versions.length > 0 ? { versions } : {})
           };

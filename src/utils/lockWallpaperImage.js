@@ -4,6 +4,14 @@
  */
 
 import { detectWebPSupport, processImageForStorage } from './imageFormatOptimizer';
+import {
+  DEFAULT_WALLPAPER_ROTATION_MS,
+  WALLPAPER_ORDER_RANDOM,
+  WALLPAPER_ROTATION_OPTIONS,
+  resolveWallpaperAdvanceOnClick,
+  resolveWallpaperOrder,
+  resolveWallpaperRotationMs
+} from './wallpaperPlayback';
 
 const MAX_EDGE_PX = 2560;
 const MAX_DATA_URL_CHARS = 5_500_000;
@@ -73,24 +81,18 @@ export async function processLockWallpaperFile(file) {
 }
 
 /** Intervalles de rotation verrou (ms). 0 = pas de rotation automatique. */
-export const LOCK_WALLPAPER_ROTATION_OPTIONS = [
-  { value: 30_000, label: '30 secondes' },
-  { value: 60_000, label: '1 minute' },
-  { value: 120_000, label: '2 minutes (comme l’accueil)' },
-  { value: 300_000, label: '5 minutes' },
-  { value: 600_000, label: '10 minutes' },
-  { value: 0, label: 'Pas de rotation' }
-];
+export const LOCK_WALLPAPER_ROTATION_OPTIONS = WALLPAPER_ROTATION_OPTIONS;
 
-export const DEFAULT_LOCK_WALLPAPER_ROTATION_MS = 120_000;
+export const DEFAULT_LOCK_WALLPAPER_ROTATION_MS = DEFAULT_WALLPAPER_ROTATION_MS;
 
 export function resolveLockWallpaperRotationMs(record) {
-  const raw = record?.lockWallpaperRotationMs;
-  if (raw === 0) return 0;
-  if (Number.isFinite(Number(raw)) && Number(raw) > 0) return Number(raw);
-  return DEFAULT_LOCK_WALLPAPER_ROTATION_MS;
+  return resolveWallpaperRotationMs(record?.lockWallpaperRotationMs, DEFAULT_LOCK_WALLPAPER_ROTATION_MS);
 }
 
 export function resolveLockWallpaperAdvanceOnClick(record) {
-  return record?.lockWallpaperAdvanceOnClick === true;
+  return resolveWallpaperAdvanceOnClick(record?.lockWallpaperAdvanceOnClick);
+}
+
+export function resolveLockWallpaperOrder(record) {
+  return resolveWallpaperOrder(record?.lockWallpaperOrder || WALLPAPER_ORDER_RANDOM);
 }

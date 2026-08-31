@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { getProfileData } from '../services/profileCard/profileCardStorage';
 import { isLockWallpaperDecoded, preloadImageUrl } from '../utils/lockWallpaperPreload';
+import { preloadCoreSportTabs } from '../utils/preloadTabs';
 
 /**
  * Signaux réels pour la séquence de chargement de l'écran d'accueil.
@@ -71,6 +72,11 @@ export function useWelcomeGateSignals({
       cancelled = true;
     };
   }, [authLoading, isAuthenticated, currentUser?.username]);
+
+  useEffect(() => {
+    if (authLoading) return;
+    preloadCoreSportTabs();
+  }, [authLoading]);
 
   const homeImagesPartial = useMemo(() => {
     if (!homeImagesLoading) return 1;

@@ -4,11 +4,7 @@ import { useAppLock } from '../../context/AppLockContext';
 import { useAuth } from '../../context/AuthContext';
 import { GlslHills } from '../ui/glsl-hills';
 import { MomentumLockBackground } from '../ui/MomentumBrandedLoading';
-import {
-  resolveLockWallpaperRotationMs,
-  resolveLockWallpaperAdvanceOnClick
-} from '../../utils/lockWallpaperImage';
-import { useLockWallpaperUrls } from '../../hooks/useLockWallpaperUrls';
+import { useLockWallpaperPlayback } from '../../hooks/useLockWallpaperUrls';
 import LockForgotRecovery from './LockForgotRecovery';
 
 const keysPin = [
@@ -102,9 +98,10 @@ const LockScreen = () => {
   };
 
   const bg = record.lockBackgroundDataUrl;
-  const lockWallpaperUrls = useLockWallpaperUrls();
+  const lockPlayback = useLockWallpaperPlayback();
+  const lockWallpaperUrls = lockPlayback.urls;
   const bgRef = useRef(null);
-  const advanceOnClick = resolveLockWallpaperAdvanceOnClick(record);
+  const advanceOnClick = lockPlayback.advanceOnClick;
   const hasCustomBg = lockWallpaperUrls.length > 0 || Boolean(bg);
 
   const handleBackdropClick = useCallback(() => {
@@ -128,8 +125,10 @@ const LockScreen = () => {
             dataUrls={lockWallpaperUrls.length > 0 ? lockWallpaperUrls : undefined}
             dataUrl={lockWallpaperUrls.length > 0 ? undefined : bg}
             variant="lock"
-            rotationMs={resolveLockWallpaperRotationMs(record)}
-            pauseAutoRotation={advanceOnClick}
+            rotationMs={lockPlayback.rotationMs}
+            pauseAutoRotation={false}
+            order={lockPlayback.order}
+            weights={lockPlayback.weights}
           />
         ) : (
           <GlslHills cameraZ={125} planeSize={256} speed={0.5} className="z-0" />

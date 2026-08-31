@@ -40,7 +40,7 @@ import { useTranslation } from '../../../../utils/translations';
  */
 const DayJustificationButton = memo(({ date }) => {
   // ✅ OPTIMISATION : Récupérer les données et fonctions du contexte
-  const { currentDate, getCurrentData, getDayJustification: getDayJustificationFromContext } = useWorkout();
+  const { currentDate, getCurrentData } = useWorkout();
   const t = useTranslation();
   
   // Utiliser la date fournie ou currentDate par défaut
@@ -49,8 +49,7 @@ const DayJustificationButton = memo(({ date }) => {
   // ✅ OPTIMISATION : Mémoriser la date string (évite recalculs)
   const dateStr = useMemo(() => getDateStr(targetDate), [targetDate]);
   
-  // ✅ OPTIMISATION : Mémoriser les données actuelles
-  const currentData = useMemo(() => getCurrentData(), [getCurrentData]);
+  const currentData = getCurrentData();
   
   // ✅ OPTIMISATION : Mémoriser la justification (évite recalculs)
   const justification = useMemo(() => {
