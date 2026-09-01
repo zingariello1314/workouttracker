@@ -66,6 +66,8 @@
     "weightPerArm": "Weight per dumbbell (total volume ×2 when using both arms)",
     "perSetOpen": "Weight per set",
     "perSetReset": "Single weight for exercise",
+    "setDetailOpen": "Set detail (reps + load)",
+    "setDetailTitle": "Detailed sets",
     "sessionEffortLabel": "Session feeling",
     "optionalWeighted": "Weighted",
     "optionalWeightedTitle": "Mark as weighted (optional external load)",

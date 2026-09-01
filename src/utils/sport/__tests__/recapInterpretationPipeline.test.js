@@ -152,6 +152,35 @@ describe('trainingRelationEngine', () => {
     const relations = detectTrainingRelations(state);
     expect(relations.some((r) => r.type === 'possible_overreach')).toBe(true);
   });
+
+  it('ne plante pas si des relations sont rejetées pour confiance trop basse', () => {
+    const state = {
+      load: {
+        value: 'falling',
+        trend: 'falling',
+        confidence: 0.2,
+        evidence: ['volume -30 %'],
+        metrics: {}
+      },
+      performance: { value: 'unknown', trend: 'unknown', confidence: 0.2, evidence: [], metrics: {} },
+      recovery: { value: 'unknown', trend: 'unknown', confidence: 0.2, evidence: [], metrics: {} },
+      fatigue: { value: 'unknown', trend: 'unknown', confidence: 0.2, evidence: [], metrics: {} },
+      adherence: { value: 'low', trend: 'falling', confidence: 0.2, evidence: ['fréquence'], metrics: {} },
+      programResponse: { value: 'unknown', trend: 'unknown', confidence: 0.2, evidence: [], metrics: {} },
+      lifePhase: null,
+      context: { goal: null, tier: null },
+      features: {
+        volumeDeltaPct: -30,
+        frequencyDeltaPct: -40,
+        programCompletionPct: 40,
+        decliningExerciseCount: 2
+      }
+    };
+    expect(() => detectTrainingRelations(state)).not.toThrow();
+    const relations = detectTrainingRelations(state);
+    expect(Array.isArray(relations)).toBe(true);
+    expect(relations.every((r) => r && r.id)).toBe(true);
+  });
 });
 
 describe('recapInterpretationPipeline integration', () => {
@@ -252,5 +281,28 @@ describe('recapInterpretationPipeline integration', () => {
         ) && t.length > 40
     );
     expect(hasComposed || pipeline.candidates.length > 0).toBe(true);
+  });
+
+  it('alimente court, moyen et long terme dès qu’il y a de la pratique', () => {
+    const snapshot = { reps: {}, checkedExercises: {} };
+    const window = { start: '2026-04-01', end: '2026-06-24' };
+    for (let i = 0; i < 40; i += 2) {
+      const date = DateHelper.addDays(window.start, i);
+      snapshot.reps[`${date}_101`] = 20 + (i % 5);
+      snapshot.checkedExercises[`${date}_101`] = true;
+      snapshot.reps[`${date}_104`] = 30;
+      snapshot.checkedExercises[`${date}_104`] = true;
+    }
+    const result = buildAdaptiveRecapInsights({
+      legacyPistes: { shortTerm: [], mediumTerm: [], longTerm: [] },
+      snapshot,
+      window,
+      period: 'all',
+      getExerciseNameById: (id) => (id === 101 ? 'Tractions' : 'Pompes'),
+      assessment: { programCompletion28: { ratio: 0.5 }, totalReps28: 800 }
+    });
+    expect(result.insights.shortTerm.length).toBeGreaterThan(0);
+    expect(result.insights.mediumTerm.length).toBeGreaterThan(0);
+    expect(result.insights.longTerm.length).toBeGreaterThan(0);
   });
 });

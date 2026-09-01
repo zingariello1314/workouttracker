@@ -56,7 +56,7 @@ function InsightColumn({ title, items, horizonKey, accent }) {
 
       {trimmed.length === 0 ? (
 
-        <p className="text-[12px] leading-relaxed text-slate-500">Aucun signal assez robuste sur cet horizon.</p>
+        <p className="text-[12px] leading-relaxed text-slate-500">Aucun signal assez robuste.</p>
 
       ) : (
 
@@ -385,7 +385,10 @@ export default function RecapAnalyseView({
 
           athleteIdentity={assessment?.athleteIdentity}
 
+          athleteJourney={assessment?.athleteJourney}
+
           phenomena={assessment?.phenomena}
+          periodDiscoveries={assessment?.periodDiscoveries}
 
           insightSignature={assessment?.insightSignature}
 

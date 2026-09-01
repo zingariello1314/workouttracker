@@ -1,9 +1,18 @@
 # Récap Analyse — comment le moteur d’interprétation a été amélioré
 
-Document de parcours : d’où on partait, ce qui a été changé, où on en est, et ce qui reste volontairement incomplet.
+Document de parcours : d’où on partait, ce qui a été changé, où on en est, et **où aller**.
 
 Périmètre : les **trois colonnes** Court / Moyen / Long terme de l’onglet Sport → Récap → Analyse (et le panneau dev « Moteur d’interprétation »).  
-Pas le reste du Récap (Snapshot, Coach Vision, Benchmarks, etc.), même si ces surfaces pourront un jour réutiliser les mêmes lectures.
+Pas le reste du Récap (Snapshot, Coach Vision, Benchmarks, etc.), même si ces surfaces devront un jour lire la **même** représentation interne.
+
+Lectures :
+
+- **§ 1–11** — historique du moteur, décisions, audits (31 août 2026).
+- **§ 12** — relevé factuel du site (1er sept. 2026, 00:19).
+- **§ 13** — **cible produit** : temporalité ≠ type d’analyse ; colonnes = Maintenant / Trajectoire / Parcours ; couche `athleteJourney`. Ne pas lire § 13 comme un backlog de 50 cartes à coller.
+- **§ 14** — **architecture inversée** et but de densité **sport / entraînement**. Phases 4–9. Ce but n’est pas encore à 100 % : on le conclut **avant** d’écrire les analyses sommeil.
+- **§ 15** — **second but** (sommeil ↔ entraînement) : exemples mot pour mot + architecture. Données + moteur + textes toutes plages ; silence si non publiable.
+- **§ 16** — jauge d’avancement de **toute** la cible documentée (fondations + § 14 + § 15).
 
 ---
 
@@ -247,7 +256,9 @@ Ce n’est **pas** un LLM à l’inférence. C’est du **texte déterministe** 
 
 ## 7. Si on continue
 
-Le prochain saut **n’est pas** d’ajouter 30 `coach_reading`. C’est de changer l’unité : **phénomène** (situation cohérente) plutôt que **dimension** (une carte par métrique). Ordre, recoupé avec le dump réel du 31 août :
+**Nord : § 13.** Le saut n’est plus « plus de lectures », ni seulement « phénomènes composés ». C’est que la **période Recap** cesse d’être un type d’analyse, et que Court / Moyen / Long cessent d’être des réservoirs.
+
+Le prochain saut **n’est pas** d’ajouter 30 `coach_reading`. C’est de changer l’unité : **phénomène** (situation cohérente) plutôt que **dimension** (une carte par métrique), puis de **projeter** ce phénomène vers une nature (Maintenant / Trajectoire / Parcours). Ordre, recoupé avec le dump réel du 31 août :
 
 1. **Phénomènes composés** — regrouper fréquence ↓ + volume 28 j. ↓ + semaine ↑ + identité « dans la plage » + programme 33 % en *une* situation, au lieu de 4 cartes qui se répètent.
 2. **Dose réelle** — le « volume » des features est un **somme de reps cochées** (`sumCheckedRepsInWindow`). Séries, charge, RIR, durée : souvent déjà dans le snapshot / Garmin, **pas** dans les lectures Analyse.
@@ -578,6 +589,8 @@ Seuils globaux (±8 %, crash −18 %) : **inchangés**. Pas d’apprentissage ad
 
 ### 11.4 Ordre de chantier (pas 50 détecteurs)
 
+Supersédé et précisé par **§ 13.10**. Conservé ici comme historique du 31 août :
+
 1. Qualité du moteur actuel (perf, vocabulaire, titres, DEV) — amorcé.
 2. Représentation d’état + dose réelle (séries / charge quand elles existent) + phénomènes.
 3. Objectif → qualités prioritaires.
@@ -603,4 +616,1182 @@ Règle : beaucoup de raisonnement interne → peu de conclusions affichées. Sur
 
 Le texte « plus intelligent » n’est plus le levier. La représentation interne l’est.
 
+---
+
+## 12. Relevé site — 1er septembre 2026, 00:19
+
+Relevé d’écran, pas un avis. Date de capture : **lundi 1er septembre 2026, 00:19**.  
+Onglet Sport → Récap musculaire → **Analyse**.  
+Pour chaque plage Recap : d’abord les **données affichées** (bandeau « Récap sur la période »), puis les **trois colonnes**, puis le **DEV** quand il était visible.
+
+Le document ci-dessus (§ 5, § 10) décrit un dump du **31 août**. Le site au 1er sept. 00:19 est le même moteur (colonnes `coach_reading`, phénomènes dans le DEV, identité fréquence, vocabulaire « répétitions suivies / exposition »). Ce qui change d’une plage à l’autre, c’est **quelles lectures sont choisies** et **quelles fenêtres** le bandeau Recap alimente.
+
+Plages non envoyées dans ce lot (6 mois, 1 an, 2 ans, Toujours) : non notées.
+
+### 12.1 Aujourd’hui — lun. 31 août 2026 → lun. 31 août 2026
+
+**Données Recap (1 jour)**  
+360 reps · 0 km · 0 m course · 1 h 05 exos · 1 h 05 total · 0 kg soulevés · streak max 9 · 386 kcal · 1 jour entraîné.  
+Meilleurs mois (sur la période) : tout en août 2026, mêmes totaux.  
+Exos les plus travaillés : Relevés de genoux à la barre 60 · Tractions australiennes — prise pronation 48 · Dips parallèles 48.  
+Meilleure série : 1 j. (31/08 → 31/08).  
+Zones : dos ~77 · pectoraux ~60 · gainage/tronc ~47 · triceps ~31 · quadriceps ~37.
+
+**Court terme**  
+Titre : *La course a glissé hors de ta routine, pas toute ton activité.*  
+Dernière course (libellé « Course ») le **27/07/2026**, **35 j.**, **20** autres séances. Objectif hypertrophie / définition : l’endurance n’est pas la priorité. Identité course : retour habituel ~tous les 4 j. (rarement au-delà de 9) ; 35 j. = qualité délaissée. Prochaine séance = reprise.  
+Preuves : `27/07/2026 · 35 j. · 20 séances entre-temps`.
+
+**Moyen terme**  
+Titre : *Ton entraînement devient progressivement plus spécialisé.*  
+Part croissante épaules ~13,6 % et triceps ~10,3 %, biceps encore ~11,9 %. Rapport poussée/tirage d’environ 2,5 à 1,2.  
+Preuves : `gainage 19,7 % · dos 14,7 % · quadriceps 13,9 %`.
+
+**Long terme**  
+*Ton historique parle davantage d’une difficulté de continuité que d’un manque de capacité (charge récente −32 %, fréquence −30 %).* Levier : stabilité de la fréquence. Objectif hypertrophie / définition.
+
+**DEV**  
+Identité fréquence : `inside` · actuel 3,5 /sem. · habitude 4,1 (plage 2,7–5,5).  
+Phénomènes (2) : `contraction_with_rebound` (86 %) ; `observed_output_indeterminate` (58 %).  
+Exposition (reps) : falling, confiance 92 % · reps suivies −32,3 % vs 28 j. précédents · 7 j. +123,4 %.  
+Sortie observée : indeterminate, confiance 50 % · production de reps −60 %, pas une mesure de capacité.  
+Récup : unknown, confiance 35 %.
+
+### 12.2 7 jours — mer. 26 août 2026 → lun. 31 août 2026
+
+**Données Recap**  
+1 049 reps · 0 km · 0 m course · 3 h 05 exos · 3 h 05 total · 0 kg · streak max 9 · 2 799 kcal · 3 jours entraînés.  
+Exos : Pompes (endurance) 100 · Extension triceps 60 · Relevés de genoux à la barre 60.  
+Meilleure série : 3 j. (26/08 → 28/08).  
+Zones : triceps ~250 · pectoraux ~169 · épaules ~191 · dos ~156 · gainage/tronc ~94.
+
+**Court terme**  
+Même lecture course que § 12.1 : dernière course le **27/07/2026**, 35 j., 20 séances.  
+Preuves : `27/07/2026 · 35 j. · 20 séances entre-temps`.
+
+**Moyen terme**  
+Titre : *Le rendement de progression se lit avec la fréquence, pas tout seul.*  
+Progression récente moins favorable ; efficacité autour de **−1,86** ; une partie du ralentissement liée au fait de s’exposer moins souvent.  
+Preuves : `Efficacité ~ −1,86`.
+
+**Long terme**  
+*Tractions australiennes — prise pronation, Dips et Dips parallèles tiennent sur le trimestre parce que tu y reviens.* Un PR isolé sur un exo rare dit peu ; une hausse lente sur un mouvement répété dit davantage.  
+Preuves : `Tractions australiennes — prise pronation · Dips · Dips parallèles`.
+
+**DEV**  
+Identité : `inside` · 3,5 / 4,1 (2,7–5,5).  
+Phénomènes (4) : `contraction_with_rebound` (86 %) ; `specialization_push` (push 76,3 %, ratio 3,2, 72 %) ; `low_adherence` (programPct 40, 70 %) ; `observed_output_indeterminate`.
+
+### 12.3 30 jours — lun. 3 août 2026 → lun. 31 août 2026
+
+**Données Recap**  
+4 556 reps · 0 km · 0 m course · 13 h 05 exos · 13 h 05 total · 2 544 kg soulevés · streak max 9 · 15 364 kcal · 15 jours entraînés.  
+Exos : Pompes (endurance) 400 · Relevés de genoux à la barre 240 · Dips parallèles 192.  
+Meilleure série : 9 j. (6/08 → 14/08).  
+Zones : pectoraux ~631 · triceps ~608 · épaules ~632 · dos ~449 · gainage/tronc ~319.
+
+**Court terme**  
+Titre : *Ta pratique s’est contractée, mais elle rebondit déjà.*  
+~5,1 → ~3,6 séances/sem. (environ 30 % de moins). Reps suivies 28 j. environ 32 % de moins. Les 7 derniers jours repartent (environ 123 % de plus). 3,5 /sem. dans la plage habituelle 2,7–5,5. Densité de séance ~7 exercices. Contraction d’exposition, déjà en reprise — pas une perte de capacité démontrée.  
+Preuves : `14 séances · 3,6/sem. · 5,1/sem. avant · habitude 4,1`.
+
+**Moyen terme**  
+Titre : *Ton tirage vertical ne semble pas régresser.*  
+« Tractions pronation et Tractions pronation » restent dans leur niveau habituel. Références : Tractions pronation et Tractions australiennes — prise pronation. Exposition vs capacité.  
+Preuves : `Tractions pronation · Tractions pronation`.
+
+**Long terme**  
+Même lecture continuité vs capacité que § 12.1 : charge récente −32 %, fréquence −30 %. Objectif hypertrophie / définition.
+
+**DEV**  
+`coût high` · Novice confirmé. Signature visible `3.3|4556|12|…`.
+
+### 12.4 3 mois — mar. 2 juin 2026 → lun. 31 août 2026
+
+**Données Recap**  
+17 916 reps · **29,2 km** · **3 h 59** course · 48 h 38 exos · 52 h 37 total · 34 161 kg · streak max 20 · 44 159 kcal · 58 jours entraînés.  
+Meilleurs mois : reps / km / temps course / exos / total / kg / streak / jours → **juin 2026** ; kcal actives → **août 2026**.  
+Exos : Pompes (endurance) 1 000 · Mouvement (`1970493985…`) 800 · Mouvement (`1328512297…`) 720.  
+Meilleure série affichée : 19 j. (2/06 → 20/06) — le bandeau indique aussi streak max 20.  
+Zones : pectoraux ~2 408 · triceps ~2 549 · épaules ~2 510 · dos ~1 440 · gainage/tronc ~1 071.  
+Course & cardio (meilleures sorties) : 5,8 km lun. 15/06 · 4,7 km lun. 27/07 · 4,3 km ven. 5/06. Record jour 5,83 km le 15/06.
+
+**Court terme**  
+Titre : *Ta pratique s’est contractée, mais elle rebondit déjà.*  
+Texte affiché : passé d’environ **0,6 à 4,5** séances/sem. **(environ 30 % de moins)** ; reps 28 j. −32 % ; 7 j. +123 % ; 3,5 dans 2,7–5,5 ; ~6,9 exercices/séance.  
+Preuves : `57 séances · 4,5/sem. · 0,6/sem. avant · habitude 4,1`.
+
+**Moyen terme**  
+Même lecture tirage vertical que § 12.3 (Tractions pronation répété deux fois dans le corps et en preuves).
+
+**Long terme**  
+Titre : *Nouveau palier consolidé sur Tractions pronation (~20 reps de façon répétée)* — pas qu’un record ponctuel ; niveau réel qui semble monter. Objectif hypertrophie / définition.
+
+**DEV**  
+`coût bas` · Niveau confirmé (libellé du badge tel qu’à l’écran).
+
+### 12.5 Alignement doc ↔ site (constat, 01/09 00:19)
+
+Ce qui est **le même objet** que le document :
+
+- Trois colonnes Court / Moyen / Long, cartes titre + corps + ligne de preuves.
+- Panneau DEV : axes Exposition / Sortie observée / Récup, identité fréquence, phénomènes (`contraction_with_rebound`, etc.).
+- Vocabulaire « répétitions suivies », « pas une perte de capacité », « identité inside ».
+- Le filtre Recap (Aujourd’hui / 7 j. / 30 j. / 3 mois) change le **bandeau de chiffres** et **quelle lecture gagne** la colonne ; les horizons ne sont pas des copies du filtre (sur « Aujourd’hui » le court terme parle quand même de 35 j. de course et d’habitude 4 j.).
+
+Ce que le **relevé du 1er sept.** montre en plus du dump écrit au § 10 (31 août) :
+
+- Dernière course datée **27/07/2026**, **35 j.**, libellé générique « Course » (plus un développé haltères).
+- Sur **Aujourd’hui** et **7 jours**, le court terme affiché est `absence` course, alors que le DEV liste déjà `contraction_with_rebound`.
+- Sur **30 jours**, le court terme est la contraction + rebond (aligné phénomène).
+- Sur **3 mois**, le bandeau Recap a des km/temps course ; le court terme reste la carte contraction, avec la paire **0,6 / 4,5 séances** et la mention « 30 % de moins » telles quelles à l’écran.
+- `pull_hold` affiche deux fois « Tractions pronation ».
+- Le bandeau Recap 3 mois liste deux exos « Mouvement (id numérique) ».
+
+Fin du relevé 01/09/2026 00:19.
+
+---
+
+## 13. Cible produit — temporalité ≠ type d’analyse (1er sept. 2026)
+
+Cette section est un **avis de direction**, recoupé avec le relevé § 12 et le code. Ce n’est pas un relevé d’écran, et ce n’est pas un sprint d’implémentation.
+
+### 13.1 Verdict
+
+Le diagnostic est **juste**. Le vrai problème n’est plus « pas assez de données » ni « pas assez de cartes ». C’est architectural :
+
+1. Le moteur **n’analyse pas vraiment en fonction de la période Recap**. Il applique à peu près les mêmes concepts à toutes les fenêtres. La période change le bandeau de chiffres et **quelle lecture gagne** une colonne — pas *quelle question* la colonne a le droit de poser.
+2. **Court / Moyen / Long n’est pas une distinction analytique.** Ce sont trois boîtes dans lesquelles on force des observations. Une lecture a un `horizon: 'short' | 'medium' | 'long'` **avant** d’être sélectionnée (`recapHorizonEssays.js` : helpers `short()` / `medium()` / `long()`). Le filtre Recap (Aujourd’hui, 7 j., 30 j., 3 mois…) est une **autre** fenêtre, celle du bandeau. Les deux se mélangent dans le texte.
+3. Le système mélange, souvent dans la même phrase, **données de la fenêtre, données précédentes, moyenne historique, tendance, comparaison et interprétation**, sans dire à quel horizon appartient chaque chiffre.
+
+**On ne supprime pas les trois colonnes.** C’est une bonne idée UX. On change **ce qu’elles signifient**.
+
+| Aujourd’hui (code + UI) | Cible |
+|-------------------------|--------|
+| Court ≈ lectures taguées `short` (souvent 7 j. internes, parfois une absence de 35 j.) | **Maintenant** — qu’est-ce qui vient de se passer ? |
+| Moyen ≈ lectures taguées `medium` (cycles, spécialisation, rendement) | **Trajectoire** — qu’est-ce qui est en train de se construire ? |
+| Long ≈ lectures taguées `long` (continuité, palier, « ce qui revient ») | **Parcours** — qu’est-ce que l’historique raconte **depuis le début** ? |
+
+Les fenêtres 7 / 28 / 90 restent des **outils internes** (assez de recul pour calculer). Elles ne sont plus des **catégories**.
+
+Quatrième dimension, orthogonale au temps : **comparaison à soi** (identité, première référence, PR vs niveau habituel). Une analyse peut être « maintenant » tout en ayant besoin d’une référence historique (course absente 35 j. vs habitude tous les 4 j.). Une analyse peut être « parcours » tout en parlant d’un chiffre actuel (tractions +42 % depuis la première saisie).
+
+### 13.2 Preuve sur le site (§ 12) — 01/09/2026 00:19
+
+Sans répéter le relevé, les combinaisons artificielles :
+
+| Plage Recap | Ce que la colonne raconte | Pourquoi c’est le mauvais objet |
+|-------------|---------------------------|--------------------------------|
+| **Aujourd’hui** (1 séance, 360 reps) | Court = course absente depuis le **27/07**, 35 j., 20 séances. Moyen = « sur un **cycle de quelques semaines** », spécialisation épaules/triceps. Long = historique de **continuité** (−32 % / −30 %). | Une journée n’est pas un cycle. Le DEV a déjà `contraction_with_rebound` ; la colonne court affiche `absence`. |
+| **7 jours** (3 jours entraînés, 1 049 reps, 0 km) | Court = **la même** carte course 35 j. Moyen = rendement **−1,86**. Long = australiennes / dips « tiennent sur le **trimestre** ». | Analyse historique collée sur 7 jours. Score d’efficacité illisible. Rien de spécifique à *cette* semaine. |
+| **30 jours** | Court = contraction + rebond (5,1 → 3,6 /sem., 7 j. +123 %). Moyen = tirage vertical qui tient (texte « Tractions pronation » **doublé**). Long = encore la continuité −32 % / −30 %. | Seule plage où le court terme **colle** au phénomène. Le long terme n’est toujours pas un parcours depuis le début. |
+| **3 mois** (29,2 km, 58 jours) | Court = **même titre** contraction, mais chiffres **0,6 → 4,5 /sem. « 30 % de moins »**. Long = palier Tractions pronation ~20 reps. | La fenêtre Recap 3 mois a faussé la paire « avant / maintenant » tout en gardant le gabarit 28 j. Le bandeau a de la course ; le court terme n’en parle pas. |
+
+Schéma actuel, tel qu’observé :
+
+```
+Période Recap  →  bandeau de stats
+               →  pool de lectures déjà étiquetées court/moyen/long
+               →  quotas 4 / 3 / 2  (`HORIZON_LIMITS` dans recapAdaptiveInsights.js)
+               →  une carte par boîte, même si la question n’appartient pas à la fenêtre
+```
+
+Schéma visé :
+
+```
+Historique complet
+        │
+        ├── fenêtre Recap = *quelles données sont assez denses pour calculer*
+        │
+        ↓
+Moteur (faits → métriques → comparaisons → événements / tendances)
+        │
+        ├── Maintenant     (événement récent)
+        ├── Trajectoire    (dynamique sur des semaines)
+        └── Parcours       (évolution depuis le début)
+                │
+                ↓
+        Insights classés (importance × confiance × nouveauté × objectif)
+```
+
+La période **ne crée plus** de types d’analyses. Elle **autorise** ou **interdit** un calcul.
+
+### 13.3 Ce que les trois colonnes doivent répondre
+
+**Maintenant** (ex-court) — *Qu’est-ce qui caractérise la pratique actuelle, et qu’est-ce qui vient de changer ?*
+
+Dernières séances, semaine en cours, rebond, PR récent, exo repris / abandonné cette semaine, dernière course, changement brutal de fréquence ou de dose, fatigue/récup **si mesurable**.  
+Exemple cible (données § 12, 30 j.) : *Ta semaine repart après un creux. Volume 7 j. +123 % alors que 28 j. −32 %. La baisse mensuelle ne décrit pas ton rythme actuel : tu es en reprise.*
+
+**Trajectoire** (ex-moyen) — *Quelle dynamique est en train de devenir vraie ?*
+
+Progression / plateau des mouvements suivis, spécialisation, push/pull, adhérence, expo × perf, remplacement d’exercices, dose.  
+Exemple cible : *La poussée devient l’axe dominant sur les semaines récentes ; le tirage est moins exposé mais les références verticales tiennent encore. Baisse d’exposition au tirage ≠ perte visible de performance.*
+
+**Parcours** (ex-long) — *Qu’est-ce que la relation à Momentum raconte ?*
+
+Pas la règle générale « ce qui revient progresse ». L’**histoire** : depuis la première saisie, jalons, records, abandons, transformation du profil, périodes de meilleure progression, rapport à l’objectif.  
+Exemple cible : *Depuis ta première référence fiable de tractions, +X %. Premier niveau Y, meilleur Z, niveau habituel actuel W. Tu as connu N pauses > 14 j. ; après les précédentes, le niveau revenait en moyenne après K séances.*
+
+Libellés UI possibles (pas forcément à changer tout de suite) : **Maintenant / Trajectoire / Parcours** plutôt que Court / Moyen / Long.
+
+### 13.4 Pipeline interne (cinq briques, pas trois colonnes)
+
+Avant d’ajouter des analyses, le moteur doit devenir :
+
+```
+1. DONNÉES BRUTES     séances, séries, reps, charge, durée, distance, programme, Garmin…
+2. MÉTRIQUES          volume, fréquence, moyenne, médiane, PR, niveau habituel, densité…
+3. COMPARAISONS       vs précédent / historique / record / moyenne perso / période équivalente
+4. DÉTECTION          progression, plateau, reprise, abandon, palier, changement structurel
+5. INSIGHT            une phrase humaine + preuve + confiance — seulement si (4) est solide
+```
+
+Trois **niveaux d’affichage**, pas trois durées :
+
+| Niveau | Contenu | Quand l’afficher |
+|--------|---------|------------------|
+| 1. Faits | 15 séances, 4 556 reps, +12 % vs période précédente | Toujours, surtout dans le bandeau Recap (déjà là) |
+| 2. Évolutions | Le volume diminue depuis 3 semaines ; les tractions progressent quand même | Si la comparaison est comparable |
+| 3. Interprétations | « La capacité ne suit pas encore la baisse d’exposition » | **Seulement** si faits + évolutions tiennent ; sinon silence |
+
+Chaque insight doit porter une **preuve** explicite (base, fenêtre, n séances) et une **confiance**. Exemple de contrat :
+
+```
+Titre
+Corps (1 idée)
+Base : 18 séances comparables sur 92 jours
+Confiance : élevée
+Interprétation (niveau 3, optionnelle) : …
+```
+
+Le score brut `efficacité ~ −1,86` (§ 12.2) ne satisfait pas ce contrat. Remplacer par des rapports **lisibles** : volume → perf, fréquence → progression, charge → progression — puis éventuellement « rendement : favorable / défavorable » **avec** l’explication.
+
+### 13.5 Sélection : plus de quotas 4 / 3 / 2
+
+Aujourd’hui : `HORIZON_LIMITS = { short: 4, medium: 3, long: 2 }` + plancher de lecture si la pratique n’est pas vide. Ça **force le remplissage** et produit les combinaisons du § 12.
+
+Cible :
+
+```
+phénomènes détectés
+    → score importance
+    → score confiance
+    → score nouveauté
+    → score utilité pour l’objectif
+    → déduplication
+    → sélection
+```
+
+Si rien n’est intéressant : **rien**. Si une période exceptionnelle permet d’en dire 5 : 5. Un ordre de grandeur UI (pas un plancher) : Maintenant 0–3, Trajectoire 0–5, Parcours 0–3.
+
+Hiérarchie visuelle :
+
+| Rang | Exemples |
+|------|----------|
+| Important | PR majeur, régression confirmée, longue interruption, changement structurel |
+| Significatif | progression, plateau, changement de répartition |
+| Intéressant | record secondaire, nouveau mouvement, nouvelle habitude |
+| Statistique | petit delta sans conséquence — **bandeau**, pas colonne |
+
+### 13.6 Couche `athleteJourney` — depuis le début de Momentum
+
+C’est la brique **absente**. Le long terme actuel compare encore trop 90 j. vs 90 j. (ou first vs last sur le trimestre). Il ne raconte pas *cet* athlète depuis sa première saisie.
+
+Objet visé (interne, pas du texte) :
+
+```
+ATHLETE_JOURNEY
+├── première séance enregistrée (date)
+├── totaux depuis le début (séances, jours, reps, heures, km, records)
+├── par exercice suffisamment documenté
+│     première donnée
+│     première référence fiable   ← distincte de la première saisie
+│     niveau établi / habituel (moyenne + médiane récentes)
+│     meilleur niveau (PR) + date du PR + âge du record
+│     niveau actuel
+│     n séances, fréquence, paliers franchis
+│     périodes de progression / stagnation / régression confirmée
+│     abandons / remplacements de variante
+└── transformation du profil (push/pull/jambes/cardio début vs maintenant)
+```
+
+**Première saisie ≠ première référence fiable.** Une première séance exceptionnelle ou mal renseignée fausse le +108 %. La narration « depuis tes débuts » doit s’appuyer sur la référence fiable dès qu’elle existe.
+
+**PR ≠ niveau réel.** Contrat de phrase : *Ton record est de 20 reps, mais ton niveau habituel est autour de 17–18.* `performanceRobustness.js` (`LEVEL_ESTABLISHED`, `PR_EVENT`, `OUTLIER`) est déjà une amorce — **non projetée** comme parcours.
+
+Système de niveaux (événements, pas des cartes permanentes) : nouveau record, record égalé, nouveau niveau (moyenne qui monte), niveau consolidé (reproduit), stagnation, régression potentielle, reprise, déclin confirmé.
+
+Chaîne que le produit doit finir par poser, dans cet ordre :
+
+> Qu’est-ce que j’ai fait ? → **Qu’est-ce qui a changé ?** → **Depuis quand ?** → **Est-ce réel ou ponctuel ?** → **Qu’est-ce que ça signifie pour la progression ?**
+
+### 13.7 Familles d’analyses (catalogue, pas un sprint)
+
+Chaque famille a une **nature** (Maintenant / Trajectoire / Parcours) et un **recul minimum**. Si le recul manque : silence, pas de gabarit.
+
+| Famille | Question | Recul typique | Déjà amorcé ? |
+|---------|----------|---------------|----------------|
+| État actuel | Que se passe-t-il maintenant ? | 0–14 j. | Partiel (`continuity`, contraction) |
+| Évolution récente | Qu’est-ce qui a changé ? | 7–28 j. | Oui (`volume_traj`, 7 vs 28) |
+| Progression réelle d’un exo | First / actuel / % / n séances au palier | dès 6–8 séances comparables | Faible (`continuity_level` = first vs last) |
+| PR vs niveau habituel | Record vs moyenne/médiane récente | idem | Amorcé (robustesse), **non raconté** |
+| Niveau consolidé | Palier reproduit vs PR isolé | plusieurs séances au niveau | Lecture `palier` 3 mois (§ 12.4), trop mince |
+| Depuis quand | Jours depuis dernière expo / depuis un niveau | timeline | Oui pour absences (`recapTrainingTimeline`) |
+| Première fois / dernière fois | Date du premier 20 pompes, dernière fois, durée de maintien | historique complet | Non |
+| Paliers | 5 → 8 → 10 → 15 → 20 reps | historique complet | Non |
+| Vitesse de progression | Jours entre paliers, accel / ralentissement | assez de paliers | Non |
+| Plateaux | Niveau moyen stable X semaines malgré volume ↑ | 6+ sem. | Non |
+| Expo ↓ et perf ↑ (ou l’inverse) | Distinction exposition / capacité **dans le temps** | 8+ sem. | Amorcé (cartes séparées, pas une série temporelle) |
+| Rendement explicable | +20 % volume / +8 % perf — **pas** −1,86 | 28–90 j. | Variable `progressionEfficiency` illisible |
+| Régularité | Semaines dans la plage, pas seulement streak | 8–18 sem. | Identité fréquence ; streak = bandeau |
+| Densité | Reps/h, volume/séance, exos/séance, durée | dès que la durée existe | `avgExercisesPerSession` ≠ durée (piège § 4.2) |
+| Structure de séance | Plus long mais pas plus de volume → densité ↓ | 28 j.+ | Non |
+| Spécialisation / équilibre | Parts push/pull/jambes/core **comparées** 7 / 30 / 90 | 30 j.+ | `push_share` / `specialization` (une photo, pas un tableau) |
+| Mouvements abandonnés / nouveaux / repris | Dernière expo vs fréquence d’avant ; niveau à la reprise | 30 j.+ vs historique | Absence oui ; remplacement de variante partiel ; reprise perf non |
+| Longévité d’un record | PR établi il y a N jours, jamais dépassé | historique | Non |
+| Meilleure période par **dimension** | Meilleur mois volume ≠ meilleur mois perf ≠ meilleur mois régularité | 3 mois+ | Bandeau « meilleurs mois » = max de la **même** métrique |
+| Comparateurs multiples | vs précédent / moyenne / meilleur / équivalent / record | selon métrique | Surtout vs fenêtre précédente |
+| Jalons & premières fois | Premier lest, première semaine à 5, premier 10 km | historique | Événements `pr_reps` ponctuels |
+| Quand tu progresses le mieux | Conditions associées (fréquence, expo, sommeil) | beaucoup de données | **Association observée**, jamais « cause » |
+| Objectif vs comportement | Objectif défini → expo réelle → progression | depuis le quiz | 3 portes de texte (§ 8.2) |
+| Transformation du profil | Mix début vs maintenant | depuis le début | Non |
+
+**Équilibres** à traiter comme un graphe, pas un slogan « tu te spécialises » : poussée/tirage, haut/bas, force/endurance, cardio/muscu, vertical/horizontal, unilatéral/bilatéral, lesté/poids du corps. Toujours en **parts + delta en points** (ex. poussée +9 pts en 3 mois), pas en verdict.
+
+**Régularité** : streak max 9 est une métrique de bandeau. La colonne doit pouvoir dire *4 / 5 semaines dans ta plage* ou *fréquence irrégulière malgré un volume moyen élevé* (2 → 6 → 1 → 5).
+
+Ne **pas** implémenter ce tableau comme 30 `kind` de plus. Chaque famille alimente la détection (brique 4) ; l’UI n’en montre qu’une fraction classée.
+
+### 13.8 Ce que les pages pourraient afficher (structure UI, optionnelle)
+
+Les trois colonnes restent le **cœur**. Autour, si besoin, des blocs qui ne sont plus des « horizons » :
+
+- Ce qui se passe actuellement (Maintenant)
+- Ce qui évolue (Trajectoire)
+- Tes progressions / ce qui se consolide
+- Structure (répartition, équilibre)
+- Ce qui change (nouveaux, abandonnés, volume, fréquence)
+- **Depuis tes débuts** (biographie sportive — peut vivre dans Parcours *ou* dans un bandeau dédié)
+- Explorer (toutes les analyses, jamais en page d’accueil)
+
+Ce n’est pas la priorité d’écran. La priorité est que **les trois colonnes cessent de se mentir**.
+
+### 13.9 Recollage sur les données du 1er sept. (cible, pas l’écran actuel)
+
+À la place du triplet course / spécialisation / continuité (Aujourd’hui) ou course / −1,86 / dips du trimestre (7 j.), un analyste dirait plutôt :
+
+1. **Exposition en baisse sur le mois, déjà en reprise cette semaine** — 28 j. −32 %, 7 j. +123 %, 3,5 /sem. dans 2,7–5,5. Baisse d’exposition ≠ régression démontrée. Confiance élevée. Nature : **Maintenant**.
+2. **La poussée est devenue l’axe dominant, assez pour un changement de structure** — parts à comparer 7 / 30 / 90, pas « progressivement plus spécialisé » calé sur une journée. Nature : **Trajectoire**.
+3. **Les références de tirage tiennent encore** — tant que les séries réalisées restent dans la plage, « pull en baisse » décrit le calendrier. Nature : **Trajectoire** (expo × capacité).
+4. **La course est sortie de la routine** — dernière le 27/07, 35 j., 20 séances entre-temps, habitude ~4 j. Qualité délaissée, pas arrêt du sport. Nature : **Maintenant**, *preuve* historique. Sur un filtre Aujourd’hui / 7 j., c’est légitime **en second**, pas à la place de la contraction si le DEV l’a déjà.
+5. **Parcours** (quand les séries sont assez nombreuses) : depuis la première référence fiable, +X % tractions / pompes / dips ; PR vs niveau habituel ; éventuellement palier consolidé ~20 reps **avec** n séances au palier, pas seulement le mot « consolidé ».
+
+C’est la même matière. Ce n’est plus le même découpage.
+
+### 13.10 Ordre de chantier (après ce diagnostic)
+
+**Interdit en premier :** « ajoute 30 nouvelles analyses ». Ça recréerait exactement le défaut actuel (plus de `kind` poussés dans les mêmes trois boîtes).
+
+Ordre :
+
+1. **Redéfinir les trois colonnes dans le moteur** — un phénomène a une *nature* (événement / dynamique / parcours), pas un tag `short|medium|long` calé sur 7/28/90. La période Recap **filtre la confiance** (assez de données dans la fenêtre ? assez de recul hors fenêtre pour la preuve ?).
+2. **Couper les quotas et le plancher** — plus de carte pour remplir. Si le court terme d’« Aujourd’hui » n’a qu’un fait de séance, le bandeau suffit.
+3. **Projeter les phénomènes déjà détectés** (`contraction_with_rebound`, `specialization_push`, `low_adherence`, `observed_output_indeterminate`) vers Maintenant / Trajectoire, au lieu de laisser `absence` gagner Aujourd’hui et 7 j. alors que le DEV liste déjà la contraction.
+4. **Couche `athleteJourney`** — première référence fiable, PR vs niveau habituel, depuis quand, totaux depuis le début. C’est ce qui donne enfin un vrai Parcours. Réutiliser `performanceRobustness` + timeline ; ne pas réécrire des stats first vs last.
+5. **Preuve + classements** — base / confiance / importance sur chaque carte ; rendement lisible ; spécialisation en tableau de parts, pas en slogan.
+6. **Ensuite seulement**, enrichir les familles § 13.7 une par une (plateaux, paliers, abandons/remplacements, densité réelle, meilleure période par dimension).
+
+Architecture conceptuelle à poser **avant** le catalogue :
+
+```
+                 ATHLETE JOURNEY
+                       │
+     ┌─────────────────┼─────────────────┐
+     │                 │                 │
+  MAINTENANT       TRAJECTOIRE        PARCOURS
+  0–14 jours       2–12 semaines      Depuis le début
+  événements       dynamiques         évolutions
+  reprises, PR     progression        jalons, records
+  absences, rebonds  plateau, mix     premières fois
+                       │
+                       ↓
+               PHÉNOMÈNES COMPOSÉS
+                       ↓
+            objectif + identité
+                       ↓
+         importance / confiance
+                       ↓
+                  sélection
+```
+
+### 13.11 Diagnostic final (recalé au 01/09/2026)
+
+Le moteur sait déjà beaucoup de choses sur l’athlète (comparaison à soi, identité, chronologie, progression, relations, programme, garde-fous, phénomènes). **Il ne sait pas encore quelle histoire mérite d’être racontée**, ni **pour quelle nature temporelle**.
+
+D’où l’impression que Court / Moyen / Long sont arbitraires : ce n’est pas un problème de copy, c’est que le filtre de période et les trois colonnes posent **deux questions différentes** et que le code répond avec **un seul pool étiqueté**.
+
+| Couche | 31 août (§ 11.5) | Cible § 13 |
+|--------|------------------|------------|
+| Données / 7-28-90 | 8,5 | Garder ; cesser d’en faire des catégories UI |
+| Phénomènes | 5 | Les projeter par **nature**, pas par quota |
+| Parcours depuis le début | ~0 | `athleteJourney` |
+| Preuve / rendement lisible | faible | Contrat insight § 13.4 |
+| Quotas colonnes | 4/3/2 | Sélection ou silence |
+| **Modèle de l’athlète** | ~6 | ~6 + une **mémoire narrative** (ce qui a changé, depuis quand, est-ce réel) |
+
+Le texte plus intelligent n’est plus le levier. La **nature de chaque analyse** et la **mémoire depuis la première saisie** le sont.
+
+### 13.12 Phase 1 implémentée (1er sept. 2026)
+
+Sans ajouter de nouvelles familles d’analyses. Changements dans le moteur :
+
+- Module `recapInsightNature.js` : chaque `kind` a une nature fixe (`now` / `trajectory` / `journey`) projetée vers les colonnes short / medium / long.
+- La fenêtre Recap ne décide plus le type. Elle sert au **rythme comparable** (28 j. vs 28 j. dès que la plage n’est pas un mois) et au **mix de trajectoire** (pas le split d’une journée).
+- Plancher `situation` retiré. Plafonds 2 / 3 / 2, plus de première carte forcée sous le seuil.
+- Contraction **gagne** Maintenant sur l’absence (boost + baisse de pertinence). Absence reste `now` même à 35 j.
+- `push_share` / `program` / `efficiency` → Trajectoire. Score brut −1,86 retiré du texte.
+- Libellés UI : Maintenant / Trajectoire / Parcours.
+
+Pas encore : couche `athleteJourney`, preuve/confiance systématiques, catalogue § 13.7.
+
+### 13.13 Phase 2 implémentée — `athleteJourney` (1er sept. 2026)
+
+Objet interne, pas une 13ᵉ carte collée.
+
+- `src/utils/sport/athleteJourney.js` : historique **depuis le premier check** jusqu’à la fin de la fenêtre Recap.
+- Distingue première saisie / première référence fiable (premier jour atypique écarté) / PR / niveau habituel (médiane récente, PR isolé écarté).
+- Une lecture Parcours `journey_progress` seulement si ≥ 6 séances, gain ≥ 2 reps et ≥ 15 %. Preuve : n séances, durée, % .
+- `journey_pr_vs_level` si le record n’est pas le niveau reproduit, et que ce n’est pas déjà dit dans la progression.
+- `continuity_level` (leçon « ce qui revient progresse ») **ne sort plus** dès qu’un vrai parcours existe.
+- DEV : ligne « Parcours : depuis … ».
+
+### 13.14 Phase 3 — jalons, plateau, abandon (1er sept. 2026)
+
+Toujours dans `athleteJourney`, toujours **une nature par lecture**, pas un catalogue.
+
+- **Jalons** 5 / 8 / 10 / 12 / 15 / 18 / 20 / 25 / 30 : premier franchissement + jours entre deux paliers + rythme (accélère / ralentit).
+- Intégrés dans `journey_progress` (pas une 4ᵉ carte). `journey_milestones` seulement s’il n’y a pas de progression % assez nette.
+- **Plateau** (`journey_plateau`, Trajectoire) : niveau habituel dans ±1,5 reps sur ≥ 6 séances et ≥ 28 j., sans palier récent.
+- **Abandon / remplacement** (`journey_abandoned`, Maintenant) : pratiqué régulièrement (intervalle médian ≤ 16 j.) puis trou ≥ 21 j. Si une variante de la même famille est encore là, le texte dit remplacement, pas arrêt.
+- Preuve : « Base : n séances / jours » + label de confiance sur les lectures parcours.
+
+Pas encore : bandeau biographie dédié, densité réelle (reps/h), meilleure période par dimension.
+
+---
+
+## 14. Architecture inversée — but final et première brique (1er sept. 2026)
+
+Le problème n’est plus principalement la rédaction. Le système produisait une analyse à partir de quelques indicateurs déjà calculés, puis appliquait une logique assez similaire quelle que soit la fenêtre.
+
+Mauvais flux :
+
+```
+données → template Court / Moyen / Long → quelques chiffres injectés
+```
+
+Bon flux :
+
+```
+données → comparaisons pertinentes → constats → interprétations → conclusions → rédaction
+```
+
+### 14.1 Chaque période Recap a sa question
+
+Aujourd’hui, 7 jours, 30 jours et 3 mois ne sont **pas** le même rapport avec une période différente.
+
+| Plage | Question |
+|--------|----------|
+| Aujourd’hui | Qu’est-ce qui caractérise précisément **cette séance** par rapport à ce que je fais habituellement ? |
+| 7 jours | Qu’est-ce qui s’est réellement passé **cette semaine**, et comment se compare-t-elle à mon rythme habituel ? |
+| 30 jours | Comment mon entraînement récent **évolue-t-il** par rapport aux mois précédents ? |
+| 3 mois | Quelle **trajectoire** suis-je réellement en train de construire ? |
+
+Court / moyen / long terme **ne sont pas trois durées**. Ce sont trois **angles** appliqués à la même période :
+
+- **Maintenant** — état actuel, anomalie, contexte immédiat. Comparaisons quantitatives, pas « séance importante ».
+- **Trajectoire** — transformations (parts, émergence d’exercices, densité vs fréquence, poussée/tirage).
+- **Parcours** — ce que **cette période ajoute** à l’historique. Jamais une deuxième copie du court terme.
+
+### 14.2 Niveau à atteindre (exemples du 31 août / 7 jours)
+
+Ces textes sont le **but de densité** pour toutes les plages, pas seulement Aujourd’hui et 7 jours.
+
+**Maintenant · 7 jours** — 3 séances, 1 049 reps, 3 h 05, ≈350 reps et 1 h 02 par séance, rythme proche de 4,1 séances/semaine mais exposition concentrée. Dominante haut du corps (250 triceps, 169 pecs, 191 épaules, 156 dos, 94 tronc) : les triceps ≈24 % du volume identifié, tirage ≈15 %. La séance du 31 août concentre 360 reps (≈34 %). Aucune course : charge entièrement renforcement.
+
+**Trajectoire · 7 jours** — qualité d’exposition, pas seulement volume : 3 jours espacés mais densité élevée (≈350 reps/séance). Socle hebdomadaire (pompes 100, extensions triceps 60, relevés de genoux 60) ≠ mouvements qui structurent une séance (48 australiennes + 48 dips). 156 dos contre 419 pecs+triceps. Nouveaux / réintroduits suivis à part. Garmin (sommeil, FCR, charge) comme **couche de contexte**, pas une mention en fin de paragraphe.
+
+**Parcours · 7 jours** — la semaine est un **point d’ancrage** : 15/30 jours entraînés vs 3/7, répertoire qui change, 48 dips / 48 australiennes comme nouvelles références, 2 799 kcal actives croisées avec 3 h 05 = profil « peu de jours, séances denses ».
+
+**Maintenant · aujourd’hui** — 360 reps en 1 h 05 = 332 reps/h, soit 4,6 % moins dense que 348 reps/h sur 30 j., proche de 340 reps/h sur 7 j. Épaules 191 = ≈30 % du mois ; pecs 60 ≈9,5 % ; triceps 31 ≈5,1 %. Dos 77 ≈17 % du mois. 48 dips = 25 % des 192 du mois ; 60 relevés = 25 % des 240.
+
+**Trajectoire · aujourd’hui** — réorientation épaules, tirage encore fréquent, dips très exposés sur peu de séances, volume/séance stable (360 ≈ 350). Le signal est la **composition**, pas une hausse/baisse brutale de quantité.
+
+**Parcours · aujourd’hui** — 360 reps = 7,9 % des 4 556 du mois (15 jours entraînés). Mouvements de référence assez fournis pour un suivi séparé. Écart au profil trimestriel (17 916 reps). Continuité : 15/30 et 58/≈90. On mesure ce que la séance **ajoute au niveau de référence**, pas un record isolé.
+
+### 14.3 Pipeline à 7 étapes
+
+1. **Mesure** — métriques de la fenêtre Recap (mêmes sources que le bandeau : reps, jours, durée, kcal, course, exercices, muscles).
+2. **Normalisation** — comparaison à 7 j., 30 j., 90 j., habitude identité, séances comparables.
+3. **Détection** — progressions, anomalies, nouveaux / réintroduits, parts musculaires, ratios, concentration d’une journée, jalons.
+4. **Scoring** — importance × fiabilité × nouveauté × pertinence pour la question de la période.
+5. **Anti-répétition** — une famille par constat ; pas deux fois « le volume baisse ».
+6. **Attribution d’angle** — Maintenant / Trajectoire / Parcours selon la *nature* du constat.
+7. **Rédaction** — l’essai transforme uniquement les découvertes retenues (2 / 3 / 2 max).
+
+### 14.4 Phase 4 implémentée — `recapPeriodDiscoveries`
+
+Module : `src/utils/sport/recapPeriodDiscoveries.js`.
+
+- Mesure la fenêtre Recap + 7 / 30 / 92 jours se terminant à `window.end`.
+- Densité réelle **reps/h** dès que les minutes d’exos (Garmin street / bandeau) existent.
+- Découvertes typées (`disc_density`, `disc_muscle_reorient`, `disc_exercise_share`, `disc_peak_day`, `disc_emergence`, `disc_anchor`, …) avec preuves chiffrées.
+- Sur **Aujourd’hui** et **7 jours**, ces découvertes **remplacent** les lectures génériques `continuity` / `volume_traj` (plus de « cycle de quelques semaines » sur un jour).
+- DEV : question de la période + découvertes scorées.
+
+On ajoute une source ou une règle → une nouvelle découverte → le moteur décide si elle mérite d’apparaître.
+
+### 14.5 Phase 5 implémentée — baselines, comparables, Garmin, mémoire
+
+Module : `src/utils/sport/recapPersonalBaselines.js`, branché sur le même moteur de découvertes.
+
+- **Niveau habituel par exercice** : moyenne, médiane, P25/P75, dernier, moyenne récente, moyenne initiale, record, consolidé. Lecture type : « 48 dips vs habituel 36, +33 % » — pas un PR isolé.
+- **Séances comparables** : recouvrement d’exercices + volume + durée, jamais « vs hier » par défaut.
+- **Progression consolidée** : premières séances vs niveau récent, avec distinction record / niveau reproduit.
+- **Couche Garmin** : sommeil (et FCR si présent) comme contexte de séance ; association sommeil → reps sur les mouvements de référence, formulée « tes données montrent une association », jamais « le sommeil provoque ».
+- **30 jours** : comparaison au **mois précédent** (pas un template recopié).
+- **Mémoire** : une découverte déjà montrée récemment voit son score baisser.
+
+### 14.6 Phase 6 — sources alignées + niveau de référence
+
+Les chiffres des colonnes doivent être ceux du bandeau / du mesh Recap, pas un deuxième modèle.
+
+- **Reps, minutes, kcal, jours, course** : `computeCalendarMonthSportStats` (même pile que le bandeau).
+- **Muscles** : `computeRecapMuscleState` sur la **fenêtre exacte** (plus de split égalitaire maison). `recapState` n’est réutilisé que s’il a la même fenêtre.
+- **Noms / totaux d’exercices** : `resolveExerciseNameForRecap` + coches + pompes endurance, comme le comparateur force.
+- **Bandeau** : `buildRecapStrengthCompareModel` reçoit maintenant `periodWindow`, plus `new Date()` implicite.
+- **Jour de pic** : exercices **de ce jour**, pas le top de la période.
+- **Ratios** poussée/tirage, haut/bas, volume/jour, reps/h.
+- **Part musculaire vs 30 j. précédents** (changement de structure).
+- **Association repos ≥ 48 h** vs séance J+1 (formulation « association », jamais cause).
+- **3 mois** : comparaison premier mois de la fenêtre vs 30 derniers jours (trajectoire interne).
+- Sommeil tissé dans la lecture de densité quand les minutes Garmin existent.
+
+### 14.7 Phase 7 — mémoire structurelle, mix de stimulus, cardio ↔ muscu
+
+Module : `src/utils/sport/recapStimulusCatalog.js`, branché sur `detectDiscoveries`.
+
+- **Mémoire narrative** (`disc_structural_memory`) : un mouvement « devient structurel » quand sa part dans une famille (poussée / tirage / jambes / tronc) saute nettement vs les 30 jours d’avant — type « les dips structurent désormais ta poussée », pas un simple top d’exercice.
+- **Mix de stimulus** (`disc_stimulus_mix`) : parts **poly / isolation**, **force / endurance musculaire**, **lesté / poids du corps**, comparées à la référence récente. Toujours en parts, jamais « tu te spécialises ».
+- **Cardio ↔ muscu** (`disc_cardio_strength`) : km / minutes de course **et** reps / minutes de renforcement dans la même lecture. Silence s’il n’y a pas de course. Si les deux évoluent en sens inverse, le texte le dit (plus musclé / plus cardio).
+
+### 14.8 Phase 8 — 30 jours et 3 mois au grain du § 14.2
+
+Les plages 30 j. / 3 mois ne reprennent plus le gabarit « ta pratique s’est contractée ». Dès qu’une découverte `now` existe, c’est elle qui occupe Maintenant.
+
+- **30 jours** : volume + durée + reps/séance **contre le mois précédent** ; rebond 7 j. / retrait 28 j. tissés dans la même lecture ; densité reps/h vs **prev30** (plus vs soi-même).
+- **3 mois** : totaux de période + rythme **28 j. vs 28 j.** (jamais 0,6 → 4,5 inventé sur la fenêtre) ; meilleur mois calendaire (`disc_best_month`) ; arc premier mois ↔ 30 derniers jours.
+- **Mix** : vertical / horizontal et unilatéral / bilatéral ajoutés aux parts force / endurance / poly / charges.
+- **Abandon familial** (`disc_family_fade`) : « 18 % de la poussée → 4 % », distinct d’un simple top d’exercice.
+
+### 14.9 Phase 9 — la sélection affiche ce qui répond à la question
+
+Trop de constats valides se marchaient dessus : le gabarit « contraction / spécialisation / programme » pouvait encore gagner les 2 / 3 / 2 places.
+
+- **Priorité par plage** (`PERIOD_DISCOVERY_PRIORITY`) : 30 j. force `volume_shape` + mois d’avant en Maintenant, `best_month` en Parcours ; 3 mois force le rythme 28 j. et l’arc trimestriel.
+- **Rivaux** : on ne montre pas deux lectures qui disent la même chose (`muscle_now` + `push_pull`, `quarter_arc` + `quarter_profile`, émergence + fade, etc.).
+- **Essais génériques coupés** dès qu’une découverte couvre l’angle (plus de `specialization` / `performance` / `program` en doublon).
+- **Poids UI** : les `disc_*` sont favorisés dans la sélection des colonnes.
+
+### 14.10 Phase 10 — Parcours complémentaire + cardio plus fin
+
+- `journey_progress` ne double plus `disc_exercise_progress` (même histoire). Il reste si le Parcours raconte encore *depuis la première saisie*, distinct du meilleur mois.
+- Course ↔ renforcement : part du **temps** d’activité en course, pas seulement km vs reps.
+
+---
+
+## 15. Second but — analyses sommeil liées à l’entraînement
+
+Le § 14 reste le **premier but**. Il n’est pas à 100 %. On le conclut **avant** d’écrire les analyses sommeil.
+
+Ce § 15 est un **but supplémentaire**, pas un remplacement. Les exemples ci-dessous sont le niveau à atteindre **en plus** des textes sport du § 14.2, pour toutes les plages (Aujourd’hui, 7 jours, 30 jours, 3 mois) et les trois angles (Maintenant / Trajectoire / Parcours — ici libellés Court / Moyen / Long terme comme dans les textes cibles).
+
+**État au 1er septembre 2026 :** les nuits Garmin / calendrier sont **branchées** (`src/utils/sport/recapSleepNight.js` → catalogue de séances + `sleepContextForDate`). Le moteur de candidats et une partie des textes § 15.1 existent. Si une variable manque, **rien** n’est affiché. « Pas assez de données de sommeil » n’est pas une analyse ; c’est un état du moteur.
+
+Convention calendaire : le sommeil de la date D = la nuit qui **se termine** le matin D = récupération **avant** la séance du jour D.
+
+---
+
+### 15.1 Exemples cibles — mot pour mot
+
+#### Aujourd’hui — Court terme
+
+Une nuit correcte en durée, mais une récupération moins complète
+
+Cette nuit, tu as dormi 7 h 46, contre 7 h 58 de moyenne sur tes 7 dernières nuits. L'écart de 12 minutes est faible et ne constitue donc pas une réduction significative de ton temps de sommeil. La différence se situe davantage dans l'architecture : 1 h 02 de sommeil profond, 1 h 31 de REM et 5 h 13 de sommeil léger, avec seulement 18 minutes éveillé. Ton sommeil est donc resté relativement continu malgré une durée légèrement inférieure à ton niveau récent.
+
+La nuit précédente te place dans une zone favorable à ton volume habituel
+
+Sur les séances réalisées après au moins 7 h 30 de sommeil, ton volume moyen atteint 338 reps, contre 251 reps lorsque le sommeil passe sous 7 h 30. La nuit dernière, avec 7 h 46, te situe donc dans la plage où ton historique montre habituellement tes séances les plus volumineuses. Ta séance d'aujourd'hui atteint justement 360 reps, soit 22 reps au-dessus de cette moyenne.
+
+Le sommeil ne joue pas seulement sur le volume
+
+Tes séances réalisées après des nuits d'au moins 7 h 30 présentent également une durée moyenne de 1 h 03, contre 52 minutes après les nuits sous 7 h 30. Aujourd'hui, tu t'entraînes pendant 1 h 05. La combinaison sommeil + durée d'entraînement correspond donc très précisément à ton profil de journées où l'exposition est élevée.
+
+Récupération physiologique
+
+Ta fréquence cardiaque nocturne moyenne est de 57 bpm, contre 59 bpm sur les 7 dernières nuits, tandis que ton Body Battery passe de 38 à 92 pendant la nuit. La recharge atteint donc +54 points, contre +47 points en moyenne. La nuit est ainsi meilleure que ton niveau récent sur deux indicateurs de récupération indépendants de la seule durée de sommeil.
+
+#### Aujourd’hui — Moyen terme
+
+Ta séance s'inscrit dans une plage de performance associée à un sommeil suffisant
+
+Sur les 14 dernières séances, les journées précédées d'au moins 7 h 30 de sommeil totalisent en moyenne 347 reps, tandis que celles précédées de moins de 7 h 30 atteignent 238 reps. L'écart est de 109 reps par séance, soit environ 46 % de volume supplémentaire dans la plage de sommeil la plus élevée.
+
+Aujourd'hui, avec 7 h 46 de sommeil et 360 reps, tu te situes au-dessus des deux références : +13 reps par rapport aux séances similaires réalisées après une nuit ≥ 7 h 30 et +122 reps par rapport aux séances suivant une nuit < 7 h 30.
+
+Le seuil des 7 h 30 apparaît nettement dans ton historique récent
+
+Sur les 14 séances étudiées, 10 des 11 séances dépassant 300 reps ont été précédées d'au moins 7 h 30 de sommeil. À l'inverse, 5 des 6 séances sous 250 reps ont suivi une nuit inférieure à 7 h 30. Ton historique récent montre donc une séparation très nette entre les journées à forte exposition et les nuits courtes.
+
+Le phénomène concerne surtout la quantité de travail réalisée : les performances individuelles sur un exercice donné varient moins fortement que le volume total de séance. Le sommeil semble donc davantage associé à ta capacité à maintenir une séance longue et volumineuse qu'à une augmentation automatique de chaque série.
+
+La continuité du sommeil renforce cette relation
+
+Les séances dépassant 300 reps ont été précédées de nuits comportant en moyenne 24 minutes éveillé, contre 41 minutes pour les séances sous 250 reps. Aujourd'hui, tu n'as passé que 18 minutes éveillé. Tu cumules donc une durée de sommeil élevée avec une continuité supérieure à celle observée dans tes journées à faible volume.
+
+#### Aujourd’hui — Long terme
+
+Ton historique commence à faire apparaître une véritable zone de fonctionnement
+
+Sur les trois derniers mois, tes journées d'entraînement les plus productives ne se répartissent pas uniformément selon le sommeil. Les séances dépassant 300 reps apparaissent majoritairement après des nuits d'au moins 7 h 30, alors que les journées sous 200 reps sont beaucoup plus fréquentes après des nuits courtes ou irrégulières.
+
+Le seuil le plus discriminant de ton historique se situe autour de 7 h 30–8 h : au-dessus de cette zone, ton volume moyen atteint environ 340 reps ; entre 6 h 30 et 7 h 30, il descend autour de 270 reps ; sous 6 h 30, il tombe autour de 190 reps.
+
+Ton sommeil semble davantage déterminer ton potentiel de volume que ta fréquence d'entraînement
+
+Les périodes où tu dors suffisamment ne correspondent pas seulement à davantage de séances : elles correspondent également à des séances plus longues et plus volumineuses. En juin, par exemple, tu réalises 6 651 reps sur le mois, avec 21 jours entraînés et 17 h 40 d'exercice. Sur les périodes de moindre exposition, la diminution du volume s'accompagne aussi d'une fréquence de sommeil moins régulière.
+
+Ton historique montre donc deux variables qui évoluent ensemble : la continuité de la pratique et la continuité du sommeil. Les meilleurs mois d'entraînement ne sont pas uniquement ceux où tu accumules le plus de jours actifs ; ce sont également ceux où ton sommeil permet de maintenir cette exposition.
+
+#### 7 jours — Court terme
+
+Ta semaine présente une relation claire entre sommeil et charge quotidienne
+
+Sur les 7 derniers jours, tu as dormi en moyenne 7 h 34, avec une amplitude allant de 6 h 41 à 8 h 12. Tes trois journées d'entraînement totalisent 1 049 reps. La journée à 360 reps suit la meilleure nuit de la semaine avec 7 h 46, tandis que la séance à 329 reps suit 8 h 12 de sommeil. La troisième journée, à 360 reps, complète le volume hebdomadaire après une nuit de 7 h 04.
+
+Les deux nuits supérieures à 7 h 30 précèdent donc 689 des 1 049 reps de la semaine, soit 66 % du volume hebdomadaire, alors qu'elles représentent seulement 29 % des nuits observées.
+
+Le sommeil profond reste stable malgré les variations de durée
+
+Ton sommeil profond varie entre 54 minutes et 1 h 18, alors que la durée totale varie de plus d'une heure et demie. Cette stabilité relative signifie que tes nuits courtes proviennent principalement d'une réduction du sommeil léger et du REM, plutôt que d'une disparition proportionnelle du sommeil profond.
+
+Le REM présente en revanche une amplitude plus importante : 1 h 08 sur la nuit de 6 h 41 contre 1 h 46 sur la nuit de 8 h 12. Les nuits longues augmentent donc principalement l'espace disponible pour le REM dans ton profil récent.
+
+Ton Body Battery confirme la différence entre durée et récupération
+
+Les nuits dépassant 7 h 30 produisent en moyenne +52 points de Body Battery, contre +38 points sous ce seuil. La différence de 14 points par nuit est cohérente avec l'écart observé dans le volume d'entraînement du lendemain.
+
+#### 7 jours — Moyen terme
+
+La semaine montre déjà une relation dose-réponse
+
+Tes journées précédées de plus de 7 h 30 de sommeil atteignent 344 reps en moyenne, contre 238 reps après les nuits plus courtes. L'écart de 106 reps représente environ 45 % de volume supplémentaire.
+
+La relation devient encore plus nette avec les nuits dépassant 8 h : les journées suivantes atteignent 360 reps en moyenne, soit environ 51 % de plus que les journées suivant moins de 7 h 30.
+
+Le facteur déterminant n'est pas uniquement la durée
+
+Les journées dépassant 300 reps sont associées à 7 h 52 de sommeil moyen, 1 h 21 de REM, 1 h 07 de profond et +55 points de Body Battery pendant la nuit précédente. Les journées sous 250 reps sont associées à 6 h 58, 1 h 09 de REM, 54 min de profond et +39 points de Body Battery.
+
+La différence entre tes journées fortes et faibles apparaît donc simultanément sur la durée, le REM et la recharge nocturne, tandis que le sommeil profond reste beaucoup plus stable.
+
+La régularité du sommeil accompagne la régularité de l'entraînement
+
+Tes trois journées d'entraînement de la semaine sont espacées de 1 à 2 jours, tandis que tes horaires de coucher oscillent de seulement 1 h 04. Sur les semaines où cette amplitude reste sous environ une heure et demie, ton volume moyen dépasse 320 reps par séance. Les semaines présentant des décalages horaires plus importants descendent autour de 270 reps par séance.
+
+#### 7 jours — Long terme
+
+Ton sommeil récent confirme un profil déjà visible dans l'historique sportif
+
+Les 1 049 reps réalisées cette semaine ne représentent pas simplement trois séances isolées : elles prolongent une relation déjà observable sur les périodes précédentes entre sommeil suffisant et capacité à maintenir un volume élevé.
+
+Ton profil actuel place 7 h 30 de sommeil comme une frontière particulièrement informative : au-dessus, ton volume moyen se situe autour de 340 reps ; en dessous, il se rapproche de 240–250 reps. Le seuil ne signifie pas qu'une nuit courte empêche mécaniquement l'entraînement ; il sépare surtout deux régimes de volume qui apparaissent régulièrement dans ton historique.
+
+Les nuits longues semblent également favoriser la répétition des bonnes journées
+
+Tes semaines contenant au moins 4 nuits au-dessus de 7 h 30 présentent une moyenne de 4,1 jours actifs, contre 2,8 jours lorsque ce seuil n'est atteint que deux fois ou moins. La différence porte donc à la fois sur le nombre de jours où tu t'entraînes et la quantité de travail réalisée lors de ces journées.
+
+#### 30 jours — Moyen terme
+
+Ton mois révèle un lien beaucoup plus robuste
+
+Sur les 30 derniers jours, tu as réalisé 15 jours d'entraînement pour 4 556 reps, soit environ 304 reps par jour entraîné. Les journées précédées d'au moins 7 h 30 de sommeil représentent 9 séances et concentrent 3 270 reps, soit 80 % de ton volume réalisé, alors qu'elles représentent seulement 60 % de tes séances.
+
+Les sept nuits sous 7 h 30 sont associées à seulement 820 reps, soit 117 reps par nuit courte, contre 364 reps par nuit suffisamment dormie lorsqu'on rapporte le volume à la fréquence des journées suivantes.
+
+La durée du sommeil explique davantage le volume que le nombre de séances
+
+Ton mois compte 15 jours entraînés, mais la différence entre les journées fortes et faibles vient surtout du volume réalisé à l'intérieur de ces journées. Les séances suivant plus de 7 h 30 totalisent en moyenne 363 reps, contre 205 reps après une nuit courte.
+
+La différence atteint 158 reps par séance. Une partie importante de ton volume mensuel est donc concentrée derrière un nombre relativement limité de nuits bien récupérées.
+
+Le sommeil profond n'est pas le principal facteur discriminant
+
+Ton sommeil profond mensuel reste autour de 1 h 05 par nuit, avec seulement quelques minutes d'écart entre les journées à haut et faible volume. Le facteur qui distingue le mieux les deux profils est la durée totale, suivie du REM et de la recharge Body Battery, plutôt que le temps passé en sommeil profond.
+
+#### 30 jours — Long terme
+
+Ton profil de récupération se précise
+
+Sur les 30 jours, tes données établissent trois zones comportementales :
+
+≥ 8 h de sommeil : environ 364 reps le lendemain.
+7 h 30–8 h : environ 335 reps.
+< 7 h 30 : environ 205 reps.
+
+La différence entre la première et la troisième zone atteint 159 reps, soit environ 77 % de volume supplémentaire après les nuits de plus de 8 h.
+
+Le sommeil agit surtout sur ta capacité à maintenir l'exposition
+
+Tes meilleures journées ne correspondent pas systématiquement à tes meilleures performances sur chaque exercice. Elles correspondent surtout aux journées où tu parviens à accumuler beaucoup de travail sans réduire fortement la durée de la séance.
+
+C'est particulièrement visible avec tes 360 reps en 1 h 05 : le sommeil ne se traduit pas simplement par une meilleure série de tractions ou de dips ; il apparaît dans ta capacité globale à maintenir une séance complète avec plusieurs mouvements et plusieurs groupes musculaires.
+
+#### 3 mois — Long terme
+
+Le sommeil devient une variable explicative de ta progression
+
+Sur trois mois, tu totalises 17 916 reps, 58 jours entraînés, 48 h 38 d'exercices et 52 h 37 d'activité totale, avec un maximum de 20 jours consécutifs.
+
+Ton sommeil permet de replacer ces chiffres dans leur contexte. Les périodes présentant une moyenne supérieure à 7 h 30 concentrent près des deux tiers des journées dépassant 300 reps, alors qu'elles ne représentent qu'un peu plus de la moitié des nuits. Les périodes sous 7 h 30 sont au contraire surreprésentées dans les journées à faible volume.
+
+La progression dépend donc de l'accumulation de bonnes journées
+
+Tes 17 916 reps ne proviennent pas d'une augmentation uniforme de ton volume quotidien. Elles résultent principalement de l'accumulation de journées où tu combines sommeil suffisant + entraînement complet + durée élevée de séance.
+
+Ton mois de juin illustre cette dynamique avec 6 651 reps, 21 jours entraînés et 17 h 40 d'exercice. Le sommeil devient alors une variable permettant d'expliquer pourquoi certaines périodes autorisent une exposition beaucoup plus importante que d'autres.
+
+La régularité constitue le signal le plus important sur trois mois
+
+Ton record de 20 jours consécutifs montre que ta capacité à maintenir l'entraînement existe. La différence entre une période productive et une période moins productive réside davantage dans la répétition de journées suffisamment récupérées que dans l'existence d'un niveau maximal ponctuel.
+
+Le sommeil devient ainsi une composante du potentiel d'entraînement durable : les nuits suffisamment longues augmentent la probabilité d'une journée à fort volume, la répétition de ces journées augmente l'exposition mensuelle, et l'exposition répétée fournit davantage d'occasions de faire progresser tes mouvements de référence.
+
+---
+
+### 15.2 Règle de silence
+
+Le système doit savoir **ne rien afficher** lorsqu'une donnée ne permet pas de produire une observation réellement informative.
+
+« Pas assez de données de sommeil » n'est pas une analyse ; c'est un état du moteur.
+
+| Situation | Comportement |
+|-----------|----------------|
+| Donnée absente + aucune analyse possible | Ne rien afficher. Pas de phrase d’excuse. |
+| Donnée absente aujourd’hui, mais historique suffisant | Utiliser l’historique (ex. 180 nuits, même sans nuit du jour). |
+| Donnée partielle | Utiliser uniquement les variables disponibles (durée + efficacité, REM absent → pas de phrase REM). |
+| Nouvelle connexion Garmin | Distinguer *donnée absente* de *donnée jamais disponible historiquement*. Ne pas traiter l’absence historique comme une absence réelle de sommeil. |
+
+---
+
+### 15.3 Principe fondamental — chaîne obligatoire
+
+Momentum doit fonctionner selon cette chaîne :
+
+**Données brutes → métriques dérivées → références personnelles → comparaisons → relations entre variables → détection de tendances → interprétation → sélection des observations → rédaction.**
+
+Et non :
+
+**Données → prompt → paragraphe générique.**
+
+C'est cette différence qui explique pourquoi les analyses actuelles se répètent.
+
+La vraie priorité technique n'est donc pas de perfectionner le prompt de rédaction : c'est de construire **Baseline Engine + Comparable Sessions + Trend Engine + Correlation Engine + Insight Scoring + Deduplication**. Le LLM, s’il intervient un jour, transforme uniquement des résultats analytiques **déjà validés** en texte naturel. Le moteur Recap actuel reste déterministe.
+
+---
+
+### 15.4 Première étape — vraie base de référence personnelle
+
+Le chiffre du jour n'a presque jamais de sens seul.
+
+Pour chaque métrique importante, Momentum doit connaître plusieurs références :
+
+**Référence immédiate** — ce que l'utilisateur faisait récemment.
+
+Exemple : 7 derniers jours : 3,5 séances/semaine ; 28 jours précédents : 4,2 séances/semaine.
+
+**Référence habituelle** — une moyenne ou médiane calculée sur une période suffisamment longue.
+
+Exemple : fréquence habituelle : 4,1 séances/semaine.
+
+**Référence comparable** — probablement la plus importante.
+
+Pour une séance de tractions aujourd'hui, comparer avec : les séances de tractions récentes ; les mêmes variantes ; les mêmes plages de répétitions ; idéalement une structure similaire ; éventuellement des conditions de récupération similaires.
+
+Ainsi : 48 répétitions aujourd'hui devient : 48 répétitions, contre 41 en moyenne sur tes 8 dernières séances comparables, soit +17 %. L'utilisateur n'aurait jamais obtenu cette information en regardant simplement « 48 reps ».
+
+---
+
+### 15.5 Quatre concepts à séparer
+
+Indispensable pour éviter les mauvaises interprétations.
+
+**Exposition** — combien l'utilisateur pratique quelque chose : nombre de séances, fréquence, répétitions, séries, temps, kilomètres, volume musculaire, fréquence d'un exercice.
+
+**Performance** — ce que l'utilisateur produit lorsqu'il pratique : reps/série, charge, distance, allure, temps, meilleure série, e1RM, densité, amplitude si disponible.
+
+**Capacité** — le niveau relativement stable que l'utilisateur semble capable de reproduire. Exemple : moyenne des meilleures séries sur les 10 dernières séances.
+
+**Récupération** — les conditions dans lesquelles la performance intervient : sommeil, durée, efficacité, REM, sommeil profond, FC repos, HRV, stress, activité précédente, charge récente, jours depuis dernière séance similaire.
+
+C'est leur **interaction** qui produit les analyses vraiment intéressantes.
+
+---
+
+### 15.6 Le sommeil ne doit jamais être analysé isolément
+
+C'est exactement là où Momentum peut devenir beaucoup plus avancé.
+
+Pour chaque nuit, conserver au minimum :
+
+- durée totale de sommeil ;
+- heure d'endormissement ;
+- heure de réveil ;
+- temps éveillé ;
+- efficacité du sommeil ;
+- sommeil profond ;
+- sommeil léger ;
+- REM ;
+- fréquence cardiaque moyenne ;
+- fréquence cardiaque au repos ;
+- HRV lorsque disponible ;
+- respiration ;
+- éventuels scores Garmin disponibles ;
+- Body Battery (début / fin / recharge nocturne) lorsqu’il existe.
+
+Puis les mettre en **relation** avec les données sportives du lendemain.
+
+Il n’y a pas deux blocs séparés « Analyse sommeil » et « Analyse sport ». Il y a une analyse de la relation **récupération ↔ comportement ↔ performance**.
+
+---
+
+### 15.7 Au-delà de la durée — seuils, couples, effets retardés, interactions
+
+**Durée seule (exemple de table interne)**
+
+| Sommeil | Volume moyen le lendemain |
+|---------|---------------------------|
+| ≥ 8 h | 347 reps |
+| 7–8 h | 301 reps |
+| < 7 h | 246 reps |
+
+Après suffisamment de nuits : « Tes journées suivant au moins 8 h de sommeil sont associées à un volume moyen de 347 répétitions, contre 246 lorsque le sommeil passe sous 7 h. L'écart atteint 101 répétitions, soit environ 41 %. »
+
+On n’affiche plus « Tu as bien dormi. » On affiche l’**effet observé** dans l’historique de cette personne.
+
+**Plus loin que la durée**
+
+Exemple : « La durée seule ne semble pas expliquer entièrement ton volume d'entraînement : à durée de sommeil comparable, tes journées précédées d'une nuit avec une efficacité ≥ 90 % produisent en moyenne 12 % plus de répétitions que celles où l'efficacité descend sous 90 %. »
+
+Encore mieux : « Tes meilleures journées d'entraînement apparaissent surtout lorsque trois conditions sont réunies : au moins 7 h 45 de sommeil, efficacité ≥ 90 % et absence de déficit important de sommeil sur les deux nuits précédentes. Dans cette configuration, ton volume moyen atteint 326 répétitions, contre 247 lorsque ces conditions ne sont pas réunies. »
+
+**Seuils personnels, pas seulement des corrélations**
+
+Pour chaque variable : Sommeil ≥ 8 h / 7–8 h / < 7 h → performance moyenne. Puis REM élevé / moyen / faible ; sommeil profond ; HRV ; etc. Le système cherche ensuite les seuils qui **séparent réellement** les comportements.
+
+Exemple : sous 7 h 15, la fréquence tombe à 2,8 séances/semaine ; au-dessus de 7 h 45, elle atteint 4,6. Infiniment plus utile que « tu dors suffisamment ».
+
+**Couples de variables à tester**
+
+- Sommeil → volume (durée ↔ reps)
+- Sommeil → performance (durée ↔ reps/série)
+- Sommeil → intensité (proximité de l’échec)
+- Sommeil → fréquence (probabilité de s’entraîner)
+- Sommeil → récupération (séance suivante)
+- Sommeil → continuité (streak)
+- Sommeil → cardio (allure / FC / distance)
+- Sommeil → fatigue (baisse sur plusieurs jours)
+
+**Effets retardés**
+
+La nuit précédente n’est pas la seule chose importante. Tester :
+
+- Sommeil J-1 → performance J
+- Sommeil J-2 → performance J
+- sommeil moyen J-1/J-2 → performance J
+- déficit cumulé sur 3 nuits → performance J
+
+Exemple : « Ton volume ne décroche pas après une seule nuit courte : la baisse apparaît surtout lorsque le déficit de sommeil se répète au moins deux nuits. Après deux nuits sous 7 h, ton volume moyen tombe à 238 reps, contre 319 reps lorsque les deux nuits précédentes dépassent 7 h 30. »
+
+**Interactions**
+
+Une variable peut n’avoir quasiment aucun effet seule mais devenir importante combinée à une autre.
+
+`sommeil < 7 h` peut être peu problématique si l’entraînement précédent était léger. `sommeil < 7 h + volume élevé la veille` peut fortement dégrader la séance suivante.
+
+Tester : Sommeil × charge précédente ; × fréquence ; × intensité ; × récupération ; × type d’entraînement.
+
+Exemple : « Après une nuit de moins de 7 h, tes séances de poussée conservent 94 % de leur volume habituel, tandis que tes séances de tirage tombent à 81 %. » Le déficit ne touche pas toutes les qualités de la même manière. Le tirage apparaît comme la qualité la plus sensible à une mauvaise récupération dans cet historique.
+
+---
+
+### 15.8 Séances comparables, mémoire d’exercice, trajectoire
+
+**Séance comparable** — une séance de 48 dips + 48 australiennes + 60 relevés de genoux ne se compare pas à une séance de jambes.
+
+Familles : poussée (pompes, dips, variantes) ; tirage vertical (tractions) ; tirage horizontal (australiennes, rowings) ; bras ; épaules ; jambes ; core.
+
+Comparer dans cet ordre : mouvement exact → variante → famille → groupe musculaire.
+
+**Nouveaux exercices** — pas d’historique → ne pas prétendre à une progression. Reconnaître « nouveau mouvement », analyser l’intégration.
+
+Exemple : « Les tractions neutres apparaissent pour la première fois cette semaine et représentent déjà 14 % de ton volume de tirage. Elles s'intègrent donc rapidement à ton entraînement sans remplacer les tractions pronation, qui restent majoritaires. »
+
+Après plusieurs semaines : « Après 6 semaines, les tractions neutres sont devenues une composante régulière de ton tirage : 3,1 séances sur 5 en contiennent désormais, contre 1,2 sur 5 durant les deux premières semaines. »
+
+Puis seulement plus tard : « La performance moyenne sur les tractions neutres progresse de 21 % depuis leur introduction. »
+
+**Exercices abandonnés** — « Les dips ont représenté 18 % de ton volume de poussée en juin, contre 4 % sur les 30 derniers jours. Leur disparition explique une grande partie de la baisse récente du volume de triceps, malgré une fréquence d'entraînement globalement stable. »
+
+**Mémoire de chaque exercice** : première / dernière apparition, nombre de séances, fréquence, volume total et moyen, meilleure série, meilleure performance, moyenne récente / historique, tendance, variabilité, progression, stagnation, abandon, reprise, temps depuis dernière pratique.
+
+Exemples : « Tu reprends les dips après 18 jours d'absence et produis immédiatement 92 % de ton volume habituel. » / « Après 6 semaines sans pratique, ta première séance revient à 71 % de ton niveau historique. »
+
+**Long terme = trajectoire**, jamais « tu manques de régularité ». Répondre : où étais-tu ? où es-tu ? quelle trajectoire ? qu’est-ce qui a changé / est devenu stable / disparaît ? quels paliers consolidés ?
+
+Exemple : « Depuis ta première saisie, ton volume moyen sur les tractions pronation est passé de 18 à 27 répétitions par séance comparable, soit +50 %. Cette progression s'accompagne d'une augmentation de la fréquence d'exposition de 1,4 à 2,3 séances par semaine. Le niveau actuel n'est donc pas seulement supérieur : il est désormais reproduit régulièrement sur plusieurs semaines. »
+
+**Changements de régime** — plus puissant qu’une simple progression. Juin 4,8 séances/semaine, juillet 3,9, août 3,2 → « Depuis juillet, ta fréquence s'est installée environ 30 % sous ton niveau observé en juin. Cette baisse coïncide avec une diminution du volume total, mais pas avec une baisse équivalente des performances sur les mouvements que tu continues à pratiquer. Ton régime actuel est donc caractérisé par moins d'exposition, plutôt que par une perte générale de capacité. »
+
+---
+
+### 15.9 Densité adaptative, missions des horizons, confiance interne
+
+**Ne pas forcer** trois paragraphes de même longueur. Chaque période a un budget, le moteur choisit les observations **réellement disponibles**.
+
+| Période | Budget d’observations fortes |
+|---------|------------------------------|
+| Aujourd’hui | 2–4 par horizon |
+| 7 jours | 3–5 |
+| 30 jours | 4–6 |
+| 3 mois | 5–8 |
+| 1 an+ | 6–10 si l’historique le justifie |
+
+La quantité dépend de la richesse analytique, pas d’un nombre arbitraire de phrases.
+
+**Missions des horizons** (complémentaires, pas concurrentes) :
+
+| Horizon | Question | Fenêtre indicative |
+|---------|----------|-------------------|
+| Court terme | Qu’est-ce qui vient de changer ? | ~7–21 jours : évolution récente, récupération, fréquence, charge, volume, réaction, sommeil récent, performances comparables récentes. |
+| Moyen terme | Qu’est-ce qui est en train de devenir une tendance ? | ~1–3 mois : cycles, adaptations, habitudes, progression, stagnation, déséquilibres, exposition/performance, récupération, exercices structurants. |
+| Long terme | Qu’est-ce qui a réellement changé dans ton profil ? | 3 mois → années : première saisie, records consolidés, changements de profil, abandons, ruptures, spécialisation, évolution de la récupération et du volume. |
+
+**Confiance interne, jamais affichée** sous forme de « peut-être ». Le moteur attribue : nombre d’observations, durée, stabilité, taille de l’effet, reproductibilité, qualité des données, comparabilité.
+
+Exemple interne publié : relation sommeil → volume, n = 47 nuits, effet +18 %, répétabilité élevée, dispersion faible.
+
+Exemple interne **refusé** : n = 4, effet +31 %, dispersion énorme → **pas d’analyse**.
+
+**Seuil minimal avant de publier une corrélation** : assez de jours, de séances, de nuits, de cas dans chaque groupe, effet assez grand, stabilité suffisante. Une corrélation ne naît pas parce que « cette semaine tu as dormi 8 h et fait beaucoup de reps ». Elle naît parce que l’historique montre un phénomène **reproductible**.
+
+---
+
+### 15.10 Aucune phrase vide — couches d’une observation
+
+Chaque phrase doit apporter quelque chose que l’utilisateur **ne voit pas directement**.
+
+Bannir : « Ton dos est légèrement devant tes pectoraux. » (il voit déjà Dos 77 / Pectoraux 60.)
+
+À la place : « Le dos représente 30 % de ton volume musculaire de la séance et dépasse les pectoraux de 28 %. Cette dominante vient principalement des 48 répétitions d'australiennes, qui représentent à elles seules la majorité de ton exposition de tirage. »
+
+Format idéal : **constat + comparaison + quantification + interprétation**.
+
+Exemple : « Tu réalises aujourd'hui 48 répétitions d'australiennes, soit 17 % de plus que ta moyenne sur les séances comparables, alors que ton volume total reste proche de ton niveau habituel. La hausse vient donc spécifiquement du tirage horizontal plutôt que d'une augmentation générale du volume de séance. »
+
+Encore mieux, plusieurs dimensions : « Avec 360 répétitions en 1 h 05, ta séance atteint 92 répétitions par heure, soit 14 % de plus que ta moyenne des 10 dernières séances. Cette densité supérieure intervient alors que ton sommeil de la nuit précédente atteint 8 h 12 avec une efficacité de 93 %, conditions qui figurent également parmi tes meilleures configurations de récupération. »
+
+**Familles d’insights à chercher systématiquement** : progression (PR, moyenne, consolidée, vitesse) ; régression (réelle vs liée à l’exposition vs après interruption) ; régularité (fréquence, streak, interruptions, retour) ; volume ; densité ; répartition ; spécialisation ; nouveautés ; abandons ; consolidation ; variabilité ; récupération ; relations (sommeil → performance, fréquence → progression, volume → progression, récupération → fréquence, charge → fatigue) ; jalons (première séance, première traction, 100e séance, 1 000e rep).
+
+Garmin = **contexte**, jamais un bloc séparé. Exemple : « Après tes nuits dépassant 8 h, tu t'entraînes en moyenne 4,7 jours sur 7 et atteins 318 répétitions par journée d'entraînement. Sous 7 h, ces valeurs tombent respectivement à 3,1 jours et 247 répétitions. Le sommeil apparaît ainsi davantage associé à ta capacité à maintenir le rythme qu'à la seule performance d'une séance isolée. »
+
+---
+
+### 15.11 Architecture de sélection
+
+```
+RAW DATA
+   ↓
+NORMALISATION
+   ↓
+METRICS ENGINE
+   ↓
+PERSONAL BASELINES
+   ↓
+COMPARABLE SESSIONS
+   ↓
+TREND ENGINE
+   ↓
+CORRELATION ENGINE
+   ↓
+EVENT DETECTION
+   ↓
+INSIGHT CANDIDATES
+   ↓
+SCORING
+   ↓
+DÉDUPLICATION
+   ↓
+HORIZON CLASSIFICATION
+   ↓
+NARRATIVE GENERATION
+```
+
+Le moteur génère des **candidats**, pas directement du texte.
+
+```
+INSIGHT
+type: sleep_performance
+period: 30d
+sleep_condition: >= 7h45
+nights: 21
+training_volume: +18.4%
+performance: +11.2%
+frequency: +9.8%
+confidence: high
+novelty: high
+```
+
+Puis le générateur transforme cela en phrase.
+
+**Déduplication obligatoire.** Chaque insight a une signature (ex. `frequency_decline`). Si le même insight apparaît déjà dans une période plus courte, la période supérieure doit : apporter une nouvelle dimension ; ou le reformuler à un niveau supérieur ; ou ne pas l’afficher.
+
+Exemple de quatre niveaux distincts sur la même donnée :
+
+- Aujourd’hui — 360 reps, soit +18 % par rapport à ta moyenne de séance.
+- 7 jours — volume hebdomadaire +11 % au-dessus de ta moyenne récente.
+- 30 jours — volume mensuel encore 7 % sous le niveau habituel malgré la reprise récente.
+- 3 mois — trimestre marqué par une fréquence inférieure à celle du début de période.
+
+**Hiérarchie de valeur** : nouveauté × importance × ampleur × fiabilité × personnalisation × actionnabilité.
+
+« Tu as fait 360 reps » → score quasiment nul.
+
+« Tes journées suivant ≥ 7 h 45 de sommeil produisent 22 % plus de volume sur les 46 séances observées, et l'écart reste présent lorsque la fréquence d'entraînement et le volume de la veille sont contrôlés » → score très élevé.
+
+C’est ce système qui permet de remplir une page avec 5 analyses exceptionnelles plutôt que 15 phrases génériques.
+
+---
+
+### 15.12 Résultat final recherché (niveau à viser)
+
+Quand l’utilisateur ouvre Aujourd’hui, Momentum devrait pouvoir dire, **sans** « si », « on pourrait », « il serait intéressant de », ni répétition artificielle :
+
+Tu as réalisé 360 répétitions aujourd'hui, soit 12 % au-dessus de ta moyenne sur tes séances comparables. La séance est également plus dense que ton niveau habituel, avec 92 répétitions par heure contre 81 en moyenne.
+
+Puis : Tes 48 répétitions d'australiennes représentent ton meilleur volume sur ce mouvement depuis 19 jours et dépassent de 16 % ta moyenne des 8 dernières séances comparables. Les dips atteignent également leur deuxième meilleur volume récent, ce qui place la séance parmi tes journées de poussée/tirage les plus productives du mois.
+
+Puis : La récupération précédant cette séance figure parmi tes meilleures configurations récentes : 8 h 12 de sommeil, 93 % d'efficacité et une durée REM supérieure à ta moyenne. Dans ton historique, les journées précédées par au moins 7 h 45 de sommeil et une efficacité supérieure à 90 % produisent 19 % plus de volume que les journées ne réunissant pas ces deux conditions.
+
+Et plus loin : Sur les 30 derniers jours, ta fréquence reste inférieure à ton niveau habituel, mais ta performance par séance ne suit pas cette baisse. Tu produis donc moins parce que tu t'exposes moins, pas parce que chaque séance est devenue moins productive.
+
+Et enfin : Depuis tes premières saisies, tes mouvements de tirage ont progressivement pris une place plus importante dans ta pratique : leur fréquence est désormais 1,7 fois supérieure à celle observée durant ta première période de référence, tandis que plusieurs performances autrefois ponctuelles sont maintenant reproduites régulièrement.
+
+Le moteur a déjà fait le travail statistique **avant** que le texte existe.
+
+---
+
+### 15.13 Données déjà branchées (1er septembre 2026) — pas encore d’analyse
+
+Source unique : `src/utils/sport/recapSleepNight.js`.
+
+Lit `garminData.dailyMetrics[ymd].sleep` avec les **mêmes alias** que le calendrier (`calendarDayRecapDetail`) et l’onglet Garmin :
+
+- durée : `duration` | `totalSleep` | `totalMinutes` — **< 24 = heures**, sinon minutes ;
+- profond : `deep` | `deepSleep` ;
+- léger : `light` | `lightSleep` ;
+- REM : `rem` | `remSleep` ;
+- éveillé : `awake` | `awakeSleep` ;
+- efficacité / score : `efficiency` | `sleepEfficiency` | `quality` | `score` ;
+- coucher / réveil : `bedTime` | `startTime` / `wakeTime` | `endTime` ;
+- FC nocturne : `avgHR` | `averageHeartRate` | … ;
+- FCR : `heartRate.resting` | `restingHeartRate` ;
+- HRV si présent ;
+- Body Battery : scalaire **ou** `{ start, end, charged }` (alias `chargedFrom` / `chargedTo` / `low` / `high`).
+
+Nuit absente ou < 90 minutes → `null`. Pas de phrase.
+
+Branché sur :
+
+- le catalogue de séances (`buildSessionCatalog`) : chaque jour entraîné porte `night` + `sleepHours` ;
+- `sleepContextForDate` : nuit du jour + **7 dernières nuits réellement présentes** (jours sans sommeil sautés), pas seulement les nuits des jours d’entraînement.
+
+### 15.15 Phases 10–12 — moteur de corrélation + textes au grain § 15.1
+
+Module : `src/utils/sport/recapSleepCorrelation.js`.
+
+Phase 10 :
+
+- Joint séance ↔ nuit (la nuit qui se termine le matin D).
+- Publie **seulement** si n et effet tiennent : seuil 7 h 30 / 8 h, zones, séparation 300 vs 250 reps, architecture, déficit sur **deux** nuits.
+- Sinon : tableau vide. Aucune phrase « pas assez de données de sommeil ».
+
+Phase 11 :
+
+- J-2 **calendaire** (nuit de D-1), plus la séance précédente.
+- Efficacité ≥ 90 % **à durée comparable**.
+- Interaction poussée vs tirage après nuit < 7 h.
+- Trio ≥ 7 h 45 + efficacité ≥ 90 % + pas de déficit sur les deux nuits.
+- Concentration de fenêtre (volume derrière un petit nombre de nuits) + profond stable.
+- Textes aujourd’hui / 7 j. collés plus près des exemples § 15.1 (architecture, placement vs 7 h 30, durée de séance, FC / Body Battery).
+
+Phase 12 :
+
+- 30 j. : `disc_sleep_month` (concentration + reps/séance, pas une copie de la semaine).
+- 3 mois : `disc_sleep_quarter` (part des journées ≥ 300 derrière nuits ≥ 7 h 30) + meilleur mois recollé au sommeil.
+- Sommeil × charge de la veille (`disc_sleep_load`).
+- Semaines à ≥ 4 nuits longues ↔ plus de jours actifs (`disc_sleep_freq`).
+- Dédup : aujourd’hui / 7 j. gardent le seuil ; 30 j. / 3 mois reformulent.
+
+Encore ouvert : budgets adaptatifs § 15.9, sommeil × intensité / cardio.
+
+---
+
+### 15.14 Ordre de travail
+
+1. Le but sport § 14.2 est quasi clos (~96 %). Unilatéral seulement si le nom le porte.
+2. Le but sommeil § 15.1 : 30 j. / 3 mois branchés ; rester silencieux si le candidat n’est pas publiable.
+3. Ne jamais afficher « Pas assez de données de sommeil ».
+
+---
+
+## 16. Jauge — totalité des accomplissements prévus
+
+Barème unique pour tout le document (fondations déjà livrées + but sport § 14 + but sommeil § 15).  
+Mis à jour à chaque lot. Date : **1er septembre 2026, fin de phase 12**.
+
+| # | Accomplissement | Poids | Fait |
+|---|-----------------|------:|-----:|
+| 1 | Natures + `athleteJourney` (§ 13) | 12 | 100 % |
+| 2 | Pipeline inversé + questions par plage (§ 14.1–14.3) | 8 | 100 % |
+| 3 | Découvertes de période (§ 14.4) | 10 | 98 % |
+| 4 | Baselines / comparables / mémoire courte (§ 14.5) | 8 | 90 % |
+| 5 | Sources alignées sur le bandeau (§ 14.6) | 8 | 95 % |
+| 6 | Densité des textes § 14.2 sur **toutes** les plages | 14 | 95 % |
+| 7 | Mémoire structurelle + abandon familial | 6 | 90 % |
+| 8 | Mix force / endurance / poly / charges / plans | 6 | 92 % |
+| 9 | Relation cardio ↔ muscu | 6 | 82 % |
+| 10 | Données sommeil Garmin / calendrier branchées | 5 | 100 % |
+| 11 | Moteur de corrélation sommeil (§ 15.3–15.11) | 9 | 88 % |
+| 12 | Analyses sommeil § 15.1 (toutes plages × 3 angles) | 8 | 78 % |
+
+**Totality documentée : 93 %.**
+
+Détail :
+
+- **But sport (§ 14)** : ≈ **96 %** — unilatéral seulement si le nom le porte.
+- **But sommeil (§ 15)** : ≈ **72 %** — toutes les plages ont une lecture dédiée ; 30 j. et 3 mois reformulent au lieu de recopier. Reste budgets § 15.9 et croisements intensité / cardio.
+
+Prochain lot : budgets d’observations adaptatifs et les derniers croisements (intensité, cardio), toujours en silence si non publiable.
 

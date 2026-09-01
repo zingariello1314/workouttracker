@@ -188,7 +188,10 @@ export function buildRecapPeriodCalendarAnalytics({
   const strength = buildRecapStrengthCompareModel(
     workoutData,
     period,
-    getExerciseNameById
+    getExerciseNameById,
+    periodWindow?.end ? new Date(`${periodWindow.end}T12:00:00`) : new Date(),
+    8,
+    periodWindow
   );
   const topExercises = (strength?.top3Exercises || []).slice(0, 5);
   const streakRange = calculateLongestTrainingStreakInRange(workoutData, startYmd, endYmd);

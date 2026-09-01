@@ -6,6 +6,7 @@ import {
   extractDateStrFromWorkoutKey,
   extractExerciseIdFromWorkoutKey
 } from '../exerciseKeyGenerator';
+import { resolveSessionCalendarDate, readGarminActivityDateOverrides } from '../sessionCalendarDate';
 
 export function formatDayFr(ymd, withYear = false) {
   if (!ymd || !/^\d{4}-\d{2}-\d{2}$/.test(ymd)) return '';
@@ -71,14 +72,92 @@ export function buildExerciseTimeline(snapshot, getExerciseNameById = null) {
   return { items, trainingDays: [...trainingSet].sort() };
 }
 
+/** Muscu / presses : jamais du cardio. « développé » contient « velo ». */
+const STRENGTH_NOT_CARDIO =
+  /developp|couche|haltere|bench\s*press|shoulder press|pec\s*deck|butterfly|ecartes?|flyes?\b|chest press/;
+
+function compactName(name) {
+  return String(name || '')
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '');
+}
+
+/**
+ * Course : endurance fondamentale, fractionné, footing, sorties Garmin, pas la muscu.
+ */
+export function isRunningLikeName(name) {
+  const n = compactName(name);
+  if (!n || STRENGTH_NOT_CARDIO.test(n)) return false;
+  if (
+    /endurance fondamentale|\bfooting\b|\bfractionn|\beasy run\b|\btempo run\b|\binterval run|\bsortie longue|course a pied|course endurance|course fractionn/.test(
+      n
+    )
+  ) {
+    return true;
+  }
+  if (/\bcourse\b/.test(n) && !/\bparcours\b/.test(n)) return true;
+  if (/(^|[^a-z])run(ning)?([^a-z]|$)/.test(n)) return true;
+  return false;
+}
+
+/**
+ * Cardio au sens large (course, vélo, nage, corde) — jamais un développé / une presse.
+ */
 export function isCardioLikeName(name) {
-  return /course|run\b|footing|endurance fondamentale|fractionn|hiit|cardio|v[ée]lo|natation/i.test(
-    String(name || '')
-  );
+  if (isRunningLikeName(name)) return true;
+  const n = compactName(name);
+  if (!n || STRENGTH_NOT_CARDIO.test(n)) return false;
+  if (/(^|[^a-z])(velo|bike|cycling)([^a-z]|$)/.test(n)) return true;
+  if (/\b(natation|swim|hiit|cardio|corde a sauter|jump ?rope)\b/.test(n)) return true;
+  return false;
 }
 
 export function isLegLikeName(name) {
   return /mollet|squat|fente|ischio|quadri|presse|hip thrust|soulev/i.test(String(name || ''));
+}
+
+function runningSessionLabel(session) {
+  const blob = compactName(
+    [session?.name, session?.title, session?.type, session?.activityType, session?.programSubType, session?.subtype]
+      .filter(Boolean)
+      .join(' ')
+  );
+  if (/fractionn|interval/.test(blob)) return 'Fractionné';
+  if (/endurance fondamentale|footing|easy|zone 2|\bef\b/.test(blob)) return 'Course endurance fondamentale';
+  if (session?.name && isRunningLikeName(session.name)) return String(session.name).trim();
+  return 'Course';
+}
+
+function isWalkLikeSession(session) {
+  const blob = compactName(
+    [session?.name, session?.title, session?.type, session?.activityType, session?.isWalk ? 'walk' : '']
+      .filter(Boolean)
+      .join(' ')
+  );
+  return /\b(walk|walking|marche)\b/.test(blob);
+}
+
+/**
+ * Dernière vraie sortie course (module endurance / Garmin), pas un exo de muscu coché.
+ */
+export function lastRunningSessionFromSnapshot(snapshot) {
+  const endurance = snapshot?.enduranceData || {};
+  const sessions = [
+    ...(Array.isArray(endurance.sessions?.running) ? endurance.sessions.running : []),
+    ...(Array.isArray(endurance.runningSessions) ? endurance.runningSessions : [])
+  ];
+  const overrides = readGarminActivityDateOverrides(snapshot) || {};
+  let best = null;
+  sessions.forEach((s) => {
+    if (!s || isWalkLikeSession(s)) return;
+    const ymd = resolveSessionCalendarDate(s, overrides);
+    if (!ymd || !/^\d{4}-\d{2}-\d{2}$/.test(ymd)) return;
+    if (!best || ymd > best.lastDate) {
+      best = { lastDate: ymd, name: runningSessionLabel(s), source: 'endurance' };
+    }
+  });
+  return best;
 }
 
 /**

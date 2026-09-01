@@ -66,6 +66,8 @@
     "weightPerArm": "Saisie en kg par haltère (volume total ×2 si les deux bras)",
     "perSetOpen": "Poids par série",
     "perSetReset": "Un seul poids pour l’exo",
+    "setDetailOpen": "Détail par série (reps + charge)",
+    "setDetailTitle": "Séries détaillées",
     "sessionEffortLabel": "Ressenti de la séance",
     "optionalWeighted": "Lesté",
     "optionalWeightedTitle": "Marquer comme lesté (charge externe optionnelle)",

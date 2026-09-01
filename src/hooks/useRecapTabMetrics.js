@@ -100,60 +100,90 @@ export function useRecapTabMetrics({
           isAuthenticated
         });
 
-        const adaptive = buildAdaptiveRecapInsights({
-          legacyPistes: recapAssessment.insights || {},
-          enrichment,
-          assessment: recapAssessment,
-          recapState,
-          snapshot,
-          window: recapState.window,
-          garminData: garminDataForMetrics,
-          garminPartial: garminPartialForRecap,
-          garminDailyMetrics:
-            garminPartialForRecap?.status === 'ready' ? garminPartialForRecap.dailyMetrics : null,
-          period: deferredPeriod,
-          getExerciseNameById,
-          profileQuestionnaireRaw,
-          activeProgram,
-          programs: Array.isArray(programs) ? programs : []
-        });
+        let recapAssessmentMerged = recapAssessment;
+        let programCoachAnalysis = null;
+        try {
+          const adaptive = buildAdaptiveRecapInsights({
+            legacyPistes: recapAssessment.insights || {},
+            enrichment,
+            assessment: recapAssessment,
+            recapState,
+            snapshot,
+            window: recapState.window,
+            garminData: garminDataForMetrics,
+            garminPartial: garminPartialForRecap,
+            garminDailyMetrics:
+              garminPartialForRecap?.status === 'ready' ? garminPartialForRecap.dailyMetrics : null,
+            period: deferredPeriod,
+            getExerciseNameById,
+            profileQuestionnaireRaw,
+            activeProgram,
+            programs: Array.isArray(programs) ? programs : []
+          });
 
-        const recapAssessmentMerged = {
-          ...recapAssessment,
-          insights: adaptive.insights,
-          adaptiveKpis: adaptive.kpis,
-          insightSignature: adaptive.signature ?? null,
-          trainingState: adaptive.trainingState ?? null,
-          priorState: adaptive.priorState ?? null,
-          stateTransitions: adaptive.stateTransitions ?? [],
-          performanceRobustness: adaptive.performanceRobustness ?? [],
-          populationComparisons: adaptive.populationComparisons ?? [],
-          composedInterpretations: adaptive.composedInterpretations ?? [],
-          trainingEvents: adaptive.trainingEvents ?? null,
-          athleteIdentity: adaptive.athleteIdentity ?? null,
-          phenomena: adaptive.phenomena ?? []
-        };
+          recapAssessmentMerged = {
+            ...recapAssessment,
+            insights: adaptive.insights,
+            adaptiveKpis: adaptive.kpis,
+            insightSignature: adaptive.signature ?? null,
+            trainingState: adaptive.trainingState ?? null,
+            priorState: adaptive.priorState ?? null,
+            stateTransitions: adaptive.stateTransitions ?? [],
+            performanceRobustness: adaptive.performanceRobustness ?? [],
+            populationComparisons: adaptive.populationComparisons ?? [],
+            composedInterpretations: adaptive.composedInterpretations ?? [],
+            trainingEvents: adaptive.trainingEvents ?? null,
+            athleteIdentity: adaptive.athleteIdentity ?? null,
+            athleteJourney: adaptive.athleteJourney ?? null,
+            phenomena: adaptive.phenomena ?? [],
+            periodDiscoveries: adaptive.periodDiscoveries ?? null
+          };
 
-        const programCoachAnalysis = buildRecapProgramCoachAnalysis({
-          activeProgram,
-          snapshot,
-          window: recapState.window,
-          enrichment,
-          assessment: recapAssessment,
-          recapState,
-          garminPartial: garminPartialForRecap,
-          garminData: garminDataForMetrics,
-          getExerciseNameById,
-          profileQuestionnaireRaw,
-          programs: Array.isArray(programs) ? programs : [],
-          getTodayWorkout: getTodayWorkoutForCompletion,
-          isAdmin,
-          isAuthenticated,
-          trainingState: adaptive.trainingState ?? null,
-          composedInterpretations: adaptive.composedInterpretations ?? [],
-          trainingEvents: adaptive.trainingEvents ?? null,
-          stateTransitions: adaptive.stateTransitions ?? []
-        });
+          programCoachAnalysis = buildRecapProgramCoachAnalysis({
+            activeProgram,
+            snapshot,
+            window: recapState.window,
+            enrichment,
+            assessment: recapAssessment,
+            recapState,
+            garminPartial: garminPartialForRecap,
+            garminData: garminDataForMetrics,
+            getExerciseNameById,
+            profileQuestionnaireRaw,
+            programs: Array.isArray(programs) ? programs : [],
+            getTodayWorkout: getTodayWorkoutForCompletion,
+            isAdmin,
+            isAuthenticated,
+            trainingState: adaptive.trainingState ?? null,
+            composedInterpretations: adaptive.composedInterpretations ?? [],
+            trainingEvents: adaptive.trainingEvents ?? null,
+            stateTransitions: adaptive.stateTransitions ?? []
+          });
+        } catch (adaptiveErr) {
+          if (process.env.NODE_ENV === 'development') {
+            console.error('[useRecapTabMetrics] adaptive', adaptiveErr);
+          }
+          try {
+            programCoachAnalysis = buildRecapProgramCoachAnalysis({
+              activeProgram,
+              snapshot,
+              window: recapState.window,
+              enrichment,
+              assessment: recapAssessment,
+              recapState,
+              garminPartial: garminPartialForRecap,
+              garminData: garminDataForMetrics,
+              getExerciseNameById,
+              profileQuestionnaireRaw,
+              programs: Array.isArray(programs) ? programs : [],
+              getTodayWorkout: getTodayWorkoutForCompletion,
+              isAdmin,
+              isAuthenticated
+            });
+          } catch {
+            programCoachAnalysis = null;
+          }
+        }
 
         if (gen !== genRef.current) return;
         setBundle({

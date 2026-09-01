@@ -23,6 +23,8 @@ import { buildHierarchicalComparisons } from './populationComparisonEngine';
 import { buildHorizonEssayCandidates } from './recapHorizonEssays';
 import { buildAthleteTrainingIdentity } from './athleteTrainingIdentity';
 import { buildTrainingPhenomena } from './trainingPhenomenonEngine';
+import { buildAthleteJourney } from './athleteJourney';
+import { buildPeriodDiscoveryBundle } from './recapPeriodDiscoveries';
 
 /** Candidat affichable dans les 3 colonnes (pas un fait isolé). */
 export function isColumnInterpretation(c) {
@@ -47,10 +49,26 @@ export function buildComposedInterpretationPipeline(opts = {}) {
     window: opts.window,
     getExerciseNameById: opts.getExerciseNameById
   });
+  const athleteJourney = buildAthleteJourney({
+    snapshot: opts.snapshot,
+    window: opts.window,
+    getExerciseNameById: opts.getExerciseNameById
+  });
   const phenomena = buildTrainingPhenomena({
     features: trainingState?.features,
     identity: athleteIdentity,
     goal: trainingState?.context?.goal
+  });
+  const periodDiscoveries = buildPeriodDiscoveryBundle({
+    snapshot: opts.snapshot,
+    window: opts.window,
+    period: opts.period || '7d',
+    getExerciseNameById: opts.getExerciseNameById,
+    garminData: opts.garminData,
+    recapState: opts.recapState || null,
+    athleteIdentity,
+    insightHistory: opts.insightHistory || null,
+    features: trainingState?.features || null
   });
 
   const eventBundle = detectTrainingEvents({
@@ -65,7 +83,12 @@ export function buildComposedInterpretationPipeline(opts = {}) {
     assessment: opts.assessment
   };
 
-  const rawRelations = detectTrainingRelations(trainingState, eventBundle, relationMeta);
+  let rawRelations = [];
+  try {
+    rawRelations = detectTrainingRelations(trainingState, eventBundle, relationMeta);
+  } catch {
+    rawRelations = [];
+  }
   const essayDrafts = buildHorizonEssayCandidates({
     snapshot: opts.snapshot,
     window: opts.window,
@@ -81,7 +104,9 @@ export function buildComposedInterpretationPipeline(opts = {}) {
     trainingEvents: eventBundle.events,
     insightHistory: opts.insightHistory || null,
     athleteIdentity,
-    phenomena
+    athleteJourney,
+    phenomena,
+    periodDiscoveries
   });
 
   const renderedEssays = renderInterpretations(essayDrafts, trainingState);
@@ -90,7 +115,9 @@ export function buildComposedInterpretationPipeline(opts = {}) {
   renderedEssays.forEach((c) => {
     if (c.text?.length >= 80 && essayCount[c.horizon] != null) essayCount[c.horizon] += 1;
   });
-  const fallbackRelations = renderedRelations.filter((c) => (essayCount[c.horizon] || 0) < 2);
+  const fallbackRelations = renderedRelations.filter(
+    (c) => (essayCount[c.horizon] || 0) === 0 && (c.relevance || 0) >= 0.85
+  );
   const allInterpretations = [...renderedEssays, ...fallbackRelations];
 
   const populationComparisons = buildHierarchicalComparisons({
@@ -114,7 +141,9 @@ export function buildComposedInterpretationPipeline(opts = {}) {
     interpretations: allInterpretations,
     candidates,
     athleteIdentity,
-    phenomena
+    athleteJourney,
+    phenomena,
+    periodDiscoveries
   };
 }
 

@@ -48,7 +48,8 @@ import {
   saveLastInsightSignature
 } from './insightNoveltyStore';
 
-const HORIZON_LIMITS = { short: 4, medium: 3, long: 2 };
+import { applyNatureWeights, NATURE_COLUMN_CAPS } from './recapInsightNature';
+
 const MIN_COLUMN_WEIGHT = 32;
 
 function inWindow(dateStr, window) {
@@ -1161,6 +1162,7 @@ export function selectBalancedCandidates(candidates, horizon, limit, signature) 
       if (usedIds.has(c.id)) continue;
       const group = semanticGroupFromCandidateId(c.id);
       let score = c.weight;
+      if (String(c.id).includes('.disc_')) score += 14;
       if (usedGroups.has(group) && group !== 'misc') score -= 16;
       if (usedPillars.has(c.pillar)) {
         const samePillarBest = picked.find((p) => p.pillar === c.pillar);
@@ -1180,7 +1182,10 @@ export function selectBalancedCandidates(candidates, horizon, limit, signature) 
         best = c;
       }
     }
-    if (!best || bestScore < MIN_COLUMN_WEIGHT) break;
+    if (!best) break;
+    if (bestScore < MIN_COLUMN_WEIGHT) {
+      break;
+    }
     picked.push(best);
     usedIds.add(best.id);
     usedPillars.add(best.pillar);
@@ -1268,7 +1273,8 @@ export function buildAdaptiveRecapInsights(opts = {}) {
     period,
     activeProgram,
     programs,
-    insightHistory
+    insightHistory,
+    recapState
   });
 
   const candidates = composed.candidates || [];
@@ -1292,24 +1298,27 @@ export function buildAdaptiveRecapInsights(opts = {}) {
     hashSig(JSON.stringify(candidates.map((c) => `${c.id}:${c.weight}`).slice(0, 12)))
   ].join('|');
 
-  const weightedCandidates = applyNoveltyWeights(candidates, insightHistory);
+  const weightedCandidates = applyNatureWeights(
+    applyNoveltyWeights(candidates, insightHistory),
+    composed.phenomena
+  );
 
   const pickedShort = selectBalancedCandidates(
     weightedCandidates,
     'short',
-    HORIZON_LIMITS.short,
+    NATURE_COLUMN_CAPS.short,
     signature
   );
   const pickedMedium = selectBalancedCandidates(
     weightedCandidates,
     'medium',
-    HORIZON_LIMITS.medium,
+    NATURE_COLUMN_CAPS.medium,
     signature
   );
   const pickedLong = selectBalancedCandidates(
     weightedCandidates,
     'long',
-    HORIZON_LIMITS.long,
+    NATURE_COLUMN_CAPS.long,
     signature
   );
   const allPicked = [...pickedShort, ...pickedMedium, ...pickedLong];
@@ -1349,6 +1358,8 @@ export function buildAdaptiveRecapInsights(opts = {}) {
     trainingEvents: composed.trainingEvents,
     composedInterpretations: composed.interpretations,
     athleteIdentity: composed.athleteIdentity,
-    phenomena: composed.phenomena
+    athleteJourney: composed.athleteJourney,
+    phenomena: composed.phenomena,
+    periodDiscoveries: composed.periodDiscoveries
   };
 }

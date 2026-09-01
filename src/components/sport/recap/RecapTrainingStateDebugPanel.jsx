@@ -54,7 +54,9 @@ export default function RecapTrainingStateDebugPanel({
   composedInterpretations = [],
   insightSignature = null,
   athleteIdentity = null,
-  phenomena = []
+  athleteJourney = null,
+  phenomena = [],
+  periodDiscoveries = null
 }) {
   const [open, setOpen] = useState(false);
 
@@ -102,7 +104,8 @@ export default function RecapTrainingStateDebugPanel({
           <p className="text-[10px] leading-relaxed text-slate-500">
             Trois couches distinctes : <span className="text-slate-300">état brut</span> (features, reps
             cochées) → <span className="text-slate-300">interprétation</span> (phénomènes) →{' '}
-            <span className="text-slate-300">conclusion</span> (cartes). « Volume » = nombre de
+            <span className="text-slate-300">conclusion</span> (cartes). Colonnes = nature
+            (Maintenant / Trajectoire / Parcours), pas la durée du filtre Recap. « Volume » = nombre de
             répétitions suivies, pas une dose mécanique. Identité = habitude observée, pas un rythme
             optimal. Les colonnes n’affichent que les lectures retenues.
           </p>
@@ -116,6 +119,45 @@ export default function RecapTrainingStateDebugPanel({
             </p>
           ) : null}
 
+          {periodDiscoveries?.question ? (
+            <p className="rounded-lg border border-cyan-700/40 bg-cyan-950/30 px-2.5 py-2 text-[10px] text-cyan-100">
+              Question de la période : {periodDiscoveries.question}
+              {(periodDiscoveries.selected || []).length
+                ? ` · ${periodDiscoveries.selected.length} découvertes retenues`
+                : ''}
+            </p>
+          ) : null}
+
+          {athleteJourney?.startYmd ? (
+            <p className="rounded-lg border border-slate-700/50 bg-slate-900/40 px-2.5 py-2 text-[10px] text-slate-300">
+              Parcours : depuis {athleteJourney.startYmd} · {athleteJourney.trainingDays} j. entraînés ·{' '}
+              {athleteJourney.totalReps} reps ·{' '}
+              {(athleteJourney.narratives?.progress || [])
+                .map(
+                  (e) =>
+                    `${e.name} ${e.firstReliable?.reps}→${Math.round(e.habitual?.median ?? 0)} (${
+                      e.pctFromReliable >= 0 ? '+' : ''
+                    }${Math.round(e.pctFromReliable)} %)`
+                )
+                .join(' · ') || 'pas encore de progression assez documentée'}
+            </p>
+          ) : null}
+
+          <div>
+            <p className="mb-1 text-[10px] font-semibold uppercase tracking-wide text-slate-500">
+              Découvertes période ({(periodDiscoveries?.selected || []).length}/{(periodDiscoveries?.all || []).length})
+            </p>
+            <ChipList
+              items={(periodDiscoveries?.selected || []).map((d) => ({
+                id: d.kind,
+                type: `${d.nature} · ${d.score}`,
+                narrative: d.title,
+                text: d.evidence || d.body
+              }))}
+              empty="Aucune découverte quantitative sur cette fenêtre"
+            />
+          </div>
+
           <div>
             <p className="mb-1 text-[10px] font-semibold uppercase tracking-wide text-slate-500">
               Phénomènes ({(phenomena || []).length})
@@ -124,7 +166,7 @@ export default function RecapTrainingStateDebugPanel({
               items={(phenomena || []).map((p) => ({
                 id: p.id,
                 type: p.type,
-                narrative: (p.signals || []).join(', '),
+                narrative: [p.nature, (p.signals || []).join(', ')].filter(Boolean).join(' · '),
                 text: [
                   p.interpretation ? JSON.stringify(p.interpretation) : null,
                   p.priority

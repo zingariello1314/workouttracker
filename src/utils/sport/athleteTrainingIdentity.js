@@ -12,7 +12,7 @@ import {
   extractExerciseIdFromWorkoutKey
 } from '../exerciseKeyGenerator';
 import { classifyMovement } from './recapMovementClassification';
-import { daysBetweenYmd, isCardioLikeName } from './recapTrainingTimeline';
+import { daysBetweenYmd, isRunningLikeName } from './recapTrainingTimeline';
 
 export const IDENTITY_LOOKBACK_DAYS = 126;
 const MIN_WEEKS = 6;
@@ -114,7 +114,7 @@ function qualityKeyFor(id, name, getExerciseNameById) {
   if (cls.isPullup) return 'pullup';
   if (cls.isPushup) return 'pushup';
   if (/dip|dips|barres parall/i.test(String(name || ''))) return 'dip';
-  if (isCardioLikeName(name)) return 'run';
+  if (isRunningLikeName(name)) return 'run';
   return null;
 }
 

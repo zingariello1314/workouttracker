@@ -56,7 +56,7 @@ function maxRecordedWeightKgInWindow(allData, window) {
   return max;
 }
 
-const resolveExerciseNameForRecap = (exerciseId, getExerciseNameById) => {
+export const resolveExerciseNameForRecap = (exerciseId, getExerciseNameById) => {
   const idStr = String(exerciseId || '').trim();
   if (!idStr) return '';
   if (
@@ -112,8 +112,17 @@ function minDateFromStrengthSources(grouped, allData) {
  * @param {Date} [refDate]
  * @param {number} [numBars]
  */
-export function buildRecapStrengthCompareModel(allData, period, getExerciseNameById, refDate = new Date(), numBars = 8) {
-  const window = getRecapDateWindow(period, refDate);
+export function buildRecapStrengthCompareModel(
+  allData,
+  period,
+  getExerciseNameById,
+  refDate = new Date(),
+  numBars = 8,
+  windowOverride = null
+) {
+  const window = windowOverride?.end
+    ? { start: windowOverride.start ?? null, end: windowOverride.end }
+    : getRecapDateWindow(period, refDate);
   const endStr = window.end;
   let currStart = window.start;
   const reps = allData?.reps || {};

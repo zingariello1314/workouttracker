@@ -20,6 +20,7 @@ function num(n) {
  * @property {number} confidence
  * @property {object} interpretation
  * @property {string[]} suppresses — kinds d'essays redondants si ce phénomène est retenu
+ * @property {'now'|'trajectory'|'journey'} [nature]
  * @property {{ unusual?: boolean, goalRelevant?: boolean }} [priority]
  */
 
@@ -69,6 +70,7 @@ export function buildTrainingPhenomena(opts = {}) {
         identityStatus: inside ? 'normal' : idStatus === 'low' ? 'unusual' : 'unknown',
         identityMeans: 'observed_habit'
       },
+      nature: 'now',
       priority: { unusual: !inside && idStatus === 'low', goalRelevant: true },
       suppresses: [
         'volume_traj',
@@ -90,6 +92,7 @@ export function buildTrainingPhenomena(opts = {}) {
       strength: pushPct >= 70 ? 0.86 : 0.78,
       confidence: 0.72,
       interpretation: { mix: 'push_dominant', pushPct },
+      nature: 'trajectory',
       priority: { unusual: true, goalRelevant: street },
       suppresses: ['specialization']
     });
@@ -103,6 +106,7 @@ export function buildTrainingPhenomena(opts = {}) {
       strength: programPct < 40 ? 0.84 : 0.74,
       confidence: 0.7,
       interpretation: { adherence: 'low', programPct },
+      nature: 'trajectory',
       priority: { unusual: true, goalRelevant: true },
       suppresses: []
     });
@@ -118,6 +122,7 @@ export function buildTrainingPhenomena(opts = {}) {
       strength: cardio.daysSince >= 45 ? 0.84 : 0.76,
       confidence: 0.74,
       interpretation: { quality: 'run', daysSince: cardio.daysSince },
+      nature: 'now',
       priority: { unusual: true, goalRelevant: !street },
       suppresses: []
     });
@@ -135,6 +140,7 @@ export function buildTrainingPhenomena(opts = {}) {
         performanceState: 'insufficient_evidence',
         comparable: false
       },
+      nature: 'now',
       priority: { unusual: false, goalRelevant: true },
       suppresses: []
     });

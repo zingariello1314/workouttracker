@@ -307,8 +307,17 @@ function applyEndurancePushupsRepShares({ allData, window, repShareByGroup, exer
  * @param {(id: string|number) => string} getExerciseNameById
  * @param {Date} [referenceDate]
  */
-export function computeRecapMuscleState(allData, period, getExerciseNameById, referenceDate = new Date()) {
-  const window = getRecapDateWindow(period, referenceDate);
+export function computeRecapMuscleState(
+  allData,
+  period,
+  getExerciseNameById,
+  referenceDate = new Date(),
+  windowOverride = null
+) {
+  const window =
+    windowOverride?.end
+      ? { start: windowOverride.start ?? null, end: windowOverride.end }
+      : getRecapDateWindow(period, referenceDate);
   const refYmd = window.end;
 
   /** @type {Record<string, { strength: number, cardio: number }>} */

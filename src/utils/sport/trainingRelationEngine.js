@@ -713,17 +713,18 @@ export function detectTrainingRelations(state, eventBundle = null, meta = {}) {
     stateTransitions,
     events
   });
+  const relations = out.filter(Boolean);
   const graphHits = evaluateRelationGraph(graphCtx);
-  const existingIds = new Set(out.map((r) => r.id));
+  const existingIds = new Set(relations.map((r) => r.id));
   graphHits.forEach((hit) => {
-    if (existingIds.has(hit.id)) return;
+    if (!hit?.id || existingIds.has(hit.id)) return;
     if (hit.id === 'relation.push_pull_imbalance' && existingIds.has('relation.push_pull_stimulus')) return;
     if (hit.id === 'relation.undertraining_signal' && existingIds.has('relation.training_discontinuity')) return;
-    out.push(hit);
+    relations.push(hit);
     existingIds.add(hit.id);
   });
 
-  return out.filter(Boolean).sort((a, b) => b.relevance * b.confidence - a.relevance * a.confidence);
+  return relations.sort((a, b) => b.relevance * b.confidence - a.relevance * a.confidence);
 }
 
 /**
@@ -739,11 +740,15 @@ export function interpretationToLegacyCandidate(interp) {
   if (interp.type === 'composed_horizon_read' || interp.type === 'coach_reading') {
     weight = Math.min(92, 80 + Math.round((interp.relevance || 0.8) * 12));
   }
+  if (String(interp.id || '').includes('.disc_')) {
+    weight = Math.min(98, weight + 10);
+  }
   return {
     id: interp.id,
     horizon: interp.horizon,
+    nature: interp.nature || interp.context?.nature,
     pillar: interp.pillar,
-    weight: Math.min(92, weight),
+    weight: Math.min(98, weight),
     text: interp.text,
     interpretation: interp
   };

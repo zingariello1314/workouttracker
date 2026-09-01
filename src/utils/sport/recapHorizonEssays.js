@@ -1,6 +1,6 @@
 /**
- * Lectures de coach : plusieurs analyses courtes par horizon, pas un paragraphe unique.
- * Données → observation → comparaison → relation → interprétation (hypothèse prudente).
+ * Lectures de coach. L'horizon UI (short/medium/long) est la projection d'une
+ * nature (now / trajectory / journey), pas la durée de la fenêtre Recap.
  */
 
 import { getCompletionForWindow } from './recapCompletionTruth';
@@ -15,9 +15,11 @@ import {
 import { classifyMovement } from './recapMovementClassification';
 import {
   buildExerciseTimeline,
+  daysBetweenYmd,
   findSpecificAbsences,
   formatDayFr,
-  isCardioLikeName
+  isRunningLikeName,
+  lastRunningSessionFromSnapshot
 } from './recapTrainingTimeline';
 import {
   buildAthleteTrainingIdentity,
@@ -26,6 +28,14 @@ import {
   identityFrequencyStatus
 } from './athleteTrainingIdentity';
 import { buildTrainingPhenomena, phenomenonSuppresses, primaryPhenomenon } from './trainingPhenomenonEngine';
+import { buildAthleteJourney, journeyHasProgressStory } from './athleteJourney';
+import {
+  comparableWeeklyRates,
+  horizonForNature,
+  muscleProfileForTrajectory,
+  natureForKind
+} from './recapInsightNature';
+import { buildPeriodDiscoveryBundle } from './recapPeriodDiscoveries';
 
 function sampleDays(window) {
   if (!window?.end) return 30;
@@ -43,10 +53,37 @@ export function confidenceFromSample(sessions, days) {
 }
 
 function fmtList(names, max = 3) {
-  const slice = (names || []).filter(Boolean).slice(0, max);
-  if (!slice.length) return '';
-  if (slice.length === 1) return slice[0];
-  return `${slice.slice(0, -1).join(', ')} et ${slice[slice.length - 1]}`;
+  const seen = new Set();
+  const slice = [];
+  (names || []).forEach((n) => {
+    if (!n) return;
+    const key = String(n).toLowerCase();
+    if (seen.has(key)) return;
+    seen.add(key);
+    slice.push(n);
+  });
+  const cut = slice.slice(0, max);
+  if (!cut.length) return '';
+  if (cut.length === 1) return cut[0];
+  return `${cut.slice(0, -1).join(', ')} et ${cut[cut.length - 1]}`;
+}
+
+function milestonePhrase(row) {
+  const hits = row?.milestones?.hits || [];
+  const steps = (row?.milestones?.steps || []).filter((s) => s.days != null);
+  if (hits.length < 2) return '';
+  const ladder = ` Paliers franchis : ${hits.map((h) => h.reps).join(', ')} reps.`;
+  const timed = steps.slice(-2);
+  const paceBit = timed.length
+    ? ` ${timed.map((s) => `${s.from} → ${s.to} en ${s.days} j.`).join(' ')}`
+    : '';
+  const pace =
+    row.milestones.pace === 'accelerating'
+      ? ' La progression s’est accélérée récemment.'
+      : row.milestones.pace === 'slowing'
+        ? ' Chaque nouveau palier te demande désormais davantage de temps.'
+        : '';
+  return `${ladder}${paceBit}${pace}`;
 }
 
 function polish(s) {
@@ -97,7 +134,7 @@ function identityPerfParagraph(q) {
 function matchingIdentityQuality(identity, name) {
   const n = String(name || '').toLowerCase();
   return (identity?.qualities || []).find((q) => {
-    if (q.key === 'run' && isCardioLikeName(name)) return true;
+    if (q.key === 'run' && isRunningLikeName(name)) return true;
     if (q.key === 'pullup' && /traction|pull|australien/i.test(n)) return true;
     if (q.key === 'pushup' && /pompe|push-up|pushup/i.test(n)) return true;
     if (q.key === 'dip' && /dip/i.test(n)) return true;
@@ -173,13 +210,36 @@ function splitPullFamily(summary, getExerciseNameById) {
   return { vert, acc };
 }
 
-function pickCardioAbsence(absences, least) {
-  const cardioAbs = (absences || []).filter((a) => isCardioLikeName(a.name));
+function pickCardioAbsence(absences, least, snapshot, endYmd, trainingDays = []) {
+  const runningAbs = (absences || []).filter((a) => isRunningLikeName(a.name));
   const prefer =
-    cardioAbs.find((a) => /endurance fondamentale|\bcourse\b/i.test(a.name) && !/fractionn/i.test(a.name)) ||
-    cardioAbs[0];
+    runningAbs.find((a) => /endurance fondamentale|footing|easy run/i.test(a.name)) ||
+    runningAbs.find((a) => /fractionn|interval/i.test(a.name)) ||
+    runningAbs[0];
+
+  const fromEndurance = lastRunningSessionFromSnapshot(snapshot);
+  if (fromEndurance?.lastDate && endYmd) {
+    const daysSince = daysBetweenYmd(fromEndurance.lastDate, endYmd);
+    const sessionsSince = (trainingDays || []).filter(
+      (d) => d > fromEndurance.lastDate && d <= endYmd
+    ).length;
+    if (daysSince != null && daysSince < 8) return null;
+    if (daysSince != null && daysSince >= 8) {
+      if (prefer && prefer.lastDate && fromEndurance.lastDate < prefer.lastDate) {
+        return prefer;
+      }
+      return {
+        name: fromEndurance.name,
+        lastDate: fromEndurance.lastDate,
+        daysSince,
+        sessionsSince,
+        source: 'endurance'
+      };
+    }
+  }
+
   if (prefer) return prefer;
-  const fromLeast = (least || []).find((n) => isCardioLikeName(n));
+  const fromLeast = (least || []).find((n) => isRunningLikeName(n));
   if (!fromLeast) return null;
   return { name: fromLeast, daysSince: null, sessionsSince: 0, lastDate: null };
 }
@@ -196,12 +256,15 @@ function dedupeEstablished(rows) {
   return out;
 }
 
-function reading({ horizon, kind, title, body, evidence = '', relevance, conf, days, extra = {} }) {
+function reading({ horizon, nature, kind, title, body, evidence = '', relevance, conf, days, extra = {} }) {
+  const resolvedNature = nature || natureForKind(kind);
+  const resolvedHorizon = horizon || horizonForNature(resolvedNature);
   return {
-    id: `relation.reading.${horizon}.${kind}`,
+    id: `relation.reading.${resolvedHorizon}.${kind}`,
     type: 'coach_reading',
     pillar: 'interpretation',
-    horizon,
+    horizon: resolvedHorizon,
+    nature: resolvedNature,
     state: 'composed',
     evidence: extra.evidence || [],
     metrics: extra.metrics || {},
@@ -215,8 +278,9 @@ function reading({ horizon, kind, title, body, evidence = '', relevance, conf, d
       body: polish(body),
       evidenceLine: evidence,
       kind,
-      confidenceLabel: extra.showConfidence ? conf.label : null,
-      sampleDays: extra.showConfidence ? days : null
+      nature: resolvedNature,
+      confidenceLabel: extra.confidenceLabel || (extra.showConfidence ? conf.label : null),
+      sampleDays: extra.sampleDays ?? (extra.showConfidence ? days : null)
     }
   };
 }
@@ -239,7 +303,9 @@ export function buildHorizonEssayCandidates(opts = {}) {
     performanceRobustness = [],
     trainingEvents = [],
     insightHistory = null,
-    athleteIdentity = null
+    athleteIdentity = null,
+    athleteJourney = null,
+    periodDiscoveries = null
   } = opts;
 
   const wins = deriveExposureWindows(period, window);
@@ -248,6 +314,9 @@ export function buildHorizonEssayCandidates(opts = {}) {
   const identity =
     athleteIdentity ||
     buildAthleteTrainingIdentity({ snapshot, window, getExerciseNameById });
+  const journey =
+    athleteJourney ||
+    buildAthleteJourney({ snapshot, window, getExerciseNameById });
 
   const current = summarizeExposure(snapshot, wins.current, getExerciseNameById, garminData);
   const habit = summarizeExposure(snapshot, wins.habit, getExerciseNameById, garminData);
@@ -297,7 +366,7 @@ export function buildHorizonEssayCandidates(opts = {}) {
   const endYmd = window?.end;
   const timeline = buildExerciseTimeline(snapshot, getExerciseNameById);
   const absences = findSpecificAbsences(timeline, endYmd, { minGap: 8, minSessionsSince: 3 });
-  const cardioGone = pickCardioAbsence(absences, least);
+  const cardioGone = pickCardioAbsence(absences, least, snapshot, endYmd, timeline.trainingDays);
   const phenomena = buildTrainingPhenomena({
     features: f,
     identity,
@@ -322,19 +391,74 @@ export function buildHorizonEssayCandidates(opts = {}) {
   const fatigueUnknown = !trainingState?.fatigue?.value || trainingState.fatigue.value === 'unknown'
     || (trainingState.fatigue.confidence != null && trainingState.fatigue.confidence < 0.45);
   const loadFalling = trainingState?.load?.trend === 'falling';
-  const perfFalling = trainingState?.performance?.trend === 'falling';
   const risingNames = shifts.rising.map((e) => e.name);
   const out = [];
+  const trajP = muscleProfileForTrajectory(wins.currentLen, currP, habitP, longP);
+  const trajHasCycle =
+    wins.currentLen >= 14 || (habitP?.total || 0) >= 40 || (longP?.total || 0) >= 40;
+  const rates = comparableWeeklyRates({
+    features: f,
+    identity,
+    windowLen: wins.currentLen,
+    currRate,
+    habitRate
+  });
+  const emitRate = rates.current ?? currRate;
+  const emitPrev = rates.previous ?? habitRate;
 
-  const short = (kind, title, body, evidence, relevance, extra) =>
-    out.push(reading({ horizon: 'short', kind, title, body, evidence, relevance, conf, days, extra }));
-  const medium = (kind, title, body, evidence, relevance, extra) =>
-    out.push(reading({ horizon: 'medium', kind, title, body, evidence, relevance, conf, days, extra }));
-  const long = (kind, title, body, evidence, relevance, extra) =>
-    out.push(reading({ horizon: 'long', kind, title, body, evidence, relevance, conf: longConf, days: 90, extra }));
+  const emit = (kind, title, body, evidence, relevance, extra) => {
+    const nature = extra?.nature || natureForKind(kind);
+    const horizon = horizonForNature(nature);
+    const useConf = nature === 'journey' ? longConf : conf;
+    const useDays = nature === 'journey' ? 90 : days;
+    out.push(
+      reading({
+        horizon,
+        nature,
+        kind,
+        title,
+        body,
+        evidence,
+        relevance,
+        conf: useConf,
+        days: useDays,
+        extra
+      })
+    );
+  };
+  const short = emit;
+  const medium = emit;
+  const long = emit;
+
+  const discoveryBundle =
+    periodDiscoveries ||
+    buildPeriodDiscoveryBundle({
+      snapshot,
+      window,
+      period,
+      getExerciseNameById,
+      garminData,
+      recapState: opts.recapState || null,
+      athleteIdentity: identity,
+      insightHistory: insightHistory || null,
+      features: f
+    });
+  (discoveryBundle.selected || []).forEach((d) => {
+    emit(d.kind, d.title, d.body, d.evidence, d.relevance, {
+      nature: d.nature,
+      metrics: d.metrics || {}
+    });
+  });
+  const preferPeriodNow = Boolean(discoveryBundle.preferPeriodNow);
+  const selectedDisc = discoveryBundle.selected || [];
+  const selectedDiscKinds = new Set(selectedDisc.map((d) => d.kind));
+  const discCoversNow = selectedDisc.some((d) => d.nature === 'now');
+  const discCoversTraj = selectedDisc.some((d) => d.nature === 'trajectory');
+  const skipGenericNow = discCoversNow || preferPeriodNow;
+  const selectedKinds = selectedDiscKinds;
 
   // ——— COURT TERME : projection des phénomènes, pas une carte par métrique ———
-  if (current.sessions + habit.sessions >= 1) {
+  if (!discCoversNow && !preferPeriodNow && current.sessions + habit.sessions >= 1) {
     const denser =
       current.avgExercisesPerSession &&
       habit.avgExercisesPerSession &&
@@ -351,8 +475,8 @@ export function buildHorizonEssayCandidates(opts = {}) {
             ? "Ta pratique s'est contractée, sans sortir de ton rythme habituel"
             : "Ta pratique s'est contractée sur la période";
       const freqBit = freqDelta != null
-        ? `Tu es passé d'environ ${habitRate} à ${currRate} séances par semaine (${pctPhrase(freqDelta)}).`
-        : `Tu es autour de ${currRate} séances par semaine.`;
+        ? `Tu es passé d'environ ${emitPrev} à ${emitRate} séances par semaine (${pctPhrase(freqDelta)}).`
+        : `Tu es autour de ${emitRate} séances par semaine.`;
       const expoBit = d28 != null
         ? ` Les répétitions suivies sur 28 jours sont ${pctPhrase(d28)} que le mois comparable.`
         : '';
@@ -376,9 +500,13 @@ export function buildHorizonEssayCandidates(opts = {}) {
         'continuity',
         title,
         `${freqBit}${expoBit}${weekBit}${idBit}${densBit}${close}`,
-        `${started} séance${started > 1 ? 's' : ''} · ${currRate}/sem. · ${habitRate}/sem. avant${
-          identity?.ready ? ` · habitude ${formatRateFr(identity.frequency.meanPerWeek)}` : ''
-        }`,
+        rates.source === 'recap_window'
+          ? `${started} séance${started > 1 ? 's' : ''} · ${emitRate}/sem. · ${emitPrev}/sem. avant${
+              identity?.ready ? ` · habitude ${formatRateFr(identity.frequency.meanPerWeek)}` : ''
+            }`
+          : `28 j. · ${emitRate}/sem. · ${emitPrev}/sem. avant${
+              identity?.ready ? ` · habitude ${formatRateFr(identity.frequency.meanPerWeek)}` : ''
+            }`,
         0.97
       );
     } else {
@@ -392,7 +520,7 @@ export function buildHorizonEssayCandidates(opts = {}) {
       'continuity',
       continuityTitle,
       [
-        `Tu es passé d'environ ${habitRate} à ${currRate} séances par semaine`,
+        `Tu es passé d'environ ${emitPrev} à ${emitRate} séances par semaine`,
         freqDelta != null ? ` (${pctPhrase(freqDelta)} sur ~28 jours)` : '',
         '. ',
         denser
@@ -404,15 +532,19 @@ export function buildHorizonEssayCandidates(opts = {}) {
             : 'Le rythme des séances a changé ; la densité par séance n’est pas assez claire pour en dire plus.',
         idFreqNote
       ].join(''),
-      `${started} séance${started > 1 ? 's' : ''} · ${currRate}/sem. · ${habitRate}/sem. avant${
-        identity?.ready ? ` · habitude ${formatRateFr(identity.frequency.meanPerWeek)}` : ''
-      }`,
+      rates.source === 'recap_window'
+        ? `${started} séance${started > 1 ? 's' : ''} · ${emitRate}/sem. · ${emitPrev}/sem. avant${
+            identity?.ready ? ` · habitude ${formatRateFr(identity.frequency.meanPerWeek)}` : ''
+          }`
+        : `28 j. · ${emitRate}/sem. · ${emitPrev}/sem. avant${
+            identity?.ready ? ` · habitude ${formatRateFr(identity.frequency.meanPerWeek)}` : ''
+          }`,
       identity?.ready && idStatus === 'inside' ? 0.93 : 0.97
     );
     }
   }
 
-  if ((d7 != null || d28 != null) && !skipKind('volume_traj')) {
+  if (!skipGenericNow && (d7 != null || d28 != null) && !skipKind('volume_traj')) {
     let body;
     if (d28 != null && d28 < -12 && d7 != null && d7 > 4) {
       body = `Sur un mois comparable, tu as coché ${pctPhrase(d28)} de répétitions que le mois d'avant. Les 7 derniers jours repartent pourtant (${pctPhrase(d7)}). Le mois reste creux, mais la contraction ne s'accélère plus.`;
@@ -434,7 +566,7 @@ export function buildHorizonEssayCandidates(opts = {}) {
     );
   }
 
-  if (programPct != null) {
+  if (programPct != null && !skipGenericNow && !(preferPeriodNow && period === 'today')) {
     const half = halfWords(programPct);
     const startBit =
       started != null && planned != null
@@ -462,9 +594,15 @@ export function buildHorizonEssayCandidates(opts = {}) {
     );
   }
 
-  if (cardioGone && (cardioGone.daysSince >= 8 || least.some((n) => isCardioLikeName(n)))) {
+  if (
+    cardioGone &&
+    !skipGenericNow &&
+    !selectedKinds.has('disc_no_running') &&
+    !selectedKinds.has('disc_family_fade') &&
+    (cardioGone.daysSince >= 8 || least.some((n) => isRunningLikeName(n)))
+  ) {
     const last = cardioGone.lastDate
-      ? `Ta dernière ${/course/i.test(cardioGone.name) ? 'course' : 'séance cardio'} (${cardioGone.name}) était le ${formatDayFr(cardioGone.lastDate, true)}`
+      ? `Ta dernière course (${cardioGone.name}) était le ${formatDayFr(cardioGone.lastDate, true)}`
       : `${cardioGone.name} revient très peu dans tes séances récentes`;
     const gap = cardioGone.daysSince != null ? `. Cela fait ${cardioGone.daysSince} jours` : '';
     const mid =
@@ -482,18 +620,22 @@ export function buildHorizonEssayCandidates(opts = {}) {
       ? ' Après un trou aussi long, la prochaine séance se lira comme une reprise, pas comme une comparaison à ton meilleur niveau récent.'
       : '';
     const body = `${last}${gap}${mid}${goalBit}${identityGapParagraph(gapQ)}${repriseBit}`;
-    const horizonAbs = cardioGone.daysSince >= 45 ? 'long' : 'short';
-    const fn = horizonAbs === 'long' ? long : short;
-    fn(
+    emit(
       'absence',
-      'La course (ou le cardio) a glissé hors de ta routine, pas toute ton activité',
+      'La course a glissé hors de ta routine, pas toute ton activité',
       body,
       cardioGone.lastDate
         ? `${formatDayFr(cardioGone.lastDate, true)} · ${cardioGone.daysSince} j. · ${cardioGone.sessionsSince} séances entre-temps`
         : cardioGone.name,
-      cardioGone.daysSince >= 14 ? 0.95 : 0.88
+      contraction
+        ? cardioGone.daysSince >= 14
+          ? 0.84
+          : 0.78
+        : cardioGone.daysSince >= 14
+          ? 0.95
+          : 0.88
     );
-  } else if (absences[0] && absences[0].daysSince >= 12) {
+  } else if (!skipGenericNow && absences[0] && absences[0].daysSince >= 12) {
     const a = absences[0];
     const gapQ = matchingIdentityQuality(identity, a.name) || unusualGapQ;
     short(
@@ -503,7 +645,7 @@ export function buildHorizonEssayCandidates(opts = {}) {
       `${formatDayFr(a.lastDate)} · ${a.daysSince} j. · ${a.sessionsSince} séances entre-temps`,
       gapQ?.unusualGap ? 0.94 : 0.88
     );
-  } else if (unusualGapQ && identityCanClaimUnusual(identity)) {
+  } else if (!skipGenericNow && unusualGapQ && identityCanClaimUnusual(identity)) {
     short(
       'absence',
       `${unusualGapQ.name.charAt(0).toUpperCase()}${unusualGapQ.name.slice(1)} sort de ton rythme habituel`,
@@ -513,7 +655,10 @@ export function buildHorizonEssayCandidates(opts = {}) {
     );
   }
 
-  if (mom != null || risingNames.length || shifts.replacements.length || shifts.performanceDrops.length) {
+  if (
+    !skipGenericNow &&
+    (mom != null || risingNames.length || shifts.replacements.length || shifts.performanceDrops.length)
+  ) {
     const momBit =
       mom != null && mom < -12
         ? `En moyenne, tes répétitions récentes reculent (${pctPhrase(mom)}).`
@@ -544,10 +689,15 @@ export function buildHorizonEssayCandidates(opts = {}) {
     );
   }
 
-  if ((pushPct != null && pushPct >= 60) || (ratioEnr != null && ratioEnr >= 1.6)) {
-    const triNow = muscleShare(currP, 'triceps');
+  if (
+    !discCoversTraj &&
+    period !== 'today' &&
+    ((pushPct != null && pushPct >= 60) || (ratioEnr != null && ratioEnr >= 1.6))
+  ) {
+    const pushProfile = wins.currentLen >= 14 ? currP : trajP;
+    const triNow = muscleShare(pushProfile, 'triceps');
     const triThen = muscleShare(habitP, 'triceps');
-    const shNow = muscleShare(currP, 'épaule');
+    const shNow = muscleShare(pushProfile, 'épaule');
     const shThen = muscleShare(habitP, 'épaule');
     const rel =
       triNow && triThen
@@ -569,7 +719,7 @@ export function buildHorizonEssayCandidates(opts = {}) {
     short(
       'push_share',
       persist ? 'La poussée reste dominante' : 'La poussée prend de plus en plus de place',
-      `Environ ${Math.round(pushPct || currP.pushPct)} % de tes répétitions récentes vient de mouvements de poussée, contre ~${Math.round(pullPct || currP.pullPct || 0)} % de tirage${ratioEnr != null ? ` (à peu près ${ratioEnr} pour 1)` : ''}.${rel}${sh}${legs} Ça vient surtout de ce que tu continues à faire — triceps et épaules. Le travail restant s'est recomposé : tu n'as pas tout baissé pareil. ${goalPushConsequence(goal)}${persist} À surveiller : si le tirage de référence et le bas du corps restent assez exposés pour ne pas sortir de la rotation.`,
+      `Environ ${Math.round(pushPct || pushProfile.pushPct)} % de tes répétitions récentes vient de mouvements de poussée, contre ~${Math.round(pullPct || pushProfile.pullPct || 0)} % de tirage${ratioEnr != null ? ` (à peu près ${ratioEnr} pour 1)` : ''}.${rel}${sh}${legs} Ça vient surtout de ce que tu continues à faire — triceps et épaules. Le travail restant s'est recomposé : tu n'as pas tout baissé pareil. ${goalPushConsequence(goal)}${persist} À surveiller : si le tirage de référence et le bas du corps restent assez exposés pour ne pas sortir de la rotation.`,
       ratioEnr != null ? `push/pull ~${ratioEnr} · ~${Math.round(pushPct)} % poussée` : `~${Math.round(pushPct)} % poussée`,
       persist ? 0.93 : 0.9
     );
@@ -577,7 +727,7 @@ export function buildHorizonEssayCandidates(opts = {}) {
 
   const vertHold = pullFam.vert.filter((e) => e.sessions >= 2 && e.lastReps >= e.firstReps - 3);
   const accDrop = pullFam.acc.filter((e) => e.sessions <= 2);
-  if (vertHold.length && (habitP.muscles.find((m) => m.label === 'dos') || accDrop.length)) {
+  if (!discCoversTraj && vertHold.length && (habitP.muscles.find((m) => m.label === 'dos') || accDrop.length)) {
     const estPull = established.filter((e) => /traction|australien|pull/i.test(e.exerciseName || ''));
     medium(
       'pull_hold',
@@ -588,7 +738,7 @@ export function buildHorizonEssayCandidates(opts = {}) {
     );
   }
 
-  if (fatigueUnknown && loadFalling && !(d7 != null && d7 > 8)) {
+  if (!skipGenericNow && fatigueUnknown && loadFalling && !(d7 != null && d7 > 8)) {
     short(
       'unknown_fatigue',
       'Fatigue : on ne peut pas encore trancher',
@@ -598,16 +748,16 @@ export function buildHorizonEssayCandidates(opts = {}) {
     );
   }
 
-  // ——— MOYEN TERME : ce qui se construit ———
-  if ((currP.total >= 40 || habitP.total >= 40) && !skipKind('specialization')) {
-    const triNow = muscleShare(currP, 'triceps');
-    const shNow = muscleShare(currP, 'épaule');
-    const biNow = muscleShare(currP, 'biceps');
+  // ——— TRAJECTOIRE : ce qui se construit (pas « la période Recap = un cycle ») ———
+  if (!discCoversTraj && trajHasCycle && (trajP.total >= 40 || habitP.total >= 40) && !skipKind('specialization')) {
+    const triNow = muscleShare(trajP, 'triceps');
+    const shNow = muscleShare(trajP, 'épaule');
+    const biNow = muscleShare(trajP, 'biceps');
     medium(
       'specialization',
       'Ton entraînement devient progressivement plus spécialisé',
       [
-        `Sur un cycle de quelques semaines, tu consacres une part croissante du travail aux épaules et aux triceps`,
+        `Sur les dernières semaines, tu consacres une part croissante du travail aux épaules et aux triceps`,
         triNow && shNow ? ` (~${shNow.sharePct} % et ~${triNow.sharePct} % des répétitions)` : '',
         biNow ? `, avec encore les biceps autour de ${biNow.sharePct} %` : '',
         '. ',
@@ -616,13 +766,13 @@ export function buildHorizonEssayCandidates(opts = {}) {
           : '',
         ' Certaines qualités reçoivent beaucoup plus d’exposition que d’autres. Ça peut être cohérent si tu priorises la poussée ; moins si tu visais un développement plus équilibré.'
       ].join(''),
-      shareEvidence(currP),
+      shareEvidence(trajP),
       0.94
     );
   }
 
   const pushN = pushVariantCount(current, getExerciseNameById);
-  if (pushN >= 4 && pushPct < 68) {
+  if (!discCoversTraj && pushN >= 4 && pushPct < 68) {
     medium(
       'redundancy',
       'Beaucoup de variantes de pompes, pas forcément plus de stimulus différent',
@@ -632,7 +782,7 @@ export function buildHorizonEssayCandidates(opts = {}) {
     );
   }
 
-  if (established.length >= 2 && vertHold.length < 2) {
+  if (!discCoversTraj && established.length >= 2 && vertHold.length < 2) {
     medium(
       'established',
       'Les mouvements que tu répètes sont ceux dont le niveau devient lisible',
@@ -642,17 +792,20 @@ export function buildHorizonEssayCandidates(opts = {}) {
     );
   }
 
-  if (efficiency != null && (loadFalling || (mom != null && mom < 0))) {
+  if (!discCoversTraj && efficiency != null && (loadFalling || (mom != null && mom < 0))) {
     medium(
       'efficiency',
       'Le rendement de progression se lit avec la fréquence, pas tout seul',
-      `La progression récente est moins favorable : tu investis de l'exposition pour un retour plutôt négatif (efficacité autour de ${efficiency}). Une partie de ce ralentissement peut venir du simple fait que tu t'exposes moins souvent. Le chiffre redevient intéressant si tu retrouves un rythme régulier et que les références ne suivent toujours pas.`,
-      efficiency != null ? `efficacité ~${efficiency}` : '',
-      0.84
+      `La progression récente est moins favorable : tu t'exposes moins souvent et les répétitions observées reculent aussi. Une partie de ce ralentissement peut venir du simple fait que tu t'entraînes moins régulièrement. Le chiffre redevient intéressant si tu retrouves un rythme stable et que les références ne suivent toujours pas.`,
+      [d28 != null ? `reps 28 j. ${Math.round(d28)} %` : null, mom != null ? `reps observées ${Math.round(mom)} %` : null]
+        .filter(Boolean)
+        .join(' · '),
+      0.8
     );
   }
 
   if (
+    !discCoversTraj &&
     (goal === 'muscular_defined' || goal === 'strength_lean') &&
     programPct != null &&
     programPct < 65 &&
@@ -667,7 +820,13 @@ export function buildHorizonEssayCandidates(opts = {}) {
     );
   }
 
-  if (loadFalling && current.avgExercisesPerSession && habit.avgExercisesPerSession && !skipKind('capacity_vs_exposure')) {
+  if (
+    !discCoversTraj &&
+    loadFalling &&
+    current.avgExercisesPerSession &&
+    habit.avgExercisesPerSession &&
+    !skipKind('capacity_vs_exposure')
+  ) {
     medium(
       'capacity_vs_exposure',
       "Le risque actuel ressemble davantage à un trou de rythme qu'à un manque de capacité",
@@ -678,8 +837,134 @@ export function buildHorizonEssayCandidates(opts = {}) {
     );
   }
 
-  // ——— LONG TERME : ce qui caractérise la trajectoire (pas du remplissage) ———
-  if (longTerm.sessions >= 4) {
+  // ——— PARCOURS : depuis la première saisie, pas first vs last sur 90 j. ———
+  const progressRows = journey?.narratives?.progress || [];
+  if (progressRows.length && !selectedKinds.has('disc_exercise_progress')) {
+    const lead = progressRows[0];
+    const title =
+      progressRows.length === 1
+        ? `Depuis ta première référence, ${lead.name} ${
+            lead.pctFromReliable >= 0 ? '+' : ''
+          }${Math.round(lead.pctFromReliable)} %`
+        : 'Depuis tes débuts, tes mouvements de référence ont bougé';
+    let body;
+    if (progressRows.length === 1) {
+      const refLabel =
+        lead.firstReliable.source === 'first_reliable'
+          ? `ta première référence fiable (${lead.firstReliable.reps} reps — les premières saisies trop atypiques sont mises de côté)`
+          : `ta première saisie (${lead.firstReliable.reps} reps le ${formatDayFr(lead.firstReliable.date, true)})`;
+      const habitN = lead.habitual?.median != null ? Math.round(lead.habitual.median) : null;
+      const prBit =
+        lead.pr && lead.prDistinctFromHabitual
+          ? ` Ton record est de ${lead.pr.reps} reps${
+              lead.prAgeDays != null ? ` (il y a ${lead.prAgeDays} j.)` : ''
+            } : ce n'est pas le niveau que tu reproduis séance après séance.`
+          : lead.pr
+            ? ` Meilleure séance : ${lead.pr.reps} reps.`
+            : '';
+      const cons =
+        lead.robustnessKind === 'LEVEL_ESTABLISHED'
+          ? ' Ce niveau est assez répété pour servir de référence personnelle, pas d’un pic isolé.'
+          : '';
+      body = `Depuis ${refLabel}, ton niveau habituel sur ${lead.name} est autour de ${habitN} reps (${
+        lead.pctFromReliable >= 0 ? '+' : ''
+      }${Math.round(lead.pctFromReliable)} %).${prBit}${cons}${milestonePhrase(lead)}${
+        journey.tenureDays >= 45 && journey.startYmd
+          ? ` Premier entraînement enregistré : ${formatDayFr(journey.startYmd, true)} (${journey.tenureDays} j., ${journey.trainingDays} jours entraînés).`
+          : ''
+      } Base : ${lead.sessions} séances sur ${lead.spanDays} jours.`;
+    } else {
+      const bits = progressRows.map(
+        (e) =>
+          `${e.name} : ${e.firstReliable.reps} → ${Math.round(e.habitual.median)} reps (${
+            e.pctFromReliable >= 0 ? '+' : ''
+          }${Math.round(e.pctFromReliable)} %)`
+      );
+      body = `Les mouvements que tu répètes assez souvent pour être comparables ont changé depuis tes premières références fiables. ${bits.join('. ')}. Un record isolé n'est pas le niveau : le chiffre utile, c'est ce que tu reproduis.`;
+    }
+    const jConf = confidenceFromSample(lead.sessions, lead.spanDays || 90);
+    long(
+      'journey_progress',
+      title,
+      body,
+      progressRows
+        .map((e) => `${e.name} ${e.firstReliable.reps}→${Math.round(e.habitual.median)}`)
+        .join(' · '),
+      0.94,
+      { showConfidence: true, confidenceLabel: jConf.label, sampleDays: lead.spanDays }
+    );
+  }
+
+  const prStory = journey?.narratives?.prVsLevel;
+  if (prStory && !progressRows.some((e) => e.exerciseId === prStory.exerciseId)) {
+    long(
+      'journey_pr_vs_level',
+      `Ton record de ${prStory.name} n'est pas ton niveau habituel`,
+      `Record ${prStory.pr.reps} reps, établi le ${formatDayFr(prStory.pr.date, true)}${
+        prStory.prAgeDays != null ? ` (il y a ${prStory.prAgeDays} j.)` : ''
+      }. Ton niveau habituel, reproduit sur ${prStory.sessionsAtHabitual} séances, est autour de ${Math.round(
+        prStory.habitual.median
+      )}–${Math.round(prStory.habitual.mean)} reps. Un PR dit le plafond d'un jour ; le niveau comparable, c'est ce que tu reproduis.`,
+      `PR ${prStory.pr.reps} · habituel ~${Math.round(prStory.habitual.median)} · ${prStory.sessions} séances`,
+      0.9,
+      {
+        showConfidence: true,
+        confidenceLabel: confidenceFromSample(prStory.sessions, prStory.spanDays || 90).label,
+        sampleDays: prStory.spanDays
+      }
+    );
+  }
+
+  const mileLead = journey?.narratives?.milestoneStory;
+  if (!progressRows.length && mileLead && (mileLead.milestones?.hits || []).length >= 3) {
+    long(
+      'journey_milestones',
+      `${mileLead.name} : ${mileLead.milestones.hits.length} paliers depuis tes débuts`,
+      `${mileLead.name} a franchi ${fmtList(mileLead.milestones.hits.map((h) => `${h.reps} reps`))}.${milestonePhrase(mileLead)} Ce n'est pas un palmarès : ce sont les niveaux que tu as réellement atteints au moins une fois, dans l'ordre.`,
+      mileLead.milestones.hits.map((h) => `${h.reps}`).join(' → '),
+      0.88,
+      {
+        showConfidence: true,
+        confidenceLabel: confidenceFromSample(mileLead.sessions, mileLead.spanDays || 90).label,
+        sampleDays: mileLead.spanDays
+      }
+    );
+  }
+
+  const plateauRow = journey?.narratives?.plateau;
+  if (plateauRow?.plateau) {
+    medium(
+      'journey_plateau',
+      `Plateau — ${plateauRow.name}`,
+      `Ton niveau habituel sur ${plateauRow.name} reste autour de ${Math.round(
+        plateauRow.plateau.median
+      )} reps depuis ${plateauRow.plateau.spanDays} jours (${plateauRow.plateau.sessions} séances dans cette bande). L'exposition continue, mais la performance maximale n'évolue plus clairement. Ce n'est pas une régression : c'est une absence de nouveau palier.`,
+      `~${Math.round(plateauRow.plateau.median)} reps · ${plateauRow.plateau.spanDays} j.`,
+      0.86
+    );
+  }
+
+  const gone = (journey?.narratives?.abandoned || []).find((e) => e.family && e.family !== 'other');
+  if (gone && !(cardioGone && /course|run/i.test(gone.name))) {
+    const repl = gone.replacement
+      ? ` Tu n'as pas arrêté la famille : ${gone.replacement.name} est encore là.`
+      : '';
+    emit(
+      'journey_abandoned',
+      gone.replacement
+        ? `${gone.name} a été remplacé, pas abandonné au hasard`
+        : `${gone.name} est sorti de la rotation`,
+      `Tu pratiquais ${gone.name} régulièrement (retour habituel ~tous les ${gone.medianIntervalDays} j., ${gone.sessions} séances), puis plus rien depuis ${gone.daysSinceLast} jours (dernière fois le ${formatDayFr(gone.current.date, true)}).${repl} La prochaine séance se lira comme une reprise.`,
+      `${formatDayFr(gone.current.date, true)} · ${gone.daysSinceLast} j. · habitude ~${gone.medianIntervalDays} j.`,
+      contraction ? 0.8 : 0.88
+    );
+  }
+
+  if (
+    !journeyHasProgressStory(journey) &&
+    !journey?.narratives?.milestoneStory &&
+    longTerm.sessions >= 4
+  ) {
     const durable = (longShifts.rising.length
       ? longShifts.rising
       : longTerm.exercises.filter((e) => e.sessions >= 4 && e.lastReps >= e.firstReps + 2)
@@ -697,7 +982,7 @@ export function buildHorizonEssayCandidates(opts = {}) {
       );
     }
 
-    if (currRate && longRate && currRate < longRate * 0.85 && !skipKind('recent_vs_identity')) {
+    if (currRate && longRate && currRate < longRate * 0.85 && !skipKind('recent_vs_identity') && wins.currentLen <= 45) {
       const idBit = identity?.ready
         ? ` Ton rythme habituel, lui, se situe autour de ${formatRateFr(identity.frequency.meanPerWeek)} séances/sem. (souvent ${identityBandPhrase(identity)})${
             idStatus === 'low'

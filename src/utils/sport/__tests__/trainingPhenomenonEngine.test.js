@@ -32,6 +32,8 @@ describe('buildTrainingPhenomena', () => {
     const contraction = phenomena.find((p) => p.type === 'contraction_with_rebound');
     expect(contraction.interpretation.identityStatus).toBe('normal');
     expect(contraction.interpretation.identityMeans).toBe('observed_habit');
+    expect(contraction.nature).toBe('now');
+    expect(phenomena.find((p) => p.type === 'specialization_push').nature).toBe('trajectory');
     expect(phenomenonSuppresses(phenomena, 'volume_traj')).toBe(true);
     expect(phenomenonSuppresses(phenomena, 'specialization')).toBe(true);
     expect(phenomenonSuppresses(phenomena, 'capacity_vs_exposure')).toBe(true);
