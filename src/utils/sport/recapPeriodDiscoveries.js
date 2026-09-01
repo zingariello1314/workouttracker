@@ -28,7 +28,7 @@ import { resolveExerciseNameForRecap } from './recapStrengthPeriodStats';
 import { formatRateFr } from './athleteTrainingIdentity';
 import { formatDayFr, daysBetweenYmd } from './recapTrainingTimeline';
 import { recentThemeCount } from './insightNoveltyStore';
-import { comparableWeeklyRates } from './recapInsightNature';
+import { comparableWeeklyRates, SIGNAL_FAMILY_CAPS, signalFamilyOfKind } from './recapInsightNature';
 import {
   buildExerciseBaselines,
   buildSessionCatalog,
@@ -106,32 +106,14 @@ const LOWER_GROUPS = new Set([
   MuscleGroups.TIBIALIS_ANTERIOR
 ]);
 
-const ANGLE_CAPS = { now: 2, trajectory: 3, journey: 2 };
-
-/** Plafonds de base — jamais un plancher. */
-const PERIOD_BASE_CAPS = {
-  today: { now: 2, trajectory: 3, journey: 2 },
-  week: { now: 2, trajectory: 3, journey: 2 },
-  month: { now: 2, trajectory: 3, journey: 2 },
-  long: { now: 2, trajectory: 3, journey: 2 },
-  year: { now: 2, trajectory: 3, journey: 2 }
-};
-
-/** Plafonds élargis seulement si assez d'observations fortes. */
-const PERIOD_MAX_CAPS = {
-  today: { now: 2, trajectory: 3, journey: 2 },
-  week: { now: 2, trajectory: 3, journey: 3 },
-  month: { now: 2, trajectory: 4, journey: 2 },
-  long: { now: 2, trajectory: 3, journey: 3 },
-  year: { now: 2, trajectory: 4, journey: 3 }
-};
-
-export function observationCaps(voiceKey, discoveries = []) {
-  const base = PERIOD_BASE_CAPS[voiceKey] || ANGLE_CAPS;
-  const max = PERIOD_MAX_CAPS[voiceKey] || ANGLE_CAPS;
-  const strong = (discoveries || []).filter((d) => (d.score || 0) >= 72).length;
-  const need = voiceKey === 'year' ? 8 : 6;
-  return strong >= need ? { ...max } : { ...base };
+/** Plafonds totaux (sport + sommeil) — jamais un plancher. */
+export function observationCaps(voiceKey, _discoveries = []) {
+  const fam = SIGNAL_FAMILY_CAPS[voiceKey] || SIGNAL_FAMILY_CAPS.week;
+  return {
+    now: fam.now.sport + fam.now.sleep,
+    trajectory: fam.trajectory.sport + fam.trajectory.sleep,
+    journey: fam.journey.sport + fam.journey.sleep
+  };
 }
 
 function muscleLabel(group) {
@@ -1518,10 +1500,15 @@ function detectDiscoveries(cmp, extras = {}) {
   const j2 = sleepCands.find((c) => c.type === 'sleep_j2');
   const combo = sleepCands.find((c) => c.type === 'sleep_combo');
   const windowFacts = extras.sleepWindowFacts || [];
+  const journeyFacts = extras.sleepJourneyFacts || [];
   const conc = windowFacts.find((c) => c.type === 'sleep_concentration');
   const deepStab = windowFacts.find((c) => c.type === 'sleep_deep_stable');
-  const highShare = windowFacts.find((c) => c.type === 'sleep_high_day_share');
-  const weekFreq = windowFacts.find((c) => c.type === 'sleep_week_freq');
+  const highShareWindow = windowFacts.find((c) => c.type === 'sleep_high_day_share');
+  const highShareJourney = journeyFacts.find((c) => c.type === 'sleep_high_day_share');
+  const highShare = isToday || isWeek ? highShareJourney : highShareWindow || highShareJourney;
+  const weekFreqWindow = windowFacts.find((c) => c.type === 'sleep_week_freq');
+  const weekFreqJourney = journeyFacts.find((c) => c.type === 'sleep_week_freq');
+  const weekFreq = isToday || isWeek ? weekFreqJourney || weekFreqWindow : weekFreqWindow || weekFreqJourney;
   const prevLoad = sleepCands.find((c) => c.type === 'sleep_prev_load');
   const densSleep = sleepCands.find((c) => c.type === 'sleep_intensity');
   const cardioSleep = sleepCands.find((c) => c.type === 'sleep_cardio');
@@ -1652,7 +1639,7 @@ function detectDiscoveries(cmp, extras = {}) {
     );
   }
 
-  if (archSleep && (isWeek || isMonth || isLongVoice(v))) {
+  if (archSleep) {
     const bits = [];
     if (archSleep.hoursHigh != null && archSleep.hoursLow != null) {
       bits.push(`${formatSleepHoursFr(archSleep.hoursHigh)} vs ${formatSleepHoursFr(archSleep.hoursLow)} de sommeil`);
@@ -1737,20 +1724,25 @@ function detectDiscoveries(cmp, extras = {}) {
     );
   }
 
-  if (zones && (isMonth || isLongVoice(v))) {
+  if (zones) {
     const exposeBit =
       vol75?.highMin != null && vol75?.lowMin != null
         ? ` Le sommeil agit surtout sur ta capacité à maintenir l'exposition : tes meilleures journées correspondent aux séances où tu accumules beaucoup de travail sans réduire fortement la durée (${formatDurationFr(vol75.highMin)} contre ${formatDurationFr(vol75.lowMin)}).`
         : '';
+    const zoneScope = isToday || isWeek ? 'Dans tes séances documentées' : isLongVoice(v) ? 'Sur le trimestre' : 'Sur les 30 jours';
     out.push(
       discovery({
         kind: 'disc_sleep_zones',
         nature: 'journey',
         family: 'sleep_zones',
-        title: isLongVoice(v)
-          ? 'Ton historique établit trois zones de récupération'
-          : 'Ton profil de récupération se précise en trois zones',
-        body: `Sur les 30 jours, tes données établissent trois zones : au-dessus de 8 h, environ ${fmtInt(zones.z8.vol)} reps le lendemain${
+        title: isToday
+          ? "Cette séance s'inscrit dans trois zones de récupération déjà visibles"
+          : isWeek
+            ? 'Cette semaine confirme trois zones de récupération'
+            : isLongVoice(v)
+              ? 'Ton historique établit trois zones de récupération'
+              : 'Ton profil de récupération se précise en trois zones',
+        body: `${zoneScope}, tes données établissent trois zones : au-dessus de 8 h, environ ${fmtInt(zones.z8.vol)} reps le lendemain${
           zones.z75 ? ` ; entre 7 h 30 et 8 h, environ ${fmtInt(zones.z75.vol)}` : ''
         } ; sous 7 h 30, environ ${fmtInt(zones.zLow.vol)}. L'écart entre la première et la troisième zone atteint ${fmtInt(zones.delta)} reps (${fmtPct(zones.deltaPct)}).${exposeBit} Le seuil ne dit pas qu'une nuit courte empêche l'entraînement : il sépare deux régimes de volume.`,
         evidence: `≥ 8 h ${fmtInt(zones.z8.vol)} · < 7 h 30 ${fmtInt(zones.zLow.vol)}`,
@@ -1760,13 +1752,17 @@ function detectDiscoveries(cmp, extras = {}) {
     );
   }
 
-  if (delayed && isLongVoice(v)) {
+  if (delayed) {
     out.push(
       discovery({
         kind: 'disc_sleep_delayed',
         nature: 'journey',
         family: 'sleep_delayed',
-        title: 'Le déficit de sommeil se lit surtout quand il se répète',
+        title: isToday
+          ? "Cette séance s'inscrit dans un effet de déficit répété"
+          : isWeek
+            ? 'Cette semaine confirme que le déficit se lit surtout quand il se répète'
+            : 'Le déficit de sommeil se lit surtout quand il se répète',
         body: `Après deux nuits sous 7 h, ton volume moyen tombe à ${fmtInt(delayed.shortVol)} reps, contre ${fmtInt(delayed.longVol)} lorsque les deux nuits précédentes dépassent 7 h 30 (${delayed.shortN} et ${delayed.longN} cas). Une seule nuit courte ne suffit pas à faire décrocher le volume dans cet historique.`,
         evidence: `2 nuits courtes ${fmtInt(delayed.shortVol)} · 2 nuits longues ${fmtInt(delayed.longVol)}`,
         weights: { importance: 0.88, reliability: 0.82, novelty: 0.94, fit: 0.9 },
@@ -1854,13 +1850,17 @@ function detectDiscoveries(cmp, extras = {}) {
     );
   }
 
-  if (weekFreq && (isWeek || isLongVoice(v))) {
+  if (weekFreq) {
     out.push(
       discovery({
         kind: 'disc_sleep_freq',
         nature: 'journey',
         family: 'sleep_freq',
-        title: 'Les nuits longues favorisent aussi la répétition des jours actifs',
+        title: isToday
+          ? "Cette séance s'inscrit dans un lien entre nuits longues et jours actifs"
+          : isWeek
+            ? 'Cette semaine confirme un lien entre nuits longues et jours actifs'
+            : 'Les nuits longues favorisent aussi la répétition des jours actifs',
         body: `Tes semaines contenant au moins 4 nuits au-dessus de 7 h 30 présentent une moyenne de ${fmt1(weekFreq.highDays)} jours actifs, contre ${fmt1(weekFreq.lowDays)} lorsque ce seuil n'est atteint que deux fois ou moins (${weekFreq.highWeeks} et ${weekFreq.lowWeeks} semaines). La différence porte donc à la fois sur le nombre de jours où tu t'entraînes et la quantité de travail réalisée lors de ces journées.`,
         evidence: `${fmt1(weekFreq.highDays)} j. · ${fmt1(weekFreq.lowDays)} j.`,
         weights: { importance: 0.86, reliability: 0.82, novelty: 0.92, fit: 0.9 },
@@ -1869,13 +1869,14 @@ function detectDiscoveries(cmp, extras = {}) {
     );
   }
 
-  if (highShare && isLongVoice(v)) {
-    const streak = maxConsecutiveTrainingDays(p.repsByDate);
+  if (highShare) {
+    const qSrc = isToday || isWeek ? d90 : p;
+    const streak = maxConsecutiveTrainingDays(qSrc.repsByDate || p.repsByDate);
     const timeBit =
-      p.minutes >= 40
-        ? `, ${formatDurationFr(p.minutes)} d'exercices`
-        : p.totalMinutes >= 40
-          ? `, ${formatDurationFr(p.totalMinutes)} d'activité`
+      qSrc.minutes >= 40
+        ? `, ${formatDurationFr(qSrc.minutes)} d'exercices`
+        : qSrc.totalMinutes >= 40
+          ? `, ${formatDurationFr(qSrc.totalMinutes)} d'activité`
           : '';
     const lowBit =
       highShare.lowShortShare != null
@@ -1885,13 +1886,25 @@ function detectDiscoveries(cmp, extras = {}) {
       streak >= 8
         ? ` Ton record de ${streak} jours consécutifs montre que ta capacité à maintenir l'entraînement existe. La différence entre une période productive et une période moins productive réside davantage dans la répétition de journées suffisamment récupérées que dans un niveau maximal ponctuel.`
         : '';
+    const scopeLead = isToday
+      ? "Cette séance s'inscrit dans un trimestre"
+      : isWeek
+        ? 'Cette semaine confirme un trimestre'
+        : 'Sur trois mois, tu totalises';
+    const totalsBit = isToday || isWeek
+      ? ` où tu totalises ${fmtInt(qSrc.totalReps)} reps, ${qSrc.trainingDays} jours entraînés${timeBit}`
+      : ` ${fmtInt(qSrc.totalReps)} reps, ${qSrc.trainingDays} jours entraînés${timeBit}`;
     out.push(
       discovery({
         kind: 'disc_sleep_quarter',
         nature: 'journey',
         family: 'sleep_quarter',
-        title: 'Le sommeil devient une variable explicative de ta progression',
-        body: `Sur trois mois, tu totalises ${fmtInt(p.totalReps)} reps, ${p.trainingDays} jours entraînés${timeBit}. Les nuits d'au moins 7 h 30 concentrent ${fmtPct(highShare.highShare)} des journées dépassant 300 reps, alors qu'elles représentent ${fmtPct(highShare.nightShare)} des nuits.${lowBit} Tes ${fmtInt(p.totalReps)} reps ne proviennent pas d'une augmentation uniforme de ton volume quotidien : elles résultent de l'accumulation de journées où tu combines sommeil suffisant et entraînement complet.${streakBit}`,
+        title: isToday
+          ? 'Cette séance s’inscrit dans un trimestre où le sommeil explique les journées denses'
+          : isWeek
+            ? 'Cette semaine confirme un trimestre où le sommeil explique les journées denses'
+            : 'Le sommeil devient une variable explicative de ta progression',
+        body: `${scopeLead}${totalsBit}. Les nuits d'au moins 7 h 30 concentrent ${fmtPct(highShare.highShare)} des journées dépassant 300 reps, alors qu'elles représentent ${fmtPct(highShare.nightShare)} des nuits.${lowBit} Tes ${fmtInt(qSrc.totalReps)} reps ne proviennent pas d'une augmentation uniforme de ton volume quotidien : elles résultent de l'accumulation de journées où tu combines sommeil suffisant et entraînement complet.${streakBit}`,
         evidence: `${fmtPct(highShare.highShare)} des ≥ 300 · ${fmtPct(highShare.nightShare)} des nuits`,
         weights: { importance: 0.93, reliability: 0.86, novelty: 0.94, fit: 0.97 },
         metrics: { ...highShare, streak }
@@ -1899,13 +1912,17 @@ function detectDiscoveries(cmp, extras = {}) {
     );
   }
 
-  if (j2 && (isLongVoice(v) || isMonth)) {
+  if (j2) {
     out.push(
       discovery({
         kind: 'disc_sleep_j2',
         nature: 'journey',
         family: 'sleep_j2',
-        title: 'Le sommeil d’avant-hier pèse encore, même après une nuit correcte',
+        title: isToday
+          ? "Cette séance s'inscrit dans un effet de la nuit d'avant-hier"
+          : isWeek
+            ? "Cette semaine confirme que la nuit d'avant-hier pèse encore"
+            : 'Le sommeil d’avant-hier pèse encore, même après une nuit correcte',
         body: `Même après une nuit précédente d'au moins 7 h 30, un sommeil sous 7 h deux nuits plus tôt est associé à ${fmtInt(j2.isolatedVol)} reps le jour J, contre ${fmtInt(j2.okVol)} lorsque les deux nuits dépassent 7 h 30 (${j2.isolatedN} et ${j2.okN} cas). La nuit d'avant-hier n'est donc pas un détail : elle sépare encore deux régimes de volume.`,
         evidence: `J-2 court ${fmtInt(j2.isolatedVol)} · deux nuits ok ${fmtInt(j2.okVol)}`,
         weights: { importance: 0.86, reliability: 0.8, novelty: 0.95, fit: 0.88 },
@@ -2368,10 +2385,20 @@ export const PERIOD_DISCOVERY_PRIORITY = {
       'disc_structural_memory',
       'disc_stimulus_mix'
     ],
-    journey: ['disc_anchor', 'disc_repertoire', 'disc_exercise_progress', 'disc_freq_continuity']
+    journey: [
+      'disc_sleep_zones',
+      'disc_anchor',
+      'disc_sleep_freq',
+      'disc_sleep_j2',
+      'disc_repertoire',
+      'disc_exercise_progress',
+      'disc_freq_continuity',
+      'disc_sleep_quarter',
+      'disc_sleep_delayed'
+    ]
   },
   week: {
-    now: ['disc_pending_session', 'disc_sleep_week', 'disc_volume_shape', 'disc_sleep_night', 'disc_sleep_deep', 'disc_peak_day', 'disc_density'],
+    now: ['disc_pending_session', 'disc_sleep_week', 'disc_volume_shape', 'disc_sleep_deep', 'disc_sleep_night', 'disc_peak_day', 'disc_density'],
     trajectory: [
       'disc_pending_context',
       'disc_sleep_volume',
@@ -2388,7 +2415,17 @@ export const PERIOD_DISCOVERY_PRIORITY = {
       'disc_structural_memory',
       'disc_stimulus_mix'
     ],
-    journey: ['disc_sleep_freq', 'disc_anchor', 'disc_kcal_profile', 'disc_repertoire', 'disc_best_month']
+    journey: [
+      'disc_sleep_freq',
+      'disc_sleep_zones',
+      'disc_anchor',
+      'disc_kcal_profile',
+      'disc_repertoire',
+      'disc_best_month',
+      'disc_sleep_quarter',
+      'disc_sleep_j2',
+      'disc_sleep_delayed'
+    ]
   },
   month: {
     now: ['disc_volume_shape', 'disc_density', 'disc_muscle_now'],
@@ -2446,13 +2483,8 @@ const DISCOVERY_RIVALS = [
   ['disc_family_fade', 'disc_emergence'],
   ['disc_muscle_share_shift', 'disc_muscle_reorient'],
   ['disc_sleep_volume', 'disc_sleep_assoc', 'disc_sleep_combo', 'disc_sleep_month', 'disc_sleep_perf'],
-  ['disc_sleep_combo', 'disc_sleep_efficiency'],
-  ['disc_sleep_delayed', 'disc_sleep_j2'],
-  ['disc_sleep_architecture', 'disc_sleep_deep'],
-  ['disc_sleep_family', 'disc_sleep_assoc', 'disc_sleep_load'],
-  ['disc_sleep_intensity', 'disc_sleep_rpe'],
-  ['disc_sleep_cardio', 'disc_cardio_strength'],
-  ['disc_sleep_zones', 'disc_sleep_quarter', 'disc_quarter_profile']
+  ['disc_sleep_zones', 'disc_sleep_quarter'],
+  ['disc_sleep_intensity', 'disc_sleep_rpe']
 ];
 
 function rivalBlocked(kind, usedKinds) {
@@ -2461,7 +2493,24 @@ function rivalBlocked(kind, usedKinds) {
   );
 }
 
-export function selectPeriodDiscoveries(discoveries, insightHistory = null, voiceKey = 'week') {
+function inferDropReason(d, selected, famCaps) {
+  const nature = d.nature || 'trajectory';
+  const sig = signalFamilyOfKind(d.kind);
+  const selectedKinds = new Set(selected.map((s) => s.kind));
+  const minScore = isMilestoneKind(d.kind) ? 52 : 48;
+  if ((d.score || 0) < minScore) return 'score';
+  if (rivalBlocked(d.kind, selectedKinds)) return 'rival';
+  const sameFamily = selected.find((s) => s.family && s.family === d.family);
+  if (sameFamily && (d.score || 0) < 86) return 'family';
+  const filled = selected.filter(
+    (s) => (s.nature || 'trajectory') === nature && signalFamilyOfKind(s.kind) === sig
+  ).length;
+  const cap = famCaps[nature]?.[sig] ?? 0;
+  if (filled >= cap) return 'cap';
+  return 'other';
+}
+
+export function selectPeriodDiscoveriesWithTrace(discoveries, insightHistory = null, voiceKey = 'week') {
   const scored = (discoveries || []).map((d) => ({
     ...d,
     score: Math.round((d.score || 0) * memoryFactor(insightHistory, d.kind))
@@ -2477,14 +2526,13 @@ export function selectPeriodDiscoveries(discoveries, insightHistory = null, voic
   const byAngle = { now: [], trajectory: [], journey: [] };
   const usedFamily = new Set();
   const usedKind = new Set();
+  const familyCount = {
+    now: { sport: 0, sleep: 0, milestone: 0 },
+    trajectory: { sport: 0, sleep: 0, milestone: 0 },
+    journey: { sport: 0, sleep: 0, milestone: 0 }
+  };
   const priority = PERIOD_DISCOVERY_PRIORITY[voiceKey] || PERIOD_DISCOVERY_PRIORITY.week;
-  const caps = observationCaps(voiceKey, unique);
-  const baseCaps = PERIOD_BASE_CAPS[voiceKey] || ANGLE_CAPS;
-  const priorityKinds = new Set([
-    ...(priority.now || []),
-    ...(priority.trajectory || []),
-    ...(priority.journey || [])
-  ]);
+  const famCaps = SIGNAL_FAMILY_CAPS[voiceKey] || SIGNAL_FAMILY_CAPS.week;
 
   const canTake = (d) => {
     if ((d.score || 0) < 48) return false;
@@ -2497,15 +2545,14 @@ export function selectPeriodDiscoveries(discoveries, insightHistory = null, voic
   const take = (d) => {
     if (isMilestoneKind(d.kind)) return false;
     const nature = d.nature || 'trajectory';
-    const cap = caps[nature] || 2;
-    const filled = (byAngle[nature] || []).length;
-    if (filled >= cap) return false;
-    const extra = filled >= (baseCaps[nature] || 2);
-    if (extra && ((d.score || 0) < 72 || !priorityKinds.has(d.kind))) return false;
+    const sig = signalFamilyOfKind(d.kind);
+    const cap = famCaps[nature]?.[sig] ?? 0;
+    if ((familyCount[nature]?.[sig] || 0) >= cap) return false;
     if (!canTake(d)) return false;
     byAngle[nature].push(d);
     usedKind.add(d.kind);
     usedFamily.add(d.family);
+    familyCount[nature][sig] += 1;
     return true;
   };
 
@@ -2518,22 +2565,38 @@ export function selectPeriodDiscoveries(discoveries, insightHistory = null, voic
 
   sorted.forEach((d) => take(d));
 
-  const extraAllow = { now: 1, trajectory: 1, journey: 1 };
   ['now', 'trajectory', 'journey'].forEach((angle) => {
-    const limit = (baseCaps[angle] || 2) + extraAllow[angle];
+    const cap = famCaps[angle]?.milestone ?? 1;
     sorted.forEach((d) => {
       if (!isMilestoneKind(d.kind)) return;
       if ((d.nature || 'trajectory') !== angle) return;
-      if ((byAngle[angle] || []).length >= limit) return;
+      if ((familyCount[angle].milestone || 0) >= cap) return;
       if (usedKind.has(d.kind)) return;
       if ((d.score || 0) < 52) return;
       byAngle[angle].push(d);
       usedKind.add(d.kind);
       usedFamily.add(d.family);
+      familyCount[angle].milestone += 1;
     });
   });
 
-  return [...byAngle.now, ...byAngle.trajectory, ...byAngle.journey];
+  const selected = [...byAngle.now, ...byAngle.trajectory, ...byAngle.journey];
+  const dropped = unique
+    .filter((d) => !usedKind.has(d.kind))
+    .map((d) => ({
+      kind: d.kind,
+      nature: d.nature || 'trajectory',
+      family: d.family,
+      signalFamily: signalFamilyOfKind(d.kind),
+      score: d.score,
+      reason: inferDropReason(d, selected, famCaps)
+    }));
+
+  return { selected, dropped };
+}
+
+export function selectPeriodDiscoveries(discoveries, insightHistory = null, voiceKey = 'week') {
+  return selectPeriodDiscoveriesWithTrace(discoveries, insightHistory, voiceKey).selected;
 }
 
 /**
@@ -2554,6 +2617,19 @@ export function buildPeriodDiscoveryBundle(opts = {}) {
     garminData: opts.garminData,
     endYmd: end
   });
+  const catalogPairs = pairSessionsWithNights(catalog);
+  const windowStart = opts.window?.start || '';
+  const journeyStart = end ? addCalendarDays(end, -91) : null;
+  const trainedInWindow = catalogPairs.filter(
+    (s) => s.date >= windowStart && s.date <= (end || '9999')
+  );
+  const journeyPairs = journeyStart
+    ? catalogPairs.filter((s) => s.date >= journeyStart && s.date <= (end || '9999'))
+    : catalogPairs;
+  const allNights = extractSleepNightsInWindow(opts.garminData, opts.window?.start, end);
+  const journeyNights = journeyStart
+    ? extractSleepNightsInWindow(opts.garminData, journeyStart, end)
+    : allNights;
   const focusDate =
     comparisons.voice?.key === 'today'
       ? end
@@ -2579,29 +2655,53 @@ export function buildPeriodDiscoveryBundle(opts = {}) {
     garminData: opts.garminData,
     getExerciseNameById: opts.getExerciseNameById,
     profileQuestionnaireRaw: opts.profileQuestionnaireRaw || null,
-    allNights: extractSleepNightsInWindow(opts.garminData, opts.window?.start, end),
+    allNights,
     sleepWindowFacts: publishWindowSleepFacts({
-      trainedPairs: pairSessionsWithNights(catalog).filter(
-        (s) => s.date >= (opts.window?.start || '') && s.date <= (end || '9999')
-      ),
-      allNights: extractSleepNightsInWindow(opts.garminData, opts.window?.start, end),
+      trainedPairs: trainedInWindow,
+      allNights,
       vs: comparisons.voice?.key === 'week' ? 'nights' : 'sessions'
+    }),
+    sleepJourneyFacts: publishWindowSleepFacts({
+      trainedPairs: journeyPairs,
+      allNights: journeyNights,
+      vs: 'sessions'
     })
   };
   const all = detectDiscoveries(comparisons, extras);
-  const selected = selectPeriodDiscoveries(
+  const traced = selectPeriodDiscoveriesWithTrace(
     all,
     opts.insightHistory || null,
     comparisons.voice?.key || 'week'
   );
+  const selected = traced.selected;
+  const dropped = traced.dropped;
   const preferPeriodNow = selected.some((d) => d.nature === 'now');
+  const sleepDetected = all.filter((d) => signalFamilyOfKind(d.kind) === 'sleep').map((d) => d.kind);
+  const sleepSelected = selected.filter((d) => signalFamilyOfKind(d.kind) === 'sleep').map((d) => d.kind);
+  const milestonesDetected = all.filter((d) => isMilestoneKind(d.kind)).map((d) => d.kind);
+  const milestonesSelected = selected.filter((d) => isMilestoneKind(d.kind)).map((d) => d.kind);
   return {
     comparisons,
     all,
     selected,
+    dropped,
     extras,
     question: comparisons.question,
-    preferPeriodNow
+    preferPeriodNow,
+    debug: {
+      garminNightDays: allNights.length,
+      journeyNightDays: journeyNights.length,
+      sleepPairs: catalogPairs.length,
+      sleepCandidateTypes: (extras.sleepCandidates || []).map((c) => c.type),
+      sleepDetected,
+      sleepSelected,
+      milestonesDetected,
+      milestonesSelected,
+      droppedBy: dropped.reduce((acc, d) => {
+        acc[d.reason] = (acc[d.reason] || 0) + 1;
+        return acc;
+      }, {})
+    }
   };
 }
 

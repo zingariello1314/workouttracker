@@ -50,7 +50,7 @@ function InsightColumn({ title, items, horizonKey, accent }) {
 
   const pill = HORIZON_PILLS[horizonKey] || HORIZON_PILLS.medium;
 
-  const trimmed = (items || []).slice(0, 5);
+  const trimmed = (items || []).slice(0, 8);
 
   return (
 

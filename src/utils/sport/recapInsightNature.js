@@ -22,15 +22,74 @@ export const NATURE_TO_HORIZON = {
   journey: 'long'
 };
 
-/** Plafonds par colonne — un maximum, jamais un plancher. */
-export const NATURE_COLUMN_CAPS = { short: 2, medium: 3, long: 2 };
-export const NATURE_COLUMN_CAPS_WITH_MILESTONES = { short: 3, medium: 4, long: 3 };
+/**
+ * Plafonds par famille de signal (sport / sommeil / jalon).
+ * Un maximum, jamais un plancher : slot vide si le signal n'est pas publiable.
+ */
+export const SIGNAL_FAMILY_CAPS = {
+  today: {
+    now: { sport: 3, sleep: 2, milestone: 1 },
+    trajectory: { sport: 3, sleep: 2, milestone: 1 },
+    journey: { sport: 2, sleep: 1, milestone: 1 }
+  },
+  week: {
+    now: { sport: 3, sleep: 2, milestone: 1 },
+    trajectory: { sport: 3, sleep: 2, milestone: 1 },
+    journey: { sport: 2, sleep: 1, milestone: 1 }
+  },
+  month: {
+    now: { sport: 3, sleep: 2, milestone: 1 },
+    trajectory: { sport: 4, sleep: 2, milestone: 1 },
+    journey: { sport: 2, sleep: 2, milestone: 1 }
+  },
+  long: {
+    now: { sport: 3, sleep: 1, milestone: 1 },
+    trajectory: { sport: 3, sleep: 2, milestone: 1 },
+    journey: { sport: 3, sleep: 2, milestone: 1 }
+  },
+  year: {
+    now: { sport: 3, sleep: 1, milestone: 1 },
+    trajectory: { sport: 4, sleep: 2, milestone: 1 },
+    journey: { sport: 3, sleep: 2, milestone: 1 }
+  }
+};
 
-export function columnCapsForCandidates(candidates = []) {
-  const hasMs = (candidates || []).some(
-    (c) => String(c.id || '').includes('disc_ms_') || String(c.interpretation?.context?.kind || '').startsWith('disc_ms_')
-  );
-  return hasMs ? NATURE_COLUMN_CAPS_WITH_MILESTONES : NATURE_COLUMN_CAPS;
+export function signalFamilyOfKind(kind) {
+  const k = String(kind || '');
+  if (k.startsWith('disc_ms_')) return 'milestone';
+  if (k.startsWith('disc_sleep_') || k === 'disc_rest_assoc') return 'sleep';
+  return 'sport';
+}
+
+export function angleCapsFromFamilies(voiceKey, { hasMilestone = false } = {}) {
+  const fam = SIGNAL_FAMILY_CAPS[voiceKey] || SIGNAL_FAMILY_CAPS.week;
+  const tot = (angle) => {
+    const f = fam[angle];
+    return f.sport + f.sleep + (hasMilestone ? f.milestone : 0);
+  };
+  return { short: tot('now'), medium: tot('trajectory'), long: tot('journey') };
+}
+
+/** Totaux UI semaine sans jalon — dérivés des familles. */
+export const NATURE_COLUMN_CAPS = { short: 5, medium: 5, long: 3 };
+export const NATURE_COLUMN_CAPS_WITH_MILESTONES = { short: 6, medium: 6, long: 4 };
+
+/**
+ * @param {object[]} [candidates]
+ * @param {{ voiceKey?: string, detectedKinds?: string[] }} [opts]
+ *   detectedKinds : kinds vus dans detectDiscoveries (all), pas seulement selected.
+ */
+export function columnCapsForCandidates(candidates = [], opts = {}) {
+  const voiceKey = opts.voiceKey || 'week';
+  const detected = opts.detectedKinds || [];
+  const hasMs =
+    detected.some((k) => String(k).startsWith('disc_ms_')) ||
+    (candidates || []).some(
+      (c) =>
+        String(c.id || '').includes('disc_ms_') ||
+        String(c.interpretation?.context?.kind || '').startsWith('disc_ms_')
+    );
+  return angleCapsFromFamilies(voiceKey, { hasMilestone: hasMs });
 }
 
 /**

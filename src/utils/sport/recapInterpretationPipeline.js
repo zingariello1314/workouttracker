@@ -25,6 +25,7 @@ import { buildAthleteTrainingIdentity } from './athleteTrainingIdentity';
 import { buildTrainingPhenomena } from './trainingPhenomenonEngine';
 import { buildAthleteJourney } from './athleteJourney';
 import { buildPeriodDiscoveryBundle } from './recapPeriodDiscoveries';
+import { mergeGarminDataForRecap } from './recapGarminMerge';
 
 /** Candidat affichable dans les 3 colonnes (pas un fait isolé). */
 export function isColumnInterpretation(c) {
@@ -39,11 +40,17 @@ export function isColumnInterpretation(c) {
  * @param {object} opts — mêmes entrées que buildAdaptiveRecapInsights (subset)
  */
 export function buildComposedInterpretationPipeline(opts = {}) {
-  const trainingState = buildUserTrainingState(opts);
+  const garminData = mergeGarminDataForRecap(
+    opts.garminData,
+    opts.garminPartial,
+    opts.garminDailyMetrics
+  );
+  const mergedOpts = { ...opts, garminData };
+  const trainingState = buildUserTrainingState(mergedOpts);
   const priorWindow = priorWindowForComparison(opts.window);
-  const priorState = priorWindow ? buildUserTrainingState({ ...opts, window: priorWindow }) : null;
+  const priorState = priorWindow ? buildUserTrainingState({ ...mergedOpts, window: priorWindow }) : null;
   const stateTransitions = detectStateTransitions(priorState, trainingState);
-  const performanceRobustness = analyzePerformanceRobustness(opts);
+  const performanceRobustness = analyzePerformanceRobustness(mergedOpts);
   const athleteIdentity = buildAthleteTrainingIdentity({
     snapshot: opts.snapshot,
     window: opts.window,
@@ -64,7 +71,7 @@ export function buildComposedInterpretationPipeline(opts = {}) {
     window: opts.window,
     period: opts.period || '7d',
     getExerciseNameById: opts.getExerciseNameById,
-    garminData: opts.garminData,
+    garminData,
     recapState: opts.recapState || null,
     athleteIdentity,
     insightHistory: opts.insightHistory || null,
@@ -73,7 +80,7 @@ export function buildComposedInterpretationPipeline(opts = {}) {
   });
 
   const eventBundle = detectTrainingEvents({
-    ...opts,
+    ...mergedOpts,
     performanceRobustness
   });
 
@@ -95,7 +102,7 @@ export function buildComposedInterpretationPipeline(opts = {}) {
     window: opts.window,
     period: opts.period || '7d',
     getExerciseNameById: opts.getExerciseNameById,
-    garminData: opts.garminData,
+    garminData,
     trainingState,
     enrichment: opts.enrichment,
     assessment: opts.assessment,
@@ -122,7 +129,7 @@ export function buildComposedInterpretationPipeline(opts = {}) {
   const allInterpretations = [...renderedEssays, ...fallbackRelations];
 
   const populationComparisons = buildHierarchicalComparisons({
-    ...opts,
+    ...mergedOpts,
     trainingState,
     priorState
   });

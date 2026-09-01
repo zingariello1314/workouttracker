@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
   applyNatureWeights,
   comparableWeeklyRates,
+  columnCapsForCandidates,
   horizonForNature,
   KIND_NATURE,
   muscleProfileForTrajectory,
@@ -102,5 +103,17 @@ describe('recapInsightNature', () => {
     expect(rewardToneForKind('disc_sleep_volume')).toBe('discovery');
     expect(rewardToneForKind('disc_ms_mix_shift')).toBe('transformation');
     expect(rewardToneForKind('disc_ms_first_session')).toBe('historic');
+  });
+
+  it('ouvre les caps UI dès qu’un jalon est détecté, même s’il n’est pas encore dans les essays', () => {
+    const without = columnCapsForCandidates([], { voiceKey: 'week', detectedKinds: [] });
+    expect(without.short).toBe(5);
+    const withMs = columnCapsForCandidates([], {
+      voiceKey: 'week',
+      detectedKinds: ['disc_ms_pr']
+    });
+    expect(withMs.short).toBe(6);
+    expect(withMs.medium).toBe(6);
+    expect(withMs.long).toBe(4);
   });
 });

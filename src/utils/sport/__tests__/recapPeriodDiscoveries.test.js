@@ -521,7 +521,6 @@ describe('recapPeriodDiscoveries', () => {
     const long = selectPeriodDiscoveries(fake, null, 'long');
     expect(long.find((d) => d.nature === 'now')?.kind).toBe('disc_volume_shape');
     expect(long.some((d) => d.kind === 'disc_best_month')).toBe(true);
-    expect(long.some((d) => d.kind === 'disc_kcal_profile')).toBe(false);
   });
 
   it('n’ouvre un slot extra que si l’observation est forte et prioritaire', () => {
@@ -535,31 +534,25 @@ describe('recapPeriodDiscoveries', () => {
       { kind: 'disc_sleep_volume', nature: 'trajectory', family: 'sleep_volume', score: 84 },
       { kind: 'disc_cardio_strength', nature: 'trajectory', family: 'cardio_strength', score: 83 }
     ];
-    expect(observationCaps('long', many).journey).toBe(3);
+    expect(observationCaps('long', many).journey).toBe(5);
     const long = selectPeriodDiscoveries(many, null, 'long');
     expect(long.filter((d) => d.nature === 'journey').map((d) => d.kind)).toEqual([
       'disc_sleep_quarter',
       'disc_best_month',
-      'disc_sleep_freq'
+      'disc_sleep_freq',
+      'disc_kcal_profile'
     ]);
-    expect(long.some((d) => d.kind === 'disc_kcal_profile')).toBe(false);
-    expect(observationCaps('today', many).trajectory).toBe(3);
+    expect(observationCaps('today', many).trajectory).toBe(5);
   });
 
-  it('traite 1 an comme une voix distincte, avec un plafond plus haut seulement si l’historique est riche', () => {
+  it('traite 1 an comme une voix distincte, avec un plafond parcours plus haut que la semaine', () => {
     expect(periodVoice('1y', 365).key).toBe('year');
     expect(periodVoice('1y', 365).thisPeriod).toMatch(/année/);
     expect(PERIOD_QUESTIONS['1y']).toMatch(/année/);
     expect(periodVoice('3m', 92).key).toBe('long');
-    const few = [
-      { kind: 'a', score: 80 },
-      { kind: 'b', score: 80 },
-      { kind: 'c', score: 80 }
-    ];
-    expect(observationCaps('year', few).journey).toBe(2);
-    const rich = Array.from({ length: 8 }, (_, i) => ({ kind: `k${i}`, score: 80 }));
-    expect(observationCaps('year', rich).journey).toBe(3);
-    expect(observationCaps('year', rich).trajectory).toBe(4);
+    expect(observationCaps('year').journey).toBe(5);
+    expect(observationCaps('week').journey).toBe(3);
+    expect(observationCaps('year').trajectory).toBe(6);
   });
 
   it('quand aujourd’hui est à 0 reps, décrit une séance en attente plutôt qu’une contraction', () => {
@@ -596,5 +589,65 @@ describe('recapPeriodDiscoveries', () => {
     expect(shape.body.length).toBeGreaterThan(260);
     expect(shape.body).toMatch(/séance|reps/i);
     expect(shape.body).toMatch(/renforcement|tirage|triceps|pector|séance du/i);
+  });
+
+  it('garde sport, sommeil et jalon dans la même colonne au lieu de les faire s’évincer', () => {
+    const fake = [
+      { kind: 'disc_volume_shape', nature: 'now', family: 'volume_shape', score: 80 },
+      { kind: 'disc_density', nature: 'now', family: 'density', score: 82 },
+      { kind: 'disc_sleep_week', nature: 'now', family: 'sleep_week', score: 88 },
+      { kind: 'disc_sleep_deep', nature: 'now', family: 'sleep_deep', score: 84 },
+      { kind: 'disc_peak_day', nature: 'now', family: 'peak_day', score: 70 },
+      { kind: 'disc_ms_pr', nature: 'now', family: 'ms_pr', score: 80 }
+    ];
+    const week = selectPeriodDiscoveries(fake, null, 'week');
+    const now = week.filter((d) => d.nature === 'now');
+    expect(now.some((d) => d.kind === 'disc_volume_shape')).toBe(true);
+    expect(now.some((d) => d.kind === 'disc_sleep_week')).toBe(true);
+    expect(now.some((d) => d.kind === 'disc_sleep_deep')).toBe(true);
+    expect(now.some((d) => d.kind === 'disc_ms_pr')).toBe(true);
+  });
+
+  it('avec 12 paires séance×nuit, publie au moins une découverte sommeil retenue aujourd’hui et en 7 j.', () => {
+    const end = '2026-08-31';
+    const snapshot = { reps: {}, checkedExercises: {} };
+    const dailyMetrics = {};
+    for (let i = 0; i < 12; i += 1) {
+      const d = DateHelper.addDays(end, -i * 2);
+      addCheck(snapshot, d, 501, i % 2 === 0 ? 340 : 210);
+      dailyMetrics[d] = {
+        sleep: {
+          duration: i % 2 === 0 ? 7.8 : 6.5,
+          deep: 1.05,
+          rem: 1.4,
+          light: 5.0,
+          awake: 0.25
+        },
+        bodyBattery: { start: 38, end: 90, charged: 52 }
+      };
+    }
+    const garmin = { dailyMetrics, activities: { cardio: [] } };
+    const today = buildPeriodDiscoveryBundle({
+      snapshot,
+      window: { start: end, end },
+      period: 'today',
+      getExerciseNameById: getName,
+      garminData: garmin
+    });
+    expect(today.debug.sleepPairs).toBeGreaterThanOrEqual(8);
+    expect(today.extras.sleepCandidates.length).toBeGreaterThan(0);
+    expect(today.selected.some((d) => String(d.kind).startsWith('disc_sleep_'))).toBe(true);
+    expect(today.all.some((d) => d.kind === 'disc_sleep_zones' || d.kind === 'disc_sleep_volume')).toBe(
+      true
+    );
+
+    const week = buildPeriodDiscoveryBundle({
+      snapshot,
+      window: { start: '2026-08-25', end },
+      period: '7d',
+      getExerciseNameById: getName,
+      garminData: garmin
+    });
+    expect(week.selected.some((d) => String(d.kind).startsWith('disc_sleep_'))).toBe(true);
   });
 });

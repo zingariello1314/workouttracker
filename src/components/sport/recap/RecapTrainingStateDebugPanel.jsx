@@ -158,6 +158,52 @@ export default function RecapTrainingStateDebugPanel({
             />
           </div>
 
+          {periodDiscoveries?.debug ? (
+            <div className="rounded-lg border border-amber-700/40 bg-amber-950/20 px-2.5 py-2 text-[10px] text-amber-100/90">
+              <p className="mb-1 font-semibold uppercase tracking-wide text-amber-200/80">Tuyau sommeil / jalons</p>
+              <p>
+                paires séance×nuit {periodDiscoveries.debug.sleepPairs ?? '—'} · nuits fenêtre{' '}
+                {periodDiscoveries.debug.garminNightDays ?? '—'} · nuits 90 j.{' '}
+                {periodDiscoveries.debug.journeyNightDays ?? '—'}
+              </p>
+              <p className="mt-1">
+                candidats sommeil : {(periodDiscoveries.debug.sleepCandidateTypes || []).join(', ') || 'aucun'}
+              </p>
+              <p className="mt-1">
+                sommeil détecté : {(periodDiscoveries.debug.sleepDetected || []).join(', ') || '—'} → retenu{' '}
+                {(periodDiscoveries.debug.sleepSelected || []).join(', ') || 'aucun'}
+              </p>
+              <p className="mt-1">
+                jalons détectés : {(periodDiscoveries.debug.milestonesDetected || []).join(', ') || '—'} → retenus{' '}
+                {(periodDiscoveries.debug.milestonesSelected || []).join(', ') || 'aucun'}
+              </p>
+              <p className="mt-1">
+                droppedBy :{' '}
+                {periodDiscoveries.debug.droppedBy && Object.keys(periodDiscoveries.debug.droppedBy).length
+                  ? Object.entries(periodDiscoveries.debug.droppedBy)
+                      .map(([k, n]) => `${k} ${n}`)
+                      .join(' · ')
+                  : '—'}
+              </p>
+            </div>
+          ) : null}
+
+          {(periodDiscoveries?.dropped || []).length ? (
+            <div>
+              <p className="mb-1 text-[10px] font-semibold uppercase tracking-wide text-slate-500">
+                Découvertes écartées ({periodDiscoveries.dropped.length})
+              </p>
+              <ul className="max-h-36 space-y-0.5 overflow-auto text-[10px] text-slate-400">
+                {periodDiscoveries.dropped.slice(0, 24).map((d) => (
+                  <li key={`${d.kind}-${d.reason}`}>
+                    {d.kind} · {d.nature} · {d.signalFamily} · {d.reason}
+                    {d.score != null ? ` · ${d.score}` : ''}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ) : null}
+
           <div>
             <p className="mb-1 text-[10px] font-semibold uppercase tracking-wide text-slate-500">
               Phénomènes ({(phenomena || []).length})

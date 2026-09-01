@@ -49,6 +49,8 @@ import {
 } from './insightNoveltyStore';
 
 import { applyNatureWeights, columnCapsForCandidates, rewardToneForKind } from './recapInsightNature';
+import { mergeGarminDataForRecap } from './recapGarminMerge';
+import { periodVoice } from './recapPeriodDiscoveries';
 
 const MIN_COLUMN_WEIGHT = 32;
 
@@ -1264,12 +1266,13 @@ export function buildAdaptiveRecapInsights(opts = {}) {
     : null;
 
   const insightHistory = loadInsightHistory();
+  const mergedGarmin = mergeGarminDataForRecap(garminData, garminPartial, garminDailyMetrics);
   const composed = buildComposedInterpretationPipeline({
     snapshot,
     window,
     enrichment,
     assessment: assessmentForPipeline,
-    garminData,
+    garminData: mergedGarmin,
     garminPartial,
     garminDailyMetrics,
     getExerciseNameById,
@@ -1283,9 +1286,9 @@ export function buildAdaptiveRecapInsights(opts = {}) {
 
   const candidates = composed.candidates || [];
 
-  const vol = runningVolumeForWindow(snapshot, garminData, window);
+  const vol = runningVolumeForWindow(snapshot, mergedGarmin, window);
   const kcalSum = activeKcalSumForWindow(
-    garminDailyMetrics || garminPartial?.dailyMetrics,
+    mergedGarmin?.dailyMetrics || garminDailyMetrics || garminPartial?.dailyMetrics,
     window
   );
 
@@ -1307,7 +1310,19 @@ export function buildAdaptiveRecapInsights(opts = {}) {
     composed.phenomena
   );
 
-  const caps = columnCapsForCandidates(weightedCandidates);
+  let spanDays = 7;
+  if (window?.end && window?.start) {
+    const a = new Date(`${window.start}T12:00:00`);
+    const b = new Date(`${window.end}T12:00:00`);
+    spanDays = Math.max(1, Math.round((b - a) / 86400000) + 1);
+  } else if (window?.end && !window?.start) {
+    spanDays = 365;
+  }
+  const voiceKey = periodVoice(period, spanDays).key;
+  const caps = columnCapsForCandidates(weightedCandidates, {
+    voiceKey,
+    detectedKinds: (composed.periodDiscoveries?.all || []).map((d) => d.kind)
+  });
   const pickedShort = selectBalancedCandidates(
     weightedCandidates,
     'short',
