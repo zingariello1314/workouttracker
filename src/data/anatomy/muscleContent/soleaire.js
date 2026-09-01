@@ -1,21 +1,25 @@
+import presentationBlocks from './soleaire/presentationBlocks.js';
+import anatomieBlocks from './soleaire/anatomieBlocks.js';
+import fonctionsBlocks from './soleaire/fonctionsBlocks.js';
+import erreursBlocks from './soleaire/erreursBlocks.js';
+
 /** @type {{ sections: { id: string, title: string, blocks: object[] }[] }} */
 const soleaire = {
   sections: [
     {
       id: 'presentation',
-      title: 'Introduction — Masse profonde du mollet',
-      blocks: [
-        {
-          type: 'p',
-          text:
-            'Le soléaire est sous le gastrocnémien, souvent invisible mais parfois majoritaire en volume du triceps sural. Origines sur tibia et fibula, tendon d’Achille commun — flexion plantaire. Une seule articulation (cheville) : genou fléchi, le gastrocnémien est raccourci et perd de l’efficacité ; le soléaire prend le relais.'
-        },
-        {
-          type: 'p',
-          text:
-            'Endurance debout, marche longue, fibres résistantes à la fatigue. Mollet « complet » = debout (gastroc) + assis (soléaire).'
-        }
-      ]
+      title: 'Présentation générale',
+      blocks: presentationBlocks
+    },
+    {
+      id: 'anatomie',
+      title: 'Anatomie',
+      blocks: anatomieBlocks
+    },
+    {
+      id: 'fonctions',
+      title: 'Fonctions',
+      blocks: fonctionsBlocks
     },
     {
       id: 'exercices',
@@ -34,6 +38,11 @@ const soleaire = {
           items: ['Seated calf raise', 'Presse à mollets genoux fléchis']
         }
       ]
+    },
+    {
+      id: 'erreurs',
+      title: 'Erreurs fréquentes',
+      blocks: erreursBlocks
     },
     {
       id: 'saviez-vous',

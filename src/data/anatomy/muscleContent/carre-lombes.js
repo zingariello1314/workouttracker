@@ -1,37 +1,26 @@
+import presentationBlocks from './carre-lombes/presentationBlocks.js';
+import anatomieBlocks from './carre-lombes/anatomieBlocks.js';
+import fonctionsBlocks from './carre-lombes/fonctionsBlocks.js';
+import erreursBlocks from './carre-lombes/erreursBlocks.js';
+import blessuresBlocks from './carre-lombes/blessuresBlocks.js';
+
 /** @type {{ sections: { id: string, title: string, blocks: object[] }[] }} */
 const carreLombes = {
   sections: [
     {
       id: 'presentation',
-      title: 'Introduction — Stabilisateur latéral du bassin',
-      blocks: [
-        {
-          type: 'p',
-          text:
-            'Le carré des lombes (quadratus lumborum) est un muscle profond de la région lombaire : relie la dernière côte, les vertèbres lombaires et le bassin (crête iliaque). Peu visible, central dans la ceinture abdominale et lombaire avec transverse, obliques et érecteurs (famille Bas du dos).'
-        },
-        {
-          type: 'p',
-          text:
-            'Flexion latérale du tronc, stabilisation du bassin, maintien de la posture. Exemple : porter une valise lourde d’une main — le carré des lombes empêche le corps de basculer complètement de l’autre côté.'
-        }
-      ]
+      title: 'Présentation générale',
+      blocks: presentationBlocks
+    },
+    {
+      id: 'anatomie',
+      title: 'Anatomie',
+      blocks: anatomieBlocks
     },
     {
       id: 'fonctions',
       title: 'Ceinture lombaire et douleurs',
-      blocks: [
-        {
-          type: 'p',
-          text:
-            'Les douleurs lombaires sont multifactorielles : charge, fatigue, contrôle moteur, mobilité, stress, habitudes — pas toujours un muscle « faible ». Un dos douloureux n’est pas forcément un dos fragile ; douleur et capacité mécanique ne sont pas toujours liées.'
-        },
-        {
-          type: 'p',
-          text:
-            'Érecteurs du rachis : extension et stabilisation sur toute la colonne (soulevé, squat, rowing) — voir fiche Érecteurs du rachis (Bas du dos).'
-        }
-      ]
+      blocks: fonctionsBlocks
     },
     {
       id: 'momentum',
@@ -71,24 +60,12 @@ const carreLombes = {
     {
       id: 'erreurs',
       title: 'Erreurs fréquentes',
-      blocks: [
-        {
-          type: 'p',
-          text:
-            'Étirer sans endurance ni contrôle. Flexions latérales lourdes sans anti-inclinaison. Négliger fessiers (bassin mal contrôlé → surcharge du carré des lombes). Renforcer les lombaires sans abdominaux, fessiers et ischios crée un déséquilibre du core.'
-        }
-      ]
+      blocks: erreursBlocks
     },
     {
       id: 'blessures',
       title: 'Contexte lombaire',
-      blocks: [
-        {
-          type: 'p',
-          text:
-            'Lombalgies mécaniques, élongations, hernie discale (avis médical si irradiation) — reprise progressive souvent préférable au repos total prolongé. Renforcement lombaire progressif rend les tissus plus résistants, ce n’est pas intrinsèquement dangereux.'
-        }
-      ]
+      blocks: blessuresBlocks
     }
   ]
 };

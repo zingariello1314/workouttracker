@@ -1,54 +1,20 @@
+import presentationBlocks from './avant-bras-ensemble/presentationBlocks.js';
+import anatomieBlocks from './avant-bras-ensemble/anatomieBlocks.js';
+import erreursBlocks from './avant-bras-ensemble/erreursBlocks.js';
+import blessuresBlocks from './avant-bras-ensemble/blessuresBlocks.js';
+
 /** @type {{ sections: { id: string, title: string, blocks: object[] }[] }} */
 const avantBrasEnsemble = {
   sections: [
     {
       id: 'presentation',
       title: 'Présentation générale',
-      blocks: [
-        {
-          type: 'p',
-          text:
-            'Les avant-bras sont le lien entre la force produite (dos, bras) et la main qui tient barre, anneaux ou adversaire. Sans prise solide, dorsaux et biceps plafonnent — facteur limitant fréquent en tractions, muscle-up, soulevés et escalade.'
-        },
-        {
-          type: 'p',
-          text:
-            'Plus d’une vingtaine de muscles : fléchisseurs (paume), extenseurs (dos main), pronateurs/supinateurs, brachio-radial (transition coude, prise neutre).'
-        }
-      ]
+      blocks: presentationBlocks
     },
     {
       id: 'anatomie',
       title: 'Muscles clés',
-      blocks: [
-        {
-          type: 'h3',
-          text: 'Fléchisseurs des doigts'
-        },
-        {
-          type: 'p',
-          text:
-            'Profond et superficiel — fermeture main, suspension, escalade. Fatigue prise avant le dos sur les tractions.'
-        },
-        {
-          type: 'h3',
-          text: 'Fléchisseurs et extenseurs du poignet'
-        },
-        {
-          type: 'p',
-          text:
-            'Stabilisation du poignet en curl et en maintien de barre ; extenseurs équilibrent fléchisseurs (prévention épicondylalgies).'
-        },
-        {
-          type: 'h3',
-          text: 'Brachio-radial'
-        },
-        {
-          type: 'p',
-          text:
-            'Flexion coude en prise neutre — curl marteau ; visible sur le côté externe. Voir aussi fiche Brachio-radial (famille Bras).'
-        }
-      ]
+      blocks: anatomieBlocks
     },
     {
       id: 'exercices',
@@ -89,24 +55,12 @@ const avantBrasEnsemble = {
     {
       id: 'erreurs',
       title: 'Erreurs fréquentes',
-      blocks: [
-        {
-          type: 'p',
-          text:
-            'Négliger extenseurs ; sangles systématiques (moins de travail prise) ; croire que poignets fins empêchent gros avant-bras — les muscles peuvent beaucoup grossir.'
-        }
-      ]
+      blocks: erreursBlocks
     },
     {
       id: 'blessures',
       title: 'Blessures',
-      blocks: [
-        {
-          type: 'p',
-          text:
-            'Tendinopathies coude, épicondylalgie latérale (grimpeurs, tractions), douleurs poignet (pompes, anneaux) — progression et équilibre fléchisseurs/extenseurs.'
-        }
-      ]
+      blocks: blessuresBlocks
     },
     {
       id: 'saviez-vous',

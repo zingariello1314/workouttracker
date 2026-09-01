@@ -1,16 +1,12 @@
+import presentationBlocks from './brachio-radial/presentationBlocks.js';
+
 /** @type {{ sections: { id: string, title: string, blocks: object[] }[] }} */
 const brachioRadial = {
   sections: [
     {
       id: 'presentation',
       title: 'Présentation',
-      blocks: [
-        {
-          type: 'p',
-          text:
-            'Le brachio-radial forme la saillie externe du bras vers l’avant-bras. Il assiste la flexion du coude, surtout en prise neutre, et épaissit la transition bras / avant-bras.'
-        }
-      ]
+      blocks: presentationBlocks
     },
     {
       id: 'exercices',

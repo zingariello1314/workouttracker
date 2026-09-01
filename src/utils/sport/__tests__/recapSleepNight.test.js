@@ -70,6 +70,17 @@ describe('recapSleepNight', () => {
     expect(night.quality).toBe(88);
   });
 
+  it('lit sleepTimeSeconds si duration est absent', () => {
+    const night = extractSleepNight(
+      garmin({
+        '2026-08-31': { sleep: { sleepTimeSeconds: 7.7 * 3600, deepSleep: 1.05 } }
+      }),
+      '2026-08-31'
+    );
+    expect(night).toBeTruthy();
+    expect(night.hours).toBeCloseTo(7.7, 1);
+  });
+
   it('retourne null sans inventer une nuit — silence, pas un message', () => {
     expect(extractSleepNight(garmin({}), '2026-08-31')).toBeNull();
     expect(extractSleepNight(garmin({ '2026-08-31': {} }), '2026-08-31')).toBeNull();

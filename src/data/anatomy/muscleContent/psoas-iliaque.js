@@ -1,27 +1,26 @@
+import presentationBlocks from './psoas-iliaque/presentationBlocks.js';
+import anatomieBlocks from './psoas-iliaque/anatomieBlocks.js';
+import fonctionsBlocks from './psoas-iliaque/fonctionsBlocks.js';
+import erreursBlocks from './psoas-iliaque/erreursBlocks.js';
+import faqBlocks from './psoas-iliaque/faqBlocks.js';
+
 /** @type {{ sections: { id: string, title: string, blocks: object[] }[] }} */
 const psoasIliaque = {
   sections: [
     {
       id: 'presentation',
-      title: 'Présentation — Flexion de hanche et figures',
-      blocks: [
-        {
-          type: 'p',
-          text:
-            'Psoas majeur et iliaque : vertèbres lombaires / fosse iliaque → petit trochanter. Principal fléchisseur de hanche — lien colonne, bassin et cuisses. L-sit, relevés suspendus, retour de jambe en course. Le L-sit n’est pas « que des abdos » : coordination abdominaux, quadriceps, psoas, épaules, triceps ; échec souvent = mobilité ischios, compression ou force de hanche.'
-        }
-      ]
+      title: 'Présentation générale',
+      blocks: presentationBlocks
+    },
+    {
+      id: 'anatomie',
+      title: 'Anatomie',
+      blocks: anatomieBlocks
     },
     {
       id: 'fonctions',
       title: 'Relevés de jambes : abdos ou psoas ?',
-      blocks: [
-        {
-          type: 'p',
-          text:
-            'Les fléchisseurs de hanche participent naturellement aux relevés. Pour maximiser les abdominaux : rétroversion du bassin, enroulement, éviter de monter les pieds haut avec cambrure et élan. Voir aussi droit fémoral (Quadriceps) pour la flexion de hanche.'
-        }
-      ]
+      blocks: fonctionsBlocks
     },
     {
       id: 'exercices',
@@ -50,28 +49,12 @@ const psoasIliaque = {
     {
       id: 'erreurs',
       title: 'Erreurs',
-      blocks: [
-        {
-          type: 'p',
-          text:
-            'Relevés = psoas dominant si bassin non rétroversé. Toujours étirer sans renforcement actif. Déséquilibre fessiers / extenseurs de hanche. Posture assise prolongée sans gainage ni mobilité.'
-        }
-      ]
+      blocks: erreursBlocks
     },
     {
       id: 'faq',
       title: 'Questions fréquentes',
-      blocks: [
-        {
-          type: 'h3',
-          text: 'Pourquoi je sens les fléchisseurs de hanche en relevés ?'
-        },
-        {
-          type: 'p',
-          text:
-            'Ils participent au mouvement ; augmenter le travail abdominal par contrôle du bassin et rétroversion, pas seulement la hauteur des pieds.'
-        }
-      ]
+      blocks: faqBlocks
     }
   ]
 };

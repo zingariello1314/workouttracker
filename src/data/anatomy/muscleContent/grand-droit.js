@@ -1,43 +1,27 @@
+import presentationBlocks from './grand-droit/presentationBlocks.js';
+import anatomieBlocks from './grand-droit/anatomieBlocks.js';
+import fonctionsBlocks from './grand-droit/fonctionsBlocks.js';
+import recrutementBlocks from './grand-droit/recrutementBlocks.js';
+import erreursBlocks from './grand-droit/erreursBlocks.js';
+import faqBlocks from './grand-droit/faqBlocks.js';
+
 /** @type {{ sections: { id: string, title: string, blocks: object[] }[] }} */
 const grandDroit = {
   sections: [
     {
       id: 'presentation',
-      title: 'Introduction — Le muscle des « tablettes »',
-      blocks: [
-        {
-          type: 'p',
-          text:
-            'Le grand droit est le muscle abdominal le plus connu : vertical sur l’avant de l’abdomen, du bassin au sternum, séparé droite/gauche par la ligne blanche. Les « tablettes » ne sont pas des muscles distincts — ce sont les intersections tendineuses qui découpent visuellement le muscle.'
-        },
-        {
-          type: 'p',
-          text:
-            'Son rôle dépasse l’esthétique : flexion du tronc (rapprocher cage thoracique et bassin), stabilisation du bassin, respiration forcée, pression intra-abdominale. Crunchs, relevés de buste, enroulement du bassin en suspension.'
-        }
-      ]
+      title: 'Présentation générale',
+      blocks: presentationBlocks
     },
     {
       id: 'anatomie',
       title: 'Origines et insertions',
-      blocks: [
-        {
-          type: 'p',
-          text:
-            'Origines : pubis, symphyse pubienne. Insertions : processus xiphoïde du sternum, cartilages des côtes 5 à 7. Gaine du droit : aponévroses des autres muscles abdominaux.'
-        }
-      ]
+      blocks: anatomieBlocks
     },
     {
       id: 'fonctions',
       title: 'Crunchs : utiles mais mal compris',
-      blocks: [
-        {
-          type: 'p',
-          text:
-            'Critiqués comme « non fonctionnels » — simpliste : le grand droit produit bien une flexion de colonne ; un mouvement contrôlé peut être pertinent pour le développer. Problème = excès : uniquement des crunchs, centaines de reps sans progression, négliger transverse, obliques et anti-rotation. Adapter le stimulus à l’objectif.'
-        }
-      ]
+      blocks: fonctionsBlocks
     },
     {
       id: 'exercices',
@@ -65,39 +49,17 @@ const grandDroit = {
     {
       id: 'recrutement',
       title: 'Visibilité et développement',
-      blocks: [
-        {
-          type: 'p',
-          text:
-            'Abdos visibles : surtout taux de masse grasse, taille du muscle, génétique de la séparation tendineuse — tout le monde possède un grand droit. Surcharge progressive, amplitude contrôlée, récupération ; combiner flexion dynamique et travail anti-extension (planche, ab wheel).'
-        }
-      ]
+      blocks: recrutementBlocks
     },
     {
       id: 'erreurs',
       title: 'Erreurs fréquentes',
-      blocks: [
-        {
-          type: 'p',
-          text:
-            'Relevés de jambes sans rétroversion (fléchisseurs de hanche dominants). Chercher la brûlure sans progression. Crunchs seuls en oubliant le reste du core.'
-        }
-      ]
+      blocks: erreursBlocks
     },
     {
       id: 'faq',
       title: 'Questions fréquentes',
-      blocks: [
-        {
-          type: 'h3',
-          text: 'Faire des abdos enlève-t-il le ventre ?'
-        },
-        {
-          type: 'p',
-          text:
-            'Non en localisation : renforce les muscles ; la graisse dépend de l’équilibre énergétique et de l’activité globale.'
-        }
-      ]
+      blocks: faqBlocks
     }
   ]
 };

@@ -1421,7 +1421,12 @@ function detectDiscoveries(cmp, extras = {}) {
   }
 
   const night = sleepCtx?.night;
-  const recentHabit = summarizeRecentNights(sleepCtx?.recentNights || []);
+  const catalogNights = (catalog || [])
+    .map((s) => s.night)
+    .filter((n) => n && n.hours != null)
+    .slice(-8);
+  const recentHabit =
+    summarizeRecentNights(sleepCtx?.recentNights || []) || summarizeRecentNights(catalogNights);
   if (night && recentHabit && recentHabit.n >= 4 && (isToday || isWeek)) {
     const deltaMin = Math.round((night.hours - recentHabit.hours) * 60);
     const smallGap = Math.abs(deltaMin) < 20;
@@ -2496,11 +2501,15 @@ function rivalBlocked(kind, usedKinds) {
 function inferDropReason(d, selected, famCaps) {
   const nature = d.nature || 'trajectory';
   const sig = signalFamilyOfKind(d.kind);
-  const selectedKinds = new Set(selected.map((s) => s.kind));
+  const sameAngleKinds = new Set(
+    selected.filter((s) => (s.nature || 'trajectory') === nature).map((s) => s.kind)
+  );
   const minScore = isMilestoneKind(d.kind) ? 52 : 48;
   if ((d.score || 0) < minScore) return 'score';
-  if (rivalBlocked(d.kind, selectedKinds)) return 'rival';
-  const sameFamily = selected.find((s) => s.family && s.family === d.family);
+  if (rivalBlocked(d.kind, sameAngleKinds)) return 'rival';
+  const sameFamily = selected.find(
+    (s) => s.family && s.family === d.family && (s.nature || 'trajectory') === nature
+  );
   if (sameFamily && (d.score || 0) < 86) return 'family';
   const filled = selected.filter(
     (s) => (s.nature || 'trajectory') === nature && signalFamilyOfKind(s.kind) === sig
@@ -2524,8 +2533,9 @@ export function selectPeriodDiscoveriesWithTrace(discoveries, insightHistory = n
   const unique = [...byKind.values()];
   const sorted = unique.sort((a, b) => (b.score || 0) - (a.score || 0));
   const byAngle = { now: [], trajectory: [], journey: [] };
-  const usedFamily = new Set();
   const usedKind = new Set();
+  const usedKindByNature = { now: new Set(), trajectory: new Set(), journey: new Set() };
+  const usedFamilyByNature = { now: new Set(), trajectory: new Set(), journey: new Set() };
   const familyCount = {
     now: { sport: 0, sleep: 0, milestone: 0 },
     trajectory: { sport: 0, sleep: 0, milestone: 0 },
@@ -2535,10 +2545,11 @@ export function selectPeriodDiscoveriesWithTrace(discoveries, insightHistory = n
   const famCaps = SIGNAL_FAMILY_CAPS[voiceKey] || SIGNAL_FAMILY_CAPS.week;
 
   const canTake = (d) => {
+    const nature = d.nature || 'trajectory';
     if ((d.score || 0) < 48) return false;
     if (usedKind.has(d.kind)) return false;
-    if (rivalBlocked(d.kind, usedKind)) return false;
-    if (usedFamily.has(d.family) && (d.score || 0) < 86) return false;
+    if (rivalBlocked(d.kind, usedKindByNature[nature])) return false;
+    if (usedFamilyByNature[nature].has(d.family) && (d.score || 0) < 86) return false;
     return true;
   };
 
@@ -2551,7 +2562,8 @@ export function selectPeriodDiscoveriesWithTrace(discoveries, insightHistory = n
     if (!canTake(d)) return false;
     byAngle[nature].push(d);
     usedKind.add(d.kind);
-    usedFamily.add(d.family);
+    usedKindByNature[nature].add(d.kind);
+    usedFamilyByNature[nature].add(d.family);
     familyCount[nature][sig] += 1;
     return true;
   };
@@ -2575,7 +2587,8 @@ export function selectPeriodDiscoveriesWithTrace(discoveries, insightHistory = n
       if ((d.score || 0) < 52) return;
       byAngle[angle].push(d);
       usedKind.add(d.kind);
-      usedFamily.add(d.family);
+      usedKindByNature[angle].add(d.kind);
+      usedFamilyByNature[angle].add(d.family);
       familyCount[angle].milestone += 1;
     });
   });

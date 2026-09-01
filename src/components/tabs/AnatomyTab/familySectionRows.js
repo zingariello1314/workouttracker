@@ -9,10 +9,6 @@ export const FAMILY_SECTION_SIDE_PAIRS = {
     ['synthese', 'faq-pilotage']
   ],
   'bas-dos': [['role', 'composition']],
-  abdominaux: [
-    ['core-concept', 'trois-roles'],
-    ['erreurs-generales', 'saviez-vous']
-  ],
   cuisses: [
     ['chaines-jambes', 'biomecanique-jambes'],
     ['saviez-vous', 'momentum']

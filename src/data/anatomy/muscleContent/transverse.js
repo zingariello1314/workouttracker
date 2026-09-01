@@ -1,37 +1,25 @@
+import presentationBlocks from './transverse/presentationBlocks.js';
+import anatomieBlocks from './transverse/anatomieBlocks.js';
+import fonctionsBlocks from './transverse/fonctionsBlocks.js';
+import erreursBlocks from './transverse/erreursBlocks.js';
+
 /** @type {{ sections: { id: string, title: string, blocks: object[] }[] }} */
 const transverse = {
   sections: [
     {
       id: 'presentation',
-      title: 'Introduction — La ceinture naturelle',
-      blocks: [
-        {
-          type: 'p',
-          text:
-            'Le transverse de l’abdomen est probablement le muscle abdominal le plus important pour la stabilité : invisible, fibres horizontales en véritable ceinture autour du ventre. Origines : côtes inférieures, fascias lombaires, crête iliaque → ligne blanche.'
-        },
-        {
-          type: 'p',
-          text:
-            'Rôle prioritaire : compression abdominale, stabilisation du tronc, gestion de la pression interne — pas un grand mouvement visible. Avant un effort lourd, le corps augmente la pression dans l’abdomen ; le transverse y participe fortement (avec diaphragme et plancher pelvien).'
-        }
-      ]
+      title: 'Présentation générale',
+      blocks: presentationBlocks
+    },
+    {
+      id: 'anatomie',
+      title: 'Anatomie',
+      blocks: anatomieBlocks
     },
     {
       id: 'fonctions',
       title: 'Respiration et rigidité',
-      blocks: [
-        {
-          type: 'p',
-          text:
-            'Diaphragme, transverse et plancher pelvien fonctionnent ensemble. Effort intense : pression interne qui rigidifie le tronc (principe de la manœuvre de Valsalva en force maximale très courte). Course, endurance, technique et répétitions : respiration adaptée, pas blocage permanent.'
-        },
-        {
-          type: 'p',
-          text:
-            'Mal développé avec des crunchs seuls — combiner gainage, anti-extension, anti-rotation, hollow body, dead bug.'
-        }
-      ]
+      blocks: fonctionsBlocks
     },
     {
       id: 'exercices',
@@ -52,13 +40,49 @@ const transverse = {
       ]
     },
     {
+      id: 'erreurs',
+      title: 'Erreurs fréquentes',
+      blocks: erreursBlocks
+    },
+    {
       id: 'saviez-vous',
       title: 'Types de gainage',
       blocks: [
         {
+          type: 'h3',
+          text: 'Anti-extension'
+        },
+        {
           type: 'p',
           text:
-            'Anti-extension : planche, hollow, dead bug, roue abdominale. Anti-rotation : Pallof, carry unilatéral. Anti-inclinaison : side plank. Un bon gainage intense et court peut surpasser une planche relâchée de plusieurs minutes.'
+            'Résister à la tendance du tronc à partir en extension. Planche, hollow body, ab wheel, variantes de dead bug. Un bon gainage intense et court peut surpasser une planche relâchée de plusieurs minutes.'
+        },
+        {
+          type: 'h3',
+          text: 'Anti-rotation'
+        },
+        {
+          type: 'p',
+          text:
+            'Résister à une force qui cherche à faire tourner le tronc. Pallof press, carry unilatéral, variantes asymétriques au poids du corps.'
+        },
+        {
+          type: 'h3',
+          text: 'Anti-inclinaison'
+        },
+        {
+          type: 'p',
+          text:
+            'Résister à une force qui cherche à faire basculer le tronc sur le côté. Side plank, suitcase carry. Le transverse participe à la tension générale de la paroi, avec les obliques.'
+        },
+        {
+          type: 'h3',
+          text: 'Contrôle dynamique et flexion'
+        },
+        {
+          type: 'p',
+          text:
+            'Maintenir bassin et cage thoracique organisés pendant que les membres bougent : dead bug, relevés, L-sit. La flexion (crunch, crunch lesté, relevés avec rétroversion) développe une autre fonction et complète le gainage, elle ne le remplace pas.'
         }
       ]
     }

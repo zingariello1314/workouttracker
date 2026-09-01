@@ -516,7 +516,7 @@ describe('recapPeriodDiscoveries', () => {
     ]);
     expect(month.some((d) => d.kind === 'disc_best_month')).toBe(true);
     expect(month.some((d) => d.kind === 'disc_muscle_share_shift')).toBe(true);
-    expect(month.some((d) => d.kind === 'disc_push_pull')).toBe(false);
+    expect(month.some((d) => d.kind === 'disc_push_pull')).toBe(true);
 
     const long = selectPeriodDiscoveries(fake, null, 'long');
     expect(long.find((d) => d.nature === 'now')?.kind).toBe('disc_volume_shape');
@@ -606,6 +606,13 @@ describe('recapPeriodDiscoveries', () => {
     expect(now.some((d) => d.kind === 'disc_sleep_week')).toBe(true);
     expect(now.some((d) => d.kind === 'disc_sleep_deep')).toBe(true);
     expect(now.some((d) => d.kind === 'disc_ms_pr')).toBe(true);
+    const withPush = selectPeriodDiscoveries(
+      [...fake, { kind: 'disc_push_pull', nature: 'trajectory', family: 'push_pull', score: 88 }],
+      null,
+      'week'
+    );
+    expect(withPush.some((d) => d.kind === 'disc_muscle_now' || d.kind === 'disc_volume_shape')).toBe(true);
+    expect(withPush.some((d) => d.kind === 'disc_push_pull')).toBe(true);
   });
 
   it('avec 12 paires séance×nuit, publie au moins une découverte sommeil retenue aujourd’hui et en 7 j.', () => {

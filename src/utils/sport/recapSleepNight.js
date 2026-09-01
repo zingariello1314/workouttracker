@@ -71,7 +71,13 @@ export function extractSleepNight(garminData, ymd) {
   const sleep = pickSleepObject(day);
   if (!sleep) return null;
 
-  let totalMin = garminDurationToMinutes(sleep.duration ?? sleep.totalSleep ?? sleep.totalMinutes);
+  let totalMin = garminDurationToMinutes(sleep.duration || sleep.totalSleep || sleep.totalMinutes);
+  if (totalMin == null) {
+    const sec = toNum(sleep.sleepTimeSeconds ?? sleep.sleepTime);
+    if (sec != null && sec >= 90 * 60 && sec <= 16 * 3600) {
+      totalMin = Math.round(sec / 60);
+    }
+  }
   const deepMin = garminDurationToMinutes(sleep.deepSleep ?? sleep.deep);
   const lightMin = garminDurationToMinutes(sleep.lightSleep ?? sleep.light);
   const remMin = garminDurationToMinutes(sleep.remSleep ?? sleep.rem);

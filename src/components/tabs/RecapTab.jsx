@@ -110,9 +110,22 @@ const RecapTab = () => {
 
   const periodWindow = useMemo(() => getRecapDateWindow(deferredPeriod), [deferredPeriod]);
 
+  const garminRangeForRecap = useMemo(() => {
+    const end = periodWindow.end;
+    if (!end) return { startYmd: null, endYmd: null };
+    const lookback90 = DateHelper.addDays(end, -89);
+    if (!periodWindow.start) {
+      return { startYmd: DateHelper.addDays(end, -365), endYmd: end };
+    }
+    return {
+      startYmd: periodWindow.start <= lookback90 ? periodWindow.start : lookback90,
+      endYmd: end
+    };
+  }, [periodWindow.start, periodWindow.end]);
+
   const garminPartialForRecap = useRecapCrossCoachGarmin({
-    startYmd: periodWindow.start ?? DateHelper.addDays(periodWindow.end, -365),
-    endYmd: periodWindow.end,
+    startYmd: garminRangeForRecap.startYmd,
+    endYmd: garminRangeForRecap.endYmd,
     enabled: !isGradesView,
     manualWalkByDate: snapshotForRecap?.enduranceData?.manualDailyWalkByDate ?? null
   });

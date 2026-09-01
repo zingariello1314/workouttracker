@@ -1,52 +1,25 @@
+import presentationBlocks from './dentele-anterieur/presentationBlocks.js';
+import anatomieBlocks from './dentele-anterieur/anatomieBlocks.js';
+import fonctionsBlocks from './dentele-anterieur/fonctionsBlocks.js';
+import blessuresBlocks from './dentele-anterieur/blessuresBlocks.js';
+
 /** @type {{ sections: { id: string, title: string, blocks: object[] }[] }} */
 const denteleAnterieur = {
   sections: [
     {
       id: 'presentation',
       title: 'Présentation générale',
-      blocks: [
-        {
-          type: 'p',
-          text:
-            'Le dentelé antérieur (serratus anterior) est l’un des muscles les plus sous-estimés du haut du corps. Sur le flanc du thorax, sous l’aisselle, ses insertions sur les côtes évoquent une scie — il relie les côtes au bord médial de la scapula.'
-        },
-        {
-          type: 'p',
-          text:
-            'Il maintient la scapula collée à la cage thoracique. S’il fonctionne mal, l’omoplate peut « ressortir » (scapula ailée / winging), avec perte de stabilité et difficultés au-dessus de la tête.'
-        }
-      ]
+      blocks: presentationBlocks
     },
     {
       id: 'anatomie',
       title: 'Anatomie',
-      blocks: [
-        {
-          type: 'h3',
-          text: 'Origine et insertion'
-        },
-        {
-          type: 'p',
-          text:
-            'Origine sur les neuf premières côtes (en règle générale) ; insertion sur le bord médial et l’angle inférieur de la scapula.'
-        }
-      ]
+      blocks: anatomieBlocks
     },
     {
       id: 'fonctions',
       title: 'Fonctions',
-      blocks: [
-        {
-          type: 'p',
-          text:
-            'Protraction de la scapula — éloigner les omoplates, comme en poussée devant soi. Rotation supérieure et maintien de l’omoplate contre le thorax.'
-        },
-        {
-          type: 'p',
-          text:
-            'Sollicité fortement en pompes, développés overhead, frappes, lancers et gymnastique.'
-        }
-      ]
+      blocks: fonctionsBlocks
     },
     {
       id: 'exercices',
@@ -87,13 +60,7 @@ const denteleAnterieur = {
     {
       id: 'blessures',
       title: 'Scapula ailée et épaule',
-      blocks: [
-        {
-          type: 'p',
-          text:
-            'Dentelé faible ou mal activé → winging, mauvaise stabilité, gêne overhead, perte de force. Peut perturber le rythme scapulo-huméral et augmenter les contraintes sur coiffe et espace sous-acromial.'
-        }
-      ]
+      blocks: blessuresBlocks
     },
     {
       id: 'saviez-vous',

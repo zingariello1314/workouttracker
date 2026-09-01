@@ -1,87 +1,25 @@
+import presentationBlocks from './triceps-brachial/presentationBlocks.js';
+import portionsBlocks from './triceps-brachial/portionsBlocks.js';
+import recrutementBlocks from './triceps-brachial/recrutementBlocks.js';
+import blessuresBlocks from './triceps-brachial/blessuresBlocks.js';
+
 /** @type {{ sections: { id: string, title: string, blocks: object[] }[] }} */
 const tricepsBrachial = {
   sections: [
     {
       id: 'presentation',
       title: 'Présentation générale',
-      blocks: [
-        {
-          type: 'p',
-          text:
-            'Le triceps brachial représente environ 60 à 70 % de la masse du bras — le véritable constructeur du volume. Trois chefs (long, latéral, médial), un tendon commun sur l’olécrâne : extension du coude, pilier des pompes, dips, développés, HSPU, planche et muscle-up.'
-        },
-        {
-          type: 'p',
-          text:
-            'Ce ne sont pas trois muscles séparés : leurs origines diffèrent, leurs fibres convergent. Le chef long seul traverse l’épaule — sa longueur varie selon la position du bras (overhead vs pushdown).'
-        }
-      ]
+      blocks: presentationBlocks
     },
     {
       id: 'portions',
       title: 'Les trois chefs',
-      blocks: [
-        {
-          type: 'p',
-          text:
-            'Impossible d’isoler totalement un chef ; la position de l’épaule et du coude modifie surtout la contribution relative du chef long.'
-        },
-        {
-          type: 'h3',
-          text: 'Chef long — Traverse l’épaule'
-        },
-        {
-          type: 'p',
-          text:
-            'Origine tubercule infraglénoïdal ; extension coude, adduction/extension épaule. Volume arrière du bras ; souvent sous-stimulé si seuls dips/pompes bras le long du corps — extensions overhead intéressantes en position étirée.'
-        },
-        {
-          type: 'ul',
-          items: ['Extension au-dessus de la tête', 'Dips', 'Pompes diamant']
-        },
-        {
-          type: 'h3',
-          text: 'Chef latéral — Fer à cheval'
-        },
-        {
-          type: 'p',
-          text:
-            'Face externe humérus ; largeur visuelle du triceps. Pushdown, développé serré, pompes serrées.'
-        },
-        {
-          type: 'ul',
-          items: ['Pushdown corde', 'Développé serré', 'Pompes serrées']
-        },
-        {
-          type: 'h3',
-          text: 'Chef médial — Profondeur et endurance'
-        },
-        {
-          type: 'p',
-          text:
-            'Sous les autres portions ; extensions répétées, pompes volume, contrôle fin.'
-        },
-        {
-          type: 'ul',
-          items: ['Extensions poulie', 'Volume pompes']
-        }
-      ]
+      blocks: portionsBlocks
     },
     {
       id: 'recrutement',
       title: 'Recrutement efficace',
-      blocks: [
-        {
-          type: 'p',
-          text:
-            'Amplitude complète (flexion puis extension), surcharge progressive, plusieurs angles — chef long = position épaule (overhead vs coude au corps). Extension overhead vs pushdown : complémentaires, pas rivaux.'
-        },
-        {
-          type: 'p',
-          text:
-            'Développé couché : triceps verrouille en fin de mouvement. Dips : amplitude + charge relative. Pompes : excellentes chez débutant, variantes lest/tempo pour avancés.'
-        }
-      ]
+      blocks: recrutementBlocks
     },
     {
       id: 'exercices',
@@ -131,13 +69,7 @@ const tricepsBrachial = {
     {
       id: 'blessures',
       title: 'Blessures',
-      blocks: [
-        {
-          type: 'p',
-          text:
-            'Tendinopathie triceps olécrâne ; douleurs coude avec volume poussée excessif, progression rapide dips/pompes/extensions — adapter amplitude et récupération.'
-        }
-      ]
+      blocks: blessuresBlocks
     },
     {
       id: 'saviez-vous',
