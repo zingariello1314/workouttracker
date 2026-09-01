@@ -33,7 +33,8 @@ import {
   comparableWeeklyRates,
   horizonForNature,
   muscleProfileForTrajectory,
-  natureForKind
+  natureForKind,
+  rewardToneForKind
 } from './recapInsightNature';
 import { buildPeriodDiscoveryBundle } from './recapPeriodDiscoveries';
 
@@ -279,6 +280,7 @@ function reading({ horizon, nature, kind, title, body, evidence = '', relevance,
       evidenceLine: evidence,
       kind,
       nature: resolvedNature,
+      rewardTone: extra.rewardTone || rewardToneForKind(kind),
       confidenceLabel: extra.confidenceLabel || (extra.showConfidence ? conf.label : null),
       sampleDays: extra.sampleDays ?? (extra.showConfidence ? days : null)
     }
@@ -305,7 +307,8 @@ export function buildHorizonEssayCandidates(opts = {}) {
     insightHistory = null,
     athleteIdentity = null,
     athleteJourney = null,
-    periodDiscoveries = null
+    periodDiscoveries = null,
+    profileQuestionnaireRaw = null
   } = opts;
 
   const wins = deriveExposureWindows(period, window);
@@ -441,12 +444,14 @@ export function buildHorizonEssayCandidates(opts = {}) {
       recapState: opts.recapState || null,
       athleteIdentity: identity,
       insightHistory: insightHistory || null,
-      features: f
+      features: f,
+      profileQuestionnaireRaw
     });
   (discoveryBundle.selected || []).forEach((d) => {
     emit(d.kind, d.title, d.body, d.evidence, d.relevance, {
       nature: d.nature,
-      metrics: d.metrics || {}
+      metrics: d.metrics || {},
+      rewardTone: rewardToneForKind(d.kind)
     });
   });
   const preferPeriodNow = Boolean(discoveryBundle.preferPeriodNow);
@@ -454,11 +459,11 @@ export function buildHorizonEssayCandidates(opts = {}) {
   const selectedDiscKinds = new Set(selectedDisc.map((d) => d.kind));
   const discCoversNow = selectedDisc.some((d) => d.nature === 'now');
   const discCoversTraj = selectedDisc.some((d) => d.nature === 'trajectory');
-  const skipGenericNow = discCoversNow || preferPeriodNow;
+  const skipGenericNow = discCoversNow || preferPeriodNow || (period === 'today' && (current.sessions || 0) === 0);
   const selectedKinds = selectedDiscKinds;
 
   // ——— COURT TERME : projection des phénomènes, pas une carte par métrique ———
-  if (!discCoversNow && !preferPeriodNow && current.sessions + habit.sessions >= 1) {
+  if (!discCoversNow && !preferPeriodNow && period !== 'today' && current.sessions + habit.sessions >= 1) {
     const denser =
       current.avgExercisesPerSession &&
       habit.avgExercisesPerSession &&
@@ -880,7 +885,19 @@ export function buildHorizonEssayCandidates(opts = {}) {
             e.pctFromReliable >= 0 ? '+' : ''
           }${Math.round(e.pctFromReliable)} %)`
       );
-      body = `Les mouvements que tu répètes assez souvent pour être comparables ont changé depuis tes premières références fiables. ${bits.join('. ')}. Un record isolé n'est pas le niveau : le chiffre utile, c'est ce que tu reproduis.`;
+      const tenureBit =
+        journey.tenureDays >= 45 && journey.startYmd
+          ? ` Premier entraînement enregistré : ${formatDayFr(journey.startYmd, true)} (${journey.tenureDays} j., ${journey.trainingDays} jours entraînés).`
+          : '';
+      const periodM = discoveryBundle.comparisons?.period;
+      const d30m = discoveryBundle.comparisons?.d30;
+      const anchorBit =
+        periodM?.trainingDays >= 1 && d30m?.trainingDays >= 6
+          ? ` ${period === 'today' && periodM.totalReps < 20
+              ? `Aujourd'hui n'est pas encore une séance : le parcours se lit sur tes ${d30m.trainingDays} jours entraînés sur 30, pas sur un zéro du matin.`
+              : `${periodM.trainingDays} jour${periodM.trainingDays > 1 ? 's' : ''} ${period === '7d' ? 'cette semaine' : period === 'today' ? "aujourd'hui" : 'sur la période'} s'inscrivent dans ${d30m.trainingDays}/30 jours entraînés.`}`
+          : '';
+      body = `Les mouvements que tu répètes assez souvent pour être comparables ont changé depuis tes premières références fiables. ${bits.join('. ')}. Un record isolé n'est pas le niveau : le chiffre utile, c'est ce que tu reproduis.${tenureBit}${anchorBit}`;
     }
     const jConf = confidenceFromSample(lead.sessions, lead.spanDays || 90);
     long(
@@ -932,7 +949,7 @@ export function buildHorizonEssayCandidates(opts = {}) {
   }
 
   const plateauRow = journey?.narratives?.plateau;
-  if (plateauRow?.plateau) {
+  if (plateauRow?.plateau && !selectedKinds.has('disc_pending_session')) {
     medium(
       'journey_plateau',
       `Plateau — ${plateauRow.name}`,

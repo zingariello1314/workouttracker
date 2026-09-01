@@ -23,13 +23,25 @@ import RecapTrainingStateDebugPanel from '../RecapTrainingStateDebugPanel';
 
 
 const HORIZON_PILLS = {
-
   short: 'bg-cyan-500/20 text-cyan-200 border-cyan-500/40',
-
   medium: 'bg-teal-500/20 text-teal-200 border-teal-500/40',
-
   long: 'bg-emerald-600/20 text-emerald-200 border-emerald-600/40'
+};
 
+const REWARD_CARD = {
+  daily: 'border-l-2 border-l-emerald-400/85',
+  jalon: 'border-l-2 border-l-sky-400/90',
+  discovery: 'border-l-2 border-l-violet-400/90',
+  transformation: 'border-l-2 border-l-orange-400/90',
+  historic: 'border-l-2 border-l-rose-500/90'
+};
+
+const REWARD_TITLE = {
+  daily: 'text-emerald-100/95',
+  jalon: 'text-sky-100/95',
+  discovery: 'text-violet-100/95',
+  transformation: 'text-orange-100/95',
+  historic: 'text-rose-100/95'
 };
 
 
@@ -65,14 +77,16 @@ function InsightColumn({ title, items, horizonKey, accent }) {
           {trimmed.map((item, i) => {
 
             const card = typeof item === 'object' && item ? item : { body: String(item || '') };
+            const tone = REWARD_CARD[card.rewardTone] || '';
+            const titleTone = REWARD_TITLE[card.rewardTone] || 'text-teal-100/95';
 
             return (
 
-              <article key={i} className="border-t border-white/10 pt-3 first:border-t-0 first:pt-0">
+              <article key={i} className={`border-t border-white/10 pt-3 first:border-t-0 first:pt-0 pl-3 ${tone}`}>
 
                 {card.title ? (
 
-                  <h4 className="mb-1.5 text-[12px] font-semibold leading-snug text-teal-100/95">
+                  <h4 className={`mb-1.5 text-[12px] font-semibold leading-snug ${titleTone}`}>
 
                     {card.title}
 

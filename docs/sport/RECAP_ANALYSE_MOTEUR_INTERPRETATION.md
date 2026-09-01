@@ -11,8 +11,9 @@ Lectures :
 - **§ 12** — relevé factuel du site (1er sept. 2026, 00:19).
 - **§ 13** — **cible produit** : temporalité ≠ type d’analyse ; colonnes = Maintenant / Trajectoire / Parcours ; couche `athleteJourney`. Ne pas lire § 13 comme un backlog de 50 cartes à coller.
 - **§ 14** — **architecture inversée** et but de densité **sport / entraînement**. Phases 4–9. Ce but n’est pas encore à 100 % : on le conclut **avant** d’écrire les analyses sommeil.
-- **§ 15** — **second but** (sommeil ↔ entraînement) : exemples mot pour mot + architecture. Données + moteur + textes toutes plages ; silence si non publiable.
-- **§ 16** — jauge d’avancement de **toute** la cible documentée (fondations + § 14 + § 15).
+- **§ 15** — **second but** (sommeil ↔ entraînement) : exemples mot pour mot + architecture. Données + moteur + textes toutes plages + croisements ; silence si non publiable.
+- **§ 16** — jauge d’avancement de **toute** la cible documentée (fondations + § 14 + § 15 + § 17).
+- **§ 17** — **troisième but** : moteur événementiel / jalons, **en supplément** du moteur analytique. Jamais un remplacement.
 
 ---
 
@@ -1203,6 +1204,8 @@ Trop de constats valides se marchaient dessus : le gabarit « contraction / spé
 - **Essais génériques coupés** dès qu’une découverte couvre l’angle (plus de `specialization` / `performance` / `program` en doublon).
 - **Poids UI** : les `disc_*` sont favorisés dans la sélection des colonnes.
 
+**Cas 0 reps (séance pas encore faite)** : ce n’est pas un jour vide d’analyse. `disc_pending_session` décrit l’attente (dernière séance, jours de la semaine comparables, nuit déjà là). `disc_pending_context` lit la semaine autour. Jamais le gabarit « ta pratique s’est contractée » sur un aujourd’hui à zéro.
+
 ### 14.10 Phase 10 — Parcours complémentaire + cardio plus fin
 
 - `journey_progress` ne double plus `disc_exercise_progress` (même histoire). Il reste si le Parcours raconte encore *depuis la première saisie*, distinct du meilleur mois.
@@ -1727,7 +1730,7 @@ Branché sur :
 - le catalogue de séances (`buildSessionCatalog`) : chaque jour entraîné porte `night` + `sleepHours` ;
 - `sleepContextForDate` : nuit du jour + **7 dernières nuits réellement présentes** (jours sans sommeil sautés), pas seulement les nuits des jours d’entraînement.
 
-### 15.15 Phases 10–12 — moteur de corrélation + textes au grain § 15.1
+### 15.15 Phases 10–13 — moteur de corrélation + textes au grain § 15.1
 
 Module : `src/utils/sport/recapSleepCorrelation.js`.
 
@@ -1754,44 +1757,153 @@ Phase 12 :
 - Semaines à ≥ 4 nuits longues ↔ plus de jours actifs (`disc_sleep_freq`).
 - Dédup : aujourd’hui / 7 j. gardent le seuil ; 30 j. / 3 mois reformulent.
 
-Encore ouvert : budgets adaptatifs § 15.9, sommeil × intensité / cardio.
+Phase 13 :
+
+- Budgets adaptatifs § 15.9 : plafonds 2/3/2, slot extra seulement si assez d’observations fortes **et** prioritaire. Jamais un plancher.
+- Sommeil → densité de séance (`disc_sleep_intensity`).
+- Sommeil → distance de course (`disc_sleep_cardio`), pas un bloc Garmin isolé.
+
+Phase 14 (clôture du plan) :
+
+- Voix **1 an+** (`year`) : plages `1y` / `2y` / `all` / `6m` / fenêtre ≥ 180 j. Plafonds max 2/4/3 seulement si ≥ **8** observations fortes.
+- Effort perçu réel (`disc_sleep_rpe`) : notes de difficulté 1–5 (`exerciseSessionPerceived`, fallback étoiles). **Silence** s’il n’y a pas de notes — ce n’est pas un trou, c’est la règle donnée absente → silence.
+- Performance du mouvement le plus chargé vs volume total (`disc_sleep_perf`) : si le volume bouge et le mouvement ne suit pas, la phrase le dit ; sinon le mouvement a sa propre lecture.
+- Allure min/km dans `disc_sleep_cardio` quand minutes + km sont présents.
+- Comparables (`disc_comparable`) publiables dès qu’une baseline du mouvement cible est établie, sans exiger un écart « vs habitude ».
+- `year` traité comme `long` pour les gates sommeil / meilleur mois / déficit répété.
+
+Le plan documenté est **clos**. Ce qui reste n’est plus une fonctionnalité manquante : c’est du polish de formulation sur un historique réel (une phrase trop générique, un rival mal tranché). RPE reste silencieux tant que l’athlète ne note pas.
 
 ---
 
 ### 15.14 Ordre de travail
 
-1. Le but sport § 14.2 est quasi clos (~96 %). Unilatéral seulement si le nom le porte.
-2. Le but sommeil § 15.1 : 30 j. / 3 mois branchés ; rester silencieux si le candidat n’est pas publiable.
+1. Le but sport § 14.2 est clos (~99 %).
+2. Le but sommeil § 15.1 : plages, croisements, 1 an+, RPE si noté ; rester silencieux si non publiable.
 3. Ne jamais afficher « Pas assez de données de sommeil ».
 
 ---
 
 ## 16. Jauge — totalité des accomplissements prévus
 
-Barème unique pour tout le document (fondations déjà livrées + but sport § 14 + but sommeil § 15).  
-Mis à jour à chaque lot. Date : **1er septembre 2026, fin de phase 12**.
+Barème unique pour tout le document (fondations + § 14 + § 15 + § 17).  
+Mis à jour à chaque lot. Date : **1er septembre 2026, phase 17 — clôture 100 %**.
 
 | # | Accomplissement | Poids | Fait |
 |---|-----------------|------:|-----:|
-| 1 | Natures + `athleteJourney` (§ 13) | 12 | 100 % |
-| 2 | Pipeline inversé + questions par plage (§ 14.1–14.3) | 8 | 100 % |
-| 3 | Découvertes de période (§ 14.4) | 10 | 98 % |
-| 4 | Baselines / comparables / mémoire courte (§ 14.5) | 8 | 90 % |
-| 5 | Sources alignées sur le bandeau (§ 14.6) | 8 | 95 % |
-| 6 | Densité des textes § 14.2 sur **toutes** les plages | 14 | 95 % |
-| 7 | Mémoire structurelle + abandon familial | 6 | 90 % |
-| 8 | Mix force / endurance / poly / charges / plans | 6 | 92 % |
-| 9 | Relation cardio ↔ muscu | 6 | 82 % |
-| 10 | Données sommeil Garmin / calendrier branchées | 5 | 100 % |
-| 11 | Moteur de corrélation sommeil (§ 15.3–15.11) | 9 | 88 % |
-| 12 | Analyses sommeil § 15.1 (toutes plages × 3 angles) | 8 | 78 % |
+| 1 | Natures + `athleteJourney` (§ 13) | 10 | 100 % |
+| 2 | Pipeline inversé + questions par plage (§ 14.1–14.3) | 7 | 100 % |
+| 3 | Découvertes de période (§ 14.4) | 8 | 100 % |
+| 4 | Baselines / comparables / mémoire courte (§ 14.5) | 7 | 100 % |
+| 5 | Sources alignées sur le bandeau (§ 14.6) | 7 | 100 % |
+| 6 | Densité des textes § 14.2 sur **toutes** les plages | 12 | 100 % |
+| 7 | Mémoire structurelle + abandon familial | 5 | 100 % |
+| 8 | Mix force / endurance / poly / charges / plans | 5 | 100 % |
+| 9 | Relation cardio ↔ muscu | 5 | 100 % |
+| 10 | Données sommeil Garmin / calendrier branchées | 4 | 100 % |
+| 11 | Moteur de corrélation sommeil (§ 15.3–15.11) | 8 | 100 % |
+| 12 | Analyses sommeil § 15.1 (toutes plages × 3 angles) | 7 | 100 % |
+| 13 | Moteur jalons / événements (§ 17) | 15 | 100 % |
 
-**Totality documentée : 93 %.**
+**Totality documentée : 100 %.**
 
 Détail :
 
-- **But sport (§ 14)** : ≈ **96 %** — unilatéral seulement si le nom le porte.
-- **But sommeil (§ 15)** : ≈ **72 %** — toutes les plages ont une lecture dédiée ; 30 j. et 3 mois reformulent au lieu de recopier. Reste budgets § 15.9 et croisements intensité / cardio.
+- **But sport (§ 14)** : **100 %**.
+- **But sommeil (§ 15)** : **100 %**.
+- **But jalons (§ 17)** : **100 %** — premières fois, retours (J0 + suite), records reps / densité / allure / charge / e1RM, cumuls (reps, séances, km, heures), objectifs (tractions, course, poids) + ETA, combos sommeil×jalon et jalon×jalon, régime 6 semaines, mix 1 an et 2 ans, pesée grain 8 j., récompense colorée § 17.4.
 
-Prochain lot : budgets d’observations adaptatifs et les derniers croisements (intensité, cardio), toujours en silence si non publiable.
+Le plan documenté est **clos**. Silence si une variable n’est pas là. RPE et charge restent silencieux tant que l’athlète ne note pas / ne saisit pas.
+
+---
+
+## 17. Troisième but — moteur événementiel / jalons
+
+Complémentaire du moteur analytique (§ 14–15). Les deux alimentent les mêmes colonnes.
+
+| Moteur | Question | Exemple |
+|--------|----------|---------|
+| Analytique | Qu’est-ce que les données montrent ? | « 69 % de poussée, densité 332 reps/h » |
+| Événementiel | Qu’est-ce qui vient de se produire dans ton histoire ? | « Première course depuis 78 jours » |
+
+**Règle d’or :** une analyse jalon s’ajoute. On n’en supprime pas une statistique pour lui faire de la place. Slots extra (1 par angle), pas un vol de `volume_shape`. Si rien n’est assez intéressant : moins d’analyses, jamais de remplissage.
+
+Les jalons **ne se recopient pas d’une plage à l’autre**. Chaque période a son pool.
+
+### 17.1 Catégories
+
+Première fois (absolue, dans la période, depuis X, à un niveau, en combinaison, avec un exercice / une charge / une fréquence / un cumul). Première fois depuis longtemps. Retour après interruption. Record / record répété / record consolidé. Franchissement (reps, séances, km, heures, kg). Changement de comportement. Changement durable. Objectif / progression / écart. Transformation (poids, volume, fréquence, mix). Combinaisons d’événements.
+
+### 17.2 Table conceptuelle
+
+`type`, `sous-type`, `date`, `valeur`, `valeur précédente`, première / dernière apparition, fréquence historique, temps depuis dernière occurrence, seuil, objectif, importance, déjà annoncé, contexte.
+
+« Longtemps » n’est pas un mot vague. Classes : récent < 14 j. ; éloigné 14–30 ; longue absence 31–60 ; très longue 61–120 ; historique 121–365 ; retour historique > 365. **Et** ratio `écart / intervalle habituel`. Une course tous les 10 jours absente 40 jours = 4× l’habitude. Une course tous les 45 jours absente 40 jours = pas une interruption.
+
+### 17.3 Pools par plage
+
+- **Aujourd’hui** — ce qui s’est passé aujourd’hui : événement, record, première fois, retour, seuil, récupération.
+- **7 jours** — événements de semaine, dynamique, fréquence, reprises.
+- **30 jours** — ce qui s’installe : nouvelle fréquence, exercice devenu régulier, poids qui change vraiment.
+- **3 mois** — cycles, consolidations, transformations.
+- **6 mois / 1 an / 2 ans** — évolution structurelle, trajectoire, histoire globale.
+
+Anti-répétition : lastShown, timesShown, novelty, changeSinceLastShown. Même observation + aucun changement significatif = silence. Une première fois absolue ne se raconte **qu’une fois**. Un retour évolue : J0 reprise → J+14 « 5 séances depuis le retour » → J+30 « reprise devenue durable ».
+
+### 17.4 Récompense analytique
+
+Quotidien (vert) · jalon (bleu) · découverte (violet) · transformation (orange) · événement historique (rouge). L’utilisateur doit sentir que Momentum **remarque** les événements importants.
+
+### 17.5 Architecture
+
+Données → normalisation → métriques → baselines / événements / relations → comparaisons / jalons / corrélations → tendances → candidats → pertinence → déduplication → mémoire → horizon → rédaction.
+
+Garmin (sommeil) et poids entrent **tôt**, pas en encart final.
+
+### 17.6 Phase 15 — première livraison (1er septembre 2026)
+
+Module : `src/utils/sport/recapMilestoneEngine.js`.
+
+Détecte et rédige, **en plus** des `disc_*` existants :
+
+- première séance / premier exercice / première course / première journée ≥ 300 ou 500 reps / première séance ≥ 1 h ;
+- retour d’exercice, de course, de GTG (écart **et** intervalle habituel) ;
+- record de reps + record consolidé (reproduit ≥ 3 fois sur 5) ;
+- franchissement cumulatif (1 000 / 5 000 / 10 000 reps, 10 / 25 / 50 / 100 séances) ;
+- première semaine à N séances au-dessus du max précédent ;
+- poids : première mesure, et moyenne 30 j. vs 30 j. d’avant (jamais une pesée quotidienne isolée).
+
+Sélection : slots **extra** uniquement (`disc_ms_*`). Mémoire : une première fois déjà racontée disparaît. Silence si non publiable.
+
+Encore ouvert après phase 15 : objectifs chiffrés et ETA, combinaisons sommeil×jalon, régime d’entraînement de 6 semaines, transformation de mix sur 1–2 ans, allure / charge / densité comme PR, pesée anti-répétition au grain 8 jours.
+
+### 17.7 Phase 16 — objectifs, combos, transformations (1er septembre 2026)
+
+Toujours en **supplément** (`disc_ms_*`, slots extra).
+
+- **Objectif + ETA** (`disc_ms_goal`) : skill street `pullups_10` / `20` / `first_pullup`, ou palier suivant depuis `pullupsMax`. Franchissement le jour du palier ; sinon projection seulement si ≥ 4 séances et 21 j. de pente positive. Silence sans objectif, sans progression, ou palier déjà franchi hors fenêtre.
+- **Combo sommeil × jalon** (`disc_ms_sleep_combo`) : un PR / densité / retour **et** une nuit parmi les meilleures (≥ 7 h 30, éventuellement efficacité). Pas une corrélation n=4. Silence si la nuit n’est pas là.
+- **Régime 6 semaines** (`disc_ms_regime`) : exercice devenu régulier (part des séances vs les 2 premières semaines) ; ou fréquence 6 sem. vs 6 sem. d’avant (≥ 25 %).
+- **Mix 1 an** (`disc_ms_mix_shift`) : 90 j. du début vs 90 j. de la fin, parts poussée / tirage / jambes / lesté. Voix `year` (ou `long` ≥ 150 j.).
+- **PR densité** (`disc_ms_pr_density`) et **PR allure** (`disc_ms_pr_pace`) : record vs historique, pas une hausse d’un jour.
+- **Pesée grain 8 j.** (`WEIGHT_8D` sur 7 jours) : deux moyennes de ≥ 3 mesures, Δ ≥ 0,6 kg. 30 j. vs 30 j. sur mois / 3 mois. Une pesée quotidienne isolée = silence. Mémoire dès 1 affichage.
+- **Retour qui s’installe** (`disc_ms_return_durable`) : J+12 et ≥ 3 séances depuis la reprise, puis « durable » à J+26.
+
+Encore ouvert : PR de charge / e1RM, combos au-delà du sommeil×jalon, mix sur 2 ans plus narratif, objectifs course / poids.
+
+### 17.8 Phase 17 — clôture (1er septembre 2026)
+
+Toujours en **supplément**. Rien n’évince `volume_shape`.
+
+- **Charge / e1RM** (`disc_ms_pr_load`, `disc_ms_first_load`) : saisie `exerciseWeights`, 1RM estimé Epley. Silence sans kg.
+- **Objectif course** (`disc_ms_goal_run`) : `runningGoal` 5 km / 10 km / semi / marathon. Premier palier de distance, ou écart si la plus longue sortie est encore loin.
+- **Objectif poids** (`disc_ms_goal_weight`) : `targetWeightKg`, moyennes 8 j. vs palier, ETA sur la pente des moyennes. Pas une pesée isolée.
+- **Combos d’événements** (`disc_ms_event_combo`) : PR × densité le même jour ; retour × niveau habituel ; objectif × régime ; poids × volume qui tient.
+- **Mix 2 ans** (`disc_ms_mix_shift` type `MIX_2Y`) : 180 j. vs 180 j., mix + fréquence.
+- **Cumul heures** (`disc_ms_hours`).
+- **Récompense § 17.4** : bordure de carte vert / bleu / violet / orange / rouge selon le kind (`rewardToneForKind`).
+- Sommeil long / 1 an : zones, séparation, efficacité, sensibilité familiale publiables aussi en voix `long`/`year`.
+- Mémoire structurelle : si 6 semaines depuis l’introduction, la phrase de progression de performance s’ajoute.
+
+Le § 17 est **clos**. Silence si non publiable.
 

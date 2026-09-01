@@ -256,18 +256,26 @@ function describeExercise(exId, sessions, endYmd, getExerciseNameById) {
 }
 
 function pickNarratives(exercises, endYmd) {
-  const progress = exercises
+  const progress = [];
+  const seenNames = new Set();
+  exercises
     .filter((e) => e.meaningfulProgress)
     .sort((a, b) => Math.abs(b.pctFromReliable) - Math.abs(a.pctFromReliable))
-    .slice(0, 3);
-  const progressIds = new Set(progress.map((e) => e.exerciseId));
+    .forEach((e) => {
+      const key = String(e.name || '').toLowerCase().replace(/\s+/g, ' ').trim();
+      if (!key || seenNames.has(key)) return;
+      seenNames.add(key);
+      progress.push(e);
+    });
+  const uniqueProgress = progress.slice(0, 3);
+  const progressIds = new Set(uniqueProgress.map((e) => e.exerciseId));
   const prVsLevel = exercises
     .filter((e) => e.prDistinctFromHabitual && !progressIds.has(e.exerciseId))
     .sort((a, b) => (b.pr?.reps || 0) - (b.habitual?.median || 0) - ((a.pr?.reps || 0) - (a.habitual?.median || 0)))
     .slice(0, 1);
 
-  const milestoneStory = progress[0]?.milestones?.hits?.length >= 3
-    ? progress[0]
+  const milestoneStory = uniqueProgress[0]?.milestones?.hits?.length >= 3
+    ? uniqueProgress[0]
     : exercises
         .filter((e) => (e.milestones?.hits || []).length >= 3)
         .sort((a, b) => b.milestones.hits.length - a.milestones.hits.length)[0] || null;
@@ -303,7 +311,7 @@ function pickNarratives(exercises, endYmd) {
     });
 
   return {
-    progress: progress.length ? progress : [],
+    progress: uniqueProgress,
     prVsLevel: prVsLevel[0] || null,
     milestoneStory: milestoneStory || null,
     plateau,

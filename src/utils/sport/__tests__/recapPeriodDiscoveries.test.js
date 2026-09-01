@@ -3,6 +3,8 @@ import DateHelper from '../../dateHelper';
 import {
   buildPeriodDiscoveryBundle,
   measureRecapWindow,
+  observationCaps,
+  periodVoice,
   PERIOD_QUESTIONS,
   selectPeriodDiscoveries
 } from '../recapPeriodDiscoveries';
@@ -520,5 +522,79 @@ describe('recapPeriodDiscoveries', () => {
     expect(long.find((d) => d.nature === 'now')?.kind).toBe('disc_volume_shape');
     expect(long.some((d) => d.kind === 'disc_best_month')).toBe(true);
     expect(long.some((d) => d.kind === 'disc_kcal_profile')).toBe(false);
+  });
+
+  it('n’ouvre un slot extra que si l’observation est forte et prioritaire', () => {
+    const many = [
+      { kind: 'disc_volume_shape', nature: 'now', family: 'volume_shape', score: 80 },
+      { kind: 'disc_muscle_now', nature: 'now', family: 'muscle_now', score: 78 },
+      { kind: 'disc_sleep_quarter', nature: 'journey', family: 'sleep_quarter', score: 90 },
+      { kind: 'disc_best_month', nature: 'journey', family: 'best_month', score: 88 },
+      { kind: 'disc_sleep_freq', nature: 'journey', family: 'sleep_freq', score: 86 },
+      { kind: 'disc_kcal_profile', nature: 'journey', family: 'kcal_profile', score: 92 },
+      { kind: 'disc_sleep_volume', nature: 'trajectory', family: 'sleep_volume', score: 84 },
+      { kind: 'disc_cardio_strength', nature: 'trajectory', family: 'cardio_strength', score: 83 }
+    ];
+    expect(observationCaps('long', many).journey).toBe(3);
+    const long = selectPeriodDiscoveries(many, null, 'long');
+    expect(long.filter((d) => d.nature === 'journey').map((d) => d.kind)).toEqual([
+      'disc_sleep_quarter',
+      'disc_best_month',
+      'disc_sleep_freq'
+    ]);
+    expect(long.some((d) => d.kind === 'disc_kcal_profile')).toBe(false);
+    expect(observationCaps('today', many).trajectory).toBe(3);
+  });
+
+  it('traite 1 an comme une voix distincte, avec un plafond plus haut seulement si l’historique est riche', () => {
+    expect(periodVoice('1y', 365).key).toBe('year');
+    expect(periodVoice('1y', 365).thisPeriod).toMatch(/année/);
+    expect(PERIOD_QUESTIONS['1y']).toMatch(/année/);
+    expect(periodVoice('3m', 92).key).toBe('long');
+    const few = [
+      { kind: 'a', score: 80 },
+      { kind: 'b', score: 80 },
+      { kind: 'c', score: 80 }
+    ];
+    expect(observationCaps('year', few).journey).toBe(2);
+    const rich = Array.from({ length: 8 }, (_, i) => ({ kind: `k${i}`, score: 80 }));
+    expect(observationCaps('year', rich).journey).toBe(3);
+    expect(observationCaps('year', rich).trajectory).toBe(4);
+  });
+
+  it('quand aujourd’hui est à 0 reps, décrit une séance en attente plutôt qu’une contraction', () => {
+    const { snapshot, garmin } = buildAugustFixture();
+    const bundle = buildPeriodDiscoveryBundle({
+      snapshot,
+      window: { start: '2026-09-01', end: '2026-09-01' },
+      period: 'today',
+      getExerciseNameById: getName,
+      garminData: garmin
+    });
+    const pending = bundle.all.find((d) => d.kind === 'disc_pending_session');
+    expect(pending).toBeTruthy();
+    expect(pending.nature).toBe('now');
+    expect(`${pending.title} ${pending.body}`).toMatch(/pas encore|attente/i);
+    expect(pending.body).not.toMatch(/pas assez de données/i);
+    expect(pending.body).not.toMatch(/contraction/i);
+    expect(bundle.selected.some((d) => d.kind === 'disc_pending_session')).toBe(true);
+    expect(bundle.all.find((d) => d.kind === 'disc_volume_shape')).toBeFalsy();
+  });
+
+  it('sur 7 jours, le portrait de volume tisse muscles, pic et course comme le § 14.2', () => {
+    const { snapshot, garmin } = buildAugustFixture();
+    const bundle = buildPeriodDiscoveryBundle({
+      snapshot,
+      window: { start: '2026-08-25', end: '2026-08-31' },
+      period: '7d',
+      getExerciseNameById: getName,
+      garminData: garmin,
+      athleteIdentity: { frequency: { meanPerWeek: 4.1 } }
+    });
+    const shape = bundle.all.find((d) => d.kind === 'disc_volume_shape');
+    expect(shape).toBeTruthy();
+    expect(shape.body.length).toBeGreaterThan(260);
+    expect(shape.body).toMatch(/séance|reps/i);
+    expect(shape.body).toMatch(/renforcement|tirage|triceps|pector|séance du/i);
   });
 });

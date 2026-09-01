@@ -24,6 +24,14 @@ export const NATURE_TO_HORIZON = {
 
 /** Plafonds par colonne — un maximum, jamais un plancher. */
 export const NATURE_COLUMN_CAPS = { short: 2, medium: 3, long: 2 };
+export const NATURE_COLUMN_CAPS_WITH_MILESTONES = { short: 3, medium: 4, long: 3 };
+
+export function columnCapsForCandidates(candidates = []) {
+  const hasMs = (candidates || []).some(
+    (c) => String(c.id || '').includes('disc_ms_') || String(c.interpretation?.context?.kind || '').startsWith('disc_ms_')
+  );
+  return hasMs ? NATURE_COLUMN_CAPS_WITH_MILESTONES : NATURE_COLUMN_CAPS;
+}
 
 /**
  * Un kind a une nature fixe. La fenêtre Recap ne la change pas.
@@ -69,6 +77,8 @@ export const KIND_NATURE = {
   disc_kcal_profile: 'journey',
   disc_quarter_profile: 'journey',
   disc_vs_habit: 'now',
+  disc_pending_session: 'now',
+  disc_pending_context: 'trajectory',
   disc_comparable: 'trajectory',
   disc_exercise_progress: 'journey',
   disc_sleep_context: 'now',
@@ -88,6 +98,10 @@ export const KIND_NATURE = {
   disc_sleep_quarter: 'journey',
   disc_sleep_load: 'trajectory',
   disc_sleep_freq: 'journey',
+  disc_sleep_intensity: 'trajectory',
+  disc_sleep_cardio: 'trajectory',
+  disc_sleep_perf: 'trajectory',
+  disc_sleep_rpe: 'trajectory',
   disc_rest_assoc: 'trajectory',
   disc_muscle_share_shift: 'trajectory',
   disc_ratio_structure: 'trajectory',
@@ -96,7 +110,35 @@ export const KIND_NATURE = {
   disc_stimulus_mix: 'trajectory',
   disc_cardio_strength: 'trajectory',
   disc_family_fade: 'trajectory',
-  disc_best_month: 'journey'
+  disc_best_month: 'journey',
+  disc_ms_first_session: 'now',
+  disc_ms_first_exercise: 'trajectory',
+  disc_ms_first_run: 'now',
+  disc_ms_first_hour: 'now',
+  disc_ms_return: 'now',
+  disc_ms_return_run: 'now',
+  disc_ms_return_gtg: 'now',
+  disc_ms_day_volume: 'now',
+  disc_ms_cumul: 'journey',
+  disc_ms_sessions: 'journey',
+  disc_ms_km: 'journey',
+  disc_ms_pr: 'now',
+  disc_ms_pr_consolidated: 'trajectory',
+  disc_ms_pr_density: 'now',
+  disc_ms_pr_pace: 'now',
+  disc_ms_week_freq: 'trajectory',
+  disc_ms_weight: 'trajectory',
+  disc_ms_goal: 'trajectory',
+  disc_ms_sleep_combo: 'trajectory',
+  disc_ms_regime: 'trajectory',
+  disc_ms_mix_shift: 'journey',
+  disc_ms_return_durable: 'trajectory',
+  disc_ms_hours: 'journey',
+  disc_ms_pr_load: 'now',
+  disc_ms_first_load: 'now',
+  disc_ms_goal_run: 'now',
+  disc_ms_goal_weight: 'trajectory',
+  disc_ms_event_combo: 'trajectory'
 };
 
 export function natureForKind(kind) {
@@ -105,6 +147,51 @@ export function natureForKind(kind) {
 
 export function horizonForNature(nature) {
   return NATURE_TO_HORIZON[nature] || 'medium';
+}
+
+/** § 17.4 — récompense analytique (couleur de carte, pas un quota). */
+export const REWARD_TONE = {
+  DAILY: 'daily',
+  JALON: 'jalon',
+  DISCOVERY: 'discovery',
+  TRANSFORMATION: 'transformation',
+  HISTORIC: 'historic'
+};
+
+export function rewardToneForKind(kind) {
+  const k = String(kind || '');
+  if (
+    k === 'disc_ms_first_session' ||
+    k === 'disc_ms_first_run' ||
+    k === 'disc_ms_cumul' ||
+    k === 'disc_ms_sessions' ||
+    k === 'disc_ms_km' ||
+    k === 'disc_ms_hours'
+  ) {
+    return REWARD_TONE.HISTORIC;
+  }
+  if (
+    k === 'disc_ms_mix_shift' ||
+    k === 'disc_ms_regime' ||
+    k === 'disc_structural_memory' ||
+    k === 'disc_family_fade' ||
+    k === 'disc_muscle_share_shift' ||
+    k === 'disc_stimulus_mix' ||
+    k === 'disc_quarter_arc'
+  ) {
+    return REWARD_TONE.TRANSFORMATION;
+  }
+  if (k.startsWith('disc_ms_')) return REWARD_TONE.JALON;
+  if (
+    k.startsWith('disc_sleep_') ||
+    k === 'disc_emergence' ||
+    k === 'disc_comparable' ||
+    k === 'disc_rest_assoc' ||
+    k === 'disc_best_month'
+  ) {
+    return REWARD_TONE.DISCOVERY;
+  }
+  return REWARD_TONE.DAILY;
 }
 
 export function kindFromCandidateId(id) {
@@ -181,6 +268,7 @@ export function natureSelectionBoost(candidate, phenomena) {
   if (kind === 'journey_plateau') w += 5;
   if (kind === 'journey_abandoned' && contracted) w -= 10;
   if (kind === 'situation') w -= 40;
+  if (String(kind || '').startsWith('disc_ms_')) w += 10;
   if (String(kind || '').startsWith('disc_')) w += 16;
   return w;
 }

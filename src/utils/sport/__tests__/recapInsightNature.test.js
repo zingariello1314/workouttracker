@@ -6,7 +6,8 @@ import {
   KIND_NATURE,
   muscleProfileForTrajectory,
   natureForKind,
-  natureSelectionBoost
+  natureSelectionBoost,
+  rewardToneForKind
 } from '../recapInsightNature';
 
 describe('recapInsightNature', () => {
@@ -28,6 +29,17 @@ describe('recapInsightNature', () => {
     expect(natureForKind('disc_vs_habit')).toBe('now');
     expect(natureForKind('disc_comparable')).toBe('trajectory');
     expect(natureForKind('disc_sleep_assoc')).toBe('trajectory');
+    expect(natureForKind('disc_sleep_perf')).toBe('trajectory');
+    expect(natureForKind('disc_sleep_rpe')).toBe('trajectory');
+    expect(natureForKind('disc_pending_session')).toBe('now');
+    expect(natureForKind('disc_pending_context')).toBe('trajectory');
+    expect(natureForKind('disc_ms_return')).toBe('now');
+    expect(natureForKind('disc_ms_pr_consolidated')).toBe('trajectory');
+    expect(natureForKind('disc_ms_goal')).toBe('trajectory');
+    expect(natureForKind('disc_ms_pr_density')).toBe('now');
+    expect(natureForKind('disc_ms_mix_shift')).toBe('journey');
+    expect(natureForKind('disc_ms_pr_load')).toBe('now');
+    expect(natureForKind('disc_ms_event_combo')).toBe('trajectory');
   });
 
   it('compare le rythme sur 28 j. quand la fenêtre Recap n’est pas un mois', () => {
@@ -82,5 +94,13 @@ describe('recapInsightNature', () => {
     expect(byId['relation.reading.short.continuity']).toBeGreaterThan(
       byId['relation.reading.short.absence']
     );
+  });
+
+  it('classe les tons de récompense § 17.4', () => {
+    expect(rewardToneForKind('disc_density')).toBe('daily');
+    expect(rewardToneForKind('disc_ms_pr')).toBe('jalon');
+    expect(rewardToneForKind('disc_sleep_volume')).toBe('discovery');
+    expect(rewardToneForKind('disc_ms_mix_shift')).toBe('transformation');
+    expect(rewardToneForKind('disc_ms_first_session')).toBe('historic');
   });
 });

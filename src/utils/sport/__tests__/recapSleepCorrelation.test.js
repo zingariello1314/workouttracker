@@ -10,6 +10,10 @@ import {
   sleepTripleCondition,
   sleepVolumeByThreshold,
   sleepHighDayShare,
+  sleepIntensityByDensity,
+  sleepCardioByThreshold,
+  sleepPerceivedEffort,
+  sleepPerformanceLead,
   sleepPrevLoadInteraction,
   sleepWeekFrequency,
   sleepWindowConcentration,
@@ -236,5 +240,72 @@ describe('recapSleepCorrelation', () => {
     const freq = sleepWeekFrequency(trained, nights);
     expect(freq).toBeTruthy();
     expect(freq.highDays).toBeGreaterThan(freq.lowDays);
+  });
+
+  it('publie une densité de séance plus élevée après les nuits longues', () => {
+    const catalog = [];
+    for (let i = 0; i < 5; i += 1) {
+      catalog.push(sess(`2026-04-0${i + 1}`, 360, 7.8, { minutes: 65 }));
+    }
+    for (let i = 0; i < 5; i += 1) {
+      catalog.push(sess(`2026-04-1${i + 1}`, 200, 6.4, { minutes: 48 }));
+    }
+    const dens = sleepIntensityByDensity(pairSessionsWithNights(catalog));
+    expect(dens).toBeTruthy();
+    expect(dens.highDens).toBeGreaterThan(dens.lowDens);
+    expect(sleepIntensityByDensity(pairSessionsWithNights(catalog.slice(0, 2)))).toBeNull();
+  });
+
+  it('associe les nuits longues à des sorties plus longues, sinon silence', () => {
+    const runs = [];
+    for (let i = 0; i < 4; i += 1) {
+      runs.push({ date: `2026-03-0${i + 1}`, hours: 7.8, km: 8.2, pace: 5.6 });
+    }
+    for (let i = 0; i < 4; i += 1) {
+      runs.push({ date: `2026-03-1${i + 1}`, hours: 6.4, km: 5.1, pace: 6.4 });
+    }
+    const cardio = sleepCardioByThreshold(runs);
+    expect(cardio).toBeTruthy();
+    expect(cardio.highKm).toBeGreaterThan(cardio.lowKm);
+    expect(cardio.highPace).toBeLessThan(cardio.lowPace);
+    expect(sleepCardioByThreshold(runs.slice(0, 2))).toBeNull();
+  });
+
+  it('sépare performance d’un mouvement et volume total, ou se tait', () => {
+    const catalog = [];
+    for (let i = 0; i < 5; i += 1) {
+      catalog.push(
+        sess(`2026-02-0${i + 1}`, 360, 7.8, {
+          exercises: [{ id: '1', name: 'Dips parallèles', reps: 48 }]
+        })
+      );
+    }
+    for (let i = 0; i < 5; i += 1) {
+      catalog.push(
+        sess(`2026-02-1${i + 1}`, 200, 6.4, {
+          exercises: [{ id: '1', name: 'Dips parallèles', reps: 44 }]
+        })
+      );
+    }
+    const perf = sleepPerformanceLead(pairSessionsWithNights(catalog));
+    expect(perf).toBeTruthy();
+    expect(perf.volumeDominates).toBe(true);
+  });
+
+  it('publie l’effort perçu seulement s’il y a des notes, sinon silence', () => {
+    const catalog = [];
+    const diffs = [];
+    for (let i = 0; i < 4; i += 1) {
+      catalog.push(sess(`2026-01-0${i + 1}`, 300, 7.8));
+      diffs.push({ date: `2026-01-0${i + 1}`, difficulty: 2.2 });
+    }
+    for (let i = 0; i < 4; i += 1) {
+      catalog.push(sess(`2026-01-1${i + 1}`, 220, 6.4));
+      diffs.push({ date: `2026-01-1${i + 1}`, difficulty: 4.1 });
+    }
+    const rpe = sleepPerceivedEffort(pairSessionsWithNights(catalog), diffs);
+    expect(rpe).toBeTruthy();
+    expect(rpe.lowDiff).toBeGreaterThan(rpe.highDiff);
+    expect(sleepPerceivedEffort(pairSessionsWithNights(catalog), [])).toBeNull();
   });
 });

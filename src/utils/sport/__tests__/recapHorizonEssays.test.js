@@ -295,4 +295,23 @@ describe('lectures de coach', () => {
     expect(blob(progress)).toMatch(/paliers|5 → 8|Base :/i);
     expect(cands.some((c) => c.id.includes('continuity_level'))).toBe(false);
   });
+
+  it('ne raconte pas une contraction quand aujourd’hui n’a pas encore de séance', () => {
+    const snapshot = { reps: {}, checkedExercises: {} };
+    const add = (date, reps) => {
+      snapshot.reps[`${date}_501`] = reps;
+      snapshot.checkedExercises[`${date}_501`] = true;
+    };
+    add('2026-08-28', 300);
+    add('2026-08-31', 360);
+    const cands = buildHorizonEssayCandidates({
+      snapshot,
+      window: { start: '2026-09-01', end: '2026-09-01' },
+      period: 'today',
+      getExerciseNameById: () => 'Dips parallèles'
+    });
+    expect(cands.some((c) => c.id.includes('disc_pending_session'))).toBe(true);
+    expect(cands.some((c) => c.id.includes('continuity'))).toBe(false);
+    expect(blob(cands.find((c) => c.id.includes('disc_pending_session')))).toMatch(/pas encore/i);
+  });
 });

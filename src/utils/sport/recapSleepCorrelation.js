@@ -9,6 +9,8 @@
  */
 
 import { familyOfExercise } from './recapStimulusCatalog';
+import { extractSleepNight } from './recapSleepNight';
+import { normalizeSessionPerceivedStored } from '../exerciseSessionPerceivedModel';
 
 function mean(nums) {
   const v = (nums || []).filter((n) => Number.isFinite(n));
@@ -83,6 +85,7 @@ export function pairSessionsWithNights(catalog) {
         pullReps: fam.pull,
         prevDayReps: Number(s.prevDayReps) || 0,
         exerciseCount: (s.exercises || []).length,
+        leadReps: Math.max(0, ...((s.exercises || []).map((e) => Number(e.reps) || 0))),
         muscles: s.muscles || []
       };
     })
@@ -439,6 +442,119 @@ export function sleepDeepStability(nights) {
 }
 
 /**
+ * Densité de séance (reps/h) après nuit longue vs courte — proxy d'intensité.
+ */
+export function sleepIntensityByDensity(pairs, { longCut = 7.5, shortCut = 7 } = {}) {
+  const high = (pairs || []).filter((p) => p.hours >= longCut && p.minutes >= 20);
+  const low = (pairs || []).filter((p) => p.hours < shortCut && p.minutes >= 20);
+  const dens = (p) => (p.totalReps / p.minutes) * 60;
+  const highD = mean(high.map(dens));
+  const lowD = mean(low.map(dens));
+  if (!publishable(high.length, low.length, highD - lowD, lowD, { minEach: 3, minPct: 8, minAbs: 18 })) {
+    return null;
+  }
+  return {
+    type: 'sleep_intensity',
+    highN: high.length,
+    lowN: low.length,
+    highDens: Math.round(highD),
+    lowDens: Math.round(lowD),
+    delta: Math.round(highD - lowD),
+    deltaPct: lowD > 0 ? round1(((highD - lowD) / lowD) * 100) : null,
+    confidence: high.length + low.length >= 10 ? 'high' : 'medium'
+  };
+}
+
+function activityYmd(act) {
+  const raw = act?.date || act?.startTime || act?.beginTimestamp;
+  if (!raw) return null;
+  const s = String(raw);
+  if (/^\d{4}-\d{2}-\d{2}/.test(s)) return s.slice(0, 10);
+  const t = Date.parse(s);
+  if (!Number.isFinite(t)) return null;
+  const d = new Date(t);
+  if (Number.isNaN(d.getTime())) return null;
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${y}-${m}-${day}`;
+}
+
+function activityKm(act) {
+  let d = act?.distance ?? act?.distanceKm ?? act?.km;
+  if (d != null && typeof d === 'object') d = d.total ?? d.value ?? d.km ?? 0;
+  const n = Number(d);
+  if (!Number.isFinite(n) || n <= 0) return 0;
+  return n > 80 ? n / 1000 : n;
+}
+
+function activityMinutes(act) {
+  const sec = Number(act?.duration ?? act?.durationInSeconds ?? act?.elapsedDuration);
+  if (Number.isFinite(sec) && sec >= 60) return sec / 60;
+  const min = Number(act?.durationMin ?? act?.minutes);
+  return Number.isFinite(min) && min > 0 ? min : 0;
+}
+
+function isRunActivity(act) {
+  const t = `${act?.activityType || ''} ${act?.activityName || ''} ${act?.type || ''}`.toLowerCase();
+  if (/walk|marche|hike|strength|street|muscu/.test(t)) return false;
+  return /run|course|trail|jogging/.test(t);
+}
+
+export function collectRunDays(garminData) {
+  const byDate = new Map();
+  (garminData?.activities?.cardio || []).forEach((act) => {
+    if (!isRunActivity(act)) return;
+    const date = activityYmd(act);
+    const km = activityKm(act);
+    if (!date || km < 0.8) return;
+    const row = byDate.get(date) || { date, km: 0, minutes: 0, hours: null };
+    row.km += km;
+    row.minutes += activityMinutes(act);
+    byDate.set(date, row);
+  });
+  const out = [];
+  byDate.forEach((row) => {
+    const night = extractSleepNight(garminData, row.date);
+    if (!night || night.hours == null || night.hours < 1.5) return;
+    out.push({
+      ...row,
+      km: round1(row.km),
+      hours: night.hours,
+      pace: row.minutes >= 8 && row.km >= 1 ? round1(row.minutes / row.km) : null
+    });
+  });
+  return out.sort((a, b) => a.date.localeCompare(b.date));
+}
+
+/**
+ * Distance de course après nuit ≥ 7 h 30 vs < 7 h.
+ */
+export function sleepCardioByThreshold(runDays, { longCut = 7.5, shortCut = 7 } = {}) {
+  const high = (runDays || []).filter((r) => r.hours >= longCut && r.km >= 1);
+  const low = (runDays || []).filter((r) => r.hours < shortCut && r.km >= 1);
+  const highKm = mean(high.map((r) => r.km));
+  const lowKm = mean(low.map((r) => r.km));
+  if (!publishable(high.length, low.length, highKm - lowKm, lowKm, { minEach: 3, minPct: 10, minAbs: 0.8 })) {
+    return null;
+  }
+  const highPace = mean(high.map((r) => r.pace).filter((n) => n > 0));
+  const lowPace = mean(low.map((r) => r.pace).filter((n) => n > 0));
+  return {
+    type: 'sleep_cardio',
+    highN: high.length,
+    lowN: low.length,
+    highKm: round1(highKm),
+    lowKm: round1(lowKm),
+    delta: round1(highKm - lowKm),
+    deltaPct: lowKm > 0 ? round1(((highKm - lowKm) / lowKm) * 100) : null,
+    highPace: highPace != null ? round1(highPace) : null,
+    lowPace: lowPace != null ? round1(lowPace) : null,
+    confidence: high.length + low.length >= 8 ? 'high' : 'medium'
+  };
+}
+
+/**
  * Nuit courte après une séance lourde la veille vs après un jour léger / repos.
  */
 export function sleepPrevLoadInteraction(pairs, { shortCut = 7, heavyCut = 280, lightCut = 80 } = {}) {
@@ -549,6 +665,89 @@ export function publishWindowSleepFacts({ trainedPairs, allNights, vs = 'session
 }
 
 /**
+ * Performance du mouvement le plus chargé, distincte du volume total de séance.
+ */
+export function sleepPerformanceLead(pairs, { longCut = 7.5, shortCut = 7 } = {}) {
+  const high = (pairs || []).filter((p) => p.hours >= longCut && p.leadReps >= 8);
+  const low = (pairs || []).filter((p) => p.hours < shortCut && p.leadReps >= 8);
+  const highLead = mean(high.map((p) => p.leadReps));
+  const lowLead = mean(low.map((p) => p.leadReps));
+  if (highLead == null || lowLead == null) return null;
+  const vol = sleepVolumeByThreshold(pairs, longCut, { minEach: 3 });
+  const leadPct = lowLead > 0 ? ((highLead - lowLead) / lowLead) * 100 : null;
+  const volumeDominates =
+    vol && leadPct != null && vol.deltaPct != null && Math.abs(leadPct) + 8 < Math.abs(vol.deltaPct);
+  if (!volumeDominates && !publishable(high.length, low.length, highLead - lowLead, lowLead, { minEach: 3, minPct: 10, minAbs: 6 })) {
+    return null;
+  }
+  if (!volumeDominates && (high.length < 3 || low.length < 3)) return null;
+  return {
+    type: 'sleep_performance',
+    highN: high.length,
+    lowN: low.length,
+    highLead: round1(highLead),
+    lowLead: round1(lowLead),
+    delta: round1(highLead - lowLead),
+    deltaPct: leadPct != null ? round1(leadPct) : null,
+    volumeDominates: Boolean(volumeDominates),
+    volDeltaPct: vol?.deltaPct ?? null,
+    confidence: high.length + low.length >= 10 ? 'high' : 'medium'
+  };
+}
+
+export function meanDifficultyByDate(snapshot) {
+  const map = snapshot?.exerciseSessionPerceived || {};
+  const byDate = {};
+  Object.entries(map).forEach(([key, row]) => {
+    const date = String(key).slice(0, 10);
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) return;
+    const d = normalizeSessionPerceivedStored(row).difficulty;
+    if (d < 1) return;
+    if (!byDate[date]) byDate[date] = [];
+    byDate[date].push(d);
+  });
+  const stars = snapshot?.exerciseSessionEffortStars || {};
+  Object.entries(stars).forEach(([key, v]) => {
+    const date = String(key).slice(0, 10);
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) return;
+    if (byDate[date]?.length) return;
+    const n = Number(v);
+    if (!Number.isFinite(n) || n < 1 || n > 5) return;
+    byDate[date] = [n];
+  });
+  return Object.entries(byDate).map(([date, arr]) => ({
+    date,
+    difficulty: arr.reduce((a, b) => a + b, 0) / arr.length
+  }));
+}
+
+/**
+ * Effort perçu (difficulté 1–5) après nuit longue vs courte. Silence s'il n'y a pas de notes.
+ */
+export function sleepPerceivedEffort(pairs, difficulties, { longCut = 7.5, shortCut = 7 } = {}) {
+  const byDate = new Map((difficulties || []).map((r) => [r.date, r.difficulty]));
+  const rows = (pairs || [])
+    .map((p) => ({ hours: p.hours, difficulty: byDate.get(p.date) }))
+    .filter((r) => r.hours != null && r.difficulty >= 1);
+  const high = rows.filter((r) => r.hours >= longCut);
+  const low = rows.filter((r) => r.hours < shortCut);
+  const highD = mean(high.map((r) => r.difficulty));
+  const lowD = mean(low.map((r) => r.difficulty));
+  if (!publishable(high.length, low.length, lowD - highD, highD, { minEach: 3, minPct: 8, minAbs: 0.35 })) {
+    return null;
+  }
+  return {
+    type: 'sleep_rpe',
+    highN: high.length,
+    lowN: low.length,
+    highDiff: round1(highD),
+    lowDiff: round1(lowD),
+    delta: round1(lowD - highD),
+    confidence: high.length + low.length >= 8 ? 'high' : 'medium'
+  };
+}
+
+/**
  * @returns {object[]} candidats publiables uniquement
  */
 export function publishSleepCandidates(catalog, opts = {}) {
@@ -567,7 +766,11 @@ export function publishSleepCandidates(catalog, opts = {}) {
     sleepFamilySensitivity(pairs),
     sleepLagJ2(pairs),
     sleepTripleCondition(pairs),
-    sleepPrevLoadInteraction(pairs)
+    sleepPrevLoadInteraction(pairs),
+    sleepIntensityByDensity(pairs),
+    sleepPerformanceLead(pairs),
+    sleepPerceivedEffort(pairs, meanDifficultyByDate(opts.snapshot)),
+    sleepCardioByThreshold(opts.runDays || [])
   ].filter(Boolean);
 }
 

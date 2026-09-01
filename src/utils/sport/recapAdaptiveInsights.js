@@ -48,7 +48,7 @@ import {
   saveLastInsightSignature
 } from './insightNoveltyStore';
 
-import { applyNatureWeights, NATURE_COLUMN_CAPS } from './recapInsightNature';
+import { applyNatureWeights, columnCapsForCandidates, rewardToneForKind } from './recapInsightNature';
 
 const MIN_COLUMN_WEIGHT = 32;
 
@@ -1201,6 +1201,8 @@ export function selectBalancedInsightTexts(candidates, horizon, limit, signature
 
 function toInsightCard(p) {
   const ctx = p.interpretation?.context || {};
+  const kind = ctx.kind || '';
+  const rewardTone = ctx.rewardTone || rewardToneForKind(kind);
   if (ctx.title && ctx.body) {
     return {
       title: ctx.title,
@@ -1209,10 +1211,12 @@ function toInsightCard(p) {
       confidence: ctx.confidenceLabel
         ? `Confiance : ${ctx.confidenceLabel}${ctx.sampleDays ? ` · Échantillon : ${ctx.sampleDays} j` : ''}`
         : '',
-      text: p.text
+      text: p.text,
+      kind,
+      rewardTone
     };
   }
-  return p.text;
+  return typeof p.text === 'string' ? { body: p.text, text: p.text, kind, rewardTone } : p.text;
 }
 
 /**
@@ -1303,22 +1307,23 @@ export function buildAdaptiveRecapInsights(opts = {}) {
     composed.phenomena
   );
 
+  const caps = columnCapsForCandidates(weightedCandidates);
   const pickedShort = selectBalancedCandidates(
     weightedCandidates,
     'short',
-    NATURE_COLUMN_CAPS.short,
+    caps.short,
     signature
   );
   const pickedMedium = selectBalancedCandidates(
     weightedCandidates,
     'medium',
-    NATURE_COLUMN_CAPS.medium,
+    caps.medium,
     signature
   );
   const pickedLong = selectBalancedCandidates(
     weightedCandidates,
     'long',
-    NATURE_COLUMN_CAPS.long,
+    caps.long,
     signature
   );
   const allPicked = [...pickedShort, ...pickedMedium, ...pickedLong];
