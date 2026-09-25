@@ -58,3 +58,6 @@ temp/
 
 # Cache Garmin local (régénéré, ne pas versionner)
 garmin-server/.cache/
+
+# graft's local graph cache — regenerable, not committed (run `graft build`).
+/graft/
