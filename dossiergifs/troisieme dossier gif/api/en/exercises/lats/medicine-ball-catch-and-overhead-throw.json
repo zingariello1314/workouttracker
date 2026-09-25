@@ -1,0 +1,20 @@
+{
+  "id": "lats/medicine-ball-catch-and-overhead-throw",
+  "slug": "medicine-ball-catch-and-overhead-throw",
+  "name": "Medicine Ball Catch And Overhead Throw",
+  "muscle": "lats",
+  "bodyPart": "back",
+  "equipment": "bodyweight",
+  "category": "strength",
+  "secondaryMuscles": [],
+  "instructions": [
+    "Adopt the starting position with proper body alignment.",
+    "Pre-engage the lats before initiating the movement.",
+    "Perform the movement in a controlled manner, keeping good form.",
+    "Return to the starting position controlling the eccentric phase.",
+    "Breathe: exhale on effort, inhale on the way back."
+  ],
+  "file": "lats/medicine-ball-catch-and-overhead-throw.gif",
+  "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/lats/medicine-ball-catch-and-overhead-throw.gif",
+  "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/lats/medicine-ball-catch-and-overhead-throw.thumb.webp"
+}

@@ -1,0 +1,20 @@
+{
+  "id": "calves/ankle-circles",
+  "slug": "ankle-circles",
+  "name": "Ankle Circles",
+  "muscle": "calves",
+  "bodyPart": "legs",
+  "equipment": "bodyweight",
+  "category": "strength",
+  "secondaryMuscles": [],
+  "instructions": [
+    "Adopt the starting position with proper body alignment.",
+    "Pre-engage the calves before initiating the movement.",
+    "Perform the movement in a controlled manner, keeping good form.",
+    "Return to the starting position controlling the eccentric phase.",
+    "Breathe: exhale on effort, inhale on the way back."
+  ],
+  "file": "calves/ankle-circles.gif",
+  "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/calves/ankle-circles.gif",
+  "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/calves/ankle-circles.thumb.webp"
+}

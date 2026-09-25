@@ -1,0 +1,23 @@
+{
+  "id": "glutes/single-leg-bridge-with-outstretched-leg",
+  "slug": "single-leg-bridge-with-outstretched-leg",
+  "name": "Puente, a una pierna con extendida",
+  "muscle": "glutes",
+  "bodyPart": "legs",
+  "equipment": "bodyweight",
+  "category": "strength",
+  "secondaryMuscles": [
+    "hamstrings",
+    "abs"
+  ],
+  "instructions": [
+    "Adopta la postura inicial con buena alineación corporal.",
+    "Activa los glúteos antes de iniciar el movimiento.",
+    "Realiza el movimiento de forma controlada manteniendo la técnica.",
+    "Vuelve a la posición inicial controlando la fase excéntrica.",
+    "Mantén la respiración: exhala en el esfuerzo, inhala al volver."
+  ],
+  "file": "glutes/single-leg-bridge-with-outstretched-leg.gif",
+  "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/glutes/single-leg-bridge-with-outstretched-leg.gif",
+  "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/glutes/single-leg-bridge-with-outstretched-leg.thumb.webp"
+}

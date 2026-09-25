@@ -1,0 +1,69 @@
+{
+  "equipment": "other",
+  "count": 3,
+  "exercises": [
+    {
+      "id": "hamstrings/standing-single-leg-curl",
+      "slug": "standing-single-leg-curl",
+      "name": "Standing Single Leg Curl",
+      "muscle": "hamstrings",
+      "bodyPart": "legs",
+      "equipment": "other",
+      "category": "strength",
+      "secondaryMuscles": [
+        "glutes",
+        "calves"
+      ],
+      "instructions": [
+        "Prepare the equipment and adopt the starting position.",
+        "Pre-engage the hamstrings before initiating the movement.",
+        "Perform the movement in a controlled manner, keeping good form.",
+        "Return to the starting position controlling the eccentric phase.",
+        "Breathe: exhale on effort, inhale on the way back."
+      ],
+      "file": "hamstrings/standing-single-leg-curl.gif",
+      "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/hamstrings/standing-single-leg-curl.gif",
+      "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/hamstrings/standing-single-leg-curl.thumb.webp"
+    },
+    {
+      "id": "upper-back/elevator",
+      "slug": "elevator",
+      "name": "Elevator",
+      "muscle": "upper-back",
+      "bodyPart": "back",
+      "equipment": "other",
+      "category": "strength",
+      "secondaryMuscles": [],
+      "instructions": [
+        "Prepare the equipment and adopt the starting position.",
+        "Pre-engage the upper back before initiating the movement.",
+        "Perform the movement in a controlled manner, keeping good form.",
+        "Return to the starting position controlling the eccentric phase.",
+        "Breathe: exhale on effort, inhale on the way back."
+      ],
+      "file": "upper-back/elevator.gif",
+      "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/upper-back/elevator.gif",
+      "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/upper-back/elevator.thumb.webp"
+    },
+    {
+      "id": "upper-back/standing-archer",
+      "slug": "standing-archer",
+      "name": "Standing Archer",
+      "muscle": "upper-back",
+      "bodyPart": "back",
+      "equipment": "other",
+      "category": "strength",
+      "secondaryMuscles": [],
+      "instructions": [
+        "Prepare the equipment and adopt the starting position.",
+        "Pre-engage the upper back before initiating the movement.",
+        "Perform the movement in a controlled manner, keeping good form.",
+        "Return to the starting position controlling the eccentric phase.",
+        "Breathe: exhale on effort, inhale on the way back."
+      ],
+      "file": "upper-back/standing-archer.gif",
+      "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/upper-back/standing-archer.gif",
+      "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/upper-back/standing-archer.thumb.webp"
+    }
+  ]
+}

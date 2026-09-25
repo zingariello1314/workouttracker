@@ -1,0 +1,19 @@
+{
+  "id": "pectorals/assisted-seated-pectoralis-major-stretch-with-stability-ball",
+  "slug": "assisted-seated-pectoralis-major-stretch-with-stability-ball",
+  "name": "Assisted Seated Pectoralis Major Stretch With Stability Ball",
+  "muscle": "pectorals",
+  "bodyPart": "chest",
+  "equipment": "bodyweight",
+  "category": "stretching",
+  "secondaryMuscles": [],
+  "instructions": [
+    "Adopt the starting position with proper body alignment.",
+    "Move into the the chest stretch position.",
+    "Hold for 20 to 40 seconds breathing deeply.",
+    "Return slowly to the starting position and repeat if desired."
+  ],
+  "file": "pectorals/assisted-seated-pectoralis-major-stretch-with-stability-ball.gif",
+  "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/pectorals/assisted-seated-pectoralis-major-stretch-with-stability-ball.gif",
+  "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/pectorals/assisted-seated-pectoralis-major-stretch-with-stability-ball.thumb.webp"
+}

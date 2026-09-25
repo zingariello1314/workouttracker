@@ -1,0 +1,23 @@
+{
+  "id": "abs/front-plank-with-twist",
+  "slug": "front-plank-with-twist",
+  "name": "Plancha frontal con giro",
+  "muscle": "abs",
+  "bodyPart": "core",
+  "equipment": "bodyweight",
+  "category": "strength",
+  "secondaryMuscles": [
+    "delts",
+    "glutes"
+  ],
+  "instructions": [
+    "Adopta la postura inicial con buena alineación corporal.",
+    "Activa el core antes de iniciar el movimiento.",
+    "Realiza el movimiento de forma controlada manteniendo la técnica.",
+    "Vuelve a la posición inicial controlando la fase excéntrica.",
+    "Mantén la respiración: exhala en el esfuerzo, inhala al volver."
+  ],
+  "file": "abs/front-plank-with-twist.gif",
+  "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/abs/front-plank-with-twist.gif",
+  "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/abs/front-plank-with-twist.thumb.webp"
+}

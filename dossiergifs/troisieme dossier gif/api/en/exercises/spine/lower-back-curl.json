@@ -1,0 +1,20 @@
+{
+  "id": "spine/lower-back-curl",
+  "slug": "lower-back-curl",
+  "name": "Lower Back Curl",
+  "muscle": "spine",
+  "bodyPart": "back",
+  "equipment": "bodyweight",
+  "category": "strength",
+  "secondaryMuscles": [],
+  "instructions": [
+    "Adopt the starting position with proper body alignment.",
+    "Pre-engage the lower back before initiating the movement.",
+    "Perform the movement in a controlled manner, keeping good form.",
+    "Return to the starting position controlling the eccentric phase.",
+    "Breathe: exhale on effort, inhale on the way back."
+  ],
+  "file": "spine/lower-back-curl.gif",
+  "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/spine/lower-back-curl.gif",
+  "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/spine/lower-back-curl.thumb.webp"
+}

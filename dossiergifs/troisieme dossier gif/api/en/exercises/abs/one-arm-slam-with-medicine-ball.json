@@ -1,0 +1,20 @@
+{
+  "id": "abs/one-arm-slam-with-medicine-ball",
+  "slug": "one-arm-slam-with-medicine-ball",
+  "name": "One Arm Slam With Medicine Ball",
+  "muscle": "abs",
+  "bodyPart": "core",
+  "equipment": "bodyweight",
+  "category": "strength",
+  "secondaryMuscles": [],
+  "instructions": [
+    "Adopt the starting position with proper body alignment.",
+    "Pre-engage the core before initiating the movement.",
+    "Perform the movement in a controlled manner, keeping good form.",
+    "Return to the starting position controlling the eccentric phase.",
+    "Breathe: exhale on effort, inhale on the way back."
+  ],
+  "file": "abs/one-arm-slam-with-medicine-ball.gif",
+  "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/abs/one-arm-slam-with-medicine-ball.gif",
+  "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/abs/one-arm-slam-with-medicine-ball.thumb.webp"
+}

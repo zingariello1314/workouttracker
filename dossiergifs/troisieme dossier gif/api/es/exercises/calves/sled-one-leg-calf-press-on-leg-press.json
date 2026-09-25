@@ -1,0 +1,23 @@
+{
+  "id": "calves/sled-one-leg-calf-press-on-leg-press",
+  "slug": "sled-one-leg-calf-press-on-leg-press",
+  "name": "Press de gemelo a una pierna en prensa con trineo",
+  "muscle": "calves",
+  "bodyPart": "legs",
+  "equipment": "sled",
+  "category": "strength",
+  "secondaryMuscles": [
+    "triceps",
+    "delts"
+  ],
+  "instructions": [
+    "Prepara el equipo y adopta la postura inicial.",
+    "Activa los gemelos antes de iniciar el movimiento.",
+    "Realiza el movimiento de forma controlada manteniendo la técnica.",
+    "Vuelve a la posición inicial controlando la fase excéntrica.",
+    "Mantén la respiración: exhala en el esfuerzo, inhala al volver."
+  ],
+  "file": "calves/sled-one-leg-calf-press-on-leg-press.gif",
+  "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/calves/sled-one-leg-calf-press-on-leg-press.gif",
+  "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/calves/sled-one-leg-calf-press-on-leg-press.thumb.webp"
+}

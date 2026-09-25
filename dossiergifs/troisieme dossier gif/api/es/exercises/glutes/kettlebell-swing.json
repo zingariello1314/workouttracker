@@ -1,0 +1,26 @@
+{
+  "id": "glutes/kettlebell-swing",
+  "slug": "kettlebell-swing",
+  "name": "Swing con kettlebell",
+  "muscle": "glutes",
+  "bodyPart": "legs",
+  "equipment": "kettlebell",
+  "category": "strength",
+  "secondaryMuscles": [
+    "hamstrings",
+    "spine",
+    "traps",
+    "delts",
+    "forearms"
+  ],
+  "instructions": [
+    "Coge la kettlebell con un peso adecuado y adopta la postura.",
+    "Activa los glúteos antes de iniciar el movimiento.",
+    "Realiza el movimiento de forma controlada manteniendo la técnica.",
+    "Vuelve a la posición inicial controlando la fase excéntrica.",
+    "Mantén la respiración: exhala en el esfuerzo, inhala al volver."
+  ],
+  "file": "glutes/kettlebell-swing.gif",
+  "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/glutes/kettlebell-swing.gif",
+  "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/glutes/kettlebell-swing.thumb.webp"
+}

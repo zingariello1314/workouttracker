@@ -1,0 +1,23 @@
+{
+  "id": "abs/reverse-plank-with-leg-lift",
+  "slug": "reverse-plank-with-leg-lift",
+  "name": "Plancha invertida con elevación de pierna",
+  "muscle": "abs",
+  "bodyPart": "core",
+  "equipment": "bodyweight",
+  "category": "strength",
+  "secondaryMuscles": [
+    "delts",
+    "glutes"
+  ],
+  "instructions": [
+    "Adopta la postura inicial con buena alineación corporal.",
+    "Activa el core antes de iniciar el movimiento.",
+    "Realiza el movimiento de forma controlada manteniendo la técnica.",
+    "Vuelve a la posición inicial controlando la fase excéntrica.",
+    "Mantén la respiración: exhala en el esfuerzo, inhala al volver."
+  ],
+  "file": "abs/reverse-plank-with-leg-lift.gif",
+  "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/abs/reverse-plank-with-leg-lift.gif",
+  "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/abs/reverse-plank-with-leg-lift.thumb.webp"
+}

@@ -1,0 +1,20 @@
+{
+  "id": "glutes/basic-toe-touch-male",
+  "slug": "basic-toe-touch-male",
+  "name": "Tocar punta del pie, basic",
+  "muscle": "glutes",
+  "bodyPart": "legs",
+  "equipment": "bodyweight",
+  "category": "strength",
+  "secondaryMuscles": [],
+  "instructions": [
+    "Adopta la postura inicial con buena alineación corporal.",
+    "Activa los glúteos antes de iniciar el movimiento.",
+    "Realiza el movimiento de forma controlada manteniendo la técnica.",
+    "Vuelve a la posición inicial controlando la fase excéntrica.",
+    "Mantén la respiración: exhala en el esfuerzo, inhala al volver."
+  ],
+  "file": "glutes/basic-toe-touch-male.gif",
+  "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/glutes/basic-toe-touch-male.gif",
+  "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/glutes/basic-toe-touch-male.thumb.webp"
+}

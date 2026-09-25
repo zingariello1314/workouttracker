@@ -1,0 +1,149 @@
+{
+  "equipment": "machine",
+  "count": 7,
+  "exercises": [
+    {
+      "id": "cardio/cycle-cross-trainer",
+      "slug": "cycle-cross-trainer",
+      "name": "Bicicleta elíptica",
+      "muscle": "cardio",
+      "bodyPart": "cardio",
+      "equipment": "machine",
+      "category": "cardio",
+      "secondaryMuscles": [],
+      "instructions": [
+        "Ajusta la máquina a tu medida y selecciona la carga.",
+        "Mantén un ritmo constante adaptado a tu nivel.",
+        "Activa el core y mantén una postura erguida durante todo el ejercicio.",
+        "Continúa el tiempo o las repeticiones planificadas."
+      ],
+      "file": "cardio/cycle-cross-trainer.gif",
+      "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/cardio/cycle-cross-trainer.gif",
+      "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/cardio/cycle-cross-trainer.thumb.webp"
+    },
+    {
+      "id": "cardio/walk-elliptical-cross-trainer",
+      "slug": "walk-elliptical-cross-trainer",
+      "name": "Caminata elíptica cruzado trainer",
+      "muscle": "cardio",
+      "bodyPart": "cardio",
+      "equipment": "machine",
+      "category": "cardio",
+      "secondaryMuscles": [],
+      "instructions": [
+        "Ajusta la máquina a tu medida y selecciona la carga.",
+        "Mantén un ritmo constante adaptado a tu nivel.",
+        "Activa el core y mantén una postura erguida durante todo el ejercicio.",
+        "Continúa el tiempo o las repeticiones planificadas."
+      ],
+      "file": "cardio/walk-elliptical-cross-trainer.gif",
+      "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/cardio/walk-elliptical-cross-trainer.gif",
+      "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/cardio/walk-elliptical-cross-trainer.thumb.webp"
+    },
+    {
+      "id": "cardio/walking-on-incline-treadmill",
+      "slug": "walking-on-incline-treadmill",
+      "name": "Caminando cinta inclinado",
+      "muscle": "cardio",
+      "bodyPart": "cardio",
+      "equipment": "machine",
+      "category": "cardio",
+      "secondaryMuscles": [],
+      "instructions": [
+        "Ajusta la máquina a tu medida y selecciona la carga.",
+        "Mantén un ritmo constante adaptado a tu nivel.",
+        "Activa el core y mantén una postura erguida durante todo el ejercicio.",
+        "Continúa el tiempo o las repeticiones planificadas."
+      ],
+      "file": "cardio/walking-on-incline-treadmill.gif",
+      "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/cardio/walking-on-incline-treadmill.gif",
+      "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/cardio/walking-on-incline-treadmill.thumb.webp"
+    },
+    {
+      "id": "cardio/walking-on-stepmill",
+      "slug": "walking-on-stepmill",
+      "name": "Andando en stepmill",
+      "muscle": "cardio",
+      "bodyPart": "cardio",
+      "equipment": "machine",
+      "category": "cardio",
+      "secondaryMuscles": [],
+      "instructions": [
+        "Ajusta la máquina a tu medida y selecciona la carga.",
+        "Mantén un ritmo constante adaptado a tu nivel.",
+        "Activa el core y mantén una postura erguida durante todo el ejercicio.",
+        "Continúa el tiempo o las repeticiones planificadas."
+      ],
+      "file": "cardio/walking-on-stepmill.gif",
+      "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/cardio/walking-on-stepmill.gif",
+      "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/cardio/walking-on-stepmill.thumb.webp"
+    },
+    {
+      "id": "hamstrings/single-leg-platform-slide",
+      "slug": "single-leg-platform-slide",
+      "name": "Plataforma slide, a una pierna",
+      "muscle": "hamstrings",
+      "bodyPart": "legs",
+      "equipment": "machine",
+      "category": "strength",
+      "secondaryMuscles": [],
+      "instructions": [
+        "Ajusta la máquina a tu medida y selecciona la carga.",
+        "Activa los isquiotibiales antes de iniciar el movimiento.",
+        "Realiza el movimiento de forma controlada manteniendo la técnica.",
+        "Vuelve a la posición inicial controlando la fase excéntrica.",
+        "Mantén la respiración: exhala en el esfuerzo, inhala al volver."
+      ],
+      "file": "hamstrings/single-leg-platform-slide.gif",
+      "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/hamstrings/single-leg-platform-slide.gif",
+      "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/hamstrings/single-leg-platform-slide.thumb.webp"
+    },
+    {
+      "id": "lats/reverse-grip-machine-lat-pulldown",
+      "slug": "reverse-grip-machine-lat-pulldown",
+      "name": "Jalón al pecho en máquina, con agarre invertido",
+      "muscle": "lats",
+      "bodyPart": "back",
+      "equipment": "machine",
+      "category": "strength",
+      "secondaryMuscles": [
+        "biceps",
+        "forearms",
+        "delts"
+      ],
+      "instructions": [
+        "Ajusta la máquina a tu medida y selecciona la carga.",
+        "Activa los dorsales antes de iniciar el movimiento.",
+        "Realiza el movimiento de forma controlada manteniendo la técnica.",
+        "Vuelve a la posición inicial controlando la fase excéntrica.",
+        "Mantén la respiración: exhala en el esfuerzo, inhala al volver."
+      ],
+      "file": "lats/reverse-grip-machine-lat-pulldown.gif",
+      "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/lats/reverse-grip-machine-lat-pulldown.gif",
+      "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/lats/reverse-grip-machine-lat-pulldown.thumb.webp"
+    },
+    {
+      "id": "pectorals/machine-inner-chest-press",
+      "slug": "machine-inner-chest-press",
+      "name": "Press de pecho en máquina, interno",
+      "muscle": "pectorals",
+      "bodyPart": "chest",
+      "equipment": "machine",
+      "category": "strength",
+      "secondaryMuscles": [
+        "triceps",
+        "delts"
+      ],
+      "instructions": [
+        "Ajusta la máquina a tu medida y selecciona la carga.",
+        "Activa el pectoral antes de iniciar el movimiento.",
+        "Realiza el movimiento de forma controlada manteniendo la técnica.",
+        "Vuelve a la posición inicial controlando la fase excéntrica.",
+        "Mantén la respiración: exhala en el esfuerzo, inhala al volver."
+      ],
+      "file": "pectorals/machine-inner-chest-press.gif",
+      "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/pectorals/machine-inner-chest-press.gif",
+      "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/pectorals/machine-inner-chest-press.thumb.webp"
+    }
+  ]
+}

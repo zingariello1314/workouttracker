@@ -1,0 +1,19 @@
+{
+  "id": "calves/posterior-tibialis-stretch",
+  "slug": "posterior-tibialis-stretch",
+  "name": "Posterior Tibialis Stretch",
+  "muscle": "calves",
+  "bodyPart": "legs",
+  "equipment": "bodyweight",
+  "category": "stretching",
+  "secondaryMuscles": [],
+  "instructions": [
+    "Adopt the starting position with proper body alignment.",
+    "Move into the the calves stretch position.",
+    "Hold for 20 to 40 seconds breathing deeply.",
+    "Return slowly to the starting position and repeat if desired."
+  ],
+  "file": "calves/posterior-tibialis-stretch.gif",
+  "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/calves/posterior-tibialis-stretch.gif",
+  "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/calves/posterior-tibialis-stretch.thumb.webp"
+}

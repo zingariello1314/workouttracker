@@ -1,0 +1,23 @@
+{
+  "id": "glutes/cable-pull-through-with-rope",
+  "slug": "cable-pull-through-with-rope",
+  "name": "Pull through en polea, con cuerda",
+  "muscle": "glutes",
+  "bodyPart": "legs",
+  "equipment": "cable",
+  "category": "strength",
+  "secondaryMuscles": [
+    "hamstrings",
+    "spine"
+  ],
+  "instructions": [
+    "Ajusta la polea a la altura indicada y selecciona el peso.",
+    "Activa los glúteos antes de iniciar el movimiento.",
+    "Realiza el movimiento de forma controlada manteniendo la técnica.",
+    "Vuelve a la posición inicial controlando la fase excéntrica.",
+    "Mantén la respiración: exhala en el esfuerzo, inhala al volver."
+  ],
+  "file": "glutes/cable-pull-through-with-rope.gif",
+  "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/glutes/cable-pull-through-with-rope.gif",
+  "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/glutes/cable-pull-through-with-rope.thumb.webp"
+}

@@ -1,0 +1,20 @@
+{
+  "id": "abs/suspended-abdominal-fallout",
+  "slug": "suspended-abdominal-fallout",
+  "name": "Abdominal fallout, suspendido",
+  "muscle": "abs",
+  "bodyPart": "core",
+  "equipment": "bodyweight",
+  "category": "strength",
+  "secondaryMuscles": [],
+  "instructions": [
+    "Adopta la postura inicial con buena alineación corporal.",
+    "Activa el core antes de iniciar el movimiento.",
+    "Realiza el movimiento de forma controlada manteniendo la técnica.",
+    "Vuelve a la posición inicial controlando la fase excéntrica.",
+    "Mantén la respiración: exhala en el esfuerzo, inhala al volver."
+  ],
+  "file": "abs/suspended-abdominal-fallout.gif",
+  "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/abs/suspended-abdominal-fallout.gif",
+  "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/abs/suspended-abdominal-fallout.thumb.webp"
+}

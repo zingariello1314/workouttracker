@@ -1,0 +1,22 @@
+{
+  "id": "triceps/push-up-on-lower-arms",
+  "slug": "push-up-on-lower-arms",
+  "name": "Push Up On Lower Arms",
+  "muscle": "triceps",
+  "bodyPart": "arms",
+  "equipment": "bodyweight",
+  "category": "strength",
+  "secondaryMuscles": [
+    "delts"
+  ],
+  "instructions": [
+    "Adopt the starting position with proper body alignment.",
+    "Pre-engage the triceps before initiating the movement.",
+    "Perform the movement in a controlled manner, keeping good form.",
+    "Return to the starting position controlling the eccentric phase.",
+    "Breathe: exhale on effort, inhale on the way back."
+  ],
+  "file": "triceps/push-up-on-lower-arms.gif",
+  "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/triceps/push-up-on-lower-arms.gif",
+  "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/triceps/push-up-on-lower-arms.thumb.webp"
+}

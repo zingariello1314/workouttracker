@@ -1,0 +1,25 @@
+{
+  "id": "cardio/jack-burpee",
+  "slug": "jack-burpee",
+  "name": "Burpee, jack",
+  "muscle": "cardio",
+  "bodyPart": "cardio",
+  "equipment": "bodyweight",
+  "category": "cardio",
+  "secondaryMuscles": [
+    "pectorals",
+    "triceps",
+    "quads",
+    "glutes",
+    "abs"
+  ],
+  "instructions": [
+    "Adopta la postura inicial con buena alineación corporal.",
+    "Mantén un ritmo constante adaptado a tu nivel.",
+    "Activa el core y mantén una postura erguida durante todo el ejercicio.",
+    "Continúa el tiempo o las repeticiones planificadas."
+  ],
+  "file": "cardio/jack-burpee.gif",
+  "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/cardio/jack-burpee.gif",
+  "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/cardio/jack-burpee.thumb.webp"
+}

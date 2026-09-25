@@ -1,0 +1,19 @@
+{
+  "id": "lats/exercise-ball-lower-back-stretch-pyramid",
+  "slug": "exercise-ball-lower-back-stretch-pyramid",
+  "name": "Estiramiento en fitball, inferior espalda pyramid",
+  "muscle": "lats",
+  "bodyPart": "back",
+  "equipment": "bodyweight",
+  "category": "stretching",
+  "secondaryMuscles": [],
+  "instructions": [
+    "Adopta la postura inicial con buena alineación corporal.",
+    "Lleva el cuerpo a la posición de estiramiento de los dorsales.",
+    "Mantén entre 20 y 40 segundos respirando de forma profunda.",
+    "Vuelve a la posición inicial lentamente y repite si lo deseas."
+  ],
+  "file": "lats/exercise-ball-lower-back-stretch-pyramid.gif",
+  "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/lats/exercise-ball-lower-back-stretch-pyramid.gif",
+  "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/lats/exercise-ball-lower-back-stretch-pyramid.thumb.webp"
+}

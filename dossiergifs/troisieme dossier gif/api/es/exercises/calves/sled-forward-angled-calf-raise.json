@@ -1,0 +1,20 @@
+{
+  "id": "calves/sled-forward-angled-calf-raise",
+  "slug": "sled-forward-angled-calf-raise",
+  "name": "Elevación de talones en trineo, hacia adelante angled",
+  "muscle": "calves",
+  "bodyPart": "legs",
+  "equipment": "sled",
+  "category": "strength",
+  "secondaryMuscles": [],
+  "instructions": [
+    "Prepara el equipo y adopta la postura inicial.",
+    "Activa los gemelos antes de iniciar el movimiento.",
+    "Realiza el movimiento de forma controlada manteniendo la técnica.",
+    "Vuelve a la posición inicial controlando la fase excéntrica.",
+    "Mantén la respiración: exhala en el esfuerzo, inhala al volver."
+  ],
+  "file": "calves/sled-forward-angled-calf-raise.gif",
+  "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/calves/sled-forward-angled-calf-raise.gif",
+  "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/calves/sled-forward-angled-calf-raise.thumb.webp"
+}

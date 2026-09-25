@@ -1,0 +1,19 @@
+{
+  "id": "cardio/short-stride-run",
+  "slug": "short-stride-run",
+  "name": "Carrera a zancada corta",
+  "muscle": "cardio",
+  "bodyPart": "cardio",
+  "equipment": "bodyweight",
+  "category": "cardio",
+  "secondaryMuscles": [],
+  "instructions": [
+    "Adopta la postura inicial con buena alineación corporal.",
+    "Mantén un ritmo constante adaptado a tu nivel.",
+    "Activa el core y mantén una postura erguida durante todo el ejercicio.",
+    "Continúa el tiempo o las repeticiones planificadas."
+  ],
+  "file": "cardio/short-stride-run.gif",
+  "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/cardio/short-stride-run.gif",
+  "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/cardio/short-stride-run.thumb.webp"
+}

@@ -1,0 +1,19 @@
+{
+  "id": "cardio/walking-on-stepmill",
+  "slug": "walking-on-stepmill",
+  "name": "Walking On Stepmill",
+  "muscle": "cardio",
+  "bodyPart": "cardio",
+  "equipment": "machine",
+  "category": "cardio",
+  "secondaryMuscles": [],
+  "instructions": [
+    "Adjust the machine to your size and select the load.",
+    "Keep a steady pace adapted to your fitness level.",
+    "Engage your core and keep an upright posture throughout.",
+    "Continue for the planned time or repetitions."
+  ],
+  "file": "cardio/walking-on-stepmill.gif",
+  "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/cardio/walking-on-stepmill.gif",
+  "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/cardio/walking-on-stepmill.thumb.webp"
+}

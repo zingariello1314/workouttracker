@@ -1,0 +1,19 @@
+{
+  "id": "cardio/walking-on-incline-treadmill",
+  "slug": "walking-on-incline-treadmill",
+  "name": "Caminando cinta inclinado",
+  "muscle": "cardio",
+  "bodyPart": "cardio",
+  "equipment": "machine",
+  "category": "cardio",
+  "secondaryMuscles": [],
+  "instructions": [
+    "Ajusta la máquina a tu medida y selecciona la carga.",
+    "Mantén un ritmo constante adaptado a tu nivel.",
+    "Activa el core y mantén una postura erguida durante todo el ejercicio.",
+    "Continúa el tiempo o las repeticiones planificadas."
+  ],
+  "file": "cardio/walking-on-incline-treadmill.gif",
+  "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/cardio/walking-on-incline-treadmill.gif",
+  "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/cardio/walking-on-incline-treadmill.thumb.webp"
+}

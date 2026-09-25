@@ -1,0 +1,20 @@
+{
+  "id": "calves/exercise-ball-on-the-wall-calf-raise",
+  "slug": "exercise-ball-on-the-wall-calf-raise",
+  "name": "Elevación de talones en fitball, pared",
+  "muscle": "calves",
+  "bodyPart": "legs",
+  "equipment": "bodyweight",
+  "category": "strength",
+  "secondaryMuscles": [],
+  "instructions": [
+    "Adopta la postura inicial con buena alineación corporal.",
+    "Activa los gemelos antes de iniciar el movimiento.",
+    "Realiza el movimiento de forma controlada manteniendo la técnica.",
+    "Vuelve a la posición inicial controlando la fase excéntrica.",
+    "Mantén la respiración: exhala en el esfuerzo, inhala al volver."
+  ],
+  "file": "calves/exercise-ball-on-the-wall-calf-raise.gif",
+  "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/calves/exercise-ball-on-the-wall-calf-raise.gif",
+  "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/calves/exercise-ball-on-the-wall-calf-raise.thumb.webp"
+}

@@ -1,0 +1,20 @@
+{
+  "id": "delts/dumbbell-upright-shoulder-external-rotation",
+  "slug": "dumbbell-upright-shoulder-external-rotation",
+  "name": "Upright hombro external rotation con mancuerna",
+  "muscle": "delts",
+  "bodyPart": "shoulders",
+  "equipment": "dumbbell",
+  "category": "strength",
+  "secondaryMuscles": [],
+  "instructions": [
+    "Coge una mancuerna en cada mano (o la indicada) con un peso adecuado.",
+    "Activa los hombros antes de iniciar el movimiento.",
+    "Realiza el movimiento de forma controlada manteniendo la técnica.",
+    "Vuelve a la posición inicial controlando la fase excéntrica.",
+    "Mantén la respiración: exhala en el esfuerzo, inhala al volver."
+  ],
+  "file": "delts/dumbbell-upright-shoulder-external-rotation.gif",
+  "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/delts/dumbbell-upright-shoulder-external-rotation.gif",
+  "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/delts/dumbbell-upright-shoulder-external-rotation.thumb.webp"
+}

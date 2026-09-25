@@ -1,0 +1,19 @@
+{
+  "id": "quads/all-fours-squad-stretch",
+  "slug": "all-fours-squad-stretch",
+  "name": "All Fours Squad Stretch",
+  "muscle": "quads",
+  "bodyPart": "legs",
+  "equipment": "bodyweight",
+  "category": "stretching",
+  "secondaryMuscles": [],
+  "instructions": [
+    "Adopt the starting position with proper body alignment.",
+    "Move into the the quadriceps stretch position.",
+    "Hold for 20 to 40 seconds breathing deeply.",
+    "Return slowly to the starting position and repeat if desired."
+  ],
+  "file": "quads/all-fours-squad-stretch.gif",
+  "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/quads/all-fours-squad-stretch.gif",
+  "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/quads/all-fours-squad-stretch.thumb.webp"
+}

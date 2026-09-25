@@ -1,0 +1,20 @@
+{
+  "id": "calves/band-two-legs-calf-raise-band-under-both-legs-v-2",
+  "slug": "band-two-legs-calf-raise-band-under-both-legs-v-2",
+  "name": "Elevación de talones con banda, a dos piernas bajo ambas",
+  "muscle": "calves",
+  "bodyPart": "legs",
+  "equipment": "band",
+  "category": "strength",
+  "secondaryMuscles": [],
+  "instructions": [
+    "Fija la banda elástica y mantén la tensión inicial.",
+    "Activa los gemelos antes de iniciar el movimiento.",
+    "Realiza el movimiento de forma controlada manteniendo la técnica.",
+    "Vuelve a la posición inicial controlando la fase excéntrica.",
+    "Mantén la respiración: exhala en el esfuerzo, inhala al volver."
+  ],
+  "file": "calves/band-two-legs-calf-raise-band-under-both-legs-v-2.gif",
+  "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/calves/band-two-legs-calf-raise-band-under-both-legs-v-2.gif",
+  "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/calves/band-two-legs-calf-raise-band-under-both-legs-v-2.thumb.webp"
+}

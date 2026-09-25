@@ -1,0 +1,19 @@
+{
+  "id": "quads/forward-jump",
+  "slug": "forward-jump",
+  "name": "Forward Jump",
+  "muscle": "quads",
+  "bodyPart": "legs",
+  "equipment": "bodyweight",
+  "category": "plyometrics",
+  "secondaryMuscles": [],
+  "instructions": [
+    "Adopt the starting position with proper body alignment.",
+    "Perform a brief dip to load tension.",
+    "Execute the movement explosively and land under control.",
+    "Land softly absorbing with legs and core, then chain the next rep."
+  ],
+  "file": "quads/forward-jump.gif",
+  "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/quads/forward-jump.gif",
+  "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/quads/forward-jump.thumb.webp"
+}

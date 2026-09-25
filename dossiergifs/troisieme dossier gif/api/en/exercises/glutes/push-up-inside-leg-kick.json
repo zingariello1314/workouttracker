@@ -1,0 +1,23 @@
+{
+  "id": "glutes/push-up-inside-leg-kick",
+  "slug": "push-up-inside-leg-kick",
+  "name": "Push Up Inside Leg Kick",
+  "muscle": "glutes",
+  "bodyPart": "legs",
+  "equipment": "bodyweight",
+  "category": "strength",
+  "secondaryMuscles": [
+    "triceps",
+    "delts"
+  ],
+  "instructions": [
+    "Adopt the starting position with proper body alignment.",
+    "Pre-engage the glutes before initiating the movement.",
+    "Perform the movement in a controlled manner, keeping good form.",
+    "Return to the starting position controlling the eccentric phase.",
+    "Breathe: exhale on effort, inhale on the way back."
+  ],
+  "file": "glutes/push-up-inside-leg-kick.gif",
+  "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/glutes/push-up-inside-leg-kick.gif",
+  "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/glutes/push-up-inside-leg-kick.thumb.webp"
+}

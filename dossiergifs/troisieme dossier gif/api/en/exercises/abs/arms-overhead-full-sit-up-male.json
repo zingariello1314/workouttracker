@@ -1,0 +1,20 @@
+{
+  "id": "abs/arms-overhead-full-sit-up-male",
+  "slug": "arms-overhead-full-sit-up-male",
+  "name": "Arms Overhead Full Sit Up Male",
+  "muscle": "abs",
+  "bodyPart": "core",
+  "equipment": "bodyweight",
+  "category": "strength",
+  "secondaryMuscles": [],
+  "instructions": [
+    "Adopt the starting position with proper body alignment.",
+    "Pre-engage the core before initiating the movement.",
+    "Perform the movement in a controlled manner, keeping good form.",
+    "Return to the starting position controlling the eccentric phase.",
+    "Breathe: exhale on effort, inhale on the way back."
+  ],
+  "file": "abs/arms-overhead-full-sit-up-male.gif",
+  "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/abs/arms-overhead-full-sit-up-male.gif",
+  "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/abs/arms-overhead-full-sit-up-male.thumb.webp"
+}

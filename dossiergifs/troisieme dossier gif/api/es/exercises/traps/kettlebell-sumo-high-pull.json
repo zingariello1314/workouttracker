@@ -1,0 +1,20 @@
+{
+  "id": "traps/kettlebell-sumo-high-pull",
+  "slug": "kettlebell-sumo-high-pull",
+  "name": "Tirón alto sumo con kettlebell",
+  "muscle": "traps",
+  "bodyPart": "back",
+  "equipment": "kettlebell",
+  "category": "strength",
+  "secondaryMuscles": [],
+  "instructions": [
+    "Coge la kettlebell con un peso adecuado y adopta la postura.",
+    "Activa los trapecios antes de iniciar el movimiento.",
+    "Realiza el movimiento de forma controlada manteniendo la técnica.",
+    "Vuelve a la posición inicial controlando la fase excéntrica.",
+    "Mantén la respiración: exhala en el esfuerzo, inhala al volver."
+  ],
+  "file": "traps/kettlebell-sumo-high-pull.gif",
+  "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/traps/kettlebell-sumo-high-pull.gif",
+  "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/traps/kettlebell-sumo-high-pull.thumb.webp"
+}

@@ -1,0 +1,26 @@
+{
+  "id": "cardio/swing-360",
+  "slug": "swing-360",
+  "name": "Swing 360",
+  "muscle": "cardio",
+  "bodyPart": "cardio",
+  "equipment": "bodyweight",
+  "category": "cardio",
+  "secondaryMuscles": [
+    "glutes",
+    "hamstrings",
+    "spine",
+    "traps",
+    "delts",
+    "forearms"
+  ],
+  "instructions": [
+    "Adopt the starting position with proper body alignment.",
+    "Keep a steady pace adapted to your fitness level.",
+    "Engage your core and keep an upright posture throughout.",
+    "Continue for the planned time or repetitions."
+  ],
+  "file": "cardio/swing-360.gif",
+  "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/cardio/swing-360.gif",
+  "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/cardio/swing-360.thumb.webp"
+}

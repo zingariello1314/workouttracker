@@ -1,0 +1,23 @@
+{
+  "id": "glutes/iron-cross-stretch",
+  "slug": "iron-cross-stretch",
+  "name": "Estiramiento, iron cruzado",
+  "muscle": "glutes",
+  "bodyPart": "legs",
+  "equipment": "bodyweight",
+  "category": "stretching",
+  "secondaryMuscles": [
+    "pectorals",
+    "lats",
+    "abs"
+  ],
+  "instructions": [
+    "Adopta la postura inicial con buena alineación corporal.",
+    "Lleva el cuerpo a la posición de estiramiento de los glúteos.",
+    "Mantén entre 20 y 40 segundos respirando de forma profunda.",
+    "Vuelve a la posición inicial lentamente y repite si lo deseas."
+  ],
+  "file": "glutes/iron-cross-stretch.gif",
+  "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/glutes/iron-cross-stretch.gif",
+  "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/glutes/iron-cross-stretch.thumb.webp"
+}

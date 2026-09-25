@@ -1,0 +1,20 @@
+{
+  "id": "abductors/straight-leg-outer-hip-abductor",
+  "slug": "straight-leg-outer-hip-abductor",
+  "name": "Abductores, con pierna recta externo, cadera",
+  "muscle": "abductors",
+  "bodyPart": "legs",
+  "equipment": "bodyweight",
+  "category": "strength",
+  "secondaryMuscles": [],
+  "instructions": [
+    "Adopta la postura inicial con buena alineación corporal.",
+    "Activa los abductores antes de iniciar el movimiento.",
+    "Realiza el movimiento de forma controlada manteniendo la técnica.",
+    "Vuelve a la posición inicial controlando la fase excéntrica.",
+    "Mantén la respiración: exhala en el esfuerzo, inhala al volver."
+  ],
+  "file": "abductors/straight-leg-outer-hip-abductor.gif",
+  "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/abductors/straight-leg-outer-hip-abductor.gif",
+  "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/abductors/straight-leg-outer-hip-abductor.thumb.webp"
+}

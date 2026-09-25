@@ -1,0 +1,149 @@
+{
+  "equipment": "machine",
+  "count": 7,
+  "exercises": [
+    {
+      "id": "cardio/cycle-cross-trainer",
+      "slug": "cycle-cross-trainer",
+      "name": "Cycle Cross Trainer",
+      "muscle": "cardio",
+      "bodyPart": "cardio",
+      "equipment": "machine",
+      "category": "cardio",
+      "secondaryMuscles": [],
+      "instructions": [
+        "Adjust the machine to your size and select the load.",
+        "Keep a steady pace adapted to your fitness level.",
+        "Engage your core and keep an upright posture throughout.",
+        "Continue for the planned time or repetitions."
+      ],
+      "file": "cardio/cycle-cross-trainer.gif",
+      "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/cardio/cycle-cross-trainer.gif",
+      "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/cardio/cycle-cross-trainer.thumb.webp"
+    },
+    {
+      "id": "cardio/walk-elliptical-cross-trainer",
+      "slug": "walk-elliptical-cross-trainer",
+      "name": "Walk Elliptical Cross Trainer",
+      "muscle": "cardio",
+      "bodyPart": "cardio",
+      "equipment": "machine",
+      "category": "cardio",
+      "secondaryMuscles": [],
+      "instructions": [
+        "Adjust the machine to your size and select the load.",
+        "Keep a steady pace adapted to your fitness level.",
+        "Engage your core and keep an upright posture throughout.",
+        "Continue for the planned time or repetitions."
+      ],
+      "file": "cardio/walk-elliptical-cross-trainer.gif",
+      "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/cardio/walk-elliptical-cross-trainer.gif",
+      "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/cardio/walk-elliptical-cross-trainer.thumb.webp"
+    },
+    {
+      "id": "cardio/walking-on-incline-treadmill",
+      "slug": "walking-on-incline-treadmill",
+      "name": "Walking On Incline Treadmill",
+      "muscle": "cardio",
+      "bodyPart": "cardio",
+      "equipment": "machine",
+      "category": "cardio",
+      "secondaryMuscles": [],
+      "instructions": [
+        "Adjust the machine to your size and select the load.",
+        "Keep a steady pace adapted to your fitness level.",
+        "Engage your core and keep an upright posture throughout.",
+        "Continue for the planned time or repetitions."
+      ],
+      "file": "cardio/walking-on-incline-treadmill.gif",
+      "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/cardio/walking-on-incline-treadmill.gif",
+      "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/cardio/walking-on-incline-treadmill.thumb.webp"
+    },
+    {
+      "id": "cardio/walking-on-stepmill",
+      "slug": "walking-on-stepmill",
+      "name": "Walking On Stepmill",
+      "muscle": "cardio",
+      "bodyPart": "cardio",
+      "equipment": "machine",
+      "category": "cardio",
+      "secondaryMuscles": [],
+      "instructions": [
+        "Adjust the machine to your size and select the load.",
+        "Keep a steady pace adapted to your fitness level.",
+        "Engage your core and keep an upright posture throughout.",
+        "Continue for the planned time or repetitions."
+      ],
+      "file": "cardio/walking-on-stepmill.gif",
+      "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/cardio/walking-on-stepmill.gif",
+      "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/cardio/walking-on-stepmill.thumb.webp"
+    },
+    {
+      "id": "hamstrings/single-leg-platform-slide",
+      "slug": "single-leg-platform-slide",
+      "name": "Single Leg Platform Slide",
+      "muscle": "hamstrings",
+      "bodyPart": "legs",
+      "equipment": "machine",
+      "category": "strength",
+      "secondaryMuscles": [],
+      "instructions": [
+        "Adjust the machine to your size and select the load.",
+        "Pre-engage the hamstrings before initiating the movement.",
+        "Perform the movement in a controlled manner, keeping good form.",
+        "Return to the starting position controlling the eccentric phase.",
+        "Breathe: exhale on effort, inhale on the way back."
+      ],
+      "file": "hamstrings/single-leg-platform-slide.gif",
+      "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/hamstrings/single-leg-platform-slide.gif",
+      "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/hamstrings/single-leg-platform-slide.thumb.webp"
+    },
+    {
+      "id": "lats/reverse-grip-machine-lat-pulldown",
+      "slug": "reverse-grip-machine-lat-pulldown",
+      "name": "Reverse Grip Machine Lat Pulldown",
+      "muscle": "lats",
+      "bodyPart": "back",
+      "equipment": "machine",
+      "category": "strength",
+      "secondaryMuscles": [
+        "biceps",
+        "forearms",
+        "delts"
+      ],
+      "instructions": [
+        "Adjust the machine to your size and select the load.",
+        "Pre-engage the lats before initiating the movement.",
+        "Perform the movement in a controlled manner, keeping good form.",
+        "Return to the starting position controlling the eccentric phase.",
+        "Breathe: exhale on effort, inhale on the way back."
+      ],
+      "file": "lats/reverse-grip-machine-lat-pulldown.gif",
+      "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/lats/reverse-grip-machine-lat-pulldown.gif",
+      "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/lats/reverse-grip-machine-lat-pulldown.thumb.webp"
+    },
+    {
+      "id": "pectorals/machine-inner-chest-press",
+      "slug": "machine-inner-chest-press",
+      "name": "Machine Inner Chest Press",
+      "muscle": "pectorals",
+      "bodyPart": "chest",
+      "equipment": "machine",
+      "category": "strength",
+      "secondaryMuscles": [
+        "triceps",
+        "delts"
+      ],
+      "instructions": [
+        "Adjust the machine to your size and select the load.",
+        "Pre-engage the chest before initiating the movement.",
+        "Perform the movement in a controlled manner, keeping good form.",
+        "Return to the starting position controlling the eccentric phase.",
+        "Breathe: exhale on effort, inhale on the way back."
+      ],
+      "file": "pectorals/machine-inner-chest-press.gif",
+      "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/pectorals/machine-inner-chest-press.gif",
+      "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/pectorals/machine-inner-chest-press.thumb.webp"
+    }
+  ]
+}

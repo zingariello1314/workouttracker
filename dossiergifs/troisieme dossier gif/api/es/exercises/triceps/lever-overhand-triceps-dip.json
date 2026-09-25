@@ -1,0 +1,23 @@
+{
+  "id": "triceps/lever-overhand-triceps-dip",
+  "slug": "lever-overhand-triceps-dip",
+  "name": "Fondo de tríceps en máquina, overhand",
+  "muscle": "triceps",
+  "bodyPart": "arms",
+  "equipment": "lever",
+  "category": "strength",
+  "secondaryMuscles": [
+    "delts",
+    "pectorals"
+  ],
+  "instructions": [
+    "Ajusta la máquina a tu medida y selecciona la carga.",
+    "Activa los tríceps antes de iniciar el movimiento.",
+    "Realiza el movimiento de forma controlada manteniendo la técnica.",
+    "Vuelve a la posición inicial controlando la fase excéntrica.",
+    "Mantén la respiración: exhala en el esfuerzo, inhala al volver."
+  ],
+  "file": "triceps/lever-overhand-triceps-dip.gif",
+  "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/triceps/lever-overhand-triceps-dip.gif",
+  "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/triceps/lever-overhand-triceps-dip.thumb.webp"
+}

@@ -1,0 +1,350 @@
+{
+  "muscle": "traps",
+  "count": 15,
+  "exercises": [
+    {
+      "id": "traps/band-shrug",
+      "slug": "band-shrug",
+      "name": "Encogimiento con banda",
+      "muscle": "traps",
+      "bodyPart": "back",
+      "equipment": "band",
+      "category": "strength",
+      "secondaryMuscles": [
+        "delts",
+        "forearms"
+      ],
+      "instructions": [
+        "Fija la banda elástica y mantén la tensión inicial.",
+        "Activa los trapecios antes de iniciar el movimiento.",
+        "Realiza el movimiento de forma controlada manteniendo la técnica.",
+        "Vuelve a la posición inicial controlando la fase excéntrica.",
+        "Mantén la respiración: exhala en el esfuerzo, inhala al volver."
+      ],
+      "file": "traps/band-shrug.gif",
+      "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/traps/band-shrug.gif",
+      "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/traps/band-shrug.thumb.webp"
+    },
+    {
+      "id": "traps/barbell-shrug",
+      "slug": "barbell-shrug",
+      "name": "Encogimiento con barra",
+      "muscle": "traps",
+      "bodyPart": "back",
+      "equipment": "barbell",
+      "category": "strength",
+      "secondaryMuscles": [
+        "delts",
+        "forearms"
+      ],
+      "instructions": [
+        "Carga el peso adecuado en la barra y adopta la postura inicial.",
+        "Activa los trapecios antes de iniciar el movimiento.",
+        "Realiza el movimiento de forma controlada manteniendo la técnica.",
+        "Vuelve a la posición inicial controlando la fase excéntrica.",
+        "Mantén la respiración: exhala en el esfuerzo, inhala al volver."
+      ],
+      "file": "traps/barbell-shrug.gif",
+      "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/traps/barbell-shrug.gif",
+      "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/traps/barbell-shrug.thumb.webp"
+    },
+    {
+      "id": "traps/cable-shrug",
+      "slug": "cable-shrug",
+      "name": "Encogimiento en polea",
+      "muscle": "traps",
+      "bodyPart": "back",
+      "equipment": "cable",
+      "category": "strength",
+      "secondaryMuscles": [
+        "delts",
+        "forearms"
+      ],
+      "instructions": [
+        "Ajusta la polea a la altura indicada y selecciona el peso.",
+        "Activa los trapecios antes de iniciar el movimiento.",
+        "Realiza el movimiento de forma controlada manteniendo la técnica.",
+        "Vuelve a la posición inicial controlando la fase excéntrica.",
+        "Mantén la respiración: exhala en el esfuerzo, inhala al volver."
+      ],
+      "file": "traps/cable-shrug.gif",
+      "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/traps/cable-shrug.gif",
+      "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/traps/cable-shrug.thumb.webp"
+    },
+    {
+      "id": "traps/dumbbell-decline-shrug-v-2",
+      "slug": "dumbbell-decline-shrug-v-2",
+      "name": "Encogimiento declinado con mancuerna",
+      "muscle": "traps",
+      "bodyPart": "back",
+      "equipment": "dumbbell",
+      "category": "strength",
+      "secondaryMuscles": [
+        "delts",
+        "forearms"
+      ],
+      "instructions": [
+        "Coge una mancuerna en cada mano (o la indicada) con un peso adecuado.",
+        "Activa los trapecios antes de iniciar el movimiento.",
+        "Realiza el movimiento de forma controlada manteniendo la técnica.",
+        "Vuelve a la posición inicial controlando la fase excéntrica.",
+        "Mantén la respiración: exhala en el esfuerzo, inhala al volver."
+      ],
+      "file": "traps/dumbbell-decline-shrug-v-2.gif",
+      "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/traps/dumbbell-decline-shrug-v-2.gif",
+      "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/traps/dumbbell-decline-shrug-v-2.thumb.webp"
+    },
+    {
+      "id": "traps/dumbbell-decline-shrug",
+      "slug": "dumbbell-decline-shrug",
+      "name": "Encogimiento declinado con mancuerna",
+      "muscle": "traps",
+      "bodyPart": "back",
+      "equipment": "dumbbell",
+      "category": "strength",
+      "secondaryMuscles": [
+        "delts",
+        "forearms"
+      ],
+      "instructions": [
+        "Coge una mancuerna en cada mano (o la indicada) con un peso adecuado.",
+        "Activa los trapecios antes de iniciar el movimiento.",
+        "Realiza el movimiento de forma controlada manteniendo la técnica.",
+        "Vuelve a la posición inicial controlando la fase excéntrica.",
+        "Mantén la respiración: exhala en el esfuerzo, inhala al volver."
+      ],
+      "file": "traps/dumbbell-decline-shrug.gif",
+      "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/traps/dumbbell-decline-shrug.gif",
+      "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/traps/dumbbell-decline-shrug.thumb.webp"
+    },
+    {
+      "id": "traps/dumbbell-incline-shrug",
+      "slug": "dumbbell-incline-shrug",
+      "name": "Encogimiento inclinado con mancuerna",
+      "muscle": "traps",
+      "bodyPart": "back",
+      "equipment": "dumbbell",
+      "category": "strength",
+      "secondaryMuscles": [
+        "delts",
+        "forearms"
+      ],
+      "instructions": [
+        "Coge una mancuerna en cada mano (o la indicada) con un peso adecuado.",
+        "Activa los trapecios antes de iniciar el movimiento.",
+        "Realiza el movimiento de forma controlada manteniendo la técnica.",
+        "Vuelve a la posición inicial controlando la fase excéntrica.",
+        "Mantén la respiración: exhala en el esfuerzo, inhala al volver."
+      ],
+      "file": "traps/dumbbell-incline-shrug.gif",
+      "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/traps/dumbbell-incline-shrug.gif",
+      "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/traps/dumbbell-incline-shrug.thumb.webp"
+    },
+    {
+      "id": "traps/dumbbell-shrug",
+      "slug": "dumbbell-shrug",
+      "name": "Encogimiento con mancuerna",
+      "muscle": "traps",
+      "bodyPart": "back",
+      "equipment": "dumbbell",
+      "category": "strength",
+      "secondaryMuscles": [
+        "delts",
+        "forearms"
+      ],
+      "instructions": [
+        "Coge una mancuerna en cada mano (o la indicada) con un peso adecuado.",
+        "Activa los trapecios antes de iniciar el movimiento.",
+        "Realiza el movimiento de forma controlada manteniendo la técnica.",
+        "Vuelve a la posición inicial controlando la fase excéntrica.",
+        "Mantén la respiración: exhala en el esfuerzo, inhala al volver."
+      ],
+      "file": "traps/dumbbell-shrug.gif",
+      "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/traps/dumbbell-shrug.gif",
+      "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/traps/dumbbell-shrug.thumb.webp"
+    },
+    {
+      "id": "traps/kettlebell-sumo-high-pull",
+      "slug": "kettlebell-sumo-high-pull",
+      "name": "Tirón alto sumo con kettlebell",
+      "muscle": "traps",
+      "bodyPart": "back",
+      "equipment": "kettlebell",
+      "category": "strength",
+      "secondaryMuscles": [],
+      "instructions": [
+        "Coge la kettlebell con un peso adecuado y adopta la postura.",
+        "Activa los trapecios antes de iniciar el movimiento.",
+        "Realiza el movimiento de forma controlada manteniendo la técnica.",
+        "Vuelve a la posición inicial controlando la fase excéntrica.",
+        "Mantén la respiración: exhala en el esfuerzo, inhala al volver."
+      ],
+      "file": "traps/kettlebell-sumo-high-pull.gif",
+      "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/traps/kettlebell-sumo-high-pull.gif",
+      "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/traps/kettlebell-sumo-high-pull.thumb.webp"
+    },
+    {
+      "id": "traps/lever-gripless-shrug-v-2",
+      "slug": "lever-gripless-shrug-v-2",
+      "name": "Encogimiento en máquina, gripless",
+      "muscle": "traps",
+      "bodyPart": "back",
+      "equipment": "lever",
+      "category": "strength",
+      "secondaryMuscles": [
+        "delts",
+        "forearms"
+      ],
+      "instructions": [
+        "Ajusta la máquina a tu medida y selecciona la carga.",
+        "Activa los trapecios antes de iniciar el movimiento.",
+        "Realiza el movimiento de forma controlada manteniendo la técnica.",
+        "Vuelve a la posición inicial controlando la fase excéntrica.",
+        "Mantén la respiración: exhala en el esfuerzo, inhala al volver."
+      ],
+      "file": "traps/lever-gripless-shrug-v-2.gif",
+      "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/traps/lever-gripless-shrug-v-2.gif",
+      "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/traps/lever-gripless-shrug-v-2.thumb.webp"
+    },
+    {
+      "id": "traps/lever-gripless-shrug",
+      "slug": "lever-gripless-shrug",
+      "name": "Encogimiento en máquina, gripless",
+      "muscle": "traps",
+      "bodyPart": "back",
+      "equipment": "lever",
+      "category": "strength",
+      "secondaryMuscles": [
+        "delts",
+        "forearms"
+      ],
+      "instructions": [
+        "Ajusta la máquina a tu medida y selecciona la carga.",
+        "Activa los trapecios antes de iniciar el movimiento.",
+        "Realiza el movimiento de forma controlada manteniendo la técnica.",
+        "Vuelve a la posición inicial controlando la fase excéntrica.",
+        "Mantén la respiración: exhala en el esfuerzo, inhala al volver."
+      ],
+      "file": "traps/lever-gripless-shrug.gif",
+      "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/traps/lever-gripless-shrug.gif",
+      "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/traps/lever-gripless-shrug.thumb.webp"
+    },
+    {
+      "id": "traps/lever-shrug",
+      "slug": "lever-shrug",
+      "name": "Encogimiento en máquina",
+      "muscle": "traps",
+      "bodyPart": "back",
+      "equipment": "lever",
+      "category": "strength",
+      "secondaryMuscles": [
+        "delts",
+        "forearms"
+      ],
+      "instructions": [
+        "Ajusta la máquina a tu medida y selecciona la carga.",
+        "Activa los trapecios antes de iniciar el movimiento.",
+        "Realiza el movimiento de forma controlada manteniendo la técnica.",
+        "Vuelve a la posición inicial controlando la fase excéntrica.",
+        "Mantén la respiración: exhala en el esfuerzo, inhala al volver."
+      ],
+      "file": "traps/lever-shrug.gif",
+      "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/traps/lever-shrug.gif",
+      "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/traps/lever-shrug.thumb.webp"
+    },
+    {
+      "id": "traps/scapula-dips",
+      "slug": "scapula-dips",
+      "name": "Fondos escapulares",
+      "muscle": "traps",
+      "bodyPart": "back",
+      "equipment": "bodyweight",
+      "category": "strength",
+      "secondaryMuscles": [
+        "triceps",
+        "delts",
+        "pectorals"
+      ],
+      "instructions": [
+        "Adopta la postura inicial con buena alineación corporal.",
+        "Activa los trapecios antes de iniciar el movimiento.",
+        "Realiza el movimiento de forma controlada manteniendo la técnica.",
+        "Vuelve a la posición inicial controlando la fase excéntrica.",
+        "Mantén la respiración: exhala en el esfuerzo, inhala al volver."
+      ],
+      "file": "traps/scapula-dips.gif",
+      "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/traps/scapula-dips.gif",
+      "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/traps/scapula-dips.thumb.webp"
+    },
+    {
+      "id": "traps/scapular-pull-up",
+      "slug": "scapular-pull-up",
+      "name": "Dominada, scapular",
+      "muscle": "traps",
+      "bodyPart": "back",
+      "equipment": "bodyweight",
+      "category": "strength",
+      "secondaryMuscles": [
+        "biceps",
+        "forearms",
+        "delts"
+      ],
+      "instructions": [
+        "Adopta la postura inicial con buena alineación corporal.",
+        "Activa los trapecios antes de iniciar el movimiento.",
+        "Realiza el movimiento de forma controlada manteniendo la técnica.",
+        "Vuelve a la posición inicial controlando la fase excéntrica.",
+        "Mantén la respiración: exhala en el esfuerzo, inhala al volver."
+      ],
+      "file": "traps/scapular-pull-up.gif",
+      "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/traps/scapular-pull-up.gif",
+      "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/traps/scapular-pull-up.thumb.webp"
+    },
+    {
+      "id": "traps/smith-back-shrug",
+      "slug": "smith-back-shrug",
+      "name": "Encogimiento en máquina Smith, espalda",
+      "muscle": "traps",
+      "bodyPart": "back",
+      "equipment": "smith",
+      "category": "strength",
+      "secondaryMuscles": [
+        "delts",
+        "forearms"
+      ],
+      "instructions": [
+        "Coloca la barra en la máquina Smith a la altura adecuada.",
+        "Activa los trapecios antes de iniciar el movimiento.",
+        "Realiza el movimiento de forma controlada manteniendo la técnica.",
+        "Vuelve a la posición inicial controlando la fase excéntrica.",
+        "Mantén la respiración: exhala en el esfuerzo, inhala al volver."
+      ],
+      "file": "traps/smith-back-shrug.gif",
+      "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/traps/smith-back-shrug.gif",
+      "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/traps/smith-back-shrug.thumb.webp"
+    },
+    {
+      "id": "traps/smith-shrug",
+      "slug": "smith-shrug",
+      "name": "Encogimiento en máquina Smith",
+      "muscle": "traps",
+      "bodyPart": "back",
+      "equipment": "smith",
+      "category": "strength",
+      "secondaryMuscles": [
+        "delts",
+        "forearms"
+      ],
+      "instructions": [
+        "Coloca la barra en la máquina Smith a la altura adecuada.",
+        "Activa los trapecios antes de iniciar el movimiento.",
+        "Realiza el movimiento de forma controlada manteniendo la técnica.",
+        "Vuelve a la posición inicial controlando la fase excéntrica.",
+        "Mantén la respiración: exhala en el esfuerzo, inhala al volver."
+      ],
+      "file": "traps/smith-shrug.gif",
+      "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/traps/smith-shrug.gif",
+      "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/traps/smith-shrug.thumb.webp"
+    }
+  ]
+}

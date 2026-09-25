@@ -1,0 +1,20 @@
+{
+  "id": "calves/smith-one-leg-floor-calf-raise",
+  "slug": "smith-one-leg-floor-calf-raise",
+  "name": "En máquina Smith, elevación de talones en el suelo, a una pierna",
+  "muscle": "calves",
+  "bodyPart": "legs",
+  "equipment": "smith",
+  "category": "strength",
+  "secondaryMuscles": [],
+  "instructions": [
+    "Coloca la barra en la máquina Smith a la altura adecuada.",
+    "Activa los gemelos antes de iniciar el movimiento.",
+    "Realiza el movimiento de forma controlada manteniendo la técnica.",
+    "Vuelve a la posición inicial controlando la fase excéntrica.",
+    "Mantén la respiración: exhala en el esfuerzo, inhala al volver."
+  ],
+  "file": "calves/smith-one-leg-floor-calf-raise.gif",
+  "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/calves/smith-one-leg-floor-calf-raise.gif",
+  "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/calves/smith-one-leg-floor-calf-raise.thumb.webp"
+}

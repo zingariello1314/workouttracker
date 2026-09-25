@@ -1,0 +1,24 @@
+{
+  "id": "abs/push-up-to-side-plank",
+  "slug": "push-up-to-side-plank",
+  "name": "Push Up To Side Plank",
+  "muscle": "abs",
+  "bodyPart": "core",
+  "equipment": "bodyweight",
+  "category": "strength",
+  "secondaryMuscles": [
+    "triceps",
+    "delts",
+    "glutes"
+  ],
+  "instructions": [
+    "Adopt the starting position with proper body alignment.",
+    "Pre-engage the core before initiating the movement.",
+    "Perform the movement in a controlled manner, keeping good form.",
+    "Return to the starting position controlling the eccentric phase.",
+    "Breathe: exhale on effort, inhale on the way back."
+  ],
+  "file": "abs/push-up-to-side-plank.gif",
+  "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/abs/push-up-to-side-plank.gif",
+  "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/abs/push-up-to-side-plank.thumb.webp"
+}

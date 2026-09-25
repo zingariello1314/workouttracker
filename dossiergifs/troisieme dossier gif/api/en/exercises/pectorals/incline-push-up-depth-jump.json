@@ -1,0 +1,22 @@
+{
+  "id": "pectorals/incline-push-up-depth-jump",
+  "slug": "incline-push-up-depth-jump",
+  "name": "Incline Push Up Depth Jump",
+  "muscle": "pectorals",
+  "bodyPart": "chest",
+  "equipment": "bodyweight",
+  "category": "plyometrics",
+  "secondaryMuscles": [
+    "triceps",
+    "delts"
+  ],
+  "instructions": [
+    "Adopt the starting position with proper body alignment.",
+    "Perform a brief dip to load tension.",
+    "Execute the movement explosively and land under control.",
+    "Land softly absorbing with legs and core, then chain the next rep."
+  ],
+  "file": "pectorals/incline-push-up-depth-jump.gif",
+  "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/pectorals/incline-push-up-depth-jump.gif",
+  "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/pectorals/incline-push-up-depth-jump.thumb.webp"
+}

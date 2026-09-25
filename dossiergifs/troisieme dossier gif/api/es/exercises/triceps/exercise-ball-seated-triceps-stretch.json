@@ -1,0 +1,19 @@
+{
+  "id": "triceps/exercise-ball-seated-triceps-stretch",
+  "slug": "exercise-ball-seated-triceps-stretch",
+  "name": "Estiramiento en fitball, sentado, tríceps",
+  "muscle": "triceps",
+  "bodyPart": "arms",
+  "equipment": "bodyweight",
+  "category": "stretching",
+  "secondaryMuscles": [],
+  "instructions": [
+    "Adopta la postura inicial con buena alineación corporal.",
+    "Lleva el cuerpo a la posición de estiramiento de los tríceps.",
+    "Mantén entre 20 y 40 segundos respirando de forma profunda.",
+    "Vuelve a la posición inicial lentamente y repite si lo deseas."
+  ],
+  "file": "triceps/exercise-ball-seated-triceps-stretch.gif",
+  "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/triceps/exercise-ball-seated-triceps-stretch.gif",
+  "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/triceps/exercise-ball-seated-triceps-stretch.thumb.webp"
+}

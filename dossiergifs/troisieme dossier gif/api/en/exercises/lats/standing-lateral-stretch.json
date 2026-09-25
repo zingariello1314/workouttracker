@@ -1,0 +1,19 @@
+{
+  "id": "lats/standing-lateral-stretch",
+  "slug": "standing-lateral-stretch",
+  "name": "Standing Lateral Stretch",
+  "muscle": "lats",
+  "bodyPart": "back",
+  "equipment": "bodyweight",
+  "category": "stretching",
+  "secondaryMuscles": [],
+  "instructions": [
+    "Adopt the starting position with proper body alignment.",
+    "Move into the the lats stretch position.",
+    "Hold for 20 to 40 seconds breathing deeply.",
+    "Return slowly to the starting position and repeat if desired."
+  ],
+  "file": "lats/standing-lateral-stretch.gif",
+  "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/lats/standing-lateral-stretch.gif",
+  "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/lats/standing-lateral-stretch.thumb.webp"
+}

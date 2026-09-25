@@ -1,0 +1,20 @@
+{
+  "id": "adductors/butterfly-yoga-pose",
+  "slug": "butterfly-yoga-pose",
+  "name": "Postura de mariposa",
+  "muscle": "adductors",
+  "bodyPart": "legs",
+  "equipment": "bodyweight",
+  "category": "strength",
+  "secondaryMuscles": [],
+  "instructions": [
+    "Adopta la postura inicial con buena alineación corporal.",
+    "Activa los aductores antes de iniciar el movimiento.",
+    "Realiza el movimiento de forma controlada manteniendo la técnica.",
+    "Vuelve a la posición inicial controlando la fase excéntrica.",
+    "Mantén la respiración: exhala en el esfuerzo, inhala al volver."
+  ],
+  "file": "adductors/butterfly-yoga-pose.gif",
+  "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/adductors/butterfly-yoga-pose.gif",
+  "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/adductors/butterfly-yoga-pose.thumb.webp"
+}

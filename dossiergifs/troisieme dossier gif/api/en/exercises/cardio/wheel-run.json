@@ -1,0 +1,19 @@
+{
+  "id": "cardio/wheel-run",
+  "slug": "wheel-run",
+  "name": "Wheel Run",
+  "muscle": "cardio",
+  "bodyPart": "cardio",
+  "equipment": "bodyweight",
+  "category": "cardio",
+  "secondaryMuscles": [],
+  "instructions": [
+    "Adopt the starting position with proper body alignment.",
+    "Keep a steady pace adapted to your fitness level.",
+    "Engage your core and keep an upright posture throughout.",
+    "Continue for the planned time or repetitions."
+  ],
+  "file": "cardio/wheel-run.gif",
+  "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/cardio/wheel-run.gif",
+  "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/cardio/wheel-run.thumb.webp"
+}

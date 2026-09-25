@@ -1,0 +1,19 @@
+{
+  "id": "triceps/triceps-stretch",
+  "slug": "triceps-stretch",
+  "name": "Triceps Stretch",
+  "muscle": "triceps",
+  "bodyPart": "arms",
+  "equipment": "bodyweight",
+  "category": "stretching",
+  "secondaryMuscles": [],
+  "instructions": [
+    "Adopt the starting position with proper body alignment.",
+    "Move into the the triceps stretch position.",
+    "Hold for 20 to 40 seconds breathing deeply.",
+    "Return slowly to the starting position and repeat if desired."
+  ],
+  "file": "triceps/triceps-stretch.gif",
+  "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/triceps/triceps-stretch.gif",
+  "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/triceps/triceps-stretch.thumb.webp"
+}

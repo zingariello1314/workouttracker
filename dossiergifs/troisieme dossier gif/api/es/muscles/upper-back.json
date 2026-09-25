@@ -1,0 +1,2139 @@
+{
+  "muscle": "upper-back",
+  "count": 87,
+  "exercises": [
+    {
+      "id": "upper-back/back-lever",
+      "slug": "back-lever",
+      "name": "Back lever",
+      "muscle": "upper-back",
+      "bodyPart": "back",
+      "equipment": "lever",
+      "category": "strength",
+      "secondaryMuscles": [],
+      "instructions": [
+        "Ajusta la máquina a tu medida y selecciona la carga.",
+        "Activa la espalda alta antes de iniciar el movimiento.",
+        "Realiza el movimiento de forma controlada manteniendo la técnica.",
+        "Vuelve a la posición inicial controlando la fase excéntrica.",
+        "Mantén la respiración: exhala en el esfuerzo, inhala al volver."
+      ],
+      "file": "upper-back/back-lever.gif",
+      "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/upper-back/back-lever.gif",
+      "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/upper-back/back-lever.thumb.webp"
+    },
+    {
+      "id": "upper-back/band-one-arm-standing-low-row",
+      "slug": "band-one-arm-standing-low-row",
+      "name": "Remo bajo con banda, de pie, a una mano",
+      "muscle": "upper-back",
+      "bodyPart": "back",
+      "equipment": "band",
+      "category": "strength",
+      "secondaryMuscles": [
+        "biceps",
+        "forearms",
+        "delts",
+        "lats"
+      ],
+      "instructions": [
+        "Fija la banda elástica y mantén la tensión inicial.",
+        "Activa la espalda alta antes de iniciar el movimiento.",
+        "Realiza el movimiento de forma controlada manteniendo la técnica.",
+        "Vuelve a la posición inicial controlando la fase excéntrica.",
+        "Mantén la respiración: exhala en el esfuerzo, inhala al volver."
+      ],
+      "file": "upper-back/band-one-arm-standing-low-row.gif",
+      "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/upper-back/band-one-arm-standing-low-row.gif",
+      "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/upper-back/band-one-arm-standing-low-row.thumb.webp"
+    },
+    {
+      "id": "upper-back/band-one-arm-twisting-seated-row",
+      "slug": "band-one-arm-twisting-seated-row",
+      "name": "Remo sentado con banda, a una mano con giro",
+      "muscle": "upper-back",
+      "bodyPart": "back",
+      "equipment": "band",
+      "category": "strength",
+      "secondaryMuscles": [
+        "biceps",
+        "forearms",
+        "delts",
+        "lats"
+      ],
+      "instructions": [
+        "Fija la banda elástica y mantén la tensión inicial.",
+        "Activa la espalda alta antes de iniciar el movimiento.",
+        "Realiza el movimiento de forma controlada manteniendo la técnica.",
+        "Vuelve a la posición inicial controlando la fase excéntrica.",
+        "Mantén la respiración: exhala en el esfuerzo, inhala al volver."
+      ],
+      "file": "upper-back/band-one-arm-twisting-seated-row.gif",
+      "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/upper-back/band-one-arm-twisting-seated-row.gif",
+      "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/upper-back/band-one-arm-twisting-seated-row.thumb.webp"
+    },
+    {
+      "id": "upper-back/barbell-bent-over-row",
+      "slug": "barbell-bent-over-row",
+      "name": "Remo inclinado con barra",
+      "muscle": "upper-back",
+      "bodyPart": "back",
+      "equipment": "barbell",
+      "category": "strength",
+      "secondaryMuscles": [
+        "biceps",
+        "forearms",
+        "delts",
+        "lats"
+      ],
+      "instructions": [
+        "Carga el peso adecuado en la barra y adopta la postura inicial.",
+        "Activa la espalda alta antes de iniciar el movimiento.",
+        "Realiza el movimiento de forma controlada manteniendo la técnica.",
+        "Vuelve a la posición inicial controlando la fase excéntrica.",
+        "Mantén la respiración: exhala en el esfuerzo, inhala al volver."
+      ],
+      "file": "upper-back/barbell-bent-over-row.gif",
+      "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/upper-back/barbell-bent-over-row.gif",
+      "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/upper-back/barbell-bent-over-row.thumb.webp"
+    },
+    {
+      "id": "upper-back/barbell-incline-row",
+      "slug": "barbell-incline-row",
+      "name": "Remo inclinado con barra",
+      "muscle": "upper-back",
+      "bodyPart": "back",
+      "equipment": "barbell",
+      "category": "strength",
+      "secondaryMuscles": [
+        "biceps",
+        "forearms",
+        "delts",
+        "lats"
+      ],
+      "instructions": [
+        "Carga el peso adecuado en la barra y adopta la postura inicial.",
+        "Activa la espalda alta antes de iniciar el movimiento.",
+        "Realiza el movimiento de forma controlada manteniendo la técnica.",
+        "Vuelve a la posición inicial controlando la fase excéntrica.",
+        "Mantén la respiración: exhala en el esfuerzo, inhala al volver."
+      ],
+      "file": "upper-back/barbell-incline-row.gif",
+      "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/upper-back/barbell-incline-row.gif",
+      "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/upper-back/barbell-incline-row.thumb.webp"
+    },
+    {
+      "id": "upper-back/barbell-one-arm-bent-over-row",
+      "slug": "barbell-one-arm-bent-over-row",
+      "name": "Remo inclinado con barra, a una mano",
+      "muscle": "upper-back",
+      "bodyPart": "back",
+      "equipment": "barbell",
+      "category": "strength",
+      "secondaryMuscles": [
+        "biceps",
+        "forearms",
+        "delts",
+        "lats"
+      ],
+      "instructions": [
+        "Carga el peso adecuado en la barra y adopta la postura inicial.",
+        "Activa la espalda alta antes de iniciar el movimiento.",
+        "Realiza el movimiento de forma controlada manteniendo la técnica.",
+        "Vuelve a la posición inicial controlando la fase excéntrica.",
+        "Mantén la respiración: exhala en el esfuerzo, inhala al volver."
+      ],
+      "file": "upper-back/barbell-one-arm-bent-over-row.gif",
+      "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/upper-back/barbell-one-arm-bent-over-row.gif",
+      "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/upper-back/barbell-one-arm-bent-over-row.thumb.webp"
+    },
+    {
+      "id": "upper-back/barbell-pendlay-row",
+      "slug": "barbell-pendlay-row",
+      "name": "Remo Pendlay con barra",
+      "muscle": "upper-back",
+      "bodyPart": "back",
+      "equipment": "barbell",
+      "category": "strength",
+      "secondaryMuscles": [
+        "biceps",
+        "forearms",
+        "delts",
+        "lats"
+      ],
+      "instructions": [
+        "Carga el peso adecuado en la barra y adopta la postura inicial.",
+        "Activa la espalda alta antes de iniciar el movimiento.",
+        "Realiza el movimiento de forma controlada manteniendo la técnica.",
+        "Vuelve a la posición inicial controlando la fase excéntrica.",
+        "Mantén la respiración: exhala en el esfuerzo, inhala al volver."
+      ],
+      "file": "upper-back/barbell-pendlay-row.gif",
+      "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/upper-back/barbell-pendlay-row.gif",
+      "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/upper-back/barbell-pendlay-row.thumb.webp"
+    },
+    {
+      "id": "upper-back/barbell-reverse-grip-bent-over-row",
+      "slug": "barbell-reverse-grip-bent-over-row",
+      "name": "Remo inclinado con barra, con agarre invertido",
+      "muscle": "upper-back",
+      "bodyPart": "back",
+      "equipment": "barbell",
+      "category": "strength",
+      "secondaryMuscles": [
+        "biceps",
+        "forearms",
+        "delts",
+        "lats"
+      ],
+      "instructions": [
+        "Carga el peso adecuado en la barra y adopta la postura inicial.",
+        "Activa la espalda alta antes de iniciar el movimiento.",
+        "Realiza el movimiento de forma controlada manteniendo la técnica.",
+        "Vuelve a la posición inicial controlando la fase excéntrica.",
+        "Mantén la respiración: exhala en el esfuerzo, inhala al volver."
+      ],
+      "file": "upper-back/barbell-reverse-grip-bent-over-row.gif",
+      "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/upper-back/barbell-reverse-grip-bent-over-row.gif",
+      "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/upper-back/barbell-reverse-grip-bent-over-row.thumb.webp"
+    },
+    {
+      "id": "upper-back/barbell-reverse-grip-incline-bench-row",
+      "slug": "barbell-reverse-grip-incline-bench-row",
+      "name": "Remo con barra, con agarre invertido, en banco inclinado",
+      "muscle": "upper-back",
+      "bodyPart": "back",
+      "equipment": "barbell",
+      "category": "strength",
+      "secondaryMuscles": [
+        "biceps",
+        "forearms",
+        "delts",
+        "lats"
+      ],
+      "instructions": [
+        "Carga el peso adecuado en la barra y adopta la postura inicial.",
+        "Activa la espalda alta antes de iniciar el movimiento.",
+        "Realiza el movimiento de forma controlada manteniendo la técnica.",
+        "Vuelve a la posición inicial controlando la fase excéntrica.",
+        "Mantén la respiración: exhala en el esfuerzo, inhala al volver."
+      ],
+      "file": "upper-back/barbell-reverse-grip-incline-bench-row.gif",
+      "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/upper-back/barbell-reverse-grip-incline-bench-row.gif",
+      "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/upper-back/barbell-reverse-grip-incline-bench-row.thumb.webp"
+    },
+    {
+      "id": "upper-back/bodyweight-squatting-row-with-towel",
+      "slug": "bodyweight-squatting-row-with-towel",
+      "name": "Remo con peso corporal, en cuclillas, con toalla",
+      "muscle": "upper-back",
+      "bodyPart": "back",
+      "equipment": "bodyweight",
+      "category": "strength",
+      "secondaryMuscles": [
+        "glutes",
+        "hamstrings",
+        "calves",
+        "biceps",
+        "forearms",
+        "delts",
+        "lats"
+      ],
+      "instructions": [
+        "Adopta la postura inicial con buena alineación corporal.",
+        "Activa la espalda alta antes de iniciar el movimiento.",
+        "Realiza el movimiento de forma controlada manteniendo la técnica.",
+        "Vuelve a la posición inicial controlando la fase excéntrica.",
+        "Mantén la respiración: exhala en el esfuerzo, inhala al volver."
+      ],
+      "file": "upper-back/bodyweight-squatting-row-with-towel.gif",
+      "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/upper-back/bodyweight-squatting-row-with-towel.gif",
+      "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/upper-back/bodyweight-squatting-row-with-towel.thumb.webp"
+    },
+    {
+      "id": "upper-back/bodyweight-squatting-row",
+      "slug": "bodyweight-squatting-row",
+      "name": "Remo con peso corporal, en cuclillas",
+      "muscle": "upper-back",
+      "bodyPart": "back",
+      "equipment": "bodyweight",
+      "category": "strength",
+      "secondaryMuscles": [
+        "glutes",
+        "hamstrings",
+        "calves",
+        "biceps",
+        "forearms",
+        "delts",
+        "lats"
+      ],
+      "instructions": [
+        "Adopta la postura inicial con buena alineación corporal.",
+        "Activa la espalda alta antes de iniciar el movimiento.",
+        "Realiza el movimiento de forma controlada manteniendo la técnica.",
+        "Vuelve a la posición inicial controlando la fase excéntrica.",
+        "Mantén la respiración: exhala en el esfuerzo, inhala al volver."
+      ],
+      "file": "upper-back/bodyweight-squatting-row.gif",
+      "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/upper-back/bodyweight-squatting-row.gif",
+      "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/upper-back/bodyweight-squatting-row.thumb.webp"
+    },
+    {
+      "id": "upper-back/bodyweight-standing-close-grip-one-arm-row",
+      "slug": "bodyweight-standing-close-grip-one-arm-row",
+      "name": "Remo con peso corporal, de pie, con agarre cerrado, a una mano",
+      "muscle": "upper-back",
+      "bodyPart": "back",
+      "equipment": "bodyweight",
+      "category": "strength",
+      "secondaryMuscles": [
+        "biceps",
+        "forearms",
+        "delts",
+        "lats"
+      ],
+      "instructions": [
+        "Adopta la postura inicial con buena alineación corporal.",
+        "Activa la espalda alta antes de iniciar el movimiento.",
+        "Realiza el movimiento de forma controlada manteniendo la técnica.",
+        "Vuelve a la posición inicial controlando la fase excéntrica.",
+        "Mantén la respiración: exhala en el esfuerzo, inhala al volver."
+      ],
+      "file": "upper-back/bodyweight-standing-close-grip-one-arm-row.gif",
+      "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/upper-back/bodyweight-standing-close-grip-one-arm-row.gif",
+      "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/upper-back/bodyweight-standing-close-grip-one-arm-row.thumb.webp"
+    },
+    {
+      "id": "upper-back/bodyweight-standing-close-grip-row",
+      "slug": "bodyweight-standing-close-grip-row",
+      "name": "Remo con peso corporal, de pie, con agarre cerrado",
+      "muscle": "upper-back",
+      "bodyPart": "back",
+      "equipment": "bodyweight",
+      "category": "strength",
+      "secondaryMuscles": [
+        "biceps",
+        "forearms",
+        "delts",
+        "lats"
+      ],
+      "instructions": [
+        "Adopta la postura inicial con buena alineación corporal.",
+        "Activa la espalda alta antes de iniciar el movimiento.",
+        "Realiza el movimiento de forma controlada manteniendo la técnica.",
+        "Vuelve a la posición inicial controlando la fase excéntrica.",
+        "Mantén la respiración: exhala en el esfuerzo, inhala al volver."
+      ],
+      "file": "upper-back/bodyweight-standing-close-grip-row.gif",
+      "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/upper-back/bodyweight-standing-close-grip-row.gif",
+      "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/upper-back/bodyweight-standing-close-grip-row.thumb.webp"
+    },
+    {
+      "id": "upper-back/bodyweight-standing-one-arm-row-with-towel",
+      "slug": "bodyweight-standing-one-arm-row-with-towel",
+      "name": "Remo con peso corporal, de pie, a una mano con toalla",
+      "muscle": "upper-back",
+      "bodyPart": "back",
+      "equipment": "bodyweight",
+      "category": "strength",
+      "secondaryMuscles": [
+        "biceps",
+        "forearms",
+        "delts",
+        "lats"
+      ],
+      "instructions": [
+        "Adopta la postura inicial con buena alineación corporal.",
+        "Activa la espalda alta antes de iniciar el movimiento.",
+        "Realiza el movimiento de forma controlada manteniendo la técnica.",
+        "Vuelve a la posición inicial controlando la fase excéntrica.",
+        "Mantén la respiración: exhala en el esfuerzo, inhala al volver."
+      ],
+      "file": "upper-back/bodyweight-standing-one-arm-row-with-towel.gif",
+      "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/upper-back/bodyweight-standing-one-arm-row-with-towel.gif",
+      "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/upper-back/bodyweight-standing-one-arm-row-with-towel.thumb.webp"
+    },
+    {
+      "id": "upper-back/bodyweight-standing-one-arm-row",
+      "slug": "bodyweight-standing-one-arm-row",
+      "name": "Remo con peso corporal, de pie, a una mano",
+      "muscle": "upper-back",
+      "bodyPart": "back",
+      "equipment": "bodyweight",
+      "category": "strength",
+      "secondaryMuscles": [
+        "biceps",
+        "forearms",
+        "delts",
+        "lats"
+      ],
+      "instructions": [
+        "Adopta la postura inicial con buena alineación corporal.",
+        "Activa la espalda alta antes de iniciar el movimiento.",
+        "Realiza el movimiento de forma controlada manteniendo la técnica.",
+        "Vuelve a la posición inicial controlando la fase excéntrica.",
+        "Mantén la respiración: exhala en el esfuerzo, inhala al volver."
+      ],
+      "file": "upper-back/bodyweight-standing-one-arm-row.gif",
+      "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/upper-back/bodyweight-standing-one-arm-row.gif",
+      "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/upper-back/bodyweight-standing-one-arm-row.thumb.webp"
+    },
+    {
+      "id": "upper-back/bodyweight-standing-row-with-towel",
+      "slug": "bodyweight-standing-row-with-towel",
+      "name": "Remo con peso corporal, de pie, con toalla",
+      "muscle": "upper-back",
+      "bodyPart": "back",
+      "equipment": "bodyweight",
+      "category": "strength",
+      "secondaryMuscles": [
+        "biceps",
+        "forearms",
+        "delts",
+        "lats"
+      ],
+      "instructions": [
+        "Adopta la postura inicial con buena alineación corporal.",
+        "Activa la espalda alta antes de iniciar el movimiento.",
+        "Realiza el movimiento de forma controlada manteniendo la técnica.",
+        "Vuelve a la posición inicial controlando la fase excéntrica.",
+        "Mantén la respiración: exhala en el esfuerzo, inhala al volver."
+      ],
+      "file": "upper-back/bodyweight-standing-row-with-towel.gif",
+      "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/upper-back/bodyweight-standing-row-with-towel.gif",
+      "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/upper-back/bodyweight-standing-row-with-towel.thumb.webp"
+    },
+    {
+      "id": "upper-back/bodyweight-standing-row",
+      "slug": "bodyweight-standing-row",
+      "name": "Remo con peso corporal, de pie",
+      "muscle": "upper-back",
+      "bodyPart": "back",
+      "equipment": "bodyweight",
+      "category": "strength",
+      "secondaryMuscles": [
+        "biceps",
+        "forearms",
+        "delts",
+        "lats"
+      ],
+      "instructions": [
+        "Adopta la postura inicial con buena alineación corporal.",
+        "Activa la espalda alta antes de iniciar el movimiento.",
+        "Realiza el movimiento de forma controlada manteniendo la técnica.",
+        "Vuelve a la posición inicial controlando la fase excéntrica.",
+        "Mantén la respiración: exhala en el esfuerzo, inhala al volver."
+      ],
+      "file": "upper-back/bodyweight-standing-row.gif",
+      "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/upper-back/bodyweight-standing-row.gif",
+      "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/upper-back/bodyweight-standing-row.thumb.webp"
+    },
+    {
+      "id": "upper-back/cable-decline-seated-wide-grip-row",
+      "slug": "cable-decline-seated-wide-grip-row",
+      "name": "Remo declinado en polea, sentado, con agarre ancho",
+      "muscle": "upper-back",
+      "bodyPart": "back",
+      "equipment": "cable",
+      "category": "strength",
+      "secondaryMuscles": [
+        "biceps",
+        "forearms",
+        "delts",
+        "lats"
+      ],
+      "instructions": [
+        "Ajusta la polea a la altura indicada y selecciona el peso.",
+        "Activa la espalda alta antes de iniciar el movimiento.",
+        "Realiza el movimiento de forma controlada manteniendo la técnica.",
+        "Vuelve a la posición inicial controlando la fase excéntrica.",
+        "Mantén la respiración: exhala en el esfuerzo, inhala al volver."
+      ],
+      "file": "upper-back/cable-decline-seated-wide-grip-row.gif",
+      "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/upper-back/cable-decline-seated-wide-grip-row.gif",
+      "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/upper-back/cable-decline-seated-wide-grip-row.thumb.webp"
+    },
+    {
+      "id": "upper-back/cable-floor-seated-wide-grip-row",
+      "slug": "cable-floor-seated-wide-grip-row",
+      "name": "Remo en polea, sentado, con agarre ancho, suelo",
+      "muscle": "upper-back",
+      "bodyPart": "back",
+      "equipment": "cable",
+      "category": "strength",
+      "secondaryMuscles": [
+        "biceps",
+        "forearms",
+        "delts",
+        "lats"
+      ],
+      "instructions": [
+        "Ajusta la polea a la altura indicada y selecciona el peso.",
+        "Activa la espalda alta antes de iniciar el movimiento.",
+        "Realiza el movimiento de forma controlada manteniendo la técnica.",
+        "Vuelve a la posición inicial controlando la fase excéntrica.",
+        "Mantén la respiración: exhala en el esfuerzo, inhala al volver."
+      ],
+      "file": "upper-back/cable-floor-seated-wide-grip-row.gif",
+      "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/upper-back/cable-floor-seated-wide-grip-row.gif",
+      "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/upper-back/cable-floor-seated-wide-grip-row.thumb.webp"
+    },
+    {
+      "id": "upper-back/cable-high-row-kneeling",
+      "slug": "cable-high-row-kneeling",
+      "name": "Remo alto en polea, de rodillas",
+      "muscle": "upper-back",
+      "bodyPart": "back",
+      "equipment": "cable",
+      "category": "strength",
+      "secondaryMuscles": [
+        "biceps",
+        "forearms",
+        "delts",
+        "lats"
+      ],
+      "instructions": [
+        "Ajusta la polea a la altura indicada y selecciona el peso.",
+        "Activa la espalda alta antes de iniciar el movimiento.",
+        "Realiza el movimiento de forma controlada manteniendo la técnica.",
+        "Vuelve a la posición inicial controlando la fase excéntrica.",
+        "Mantén la respiración: exhala en el esfuerzo, inhala al volver."
+      ],
+      "file": "upper-back/cable-high-row-kneeling.gif",
+      "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/upper-back/cable-high-row-kneeling.gif",
+      "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/upper-back/cable-high-row-kneeling.thumb.webp"
+    },
+    {
+      "id": "upper-back/cable-incline-bench-row",
+      "slug": "cable-incline-bench-row",
+      "name": "Remo en polea, en banco inclinado",
+      "muscle": "upper-back",
+      "bodyPart": "back",
+      "equipment": "cable",
+      "category": "strength",
+      "secondaryMuscles": [
+        "biceps",
+        "forearms",
+        "delts",
+        "lats"
+      ],
+      "instructions": [
+        "Ajusta la polea a la altura indicada y selecciona el peso.",
+        "Activa la espalda alta antes de iniciar el movimiento.",
+        "Realiza el movimiento de forma controlada manteniendo la técnica.",
+        "Vuelve a la posición inicial controlando la fase excéntrica.",
+        "Mantén la respiración: exhala en el esfuerzo, inhala al volver."
+      ],
+      "file": "upper-back/cable-incline-bench-row.gif",
+      "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/upper-back/cable-incline-bench-row.gif",
+      "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/upper-back/cable-incline-bench-row.thumb.webp"
+    },
+    {
+      "id": "upper-back/cable-low-seated-row",
+      "slug": "cable-low-seated-row",
+      "name": "Remo sentado en polea",
+      "muscle": "upper-back",
+      "bodyPart": "back",
+      "equipment": "cable",
+      "category": "strength",
+      "secondaryMuscles": [
+        "biceps",
+        "forearms",
+        "delts",
+        "lats"
+      ],
+      "instructions": [
+        "Ajusta la polea a la altura indicada y selecciona el peso.",
+        "Activa la espalda alta antes de iniciar el movimiento.",
+        "Realiza el movimiento de forma controlada manteniendo la técnica.",
+        "Vuelve a la posición inicial controlando la fase excéntrica.",
+        "Mantén la respiración: exhala en el esfuerzo, inhala al volver."
+      ],
+      "file": "upper-back/cable-low-seated-row.gif",
+      "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/upper-back/cable-low-seated-row.gif",
+      "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/upper-back/cable-low-seated-row.thumb.webp"
+    },
+    {
+      "id": "upper-back/cable-one-arm-bent-over-row",
+      "slug": "cable-one-arm-bent-over-row",
+      "name": "Remo inclinado en polea, a una mano",
+      "muscle": "upper-back",
+      "bodyPart": "back",
+      "equipment": "cable",
+      "category": "strength",
+      "secondaryMuscles": [
+        "biceps",
+        "forearms",
+        "delts",
+        "lats"
+      ],
+      "instructions": [
+        "Ajusta la polea a la altura indicada y selecciona el peso.",
+        "Activa la espalda alta antes de iniciar el movimiento.",
+        "Realiza el movimiento de forma controlada manteniendo la técnica.",
+        "Vuelve a la posición inicial controlando la fase excéntrica.",
+        "Mantén la respiración: exhala en el esfuerzo, inhala al volver."
+      ],
+      "file": "upper-back/cable-one-arm-bent-over-row.gif",
+      "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/upper-back/cable-one-arm-bent-over-row.gif",
+      "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/upper-back/cable-one-arm-bent-over-row.thumb.webp"
+    },
+    {
+      "id": "upper-back/cable-one-arm-straight-back-high-row-kneeling",
+      "slug": "cable-one-arm-straight-back-high-row-kneeling",
+      "name": "Remo alto en polea, de rodillas, a una mano con espalda recta",
+      "muscle": "upper-back",
+      "bodyPart": "back",
+      "equipment": "cable",
+      "category": "strength",
+      "secondaryMuscles": [
+        "biceps",
+        "forearms",
+        "delts",
+        "lats"
+      ],
+      "instructions": [
+        "Ajusta la polea a la altura indicada y selecciona el peso.",
+        "Activa la espalda alta antes de iniciar el movimiento.",
+        "Realiza el movimiento de forma controlada manteniendo la técnica.",
+        "Vuelve a la posición inicial controlando la fase excéntrica.",
+        "Mantén la respiración: exhala en el esfuerzo, inhala al volver."
+      ],
+      "file": "upper-back/cable-one-arm-straight-back-high-row-kneeling.gif",
+      "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/upper-back/cable-one-arm-straight-back-high-row-kneeling.gif",
+      "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/upper-back/cable-one-arm-straight-back-high-row-kneeling.thumb.webp"
+    },
+    {
+      "id": "upper-back/cable-palm-rotational-row",
+      "slug": "cable-palm-rotational-row",
+      "name": "Remo con rotación de palma en polea",
+      "muscle": "upper-back",
+      "bodyPart": "back",
+      "equipment": "cable",
+      "category": "strength",
+      "secondaryMuscles": [
+        "biceps",
+        "forearms",
+        "delts",
+        "lats"
+      ],
+      "instructions": [
+        "Ajusta la polea a la altura indicada y selecciona el peso.",
+        "Activa la espalda alta antes de iniciar el movimiento.",
+        "Realiza el movimiento de forma controlada manteniendo la técnica.",
+        "Vuelve a la posición inicial controlando la fase excéntrica.",
+        "Mantén la respiración: exhala en el esfuerzo, inhala al volver."
+      ],
+      "file": "upper-back/cable-palm-rotational-row.gif",
+      "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/upper-back/cable-palm-rotational-row.gif",
+      "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/upper-back/cable-palm-rotational-row.thumb.webp"
+    },
+    {
+      "id": "upper-back/cable-reverse-grip-straight-back-seated-high-row",
+      "slug": "cable-reverse-grip-straight-back-seated-high-row",
+      "name": "Remo alto en polea, sentado, con agarre invertido, con espalda recta",
+      "muscle": "upper-back",
+      "bodyPart": "back",
+      "equipment": "cable",
+      "category": "strength",
+      "secondaryMuscles": [
+        "biceps",
+        "forearms",
+        "delts",
+        "lats"
+      ],
+      "instructions": [
+        "Ajusta la polea a la altura indicada y selecciona el peso.",
+        "Activa la espalda alta antes de iniciar el movimiento.",
+        "Realiza el movimiento de forma controlada manteniendo la técnica.",
+        "Vuelve a la posición inicial controlando la fase excéntrica.",
+        "Mantén la respiración: exhala en el esfuerzo, inhala al volver."
+      ],
+      "file": "upper-back/cable-reverse-grip-straight-back-seated-high-row.gif",
+      "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/upper-back/cable-reverse-grip-straight-back-seated-high-row.gif",
+      "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/upper-back/cable-reverse-grip-straight-back-seated-high-row.thumb.webp"
+    },
+    {
+      "id": "upper-back/cable-rope-crossover-seated-row",
+      "slug": "cable-rope-crossover-seated-row",
+      "name": "Remo sentado en polea con cuerda, crossover",
+      "muscle": "upper-back",
+      "bodyPart": "back",
+      "equipment": "cable",
+      "category": "strength",
+      "secondaryMuscles": [
+        "biceps",
+        "forearms",
+        "delts",
+        "lats"
+      ],
+      "instructions": [
+        "Ajusta la polea a la altura indicada y selecciona el peso.",
+        "Activa la espalda alta antes de iniciar el movimiento.",
+        "Realiza el movimiento de forma controlada manteniendo la técnica.",
+        "Vuelve a la posición inicial controlando la fase excéntrica.",
+        "Mantén la respiración: exhala en el esfuerzo, inhala al volver."
+      ],
+      "file": "upper-back/cable-rope-crossover-seated-row.gif",
+      "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/upper-back/cable-rope-crossover-seated-row.gif",
+      "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/upper-back/cable-rope-crossover-seated-row.thumb.webp"
+    },
+    {
+      "id": "upper-back/cable-rope-elevated-seated-row",
+      "slug": "cable-rope-elevated-seated-row",
+      "name": "Remo sentado en polea con cuerda, elevated",
+      "muscle": "upper-back",
+      "bodyPart": "back",
+      "equipment": "cable",
+      "category": "strength",
+      "secondaryMuscles": [
+        "biceps",
+        "forearms",
+        "delts",
+        "lats"
+      ],
+      "instructions": [
+        "Ajusta la polea a la altura indicada y selecciona el peso.",
+        "Activa la espalda alta antes de iniciar el movimiento.",
+        "Realiza el movimiento de forma controlada manteniendo la técnica.",
+        "Vuelve a la posición inicial controlando la fase excéntrica.",
+        "Mantén la respiración: exhala en el esfuerzo, inhala al volver."
+      ],
+      "file": "upper-back/cable-rope-elevated-seated-row.gif",
+      "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/upper-back/cable-rope-elevated-seated-row.gif",
+      "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/upper-back/cable-rope-elevated-seated-row.thumb.webp"
+    },
+    {
+      "id": "upper-back/cable-rope-extension-incline-bench-row",
+      "slug": "cable-rope-extension-incline-bench-row",
+      "name": "Remo en polea con cuerda, en banco inclinado, extension",
+      "muscle": "upper-back",
+      "bodyPart": "back",
+      "equipment": "cable",
+      "category": "strength",
+      "secondaryMuscles": [
+        "biceps",
+        "forearms",
+        "delts",
+        "lats"
+      ],
+      "instructions": [
+        "Ajusta la polea a la altura indicada y selecciona el peso.",
+        "Activa la espalda alta antes de iniciar el movimiento.",
+        "Realiza el movimiento de forma controlada manteniendo la técnica.",
+        "Vuelve a la posición inicial controlando la fase excéntrica.",
+        "Mantén la respiración: exhala en el esfuerzo, inhala al volver."
+      ],
+      "file": "upper-back/cable-rope-extension-incline-bench-row.gif",
+      "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/upper-back/cable-rope-extension-incline-bench-row.gif",
+      "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/upper-back/cable-rope-extension-incline-bench-row.thumb.webp"
+    },
+    {
+      "id": "upper-back/cable-rope-seated-row",
+      "slug": "cable-rope-seated-row",
+      "name": "Remo sentado en polea con cuerda",
+      "muscle": "upper-back",
+      "bodyPart": "back",
+      "equipment": "cable",
+      "category": "strength",
+      "secondaryMuscles": [
+        "biceps",
+        "forearms",
+        "delts",
+        "lats"
+      ],
+      "instructions": [
+        "Ajusta la polea a la altura indicada y selecciona el peso.",
+        "Activa la espalda alta antes de iniciar el movimiento.",
+        "Realiza el movimiento de forma controlada manteniendo la técnica.",
+        "Vuelve a la posición inicial controlando la fase excéntrica.",
+        "Mantén la respiración: exhala en el esfuerzo, inhala al volver."
+      ],
+      "file": "upper-back/cable-rope-seated-row.gif",
+      "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/upper-back/cable-rope-seated-row.gif",
+      "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/upper-back/cable-rope-seated-row.thumb.webp"
+    },
+    {
+      "id": "upper-back/cable-seated-one-arm-alternate-row",
+      "slug": "cable-seated-one-arm-alternate-row",
+      "name": "Remo en polea, sentado, a una mano alternado",
+      "muscle": "upper-back",
+      "bodyPart": "back",
+      "equipment": "cable",
+      "category": "strength",
+      "secondaryMuscles": [
+        "biceps",
+        "forearms",
+        "delts",
+        "lats"
+      ],
+      "instructions": [
+        "Ajusta la polea a la altura indicada y selecciona el peso.",
+        "Activa la espalda alta antes de iniciar el movimiento.",
+        "Realiza el movimiento de forma controlada manteniendo la técnica.",
+        "Vuelve a la posición inicial controlando la fase excéntrica.",
+        "Mantén la respiración: exhala en el esfuerzo, inhala al volver."
+      ],
+      "file": "upper-back/cable-seated-one-arm-alternate-row.gif",
+      "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/upper-back/cable-seated-one-arm-alternate-row.gif",
+      "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/upper-back/cable-seated-one-arm-alternate-row.thumb.webp"
+    },
+    {
+      "id": "upper-back/cable-seated-row",
+      "slug": "cable-seated-row",
+      "name": "Remo sentado en polea",
+      "muscle": "upper-back",
+      "bodyPart": "back",
+      "equipment": "cable",
+      "category": "strength",
+      "secondaryMuscles": [
+        "biceps",
+        "forearms",
+        "delts",
+        "lats"
+      ],
+      "instructions": [
+        "Ajusta la polea a la altura indicada y selecciona el peso.",
+        "Activa la espalda alta antes de iniciar el movimiento.",
+        "Realiza el movimiento de forma controlada manteniendo la técnica.",
+        "Vuelve a la posición inicial controlando la fase excéntrica.",
+        "Mantén la respiración: exhala en el esfuerzo, inhala al volver."
+      ],
+      "file": "upper-back/cable-seated-row.gif",
+      "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/upper-back/cable-seated-row.gif",
+      "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/upper-back/cable-seated-row.thumb.webp"
+    },
+    {
+      "id": "upper-back/cable-seated-wide-grip-row",
+      "slug": "cable-seated-wide-grip-row",
+      "name": "Remo en polea, sentado, con agarre ancho",
+      "muscle": "upper-back",
+      "bodyPart": "back",
+      "equipment": "cable",
+      "category": "strength",
+      "secondaryMuscles": [
+        "biceps",
+        "forearms",
+        "delts",
+        "lats"
+      ],
+      "instructions": [
+        "Ajusta la polea a la altura indicada y selecciona el peso.",
+        "Activa la espalda alta antes de iniciar el movimiento.",
+        "Realiza el movimiento de forma controlada manteniendo la técnica.",
+        "Vuelve a la posición inicial controlando la fase excéntrica.",
+        "Mantén la respiración: exhala en el esfuerzo, inhala al volver."
+      ],
+      "file": "upper-back/cable-seated-wide-grip-row.gif",
+      "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/upper-back/cable-seated-wide-grip-row.gif",
+      "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/upper-back/cable-seated-wide-grip-row.thumb.webp"
+    },
+    {
+      "id": "upper-back/cable-standing-row-v-bar",
+      "slug": "cable-standing-row-v-bar",
+      "name": "Remo en polea con barra en V, de pie",
+      "muscle": "upper-back",
+      "bodyPart": "back",
+      "equipment": "cable",
+      "category": "strength",
+      "secondaryMuscles": [
+        "biceps",
+        "forearms",
+        "delts",
+        "lats"
+      ],
+      "instructions": [
+        "Ajusta la polea a la altura indicada y selecciona el peso.",
+        "Activa la espalda alta antes de iniciar el movimiento.",
+        "Realiza el movimiento de forma controlada manteniendo la técnica.",
+        "Vuelve a la posición inicial controlando la fase excéntrica.",
+        "Mantén la respiración: exhala en el esfuerzo, inhala al volver."
+      ],
+      "file": "upper-back/cable-standing-row-v-bar.gif",
+      "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/upper-back/cable-standing-row-v-bar.gif",
+      "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/upper-back/cable-standing-row-v-bar.thumb.webp"
+    },
+    {
+      "id": "upper-back/cable-standing-twist-row-v-bar",
+      "slug": "cable-standing-twist-row-v-bar",
+      "name": "Remo con giro en polea con barra en V, de pie",
+      "muscle": "upper-back",
+      "bodyPart": "back",
+      "equipment": "cable",
+      "category": "strength",
+      "secondaryMuscles": [
+        "biceps",
+        "forearms",
+        "delts",
+        "lats"
+      ],
+      "instructions": [
+        "Ajusta la polea a la altura indicada y selecciona el peso.",
+        "Activa la espalda alta antes de iniciar el movimiento.",
+        "Realiza el movimiento de forma controlada manteniendo la técnica.",
+        "Vuelve a la posición inicial controlando la fase excéntrica.",
+        "Mantén la respiración: exhala en el esfuerzo, inhala al volver."
+      ],
+      "file": "upper-back/cable-standing-twist-row-v-bar.gif",
+      "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/upper-back/cable-standing-twist-row-v-bar.gif",
+      "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/upper-back/cable-standing-twist-row-v-bar.thumb.webp"
+    },
+    {
+      "id": "upper-back/cable-straight-back-seated-row",
+      "slug": "cable-straight-back-seated-row",
+      "name": "Remo sentado en polea, con espalda recta",
+      "muscle": "upper-back",
+      "bodyPart": "back",
+      "equipment": "cable",
+      "category": "strength",
+      "secondaryMuscles": [
+        "biceps",
+        "forearms",
+        "delts",
+        "lats"
+      ],
+      "instructions": [
+        "Ajusta la polea a la altura indicada y selecciona el peso.",
+        "Activa la espalda alta antes de iniciar el movimiento.",
+        "Realiza el movimiento de forma controlada manteniendo la técnica.",
+        "Vuelve a la posición inicial controlando la fase excéntrica.",
+        "Mantén la respiración: exhala en el esfuerzo, inhala al volver."
+      ],
+      "file": "upper-back/cable-straight-back-seated-row.gif",
+      "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/upper-back/cable-straight-back-seated-row.gif",
+      "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/upper-back/cable-straight-back-seated-row.thumb.webp"
+    },
+    {
+      "id": "upper-back/cable-upper-row",
+      "slug": "cable-upper-row",
+      "name": "Remo en polea, superior",
+      "muscle": "upper-back",
+      "bodyPart": "back",
+      "equipment": "cable",
+      "category": "strength",
+      "secondaryMuscles": [
+        "biceps",
+        "forearms",
+        "delts",
+        "lats"
+      ],
+      "instructions": [
+        "Ajusta la polea a la altura indicada y selecciona el peso.",
+        "Activa la espalda alta antes de iniciar el movimiento.",
+        "Realiza el movimiento de forma controlada manteniendo la técnica.",
+        "Vuelve a la posición inicial controlando la fase excéntrica.",
+        "Mantén la respiración: exhala en el esfuerzo, inhala al volver."
+      ],
+      "file": "upper-back/cable-upper-row.gif",
+      "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/upper-back/cable-upper-row.gif",
+      "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/upper-back/cable-upper-row.thumb.webp"
+    },
+    {
+      "id": "upper-back/cambered-bar-lying-row",
+      "slug": "cambered-bar-lying-row",
+      "name": "Remo con barra curva, tumbado",
+      "muscle": "upper-back",
+      "bodyPart": "back",
+      "equipment": "barbell",
+      "category": "strength",
+      "secondaryMuscles": [
+        "biceps",
+        "forearms",
+        "delts",
+        "lats"
+      ],
+      "instructions": [
+        "Carga el peso adecuado en la barra y adopta la postura inicial.",
+        "Activa la espalda alta antes de iniciar el movimiento.",
+        "Realiza el movimiento de forma controlada manteniendo la técnica.",
+        "Vuelve a la posición inicial controlando la fase excéntrica.",
+        "Mantén la respiración: exhala en el esfuerzo, inhala al volver."
+      ],
+      "file": "upper-back/cambered-bar-lying-row.gif",
+      "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/upper-back/cambered-bar-lying-row.gif",
+      "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/upper-back/cambered-bar-lying-row.thumb.webp"
+    },
+    {
+      "id": "upper-back/chin-ups-narrow-parallel-grip",
+      "slug": "chin-ups-narrow-parallel-grip",
+      "name": "Dominadas supinas, estrecho con agarre paralelo",
+      "muscle": "upper-back",
+      "bodyPart": "back",
+      "equipment": "bodyweight",
+      "category": "strength",
+      "secondaryMuscles": [
+        "lats",
+        "biceps",
+        "forearms",
+        "delts"
+      ],
+      "instructions": [
+        "Adopta la postura inicial con buena alineación corporal.",
+        "Activa la espalda alta antes de iniciar el movimiento.",
+        "Realiza el movimiento de forma controlada manteniendo la técnica.",
+        "Vuelve a la posición inicial controlando la fase excéntrica.",
+        "Mantén la respiración: exhala en el esfuerzo, inhala al volver."
+      ],
+      "file": "upper-back/chin-ups-narrow-parallel-grip.gif",
+      "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/upper-back/chin-ups-narrow-parallel-grip.gif",
+      "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/upper-back/chin-ups-narrow-parallel-grip.thumb.webp"
+    },
+    {
+      "id": "upper-back/dumbbell-bent-over-row",
+      "slug": "dumbbell-bent-over-row",
+      "name": "Remo inclinado con mancuerna",
+      "muscle": "upper-back",
+      "bodyPart": "back",
+      "equipment": "dumbbell",
+      "category": "strength",
+      "secondaryMuscles": [
+        "biceps",
+        "forearms",
+        "delts",
+        "lats"
+      ],
+      "instructions": [
+        "Coge una mancuerna en cada mano (o la indicada) con un peso adecuado.",
+        "Activa la espalda alta antes de iniciar el movimiento.",
+        "Realiza el movimiento de forma controlada manteniendo la técnica.",
+        "Vuelve a la posición inicial controlando la fase excéntrica.",
+        "Mantén la respiración: exhala en el esfuerzo, inhala al volver."
+      ],
+      "file": "upper-back/dumbbell-bent-over-row.gif",
+      "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/upper-back/dumbbell-bent-over-row.gif",
+      "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/upper-back/dumbbell-bent-over-row.thumb.webp"
+    },
+    {
+      "id": "upper-back/dumbbell-incline-row",
+      "slug": "dumbbell-incline-row",
+      "name": "Remo inclinado con mancuerna",
+      "muscle": "upper-back",
+      "bodyPart": "back",
+      "equipment": "dumbbell",
+      "category": "strength",
+      "secondaryMuscles": [
+        "biceps",
+        "forearms",
+        "delts",
+        "lats"
+      ],
+      "instructions": [
+        "Coge una mancuerna en cada mano (o la indicada) con un peso adecuado.",
+        "Activa la espalda alta antes de iniciar el movimiento.",
+        "Realiza el movimiento de forma controlada manteniendo la técnica.",
+        "Vuelve a la posición inicial controlando la fase excéntrica.",
+        "Mantén la respiración: exhala en el esfuerzo, inhala al volver."
+      ],
+      "file": "upper-back/dumbbell-incline-row.gif",
+      "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/upper-back/dumbbell-incline-row.gif",
+      "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/upper-back/dumbbell-incline-row.thumb.webp"
+    },
+    {
+      "id": "upper-back/dumbbell-incline-y-raise",
+      "slug": "dumbbell-incline-y-raise",
+      "name": "Y-raise inclinado con mancuerna",
+      "muscle": "upper-back",
+      "bodyPart": "back",
+      "equipment": "dumbbell",
+      "category": "strength",
+      "secondaryMuscles": [],
+      "instructions": [
+        "Coge una mancuerna en cada mano (o la indicada) con un peso adecuado.",
+        "Activa la espalda alta antes de iniciar el movimiento.",
+        "Realiza el movimiento de forma controlada manteniendo la técnica.",
+        "Vuelve a la posición inicial controlando la fase excéntrica.",
+        "Mantén la respiración: exhala en el esfuerzo, inhala al volver."
+      ],
+      "file": "upper-back/dumbbell-incline-y-raise.gif",
+      "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/upper-back/dumbbell-incline-y-raise.gif",
+      "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/upper-back/dumbbell-incline-y-raise.thumb.webp"
+    },
+    {
+      "id": "upper-back/dumbbell-lying-rear-delt-row",
+      "slug": "dumbbell-lying-rear-delt-row",
+      "name": "Remo de deltoides posterior con mancuerna, tumbado",
+      "muscle": "upper-back",
+      "bodyPart": "back",
+      "equipment": "dumbbell",
+      "category": "strength",
+      "secondaryMuscles": [
+        "biceps",
+        "forearms",
+        "delts",
+        "lats"
+      ],
+      "instructions": [
+        "Coge una mancuerna en cada mano (o la indicada) con un peso adecuado.",
+        "Activa la espalda alta antes de iniciar el movimiento.",
+        "Realiza el movimiento de forma controlada manteniendo la técnica.",
+        "Vuelve a la posición inicial controlando la fase excéntrica.",
+        "Mantén la respiración: exhala en el esfuerzo, inhala al volver."
+      ],
+      "file": "upper-back/dumbbell-lying-rear-delt-row.gif",
+      "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/upper-back/dumbbell-lying-rear-delt-row.gif",
+      "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/upper-back/dumbbell-lying-rear-delt-row.thumb.webp"
+    },
+    {
+      "id": "upper-back/dumbbell-one-arm-bent-over-row",
+      "slug": "dumbbell-one-arm-bent-over-row",
+      "name": "Remo inclinado con mancuerna, a una mano",
+      "muscle": "upper-back",
+      "bodyPart": "back",
+      "equipment": "dumbbell",
+      "category": "strength",
+      "secondaryMuscles": [
+        "biceps",
+        "forearms",
+        "delts",
+        "lats"
+      ],
+      "instructions": [
+        "Coge una mancuerna en cada mano (o la indicada) con un peso adecuado.",
+        "Activa la espalda alta antes de iniciar el movimiento.",
+        "Realiza el movimiento de forma controlada manteniendo la técnica.",
+        "Vuelve a la posición inicial controlando la fase excéntrica.",
+        "Mantén la respiración: exhala en el esfuerzo, inhala al volver."
+      ],
+      "file": "upper-back/dumbbell-one-arm-bent-over-row.gif",
+      "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/upper-back/dumbbell-one-arm-bent-over-row.gif",
+      "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/upper-back/dumbbell-one-arm-bent-over-row.thumb.webp"
+    },
+    {
+      "id": "upper-back/dumbbell-palm-rotational-bent-over-row",
+      "slug": "dumbbell-palm-rotational-bent-over-row",
+      "name": "Remo inclinado con rotación de palma, con mancuerna",
+      "muscle": "upper-back",
+      "bodyPart": "back",
+      "equipment": "dumbbell",
+      "category": "strength",
+      "secondaryMuscles": [
+        "biceps",
+        "forearms",
+        "delts",
+        "lats"
+      ],
+      "instructions": [
+        "Coge una mancuerna en cada mano (o la indicada) con un peso adecuado.",
+        "Activa la espalda alta antes de iniciar el movimiento.",
+        "Realiza el movimiento de forma controlada manteniendo la técnica.",
+        "Vuelve a la posición inicial controlando la fase excéntrica.",
+        "Mantén la respiración: exhala en el esfuerzo, inhala al volver."
+      ],
+      "file": "upper-back/dumbbell-palm-rotational-bent-over-row.gif",
+      "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/upper-back/dumbbell-palm-rotational-bent-over-row.gif",
+      "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/upper-back/dumbbell-palm-rotational-bent-over-row.thumb.webp"
+    },
+    {
+      "id": "upper-back/dumbbell-reverse-grip-incline-bench-one-arm-row",
+      "slug": "dumbbell-reverse-grip-incline-bench-one-arm-row",
+      "name": "Remo con mancuerna, con agarre invertido, en banco inclinado a una mano",
+      "muscle": "upper-back",
+      "bodyPart": "back",
+      "equipment": "dumbbell",
+      "category": "strength",
+      "secondaryMuscles": [
+        "biceps",
+        "forearms",
+        "delts",
+        "lats"
+      ],
+      "instructions": [
+        "Coge una mancuerna en cada mano (o la indicada) con un peso adecuado.",
+        "Activa la espalda alta antes de iniciar el movimiento.",
+        "Realiza el movimiento de forma controlada manteniendo la técnica.",
+        "Vuelve a la posición inicial controlando la fase excéntrica.",
+        "Mantén la respiración: exhala en el esfuerzo, inhala al volver."
+      ],
+      "file": "upper-back/dumbbell-reverse-grip-incline-bench-one-arm-row.gif",
+      "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/upper-back/dumbbell-reverse-grip-incline-bench-one-arm-row.gif",
+      "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/upper-back/dumbbell-reverse-grip-incline-bench-one-arm-row.thumb.webp"
+    },
+    {
+      "id": "upper-back/dumbbell-reverse-grip-incline-bench-two-arm-row",
+      "slug": "dumbbell-reverse-grip-incline-bench-two-arm-row",
+      "name": "Remo con mancuerna, con agarre invertido, en banco inclinado a dos manos",
+      "muscle": "upper-back",
+      "bodyPart": "back",
+      "equipment": "dumbbell",
+      "category": "strength",
+      "secondaryMuscles": [
+        "biceps",
+        "forearms",
+        "delts",
+        "lats"
+      ],
+      "instructions": [
+        "Coge una mancuerna en cada mano (o la indicada) con un peso adecuado.",
+        "Activa la espalda alta antes de iniciar el movimiento.",
+        "Realiza el movimiento de forma controlada manteniendo la técnica.",
+        "Vuelve a la posición inicial controlando la fase excéntrica.",
+        "Mantén la respiración: exhala en el esfuerzo, inhala al volver."
+      ],
+      "file": "upper-back/dumbbell-reverse-grip-incline-bench-two-arm-row.gif",
+      "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/upper-back/dumbbell-reverse-grip-incline-bench-two-arm-row.gif",
+      "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/upper-back/dumbbell-reverse-grip-incline-bench-two-arm-row.thumb.webp"
+    },
+    {
+      "id": "upper-back/dumbbell-reverse-grip-row-female",
+      "slug": "dumbbell-reverse-grip-row-female",
+      "name": "Remo con mancuerna, con agarre invertido",
+      "muscle": "upper-back",
+      "bodyPart": "back",
+      "equipment": "dumbbell",
+      "category": "strength",
+      "secondaryMuscles": [
+        "biceps",
+        "forearms",
+        "delts",
+        "lats"
+      ],
+      "instructions": [
+        "Coge una mancuerna en cada mano (o la indicada) con un peso adecuado.",
+        "Activa la espalda alta antes de iniciar el movimiento.",
+        "Realiza el movimiento de forma controlada manteniendo la técnica.",
+        "Vuelve a la posición inicial controlando la fase excéntrica.",
+        "Mantén la respiración: exhala en el esfuerzo, inhala al volver."
+      ],
+      "file": "upper-back/dumbbell-reverse-grip-row-female.gif",
+      "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/upper-back/dumbbell-reverse-grip-row-female.gif",
+      "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/upper-back/dumbbell-reverse-grip-row-female.thumb.webp"
+    },
+    {
+      "id": "upper-back/dumbbell-side-plank-with-rear-fly",
+      "slug": "dumbbell-side-plank-with-rear-fly",
+      "name": "Plancha lateral con mancuerna y apertura posterior",
+      "muscle": "upper-back",
+      "bodyPart": "back",
+      "equipment": "dumbbell",
+      "category": "strength",
+      "secondaryMuscles": [
+        "abs",
+        "delts",
+        "glutes",
+        "traps"
+      ],
+      "instructions": [
+        "Coge una mancuerna en cada mano (o la indicada) con un peso adecuado.",
+        "Activa la espalda alta antes de iniciar el movimiento.",
+        "Realiza el movimiento de forma controlada manteniendo la técnica.",
+        "Vuelve a la posición inicial controlando la fase excéntrica.",
+        "Mantén la respiración: exhala en el esfuerzo, inhala al volver."
+      ],
+      "file": "upper-back/dumbbell-side-plank-with-rear-fly.gif",
+      "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/upper-back/dumbbell-side-plank-with-rear-fly.gif",
+      "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/upper-back/dumbbell-side-plank-with-rear-fly.thumb.webp"
+    },
+    {
+      "id": "upper-back/elbow-lift-reverse-push-up",
+      "slug": "elbow-lift-reverse-push-up",
+      "name": "Flexión invertida con elevación de codo",
+      "muscle": "upper-back",
+      "bodyPart": "back",
+      "equipment": "bodyweight",
+      "category": "strength",
+      "secondaryMuscles": [
+        "triceps",
+        "delts"
+      ],
+      "instructions": [
+        "Adopta la postura inicial con buena alineación corporal.",
+        "Activa la espalda alta antes de iniciar el movimiento.",
+        "Realiza el movimiento de forma controlada manteniendo la técnica.",
+        "Vuelve a la posición inicial controlando la fase excéntrica.",
+        "Mantén la respiración: exhala en el esfuerzo, inhala al volver."
+      ],
+      "file": "upper-back/elbow-lift-reverse-push-up.gif",
+      "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/upper-back/elbow-lift-reverse-push-up.gif",
+      "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/upper-back/elbow-lift-reverse-push-up.thumb.webp"
+    },
+    {
+      "id": "upper-back/elevator",
+      "slug": "elevator",
+      "name": "Elevator",
+      "muscle": "upper-back",
+      "bodyPart": "back",
+      "equipment": "other",
+      "category": "strength",
+      "secondaryMuscles": [],
+      "instructions": [
+        "Prepara el equipo y adopta la postura inicial.",
+        "Activa la espalda alta antes de iniciar el movimiento.",
+        "Realiza el movimiento de forma controlada manteniendo la técnica.",
+        "Vuelve a la posición inicial controlando la fase excéntrica.",
+        "Mantén la respiración: exhala en el esfuerzo, inhala al volver."
+      ],
+      "file": "upper-back/elevator.gif",
+      "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/upper-back/elevator.gif",
+      "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/upper-back/elevator.thumb.webp"
+    },
+    {
+      "id": "upper-back/ez-bar-reverse-grip-bent-over-row",
+      "slug": "ez-bar-reverse-grip-bent-over-row",
+      "name": "Remo inclinado con barra Z, con agarre invertido",
+      "muscle": "upper-back",
+      "bodyPart": "back",
+      "equipment": "ez-bar",
+      "category": "strength",
+      "secondaryMuscles": [
+        "biceps",
+        "forearms",
+        "delts",
+        "lats"
+      ],
+      "instructions": [
+        "Carga la barra Z con un peso adecuado y agárrala con firmeza.",
+        "Activa la espalda alta antes de iniciar el movimiento.",
+        "Realiza el movimiento de forma controlada manteniendo la técnica.",
+        "Vuelve a la posición inicial controlando la fase excéntrica.",
+        "Mantén la respiración: exhala en el esfuerzo, inhala al volver."
+      ],
+      "file": "upper-back/ez-bar-reverse-grip-bent-over-row.gif",
+      "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/upper-back/ez-bar-reverse-grip-bent-over-row.gif",
+      "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/upper-back/ez-bar-reverse-grip-bent-over-row.thumb.webp"
+    },
+    {
+      "id": "upper-back/front-lever-reps",
+      "slug": "front-lever-reps",
+      "name": "Front lever, reps",
+      "muscle": "upper-back",
+      "bodyPart": "back",
+      "equipment": "lever",
+      "category": "strength",
+      "secondaryMuscles": [],
+      "instructions": [
+        "Ajusta la máquina a tu medida y selecciona la carga.",
+        "Activa la espalda alta antes de iniciar el movimiento.",
+        "Realiza el movimiento de forma controlada manteniendo la técnica.",
+        "Vuelve a la posición inicial controlando la fase excéntrica.",
+        "Mantén la respiración: exhala en el esfuerzo, inhala al volver."
+      ],
+      "file": "upper-back/front-lever-reps.gif",
+      "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/upper-back/front-lever-reps.gif",
+      "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/upper-back/front-lever-reps.thumb.webp"
+    },
+    {
+      "id": "upper-back/inverted-row-bent-knees",
+      "slug": "inverted-row-bent-knees",
+      "name": "Remo invertido, con rodillas flexionadas",
+      "muscle": "upper-back",
+      "bodyPart": "back",
+      "equipment": "bodyweight",
+      "category": "strength",
+      "secondaryMuscles": [
+        "biceps",
+        "forearms",
+        "delts",
+        "lats"
+      ],
+      "instructions": [
+        "Adopta la postura inicial con buena alineación corporal.",
+        "Activa la espalda alta antes de iniciar el movimiento.",
+        "Realiza el movimiento de forma controlada manteniendo la técnica.",
+        "Vuelve a la posición inicial controlando la fase excéntrica.",
+        "Mantén la respiración: exhala en el esfuerzo, inhala al volver."
+      ],
+      "file": "upper-back/inverted-row-bent-knees.gif",
+      "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/upper-back/inverted-row-bent-knees.gif",
+      "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/upper-back/inverted-row-bent-knees.thumb.webp"
+    },
+    {
+      "id": "upper-back/inverted-row-on-bench",
+      "slug": "inverted-row-on-bench",
+      "name": "Remo invertido, en banco",
+      "muscle": "upper-back",
+      "bodyPart": "back",
+      "equipment": "bodyweight",
+      "category": "strength",
+      "secondaryMuscles": [
+        "biceps",
+        "forearms",
+        "delts",
+        "lats"
+      ],
+      "instructions": [
+        "Adopta la postura inicial con buena alineación corporal.",
+        "Activa la espalda alta antes de iniciar el movimiento.",
+        "Realiza el movimiento de forma controlada manteniendo la técnica.",
+        "Vuelve a la posición inicial controlando la fase excéntrica.",
+        "Mantén la respiración: exhala en el esfuerzo, inhala al volver."
+      ],
+      "file": "upper-back/inverted-row-on-bench.gif",
+      "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/upper-back/inverted-row-on-bench.gif",
+      "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/upper-back/inverted-row-on-bench.thumb.webp"
+    },
+    {
+      "id": "upper-back/inverted-row-v-2",
+      "slug": "inverted-row-v-2",
+      "name": "Remo invertido",
+      "muscle": "upper-back",
+      "bodyPart": "back",
+      "equipment": "bodyweight",
+      "category": "strength",
+      "secondaryMuscles": [
+        "biceps",
+        "forearms",
+        "delts",
+        "lats"
+      ],
+      "instructions": [
+        "Adopta la postura inicial con buena alineación corporal.",
+        "Activa la espalda alta antes de iniciar el movimiento.",
+        "Realiza el movimiento de forma controlada manteniendo la técnica.",
+        "Vuelve a la posición inicial controlando la fase excéntrica.",
+        "Mantén la respiración: exhala en el esfuerzo, inhala al volver."
+      ],
+      "file": "upper-back/inverted-row-v-2.gif",
+      "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/upper-back/inverted-row-v-2.gif",
+      "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/upper-back/inverted-row-v-2.thumb.webp"
+    },
+    {
+      "id": "upper-back/inverted-row-with-straps",
+      "slug": "inverted-row-with-straps",
+      "name": "Remo invertido, con correas",
+      "muscle": "upper-back",
+      "bodyPart": "back",
+      "equipment": "bodyweight",
+      "category": "strength",
+      "secondaryMuscles": [
+        "biceps",
+        "forearms",
+        "delts",
+        "lats"
+      ],
+      "instructions": [
+        "Adopta la postura inicial con buena alineación corporal.",
+        "Activa la espalda alta antes de iniciar el movimiento.",
+        "Realiza el movimiento de forma controlada manteniendo la técnica.",
+        "Vuelve a la posición inicial controlando la fase excéntrica.",
+        "Mantén la respiración: exhala en el esfuerzo, inhala al volver."
+      ],
+      "file": "upper-back/inverted-row-with-straps.gif",
+      "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/upper-back/inverted-row-with-straps.gif",
+      "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/upper-back/inverted-row-with-straps.thumb.webp"
+    },
+    {
+      "id": "upper-back/inverted-row",
+      "slug": "inverted-row",
+      "name": "Remo invertido",
+      "muscle": "upper-back",
+      "bodyPart": "back",
+      "equipment": "bodyweight",
+      "category": "strength",
+      "secondaryMuscles": [
+        "biceps",
+        "forearms",
+        "delts",
+        "lats"
+      ],
+      "instructions": [
+        "Adopta la postura inicial con buena alineación corporal.",
+        "Activa la espalda alta antes de iniciar el movimiento.",
+        "Realiza el movimiento de forma controlada manteniendo la técnica.",
+        "Vuelve a la posición inicial controlando la fase excéntrica.",
+        "Mantén la respiración: exhala en el esfuerzo, inhala al volver."
+      ],
+      "file": "upper-back/inverted-row.gif",
+      "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/upper-back/inverted-row.gif",
+      "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/upper-back/inverted-row.thumb.webp"
+    },
+    {
+      "id": "upper-back/kettlebell-alternating-renegade-row",
+      "slug": "kettlebell-alternating-renegade-row",
+      "name": "Remo renegado con kettlebell, alternado",
+      "muscle": "upper-back",
+      "bodyPart": "back",
+      "equipment": "kettlebell",
+      "category": "strength",
+      "secondaryMuscles": [
+        "biceps",
+        "forearms",
+        "delts",
+        "lats"
+      ],
+      "instructions": [
+        "Coge la kettlebell con un peso adecuado y adopta la postura.",
+        "Activa la espalda alta antes de iniciar el movimiento.",
+        "Realiza el movimiento de forma controlada manteniendo la técnica.",
+        "Vuelve a la posición inicial controlando la fase excéntrica.",
+        "Mantén la respiración: exhala en el esfuerzo, inhala al volver."
+      ],
+      "file": "upper-back/kettlebell-alternating-renegade-row.gif",
+      "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/upper-back/kettlebell-alternating-renegade-row.gif",
+      "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/upper-back/kettlebell-alternating-renegade-row.thumb.webp"
+    },
+    {
+      "id": "upper-back/kettlebell-alternating-row",
+      "slug": "kettlebell-alternating-row",
+      "name": "Remo con kettlebell, alternado",
+      "muscle": "upper-back",
+      "bodyPart": "back",
+      "equipment": "kettlebell",
+      "category": "strength",
+      "secondaryMuscles": [
+        "biceps",
+        "forearms",
+        "delts",
+        "lats"
+      ],
+      "instructions": [
+        "Coge la kettlebell con un peso adecuado y adopta la postura.",
+        "Activa la espalda alta antes de iniciar el movimiento.",
+        "Realiza el movimiento de forma controlada manteniendo la técnica.",
+        "Vuelve a la posición inicial controlando la fase excéntrica.",
+        "Mantén la respiración: exhala en el esfuerzo, inhala al volver."
+      ],
+      "file": "upper-back/kettlebell-alternating-row.gif",
+      "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/upper-back/kettlebell-alternating-row.gif",
+      "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/upper-back/kettlebell-alternating-row.thumb.webp"
+    },
+    {
+      "id": "upper-back/kettlebell-one-arm-row",
+      "slug": "kettlebell-one-arm-row",
+      "name": "Remo con kettlebell, a una mano",
+      "muscle": "upper-back",
+      "bodyPart": "back",
+      "equipment": "kettlebell",
+      "category": "strength",
+      "secondaryMuscles": [
+        "biceps",
+        "forearms",
+        "delts",
+        "lats"
+      ],
+      "instructions": [
+        "Coge la kettlebell con un peso adecuado y adopta la postura.",
+        "Activa la espalda alta antes de iniciar el movimiento.",
+        "Realiza el movimiento de forma controlada manteniendo la técnica.",
+        "Vuelve a la posición inicial controlando la fase excéntrica.",
+        "Mantén la respiración: exhala en el esfuerzo, inhala al volver."
+      ],
+      "file": "upper-back/kettlebell-one-arm-row.gif",
+      "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/upper-back/kettlebell-one-arm-row.gif",
+      "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/upper-back/kettlebell-one-arm-row.thumb.webp"
+    },
+    {
+      "id": "upper-back/kettlebell-two-arm-row",
+      "slug": "kettlebell-two-arm-row",
+      "name": "Remo con kettlebell, a dos manos",
+      "muscle": "upper-back",
+      "bodyPart": "back",
+      "equipment": "kettlebell",
+      "category": "strength",
+      "secondaryMuscles": [
+        "biceps",
+        "forearms",
+        "delts",
+        "lats"
+      ],
+      "instructions": [
+        "Coge la kettlebell con un peso adecuado y adopta la postura.",
+        "Activa la espalda alta antes de iniciar el movimiento.",
+        "Realiza el movimiento de forma controlada manteniendo la técnica.",
+        "Vuelve a la posición inicial controlando la fase excéntrica.",
+        "Mantén la respiración: exhala en el esfuerzo, inhala al volver."
+      ],
+      "file": "upper-back/kettlebell-two-arm-row.gif",
+      "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/upper-back/kettlebell-two-arm-row.gif",
+      "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/upper-back/kettlebell-two-arm-row.thumb.webp"
+    },
+    {
+      "id": "upper-back/lever-alternating-narrow-grip-seated-row",
+      "slug": "lever-alternating-narrow-grip-seated-row",
+      "name": "Remo sentado en máquina, con agarre estrecho, alternado",
+      "muscle": "upper-back",
+      "bodyPart": "back",
+      "equipment": "lever",
+      "category": "strength",
+      "secondaryMuscles": [
+        "biceps",
+        "forearms",
+        "delts",
+        "lats"
+      ],
+      "instructions": [
+        "Ajusta la máquina a tu medida y selecciona la carga.",
+        "Activa la espalda alta antes de iniciar el movimiento.",
+        "Realiza el movimiento de forma controlada manteniendo la técnica.",
+        "Vuelve a la posición inicial controlando la fase excéntrica.",
+        "Mantén la respiración: exhala en el esfuerzo, inhala al volver."
+      ],
+      "file": "upper-back/lever-alternating-narrow-grip-seated-row.gif",
+      "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/upper-back/lever-alternating-narrow-grip-seated-row.gif",
+      "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/upper-back/lever-alternating-narrow-grip-seated-row.thumb.webp"
+    },
+    {
+      "id": "upper-back/lever-bent-over-row-with-v-bar",
+      "slug": "lever-bent-over-row-with-v-bar",
+      "name": "Remo inclinado en máquina con barra en V",
+      "muscle": "upper-back",
+      "bodyPart": "back",
+      "equipment": "lever",
+      "category": "strength",
+      "secondaryMuscles": [
+        "biceps",
+        "forearms",
+        "delts",
+        "lats"
+      ],
+      "instructions": [
+        "Ajusta la máquina a tu medida y selecciona la carga.",
+        "Activa la espalda alta antes de iniciar el movimiento.",
+        "Realiza el movimiento de forma controlada manteniendo la técnica.",
+        "Vuelve a la posición inicial controlando la fase excéntrica.",
+        "Mantén la respiración: exhala en el esfuerzo, inhala al volver."
+      ],
+      "file": "upper-back/lever-bent-over-row-with-v-bar.gif",
+      "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/upper-back/lever-bent-over-row-with-v-bar.gif",
+      "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/upper-back/lever-bent-over-row-with-v-bar.thumb.webp"
+    },
+    {
+      "id": "upper-back/lever-bent-over-row",
+      "slug": "lever-bent-over-row",
+      "name": "Remo inclinado en máquina",
+      "muscle": "upper-back",
+      "bodyPart": "back",
+      "equipment": "lever",
+      "category": "strength",
+      "secondaryMuscles": [
+        "biceps",
+        "forearms",
+        "delts",
+        "lats"
+      ],
+      "instructions": [
+        "Ajusta la máquina a tu medida y selecciona la carga.",
+        "Activa la espalda alta antes de iniciar el movimiento.",
+        "Realiza el movimiento de forma controlada manteniendo la técnica.",
+        "Vuelve a la posición inicial controlando la fase excéntrica.",
+        "Mantén la respiración: exhala en el esfuerzo, inhala al volver."
+      ],
+      "file": "upper-back/lever-bent-over-row.gif",
+      "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/upper-back/lever-bent-over-row.gif",
+      "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/upper-back/lever-bent-over-row.thumb.webp"
+    },
+    {
+      "id": "upper-back/lever-high-row",
+      "slug": "lever-high-row",
+      "name": "Remo alto en máquina",
+      "muscle": "upper-back",
+      "bodyPart": "back",
+      "equipment": "lever",
+      "category": "strength",
+      "secondaryMuscles": [
+        "biceps",
+        "forearms",
+        "delts",
+        "lats"
+      ],
+      "instructions": [
+        "Ajusta la máquina a tu medida y selecciona la carga.",
+        "Activa la espalda alta antes de iniciar el movimiento.",
+        "Realiza el movimiento de forma controlada manteniendo la técnica.",
+        "Vuelve a la posición inicial controlando la fase excéntrica.",
+        "Mantén la respiración: exhala en el esfuerzo, inhala al volver."
+      ],
+      "file": "upper-back/lever-high-row.gif",
+      "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/upper-back/lever-high-row.gif",
+      "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/upper-back/lever-high-row.thumb.webp"
+    },
+    {
+      "id": "upper-back/lever-narrow-grip-seated-row",
+      "slug": "lever-narrow-grip-seated-row",
+      "name": "Remo sentado en máquina, con agarre estrecho",
+      "muscle": "upper-back",
+      "bodyPart": "back",
+      "equipment": "lever",
+      "category": "strength",
+      "secondaryMuscles": [
+        "biceps",
+        "forearms",
+        "delts",
+        "lats"
+      ],
+      "instructions": [
+        "Ajusta la máquina a tu medida y selecciona la carga.",
+        "Activa la espalda alta antes de iniciar el movimiento.",
+        "Realiza el movimiento de forma controlada manteniendo la técnica.",
+        "Vuelve a la posición inicial controlando la fase excéntrica.",
+        "Mantén la respiración: exhala en el esfuerzo, inhala al volver."
+      ],
+      "file": "upper-back/lever-narrow-grip-seated-row.gif",
+      "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/upper-back/lever-narrow-grip-seated-row.gif",
+      "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/upper-back/lever-narrow-grip-seated-row.thumb.webp"
+    },
+    {
+      "id": "upper-back/lever-one-arm-bent-over-row",
+      "slug": "lever-one-arm-bent-over-row",
+      "name": "Remo inclinado en máquina, a una mano",
+      "muscle": "upper-back",
+      "bodyPart": "back",
+      "equipment": "lever",
+      "category": "strength",
+      "secondaryMuscles": [
+        "biceps",
+        "forearms",
+        "delts",
+        "lats"
+      ],
+      "instructions": [
+        "Ajusta la máquina a tu medida y selecciona la carga.",
+        "Activa la espalda alta antes de iniciar el movimiento.",
+        "Realiza el movimiento de forma controlada manteniendo la técnica.",
+        "Vuelve a la posición inicial controlando la fase excéntrica.",
+        "Mantén la respiración: exhala en el esfuerzo, inhala al volver."
+      ],
+      "file": "upper-back/lever-one-arm-bent-over-row.gif",
+      "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/upper-back/lever-one-arm-bent-over-row.gif",
+      "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/upper-back/lever-one-arm-bent-over-row.thumb.webp"
+    },
+    {
+      "id": "upper-back/lever-one-arm-lateral-high-row",
+      "slug": "lever-one-arm-lateral-high-row",
+      "name": "Remo alto en máquina, a una mano, lateral",
+      "muscle": "upper-back",
+      "bodyPart": "back",
+      "equipment": "lever",
+      "category": "strength",
+      "secondaryMuscles": [
+        "biceps",
+        "forearms",
+        "delts",
+        "lats"
+      ],
+      "instructions": [
+        "Ajusta la máquina a tu medida y selecciona la carga.",
+        "Activa la espalda alta antes de iniciar el movimiento.",
+        "Realiza el movimiento de forma controlada manteniendo la técnica.",
+        "Vuelve a la posición inicial controlando la fase excéntrica.",
+        "Mantén la respiración: exhala en el esfuerzo, inhala al volver."
+      ],
+      "file": "upper-back/lever-one-arm-lateral-high-row.gif",
+      "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/upper-back/lever-one-arm-lateral-high-row.gif",
+      "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/upper-back/lever-one-arm-lateral-high-row.thumb.webp"
+    },
+    {
+      "id": "upper-back/lever-reverse-grip-vertical-row",
+      "slug": "lever-reverse-grip-vertical-row",
+      "name": "Remo vertical con agarre invertido en máquina",
+      "muscle": "upper-back",
+      "bodyPart": "back",
+      "equipment": "lever",
+      "category": "strength",
+      "secondaryMuscles": [
+        "biceps",
+        "forearms",
+        "delts",
+        "lats"
+      ],
+      "instructions": [
+        "Ajusta la máquina a tu medida y selecciona la carga.",
+        "Activa la espalda alta antes de iniciar el movimiento.",
+        "Realiza el movimiento de forma controlada manteniendo la técnica.",
+        "Vuelve a la posición inicial controlando la fase excéntrica.",
+        "Mantén la respiración: exhala en el esfuerzo, inhala al volver."
+      ],
+      "file": "upper-back/lever-reverse-grip-vertical-row.gif",
+      "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/upper-back/lever-reverse-grip-vertical-row.gif",
+      "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/upper-back/lever-reverse-grip-vertical-row.thumb.webp"
+    },
+    {
+      "id": "upper-back/lever-reverse-t-bar-row",
+      "slug": "lever-reverse-t-bar-row",
+      "name": "Remo en T invertido en máquina",
+      "muscle": "upper-back",
+      "bodyPart": "back",
+      "equipment": "lever",
+      "category": "strength",
+      "secondaryMuscles": [
+        "biceps",
+        "forearms",
+        "delts",
+        "lats"
+      ],
+      "instructions": [
+        "Ajusta la máquina a tu medida y selecciona la carga.",
+        "Activa la espalda alta antes de iniciar el movimiento.",
+        "Realiza el movimiento de forma controlada manteniendo la técnica.",
+        "Vuelve a la posición inicial controlando la fase excéntrica.",
+        "Mantén la respiración: exhala en el esfuerzo, inhala al volver."
+      ],
+      "file": "upper-back/lever-reverse-t-bar-row.gif",
+      "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/upper-back/lever-reverse-t-bar-row.gif",
+      "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/upper-back/lever-reverse-t-bar-row.thumb.webp"
+    },
+    {
+      "id": "upper-back/lever-seated-row",
+      "slug": "lever-seated-row",
+      "name": "Remo sentado en máquina",
+      "muscle": "upper-back",
+      "bodyPart": "back",
+      "equipment": "lever",
+      "category": "strength",
+      "secondaryMuscles": [
+        "biceps",
+        "forearms",
+        "delts",
+        "lats"
+      ],
+      "instructions": [
+        "Ajusta la máquina a tu medida y selecciona la carga.",
+        "Activa la espalda alta antes de iniciar el movimiento.",
+        "Realiza el movimiento de forma controlada manteniendo la técnica.",
+        "Vuelve a la posición inicial controlando la fase excéntrica.",
+        "Mantén la respiración: exhala en el esfuerzo, inhala al volver."
+      ],
+      "file": "upper-back/lever-seated-row.gif",
+      "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/upper-back/lever-seated-row.gif",
+      "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/upper-back/lever-seated-row.thumb.webp"
+    },
+    {
+      "id": "upper-back/lever-t-bar-reverse-grip-row",
+      "slug": "lever-t-bar-reverse-grip-row",
+      "name": "Remo en máquina, con agarre invertido, t barra",
+      "muscle": "upper-back",
+      "bodyPart": "back",
+      "equipment": "lever",
+      "category": "strength",
+      "secondaryMuscles": [
+        "biceps",
+        "forearms",
+        "delts",
+        "lats"
+      ],
+      "instructions": [
+        "Ajusta la máquina a tu medida y selecciona la carga.",
+        "Activa la espalda alta antes de iniciar el movimiento.",
+        "Realiza el movimiento de forma controlada manteniendo la técnica.",
+        "Vuelve a la posición inicial controlando la fase excéntrica.",
+        "Mantén la respiración: exhala en el esfuerzo, inhala al volver."
+      ],
+      "file": "upper-back/lever-t-bar-reverse-grip-row.gif",
+      "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/upper-back/lever-t-bar-reverse-grip-row.gif",
+      "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/upper-back/lever-t-bar-reverse-grip-row.thumb.webp"
+    },
+    {
+      "id": "upper-back/lever-t-bar-row",
+      "slug": "lever-t-bar-row",
+      "name": "Remo en T en máquina",
+      "muscle": "upper-back",
+      "bodyPart": "back",
+      "equipment": "lever",
+      "category": "strength",
+      "secondaryMuscles": [
+        "biceps",
+        "forearms",
+        "delts",
+        "lats"
+      ],
+      "instructions": [
+        "Ajusta la máquina a tu medida y selecciona la carga.",
+        "Activa la espalda alta antes de iniciar el movimiento.",
+        "Realiza el movimiento de forma controlada manteniendo la técnica.",
+        "Vuelve a la posición inicial controlando la fase excéntrica.",
+        "Mantén la respiración: exhala en el esfuerzo, inhala al volver."
+      ],
+      "file": "upper-back/lever-t-bar-row.gif",
+      "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/upper-back/lever-t-bar-row.gif",
+      "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/upper-back/lever-t-bar-row.thumb.webp"
+    },
+    {
+      "id": "upper-back/lever-unilateral-row",
+      "slug": "lever-unilateral-row",
+      "name": "Remo en máquina, unilateral",
+      "muscle": "upper-back",
+      "bodyPart": "back",
+      "equipment": "lever",
+      "category": "strength",
+      "secondaryMuscles": [
+        "biceps",
+        "forearms",
+        "delts",
+        "lats"
+      ],
+      "instructions": [
+        "Ajusta la máquina a tu medida y selecciona la carga.",
+        "Activa la espalda alta antes de iniciar el movimiento.",
+        "Realiza el movimiento de forma controlada manteniendo la técnica.",
+        "Vuelve a la posición inicial controlando la fase excéntrica.",
+        "Mantén la respiración: exhala en el esfuerzo, inhala al volver."
+      ],
+      "file": "upper-back/lever-unilateral-row.gif",
+      "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/upper-back/lever-unilateral-row.gif",
+      "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/upper-back/lever-unilateral-row.thumb.webp"
+    },
+    {
+      "id": "upper-back/medicine-ball-overhead-slam",
+      "slug": "medicine-ball-overhead-slam",
+      "name": "Slam sobre la cabeza con balón medicinal",
+      "muscle": "upper-back",
+      "bodyPart": "back",
+      "equipment": "bodyweight",
+      "category": "strength",
+      "secondaryMuscles": [],
+      "instructions": [
+        "Adopta la postura inicial con buena alineación corporal.",
+        "Activa la espalda alta antes de iniciar el movimiento.",
+        "Realiza el movimiento de forma controlada manteniendo la técnica.",
+        "Vuelve a la posición inicial controlando la fase excéntrica.",
+        "Mantén la respiración: exhala en el esfuerzo, inhala al volver."
+      ],
+      "file": "upper-back/medicine-ball-overhead-slam.gif",
+      "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/upper-back/medicine-ball-overhead-slam.gif",
+      "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/upper-back/medicine-ball-overhead-slam.thumb.webp"
+    },
+    {
+      "id": "upper-back/one-arm-towel-row",
+      "slug": "one-arm-towel-row",
+      "name": "Remo con toalla, a una mano",
+      "muscle": "upper-back",
+      "bodyPart": "back",
+      "equipment": "bodyweight",
+      "category": "strength",
+      "secondaryMuscles": [
+        "biceps",
+        "forearms",
+        "delts",
+        "lats"
+      ],
+      "instructions": [
+        "Adopta la postura inicial con buena alineación corporal.",
+        "Activa la espalda alta antes de iniciar el movimiento.",
+        "Realiza el movimiento de forma controlada manteniendo la técnica.",
+        "Vuelve a la posición inicial controlando la fase excéntrica.",
+        "Mantén la respiración: exhala en el esfuerzo, inhala al volver."
+      ],
+      "file": "upper-back/one-arm-towel-row.gif",
+      "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/upper-back/one-arm-towel-row.gif",
+      "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/upper-back/one-arm-towel-row.thumb.webp"
+    },
+    {
+      "id": "upper-back/resistance-band-seated-straight-back-row",
+      "slug": "resistance-band-seated-straight-back-row",
+      "name": "Remo con banda elástica, sentado, con espalda recta",
+      "muscle": "upper-back",
+      "bodyPart": "back",
+      "equipment": "band",
+      "category": "strength",
+      "secondaryMuscles": [
+        "biceps",
+        "forearms",
+        "delts",
+        "lats"
+      ],
+      "instructions": [
+        "Fija la banda elástica y mantén la tensión inicial.",
+        "Activa la espalda alta antes de iniciar el movimiento.",
+        "Realiza el movimiento de forma controlada manteniendo la técnica.",
+        "Vuelve a la posición inicial controlando la fase excéntrica.",
+        "Mantén la respiración: exhala en el esfuerzo, inhala al volver."
+      ],
+      "file": "upper-back/resistance-band-seated-straight-back-row.gif",
+      "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/upper-back/resistance-band-seated-straight-back-row.gif",
+      "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/upper-back/resistance-band-seated-straight-back-row.thumb.webp"
+    },
+    {
+      "id": "upper-back/rope-climb",
+      "slug": "rope-climb",
+      "name": "Subida por cuerda",
+      "muscle": "upper-back",
+      "bodyPart": "back",
+      "equipment": "bodyweight",
+      "category": "strength",
+      "secondaryMuscles": [],
+      "instructions": [
+        "Adopta la postura inicial con buena alineación corporal.",
+        "Activa la espalda alta antes de iniciar el movimiento.",
+        "Realiza el movimiento de forma controlada manteniendo la técnica.",
+        "Vuelve a la posición inicial controlando la fase excéntrica.",
+        "Mantén la respiración: exhala en el esfuerzo, inhala al volver."
+      ],
+      "file": "upper-back/rope-climb.gif",
+      "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/upper-back/rope-climb.gif",
+      "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/upper-back/rope-climb.thumb.webp"
+    },
+    {
+      "id": "upper-back/skin-the-cat",
+      "slug": "skin-the-cat",
+      "name": "Skin the cat",
+      "muscle": "upper-back",
+      "bodyPart": "back",
+      "equipment": "bodyweight",
+      "category": "strength",
+      "secondaryMuscles": [],
+      "instructions": [
+        "Adopta la postura inicial con buena alineación corporal.",
+        "Activa la espalda alta antes de iniciar el movimiento.",
+        "Realiza el movimiento de forma controlada manteniendo la técnica.",
+        "Vuelve a la posición inicial controlando la fase excéntrica.",
+        "Mantén la respiración: exhala en el esfuerzo, inhala al volver."
+      ],
+      "file": "upper-back/skin-the-cat.gif",
+      "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/upper-back/skin-the-cat.gif",
+      "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/upper-back/skin-the-cat.thumb.webp"
+    },
+    {
+      "id": "upper-back/smith-bent-over-row",
+      "slug": "smith-bent-over-row",
+      "name": "Remo inclinado en máquina Smith",
+      "muscle": "upper-back",
+      "bodyPart": "back",
+      "equipment": "smith",
+      "category": "strength",
+      "secondaryMuscles": [
+        "biceps",
+        "forearms",
+        "delts",
+        "lats"
+      ],
+      "instructions": [
+        "Coloca la barra en la máquina Smith a la altura adecuada.",
+        "Activa la espalda alta antes de iniciar el movimiento.",
+        "Realiza el movimiento de forma controlada manteniendo la técnica.",
+        "Vuelve a la posición inicial controlando la fase excéntrica.",
+        "Mantén la respiración: exhala en el esfuerzo, inhala al volver."
+      ],
+      "file": "upper-back/smith-bent-over-row.gif",
+      "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/upper-back/smith-bent-over-row.gif",
+      "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/upper-back/smith-bent-over-row.thumb.webp"
+    },
+    {
+      "id": "upper-back/smith-narrow-row",
+      "slug": "smith-narrow-row",
+      "name": "Remo en máquina Smith, estrecho",
+      "muscle": "upper-back",
+      "bodyPart": "back",
+      "equipment": "smith",
+      "category": "strength",
+      "secondaryMuscles": [
+        "biceps",
+        "forearms",
+        "delts",
+        "lats"
+      ],
+      "instructions": [
+        "Coloca la barra en la máquina Smith a la altura adecuada.",
+        "Activa la espalda alta antes de iniciar el movimiento.",
+        "Realiza el movimiento de forma controlada manteniendo la técnica.",
+        "Vuelve a la posición inicial controlando la fase excéntrica.",
+        "Mantén la respiración: exhala en el esfuerzo, inhala al volver."
+      ],
+      "file": "upper-back/smith-narrow-row.gif",
+      "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/upper-back/smith-narrow-row.gif",
+      "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/upper-back/smith-narrow-row.thumb.webp"
+    },
+    {
+      "id": "upper-back/smith-one-arm-row",
+      "slug": "smith-one-arm-row",
+      "name": "Remo en máquina Smith, a una mano",
+      "muscle": "upper-back",
+      "bodyPart": "back",
+      "equipment": "smith",
+      "category": "strength",
+      "secondaryMuscles": [
+        "biceps",
+        "forearms",
+        "delts",
+        "lats"
+      ],
+      "instructions": [
+        "Coloca la barra en la máquina Smith a la altura adecuada.",
+        "Activa la espalda alta antes de iniciar el movimiento.",
+        "Realiza el movimiento de forma controlada manteniendo la técnica.",
+        "Vuelve a la posición inicial controlando la fase excéntrica.",
+        "Mantén la respiración: exhala en el esfuerzo, inhala al volver."
+      ],
+      "file": "upper-back/smith-one-arm-row.gif",
+      "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/upper-back/smith-one-arm-row.gif",
+      "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/upper-back/smith-one-arm-row.thumb.webp"
+    },
+    {
+      "id": "upper-back/smith-reverse-grip-bent-over-row",
+      "slug": "smith-reverse-grip-bent-over-row",
+      "name": "Remo inclinado en máquina Smith, con agarre invertido",
+      "muscle": "upper-back",
+      "bodyPart": "back",
+      "equipment": "smith",
+      "category": "strength",
+      "secondaryMuscles": [
+        "biceps",
+        "forearms",
+        "delts",
+        "lats"
+      ],
+      "instructions": [
+        "Coloca la barra en la máquina Smith a la altura adecuada.",
+        "Activa la espalda alta antes de iniciar el movimiento.",
+        "Realiza el movimiento de forma controlada manteniendo la técnica.",
+        "Vuelve a la posición inicial controlando la fase excéntrica.",
+        "Mantén la respiración: exhala en el esfuerzo, inhala al volver."
+      ],
+      "file": "upper-back/smith-reverse-grip-bent-over-row.gif",
+      "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/upper-back/smith-reverse-grip-bent-over-row.gif",
+      "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/upper-back/smith-reverse-grip-bent-over-row.thumb.webp"
+    },
+    {
+      "id": "upper-back/standing-archer",
+      "slug": "standing-archer",
+      "name": "Del arquero, de pie",
+      "muscle": "upper-back",
+      "bodyPart": "back",
+      "equipment": "other",
+      "category": "strength",
+      "secondaryMuscles": [],
+      "instructions": [
+        "Prepara el equipo y adopta la postura inicial.",
+        "Activa la espalda alta antes de iniciar el movimiento.",
+        "Realiza el movimiento de forma controlada manteniendo la técnica.",
+        "Vuelve a la posición inicial controlando la fase excéntrica.",
+        "Mantén la respiración: exhala en el esfuerzo, inhala al volver."
+      ],
+      "file": "upper-back/standing-archer.gif",
+      "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/upper-back/standing-archer.gif",
+      "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/upper-back/standing-archer.thumb.webp"
+    },
+    {
+      "id": "upper-back/suspended-row",
+      "slug": "suspended-row",
+      "name": "Remo, suspendido",
+      "muscle": "upper-back",
+      "bodyPart": "back",
+      "equipment": "bodyweight",
+      "category": "strength",
+      "secondaryMuscles": [
+        "biceps",
+        "forearms",
+        "delts",
+        "lats"
+      ],
+      "instructions": [
+        "Adopta la postura inicial con buena alineación corporal.",
+        "Activa la espalda alta antes de iniciar el movimiento.",
+        "Realiza el movimiento de forma controlada manteniendo la técnica.",
+        "Vuelve a la posición inicial controlando la fase excéntrica.",
+        "Mantén la respiración: exhala en el esfuerzo, inhala al volver."
+      ],
+      "file": "upper-back/suspended-row.gif",
+      "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/upper-back/suspended-row.gif",
+      "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/upper-back/suspended-row.thumb.webp"
+    },
+    {
+      "id": "upper-back/upper-back-stretch",
+      "slug": "upper-back-stretch",
+      "name": "Estiramiento, superior espalda",
+      "muscle": "upper-back",
+      "bodyPart": "back",
+      "equipment": "bodyweight",
+      "category": "stretching",
+      "secondaryMuscles": [],
+      "instructions": [
+        "Adopta la postura inicial con buena alineación corporal.",
+        "Lleva el cuerpo a la posición de estiramiento de la espalda alta.",
+        "Mantén entre 20 y 40 segundos respirando de forma profunda.",
+        "Vuelve a la posición inicial lentamente y repite si lo deseas."
+      ],
+      "file": "upper-back/upper-back-stretch.gif",
+      "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/upper-back/upper-back-stretch.gif",
+      "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/upper-back/upper-back-stretch.thumb.webp"
+    }
+  ]
+}

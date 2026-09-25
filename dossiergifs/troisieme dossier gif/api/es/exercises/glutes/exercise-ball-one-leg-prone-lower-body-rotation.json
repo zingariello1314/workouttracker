@@ -1,0 +1,20 @@
+{
+  "id": "glutes/exercise-ball-one-leg-prone-lower-body-rotation",
+  "slug": "exercise-ball-one-leg-prone-lower-body-rotation",
+  "name": "Inferior body rotation tumbado boca abajo en fitball, a una pierna",
+  "muscle": "glutes",
+  "bodyPart": "legs",
+  "equipment": "bodyweight",
+  "category": "strength",
+  "secondaryMuscles": [],
+  "instructions": [
+    "Adopta la postura inicial con buena alineación corporal.",
+    "Activa los glúteos antes de iniciar el movimiento.",
+    "Realiza el movimiento de forma controlada manteniendo la técnica.",
+    "Vuelve a la posición inicial controlando la fase excéntrica.",
+    "Mantén la respiración: exhala en el esfuerzo, inhala al volver."
+  ],
+  "file": "glutes/exercise-ball-one-leg-prone-lower-body-rotation.gif",
+  "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/glutes/exercise-ball-one-leg-prone-lower-body-rotation.gif",
+  "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/glutes/exercise-ball-one-leg-prone-lower-body-rotation.thumb.webp"
+}

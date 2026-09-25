@@ -1,0 +1,19 @@
+{
+  "id": "cardio/short-stride-run",
+  "slug": "short-stride-run",
+  "name": "Short Stride Run",
+  "muscle": "cardio",
+  "bodyPart": "cardio",
+  "equipment": "bodyweight",
+  "category": "cardio",
+  "secondaryMuscles": [],
+  "instructions": [
+    "Adopt the starting position with proper body alignment.",
+    "Keep a steady pace adapted to your fitness level.",
+    "Engage your core and keep an upright posture throughout.",
+    "Continue for the planned time or repetitions."
+  ],
+  "file": "cardio/short-stride-run.gif",
+  "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/cardio/short-stride-run.gif",
+  "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/cardio/short-stride-run.thumb.webp"
+}

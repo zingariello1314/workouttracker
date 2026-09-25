@@ -1,0 +1,25 @@
+{
+  "id": "upper-back/band-one-arm-twisting-seated-row",
+  "slug": "band-one-arm-twisting-seated-row",
+  "name": "Remo sentado con banda, a una mano con giro",
+  "muscle": "upper-back",
+  "bodyPart": "back",
+  "equipment": "band",
+  "category": "strength",
+  "secondaryMuscles": [
+    "biceps",
+    "forearms",
+    "delts",
+    "lats"
+  ],
+  "instructions": [
+    "Fija la banda elástica y mantén la tensión inicial.",
+    "Activa la espalda alta antes de iniciar el movimiento.",
+    "Realiza el movimiento de forma controlada manteniendo la técnica.",
+    "Vuelve a la posición inicial controlando la fase excéntrica.",
+    "Mantén la respiración: exhala en el esfuerzo, inhala al volver."
+  ],
+  "file": "upper-back/band-one-arm-twisting-seated-row.gif",
+  "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/upper-back/band-one-arm-twisting-seated-row.gif",
+  "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/upper-back/band-one-arm-twisting-seated-row.thumb.webp"
+}

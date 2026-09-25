@@ -1,0 +1,23 @@
+{
+  "id": "delts/lever-seated-reverse-fly-parallel-grip",
+  "slug": "lever-seated-reverse-fly-parallel-grip",
+  "name": "Apertura inversa en máquina, sentado, con agarre paralelo",
+  "muscle": "delts",
+  "bodyPart": "shoulders",
+  "equipment": "lever",
+  "category": "strength",
+  "secondaryMuscles": [
+    "traps",
+    "upper-back"
+  ],
+  "instructions": [
+    "Ajusta la máquina a tu medida y selecciona la carga.",
+    "Activa los hombros antes de iniciar el movimiento.",
+    "Realiza el movimiento de forma controlada manteniendo la técnica.",
+    "Vuelve a la posición inicial controlando la fase excéntrica.",
+    "Mantén la respiración: exhala en el esfuerzo, inhala al volver."
+  ],
+  "file": "delts/lever-seated-reverse-fly-parallel-grip.gif",
+  "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/delts/lever-seated-reverse-fly-parallel-grip.gif",
+  "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/delts/lever-seated-reverse-fly-parallel-grip.thumb.webp"
+}

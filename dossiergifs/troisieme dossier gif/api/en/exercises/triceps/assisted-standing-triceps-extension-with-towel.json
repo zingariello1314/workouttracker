@@ -1,0 +1,22 @@
+{
+  "id": "triceps/assisted-standing-triceps-extension-with-towel",
+  "slug": "assisted-standing-triceps-extension-with-towel",
+  "name": "Assisted Standing Triceps Extension With Towel",
+  "muscle": "triceps",
+  "bodyPart": "arms",
+  "equipment": "bodyweight",
+  "category": "strength",
+  "secondaryMuscles": [
+    "delts"
+  ],
+  "instructions": [
+    "Adopt the starting position with proper body alignment.",
+    "Pre-engage the triceps before initiating the movement.",
+    "Perform the movement in a controlled manner, keeping good form.",
+    "Return to the starting position controlling the eccentric phase.",
+    "Breathe: exhale on effort, inhale on the way back."
+  ],
+  "file": "triceps/assisted-standing-triceps-extension-with-towel.gif",
+  "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/triceps/assisted-standing-triceps-extension-with-towel.gif",
+  "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/triceps/assisted-standing-triceps-extension-with-towel.thumb.webp"
+}

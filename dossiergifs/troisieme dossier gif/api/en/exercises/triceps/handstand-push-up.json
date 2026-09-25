@@ -1,0 +1,24 @@
+{
+  "id": "triceps/handstand-push-up",
+  "slug": "handstand-push-up",
+  "name": "Handstand Push Up",
+  "muscle": "triceps",
+  "bodyPart": "arms",
+  "equipment": "bodyweight",
+  "category": "strength",
+  "secondaryMuscles": [
+    "delts",
+    "abs",
+    "traps"
+  ],
+  "instructions": [
+    "Adopt the starting position with proper body alignment.",
+    "Pre-engage the triceps before initiating the movement.",
+    "Perform the movement in a controlled manner, keeping good form.",
+    "Return to the starting position controlling the eccentric phase.",
+    "Breathe: exhale on effort, inhale on the way back."
+  ],
+  "file": "triceps/handstand-push-up.gif",
+  "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/triceps/handstand-push-up.gif",
+  "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/triceps/handstand-push-up.thumb.webp"
+}

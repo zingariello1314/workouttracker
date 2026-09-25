@@ -1,0 +1,25 @@
+{
+  "id": "upper-back/smith-bent-over-row",
+  "slug": "smith-bent-over-row",
+  "name": "Remo inclinado en máquina Smith",
+  "muscle": "upper-back",
+  "bodyPart": "back",
+  "equipment": "smith",
+  "category": "strength",
+  "secondaryMuscles": [
+    "biceps",
+    "forearms",
+    "delts",
+    "lats"
+  ],
+  "instructions": [
+    "Coloca la barra en la máquina Smith a la altura adecuada.",
+    "Activa la espalda alta antes de iniciar el movimiento.",
+    "Realiza el movimiento de forma controlada manteniendo la técnica.",
+    "Vuelve a la posición inicial controlando la fase excéntrica.",
+    "Mantén la respiración: exhala en el esfuerzo, inhala al volver."
+  ],
+  "file": "upper-back/smith-bent-over-row.gif",
+  "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/upper-back/smith-bent-over-row.gif",
+  "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/upper-back/smith-bent-over-row.thumb.webp"
+}

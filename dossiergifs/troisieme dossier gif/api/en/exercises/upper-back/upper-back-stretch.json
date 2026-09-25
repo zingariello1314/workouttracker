@@ -1,0 +1,19 @@
+{
+  "id": "upper-back/upper-back-stretch",
+  "slug": "upper-back-stretch",
+  "name": "Upper Back Stretch",
+  "muscle": "upper-back",
+  "bodyPart": "back",
+  "equipment": "bodyweight",
+  "category": "stretching",
+  "secondaryMuscles": [],
+  "instructions": [
+    "Adopt the starting position with proper body alignment.",
+    "Move into the the upper back stretch position.",
+    "Hold for 20 to 40 seconds breathing deeply.",
+    "Return slowly to the starting position and repeat if desired."
+  ],
+  "file": "upper-back/upper-back-stretch.gif",
+  "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/upper-back/upper-back-stretch.gif",
+  "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/upper-back/upper-back-stretch.thumb.webp"
+}

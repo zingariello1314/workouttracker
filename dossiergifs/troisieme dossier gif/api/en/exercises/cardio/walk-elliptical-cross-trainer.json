@@ -1,0 +1,19 @@
+{
+  "id": "cardio/walk-elliptical-cross-trainer",
+  "slug": "walk-elliptical-cross-trainer",
+  "name": "Walk Elliptical Cross Trainer",
+  "muscle": "cardio",
+  "bodyPart": "cardio",
+  "equipment": "machine",
+  "category": "cardio",
+  "secondaryMuscles": [],
+  "instructions": [
+    "Adjust the machine to your size and select the load.",
+    "Keep a steady pace adapted to your fitness level.",
+    "Engage your core and keep an upright posture throughout.",
+    "Continue for the planned time or repetitions."
+  ],
+  "file": "cardio/walk-elliptical-cross-trainer.gif",
+  "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/cardio/walk-elliptical-cross-trainer.gif",
+  "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/cardio/walk-elliptical-cross-trainer.thumb.webp"
+}

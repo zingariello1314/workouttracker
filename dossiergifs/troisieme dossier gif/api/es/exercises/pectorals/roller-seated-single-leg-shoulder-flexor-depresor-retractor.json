@@ -1,0 +1,20 @@
+{
+  "id": "pectorals/roller-seated-single-leg-shoulder-flexor-depresor-retractor",
+  "slug": "roller-seated-single-leg-shoulder-flexor-depresor-retractor",
+  "name": "Roller hombro flexor depresor retractor, sentado, a una pierna",
+  "muscle": "pectorals",
+  "bodyPart": "chest",
+  "equipment": "bodyweight",
+  "category": "strength",
+  "secondaryMuscles": [],
+  "instructions": [
+    "Adopta la postura inicial con buena alineación corporal.",
+    "Activa el pectoral antes de iniciar el movimiento.",
+    "Realiza el movimiento de forma controlada manteniendo la técnica.",
+    "Vuelve a la posición inicial controlando la fase excéntrica.",
+    "Mantén la respiración: exhala en el esfuerzo, inhala al volver."
+  ],
+  "file": "pectorals/roller-seated-single-leg-shoulder-flexor-depresor-retractor.gif",
+  "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/pectorals/roller-seated-single-leg-shoulder-flexor-depresor-retractor.gif",
+  "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/pectorals/roller-seated-single-leg-shoulder-flexor-depresor-retractor.thumb.webp"
+}

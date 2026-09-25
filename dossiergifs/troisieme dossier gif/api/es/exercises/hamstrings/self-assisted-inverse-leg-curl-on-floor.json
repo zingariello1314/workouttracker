@@ -1,0 +1,23 @@
+{
+  "id": "hamstrings/self-assisted-inverse-leg-curl-on-floor",
+  "slug": "self-assisted-inverse-leg-curl-on-floor",
+  "name": "Curl femoral nórdico, asistido en el suelo, self",
+  "muscle": "hamstrings",
+  "bodyPart": "legs",
+  "equipment": "bodyweight",
+  "category": "strength",
+  "secondaryMuscles": [
+    "glutes",
+    "calves"
+  ],
+  "instructions": [
+    "Adopta la postura inicial con buena alineación corporal.",
+    "Activa los isquiotibiales antes de iniciar el movimiento.",
+    "Realiza el movimiento de forma controlada manteniendo la técnica.",
+    "Vuelve a la posición inicial controlando la fase excéntrica.",
+    "Mantén la respiración: exhala en el esfuerzo, inhala al volver."
+  ],
+  "file": "hamstrings/self-assisted-inverse-leg-curl-on-floor.gif",
+  "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/hamstrings/self-assisted-inverse-leg-curl-on-floor.gif",
+  "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/hamstrings/self-assisted-inverse-leg-curl-on-floor.thumb.webp"
+}

@@ -1,0 +1,25 @@
+{
+  "id": "upper-back/dumbbell-side-plank-with-rear-fly",
+  "slug": "dumbbell-side-plank-with-rear-fly",
+  "name": "Plancha lateral con mancuerna y apertura posterior",
+  "muscle": "upper-back",
+  "bodyPart": "back",
+  "equipment": "dumbbell",
+  "category": "strength",
+  "secondaryMuscles": [
+    "abs",
+    "delts",
+    "glutes",
+    "traps"
+  ],
+  "instructions": [
+    "Coge una mancuerna en cada mano (o la indicada) con un peso adecuado.",
+    "Activa la espalda alta antes de iniciar el movimiento.",
+    "Realiza el movimiento de forma controlada manteniendo la técnica.",
+    "Vuelve a la posición inicial controlando la fase excéntrica.",
+    "Mantén la respiración: exhala en el esfuerzo, inhala al volver."
+  ],
+  "file": "upper-back/dumbbell-side-plank-with-rear-fly.gif",
+  "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/upper-back/dumbbell-side-plank-with-rear-fly.gif",
+  "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/upper-back/dumbbell-side-plank-with-rear-fly.thumb.webp"
+}

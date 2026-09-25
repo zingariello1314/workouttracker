@@ -1,0 +1,417 @@
+{
+  "muscle": "spine",
+  "count": 19,
+  "exercises": [
+    {
+      "id": "spine/back-extension-on-exercise-ball",
+      "slug": "back-extension-on-exercise-ball",
+      "name": "Extensión, en fitball, espalda",
+      "muscle": "spine",
+      "bodyPart": "back",
+      "equipment": "bodyweight",
+      "category": "strength",
+      "secondaryMuscles": [
+        "glutes",
+        "hamstrings"
+      ],
+      "instructions": [
+        "Adopta la postura inicial con buena alineación corporal.",
+        "Activa la zona lumbar antes de iniciar el movimiento.",
+        "Realiza el movimiento de forma controlada manteniendo la técnica.",
+        "Vuelve a la posición inicial controlando la fase excéntrica.",
+        "Mantén la respiración: exhala en el esfuerzo, inhala al volver."
+      ],
+      "file": "spine/back-extension-on-exercise-ball.gif",
+      "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/spine/back-extension-on-exercise-ball.gif",
+      "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/spine/back-extension-on-exercise-ball.thumb.webp"
+    },
+    {
+      "id": "spine/band-straight-leg-deadlift",
+      "slug": "band-straight-leg-deadlift",
+      "name": "Peso muerto con banda, con pierna recta",
+      "muscle": "spine",
+      "bodyPart": "back",
+      "equipment": "band",
+      "category": "strength",
+      "secondaryMuscles": [
+        "glutes",
+        "hamstrings",
+        "lats",
+        "traps",
+        "forearms"
+      ],
+      "instructions": [
+        "Fija la banda elástica y mantén la tensión inicial.",
+        "Activa la zona lumbar antes de iniciar el movimiento.",
+        "Realiza el movimiento de forma controlada manteniendo la técnica.",
+        "Vuelve a la posición inicial controlando la fase excéntrica.",
+        "Mantén la respiración: exhala en el esfuerzo, inhala al volver."
+      ],
+      "file": "spine/band-straight-leg-deadlift.gif",
+      "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/spine/band-straight-leg-deadlift.gif",
+      "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/spine/band-straight-leg-deadlift.thumb.webp"
+    },
+    {
+      "id": "spine/exercise-ball-back-extension-with-arms-extended",
+      "slug": "exercise-ball-back-extension-with-arms-extended",
+      "name": "Extensión en fitball, con brazos extendidos, espalda",
+      "muscle": "spine",
+      "bodyPart": "back",
+      "equipment": "bodyweight",
+      "category": "strength",
+      "secondaryMuscles": [
+        "glutes",
+        "hamstrings"
+      ],
+      "instructions": [
+        "Adopta la postura inicial con buena alineación corporal.",
+        "Activa la zona lumbar antes de iniciar el movimiento.",
+        "Realiza el movimiento de forma controlada manteniendo la técnica.",
+        "Vuelve a la posición inicial controlando la fase excéntrica.",
+        "Mantén la respiración: exhala en el esfuerzo, inhala al volver."
+      ],
+      "file": "spine/exercise-ball-back-extension-with-arms-extended.gif",
+      "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/spine/exercise-ball-back-extension-with-arms-extended.gif",
+      "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/spine/exercise-ball-back-extension-with-arms-extended.thumb.webp"
+    },
+    {
+      "id": "spine/exercise-ball-back-extension-with-hands-behind-head",
+      "slug": "exercise-ball-back-extension-with-hands-behind-head",
+      "name": "Extensión en fitball, con manos detrás de la cabeza, espalda",
+      "muscle": "spine",
+      "bodyPart": "back",
+      "equipment": "bodyweight",
+      "category": "strength",
+      "secondaryMuscles": [
+        "glutes",
+        "hamstrings"
+      ],
+      "instructions": [
+        "Adopta la postura inicial con buena alineación corporal.",
+        "Activa la zona lumbar antes de iniciar el movimiento.",
+        "Realiza el movimiento de forma controlada manteniendo la técnica.",
+        "Vuelve a la posición inicial controlando la fase excéntrica.",
+        "Mantén la respiración: exhala en el esfuerzo, inhala al volver."
+      ],
+      "file": "spine/exercise-ball-back-extension-with-hands-behind-head.gif",
+      "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/spine/exercise-ball-back-extension-with-hands-behind-head.gif",
+      "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/spine/exercise-ball-back-extension-with-hands-behind-head.thumb.webp"
+    },
+    {
+      "id": "spine/exercise-ball-back-extension-with-knees-off-ground",
+      "slug": "exercise-ball-back-extension-with-knees-off-ground",
+      "name": "Extensión en fitball, espalda rodillas off ground",
+      "muscle": "spine",
+      "bodyPart": "back",
+      "equipment": "bodyweight",
+      "category": "strength",
+      "secondaryMuscles": [
+        "glutes",
+        "hamstrings"
+      ],
+      "instructions": [
+        "Adopta la postura inicial con buena alineación corporal.",
+        "Activa la zona lumbar antes de iniciar el movimiento.",
+        "Realiza el movimiento de forma controlada manteniendo la técnica.",
+        "Vuelve a la posición inicial controlando la fase excéntrica.",
+        "Mantén la respiración: exhala en el esfuerzo, inhala al volver."
+      ],
+      "file": "spine/exercise-ball-back-extension-with-knees-off-ground.gif",
+      "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/spine/exercise-ball-back-extension-with-knees-off-ground.gif",
+      "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/spine/exercise-ball-back-extension-with-knees-off-ground.thumb.webp"
+    },
+    {
+      "id": "spine/exercise-ball-back-extension-with-rotation",
+      "slug": "exercise-ball-back-extension-with-rotation",
+      "name": "Extensión en fitball, espalda rotation",
+      "muscle": "spine",
+      "bodyPart": "back",
+      "equipment": "bodyweight",
+      "category": "strength",
+      "secondaryMuscles": [
+        "glutes",
+        "hamstrings"
+      ],
+      "instructions": [
+        "Adopta la postura inicial con buena alineación corporal.",
+        "Activa la zona lumbar antes de iniciar el movimiento.",
+        "Realiza el movimiento de forma controlada manteniendo la técnica.",
+        "Vuelve a la posición inicial controlando la fase excéntrica.",
+        "Mantén la respiración: exhala en el esfuerzo, inhala al volver."
+      ],
+      "file": "spine/exercise-ball-back-extension-with-rotation.gif",
+      "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/spine/exercise-ball-back-extension-with-rotation.gif",
+      "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/spine/exercise-ball-back-extension-with-rotation.thumb.webp"
+    },
+    {
+      "id": "spine/exercise-ball-hug",
+      "slug": "exercise-ball-hug",
+      "name": "Abrazar en fitball",
+      "muscle": "spine",
+      "bodyPart": "back",
+      "equipment": "bodyweight",
+      "category": "strength",
+      "secondaryMuscles": [],
+      "instructions": [
+        "Adopta la postura inicial con buena alineación corporal.",
+        "Activa la zona lumbar antes de iniciar el movimiento.",
+        "Realiza el movimiento de forma controlada manteniendo la técnica.",
+        "Vuelve a la posición inicial controlando la fase excéntrica.",
+        "Mantén la respiración: exhala en el esfuerzo, inhala al volver."
+      ],
+      "file": "spine/exercise-ball-hug.gif",
+      "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/spine/exercise-ball-hug.gif",
+      "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/spine/exercise-ball-hug.thumb.webp"
+    },
+    {
+      "id": "spine/exercise-ball-prone-leg-raise",
+      "slug": "exercise-ball-prone-leg-raise",
+      "name": "Elevación de piernas tumbado boca abajo en fitball",
+      "muscle": "spine",
+      "bodyPart": "back",
+      "equipment": "bodyweight",
+      "category": "strength",
+      "secondaryMuscles": [],
+      "instructions": [
+        "Adopta la postura inicial con buena alineación corporal.",
+        "Activa la zona lumbar antes de iniciar el movimiento.",
+        "Realiza el movimiento de forma controlada manteniendo la técnica.",
+        "Vuelve a la posición inicial controlando la fase excéntrica.",
+        "Mantén la respiración: exhala en el esfuerzo, inhala al volver."
+      ],
+      "file": "spine/exercise-ball-prone-leg-raise.gif",
+      "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/spine/exercise-ball-prone-leg-raise.gif",
+      "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/spine/exercise-ball-prone-leg-raise.thumb.webp"
+    },
+    {
+      "id": "spine/hyperextension-on-bench",
+      "slug": "hyperextension-on-bench",
+      "name": "Hyperextension, en banco",
+      "muscle": "spine",
+      "bodyPart": "back",
+      "equipment": "bodyweight",
+      "category": "strength",
+      "secondaryMuscles": [
+        "glutes",
+        "hamstrings"
+      ],
+      "instructions": [
+        "Adopta la postura inicial con buena alineación corporal.",
+        "Activa la zona lumbar antes de iniciar el movimiento.",
+        "Realiza el movimiento de forma controlada manteniendo la técnica.",
+        "Vuelve a la posición inicial controlando la fase excéntrica.",
+        "Mantén la respiración: exhala en el esfuerzo, inhala al volver."
+      ],
+      "file": "spine/hyperextension-on-bench.gif",
+      "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/spine/hyperextension-on-bench.gif",
+      "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/spine/hyperextension-on-bench.thumb.webp"
+    },
+    {
+      "id": "spine/hyperextension",
+      "slug": "hyperextension",
+      "name": "Hyperextension",
+      "muscle": "spine",
+      "bodyPart": "back",
+      "equipment": "bodyweight",
+      "category": "strength",
+      "secondaryMuscles": [
+        "glutes",
+        "hamstrings"
+      ],
+      "instructions": [
+        "Adopta la postura inicial con buena alineación corporal.",
+        "Activa la zona lumbar antes de iniciar el movimiento.",
+        "Realiza el movimiento de forma controlada manteniendo la técnica.",
+        "Vuelve a la posición inicial controlando la fase excéntrica.",
+        "Mantén la respiración: exhala en el esfuerzo, inhala al volver."
+      ],
+      "file": "spine/hyperextension.gif",
+      "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/spine/hyperextension.gif",
+      "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/spine/hyperextension.thumb.webp"
+    },
+    {
+      "id": "spine/lever-back-extension",
+      "slug": "lever-back-extension",
+      "name": "Extensión en máquina, espalda",
+      "muscle": "spine",
+      "bodyPart": "back",
+      "equipment": "lever",
+      "category": "strength",
+      "secondaryMuscles": [
+        "glutes",
+        "hamstrings"
+      ],
+      "instructions": [
+        "Ajusta la máquina a tu medida y selecciona la carga.",
+        "Activa la zona lumbar antes de iniciar el movimiento.",
+        "Realiza el movimiento de forma controlada manteniendo la técnica.",
+        "Vuelve a la posición inicial controlando la fase excéntrica.",
+        "Mantén la respiración: exhala en el esfuerzo, inhala al volver."
+      ],
+      "file": "spine/lever-back-extension.gif",
+      "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/spine/lever-back-extension.gif",
+      "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/spine/lever-back-extension.thumb.webp"
+    },
+    {
+      "id": "spine/lower-back-curl",
+      "slug": "lower-back-curl",
+      "name": "Extensión lumbar",
+      "muscle": "spine",
+      "bodyPart": "back",
+      "equipment": "bodyweight",
+      "category": "strength",
+      "secondaryMuscles": [],
+      "instructions": [
+        "Adopta la postura inicial con buena alineación corporal.",
+        "Activa la zona lumbar antes de iniciar el movimiento.",
+        "Realiza el movimiento de forma controlada manteniendo la técnica.",
+        "Vuelve a la posición inicial controlando la fase excéntrica.",
+        "Mantén la respiración: exhala en el esfuerzo, inhala al volver."
+      ],
+      "file": "spine/lower-back-curl.gif",
+      "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/spine/lower-back-curl.gif",
+      "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/spine/lower-back-curl.thumb.webp"
+    },
+    {
+      "id": "spine/roller-back-stretch",
+      "slug": "roller-back-stretch",
+      "name": "Estiramiento, roller espalda",
+      "muscle": "spine",
+      "bodyPart": "back",
+      "equipment": "bodyweight",
+      "category": "stretching",
+      "secondaryMuscles": [],
+      "instructions": [
+        "Adopta la postura inicial con buena alineación corporal.",
+        "Lleva el cuerpo a la posición de estiramiento de la zona lumbar.",
+        "Mantén entre 20 y 40 segundos respirando de forma profunda.",
+        "Vuelve a la posición inicial lentamente y repite si lo deseas."
+      ],
+      "file": "spine/roller-back-stretch.gif",
+      "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/spine/roller-back-stretch.gif",
+      "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/spine/roller-back-stretch.thumb.webp"
+    },
+    {
+      "id": "spine/sphinx",
+      "slug": "sphinx",
+      "name": "Esfinge",
+      "muscle": "spine",
+      "bodyPart": "back",
+      "equipment": "bodyweight",
+      "category": "strength",
+      "secondaryMuscles": [],
+      "instructions": [
+        "Adopta la postura inicial con buena alineación corporal.",
+        "Activa la zona lumbar antes de iniciar el movimiento.",
+        "Realiza el movimiento de forma controlada manteniendo la técnica.",
+        "Vuelve a la posición inicial controlando la fase excéntrica.",
+        "Mantén la respiración: exhala en el esfuerzo, inhala al volver."
+      ],
+      "file": "spine/sphinx.gif",
+      "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/spine/sphinx.gif",
+      "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/spine/sphinx.thumb.webp"
+    },
+    {
+      "id": "spine/spine-stretch",
+      "slug": "spine-stretch",
+      "name": "Estiramiento, columna",
+      "muscle": "spine",
+      "bodyPart": "back",
+      "equipment": "bodyweight",
+      "category": "stretching",
+      "secondaryMuscles": [],
+      "instructions": [
+        "Adopta la postura inicial con buena alineación corporal.",
+        "Lleva el cuerpo a la posición de estiramiento de la zona lumbar.",
+        "Mantén entre 20 y 40 segundos respirando de forma profunda.",
+        "Vuelve a la posición inicial lentamente y repite si lo deseas."
+      ],
+      "file": "spine/spine-stretch.gif",
+      "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/spine/spine-stretch.gif",
+      "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/spine/spine-stretch.thumb.webp"
+    },
+    {
+      "id": "spine/standing-pelvic-tilt",
+      "slug": "standing-pelvic-tilt",
+      "name": "Inclinación pélvica, de pie",
+      "muscle": "spine",
+      "bodyPart": "back",
+      "equipment": "bodyweight",
+      "category": "strength",
+      "secondaryMuscles": [],
+      "instructions": [
+        "Adopta la postura inicial con buena alineación corporal.",
+        "Activa la zona lumbar antes de iniciar el movimiento.",
+        "Realiza el movimiento de forma controlada manteniendo la técnica.",
+        "Vuelve a la posición inicial controlando la fase excéntrica.",
+        "Mantén la respiración: exhala en el esfuerzo, inhala al volver."
+      ],
+      "file": "spine/standing-pelvic-tilt.gif",
+      "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/spine/standing-pelvic-tilt.gif",
+      "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/spine/standing-pelvic-tilt.thumb.webp"
+    },
+    {
+      "id": "spine/two-toe-touch-male",
+      "slug": "two-toe-touch-male",
+      "name": "Toques de dos puntas",
+      "muscle": "spine",
+      "bodyPart": "back",
+      "equipment": "bodyweight",
+      "category": "strength",
+      "secondaryMuscles": [],
+      "instructions": [
+        "Adopta la postura inicial con buena alineación corporal.",
+        "Activa la zona lumbar antes de iniciar el movimiento.",
+        "Realiza el movimiento de forma controlada manteniendo la técnica.",
+        "Vuelve a la posición inicial controlando la fase excéntrica.",
+        "Mantén la respiración: exhala en el esfuerzo, inhala al volver."
+      ],
+      "file": "spine/two-toe-touch-male.gif",
+      "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/spine/two-toe-touch-male.gif",
+      "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/spine/two-toe-touch-male.thumb.webp"
+    },
+    {
+      "id": "spine/upward-facing-dog",
+      "slug": "upward-facing-dog",
+      "name": "Perro boca arriba",
+      "muscle": "spine",
+      "bodyPart": "back",
+      "equipment": "bodyweight",
+      "category": "strength",
+      "secondaryMuscles": [],
+      "instructions": [
+        "Adopta la postura inicial con buena alineación corporal.",
+        "Activa la zona lumbar antes de iniciar el movimiento.",
+        "Realiza el movimiento de forma controlada manteniendo la técnica.",
+        "Vuelve a la posición inicial controlando la fase excéntrica.",
+        "Mantén la respiración: exhala en el esfuerzo, inhala al volver."
+      ],
+      "file": "spine/upward-facing-dog.gif",
+      "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/spine/upward-facing-dog.gif",
+      "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/spine/upward-facing-dog.thumb.webp"
+    },
+    {
+      "id": "spine/weighted-hyperextension-on-stability-ball",
+      "slug": "weighted-hyperextension-on-stability-ball",
+      "name": "Hyperextension, con peso en fitball",
+      "muscle": "spine",
+      "bodyPart": "back",
+      "equipment": "bodyweight",
+      "category": "strength",
+      "secondaryMuscles": [
+        "glutes",
+        "hamstrings"
+      ],
+      "instructions": [
+        "Adopta la postura inicial con buena alineación corporal.",
+        "Activa la zona lumbar antes de iniciar el movimiento.",
+        "Realiza el movimiento de forma controlada manteniendo la técnica.",
+        "Vuelve a la posición inicial controlando la fase excéntrica.",
+        "Mantén la respiración: exhala en el esfuerzo, inhala al volver."
+      ],
+      "file": "spine/weighted-hyperextension-on-stability-ball.gif",
+      "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/spine/weighted-hyperextension-on-stability-ball.gif",
+      "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/spine/weighted-hyperextension-on-stability-ball.thumb.webp"
+    }
+  ]
+}

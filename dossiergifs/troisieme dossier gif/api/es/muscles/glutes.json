@@ -1,0 +1,3271 @@
+{
+  "muscle": "glutes",
+  "count": 144,
+  "exercises": [
+    {
+      "id": "glutes/arms-apart-circular-toe-touch-male",
+      "slug": "arms-apart-circular-toe-touch-male",
+      "name": "Tocar punta del pie, brazos apart circular",
+      "muscle": "glutes",
+      "bodyPart": "legs",
+      "equipment": "bodyweight",
+      "category": "strength",
+      "secondaryMuscles": [],
+      "instructions": [
+        "Adopta la postura inicial con buena alineación corporal.",
+        "Activa los glúteos antes de iniciar el movimiento.",
+        "Realiza el movimiento de forma controlada manteniendo la técnica.",
+        "Vuelve a la posición inicial controlando la fase excéntrica.",
+        "Mantén la respiración: exhala en el esfuerzo, inhala al volver."
+      ],
+      "file": "glutes/arms-apart-circular-toe-touch-male.gif",
+      "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/glutes/arms-apart-circular-toe-touch-male.gif",
+      "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/glutes/arms-apart-circular-toe-touch-male.thumb.webp"
+    },
+    {
+      "id": "glutes/assisted-lying-glutes-stretch",
+      "slug": "assisted-lying-glutes-stretch",
+      "name": "Estiramiento, tumbado, asistido, glúteos",
+      "muscle": "glutes",
+      "bodyPart": "legs",
+      "equipment": "bodyweight",
+      "category": "stretching",
+      "secondaryMuscles": [],
+      "instructions": [
+        "Adopta la postura inicial con buena alineación corporal.",
+        "Lleva el cuerpo a la posición de estiramiento de los glúteos.",
+        "Mantén entre 20 y 40 segundos respirando de forma profunda.",
+        "Vuelve a la posición inicial lentamente y repite si lo deseas."
+      ],
+      "file": "glutes/assisted-lying-glutes-stretch.gif",
+      "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/glutes/assisted-lying-glutes-stretch.gif",
+      "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/glutes/assisted-lying-glutes-stretch.thumb.webp"
+    },
+    {
+      "id": "glutes/assisted-lying-gluteus-and-piriformis-stretch",
+      "slug": "assisted-lying-gluteus-and-piriformis-stretch",
+      "name": "Estiramiento asistido de glúteos y piriforme, tumbado",
+      "muscle": "glutes",
+      "bodyPart": "legs",
+      "equipment": "bodyweight",
+      "category": "stretching",
+      "secondaryMuscles": [],
+      "instructions": [
+        "Adopta la postura inicial con buena alineación corporal.",
+        "Lleva el cuerpo a la posición de estiramiento de los glúteos.",
+        "Mantén entre 20 y 40 segundos respirando de forma profunda.",
+        "Vuelve a la posición inicial lentamente y repite si lo deseas."
+      ],
+      "file": "glutes/assisted-lying-gluteus-and-piriformis-stretch.gif",
+      "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/glutes/assisted-lying-gluteus-and-piriformis-stretch.gif",
+      "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/glutes/assisted-lying-gluteus-and-piriformis-stretch.thumb.webp"
+    },
+    {
+      "id": "glutes/band-bent-over-hip-extension",
+      "slug": "band-bent-over-hip-extension",
+      "name": "Extensión de cadera inclinada con banda",
+      "muscle": "glutes",
+      "bodyPart": "legs",
+      "equipment": "band",
+      "category": "strength",
+      "secondaryMuscles": [
+        "hamstrings",
+        "spine"
+      ],
+      "instructions": [
+        "Fija la banda elástica y mantén la tensión inicial.",
+        "Activa los glúteos antes de iniciar el movimiento.",
+        "Realiza el movimiento de forma controlada manteniendo la técnica.",
+        "Vuelve a la posición inicial controlando la fase excéntrica.",
+        "Mantén la respiración: exhala en el esfuerzo, inhala al volver."
+      ],
+      "file": "glutes/band-bent-over-hip-extension.gif",
+      "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/glutes/band-bent-over-hip-extension.gif",
+      "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/glutes/band-bent-over-hip-extension.thumb.webp"
+    },
+    {
+      "id": "glutes/band-hip-lift",
+      "slug": "band-hip-lift",
+      "name": "Elevación de cadera con banda",
+      "muscle": "glutes",
+      "bodyPart": "legs",
+      "equipment": "band",
+      "category": "strength",
+      "secondaryMuscles": [],
+      "instructions": [
+        "Fija la banda elástica y mantén la tensión inicial.",
+        "Activa los glúteos antes de iniciar el movimiento.",
+        "Realiza el movimiento de forma controlada manteniendo la técnica.",
+        "Vuelve a la posición inicial controlando la fase excéntrica.",
+        "Mantén la respiración: exhala en el esfuerzo, inhala al volver."
+      ],
+      "file": "glutes/band-hip-lift.gif",
+      "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/glutes/band-hip-lift.gif",
+      "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/glutes/band-hip-lift.thumb.webp"
+    },
+    {
+      "id": "glutes/band-lying-hip-internal-rotation",
+      "slug": "band-lying-hip-internal-rotation",
+      "name": "Cadera internal rotation con banda, tumbado",
+      "muscle": "glutes",
+      "bodyPart": "legs",
+      "equipment": "band",
+      "category": "strength",
+      "secondaryMuscles": [],
+      "instructions": [
+        "Fija la banda elástica y mantén la tensión inicial.",
+        "Activa los glúteos antes de iniciar el movimiento.",
+        "Realiza el movimiento de forma controlada manteniendo la técnica.",
+        "Vuelve a la posición inicial controlando la fase excéntrica.",
+        "Mantén la respiración: exhala en el esfuerzo, inhala al volver."
+      ],
+      "file": "glutes/band-lying-hip-internal-rotation.gif",
+      "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/glutes/band-lying-hip-internal-rotation.gif",
+      "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/glutes/band-lying-hip-internal-rotation.thumb.webp"
+    },
+    {
+      "id": "glutes/band-pull-through",
+      "slug": "band-pull-through",
+      "name": "Pull through con banda",
+      "muscle": "glutes",
+      "bodyPart": "legs",
+      "equipment": "band",
+      "category": "strength",
+      "secondaryMuscles": [
+        "hamstrings",
+        "spine"
+      ],
+      "instructions": [
+        "Fija la banda elástica y mantén la tensión inicial.",
+        "Activa los glúteos antes de iniciar el movimiento.",
+        "Realiza el movimiento de forma controlada manteniendo la técnica.",
+        "Vuelve a la posición inicial controlando la fase excéntrica.",
+        "Mantén la respiración: exhala en el esfuerzo, inhala al volver."
+      ],
+      "file": "glutes/band-pull-through.gif",
+      "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/glutes/band-pull-through.gif",
+      "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/glutes/band-pull-through.thumb.webp"
+    },
+    {
+      "id": "glutes/band-seated-hip-internal-rotation",
+      "slug": "band-seated-hip-internal-rotation",
+      "name": "Cadera internal rotation con banda, sentado",
+      "muscle": "glutes",
+      "bodyPart": "legs",
+      "equipment": "band",
+      "category": "strength",
+      "secondaryMuscles": [],
+      "instructions": [
+        "Fija la banda elástica y mantén la tensión inicial.",
+        "Activa los glúteos antes de iniciar el movimiento.",
+        "Realiza el movimiento de forma controlada manteniendo la técnica.",
+        "Vuelve a la posición inicial controlando la fase excéntrica.",
+        "Mantén la respiración: exhala en el esfuerzo, inhala al volver."
+      ],
+      "file": "glutes/band-seated-hip-internal-rotation.gif",
+      "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/glutes/band-seated-hip-internal-rotation.gif",
+      "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/glutes/band-seated-hip-internal-rotation.thumb.webp"
+    },
+    {
+      "id": "glutes/band-squat-row",
+      "slug": "band-squat-row",
+      "name": "Sentadilla con remo en banda",
+      "muscle": "glutes",
+      "bodyPart": "legs",
+      "equipment": "band",
+      "category": "strength",
+      "secondaryMuscles": [
+        "hamstrings",
+        "calves",
+        "biceps",
+        "forearms",
+        "delts"
+      ],
+      "instructions": [
+        "Fija la banda elástica y mantén la tensión inicial.",
+        "Activa los glúteos antes de iniciar el movimiento.",
+        "Realiza el movimiento de forma controlada manteniendo la técnica.",
+        "Vuelve a la posición inicial controlando la fase excéntrica.",
+        "Mantén la respiración: exhala en el esfuerzo, inhala al volver."
+      ],
+      "file": "glutes/band-squat-row.gif",
+      "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/glutes/band-squat-row.gif",
+      "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/glutes/band-squat-row.thumb.webp"
+    },
+    {
+      "id": "glutes/band-squat",
+      "slug": "band-squat",
+      "name": "Sentadilla con banda",
+      "muscle": "glutes",
+      "bodyPart": "legs",
+      "equipment": "band",
+      "category": "strength",
+      "secondaryMuscles": [
+        "hamstrings",
+        "calves"
+      ],
+      "instructions": [
+        "Fija la banda elástica y mantén la tensión inicial.",
+        "Activa los glúteos antes de iniciar el movimiento.",
+        "Realiza el movimiento de forma controlada manteniendo la técnica.",
+        "Vuelve a la posición inicial controlando la fase excéntrica.",
+        "Mantén la respiración: exhala en el esfuerzo, inhala al volver."
+      ],
+      "file": "glutes/band-squat.gif",
+      "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/glutes/band-squat.gif",
+      "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/glutes/band-squat.thumb.webp"
+    },
+    {
+      "id": "glutes/band-step-up",
+      "slug": "band-step-up",
+      "name": "Step-up con banda",
+      "muscle": "glutes",
+      "bodyPart": "legs",
+      "equipment": "band",
+      "category": "strength",
+      "secondaryMuscles": [],
+      "instructions": [
+        "Fija la banda elástica y mantén la tensión inicial.",
+        "Activa los glúteos antes de iniciar el movimiento.",
+        "Realiza el movimiento de forma controlada manteniendo la técnica.",
+        "Vuelve a la posición inicial controlando la fase excéntrica.",
+        "Mantén la respiración: exhala en el esfuerzo, inhala al volver."
+      ],
+      "file": "glutes/band-step-up.gif",
+      "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/glutes/band-step-up.gif",
+      "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/glutes/band-step-up.thumb.webp"
+    },
+    {
+      "id": "glutes/band-stiff-leg-deadlift",
+      "slug": "band-stiff-leg-deadlift",
+      "name": "Peso muerto a piernas rígidas con banda",
+      "muscle": "glutes",
+      "bodyPart": "legs",
+      "equipment": "band",
+      "category": "strength",
+      "secondaryMuscles": [
+        "hamstrings",
+        "lats",
+        "traps",
+        "forearms",
+        "spine"
+      ],
+      "instructions": [
+        "Fija la banda elástica y mantén la tensión inicial.",
+        "Activa los glúteos antes de iniciar el movimiento.",
+        "Realiza el movimiento de forma controlada manteniendo la técnica.",
+        "Vuelve a la posición inicial controlando la fase excéntrica.",
+        "Mantén la respiración: exhala en el esfuerzo, inhala al volver."
+      ],
+      "file": "glutes/band-stiff-leg-deadlift.gif",
+      "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/glutes/band-stiff-leg-deadlift.gif",
+      "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/glutes/band-stiff-leg-deadlift.thumb.webp"
+    },
+    {
+      "id": "glutes/band-straight-back-stiff-leg-deadlift",
+      "slug": "band-straight-back-stiff-leg-deadlift",
+      "name": "Peso muerto a piernas rígidas con banda, con espalda recta",
+      "muscle": "glutes",
+      "bodyPart": "legs",
+      "equipment": "band",
+      "category": "strength",
+      "secondaryMuscles": [
+        "hamstrings",
+        "lats",
+        "traps",
+        "forearms",
+        "spine"
+      ],
+      "instructions": [
+        "Fija la banda elástica y mantén la tensión inicial.",
+        "Activa los glúteos antes de iniciar el movimiento.",
+        "Realiza el movimiento de forma controlada manteniendo la técnica.",
+        "Vuelve a la posición inicial controlando la fase excéntrica.",
+        "Mantén la respiración: exhala en el esfuerzo, inhala al volver."
+      ],
+      "file": "glutes/band-straight-back-stiff-leg-deadlift.gif",
+      "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/glutes/band-straight-back-stiff-leg-deadlift.gif",
+      "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/glutes/band-straight-back-stiff-leg-deadlift.thumb.webp"
+    },
+    {
+      "id": "glutes/barbell-clean-grip-front-squat",
+      "slug": "barbell-clean-grip-front-squat",
+      "name": "Sentadilla frontal con agarre de cargada con barra",
+      "muscle": "glutes",
+      "bodyPart": "legs",
+      "equipment": "barbell",
+      "category": "strength",
+      "secondaryMuscles": [
+        "hamstrings",
+        "calves",
+        "spine",
+        "traps",
+        "delts",
+        "forearms"
+      ],
+      "instructions": [
+        "Carga el peso adecuado en la barra y adopta la postura inicial.",
+        "Activa los glúteos antes de iniciar el movimiento.",
+        "Realiza el movimiento de forma controlada manteniendo la técnica.",
+        "Vuelve a la posición inicial controlando la fase excéntrica.",
+        "Mantén la respiración: exhala en el esfuerzo, inhala al volver."
+      ],
+      "file": "glutes/barbell-clean-grip-front-squat.gif",
+      "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/glutes/barbell-clean-grip-front-squat.gif",
+      "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/glutes/barbell-clean-grip-front-squat.thumb.webp"
+    },
+    {
+      "id": "glutes/barbell-deadlift",
+      "slug": "barbell-deadlift",
+      "name": "Peso muerto con barra",
+      "muscle": "glutes",
+      "bodyPart": "legs",
+      "equipment": "barbell",
+      "category": "strength",
+      "secondaryMuscles": [
+        "hamstrings",
+        "lats",
+        "traps",
+        "forearms",
+        "spine"
+      ],
+      "instructions": [
+        "Carga el peso adecuado en la barra y adopta la postura inicial.",
+        "Activa los glúteos antes de iniciar el movimiento.",
+        "Realiza el movimiento de forma controlada manteniendo la técnica.",
+        "Vuelve a la posición inicial controlando la fase excéntrica.",
+        "Mantén la respiración: exhala en el esfuerzo, inhala al volver."
+      ],
+      "file": "glutes/barbell-deadlift.gif",
+      "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/glutes/barbell-deadlift.gif",
+      "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/glutes/barbell-deadlift.thumb.webp"
+    },
+    {
+      "id": "glutes/barbell-front-chest-squat",
+      "slug": "barbell-front-chest-squat",
+      "name": "Sentadilla con barra, frontal, pecho",
+      "muscle": "glutes",
+      "bodyPart": "legs",
+      "equipment": "barbell",
+      "category": "strength",
+      "secondaryMuscles": [
+        "hamstrings",
+        "calves"
+      ],
+      "instructions": [
+        "Carga el peso adecuado en la barra y adopta la postura inicial.",
+        "Activa los glúteos antes de iniciar el movimiento.",
+        "Realiza el movimiento de forma controlada manteniendo la técnica.",
+        "Vuelve a la posición inicial controlando la fase excéntrica.",
+        "Mantén la respiración: exhala en el esfuerzo, inhala al volver."
+      ],
+      "file": "glutes/barbell-front-chest-squat.gif",
+      "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/glutes/barbell-front-chest-squat.gif",
+      "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/glutes/barbell-front-chest-squat.thumb.webp"
+    },
+    {
+      "id": "glutes/barbell-front-squat",
+      "slug": "barbell-front-squat",
+      "name": "Sentadilla frontal con barra",
+      "muscle": "glutes",
+      "bodyPart": "legs",
+      "equipment": "barbell",
+      "category": "strength",
+      "secondaryMuscles": [
+        "hamstrings",
+        "calves"
+      ],
+      "instructions": [
+        "Carga el peso adecuado en la barra y adopta la postura inicial.",
+        "Activa los glúteos antes de iniciar el movimiento.",
+        "Realiza el movimiento de forma controlada manteniendo la técnica.",
+        "Vuelve a la posición inicial controlando la fase excéntrica.",
+        "Mantén la respiración: exhala en el esfuerzo, inhala al volver."
+      ],
+      "file": "glutes/barbell-front-squat.gif",
+      "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/glutes/barbell-front-squat.gif",
+      "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/glutes/barbell-front-squat.thumb.webp"
+    },
+    {
+      "id": "glutes/barbell-full-squat-back-pov",
+      "slug": "barbell-full-squat-back-pov",
+      "name": "Sentadilla completa con barra",
+      "muscle": "glutes",
+      "bodyPart": "legs",
+      "equipment": "barbell",
+      "category": "strength",
+      "secondaryMuscles": [
+        "hamstrings",
+        "calves"
+      ],
+      "instructions": [
+        "Carga el peso adecuado en la barra y adopta la postura inicial.",
+        "Activa los glúteos antes de iniciar el movimiento.",
+        "Realiza el movimiento de forma controlada manteniendo la técnica.",
+        "Vuelve a la posición inicial controlando la fase excéntrica.",
+        "Mantén la respiración: exhala en el esfuerzo, inhala al volver."
+      ],
+      "file": "glutes/barbell-full-squat-back-pov.gif",
+      "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/glutes/barbell-full-squat-back-pov.gif",
+      "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/glutes/barbell-full-squat-back-pov.thumb.webp"
+    },
+    {
+      "id": "glutes/barbell-full-squat-side-pov",
+      "slug": "barbell-full-squat-side-pov",
+      "name": "Sentadilla completa con barra, vista lateral",
+      "muscle": "glutes",
+      "bodyPart": "legs",
+      "equipment": "barbell",
+      "category": "strength",
+      "secondaryMuscles": [
+        "hamstrings",
+        "calves"
+      ],
+      "instructions": [
+        "Carga el peso adecuado en la barra y adopta la postura inicial.",
+        "Activa los glúteos antes de iniciar el movimiento.",
+        "Realiza el movimiento de forma controlada manteniendo la técnica.",
+        "Vuelve a la posición inicial controlando la fase excéntrica.",
+        "Mantén la respiración: exhala en el esfuerzo, inhala al volver."
+      ],
+      "file": "glutes/barbell-full-squat-side-pov.gif",
+      "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/glutes/barbell-full-squat-side-pov.gif",
+      "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/glutes/barbell-full-squat-side-pov.thumb.webp"
+    },
+    {
+      "id": "glutes/barbell-full-squat",
+      "slug": "barbell-full-squat",
+      "name": "Sentadilla completa con barra",
+      "muscle": "glutes",
+      "bodyPart": "legs",
+      "equipment": "barbell",
+      "category": "strength",
+      "secondaryMuscles": [
+        "hamstrings",
+        "calves"
+      ],
+      "instructions": [
+        "Carga el peso adecuado en la barra y adopta la postura inicial.",
+        "Activa los glúteos antes de iniciar el movimiento.",
+        "Realiza el movimiento de forma controlada manteniendo la técnica.",
+        "Vuelve a la posición inicial controlando la fase excéntrica.",
+        "Mantén la respiración: exhala en el esfuerzo, inhala al volver."
+      ],
+      "file": "glutes/barbell-full-squat.gif",
+      "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/glutes/barbell-full-squat.gif",
+      "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/glutes/barbell-full-squat.thumb.webp"
+    },
+    {
+      "id": "glutes/barbell-full-zercher-squat",
+      "slug": "barbell-full-zercher-squat",
+      "name": "Sentadilla zercher completa con barra",
+      "muscle": "glutes",
+      "bodyPart": "legs",
+      "equipment": "barbell",
+      "category": "strength",
+      "secondaryMuscles": [
+        "hamstrings",
+        "calves"
+      ],
+      "instructions": [
+        "Carga el peso adecuado en la barra y adopta la postura inicial.",
+        "Activa los glúteos antes de iniciar el movimiento.",
+        "Realiza el movimiento de forma controlada manteniendo la técnica.",
+        "Vuelve a la posición inicial controlando la fase excéntrica.",
+        "Mantén la respiración: exhala en el esfuerzo, inhala al volver."
+      ],
+      "file": "glutes/barbell-full-zercher-squat.gif",
+      "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/glutes/barbell-full-zercher-squat.gif",
+      "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/glutes/barbell-full-zercher-squat.thumb.webp"
+    },
+    {
+      "id": "glutes/barbell-glute-bridge-two-legs-on-bench-male",
+      "slug": "barbell-glute-bridge-two-legs-on-bench-male",
+      "name": "Puente de glúteos con barra, a dos piernas en banco",
+      "muscle": "glutes",
+      "bodyPart": "legs",
+      "equipment": "barbell",
+      "category": "strength",
+      "secondaryMuscles": [
+        "hamstrings",
+        "abs"
+      ],
+      "instructions": [
+        "Carga el peso adecuado en la barra y adopta la postura inicial.",
+        "Activa los glúteos antes de iniciar el movimiento.",
+        "Realiza el movimiento de forma controlada manteniendo la técnica.",
+        "Vuelve a la posición inicial controlando la fase excéntrica.",
+        "Mantén la respiración: exhala en el esfuerzo, inhala al volver."
+      ],
+      "file": "glutes/barbell-glute-bridge-two-legs-on-bench-male.gif",
+      "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/glutes/barbell-glute-bridge-two-legs-on-bench-male.gif",
+      "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/glutes/barbell-glute-bridge-two-legs-on-bench-male.thumb.webp"
+    },
+    {
+      "id": "glutes/barbell-glute-bridge",
+      "slug": "barbell-glute-bridge",
+      "name": "Puente de glúteos con barra",
+      "muscle": "glutes",
+      "bodyPart": "legs",
+      "equipment": "barbell",
+      "category": "strength",
+      "secondaryMuscles": [
+        "hamstrings",
+        "abs"
+      ],
+      "instructions": [
+        "Carga el peso adecuado en la barra y adopta la postura inicial.",
+        "Activa los glúteos antes de iniciar el movimiento.",
+        "Realiza el movimiento de forma controlada manteniendo la técnica.",
+        "Vuelve a la posición inicial controlando la fase excéntrica.",
+        "Mantén la respiración: exhala en el esfuerzo, inhala al volver."
+      ],
+      "file": "glutes/barbell-glute-bridge.gif",
+      "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/glutes/barbell-glute-bridge.gif",
+      "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/glutes/barbell-glute-bridge.thumb.webp"
+    },
+    {
+      "id": "glutes/barbell-hack-squat",
+      "slug": "barbell-hack-squat",
+      "name": "Hack squat con barra",
+      "muscle": "glutes",
+      "bodyPart": "legs",
+      "equipment": "barbell",
+      "category": "strength",
+      "secondaryMuscles": [
+        "hamstrings",
+        "calves"
+      ],
+      "instructions": [
+        "Carga el peso adecuado en la barra y adopta la postura inicial.",
+        "Activa los glúteos antes de iniciar el movimiento.",
+        "Realiza el movimiento de forma controlada manteniendo la técnica.",
+        "Vuelve a la posición inicial controlando la fase excéntrica.",
+        "Mantén la respiración: exhala en el esfuerzo, inhala al volver."
+      ],
+      "file": "glutes/barbell-hack-squat.gif",
+      "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/glutes/barbell-hack-squat.gif",
+      "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/glutes/barbell-hack-squat.thumb.webp"
+    },
+    {
+      "id": "glutes/barbell-high-bar-squat",
+      "slug": "barbell-high-bar-squat",
+      "name": "Sentadilla con barra, alto",
+      "muscle": "glutes",
+      "bodyPart": "legs",
+      "equipment": "barbell",
+      "category": "strength",
+      "secondaryMuscles": [
+        "hamstrings",
+        "calves"
+      ],
+      "instructions": [
+        "Carga el peso adecuado en la barra y adopta la postura inicial.",
+        "Activa los glúteos antes de iniciar el movimiento.",
+        "Realiza el movimiento de forma controlada manteniendo la técnica.",
+        "Vuelve a la posición inicial controlando la fase excéntrica.",
+        "Mantén la respiración: exhala en el esfuerzo, inhala al volver."
+      ],
+      "file": "glutes/barbell-high-bar-squat.gif",
+      "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/glutes/barbell-high-bar-squat.gif",
+      "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/glutes/barbell-high-bar-squat.thumb.webp"
+    },
+    {
+      "id": "glutes/barbell-jefferson-squat",
+      "slug": "barbell-jefferson-squat",
+      "name": "Sentadilla con barra, jefferson",
+      "muscle": "glutes",
+      "bodyPart": "legs",
+      "equipment": "barbell",
+      "category": "strength",
+      "secondaryMuscles": [
+        "hamstrings",
+        "calves"
+      ],
+      "instructions": [
+        "Carga el peso adecuado en la barra y adopta la postura inicial.",
+        "Activa los glúteos antes de iniciar el movimiento.",
+        "Realiza el movimiento de forma controlada manteniendo la técnica.",
+        "Vuelve a la posición inicial controlando la fase excéntrica.",
+        "Mantén la respiración: exhala en el esfuerzo, inhala al volver."
+      ],
+      "file": "glutes/barbell-jefferson-squat.gif",
+      "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/glutes/barbell-jefferson-squat.gif",
+      "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/glutes/barbell-jefferson-squat.thumb.webp"
+    },
+    {
+      "id": "glutes/barbell-jump-squat",
+      "slug": "barbell-jump-squat",
+      "name": "Sentadilla con salto con barra",
+      "muscle": "glutes",
+      "bodyPart": "legs",
+      "equipment": "barbell",
+      "category": "plyometrics",
+      "secondaryMuscles": [
+        "hamstrings",
+        "calves"
+      ],
+      "instructions": [
+        "Carga el peso adecuado en la barra y adopta la postura inicial.",
+        "Realiza una breve flexión para acumular tensión.",
+        "Ejecuta el movimiento de forma explosiva y aterriza con control.",
+        "Aterriza suave amortiguando con piernas y core, y encadena la siguiente repetición."
+      ],
+      "file": "glutes/barbell-jump-squat.gif",
+      "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/glutes/barbell-jump-squat.gif",
+      "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/glutes/barbell-jump-squat.thumb.webp"
+    },
+    {
+      "id": "glutes/barbell-lateral-lunge",
+      "slug": "barbell-lateral-lunge",
+      "name": "Zancada con barra, lateral",
+      "muscle": "glutes",
+      "bodyPart": "legs",
+      "equipment": "barbell",
+      "category": "strength",
+      "secondaryMuscles": [
+        "hamstrings",
+        "calves"
+      ],
+      "instructions": [
+        "Carga el peso adecuado en la barra y adopta la postura inicial.",
+        "Activa los glúteos antes de iniciar el movimiento.",
+        "Realiza el movimiento de forma controlada manteniendo la técnica.",
+        "Vuelve a la posición inicial controlando la fase excéntrica.",
+        "Mantén la respiración: exhala en el esfuerzo, inhala al volver."
+      ],
+      "file": "glutes/barbell-lateral-lunge.gif",
+      "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/glutes/barbell-lateral-lunge.gif",
+      "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/glutes/barbell-lateral-lunge.thumb.webp"
+    },
+    {
+      "id": "glutes/barbell-low-bar-squat",
+      "slug": "barbell-low-bar-squat",
+      "name": "Sentadilla con barra",
+      "muscle": "glutes",
+      "bodyPart": "legs",
+      "equipment": "barbell",
+      "category": "strength",
+      "secondaryMuscles": [
+        "hamstrings",
+        "calves"
+      ],
+      "instructions": [
+        "Carga el peso adecuado en la barra y adopta la postura inicial.",
+        "Activa los glúteos antes de iniciar el movimiento.",
+        "Realiza el movimiento de forma controlada manteniendo la técnica.",
+        "Vuelve a la posición inicial controlando la fase excéntrica.",
+        "Mantén la respiración: exhala en el esfuerzo, inhala al volver."
+      ],
+      "file": "glutes/barbell-low-bar-squat.gif",
+      "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/glutes/barbell-low-bar-squat.gif",
+      "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/glutes/barbell-low-bar-squat.thumb.webp"
+    },
+    {
+      "id": "glutes/barbell-lunge",
+      "slug": "barbell-lunge",
+      "name": "Zancada con barra",
+      "muscle": "glutes",
+      "bodyPart": "legs",
+      "equipment": "barbell",
+      "category": "strength",
+      "secondaryMuscles": [
+        "hamstrings",
+        "calves"
+      ],
+      "instructions": [
+        "Carga el peso adecuado en la barra y adopta la postura inicial.",
+        "Activa los glúteos antes de iniciar el movimiento.",
+        "Realiza el movimiento de forma controlada manteniendo la técnica.",
+        "Vuelve a la posición inicial controlando la fase excéntrica.",
+        "Mantén la respiración: exhala en el esfuerzo, inhala al volver."
+      ],
+      "file": "glutes/barbell-lunge.gif",
+      "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/glutes/barbell-lunge.gif",
+      "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/glutes/barbell-lunge.thumb.webp"
+    },
+    {
+      "id": "glutes/barbell-lying-lifting-on-hip",
+      "slug": "barbell-lying-lifting-on-hip",
+      "name": "Lifting cadera con barra, tumbado",
+      "muscle": "glutes",
+      "bodyPart": "legs",
+      "equipment": "barbell",
+      "category": "strength",
+      "secondaryMuscles": [],
+      "instructions": [
+        "Carga el peso adecuado en la barra y adopta la postura inicial.",
+        "Activa los glúteos antes de iniciar el movimiento.",
+        "Realiza el movimiento de forma controlada manteniendo la técnica.",
+        "Vuelve a la posición inicial controlando la fase excéntrica.",
+        "Mantén la respiración: exhala en el esfuerzo, inhala al volver."
+      ],
+      "file": "glutes/barbell-lying-lifting-on-hip.gif",
+      "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/glutes/barbell-lying-lifting-on-hip.gif",
+      "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/glutes/barbell-lying-lifting-on-hip.thumb.webp"
+    },
+    {
+      "id": "glutes/barbell-narrow-stance-squat",
+      "slug": "barbell-narrow-stance-squat",
+      "name": "Sentadilla con barra, estrecho",
+      "muscle": "glutes",
+      "bodyPart": "legs",
+      "equipment": "barbell",
+      "category": "strength",
+      "secondaryMuscles": [
+        "hamstrings",
+        "calves"
+      ],
+      "instructions": [
+        "Carga el peso adecuado en la barra y adopta la postura inicial.",
+        "Activa los glúteos antes de iniciar el movimiento.",
+        "Realiza el movimiento de forma controlada manteniendo la técnica.",
+        "Vuelve a la posición inicial controlando la fase excéntrica.",
+        "Mantén la respiración: exhala en el esfuerzo, inhala al volver."
+      ],
+      "file": "glutes/barbell-narrow-stance-squat.gif",
+      "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/glutes/barbell-narrow-stance-squat.gif",
+      "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/glutes/barbell-narrow-stance-squat.thumb.webp"
+    },
+    {
+      "id": "glutes/barbell-one-arm-side-deadlift",
+      "slug": "barbell-one-arm-side-deadlift",
+      "name": "Peso muerto con barra, lateral, a una mano",
+      "muscle": "glutes",
+      "bodyPart": "legs",
+      "equipment": "barbell",
+      "category": "strength",
+      "secondaryMuscles": [
+        "hamstrings",
+        "lats",
+        "traps",
+        "forearms",
+        "spine"
+      ],
+      "instructions": [
+        "Carga el peso adecuado en la barra y adopta la postura inicial.",
+        "Activa los glúteos antes de iniciar el movimiento.",
+        "Realiza el movimiento de forma controlada manteniendo la técnica.",
+        "Vuelve a la posición inicial controlando la fase excéntrica.",
+        "Mantén la respiración: exhala en el esfuerzo, inhala al volver."
+      ],
+      "file": "glutes/barbell-one-arm-side-deadlift.gif",
+      "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/glutes/barbell-one-arm-side-deadlift.gif",
+      "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/glutes/barbell-one-arm-side-deadlift.thumb.webp"
+    },
+    {
+      "id": "glutes/barbell-rack-pull",
+      "slug": "barbell-rack-pull",
+      "name": "Rack pull con barra",
+      "muscle": "glutes",
+      "bodyPart": "legs",
+      "equipment": "barbell",
+      "category": "strength",
+      "secondaryMuscles": [],
+      "instructions": [
+        "Carga el peso adecuado en la barra y adopta la postura inicial.",
+        "Activa los glúteos antes de iniciar el movimiento.",
+        "Realiza el movimiento de forma controlada manteniendo la técnica.",
+        "Vuelve a la posición inicial controlando la fase excéntrica.",
+        "Mantén la respiración: exhala en el esfuerzo, inhala al volver."
+      ],
+      "file": "glutes/barbell-rack-pull.gif",
+      "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/glutes/barbell-rack-pull.gif",
+      "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/glutes/barbell-rack-pull.thumb.webp"
+    },
+    {
+      "id": "glutes/barbell-rear-lunge-v-2",
+      "slug": "barbell-rear-lunge-v-2",
+      "name": "Zancada con barra, posterior",
+      "muscle": "glutes",
+      "bodyPart": "legs",
+      "equipment": "barbell",
+      "category": "strength",
+      "secondaryMuscles": [
+        "hamstrings",
+        "calves"
+      ],
+      "instructions": [
+        "Carga el peso adecuado en la barra y adopta la postura inicial.",
+        "Activa los glúteos antes de iniciar el movimiento.",
+        "Realiza el movimiento de forma controlada manteniendo la técnica.",
+        "Vuelve a la posición inicial controlando la fase excéntrica.",
+        "Mantén la respiración: exhala en el esfuerzo, inhala al volver."
+      ],
+      "file": "glutes/barbell-rear-lunge-v-2.gif",
+      "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/glutes/barbell-rear-lunge-v-2.gif",
+      "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/glutes/barbell-rear-lunge-v-2.thumb.webp"
+    },
+    {
+      "id": "glutes/barbell-rear-lunge",
+      "slug": "barbell-rear-lunge",
+      "name": "Zancada con barra, posterior",
+      "muscle": "glutes",
+      "bodyPart": "legs",
+      "equipment": "barbell",
+      "category": "strength",
+      "secondaryMuscles": [
+        "hamstrings",
+        "calves"
+      ],
+      "instructions": [
+        "Carga el peso adecuado en la barra y adopta la postura inicial.",
+        "Activa los glúteos antes de iniciar el movimiento.",
+        "Realiza el movimiento de forma controlada manteniendo la técnica.",
+        "Vuelve a la posición inicial controlando la fase excéntrica.",
+        "Mantén la respiración: exhala en el esfuerzo, inhala al volver."
+      ],
+      "file": "glutes/barbell-rear-lunge.gif",
+      "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/glutes/barbell-rear-lunge.gif",
+      "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/glutes/barbell-rear-lunge.thumb.webp"
+    },
+    {
+      "id": "glutes/barbell-romanian-deadlift",
+      "slug": "barbell-romanian-deadlift",
+      "name": "Peso muerto rumano con barra",
+      "muscle": "glutes",
+      "bodyPart": "legs",
+      "equipment": "barbell",
+      "category": "strength",
+      "secondaryMuscles": [
+        "hamstrings",
+        "lats",
+        "traps",
+        "forearms",
+        "spine"
+      ],
+      "instructions": [
+        "Carga el peso adecuado en la barra y adopta la postura inicial.",
+        "Activa los glúteos antes de iniciar el movimiento.",
+        "Realiza el movimiento de forma controlada manteniendo la técnica.",
+        "Vuelve a la posición inicial controlando la fase excéntrica.",
+        "Mantén la respiración: exhala en el esfuerzo, inhala al volver."
+      ],
+      "file": "glutes/barbell-romanian-deadlift.gif",
+      "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/glutes/barbell-romanian-deadlift.gif",
+      "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/glutes/barbell-romanian-deadlift.thumb.webp"
+    },
+    {
+      "id": "glutes/barbell-seated-good-morning",
+      "slug": "barbell-seated-good-morning",
+      "name": "Good morning con barra, sentado",
+      "muscle": "glutes",
+      "bodyPart": "legs",
+      "equipment": "barbell",
+      "category": "strength",
+      "secondaryMuscles": [],
+      "instructions": [
+        "Carga el peso adecuado en la barra y adopta la postura inicial.",
+        "Activa los glúteos antes de iniciar el movimiento.",
+        "Realiza el movimiento de forma controlada manteniendo la técnica.",
+        "Vuelve a la posición inicial controlando la fase excéntrica.",
+        "Mantén la respiración: exhala en el esfuerzo, inhala al volver."
+      ],
+      "file": "glutes/barbell-seated-good-morning.gif",
+      "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/glutes/barbell-seated-good-morning.gif",
+      "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/glutes/barbell-seated-good-morning.thumb.webp"
+    },
+    {
+      "id": "glutes/barbell-single-leg-deadlift",
+      "slug": "barbell-single-leg-deadlift",
+      "name": "Peso muerto con barra, a una pierna",
+      "muscle": "glutes",
+      "bodyPart": "legs",
+      "equipment": "barbell",
+      "category": "strength",
+      "secondaryMuscles": [
+        "hamstrings",
+        "lats",
+        "traps",
+        "forearms",
+        "spine"
+      ],
+      "instructions": [
+        "Carga el peso adecuado en la barra y adopta la postura inicial.",
+        "Activa los glúteos antes de iniciar el movimiento.",
+        "Realiza el movimiento de forma controlada manteniendo la técnica.",
+        "Vuelve a la posición inicial controlando la fase excéntrica.",
+        "Mantén la respiración: exhala en el esfuerzo, inhala al volver."
+      ],
+      "file": "glutes/barbell-single-leg-deadlift.gif",
+      "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/glutes/barbell-single-leg-deadlift.gif",
+      "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/glutes/barbell-single-leg-deadlift.thumb.webp"
+    },
+    {
+      "id": "glutes/barbell-speed-squat",
+      "slug": "barbell-speed-squat",
+      "name": "Sentadilla con barra, speed",
+      "muscle": "glutes",
+      "bodyPart": "legs",
+      "equipment": "barbell",
+      "category": "strength",
+      "secondaryMuscles": [
+        "hamstrings",
+        "calves"
+      ],
+      "instructions": [
+        "Carga el peso adecuado en la barra y adopta la postura inicial.",
+        "Activa los glúteos antes de iniciar el movimiento.",
+        "Realiza el movimiento de forma controlada manteniendo la técnica.",
+        "Vuelve a la posición inicial controlando la fase excéntrica.",
+        "Mantén la respiración: exhala en el esfuerzo, inhala al volver."
+      ],
+      "file": "glutes/barbell-speed-squat.gif",
+      "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/glutes/barbell-speed-squat.gif",
+      "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/glutes/barbell-speed-squat.thumb.webp"
+    },
+    {
+      "id": "glutes/barbell-step-up",
+      "slug": "barbell-step-up",
+      "name": "Step-up con barra",
+      "muscle": "glutes",
+      "bodyPart": "legs",
+      "equipment": "barbell",
+      "category": "strength",
+      "secondaryMuscles": [],
+      "instructions": [
+        "Carga el peso adecuado en la barra y adopta la postura inicial.",
+        "Activa los glúteos antes de iniciar el movimiento.",
+        "Realiza el movimiento de forma controlada manteniendo la técnica.",
+        "Vuelve a la posición inicial controlando la fase excéntrica.",
+        "Mantén la respiración: exhala en el esfuerzo, inhala al volver."
+      ],
+      "file": "glutes/barbell-step-up.gif",
+      "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/glutes/barbell-step-up.gif",
+      "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/glutes/barbell-step-up.thumb.webp"
+    },
+    {
+      "id": "glutes/barbell-stiff-leg-good-morning",
+      "slug": "barbell-stiff-leg-good-morning",
+      "name": "Good morning con barra, a piernas rígidas",
+      "muscle": "glutes",
+      "bodyPart": "legs",
+      "equipment": "barbell",
+      "category": "strength",
+      "secondaryMuscles": [],
+      "instructions": [
+        "Carga el peso adecuado en la barra y adopta la postura inicial.",
+        "Activa los glúteos antes de iniciar el movimiento.",
+        "Realiza el movimiento de forma controlada manteniendo la técnica.",
+        "Vuelve a la posición inicial controlando la fase excéntrica.",
+        "Mantén la respiración: exhala en el esfuerzo, inhala al volver."
+      ],
+      "file": "glutes/barbell-stiff-leg-good-morning.gif",
+      "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/glutes/barbell-stiff-leg-good-morning.gif",
+      "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/glutes/barbell-stiff-leg-good-morning.thumb.webp"
+    },
+    {
+      "id": "glutes/barbell-sumo-deadlift",
+      "slug": "barbell-sumo-deadlift",
+      "name": "Peso muerto sumo con barra",
+      "muscle": "glutes",
+      "bodyPart": "legs",
+      "equipment": "barbell",
+      "category": "strength",
+      "secondaryMuscles": [
+        "hamstrings",
+        "lats",
+        "traps",
+        "forearms",
+        "spine"
+      ],
+      "instructions": [
+        "Carga el peso adecuado en la barra y adopta la postura inicial.",
+        "Activa los glúteos antes de iniciar el movimiento.",
+        "Realiza el movimiento de forma controlada manteniendo la técnica.",
+        "Vuelve a la posición inicial controlando la fase excéntrica.",
+        "Mantén la respiración: exhala en el esfuerzo, inhala al volver."
+      ],
+      "file": "glutes/barbell-sumo-deadlift.gif",
+      "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/glutes/barbell-sumo-deadlift.gif",
+      "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/glutes/barbell-sumo-deadlift.thumb.webp"
+    },
+    {
+      "id": "glutes/barbell-zercher-squat",
+      "slug": "barbell-zercher-squat",
+      "name": "Sentadilla zercher con barra",
+      "muscle": "glutes",
+      "bodyPart": "legs",
+      "equipment": "barbell",
+      "category": "strength",
+      "secondaryMuscles": [
+        "hamstrings",
+        "calves"
+      ],
+      "instructions": [
+        "Carga el peso adecuado en la barra y adopta la postura inicial.",
+        "Activa los glúteos antes de iniciar el movimiento.",
+        "Realiza el movimiento de forma controlada manteniendo la técnica.",
+        "Vuelve a la posición inicial controlando la fase excéntrica.",
+        "Mantén la respiración: exhala en el esfuerzo, inhala al volver."
+      ],
+      "file": "glutes/barbell-zercher-squat.gif",
+      "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/glutes/barbell-zercher-squat.gif",
+      "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/glutes/barbell-zercher-squat.thumb.webp"
+    },
+    {
+      "id": "glutes/basic-toe-touch-male",
+      "slug": "basic-toe-touch-male",
+      "name": "Tocar punta del pie, basic",
+      "muscle": "glutes",
+      "bodyPart": "legs",
+      "equipment": "bodyweight",
+      "category": "strength",
+      "secondaryMuscles": [],
+      "instructions": [
+        "Adopta la postura inicial con buena alineación corporal.",
+        "Activa los glúteos antes de iniciar el movimiento.",
+        "Realiza el movimiento de forma controlada manteniendo la técnica.",
+        "Vuelve a la posición inicial controlando la fase excéntrica.",
+        "Mantén la respiración: exhala en el esfuerzo, inhala al volver."
+      ],
+      "file": "glutes/basic-toe-touch-male.gif",
+      "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/glutes/basic-toe-touch-male.gif",
+      "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/glutes/basic-toe-touch-male.thumb.webp"
+    },
+    {
+      "id": "glutes/bench-hip-extension",
+      "slug": "bench-hip-extension",
+      "name": "Extensión, banco cadera",
+      "muscle": "glutes",
+      "bodyPart": "legs",
+      "equipment": "bodyweight",
+      "category": "strength",
+      "secondaryMuscles": [
+        "hamstrings",
+        "spine"
+      ],
+      "instructions": [
+        "Adopta la postura inicial con buena alineación corporal.",
+        "Activa los glúteos antes de iniciar el movimiento.",
+        "Realiza el movimiento de forma controlada manteniendo la técnica.",
+        "Vuelve a la posición inicial controlando la fase excéntrica.",
+        "Mantén la respiración: exhala en el esfuerzo, inhala al volver."
+      ],
+      "file": "glutes/bench-hip-extension.gif",
+      "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/glutes/bench-hip-extension.gif",
+      "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/glutes/bench-hip-extension.thumb.webp"
+    },
+    {
+      "id": "glutes/bent-knee-lying-twist-male",
+      "slug": "bent-knee-lying-twist-male",
+      "name": "Giro, tumbado con rodillas flexionadas",
+      "muscle": "glutes",
+      "bodyPart": "legs",
+      "equipment": "bodyweight",
+      "category": "strength",
+      "secondaryMuscles": [],
+      "instructions": [
+        "Adopta la postura inicial con buena alineación corporal.",
+        "Activa los glúteos antes de iniciar el movimiento.",
+        "Realiza el movimiento de forma controlada manteniendo la técnica.",
+        "Vuelve a la posición inicial controlando la fase excéntrica.",
+        "Mantén la respiración: exhala en el esfuerzo, inhala al volver."
+      ],
+      "file": "glutes/bent-knee-lying-twist-male.gif",
+      "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/glutes/bent-knee-lying-twist-male.gif",
+      "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/glutes/bent-knee-lying-twist-male.thumb.webp"
+    },
+    {
+      "id": "glutes/bodyweight-drop-jump-squat",
+      "slug": "bodyweight-drop-jump-squat",
+      "name": "Sentadilla con salto con peso corporal, drop",
+      "muscle": "glutes",
+      "bodyPart": "legs",
+      "equipment": "bodyweight",
+      "category": "plyometrics",
+      "secondaryMuscles": [
+        "hamstrings",
+        "calves"
+      ],
+      "instructions": [
+        "Adopta la postura inicial con buena alineación corporal.",
+        "Realiza una breve flexión para acumular tensión.",
+        "Ejecuta el movimiento de forma explosiva y aterriza con control.",
+        "Aterriza suave amortiguando con piernas y core, y encadena la siguiente repetición."
+      ],
+      "file": "glutes/bodyweight-drop-jump-squat.gif",
+      "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/glutes/bodyweight-drop-jump-squat.gif",
+      "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/glutes/bodyweight-drop-jump-squat.thumb.webp"
+    },
+    {
+      "id": "glutes/cable-deadlift",
+      "slug": "cable-deadlift",
+      "name": "Peso muerto en polea",
+      "muscle": "glutes",
+      "bodyPart": "legs",
+      "equipment": "cable",
+      "category": "strength",
+      "secondaryMuscles": [
+        "hamstrings",
+        "lats",
+        "traps",
+        "forearms",
+        "spine"
+      ],
+      "instructions": [
+        "Ajusta la polea a la altura indicada y selecciona el peso.",
+        "Activa los glúteos antes de iniciar el movimiento.",
+        "Realiza el movimiento de forma controlada manteniendo la técnica.",
+        "Vuelve a la posición inicial controlando la fase excéntrica.",
+        "Mantén la respiración: exhala en el esfuerzo, inhala al volver."
+      ],
+      "file": "glutes/cable-deadlift.gif",
+      "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/glutes/cable-deadlift.gif",
+      "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/glutes/cable-deadlift.thumb.webp"
+    },
+    {
+      "id": "glutes/cable-pull-through-with-rope",
+      "slug": "cable-pull-through-with-rope",
+      "name": "Pull through en polea, con cuerda",
+      "muscle": "glutes",
+      "bodyPart": "legs",
+      "equipment": "cable",
+      "category": "strength",
+      "secondaryMuscles": [
+        "hamstrings",
+        "spine"
+      ],
+      "instructions": [
+        "Ajusta la polea a la altura indicada y selecciona el peso.",
+        "Activa los glúteos antes de iniciar el movimiento.",
+        "Realiza el movimiento de forma controlada manteniendo la técnica.",
+        "Vuelve a la posición inicial controlando la fase excéntrica.",
+        "Mantén la respiración: exhala en el esfuerzo, inhala al volver."
+      ],
+      "file": "glutes/cable-pull-through-with-rope.gif",
+      "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/glutes/cable-pull-through-with-rope.gif",
+      "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/glutes/cable-pull-through-with-rope.thumb.webp"
+    },
+    {
+      "id": "glutes/cable-standing-hip-extension",
+      "slug": "cable-standing-hip-extension",
+      "name": "Extensión en polea, de pie, cadera",
+      "muscle": "glutes",
+      "bodyPart": "legs",
+      "equipment": "cable",
+      "category": "strength",
+      "secondaryMuscles": [
+        "hamstrings",
+        "spine"
+      ],
+      "instructions": [
+        "Ajusta la polea a la altura indicada y selecciona el peso.",
+        "Activa los glúteos antes de iniciar el movimiento.",
+        "Realiza el movimiento de forma controlada manteniendo la técnica.",
+        "Vuelve a la posición inicial controlando la fase excéntrica.",
+        "Mantén la respiración: exhala en el esfuerzo, inhala al volver."
+      ],
+      "file": "glutes/cable-standing-hip-extension.gif",
+      "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/glutes/cable-standing-hip-extension.gif",
+      "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/glutes/cable-standing-hip-extension.thumb.webp"
+    },
+    {
+      "id": "glutes/curtsey-squat",
+      "slug": "curtsey-squat",
+      "name": "Sentadilla, curtsey",
+      "muscle": "glutes",
+      "bodyPart": "legs",
+      "equipment": "bodyweight",
+      "category": "strength",
+      "secondaryMuscles": [
+        "hamstrings",
+        "calves"
+      ],
+      "instructions": [
+        "Adopta la postura inicial con buena alineación corporal.",
+        "Activa los glúteos antes de iniciar el movimiento.",
+        "Realiza el movimiento de forma controlada manteniendo la técnica.",
+        "Vuelve a la posición inicial controlando la fase excéntrica.",
+        "Mantén la respiración: exhala en el esfuerzo, inhala al volver."
+      ],
+      "file": "glutes/curtsey-squat.gif",
+      "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/glutes/curtsey-squat.gif",
+      "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/glutes/curtsey-squat.thumb.webp"
+    },
+    {
+      "id": "glutes/dumbbell-bench-squat",
+      "slug": "dumbbell-bench-squat",
+      "name": "Sentadilla con mancuerna, banco",
+      "muscle": "glutes",
+      "bodyPart": "legs",
+      "equipment": "dumbbell",
+      "category": "strength",
+      "secondaryMuscles": [
+        "hamstrings",
+        "calves"
+      ],
+      "instructions": [
+        "Coge una mancuerna en cada mano (o la indicada) con un peso adecuado.",
+        "Activa los glúteos antes de iniciar el movimiento.",
+        "Realiza el movimiento de forma controlada manteniendo la técnica.",
+        "Vuelve a la posición inicial controlando la fase excéntrica.",
+        "Mantén la respiración: exhala en el esfuerzo, inhala al volver."
+      ],
+      "file": "glutes/dumbbell-bench-squat.gif",
+      "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/glutes/dumbbell-bench-squat.gif",
+      "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/glutes/dumbbell-bench-squat.thumb.webp"
+    },
+    {
+      "id": "glutes/dumbbell-clean",
+      "slug": "dumbbell-clean",
+      "name": "Cargada con mancuerna",
+      "muscle": "glutes",
+      "bodyPart": "legs",
+      "equipment": "dumbbell",
+      "category": "strength",
+      "secondaryMuscles": [
+        "hamstrings",
+        "spine",
+        "traps",
+        "delts",
+        "forearms"
+      ],
+      "instructions": [
+        "Coge una mancuerna en cada mano (o la indicada) con un peso adecuado.",
+        "Activa los glúteos antes de iniciar el movimiento.",
+        "Realiza el movimiento de forma controlada manteniendo la técnica.",
+        "Vuelve a la posición inicial controlando la fase excéntrica.",
+        "Mantén la respiración: exhala en el esfuerzo, inhala al volver."
+      ],
+      "file": "glutes/dumbbell-clean.gif",
+      "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/glutes/dumbbell-clean.gif",
+      "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/glutes/dumbbell-clean.thumb.webp"
+    },
+    {
+      "id": "glutes/dumbbell-contralateral-forward-lunge",
+      "slug": "dumbbell-contralateral-forward-lunge",
+      "name": "Zancada con mancuerna, contralateral hacia adelante",
+      "muscle": "glutes",
+      "bodyPart": "legs",
+      "equipment": "dumbbell",
+      "category": "strength",
+      "secondaryMuscles": [
+        "hamstrings",
+        "calves"
+      ],
+      "instructions": [
+        "Coge una mancuerna en cada mano (o la indicada) con un peso adecuado.",
+        "Activa los glúteos antes de iniciar el movimiento.",
+        "Realiza el movimiento de forma controlada manteniendo la técnica.",
+        "Vuelve a la posición inicial controlando la fase excéntrica.",
+        "Mantén la respiración: exhala en el esfuerzo, inhala al volver."
+      ],
+      "file": "glutes/dumbbell-contralateral-forward-lunge.gif",
+      "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/glutes/dumbbell-contralateral-forward-lunge.gif",
+      "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/glutes/dumbbell-contralateral-forward-lunge.thumb.webp"
+    },
+    {
+      "id": "glutes/dumbbell-deadlift",
+      "slug": "dumbbell-deadlift",
+      "name": "Peso muerto con mancuerna",
+      "muscle": "glutes",
+      "bodyPart": "legs",
+      "equipment": "dumbbell",
+      "category": "strength",
+      "secondaryMuscles": [
+        "hamstrings",
+        "lats",
+        "traps",
+        "forearms",
+        "spine"
+      ],
+      "instructions": [
+        "Coge una mancuerna en cada mano (o la indicada) con un peso adecuado.",
+        "Activa los glúteos antes de iniciar el movimiento.",
+        "Realiza el movimiento de forma controlada manteniendo la técnica.",
+        "Vuelve a la posición inicial controlando la fase excéntrica.",
+        "Mantén la respiración: exhala en el esfuerzo, inhala al volver."
+      ],
+      "file": "glutes/dumbbell-deadlift.gif",
+      "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/glutes/dumbbell-deadlift.gif",
+      "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/glutes/dumbbell-deadlift.thumb.webp"
+    },
+    {
+      "id": "glutes/dumbbell-lunge",
+      "slug": "dumbbell-lunge",
+      "name": "Zancada con mancuerna",
+      "muscle": "glutes",
+      "bodyPart": "legs",
+      "equipment": "dumbbell",
+      "category": "strength",
+      "secondaryMuscles": [
+        "hamstrings",
+        "calves"
+      ],
+      "instructions": [
+        "Coge una mancuerna en cada mano (o la indicada) con un peso adecuado.",
+        "Activa los glúteos antes de iniciar el movimiento.",
+        "Realiza el movimiento de forma controlada manteniendo la técnica.",
+        "Vuelve a la posición inicial controlando la fase excéntrica.",
+        "Mantén la respiración: exhala en el esfuerzo, inhala al volver."
+      ],
+      "file": "glutes/dumbbell-lunge.gif",
+      "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/glutes/dumbbell-lunge.gif",
+      "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/glutes/dumbbell-lunge.thumb.webp"
+    },
+    {
+      "id": "glutes/dumbbell-one-arm-snatch",
+      "slug": "dumbbell-one-arm-snatch",
+      "name": "Arrancada con mancuerna, a una mano",
+      "muscle": "glutes",
+      "bodyPart": "legs",
+      "equipment": "dumbbell",
+      "category": "strength",
+      "secondaryMuscles": [
+        "hamstrings",
+        "spine",
+        "traps",
+        "delts",
+        "forearms"
+      ],
+      "instructions": [
+        "Coge una mancuerna en cada mano (o la indicada) con un peso adecuado.",
+        "Activa los glúteos antes de iniciar el movimiento.",
+        "Realiza el movimiento de forma controlada manteniendo la técnica.",
+        "Vuelve a la posición inicial controlando la fase excéntrica.",
+        "Mantén la respiración: exhala en el esfuerzo, inhala al volver."
+      ],
+      "file": "glutes/dumbbell-one-arm-snatch.gif",
+      "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/glutes/dumbbell-one-arm-snatch.gif",
+      "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/glutes/dumbbell-one-arm-snatch.thumb.webp"
+    },
+    {
+      "id": "glutes/dumbbell-plyo-squat",
+      "slug": "dumbbell-plyo-squat",
+      "name": "Sentadilla con mancuerna, plio",
+      "muscle": "glutes",
+      "bodyPart": "legs",
+      "equipment": "dumbbell",
+      "category": "plyometrics",
+      "secondaryMuscles": [
+        "hamstrings",
+        "calves"
+      ],
+      "instructions": [
+        "Coge una mancuerna en cada mano (o la indicada) con un peso adecuado.",
+        "Realiza una breve flexión para acumular tensión.",
+        "Ejecuta el movimiento de forma explosiva y aterriza con control.",
+        "Aterriza suave amortiguando con piernas y core, y encadena la siguiente repetición."
+      ],
+      "file": "glutes/dumbbell-plyo-squat.gif",
+      "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/glutes/dumbbell-plyo-squat.gif",
+      "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/glutes/dumbbell-plyo-squat.thumb.webp"
+    },
+    {
+      "id": "glutes/dumbbell-rear-lunge",
+      "slug": "dumbbell-rear-lunge",
+      "name": "Zancada con mancuerna, posterior",
+      "muscle": "glutes",
+      "bodyPart": "legs",
+      "equipment": "dumbbell",
+      "category": "strength",
+      "secondaryMuscles": [
+        "hamstrings",
+        "calves"
+      ],
+      "instructions": [
+        "Coge una mancuerna en cada mano (o la indicada) con un peso adecuado.",
+        "Activa los glúteos antes de iniciar el movimiento.",
+        "Realiza el movimiento de forma controlada manteniendo la técnica.",
+        "Vuelve a la posición inicial controlando la fase excéntrica.",
+        "Mantén la respiración: exhala en el esfuerzo, inhala al volver."
+      ],
+      "file": "glutes/dumbbell-rear-lunge.gif",
+      "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/glutes/dumbbell-rear-lunge.gif",
+      "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/glutes/dumbbell-rear-lunge.thumb.webp"
+    },
+    {
+      "id": "glutes/dumbbell-romanian-deadlift",
+      "slug": "dumbbell-romanian-deadlift",
+      "name": "Peso muerto rumano con mancuerna",
+      "muscle": "glutes",
+      "bodyPart": "legs",
+      "equipment": "dumbbell",
+      "category": "strength",
+      "secondaryMuscles": [
+        "hamstrings",
+        "lats",
+        "traps",
+        "forearms",
+        "spine"
+      ],
+      "instructions": [
+        "Coge una mancuerna en cada mano (o la indicada) con un peso adecuado.",
+        "Activa los glúteos antes de iniciar el movimiento.",
+        "Realiza el movimiento de forma controlada manteniendo la técnica.",
+        "Vuelve a la posición inicial controlando la fase excéntrica.",
+        "Mantén la respiración: exhala en el esfuerzo, inhala al volver."
+      ],
+      "file": "glutes/dumbbell-romanian-deadlift.gif",
+      "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/glutes/dumbbell-romanian-deadlift.gif",
+      "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/glutes/dumbbell-romanian-deadlift.thumb.webp"
+    },
+    {
+      "id": "glutes/dumbbell-single-leg-deadlift-with-stepbox-support",
+      "slug": "dumbbell-single-leg-deadlift-with-stepbox-support",
+      "name": "Peso muerto a una pierna con mancuerna, con apoyo en step",
+      "muscle": "glutes",
+      "bodyPart": "legs",
+      "equipment": "dumbbell",
+      "category": "strength",
+      "secondaryMuscles": [
+        "hamstrings",
+        "lats",
+        "traps",
+        "forearms",
+        "spine"
+      ],
+      "instructions": [
+        "Coge una mancuerna en cada mano (o la indicada) con un peso adecuado.",
+        "Activa los glúteos antes de iniciar el movimiento.",
+        "Realiza el movimiento de forma controlada manteniendo la técnica.",
+        "Vuelve a la posición inicial controlando la fase excéntrica.",
+        "Mantén la respiración: exhala en el esfuerzo, inhala al volver."
+      ],
+      "file": "glutes/dumbbell-single-leg-deadlift-with-stepbox-support.gif",
+      "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/glutes/dumbbell-single-leg-deadlift-with-stepbox-support.gif",
+      "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/glutes/dumbbell-single-leg-deadlift-with-stepbox-support.thumb.webp"
+    },
+    {
+      "id": "glutes/dumbbell-single-leg-deadlift",
+      "slug": "dumbbell-single-leg-deadlift",
+      "name": "Peso muerto con mancuerna, a una pierna",
+      "muscle": "glutes",
+      "bodyPart": "legs",
+      "equipment": "dumbbell",
+      "category": "strength",
+      "secondaryMuscles": [
+        "hamstrings",
+        "lats",
+        "traps",
+        "forearms",
+        "spine"
+      ],
+      "instructions": [
+        "Coge una mancuerna en cada mano (o la indicada) con un peso adecuado.",
+        "Activa los glúteos antes de iniciar el movimiento.",
+        "Realiza el movimiento de forma controlada manteniendo la técnica.",
+        "Vuelve a la posición inicial controlando la fase excéntrica.",
+        "Mantén la respiración: exhala en el esfuerzo, inhala al volver."
+      ],
+      "file": "glutes/dumbbell-single-leg-deadlift.gif",
+      "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/glutes/dumbbell-single-leg-deadlift.gif",
+      "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/glutes/dumbbell-single-leg-deadlift.thumb.webp"
+    },
+    {
+      "id": "glutes/dumbbell-single-leg-squat",
+      "slug": "dumbbell-single-leg-squat",
+      "name": "Sentadilla con mancuerna, a una pierna",
+      "muscle": "glutes",
+      "bodyPart": "legs",
+      "equipment": "dumbbell",
+      "category": "strength",
+      "secondaryMuscles": [
+        "hamstrings",
+        "calves"
+      ],
+      "instructions": [
+        "Coge una mancuerna en cada mano (o la indicada) con un peso adecuado.",
+        "Activa los glúteos antes de iniciar el movimiento.",
+        "Realiza el movimiento de forma controlada manteniendo la técnica.",
+        "Vuelve a la posición inicial controlando la fase excéntrica.",
+        "Mantén la respiración: exhala en el esfuerzo, inhala al volver."
+      ],
+      "file": "glutes/dumbbell-single-leg-squat.gif",
+      "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/glutes/dumbbell-single-leg-squat.gif",
+      "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/glutes/dumbbell-single-leg-squat.thumb.webp"
+    },
+    {
+      "id": "glutes/dumbbell-squat",
+      "slug": "dumbbell-squat",
+      "name": "Sentadilla con mancuerna",
+      "muscle": "glutes",
+      "bodyPart": "legs",
+      "equipment": "dumbbell",
+      "category": "strength",
+      "secondaryMuscles": [
+        "hamstrings",
+        "calves"
+      ],
+      "instructions": [
+        "Coge una mancuerna en cada mano (o la indicada) con un peso adecuado.",
+        "Activa los glúteos antes de iniciar el movimiento.",
+        "Realiza el movimiento de forma controlada manteniendo la técnica.",
+        "Vuelve a la posición inicial controlando la fase excéntrica.",
+        "Mantén la respiración: exhala en el esfuerzo, inhala al volver."
+      ],
+      "file": "glutes/dumbbell-squat.gif",
+      "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/glutes/dumbbell-squat.gif",
+      "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/glutes/dumbbell-squat.thumb.webp"
+    },
+    {
+      "id": "glutes/dumbbell-step-up",
+      "slug": "dumbbell-step-up",
+      "name": "Step-up con mancuerna",
+      "muscle": "glutes",
+      "bodyPart": "legs",
+      "equipment": "dumbbell",
+      "category": "strength",
+      "secondaryMuscles": [],
+      "instructions": [
+        "Coge una mancuerna en cada mano (o la indicada) con un peso adecuado.",
+        "Activa los glúteos antes de iniciar el movimiento.",
+        "Realiza el movimiento de forma controlada manteniendo la técnica.",
+        "Vuelve a la posición inicial controlando la fase excéntrica.",
+        "Mantén la respiración: exhala en el esfuerzo, inhala al volver."
+      ],
+      "file": "glutes/dumbbell-step-up.gif",
+      "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/glutes/dumbbell-step-up.gif",
+      "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/glutes/dumbbell-step-up.thumb.webp"
+    },
+    {
+      "id": "glutes/dumbbell-stiff-leg-deadlift",
+      "slug": "dumbbell-stiff-leg-deadlift",
+      "name": "Peso muerto a piernas rígidas con mancuerna",
+      "muscle": "glutes",
+      "bodyPart": "legs",
+      "equipment": "dumbbell",
+      "category": "strength",
+      "secondaryMuscles": [
+        "hamstrings",
+        "lats",
+        "traps",
+        "forearms",
+        "spine"
+      ],
+      "instructions": [
+        "Coge una mancuerna en cada mano (o la indicada) con un peso adecuado.",
+        "Activa los glúteos antes de iniciar el movimiento.",
+        "Realiza el movimiento de forma controlada manteniendo la técnica.",
+        "Vuelve a la posición inicial controlando la fase excéntrica.",
+        "Mantén la respiración: exhala en el esfuerzo, inhala al volver."
+      ],
+      "file": "glutes/dumbbell-stiff-leg-deadlift.gif",
+      "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/glutes/dumbbell-stiff-leg-deadlift.gif",
+      "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/glutes/dumbbell-stiff-leg-deadlift.thumb.webp"
+    },
+    {
+      "id": "glutes/dumbbell-straight-leg-deadlift",
+      "slug": "dumbbell-straight-leg-deadlift",
+      "name": "Peso muerto con mancuerna, con pierna recta",
+      "muscle": "glutes",
+      "bodyPart": "legs",
+      "equipment": "dumbbell",
+      "category": "strength",
+      "secondaryMuscles": [
+        "hamstrings",
+        "lats",
+        "traps",
+        "forearms",
+        "spine"
+      ],
+      "instructions": [
+        "Coge una mancuerna en cada mano (o la indicada) con un peso adecuado.",
+        "Activa los glúteos antes de iniciar el movimiento.",
+        "Realiza el movimiento de forma controlada manteniendo la técnica.",
+        "Vuelve a la posición inicial controlando la fase excéntrica.",
+        "Mantén la respiración: exhala en el esfuerzo, inhala al volver."
+      ],
+      "file": "glutes/dumbbell-straight-leg-deadlift.gif",
+      "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/glutes/dumbbell-straight-leg-deadlift.gif",
+      "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/glutes/dumbbell-straight-leg-deadlift.thumb.webp"
+    },
+    {
+      "id": "glutes/dumbbell-sumo-pull-through",
+      "slug": "dumbbell-sumo-pull-through",
+      "name": "Pull through sumo con mancuerna",
+      "muscle": "glutes",
+      "bodyPart": "legs",
+      "equipment": "dumbbell",
+      "category": "strength",
+      "secondaryMuscles": [
+        "hamstrings",
+        "spine"
+      ],
+      "instructions": [
+        "Coge una mancuerna en cada mano (o la indicada) con un peso adecuado.",
+        "Activa los glúteos antes de iniciar el movimiento.",
+        "Realiza el movimiento de forma controlada manteniendo la técnica.",
+        "Vuelve a la posición inicial controlando la fase excéntrica.",
+        "Mantén la respiración: exhala en el esfuerzo, inhala al volver."
+      ],
+      "file": "glutes/dumbbell-sumo-pull-through.gif",
+      "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/glutes/dumbbell-sumo-pull-through.gif",
+      "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/glutes/dumbbell-sumo-pull-through.thumb.webp"
+    },
+    {
+      "id": "glutes/exercise-ball-hip-flexor-stretch",
+      "slug": "exercise-ball-hip-flexor-stretch",
+      "name": "Estiramiento en fitball, cadera flexor",
+      "muscle": "glutes",
+      "bodyPart": "legs",
+      "equipment": "bodyweight",
+      "category": "stretching",
+      "secondaryMuscles": [],
+      "instructions": [
+        "Adopta la postura inicial con buena alineación corporal.",
+        "Lleva el cuerpo a la posición de estiramiento de los glúteos.",
+        "Mantén entre 20 y 40 segundos respirando de forma profunda.",
+        "Vuelve a la posición inicial lentamente y repite si lo deseas."
+      ],
+      "file": "glutes/exercise-ball-hip-flexor-stretch.gif",
+      "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/glutes/exercise-ball-hip-flexor-stretch.gif",
+      "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/glutes/exercise-ball-hip-flexor-stretch.thumb.webp"
+    },
+    {
+      "id": "glutes/exercise-ball-one-leg-prone-lower-body-rotation",
+      "slug": "exercise-ball-one-leg-prone-lower-body-rotation",
+      "name": "Inferior body rotation tumbado boca abajo en fitball, a una pierna",
+      "muscle": "glutes",
+      "bodyPart": "legs",
+      "equipment": "bodyweight",
+      "category": "strength",
+      "secondaryMuscles": [],
+      "instructions": [
+        "Adopta la postura inicial con buena alineación corporal.",
+        "Activa los glúteos antes de iniciar el movimiento.",
+        "Realiza el movimiento de forma controlada manteniendo la técnica.",
+        "Vuelve a la posición inicial controlando la fase excéntrica.",
+        "Mantén la respiración: exhala en el esfuerzo, inhala al volver."
+      ],
+      "file": "glutes/exercise-ball-one-leg-prone-lower-body-rotation.gif",
+      "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/glutes/exercise-ball-one-leg-prone-lower-body-rotation.gif",
+      "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/glutes/exercise-ball-one-leg-prone-lower-body-rotation.thumb.webp"
+    },
+    {
+      "id": "glutes/exercise-ball-one-legged-diagonal-kick-hamstring-curl",
+      "slug": "exercise-ball-one-legged-diagonal-kick-hamstring-curl",
+      "name": "Curl femoral con patada diagonal a una pierna en fitball",
+      "muscle": "glutes",
+      "bodyPart": "legs",
+      "equipment": "bodyweight",
+      "category": "strength",
+      "secondaryMuscles": [],
+      "instructions": [
+        "Adopta la postura inicial con buena alineación corporal.",
+        "Activa los glúteos antes de iniciar el movimiento.",
+        "Realiza el movimiento de forma controlada manteniendo la técnica.",
+        "Vuelve a la posición inicial controlando la fase excéntrica.",
+        "Mantén la respiración: exhala en el esfuerzo, inhala al volver."
+      ],
+      "file": "glutes/exercise-ball-one-legged-diagonal-kick-hamstring-curl.gif",
+      "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/glutes/exercise-ball-one-legged-diagonal-kick-hamstring-curl.gif",
+      "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/glutes/exercise-ball-one-legged-diagonal-kick-hamstring-curl.thumb.webp"
+    },
+    {
+      "id": "glutes/flutter-kicks",
+      "slug": "flutter-kicks",
+      "name": "Tijeras",
+      "muscle": "glutes",
+      "bodyPart": "legs",
+      "equipment": "bodyweight",
+      "category": "strength",
+      "secondaryMuscles": [],
+      "instructions": [
+        "Adopta la postura inicial con buena alineación corporal.",
+        "Activa los glúteos antes de iniciar el movimiento.",
+        "Realiza el movimiento de forma controlada manteniendo la técnica.",
+        "Vuelve a la posición inicial controlando la fase excéntrica.",
+        "Mantén la respiración: exhala en el esfuerzo, inhala al volver."
+      ],
+      "file": "glutes/flutter-kicks.gif",
+      "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/glutes/flutter-kicks.gif",
+      "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/glutes/flutter-kicks.thumb.webp"
+    },
+    {
+      "id": "glutes/forward-lunge-male",
+      "slug": "forward-lunge-male",
+      "name": "Zancada, hacia adelante",
+      "muscle": "glutes",
+      "bodyPart": "legs",
+      "equipment": "bodyweight",
+      "category": "strength",
+      "secondaryMuscles": [
+        "hamstrings",
+        "calves"
+      ],
+      "instructions": [
+        "Adopta la postura inicial con buena alineación corporal.",
+        "Activa los glúteos antes de iniciar el movimiento.",
+        "Realiza el movimiento de forma controlada manteniendo la técnica.",
+        "Vuelve a la posición inicial controlando la fase excéntrica.",
+        "Mantén la respiración: exhala en el esfuerzo, inhala al volver."
+      ],
+      "file": "glutes/forward-lunge-male.gif",
+      "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/glutes/forward-lunge-male.gif",
+      "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/glutes/forward-lunge-male.thumb.webp"
+    },
+    {
+      "id": "glutes/frankenstein-squat",
+      "slug": "frankenstein-squat",
+      "name": "Sentadilla, frankenstein",
+      "muscle": "glutes",
+      "bodyPart": "legs",
+      "equipment": "bodyweight",
+      "category": "strength",
+      "secondaryMuscles": [
+        "hamstrings",
+        "calves"
+      ],
+      "instructions": [
+        "Adopta la postura inicial con buena alineación corporal.",
+        "Activa los glúteos antes de iniciar el movimiento.",
+        "Realiza el movimiento de forma controlada manteniendo la técnica.",
+        "Vuelve a la posición inicial controlando la fase excéntrica.",
+        "Mantén la respiración: exhala en el esfuerzo, inhala al volver."
+      ],
+      "file": "glutes/frankenstein-squat.gif",
+      "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/glutes/frankenstein-squat.gif",
+      "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/glutes/frankenstein-squat.thumb.webp"
+    },
+    {
+      "id": "glutes/glute-bridge-march",
+      "slug": "glute-bridge-march",
+      "name": "Puente de glúteos, march",
+      "muscle": "glutes",
+      "bodyPart": "legs",
+      "equipment": "bodyweight",
+      "category": "strength",
+      "secondaryMuscles": [
+        "hamstrings",
+        "abs"
+      ],
+      "instructions": [
+        "Adopta la postura inicial con buena alineación corporal.",
+        "Activa los glúteos antes de iniciar el movimiento.",
+        "Realiza el movimiento de forma controlada manteniendo la técnica.",
+        "Vuelve a la posición inicial controlando la fase excéntrica.",
+        "Mantén la respiración: exhala en el esfuerzo, inhala al volver."
+      ],
+      "file": "glutes/glute-bridge-march.gif",
+      "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/glutes/glute-bridge-march.gif",
+      "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/glutes/glute-bridge-march.thumb.webp"
+    },
+    {
+      "id": "glutes/glute-bridge-two-legs-on-bench-male",
+      "slug": "glute-bridge-two-legs-on-bench-male",
+      "name": "Puente de glúteos, a dos piernas en banco",
+      "muscle": "glutes",
+      "bodyPart": "legs",
+      "equipment": "bodyweight",
+      "category": "strength",
+      "secondaryMuscles": [
+        "hamstrings",
+        "abs"
+      ],
+      "instructions": [
+        "Adopta la postura inicial con buena alineación corporal.",
+        "Activa los glúteos antes de iniciar el movimiento.",
+        "Realiza el movimiento de forma controlada manteniendo la técnica.",
+        "Vuelve a la posición inicial controlando la fase excéntrica.",
+        "Mantén la respiración: exhala en el esfuerzo, inhala al volver."
+      ],
+      "file": "glutes/glute-bridge-two-legs-on-bench-male.gif",
+      "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/glutes/glute-bridge-two-legs-on-bench-male.gif",
+      "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/glutes/glute-bridge-two-legs-on-bench-male.thumb.webp"
+    },
+    {
+      "id": "glutes/hands-clasped-circular-toe-touch-male",
+      "slug": "hands-clasped-circular-toe-touch-male",
+      "name": "Tocar punta del pie, manos clasped circular",
+      "muscle": "glutes",
+      "bodyPart": "legs",
+      "equipment": "bodyweight",
+      "category": "strength",
+      "secondaryMuscles": [],
+      "instructions": [
+        "Adopta la postura inicial con buena alineación corporal.",
+        "Activa los glúteos antes de iniciar el movimiento.",
+        "Realiza el movimiento de forma controlada manteniendo la técnica.",
+        "Vuelve a la posición inicial controlando la fase excéntrica.",
+        "Mantén la respiración: exhala en el esfuerzo, inhala al volver."
+      ],
+      "file": "glutes/hands-clasped-circular-toe-touch-male.gif",
+      "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/glutes/hands-clasped-circular-toe-touch-male.gif",
+      "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/glutes/hands-clasped-circular-toe-touch-male.thumb.webp"
+    },
+    {
+      "id": "glutes/hands-reversed-clasped-circular-toe-touch-male",
+      "slug": "hands-reversed-clasped-circular-toe-touch-male",
+      "name": "Tocar punta del pie, manos reversed clasped circular",
+      "muscle": "glutes",
+      "bodyPart": "legs",
+      "equipment": "bodyweight",
+      "category": "strength",
+      "secondaryMuscles": [],
+      "instructions": [
+        "Adopta la postura inicial con buena alineación corporal.",
+        "Activa los glúteos antes de iniciar el movimiento.",
+        "Realiza el movimiento de forma controlada manteniendo la técnica.",
+        "Vuelve a la posición inicial controlando la fase excéntrica.",
+        "Mantén la respiración: exhala en el esfuerzo, inhala al volver."
+      ],
+      "file": "glutes/hands-reversed-clasped-circular-toe-touch-male.gif",
+      "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/glutes/hands-reversed-clasped-circular-toe-touch-male.gif",
+      "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/glutes/hands-reversed-clasped-circular-toe-touch-male.thumb.webp"
+    },
+    {
+      "id": "glutes/hug-keens-to-chest",
+      "slug": "hug-keens-to-chest",
+      "name": "Abrazar rodillas al pecho",
+      "muscle": "glutes",
+      "bodyPart": "legs",
+      "equipment": "bodyweight",
+      "category": "strength",
+      "secondaryMuscles": [],
+      "instructions": [
+        "Adopta la postura inicial con buena alineación corporal.",
+        "Activa los glúteos antes de iniciar el movimiento.",
+        "Realiza el movimiento de forma controlada manteniendo la técnica.",
+        "Vuelve a la posición inicial controlando la fase excéntrica.",
+        "Mantén la respiración: exhala en el esfuerzo, inhala al volver."
+      ],
+      "file": "glutes/hug-keens-to-chest.gif",
+      "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/glutes/hug-keens-to-chest.gif",
+      "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/glutes/hug-keens-to-chest.thumb.webp"
+    },
+    {
+      "id": "glutes/iron-cross-stretch",
+      "slug": "iron-cross-stretch",
+      "name": "Estiramiento, iron cruzado",
+      "muscle": "glutes",
+      "bodyPart": "legs",
+      "equipment": "bodyweight",
+      "category": "stretching",
+      "secondaryMuscles": [
+        "pectorals",
+        "lats",
+        "abs"
+      ],
+      "instructions": [
+        "Adopta la postura inicial con buena alineación corporal.",
+        "Lleva el cuerpo a la posición de estiramiento de los glúteos.",
+        "Mantén entre 20 y 40 segundos respirando de forma profunda.",
+        "Vuelve a la posición inicial lentamente y repite si lo deseas."
+      ],
+      "file": "glutes/iron-cross-stretch.gif",
+      "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/glutes/iron-cross-stretch.gif",
+      "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/glutes/iron-cross-stretch.thumb.webp"
+    },
+    {
+      "id": "glutes/jump-squat-v-2",
+      "slug": "jump-squat-v-2",
+      "name": "Sentadilla con salto",
+      "muscle": "glutes",
+      "bodyPart": "legs",
+      "equipment": "bodyweight",
+      "category": "plyometrics",
+      "secondaryMuscles": [
+        "hamstrings",
+        "calves"
+      ],
+      "instructions": [
+        "Adopta la postura inicial con buena alineación corporal.",
+        "Realiza una breve flexión para acumular tensión.",
+        "Ejecuta el movimiento de forma explosiva y aterriza con control.",
+        "Aterriza suave amortiguando con piernas y core, y encadena la siguiente repetición."
+      ],
+      "file": "glutes/jump-squat-v-2.gif",
+      "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/glutes/jump-squat-v-2.gif",
+      "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/glutes/jump-squat-v-2.thumb.webp"
+    },
+    {
+      "id": "glutes/jump-squat",
+      "slug": "jump-squat",
+      "name": "Sentadilla con salto",
+      "muscle": "glutes",
+      "bodyPart": "legs",
+      "equipment": "bodyweight",
+      "category": "plyometrics",
+      "secondaryMuscles": [
+        "hamstrings",
+        "calves"
+      ],
+      "instructions": [
+        "Adopta la postura inicial con buena alineación corporal.",
+        "Realiza una breve flexión para acumular tensión.",
+        "Ejecuta el movimiento de forma explosiva y aterriza con control.",
+        "Aterriza suave amortiguando con piernas y core, y encadena la siguiente repetición."
+      ],
+      "file": "glutes/jump-squat.gif",
+      "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/glutes/jump-squat.gif",
+      "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/glutes/jump-squat.thumb.webp"
+    },
+    {
+      "id": "glutes/kettlebell-front-squat",
+      "slug": "kettlebell-front-squat",
+      "name": "Sentadilla frontal con kettlebell",
+      "muscle": "glutes",
+      "bodyPart": "legs",
+      "equipment": "kettlebell",
+      "category": "strength",
+      "secondaryMuscles": [
+        "hamstrings",
+        "calves"
+      ],
+      "instructions": [
+        "Coge la kettlebell con un peso adecuado y adopta la postura.",
+        "Activa los glúteos antes de iniciar el movimiento.",
+        "Realiza el movimiento de forma controlada manteniendo la técnica.",
+        "Vuelve a la posición inicial controlando la fase excéntrica.",
+        "Mantén la respiración: exhala en el esfuerzo, inhala al volver."
+      ],
+      "file": "glutes/kettlebell-front-squat.gif",
+      "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/glutes/kettlebell-front-squat.gif",
+      "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/glutes/kettlebell-front-squat.thumb.webp"
+    },
+    {
+      "id": "glutes/kettlebell-goblet-squat",
+      "slug": "kettlebell-goblet-squat",
+      "name": "Sentadilla goblet con kettlebell",
+      "muscle": "glutes",
+      "bodyPart": "legs",
+      "equipment": "kettlebell",
+      "category": "strength",
+      "secondaryMuscles": [
+        "hamstrings",
+        "calves"
+      ],
+      "instructions": [
+        "Coge la kettlebell con un peso adecuado y adopta la postura.",
+        "Activa los glúteos antes de iniciar el movimiento.",
+        "Realiza el movimiento de forma controlada manteniendo la técnica.",
+        "Vuelve a la posición inicial controlando la fase excéntrica.",
+        "Mantén la respiración: exhala en el esfuerzo, inhala al volver."
+      ],
+      "file": "glutes/kettlebell-goblet-squat.gif",
+      "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/glutes/kettlebell-goblet-squat.gif",
+      "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/glutes/kettlebell-goblet-squat.thumb.webp"
+    },
+    {
+      "id": "glutes/kettlebell-lunge-pass-through",
+      "slug": "kettlebell-lunge-pass-through",
+      "name": "Zancada pass-through con kettlebell",
+      "muscle": "glutes",
+      "bodyPart": "legs",
+      "equipment": "kettlebell",
+      "category": "strength",
+      "secondaryMuscles": [
+        "hamstrings",
+        "calves"
+      ],
+      "instructions": [
+        "Coge la kettlebell con un peso adecuado y adopta la postura.",
+        "Activa los glúteos antes de iniciar el movimiento.",
+        "Realiza el movimiento de forma controlada manteniendo la técnica.",
+        "Vuelve a la posición inicial controlando la fase excéntrica.",
+        "Mantén la respiración: exhala en el esfuerzo, inhala al volver."
+      ],
+      "file": "glutes/kettlebell-lunge-pass-through.gif",
+      "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/glutes/kettlebell-lunge-pass-through.gif",
+      "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/glutes/kettlebell-lunge-pass-through.thumb.webp"
+    },
+    {
+      "id": "glutes/kettlebell-pistol-squat",
+      "slug": "kettlebell-pistol-squat",
+      "name": "Sentadilla pistol con kettlebell",
+      "muscle": "glutes",
+      "bodyPart": "legs",
+      "equipment": "kettlebell",
+      "category": "strength",
+      "secondaryMuscles": [
+        "hamstrings",
+        "calves"
+      ],
+      "instructions": [
+        "Coge la kettlebell con un peso adecuado y adopta la postura.",
+        "Activa los glúteos antes de iniciar el movimiento.",
+        "Realiza el movimiento de forma controlada manteniendo la técnica.",
+        "Vuelve a la posición inicial controlando la fase excéntrica.",
+        "Mantén la respiración: exhala en el esfuerzo, inhala al volver."
+      ],
+      "file": "glutes/kettlebell-pistol-squat.gif",
+      "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/glutes/kettlebell-pistol-squat.gif",
+      "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/glutes/kettlebell-pistol-squat.thumb.webp"
+    },
+    {
+      "id": "glutes/kettlebell-swing",
+      "slug": "kettlebell-swing",
+      "name": "Swing con kettlebell",
+      "muscle": "glutes",
+      "bodyPart": "legs",
+      "equipment": "kettlebell",
+      "category": "strength",
+      "secondaryMuscles": [
+        "hamstrings",
+        "spine",
+        "traps",
+        "delts",
+        "forearms"
+      ],
+      "instructions": [
+        "Coge la kettlebell con un peso adecuado y adopta la postura.",
+        "Activa los glúteos antes de iniciar el movimiento.",
+        "Realiza el movimiento de forma controlada manteniendo la técnica.",
+        "Vuelve a la posición inicial controlando la fase excéntrica.",
+        "Mantén la respiración: exhala en el esfuerzo, inhala al volver."
+      ],
+      "file": "glutes/kettlebell-swing.gif",
+      "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/glutes/kettlebell-swing.gif",
+      "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/glutes/kettlebell-swing.thumb.webp"
+    },
+    {
+      "id": "glutes/kettlebell-turkish-get-up-squat-style",
+      "slug": "kettlebell-turkish-get-up-squat-style",
+      "name": "Sentadilla con kettlebell, turkish get up style",
+      "muscle": "glutes",
+      "bodyPart": "legs",
+      "equipment": "kettlebell",
+      "category": "strength",
+      "secondaryMuscles": [
+        "hamstrings",
+        "calves"
+      ],
+      "instructions": [
+        "Coge la kettlebell con un peso adecuado y adopta la postura.",
+        "Activa los glúteos antes de iniciar el movimiento.",
+        "Realiza el movimiento de forma controlada manteniendo la técnica.",
+        "Vuelve a la posición inicial controlando la fase excéntrica.",
+        "Mantén la respiración: exhala en el esfuerzo, inhala al volver."
+      ],
+      "file": "glutes/kettlebell-turkish-get-up-squat-style.gif",
+      "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/glutes/kettlebell-turkish-get-up-squat-style.gif",
+      "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/glutes/kettlebell-turkish-get-up-squat-style.thumb.webp"
+    },
+    {
+      "id": "glutes/kneeling-jump-squat",
+      "slug": "kneeling-jump-squat",
+      "name": "Sentadilla con salto, de rodillas",
+      "muscle": "glutes",
+      "bodyPart": "legs",
+      "equipment": "bodyweight",
+      "category": "plyometrics",
+      "secondaryMuscles": [
+        "hamstrings",
+        "calves"
+      ],
+      "instructions": [
+        "Adopta la postura inicial con buena alineación corporal.",
+        "Realiza una breve flexión para acumular tensión.",
+        "Ejecuta el movimiento de forma explosiva y aterriza con control.",
+        "Aterriza suave amortiguando con piernas y core, y encadena la siguiente repetición."
+      ],
+      "file": "glutes/kneeling-jump-squat.gif",
+      "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/glutes/kneeling-jump-squat.gif",
+      "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/glutes/kneeling-jump-squat.thumb.webp"
+    },
+    {
+      "id": "glutes/lever-deadlift",
+      "slug": "lever-deadlift",
+      "name": "Peso muerto en máquina",
+      "muscle": "glutes",
+      "bodyPart": "legs",
+      "equipment": "lever",
+      "category": "strength",
+      "secondaryMuscles": [
+        "hamstrings",
+        "lats",
+        "traps",
+        "forearms",
+        "spine"
+      ],
+      "instructions": [
+        "Ajusta la máquina a tu medida y selecciona la carga.",
+        "Activa los glúteos antes de iniciar el movimiento.",
+        "Realiza el movimiento de forma controlada manteniendo la técnica.",
+        "Vuelve a la posición inicial controlando la fase excéntrica.",
+        "Mantén la respiración: exhala en el esfuerzo, inhala al volver."
+      ],
+      "file": "glutes/lever-deadlift.gif",
+      "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/glutes/lever-deadlift.gif",
+      "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/glutes/lever-deadlift.thumb.webp"
+    },
+    {
+      "id": "glutes/lever-hip-extension-v-2",
+      "slug": "lever-hip-extension-v-2",
+      "name": "Extensión en máquina, cadera",
+      "muscle": "glutes",
+      "bodyPart": "legs",
+      "equipment": "lever",
+      "category": "strength",
+      "secondaryMuscles": [
+        "hamstrings",
+        "spine"
+      ],
+      "instructions": [
+        "Ajusta la máquina a tu medida y selecciona la carga.",
+        "Activa los glúteos antes de iniciar el movimiento.",
+        "Realiza el movimiento de forma controlada manteniendo la técnica.",
+        "Vuelve a la posición inicial controlando la fase excéntrica.",
+        "Mantén la respiración: exhala en el esfuerzo, inhala al volver."
+      ],
+      "file": "glutes/lever-hip-extension-v-2.gif",
+      "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/glutes/lever-hip-extension-v-2.gif",
+      "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/glutes/lever-hip-extension-v-2.thumb.webp"
+    },
+    {
+      "id": "glutes/lever-horizontal-one-leg-press",
+      "slug": "lever-horizontal-one-leg-press",
+      "name": "Prensa horizontal a una pierna en máquina",
+      "muscle": "glutes",
+      "bodyPart": "legs",
+      "equipment": "lever",
+      "category": "strength",
+      "secondaryMuscles": [
+        "triceps",
+        "delts"
+      ],
+      "instructions": [
+        "Ajusta la máquina a tu medida y selecciona la carga.",
+        "Activa los glúteos antes de iniciar el movimiento.",
+        "Realiza el movimiento de forma controlada manteniendo la técnica.",
+        "Vuelve a la posición inicial controlando la fase excéntrica.",
+        "Mantén la respiración: exhala en el esfuerzo, inhala al volver."
+      ],
+      "file": "glutes/lever-horizontal-one-leg-press.gif",
+      "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/glutes/lever-horizontal-one-leg-press.gif",
+      "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/glutes/lever-horizontal-one-leg-press.thumb.webp"
+    },
+    {
+      "id": "glutes/lever-reverse-hyperextension",
+      "slug": "lever-reverse-hyperextension",
+      "name": "Hyperextension invertido en máquina",
+      "muscle": "glutes",
+      "bodyPart": "legs",
+      "equipment": "lever",
+      "category": "strength",
+      "secondaryMuscles": [
+        "hamstrings",
+        "spine"
+      ],
+      "instructions": [
+        "Ajusta la máquina a tu medida y selecciona la carga.",
+        "Activa los glúteos antes de iniciar el movimiento.",
+        "Realiza el movimiento de forma controlada manteniendo la técnica.",
+        "Vuelve a la posición inicial controlando la fase excéntrica.",
+        "Mantén la respiración: exhala en el esfuerzo, inhala al volver."
+      ],
+      "file": "glutes/lever-reverse-hyperextension.gif",
+      "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/glutes/lever-reverse-hyperextension.gif",
+      "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/glutes/lever-reverse-hyperextension.thumb.webp"
+    },
+    {
+      "id": "glutes/lever-seated-good-morning",
+      "slug": "lever-seated-good-morning",
+      "name": "Good morning en máquina, sentado",
+      "muscle": "glutes",
+      "bodyPart": "legs",
+      "equipment": "lever",
+      "category": "strength",
+      "secondaryMuscles": [],
+      "instructions": [
+        "Ajusta la máquina a tu medida y selecciona la carga.",
+        "Activa los glúteos antes de iniciar el movimiento.",
+        "Realiza el movimiento de forma controlada manteniendo la técnica.",
+        "Vuelve a la posición inicial controlando la fase excéntrica.",
+        "Mantén la respiración: exhala en el esfuerzo, inhala al volver."
+      ],
+      "file": "glutes/lever-seated-good-morning.gif",
+      "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/glutes/lever-seated-good-morning.gif",
+      "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/glutes/lever-seated-good-morning.thumb.webp"
+    },
+    {
+      "id": "glutes/low-glute-bridge-on-floor",
+      "slug": "low-glute-bridge-on-floor",
+      "name": "Puente de glúteos, bajo en el suelo",
+      "muscle": "glutes",
+      "bodyPart": "legs",
+      "equipment": "bodyweight",
+      "category": "strength",
+      "secondaryMuscles": [
+        "hamstrings",
+        "abs"
+      ],
+      "instructions": [
+        "Adopta la postura inicial con buena alineación corporal.",
+        "Activa los glúteos antes de iniciar el movimiento.",
+        "Realiza el movimiento de forma controlada manteniendo la técnica.",
+        "Vuelve a la posición inicial controlando la fase excéntrica.",
+        "Mantén la respiración: exhala en el esfuerzo, inhala al volver."
+      ],
+      "file": "glutes/low-glute-bridge-on-floor.gif",
+      "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/glutes/low-glute-bridge-on-floor.gif",
+      "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/glutes/low-glute-bridge-on-floor.thumb.webp"
+    },
+    {
+      "id": "glutes/lunge-with-jump",
+      "slug": "lunge-with-jump",
+      "name": "Zancada, jump",
+      "muscle": "glutes",
+      "bodyPart": "legs",
+      "equipment": "bodyweight",
+      "category": "plyometrics",
+      "secondaryMuscles": [
+        "hamstrings",
+        "calves"
+      ],
+      "instructions": [
+        "Adopta la postura inicial con buena alineación corporal.",
+        "Realiza una breve flexión para acumular tensión.",
+        "Ejecuta el movimiento de forma explosiva y aterriza con control.",
+        "Aterriza suave amortiguando con piernas y core, y encadena la siguiente repetición."
+      ],
+      "file": "glutes/lunge-with-jump.gif",
+      "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/glutes/lunge-with-jump.gif",
+      "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/glutes/lunge-with-jump.thumb.webp"
+    },
+    {
+      "id": "glutes/march-sit-wall",
+      "slug": "march-sit-wall",
+      "name": "March sit pared",
+      "muscle": "glutes",
+      "bodyPart": "legs",
+      "equipment": "bodyweight",
+      "category": "strength",
+      "secondaryMuscles": [],
+      "instructions": [
+        "Adopta la postura inicial con buena alineación corporal.",
+        "Activa los glúteos antes de iniciar el movimiento.",
+        "Realiza el movimiento de forma controlada manteniendo la técnica.",
+        "Vuelve a la posición inicial controlando la fase excéntrica.",
+        "Mantén la respiración: exhala en el esfuerzo, inhala al volver."
+      ],
+      "file": "glutes/march-sit-wall.gif",
+      "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/glutes/march-sit-wall.gif",
+      "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/glutes/march-sit-wall.thumb.webp"
+    },
+    {
+      "id": "glutes/monster-walk",
+      "slug": "monster-walk",
+      "name": "Monster caminata",
+      "muscle": "glutes",
+      "bodyPart": "legs",
+      "equipment": "bodyweight",
+      "category": "strength",
+      "secondaryMuscles": [],
+      "instructions": [
+        "Adopta la postura inicial con buena alineación corporal.",
+        "Activa los glúteos antes de iniciar el movimiento.",
+        "Realiza el movimiento de forma controlada manteniendo la técnica.",
+        "Vuelve a la posición inicial controlando la fase excéntrica.",
+        "Mantén la respiración: exhala en el esfuerzo, inhala al volver."
+      ],
+      "file": "glutes/monster-walk.gif",
+      "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/glutes/monster-walk.gif",
+      "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/glutes/monster-walk.thumb.webp"
+    },
+    {
+      "id": "glutes/one-leg-squat",
+      "slug": "one-leg-squat",
+      "name": "Sentadilla, a una pierna",
+      "muscle": "glutes",
+      "bodyPart": "legs",
+      "equipment": "bodyweight",
+      "category": "strength",
+      "secondaryMuscles": [
+        "hamstrings",
+        "calves"
+      ],
+      "instructions": [
+        "Adopta la postura inicial con buena alineación corporal.",
+        "Activa los glúteos antes de iniciar el movimiento.",
+        "Realiza el movimiento de forma controlada manteniendo la técnica.",
+        "Vuelve a la posición inicial controlando la fase excéntrica.",
+        "Mantén la respiración: exhala en el esfuerzo, inhala al volver."
+      ],
+      "file": "glutes/one-leg-squat.gif",
+      "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/glutes/one-leg-squat.gif",
+      "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/glutes/one-leg-squat.thumb.webp"
+    },
+    {
+      "id": "glutes/outside-leg-kick-push-up",
+      "slug": "outside-leg-kick-push-up",
+      "name": "Flexión, externo pierna patada",
+      "muscle": "glutes",
+      "bodyPart": "legs",
+      "equipment": "bodyweight",
+      "category": "strength",
+      "secondaryMuscles": [
+        "triceps",
+        "delts"
+      ],
+      "instructions": [
+        "Adopta la postura inicial con buena alineación corporal.",
+        "Activa los glúteos antes de iniciar el movimiento.",
+        "Realiza el movimiento de forma controlada manteniendo la técnica.",
+        "Vuelve a la posición inicial controlando la fase excéntrica.",
+        "Mantén la respiración: exhala en el esfuerzo, inhala al volver."
+      ],
+      "file": "glutes/outside-leg-kick-push-up.gif",
+      "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/glutes/outside-leg-kick-push-up.gif",
+      "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/glutes/outside-leg-kick-push-up.thumb.webp"
+    },
+    {
+      "id": "glutes/pelvic-tilt-into-bridge",
+      "slug": "pelvic-tilt-into-bridge",
+      "name": "Inclinación pélvica al puente",
+      "muscle": "glutes",
+      "bodyPart": "legs",
+      "equipment": "bodyweight",
+      "category": "strength",
+      "secondaryMuscles": [
+        "hamstrings",
+        "abs"
+      ],
+      "instructions": [
+        "Adopta la postura inicial con buena alineación corporal.",
+        "Activa los glúteos antes de iniciar el movimiento.",
+        "Realiza el movimiento de forma controlada manteniendo la técnica.",
+        "Vuelve a la posición inicial controlando la fase excéntrica.",
+        "Mantén la respiración: exhala en el esfuerzo, inhala al volver."
+      ],
+      "file": "glutes/pelvic-tilt-into-bridge.gif",
+      "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/glutes/pelvic-tilt-into-bridge.gif",
+      "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/glutes/pelvic-tilt-into-bridge.thumb.webp"
+    },
+    {
+      "id": "glutes/pike-to-cobra-push-up",
+      "slug": "pike-to-cobra-push-up",
+      "name": "Flexión pike-cobra",
+      "muscle": "glutes",
+      "bodyPart": "legs",
+      "equipment": "bodyweight",
+      "category": "strength",
+      "secondaryMuscles": [
+        "triceps",
+        "delts",
+        "abs",
+        "traps"
+      ],
+      "instructions": [
+        "Adopta la postura inicial con buena alineación corporal.",
+        "Activa los glúteos antes de iniciar el movimiento.",
+        "Realiza el movimiento de forma controlada manteniendo la técnica.",
+        "Vuelve a la posición inicial controlando la fase excéntrica.",
+        "Mantén la respiración: exhala en el esfuerzo, inhala al volver."
+      ],
+      "file": "glutes/pike-to-cobra-push-up.gif",
+      "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/glutes/pike-to-cobra-push-up.gif",
+      "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/glutes/pike-to-cobra-push-up.thumb.webp"
+    },
+    {
+      "id": "glutes/potty-squat-with-support",
+      "slug": "potty-squat-with-support",
+      "name": "Sentadilla potty con apoyo",
+      "muscle": "glutes",
+      "bodyPart": "legs",
+      "equipment": "bodyweight",
+      "category": "strength",
+      "secondaryMuscles": [
+        "hamstrings",
+        "calves"
+      ],
+      "instructions": [
+        "Adopta la postura inicial con buena alineación corporal.",
+        "Activa los glúteos antes de iniciar el movimiento.",
+        "Realiza el movimiento de forma controlada manteniendo la técnica.",
+        "Vuelve a la posición inicial controlando la fase excéntrica.",
+        "Mantén la respiración: exhala en el esfuerzo, inhala al volver."
+      ],
+      "file": "glutes/potty-squat-with-support.gif",
+      "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/glutes/potty-squat-with-support.gif",
+      "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/glutes/potty-squat-with-support.thumb.webp"
+    },
+    {
+      "id": "glutes/push-up-inside-leg-kick",
+      "slug": "push-up-inside-leg-kick",
+      "name": "Flexión, interno pierna patada",
+      "muscle": "glutes",
+      "bodyPart": "legs",
+      "equipment": "bodyweight",
+      "category": "strength",
+      "secondaryMuscles": [
+        "triceps",
+        "delts"
+      ],
+      "instructions": [
+        "Adopta la postura inicial con buena alineación corporal.",
+        "Activa los glúteos antes de iniciar el movimiento.",
+        "Realiza el movimiento de forma controlada manteniendo la técnica.",
+        "Vuelve a la posición inicial controlando la fase excéntrica.",
+        "Mantén la respiración: exhala en el esfuerzo, inhala al volver."
+      ],
+      "file": "glutes/push-up-inside-leg-kick.gif",
+      "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/glutes/push-up-inside-leg-kick.gif",
+      "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/glutes/push-up-inside-leg-kick.thumb.webp"
+    },
+    {
+      "id": "glutes/rear-decline-bridge",
+      "slug": "rear-decline-bridge",
+      "name": "Puente declinado, posterior",
+      "muscle": "glutes",
+      "bodyPart": "legs",
+      "equipment": "bodyweight",
+      "category": "strength",
+      "secondaryMuscles": [
+        "hamstrings",
+        "abs"
+      ],
+      "instructions": [
+        "Adopta la postura inicial con buena alineación corporal.",
+        "Activa los glúteos antes de iniciar el movimiento.",
+        "Realiza el movimiento de forma controlada manteniendo la técnica.",
+        "Vuelve a la posición inicial controlando la fase excéntrica.",
+        "Mantén la respiración: exhala en el esfuerzo, inhala al volver."
+      ],
+      "file": "glutes/rear-decline-bridge.gif",
+      "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/glutes/rear-decline-bridge.gif",
+      "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/glutes/rear-decline-bridge.thumb.webp"
+    },
+    {
+      "id": "glutes/resistance-band-hip-thrusts-on-knees-female",
+      "slug": "resistance-band-hip-thrusts-on-knees-female",
+      "name": "Hip thrust con banda elástica, de rodillas",
+      "muscle": "glutes",
+      "bodyPart": "legs",
+      "equipment": "band",
+      "category": "strength",
+      "secondaryMuscles": [
+        "hamstrings",
+        "abs"
+      ],
+      "instructions": [
+        "Fija la banda elástica y mantén la tensión inicial.",
+        "Activa los glúteos antes de iniciar el movimiento.",
+        "Realiza el movimiento de forma controlada manteniendo la técnica.",
+        "Vuelve a la posición inicial controlando la fase excéntrica.",
+        "Mantén la respiración: exhala en el esfuerzo, inhala al volver."
+      ],
+      "file": "glutes/resistance-band-hip-thrusts-on-knees-female.gif",
+      "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/glutes/resistance-band-hip-thrusts-on-knees-female.gif",
+      "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/glutes/resistance-band-hip-thrusts-on-knees-female.thumb.webp"
+    },
+    {
+      "id": "glutes/reverse-hyper-extension-on-stability-ball",
+      "slug": "reverse-hyper-extension-on-stability-ball",
+      "name": "Extensión invertido, en fitball, hyper",
+      "muscle": "glutes",
+      "bodyPart": "legs",
+      "equipment": "bodyweight",
+      "category": "strength",
+      "secondaryMuscles": [],
+      "instructions": [
+        "Adopta la postura inicial con buena alineación corporal.",
+        "Activa los glúteos antes de iniciar el movimiento.",
+        "Realiza el movimiento de forma controlada manteniendo la técnica.",
+        "Vuelve a la posición inicial controlando la fase excéntrica.",
+        "Mantén la respiración: exhala en el esfuerzo, inhala al volver."
+      ],
+      "file": "glutes/reverse-hyper-extension-on-stability-ball.gif",
+      "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/glutes/reverse-hyper-extension-on-stability-ball.gif",
+      "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/glutes/reverse-hyper-extension-on-stability-ball.thumb.webp"
+    },
+    {
+      "id": "glutes/reverse-hyper-on-flat-bench",
+      "slug": "reverse-hyper-on-flat-bench",
+      "name": "Hyper invertido, en banco plano",
+      "muscle": "glutes",
+      "bodyPart": "legs",
+      "equipment": "bodyweight",
+      "category": "strength",
+      "secondaryMuscles": [],
+      "instructions": [
+        "Adopta la postura inicial con buena alineación corporal.",
+        "Activa los glúteos antes de iniciar el movimiento.",
+        "Realiza el movimiento de forma controlada manteniendo la técnica.",
+        "Vuelve a la posición inicial controlando la fase excéntrica.",
+        "Mantén la respiración: exhala en el esfuerzo, inhala al volver."
+      ],
+      "file": "glutes/reverse-hyper-on-flat-bench.gif",
+      "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/glutes/reverse-hyper-on-flat-bench.gif",
+      "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/glutes/reverse-hyper-on-flat-bench.thumb.webp"
+    },
+    {
+      "id": "glutes/rocking-frog-stretch",
+      "slug": "rocking-frog-stretch",
+      "name": "Estiramiento, rocking frog",
+      "muscle": "glutes",
+      "bodyPart": "legs",
+      "equipment": "bodyweight",
+      "category": "stretching",
+      "secondaryMuscles": [],
+      "instructions": [
+        "Adopta la postura inicial con buena alineación corporal.",
+        "Lleva el cuerpo a la posición de estiramiento de los glúteos.",
+        "Mantén entre 20 y 40 segundos respirando de forma profunda.",
+        "Vuelve a la posición inicial lentamente y repite si lo deseas."
+      ],
+      "file": "glutes/rocking-frog-stretch.gif",
+      "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/glutes/rocking-frog-stretch.gif",
+      "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/glutes/rocking-frog-stretch.thumb.webp"
+    },
+    {
+      "id": "glutes/roller-hip-lat-stretch",
+      "slug": "roller-hip-lat-stretch",
+      "name": "Estiramiento, roller cadera dorsal",
+      "muscle": "glutes",
+      "bodyPart": "legs",
+      "equipment": "bodyweight",
+      "category": "stretching",
+      "secondaryMuscles": [],
+      "instructions": [
+        "Adopta la postura inicial con buena alineación corporal.",
+        "Lleva el cuerpo a la posición de estiramiento de los glúteos.",
+        "Mantén entre 20 y 40 segundos respirando de forma profunda.",
+        "Vuelve a la posición inicial lentamente y repite si lo deseas."
+      ],
+      "file": "glutes/roller-hip-lat-stretch.gif",
+      "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/glutes/roller-hip-lat-stretch.gif",
+      "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/glutes/roller-hip-lat-stretch.thumb.webp"
+    },
+    {
+      "id": "glutes/roller-hip-stretch",
+      "slug": "roller-hip-stretch",
+      "name": "Estiramiento, roller cadera",
+      "muscle": "glutes",
+      "bodyPart": "legs",
+      "equipment": "bodyweight",
+      "category": "stretching",
+      "secondaryMuscles": [],
+      "instructions": [
+        "Adopta la postura inicial con buena alineación corporal.",
+        "Lleva el cuerpo a la posición de estiramiento de los glúteos.",
+        "Mantén entre 20 y 40 segundos respirando de forma profunda.",
+        "Vuelve a la posición inicial lentamente y repite si lo deseas."
+      ],
+      "file": "glutes/roller-hip-stretch.gif",
+      "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/glutes/roller-hip-stretch.gif",
+      "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/glutes/roller-hip-stretch.thumb.webp"
+    },
+    {
+      "id": "glutes/seated-glute-stretch",
+      "slug": "seated-glute-stretch",
+      "name": "Estiramiento, sentado, glúteo",
+      "muscle": "glutes",
+      "bodyPart": "legs",
+      "equipment": "bodyweight",
+      "category": "stretching",
+      "secondaryMuscles": [],
+      "instructions": [
+        "Adopta la postura inicial con buena alineación corporal.",
+        "Lleva el cuerpo a la posición de estiramiento de los glúteos.",
+        "Mantén entre 20 y 40 segundos respirando de forma profunda.",
+        "Vuelve a la posición inicial lentamente y repite si lo deseas."
+      ],
+      "file": "glutes/seated-glute-stretch.gif",
+      "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/glutes/seated-glute-stretch.gif",
+      "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/glutes/seated-glute-stretch.thumb.webp"
+    },
+    {
+      "id": "glutes/seated-piriformis-stretch",
+      "slug": "seated-piriformis-stretch",
+      "name": "Estiramiento del piriforme, sentado",
+      "muscle": "glutes",
+      "bodyPart": "legs",
+      "equipment": "bodyweight",
+      "category": "stretching",
+      "secondaryMuscles": [],
+      "instructions": [
+        "Adopta la postura inicial con buena alineación corporal.",
+        "Lleva el cuerpo a la posición de estiramiento de los glúteos.",
+        "Mantén entre 20 y 40 segundos respirando de forma profunda.",
+        "Vuelve a la posición inicial lentamente y repite si lo deseas."
+      ],
+      "file": "glutes/seated-piriformis-stretch.gif",
+      "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/glutes/seated-piriformis-stretch.gif",
+      "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/glutes/seated-piriformis-stretch.thumb.webp"
+    },
+    {
+      "id": "glutes/single-leg-bridge-with-outstretched-leg",
+      "slug": "single-leg-bridge-with-outstretched-leg",
+      "name": "Puente, a una pierna con extendida",
+      "muscle": "glutes",
+      "bodyPart": "legs",
+      "equipment": "bodyweight",
+      "category": "strength",
+      "secondaryMuscles": [
+        "hamstrings",
+        "abs"
+      ],
+      "instructions": [
+        "Adopta la postura inicial con buena alineación corporal.",
+        "Activa los glúteos antes de iniciar el movimiento.",
+        "Realiza el movimiento de forma controlada manteniendo la técnica.",
+        "Vuelve a la posición inicial controlando la fase excéntrica.",
+        "Mantén la respiración: exhala en el esfuerzo, inhala al volver."
+      ],
+      "file": "glutes/single-leg-bridge-with-outstretched-leg.gif",
+      "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/glutes/single-leg-bridge-with-outstretched-leg.gif",
+      "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/glutes/single-leg-bridge-with-outstretched-leg.thumb.webp"
+    },
+    {
+      "id": "glutes/single-leg-squat-pistol-male",
+      "slug": "single-leg-squat-pistol-male",
+      "name": "Sentadilla pistol, a una pierna",
+      "muscle": "glutes",
+      "bodyPart": "legs",
+      "equipment": "bodyweight",
+      "category": "strength",
+      "secondaryMuscles": [
+        "hamstrings",
+        "calves"
+      ],
+      "instructions": [
+        "Adopta la postura inicial con buena alineación corporal.",
+        "Activa los glúteos antes de iniciar el movimiento.",
+        "Realiza el movimiento de forma controlada manteniendo la técnica.",
+        "Vuelve a la posición inicial controlando la fase excéntrica.",
+        "Mantén la respiración: exhala en el esfuerzo, inhala al volver."
+      ],
+      "file": "glutes/single-leg-squat-pistol-male.gif",
+      "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/glutes/single-leg-squat-pistol-male.gif",
+      "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/glutes/single-leg-squat-pistol-male.thumb.webp"
+    },
+    {
+      "id": "glutes/sled-45-degrees-one-leg-press",
+      "slug": "sled-45-degrees-one-leg-press",
+      "name": "Press en trineo, a una pierna, degrees",
+      "muscle": "glutes",
+      "bodyPart": "legs",
+      "equipment": "sled",
+      "category": "strength",
+      "secondaryMuscles": [
+        "triceps",
+        "delts"
+      ],
+      "instructions": [
+        "Prepara el equipo y adopta la postura inicial.",
+        "Activa los glúteos antes de iniciar el movimiento.",
+        "Realiza el movimiento de forma controlada manteniendo la técnica.",
+        "Vuelve a la posición inicial controlando la fase excéntrica.",
+        "Mantén la respiración: exhala en el esfuerzo, inhala al volver."
+      ],
+      "file": "glutes/sled-45-degrees-one-leg-press.gif",
+      "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/glutes/sled-45-degrees-one-leg-press.gif",
+      "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/glutes/sled-45-degrees-one-leg-press.thumb.webp"
+    },
+    {
+      "id": "glutes/sled-45-leg-press-back-pov",
+      "slug": "sled-45-leg-press-back-pov",
+      "name": "Prensa de piernas a 45° en trineo",
+      "muscle": "glutes",
+      "bodyPart": "legs",
+      "equipment": "sled",
+      "category": "strength",
+      "secondaryMuscles": [
+        "triceps",
+        "delts"
+      ],
+      "instructions": [
+        "Prepara el equipo y adopta la postura inicial.",
+        "Activa los glúteos antes de iniciar el movimiento.",
+        "Realiza el movimiento de forma controlada manteniendo la técnica.",
+        "Vuelve a la posición inicial controlando la fase excéntrica.",
+        "Mantén la respiración: exhala en el esfuerzo, inhala al volver."
+      ],
+      "file": "glutes/sled-45-leg-press-back-pov.gif",
+      "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/glutes/sled-45-leg-press-back-pov.gif",
+      "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/glutes/sled-45-leg-press-back-pov.thumb.webp"
+    },
+    {
+      "id": "glutes/sled-45-leg-press-side-pov",
+      "slug": "sled-45-leg-press-side-pov",
+      "name": "Prensa de piernas a 45° en trineo, vista lateral",
+      "muscle": "glutes",
+      "bodyPart": "legs",
+      "equipment": "sled",
+      "category": "strength",
+      "secondaryMuscles": [
+        "triceps",
+        "delts"
+      ],
+      "instructions": [
+        "Prepara el equipo y adopta la postura inicial.",
+        "Activa los glúteos antes de iniciar el movimiento.",
+        "Realiza el movimiento de forma controlada manteniendo la técnica.",
+        "Vuelve a la posición inicial controlando la fase excéntrica.",
+        "Mantén la respiración: exhala en el esfuerzo, inhala al volver."
+      ],
+      "file": "glutes/sled-45-leg-press-side-pov.gif",
+      "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/glutes/sled-45-leg-press-side-pov.gif",
+      "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/glutes/sled-45-leg-press-side-pov.thumb.webp"
+    },
+    {
+      "id": "glutes/sled-45-leg-press",
+      "slug": "sled-45-leg-press",
+      "name": "Prensa de piernas a 45° en trineo",
+      "muscle": "glutes",
+      "bodyPart": "legs",
+      "equipment": "sled",
+      "category": "strength",
+      "secondaryMuscles": [
+        "triceps",
+        "delts"
+      ],
+      "instructions": [
+        "Prepara el equipo y adopta la postura inicial.",
+        "Activa los glúteos antes de iniciar el movimiento.",
+        "Realiza el movimiento de forma controlada manteniendo la técnica.",
+        "Vuelve a la posición inicial controlando la fase excéntrica.",
+        "Mantén la respiración: exhala en el esfuerzo, inhala al volver."
+      ],
+      "file": "glutes/sled-45-leg-press.gif",
+      "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/glutes/sled-45-leg-press.gif",
+      "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/glutes/sled-45-leg-press.thumb.webp"
+    },
+    {
+      "id": "glutes/sled-45-leg-wide-press",
+      "slug": "sled-45-leg-wide-press",
+      "name": "Press en trineo, ancho, pierna",
+      "muscle": "glutes",
+      "bodyPart": "legs",
+      "equipment": "sled",
+      "category": "strength",
+      "secondaryMuscles": [
+        "triceps",
+        "delts"
+      ],
+      "instructions": [
+        "Prepara el equipo y adopta la postura inicial.",
+        "Activa los glúteos antes de iniciar el movimiento.",
+        "Realiza el movimiento de forma controlada manteniendo la técnica.",
+        "Vuelve a la posición inicial controlando la fase excéntrica.",
+        "Mantén la respiración: exhala en el esfuerzo, inhala al volver."
+      ],
+      "file": "glutes/sled-45-leg-wide-press.gif",
+      "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/glutes/sled-45-leg-wide-press.gif",
+      "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/glutes/sled-45-leg-wide-press.thumb.webp"
+    },
+    {
+      "id": "glutes/sled-closer-hack-squat",
+      "slug": "sled-closer-hack-squat",
+      "name": "Hack squat en trineo, closer",
+      "muscle": "glutes",
+      "bodyPart": "legs",
+      "equipment": "lever",
+      "category": "strength",
+      "secondaryMuscles": [
+        "hamstrings",
+        "calves"
+      ],
+      "instructions": [
+        "Ajusta la máquina a tu medida y selecciona la carga.",
+        "Activa los glúteos antes de iniciar el movimiento.",
+        "Realiza el movimiento de forma controlada manteniendo la técnica.",
+        "Vuelve a la posición inicial controlando la fase excéntrica.",
+        "Mantén la respiración: exhala en el esfuerzo, inhala al volver."
+      ],
+      "file": "glutes/sled-closer-hack-squat.gif",
+      "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/glutes/sled-closer-hack-squat.gif",
+      "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/glutes/sled-closer-hack-squat.thumb.webp"
+    },
+    {
+      "id": "glutes/sled-hack-squat",
+      "slug": "sled-hack-squat",
+      "name": "Hack squat en trineo",
+      "muscle": "glutes",
+      "bodyPart": "legs",
+      "equipment": "lever",
+      "category": "strength",
+      "secondaryMuscles": [
+        "hamstrings",
+        "calves"
+      ],
+      "instructions": [
+        "Ajusta la máquina a tu medida y selecciona la carga.",
+        "Activa los glúteos antes de iniciar el movimiento.",
+        "Realiza el movimiento de forma controlada manteniendo la técnica.",
+        "Vuelve a la posición inicial controlando la fase excéntrica.",
+        "Mantén la respiración: exhala en el esfuerzo, inhala al volver."
+      ],
+      "file": "glutes/sled-hack-squat.gif",
+      "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/glutes/sled-hack-squat.gif",
+      "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/glutes/sled-hack-squat.thumb.webp"
+    },
+    {
+      "id": "glutes/sled-lying-squat",
+      "slug": "sled-lying-squat",
+      "name": "Sentadilla en trineo, tumbado",
+      "muscle": "glutes",
+      "bodyPart": "legs",
+      "equipment": "sled",
+      "category": "strength",
+      "secondaryMuscles": [
+        "hamstrings",
+        "calves"
+      ],
+      "instructions": [
+        "Prepara el equipo y adopta la postura inicial.",
+        "Activa los glúteos antes de iniciar el movimiento.",
+        "Realiza el movimiento de forma controlada manteniendo la técnica.",
+        "Vuelve a la posición inicial controlando la fase excéntrica.",
+        "Mantén la respiración: exhala en el esfuerzo, inhala al volver."
+      ],
+      "file": "glutes/sled-lying-squat.gif",
+      "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/glutes/sled-lying-squat.gif",
+      "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/glutes/sled-lying-squat.thumb.webp"
+    },
+    {
+      "id": "glutes/smith-bent-knee-good-morning",
+      "slug": "smith-bent-knee-good-morning",
+      "name": "Good morning en máquina Smith, con rodillas flexionadas",
+      "muscle": "glutes",
+      "bodyPart": "legs",
+      "equipment": "smith",
+      "category": "strength",
+      "secondaryMuscles": [],
+      "instructions": [
+        "Coloca la barra en la máquina Smith a la altura adecuada.",
+        "Activa los glúteos antes de iniciar el movimiento.",
+        "Realiza el movimiento de forma controlada manteniendo la técnica.",
+        "Vuelve a la posición inicial controlando la fase excéntrica.",
+        "Mantén la respiración: exhala en el esfuerzo, inhala al volver."
+      ],
+      "file": "glutes/smith-bent-knee-good-morning.gif",
+      "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/glutes/smith-bent-knee-good-morning.gif",
+      "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/glutes/smith-bent-knee-good-morning.thumb.webp"
+    },
+    {
+      "id": "glutes/smith-deadlift",
+      "slug": "smith-deadlift",
+      "name": "Peso muerto en máquina Smith",
+      "muscle": "glutes",
+      "bodyPart": "legs",
+      "equipment": "smith",
+      "category": "strength",
+      "secondaryMuscles": [
+        "hamstrings",
+        "lats",
+        "traps",
+        "forearms",
+        "spine"
+      ],
+      "instructions": [
+        "Coloca la barra en la máquina Smith a la altura adecuada.",
+        "Activa los glúteos antes de iniciar el movimiento.",
+        "Realiza el movimiento de forma controlada manteniendo la técnica.",
+        "Vuelve a la posición inicial controlando la fase excéntrica.",
+        "Mantén la respiración: exhala en el esfuerzo, inhala al volver."
+      ],
+      "file": "glutes/smith-deadlift.gif",
+      "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/glutes/smith-deadlift.gif",
+      "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/glutes/smith-deadlift.thumb.webp"
+    },
+    {
+      "id": "glutes/smith-front-squat-clean-grip",
+      "slug": "smith-front-squat-clean-grip",
+      "name": "Cargada en máquina Smith, front-squat",
+      "muscle": "glutes",
+      "bodyPart": "legs",
+      "equipment": "smith",
+      "category": "strength",
+      "secondaryMuscles": [
+        "hamstrings",
+        "calves",
+        "spine",
+        "traps",
+        "delts",
+        "forearms"
+      ],
+      "instructions": [
+        "Coloca la barra en la máquina Smith a la altura adecuada.",
+        "Activa los glúteos antes de iniciar el movimiento.",
+        "Realiza el movimiento de forma controlada manteniendo la técnica.",
+        "Vuelve a la posición inicial controlando la fase excéntrica.",
+        "Mantén la respiración: exhala en el esfuerzo, inhala al volver."
+      ],
+      "file": "glutes/smith-front-squat-clean-grip.gif",
+      "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/glutes/smith-front-squat-clean-grip.gif",
+      "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/glutes/smith-front-squat-clean-grip.thumb.webp"
+    },
+    {
+      "id": "glutes/smith-full-squat",
+      "slug": "smith-full-squat",
+      "name": "Sentadilla completa en máquina Smith",
+      "muscle": "glutes",
+      "bodyPart": "legs",
+      "equipment": "smith",
+      "category": "strength",
+      "secondaryMuscles": [
+        "hamstrings",
+        "calves"
+      ],
+      "instructions": [
+        "Coloca la barra en la máquina Smith a la altura adecuada.",
+        "Activa los glúteos antes de iniciar el movimiento.",
+        "Realiza el movimiento de forma controlada manteniendo la técnica.",
+        "Vuelve a la posición inicial controlando la fase excéntrica.",
+        "Mantén la respiración: exhala en el esfuerzo, inhala al volver."
+      ],
+      "file": "glutes/smith-full-squat.gif",
+      "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/glutes/smith-full-squat.gif",
+      "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/glutes/smith-full-squat.thumb.webp"
+    },
+    {
+      "id": "glutes/smith-hack-squat",
+      "slug": "smith-hack-squat",
+      "name": "Hack squat en máquina Smith",
+      "muscle": "glutes",
+      "bodyPart": "legs",
+      "equipment": "smith",
+      "category": "strength",
+      "secondaryMuscles": [
+        "hamstrings",
+        "calves"
+      ],
+      "instructions": [
+        "Coloca la barra en la máquina Smith a la altura adecuada.",
+        "Activa los glúteos antes de iniciar el movimiento.",
+        "Realiza el movimiento de forma controlada manteniendo la técnica.",
+        "Vuelve a la posición inicial controlando la fase excéntrica.",
+        "Mantén la respiración: exhala en el esfuerzo, inhala al volver."
+      ],
+      "file": "glutes/smith-hack-squat.gif",
+      "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/glutes/smith-hack-squat.gif",
+      "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/glutes/smith-hack-squat.thumb.webp"
+    },
+    {
+      "id": "glutes/smith-leg-press",
+      "slug": "smith-leg-press",
+      "name": "Prensa de piernas en máquina Smith",
+      "muscle": "glutes",
+      "bodyPart": "legs",
+      "equipment": "smith",
+      "category": "strength",
+      "secondaryMuscles": [
+        "triceps",
+        "delts"
+      ],
+      "instructions": [
+        "Coloca la barra en la máquina Smith a la altura adecuada.",
+        "Activa los glúteos antes de iniciar el movimiento.",
+        "Realiza el movimiento de forma controlada manteniendo la técnica.",
+        "Vuelve a la posición inicial controlando la fase excéntrica.",
+        "Mantén la respiración: exhala en el esfuerzo, inhala al volver."
+      ],
+      "file": "glutes/smith-leg-press.gif",
+      "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/glutes/smith-leg-press.gif",
+      "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/glutes/smith-leg-press.thumb.webp"
+    },
+    {
+      "id": "glutes/smith-low-bar-squat",
+      "slug": "smith-low-bar-squat",
+      "name": "Sentadilla en máquina Smith, barra",
+      "muscle": "glutes",
+      "bodyPart": "legs",
+      "equipment": "smith",
+      "category": "strength",
+      "secondaryMuscles": [
+        "hamstrings",
+        "calves"
+      ],
+      "instructions": [
+        "Coloca la barra en la máquina Smith a la altura adecuada.",
+        "Activa los glúteos antes de iniciar el movimiento.",
+        "Realiza el movimiento de forma controlada manteniendo la técnica.",
+        "Vuelve a la posición inicial controlando la fase excéntrica.",
+        "Mantén la respiración: exhala en el esfuerzo, inhala al volver."
+      ],
+      "file": "glutes/smith-low-bar-squat.gif",
+      "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/glutes/smith-low-bar-squat.gif",
+      "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/glutes/smith-low-bar-squat.thumb.webp"
+    },
+    {
+      "id": "glutes/smith-sprint-lunge",
+      "slug": "smith-sprint-lunge",
+      "name": "Zancada en máquina Smith, sprint",
+      "muscle": "glutes",
+      "bodyPart": "legs",
+      "equipment": "smith",
+      "category": "strength",
+      "secondaryMuscles": [
+        "hamstrings",
+        "calves"
+      ],
+      "instructions": [
+        "Coloca la barra en la máquina Smith a la altura adecuada.",
+        "Activa los glúteos antes de iniciar el movimiento.",
+        "Realiza el movimiento de forma controlada manteniendo la técnica.",
+        "Vuelve a la posición inicial controlando la fase excéntrica.",
+        "Mantén la respiración: exhala en el esfuerzo, inhala al volver."
+      ],
+      "file": "glutes/smith-sprint-lunge.gif",
+      "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/glutes/smith-sprint-lunge.gif",
+      "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/glutes/smith-sprint-lunge.thumb.webp"
+    },
+    {
+      "id": "glutes/smith-squat",
+      "slug": "smith-squat",
+      "name": "Sentadilla en máquina Smith",
+      "muscle": "glutes",
+      "bodyPart": "legs",
+      "equipment": "smith",
+      "category": "strength",
+      "secondaryMuscles": [
+        "hamstrings",
+        "calves"
+      ],
+      "instructions": [
+        "Coloca la barra en la máquina Smith a la altura adecuada.",
+        "Activa los glúteos antes de iniciar el movimiento.",
+        "Realiza el movimiento de forma controlada manteniendo la técnica.",
+        "Vuelve a la posición inicial controlando la fase excéntrica.",
+        "Mantén la respiración: exhala en el esfuerzo, inhala al volver."
+      ],
+      "file": "glutes/smith-squat.gif",
+      "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/glutes/smith-squat.gif",
+      "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/glutes/smith-squat.thumb.webp"
+    },
+    {
+      "id": "glutes/smith-sumo-squat",
+      "slug": "smith-sumo-squat",
+      "name": "Sentadilla sumo en máquina Smith",
+      "muscle": "glutes",
+      "bodyPart": "legs",
+      "equipment": "smith",
+      "category": "strength",
+      "secondaryMuscles": [
+        "hamstrings",
+        "calves"
+      ],
+      "instructions": [
+        "Coloca la barra en la máquina Smith a la altura adecuada.",
+        "Activa los glúteos antes de iniciar el movimiento.",
+        "Realiza el movimiento de forma controlada manteniendo la técnica.",
+        "Vuelve a la posición inicial controlando la fase excéntrica.",
+        "Mantén la respiración: exhala en el esfuerzo, inhala al volver."
+      ],
+      "file": "glutes/smith-sumo-squat.gif",
+      "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/glutes/smith-sumo-squat.gif",
+      "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/glutes/smith-sumo-squat.thumb.webp"
+    },
+    {
+      "id": "glutes/spider-crawl-push-up",
+      "slug": "spider-crawl-push-up",
+      "name": "Flexión spider, crawl",
+      "muscle": "glutes",
+      "bodyPart": "legs",
+      "equipment": "bodyweight",
+      "category": "strength",
+      "secondaryMuscles": [
+        "triceps",
+        "delts"
+      ],
+      "instructions": [
+        "Adopta la postura inicial con buena alineación corporal.",
+        "Activa los glúteos antes de iniciar el movimiento.",
+        "Realiza el movimiento de forma controlada manteniendo la técnica.",
+        "Vuelve a la posición inicial controlando la fase excéntrica.",
+        "Mantén la respiración: exhala en el esfuerzo, inhala al volver."
+      ],
+      "file": "glutes/spider-crawl-push-up.gif",
+      "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/glutes/spider-crawl-push-up.gif",
+      "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/glutes/spider-crawl-push-up.thumb.webp"
+    },
+    {
+      "id": "glutes/swimmer-kicks-v-2-male",
+      "slug": "swimmer-kicks-v-2-male",
+      "name": "Patadas de nadador",
+      "muscle": "glutes",
+      "bodyPart": "legs",
+      "equipment": "bodyweight",
+      "category": "strength",
+      "secondaryMuscles": [],
+      "instructions": [
+        "Adopta la postura inicial con buena alineación corporal.",
+        "Activa los glúteos antes de iniciar el movimiento.",
+        "Realiza el movimiento de forma controlada manteniendo la técnica.",
+        "Vuelve a la posición inicial controlando la fase excéntrica.",
+        "Mantén la respiración: exhala en el esfuerzo, inhala al volver."
+      ],
+      "file": "glutes/swimmer-kicks-v-2-male.gif",
+      "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/glutes/swimmer-kicks-v-2-male.gif",
+      "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/glutes/swimmer-kicks-v-2-male.thumb.webp"
+    },
+    {
+      "id": "glutes/tire-flip",
+      "slug": "tire-flip",
+      "name": "Volteo de neumático",
+      "muscle": "glutes",
+      "bodyPart": "legs",
+      "equipment": "bodyweight",
+      "category": "strength",
+      "secondaryMuscles": [],
+      "instructions": [
+        "Adopta la postura inicial con buena alineación corporal.",
+        "Activa los glúteos antes de iniciar el movimiento.",
+        "Realiza el movimiento de forma controlada manteniendo la técnica.",
+        "Vuelve a la posición inicial controlando la fase excéntrica.",
+        "Mantén la respiración: exhala en el esfuerzo, inhala al volver."
+      ],
+      "file": "glutes/tire-flip.gif",
+      "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/glutes/tire-flip.gif",
+      "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/glutes/tire-flip.thumb.webp"
+    },
+    {
+      "id": "glutes/trap-bar-deadlift",
+      "slug": "trap-bar-deadlift",
+      "name": "Peso muerto con barra hexagonal",
+      "muscle": "glutes",
+      "bodyPart": "legs",
+      "equipment": "barbell",
+      "category": "strength",
+      "secondaryMuscles": [
+        "hamstrings",
+        "lats",
+        "traps",
+        "forearms",
+        "spine"
+      ],
+      "instructions": [
+        "Carga el peso adecuado en la barra y adopta la postura inicial.",
+        "Activa los glúteos antes de iniciar el movimiento.",
+        "Realiza el movimiento de forma controlada manteniendo la técnica.",
+        "Vuelve a la posición inicial controlando la fase excéntrica.",
+        "Mantén la respiración: exhala en el esfuerzo, inhala al volver."
+      ],
+      "file": "glutes/trap-bar-deadlift.gif",
+      "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/glutes/trap-bar-deadlift.gif",
+      "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/glutes/trap-bar-deadlift.thumb.webp"
+    },
+    {
+      "id": "glutes/twist-hip-lift",
+      "slug": "twist-hip-lift",
+      "name": "Elevación de cadera con giro",
+      "muscle": "glutes",
+      "bodyPart": "legs",
+      "equipment": "bodyweight",
+      "category": "strength",
+      "secondaryMuscles": [],
+      "instructions": [
+        "Adopta la postura inicial con buena alineación corporal.",
+        "Activa los glúteos antes de iniciar el movimiento.",
+        "Realiza el movimiento de forma controlada manteniendo la técnica.",
+        "Vuelve a la posición inicial controlando la fase excéntrica.",
+        "Mantén la respiración: exhala en el esfuerzo, inhala al volver."
+      ],
+      "file": "glutes/twist-hip-lift.gif",
+      "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/glutes/twist-hip-lift.gif",
+      "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/glutes/twist-hip-lift.thumb.webp"
+    },
+    {
+      "id": "glutes/walking-lunge",
+      "slug": "walking-lunge",
+      "name": "Zancada, caminando",
+      "muscle": "glutes",
+      "bodyPart": "legs",
+      "equipment": "bodyweight",
+      "category": "strength",
+      "secondaryMuscles": [
+        "hamstrings",
+        "calves"
+      ],
+      "instructions": [
+        "Adopta la postura inicial con buena alineación corporal.",
+        "Activa los glúteos antes de iniciar el movimiento.",
+        "Realiza el movimiento de forma controlada manteniendo la técnica.",
+        "Vuelve a la posición inicial controlando la fase excéntrica.",
+        "Mantén la respiración: exhala en el esfuerzo, inhala al volver."
+      ],
+      "file": "glutes/walking-lunge.gif",
+      "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/glutes/walking-lunge.gif",
+      "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/glutes/walking-lunge.thumb.webp"
+    },
+    {
+      "id": "glutes/weighted-cossack-squats-male",
+      "slug": "weighted-cossack-squats-male",
+      "name": "Sentadillas, con peso, cossack",
+      "muscle": "glutes",
+      "bodyPart": "legs",
+      "equipment": "bodyweight",
+      "category": "strength",
+      "secondaryMuscles": [
+        "hamstrings",
+        "calves"
+      ],
+      "instructions": [
+        "Adopta la postura inicial con buena alineación corporal.",
+        "Activa los glúteos antes de iniciar el movimiento.",
+        "Realiza el movimiento de forma controlada manteniendo la técnica.",
+        "Vuelve a la posición inicial controlando la fase excéntrica.",
+        "Mantén la respiración: exhala en el esfuerzo, inhala al volver."
+      ],
+      "file": "glutes/weighted-cossack-squats-male.gif",
+      "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/glutes/weighted-cossack-squats-male.gif",
+      "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/glutes/weighted-cossack-squats-male.thumb.webp"
+    },
+    {
+      "id": "glutes/weighted-lunge-with-swing",
+      "slug": "weighted-lunge-with-swing",
+      "name": "Zancada, con peso, swing",
+      "muscle": "glutes",
+      "bodyPart": "legs",
+      "equipment": "bodyweight",
+      "category": "strength",
+      "secondaryMuscles": [
+        "hamstrings",
+        "calves",
+        "spine",
+        "traps",
+        "delts",
+        "forearms"
+      ],
+      "instructions": [
+        "Adopta la postura inicial con buena alineación corporal.",
+        "Activa los glúteos antes de iniciar el movimiento.",
+        "Realiza el movimiento de forma controlada manteniendo la técnica.",
+        "Vuelve a la posición inicial controlando la fase excéntrica.",
+        "Mantén la respiración: exhala en el esfuerzo, inhala al volver."
+      ],
+      "file": "glutes/weighted-lunge-with-swing.gif",
+      "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/glutes/weighted-lunge-with-swing.gif",
+      "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/glutes/weighted-lunge-with-swing.thumb.webp"
+    },
+    {
+      "id": "glutes/weighted-squat",
+      "slug": "weighted-squat",
+      "name": "Sentadilla, con peso",
+      "muscle": "glutes",
+      "bodyPart": "legs",
+      "equipment": "bodyweight",
+      "category": "strength",
+      "secondaryMuscles": [
+        "hamstrings",
+        "calves"
+      ],
+      "instructions": [
+        "Adopta la postura inicial con buena alineación corporal.",
+        "Activa los glúteos antes de iniciar el movimiento.",
+        "Realiza el movimiento de forma controlada manteniendo la técnica.",
+        "Vuelve a la posición inicial controlando la fase excéntrica.",
+        "Mantén la respiración: exhala en el esfuerzo, inhala al volver."
+      ],
+      "file": "glutes/weighted-squat.gif",
+      "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/glutes/weighted-squat.gif",
+      "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/glutes/weighted-squat.thumb.webp"
+    },
+    {
+      "id": "glutes/weighted-stretch-lunge",
+      "slug": "weighted-stretch-lunge",
+      "name": "Zancada en estiramiento con peso",
+      "muscle": "glutes",
+      "bodyPart": "legs",
+      "equipment": "bodyweight",
+      "category": "stretching",
+      "secondaryMuscles": [
+        "hamstrings",
+        "calves"
+      ],
+      "instructions": [
+        "Adopta la postura inicial con buena alineación corporal.",
+        "Lleva el cuerpo a la posición de estiramiento de los glúteos.",
+        "Mantén entre 20 y 40 segundos respirando de forma profunda.",
+        "Vuelve a la posición inicial lentamente y repite si lo deseas."
+      ],
+      "file": "glutes/weighted-stretch-lunge.gif",
+      "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/glutes/weighted-stretch-lunge.gif",
+      "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/glutes/weighted-stretch-lunge.thumb.webp"
+    }
+  ]
+}

@@ -1,0 +1,19 @@
+{
+  "id": "lats/exercise-ball-lying-side-lat-stretch",
+  "slug": "exercise-ball-lying-side-lat-stretch",
+  "name": "Estiramiento en fitball, tumbado lateral, dorsal",
+  "muscle": "lats",
+  "bodyPart": "back",
+  "equipment": "bodyweight",
+  "category": "stretching",
+  "secondaryMuscles": [],
+  "instructions": [
+    "Adopta la postura inicial con buena alineación corporal.",
+    "Lleva el cuerpo a la posición de estiramiento de los dorsales.",
+    "Mantén entre 20 y 40 segundos respirando de forma profunda.",
+    "Vuelve a la posición inicial lentamente y repite si lo deseas."
+  ],
+  "file": "lats/exercise-ball-lying-side-lat-stretch.gif",
+  "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/lats/exercise-ball-lying-side-lat-stretch.gif",
+  "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/lats/exercise-ball-lying-side-lat-stretch.thumb.webp"
+}

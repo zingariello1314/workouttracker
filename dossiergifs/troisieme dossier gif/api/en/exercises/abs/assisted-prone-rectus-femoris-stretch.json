@@ -1,0 +1,19 @@
+{
+  "id": "abs/assisted-prone-rectus-femoris-stretch",
+  "slug": "assisted-prone-rectus-femoris-stretch",
+  "name": "Assisted Prone Rectus Femoris Stretch",
+  "muscle": "abs",
+  "bodyPart": "core",
+  "equipment": "bodyweight",
+  "category": "stretching",
+  "secondaryMuscles": [],
+  "instructions": [
+    "Adopt the starting position with proper body alignment.",
+    "Move into the the core stretch position.",
+    "Hold for 20 to 40 seconds breathing deeply.",
+    "Return slowly to the starting position and repeat if desired."
+  ],
+  "file": "abs/assisted-prone-rectus-femoris-stretch.gif",
+  "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/abs/assisted-prone-rectus-femoris-stretch.gif",
+  "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/abs/assisted-prone-rectus-femoris-stretch.thumb.webp"
+}

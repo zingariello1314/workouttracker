@@ -1,0 +1,23 @@
+{
+  "id": "spine/exercise-ball-back-extension-with-hands-behind-head",
+  "slug": "exercise-ball-back-extension-with-hands-behind-head",
+  "name": "Exercise Ball Back Extension With Hands Behind Head",
+  "muscle": "spine",
+  "bodyPart": "back",
+  "equipment": "bodyweight",
+  "category": "strength",
+  "secondaryMuscles": [
+    "glutes",
+    "hamstrings"
+  ],
+  "instructions": [
+    "Adopt the starting position with proper body alignment.",
+    "Pre-engage the lower back before initiating the movement.",
+    "Perform the movement in a controlled manner, keeping good form.",
+    "Return to the starting position controlling the eccentric phase.",
+    "Breathe: exhale on effort, inhale on the way back."
+  ],
+  "file": "spine/exercise-ball-back-extension-with-hands-behind-head.gif",
+  "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/spine/exercise-ball-back-extension-with-hands-behind-head.gif",
+  "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/spine/exercise-ball-back-extension-with-hands-behind-head.thumb.webp"
+}

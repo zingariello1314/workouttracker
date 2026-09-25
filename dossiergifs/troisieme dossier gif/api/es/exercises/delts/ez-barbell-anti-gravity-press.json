@@ -1,0 +1,22 @@
+{
+  "id": "delts/ez-barbell-anti-gravity-press",
+  "slug": "ez-barbell-anti-gravity-press",
+  "name": "Press antigravedad con barra Z",
+  "muscle": "delts",
+  "bodyPart": "shoulders",
+  "equipment": "ez-bar",
+  "category": "strength",
+  "secondaryMuscles": [
+    "triceps"
+  ],
+  "instructions": [
+    "Carga la barra Z con un peso adecuado y agárrala con firmeza.",
+    "Activa los hombros antes de iniciar el movimiento.",
+    "Realiza el movimiento de forma controlada manteniendo la técnica.",
+    "Vuelve a la posición inicial controlando la fase excéntrica.",
+    "Mantén la respiración: exhala en el esfuerzo, inhala al volver."
+  ],
+  "file": "delts/ez-barbell-anti-gravity-press.gif",
+  "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/delts/ez-barbell-anti-gravity-press.gif",
+  "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/delts/ez-barbell-anti-gravity-press.thumb.webp"
+}

@@ -1,0 +1,20 @@
+{
+  "id": "calves/standing-calf-raise-on-a-staircase",
+  "slug": "standing-calf-raise-on-a-staircase",
+  "name": "Elevación de talones de pie, en escalera",
+  "muscle": "calves",
+  "bodyPart": "legs",
+  "equipment": "bodyweight",
+  "category": "strength",
+  "secondaryMuscles": [],
+  "instructions": [
+    "Adopta la postura inicial con buena alineación corporal.",
+    "Activa los gemelos antes de iniciar el movimiento.",
+    "Realiza el movimiento de forma controlada manteniendo la técnica.",
+    "Vuelve a la posición inicial controlando la fase excéntrica.",
+    "Mantén la respiración: exhala en el esfuerzo, inhala al volver."
+  ],
+  "file": "calves/standing-calf-raise-on-a-staircase.gif",
+  "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/calves/standing-calf-raise-on-a-staircase.gif",
+  "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/calves/standing-calf-raise-on-a-staircase.thumb.webp"
+}

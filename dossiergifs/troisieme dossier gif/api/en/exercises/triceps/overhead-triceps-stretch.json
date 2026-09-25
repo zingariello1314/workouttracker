@@ -1,0 +1,21 @@
+{
+  "id": "triceps/overhead-triceps-stretch",
+  "slug": "overhead-triceps-stretch",
+  "name": "Overhead Triceps Stretch",
+  "muscle": "triceps",
+  "bodyPart": "arms",
+  "equipment": "bodyweight",
+  "category": "stretching",
+  "secondaryMuscles": [
+    "delts"
+  ],
+  "instructions": [
+    "Adopt the starting position with proper body alignment.",
+    "Move into the the triceps stretch position.",
+    "Hold for 20 to 40 seconds breathing deeply.",
+    "Return slowly to the starting position and repeat if desired."
+  ],
+  "file": "triceps/overhead-triceps-stretch.gif",
+  "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/triceps/overhead-triceps-stretch.gif",
+  "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/triceps/overhead-triceps-stretch.thumb.webp"
+}

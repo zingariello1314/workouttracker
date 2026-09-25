@@ -1,0 +1,19 @@
+{
+  "id": "pectorals/assisted-seated-pectoralis-major-stretch-with-stability-ball",
+  "slug": "assisted-seated-pectoralis-major-stretch-with-stability-ball",
+  "name": "Estiramiento en fitball, sentado, asistido, pectoralis major",
+  "muscle": "pectorals",
+  "bodyPart": "chest",
+  "equipment": "bodyweight",
+  "category": "stretching",
+  "secondaryMuscles": [],
+  "instructions": [
+    "Adopta la postura inicial con buena alineación corporal.",
+    "Lleva el cuerpo a la posición de estiramiento de el pectoral.",
+    "Mantén entre 20 y 40 segundos respirando de forma profunda.",
+    "Vuelve a la posición inicial lentamente y repite si lo deseas."
+  ],
+  "file": "pectorals/assisted-seated-pectoralis-major-stretch-with-stability-ball.gif",
+  "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/pectorals/assisted-seated-pectoralis-major-stretch-with-stability-ball.gif",
+  "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/pectorals/assisted-seated-pectoralis-major-stretch-with-stability-ball.thumb.webp"
+}

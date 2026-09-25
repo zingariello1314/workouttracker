@@ -1,0 +1,20 @@
+{
+  "id": "pectorals/medicine-ball-chest-push-from-3-point-stance",
+  "slug": "medicine-ball-chest-push-from-3-point-stance",
+  "name": "Empuje de pecho con balón medicinal desde postura de 3 apoyos",
+  "muscle": "pectorals",
+  "bodyPart": "chest",
+  "equipment": "bodyweight",
+  "category": "strength",
+  "secondaryMuscles": [],
+  "instructions": [
+    "Adopta la postura inicial con buena alineación corporal.",
+    "Activa el pectoral antes de iniciar el movimiento.",
+    "Realiza el movimiento de forma controlada manteniendo la técnica.",
+    "Vuelve a la posición inicial controlando la fase excéntrica.",
+    "Mantén la respiración: exhala en el esfuerzo, inhala al volver."
+  ],
+  "file": "pectorals/medicine-ball-chest-push-from-3-point-stance.gif",
+  "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/pectorals/medicine-ball-chest-push-from-3-point-stance.gif",
+  "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/pectorals/medicine-ball-chest-push-from-3-point-stance.thumb.webp"
+}

@@ -1,0 +1,21 @@
+{
+  "id": "forearms/side-wrist-pull-stretch",
+  "slug": "side-wrist-pull-stretch",
+  "name": "Estiramiento de muñeca lateral",
+  "muscle": "forearms",
+  "bodyPart": "arms",
+  "equipment": "bodyweight",
+  "category": "stretching",
+  "secondaryMuscles": [
+    "biceps"
+  ],
+  "instructions": [
+    "Adopta la postura inicial con buena alineación corporal.",
+    "Lleva el cuerpo a la posición de estiramiento de los antebrazos.",
+    "Mantén entre 20 y 40 segundos respirando de forma profunda.",
+    "Vuelve a la posición inicial lentamente y repite si lo deseas."
+  ],
+  "file": "forearms/side-wrist-pull-stretch.gif",
+  "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/forearms/side-wrist-pull-stretch.gif",
+  "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/forearms/side-wrist-pull-stretch.thumb.webp"
+}

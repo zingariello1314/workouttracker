@@ -1,0 +1,24 @@
+{
+  "id": "delts/battling-ropes",
+  "slug": "battling-ropes",
+  "name": "Battling Ropes",
+  "muscle": "delts",
+  "bodyPart": "shoulders",
+  "equipment": "band",
+  "category": "strength",
+  "secondaryMuscles": [
+    "abs",
+    "forearms",
+    "traps"
+  ],
+  "instructions": [
+    "Anchor the resistance band and maintain initial tension.",
+    "Pre-engage the shoulders before initiating the movement.",
+    "Perform the movement in a controlled manner, keeping good form.",
+    "Return to the starting position controlling the eccentric phase.",
+    "Breathe: exhale on effort, inhale on the way back."
+  ],
+  "file": "delts/battling-ropes.gif",
+  "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/delts/battling-ropes.gif",
+  "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/delts/battling-ropes.thumb.webp"
+}

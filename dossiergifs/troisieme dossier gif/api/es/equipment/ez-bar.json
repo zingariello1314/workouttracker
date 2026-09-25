@@ -1,0 +1,517 @@
+{
+  "equipment": "ez-bar",
+  "count": 23,
+  "exercises": [
+    {
+      "id": "biceps/ez-bar-biceps-curl-with-arm-blaster",
+      "slug": "ez-bar-biceps-curl-with-arm-blaster",
+      "name": "Curl de bíceps con barra Z, con arm blaster",
+      "muscle": "biceps",
+      "bodyPart": "arms",
+      "equipment": "ez-bar",
+      "category": "strength",
+      "secondaryMuscles": [
+        "forearms"
+      ],
+      "instructions": [
+        "Carga la barra Z con un peso adecuado y agárrala con firmeza.",
+        "Activa los bíceps antes de iniciar el movimiento.",
+        "Realiza el movimiento de forma controlada manteniendo la técnica.",
+        "Vuelve a la posición inicial controlando la fase excéntrica.",
+        "Mantén la respiración: exhala en el esfuerzo, inhala al volver."
+      ],
+      "file": "biceps/ez-bar-biceps-curl-with-arm-blaster.gif",
+      "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/biceps/ez-bar-biceps-curl-with-arm-blaster.gif",
+      "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/biceps/ez-bar-biceps-curl-with-arm-blaster.thumb.webp"
+    },
+    {
+      "id": "biceps/ez-bar-seated-close-grip-concentration-curl",
+      "slug": "ez-bar-seated-close-grip-concentration-curl",
+      "name": "Curl concentrado con barra Z, sentado, con agarre cerrado",
+      "muscle": "biceps",
+      "bodyPart": "arms",
+      "equipment": "ez-bar",
+      "category": "strength",
+      "secondaryMuscles": [
+        "forearms"
+      ],
+      "instructions": [
+        "Carga la barra Z con un peso adecuado y agárrala con firmeza.",
+        "Activa los bíceps antes de iniciar el movimiento.",
+        "Realiza el movimiento de forma controlada manteniendo la técnica.",
+        "Vuelve a la posición inicial controlando la fase excéntrica.",
+        "Mantén la respiración: exhala en el esfuerzo, inhala al volver."
+      ],
+      "file": "biceps/ez-bar-seated-close-grip-concentration-curl.gif",
+      "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/biceps/ez-bar-seated-close-grip-concentration-curl.gif",
+      "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/biceps/ez-bar-seated-close-grip-concentration-curl.thumb.webp"
+    },
+    {
+      "id": "biceps/ez-barbell-close-grip-curl",
+      "slug": "ez-barbell-close-grip-curl",
+      "name": "Curl con barra Z, con agarre cerrado",
+      "muscle": "biceps",
+      "bodyPart": "arms",
+      "equipment": "ez-bar",
+      "category": "strength",
+      "secondaryMuscles": [
+        "forearms"
+      ],
+      "instructions": [
+        "Carga la barra Z con un peso adecuado y agárrala con firmeza.",
+        "Activa los bíceps antes de iniciar el movimiento.",
+        "Realiza el movimiento de forma controlada manteniendo la técnica.",
+        "Vuelve a la posición inicial controlando la fase excéntrica.",
+        "Mantén la respiración: exhala en el esfuerzo, inhala al volver."
+      ],
+      "file": "biceps/ez-barbell-close-grip-curl.gif",
+      "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/biceps/ez-barbell-close-grip-curl.gif",
+      "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/biceps/ez-barbell-close-grip-curl.thumb.webp"
+    },
+    {
+      "id": "biceps/ez-barbell-close-grip-preacher-curl",
+      "slug": "ez-barbell-close-grip-preacher-curl",
+      "name": "Curl predicador con barra Z, con agarre cerrado",
+      "muscle": "biceps",
+      "bodyPart": "arms",
+      "equipment": "ez-bar",
+      "category": "strength",
+      "secondaryMuscles": [
+        "forearms"
+      ],
+      "instructions": [
+        "Carga la barra Z con un peso adecuado y agárrala con firmeza.",
+        "Activa los bíceps antes de iniciar el movimiento.",
+        "Realiza el movimiento de forma controlada manteniendo la técnica.",
+        "Vuelve a la posición inicial controlando la fase excéntrica.",
+        "Mantén la respiración: exhala en el esfuerzo, inhala al volver."
+      ],
+      "file": "biceps/ez-barbell-close-grip-preacher-curl.gif",
+      "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/biceps/ez-barbell-close-grip-preacher-curl.gif",
+      "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/biceps/ez-barbell-close-grip-preacher-curl.thumb.webp"
+    },
+    {
+      "id": "biceps/ez-barbell-curl",
+      "slug": "ez-barbell-curl",
+      "name": "Curl con barra Z",
+      "muscle": "biceps",
+      "bodyPart": "arms",
+      "equipment": "ez-bar",
+      "category": "strength",
+      "secondaryMuscles": [
+        "forearms"
+      ],
+      "instructions": [
+        "Carga la barra Z con un peso adecuado y agárrala con firmeza.",
+        "Activa los bíceps antes de iniciar el movimiento.",
+        "Realiza el movimiento de forma controlada manteniendo la técnica.",
+        "Vuelve a la posición inicial controlando la fase excéntrica.",
+        "Mantén la respiración: exhala en el esfuerzo, inhala al volver."
+      ],
+      "file": "biceps/ez-barbell-curl.gif",
+      "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/biceps/ez-barbell-curl.gif",
+      "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/biceps/ez-barbell-curl.thumb.webp"
+    },
+    {
+      "id": "biceps/ez-barbell-reverse-grip-curl",
+      "slug": "ez-barbell-reverse-grip-curl",
+      "name": "Curl con barra Z, con agarre invertido",
+      "muscle": "biceps",
+      "bodyPart": "arms",
+      "equipment": "ez-bar",
+      "category": "strength",
+      "secondaryMuscles": [
+        "forearms"
+      ],
+      "instructions": [
+        "Carga la barra Z con un peso adecuado y agárrala con firmeza.",
+        "Activa los bíceps antes de iniciar el movimiento.",
+        "Realiza el movimiento de forma controlada manteniendo la técnica.",
+        "Vuelve a la posición inicial controlando la fase excéntrica.",
+        "Mantén la respiración: exhala en el esfuerzo, inhala al volver."
+      ],
+      "file": "biceps/ez-barbell-reverse-grip-curl.gif",
+      "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/biceps/ez-barbell-reverse-grip-curl.gif",
+      "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/biceps/ez-barbell-reverse-grip-curl.thumb.webp"
+    },
+    {
+      "id": "biceps/ez-barbell-reverse-grip-preacher-curl",
+      "slug": "ez-barbell-reverse-grip-preacher-curl",
+      "name": "Curl predicador con barra Z, con agarre invertido",
+      "muscle": "biceps",
+      "bodyPart": "arms",
+      "equipment": "ez-bar",
+      "category": "strength",
+      "secondaryMuscles": [
+        "forearms"
+      ],
+      "instructions": [
+        "Carga la barra Z con un peso adecuado y agárrala con firmeza.",
+        "Activa los bíceps antes de iniciar el movimiento.",
+        "Realiza el movimiento de forma controlada manteniendo la técnica.",
+        "Vuelve a la posición inicial controlando la fase excéntrica.",
+        "Mantén la respiración: exhala en el esfuerzo, inhala al volver."
+      ],
+      "file": "biceps/ez-barbell-reverse-grip-preacher-curl.gif",
+      "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/biceps/ez-barbell-reverse-grip-preacher-curl.gif",
+      "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/biceps/ez-barbell-reverse-grip-preacher-curl.thumb.webp"
+    },
+    {
+      "id": "biceps/ez-barbell-seated-curls",
+      "slug": "ez-barbell-seated-curls",
+      "name": "Curl con barra Z, sentado",
+      "muscle": "biceps",
+      "bodyPart": "arms",
+      "equipment": "ez-bar",
+      "category": "strength",
+      "secondaryMuscles": [
+        "forearms"
+      ],
+      "instructions": [
+        "Carga la barra Z con un peso adecuado y agárrala con firmeza.",
+        "Activa los bíceps antes de iniciar el movimiento.",
+        "Realiza el movimiento de forma controlada manteniendo la técnica.",
+        "Vuelve a la posición inicial controlando la fase excéntrica.",
+        "Mantén la respiración: exhala en el esfuerzo, inhala al volver."
+      ],
+      "file": "biceps/ez-barbell-seated-curls.gif",
+      "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/biceps/ez-barbell-seated-curls.gif",
+      "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/biceps/ez-barbell-seated-curls.thumb.webp"
+    },
+    {
+      "id": "biceps/ez-barbell-spider-curl-1628",
+      "slug": "ez-barbell-spider-curl-1628",
+      "name": "Curl spider con barra Z",
+      "muscle": "biceps",
+      "bodyPart": "arms",
+      "equipment": "ez-bar",
+      "category": "strength",
+      "secondaryMuscles": [
+        "forearms"
+      ],
+      "instructions": [
+        "Carga la barra Z con un peso adecuado y agárrala con firmeza.",
+        "Activa los bíceps antes de iniciar el movimiento.",
+        "Realiza el movimiento de forma controlada manteniendo la técnica.",
+        "Vuelve a la posición inicial controlando la fase excéntrica.",
+        "Mantén la respiración: exhala en el esfuerzo, inhala al volver."
+      ],
+      "file": "biceps/ez-barbell-spider-curl-1628.gif",
+      "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/biceps/ez-barbell-spider-curl-1628.gif",
+      "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/biceps/ez-barbell-spider-curl-1628.thumb.webp"
+    },
+    {
+      "id": "biceps/ez-barbell-spider-curl",
+      "slug": "ez-barbell-spider-curl",
+      "name": "Curl spider con barra Z",
+      "muscle": "biceps",
+      "bodyPart": "arms",
+      "equipment": "ez-bar",
+      "category": "strength",
+      "secondaryMuscles": [
+        "forearms"
+      ],
+      "instructions": [
+        "Carga la barra Z con un peso adecuado y agárrala con firmeza.",
+        "Activa los bíceps antes de iniciar el movimiento.",
+        "Realiza el movimiento de forma controlada manteniendo la técnica.",
+        "Vuelve a la posición inicial controlando la fase excéntrica.",
+        "Mantén la respiración: exhala en el esfuerzo, inhala al volver."
+      ],
+      "file": "biceps/ez-barbell-spider-curl.gif",
+      "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/biceps/ez-barbell-spider-curl.gif",
+      "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/biceps/ez-barbell-spider-curl.thumb.webp"
+    },
+    {
+      "id": "biceps/ez-barbell-standing-wide-grip-biceps-curl",
+      "slug": "ez-barbell-standing-wide-grip-biceps-curl",
+      "name": "Curl de bíceps con barra Z, de pie, con agarre ancho",
+      "muscle": "biceps",
+      "bodyPart": "arms",
+      "equipment": "ez-bar",
+      "category": "strength",
+      "secondaryMuscles": [
+        "forearms"
+      ],
+      "instructions": [
+        "Carga la barra Z con un peso adecuado y agárrala con firmeza.",
+        "Activa los bíceps antes de iniciar el movimiento.",
+        "Realiza el movimiento de forma controlada manteniendo la técnica.",
+        "Vuelve a la posición inicial controlando la fase excéntrica.",
+        "Mantén la respiración: exhala en el esfuerzo, inhala al volver."
+      ],
+      "file": "biceps/ez-barbell-standing-wide-grip-biceps-curl.gif",
+      "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/biceps/ez-barbell-standing-wide-grip-biceps-curl.gif",
+      "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/biceps/ez-barbell-standing-wide-grip-biceps-curl.thumb.webp"
+    },
+    {
+      "id": "delts/ez-barbell-anti-gravity-press",
+      "slug": "ez-barbell-anti-gravity-press",
+      "name": "Press antigravedad con barra Z",
+      "muscle": "delts",
+      "bodyPart": "shoulders",
+      "equipment": "ez-bar",
+      "category": "strength",
+      "secondaryMuscles": [
+        "triceps"
+      ],
+      "instructions": [
+        "Carga la barra Z con un peso adecuado y agárrala con firmeza.",
+        "Activa los hombros antes de iniciar el movimiento.",
+        "Realiza el movimiento de forma controlada manteniendo la técnica.",
+        "Vuelve a la posición inicial controlando la fase excéntrica.",
+        "Mantén la respiración: exhala en el esfuerzo, inhala al volver."
+      ],
+      "file": "delts/ez-barbell-anti-gravity-press.gif",
+      "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/delts/ez-barbell-anti-gravity-press.gif",
+      "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/delts/ez-barbell-anti-gravity-press.thumb.webp"
+    },
+    {
+      "id": "lats/ez-bar-lying-bent-arms-pullover",
+      "slug": "ez-bar-lying-bent-arms-pullover",
+      "name": "Pullover con barra Z, tumbado, con brazos doblados",
+      "muscle": "lats",
+      "bodyPart": "back",
+      "equipment": "ez-bar",
+      "category": "strength",
+      "secondaryMuscles": [
+        "pectorals",
+        "triceps",
+        "abs"
+      ],
+      "instructions": [
+        "Carga la barra Z con un peso adecuado y agárrala con firmeza.",
+        "Activa los dorsales antes de iniciar el movimiento.",
+        "Realiza el movimiento de forma controlada manteniendo la técnica.",
+        "Vuelve a la posición inicial controlando la fase excéntrica.",
+        "Mantén la respiración: exhala en el esfuerzo, inhala al volver."
+      ],
+      "file": "lats/ez-bar-lying-bent-arms-pullover.gif",
+      "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/lats/ez-bar-lying-bent-arms-pullover.gif",
+      "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/lats/ez-bar-lying-bent-arms-pullover.thumb.webp"
+    },
+    {
+      "id": "triceps/ez-bar-close-grip-bench-press",
+      "slug": "ez-bar-close-grip-bench-press",
+      "name": "Press de banca con barra Z, con agarre cerrado",
+      "muscle": "triceps",
+      "bodyPart": "arms",
+      "equipment": "ez-bar",
+      "category": "strength",
+      "secondaryMuscles": [
+        "delts"
+      ],
+      "instructions": [
+        "Carga la barra Z con un peso adecuado y agárrala con firmeza.",
+        "Activa los tríceps antes de iniciar el movimiento.",
+        "Realiza el movimiento de forma controlada manteniendo la técnica.",
+        "Vuelve a la posición inicial controlando la fase excéntrica.",
+        "Mantén la respiración: exhala en el esfuerzo, inhala al volver."
+      ],
+      "file": "triceps/ez-bar-close-grip-bench-press.gif",
+      "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/triceps/ez-bar-close-grip-bench-press.gif",
+      "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/triceps/ez-bar-close-grip-bench-press.thumb.webp"
+    },
+    {
+      "id": "triceps/ez-bar-french-press-on-exercise-ball",
+      "slug": "ez-bar-french-press-on-exercise-ball",
+      "name": "Press francés con barra Z, en fitball",
+      "muscle": "triceps",
+      "bodyPart": "arms",
+      "equipment": "ez-bar",
+      "category": "strength",
+      "secondaryMuscles": [
+        "delts"
+      ],
+      "instructions": [
+        "Carga la barra Z con un peso adecuado y agárrala con firmeza.",
+        "Activa los tríceps antes de iniciar el movimiento.",
+        "Realiza el movimiento de forma controlada manteniendo la técnica.",
+        "Vuelve a la posición inicial controlando la fase excéntrica.",
+        "Mantén la respiración: exhala en el esfuerzo, inhala al volver."
+      ],
+      "file": "triceps/ez-bar-french-press-on-exercise-ball.gif",
+      "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/triceps/ez-bar-french-press-on-exercise-ball.gif",
+      "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/triceps/ez-bar-french-press-on-exercise-ball.thumb.webp"
+    },
+    {
+      "id": "triceps/ez-bar-lying-close-grip-triceps-extension-behind-head",
+      "slug": "ez-bar-lying-close-grip-triceps-extension-behind-head",
+      "name": "Extensión de tríceps con barra Z, tumbado, con agarre cerrado, tras la nuca",
+      "muscle": "triceps",
+      "bodyPart": "arms",
+      "equipment": "ez-bar",
+      "category": "strength",
+      "secondaryMuscles": [
+        "delts"
+      ],
+      "instructions": [
+        "Carga la barra Z con un peso adecuado y agárrala con firmeza.",
+        "Activa los tríceps antes de iniciar el movimiento.",
+        "Realiza el movimiento de forma controlada manteniendo la técnica.",
+        "Vuelve a la posición inicial controlando la fase excéntrica.",
+        "Mantén la respiración: exhala en el esfuerzo, inhala al volver."
+      ],
+      "file": "triceps/ez-bar-lying-close-grip-triceps-extension-behind-head.gif",
+      "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/triceps/ez-bar-lying-close-grip-triceps-extension-behind-head.gif",
+      "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/triceps/ez-bar-lying-close-grip-triceps-extension-behind-head.thumb.webp"
+    },
+    {
+      "id": "triceps/ez-bar-standing-french-press",
+      "slug": "ez-bar-standing-french-press",
+      "name": "Press francés con barra Z, de pie",
+      "muscle": "triceps",
+      "bodyPart": "arms",
+      "equipment": "ez-bar",
+      "category": "strength",
+      "secondaryMuscles": [
+        "delts"
+      ],
+      "instructions": [
+        "Carga la barra Z con un peso adecuado y agárrala con firmeza.",
+        "Activa los tríceps antes de iniciar el movimiento.",
+        "Realiza el movimiento de forma controlada manteniendo la técnica.",
+        "Vuelve a la posición inicial controlando la fase excéntrica.",
+        "Mantén la respiración: exhala en el esfuerzo, inhala al volver."
+      ],
+      "file": "triceps/ez-bar-standing-french-press.gif",
+      "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/triceps/ez-bar-standing-french-press.gif",
+      "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/triceps/ez-bar-standing-french-press.thumb.webp"
+    },
+    {
+      "id": "triceps/ez-barbell-decline-close-grip-face-press",
+      "slug": "ez-barbell-decline-close-grip-face-press",
+      "name": "Press declinado con barra Z, con agarre cerrado, face",
+      "muscle": "triceps",
+      "bodyPart": "arms",
+      "equipment": "ez-bar",
+      "category": "strength",
+      "secondaryMuscles": [
+        "delts"
+      ],
+      "instructions": [
+        "Carga la barra Z con un peso adecuado y agárrala con firmeza.",
+        "Activa los tríceps antes de iniciar el movimiento.",
+        "Realiza el movimiento de forma controlada manteniendo la técnica.",
+        "Vuelve a la posición inicial controlando la fase excéntrica.",
+        "Mantén la respiración: exhala en el esfuerzo, inhala al volver."
+      ],
+      "file": "triceps/ez-barbell-decline-close-grip-face-press.gif",
+      "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/triceps/ez-barbell-decline-close-grip-face-press.gif",
+      "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/triceps/ez-barbell-decline-close-grip-face-press.thumb.webp"
+    },
+    {
+      "id": "triceps/ez-barbell-decline-triceps-extension",
+      "slug": "ez-barbell-decline-triceps-extension",
+      "name": "Extensión de tríceps declinado con barra Z",
+      "muscle": "triceps",
+      "bodyPart": "arms",
+      "equipment": "ez-bar",
+      "category": "strength",
+      "secondaryMuscles": [
+        "delts"
+      ],
+      "instructions": [
+        "Carga la barra Z con un peso adecuado y agárrala con firmeza.",
+        "Activa los tríceps antes de iniciar el movimiento.",
+        "Realiza el movimiento de forma controlada manteniendo la técnica.",
+        "Vuelve a la posición inicial controlando la fase excéntrica.",
+        "Mantén la respiración: exhala en el esfuerzo, inhala al volver."
+      ],
+      "file": "triceps/ez-barbell-decline-triceps-extension.gif",
+      "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/triceps/ez-barbell-decline-triceps-extension.gif",
+      "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/triceps/ez-barbell-decline-triceps-extension.thumb.webp"
+    },
+    {
+      "id": "triceps/ez-barbell-incline-triceps-extension",
+      "slug": "ez-barbell-incline-triceps-extension",
+      "name": "Extensión de tríceps inclinado con barra Z",
+      "muscle": "triceps",
+      "bodyPart": "arms",
+      "equipment": "ez-bar",
+      "category": "strength",
+      "secondaryMuscles": [
+        "delts"
+      ],
+      "instructions": [
+        "Carga la barra Z con un peso adecuado y agárrala con firmeza.",
+        "Activa los tríceps antes de iniciar el movimiento.",
+        "Realiza el movimiento de forma controlada manteniendo la técnica.",
+        "Vuelve a la posición inicial controlando la fase excéntrica.",
+        "Mantén la respiración: exhala en el esfuerzo, inhala al volver."
+      ],
+      "file": "triceps/ez-barbell-incline-triceps-extension.gif",
+      "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/triceps/ez-barbell-incline-triceps-extension.gif",
+      "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/triceps/ez-barbell-incline-triceps-extension.thumb.webp"
+    },
+    {
+      "id": "triceps/ez-barbell-jm-bench-press",
+      "slug": "ez-barbell-jm-bench-press",
+      "name": "Press de banca JM con barra Z",
+      "muscle": "triceps",
+      "bodyPart": "arms",
+      "equipment": "ez-bar",
+      "category": "strength",
+      "secondaryMuscles": [
+        "delts"
+      ],
+      "instructions": [
+        "Carga la barra Z con un peso adecuado y agárrala con firmeza.",
+        "Activa los tríceps antes de iniciar el movimiento.",
+        "Realiza el movimiento de forma controlada manteniendo la técnica.",
+        "Vuelve a la posición inicial controlando la fase excéntrica.",
+        "Mantén la respiración: exhala en el esfuerzo, inhala al volver."
+      ],
+      "file": "triceps/ez-barbell-jm-bench-press.gif",
+      "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/triceps/ez-barbell-jm-bench-press.gif",
+      "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/triceps/ez-barbell-jm-bench-press.thumb.webp"
+    },
+    {
+      "id": "triceps/ez-barbell-seated-triceps-extension",
+      "slug": "ez-barbell-seated-triceps-extension",
+      "name": "Extensión de tríceps con barra Z, sentado",
+      "muscle": "triceps",
+      "bodyPart": "arms",
+      "equipment": "ez-bar",
+      "category": "strength",
+      "secondaryMuscles": [
+        "delts"
+      ],
+      "instructions": [
+        "Carga la barra Z con un peso adecuado y agárrala con firmeza.",
+        "Activa los tríceps antes de iniciar el movimiento.",
+        "Realiza el movimiento de forma controlada manteniendo la técnica.",
+        "Vuelve a la posición inicial controlando la fase excéntrica.",
+        "Mantén la respiración: exhala en el esfuerzo, inhala al volver."
+      ],
+      "file": "triceps/ez-barbell-seated-triceps-extension.gif",
+      "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/triceps/ez-barbell-seated-triceps-extension.gif",
+      "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/triceps/ez-barbell-seated-triceps-extension.thumb.webp"
+    },
+    {
+      "id": "upper-back/ez-bar-reverse-grip-bent-over-row",
+      "slug": "ez-bar-reverse-grip-bent-over-row",
+      "name": "Remo inclinado con barra Z, con agarre invertido",
+      "muscle": "upper-back",
+      "bodyPart": "back",
+      "equipment": "ez-bar",
+      "category": "strength",
+      "secondaryMuscles": [
+        "biceps",
+        "forearms",
+        "delts",
+        "lats"
+      ],
+      "instructions": [
+        "Carga la barra Z con un peso adecuado y agárrala con firmeza.",
+        "Activa la espalda alta antes de iniciar el movimiento.",
+        "Realiza el movimiento de forma controlada manteniendo la técnica.",
+        "Vuelve a la posición inicial controlando la fase excéntrica.",
+        "Mantén la respiración: exhala en el esfuerzo, inhala al volver."
+      ],
+      "file": "upper-back/ez-bar-reverse-grip-bent-over-row.gif",
+      "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/upper-back/ez-bar-reverse-grip-bent-over-row.gif",
+      "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/upper-back/ez-bar-reverse-grip-bent-over-row.thumb.webp"
+    }
+  ]
+}

@@ -1,0 +1,20 @@
+{
+  "id": "abs/arm-slingers-hanging-bent-knee-legs",
+  "slug": "arm-slingers-hanging-bent-knee-legs",
+  "name": "Arm Slingers Hanging Bent Knee Legs",
+  "muscle": "abs",
+  "bodyPart": "core",
+  "equipment": "bodyweight",
+  "category": "strength",
+  "secondaryMuscles": [],
+  "instructions": [
+    "Adopt the starting position with proper body alignment.",
+    "Pre-engage the core before initiating the movement.",
+    "Perform the movement in a controlled manner, keeping good form.",
+    "Return to the starting position controlling the eccentric phase.",
+    "Breathe: exhale on effort, inhale on the way back."
+  ],
+  "file": "abs/arm-slingers-hanging-bent-knee-legs.gif",
+  "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/abs/arm-slingers-hanging-bent-knee-legs.gif",
+  "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/abs/arm-slingers-hanging-bent-knee-legs.thumb.webp"
+}

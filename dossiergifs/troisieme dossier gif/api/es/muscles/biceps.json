@@ -1,0 +1,3358 @@
+{
+  "muscle": "biceps",
+  "count": 151,
+  "exercises": [
+    {
+      "id": "biceps/band-alternating-biceps-curl",
+      "slug": "band-alternating-biceps-curl",
+      "name": "Curl de bíceps con banda, alternado",
+      "muscle": "biceps",
+      "bodyPart": "arms",
+      "equipment": "band",
+      "category": "strength",
+      "secondaryMuscles": [
+        "forearms"
+      ],
+      "instructions": [
+        "Fija la banda elástica y mantén la tensión inicial.",
+        "Activa los bíceps antes de iniciar el movimiento.",
+        "Realiza el movimiento de forma controlada manteniendo la técnica.",
+        "Vuelve a la posición inicial controlando la fase excéntrica.",
+        "Mantén la respiración: exhala en el esfuerzo, inhala al volver."
+      ],
+      "file": "biceps/band-alternating-biceps-curl.gif",
+      "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/biceps/band-alternating-biceps-curl.gif",
+      "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/biceps/band-alternating-biceps-curl.thumb.webp"
+    },
+    {
+      "id": "biceps/band-concentration-curl",
+      "slug": "band-concentration-curl",
+      "name": "Curl concentrado con banda",
+      "muscle": "biceps",
+      "bodyPart": "arms",
+      "equipment": "band",
+      "category": "strength",
+      "secondaryMuscles": [
+        "forearms"
+      ],
+      "instructions": [
+        "Fija la banda elástica y mantén la tensión inicial.",
+        "Activa los bíceps antes de iniciar el movimiento.",
+        "Realiza el movimiento de forma controlada manteniendo la técnica.",
+        "Vuelve a la posición inicial controlando la fase excéntrica.",
+        "Mantén la respiración: exhala en el esfuerzo, inhala al volver."
+      ],
+      "file": "biceps/band-concentration-curl.gif",
+      "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/biceps/band-concentration-curl.gif",
+      "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/biceps/band-concentration-curl.thumb.webp"
+    },
+    {
+      "id": "biceps/band-one-arm-overhead-biceps-curl",
+      "slug": "band-one-arm-overhead-biceps-curl",
+      "name": "Curl de bíceps sobre la cabeza con banda, a una mano",
+      "muscle": "biceps",
+      "bodyPart": "arms",
+      "equipment": "band",
+      "category": "strength",
+      "secondaryMuscles": [
+        "forearms"
+      ],
+      "instructions": [
+        "Fija la banda elástica y mantén la tensión inicial.",
+        "Activa los bíceps antes de iniciar el movimiento.",
+        "Realiza el movimiento de forma controlada manteniendo la técnica.",
+        "Vuelve a la posición inicial controlando la fase excéntrica.",
+        "Mantén la respiración: exhala en el esfuerzo, inhala al volver."
+      ],
+      "file": "biceps/band-one-arm-overhead-biceps-curl.gif",
+      "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/biceps/band-one-arm-overhead-biceps-curl.gif",
+      "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/biceps/band-one-arm-overhead-biceps-curl.thumb.webp"
+    },
+    {
+      "id": "biceps/barbell-alternate-biceps-curl",
+      "slug": "barbell-alternate-biceps-curl",
+      "name": "Curl de bíceps con barra, alternado",
+      "muscle": "biceps",
+      "bodyPart": "arms",
+      "equipment": "barbell",
+      "category": "strength",
+      "secondaryMuscles": [
+        "forearms"
+      ],
+      "instructions": [
+        "Carga el peso adecuado en la barra y adopta la postura inicial.",
+        "Activa los bíceps antes de iniciar el movimiento.",
+        "Realiza el movimiento de forma controlada manteniendo la técnica.",
+        "Vuelve a la posición inicial controlando la fase excéntrica.",
+        "Mantén la respiración: exhala en el esfuerzo, inhala al volver."
+      ],
+      "file": "biceps/barbell-alternate-biceps-curl.gif",
+      "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/biceps/barbell-alternate-biceps-curl.gif",
+      "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/biceps/barbell-alternate-biceps-curl.thumb.webp"
+    },
+    {
+      "id": "biceps/barbell-biceps-curl-with-arm-blaster",
+      "slug": "barbell-biceps-curl-with-arm-blaster",
+      "name": "Curl de bíceps con barra, con arm blaster",
+      "muscle": "biceps",
+      "bodyPart": "arms",
+      "equipment": "barbell",
+      "category": "strength",
+      "secondaryMuscles": [
+        "forearms"
+      ],
+      "instructions": [
+        "Carga el peso adecuado en la barra y adopta la postura inicial.",
+        "Activa los bíceps antes de iniciar el movimiento.",
+        "Realiza el movimiento de forma controlada manteniendo la técnica.",
+        "Vuelve a la posición inicial controlando la fase excéntrica.",
+        "Mantén la respiración: exhala en el esfuerzo, inhala al volver."
+      ],
+      "file": "biceps/barbell-biceps-curl-with-arm-blaster.gif",
+      "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/biceps/barbell-biceps-curl-with-arm-blaster.gif",
+      "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/biceps/barbell-biceps-curl-with-arm-blaster.thumb.webp"
+    },
+    {
+      "id": "biceps/barbell-curl",
+      "slug": "barbell-curl",
+      "name": "Curl con barra",
+      "muscle": "biceps",
+      "bodyPart": "arms",
+      "equipment": "barbell",
+      "category": "strength",
+      "secondaryMuscles": [
+        "forearms"
+      ],
+      "instructions": [
+        "Carga el peso adecuado en la barra y adopta la postura inicial.",
+        "Activa los bíceps antes de iniciar el movimiento.",
+        "Realiza el movimiento de forma controlada manteniendo la técnica.",
+        "Vuelve a la posición inicial controlando la fase excéntrica.",
+        "Mantén la respiración: exhala en el esfuerzo, inhala al volver."
+      ],
+      "file": "biceps/barbell-curl.gif",
+      "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/biceps/barbell-curl.gif",
+      "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/biceps/barbell-curl.thumb.webp"
+    },
+    {
+      "id": "biceps/barbell-drag-curl",
+      "slug": "barbell-drag-curl",
+      "name": "Curl drag con barra",
+      "muscle": "biceps",
+      "bodyPart": "arms",
+      "equipment": "barbell",
+      "category": "strength",
+      "secondaryMuscles": [
+        "forearms"
+      ],
+      "instructions": [
+        "Carga el peso adecuado en la barra y adopta la postura inicial.",
+        "Activa los bíceps antes de iniciar el movimiento.",
+        "Realiza el movimiento de forma controlada manteniendo la técnica.",
+        "Vuelve a la posición inicial controlando la fase excéntrica.",
+        "Mantén la respiración: exhala en el esfuerzo, inhala al volver."
+      ],
+      "file": "biceps/barbell-drag-curl.gif",
+      "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/biceps/barbell-drag-curl.gif",
+      "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/biceps/barbell-drag-curl.thumb.webp"
+    },
+    {
+      "id": "biceps/barbell-lying-preacher-curl",
+      "slug": "barbell-lying-preacher-curl",
+      "name": "Curl predicador con barra, tumbado",
+      "muscle": "biceps",
+      "bodyPart": "arms",
+      "equipment": "barbell",
+      "category": "strength",
+      "secondaryMuscles": [
+        "forearms"
+      ],
+      "instructions": [
+        "Carga el peso adecuado en la barra y adopta la postura inicial.",
+        "Activa los bíceps antes de iniciar el movimiento.",
+        "Realiza el movimiento de forma controlada manteniendo la técnica.",
+        "Vuelve a la posición inicial controlando la fase excéntrica.",
+        "Mantén la respiración: exhala en el esfuerzo, inhala al volver."
+      ],
+      "file": "biceps/barbell-lying-preacher-curl.gif",
+      "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/biceps/barbell-lying-preacher-curl.gif",
+      "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/biceps/barbell-lying-preacher-curl.thumb.webp"
+    },
+    {
+      "id": "biceps/barbell-preacher-curl",
+      "slug": "barbell-preacher-curl",
+      "name": "Curl predicador con barra",
+      "muscle": "biceps",
+      "bodyPart": "arms",
+      "equipment": "barbell",
+      "category": "strength",
+      "secondaryMuscles": [
+        "forearms"
+      ],
+      "instructions": [
+        "Carga el peso adecuado en la barra y adopta la postura inicial.",
+        "Activa los bíceps antes de iniciar el movimiento.",
+        "Realiza el movimiento de forma controlada manteniendo la técnica.",
+        "Vuelve a la posición inicial controlando la fase excéntrica.",
+        "Mantén la respiración: exhala en el esfuerzo, inhala al volver."
+      ],
+      "file": "biceps/barbell-preacher-curl.gif",
+      "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/biceps/barbell-preacher-curl.gif",
+      "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/biceps/barbell-preacher-curl.thumb.webp"
+    },
+    {
+      "id": "biceps/barbell-prone-incline-curl",
+      "slug": "barbell-prone-incline-curl",
+      "name": "Curl tumbado boca abajo inclinado con barra",
+      "muscle": "biceps",
+      "bodyPart": "arms",
+      "equipment": "barbell",
+      "category": "strength",
+      "secondaryMuscles": [
+        "forearms"
+      ],
+      "instructions": [
+        "Carga el peso adecuado en la barra y adopta la postura inicial.",
+        "Activa los bíceps antes de iniciar el movimiento.",
+        "Realiza el movimiento de forma controlada manteniendo la técnica.",
+        "Vuelve a la posición inicial controlando la fase excéntrica.",
+        "Mantén la respiración: exhala en el esfuerzo, inhala al volver."
+      ],
+      "file": "biceps/barbell-prone-incline-curl.gif",
+      "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/biceps/barbell-prone-incline-curl.gif",
+      "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/biceps/barbell-prone-incline-curl.thumb.webp"
+    },
+    {
+      "id": "biceps/barbell-reverse-curl",
+      "slug": "barbell-reverse-curl",
+      "name": "Curl invertido con barra",
+      "muscle": "biceps",
+      "bodyPart": "arms",
+      "equipment": "barbell",
+      "category": "strength",
+      "secondaryMuscles": [
+        "forearms"
+      ],
+      "instructions": [
+        "Carga el peso adecuado en la barra y adopta la postura inicial.",
+        "Activa los bíceps antes de iniciar el movimiento.",
+        "Realiza el movimiento de forma controlada manteniendo la técnica.",
+        "Vuelve a la posición inicial controlando la fase excéntrica.",
+        "Mantén la respiración: exhala en el esfuerzo, inhala al volver."
+      ],
+      "file": "biceps/barbell-reverse-curl.gif",
+      "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/biceps/barbell-reverse-curl.gif",
+      "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/biceps/barbell-reverse-curl.thumb.webp"
+    },
+    {
+      "id": "biceps/barbell-reverse-preacher-curl",
+      "slug": "barbell-reverse-preacher-curl",
+      "name": "Curl predicador invertido con barra",
+      "muscle": "biceps",
+      "bodyPart": "arms",
+      "equipment": "barbell",
+      "category": "strength",
+      "secondaryMuscles": [
+        "forearms"
+      ],
+      "instructions": [
+        "Carga el peso adecuado en la barra y adopta la postura inicial.",
+        "Activa los bíceps antes de iniciar el movimiento.",
+        "Realiza el movimiento de forma controlada manteniendo la técnica.",
+        "Vuelve a la posición inicial controlando la fase excéntrica.",
+        "Mantén la respiración: exhala en el esfuerzo, inhala al volver."
+      ],
+      "file": "biceps/barbell-reverse-preacher-curl.gif",
+      "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/biceps/barbell-reverse-preacher-curl.gif",
+      "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/biceps/barbell-reverse-preacher-curl.thumb.webp"
+    },
+    {
+      "id": "biceps/barbell-seated-close-grip-concentration-curl",
+      "slug": "barbell-seated-close-grip-concentration-curl",
+      "name": "Curl concentrado con barra, sentado, con agarre cerrado",
+      "muscle": "biceps",
+      "bodyPart": "arms",
+      "equipment": "barbell",
+      "category": "strength",
+      "secondaryMuscles": [
+        "forearms"
+      ],
+      "instructions": [
+        "Carga el peso adecuado en la barra y adopta la postura inicial.",
+        "Activa los bíceps antes de iniciar el movimiento.",
+        "Realiza el movimiento de forma controlada manteniendo la técnica.",
+        "Vuelve a la posición inicial controlando la fase excéntrica.",
+        "Mantén la respiración: exhala en el esfuerzo, inhala al volver."
+      ],
+      "file": "biceps/barbell-seated-close-grip-concentration-curl.gif",
+      "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/biceps/barbell-seated-close-grip-concentration-curl.gif",
+      "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/biceps/barbell-seated-close-grip-concentration-curl.thumb.webp"
+    },
+    {
+      "id": "biceps/barbell-standing-close-grip-curl",
+      "slug": "barbell-standing-close-grip-curl",
+      "name": "Curl con barra, de pie, con agarre cerrado",
+      "muscle": "biceps",
+      "bodyPart": "arms",
+      "equipment": "barbell",
+      "category": "strength",
+      "secondaryMuscles": [
+        "forearms"
+      ],
+      "instructions": [
+        "Carga el peso adecuado en la barra y adopta la postura inicial.",
+        "Activa los bíceps antes de iniciar el movimiento.",
+        "Realiza el movimiento de forma controlada manteniendo la técnica.",
+        "Vuelve a la posición inicial controlando la fase excéntrica.",
+        "Mantén la respiración: exhala en el esfuerzo, inhala al volver."
+      ],
+      "file": "biceps/barbell-standing-close-grip-curl.gif",
+      "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/biceps/barbell-standing-close-grip-curl.gif",
+      "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/biceps/barbell-standing-close-grip-curl.thumb.webp"
+    },
+    {
+      "id": "biceps/barbell-standing-concentration-curl",
+      "slug": "barbell-standing-concentration-curl",
+      "name": "Curl concentrado con barra, de pie",
+      "muscle": "biceps",
+      "bodyPart": "arms",
+      "equipment": "barbell",
+      "category": "strength",
+      "secondaryMuscles": [
+        "forearms"
+      ],
+      "instructions": [
+        "Carga el peso adecuado en la barra y adopta la postura inicial.",
+        "Activa los bíceps antes de iniciar el movimiento.",
+        "Realiza el movimiento de forma controlada manteniendo la técnica.",
+        "Vuelve a la posición inicial controlando la fase excéntrica.",
+        "Mantén la respiración: exhala en el esfuerzo, inhala al volver."
+      ],
+      "file": "biceps/barbell-standing-concentration-curl.gif",
+      "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/biceps/barbell-standing-concentration-curl.gif",
+      "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/biceps/barbell-standing-concentration-curl.thumb.webp"
+    },
+    {
+      "id": "biceps/barbell-standing-reverse-grip-curl",
+      "slug": "barbell-standing-reverse-grip-curl",
+      "name": "Curl con barra, de pie, con agarre invertido",
+      "muscle": "biceps",
+      "bodyPart": "arms",
+      "equipment": "barbell",
+      "category": "strength",
+      "secondaryMuscles": [
+        "forearms"
+      ],
+      "instructions": [
+        "Carga el peso adecuado en la barra y adopta la postura inicial.",
+        "Activa los bíceps antes de iniciar el movimiento.",
+        "Realiza el movimiento de forma controlada manteniendo la técnica.",
+        "Vuelve a la posición inicial controlando la fase excéntrica.",
+        "Mantén la respiración: exhala en el esfuerzo, inhala al volver."
+      ],
+      "file": "biceps/barbell-standing-reverse-grip-curl.gif",
+      "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/biceps/barbell-standing-reverse-grip-curl.gif",
+      "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/biceps/barbell-standing-reverse-grip-curl.thumb.webp"
+    },
+    {
+      "id": "biceps/barbell-standing-wide-grip-biceps-curl",
+      "slug": "barbell-standing-wide-grip-biceps-curl",
+      "name": "Curl de bíceps con barra, de pie, con agarre ancho",
+      "muscle": "biceps",
+      "bodyPart": "arms",
+      "equipment": "barbell",
+      "category": "strength",
+      "secondaryMuscles": [
+        "forearms"
+      ],
+      "instructions": [
+        "Carga el peso adecuado en la barra y adopta la postura inicial.",
+        "Activa los bíceps antes de iniciar el movimiento.",
+        "Realiza el movimiento de forma controlada manteniendo la técnica.",
+        "Vuelve a la posición inicial controlando la fase excéntrica.",
+        "Mantén la respiración: exhala en el esfuerzo, inhala al volver."
+      ],
+      "file": "biceps/barbell-standing-wide-grip-biceps-curl.gif",
+      "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/biceps/barbell-standing-wide-grip-biceps-curl.gif",
+      "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/biceps/barbell-standing-wide-grip-biceps-curl.thumb.webp"
+    },
+    {
+      "id": "biceps/barbell-standing-wide-grip-curl",
+      "slug": "barbell-standing-wide-grip-curl",
+      "name": "Curl con barra, de pie, con agarre ancho",
+      "muscle": "biceps",
+      "bodyPart": "arms",
+      "equipment": "barbell",
+      "category": "strength",
+      "secondaryMuscles": [
+        "forearms"
+      ],
+      "instructions": [
+        "Carga el peso adecuado en la barra y adopta la postura inicial.",
+        "Activa los bíceps antes de iniciar el movimiento.",
+        "Realiza el movimiento de forma controlada manteniendo la técnica.",
+        "Vuelve a la posición inicial controlando la fase excéntrica.",
+        "Mantén la respiración: exhala en el esfuerzo, inhala al volver."
+      ],
+      "file": "biceps/barbell-standing-wide-grip-curl.gif",
+      "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/biceps/barbell-standing-wide-grip-curl.gif",
+      "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/biceps/barbell-standing-wide-grip-curl.thumb.webp"
+    },
+    {
+      "id": "biceps/biceps-leg-concentration-curl",
+      "slug": "biceps-leg-concentration-curl",
+      "name": "Curl concentrado, de bíceps, a una pierna",
+      "muscle": "biceps",
+      "bodyPart": "arms",
+      "equipment": "bodyweight",
+      "category": "strength",
+      "secondaryMuscles": [
+        "forearms"
+      ],
+      "instructions": [
+        "Adopta la postura inicial con buena alineación corporal.",
+        "Activa los bíceps antes de iniciar el movimiento.",
+        "Realiza el movimiento de forma controlada manteniendo la técnica.",
+        "Vuelve a la posición inicial controlando la fase excéntrica.",
+        "Mantén la respiración: exhala en el esfuerzo, inhala al volver."
+      ],
+      "file": "biceps/biceps-leg-concentration-curl.gif",
+      "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/biceps/biceps-leg-concentration-curl.gif",
+      "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/biceps/biceps-leg-concentration-curl.thumb.webp"
+    },
+    {
+      "id": "biceps/biceps-narrow-pull-ups",
+      "slug": "biceps-narrow-pull-ups",
+      "name": "Dominadas, estrecho, bíceps",
+      "muscle": "biceps",
+      "bodyPart": "arms",
+      "equipment": "bodyweight",
+      "category": "strength",
+      "secondaryMuscles": [
+        "forearms",
+        "delts"
+      ],
+      "instructions": [
+        "Adopta la postura inicial con buena alineación corporal.",
+        "Activa los bíceps antes de iniciar el movimiento.",
+        "Realiza el movimiento de forma controlada manteniendo la técnica.",
+        "Vuelve a la posición inicial controlando la fase excéntrica.",
+        "Mantén la respiración: exhala en el esfuerzo, inhala al volver."
+      ],
+      "file": "biceps/biceps-narrow-pull-ups.gif",
+      "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/biceps/biceps-narrow-pull-ups.gif",
+      "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/biceps/biceps-narrow-pull-ups.thumb.webp"
+    },
+    {
+      "id": "biceps/biceps-pull-up",
+      "slug": "biceps-pull-up",
+      "name": "Dominada, bíceps",
+      "muscle": "biceps",
+      "bodyPart": "arms",
+      "equipment": "bodyweight",
+      "category": "strength",
+      "secondaryMuscles": [
+        "forearms",
+        "delts"
+      ],
+      "instructions": [
+        "Adopta la postura inicial con buena alineación corporal.",
+        "Activa los bíceps antes de iniciar el movimiento.",
+        "Realiza el movimiento de forma controlada manteniendo la técnica.",
+        "Vuelve a la posición inicial controlando la fase excéntrica.",
+        "Mantén la respiración: exhala en el esfuerzo, inhala al volver."
+      ],
+      "file": "biceps/biceps-pull-up.gif",
+      "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/biceps/biceps-pull-up.gif",
+      "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/biceps/biceps-pull-up.thumb.webp"
+    },
+    {
+      "id": "biceps/bodyweight-side-lying-biceps-curl",
+      "slug": "bodyweight-side-lying-biceps-curl",
+      "name": "Curl de bíceps con peso corporal, tumbado de lado",
+      "muscle": "biceps",
+      "bodyPart": "arms",
+      "equipment": "bodyweight",
+      "category": "strength",
+      "secondaryMuscles": [
+        "forearms"
+      ],
+      "instructions": [
+        "Adopta la postura inicial con buena alineación corporal.",
+        "Activa los bíceps antes de iniciar el movimiento.",
+        "Realiza el movimiento de forma controlada manteniendo la técnica.",
+        "Vuelve a la posición inicial controlando la fase excéntrica.",
+        "Mantén la respiración: exhala en el esfuerzo, inhala al volver."
+      ],
+      "file": "biceps/bodyweight-side-lying-biceps-curl.gif",
+      "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/biceps/bodyweight-side-lying-biceps-curl.gif",
+      "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/biceps/bodyweight-side-lying-biceps-curl.thumb.webp"
+    },
+    {
+      "id": "biceps/cable-close-grip-curl",
+      "slug": "cable-close-grip-curl",
+      "name": "Curl en polea, con agarre cerrado",
+      "muscle": "biceps",
+      "bodyPart": "arms",
+      "equipment": "cable",
+      "category": "strength",
+      "secondaryMuscles": [
+        "forearms"
+      ],
+      "instructions": [
+        "Ajusta la polea a la altura indicada y selecciona el peso.",
+        "Activa los bíceps antes de iniciar el movimiento.",
+        "Realiza el movimiento de forma controlada manteniendo la técnica.",
+        "Vuelve a la posición inicial controlando la fase excéntrica.",
+        "Mantén la respiración: exhala en el esfuerzo, inhala al volver."
+      ],
+      "file": "biceps/cable-close-grip-curl.gif",
+      "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/biceps/cable-close-grip-curl.gif",
+      "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/biceps/cable-close-grip-curl.thumb.webp"
+    },
+    {
+      "id": "biceps/cable-concentration-curl",
+      "slug": "cable-concentration-curl",
+      "name": "Curl concentrado en polea",
+      "muscle": "biceps",
+      "bodyPart": "arms",
+      "equipment": "cable",
+      "category": "strength",
+      "secondaryMuscles": [
+        "forearms"
+      ],
+      "instructions": [
+        "Ajusta la polea a la altura indicada y selecciona el peso.",
+        "Activa los bíceps antes de iniciar el movimiento.",
+        "Realiza el movimiento de forma controlada manteniendo la técnica.",
+        "Vuelve a la posición inicial controlando la fase excéntrica.",
+        "Mantén la respiración: exhala en el esfuerzo, inhala al volver."
+      ],
+      "file": "biceps/cable-concentration-curl.gif",
+      "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/biceps/cable-concentration-curl.gif",
+      "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/biceps/cable-concentration-curl.thumb.webp"
+    },
+    {
+      "id": "biceps/cable-curl",
+      "slug": "cable-curl",
+      "name": "Curl en polea",
+      "muscle": "biceps",
+      "bodyPart": "arms",
+      "equipment": "cable",
+      "category": "strength",
+      "secondaryMuscles": [
+        "forearms"
+      ],
+      "instructions": [
+        "Ajusta la polea a la altura indicada y selecciona el peso.",
+        "Activa los bíceps antes de iniciar el movimiento.",
+        "Realiza el movimiento de forma controlada manteniendo la técnica.",
+        "Vuelve a la posición inicial controlando la fase excéntrica.",
+        "Mantén la respiración: exhala en el esfuerzo, inhala al volver."
+      ],
+      "file": "biceps/cable-curl.gif",
+      "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/biceps/cable-curl.gif",
+      "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/biceps/cable-curl.thumb.webp"
+    },
+    {
+      "id": "biceps/cable-drag-curl",
+      "slug": "cable-drag-curl",
+      "name": "Curl drag en polea",
+      "muscle": "biceps",
+      "bodyPart": "arms",
+      "equipment": "cable",
+      "category": "strength",
+      "secondaryMuscles": [
+        "forearms"
+      ],
+      "instructions": [
+        "Ajusta la polea a la altura indicada y selecciona el peso.",
+        "Activa los bíceps antes de iniciar el movimiento.",
+        "Realiza el movimiento de forma controlada manteniendo la técnica.",
+        "Vuelve a la posición inicial controlando la fase excéntrica.",
+        "Mantén la respiración: exhala en el esfuerzo, inhala al volver."
+      ],
+      "file": "biceps/cable-drag-curl.gif",
+      "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/biceps/cable-drag-curl.gif",
+      "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/biceps/cable-drag-curl.thumb.webp"
+    },
+    {
+      "id": "biceps/cable-hammer-curl-with-rope",
+      "slug": "cable-hammer-curl-with-rope",
+      "name": "Curl martillo en polea, con cuerda",
+      "muscle": "biceps",
+      "bodyPart": "arms",
+      "equipment": "cable",
+      "category": "strength",
+      "secondaryMuscles": [
+        "forearms"
+      ],
+      "instructions": [
+        "Ajusta la polea a la altura indicada y selecciona el peso.",
+        "Activa los bíceps antes de iniciar el movimiento.",
+        "Realiza el movimiento de forma controlada manteniendo la técnica.",
+        "Vuelve a la posición inicial controlando la fase excéntrica.",
+        "Mantén la respiración: exhala en el esfuerzo, inhala al volver."
+      ],
+      "file": "biceps/cable-hammer-curl-with-rope.gif",
+      "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/biceps/cable-hammer-curl-with-rope.gif",
+      "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/biceps/cable-hammer-curl-with-rope.thumb.webp"
+    },
+    {
+      "id": "biceps/cable-lying-bicep-curl",
+      "slug": "cable-lying-bicep-curl",
+      "name": "Curl de bíceps en polea, tumbado",
+      "muscle": "biceps",
+      "bodyPart": "arms",
+      "equipment": "cable",
+      "category": "strength",
+      "secondaryMuscles": [
+        "forearms"
+      ],
+      "instructions": [
+        "Ajusta la polea a la altura indicada y selecciona el peso.",
+        "Activa los bíceps antes de iniciar el movimiento.",
+        "Realiza el movimiento de forma controlada manteniendo la técnica.",
+        "Vuelve a la posición inicial controlando la fase excéntrica.",
+        "Mantén la respiración: exhala en el esfuerzo, inhala al volver."
+      ],
+      "file": "biceps/cable-lying-bicep-curl.gif",
+      "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/biceps/cable-lying-bicep-curl.gif",
+      "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/biceps/cable-lying-bicep-curl.thumb.webp"
+    },
+    {
+      "id": "biceps/cable-lying-close-grip-curl",
+      "slug": "cable-lying-close-grip-curl",
+      "name": "Curl en polea, tumbado, con agarre cerrado",
+      "muscle": "biceps",
+      "bodyPart": "arms",
+      "equipment": "cable",
+      "category": "strength",
+      "secondaryMuscles": [
+        "forearms"
+      ],
+      "instructions": [
+        "Ajusta la polea a la altura indicada y selecciona el peso.",
+        "Activa los bíceps antes de iniciar el movimiento.",
+        "Realiza el movimiento de forma controlada manteniendo la técnica.",
+        "Vuelve a la posición inicial controlando la fase excéntrica.",
+        "Mantén la respiración: exhala en el esfuerzo, inhala al volver."
+      ],
+      "file": "biceps/cable-lying-close-grip-curl.gif",
+      "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/biceps/cable-lying-close-grip-curl.gif",
+      "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/biceps/cable-lying-close-grip-curl.thumb.webp"
+    },
+    {
+      "id": "biceps/cable-one-arm-curl",
+      "slug": "cable-one-arm-curl",
+      "name": "Curl en polea, a una mano",
+      "muscle": "biceps",
+      "bodyPart": "arms",
+      "equipment": "cable",
+      "category": "strength",
+      "secondaryMuscles": [
+        "forearms"
+      ],
+      "instructions": [
+        "Ajusta la polea a la altura indicada y selecciona el peso.",
+        "Activa los bíceps antes de iniciar el movimiento.",
+        "Realiza el movimiento de forma controlada manteniendo la técnica.",
+        "Vuelve a la posición inicial controlando la fase excéntrica.",
+        "Mantén la respiración: exhala en el esfuerzo, inhala al volver."
+      ],
+      "file": "biceps/cable-one-arm-curl.gif",
+      "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/biceps/cable-one-arm-curl.gif",
+      "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/biceps/cable-one-arm-curl.thumb.webp"
+    },
+    {
+      "id": "biceps/cable-one-arm-preacher-curl",
+      "slug": "cable-one-arm-preacher-curl",
+      "name": "Curl predicador en polea, a una mano",
+      "muscle": "biceps",
+      "bodyPart": "arms",
+      "equipment": "cable",
+      "category": "strength",
+      "secondaryMuscles": [
+        "forearms"
+      ],
+      "instructions": [
+        "Ajusta la polea a la altura indicada y selecciona el peso.",
+        "Activa los bíceps antes de iniciar el movimiento.",
+        "Realiza el movimiento de forma controlada manteniendo la técnica.",
+        "Vuelve a la posición inicial controlando la fase excéntrica.",
+        "Mantén la respiración: exhala en el esfuerzo, inhala al volver."
+      ],
+      "file": "biceps/cable-one-arm-preacher-curl.gif",
+      "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/biceps/cable-one-arm-preacher-curl.gif",
+      "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/biceps/cable-one-arm-preacher-curl.thumb.webp"
+    },
+    {
+      "id": "biceps/cable-one-arm-reverse-preacher-curl",
+      "slug": "cable-one-arm-reverse-preacher-curl",
+      "name": "Curl predicador invertido en polea, a una mano",
+      "muscle": "biceps",
+      "bodyPart": "arms",
+      "equipment": "cable",
+      "category": "strength",
+      "secondaryMuscles": [
+        "forearms"
+      ],
+      "instructions": [
+        "Ajusta la polea a la altura indicada y selecciona el peso.",
+        "Activa los bíceps antes de iniciar el movimiento.",
+        "Realiza el movimiento de forma controlada manteniendo la técnica.",
+        "Vuelve a la posición inicial controlando la fase excéntrica.",
+        "Mantén la respiración: exhala en el esfuerzo, inhala al volver."
+      ],
+      "file": "biceps/cable-one-arm-reverse-preacher-curl.gif",
+      "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/biceps/cable-one-arm-reverse-preacher-curl.gif",
+      "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/biceps/cable-one-arm-reverse-preacher-curl.thumb.webp"
+    },
+    {
+      "id": "biceps/cable-overhead-curl-on-exercise-ball",
+      "slug": "cable-overhead-curl-on-exercise-ball",
+      "name": "Curl sobre la cabeza en polea, en fitball",
+      "muscle": "biceps",
+      "bodyPart": "arms",
+      "equipment": "cable",
+      "category": "strength",
+      "secondaryMuscles": [
+        "forearms"
+      ],
+      "instructions": [
+        "Ajusta la polea a la altura indicada y selecciona el peso.",
+        "Activa los bíceps antes de iniciar el movimiento.",
+        "Realiza el movimiento de forma controlada manteniendo la técnica.",
+        "Vuelve a la posición inicial controlando la fase excéntrica.",
+        "Mantén la respiración: exhala en el esfuerzo, inhala al volver."
+      ],
+      "file": "biceps/cable-overhead-curl-on-exercise-ball.gif",
+      "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/biceps/cable-overhead-curl-on-exercise-ball.gif",
+      "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/biceps/cable-overhead-curl-on-exercise-ball.thumb.webp"
+    },
+    {
+      "id": "biceps/cable-overhead-curl",
+      "slug": "cable-overhead-curl",
+      "name": "Curl sobre la cabeza en polea",
+      "muscle": "biceps",
+      "bodyPart": "arms",
+      "equipment": "cable",
+      "category": "strength",
+      "secondaryMuscles": [
+        "forearms"
+      ],
+      "instructions": [
+        "Ajusta la polea a la altura indicada y selecciona el peso.",
+        "Activa los bíceps antes de iniciar el movimiento.",
+        "Realiza el movimiento de forma controlada manteniendo la técnica.",
+        "Vuelve a la posición inicial controlando la fase excéntrica.",
+        "Mantén la respiración: exhala en el esfuerzo, inhala al volver."
+      ],
+      "file": "biceps/cable-overhead-curl.gif",
+      "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/biceps/cable-overhead-curl.gif",
+      "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/biceps/cable-overhead-curl.thumb.webp"
+    },
+    {
+      "id": "biceps/cable-preacher-curl",
+      "slug": "cable-preacher-curl",
+      "name": "Curl predicador en polea",
+      "muscle": "biceps",
+      "bodyPart": "arms",
+      "equipment": "cable",
+      "category": "strength",
+      "secondaryMuscles": [
+        "forearms"
+      ],
+      "instructions": [
+        "Ajusta la polea a la altura indicada y selecciona el peso.",
+        "Activa los bíceps antes de iniciar el movimiento.",
+        "Realiza el movimiento de forma controlada manteniendo la técnica.",
+        "Vuelve a la posición inicial controlando la fase excéntrica.",
+        "Mantén la respiración: exhala en el esfuerzo, inhala al volver."
+      ],
+      "file": "biceps/cable-preacher-curl.gif",
+      "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/biceps/cable-preacher-curl.gif",
+      "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/biceps/cable-preacher-curl.thumb.webp"
+    },
+    {
+      "id": "biceps/cable-pulldown-bicep-curl",
+      "slug": "cable-pulldown-bicep-curl",
+      "name": "Jalón al pecho en polea, bicep-curl",
+      "muscle": "biceps",
+      "bodyPart": "arms",
+      "equipment": "cable",
+      "category": "strength",
+      "secondaryMuscles": [
+        "forearms",
+        "delts"
+      ],
+      "instructions": [
+        "Ajusta la polea a la altura indicada y selecciona el peso.",
+        "Activa los bíceps antes de iniciar el movimiento.",
+        "Realiza el movimiento de forma controlada manteniendo la técnica.",
+        "Vuelve a la posición inicial controlando la fase excéntrica.",
+        "Mantén la respiración: exhala en el esfuerzo, inhala al volver."
+      ],
+      "file": "biceps/cable-pulldown-bicep-curl.gif",
+      "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/biceps/cable-pulldown-bicep-curl.gif",
+      "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/biceps/cable-pulldown-bicep-curl.thumb.webp"
+    },
+    {
+      "id": "biceps/cable-reverse-curl",
+      "slug": "cable-reverse-curl",
+      "name": "Curl invertido en polea",
+      "muscle": "biceps",
+      "bodyPart": "arms",
+      "equipment": "cable",
+      "category": "strength",
+      "secondaryMuscles": [
+        "forearms"
+      ],
+      "instructions": [
+        "Ajusta la polea a la altura indicada y selecciona el peso.",
+        "Activa los bíceps antes de iniciar el movimiento.",
+        "Realiza el movimiento de forma controlada manteniendo la técnica.",
+        "Vuelve a la posición inicial controlando la fase excéntrica.",
+        "Mantén la respiración: exhala en el esfuerzo, inhala al volver."
+      ],
+      "file": "biceps/cable-reverse-curl.gif",
+      "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/biceps/cable-reverse-curl.gif",
+      "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/biceps/cable-reverse-curl.thumb.webp"
+    },
+    {
+      "id": "biceps/cable-reverse-one-arm-curl",
+      "slug": "cable-reverse-one-arm-curl",
+      "name": "Curl invertido en polea, a una mano",
+      "muscle": "biceps",
+      "bodyPart": "arms",
+      "equipment": "cable",
+      "category": "strength",
+      "secondaryMuscles": [
+        "forearms"
+      ],
+      "instructions": [
+        "Ajusta la polea a la altura indicada y selecciona el peso.",
+        "Activa los bíceps antes de iniciar el movimiento.",
+        "Realiza el movimiento de forma controlada manteniendo la técnica.",
+        "Vuelve a la posición inicial controlando la fase excéntrica.",
+        "Mantén la respiración: exhala en el esfuerzo, inhala al volver."
+      ],
+      "file": "biceps/cable-reverse-one-arm-curl.gif",
+      "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/biceps/cable-reverse-one-arm-curl.gif",
+      "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/biceps/cable-reverse-one-arm-curl.thumb.webp"
+    },
+    {
+      "id": "biceps/cable-reverse-preacher-curl",
+      "slug": "cable-reverse-preacher-curl",
+      "name": "Curl predicador invertido en polea",
+      "muscle": "biceps",
+      "bodyPart": "arms",
+      "equipment": "cable",
+      "category": "strength",
+      "secondaryMuscles": [
+        "forearms"
+      ],
+      "instructions": [
+        "Ajusta la polea a la altura indicada y selecciona el peso.",
+        "Activa los bíceps antes de iniciar el movimiento.",
+        "Realiza el movimiento de forma controlada manteniendo la técnica.",
+        "Vuelve a la posición inicial controlando la fase excéntrica.",
+        "Mantén la respiración: exhala en el esfuerzo, inhala al volver."
+      ],
+      "file": "biceps/cable-reverse-preacher-curl.gif",
+      "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/biceps/cable-reverse-preacher-curl.gif",
+      "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/biceps/cable-reverse-preacher-curl.thumb.webp"
+    },
+    {
+      "id": "biceps/cable-rope-hammer-preacher-curl",
+      "slug": "cable-rope-hammer-preacher-curl",
+      "name": "Curl predicador martillo en polea con cuerda",
+      "muscle": "biceps",
+      "bodyPart": "arms",
+      "equipment": "cable",
+      "category": "strength",
+      "secondaryMuscles": [
+        "forearms"
+      ],
+      "instructions": [
+        "Ajusta la polea a la altura indicada y selecciona el peso.",
+        "Activa los bíceps antes de iniciar el movimiento.",
+        "Realiza el movimiento de forma controlada manteniendo la técnica.",
+        "Vuelve a la posición inicial controlando la fase excéntrica.",
+        "Mantén la respiración: exhala en el esfuerzo, inhala al volver."
+      ],
+      "file": "biceps/cable-rope-hammer-preacher-curl.gif",
+      "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/biceps/cable-rope-hammer-preacher-curl.gif",
+      "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/biceps/cable-rope-hammer-preacher-curl.thumb.webp"
+    },
+    {
+      "id": "biceps/cable-rope-one-arm-hammer-preacher-curl",
+      "slug": "cable-rope-one-arm-hammer-preacher-curl",
+      "name": "Curl predicador martillo en polea con cuerda, a una mano",
+      "muscle": "biceps",
+      "bodyPart": "arms",
+      "equipment": "cable",
+      "category": "strength",
+      "secondaryMuscles": [
+        "forearms"
+      ],
+      "instructions": [
+        "Ajusta la polea a la altura indicada y selecciona el peso.",
+        "Activa los bíceps antes de iniciar el movimiento.",
+        "Realiza el movimiento de forma controlada manteniendo la técnica.",
+        "Vuelve a la posición inicial controlando la fase excéntrica.",
+        "Mantén la respiración: exhala en el esfuerzo, inhala al volver."
+      ],
+      "file": "biceps/cable-rope-one-arm-hammer-preacher-curl.gif",
+      "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/biceps/cable-rope-one-arm-hammer-preacher-curl.gif",
+      "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/biceps/cable-rope-one-arm-hammer-preacher-curl.thumb.webp"
+    },
+    {
+      "id": "biceps/cable-seated-curl",
+      "slug": "cable-seated-curl",
+      "name": "Curl en polea, sentado",
+      "muscle": "biceps",
+      "bodyPart": "arms",
+      "equipment": "cable",
+      "category": "strength",
+      "secondaryMuscles": [
+        "forearms"
+      ],
+      "instructions": [
+        "Ajusta la polea a la altura indicada y selecciona el peso.",
+        "Activa los bíceps antes de iniciar el movimiento.",
+        "Realiza el movimiento de forma controlada manteniendo la técnica.",
+        "Vuelve a la posición inicial controlando la fase excéntrica.",
+        "Mantén la respiración: exhala en el esfuerzo, inhala al volver."
+      ],
+      "file": "biceps/cable-seated-curl.gif",
+      "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/biceps/cable-seated-curl.gif",
+      "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/biceps/cable-seated-curl.thumb.webp"
+    },
+    {
+      "id": "biceps/cable-seated-one-arm-concentration-curl",
+      "slug": "cable-seated-one-arm-concentration-curl",
+      "name": "Curl concentrado en polea, sentado, a una mano",
+      "muscle": "biceps",
+      "bodyPart": "arms",
+      "equipment": "cable",
+      "category": "strength",
+      "secondaryMuscles": [
+        "forearms"
+      ],
+      "instructions": [
+        "Ajusta la polea a la altura indicada y selecciona el peso.",
+        "Activa los bíceps antes de iniciar el movimiento.",
+        "Realiza el movimiento de forma controlada manteniendo la técnica.",
+        "Vuelve a la posición inicial controlando la fase excéntrica.",
+        "Mantén la respiración: exhala en el esfuerzo, inhala al volver."
+      ],
+      "file": "biceps/cable-seated-one-arm-concentration-curl.gif",
+      "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/biceps/cable-seated-one-arm-concentration-curl.gif",
+      "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/biceps/cable-seated-one-arm-concentration-curl.thumb.webp"
+    },
+    {
+      "id": "biceps/cable-seated-overhead-curl",
+      "slug": "cable-seated-overhead-curl",
+      "name": "Curl sobre la cabeza en polea, sentado",
+      "muscle": "biceps",
+      "bodyPart": "arms",
+      "equipment": "cable",
+      "category": "strength",
+      "secondaryMuscles": [
+        "forearms"
+      ],
+      "instructions": [
+        "Ajusta la polea a la altura indicada y selecciona el peso.",
+        "Activa los bíceps antes de iniciar el movimiento.",
+        "Realiza el movimiento de forma controlada manteniendo la técnica.",
+        "Vuelve a la posición inicial controlando la fase excéntrica.",
+        "Mantén la respiración: exhala en el esfuerzo, inhala al volver."
+      ],
+      "file": "biceps/cable-seated-overhead-curl.gif",
+      "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/biceps/cable-seated-overhead-curl.gif",
+      "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/biceps/cable-seated-overhead-curl.thumb.webp"
+    },
+    {
+      "id": "biceps/cable-squatting-curl",
+      "slug": "cable-squatting-curl",
+      "name": "Curl en polea, en cuclillas",
+      "muscle": "biceps",
+      "bodyPart": "arms",
+      "equipment": "cable",
+      "category": "strength",
+      "secondaryMuscles": [
+        "forearms",
+        "glutes",
+        "hamstrings",
+        "calves"
+      ],
+      "instructions": [
+        "Ajusta la polea a la altura indicada y selecciona el peso.",
+        "Activa los bíceps antes de iniciar el movimiento.",
+        "Realiza el movimiento de forma controlada manteniendo la técnica.",
+        "Vuelve a la posición inicial controlando la fase excéntrica.",
+        "Mantén la respiración: exhala en el esfuerzo, inhala al volver."
+      ],
+      "file": "biceps/cable-squatting-curl.gif",
+      "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/biceps/cable-squatting-curl.gif",
+      "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/biceps/cable-squatting-curl.thumb.webp"
+    },
+    {
+      "id": "biceps/cable-standing-inner-curl",
+      "slug": "cable-standing-inner-curl",
+      "name": "Curl en polea, de pie, interno",
+      "muscle": "biceps",
+      "bodyPart": "arms",
+      "equipment": "cable",
+      "category": "strength",
+      "secondaryMuscles": [
+        "forearms"
+      ],
+      "instructions": [
+        "Ajusta la polea a la altura indicada y selecciona el peso.",
+        "Activa los bíceps antes de iniciar el movimiento.",
+        "Realiza el movimiento de forma controlada manteniendo la técnica.",
+        "Vuelve a la posición inicial controlando la fase excéntrica.",
+        "Mantén la respiración: exhala en el esfuerzo, inhala al volver."
+      ],
+      "file": "biceps/cable-standing-inner-curl.gif",
+      "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/biceps/cable-standing-inner-curl.gif",
+      "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/biceps/cable-standing-inner-curl.thumb.webp"
+    },
+    {
+      "id": "biceps/cable-standing-pulldown-with-rope",
+      "slug": "cable-standing-pulldown-with-rope",
+      "name": "Jalón al pecho en polea, de pie, con cuerda",
+      "muscle": "biceps",
+      "bodyPart": "arms",
+      "equipment": "cable",
+      "category": "strength",
+      "secondaryMuscles": [
+        "forearms",
+        "delts"
+      ],
+      "instructions": [
+        "Ajusta la polea a la altura indicada y selecciona el peso.",
+        "Activa los bíceps antes de iniciar el movimiento.",
+        "Realiza el movimiento de forma controlada manteniendo la técnica.",
+        "Vuelve a la posición inicial controlando la fase excéntrica.",
+        "Mantén la respiración: exhala en el esfuerzo, inhala al volver."
+      ],
+      "file": "biceps/cable-standing-pulldown-with-rope.gif",
+      "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/biceps/cable-standing-pulldown-with-rope.gif",
+      "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/biceps/cable-standing-pulldown-with-rope.thumb.webp"
+    },
+    {
+      "id": "biceps/cable-two-arm-curl-on-incline-bench",
+      "slug": "cable-two-arm-curl-on-incline-bench",
+      "name": "Curl en polea, a dos manos en banco inclinado",
+      "muscle": "biceps",
+      "bodyPart": "arms",
+      "equipment": "cable",
+      "category": "strength",
+      "secondaryMuscles": [
+        "forearms"
+      ],
+      "instructions": [
+        "Ajusta la polea a la altura indicada y selecciona el peso.",
+        "Activa los bíceps antes de iniciar el movimiento.",
+        "Realiza el movimiento de forma controlada manteniendo la técnica.",
+        "Vuelve a la posición inicial controlando la fase excéntrica.",
+        "Mantén la respiración: exhala en el esfuerzo, inhala al volver."
+      ],
+      "file": "biceps/cable-two-arm-curl-on-incline-bench.gif",
+      "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/biceps/cable-two-arm-curl-on-incline-bench.gif",
+      "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/biceps/cable-two-arm-curl-on-incline-bench.thumb.webp"
+    },
+    {
+      "id": "biceps/dumbbell-alternate-biceps-curl-with-arm-blaster",
+      "slug": "dumbbell-alternate-biceps-curl-with-arm-blaster",
+      "name": "Curl de bíceps con mancuerna, alternado con arm blaster",
+      "muscle": "biceps",
+      "bodyPart": "arms",
+      "equipment": "dumbbell",
+      "category": "strength",
+      "secondaryMuscles": [
+        "forearms"
+      ],
+      "instructions": [
+        "Coge una mancuerna en cada mano (o la indicada) con un peso adecuado.",
+        "Activa los bíceps antes de iniciar el movimiento.",
+        "Realiza el movimiento de forma controlada manteniendo la técnica.",
+        "Vuelve a la posición inicial controlando la fase excéntrica.",
+        "Mantén la respiración: exhala en el esfuerzo, inhala al volver."
+      ],
+      "file": "biceps/dumbbell-alternate-biceps-curl-with-arm-blaster.gif",
+      "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/biceps/dumbbell-alternate-biceps-curl-with-arm-blaster.gif",
+      "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/biceps/dumbbell-alternate-biceps-curl-with-arm-blaster.thumb.webp"
+    },
+    {
+      "id": "biceps/dumbbell-alternate-biceps-curl",
+      "slug": "dumbbell-alternate-biceps-curl",
+      "name": "Curl de bíceps con mancuerna, alternado",
+      "muscle": "biceps",
+      "bodyPart": "arms",
+      "equipment": "dumbbell",
+      "category": "strength",
+      "secondaryMuscles": [
+        "forearms"
+      ],
+      "instructions": [
+        "Coge una mancuerna en cada mano (o la indicada) con un peso adecuado.",
+        "Activa los bíceps antes de iniciar el movimiento.",
+        "Realiza el movimiento de forma controlada manteniendo la técnica.",
+        "Vuelve a la posición inicial controlando la fase excéntrica.",
+        "Mantén la respiración: exhala en el esfuerzo, inhala al volver."
+      ],
+      "file": "biceps/dumbbell-alternate-biceps-curl.gif",
+      "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/biceps/dumbbell-alternate-biceps-curl.gif",
+      "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/biceps/dumbbell-alternate-biceps-curl.thumb.webp"
+    },
+    {
+      "id": "biceps/dumbbell-alternate-hammer-preacher-curl",
+      "slug": "dumbbell-alternate-hammer-preacher-curl",
+      "name": "Curl predicador martillo con mancuerna, alternado",
+      "muscle": "biceps",
+      "bodyPart": "arms",
+      "equipment": "dumbbell",
+      "category": "strength",
+      "secondaryMuscles": [
+        "forearms"
+      ],
+      "instructions": [
+        "Coge una mancuerna en cada mano (o la indicada) con un peso adecuado.",
+        "Activa los bíceps antes de iniciar el movimiento.",
+        "Realiza el movimiento de forma controlada manteniendo la técnica.",
+        "Vuelve a la posición inicial controlando la fase excéntrica.",
+        "Mantén la respiración: exhala en el esfuerzo, inhala al volver."
+      ],
+      "file": "biceps/dumbbell-alternate-hammer-preacher-curl.gif",
+      "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/biceps/dumbbell-alternate-hammer-preacher-curl.gif",
+      "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/biceps/dumbbell-alternate-hammer-preacher-curl.thumb.webp"
+    },
+    {
+      "id": "biceps/dumbbell-alternate-preacher-curl",
+      "slug": "dumbbell-alternate-preacher-curl",
+      "name": "Curl predicador con mancuerna, alternado",
+      "muscle": "biceps",
+      "bodyPart": "arms",
+      "equipment": "dumbbell",
+      "category": "strength",
+      "secondaryMuscles": [
+        "forearms"
+      ],
+      "instructions": [
+        "Coge una mancuerna en cada mano (o la indicada) con un peso adecuado.",
+        "Activa los bíceps antes de iniciar el movimiento.",
+        "Realiza el movimiento de forma controlada manteniendo la técnica.",
+        "Vuelve a la posición inicial controlando la fase excéntrica.",
+        "Mantén la respiración: exhala en el esfuerzo, inhala al volver."
+      ],
+      "file": "biceps/dumbbell-alternate-preacher-curl.gif",
+      "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/biceps/dumbbell-alternate-preacher-curl.gif",
+      "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/biceps/dumbbell-alternate-preacher-curl.thumb.webp"
+    },
+    {
+      "id": "biceps/dumbbell-alternate-seated-hammer-curl",
+      "slug": "dumbbell-alternate-seated-hammer-curl",
+      "name": "Curl martillo con mancuerna, sentado, alternado",
+      "muscle": "biceps",
+      "bodyPart": "arms",
+      "equipment": "dumbbell",
+      "category": "strength",
+      "secondaryMuscles": [
+        "forearms"
+      ],
+      "instructions": [
+        "Coge una mancuerna en cada mano (o la indicada) con un peso adecuado.",
+        "Activa los bíceps antes de iniciar el movimiento.",
+        "Realiza el movimiento de forma controlada manteniendo la técnica.",
+        "Vuelve a la posición inicial controlando la fase excéntrica.",
+        "Mantén la respiración: exhala en el esfuerzo, inhala al volver."
+      ],
+      "file": "biceps/dumbbell-alternate-seated-hammer-curl.gif",
+      "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/biceps/dumbbell-alternate-seated-hammer-curl.gif",
+      "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/biceps/dumbbell-alternate-seated-hammer-curl.thumb.webp"
+    },
+    {
+      "id": "biceps/dumbbell-alternating-bicep-curl-with-leg-raised-on-exercise-ball",
+      "slug": "dumbbell-alternating-bicep-curl-with-leg-raised-on-exercise-ball",
+      "name": "Curl de bíceps con mancuerna, alternado con pierna elevada en fitball",
+      "muscle": "biceps",
+      "bodyPart": "arms",
+      "equipment": "dumbbell",
+      "category": "strength",
+      "secondaryMuscles": [
+        "forearms"
+      ],
+      "instructions": [
+        "Coge una mancuerna en cada mano (o la indicada) con un peso adecuado.",
+        "Activa los bíceps antes de iniciar el movimiento.",
+        "Realiza el movimiento de forma controlada manteniendo la técnica.",
+        "Vuelve a la posición inicial controlando la fase excéntrica.",
+        "Mantén la respiración: exhala en el esfuerzo, inhala al volver."
+      ],
+      "file": "biceps/dumbbell-alternating-bicep-curl-with-leg-raised-on-exercise-ball.gif",
+      "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/biceps/dumbbell-alternating-bicep-curl-with-leg-raised-on-exercise-ball.gif",
+      "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/biceps/dumbbell-alternating-bicep-curl-with-leg-raised-on-exercise-ball.thumb.webp"
+    },
+    {
+      "id": "biceps/dumbbell-alternating-seated-bicep-curl-on-exercise-ball",
+      "slug": "dumbbell-alternating-seated-bicep-curl-on-exercise-ball",
+      "name": "Curl de bíceps con mancuerna, sentado, alternado en fitball",
+      "muscle": "biceps",
+      "bodyPart": "arms",
+      "equipment": "dumbbell",
+      "category": "strength",
+      "secondaryMuscles": [
+        "forearms"
+      ],
+      "instructions": [
+        "Coge una mancuerna en cada mano (o la indicada) con un peso adecuado.",
+        "Activa los bíceps antes de iniciar el movimiento.",
+        "Realiza el movimiento de forma controlada manteniendo la técnica.",
+        "Vuelve a la posición inicial controlando la fase excéntrica.",
+        "Mantén la respiración: exhala en el esfuerzo, inhala al volver."
+      ],
+      "file": "biceps/dumbbell-alternating-seated-bicep-curl-on-exercise-ball.gif",
+      "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/biceps/dumbbell-alternating-seated-bicep-curl-on-exercise-ball.gif",
+      "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/biceps/dumbbell-alternating-seated-bicep-curl-on-exercise-ball.thumb.webp"
+    },
+    {
+      "id": "biceps/dumbbell-bicep-curl-lunge-with-bowling-motion",
+      "slug": "dumbbell-bicep-curl-lunge-with-bowling-motion",
+      "name": "Zancada con mancuerna, con movimiento de bolos, bicep-curl",
+      "muscle": "biceps",
+      "bodyPart": "arms",
+      "equipment": "dumbbell",
+      "category": "strength",
+      "secondaryMuscles": [
+        "forearms",
+        "glutes",
+        "hamstrings",
+        "calves"
+      ],
+      "instructions": [
+        "Coge una mancuerna en cada mano (o la indicada) con un peso adecuado.",
+        "Activa los bíceps antes de iniciar el movimiento.",
+        "Realiza el movimiento de forma controlada manteniendo la técnica.",
+        "Vuelve a la posición inicial controlando la fase excéntrica.",
+        "Mantén la respiración: exhala en el esfuerzo, inhala al volver."
+      ],
+      "file": "biceps/dumbbell-bicep-curl-lunge-with-bowling-motion.gif",
+      "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/biceps/dumbbell-bicep-curl-lunge-with-bowling-motion.gif",
+      "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/biceps/dumbbell-bicep-curl-lunge-with-bowling-motion.thumb.webp"
+    },
+    {
+      "id": "biceps/dumbbell-bicep-curl-on-exercise-ball-with-leg-raised",
+      "slug": "dumbbell-bicep-curl-on-exercise-ball-with-leg-raised",
+      "name": "Curl de bíceps con mancuerna, en fitball con pierna elevada",
+      "muscle": "biceps",
+      "bodyPart": "arms",
+      "equipment": "dumbbell",
+      "category": "strength",
+      "secondaryMuscles": [
+        "forearms"
+      ],
+      "instructions": [
+        "Coge una mancuerna en cada mano (o la indicada) con un peso adecuado.",
+        "Activa los bíceps antes de iniciar el movimiento.",
+        "Realiza el movimiento de forma controlada manteniendo la técnica.",
+        "Vuelve a la posición inicial controlando la fase excéntrica.",
+        "Mantén la respiración: exhala en el esfuerzo, inhala al volver."
+      ],
+      "file": "biceps/dumbbell-bicep-curl-on-exercise-ball-with-leg-raised.gif",
+      "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/biceps/dumbbell-bicep-curl-on-exercise-ball-with-leg-raised.gif",
+      "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/biceps/dumbbell-bicep-curl-on-exercise-ball-with-leg-raised.thumb.webp"
+    },
+    {
+      "id": "biceps/dumbbell-bicep-curl-with-stork-stance",
+      "slug": "dumbbell-bicep-curl-with-stork-stance",
+      "name": "Curl de bíceps con mancuerna, en postura de cigüeña",
+      "muscle": "biceps",
+      "bodyPart": "arms",
+      "equipment": "dumbbell",
+      "category": "strength",
+      "secondaryMuscles": [
+        "forearms"
+      ],
+      "instructions": [
+        "Coge una mancuerna en cada mano (o la indicada) con un peso adecuado.",
+        "Activa los bíceps antes de iniciar el movimiento.",
+        "Realiza el movimiento de forma controlada manteniendo la técnica.",
+        "Vuelve a la posición inicial controlando la fase excéntrica.",
+        "Mantén la respiración: exhala en el esfuerzo, inhala al volver."
+      ],
+      "file": "biceps/dumbbell-bicep-curl-with-stork-stance.gif",
+      "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/biceps/dumbbell-bicep-curl-with-stork-stance.gif",
+      "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/biceps/dumbbell-bicep-curl-with-stork-stance.thumb.webp"
+    },
+    {
+      "id": "biceps/dumbbell-biceps-curl-reverse",
+      "slug": "dumbbell-biceps-curl-reverse",
+      "name": "Curl de bíceps invertido con mancuerna",
+      "muscle": "biceps",
+      "bodyPart": "arms",
+      "equipment": "dumbbell",
+      "category": "strength",
+      "secondaryMuscles": [
+        "forearms"
+      ],
+      "instructions": [
+        "Coge una mancuerna en cada mano (o la indicada) con un peso adecuado.",
+        "Activa los bíceps antes de iniciar el movimiento.",
+        "Realiza el movimiento de forma controlada manteniendo la técnica.",
+        "Vuelve a la posición inicial controlando la fase excéntrica.",
+        "Mantén la respiración: exhala en el esfuerzo, inhala al volver."
+      ],
+      "file": "biceps/dumbbell-biceps-curl-reverse.gif",
+      "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/biceps/dumbbell-biceps-curl-reverse.gif",
+      "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/biceps/dumbbell-biceps-curl-reverse.thumb.webp"
+    },
+    {
+      "id": "biceps/dumbbell-biceps-curl-squat",
+      "slug": "dumbbell-biceps-curl-squat",
+      "name": "Sentadilla con mancuerna, biceps-curl",
+      "muscle": "biceps",
+      "bodyPart": "arms",
+      "equipment": "dumbbell",
+      "category": "strength",
+      "secondaryMuscles": [
+        "forearms",
+        "glutes",
+        "hamstrings",
+        "calves"
+      ],
+      "instructions": [
+        "Coge una mancuerna en cada mano (o la indicada) con un peso adecuado.",
+        "Activa los bíceps antes de iniciar el movimiento.",
+        "Realiza el movimiento de forma controlada manteniendo la técnica.",
+        "Vuelve a la posición inicial controlando la fase excéntrica.",
+        "Mantén la respiración: exhala en el esfuerzo, inhala al volver."
+      ],
+      "file": "biceps/dumbbell-biceps-curl-squat.gif",
+      "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/biceps/dumbbell-biceps-curl-squat.gif",
+      "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/biceps/dumbbell-biceps-curl-squat.thumb.webp"
+    },
+    {
+      "id": "biceps/dumbbell-biceps-curl-v-sit-on-bosu-ball",
+      "slug": "dumbbell-biceps-curl-v-sit-on-bosu-ball",
+      "name": "Curl de bíceps con mancuerna, en bosu, sit",
+      "muscle": "biceps",
+      "bodyPart": "arms",
+      "equipment": "dumbbell",
+      "category": "strength",
+      "secondaryMuscles": [
+        "forearms"
+      ],
+      "instructions": [
+        "Coge una mancuerna en cada mano (o la indicada) con un peso adecuado.",
+        "Activa los bíceps antes de iniciar el movimiento.",
+        "Realiza el movimiento de forma controlada manteniendo la técnica.",
+        "Vuelve a la posición inicial controlando la fase excéntrica.",
+        "Mantén la respiración: exhala en el esfuerzo, inhala al volver."
+      ],
+      "file": "biceps/dumbbell-biceps-curl-v-sit-on-bosu-ball.gif",
+      "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/biceps/dumbbell-biceps-curl-v-sit-on-bosu-ball.gif",
+      "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/biceps/dumbbell-biceps-curl-v-sit-on-bosu-ball.thumb.webp"
+    },
+    {
+      "id": "biceps/dumbbell-biceps-curl-with-arm-blaster",
+      "slug": "dumbbell-biceps-curl-with-arm-blaster",
+      "name": "Curl de bíceps con mancuerna, con arm blaster",
+      "muscle": "biceps",
+      "bodyPart": "arms",
+      "equipment": "dumbbell",
+      "category": "strength",
+      "secondaryMuscles": [
+        "forearms"
+      ],
+      "instructions": [
+        "Coge una mancuerna en cada mano (o la indicada) con un peso adecuado.",
+        "Activa los bíceps antes de iniciar el movimiento.",
+        "Realiza el movimiento de forma controlada manteniendo la técnica.",
+        "Vuelve a la posición inicial controlando la fase excéntrica.",
+        "Mantén la respiración: exhala en el esfuerzo, inhala al volver."
+      ],
+      "file": "biceps/dumbbell-biceps-curl-with-arm-blaster.gif",
+      "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/biceps/dumbbell-biceps-curl-with-arm-blaster.gif",
+      "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/biceps/dumbbell-biceps-curl-with-arm-blaster.thumb.webp"
+    },
+    {
+      "id": "biceps/dumbbell-biceps-curl",
+      "slug": "dumbbell-biceps-curl",
+      "name": "Curl de bíceps con mancuerna",
+      "muscle": "biceps",
+      "bodyPart": "arms",
+      "equipment": "dumbbell",
+      "category": "strength",
+      "secondaryMuscles": [
+        "forearms"
+      ],
+      "instructions": [
+        "Coge una mancuerna en cada mano (o la indicada) con un peso adecuado.",
+        "Activa los bíceps antes de iniciar el movimiento.",
+        "Realiza el movimiento de forma controlada manteniendo la técnica.",
+        "Vuelve a la posición inicial controlando la fase excéntrica.",
+        "Mantén la respiración: exhala en el esfuerzo, inhala al volver."
+      ],
+      "file": "biceps/dumbbell-biceps-curl.gif",
+      "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/biceps/dumbbell-biceps-curl.gif",
+      "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/biceps/dumbbell-biceps-curl.thumb.webp"
+    },
+    {
+      "id": "biceps/dumbbell-concentration-curl",
+      "slug": "dumbbell-concentration-curl",
+      "name": "Curl concentrado con mancuerna",
+      "muscle": "biceps",
+      "bodyPart": "arms",
+      "equipment": "dumbbell",
+      "category": "strength",
+      "secondaryMuscles": [
+        "forearms"
+      ],
+      "instructions": [
+        "Coge una mancuerna en cada mano (o la indicada) con un peso adecuado.",
+        "Activa los bíceps antes de iniciar el movimiento.",
+        "Realiza el movimiento de forma controlada manteniendo la técnica.",
+        "Vuelve a la posición inicial controlando la fase excéntrica.",
+        "Mantén la respiración: exhala en el esfuerzo, inhala al volver."
+      ],
+      "file": "biceps/dumbbell-concentration-curl.gif",
+      "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/biceps/dumbbell-concentration-curl.gif",
+      "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/biceps/dumbbell-concentration-curl.thumb.webp"
+    },
+    {
+      "id": "biceps/dumbbell-cross-body-hammer-curl-v-2",
+      "slug": "dumbbell-cross-body-hammer-curl-v-2",
+      "name": "Curl martillo cruzado al cuerpo con mancuerna",
+      "muscle": "biceps",
+      "bodyPart": "arms",
+      "equipment": "dumbbell",
+      "category": "strength",
+      "secondaryMuscles": [
+        "forearms"
+      ],
+      "instructions": [
+        "Coge una mancuerna en cada mano (o la indicada) con un peso adecuado.",
+        "Activa los bíceps antes de iniciar el movimiento.",
+        "Realiza el movimiento de forma controlada manteniendo la técnica.",
+        "Vuelve a la posición inicial controlando la fase excéntrica.",
+        "Mantén la respiración: exhala en el esfuerzo, inhala al volver."
+      ],
+      "file": "biceps/dumbbell-cross-body-hammer-curl-v-2.gif",
+      "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/biceps/dumbbell-cross-body-hammer-curl-v-2.gif",
+      "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/biceps/dumbbell-cross-body-hammer-curl-v-2.thumb.webp"
+    },
+    {
+      "id": "biceps/dumbbell-cross-body-hammer-curl",
+      "slug": "dumbbell-cross-body-hammer-curl",
+      "name": "Curl martillo cruzado al cuerpo con mancuerna",
+      "muscle": "biceps",
+      "bodyPart": "arms",
+      "equipment": "dumbbell",
+      "category": "strength",
+      "secondaryMuscles": [
+        "forearms"
+      ],
+      "instructions": [
+        "Coge una mancuerna en cada mano (o la indicada) con un peso adecuado.",
+        "Activa los bíceps antes de iniciar el movimiento.",
+        "Realiza el movimiento de forma controlada manteniendo la técnica.",
+        "Vuelve a la posición inicial controlando la fase excéntrica.",
+        "Mantén la respiración: exhala en el esfuerzo, inhala al volver."
+      ],
+      "file": "biceps/dumbbell-cross-body-hammer-curl.gif",
+      "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/biceps/dumbbell-cross-body-hammer-curl.gif",
+      "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/biceps/dumbbell-cross-body-hammer-curl.thumb.webp"
+    },
+    {
+      "id": "biceps/dumbbell-hammer-curl-on-exercise-ball",
+      "slug": "dumbbell-hammer-curl-on-exercise-ball",
+      "name": "Curl martillo con mancuerna, en fitball",
+      "muscle": "biceps",
+      "bodyPart": "arms",
+      "equipment": "dumbbell",
+      "category": "strength",
+      "secondaryMuscles": [
+        "forearms"
+      ],
+      "instructions": [
+        "Coge una mancuerna en cada mano (o la indicada) con un peso adecuado.",
+        "Activa los bíceps antes de iniciar el movimiento.",
+        "Realiza el movimiento de forma controlada manteniendo la técnica.",
+        "Vuelve a la posición inicial controlando la fase excéntrica.",
+        "Mantén la respiración: exhala en el esfuerzo, inhala al volver."
+      ],
+      "file": "biceps/dumbbell-hammer-curl-on-exercise-ball.gif",
+      "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/biceps/dumbbell-hammer-curl-on-exercise-ball.gif",
+      "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/biceps/dumbbell-hammer-curl-on-exercise-ball.thumb.webp"
+    },
+    {
+      "id": "biceps/dumbbell-hammer-curl-v-2",
+      "slug": "dumbbell-hammer-curl-v-2",
+      "name": "Curl martillo con mancuerna",
+      "muscle": "biceps",
+      "bodyPart": "arms",
+      "equipment": "dumbbell",
+      "category": "strength",
+      "secondaryMuscles": [
+        "forearms"
+      ],
+      "instructions": [
+        "Coge una mancuerna en cada mano (o la indicada) con un peso adecuado.",
+        "Activa los bíceps antes de iniciar el movimiento.",
+        "Realiza el movimiento de forma controlada manteniendo la técnica.",
+        "Vuelve a la posición inicial controlando la fase excéntrica.",
+        "Mantén la respiración: exhala en el esfuerzo, inhala al volver."
+      ],
+      "file": "biceps/dumbbell-hammer-curl-v-2.gif",
+      "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/biceps/dumbbell-hammer-curl-v-2.gif",
+      "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/biceps/dumbbell-hammer-curl-v-2.thumb.webp"
+    },
+    {
+      "id": "biceps/dumbbell-hammer-curl",
+      "slug": "dumbbell-hammer-curl",
+      "name": "Curl martillo con mancuerna",
+      "muscle": "biceps",
+      "bodyPart": "arms",
+      "equipment": "dumbbell",
+      "category": "strength",
+      "secondaryMuscles": [
+        "forearms"
+      ],
+      "instructions": [
+        "Coge una mancuerna en cada mano (o la indicada) con un peso adecuado.",
+        "Activa los bíceps antes de iniciar el movimiento.",
+        "Realiza el movimiento de forma controlada manteniendo la técnica.",
+        "Vuelve a la posición inicial controlando la fase excéntrica.",
+        "Mantén la respiración: exhala en el esfuerzo, inhala al volver."
+      ],
+      "file": "biceps/dumbbell-hammer-curl.gif",
+      "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/biceps/dumbbell-hammer-curl.gif",
+      "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/biceps/dumbbell-hammer-curl.thumb.webp"
+    },
+    {
+      "id": "biceps/dumbbell-hammer-curls-with-arm-blaster",
+      "slug": "dumbbell-hammer-curls-with-arm-blaster",
+      "name": "Curl martillo con mancuerna, con arm blaster",
+      "muscle": "biceps",
+      "bodyPart": "arms",
+      "equipment": "dumbbell",
+      "category": "strength",
+      "secondaryMuscles": [
+        "forearms"
+      ],
+      "instructions": [
+        "Coge una mancuerna en cada mano (o la indicada) con un peso adecuado.",
+        "Activa los bíceps antes de iniciar el movimiento.",
+        "Realiza el movimiento de forma controlada manteniendo la técnica.",
+        "Vuelve a la posición inicial controlando la fase excéntrica.",
+        "Mantén la respiración: exhala en el esfuerzo, inhala al volver."
+      ],
+      "file": "biceps/dumbbell-hammer-curls-with-arm-blaster.gif",
+      "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/biceps/dumbbell-hammer-curls-with-arm-blaster.gif",
+      "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/biceps/dumbbell-hammer-curls-with-arm-blaster.thumb.webp"
+    },
+    {
+      "id": "biceps/dumbbell-high-curl",
+      "slug": "dumbbell-high-curl",
+      "name": "Curl con mancuerna, alto",
+      "muscle": "biceps",
+      "bodyPart": "arms",
+      "equipment": "dumbbell",
+      "category": "strength",
+      "secondaryMuscles": [
+        "forearms"
+      ],
+      "instructions": [
+        "Coge una mancuerna en cada mano (o la indicada) con un peso adecuado.",
+        "Activa los bíceps antes de iniciar el movimiento.",
+        "Realiza el movimiento de forma controlada manteniendo la técnica.",
+        "Vuelve a la posición inicial controlando la fase excéntrica.",
+        "Mantén la respiración: exhala en el esfuerzo, inhala al volver."
+      ],
+      "file": "biceps/dumbbell-high-curl.gif",
+      "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/biceps/dumbbell-high-curl.gif",
+      "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/biceps/dumbbell-high-curl.thumb.webp"
+    },
+    {
+      "id": "biceps/dumbbell-incline-biceps-curl",
+      "slug": "dumbbell-incline-biceps-curl",
+      "name": "Curl de bíceps inclinado con mancuerna",
+      "muscle": "biceps",
+      "bodyPart": "arms",
+      "equipment": "dumbbell",
+      "category": "strength",
+      "secondaryMuscles": [
+        "forearms"
+      ],
+      "instructions": [
+        "Coge una mancuerna en cada mano (o la indicada) con un peso adecuado.",
+        "Activa los bíceps antes de iniciar el movimiento.",
+        "Realiza el movimiento de forma controlada manteniendo la técnica.",
+        "Vuelve a la posición inicial controlando la fase excéntrica.",
+        "Mantén la respiración: exhala en el esfuerzo, inhala al volver."
+      ],
+      "file": "biceps/dumbbell-incline-biceps-curl.gif",
+      "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/biceps/dumbbell-incline-biceps-curl.gif",
+      "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/biceps/dumbbell-incline-biceps-curl.thumb.webp"
+    },
+    {
+      "id": "biceps/dumbbell-incline-curl-v-2",
+      "slug": "dumbbell-incline-curl-v-2",
+      "name": "Curl inclinado con mancuerna",
+      "muscle": "biceps",
+      "bodyPart": "arms",
+      "equipment": "dumbbell",
+      "category": "strength",
+      "secondaryMuscles": [
+        "forearms"
+      ],
+      "instructions": [
+        "Coge una mancuerna en cada mano (o la indicada) con un peso adecuado.",
+        "Activa los bíceps antes de iniciar el movimiento.",
+        "Realiza el movimiento de forma controlada manteniendo la técnica.",
+        "Vuelve a la posición inicial controlando la fase excéntrica.",
+        "Mantén la respiración: exhala en el esfuerzo, inhala al volver."
+      ],
+      "file": "biceps/dumbbell-incline-curl-v-2.gif",
+      "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/biceps/dumbbell-incline-curl-v-2.gif",
+      "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/biceps/dumbbell-incline-curl-v-2.thumb.webp"
+    },
+    {
+      "id": "biceps/dumbbell-incline-curl",
+      "slug": "dumbbell-incline-curl",
+      "name": "Curl inclinado con mancuerna",
+      "muscle": "biceps",
+      "bodyPart": "arms",
+      "equipment": "dumbbell",
+      "category": "strength",
+      "secondaryMuscles": [
+        "forearms"
+      ],
+      "instructions": [
+        "Coge una mancuerna en cada mano (o la indicada) con un peso adecuado.",
+        "Activa los bíceps antes de iniciar el movimiento.",
+        "Realiza el movimiento de forma controlada manteniendo la técnica.",
+        "Vuelve a la posición inicial controlando la fase excéntrica.",
+        "Mantén la respiración: exhala en el esfuerzo, inhala al volver."
+      ],
+      "file": "biceps/dumbbell-incline-curl.gif",
+      "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/biceps/dumbbell-incline-curl.gif",
+      "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/biceps/dumbbell-incline-curl.thumb.webp"
+    },
+    {
+      "id": "biceps/dumbbell-incline-hammer-curl",
+      "slug": "dumbbell-incline-hammer-curl",
+      "name": "Curl martillo inclinado con mancuerna",
+      "muscle": "biceps",
+      "bodyPart": "arms",
+      "equipment": "dumbbell",
+      "category": "strength",
+      "secondaryMuscles": [
+        "forearms"
+      ],
+      "instructions": [
+        "Coge una mancuerna en cada mano (o la indicada) con un peso adecuado.",
+        "Activa los bíceps antes de iniciar el movimiento.",
+        "Realiza el movimiento de forma controlada manteniendo la técnica.",
+        "Vuelve a la posición inicial controlando la fase excéntrica.",
+        "Mantén la respiración: exhala en el esfuerzo, inhala al volver."
+      ],
+      "file": "biceps/dumbbell-incline-hammer-curl.gif",
+      "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/biceps/dumbbell-incline-hammer-curl.gif",
+      "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/biceps/dumbbell-incline-hammer-curl.thumb.webp"
+    },
+    {
+      "id": "biceps/dumbbell-incline-inner-biceps-curl",
+      "slug": "dumbbell-incline-inner-biceps-curl",
+      "name": "Curl de bíceps inclinado con mancuerna, interno",
+      "muscle": "biceps",
+      "bodyPart": "arms",
+      "equipment": "dumbbell",
+      "category": "strength",
+      "secondaryMuscles": [
+        "forearms"
+      ],
+      "instructions": [
+        "Coge una mancuerna en cada mano (o la indicada) con un peso adecuado.",
+        "Activa los bíceps antes de iniciar el movimiento.",
+        "Realiza el movimiento de forma controlada manteniendo la técnica.",
+        "Vuelve a la posición inicial controlando la fase excéntrica.",
+        "Mantén la respiración: exhala en el esfuerzo, inhala al volver."
+      ],
+      "file": "biceps/dumbbell-incline-inner-biceps-curl.gif",
+      "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/biceps/dumbbell-incline-inner-biceps-curl.gif",
+      "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/biceps/dumbbell-incline-inner-biceps-curl.thumb.webp"
+    },
+    {
+      "id": "biceps/dumbbell-kneeling-bicep-curl-exercise-ball",
+      "slug": "dumbbell-kneeling-bicep-curl-exercise-ball",
+      "name": "Curl de bíceps con mancuerna en fitball, de rodillas",
+      "muscle": "biceps",
+      "bodyPart": "arms",
+      "equipment": "dumbbell",
+      "category": "strength",
+      "secondaryMuscles": [
+        "forearms"
+      ],
+      "instructions": [
+        "Coge una mancuerna en cada mano (o la indicada) con un peso adecuado.",
+        "Activa los bíceps antes de iniciar el movimiento.",
+        "Realiza el movimiento de forma controlada manteniendo la técnica.",
+        "Vuelve a la posición inicial controlando la fase excéntrica.",
+        "Mantén la respiración: exhala en el esfuerzo, inhala al volver."
+      ],
+      "file": "biceps/dumbbell-kneeling-bicep-curl-exercise-ball.gif",
+      "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/biceps/dumbbell-kneeling-bicep-curl-exercise-ball.gif",
+      "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/biceps/dumbbell-kneeling-bicep-curl-exercise-ball.thumb.webp"
+    },
+    {
+      "id": "biceps/dumbbell-lunge-with-bicep-curl",
+      "slug": "dumbbell-lunge-with-bicep-curl",
+      "name": "Zancada con mancuerna, con curl de bíceps",
+      "muscle": "biceps",
+      "bodyPart": "arms",
+      "equipment": "dumbbell",
+      "category": "strength",
+      "secondaryMuscles": [
+        "forearms",
+        "glutes",
+        "hamstrings",
+        "calves"
+      ],
+      "instructions": [
+        "Coge una mancuerna en cada mano (o la indicada) con un peso adecuado.",
+        "Activa los bíceps antes de iniciar el movimiento.",
+        "Realiza el movimiento de forma controlada manteniendo la técnica.",
+        "Vuelve a la posición inicial controlando la fase excéntrica.",
+        "Mantén la respiración: exhala en el esfuerzo, inhala al volver."
+      ],
+      "file": "biceps/dumbbell-lunge-with-bicep-curl.gif",
+      "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/biceps/dumbbell-lunge-with-bicep-curl.gif",
+      "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/biceps/dumbbell-lunge-with-bicep-curl.thumb.webp"
+    },
+    {
+      "id": "biceps/dumbbell-lying-supine-biceps-curl",
+      "slug": "dumbbell-lying-supine-biceps-curl",
+      "name": "Curl de bíceps tumbado boca arriba con mancuerna",
+      "muscle": "biceps",
+      "bodyPart": "arms",
+      "equipment": "dumbbell",
+      "category": "strength",
+      "secondaryMuscles": [
+        "forearms"
+      ],
+      "instructions": [
+        "Coge una mancuerna en cada mano (o la indicada) con un peso adecuado.",
+        "Activa los bíceps antes de iniciar el movimiento.",
+        "Realiza el movimiento de forma controlada manteniendo la técnica.",
+        "Vuelve a la posición inicial controlando la fase excéntrica.",
+        "Mantén la respiración: exhala en el esfuerzo, inhala al volver."
+      ],
+      "file": "biceps/dumbbell-lying-supine-biceps-curl.gif",
+      "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/biceps/dumbbell-lying-supine-biceps-curl.gif",
+      "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/biceps/dumbbell-lying-supine-biceps-curl.thumb.webp"
+    },
+    {
+      "id": "biceps/dumbbell-lying-supine-curl",
+      "slug": "dumbbell-lying-supine-curl",
+      "name": "Curl tumbado boca arriba con mancuerna",
+      "muscle": "biceps",
+      "bodyPart": "arms",
+      "equipment": "dumbbell",
+      "category": "strength",
+      "secondaryMuscles": [
+        "forearms"
+      ],
+      "instructions": [
+        "Coge una mancuerna en cada mano (o la indicada) con un peso adecuado.",
+        "Activa los bíceps antes de iniciar el movimiento.",
+        "Realiza el movimiento de forma controlada manteniendo la técnica.",
+        "Vuelve a la posición inicial controlando la fase excéntrica.",
+        "Mantén la respiración: exhala en el esfuerzo, inhala al volver."
+      ],
+      "file": "biceps/dumbbell-lying-supine-curl.gif",
+      "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/biceps/dumbbell-lying-supine-curl.gif",
+      "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/biceps/dumbbell-lying-supine-curl.thumb.webp"
+    },
+    {
+      "id": "biceps/dumbbell-lying-wide-curl",
+      "slug": "dumbbell-lying-wide-curl",
+      "name": "Curl con mancuerna, tumbado, ancho",
+      "muscle": "biceps",
+      "bodyPart": "arms",
+      "equipment": "dumbbell",
+      "category": "strength",
+      "secondaryMuscles": [
+        "forearms"
+      ],
+      "instructions": [
+        "Coge una mancuerna en cada mano (o la indicada) con un peso adecuado.",
+        "Activa los bíceps antes de iniciar el movimiento.",
+        "Realiza el movimiento de forma controlada manteniendo la técnica.",
+        "Vuelve a la posición inicial controlando la fase excéntrica.",
+        "Mantén la respiración: exhala en el esfuerzo, inhala al volver."
+      ],
+      "file": "biceps/dumbbell-lying-wide-curl.gif",
+      "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/biceps/dumbbell-lying-wide-curl.gif",
+      "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/biceps/dumbbell-lying-wide-curl.thumb.webp"
+    },
+    {
+      "id": "biceps/dumbbell-one-arm-concentration-curl-on-stability-ball",
+      "slug": "dumbbell-one-arm-concentration-curl-on-stability-ball",
+      "name": "Curl concentrado con mancuerna, a una mano en fitball",
+      "muscle": "biceps",
+      "bodyPart": "arms",
+      "equipment": "dumbbell",
+      "category": "strength",
+      "secondaryMuscles": [
+        "forearms"
+      ],
+      "instructions": [
+        "Coge una mancuerna en cada mano (o la indicada) con un peso adecuado.",
+        "Activa los bíceps antes de iniciar el movimiento.",
+        "Realiza el movimiento de forma controlada manteniendo la técnica.",
+        "Vuelve a la posición inicial controlando la fase excéntrica.",
+        "Mantén la respiración: exhala en el esfuerzo, inhala al volver."
+      ],
+      "file": "biceps/dumbbell-one-arm-concentration-curl-on-stability-ball.gif",
+      "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/biceps/dumbbell-one-arm-concentration-curl-on-stability-ball.gif",
+      "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/biceps/dumbbell-one-arm-concentration-curl-on-stability-ball.thumb.webp"
+    },
+    {
+      "id": "biceps/dumbbell-one-arm-hammer-preacher-curl",
+      "slug": "dumbbell-one-arm-hammer-preacher-curl",
+      "name": "Curl predicador martillo con mancuerna, a una mano",
+      "muscle": "biceps",
+      "bodyPart": "arms",
+      "equipment": "dumbbell",
+      "category": "strength",
+      "secondaryMuscles": [
+        "forearms"
+      ],
+      "instructions": [
+        "Coge una mancuerna en cada mano (o la indicada) con un peso adecuado.",
+        "Activa los bíceps antes de iniciar el movimiento.",
+        "Realiza el movimiento de forma controlada manteniendo la técnica.",
+        "Vuelve a la posición inicial controlando la fase excéntrica.",
+        "Mantén la respiración: exhala en el esfuerzo, inhala al volver."
+      ],
+      "file": "biceps/dumbbell-one-arm-hammer-preacher-curl.gif",
+      "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/biceps/dumbbell-one-arm-hammer-preacher-curl.gif",
+      "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/biceps/dumbbell-one-arm-hammer-preacher-curl.thumb.webp"
+    },
+    {
+      "id": "biceps/dumbbell-one-arm-prone-curl",
+      "slug": "dumbbell-one-arm-prone-curl",
+      "name": "Curl tumbado boca abajo con mancuerna, a una mano",
+      "muscle": "biceps",
+      "bodyPart": "arms",
+      "equipment": "dumbbell",
+      "category": "strength",
+      "secondaryMuscles": [
+        "forearms"
+      ],
+      "instructions": [
+        "Coge una mancuerna en cada mano (o la indicada) con un peso adecuado.",
+        "Activa los bíceps antes de iniciar el movimiento.",
+        "Realiza el movimiento de forma controlada manteniendo la técnica.",
+        "Vuelve a la posición inicial controlando la fase excéntrica.",
+        "Mantén la respiración: exhala en el esfuerzo, inhala al volver."
+      ],
+      "file": "biceps/dumbbell-one-arm-prone-curl.gif",
+      "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/biceps/dumbbell-one-arm-prone-curl.gif",
+      "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/biceps/dumbbell-one-arm-prone-curl.thumb.webp"
+    },
+    {
+      "id": "biceps/dumbbell-one-arm-prone-hammer-curl",
+      "slug": "dumbbell-one-arm-prone-hammer-curl",
+      "name": "Curl martillo tumbado boca abajo con mancuerna, a una mano",
+      "muscle": "biceps",
+      "bodyPart": "arms",
+      "equipment": "dumbbell",
+      "category": "strength",
+      "secondaryMuscles": [
+        "forearms"
+      ],
+      "instructions": [
+        "Coge una mancuerna en cada mano (o la indicada) con un peso adecuado.",
+        "Activa los bíceps antes de iniciar el movimiento.",
+        "Realiza el movimiento de forma controlada manteniendo la técnica.",
+        "Vuelve a la posición inicial controlando la fase excéntrica.",
+        "Mantén la respiración: exhala en el esfuerzo, inhala al volver."
+      ],
+      "file": "biceps/dumbbell-one-arm-prone-hammer-curl.gif",
+      "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/biceps/dumbbell-one-arm-prone-hammer-curl.gif",
+      "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/biceps/dumbbell-one-arm-prone-hammer-curl.thumb.webp"
+    },
+    {
+      "id": "biceps/dumbbell-one-arm-reverse-preacher-curl",
+      "slug": "dumbbell-one-arm-reverse-preacher-curl",
+      "name": "Curl predicador invertido con mancuerna, a una mano",
+      "muscle": "biceps",
+      "bodyPart": "arms",
+      "equipment": "dumbbell",
+      "category": "strength",
+      "secondaryMuscles": [
+        "forearms"
+      ],
+      "instructions": [
+        "Coge una mancuerna en cada mano (o la indicada) con un peso adecuado.",
+        "Activa los bíceps antes de iniciar el movimiento.",
+        "Realiza el movimiento de forma controlada manteniendo la técnica.",
+        "Vuelve a la posición inicial controlando la fase excéntrica.",
+        "Mantén la respiración: exhala en el esfuerzo, inhala al volver."
+      ],
+      "file": "biceps/dumbbell-one-arm-reverse-preacher-curl.gif",
+      "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/biceps/dumbbell-one-arm-reverse-preacher-curl.gif",
+      "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/biceps/dumbbell-one-arm-reverse-preacher-curl.thumb.webp"
+    },
+    {
+      "id": "biceps/dumbbell-one-arm-reverse-spider-curl",
+      "slug": "dumbbell-one-arm-reverse-spider-curl",
+      "name": "Curl spider invertido con mancuerna, a una mano",
+      "muscle": "biceps",
+      "bodyPart": "arms",
+      "equipment": "dumbbell",
+      "category": "strength",
+      "secondaryMuscles": [
+        "forearms"
+      ],
+      "instructions": [
+        "Coge una mancuerna en cada mano (o la indicada) con un peso adecuado.",
+        "Activa los bíceps antes de iniciar el movimiento.",
+        "Realiza el movimiento de forma controlada manteniendo la técnica.",
+        "Vuelve a la posición inicial controlando la fase excéntrica.",
+        "Mantén la respiración: exhala en el esfuerzo, inhala al volver."
+      ],
+      "file": "biceps/dumbbell-one-arm-reverse-spider-curl.gif",
+      "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/biceps/dumbbell-one-arm-reverse-spider-curl.gif",
+      "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/biceps/dumbbell-one-arm-reverse-spider-curl.thumb.webp"
+    },
+    {
+      "id": "biceps/dumbbell-one-arm-seated-bicep-curl-on-exercise-ball",
+      "slug": "dumbbell-one-arm-seated-bicep-curl-on-exercise-ball",
+      "name": "Curl de bíceps con mancuerna, sentado, a una mano en fitball",
+      "muscle": "biceps",
+      "bodyPart": "arms",
+      "equipment": "dumbbell",
+      "category": "strength",
+      "secondaryMuscles": [
+        "forearms"
+      ],
+      "instructions": [
+        "Coge una mancuerna en cada mano (o la indicada) con un peso adecuado.",
+        "Activa los bíceps antes de iniciar el movimiento.",
+        "Realiza el movimiento de forma controlada manteniendo la técnica.",
+        "Vuelve a la posición inicial controlando la fase excéntrica.",
+        "Mantén la respiración: exhala en el esfuerzo, inhala al volver."
+      ],
+      "file": "biceps/dumbbell-one-arm-seated-bicep-curl-on-exercise-ball.gif",
+      "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/biceps/dumbbell-one-arm-seated-bicep-curl-on-exercise-ball.gif",
+      "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/biceps/dumbbell-one-arm-seated-bicep-curl-on-exercise-ball.thumb.webp"
+    },
+    {
+      "id": "biceps/dumbbell-one-arm-seated-hammer-curl",
+      "slug": "dumbbell-one-arm-seated-hammer-curl",
+      "name": "Curl martillo con mancuerna, sentado, a una mano",
+      "muscle": "biceps",
+      "bodyPart": "arms",
+      "equipment": "dumbbell",
+      "category": "strength",
+      "secondaryMuscles": [
+        "forearms"
+      ],
+      "instructions": [
+        "Coge una mancuerna en cada mano (o la indicada) con un peso adecuado.",
+        "Activa los bíceps antes de iniciar el movimiento.",
+        "Realiza el movimiento de forma controlada manteniendo la técnica.",
+        "Vuelve a la posición inicial controlando la fase excéntrica.",
+        "Mantén la respiración: exhala en el esfuerzo, inhala al volver."
+      ],
+      "file": "biceps/dumbbell-one-arm-seated-hammer-curl.gif",
+      "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/biceps/dumbbell-one-arm-seated-hammer-curl.gif",
+      "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/biceps/dumbbell-one-arm-seated-hammer-curl.thumb.webp"
+    },
+    {
+      "id": "biceps/dumbbell-one-arm-standing-curl",
+      "slug": "dumbbell-one-arm-standing-curl",
+      "name": "Curl con mancuerna, de pie, a una mano",
+      "muscle": "biceps",
+      "bodyPart": "arms",
+      "equipment": "dumbbell",
+      "category": "strength",
+      "secondaryMuscles": [
+        "forearms"
+      ],
+      "instructions": [
+        "Coge una mancuerna en cada mano (o la indicada) con un peso adecuado.",
+        "Activa los bíceps antes de iniciar el movimiento.",
+        "Realiza el movimiento de forma controlada manteniendo la técnica.",
+        "Vuelve a la posición inicial controlando la fase excéntrica.",
+        "Mantén la respiración: exhala en el esfuerzo, inhala al volver."
+      ],
+      "file": "biceps/dumbbell-one-arm-standing-curl.gif",
+      "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/biceps/dumbbell-one-arm-standing-curl.gif",
+      "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/biceps/dumbbell-one-arm-standing-curl.thumb.webp"
+    },
+    {
+      "id": "biceps/dumbbell-one-arm-standing-hammer-curl",
+      "slug": "dumbbell-one-arm-standing-hammer-curl",
+      "name": "Curl martillo con mancuerna, de pie, a una mano",
+      "muscle": "biceps",
+      "bodyPart": "arms",
+      "equipment": "dumbbell",
+      "category": "strength",
+      "secondaryMuscles": [
+        "forearms"
+      ],
+      "instructions": [
+        "Coge una mancuerna en cada mano (o la indicada) con un peso adecuado.",
+        "Activa los bíceps antes de iniciar el movimiento.",
+        "Realiza el movimiento de forma controlada manteniendo la técnica.",
+        "Vuelve a la posición inicial controlando la fase excéntrica.",
+        "Mantén la respiración: exhala en el esfuerzo, inhala al volver."
+      ],
+      "file": "biceps/dumbbell-one-arm-standing-hammer-curl.gif",
+      "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/biceps/dumbbell-one-arm-standing-hammer-curl.gif",
+      "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/biceps/dumbbell-one-arm-standing-hammer-curl.thumb.webp"
+    },
+    {
+      "id": "biceps/dumbbell-one-arm-zottman-preacher-curl",
+      "slug": "dumbbell-one-arm-zottman-preacher-curl",
+      "name": "Curl predicador Zottman con mancuerna, a una mano",
+      "muscle": "biceps",
+      "bodyPart": "arms",
+      "equipment": "dumbbell",
+      "category": "strength",
+      "secondaryMuscles": [
+        "forearms"
+      ],
+      "instructions": [
+        "Coge una mancuerna en cada mano (o la indicada) con un peso adecuado.",
+        "Activa los bíceps antes de iniciar el movimiento.",
+        "Realiza el movimiento de forma controlada manteniendo la técnica.",
+        "Vuelve a la posición inicial controlando la fase excéntrica.",
+        "Mantén la respiración: exhala en el esfuerzo, inhala al volver."
+      ],
+      "file": "biceps/dumbbell-one-arm-zottman-preacher-curl.gif",
+      "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/biceps/dumbbell-one-arm-zottman-preacher-curl.gif",
+      "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/biceps/dumbbell-one-arm-zottman-preacher-curl.thumb.webp"
+    },
+    {
+      "id": "biceps/dumbbell-over-bench-neutral-wrist-curl",
+      "slug": "dumbbell-over-bench-neutral-wrist-curl",
+      "name": "Curl con mancuerna, con muñeca neutra, sobre banco",
+      "muscle": "biceps",
+      "bodyPart": "arms",
+      "equipment": "dumbbell",
+      "category": "strength",
+      "secondaryMuscles": [
+        "forearms"
+      ],
+      "instructions": [
+        "Coge una mancuerna en cada mano (o la indicada) con un peso adecuado.",
+        "Activa los bíceps antes de iniciar el movimiento.",
+        "Realiza el movimiento de forma controlada manteniendo la técnica.",
+        "Vuelve a la posición inicial controlando la fase excéntrica.",
+        "Mantén la respiración: exhala en el esfuerzo, inhala al volver."
+      ],
+      "file": "biceps/dumbbell-over-bench-neutral-wrist-curl.gif",
+      "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/biceps/dumbbell-over-bench-neutral-wrist-curl.gif",
+      "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/biceps/dumbbell-over-bench-neutral-wrist-curl.thumb.webp"
+    },
+    {
+      "id": "biceps/dumbbell-over-bench-one-arm-neutral-wrist-curl",
+      "slug": "dumbbell-over-bench-one-arm-neutral-wrist-curl",
+      "name": "Curl con mancuerna, con muñeca neutra, sobre banco a una mano",
+      "muscle": "biceps",
+      "bodyPart": "arms",
+      "equipment": "dumbbell",
+      "category": "strength",
+      "secondaryMuscles": [
+        "forearms"
+      ],
+      "instructions": [
+        "Coge una mancuerna en cada mano (o la indicada) con un peso adecuado.",
+        "Activa los bíceps antes de iniciar el movimiento.",
+        "Realiza el movimiento de forma controlada manteniendo la técnica.",
+        "Vuelve a la posición inicial controlando la fase excéntrica.",
+        "Mantén la respiración: exhala en el esfuerzo, inhala al volver."
+      ],
+      "file": "biceps/dumbbell-over-bench-one-arm-neutral-wrist-curl.gif",
+      "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/biceps/dumbbell-over-bench-one-arm-neutral-wrist-curl.gif",
+      "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/biceps/dumbbell-over-bench-one-arm-neutral-wrist-curl.thumb.webp"
+    },
+    {
+      "id": "biceps/dumbbell-peacher-hammer-curl",
+      "slug": "dumbbell-peacher-hammer-curl",
+      "name": "Curl martillo con mancuerna, peacher",
+      "muscle": "biceps",
+      "bodyPart": "arms",
+      "equipment": "dumbbell",
+      "category": "strength",
+      "secondaryMuscles": [
+        "forearms"
+      ],
+      "instructions": [
+        "Coge una mancuerna en cada mano (o la indicada) con un peso adecuado.",
+        "Activa los bíceps antes de iniciar el movimiento.",
+        "Realiza el movimiento de forma controlada manteniendo la técnica.",
+        "Vuelve a la posición inicial controlando la fase excéntrica.",
+        "Mantén la respiración: exhala en el esfuerzo, inhala al volver."
+      ],
+      "file": "biceps/dumbbell-peacher-hammer-curl.gif",
+      "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/biceps/dumbbell-peacher-hammer-curl.gif",
+      "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/biceps/dumbbell-peacher-hammer-curl.thumb.webp"
+    },
+    {
+      "id": "biceps/dumbbell-preacher-curl-over-exercise-ball",
+      "slug": "dumbbell-preacher-curl-over-exercise-ball",
+      "name": "Curl predicador con mancuerna, sobre fitball",
+      "muscle": "biceps",
+      "bodyPart": "arms",
+      "equipment": "dumbbell",
+      "category": "strength",
+      "secondaryMuscles": [
+        "forearms"
+      ],
+      "instructions": [
+        "Coge una mancuerna en cada mano (o la indicada) con un peso adecuado.",
+        "Activa los bíceps antes de iniciar el movimiento.",
+        "Realiza el movimiento de forma controlada manteniendo la técnica.",
+        "Vuelve a la posición inicial controlando la fase excéntrica.",
+        "Mantén la respiración: exhala en el esfuerzo, inhala al volver."
+      ],
+      "file": "biceps/dumbbell-preacher-curl-over-exercise-ball.gif",
+      "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/biceps/dumbbell-preacher-curl-over-exercise-ball.gif",
+      "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/biceps/dumbbell-preacher-curl-over-exercise-ball.thumb.webp"
+    },
+    {
+      "id": "biceps/dumbbell-preacher-curl",
+      "slug": "dumbbell-preacher-curl",
+      "name": "Curl predicador con mancuerna",
+      "muscle": "biceps",
+      "bodyPart": "arms",
+      "equipment": "dumbbell",
+      "category": "strength",
+      "secondaryMuscles": [
+        "forearms"
+      ],
+      "instructions": [
+        "Coge una mancuerna en cada mano (o la indicada) con un peso adecuado.",
+        "Activa los bíceps antes de iniciar el movimiento.",
+        "Realiza el movimiento de forma controlada manteniendo la técnica.",
+        "Vuelve a la posición inicial controlando la fase excéntrica.",
+        "Mantén la respiración: exhala en el esfuerzo, inhala al volver."
+      ],
+      "file": "biceps/dumbbell-preacher-curl.gif",
+      "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/biceps/dumbbell-preacher-curl.gif",
+      "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/biceps/dumbbell-preacher-curl.thumb.webp"
+    },
+    {
+      "id": "biceps/dumbbell-prone-incline-curl",
+      "slug": "dumbbell-prone-incline-curl",
+      "name": "Curl tumbado boca abajo inclinado con mancuerna",
+      "muscle": "biceps",
+      "bodyPart": "arms",
+      "equipment": "dumbbell",
+      "category": "strength",
+      "secondaryMuscles": [
+        "forearms"
+      ],
+      "instructions": [
+        "Coge una mancuerna en cada mano (o la indicada) con un peso adecuado.",
+        "Activa los bíceps antes de iniciar el movimiento.",
+        "Realiza el movimiento de forma controlada manteniendo la técnica.",
+        "Vuelve a la posición inicial controlando la fase excéntrica.",
+        "Mantén la respiración: exhala en el esfuerzo, inhala al volver."
+      ],
+      "file": "biceps/dumbbell-prone-incline-curl.gif",
+      "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/biceps/dumbbell-prone-incline-curl.gif",
+      "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/biceps/dumbbell-prone-incline-curl.thumb.webp"
+    },
+    {
+      "id": "biceps/dumbbell-prone-incline-hammer-curl",
+      "slug": "dumbbell-prone-incline-hammer-curl",
+      "name": "Curl martillo tumbado boca abajo inclinado con mancuerna",
+      "muscle": "biceps",
+      "bodyPart": "arms",
+      "equipment": "dumbbell",
+      "category": "strength",
+      "secondaryMuscles": [
+        "forearms"
+      ],
+      "instructions": [
+        "Coge una mancuerna en cada mano (o la indicada) con un peso adecuado.",
+        "Activa los bíceps antes de iniciar el movimiento.",
+        "Realiza el movimiento de forma controlada manteniendo la técnica.",
+        "Vuelve a la posición inicial controlando la fase excéntrica.",
+        "Mantén la respiración: exhala en el esfuerzo, inhala al volver."
+      ],
+      "file": "biceps/dumbbell-prone-incline-hammer-curl.gif",
+      "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/biceps/dumbbell-prone-incline-hammer-curl.gif",
+      "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/biceps/dumbbell-prone-incline-hammer-curl.thumb.webp"
+    },
+    {
+      "id": "biceps/dumbbell-revers-grip-biceps-curl",
+      "slug": "dumbbell-revers-grip-biceps-curl",
+      "name": "Curl de bíceps con mancuerna, revers",
+      "muscle": "biceps",
+      "bodyPart": "arms",
+      "equipment": "dumbbell",
+      "category": "strength",
+      "secondaryMuscles": [
+        "forearms"
+      ],
+      "instructions": [
+        "Coge una mancuerna en cada mano (o la indicada) con un peso adecuado.",
+        "Activa los bíceps antes de iniciar el movimiento.",
+        "Realiza el movimiento de forma controlada manteniendo la técnica.",
+        "Vuelve a la posición inicial controlando la fase excéntrica.",
+        "Mantén la respiración: exhala en el esfuerzo, inhala al volver."
+      ],
+      "file": "biceps/dumbbell-revers-grip-biceps-curl.gif",
+      "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/biceps/dumbbell-revers-grip-biceps-curl.gif",
+      "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/biceps/dumbbell-revers-grip-biceps-curl.thumb.webp"
+    },
+    {
+      "id": "biceps/dumbbell-reverse-preacher-curl",
+      "slug": "dumbbell-reverse-preacher-curl",
+      "name": "Curl predicador invertido con mancuerna",
+      "muscle": "biceps",
+      "bodyPart": "arms",
+      "equipment": "dumbbell",
+      "category": "strength",
+      "secondaryMuscles": [
+        "forearms"
+      ],
+      "instructions": [
+        "Coge una mancuerna en cada mano (o la indicada) con un peso adecuado.",
+        "Activa los bíceps antes de iniciar el movimiento.",
+        "Realiza el movimiento de forma controlada manteniendo la técnica.",
+        "Vuelve a la posición inicial controlando la fase excéntrica.",
+        "Mantén la respiración: exhala en el esfuerzo, inhala al volver."
+      ],
+      "file": "biceps/dumbbell-reverse-preacher-curl.gif",
+      "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/biceps/dumbbell-reverse-preacher-curl.gif",
+      "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/biceps/dumbbell-reverse-preacher-curl.thumb.webp"
+    },
+    {
+      "id": "biceps/dumbbell-reverse-spider-curl",
+      "slug": "dumbbell-reverse-spider-curl",
+      "name": "Curl spider invertido con mancuerna",
+      "muscle": "biceps",
+      "bodyPart": "arms",
+      "equipment": "dumbbell",
+      "category": "strength",
+      "secondaryMuscles": [
+        "forearms"
+      ],
+      "instructions": [
+        "Coge una mancuerna en cada mano (o la indicada) con un peso adecuado.",
+        "Activa los bíceps antes de iniciar el movimiento.",
+        "Realiza el movimiento de forma controlada manteniendo la técnica.",
+        "Vuelve a la posición inicial controlando la fase excéntrica.",
+        "Mantén la respiración: exhala en el esfuerzo, inhala al volver."
+      ],
+      "file": "biceps/dumbbell-reverse-spider-curl.gif",
+      "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/biceps/dumbbell-reverse-spider-curl.gif",
+      "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/biceps/dumbbell-reverse-spider-curl.thumb.webp"
+    },
+    {
+      "id": "biceps/dumbbell-seated-alternate-hammer-curl-on-exercise-ball",
+      "slug": "dumbbell-seated-alternate-hammer-curl-on-exercise-ball",
+      "name": "Curl martillo con mancuerna, sentado, alternado en fitball",
+      "muscle": "biceps",
+      "bodyPart": "arms",
+      "equipment": "dumbbell",
+      "category": "strength",
+      "secondaryMuscles": [
+        "forearms"
+      ],
+      "instructions": [
+        "Coge una mancuerna en cada mano (o la indicada) con un peso adecuado.",
+        "Activa los bíceps antes de iniciar el movimiento.",
+        "Realiza el movimiento de forma controlada manteniendo la técnica.",
+        "Vuelve a la posición inicial controlando la fase excéntrica.",
+        "Mantén la respiración: exhala en el esfuerzo, inhala al volver."
+      ],
+      "file": "biceps/dumbbell-seated-alternate-hammer-curl-on-exercise-ball.gif",
+      "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/biceps/dumbbell-seated-alternate-hammer-curl-on-exercise-ball.gif",
+      "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/biceps/dumbbell-seated-alternate-hammer-curl-on-exercise-ball.thumb.webp"
+    },
+    {
+      "id": "biceps/dumbbell-seated-bicep-curl",
+      "slug": "dumbbell-seated-bicep-curl",
+      "name": "Curl de bíceps con mancuerna, sentado",
+      "muscle": "biceps",
+      "bodyPart": "arms",
+      "equipment": "dumbbell",
+      "category": "strength",
+      "secondaryMuscles": [
+        "forearms"
+      ],
+      "instructions": [
+        "Coge una mancuerna en cada mano (o la indicada) con un peso adecuado.",
+        "Activa los bíceps antes de iniciar el movimiento.",
+        "Realiza el movimiento de forma controlada manteniendo la técnica.",
+        "Vuelve a la posición inicial controlando la fase excéntrica.",
+        "Mantén la respiración: exhala en el esfuerzo, inhala al volver."
+      ],
+      "file": "biceps/dumbbell-seated-bicep-curl.gif",
+      "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/biceps/dumbbell-seated-bicep-curl.gif",
+      "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/biceps/dumbbell-seated-bicep-curl.thumb.webp"
+    },
+    {
+      "id": "biceps/dumbbell-seated-biceps-curl-on-stability-ball",
+      "slug": "dumbbell-seated-biceps-curl-on-stability-ball",
+      "name": "Curl de bíceps con mancuerna, sentado, en fitball",
+      "muscle": "biceps",
+      "bodyPart": "arms",
+      "equipment": "dumbbell",
+      "category": "strength",
+      "secondaryMuscles": [
+        "forearms"
+      ],
+      "instructions": [
+        "Coge una mancuerna en cada mano (o la indicada) con un peso adecuado.",
+        "Activa los bíceps antes de iniciar el movimiento.",
+        "Realiza el movimiento de forma controlada manteniendo la técnica.",
+        "Vuelve a la posición inicial controlando la fase excéntrica.",
+        "Mantén la respiración: exhala en el esfuerzo, inhala al volver."
+      ],
+      "file": "biceps/dumbbell-seated-biceps-curl-on-stability-ball.gif",
+      "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/biceps/dumbbell-seated-biceps-curl-on-stability-ball.gif",
+      "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/biceps/dumbbell-seated-biceps-curl-on-stability-ball.thumb.webp"
+    },
+    {
+      "id": "biceps/dumbbell-seated-biceps-curl-to-shoulder-press",
+      "slug": "dumbbell-seated-biceps-curl-to-shoulder-press",
+      "name": "Curl de bíceps con mancuerna, sentado, y press de hombros",
+      "muscle": "biceps",
+      "bodyPart": "arms",
+      "equipment": "dumbbell",
+      "category": "strength",
+      "secondaryMuscles": [
+        "forearms",
+        "triceps",
+        "delts"
+      ],
+      "instructions": [
+        "Coge una mancuerna en cada mano (o la indicada) con un peso adecuado.",
+        "Activa los bíceps antes de iniciar el movimiento.",
+        "Realiza el movimiento de forma controlada manteniendo la técnica.",
+        "Vuelve a la posición inicial controlando la fase excéntrica.",
+        "Mantén la respiración: exhala en el esfuerzo, inhala al volver."
+      ],
+      "file": "biceps/dumbbell-seated-biceps-curl-to-shoulder-press.gif",
+      "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/biceps/dumbbell-seated-biceps-curl-to-shoulder-press.gif",
+      "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/biceps/dumbbell-seated-biceps-curl-to-shoulder-press.thumb.webp"
+    },
+    {
+      "id": "biceps/dumbbell-seated-curl",
+      "slug": "dumbbell-seated-curl",
+      "name": "Curl con mancuerna, sentado",
+      "muscle": "biceps",
+      "bodyPart": "arms",
+      "equipment": "dumbbell",
+      "category": "strength",
+      "secondaryMuscles": [
+        "forearms"
+      ],
+      "instructions": [
+        "Coge una mancuerna en cada mano (o la indicada) con un peso adecuado.",
+        "Activa los bíceps antes de iniciar el movimiento.",
+        "Realiza el movimiento de forma controlada manteniendo la técnica.",
+        "Vuelve a la posición inicial controlando la fase excéntrica.",
+        "Mantén la respiración: exhala en el esfuerzo, inhala al volver."
+      ],
+      "file": "biceps/dumbbell-seated-curl.gif",
+      "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/biceps/dumbbell-seated-curl.gif",
+      "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/biceps/dumbbell-seated-curl.thumb.webp"
+    },
+    {
+      "id": "biceps/dumbbell-seated-hammer-curl",
+      "slug": "dumbbell-seated-hammer-curl",
+      "name": "Curl martillo con mancuerna, sentado",
+      "muscle": "biceps",
+      "bodyPart": "arms",
+      "equipment": "dumbbell",
+      "category": "strength",
+      "secondaryMuscles": [
+        "forearms"
+      ],
+      "instructions": [
+        "Coge una mancuerna en cada mano (o la indicada) con un peso adecuado.",
+        "Activa los bíceps antes de iniciar el movimiento.",
+        "Realiza el movimiento de forma controlada manteniendo la técnica.",
+        "Vuelve a la posición inicial controlando la fase excéntrica.",
+        "Mantén la respiración: exhala en el esfuerzo, inhala al volver."
+      ],
+      "file": "biceps/dumbbell-seated-hammer-curl.gif",
+      "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/biceps/dumbbell-seated-hammer-curl.gif",
+      "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/biceps/dumbbell-seated-hammer-curl.thumb.webp"
+    },
+    {
+      "id": "biceps/dumbbell-seated-inner-biceps-curl",
+      "slug": "dumbbell-seated-inner-biceps-curl",
+      "name": "Curl de bíceps con mancuerna, sentado, interno",
+      "muscle": "biceps",
+      "bodyPart": "arms",
+      "equipment": "dumbbell",
+      "category": "strength",
+      "secondaryMuscles": [
+        "forearms"
+      ],
+      "instructions": [
+        "Coge una mancuerna en cada mano (o la indicada) con un peso adecuado.",
+        "Activa los bíceps antes de iniciar el movimiento.",
+        "Realiza el movimiento de forma controlada manteniendo la técnica.",
+        "Vuelve a la posición inicial controlando la fase excéntrica.",
+        "Mantén la respiración: exhala en el esfuerzo, inhala al volver."
+      ],
+      "file": "biceps/dumbbell-seated-inner-biceps-curl.gif",
+      "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/biceps/dumbbell-seated-inner-biceps-curl.gif",
+      "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/biceps/dumbbell-seated-inner-biceps-curl.thumb.webp"
+    },
+    {
+      "id": "biceps/dumbbell-seated-neutral-wrist-curl",
+      "slug": "dumbbell-seated-neutral-wrist-curl",
+      "name": "Curl con mancuerna, sentado, con muñeca neutra",
+      "muscle": "biceps",
+      "bodyPart": "arms",
+      "equipment": "dumbbell",
+      "category": "strength",
+      "secondaryMuscles": [
+        "forearms"
+      ],
+      "instructions": [
+        "Coge una mancuerna en cada mano (o la indicada) con un peso adecuado.",
+        "Activa los bíceps antes de iniciar el movimiento.",
+        "Realiza el movimiento de forma controlada manteniendo la técnica.",
+        "Vuelve a la posición inicial controlando la fase excéntrica.",
+        "Mantén la respiración: exhala en el esfuerzo, inhala al volver."
+      ],
+      "file": "biceps/dumbbell-seated-neutral-wrist-curl.gif",
+      "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/biceps/dumbbell-seated-neutral-wrist-curl.gif",
+      "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/biceps/dumbbell-seated-neutral-wrist-curl.thumb.webp"
+    },
+    {
+      "id": "biceps/dumbbell-seated-one-arm-bicep-curl-on-exercise-ball-with-leg-raised",
+      "slug": "dumbbell-seated-one-arm-bicep-curl-on-exercise-ball-with-leg-raised",
+      "name": "Curl de bíceps con mancuerna, sentado, a una mano en fitball con pierna elevada",
+      "muscle": "biceps",
+      "bodyPart": "arms",
+      "equipment": "dumbbell",
+      "category": "strength",
+      "secondaryMuscles": [
+        "forearms"
+      ],
+      "instructions": [
+        "Coge una mancuerna en cada mano (o la indicada) con un peso adecuado.",
+        "Activa los bíceps antes de iniciar el movimiento.",
+        "Realiza el movimiento de forma controlada manteniendo la técnica.",
+        "Vuelve a la posición inicial controlando la fase excéntrica.",
+        "Mantén la respiración: exhala en el esfuerzo, inhala al volver."
+      ],
+      "file": "biceps/dumbbell-seated-one-arm-bicep-curl-on-exercise-ball-with-leg-raised.gif",
+      "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/biceps/dumbbell-seated-one-arm-bicep-curl-on-exercise-ball-with-leg-raised.gif",
+      "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/biceps/dumbbell-seated-one-arm-bicep-curl-on-exercise-ball-with-leg-raised.thumb.webp"
+    },
+    {
+      "id": "biceps/dumbbell-seated-preacher-curl",
+      "slug": "dumbbell-seated-preacher-curl",
+      "name": "Curl predicador con mancuerna, sentado",
+      "muscle": "biceps",
+      "bodyPart": "arms",
+      "equipment": "dumbbell",
+      "category": "strength",
+      "secondaryMuscles": [
+        "forearms"
+      ],
+      "instructions": [
+        "Coge una mancuerna en cada mano (o la indicada) con un peso adecuado.",
+        "Activa los bíceps antes de iniciar el movimiento.",
+        "Realiza el movimiento de forma controlada manteniendo la técnica.",
+        "Vuelve a la posición inicial controlando la fase excéntrica.",
+        "Mantén la respiración: exhala en el esfuerzo, inhala al volver."
+      ],
+      "file": "biceps/dumbbell-seated-preacher-curl.gif",
+      "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/biceps/dumbbell-seated-preacher-curl.gif",
+      "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/biceps/dumbbell-seated-preacher-curl.thumb.webp"
+    },
+    {
+      "id": "biceps/dumbbell-seated-revers-grip-concentration-curl",
+      "slug": "dumbbell-seated-revers-grip-concentration-curl",
+      "name": "Curl concentrado con mancuerna, sentado, revers",
+      "muscle": "biceps",
+      "bodyPart": "arms",
+      "equipment": "dumbbell",
+      "category": "strength",
+      "secondaryMuscles": [
+        "forearms"
+      ],
+      "instructions": [
+        "Coge una mancuerna en cada mano (o la indicada) con un peso adecuado.",
+        "Activa los bíceps antes de iniciar el movimiento.",
+        "Realiza el movimiento de forma controlada manteniendo la técnica.",
+        "Vuelve a la posición inicial controlando la fase excéntrica.",
+        "Mantén la respiración: exhala en el esfuerzo, inhala al volver."
+      ],
+      "file": "biceps/dumbbell-seated-revers-grip-concentration-curl.gif",
+      "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/biceps/dumbbell-seated-revers-grip-concentration-curl.gif",
+      "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/biceps/dumbbell-seated-revers-grip-concentration-curl.thumb.webp"
+    },
+    {
+      "id": "biceps/dumbbell-standing-alternate-hammer-curl-and-press",
+      "slug": "dumbbell-standing-alternate-hammer-curl-and-press",
+      "name": "Curl martillo con mancuerna, de pie, alternado y press",
+      "muscle": "biceps",
+      "bodyPart": "arms",
+      "equipment": "dumbbell",
+      "category": "strength",
+      "secondaryMuscles": [
+        "forearms",
+        "triceps",
+        "delts"
+      ],
+      "instructions": [
+        "Coge una mancuerna en cada mano (o la indicada) con un peso adecuado.",
+        "Activa los bíceps antes de iniciar el movimiento.",
+        "Realiza el movimiento de forma controlada manteniendo la técnica.",
+        "Vuelve a la posición inicial controlando la fase excéntrica.",
+        "Mantén la respiración: exhala en el esfuerzo, inhala al volver."
+      ],
+      "file": "biceps/dumbbell-standing-alternate-hammer-curl-and-press.gif",
+      "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/biceps/dumbbell-standing-alternate-hammer-curl-and-press.gif",
+      "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/biceps/dumbbell-standing-alternate-hammer-curl-and-press.thumb.webp"
+    },
+    {
+      "id": "biceps/dumbbell-standing-biceps-curl",
+      "slug": "dumbbell-standing-biceps-curl",
+      "name": "Curl de bíceps con mancuerna, de pie",
+      "muscle": "biceps",
+      "bodyPart": "arms",
+      "equipment": "dumbbell",
+      "category": "strength",
+      "secondaryMuscles": [
+        "forearms"
+      ],
+      "instructions": [
+        "Coge una mancuerna en cada mano (o la indicada) con un peso adecuado.",
+        "Activa los bíceps antes de iniciar el movimiento.",
+        "Realiza el movimiento de forma controlada manteniendo la técnica.",
+        "Vuelve a la posición inicial controlando la fase excéntrica.",
+        "Mantén la respiración: exhala en el esfuerzo, inhala al volver."
+      ],
+      "file": "biceps/dumbbell-standing-biceps-curl.gif",
+      "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/biceps/dumbbell-standing-biceps-curl.gif",
+      "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/biceps/dumbbell-standing-biceps-curl.thumb.webp"
+    },
+    {
+      "id": "biceps/dumbbell-standing-concentration-curl",
+      "slug": "dumbbell-standing-concentration-curl",
+      "name": "Curl concentrado con mancuerna, de pie",
+      "muscle": "biceps",
+      "bodyPart": "arms",
+      "equipment": "dumbbell",
+      "category": "strength",
+      "secondaryMuscles": [
+        "forearms"
+      ],
+      "instructions": [
+        "Coge una mancuerna en cada mano (o la indicada) con un peso adecuado.",
+        "Activa los bíceps antes de iniciar el movimiento.",
+        "Realiza el movimiento de forma controlada manteniendo la técnica.",
+        "Vuelve a la posición inicial controlando la fase excéntrica.",
+        "Mantén la respiración: exhala en el esfuerzo, inhala al volver."
+      ],
+      "file": "biceps/dumbbell-standing-concentration-curl.gif",
+      "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/biceps/dumbbell-standing-concentration-curl.gif",
+      "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/biceps/dumbbell-standing-concentration-curl.thumb.webp"
+    },
+    {
+      "id": "biceps/dumbbell-standing-inner-biceps-curl-v-2",
+      "slug": "dumbbell-standing-inner-biceps-curl-v-2",
+      "name": "Curl de bíceps con mancuerna, de pie, interno",
+      "muscle": "biceps",
+      "bodyPart": "arms",
+      "equipment": "dumbbell",
+      "category": "strength",
+      "secondaryMuscles": [
+        "forearms"
+      ],
+      "instructions": [
+        "Coge una mancuerna en cada mano (o la indicada) con un peso adecuado.",
+        "Activa los bíceps antes de iniciar el movimiento.",
+        "Realiza el movimiento de forma controlada manteniendo la técnica.",
+        "Vuelve a la posición inicial controlando la fase excéntrica.",
+        "Mantén la respiración: exhala en el esfuerzo, inhala al volver."
+      ],
+      "file": "biceps/dumbbell-standing-inner-biceps-curl-v-2.gif",
+      "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/biceps/dumbbell-standing-inner-biceps-curl-v-2.gif",
+      "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/biceps/dumbbell-standing-inner-biceps-curl-v-2.thumb.webp"
+    },
+    {
+      "id": "biceps/dumbbell-standing-one-arm-concentration-curl",
+      "slug": "dumbbell-standing-one-arm-concentration-curl",
+      "name": "Curl concentrado con mancuerna, de pie, a una mano",
+      "muscle": "biceps",
+      "bodyPart": "arms",
+      "equipment": "dumbbell",
+      "category": "strength",
+      "secondaryMuscles": [
+        "forearms"
+      ],
+      "instructions": [
+        "Coge una mancuerna en cada mano (o la indicada) con un peso adecuado.",
+        "Activa los bíceps antes de iniciar el movimiento.",
+        "Realiza el movimiento de forma controlada manteniendo la técnica.",
+        "Vuelve a la posición inicial controlando la fase excéntrica.",
+        "Mantén la respiración: exhala en el esfuerzo, inhala al volver."
+      ],
+      "file": "biceps/dumbbell-standing-one-arm-concentration-curl.gif",
+      "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/biceps/dumbbell-standing-one-arm-concentration-curl.gif",
+      "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/biceps/dumbbell-standing-one-arm-concentration-curl.thumb.webp"
+    },
+    {
+      "id": "biceps/dumbbell-standing-one-arm-curl-over-incline-bench-1680",
+      "slug": "dumbbell-standing-one-arm-curl-over-incline-bench-1680",
+      "name": "Curl con mancuerna, de pie, a una mano sobre banco inclinado",
+      "muscle": "biceps",
+      "bodyPart": "arms",
+      "equipment": "dumbbell",
+      "category": "strength",
+      "secondaryMuscles": [
+        "forearms"
+      ],
+      "instructions": [
+        "Coge una mancuerna en cada mano (o la indicada) con un peso adecuado.",
+        "Activa los bíceps antes de iniciar el movimiento.",
+        "Realiza el movimiento de forma controlada manteniendo la técnica.",
+        "Vuelve a la posición inicial controlando la fase excéntrica.",
+        "Mantén la respiración: exhala en el esfuerzo, inhala al volver."
+      ],
+      "file": "biceps/dumbbell-standing-one-arm-curl-over-incline-bench-1680.gif",
+      "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/biceps/dumbbell-standing-one-arm-curl-over-incline-bench-1680.gif",
+      "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/biceps/dumbbell-standing-one-arm-curl-over-incline-bench-1680.thumb.webp"
+    },
+    {
+      "id": "biceps/dumbbell-standing-one-arm-curl-over-incline-bench",
+      "slug": "dumbbell-standing-one-arm-curl-over-incline-bench",
+      "name": "Curl con mancuerna, de pie, a una mano sobre banco inclinado",
+      "muscle": "biceps",
+      "bodyPart": "arms",
+      "equipment": "dumbbell",
+      "category": "strength",
+      "secondaryMuscles": [
+        "forearms"
+      ],
+      "instructions": [
+        "Coge una mancuerna en cada mano (o la indicada) con un peso adecuado.",
+        "Activa los bíceps antes de iniciar el movimiento.",
+        "Realiza el movimiento de forma controlada manteniendo la técnica.",
+        "Vuelve a la posición inicial controlando la fase excéntrica.",
+        "Mantén la respiración: exhala en el esfuerzo, inhala al volver."
+      ],
+      "file": "biceps/dumbbell-standing-one-arm-curl-over-incline-bench.gif",
+      "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/biceps/dumbbell-standing-one-arm-curl-over-incline-bench.gif",
+      "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/biceps/dumbbell-standing-one-arm-curl-over-incline-bench.thumb.webp"
+    },
+    {
+      "id": "biceps/dumbbell-standing-one-arm-reverse-curl",
+      "slug": "dumbbell-standing-one-arm-reverse-curl",
+      "name": "Curl invertido con mancuerna, de pie, a una mano",
+      "muscle": "biceps",
+      "bodyPart": "arms",
+      "equipment": "dumbbell",
+      "category": "strength",
+      "secondaryMuscles": [
+        "forearms"
+      ],
+      "instructions": [
+        "Coge una mancuerna en cada mano (o la indicada) con un peso adecuado.",
+        "Activa los bíceps antes de iniciar el movimiento.",
+        "Realiza el movimiento de forma controlada manteniendo la técnica.",
+        "Vuelve a la posición inicial controlando la fase excéntrica.",
+        "Mantén la respiración: exhala en el esfuerzo, inhala al volver."
+      ],
+      "file": "biceps/dumbbell-standing-one-arm-reverse-curl.gif",
+      "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/biceps/dumbbell-standing-one-arm-reverse-curl.gif",
+      "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/biceps/dumbbell-standing-one-arm-reverse-curl.thumb.webp"
+    },
+    {
+      "id": "biceps/dumbbell-standing-preacher-curl",
+      "slug": "dumbbell-standing-preacher-curl",
+      "name": "Curl predicador con mancuerna, de pie",
+      "muscle": "biceps",
+      "bodyPart": "arms",
+      "equipment": "dumbbell",
+      "category": "strength",
+      "secondaryMuscles": [
+        "forearms"
+      ],
+      "instructions": [
+        "Coge una mancuerna en cada mano (o la indicada) con un peso adecuado.",
+        "Activa los bíceps antes de iniciar el movimiento.",
+        "Realiza el movimiento de forma controlada manteniendo la técnica.",
+        "Vuelve a la posición inicial controlando la fase excéntrica.",
+        "Mantén la respiración: exhala en el esfuerzo, inhala al volver."
+      ],
+      "file": "biceps/dumbbell-standing-preacher-curl.gif",
+      "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/biceps/dumbbell-standing-preacher-curl.gif",
+      "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/biceps/dumbbell-standing-preacher-curl.thumb.webp"
+    },
+    {
+      "id": "biceps/dumbbell-standing-reverse-curl",
+      "slug": "dumbbell-standing-reverse-curl",
+      "name": "Curl invertido con mancuerna, de pie",
+      "muscle": "biceps",
+      "bodyPart": "arms",
+      "equipment": "dumbbell",
+      "category": "strength",
+      "secondaryMuscles": [
+        "forearms"
+      ],
+      "instructions": [
+        "Coge una mancuerna en cada mano (o la indicada) con un peso adecuado.",
+        "Activa los bíceps antes de iniciar el movimiento.",
+        "Realiza el movimiento de forma controlada manteniendo la técnica.",
+        "Vuelve a la posición inicial controlando la fase excéntrica.",
+        "Mantén la respiración: exhala en el esfuerzo, inhala al volver."
+      ],
+      "file": "biceps/dumbbell-standing-reverse-curl.gif",
+      "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/biceps/dumbbell-standing-reverse-curl.gif",
+      "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/biceps/dumbbell-standing-reverse-curl.thumb.webp"
+    },
+    {
+      "id": "biceps/dumbbell-standing-zottman-preacher-curl",
+      "slug": "dumbbell-standing-zottman-preacher-curl",
+      "name": "Curl predicador Zottman con mancuerna, de pie",
+      "muscle": "biceps",
+      "bodyPart": "arms",
+      "equipment": "dumbbell",
+      "category": "strength",
+      "secondaryMuscles": [
+        "forearms"
+      ],
+      "instructions": [
+        "Coge una mancuerna en cada mano (o la indicada) con un peso adecuado.",
+        "Activa los bíceps antes de iniciar el movimiento.",
+        "Realiza el movimiento de forma controlada manteniendo la técnica.",
+        "Vuelve a la posición inicial controlando la fase excéntrica.",
+        "Mantén la respiración: exhala en el esfuerzo, inhala al volver."
+      ],
+      "file": "biceps/dumbbell-standing-zottman-preacher-curl.gif",
+      "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/biceps/dumbbell-standing-zottman-preacher-curl.gif",
+      "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/biceps/dumbbell-standing-zottman-preacher-curl.thumb.webp"
+    },
+    {
+      "id": "biceps/dumbbell-step-up-single-leg-balance-with-bicep-curl",
+      "slug": "dumbbell-step-up-single-leg-balance-with-bicep-curl",
+      "name": "Step-up con mancuerna, a una pierna con curl de bíceps, equilibrio",
+      "muscle": "biceps",
+      "bodyPart": "arms",
+      "equipment": "dumbbell",
+      "category": "strength",
+      "secondaryMuscles": [
+        "forearms"
+      ],
+      "instructions": [
+        "Coge una mancuerna en cada mano (o la indicada) con un peso adecuado.",
+        "Activa los bíceps antes de iniciar el movimiento.",
+        "Realiza el movimiento de forma controlada manteniendo la técnica.",
+        "Vuelve a la posición inicial controlando la fase excéntrica.",
+        "Mantén la respiración: exhala en el esfuerzo, inhala al volver."
+      ],
+      "file": "biceps/dumbbell-step-up-single-leg-balance-with-bicep-curl.gif",
+      "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/biceps/dumbbell-step-up-single-leg-balance-with-bicep-curl.gif",
+      "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/biceps/dumbbell-step-up-single-leg-balance-with-bicep-curl.thumb.webp"
+    },
+    {
+      "id": "biceps/dumbbell-waiter-biceps-curl",
+      "slug": "dumbbell-waiter-biceps-curl",
+      "name": "Curl de bíceps del camarero con mancuerna",
+      "muscle": "biceps",
+      "bodyPart": "arms",
+      "equipment": "dumbbell",
+      "category": "strength",
+      "secondaryMuscles": [
+        "forearms"
+      ],
+      "instructions": [
+        "Coge una mancuerna en cada mano (o la indicada) con un peso adecuado.",
+        "Activa los bíceps antes de iniciar el movimiento.",
+        "Realiza el movimiento de forma controlada manteniendo la técnica.",
+        "Vuelve a la posición inicial controlando la fase excéntrica.",
+        "Mantén la respiración: exhala en el esfuerzo, inhala al volver."
+      ],
+      "file": "biceps/dumbbell-waiter-biceps-curl.gif",
+      "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/biceps/dumbbell-waiter-biceps-curl.gif",
+      "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/biceps/dumbbell-waiter-biceps-curl.thumb.webp"
+    },
+    {
+      "id": "biceps/dumbbell-zottman-curl",
+      "slug": "dumbbell-zottman-curl",
+      "name": "Curl Zottman con mancuerna",
+      "muscle": "biceps",
+      "bodyPart": "arms",
+      "equipment": "dumbbell",
+      "category": "strength",
+      "secondaryMuscles": [
+        "forearms"
+      ],
+      "instructions": [
+        "Coge una mancuerna en cada mano (o la indicada) con un peso adecuado.",
+        "Activa los bíceps antes de iniciar el movimiento.",
+        "Realiza el movimiento de forma controlada manteniendo la técnica.",
+        "Vuelve a la posición inicial controlando la fase excéntrica.",
+        "Mantén la respiración: exhala en el esfuerzo, inhala al volver."
+      ],
+      "file": "biceps/dumbbell-zottman-curl.gif",
+      "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/biceps/dumbbell-zottman-curl.gif",
+      "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/biceps/dumbbell-zottman-curl.thumb.webp"
+    },
+    {
+      "id": "biceps/dumbbell-zottman-preacher-curl",
+      "slug": "dumbbell-zottman-preacher-curl",
+      "name": "Curl predicador Zottman con mancuerna",
+      "muscle": "biceps",
+      "bodyPart": "arms",
+      "equipment": "dumbbell",
+      "category": "strength",
+      "secondaryMuscles": [
+        "forearms"
+      ],
+      "instructions": [
+        "Coge una mancuerna en cada mano (o la indicada) con un peso adecuado.",
+        "Activa los bíceps antes de iniciar el movimiento.",
+        "Realiza el movimiento de forma controlada manteniendo la técnica.",
+        "Vuelve a la posición inicial controlando la fase excéntrica.",
+        "Mantén la respiración: exhala en el esfuerzo, inhala al volver."
+      ],
+      "file": "biceps/dumbbell-zottman-preacher-curl.gif",
+      "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/biceps/dumbbell-zottman-preacher-curl.gif",
+      "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/biceps/dumbbell-zottman-preacher-curl.thumb.webp"
+    },
+    {
+      "id": "biceps/ez-bar-biceps-curl-with-arm-blaster",
+      "slug": "ez-bar-biceps-curl-with-arm-blaster",
+      "name": "Curl de bíceps con barra Z, con arm blaster",
+      "muscle": "biceps",
+      "bodyPart": "arms",
+      "equipment": "ez-bar",
+      "category": "strength",
+      "secondaryMuscles": [
+        "forearms"
+      ],
+      "instructions": [
+        "Carga la barra Z con un peso adecuado y agárrala con firmeza.",
+        "Activa los bíceps antes de iniciar el movimiento.",
+        "Realiza el movimiento de forma controlada manteniendo la técnica.",
+        "Vuelve a la posición inicial controlando la fase excéntrica.",
+        "Mantén la respiración: exhala en el esfuerzo, inhala al volver."
+      ],
+      "file": "biceps/ez-bar-biceps-curl-with-arm-blaster.gif",
+      "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/biceps/ez-bar-biceps-curl-with-arm-blaster.gif",
+      "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/biceps/ez-bar-biceps-curl-with-arm-blaster.thumb.webp"
+    },
+    {
+      "id": "biceps/ez-bar-seated-close-grip-concentration-curl",
+      "slug": "ez-bar-seated-close-grip-concentration-curl",
+      "name": "Curl concentrado con barra Z, sentado, con agarre cerrado",
+      "muscle": "biceps",
+      "bodyPart": "arms",
+      "equipment": "ez-bar",
+      "category": "strength",
+      "secondaryMuscles": [
+        "forearms"
+      ],
+      "instructions": [
+        "Carga la barra Z con un peso adecuado y agárrala con firmeza.",
+        "Activa los bíceps antes de iniciar el movimiento.",
+        "Realiza el movimiento de forma controlada manteniendo la técnica.",
+        "Vuelve a la posición inicial controlando la fase excéntrica.",
+        "Mantén la respiración: exhala en el esfuerzo, inhala al volver."
+      ],
+      "file": "biceps/ez-bar-seated-close-grip-concentration-curl.gif",
+      "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/biceps/ez-bar-seated-close-grip-concentration-curl.gif",
+      "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/biceps/ez-bar-seated-close-grip-concentration-curl.thumb.webp"
+    },
+    {
+      "id": "biceps/ez-barbell-close-grip-curl",
+      "slug": "ez-barbell-close-grip-curl",
+      "name": "Curl con barra Z, con agarre cerrado",
+      "muscle": "biceps",
+      "bodyPart": "arms",
+      "equipment": "ez-bar",
+      "category": "strength",
+      "secondaryMuscles": [
+        "forearms"
+      ],
+      "instructions": [
+        "Carga la barra Z con un peso adecuado y agárrala con firmeza.",
+        "Activa los bíceps antes de iniciar el movimiento.",
+        "Realiza el movimiento de forma controlada manteniendo la técnica.",
+        "Vuelve a la posición inicial controlando la fase excéntrica.",
+        "Mantén la respiración: exhala en el esfuerzo, inhala al volver."
+      ],
+      "file": "biceps/ez-barbell-close-grip-curl.gif",
+      "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/biceps/ez-barbell-close-grip-curl.gif",
+      "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/biceps/ez-barbell-close-grip-curl.thumb.webp"
+    },
+    {
+      "id": "biceps/ez-barbell-close-grip-preacher-curl",
+      "slug": "ez-barbell-close-grip-preacher-curl",
+      "name": "Curl predicador con barra Z, con agarre cerrado",
+      "muscle": "biceps",
+      "bodyPart": "arms",
+      "equipment": "ez-bar",
+      "category": "strength",
+      "secondaryMuscles": [
+        "forearms"
+      ],
+      "instructions": [
+        "Carga la barra Z con un peso adecuado y agárrala con firmeza.",
+        "Activa los bíceps antes de iniciar el movimiento.",
+        "Realiza el movimiento de forma controlada manteniendo la técnica.",
+        "Vuelve a la posición inicial controlando la fase excéntrica.",
+        "Mantén la respiración: exhala en el esfuerzo, inhala al volver."
+      ],
+      "file": "biceps/ez-barbell-close-grip-preacher-curl.gif",
+      "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/biceps/ez-barbell-close-grip-preacher-curl.gif",
+      "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/biceps/ez-barbell-close-grip-preacher-curl.thumb.webp"
+    },
+    {
+      "id": "biceps/ez-barbell-curl",
+      "slug": "ez-barbell-curl",
+      "name": "Curl con barra Z",
+      "muscle": "biceps",
+      "bodyPart": "arms",
+      "equipment": "ez-bar",
+      "category": "strength",
+      "secondaryMuscles": [
+        "forearms"
+      ],
+      "instructions": [
+        "Carga la barra Z con un peso adecuado y agárrala con firmeza.",
+        "Activa los bíceps antes de iniciar el movimiento.",
+        "Realiza el movimiento de forma controlada manteniendo la técnica.",
+        "Vuelve a la posición inicial controlando la fase excéntrica.",
+        "Mantén la respiración: exhala en el esfuerzo, inhala al volver."
+      ],
+      "file": "biceps/ez-barbell-curl.gif",
+      "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/biceps/ez-barbell-curl.gif",
+      "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/biceps/ez-barbell-curl.thumb.webp"
+    },
+    {
+      "id": "biceps/ez-barbell-reverse-grip-curl",
+      "slug": "ez-barbell-reverse-grip-curl",
+      "name": "Curl con barra Z, con agarre invertido",
+      "muscle": "biceps",
+      "bodyPart": "arms",
+      "equipment": "ez-bar",
+      "category": "strength",
+      "secondaryMuscles": [
+        "forearms"
+      ],
+      "instructions": [
+        "Carga la barra Z con un peso adecuado y agárrala con firmeza.",
+        "Activa los bíceps antes de iniciar el movimiento.",
+        "Realiza el movimiento de forma controlada manteniendo la técnica.",
+        "Vuelve a la posición inicial controlando la fase excéntrica.",
+        "Mantén la respiración: exhala en el esfuerzo, inhala al volver."
+      ],
+      "file": "biceps/ez-barbell-reverse-grip-curl.gif",
+      "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/biceps/ez-barbell-reverse-grip-curl.gif",
+      "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/biceps/ez-barbell-reverse-grip-curl.thumb.webp"
+    },
+    {
+      "id": "biceps/ez-barbell-reverse-grip-preacher-curl",
+      "slug": "ez-barbell-reverse-grip-preacher-curl",
+      "name": "Curl predicador con barra Z, con agarre invertido",
+      "muscle": "biceps",
+      "bodyPart": "arms",
+      "equipment": "ez-bar",
+      "category": "strength",
+      "secondaryMuscles": [
+        "forearms"
+      ],
+      "instructions": [
+        "Carga la barra Z con un peso adecuado y agárrala con firmeza.",
+        "Activa los bíceps antes de iniciar el movimiento.",
+        "Realiza el movimiento de forma controlada manteniendo la técnica.",
+        "Vuelve a la posición inicial controlando la fase excéntrica.",
+        "Mantén la respiración: exhala en el esfuerzo, inhala al volver."
+      ],
+      "file": "biceps/ez-barbell-reverse-grip-preacher-curl.gif",
+      "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/biceps/ez-barbell-reverse-grip-preacher-curl.gif",
+      "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/biceps/ez-barbell-reverse-grip-preacher-curl.thumb.webp"
+    },
+    {
+      "id": "biceps/ez-barbell-seated-curls",
+      "slug": "ez-barbell-seated-curls",
+      "name": "Curl con barra Z, sentado",
+      "muscle": "biceps",
+      "bodyPart": "arms",
+      "equipment": "ez-bar",
+      "category": "strength",
+      "secondaryMuscles": [
+        "forearms"
+      ],
+      "instructions": [
+        "Carga la barra Z con un peso adecuado y agárrala con firmeza.",
+        "Activa los bíceps antes de iniciar el movimiento.",
+        "Realiza el movimiento de forma controlada manteniendo la técnica.",
+        "Vuelve a la posición inicial controlando la fase excéntrica.",
+        "Mantén la respiración: exhala en el esfuerzo, inhala al volver."
+      ],
+      "file": "biceps/ez-barbell-seated-curls.gif",
+      "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/biceps/ez-barbell-seated-curls.gif",
+      "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/biceps/ez-barbell-seated-curls.thumb.webp"
+    },
+    {
+      "id": "biceps/ez-barbell-spider-curl-1628",
+      "slug": "ez-barbell-spider-curl-1628",
+      "name": "Curl spider con barra Z",
+      "muscle": "biceps",
+      "bodyPart": "arms",
+      "equipment": "ez-bar",
+      "category": "strength",
+      "secondaryMuscles": [
+        "forearms"
+      ],
+      "instructions": [
+        "Carga la barra Z con un peso adecuado y agárrala con firmeza.",
+        "Activa los bíceps antes de iniciar el movimiento.",
+        "Realiza el movimiento de forma controlada manteniendo la técnica.",
+        "Vuelve a la posición inicial controlando la fase excéntrica.",
+        "Mantén la respiración: exhala en el esfuerzo, inhala al volver."
+      ],
+      "file": "biceps/ez-barbell-spider-curl-1628.gif",
+      "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/biceps/ez-barbell-spider-curl-1628.gif",
+      "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/biceps/ez-barbell-spider-curl-1628.thumb.webp"
+    },
+    {
+      "id": "biceps/ez-barbell-spider-curl",
+      "slug": "ez-barbell-spider-curl",
+      "name": "Curl spider con barra Z",
+      "muscle": "biceps",
+      "bodyPart": "arms",
+      "equipment": "ez-bar",
+      "category": "strength",
+      "secondaryMuscles": [
+        "forearms"
+      ],
+      "instructions": [
+        "Carga la barra Z con un peso adecuado y agárrala con firmeza.",
+        "Activa los bíceps antes de iniciar el movimiento.",
+        "Realiza el movimiento de forma controlada manteniendo la técnica.",
+        "Vuelve a la posición inicial controlando la fase excéntrica.",
+        "Mantén la respiración: exhala en el esfuerzo, inhala al volver."
+      ],
+      "file": "biceps/ez-barbell-spider-curl.gif",
+      "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/biceps/ez-barbell-spider-curl.gif",
+      "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/biceps/ez-barbell-spider-curl.thumb.webp"
+    },
+    {
+      "id": "biceps/ez-barbell-standing-wide-grip-biceps-curl",
+      "slug": "ez-barbell-standing-wide-grip-biceps-curl",
+      "name": "Curl de bíceps con barra Z, de pie, con agarre ancho",
+      "muscle": "biceps",
+      "bodyPart": "arms",
+      "equipment": "ez-bar",
+      "category": "strength",
+      "secondaryMuscles": [
+        "forearms"
+      ],
+      "instructions": [
+        "Carga la barra Z con un peso adecuado y agárrala con firmeza.",
+        "Activa los bíceps antes de iniciar el movimiento.",
+        "Realiza el movimiento de forma controlada manteniendo la técnica.",
+        "Vuelve a la posición inicial controlando la fase excéntrica.",
+        "Mantén la respiración: exhala en el esfuerzo, inhala al volver."
+      ],
+      "file": "biceps/ez-barbell-standing-wide-grip-biceps-curl.gif",
+      "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/biceps/ez-barbell-standing-wide-grip-biceps-curl.gif",
+      "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/biceps/ez-barbell-standing-wide-grip-biceps-curl.thumb.webp"
+    },
+    {
+      "id": "biceps/kettlebell-bottoms-up-clean-from-the-hang-position",
+      "slug": "kettlebell-bottoms-up-clean-from-the-hang-position",
+      "name": "Cargada con kettlebell, fondo up colgado",
+      "muscle": "biceps",
+      "bodyPart": "arms",
+      "equipment": "kettlebell",
+      "category": "strength",
+      "secondaryMuscles": [
+        "glutes",
+        "hamstrings",
+        "spine",
+        "traps",
+        "delts",
+        "forearms"
+      ],
+      "instructions": [
+        "Coge la kettlebell con un peso adecuado y adopta la postura.",
+        "Activa los bíceps antes de iniciar el movimiento.",
+        "Realiza el movimiento de forma controlada manteniendo la técnica.",
+        "Vuelve a la posición inicial controlando la fase excéntrica.",
+        "Mantén la respiración: exhala en el esfuerzo, inhala al volver."
+      ],
+      "file": "biceps/kettlebell-bottoms-up-clean-from-the-hang-position.gif",
+      "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/biceps/kettlebell-bottoms-up-clean-from-the-hang-position.gif",
+      "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/biceps/kettlebell-bottoms-up-clean-from-the-hang-position.thumb.webp"
+    },
+    {
+      "id": "biceps/kettlebell-double-alternating-hang-clean",
+      "slug": "kettlebell-double-alternating-hang-clean",
+      "name": "Cargada con kettlebell, alternado, doble colgado",
+      "muscle": "biceps",
+      "bodyPart": "arms",
+      "equipment": "kettlebell",
+      "category": "strength",
+      "secondaryMuscles": [
+        "glutes",
+        "hamstrings",
+        "spine",
+        "traps",
+        "delts",
+        "forearms"
+      ],
+      "instructions": [
+        "Coge la kettlebell con un peso adecuado y adopta la postura.",
+        "Activa los bíceps antes de iniciar el movimiento.",
+        "Realiza el movimiento de forma controlada manteniendo la técnica.",
+        "Vuelve a la posición inicial controlando la fase excéntrica.",
+        "Mantén la respiración: exhala en el esfuerzo, inhala al volver."
+      ],
+      "file": "biceps/kettlebell-double-alternating-hang-clean.gif",
+      "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/biceps/kettlebell-double-alternating-hang-clean.gif",
+      "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/biceps/kettlebell-double-alternating-hang-clean.thumb.webp"
+    },
+    {
+      "id": "biceps/lever-bicep-curl",
+      "slug": "lever-bicep-curl",
+      "name": "Curl de bíceps en máquina",
+      "muscle": "biceps",
+      "bodyPart": "arms",
+      "equipment": "lever",
+      "category": "strength",
+      "secondaryMuscles": [
+        "forearms"
+      ],
+      "instructions": [
+        "Ajusta la máquina a tu medida y selecciona la carga.",
+        "Activa los bíceps antes de iniciar el movimiento.",
+        "Realiza el movimiento de forma controlada manteniendo la técnica.",
+        "Vuelve a la posición inicial controlando la fase excéntrica.",
+        "Mantén la respiración: exhala en el esfuerzo, inhala al volver."
+      ],
+      "file": "biceps/lever-bicep-curl.gif",
+      "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/biceps/lever-bicep-curl.gif",
+      "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/biceps/lever-bicep-curl.thumb.webp"
+    },
+    {
+      "id": "biceps/lever-hammer-grip-preacher-curl",
+      "slug": "lever-hammer-grip-preacher-curl",
+      "name": "Curl predicador en máquina, con agarre martillo",
+      "muscle": "biceps",
+      "bodyPart": "arms",
+      "equipment": "lever",
+      "category": "strength",
+      "secondaryMuscles": [
+        "forearms"
+      ],
+      "instructions": [
+        "Ajusta la máquina a tu medida y selecciona la carga.",
+        "Activa los bíceps antes de iniciar el movimiento.",
+        "Realiza el movimiento de forma controlada manteniendo la técnica.",
+        "Vuelve a la posición inicial controlando la fase excéntrica.",
+        "Mantén la respiración: exhala en el esfuerzo, inhala al volver."
+      ],
+      "file": "biceps/lever-hammer-grip-preacher-curl.gif",
+      "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/biceps/lever-hammer-grip-preacher-curl.gif",
+      "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/biceps/lever-hammer-grip-preacher-curl.thumb.webp"
+    },
+    {
+      "id": "biceps/lever-preacher-curl-v-2",
+      "slug": "lever-preacher-curl-v-2",
+      "name": "Curl predicador en máquina",
+      "muscle": "biceps",
+      "bodyPart": "arms",
+      "equipment": "lever",
+      "category": "strength",
+      "secondaryMuscles": [
+        "forearms"
+      ],
+      "instructions": [
+        "Ajusta la máquina a tu medida y selecciona la carga.",
+        "Activa los bíceps antes de iniciar el movimiento.",
+        "Realiza el movimiento de forma controlada manteniendo la técnica.",
+        "Vuelve a la posición inicial controlando la fase excéntrica.",
+        "Mantén la respiración: exhala en el esfuerzo, inhala al volver."
+      ],
+      "file": "biceps/lever-preacher-curl-v-2.gif",
+      "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/biceps/lever-preacher-curl-v-2.gif",
+      "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/biceps/lever-preacher-curl-v-2.thumb.webp"
+    },
+    {
+      "id": "biceps/lever-preacher-curl",
+      "slug": "lever-preacher-curl",
+      "name": "Curl predicador en máquina",
+      "muscle": "biceps",
+      "bodyPart": "arms",
+      "equipment": "lever",
+      "category": "strength",
+      "secondaryMuscles": [
+        "forearms"
+      ],
+      "instructions": [
+        "Ajusta la máquina a tu medida y selecciona la carga.",
+        "Activa los bíceps antes de iniciar el movimiento.",
+        "Realiza el movimiento de forma controlada manteniendo la técnica.",
+        "Vuelve a la posición inicial controlando la fase excéntrica.",
+        "Mantén la respiración: exhala en el esfuerzo, inhala al volver."
+      ],
+      "file": "biceps/lever-preacher-curl.gif",
+      "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/biceps/lever-preacher-curl.gif",
+      "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/biceps/lever-preacher-curl.thumb.webp"
+    },
+    {
+      "id": "biceps/lever-reverse-grip-preacher-curl",
+      "slug": "lever-reverse-grip-preacher-curl",
+      "name": "Curl predicador en máquina, con agarre invertido",
+      "muscle": "biceps",
+      "bodyPart": "arms",
+      "equipment": "lever",
+      "category": "strength",
+      "secondaryMuscles": [
+        "forearms"
+      ],
+      "instructions": [
+        "Ajusta la máquina a tu medida y selecciona la carga.",
+        "Activa los bíceps antes de iniciar el movimiento.",
+        "Realiza el movimiento de forma controlada manteniendo la técnica.",
+        "Vuelve a la posición inicial controlando la fase excéntrica.",
+        "Mantén la respiración: exhala en el esfuerzo, inhala al volver."
+      ],
+      "file": "biceps/lever-reverse-grip-preacher-curl.gif",
+      "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/biceps/lever-reverse-grip-preacher-curl.gif",
+      "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/biceps/lever-reverse-grip-preacher-curl.thumb.webp"
+    },
+    {
+      "id": "biceps/olympic-barbell-hammer-curl",
+      "slug": "olympic-barbell-hammer-curl",
+      "name": "Curl martillo con barra olímpica",
+      "muscle": "biceps",
+      "bodyPart": "arms",
+      "equipment": "barbell",
+      "category": "strength",
+      "secondaryMuscles": [
+        "forearms"
+      ],
+      "instructions": [
+        "Carga el peso adecuado en la barra y adopta la postura inicial.",
+        "Activa los bíceps antes de iniciar el movimiento.",
+        "Realiza el movimiento de forma controlada manteniendo la técnica.",
+        "Vuelve a la posición inicial controlando la fase excéntrica.",
+        "Mantén la respiración: exhala en el esfuerzo, inhala al volver."
+      ],
+      "file": "biceps/olympic-barbell-hammer-curl.gif",
+      "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/biceps/olympic-barbell-hammer-curl.gif",
+      "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/biceps/olympic-barbell-hammer-curl.thumb.webp"
+    },
+    {
+      "id": "biceps/resistance-band-seated-biceps-curl",
+      "slug": "resistance-band-seated-biceps-curl",
+      "name": "Curl de bíceps con banda elástica, sentado",
+      "muscle": "biceps",
+      "bodyPart": "arms",
+      "equipment": "band",
+      "category": "strength",
+      "secondaryMuscles": [
+        "forearms"
+      ],
+      "instructions": [
+        "Fija la banda elástica y mantén la tensión inicial.",
+        "Activa los bíceps antes de iniciar el movimiento.",
+        "Realiza el movimiento de forma controlada manteniendo la técnica.",
+        "Vuelve a la posición inicial controlando la fase excéntrica.",
+        "Mantén la respiración: exhala en el esfuerzo, inhala al volver."
+      ],
+      "file": "biceps/resistance-band-seated-biceps-curl.gif",
+      "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/biceps/resistance-band-seated-biceps-curl.gif",
+      "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/biceps/resistance-band-seated-biceps-curl.thumb.webp"
+    },
+    {
+      "id": "biceps/smith-machine-bicep-curl",
+      "slug": "smith-machine-bicep-curl",
+      "name": "Curl de bíceps en máquina Smith",
+      "muscle": "biceps",
+      "bodyPart": "arms",
+      "equipment": "smith",
+      "category": "strength",
+      "secondaryMuscles": [
+        "forearms"
+      ],
+      "instructions": [
+        "Coloca la barra en la máquina Smith a la altura adecuada.",
+        "Activa los bíceps antes de iniciar el movimiento.",
+        "Realiza el movimiento de forma controlada manteniendo la técnica.",
+        "Vuelve a la posición inicial controlando la fase excéntrica.",
+        "Mantén la respiración: exhala en el esfuerzo, inhala al volver."
+      ],
+      "file": "biceps/smith-machine-bicep-curl.gif",
+      "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/biceps/smith-machine-bicep-curl.gif",
+      "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/biceps/smith-machine-bicep-curl.thumb.webp"
+    },
+    {
+      "id": "biceps/weighted-seated-bicep-curl-on-stability-ball",
+      "slug": "weighted-seated-bicep-curl-on-stability-ball",
+      "name": "Curl de bíceps, sentado, con peso en fitball",
+      "muscle": "biceps",
+      "bodyPart": "arms",
+      "equipment": "bodyweight",
+      "category": "strength",
+      "secondaryMuscles": [
+        "forearms"
+      ],
+      "instructions": [
+        "Adopta la postura inicial con buena alineación corporal.",
+        "Activa los bíceps antes de iniciar el movimiento.",
+        "Realiza el movimiento de forma controlada manteniendo la técnica.",
+        "Vuelve a la posición inicial controlando la fase excéntrica.",
+        "Mantén la respiración: exhala en el esfuerzo, inhala al volver."
+      ],
+      "file": "biceps/weighted-seated-bicep-curl-on-stability-ball.gif",
+      "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/biceps/weighted-seated-bicep-curl-on-stability-ball.gif",
+      "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/biceps/weighted-seated-bicep-curl-on-stability-ball.thumb.webp"
+    },
+    {
+      "id": "biceps/weighted-standing-curl",
+      "slug": "weighted-standing-curl",
+      "name": "Curl, de pie, con peso",
+      "muscle": "biceps",
+      "bodyPart": "arms",
+      "equipment": "bodyweight",
+      "category": "strength",
+      "secondaryMuscles": [
+        "forearms"
+      ],
+      "instructions": [
+        "Adopta la postura inicial con buena alineación corporal.",
+        "Activa los bíceps antes de iniciar el movimiento.",
+        "Realiza el movimiento de forma controlada manteniendo la técnica.",
+        "Vuelve a la posición inicial controlando la fase excéntrica.",
+        "Mantén la respiración: exhala en el esfuerzo, inhala al volver."
+      ],
+      "file": "biceps/weighted-standing-curl.gif",
+      "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/biceps/weighted-standing-curl.gif",
+      "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/biceps/weighted-standing-curl.thumb.webp"
+    }
+  ]
+}

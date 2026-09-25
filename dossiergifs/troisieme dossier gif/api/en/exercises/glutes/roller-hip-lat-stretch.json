@@ -1,0 +1,19 @@
+{
+  "id": "glutes/roller-hip-lat-stretch",
+  "slug": "roller-hip-lat-stretch",
+  "name": "Roller Hip Lat Stretch",
+  "muscle": "glutes",
+  "bodyPart": "legs",
+  "equipment": "bodyweight",
+  "category": "stretching",
+  "secondaryMuscles": [],
+  "instructions": [
+    "Adopt the starting position with proper body alignment.",
+    "Move into the the glutes stretch position.",
+    "Hold for 20 to 40 seconds breathing deeply.",
+    "Return slowly to the starting position and repeat if desired."
+  ],
+  "file": "glutes/roller-hip-lat-stretch.gif",
+  "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/glutes/roller-hip-lat-stretch.gif",
+  "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/glutes/roller-hip-lat-stretch.thumb.webp"
+}

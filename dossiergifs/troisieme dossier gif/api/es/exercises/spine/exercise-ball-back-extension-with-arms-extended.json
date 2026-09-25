@@ -1,0 +1,23 @@
+{
+  "id": "spine/exercise-ball-back-extension-with-arms-extended",
+  "slug": "exercise-ball-back-extension-with-arms-extended",
+  "name": "Extensión en fitball, con brazos extendidos, espalda",
+  "muscle": "spine",
+  "bodyPart": "back",
+  "equipment": "bodyweight",
+  "category": "strength",
+  "secondaryMuscles": [
+    "glutes",
+    "hamstrings"
+  ],
+  "instructions": [
+    "Adopta la postura inicial con buena alineación corporal.",
+    "Activa la zona lumbar antes de iniciar el movimiento.",
+    "Realiza el movimiento de forma controlada manteniendo la técnica.",
+    "Vuelve a la posición inicial controlando la fase excéntrica.",
+    "Mantén la respiración: exhala en el esfuerzo, inhala al volver."
+  ],
+  "file": "spine/exercise-ball-back-extension-with-arms-extended.gif",
+  "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/spine/exercise-ball-back-extension-with-arms-extended.gif",
+  "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/spine/exercise-ball-back-extension-with-arms-extended.thumb.webp"
+}

@@ -1,0 +1,22 @@
+{
+  "id": "biceps/cable-two-arm-curl-on-incline-bench",
+  "slug": "cable-two-arm-curl-on-incline-bench",
+  "name": "Curl en polea, a dos manos en banco inclinado",
+  "muscle": "biceps",
+  "bodyPart": "arms",
+  "equipment": "cable",
+  "category": "strength",
+  "secondaryMuscles": [
+    "forearms"
+  ],
+  "instructions": [
+    "Ajusta la polea a la altura indicada y selecciona el peso.",
+    "Activa los bíceps antes de iniciar el movimiento.",
+    "Realiza el movimiento de forma controlada manteniendo la técnica.",
+    "Vuelve a la posición inicial controlando la fase excéntrica.",
+    "Mantén la respiración: exhala en el esfuerzo, inhala al volver."
+  ],
+  "file": "biceps/cable-two-arm-curl-on-incline-bench.gif",
+  "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/biceps/cable-two-arm-curl-on-incline-bench.gif",
+  "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/biceps/cable-two-arm-curl-on-incline-bench.thumb.webp"
+}

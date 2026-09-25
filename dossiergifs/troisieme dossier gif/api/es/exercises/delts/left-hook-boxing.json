@@ -1,0 +1,20 @@
+{
+  "id": "delts/left-hook-boxing",
+  "slug": "left-hook-boxing",
+  "name": "Gancho izquierdo de boxeo",
+  "muscle": "delts",
+  "bodyPart": "shoulders",
+  "equipment": "bodyweight",
+  "category": "strength",
+  "secondaryMuscles": [],
+  "instructions": [
+    "Adopta la postura inicial con buena alineación corporal.",
+    "Activa los hombros antes de iniciar el movimiento.",
+    "Realiza el movimiento de forma controlada manteniendo la técnica.",
+    "Vuelve a la posición inicial controlando la fase excéntrica.",
+    "Mantén la respiración: exhala en el esfuerzo, inhala al volver."
+  ],
+  "file": "delts/left-hook-boxing.gif",
+  "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/delts/left-hook-boxing.gif",
+  "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/delts/left-hook-boxing.thumb.webp"
+}

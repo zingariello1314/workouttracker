@@ -1,0 +1,24 @@
+{
+  "id": "adductors/side-plank-hip-adduction",
+  "slug": "side-plank-hip-adduction",
+  "name": "Side Plank Hip Adduction",
+  "muscle": "adductors",
+  "bodyPart": "legs",
+  "equipment": "bodyweight",
+  "category": "strength",
+  "secondaryMuscles": [
+    "abs",
+    "delts",
+    "glutes"
+  ],
+  "instructions": [
+    "Adopt the starting position with proper body alignment.",
+    "Pre-engage the adductors before initiating the movement.",
+    "Perform the movement in a controlled manner, keeping good form.",
+    "Return to the starting position controlling the eccentric phase.",
+    "Breathe: exhale on effort, inhale on the way back."
+  ],
+  "file": "adductors/side-plank-hip-adduction.gif",
+  "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/adductors/side-plank-hip-adduction.gif",
+  "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/adductors/side-plank-hip-adduction.thumb.webp"
+}

@@ -1,0 +1,20 @@
+{
+  "id": "hamstrings/single-leg-platform-slide",
+  "slug": "single-leg-platform-slide",
+  "name": "Single Leg Platform Slide",
+  "muscle": "hamstrings",
+  "bodyPart": "legs",
+  "equipment": "machine",
+  "category": "strength",
+  "secondaryMuscles": [],
+  "instructions": [
+    "Adjust the machine to your size and select the load.",
+    "Pre-engage the hamstrings before initiating the movement.",
+    "Perform the movement in a controlled manner, keeping good form.",
+    "Return to the starting position controlling the eccentric phase.",
+    "Breathe: exhale on effort, inhale on the way back."
+  ],
+  "file": "hamstrings/single-leg-platform-slide.gif",
+  "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/hamstrings/single-leg-platform-slide.gif",
+  "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/hamstrings/single-leg-platform-slide.thumb.webp"
+}

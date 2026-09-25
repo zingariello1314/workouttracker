@@ -1,0 +1,44 @@
+{
+  "muscle": "levator-scapulae",
+  "count": 2,
+  "exercises": [
+    {
+      "id": "levator-scapulae/neck-side-stretch",
+      "slug": "neck-side-stretch",
+      "name": "Estiramiento, lateral, cuello",
+      "muscle": "levator-scapulae",
+      "bodyPart": "back",
+      "equipment": "bodyweight",
+      "category": "stretching",
+      "secondaryMuscles": [],
+      "instructions": [
+        "Adopta la postura inicial con buena alineación corporal.",
+        "Lleva el cuerpo a la posición de estiramiento de el elevador de la escápula.",
+        "Mantén entre 20 y 40 segundos respirando de forma profunda.",
+        "Vuelve a la posición inicial lentamente y repite si lo deseas."
+      ],
+      "file": "levator-scapulae/neck-side-stretch.gif",
+      "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/levator-scapulae/neck-side-stretch.gif",
+      "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/levator-scapulae/neck-side-stretch.thumb.webp"
+    },
+    {
+      "id": "levator-scapulae/side-push-neck-stretch",
+      "slug": "side-push-neck-stretch",
+      "name": "Estiramiento lateral del cuello",
+      "muscle": "levator-scapulae",
+      "bodyPart": "back",
+      "equipment": "bodyweight",
+      "category": "stretching",
+      "secondaryMuscles": [],
+      "instructions": [
+        "Adopta la postura inicial con buena alineación corporal.",
+        "Lleva el cuerpo a la posición de estiramiento de el elevador de la escápula.",
+        "Mantén entre 20 y 40 segundos respirando de forma profunda.",
+        "Vuelve a la posición inicial lentamente y repite si lo deseas."
+      ],
+      "file": "levator-scapulae/side-push-neck-stretch.gif",
+      "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/levator-scapulae/side-push-neck-stretch.gif",
+      "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/levator-scapulae/side-push-neck-stretch.thumb.webp"
+    }
+  ]
+}

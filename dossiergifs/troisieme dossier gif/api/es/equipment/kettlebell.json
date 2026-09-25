@@ -1,0 +1,966 @@
+{
+  "equipment": "kettlebell",
+  "count": 41,
+  "exercises": [
+    {
+      "id": "abs/kettlebell-advanced-windmill",
+      "slug": "kettlebell-advanced-windmill",
+      "name": "Windmill avanzado con kettlebell",
+      "muscle": "abs",
+      "bodyPart": "core",
+      "equipment": "kettlebell",
+      "category": "strength",
+      "secondaryMuscles": [],
+      "instructions": [
+        "Coge la kettlebell con un peso adecuado y adopta la postura.",
+        "Activa el core antes de iniciar el movimiento.",
+        "Realiza el movimiento de forma controlada manteniendo la técnica.",
+        "Vuelve a la posición inicial controlando la fase excéntrica.",
+        "Mantén la respiración: exhala en el esfuerzo, inhala al volver."
+      ],
+      "file": "abs/kettlebell-advanced-windmill.gif",
+      "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/abs/kettlebell-advanced-windmill.gif",
+      "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/abs/kettlebell-advanced-windmill.thumb.webp"
+    },
+    {
+      "id": "abs/kettlebell-bent-press",
+      "slug": "kettlebell-bent-press",
+      "name": "Press doblado con kettlebell",
+      "muscle": "abs",
+      "bodyPart": "core",
+      "equipment": "kettlebell",
+      "category": "strength",
+      "secondaryMuscles": [
+        "triceps",
+        "delts"
+      ],
+      "instructions": [
+        "Coge la kettlebell con un peso adecuado y adopta la postura.",
+        "Activa el core antes de iniciar el movimiento.",
+        "Realiza el movimiento de forma controlada manteniendo la técnica.",
+        "Vuelve a la posición inicial controlando la fase excéntrica.",
+        "Mantén la respiración: exhala en el esfuerzo, inhala al volver."
+      ],
+      "file": "abs/kettlebell-bent-press.gif",
+      "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/abs/kettlebell-bent-press.gif",
+      "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/abs/kettlebell-bent-press.thumb.webp"
+    },
+    {
+      "id": "abs/kettlebell-double-windmill",
+      "slug": "kettlebell-double-windmill",
+      "name": "Windmill doble con kettlebell",
+      "muscle": "abs",
+      "bodyPart": "core",
+      "equipment": "kettlebell",
+      "category": "strength",
+      "secondaryMuscles": [],
+      "instructions": [
+        "Coge la kettlebell con un peso adecuado y adopta la postura.",
+        "Activa el core antes de iniciar el movimiento.",
+        "Realiza el movimiento de forma controlada manteniendo la técnica.",
+        "Vuelve a la posición inicial controlando la fase excéntrica.",
+        "Mantén la respiración: exhala en el esfuerzo, inhala al volver."
+      ],
+      "file": "abs/kettlebell-double-windmill.gif",
+      "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/abs/kettlebell-double-windmill.gif",
+      "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/abs/kettlebell-double-windmill.thumb.webp"
+    },
+    {
+      "id": "abs/kettlebell-figure-8",
+      "slug": "kettlebell-figure-8",
+      "name": "Figure con kettlebell",
+      "muscle": "abs",
+      "bodyPart": "core",
+      "equipment": "kettlebell",
+      "category": "strength",
+      "secondaryMuscles": [],
+      "instructions": [
+        "Coge la kettlebell con un peso adecuado y adopta la postura.",
+        "Activa el core antes de iniciar el movimiento.",
+        "Realiza el movimiento de forma controlada manteniendo la técnica.",
+        "Vuelve a la posición inicial controlando la fase excéntrica.",
+        "Mantén la respiración: exhala en el esfuerzo, inhala al volver."
+      ],
+      "file": "abs/kettlebell-figure-8.gif",
+      "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/abs/kettlebell-figure-8.gif",
+      "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/abs/kettlebell-figure-8.thumb.webp"
+    },
+    {
+      "id": "abs/kettlebell-windmill",
+      "slug": "kettlebell-windmill",
+      "name": "Windmill con kettlebell",
+      "muscle": "abs",
+      "bodyPart": "core",
+      "equipment": "kettlebell",
+      "category": "strength",
+      "secondaryMuscles": [],
+      "instructions": [
+        "Coge la kettlebell con un peso adecuado y adopta la postura.",
+        "Activa el core antes de iniciar el movimiento.",
+        "Realiza el movimiento de forma controlada manteniendo la técnica.",
+        "Vuelve a la posición inicial controlando la fase excéntrica.",
+        "Mantén la respiración: exhala en el esfuerzo, inhala al volver."
+      ],
+      "file": "abs/kettlebell-windmill.gif",
+      "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/abs/kettlebell-windmill.gif",
+      "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/abs/kettlebell-windmill.thumb.webp"
+    },
+    {
+      "id": "biceps/kettlebell-bottoms-up-clean-from-the-hang-position",
+      "slug": "kettlebell-bottoms-up-clean-from-the-hang-position",
+      "name": "Cargada con kettlebell, fondo up colgado",
+      "muscle": "biceps",
+      "bodyPart": "arms",
+      "equipment": "kettlebell",
+      "category": "strength",
+      "secondaryMuscles": [
+        "glutes",
+        "hamstrings",
+        "spine",
+        "traps",
+        "delts",
+        "forearms"
+      ],
+      "instructions": [
+        "Coge la kettlebell con un peso adecuado y adopta la postura.",
+        "Activa los bíceps antes de iniciar el movimiento.",
+        "Realiza el movimiento de forma controlada manteniendo la técnica.",
+        "Vuelve a la posición inicial controlando la fase excéntrica.",
+        "Mantén la respiración: exhala en el esfuerzo, inhala al volver."
+      ],
+      "file": "biceps/kettlebell-bottoms-up-clean-from-the-hang-position.gif",
+      "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/biceps/kettlebell-bottoms-up-clean-from-the-hang-position.gif",
+      "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/biceps/kettlebell-bottoms-up-clean-from-the-hang-position.thumb.webp"
+    },
+    {
+      "id": "biceps/kettlebell-double-alternating-hang-clean",
+      "slug": "kettlebell-double-alternating-hang-clean",
+      "name": "Cargada con kettlebell, alternado, doble colgado",
+      "muscle": "biceps",
+      "bodyPart": "arms",
+      "equipment": "kettlebell",
+      "category": "strength",
+      "secondaryMuscles": [
+        "glutes",
+        "hamstrings",
+        "spine",
+        "traps",
+        "delts",
+        "forearms"
+      ],
+      "instructions": [
+        "Coge la kettlebell con un peso adecuado y adopta la postura.",
+        "Activa los bíceps antes de iniciar el movimiento.",
+        "Realiza el movimiento de forma controlada manteniendo la técnica.",
+        "Vuelve a la posición inicial controlando la fase excéntrica.",
+        "Mantén la respiración: exhala en el esfuerzo, inhala al volver."
+      ],
+      "file": "biceps/kettlebell-double-alternating-hang-clean.gif",
+      "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/biceps/kettlebell-double-alternating-hang-clean.gif",
+      "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/biceps/kettlebell-double-alternating-hang-clean.thumb.webp"
+    },
+    {
+      "id": "delts/kettlebell-alternating-press",
+      "slug": "kettlebell-alternating-press",
+      "name": "Press con kettlebell, alternado",
+      "muscle": "delts",
+      "bodyPart": "shoulders",
+      "equipment": "kettlebell",
+      "category": "strength",
+      "secondaryMuscles": [
+        "triceps"
+      ],
+      "instructions": [
+        "Coge la kettlebell con un peso adecuado y adopta la postura.",
+        "Activa los hombros antes de iniciar el movimiento.",
+        "Realiza el movimiento de forma controlada manteniendo la técnica.",
+        "Vuelve a la posición inicial controlando la fase excéntrica.",
+        "Mantén la respiración: exhala en el esfuerzo, inhala al volver."
+      ],
+      "file": "delts/kettlebell-alternating-press.gif",
+      "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/delts/kettlebell-alternating-press.gif",
+      "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/delts/kettlebell-alternating-press.thumb.webp"
+    },
+    {
+      "id": "delts/kettlebell-arnold-press",
+      "slug": "kettlebell-arnold-press",
+      "name": "Press Arnold con kettlebell",
+      "muscle": "delts",
+      "bodyPart": "shoulders",
+      "equipment": "kettlebell",
+      "category": "strength",
+      "secondaryMuscles": [
+        "triceps"
+      ],
+      "instructions": [
+        "Coge la kettlebell con un peso adecuado y adopta la postura.",
+        "Activa los hombros antes de iniciar el movimiento.",
+        "Realiza el movimiento de forma controlada manteniendo la técnica.",
+        "Vuelve a la posición inicial controlando la fase excéntrica.",
+        "Mantén la respiración: exhala en el esfuerzo, inhala al volver."
+      ],
+      "file": "delts/kettlebell-arnold-press.gif",
+      "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/delts/kettlebell-arnold-press.gif",
+      "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/delts/kettlebell-arnold-press.thumb.webp"
+    },
+    {
+      "id": "delts/kettlebell-double-jerk",
+      "slug": "kettlebell-double-jerk",
+      "name": "Envión con kettlebell, doble",
+      "muscle": "delts",
+      "bodyPart": "shoulders",
+      "equipment": "kettlebell",
+      "category": "strength",
+      "secondaryMuscles": [
+        "glutes",
+        "hamstrings",
+        "spine",
+        "traps",
+        "forearms"
+      ],
+      "instructions": [
+        "Coge la kettlebell con un peso adecuado y adopta la postura.",
+        "Activa los hombros antes de iniciar el movimiento.",
+        "Realiza el movimiento de forma controlada manteniendo la técnica.",
+        "Vuelve a la posición inicial controlando la fase excéntrica.",
+        "Mantén la respiración: exhala en el esfuerzo, inhala al volver."
+      ],
+      "file": "delts/kettlebell-double-jerk.gif",
+      "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/delts/kettlebell-double-jerk.gif",
+      "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/delts/kettlebell-double-jerk.thumb.webp"
+    },
+    {
+      "id": "delts/kettlebell-double-push-press",
+      "slug": "kettlebell-double-push-press",
+      "name": "Push press con kettlebell, doble",
+      "muscle": "delts",
+      "bodyPart": "shoulders",
+      "equipment": "kettlebell",
+      "category": "strength",
+      "secondaryMuscles": [
+        "triceps"
+      ],
+      "instructions": [
+        "Coge la kettlebell con un peso adecuado y adopta la postura.",
+        "Activa los hombros antes de iniciar el movimiento.",
+        "Realiza el movimiento de forma controlada manteniendo la técnica.",
+        "Vuelve a la posición inicial controlando la fase excéntrica.",
+        "Mantén la respiración: exhala en el esfuerzo, inhala al volver."
+      ],
+      "file": "delts/kettlebell-double-push-press.gif",
+      "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/delts/kettlebell-double-push-press.gif",
+      "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/delts/kettlebell-double-push-press.thumb.webp"
+    },
+    {
+      "id": "delts/kettlebell-double-snatch",
+      "slug": "kettlebell-double-snatch",
+      "name": "Arrancada con kettlebell, doble",
+      "muscle": "delts",
+      "bodyPart": "shoulders",
+      "equipment": "kettlebell",
+      "category": "strength",
+      "secondaryMuscles": [
+        "glutes",
+        "hamstrings",
+        "spine",
+        "traps",
+        "forearms"
+      ],
+      "instructions": [
+        "Coge la kettlebell con un peso adecuado y adopta la postura.",
+        "Activa los hombros antes de iniciar el movimiento.",
+        "Realiza el movimiento de forma controlada manteniendo la técnica.",
+        "Vuelve a la posición inicial controlando la fase excéntrica.",
+        "Mantén la respiración: exhala en el esfuerzo, inhala al volver."
+      ],
+      "file": "delts/kettlebell-double-snatch.gif",
+      "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/delts/kettlebell-double-snatch.gif",
+      "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/delts/kettlebell-double-snatch.thumb.webp"
+    },
+    {
+      "id": "delts/kettlebell-one-arm-clean-and-jerk",
+      "slug": "kettlebell-one-arm-clean-and-jerk",
+      "name": "Cargada y envión con kettlebell, a una mano",
+      "muscle": "delts",
+      "bodyPart": "shoulders",
+      "equipment": "kettlebell",
+      "category": "strength",
+      "secondaryMuscles": [
+        "glutes",
+        "hamstrings",
+        "spine",
+        "traps",
+        "forearms"
+      ],
+      "instructions": [
+        "Coge la kettlebell con un peso adecuado y adopta la postura.",
+        "Activa los hombros antes de iniciar el movimiento.",
+        "Realiza el movimiento de forma controlada manteniendo la técnica.",
+        "Vuelve a la posición inicial controlando la fase excéntrica.",
+        "Mantén la respiración: exhala en el esfuerzo, inhala al volver."
+      ],
+      "file": "delts/kettlebell-one-arm-clean-and-jerk.gif",
+      "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/delts/kettlebell-one-arm-clean-and-jerk.gif",
+      "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/delts/kettlebell-one-arm-clean-and-jerk.thumb.webp"
+    },
+    {
+      "id": "delts/kettlebell-one-arm-jerk",
+      "slug": "kettlebell-one-arm-jerk",
+      "name": "Envión con kettlebell, a una mano",
+      "muscle": "delts",
+      "bodyPart": "shoulders",
+      "equipment": "kettlebell",
+      "category": "strength",
+      "secondaryMuscles": [
+        "glutes",
+        "hamstrings",
+        "spine",
+        "traps",
+        "forearms"
+      ],
+      "instructions": [
+        "Coge la kettlebell con un peso adecuado y adopta la postura.",
+        "Activa los hombros antes de iniciar el movimiento.",
+        "Realiza el movimiento de forma controlada manteniendo la técnica.",
+        "Vuelve a la posición inicial controlando la fase excéntrica.",
+        "Mantén la respiración: exhala en el esfuerzo, inhala al volver."
+      ],
+      "file": "delts/kettlebell-one-arm-jerk.gif",
+      "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/delts/kettlebell-one-arm-jerk.gif",
+      "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/delts/kettlebell-one-arm-jerk.thumb.webp"
+    },
+    {
+      "id": "delts/kettlebell-one-arm-military-press-to-the-side",
+      "slug": "kettlebell-one-arm-military-press-to-the-side",
+      "name": "Press militar con kettlebell, lateral, a una mano",
+      "muscle": "delts",
+      "bodyPart": "shoulders",
+      "equipment": "kettlebell",
+      "category": "strength",
+      "secondaryMuscles": [
+        "triceps"
+      ],
+      "instructions": [
+        "Coge la kettlebell con un peso adecuado y adopta la postura.",
+        "Activa los hombros antes de iniciar el movimiento.",
+        "Realiza el movimiento de forma controlada manteniendo la técnica.",
+        "Vuelve a la posición inicial controlando la fase excéntrica.",
+        "Mantén la respiración: exhala en el esfuerzo, inhala al volver."
+      ],
+      "file": "delts/kettlebell-one-arm-military-press-to-the-side.gif",
+      "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/delts/kettlebell-one-arm-military-press-to-the-side.gif",
+      "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/delts/kettlebell-one-arm-military-press-to-the-side.thumb.webp"
+    },
+    {
+      "id": "delts/kettlebell-one-arm-push-press",
+      "slug": "kettlebell-one-arm-push-press",
+      "name": "Push press con kettlebell, a una mano",
+      "muscle": "delts",
+      "bodyPart": "shoulders",
+      "equipment": "kettlebell",
+      "category": "strength",
+      "secondaryMuscles": [
+        "triceps"
+      ],
+      "instructions": [
+        "Coge la kettlebell con un peso adecuado y adopta la postura.",
+        "Activa los hombros antes de iniciar el movimiento.",
+        "Realiza el movimiento de forma controlada manteniendo la técnica.",
+        "Vuelve a la posición inicial controlando la fase excéntrica.",
+        "Mantén la respiración: exhala en el esfuerzo, inhala al volver."
+      ],
+      "file": "delts/kettlebell-one-arm-push-press.gif",
+      "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/delts/kettlebell-one-arm-push-press.gif",
+      "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/delts/kettlebell-one-arm-push-press.thumb.webp"
+    },
+    {
+      "id": "delts/kettlebell-one-arm-snatch",
+      "slug": "kettlebell-one-arm-snatch",
+      "name": "Arrancada con kettlebell, a una mano",
+      "muscle": "delts",
+      "bodyPart": "shoulders",
+      "equipment": "kettlebell",
+      "category": "strength",
+      "secondaryMuscles": [
+        "glutes",
+        "hamstrings",
+        "spine",
+        "traps",
+        "forearms"
+      ],
+      "instructions": [
+        "Coge la kettlebell con un peso adecuado y adopta la postura.",
+        "Activa los hombros antes de iniciar el movimiento.",
+        "Realiza el movimiento de forma controlada manteniendo la técnica.",
+        "Vuelve a la posición inicial controlando la fase excéntrica.",
+        "Mantén la respiración: exhala en el esfuerzo, inhala al volver."
+      ],
+      "file": "delts/kettlebell-one-arm-snatch.gif",
+      "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/delts/kettlebell-one-arm-snatch.gif",
+      "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/delts/kettlebell-one-arm-snatch.thumb.webp"
+    },
+    {
+      "id": "delts/kettlebell-pirate-supper-legs",
+      "slug": "kettlebell-pirate-supper-legs",
+      "name": "Pirate supper piernas con kettlebell",
+      "muscle": "delts",
+      "bodyPart": "shoulders",
+      "equipment": "kettlebell",
+      "category": "strength",
+      "secondaryMuscles": [],
+      "instructions": [
+        "Coge la kettlebell con un peso adecuado y adopta la postura.",
+        "Activa los hombros antes de iniciar el movimiento.",
+        "Realiza el movimiento de forma controlada manteniendo la técnica.",
+        "Vuelve a la posición inicial controlando la fase excéntrica.",
+        "Mantén la respiración: exhala en el esfuerzo, inhala al volver."
+      ],
+      "file": "delts/kettlebell-pirate-supper-legs.gif",
+      "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/delts/kettlebell-pirate-supper-legs.gif",
+      "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/delts/kettlebell-pirate-supper-legs.thumb.webp"
+    },
+    {
+      "id": "delts/kettlebell-seated-press",
+      "slug": "kettlebell-seated-press",
+      "name": "Press con kettlebell, sentado",
+      "muscle": "delts",
+      "bodyPart": "shoulders",
+      "equipment": "kettlebell",
+      "category": "strength",
+      "secondaryMuscles": [
+        "triceps"
+      ],
+      "instructions": [
+        "Coge la kettlebell con un peso adecuado y adopta la postura.",
+        "Activa los hombros antes de iniciar el movimiento.",
+        "Realiza el movimiento de forma controlada manteniendo la técnica.",
+        "Vuelve a la posición inicial controlando la fase excéntrica.",
+        "Mantén la respiración: exhala en el esfuerzo, inhala al volver."
+      ],
+      "file": "delts/kettlebell-seated-press.gif",
+      "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/delts/kettlebell-seated-press.gif",
+      "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/delts/kettlebell-seated-press.thumb.webp"
+    },
+    {
+      "id": "delts/kettlebell-seated-two-arm-military-press",
+      "slug": "kettlebell-seated-two-arm-military-press",
+      "name": "Press militar con kettlebell, sentado, a dos manos",
+      "muscle": "delts",
+      "bodyPart": "shoulders",
+      "equipment": "kettlebell",
+      "category": "strength",
+      "secondaryMuscles": [
+        "triceps"
+      ],
+      "instructions": [
+        "Coge la kettlebell con un peso adecuado y adopta la postura.",
+        "Activa los hombros antes de iniciar el movimiento.",
+        "Realiza el movimiento de forma controlada manteniendo la técnica.",
+        "Vuelve a la posición inicial controlando la fase excéntrica.",
+        "Mantén la respiración: exhala en el esfuerzo, inhala al volver."
+      ],
+      "file": "delts/kettlebell-seated-two-arm-military-press.gif",
+      "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/delts/kettlebell-seated-two-arm-military-press.gif",
+      "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/delts/kettlebell-seated-two-arm-military-press.thumb.webp"
+    },
+    {
+      "id": "delts/kettlebell-seesaw-press",
+      "slug": "kettlebell-seesaw-press",
+      "name": "Press alternado seesaw con kettlebell",
+      "muscle": "delts",
+      "bodyPart": "shoulders",
+      "equipment": "kettlebell",
+      "category": "strength",
+      "secondaryMuscles": [
+        "triceps"
+      ],
+      "instructions": [
+        "Coge la kettlebell con un peso adecuado y adopta la postura.",
+        "Activa los hombros antes de iniciar el movimiento.",
+        "Realiza el movimiento de forma controlada manteniendo la técnica.",
+        "Vuelve a la posición inicial controlando la fase excéntrica.",
+        "Mantén la respiración: exhala en el esfuerzo, inhala al volver."
+      ],
+      "file": "delts/kettlebell-seesaw-press.gif",
+      "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/delts/kettlebell-seesaw-press.gif",
+      "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/delts/kettlebell-seesaw-press.thumb.webp"
+    },
+    {
+      "id": "delts/kettlebell-thruster",
+      "slug": "kettlebell-thruster",
+      "name": "Thruster con kettlebell",
+      "muscle": "delts",
+      "bodyPart": "shoulders",
+      "equipment": "kettlebell",
+      "category": "strength",
+      "secondaryMuscles": [
+        "glutes",
+        "quads",
+        "triceps",
+        "abs"
+      ],
+      "instructions": [
+        "Coge la kettlebell con un peso adecuado y adopta la postura.",
+        "Activa los hombros antes de iniciar el movimiento.",
+        "Realiza el movimiento de forma controlada manteniendo la técnica.",
+        "Vuelve a la posición inicial controlando la fase excéntrica.",
+        "Mantén la respiración: exhala en el esfuerzo, inhala al volver."
+      ],
+      "file": "delts/kettlebell-thruster.gif",
+      "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/delts/kettlebell-thruster.gif",
+      "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/delts/kettlebell-thruster.thumb.webp"
+    },
+    {
+      "id": "delts/kettlebell-two-arm-clean",
+      "slug": "kettlebell-two-arm-clean",
+      "name": "Cargada con kettlebell, a dos manos",
+      "muscle": "delts",
+      "bodyPart": "shoulders",
+      "equipment": "kettlebell",
+      "category": "strength",
+      "secondaryMuscles": [
+        "glutes",
+        "hamstrings",
+        "spine",
+        "traps",
+        "forearms"
+      ],
+      "instructions": [
+        "Coge la kettlebell con un peso adecuado y adopta la postura.",
+        "Activa los hombros antes de iniciar el movimiento.",
+        "Realiza el movimiento de forma controlada manteniendo la técnica.",
+        "Vuelve a la posición inicial controlando la fase excéntrica.",
+        "Mantén la respiración: exhala en el esfuerzo, inhala al volver."
+      ],
+      "file": "delts/kettlebell-two-arm-clean.gif",
+      "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/delts/kettlebell-two-arm-clean.gif",
+      "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/delts/kettlebell-two-arm-clean.thumb.webp"
+    },
+    {
+      "id": "delts/kettlebell-two-arm-military-press",
+      "slug": "kettlebell-two-arm-military-press",
+      "name": "Press militar con kettlebell, a dos manos",
+      "muscle": "delts",
+      "bodyPart": "shoulders",
+      "equipment": "kettlebell",
+      "category": "strength",
+      "secondaryMuscles": [
+        "triceps"
+      ],
+      "instructions": [
+        "Coge la kettlebell con un peso adecuado y adopta la postura.",
+        "Activa los hombros antes de iniciar el movimiento.",
+        "Realiza el movimiento de forma controlada manteniendo la técnica.",
+        "Vuelve a la posición inicial controlando la fase excéntrica.",
+        "Mantén la respiración: exhala en el esfuerzo, inhala al volver."
+      ],
+      "file": "delts/kettlebell-two-arm-military-press.gif",
+      "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/delts/kettlebell-two-arm-military-press.gif",
+      "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/delts/kettlebell-two-arm-military-press.thumb.webp"
+    },
+    {
+      "id": "forearms/kettlebell-alternating-hang-clean",
+      "slug": "kettlebell-alternating-hang-clean",
+      "name": "Cargada con kettlebell, alternado, colgado",
+      "muscle": "forearms",
+      "bodyPart": "arms",
+      "equipment": "kettlebell",
+      "category": "strength",
+      "secondaryMuscles": [
+        "glutes",
+        "hamstrings",
+        "spine",
+        "traps",
+        "delts"
+      ],
+      "instructions": [
+        "Coge la kettlebell con un peso adecuado y adopta la postura.",
+        "Activa los antebrazos antes de iniciar el movimiento.",
+        "Realiza el movimiento de forma controlada manteniendo la técnica.",
+        "Vuelve a la posición inicial controlando la fase excéntrica.",
+        "Mantén la respiración: exhala en el esfuerzo, inhala al volver."
+      ],
+      "file": "forearms/kettlebell-alternating-hang-clean.gif",
+      "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/forearms/kettlebell-alternating-hang-clean.gif",
+      "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/forearms/kettlebell-alternating-hang-clean.thumb.webp"
+    },
+    {
+      "id": "glutes/kettlebell-front-squat",
+      "slug": "kettlebell-front-squat",
+      "name": "Sentadilla frontal con kettlebell",
+      "muscle": "glutes",
+      "bodyPart": "legs",
+      "equipment": "kettlebell",
+      "category": "strength",
+      "secondaryMuscles": [
+        "hamstrings",
+        "calves"
+      ],
+      "instructions": [
+        "Coge la kettlebell con un peso adecuado y adopta la postura.",
+        "Activa los glúteos antes de iniciar el movimiento.",
+        "Realiza el movimiento de forma controlada manteniendo la técnica.",
+        "Vuelve a la posición inicial controlando la fase excéntrica.",
+        "Mantén la respiración: exhala en el esfuerzo, inhala al volver."
+      ],
+      "file": "glutes/kettlebell-front-squat.gif",
+      "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/glutes/kettlebell-front-squat.gif",
+      "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/glutes/kettlebell-front-squat.thumb.webp"
+    },
+    {
+      "id": "glutes/kettlebell-goblet-squat",
+      "slug": "kettlebell-goblet-squat",
+      "name": "Sentadilla goblet con kettlebell",
+      "muscle": "glutes",
+      "bodyPart": "legs",
+      "equipment": "kettlebell",
+      "category": "strength",
+      "secondaryMuscles": [
+        "hamstrings",
+        "calves"
+      ],
+      "instructions": [
+        "Coge la kettlebell con un peso adecuado y adopta la postura.",
+        "Activa los glúteos antes de iniciar el movimiento.",
+        "Realiza el movimiento de forma controlada manteniendo la técnica.",
+        "Vuelve a la posición inicial controlando la fase excéntrica.",
+        "Mantén la respiración: exhala en el esfuerzo, inhala al volver."
+      ],
+      "file": "glutes/kettlebell-goblet-squat.gif",
+      "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/glutes/kettlebell-goblet-squat.gif",
+      "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/glutes/kettlebell-goblet-squat.thumb.webp"
+    },
+    {
+      "id": "glutes/kettlebell-lunge-pass-through",
+      "slug": "kettlebell-lunge-pass-through",
+      "name": "Zancada pass-through con kettlebell",
+      "muscle": "glutes",
+      "bodyPart": "legs",
+      "equipment": "kettlebell",
+      "category": "strength",
+      "secondaryMuscles": [
+        "hamstrings",
+        "calves"
+      ],
+      "instructions": [
+        "Coge la kettlebell con un peso adecuado y adopta la postura.",
+        "Activa los glúteos antes de iniciar el movimiento.",
+        "Realiza el movimiento de forma controlada manteniendo la técnica.",
+        "Vuelve a la posición inicial controlando la fase excéntrica.",
+        "Mantén la respiración: exhala en el esfuerzo, inhala al volver."
+      ],
+      "file": "glutes/kettlebell-lunge-pass-through.gif",
+      "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/glutes/kettlebell-lunge-pass-through.gif",
+      "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/glutes/kettlebell-lunge-pass-through.thumb.webp"
+    },
+    {
+      "id": "glutes/kettlebell-pistol-squat",
+      "slug": "kettlebell-pistol-squat",
+      "name": "Sentadilla pistol con kettlebell",
+      "muscle": "glutes",
+      "bodyPart": "legs",
+      "equipment": "kettlebell",
+      "category": "strength",
+      "secondaryMuscles": [
+        "hamstrings",
+        "calves"
+      ],
+      "instructions": [
+        "Coge la kettlebell con un peso adecuado y adopta la postura.",
+        "Activa los glúteos antes de iniciar el movimiento.",
+        "Realiza el movimiento de forma controlada manteniendo la técnica.",
+        "Vuelve a la posición inicial controlando la fase excéntrica.",
+        "Mantén la respiración: exhala en el esfuerzo, inhala al volver."
+      ],
+      "file": "glutes/kettlebell-pistol-squat.gif",
+      "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/glutes/kettlebell-pistol-squat.gif",
+      "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/glutes/kettlebell-pistol-squat.thumb.webp"
+    },
+    {
+      "id": "glutes/kettlebell-swing",
+      "slug": "kettlebell-swing",
+      "name": "Swing con kettlebell",
+      "muscle": "glutes",
+      "bodyPart": "legs",
+      "equipment": "kettlebell",
+      "category": "strength",
+      "secondaryMuscles": [
+        "hamstrings",
+        "spine",
+        "traps",
+        "delts",
+        "forearms"
+      ],
+      "instructions": [
+        "Coge la kettlebell con un peso adecuado y adopta la postura.",
+        "Activa los glúteos antes de iniciar el movimiento.",
+        "Realiza el movimiento de forma controlada manteniendo la técnica.",
+        "Vuelve a la posición inicial controlando la fase excéntrica.",
+        "Mantén la respiración: exhala en el esfuerzo, inhala al volver."
+      ],
+      "file": "glutes/kettlebell-swing.gif",
+      "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/glutes/kettlebell-swing.gif",
+      "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/glutes/kettlebell-swing.thumb.webp"
+    },
+    {
+      "id": "glutes/kettlebell-turkish-get-up-squat-style",
+      "slug": "kettlebell-turkish-get-up-squat-style",
+      "name": "Sentadilla con kettlebell, turkish get up style",
+      "muscle": "glutes",
+      "bodyPart": "legs",
+      "equipment": "kettlebell",
+      "category": "strength",
+      "secondaryMuscles": [
+        "hamstrings",
+        "calves"
+      ],
+      "instructions": [
+        "Coge la kettlebell con un peso adecuado y adopta la postura.",
+        "Activa los glúteos antes de iniciar el movimiento.",
+        "Realiza el movimiento de forma controlada manteniendo la técnica.",
+        "Vuelve a la posición inicial controlando la fase excéntrica.",
+        "Mantén la respiración: exhala en el esfuerzo, inhala al volver."
+      ],
+      "file": "glutes/kettlebell-turkish-get-up-squat-style.gif",
+      "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/glutes/kettlebell-turkish-get-up-squat-style.gif",
+      "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/glutes/kettlebell-turkish-get-up-squat-style.thumb.webp"
+    },
+    {
+      "id": "hamstrings/kettlebell-hang-clean",
+      "slug": "kettlebell-hang-clean",
+      "name": "Cargada con kettlebell, colgado",
+      "muscle": "hamstrings",
+      "bodyPart": "legs",
+      "equipment": "kettlebell",
+      "category": "strength",
+      "secondaryMuscles": [
+        "glutes",
+        "spine",
+        "traps",
+        "delts",
+        "forearms"
+      ],
+      "instructions": [
+        "Coge la kettlebell con un peso adecuado y adopta la postura.",
+        "Activa los isquiotibiales antes de iniciar el movimiento.",
+        "Realiza el movimiento de forma controlada manteniendo la técnica.",
+        "Vuelve a la posición inicial controlando la fase excéntrica.",
+        "Mantén la respiración: exhala en el esfuerzo, inhala al volver."
+      ],
+      "file": "hamstrings/kettlebell-hang-clean.gif",
+      "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/hamstrings/kettlebell-hang-clean.gif",
+      "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/hamstrings/kettlebell-hang-clean.thumb.webp"
+    },
+    {
+      "id": "pectorals/kettlebell-alternating-press-on-floor",
+      "slug": "kettlebell-alternating-press-on-floor",
+      "name": "Press con kettlebell, alternado en el suelo",
+      "muscle": "pectorals",
+      "bodyPart": "chest",
+      "equipment": "kettlebell",
+      "category": "strength",
+      "secondaryMuscles": [
+        "triceps",
+        "delts"
+      ],
+      "instructions": [
+        "Coge la kettlebell con un peso adecuado y adopta la postura.",
+        "Activa el pectoral antes de iniciar el movimiento.",
+        "Realiza el movimiento de forma controlada manteniendo la técnica.",
+        "Vuelve a la posición inicial controlando la fase excéntrica.",
+        "Mantén la respiración: exhala en el esfuerzo, inhala al volver."
+      ],
+      "file": "pectorals/kettlebell-alternating-press-on-floor.gif",
+      "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/pectorals/kettlebell-alternating-press-on-floor.gif",
+      "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/pectorals/kettlebell-alternating-press-on-floor.thumb.webp"
+    },
+    {
+      "id": "pectorals/kettlebell-extended-range-one-arm-press-on-floor",
+      "slug": "kettlebell-extended-range-one-arm-press-on-floor",
+      "name": "Press con kettlebell, a una mano en el suelo, extended rango",
+      "muscle": "pectorals",
+      "bodyPart": "chest",
+      "equipment": "kettlebell",
+      "category": "strength",
+      "secondaryMuscles": [
+        "triceps",
+        "delts"
+      ],
+      "instructions": [
+        "Coge la kettlebell con un peso adecuado y adopta la postura.",
+        "Activa el pectoral antes de iniciar el movimiento.",
+        "Realiza el movimiento de forma controlada manteniendo la técnica.",
+        "Vuelve a la posición inicial controlando la fase excéntrica.",
+        "Mantén la respiración: exhala en el esfuerzo, inhala al volver."
+      ],
+      "file": "pectorals/kettlebell-extended-range-one-arm-press-on-floor.gif",
+      "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/pectorals/kettlebell-extended-range-one-arm-press-on-floor.gif",
+      "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/pectorals/kettlebell-extended-range-one-arm-press-on-floor.thumb.webp"
+    },
+    {
+      "id": "pectorals/kettlebell-one-arm-floor-press",
+      "slug": "kettlebell-one-arm-floor-press",
+      "name": "Press en el suelo con kettlebell, a una mano",
+      "muscle": "pectorals",
+      "bodyPart": "chest",
+      "equipment": "kettlebell",
+      "category": "strength",
+      "secondaryMuscles": [
+        "triceps",
+        "delts"
+      ],
+      "instructions": [
+        "Coge la kettlebell con un peso adecuado y adopta la postura.",
+        "Activa el pectoral antes de iniciar el movimiento.",
+        "Realiza el movimiento de forma controlada manteniendo la técnica.",
+        "Vuelve a la posición inicial controlando la fase excéntrica.",
+        "Mantén la respiración: exhala en el esfuerzo, inhala al volver."
+      ],
+      "file": "pectorals/kettlebell-one-arm-floor-press.gif",
+      "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/pectorals/kettlebell-one-arm-floor-press.gif",
+      "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/pectorals/kettlebell-one-arm-floor-press.thumb.webp"
+    },
+    {
+      "id": "pectorals/kettlebell-plyo-push-up",
+      "slug": "kettlebell-plyo-push-up",
+      "name": "Flexión pliométrica con kettlebell",
+      "muscle": "pectorals",
+      "bodyPart": "chest",
+      "equipment": "kettlebell",
+      "category": "plyometrics",
+      "secondaryMuscles": [
+        "triceps",
+        "delts"
+      ],
+      "instructions": [
+        "Coge la kettlebell con un peso adecuado y adopta la postura.",
+        "Realiza una breve flexión para acumular tensión.",
+        "Ejecuta el movimiento de forma explosiva y aterriza con control.",
+        "Aterriza suave amortiguando con piernas y core, y encadena la siguiente repetición."
+      ],
+      "file": "pectorals/kettlebell-plyo-push-up.gif",
+      "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/pectorals/kettlebell-plyo-push-up.gif",
+      "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/pectorals/kettlebell-plyo-push-up.thumb.webp"
+    },
+    {
+      "id": "traps/kettlebell-sumo-high-pull",
+      "slug": "kettlebell-sumo-high-pull",
+      "name": "Tirón alto sumo con kettlebell",
+      "muscle": "traps",
+      "bodyPart": "back",
+      "equipment": "kettlebell",
+      "category": "strength",
+      "secondaryMuscles": [],
+      "instructions": [
+        "Coge la kettlebell con un peso adecuado y adopta la postura.",
+        "Activa los trapecios antes de iniciar el movimiento.",
+        "Realiza el movimiento de forma controlada manteniendo la técnica.",
+        "Vuelve a la posición inicial controlando la fase excéntrica.",
+        "Mantén la respiración: exhala en el esfuerzo, inhala al volver."
+      ],
+      "file": "traps/kettlebell-sumo-high-pull.gif",
+      "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/traps/kettlebell-sumo-high-pull.gif",
+      "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/traps/kettlebell-sumo-high-pull.thumb.webp"
+    },
+    {
+      "id": "upper-back/kettlebell-alternating-renegade-row",
+      "slug": "kettlebell-alternating-renegade-row",
+      "name": "Remo renegado con kettlebell, alternado",
+      "muscle": "upper-back",
+      "bodyPart": "back",
+      "equipment": "kettlebell",
+      "category": "strength",
+      "secondaryMuscles": [
+        "biceps",
+        "forearms",
+        "delts",
+        "lats"
+      ],
+      "instructions": [
+        "Coge la kettlebell con un peso adecuado y adopta la postura.",
+        "Activa la espalda alta antes de iniciar el movimiento.",
+        "Realiza el movimiento de forma controlada manteniendo la técnica.",
+        "Vuelve a la posición inicial controlando la fase excéntrica.",
+        "Mantén la respiración: exhala en el esfuerzo, inhala al volver."
+      ],
+      "file": "upper-back/kettlebell-alternating-renegade-row.gif",
+      "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/upper-back/kettlebell-alternating-renegade-row.gif",
+      "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/upper-back/kettlebell-alternating-renegade-row.thumb.webp"
+    },
+    {
+      "id": "upper-back/kettlebell-alternating-row",
+      "slug": "kettlebell-alternating-row",
+      "name": "Remo con kettlebell, alternado",
+      "muscle": "upper-back",
+      "bodyPart": "back",
+      "equipment": "kettlebell",
+      "category": "strength",
+      "secondaryMuscles": [
+        "biceps",
+        "forearms",
+        "delts",
+        "lats"
+      ],
+      "instructions": [
+        "Coge la kettlebell con un peso adecuado y adopta la postura.",
+        "Activa la espalda alta antes de iniciar el movimiento.",
+        "Realiza el movimiento de forma controlada manteniendo la técnica.",
+        "Vuelve a la posición inicial controlando la fase excéntrica.",
+        "Mantén la respiración: exhala en el esfuerzo, inhala al volver."
+      ],
+      "file": "upper-back/kettlebell-alternating-row.gif",
+      "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/upper-back/kettlebell-alternating-row.gif",
+      "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/upper-back/kettlebell-alternating-row.thumb.webp"
+    },
+    {
+      "id": "upper-back/kettlebell-one-arm-row",
+      "slug": "kettlebell-one-arm-row",
+      "name": "Remo con kettlebell, a una mano",
+      "muscle": "upper-back",
+      "bodyPart": "back",
+      "equipment": "kettlebell",
+      "category": "strength",
+      "secondaryMuscles": [
+        "biceps",
+        "forearms",
+        "delts",
+        "lats"
+      ],
+      "instructions": [
+        "Coge la kettlebell con un peso adecuado y adopta la postura.",
+        "Activa la espalda alta antes de iniciar el movimiento.",
+        "Realiza el movimiento de forma controlada manteniendo la técnica.",
+        "Vuelve a la posición inicial controlando la fase excéntrica.",
+        "Mantén la respiración: exhala en el esfuerzo, inhala al volver."
+      ],
+      "file": "upper-back/kettlebell-one-arm-row.gif",
+      "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/upper-back/kettlebell-one-arm-row.gif",
+      "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/upper-back/kettlebell-one-arm-row.thumb.webp"
+    },
+    {
+      "id": "upper-back/kettlebell-two-arm-row",
+      "slug": "kettlebell-two-arm-row",
+      "name": "Remo con kettlebell, a dos manos",
+      "muscle": "upper-back",
+      "bodyPart": "back",
+      "equipment": "kettlebell",
+      "category": "strength",
+      "secondaryMuscles": [
+        "biceps",
+        "forearms",
+        "delts",
+        "lats"
+      ],
+      "instructions": [
+        "Coge la kettlebell con un peso adecuado y adopta la postura.",
+        "Activa la espalda alta antes de iniciar el movimiento.",
+        "Realiza el movimiento de forma controlada manteniendo la técnica.",
+        "Vuelve a la posición inicial controlando la fase excéntrica.",
+        "Mantén la respiración: exhala en el esfuerzo, inhala al volver."
+      ],
+      "file": "upper-back/kettlebell-two-arm-row.gif",
+      "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/upper-back/kettlebell-two-arm-row.gif",
+      "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/upper-back/kettlebell-two-arm-row.thumb.webp"
+    }
+  ]
+}

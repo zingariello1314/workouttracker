@@ -1,0 +1,19 @@
+{
+  "id": "calves/calf-push-stretch-with-hands-against-wall",
+  "slug": "calf-push-stretch-with-hands-against-wall",
+  "name": "Estiramiento de gemelo con manos en la pared",
+  "muscle": "calves",
+  "bodyPart": "legs",
+  "equipment": "bodyweight",
+  "category": "stretching",
+  "secondaryMuscles": [],
+  "instructions": [
+    "Adopta la postura inicial con buena alineación corporal.",
+    "Lleva el cuerpo a la posición de estiramiento de los gemelos.",
+    "Mantén entre 20 y 40 segundos respirando de forma profunda.",
+    "Vuelve a la posición inicial lentamente y repite si lo deseas."
+  ],
+  "file": "calves/calf-push-stretch-with-hands-against-wall.gif",
+  "gifUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/calves/calf-push-stretch-with-hands-against-wall.gif",
+  "thumbUrl": "https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/calves/calf-push-stretch-with-hands-against-wall.thumb.webp"
+}
