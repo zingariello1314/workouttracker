@@ -13,6 +13,7 @@ import {
   collectExerciseKeysForWorkoutExercise
 } from '../../../../utils/exerciseKeyGenerator';
 import { resolvePrescriptionAutofillValue } from '../../../../utils/exerciseCalculations';
+import { getPlannedTotalFromPrescription } from '../../../../utils/programPrescriptionNormalizer';
 import { getDateStr } from '../../../../utils/dateUtils';
 import { resolveExercisePyramidPattern } from '../../../../services/trainingPatterns/resolveExercisePyramidPattern';
 import { appendPyramidSessionLogEntry } from '../../../../services/trainingPatterns/pyramidSessionLog';
@@ -125,15 +126,13 @@ export const useExerciseTracking = (options = {}) => {
 
         let repsVal = '';
         if (seriesSource) {
-          const autoReps = resolvePrescriptionAutofillValue(
-            { ...exercise, series: seriesSource },
-            { round: true }
-          );
-          if (autoReps !== null) repsVal = autoReps.toString();
-        }
-        if (!repsVal) {
-          const prev = pickStoredState(currentData, keys);
-          repsVal = prev.reps || '';
+          const merged = { ...exercise, series: seriesSource };
+          const planned = getPlannedTotalFromPrescription(merged);
+          if (planned != null) repsVal = String(planned);
+          else {
+            const autoReps = resolvePrescriptionAutofillValue(merged, { round: true });
+            if (autoReps !== null) repsVal = autoReps.toString();
+          }
         }
 
         nextChk[primaryKey] = true;

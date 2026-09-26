@@ -2,6 +2,7 @@ import React, { memo, useCallback, useMemo } from 'react';
 import useMuscleGroups from '../../../hooks/useMuscleGroups';
 import useWeeklyMissions from '../../../hooks/useWeeklyMissions';
 import { useWorkout } from '../../../context/WorkoutContext';
+import { useSessionDraftVersion } from '../../../context/WorkoutContext/sessionDraftStore';
 import { getTodayWorkoutsFromData } from '../../../context/WorkoutContext/utils/workoutHistoryUtils';
 import { getDateStr, getAutoWeekVariant } from '../../../utils/dateUtils';
 import '../../../styles/sidebar-visual-enhancements.css';
@@ -32,10 +33,9 @@ const DailyTrainingModule = memo(({
     getCurrentData,
     updateTempExerciseData,
     workoutDayOverride,
-    isGymMode,
-    tempData
+    isGymMode
   } = useWorkout();
-  // tempData en dépendance pour réactivité : coche dans Sport > Aujourd'hui se reflète ici (et inversement)
+  const sessionDraftVersion = useSessionDraftVersion();
 
   const currentDate = new Date();
   const dateStr = getDateStr(currentDate);
@@ -164,7 +164,7 @@ const DailyTrainingModule = memo(({
     } catch (_) {
       return 0;
     }
-  }, [getCurrentData, data?.sport, tempData]);
+  }, [getCurrentData, data?.sport, sessionDraftVersion]);
 
   // Objectifs du jour : pas et calories (Garmin/sidebar), séances (workout data)
   const dailyObjectives = useMemo(() => {

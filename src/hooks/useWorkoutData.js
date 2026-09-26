@@ -1259,7 +1259,7 @@ export const useWorkoutData = (options = {}) => {
   };
 
   const updateData = async (newData, options = {}) => {
-    const { strict = false, sessionDay = null } = options;
+    const { strict = false, sessionDay = null, skipReact = false } = options;
     const resolved = typeof newData === 'function' ? newData(dataRef.current) : newData;
     workoutDataLog.debug('🔄 updateData appelé avec:', resolved);
     let toStore = resolved;
@@ -1282,7 +1282,9 @@ export const useWorkoutData = (options = {}) => {
       }
       suppressAutoSaveUntilRef.current = Date.now() + 3000;
     }
-    setData(toStore);
+    if (!skipReact) {
+      setData(toStore);
+    }
     dataRef.current = toStore;
 
     try {

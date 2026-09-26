@@ -181,7 +181,7 @@ const StretchDetailPage = ({
   );
 
   return (
-    <div className="max-w-6xl mx-auto space-y-6 pb-10">
+    <div className="max-w-[1600px] mx-auto px-2 sm:px-4 space-y-6 pb-10">
       <div className="flex flex-wrap items-start gap-4">
         <Button
           type="button"
@@ -203,7 +203,7 @@ const StretchDetailPage = ({
         </div>
       </div>
 
-      <div className="lg:grid lg:grid-cols-[minmax(0,1fr)_min(100%,364px)] lg:gap-x-8 lg:items-start">
+      <div className="lg:grid lg:grid-cols-[minmax(0,1fr)_min(100%,440px)] xl:grid-cols-[minmax(0,1fr)_min(100%,480px)] lg:gap-x-10 lg:items-start">
         <div className="space-y-5 min-w-0">
           <Card variant="sport" className={`${SPORT_BORDER} overflow-hidden`}>
             <CardHeader className="pb-2 border-b border-[#0F4C5C]/35">

@@ -188,27 +188,69 @@ export const extractExerciseIdFromWorkoutKey = (key) => {
  * Dernière valeur de poids enregistrée pour un id d’exercice (toutes dates),
  * pour préremplir la saisie du jour (clés du type YYYY-MM-DD_id[_semaineA|B]).
  */
+function considerLatestWeight(datePart, raw, state) {
+  if (raw === undefined || raw === null || String(raw).trim() === '') return;
+  const val = String(raw).trim().replace(',', '.');
+  const n = parseFloat(val);
+  if (!Number.isFinite(n) || n <= 0) return;
+  if (datePart >= state.bestDate) {
+    state.bestDate = datePart;
+    state.bestVal = val;
+  }
+}
+
 export const findLatestExerciseWeightValue = (currentData, exerciseIds) => {
-  const weights = currentData?.exerciseWeights;
-  if (!weights || typeof weights !== 'object') return '';
   const ids = [...new Set((exerciseIds || []).filter((x) => x != null).map(String))];
   if (!ids.length) return '';
-  let bestDate = '';
-  let bestVal = '';
-  for (const [key, raw] of Object.entries(weights)) {
-    if (raw === undefined || raw === null || String(raw).trim() === '') continue;
-    const datePart = key.slice(0, 10);
-    if (!/^\d{4}-\d{2}-\d{2}$/.test(datePart)) continue;
-    const rest = key.slice(11);
-    if (!rest) continue;
-    const matchedId = ids.find((id) => rest === id || rest.startsWith(`${id}_`));
-    if (!matchedId) continue;
-    if (datePart >= bestDate) {
-      bestDate = datePart;
-      bestVal = String(raw).trim().replace(',', '.');
+  const idSet = new Set(ids);
+  const state = { bestDate: '', bestVal: '' };
+
+  const dateIfMatch = (key) => {
+    const datePart = String(key || '').slice(0, 10);
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(datePart)) return '';
+    const idFromKey = extractExerciseIdFromWorkoutKey(key);
+    return idSet.has(idFromKey) ? datePart : '';
+  };
+
+  const weights = currentData?.exerciseWeights;
+  if (weights && typeof weights === 'object') {
+    for (const [key, raw] of Object.entries(weights)) {
+      const datePart = dateIfMatch(key);
+      if (datePart) considerLatestWeight(datePart, raw, state);
     }
   }
-  return bestVal;
+
+  const setW = currentData?.exerciseSetWeights;
+  if (setW && typeof setW === 'object') {
+    for (const [key, row] of Object.entries(setW)) {
+      const datePart = dateIfMatch(key);
+      if (!datePart || !Array.isArray(row)) continue;
+      for (let i = row.length - 1; i >= 0; i -= 1) {
+        if (row[i] != null && String(row[i]).trim() !== '') {
+          considerLatestWeight(datePart, row[i], state);
+          break;
+        }
+      }
+    }
+  }
+
+  const logs = currentData?.exerciseSetLogs;
+  if (logs && typeof logs === 'object') {
+    for (const [key, log] of Object.entries(logs)) {
+      const datePart = dateIfMatch(key);
+      if (!datePart) continue;
+      const sets = Array.isArray(log?.sets) ? log.sets : [];
+      for (let i = sets.length - 1; i >= 0; i -= 1) {
+        const w = sets[i]?.weight;
+        if (w != null && Number(w) > 0) {
+          considerLatestWeight(datePart, w, state);
+          break;
+        }
+      }
+    }
+  }
+
+  return state.bestVal;
 };
 
 /**

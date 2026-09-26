@@ -9,7 +9,7 @@ import {
   getPlannedTotalFromPrescription
 } from '../programPrescriptionNormalizer';
 import { normalizeExerciseSetLog } from '../exerciseSetLogUtils';
-import { extractExerciseIdFromWorkoutKey } from '../exerciseKeyGenerator';
+import { extractExerciseIdFromWorkoutKey, findLatestExerciseWeightValue } from '../exerciseKeyGenerator';
 
 export const SET_INFERENCE_METHOD = {
   PRESCRIPTION: 'prescription',
@@ -385,7 +385,17 @@ export function resolveSetWeightsForLog(workoutData, storageKey, setCount, perAr
     };
   }
 
-  if (singleW != null) {
+  const historicalW =
+    singleW != null
+      ? singleW
+      : parseWeightCell(
+          findLatestExerciseWeightValue(workoutData, [
+            storageKey ? exerciseIdFromStorageKey(storageKey) : null
+          ])
+        );
+
+  if (historicalW != null) {
+    const seedW = historicalW;
     const exId = storageKey ? exerciseIdFromStorageKey(storageKey) : null;
     if (exId && workoutData) {
       const history = collectHistoricalWeightProfiles(workoutData, exId, {
@@ -395,7 +405,7 @@ export function resolveSetWeightsForLog(workoutData, storageKey, setCount, perAr
       if (history.profiles.length >= MIN_HABIT_SESSIONS) {
         const median = medianWeightProfile(history.profiles);
         if (median && weightProfileHasVariation(median)) {
-          const scaled = scaleWeightProfileToAverage(median, singleW);
+          const scaled = scaleWeightProfileToAverage(median, seedW);
           return {
             weights: scaled,
             weightInference: {
@@ -409,7 +419,7 @@ export function resolveSetWeightsForLog(workoutData, storageKey, setCount, perAr
     }
 
     return {
-      weights: Array.from({ length: n }, () => singleW),
+      weights: Array.from({ length: n }, () => seedW),
       weightInference: {
         mode: WEIGHT_INFERENCE_MODE.REPLICATED,
         confidence: 0.95

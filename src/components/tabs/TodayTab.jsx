@@ -1,6 +1,7 @@
 import React, { useMemo, useState, useEffect, useCallback, useRef } from 'react';
 import { Play, Square, CheckCircle, Clock, Target, Flame, Zap, MessageSquare, Save, X, Award, Plus, Trash2, BarChart3, PenLine, Scale, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useWorkout } from '../../context/WorkoutContext';
+import { useSessionDraftVersion } from '../../context/WorkoutContext/sessionDraftStore';
 import { useToast } from '../../components/ui/Toast';
 import { workoutProgram } from '../../data/workoutProgram';
 import Card, { CardHeader, CardTitle, CardContent } from '../ui/Card';
@@ -26,7 +27,8 @@ import {
   collectExerciseKeysForWorkoutExercise,
   generateSmartExerciseKey,
   resolveBestRepsStorageKey,
-  findLatestExerciseWeightValue
+  findLatestExerciseWeightValue,
+  extractDateStrFromWorkoutKey
 } from '../../utils/exerciseKeyGenerator';
 import { normalizeStretchSlots, countStretchItems, resolveEtirementsForDay } from '../../utils/stretchUtils';
 import { syncStretchLinkedQuests } from '../../utils/questStretchSync';
@@ -207,6 +209,7 @@ function pickExerciseSessionPleasureStars(currentData, keys, primaryKey) {
 }
 
 const TodayTab = () => {
+  useSessionDraftVersion();
   const {
     currentDate,
     setCurrentDate,
@@ -448,44 +451,19 @@ const TodayTab = () => {
 
   // Note: calculateAutoReps est maintenant importé depuis utils/exerciseCalculations
 
-  // Gestionnaire pour l'auto-remplissage au focus/clic
-  const handleInputFocus = (exerciseId, exercise) => {
-    const currentData = getCurrentData();
-    const workoutForDay = getTodayWorkout(currentDate, isGymMode);
-    const keys = collectExerciseKeysForWorkoutExercise(currentDate, exercise, {
-      isGymMode,
-      workoutIsGymMode: workoutForDay?.isGymMode
-    });
-    const readKey = resolveBestRepsStorageKey(currentData, keys) || keys[0];
-    const currentValue = String(currentData.reps?.[readKey] ?? '').trim();
+  const lastWeightIdsForExercise = (exercise, exerciseId) =>
+    [exerciseId, exercise?.id, exercise?.originalId, exercise?.exerciseKey, exercise?.bankKey].filter(
+      (x) => x != null
+    );
 
-    if (!currentValue && exercise.series) {
-      const planned = getPlannedTotalFromPrescription(exercise);
-      const autoReps =
-        planned != null ? planned : resolvePrescriptionAutofillValue(exercise, { round: true });
-      if (autoReps != null) {
-        updateLocalReps(exerciseId, autoReps.toString(), currentDate);
-      }
-    }
-  };
-
-  const handleWeightInputFocus = (exerciseId, exercise) => {
-    const currentData = getCurrentData();
-    const workoutForDay = getTodayWorkout(currentDate, isGymMode);
-    const keys = collectExerciseKeysForWorkoutExercise(currentDate, exercise, {
-      isGymMode,
-      workoutIsGymMode: workoutForDay?.isGymMode
-    });
-    const readKey = resolveBestRepsStorageKey(currentData, keys) || keys[0];
-    const markedWeighted = currentData.exerciseMarkedWeighted?.[readKey] === true;
-    if (!exerciseShowsWeightField(exercise, markedWeighted)) return;
-    const displayed = resolveExerciseWeightDisplay(currentData, keys, readKey).trim();
-    if (displayed) return;
-    const ids = [exerciseId, exercise?.originalId].filter((x) => x != null);
-    const latest = findLatestExerciseWeightValue(currentData, ids);
-    if (latest) {
-      updateLocalExerciseWeight(exerciseId, latest, currentDate);
-    }
+  const plannedRepsForExercise = (exercise) => {
+    if (!exercise?.series) return '';
+    const planned = getPlannedTotalFromPrescription(exercise);
+    if (planned != null) return String(planned);
+    const autoVal = resolvePrescriptionAutofillValue(exercise, { round: true });
+    if (autoVal != null) return String(autoVal);
+    const calc = calculateAutoReps(exercise.series, { round: true });
+    return calc != null ? String(calc) : '';
   };
 
   /** Quêtes « liées sport » : même jour que l’engine, cocher si au moins un exo programme coché, décocher si plus aucun. */
@@ -610,39 +588,17 @@ const TodayTab = () => {
       const perceivedStrip = !shouldCheck
         ? stripSessionPerceivedForKeys(currentData, [fallbackKey])
         : {};
-      updateTempExerciseData({
-        ...currentData,
-        checkedExercises: {
-          ...currentData.checkedExercises,
-          [fallbackKey]: shouldCheck
+      const nextChecked = { ...(currentData.checkedExercises || {}) };
+      if (shouldCheck) nextChecked[fallbackKey] = true;
+      else delete nextChecked[fallbackKey];
+      updateTempExerciseData(
+        {
+          ...currentData,
+          checkedExercises: nextChecked,
+          ...perceivedStrip
         },
-        reps: {
-          ...currentData.reps,
-          [fallbackKey]: shouldCheck ? currentData.reps?.[fallbackKey] || '' : undefined
-        },
-        exerciseWeights: {
-          ...(currentData.exerciseWeights || {}),
-          [fallbackKey]: shouldCheck
-            ? currentData.exerciseWeights?.[fallbackKey] ?? ''
-            : undefined
-        },
-        exerciseWeightPerArm: (() => {
-          const o = { ...(currentData.exerciseWeightPerArm || {}) };
-          if (!shouldCheck) delete o[fallbackKey];
-          return o;
-        })(),
-        exerciseSetWeights: (() => {
-          const o = { ...(currentData.exerciseSetWeights || {}) };
-          if (!shouldCheck) delete o[fallbackKey];
-          return o;
-        })(),
-        exerciseSetLogs: (() => {
-          const o = { ...(currentData.exerciseSetLogs || {}) };
-          if (!shouldCheck) delete o[fallbackKey];
-          return o;
-        })(),
-        ...perceivedStrip
-      });
+        { urgentXp: !shouldCheck }
+      );
       if (!shouldCheck) {
         setExpandedPerceivedIds((prev) => {
           const next = new Set(prev);
@@ -650,7 +606,6 @@ const TodayTab = () => {
           return next;
         });
       }
-      finishOptimistic();
       return;
     }
 
@@ -686,48 +641,27 @@ const TodayTab = () => {
     };
 
     if (!shouldCheck) {
-      const { nextChecked, nextReps, nextWeights, nextPerArm, nextSetW } = stripKeys(
-        currentData.checkedExercises,
-        currentData.reps,
-        currentData.exerciseWeights || {},
-        currentData.exerciseWeightPerArm || {},
-        currentData.exerciseSetWeights || {}
-      );
-      const nextSnapshot = stripExerciseSetLogForKeys(
-        {
-          ...currentData,
-          checkedExercises: nextChecked,
-          reps: nextReps,
-          exerciseWeights: nextWeights,
-          exerciseWeightPerArm: nextPerArm,
-          exerciseSetWeights: nextSetW,
-          ...stripSessionPerceivedForKeys(currentData, keys)
-        },
-        keys
-      );
-      updateTempExerciseData(nextSnapshot);
+      const nextChecked = { ...(currentData.checkedExercises || {}) };
+      keys.forEach((k) => {
+        delete nextChecked[k];
+      });
+      const nextSnapshot = {
+        ...currentData,
+        checkedExercises: nextChecked,
+        ...stripSessionPerceivedForKeys(currentData, keys)
+      };
+      updateTempExerciseData(nextSnapshot, { urgentXp: true });
       queueMicrotask(() => syncSportLinkedQuestsWithProgramSnapshot(date, nextSnapshot));
       setExpandedPerceivedIds((prev) => {
         const next = new Set(prev);
         next.delete(String(exercise.id));
         return next;
       });
-      finishOptimistic();
       return;
     }
 
     if (exercise.series) {
-      const prevKeyForReps = resolveBestRepsStorageKey(currentData, keys);
-      const manualReps =
-        prevKeyForReps && currentData.reps?.[prevKeyForReps] != null
-          ? String(currentData.reps[prevKeyForReps]).trim()
-          : '';
-
-      let repsVal = manualReps;
-      if (!repsVal) {
-        const autoVal = resolvePrescriptionAutofillValue(exercise, { round: true });
-        if (autoVal != null) repsVal = autoVal.toString();
-      }
+      const repsVal = plannedRepsForExercise(exercise);
 
       const { nextChecked, nextReps, nextWeights, nextPerArm, nextSetW } = stripKeys(
         currentData.checkedExercises,
@@ -739,10 +673,14 @@ const TodayTab = () => {
       nextChecked[primaryKey] = true;
       nextReps[primaryKey] = repsVal;
       const prevKeyForWeight = resolveBestRepsStorageKey(currentData, keys);
-      nextWeights[primaryKey] =
-        prevKeyForWeight && currentData.exerciseWeights?.[prevKeyForWeight] != null
-          ? String(currentData.exerciseWeights[prevKeyForWeight])
+      const todayWeight =
+        prevKeyForWeight && extractDateStrFromWorkoutKey(prevKeyForWeight) === dateStr
+          ? String(currentData.exerciseWeights?.[prevKeyForWeight] ?? '').trim()
           : '';
+      nextWeights[primaryKey] =
+        todayWeight ||
+        findLatestExerciseWeightValue(currentData, lastWeightIdsForExercise(exercise, exerciseId)) ||
+        '';
       if (prevKeyForWeight && currentData.exerciseWeightPerArm?.[prevKeyForWeight] === true) {
         nextPerArm[primaryKey] = true;
       }
@@ -783,7 +721,6 @@ const TodayTab = () => {
       );
       updateTempExerciseData(nextSnapshot);
       queueMicrotask(() => syncSportLinkedQuestsWithProgramSnapshot(date, nextSnapshot));
-      finishOptimistic();
       return;
     }
 
@@ -795,13 +732,16 @@ const TodayTab = () => {
       currentData.exerciseSetWeights || {}
     );
     nextChecked[primaryKey] = true;
+    nextReps[primaryKey] = plannedRepsForExercise(exercise);
     const prevKey = resolveBestRepsStorageKey(currentData, keys);
-    nextReps[primaryKey] =
-      prevKey && currentData.reps?.[prevKey] != null ? String(currentData.reps[prevKey]) : '';
-    nextWeights[primaryKey] =
-      prevKey && currentData.exerciseWeights?.[prevKey] != null
-        ? String(currentData.exerciseWeights[prevKey])
+    const todayWeight =
+      prevKey && extractDateStrFromWorkoutKey(prevKey) === dateStr
+        ? String(currentData.exerciseWeights?.[prevKey] ?? '').trim()
         : '';
+    nextWeights[primaryKey] =
+      todayWeight ||
+      findLatestExerciseWeightValue(currentData, lastWeightIdsForExercise(exercise, exerciseId)) ||
+      '';
     if (prevKey && currentData.exerciseWeightPerArm?.[prevKey] === true) {
       nextPerArm[primaryKey] = true;
     }
@@ -830,7 +770,6 @@ const TodayTab = () => {
     );
     updateTempExerciseData(nextSnapshot);
     queueMicrotask(() => syncSportLinkedQuestsWithProgramSnapshot(date, nextSnapshot));
-    finishOptimistic();
   };
 
   const handleExerciseCheck = (exerciseId, date, currentlyChecked) => {
@@ -839,19 +778,7 @@ const TodayTab = () => {
     const shouldCheck = !currently;
     latestCheckIntentRef.current[optKey] = shouldCheck;
     setOptimisticCheckedById((prev) => ({ ...prev, [optKey]: shouldCheck }));
-
-    const run = () => {
-      const intended = latestCheckIntentRef.current[optKey];
-      if (typeof intended !== 'boolean') return;
-      applyExerciseCheck(exerciseId, date, intended);
-    };
-    if (typeof requestAnimationFrame === 'function') {
-      requestAnimationFrame(() => {
-        requestAnimationFrame(run);
-      });
-    } else {
-      setTimeout(run, 0);
-    }
+    applyExerciseCheck(exerciseId, date, shouldCheck);
   };
 
   const updateLocalReps = (exerciseId, reps, date) => {
@@ -889,15 +816,12 @@ const TodayTab = () => {
         })
       : `${dateStr}_${exerciseId}`;
 
-    const nextSetW = { ...(currentData.exerciseSetWeights || {}) };
-    delete nextSetW[key];
     updateTempExerciseData({
       ...currentData,
       exerciseWeights: {
         ...(currentData.exerciseWeights || {}),
         [key]: weightStr
-      },
-      exerciseSetWeights: nextSetW
+      }
     });
   };
 
@@ -1000,6 +924,7 @@ const TodayTab = () => {
     setIsSavingSessionDraft(true);
     try {
       await withSessionSaveTimeout(saveExerciseChanges());
+      setOptimisticCheckedById({});
       collapseAllPerceivedPanels();
       if (hadExercisesDraft && hadStretchesDraft) {
         showSuccess(t('today.messages.sessionSaved'));
@@ -1081,6 +1006,7 @@ const TodayTab = () => {
 
   const handleDiscardExercises = () => {
     discardExerciseChanges();
+    setOptimisticCheckedById({});
     collapseAllPerceivedPanels();
   };
 
@@ -1747,6 +1673,8 @@ const TodayTab = () => {
     );
   }
 
+  const sessionSnapshot = getCurrentData();
+
   return (
     <div className="relative min-h-screen today-sport-shell">
       {/* Contenu avec z-index relatif */}
@@ -2132,7 +2060,7 @@ const TodayTab = () => {
             {/* ✅ NOUVEAU : Exercices du programme (filtrés selon variations) */}
             {exercisesForTodayList.map((exercise) => {
             const isProgramExercise = !exercise.source;
-            const currentData = getCurrentData();
+            const currentData = sessionSnapshot;
             const keys = collectExerciseKeysForWorkoutExercise(currentDate, exercise, {
               isGymMode,
               workoutIsGymMode: workout.isGymMode
@@ -2142,7 +2070,7 @@ const TodayTab = () => {
             const optimisticCheck = optimisticCheckedById[String(exercise.id)];
             const checkboxChecked =
               typeof optimisticCheck === 'boolean' ? optimisticCheck : dataChecked;
-            const isChecked = dataChecked;
+            const isChecked = checkboxChecked;
             const reps =
               currentData.reps?.[readKey] !== undefined && currentData.reps?.[readKey] !== null
                 ? String(currentData.reps[readKey])
@@ -2322,7 +2250,6 @@ const TodayTab = () => {
                           placeholder={inputPlaceholder}
                           value={reps}
                           onChange={(e) => updateLocalReps(exercise.id, e.target.value, currentDate)}
-                          onFocus={() => handleInputFocus(exercise.id, exercise)}
                           className={`w-full text-center ${isChecked ? 'bg-green-600/20 border-green-500 text-green-300' : 'bg-black border-[#0F4C5C]/50 text-white'}`}
                           size="sm"
                         />
@@ -2339,7 +2266,6 @@ const TodayTab = () => {
                           onChange={(e) =>
                             updateLocalExerciseWeight(exercise.id, e.target.value, currentDate)
                           }
-                          onFocus={() => handleWeightInputFocus(exercise.id, exercise)}
                           className={`w-full text-center ${isChecked ? 'bg-green-600/20 border-green-500 text-green-300' : 'bg-black border-[#0F4C5C]/50 text-white'}`}
                           size="sm"
                         />
@@ -2464,7 +2390,7 @@ const TodayTab = () => {
                       onToggle={() => togglePerceivedPanel(exercise.id)}
                       idPrefix={`today-ex-${exercise.id}`}
                       persistedDraft={pickStoredSessionPerceived(
-                        getCurrentData(),
+                        currentData,
                         keys,
                         primaryKeyForStars
                       )}
@@ -2611,7 +2537,7 @@ const TodayTab = () => {
               <div className="flex items-center space-x-2">
                 {(() => {
                   const complementaryId = `complementary_${workout.complementaryActivity.name.toLowerCase()}`;
-                  const complementaryDataChecked = !!getCurrentData().checkedExercises[`${dateStr}_${complementaryId}`];
+                  const complementaryDataChecked = !!sessionSnapshot.checkedExercises?.[`${dateStr}_${complementaryId}`];
                   const complementaryOpt = optimisticCheckedById[complementaryId];
                   const complementaryChecked =
                     typeof complementaryOpt === 'boolean' ? complementaryOpt : complementaryDataChecked;
@@ -2630,7 +2556,7 @@ const TodayTab = () => {
                   <ExerciseTimeInput
                     unit="min"
                     value={
-                      getCurrentData().reps[
+                      sessionSnapshot.reps[
                         `${dateStr}_complementary_${workout.complementaryActivity.name.toLowerCase()}_minutes`
                       ] || ''
                     }

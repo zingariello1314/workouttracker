@@ -15,7 +15,7 @@ import Button from '../../ui/Button';
 import ExerciseTimeInput from '../../ui/ExerciseTimeInput';
 import { useExerciseTracking } from '../hooks/useExerciseTracking';
 import { useWorkout } from '../../../../context/WorkoutContext';
-import { calculateAutoReps, detectExerciseUnit } from '../../../../utils/exerciseCalculations';
+import { detectExerciseUnit } from '../../../../utils/exerciseCalculations';
 import { getDateStr } from '../../../../utils/dateUtils';
 import { formatStepsDash } from '../../../../services/trainingPatterns/pyramidEngine';
 import { resolveExercisePyramidPattern } from '../../../../services/trainingPatterns/resolveExercisePyramidPattern';
@@ -124,23 +124,6 @@ const ExerciseItem = ({ exercise, date, isGymMode, onShowVariations }) => {
         'Reps';
   }, [exerciseUnit]);
 
-  // Handler pour auto-remplissage au focus
-  const handleInputFocus = useCallback(() => {
-    if (reps) return;
-    if (exerciseUnit?.isTimeBased) return;
-
-    let autoReps = null;
-    if (trainingPattern && Number.isFinite(Number(trainingPattern.totalReps))) {
-      autoReps = Math.round(Number(trainingPattern.totalReps));
-    } else if (exercise.series) {
-      autoReps = calculateAutoReps(exercise.series, { round: true });
-    }
-    if (autoReps !== null) {
-      updateReps(exercise, String(autoReps));
-    }
-  }, [exercise, reps, updateReps, exerciseUnit, trainingPattern]);
-
-  // Handler pour toggle
   const handleToggle = useCallback(() => {
     toggleExercise(exercise);
   }, [exercise, toggleExercise]);
@@ -255,7 +238,6 @@ const ExerciseItem = ({ exercise, date, isGymMode, onShowVariations }) => {
                 placeholder={inputPlaceholder}
                 value={reps}
                 onChange={handleRepsChange}
-                onFocus={handleInputFocus}
                 className={`w-20 text-center ${isChecked ? 'bg-green-600/20 border-green-500 text-green-300' : 'bg-slate-800 border-slate-600 text-white'}`}
                 size="sm"
                 aria-label={`Répétitions pour ${exercise.name}`}

@@ -1,32 +1,18 @@
+import presentationBlocks from './tibial-anterieur/presentationBlocks.js';
+import fonctionsBlocks from './tibial-anterieur/fonctionsBlocks.js';
+
 /** @type {{ sections: { id: string, title: string, blocks: object[] }[] }} */
 const tibialAnterieur = {
   sections: [
     {
       id: 'presentation',
-      title: 'Introduction — Face avant de la jambe',
-      blocks: [
-        {
-          type: 'p',
-          text:
-            'Le tibial antérieur occupe l’avant du tibia. C’est le principal dorsiflexeur : ramener le pied vers le tibia (orteils vers le haut). En marche, il contrôle la descente du pied après contact talon.'
-        },
-        {
-          type: 'p',
-          text:
-            'Avec les mollets, il équilibre la cheville : mollets poussent, tibial antérieur freine et stabilise. Déséquilibre avant/arrière peut influencer course, stabilité de cheville et tolérance aux impacts. Le pied (petits muscles) complète stabilité et adaptation au terrain — chaîne pied → cheville → genou → hanche.'
-        }
-      ]
+      title: 'Présentation générale',
+      blocks: presentationBlocks
     },
     {
       id: 'fonctions',
       title: 'Pourquoi ne pas l’oublier',
-      blocks: [
-        {
-          type: 'p',
-          text:
-            'Un pied qui s’affaisse excessivement vers l’intérieur peut influencer le genou ; toutes les douleurs ne viennent pas du pied, mais une jambe « complète » inclut le contrôle dorsiflexeur et l’appui, pas seulement gastrocnémien et quadriceps.'
-        }
-      ]
+      blocks: fonctionsBlocks
     },
     {
       id: 'exercices',

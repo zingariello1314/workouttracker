@@ -3,7 +3,7 @@
  * Améliore la cohérence et l'accessibilité
  */
 
-import React from 'react';
+import React, { useId } from 'react';
 
 const Input = ({
   label,
@@ -47,7 +47,8 @@ const Input = ({
             ? 'border-slate-500/50 focus:border-slate-400 focus:ring-2 focus:ring-slate-500/35 focus:bg-slate-800/40'
             : 'border-emerald-500/50 focus:border-cyan-400 focus:ring-2 focus:ring-emerald-500/50 focus:bg-emerald-500/5';
 
-  const inputId = props.id || `input-${Math.random().toString(36).substring(2, 9)}`;
+  const generatedId = useId();
+  const inputId = props.id || generatedId;
 
   // Gérer l'icône : si c'est un composant React, l'invoquer
   const IconComponent = icon;
@@ -153,7 +154,8 @@ const TextArea = React.forwardRef(({
             ? 'border-slate-500/50 focus:border-slate-400 focus:ring-2 focus:ring-slate-500/35 focus:bg-slate-800/40'
             : 'border-emerald-500/50 focus:border-cyan-400 focus:ring-2 focus:ring-emerald-500/50 focus:bg-emerald-500/5';
 
-  const textAreaId = props.id || `textarea-${Math.random().toString(36).substring(2, 9)}`;
+  const generatedId = useId();
+  const textAreaId = props.id || generatedId;
 
   return (
     <div className={fullWidth ? 'w-full' : ''}>
@@ -231,7 +233,8 @@ const Select = ({
             ? 'border-slate-500/50 focus:border-slate-400 focus:ring-2 focus:ring-slate-500/35 focus:bg-slate-800/40'
             : 'border-emerald-500/50 focus:border-cyan-400 focus:ring-2 focus:ring-emerald-500/50 focus:bg-emerald-500/5';
 
-  const selectId = props.id || `select-${Math.random().toString(36).substring(2, 9)}`;
+  const generatedId = useId();
+  const selectId = props.id || generatedId;
 
   return (
     <div className={fullWidth ? 'w-full' : ''}>

@@ -1,14 +1,12 @@
 import { useMemo } from 'react';
 import { useSportXP } from './useSportXP';
-import { useWorkout } from '../context/WorkoutContext';
 import { masteryScoreFromBreakdown } from '../services/xp/sportMasteryScore';
 import { computeSportActivityAggregates } from '../services/xp/sportActivityAggregates';
 import { resolveSportGrades } from '../services/xp/sportGradeResolution';
 
 export function useSportGrade() {
   const sport = useSportXP();
-  const { getCurrentData } = useWorkout();
-  const workoutData = getCurrentData();
+  const workoutData = sport.workoutSnapshot;
 
   return useMemo(() => {
     const breakdown = sport.breakdown || {};
@@ -34,6 +32,7 @@ export function useSportGrade() {
     sport.progress,
     sport.isLoading,
     sport.isSportXpReady,
+    sport.dailyInsights,
     workoutData
   ]);
 }

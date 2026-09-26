@@ -4,6 +4,11 @@
 
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useWorkout } from '../context/WorkoutContext';
+import {
+  subscribeSessionDraft,
+  getSessionDraftVersion,
+  getSessionDraftXpNotifyDelay
+} from '../context/WorkoutContext/sessionDraftStore';
 import { useGarminData } from './useGarminData';
 import { calculateSportXP, computeNutritionRegisteredFoodSportXp, countNutritionRegisteredFoodItems, SPORT_XP_FORMULA_REVISION } from '../services/xp/xpCalculations';
 import { collectDedupedCheckedVolumeKeys } from '../utils/trainingLoadUtils';
@@ -175,20 +180,32 @@ export const useSportXP = () => {
   }, [currentUser]);
   const {
     data,
-    tempData,
-    hasUnsavedExercises,
-    hasUnsavedStretches,
     getCurrentData,
     programs,
     activeProgram,
     getExerciseNameById,
     isWorkoutDataLoading = false
   } = useWorkout();
+  const [xpDraftVersion, setXpDraftVersion] = useState(0);
+  useEffect(() => {
+    let timeoutId;
+    const unsub = subscribeSessionDraft(() => {
+      window.clearTimeout(timeoutId);
+      const delay = getSessionDraftXpNotifyDelay();
+      timeoutId = window.setTimeout(() => {
+        setXpDraftVersion(getSessionDraftVersion());
+      }, delay);
+    });
+    return () => {
+      window.clearTimeout(timeoutId);
+      unsub();
+    };
+  }, []);
 
-  /** Brouillon cochages / reps : la barre XP doit suivre tout de suite (pas seulement après « Enregistrer »). */
+  /** Brouillon : la barre XP suit avec un léger délai pour ne pas geler la coche. */
   const workoutData = useMemo(
     () => getCurrentData(),
-    [getCurrentData, data, tempData, hasUnsavedExercises, hasUnsavedStretches]
+    [getCurrentData, data, xpDraftVersion]
   );
 
   const programsForCompletionXp = useMemo(() => {
@@ -604,6 +621,7 @@ export const useSportXP = () => {
     breakdown: calculated.breakdown || DEFAULT_BREAKDOWN,
     progress: levelInfo.progress,
     dailyInsights,
+    workoutSnapshot: workoutData,
     isLoading: sportXpBootstrapPending && !warmSportXpDisplay,
     isSportXpReady: !sportXpBootstrapPending
   };

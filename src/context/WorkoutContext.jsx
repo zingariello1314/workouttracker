@@ -267,27 +267,25 @@ const WorkoutProvider = ({ children }) => {
 
   const getCurrentData = getWorkoutDataForSession;
 
-  /** Quitter l’onglet Aujourd’hui : abandonner le brouillon (évite barre Enregistrer fantôme au retour). */
+  /** Quitter l’onglet Aujourd’hui : enregistrer le brouillon en cours. */
   const prevActiveTabRef = useRef(activeTab);
   useEffect(() => {
     const prev = prevActiveTabRef.current;
     if (prev === 'today' && activeTab !== 'today') {
-      discardExerciseChanges();
-      discardStretchChanges();
+      void flushDirtySessionDraft();
     }
     prevActiveTabRef.current = activeTab;
-  }, [activeTab, discardExerciseChanges, discardStretchChanges]);
+  }, [activeTab, flushDirtySessionDraft]);
 
   const prevWorkoutDayOverrideRef = useRef(workoutDayOverride);
   useEffect(() => {
     if (prevWorkoutDayOverrideRef.current !== workoutDayOverride) {
-      discardExerciseChanges();
-      discardStretchChanges();
+      void flushDirtySessionDraft();
       prevWorkoutDayOverrideRef.current = workoutDayOverride;
     }
-  }, [workoutDayOverride, discardExerciseChanges, discardStretchChanges]);
+  }, [workoutDayOverride, flushDirtySessionDraft]);
 
-  /** Change la date calendaire de la séance : abandonne toujours le brouillon (évite blocage navigation). */
+  /** Change la date calendaire de la séance : enregistre d’abord le jour affiché. */
   const changeSessionCalendarDate = useCallback(
     (nextDate) => {
       const normalized = new Date(nextDate);
@@ -296,11 +294,10 @@ const WorkoutProvider = ({ children }) => {
       const nextStr = getDateStr(normalized);
       const prevStr = getDateStr(currentDate);
       if (nextStr === prevStr) return;
-      discardExerciseChanges();
-      discardStretchChanges();
+      void flushDirtySessionDraft();
       setCurrentDate(normalized);
     },
-    [currentDate, discardExerciseChanges, discardStretchChanges]
+    [currentDate, flushDirtySessionDraft]
   );
 
   // ✅ PHASE 4 : Utilisation du hook pour les programmes

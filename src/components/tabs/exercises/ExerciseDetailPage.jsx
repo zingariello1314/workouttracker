@@ -336,7 +336,7 @@ const ExerciseDetailPage = ({
   }, [anatomySecondaryList]);
 
   return (
-    <div className="max-w-6xl mx-auto px-3 pb-16 space-y-6">
+    <div className="max-w-[1600px] mx-auto px-2 sm:px-4 pb-16 space-y-6">
       <div className="flex flex-wrap items-start gap-4 pt-2">
         <Button
           type="button"
@@ -401,7 +401,7 @@ const ExerciseDetailPage = ({
         </div>
       </div>
 
-      <div className="lg:grid lg:grid-cols-[minmax(0,1fr)_min(100%,364px)] lg:gap-x-8 lg:items-start">
+      <div className="lg:grid lg:grid-cols-[minmax(0,1fr)_min(100%,440px)] xl:grid-cols-[minmax(0,1fr)_min(100%,480px)] lg:gap-x-10 lg:items-start">
         <div className="space-y-6 min-w-0">
           <Card variant="sport" className="ring-1 ring-[#0F5C45]/40">
             <CardContent className="space-y-6 bg-black pt-6">

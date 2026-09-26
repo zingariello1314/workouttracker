@@ -34,13 +34,12 @@ export function useExerciseGrades({ sortMode = 'grade', vitalsRefreshKey = 0, en
     getExerciseNameById,
     programs,
     data,
-    tempData,
     hasUnsavedExercises,
     hasUnsavedStretches
   } = useWorkout();
   const workoutData = useMemo(
     () => getCurrentData(),
-    [getCurrentData, data, tempData, hasUnsavedExercises, hasUnsavedStretches]
+    [getCurrentData, data, hasUnsavedExercises, hasUnsavedStretches]
   );
   const programNameIndex = useMemo(
     () => buildExerciseNameIndexFromPrograms(programs),
