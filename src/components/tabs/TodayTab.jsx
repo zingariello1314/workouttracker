@@ -212,6 +212,78 @@ function pickExerciseSessionPleasureStars(currentData, keys, primaryKey) {
   return null;
 }
 
+const optimisticChecks = new Map();
+const optimisticCheckListeners = new Map();
+
+function subscribeOptimisticCheck(exerciseId, listener) {
+  const key = String(exerciseId);
+  let set = optimisticCheckListeners.get(key);
+  if (!set) {
+    set = new Set();
+    optimisticCheckListeners.set(key, set);
+  }
+  set.add(listener);
+  return () => set.delete(listener);
+}
+
+function notifyOptimisticCheck(exerciseId) {
+  const set = optimisticCheckListeners.get(String(exerciseId));
+  if (!set) return;
+  set.forEach((listener) => listener());
+}
+
+function setOptimisticCheck(exerciseId, checked) {
+  optimisticChecks.set(String(exerciseId), !!checked);
+  notifyOptimisticCheck(exerciseId);
+}
+
+function clearOptimisticCheck(exerciseId) {
+  const key = String(exerciseId);
+  if (!optimisticChecks.has(key)) return;
+  optimisticChecks.delete(key);
+  notifyOptimisticCheck(exerciseId);
+}
+
+function useOptimisticCheck(exerciseId) {
+  const key = String(exerciseId);
+  const [value, setValue] = useState(() =>
+    optimisticChecks.has(key) ? optimisticChecks.get(key) : undefined
+  );
+  useEffect(
+    () =>
+      subscribeOptimisticCheck(key, () => {
+        setValue(optimisticChecks.has(key) ? optimisticChecks.get(key) : undefined);
+      }),
+    [key]
+  );
+  return value;
+}
+
+function TodayExerciseCheck({ exerciseId, checked, onToggle, className, name, id }) {
+  const optimistic = useOptimisticCheck(exerciseId);
+  const shown = optimistic === undefined ? !!checked : optimistic;
+  useEffect(() => {
+    if (optimistic !== undefined && optimistic === !!checked) {
+      clearOptimisticCheck(exerciseId);
+    }
+  }, [optimistic, checked, exerciseId]);
+  return (
+    <Checkbox
+      checked={shown}
+      onChange={() => {
+        const key = String(exerciseId);
+        const current = optimisticChecks.has(key) ? optimisticChecks.get(key) : !!checked;
+        const next = !current;
+        setOptimisticCheck(exerciseId, next);
+        onToggle(next);
+      }}
+      className={className}
+      name={name}
+      id={id}
+    />
+  );
+}
+
 function TodaySessionTextField({ value, onCommitSilent, ...inputProps }) {
   const [text, setText] = useState(String(value ?? ''));
   const focusedRef = useRef(false);
@@ -814,10 +886,22 @@ const TodayTab = () => {
     measure.flush();
   };
 
-  const handleExerciseCheck = (exerciseId, date, currentlyChecked) => {
-    const currently = typeof currentlyChecked === 'boolean' ? currentlyChecked : false;
-    const shouldCheck = !currently;
-    applyExerciseCheck(exerciseId, date, shouldCheck);
+  const applyExerciseCheckRef = useRef(applyExerciseCheck);
+  applyExerciseCheckRef.current = applyExerciseCheck;
+
+  const pendingCheckFrameRef = useRef(new Map());
+  const queueExerciseCheck = (exerciseId, date, shouldCheck) => {
+    const key = String(exerciseId);
+    const prev = pendingCheckFrameRef.current.get(key);
+    if (prev) cancelAnimationFrame(prev);
+    const frame = requestAnimationFrame(() => {
+      const afterPaint = requestAnimationFrame(() => {
+        pendingCheckFrameRef.current.delete(key);
+        applyExerciseCheckRef.current(exerciseId, date, shouldCheck);
+      });
+      pendingCheckFrameRef.current.set(key, afterPaint);
+    });
+    pendingCheckFrameRef.current.set(key, frame);
   };
 
   const patchDraftField = (mapKey, storageKey, value) => {
@@ -2171,9 +2255,10 @@ const TodayTab = () => {
                     ) : null}
                   </div>
                   <div className="today-ex-actions">
-                    <Checkbox
+                    <TodayExerciseCheck
+                      exerciseId={exercise.id}
                       checked={checkboxChecked}
-                      onChange={() => handleExerciseCheck(exercise.id, currentDate, checkboxChecked)}
+                      onToggle={(shouldCheck) => queueExerciseCheck(exercise.id, currentDate, shouldCheck)}
                       className="today-ex-check text-green-400"
                       name={`exercise_${exercise.id}`}
                       id={`today-ex-check-${exercise.id}`}
@@ -2567,9 +2652,10 @@ const TodayTab = () => {
                   const complementaryDataChecked = !!sessionSnapshot.checkedExercises?.[`${dateStr}_${complementaryId}`];
                   const complementaryChecked = complementaryDataChecked;
                   return (
-                <Checkbox
+                <TodayExerciseCheck
+                  exerciseId={complementaryId}
                   checked={complementaryChecked}
-                  onChange={() => handleExerciseCheck(complementaryId, currentDate, complementaryChecked)}
+                  onToggle={(shouldCheck) => queueExerciseCheck(complementaryId, currentDate, shouldCheck)}
                   className="text-teal-400"
                   name={complementaryId}
                 />

@@ -83,6 +83,17 @@ function TabSuspenseFallback({ tabId }) {
   return <MomentumTabInlineLoader message="Chargement…" />;
 }
 
+/** Reste monté pendant le chargement du site : ouvrir le calendrier n’a plus à relire ni reconstruire l’année. */
+const CalendarTabHost = memo(function CalendarTabHost() {
+  return (
+    <ErrorBoundary context={{ activeTab: 'calendar' }} title="Erreur dans l'onglet calendar">
+      <Suspense fallback={<TabSuspenseFallback tabId="calendar" />}>
+        <CalendarTab />
+      </Suspense>
+    </ErrorBoundary>
+  );
+});
+
 /** Reste monté après le préchargement : ouvrir Aujourd’hui n’a plus à reconstruire la page. */
 const TodayTabHost = memo(function TodayTabHost() {
   return (
@@ -144,6 +155,7 @@ const WorkoutTrackerContent = () => {
   const [showProfileQuiz, setShowProfileQuiz] = useState(false);
   const [onboardingPromptHandled, setOnboardingPromptHandled] = useState(false);
   const [warmToday, setWarmToday] = useState(false);
+  const [warmCalendar, setWarmCalendar] = useState(false);
 
   // Ne pas rediriger localhost → 127.0.0.1 : ce sont deux origines (IndexedDB / session séparées).
   // Pour Spotify, l’URI de retour OAuth reste 127.0.0.1 (exigence dashboard) ; garde le même hôte pour le reste.
@@ -227,6 +239,7 @@ const WorkoutTrackerContent = () => {
     preloadCoreSportTabs();
     React.startTransition(() => {
       setWarmToday(true);
+      setWarmCalendar(true);
     });
   }, [authLoading]);
 
@@ -299,6 +312,8 @@ const WorkoutTrackerContent = () => {
       case 'recap':
         return <RecapTab />;
       case 'today':
+        return null;
+      case 'calendar':
         return null;
       case 'quests':
         // Onglet QuietQuest – contenu en cours de développement
@@ -498,7 +513,7 @@ const WorkoutTrackerContent = () => {
               <Suspense fallback={<MomentumTabLoadOverlay message="Chargement…" />}>
                 <PricingTab />
               </Suspense>
-            ) : (activeTab !== 'home' && activeTab !== 'dashboard' && activeTab !== 'today') ? (
+            ) : (activeTab !== 'home' && activeTab !== 'dashboard' && activeTab !== 'today' && activeTab !== 'calendar') ? (
               <ErrorBoundary
                 context={{ activeTab }}
                 title={`Erreur dans l'onglet ${activeTab}`}
@@ -539,6 +554,20 @@ const WorkoutTrackerContent = () => {
                   </div>
                 )}
                 <TodayTabHost />
+              </div>
+            )}
+            {(warmCalendar || activeTab === 'calendar') && (
+              <div
+                className="container mx-auto px-4"
+                style={{ display: activeTab === 'calendar' ? undefined : 'none' }}
+                aria-hidden={activeTab !== 'calendar'}
+              >
+                {activeTab === 'calendar' && (
+                  <div className="mb-5 mt-5 scroll-mt-40 pt-1">
+                    <SportXPBar />
+                  </div>
+                )}
+                <CalendarTabHost />
               </div>
             )}
           </main>

@@ -500,6 +500,25 @@ export function peekGarminAllDataCache() {
   return null;
 }
 
+const garminCacheListeners = new Set();
+
+function notifyGarminAllDataCache(data) {
+  garminCacheListeners.forEach((listener) => {
+    try {
+      listener(data);
+    } catch {
+      // ignore subscriber errors
+    }
+  });
+}
+
+export function subscribeGarminAllDataCache(listener) {
+  garminCacheListeners.add(listener);
+  const cached = peekGarminAllDataCache();
+  if (cached) listener(cached);
+  return () => garminCacheListeners.delete(listener);
+}
+
 async function loadAllDataFromStorage(dbReady) {
   if (!dbReady) {
     return EMPTY_ALL_DATA;
@@ -577,6 +596,7 @@ export const loadAllData = async (dbReady) => {
     .then((data) => {
       allDataMemoryCache = data;
       allDataMemoryScope = scope;
+      notifyGarminAllDataCache(data);
       return data;
     })
     .finally(() => {

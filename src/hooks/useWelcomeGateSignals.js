@@ -1,12 +1,18 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { getProfileData } from '../services/profileCard/profileCardStorage';
+import { rememberProfileCardWarm } from '../services/profileCard/profileCardWarmCache';
 import { isLockWallpaperDecoded, preloadImageUrl } from '../utils/lockWallpaperPreload';
+import { isAdminUser } from '../utils/accessControl';
+import { setGarminScope } from '../hooks/garminDataUtils';
 import {
   getCoreSportTabsPreloadProgress,
   markTodayViewPrepared,
   markAnimatedBackgroundPrepared,
+  markCalendarViewPrepared,
   preloadCoreSportTabs,
+  preloadExercisesTab,
+  preloadRemainingTabsIdle,
   subscribeCoreSportTabsPreload
 } from '../utils/preloadTabs';
 
@@ -46,26 +52,22 @@ export function useWelcomeGateSignals({
     getProfileData(currentUser.username)
       .then((data) => {
         if (cancelled) return;
-        const url = data?.avatarUrl;
-        if (!url || typeof url !== 'string') {
+        rememberProfileCardWarm(currentUser.username, data);
+        const urls = [data?.avatarUrl, data?.cardIconUrl].filter(
+          (url) => typeof url === 'string' && url.length > 20
+        );
+        if (!urls.length) {
           setAvatarPartial(1);
           setAvatarReady(true);
           return;
         }
         setAvatarPartial(0.5);
-        preloadImageUrl(url)
-          .then(() => {
-            if (!cancelled) {
-              setAvatarPartial(1);
-              setAvatarReady(true);
-            }
-          })
-          .catch(() => {
-            if (!cancelled) {
-              setAvatarPartial(1);
-              setAvatarReady(true);
-            }
-          });
+        Promise.all(urls.map((url) => preloadImageUrl(url).catch(() => {}))).then(() => {
+          if (!cancelled) {
+            setAvatarPartial(1);
+            setAvatarReady(true);
+          }
+        });
       })
       .catch(() => {
         if (!cancelled) {
@@ -85,13 +87,34 @@ export function useWelcomeGateSignals({
 
   useEffect(() => {
     if (authLoading) return undefined;
-    preloadCoreSportTabs();
+    const scope = !isAuthenticated
+      ? 'guest'
+      : isAdminUser(currentUser)
+        ? 'main'
+        : `user-${currentUser?.id || 'unknown'}`;
+    setGarminScope(scope);
+    const core = preloadCoreSportTabs();
+    const bank = preloadExercisesTab();
+    let cancelled = false;
+    Promise.all([core, bank]).finally(() => {
+      if (!cancelled) preloadRemainingTabsIdle();
+    });
+    import('../hooks/garminDataLoad')
+      .then((mod) => {
+        if (mod.peekGarminAllDataCache()) return undefined;
+        return mod.loadAllData(true);
+      })
+      .catch(() => {});
     const safety = window.setTimeout(() => {
       markTodayViewPrepared();
       markAnimatedBackgroundPrepared();
+      markCalendarViewPrepared();
     }, 12000);
-    return () => window.clearTimeout(safety);
-  }, [authLoading]);
+    return () => {
+      cancelled = true;
+      window.clearTimeout(safety);
+    };
+  }, [authLoading, isAuthenticated, currentUser]);
 
   const homeImagesPartial = useMemo(() => {
     if (!homeImagesLoading) return 1;
@@ -139,10 +162,13 @@ export function useWelcomeGateSignals({
           !homeImagesLoading &&
           sportPreload.ready &&
           sportPreload.todayViewPrepared &&
-          sportPreload.animatedBackgroundPrepared,
+          sportPreload.animatedBackgroundPrepared &&
+          sportPreload.calendarViewPrepared,
         partial:
           !authLoading && !homeImagesLoading
-            ? sportPreload.todayViewPrepared && sportPreload.animatedBackgroundPrepared
+            ? sportPreload.todayViewPrepared &&
+              sportPreload.animatedBackgroundPrepared &&
+              sportPreload.calendarViewPrepared
               ? 1
               : Math.max(sportPreload.partial, 0.35)
             : Math.max(homeImagesPartial, lockWallpaperPartial)

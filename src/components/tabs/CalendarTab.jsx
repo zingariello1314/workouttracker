@@ -4,7 +4,7 @@ import { useWorkout } from '../../context/WorkoutContext';
 import { useAuth } from '../../context/AuthContext';
 import { useWorkoutStats } from '../../hooks/useWorkoutStats';
 import { useGarminData } from '../../hooks/useGarminData';
-import { peekGarminAllDataCache } from '../../hooks/garminDataLoad';
+import { peekGarminAllDataCache, subscribeGarminAllDataCache } from '../../hooks/garminDataLoad';
 import CalendarHeatmap from '../CalendarHeatmap';
 import Card, { CardHeader, CardTitle, CardContent } from '../ui/Card';
 import { getDateStr, addCalendarDays } from '../../utils/dateUtils';
@@ -85,12 +85,16 @@ const CalendarTab = () => {
   const garminPeek = peekGarminAllDataCache();
   const [garminData, setGarminData] = useState(garminPeek);
   const [garminDataLoaded, setGarminDataLoaded] = useState(() => garminPeek != null);
-  
+
   useEffect(() => {
-    if (!dbReady) {
-      if (!peekGarminAllDataCache()) setGarminDataLoaded(false);
-      return;
-    }
+    return subscribeGarminAllDataCache((data) => {
+      setGarminData(data);
+      setGarminDataLoaded(true);
+    });
+  }, []);
+
+  useEffect(() => {
+    if (!dbReady) return undefined;
     let cancelled = false;
     const cached = peekGarminAllDataCache();
     if (cached) {

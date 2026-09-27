@@ -17,6 +17,7 @@ import { useAuth } from '../context/AuthContext';
 import { isAdminUser } from '../utils/accessControl';
 import { useToast } from './ui/Toast';
 import { getDateStr, getDayName } from '../utils/dateUtils';
+import { markCalendarViewPrepared } from '../utils/preloadTabs';
 import {
   calendarExerciseRecordElementId,
   calendarEnduranceHistoryElementId,
@@ -2621,6 +2622,7 @@ const CalendarHeatmap = ({
     const cached = readYearPackSessionCache(probe);
     if (cached) {
       setYearPack(cached);
+      if (variant === 'sport' && cached.months?.length >= 12) markCalendarViewPrepared();
       return undefined;
     }
 
@@ -2636,6 +2638,7 @@ const CalendarHeatmap = ({
       const pack = { months, yearStats: accumulateYearStats(months) };
       writeYearPackSessionCache(probe, pack);
       setYearPack(pack);
+      if (variant === 'sport') markCalendarViewPrepared();
     });
     return () => {
       cancelled = true;

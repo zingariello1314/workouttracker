@@ -14,6 +14,7 @@ import {
   saveRotationSettings,
   rotateToNextImage
 } from '../services/profileCard/profileCardStorage';
+import { readProfileCardWarm } from '../services/profileCard/profileCardWarmCache';
 import logger from '../utils/logger';
 
 const profileCardHookLog = logger.module('useProfileCard');
@@ -24,17 +25,18 @@ const profileCardHookLog = logger.module('useProfileCard');
  * @returns {Object} État et fonctions du profil
  */
 export const useProfileCard = (username = 'guest') => {
+  const warm = readProfileCardWarm(username);
   const [profileData, setProfileData] = useState({
-    avatarUrl: null,
-    avatars: [],
-    activeAvatarIndex: 0,
-    handle: username,
+    avatarUrl: warm?.avatarUrl || null,
+    avatars: warm?.avatars || [],
+    activeAvatarIndex: warm?.activeAvatarIndex ?? 0,
+    handle: warm?.handle || username,
     title: 'Utilisateur',
     status: 'En ligne',
-    cardIconUrl: null,
-    cardIcons: [],
-    activeCardIconIndex: 0,
-    isLoading: true
+    cardIconUrl: warm?.cardIconUrl || null,
+    cardIcons: warm?.cardIcons || [],
+    activeCardIconIndex: warm?.activeCardIconIndex ?? 0,
+    isLoading: !(warm?.avatarUrl || warm?.cardIconUrl)
   });
 
   const [rotationSettings, setRotationSettings] = useState({
@@ -63,7 +65,10 @@ export const useProfileCard = (username = 'guest') => {
    */
   const loadProfileData = useCallback(async () => {
     try {
-      setProfileData(prev => ({ ...prev, isLoading: true }));
+      setProfileData(prev => ({
+        ...prev,
+        isLoading: !(prev.avatarUrl || prev.cardIconUrl)
+      }));
 
       const data = await getProfileData(username);
       const title = getUserTitle(username);
