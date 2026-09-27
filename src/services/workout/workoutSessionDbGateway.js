@@ -284,6 +284,9 @@ export async function migrateLegacySessionsFromAggregate(scopeKey, aggregateRow)
 
     if (!hasMaps && !hasVar && !hasCircuit) continue;
 
+    const existing = await getWorkoutSessionDay(scopeKey, dateStr);
+    if (existing) continue;
+
     await putWorkoutSessionDay(scopeKey, dateStr, slice);
 
     written += 1;

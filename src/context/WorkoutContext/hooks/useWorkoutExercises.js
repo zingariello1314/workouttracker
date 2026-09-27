@@ -393,10 +393,31 @@ export const useWorkoutExercises = (
     return draft;
   }, []);
 
+  const writeExerciseDraftCell = useCallback((mapKey, storageKey, value) => {
+    if (!storageKey) return;
+    const persisted = persistMapsRef.current || {};
+    if (!tempDataRef.current || !dirtyFlagsRef.current.exercises) {
+      tempDataRef.current = { ...(tempDataRef.current || persisted) };
+    }
+    const draft = tempDataRef.current;
+    let map = draft[mapKey];
+    if (!map || typeof map !== 'object' || Array.isArray(map) || map === persisted[mapKey]) {
+      const source =
+        map && typeof map === 'object' && !Array.isArray(map) ? map : persisted[mapKey];
+      map = { ...(source && typeof source === 'object' && !Array.isArray(source) ? source : {}) };
+      draft[mapKey] = map;
+    }
+    if (String(map[storageKey] ?? '') === String(value ?? '')) return;
+    map[storageKey] = value;
+    dirtyFlagsRef.current = { ...dirtyFlagsRef.current, exercises: true };
+    setSessionCommitDirty({ exercises: true });
+  }, []);
+
   const patchSessionExerciseDraft = useCallback(
     (mutator, options = {}) => {
       const draft = ensureMutableExerciseDraft();
-      mutator(draft);
+      const changed = mutator(draft);
+      if (changed === false) return draft;
       dirtyFlagsRef.current = { ...dirtyFlagsRef.current, exercises: true };
       setSessionCommitDirty({ exercises: true });
       if (options.exerciseId != null && options.exerciseId !== '') {
@@ -550,6 +571,7 @@ export const useWorkoutExercises = (
     replaceDraftWorkoutData,
     updateTempExerciseData,
     patchSessionExerciseDraft,
+    writeExerciseDraftCell,
     updateTempStretchData,
     saveExerciseChanges,
     discardExerciseChanges,

@@ -82,7 +82,7 @@ export const normalizeCircuitDefinition = (input = {}) => {
     name: (typeof input.name === 'string' ? input.name : '').trim().slice(0, 80) || 'Circuit',
     targetRounds,
     restBetweenRoundsSec,
-    notes: typeof input.notes === 'string' ? input.notes.slice(0, 500) : '',
+    notes: typeof input.notes === 'string' ? input.notes.slice(0, 8000) : '',
     primaryMuscles,
     items,
     createdAt: input.createdAt || new Date().toISOString(),

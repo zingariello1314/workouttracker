@@ -3,7 +3,7 @@ import { useWorkout } from '../../context/WorkoutContext';
 import { useTranslation } from '../../utils/translations';
 import { useAuth } from '../../context/AuthContext';
 import { canAccessTab } from '../../utils/accessMatrix';
-import { preloadCoreSportTabs } from '../../utils/preloadTabs';
+import { preloadCoreSportTabs, preloadExercisesTab } from '../../utils/preloadTabs';
 import { loadAllData, peekGarminAllDataCache } from '../../hooks/garminDataLoad';
 
 function warmCalendarGarmin() {
@@ -50,6 +50,10 @@ const Navigation = () => {
   useEffect(() => {
     if (!sportSubTabs.includes(activeTab)) return;
     warmCalendarGarmin();
+    const id = window.setTimeout(() => {
+      preloadExercisesTab();
+    }, 250);
+    return () => window.clearTimeout(id);
   }, [activeTab, sportSubTabs]);
 
   const codeTabs = useMemo(
@@ -157,7 +161,10 @@ const Navigation = () => {
             <button
               key={tab.id}
               onMouseEnter={() => {
-                if (tab.id === 'sport') preloadCoreSportTabs();
+                if (tab.id === 'sport') {
+                  preloadCoreSportTabs();
+                  preloadExercisesTab();
+                }
               }}
               onClick={() => handleClick(tab.id)}
               role="tab"
@@ -185,6 +192,7 @@ const Navigation = () => {
               <button
                 key={tab.id}
                 onMouseEnter={() => {
+                  if (tab.id === 'exercises') preloadExercisesTab();
                   if (tab.id === 'recap' || tab.id === 'today' || tab.id === 'calendar') {
                     preloadCoreSportTabs();
                   }

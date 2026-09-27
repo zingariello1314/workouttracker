@@ -23,6 +23,10 @@ export const CATALOG_QUADRICEPS = [
   scoringEntry('Leg extension', 'reps', 2, 0.75, { muscleGroup: 'Quadriceps' }),
   scoringEntry('Leg press unilatérale', 'reps', 4, 1.15, { muscleGroup: 'Quadriceps' }),
   scoringEntry('Pistol squat', 'reps', 7, 1.8, { muscleGroup: 'Quadriceps' }),
+  scoringEntry('Pistol squat haltère', 'reps', 5, 1.4, {
+    muscleGroup: 'Quadriceps',
+    aliases: ['dumbbell pistol', 'pistol haltère']
+  }),
   scoringEntry('Presse à cuisses', 'reps', 3, 1.0, {
     muscleGroup: 'Quadriceps',
     aliases: ['leg press']
@@ -258,6 +262,10 @@ export const CATALOG_ISCHIO = [
 
 export const CATALOG_MOLLETS = [
   scoringEntry('Mollets debout', 'reps', 1, 0.6, { muscleGroup: 'Mollets' }),
+  scoringEntry('Mollets Smith sur step', 'reps', 2, 0.7, {
+    muscleGroup: 'Mollets',
+    aliases: ['smith calf raise', 'mollets debout smith']
+  }),
   scoringEntry('Mollets assis', 'reps', 1, 0.6, { muscleGroup: 'Mollets' }),
   scoringEntry('Mollets à la presse', 'reps', 2, 0.7, { muscleGroup: 'Mollets' }),
   scoringEntry('Mollets unilatéraux', 'reps', 3, 0.9, { muscleGroup: 'Mollets' }),
@@ -311,6 +319,14 @@ export const CATALOG_FESSIERS = [
   }),
   scoringEntry('Glute bridge unilatéral', 'reps', 3, 0.9, { muscleGroup: 'Fessiers' }),
   scoringEntry('Hip thrust', 'reps', 2, 0.85, { muscleGroup: 'Fessiers' }),
+  scoringEntry('Hip thrust Smith', 'reps', 3, 0.95, {
+    muscleGroup: 'Fessiers',
+    aliases: ['smith hip thrust', 'hip thrust smith']
+  }),
+  scoringEntry('Hip thrust pieds au mur', 'reps', 2, 0.75, {
+    muscleGroup: 'Fessiers',
+    aliases: ['wall hip thrust', 'hip thrust pieds contre le mur']
+  }),
   scoringEntry('Hip thrust unilatéral', 'reps', 4, 1.05, { muscleGroup: 'Fessiers' }),
   scoringEntry('Kettlebell swings', 'reps', 3, 1.0, { muscleGroup: 'Fessiers' }),
   scoringEntry('Monster walk', 'reps', 2, 0.55, { muscleGroup: 'Fessiers' }),

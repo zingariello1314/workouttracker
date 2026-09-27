@@ -1,4 +1,4 @@
-import React, { useState, useEffect, lazy, Suspense } from 'react';
+import React, { useState, useEffect, lazy, Suspense, memo } from 'react';
 import { WorkoutProvider } from './context/WorkoutContext';
 import { AuthProvider } from './context/AuthContext';
 import { QuietQuestProvider } from './hooks/useQuietQuestEngine';
@@ -83,6 +83,17 @@ function TabSuspenseFallback({ tabId }) {
   return <MomentumTabInlineLoader message="Chargement…" />;
 }
 
+/** Reste monté après le préchargement : ouvrir Aujourd’hui n’a plus à reconstruire la page. */
+const TodayTabHost = memo(function TodayTabHost() {
+  return (
+    <ErrorBoundary context={{ activeTab: 'today' }} title="Erreur dans l'onglet today">
+      <Suspense fallback={<TabSuspenseFallback tabId="today" />}>
+        <TodayTab />
+      </Suspense>
+    </ErrorBoundary>
+  );
+});
+
 const WorkoutTrackerApp = () => {
   return (
     <LanguageProvider>
@@ -132,6 +143,7 @@ const WorkoutTrackerContent = () => {
   const isAdmin = isAdminUser(currentUser);
   const [showProfileQuiz, setShowProfileQuiz] = useState(false);
   const [onboardingPromptHandled, setOnboardingPromptHandled] = useState(false);
+  const [warmToday, setWarmToday] = useState(false);
 
   // Ne pas rediriger localhost → 127.0.0.1 : ce sont deux origines (IndexedDB / session séparées).
   // Pour Spotify, l’URI de retour OAuth reste 127.0.0.1 (exigence dashboard) ; garde le même hôte pour le reste.
@@ -213,6 +225,9 @@ const WorkoutTrackerContent = () => {
   React.useEffect(() => {
     if (authLoading) return;
     preloadCoreSportTabs();
+    React.startTransition(() => {
+      setWarmToday(true);
+    });
   }, [authLoading]);
 
   // ✅ Charger les données Garmin pour les calories
@@ -284,7 +299,7 @@ const WorkoutTrackerContent = () => {
       case 'recap':
         return <RecapTab />;
       case 'today':
-        return <TodayTab />;
+        return null;
       case 'quests':
         // Onglet QuietQuest – contenu en cours de développement
         return <QuestsTab />;
@@ -409,32 +424,38 @@ const WorkoutTrackerContent = () => {
       {/* Filtre SVG pour l'effet liquid glass - UNE SEULE FOIS dans l'app */}
       <GlassFilter />
       
-      {/* Fond animé global - TOUJOURS monté pour éviter le rechargement */}
-      {/* Le fond est en position fixed donc il persiste entre les changements d'onglets */}
-      {/* IMPORTANT: Ne JAMAIS démonter ce composant pour éviter le rechargement du Canvas Three.js */}
-      {/* Pour dashboard, l'opacité est gérée par scrollProgress (0 = masqué, >0.25 = visible progressivement) */}
-      <div 
-        style={{ 
-          opacity: activeTab === 'dashboard' 
-            ? (dashboardScrollProgress < 0.25 
-                ? 0 
-                : dashboardScrollProgress < 0.5 
+      {/* Le shader tourne dès le premier rendu (chargement initial), même sur l'accueil.
+          Sur accueil / auth / pricing un voile opaque le masque sans l'arrêter. */}
+      <div
+        style={{
+          opacity: activeTab === 'dashboard'
+            ? (dashboardScrollProgress < 0.25
+                ? 0
+                : dashboardScrollProgress < 0.5
                   ? (dashboardScrollProgress - 0.25) / 0.25
                   : 1)
-            : showAnimatedBackground 
-              ? 1 
-              : 0,
-          transition: 'opacity 0.2s ease-out',
+            : 1,
+          transition: activeTab === 'dashboard' ? 'opacity 0.2s ease-out' : 'none',
           pointerEvents: 'none',
           position: 'fixed',
           inset: 0,
           zIndex: -1,
-          // Toujours monté, même si opacity est 0
+          transform: 'translateZ(0)',
           display: 'block'
         }}
       >
         <AnimatedBackground />
       </div>
+      {!showAnimatedBackground && (
+        <div
+          className="fixed inset-0"
+          style={{
+            zIndex: -1,
+            pointerEvents: 'none',
+            background: 'linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #0f172a 100%)'
+          }}
+        />
+      )}
 
       {/* Fond de fallback - couleur de base du shader animé (vert foncé) pour transition fluide */}
       {/* Ce fond évite le flash blanc pendant le chargement du Canvas Three.js */}
@@ -477,7 +498,7 @@ const WorkoutTrackerContent = () => {
               <Suspense fallback={<MomentumTabLoadOverlay message="Chargement…" />}>
                 <PricingTab />
               </Suspense>
-            ) : (activeTab !== 'home' && activeTab !== 'dashboard') ? (
+            ) : (activeTab !== 'home' && activeTab !== 'dashboard' && activeTab !== 'today') ? (
               <ErrorBoundary
                 context={{ activeTab }}
                 title={`Erreur dans l'onglet ${activeTab}`}
@@ -506,6 +527,20 @@ const WorkoutTrackerContent = () => {
                 </Suspense>
               </ErrorBoundary>
             ) : null}
+            {(warmToday || activeTab === 'today') && (
+              <div
+                className="container mx-auto px-4"
+                style={{ display: activeTab === 'today' ? undefined : 'none' }}
+                aria-hidden={activeTab !== 'today'}
+              >
+                {activeTab === 'today' && (
+                  <div className="today-sport-shell today-xp-wrap mb-5 mt-5 scroll-mt-40 pt-1">
+                    <SportXPBar />
+                  </div>
+                )}
+                <TodayTabHost />
+              </div>
+            )}
           </main>
         </div>
 

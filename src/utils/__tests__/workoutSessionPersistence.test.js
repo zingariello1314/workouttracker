@@ -42,6 +42,27 @@ describe('workoutSessionPersistence', () => {
     expect(merged.checkedExercises['2026-06-05_1']).toBe(true);
   });
 
+  it('une ligne séance remplace le jour et laisse les autres dates', () => {
+    const base = {
+      reps: { '2026-06-05_1': '10', '2026-06-04_2': '8' },
+      checkedExercises: { '2026-06-05_1': true, '2026-06-04_2': true },
+    };
+    const merged = mergeSessionDaysIntoAggregate(base, [
+      {
+        dateStr: '2026-06-05',
+        mapFields: {
+          reps: { '2026-06-05_9': '3' },
+          checkedExercises: {},
+        },
+      },
+    ]);
+    expect(merged.reps['2026-06-05_1']).toBeUndefined();
+    expect(merged.reps['2026-06-05_9']).toBe('3');
+    expect(merged.reps['2026-06-04_2']).toBe('8');
+    expect(merged.checkedExercises['2026-06-05_1']).toBeUndefined();
+    expect(merged.checkedExercises['2026-06-04_2']).toBe(true);
+  });
+
   it('listLegacySessionDatesInAggregate détecte les dates', () => {
     const dates = listLegacySessionDatesInAggregate({
       reps: { '2026-01-01_1': 1, '2026-01-02_2': 2 },

@@ -140,7 +140,7 @@ export default function SportBankExerciseCard({
           open();
         }
       }}
-      className="group text-left rounded-xl border-2 border-[#0F4C5C]/85 bg-black shadow-lg shadow-black/40 hover:border-[#0F5C45]/80 hover:shadow-[0_0_24px_-8px_rgba(15,92,69,0.45)] transition-all duration-200 p-4 grid h-full min-h-[32rem] cursor-pointer focus:outline-none focus:ring-2 focus:ring-[#0F5C45]/45
+      className="group text-left rounded-xl border-2 border-[#0F4C5C]/85 bg-black shadow-lg shadow-black/40 hover:border-[#0F5C45]/80 hover:shadow-[0_0_24px_-8px_rgba(15,92,69,0.45)] transition-all duration-200 p-4 grid h-full min-h-[32rem] cursor-pointer focus:outline-none focus:ring-2 focus:ring-[#0F5C45]/45 [content-visibility:auto] [contain-intrinsic-size:auto_32rem]
         grid-rows-[auto_auto_auto_300px_auto_auto_minmax(3.5rem,1fr)_auto]
         gap-3"
     >

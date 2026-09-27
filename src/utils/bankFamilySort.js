@@ -162,11 +162,14 @@ export function getExerciseFamilyLabel(exercise) {
   return 'Autres exercices';
 }
 
-export function sortExercisesByMuscleName(items) {
+export function sortExercisesByMuscleName(items, hasGif) {
   const list = Array.isArray(items) ? [...items] : [];
+  const gifRank = (exercise) => (typeof hasGif === 'function' && !hasGif(exercise) ? 1 : 0);
   list.sort((a, b) => {
     const catCmp = getExerciseMuscleCategory(a).localeCompare(getExerciseMuscleCategory(b), 'fr');
     if (catCmp !== 0) return catCmp;
+    const mediaCmp = gifRank(a) - gifRank(b);
+    if (mediaCmp !== 0) return mediaCmp;
     return String(a?.name || '').localeCompare(String(b?.name || ''), 'fr');
   });
   return list;

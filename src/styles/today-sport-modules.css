@@ -5,7 +5,7 @@
  * Scopé à .today-sport-shell (pas le fond du site, pas les autres onglets).
  */
 .today-sport-shell {
-  --today-surface: rgba(14, 22, 21, 0.72);
+  --today-surface: rgba(10, 18, 17, 0.94);
   --today-surface-2: rgba(18, 28, 26, 0.5);
   --today-border: rgba(255, 255, 255, 0.07);
   --today-border-strong: rgba(74, 158, 255, 0.28);
@@ -122,7 +122,6 @@
   border-color: var(--today-border) !important;
   border-width: 1px !important;
   border-style: solid !important;
-  backdrop-filter: blur(18px);
   box-shadow: none !important;
 }
 
@@ -707,7 +706,6 @@
   background: var(--today-surface) !important;
   border-color: var(--today-border) !important;
   border-width: 1px !important;
-  backdrop-filter: blur(18px);
   box-shadow: none !important;
   border-radius: var(--today-radius) !important;
 }
@@ -850,6 +848,9 @@
   color: var(--today-text) !important;
   border-radius: 8px;
   font-family: 'JetBrains Mono', ui-monospace, monospace;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+  transition: none !important;
 }
 
 @media (max-width: 980px) {

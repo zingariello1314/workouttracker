@@ -1,178 +1,149 @@
-import { Canvas, useFrame, useThree } from "@react-three/fiber";
-import { useMemo, useRef } from "react";
-import * as THREE from "three";
+import { useEffect, useRef } from 'react';
+import { markAnimatedBackgroundPrepared } from '../../utils/preloadTabs';
+import { BACKGROUND_FRAGMENT_SHADER, BACKGROUND_VERTEX_SHADER } from './animatedBackgroundShader';
+
+function viewportSize() {
+  return {
+    width: Math.max(1, Math.floor(window.innerWidth || 1)),
+    height: Math.max(1, Math.floor(window.innerHeight || 1))
+  };
+}
+
+/** Secours si OffscreenCanvas n'est pas disponible : même shader, fil principal. */
+function startOnMainThread(canvas, onReady) {
+  let gl = null;
+  try {
+    gl = canvas.getContext('webgl', {
+      antialias: false,
+      alpha: false,
+      depth: false,
+      stencil: false,
+      preserveDrawingBuffer: false,
+      powerPreference: 'high-performance'
+    });
+  } catch {
+    gl = null;
+  }
+  if (!gl) {
+    onReady();
+    return () => {};
+  }
+
+  const compile = (type, source) => {
+    const shader = gl.createShader(type);
+    gl.shaderSource(shader, source);
+    gl.compileShader(shader);
+    return shader;
+  };
+  const program = gl.createProgram();
+  gl.attachShader(program, compile(gl.VERTEX_SHADER, BACKGROUND_VERTEX_SHADER));
+  gl.attachShader(program, compile(gl.FRAGMENT_SHADER, BACKGROUND_FRAGMENT_SHADER));
+  gl.linkProgram(program);
+  gl.useProgram(program);
+  const buffer = gl.createBuffer();
+  gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
+  gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1, -1, 1, -1, -1, 1, 1, 1]), gl.STATIC_DRAW);
+  const loc = gl.getAttribLocation(program, 'a_pos');
+  gl.enableVertexAttribArray(loc);
+  gl.vertexAttribPointer(loc, 2, gl.FLOAT, false, 0, 0);
+  const uTime = gl.getUniformLocation(program, 'u_time');
+  const uResolution = gl.getUniformLocation(program, 'u_resolution');
+  const startedAt = performance.now();
+  let rafId = 0;
+  let ready = false;
+
+  const applySize = () => {
+    const { width, height } = viewportSize();
+    if (canvas.width !== width) canvas.width = width;
+    if (canvas.height !== height) canvas.height = height;
+  };
+
+  const frame = (now) => {
+    applySize();
+    gl.viewport(0, 0, canvas.width, canvas.height);
+    gl.useProgram(program);
+    gl.uniform1f(uTime, (now - startedAt) * 0.0005);
+    gl.uniform3f(uResolution, canvas.width, canvas.height, 1);
+    gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+    if (!ready) {
+      ready = true;
+      onReady();
+    }
+    rafId = requestAnimationFrame(frame);
+  };
+  applySize();
+  rafId = requestAnimationFrame(frame);
+  return () => cancelAnimationFrame(rafId);
+}
 
 /**
- * Composant ShaderPlane - Rendu du shader animé
- *
- * Ce composant crée un plan 2D qui affiche le shader de fragment
- * avec animation basée sur le temps.
+ * Fond animé vert.
+ * Le shader tourne dans un worker (OffscreenCanvas) dès le montage de l'app,
+ * pas à l'ouverture du premier onglet, et il ne s'arrête pas quand le fil
+ * principal est occupé (coche, enregistrement).
  */
-const ShaderPlane = ({
-  vertexShader,
-  fragmentShader,
-  uniforms,
-}) => {
-  const meshRef = useRef(null);
-  const { size } = useThree();
+export default function AnimatedBackground({ className = '' }) {
+  const hostRef = useRef(null);
 
-  // Mise à jour des uniforms à chaque frame pour l'animation
-  useFrame((state) => {
-    if (meshRef.current) {
-      const material = meshRef.current.material;
-      if (material && material.uniforms) {
-        material.uniforms.u_time.value = state.clock.elapsedTime * 0.5;
-        material.uniforms.u_resolution.value.set(size.width, size.height, 1.0);
+  useEffect(() => {
+    const host = hostRef.current;
+    if (!host) return undefined;
+
+    const canvas = document.createElement('canvas');
+    canvas.style.cssText = 'width:100%;height:100%;display:block';
+    host.appendChild(canvas);
+
+    const onReady = () => markAnimatedBackgroundPrepared();
+    let worker = null;
+    let stopMain = null;
+
+    const onResize = () => {
+      const size = viewportSize();
+      if (worker) worker.postMessage({ type: 'resize', ...size });
+    };
+
+    const useMainThread = () => {
+      if (worker) {
+        worker.terminate();
+        worker = null;
+      }
+      stopMain = startOnMainThread(canvas, onReady);
+      window.addEventListener('resize', onResize);
+    };
+
+    if (typeof canvas.transferControlToOffscreen !== 'function') {
+      useMainThread();
+    } else {
+      try {
+        worker = new Worker(new URL('./animatedBackground.worker.js', import.meta.url), { type: 'module' });
+        const offscreen = canvas.transferControlToOffscreen();
+        worker.onmessage = (event) => {
+          if (event.data?.type === 'ready') onReady();
+        };
+        worker.postMessage({ type: 'init', canvas: offscreen, ...viewportSize() }, [offscreen]);
+        window.addEventListener('resize', onResize);
+      } catch {
+        useMainThread();
       }
     }
-  });
 
-  return (
-    <mesh ref={meshRef}>
-      <planeGeometry args={[2, 2]} />
-      <shaderMaterial
-        vertexShader={vertexShader}
-        fragmentShader={fragmentShader}
-        uniforms={uniforms}
-        side={THREE.FrontSide}
-        depthTest={false}
-        depthWrite={false}
-      />
-    </mesh>
-  );
-};
-
-/**
- * Vertex Shader - Simple passe-coordonnées UV
- *
- * Ce shader passe simplement les coordonnées UV au fragment shader.
- */
-const vertexShader = `
-  varying vec2 vUv;
-  void main() {
-    vUv = uv;
-    gl_Position = vec4(position, 1.0);
-  }
-`;
-
-/**
- * Fragment Shader - Effet visuel vert animé
- *
- * Ce shader crée l'effet de lignes vertes tourbillonnantes
- * avec des transformations polaires et des rotations.
- */
-const fragmentShader = `
-  precision highp float;
-
-  varying vec2 vUv;
-  uniform float u_time;
-  uniform vec3 u_resolution;
-
-  vec2 toPolar(vec2 p) {
-      float r = length(p);
-      float a = atan(p.y, p.x);
-      return vec2(r, a);
-  }
-
-  vec2 fromPolar(vec2 polar) {
-      return vec2(cos(polar.y), sin(polar.y)) * polar.x;
-  }
-
-  void mainImage(out vec4 fragColor, in vec2 fragCoord) {
-      vec2 p = 6.0 * ((fragCoord.xy - 0.5 * u_resolution.xy) / u_resolution.y);
-
-      vec2 polar = toPolar(p);
-      float r = polar.x;
-      float a = polar.y;
-
-      vec2 i = p;
-      float c = 0.0;
-      float rot = r + u_time + p.x * 0.100;
-      for (float n = 0.0; n < 4.0; n++) {
-          float rr = r + 0.15 * sin(u_time*0.7 + float(n) + r*2.0);
-          p *= mat2(
-              cos(rot - sin(u_time / 10.0)), sin(rot),
-              -sin(cos(rot) - u_time / 10.0), cos(rot)
-          ) * -0.25;
-
-          float t = r - u_time / (n + 30.0);
-          i -= p + sin(t - i.y) + rr;
-
-          c += 2.2 / length(vec2(
-              (sin(i.x + t) / 0.15),
-              (cos(i.y + t) / 0.15)
-          ));
-      }
-
-      c /= 8.0;
-
-      vec3 baseColor = vec3(0.2, 0.7, 0.5);
-      vec3 finalColor = baseColor * smoothstep(0.0, 1.0, c * 0.6);
-
-      fragColor = vec4(finalColor, 1.0);
-  }
-
-  void main() {
-      vec4 fragColor;
-      vec2 fragCoord = vUv * u_resolution.xy;
-      mainImage(fragColor, fragCoord);
-      gl_FragColor = fragColor;
-  }
-`;
-
-/**
- * Composant AnimatedBackground
- *
- * Composant réutilisable qui affiche uniquement le fond animé vert.
- * Le fond est en position fixed pour occuper toute la page (viewport).
- *
- * @param {Object} props
- * @param {string} props.className - Classes CSS additionnelles
- */
-const AnimatedBackground = ({ className = "" }) => {
-  const shaderUniforms = useMemo(
-    () => ({
-      u_time: { value: 0 },
-      u_resolution: { value: new THREE.Vector3(1, 1, 1) },
-    }),
-    [],
-  );
+    return () => {
+      window.removeEventListener('resize', onResize);
+      if (worker) worker.terminate();
+      if (stopMain) stopMain();
+      canvas.remove();
+    };
+  }, []);
 
   return (
     <div
+      ref={hostRef}
       className={`fixed inset-0 ${className}`}
       style={{
-        pointerEvents: "none",
-        width: "100vw",
-        height: "100vh",
-        top: 0,
-        left: 0,
-        right: 0,
-        bottom: 0,
+        pointerEvents: 'none',
         zIndex: -1,
-        // Fond de fallback pendant le chargement du Canvas (couleur de base du shader)
-        backgroundColor: "#0a2e1a",
+        backgroundColor: '#0a2e1a'
       }}
-    >
-      <Canvas
-        style={{ width: "100%", height: "100%" }}
-        gl={{
-          antialias: true,
-          alpha: false,
-          // Optimisations pour réduire le flash
-          powerPreference: "high-performance",
-          preserveDrawingBuffer: false,
-        }}
-      >
-        <ShaderPlane
-          vertexShader={vertexShader}
-          fragmentShader={fragmentShader}
-          uniforms={shaderUniforms}
-        />
-      </Canvas>
-    </div>
+    />
   );
-};
-
-export default AnimatedBackground;
-
+}

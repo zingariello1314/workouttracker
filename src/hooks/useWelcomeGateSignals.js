@@ -2,7 +2,13 @@ import { useEffect, useMemo, useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { getProfileData } from '../services/profileCard/profileCardStorage';
 import { isLockWallpaperDecoded, preloadImageUrl } from '../utils/lockWallpaperPreload';
-import { preloadCoreSportTabs } from '../utils/preloadTabs';
+import {
+  getCoreSportTabsPreloadProgress,
+  markTodayViewPrepared,
+  markAnimatedBackgroundPrepared,
+  preloadCoreSportTabs,
+  subscribeCoreSportTabsPreload
+} from '../utils/preloadTabs';
 
 /**
  * Signaux réels pour la séquence de chargement de l'écran d'accueil.
@@ -73,9 +79,18 @@ export function useWelcomeGateSignals({
     };
   }, [authLoading, isAuthenticated, currentUser?.username]);
 
+  const [sportPreload, setSportPreload] = useState(getCoreSportTabsPreloadProgress);
+
+  useEffect(() => subscribeCoreSportTabsPreload(setSportPreload), []);
+
   useEffect(() => {
-    if (authLoading) return;
+    if (authLoading) return undefined;
     preloadCoreSportTabs();
+    const safety = window.setTimeout(() => {
+      markTodayViewPrepared();
+      markAnimatedBackgroundPrepared();
+    }, 12000);
+    return () => window.clearTimeout(safety);
   }, [authLoading]);
 
   const homeImagesPartial = useMemo(() => {
@@ -119,8 +134,18 @@ export function useWelcomeGateSignals({
         partial: homeImagesPartial
       },
       {
-        ready: !authLoading && !homeImagesLoading,
-        partial: Math.max(homeImagesPartial, lockWallpaperPartial)
+        ready:
+          !authLoading &&
+          !homeImagesLoading &&
+          sportPreload.ready &&
+          sportPreload.todayViewPrepared &&
+          sportPreload.animatedBackgroundPrepared,
+        partial:
+          !authLoading && !homeImagesLoading
+            ? sportPreload.todayViewPrepared && sportPreload.animatedBackgroundPrepared
+              ? 1
+              : Math.max(sportPreload.partial, 0.35)
+            : Math.max(homeImagesPartial, lockWallpaperPartial)
       }
     ],
     [
@@ -135,7 +160,8 @@ export function useWelcomeGateSignals({
       isInitialImageLoaded,
       layer0Loaded,
       layer0Src,
-      lockWallpaperPartial
+      lockWallpaperPartial,
+      sportPreload
     ]
   );
 

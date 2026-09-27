@@ -203,7 +203,8 @@ export const exerciseDatabase = {
     primaryMuscles: ["Triceps"],
     secondaryMuscles: [],
     equipment: "Poulie haute",
-    description: "Extension triceps à la poulie",
+    description:
+      "Debout face à la poulie haute, coudes près des côtes, avant-bras vers le haut. Tu tends les coudes vers le bas jusqu’à presque verrouiller, tu serres une seconde, puis tu laisses les avant-bras remonter sans que les coudes partent devant toi et sans hausser les épaules. La prise barre droite, la corde et les prises pronation ou supination ont leurs propres fiches : ici c’est l’extension à la poulie, pas un mouvement aux haltères. Le buste ne se penche pas pour pousser. Inspire en remontant, expire en tendant. 3 séries de 10 à 15.",
     variations: ["tricep pushdown", "extension câble"]
   },
   "dips triceps": {
@@ -232,7 +233,8 @@ export const exerciseDatabase = {
     primaryMuscles: ["Quadriceps"],
     secondaryMuscles: ["Fessiers", "Ischio-jambiers"],
     equipment: "Haltères/Barre",
-    description: "Exercice unilatéral pour les jambes",
+    description:
+      "Un haltère dans chaque main, le long du corps. Tu fais un grand pas, le genou avant reste au-dessus de la cheville, le genou arrière descend vers le sol et peut l’effleurer, puis tu pousses dans le talon avant pour revenir. Le buste reste presque droit, les haltères ne se balancent pas. Même chose en pas arrière, ou en avançant à chaque répétition. La fente barre a sa propre fiche : ici la charge est aux haltères. Ce n’est pas la fente bulgare, aucun pied n’est sur un banc. Inspire en descendant, expire en poussant. 3 séries de 8 à 12 de chaque jambe, repos 2 min.",
     variations: ["lunges", "fente", "split squat"]
   },
   "presse à cuisses": {
@@ -691,7 +693,7 @@ export const exerciseDatabase = {
     secondaryMuscles: ["Brachial antérieur"],
     equipment: "Haltères + Banc incliné",
     description: "Curl sur banc incliné pour étirement maximal des biceps",
-    variations: ["incline curl", "curl banc incliné"]
+    variations: ["incline curl", "curl banc incliné", "curl incliné supination"]
   },
   "curl poulie basse": {
     name: "Curl poulie basse",
@@ -741,7 +743,8 @@ export const exerciseDatabase = {
     primaryMuscles: ["Triceps"],
     secondaryMuscles: [],
     equipment: "Haltère",
-    description: "Extension triceps penché en arrière",
+    description:
+      "Buste penché, dos plat, genoux souples, haltère en main. Un bras après l’autre ou les deux ensemble : le coude reste haut, collé au flanc, et ne voyage pas. Seul l’avant-bras s’étend vers l’arrière jusqu’à aligner le bras, puis tu reviens sans laisser le bras balancer ni le buste se redresser pour aider. La charge reste plus légère que sur l’extension au-dessus de la tête ou à la poulie : le bras est déjà en arrière, le triceps est court, et un haltère trop lourd casse le coude fixe. Inspire en fléchissant, expire en tendant. 3 séries de 12 à 15. Ce n’est pas le kickback à la poulie, qui suit le même geste contre un câble.",
     variations: ["tricep kickback", "extension arrière"]
   },
   "extension poulie corde": {
@@ -1481,14 +1484,38 @@ export const exerciseDatabase = {
       "decline db press with pause"
     ]
   },
-  "écarté poulie": {
-    name: "Écarté à la poulie",
+  "écarté poulie haute": {
+    name: "Écarté poulie haute",
     category: "Pectoraux",
-    primaryMuscles: ["Pectoraux"],
-    secondaryMuscles: [],
+    primaryMuscles: ["Grand pectoral, faisceau sterno-costal inférieur"],
+    secondaryMuscles: ["Deltoïde antérieur", "Dentelé antérieur"],
     equipment: "Poulie vis-à-vis",
-    description: "Écarté à la poulie pour tension constante",
-    variations: ["cable fly", "écarté câble", "écarté à la poulie vis-à-vis", "cable crossover", "crossover"]
+    difficulty: 2,
+    isNew: true,
+    description: "Les deux poulies sont réglées au-dessus des épaules, poignées en main, un pied légèrement devant pour ne pas partir en arrière. Tu pars bras ouverts, mains hautes, coudes souples et fixes : ce n’est pas un développé, les coudes ne se plient pas pour pousser. Tu ramènes les mains vers le bas et vers l’intérieur, jusqu’en bas des pectoraux ou juste devant les hanches, en serrant les pecs une seconde, puis tu rouvres jusqu’à sentir l’étirement sans que les épaules montent aux oreilles. La ligne de traction descend : c’est le bas du grand pectoral qui travaille, pas le haut. Le buste reste droit, les côtes ne s’ouvrent pas, le bassin ne part pas en avant. Inspire en ouvrant, expire en ramenant. Si les mains se croisent, c’est un petit croisement devant le nombril, pas une torsion du tronc. 3 séries de 12 à 15, repos 60 s. La poulie médiane reste horizontale, la poulie basse monte vers le visage.",
+    variations: ["cable high fly", "high to low crossover", "écarté poulie haute debout"]
+  },
+  "écarté poulie médiane": {
+    name: "Écarté poulie médiane",
+    category: "Pectoraux",
+    primaryMuscles: ["Grand pectoral, faisceau sterno-costal"],
+    secondaryMuscles: ["Deltoïde antérieur", "Biceps, chef court"],
+    equipment: "Poulie vis-à-vis",
+    difficulty: 2,
+    isNew: true,
+    description: "Les deux poulies sont à hauteur d’épaules, poignées en prise neutre, buste droit, un pied devant. Les bras s’ouvrent sur le côté jusqu’à aligner les mains avec les épaules, coudes légèrement fléchis et qui ne bougent plus pendant la série. Tu ramènes les mains l’une vers l’autre devant le sternum, sur une ligne horizontale, tu serres une seconde, puis tu reviens sans laisser les poids claquer. Si les mains descendent vers les hanches, tu es passé sur la poulie haute. Si elles montent vers le visage, tu es sur la poulie basse. Ici le milieu du pectoral prend la tension du début à la fin, y compris bras ouverts, là où l’haltère se repose. Les omoplates glissent autour des côtes, elles ne se haussent pas. Les poignets restent dans l’axe des avant-bras. Inspire en ouvrant, expire en fermant. 3 séries de 12 à 15, repos 60 s.",
+    variations: ["cable middle fly", "cable fly shoulder height", "écarté poulie médiane debout", "écarté à la poulie", "écarté à la poulie vis-à-vis"]
+  },
+  "écarté poulie basse": {
+    name: "Écarté poulie basse",
+    category: "Pectoraux",
+    primaryMuscles: ["Grand pectoral, faisceau claviculaire"],
+    secondaryMuscles: ["Deltoïde antérieur", "Dentelé antérieur"],
+    equipment: "Poulie vis-à-vis",
+    difficulty: 2,
+    isNew: true,
+    description: "Les deux poulies sont tout en bas, poignées en main, bras ouverts vers le bas et légèrement derrière le buste pour prendre l’étirement du haut du pec. Coudes souples, presque fixes. Tu montes les mains vers le haut et l’intérieur, jusqu’au haut de la poitrine ou au niveau du visage, sans verrouiller les coudes et sans hausser les épaules pour finir le geste. Tu serres en haut, puis tu redescends lentement jusqu’à l’étirement, les poids ne tombent pas. La ligne de traction monte : c’est le faisceau claviculaire, le haut du pectoral, pas le bas. Le dos ne se cambre pas pour emmener les mains plus haut, les côtes restent basses, le regard devant. Inspire en descendant, expire en montant. 3 séries de 12 à 15, repos 60 s. Ce n’est pas l’écarté incliné au banc : ici tu es debout, et la poulie haute, elle, descend vers les hanches.",
+    variations: ["cable low fly", "low to high crossover", "écarté poulie basse debout"]
   },
   "leg extension": {
     name: "Leg extension",
@@ -5446,7 +5473,8 @@ export const exerciseDatabase = {
       "equipment": "Haltères",
       "difficulty": 2,
       "isNew": true,
-      "description": "Haltères le long du corps. Tu descends en gardant le dos neutre et les talons au sol, puis tu remontes.",
+    description:
+      "Haltères le long du corps, pieds un peu plus larges que les hanches, pointes légèrement ouvertes. Tu descends en poussant les genoux dans l’axe des orteils, talons au sol, dos neutre, jusqu’à ce que les cuisses passent vers l’horizontale si la mobilité le permet, puis tu remontes en poussant le sol. Les haltères restent pendus, ils ne se balancent pas devant toi. Ce n’est pas le squat gobelet, où la charge est tenue contre la poitrine, ni le squat barre, ni le hack squat : ici la charge est libre, de chaque côté. Inspire en descendant, expire en poussant. 3 séries de 8 à 12, repos 2 min.",
       "variations": ["squat haltères"]
   },
   "front squat kettlebell": {
@@ -6737,6 +6765,125 @@ export const exerciseDatabase = {
     isNew: true,
     description: "Barre calée sur le haut du dos, pieds largeur de hanches. Tu fais un pas en arrière, le genou arrière descend vers le sol sans le poser, le genou avant reste au-dessus de la cheville, puis tu pousses dans le talon avant pour revenir. Le buste reste presque droit, la barre ne roule pas sur la nuque. Ce n’est pas la fente haltères, ni la fente bulgare : aucun banc, les deux pieds reviennent côte à côte. Inspire en descendant, expire en poussant. 3 séries de 8 à 12 de chaque jambe, repos 90 s.",
     variations: ["fente barre", "barbell lunge", "fente arrière barre", "reverse lunge barre"]
+  },
+  "pistol squat haltère": {
+    name: "Pistol squat haltère",
+    category: "Quadriceps",
+    primaryMuscles: ["Quadriceps", "Fessiers"],
+    secondaryMuscles: ["Ischio-jambiers", "Adducteurs", "Mollets"],
+    equipment: "Haltère",
+    difficulty: 4,
+    isNew: true,
+    description: "Debout sur une jambe, l’autre tendue devant toi, un haltère tenu devant la poitrine ou bras tendu comme contrepoids. Tu descends en contrôlant, le genou de la jambe d’appui suit les orteils, le talon reste au sol aussi longtemps que la cheville le permet, puis tu remontes sans poser l’autre pied et sans t’écrouler en bas. L’haltère aide l’équilibre : il n’est pas là pour être jeté vers l’avant. Si la descente complète n’est pas propre, tu t’arrêtes plus haut, ou une main effleure un support. Le pistol au poids du corps reste sa fiche, sans charge. La presse unilatérale est une machine, pas ce geste. Inspire en descendant, expire en poussant. 3 séries de 6 à 10 de chaque jambe, repos 2 min.",
+    variations: ["pistol haltère", "dumbbell pistol squat", "squat une jambe haltère"]
+  },
+
+  "curl marteau incliné": {
+    name: "Curl marteau incliné",
+    category: "Biceps",
+    primaryMuscles: ["Brachial", "Brachio-radial"],
+    secondaryMuscles: ["Biceps brachial"],
+    equipment: "Haltères + Banc incliné",
+    difficulty: 2,
+    isNew: true,
+    description: "Dos calé sur un banc incliné, un haltère dans chaque main, prise neutre : pouces vers le plafond, paumes face à face. Les bras partent derrière le buste, comme au curl incliné, mais les poignets ne tournent pas. Tu fléchis les coudes pour amener les haltères vers les épaules, sans décoller le dos, sans balancer le buste et sans transformer le geste en curl supiné en haut. La prise neutre laisse plus de place au brachial et au brachio-radial. Le biceps reste dans la flexion, il n’en est plus le seul moteur. La charge est en général plus légère que sur le curl incliné en supination, et plus lourde que sur le spider. Ce n’est pas le curl marteau debout, ni le curl marteau au pupitre, ni le curl marteau croisé, ni le curl marteau à la poulie. Inspire en descendant, expire en montant. 3 séries de 8 à 12.",
+    variations: ["incline hammer curl", "curl marteau sur banc incliné", "dumbbell incline hammer curl"]
+  },
+
+  "crunch au mur": {
+    name: "Crunch au mur",
+    category: "Abdominaux",
+    primaryMuscles: ["Grand droit de l'abdomen"],
+    secondaryMuscles: ["Obliques"],
+    equipment: "Poids du corps",
+    difficulty: 1,
+    isNew: true,
+    description: "Allongé sur le dos, pieds à plat contre le mur, genoux fléchis. Tu décolles les épaules et la tête en enroulant le buste, le bas du dos reste au sol, puis tu redescends sans laisser retomber la nuque. Les pieds restent collés au mur : ce n’est pas le crunch au sol, ni le crunch à la poulie, ni le crunch machine, ni le swiss ball. Pas d’élan des bras. Expire en montant, inspire en redescendant. 3 séries de 12 à 20.",
+    variations: ["wall crunch", "crunch pieds au mur"]
+  },
+
+  "crunch au mur haltère": {
+    name: "Crunch au mur haltère",
+    category: "Abdominaux",
+    primaryMuscles: ["Grand droit de l'abdomen"],
+    secondaryMuscles: ["Obliques"],
+    equipment: "Haltère",
+    difficulty: 2,
+    isNew: true,
+    description: "Même crunch au mur, avec un haltère. Tu le tiens contre la poitrine, ou bras tendus au-dessus du torse : les bras tendus allongent le levier et rendent la même charge plus dure. Les pieds restent au mur, le bassin ne se soulève pas pour aider. Ce n’est pas le crunch au mur sans charge, ni la variante où les pieds quittent le mur. Expire en montant. 3 séries de 12 à 20.",
+    variations: ["wall crunch haltère", "weighted wall crunch"]
+  },
+
+  "hip thrust pieds au mur": {
+    name: "Hip thrust pieds au mur",
+    category: "Fessiers",
+    primaryMuscles: ["Fessiers"],
+    secondaryMuscles: ["Ischio-jambiers", "Grand droit de l'abdomen"],
+    equipment: "Haltère",
+    difficulty: 2,
+    isNew: true,
+    description: "Allongé au sol, pieds à plat contre le mur, genoux fléchis, un haltère posé sur le bassin et tenu à deux mains. Tu pousses les hanches vers le plafond jusqu’à aligner genoux, bassin et épaules, sans creuser les lombaires, puis tu redescends sans poser le bassin d’un coup. Le mur remplace le banc : les épaules restent au sol. Ce n’est pas le hip thrust barre, dos sur un banc et pieds au sol, ni le pont fessier pieds au sol, ni le hip thrust unilatéral. Expire en montant. 3 séries de 12 à 20.",
+    variations: ["wall hip thrust", "hip thrust pieds contre le mur", "dumbbell wall hip thrust"]
+  },
+
+  "crunch au mur pieds décollés": {
+    name: "Crunch au mur pieds décollés",
+    category: "Abdominaux",
+    primaryMuscles: ["Grand droit de l'abdomen"],
+    secondaryMuscles: ["Fléchisseurs de hanche", "Obliques"],
+    equipment: "Haltère",
+    difficulty: 2,
+    isNew: true,
+    description: "Tu pars du crunch au mur, haltère contre la poitrine ou au-dessus du torse, puis les pieds quittent le mur à chaque répétition. Le bassin doit rester contrôlé : les jambes ne se balancent pas pour monter le buste. C’est plus exigeant que le crunch au mur pieds collés, avec ou sans haltère. Ce n’est pas un relevé de jambes, le mouvement reste une flexion du tronc. Expire en montant. 3 séries de 10 à 20.",
+    variations: ["wall crunch pieds décollés", "wall crunch feet up"]
+  },
+
+  "curl pupitre unilatéral": {
+    name: "Curl pupitre unilatéral",
+    category: "Biceps",
+    primaryMuscles: ["Biceps brachial"],
+    secondaryMuscles: ["Brachial"],
+    equipment: "Haltère + Banc pupitre",
+    difficulty: 2,
+    isNew: true,
+    description: "Un bras à la fois, aisselle calée sur le pupitre, haltère en supination. Le bras reste sur le coussin pendant toute la flexion : tu tends presque complètement en bas, tu montes sans décoller le coude, puis tu changes de côté. Le buste ne se rejette pas en arrière. Le curl pupitre à deux bras, à la barre, à la machine ou à la poulie reste sa fiche. Le curl marteau pupitre est la prise neutre. Inspire en descendant, expire en montant. 3 séries de 8 à 12 de chaque bras.",
+    variations: ["single arm preacher curl", "curl pupitre un bras", "unilateral preacher curl"]
+  },
+
+  "curl assis dos calé": {
+    name: "Curl assis dos calé",
+    category: "Biceps",
+    primaryMuscles: ["Biceps brachial"],
+    secondaryMuscles: ["Brachial"],
+    equipment: "Haltères + Banc",
+    difficulty: 2,
+    isNew: true,
+    description: "Assis, dos et épaules collés au dossier, un haltère dans chaque main. Tu fléchis les coudes en supination sans décoller le dos et sans donner d’élan au buste. Le dossier joue le même rôle qu’un mur : il empêche de tricher. Ce n’est pas le curl debout, ni le curl incliné (les bras partent derrière le buste), ni le curl pupitre (le bras est posé devant). La charge reste plus légère que sur un curl où le torse peut aider. Inspire en descendant, expire en montant. 3 séries de 8 à 12.",
+    variations: ["seated dumbbell curl", "curl haltères assis", "curl dos calé"]
+  },
+
+  "hip thrust smith": {
+    name: "Hip thrust Smith",
+    category: "Fessiers",
+    primaryMuscles: ["Fessiers"],
+    secondaryMuscles: ["Ischio-jambiers"],
+    equipment: "Smith machine + Banc",
+    difficulty: 2,
+    isNew: true,
+    description: "Dos sur un banc, barre du Smith sur le bassin, pieds au sol. Tu pousses les hanches jusqu’à aligner genoux, bassin et épaules, sans creuser les lombaires, puis tu redescends le long du rail. Le guidage laisse monter la charge plus simplement qu’avec une barre libre. Ce n’est pas le hip thrust barre libre, ni le hip thrust pieds au mur, ni le pont fessier au sol. Menton rentré, genoux dans l’axe des pieds. Expire en montant. 3 séries de 8 à 12.",
+    variations: ["smith hip thrust", "thrust fessier smith"]
+  },
+
+  "mollets smith sur step": {
+    name: "Mollets Smith sur step",
+    category: "Mollets",
+    primaryMuscles: ["Gastrocnémiens"],
+    secondaryMuscles: ["Soléaires"],
+    equipment: "Smith machine + Step",
+    difficulty: 2,
+    isNew: true,
+    description: "Debout dans le Smith, avant des pieds sur un step, barre sur les épaules. Tu laisses les talons descendre sous le step, puis tu montes sur la pointe sans plier les genoux. Le step sert l’amplitude, le rail guide la barre. La charge utile est souvent plus basse que sur le hip thrust ou les bulgares de la même séance. Ce n’est pas les mollets inversés Smith, où les orteils tirent vers le tibia, ni les mollets assis, ni les mollets haltères. Expire en montant. 3 séries de 10 à 15.",
+    variations: ["smith calf raise", "mollets debout smith sur step"]
   }
 
 };

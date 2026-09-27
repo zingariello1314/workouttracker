@@ -6,7 +6,8 @@ import {
   FolderOpen,
   Sparkles,
   Calendar,
-  Dumbbell
+  Dumbbell,
+  Film
 } from 'lucide-react';
 import { WorkoutContext } from '../../context/WorkoutContext';
 import { useToast } from '../ui/Toast';
@@ -19,6 +20,8 @@ import {
 } from '../../utils/bankProgramMutations';
 import { getDayName } from '../../utils/dateUtils';
 import { STRETCH_MOMENTS } from '../../utils/stretchUtils';
+import { exerciseDatabase } from '../../data/exerciseDatabase';
+import { toggleCircuitOnProgramDay } from '../../utils/circuits/circuitDefinitionUtils';
 
 const DAY_LABEL = {
   lundi: 'Lundi',
@@ -33,10 +36,10 @@ const DAY_LABEL = {
 const MOMENT_LABEL = { matin: 'Matin', midi: 'Midi', soir: 'Soir' };
 
 /**
- * @param {{ payload: { kind:'exercise'; exercise:any } | { kind:'stretch'; stretchKey:string; stretchLabel?:string } | null }} props
+ * @param {{ payload: { kind:'exercise'; exercise:any } | { kind:'stretch'; stretchKey:string; stretchLabel?:string } | { kind:'circuit'; circuit:object } | null }} props
  */
 export default function BankAddToProgramModal({ payload, onClose }) {
-  const { programs, activeProgram, addProgram, activateProgram, updateProgram } =
+  const { programs, activeProgram, addProgram, activateProgram, updateProgram, saveCircuitDefinition } =
     useContext(WorkoutContext);
   const { showSuccess, showWarning, showError } = useToast();
 
@@ -81,6 +84,7 @@ export default function BankAddToProgramModal({ payload, onClose }) {
       return payload.label || `${n} élément${n > 1 ? 's' : ''}`;
     }
     if (payload.kind === 'stretch') return payload.stretchLabel || payload.stretchKey || 'Étirement';
+    if (payload.kind === 'circuit') return payload.circuit?.title || 'Circuit';
     return payload.exercise?.name || 'Exercice';
   }, [payload]);
 
@@ -204,6 +208,36 @@ export default function BankAddToProgramModal({ payload, onClose }) {
       }
       persistProgram(r.program);
       showSuccess(`Étirement ajouté · ${DAY_LABEL[dayKey]} (${MOMENT_LABEL[moment]}).`);
+    } else if (payload.kind === 'circuit') {
+      const circuit = payload.circuit || {};
+      const keys = Array.isArray(circuit.exerciseKeys) ? circuit.exerciseKeys : [];
+      void (async () => {
+        try {
+          const saved = await saveCircuitDefinition({
+            id: `bank_${circuit.mediaId}`,
+            name: circuit.title,
+            notes: circuit.description || '',
+            targetRounds: circuit.targetRounds || 3,
+            restBetweenRoundsSec: circuit.restBetweenRoundsSec ?? 60,
+            items: keys.map((key) => ({
+              exerciseKey: key,
+              exerciseName: exerciseDatabase[key]?.name || key,
+              mode: 'reps',
+              targetReps: circuit.defaultTargetReps || 10
+            }))
+          });
+          persistProgram(toggleCircuitOnProgramDay(target, dayKey, saved.id, true));
+          showSuccess(
+            keys.length
+              ? `Circuit ajouté · ${DAY_LABEL[dayKey]} · ${target.name}.`
+              : `Circuit ajouté · ${DAY_LABEL[dayKey]} · ${target.name}. Les exercices seront ajoutés quand la composition sera renseignée.`
+          );
+          onClose?.();
+        } catch {
+          showError('Impossible d’ajouter le circuit.');
+        }
+      })();
+      return;
     } else {
       const r = appendExerciseBankKeyToProgramDay(target, dayKey, resolvedExerciseKey, {
         ...(payload.series ? { series: payload.series } : {})
@@ -248,6 +282,8 @@ export default function BankAddToProgramModal({ payload, onClose }) {
             <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-teal-500/95">
               {payload.kind === 'stretch' ? (
                 <Sparkles className="h-4 w-4 shrink-0 text-teal-400" />
+              ) : payload.kind === 'circuit' ? (
+                <Film className="h-4 w-4 shrink-0 text-teal-300" />
               ) : (
                 <Dumbbell className="h-4 w-4 shrink-0 text-sky-400" />
               )}

@@ -41,16 +41,15 @@ export function extractDaySliceFromAggregate(data, dateStr) {
   const mapFields = {};
   for (const field of SESSION_MAP_FIELDS) {
     const src = data[field];
-    if (!src || typeof src !== 'object' || Array.isArray(src)) continue;
     const dayMap = {};
-    for (const [k, v] of Object.entries(src)) {
-      if (k.startsWith(prefix)) {
-        dayMap[k] = v;
+    if (src && typeof src === 'object' && !Array.isArray(src)) {
+      for (const [k, v] of Object.entries(src)) {
+        if (k.startsWith(prefix)) dayMap[k] = v;
       }
     }
-    if (Object.keys(dayMap).length > 0) {
-      mapFields[field] = dayMap;
-    }
+    // Toujours présent, même vide : au rechargement, une map absente ne veut pas
+    // dire « garder l’ancien jour », une map vide veut dire « plus rien ce jour-là ».
+    mapFields[field] = dayMap;
   }
 
   const dailyVariations =
@@ -66,8 +65,34 @@ export function extractDaySliceFromAggregate(data, dateStr) {
   return { mapFields, dailyVariations, circuitProgress };
 }
 
+function sessionRowDate(row, maps) {
+  if (typeof row?.dateStr === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(row.dateStr)) {
+    return row.dateStr;
+  }
+  for (const map of Object.values(maps || {})) {
+    if (!map || typeof map !== 'object') continue;
+    for (const key of Object.keys(map)) {
+      const d = dateStrFromSessionKey(key);
+      if (d) return d;
+    }
+  }
+  return null;
+}
+
+/** La ligne séance remplace tout le jour : une décochage ne doit pas ressusciter au rechargement. */
+function replaceDayKeys(existing, dateStr, dayMap) {
+  const prefix = `${dateStr}_`;
+  const next = { ...(existing && typeof existing === 'object' ? existing : {}) };
+  for (const key of Object.keys(next)) {
+    if (key.startsWith(prefix)) delete next[key];
+  }
+  Object.assign(next, dayMap || {});
+  return next;
+}
+
 /**
  * Fusionne les lignes `workoutSessions` dans l’état agrégat (chargement).
+ * Une ligne qui porte une date remplace les clés de ce jour (source de vérité).
  * @param {Record<string, unknown>} base
  * @param {Array<Record<string, unknown>>} sessionRows
  */
@@ -94,9 +119,14 @@ export function mergeSessionDaysIntoAggregate(base, sessionRows) {
 
   for (const row of sorted) {
     const maps = row.mapFields && typeof row.mapFields === 'object' ? row.mapFields : {};
+    const rowDate = sessionRowDate(row, maps);
     for (const [field, map] of Object.entries(maps)) {
       if (!SESSION_MAP_FIELDS.includes(field) || !map || typeof map !== 'object') continue;
-      out[field] = { ...(out[field] || {}), ...map };
+      if (rowDate) {
+        out[field] = replaceDayKeys(out[field], rowDate, map);
+      } else {
+        out[field] = { ...(out[field] || {}), ...map };
+      }
     }
     if (row.dailyVariations && typeof row.dailyVariations === 'object') {
       out.dailyVariations = { ...out.dailyVariations, ...row.dailyVariations };

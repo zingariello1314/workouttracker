@@ -3,6 +3,7 @@ import { Play, Square, CheckCircle, Clock, Target, Flame, Zap, MessageSquare, Sa
 import { useWorkout } from '../../context/WorkoutContext';
 import { useSessionDraftVersion, useExerciseUiVersion, useSessionCommitDirty, useSessionCommitEpoch, getSessionCommitDirty } from '../../context/WorkoutContext/sessionDraftStore';
 import { startTodayCheckMeasure, scheduleTodayCheckIdle, yieldToNextPaint } from '../../utils/todayCheckMeasure';
+import { markTodayViewPrepared } from '../../utils/preloadTabs';
 import { useToast } from '../../components/ui/Toast';
 import { workoutProgram } from '../../data/workoutProgram';
 import Card, { CardHeader, CardTitle, CardContent } from '../ui/Card';
@@ -27,7 +28,11 @@ import {
   collectExerciseKeysForWorkoutExercise,
   generateSmartExerciseKey,
   resolveBestRepsStorageKey,
-  findLatestExerciseWeightValue,
+  peekLastExerciseWeightValue,
+  isLastExerciseWeightIndexReady,
+  noteLastExerciseWeightFromKey,
+  pauseLastExerciseWeightIndex,
+  resumeLastExerciseWeightIndex,
   extractDateStrFromWorkoutKey
 } from '../../utils/exerciseKeyGenerator';
 import { normalizeStretchSlots, countStretchItems, resolveEtirementsForDay } from '../../utils/stretchUtils';
@@ -247,6 +252,20 @@ const IsolatedTodayExerciseCard = memo(function IsolatedTodayExerciseCard({ exer
   return children(getCurrentData() || {});
 });
 
+function LastWeightIndexKeeper() {
+  const dirty = useSessionCommitDirty();
+  const { getCurrentData } = useWorkout();
+  useEffect(() => {
+    if (dirty.exercises) {
+      pauseLastExerciseWeightIndex();
+      return undefined;
+    }
+    resumeLastExerciseWeightIndex(getCurrentData);
+    return () => pauseLastExerciseWeightIndex();
+  }, [dirty.exercises, getCurrentData]);
+  return null;
+}
+
 function TodaySessionCommitBar({
   kind,
   onSave,
@@ -275,7 +294,7 @@ function TodaySessionCommitBar({
     <div className="mt-6 pt-4 border-t border-[#0F4C5C]/40">
       <div className="flex items-center justify-between">
         <div className="text-sm text-amber-300 flex items-center gap-2">
-          <div className="w-2 h-2 bg-amber-400 rounded-full animate-pulse"></div>
+          <div className="w-2 h-2 bg-amber-400 rounded-full"></div>
           {unsavedLabel}
         </div>
         <div className="flex gap-3">
@@ -328,6 +347,7 @@ const TodayTab = () => {
     discardStretchChanges,
     updateTempExerciseData,
     patchSessionExerciseDraft,
+    writeExerciseDraftCell,
     updateTempStretchData,
     getCurrentData,
     updateReps,
@@ -657,11 +677,11 @@ const TodayTab = () => {
   }, []);
 
   const applyExerciseCheck = (exerciseId, date, shouldCheck) => {
+    pauseLastExerciseWeightIndex();
     const measure = startTodayCheckMeasure(shouldCheck ? 'check' : 'uncheck');
     measure.mark('handler');
     const currentData = getCurrentData();
     const dateStr = getDateStr(date);
-    const workout = getTodayWorkout(date, isGymMode);
     const exercise = resolveProgramExerciseFromWorkout(workout, currentData.dailyVariations, dateStr, exerciseId);
     const fallbackKey = `${dateStr}_${exerciseId}`;
 
@@ -748,6 +768,11 @@ const TodayTab = () => {
       prevKeyForWeight && extractDateStrFromWorkoutKey(prevKeyForWeight) === dateStr
         ? String(currentData.exerciseWeights?.[prevKeyForWeight] ?? '').trim()
         : '';
+    const peekedWeight =
+      exerciseShowsWeightField(exercise, false) && isLastExerciseWeightIndexReady()
+        ? peekLastExerciseWeightValue(lastWeightIdsForExercise(exercise, exerciseId))
+        : '';
+    const weightToStore = todayWeight || peekedWeight;
     const repsVal = plannedRepsForExercise(exercise);
 
     measure.mark('apply:check');
@@ -756,7 +781,7 @@ const TodayTab = () => {
         stripKeysInPlace(draft, keys);
         draft.checkedExercises[primaryKey] = true;
         draft.reps[primaryKey] = repsVal;
-        if (todayWeight) draft.exerciseWeights[primaryKey] = todayWeight;
+        if (weightToStore) draft.exerciseWeights[primaryKey] = weightToStore;
         if (prevKeyForWeight && currentData.exerciseWeightPerArm?.[prevKeyForWeight] === true) {
           draft.exerciseWeightPerArm[primaryKey] = true;
         }
@@ -766,35 +791,26 @@ const TodayTab = () => {
         if (exercise.id != null && exercise.name) {
           draft.exerciseDisplayNames[String(exercise.id)] = String(exercise.name);
         }
-      },
-      { exerciseId: exercise.id }
-    );
-    measure.mark('patched');
-
-    scheduleTodayCheckIdle(() => {
-      measure.mark('idle:enrich');
-      patchSessionExerciseDraft(
-        (draft) => {
-          if (!draft.exerciseWeights[primaryKey]) {
-            const latest =
-              findLatestExerciseWeightValue(draft, lastWeightIdsForExercise(exercise, exerciseId)) || '';
-            if (latest) draft.exerciseWeights[primaryKey] = latest;
-          }
-          const builtLog = buildSetLogFromPrescription(exercise, {
+        let builtLog = null;
+        try {
+          builtLog = buildSetLogFromPrescription(exercise, {
             totalReps: repsVal ? parseInt(repsVal, 10) : undefined,
             workoutData: draft,
             storageKey: primaryKey
           });
-          if (builtLog?.sets?.length) {
-            draft.exerciseSetLogs[primaryKey] = builtLog;
-          } else if (prevKeyForWeight && currentData.exerciseSetLogs?.[prevKeyForWeight]) {
-            draft.exerciseSetLogs[primaryKey] = { ...currentData.exerciseSetLogs[prevKeyForWeight] };
-          }
-        },
-        { exerciseId: exercise.id }
-      );
-    });
-
+        } catch {
+          builtLog = null;
+        }
+        if (builtLog?.sets?.length) {
+          draft.exerciseSetLogs[primaryKey] = builtLog;
+        } else if (prevKeyForWeight && currentData.exerciseSetLogs?.[prevKeyForWeight]) {
+          draft.exerciseSetLogs[primaryKey] = { ...currentData.exerciseSetLogs[prevKeyForWeight] };
+        }
+        if (weightToStore) noteLastExerciseWeightFromKey(primaryKey, weightToStore);
+      },
+      { exerciseId: exercise.id }
+    );
+    measure.mark('patched');
     measure.flush();
   };
 
@@ -804,126 +820,82 @@ const TodayTab = () => {
     applyExerciseCheck(exerciseId, date, shouldCheck);
   };
 
-  const updateLocalReps = (exerciseId, reps, date) => {
-    const currentData = getCurrentData();
-    const dateStr = getDateStr(date);
-    const workout = getTodayWorkout(date, isGymMode);
-    const exercise = resolveProgramExerciseFromWorkout(workout, currentData.dailyVariations, dateStr, exerciseId);
-    const key = exercise
-      ? generateSmartExerciseKey(date, exercise.id, {
-          isGymMode,
-          workoutIsGymMode: workout?.isGymMode,
-          weekVariant: getAutoWeekVariant(date)
-        })
-      : `${dateStr}_${exerciseId}`;
+  const patchDraftField = (mapKey, storageKey, value) => {
+    if (!storageKey) return;
+    pauseLastExerciseWeightIndex();
+    writeExerciseDraftCell(mapKey, storageKey, value);
+    if (mapKey === 'exerciseWeights') noteLastExerciseWeightFromKey(storageKey, value);
+  };
 
-    if (String(currentData.reps?.[key] ?? '') === String(reps ?? '')) return;
+  const updateLocalReps = (storageKey, reps) => {
+    patchDraftField('reps', storageKey, reps);
+  };
 
-    updateTempExerciseData({
-      ...currentData,
-      reps: {
-        ...currentData.reps,
-        [key]: reps
+  const updateLocalExerciseWeight = (storageKey, weightStr) => {
+    patchDraftField('exerciseWeights', storageKey, weightStr);
+  };
+
+  const updateLocalExerciseMarkedWeighted = (storageKey, checked, exerciseId) => {
+    patchSessionExerciseDraft((draft) => {
+      if (!draft.exerciseMarkedWeighted || typeof draft.exerciseMarkedWeighted !== 'object') {
+        draft.exerciseMarkedWeighted = {};
       }
+      if (checked) draft.exerciseMarkedWeighted[storageKey] = true;
+      else delete draft.exerciseMarkedWeighted[storageKey];
+    }, { exerciseId });
+  };
+
+  const updateLocalExerciseWeightPerArm = (storageKey, checked, exerciseId) => {
+    patchSessionExerciseDraft((draft) => {
+      if (!draft.exerciseWeightPerArm || typeof draft.exerciseWeightPerArm !== 'object') {
+        draft.exerciseWeightPerArm = {};
+      }
+      if (checked) draft.exerciseWeightPerArm[storageKey] = true;
+      else delete draft.exerciseWeightPerArm[storageKey];
+    }, { exerciseId });
+  };
+
+  const updateExerciseSetWeightAtIndex = (storageKey, setIndex, value, exercise) => {
+    pauseLastExerciseWeightIndex();
+    const count = Math.max(1, inferDefaultSetCount(exercise, 0));
+    patchSessionExerciseDraft((draft) => {
+      const existing = draft.exerciseSetWeights?.[storageKey];
+      if (Array.isArray(existing) && String(existing[setIndex] ?? '') === String(value ?? '')) {
+        return false;
+      }
+      const prevRow =
+        (Array.isArray(existing) && existing.slice()) ||
+        Array.from({ length: count }, () => String(draft.exerciseWeights?.[storageKey] || '').trim());
+      while (prevRow.length < count) {
+        prevRow.push(String(draft.exerciseWeights?.[storageKey] || '').trim());
+      }
+      prevRow[setIndex] = value;
+      if (!draft.exerciseSetWeights || typeof draft.exerciseSetWeights !== 'object' || Array.isArray(draft.exerciseSetWeights)) {
+        draft.exerciseSetWeights = {};
+      }
+      draft.exerciseSetWeights[storageKey] = prevRow;
+      return true;
     }, { silent: true });
   };
 
-  const updateLocalExerciseWeight = (exerciseId, weightStr, date) => {
-    const currentData = getCurrentData();
-    const dateStr = getDateStr(date);
-    const workout = getTodayWorkout(date, isGymMode);
-    const exercise = resolveProgramExerciseFromWorkout(workout, currentData.dailyVariations, dateStr, exerciseId);
-    const key = exercise
-      ? generateSmartExerciseKey(date, exercise.id, {
-          isGymMode,
-          workoutIsGymMode: workout?.isGymMode,
-          weekVariant: getAutoWeekVariant(date)
-        })
-      : `${dateStr}_${exerciseId}`;
-
-    if (String(currentData.exerciseWeights?.[key] ?? '') === String(weightStr ?? '')) return;
-
-    updateTempExerciseData({
-      ...currentData,
-      exerciseWeights: {
-        ...(currentData.exerciseWeights || {}),
-        [key]: weightStr
-      }
-    }, { silent: true });
+  const clearExerciseSetWeightsForExercise = (storageKey, exerciseId) => {
+    patchSessionExerciseDraft((draft) => {
+      if (draft.exerciseSetWeights) delete draft.exerciseSetWeights[storageKey];
+    }, { exerciseId });
   };
 
-  const getExercisePrimaryStorageKey = (exerciseId, date) => {
-    const dateStr = getDateStr(date);
-    const workout = getTodayWorkout(date, isGymMode);
-    const snapshot = getCurrentData();
-    const exercise = resolveProgramExerciseFromWorkout(workout, snapshot.dailyVariations, dateStr, exerciseId);
-    return exercise
-      ? generateSmartExerciseKey(date, exercise.id, {
-          isGymMode,
-          workoutIsGymMode: workout?.isGymMode,
-          weekVariant: getAutoWeekVariant(date)
-        })
-      : `${dateStr}_${exerciseId}`;
-  };
-
-  const updateLocalExerciseMarkedWeighted = (exerciseId, checked, date) => {
+  const initExerciseSetWeightsFromSeries = (storageKey, exercise) => {
     const currentData = getCurrentData();
-    const key = getExercisePrimaryStorageKey(exerciseId, date);
-    const next = { ...(currentData.exerciseMarkedWeighted || {}) };
-    if (checked) next[key] = true;
-    else delete next[key];
-    updateTempExerciseData({ ...currentData, exerciseMarkedWeighted: next });
-  };
-
-  const updateLocalExerciseWeightPerArm = (exerciseId, checked, date) => {
-    const currentData = getCurrentData();
-    const key = getExercisePrimaryStorageKey(exerciseId, date);
-    const next = { ...(currentData.exerciseWeightPerArm || {}) };
-    if (checked) next[key] = true;
-    else delete next[key];
-    updateTempExerciseData({ ...currentData, exerciseWeightPerArm: next });
-  };
-
-  const updateExerciseSetWeightAtIndex = (exerciseId, setIndex, value, date, exercise) => {
-    const currentData = getCurrentData();
-    const key = getExercisePrimaryStorageKey(exerciseId, date);
     const n = inferDefaultSetCount(exercise, 0);
     const count = Math.max(1, n);
-    const prevRow =
-      (Array.isArray(currentData.exerciseSetWeights?.[key]) &&
-        currentData.exerciseSetWeights[key].slice()) ||
-      Array.from({ length: count }, () => String(currentData.exerciseWeights?.[key] || '').trim());
-    while (prevRow.length < count) prevRow.push(String(currentData.exerciseWeights?.[key] || '').trim());
-    const previous = Array.isArray(currentData.exerciseSetWeights?.[key])
-      ? currentData.exerciseSetWeights[key]
-      : null;
-    if (previous && String(previous[setIndex] ?? '') === String(value ?? '')) return;
-    prevRow[setIndex] = value;
-    updateTempExerciseData({
-      ...currentData,
-      exerciseSetWeights: { ...(currentData.exerciseSetWeights || {}), [key]: prevRow }
-    }, { silent: true });
-  };
-
-  const clearExerciseSetWeightsForExercise = (exerciseId, date) => {
-    const currentData = getCurrentData();
-    const key = getExercisePrimaryStorageKey(exerciseId, date);
-    const next = { ...(currentData.exerciseSetWeights || {}) };
-    delete next[key];
-    updateTempExerciseData({ ...currentData, exerciseSetWeights: next });
-  };
-
-  const initExerciseSetWeightsFromSeries = (exerciseId, date, exercise) => {
-    const currentData = getCurrentData();
-    const key = getExercisePrimaryStorageKey(exerciseId, date);
-    const n = inferDefaultSetCount(exercise, 0);
-    const count = Math.max(1, n);
-    const base = String(currentData.exerciseWeights?.[key] || '').trim();
+    const base = String(currentData.exerciseWeights?.[storageKey] || '').trim();
     const row = Array.from({ length: count }, () => base);
-    updateTempExerciseData({
-      ...currentData,
-      exerciseSetWeights: { ...(currentData.exerciseSetWeights || {}), [key]: row }
-    });
+    patchSessionExerciseDraft((draft) => {
+      if (!draft.exerciseSetWeights || typeof draft.exerciseSetWeights !== 'object') {
+        draft.exerciseSetWeights = {};
+      }
+      draft.exerciseSetWeights[storageKey] = row;
+    }, { exerciseId: exercise?.id });
   };
 
   // Fonctions locales pour les étirements
@@ -1143,7 +1115,10 @@ const TodayTab = () => {
     }
   };
 
-  const workout = getTodayWorkout(currentDate, isGymMode);
+  const workout = useMemo(
+    () => getTodayWorkout(currentDate, isGymMode),
+    [getTodayWorkout, currentDate, isGymMode]
+  );
   const dateStr = getDateStr(currentDate);
   const dayName = getDayName(currentDate);
   const calendarTodayYmd = getDateStr(new Date());
@@ -1644,6 +1619,10 @@ const TodayTab = () => {
     Array.isArray(workout?.drillsCourse?.items) && workout.drillsCourse.items.length > 0;
 
   useEffect(() => {
+    markTodayViewPrepared();
+  }, []);
+
+  useEffect(() => {
     // Verrou local (savingLockRef) : plus d’état isSavingSessionDraft.
     if (savingLockRef.current) return;
     if (!hasStretchesContent || !Array.isArray(quietQuests) || quietQuests.length === 0) return;
@@ -1718,6 +1697,7 @@ const TodayTab = () => {
 
   return (
     <div className="relative min-h-screen today-sport-shell">
+      <LastWeightIndexKeeper />
       {/* Contenu avec z-index relatif */}
       <div className="relative z-10 max-w-[1240px] mx-auto px-4 py-6 space-y-6">
         {/* Workout Header */}
@@ -2278,7 +2258,7 @@ const TodayTab = () => {
                           unit={exerciseUnit.unit === 'min' ? 'min' : 'sec'}
                           value={reps}
                           onChange={(next) =>
-                            updateLocalReps(exercise.id, next === '' ? '' : String(next), currentDate)
+                            updateLocalReps(primaryKeyForStars, next === '' ? '' : String(next))
                           }
                           className={
                             isChecked
@@ -2288,10 +2268,12 @@ const TodayTab = () => {
                         />
                       ) : (
                         <TodaySessionTextField
-                          type="number"
+                          type="text"
+                          inputMode="numeric"
+                          autoComplete="off"
                           placeholder={inputPlaceholder}
                           value={reps}
-                          onCommitSilent={(next) => updateLocalReps(exercise.id, next, currentDate)}
+                          onCommitSilent={(next) => updateLocalReps(primaryKeyForStars, next)}
                           className={`w-full text-center ${isChecked ? 'bg-green-600/20 border-green-500 text-green-300' : 'bg-black border-[#0F4C5C]/50 text-white'}`}
                           size="sm"
                         />
@@ -2303,10 +2285,11 @@ const TodayTab = () => {
                         <TodaySessionTextField
                           type="text"
                           inputMode="decimal"
+                          autoComplete="off"
                           placeholder="kg"
                           value={weightStr}
                           onCommitSilent={(next) =>
-                            updateLocalExerciseWeight(exercise.id, next, currentDate)
+                            updateLocalExerciseWeight(primaryKeyForStars, next)
                           }
                           className={`w-full text-center ${isChecked ? 'bg-green-600/20 border-green-500 text-green-300' : 'bg-black border-[#0F4C5C]/50 text-white'}`}
                           size="sm"
@@ -2332,7 +2315,7 @@ const TodayTab = () => {
                         <Checkbox
                           checked={markedWeighted}
                           onChange={(e) =>
-                            updateLocalExerciseMarkedWeighted(exercise.id, e.target.checked, currentDate)
+                            updateLocalExerciseMarkedWeighted(primaryKeyForStars, e.target.checked, exercise.id)
                           }
                           className="scale-90 text-violet-400"
                           name={`weighted_${exercise.id}`}
@@ -2346,7 +2329,7 @@ const TodayTab = () => {
                       <Checkbox
                         checked={resolveExerciseWeightPerArm(currentData, keys, readKey)}
                         onChange={(e) =>
-                          updateLocalExerciseWeightPerArm(exercise.id, e.target.checked, currentDate)
+                          updateLocalExerciseWeightPerArm(primaryKeyForStars, e.target.checked, exercise.id)
                         }
                         className="text-teal-400 mt-0.5 shrink-0"
                         name={`per_arm_${exercise.id}`}
@@ -2371,13 +2354,13 @@ const TodayTab = () => {
                                 <TodaySessionTextField
                                   type="text"
                                   inputMode="decimal"
+                                  autoComplete="off"
                                   value={sw != null ? String(sw) : ''}
                                   onCommitSilent={(next) =>
                                     updateExerciseSetWeightAtIndex(
-                                      exercise.id,
+                                      primaryKeyForStars,
                                       idx,
                                       next,
-                                      currentDate,
                                       exercise
                                     )
                                   }
@@ -2392,7 +2375,7 @@ const TodayTab = () => {
                           </div>
                           <button
                             type="button"
-                            onClick={() => clearExerciseSetWeightsForExercise(exercise.id, currentDate)}
+                            onClick={() => clearExerciseSetWeightsForExercise(primaryKeyForStars, exercise.id)}
                           className="today-ex-link text-left w-fit"
                           >
                             {t('today.exercises.perSetReset')}
@@ -2401,7 +2384,7 @@ const TodayTab = () => {
                       ) : (
                         <button
                           type="button"
-                          onClick={() => initExerciseSetWeightsFromSeries(exercise.id, currentDate, exercise)}
+                          onClick={() => initExerciseSetWeightsFromSeries(primaryKeyForStars, exercise)}
                           className="today-ex-link text-left w-fit"
                         >
                           {t('today.exercises.perSetOpen')}
@@ -2415,10 +2398,10 @@ const TodayTab = () => {
                       storageKey={readKey}
                       exercise={exercise}
                       getWorkoutData={getCurrentData}
-                      onApply={updateTempExerciseData}
+                      onApply={(next) => updateTempExerciseData(next, { silent: true })}
                       perArm={resolveExerciseWeightPerArm(currentData, keys, readKey)}
                       onPerArmChange={(checked) =>
-                        updateLocalExerciseWeightPerArm(exercise.id, checked, currentDate)
+                        updateLocalExerciseWeightPerArm(primaryKeyForStars, checked, exercise.id)
                       }
                       isChecked={isChecked}
                       t={t}

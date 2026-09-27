@@ -253,6 +253,263 @@ export const findLatestExerciseWeightValue = (currentData, exerciseIds) => {
   return state.bestVal;
 };
 
+const WEIGHT_SCAN_BUDGET_MS = 8;
+
+/**
+ * Même résultat que `findLatestExerciseWeightValue`, mais en tranches courtes
+ * pour ne pas bloquer la saisie pendant le préremplissage du poids.
+ * @param {object} currentData
+ * @param {Array<string|number>} exerciseIds
+ * @returns {Promise<string>}
+ */
+export function findLatestExerciseWeightValueYielding(currentData, exerciseIds) {
+  const ids = [...new Set((exerciseIds || []).filter((x) => x != null).map(String))];
+  if (!ids.length) return Promise.resolve('');
+  const idSet = new Set(ids);
+  const state = { bestDate: '', bestVal: '' };
+
+  const dateIfMatch = (key) => {
+    const datePart = String(key || '').slice(0, 10);
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(datePart)) return '';
+    const idFromKey = extractExerciseIdFromWorkoutKey(key);
+    return idSet.has(idFromKey) ? datePart : '';
+  };
+
+  const maps = [
+    currentData?.exerciseWeights,
+    currentData?.exerciseSetWeights,
+    currentData?.exerciseSetLogs,
+  ];
+  let mapIndex = 0;
+  let keys = [];
+  let keyIndex = 0;
+  let mode = 'weights';
+
+  return new Promise((resolve) => {
+    const step = () => {
+      const started = typeof performance !== 'undefined' ? performance.now() : Date.now();
+      while ((typeof performance !== 'undefined' ? performance.now() : Date.now()) - started < WEIGHT_SCAN_BUDGET_MS) {
+        if (keyIndex >= keys.length) {
+          if (mapIndex >= maps.length) {
+            resolve(state.bestVal);
+            return;
+          }
+          const obj = maps[mapIndex];
+          mode = mapIndex === 0 ? 'weights' : mapIndex === 1 ? 'sets' : 'logs';
+          mapIndex += 1;
+          keys = obj && typeof obj === 'object' ? Object.keys(obj) : [];
+          keyIndex = 0;
+          continue;
+        }
+        const key = keys[keyIndex];
+        keyIndex += 1;
+        const datePart = dateIfMatch(key);
+        if (!datePart) continue;
+        const raw = maps[mapIndex - 1]?.[key];
+        if (mode === 'weights') {
+          considerLatestWeight(datePart, raw, state);
+        } else if (mode === 'sets' && Array.isArray(raw)) {
+          for (let i = raw.length - 1; i >= 0; i -= 1) {
+            if (raw[i] != null && String(raw[i]).trim() !== '') {
+              considerLatestWeight(datePart, raw[i], state);
+              break;
+            }
+          }
+        } else if (mode === 'logs') {
+          const sets = Array.isArray(raw?.sets) ? raw.sets : [];
+          for (let i = sets.length - 1; i >= 0; i -= 1) {
+            const w = sets[i]?.weight;
+            if (w != null && Number(w) > 0) {
+              considerLatestWeight(datePart, w, state);
+              break;
+            }
+          }
+        }
+      }
+      setTimeout(step, 0);
+    };
+    step();
+  });
+}
+
+/**
+ * Index id → dernière charge, construit au ralenti quand la séance n’est pas en cours
+ * d’édition. La coche lit cet index en O(1) au lieu de parcourir tout l’historique.
+ */
+const lastWeightByExerciseId = new Map();
+let weightIndexPaused = true;
+let weightIndexScheduled = false;
+let weightIndexGetData = null;
+let weightIndexSource = null;
+let weightIndexMapIndex = 0;
+let weightIndexKeys = null;
+let weightIndexKeyIndex = 0;
+let weightIndexDone = false;
+
+function weightIndexMaps(data) {
+  return [data?.exerciseWeights, data?.exerciseSetWeights, data?.exerciseSetLogs];
+}
+
+function ingestIndexedWeight(exerciseId, datePart, raw) {
+  if (!exerciseId || !datePart) return;
+  const state = { bestDate: '', bestVal: '' };
+  const prev = lastWeightByExerciseId.get(exerciseId);
+  if (prev) {
+    state.bestDate = prev.date;
+    state.bestVal = prev.val;
+  }
+  considerLatestWeight(datePart, raw, state);
+  if (state.bestVal) {
+    lastWeightByExerciseId.set(exerciseId, { date: state.bestDate, val: state.bestVal });
+  }
+}
+
+function ingestIndexedEntry(mode, key, raw) {
+  const datePart = String(key || '').slice(0, 10);
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(datePart)) return;
+  const exerciseId = extractExerciseIdFromWorkoutKey(key);
+  if (!exerciseId) return;
+  if (mode === 'weights') {
+    ingestIndexedWeight(exerciseId, datePart, raw);
+    return;
+  }
+  if (mode === 'sets' && Array.isArray(raw)) {
+    for (let i = raw.length - 1; i >= 0; i -= 1) {
+      if (raw[i] != null && String(raw[i]).trim() !== '') {
+        ingestIndexedWeight(exerciseId, datePart, raw[i]);
+        return;
+      }
+    }
+    return;
+  }
+  const sets = Array.isArray(raw?.sets) ? raw.sets : [];
+  for (let i = sets.length - 1; i >= 0; i -= 1) {
+    const w = sets[i]?.weight;
+    if (w != null && Number(w) > 0) {
+      ingestIndexedWeight(exerciseId, datePart, w);
+      return;
+    }
+  }
+}
+
+function resetWeightIndexCursor() {
+  weightIndexMapIndex = 0;
+  weightIndexKeys = null;
+  weightIndexKeyIndex = 0;
+  weightIndexDone = false;
+}
+
+export function pauseLastExerciseWeightIndex() {
+  weightIndexPaused = true;
+}
+
+export function noteLastExerciseWeightFromKey(storageKey, raw) {
+  const datePart = extractDateStrFromWorkoutKey(storageKey);
+  const exerciseId = extractExerciseIdFromWorkoutKey(storageKey);
+  ingestIndexedWeight(exerciseId, datePart, raw);
+}
+
+export function isLastExerciseWeightIndexReady() {
+  return weightIndexDone && weightIndexSource != null;
+}
+
+export function peekLastExerciseWeightValue(exerciseIds) {
+  const ids = [...new Set((exerciseIds || []).filter((x) => x != null).map(String))];
+  let bestDate = '';
+  let bestVal = '';
+  for (let i = 0; i < ids.length; i += 1) {
+    const hit = lastWeightByExerciseId.get(ids[i]);
+    if (hit && hit.date >= bestDate && hit.val) {
+      bestDate = hit.date;
+      bestVal = hit.val;
+    }
+  }
+  return bestVal;
+}
+
+function scheduleWeightIndexSlice() {
+  if (weightIndexScheduled || weightIndexPaused || weightIndexDone) return;
+  weightIndexScheduled = true;
+  const run = (deadline) => {
+    weightIndexScheduled = false;
+    if (weightIndexPaused || weightIndexDone) return;
+    const data = typeof weightIndexGetData === 'function' ? weightIndexGetData() : null;
+    if (!data || data !== weightIndexSource) {
+      weightIndexSource = data;
+      lastWeightByExerciseId.clear();
+      resetWeightIndexCursor();
+      if (!data) return;
+    }
+    const maps = weightIndexMaps(data);
+    const remaining = typeof deadline?.timeRemaining === 'function' ? deadline.timeRemaining() : 6;
+    if (remaining < 2) {
+      setTimeout(scheduleWeightIndexSlice, 32);
+      return;
+    }
+    const budgetMs = Math.min(6, remaining);
+    const started = typeof performance !== 'undefined' ? performance.now() : Date.now();
+    while ((typeof performance !== 'undefined' ? performance.now() : Date.now()) - started < budgetMs) {
+      if (weightIndexMapIndex >= maps.length) {
+        weightIndexDone = true;
+        return;
+      }
+      const obj = maps[weightIndexMapIndex];
+      if (!weightIndexKeys) {
+        weightIndexKeys = obj && typeof obj === 'object' ? Object.keys(obj) : [];
+        weightIndexKeyIndex = 0;
+      }
+      if (weightIndexKeyIndex >= weightIndexKeys.length) {
+        weightIndexMapIndex += 1;
+        weightIndexKeys = null;
+        weightIndexKeyIndex = 0;
+        continue;
+      }
+      const key = weightIndexKeys[weightIndexKeyIndex];
+      weightIndexKeyIndex += 1;
+      const mode = weightIndexMapIndex === 0 ? 'weights' : weightIndexMapIndex === 1 ? 'sets' : 'logs';
+      ingestIndexedEntry(mode, key, obj?.[key]);
+    }
+    scheduleWeightIndexSlice();
+  };
+  if (typeof requestIdleCallback === 'function') {
+    requestIdleCallback(run, { timeout: 800 });
+  } else {
+    setTimeout(() => run(null), 48);
+  }
+}
+
+/** Reprend le remplissage seulement hors édition. Même objet de données = on continue. */
+export function resumeLastExerciseWeightIndex(getCurrentData) {
+  weightIndexGetData = getCurrentData;
+  weightIndexPaused = false;
+  const data = typeof getCurrentData === 'function' ? getCurrentData() : null;
+  if (data !== weightIndexSource) {
+    weightIndexSource = data;
+    lastWeightByExerciseId.clear();
+    resetWeightIndexCursor();
+  }
+  if (!weightIndexDone) scheduleWeightIndexSlice();
+}
+
+/** Pour les tests : même résultat que findLatest, sans attendre le ralenti. */
+export function rebuildLastExerciseWeightIndexSync(data) {
+  pauseLastExerciseWeightIndex();
+  weightIndexSource = data || null;
+  lastWeightByExerciseId.clear();
+  resetWeightIndexCursor();
+  weightIndexDone = true;
+  if (!data) return;
+  const maps = weightIndexMaps(data);
+  const modes = ['weights', 'sets', 'logs'];
+  for (let m = 0; m < maps.length; m += 1) {
+    const obj = maps[m];
+    if (!obj || typeof obj !== 'object') continue;
+    for (const key of Object.keys(obj)) {
+      ingestIndexedEntry(modes[m], key, obj[key]);
+    }
+  }
+}
+
 /**
  * Génère une clé pour un étirement (legacy : granularité par moment)
  * 

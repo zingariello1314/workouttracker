@@ -27,6 +27,14 @@ export const CATALOG_BICEPS = [
     muscleGroup: 'Biceps',
     aliases: ['preacher curl']
   }),
+  scoringEntry('Curl pupitre unilatéral', 'reps', 3, 0.8, {
+    muscleGroup: 'Biceps',
+    aliases: ['single arm preacher curl', 'curl pupitre un bras']
+  }),
+  scoringEntry('Curl assis dos calé', 'reps', 2, 0.75, {
+    muscleGroup: 'Biceps',
+    aliases: ['seated dumbbell curl', 'curl haltères assis']
+  }),
   scoringEntry('Curl pupitre machine', 'reps', 2, 0.8, { muscleGroup: 'Biceps' }),
   scoringEntry('Curl spider', 'reps', 3, 0.85, { muscleGroup: 'Biceps' }),
   scoringEntry('Curl Zottman', 'reps', 3, 0.85, { muscleGroup: 'Biceps' }),
@@ -81,6 +89,10 @@ export const CATALOG_BICEPS = [
   scoringEntry("Curl marteau pupitre", 'reps', 2, 0.7, {
     muscleGroup: 'Biceps',
     aliases: ['hammer preacher curl']
+  }),
+  scoringEntry('Curl marteau incliné', 'reps', 3, 0.85, {
+    muscleGroup: 'Biceps',
+    aliases: ['incline hammer curl', 'curl marteau sur banc incliné']
   }),
   scoringEntry("Curl incliné à la poulie", 'reps', 2, 0.75, {
     muscleGroup: 'Biceps',

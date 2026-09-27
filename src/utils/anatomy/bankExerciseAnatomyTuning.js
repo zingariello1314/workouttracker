@@ -3,7 +3,7 @@
  * S’applique après l’inférence par muscles (voir `resolveBankItemAnatomy`).
  */
 
-/** @typedef {{ boundsMargin?: number, cameraDistanceFactor?: number }} BankCameraOverride */
+/** @typedef {{ boundsMargin?: number, cameraDistanceFactor?: number, targetOffsetY?: number }} BankCameraOverride */
 
 /** @typedef {{ inferredView?: string, camera?: BankCameraOverride }} BankExerciseTune */
 
@@ -79,6 +79,14 @@ export const BANK_EXERCISE_ANATOMY_TUNING = {
   'muscle up strict': {
     inferredView: 'back',
     camera: { boundsMargin: 0.9, cameraDistanceFactor: 1.12 }
+  },
+  /**
+   * Sans GIF : le cadrage par défaut collait la caméra au bassin.
+   * Recul + visée plus haute pour voir bras, biceps et avant-bras.
+   */
+  'curl marteau incliné': {
+    inferredView: 'frontHighWide',
+    camera: { boundsMargin: 1.16, cameraDistanceFactor: 1.65, targetOffsetY: 0.22 }
   }
 };
 

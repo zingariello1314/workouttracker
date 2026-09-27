@@ -93,6 +93,9 @@ const ExercisesTabBody = () => {
   const [viewMode, setViewMode] = useState('exercises'); // 'exercises' ou 'programs'
   /** Sélection sous-onglet : exercises (banque exos) | stretches (banque étirements) | program (mon programme) */
   const [bankSubTab, setBankSubTab] = useState(BANK_SUB_TABS.EXERCISES);
+  /** La grille complète ne se monte pas dans le premier rendu : sinon l’onglet reste sur « Chargement… ». */
+  const [bankPrepared, setBankPrepared] = useState(false);
+  const [bankRenderLimit, setBankRenderLimit] = useState(24);
   /** Éditeur complet du programme actif (même vue que l’onglet Programme) depuis Banque → Mon programme */
   const [bankProgramEditorOpen, setBankProgramEditorOpen] = useState(false);
 
@@ -370,6 +373,7 @@ const ExercisesTabBody = () => {
     };
 
     if (isGuest) return [];
+    if (dataSource === 'exercise_bank' && !bankPrepared) return [];
     if (isStandardUser || dataSource === 'exercise_bank') return mergeReferenceExercises([]);
 
     // Priorité aux exercices synchronisés si disponibles ET s'ils sont enrichis
@@ -408,7 +412,7 @@ const ExercisesTabBody = () => {
     }));
 
     return mergeReferenceExercises(fromProgram);
-  }, [enhancedProgram, syncData, t, isGuest, isStandardUser, dataSource]);
+  }, [enhancedProgram, syncData, t, isGuest, isStandardUser, dataSource, bankPrepared]);
 
   // Filtrer les exercices
   const filteredExercises = useMemo(() => {
@@ -418,7 +422,7 @@ const ExercisesTabBody = () => {
     if (filters.hasGif === 'yes') list = list.filter((exercise) => exerciseHasGif(exercise));
     if (filters.hasGif === 'no') list = list.filter((exercise) => !exerciseHasGif(exercise));
     if (filters.isNew === 'yes') list = list.filter((exercise) => exercise.isNew);
-    return sortExercisesByMuscleName(list);
+    return sortExercisesByMuscleName(list, exerciseHasGif);
   }, [allExercises, filters]);
 
   const groupedExerciseBank = useMemo(() => {
@@ -433,9 +437,23 @@ const ExercisesTabBody = () => {
       .sort(([a], [b]) => a.localeCompare(b, 'fr'))
       .map(([category, rows]) => ({
         category,
-        rows: [...rows].sort((a, b) => String(a?.name || '').localeCompare(String(b?.name || ''), 'fr'))
+        rows
       }));
   }, [dataSource, filteredExercises]);
+
+  useEffect(() => {
+    if (bankSubTab !== BANK_SUB_TABS.EXERCISES) return undefined;
+    if (!bankPrepared) {
+      const id = window.setTimeout(() => setBankPrepared(true), 0);
+      return () => window.clearTimeout(id);
+    }
+    if (dataSource !== 'exercise_bank') return undefined;
+    if (bankRenderLimit >= filteredExercises.length) return undefined;
+    const id = window.setTimeout(() => {
+      setBankRenderLimit((count) => count + 48);
+    }, 32);
+    return () => window.clearTimeout(id);
+  }, [bankSubTab, bankPrepared, bankRenderLimit, dataSource, filteredExercises.length]);
 
   // Fonction pour normaliser la structure des exercices
   const normalizeExercise = (exercise) => {
@@ -505,6 +523,18 @@ const ExercisesTabBody = () => {
     if (difficulty === t('exercisesTab.difficulty.advanced') || difficulty === 'Avancé') return 'text-red-400';
     return 'text-slate-400';
   };
+
+  const bankListPending = dataSource === 'exercise_bank' && !bankPrepared;
+  let bankSlotsLeft = dataSource === 'exercise_bank' ? bankRenderLimit : Number.POSITIVE_INFINITY;
+  const visibleExerciseGroups = bankListPending
+    ? []
+    : groupedExerciseBank.flatMap((group) => {
+        if (bankSlotsLeft <= 0) return [];
+        const rows = group.rows.slice(0, bankSlotsLeft);
+        bankSlotsLeft -= rows.length;
+        if (!rows.length) return [];
+        return [{ category: group.category, rows, total: group.rows.length }];
+      });
 
   if (similarExerciseHub) {
     return (
@@ -707,7 +737,13 @@ const ExercisesTabBody = () => {
       <div className="relative">
         <div className="relative z-10 space-y-6 p-6">
           {subTabsHeader}
-          <CircuitsBankView />
+          <CircuitsBankView
+            data={data}
+            updateData={updateData}
+            isAuthenticated={isAuthenticated}
+            intensityCoeffs={intensityCoeffs}
+            maxRecordsByExerciseId={maxRecordsByExerciseId}
+          />
         </div>
       </div>
     );
@@ -965,7 +1001,7 @@ const ExercisesTabBody = () => {
               </div>
               <div>
                 <p className="text-sm text-slate-400">{t('exercisesTab.stats.totalExercises')}</p>
-                <p className="text-xl font-bold text-white">{exerciseStats.total}</p>
+                <p className="text-xl font-bold text-white">{bankListPending ? '…' : exerciseStats.total}</p>
               </div>
             </div>
           </CardContent>
@@ -980,7 +1016,7 @@ const ExercisesTabBody = () => {
               <div>
                 <p className="text-sm text-slate-400">{t('exercisesTab.stats.categories')}</p>
                 <p className="text-xl font-bold text-white">
-                  {Object.keys(exerciseStats.byCategory).length}
+                  {bankListPending ? '…' : Object.keys(exerciseStats.byCategory).length}
                 </p>
               </div>
             </div>
@@ -996,7 +1032,7 @@ const ExercisesTabBody = () => {
               <div>
                 <p className="text-sm text-slate-400">{t('exercisesTab.stats.muscleGroups')}</p>
                 <p className="text-xl font-bold text-white">
-                  {Object.keys(exerciseStats.byMuscleGroup).length}
+                  {bankListPending ? '…' : Object.keys(exerciseStats.byMuscleGroup).length}
                 </p>
               </div>
             </div>
@@ -1011,7 +1047,7 @@ const ExercisesTabBody = () => {
               </div>
               <div>
                 <p className="text-sm text-slate-400">{t('exercisesTab.stats.filtered')}</p>
-                <p className="text-xl font-bold text-white">{filteredExercises.length}</p>
+                <p className="text-xl font-bold text-white">{bankListPending ? '…' : filteredExercises.length}</p>
               </div>
             </div>
           </CardContent>
@@ -1096,13 +1132,17 @@ const ExercisesTabBody = () => {
           <CardHeader>
             <CardTitle>
               {selectedProgram 
-                ? t('exercisesTab.exercises.titleWithProgram', { count: filteredExercises.length, programName: selectedProgram.name })
-                : t('exercisesTab.exercises.title', { count: filteredExercises.length })
+                ? t('exercisesTab.exercises.titleWithProgram', { count: bankListPending ? 0 : filteredExercises.length, programName: selectedProgram.name })
+                : bankListPending
+                  ? 'Banque d’exercices'
+                  : t('exercisesTab.exercises.title', { count: filteredExercises.length })
               }
             </CardTitle>
           </CardHeader>
           <CardContent>
-            {filteredExercises.length === 0 ? (
+            {bankListPending ? (
+              <p className="py-10 text-center text-sm text-slate-400">Préparation de la banque…</p>
+            ) : filteredExercises.length === 0 ? (
               <div className="text-center py-12">
                 <Dumbbell className="w-12 h-12 text-slate-400 mx-auto mb-4" />
                 <p className="text-slate-400 text-lg mb-2">{t('exercisesTab.exercises.none')}</p>
@@ -1115,10 +1155,10 @@ const ExercisesTabBody = () => {
               </div>
             ) : dataSource === 'exercise_bank' ? (
                 <div className="space-y-6">
-                  {groupedExerciseBank.map((group) => (
+                  {visibleExerciseGroups.map((group) => (
                     <section key={group.category} className="space-y-3">
                       <h3 className="text-sm font-semibold uppercase tracking-wide text-teal-200 border-b border-[#0F4C5C]/50 pb-2">
-                        {group.category} ({group.rows.length})
+                        {group.category} ({group.total})
                       </h3>
                       <div className="grid grid-cols-1 items-stretch sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
                         {group.rows.map((exercise) => (

@@ -27,7 +27,15 @@ const REVIEWED_EXISTING_VIDEOS = [
   ['videos muscles/soulevé de terre.mp4', 'db:soulevé de terre'],
   ['videos muscles/traction australienne prise pronation.mp4', 'db:tractions australiennes'],
   ['videos muscles/tirage vertical toutes les variantes.mp4', 'db:tirage vertical'],
-  ['videos muscles/pecs a la poulie debout toutes les variantes.mp4', 'db:écarté poulie'],
+  ['videos muscles/pecs a la poulie debout toutes les variantes.mp4', 'db:écarté poulie haute'],
+  ['videos muscles/pecs a la poulie debout toutes les variantes.mp4', 'db:écarté poulie médiane'],
+  ['videos muscles/pecs a la poulie debout toutes les variantes.mp4', 'db:écarté poulie basse'],
+  ['videos muscles/pec fly a la poulie.mp4', 'db:écarté poulie médiane'],
+  ['videos muscles/pec fly a la poulie.mp4', 'db:écarté poulie basse'],
+  ['videos muscles/toutes les variantes de pec fly a la poulie 2.mp4', 'db:écarté poulie haute'],
+  ['videos muscles/toutes les variantes de pec fly a la poulie 2.mp4', 'db:écarté poulie médiane'],
+  ['videos muscles/toutes les variantes de pec fly a la poulie 2.mp4', 'db:écarté poulie basse'],
+  ['videos muscles/pec fly poulie haute.mp4', 'db:écarté poulie haute'],
   ['videos muscles/curl concentration assis .mp4', 'db:curl concentration'],
   ['videos muscles/curl concentration assis.mp4', 'db:curl concentration'],
   ['videos muscles/developpé couché incliné a la barre .mp4', 'db:développé incliné'],
@@ -112,7 +120,7 @@ const REVIEWED_EXISTING_VIDEOS = [
   ['deuxieme dossier gif/0092.mp4', 'db:tirage menton haltères'],
   ['deuxieme dossier gif/0093.mp4', 'db:élévations frontales'],
   ['deuxieme dossier gif/0095.mp4', 'db:développé militaire kettlebell'],
-  ['deuxieme dossier gif/0096.mp4', 'db:écarté poulie'],
+  ['deuxieme dossier gif/0096.mp4', 'db:écarté poulie basse'],
   ['deuxieme dossier gif/0097.mp4', 'db:élévations latérales'],
   ['deuxieme dossier gif/0098.mp4', 'db:chest press debout machine'],
   ['deuxieme dossier gif/0099.mp4', 'db:développé militaire smith'],
@@ -151,6 +159,517 @@ const REVIEWED_EXISTING_GIFS = [
   ['troisieme dossier gif/delts/barbell-upright-row-v-2.gif', 'db:tirage menton barre']
 ];
 
+const CIRCUIT_OVERRIDES = {
+  'videos muscles/routines/routine triceps.mp4': {
+    title: 'Triceps Isolation — extension au-dessus de la tête + kickback + poulie',
+    targetRounds: 3,
+    restBetweenRoundsSec: 90,
+    defaultTargetReps: 12,
+    exerciseKeys: [
+      'extension triceps debout haltère',
+      'kickbacks triceps',
+      'extension poulie'
+    ],
+    description: `Circuit — spécialisation triceps
+
+Ordre de la vidéo :
+1. Extension triceps au-dessus de la tête, debout, haltère
+2. Kickback triceps, haltère
+3. Extension triceps à la poulie
+
+Niveau          Séries    Reps / exercice    Charge indicative    Repos entre tours
+Débutant        2–3       12–15              2–8 kg               90–120 s
+Intermédiaire   3         10–15              5–15 kg              75–120 s
+Expérimenté     3–4       8–15               8–20 kg              60–120 s
+Bodybuilder     3–4       8–15               10–25+ kg            60–90 s
+
+Ces fourchettes sont volontairement larges. Le kickback se fait presque toujours plus léger que l’extension à la poulie et que l’extension au-dessus de la tête : le bras est déjà en arrière, le levier est long, et la technique casse avant le muscle si la charge est la même. Le bon poids, sur chaque exercice, est celui qui laisse finir la série avec environ 1 à 3 répétitions en réserve et une technique encore propre.
+
+Utilité
+
+Bloc entièrement consacré aux triceps. Les trois mouvements étendent le coude, donc le volume, les répétitions et la fatigue restent sur le même muscle au lieu de se disperser. Enchaîner trois variantes proches maintient la sollicitation quand la première série a déjà fatigué : la charge ou les reps peuvent baisser, le triceps continue de travailler.
+
+Les positions du bras ne sont pas les mêmes. Au-dessus de la tête, l’épaule est fléchie et le chef long est étiré. Au kickback, le bras est en arrière et le triceps travaille en course courte, avec une charge forcément plus modeste. À la poulie, le coude est fixe le long du corps et la tension reste présente jusqu’en bas, là où l’haltère se repose. Le stimulus est donc moins monotone que trois fois le même geste, sans devenir un entraînement du haut du corps.
+
+Utile pour prendre du volume sur les triceps, poser un bloc de spécialisation, ou finir une séance push. Les formats en 12–15 répétitions ajoutent de l’endurance musculaire locale. En revanche, la mécanique reste très proche d’un exercice à l’autre : peu de diversité musculaire, peu d’intérêt pour la force maximale. La logique est l’hypertrophie, le volume local et une fatigue contrôlée.
+
+Lecture par niveau
+
+Débutant : apprendre le coude fixe, garder de la marge, charges basses. L’échec n’est pas le but.
+Intermédiaire : vrai bloc d’hypertrophie, assez de volume pour progresser, la technique reste prioritaire.
+Expérimenté : séries plus proches de l’échec, charge ou volume qui montent. Le circuit peut servir de spécialisation.
+Bodybuilder : volume ciblé, tempo tenu, amplitude stable, séries parfois très proches de l’échec. Ce volume se compte avec le reste de la séance et de la semaine, pas tout seul.
+
+En résumé
+
+Dominante : hypertrophie des triceps
+Secondaire : endurance musculaire locale
+Densité musculaire : très élevée
+Diversité musculaire : faible
+Force maximale : faible à modérée
+Spécialisation : excellente
+Circuit complet à lui seul : non
+Meilleur contexte : séance bras, séance push, ou bloc de spécialisation triceps.`
+  },
+  'videos muscles/routines/routine 3 exercices qui remplacent des exercices sur machine .mp4': {
+    title: 'Leg Unilateral — squat haltères + fentes + pistol haltère',
+    targetRounds: 3,
+    restBetweenRoundsSec: 150,
+    defaultTargetReps: 10,
+    exerciseKeys: [
+      'squat haltères',
+      'fentes',
+      'pistol squat haltère'
+    ],
+    description: `Circuit — Leg Unilateral
+
+Ordre de la vidéo :
+1. Squat avec haltères
+2. Fentes avec haltères
+3. Pistol squat avec haltère
+
+Niveau          Séries    Reps / exercice    Charge indicative*    Repos entre tours
+Débutant        2–3       8–12               4–12 kg               120–180 s
+Intermédiaire   3         8–12               8–20 kg               120–180 s
+Expérimenté     3–4       8–12               12–30 kg              120–180 s
+Bodybuilder     3–4       8–15               16–40+ kg             120–240 s
+
+* Charge totale quand tu tiens deux haltères. Ce sont des repères, pas des standards. La technique, l’amplitude et le matériel font bouger la charge utile. Le pistol se charge en général bien plus léger que le squat : l’équilibre et la mobilité limitent souvent avant le muscle.
+
+Équivalences salle
+
+Squat avec haltères — charge libre, les deux jambes — proche du rôle d’un hack squat.
+Fentes avec haltères — unilatéral libre — proche du rôle des fentes à la Smith.
+Pistol squat avec haltère — unilatéral très exigeant — proche du rôle d’une presse à cuisses unilatérale.
+
+Ces équivalences ne disent pas que les gestes sont les mêmes. Elles disent leur place dans la séance : une grosse sollicitation des jambes, avec une paire d’haltères, quand les machines ne sont pas là.
+
+Utilité
+
+Alternative haltères à une partie de séance jambes de salle. La logique ressemble à hack squat, puis fentes guidées, puis presse unilatérale, avec beaucoup moins de matériel.
+
+Le squat haltères ouvre : les deux jambes, de la charge, du volume. Les fentes passent sur une jambe en mouvement, avec de la stabilité, et chaque jambe doit produire sa part. Le pistol ferme : force relative, équilibre, mobilité, contrôle. La progression est charge globale, puis unilatéral, puis contrôle.
+
+Quadriceps et fessiers portent le circuit. Adducteurs, ischio-jambiers, mollets et stabilisateurs de hanche et de cheville suivent. Plus on avance, plus une jambe travaille seule, donc les écarts de force et de contrôle entre les deux côtés se voient.
+
+Pourquoi ça remplace des machines
+
+Avec une paire d’haltères, la séance reste exigeante sans hack squat, sans Smith et sans presse. Les haltères demandent plus de stabilisation. La charge maximale est en général plus basse. L’équilibre peut lâcher avant le muscle visé. Le pistol demande bien plus de mobilité et de contrôle qu’une presse unilatérale. Les machines, elles, laissent monter la charge plus simplement et plus haut.
+
+Utile à la maison, en déplacement, ou dans une salle peu équipée. Utile aussi en salle, volontairement, pour ajouter du travail libre et unilatéral.
+
+Lecture par niveau
+
+Débutant : maîtriser les trois gestes, contrôler la descente, charger peu à peu. Le pistol peut s’aider d’un support ou d’une amplitude plus courte avant d’être libre.
+Intermédiaire : la charge devient vraiment stimulante. Le circuit développe le volume des quadriceps et des fessiers, et le travail sur une jambe.
+Expérimenté : plus de volume, plus de charge, plus près de l’échec. Le squat accumule la tension, les deux suivants continuent malgré la fatigue.
+Bodybuilder : le squat et les fentes portent l’hypertrophie. Le pistol apporte surtout l’unilatéral et le contrôle. Le charger lourd n’est pas obligatoire : le geste est déjà dur.
+
+Profil
+
+Dominante : quadriceps + fessiers
+Secondaire : adducteurs, ischio-jambiers, mollets, stabilisateurs
+Force : élevée
+Hypertrophie : élevée
+Travail unilatéral : très élevé
+Stabilité / équilibre : très élevé
+Mobilité : importante
+Endurance musculaire : modérée à élevée
+Dépendance au matériel : faible
+Alternative aux machines : excellente
+Diversité musculaire : bonne, centrée sur les jambes
+Meilleur contexte : maison, salle peu équipée, déplacement, ou séance jambes aux haltères.
+
+En une phrase
+
+Leg Unilateral remplace à peu près le hack squat, les fentes à la Smith et la presse unilatérale par trois mouvements aux haltères, avec plus de stabilisation, de contrôle et de travail sur une jambe.`
+  },
+  'videos muscles/routines/routine biceps.mp4': {
+    title: 'Biceps Incline — spider + curl incliné + marteau incliné',
+    targetRounds: 3,
+    restBetweenRoundsSec: 90,
+    defaultTargetReps: 10,
+    exerciseKeys: [
+      'curl spider',
+      'curl incliné',
+      'curl marteau incliné'
+    ],
+    description: `Circuit — Biceps Incline
+
+Ordre de la vidéo :
+1. Curl spider
+2. Curl incliné
+3. Curl marteau incliné
+
+Niveau          Séries    Reps / exercice    Charge indicative*    Repos entre tours
+Débutant        2–3       10–15              3–7 kg / haltère      90–120 s
+Intermédiaire   3         8–12               5–10 kg / haltère     90–120 s
+Expérimenté     3–4       8–12               7–14 kg / haltère     75–120 s
+Bodybuilder     3–4       8–15               8–18+ kg / haltère    60–120 s
+
+* Charges indicatives par haltère. Elles ne constituent pas une norme : le niveau réel, le banc, l’amplitude, la morphologie et surtout la qualité d’exécution peuvent modifier fortement la charge appropriée. Le spider se charge en général moins lourd que le curl marteau incliné.
+
+Les trois mouvements
+
+Curl spider — poitrine contre le dossier incliné, bras pendants vers le sol, ce qui limite fortement l’élan du buste.
+Curl incliné — dos sur le banc, bras derrière le buste, supination complète, forte amplitude.
+Curl marteau incliné — même banc, prise neutre : les fléchisseurs du coude continuent, avec plus de brachial et de brachio-radial.
+
+Utilité
+
+Biceps Incline cherche moins à multiplier les exercices qu’à exploiter trois configurations du curl, toutes sur banc incliné. Le volume reste sur les fléchisseurs du coude : dominante biceps, et une part nette pour le brachial et le brachio-radial.
+
+Les trois gestes ne placent pas le bras de la même façon. Le curl incliné ouvre l’épaule : le bras part derrière le buste, l’amplitude est longue, la supination est complète. Le spider retourne la position, poitrine contre le dossier, et coupe une grande partie des compensations : la sollicitation reste ciblée quand la fatigue est déjà là. Le curl marteau incliné garde le banc, change la prise, et déplace un peu l’accent vers l’ensemble des fléchisseurs.
+
+L’intérêt des trois positions, indépendamment de l’ordre filmé : amplitude importante, puis isolation stricte, puis prise neutre et développement global du bras.
+
+Le circuit sert l’hypertrophie, le contrôle, le volume local et le travail des bras sous plusieurs positions. Il peut être le bloc principal d’une séance biceps courte, ou la finition après des tirages.
+
+La limite est volontaire. Les trois exercices restent des variantes de curl : forte spécialisation, peu de diversité. Ça complète une séance dos ou pull. Ce n’est pas un entraînement du haut du corps.
+
+Lecture par niveau
+
+Débutant : apprentissage et construction de base. Le volume reste modéré. L’amplitude, le contrôle, et la capacité à faire les trois variantes sans élan passent avant la charge.
+Intermédiaire : hypertrophie. Le circuit devient un vrai bloc de bras. Les trois positions accumulent du volume sans répéter exactement le même geste, et l’échec se rapproche peu à peu.
+Expérimenté : spécialisation. Plus de volume, plus près de l’échec. Le spider sert surtout à garder une exécution stricte quand les deux autres ont déjà fatigué les bras.
+Bodybuilder : hypertrophie ciblée. La qualité du volume compte plus que la charge maximale. Les séries peuvent aller très près de l’échec, amplitude tenue. Le curl marteau incliné complète l’épaisseur du bras.
+
+Profil
+
+Hypertrophie : ★★★★★
+Spécialisation biceps : ★★★★★
+Travail sous amplitude importante : ★★★★★
+Contrôle / isolation : ★★★★★
+Brachial / épaisseur du bras : ★★★★
+Force maximale : ★★
+Endurance musculaire locale : ★★★★
+Diversité des prises : ★★★★
+Diversité musculaire globale : ★★
+Dépendance au matériel : faible
+Meilleur contexte : séance bras, pull, ou spécialisation biceps
+
+En une phrase
+
+Biceps Incline combine un curl en position étirée, un spider particulièrement strict et un curl marteau incliné pour accumuler du volume sur les fléchisseurs du coude, avec une dominante biceps et une contribution nette à l’épaisseur du bras.`
+  },
+  'videos muscles/routines/routine abdos.mp4': {
+    title: 'Wall Core & Glutes — crunch au mur + hip thrust au mur',
+    targetRounds: 3,
+    restBetweenRoundsSec: 90,
+    defaultTargetReps: 15,
+    exerciseKeys: [
+      'crunch au mur',
+      'crunch au mur haltère',
+      'hip thrust pieds au mur',
+      'crunch au mur pieds décollés'
+    ],
+    description: `Circuit — Wall Core & Glutes
+
+Ordre de la vidéo :
+1. Crunch au mur
+2. Crunch au mur haltère
+3. Hip thrust pieds au mur
+4. Crunch au mur pieds décollés
+
+Niveau          Séries    Reps / exercice    Charge indicative*    Repos entre tours
+Débutant        2–3       12–20              0–5 kg                90–120 s
+Intermédiaire   3         12–20              5–10 kg               90–120 s
+Expérimenté     3–4       10–20              8–15 kg               75–120 s
+Bodybuilder     3–4       10–20              10–25+ kg             60–120 s
+
+* Charge indicative lorsqu’un haltère est utilisé. Pour les crunchs, l’haltère est tenu contre la poitrine ou au-dessus du torse. Pour le hip thrust, il est sur le bassin. Les charges ne se comparent donc pas d’un exercice à l’autre.
+
+Les quatre mouvements
+
+Crunch au mur — pieds contre le mur, jambes fléchies, flexion du tronc.
+Crunch au mur haltère — le même geste, avec une charge pour durcir progressivement.
+Hip thrust pieds au mur — extension de hanche, pieds en appui au mur, haltère sur le bassin.
+Crunch au mur pieds décollés — les pieds quittent le mur à chaque répétition, avec l’haltère. Plus de contrôle du bassin et du tronc.
+
+Utilité
+
+Wall Core & Glutes développe le tronc et les fessiers avec très peu de matériel. Les quatre exercices tournent autour du mur, et la difficulté monte par la charge, le contrôle du bassin et la stabilité des jambes.
+
+Ça commence par un crunch accessible, puis l’haltère. Le hip thrust change ensuite complètement de geste : l’extension de hanche. On revient ensuite à un crunch plus dur, où les pieds ne restent plus collés au mur.
+
+Le circuit couvre plusieurs fonctions du complexe abdominaux, bassin et hanches : flexion du tronc, contrôle du bassin, stabilité du centre, extension de hanche. Le hip thrust porte la force et l’hypertrophie des fessiers. Les crunchs au mur portent le droit de l’abdomen et le contrôle du tronc.
+
+Utile à la maison : peu de matériel, beaucoup de contrôle, et une progression sans machine. L’haltère sert quand le poids du corps devient trop facile.
+
+Ça développe surtout l’endurance et l’hypertrophie locale des abdominaux, la force des fessiers et le contrôle lombo-pelvien. Ce n’est pas un circuit de force maximale, ni un développement complet de la chaîne postérieure : rien ici ne charge lourdement les ischio-jambiers.
+
+Lecture par niveau
+
+Débutant : contrôle du tronc et apprentissage. Le poids du corps suffit. Le bassin reste placé, le geste ne part pas de l’élan.
+Intermédiaire : volume et résistance. L’haltère durcit le circuit. Ça devient un vrai complément de sangle et de fessiers.
+Expérimenté : intensité locale. Volume et charge peuvent monter. Les pieds décollés demandent plus de contrôle. Le circuit peut être un bloc, pas seulement un finisher.
+Bodybuilder : hypertrophie ciblée. On accumule de la tension sur les abdominaux et les fessiers. L’haltère surcharge. Les variantes sans appui durcissent le geste sans obliger à charger beaucoup plus.
+
+Profil
+
+Abdominaux : ★★★★★
+Contrôle du bassin : ★★★★★
+Fessiers : ★★★★
+Hypertrophie locale : ★★★★
+Endurance musculaire : ★★★★★
+Stabilité du tronc : ★★★★
+Force maximale : ★★
+Chaîne postérieure complète : ★★
+Travail à domicile : ★★★★★
+Dépendance au matériel : très faible
+Progression avec charge : bonne
+Diversité musculaire : modérée
+Meilleur contexte : core, abdos, séance bas du corps, ou finisher
+
+En une phrase
+
+Wall Core & Glutes demande très peu de matériel et combine un travail abdominal chargé, le contrôle du bassin et l’extension de hanche, des crunchs au mur jusqu’aux variantes lestées et sans appui des pieds.`
+  },
+  'videos muscles/routines/routine biceps 2 .mp4': {
+    title: 'Biceps Isolation — incliné + pupitre unilatéral + dos calé',
+    targetRounds: 3,
+    restBetweenRoundsSec: 90,
+    defaultTargetReps: 10,
+    exerciseKeys: [
+      'curl incliné',
+      'curl pupitre unilatéral',
+      'curl assis dos calé'
+    ],
+    description: `Circuit — Biceps Isolation
+
+Ordre de la vidéo :
+1. Curl incliné
+2. Curl pupitre unilatéral
+3. Curl assis dos calé
+
+Niveau          Séries    Reps / exercice    Charge indicative*    Repos entre tours
+Débutant        2–3       10–15              3–7 kg / haltère      90–120 s
+Intermédiaire   3         8–12               5–10 kg / haltère     90–120 s
+Expérimenté     3–4       8–12               7–14 kg / haltère     75–120 s
+Bodybuilder     3–4       8–15               8–18+ kg / haltère    60–120 s
+
+* Charge indicative par haltère. Le pupitre unilatéral et le curl dos calé se chargent en général moins lourd qu’un curl incliné, parce qu’il reste peu de place pour compenser.
+
+Les trois mouvements
+
+Curl incliné — dos contre le banc incliné, bras légèrement derrière le buste, forte amplitude.
+Curl pupitre unilatéral — un bras stabilisé sur le pupitre, un côté après l’autre, très peu d’élan.
+Curl assis dos calé — dos et épaules contre le dossier, pour empêcher le buste d’aider. Un mur rend le même service s’il n’y a pas de banc.
+
+Utilité
+
+Biceps Isolation vise la qualité du travail direct des biceps plus que la charge déplacée. Les trois exercices réduisent peu à peu les compensations, et le volume reste sur les fléchisseurs du coude.
+
+Le curl incliné apporte l’amplitude, bras derrière le buste. Le pupitre unilatéral change la contrainte : le bras est calé, chaque côté travaille seul. Le curl assis, dos au dossier, impose une exécution très contrôlée en coupant l’élan du torse.
+
+Le circuit combine amplitude, isolation, contrôle et travail unilatéral. Ce n’est pas un circuit pour faire monter vite les charges. C’est un moyen d’accumuler du volume propre, technique stricte.
+
+Le pupitre unilatéral empêche aussi qu’un bras plus fort prenne le dessus. Utile pour l’hypertrophie des biceps, ou pour une spécialisation où la qualité compte plus que les kilos.
+
+La limite est celle des circuits de spécialisation : les trois gestes visent les mêmes fonctions. Ça complète une séance pull ou bras. Ce n’est pas un entraînement du membre supérieur.
+
+Lecture par niveau
+
+Débutant : apprentissage et contrôle. Des haltères légers suffisent. La trajectoire reste propre, le buste ne prend pas le relais.
+Intermédiaire : hypertrophie. Bloc de volume direct. Changer de position permet de continuer alors que la fatigue monte.
+Expérimenté : spécialisation. On peut se rapprocher de l’échec sans lâcher la technique. Le unilatéral montre les écarts entre les deux bras.
+Bodybuilder : isolation et volume de qualité. La charge passe après la tension, l’amplitude et le contrôle. Les dernières séries peuvent frôler l’échec sans charges très lourdes.
+
+Profil
+
+Hypertrophie biceps : ★★★★★
+Isolation : ★★★★★
+Contrôle technique : ★★★★★
+Travail sous amplitude importante : ★★★★
+Travail unilatéral : ★★★★
+Endurance musculaire locale : ★★★★
+Force maximale : ★★
+Possibilité de tricher : faible
+Progression en charge : modérée
+Diversité musculaire : faible
+Dépendance au matériel : faible à modérée
+Meilleur contexte : séance bras, pull, ou spécialisation biceps
+
+En une phrase
+
+Biceps Isolation privilégie la qualité de la contraction et la maîtrise du geste, avec un curl en position étirée, une isolation unilatérale au pupitre et un curl strict dos calé.`
+  },
+  'videos muscles/routines/routine bas du corps cage a squat.mp4': {
+    title: 'Smith Lower Body — hip thrust + bulgares + good morning + mollets',
+    targetRounds: 3,
+    restBetweenRoundsSec: 150,
+    defaultTargetReps: 10,
+    exerciseKeys: [
+      'hip thrust smith',
+      'fentes bulgares smith',
+      'good morning smith',
+      'mollets smith sur step'
+    ],
+    description: `Circuit — Smith Lower Body
+
+Ordre de la vidéo :
+1. Hip thrust Smith
+2. Fentes bulgares Smith
+3. Good morning Smith
+4. Mollets Smith sur step
+
+Niveau          Séries    Reps / exercice    Charge indicative*    Repos entre tours
+Débutant        2–3       10–15              20–40 kg              120–180 s
+Intermédiaire   3         8–12               35–70 kg              120–180 s
+Expérimenté     3–4       8–12               60–110 kg             120–240 s
+Bodybuilder     3–4       8–15               80–150+ kg            120–240 s
+
+* Charge totale sur la barre. Les Smith n’ont pas toutes la même barre ni le même contrepoids : les kilos affichés ne se comparent pas d’une machine à l’autre. Sur les mollets, une charge bien plus basse suffit souvent.
+
+Les quatre mouvements
+
+Hip thrust Smith — extension de hanche vers les fessiers, trajectoire guidée, facile à charger.
+Fentes bulgares Smith — unilatéral quadriceps et fessiers, plus stable que la version libre.
+Good morning Smith — charnière de hanche : ischio-jambiers, fessiers, érecteurs.
+Mollets Smith sur step — triceps sural en grande amplitude, le step augmente la dorsiflexion.
+
+Utilité
+
+Smith Lower Body couvre le bas du corps plus largement que les circuits d’un seul pattern. Quatre fonctions : extension de hanche, unilatéral, charnière, flexion plantaire.
+
+Le hip thrust ouvre, stable et chargeable, beaucoup de tension sur les fessiers. Les bulgares passent sur une jambe : chaque côté produit sa part, la stabilité demandée monte. Le good morning change de dominante : plus une charnière, avec un étirement de la chaîne postérieure, donc les ischio-jambiers entrent vraiment. Les mollets sur step ferment sur le bas de jambe, en amplitude.
+
+La logique : fessiers, puis jambes unilatérales, puis chaîne postérieure, puis mollets. Quatre exercices, une grande partie du membre inférieur, sans répéter quatre fois le même geste.
+
+Ce que le circuit exploite particulièrement bien
+
+Hypertrophie globale des jambes
+Fessiers fortement sollicités
+Quadriceps, surtout via les bulgares
+Ischio-jambiers et chaîne postérieure
+Travail unilatéral
+Force et stabilité du membre inférieur
+Mollets en grande amplitude
+Progression de charge facilitée
+Trajectoire stable pour suivre les perfs
+
+La Smith retire une partie de la stabilisation de la barre. L’effort se concentre davantage sur les muscles visés, et la charge progresse plus simplement. Cette stabilité est aussi la limite : ce n’est pas le squat libre, le soulevé libre, ni des fentes libres. Très bon pour le muscle, moins représentatif de la force en charge libre.
+
+Lecture par niveau
+
+Débutant : construction de la base. Le volume reste modéré. On apprend les quatre gestes et une charge contrôlée, sans chercher l’échec à chaque série. Le good morning monte plus prudemment que le hip thrust : la charnière et le tronc passent avant la charge.
+Intermédiaire : développement musculaire. Trois séries suffisent déjà à un vrai entraînement bas du corps, entre quadriceps, fessiers, ischio-jambiers et mollets. On ajoute de la charge quand le haut des répétitions est propre.
+Expérimenté : volume et surcharge progressive. Quatre séries, plus près de l’échec, surtout au hip thrust, aux bulgares et aux mollets. La fatigue des premiers gestes pèse sur le good morning : le repos compte.
+Bodybuilder : hypertrophie du bas du corps. Trajectoire stable, tension forte. Le hip thrust se charge, les bulgares portent le volume quadriceps et fessiers, le good morning complète la chaîne postérieure, les mollets gardent l’amplitude. Ce n’est pas un test de force maximale.
+
+Profil
+
+Hypertrophie globale jambes : ★★★★★
+Fessiers : ★★★★★
+Quadriceps : ★★★★
+Ischio-jambiers : ★★★★
+Mollets : ★★★★
+Chaîne postérieure : ★★★★
+Travail unilatéral : ★★★★
+Stabilité / contrôle : ★★★★
+Force : ★★★★
+Progression en charge : ★★★★★
+Endurance musculaire : ★★★★
+Diversité musculaire : ★★★★★
+Besoin de matériel : élevé
+Meilleur contexte : séance jambes, ou hypertrophie du bas du corps
+
+Équivalences salle
+
+Ces rôles sont fonctionnels. Les gestes ne sont pas identiques.
+
+Mouvement                Fonction                              Alternative
+Hip thrust Smith         Extension de hanche, fessiers         Hip thrust machine, hip thrust libre
+Fentes bulgares Smith    Unilatéral quadriceps et fessiers     Presse unilatérale, fentes guidées
+Good morning Smith       Charnière, chaîne postérieure         RDL, good morning libre
+Mollets Smith sur step   Flexion plantaire                     Machine à mollets debout
+
+En une phrase
+
+Smith Lower Body est un circuit bas du corps complet, orienté hypertrophie, qui utilise la Smith pour enchaîner fessiers, quadriceps, chaîne postérieure et mollets, en bilatéral, en unilatéral et en charnière.`
+  },
+  'videos muscles/routines/routine triceps 2.mp4': {
+    title: 'Triceps Extension — barre au front + overhead + kickback',
+    targetRounds: 3,
+    restBetweenRoundsSec: 90,
+    defaultTargetReps: 10,
+    exerciseKeys: [
+      'barre au front',
+      'extension triceps debout haltère',
+      'kickbacks triceps'
+    ],
+    description: `Circuit — Triceps Extension
+
+Ordre de la vidéo :
+1. Barre au front
+2. Extension triceps au-dessus de la tête, un haltère
+3. Kickback triceps
+
+Niveau          Séries    Reps / exercice    Charge indicative*    Repos entre tours
+Débutant        2–3       10–15              5–15 kg               90–120 s
+Intermédiaire   3         8–12               10–25 kg              90–120 s
+Expérimenté     3–4       8–12               15–35 kg              75–120 s
+Bodybuilder     3–4       8–15               20–45+ kg             60–120 s
+
+* Barre au front : charge totale sur la barre. Extension au-dessus de la tête : charge de l’haltère. Le kickback se fait presque toujours beaucoup plus léger. L’amplitude et la technique font bouger ces repères.
+
+Les trois mouvements
+
+Barre au front — allongé, la barre descend vers le front. C’est en général le geste qui déplace le plus de charge.
+Extension au-dessus de la tête — un haltère, bras au-dessus de la tête, assis ou debout. L’épaule est fléchie, le chef long est étiré.
+Kickback — buste penché, charge légère, le coude reste fixe. La finition est dans le contrôle, pas dans les kilos.
+
+Utilité
+
+Triceps Extension spécialise les triceps avec trois extensions du coude assez différentes pour se compléter, tout en gardant le volume sur le même muscle.
+
+La barre pose la tension et le volume. L’haltère au-dessus de la tête change la position du bras. Le kickback ferme, léger, sur la trajectoire et la contraction.
+
+La logique : tension importante, puis travail au-dessus de la tête, puis isolation. Beaucoup de travail direct, sans multiplier les poussées. Utile en hypertrophie, en séance bras, ou en finition après des développés ou des dips.
+
+La diversité reste limitée : les trois gestes étendent le coude. Le circuit ne cherche pas plusieurs groupes. Il change de configuration pour garder du volume sur les triceps.
+
+Ce que le circuit exploite particulièrement bien
+
+Hypertrophie directe des triceps
+Accumulation de volume local
+Tension mécanique avec la barre
+Travail bras au-dessus de la tête
+Isolation et contrôle en fin de circuit
+Progression de charge sur le premier geste
+Proche de l’échec sur les variantes légères
+Peu de machines spécialisées
+
+On commence par le geste qui accepte le plus de charge, puis on va vers des exercices où la contraction compte plus que les kilos. La fatigue se gère dans ce sens.
+
+Lecture par niveau
+
+Débutant : apprentissage et base musculaire. Charges modestes, coude stable, pas d’échec sur chaque exercice. L’extension au-dessus de la tête et le kickback apprennent à isoler sans charger lourd.
+Intermédiaire : hypertrophie. Trois séries font déjà un volume réel. On se rapproche de l’échec en gardant l’amplitude. La barre surcharge. Les deux suivants complètent plus léger.
+Expérimenté : spécialisation. Plus près de l’échec, et les écarts de charge entre les trois gestes sont voulus. Le but n’est pas la même performance partout : continuer à stimuler le muscle malgré la fatigue.
+Bodybuilder : hypertrophie ciblée. Lourd et stable d’abord, au-dessus de la tête ensuite, isolation pour finir. Le kickback n’a pas besoin d’être lourd : contraction, amplitude, contrôle.
+
+Profil
+
+Hypertrophie triceps : ★★★★★
+Isolation : ★★★★★
+Tension mécanique : ★★★★
+Travail bras au-dessus de la tête : ★★★★
+Contrôle / qualité d’exécution : ★★★★★
+Endurance musculaire locale : ★★★★
+Force maximale : ★★
+Progression en charge : ★★★★
+Diversité musculaire : ★★
+Spécialisation triceps : ★★★★★
+Besoin de matériel : faible à modéré
+Meilleur contexte : séance bras, push, ou spécialisation triceps
+
+En une phrase
+
+Triceps Extension enchaîne une extension lourde à la barre, une extension au-dessus de la tête et un kickback pour accumuler du volume sur les triceps, de la tension mécanique vers une isolation plus stricte.`
+  }
+};
+
 /** Lien nom-à-nom faux : « air bike » du dossier abdos est un Russian twist, pas l'assault bike. */
 const BLOCKED_LINKS = new Set([
   'db:assault bike|troisieme dossier gif/abs/air-bike.gif',
@@ -158,7 +677,10 @@ const BLOCKED_LINKS = new Set([
 
   'db:hip thrust|troisieme dossier gif/glutes/barbell-glute-bridge.gif',
   'db:hip thrust unilatéral|troisieme dossier gif/glutes/barbell-glute-bridge.gif',
-  'db:pompes|troisieme dossier gif/pectorals/push-up-wall.gif'
+  'db:pompes|troisieme dossier gif/pectorals/push-up-wall.gif',
+  'db:écarté poulie|videos muscles/pec fly a la poulie.mp4',
+  'db:écarté poulie|videos muscles/toutes les variantes de pec fly a la poulie 2.mp4',
+  'db:écarté poulie|videos muscles/pec fly poulie haute.mp4'
 ]);
 
 const RUN_GIF = 'troisieme dossier gif/cardio/run.gif';
@@ -219,7 +741,7 @@ const SHARED_GIFS = [
   ['troisieme dossier gif/triceps/bench-dip-on-floor.gif', ['db:dips triceps']],
   ['troisieme dossier gif/pectorals/modified-hindu-push-up-male.gif', ['db:pompes hindu']],
   ['troisieme dossier gif/pectorals/lever-seated-fly.gif', ['db:pec deck']],
-  ['troisieme dossier gif/pectorals/cable-standing-fly.gif', ['db:écarté poulie']],
+  ['troisieme dossier gif/pectorals/cable-standing-fly.gif', ['db:écarté poulie haute']],
   ['troisieme dossier gif/pectorals/dumbbell-bench-press.gif', ['db:développé couché haltères pause bas']],
   ['troisieme dossier gif/pectorals/dumbbell-incline-bench-press.gif', ['db:développé incliné haltères pause bas']],
   ['troisieme dossier gif/pectorals/dumbbell-decline-bench-press.gif', ['db:développé décliné haltères pause bas']],
@@ -637,15 +1159,8 @@ const SHARED_GIFS = [
   ["troisieme dossier gif/pectorals/barbell-decline-pullover.gif", ["db:pull-over barre"]],
   ["troisieme dossier gif/pectorals/smith-wide-grip-bench-press.gif", ["db:développé couché smith"]],
   ["troisieme dossier gif/pectorals/smith-reverse-grip-press.gif", ["db:développé couché smith"]],
-  ["troisieme dossier gif/pectorals/cable-cross-over-variation.gif", ["db:écarté poulie"]],
-  ["troisieme dossier gif/pectorals/cable-decline-fly.gif", ["db:écarté poulie"]],
-  ["troisieme dossier gif/pectorals/cable-incline-fly.gif", ["db:écarté poulie"]],
-  ["troisieme dossier gif/pectorals/cable-incline-fly-on-stability-ball.gif", ["db:écarté poulie"]],
-  ["troisieme dossier gif/pectorals/cable-low-fly.gif", ["db:écarté poulie"]],
-  ["troisieme dossier gif/pectorals/cable-lying-fly.gif", ["db:écarté poulie"]],
-  ["troisieme dossier gif/pectorals/cable-middle-fly.gif", ["db:écarté poulie"]],
-  ["troisieme dossier gif/pectorals/cable-standing-up-straight-crossovers.gif", ["db:écarté poulie"]],
-  ["troisieme dossier gif/pectorals/cable-upper-chest-crossovers.gif", ["db:écarté poulie"]],
+  ["troisieme dossier gif/pectorals/cable-low-fly.gif", ["db:écarté poulie basse"]],
+  ["troisieme dossier gif/pectorals/cable-middle-fly.gif", ["db:écarté poulie médiane"]],
   ["troisieme dossier gif/pectorals/dumbbell-decline-hammer-press.gif", ["db:développé décliné haltères"]],
   ["troisieme dossier gif/pectorals/dumbbell-one-arm-decline-chest-press.gif", ["db:développé décliné haltères"]],
   ["troisieme dossier gif/pectorals/dumbbell-incline-alternate-press.gif", ["db:développé incliné haltères"]],
@@ -1226,16 +1741,34 @@ function main() {
   }
 
   const circuits = [];
-  const seenHash = new Set();
+  const seenHash = new Map();
+  const excludedCircuits = new Set([
+    'videos muscles/routines/roulette abdos.mp4',
+    'videos muscles/routines/routine biceps 3.mp4'
+  ]);
   for (const rec of proposals.filter((row) => row.role === 'routine')) {
-    if (seenHash.has(rec.sha256)) continue;
-    seenHash.add(rec.sha256);
-    circuits.push({
+    if (excludedCircuits.has(rec.sourcePath)) continue;
+    const override = CIRCUIT_OVERRIDES[rec.sourcePath] || {};
+    const entry = {
       mediaId: rec.mediaId,
       sourcePath: rec.sourcePath,
-      title: rec.filename.replace(/\.mp4$/i, '').replace(/\s+/g, ' ').trim()
-    });
+      title: rec.filename.replace(/\.mp4$/i, '').replace(/\s+/g, ' ').trim(),
+      description: '',
+      exerciseKeys: [],
+      ...override
+    };
+    if (seenHash.has(rec.sha256)) {
+      if (rec.sourcePath.endsWith('routines/routine abdos.mp4')) {
+        circuits[seenHash.get(rec.sha256)] = entry;
+      }
+      continue;
+    }
+    seenHash.set(rec.sha256, circuits.length);
+    circuits.push(entry);
   }
+
+  const filledFirst = (row) => ((row.exerciseKeys || []).length > 0 || (row.description || '').trim() ? 0 : 1);
+  circuits.sort((a, b) => filledFirst(a) - filledFirst(b));
 
   const manifest = {
     generatedAt: new Date().toISOString(),

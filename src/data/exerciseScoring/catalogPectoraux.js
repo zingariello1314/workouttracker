@@ -42,9 +42,17 @@ export const CATALOG_PECTORAUX = [
     muscleGroup: 'Pectoraux',
     aliases: ['dip', 'répulsions']
   }),
-  scoringEntry('Écarté à la poulie', 'reps', 2, 0.75, {
+  scoringEntry('Écarté poulie haute', 'reps', 2, 0.75, {
     muscleGroup: 'Pectoraux',
-    aliases: ['cable fly', 'écarté poulie']
+    aliases: ['cable high fly', 'écarté poulie haute']
+  }),
+  scoringEntry('Écarté poulie médiane', 'reps', 2, 0.75, {
+    muscleGroup: 'Pectoraux',
+    aliases: ['cable middle fly', 'écarté poulie médiane', 'écarté à la poulie']
+  }),
+  scoringEntry('Écarté poulie basse', 'reps', 2, 0.75, {
+    muscleGroup: 'Pectoraux',
+    aliases: ['cable low fly', 'écarté poulie basse']
   }),
   scoringEntry('Écarté haltères', 'reps', 2, 0.75, {
     muscleGroup: 'Pectoraux',

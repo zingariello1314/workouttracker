@@ -255,6 +255,7 @@ const WorkoutProvider = ({ children }) => {
     replaceDraftWorkoutData,
     updateTempExerciseData,
     patchSessionExerciseDraft,
+    writeExerciseDraftCell,
     updateTempStretchData,
     saveExerciseChanges,
     discardExerciseChanges,
@@ -572,6 +573,9 @@ const WorkoutProvider = ({ children }) => {
     [getCurrentData, updateData]
   );
 
+  const workoutLogicRef = useRef(workoutLogic);
+  workoutLogicRef.current = workoutLogic;
+
   // Fonction wrapper pour getTodayWorkout qui utilise activeProgram si disponible
   const getTodayWorkoutWrapper = useCallback((requestedDate, isGymMode = false) => {
     // Si un programme actif existe, utiliser son schedule
@@ -710,7 +714,7 @@ const WorkoutProvider = ({ children }) => {
     }
     
     // Fallback vers la fonction originale de workoutLogic (avec jour override si besoin)
-    if (workoutLogic && workoutLogic.getTodayWorkout) {
+    if (workoutLogicRef.current?.getTodayWorkout) {
       const sessionDateStr = getDateStr(requestedDate);
       const todayStr = getDateStr(currentDate);
       const useDayOverride =
@@ -721,9 +725,9 @@ const WorkoutProvider = ({ children }) => {
       const dayIndex = ['dimanche', 'lundi', 'mardi', 'mercredi', 'jeudi', 'vendredi', 'samedi'].indexOf(dayToUse);
       if (dayIndex >= 0) {
         virtualDate.setDate(virtualDate.getDate() - virtualDate.getDay() + dayIndex);
-        return workoutLogic.getTodayWorkout(virtualDate, isGymMode);
+        return workoutLogicRef.current.getTodayWorkout(virtualDate, isGymMode);
       }
-      return workoutLogic.getTodayWorkout(requestedDate, isGymMode);
+      return workoutLogicRef.current.getTodayWorkout(requestedDate, isGymMode);
     }
     
     // Dernier fallback
@@ -735,7 +739,7 @@ const WorkoutProvider = ({ children }) => {
         isGymMode: false,
         weekVariant: getAutoWeekVariant(requestedDate)
       };
-  }, [activeProgram, workoutLogic, convertToStableNumericId, makeUniqueNumericId, workoutDayOverride, currentDate, getCurrentData]);
+  }, [activeProgram, convertToStableNumericId, makeUniqueNumericId, workoutDayOverride, currentDate, getCurrentData]);
 
   // ✅ PHASE 4 : addProgressEntry, updateProgressEntry, deleteProgressEntry, deleteProgressEntryField,
   // addProgressPhoto, updateProgressPhoto, deleteProgressPhoto sont maintenant dans useWorkoutProgress
@@ -1641,6 +1645,7 @@ const WorkoutProvider = ({ children }) => {
     tempData,
     updateTempExerciseData,
     patchSessionExerciseDraft,
+    writeExerciseDraftCell,
     updateTempStretchData,
     saveExerciseChanges,
     discardExerciseChanges,

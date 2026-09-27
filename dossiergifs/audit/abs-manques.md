@@ -3367,3 +3367,25 @@ Les mp4 de `deuxieme dossier gif` sont des vidéos du détail, pas des images de
 ## Suite — doublons sans GIF et nouveaux fichiers
 
 Fiches déjà illustrées laissées telles quelles. Retirées de la banque parce qu’elles n’avaient pas de GIF et doublonnaient une fiche qui en a un : Boxe sac/ring, Marche active / footing marche, Natation endurance/technique, la seconde Planche sur coudes, la seconde Pose du corbeau. Serratus punch et Ramassage serviette sont retirés. Les variantes mollets qui avaient déjà leur GIF (debout haltères, assis, presse, unilatéral, donkey, Smith inversé, rotatif, balancé) ne changent pas. `extension-mollets.gif` va sur les trois qui n’en avaient pas : pointes dehors, pointes dedans, descente excentrique. `0059.mp4` est la fente barre, sur sa propre fiche. `0060.mp4`, genou au sol, reste sur Fentes. Les mp4 du deuxième dossier s’affichent à la taille d’un GIF.
+
+`routine biceps 3.mp4` n’est plus dans les circuits : c’est le même enchaînement que `routine biceps 2`. Le fichier reste dans le dossier. Les routines qui ont déjà des exercices passent devant celles qui n’ont ni exercices ni texte.
+
+Routine bas du corps cage a squat : « Smith Lower Body ». Ordre : Hip thrust Smith (fiche nouvelle), Fentes bulgares Smith, Good morning Smith, Mollets Smith sur step (fiche nouvelle). Les mollets inversés Smith, orteils vers le tibia, restent leur fiche. Le hip thrust barre libre et le hip thrust pieds au mur aussi.
+
+Routine triceps 2 : « Triceps Extension ». Ordre : Barre au front, Extension triceps debout avec haltère, Kickbacks triceps. Les trois fiches existaient. La vidéo montre l’extension au-dessus de la tête assise, un haltère tenu à deux mains.
+
+`roulette abdos.mp4` n’est plus dans les circuits. Le fichier reste dans le dossier.
+
+Routine abdos (`routine abdos.mp4`) : « Wall Core & Glutes ». Ordre : Crunch au mur, Crunch au mur haltère, Hip thrust pieds au mur, Crunch au mur pieds décollés. Quatre fiches nouvelles. Le hip thrust barre, dos sur banc, reste sa fiche. Le crunch au sol aussi.
+
+Routine biceps 2 (`routine biceps 2 .mp4`) : « Biceps Isolation ». Ordre de la vidéo : Curl incliné (fiche déjà là), Curl pupitre unilatéral (fiche nouvelle), Curl assis dos calé (fiche nouvelle). Le troisième geste est dos contre le dossier d’un banc, pas contre un mur. Le curl pupitre à deux bras reste sa fiche.
+
+Routine biceps (`videos muscles/routines/routine biceps.mp4`, sans espace avant .mp4) : titre « Biceps Incline — spider + curl incliné + marteau incliné ». Ordre de la vidéo : Curl spider, Curl incliné, Curl marteau incliné. `routine biceps .mp4` (avec espace) est un curl à la poulie debout, fiche non remplie. Curl incliné et Curl spider existaient déjà. Curl marteau incliné est une fiche à part : ce n’est ni le curl marteau debout, ni le pupitre, ni le croisé, ni la poulie.
+
+Routine triceps (`videos muscles/routines/routine triceps.mp4`) : titre « Triceps Isolation — extension au-dessus de la tête + kickback + poulie ». Exercices, dans l’ordre : Extension triceps debout avec haltère, Kickbacks triceps, Extension poulie. Les trois fiches existaient déjà.
+
+Leg Unilateral (`routine 3 exercices qui remplacent des exercices sur machine`) : Squat haltères, Fentes, Pistol squat haltère. Le pistol au poids du corps reste sa fiche. Le pistol avec haltère est une fiche à part.
+
+## Écartés poulie et routines
+
+La fiche « Écarté à la poulie » est retirée. Trois fiches : poulie haute (`cable-standing-fly.gif` + `pec fly poulie haute.mp4`), poulie médiane (`cable-middle-fly.gif`), poulie basse (`cable-low-fly.gif` + `0096.mp4`). Les trois ont `pecs a la poulie debout toutes les variantes.mp4` et `toutes les variantes de pec fly a la poulie 2.mp4`. `pec fly a la poulie.mp4` est le même fichier que `pec fly poulie haute.mp4` : il est sur la médiane et la basse. Les écartés au banc, au swiss ball et allongé ne sont pas ces trois gestes debout, ils restent sans fiche. `routine abdos.mp4` remplace le doublon `abdos routines` dans les circuits. Les cartes de routine ont le nom du fichier, un texte vide et une liste d’exercices vide, en attendant la composition.

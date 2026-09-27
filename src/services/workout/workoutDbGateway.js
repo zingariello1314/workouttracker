@@ -15,7 +15,6 @@ export const WORKOUT_TRACKER_DB_VERSION = 13;
 
 const OPEN_TIMEOUT_MS = 6000;
 const SESSION_PUT_TIMEOUT_MS = 10000;
-const WORKOUTS_PATCH_TIMEOUT_MS = 12000;
 
 /**
  * @param {IDBDatabase} db
@@ -243,22 +242,22 @@ export function openUncachedWorkoutDb() {
 }
 
 /**
- * Persistance fiable d’une séance (reps, kg, étirements) :
- * 1. `workoutSessions` — petit payload, source de vérité au rechargement
- * 2. `workouts` — patch des maps du jour (repli legacy)
+ * Persistance d’une séance (reps, kg, étirements) dans `workoutSessions`.
+ * On n’écrit pas la ligne `workouts` ici : ce put clonait photos, endurance
+ * et tout l’historique sur le fil de l’interface. Au chargement, la ligne du
+ * jour remplace les clés de cette date.
  *
  * @param {string} scopeKey
  * @param {string} sessionDay — YYYY-MM-DD
- * @param {Record<string, unknown>} fullData
+ * @param {Record<string, unknown>} _fullData — conservé pour les appelants
  * @param {Record<string, unknown>} slice — extrait journalier
  */
-export async function persistWorkoutSessionDay(scopeKey, sessionDay, fullData, slice) {
+export async function persistWorkoutSessionDay(scopeKey, _sessionDay, _fullData, slice) {
   const {
     putWorkoutSessionDayOnDb,
     getWorkoutSessionDay,
     buildSessionDayPayload,
   } = await import('./workoutSessionDbGateway.js');
-  const { applyDayKeysToWorkoutRow } = await import('../../utils/workoutSessionPersistence.js');
 
   const payload = buildSessionDayPayload(scopeKey, sessionDay, slice);
 
@@ -291,34 +290,6 @@ export async function persistWorkoutSessionDay(scopeKey, sessionDay, fullData, s
   const verified = await getWorkoutSessionDay(scopeKey, sessionDay);
   if (!verified) {
     throw new Error('WORKOUT_SESSION_VERIFY_FAILED');
-  }
-
-  try {
-    await withIdbOperationTimeout(
-      withEphemeralWorkoutDb((db) => {
-        return new Promise((resolve, reject) => {
-          const tx = db.transaction([WORKOUT_STORE_NAME], 'readwrite');
-          const store = tx.objectStore(WORKOUT_STORE_NAME);
-          const getReq = store.get(scopeKey);
-          getReq.onerror = () => reject(getReq.error);
-          getReq.onsuccess = () => {
-            const existing = getReq.result;
-            const flat =
-              existing?.data && typeof existing.data === 'object' ? existing.data : existing || {};
-            const merged = applyDayKeysToWorkoutRow(flat, fullData, sessionDay);
-            merged.lastSaved = new Date().toISOString();
-            merged.id = scopeKey;
-            const putReq = store.put(merged);
-            putReq.onerror = () => reject(putReq.error);
-          };
-          tx.oncomplete = () => resolve(undefined);
-          tx.onerror = () => reject(tx.error || new Error('WORKOUT_PATCH_TX_FAILED'));
-        });
-      }),
-      WORKOUTS_PATCH_TIMEOUT_MS
-    );
-  } catch (patchErr) {
-    console.warn('[workoutDbGateway] Patch store workouts ignoré (session store OK):', patchErr);
   }
 }
 

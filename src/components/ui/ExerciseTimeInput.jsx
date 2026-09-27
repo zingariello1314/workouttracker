@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import {
   clampInt,
   combineMinutesParts,
@@ -24,12 +24,14 @@ export default function ExerciseTimeInput({
 }) {
   const split = unit === 'min' ? splitStoredMinutes : splitStoredSeconds;
   const initial = split(value);
+  const focusedRef = useRef(false);
   const [primary, setPrimary] = useState(String(initial.primary || ''));
   const [secondary, setSecondary] = useState(
     initial.secondary > 0 ? String(initial.secondary) : ''
   );
 
   useEffect(() => {
+    if (focusedRef.current) return;
     const parts = split(value);
     setPrimary(parts.primary > 0 ? String(parts.primary) : '');
     setSecondary(parts.secondary > 0 ? String(parts.secondary) : '');
@@ -69,7 +71,14 @@ export default function ExerciseTimeInput({
         <input
           type="text"
           inputMode="numeric"
+          autoComplete="off"
           value={primary}
+          onFocus={() => {
+            focusedRef.current = true;
+          }}
+          onBlur={() => {
+            focusedRef.current = false;
+          }}
           onChange={onPrimary}
           disabled={disabled}
           placeholder="0"
@@ -82,7 +91,14 @@ export default function ExerciseTimeInput({
         <input
           type="text"
           inputMode="numeric"
+          autoComplete="off"
           value={secondary}
+          onFocus={() => {
+            focusedRef.current = true;
+          }}
+          onBlur={() => {
+            focusedRef.current = false;
+          }}
           onChange={onSecondary}
           disabled={disabled}
           placeholder="0"

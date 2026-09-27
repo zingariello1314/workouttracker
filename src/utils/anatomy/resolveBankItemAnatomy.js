@@ -38,12 +38,18 @@ export function resolveBankItemAnatomy(muscleLists, mode, ctx) {
   if (bankTune?.inferredView) {
     inferredView = bankTune.inferredView;
   }
-  if (bankTune?.camera && (bankTune.camera.boundsMargin != null || bankTune.camera.cameraDistanceFactor != null)) {
+  if (
+    bankTune?.camera &&
+    (bankTune.camera.boundsMargin != null ||
+      bankTune.camera.cameraDistanceFactor != null ||
+      bankTune.camera.targetOffsetY != null)
+  ) {
     cameraTuningOverride = {
       ...(bankTune.camera.boundsMargin != null ? { boundsMargin: bankTune.camera.boundsMargin } : {}),
       ...(bankTune.camera.cameraDistanceFactor != null
         ? { cameraDistanceFactor: bankTune.camera.cameraDistanceFactor }
-        : {})
+        : {}),
+      ...(bankTune.camera.targetOffsetY != null ? { targetOffsetY: bankTune.camera.targetOffsetY } : {})
     };
   }
 
@@ -85,7 +91,9 @@ export function resolveBankItemAnatomy(muscleLists, mode, ctx) {
     usedFullBodyUniform: finalFullBody,
     anatomyFallback,
     ...(cameraTuningOverride &&
-    (cameraTuningOverride.boundsMargin != null || cameraTuningOverride.cameraDistanceFactor != null)
+    (cameraTuningOverride.boundsMargin != null ||
+      cameraTuningOverride.cameraDistanceFactor != null ||
+      cameraTuningOverride.targetOffsetY != null)
       ? { cameraTuningOverride }
       : {})
   };

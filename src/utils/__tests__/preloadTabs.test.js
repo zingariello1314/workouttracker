@@ -1,6 +1,7 @@
 import { afterEach, describe, expect, it } from 'vitest';
 import {
   getCoreSportTabsPreloadProgress,
+  markTodayViewPrepared,
   preloadCoreSportTabs,
   resetCoreSportTabsPreloadForTests,
   subscribeCoreSportTabsPreload
@@ -32,6 +33,10 @@ describe('preloadCoreSportTabs', () => {
 
     resolveToday({ default: {} });
     await done;
+
+    expect(getCoreSportTabsPreloadProgress().todayViewPrepared).toBe(false);
+    markTodayViewPrepared();
+    expect(getCoreSportTabsPreloadProgress().todayViewPrepared).toBe(true);
 
     expect(getCoreSportTabsPreloadProgress()).toMatchObject({
       done: 3,

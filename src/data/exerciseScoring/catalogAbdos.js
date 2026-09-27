@@ -95,6 +95,18 @@ export const CATALOG_ABDOMINAUX = [
     muscleGroup: 'Abdominaux',
     aliases: ['oblique crunch']
   }),
+  scoringEntry('Crunch au mur', 'reps', 1, 0.5, {
+    muscleGroup: 'Abdominaux',
+    aliases: ['wall crunch']
+  }),
+  scoringEntry('Crunch au mur haltère', 'reps', 2, 0.65, {
+    muscleGroup: 'Abdominaux',
+    aliases: ['weighted wall crunch']
+  }),
+  scoringEntry('Crunch au mur pieds décollés', 'reps', 2, 0.7, {
+    muscleGroup: 'Abdominaux',
+    aliases: ['wall crunch pieds décollés']
+  }),
   scoringEntry("Inclinaison latérale", 'reps', 1, 0.45, {
     muscleGroup: 'Abdominaux',
     aliases: ['side bend']

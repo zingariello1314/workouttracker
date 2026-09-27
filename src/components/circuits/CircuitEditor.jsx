@@ -355,7 +355,7 @@ const CircuitEditor = ({
               placeholder="Tempo, focus, restrictions…"
               rows={2}
               className={inputBase}
-              maxLength={500}
+              maxLength={8000}
             />
           </div>
         </div>
