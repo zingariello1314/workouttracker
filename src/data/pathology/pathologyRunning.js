@@ -137,7 +137,6 @@ export const pathologyRunning = [
     symptoms: ['Douleur sous le talon ou voûte plantaire', 'Premiers pas du matin très douloureux'],
     causes: ['Charge d’impact excessive', 'Raideur mollet / pied faible', 'Chaussures inadaptées'],
     items: [
-      ex('ramassage serviette orteils', '3×15', 'Voûte plantaire'),
       st('mob_cheville_short_foot', '3×10', 'Voûte plantaire'),
       st('et_mollet_mur_profond', '2×30 s', 'Mollets'),
       st('et_mollet_genou_plie_sol', '2×30 s', 'Soléaire')
@@ -523,8 +522,7 @@ export const pathologyRunning = [
     symptoms: ['Oignon', 'Douleur à l’appui', 'Rougeur possible'],
     causes: ['Chaussage', 'Alignement du pied', 'Charge répétée'],
     items: [
-      st('mob_cheville_short_foot', '3×10', 'Contrôle gros orteil'),
-      ex('ramassage serviette orteils', '3×15', 'Intrinsèques')
+      st('mob_cheville_short_foot', '3×10', 'Contrôle gros orteil')
     ],
     frequency: 'Quotidien',
     recoveryTime: 'Gestion chronique',

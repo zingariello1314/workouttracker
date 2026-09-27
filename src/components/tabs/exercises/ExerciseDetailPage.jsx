@@ -1,4 +1,4 @@
-import React, { useMemo, useState, useEffect, useCallback, useLayoutEffect } from 'react';
+import React, { useMemo, useState, useEffect, useCallback, useLayoutEffect, useRef } from 'react';
 import { ArrowLeft, Dumbbell, Gauge, Heart, Calculator, Activity } from 'lucide-react';
 import Card, { CardHeader, CardTitle, CardContent } from '../../ui/Card';
 import Button from '../../ui/Button';
@@ -31,6 +31,7 @@ import {
   formatMuscleList
 } from '../../../utils/exerciseHeroContent';
 import AnatomyBankHighlight from '../../anatomy/AnatomyBankHighlight';
+import { BankDetailMedia, mediaForExercise } from '../../sport/BankLinkedMedia';
 import ExercisePerceivedRessentiPanel from './ExercisePerceivedRessentiPanel';
 import ExerciseSimilarSection from './ExerciseSimilarSection';
 import {
@@ -90,12 +91,22 @@ const ExerciseDetailPage = ({
   const notesMap = data?.exercisePersonalNotes || {};
   const idKey = String(exercise.id);
   const perceivedStored = ratingsMap[idKey];
+  const detailHeaderRef = useRef(null);
+  const detailVideosRef = useRef(null);
+  const detailGifRef = useRef(null);
 
   useLayoutEffect(() => {
-    window.scrollTo({ top: 0, left: 0, behavior: 'auto' });
-    const main =
-      typeof document !== 'undefined' ? document.querySelector('main') : null;
-    if (main) main.scrollTop = 0;
+    const header = detailHeaderRef.current;
+    const videos = detailVideosRef.current;
+    const gif = detailGifRef.current;
+    const target = videos || gif || header;
+    if (!target) return;
+    const nav = document.querySelector('nav.fixed');
+    const chrome = 64 + (nav?.getBoundingClientRect().height || 0);
+    const headerHeight = header?.getBoundingClientRect().height || 0;
+    const keepTitleAboveMedia = Boolean(videos || gif);
+    target.style.scrollMarginTop = `${chrome + (keepTitleAboveMedia ? headerHeight + 24 : 8)}px`;
+    target.scrollIntoView({ block: 'start', inline: 'nearest', behavior: 'auto' });
   }, [idKey]);
 
   const profile = useMemo(() => resolveExerciseDetailProfile(exercise), [exercise]);
@@ -337,7 +348,7 @@ const ExerciseDetailPage = ({
 
   return (
     <div className="max-w-[1600px] mx-auto px-2 sm:px-4 pb-16 space-y-6">
-      <div className="flex flex-wrap items-start gap-4 pt-2">
+      <div ref={detailHeaderRef} className="flex flex-wrap items-start gap-4 pt-2">
         <Button
           type="button"
           variant="ghost"
@@ -351,8 +362,13 @@ const ExerciseDetailPage = ({
           <p className={`text-xs uppercase tracking-wide ${SPORT_KICKER} mb-1 font-semibold`}>
             {t('exercisesTab.detail.kicker', 'Sport · Exercices')}
           </p>
-          <h1 className={`text-xl sm:text-2xl ${SPORT_PAGE_TITLE} leading-tight tracking-tight font-bold break-words`}>
-            {exercise.name || exercise.nom}
+          <h1 className={`text-xl sm:text-2xl ${SPORT_PAGE_TITLE} leading-tight tracking-tight font-bold break-words inline-flex flex-wrap items-center gap-2`}>
+            <span>{exercise.name || exercise.nom}</span>
+            {exercise.isNew && (
+              <span className="px-2 py-0.5 rounded-md border border-amber-400/70 bg-amber-400/15 text-[10px] font-semibold uppercase tracking-wide text-amber-200">
+                New
+              </span>
+            )}
           </h1>
           <div className="mt-2 flex flex-wrap items-center gap-2">
             {scoring ? (
@@ -400,6 +416,12 @@ const ExerciseDetailPage = ({
           </div>
         </div>
       </div>
+
+      <BankDetailMedia
+        media={mediaForExercise(exercise)}
+        videosRef={detailVideosRef}
+        gifRef={detailGifRef}
+      />
 
       <div className="lg:grid lg:grid-cols-[minmax(0,1fr)_min(100%,440px)] xl:grid-cols-[minmax(0,1fr)_min(100%,480px)] lg:gap-x-10 lg:items-start">
         <div className="space-y-6 min-w-0">

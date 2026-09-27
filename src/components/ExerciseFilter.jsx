@@ -68,6 +68,26 @@ const ExerciseFilter = ({
         { value: Difficulty.ADVANCED, label: 'Avancé ★★★☆' },
         { value: Difficulty.EXPERT, label: 'Expert ★★★★' }
       ]
+    },
+    hasVideo: {
+      label: 'Vidéo',
+      options: [
+        { value: 'yes', label: 'Avec vidéo' },
+        { value: 'no', label: 'Sans vidéo' }
+      ]
+    },
+    hasGif: {
+      label: 'GIF',
+      options: [
+        { value: 'yes', label: 'Avec GIF' },
+        { value: 'no', label: 'Sans GIF' }
+      ]
+    },
+    isNew: {
+      label: 'Nouveaux',
+      options: [
+        { value: 'yes', label: 'Nouveaux' }
+      ]
     }
   };
 
@@ -127,6 +147,41 @@ const ExerciseFilter = ({
           />
         </div>
         
+        <Button
+          variant="outline"
+          onClick={() => handleFilterChange('hasVideo', 'yes')}
+          className={activeFilters.hasVideo === 'yes' ? 'border-teal-400 text-teal-200' : ''}
+        >
+          Avec vidéo
+        </Button>
+        <Button
+          variant="outline"
+          onClick={() => handleFilterChange('hasVideo', 'no')}
+          className={activeFilters.hasVideo === 'no' ? 'border-teal-400 text-teal-200' : ''}
+        >
+          Sans vidéo
+        </Button>
+        <Button
+          variant="outline"
+          onClick={() => handleFilterChange('hasGif', 'yes')}
+          className={activeFilters.hasGif === 'yes' ? 'border-teal-400 text-teal-200' : ''}
+        >
+          Avec GIF
+        </Button>
+        <Button
+          variant="outline"
+          onClick={() => handleFilterChange('hasGif', 'no')}
+          className={activeFilters.hasGif === 'no' ? 'border-teal-400 text-teal-200' : ''}
+        >
+          Sans GIF
+        </Button>
+        <Button
+          variant="outline"
+          onClick={() => handleFilterChange('isNew', 'yes')}
+          className={activeFilters.isNew === 'yes' ? 'border-amber-400 text-amber-200' : ''}
+        >
+          Nouveaux
+        </Button>
         <Button
           variant="outline"
           onClick={() => setIsOpen(!isOpen)}

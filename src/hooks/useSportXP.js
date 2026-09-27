@@ -4,11 +4,6 @@
 
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useWorkout } from '../context/WorkoutContext';
-import {
-  subscribeSessionDraft,
-  getSessionDraftVersion,
-  getSessionDraftXpNotifyDelay
-} from '../context/WorkoutContext/sessionDraftStore';
 import { useGarminData } from './useGarminData';
 import { calculateSportXP, computeNutritionRegisteredFoodSportXp, countNutritionRegisteredFoodItems, SPORT_XP_FORMULA_REVISION } from '../services/xp/xpCalculations';
 import { collectDedupedCheckedVolumeKeys } from '../utils/trainingLoadUtils';
@@ -180,33 +175,14 @@ export const useSportXP = () => {
   }, [currentUser]);
   const {
     data,
-    getCurrentData,
     programs,
     activeProgram,
     getExerciseNameById,
     isWorkoutDataLoading = false
   } = useWorkout();
-  const [xpDraftVersion, setXpDraftVersion] = useState(0);
-  useEffect(() => {
-    let timeoutId;
-    const unsub = subscribeSessionDraft(() => {
-      window.clearTimeout(timeoutId);
-      const delay = getSessionDraftXpNotifyDelay();
-      timeoutId = window.setTimeout(() => {
-        setXpDraftVersion(getSessionDraftVersion());
-      }, delay);
-    });
-    return () => {
-      window.clearTimeout(timeoutId);
-      unsub();
-    };
-  }, []);
 
-  /** Brouillon : la barre XP suit avec un léger délai pour ne pas geler la coche. */
-  const workoutData = useMemo(
-    () => getCurrentData(),
-    [getCurrentData, data, xpDraftVersion]
-  );
+  /** Totaux / XP : uniquement les données déjà enregistrées, pas le brouillon de coche. */
+  const workoutData = data;
 
   const programsForCompletionXp = useMemo(() => {
     const arr = Array.isArray(programs) ? [...programs] : [];

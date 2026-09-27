@@ -254,6 +254,7 @@ const WorkoutProvider = ({ children }) => {
     getWorkoutDataForSession,
     replaceDraftWorkoutData,
     updateTempExerciseData,
+    patchSessionExerciseDraft,
     updateTempStretchData,
     saveExerciseChanges,
     discardExerciseChanges,
@@ -267,25 +268,6 @@ const WorkoutProvider = ({ children }) => {
 
   const getCurrentData = getWorkoutDataForSession;
 
-  /** Quitter l’onglet Aujourd’hui : enregistrer le brouillon en cours. */
-  const prevActiveTabRef = useRef(activeTab);
-  useEffect(() => {
-    const prev = prevActiveTabRef.current;
-    if (prev === 'today' && activeTab !== 'today') {
-      void flushDirtySessionDraft();
-    }
-    prevActiveTabRef.current = activeTab;
-  }, [activeTab, flushDirtySessionDraft]);
-
-  const prevWorkoutDayOverrideRef = useRef(workoutDayOverride);
-  useEffect(() => {
-    if (prevWorkoutDayOverrideRef.current !== workoutDayOverride) {
-      void flushDirtySessionDraft();
-      prevWorkoutDayOverrideRef.current = workoutDayOverride;
-    }
-  }, [workoutDayOverride, flushDirtySessionDraft]);
-
-  /** Change la date calendaire de la séance : enregistre d’abord le jour affiché. */
   const changeSessionCalendarDate = useCallback(
     (nextDate) => {
       const normalized = new Date(nextDate);
@@ -294,10 +276,9 @@ const WorkoutProvider = ({ children }) => {
       const nextStr = getDateStr(normalized);
       const prevStr = getDateStr(currentDate);
       if (nextStr === prevStr) return;
-      void flushDirtySessionDraft();
       setCurrentDate(normalized);
     },
-    [currentDate, flushDirtySessionDraft]
+    [currentDate]
   );
 
   // ✅ PHASE 4 : Utilisation du hook pour les programmes
@@ -1659,6 +1640,7 @@ const WorkoutProvider = ({ children }) => {
     hasUnsavedStretches,
     tempData,
     updateTempExerciseData,
+    patchSessionExerciseDraft,
     updateTempStretchData,
     saveExerciseChanges,
     discardExerciseChanges,
@@ -1798,7 +1780,6 @@ const WorkoutProvider = ({ children }) => {
   useEffect(() => {
     if (!isAuthenticated) return undefined;
     return registerAppPersistenceFlush(async () => {
-      await flushDirtySessionDraft?.();
       cancelPendingAutoSave?.();
       await flushPendingSaveNow({ forcePersist: true });
       await flushAutoSave({
@@ -1809,7 +1790,7 @@ const WorkoutProvider = ({ children }) => {
         isGymMode: isGymModeRef.current,
       });
     });
-  }, [isAuthenticated, flushAutoSave, flushDirtySessionDraft, cancelPendingAutoSave, flushPendingSaveNow]);
+  }, [isAuthenticated, flushAutoSave, cancelPendingAutoSave, flushPendingSaveNow]);
 
   useEffect(() => {
     if (isInitialLoadRef.current) return;

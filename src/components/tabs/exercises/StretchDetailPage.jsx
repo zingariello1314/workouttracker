@@ -21,6 +21,7 @@ import {
 import Card, { CardHeader, CardTitle, CardContent } from '../../ui/Card';
 import Button from '../../ui/Button';
 import AnatomyBankHighlight from '../../anatomy/AnatomyBankHighlight';
+import { BankDetailMedia, mediaForStretch } from '../../sport/BankLinkedMedia';
 import { useTranslation } from '../../../utils/translations';
 import StretchRessentiPanel from './StretchRessentiPanel';
 import StretchSimilarSection from './StretchSimilarSection';
@@ -202,6 +203,8 @@ const StretchDetailPage = ({
           </div>
         </div>
       </div>
+
+      <BankDetailMedia media={mediaForStretch(stretch)} />
 
       <div className="lg:grid lg:grid-cols-[minmax(0,1fr)_min(100%,440px)] xl:grid-cols-[minmax(0,1fr)_min(100%,480px)] lg:gap-x-10 lg:items-start">
         <div className="space-y-5 min-w-0">

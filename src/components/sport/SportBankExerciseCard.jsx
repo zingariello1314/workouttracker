@@ -5,6 +5,7 @@ import { Gauge, Plus, ChevronRight, Award } from 'lucide-react';
 import { useTranslation } from '../../utils/translations';
 import ReferenceDifficultyStars from './ReferenceDifficultyStars';
 import AnatomyExerciseCardPreview from '../anatomy/AnatomyExerciseCardPreview';
+import { BankCardGif, mediaForExercise } from './BankLinkedMedia';
 import {
   ExerciseCategories,
   MuscleGroups,
@@ -199,6 +200,11 @@ export default function SportBankExerciseCard({
       </div>
 
       <div className="row-start-3 flex min-h-[4.25rem] shrink-0 flex-wrap content-start items-start gap-2 text-[10px]">
+        {exercise.isNew && (
+          <span className="px-2 py-0.5 rounded-md border border-amber-400/70 bg-amber-400/15 text-[10px] font-semibold uppercase tracking-wide text-amber-200">
+            New
+          </span>
+        )}
         <span className="px-2 py-0.5 rounded-md border border-sky-500/35 bg-sky-950/35 text-sky-200">
           {categoryStr}
         </span>
@@ -224,7 +230,9 @@ export default function SportBankExerciseCard({
       </div>
 
       <div className="row-start-4 flex h-[300px] w-full min-h-0 shrink-0 overflow-hidden [&>*]:min-h-0">
-        <AnatomyExerciseCardPreview exercise={exercise} previewLayout="gridFill" />
+        <BankCardGif media={mediaForExercise(exercise)}>
+          <AnatomyExerciseCardPreview exercise={exercise} previewLayout="gridFill" />
+        </BankCardGif>
       </div>
 
       {(exercise.primaryMuscles?.length > 0 || exercise.secondaryMuscles?.length > 0) ? (

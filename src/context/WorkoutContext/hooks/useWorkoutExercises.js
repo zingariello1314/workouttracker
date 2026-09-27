@@ -14,12 +14,42 @@ import { getDateStr } from '../../../utils/dateUtils';
 import { sidebarEvents, SIDEBAR_EVENTS } from '../../../utils/sidebarEvents';
 import { invalidateSportXpCache } from '../../../hooks/useSportXP';
 import {
-  overlayPersistedDayJustifications,
-  stripJustificationsSupersededByActivity
+  overlayPersistedDayJustifications
 } from '../../../utils/dayJustificationUtils';
-import { bumpSessionDraft } from '../sessionDraftStore';
+import {
+  bumpSessionDraft,
+  bumpExerciseUi,
+  bumpSessionCommitEpoch,
+  setSessionCommitDirty
+} from '../sessionDraftStore';
+import { yieldToNextPaint, scheduleTodayCheckIdle } from '../../../utils/todayCheckMeasure';
+import { readServerTokens } from '../../../utils/serverAuthApi';
+import { flushWorkoutAggregateCloudPushNow } from '../../../services/workout/workoutAggregateCloudSync';
 
-const AUTO_PERSIST_MS = 280;
+const AUTO_PERSIST_MS = 2000;
+
+const SESSION_MAP_KEYS = [
+  'checkedExercises',
+  'reps',
+  'exerciseWeights',
+  'exerciseWeightPerArm',
+  'exerciseSetWeights',
+  'exerciseSetLogs',
+  'exerciseSessionPerceived',
+  'exerciseSessionEffortStars',
+  'exerciseSessionPleasureStars',
+  'exerciseDisplayNames',
+  'exerciseMarkedWeighted'
+];
+
+function copySessionMaps(source) {
+  const draft = { ...source };
+  SESSION_MAP_KEYS.forEach((key) => {
+    const value = source?.[key];
+    draft[key] = value && typeof value === 'object' && !Array.isArray(value) ? { ...value } : {};
+  });
+  return draft;
+}
 
 function cloneDraft(source) {
   try {
@@ -170,6 +200,8 @@ export const useWorkoutExercises = (
     setHasUnsavedExercises(false);
     setHasUnsavedStretches(false);
     setTempData(null);
+    setSessionCommitDirty({ exercises: false, stretches: false });
+    bumpSessionCommitEpoch();
     bumpSessionDraft();
   }, []);
 
@@ -204,10 +236,12 @@ export const useWorkoutExercises = (
         window.clearTimeout(autoPersistTimerRef.current);
         autoPersistTimerRef.current = null;
       }
-      try {
+        try {
         cancelPendingAutoSave?.();
-        const payload = stripJustificationsSupersededByActivity(
-          overlayPersistedDayJustifications(normalizeWorkoutDraft(td), persistedData)
+        await yieldToNextPaint();
+        const payload = overlayPersistedDayJustifications(
+          force ? normalizeWorkoutDraft(td) : td,
+          persistedData
         );
         if (payload?.reps) payload.reps = { ...payload.reps };
         if (payload?.exerciseWeights) payload.exerciseWeights = { ...payload.exerciseWeights };
@@ -218,7 +252,13 @@ export const useWorkoutExercises = (
             : sessionCalendarDateStr && /^\d{4}-\d{2}-\d{2}$/.test(sessionCalendarDateStr)
               ? sessionCalendarDateStr
               : getDateStr(new Date());
-        await updateData(payload, { strict: true, sessionDay, skipReact: true });
+        await updateData(payload, {
+          strict: true,
+          sessionDay,
+          skipReact: true,
+          skipCloud: true,
+          applyReactAfterPaint: force
+        });
 
         if (tempDataRef.current && tempDataRef.current !== td) {
           persistQueuedRef.current = true;
@@ -226,17 +266,34 @@ export const useWorkoutExercises = (
         }
 
         if (force) {
-          invalidateSportXpCache();
-          sidebarEvents.emit(SIDEBAR_EVENTS.WORKOUT_UPDATED, {
-            date: sessionDay,
-            type:
-              emitType ||
-              (dirtyAtStart.exercises && dirtyAtStart.stretches
-                ? 'session'
-                : dirtyAtStart.exercises
-                  ? 'exercises'
-                  : 'stretches')
-          });
+          tempDataRef.current = null;
+          dirtyFlagsRef.current = { exercises: false, stretches: false };
+          setHasUnsavedExercises(false);
+          setHasUnsavedStretches(false);
+          setTempData(null);
+          setSessionCommitDirty({ exercises: false, stretches: false });
+          const emitTypeResolved =
+            emitType ||
+            (dirtyAtStart.exercises && dirtyAtStart.stretches
+              ? 'session'
+              : dirtyAtStart.exercises
+                ? 'exercises'
+                : 'stretches');
+          scheduleTodayCheckIdle(() => {
+            invalidateSportXpCache();
+            sidebarEvents.emit(SIDEBAR_EVENTS.WORKOUT_UPDATED, {
+              date: sessionDay,
+              type: emitTypeResolved
+            });
+            if (storageKey && storageKey !== 'anonymous') {
+              const { accessToken } = readServerTokens();
+              void flushWorkoutAggregateCloudPushNow({
+                accessToken,
+                storageKey,
+                row: { ...payload, id: storageKey, lastSaved: new Date().toISOString() }
+              });
+            }
+          }, 800);
         }
       } catch (error) {
         console.error('❌ Erreur lors de la persistance du brouillon séance:', error);
@@ -247,19 +304,15 @@ export const useWorkoutExercises = (
         throw error;
       } finally {
         isPersistingSessionRef.current = false;
-        if (persistQueuedRef.current) {
-          persistQueuedRef.current = false;
-          scheduleAutoPersist(0);
-        }
+        persistQueuedRef.current = false;
       }
     },
     [
       updateData,
       sessionCalendarDateStr,
-      clearDraftState,
       cancelPendingAutoSave,
       persistedData,
-      scheduleAutoPersist
+      storageKey
     ]
   );
 
@@ -291,44 +344,16 @@ export const useWorkoutExercises = (
   const saveExerciseChanges = saveSessionDraft;
   const saveStretchChanges = saveSessionDraft;
 
-  /** Flush immédiat du brouillon (fermeture app / onglet) — même logique qu’Enregistrer. */
+  /** Flush uniquement pour Enregistrer (plus de sauvegarde cachée). */
   const flushDirtySessionDraft = useCallback(async () => {
-    const dirty = dirtyFlagsRef.current;
-    if (!tempDataRef.current || (!dirty.exercises && !dirty.stretches)) return;
-    await persistFullDraftRef.current({ force: true, emitType: 'session' });
-  }, []);
-
-  useEffect(() => {
-    const flushIfDirty = () => {
-      const dirty = dirtyFlagsRef.current;
-      if (!tempDataRef.current || (!dirty.exercises && !dirty.stretches)) return;
-      void persistFullDraftRef.current({});
-    };
-    const onVisibility = () => {
-      if (document.visibilityState === 'hidden') flushIfDirty();
-    };
-    document.addEventListener('visibilitychange', onVisibility);
-    window.addEventListener('pagehide', flushIfDirty);
-    return () => {
-      document.removeEventListener('visibilitychange', onVisibility);
-      window.removeEventListener('pagehide', flushIfDirty);
-    };
+    return undefined;
   }, []);
 
   const lastSessionDateRef = useRef(sessionCalendarDateStr);
   useEffect(() => {
     if (lastSessionDateRef.current === sessionCalendarDateStr) return;
-    const previousDay = lastSessionDateRef.current;
     lastSessionDateRef.current = sessionCalendarDateStr;
     const dirty = dirtyFlagsRef.current;
-    if (tempDataRef.current && (dirty.exercises || dirty.stretches) && !isPersistingSessionRef.current) {
-      void persistFullDraftRef.current({
-        force: true,
-        emitType: 'session',
-        sessionDayOverride: previousDay
-      });
-      return;
-    }
     if (!isPersistingSessionRef.current && !dirty.exercises && !dirty.stretches) {
       clearDraftState();
     }
@@ -343,21 +368,70 @@ export const useWorkoutExercises = (
     }
   }, [hasUnsavedExercises, hasUnsavedStretches, clearDraftState]);
 
-  const updateTempExerciseData = useCallback((newData, options = {}) => {
-    const normalized = normalizeWorkoutDraft(newData);
-    tempDataRef.current = normalized;
-    dirtyFlagsRef.current = { ...dirtyFlagsRef.current, exercises: true };
-    bumpSessionDraft({ urgentXp: options.urgentXp === true });
-    scheduleAutoPersist();
-  }, [scheduleAutoPersist]);
+  const persistMapsRef = useRef(persistedData);
+  persistMapsRef.current = persistedData;
 
-  const updateTempStretchData = useCallback((newData) => {
-    const normalized = normalizeWorkoutDraft(newData);
-    tempDataRef.current = normalized;
+  const ensureMutableExerciseDraft = useCallback(() => {
+    const persisted = persistMapsRef.current || {};
+    const dirty = dirtyFlagsRef.current;
+    if (!tempDataRef.current || !dirty.exercises) {
+      const draft = copySessionMaps(tempDataRef.current || persisted);
+      tempDataRef.current = draft;
+      return draft;
+    }
+    const draft = tempDataRef.current;
+    SESSION_MAP_KEYS.forEach((key) => {
+      const current = draft[key];
+      if (!current || typeof current !== 'object' || Array.isArray(current) || current === persisted[key]) {
+        draft[key] = {
+          ...((current && typeof current === 'object' && !Array.isArray(current) ? current : null) ||
+            persisted[key] ||
+            {})
+        };
+      }
+    });
+    return draft;
+  }, []);
+
+  const patchSessionExerciseDraft = useCallback(
+    (mutator, options = {}) => {
+      const draft = ensureMutableExerciseDraft();
+      mutator(draft);
+      dirtyFlagsRef.current = { ...dirtyFlagsRef.current, exercises: true };
+      setSessionCommitDirty({ exercises: true });
+      if (options.exerciseId != null && options.exerciseId !== '') {
+        bumpExerciseUi(options.exerciseId);
+        return draft;
+      }
+      if (!options.silent) {
+        bumpSessionDraft({ urgentXp: options.urgentXp === true });
+      }
+      return draft;
+    },
+    [ensureMutableExerciseDraft]
+  );
+
+  const updateTempExerciseData = useCallback((newData, options = {}) => {
+    tempDataRef.current = newData;
+    dirtyFlagsRef.current = { ...dirtyFlagsRef.current, exercises: true };
+    setSessionCommitDirty({ exercises: true });
+    if (options.exerciseId != null && options.exerciseId !== '') {
+      bumpExerciseUi(options.exerciseId);
+      return;
+    }
+    if (!options.silent) {
+      bumpSessionDraft({ urgentXp: options.urgentXp === true });
+    }
+  }, []);
+
+  const updateTempStretchData = useCallback((newData, options = {}) => {
+    tempDataRef.current = newData;
     dirtyFlagsRef.current = { ...dirtyFlagsRef.current, stretches: true };
-    bumpSessionDraft();
-    scheduleAutoPersist();
-  }, [scheduleAutoPersist]);
+    setSessionCommitDirty({ stretches: true });
+    if (!options.silent) {
+      bumpSessionDraft();
+    }
+  }, []);
 
   /**
    * Remplace le brouillon par un snapshot déjà aligné sur la persistance (ex. calendrier après `updateData`).
@@ -370,6 +444,8 @@ export const useWorkoutExercises = (
     setTempData(snapshot);
     setHasUnsavedExercises(false);
     setHasUnsavedStretches(false);
+    setSessionCommitDirty({ exercises: false, stretches: false });
+    bumpSessionCommitEpoch();
     bumpSessionDraft();
   }, []);
 
@@ -473,6 +549,7 @@ export const useWorkoutExercises = (
     getWorkoutDataForSession,
     replaceDraftWorkoutData,
     updateTempExerciseData,
+    patchSessionExerciseDraft,
     updateTempStretchData,
     saveExerciseChanges,
     discardExerciseChanges,

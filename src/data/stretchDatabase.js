@@ -2344,6 +2344,23 @@ export const stretchDatabase = {
     contraindications: ["Instabilité chronique cheville/genou"],
     variations: ["reactive hops", "plyo multidirectionnel"]
   },
+  montee_genoux: {
+    name: "Montée de genoux",
+    category: "Mobilité",
+    bodyZone: "hanches",
+    primaryMuscles: ["Fléchisseurs de hanche", "Quadriceps"],
+    secondaryMuscles: ["Moyen fessier", "Core", "Mollets"],
+    equipment: "Kettlebell",
+    defaultDuration: 40,
+    position: "Debout",
+    difficulty: 1,
+    description:
+      "Échauffement de hanche : un genou monte vers la poitrine pendant que le kettlebell reste collé au haut du torse. Ce n’est pas un squat, et ce n’est pas un étirement passif.",
+    instructions:
+      "Tiens le kettlebell des deux mains contre le haut de la poitrine, coudes bas. Monte un genou à hauteur de hanche, pied flex, buste droit, puis repose-le avant de changer de jambe. Le bassin ne bascule pas en arrière pour aller chercher la hauteur. 2 à 3 fois 20 à 30 montées, en marchant sur place.",
+    contraindications: ["Douleur de hanche en flexion haute", "instabilité lombaire si le bassin part en arrière"],
+    variations: ["high knees", "montée de genoux kettlebell", "knee drive"]
+  },
 
   ...mobilityStretchCatalog,
   ...stretchDrillsCatalog

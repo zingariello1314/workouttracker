@@ -1,0 +1,495 @@
+{
+  "generatedAt": "2026-09-26T18:42:28.730Z",
+  "elapsedMs": 1889,
+  "momentum": {
+    "exerciseDatabaseKeys": 257,
+    "exerciseDatabaseNames": 256,
+    "scoringEntries": 231,
+    "cardioReference": 17,
+    "uniqueNormalizedNamesAcrossSources": 282,
+    "note": "uniqueNormalizedNamesAcrossSources déduplique les trois sources par nom normalisé, dans l’esprit de la fusion de l’onglet Banque. Ce n’est pas encore le rendu écran (enrichissement, alias)."
+  },
+  "filesByCollection": {
+    "gifs": {
+      "files": 35,
+      "byExt": {
+        ".gif": 30,
+        ".json": 4,
+        ".md": 1
+      }
+    },
+    "deuxieme dossier gif": {
+      "files": 50,
+      "byExt": {
+        ".mp4": 49,
+        ".json": 1
+      }
+    },
+    "troisieme dossier gif": {
+      "files": 5408,
+      "byExt": {
+        "(noext)": 1,
+        ".gif": 1323,
+        ".webp": 1323,
+        ".json": 2747,
+        ".js": 9,
+        ".txt": 2,
+        ".html": 1,
+        ".md": 1,
+        ".css": 1
+      }
+    },
+    "quatrieme dossier gif": {
+      "files": 1332,
+      "byExt": {
+        "(noext)": 2,
+        ".json": 2,
+        ".html": 2,
+        ".md": 2,
+        ".gif": 1324
+      }
+    },
+    "videos muscles": {
+      "files": 113,
+      "byExt": {
+        ".mp4": 113
+      }
+    }
+  },
+  "mediaCounts": {
+    "byCollectionAndRole": {
+      "gifs | card_media | .gif": 30,
+      "deuxieme dossier gif | card_media | .mp4": 50,
+      "troisieme dossier gif | card_media | .gif": 1323,
+      "troisieme dossier gif | thumb_companion | .webp": 1323,
+      "quatrieme dossier gif | card_media | .gif": 1324,
+      "videos muscles | pedagogical_video | .mp4": 84,
+      "videos muscles | routine | .mp4": 29
+    },
+    "filenameClassByCollection": {
+      "gifs | opaque_id": 30,
+      "deuxieme dossier gif | numeric_only": 49,
+      "deuxieme dossier gif | words_with_number": 1,
+      "troisieme dossier gif | slug": 1313,
+      "troisieme dossier gif | words": 1273,
+      "troisieme dossier gif | words_with_number": 60,
+      "quatrieme dossier gif | id_plus_opaque": 1324,
+      "videos muscles | words": 84,
+      "videos muscles | all_variants": 8,
+      "videos muscles | words_with_number": 20,
+      "videos muscles | slug": 1
+    },
+    "filenameExploitable": {
+      "gifs | exploitableFilename=false": 30,
+      "deuxieme dossier gif | exploitableFilename=false": 49,
+      "deuxieme dossier gif | exploitableFilename=true": 1,
+      "troisieme dossier gif | exploitableFilename=true": 1323,
+      "quatrieme dossier gif | exploitableFilename=false": 1324,
+      "videos muscles | exploitableFilename=true": 113
+    },
+    "catalogNamePresent": {
+      "gifs": 30,
+      "quatrieme": 1324,
+      "troisiemeGif": 1323,
+      "deuxiemeWithCatalogName": 0,
+      "videosMusclesWithCatalogName": 0
+    }
+  },
+  "videoFilenameClasses": {
+    "words": 84,
+    "all_variants": 8,
+    "words_with_number": 20,
+    "slug": 1
+  },
+  "pedagogicalVideos": [
+    "Cable Straight-Arm Pulldown.mp4",
+    "Hip Thrust au poids du corps variantes .mp4",
+    "Leg Curl allongé.mp4",
+    "Reverse Hand Plank Lean.mp4",
+    "adductor et abductor press.mp4",
+    "chest fly aux halteres.mp4",
+    "curl barre ez toutes les variantes.mp4",
+    "curl biceps poulie .mp4",
+    "curl biceps.mp4",
+    "curl concentration assis .mp4",
+    "curl concentration assis.mp4",
+    "curl marteau.mp4",
+    "curl pupitre barre ez .mp4",
+    "developpe militaire halteres.mp4",
+    "developpé couché incliné a la barre .mp4",
+    "dips mains sur banc.mp4",
+    "dips.mp4",
+    "développé couché  barre.mp4",
+    "développé couché haltères toutes les variantes .mp4",
+    "développé couché haltères.mp4",
+    "développé couché smith machine.mp4",
+    "développé couché.mp4",
+    "développé militaire assis halteres.mp4",
+    "développé militaire barre droite debout .mp4",
+    "développé militaire haltères assis .mp4",
+    "développé militaire smith machine.mp4",
+    "extension mollet debout toutes les variantes.mp4",
+    "extension mollets debout variantes.mp4",
+    "extension triceps a la corde 2.mp4",
+    "extension triceps a la poulie corde .mp4",
+    "extension triceps avec une haltere assis.mp4",
+    "extension triceps barre ez.mp4",
+    "extension triceps debout avec deux haltères.mp4",
+    "extension triceps debout avec une haltère.mp4",
+    "extension tricpes poulie.mp4",
+    "fente avec halteres.mp4",
+    "fentes bulgares poids du corps .mp4",
+    "gainage.mp4",
+    "good morning.mp4",
+    "hip thrust halteres.mp4",
+    "hip thrust à la barre .mp4",
+    "kickback à la poulie.mp4",
+    "l-sit.mp4",
+    "landmine row.mp4",
+    "leg extension.mp4",
+    "leg press 2.mp4",
+    "leg press 3.mp4",
+    "oiseaux halteres.mp4",
+    "oiseaux haltères 2.mp4",
+    "oiseaux haltères assis.mp4",
+    "oiseaux poulie.mp4",
+    "one arm push up.mp4",
+    "pec fly a la machine.mp4",
+    "pec fly a la poulie.mp4",
+    "pec fly poulie haute.mp4",
+    "pecs a la poulie debout toutes les variantes.mp4",
+    "pompes classiques 2.mp4",
+    "pompes classiques 3.mp4",
+    "pompes classiques et bodyweight triceps extension.mp4",
+    "pompes classiques.mp4",
+    "presse verticale.mp4",
+    "rear delt fly à la machine.mp4",
+    "rowing barre droite.mp4",
+    "rowing bucheron en appui su rle banc.mp4",
+    "rowing bucheron main sur banc 2.mp4",
+    "rowing haltère debout.mp4",
+    "shrugs aux halteres.mp4",
+    "soulevé de terre.mp4",
+    "squat barre .mp4",
+    "squat haltère .mp4",
+    "squat machine.mp4",
+    "squat smith machine.mp4",
+    "squat sumo 2.mp4",
+    "squat sumo.mp4",
+    "tirage horizontal a la poulie.mp4",
+    "tirage vertical toutes les variantes.mp4",
+    "toutes les variantes de pec fly a la poulie 2.mp4",
+    "toutes les variantes de tractions australiennes.mp4",
+    "toutes les variantes de tractions.mp4",
+    "traction australienne prise pronation.mp4",
+    "tractions otutes les variantes 2.mp4",
+    "variantes de positionnemùent leg extension a la machine .mp4",
+    "variantes pompes 3.mp4",
+    "élévation frontale.mp4"
+  ],
+  "routines": [
+    "abdos routines.mp4",
+    "roulette abdos.mp4",
+    "routine 3 exercices qui remplacent des exercices sur machine .mp4",
+    "routine abdos 2.mp4",
+    "routine abdos 5.mp4",
+    "routine abdos 7.mp4",
+    "routine abdos.mp4",
+    "routine abdos4.mp4",
+    "routine avant bras .mp4",
+    "routine avant bras 2.mp4",
+    "routine avant bras.mp4",
+    "routine barre Landmine..mp4",
+    "routine bas du corps cage a squat.mp4",
+    "routine bas du corps.mp4",
+    "routine biceps .mp4",
+    "routine biceps 2 .mp4",
+    "routine biceps 3.mp4",
+    "routine biceps brachial avant bras.mp4",
+    "routine biceps.mp4",
+    "routine dos a la poulie .mp4",
+    "routine epaule et dos halteres.mp4",
+    "routine epaule.mp4",
+    "routine epuale 2.mp4",
+    "routine etirement dos .mp4",
+    "routine haut du corps sans machines.mp4",
+    "routine pec sans materiel.mp4",
+    "routine smith machine .mp4",
+    "routine triceps 2.mp4",
+    "routine triceps.mp4"
+  ],
+  "allVariantsFiles": [
+    "videos muscles/curl barre ez toutes les variantes.mp4",
+    "videos muscles/développé couché haltères toutes les variantes .mp4",
+    "videos muscles/extension mollet debout toutes les variantes.mp4",
+    "videos muscles/pecs a la poulie debout toutes les variantes.mp4",
+    "videos muscles/tirage vertical toutes les variantes.mp4",
+    "videos muscles/toutes les variantes de pec fly a la poulie 2.mp4",
+    "videos muscles/toutes les variantes de tractions australiennes.mp4",
+    "videos muscles/toutes les variantes de tractions.mp4"
+  ],
+  "problematic": [
+    {
+      "relativePath": "deuxieme dossier gif/50gymworkouts.json",
+      "issue": "extension_ne_correspond_pas_au_contenu",
+      "declaredExtension": ".json",
+      "detected": "mp4/iso-bmff",
+      "bytes": 3538889
+    }
+  ],
+  "physicalDuplicates": {
+    "groups": 3,
+    "extraCopies": 3,
+    "groupsDetail": [
+      {
+        "sha256": "5a819a2895fa847804afe52fafec16e650318e25ba2aba67df8a73fb5bcd7b3e",
+        "count": 2,
+        "paths": [
+          "videos muscles/extension triceps debout avec une haltère.mp4",
+          "videos muscles/routines/routine triceps.mp4"
+        ]
+      },
+      {
+        "sha256": "1167bc73f1acca6bdc660f74cf0d3c3b22aa9380dd8b3b36a68fc7588ca5a808",
+        "count": 2,
+        "paths": [
+          "videos muscles/pec fly a la poulie.mp4",
+          "videos muscles/pec fly poulie haute.mp4"
+        ]
+      },
+      {
+        "sha256": "721c83163ca52a294b682c0f45154f17a4587d035cd63d730c22e75c8c77ebbd",
+        "count": 2,
+        "paths": [
+          "videos muscles/routines/abdos routines.mp4",
+          "videos muscles/routines/routine abdos.mp4"
+        ]
+      }
+    ]
+  },
+  "catalogOverlap": {
+    "rootMediaIdInsideQuatrieme": 30,
+    "rootMediaIdTotal": 30,
+    "normalizedNameRootInsideQuatrieme": 30,
+    "normalizedNameTroisiemeInsideQuatrieme": 1275,
+    "rootNames": 30,
+    "troisiemeGifNames": 1323,
+    "quatriemeNames": 1316
+  },
+  "deuxiemeNumeric": {
+    "count": 49,
+    "min": 52,
+    "max": 100,
+    "gapsInsideMinMax": [],
+    "stemsAlsoQuatriemeId": 47,
+    "stemsMissingFromQuatrieme": [
+      "0062.mp4",
+      "0093.mp4"
+    ]
+  },
+  "quatriemeDuplicateNames": [
+    {
+      "normalized": "barbell seated calf raise",
+      "count": 2,
+      "names": [
+        "barbell seated calf raise"
+      ]
+    },
+    {
+      "normalized": "dumbbell close grip press",
+      "count": 2,
+      "names": [
+        "dumbbell close grip press",
+        "dumbbell close-grip press"
+      ]
+    },
+    {
+      "normalized": "dumbbell standing one arm curl over incline bench",
+      "count": 2,
+      "names": [
+        "dumbbell standing one arm curl (over incline bench)",
+        "dumbbell standing one arm curl over incline bench"
+      ]
+    },
+    {
+      "normalized": "ez barbell spider curl",
+      "count": 2,
+      "names": [
+        "ez barbell spider curl"
+      ]
+    },
+    {
+      "normalized": "lever chest press",
+      "count": 2,
+      "names": [
+        "lever chest press"
+      ]
+    },
+    {
+      "normalized": "push up on stability ball",
+      "count": 2,
+      "names": [
+        "push-up (on stability ball)"
+      ]
+    },
+    {
+      "normalized": "self assisted inverse leg curl",
+      "count": 2,
+      "names": [
+        "self assisted inverse leg curl"
+      ]
+    },
+    {
+      "normalized": "smith reverse calf raises",
+      "count": 2,
+      "names": [
+        "smith reverse calf raises"
+      ]
+    }
+  ],
+  "troisiemeDuplicateNames": [],
+  "jsonLinkCoverage": {
+    "gifs": 30,
+    "gifsTotal": 30,
+    "quatrieme": 1324,
+    "quatriemeTotal": 1324,
+    "troisieme": 1323,
+    "troisiemeTotal": 1323
+  },
+  "schema": {
+    "gifs": {
+      "files": {
+        "bodyParts.json": {
+          "container": "array",
+          "length": 10,
+          "itemKeys": [
+            "name"
+          ],
+          "idField": null,
+          "note": "liste de {name} sans id"
+        },
+        "equipments (2).json": {
+          "container": "array",
+          "length": 28,
+          "itemKeys": [
+            "name"
+          ],
+          "idField": null,
+          "note": "liste de {name} sans id"
+        },
+        "muscles (2).json": {
+          "container": "array",
+          "length": 50,
+          "itemKeys": [
+            "name"
+          ],
+          "idField": null,
+          "note": "liste de {name} sans id"
+        },
+        "exercises (2).json": {
+          "container": "array",
+          "length": 30,
+          "itemKeys": [
+            "exerciseId",
+            "name",
+            "gifUrl",
+            "targetMuscles",
+            "bodyParts",
+            "equipments",
+            "secondaryMuscles",
+            "instructions"
+          ],
+          "idField": "exerciseId",
+          "uniqueIds": 30,
+          "nameLanguage": "en",
+          "instructions": "tableau de chaînes anglaises Step:N"
+        }
+      },
+      "separateCatalogs": true
+    },
+    "deuxieme dossier gif": {
+      "files": {},
+      "separateCatalogs": false,
+      "note": "Aucun JSON de catalogue. 50gymworkouts.json est un MP4 mal nommé."
+    },
+    "troisieme dossier gif": {
+      "canonicalLanguage": "en",
+      "mirrorLanguage": "es",
+      "exerciseCountEn": 1323,
+      "exerciseCountEs": 1323,
+      "idsOnlyInEn": 0,
+      "idsOnlyInEs": 0,
+      "exerciseItemKeys": [
+        "id",
+        "slug",
+        "name",
+        "muscle",
+        "bodyPart",
+        "equipment",
+        "category",
+        "secondaryMuscles",
+        "instructions",
+        "file",
+        "gifUrl",
+        "thumbUrl"
+      ],
+      "idField": "id (muscle/slug), pas un entier global",
+      "catalogs": {
+        "bodyparts.json": "tableau {bodyPart, count, endpoint}, 7 entrées, sans id stable autre que le slug",
+        "equipment.json": "tableau {equipment, count, endpoint}, 12 entrées",
+        "muscles.json": "tableau {muscle, count, endpoint}, 19 entrées",
+        "categories.json": "tableau {category, count, endpoint}, 4 entrées",
+        "exercises.json": "objet {count, exercises[]}, pas un tableau nu"
+      },
+      "note": "Les catalogues existent en double en/ et es/. Les fichiers par exercice sous api/*/exercises/ répètent exercises.json. Les identifiants sont des slugs, pas des entiers."
+    },
+    "quatrieme dossier gif": {
+      "files": [
+        "data/exercises.json",
+        "data/exercises.schema.json"
+      ],
+      "exerciseCount": 1324,
+      "uniqueIds": 1324,
+      "uniqueMediaIds": 1324,
+      "itemKeys": [
+        "id",
+        "name",
+        "category",
+        "body_part",
+        "equipment",
+        "instructions",
+        "instruction_steps",
+        "muscle_group",
+        "secondary_muscles",
+        "target",
+        "image",
+        "gif_url",
+        "media_id",
+        "created_at",
+        "attribution"
+      ],
+      "idField": "id sur 4 chiffres, non contigu",
+      "idMin": "0001",
+      "idMax": "5201",
+      "numbersAbsentInsideMinMax": 3877,
+      "instructionLanguages": [
+        "en",
+        "it",
+        "tr",
+        "es",
+        "ru",
+        "zh",
+        "hi",
+        "pl",
+        "ko",
+        "fr"
+      ],
+      "separateBodyPartsFile": false,
+      "note": "body_part et equipment sont des champs string. Le schéma enumère les body parts. Pas de bodyParts.json / muscles.json séparés. gif_url = videos/{id}-{media_id}.gif. Le champ image pointe vers images/ qui n’est pas dans le dossier.",
+      "imagesFolderPresent": false
+    },
+    "schemasIdentical": false,
+    "parser": "adaptateurs requis vers un pivot commun"
+  },
+  "matching": "non exécuté — aucune confiance EXACT/HIGH/PROBABLE/AMBIGUOUS/NO_MATCH assignée"
+}

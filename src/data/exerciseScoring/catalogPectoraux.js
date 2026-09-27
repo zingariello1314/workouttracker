@@ -113,5 +113,132 @@ export const CATALOG_PECTORAUX = [
   scoringEntry('Pompes triple claquées', 'reps', 6, 1.6, {
     muscleGroup: 'Pectoraux',
     aliases: ['triple clap push up']
+  }),
+  scoringEntry('Développé couché Smith', 'reps', 3, 0.95, {
+    muscleGroup: 'Pectoraux',
+    aliases: ['smith bench press']
+  }),
+  scoringEntry('Pompes et extension triceps', 'reps', 2, 0.75, {
+    muscleGroup: 'Pectoraux'
+  }),
+  scoringEntry("Pompes au mur", 'reps', 1, 0.4, {
+    muscleGroup: "Pectoraux",
+    aliases: ["pompes au mur"]
+  }),
+  scoringEntry("Pompes shoulder tap", 'reps', 2, 0.9, {
+    muscleGroup: "Pectoraux",
+    aliases: ["pompes shoulder tap"]
+  }),
+  scoringEntry("Pompes horloge", 'reps', 3, 1.05, {
+    muscleGroup: "Pectoraux",
+    aliases: ["pompes horloge"]
+  }),
+  scoringEntry("Pompes superman", 'reps', 4, 1.3, {
+    muscleGroup: "Pectoraux",
+    aliases: ["pompes superman"]
+  }),
+  scoringEntry("Pompes suspendues", 'reps', 3, 1.1, {
+    muscleGroup: "Pectoraux",
+    aliases: ["pompes suspendues"]
+  }),
+  scoringEntry("Pompes sur surface instable", 'reps', 2, 0.95, {
+    muscleGroup: "Pectoraux",
+    aliases: ["pompes surface instable"]
+  }),
+  scoringEntry("Pompes horizontales", 'reps', 7, 1.85, {
+    muscleGroup: "Pectoraux",
+    aliases: ["pompes horizontales"]
+  }),
+  scoringEntry("Tenue pectoraux bras écartés", 'seconds', 2, 0.7, {
+    muscleGroup: "Pectoraux",
+    aliases: ["tenue pectoraux bras écartés"]
+  }),
+  scoringEntry("Écarté au sol à la barre", 'reps', 2, 0.8, {
+    muscleGroup: "Pectoraux",
+    aliases: ["écarté au sol barre"]
+  }),
+  scoringEntry("Dips assistés", 'reps', 2, 0.85, {
+    muscleGroup: "Pectoraux",
+    aliases: ["dips assistés"]
+  }),
+  scoringEntry("Développé guillotine", 'reps', 4, 1.15, {
+    muscleGroup: "Pectoraux",
+    aliases: ["développé guillotine"]
+  }),
+  scoringEntry("Développé couché prise inversée", 'reps', 3, 1.05, {
+    muscleGroup: "Pectoraux",
+    aliases: ["développé couché prise inversée"]
+  }),
+  scoringEntry("Développé haltères prise inversée", 'reps', 2, 0.9, {
+    muscleGroup: "Pectoraux",
+    aliases: ["développé haltères prise inversée"]
+  }),
+  scoringEntry("Développé couché à la poulie", 'reps', 2, 0.85, {
+    muscleGroup: "Pectoraux",
+    aliases: ["développé couché poulie"]
+  }),
+  scoringEntry("Développé incliné à la poulie", 'reps', 2, 0.85, {
+    muscleGroup: "Pectoraux",
+    aliases: ["développé incliné poulie"]
+  }),
+  scoringEntry("Développé décliné à la poulie", 'reps', 2, 0.85, {
+    muscleGroup: "Pectoraux",
+    aliases: ["développé décliné poulie"]
+  }),
+  scoringEntry("Développé assis à la poulie", 'reps', 2, 0.8, {
+    muscleGroup: "Pectoraux",
+    aliases: ["développé assis poulie"]
+  }),
+  scoringEntry("Développé couché élastique", 'reps', 2, 0.65, {
+    muscleGroup: "Pectoraux",
+    aliases: ["développé couché élastique"]
+  }),
+  scoringEntry("Développé assis élastique", 'reps', 1, 0.55, {
+    muscleGroup: "Pectoraux",
+    aliases: ["développé assis élastique"]
+  }),
+  scoringEntry("Développé rotatif élastique", 'reps', 2, 0.7, {
+    muscleGroup: "Pectoraux",
+    aliases: ["développé rotatif élastique"]
+  }),
+  scoringEntry("Développé décliné Smith", 'reps', 3, 0.95, {
+    muscleGroup: "Pectoraux",
+    aliases: ["développé décliné smith"]
+  }),
+  scoringEntry("Développé incliné Smith", 'reps', 3, 0.95, {
+    muscleGroup: "Pectoraux",
+    aliases: ["développé incliné smith"]
+  }),
+  scoringEntry("Écarté décliné haltères", 'reps', 2, 0.8, {
+    muscleGroup: "Pectoraux",
+    aliases: ["écarté décliné haltères"]
+  }),
+  scoringEntry("Écarté unilatéral à la poulie", 'reps', 2, 0.8, {
+    muscleGroup: "Pectoraux",
+    aliases: ["écarté unilatéral poulie"]
+  }),
+  scoringEntry("Floor press kettlebell", 'reps', 2, 0.85, {
+    muscleGroup: "Pectoraux",
+    aliases: ["floor press kettlebell"]
+  }),
+  scoringEntry("Svend press", 'reps', 1, 0.5, {
+    muscleGroup: "Pectoraux",
+    aliases: ["svend press"]
+  }),
+  scoringEntry("Chest press décliné machine", 'reps', 2, 0.8, {
+    muscleGroup: "Pectoraux",
+    aliases: ["chest press décliné machine"]
+  }),
+  scoringEntry("Chest press incliné machine", 'reps', 2, 0.8, {
+    muscleGroup: "Pectoraux",
+    aliases: ["chest press incliné machine"]
+  }),
+  scoringEntry("Chest press debout machine", 'reps', 2, 0.8, {
+    muscleGroup: "Pectoraux",
+    aliases: ["chest press debout machine"]
+  }),
+  scoringEntry("Floor press barre", 'reps', 3, 0.95, {
+    muscleGroup: "Pectoraux",
+    aliases: ["floor press barre"]
   })
 ];

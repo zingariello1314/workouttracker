@@ -1,0 +1,807 @@
+{
+  "generatedAt": "2026-09-26T19:59:54.408Z",
+  "finalStatus": "PENDING_REVIEW",
+  "appliedToMomentum": false,
+  "momentumCardsConsidered": 282,
+  "proposals": 2840,
+  "byConfidence": {
+    "NO_MATCH": 2613,
+    "HIGH_CONFIDENCE": 116,
+    "PROBABLE": 4,
+    "EXACT": 103,
+    "AMBIGUOUS": 4
+  },
+  "byMatchType": {
+    "individual": 2423,
+    "normalized": 106,
+    "numeric_hint": 49,
+    "not_individual": 113,
+    "direct": 105,
+    "semantic": 2,
+    "family_all_variants": 13,
+    "routine_deferred": 29
+  },
+  "proposedNewRecords": 2423,
+  "proposedNewUniqueNames": 1257,
+  "familyFiles": [
+    {
+      "sourcePath": "videos muscles/curl barre ez toutes les variantes.mp4",
+      "confidence": "HIGH_CONFIDENCE",
+      "candidates": [
+        "Curl barre EZ"
+      ]
+    },
+    {
+      "sourcePath": "videos muscles/développé couché haltères toutes les variantes .mp4",
+      "confidence": "HIGH_CONFIDENCE",
+      "candidates": [
+        "Développé couché décliné aux haltères",
+        "Développé couché incliné aux haltères",
+        "Développé couché incliné aux haltères avec pause",
+        "Développé couché aux haltères",
+        "Développé couché aux haltères avec pause",
+        "Développé couché décliné aux haltères avec pause"
+      ]
+    },
+    {
+      "sourcePath": "videos muscles/extension mollet debout toutes les variantes.mp4",
+      "confidence": "HIGH_CONFIDENCE",
+      "candidates": [
+        "Mollets debout",
+        "Mollets debout unilatéral machine"
+      ]
+    },
+    {
+      "sourcePath": "videos muscles/extension mollets debout variantes.mp4",
+      "confidence": "HIGH_CONFIDENCE",
+      "candidates": [
+        "Mollets debout",
+        "Mollets debout unilatéral machine"
+      ]
+    },
+    {
+      "sourcePath": "videos muscles/Hip Thrust au poids du corps variantes .mp4",
+      "confidence": "NO_MATCH",
+      "candidates": []
+    },
+    {
+      "sourcePath": "videos muscles/pecs a la poulie debout toutes les variantes.mp4",
+      "confidence": "PROBABLE",
+      "candidates": [
+        "Écarté à la poulie"
+      ]
+    },
+    {
+      "sourcePath": "videos muscles/tirage vertical toutes les variantes.mp4",
+      "confidence": "PROBABLE",
+      "candidates": [
+        "Tirage vertical"
+      ]
+    },
+    {
+      "sourcePath": "videos muscles/toutes les variantes de pec fly a la poulie 2.mp4",
+      "confidence": "HIGH_CONFIDENCE",
+      "candidates": [
+        "Écarté à la poulie"
+      ]
+    },
+    {
+      "sourcePath": "videos muscles/toutes les variantes de tractions australiennes.mp4",
+      "confidence": "HIGH_CONFIDENCE",
+      "candidates": [
+        "Tractions australiennes — prise pronation",
+        "Tractions australiennes — prise serrée pronation",
+        "Tractions australiennes — prise large pronation",
+        "Tractions australiennes — prise large supination",
+        "Tractions australiennes — prise serrée supination",
+        "Tractions australiennes — prise neutre"
+      ]
+    },
+    {
+      "sourcePath": "videos muscles/toutes les variantes de tractions.mp4",
+      "confidence": "HIGH_CONFIDENCE",
+      "candidates": [
+        "Tractions pronation",
+        "Tractions supination",
+        "Tractions commando",
+        "Tractions typewriter",
+        "Tractions archer",
+        "Tractions scapulaires"
+      ]
+    },
+    {
+      "sourcePath": "videos muscles/tractions otutes les variantes 2.mp4",
+      "confidence": "HIGH_CONFIDENCE",
+      "candidates": [
+        "Tractions pronation",
+        "Tractions supination",
+        "Tractions commando",
+        "Tractions typewriter",
+        "Tractions archer",
+        "Tractions scapulaires"
+      ]
+    },
+    {
+      "sourcePath": "videos muscles/variantes de positionnemùent leg extension a la machine .mp4",
+      "confidence": "HIGH_CONFIDENCE",
+      "candidates": [
+        "Leg extension"
+      ]
+    },
+    {
+      "sourcePath": "videos muscles/variantes pompes 3.mp4",
+      "confidence": "HIGH_CONFIDENCE",
+      "candidates": [
+        "Pompes",
+        "Pompes inclinées",
+        "Pompes serrées",
+        "Pompes déclinées",
+        "Pompes sur poignées",
+        "Pompes archer",
+        "Pompes scapulaires"
+      ]
+    }
+  ],
+  "numericHint": [
+    {
+      "sourcePath": "deuxieme dossier gif/0052.mp4",
+      "confidence": "PROBABLE",
+      "reasons": [
+        "numéro 0052 retrouvé dans le quatrième dossier (« barbell jm bench press »), contenu vidéo non vérifié",
+        "nom égal après normalisation FR/EN, synonymes et ordre des mots"
+      ],
+      "candidates": [
+        "JM press"
+      ]
+    },
+    {
+      "sourcePath": "deuxieme dossier gif/0053.mp4",
+      "confidence": "NO_MATCH",
+      "reasons": [
+        "numéro 0053 retrouvé dans le quatrième dossier (« barbell jump squat »), contenu vidéo non vérifié",
+        "aucune correspondance fiable avec une fiche Momentum"
+      ],
+      "candidates": []
+    },
+    {
+      "sourcePath": "deuxieme dossier gif/0054.mp4",
+      "confidence": "NO_MATCH",
+      "reasons": [
+        "numéro 0054 retrouvé dans le quatrième dossier (« barbell lunge »), contenu vidéo non vérifié",
+        "aucune correspondance fiable avec une fiche Momentum"
+      ],
+      "candidates": []
+    },
+    {
+      "sourcePath": "deuxieme dossier gif/0055.mp4",
+      "confidence": "NO_MATCH",
+      "reasons": [
+        "numéro 0055 retrouvé dans le quatrième dossier (« barbell lying close-grip press »), contenu vidéo non vérifié",
+        "aucune correspondance fiable avec une fiche Momentum"
+      ],
+      "candidates": []
+    },
+    {
+      "sourcePath": "deuxieme dossier gif/0056.mp4",
+      "confidence": "NO_MATCH",
+      "reasons": [
+        "numéro 0056 retrouvé dans le quatrième dossier (« barbell lying close-grip triceps extension »), contenu vidéo non vérifié",
+        "aucune correspondance fiable avec une fiche Momentum"
+      ],
+      "candidates": []
+    },
+    {
+      "sourcePath": "deuxieme dossier gif/0057.mp4",
+      "confidence": "NO_MATCH",
+      "reasons": [
+        "numéro 0057 retrouvé dans le quatrième dossier (« barbell lying extension »), contenu vidéo non vérifié",
+        "aucune correspondance fiable avec une fiche Momentum"
+      ],
+      "candidates": []
+    },
+    {
+      "sourcePath": "deuxieme dossier gif/0058.mp4",
+      "confidence": "NO_MATCH",
+      "reasons": [
+        "numéro 0058 retrouvé dans le quatrième dossier (« barbell lying lifting (on hip) »), contenu vidéo non vérifié",
+        "aucune correspondance fiable avec une fiche Momentum"
+      ],
+      "candidates": []
+    },
+    {
+      "sourcePath": "deuxieme dossier gif/0059.mp4",
+      "confidence": "NO_MATCH",
+      "reasons": [
+        "numéro 0059 retrouvé dans le quatrième dossier (« barbell lying preacher curl »), contenu vidéo non vérifié",
+        "aucune correspondance fiable avec une fiche Momentum"
+      ],
+      "candidates": []
+    },
+    {
+      "sourcePath": "deuxieme dossier gif/0060.mp4",
+      "confidence": "NO_MATCH",
+      "reasons": [
+        "numéro 0060 retrouvé dans le quatrième dossier (« barbell lying triceps extension skull crusher »), contenu vidéo non vérifié",
+        "aucune correspondance fiable avec une fiche Momentum"
+      ],
+      "candidates": []
+    },
+    {
+      "sourcePath": "deuxieme dossier gif/0061.mp4",
+      "confidence": "NO_MATCH",
+      "reasons": [
+        "numéro 0061 retrouvé dans le quatrième dossier (« barbell lying triceps extension »), contenu vidéo non vérifié",
+        "aucune correspondance fiable avec une fiche Momentum"
+      ],
+      "candidates": []
+    },
+    {
+      "sourcePath": "deuxieme dossier gif/0062.mp4",
+      "confidence": "NO_MATCH",
+      "reasons": [
+        "numéro 0062 absent du catalogue du quatrième dossier",
+        "le numéro n’est pas une preuve, contenu vidéo non identifié"
+      ],
+      "candidates": []
+    },
+    {
+      "sourcePath": "deuxieme dossier gif/0063.mp4",
+      "confidence": "NO_MATCH",
+      "reasons": [
+        "numéro 0063 retrouvé dans le quatrième dossier (« barbell narrow stance squat »), contenu vidéo non vérifié",
+        "aucune correspondance fiable avec une fiche Momentum"
+      ],
+      "candidates": []
+    },
+    {
+      "sourcePath": "deuxieme dossier gif/0064.mp4",
+      "confidence": "NO_MATCH",
+      "reasons": [
+        "numéro 0064 retrouvé dans le quatrième dossier (« barbell one arm bent over row »), contenu vidéo non vérifié",
+        "aucune correspondance fiable avec une fiche Momentum"
+      ],
+      "candidates": []
+    },
+    {
+      "sourcePath": "deuxieme dossier gif/0065.mp4",
+      "confidence": "NO_MATCH",
+      "reasons": [
+        "numéro 0065 retrouvé dans le quatrième dossier (« barbell one arm floor press »), contenu vidéo non vérifié",
+        "aucune correspondance fiable avec une fiche Momentum"
+      ],
+      "candidates": []
+    },
+    {
+      "sourcePath": "deuxieme dossier gif/0066.mp4",
+      "confidence": "NO_MATCH",
+      "reasons": [
+        "numéro 0066 retrouvé dans le quatrième dossier (« barbell one arm side deadlift »), contenu vidéo non vérifié",
+        "aucune correspondance fiable avec une fiche Momentum"
+      ],
+      "candidates": []
+    },
+    {
+      "sourcePath": "deuxieme dossier gif/0067.mp4",
+      "confidence": "NO_MATCH",
+      "reasons": [
+        "numéro 0067 retrouvé dans le quatrième dossier (« barbell one arm snatch »), contenu vidéo non vérifié",
+        "aucune correspondance fiable avec une fiche Momentum"
+      ],
+      "candidates": []
+    },
+    {
+      "sourcePath": "deuxieme dossier gif/0068.mp4",
+      "confidence": "NO_MATCH",
+      "reasons": [
+        "numéro 0068 retrouvé dans le quatrième dossier (« barbell one leg squat »), contenu vidéo non vérifié",
+        "aucune correspondance fiable avec une fiche Momentum"
+      ],
+      "candidates": []
+    },
+    {
+      "sourcePath": "deuxieme dossier gif/0069.mp4",
+      "confidence": "NO_MATCH",
+      "reasons": [
+        "numéro 0069 retrouvé dans le quatrième dossier (« barbell overhead squat »), contenu vidéo non vérifié",
+        "aucune correspondance fiable avec une fiche Momentum"
+      ],
+      "candidates": []
+    },
+    {
+      "sourcePath": "deuxieme dossier gif/0070.mp4",
+      "confidence": "NO_MATCH",
+      "reasons": [
+        "numéro 0070 retrouvé dans le quatrième dossier (« barbell preacher curl »), contenu vidéo non vérifié",
+        "aucune correspondance fiable avec une fiche Momentum"
+      ],
+      "candidates": []
+    },
+    {
+      "sourcePath": "deuxieme dossier gif/0071.mp4",
+      "confidence": "NO_MATCH",
+      "reasons": [
+        "numéro 0071 retrouvé dans le quatrième dossier (« barbell press sit-up »), contenu vidéo non vérifié",
+        "aucune correspondance fiable avec une fiche Momentum"
+      ],
+      "candidates": []
+    },
+    {
+      "sourcePath": "deuxieme dossier gif/0072.mp4",
+      "confidence": "NO_MATCH",
+      "reasons": [
+        "numéro 0072 retrouvé dans le quatrième dossier (« barbell prone incline curl »), contenu vidéo non vérifié",
+        "aucune correspondance fiable avec une fiche Momentum"
+      ],
+      "candidates": []
+    },
+    {
+      "sourcePath": "deuxieme dossier gif/0073.mp4",
+      "confidence": "NO_MATCH",
+      "reasons": [
+        "numéro 0073 retrouvé dans le quatrième dossier (« barbell pullover »), contenu vidéo non vérifié",
+        "aucune correspondance fiable avec une fiche Momentum"
+      ],
+      "candidates": []
+    },
+    {
+      "sourcePath": "deuxieme dossier gif/0074.mp4",
+      "confidence": "NO_MATCH",
+      "reasons": [
+        "numéro 0074 retrouvé dans le quatrième dossier (« barbell rack pull »), contenu vidéo non vérifié",
+        "aucune correspondance fiable avec une fiche Momentum"
+      ],
+      "candidates": []
+    },
+    {
+      "sourcePath": "deuxieme dossier gif/0075.mp4",
+      "confidence": "NO_MATCH",
+      "reasons": [
+        "numéro 0075 retrouvé dans le quatrième dossier (« barbell rear delt raise »), contenu vidéo non vérifié",
+        "aucune correspondance fiable avec une fiche Momentum"
+      ],
+      "candidates": []
+    },
+    {
+      "sourcePath": "deuxieme dossier gif/0076.mp4",
+      "confidence": "NO_MATCH",
+      "reasons": [
+        "numéro 0076 retrouvé dans le quatrième dossier (« barbell rear delt row »), contenu vidéo non vérifié",
+        "aucune correspondance fiable avec une fiche Momentum"
+      ],
+      "candidates": []
+    },
+    {
+      "sourcePath": "deuxieme dossier gif/0077.mp4",
+      "confidence": "NO_MATCH",
+      "reasons": [
+        "numéro 0077 retrouvé dans le quatrième dossier (« barbell rear lunge v. 2 »), contenu vidéo non vérifié",
+        "aucune correspondance fiable avec une fiche Momentum"
+      ],
+      "candidates": []
+    },
+    {
+      "sourcePath": "deuxieme dossier gif/0078.mp4",
+      "confidence": "NO_MATCH",
+      "reasons": [
+        "numéro 0078 retrouvé dans le quatrième dossier (« barbell rear lunge »), contenu vidéo non vérifié",
+        "aucune correspondance fiable avec une fiche Momentum"
+      ],
+      "candidates": []
+    },
+    {
+      "sourcePath": "deuxieme dossier gif/0079.mp4",
+      "confidence": "NO_MATCH",
+      "reasons": [
+        "numéro 0079 retrouvé dans le quatrième dossier (« barbell revers wrist curl v. 2 »), contenu vidéo non vérifié",
+        "aucune correspondance fiable avec une fiche Momentum"
+      ],
+      "candidates": []
+    },
+    {
+      "sourcePath": "deuxieme dossier gif/0080.mp4",
+      "confidence": "NO_MATCH",
+      "reasons": [
+        "numéro 0080 retrouvé dans le quatrième dossier (« barbell reverse curl »), contenu vidéo non vérifié",
+        "aucune correspondance fiable avec une fiche Momentum"
+      ],
+      "candidates": []
+    },
+    {
+      "sourcePath": "deuxieme dossier gif/0081.mp4",
+      "confidence": "NO_MATCH",
+      "reasons": [
+        "numéro 0081 retrouvé dans le quatrième dossier (« barbell reverse preacher curl »), contenu vidéo non vérifié",
+        "aucune correspondance fiable avec une fiche Momentum"
+      ],
+      "candidates": []
+    },
+    {
+      "sourcePath": "deuxieme dossier gif/0082.mp4",
+      "confidence": "NO_MATCH",
+      "reasons": [
+        "numéro 0082 retrouvé dans le quatrième dossier (« barbell reverse wrist curl »), contenu vidéo non vérifié",
+        "aucune correspondance fiable avec une fiche Momentum"
+      ],
+      "candidates": []
+    },
+    {
+      "sourcePath": "deuxieme dossier gif/0083.mp4",
+      "confidence": "NO_MATCH",
+      "reasons": [
+        "numéro 0083 retrouvé dans le quatrième dossier (« barbell rollerout from bench »), contenu vidéo non vérifié",
+        "aucune correspondance fiable avec une fiche Momentum"
+      ],
+      "candidates": []
+    },
+    {
+      "sourcePath": "deuxieme dossier gif/0084.mp4",
+      "confidence": "NO_MATCH",
+      "reasons": [
+        "numéro 0084 retrouvé dans le quatrième dossier (« barbell rollerout »), contenu vidéo non vérifié",
+        "aucune correspondance fiable avec une fiche Momentum"
+      ],
+      "candidates": []
+    },
+    {
+      "sourcePath": "deuxieme dossier gif/0085.mp4",
+      "confidence": "PROBABLE",
+      "reasons": [
+        "numéro 0085 retrouvé dans le quatrième dossier (« barbell romanian deadlift »), contenu vidéo non vérifié",
+        "nom égal après normalisation FR/EN, synonymes et ordre des mots"
+      ],
+      "candidates": [
+        "Soulevé de terre jambes semi-tendues"
+      ]
+    },
+    {
+      "sourcePath": "deuxieme dossier gif/0086.mp4",
+      "confidence": "NO_MATCH",
+      "reasons": [
+        "numéro 0086 retrouvé dans le quatrième dossier (« barbell seated behind head military press »), contenu vidéo non vérifié",
+        "aucune correspondance fiable avec une fiche Momentum"
+      ],
+      "candidates": []
+    },
+    {
+      "sourcePath": "deuxieme dossier gif/0087.mp4",
+      "confidence": "NO_MATCH",
+      "reasons": [
+        "numéro 0087 retrouvé dans le quatrième dossier (« barbell seated bradford rocky press »), contenu vidéo non vérifié",
+        "aucune correspondance fiable avec une fiche Momentum"
+      ],
+      "candidates": []
+    },
+    {
+      "sourcePath": "deuxieme dossier gif/0088.mp4",
+      "confidence": "NO_MATCH",
+      "reasons": [
+        "numéro 0088 retrouvé dans le quatrième dossier (« barbell seated calf raise »), contenu vidéo non vérifié",
+        "aucune correspondance fiable avec une fiche Momentum"
+      ],
+      "candidates": []
+    },
+    {
+      "sourcePath": "deuxieme dossier gif/0089.mp4",
+      "confidence": "NO_MATCH",
+      "reasons": [
+        "numéro 0089 retrouvé dans le quatrième dossier (« barbell seated close-grip concentration curl »), contenu vidéo non vérifié",
+        "aucune correspondance fiable avec une fiche Momentum"
+      ],
+      "candidates": []
+    },
+    {
+      "sourcePath": "deuxieme dossier gif/0090.mp4",
+      "confidence": "NO_MATCH",
+      "reasons": [
+        "numéro 0090 retrouvé dans le quatrième dossier (« barbell seated good morning »), contenu vidéo non vérifié",
+        "aucune correspondance fiable avec une fiche Momentum"
+      ],
+      "candidates": []
+    },
+    {
+      "sourcePath": "deuxieme dossier gif/0091.mp4",
+      "confidence": "NO_MATCH",
+      "reasons": [
+        "numéro 0091 retrouvé dans le quatrième dossier (« barbell seated overhead press »), contenu vidéo non vérifié",
+        "aucune correspondance fiable avec une fiche Momentum"
+      ],
+      "candidates": []
+    },
+    {
+      "sourcePath": "deuxieme dossier gif/0092.mp4",
+      "confidence": "NO_MATCH",
+      "reasons": [
+        "numéro 0092 retrouvé dans le quatrième dossier (« barbell seated overhead triceps extension »), contenu vidéo non vérifié",
+        "aucune correspondance fiable avec une fiche Momentum"
+      ],
+      "candidates": []
+    },
+    {
+      "sourcePath": "deuxieme dossier gif/0093.mp4",
+      "confidence": "NO_MATCH",
+      "reasons": [
+        "numéro 0093 absent du catalogue du quatrième dossier",
+        "le numéro n’est pas une preuve, contenu vidéo non identifié"
+      ],
+      "candidates": []
+    },
+    {
+      "sourcePath": "deuxieme dossier gif/0094.mp4",
+      "confidence": "NO_MATCH",
+      "reasons": [
+        "numéro 0094 retrouvé dans le quatrième dossier (« barbell seated twist »), contenu vidéo non vérifié",
+        "aucune correspondance fiable avec une fiche Momentum"
+      ],
+      "candidates": []
+    },
+    {
+      "sourcePath": "deuxieme dossier gif/0095.mp4",
+      "confidence": "NO_MATCH",
+      "reasons": [
+        "numéro 0095 retrouvé dans le quatrième dossier (« barbell shrug »), contenu vidéo non vérifié",
+        "aucune correspondance fiable avec une fiche Momentum"
+      ],
+      "candidates": []
+    },
+    {
+      "sourcePath": "deuxieme dossier gif/0096.mp4",
+      "confidence": "NO_MATCH",
+      "reasons": [
+        "numéro 0096 retrouvé dans le quatrième dossier (« barbell side bent v. 2 »), contenu vidéo non vérifié",
+        "aucune correspondance fiable avec une fiche Momentum"
+      ],
+      "candidates": []
+    },
+    {
+      "sourcePath": "deuxieme dossier gif/0097.mp4",
+      "confidence": "NO_MATCH",
+      "reasons": [
+        "numéro 0097 retrouvé dans le quatrième dossier (« barbell side split squat v. 2 »), contenu vidéo non vérifié",
+        "aucune correspondance fiable avec une fiche Momentum"
+      ],
+      "candidates": []
+    },
+    {
+      "sourcePath": "deuxieme dossier gif/0098.mp4",
+      "confidence": "NO_MATCH",
+      "reasons": [
+        "numéro 0098 retrouvé dans le quatrième dossier (« barbell side split squat »), contenu vidéo non vérifié",
+        "aucune correspondance fiable avec une fiche Momentum"
+      ],
+      "candidates": []
+    },
+    {
+      "sourcePath": "deuxieme dossier gif/0099.mp4",
+      "confidence": "NO_MATCH",
+      "reasons": [
+        "numéro 0099 retrouvé dans le quatrième dossier (« barbell single leg split squat »), contenu vidéo non vérifié",
+        "aucune correspondance fiable avec une fiche Momentum"
+      ],
+      "candidates": []
+    },
+    {
+      "sourcePath": "deuxieme dossier gif/0100.mp4",
+      "confidence": "NO_MATCH",
+      "reasons": [
+        "numéro 0100 retrouvé dans le quatrième dossier (« barbell skier »), contenu vidéo non vérifié",
+        "aucune correspondance fiable avec une fiche Momentum"
+      ],
+      "candidates": []
+    }
+  ],
+  "samples": {
+    "EXACT": [
+      {
+        "sourcePath": "troisieme dossier gif/abs/air-bike.gif",
+        "confidence": "EXACT",
+        "matchType": "direct",
+        "candidates": [
+          "Assault bike"
+        ],
+        "proposed": null
+      },
+      {
+        "sourcePath": "troisieme dossier gif/abs/dead-bug.gif",
+        "confidence": "EXACT",
+        "matchType": "direct",
+        "candidates": [
+          "Dead bug"
+        ],
+        "proposed": null
+      },
+      {
+        "sourcePath": "troisieme dossier gif/abs/reverse-crunch.gif",
+        "confidence": "EXACT",
+        "matchType": "direct",
+        "candidates": [
+          "Crunchs inversés"
+        ],
+        "proposed": null
+      },
+      {
+        "sourcePath": "troisieme dossier gif/abs/russian-twist.gif",
+        "confidence": "EXACT",
+        "matchType": "direct",
+        "candidates": [
+          "Russian twist"
+        ],
+        "proposed": null
+      },
+      {
+        "sourcePath": "troisieme dossier gif/abs/straddle-planche.gif",
+        "confidence": "EXACT",
+        "matchType": "direct",
+        "candidates": [
+          "Straddle planche hold"
+        ],
+        "proposed": null
+      }
+    ],
+    "HIGH_CONFIDENCE": [
+      {
+        "sourcePath": "3eGE2JC (2).gif",
+        "confidence": "HIGH_CONFIDENCE",
+        "matchType": "normalized",
+        "candidates": [
+          "Élévations frontales"
+        ],
+        "proposed": null
+      },
+      {
+        "sourcePath": "3TZduzM (2).gif",
+        "confidence": "HIGH_CONFIDENCE",
+        "matchType": "normalized",
+        "candidates": [
+          "Développé incliné"
+        ],
+        "proposed": null
+      },
+      {
+        "sourcePath": "troisieme dossier gif/biceps/cable-one-arm-curl.gif",
+        "confidence": "HIGH_CONFIDENCE",
+        "matchType": "normalized",
+        "candidates": [
+          "Curl câble unilatéral"
+        ],
+        "proposed": null
+      },
+      {
+        "sourcePath": "troisieme dossier gif/biceps/dumbbell-biceps-curl.gif",
+        "confidence": "HIGH_CONFIDENCE",
+        "matchType": "normalized",
+        "candidates": [
+          "Curl haltères"
+        ],
+        "proposed": null
+      },
+      {
+        "sourcePath": "troisieme dossier gif/biceps/dumbbell-concentration-curl.gif",
+        "confidence": "HIGH_CONFIDENCE",
+        "matchType": "normalized",
+        "candidates": [
+          "Curl concentration"
+        ],
+        "proposed": null
+      }
+    ],
+    "PROBABLE": [
+      {
+        "sourcePath": "deuxieme dossier gif/0052.mp4",
+        "confidence": "PROBABLE",
+        "matchType": "numeric_hint",
+        "candidates": [
+          "JM press"
+        ],
+        "proposed": null
+      },
+      {
+        "sourcePath": "deuxieme dossier gif/0085.mp4",
+        "confidence": "PROBABLE",
+        "matchType": "numeric_hint",
+        "candidates": [
+          "Soulevé de terre jambes semi-tendues"
+        ],
+        "proposed": null
+      },
+      {
+        "sourcePath": "videos muscles/pecs a la poulie debout toutes les variantes.mp4",
+        "confidence": "PROBABLE",
+        "matchType": "family_all_variants",
+        "candidates": [
+          "Écarté à la poulie"
+        ],
+        "proposed": null
+      },
+      {
+        "sourcePath": "videos muscles/tirage vertical toutes les variantes.mp4",
+        "confidence": "PROBABLE",
+        "matchType": "family_all_variants",
+        "candidates": [
+          "Tirage vertical"
+        ],
+        "proposed": null
+      }
+    ],
+    "AMBIGUOUS": [
+      {
+        "sourcePath": "troisieme dossier gif/delts/cable-lateral-raise.gif",
+        "confidence": "AMBIGUOUS",
+        "matchType": "direct",
+        "candidates": [
+          "Élévations latérales poulie",
+          "Élévation latérale unilatérale poulie cheville"
+        ],
+        "proposed": null
+      },
+      {
+        "sourcePath": "quatrieme dossier gif/videos/0178-goJ6ezq.gif",
+        "confidence": "AMBIGUOUS",
+        "matchType": "direct",
+        "candidates": [
+          "Élévations latérales poulie",
+          "Élévation latérale unilatérale poulie cheville"
+        ],
+        "proposed": null
+      },
+      {
+        "sourcePath": "videos muscles/Cable Straight-Arm Pulldown.mp4",
+        "confidence": "AMBIGUOUS",
+        "matchType": "semantic",
+        "candidates": [
+          "Tirage vertical",
+          "Pull-over poulie haute"
+        ],
+        "proposed": null
+      },
+      {
+        "sourcePath": "videos muscles/curl biceps.mp4",
+        "confidence": "AMBIGUOUS",
+        "matchType": "semantic",
+        "candidates": [
+          "Curl barre",
+          "Curl haltères",
+          "Curl poulie basse",
+          "Curl barre EZ"
+        ],
+        "proposed": null
+      }
+    ],
+    "NO_MATCH": [
+      {
+        "sourcePath": "05Cf2v8 (3).gif",
+        "confidence": "NO_MATCH",
+        "matchType": "individual",
+        "candidates": [],
+        "proposed": "impossible dips"
+      },
+      {
+        "sourcePath": "2ORFMoR.gif",
+        "confidence": "NO_MATCH",
+        "matchType": "individual",
+        "candidates": [],
+        "proposed": "hack calf raise"
+      },
+      {
+        "sourcePath": "2Qh2J1e (2).gif",
+        "confidence": "NO_MATCH",
+        "matchType": "individual",
+        "candidates": [],
+        "proposed": "sled 45° leg press (side pov)"
+      },
+      {
+        "sourcePath": "3tAXPQ6 (2).gif",
+        "confidence": "NO_MATCH",
+        "matchType": "individual",
+        "candidates": [],
+        "proposed": "dumbbell over bench revers wrist curl"
+      },
+      {
+        "sourcePath": "3XFdb1Z (2).gif",
+        "confidence": "NO_MATCH",
+        "matchType": "individual",
+        "candidates": [],
+        "proposed": "cable squatting curl"
+      }
+    ]
+  }
+}

@@ -171,18 +171,6 @@ const CARDIO_REFERENCE_EXERCISES_RAW = [
     isCardioReference: true
   },
   {
-    id: 'cardio_run_walk',
-    name: 'Marche active / footing marche',
-    series: hint,
-    materiel: 'Course à pied',
-    category: ExerciseCategories.CARDIO,
-    muscleGroup: MuscleGroups.FULL_BODY,
-    equipment: Equipment.BODYWEIGHT,
-    notes: 'Marche rapide ou alternance marche-course.',
-    ...RUNNING_CARDIO_MUSCLES,
-    isCardioReference: true
-  },
-  {
     id: 'cardio_jumprope',
     name: 'Corde à sauter — endurance / technique',
     series: 'Séances : Sport → Endurance → Corde',
@@ -195,40 +183,6 @@ const CARDIO_REFERENCE_EXERCISES_RAW = [
     secondaryMuscles: ['Mollets', 'Grand dorsal', 'Deltoïdes antérieurs', 'Ischio-jambiers', 'Avant-bras'],
     isCardioReference: true
   },
-  {
-    id: 'cardio_swimming',
-    name: 'Natation — endurance / technique',
-    series: 'Séances : Sport → Endurance → Natation',
-    materiel: 'Piscine',
-    category: ExerciseCategories.CARDIO,
-    muscleGroup: MuscleGroups.FULL_BODY,
-    equipment: Equipment.BODYWEIGHT,
-    notes: 'Longueurs, allures, types de nage.',
-    primaryMuscles: [
-      'Grand dorsal',
-      'Deltoïdes antérieurs',
-      'Pectoraux',
-      'Triceps brachial',
-      'Quadriceps',
-      'Mollets',
-      'Core'
-    ],
-    secondaryMuscles: ['Ischio-jambiers', 'Fessiers', 'Biceps brachial', 'Triceps'],
-    isCardioReference: true
-  },
-  {
-    id: 'cardio_boxing',
-    name: 'Boxe — sac / ring / cardio',
-    series: 'Séances : Sport → Endurance → Boxe',
-    materiel: 'Gants, sac',
-    category: ExerciseCategories.CARDIO,
-    muscleGroup: MuscleGroups.FULL_BODY,
-    equipment: Equipment.BODYWEIGHT,
-    notes: 'Durée, intensité, rounds.',
-    primaryMuscles: ['Deltoïdes antérieurs', 'Triceps brachial', 'Mollets', 'Core', 'Quadriceps'],
-    secondaryMuscles: ['Fessiers', 'Grand dorsal', 'Biceps brachial', 'Avant-bras', 'Mollets'],
-    isCardioReference: true
-  }
 ];
 
 /** Référentiels cardio avec difficulté par défaut pour les filtres de l’onglet Exercices */

@@ -211,8 +211,7 @@ export const pathologyStrength = [
     symptoms: ['Omoplate très visible, décollée du thorax', 'Fatigue rapide en poussée'],
     causes: ['Faiblesse dentelé antérieur (serratus)', 'Neuropathie possible — avis si sévère'],
     items: [
-      ex('pompes scapulaires', '3×15', 'Push-up plus'),
-      ex('serratus punch', '3×15', 'Serratus punch')
+      ex('pompes scapulaires', '3×15', 'Push-up plus')
     ],
     frequency: '4 à 5 séances / semaine',
     recoveryTime: 'Plusieurs mois',

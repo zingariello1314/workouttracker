@@ -2649,17 +2649,6 @@ export const exerciseDatabase = {
       "Position haute de pompe : sans plier les coudes, laisse les omoplates se rapprocher puis s'éloigner (protraction/rétraction). Réactive le dentelé antérieur et stabilise la scapula.",
     variations: ["push-up plus", "scapular push-up", "serratus push-up", "protraction scapulaire"]
   },
-  "serratus punch": {
-    name: "Serratus punch",
-    category: "Épaules",
-    primaryMuscles: ["Serratus antérieur"],
-    secondaryMuscles: ["Trapèze inférieur", "Deltoïde antérieur"],
-    equipment: "Bande élastique ou câble",
-    difficulty: 1,
-    description:
-      "Bras tendu devant soi, pousse en avant (shadow boxing) en laissant l'omoplate glisser autour du thorax. Cible le dentelé antérieur — utile en scapula alata et instabilité scapulaire.",
-    variations: ["serratus punches", "protraction punch", "straight arm punch band"]
-  },
   "squat décliné rééducation": {
     name: "Squat décliné (rééducation genou)",
     category: "Quadriceps",
@@ -2803,17 +2792,3953 @@ export const exerciseDatabase = {
       "Debout, élastique autour des chevilles : écarte la jambe latéralement sans basculer le bassin. Renforce le moyen fessier — essentiel en syndrome de l'essuie-glace et tendinopathie du moyen fessier.",
     variations: ["hip abduction band", "abduction élastique", "lateral leg raise band"]
   },
-  "ramassage serviette orteils": {
-    name: "Ramassage serviette (orteils)",
-    category: "Mollets",
-    primaryMuscles: ["Intrinsèques du pied", "Fléchisseurs des orteils"],
-    secondaryMuscles: ["Voûte plantaire"],
-    equipment: "Serviette",
-    difficulty: 1,
+  "presse verticale": {
+    name: "Presse verticale",
+    category: "Quadriceps",
+    primaryMuscles: ["Quadriceps", "Fessiers"],
+    secondaryMuscles: ["Ischio-jambiers", "Mollets"],
+    equipment: "Presse à 90°",
+    difficulty: 3,
+    isNew: true,
     description:
-      "Assis, ramasse une serviette au sol avec les orteils. Renforce la voûte plantaire — protocole classique fasciite plantaire et prévention douleurs du pied.",
-    variations: ["towel scrunch", "toe curls towel", "ramasser serviette", "short foot towel"]
+      "Presse à cuisses verticale : le dossier est presque à 90°, les pieds poussent vers le haut et la tête reste plus basse que les hanches. La charge descend le long du corps, sans la trajectoire inclinée de la presse à 45°.",
+    variations: ["presse 90 degrés", "vertical leg press", "presse tête en bas", "presse verticale 90"]
+  },
+  "développé couché smith": {
+    name: "Développé couché Smith",
+    category: "Pectoraux",
+    primaryMuscles: ["Pectoraux"],
+    secondaryMuscles: ["Triceps", "Deltoïdes antérieurs"],
+    equipment: "Smith machine + Banc",
+    difficulty: 2,
+    isNew: true,
+    description:
+      "Développé couché sur barre guidée. La trajectoire est fixe : on règle la hauteur des sécurités, on descend la barre sur le bas des pectoraux, puis on pousse sans déverrouiller les coudes. Plus stable que la barre libre, moins exigeant pour les stabilisateurs.",
+    variations: ["smith bench press", "développé smith", "bench press smith machine"]
+  },
+  "développé militaire smith": {
+    name: "Développé militaire Smith",
+    category: "Épaules",
+    primaryMuscles: ["Deltoïdes antérieurs", "Deltoïdes moyens"],
+    secondaryMuscles: ["Triceps", "Trapèzes supérieurs"],
+    equipment: "Smith machine",
+    difficulty: 2,
+    isNew: true,
+    description:
+      "Développé au-dessus de la tête sur barre guidée, assis ou debout. La barre reste dans un plan vertical. Descendre devant le visage jusqu'aux clavicules, puis pousser sans cambrer le bas du dos.",
+    variations: ["smith shoulder press", "militaire smith", "overhead press smith"]
+  },
+  "squat smith": {
+    name: "Squat Smith",
+    category: "Quadriceps",
+    primaryMuscles: ["Quadriceps", "Fessiers"],
+    secondaryMuscles: ["Ischio-jambiers", "Core"],
+    equipment: "Smith machine",
+    difficulty: 2,
+    isNew: true,
+    description:
+      "Squat sur barre guidée, pieds légèrement avancés pour que les genoux suivent la trajectoire verticale de la barre. Les sécurités se règlent juste sous la position basse. Moins de gainage qu'un squat libre.",
+    variations: ["smith squat", "squat guidé", "smith machine squat"]
+  },
+  "squat sumo": {
+    name: "Squat sumo",
+    category: "Quadriceps",
+    primaryMuscles: ["Quadriceps", "Adducteurs", "Fessiers"],
+    secondaryMuscles: ["Ischio-jambiers", "Core"],
+    equipment: "Poids du corps / Haltères",
+    difficulty: 2,
+    isNew: true,
+    description:
+      "Squat pieds très écartés, pointes ouvertes, descente entre les jambes. Le buste reste plus droit qu'au squat classique. Ce n'est pas le soulevé de terre sumo : ici on plie les genoux et on remonte en poussant le sol.",
+    variations: ["sumo squat", "squat large", "plie squat"]
+  },
+  "développé militaire haltères": {
+    name: "Développé militaire haltères",
+    category: "Épaules",
+    primaryMuscles: ["Deltoïdes antérieurs", "Deltoïdes moyens"],
+    secondaryMuscles: ["Triceps", "Trapèzes supérieurs", "Core"],
+    equipment: "Haltères",
+    difficulty: 3,
+    isNew: true,
+    description:
+      "Développé haltères au-dessus de la tête, debout. Les haltères partent aux épaules et montent sans se cogner en haut. Le gainage empêche de cambrer. La fiche assise reste un autre exercice.",
+    variations: ["dumbbell military press", "développé haltères debout", "standing dumbbell shoulder press"]
+  },
+  "rowing haltère debout": {
+    name: "Rowing haltère debout",
+    category: "Dorsaux",
+    primaryMuscles: ["Grand dorsal", "Rhomboïdes"],
+    secondaryMuscles: ["Biceps", "Deltoïdes postérieurs", "Érecteurs du rachis"],
+    equipment: "Haltère",
+    difficulty: 2,
+    isNew: true,
+    description:
+      "Rowing un bras, buste penché, sans appui sur un banc. L'haltère monte vers la hanche, coude proche du corps, dos plat. Différent du rowing haltère au banc, qui a un appui pour le torse.",
+    variations: ["dumbbell bent over row standing", "rowing haltère penché", "one arm dumbbell row standing"]
+  },
+  "kickback triceps poulie": {
+    name: "Kickback triceps à la poulie",
+    category: "Triceps",
+    primaryMuscles: ["Triceps"],
+    secondaryMuscles: [],
+    equipment: "Poulie basse",
+    difficulty: 2,
+    isNew: true,
+    description:
+      "Buste penché, coude fixe le long du corps, extension de l'avant-bras vers l'arrière contre la poulie basse. Le bras ne balance pas. Le kickback haltère est le même geste sans câble.",
+    variations: ["cable kickback", "kickback poulie", "tricep cable kickback"]
+  },
+  "oiseau machine": {
+    name: "Oiseau machine",
+    category: "Épaules",
+    primaryMuscles: ["Deltoïdes postérieurs"],
+    secondaryMuscles: ["Rhomboïdes", "Trapèzes moyens"],
+    equipment: "Machine rear delt",
+    difficulty: 2,
+    isNew: true,
+    description:
+      "Écarté inverse guidé, poitrine contre le dossier. Les bras s'ouvrent vers l'arrière jusqu'à l'alignement des épaules, sans hausser les trapèzes. L'oiseau haltères et l'oiseau poulie restent d'autres fiches.",
+    variations: ["rear delt fly machine", "reverse pec deck", "oiseau machine rear delt"]
+  },
+  "presse adducteurs abducteurs": {
+    name: "Presse adducteurs et abducteurs",
+    category: "Quadriceps",
+    primaryMuscles: ["Adducteurs", "Moyen fessier"],
+    secondaryMuscles: ["Fessiers"],
+    equipment: "Machine adducteurs / abducteurs",
+    difficulty: 2,
+    isNew: true,
+    description:
+      "Deux postes assis. Adducteurs : les genoux se rapprochent contre les coussins. Abducteurs : les genoux s'écartent. Le dos reste contre le dossier, sans s'aider des mains pour tricher.",
+    variations: ["adductor machine", "abductor machine", "presse adducteurs", "presse abducteurs"]
+  },
+  "extension triceps barre ez": {
+    name: "Extension triceps barre EZ",
+    category: "Triceps",
+    primaryMuscles: ["Triceps"],
+    secondaryMuscles: ["Pectoraux", "Deltoïdes antérieurs"],
+    equipment: "Barre EZ + Banc",
+    difficulty: 2,
+    isNew: true,
+    description:
+      "Allongé sur le banc, barre EZ au-dessus de la poitrine, prise angulée. Les coudes restent vers le plafond pendant que la barre descend vers le front, puis les triceps la repoussent. Même geste que la barre au front, avec la barre EZ pour soulager les poignets.",
+    variations: ["ez bar skull crusher", "barre au front ez", "lying ez triceps extension"]
+  },
+  "planche inversée penchée": {
+    name: "Planche inversée penchée",
+    category: "Abdominaux",
+    primaryMuscles: ["Core", "Deltoïdes antérieurs", "Fessiers"],
+    secondaryMuscles: ["Triceps", "Ischio-jambiers"],
+    equipment: "Poids du corps",
+    difficulty: 2,
+    isNew: true,
+    description:
+      "Assis, mains au sol derrière le bassin, doigts vers les pieds ou vers l'extérieur. Les hanches montent en pont inversé, puis les mains reculent pour augmenter le penché. Les épaules restent au-dessus des poignets.",
+    variations: ["reverse hand plank lean", "reverse plank lean", "planche inversée mains"]
+  },
+  "pompes et extension triceps": {
+    name: "Pompes et extension triceps",
+    category: "Pectoraux",
+    primaryMuscles: ["Pectoraux", "Triceps"],
+    secondaryMuscles: ["Deltoïdes antérieurs", "Core"],
+    equipment: "Poids du corps",
+    difficulty: 2,
+    isNew: true,
+    description:
+      "Enchaînement au sol : des pompes, puis une extension des triceps au poids du corps. Les deux gestes sont dans la même vidéo. Les fiches Pompes et Extension triceps restent les mouvements séparés.",
+    variations: ["push up and bodyweight triceps extension", "pompes plus extension triceps"]
+  },
+
+  "abduction hanche machine assise": {
+    name: "Abduction de hanche machine assise",
+    category: "Fessiers",
+    primaryMuscles: ["Moyen fessier"],
+    secondaryMuscles: ["Petit fessier", "Tenseur du fascia lata"],
+    equipment: "Machine abducteurs",
+    difficulty: 1,
+    isNew: true,
+    description:
+      "Assis, dos contre le dossier, genoux contre les coussins. Écarte les cuisses sans décoller le bassin du siège, puis reviens lentement sans laisser les poids claquer. Le buste ne se penche pas en avant pour aider.",
+    variations: ["lever seated hip abduction", "abductor machine", "écarté machine hanche"]
+  },
+  "abduction hanche assise élastique": {
+    name: "Abduction de hanche assise élastique",
+    category: "Fessiers",
+    primaryMuscles: ["Moyen fessier"],
+    secondaryMuscles: ["Petit fessier", "Tenseur du fascia lata"],
+    equipment: "Bande élastique + Banc",
+    difficulty: 1,
+    isNew: true,
+    description:
+      "Assis au bord d'un banc, bande au-dessus des genoux, pieds au sol. Écarte les genoux contre l'élastique en gardant le dos droit, puis reviens sans relâcher la tension. Plus facile que la version debout aux chevilles : le bassin est calé.",
+    variations: ["seated band hip abduction", "abduction assise élastique", "banded seated abduction"]
+  },
+  "abduction hanche gainage latéral": {
+    name: "Abduction de hanche pont latéral",
+    category: "Fessiers",
+    primaryMuscles: ["Moyen fessier"],
+    secondaryMuscles: ["Obliques", "Ischio-jambiers", "Petit fessier"],
+    equipment: "Poids du corps",
+    difficulty: 3,
+    isNew: true,
+    description:
+      "Gainage latéral sur l'avant-bras, corps aligné, puis la jambe du dessus monte sans tourner le bassin vers le plafond. La descente est lente. Le gainage tient tout le long : si les hanches tombent, la jambe ne monte plus.",
+    variations: ["side bridge hip abduction", "side plank leg lift", "abduction gainage latéral"]
+  },
+  "abduction hanche allongée": {
+    name: "Abduction de hanche allongée",
+    category: "Fessiers",
+    primaryMuscles: ["Moyen fessier"],
+    secondaryMuscles: ["Petit fessier", "Tenseur du fascia lata"],
+    equipment: "Poids du corps",
+    difficulty: 1,
+    isNew: true,
+    description:
+      "Allongé sur le côté, tête appuyée, bassin fixe. La jambe du dessus s'élève latéralement, pied parallèle ou légèrement tourné vers le bas pour viser le moyen fessier, puis redescend sans poser brutalement. Le bassin ne bascule pas en arrière.",
+    variations: ["side lying hip abduction", "side hip abduction", "élévation jambe côté"]
+  },
+  "abduction hanche debout jambe tendue": {
+    name: "Abduction de hanche debout jambe tendue",
+    category: "Fessiers",
+    primaryMuscles: ["Moyen fessier"],
+    secondaryMuscles: ["Petit fessier", "Tenseur du fascia lata"],
+    equipment: "Poids du corps",
+    difficulty: 1,
+    isNew: true,
+    description:
+      "Debout, jambe d'appui légèrement fléchie, l'autre jambe tendue s'écarte sur le côté sans pencher le buste. Le pied reste dans l'axe, le bassin ne part pas avec la jambe. Retour contrôlé. La version avec élastique aux chevilles est une autre fiche.",
+    variations: ["straight leg hip abduction", "standing hip abduction", "abduction debout jambe tendue"]
+  },
+
+  "sit-up": {
+      "name": "Sit-up",
+      "category": "Abdominaux",
+      "primaryMuscles": [
+          "Grand droit"
+      ],
+      "secondaryMuscles": [
+          "Fléchisseurs de hanche",
+          "Obliques"
+      ],
+      "equipment": "Poids du corps",
+      "difficulty": 1,
+      "isNew": true,
+      "description": "Allongé, les omoplates décollent puis le buste monte jusqu'à la position assise, et la descente reste contrôlée. Ce n'est pas un crunch : les hanches participent. Les demi-redressements, bras le long du corps ou au-dessus de la tête, et la version assistée sont le même geste.",
+      "variations": [
+          "sit up",
+          "redressement assis",
+          "half sit-up",
+          "janda sit-up"
+      ]
+  },
+
+  "sit-up décliné": {
+      "name": "Sit-up décliné",
+      "category": "Abdominaux",
+      "primaryMuscles": [
+          "Grand droit"
+      ],
+      "secondaryMuscles": [
+          "Fléchisseurs de hanche",
+          "Obliques"
+      ],
+      "equipment": "Banc décliné",
+      "difficulty": 2,
+      "isNew": true,
+      "description": "Pieds calés sur le banc décliné, le buste descend vers l'arrière puis remonte. La pente charge plus le grand droit que le sit-up au sol. Le crunch décliné et la version lestée sont le même montage.",
+      "variations": [
+          "decline sit-up",
+          "crunch décliné",
+          "weighted decline sit-up"
+      ]
+  },
+
+  "sit-up press barre": {
+      "name": "Sit-up press barre",
+      "category": "Abdominaux",
+      "primaryMuscles": [
+          "Grand droit"
+      ],
+      "secondaryMuscles": [
+          "Fléchisseurs de hanche",
+          "Deltoïdes antérieurs",
+          "Triceps"
+      ],
+      "equipment": "Barre + Banc",
+      "difficulty": 3,
+      "isNew": true,
+      "description": "Sit-up avec une barre poussée au-dessus de la poitrine pendant la montée du buste. Les coudes ne s'ouvrent pas en croix, la barre reste au-dessus du sternum, et le dos ne s'arrondit pas d'un bloc en bas.",
+      "variations": [
+          "barbell press sit-up",
+          "sit-up développé barre"
+      ]
+  },
+
+  "crunch sur swiss ball": {
+      "name": "Crunch sur swiss ball",
+      "category": "Abdominaux",
+      "primaryMuscles": [
+          "Grand droit"
+      ],
+      "secondaryMuscles": [
+          "Obliques"
+      ],
+      "equipment": "Swiss ball",
+      "difficulty": 2,
+      "isNew": true,
+      "description": "Dos sur le ballon, pieds au sol, le bassin reste fixe pendant que les côtes se rapprochent du bassin. Le ballon permet de descendre plus bas que le crunch au sol. Bras tendus ou lest au-dessus de la tête : même crunch, bras plus longs.",
+      "variations": [
+          "stability ball crunch",
+          "crunch swiss ball",
+          "weighted overhead crunch ball"
+      ]
+  },
+
+  "rentrée de genoux sur swiss ball": {
+      "name": "Rentrée de genoux sur swiss ball",
+      "category": "Abdominaux",
+      "primaryMuscles": [
+          "Grand droit"
+      ],
+      "secondaryMuscles": [
+          "Fléchisseurs de hanche",
+          "Deltoïdes antérieurs"
+      ],
+      "equipment": "Swiss ball",
+      "difficulty": 2,
+      "isNew": true,
+      "description": "Mains au sol, tibias sur le ballon. Les genoux se rapprochent de la poitrine, le ballon roule vers l'avant, puis les jambes se rallongent sans creuser les lombaires. Le bassin ne monte pas en pike.",
+      "variations": [
+          "stability ball knee tuck",
+          "pull-in swiss ball"
+      ]
+  },
+
+  "crunch oblique": {
+      "name": "Crunch oblique",
+      "category": "Abdominaux",
+      "primaryMuscles": [
+          "Obliques"
+      ],
+      "secondaryMuscles": [
+          "Grand droit"
+      ],
+      "equipment": "Poids du corps",
+      "difficulty": 1,
+      "isNew": true,
+      "description": "Allongé, une épaule se dirige vers la hanche opposée ou la main glisse le long de la cuisse vers le talon. Le bassin ne quitte pas le sol. Le bicycle n'est pas cette fiche : les jambes n'y pédalent pas.",
+      "variations": [
+          "oblique crunch",
+          "heel touchers",
+          "crunch oblique au sol"
+      ]
+  },
+
+  "inclinaison latérale": {
+      "name": "Inclinaison latérale",
+      "category": "Abdominaux",
+      "primaryMuscles": [
+          "Obliques"
+      ],
+      "secondaryMuscles": [
+          "Carré des lombes"
+      ],
+      "equipment": "Poids du corps",
+      "difficulty": 1,
+      "isNew": true,
+      "description": "Debout ou assis, le buste s'incline sur le côté sans partir en avant ni tourner les épaules. Le retour est actif, pas une chute. Les versions barre, haltère et poulie sont d'autres fiches.",
+      "variations": [
+          "side bend",
+          "flexion latérale",
+          "side crunch assis"
+      ]
+  },
+
+  "inclinaison latérale haltères": {
+      "name": "Inclinaison latérale haltères",
+      "category": "Abdominaux",
+      "primaryMuscles": [
+          "Obliques"
+      ],
+      "secondaryMuscles": [
+          "Carré des lombes"
+      ],
+      "equipment": "Haltère",
+      "difficulty": 1,
+      "isNew": true,
+      "description": "Debout, un haltère dans une main, l'autre main à la tempe ou le long du corps. Le buste descend du côté de la charge puis remonte sans balancer l'épaule vers l'avant. La version sur swiss ball est le même côté, avec un appui instable.",
+      "variations": [
+          "dumbbell side bend",
+          "flexion latérale haltère"
+      ]
+  },
+
+  "inclinaison latérale barre": {
+      "name": "Inclinaison latérale barre",
+      "category": "Abdominaux",
+      "primaryMuscles": [
+          "Obliques"
+      ],
+      "secondaryMuscles": [
+          "Carré des lombes"
+      ],
+      "equipment": "Barre",
+      "difficulty": 2,
+      "isNew": true,
+      "description": "Barre sur les trapèzes, comme un squat, le buste s'incline latéralement et remonte. Les genoux restent souples, le bassin ne part pas en rotation, et la barre ne glisse pas vers le cou.",
+      "variations": [
+          "barbell side bend",
+          "flexion latérale barre"
+      ]
+  },
+
+  "inclinaison latérale poulie": {
+      "name": "Inclinaison latérale poulie",
+      "category": "Abdominaux",
+      "primaryMuscles": [
+          "Obliques"
+      ],
+      "secondaryMuscles": [
+          "Carré des lombes",
+          "Grand droit"
+      ],
+      "equipment": "Poulie basse",
+      "difficulty": 2,
+      "isNew": true,
+      "description": "Poignée de la poulie basse dans une main, le buste s'incline à l'opposé de la charge puis ramène les côtes vers la hanche. L'épaule de la main qui tient ne monte pas vers l'oreille. Le crunch latéral et la version sur Bosu sont le même côté.",
+      "variations": [
+          "cable side bend",
+          "cable side crunch",
+          "flexion latérale poulie"
+      ]
+  },
+
+  "l-sit au sol": {
+      "name": "L-sit au sol",
+      "category": "Abdominaux",
+      "primaryMuscles": [
+          "Grand droit",
+          "Fléchisseurs de hanche"
+      ],
+      "secondaryMuscles": [
+          "Triceps",
+          "Dentelé antérieur"
+      ],
+      "equipment": "Poids du corps",
+      "difficulty": 3,
+      "isNew": true,
+      "description": "Mains au sol à côté des hanches, bras tendus, jambes tendues devant, fesses décollées. Les épaules restent basses. Ce n'est ni le L-sit à la barre ni celui aux parallèles.",
+      "variations": [
+          "floor l-sit",
+          "l-sit sol"
+      ]
+  },
+
+  "v-sit au sol": {
+      "name": "V-sit au sol",
+      "category": "Abdominaux",
+      "primaryMuscles": [
+          "Grand droit",
+          "Fléchisseurs de hanche"
+      ],
+      "secondaryMuscles": [
+          "Obliques"
+      ],
+      "equipment": "Poids du corps",
+      "difficulty": 2,
+      "isNew": true,
+      "description": "Assis, buste et jambes tendues se rapprochent pour former un V, les mains hors du sol ou tendues vers les pieds. Le dos ne s'effondre pas en rond complet. Le L-sit au sol garde les mains en appui, celui-ci non.",
+      "variations": [
+          "v-sit",
+          "bateau",
+          "boat hold"
+      ]
+  },
+
+  "drapeau humain": {
+      "name": "Drapeau humain",
+      "category": "Abdominaux",
+      "primaryMuscles": [
+          "Obliques",
+          "Grand dorsal"
+      ],
+      "secondaryMuscles": [
+          "Grand droit",
+          "Deltoïdes",
+          "Dentelé antérieur"
+      ],
+      "equipment": "Barre verticale / poteau",
+      "difficulty": 4,
+      "isNew": true,
+      "description": "Corps horizontal le long d'une barre verticale, jambes tendues, une épaule pousse et l'autre tire. Les fiches tuck et straddle restent les étapes d'avant. Ici le corps est aligné, sans genoux groupés.",
+      "variations": [
+          "human flag",
+          "full flag",
+          "drapeau"
+      ]
+  },
+
+  "inchworm": {
+      "name": "Inchworm",
+      "category": "Abdominaux",
+      "primaryMuscles": [
+          "Grand droit"
+      ],
+      "secondaryMuscles": [
+          "Deltoïdes antérieurs",
+          "Ischio-jambiers"
+      ],
+      "equipment": "Poids du corps",
+      "difficulty": 1,
+      "isNew": true,
+      "description": "Debout, les mains descendent au sol, marchent jusqu'à la planche, puis les pieds reviennent vers les mains. Les jambes peuvent rester tendues. La variante v-2 est le même déplacement.",
+      "variations": [
+          "inchworm",
+          "marche de l ours inversée"
+      ]
+  },
+
+  "pompes vers gainage latéral": {
+      "name": "Pompes vers gainage latéral",
+      "category": "Abdominaux",
+      "primaryMuscles": [
+          "Obliques",
+          "Pectoraux"
+      ],
+      "secondaryMuscles": [
+          "Deltoïdes",
+          "Triceps",
+          "Grand droit"
+      ],
+      "equipment": "Poids du corps",
+      "difficulty": 2,
+      "isNew": true,
+      "description": "Une pompe, puis le corps s'ouvre en appui latéral sur un bras, l'autre bras vers le plafond, et on revient. Les hanches ne tombent pas pendant la rotation. Les pompes classiques restent leur fiche.",
+      "variations": [
+          "push-up to side plank",
+          "pompe t-rotation"
+      ]
+  },
+
+  "gainage jambe levée": {
+      "name": "Gainage jambe levée",
+      "category": "Abdominaux",
+      "primaryMuscles": [
+          "Grand droit"
+      ],
+      "secondaryMuscles": [
+          "Grand fessier",
+          "Deltoïdes antérieurs"
+      ],
+      "equipment": "Poids du corps",
+      "difficulty": 2,
+      "isNew": true,
+      "description": "Planche haute, une jambe se décolle et reste tendue, le bassin ne tourne pas et ne monte pas. Le gainage classique garde les deux appuis. Ici l'équilibre est sur trois appuis.",
+      "variations": [
+          "plank leg lift",
+          "power point plank",
+          "planche trois appuis"
+      ]
+  },
+
+  "planche inversée jambe levée": {
+      "name": "Planche inversée jambe levée",
+      "category": "Abdominaux",
+      "primaryMuscles": [
+          "Grand droit",
+          "Grand fessier"
+      ],
+      "secondaryMuscles": [
+          "Ischio-jambiers",
+          "Deltoïdes antérieurs"
+      ],
+      "equipment": "Poids du corps",
+      "difficulty": 2,
+      "isNew": true,
+      "description": "Planche inversée, visage vers le plafond, bassin haut, puis une jambe monte. Ce n'est pas la planche inversée penchée : ici le bassin est déjà en ligne et la jambe bouge.",
+      "variations": [
+          "reverse plank leg lift",
+          "planche inversée une jambe"
+      ]
+  },
+
+  "bascule du bassin": {
+      "name": "Bascule du bassin",
+      "category": "Abdominaux",
+      "primaryMuscles": [
+          "Grand droit"
+      ],
+      "secondaryMuscles": [
+          "Transverse"
+      ],
+      "equipment": "Poids du corps",
+      "difficulty": 1,
+      "isNew": true,
+      "description": "Allongé, genoux fléchis, pieds au sol. Le bas du dos se plaque au sol en rentrant le bassin, puis le relâchement est lent. Les fesses ne décollent pas : ce n'est pas un pont fessier.",
+      "variations": [
+          "pelvic tilt",
+          "bascule postérieure"
+      ]
+  },
+
+  "relevé de jambes assis": {
+      "name": "Relevé de jambes assis",
+      "category": "Abdominaux",
+      "primaryMuscles": [
+          "Fléchisseurs de hanche",
+          "Grand droit"
+      ],
+      "secondaryMuscles": [
+          "Obliques"
+      ],
+      "equipment": "Poids du corps / Barre",
+      "difficulty": 1,
+      "isNew": true,
+      "description": "Assis au bord d'un banc, mains en appui, les jambes tendues montent devant puis redescendent sans que le dos s'arrondisse en arrière. La version barre alterne les jambes : même position assise, pas le relevé suspendu.",
+      "variations": [
+          "seated leg raise",
+          "relevé de jambes assis barre"
+      ]
+  },
+
+  "relevé de jambes banc décliné": {
+      "name": "Relevé de jambes banc décliné",
+      "category": "Abdominaux",
+      "primaryMuscles": [
+          "Grand droit",
+          "Fléchisseurs de hanche"
+      ],
+      "secondaryMuscles": [
+          "Obliques"
+      ],
+      "equipment": "Banc décliné",
+      "difficulty": 2,
+      "isNew": true,
+      "description": "Allongé tête en haut du banc incliné, mains qui tiennent le banc, jambes tendues qui montent puis le bassin se décolle légèrement en fin de course. Ce n'est pas le relevé à plat ni le relevé suspendu.",
+      "variations": [
+          "incline leg hip raise",
+          "relevé de jambes banc incliné"
+      ]
+  },
+
+  "relevé de jambes en torsion": {
+      "name": "Relevé de jambes en torsion",
+      "category": "Abdominaux",
+      "primaryMuscles": [
+          "Obliques"
+      ],
+      "secondaryMuscles": [
+          "Grand droit",
+          "Fléchisseurs de hanche"
+      ],
+      "equipment": "Poids du corps",
+      "difficulty": 2,
+      "isNew": true,
+      "description": "Allongé, les jambes tendues montent en diagonale, d'un côté puis de l'autre, sans que les épaules quittent le sol. Le GIF femme est le même geste. Les windshield à la barre restent la version suspendue.",
+      "variations": [
+          "twisted leg raise",
+          "relevé oblique allongé"
+      ]
+  },
+
+  "relevé de genoux oblique suspendu": {
+      "name": "Relevé de genoux oblique suspendu",
+      "category": "Abdominaux",
+      "primaryMuscles": [
+          "Obliques"
+      ],
+      "secondaryMuscles": [
+          "Grand droit",
+          "Fléchisseurs de hanche"
+      ],
+      "equipment": "Barre de traction",
+      "difficulty": 3,
+      "isNew": true,
+      "description": "Suspendu, les genoux montent vers un coude, pas droit devant. Le corps ne se balance pas pour prendre l'élan. Les relevés de genoux de face et les windshield jambes tendues restent leurs fiches.",
+      "variations": [
+          "hanging oblique knee raise",
+          "genoux vers le coude"
+      ]
+  },
+
+  "relevé de hanche latéral aux parallèles": {
+      "name": "Relevé de hanche latéral aux parallèles",
+      "category": "Abdominaux",
+      "primaryMuscles": [
+          "Obliques"
+      ],
+      "secondaryMuscles": [
+          "Grand dorsal",
+          "Grand droit"
+      ],
+      "equipment": "Barres parallèles",
+      "difficulty": 3,
+      "isNew": true,
+      "description": "En appui sur les parallèles, le bassin se déplace sur le côté pour monter une hanche, puis l'autre. Les bras restent tendus. Ce n'est pas le relevé de genoux de face déjà en banque.",
+      "variations": [
+          "side hip raise parallel bars",
+          "hanche latérale parallèles"
+      ]
+  },
+
+  "jackknife": {
+      "name": "Jackknife",
+      "category": "Abdominaux",
+      "primaryMuscles": [
+          "Grand droit",
+          "Fléchisseurs de hanche"
+      ],
+      "secondaryMuscles": [
+          "Obliques"
+      ],
+      "equipment": "Poids du corps / Élastique",
+      "difficulty": 2,
+      "isNew": true,
+      "description": "Allongé, bras et jambes tendus, le buste et les jambes montent en même temps pour que les mains rejoignent les pieds, puis tout redescend long. L'élastique est le même jackknife avec une résistance. Le V-sit est la tenue, pas l'aller-retour.",
+      "variations": [
+          "jackknife sit-up",
+          "jackknife élastique",
+          "v-up"
+      ]
+  },
+
+  "v-up élastique": {
+      "name": "V-up élastique",
+      "category": "Abdominaux",
+      "primaryMuscles": [
+          "Grand droit",
+          "Fléchisseurs de hanche"
+      ],
+      "secondaryMuscles": [
+          "Obliques"
+      ],
+      "equipment": "Élastique",
+      "difficulty": 2,
+      "isNew": true,
+      "description": "L'élastique passe sous les pieds et dans les mains. Jambes et buste montent ensemble contre la bande, puis redescendent sans poser les talons violemment. La version alternée lève une jambe à la fois.",
+      "variations": [
+          "band v-up",
+          "v-up élastique alterné"
+      ]
+  },
+
+  "crunch élastique debout": {
+      "name": "Crunch élastique debout",
+      "category": "Abdominaux",
+      "primaryMuscles": [
+          "Grand droit"
+      ],
+      "secondaryMuscles": [
+          "Obliques"
+      ],
+      "equipment": "Élastique",
+      "difficulty": 1,
+      "isNew": true,
+      "description": "Debout, bande au-dessus de la tête ou derrière la nuque, les côtes se rapprochent du bassin sans plier les hanches comme un soulevé de terre. Le crunch à la poulie haute reste la fiche poulie.",
+      "variations": [
+          "band standing crunch",
+          "crunch élastique"
+      ]
+  },
+
+  "crunch élastique en rotation": {
+      "name": "Crunch élastique en rotation",
+      "category": "Abdominaux",
+      "primaryMuscles": [
+          "Obliques"
+      ],
+      "secondaryMuscles": [
+          "Grand droit"
+      ],
+      "equipment": "Élastique",
+      "difficulty": 2,
+      "isNew": true,
+      "description": "Debout ou à genoux, la bande résiste pendant que le coude ou les mains descendent en diagonale vers la hanche opposée. Les hanches restent de face. Le wood chop à la poulie est une autre fiche.",
+      "variations": [
+          "band twisting crunch",
+          "crunch rotatif élastique"
+      ]
+  },
+
+  "crunch inversé à la poulie": {
+      "name": "Crunch inversé à la poulie",
+      "category": "Abdominaux",
+      "primaryMuscles": [
+          "Grand droit"
+      ],
+      "secondaryMuscles": [
+          "Fléchisseurs de hanche"
+      ],
+      "equipment": "Poulie basse",
+      "difficulty": 2,
+      "isNew": true,
+      "description": "Allongé face à la poulie basse, chevilles reliées à la sangle, les genoux viennent vers la poitrine et le bassin décolle. La version tuck garde les genoux plus groupés. Les crunchs inversés au sol restent sans poulie.",
+      "variations": [
+          "cable reverse crunch",
+          "crunch inversé poulie"
+      ]
+  },
+
+  "crunch machine assis": {
+      "name": "Crunch machine assis",
+      "category": "Abdominaux",
+      "primaryMuscles": [
+          "Grand droit"
+      ],
+      "secondaryMuscles": [
+          "Obliques"
+      ],
+      "equipment": "Machine à crunch",
+      "difficulty": 2,
+      "isNew": true,
+      "description": "Assis à la machine, le buste s'enroule vers les cuisses contre le coussin ou les poignées. Les hanches ne glissent pas vers l'avant du siège. Le modèle avec relevé de jambes ajoute les genoux, c'est la même machine.",
+      "variations": [
+          "seated crunch machine",
+          "crunch machine buste et jambes"
+      ]
+  },
+
+  "rotation machine à genoux": {
+      "name": "Rotation machine à genoux",
+      "category": "Abdominaux",
+      "primaryMuscles": [
+          "Obliques"
+      ],
+      "secondaryMuscles": [
+          "Grand droit"
+      ],
+      "equipment": "Machine rotative",
+      "difficulty": 2,
+      "isNew": true,
+      "description": "À genoux dans la machine, les mains tiennent les poignées et le buste tourne d'un côté sans que le bassin suive. Le retour est freiné. Ce n'est pas le crunch machine, qui fléchit le buste vers l'avant.",
+      "variations": [
+          "kneeling torso twist machine",
+          "rotation oblique machine"
+      ]
+  },
+
+  "rollout abdominal à la barre": {
+      "name": "Rollout abdominal à la barre",
+      "category": "Abdominaux",
+      "primaryMuscles": [
+          "Grand droit"
+      ],
+      "secondaryMuscles": [
+          "Deltoïdes antérieurs",
+          "Grand dorsal"
+      ],
+      "equipment": "Barre",
+      "difficulty": 3,
+      "isNew": true,
+      "description": "À genoux ou debout, les mains sur la barre, le corps s'allonge vers l'avant en gardant les côtes rentrées, puis les abdos ramènent la barre. La roue abdominale reste sa fiche. Ici l'outil est la barre, y compris depuis un banc.",
+      "variations": [
+          "barbell rollout",
+          "ab roller barre",
+          "rollout debout barre"
+      ]
+  },
+
+  "rotation haltères buste penché": {
+      "name": "Rotation haltères buste penché",
+      "category": "Abdominaux",
+      "primaryMuscles": [
+          "Obliques"
+      ],
+      "secondaryMuscles": [
+          "Deltoïdes postérieurs",
+          "Érecteurs du rachis"
+      ],
+      "equipment": "Haltères",
+      "difficulty": 2,
+      "isNew": true,
+      "description": "Buste penché, haltères dans les mains, le torse tourne pour amener les charges d'un côté à l'autre sans arrondir le dos. Le wood chop à la poulie est debout et à la poulie, pas ce geste.",
+      "variations": [
+          "spell caster",
+          "dumbbell twist bent over"
+      ]
+  },
+
+  "windmill kettlebell": {
+      "name": "Windmill kettlebell",
+      "category": "Abdominaux",
+      "primaryMuscles": [
+          "Obliques"
+      ],
+      "secondaryMuscles": [
+          "Deltoïdes",
+          "Grand fessier",
+          "Ischio-jambiers"
+      ],
+      "equipment": "Kettlebell",
+      "difficulty": 3,
+      "isNew": true,
+      "description": "Un kettlebell bras tendu au-dessus de l'épaule, les pieds écartés, la main libre descend le long de la jambe avant pendant que le regard reste sur la charge. Les hanches partent en arrière, le bras du haut ne plie pas. La version deux kettlebells est le même schéma.",
+      "variations": [
+          "kettlebell windmill",
+          "windmill avancé",
+          "double windmill"
+      ]
+  },
+
+  "figure 8 kettlebell": {
+      "name": "Figure 8 kettlebell",
+      "category": "Abdominaux",
+      "primaryMuscles": [
+          "Obliques"
+      ],
+      "secondaryMuscles": [
+          "Grand droit",
+          "Grand fessier"
+      ],
+      "equipment": "Kettlebell",
+      "difficulty": 2,
+      "isNew": true,
+      "description": "Debout, buste légèrement penché, le kettlebell passe en huit entre les jambes, d'une main à l'autre. Le dos reste long, les genoux suivent les pieds. Ce n'est pas un swing.",
+      "variations": [
+          "kettlebell figure 8",
+          "huit kettlebell"
+      ]
+  },
+
+  "swing de masse": {
+      "name": "Swing de masse",
+      "category": "Abdominaux",
+      "primaryMuscles": [
+          "Obliques"
+      ],
+      "secondaryMuscles": [
+          "Grand dorsal",
+          "Deltoïdes",
+          "Grand fessier"
+      ],
+      "equipment": "Masse",
+      "difficulty": 2,
+      "isNew": true,
+      "description": "Masse tenue à deux hauteurs de mains, le buste tourne pour abattre la tête de masse, puis les abdos et les hanches ramènent l'outil. Les bras ne frappent pas tout seuls, c'est la rotation du tronc qui mène.",
+      "variations": [
+          "sledgehammer swing",
+          "frappe de masse"
+      ]
+  },
+
+  "slam médecine ball un bras": {
+      "name": "Slam médecine ball un bras",
+      "category": "Abdominaux",
+      "primaryMuscles": [
+          "Grand droit",
+          "Obliques"
+      ],
+      "secondaryMuscles": [
+          "Deltoïdes",
+          "Grand dorsal"
+      ],
+      "equipment": "Médecine ball",
+      "difficulty": 2,
+      "isNew": true,
+      "description": "Le ballon part au-dessus de l'épaule d'un bras et s'abat au sol à côté du pied, avec une rotation du buste. On ramasse le ballon dos long, pas en arrondi lombaire.",
+      "variations": [
+          "one arm med ball slam",
+          "slam oblique"
+      ]
+  },
+
+  "rotation landmine": {
+      "name": "Rotation landmine",
+      "category": "Abdominaux",
+      "primaryMuscles": [
+          "Obliques"
+      ],
+      "secondaryMuscles": [
+          "Deltoïdes antérieurs",
+          "Grand droit"
+      ],
+      "equipment": "Landmine / Barre",
+      "difficulty": 2,
+      "isNew": true,
+      "description": "Un bout de barre est ancré au sol, les deux mains tiennent l'autre bout. La barre décrit un arc d'un côté à l'autre, bras tendus, hanches stables. Le wood chop à la poulie n'utilise pas la landmine.",
+      "variations": [
+          "landmine 180",
+          "landmine rotation",
+          "rotation barre ancrée"
+      ]
+  },
+
+  "gainage avec rotation": {
+      "name": "Gainage avec rotation",
+      "category": "Abdominaux",
+      "primaryMuscles": [
+          "Obliques"
+      ],
+      "secondaryMuscles": [
+          "Grand droit",
+          "Deltoïdes"
+      ],
+      "equipment": "Poids du corps",
+      "difficulty": 2,
+      "isNew": true,
+      "description": "En gainage, une main quitte le sol et le buste s'ouvre sur le côté, puis revient. Les hanches ne basculent pas en bloc. Les shoulder taps restent le gainage dynamique, sans cette ouverture.",
+      "variations": [
+          "plank with twist",
+          "gainage rotation"
+      ]
+  },
+
+  "fallout en suspension": {
+      "name": "Fallout en suspension",
+      "category": "Abdominaux",
+      "primaryMuscles": [
+          "Grand droit"
+      ],
+      "secondaryMuscles": [
+          "Deltoïdes antérieurs",
+          "Grand dorsal"
+      ],
+      "equipment": "Sangles de suspension",
+      "difficulty": 3,
+      "isNew": true,
+      "description": "Avant-bras ou mains dans les sangles, le corps part vers l'avant, bras qui montent, côtes rentrées, puis les abdos ramènent. Même famille que la roue, autre outil. La roue et le rollout barre restent leurs fiches.",
+      "variations": [
+          "suspension fallout",
+          "ab rollout sangles"
+      ]
+  },
+
+  "crunch inversé en suspension": {
+      "name": "Crunch inversé en suspension",
+      "category": "Abdominaux",
+      "primaryMuscles": [
+          "Grand droit"
+      ],
+      "secondaryMuscles": [
+          "Fléchisseurs de hanche"
+      ],
+      "equipment": "Sangles de suspension",
+      "difficulty": 3,
+      "isNew": true,
+      "description": "Pieds dans les sangles, mains au sol, les genoux se tirent vers la poitrine pendant que les sangles reviennent. Le dos ne creuse pas au retour. Ce n'est pas la rentrée de genoux sur swiss ball.",
+      "variations": [
+          "suspended reverse crunch",
+          "knee tuck sangles"
+      ]
+  },
+
+  "rotation ventrale sur swiss ball": {
+      "name": "Rotation ventrale sur swiss ball",
+      "category": "Abdominaux",
+      "primaryMuscles": [
+          "Obliques"
+      ],
+      "secondaryMuscles": [
+          "Érecteurs du rachis",
+          "Grand fessier"
+      ],
+      "equipment": "Swiss ball",
+      "difficulty": 2,
+      "isNew": true,
+      "description": "Ventre ou hanches en appui sur le ballon, les pieds calés, le buste tourne d'un côté à l'autre. Les lombaires ne font pas le mouvement toutes seules : la rotation part des côtes.",
+      "variations": [
+          "prone twist stability ball",
+          "rotation ventrale ballon"
+      ]
+  },
+
+  "planche complète": {
+      "name": "Planche complète",
+      "category": "Épaules",
+      "primaryMuscles": [
+          "Deltoïdes antérieurs",
+          "Pectoraux"
+      ],
+      "secondaryMuscles": [
+          "Triceps",
+          "Grand droit",
+          "Dentelé antérieur"
+      ],
+      "equipment": "Sol / Parallettes",
+      "difficulty": 4,
+      "isNew": true,
+      "description": "Corps horizontal, bras tendus, jambes serrées et tendues, bassin aligné. Les tenues tuck et straddle restent les étapes d'avant. Ici les jambes ne sont plus écartées ni groupées.",
+      "variations": [
+          "full planche",
+          "planche"
+      ]
+  },
+
+  "maltese": {
+      "name": "Maltese",
+      "category": "Épaules",
+      "primaryMuscles": [
+          "Deltoïdes antérieurs",
+          "Pectoraux"
+      ],
+      "secondaryMuscles": [
+          "Triceps",
+          "Grand droit",
+          "Dentelé antérieur"
+      ],
+      "equipment": "Anneaux / Parallettes",
+      "difficulty": 4,
+      "isNew": true,
+      "description": "Corps horizontal, bras ouverts sur les côtés, pas le long du corps comme la planche. Les épaules restent basses. Le straddle maltese est la fiche d'écart des jambes.",
+      "variations": [
+          "full maltese",
+          "maltese"
+      ]
+  },
+
+  "maltese straddle": {
+      "name": "Maltese straddle",
+      "category": "Épaules",
+      "primaryMuscles": [
+          "Deltoïdes antérieurs",
+          "Pectoraux"
+      ],
+      "secondaryMuscles": [
+          "Triceps",
+          "Grand droit"
+      ],
+      "equipment": "Anneaux / Parallettes",
+      "difficulty": 4,
+      "isNew": true,
+      "description": "Même tenue que le maltese, bras ouverts, mais les jambes sont écartées. C'est l'étape d'avant le maltese jambes serrées, pas une planche straddle (les bras de la planche restent proches du bassin).",
+      "variations": [
+          "straddle maltese"
+      ]
+  },
+
+  "bent press kettlebell": {
+      "name": "Bent press kettlebell",
+      "category": "Épaules",
+      "primaryMuscles": [
+          "Deltoïdes"
+      ],
+      "secondaryMuscles": [
+          "Obliques",
+          "Triceps",
+          "Grand fessier"
+      ],
+      "equipment": "Kettlebell",
+      "difficulty": 3,
+      "isNew": true,
+      "description": "Le kettlebell part à l'épaule. Le buste s'incline sur le côté et le bras se tend au-dessus de la tête sans que la charge soit poussée comme un développé militaire. Le regard suit le kettlebell.",
+      "variations": [
+          "kettlebell bent press"
+      ]
+  },
+
+  "adduction hanche poulie": {
+      "name": "Adduction de hanche à la poulie",
+      "category": "Quadriceps",
+      "primaryMuscles": [
+          "Adducteurs"
+      ],
+      "secondaryMuscles": [
+          "Grand fessier"
+      ],
+      "equipment": "Poulie basse",
+      "difficulty": 2,
+      "isNew": true,
+      "description": "Debout, la cheville reliée à la poulie basse, la jambe libre se rapproche de l'autre sans pencher le buste. Le retour ne laisse pas la charge tirer la jambe d'un coup. La fiche élastique reste sans ce GIF : ce n'est pas une bande.",
+      "variations": [
+          "cable hip adduction",
+          "adduction poulie"
+      ]
+  },
+
+  "adduction hanche machine assise": {
+      "name": "Adduction de hanche machine assise",
+      "category": "Quadriceps",
+      "primaryMuscles": [
+          "Adducteurs"
+      ],
+      "secondaryMuscles": [
+          "Grand fessier"
+      ],
+      "equipment": "Machine adducteurs",
+      "difficulty": 1,
+      "isNew": true,
+      "description": "Assis, dos contre le dossier, les genoux poussent les coussins l'un vers l'autre. Le bassin ne décolle pas et les poids ne claquent pas au retour. L'abduction machine est l'autre fiche, les cuisses s'écartent.",
+      "variations": [
+          "seated hip adduction",
+          "adductor machine"
+      ]
+  },
+
+  "adduction hanche allongée": {
+      "name": "Adduction de hanche allongée",
+      "category": "Quadriceps",
+      "primaryMuscles": [
+          "Adducteurs"
+      ],
+      "secondaryMuscles": [],
+      "equipment": "Poids du corps",
+      "difficulty": 1,
+      "isNew": true,
+      "description": "Allongé sur le côté, la jambe du dessus est fléchie et posée devant, la jambe du dessous tendue monte vers elle. Le bassin ne roule pas en arrière. Ce n'est pas le Copenhagen, qui se fait en gainage latéral.",
+      "variations": [
+          "side lying hip adduction",
+          "adduction allongée"
+      ]
+  },
+
+  "curl drag barre": {
+      "name": "Curl drag barre",
+      "category": "Biceps",
+      "primaryMuscles": [
+          "Biceps"
+      ],
+      "secondaryMuscles": [
+          "Brachial"
+      ],
+      "equipment": "Barre",
+      "difficulty": 3,
+      "isNew": true,
+      "description": "La barre reste contre le corps et monte vers le cou pendant que les coudes partent vers l'arrière. Ce n'est pas un curl barre classique : les coudes ne restent pas fixes sous les épaules.",
+      "variations": [
+          "drag curl",
+          "barbell drag curl"
+      ]
+  },
+
+  "curl drag poulie": {
+      "name": "Curl drag à la poulie",
+      "category": "Biceps",
+      "primaryMuscles": [
+          "Biceps"
+      ],
+      "secondaryMuscles": [
+          "Brachial"
+      ],
+      "equipment": "Poulie basse",
+      "difficulty": 2,
+      "isNew": true,
+      "description": "Même trajet que le drag curl, la poignée ou la barre de poulie colle au torse et les coudes reculent. La poulie garde la tension en bas, là où la barre libre se relâche.",
+      "variations": [
+          "cable drag curl"
+      ]
+  },
+
+  "curl inversé barre": {
+      "name": "Curl inversé barre",
+      "category": "Biceps",
+      "primaryMuscles": [
+          "Brachio-radial"
+      ],
+      "secondaryMuscles": [
+          "Biceps",
+          "Brachial"
+      ],
+      "equipment": "Barre",
+      "difficulty": 2,
+      "isNew": true,
+      "description": "Prise pronation, paumes vers le sol, la barre monte par une flexion du coude. Les poignets ne cassent pas en arrière. Le reverse wrist curl est le poignet, pas ce geste.",
+      "variations": [
+          "reverse curl",
+          "curl prise pronation"
+      ]
+  },
+
+  "curl inversé barre ez": {
+      "name": "Curl inversé barre EZ",
+      "category": "Biceps",
+      "primaryMuscles": [
+          "Brachio-radial"
+      ],
+      "secondaryMuscles": [
+          "Biceps",
+          "Brachial"
+      ],
+      "equipment": "Barre EZ",
+      "difficulty": 2,
+      "isNew": true,
+      "description": "Curl inversé à la barre EZ : la prise angulée est moins dure pour les poignets que la barre droite, les coudes restent le long du corps.",
+      "variations": [
+          "ez bar reverse curl"
+      ]
+  },
+
+  "curl inversé haltères": {
+      "name": "Curl inversé haltères",
+      "category": "Biceps",
+      "primaryMuscles": [
+          "Brachio-radial"
+      ],
+      "secondaryMuscles": [
+          "Biceps",
+          "Brachial"
+      ],
+      "equipment": "Haltères",
+      "difficulty": 2,
+      "isNew": true,
+      "description": "Haltères en prise pronation, flexion du coude sans laisser les poignets partir en extension. La version un bras et la concentration prise inversée sont le même coude, autre appui.",
+      "variations": [
+          "dumbbell reverse curl",
+          "reverse concentration curl"
+      ]
+  },
+
+  "curl inversé poulie": {
+      "name": "Curl inversé à la poulie",
+      "category": "Biceps",
+      "primaryMuscles": [
+          "Brachio-radial"
+      ],
+      "secondaryMuscles": [
+          "Biceps"
+      ],
+      "equipment": "Poulie basse",
+      "difficulty": 2,
+      "isNew": true,
+      "description": "Poulie basse, prise pronation, les coudes fléchissent le long du corps. La version un bras est le même geste.",
+      "variations": [
+          "cable reverse curl"
+      ]
+  },
+
+  "curl pupitre inversé": {
+      "name": "Curl pupitre inversé",
+      "category": "Biceps",
+      "primaryMuscles": [
+          "Brachio-radial"
+      ],
+      "secondaryMuscles": [
+          "Biceps"
+      ],
+      "equipment": "Banc pupitre + Barre / Haltères",
+      "difficulty": 2,
+      "isNew": true,
+      "description": "Pupitre, prise pronation, les bras posés, la charge monte par les coudes. La barre, la barre EZ et les haltères partagent cette fiche, comme le pupitre classique mélange barre et haltères.",
+      "variations": [
+          "reverse preacher curl",
+          "ez reverse preacher"
+      ]
+  },
+
+  "curl pupitre inversé poulie": {
+      "name": "Curl pupitre inversé à la poulie",
+      "category": "Biceps",
+      "primaryMuscles": [
+          "Brachio-radial"
+      ],
+      "secondaryMuscles": [
+          "Biceps"
+      ],
+      "equipment": "Poulie + Banc pupitre",
+      "difficulty": 2,
+      "isNew": true,
+      "description": "Pupitre face à la poulie, prise pronation. La tension reste présente quand le coude est ouvert, contrairement à la barre libre.",
+      "variations": [
+          "cable reverse preacher curl"
+      ]
+  },
+
+  "curl pupitre inversé machine": {
+      "name": "Curl pupitre inversé machine",
+      "category": "Biceps",
+      "primaryMuscles": [
+          "Brachio-radial"
+      ],
+      "secondaryMuscles": [
+          "Biceps"
+      ],
+      "equipment": "Machine pupitre",
+      "difficulty": 2,
+      "isNew": true,
+      "description": "Machine pupitre en prise pronation. Le trajet est guidé. Le pupitre machine en supination reste sa fiche.",
+      "variations": [
+          "lever reverse preacher curl"
+      ]
+  },
+
+  "curl marteau croisé": {
+      "name": "Curl marteau croisé",
+      "category": "Biceps",
+      "primaryMuscles": [
+          "Brachial",
+          "Biceps"
+      ],
+      "secondaryMuscles": [
+          "Brachio-radial"
+      ],
+      "equipment": "Haltères",
+      "difficulty": 2,
+      "isNew": true,
+      "description": "Prise neutre, l'haltère traverse devant le torse vers l'épaule opposée. Le curl marteau classique monte dans l'axe du corps, pas en travers.",
+      "variations": [
+          "cross body hammer curl",
+          "curl marteau croisé"
+      ]
+  },
+
+  "curl marteau poulie": {
+      "name": "Curl marteau à la poulie",
+      "category": "Biceps",
+      "primaryMuscles": [
+          "Brachial",
+          "Biceps"
+      ],
+      "secondaryMuscles": [
+          "Brachio-radial"
+      ],
+      "equipment": "Poulie basse + Corde",
+      "difficulty": 2,
+      "isNew": true,
+      "description": "Corde à la poulie basse, pouces vers le ciel, les coudes fléchissent sans supiner en haut. Les deux GIF au pupitre avec corde sont le même marteau, bras calés.",
+      "variations": [
+          "rope hammer curl",
+          "cable hammer preacher"
+      ]
+  },
+
+  "curl marteau pupitre": {
+      "name": "Curl marteau pupitre",
+      "category": "Biceps",
+      "primaryMuscles": [
+          "Brachial",
+          "Biceps"
+      ],
+      "secondaryMuscles": [
+          "Brachio-radial"
+      ],
+      "equipment": "Banc pupitre + Haltères",
+      "difficulty": 2,
+      "isNew": true,
+      "description": "Pupitre, haltères en prise neutre. Les coudes restent sur le banc. La machine prise marteau est regroupée ici.",
+      "variations": [
+          "hammer preacher curl",
+          "lever hammer preacher"
+      ]
+  },
+
+  "curl incliné poulie": {
+      "name": "Curl incliné à la poulie",
+      "category": "Biceps",
+      "primaryMuscles": [
+          "Biceps"
+      ],
+      "secondaryMuscles": [
+          "Brachial"
+      ],
+      "equipment": "Poulie basse + Banc incliné",
+      "difficulty": 2,
+      "isNew": true,
+      "description": "Dos sur le banc incliné, les deux bras tirent les poulies basses. L'épaule reste ouverte en bas, comme le curl incliné haltères, avec la tension de la poulie.",
+      "variations": [
+          "incline cable curl"
+      ]
+  },
+
+  "curl allongé haltères": {
+      "name": "Curl allongé haltères",
+      "category": "Biceps",
+      "primaryMuscles": [
+          "Biceps"
+      ],
+      "secondaryMuscles": [
+          "Brachial"
+      ],
+      "equipment": "Haltères + Banc",
+      "difficulty": 2,
+      "isNew": true,
+      "description": "Allongé sur le dos, bras vers le plafond ou écartés, les coudes fléchissent pour amener les haltères vers les épaules. Ce n'est pas le curl incliné, où le dos est relevé.",
+      "variations": [
+          "lying dumbbell curl",
+          "supine curl"
+      ]
+  },
+
+  "curl allongé poulie": {
+      "name": "Curl allongé à la poulie",
+      "category": "Biceps",
+      "primaryMuscles": [
+          "Biceps"
+      ],
+      "secondaryMuscles": [
+          "Brachial"
+      ],
+      "equipment": "Poulie basse + Banc",
+      "difficulty": 2,
+      "isNew": true,
+      "description": "Allongé, face à la poulie basse, les coudes fléchissent au-dessus de la poitrine. La prise serrée est la même position.",
+      "variations": [
+          "lying cable curl"
+      ]
+  },
+
+  "curl poulie haute": {
+      "name": "Curl poulie haute",
+      "category": "Biceps",
+      "primaryMuscles": [
+          "Biceps"
+      ],
+      "secondaryMuscles": [
+          "Brachial"
+      ],
+      "equipment": "Poulie haute",
+      "difficulty": 2,
+      "isNew": true,
+      "description": "La charge vient d'en haut. Les coudes restent hauts et fléchissent pour amener les mains vers le front ou les épaules. Ce n'est pas le curl poulie basse, ni une extension triceps : ici les biceps se raccourcissent.",
+      "variations": [
+          "overhead cable curl",
+          "high cable curl"
+      ]
+  },
+
+  "curl concentration élastique": {
+      "name": "Curl concentration élastique",
+      "category": "Biceps",
+      "primaryMuscles": [
+          "Biceps"
+      ],
+      "secondaryMuscles": [
+          "Brachial"
+      ],
+      "equipment": "Élastique",
+      "difficulty": 1,
+      "isNew": true,
+      "description": "Assis, coude calé sur la cuisse, la bande résiste pendant que la main monte vers l'épaule. Le curl concentration haltère reste l'autre fiche.",
+      "variations": [
+          "band concentration curl"
+      ]
+  },
+
+  "curl concentration poulie": {
+      "name": "Curl concentration à la poulie",
+      "category": "Biceps",
+      "primaryMuscles": [
+          "Biceps"
+      ],
+      "secondaryMuscles": [
+          "Brachial"
+      ],
+      "equipment": "Poulie basse",
+      "difficulty": 2,
+      "isNew": true,
+      "description": "Un bras, coude appuyé, la poulie basse tire vers le sol pendant la flexion. Même idée que le concentration haltère.",
+      "variations": [
+          "cable concentration curl"
+      ]
+  },
+
+  "curl élastique": {
+      "name": "Curl élastique",
+      "category": "Biceps",
+      "primaryMuscles": [
+          "Biceps"
+      ],
+      "secondaryMuscles": [
+          "Brachial"
+      ],
+      "equipment": "Élastique",
+      "difficulty": 1,
+      "isNew": true,
+      "description": "La bande passe sous les pieds ou derrière, les coudes fléchissent en supination. L'alterné et le un bras au-dessus de la tête sont le même curl, autre ancrage.",
+      "variations": [
+          "band biceps curl",
+          "resistance band curl"
+      ]
+  },
+
+  "curl pupitre poulie": {
+      "name": "Curl pupitre à la poulie",
+      "category": "Biceps",
+      "primaryMuscles": [
+          "Biceps"
+      ],
+      "secondaryMuscles": [
+          "Brachial"
+      ],
+      "equipment": "Poulie + Banc pupitre",
+      "difficulty": 2,
+      "isNew": true,
+      "description": "Bras sur le pupitre, la poulie tire vers le sol. Les coudes ne décollent pas du banc. Le pupitre barre et le pupitre machine restent leurs fiches.",
+      "variations": [
+          "cable preacher curl"
+      ]
+  },
+
+  "curl smith": {
+      "name": "Curl Smith",
+      "category": "Biceps",
+      "primaryMuscles": [
+          "Biceps"
+      ],
+      "secondaryMuscles": [
+          "Brachial"
+      ],
+      "equipment": "Smith machine",
+      "difficulty": 2,
+      "isNew": true,
+      "description": "Barre guidée, les coudes fléchissent le long du corps. Le rail empêche la barre de partir en avant. Ce n'est pas le curl barre libre.",
+      "variations": [
+          "smith machine curl"
+      ]
+  },
+
+  "curl haut": {
+      "name": "Curl haut",
+      "category": "Biceps",
+      "primaryMuscles": [
+          "Biceps"
+      ],
+      "secondaryMuscles": [
+          "Deltoïdes antérieurs",
+          "Brachial"
+      ],
+      "equipment": "Haltères",
+      "difficulty": 2,
+      "isNew": true,
+      "description": "Les coudes restent levés devant les épaules pendant que les haltères montent vers les oreilles. Le curl haltères classique garde les coudes bas.",
+      "variations": [
+          "high curl",
+          "curl coudes hauts"
+      ]
+  },
+
+  "curl waiter": {
+      "name": "Curl waiter",
+      "category": "Biceps",
+      "primaryMuscles": [
+          "Biceps"
+      ],
+      "secondaryMuscles": [
+          "Brachial"
+      ],
+      "equipment": "Haltère",
+      "difficulty": 2,
+      "isNew": true,
+      "description": "Un haltère tenu à deux mains sous le disque, comme un plateau, les coudes montent devant pendant que les mains restent paumes vers le ciel.",
+      "variations": [
+          "waiter curl"
+      ]
+  },
+
+  "curl biceps allongé côté": {
+      "name": "Curl biceps allongé sur le côté",
+      "category": "Biceps",
+      "primaryMuscles": [
+          "Biceps"
+      ],
+      "secondaryMuscles": [
+          "Brachial"
+      ],
+      "equipment": "Poids du corps",
+      "difficulty": 1,
+      "isNew": true,
+      "description": "Allongé sur le côté, le bras du dessus ou du dessous se plie sans charge, l'épaule reste fixe. Geste d'apprentissage ou de fin de série, pas un curl haltères.",
+      "variations": [
+          "bodyweight side lying curl"
+      ]
+  },
+
+  "fente et curl haltères": {
+      "name": "Fente et curl haltères",
+      "category": "Quadriceps",
+      "primaryMuscles": [
+          "Quadriceps"
+      ],
+      "secondaryMuscles": [
+          "Biceps",
+          "Grand fessier"
+      ],
+      "equipment": "Haltères",
+      "difficulty": 2,
+      "isNew": true,
+      "description": "Une fente, et les coudes fléchissent avec les haltères. Les fentes seules restent leur fiche. Le GIF « bowling » ajoute une rotation du buste : regroupé ici.",
+      "variations": [
+          "lunge with bicep curl",
+          "lunge curl bowling"
+      ]
+  },
+
+  "squat et curl haltères": {
+      "name": "Squat et curl haltères",
+      "category": "Quadriceps",
+      "primaryMuscles": [
+          "Quadriceps"
+      ],
+      "secondaryMuscles": [
+          "Biceps",
+          "Grand fessier"
+      ],
+      "equipment": "Haltères",
+      "difficulty": 2,
+      "isNew": true,
+      "description": "Squat avec haltères, les coudes fléchissent en même temps ou en haut du mouvement. Le squat haltères et le curl haltères restent leurs fiches.",
+      "variations": [
+          "squat to bicep curl",
+          "dumbbell squat curl"
+      ]
+  },
+
+  "curl et développé haltères": {
+      "name": "Curl et développé haltères",
+      "category": "Biceps",
+      "primaryMuscles": [
+          "Biceps"
+      ],
+      "secondaryMuscles": [
+          "Deltoïdes antérieurs",
+          "Triceps"
+      ],
+      "equipment": "Haltères",
+      "difficulty": 2,
+      "isNew": true,
+      "description": "Curl haltères jusqu'aux épaules, puis développé au-dessus de la tête, puis le chemin inverse. Ce n'est ni le curl haltères seul ni le développé militaire seul.",
+      "variations": [
+          "curl to shoulder press",
+          "bicep curl to press"
+      ]
+  },
+
+  "curl marteau et développé": {
+      "name": "Curl marteau et développé",
+      "category": "Biceps",
+      "primaryMuscles": [
+          "Brachial",
+          "Biceps"
+      ],
+      "secondaryMuscles": [
+          "Deltoïdes antérieurs",
+          "Triceps"
+      ],
+      "equipment": "Haltères",
+      "difficulty": 2,
+      "isNew": true,
+      "description": "Curl marteau puis développé, en alternant les bras. La prise reste neutre, contrairement au curl supiné puis développé.",
+      "variations": [
+          "hammer curl and press"
+      ]
+  },
+
+  "step-up équilibre et curl": {
+      "name": "Step-up équilibre et curl",
+      "category": "Quadriceps",
+      "primaryMuscles": [
+          "Quadriceps"
+      ],
+      "secondaryMuscles": [
+          "Biceps",
+          "Grand fessier"
+      ],
+      "equipment": "Haltères + Step",
+      "difficulty": 3,
+      "isNew": true,
+      "description": "Montée sur une jambe, tenue en équilibre, puis curl des haltères. Le genou de la jambe d'appui ne rentre pas. La fiche Step-up existe déjà : ici la montée se termine en équilibre avec un curl.",
+      "variations": [
+          "step-up single leg curl"
+      ]
+  },
+
+  "mollets donkey": {
+      "name": "Mollets donkey",
+      "category": "Mollets",
+      "primaryMuscles": [
+          "Gastrocnémiens"
+      ],
+      "secondaryMuscles": [
+          "Soléaires"
+      ],
+      "equipment": "Banc / Machine",
+      "difficulty": 2,
+      "isNew": true,
+      "description": "Buste penché, hanches fléchies, les talons descendent puis montent. Le genou reste tendu, contrairement aux mollets assis. La version lestée, unilatérale et à la machine sont le même donkey.",
+      "variations": [
+          "donkey calf raise"
+      ]
+  },
+
+  "mollets inversés smith": {
+      "name": "Mollets inversés Smith",
+      "category": "Mollets",
+      "primaryMuscles": [
+          "Tibial antérieur"
+      ],
+      "secondaryMuscles": [],
+      "equipment": "Smith machine",
+      "difficulty": 2,
+      "isNew": true,
+      "description": "Pointes vers le haut, les orteils tirent le pied vers le tibia contre la barre guidée. Ce n'est pas un mollet classique : le mollet s'étire, le tibial travaille. Les Tibialis raises au mur restent sans charge.",
+      "variations": [
+          "smith reverse calf raise",
+          "smith toe raise"
+      ]
+  },
+
+  "tibialis élastique": {
+      "name": "Tibialis élastique",
+      "category": "Mollets",
+      "primaryMuscles": [
+          "Tibial antérieur"
+      ],
+      "secondaryMuscles": [],
+      "equipment": "Élastique",
+      "difficulty": 1,
+      "isNew": true,
+      "description": "Une jambe, bande qui résiste quand les orteils se rapprochent du tibia. Même muscle que les tibialis au mur, avec une bande et une seule jambe.",
+      "variations": [
+          "band reverse calf raise"
+      ]
+  },
+
+  "mollets rotatifs machine": {
+      "name": "Mollets rotatifs machine",
+      "category": "Mollets",
+      "primaryMuscles": [
+          "Gastrocnémiens"
+      ],
+      "secondaryMuscles": [
+          "Soléaires"
+      ],
+      "equipment": "Machine mollets rotative",
+      "difficulty": 2,
+      "isNew": true,
+      "description": "Assis ou calé dans la machine rotative, le pied tourne en montant sur la pointe. Ce n'est ni le mollet assis classique ni le mollet à la presse.",
+      "variations": [
+          "rotary calf"
+      ]
+  },
+
+  "mollets debout balancé": {
+      "name": "Mollets debout balancé",
+      "category": "Mollets",
+      "primaryMuscles": [
+          "Gastrocnémiens"
+      ],
+      "secondaryMuscles": [
+          "Soléaires"
+      ],
+      "equipment": "Barre",
+      "difficulty": 2,
+      "isNew": true,
+      "description": "Mollet debout à la barre, le poids du pied passe de l'intérieur vers l'extérieur en haut du mouvement. Les fiches pointes dedans et pointes dehors restent des séries fixes, pas ce balancement.",
+      "variations": [
+          "rocking calf raise"
+      ]
+  },
+
+  "développé militaire élastique": {
+      "name": "Développé militaire élastique",
+      "category": "Épaules",
+      "primaryMuscles": [
+          "Deltoïdes antérieurs"
+      ],
+      "secondaryMuscles": [
+          "Triceps",
+          "Trapèzes"
+      ],
+      "equipment": "Élastique",
+      "difficulty": 1,
+      "isNew": true,
+      "description": "Bande sous les pieds ou derrière le banc, les mains poussent au-dessus de la tête. Les développés barre, haltères et Smith restent leurs fiches. La version qui tourne le buste est regroupée.",
+      "variations": [
+          "band shoulder press"
+      ]
+  },
+
+  "développé militaire kettlebell": {
+      "name": "Développé militaire kettlebell",
+      "category": "Épaules",
+      "primaryMuscles": [
+          "Deltoïdes antérieurs"
+      ],
+      "secondaryMuscles": [
+          "Triceps",
+          "Trapèzes"
+      ],
+      "equipment": "Kettlebell",
+      "difficulty": 2,
+      "isNew": true,
+      "description": "Kettlebells au niveau des épaules, bras qui se tendent au-dessus de la tête sans pousser avec les jambes. Le seesaw et l'alterné sont le même développé.",
+      "variations": [
+          "kettlebell military press",
+          "seesaw press"
+      ]
+  },
+
+  "développé épaules machine": {
+      "name": "Développé épaules machine",
+      "category": "Épaules",
+      "primaryMuscles": [
+          "Deltoïdes antérieurs"
+      ],
+      "secondaryMuscles": [
+          "Triceps"
+      ],
+      "equipment": "Machine à épaules",
+      "difficulty": 2,
+      "isNew": true,
+      "description": "Assis, poignées guidées, poussée au-dessus de la tête. Le Smith est une barre dans un rail, pas cette machine. Les variantes v-2, v-3 et un bras sont le même développé.",
+      "variations": [
+          "machine shoulder press",
+          "lever military press"
+      ]
+  },
+
+  "développé épaules poulie": {
+      "name": "Développé épaules à la poulie",
+      "category": "Épaules",
+      "primaryMuscles": [
+          "Deltoïdes antérieurs"
+      ],
+      "secondaryMuscles": [
+          "Triceps"
+      ],
+      "equipment": "Poulie",
+      "difficulty": 2,
+      "isNew": true,
+      "description": "Poignées de poulie poussées au-dessus de la tête, coudes qui finissent près des oreilles. L'alterné est le même geste, un bras après l'autre.",
+      "variations": [
+          "cable shoulder press"
+      ]
+  },
+
+  "développé nuque": {
+      "name": "Développé nuque",
+      "category": "Épaules",
+      "primaryMuscles": [
+          "Deltoïdes"
+      ],
+      "secondaryMuscles": [
+          "Triceps",
+          "Trapèzes"
+      ],
+      "equipment": "Barre / Smith",
+      "difficulty": 3,
+      "isNew": true,
+      "description": "La barre descend derrière la tête, pas devant le visage. Les coudes partent vers l'arrière. Le développé militaire classique reste devant. Smith et debout sont le même trajet.",
+      "variations": [
+          "behind the neck press"
+      ]
+  },
+
+  "bradford press": {
+      "name": "Bradford press",
+      "category": "Épaules",
+      "primaryMuscles": [
+          "Deltoïdes"
+      ],
+      "secondaryMuscles": [
+          "Triceps"
+      ],
+      "equipment": "Barre",
+      "difficulty": 3,
+      "isNew": true,
+      "description": "La barre passe devant le visage puis derrière la tête, sans poser, dans le même développé. Ce n'est ni le militaire devant ni le développé nuque seul.",
+      "variations": [
+          "bradford press",
+          "rocky press"
+      ]
+  },
+
+  "push press haltères": {
+      "name": "Push press haltères",
+      "category": "Épaules",
+      "primaryMuscles": [
+          "Deltoïdes antérieurs"
+      ],
+      "secondaryMuscles": [
+          "Triceps",
+          "Quadriceps"
+      ],
+      "equipment": "Haltères",
+      "difficulty": 3,
+      "isNew": true,
+      "description": "Petite flexion des genoux, puis les jambes poussent les haltères au-dessus de la tête. Le militaire haltères ne donne pas d'élan avec les jambes.",
+      "variations": [
+          "dumbbell push press"
+      ]
+  },
+
+  "push press kettlebell": {
+      "name": "Push press kettlebell",
+      "category": "Épaules",
+      "primaryMuscles": [
+          "Deltoïdes antérieurs"
+      ],
+      "secondaryMuscles": [
+          "Triceps",
+          "Quadriceps"
+      ],
+      "equipment": "Kettlebell",
+      "difficulty": 3,
+      "isNew": true,
+      "description": "Même poussée de jambes que le push press, avec kettlebell. Le jerk, plus technique, n'est pas cette fiche.",
+      "variations": [
+          "kettlebell push press"
+      ]
+  },
+
+  "thruster barre": {
+      "name": "Thruster barre",
+      "category": "Épaules",
+      "primaryMuscles": [
+          "Deltoïdes antérieurs",
+          "Quadriceps"
+      ],
+      "secondaryMuscles": [
+          "Triceps",
+          "Grand fessier"
+      ],
+      "equipment": "Barre",
+      "difficulty": 3,
+      "isNew": true,
+      "description": "Squat avant, puis la barre part au-dessus de la tête dans la montée. Le squat et le militaire restent leurs fiches.",
+      "variations": [
+          "barbell thruster"
+      ]
+  },
+
+  "thruster kettlebell": {
+      "name": "Thruster kettlebell",
+      "category": "Épaules",
+      "primaryMuscles": [
+          "Deltoïdes antérieurs",
+          "Quadriceps"
+      ],
+      "secondaryMuscles": [
+          "Triceps",
+          "Grand fessier"
+      ],
+      "equipment": "Kettlebell",
+      "difficulty": 3,
+      "isNew": true,
+      "description": "Squat gobelet ou deux kettlebells, puis développé dans la montée. Pas un squat seul.",
+      "variations": [
+          "kettlebell thruster"
+      ]
+  },
+
+  "tirage menton haltères": {
+      "name": "Tirage menton haltères",
+      "category": "Épaules",
+      "primaryMuscles": [
+          "Deltoïdes latéraux",
+          "Trapèzes"
+      ],
+      "secondaryMuscles": [
+          "Biceps"
+      ],
+      "equipment": "Haltères",
+      "difficulty": 2,
+      "isNew": true,
+      "description": "Haltères le long du corps qui montent vers le menton, coudes au-dessus des poignets. Le tirage menton barre existe déjà.",
+      "variations": [
+          "dumbbell upright row"
+      ]
+  },
+
+  "tirage menton poulie": {
+      "name": "Tirage menton à la poulie",
+      "category": "Épaules",
+      "primaryMuscles": [
+          "Deltoïdes latéraux",
+          "Trapèzes"
+      ],
+      "secondaryMuscles": [
+          "Biceps"
+      ],
+      "equipment": "Poulie basse",
+      "difficulty": 2,
+      "isNew": true,
+      "description": "Barre ou poignée de poulie basse tirée vers le menton, coudes hauts. La tension reste en bas.",
+      "variations": [
+          "cable upright row"
+      ]
+  },
+
+  "tirage menton smith": {
+      "name": "Tirage menton Smith",
+      "category": "Épaules",
+      "primaryMuscles": [
+          "Deltoïdes latéraux",
+          "Trapèzes"
+      ],
+      "secondaryMuscles": [
+          "Biceps"
+      ],
+      "equipment": "Smith machine",
+      "difficulty": 2,
+      "isNew": true,
+      "description": "Même tirage vers le menton, barre guidée. Le rail empêche la barre de s'éloigner du corps.",
+      "variations": [
+          "smith upright row"
+      ]
+  },
+
+  "oiseau smith": {
+      "name": "Oiseau Smith",
+      "category": "Épaules",
+      "primaryMuscles": [
+          "Deltoïdes postérieurs"
+      ],
+      "secondaryMuscles": [
+          "Trapèzes"
+      ],
+      "equipment": "Smith machine",
+      "difficulty": 2,
+      "isNew": true,
+      "description": "Buste penché, barre guidée tirée vers le bas du visage ou le haut du ventre, coudes ouverts. L'oiseau haltères et l'oiseau machine restent sans rail.",
+      "variations": [
+          "smith rear delt row"
+      ]
+  },
+
+  "oiseau élastique": {
+      "name": "Oiseau élastique",
+      "category": "Épaules",
+      "primaryMuscles": [
+          "Deltoïdes postérieurs"
+      ],
+      "secondaryMuscles": [
+          "Trapèzes"
+      ],
+      "equipment": "Élastique",
+      "difficulty": 1,
+      "isNew": true,
+      "description": "Buste penché ou bande devant, les bras s'ouvrent vers l'arrière, coudes souples. L'oiseau haltères, l'oiseau poulie et l'oiseau machine restent leurs fiches.",
+      "variations": [
+          "band reverse fly",
+          "band rear delt row"
+      ]
+  },
+
+  "élévation latérale machine": {
+      "name": "Élévation latérale machine",
+      "category": "Épaules",
+      "primaryMuscles": [
+          "Deltoïdes latéraux"
+      ],
+      "secondaryMuscles": [],
+      "equipment": "Machine élévations",
+      "difficulty": 1,
+      "isNew": true,
+      "description": "Assis, les coudes ou les bras poussent les manettes sur le côté jusqu'à hauteur d'épaules. Les élévations haltères et poulie restent libres.",
+      "variations": [
+          "machine lateral raise"
+      ]
+  },
+
+  "élévation latérale landmine": {
+      "name": "Élévation latérale landmine",
+      "category": "Épaules",
+      "primaryMuscles": [
+          "Deltoïdes latéraux"
+      ],
+      "secondaryMuscles": [
+          "Deltoïdes antérieurs"
+      ],
+      "equipment": "Landmine / Barre",
+      "difficulty": 2,
+      "isNew": true,
+      "description": "Un bout de barre ancré au sol, l'autre main le lève sur le côté. Ce n'est pas le landmine press, qui pousse vers l'avant.",
+      "variations": [
+          "landmine lateral raise"
+      ]
+  },
+
+  "élévations frontales barre": {
+      "name": "Élévations frontales barre",
+      "category": "Épaules",
+      "primaryMuscles": [
+          "Deltoïdes antérieurs"
+      ],
+      "secondaryMuscles": [],
+      "equipment": "Barre",
+      "difficulty": 2,
+      "isNew": true,
+      "description": "Barre devant les cuisses qui monte jusqu'aux épaules, bras presque tendus. La version au-dessus de la tête va plus haut. Les élévations frontales haltères existent déjà.",
+      "variations": [
+          "barbell front raise"
+      ]
+  },
+
+  "élévations frontales poulie": {
+      "name": "Élévations frontales poulie",
+      "category": "Épaules",
+      "primaryMuscles": [
+          "Deltoïdes antérieurs"
+      ],
+      "secondaryMuscles": [],
+      "equipment": "Poulie basse",
+      "difficulty": 2,
+      "isNew": true,
+      "description": "Poulie basse, bras tendus devant, les mains montent à hauteur d'épaules. Trois fichiers, un seul geste.",
+      "variations": [
+          "cable front raise"
+      ]
+  },
+
+  "élévations frontales élastique": {
+      "name": "Élévations frontales élastique",
+      "category": "Épaules",
+      "primaryMuscles": [
+          "Deltoïdes antérieurs"
+      ],
+      "secondaryMuscles": [],
+      "equipment": "Élastique",
+      "difficulty": 1,
+      "isNew": true,
+      "description": "Bande sous les pieds, bras tendus qui montent devant. Le Y raise élastique est un autre angle, déjà en fiche.",
+      "variations": [
+          "band front raise"
+      ]
+  },
+
+  "rotation externe poulie": {
+      "name": "Rotation externe à la poulie",
+      "category": "Épaules",
+      "primaryMuscles": [
+          "Coiffe des rotateurs"
+      ],
+      "secondaryMuscles": [
+          "Deltoïdes postérieurs"
+      ],
+      "equipment": "Poulie",
+      "difficulty": 1,
+      "isNew": true,
+      "description": "Coude au corps, la poulie résiste pendant que l'avant-bras s'ouvre vers l'extérieur. La fiche Rotation externe élastique reste la bande : ce GIF poulie n'y est plus.",
+      "variations": [
+          "cable external rotation"
+      ]
+  },
+
+  "rotation externe haltères": {
+      "name": "Rotation externe haltères",
+      "category": "Épaules",
+      "primaryMuscles": [
+          "Coiffe des rotateurs"
+      ],
+      "secondaryMuscles": [
+          "Deltoïdes postérieurs"
+      ],
+      "equipment": "Haltère",
+      "difficulty": 1,
+      "isNew": true,
+      "description": "Haltère léger, coude à 90°, l'avant-bras tourne vers l'extérieur. Allongé ou debout, c'est la même rotation. Pas un développé.",
+      "variations": [
+          "dumbbell external rotation"
+      ]
+  },
+
+  "rotation interne poulie": {
+      "name": "Rotation interne à la poulie",
+      "category": "Épaules",
+      "primaryMuscles": [
+          "Coiffe des rotateurs"
+      ],
+      "secondaryMuscles": [
+          "Grand pectoral"
+      ],
+      "equipment": "Poulie",
+      "difficulty": 1,
+      "isNew": true,
+      "description": "Coude au corps, l'avant-bras se ferme vers le ventre contre la poulie. L'inverse de la rotation externe.",
+      "variations": [
+          "cable internal rotation"
+      ]
+  },
+
+  "développé latéral haltère": {
+      "name": "Développé latéral haltère",
+      "category": "Épaules",
+      "primaryMuscles": [
+          "Deltoïdes"
+      ],
+      "secondaryMuscles": [
+          "Triceps",
+          "Obliques"
+      ],
+      "equipment": "Haltère",
+      "difficulty": 2,
+      "isNew": true,
+      "description": "Un haltère à l'épaule, le buste s'incline sur le côté pendant que le bras se tend. Ce n'est pas un militaire de face.",
+      "variations": [
+          "dumbbell side press"
+      ]
+  },
+
+  "around the world haltères": {
+      "name": "Around the world haltères",
+      "category": "Épaules",
+      "primaryMuscles": [
+          "Deltoïdes"
+      ],
+      "secondaryMuscles": [
+          "Grand pectoral"
+      ],
+      "equipment": "Haltères",
+      "difficulty": 2,
+      "isNew": true,
+      "description": "Bras presque tendus, les haltères font un cercle devant le corps, des hanches jusqu'au-dessus de la tête et retour. Ce n'est pas une élévation qui s'arrête aux épaules.",
+      "variations": [
+          "around the world"
+      ]
+  },
+
+  "porté haltère bras tendu": {
+      "name": "Porté haltère bras tendu",
+      "category": "Épaules",
+      "primaryMuscles": [
+          "Deltoïdes"
+      ],
+      "secondaryMuscles": [
+          "Trapèzes",
+          "Gainage"
+      ],
+      "equipment": "Haltère",
+      "difficulty": 2,
+      "isNew": true,
+      "description": "Marche avec un haltère bras tendu au-dessus de la tête. Le farmer walk garde les charges le long du corps, pas ici.",
+      "variations": [
+          "overhead carry",
+          "waiter walk"
+      ]
+  },
+
+  "cordes ondulatoires": {
+      "name": "Cordes ondulatoires",
+      "category": "Épaules",
+      "primaryMuscles": [
+          "Deltoïdes"
+      ],
+      "secondaryMuscles": [
+          "Grand droit",
+          "Avant-bras"
+      ],
+      "equipment": "Cordes ondulatoires",
+      "difficulty": 2,
+      "isNew": true,
+      "description": "Les deux mains font des vagues avec les cordes, bras qui montent et descendent sans s'effondrer dans le dos. Travail de souffle autant que d'épaules.",
+      "variations": [
+          "battling ropes",
+          "battle ropes"
+      ]
+  },
+
+  "curl poignet poulie": {
+      "name": "Curl poignet à la poulie",
+      "category": "Avant-bras",
+      "primaryMuscles": [
+          "Fléchisseurs du poignet"
+      ],
+      "secondaryMuscles": [],
+      "equipment": "Poulie basse",
+      "difficulty": 1,
+      "isNew": true,
+      "description": "Avant-bras calés, la poulie résiste pendant que le poignet se ferme. Le wrist curl haltères ou barre existe déjà.",
+      "variations": [
+          "cable wrist curl"
+      ]
+  },
+
+  "curl poignet inversé poulie": {
+      "name": "Curl poignet inversé à la poulie",
+      "category": "Avant-bras",
+      "primaryMuscles": [
+          "Extenseurs du poignet"
+      ],
+      "secondaryMuscles": [],
+      "equipment": "Poulie basse",
+      "difficulty": 1,
+      "isNew": true,
+      "description": "Poignet qui s'ouvre vers le dos de la main, contre la poulie. Le reverse wrist curl libre reste l'autre fiche.",
+      "variations": [
+          "cable reverse wrist curl"
+      ]
+  },
+
+  "curl poignet élastique": {
+      "name": "Curl poignet élastique",
+      "category": "Avant-bras",
+      "primaryMuscles": [
+          "Fléchisseurs du poignet"
+      ],
+      "secondaryMuscles": [],
+      "equipment": "Élastique",
+      "difficulty": 1,
+      "isNew": true,
+      "description": "La bande résiste à la fermeture du poignet. Même geste que le wrist curl, autre outil.",
+      "variations": [
+          "band wrist curl"
+      ]
+  },
+
+  "curl poignet inversé élastique": {
+      "name": "Curl poignet inversé élastique",
+      "category": "Avant-bras",
+      "primaryMuscles": [
+          "Extenseurs du poignet"
+      ],
+      "secondaryMuscles": [],
+      "equipment": "Élastique",
+      "difficulty": 1,
+      "isNew": true,
+      "description": "La bande résiste quand le dos de la main monte. Version élastique du reverse wrist curl.",
+      "variations": [
+          "band reverse wrist curl"
+      ]
+  },
+
+  "curl des doigts": {
+      "name": "Curl des doigts",
+      "category": "Avant-bras",
+      "primaryMuscles": [
+          "Fléchisseurs des doigts"
+      ],
+      "secondaryMuscles": [
+          "Avant-bras"
+      ],
+      "equipment": "Haltère / Barre",
+      "difficulty": 1,
+      "isNew": true,
+      "description": "La charge roule jusqu'au bout des doigts, puis les doigts se referment. Le poignet bouge peu : ce n'est pas le wrist curl.",
+      "variations": [
+          "finger curls"
+      ]
+  },
+
+  "gripper": {
+      "name": "Gripper",
+      "category": "Avant-bras",
+      "primaryMuscles": [
+          "Fléchisseurs des doigts"
+      ],
+      "secondaryMuscles": [],
+      "equipment": "Gripper / Disque",
+      "difficulty": 2,
+      "isNew": true,
+      "description": "La main se ferme contre un ressort ou une charge, sans bouger le coude. Le plate pinch tient des disques ouverts, ce n'est pas le même serrage.",
+      "variations": [
+          "hand gripper",
+          "hand squeeze"
+      ]
+  },
+
+  "rotation avant-bras": {
+      "name": "Rotation de l’avant-bras",
+      "category": "Avant-bras",
+      "primaryMuscles": [
+          "Rond pronateur",
+          "Biceps"
+      ],
+      "secondaryMuscles": [
+          "Brachio-radial"
+      ],
+      "equipment": "Haltère",
+      "difficulty": 1,
+      "isNew": true,
+      "description": "Coude à 90°, l'haltère tourne paume vers le sol puis paume vers le ciel. Pronation et supination sont sur la même fiche.",
+      "variations": [
+          "dumbbell pronation",
+          "dumbbell supination"
+      ]
+  },
+
+  "wrist roller": {
+      "name": "Wrist roller",
+      "category": "Avant-bras",
+      "primaryMuscles": [
+          "Fléchisseurs du poignet",
+          "Extenseurs du poignet"
+      ],
+      "secondaryMuscles": [],
+      "equipment": "Wrist roller",
+      "difficulty": 2,
+      "isNew": true,
+      "description": "Bras devant, les poignets enroulent la corde pour monter la charge, puis la déroulent. Les deux sens comptent.",
+      "variations": [
+          "wrist roller"
+      ]
+  },
+  "glute bridge barre": {
+      "name": "Glute bridge barre",
+      "category": "Fessiers",
+      "primaryMuscles": ["Fessiers"],
+      "secondaryMuscles": ["Ischio-jambiers"],
+      "equipment": "Barre",
+      "difficulty": 2,
+      "isNew": true,
+      "description": "Allongé au sol, la barre sur les hanches. Tu pousses le bassin jusqu’à aligner genoux et épaules, sans décoller le haut du dos.",
+      "variations": ["glute bridge barre"]
+  },
+  "glute bridge élastique": {
+      "name": "Glute bridge élastique",
+      "category": "Fessiers",
+      "primaryMuscles": ["Fessiers"],
+      "secondaryMuscles": ["Ischio-jambiers"],
+      "equipment": "Élastique",
+      "difficulty": 1,
+      "isNew": true,
+      "description": "Pont au sol, bande autour des hanches et ancrée au sol. Tu pousses le bassin vers le haut contre la bande, sans cambrer.",
+      "variations": ["glute bridge élastique"]
+  },
+  "glute bridge barre pieds surélevés": {
+      "name": "Glute bridge barre pieds surélevés",
+      "category": "Fessiers",
+      "primaryMuscles": ["Fessiers"],
+      "secondaryMuscles": ["Ischio-jambiers"],
+      "equipment": "Barre + Banc",
+      "difficulty": 2,
+      "isNew": true,
+      "description": "Même pont qu’au sol, les deux pieds sur un banc et la barre sur les hanches. L’amplitude est plus grande, le bas du dos reste neutre.",
+      "variations": ["glute bridge barre pieds surélevés"]
+  },
+  "hip thrust genoux élastique": {
+      "name": "Hip thrust à genoux élastique",
+      "category": "Fessiers",
+      "primaryMuscles": ["Fessiers"],
+      "secondaryMuscles": ["Ischio-jambiers"],
+      "equipment": "Élastique",
+      "difficulty": 2,
+      "isNew": true,
+      "description": "À genoux, bande derrière le bassin. Tu pousses les hanches vers l’avant jusqu’à tendre les hanches, sans cambrer.",
+      "variations": ["hip thrust genoux élastique"]
+  },
+  "extension de hanche poulie": {
+      "name": "Extension de hanche à la poulie",
+      "category": "Fessiers",
+      "primaryMuscles": ["Fessiers"],
+      "secondaryMuscles": ["Ischio-jambiers"],
+      "equipment": "Poulie basse",
+      "difficulty": 1,
+      "isNew": true,
+      "description": "Debout, sangle à la cheville. La jambe part en arrière, genou presque tendu, le bassin ne tourne pas.",
+      "variations": ["extension de hanche poulie"]
+  },
+  "extension de hanche élastique penché": {
+      "name": "Extension de hanche élastique penché",
+      "category": "Fessiers",
+      "primaryMuscles": ["Fessiers"],
+      "secondaryMuscles": ["Ischio-jambiers"],
+      "equipment": "Élastique",
+      "difficulty": 1,
+      "isNew": true,
+      "description": "Buste penché, bande au pied. Tu pousses le talon vers l’arrière sans ouvrir la hanche sur le côté.",
+      "variations": ["extension de hanche élastique penché"]
+  },
+  "kickback fessier machine": {
+      "name": "Kickback fessier machine",
+      "category": "Fessiers",
+      "primaryMuscles": ["Fessiers"],
+      "secondaryMuscles": ["Ischio-jambiers"],
+      "equipment": "Machine",
+      "difficulty": 2,
+      "isNew": true,
+      "description": "Buste appuyé sur la machine, un genou pousse le levier vers l’arrière. Le bassin ne se soulève pas du coussin.",
+      "variations": ["kickback fessier machine"]
+  },
+  "pull-through élastique": {
+      "name": "Pull-through élastique",
+      "category": "Fessiers",
+      "primaryMuscles": ["Fessiers"],
+      "secondaryMuscles": ["Ischio-jambiers","Lombaires"],
+      "equipment": "Élastique",
+      "difficulty": 2,
+      "isNew": true,
+      "description": "Bande entre les jambes, ancrée derrière. Tu charnières puis tu reviens debout en serrant les fessiers, bras tendus.",
+      "variations": ["pull-through élastique"]
+  },
+  "pull-through poulie": {
+      "name": "Pull-through à la poulie",
+      "category": "Fessiers",
+      "primaryMuscles": ["Fessiers"],
+      "secondaryMuscles": ["Ischio-jambiers"],
+      "equipment": "Poulie basse",
+      "difficulty": 2,
+      "isNew": true,
+      "description": "Corde entre les jambes, poulie basse derrière. Même charnière que l’élastique, tu finis hanches ouvertes sans cambrer.",
+      "variations": ["pull-through poulie"]
+  },
+  "reverse hyperextension": {
+      "name": "Reverse hyperextension",
+      "category": "Fessiers",
+      "primaryMuscles": ["Fessiers"],
+      "secondaryMuscles": ["Ischio-jambiers","Lombaires"],
+      "equipment": "Machine / Banc",
+      "difficulty": 2,
+      "isNew": true,
+      "description": "Buste calé, les jambes pendent. Tu les montes jusqu’à l’horizontale en menant avec les fessiers, sans balancer.",
+      "variations": ["reverse hyperextension"]
+  },
+  "hack squat barre": {
+      "name": "Hack squat barre",
+      "category": "Quadriceps",
+      "primaryMuscles": ["Quadriceps"],
+      "secondaryMuscles": ["Fessiers"],
+      "equipment": "Barre",
+      "difficulty": 3,
+      "isNew": true,
+      "description": "Barre derrière les jambes, bras tendus. Tu descends en gardant le buste droit, les talons au sol.",
+      "variations": ["hack squat barre"]
+  },
+  "squat jefferson": {
+      "name": "Squat Jefferson",
+      "category": "Quadriceps",
+      "primaryMuscles": ["Quadriceps"],
+      "secondaryMuscles": ["Fessiers","Adducteurs"],
+      "equipment": "Barre",
+      "difficulty": 3,
+      "isNew": true,
+      "description": "Barre entre les jambes, une main devant et une derrière. Tu plies en gardant le buste vertical.",
+      "variations": ["squat jefferson"]
+  },
+  "squat sauté barre": {
+      "name": "Squat sauté barre",
+      "category": "Quadriceps",
+      "primaryMuscles": ["Quadriceps"],
+      "secondaryMuscles": ["Fessiers","Mollets"],
+      "equipment": "Barre",
+      "difficulty": 3,
+      "isNew": true,
+      "description": "Barre sur le dos. Tu descends en squat puis tu pousses jusqu’à décoller, et tu réceptionnes en pliant.",
+      "variations": ["squat sauté barre"]
+  },
+  "squat sauté haltères": {
+      "name": "Squat sauté haltères",
+      "category": "Quadriceps",
+      "primaryMuscles": ["Quadriceps"],
+      "secondaryMuscles": ["Fessiers"],
+      "equipment": "Haltères",
+      "difficulty": 3,
+      "isNew": true,
+      "description": "Haltères le long du corps. Même saut qu’à la barre, tu restes gainé à la réception.",
+      "variations": ["squat sauté haltères"]
+  },
+  "fente latérale barre": {
+      "name": "Fente latérale barre",
+      "category": "Quadriceps",
+      "primaryMuscles": ["Quadriceps"],
+      "secondaryMuscles": ["Adducteurs","Fessiers"],
+      "equipment": "Barre",
+      "difficulty": 3,
+      "isNew": true,
+      "description": "Barre sur le dos. Un pas sur le côté, tu plies cette jambe et tu gardes l’autre tendue, puis tu reviens.",
+      "variations": ["fente latérale barre"]
+  },
+  "fente révérence": {
+      "name": "Fente révérence",
+      "category": "Quadriceps",
+      "primaryMuscles": ["Quadriceps"],
+      "secondaryMuscles": ["Fessiers","Adducteurs"],
+      "equipment": "Poids du corps",
+      "difficulty": 2,
+      "isNew": true,
+      "description": "Un pied croise derrière l’autre, tu descends jusqu’à ce que le genou arrière approche le sol. Le buste reste haut.",
+      "variations": ["fente révérence"]
+  },
+  "squat élastique": {
+      "name": "Squat élastique",
+      "category": "Quadriceps",
+      "primaryMuscles": ["Quadriceps"],
+      "secondaryMuscles": ["Fessiers"],
+      "equipment": "Élastique",
+      "difficulty": 1,
+      "isNew": true,
+      "description": "Bande sous les pieds et sur les épaules, ou autour des genoux. Tu squattes en poussant les genoux vers l’extérieur.",
+      "variations": ["squat élastique"]
+  },
+  "squat haltères": {
+      "name": "Squat haltères",
+      "category": "Quadriceps",
+      "primaryMuscles": ["Quadriceps"],
+      "secondaryMuscles": ["Fessiers"],
+      "equipment": "Haltères",
+      "difficulty": 2,
+      "isNew": true,
+      "description": "Haltères le long du corps. Tu descends en gardant le dos neutre et les talons au sol, puis tu remontes.",
+      "variations": ["squat haltères"]
+  },
+  "front squat kettlebell": {
+      "name": "Front squat kettlebell",
+      "category": "Quadriceps",
+      "primaryMuscles": ["Quadriceps"],
+      "secondaryMuscles": ["Fessiers","Deltoïdes antérieurs"],
+      "equipment": "Kettlebell",
+      "difficulty": 3,
+      "isNew": true,
+      "description": "Kettlebells au creux des épaules, coudes hauts. Tu squattes sans laisser les coudes tomber.",
+      "variations": ["front squat kettlebell"]
+  },
+  "front squat smith": {
+      "name": "Front squat Smith",
+      "category": "Quadriceps",
+      "primaryMuscles": ["Quadriceps"],
+      "secondaryMuscles": ["Fessiers"],
+      "equipment": "Smith machine",
+      "difficulty": 3,
+      "isNew": true,
+      "description": "Barre du Smith devant les épaules. Tu descends droit, coudes hauts, talons au sol.",
+      "variations": ["front squat smith"]
+  },
+  "hack squat smith": {
+      "name": "Hack squat Smith",
+      "category": "Quadriceps",
+      "primaryMuscles": ["Quadriceps"],
+      "secondaryMuscles": ["Fessiers"],
+      "equipment": "Smith machine",
+      "difficulty": 3,
+      "isNew": true,
+      "description": "Barre du Smith derrière les jambes, comme un hack barre. Tu plies sans arrondir le dos.",
+      "variations": ["hack squat smith"]
+  },
+  "squat ceinture": {
+      "name": "Squat à la ceinture",
+      "category": "Quadriceps",
+      "primaryMuscles": ["Quadriceps"],
+      "secondaryMuscles": ["Fessiers"],
+      "equipment": "Ceinture de lest + Banc",
+      "difficulty": 3,
+      "isNew": true,
+      "description": "Disque pendu à une ceinture, pieds sur un banc. Tu squattes entre les deux appuis, le buste reste vertical.",
+      "variations": ["squat ceinture"]
+  },
+  "presse à cuisses horizontale": {
+      "name": "Presse à cuisses horizontale",
+      "category": "Quadriceps",
+      "primaryMuscles": ["Quadriceps"],
+      "secondaryMuscles": ["Fessiers"],
+      "equipment": "Presse horizontale",
+      "difficulty": 2,
+      "isNew": true,
+      "description": "Allongé, pieds sur le plateau devant toi. Tu plies jusqu’à ce que les genoux approchent la poitrine, sans décoller le bassin.",
+      "variations": ["presse à cuisses horizontale"]
+  },
+  "retournement de pneu": {
+      "name": "Retournement de pneu",
+      "category": "Quadriceps",
+      "primaryMuscles": ["Quadriceps"],
+      "secondaryMuscles": ["Fessiers","Dorsaux","Épaules"],
+      "equipment": "Pneu",
+      "difficulty": 3,
+      "isNew": true,
+      "description": "Accroupi contre le pneu, tu pousses les jambes et tu guides le retournement avec les bras.",
+      "variations": ["retournement de pneu"]
+  },
+  "soulevé de terre trap bar": {
+      "name": "Soulevé de terre trap bar",
+      "category": "Dorsaux",
+      "primaryMuscles": ["Fessiers","Quadriceps"],
+      "secondaryMuscles": ["Ischio-jambiers","Dorsaux"],
+      "equipment": "Trap bar",
+      "difficulty": 3,
+      "isNew": true,
+      "description": "Dans le cadre, poignées sur les côtés. Tu pousses le sol en gardant le dos neutre, puis tu reposes sans relâcher.",
+      "variations": ["soulevé de terre trap bar"]
+  },
+  "soulevé de terre haltères": {
+      "name": "Soulevé de terre haltères",
+      "category": "Dorsaux",
+      "primaryMuscles": ["Fessiers","Dorsaux"],
+      "secondaryMuscles": ["Ischio-jambiers","Quadriceps"],
+      "equipment": "Haltères",
+      "difficulty": 2,
+      "isNew": true,
+      "description": "Haltères devant les cuisses. Tu charnières et tu plies les genoux pour les poser, puis tu remontes le buste.",
+      "variations": ["soulevé de terre haltères"]
+  },
+  "soulevé de terre smith": {
+      "name": "Soulevé de terre Smith",
+      "category": "Dorsaux",
+      "primaryMuscles": ["Fessiers","Dorsaux"],
+      "secondaryMuscles": ["Ischio-jambiers"],
+      "equipment": "Smith machine",
+      "difficulty": 3,
+      "isNew": true,
+      "description": "Barre du Smith au sol. Même poussée qu’un soulevé, le rail guide la barre.",
+      "variations": ["soulevé de terre smith"]
+  },
+  "soulevé de terre poulie": {
+      "name": "Soulevé de terre à la poulie",
+      "category": "Dorsaux",
+      "primaryMuscles": ["Fessiers"],
+      "secondaryMuscles": ["Ischio-jambiers","Dorsaux"],
+      "equipment": "Poulie basse",
+      "difficulty": 2,
+      "isNew": true,
+      "description": "Poulie basse entre les pieds. Tu te redresses en poussant les hanches, bras tendus.",
+      "variations": ["soulevé de terre poulie"]
+  },
+  "soulevé de terre machine": {
+      "name": "Soulevé de terre machine",
+      "category": "Dorsaux",
+      "primaryMuscles": ["Fessiers","Dorsaux"],
+      "secondaryMuscles": ["Ischio-jambiers"],
+      "equipment": "Machine",
+      "difficulty": 2,
+      "isNew": true,
+      "description": "Levier de la machine. Tu pousses les hanches vers l’avant pour te redresser, dos calé.",
+      "variations": ["soulevé de terre machine"]
+  },
+  "rack pull": {
+      "name": "Rack pull",
+      "category": "Dorsaux",
+      "primaryMuscles": ["Dorsaux"],
+      "secondaryMuscles": ["Trapèzes","Fessiers"],
+      "equipment": "Barre + Supports",
+      "difficulty": 3,
+      "isNew": true,
+      "description": "Barre sur des supports, au-dessus des genoux. Tu tires jusqu’à être debout, sans arrondir le dos.",
+      "variations": ["rack pull"]
+  },
+  "soulevé latéral un bras": {
+      "name": "Soulevé latéral un bras",
+      "category": "Fessiers",
+      "primaryMuscles": ["Fessiers"],
+      "secondaryMuscles": ["Obliques","Dorsaux"],
+      "equipment": "Barre",
+      "difficulty": 3,
+      "isNew": true,
+      "description": "Barre sur le côté, une main. Tu te penches latéralement puis tu reviens debout sans tourner le buste.",
+      "variations": ["soulevé latéral un bras"]
+  },
+  "soulevé de terre unilatéral barre": {
+      "name": "Soulevé de terre unilatéral barre",
+      "category": "Ischio-jambiers",
+      "primaryMuscles": ["Ischio-jambiers","Fessiers"],
+      "secondaryMuscles": ["Dorsaux"],
+      "equipment": "Barre",
+      "difficulty": 3,
+      "isNew": true,
+      "description": "Une jambe porte, l’autre recule. La barre descend le long de la cuisse, le dos reste neutre, puis tu reviens debout.",
+      "variations": ["soulevé de terre unilatéral barre"]
+  },
+  "soulevé de terre unilatéral haltères": {
+      "name": "Soulevé de terre unilatéral haltères",
+      "category": "Ischio-jambiers",
+      "primaryMuscles": ["Ischio-jambiers","Fessiers"],
+      "secondaryMuscles": ["Dorsaux"],
+      "equipment": "Haltères",
+      "difficulty": 3,
+      "isNew": true,
+      "description": "Même charnière sur une jambe, haltères devant la cuisse. Le genou d’appui est légèrement fléchi.",
+      "variations": ["soulevé de terre unilatéral haltères"]
+  },
+  "soulevé de terre jambes tendues élastique": {
+      "name": "Soulevé de terre jambes tendues élastique",
+      "category": "Ischio-jambiers",
+      "primaryMuscles": ["Ischio-jambiers"],
+      "secondaryMuscles": ["Fessiers","Dorsaux"],
+      "equipment": "Élastique",
+      "difficulty": 2,
+      "isNew": true,
+      "description": "Bande sous les pieds. Jambes presque tendues, tu charnières jusqu’à sentir les ischios, puis tu remontes.",
+      "variations": ["soulevé de terre jambes tendues élastique"]
+  },
+  "good morning assis": {
+      "name": "Good morning assis",
+      "category": "Ischio-jambiers",
+      "primaryMuscles": ["Ischio-jambiers"],
+      "secondaryMuscles": ["Dorsaux","Fessiers"],
+      "equipment": "Barre + Banc",
+      "difficulty": 3,
+      "isNew": true,
+      "description": "Assis, barre sur le dos. Tu penches le buste vers l’avant sans arrondir, puis tu reviens.",
+      "variations": ["good morning assis"]
+  },
+  "good morning assis machine": {
+      "name": "Good morning assis machine",
+      "category": "Ischio-jambiers",
+      "primaryMuscles": ["Ischio-jambiers"],
+      "secondaryMuscles": ["Dorsaux"],
+      "equipment": "Machine",
+      "difficulty": 2,
+      "isNew": true,
+      "description": "Assis dans la machine, le buste pousse le levier vers l’avant puis revient. Le bassin reste calé.",
+      "variations": ["good morning assis machine"]
+  },
+  "good morning smith": {
+      "name": "Good morning Smith",
+      "category": "Ischio-jambiers",
+      "primaryMuscles": ["Ischio-jambiers"],
+      "secondaryMuscles": ["Dorsaux","Fessiers"],
+      "equipment": "Smith machine",
+      "difficulty": 3,
+      "isNew": true,
+      "description": "Barre du Smith sur le dos, genoux légèrement fléchis. Tu charnières et tu remontes sans verrouiller le dos.",
+      "variations": ["good morning smith"]
+  },
+  "glute ham raise": {
+      "name": "Glute ham raise",
+      "category": "Ischio-jambiers",
+      "primaryMuscles": ["Ischio-jambiers"],
+      "secondaryMuscles": ["Fessiers","Mollets"],
+      "equipment": "Machine GHR",
+      "difficulty": 4,
+      "isNew": true,
+      "description": "Genoux sur le coussin, pieds calés. Tu descends le buste vers le sol puis tu remontes en tirant avec les ischios.",
+      "variations": ["glute ham raise"]
+  },
+  "leg curl assis": {
+      "name": "Leg curl assis",
+      "category": "Ischio-jambiers",
+      "primaryMuscles": ["Ischio-jambiers"],
+      "secondaryMuscles": [],
+      "equipment": "Machine leg curl assis",
+      "difficulty": 2,
+      "isNew": true,
+      "description": "Assis, coussin sur les chevilles. Tu tires les talons sous le siège, sans décoller le bassin.",
+      "variations": ["leg curl assis"]
+  },
+  "leg curl à genoux": {
+      "name": "Leg curl à genoux",
+      "category": "Ischio-jambiers",
+      "primaryMuscles": ["Ischio-jambiers"],
+      "secondaryMuscles": [],
+      "equipment": "Machine",
+      "difficulty": 2,
+      "isNew": true,
+      "description": "À genoux dans la machine, tu fléchis le genou contre le levier. La cuisse reste fixe.",
+      "variations": ["leg curl à genoux"]
+  },
+  "leg curl haltère": {
+      "name": "Leg curl haltère",
+      "category": "Ischio-jambiers",
+      "primaryMuscles": ["Ischio-jambiers"],
+      "secondaryMuscles": [],
+      "equipment": "Haltère + Banc",
+      "difficulty": 2,
+      "isNew": true,
+      "description": "À plat ventre sur un banc, haltère entre les pieds. Tu plies les genoux pour monter la charge, hanches collées au banc.",
+      "variations": ["leg curl haltère"]
+  },
+  "leg curl debout": {
+      "name": "Leg curl debout",
+      "category": "Ischio-jambiers",
+      "primaryMuscles": ["Ischio-jambiers"],
+      "secondaryMuscles": [],
+      "equipment": "Machine",
+      "difficulty": 2,
+      "isNew": true,
+      "description": "Debout sur une jambe, l’autre talon monte vers la fesse. Le genou pointe vers le sol, le bassin ne bascule pas.",
+      "variations": ["leg curl debout"]
+  },
+  "leg curl glissière": {
+      "name": "Leg curl glissière",
+      "category": "Ischio-jambiers",
+      "primaryMuscles": ["Ischio-jambiers"],
+      "secondaryMuscles": ["Fessiers"],
+      "equipment": "Glisseurs",
+      "difficulty": 2,
+      "isNew": true,
+      "description": "Allongé, un talon sur un glisseur. Tu glisses le talon vers les fessiers en gardant le bassin haut, puis tu repars.",
+      "variations": ["leg curl glissière"]
+  },
+  "leg curl swiss ball": {
+      "name": "Leg curl swiss ball",
+      "category": "Ischio-jambiers",
+      "primaryMuscles": ["Ischio-jambiers"],
+      "secondaryMuscles": ["Fessiers"],
+      "equipment": "Swiss ball",
+      "difficulty": 3,
+      "isNew": true,
+      "description": "Épaules au sol, talons sur le ballon. Tu ramènes le ballon vers les fessiers en gardant le bassin haut.",
+      "variations": ["leg curl swiss ball"]
+  },
+  "pull-over barre": {
+      "name": "Pull-over barre",
+      "category": "Dorsaux",
+      "primaryMuscles": ["Dorsaux"],
+      "secondaryMuscles": ["Grand pectoral","Triceps"],
+      "equipment": "Barre + Banc",
+      "difficulty": 2,
+      "isNew": true,
+      "description": "Allongé sur le banc, barre au-dessus de la poitrine, bras presque tendus. Tu amènes la barre derrière la tête puis tu reviens.",
+      "variations": ["pull-over barre"]
+  },
+  "pull-over machine": {
+      "name": "Pull-over machine",
+      "category": "Dorsaux",
+      "primaryMuscles": ["Dorsaux"],
+      "secondaryMuscles": ["Grand pectoral"],
+      "equipment": "Machine",
+      "difficulty": 2,
+      "isNew": true,
+      "description": "Assis, coudes ou mains sur le levier. Tu tires le levier de derrière la tête vers le bassin, sans décoller le dos.",
+      "variations": ["pull-over machine"]
+  },
+  "tirage vertical supination": {
+      "name": "Tirage vertical supination",
+      "category": "Dorsaux",
+      "primaryMuscles": ["Dorsaux"],
+      "secondaryMuscles": ["Biceps"],
+      "equipment": "Poulie haute",
+      "difficulty": 2,
+      "isNew": true,
+      "description": "Prise supination, barre ramenée vers le haut de la poitrine. Tu tires les coudes vers le bas sans te pencher en arrière.",
+      "variations": ["tirage vertical supination"]
+  },
+  "tirage vertical élastique": {
+      "name": "Tirage vertical élastique",
+      "category": "Dorsaux",
+      "primaryMuscles": ["Dorsaux"],
+      "secondaryMuscles": ["Biceps"],
+      "equipment": "Élastique",
+      "difficulty": 1,
+      "isNew": true,
+      "description": "Bande fixée en haut. Tu tires les mains vers la poitrine, coudes le long du corps.",
+      "variations": ["tirage vertical élastique"]
+  },
+  "tirage unilatéral poulie haute": {
+      "name": "Tirage unilatéral poulie haute",
+      "category": "Dorsaux",
+      "primaryMuscles": ["Dorsaux"],
+      "secondaryMuscles": ["Biceps"],
+      "equipment": "Poulie haute",
+      "difficulty": 2,
+      "isNew": true,
+      "description": "Une main sur la poignée. Tu tires le coude vers la hanche, l’autre côté reste stable.",
+      "variations": ["tirage unilatéral poulie haute"]
+  },
+  "tirage unilatéral machine": {
+      "name": "Tirage unilatéral machine",
+      "category": "Dorsaux",
+      "primaryMuscles": ["Dorsaux"],
+      "secondaryMuscles": ["Biceps"],
+      "equipment": "Machine",
+      "difficulty": 2,
+      "isNew": true,
+      "description": "Un bras sur le levier, prise large. Tu tires vers le bas sans tourner le buste.",
+      "variations": ["tirage unilatéral machine"]
+  },
+  "tirage vertical machine": {
+      "name": "Tirage vertical machine",
+      "category": "Dorsaux",
+      "primaryMuscles": ["Dorsaux"],
+      "secondaryMuscles": ["Biceps"],
+      "equipment": "Machine",
+      "difficulty": 2,
+      "isNew": true,
+      "description": "Assis à la machine, tu tires le levier vers le haut de la poitrine. Les épaules descendent, le buste reste droit.",
+      "variations": ["tirage vertical machine"]
+  },
+  "tirage vertical nuque": {
+      "name": "Tirage vertical nuque",
+      "category": "Dorsaux",
+      "primaryMuscles": ["Dorsaux"],
+      "secondaryMuscles": ["Biceps"],
+      "equipment": "Poulie haute",
+      "difficulty": 3,
+      "isNew": true,
+      "description": "Prise large, la barre passe derrière la tête vers la nuque. Amplitude courte, le cou ne pousse pas la barre.",
+      "variations": ["tirage vertical nuque"]
+  },
+  "tractions nuque": {
+      "name": "Tractions nuque",
+      "category": "Dorsaux",
+      "primaryMuscles": ["Dorsaux"],
+      "secondaryMuscles": ["Biceps"],
+      "equipment": "Barre de traction",
+      "difficulty": 3,
+      "isNew": true,
+      "description": "Prise large, tu tires jusqu’à ce que la nuque approche la barre. Le menton ne va pas devant.",
+      "variations": ["tractions nuque"]
+  },
+  "tractions prise neutre": {
+      "name": "Tractions prise neutre",
+      "category": "Dorsaux",
+      "primaryMuscles": ["Dorsaux"],
+      "secondaryMuscles": ["Biceps"],
+      "equipment": "Barre de traction",
+      "difficulty": 3,
+      "isNew": true,
+      "description": "Paumes face à face. Tu tires jusqu’à ce que le menton dépasse les poignées, sans balancer.",
+      "variations": ["tractions prise neutre"]
+  },
+  "tractions prise mixte": {
+      "name": "Tractions prise mixte",
+      "category": "Dorsaux",
+      "primaryMuscles": ["Dorsaux"],
+      "secondaryMuscles": ["Biceps"],
+      "equipment": "Barre de traction",
+      "difficulty": 3,
+      "isNew": true,
+      "description": "Une main en pronation, l’autre en supination. Tu tires le menton au-dessus de la barre, puis tu changes de côté.",
+      "variations": ["tractions prise mixte"]
+  },
+  "tractions sternum": {
+      "name": "Tractions sternum",
+      "category": "Dorsaux",
+      "primaryMuscles": ["Dorsaux"],
+      "secondaryMuscles": ["Biceps"],
+      "equipment": "Barre de traction",
+      "difficulty": 4,
+      "isNew": true,
+      "description": "Prise supination. Tu te penches en arrière et tu tires jusqu’à amener le sternum vers la barre.",
+      "variations": ["tractions sternum"]
+  },
+  "tractions assistées": {
+      "name": "Tractions assistées",
+      "category": "Dorsaux",
+      "primaryMuscles": ["Dorsaux"],
+      "secondaryMuscles": ["Biceps"],
+      "equipment": "Machine / Élastique / Banc",
+      "difficulty": 2,
+      "isNew": true,
+      "description": "La machine, la bande ou un pied sur un banc enlève une partie du poids. Tu tires quand même les coudes vers le bas, sans te laisser porter.",
+      "variations": ["tractions assistées"]
+  },
+  "muscle-up aux anneaux": {
+      "name": "Muscle-up aux anneaux",
+      "category": "Dorsaux",
+      "primaryMuscles": ["Dorsaux"],
+      "secondaryMuscles": ["Pectoraux","Triceps"],
+      "equipment": "Anneaux",
+      "difficulty": 4,
+      "isNew": true,
+      "description": "Suspendu aux anneaux. Tu tires puis tu passes les épaules au-dessus des mains pour finir bras tendus.",
+      "variations": ["muscle-up aux anneaux"]
+  },
+  "rowing poulie haute": {
+      "name": "Rowing poulie haute",
+      "category": "Dorsaux",
+      "primaryMuscles": ["Dorsaux"],
+      "secondaryMuscles": ["Biceps","Deltoïdes postérieurs"],
+      "equipment": "Poulie haute",
+      "difficulty": 2,
+      "isNew": true,
+      "description": "Assis, poignée en V au-dessus de la tête. Tu tires les coudes vers les hanches, buste presque droit.",
+      "variations": ["rowing poulie haute"]
+  },
+  "tirage rotatif poulie": {
+      "name": "Tirage rotatif poulie",
+      "category": "Dorsaux",
+      "primaryMuscles": ["Dorsaux"],
+      "secondaryMuscles": ["Obliques"],
+      "equipment": "Poulie",
+      "difficulty": 2,
+      "isNew": true,
+      "description": "En fente, tu tires la poignée vers la hanche en tournant le buste. Le bras se plie, le bassin ne s’effondre pas.",
+      "variations": ["tirage rotatif poulie"]
+  },
+  "rowing kayak poulie": {
+      "name": "Rowing kayak poulie",
+      "category": "Dorsaux",
+      "primaryMuscles": ["Dorsaux"],
+      "secondaryMuscles": ["Obliques","Biceps"],
+      "equipment": "Poulie",
+      "difficulty": 2,
+      "isNew": true,
+      "description": "Deux poignées, tu tires en alternant comme une pagaie. Le buste tourne un peu, les épaules restent basses.",
+      "variations": ["rowing kayak poulie"]
   }
+,
+  "pompes au mur": {
+      "name": "Pompes au mur",
+      "category": "Pectoraux",
+      "primaryMuscles": ["Pectoraux"],
+      "secondaryMuscles": ["Triceps","Deltoïdes antérieurs"],
+      "equipment": "Mur",
+      "difficulty": 1,
+      "isNew": true,
+      "description": "Debout face au mur, mains à hauteur d’épaules, un peu plus larges que le buste, corps aligné des talons à la tête. Tu plies les coudes et tu rapproches la poitrine du mur sans laisser les hanches partir en arrière, puis tu pousses jusqu’à tendre les bras. Inspire en t’approchant du mur, expire en poussant. L’erreur fréquente est de hausser les épaules vers les oreilles. 3 séries de 12 à 20, repos 45 s. Pour durcir, recule les pieds.",
+      "variations": ["pompes au mur"]
+  },
+  "pompes shoulder tap": {
+      "name": "Pompes shoulder tap",
+      "category": "Pectoraux",
+      "primaryMuscles": ["Pectoraux"],
+      "secondaryMuscles": ["Triceps","Deltoïdes","Obliques"],
+      "equipment": "Poids du corps",
+      "difficulty": 2,
+      "isNew": true,
+      "description": "Position de pompe, mains sous les épaules. En haut, une main quitte le sol et touche l’épaule opposée, le bassin ne tourne pas, puis tu changes de main. Inspire en bas de la pompe, expire en touchant l’épaule. L’erreur est d’ouvrir les hanches pour garder l’équilibre. 3 séries de 8 touches de chaque côté, repos 60 s. Écarte un peu les pieds si le bassin bouge.",
+      "variations": ["pompes shoulder tap"]
+  },
+  "pompes horloge": {
+      "name": "Pompes horloge",
+      "category": "Pectoraux",
+      "primaryMuscles": ["Pectoraux"],
+      "secondaryMuscles": ["Triceps","Deltoïdes","Obliques"],
+      "equipment": "Poids du corps",
+      "difficulty": 2,
+      "isNew": true,
+      "description": "En pompe, une main marche sur le côté, le corps suit, puis l’autre main rejoint, comme les chiffres d’une horloge autour d’un point. Tu fais une pompe à chaque poste, ou tu marches seulement en haut si la pompe à chaque pas est trop dure. Expire en poussant, inspire en déplaçant la main. Le bassin ne doit pas s’effondrer du côté de la main qui bouge. 3 tours lents, repos 75 s.",
+      "variations": ["pompes horloge"]
+  },
+  "pompes superman": {
+      "name": "Pompes superman",
+      "category": "Pectoraux",
+      "primaryMuscles": ["Pectoraux"],
+      "secondaryMuscles": ["Triceps","Deltoïdes antérieurs"],
+      "equipment": "Poids du corps",
+      "difficulty": 3,
+      "isNew": true,
+      "description": "Pompe explosive : tu pousses assez fort pour décoller les mains et les pieds, bras tendus devant, puis tu réceptionnes les mains avant la poitrine, coudes souples. Expire au décollage. Tu ne laisses pas le ventre tomber à l’arrivée. 5 séries de 3 à 6, repos 90 s. Sol dégagé, pas de montre ni de sol glissant.",
+      "variations": ["pompes superman"]
+  },
+  "pompes suspendues": {
+      "name": "Pompes suspendues",
+      "category": "Pectoraux",
+      "primaryMuscles": ["Pectoraux"],
+      "secondaryMuscles": ["Triceps","Deltoïdes","Dentelé"],
+      "equipment": "Sangles de suspension",
+      "difficulty": 3,
+      "isNew": true,
+      "description": "Mains dans les sangles, corps gainé, pieds au sol. Tu descends en laissant les mains partir un peu vers l’extérieur, coudes à environ 45°, puis tu pousses en ramenant les sangles stables. Expire en poussant. Les sangles qui tournent et le bassin qui tombe sont les deux erreurs. 3 séries de 8 à 12, repos 75 s. Plus le corps est horizontal, plus c’est dur.",
+      "variations": ["pompes suspendues"]
+  },
+  "pompes surface instable": {
+      "name": "Pompes sur surface instable",
+      "category": "Pectoraux",
+      "primaryMuscles": ["Pectoraux"],
+      "secondaryMuscles": ["Triceps","Deltoïdes","Dentelé"],
+      "equipment": "Bosu / Swiss ball / Médecine ball",
+      "difficulty": 2,
+      "isNew": true,
+      "description": "Mains sur le Bosu (face plate ou dôme), le médecine ball ou le swiss ball, pieds au sol, corps aligné. Tu descends jusqu’à ce que la poitrine approche les mains, sans que le support parte sur le côté, puis tu pousses. Expire en haut. Ne verrouille pas les coudes en claquant. 3 séries de 8 à 12, repos 60 s.",
+      "variations": ["pompes surface instable"]
+  },
+  "pompes horizontales": {
+      "name": "Pompes horizontales",
+      "category": "Pectoraux",
+      "primaryMuscles": ["Pectoraux"],
+      "secondaryMuscles": ["Deltoïdes antérieurs","Triceps","Dentelé"],
+      "equipment": "Poids du corps",
+      "difficulty": 4,
+      "isNew": true,
+      "description": "Mains au sol vers le bassin, doigts vers l’avant ou légèrement dehors, pieds décollés, corps parallèle au sol de la tête aux talons. Tu plies les coudes le long du corps sur une courte amplitude, puis tu pousses sans laisser les pieds redescendre ni le bassin monter. Expire en poussant, petites respirations. L’erreur est de cambrer ou de plier les hanches. 5 séries de 1 à 5, repos 2 à 3 min.",
+      "variations": ["pompes horizontales"]
+  },
+  "tenue pectoraux bras écartés": {
+      "name": "Tenue pectoraux bras écartés",
+      "category": "Pectoraux",
+      "primaryMuscles": ["Pectoraux"],
+      "secondaryMuscles": ["Deltoïdes antérieurs"],
+      "equipment": "Poids du corps",
+      "difficulty": 2,
+      "isNew": true,
+      "description": "Allongé comme en bas de pompe, mains plus larges que les épaules, coudes ouverts, poitrine proche du sol, corps gainé. Tu tiens sans poser le buste et sans remonter les fesses. Respire par petites bouffées, sans bloquer. Les épaules ne doivent pas partir vers les oreilles. 3 fois 15 à 30 s, repos 45 s.",
+      "variations": ["tenue pectoraux bras écartés"]
+  },
+  "écarté au sol barre": {
+      "name": "Écarté au sol à la barre",
+      "category": "Pectoraux",
+      "primaryMuscles": ["Pectoraux"],
+      "secondaryMuscles": ["Deltoïdes antérieurs"],
+      "equipment": "Barre",
+      "difficulty": 2,
+      "isNew": true,
+      "description": "En appui, mains sur une barre chargée posée au sol, barre perpendiculaire au corps ou saisie de façon à pouvoir rouler. Tu laisses la barre rouler vers l’avant pour ouvrir les bras, poitrine qui descend, puis tu la ramènes en serrant les pectoraux. Expire en ramenant. Ne laisse pas le bas du dos s’arrondir. 3 séries de 8 à 12, repos 60 s. Charges légères : la barre roule.",
+      "variations": ["écarté au sol barre"]
+  },
+  "dips assistés": {
+      "name": "Dips assistés",
+      "category": "Pectoraux",
+      "primaryMuscles": ["Pectoraux"],
+      "secondaryMuscles": ["Triceps","Deltoïdes antérieurs"],
+      "equipment": "Machine à dips / Genoux sur support",
+      "difficulty": 2,
+      "isNew": true,
+      "description": "Genoux sur le coussin de la machine, mains sur les poignées, buste légèrement penché pour viser les pectoraux. Tu descends jusqu’à ce que les bras passent sous l’horizontale, sans hausser les épaules, puis tu pousses sans verrouiller en claquant. Inspire en descendant, expire en poussant. 3 séries de 8 à 12, repos 75 s. Moins d’assistance au fil des semaines.",
+      "variations": ["dips assistés"]
+  },
+  "développé guillotine": {
+      "name": "Développé guillotine",
+      "category": "Pectoraux",
+      "primaryMuscles": ["Pectoraux"],
+      "secondaryMuscles": ["Deltoïdes antérieurs","Triceps"],
+      "equipment": "Barre + Banc",
+      "difficulty": 3,
+      "isNew": true,
+      "description": "Allongé, prise large, coudes très ouverts. La barre descend vers le cou, pas vers le bas des pectoraux, et remonte à la verticale. Inspire en descendant, expire en poussant. Pas de rebond sur la gorge, amplitude contrôlée, charge plus légère qu’au développé couché. 3 séries de 8 à 10, repos 2 min.",
+      "variations": ["développé guillotine"]
+  },
+  "développé couché prise inversée": {
+      "name": "Développé couché prise inversée",
+      "category": "Pectoraux",
+      "primaryMuscles": ["Pectoraux"],
+      "secondaryMuscles": ["Triceps","Deltoïdes antérieurs"],
+      "equipment": "Barre + Banc",
+      "difficulty": 3,
+      "isNew": true,
+      "description": "Allongé, paumes vers le visage, pouces autour de la barre, prise large. La barre descend sur le bas des pectoraux, coudes plus près du corps qu’en prise pronation, puis tu pousses. Inspire en bas, expire en haut. La barre ne doit pas tourner dans les mains : prise fermée. 4 séries de 6 à 10, repos 2 min.",
+      "variations": ["développé couché prise inversée"]
+  },
+  "développé haltères prise inversée": {
+      "name": "Développé haltères prise inversée",
+      "category": "Pectoraux",
+      "primaryMuscles": ["Pectoraux"],
+      "secondaryMuscles": ["Triceps","Biceps"],
+      "equipment": "Haltères + Banc",
+      "difficulty": 2,
+      "isNew": true,
+      "description": "Allongé, paumes vers le visage, haltères au-dessus du bas des pectoraux. Tu descends les coudes le long du corps puis tu pousses sans cogner les haltères. Expire en poussant. Les poignets restent neutres, pas cassés en arrière. 3 séries de 8 à 12, repos 90 s.",
+      "variations": ["développé haltères prise inversée"]
+  },
+  "développé couché poulie": {
+      "name": "Développé couché à la poulie",
+      "category": "Pectoraux",
+      "primaryMuscles": ["Pectoraux"],
+      "secondaryMuscles": ["Triceps","Deltoïdes antérieurs"],
+      "equipment": "Poulie + Banc",
+      "difficulty": 2,
+      "isNew": true,
+      "description": "Banc entre deux poulies basses ou à hauteur du banc, poignées au-dessus de la poitrine. Tu pousses en ramenant les mains l’une vers l’autre en fin de geste, sans verrouiller les coudes. Expire en poussant. Les épaules restent sur le banc. 3 séries de 10 à 15, repos 75 s.",
+      "variations": ["développé couché poulie"]
+  },
+  "développé incliné poulie": {
+      "name": "Développé incliné à la poulie",
+      "category": "Pectoraux",
+      "primaryMuscles": ["Pectoraux"],
+      "secondaryMuscles": ["Deltoïdes antérieurs","Triceps"],
+      "equipment": "Poulie + Banc incliné",
+      "difficulty": 2,
+      "isNew": true,
+      "description": "Banc incliné 30 à 45°, poulies basses, poignées au niveau du haut des pectoraux. Tu pousses vers le haut et légèrement vers l’intérieur. Expire en poussant. Le bas du dos ne se décolle pas pour tricher. 3 séries de 10 à 15, repos 75 s.",
+      "variations": ["développé incliné poulie"]
+  },
+  "développé décliné poulie": {
+      "name": "Développé décliné à la poulie",
+      "category": "Pectoraux",
+      "primaryMuscles": ["Pectoraux"],
+      "secondaryMuscles": ["Triceps","Deltoïdes antérieurs"],
+      "equipment": "Poulie + Banc décliné",
+      "difficulty": 2,
+      "isNew": true,
+      "description": "Banc décliné, poulies hautes, poignées au-dessus du bas des pectoraux. Tu pousses vers les hanches, sans laisser les coudes s’ouvrir à 90°. Expire en poussant. Les pieds restent calés. 3 séries de 10 à 15, repos 75 s.",
+      "variations": ["développé décliné poulie"]
+  },
+  "développé assis poulie": {
+      "name": "Développé assis à la poulie",
+      "category": "Pectoraux",
+      "primaryMuscles": ["Pectoraux"],
+      "secondaryMuscles": ["Triceps","Deltoïdes antérieurs"],
+      "equipment": "Poulie",
+      "difficulty": 2,
+      "isNew": true,
+      "description": "Assis, dossier stable, poignées à hauteur de poitrine, poulies derrière toi. Tu pousses devant sans cambrer, et tu laisses les mains revenir sans que les épaules partent en avant. Expire en poussant. 3 séries de 10 à 15, repos 75 s.",
+      "variations": ["développé assis poulie"]
+  },
+  "développé couché élastique": {
+      "name": "Développé couché élastique",
+      "category": "Pectoraux",
+      "primaryMuscles": ["Pectoraux"],
+      "secondaryMuscles": ["Triceps","Deltoïdes antérieurs"],
+      "equipment": "Élastique + Banc",
+      "difficulty": 1,
+      "isNew": true,
+      "description": "Bande dans le dos ou sous le banc, mains à la poitrine. Tu pousses jusqu’à tendre les bras sans que la bande glisse, coudes à environ 45°. Expire en poussant. Ne laisse pas les poignets casser. 3 séries de 12 à 20, repos 45 s.",
+      "variations": ["développé couché élastique"]
+  },
+  "développé assis élastique": {
+      "name": "Développé assis élastique",
+      "category": "Pectoraux",
+      "primaryMuscles": ["Pectoraux"],
+      "secondaryMuscles": ["Triceps","Deltoïdes antérieurs"],
+      "equipment": "Élastique",
+      "difficulty": 1,
+      "isNew": true,
+      "description": "Assis, bande derrière le dossier ou dans le dos, poignées à la poitrine. Tu pousses devant toi, omoplates qui restent basses, puis tu reviens en 2 secondes. Expire en poussant. 3 séries de 15 à 20, repos 45 s.",
+      "variations": ["développé assis élastique"]
+  },
+  "développé rotatif élastique": {
+      "name": "Développé rotatif élastique",
+      "category": "Pectoraux",
+      "primaryMuscles": ["Pectoraux"],
+      "secondaryMuscles": ["Obliques","Deltoïdes antérieurs"],
+      "equipment": "Élastique",
+      "difficulty": 2,
+      "isNew": true,
+      "description": "Debout ou en fente, bande sous le pied ou derrière, une main à la poitrine. Tu pousses en tournant le buste vers le bras qui travaille, puis tu reviens sans laisser le bassin partir. Expire pendant la rotation. 3 séries de 10 de chaque côté, repos 45 s.",
+      "variations": ["développé rotatif élastique"]
+  },
+  "développé décliné smith": {
+      "name": "Développé décliné Smith",
+      "category": "Pectoraux",
+      "primaryMuscles": ["Pectoraux"],
+      "secondaryMuscles": ["Triceps","Deltoïdes antérieurs"],
+      "equipment": "Smith machine + Banc décliné",
+      "difficulty": 2,
+      "isNew": true,
+      "description": "Banc décliné sous le Smith, barre au-dessus du bas des pectoraux. Tu déverrouilles, tu descends sur le bas du pec, coudes à 45°, puis tu pousses dans le rail. Inspire en descendant, expire en poussant. Les fesses restent sur le banc. 4 séries de 6 à 10, repos 2 min.",
+      "variations": ["développé décliné smith"]
+  },
+  "développé incliné smith": {
+      "name": "Développé incliné Smith",
+      "category": "Pectoraux",
+      "primaryMuscles": ["Pectoraux"],
+      "secondaryMuscles": ["Deltoïdes antérieurs","Triceps"],
+      "equipment": "Smith machine + Banc incliné",
+      "difficulty": 2,
+      "isNew": true,
+      "description": "Banc à 30°, barre du Smith au-dessus du haut des pectoraux. Tu descends vers les clavicules sans poser la barre sur le cou, puis tu pousses dans l’axe du rail. Expire en poussant. Le bas du dos reste collé. 4 séries de 6 à 10, repos 2 min.",
+      "variations": ["développé incliné smith"]
+  },
+  "écarté décliné haltères": {
+      "name": "Écarté décliné haltères",
+      "category": "Pectoraux",
+      "primaryMuscles": ["Pectoraux"],
+      "secondaryMuscles": ["Deltoïdes antérieurs"],
+      "equipment": "Haltères + Banc décliné",
+      "difficulty": 2,
+      "isNew": true,
+      "description": "Banc décliné, haltères au-dessus du bas des pectoraux, coudes légèrement fléchis. Tu ouvres jusqu’à sentir l’étirement, sans passer sous la ligne du banc, puis tu serrres en gardant le même angle de coude. Expire en serrant. Charges légères. 3 séries de 10 à 15, repos 60 s.",
+      "variations": ["écarté décliné haltères"]
+  },
+  "écarté unilatéral poulie": {
+      "name": "Écarté unilatéral à la poulie",
+      "category": "Pectoraux",
+      "primaryMuscles": ["Pectoraux"],
+      "secondaryMuscles": ["Deltoïdes antérieurs"],
+      "equipment": "Poulie",
+      "difficulty": 2,
+      "isNew": true,
+      "description": "Une main sur la poignée, pied opposé devant, buste stable. Le bras s’ouvre sur le côté, coude souple, puis tu ramènes la main devant la poitrine sans tourner le buste. Expire en ramenant. L’épaule ne monte pas. 3 séries de 12 à 15 de chaque côté, repos 45 s.",
+      "variations": ["écarté unilatéral poulie"]
+  },
+  "floor press kettlebell": {
+      "name": "Floor press kettlebell",
+      "category": "Pectoraux",
+      "primaryMuscles": ["Pectoraux"],
+      "secondaryMuscles": ["Triceps","Deltoïdes antérieurs"],
+      "equipment": "Kettlebell",
+      "difficulty": 2,
+      "isNew": true,
+      "description": "Allongé au sol, genoux fléchis, kettlebell tenue au-dessus de l’épaule, poignet droit. Tu plies le coude jusqu’à ce qu’il touche le sol, tu t’arrêtes, puis tu pousses. Expire en poussant. Le coude au sol coupe l’amplitude : c’est voulu, pas un développé incomplet par erreur. 3 séries de 8 à 12 de chaque côté, repos 75 s.",
+      "variations": ["floor press kettlebell"]
+  },
+  "svend press": {
+      "name": "Svend press",
+      "category": "Pectoraux",
+      "primaryMuscles": ["Pectoraux"],
+      "secondaryMuscles": ["Deltoïdes antérieurs"],
+      "equipment": "Disque",
+      "difficulty": 1,
+      "isNew": true,
+      "description": "Debout, un disque serré entre les paumes à hauteur de poitrine, coudes souples. Tu pousses le disque devant toi en continuant de le comprimer, puis tu reviens sans relâcher la pression des mains. Expire en avançant. Disque léger : 5 à 10 kg. 3 séries de 12 à 20, repos 45 s.",
+      "variations": ["svend press"]
+  },
+  "chest press décliné machine": {
+      "name": "Chest press décliné machine",
+      "category": "Pectoraux",
+      "primaryMuscles": ["Pectoraux"],
+      "secondaryMuscles": ["Triceps","Deltoïdes antérieurs"],
+      "equipment": "Machine chest press",
+      "difficulty": 2,
+      "isNew": true,
+      "description": "Assis, dossier réglé pour que les poignées partent du bas des pectoraux. Tu pousses sans décoller le dos, et tu reviens jusqu’à un étirement supportable. Expire en poussant. Ne verrouille pas les coudes. 3 séries de 10 à 15, repos 75 s.",
+      "variations": ["chest press décliné machine"]
+  },
+  "chest press incliné machine": {
+      "name": "Chest press incliné machine",
+      "category": "Pectoraux",
+      "primaryMuscles": ["Pectoraux"],
+      "secondaryMuscles": ["Deltoïdes antérieurs","Triceps"],
+      "equipment": "Machine chest press",
+      "difficulty": 2,
+      "isNew": true,
+      "description": "Dossier incliné, poignées au niveau du haut des pectoraux. Tu pousses dans l’axe de la machine, omoplates basses, sans décoller le bassin. Expire en poussant. 3 séries de 10 à 15, repos 75 s.",
+      "variations": ["chest press incliné machine"]
+  },
+  "chest press debout machine": {
+      "name": "Chest press debout machine",
+      "category": "Pectoraux",
+      "primaryMuscles": ["Pectoraux"],
+      "secondaryMuscles": ["Triceps","Deltoïdes antérieurs"],
+      "equipment": "Machine",
+      "difficulty": 2,
+      "isNew": true,
+      "description": "Debout, dos contre le coussin, poignées à la poitrine. Tu pousses devant toi sans cambrer et sans monter sur les pointes. Expire en poussant. Les pieds restent à plat. 3 séries de 10 à 15, repos 75 s.",
+      "variations": ["chest press debout machine"]
+  },
+  "fentes bulgares barre": {
+      "name": "Fentes bulgares barre",
+      "category": "Quadriceps",
+      "primaryMuscles": ["Quadriceps"],
+      "secondaryMuscles": ["Fessiers"],
+      "equipment": "Barre + Banc",
+      "difficulty": 3,
+      "isNew": true,
+      "description": "Barre sur le haut du dos, cou-de-pied arrière sur le banc, pied avant assez loin pour que le genou avant reste au-dessus de la cheville. Tu descends jusqu’à ce que la cuisse avant approche l’horizontale, buste légèrement penché, puis tu pousses dans le talon avant. Inspire en descendant, expire en remontant. Le genou avant ne rentre pas vers l’intérieur. 4 séries de 6 à 10 de chaque jambe, repos 2 min.",
+      "variations": ["fentes bulgares barre"]
+  },
+  "fentes bulgares smith": {
+      "name": "Fentes bulgares Smith",
+      "category": "Quadriceps",
+      "primaryMuscles": ["Quadriceps"],
+      "secondaryMuscles": ["Fessiers"],
+      "equipment": "Smith machine + Banc",
+      "difficulty": 3,
+      "isNew": true,
+      "description": "Barre du Smith sur le dos, pied arrière sur le banc, pied avant dans l’axe du rail. Tu descends droit, le genou avant suit les orteils, puis tu pousses. Expire en remontant. Le rail t’empêche d’avancer : place le banc pour que le tibia avant reste presque vertical en bas. 3 séries de 8 à 10 de chaque jambe, repos 90 s.",
+      "variations": ["fentes bulgares smith"]
+  },
+  "fentes bulgares élastique": {
+      "name": "Fentes bulgares élastique",
+      "category": "Quadriceps",
+      "primaryMuscles": ["Quadriceps"],
+      "secondaryMuscles": ["Fessiers"],
+      "equipment": "Élastique + Banc",
+      "difficulty": 2,
+      "isNew": true,
+      "description": "Bande sous le pied avant et sur les épaules, ou tenue dans la main opposée, pied arrière sur le banc. Tu descends et tu pousses contre la bande, genou avant stable. Expire en remontant. La bande ne doit pas tirer le genou vers l’intérieur. 3 séries de 10 à 12 de chaque jambe, repos 60 s.",
+      "variations": ["fentes bulgares élastique"]
+  },
+  "fente bulgare suspendue": {
+      "name": "Fente bulgare suspendue",
+      "category": "Quadriceps",
+      "primaryMuscles": ["Quadriceps"],
+      "secondaryMuscles": ["Fessiers"],
+      "equipment": "Sangles de suspension",
+      "difficulty": 3,
+      "isNew": true,
+      "description": "Pied arrière dans la sangle, pied avant au sol, genou arrière fléchi. Tu descends en laissant la sangle rester sous le pied, le genou avant suit les orteils, puis tu pousses dans le talon avant. Expire en remontant. Ne laisse pas le pied arrière pousser la sangle en avant. 3 séries de 8 à 12 de chaque jambe, repos 75 s.",
+      "variations": ["fente bulgare suspendue"]
+  },
+  "leg extension élastique": {
+      "name": "Leg extension élastique",
+      "category": "Quadriceps",
+      "primaryMuscles": ["Quadriceps"],
+      "secondaryMuscles": [],
+      "equipment": "Élastique + Banc",
+      "difficulty": 1,
+      "isNew": true,
+      "description": "Assis au bord du banc, bande autour de la cheville et ancrée derrière le pied, sous le banc. Tu tends le genou jusqu’à aligner la jambe, sans décoller la cuisse du banc, puis tu reviens en 2 secondes. Expire en tendant. Le bassin ne bascule pas en arrière. 3 séries de 12 à 20 de chaque jambe, repos 45 s.",
+      "variations": ["leg extension élastique"]
+  },
+  "squat overhead": {
+      "name": "Squat overhead",
+      "category": "Quadriceps",
+      "primaryMuscles": ["Quadriceps"],
+      "secondaryMuscles": ["Fessiers","Deltoïdes","Lombaires"],
+      "equipment": "Barre",
+      "difficulty": 3,
+      "isNew": true,
+      "description": "Prise large, barre au-dessus de la tête, bras tendus, épaules actives. Tu t’assois entre les hanches en gardant la barre à la verticale des pieds, genoux dans l’axe des orteils, puis tu remontes sans laisser la barre avancer. Inspire en descendant, expire en passant le point dur. Si la barre part devant, la charge est trop lourde ou la prise trop serrée. 5 séries de 3 à 6, repos 2 min.",
+      "variations": ["squat overhead"]
+  },
+  "squat à genoux barre": {
+      "name": "Squat à genoux barre",
+      "category": "Quadriceps",
+      "primaryMuscles": ["Quadriceps"],
+      "secondaryMuscles": ["Fessiers"],
+      "equipment": "Barre + Banc",
+      "difficulty": 2,
+      "isNew": true,
+      "description": "À genoux sur un banc, barre sur le haut du dos, buste droit. Tu t’assois vers les talons en gardant les hanches au-dessus des genoux, puis tu reviens sans cambrer. Expire en remontant. Amplitude courte : les genoux portent le poids, donc charge légère. 3 séries de 8 à 12, repos 75 s.",
+      "variations": ["squat à genoux barre"]
+  },
+  "squat bosu": {
+      "name": "Squat sur Bosu",
+      "category": "Quadriceps",
+      "primaryMuscles": ["Quadriceps"],
+      "secondaryMuscles": ["Fessiers","Mollets"],
+      "equipment": "Bosu",
+      "difficulty": 2,
+      "isNew": true,
+      "description": "Pieds sur le dôme ou sur la face plate, écartés largeur de bassin. Tu t’assois en arrière, genoux dans l’axe des orteils, bras devant pour l’équilibre, puis tu remontes sans verrouiller les genoux. Inspire en descendant, expire en remontant. Ne laisse pas les genoux rentrer quand le Bosu bouge. 3 séries de 10 à 15, repos 60 s.",
+      "variations": ["squat bosu"]
+  }
+,
+  "hyperextension": {
+      "name": "Hyperextension",
+      "category": "Dorsaux",
+      "primaryMuscles": ["Érecteurs du rachis"],
+      "secondaryMuscles": ["Fessiers","Ischio-jambiers"],
+      "equipment": "Banc à 45°",
+      "difficulty": 2,
+      "isNew": true,
+      "description": "Chevilles calées, hanches au bord du coussin, mains aux tempes. Tu plies les hanches jusqu’à ce que le buste descende, dos qui reste long, puis tu remontes jusqu’à aligner épaules, bassin et genoux, sans cambrer au-delà. Inspire en descendant, expire en remontant. Ne tire pas avec la nuque et ne plie pas les genoux pour tricher. 3 séries de 10 à 15, repos 60 s. Un disque contre la poitrine seulement quand 15 répétitions restent propres.",
+      "variations": ["hyperextension"]
+  },
+  "extension lombaire assise": {
+      "name": "Extension lombaire assise",
+      "category": "Dorsaux",
+      "primaryMuscles": ["Érecteurs du rachis"],
+      "secondaryMuscles": ["Fessiers"],
+      "equipment": "Machine",
+      "difficulty": 2,
+      "isNew": true,
+      "description": "Assis, bassin calé, coussin sur le haut du dos. Tu laisses le buste partir vers l’avant sans arrondir en boule, puis tu pousses le coussin jusqu’à te redresser, fesses qui restent sur le siège. Expire en poussant. N’écrase pas la butée en cambrant. 3 séries de 12 à 15, repos 60 s.",
+      "variations": ["extension lombaire assise"]
+  },
+  "shrugs élastique": {
+      "name": "Shrugs élastique",
+      "category": "Épaules",
+      "primaryMuscles": ["Trapèzes"],
+      "secondaryMuscles": ["Élévateur de la scapula"],
+      "equipment": "Élastique",
+      "difficulty": 1,
+      "isNew": true,
+      "description": "Debout sur la bande, poignées dans les mains, bras tendus. Tu hausses les épaules vers les oreilles, tu marques une seconde, puis tu redescends plus bas que le départ. Expire en montant. Ne plie pas les coudes : ce n’est pas un shrug-row. 3 séries de 15 à 20, repos 45 s.",
+      "variations": ["shrugs élastique"]
+  },
+  "shrugs poulie": {
+      "name": "Shrugs à la poulie",
+      "category": "Épaules",
+      "primaryMuscles": ["Trapèzes"],
+      "secondaryMuscles": ["Élévateur de la scapula"],
+      "equipment": "Poulie basse",
+      "difficulty": 2,
+      "isNew": true,
+      "description": "Face à la poulie basse, barre ou poignée devant les cuisses, bras tendus. Tu hausses les épaules droit vers le haut, sans rouler en arrière, puis tu redescends jusqu’à sentir les trapèzes s’allonger. Expire en montant. 3 séries de 12 à 15, repos 60 s.",
+      "variations": ["shrugs poulie"]
+  },
+  "shrugs machine": {
+      "name": "Shrugs machine",
+      "category": "Épaules",
+      "primaryMuscles": ["Trapèzes"],
+      "secondaryMuscles": ["Élévateur de la scapula"],
+      "equipment": "Machine à shrugs",
+      "difficulty": 2,
+      "isNew": true,
+      "description": "Épaules sous les coussins ou mains sur les poignées, bras relâchés. Tu pousses les épaules vers le haut sans plier les coudes, tu tiens une seconde, puis tu redescends. Expire en montant. Le cou reste long. 3 séries de 10 à 15, repos 60 s.",
+      "variations": ["shrugs machine"]
+  },
+  "shrugs smith": {
+      "name": "Shrugs Smith",
+      "category": "Épaules",
+      "primaryMuscles": ["Trapèzes"],
+      "secondaryMuscles": ["Élévateur de la scapula"],
+      "equipment": "Smith machine",
+      "difficulty": 2,
+      "isNew": true,
+      "description": "Barre du Smith dans les mains, bras tendus, pieds sous la barre. Tu hausses les épaules dans l’axe du rail, sans tirer avec les biceps, puis tu redescends. Expire en montant. 3 séries de 10 à 12, repos 75 s.",
+      "variations": ["shrugs smith"]
+  },
+  "dépression scapulaire au banc": {
+      "name": "Dépression scapulaire au banc",
+      "category": "Épaules",
+      "primaryMuscles": ["Trapèzes inférieurs"],
+      "secondaryMuscles": ["Dorsaux"],
+      "equipment": "Banc",
+      "difficulty": 1,
+      "isNew": true,
+      "description": "Assis au bord du banc, mains derrière les hanches, bras tendus. Tu laisses les épaules monter vers les oreilles, puis tu pousses le banc pour les abaisser, coudes qui restent tendus, fesses qui peuvent à peine décoller. Expire en poussant vers le bas. Ne plie pas les coudes : sinon c’est un dips triceps. 3 séries de 10 à 15, repos 45 s.",
+      "variations": ["dépression scapulaire au banc"]
+  },
+  "extension nuque barre": {
+      "name": "Extension nuque barre",
+      "category": "Triceps",
+      "primaryMuscles": ["Triceps"],
+      "secondaryMuscles": ["Deltoïdes"],
+      "equipment": "Barre",
+      "difficulty": 3,
+      "isNew": true,
+      "description": "Debout ou assis, prise serrée, barre au-dessus de la tête, bras près des oreilles. Tu plies les coudes pour amener la barre derrière la tête, bras qui restent verticaux, puis tu tends. Expire en tendant. Les coudes ne s’ouvrent pas sur les côtés. 3 séries de 8 à 12, repos 75 s.",
+      "variations": ["extension nuque barre"]
+  },
+  "extension nuque barre ez": {
+      "name": "Extension nuque barre EZ",
+      "category": "Triceps",
+      "primaryMuscles": ["Triceps"],
+      "secondaryMuscles": ["Deltoïdes"],
+      "equipment": "Barre EZ",
+      "difficulty": 2,
+      "isNew": true,
+      "description": "Barre EZ, prise sur la partie intérieure, barre au-dessus de la tête. Tu plies uniquement les coudes, la barre descend derrière la tête, puis tu tends sans cambrer. Expire en tendant. 3 séries de 8 à 12, repos 75 s.",
+      "variations": ["extension nuque barre ez"]
+  },
+  "extension nuque poulie": {
+      "name": "Extension nuque à la poulie",
+      "category": "Triceps",
+      "primaryMuscles": ["Triceps"],
+      "secondaryMuscles": ["Deltoïdes"],
+      "equipment": "Poulie haute + Corde",
+      "difficulty": 2,
+      "isNew": true,
+      "description": "Dos à la poulie haute, corde derrière la tête, coudes près des tempes. Tu tends les coudes vers le plafond en écartant un peu les bouts de corde, puis tu reviens sans laisser les coudes avancer. Expire en tendant. 3 séries de 10 à 15, repos 60 s.",
+      "variations": ["extension nuque poulie"]
+  },
+  "extension allongée poulie": {
+      "name": "Extension allongée à la poulie",
+      "category": "Triceps",
+      "primaryMuscles": ["Triceps"],
+      "secondaryMuscles": [],
+      "equipment": "Poulie + Banc ou sol",
+      "difficulty": 2,
+      "isNew": true,
+      "description": "Allongé, poulie basse derrière la tête, barre ou corde au-dessus du front, bras presque verticaux. Tu plies les coudes pour amener les mains vers le front, puis tu tends. Expire en tendant. Les épaules restent fixes. 3 séries de 10 à 15, repos 60 s.",
+      "variations": ["extension allongée poulie"]
+  },
+  "extension triceps élastique": {
+      "name": "Extension triceps élastique",
+      "category": "Triceps",
+      "primaryMuscles": ["Triceps"],
+      "secondaryMuscles": [],
+      "equipment": "Élastique",
+      "difficulty": 1,
+      "isNew": true,
+      "description": "Bande sous le pied ou derrière le dos, main au-dessus de la tête ou le long du corps selon l’ancrage. Tu tends le coude sans laisser le bras s’écarter, puis tu reviens en 2 secondes. Expire en tendant. 3 séries de 12 à 20 de chaque bras, repos 45 s.",
+      "variations": ["extension triceps élastique"]
+  },
+  "extension triceps au sol": {
+      "name": "Extension triceps au sol",
+      "category": "Triceps",
+      "primaryMuscles": ["Triceps"],
+      "secondaryMuscles": ["Deltoïdes","Pectoraux"],
+      "equipment": "Poids du corps",
+      "difficulty": 2,
+      "isNew": true,
+      "description": "À genoux, mains au sol sous le front, coudes pliés, corps aligné des genoux à la tête. Tu tends les coudes pour pousser les hanches vers l’arrière et le buste vers le haut, puis tu reviens en pliant uniquement les coudes. Expire en poussant. Les coudes ne s’ouvrent pas. 3 séries de 8 à 12, repos 60 s.",
+      "variations": ["extension triceps au sol"]
+  },
+  "extension triceps machine": {
+      "name": "Extension triceps machine",
+      "category": "Triceps",
+      "primaryMuscles": ["Triceps"],
+      "secondaryMuscles": [],
+      "equipment": "Machine",
+      "difficulty": 2,
+      "isNew": true,
+      "description": "Assis ou debout selon la machine, coudes calés, mains sur la poignée. Tu tends les coudes sans décoller les bras du coussin, puis tu reviens jusqu’à un étirement supportable. Expire en tendant. 3 séries de 12 à 15, repos 60 s.",
+      "variations": ["extension triceps machine"]
+  },
+  "dips machine": {
+      "name": "Dips machine",
+      "category": "Triceps",
+      "primaryMuscles": ["Triceps"],
+      "secondaryMuscles": ["Pectoraux","Deltoïdes antérieurs"],
+      "equipment": "Machine à dips",
+      "difficulty": 2,
+      "isNew": true,
+      "description": "Assis, mains sur les poignées, dos contre le dossier. Tu pousses vers le bas jusqu’à tendre les coudes, sans hausser les épaules, puis tu reviens sans que les coudes passent trop derrière le buste. Expire en poussant. Buste droit pour les triceps, un peu penché si les pectoraux prennent le dessus. 3 séries de 10 à 15, repos 75 s.",
+      "variations": ["dips machine"]
+  },
+  "pin press": {
+      "name": "Pin press",
+      "category": "Triceps",
+      "primaryMuscles": ["Triceps"],
+      "secondaryMuscles": ["Pectoraux","Deltoïdes antérieurs"],
+      "equipment": "Barre + Supports",
+      "difficulty": 3,
+      "isNew": true,
+      "description": "Allongé, barre posée sur les supports à mi-course, là où le développé cale souvent. Tu pousses jusqu’à tendre les bras, tu reposes la barre sur les tiges, tu relâches une seconde, puis tu recommences. Expire en poussant. Pas de rebond sur les supports. 5 séries de 3 à 6, repos 2 min.",
+      "variations": ["pin press"]
+  },
+  "montée avant-bras": {
+      "name": "Montée des avant-bras",
+      "category": "Triceps",
+      "primaryMuscles": ["Triceps"],
+      "secondaryMuscles": ["Deltoïdes","Pectoraux"],
+      "equipment": "Poids du corps",
+      "difficulty": 2,
+      "isNew": true,
+      "description": "En appui sur les avant-bras, corps gainé, coudes sous les épaules. Tu poses une main au sol, tu tends ce coude, puis l’autre, jusqu’à être en pompe, et tu redescends un bras après l’autre. Expire en montant. Le bassin ne tourne pas. 3 séries de 6 à 10 montées, repos 60 s.",
+      "variations": ["montée avant-bras"]
+  },
+  "dips triceps un bras": {
+      "name": "Dips triceps un bras",
+      "category": "Triceps",
+      "primaryMuscles": ["Triceps"],
+      "secondaryMuscles": ["Deltoïdes","Obliques"],
+      "equipment": "Banc",
+      "difficulty": 3,
+      "isNew": true,
+      "description": "Dos au banc, une main sur le bord, l’autre bras tendu devant, jambes tendues ou un pied au sol. Tu plies le coude le long du corps jusqu’à ce que l’épaule descende, puis tu pousses. Expire en poussant. Le buste ne tourne pas autour de la main. 3 séries de 4 à 8 de chaque bras, repos 90 s.",
+      "variations": ["dips triceps un bras"]
+  },
+  "stalder press": {
+      "name": "Presse stalder",
+      "category": "Épaules",
+      "primaryMuscles": ["Deltoïdes"],
+      "secondaryMuscles": ["Triceps","Abdominaux"],
+      "equipment": "Poids du corps",
+      "difficulty": 4,
+      "isNew": true,
+      "description": "En appui sur les mains, hanches fléchies, jambes écartées ou serrées devant le buste. Tu pousses le sol et tu amènes le bassin au-dessus des épaules jusqu’à l’équilibre, bras tendus, sans donner d’élan avec les jambes. Expire pendant la poussée. Les coudes restent proches des oreilles. 5 séries de 1 à 5, repos 2 à 3 min.",
+      "variations": ["stalder press"]
+  },
+  "floor press barre": {
+      "name": "Floor press barre",
+      "category": "Pectoraux",
+      "primaryMuscles": ["Pectoraux"],
+      "secondaryMuscles": ["Triceps","Deltoïdes antérieurs"],
+      "equipment": "Barre",
+      "difficulty": 2,
+      "isNew": true,
+      "description": "Allongé au sol, une main sur la barre, coude qui descend jusqu’à toucher le sol. Tu t’arrêtes, puis tu pousses sans décoller l’épaule. Expire en poussant. Le coude au sol coupe l’amplitude : c’est le but. 3 séries de 6 à 10 de chaque bras, repos 90 s. L’autre main peut stabiliser la barre.",
+      "variations": ["floor press barre"]
+  },
+  "rowing pendlay": {
+      "name": "Rowing Pendlay",
+      "category": "Dorsaux",
+      "primaryMuscles": ["Dorsaux"],
+      "secondaryMuscles": ["Trapèzes","Biceps"],
+      "equipment": "Barre",
+      "difficulty": 3,
+      "isNew": true,
+      "description": "Buste parallèle au sol, barre au sol à chaque répétition, genoux fléchis, dos neutre. Tu tires la barre vers le bas des pectoraux, coudes le long du corps, tu reposes la barre, tu relâches, puis tu retires. Expire en tirant. Le buste ne se redresse pas pour aider. 4 séries de 5 à 8, repos 2 min.",
+      "variations": ["rowing pendlay"]
+  },
+  "rowing smith": {
+      "name": "Rowing Smith",
+      "category": "Dorsaux",
+      "primaryMuscles": ["Dorsaux"],
+      "secondaryMuscles": ["Biceps","Trapèzes"],
+      "equipment": "Smith machine",
+      "difficulty": 2,
+      "isNew": true,
+      "description": "Buste penché, barre du Smith dans les mains, genoux souples. Tu tires vers le nombril dans l’axe du rail, coudes vers l’arrière, puis tu redescends sans arrondir. Expire en tirant. 3 séries de 8 à 12, repos 90 s.",
+      "variations": ["rowing smith"]
+  },
+  "rowing kettlebell": {
+      "name": "Rowing kettlebell",
+      "category": "Dorsaux",
+      "primaryMuscles": ["Dorsaux"],
+      "secondaryMuscles": ["Biceps","Trapèzes"],
+      "equipment": "Kettlebell",
+      "difficulty": 2,
+      "isNew": true,
+      "description": "Un genou et une main sur un banc, ou buste penché debout, kettlebell dans l’autre main. Tu tires le coude vers la hanche jusqu’à ce que le poids approche les côtes, puis tu redescends bras tendu. Expire en tirant. Ne tourne pas le buste. 3 séries de 8 à 12 de chaque côté, repos 75 s.",
+      "variations": ["rowing kettlebell"]
+  },
+  "renegade row": {
+      "name": "Renegade row",
+      "category": "Dorsaux",
+      "primaryMuscles": ["Dorsaux"],
+      "secondaryMuscles": ["Triceps","Obliques"],
+      "equipment": "Kettlebells",
+      "difficulty": 3,
+      "isNew": true,
+      "description": "En pompe, une main sur chaque kettlebell. Tu tires un poids vers la hanche pendant que l’autre bras reste tendu, le bassin ne tourne pas, puis tu changes. Expire en tirant. Pieds écartés si le corps pivote. 3 séries de 6 à 10 de chaque côté, repos 75 s.",
+      "variations": ["renegade row"]
+  },
+  "tirage horizontal élastique": {
+      "name": "Tirage horizontal élastique",
+      "category": "Dorsaux",
+      "primaryMuscles": ["Dorsaux"],
+      "secondaryMuscles": ["Biceps","Trapèzes"],
+      "equipment": "Élastique",
+      "difficulty": 1,
+      "isNew": true,
+      "description": "Assis, jambes tendues, bande autour des pieds, dos droit. Tu tires les mains vers les côtes, coudes le long du corps, omoplates qui se rapprochent, puis tu reviens bras tendus. Expire en tirant. Ne te penche pas en arrière. 3 séries de 12 à 20, repos 45 s.",
+      "variations": ["tirage horizontal élastique"]
+  },
+  "rowing suspendu": {
+      "name": "Rowing suspendu",
+      "category": "Dorsaux",
+      "primaryMuscles": ["Dorsaux"],
+      "secondaryMuscles": ["Biceps"],
+      "equipment": "Sangles de suspension",
+      "difficulty": 2,
+      "isNew": true,
+      "description": "Mains dans les sangles, corps gainé, talons au sol. Tu tires la poitrine vers les mains, coudes le long du corps, puis tu redescends bras tendus. Expire en tirant. Plus le corps est horizontal, plus c’est dur. Le bassin ne tombe pas. 3 séries de 8 à 12, repos 75 s.",
+      "variations": ["rowing suspendu"]
+  },
+  "montée de corde": {
+      "name": "Montée de corde",
+      "category": "Dorsaux",
+      "primaryMuscles": ["Dorsaux"],
+      "secondaryMuscles": ["Biceps","Avant-bras"],
+      "equipment": "Corde",
+      "difficulty": 4,
+      "isNew": true,
+      "description": "Corde entre les jambes ou pieds en clé, une main au-dessus de l’autre. Tu tires, tu bloques avec les pieds, tu remontes les mains, sans te balancer. Expire à chaque tirage. Les épaules restent basses. Descends en contrôle, mains qui ne glissent pas. 5 montées courtes ou 3 montées complètes, repos 2 min.",
+      "variations": ["montée de corde"]
+  },
+  "rowing haut machine": {
+      "name": "Rowing haut machine",
+      "category": "Dorsaux",
+      "primaryMuscles": ["Dorsaux"],
+      "secondaryMuscles": ["Trapèzes","Deltoïdes postérieurs"],
+      "equipment": "Machine",
+      "difficulty": 2,
+      "isNew": true,
+      "description": "Assis, poignées qui partent d’en haut ou devant les épaules. Tu tires vers le bas du sternum, coudes ouverts à environ 45°, omoplates qui descendent, puis tu reviens sans hausser les épaules. Expire en tirant. 3 séries de 10 à 15, repos 75 s.",
+      "variations": ["rowing haut machine"]
+  },
+  "rowing serviette": {
+      "name": "Rowing serviette",
+      "category": "Dorsaux",
+      "primaryMuscles": ["Dorsaux"],
+      "secondaryMuscles": ["Biceps"],
+      "equipment": "Serviette",
+      "difficulty": 2,
+      "isNew": true,
+      "description": "Serviette passée autour d’un point solide à hauteur de taille ou de poitrine, buste penché, bras tendus. Tu tires les mains vers les côtes, coudes en arrière, puis tu reviens. Expire en tirant. Le point d’ancrage ne doit pas céder. 3 séries de 10 à 15, repos 60 s.",
+      "variations": ["rowing serviette"]
+  },
+  "slam médecine ball": {
+      "name": "Slam médecine ball",
+      "category": "Abdominaux",
+      "primaryMuscles": ["Grand droit"],
+      "secondaryMuscles": ["Dorsaux","Épaules"],
+      "equipment": "Médecine ball",
+      "difficulty": 2,
+      "isNew": true,
+      "description": "Debout, balle au-dessus de la tête, bras tendus, pieds écartés. Tu abats la balle au sol devant les pieds en pliant les hanches et les genoux, puis tu la ramasses. Expire en frappant. Le dos ne s’arrondit pas pour aller chercher la balle. 5 séries de 8 à 12, repos 45 s.",
+      "variations": ["slam médecine ball"]
+  },
+  "marche sur tapis": {
+    name: "Marche sur tapis",
+    category: "Activités Complémentaires",
+    primaryMuscles: ["Quadriceps", "Fessiers", "Mollets"],
+    secondaryMuscles: ["Tibial antérieur", "Core"],
+    equipment: "Tapis de course",
+    difficulty: 1,
+    isNew: true,
+    description: "Marche sur tapis, buste droit, bras qui balancent, un pied toujours au sol. Tu règles une pente légère si tu veux plus de fessiers, sans te tenir à la console. Ce n’est pas la marche dehors : le tapis impose le rythme. 10 à 30 minutes, allure où tu peux encore parler.",
+    variations: ["marche tapis", "treadmill walk", "marche sur tapis roulant"]
+  },
+  "course sur tapis": {
+    name: "Course sur tapis",
+    category: "Activités Complémentaires",
+    primaryMuscles: ["Quadriceps", "Fessiers", "Mollets", "Ischio-jambiers"],
+    secondaryMuscles: ["Core"],
+    equipment: "Tapis de course",
+    difficulty: 2,
+    isNew: true,
+    description: "Course sur tapis, pose du pied sous le bassin, pas devant. Tu montes la vitesse par paliers, et tu te tiens à la console seulement pour monter ou descendre. Les courses dehors restent leurs fiches. 8 à 25 minutes selon l’allure, ou 6 à 10 fois 1 minute vite / 1 minute facile.",
+    variations: ["course tapis", "treadmill run", "course sur tapis roulant"]
+  },
+  "élévation frontale au disque": {
+    name: "Élévation frontale au disque",
+    category: "Épaules",
+    primaryMuscles: ["Deltoïdes antérieurs"],
+    secondaryMuscles: ["Trapèzes supérieurs", "Grand pectoral"],
+    equipment: "Disque",
+    difficulty: 1,
+    isNew: true,
+    description: "Debout, disque tenu à deux mains devant les cuisses, bras presque tendus. Tu le montes jusqu’à hauteur d’épaules, tu marques une seconde, puis tu redescends sans le laisser tomber. Les coudes ne se plient pas en curl. L’élévation haltères reste sa fiche. 3 séries de 10 à 15, repos 60 s.",
+    variations: ["plate front raise", "élévation disque", "front raise plate"]
+  },
+  "élévation au disque jusqu'au-dessus de la tête": {
+    name: "Élévation au disque jusqu'au-dessus de la tête",
+    category: "Épaules",
+    primaryMuscles: ["Deltoïdes antérieurs", "Deltoïdes moyens"],
+    secondaryMuscles: ["Trapèzes", "Triceps", "Grand droit"],
+    equipment: "Disque",
+    difficulty: 2,
+    isNew: true,
+    description: "Debout, disque tenu à deux mains contre les cuisses. Tu le montes bras tendus jusqu’au-dessus de la tête, tu le redescends le long du corps sans cambrer. Ce n’est pas l’élévation frontale, qui s’arrête aux épaules. 3 séries de 8 à 12, repos 75 s.",
+    variations: ["plate overhead raise", "élévation disque overhead"]
+  },
+  "kickback fessier à la poulie": {
+    name: "Kickback fessier à la poulie",
+    category: "Fessiers",
+    primaryMuscles: ["Grand fessier"],
+    secondaryMuscles: ["Ischio-jambiers", "Moyen fessier"],
+    equipment: "Poulie basse",
+    difficulty: 1,
+    isNew: true,
+    description: "Chevillère à la poulie basse, buste légèrement penché, mains sur le bâti. Tu pousses le talon vers l’arrière, jambe presque tendue, sans ouvrir la hanche sur le côté et sans cambrer. Le retour est lent. Le kickback machine reste sa fiche. 3 séries de 12 à 15 par jambe, repos 45 s.",
+    variations: ["cable glute kickback", "kickback fessier poulie", "extension hanche poulie cheville"]
+  },
+  "abduction hanche debout poulie": {
+    name: "Abduction de hanche debout à la poulie",
+    category: "Fessiers",
+    primaryMuscles: ["Moyen fessier"],
+    secondaryMuscles: ["Petit fessier", "Tenseur du fascia lata"],
+    equipment: "Poulie basse",
+    difficulty: 1,
+    isNew: true,
+    description: "Debout, une main sur le bâti, chevillère à la poulie basse du côté de la jambe qui travaille. Tu écartes la jambe sur le côté, pied dans l’axe, sans pencher le buste et sans laisser le bassin partir. Retour contrôlé. L’abduction élastique et la jambe tendue sans câble restent leurs fiches. 3 séries de 12 à 15 par jambe, repos 45 s.",
+    variations: ["cable standing hip abduction", "abduction hanche poulie", "abduction debout câble"]
+  },
+  "fentes barre": {
+    name: "Fentes barre",
+    category: "Quadriceps",
+    primaryMuscles: ["Quadriceps"],
+    secondaryMuscles: ["Fessiers", "Ischio-jambiers"],
+    equipment: "Barre",
+    difficulty: 2,
+    isNew: true,
+    description: "Barre calée sur le haut du dos, pieds largeur de hanches. Tu fais un pas en arrière, le genou arrière descend vers le sol sans le poser, le genou avant reste au-dessus de la cheville, puis tu pousses dans le talon avant pour revenir. Le buste reste presque droit, la barre ne roule pas sur la nuque. Ce n’est pas la fente haltères, ni la fente bulgare : aucun banc, les deux pieds reviennent côte à côte. Inspire en descendant, expire en poussant. 3 séries de 8 à 12 de chaque jambe, repos 90 s.",
+    variations: ["fente barre", "barbell lunge", "fente arrière barre", "reverse lunge barre"]
+  }
+
 };
 
 Object.assign(exerciseDatabase, EXERCISE_DATABASE_ENRICHMENT);

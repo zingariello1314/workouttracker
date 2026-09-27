@@ -18,7 +18,7 @@ import BankAddToProgramModal from '../sport/BankAddToProgramModal';
 import ExerciseFilter from '../ExerciseFilter';
 import ProgramCard from '../ProgramCard';
 import Card, { CardHeader, CardTitle, CardContent } from '../ui/Card';
-import { Activity, Target, Dumbbell, Clock, Filter, RefreshCw, Zap, AlertCircle, ArrowLeft, Stethoscope } from 'lucide-react';
+import { Activity, Target, Dumbbell, Clock, Filter, RefreshCw, Zap, AlertCircle, ArrowLeft, Stethoscope, Film } from 'lucide-react';
 import { useTranslation } from '../../utils/translations';
 import { useLanguage } from '../../context/LanguageContext';
 import { useAuth } from '../../context/AuthContext';
@@ -26,17 +26,17 @@ import ExerciseDetailPage from './exercises/ExerciseDetailPage';
 import StretchBankView from './exercises/StretchBankView';
 import PathologyBankView from './exercises/PathologyBankView';
 import MyProgramBankView from './exercises/MyProgramBankView';
+import CircuitsBankView from './exercises/CircuitsBankView';
 import ProgramDetailView from '../ProgramDetailView';
 import { loadTranslationNamespace } from '../../utils/translations/loader';
 import { resolveExerciseIntensityCoeff } from '../../utils/trainingLoadUtils';
 import { isAdminUser } from '../../utils/accessControl';
 import { buildBankExerciseViewFromDatabaseKey } from '../../utils/exerciseBankViewModel';
 import {
-  sortExercisesByFamily,
-  getExerciseFamilyKey,
-  getExerciseFamilyLabel,
+  sortExercisesByMuscleName,
   getExerciseMuscleCategory
 } from '../../utils/bankFamilySort';
+import { exerciseHasGif, exerciseHasVideo } from '../sport/BankLinkedMedia';
 import { AnatomyPreviewCaptureProvider } from '../anatomy/AnatomyPreviewCaptureProvider';
 
 /** Sous-onglets de la vue "Banque" (anciennement "Exercices"). */
@@ -44,7 +44,8 @@ const BANK_SUB_TABS = {
   EXERCISES: 'exercises',  // Banque d'exercices (existant)
   STRETCHES: 'stretches',  // Banque d'étirements (nouveau)
   PATHOLOGY: 'pathology',  // Pathologies & rééducation
-  PROGRAM: 'program'       // Mon programme (exos + étirements du programme actif)
+  PROGRAM: 'program',       // Mon programme (exos + étirements du programme actif)
+  CIRCUITS: 'circuits'     // Routines vidéo, composition à déterminer plus tard
 };
 
 const ExercisesTabBody = () => {
@@ -310,7 +311,8 @@ const ExercisesTabBody = () => {
           equipment: ex.equipment || enriched.equipment || t('exercisesTab.misc.notSpecified'),
           notes: ex.description || enriched.notes || '',
           categoryLabel: ex.category,
-          databaseKey: key
+          databaseKey: key,
+          isNew: Boolean(ex.isNew)
         });
       });
 
@@ -410,40 +412,29 @@ const ExercisesTabBody = () => {
 
   // Filtrer les exercices
   const filteredExercises = useMemo(() => {
-    return sortExercisesByFamily(filterExercises(allExercises, filters));
+    let list = filterExercises(allExercises, filters);
+    if (filters.hasVideo === 'yes') list = list.filter((exercise) => exerciseHasVideo(exercise));
+    if (filters.hasVideo === 'no') list = list.filter((exercise) => !exerciseHasVideo(exercise));
+    if (filters.hasGif === 'yes') list = list.filter((exercise) => exerciseHasGif(exercise));
+    if (filters.hasGif === 'no') list = list.filter((exercise) => !exerciseHasGif(exercise));
+    if (filters.isNew === 'yes') list = list.filter((exercise) => exercise.isNew);
+    return sortExercisesByMuscleName(list);
   }, [allExercises, filters]);
 
   const groupedExerciseBank = useMemo(() => {
     if (dataSource !== 'exercise_bank') return [];
-    const order = ['upper_body', 'lower_body', 'cardio', 'other'];
-    const map = new Map(order.map((k) => [k, []]));
-    filteredExercises.forEach((exercise) => {
-      const key = getExerciseFamilyKey(exercise);
-      if (!map.has(key)) map.set(key, []);
-      map.get(key).push(exercise);
+    const byCategory = new Map();
+    filteredExercises.forEach((row) => {
+      const cat = getExerciseMuscleCategory(row);
+      if (!byCategory.has(cat)) byCategory.set(cat, []);
+      byCategory.get(cat).push(row);
     });
-    return order
-      .map((key) => {
-        const rows = map.get(key) || [];
-        if (rows.length === 0) return null;
-        const byCategory = new Map();
-        rows.forEach((row) => {
-          const cat = getExerciseMuscleCategory(row);
-          if (!byCategory.has(cat)) byCategory.set(cat, []);
-          byCategory.get(cat).push(row);
-        });
-        const categories = Array.from(byCategory.keys()).sort((a, b) => a.localeCompare(b, 'fr'));
-        return {
-          key,
-          label: getExerciseFamilyLabel(rows[0]),
-          categorySummary: categories.join(' · '),
-          groups: categories.map((cat) => ({
-            category: cat,
-            rows: byCategory.get(cat) || []
-          }))
-        };
-      })
-      .filter(Boolean);
+    return Array.from(byCategory.entries())
+      .sort(([a], [b]) => a.localeCompare(b, 'fr'))
+      .map(([category, rows]) => ({
+        category,
+        rows: [...rows].sort((a, b) => String(a?.name || '').localeCompare(String(b?.name || ''), 'fr'))
+      }));
   }, [dataSource, filteredExercises]);
 
   // Fonction pour normaliser la structure des exercices
@@ -691,12 +682,37 @@ const ExercisesTabBody = () => {
               </span>
             )}
           </button>
+          <button
+            type="button"
+            role="tab"
+            aria-selected={bankSubTab === BANK_SUB_TABS.CIRCUITS}
+            onClick={() => setBankSubTab(BANK_SUB_TABS.CIRCUITS)}
+            className={`px-3 py-1.5 rounded-md text-sm font-medium transition border ${
+              bankSubTab === BANK_SUB_TABS.CIRCUITS
+                ? 'bg-teal-600/30 border-teal-400/60 text-white'
+                : 'bg-slate-900/40 border-slate-700 text-slate-300 hover:bg-slate-800/60'
+            }`}
+          >
+            <Film className="inline w-3.5 h-3.5 mr-1.5 -mt-0.5" />
+            Circuits
+          </button>
         </div>
       </CardContent>
     </Card>
   );
 
-  // Si le sous-onglet est Étirements ou Programme, on rend une vue dédiée et on s'arrête là.
+  // Si le sous-onglet est Étirements, Pathologies, Programme ou Circuits, on rend une vue dédiée.
+  if (bankSubTab === BANK_SUB_TABS.CIRCUITS) {
+    return (
+      <div className="relative">
+        <div className="relative z-10 space-y-6 p-6">
+          {subTabsHeader}
+          <CircuitsBankView />
+        </div>
+      </div>
+    );
+  }
+
   if (bankSubTab === BANK_SUB_TABS.PATHOLOGY) {
     return (
       <div className="relative">
@@ -1100,33 +1116,25 @@ const ExercisesTabBody = () => {
             ) : dataSource === 'exercise_bank' ? (
                 <div className="space-y-6">
                   {groupedExerciseBank.map((group) => (
-                    <section key={group.key} className="space-y-3">
+                    <section key={group.category} className="space-y-3">
                       <h3 className="text-sm font-semibold uppercase tracking-wide text-teal-200 border-b border-[#0F4C5C]/50 pb-2">
-                        {group.label} ({group.groups.reduce((n, g) => n + g.rows.length, 0)})
+                        {group.category} ({group.rows.length})
                       </h3>
-                      <p className="text-xs text-teal-400/85 -mt-1">{group.categorySummary}</p>
-                      {group.groups.map((sub) => (
-                        <div key={`${group.key}-${sub.category}`} className="space-y-2">
-                          <h4 className="text-xs font-semibold uppercase tracking-wide text-teal-300/90">
-                            {sub.category}
-                          </h4>
-                          <div className="grid grid-cols-1 items-stretch sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-                            {sub.rows.map((exercise) => (
-                              <SportBankExerciseCard
-                                key={exercise.id}
-                                exercise={exercise}
-                                onOpenDetail={setDetailExercise}
-                                effectiveLoadCoeff={resolveExerciseIntensityCoeff(exercise, intensityCoeffs)}
-                                hasRecordedMax={maxRecordsByExerciseId.has(String(exercise.id))}
-                                maxRecord={maxRecordsByExerciseId.get(String(exercise.id)) || null}
-                                showAddButton={isAuthenticated}
-                                onRequestAddToProgram={isAuthenticated ? (p) => setBankAddPayload(p) : undefined}
-                                workoutData={data}
-                              />
-                            ))}
-                          </div>
-                        </div>
-                      ))}
+                      <div className="grid grid-cols-1 items-stretch sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                        {group.rows.map((exercise) => (
+                          <SportBankExerciseCard
+                            key={exercise.id}
+                            exercise={exercise}
+                            onOpenDetail={setDetailExercise}
+                            effectiveLoadCoeff={resolveExerciseIntensityCoeff(exercise, intensityCoeffs)}
+                            hasRecordedMax={maxRecordsByExerciseId.has(String(exercise.id))}
+                            maxRecord={maxRecordsByExerciseId.get(String(exercise.id)) || null}
+                            showAddButton={isAuthenticated}
+                            onRequestAddToProgram={isAuthenticated ? (p) => setBankAddPayload(p) : undefined}
+                            workoutData={data}
+                          />
+                        ))}
+                      </div>
                     </section>
                   ))}
                 </div>

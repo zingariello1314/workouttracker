@@ -162,6 +162,16 @@ export function getExerciseFamilyLabel(exercise) {
   return 'Autres exercices';
 }
 
+export function sortExercisesByMuscleName(items) {
+  const list = Array.isArray(items) ? [...items] : [];
+  list.sort((a, b) => {
+    const catCmp = getExerciseMuscleCategory(a).localeCompare(getExerciseMuscleCategory(b), 'fr');
+    if (catCmp !== 0) return catCmp;
+    return String(a?.name || '').localeCompare(String(b?.name || ''), 'fr');
+  });
+  return list;
+}
+
 export function sortExercisesByFamily(items) {
   const list = Array.isArray(items) ? [...items] : [];
   list.sort((a, b) => {

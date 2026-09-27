@@ -47,6 +47,7 @@ export function buildBankExerciseViewFromDatabaseKey(key, t = (k, d = '') => d) 
   return {
     ...base,
     databaseKey: key,
+    isNew: Boolean(ex.isNew),
     /** Groupe musculaire français (banque / sous-titres). */
     muscleCategory,
     categoryLabel: muscleCategory,

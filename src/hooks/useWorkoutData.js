@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef, useCallback, startTransition } from 'react';
 import { cleanJustifications } from '../utils/dayJustificationUtils';
 import { DEFAULT_ADDICTION_QUIT_DATA } from '../utils/addictionQuitConstants';
 import { deriveJourneyStartYmd } from '../utils/sport/recapUserAssessment';
@@ -33,6 +33,7 @@ import {
   mergeEnduranceWithoutSilentWipe
 } from '../services/endurance/enduranceWipeGuard';
 import { normalizeExerciseSetLog } from '../utils/exerciseSetLogUtils';
+import { yieldToNextPaint, scheduleTodayCheckIdle } from '../utils/todayCheckMeasure';
 
 const workoutDataLog = logger.module('useWorkoutData');
 
@@ -685,11 +686,11 @@ export const useWorkoutData = (options = {}) => {
     return { ...slice, mapFields };
   };
 
-  const saveSessionDayIncremental = async (newData, effectiveKey, sessionDay) => {
+  const saveSessionDayIncremental = async (newData, effectiveKey, sessionDay, skipCloud = false) => {
     const slice = sanitizeSessionDaySlice(extractDaySliceFromAggregate(newData, sessionDay));
     await persistWorkoutSessionDay(effectiveKey, sessionDay, newData, slice);
 
-    if (!ephemeral && !generateTestData && isWorkoutAggregateCloudSyncEnabled()) {
+    if (!skipCloud && !ephemeral && !generateTestData && isWorkoutAggregateCloudSyncEnabled()) {
       const { accessToken } = readServerTokens();
       const cloudRow = { ...newData, id: effectiveKey, lastSaved: new Date().toISOString() };
       void flushWorkoutAggregateCloudPushNow({ accessToken, storageKey: effectiveKey, row: cloudRow });
@@ -702,6 +703,7 @@ export const useWorkoutData = (options = {}) => {
       forcePersist = false,
       incrementalSession = false,
       sessionDay = null,
+      skipCloud = false,
     } = saveOptions;
     const effectiveKey = storageKeyOverride || storageKey;
 
@@ -716,7 +718,7 @@ export const useWorkoutData = (options = {}) => {
         /^\d{4}-\d{2}-\d{2}$/.test(sessionDay) &&
         !ephemeral
       ) {
-        await saveSessionDayIncremental(newData, effectiveKey, sessionDay);
+        await saveSessionDayIncremental(newData, effectiveKey, sessionDay, skipCloud);
         workoutDataLog.debug(`✅ Séance incrémentale ${sessionDay} (${effectiveKey})`);
         return;
       }
@@ -1259,7 +1261,13 @@ export const useWorkoutData = (options = {}) => {
   };
 
   const updateData = async (newData, options = {}) => {
-    const { strict = false, sessionDay = null, skipReact = false } = options;
+    const {
+      strict = false,
+      sessionDay = null,
+      skipReact = false,
+      skipCloud = false,
+      applyReactAfterPaint = false
+    } = options;
     const resolved = typeof newData === 'function' ? newData(dataRef.current) : newData;
     workoutDataLog.debug('🔄 updateData appelé avec:', resolved);
     let toStore = resolved;
@@ -1291,6 +1299,7 @@ export const useWorkoutData = (options = {}) => {
       const saveOpts = {
         incrementalSession: Boolean(strict && sessionDay),
         sessionDay: sessionDay || null,
+        skipCloud,
       };
       if (strict && sessionDay) {
         await saveToDB(toStore, saveOpts);
@@ -1300,7 +1309,15 @@ export const useWorkoutData = (options = {}) => {
       lastAutoSaveFingerprintRef.current = workoutDataFingerprint(toStore);
       workoutDataLog.debug('✅ Données sauvegardées avec succès');
 
-      if (window.workoutContextCallback) {
+      if (applyReactAfterPaint) {
+        await yieldToNextPaint();
+        startTransition(() => {
+          setData(toStore);
+        });
+        scheduleTodayCheckIdle(() => {
+          window.workoutContextCallback?.();
+        });
+      } else if (window.workoutContextCallback && !skipReact) {
         window.workoutContextCallback();
       }
     } catch (error) {
@@ -1309,7 +1326,6 @@ export const useWorkoutData = (options = {}) => {
     }
   };
 
-  // Effet pour le chargement initial des données
   useEffect(() => {
     if (deferLoad) {
       setIsDataLoading(true);

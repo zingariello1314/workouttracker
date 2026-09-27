@@ -37,6 +37,7 @@ import {
   stretchRatingHasAnswers
 } from '../../../utils/stretchPerceivedRatings';
 import AnatomyBankCardPreview from '../../anatomy/AnatomyBankCardPreview';
+import { BankCardGif, mediaForStretch } from '../../sport/BankLinkedMedia';
 import { sortStretchesByFamily, getStretchFamilyKey, getStretchFamilyLabel } from '../../../utils/bankFamilySort';
 import { scrollBankDetailToTop } from '../../../utils/scrollBankDetailToTop';
 
@@ -185,13 +186,15 @@ const StretchCard = ({ stretch, ratingForCard, onOpen, onRequestAddToProgram }) 
       </div>
 
       <div className="row-start-4 flex h-[300px] w-full min-h-0 shrink-0 overflow-hidden [&>*]:min-h-0">
-        <AnatomyBankCardPreview
-          primaryMuscles={stretch.primaryMuscles}
-          secondaryMuscles={stretch.secondaryMuscles}
-          mode="stretch"
-          layout="gridFill"
-          stretchDatabaseKey={stretch.key}
-        />
+        <BankCardGif media={mediaForStretch(stretch)}>
+          <AnatomyBankCardPreview
+            primaryMuscles={stretch.primaryMuscles}
+            secondaryMuscles={stretch.secondaryMuscles}
+            mode="stretch"
+            layout="gridFill"
+            stretchDatabaseKey={stretch.key}
+          />
+        </BankCardGif>
       </div>
 
       {(stretch.primaryMuscles?.length > 0 || stretch.secondaryMuscles?.length > 0) ? (

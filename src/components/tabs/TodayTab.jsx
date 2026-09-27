@@ -1,7 +1,8 @@
-import React, { useMemo, useState, useEffect, useCallback, useRef } from 'react';
+import React, { useMemo, useState, useEffect, useCallback, useRef, startTransition, memo } from 'react';
 import { Play, Square, CheckCircle, Clock, Target, Flame, Zap, MessageSquare, Save, X, Award, Plus, Trash2, BarChart3, PenLine, Scale, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useWorkout } from '../../context/WorkoutContext';
-import { useSessionDraftVersion } from '../../context/WorkoutContext/sessionDraftStore';
+import { useSessionDraftVersion, useExerciseUiVersion, useSessionCommitDirty, useSessionCommitEpoch, getSessionCommitDirty } from '../../context/WorkoutContext/sessionDraftStore';
+import { startTodayCheckMeasure, scheduleTodayCheckIdle, yieldToNextPaint } from '../../utils/todayCheckMeasure';
 import { useToast } from '../../components/ui/Toast';
 import { workoutProgram } from '../../data/workoutProgram';
 import Card, { CardHeader, CardTitle, CardContent } from '../ui/Card';
@@ -11,7 +12,6 @@ import ChallengeCard from '../ui/ChallengeCard';
 import { typography } from '../../styles/typography';
 import { getAutoWeekVariant, getDateStr as dateToYmd } from '../../utils/dateUtils';
 import { calculateAutoReps, detectExerciseUnit, resolvePrescriptionAutofillValue } from '../../utils/exerciseCalculations';
-import { mergeExerciseDisplayName } from '../../utils/workoutExerciseIdResolve';
 import { useTodayExercises } from '../../hooks/useTodayExercises';
 import AddExceptionalExerciseModal from '../modals/AddExceptionalExerciseModal';
 import { isMockEnduranceSession, collectEnduranceSessionsForCalendarDay } from '../../utils/calendarUtils';
@@ -56,8 +56,7 @@ import ExerciseTimeInput from '../ui/ExerciseTimeInput.jsx';
 import {
   computeOverallSessionStars,
   pickStoredSessionPerceived,
-  sessionPerceivedToPayload,
-  stripSessionPerceivedForKeys
+  sessionPerceivedToPayload
 } from '../../utils/exerciseSessionPerceivedModel';
 import { computeTodaySessionComplexity } from '../../utils/todaySessionScore';
 import {
@@ -74,7 +73,7 @@ import {
   computeVolumeKgForWorkoutKey
 } from '../../utils/exerciseLoadVolume';
 import { collectWorkoutLoadSubsetForDate } from '../../utils/workoutLoadPersistence';
-import { stripExerciseSetLogForKeys, buildSetLogFromPrescription } from '../../utils/exerciseSetLogUtils';
+import { buildSetLogFromPrescription } from '../../utils/exerciseSetLogUtils';
 import {
   evaluateVolumeCompletion,
   getPlannedTotalFromPrescription
@@ -208,8 +207,102 @@ function pickExerciseSessionPleasureStars(currentData, keys, primaryKey) {
   return null;
 }
 
-const TodayTab = () => {
+function TodaySessionTextField({ value, onCommitSilent, ...inputProps }) {
+  const [text, setText] = useState(String(value ?? ''));
+  const focusedRef = useRef(false);
+  useEffect(() => {
+    if (!focusedRef.current) setText(String(value ?? ''));
+  }, [value]);
+  return (
+    <Input
+      {...inputProps}
+      value={text}
+      onFocus={(e) => {
+        focusedRef.current = true;
+        inputProps.onFocus?.(e);
+      }}
+      onChange={(e) => {
+        const next = e.target.value;
+        setText(next);
+        onCommitSilent(next);
+      }}
+      onBlur={(e) => {
+        focusedRef.current = false;
+        inputProps.onBlur?.(e);
+      }}
+    />
+  );
+}
+
+function TodayDraftReader({ children }) {
   useSessionDraftVersion();
+  const { getCurrentData } = useWorkout();
+  return children(getCurrentData() || {});
+}
+
+const IsolatedTodayExerciseCard = memo(function IsolatedTodayExerciseCard({ exerciseId, children }) {
+  useExerciseUiVersion(exerciseId);
+  useSessionCommitEpoch();
+  const { getCurrentData } = useWorkout();
+  return children(getCurrentData() || {});
+});
+
+function TodaySessionCommitBar({
+  kind,
+  onSave,
+  onDiscard,
+  unsavedLabel,
+  saveLabel,
+  savingLabel,
+  discardLabel
+}) {
+  const dirty = useSessionCommitDirty();
+  const [saving, setSaving] = useState(false);
+  const show = kind === 'stretches' ? dirty.stretches : dirty.exercises;
+  if (!show && !saving) return null;
+
+  const handleSaveClick = async () => {
+    if (saving) return;
+    setSaving(true);
+    try {
+      await onSave();
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <div className="mt-6 pt-4 border-t border-[#0F4C5C]/40">
+      <div className="flex items-center justify-between">
+        <div className="text-sm text-amber-300 flex items-center gap-2">
+          <div className="w-2 h-2 bg-amber-400 rounded-full animate-pulse"></div>
+          {unsavedLabel}
+        </div>
+        <div className="flex gap-3">
+          <button
+            type="button"
+            onClick={onDiscard}
+            className="gradient-button-premium gradient-button-premium-md gradient-button-premium-variant rounded-lg flex items-center gap-2"
+          >
+            <X className="w-4 h-4" />
+            {discardLabel}
+          </button>
+          <button
+            type="button"
+            onClick={handleSaveClick}
+            disabled={saving}
+            className="gradient-button-premium gradient-button-premium-md rounded-lg flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            <Save className="w-4 h-4" />
+            {saving ? savingLabel : saveLabel}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+const TodayTab = () => {
   const {
     currentDate,
     setCurrentDate,
@@ -234,6 +327,7 @@ const TodayTab = () => {
     saveStretchChanges,
     discardStretchChanges,
     updateTempExerciseData,
+    patchSessionExerciseDraft,
     updateTempStretchData,
     getCurrentData,
     updateReps,
@@ -546,9 +640,7 @@ const TodayTab = () => {
   );
 
   const [expandedPerceivedIds, setExpandedPerceivedIds] = useState(() => new Set());
-  const [isSavingSessionDraft, setIsSavingSessionDraft] = useState(false);
-  const [optimisticCheckedById, setOptimisticCheckedById] = useState({});
-  const latestCheckIntentRef = useRef({});
+  const savingLockRef = useRef(false);
 
   const collapseAllPerceivedPanels = useCallback(() => {
     setExpandedPerceivedIds(new Set());
@@ -565,47 +657,55 @@ const TodayTab = () => {
   }, []);
 
   const applyExerciseCheck = (exerciseId, date, shouldCheck) => {
+    const measure = startTodayCheckMeasure(shouldCheck ? 'check' : 'uncheck');
+    measure.mark('handler');
     const currentData = getCurrentData();
     const dateStr = getDateStr(date);
     const workout = getTodayWorkout(date, isGymMode);
     const exercise = resolveProgramExerciseFromWorkout(workout, currentData.dailyVariations, dateStr, exerciseId);
     const fallbackKey = `${dateStr}_${exerciseId}`;
-    const finishOptimistic = () => {
-      setOptimisticCheckedById((prev) => {
-        if (!(String(exerciseId) in prev)) return prev;
-        const next = { ...prev };
-        delete next[String(exerciseId)];
-        return next;
+
+    const stripKeysInPlace = (draft, keys) => {
+      keys.forEach((k) => {
+        delete draft.checkedExercises[k];
+        delete draft.reps[k];
+        delete draft.exerciseWeights[k];
+        delete draft.exerciseWeightPerArm[k];
+        delete draft.exerciseSetWeights[k];
+        delete draft.exerciseSetLogs[k];
+        delete draft.exerciseSessionPerceived[k];
+        delete draft.exerciseSessionEffortStars[k];
+        delete draft.exerciseSessionPleasureStars[k];
       });
     };
 
     if (!exercise) {
       const isCurrentlyChecked = !!currentData.checkedExercises?.[fallbackKey];
       if (isCurrentlyChecked === shouldCheck) {
-        finishOptimistic();
         return;
       }
-      const perceivedStrip = !shouldCheck
-        ? stripSessionPerceivedForKeys(currentData, [fallbackKey])
-        : {};
-      const nextChecked = { ...(currentData.checkedExercises || {}) };
-      if (shouldCheck) nextChecked[fallbackKey] = true;
-      else delete nextChecked[fallbackKey];
-      updateTempExerciseData(
-        {
-          ...currentData,
-          checkedExercises: nextChecked,
-          ...perceivedStrip
+      measure.mark('apply:fallback');
+      patchSessionExerciseDraft(
+        (draft) => {
+          if (shouldCheck) {
+            draft.checkedExercises[fallbackKey] = true;
+          } else {
+            stripKeysInPlace(draft, [fallbackKey]);
+          }
         },
-        { urgentXp: !shouldCheck }
+        { exerciseId }
       );
       if (!shouldCheck) {
-        setExpandedPerceivedIds((prev) => {
-          const next = new Set(prev);
-          next.delete(String(exerciseId));
-          return next;
+        startTransition(() => {
+          setExpandedPerceivedIds((prev) => {
+            const next = new Set(prev);
+            next.delete(String(exerciseId));
+            return next;
+          });
         });
       }
+      measure.mark('patched');
+      measure.flush();
       return;
     }
 
@@ -620,164 +720,87 @@ const TodayTab = () => {
     });
     const isCurrentlyChecked = keys.some((k) => currentData.checkedExercises?.[k] === true);
     if (isCurrentlyChecked === shouldCheck) {
-      finishOptimistic();
       return;
     }
-
-    const stripKeys = (checkedObj, repsObj, weightsObj, perArmObj, setWObj) => {
-      const nextChecked = { ...checkedObj };
-      const nextReps = { ...repsObj };
-      const nextWeights = { ...weightsObj };
-      const nextPerArm = { ...(perArmObj || {}) };
-      const nextSetW = { ...(setWObj || {}) };
-      keys.forEach((k) => {
-        delete nextChecked[k];
-        delete nextReps[k];
-        delete nextWeights[k];
-        delete nextPerArm[k];
-        delete nextSetW[k];
-      });
-      return { nextChecked, nextReps, nextWeights, nextPerArm, nextSetW };
-    };
 
     if (!shouldCheck) {
-      const nextChecked = { ...(currentData.checkedExercises || {}) };
-      keys.forEach((k) => {
-        delete nextChecked[k];
+      measure.mark('apply:uncheck');
+      patchSessionExerciseDraft(
+        (draft) => {
+          stripKeysInPlace(draft, keys);
+        },
+        { exerciseId: exercise.id }
+      );
+      startTransition(() => {
+        setExpandedPerceivedIds((prev) => {
+          const next = new Set(prev);
+          next.delete(String(exercise.id));
+          return next;
+        });
       });
-      const nextSnapshot = {
-        ...currentData,
-        checkedExercises: nextChecked,
-        ...stripSessionPerceivedForKeys(currentData, keys)
-      };
-      updateTempExerciseData(nextSnapshot, { urgentXp: true });
-      queueMicrotask(() => syncSportLinkedQuestsWithProgramSnapshot(date, nextSnapshot));
-      setExpandedPerceivedIds((prev) => {
-        const next = new Set(prev);
-        next.delete(String(exercise.id));
-        return next;
-      });
+      measure.mark('patched');
+      measure.flush();
       return;
     }
 
-    if (exercise.series) {
-      const repsVal = plannedRepsForExercise(exercise);
-
-      const { nextChecked, nextReps, nextWeights, nextPerArm, nextSetW } = stripKeys(
-        currentData.checkedExercises,
-        currentData.reps,
-        currentData.exerciseWeights || {},
-        currentData.exerciseWeightPerArm || {},
-        currentData.exerciseSetWeights || {}
-      );
-      nextChecked[primaryKey] = true;
-      nextReps[primaryKey] = repsVal;
-      const prevKeyForWeight = resolveBestRepsStorageKey(currentData, keys);
-      const todayWeight =
-        prevKeyForWeight && extractDateStrFromWorkoutKey(prevKeyForWeight) === dateStr
-          ? String(currentData.exerciseWeights?.[prevKeyForWeight] ?? '').trim()
-          : '';
-      nextWeights[primaryKey] =
-        todayWeight ||
-        findLatestExerciseWeightValue(currentData, lastWeightIdsForExercise(exercise, exerciseId)) ||
-        '';
-      if (prevKeyForWeight && currentData.exerciseWeightPerArm?.[prevKeyForWeight] === true) {
-        nextPerArm[primaryKey] = true;
-      }
-      if (prevKeyForWeight && Array.isArray(currentData.exerciseSetWeights?.[prevKeyForWeight])) {
-        nextSetW[primaryKey] = [...currentData.exerciseSetWeights[prevKeyForWeight]];
-      }
-      const nextSetLogs = { ...(currentData.exerciseSetLogs || {}) };
-      keys.forEach((k) => {
-        delete nextSetLogs[k];
-      });
-      const builtLog = buildSetLogFromPrescription(exercise, {
-        totalReps: repsVal ? parseInt(repsVal, 10) : undefined,
-        workoutData: {
-          ...currentData,
-          exerciseWeights: nextWeights,
-          exerciseWeightPerArm: nextPerArm,
-          exerciseSetWeights: nextSetW
-        },
-        storageKey: primaryKey
-      });
-      if (builtLog?.sets?.length) {
-        nextSetLogs[primaryKey] = builtLog;
-      } else if (prevKeyForWeight && currentData.exerciseSetLogs?.[prevKeyForWeight]) {
-        nextSetLogs[primaryKey] = { ...currentData.exerciseSetLogs[prevKeyForWeight] };
-      }
-      const nextSnapshot = mergeExerciseDisplayName(
-        {
-          ...currentData,
-          checkedExercises: nextChecked,
-          reps: nextReps,
-          exerciseWeights: nextWeights,
-          exerciseWeightPerArm: nextPerArm,
-          exerciseSetWeights: nextSetW,
-          exerciseSetLogs: nextSetLogs
-        },
-        exercise.id,
-        exercise.name
-      );
-      updateTempExerciseData(nextSnapshot);
-      queueMicrotask(() => syncSportLinkedQuestsWithProgramSnapshot(date, nextSnapshot));
-      return;
-    }
-
-    const { nextChecked, nextReps, nextWeights, nextPerArm, nextSetW } = stripKeys(
-      currentData.checkedExercises,
-      currentData.reps,
-      currentData.exerciseWeights || {},
-      currentData.exerciseWeightPerArm || {},
-      currentData.exerciseSetWeights || {}
-    );
-    nextChecked[primaryKey] = true;
-    nextReps[primaryKey] = plannedRepsForExercise(exercise);
-    const prevKey = resolveBestRepsStorageKey(currentData, keys);
+    const prevKeyForWeight = resolveBestRepsStorageKey(currentData, keys);
     const todayWeight =
-      prevKey && extractDateStrFromWorkoutKey(prevKey) === dateStr
-        ? String(currentData.exerciseWeights?.[prevKey] ?? '').trim()
+      prevKeyForWeight && extractDateStrFromWorkoutKey(prevKeyForWeight) === dateStr
+        ? String(currentData.exerciseWeights?.[prevKeyForWeight] ?? '').trim()
         : '';
-    nextWeights[primaryKey] =
-      todayWeight ||
-      findLatestExerciseWeightValue(currentData, lastWeightIdsForExercise(exercise, exerciseId)) ||
-      '';
-    if (prevKey && currentData.exerciseWeightPerArm?.[prevKey] === true) {
-      nextPerArm[primaryKey] = true;
-    }
-    if (prevKey && Array.isArray(currentData.exerciseSetWeights?.[prevKey])) {
-      nextSetW[primaryKey] = [...currentData.exerciseSetWeights[prevKey]];
-    }
-    const nextSetLogs = { ...(currentData.exerciseSetLogs || {}) };
-    keys.forEach((k) => {
-      delete nextSetLogs[k];
-    });
-    if (prevKey && currentData.exerciseSetLogs?.[prevKey]) {
-      nextSetLogs[primaryKey] = { ...currentData.exerciseSetLogs[prevKey] };
-    }
-    const nextSnapshot = mergeExerciseDisplayName(
-      {
-        ...currentData,
-        checkedExercises: nextChecked,
-        reps: nextReps,
-        exerciseWeights: nextWeights,
-        exerciseWeightPerArm: nextPerArm,
-        exerciseSetWeights: nextSetW,
-        exerciseSetLogs: nextSetLogs
+    const repsVal = plannedRepsForExercise(exercise);
+
+    measure.mark('apply:check');
+    patchSessionExerciseDraft(
+      (draft) => {
+        stripKeysInPlace(draft, keys);
+        draft.checkedExercises[primaryKey] = true;
+        draft.reps[primaryKey] = repsVal;
+        if (todayWeight) draft.exerciseWeights[primaryKey] = todayWeight;
+        if (prevKeyForWeight && currentData.exerciseWeightPerArm?.[prevKeyForWeight] === true) {
+          draft.exerciseWeightPerArm[primaryKey] = true;
+        }
+        if (prevKeyForWeight && Array.isArray(currentData.exerciseSetWeights?.[prevKeyForWeight])) {
+          draft.exerciseSetWeights[primaryKey] = [...currentData.exerciseSetWeights[prevKeyForWeight]];
+        }
+        if (exercise.id != null && exercise.name) {
+          draft.exerciseDisplayNames[String(exercise.id)] = String(exercise.name);
+        }
       },
-      exercise.id,
-      exercise.name
+      { exerciseId: exercise.id }
     );
-    updateTempExerciseData(nextSnapshot);
-    queueMicrotask(() => syncSportLinkedQuestsWithProgramSnapshot(date, nextSnapshot));
+    measure.mark('patched');
+
+    scheduleTodayCheckIdle(() => {
+      measure.mark('idle:enrich');
+      patchSessionExerciseDraft(
+        (draft) => {
+          if (!draft.exerciseWeights[primaryKey]) {
+            const latest =
+              findLatestExerciseWeightValue(draft, lastWeightIdsForExercise(exercise, exerciseId)) || '';
+            if (latest) draft.exerciseWeights[primaryKey] = latest;
+          }
+          const builtLog = buildSetLogFromPrescription(exercise, {
+            totalReps: repsVal ? parseInt(repsVal, 10) : undefined,
+            workoutData: draft,
+            storageKey: primaryKey
+          });
+          if (builtLog?.sets?.length) {
+            draft.exerciseSetLogs[primaryKey] = builtLog;
+          } else if (prevKeyForWeight && currentData.exerciseSetLogs?.[prevKeyForWeight]) {
+            draft.exerciseSetLogs[primaryKey] = { ...currentData.exerciseSetLogs[prevKeyForWeight] };
+          }
+        },
+        { exerciseId: exercise.id }
+      );
+    });
+
+    measure.flush();
   };
 
   const handleExerciseCheck = (exerciseId, date, currentlyChecked) => {
-    const optKey = String(exerciseId);
     const currently = typeof currentlyChecked === 'boolean' ? currentlyChecked : false;
     const shouldCheck = !currently;
-    latestCheckIntentRef.current[optKey] = shouldCheck;
-    setOptimisticCheckedById((prev) => ({ ...prev, [optKey]: shouldCheck }));
     applyExerciseCheck(exerciseId, date, shouldCheck);
   };
 
@@ -794,13 +817,15 @@ const TodayTab = () => {
         })
       : `${dateStr}_${exerciseId}`;
 
+    if (String(currentData.reps?.[key] ?? '') === String(reps ?? '')) return;
+
     updateTempExerciseData({
       ...currentData,
       reps: {
         ...currentData.reps,
         [key]: reps
       }
-    });
+    }, { silent: true });
   };
 
   const updateLocalExerciseWeight = (exerciseId, weightStr, date) => {
@@ -816,13 +841,15 @@ const TodayTab = () => {
         })
       : `${dateStr}_${exerciseId}`;
 
+    if (String(currentData.exerciseWeights?.[key] ?? '') === String(weightStr ?? '')) return;
+
     updateTempExerciseData({
       ...currentData,
       exerciseWeights: {
         ...(currentData.exerciseWeights || {}),
         [key]: weightStr
       }
-    });
+    }, { silent: true });
   };
 
   const getExercisePrimaryStorageKey = (exerciseId, date) => {
@@ -867,11 +894,15 @@ const TodayTab = () => {
         currentData.exerciseSetWeights[key].slice()) ||
       Array.from({ length: count }, () => String(currentData.exerciseWeights?.[key] || '').trim());
     while (prevRow.length < count) prevRow.push(String(currentData.exerciseWeights?.[key] || '').trim());
+    const previous = Array.isArray(currentData.exerciseSetWeights?.[key])
+      ? currentData.exerciseSetWeights[key]
+      : null;
+    if (previous && String(previous[setIndex] ?? '') === String(value ?? '')) return;
     prevRow[setIndex] = value;
     updateTempExerciseData({
       ...currentData,
       exerciseSetWeights: { ...(currentData.exerciseSetWeights || {}), [key]: prevRow }
-    });
+    }, { silent: true });
   };
 
   const clearExerciseSetWeightsForExercise = (exerciseId, date) => {
@@ -913,18 +944,19 @@ const TodayTab = () => {
 
   // Sauvegarder les exercices avec vérification d'intégrité
   const handleSaveExercises = async () => {
-    if (isSavingSessionDraft) return;
-    const hadExercisesDraft = hasUnsavedExercises;
-    const hadStretchesDraft = hasUnsavedStretches;
+    if (savingLockRef.current) return;
+    const dirtyAtClick = getSessionCommitDirty();
+    const hadExercisesDraft = dirtyAtClick.exercises;
+    const hadStretchesDraft = dirtyAtClick.stretches;
+    savingLockRef.current = true;
     try {
-      await maybeApplyRestDaySwapBeforeSave();
-    } catch (error) {
-      console.error('Erreur swap repos avant sauvegarde:', error);
-    }
-    setIsSavingSessionDraft(true);
-    try {
+      await yieldToNextPaint();
+      try {
+        await maybeApplyRestDaySwapBeforeSave();
+      } catch (error) {
+        console.error('Erreur swap repos avant sauvegarde:', error);
+      }
       await withSessionSaveTimeout(saveExerciseChanges());
-      setOptimisticCheckedById({});
       collapseAllPerceivedPanels();
       if (hadExercisesDraft && hadStretchesDraft) {
         showSuccess(t('today.messages.sessionSaved'));
@@ -933,6 +965,9 @@ const TodayTab = () => {
       } else if (hadStretchesDraft) {
         showSuccess(t('today.messages.stretchesSaved'));
       }
+      scheduleTodayCheckIdle(() => {
+        syncSportLinkedQuestsWithProgramSnapshot(currentDate, getCurrentData());
+      });
     } catch (error) {
       console.error('Erreur lors de la sauvegarde des exercices:', error);
       if (isSessionSaveTimeoutError(error)) {
@@ -954,22 +989,24 @@ const TodayTab = () => {
         ]
       });
     } finally {
-      setIsSavingSessionDraft(false);
+      savingLockRef.current = false;
     }
   };
 
   // Sauvegarder les étirements avec vérification d'intégrité
   const handleSaveStretches = async () => {
-    if (isSavingSessionDraft) return;
-    const hadExercisesDraft = hasUnsavedExercises;
-    const hadStretchesDraft = hasUnsavedStretches;
+    if (savingLockRef.current) return;
+    const dirtyAtClick = getSessionCommitDirty();
+    const hadExercisesDraft = dirtyAtClick.exercises;
+    const hadStretchesDraft = dirtyAtClick.stretches;
+    savingLockRef.current = true;
     try {
-      await maybeApplyRestDaySwapBeforeSave();
-    } catch (error) {
-      console.error('Erreur swap repos avant sauvegarde:', error);
-    }
-    setIsSavingSessionDraft(true);
-    try {
+      await yieldToNextPaint();
+      try {
+        await maybeApplyRestDaySwapBeforeSave();
+      } catch (error) {
+        console.error('Erreur swap repos avant sauvegarde:', error);
+      }
       await withSessionSaveTimeout(saveStretchChanges());
       collapseAllPerceivedPanels();
       if (hadExercisesDraft && hadStretchesDraft) {
@@ -979,6 +1016,9 @@ const TodayTab = () => {
       } else if (hadExercisesDraft) {
         showSuccess(t('today.messages.exercisesSaved'));
       }
+      scheduleTodayCheckIdle(() => {
+        syncSportLinkedQuestsWithProgramSnapshot(currentDate, getCurrentData());
+      });
     } catch (error) {
       console.error('Erreur lors de la sauvegarde des étirements:', error);
       if (isSessionSaveTimeoutError(error)) {
@@ -1000,13 +1040,12 @@ const TodayTab = () => {
         ]
       });
     } finally {
-      setIsSavingSessionDraft(false);
+      savingLockRef.current = false;
     }
   };
 
   const handleDiscardExercises = () => {
     discardExerciseChanges();
-    setOptimisticCheckedById({});
     collapseAllPerceivedPanels();
   };
 
@@ -1123,14 +1162,15 @@ const TodayTab = () => {
   );
 
   const confirmLeaveDayWithUnsavedDraft = useCallback(() => {
-    if (!hasUnsavedExercises && !hasUnsavedStretches) return true;
+    const dirty = getSessionCommitDirty();
+    if (!dirty.exercises && !dirty.stretches) return true;
     return window.confirm(
       t(
         'today.dateNav.leaveWithoutSave',
         'Des modifications ne sont pas enregistrées. Changer de jour quand même ? (Utilise « Enregistrer » pour garder la séance du jour affiché.)'
       )
     );
-  }, [hasUnsavedExercises, hasUnsavedStretches, t]);
+  }, [t]);
 
   const shiftSportCalendarDay = useCallback(
     (delta) => {
@@ -1144,6 +1184,7 @@ const TodayTab = () => {
       if (nextDateStr === dateStr) return;
       if (!confirmLeaveDayWithUnsavedDraft()) return;
 
+      discardExerciseChanges();
       changeSessionCalendarDate(nextDate);
     },
     [
@@ -1152,6 +1193,7 @@ const TodayTab = () => {
       calendarTodayYmd,
       confirmLeaveDayWithUnsavedDraft,
       changeSessionCalendarDate,
+      discardExerciseChanges,
       getDateStr,
     ]
   );
@@ -1159,10 +1201,11 @@ const TodayTab = () => {
   const goToSportSessionToday = useCallback(() => {
     if (dateStr === calendarTodayYmd) return;
     if (!confirmLeaveDayWithUnsavedDraft()) return;
+    discardExerciseChanges();
     const today = new Date();
     today.setHours(12, 0, 0, 0);
     changeSessionCalendarDate(today);
-  }, [dateStr, calendarTodayYmd, confirmLeaveDayWithUnsavedDraft, changeSessionCalendarDate]);
+  }, [dateStr, calendarTodayYmd, confirmLeaveDayWithUnsavedDraft, changeSessionCalendarDate, discardExerciseChanges]);
 
   const sportSessionDateNavRow = (
     <div
@@ -1601,13 +1644,13 @@ const TodayTab = () => {
     Array.isArray(workout?.drillsCourse?.items) && workout.drillsCourse.items.length > 0;
 
   useEffect(() => {
-    if (isSavingSessionDraft) return;
+    // Verrou local (savingLockRef) : plus d’état isSavingSessionDraft.
+    if (savingLockRef.current) return;
     if (!hasStretchesContent || !Array.isArray(quietQuests) || quietQuests.length === 0) return;
     const snapshot =
       hasUnsavedExercises || hasUnsavedStretches ? getCurrentData() : data;
     syncStretchLinkedQuestsWithSnapshot(currentDate, snapshot);
   }, [
-    isSavingSessionDraft,
     hasStretchesContent,
     normalizedTodayStretches,
     quietQuests,
@@ -1672,8 +1715,6 @@ const TodayTab = () => {
       </div>
     );
   }
-
-  const sessionSnapshot = getCurrentData();
 
   return (
     <div className="relative min-h-screen today-sport-shell">
@@ -2055,10 +2096,14 @@ const TodayTab = () => {
             <p>{t('today.exercises.noExercises', 'Aucun exercice prévu pour aujourd\'hui')}</p>
           </div>
         ) : (
+          <TodayDraftReader>
+          {(sessionSnapshot) => (
           <>
           <div className="today-ex-masonry">
             {/* ✅ NOUVEAU : Exercices du programme (filtrés selon variations) */}
-            {exercisesForTodayList.map((exercise) => {
+            {exercisesForTodayList.map((exercise) => (
+            <IsolatedTodayExerciseCard key={exercise.id} exerciseId={exercise.id}>
+            {(sessionSnapshot) => {
             const isProgramExercise = !exercise.source;
             const currentData = sessionSnapshot;
             const keys = collectExerciseKeysForWorkoutExercise(currentDate, exercise, {
@@ -2067,9 +2112,7 @@ const TodayTab = () => {
             });
             const readKey = resolveBestRepsStorageKey(currentData, keys) || keys[0];
             const dataChecked = keys.some((k) => currentData.checkedExercises?.[k] === true);
-            const optimisticCheck = optimisticCheckedById[String(exercise.id)];
-            const checkboxChecked =
-              typeof optimisticCheck === 'boolean' ? optimisticCheck : dataChecked;
+            const checkboxChecked = dataChecked;
             const isChecked = checkboxChecked;
             const reps =
               currentData.reps?.[readKey] !== undefined && currentData.reps?.[readKey] !== null
@@ -2133,7 +2176,6 @@ const TodayTab = () => {
 
             return (
               <div
-                key={exercise.id}
                 data-today-group={visualGroup}
                 className={`today-ex-card flex flex-col gap-2 p-4 bg-black rounded-lg border border-[#0F4C5C]/45 w-full min-w-0 ${
                   exerciseGroupFilter !== 'all' && visualGroup !== exerciseGroupFilter
@@ -2245,11 +2287,11 @@ const TodayTab = () => {
                           }
                         />
                       ) : (
-                        <Input
+                        <TodaySessionTextField
                           type="number"
                           placeholder={inputPlaceholder}
                           value={reps}
-                          onChange={(e) => updateLocalReps(exercise.id, e.target.value, currentDate)}
+                          onCommitSilent={(next) => updateLocalReps(exercise.id, next, currentDate)}
                           className={`w-full text-center ${isChecked ? 'bg-green-600/20 border-green-500 text-green-300' : 'bg-black border-[#0F4C5C]/50 text-white'}`}
                           size="sm"
                         />
@@ -2258,13 +2300,13 @@ const TodayTab = () => {
                     {showWeightField && (
                       <div className="today-field">
                         <label>{t('today.exercises.weightFieldLabel', 'Poids')}</label>
-                        <Input
+                        <TodaySessionTextField
                           type="text"
                           inputMode="decimal"
                           placeholder="kg"
                           value={weightStr}
-                          onChange={(e) =>
-                            updateLocalExerciseWeight(exercise.id, e.target.value, currentDate)
+                          onCommitSilent={(next) =>
+                            updateLocalExerciseWeight(exercise.id, next, currentDate)
                           }
                           className={`w-full text-center ${isChecked ? 'bg-green-600/20 border-green-500 text-green-300' : 'bg-black border-[#0F4C5C]/50 text-white'}`}
                           size="sm"
@@ -2326,15 +2368,15 @@ const TodayTab = () => {
                                 <span className="text-teal-700 text-xs font-medium whitespace-nowrap">
                                   S{idx + 1}
                                 </span>
-                                <Input
+                                <TodaySessionTextField
                                   type="text"
                                   inputMode="decimal"
                                   value={sw != null ? String(sw) : ''}
-                                  onChange={(e) =>
+                                  onCommitSilent={(next) =>
                                     updateExerciseSetWeightAtIndex(
                                       exercise.id,
                                       idx,
-                                      e.target.value,
+                                      next,
                                       currentDate,
                                       exercise
                                     )
@@ -2401,7 +2443,9 @@ const TodayTab = () => {
                 </div>
               </div>
             );
-          })}
+            }}
+            </IsolatedTodayExerciseCard>
+            ))}
           </div>
           <div>
 
@@ -2538,9 +2582,7 @@ const TodayTab = () => {
                 {(() => {
                   const complementaryId = `complementary_${workout.complementaryActivity.name.toLowerCase()}`;
                   const complementaryDataChecked = !!sessionSnapshot.checkedExercises?.[`${dateStr}_${complementaryId}`];
-                  const complementaryOpt = optimisticCheckedById[complementaryId];
-                  const complementaryChecked =
-                    typeof complementaryOpt === 'boolean' ? complementaryOpt : complementaryDataChecked;
+                  const complementaryChecked = complementaryDataChecked;
                   return (
                 <Checkbox
                   checked={complementaryChecked}
@@ -2585,40 +2627,19 @@ const TodayTab = () => {
           )}
           </div>
           </>
+          )}
+          </TodayDraftReader>
         )}
 
-        {/* Boutons de sauvegarde exercices (même action persiste tout le brouillon si étirements aussi modifiés) */}
-        {hasUnsavedExercises && (
-          <div className="mt-6 pt-4 border-t border-[#0F4C5C]/40">
-            <div className="flex items-center justify-between">
-              <div className="text-sm text-amber-300 flex items-center gap-2">
-                <div className="w-2 h-2 bg-amber-400 rounded-full animate-pulse"></div>
-                {t('today.exercises.unsavedChanges')}
-              </div>
-              <div className="flex gap-3">
-                <button
-                  type="button"
-                  onClick={handleDiscardExercises}
-                  className="gradient-button-premium gradient-button-premium-md gradient-button-premium-variant rounded-lg flex items-center gap-2"
-                >
-                  <X className="w-4 h-4" />
-                  {t('today.exercises.discard')}
-                </button>
-                <button
-                  type="button"
-                  onClick={handleSaveExercises}
-                  disabled={isSavingSessionDraft}
-                  className="gradient-button-premium gradient-button-premium-md rounded-lg flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  <Save className="w-4 h-4" />
-                  {isSavingSessionDraft
-                    ? t('today.exercises.saving', 'Enregistrement…')
-                    : t('today.exercises.save')}
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
+        <TodaySessionCommitBar
+          kind="exercises"
+          onSave={handleSaveExercises}
+          onDiscard={handleDiscardExercises}
+          unsavedLabel={t('today.exercises.unsavedChanges')}
+          discardLabel={t('today.exercises.discard')}
+          saveLabel={t('today.exercises.save')}
+          savingLabel={t('today.exercises.saving', 'Enregistrement…')}
+        />
       </div>
 
       <div>
@@ -2662,37 +2683,15 @@ const TodayTab = () => {
             <RunningDrillsBlock drillsCourse={workout.drillsCourse} embedded />
           )}
 
-          {hasUnsavedStretches && (
-            <div className="mt-6 pt-4 border-t border-[#0F4C5C]/40">
-              <div className="flex items-center justify-between">
-                <div className="text-sm text-amber-300 flex items-center gap-2">
-                  <div className="w-2 h-2 bg-amber-400 rounded-full animate-pulse"></div>
-                  {t('today.exercises.unsavedChanges')}
-                </div>
-                <div className="flex gap-3">
-                  <button
-                    type="button"
-                    onClick={handleDiscardStretches}
-                    className="gradient-button-premium gradient-button-premium-md gradient-button-premium-variant rounded-lg flex items-center gap-2"
-                  >
-                    <X className="w-4 h-4" />
-                    {t('today.exercises.discard')}
-                  </button>
-                  <button
-                    type="button"
-                    onClick={handleSaveStretches}
-                    disabled={isSavingSessionDraft}
-                    className="gradient-button-premium gradient-button-premium-md rounded-lg flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    <Save className="w-4 h-4" />
-                    {isSavingSessionDraft
-                      ? t('today.stretches.saving', 'Enregistrement…')
-                      : t('today.stretches.save')}
-                  </button>
-                </div>
-              </div>
-            </div>
-          )}
+          <TodaySessionCommitBar
+            kind="stretches"
+            onSave={handleSaveStretches}
+            onDiscard={handleDiscardStretches}
+            unsavedLabel={t('today.exercises.unsavedChanges')}
+            discardLabel={t('today.exercises.discard')}
+            saveLabel={t('today.stretches.save')}
+            savingLabel={t('today.stretches.saving', 'Enregistrement…')}
+          />
         </div>
       )}
 
