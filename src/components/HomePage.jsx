@@ -489,7 +489,7 @@ const HomePage = () => {
       preloadRandomImages();
     };
     if (typeof window.requestIdleCallback === 'function') {
-      idleId = window.requestIdleCallback(kick, { timeout: 5000 });
+      idleId = window.requestIdleCallback(kick);
     } else {
       timerId = window.setTimeout(kick, 2000);
     }
@@ -706,7 +706,7 @@ const HomePage = () => {
   // ✅ Chargement initial : Déterminer si on doit afficher l'écran de chargement
   // Ne s'affiche que si on est vraiment sur home ET que le chargement est en cours
   const shouldShowLoading = activeTab === 'home' && !introPlaybackDone;
-  const { steps: welcomeStepSignals, warmup: welcomeWarmup } = useWelcomeGateSignals({
+  const { steps: welcomeStepSignals } = useWelcomeGateSignals({
     homeImages: backgroundImages,
     homeImagesLoading,
     chosenHomeImageReady: isInitialImageLoaded,
@@ -794,7 +794,6 @@ const HomePage = () => {
           unlockHint={t('home.loading.unlockHint')}
           syncMessage={t('home.loading.sync')}
           stepSignals={welcomeStepSignals}
-          warmupSignals={welcomeWarmup}
           lockBackgroundDataUrls={lockWallpaperUrls}
           lockWallpaperRotationMs={lockPlayback.rotationMs}
           lockWallpaperAdvanceOnClick={lockPlayback.advanceOnClick}

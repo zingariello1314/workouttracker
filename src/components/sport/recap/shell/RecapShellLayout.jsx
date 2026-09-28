@@ -107,7 +107,7 @@ export default function RecapShellLayout({
                       key={item.id}
                       type="button"
                       onClick={() => onViewChange(item.id)}
-                      className={`flex w-full items-center gap-2.5 rounded-lg px-2.5 py-2 text-left text-xs font-medium transition-colors ${
+                      className={`flex w-full cursor-pointer items-center gap-2.5 rounded-lg px-2.5 py-2 text-left text-xs font-medium transition-colors ${
                         active
                           ? 'bg-[#0F5C45]/35 text-emerald-100 ring-1 ring-[#0F5C45]/50'
                           : 'text-slate-400 hover:bg-[#0F4C5C]/20 hover:text-teal-100'
@@ -138,7 +138,7 @@ export default function RecapShellLayout({
               key={item.id}
               type="button"
               onClick={() => onViewChange(item.id)}
-              className={`flex flex-1 flex-col items-center gap-0.5 rounded-lg py-1.5 text-[10px] ${
+              className={`flex flex-1 cursor-pointer flex-col items-center gap-0.5 rounded-lg py-1.5 text-[10px] ${
                 active ? 'text-emerald-300' : 'text-slate-500'
               }`}
             >

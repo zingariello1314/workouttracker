@@ -32,6 +32,7 @@ import {
   JUSTIFICATION_TEXT,
 } from '../../utils/dayJustificationUtils';
 import { useTranslation } from '../../utils/translations';
+import { markCalendarViewPrepared } from '../../utils/preloadTabs';
 import { calendarHeatmapCompositeBackground } from '../../utils/calendarHeatmapTint';
 import { normalizeProfileQuestionnaire } from '../../features/profileQuestionnaire/schema';
 import {
@@ -63,6 +64,10 @@ const CalendarTab = () => {
   const t = useTranslation();
   const [jumpToCalendarDate, setJumpToCalendarDate] = useState(null);
   const [calendarScrollAnchor, setCalendarScrollAnchor] = useState(null);
+
+  useEffect(() => {
+    markCalendarViewPrepared();
+  }, []);
 
   useEffect(() => {
     if (!pendingCalendarDeepLink?.dateYmd) return;

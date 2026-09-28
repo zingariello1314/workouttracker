@@ -1,4 +1,4 @@
-import React, { useCallback, useDeferredValue, useEffect, useMemo, useState, startTransition } from 'react';
+import React, { lazy, Suspense, useCallback, useDeferredValue, useEffect, useMemo, useState, startTransition } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { useWorkout } from '../../context/WorkoutContext';
 import { getRecapDateWindow } from '../../utils/sport/recapMuscleLoadEngine';
@@ -10,12 +10,13 @@ import { useRecapTabMetrics } from '../../hooks/useRecapTabMetrics';
 import DateHelper from '../../utils/dateHelper';
 import RecapShellLayout from '../sport/recap/shell/RecapShellLayout';
 import RecapTabSkeleton, { RecapContentSkeleton } from '../sport/recap/shell/RecapTabSkeleton';
-import RecapSnapshotView from '../sport/recap/views/RecapSnapshotView';
 import RecapAnalyseView from '../sport/recap/views/RecapAnalyseView';
-import RecapCorpsView from '../sport/recap/views/RecapCorpsView';
-import RecapTendancesView from '../sport/recap/views/RecapTendancesView';
-import RecapSessionsView from '../sport/recap/views/RecapSessionsView';
-import RecapGradesView from '../sport/recap/views/RecapGradesView';
+
+const RecapSnapshotView = lazy(() => import('../sport/recap/views/RecapSnapshotView'));
+const RecapCorpsView = lazy(() => import('../sport/recap/views/RecapCorpsView'));
+const RecapTendancesView = lazy(() => import('../sport/recap/views/RecapTendancesView'));
+const RecapSessionsView = lazy(() => import('../sport/recap/views/RecapSessionsView'));
+const RecapGradesView = lazy(() => import('../sport/recap/views/RecapGradesView'));
 import { isAdminUser } from '../../utils/accessControl';
 import { useGarminData } from '../../hooks/useGarminData';
 import {
@@ -33,16 +34,23 @@ const RECAP_BODY_MAP_VIEW_LS = 'sport.recap.bodyMapView';
 
 const PERIOD_STORAGE_KEY = 'sport.recap.periodView';
 
-function RecapPeriodPendingBar({ visible }) {
-  if (!visible) return null;
+function RecapLoadingLabel({ mode }) {
+  const refresh = mode === 'refresh';
   return (
     <div
-      className="mb-3 flex items-center gap-2 rounded-lg border border-teal-500/25 bg-teal-950/30 px-3 py-2 text-[11px] text-teal-200/90"
+      className="flex min-h-[420px] flex-col items-center justify-center gap-3 rounded-xl border border-[#0F4C5C]/45 bg-black/80 px-6"
       role="status"
       aria-live="polite"
     >
-      <span className="h-3 w-3 shrink-0 animate-spin rounded-full border-2 border-teal-400/30 border-t-teal-400" />
-      Mise à jour des métriques…
+      <span className="h-8 w-8 animate-spin rounded-full border-2 border-teal-400/25 border-t-teal-300" />
+      <p className="text-sm font-semibold text-teal-50">
+        {refresh ? 'Mise à jour du récap…' : 'Chargement du récap…'}
+      </p>
+      <p className="max-w-sm text-center text-xs leading-relaxed text-slate-400">
+        {refresh
+          ? 'Seules les analyses concernées sont recalculées.'
+          : 'Toutes les plages sont préparées. Elles restent ensuite en mémoire.'}
+      </p>
     </div>
   );
 }
@@ -89,7 +97,7 @@ const RecapTab = () => {
   const isGradesView = activeView === RECAP_VIEW_IDS.GRADES;
 
   const snapshotForRecap = useMemo(() => getCurrentData(), [data, getCurrentData]);
-  const nutritionPartialForRecap = useRecapCrossCoachNutrition({ enabled: !isGradesView });
+  const nutritionPartialForRecap = useRecapCrossCoachNutrition({ enabled: true });
 
   const [period, setPeriod] = useState(() => {
     try {
@@ -102,7 +110,6 @@ const RecapTab = () => {
   });
 
   const deferredPeriod = useDeferredValue(period);
-  const isPeriodStale = period !== deferredPeriod;
 
   const handlePeriodChange = useCallback((next) => {
     startTransition(() => setPeriod(next));
@@ -126,7 +133,7 @@ const RecapTab = () => {
   const garminPartialForRecap = useRecapCrossCoachGarmin({
     startYmd: garminRangeForRecap.startYmd,
     endYmd: garminRangeForRecap.endYmd,
-    enabled: !isGradesView,
+    enabled: true,
     manualWalkByDate: snapshotForRecap?.enduranceData?.manualDailyWalkByDate ?? null
   });
 
@@ -134,8 +141,7 @@ const RecapTab = () => {
   const [garminBundle, setGarminBundle] = useState(null);
 
   useEffect(() => {
-    if (isGradesView || !dbReady || !isAuthenticated) {
-      if (isGradesView) setGarminBundle(null);
+    if (!dbReady || !isAuthenticated) {
       return undefined;
     }
     let cancelled = false;
@@ -149,10 +155,11 @@ const RecapTab = () => {
     return () => {
       cancelled = true;
     };
-  }, [isGradesView, dbReady, loadAllData, isAuthenticated, data]);
+  }, [dbReady, loadAllData, isAuthenticated, data]);
 
   const {
-    computing: metricsComputing,
+    libraryReady,
+    libraryMode,
     recapAssessment,
     recapState,
     enduranceDigest,
@@ -170,11 +177,11 @@ const RecapTab = () => {
     isAdmin,
     isAuthenticated,
     nutritionPartialForRecap,
-    garminPartialForRecap,
+    garminPartialInput: garminPartialForRecap,
     garminDataForMetrics: garminBundle,
     periodWindow,
     programs,
-    enabled: !isGradesView
+    enabled: true
   });
 
   const synthesisCoach = useRecapSynthesisCoach({
@@ -229,17 +236,7 @@ const RecapTab = () => {
     };
   }, [data, getCurrentData]);
 
-  const showMetricsSkeleton =
-    activeView !== RECAP_VIEW_IDS.GRADES && metricsComputing && !enrichment;
-
-  const metricsOverlayActive =
-    activeView !== RECAP_VIEW_IDS.GRADES && isPeriodStale && !enrichment;
-
   const viewContent = useMemo(() => {
-    if (showMetricsSkeleton) {
-      return <RecapContentSkeleton />;
-    }
-
     switch (activeView) {
       case RECAP_VIEW_IDS.GRADES:
         return <RecapGradesView />;
@@ -306,7 +303,6 @@ const RecapTab = () => {
     }
   }, [
     activeView,
-    showMetricsSkeleton,
     recapAssessment,
     synthesisCoach,
     currentUser,
@@ -332,22 +328,15 @@ const RecapTab = () => {
       onViewChange={setActiveView}
       period={period}
       onPeriodChange={handlePeriodChange}
-      scoreLevel={isGradesView ? undefined : recapAssessment?.level0to100}
-      scoreTier={isGradesView ? undefined : recapAssessment?.tier}
-      showTopMetrics={!isGradesView}
+      scoreLevel={libraryReady && !isGradesView ? recapAssessment?.level0to100 : undefined}
+      scoreTier={libraryReady && !isGradesView ? recapAssessment?.tier : undefined}
+      showTopMetrics={libraryReady && !isGradesView}
     >
-      <RecapPeriodPendingBar
-        visible={
-          activeView !== RECAP_VIEW_IDS.GRADES &&
-          !enrichment &&
-          (isPeriodStale || metricsComputing)
-        }
-      />
-      <div
-        className={metricsOverlayActive ? 'pointer-events-none opacity-70 transition-opacity' : ''}
-      >
-        {viewContent}
-      </div>
+      {libraryReady ? (
+        <Suspense fallback={<RecapContentSkeleton />}>{viewContent}</Suspense>
+      ) : (
+        <RecapLoadingLabel mode={libraryMode} />
+      )}
     </RecapShellLayout>
   );
 };

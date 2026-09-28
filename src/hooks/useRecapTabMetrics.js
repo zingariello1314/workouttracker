@@ -14,20 +14,64 @@ import { markRecapViewPrepared } from '../utils/preloadTabs';
 
 function yieldFrame() {
   return new Promise((resolve) => {
-    window.setTimeout(resolve, 0);
+    const wait = () => {
+      if (navigator.scheduling?.isInputPending?.({ includeContinuous: true })) {
+        window.setTimeout(wait, 80);
+        return;
+      }
+      window.setTimeout(resolve, 0);
+    };
+    wait();
   });
 }
 
 function scheduleHeavyWork(fn) {
-  return window.setTimeout(fn, 0);
+  let cancelled = false;
+  let idleId = 0;
+  let timerId = 0;
+
+  const clear = () => {
+    if (idleId && typeof cancelIdleCallback === 'function') cancelIdleCallback(idleId);
+    if (timerId) window.clearTimeout(timerId);
+    idleId = 0;
+    timerId = 0;
+  };
+
+  const attempt = (deadline) => {
+    if (cancelled) return;
+    const inputPending = navigator.scheduling?.isInputPending?.({ includeContinuous: true });
+    const sliceTooSmall = deadline && !deadline.didTimeout && deadline.timeRemaining() < 12;
+    if (inputPending || sliceTooSmall) {
+      clear();
+      if (typeof requestIdleCallback === 'function') {
+        idleId = requestIdleCallback(attempt, { timeout: 4000 });
+      } else {
+        timerId = window.setTimeout(() => attempt(null), 250);
+      }
+      return;
+    }
+    fn();
+  };
+
+  if (typeof requestIdleCallback === 'function') {
+    idleId = requestIdleCallback(attempt, { timeout: 4000 });
+  } else {
+    timerId = window.setTimeout(() => attempt(null), 48);
+  }
+
+  return () => {
+    cancelled = true;
+    clear();
+  };
 }
 
-function cancelHeavyWork(id) {
-  window.clearTimeout(id);
+function cancelHeavyWork(cancel) {
+  if (typeof cancel === 'function') cancel();
 }
 
 /** Une entrée par plage : changer de période ne relance pas un calcul déjà fait. */
 const bundlesByFull = new Map();
+let lastReadyStamp = '';
 
 function rememberBundle(fullKey, bundle) {
   if (!fullKey || !bundle) return;
@@ -165,6 +209,21 @@ function buildRecapMetricsKey({
   };
 }
 
+function buildPeriodJobs(args) {
+  return RECAP_VIEW_PERIOD_IDS.map((periodId) => {
+    const periodWindow =
+      periodId === args.deferredPeriod && args.periodWindow
+        ? args.periodWindow
+        : getRecapDateWindow(periodId);
+    const key = buildRecapMetricsKey({
+      ...args,
+      deferredPeriod: periodId,
+      periodWindow
+    });
+    return { periodId, periodWindow, key };
+  });
+}
+
 function readSessionHit(key) {
   if (!key?.full) return null;
   const exact = bundlesByFull.get(key.full);
@@ -174,35 +233,6 @@ function readSessionHit(key) {
     if (storedKey.startsWith(`${key.workout}|`)) return bundle;
   }
   return null;
-}
-
-function schedulePrefetchWork(fn) {
-  return window.setTimeout(fn, 48);
-}
-
-let prefetchStamp = '';
-
-function queuePeriodPrefetch(stamp, runOne) {
-  if (!stamp || prefetchStamp === stamp) return;
-  prefetchStamp = stamp;
-  const periods = RECAP_VIEW_PERIOD_IDS;
-  let index = 0;
-  const step = () => {
-    if (prefetchStamp !== stamp) return;
-    if (index >= periods.length) return;
-    const period = periods[index];
-    index += 1;
-    schedulePrefetchWork(() => {
-      if (prefetchStamp !== stamp) return;
-      try {
-        runOne(period);
-      } catch {
-        /* une plage en échec n'arrête pas les suivantes */
-      }
-      step();
-    });
-  };
-  schedulePrefetchWork(step);
 }
 
 function columnTextLength(insights) {
@@ -280,14 +310,64 @@ export function useRecapTabMetrics({
       isGymMode
     ]
   );
+  const periodJobs = useMemo(
+    () =>
+      buildPeriodJobs({
+        snapshot,
+        deferredPeriod,
+        periodWindow,
+        activeProgram,
+        programs,
+        profileQuestionnaireRaw,
+        garminPartial: garminPartialInput,
+        nutritionPartial: nutritionPartialForRecap,
+        garminBundle: garminDataForMetrics,
+        isAuthenticated,
+        isAdmin,
+        isGymMode
+      }),
+    [
+      snapshot,
+      deferredPeriod,
+      periodWindow,
+      activeProgram,
+      programs,
+      profileQuestionnaireRaw,
+      garminPartialInput,
+      nutritionPartialForRecap,
+      garminDataForMetrics,
+      isAuthenticated,
+      isAdmin,
+      isGymMode
+    ]
+  );
+  const libraryStamp = periodJobs.map((job) => job.key.full).join('||');
+  const cacheComplete = periodJobs.every((job) => readSessionHit(job.key));
   const cachedHit = readSessionHit(inputKey);
   const [bundle, setBundle] = useState(cachedHit);
-  const [computing, setComputing] = useState(enabled && !cachedHit);
+  const [computing, setComputing] = useState(enabled && !cacheComplete);
+  const [library, setLibrary] = useState(() =>
+    cacheComplete
+      ? { ready: true, mode: 'ready', stamp: libraryStamp }
+      : { ready: false, mode: lastReadyStamp ? 'refresh' : 'initial', stamp: '' }
+  );
   const shownKeyRef = useRef(cachedHit ? inputKey.full : '');
+  if (cacheComplete && (!library.ready || library.stamp !== libraryStamp)) {
+    lastReadyStamp = libraryStamp;
+    setLibrary({ ready: true, mode: 'ready', stamp: libraryStamp });
+    setComputing(false);
+  } else if (!cacheComplete && library.ready) {
+    setLibrary({
+      ready: false,
+      mode: lastReadyStamp ? 'refresh' : 'initial',
+      stamp: libraryStamp
+    });
+    setComputing(true);
+  }
   if (cachedHit && !inputKey.pending && shownKeyRef.current !== inputKey.full) {
     shownKeyRef.current = inputKey.full;
     setBundle(cachedHit);
-    setComputing(false);
+    setComputing(cacheComplete ? false : computing);
   }
   const genRef = useRef(0);
   const publishedInsightsRef = useRef(null);
@@ -310,8 +390,13 @@ export function useRecapTabMetrics({
       return undefined;
     }
 
-    if (inputKey.pending && !readSessionHit(inputKey)) {
+    if (inputKey.pending && periodJobs.some((job) => !readSessionHit(job.key))) {
       setComputing(true);
+      setLibrary({
+        ready: false,
+        mode: lastReadyStamp ? 'refresh' : 'initial',
+        stamp: libraryStamp
+      });
       return undefined;
     }
 
@@ -320,9 +405,9 @@ export function useRecapTabMetrics({
     if (!hit) setComputing(true);
 
     const runFor = async (periodId, windowForPeriod, keyFull, publish) => {
-      if (publish && gen !== genRef.current) return;
+      if (gen !== genRef.current) return;
       await yieldFrame();
-      if (publish && gen !== genRef.current) return;
+      if (gen !== genRef.current) return;
 
       const garminPartialForRecap =
         garminPartialFromBundle(
@@ -357,7 +442,7 @@ export function useRecapTabMetrics({
           periodWindow: windowForPeriod
         });
         await yieldFrame();
-        if (publish && gen !== genRef.current) return;
+        if (gen !== genRef.current) return;
         const enrichment = buildRecapEnrichmentBundle({
           snapshot,
           window: recapState.window,
@@ -373,7 +458,7 @@ export function useRecapTabMetrics({
           isAuthenticated
         });
         await yieldFrame();
-        if (publish && gen !== genRef.current) return;
+        if (gen !== genRef.current) return;
 
         let recapAssessmentMerged = recapAssessment;
         let programCoachAnalysis = null;
@@ -502,7 +587,7 @@ export function useRecapTabMetrics({
           }
         }
 
-        if (publish && gen !== genRef.current) return;
+        if (gen !== genRef.current) return;
         const nextBundle = {
           recapState,
           enduranceDigest,
@@ -511,31 +596,9 @@ export function useRecapTabMetrics({
           programCoachAnalysis
         };
         rememberBundle(keyFull, nextBundle);
-        if (!publish) return;
+        if (!publish || gen !== genRef.current) return;
         shownKeyRef.current = keyFull;
         setBundle(nextBundle);
-        setComputing(false);
-        markRecapViewPrepared();
-        queuePeriodPrefetch(`${checkedVolumeFingerprint(snapshot)}|${garminDataForMetrics ? 'g' : 'n'}`, (period) => {
-          if (period === deferredPeriod) return;
-          const nextWindow = getRecapDateWindow(period);
-          const key = buildRecapMetricsKey({
-            snapshot,
-            deferredPeriod: period,
-            periodWindow: nextWindow,
-            activeProgram,
-            programs,
-            profileQuestionnaireRaw,
-            garminPartial: null,
-            nutritionPartial: nutritionPartialForRecap,
-            garminBundle: garminDataForMetrics,
-            isAuthenticated,
-            isAdmin,
-            isGymMode
-          });
-          if (key.pending || bundlesByFull.has(key.full)) return;
-          runFor(period, nextWindow, key.full, false);
-        });
       } catch (err) {
         if (!publish || gen !== genRef.current) return;
         if (process.env.NODE_ENV === 'development') {
@@ -545,44 +608,65 @@ export function useRecapTabMetrics({
       }
     };
 
-    const run = () => runFor(deferredPeriod, periodWindow, inputKey.full, true);
+    const missing = periodJobs.filter((job) => !readSessionHit(job.key));
 
-    if (hit) {
-      setBundle(hit);
+    if (missing.length === 0) {
+      if (hit) {
+        shownKeyRef.current = inputKey.full;
+        setBundle(hit);
+      }
       setComputing(false);
+      setLibrary({ ready: true, mode: 'ready', stamp: libraryStamp });
+      lastReadyStamp = libraryStamp;
       markRecapViewPrepared();
-      queuePeriodPrefetch(
-        `${checkedVolumeFingerprint(snapshot)}|${garminDataForMetrics ? 'g' : 'n'}`,
-        (period) => {
-          if (period === deferredPeriod) return;
-          const nextWindow = getRecapDateWindow(period);
-          const key = buildRecapMetricsKey({
-            snapshot,
-            deferredPeriod: period,
-            periodWindow: nextWindow,
-            activeProgram,
-            programs,
-            profileQuestionnaireRaw,
-            garminPartial: null,
-            nutritionPartial: nutritionPartialForRecap,
-            garminBundle: garminDataForMetrics,
-            isAuthenticated,
-            isAdmin,
-            isGymMode
-          });
-          if (key.pending || bundlesByFull.has(key.full)) return;
-          runFor(period, nextWindow, key.full, false);
-        }
-      );
       return undefined;
     }
 
-    const id = scheduleHeavyWork(run);
+    setComputing(true);
+    setLibrary({
+      ready: false,
+      mode: lastReadyStamp ? 'refresh' : 'initial',
+      stamp: libraryStamp
+    });
+
+    const ordered = [...missing].sort((a, b) => {
+      if (a.periodId === deferredPeriod) return -1;
+      if (b.periodId === deferredPeriod) return 1;
+      return 0;
+    });
+
+    const run = async () => {
+      for (const job of ordered) {
+        if (gen !== genRef.current) return;
+        if (readSessionHit(job.key)) continue;
+        await runFor(
+          job.periodId,
+          job.periodWindow,
+          job.key.full,
+          job.periodId === deferredPeriod
+        );
+      }
+      if (gen !== genRef.current) return;
+      if (periodJobs.some((job) => !readSessionHit(job.key))) return;
+      lastReadyStamp = libraryStamp;
+      setLibrary({ ready: true, mode: 'ready', stamp: libraryStamp });
+      setComputing(false);
+      markRecapViewPrepared();
+    };
+
+    const cancel = scheduleHeavyWork(() => {
+      run();
+    });
     return () => {
       genRef.current += 1;
-      cancelHeavyWork(id);
+      cancelHeavyWork(cancel);
     };
-  }, [deferredPeriod, isGymMode, inputKey.full, inputKey.pending, inputKey.workout, enabled]);
+  }, [deferredPeriod, isGymMode, inputKey.full, inputKey.pending, inputKey.workout, enabled, libraryStamp, periodJobs]);
 
-  return { computing, ...bundle };
+  return {
+    computing,
+    libraryReady: Boolean(library.ready && library.stamp === libraryStamp),
+    libraryMode: library.mode,
+    ...bundle
+  };
 }

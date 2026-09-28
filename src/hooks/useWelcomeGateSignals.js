@@ -21,16 +21,9 @@ function selectedHomeKey(images) {
     .join('|');
 }
 
-function chunkPartial(chunkReady, viewPrepared) {
-  if (viewPrepared) return 1;
-  if (chunkReady) return 0.55;
-  return 0.12;
-}
-
 /**
  * Chemin critique du bouton Déverrouiller : session, profil, avatar,
- * la photo d'accueil qui va s'afficher, le robot 3D, le fond animé.
- * Aujourd'hui, Récap, Calendrier et la banque n'empêchent pas le clic.
+ * la photo d'accueil, le robot, le fond animé et Aujourd'hui.
  */
 export function useWelcomeGateSignals({
   homeImages = [],
@@ -138,6 +131,10 @@ export function useWelcomeGateSignals({
       {
         ready: backgroundReady,
         partial: startup.animatedBackgroundPrepared ? 1 : backgroundReleased ? 1 : 0.35
+      },
+      {
+        ready: startup.todayViewPrepared,
+        partial: startup.todayViewPrepared ? 1 : startup.todayChunkReady ? 0.55 : 0.16
       }
     ],
     [
@@ -151,43 +148,11 @@ export function useWelcomeGateSignals({
       splineReady,
       backgroundReady,
       backgroundReleased,
-      startup.animatedBackgroundPrepared
-    ]
-  );
-
-  const warmup = useMemo(
-    () => [
-      {
-        id: 'today',
-        label: 'Aujourd\u2019hui',
-        partial: chunkPartial(startup.todayChunkReady, startup.todayViewPrepared)
-      },
-      {
-        id: 'recap',
-        label: 'Récap',
-        partial: chunkPartial(startup.recapChunkReady, startup.recapViewPrepared)
-      },
-      {
-        id: 'calendar',
-        label: 'Calendrier',
-        partial: chunkPartial(startup.calendarChunkReady, startup.calendarViewPrepared)
-      },
-      {
-        id: 'exerciseBank',
-        label: 'Banque',
-        partial: startup.exerciseBankReady ? 1 : 0.12
-      }
-    ],
-    [
-      startup.todayChunkReady,
+      startup.animatedBackgroundPrepared,
       startup.todayViewPrepared,
-      startup.recapChunkReady,
-      startup.recapViewPrepared,
-      startup.calendarChunkReady,
-      startup.calendarViewPrepared,
-      startup.exerciseBankReady
+      startup.todayChunkReady
     ]
   );
 
-  return { steps, warmup };
+  return { steps };
 }

@@ -1,4 +1,4 @@
-/** Préchargement ordonné : Aujourd'hui, puis Récap et Calendrier, puis la banque, puis le reste. */
+/** Avant le bouton : Aujourd'hui seulement. Les autres onglets se chargent à l'ouverture. */
 
 const CORE_SPORT_TAB_LOADERS = {
   today: () => import('../components/tabs/TodayTab'),
@@ -30,6 +30,7 @@ const chunkStatus = {
 const chunkJobs = new Map();
 const listeners = new Set();
 const todayWaiters = new Set();
+const calendarWaiters = new Set();
 
 function snapshot() {
   const coreDone = CORE_SPORT_TAB_IDS.filter(
@@ -104,6 +105,7 @@ export function resetCoreSportTabsPreloadForTests() {
   chunkJobs.clear();
   laterTabsStarted = false;
   releaseTodayWaiters();
+  releaseCalendarWaiters();
 }
 
 /** La page Aujourd’hui a fait son premier rendu (pendant le chargement du site). */
@@ -138,11 +140,40 @@ export function markAnimatedBackgroundPrepared() {
   notify();
 }
 
-/** Grille annuelle du calendrier sport déjà calculée. */
+function releaseCalendarWaiters() {
+  calendarWaiters.forEach((finish) => {
+    try {
+      finish();
+    } catch {
+      // ignore
+    }
+  });
+  calendarWaiters.clear();
+}
+
+/** Le calendrier a fait son premier rendu. */
 export function markCalendarViewPrepared() {
   if (calendarViewPrepared) return;
   calendarViewPrepared = true;
   notify();
+  releaseCalendarWaiters();
+}
+
+/** Résout quand le calendrier a rendu, ou au bout de 20 s. */
+export function whenCalendarViewPrepared() {
+  if (calendarViewPrepared) return Promise.resolve();
+  return new Promise((resolve) => {
+    let settled = false;
+    const finish = () => {
+      if (settled) return;
+      settled = true;
+      window.clearTimeout(timer);
+      calendarWaiters.delete(finish);
+      resolve();
+    };
+    const timer = window.setTimeout(finish, 20000);
+    calendarWaiters.add(finish);
+  });
 }
 
 /** Métriques du récap déjà calculées. */
@@ -176,17 +207,14 @@ function loadChunk(id, factory) {
 }
 
 /**
- * Aujourd'hui d'abord, puis Récap et Calendrier ensemble, puis la banque.
+ * Aujourd'hui d'abord. Les loaders personnalisés enchaînent ensuite Récap, Calendrier et la banque.
  * Les loaders personnalisés servent aux tests et ne lancent pas le reste du site.
  */
 export function preloadPriorityTabs(customLoaders = null) {
   if (priorityInflight && !customLoaders) return priorityInflight;
 
   const loaders = customLoaders || {
-    today: CORE_SPORT_TAB_LOADERS.today,
-    recap: CORE_SPORT_TAB_LOADERS.recap,
-    calendar: CORE_SPORT_TAB_LOADERS.calendar,
-    exercises: EXERCISE_BANK_LOADER
+    today: CORE_SPORT_TAB_LOADERS.today
   };
 
   const runOne = (id) => {
@@ -200,46 +228,23 @@ export function preloadPriorityTabs(customLoaders = null) {
 
   const run = (async () => {
     await runOne('today');
-    await Promise.all([runOne('recap'), runOne('calendar')]);
-    await runOne('exercises');
+    if (customLoaders) {
+      await new Promise((resolve) => {
+        setTimeout(resolve, 0);
+      });
+      await Promise.all([runOne('recap'), runOne('calendar')]);
+      if (typeof loaders.exercises === 'function') await runOne('exercises');
+    }
   })();
 
   if (!customLoaders) priorityInflight = run;
   return run;
 }
 
-function viewsWarm(snap) {
-  return snap.todayViewPrepared && snap.recapViewPrepared && snap.calendarViewPrepared && snap.exerciseBankReady;
-}
-
-function waitUntilPriorityViewsWarm() {
-  if (viewsWarm(snapshot())) return Promise.resolve();
-  return new Promise((resolve) => {
-    let settled = false;
-    let unsubscribe = () => {};
-    const finish = () => {
-      if (settled) return;
-      settled = true;
-      unsubscribe();
-      window.clearTimeout(timer);
-      resolve();
-    };
-    const timer = window.setTimeout(finish, 20000);
-    unsubscribe = subscribeCoreSportTabsPreload((snap) => {
-      if (viewsWarm(snap)) queueMicrotask(finish);
-    });
-  });
-}
-
-/** Pipeline de démarrage. Le reste des onglets n'est demandé qu'une fois les quatre priorités chaudes. */
+/** Avant le bouton : uniquement le chunk Aujourd'hui. Le reste se charge à l'ouverture de l'onglet. */
 export function startStartupPipeline() {
   if (!pipelinePromise) {
-    pipelinePromise = preloadPriorityTabs()
-      .catch(() => {})
-      .then(() => waitUntilPriorityViewsWarm())
-      .then(() => {
-        preloadRemainingTabsIdle();
-      });
+    pipelinePromise = preloadPriorityTabs().catch(() => {});
   }
   return pipelinePromise;
 }
@@ -323,32 +328,70 @@ const LATER_TAB_LOADERS = [
   () => import('../components/SessionFeedback')
 ];
 
+const BACKGROUND_TAB_LOADERS = [
+  () => loadChunk('recap', CORE_SPORT_TAB_LOADERS.recap),
+  () => loadChunk('exercises', EXERCISE_BANK_LOADER),
+  ...LATER_TAB_LOADERS
+];
+
 let laterTabsStarted = false;
 
-/** Les autres onglets, un par un, seulement après Aujourd'hui, Récap, Calendrier et la banque. */
+export function runWhenMainThreadQuiet(fn) {
+  let cancelled = false;
+  let idleId = 0;
+  let timerId = 0;
+
+  const clear = () => {
+    if (idleId && typeof cancelIdleCallback === 'function') cancelIdleCallback(idleId);
+    if (timerId) clearTimeout(timerId);
+    idleId = 0;
+    timerId = 0;
+  };
+
+  const attempt = (deadline) => {
+    if (cancelled) return;
+    const inputPending = navigator.scheduling?.isInputPending?.({ includeContinuous: true });
+    const sliceTooSmall = deadline && !deadline.didTimeout && deadline.timeRemaining() < 12;
+    if (inputPending || sliceTooSmall) {
+      clear();
+      if (typeof requestIdleCallback === 'function') {
+        idleId = requestIdleCallback(attempt, { timeout: 60000 });
+      } else {
+        timerId = setTimeout(() => attempt(null), 2000);
+      }
+      return;
+    }
+    fn();
+  };
+
+  if (typeof requestIdleCallback === 'function') {
+    idleId = requestIdleCallback(attempt, { timeout: 60000 });
+  } else {
+    timerId = setTimeout(() => attempt(null), 3000);
+  }
+
+  return () => {
+    cancelled = true;
+    clear();
+  };
+}
+
+/** Un module à la fois, seulement quand personne n'interagit. Jamais monté tant que l'onglet n'est pas ouvert. */
 export function preloadRemainingTabsIdle() {
   if (laterTabsStarted || typeof window === 'undefined') return;
   laterTabsStarted = true;
   let index = 0;
   const step = () => {
-    if (index >= LATER_TAB_LOADERS.length) return;
-    const load = LATER_TAB_LOADERS[index];
+    if (index >= BACKGROUND_TAB_LOADERS.length) return;
+    const load = BACKGROUND_TAB_LOADERS[index];
     index += 1;
     Promise.resolve()
       .then(() => load())
       .catch(() => {})
       .finally(() => {
-        if (index >= LATER_TAB_LOADERS.length) return;
-        if (typeof requestIdleCallback === 'function') {
-          requestIdleCallback(() => step(), { timeout: 2500 });
-        } else {
-          setTimeout(step, 120);
-        }
+        if (index >= BACKGROUND_TAB_LOADERS.length) return;
+        runWhenMainThreadQuiet(step);
       });
   };
-  if (typeof requestIdleCallback === 'function') {
-    requestIdleCallback(() => step(), { timeout: 1800 });
-  } else {
-    setTimeout(step, 500);
-  }
+  runWhenMainThreadQuiet(step);
 }

@@ -2,7 +2,7 @@ import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Check } from 'lucide-react';
 
 const MIN_STEP_MS = 140;
-const STEP_END_PROGRESS = [16, 33, 50, 66, 83, 100];
+const STEP_END_PROGRESS = [14, 28, 43, 57, 71, 86, 100];
 
 export const LOADING_STEPS = [
   {
@@ -34,6 +34,11 @@ export const LOADING_STEPS = [
     id: 'background',
     loadingLabel: 'Fond animé…',
     doneLabel: 'Fond animé prêt'
+  },
+  {
+    id: 'today',
+    loadingLabel: 'Aujourd\u2019hui…',
+    doneLabel: 'Aujourd\u2019hui prêt'
   }
 ];
 
@@ -211,23 +216,7 @@ export function useWelcomeLoadingSequence(stepSignals) {
   return { progress: Math.min(100, Math.round(displayProgress)), stepStatuses, isReady };
 }
 
-function WarmupRow({ item }) {
-  const width = Math.round(Math.min(1, Math.max(0, item.partial || 0)) * 100);
-  return (
-    <div className="grid grid-cols-[5.5rem_1fr_2.25rem] items-center gap-2 text-[11px] text-slate-500">
-      <span>{item.label}</span>
-      <div className="h-1 overflow-hidden rounded-full bg-white/[0.06]">
-        <div
-          className="h-full rounded-full bg-slate-400/70"
-          style={{ width: `${width}%`, transition: 'width 180ms linear' }}
-        />
-      </div>
-      <span className="text-right tabular-nums">{width}%</span>
-    </div>
-  );
-}
-
-export function LoadingStepsPanel({ stepSignals, warmupSignals = [], syncMessage, onReadyChange }) {
+export function LoadingStepsPanel({ stepSignals, syncMessage, onReadyChange }) {
   const { progress, stepStatuses, isReady } = useWelcomeLoadingSequence(stepSignals);
 
   useEffect(() => {
@@ -259,17 +248,6 @@ export function LoadingStepsPanel({ stepSignals, warmupSignals = [], syncMessage
           <StepRow key={step.id} step={step} status={stepStatuses[i]} />
         ))}
       </div>
-
-      {warmupSignals.length > 0 ? (
-        <div className="space-y-1.5 border-t border-white/[0.06] pt-3">
-          <p className="text-[10px] font-medium uppercase tracking-[0.16em] text-slate-600">
-            Déjà en préparation
-          </p>
-          {warmupSignals.map((item) => (
-            <WarmupRow key={item.id} item={item} />
-          ))}
-        </div>
-      ) : null}
 
       {syncMessage && lastStepLoading && !isReady ? (
         <p className="text-center text-[11px] text-slate-500">{syncMessage}</p>

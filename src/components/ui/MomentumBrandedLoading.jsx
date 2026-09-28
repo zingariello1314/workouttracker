@@ -205,7 +205,6 @@ export const MomentumWelcomeGate = memo(function MomentumWelcomeGate({
   unlockHint,
   syncMessage,
   stepSignals = [],
-  warmupSignals = [],
   lockBackgroundDataUrl = null,
   lockBackgroundDataUrls = null,
   lockWallpaperRotationMs = DEFAULT_LOCK_WALLPAPER_ROTATION_MS,
@@ -310,7 +309,6 @@ export const MomentumWelcomeGate = memo(function MomentumWelcomeGate({
 
             <LoadingStepsPanel
               stepSignals={stepSignals}
-              warmupSignals={warmupSignals}
               syncMessage={syncMessage}
               onReadyChange={setSequenceReady}
             />

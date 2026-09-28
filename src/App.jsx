@@ -62,7 +62,7 @@ import GitHubOAuthLanding from './components/github/GitHubOAuthLanding';
 import SpotifyOAuthLanding from './components/spotify/SpotifyOAuthLanding';
 import { MomentumTabLoadOverlay, MomentumTabInlineLoader, MomentumModalLoadCard } from './components/ui/MomentumBrandedLoading';
 import RecapTabSkeleton from './components/sport/recap/shell/RecapTabSkeleton';
-import { startStartupPipeline, subscribeCoreSportTabsPreload } from './utils/preloadTabs';
+import { startStartupPipeline } from './utils/preloadTabs';
 import SportXPBar from './components/tabs/TodayTab/components/SportXPBar';
 import CodeXPBar from './components/code/CodeXPBar';
 import { isSportSubTab } from './constants/sportSubTabs';
@@ -166,10 +166,7 @@ const WorkoutTrackerContent = () => {
   const isAdmin = isAdminUser(currentUser);
   const [showProfileQuiz, setShowProfileQuiz] = useState(false);
   const [onboardingPromptHandled, setOnboardingPromptHandled] = useState(false);
-  const [homeUnlocked, setHomeUnlocked] = useState(false);
   const [warmToday, setWarmToday] = useState(false);
-  const [warmCalendar, setWarmCalendar] = useState(false);
-  const [warmRecap, setWarmRecap] = useState(false);
 
   // Ne pas rediriger localhost → 127.0.0.1 : ce sont deux origines (IndexedDB / session séparées).
   // Pour Spotify, l’URI de retour OAuth reste 127.0.0.1 (exigence dashboard) ; garde le même hôte pour le reste.
@@ -249,42 +246,11 @@ const WorkoutTrackerContent = () => {
   }, [activeTab]);
 
   React.useEffect(() => {
-    const onUnlock = () => setHomeUnlocked(true);
-    window.addEventListener('momentum:home-unlocked', onUnlock);
-    return () => window.removeEventListener('momentum:home-unlocked', onUnlock);
-  }, []);
-
-  React.useEffect(() => {
-    if (authLoading || !homeUnlocked) return undefined;
-    let cancelled = false;
-    let idleId = 0;
-    let unsubscribe = () => {};
-    const start = () => {
-      if (cancelled) return;
-      startStartupPipeline();
-      setWarmToday(true);
-      unsubscribe = subscribeCoreSportTabsPreload((progress) => {
-        if (!progress.todayViewPrepared) return;
-        setWarmRecap(true);
-        setWarmCalendar(true);
-      });
-    };
-    const timer = window.setTimeout(() => {
-      if (typeof window.requestIdleCallback === 'function') {
-        idleId = window.requestIdleCallback(start, { timeout: 4000 });
-      } else {
-        start();
-      }
-    }, 1800);
-    return () => {
-      cancelled = true;
-      window.clearTimeout(timer);
-      if (idleId && typeof window.cancelIdleCallback === 'function') {
-        window.cancelIdleCallback(idleId);
-      }
-      unsubscribe();
-    };
-  }, [authLoading, homeUnlocked]);
+    if (authLoading) return undefined;
+    startStartupPipeline();
+    setWarmToday(true);
+    return undefined;
+  }, [authLoading]);
 
   // ✅ Charger les données Garmin pour les calories
   // - admin connecté : charge les vraies données
@@ -294,7 +260,7 @@ const WorkoutTrackerContent = () => {
   const [garminData, setGarminData] = React.useState(null);
   
   React.useEffect(() => {
-    if (!warmCalendar || !isAuthenticated) {
+    if (!showAdvancedStats || !isAuthenticated) {
       setGarminData(null);
       return;
     }
@@ -312,7 +278,7 @@ const WorkoutTrackerContent = () => {
           setGarminData(null);
         });
     }
-  }, [dbReady, loadAllData, isAdmin, isAuthenticated, warmCalendar]);
+  }, [dbReady, loadAllData, isAdmin, isAuthenticated, showAdvancedStats]);
 
   useEffect(() => {
     return registerProfileQuestionnaireOpenHandler(() => setShowProfileQuiz(true));
@@ -600,21 +566,15 @@ const WorkoutTrackerContent = () => {
                 <TodayTabHost />
               </div>
             )}
-            {(warmCalendar || activeTab === 'calendar') && (
-              <div
-                className="container mx-auto px-4"
-                style={{ display: activeTab === 'calendar' ? undefined : 'none' }}
-                aria-hidden={activeTab !== 'calendar'}
-              >
-                {activeTab === 'calendar' && (
-                  <div className="mb-5 mt-5 scroll-mt-40 pt-1">
-                    <SportXPBar />
-                  </div>
-                )}
+            {activeTab === 'calendar' && (
+              <div className="container mx-auto px-4">
+                <div className="mb-5 mt-5 scroll-mt-40 pt-1">
+                  <SportXPBar />
+                </div>
                 <CalendarTabHost />
               </div>
             )}
-            {(warmRecap || activeTab === 'recap') && (
+            {activeTab === 'recap' && (
               <div
                 className="container mx-auto px-4"
                 style={{ display: activeTab === 'recap' ? undefined : 'none' }}

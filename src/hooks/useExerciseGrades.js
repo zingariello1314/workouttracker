@@ -13,18 +13,47 @@ import {
 } from '../utils/workoutExerciseIdResolve';
 
 function scheduleHeavyWork(fn) {
-  if (typeof requestIdleCallback !== 'undefined') {
-    return requestIdleCallback(fn, { timeout: 120 });
+  let cancelled = false;
+  let idleId = 0;
+  let timerId = 0;
+
+  const clear = () => {
+    if (idleId && typeof cancelIdleCallback === 'function') cancelIdleCallback(idleId);
+    if (timerId) window.clearTimeout(timerId);
+    idleId = 0;
+    timerId = 0;
+  };
+
+  const attempt = (deadline) => {
+    if (cancelled) return;
+    const inputPending = navigator.scheduling?.isInputPending?.({ includeContinuous: true });
+    const sliceTooSmall = deadline && !deadline.didTimeout && deadline.timeRemaining() < 12;
+    if (inputPending || sliceTooSmall) {
+      clear();
+      if (typeof requestIdleCallback === 'function') {
+        idleId = requestIdleCallback(attempt, { timeout: 8000 });
+      } else {
+        timerId = window.setTimeout(() => attempt(null), 250);
+      }
+      return;
+    }
+    fn();
+  };
+
+  if (typeof requestIdleCallback === 'function') {
+    idleId = requestIdleCallback(attempt, { timeout: 8000 });
+  } else {
+    timerId = window.setTimeout(() => attempt(null), 48);
   }
-  return window.setTimeout(fn, 0);
+
+  return () => {
+    cancelled = true;
+    clear();
+  };
 }
 
-function cancelHeavyWork(id) {
-  if (typeof cancelIdleCallback !== 'undefined') {
-    cancelIdleCallback(id);
-  } else {
-    window.clearTimeout(id);
-  }
+function cancelHeavyWork(cancel) {
+  if (typeof cancel === 'function') cancel();
 }
 
 export function useExerciseGrades({ sortMode = 'grade', vitalsRefreshKey = 0, enabled = true } = {}) {
