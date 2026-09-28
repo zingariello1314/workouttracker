@@ -107,13 +107,13 @@ describe('recapInsightNature', () => {
 
   it('ouvre les caps UI dès qu’un jalon est détecté, même s’il n’est pas encore dans les essays', () => {
     const without = columnCapsForCandidates([], { voiceKey: 'week', detectedKinds: [] });
-    expect(without.short).toBe(5);
+    expect(without.short).toBe(7);
     const withMs = columnCapsForCandidates([], {
       voiceKey: 'week',
       detectedKinds: ['disc_ms_pr']
     });
-    expect(withMs.short).toBe(6);
-    expect(withMs.medium).toBe(6);
-    expect(withMs.long).toBe(4);
+    expect(withMs.short).toBe(8);
+    expect(withMs.medium).toBe(8);
+    expect(withMs.long).toBe(7);
   });
 });

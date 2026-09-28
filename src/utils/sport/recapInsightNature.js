@@ -28,29 +28,29 @@ export const NATURE_TO_HORIZON = {
  */
 export const SIGNAL_FAMILY_CAPS = {
   today: {
-    now: { sport: 3, sleep: 2, milestone: 1 },
-    trajectory: { sport: 3, sleep: 2, milestone: 1 },
-    journey: { sport: 2, sleep: 1, milestone: 1 }
+    now: { sport: 5, sleep: 2, milestone: 1 },
+    trajectory: { sport: 5, sleep: 2, milestone: 1 },
+    journey: { sport: 4, sleep: 2, milestone: 1 }
   },
   week: {
-    now: { sport: 3, sleep: 2, milestone: 1 },
-    trajectory: { sport: 3, sleep: 2, milestone: 1 },
-    journey: { sport: 2, sleep: 1, milestone: 1 }
+    now: { sport: 5, sleep: 2, milestone: 1 },
+    trajectory: { sport: 5, sleep: 2, milestone: 1 },
+    journey: { sport: 4, sleep: 2, milestone: 1 }
   },
   month: {
-    now: { sport: 3, sleep: 2, milestone: 1 },
-    trajectory: { sport: 4, sleep: 2, milestone: 1 },
-    journey: { sport: 2, sleep: 2, milestone: 1 }
+    now: { sport: 6, sleep: 2, milestone: 1 },
+    trajectory: { sport: 6, sleep: 2, milestone: 1 },
+    journey: { sport: 5, sleep: 2, milestone: 1 }
   },
   long: {
-    now: { sport: 3, sleep: 1, milestone: 1 },
-    trajectory: { sport: 3, sleep: 2, milestone: 1 },
-    journey: { sport: 3, sleep: 2, milestone: 1 }
+    now: { sport: 6, sleep: 2, milestone: 1 },
+    trajectory: { sport: 6, sleep: 2, milestone: 1 },
+    journey: { sport: 5, sleep: 2, milestone: 1 }
   },
   year: {
-    now: { sport: 3, sleep: 1, milestone: 1 },
-    trajectory: { sport: 4, sleep: 2, milestone: 1 },
-    journey: { sport: 3, sleep: 2, milestone: 1 }
+    now: { sport: 6, sleep: 2, milestone: 1 },
+    trajectory: { sport: 6, sleep: 2, milestone: 1 },
+    journey: { sport: 5, sleep: 2, milestone: 1 }
   }
 };
 
@@ -71,8 +71,8 @@ export function angleCapsFromFamilies(voiceKey, { hasMilestone = false } = {}) {
 }
 
 /** Totaux UI semaine sans jalon — dérivés des familles. */
-export const NATURE_COLUMN_CAPS = { short: 5, medium: 5, long: 3 };
-export const NATURE_COLUMN_CAPS_WITH_MILESTONES = { short: 6, medium: 6, long: 4 };
+export const NATURE_COLUMN_CAPS = { short: 7, medium: 7, long: 6 };
+export const NATURE_COLUMN_CAPS_WITH_MILESTONES = { short: 8, medium: 8, long: 7 };
 
 /**
  * @param {object[]} [candidates]

@@ -534,7 +534,7 @@ describe('recapPeriodDiscoveries', () => {
       { kind: 'disc_sleep_volume', nature: 'trajectory', family: 'sleep_volume', score: 84 },
       { kind: 'disc_cardio_strength', nature: 'trajectory', family: 'cardio_strength', score: 83 }
     ];
-    expect(observationCaps('long', many).journey).toBe(5);
+    expect(observationCaps('long', many).journey).toBe(7);
     const long = selectPeriodDiscoveries(many, null, 'long');
     expect(long.filter((d) => d.nature === 'journey').map((d) => d.kind)).toEqual([
       'disc_sleep_quarter',
@@ -542,7 +542,7 @@ describe('recapPeriodDiscoveries', () => {
       'disc_sleep_freq',
       'disc_kcal_profile'
     ]);
-    expect(observationCaps('today', many).trajectory).toBe(5);
+    expect(observationCaps('today', many).trajectory).toBe(7);
   });
 
   it('traite 1 an comme une voix distincte, avec un plafond parcours plus haut que la semaine', () => {
@@ -550,9 +550,9 @@ describe('recapPeriodDiscoveries', () => {
     expect(periodVoice('1y', 365).thisPeriod).toMatch(/année/);
     expect(PERIOD_QUESTIONS['1y']).toMatch(/année/);
     expect(periodVoice('3m', 92).key).toBe('long');
-    expect(observationCaps('year').journey).toBe(5);
-    expect(observationCaps('week').journey).toBe(3);
-    expect(observationCaps('year').trajectory).toBe(6);
+    expect(observationCaps('year').journey).toBe(7);
+    expect(observationCaps('week').journey).toBe(6);
+    expect(observationCaps('year').trajectory).toBe(8);
   });
 
   it('quand aujourd’hui est à 0 reps, décrit une séance en attente plutôt qu’une contraction', () => {

@@ -119,14 +119,13 @@ export function buildComposedInterpretationPipeline(opts = {}) {
 
   const renderedEssays = renderInterpretations(essayDrafts, trainingState);
   const renderedRelations = renderInterpretations(rawRelations, trainingState);
-  const essayCount = { short: 0, medium: 0, long: 0 };
-  renderedEssays.forEach((c) => {
-    if (c.text?.length >= 80 && essayCount[c.horizon] != null) essayCount[c.horizon] += 1;
+  const seenIds = new Set(renderedEssays.map((c) => c.id));
+  const companionRelations = renderedRelations.filter((c) => {
+    if (!c?.id || seenIds.has(c.id)) return false;
+    if ((c.text?.length || 0) < 80) return false;
+    return (c.relevance || 0) >= 0.7;
   });
-  const fallbackRelations = renderedRelations.filter(
-    (c) => (essayCount[c.horizon] || 0) === 0 && (c.relevance || 0) >= 0.85
-  );
-  const allInterpretations = [...renderedEssays, ...fallbackRelations];
+  const allInterpretations = [...renderedEssays, ...companionRelations];
 
   const populationComparisons = buildHierarchicalComparisons({
     ...mergedOpts,

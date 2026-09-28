@@ -1177,7 +1177,7 @@ export function selectBalancedCandidates(candidates, horizon, limit, signature, 
       let score = c.weight;
       if (String(c.id).includes('.disc_')) score += 14;
       if (isRichColumnReading(c)) score += hashSig(`${dayKey}:${c.id}`) % 13;
-      else if (richPool) score -= 36;
+      else if (richPool) score -= 8;
       if (usedGroups.has(group) && group !== 'misc') score -= 16;
       if (usedPillars.has(c.pillar)) {
         const samePillarBest = picked.find((p) => p.pillar === c.pillar);

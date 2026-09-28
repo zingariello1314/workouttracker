@@ -2519,7 +2519,7 @@ function inferDropReason(d, selected, famCaps) {
   const sameAngleKinds = new Set(
     selected.filter((s) => (s.nature || 'trajectory') === nature).map((s) => s.kind)
   );
-  const minScore = isMilestoneKind(d.kind) ? 52 : 48;
+  const minScore = isMilestoneKind(d.kind) ? 44 : 36;
   if ((d.score || 0) < minScore) return 'score';
   if (rivalBlocked(d.kind, sameAngleKinds)) return 'rival';
   const sameFamily = selected.find(
@@ -2561,7 +2561,7 @@ export function selectPeriodDiscoveriesWithTrace(discoveries, insightHistory = n
 
   const canTake = (d) => {
     const nature = d.nature || 'trajectory';
-    if ((d.score || 0) < 48) return false;
+    if ((d.score || 0) < 36) return false;
     if (usedKind.has(d.kind)) return false;
     if (rivalBlocked(d.kind, usedKindByNature[nature])) return false;
     if (usedFamilyByNature[nature].has(d.family) && (d.score || 0) < 86) return false;
@@ -2599,7 +2599,7 @@ export function selectPeriodDiscoveriesWithTrace(discoveries, insightHistory = n
       if ((d.nature || 'trajectory') !== angle) return;
       if ((familyCount[angle].milestone || 0) >= cap) return;
       if (usedKind.has(d.kind)) return;
-      if ((d.score || 0) < 52) return;
+      if ((d.score || 0) < 44) return;
       byAngle[angle].push(d);
       usedKind.add(d.kind);
       usedKindByNature[angle].add(d.kind);
