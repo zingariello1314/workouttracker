@@ -10,9 +10,8 @@ import { useRecapTabMetrics } from '../../hooks/useRecapTabMetrics';
 import DateHelper from '../../utils/dateHelper';
 import RecapShellLayout from '../sport/recap/shell/RecapShellLayout';
 import RecapTabSkeleton, { RecapContentSkeleton } from '../sport/recap/shell/RecapTabSkeleton';
-import RecapAnalyseView from '../sport/recap/views/RecapAnalyseView';
-
 const RecapSnapshotView = lazy(() => import('../sport/recap/views/RecapSnapshotView'));
+const RecapAnalyseView = lazy(() => import('../sport/recap/views/RecapAnalyseView'));
 const RecapCorpsView = lazy(() => import('../sport/recap/views/RecapCorpsView'));
 const RecapTendancesView = lazy(() => import('../sport/recap/views/RecapTendancesView'));
 const RecapSessionsView = lazy(() => import('../sport/recap/views/RecapSessionsView'));
@@ -34,8 +33,16 @@ const RECAP_BODY_MAP_VIEW_LS = 'sport.recap.bodyMapView';
 
 const PERIOD_STORAGE_KEY = 'sport.recap.periodView';
 
-function RecapLoadingLabel({ mode }) {
+function RecapLoadingLabel({ view, mode }) {
   const refresh = mode === 'refresh';
+  const names = {
+    analyse: 'l’analyse',
+    snapshot: 'le snapshot',
+    corps: 'le corps',
+    tendances: 'les tendances',
+    sessions: 'les séances'
+  };
+  const name = names[view] || 'cette vue';
   return (
     <div
       className="flex min-h-[420px] flex-col items-center justify-center gap-3 rounded-xl border border-[#0F4C5C]/45 bg-black/80 px-6"
@@ -44,16 +51,24 @@ function RecapLoadingLabel({ mode }) {
     >
       <span className="h-8 w-8 animate-spin rounded-full border-2 border-teal-400/25 border-t-teal-300" />
       <p className="text-sm font-semibold text-teal-50">
-        {refresh ? 'Mise à jour du récap…' : 'Chargement du récap…'}
+        {refresh ? `Mise à jour de ${name}…` : `Chargement de ${name}…`}
       </p>
       <p className="max-w-sm text-center text-xs leading-relaxed text-slate-400">
         {refresh
-          ? 'Seules les analyses concernées sont recalculées.'
-          : 'Toutes les plages sont préparées. Elles restent ensuite en mémoire.'}
+          ? 'Seul ce qui a changé est recalculé.'
+          : 'Cette vue se prépare. Les autres restent indépendantes.'}
       </p>
     </div>
   );
 }
+
+const VIEW_CHUNK_LOADERS = {
+  snapshot: () => import('../sport/recap/views/RecapSnapshotView'),
+  analyse: () => import('../sport/recap/views/RecapAnalyseView'),
+  corps: () => import('../sport/recap/views/RecapCorpsView'),
+  tendances: () => import('../sport/recap/views/RecapTendancesView'),
+  sessions: () => import('../sport/recap/views/RecapSessionsView')
+};
 
 /**
  * Sous-onglet Sport — Récap musculaire (navigation latérale + 5 vues).
@@ -95,9 +110,31 @@ const RecapTab = () => {
 
   const [activeView, setActiveView] = useState(() => readStoredRecapView());
   const isGradesView = activeView === RECAP_VIEW_IDS.GRADES;
+  const [chunkReady, setChunkReady] = useState({});
+
+  useEffect(() => {
+    if (isGradesView) return undefined;
+    const load = VIEW_CHUNK_LOADERS[activeView];
+    if (!load || chunkReady[activeView]) return undefined;
+    let cancelled = false;
+    load()
+      .then(() => {
+        if (!cancelled) {
+          setChunkReady((prev) => (prev[activeView] ? prev : { ...prev, [activeView]: true }));
+        }
+      })
+      .catch(() => {
+        if (!cancelled) {
+          setChunkReady((prev) => (prev[activeView] ? prev : { ...prev, [activeView]: true }));
+        }
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [activeView, isGradesView, chunkReady]);
 
   const snapshotForRecap = useMemo(() => getCurrentData(), [data, getCurrentData]);
-  const nutritionPartialForRecap = useRecapCrossCoachNutrition({ enabled: true });
+  const nutritionPartialForRecap = useRecapCrossCoachNutrition({ enabled: !isGradesView });
 
   const [period, setPeriod] = useState(() => {
     try {
@@ -133,7 +170,7 @@ const RecapTab = () => {
   const garminPartialForRecap = useRecapCrossCoachGarmin({
     startYmd: garminRangeForRecap.startYmd,
     endYmd: garminRangeForRecap.endYmd,
-    enabled: true,
+    enabled: !isGradesView,
     manualWalkByDate: snapshotForRecap?.enduranceData?.manualDailyWalkByDate ?? null
   });
 
@@ -141,7 +178,7 @@ const RecapTab = () => {
   const [garminBundle, setGarminBundle] = useState(null);
 
   useEffect(() => {
-    if (!dbReady || !isAuthenticated) {
+    if (isGradesView || !dbReady || !isAuthenticated) {
       return undefined;
     }
     let cancelled = false;
@@ -155,11 +192,11 @@ const RecapTab = () => {
     return () => {
       cancelled = true;
     };
-  }, [dbReady, loadAllData, isAuthenticated, data]);
+  }, [isGradesView, dbReady, loadAllData, isAuthenticated, data]);
 
   const {
-    libraryReady,
-    libraryMode,
+    contentReady,
+    loadMode,
     recapAssessment,
     recapState,
     enduranceDigest,
@@ -181,7 +218,7 @@ const RecapTab = () => {
     garminDataForMetrics: garminBundle,
     periodWindow,
     programs,
-    enabled: true
+    enabled: !isGradesView
   });
 
   const synthesisCoach = useRecapSynthesisCoach({
@@ -328,14 +365,14 @@ const RecapTab = () => {
       onViewChange={setActiveView}
       period={period}
       onPeriodChange={handlePeriodChange}
-      scoreLevel={libraryReady && !isGradesView ? recapAssessment?.level0to100 : undefined}
-      scoreTier={libraryReady && !isGradesView ? recapAssessment?.tier : undefined}
-      showTopMetrics={libraryReady && !isGradesView}
+      scoreLevel={!isGradesView && contentReady ? recapAssessment?.level0to100 : undefined}
+      scoreTier={!isGradesView && contentReady ? recapAssessment?.tier : undefined}
+      showTopMetrics={!isGradesView && contentReady}
     >
-      {libraryReady ? (
-        <Suspense fallback={<RecapContentSkeleton />}>{viewContent}</Suspense>
+      {isGradesView || (contentReady && chunkReady[activeView]) ? (
+        <Suspense fallback={isGradesView ? null : <RecapContentSkeleton />}>{viewContent}</Suspense>
       ) : (
-        <RecapLoadingLabel mode={libraryMode} />
+        <RecapLoadingLabel view={activeView} mode={loadMode} />
       )}
     </RecapShellLayout>
   );

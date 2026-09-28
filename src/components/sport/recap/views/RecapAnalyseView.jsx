@@ -1,9 +1,7 @@
-import React, { lazy, Suspense, useEffect, useState } from 'react';
+import React from 'react';
 import RecapPeriodHighlightsPanel from '../RecapPeriodHighlightsPanel';
+import RecapAnalyseDetails from './RecapAnalyseDetails';
 import { useTranslation } from '../../../../utils/translations';
-import { useWorkout } from '../../../../context/WorkoutContext';
-
-const RecapAnalyseDetails = lazy(() => import('./RecapAnalyseDetails'));
 
 const HORIZON_PILLS = {
   short: 'bg-cyan-500/20 text-cyan-200 border-cyan-500/40',
@@ -29,7 +27,7 @@ const REWARD_TITLE = {
 
 function InsightColumn({ title, items, horizonKey, accent }) {
   const pill = HORIZON_PILLS[horizonKey] || HORIZON_PILLS.medium;
-  const trimmed = (items || []).slice(0, 8);
+  const cards = items || [];
 
   return (
     <div className={`rounded-xl border p-4 ${accent}`}>
@@ -38,11 +36,11 @@ function InsightColumn({ title, items, horizonKey, accent }) {
           {title}
         </span>
       </div>
-      {trimmed.length === 0 ? (
+      {cards.length === 0 ? (
         <p className="text-[12px] leading-relaxed text-slate-500">Aucun signal assez robuste.</p>
       ) : (
         <div className="space-y-4">
-          {trimmed.map((item, i) => {
+          {cards.map((item, i) => {
             const card = typeof item === 'object' && item ? item : { body: String(item || '') };
             const tone = REWARD_CARD[card.rewardTone] || '';
             const titleTone = REWARD_TITLE[card.rewardTone] || 'text-teal-100/95';
@@ -81,27 +79,9 @@ export default function RecapAnalyseView({
   isAdmin = false
 }) {
   const t = useTranslation();
-  const { activeTab } = useWorkout();
   const shortTerm = assessment?.insights?.shortTerm || [];
   const mediumTerm = assessment?.insights?.mediumTerm || [];
   const longTerm = assessment?.insights?.longTerm || [];
-  const [detailsReady, setDetailsReady] = useState(false);
-
-  useEffect(() => {
-    if (activeTab !== 'recap') return undefined;
-    let idleId = 0;
-    let timerId = 0;
-    const show = () => setDetailsReady(true);
-    if (typeof window.requestIdleCallback === 'function') {
-      idleId = window.requestIdleCallback(show, { timeout: 1500 });
-    } else {
-      timerId = window.setTimeout(show, 400);
-    }
-    return () => {
-      if (idleId && typeof window.cancelIdleCallback === 'function') window.cancelIdleCallback(idleId);
-      if (timerId) window.clearTimeout(timerId);
-    };
-  }, [activeTab]);
 
   return (
     <div className="space-y-5">
@@ -133,21 +113,17 @@ export default function RecapAnalyseView({
         />
       </div>
 
-      {detailsReady ? (
-        <Suspense fallback={null}>
-          <RecapAnalyseDetails
-            assessment={assessment}
-            synthesisCoach={synthesisCoach}
-            profileQuestionnaireRaw={profileQuestionnaireRaw}
-            enrichment={enrichment}
-            programCoachAnalysis={programCoachAnalysis}
-            activeProgram={activeProgram}
-            period={period}
-            garminData={garminData}
-            isAdmin={isAdmin}
-          />
-        </Suspense>
-      ) : null}
+      <RecapAnalyseDetails
+        assessment={assessment}
+        synthesisCoach={synthesisCoach}
+        profileQuestionnaireRaw={profileQuestionnaireRaw}
+        enrichment={enrichment}
+        programCoachAnalysis={programCoachAnalysis}
+        activeProgram={activeProgram}
+        period={period}
+        garminData={garminData}
+        isAdmin={isAdmin}
+      />
     </div>
   );
 }

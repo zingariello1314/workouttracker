@@ -1,6 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { computeRecapMuscleState, getRecapDateWindow } from '../utils/sport/recapMuscleLoadEngine';
-import { RECAP_VIEW_PERIOD_IDS } from '../utils/sport/recapViewPeriods';
+import { computeRecapMuscleState } from '../utils/sport/recapMuscleLoadEngine';
 import { buildRecapEnduranceDigest } from '../utils/sport/recapPageDigest';
 import { buildRecapEnrichmentBundle } from '../utils/sport/recapEnrichmentMetrics';
 import { computeRecapUserAssessment } from '../utils/sport/recapUserAssessment';
@@ -71,7 +70,7 @@ function cancelHeavyWork(cancel) {
 
 /** Une entrée par plage : changer de période ne relance pas un calcul déjà fait. */
 const bundlesByFull = new Map();
-let lastReadyStamp = '';
+let hasPublishedPeriod = false;
 
 function rememberBundle(fullKey, bundle) {
   if (!fullKey || !bundle) return;
@@ -209,21 +208,6 @@ function buildRecapMetricsKey({
   };
 }
 
-function buildPeriodJobs(args) {
-  return RECAP_VIEW_PERIOD_IDS.map((periodId) => {
-    const periodWindow =
-      periodId === args.deferredPeriod && args.periodWindow
-        ? args.periodWindow
-        : getRecapDateWindow(periodId);
-    const key = buildRecapMetricsKey({
-      ...args,
-      deferredPeriod: periodId,
-      periodWindow
-    });
-    return { periodId, periodWindow, key };
-  });
-}
-
 function readSessionHit(key) {
   if (!key?.full) return null;
   const exact = bundlesByFull.get(key.full);
@@ -310,64 +294,16 @@ export function useRecapTabMetrics({
       isGymMode
     ]
   );
-  const periodJobs = useMemo(
-    () =>
-      buildPeriodJobs({
-        snapshot,
-        deferredPeriod,
-        periodWindow,
-        activeProgram,
-        programs,
-        profileQuestionnaireRaw,
-        garminPartial: garminPartialInput,
-        nutritionPartial: nutritionPartialForRecap,
-        garminBundle: garminDataForMetrics,
-        isAuthenticated,
-        isAdmin,
-        isGymMode
-      }),
-    [
-      snapshot,
-      deferredPeriod,
-      periodWindow,
-      activeProgram,
-      programs,
-      profileQuestionnaireRaw,
-      garminPartialInput,
-      nutritionPartialForRecap,
-      garminDataForMetrics,
-      isAuthenticated,
-      isAdmin,
-      isGymMode
-    ]
-  );
-  const libraryStamp = periodJobs.map((job) => job.key.full).join('||');
-  const cacheComplete = periodJobs.every((job) => readSessionHit(job.key));
   const cachedHit = readSessionHit(inputKey);
   const [bundle, setBundle] = useState(cachedHit);
-  const [computing, setComputing] = useState(enabled && !cacheComplete);
-  const [library, setLibrary] = useState(() =>
-    cacheComplete
-      ? { ready: true, mode: 'ready', stamp: libraryStamp }
-      : { ready: false, mode: lastReadyStamp ? 'refresh' : 'initial', stamp: '' }
-  );
+  const [computing, setComputing] = useState(enabled && !cachedHit);
   const shownKeyRef = useRef(cachedHit ? inputKey.full : '');
-  if (cacheComplete && (!library.ready || library.stamp !== libraryStamp)) {
-    lastReadyStamp = libraryStamp;
-    setLibrary({ ready: true, mode: 'ready', stamp: libraryStamp });
-    setComputing(false);
-  } else if (!cacheComplete && library.ready) {
-    setLibrary({
-      ready: false,
-      mode: lastReadyStamp ? 'refresh' : 'initial',
-      stamp: libraryStamp
-    });
-    setComputing(true);
-  }
   if (cachedHit && !inputKey.pending && shownKeyRef.current !== inputKey.full) {
     shownKeyRef.current = inputKey.full;
     setBundle(cachedHit);
-    setComputing(cacheComplete ? false : computing);
+    setComputing(false);
+  } else if (enabled && !cachedHit && !computing) {
+    setComputing(true);
   }
   const genRef = useRef(0);
   const publishedInsightsRef = useRef(null);
@@ -390,13 +326,8 @@ export function useRecapTabMetrics({
       return undefined;
     }
 
-    if (inputKey.pending && periodJobs.some((job) => !readSessionHit(job.key))) {
+    if (inputKey.pending && !readSessionHit(inputKey)) {
       setComputing(true);
-      setLibrary({
-        ready: false,
-        mode: lastReadyStamp ? 'refresh' : 'initial',
-        stamp: libraryStamp
-      });
       return undefined;
     }
 
@@ -599,6 +530,9 @@ export function useRecapTabMetrics({
         if (!publish || gen !== genRef.current) return;
         shownKeyRef.current = keyFull;
         setBundle(nextBundle);
+        setComputing(false);
+        hasPublishedPeriod = true;
+        markRecapViewPrepared();
       } catch (err) {
         if (!publish || gen !== genRef.current) return;
         if (process.env.NODE_ENV === 'development') {
@@ -608,65 +542,30 @@ export function useRecapTabMetrics({
       }
     };
 
-    const missing = periodJobs.filter((job) => !readSessionHit(job.key));
-
-    if (missing.length === 0) {
-      if (hit) {
-        shownKeyRef.current = inputKey.full;
-        setBundle(hit);
-      }
+    if (hit) {
+      shownKeyRef.current = inputKey.full;
+      setBundle(hit);
       setComputing(false);
-      setLibrary({ ready: true, mode: 'ready', stamp: libraryStamp });
-      lastReadyStamp = libraryStamp;
+      hasPublishedPeriod = true;
       markRecapViewPrepared();
       return undefined;
     }
 
     setComputing(true);
-    setLibrary({
-      ready: false,
-      mode: lastReadyStamp ? 'refresh' : 'initial',
-      stamp: libraryStamp
-    });
-
-    const ordered = [...missing].sort((a, b) => {
-      if (a.periodId === deferredPeriod) return -1;
-      if (b.periodId === deferredPeriod) return 1;
-      return 0;
-    });
-
-    const run = async () => {
-      for (const job of ordered) {
-        if (gen !== genRef.current) return;
-        if (readSessionHit(job.key)) continue;
-        await runFor(
-          job.periodId,
-          job.periodWindow,
-          job.key.full,
-          job.periodId === deferredPeriod
-        );
-      }
-      if (gen !== genRef.current) return;
-      if (periodJobs.some((job) => !readSessionHit(job.key))) return;
-      lastReadyStamp = libraryStamp;
-      setLibrary({ ready: true, mode: 'ready', stamp: libraryStamp });
-      setComputing(false);
-      markRecapViewPrepared();
-    };
-
     const cancel = scheduleHeavyWork(() => {
-      run();
+      runFor(deferredPeriod, periodWindow, inputKey.full, true);
     });
     return () => {
       genRef.current += 1;
       cancelHeavyWork(cancel);
     };
-  }, [deferredPeriod, isGymMode, inputKey.full, inputKey.pending, inputKey.workout, enabled, libraryStamp, periodJobs]);
+  }, [deferredPeriod, isGymMode, inputKey.full, inputKey.pending, inputKey.workout, enabled, periodWindow]);
 
+  const contentReady = !enabled || (!computing && Boolean(bundle));
   return {
     computing,
-    libraryReady: Boolean(library.ready && library.stamp === libraryStamp),
-    libraryMode: library.mode,
+    contentReady,
+    loadMode: !contentReady && hasPublishedPeriod ? 'refresh' : 'initial',
     ...bundle
   };
 }
