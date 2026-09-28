@@ -318,13 +318,13 @@ export const MomentumWelcomeGate = memo(function MomentumWelcomeGate({
             <motion.div
               initial={{ opacity: 0, y: 12 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.65, duration: 0.4, ease: CARD_EASE }}
+              transition={{ delay: 0.05, duration: 0.2, ease: CARD_EASE }}
             >
               <button
                 type="button"
                 onClick={handleUnlock}
                 disabled={!canUnlock}
-                className="group relative w-full overflow-hidden rounded-xl px-5 py-3.5 text-[15px] font-semibold transition-[transform,box-shadow,filter] duration-150 focus:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400 focus-visible:ring-offset-2 focus-visible:ring-offset-[#0d1117] disabled:cursor-not-allowed disabled:border disabled:border-slate-600/40 disabled:bg-slate-700/50 disabled:text-slate-500 disabled:shadow-none enabled:bg-gradient-to-r enabled:from-sky-500 enabled:to-cyan-400 enabled:text-slate-950 enabled:shadow-[0_0_18px_rgba(56,189,248,0.45),0_8px_28px_rgba(56,189,248,0.3)] enabled:hover:brightness-110 enabled:hover:shadow-[0_0_26px_rgba(56,189,248,0.7),0_0_52px_rgba(34,211,238,0.35),0_8px_32px_rgba(56,189,248,0.45)] enabled:active:scale-[0.98] enabled:active:shadow-[0_0_14px_rgba(56,189,248,0.55)]"
+                className="group relative w-full overflow-hidden rounded-xl px-5 py-3.5 text-[15px] font-semibold transition-[transform,box-shadow,filter] duration-150 focus:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400 focus-visible:ring-offset-2 focus-visible:ring-offset-[#0d1117] disabled:cursor-not-allowed disabled:border disabled:border-slate-600/40 disabled:bg-slate-700/50 disabled:text-slate-500 disabled:shadow-none enabled:cursor-pointer enabled:bg-gradient-to-r enabled:from-sky-500 enabled:to-cyan-400 enabled:text-slate-950 enabled:shadow-[0_0_18px_rgba(56,189,248,0.45),0_8px_28px_rgba(56,189,248,0.3)] enabled:hover:brightness-110 enabled:hover:shadow-[0_0_26px_rgba(56,189,248,0.7),0_0_52px_rgba(34,211,238,0.35),0_8px_32px_rgba(56,189,248,0.45)] enabled:active:scale-[0.98] enabled:active:shadow-[0_0_14px_rgba(56,189,248,0.55)]"
               >
                 <span
                   className="pointer-events-none absolute inset-0 opacity-0 transition-opacity duration-500 group-enabled:group-hover:opacity-100"

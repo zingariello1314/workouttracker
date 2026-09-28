@@ -6,7 +6,6 @@ import { getVisibleHomepageImageIndices } from '../utils/homepageImagePreference
 import { preloadImageUrl } from '../utils/lockWallpaperPreload';
 import {
   getCoreSportTabsPreloadProgress,
-  startStartupPipeline,
   subscribeCoreSportTabsPreload
 } from '../utils/preloadTabs';
 
@@ -30,12 +29,13 @@ function chunkPartial(chunkReady, viewPrepared) {
 
 /**
  * Chemin critique du bouton Déverrouiller : session, profil, avatar,
- * fonds d'accueil choisis, robot 3D, fond animé, Aujourd'hui.
- * Récap, Calendrier et la banque avancent en parallèle, sans bloquer le clic.
+ * la photo d'accueil qui va s'afficher, le robot 3D, le fond animé.
+ * Aujourd'hui, Récap, Calendrier et la banque n'empêchent pas le clic.
  */
 export function useWelcomeGateSignals({
   homeImages = [],
   homeImagesLoading = true,
+  chosenHomeImageReady = false,
   splineReady = false
 } = {}) {
   const { currentUser, isAuthenticated, loading: authLoading } = useAuth();
@@ -53,12 +53,6 @@ export function useWelcomeGateSignals({
     const timer = window.setTimeout(() => setBackgroundReleased(true), 8000);
     return () => window.clearTimeout(timer);
   }, []);
-
-  useEffect(() => {
-    if (authLoading) return undefined;
-    startStartupPipeline();
-    return undefined;
-  }, [authLoading]);
 
   useEffect(() => {
     if (authLoading) {
@@ -118,42 +112,18 @@ export function useWelcomeGateSignals({
     }
 
     const srcs = selectedHomeSrcs(homeImages);
-    if (srcs.length === 0) {
+    if (srcs.length === 0 || chosenHomeImageReady) {
       setHomeImagesPartial(1);
       setHomeImagesReady(true);
       return undefined;
     }
 
-    let cancelled = false;
-    setHomeImagesPartial(0.45);
-
-    const warm = async () => {
-      const [first, ...rest] = srcs;
-      await preloadImageUrl(first).catch(() => {});
-      if (cancelled) return;
-      setHomeImagesPartial(0.7);
-      setHomeImagesReady(true);
-
-      for (let i = 0; i < rest.length; i += 1) {
-        if (cancelled) return;
-        await preloadImageUrl(rest[i]).catch(() => {});
-        if (cancelled) return;
-        setHomeImagesPartial(0.7 + ((i + 1) / rest.length) * 0.3);
-        await new Promise((resolve) => {
-          window.setTimeout(resolve, 48);
-        });
-      }
-    };
-
-    warm();
-
-    return () => {
-      cancelled = true;
-    };
-  }, [homeImagesLoading, selectedKey, homeImages.length]);
+    setHomeImagesPartial(0.65);
+    setHomeImagesReady(false);
+    return undefined;
+  }, [homeImagesLoading, selectedKey, homeImages.length, chosenHomeImageReady]);
 
   const backgroundReady = startup.animatedBackgroundPrepared || backgroundReleased;
-  const todayReady = startup.todayViewPrepared;
 
   const steps = useMemo(
     () => [
@@ -168,10 +138,6 @@ export function useWelcomeGateSignals({
       {
         ready: backgroundReady,
         partial: startup.animatedBackgroundPrepared ? 1 : backgroundReleased ? 1 : 0.35
-      },
-      {
-        ready: todayReady,
-        partial: todayReady ? 1 : startup.todayChunkReady ? 0.62 : 0.16
       }
     ],
     [
@@ -185,14 +151,17 @@ export function useWelcomeGateSignals({
       splineReady,
       backgroundReady,
       backgroundReleased,
-      startup.animatedBackgroundPrepared,
-      todayReady,
-      startup.todayChunkReady
+      startup.animatedBackgroundPrepared
     ]
   );
 
   const warmup = useMemo(
     () => [
+      {
+        id: 'today',
+        label: 'Aujourd\u2019hui',
+        partial: chunkPartial(startup.todayChunkReady, startup.todayViewPrepared)
+      },
       {
         id: 'recap',
         label: 'Récap',
@@ -210,6 +179,8 @@ export function useWelcomeGateSignals({
       }
     ],
     [
+      startup.todayChunkReady,
+      startup.todayViewPrepared,
       startup.recapChunkReady,
       startup.recapViewPrepared,
       startup.calendarChunkReady,

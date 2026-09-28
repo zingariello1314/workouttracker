@@ -23,6 +23,21 @@ const log = logger.module('useHomepageImages');
 
 /** Dernière collection enregistrée dans cet onglet, par compte. Survit au changement de page. */
 const wallpaperSessionByScope = new Map();
+const homepageIdbInflight = new Map();
+
+function shareHomepageIdbRead(scopeKey, start) {
+  const existing = homepageIdbInflight.get(scopeKey);
+  if (existing) return existing;
+  const job = Promise.resolve()
+    .then(start)
+    .finally(() => {
+      if (homepageIdbInflight.get(scopeKey) === job) {
+        homepageIdbInflight.delete(scopeKey);
+      }
+    });
+  homepageIdbInflight.set(scopeKey, job);
+  return job;
+}
 
 export const useHomepageImages = () => {
   const { currentUser, isAuthenticated } = useAuth();
@@ -684,7 +699,7 @@ export const useHomepageImages = () => {
       // On attend le résultat : un délai court publiait une liste vide et l’accueil restait sans image.
       let images = [];
       try {
-        images = await loadImagesFromIndexedDB();
+        images = await shareHomepageIdbRead(scopeKey, () => loadImagesFromIndexedDB());
       } catch (idbError) {
         log.warn('⚠️ Lecture IndexedDB des fonds impossible', idbError);
         images = [];
@@ -706,6 +721,7 @@ export const useHomepageImages = () => {
         
         // ✅ Phase 7: Mettre à jour la ref IMMÉDIATEMENT lors du chargement
         backgroundImagesRef.current = shuffledImagesRef.current;
+        wallpaperSessionByScope.set(scopeKey, shuffledImagesRef.current);
         setBackgroundImages(shuffledImagesRef.current);
         setIsLoading(false);
         return;

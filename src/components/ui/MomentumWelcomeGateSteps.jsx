@@ -2,7 +2,7 @@ import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Check } from 'lucide-react';
 
 const MIN_STEP_MS = 140;
-const STEP_END_PROGRESS = [12, 24, 36, 50, 64, 78, 100];
+const STEP_END_PROGRESS = [16, 33, 50, 66, 83, 100];
 
 export const LOADING_STEPS = [
   {
@@ -34,11 +34,6 @@ export const LOADING_STEPS = [
     id: 'background',
     loadingLabel: 'Fond animé…',
     doneLabel: 'Fond animé prêt'
-  },
-  {
-    id: 'today',
-    loadingLabel: 'Préparation d\u2019Aujourd\u2019hui…',
-    doneLabel: 'Aujourd\u2019hui prêt'
   }
 ];
 

@@ -166,6 +166,7 @@ const WorkoutTrackerContent = () => {
   const isAdmin = isAdminUser(currentUser);
   const [showProfileQuiz, setShowProfileQuiz] = useState(false);
   const [onboardingPromptHandled, setOnboardingPromptHandled] = useState(false);
+  const [homeUnlocked, setHomeUnlocked] = useState(false);
   const [warmToday, setWarmToday] = useState(false);
   const [warmCalendar, setWarmCalendar] = useState(false);
   const [warmRecap, setWarmRecap] = useState(false);
@@ -248,15 +249,42 @@ const WorkoutTrackerContent = () => {
   }, [activeTab]);
 
   React.useEffect(() => {
-    if (authLoading) return undefined;
-    startStartupPipeline();
-    setWarmToday(true);
-    return subscribeCoreSportTabsPreload((progress) => {
-      if (!progress.todayViewPrepared) return;
-      setWarmRecap(true);
-      setWarmCalendar(true);
-    });
-  }, [authLoading]);
+    const onUnlock = () => setHomeUnlocked(true);
+    window.addEventListener('momentum:home-unlocked', onUnlock);
+    return () => window.removeEventListener('momentum:home-unlocked', onUnlock);
+  }, []);
+
+  React.useEffect(() => {
+    if (authLoading || !homeUnlocked) return undefined;
+    let cancelled = false;
+    let idleId = 0;
+    let unsubscribe = () => {};
+    const start = () => {
+      if (cancelled) return;
+      startStartupPipeline();
+      setWarmToday(true);
+      unsubscribe = subscribeCoreSportTabsPreload((progress) => {
+        if (!progress.todayViewPrepared) return;
+        setWarmRecap(true);
+        setWarmCalendar(true);
+      });
+    };
+    const timer = window.setTimeout(() => {
+      if (typeof window.requestIdleCallback === 'function') {
+        idleId = window.requestIdleCallback(start, { timeout: 4000 });
+      } else {
+        start();
+      }
+    }, 1800);
+    return () => {
+      cancelled = true;
+      window.clearTimeout(timer);
+      if (idleId && typeof window.cancelIdleCallback === 'function') {
+        window.cancelIdleCallback(idleId);
+      }
+      unsubscribe();
+    };
+  }, [authLoading, homeUnlocked]);
 
   // ✅ Charger les données Garmin pour les calories
   // - admin connecté : charge les vraies données

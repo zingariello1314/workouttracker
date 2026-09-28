@@ -143,15 +143,10 @@ const HomePage = () => {
   const [isInitialImageLoaded, setIsInitialImageLoaded] = useState(false);
   const [splineReady, setSplineReady] = useState(false);
   const [introPlaybackDone, setIntroPlaybackDone] = useState(false);
-  const [homeRevealReady, setHomeRevealReady] = useState(false);
   const onUnlockHomeWelcome = useCallback(() => {
     setIntroPlaybackDone(true);
-    // Le PIN, s’il est configuré, s’ouvre après la première peinture de l’accueil.
-    if (lockReady) {
-      window.requestAnimationFrame(() => {
-        lockNow();
-      });
-    }
+    window.dispatchEvent(new CustomEvent('momentum:home-unlocked'));
+    if (lockReady) lockNow();
   }, [lockReady, lockNow]);
   const initialImageLoadedRef = useRef(false); // Ref pour suivre si l'image initiale a été marquée comme chargée
   
@@ -391,30 +386,34 @@ const HomePage = () => {
       return;
     }
 
-    // Index initial pondéré (likées plus souvent), images masquées exclues
+    // Tirage une fois, sur la sélection déjà enregistrée. On affiche cet index tout de suite,
+    // pas l’image 0 le temps que le state se mette à jour.
+    let displayIndex = currentImageIndex;
     if (!initialIndexSetRef.current && backgroundImages.length > 0) {
-      const randomIndex = pickInitialHomepageImageIndex(backgroundImages, {
+      const picked = pickInitialHomepageImageIndex(backgroundImages, {
         order: homeOrderRef.current
       });
-      setCurrentImageIndex(randomIndex);
-      currentImageIndexRef.current = randomIndex;
+      displayIndex = picked >= 0 ? picked : 0;
       initialIndexSetRef.current = true;
-      log.debug(`🎲 Index initial pondéré: ${randomIndex}/${backgroundImages.length}`);
+      currentImageIndexRef.current = displayIndex;
+      if (displayIndex !== currentImageIndex) {
+        setCurrentImageIndex(displayIndex);
+      }
     }
 
-    const currentNorm = normalizeHomepageImage(backgroundImages[currentImageIndex], currentImageIndex);
+    const currentNorm = normalizeHomepageImage(backgroundImages[displayIndex], displayIndex);
     if (currentNorm?.hidden) {
-      const nextVisible = pickNextHomepageImageIndex(backgroundImages, currentImageIndex, {
+      const nextVisible = pickNextHomepageImageIndex(backgroundImages, displayIndex, {
         order: homeOrderRef.current
       });
-      if (nextVisible >= 0 && nextVisible !== currentImageIndex) {
+      if (nextVisible >= 0 && nextVisible !== displayIndex) {
         setCurrentImageIndex(nextVisible);
         currentImageIndexRef.current = nextVisible;
       }
       return;
     }
 
-    const currentImage = backgroundImages[currentImageIndex];
+    const currentImage = backgroundImages[displayIndex];
     if (!currentImage) {
       // ✅ Chargement initial : Si pas d'image actuelle, masquer l'écran de chargement
       if (isFirstLoadRef.current) {
@@ -439,8 +438,9 @@ const HomePage = () => {
   // ✅ Phase 7: Préchargement proactif des images (adapté pour rotation aléatoire)
   // ✅ RANDOMISATION : Précharger images aléatoires au lieu de séquentielles
   useEffect(() => {
+    if (!introPlaybackDone) return undefined;
     const visible = getVisibleHomepageImageIndices(backgroundImages);
-    if (!backgroundImages || visible.length <= 1) return;
+    if (!backgroundImages || visible.length <= 1) return undefined;
 
     const currentImage = backgroundImages[currentImageIndex];
     if (!currentImage) return;
@@ -448,7 +448,7 @@ const HomePage = () => {
     const preloadRandomImages = async () => {
       const indicesToPreload = new Set();
       const candidates = visible.filter((i) => i !== currentImageIndex);
-      const maxPreload = Math.min(3, candidates.length);
+      const maxPreload = Math.min(1, candidates.length);
 
       while (indicesToPreload.size < maxPreload && candidates.length > 0) {
         const pick = candidates[Math.floor(Math.random() * candidates.length)];
@@ -483,8 +483,23 @@ const HomePage = () => {
       }
     };
 
-    preloadRandomImages();
-  }, [currentImageIndex, backgroundImages]);
+    let idleId = 0;
+    let timerId = 0;
+    const kick = () => {
+      preloadRandomImages();
+    };
+    if (typeof window.requestIdleCallback === 'function') {
+      idleId = window.requestIdleCallback(kick, { timeout: 5000 });
+    } else {
+      timerId = window.setTimeout(kick, 2000);
+    }
+    return () => {
+      if (idleId && typeof window.cancelIdleCallback === 'function') {
+        window.cancelIdleCallback(idleId);
+      }
+      if (timerId) window.clearTimeout(timerId);
+    };
+  }, [currentImageIndex, backgroundImages, introPlaybackDone]);
 
   // Rotation automatique (vitesse réglable ; le clic n’arrête pas le minuteur)
   useEffect(() => {
@@ -691,24 +706,10 @@ const HomePage = () => {
   // ✅ Chargement initial : Déterminer si on doit afficher l'écran de chargement
   // Ne s'affiche que si on est vraiment sur home ET que le chargement est en cours
   const shouldShowLoading = activeTab === 'home' && !introPlaybackDone;
-
-  useEffect(() => {
-    if (shouldShowLoading) {
-      setHomeRevealReady(false);
-      return undefined;
-    }
-    let inner = 0;
-    const outer = window.requestAnimationFrame(() => {
-      inner = window.requestAnimationFrame(() => setHomeRevealReady(true));
-    });
-    return () => {
-      window.cancelAnimationFrame(outer);
-      window.cancelAnimationFrame(inner);
-    };
-  }, [shouldShowLoading]);
   const { steps: welcomeStepSignals, warmup: welcomeWarmup } = useWelcomeGateSignals({
     homeImages: backgroundImages,
     homeImagesLoading,
+    chosenHomeImageReady: isInitialImageLoaded,
     splineReady
   });
 
@@ -803,7 +804,7 @@ const HomePage = () => {
       )}
 
       {/* ✅ Phase 7: Double buffering — masqué pendant l’intro pour ne pas concurrencer le Player (GPU / peinture). */}
-      {homeRevealReady && backgroundImages.length > 0 && layer0Src && (
+      {!shouldShowLoading && backgroundImages.length > 0 && layer0Src && (
         <div 
           className="absolute inset-0 bg-cover bg-center bg-no-repeat"
           style={{
@@ -827,7 +828,7 @@ const HomePage = () => {
       )}
 
       {/* ✅ Phase 7: Double buffering - Layer 1 */}
-      {homeRevealReady && backgroundImages.length > 0 && layer1Src && (
+      {!shouldShowLoading && backgroundImages.length > 0 && layer1Src && (
         <div 
           className="absolute inset-0 bg-cover bg-center bg-no-repeat"
           style={{
@@ -850,7 +851,6 @@ const HomePage = () => {
         </div>
       )}
 
-      {/* Robot 3D : monté dès l’accueil, y compris sous l’écran de déverrouillage, pour qu’il soit prêt au clic. */}
       {activeTab === 'home' && isLargeScreen && (
         <div
           className="fixed bottom-0 right-[8rem] xl:right-[16rem] w-72 h-72 xl:w-96 xl:h-96 z-50 pointer-events-none"
@@ -858,7 +858,7 @@ const HomePage = () => {
         >
           <SplineScene
             scene="https://prod.spline.design/kZDDjO5HuC9GJUM2/scene.splinecode"
-            className="w-full h-full pointer-events-auto"
+            className={`h-full w-full ${shouldShowLoading ? 'pointer-events-none' : 'pointer-events-auto'}`}
             onLoad={() => setSplineReady(true)}
           />
         </div>
