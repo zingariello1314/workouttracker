@@ -9,7 +9,6 @@ import React, {
   useState
 } from 'react';
 import { motion } from 'framer-motion';
-import { Loader2 } from 'lucide-react';
 import { DEFAULT_LOCK_WALLPAPER_ROTATION_MS } from '../../utils/lockWallpaperImage';
 import {
   pickInitialLockWallpaperIndex,
@@ -206,6 +205,7 @@ export const MomentumWelcomeGate = memo(function MomentumWelcomeGate({
   unlockHint,
   syncMessage,
   stepSignals = [],
+  warmupSignals = [],
   lockBackgroundDataUrl = null,
   lockBackgroundDataUrls = null,
   lockWallpaperRotationMs = DEFAULT_LOCK_WALLPAPER_ROTATION_MS,
@@ -230,7 +230,7 @@ export const MomentumWelcomeGate = memo(function MomentumWelcomeGate({
   const handleUnlock = useCallback(() => {
     if (opening || !sequenceReady) return;
     setOpening(true);
-    window.setTimeout(() => onUnlock?.(), 380);
+    onUnlock?.();
   }, [opening, onUnlock, sequenceReady]);
 
   const canUnlock = sequenceReady && !opening;
@@ -310,6 +310,7 @@ export const MomentumWelcomeGate = memo(function MomentumWelcomeGate({
 
             <LoadingStepsPanel
               stepSignals={stepSignals}
+              warmupSignals={warmupSignals}
               syncMessage={syncMessage}
               onReadyChange={setSequenceReady}
             />
@@ -323,7 +324,7 @@ export const MomentumWelcomeGate = memo(function MomentumWelcomeGate({
                 type="button"
                 onClick={handleUnlock}
                 disabled={!canUnlock}
-                className="group relative w-full overflow-hidden rounded-xl px-5 py-3.5 text-[15px] font-semibold transition-all duration-500 focus:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400 focus-visible:ring-offset-2 focus-visible:ring-offset-[#0d1117] disabled:cursor-not-allowed disabled:border disabled:border-slate-600/40 disabled:bg-slate-700/50 disabled:text-slate-500 disabled:shadow-none enabled:bg-gradient-to-r enabled:from-sky-500 enabled:to-cyan-400 enabled:text-slate-950 enabled:shadow-[0_0_18px_rgba(56,189,248,0.45),0_8px_28px_rgba(56,189,248,0.3)] enabled:hover:brightness-110 enabled:hover:shadow-[0_0_26px_rgba(56,189,248,0.7),0_0_52px_rgba(34,211,238,0.35),0_8px_32px_rgba(56,189,248,0.45)] enabled:active:scale-[0.98] enabled:active:shadow-[0_0_14px_rgba(56,189,248,0.55)]"
+                className="group relative w-full overflow-hidden rounded-xl px-5 py-3.5 text-[15px] font-semibold transition-[transform,box-shadow,filter] duration-150 focus:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400 focus-visible:ring-offset-2 focus-visible:ring-offset-[#0d1117] disabled:cursor-not-allowed disabled:border disabled:border-slate-600/40 disabled:bg-slate-700/50 disabled:text-slate-500 disabled:shadow-none enabled:bg-gradient-to-r enabled:from-sky-500 enabled:to-cyan-400 enabled:text-slate-950 enabled:shadow-[0_0_18px_rgba(56,189,248,0.45),0_8px_28px_rgba(56,189,248,0.3)] enabled:hover:brightness-110 enabled:hover:shadow-[0_0_26px_rgba(56,189,248,0.7),0_0_52px_rgba(34,211,238,0.35),0_8px_32px_rgba(56,189,248,0.45)] enabled:active:scale-[0.98] enabled:active:shadow-[0_0_14px_rgba(56,189,248,0.55)]"
               >
                 <span
                   className="pointer-events-none absolute inset-0 opacity-0 transition-opacity duration-500 group-enabled:group-hover:opacity-100"
@@ -333,27 +334,23 @@ export const MomentumWelcomeGate = memo(function MomentumWelcomeGate({
                   <span className="absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/30 to-transparent transition-transform duration-700 ease-out group-enabled:group-hover:translate-x-full" />
                 </span>
                 <span className="relative z-10 flex items-center justify-center gap-2.5">
-                  {opening ? (
-                    <Loader2 size={18} className="animate-spin text-slate-900" aria-hidden />
-                  ) : (
-                    <span className="flex h-7 w-7 items-center justify-center rounded-full bg-black/15">
-                      <svg
-                        className="h-3.5 w-3.5"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        strokeWidth="2.2"
-                        aria-hidden
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          d="M8 11V7a4 4 0 118 0m-4 8v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2z"
-                        />
-                      </svg>
-                    </span>
-                  )}
-                  {opening ? 'Ouverture…' : unlockLabel}
+                  <span className="flex h-7 w-7 items-center justify-center rounded-full bg-black/15">
+                    <svg
+                      className="h-3.5 w-3.5"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2.2"
+                      aria-hidden
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        d="M8 11V7a4 4 0 118 0m-4 8v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2z"
+                      />
+                    </svg>
+                  </span>
+                  {unlockLabel}
                 </span>
               </button>
             </motion.div>

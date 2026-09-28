@@ -735,3 +735,59 @@ export function computeEnduranceDayMetricsForCalendar(allData, dateStr) {
   };
 }
 
+/** Clé `reps` / `checkedExercises` d’un exercice exceptionnel pour une date. */
+export function exceptionalExerciseStorageKey(dateStr, exerciseId) {
+  return `${dateStr}_${exerciseId}`;
+}
+
+/**
+ * Valeur enregistrée : total de reps, ou durée en secondes pour un exercice au chrono.
+ * @param {Record<string, unknown>|null|undefined} exercise
+ */
+export function recordedValueForExceptionalExercise(exercise) {
+  if (!exercise) return 0;
+  if (exercise.type === 'duration') {
+    const duration = Number(exercise.actualDuration ?? exercise.duration);
+    return Number.isFinite(duration) && duration > 0 ? Math.floor(duration) : 0;
+  }
+  const total = Number(exercise.totalReps);
+  if (Number.isFinite(total) && total > 0) return Math.floor(total);
+  const sumSeries = (values) =>
+    Array.isArray(values)
+      ? values.reduce((sum, value) => sum + (Number(value) > 0 ? Number(value) : 0), 0)
+      : 0;
+  const actual = sumSeries(exercise.actualReps);
+  if (actual > 0) return Math.floor(actual);
+  return Math.floor(sumSeries(exercise.repsPerSeries));
+}
+
+/**
+ * Exercices exceptionnels cochés absents des clés de séance déjà comptées.
+ * `repsForTotal` vaut 0 pour une durée, pour ne pas additionner des secondes aux reps.
+ * @param {string} dateStr
+ * @param {Record<string, unknown>|null|undefined} dailyVariation
+ * @param {Set<string>|Iterable<string>} alreadyCountedKeys
+ */
+export function listUncountedCompletedExceptionalExercises(dateStr, dailyVariation, alreadyCountedKeys) {
+  const list = Array.isArray(dailyVariation?.additionalExercises)
+    ? dailyVariation.additionalExercises
+    : [];
+  const counted = alreadyCountedKeys instanceof Set
+    ? alreadyCountedKeys
+    : new Set(alreadyCountedKeys || []);
+  const rows = [];
+  for (const exercise of list) {
+    if (!exercise?.completed || exercise.id == null) continue;
+    const storageKey = exceptionalExerciseStorageKey(dateStr, exercise.id);
+    if (counted.has(storageKey)) continue;
+    const recordedValue = recordedValueForExceptionalExercise(exercise);
+    rows.push({
+      exercise,
+      storageKey,
+      recordedValue,
+      repsForTotal: exercise.type === 'duration' ? 0 : recordedValue,
+    });
+  }
+  return rows;
+}
+

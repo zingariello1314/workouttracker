@@ -54,7 +54,8 @@
   "card": {
     "volume": "Volume au programme",
     "loadShort": "Diff. charge",
-    "openHint": "Cliquez pour la fiche complète et les réglages."
+    "openHint": "Cliquez pour la fiche complète et les réglages.",
+    "noNotesShort": "Ouverture fiche pour détails et technique."
   },
   "cardio": {
     "sourceLabel": "Référentiel cardio"
@@ -418,7 +419,8 @@
   "misc": {
     "notSpecified": "Non spécifié",
     "defaultProgram": "Programme par défaut",
-    "exerciseBankSource": "Banque commune exercices"
+    "exerciseBankSource": "Banque commune exercices",
+    "scoringCatalogSource": "Référentiel scoring musculation"
   },
   "equipment": {
     "boxingGloves": "Gants de boxe",

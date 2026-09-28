@@ -60,6 +60,8 @@ import {
 import CalendarDayDataStripes, {
   calendarStripeReservePx
 } from './calendar/CalendarDayDataStripes';
+import CalendarGtgDayModule from './calendar/CalendarGtgDayModule';
+import { CALENDAR_GTG_STRIPE_COLOR, omitGtgOnlyCalendarExercises } from '../utils/calendarGtgDay';
 import CalendarRestDayMarker from './calendar/CalendarRestDayMarker';
 import CalendarOtherDayMarker from './calendar/CalendarOtherDayMarker';
 import CalendarGarminDayRecap from './calendar/CalendarGarminDayRecap';
@@ -104,7 +106,10 @@ import {
   validateDate,
   validateNumericValue,
   collectEnduranceSessionsForCalendarDay,
-  computeEnduranceDayMetricsForCalendar
+  computeEnduranceDayMetricsForCalendar,
+  listUncountedCompletedExceptionalExercises,
+  recordedValueForExceptionalExercise,
+  exceptionalExerciseStorageKey
 } from '../utils/calendarUtils';
 import {
   paceMinPerKmFromSession,
@@ -1360,8 +1365,21 @@ const CalendarHeatmap = ({
     
     const enduranceData = getEnduranceDataForDate();
     
+    const completedExceptionalRows = listUncountedCompletedExceptionalExercises(
+      dateStr,
+      currentData?.dailyVariations?.[dateStr],
+      []
+    );
+    const hasCheckedThisDay = Object.keys(currentData?.checkedExercises || {}).some(
+      (key) => key.startsWith(`${dateStr}_`) && currentData.checkedExercises[key]
+    );
     // Si pas d'exercices pour ce jour ET pas de données d'endurance, retourner des valeurs par défaut
-    if (allExercisesForDate.length === 0 && enduranceData.sessions === 0) {
+    if (
+      allExercisesForDate.length === 0 &&
+      enduranceData.sessions === 0 &&
+      completedExceptionalRows.length === 0 &&
+      !hasCheckedThisDay
+    ) {
       const emptyDayJustification = getDayJustification(currentData, dateStr);
       return {
         level: 0,
@@ -1550,12 +1568,69 @@ const CalendarHeatmap = ({
         name: exerciseName,
         reps,
         exerciseId: rawId,
-        series: exceptionalSource?.series || '',
+        series: exceptionalSource?.series == null ? '' : String(exceptionalSource.series),
         type: exceptionalSource?.type || 'standard',
         materiel: exceptionalSource?.materiel || '',
         programName: exceptionalSource ? 'Exceptionnel' : 'Performance',
         programId: 'performance',
         _storageKey: key
+      });
+    });
+
+    const countedSessionKeys = new Set(plannedResolvedKeys);
+    adHocCompletedExercises.forEach((row) => {
+      if (row._storageKey) countedSessionKeys.add(row._storageKey);
+    });
+    listUncountedCompletedExceptionalExercises(
+      dateStr,
+      currentData?.dailyVariations?.[dateStr],
+      countedSessionKeys
+    ).forEach(({ exercise, storageKey, recordedValue, repsForTotal }) => {
+      completedExercises++;
+      if (repsForTotal > 0) {
+        exercisesReps += repsForTotal;
+        totalReps += repsForTotal;
+        const coeff = resolveExerciseIntensityCoeff(
+          {
+            id: exercise.id,
+            name: exercise.name,
+            series: '',
+            type: exercise.type || 'standard'
+          },
+          currentData?.exerciseIntensityCoeffs || {}
+        );
+        const usesLoad = exerciseUsesExternalLoad({
+          name: exercise.name,
+          materiel: exercise.materiel || '',
+          equipment: ''
+        });
+        const volumeKgAd = computeVolumeKgForWorkoutKey(storageKey, currentData);
+        const wKg = repsForTotal > 0 && volumeKgAd > 0 ? volumeKgAd / repsForTotal : 0;
+        const medianKg = computeMedianWeightKgForExercise(weightsStore, exercise.id);
+        const wMult = computeExternalLoadMultiplier(usesLoad, wKg, medianKg);
+        strengthLoad += computeStrengthCalendarContribution(
+          {
+            id: exercise.id,
+            name: exercise.name,
+            nom: exercise.name,
+            series: '',
+            type: exercise.type || 'standard'
+          },
+          repsForTotal,
+          coeff,
+          wMult
+        );
+      }
+      adHocCompletedExercises.push({
+        name: exercise.name,
+        reps: recordedValue,
+        exerciseId: exercise.id,
+        series: exercise.series == null ? '' : String(exercise.series),
+        type: exercise.type || 'standard',
+        materiel: exercise.materiel || '',
+        programName: 'Exceptionnel',
+        programId: 'performance',
+        _storageKey: storageKey
       });
     });
 
@@ -3179,6 +3254,7 @@ const CalendarHeatmap = ({
                 </span>
                 {[
                   ['physical', CALENDAR_PHYSICAL_ACTIVITY_COLOR, 'calendar.heatmap.stripes.physical'],
+                  ['gtg', CALENDAR_GTG_STRIPE_COLOR, 'calendar.heatmap.stripes.gtg'],
                   ['stretch', CALENDAR_MOMENTUM_STRIPE_COLORS.stretch, 'calendar.heatmap.stripes.stretch'],
                   ['walk', '#64748b', 'calendar.heatmap.stripes.walk'],
                   ['sleep', '#a855f7', 'calendar.heatmap.stripes.sleep'],
@@ -4332,6 +4408,18 @@ const CalendarHeatmap = ({
                 }
               });
               
+              const additionalForDay = latestData.dailyVariations?.[saveDateStr]?.additionalExercises;
+              if (Array.isArray(additionalForDay)) {
+                additionalForDay.forEach((exercise) => {
+                  if (!exercise?.completed || exercise.id == null) return;
+                  const key = exceptionalExerciseStorageKey(saveDateStr, exercise.id);
+                  const stored = recordedValueForExceptionalExercise(exercise);
+                  updatedCheckedExercises[key] = true;
+                  if (stored > 0) updatedReps[key] = stored;
+                  if (!savedKeys.includes(key)) savedKeys.push(key);
+                });
+              }
+
               if (isDebugDate) {
                 console.log('[DEBUG handleSave] Clés sauvegardées:', savedKeys);
                 console.log('[DEBUG handleSave] updatedReps (après traitement):', Object.keys(updatedReps).filter(k => k.startsWith(saveDateStr)));
@@ -6030,11 +6118,19 @@ const CalendarHeatmap = ({
             {/* Exercices réalisés - Masquer si jour justifié (sauf repos) */}
             {!showMinimalDayView &&
               selectedDate.intensity.session &&
-              selectedDate.intensity.session.exercises.length > 0 && (
+              omitGtgOnlyCalendarExercises(
+                selectedDate.intensity.session.exercises,
+                allData,
+                getDateStr(selectedDate.date)
+              ).length > 0 && (
               <div>
                 <h4 className="text-white font-medium mb-2">{t('calendar.heatmap.dayDetails.exercisesCompleted')}</h4>
                 <div className="space-y-2">
-                  {selectedDate.intensity.session.exercises.map((exercise, index) => {
+                  {omitGtgOnlyCalendarExercises(
+                    selectedDate.intensity.session.exercises,
+                    allData,
+                    getDateStr(selectedDate.date)
+                  ).map((exercise, index) => {
                     // Récupérer le nom du programme depuis l'exercice ou via getExerciseNameById
                     const programName = exercise.programName || 'Programme inconnu';
                     const exerciseName = exercise.name || (getExerciseNameById ? getExerciseNameById(exercise.exerciseId || exercise.id) : `Exercice ${exercise.exerciseId || exercise.id}`);
@@ -6045,12 +6141,13 @@ const CalendarHeatmap = ({
                     const isEditingReps = editingRepsStorageKey === rowStorageKey;
                     const coeffData = getCurrentData();
                     const userCoeffs = coeffData?.exerciseIntensityCoeffs || {};
+                    const seriesLabel = exercise.series == null ? '' : String(exercise.series);
                     const loadCoeff = resolveExerciseIntensityCoeff(
                       {
                         id: exercise.exerciseId ?? exercise.id,
                         name: exerciseName,
                         nom: exerciseName,
-                        series: exercise.series || '',
+                        series: seriesLabel,
                         type: exercise.type || ''
                       },
                       userCoeffs
@@ -6058,14 +6155,14 @@ const CalendarHeatmap = ({
                     const recordedDisplay = formatCalendarExerciseRecordedValue(
                       {
                         name: exerciseName,
-                        series: exercise.series || '',
+                        series: seriesLabel,
                         type: exercise.type || ''
                       },
                       exercise.reps
                     );
                     const editExerciseUnit = detectExerciseUnit({
                       name: exerciseName,
-                      series: exercise.series || '',
+                      series: seriesLabel,
                       type: exercise.type || ''
                     });
                     const weightRaw = coeffData?.exerciseWeights?.[rowStorageKey];
@@ -6120,7 +6217,7 @@ const CalendarHeatmap = ({
                                 stars={
                                   resolveExerciseScoring({
                                     name: exerciseName,
-                                    series: exercise.series || '',
+                                    series: seriesLabel,
                                     id: exercise.exerciseId ?? exercise.id
                                   })?.difficultyStars ?? 3
                                 }
@@ -6219,6 +6316,15 @@ const CalendarHeatmap = ({
                 </div>
               </div>
             )}
+
+            {variant === 'sport' ? (
+              <CalendarGtgDayModule
+                workoutData={allData}
+                dateStr={getDateStr(selectedDate.date)}
+                profileQuestionnaire={currentUser?.profileQuestionnaire || null}
+                t={t}
+              />
+            ) : null}
 
             {showMinimalDayView ? (
               <div className="mt-4 space-y-3 border-t border-slate-700/60 pt-4">

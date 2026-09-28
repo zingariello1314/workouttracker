@@ -209,6 +209,7 @@ async function saveBatchToIndexedDB(db, images, options = {}) {
             format: isV3Format ? (image.format || null) : null,
             metadata: isV3Format ? (image.metadata || null) : null,
             imageId: isV3Format ? (image.id || null) : null,
+            sortOrder: index,
             liked: isV3Format ? Boolean(image.liked) : false,
             hidden: isV3Format ? Boolean(image.hidden) : false,
             useOnHome: isV3Format ? image.useOnHome !== false : true,

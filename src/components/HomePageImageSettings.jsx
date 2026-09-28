@@ -1,5 +1,5 @@
-import React, { useState, useRef, useCallback } from 'react';
-import { Eye, EyeOff, Heart, X, ZoomIn, Home, Lock } from 'lucide-react';
+import React, { useState, useRef, useCallback, useEffect } from 'react';
+import { Eye, EyeOff, Heart, X, ZoomIn, Home, Lock, ChevronUp, ChevronDown } from 'lucide-react';
 import { useHomepageImages } from '../hooks/useHomepageImages';
 import { useAppLock } from '../context/AppLockContext';
 import { resolveLockWallpaperUrls } from '../utils/wallpaperTargets';
@@ -67,6 +67,23 @@ const HomePageImageSettings = ({ onClose }) => {
   const lockRotationMs = resolveLockWallpaperRotationMs(appLockRecord);
   const lockAdvanceOnClick = resolveLockWallpaperAdvanceOnClick(appLockRecord);
   const lockOrder = resolveLockWallpaperOrder(appLockRecord);
+  const [bankImages, setBankImages] = useState([]);
+  const [bankQuery, setBankQuery] = useState('');
+
+  useEffect(() => {
+    let cancelled = false;
+    fetch('/wallpaper-bank/manifest.json')
+      .then((response) => (response.ok ? response.json() : null))
+      .then((data) => {
+        if (!cancelled && Array.isArray(data?.images)) setBankImages(data.images);
+      })
+      .catch(() => {
+        if (!cancelled) setBankImages([]);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   // Fonction pour nettoyer le localStorage
   const cleanupLocalStorage = () => {
@@ -122,42 +139,105 @@ const HomePageImageSettings = ({ onClose }) => {
     }
   };
 
-  const applyImagePatch = useCallback(
-    async (index, patch) => {
-      const updated = backgroundImages.map((img, i) => {
-        const norm = normalizeHomepageImage(img, i);
-        return i === index ? { ...norm, ...patch } : norm;
+  const imagesLiveRef = useRef(backgroundImages);
+  const seenImagesRef = useRef(backgroundImages);
+  const saveQueueRef = useRef(Promise.resolve());
+  if (backgroundImages !== seenImagesRef.current) {
+    seenImagesRef.current = backgroundImages;
+    if (backgroundImages !== imagesLiveRef.current) {
+      imagesLiveRef.current = backgroundImages;
+    }
+  }
+
+  const commitImages = (updated) => {
+    imagesLiveRef.current = updated;
+    seenImagesRef.current = updated;
+    setBackgroundImages(updated);
+    updateImagesRef(updated);
+    const snapshot = updated;
+    saveQueueRef.current = saveQueueRef.current
+      .catch(() => {})
+      .then(async () => {
+        if (imagesLiveRef.current !== snapshot) return;
+        try {
+          cleanupLocalStorage();
+          await saveImages(snapshot, { force: true });
+          if (imagesLiveRef.current !== snapshot) {
+            setBackgroundImages(imagesLiveRef.current);
+            updateImagesRef(imagesLiveRef.current);
+          }
+        } catch (error) {
+          log.error('Erreur sauvegarde préférences image', error);
+        }
       });
-      setBackgroundImages(updated);
-      updateImagesRef(updated);
-      try {
-        cleanupLocalStorage();
-        await saveImages(updated, { force: true });
-      } catch (error) {
-        log.error('Erreur sauvegarde préférences image', error);
-      }
-    },
-    [backgroundImages, setBackgroundImages, updateImagesRef, saveImages]
-  );
+  };
+
+  const patchImage = (index, recipe) => {
+    const current = imagesLiveRef.current.map((img, i) => normalizeHomepageImage(img, i));
+    const norm = current[index];
+    if (!norm) return;
+    current[index] = { ...norm, ...recipe(norm) };
+    commitImages(current);
+  };
 
   const toggleLike = (index) => {
-    const norm = normalizeHomepageImage(backgroundImages[index], index);
-    applyImagePatch(index, { liked: !norm.liked });
+    patchImage(index, (norm) => ({ liked: !norm.liked }));
   };
 
   const toggleUseOnHome = (index) => {
-    const norm = normalizeHomepageImage(backgroundImages[index], index);
-    applyImagePatch(index, { useOnHome: !norm.useOnHome });
+    patchImage(index, (norm) => ({ useOnHome: !norm.useOnHome }));
   };
 
   const toggleUseOnLock = (index) => {
-    const norm = normalizeHomepageImage(backgroundImages[index], index);
-    applyImagePatch(index, { useOnLock: !norm.useOnLock });
+    patchImage(index, (norm) => ({ useOnLock: !norm.useOnLock }));
   };
 
   const toggleHidden = (index) => {
-    const norm = normalizeHomepageImage(backgroundImages[index], index);
-    applyImagePatch(index, { hidden: !norm.hidden });
+    patchImage(index, (norm) => ({ hidden: !norm.hidden }));
+  };
+
+  const persistCollection = async (updated) => {
+    setBackgroundImages(updated);
+    updateImagesRef(updated);
+    cleanupLocalStorage();
+    await saveImages(updated, { force: true });
+  };
+
+  const addBankImage = async (item) => {
+    const id = `bank:${item.id}`;
+    const already = backgroundImages.some((img, i) => normalizeHomepageImage(img, i).id === id);
+    if (already) return;
+    const updated = [
+      ...backgroundImages.map((img, i) => normalizeHomepageImage(img, i)),
+      {
+        id,
+        full: item.src,
+        thumbnail: item.thumb || item.src,
+        liked: false,
+        hidden: false,
+        useOnHome: false,
+        useOnLock: false,
+        bankId: item.id
+      }
+    ];
+    try {
+      await persistCollection(updated);
+    } catch (error) {
+      log.error('Erreur ajout banque de fonds', error);
+    }
+  };
+
+  const moveImage = async (index, delta) => {
+    const next = index + delta;
+    if (next < 0 || next >= backgroundImages.length) return;
+    const updated = backgroundImages.map((img, i) => normalizeHomepageImage(img, i));
+    const [item] = updated.splice(index, 1);
+    updated.splice(next, 0, item);
+    try {
+      await persistCollection(updated);
+    } catch (error) {
+      log.error('Erreur réordonnancement fond', error);
+    }
   };
 
   const handleLockOnlyUpload = async (event) => {
@@ -486,13 +566,66 @@ const HomePageImageSettings = ({ onClose }) => {
         </div>
 
         <div className="p-6 space-y-8">
+          <div>
+            <h3 className="mb-2 text-lg font-semibold text-red-100">Banque de fonds d&apos;écran</h3>
+            <p className={`mb-4 text-sm ${S.muted}`}>
+              {bankImages.length} images disponibles pour tout le monde. Ajoutez celles que vous voulez
+              à votre collection : elles ne sont ni sur l&apos;accueil ni sur le verrouillage tant que
+              vous ne les activez pas.
+            </p>
+            <input
+              type="search"
+              value={bankQuery}
+              onChange={(event) => setBankQuery(event.target.value)}
+              placeholder="Filtrer la banque…"
+              className={`mb-4 w-full max-w-md ${S.input}`}
+              aria-label="Filtrer la banque de fonds"
+            />
+            <div className="grid max-h-[28rem] grid-cols-3 gap-3 overflow-y-auto pr-1 md:grid-cols-5">
+              {bankImages
+                .filter((item) => {
+                  const q = bankQuery.trim().toLowerCase();
+                  if (!q) return true;
+                  return `${item.name || ''} ${item.id}`.toLowerCase().includes(q);
+                })
+                .map((item) => {
+                  const id = `bank:${item.id}`;
+                  const added = backgroundImages.some(
+                    (img, i) => normalizeHomepageImage(img, i).id === id
+                  );
+                  return (
+                    <div key={item.id} className="overflow-hidden rounded-lg border border-red-900/40">
+                      <img
+                        src={item.thumb || item.src}
+                        alt={item.name || item.id}
+                        loading="lazy"
+                        decoding="async"
+                        className="h-24 w-full object-cover"
+                      />
+                      <button
+                        type="button"
+                        disabled={added}
+                        onClick={() => addBankImage(item)}
+                        className={`w-full px-1 py-1.5 text-[11px] font-medium ${
+                          added ? 'cursor-default text-zinc-500' : S.btnPrimary
+                        }`}
+                      >
+                        {added ? 'Dans ma collection' : 'Ajouter'}
+                      </button>
+                    </div>
+                  );
+                })}
+            </div>
+          </div>
+
           {/* Images de fond uniquement - rotation automatique toutes les 2 minutes */}
           <div>
             <h3 className="mb-2 text-lg font-semibold text-red-100">Bibliothèque d&apos;images</h3>
             <p className={`mb-4 text-sm ${S.muted}`}>
-              Ajoutez des images puis choisissez pour chacune si elle s&apos;affiche sur l&apos;
+              Votre collection commence vide. Choisissez pour chaque image si elle s&apos;affiche sur l&apos;
               <strong className="text-red-200/90">accueil</strong>, le{' '}
               <strong className="text-red-200/90">verrouillage</strong>, ou les deux.
+              Les flèches changent l&apos;ordre utilisé en mode « dans l&apos;ordre ».
               Cœur = favori (plus souvent en mode aléatoire). Œil barré = hors rotation
               (accueil et verrou si l&apos;image y est assignée).
               {effectiveLockCount > 0 ? (
@@ -745,10 +878,30 @@ const HomePageImageSettings = ({ onClose }) => {
                         </button>
                       </div>
 
-                      <div className="absolute bottom-10 left-2 rounded border border-red-900/50 bg-black/70 px-2 py-0.5 text-[10px] text-red-100">
-                        #{index + 1}
-                        {norm.liked ? <span className="ml-1 text-rose-300">♥</span> : null}
-                        {norm.hidden ? <span className="ml-1 text-amber-300/90">masqué</span> : null}
+                      <div className="absolute bottom-10 left-2 flex items-center gap-1">
+                        <span className="rounded border border-red-900/50 bg-black/70 px-2 py-0.5 text-[10px] text-red-100">
+                          #{index + 1}
+                          {norm.liked ? <span className="ml-1 text-rose-300">♥</span> : null}
+                          {norm.hidden ? <span className="ml-1 text-amber-300/90">masqué</span> : null}
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() => moveImage(index, -1)}
+                          disabled={index === 0}
+                          title="Plus tôt dans l’ordre"
+                          className="flex h-6 w-6 items-center justify-center rounded border border-red-900/50 bg-black/70 text-red-100 disabled:opacity-30"
+                        >
+                          <ChevronUp className="h-3.5 w-3.5" />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => moveImage(index, 1)}
+                          disabled={index === backgroundImages.length - 1}
+                          title="Plus tard dans l’ordre"
+                          className="flex h-6 w-6 items-center justify-center rounded border border-red-900/50 bg-black/70 text-red-100 disabled:opacity-30"
+                        >
+                          <ChevronDown className="h-3.5 w-3.5" />
+                        </button>
                       </div>
                     </div>
                   );

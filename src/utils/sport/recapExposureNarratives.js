@@ -81,11 +81,13 @@ function habitPhrase(period, habitDays) {
 export function deriveExposureWindows(period, window) {
   const end = window?.end;
   if (!end) return null;
-  const len = Math.max(1, windowDayCount(window));
+  const openSpan =
+    period === '2y' ? 730 : period === '1y' ? 365 : period === '6m' ? 183 : period === '3m' ? 92 : period === '30d' ? 30 : 3650;
+  const len = window.start != null ? Math.max(1, windowDayCount(window)) : openSpan;
   const current =
     window.start != null
       ? window
-      : { start: DateHelper.addDays(end, -(Math.min(len, 28) - 1)), end };
+      : { start: DateHelper.addDays(end, -(len - 1)), end };
 
   let habit;
   if (period === 'today' || len <= 2) {

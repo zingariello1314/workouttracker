@@ -331,11 +331,15 @@ export function isCycle31Program(program) {
  * @param {object} exercise
  * @returns {{ setsLabel: string, repsLabel: string, rawSeries: string }}
  */
+function hasFiniteReps(meta) {
+  return Number.isFinite(Number(meta?.repsMin));
+}
+
 export function getPrescriptionDisplayParts(exercise) {
   const rawSeries = String(exercise?.series || '').trim();
   const meta = exercise?.meta;
 
-  if (meta?.setCount != null && meta.volumeMode === 'reps') {
+  if (meta?.setCount != null && meta.volumeMode === 'reps' && hasFiniteReps(meta)) {
     const repsCore =
       meta.repsMin === meta.repsMax ? String(meta.repsMin) : `${meta.repsMin}-${meta.repsMax}`;
     const scope =
@@ -351,7 +355,11 @@ export function getPrescriptionDisplayParts(exercise) {
     };
   }
 
-  if (meta?.setCount != null && (meta.volumeMode === 'seconds' || meta.volumeMode === 'minutes')) {
+  if (
+    meta?.setCount != null &&
+    (meta.volumeMode === 'seconds' || meta.volumeMode === 'minutes') &&
+    hasFiniteReps(meta)
+  ) {
     const unit = meta.volumeMode === 'minutes' ? 'min' : 'sec';
     return {
       setsLabel: String(meta.setCount),

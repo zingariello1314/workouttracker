@@ -684,7 +684,7 @@ export const exerciseDatabase = {
     secondaryMuscles: [],
     equipment: "Haltère",
     description: "Curl assis avec coude appuyé pour isolation maximale",
-    variations: ["concentration curl", "curl concentré"]
+    variations: ["concentration curl", "curl concentré", "curl concentration assis", "concentration curl assis"]
   },
   "curl incliné": {
     name: "Curl incliné",
@@ -1059,7 +1059,7 @@ export const exerciseDatabase = {
     secondaryMuscles: ["Triceps", "Trapèzes supérieurs"],
     equipment: "Haltères + Banc",
     description: "Développé épaules assis pour limiter les compensations lombaires",
-    variations: ["seated dumbbell shoulder press", "dm haltères assis", "shoulder press assis haltères"]
+    variations: ["seated dumbbell shoulder press", "dm haltères assis", "shoulder press assis haltères", "développé militaire unilatéral assis"]
   },
   "élévations latérales poulie": {
     name: "Élévations latérales poulie",
@@ -1601,6 +1601,42 @@ export const exerciseDatabase = {
     equipment: "Haltères + Banc",
     description: "Extension des triceps allongé sur banc, excellent pour la longue portion",
     variations: ["lying tricep extension", "extension couché", "skull crusher haltères"]
+  },
+  "extension triceps couché à un haltère": {
+    name: "Extension triceps couché à un haltère",
+    category: "Triceps",
+    primaryMuscles: ["Triceps brachial"],
+    secondaryMuscles: [],
+    equipment: "Haltère + Banc",
+    difficulty: 2,
+    isNew: true,
+    summary: "Allongé sur le dos · un haltère à deux mains · extension coudes",
+    description:
+      "Position : Allongé sur le dos sur un banc, les pieds au sol. Tenez un haltère à deux mains au-dessus de la poitrine, bras tendus.\n\nExécution : Fléchissez lentement les coudes pour amener l’haltère derrière la tête, en gardant les bras supérieurs relativement fixes. Descendez jusqu’à ressentir un étirement des triceps, puis tendez les coudes pour ramener l’haltère à la position initiale.\n\nPoints clés : Garder les coudes proches l’un de l’autre et éviter de laisser les bras partir excessivement vers l’extérieur. Le mouvement doit principalement venir de l’articulation du coude. Ce n’est pas la barre au front, ni les extensions triceps allongé à deux haltères.",
+    variations: [
+      "extension triceps couché 1 haltère",
+      "skull crusher un haltère",
+      "french press couché haltère",
+      "lying dumbbell triceps extension two hands"
+    ]
+  },
+  "extension triceps couché latéral à un haltère": {
+    name: "Extension triceps couché latéral à un haltère",
+    category: "Triceps",
+    primaryMuscles: ["Triceps brachial"],
+    secondaryMuscles: [],
+    equipment: "Haltère + Banc",
+    difficulty: 2,
+    isNew: true,
+    summary: "Allongé sur le côté · un haltère · un bras après l’autre",
+    description:
+      "Position : Allongé sur le côté sur un banc, maintenez un haltère dans la main du bras qui travaille. Le bras est positionné au-dessus du torse, coude fléchi.\n\nExécution : Fléchissez le coude pour abaisser l’haltère de manière contrôlée vers le côté de la tête ou derrière celle-ci, puis tendez le bras pour ramener l’haltère à la position de départ. Gardez le bras supérieur aussi stable que possible afin de concentrer le mouvement sur le triceps.\n\nPoints clés : Contrôler la descente, éviter de bouger l’épaule et conserver un mouvement fluide du coude. Effectuez toutes les répétitions d’un côté avant de changer de bras. Ce n’est pas l’extension couché à un haltère tenu à deux mains, dos à plat.",
+    variations: [
+      "extension triceps couché latéral",
+      "extension triceps allongé sur le côté",
+      "side lying dumbbell triceps extension",
+      "lying one arm triceps extension latéral"
+    ]
   },
   "soulevé de terre jambes semi-tendues": {
     name: "Soulevé de terre jambes semi-tendues",
@@ -2890,6 +2926,23 @@ export const exerciseDatabase = {
     description:
       "Développé haltères au-dessus de la tête, debout. Les haltères partent aux épaules et montent sans se cogner en haut. Le gainage empêche de cambrer. La fiche assise reste un autre exercice.",
     variations: ["dumbbell military press", "développé haltères debout", "standing dumbbell shoulder press"]
+  },
+  "développé militaire unilatéral": {
+    name: "Développé militaire unilatéral",
+    category: "Épaules",
+    primaryMuscles: ["Deltoïdes antérieurs", "Deltoïdes moyens"],
+    secondaryMuscles: ["Triceps", "Trapèzes supérieurs", "Core"],
+    equipment: "Haltère",
+    difficulty: 3,
+    isNew: true,
+    description:
+      "Développé un bras au-dessus de la tête avec une haltère. L'autre côté reste stable. Ce n'est ni le développé militaire barre, ni le développé couché.",
+    variations: [
+      "militaire unilatéral",
+      "one arm shoulder press",
+      "dumbbell one arm shoulder press",
+      "développé militaire 1 bras"
+    ]
   },
   "rowing haltère debout": {
     name: "Rowing haltère debout",
@@ -6890,39 +6943,76 @@ export const exerciseDatabase = {
 
 Object.assign(exerciseDatabase, EXERCISE_DATABASE_ENRICHMENT);
 
-// Fonctions utilitaires pour la recherche et la catégorisation
-export function findExerciseInDatabase(exerciseName) {
-  const normalizedName = String(exerciseName || '').toLowerCase().trim();
-  if (!normalizedName) return null;
+function labelsForExerciseKey(key, exercise) {
+  const labels = [String(key || '').toLowerCase().trim()];
+  const name = String(exercise?.name || '')
+    .toLowerCase()
+    .trim();
+  if (name && name !== labels[0]) labels.push(name);
+  return labels.filter(Boolean);
+}
 
-  if (exerciseDatabase[normalizedName]) {
-    return exerciseDatabase[normalizedName];
+/** Clé banque : égalité, puis plus long préfixe (évite « développé » → développé couché). */
+export function resolveExerciseDatabaseKey(exerciseName) {
+  const raw = String(exerciseName || '')
+    .toLowerCase()
+    .trim();
+  if (!raw) return null;
+
+  if (exerciseDatabase[raw]) return raw;
+
+  for (const [key, exercise] of Object.entries(exerciseDatabase)) {
+    if (String(exercise.name || '').toLowerCase().trim() === raw) return key;
   }
 
-  for (const exercise of Object.values(exerciseDatabase)) {
-    if (String(exercise.name || '').toLowerCase().trim() === normalizedName) {
-      return exercise;
+  for (const [key, exercise] of Object.entries(exerciseDatabase)) {
+    const vars = Array.isArray(exercise.variations) ? exercise.variations : [];
+    for (const variation of vars) {
+      const v = String(variation || '')
+        .toLowerCase()
+        .trim();
+      if (v && v === raw) return key;
     }
   }
 
-  let best = null;
+  let prefixKey = null;
+  let prefixLen = 0;
+  for (const [key, exercise] of Object.entries(exerciseDatabase)) {
+    for (const label of labelsForExerciseKey(key, exercise)) {
+      if (label.length <= prefixLen) continue;
+      if (raw === label || raw.startsWith(`${label} `)) {
+        prefixKey = key;
+        prefixLen = label.length;
+      }
+    }
+  }
+  if (prefixKey) return prefixKey;
+
+  let bestKey = null;
   let bestScore = 0;
-  for (const exercise of Object.values(exerciseDatabase)) {
+  for (const [key, exercise] of Object.entries(exerciseDatabase)) {
     const vars = Array.isArray(exercise.variations) ? exercise.variations : [];
     for (const variation of vars) {
-      const v = String(variation || '').toLowerCase().trim();
+      const v = String(variation || '')
+        .toLowerCase()
+        .trim();
       if (!v) continue;
-      if (v === normalizedName) return exercise;
-      if (normalizedName.includes(v) || v.includes(normalizedName)) {
+      if (v === raw) return key;
+      if (v.length < 12) continue;
+      if (raw.includes(v) || v.includes(raw)) {
         if (v.length > bestScore) {
           bestScore = v.length;
-          best = exercise;
+          bestKey = key;
         }
       }
     }
   }
+  return bestKey;
+}
 
-  return best;
+export function findExerciseInDatabase(exerciseName) {
+  const key = resolveExerciseDatabaseKey(exerciseName);
+  return key ? exerciseDatabase[key] : null;
 }
 
 export function getExercisesByCategory(category) {

@@ -54,7 +54,8 @@
   "card": {
     "volume": "Planned volume",
     "loadShort": "Load idx",
-    "openHint": "Click for full sheet and settings."
+    "openHint": "Click for full sheet and settings.",
+    "noNotesShort": "Open the sheet for details and technique."
   },
   "cardio": {
     "sourceLabel": "Cardio reference"
@@ -418,7 +419,8 @@
   "misc": {
     "notSpecified": "Not specified",
     "defaultProgram": "Default program",
-    "exerciseBankSource": "Shared exercise bank"
+    "exerciseBankSource": "Shared exercise bank",
+    "scoringCatalogSource": "Strength scoring reference"
   },
   "equipment": {
     "boxingGloves": "Boxing gloves",

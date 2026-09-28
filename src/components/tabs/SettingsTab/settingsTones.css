@@ -1,0 +1,207 @@
+/* Teinte par famille. Les modules gardent leurs classes ; seule la couleur rouge historique est recadrée. */
+.settings-page {
+  --st-accent: #fb7185;
+  --st-text: #f4f4f5;
+  --st-muted: #a1a1aa;
+  --st-line: rgba(255, 255, 255, 0.08);
+  --st-surface: #14161c;
+  color: var(--st-text);
+}
+
+.settings-page .settings-tone {
+  --st-text: #f4f4f5;
+  --st-muted: #a1a1aa;
+  --st-line: rgba(255, 255, 255, 0.08);
+  --st-surface: #14161c;
+}
+
+.settings-page [class*='bg-slate-'],
+.settings-page [class*='bg-gray-'] {
+  background-color: #14161c !important;
+}
+
+.settings-page [class*='border-slate-'],
+.settings-page [class*='border-gray-'] {
+  border-color: rgba(255, 255, 255, 0.1) !important;
+}
+
+.settings-page [class*='text-slate-'],
+.settings-page [class*='text-gray-'] {
+  color: #d4d4d8 !important;
+}
+
+.settings-tone [class*='text-red-50'],
+.settings-tone [class*='text-red-100'],
+.settings-tone [class*='text-red-200'],
+.settings-tone [class*='text-rose-100'],
+.settings-tone [class*='text-rose-200'] {
+  color: var(--st-text) !important;
+}
+
+.settings-tone [class*='text-red-300'],
+.settings-tone [class*='text-red-400'],
+.settings-tone [class*='text-red-500'],
+.settings-tone [class*='text-rose-300'],
+.settings-tone [class*='text-rose-400'] {
+  color: var(--st-accent) !important;
+}
+
+.settings-tone [class*='border-red'],
+.settings-tone [class*='border-rose'] {
+  border-color: color-mix(in srgb, var(--st-accent) 34%, transparent) !important;
+}
+
+.settings-tone [class*='bg-red-600'],
+.settings-tone [class*='bg-red-500'],
+.settings-tone [class*='bg-rose-600'],
+.settings-tone [class*='bg-rose-500'] {
+  background-color: var(--st-accent) !important;
+}
+
+.settings-tone [class*='bg-red-7'],
+.settings-tone [class*='bg-red-8'],
+.settings-tone [class*='bg-red-9'],
+.settings-tone [class*='bg-rose-9'] {
+  background-color: color-mix(in srgb, var(--st-accent) 14%, #101218) !important;
+}
+
+.settings-page .st-group-title {
+  color: var(--st-accent);
+  font-size: 0.95rem;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+}
+
+.settings-page .st-body {
+  color: var(--st-text);
+  font-size: 0.875rem;
+  line-height: 1.5;
+}
+
+.settings-page .st-label {
+  color: var(--st-text);
+  font-size: 0.875rem;
+  font-weight: 500;
+}
+
+.settings-page .st-label-xs {
+  color: color-mix(in srgb, var(--st-text) 88%, transparent);
+  font-size: 0.75rem;
+  font-weight: 500;
+}
+
+.settings-page .st-muted {
+  color: var(--st-muted);
+}
+
+.settings-page .st-muted-xs {
+  color: var(--st-muted);
+  font-size: 0.75rem;
+}
+
+.settings-page .st-inset,
+.settings-page .st-inset-sm {
+  border: 1px solid var(--st-line);
+  border-radius: 0.75rem;
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.settings-page .st-inset {
+  padding: 1rem;
+}
+
+.settings-page .st-inset-sm {
+  padding: 0.75rem;
+}
+
+.settings-page .st-divide {
+  border-color: var(--st-line);
+}
+
+.settings-page .st-btn-primary,
+.settings-page .st-btn-sm {
+  border: 1px solid transparent;
+  background: var(--st-accent);
+  color: #1a1020;
+  font-weight: 600;
+}
+
+.settings-page .st-btn-primary:hover:not(:disabled),
+.settings-page .st-btn-sm:hover:not(:disabled) {
+  filter: brightness(1.08);
+}
+
+.settings-page .st-btn-secondary {
+  border: 1px solid color-mix(in srgb, var(--st-accent) 42%, transparent);
+  background: transparent;
+  color: var(--st-text);
+}
+
+.settings-page .st-btn-secondary:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--st-accent) 12%, transparent);
+}
+
+.settings-page .st-input {
+  width: 100%;
+  border-radius: 0.5rem;
+  border: 1px solid var(--st-line);
+  background: #0c0d11;
+  color: var(--st-text);
+  padding: 0.5rem 0.75rem;
+  font-size: 0.875rem;
+}
+
+.settings-page .st-input:focus {
+  outline: none;
+  border-color: color-mix(in srgb, var(--st-accent) 70%, white);
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--st-accent) 45%, transparent);
+}
+
+.settings-page .st-modal {
+  max-height: 90vh;
+  width: 100%;
+  max-width: 56rem;
+  overflow-y: auto;
+  border-radius: 0.75rem;
+  border: 1px solid var(--st-line);
+  background: #101218;
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.45);
+}
+
+.settings-page .st-modal-header,
+.settings-page .st-modal-footer {
+  display: flex;
+  border-color: var(--st-line);
+}
+
+.settings-page .st-modal-header {
+  align-items: center;
+  justify-content: space-between;
+  border-bottom-width: 1px;
+  padding: 1.5rem;
+}
+
+.settings-page .st-modal-footer {
+  justify-content: flex-end;
+  gap: 0.5rem;
+  border-top-width: 1px;
+  padding: 1.5rem;
+}
+
+.settings-page .settings-tone [class*='bg-black'] {
+  background-color: rgba(18, 20, 28, 0.78) !important;
+}
+
+.settings-page .profile-input-dark input[type='email'],
+.settings-page .profile-input-dark input[type='password'],
+.settings-page .profile-input-dark input[type='text'],
+.settings-page .profile-input-dark input[type='number'] {
+  background-color: #0c0d11 !important;
+  color: #f4f4f5 !important;
+  border-color: rgba(255, 255, 255, 0.12) !important;
+}
+
+.settings-page .profile-input-dark input:disabled {
+  color: #a1a1aa !important;
+  opacity: 0.7 !important;
+}

@@ -233,7 +233,7 @@ const RecapTab = () => {
     activeView !== RECAP_VIEW_IDS.GRADES && metricsComputing && !enrichment;
 
   const metricsOverlayActive =
-    activeView !== RECAP_VIEW_IDS.GRADES && (isPeriodStale || metricsComputing);
+    activeView !== RECAP_VIEW_IDS.GRADES && isPeriodStale && !enrichment;
 
   const viewContent = useMemo(() => {
     if (showMetricsSkeleton) {
@@ -339,7 +339,8 @@ const RecapTab = () => {
       <RecapPeriodPendingBar
         visible={
           activeView !== RECAP_VIEW_IDS.GRADES &&
-          (isPeriodStale || (metricsComputing && !isPeriodStale))
+          !enrichment &&
+          (isPeriodStale || metricsComputing)
         }
       />
       <div

@@ -24,7 +24,11 @@ import {
   getMonthUniqueExercisesFromData,
   getTotalRepsFromData,
 } from './WorkoutContext/utils/workoutHistoryUtils';
-import { isMockEnduranceSession } from '../utils/calendarUtils';
+import {
+  isMockEnduranceSession,
+  exceptionalExerciseStorageKey,
+  recordedValueForExceptionalExercise,
+} from '../utils/calendarUtils';
 import { JUSTIFICATION_REASONS } from '../utils/dayJustificationUtils';
 // ✅ PHASE 4 : Les utilitaires de justification sont maintenant dans useWorkoutJustifications
 import { useAuth } from './AuthContext';
@@ -223,6 +227,7 @@ const WorkoutProvider = ({ children }) => {
     loadContext,
     autoSaveContext,
     flushAutoSave,
+    cancelPendingContextSave,
   } = useWorkoutContextStorage(
     setPrograms,
     setActiveProgram,
@@ -232,16 +237,45 @@ const WorkoutProvider = ({ children }) => {
     storageKey
   );
 
+  const programWriteEpochRef = useRef(0);
+  const pendingProgramSnapshotRef = useRef(null);
+  const deferredProgramSaveTimerRef = useRef(null);
+  const suppressProgramAutoSaveRef = useRef(false);
+
   const persistProgramsPartial = useCallback(
     (partial) => {
-      return flushAutoSave({
+      programWriteEpochRef.current += 1;
+      const snapshot = {
         programs: partial.programs,
         activeProgram:
           partial.activeProgram !== undefined ? partial.activeProgram : activeProgram,
         programHistory,
         weekVariant,
         isGymMode,
-      });
+      };
+      pendingProgramSnapshotRef.current = snapshot;
+      if (deferredProgramSaveTimerRef.current) {
+        clearTimeout(deferredProgramSaveTimerRef.current);
+      }
+      deferredProgramSaveTimerRef.current = setTimeout(() => {
+        deferredProgramSaveTimerRef.current = null;
+        const snap = pendingProgramSnapshotRef.current;
+        pendingProgramSnapshotRef.current = null;
+        if (!snap) return;
+        const payload = {
+          ...snap,
+          programHistory: programHistoryRef.current ?? snap.programHistory,
+          weekVariant: weekVariantRef.current ?? snap.weekVariant,
+          isGymMode: isGymModeRef.current ?? snap.isGymMode,
+        };
+        suppressProgramAutoSaveRef.current = true;
+        setTimeout(() => {
+          suppressProgramAutoSaveRef.current = false;
+        }, 400);
+        Promise.resolve(flushAutoSave(payload, { allowEmptyPrograms: true })).catch((error) => {
+          console.error('❌ [persistProgramsPartial] Échec persistance différée:', error);
+        });
+      }, 48);
     },
     [flushAutoSave, activeProgram, programHistory, weekVariant, isGymMode]
   );
@@ -1359,16 +1393,28 @@ const WorkoutProvider = ({ children }) => {
         modificationCount: (existingVariation.modificationCount || 0) + 1
       };
 
+      const storageKey = exceptionalExerciseStorageKey(dateStr, exerciseId);
+      const storedValue = recordedValueForExceptionalExercise(updatedExercise);
+
       // ✅ Sauvegarder immédiatement (action critique)
+      // La liste « exercices accomplis » et le total de reps lisent checkedExercises + reps.
       const updatedData = {
         ...currentData,
         dailyVariations: {
           ...(currentData.dailyVariations || {}),
           [dateStr]: updatedVariation
-        }
+        },
+        checkedExercises: {
+          ...(currentData.checkedExercises || {}),
+          [storageKey]: true,
+        },
+        reps: {
+          ...(currentData.reps || {}),
+          ...(storedValue > 0 ? { [storageKey]: String(storedValue) } : {}),
+        },
       };
 
-      await updateData(updatedData);
+      await updateData(updatedData, { strict: true, sessionDay: dateStr });
 
       console.log(`✅ Exercice exceptionnel "${existingExercise.name}" marqué comme complété`);
       return {
@@ -1757,17 +1803,31 @@ const WorkoutProvider = ({ children }) => {
 
   // Sauvegarde automatique du contexte
   useEffect(() => {
-    if (!isInitialLoadRef.current) {
-      const contextData = {
-        programs,
-        activeProgram,
-        programHistory,
-        weekVariant,
-        isGymMode
-      };
-      autoSaveContext(contextData);
+    if (isInitialLoadRef.current) return;
+    if (authLoading || !isAuthenticated) return;
+    if (deferredProgramSaveTimerRef.current || pendingProgramSnapshotRef.current) return;
+    if (suppressProgramAutoSaveRef.current) {
+      suppressProgramAutoSaveRef.current = false;
+      return;
     }
-  }, [programs, activeProgram, programHistory, weekVariant, isGymMode, autoSaveContext]);
+    const contextData = {
+      programs,
+      activeProgram,
+      programHistory,
+      weekVariant,
+      isGymMode
+    };
+    autoSaveContext(contextData);
+  }, [
+    programs,
+    activeProgram,
+    programHistory,
+    weekVariant,
+    isGymMode,
+    autoSaveContext,
+    authLoading,
+    isAuthenticated
+  ]);
 
   const programsRef = useRef(programs);
   const activeProgramRef = useRef(activeProgram);
@@ -1785,15 +1845,24 @@ const WorkoutProvider = ({ children }) => {
   useEffect(() => {
     if (!isAuthenticated) return undefined;
     return registerAppPersistenceFlush(async () => {
+      if (deferredProgramSaveTimerRef.current) {
+        clearTimeout(deferredProgramSaveTimerRef.current);
+        deferredProgramSaveTimerRef.current = null;
+      }
+      const pending = pendingProgramSnapshotRef.current;
+      pendingProgramSnapshotRef.current = null;
       cancelPendingAutoSave?.();
       await flushPendingSaveNow({ forcePersist: true });
-      await flushAutoSave({
-        programs: programsRef.current,
-        activeProgram: activeProgramRef.current,
-        programHistory: programHistoryRef.current,
-        weekVariant: weekVariantRef.current,
-        isGymMode: isGymModeRef.current,
-      });
+      await flushAutoSave(
+        pending || {
+          programs: programsRef.current,
+          activeProgram: activeProgramRef.current,
+          programHistory: programHistoryRef.current,
+          weekVariant: weekVariantRef.current,
+          isGymMode: isGymModeRef.current,
+        },
+        pending ? { allowEmptyPrograms: true } : undefined
+      );
     });
   }, [isAuthenticated, flushAutoSave, cancelPendingAutoSave, flushPendingSaveNow]);
 
@@ -1993,18 +2062,35 @@ const WorkoutProvider = ({ children }) => {
   };
 
   useEffect(() => {
+    if (authLoading) return undefined;
+
     if (!isAuthenticated || !currentUser) {
-      // Vue déconnectée : état programme vide immédiat (aucune fuite de la session précédente).
+      // Vue déconnectée : vider la mémoire sans écrire cette liste vide en base.
+      cancelPendingContextSave();
+      isInitialLoadRef.current = true;
       setPrograms([]);
       setActiveProgram(null);
       setProgramHistory([]);
-      isInitialLoadRef.current = false;
-      return;
+      return undefined;
     }
+
+    let cancelled = false;
+    const epochAtStart = programWriteEpochRef.current;
+    isInitialLoadRef.current = true;
+    cancelPendingContextSave();
 
     const initializeContext = async () => {
       try {
-        const saved = await loadContext();
+        const loaded = await loadContext({
+          isSuperseded: () => cancelled || programWriteEpochRef.current !== epochAtStart
+        });
+        if (cancelled) return;
+        if (!loaded || loaded.status === 'error' || loaded.superseded) {
+          isInitialLoadRef.current = false;
+          return;
+        }
+
+        const saved = loaded.context;
         const ph = saved?.programHistory ?? [];
         const wv = saved?.weekVariant ?? 'A';
         const gm = saved?.isGymMode ?? false;
@@ -2021,14 +2107,19 @@ const WorkoutProvider = ({ children }) => {
           mutated = true;
         }
 
+        if (cancelled || programWriteEpochRef.current !== epochAtStart) {
+          isInitialLoadRef.current = false;
+          return;
+        }
+
         if (programsSnapshot.length === 0) {
-          if (isAdmin) {
+          if (isAdmin && loaded.status === 'empty') {
             const { defaultProgram, optimizedProgram } = buildTemplateProgramsForFirstLaunch();
             programsSnapshot = [defaultProgram, optimizedProgram];
             activeSnapshot = defaultProgram;
             mutated = true;
           } else {
-            // Nouveau compte non-admin : zéro programme par défaut.
+            // Compte sans programme, ou ligne déjà vide : ne pas réinjecter le Cycle 3+1.
             programsSnapshot = [];
             activeSnapshot = null;
           }
@@ -2036,7 +2127,7 @@ const WorkoutProvider = ({ children }) => {
           setActiveProgram(activeSnapshot);
         }
 
-        if (isAdmin) {
+        if (isAdmin && programsSnapshot.length > 0) {
           const exists = programsSnapshot.some(
             (p) => p.id === newMusculationProgram.id || p.name === newMusculationProgram.name
           );
@@ -2045,6 +2136,11 @@ const WorkoutProvider = ({ children }) => {
             setPrograms(programsSnapshot);
             mutated = true;
           }
+        }
+
+        if (cancelled || programWriteEpochRef.current !== epochAtStart) {
+          isInitialLoadRef.current = false;
+          return;
         }
 
         if (mutated) {
@@ -2064,14 +2160,16 @@ const WorkoutProvider = ({ children }) => {
         isInitialLoadRef.current = false;
       } catch (error) {
         console.error('❌ Erreur lors de l\'initialisation du contexte:', error);
-        // Continuer même en cas d'erreur pour ne pas bloquer l'application
-        isInitialLoadRef.current = false;
+        if (!cancelled) isInitialLoadRef.current = false;
       }
     };
-    
+
     initializeContext();
+    return () => {
+      cancelled = true;
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [currentUser, isAuthenticated, isAdmin]); // Exécuter quand l'utilisateur change
+  }, [authLoading, currentUser, isAuthenticated, isAdmin, loadContext, cancelPendingContextSave, flushAutoSave]);
 
   // S'assurer que contextValue est toujours défini avant de rendre
   if (!contextValue) {

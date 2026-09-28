@@ -27,7 +27,8 @@ export const useTodayWorkout = (options = {}) => {
   const {
     currentDate,
     isGymMode: contextIsGymMode,
-    getTodayWorkout: contextGetTodayWorkout
+    getTodayWorkout: contextGetTodayWorkout,
+    activeProgram
   } = useWorkout();
   
   const date = options.date || currentDate;
@@ -87,10 +88,17 @@ export const useTodayWorkout = (options = {}) => {
   
   // Mémoizer la vérification des variantes gym disponibles
   const hasGymVariants = useMemo(() => {
-    return (dayName === 'samedi' || dayName === 'dimanche') && 
-           workoutProgram[dayName] && 
-           workoutProgram[dayName].salleVariants;
-  }, [dayName]);
+    const daySchedule = activeProgram?.schedule?.[dayName];
+    if (daySchedule?.salleVariants) {
+      const countA = daySchedule.salleVariants.semaineA?.exercises?.length || 0;
+      const countB = daySchedule.salleVariants.semaineB?.exercises?.length || 0;
+      return countA + countB > 0;
+    }
+    return Boolean(
+      (dayName === 'samedi' || dayName === 'dimanche') &&
+        workoutProgram[dayName]?.salleVariants
+    );
+  }, [dayName, activeProgram]);
   
   return {
     workout,

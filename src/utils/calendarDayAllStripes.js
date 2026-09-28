@@ -13,6 +13,7 @@ import { buildDedupedPhysicalActivityRecapRows } from './calendarPhysicalSession
 import { buildNutritionDayRecapRows } from './calendarNutritionDay';
 import { buildDedupedPhysicalActivityStripes } from './calendarPhysicalSessionStripes';
 import { buildNutritionDayStripe } from './calendarNutritionDay';
+import { buildGtgCalendarStripe } from './calendarGtgDay';
 
 /**
  * @param {object} opts
@@ -46,7 +47,9 @@ export function buildCalendarDayAllStripes({
       })
     : [];
   const nutrition = nutritionStripe ? [nutritionStripe] : [];
-  return sortCalendarDayStripes([...physical, ...nutrition, ...stretchOnly, ...garmin]);
+  const gtgStripe = buildGtgCalendarStripe(workoutData, dateStr);
+  const gtg = gtgStripe ? [gtgStripe] : [];
+  return sortCalendarDayStripes([...physical, ...gtg, ...nutrition, ...stretchOnly, ...garmin]);
 }
 
 /**

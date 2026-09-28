@@ -175,6 +175,14 @@ export const CATALOG_TRICEPS = [
   scoringEntry('Extension poulie pronation', 'reps', 2, 0.7, { muscleGroup: 'Triceps' }),
   scoringEntry('Extension poulie supination', 'reps', 2, 0.7, { muscleGroup: 'Triceps' }),
   scoringEntry('Extension triceps', 'reps', 2, 0.7, { muscleGroup: 'Triceps' }),
+  scoringEntry('Extension triceps couché à un haltère', 'reps', 3, 0.85, {
+    muscleGroup: 'Triceps',
+    aliases: ['skull crusher un haltère', 'french press couché haltère']
+  }),
+  scoringEntry('Extension triceps couché latéral à un haltère', 'reps', 2, 0.7, {
+    muscleGroup: 'Triceps',
+    aliases: ['extension triceps couché latéral', 'side lying dumbbell triceps extension']
+  }),
   scoringEntry('Extension triceps debout avec haltère', 'reps', 2, 0.7, { muscleGroup: 'Triceps' }),
   scoringEntry('Extension unilatérale à la poulie', 'reps', 2, 0.7, { muscleGroup: 'Triceps' }),
   scoringEntry('Extensions triceps allongé', 'reps', 3, 0.9, { muscleGroup: 'Triceps' }),

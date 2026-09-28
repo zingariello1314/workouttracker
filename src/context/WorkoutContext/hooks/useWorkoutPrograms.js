@@ -122,19 +122,18 @@ export const useWorkoutPrograms = (
         ...normalizeProgramRestConfig(purgeSoftRemovedExercisesFromProgram(updatedProgram)),
         updatedAt: new Date().toISOString()
       };
-      let nextProgramsRef = null;
-      let nextActiveRef = activeProgram && activeProgram.id === normalizedProgram.id ? normalizedProgram : activeProgram;
-      setPrograms((prev) => {
-        const next = prev.map((p) => (p.id === normalizedProgram.id ? normalizedProgram : p));
-        nextProgramsRef = next;
-        return next;
-      });
-      if (nextProgramsRef) persistNow(nextProgramsRef, nextActiveRef);
+      const nextActive =
+        activeProgram && activeProgram.id === normalizedProgram.id ? normalizedProgram : activeProgram;
+      const nextPrograms = programs.map((p) =>
+        p.id === normalizedProgram.id ? normalizedProgram : p
+      );
+      setPrograms(nextPrograms);
       if (activeProgram && activeProgram.id === normalizedProgram.id) {
         setActiveProgram(normalizedProgram);
       }
+      persistNow(nextPrograms, nextActive);
     },
-    [setPrograms, activeProgram, setActiveProgram, persistNow]
+    [programs, setPrograms, activeProgram, setActiveProgram, persistNow]
   );
 
   const calculateRealUsageDays = useCallback((programId, startDate) => {

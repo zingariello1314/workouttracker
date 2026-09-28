@@ -109,9 +109,21 @@ export function readEmergencyHomeImages(scopeKey) {
 
 export function preloadLockWallpaperUrls(urls) {
   if (!Array.isArray(urls)) return;
-  urls.filter(Boolean).forEach((url) => {
-    preloadImageUrl(url).catch(() => {});
-  });
+  const queue = urls.filter(Boolean);
+  let cursor = 0;
+  const workers = Math.min(2, queue.length);
+  const run = async () => {
+    while (cursor < queue.length) {
+      const url = queue[cursor];
+      cursor += 1;
+      try {
+        await preloadImageUrl(url);
+      } catch {
+        /* une image refusée ne bloque pas les suivantes */
+      }
+    }
+  };
+  for (let i = 0; i < workers; i += 1) run();
 }
 
 /**

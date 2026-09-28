@@ -431,7 +431,7 @@ const ProgramTab = () => {
   };
 
   return (
-    <div className="relative text-white">
+    <div className="program-sport-shell relative text-white">
       <div className="relative z-10">
         <div className="container mx-auto max-w-6xl px-4 py-6">
         {!isAuthenticated ? (
@@ -485,7 +485,7 @@ const ProgramTab = () => {
 
         {/* Programme Actuel */}
         {visibleActiveProgram && (
-          <Card variant="sport" className="mb-8 ring-2 ring-[#0F5C45]/45">
+          <Card variant="sport" className="prog-surface mb-8 ring-1 ring-[#2bd9a3]/35">
             <CardContent>
               <div className="flex justify-between items-start mb-4">
                 <div>
@@ -561,7 +561,7 @@ const ProgramTab = () => {
 
         {/* Formulaire de création */}
         {showCreateForm && (
-          <Card variant="sport" className="mb-8">
+          <Card variant="sport" className="prog-surface mb-8">
             <CardHeader>
               <CardTitle className={typography.presets.h3}>{t('program.createForm.title')}</CardTitle>
             </CardHeader>
@@ -641,7 +641,7 @@ const ProgramTab = () => {
         )}
 
         {/* Liste des Programmes */}
-        <Card variant="sport">
+        <Card variant="sport" className="prog-surface">
           <CardHeader>
             <CardTitle className={typography.presets.h3}>{t('program.list.title')}</CardTitle>
           </CardHeader>
@@ -651,10 +651,8 @@ const ProgramTab = () => {
                 {visiblePrograms.map((program) => (
                   <div
                     key={program.id}
-                    className={`rounded-lg border-2 p-4 transition-all ${
-                      program.id === activeProgram?.id
-                        ? 'border-[#0F5C45] bg-[#0F5C45]/12 shadow-md shadow-black/40 ring-1 ring-[#0F5C45]/30'
-                        : 'border-[#0F4C5C]/70 bg-black hover:border-[#0F5C45]/80'
+                    className={`prog-ex-card mb-0 ${
+                      program.id === activeProgram?.id ? 'ring-1 ring-[#2bd9a3]/40' : ''
                     }`}
                   >
                     <div className="flex justify-between items-start">
@@ -662,11 +660,7 @@ const ProgramTab = () => {
                         <div className="flex items-center gap-3 mb-2">
                           <h4 className={`${typography.presets.h4}`}>{program.name}</h4>
                           <span
-                            className={`rounded-full border px-2 py-1 text-xs ${
-                              program.id === activeProgram?.id
-                                ? 'border-[#0F5C45]/70 bg-[#0F5C45]/25 text-teal-50'
-                                : 'border-[#0F4C5C]/45 bg-black text-teal-200/85'
-                            }`}
+                            className="prog-chip"
                           >
                             {program.id === activeProgram?.id ? t('program.status.active') : t('program.status.inactive')}
                           </span>

@@ -78,7 +78,8 @@ export const AppLockProvider = ({ children }) => {
       const r = await getAppLockRecord(userId);
       if (cancelled) return;
       setRecord(r);
-      preloadLockWallpaperUrls(getLockOnlyWallpaperUrls(r));
+      const lockUrls = getLockOnlyWallpaperUrls(r);
+      if (lockUrls[0]) preloadLockWallpaperUrls([lockUrls[0]]);
       // Pas de verrouillage au chargement : l’écran PIN s’affiche après action sur le bouton cadenas
       // (Header ou barre d’accueil), ou selon inactivité / retour depuis l’arrière-plan si activé dans les réglages.
       setIsLocked(false);

@@ -71,6 +71,15 @@ describe('getPrescriptionDisplayParts', () => {
     expect(parts.setsLabel).toBe('3');
     expect(parts.repsLabel).toBe('10 par bras');
   });
+
+  it('relit les reps dans series quand la meta n’a que le nombre de séries', () => {
+    const parts = getPrescriptionDisplayParts({
+      series: '4×12',
+      meta: { setCount: 4, volumeMode: 'reps', prescriptionNormalized: true }
+    });
+    expect(parts.setsLabel).toBe('4');
+    expect(parts.repsLabel).toBe('12');
+  });
 });
 
 describe('isCycle31Program', () => {

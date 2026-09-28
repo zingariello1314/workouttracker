@@ -26,7 +26,9 @@ import {
   Clock,
   Target,
   X,
-  Pencil
+  Pencil,
+  CheckSquare,
+  Square
 } from 'lucide-react';
 import {
   stretchDatabase,
@@ -103,7 +105,14 @@ function slotsToRawEtirements(slots) {
 
 const stretchEditKey = (moment, id) => `${moment}::${id}`;
 
-const StretchSlotsEditor = memo(({ dayKey, etirements, onChange, stacked = false }) => {
+const StretchSlotsEditor = memo(({
+  dayKey,
+  etirements,
+  onChange,
+  stacked = false,
+  isStretchSelected,
+  onToggleStretch
+}) => {
   const slots = useMemo(() => normalizeStretchSlots(etirements, dayKey), [etirements, dayKey]);
   const [pickerMoment, setPickerMoment] = useState(null);
   /** Édition nom + consignes (clé moment::id) */
@@ -226,7 +235,7 @@ const StretchSlotsEditor = memo(({ dayKey, etirements, onChange, stacked = false
               }
             >
               <div className="flex items-center justify-between gap-2 mb-3 min-w-0">
-                <h4 className="font-medium text-white flex items-center gap-2 min-w-0">
+                <h4 className="prog-stretch-moment flex items-center gap-2 min-w-0">
                   <Icon size={16} className={`${meta.accent} shrink-0`} />
                   <span className="truncate">{meta.label}</span>
                   <span className="text-xs text-slate-400 font-normal shrink-0">({items.length})</span>
@@ -249,11 +258,30 @@ const StretchSlotsEditor = memo(({ dayKey, etirements, onChange, stacked = false
                     const rowKey = stretchEditKey(moment, item.id);
                     const isEditing = editingKey === rowKey;
                     return (
-                    <li
-                      key={item.id}
-                      className="rounded border border-slate-700/50 bg-slate-900/40 p-2"
-                    >
+                    <li key={item.id} className="prog-stretch-card">
                       <div className="flex items-start justify-between gap-2">
+                        {typeof onToggleStretch === 'function' ? (
+                          <label
+                            className="inline-flex shrink-0 items-center pt-0.5"
+                            title="Sélectionner"
+                            onClick={(e) => e.stopPropagation()}
+                          >
+                            <input
+                              type="checkbox"
+                              className="sr-only peer"
+                              checked={Boolean(isStretchSelected?.(moment, item.id))}
+                              onChange={(e) => onToggleStretch(moment, item.id, e.target.checked)}
+                              aria-label={`Sélectionner ${item.name || 'étirement'}`}
+                            />
+                            <span className="inline-flex items-center justify-center rounded border border-[#0F4C5C]/50 p-1 text-slate-400 peer-checked:border-teal-500/60 peer-checked:text-teal-200">
+                              {isStretchSelected?.(moment, item.id) ? (
+                                <CheckSquare size={14} />
+                              ) : (
+                                <Square size={14} />
+                              )}
+                            </span>
+                          </label>
+                        ) : null}
                         <div className="flex-1 min-w-0">
                           {!isEditing ? (
                             <div

@@ -19,8 +19,8 @@ const Card = ({
     books: 'bg-black border-2 border-[#3A86FF] shadow-lg shadow-black/30 rounded-2xl',
     /** Charte Sport : fond noir opaque, contours teal / émeraude (pas de flou arrière-plan). */
     sport: 'bg-black border-2 border-[#0F4C5C]/85 shadow-lg shadow-black/40',
-    /** Onglet Paramètres : fond noir, bordures rouges. */
-    settings: 'bg-black border-2 border-red-700/80 shadow-lg shadow-red-950/45',
+    /** Onglet Paramètres : surface neutre. L’accent de couleur vient de la famille. */
+    settings: 'border border-white/[0.08] bg-[#12141c]/80 shadow-none backdrop-blur-md',
     /** Finance : fond noir, bordures vertes (#339C5A). */
     finance: 'bg-black border border-[#1e6b47]/70 shadow-lg shadow-[#0a1812]/70',
     highlighted: 'bg-slate-800/70 border border-emerald-500/30 shadow-xl shadow-emerald-500/10',
@@ -35,7 +35,8 @@ const Card = ({
   const isSettings = resolvedVariant === 'settings';
   const isFinance = resolvedVariant === 'finance';
   const blurClass = isBooks || isSport || isSettings || isFinance ? '' : 'backdrop-blur-sm';
-  const roundedClass = isBooks ? '' : 'rounded-xl';
+  const roundedClass = isBooks ? '' : isSettings ? 'rounded-2xl' : 'rounded-xl';
+  const padClass = isSettings ? 'p-0' : 'p-4 md:p-6';
 
   const hoverStyles =
     hover || onClick
@@ -52,7 +53,7 @@ const Card = ({
 
   return (
     <div
-      className={`${blurClass} ${roundedClass} p-4 md:p-6 ${variantStyles[resolvedVariant]} ${hoverStyles} ${className}`}
+      className={`${blurClass} ${roundedClass} ${padClass} ${variantStyles[resolvedVariant]} ${hoverStyles} ${className}`}
       onClick={onClick}
       role={onClick ? 'button' : undefined}
       tabIndex={onClick ? 0 : undefined}
@@ -75,7 +76,7 @@ const CardHeader = ({ children, className = '', variant, ...props }) => {
     variant === 'sport'
       ? 'border-b border-[#0F4C5C]/45'
       : variant === 'settings'
-        ? 'border-b border-red-800/50'
+        ? 'border-b border-white/[0.06]'
         : variant === 'finance'
           ? 'border-b border-[#1e6b47]/55'
         : 'border-b border-slate-700/50';
@@ -98,7 +99,7 @@ const CardTitle = ({ children, className = '', tone = 'emerald', size, ...props 
         : tone === 'sport'
           ? 'text-teal-100'
           : tone === 'settings'
-            ? 'text-red-100'
+            ? 'text-zinc-100'
             : tone === 'finance'
               ? 'text-[#d4f5e6]'
             : 'text-emerald-400';
@@ -135,7 +136,7 @@ const CardFooter = ({ children, className = '', variant, ...props }) => {
     variant === 'sport'
       ? 'border-t border-[#0F4C5C]/45'
       : variant === 'settings'
-        ? 'border-t border-red-800/50'
+        ? 'border-t border-white/[0.06]'
         : variant === 'finance'
           ? 'border-t border-[#1e6b47]/55'
         : 'border-t border-slate-700/50';

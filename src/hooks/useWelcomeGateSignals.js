@@ -2,36 +2,63 @@ import { useEffect, useMemo, useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { getProfileData } from '../services/profileCard/profileCardStorage';
 import { rememberProfileCardWarm } from '../services/profileCard/profileCardWarmCache';
-import { isLockWallpaperDecoded, preloadImageUrl } from '../utils/lockWallpaperPreload';
-import { isAdminUser } from '../utils/accessControl';
-import { setGarminScope } from '../hooks/garminDataUtils';
+import { getVisibleHomepageImageIndices } from '../utils/homepageImagePreferences';
+import { preloadImageUrl } from '../utils/lockWallpaperPreload';
 import {
   getCoreSportTabsPreloadProgress,
-  markTodayViewPrepared,
-  markAnimatedBackgroundPrepared,
-  markCalendarViewPrepared,
-  preloadCoreSportTabs,
-  preloadExercisesTab,
-  preloadRemainingTabsIdle,
+  startStartupPipeline,
   subscribeCoreSportTabsPreload
 } from '../utils/preloadTabs';
 
+function selectedHomeSrcs(images) {
+  return getVisibleHomepageImageIndices(images)
+    .map((index) => images[index]?.full)
+    .filter((src) => typeof src === 'string' && src.length > 8);
+}
+
+function selectedHomeKey(images) {
+  return selectedHomeSrcs(images)
+    .map((src) => `${src.length}:${src.slice(-32)}`)
+    .join('|');
+}
+
+function chunkPartial(chunkReady, viewPrepared) {
+  if (viewPrepared) return 1;
+  if (chunkReady) return 0.55;
+  return 0.12;
+}
+
 /**
- * Signaux réels pour la séquence de chargement de l'écran d'accueil.
- * Chaque entrée : { ready, partial } — partial ∈ [0,1] pour l'avancement intra-étape.
+ * Chemin critique du bouton Déverrouiller : session, profil, avatar,
+ * fonds d'accueil choisis, robot 3D, fond animé, Aujourd'hui.
+ * Récap, Calendrier et la banque avancent en parallèle, sans bloquer le clic.
  */
 export function useWelcomeGateSignals({
-  layer0Src = null,
-  layer0Loaded = false,
-  isInitialImageLoaded = false,
-  backgroundImages = [],
+  homeImages = [],
   homeImagesLoading = true,
-  lockWallpaperUrls = []
-}) {
+  splineReady = false
+} = {}) {
   const { currentUser, isAuthenticated, loading: authLoading } = useAuth();
 
   const [avatarReady, setAvatarReady] = useState(false);
   const [avatarPartial, setAvatarPartial] = useState(0);
+  const [backgroundReleased, setBackgroundReleased] = useState(false);
+  const [homeImagesReady, setHomeImagesReady] = useState(false);
+  const [homeImagesPartial, setHomeImagesPartial] = useState(0);
+  const [startup, setStartup] = useState(getCoreSportTabsPreloadProgress);
+
+  useEffect(() => subscribeCoreSportTabsPreload(setStartup), []);
+
+  useEffect(() => {
+    const timer = window.setTimeout(() => setBackgroundReleased(true), 8000);
+    return () => window.clearTimeout(timer);
+  }, []);
+
+  useEffect(() => {
+    if (authLoading) return undefined;
+    startStartupPipeline();
+    return undefined;
+  }, [authLoading]);
 
   useEffect(() => {
     if (authLoading) {
@@ -47,27 +74,27 @@ export function useWelcomeGateSignals({
     }
 
     let cancelled = false;
-    setAvatarPartial(0.15);
+    setAvatarPartial(0.2);
 
     getProfileData(currentUser.username)
       .then((data) => {
         if (cancelled) return;
         rememberProfileCardWarm(currentUser.username, data);
-        const urls = [data?.avatarUrl, data?.cardIconUrl].filter(
-          (url) => typeof url === 'string' && url.length > 20
-        );
-        if (!urls.length) {
+        const avatarUrl = data?.avatarUrl;
+        if (typeof avatarUrl !== 'string' || avatarUrl.length <= 20) {
           setAvatarPartial(1);
           setAvatarReady(true);
           return;
         }
-        setAvatarPartial(0.5);
-        Promise.all(urls.map((url) => preloadImageUrl(url).catch(() => {}))).then(() => {
-          if (!cancelled) {
-            setAvatarPartial(1);
-            setAvatarReady(true);
-          }
-        });
+        setAvatarPartial(0.55);
+        preloadImageUrl(avatarUrl)
+          .catch(() => {})
+          .then(() => {
+            if (!cancelled) {
+              setAvatarPartial(1);
+              setAvatarReady(true);
+            }
+          });
       })
       .catch(() => {
         if (!cancelled) {
@@ -81,62 +108,52 @@ export function useWelcomeGateSignals({
     };
   }, [authLoading, isAuthenticated, currentUser?.username]);
 
-  const [sportPreload, setSportPreload] = useState(getCoreSportTabsPreloadProgress);
-
-  useEffect(() => subscribeCoreSportTabsPreload(setSportPreload), []);
+  const selectedKey = selectedHomeKey(homeImages);
 
   useEffect(() => {
-    if (authLoading) return undefined;
-    const scope = !isAuthenticated
-      ? 'guest'
-      : isAdminUser(currentUser)
-        ? 'main'
-        : `user-${currentUser?.id || 'unknown'}`;
-    setGarminScope(scope);
-    const core = preloadCoreSportTabs();
-    const bank = preloadExercisesTab();
+    if (homeImagesLoading) {
+      setHomeImagesReady(false);
+      setHomeImagesPartial(homeImages.length > 0 ? 0.35 : 0.12);
+      return undefined;
+    }
+
+    const srcs = selectedHomeSrcs(homeImages);
+    if (srcs.length === 0) {
+      setHomeImagesPartial(1);
+      setHomeImagesReady(true);
+      return undefined;
+    }
+
     let cancelled = false;
-    Promise.all([core, bank]).finally(() => {
-      if (!cancelled) preloadRemainingTabsIdle();
-    });
-    import('../hooks/garminDataLoad')
-      .then((mod) => {
-        if (mod.peekGarminAllDataCache()) return undefined;
-        return mod.loadAllData(true);
-      })
-      .catch(() => {});
-    const safety = window.setTimeout(() => {
-      markTodayViewPrepared();
-      markAnimatedBackgroundPrepared();
-      markCalendarViewPrepared();
-    }, 12000);
+    setHomeImagesPartial(0.45);
+
+    const warm = async () => {
+      const [first, ...rest] = srcs;
+      await preloadImageUrl(first).catch(() => {});
+      if (cancelled) return;
+      setHomeImagesPartial(0.7);
+      setHomeImagesReady(true);
+
+      for (let i = 0; i < rest.length; i += 1) {
+        if (cancelled) return;
+        await preloadImageUrl(rest[i]).catch(() => {});
+        if (cancelled) return;
+        setHomeImagesPartial(0.7 + ((i + 1) / rest.length) * 0.3);
+        await new Promise((resolve) => {
+          window.setTimeout(resolve, 48);
+        });
+      }
+    };
+
+    warm();
+
     return () => {
       cancelled = true;
-      window.clearTimeout(safety);
     };
-  }, [authLoading, isAuthenticated, currentUser]);
+  }, [homeImagesLoading, selectedKey, homeImages.length]);
 
-  const homeImagesPartial = useMemo(() => {
-    if (!homeImagesLoading) return 1;
-    let p = 0.08;
-    if (backgroundImages.length > 0) p += 0.28;
-    if (layer0Src) p += 0.28;
-    if (isInitialImageLoaded || layer0Loaded) p += 0.3;
-    return Math.min(0.97, p);
-  }, [
-    homeImagesLoading,
-    backgroundImages.length,
-    layer0Src,
-    isInitialImageLoaded,
-    layer0Loaded
-  ]);
-
-  const lockWallpaperPartial = useMemo(() => {
-    if (!lockWallpaperUrls?.length) return 1;
-    const decoded = lockWallpaperUrls.filter((u) => isLockWallpaperDecoded(u)).length;
-    if (decoded > 0) return Math.min(1, 0.5 + (decoded / lockWallpaperUrls.length) * 0.5);
-    return lockWallpaperUrls.length > 0 ? 0.4 : 1;
-  }, [lockWallpaperUrls]);
+  const backgroundReady = startup.animatedBackgroundPrepared || backgroundReleased;
+  const todayReady = startup.todayViewPrepared;
 
   const steps = useMemo(
     () => [
@@ -146,32 +163,15 @@ export function useWelcomeGateSignals({
         partial: authLoading ? 0 : currentUser || !isAuthenticated ? 1 : 0.55
       },
       { ready: avatarReady, partial: avatarPartial },
+      { ready: homeImagesReady, partial: homeImagesPartial },
+      { ready: Boolean(splineReady), partial: splineReady ? 1 : 0.2 },
       {
-        ready: !authLoading && (backgroundImages.length > 0 || !homeImagesLoading),
-        partial: !authLoading && (backgroundImages.length > 0 || !homeImagesLoading) ? 1 : 0.45
+        ready: backgroundReady,
+        partial: startup.animatedBackgroundPrepared ? 1 : backgroundReleased ? 1 : 0.35
       },
       {
-        ready:
-          !homeImagesLoading &&
-          (backgroundImages.length === 0 || isInitialImageLoaded || layer0Loaded || Boolean(layer0Src)),
-        partial: homeImagesPartial
-      },
-      {
-        ready:
-          !authLoading &&
-          !homeImagesLoading &&
-          sportPreload.ready &&
-          sportPreload.todayViewPrepared &&
-          sportPreload.animatedBackgroundPrepared &&
-          sportPreload.calendarViewPrepared,
-        partial:
-          !authLoading && !homeImagesLoading
-            ? sportPreload.todayViewPrepared &&
-              sportPreload.animatedBackgroundPrepared &&
-              sportPreload.calendarViewPrepared
-              ? 1
-              : Math.max(sportPreload.partial, 0.35)
-            : Math.max(homeImagesPartial, lockWallpaperPartial)
+        ready: todayReady,
+        partial: todayReady ? 1 : startup.todayChunkReady ? 0.62 : 0.16
       }
     ],
     [
@@ -180,16 +180,43 @@ export function useWelcomeGateSignals({
       currentUser,
       avatarReady,
       avatarPartial,
-      backgroundImages.length,
-      homeImagesLoading,
+      homeImagesReady,
       homeImagesPartial,
-      isInitialImageLoaded,
-      layer0Loaded,
-      layer0Src,
-      lockWallpaperPartial,
-      sportPreload
+      splineReady,
+      backgroundReady,
+      backgroundReleased,
+      startup.animatedBackgroundPrepared,
+      todayReady,
+      startup.todayChunkReady
     ]
   );
 
-  return steps;
+  const warmup = useMemo(
+    () => [
+      {
+        id: 'recap',
+        label: 'Récap',
+        partial: chunkPartial(startup.recapChunkReady, startup.recapViewPrepared)
+      },
+      {
+        id: 'calendar',
+        label: 'Calendrier',
+        partial: chunkPartial(startup.calendarChunkReady, startup.calendarViewPrepared)
+      },
+      {
+        id: 'exerciseBank',
+        label: 'Banque',
+        partial: startup.exerciseBankReady ? 1 : 0.12
+      }
+    ],
+    [
+      startup.recapChunkReady,
+      startup.recapViewPrepared,
+      startup.calendarChunkReady,
+      startup.calendarViewPrepared,
+      startup.exerciseBankReady
+    ]
+  );
+
+  return { steps, warmup };
 }

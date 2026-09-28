@@ -103,6 +103,34 @@ export function recentThemeCount(history, theme, now = Date.now(), withinMs = RE
   ).length;
 }
 
+/** Début du jour local : un second calcul le même jour ne compte pas comme une nouvelle lecture. */
+export function startOfLocalDayMs(now = Date.now()) {
+  const d = new Date(now);
+  d.setHours(0, 0, 0, 0);
+  return d.getTime();
+}
+
+/** @param {number} [now] */
+export function localDayKey(now = Date.now()) {
+  const d = new Date(now);
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${y}-${m}-${day}`;
+}
+
+/**
+ * Occurrences d'un thème vues avant aujourd'hui (les enregistrements du jour en cours sont ignorés).
+ * @param {InsightHistory} history
+ * @param {string} theme
+ */
+export function themeCountBeforeLocalDay(history, theme, now = Date.now(), withinMs = RECENT_MS) {
+  const dayStart = startOfLocalDayMs(now);
+  return (history?.entries || []).filter(
+    (e) => e.theme === theme && e.seenAt < dayStart && now - e.seenAt <= withinMs
+  ).length;
+}
+
 export { RECENT_MS, STALE_MS };
 
 export function loadLastInsightSignature() {

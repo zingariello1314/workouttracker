@@ -8,6 +8,7 @@
 
 import { useRef, useCallback } from 'react';
 import { getDateStr } from '../../../utils/dateUtils';
+import { exceptionalExerciseStorageKey } from '../../../utils/calendarUtils';
 import { sidebarEvents, SIDEBAR_EVENTS } from '../../../utils/sidebarEvents';
 import { generateExceptionalExerciseId } from '../utils';
 import { EXERCISE_TYPES } from '../constants';
@@ -118,8 +119,8 @@ export const useWorkoutExceptionalExercises = (getCurrentData, updateData) => {
         }
       };
 
-      await updateData(updatedData);
-      
+      await updateData(updatedData, { strict: true, sessionDay: dateStr });
+
       sidebarEvents.emit(SIDEBAR_EVENTS.WORKOUT_ADDED, { 
         exerciseId,
         date: dateStr,
@@ -179,8 +180,16 @@ export const useWorkoutExceptionalExercises = (getCurrentData, updateData) => {
       const hasOtherVariations = (existingVariation.suppressedExercises?.length || 0) > 0 || 
                                  updatedAdditionalExercises.length > 0;
 
+      const storageKey = exceptionalExerciseStorageKey(dateStr, exerciseId);
+      const nextChecked = { ...(currentData.checkedExercises || {}) };
+      const nextReps = { ...(currentData.reps || {}) };
+      delete nextChecked[storageKey];
+      delete nextReps[storageKey];
+
       const updatedData = {
         ...currentData,
+        checkedExercises: nextChecked,
+        reps: nextReps,
         dailyVariations: {
           ...(currentData.dailyVariations || {}),
           ...(hasOtherVariations ? { [dateStr]: updatedVariation } : {})
@@ -191,7 +200,7 @@ export const useWorkoutExceptionalExercises = (getCurrentData, updateData) => {
         delete updatedData.dailyVariations[dateStr];
       }
 
-      await updateData(updatedData);
+      await updateData(updatedData, { strict: true, sessionDay: dateStr });
       
       sidebarEvents.emit(SIDEBAR_EVENTS.WORKOUT_DELETED, { 
         exerciseId,

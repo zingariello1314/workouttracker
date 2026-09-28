@@ -252,7 +252,7 @@ export function openUncachedWorkoutDb() {
  * @param {Record<string, unknown>} _fullData — conservé pour les appelants
  * @param {Record<string, unknown>} slice — extrait journalier
  */
-export async function persistWorkoutSessionDay(scopeKey, _sessionDay, _fullData, slice) {
+export async function persistWorkoutSessionDay(scopeKey, sessionDay, _fullData, slice) {
   const {
     putWorkoutSessionDayOnDb,
     getWorkoutSessionDay,

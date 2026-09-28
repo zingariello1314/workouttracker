@@ -54,14 +54,15 @@ import { useGarminData } from './hooks/useGarminData';
 import { useAuth } from './context/AuthContext';
 import { AppLockProvider } from './context/AppLockContext';
 import { AppLockGate } from './components/appLock/LockScreen';
-import AnimatedBackground from './components/ui/AnimatedBackground';
+import AppBackground from './backgrounds/AppBackground';
+import { useAppBackground } from './backgrounds/useAppBackground';
 import GlassFilter from './components/ui/GlassFilter';
 import ErrorBoundary from './components/ui/ErrorBoundary';
 import GitHubOAuthLanding from './components/github/GitHubOAuthLanding';
 import SpotifyOAuthLanding from './components/spotify/SpotifyOAuthLanding';
 import { MomentumTabLoadOverlay, MomentumTabInlineLoader, MomentumModalLoadCard } from './components/ui/MomentumBrandedLoading';
 import RecapTabSkeleton from './components/sport/recap/shell/RecapTabSkeleton';
-import { preloadCoreSportTabs } from './utils/preloadTabs';
+import { startStartupPipeline, subscribeCoreSportTabsPreload } from './utils/preloadTabs';
 import SportXPBar from './components/tabs/TodayTab/components/SportXPBar';
 import CodeXPBar from './components/code/CodeXPBar';
 import { isSportSubTab } from './constants/sportSubTabs';
@@ -100,6 +101,17 @@ const TodayTabHost = memo(function TodayTabHost() {
     <ErrorBoundary context={{ activeTab: 'today' }} title="Erreur dans l'onglet today">
       <Suspense fallback={<TabSuspenseFallback tabId="today" />}>
         <TodayTab />
+      </Suspense>
+    </ErrorBoundary>
+  );
+});
+
+/** Reste monté après le chargement initial : ouvrir Récap n’a plus à recalculer les métriques. */
+const RecapTabHost = memo(function RecapTabHost() {
+  return (
+    <ErrorBoundary context={{ activeTab: 'recap' }} title="Erreur dans l'onglet recap">
+      <Suspense fallback={<TabSuspenseFallback tabId="recap" />}>
+        <RecapTab />
       </Suspense>
     </ErrorBoundary>
   );
@@ -156,6 +168,7 @@ const WorkoutTrackerContent = () => {
   const [onboardingPromptHandled, setOnboardingPromptHandled] = useState(false);
   const [warmToday, setWarmToday] = useState(false);
   const [warmCalendar, setWarmCalendar] = useState(false);
+  const [warmRecap, setWarmRecap] = useState(false);
 
   // Ne pas rediriger localhost → 127.0.0.1 : ce sont deux origines (IndexedDB / session séparées).
   // Pour Spotify, l’URI de retour OAuth reste 127.0.0.1 (exigence dashboard) ; garde le même hôte pour le reste.
@@ -235,10 +248,12 @@ const WorkoutTrackerContent = () => {
   }, [activeTab]);
 
   React.useEffect(() => {
-    if (authLoading) return;
-    preloadCoreSportTabs();
-    React.startTransition(() => {
-      setWarmToday(true);
+    if (authLoading) return undefined;
+    startStartupPipeline();
+    setWarmToday(true);
+    return subscribeCoreSportTabsPreload((progress) => {
+      if (!progress.todayViewPrepared) return;
+      setWarmRecap(true);
       setWarmCalendar(true);
     });
   }, [authLoading]);
@@ -251,7 +266,7 @@ const WorkoutTrackerContent = () => {
   const [garminData, setGarminData] = React.useState(null);
   
   React.useEffect(() => {
-    if (!isAuthenticated) {
+    if (!warmCalendar || !isAuthenticated) {
       setGarminData(null);
       return;
     }
@@ -269,7 +284,7 @@ const WorkoutTrackerContent = () => {
           setGarminData(null);
         });
     }
-  }, [dbReady, loadAllData, isAdmin, isAuthenticated]);
+  }, [dbReady, loadAllData, isAdmin, isAuthenticated, warmCalendar]);
 
   useEffect(() => {
     return registerProfileQuestionnaireOpenHandler(() => setShowProfileQuiz(true));
@@ -310,7 +325,7 @@ const WorkoutTrackerContent = () => {
       case 'anatomy':
         return <AnatomyTab />;
       case 'recap':
-        return <RecapTab />;
+        return null;
       case 'today':
         return null;
       case 'calendar':
@@ -402,8 +417,9 @@ const WorkoutTrackerContent = () => {
                             activeTab !== 'pricing' &&
                             activeTab !== 'dashboard';
 
-  // État pour contrôler l'affichage du fond animé
+  // État pour contrôler l'affichage du fond (toujours monté ; seule l'opacité change)
   const [showAnimatedBackground, setShowAnimatedBackground] = useState(false);
+  const { option: appBackground } = useAppBackground();
   const [dashboardScrollProgress, setDashboardScrollProgress] = useState(0);
   
   // Écouter les événements de scrollProgress depuis HomePageScrollTransition
@@ -459,7 +475,7 @@ const WorkoutTrackerContent = () => {
           display: 'block'
         }}
       >
-        <AnimatedBackground />
+        <AppBackground />
       </div>
       {!showAnimatedBackground && (
         <div
@@ -477,9 +493,9 @@ const WorkoutTrackerContent = () => {
       <div 
         className="fixed inset-0 -z-10" 
         style={{ 
-          background: showAnimatedBackground 
-            ? 'linear-gradient(135deg, #0a2e1a 0%, #1a4d2e 50%, #0a2e1a 100%)' // Vert foncé correspondant au shader
-            : 'linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #0f172a 100%)' // Slate pour home/auth/dashboard
+          background: showAnimatedBackground
+            ? appBackground.fallbackBackground
+            : 'linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #0f172a 100%)'
         }}
       />
       
@@ -513,7 +529,7 @@ const WorkoutTrackerContent = () => {
               <Suspense fallback={<MomentumTabLoadOverlay message="Chargement…" />}>
                 <PricingTab />
               </Suspense>
-            ) : (activeTab !== 'home' && activeTab !== 'dashboard' && activeTab !== 'today' && activeTab !== 'calendar') ? (
+            ) : (activeTab !== 'home' && activeTab !== 'dashboard' && activeTab !== 'today' && activeTab !== 'calendar' && activeTab !== 'recap') ? (
               <ErrorBoundary
                 context={{ activeTab }}
                 title={`Erreur dans l'onglet ${activeTab}`}
@@ -568,6 +584,20 @@ const WorkoutTrackerContent = () => {
                   </div>
                 )}
                 <CalendarTabHost />
+              </div>
+            )}
+            {(warmRecap || activeTab === 'recap') && (
+              <div
+                className="container mx-auto px-4"
+                style={{ display: activeTab === 'recap' ? undefined : 'none' }}
+                aria-hidden={activeTab !== 'recap'}
+              >
+                {activeTab === 'recap' && (
+                  <div className="mb-5 mt-5 scroll-mt-40 pt-1">
+                    <SportXPBar />
+                  </div>
+                )}
+                <RecapTabHost />
               </div>
             )}
           </main>

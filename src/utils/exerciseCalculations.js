@@ -385,7 +385,7 @@ export const parseSeries = (seriesText) => {
 export const detectExerciseUnit = (exercise) => {
   if (!exercise) return null;
   
-  const series = exercise.series || '';
+  const series = exercise.series == null ? '' : String(exercise.series);
   const name = (exercise.name || '').toLowerCase();
   
   // 🔴 FIX : Détecter unité dans la série avec patterns plus robustes

@@ -143,7 +143,12 @@ export function semanticGroupRecentPenalty(history, candidateId, now = Date.now(
   const group = semanticGroupFromCandidateId(candidateId);
   if (!group || group === 'misc') return 0;
 
+  const dayStart = new Date(now);
+  dayStart.setHours(0, 0, 0, 0);
+  const dayStartMs = dayStart.getTime();
+
   const hits = (history?.entries || []).filter((e) => {
+    if (e.seenAt >= dayStartMs) return false;
     if (now - e.seenAt > withinMs) return false;
     return semanticGroupFromCandidateId(e.id) === group || semanticGroupFromCandidateId(e.theme) === group;
   });

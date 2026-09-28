@@ -1,7 +1,7 @@
 /**
  * Contenu « héros » fiche exercice : référentiel + profil (calendrier / Récap).
  */
-import { exerciseDatabase, findExerciseInDatabase } from '../data/exerciseDatabase';
+import { exerciseDatabase, findExerciseInDatabase, resolveExerciseDatabaseKey } from '../data/exerciseDatabase';
 
 function nameNorm(exercise) {
   return String(exercise?.name || exercise?.nom || '')
@@ -19,39 +19,22 @@ export function getExerciseDatabaseHit(exercise) {
   return hit || null;
 }
 
+const databaseKeyByName = new Map();
+
+function lookupExerciseDatabaseKey(raw) {
+  return resolveExerciseDatabaseKey(raw);
+}
+
 /** Clé `exerciseDatabase` pour l’exercice courant (similarités, banque). */
 export function getExerciseDatabaseKey(exercise) {
   if (!exercise) return null;
   if (exercise.databaseKey && exerciseDatabase[exercise.databaseKey]) return exercise.databaseKey;
   const raw = nameNorm(exercise);
   if (!raw) return null;
-  const direct = Object.keys(exerciseDatabase).find((k) => k.toLowerCase() === raw);
-  if (direct) return direct;
-  for (const [k, v] of Object.entries(exerciseDatabase)) {
-    const vn = String(v.name || '')
-      .trim()
-      .toLowerCase();
-    if (vn && vn === raw) return k;
-  }
-  let bestKey = null;
-  let bestScore = 0;
-  for (const [k, v] of Object.entries(exerciseDatabase)) {
-    const vars = Array.isArray(v.variations) ? v.variations : [];
-    for (const x of vars) {
-      const t = String(x || '')
-        .toLowerCase()
-        .trim();
-      if (!t) continue;
-      if (t === raw) return k;
-      if (raw.includes(t) || t.includes(raw)) {
-        if (t.length > bestScore) {
-          bestScore = t.length;
-          bestKey = k;
-        }
-      }
-    }
-  }
-  return bestKey;
+  if (databaseKeyByName.has(raw)) return databaseKeyByName.get(raw);
+  const resolved = lookupExerciseDatabaseKey(raw);
+  databaseKeyByName.set(raw, resolved);
+  return resolved;
 }
 
 /**

@@ -71,7 +71,8 @@
     "sessionEffortLabel": "Session feeling",
     "optionalWeighted": "Weighted",
     "optionalWeightedTitle": "Mark as weighted (optional external load)",
-    "noExercises": "No exercises planned for today"
+    "noExercises": "No exercises planned for today",
+    "saving": "Saving…"
   },
   "sessionScore": {
     "title": "Session load (strength)",
@@ -86,7 +87,8 @@
     "titleOfDay": "Stretches of the day",
     "save": "Save",
     "discard": "Discard",
-    "unsavedChanges": "Unsaved changes"
+    "unsavedChanges": "Unsaved changes",
+    "saving": "Saving…"
   },
   "challenges": {
     "title": "Active challenges",

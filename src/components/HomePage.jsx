@@ -63,7 +63,7 @@ const HomePage = () => {
   // ✅ Récupérer la langue depuis useTranslation pour éviter le double appel de useLanguage
   // useTranslation utilise déjà useLanguage en interne
   const language = t.language || 'fr'; // Fallback vers 'fr' si non disponible
-  const { backgroundImages, isLoading, systemHealth } = useHomepageImages();
+  const { backgroundImages, isLoading: homeImagesLoading } = useHomepageImages();
   const {
     displayQuote,
     currentQuote,
@@ -141,20 +141,14 @@ const HomePage = () => {
   
   // ✅ Chargement initial : État pour savoir si l'image initiale est chargée
   const [isInitialImageLoaded, setIsInitialImageLoaded] = useState(false);
-  const welcomeStepSignals = useWelcomeGateSignals({
-    layer0Src,
-    layer0Loaded,
-    isInitialImageLoaded,
-    backgroundImages,
-    homeImagesLoading: isLoading,
-    lockWallpaperUrls
-  });
+  const [splineReady, setSplineReady] = useState(false);
   const [introPlaybackDone, setIntroPlaybackDone] = useState(false);
+  const [homeRevealReady, setHomeRevealReady] = useState(false);
   const onUnlockHomeWelcome = useCallback(() => {
     setIntroPlaybackDone(true);
-    // Si un code app lock est défini : afficher tout de suite l’écran PIN (LockScreen au-dessus).
+    // Le PIN, s’il est configuré, s’ouvre après la première peinture de l’accueil.
     if (lockReady) {
-      queueMicrotask(() => {
+      window.requestAnimationFrame(() => {
         lockNow();
       });
     }
@@ -262,12 +256,48 @@ const HomePage = () => {
         }
       }
       
-      // Précharger full en arrière-plan
+      // Précharger full en arrière-plan. Quelques essais : un refus bref du
+      // serveur (redémarrage) ne doit pas laisser l’accueil sans image.
+      const loadWithRetry = (url, attemptsLeft) =>
+        new Promise((resolve) => {
+          if (!url) {
+            resolve(false);
+            return;
+          }
+          const img = new Image();
+          img.onload = () => resolve(true);
+          img.onerror = () => {
+            if (attemptsLeft <= 1) {
+              resolve(false);
+              return;
+            }
+            window.setTimeout(() => {
+              loadWithRetry(url, attemptsLeft - 1).then(resolve);
+            }, 700);
+          };
+          img.src = url;
+        });
+
       return new Promise((resolve) => {
-        const img = new Image();
-        img.src = fullData;
-        
-        img.onload = () => {
+        loadWithRetry(fullData, 3).then((ok) => {
+          if (!ok) {
+            log.warn(`⚠️ Erreur chargement image full, utilisation thumbnail si disponible`);
+            if (thumbnail) {
+              if (layerIndex === 0) {
+                setLayer0Src(thumbnail);
+                setLayer0Loaded(true);
+                if (isInitialLoad && !initialImageLoadedRef.current) {
+                  initialImageLoadedRef.current = true;
+                  setIsInitialImageLoaded(true);
+                }
+              } else {
+                setLayer1Src(thumbnail);
+                setLayer1Loaded(true);
+              }
+            }
+            resolve(thumbnail || fullData);
+            return;
+          }
           // Mettre à jour le layer avec l'image full
           if (layerIndex === 0) {
             setLayer0Src(fullData);
@@ -283,27 +313,7 @@ const HomePage = () => {
           }
           log.debug(`✅ Image full chargée dans layer ${layerIndex}`);
           resolve(fullData);
-        };
-        
-        img.onerror = () => {
-          // En cas d'erreur, garder thumbnail si disponible, sinon garder l'ancienne image
-          log.warn(`⚠️ Erreur chargement image full, utilisation thumbnail si disponible`);
-          if (thumbnail) {
-            if (layerIndex === 0) {
-              setLayer0Src(thumbnail);
-              setLayer0Loaded(true); // Considérer comme chargé même si c'est thumbnail
-              // ✅ Chargement initial : Marquer comme chargé même en cas d'erreur
-              if (isInitialLoad && !initialImageLoadedRef.current) {
-                initialImageLoadedRef.current = true;
-                setIsInitialImageLoaded(true);
-              }
-            } else {
-              setLayer1Src(thumbnail);
-              setLayer1Loaded(true);
-            }
-          }
-          resolve(thumbnail || fullData);
-        };
+        });
       });
     } catch (error) {
       log.error('❌ Erreur chargement image', error);
@@ -682,6 +692,26 @@ const HomePage = () => {
   // Ne s'affiche que si on est vraiment sur home ET que le chargement est en cours
   const shouldShowLoading = activeTab === 'home' && !introPlaybackDone;
 
+  useEffect(() => {
+    if (shouldShowLoading) {
+      setHomeRevealReady(false);
+      return undefined;
+    }
+    let inner = 0;
+    const outer = window.requestAnimationFrame(() => {
+      inner = window.requestAnimationFrame(() => setHomeRevealReady(true));
+    });
+    return () => {
+      window.cancelAnimationFrame(outer);
+      window.cancelAnimationFrame(inner);
+    };
+  }, [shouldShowLoading]);
+  const { steps: welcomeStepSignals, warmup: welcomeWarmup } = useWelcomeGateSignals({
+    homeImages: backgroundImages,
+    homeImagesLoading,
+    splineReady
+  });
+
   // ✅ Screen reader announcement state
   const [screenReaderAnnouncement, setScreenReaderAnnouncement] = useState('');
 
@@ -689,15 +719,23 @@ const HomePage = () => {
   const [isLargeScreen, setIsLargeScreen] = useState(false);
 
   useEffect(() => {
-    if (typeof window === 'undefined') return;
+    if (typeof window === 'undefined') return undefined;
     const mq = window.matchMedia('(min-width: 1024px)');
-    const update = (e) => setIsLargeScreen(e.matches);
-    setIsLargeScreen(mq.matches);
-    mq.addEventListener('change', update);
-    return () => {
-      mq.removeEventListener('change', update);
+    const apply = () => {
+      const large = mq.matches;
+      setIsLargeScreen(large);
+      if (!large) setSplineReady(true);
     };
+    apply();
+    mq.addEventListener('change', apply);
+    return () => mq.removeEventListener('change', apply);
   }, []);
+
+  useEffect(() => {
+    if (!isLargeScreen || splineReady) return undefined;
+    const timer = window.setTimeout(() => setSplineReady(true), 25000);
+    return () => window.clearTimeout(timer);
+  }, [isLargeScreen, splineReady]);
 
   // ✅ Announce navigation to screen readers when swipe is detected
   useEffect(() => {
@@ -755,6 +793,7 @@ const HomePage = () => {
           unlockHint={t('home.loading.unlockHint')}
           syncMessage={t('home.loading.sync')}
           stepSignals={welcomeStepSignals}
+          warmupSignals={welcomeWarmup}
           lockBackgroundDataUrls={lockWallpaperUrls}
           lockWallpaperRotationMs={lockPlayback.rotationMs}
           lockWallpaperAdvanceOnClick={lockPlayback.advanceOnClick}
@@ -764,7 +803,7 @@ const HomePage = () => {
       )}
 
       {/* ✅ Phase 7: Double buffering — masqué pendant l’intro pour ne pas concurrencer le Player (GPU / peinture). */}
-      {!shouldShowLoading && backgroundImages.length > 0 && layer0Src && (
+      {homeRevealReady && backgroundImages.length > 0 && layer0Src && (
         <div 
           className="absolute inset-0 bg-cover bg-center bg-no-repeat"
           style={{
@@ -788,7 +827,7 @@ const HomePage = () => {
       )}
 
       {/* ✅ Phase 7: Double buffering - Layer 1 */}
-      {!shouldShowLoading && backgroundImages.length > 0 && layer1Src && (
+      {homeRevealReady && backgroundImages.length > 0 && layer1Src && (
         <div 
           className="absolute inset-0 bg-cover bg-center bg-no-repeat"
           style={{
@@ -811,12 +850,16 @@ const HomePage = () => {
         </div>
       )}
 
-      {/* Robot Spline — pas pendant l’écran de chargement (WebGL + Remotion = saccades). */}
-      {activeTab === 'home' && isLargeScreen && !shouldShowLoading && (
-        <div className="fixed bottom-0 right-[8rem] xl:right-[16rem] w-72 h-72 xl:w-96 xl:h-96 z-50 pointer-events-none">
-          <SplineScene 
+      {/* Robot 3D : monté dès l’accueil, y compris sous l’écran de déverrouillage, pour qu’il soit prêt au clic. */}
+      {activeTab === 'home' && isLargeScreen && (
+        <div
+          className="fixed bottom-0 right-[8rem] xl:right-[16rem] w-72 h-72 xl:w-96 xl:h-96 z-50 pointer-events-none"
+          aria-hidden={shouldShowLoading}
+        >
+          <SplineScene
             scene="https://prod.spline.design/kZDDjO5HuC9GJUM2/scene.splinecode"
             className="w-full h-full pointer-events-auto"
+            onLoad={() => setSplineReady(true)}
           />
         </div>
       )}

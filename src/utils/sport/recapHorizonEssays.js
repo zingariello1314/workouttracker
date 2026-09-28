@@ -760,16 +760,16 @@ export function buildHorizonEssayCandidates(opts = {}) {
     const biNow = muscleShare(trajP, 'biceps');
     medium(
       'specialization',
-      'Ton entraînement devient progressivement plus spécialisé',
+      'Le volume se concentre davantage sur le haut du corps',
       [
-        `Sur les dernières semaines, tu consacres une part croissante du travail aux épaules et aux triceps`,
-        triNow && shNow ? ` (~${shNow.sharePct} % et ~${triNow.sharePct} % des répétitions)` : '',
-        biNow ? `, avec encore les biceps autour de ${biNow.sharePct} %` : '',
+        shNow ? `Les épaules représentent ${shNow.sharePct} % des répétitions récentes` : 'Le haut du corps pèse davantage',
+        triNow ? `${shNow ? ', les triceps' : 'Les triceps'} ${triNow.sharePct} %` : '',
+        biNow ? `, les biceps ${biNow.sharePct} %` : '',
         '. ',
         ratioEnr != null && ratioThen != null
-          ? `Le rapport poussée/tirage passe d'environ ${ratioThen} à ${ratioEnr}.`
+          ? `Le rapport poussée/tirage passe d'environ ${ratioThen} à ${ratioEnr}. `
           : '',
-        ' Certaines qualités reçoivent beaucoup plus d’exposition que d’autres. Ça peut être cohérent si tu priorises la poussée ; moins si tu visais un développement plus équilibré.'
+        'Ce qui est démontré, c’est cette concentration, pas une spécialisation sur un seul mouvement. Si tu visais un développement plus équilibré, c’est la répartition du volume qu’il faut suivre.'
       ].join(''),
       shareEvidence(trajP),
       0.94
@@ -818,9 +818,9 @@ export function buildHorizonEssayCandidates(opts = {}) {
   ) {
     medium(
       'goal_gap',
-      'Ton objectif demande de la régularité, ta pratique récente en donne moins',
-      `Un objectif d'hypertrophie, de définition ou de force sèche s'appuie sur une exposition répétée. Or tu fais moins de séances et tu t'éloignes du plan (~${programPct} % réalisé). Le premier levier, c'est de retrouver assez souvent le travail déjà prévu. Si l'écart dure, l'objectif reste affiché, mais la pratique construit autre chose : moins d'exposition, plus de spécialisation sur ce que tu continues de cocher.`,
-      `objectif · ~${programPct} % du plan · fréquence ${freqDelta}%`,
+      `Tu réalises ${Math.abs(Math.round(freqDelta))} % de séances en moins que ton rythme de référence`,
+      `L'écart vient de la fréquence, pas du contenu des séances. Les mouvements prévus restent présents lorsqu'une séance a lieu, mais leur répétition est inférieure au plan (environ ${programPct} % réalisé). L'objectif reste le même ; l'entraînement récent s'en éloigne par l'espacement.`,
+      `plan réalisé ~${programPct} %`,
       0.86
     );
   }
@@ -851,7 +851,7 @@ export function buildHorizonEssayCandidates(opts = {}) {
         ? `Depuis ta première référence, ${lead.name} ${
             lead.pctFromReliable >= 0 ? '+' : ''
           }${Math.round(lead.pctFromReliable)} %`
-        : 'Depuis tes débuts, tes mouvements de référence ont bougé';
+        : 'Tes niveaux de référence ont progressé sur plusieurs mouvements';
     let body;
     if (progressRows.length === 1) {
       const refLabel =
@@ -887,7 +887,7 @@ export function buildHorizonEssayCandidates(opts = {}) {
       );
       const tenureBit =
         journey.tenureDays >= 45 && journey.startYmd
-          ? ` Premier entraînement enregistré : ${formatDayFr(journey.startYmd, true)} (${journey.tenureDays} j., ${journey.trainingDays} jours entraînés).`
+          ? ` Depuis le ${formatDayFr(journey.startYmd, true)}, ${journey.trainingDays} jours entraînés sur ${journey.tenureDays}.`
           : '';
       const periodM = discoveryBundle.comparisons?.period;
       const d30m = discoveryBundle.comparisons?.d30;
@@ -895,9 +895,9 @@ export function buildHorizonEssayCandidates(opts = {}) {
         periodM?.trainingDays >= 1 && d30m?.trainingDays >= 6
           ? ` ${period === 'today' && periodM.totalReps < 20
               ? `Aujourd'hui n'est pas encore une séance : le parcours se lit sur tes ${d30m.trainingDays} jours entraînés sur 30, pas sur un zéro du matin.`
-              : `${periodM.trainingDays} jour${periodM.trainingDays > 1 ? 's' : ''} ${period === '7d' ? 'cette semaine' : period === 'today' ? "aujourd'hui" : 'sur la période'} s'inscrivent dans ${d30m.trainingDays}/30 jours entraînés.`}`
+              : `${periodM.trainingDays} jour${periodM.trainingDays > 1 ? 's' : ''} ${period === '7d' ? 'cette semaine' : period === 'today' ? "aujourd'hui" : 'sur la période'} ${periodM.trainingDays > 1 ? "s'inscrivent" : "s'inscrit"} dans tes ${d30m.trainingDays} jours entraînés sur 30.`}`
           : '';
-      body = `Les mouvements que tu répètes assez souvent pour être comparables ont changé depuis tes premières références fiables. ${bits.join('. ')}. Un record isolé n'est pas le niveau : le chiffre utile, c'est ce que tu reproduis.${tenureBit}${anchorBit}`;
+      body = `${bits.join('. ')}. Le record indique le plafond ; le niveau habituel, ce que tu sais reproduire.${tenureBit}${anchorBit}`;
     }
     const jConf = confidenceFromSample(lead.sessions, lead.spanDays || 90);
     long(
@@ -916,13 +916,13 @@ export function buildHorizonEssayCandidates(opts = {}) {
   if (prStory && !progressRows.some((e) => e.exerciseId === prStory.exerciseId)) {
     long(
       'journey_pr_vs_level',
-      `Ton record de ${prStory.name} n'est pas ton niveau habituel`,
-      `Record ${prStory.pr.reps} reps, établi le ${formatDayFr(prStory.pr.date, true)}${
-        prStory.prAgeDays != null ? ` (il y a ${prStory.prAgeDays} j.)` : ''
-      }. Ton niveau habituel, reproduit sur ${prStory.sessionsAtHabitual} séances, est autour de ${Math.round(
+      `Ton record de ${prStory.pr.reps} reps reste éloigné de ce que tu reproduis`,
+      `Le record de ${prStory.name} (${prStory.pr.reps} reps, le ${formatDayFr(prStory.pr.date, true)}${
+        prStory.prAgeDays != null ? `, il y a ${prStory.prAgeDays} j.` : ''
+      }) indique le plafond d'un jour. Sur ${prStory.sessionsAtHabitual} séances comparables, le niveau habituel reste autour de ${Math.round(
         prStory.habitual.median
-      )}–${Math.round(prStory.habitual.mean)} reps. Un PR dit le plafond d'un jour ; le niveau comparable, c'est ce que tu reproduis.`,
-      `PR ${prStory.pr.reps} · habituel ~${Math.round(prStory.habitual.median)} · ${prStory.sessions} séances`,
+      )}–${Math.round(prStory.habitual.mean)} reps.`,
+      `${prStory.sessions} séances observées`,
       0.9,
       {
         showConfidence: true,

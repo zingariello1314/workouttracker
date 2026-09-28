@@ -574,7 +574,7 @@ describe('recapPeriodDiscoveries', () => {
     expect(bundle.all.find((d) => d.kind === 'disc_volume_shape')).toBeFalsy();
   });
 
-  it('sur 7 jours, le portrait de volume tisse muscles, pic et course comme le § 14.2', () => {
+  it('sur 7 jours, le volume parle de rythme, pas de la répartition musculaire', () => {
     const { snapshot, garmin } = buildAugustFixture();
     const bundle = buildPeriodDiscoveryBundle({
       snapshot,
@@ -586,9 +586,8 @@ describe('recapPeriodDiscoveries', () => {
     });
     const shape = bundle.all.find((d) => d.kind === 'disc_volume_shape');
     expect(shape).toBeTruthy();
-    expect(shape.body.length).toBeGreaterThan(260);
     expect(shape.body).toMatch(/séance|reps/i);
-    expect(shape.body).toMatch(/renforcement|tirage|triceps|pector|séance du/i);
+    expect(shape.body).not.toMatch(/Dominante haut du corps/);
   });
 
   it('garde sport, sommeil et jalon dans la même colonne au lieu de les faire s’évincer', () => {

@@ -34,6 +34,7 @@ export const CALENDAR_MOMENTUM_STRIPE_COLORS = {
 
 /** Priorité d’affichage : activités d’abord, étirements après, puis Garmin (sommeil, pas…). */
 export const CALENDAR_STRIPE_PRIORITY = {
+  gtg: -1,
   workout: 0,
   momentumRun: 1,
   activity: 2,

@@ -12,6 +12,7 @@
  */
 
 import logger from './logger';
+import { isSharedWallpaperSrc } from './sharedWallpaperSrc';
 
 const log = logger.module('bannerIntegrity');
 
@@ -121,6 +122,10 @@ function testImageLoad(imageData) {
 function validateBase64Format(imageData) {
   if (!imageData || typeof imageData !== 'string') {
     return { valid: false, error: 'Image invalide: pas une chaîne de caractères' };
+  }
+
+  if (isSharedWallpaperSrc(imageData)) {
+    return { valid: true, size: imageData.length, format: 'wallpaper-bank' };
   }
 
   if (!imageData.startsWith('data:image/')) {

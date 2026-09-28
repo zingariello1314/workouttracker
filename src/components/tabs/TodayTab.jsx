@@ -1440,9 +1440,18 @@ const TodayTab = () => {
   const currentWeekVariant = getAutoWeekVariant(currentDate);
 
   // Vérifier si des variantes gym sont disponibles pour ce jour
-  const hasGymVariants = (dayName === 'samedi' || dayName === 'dimanche') && 
-                        workoutProgram[dayName] && 
-                        workoutProgram[dayName].salleVariants;
+  const hasGymVariants = (() => {
+    const daySchedule = activeProgram?.schedule?.[dayName];
+    if (daySchedule?.salleVariants) {
+      const countA = daySchedule.salleVariants.semaineA?.exercises?.length || 0;
+      const countB = daySchedule.salleVariants.semaineB?.exercises?.length || 0;
+      return countA + countB > 0;
+    }
+    return (
+      (dayName === 'samedi' || dayName === 'dimanche') &&
+      Boolean(workoutProgram[dayName]?.salleVariants)
+    );
+  })();
 
   // ✅ NOUVEAU : Utiliser le hook useTodayExercises pour obtenir exercices avec variations
   const {

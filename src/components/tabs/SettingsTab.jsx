@@ -8,8 +8,8 @@
  * @module components/tabs/SettingsTab
  */
 
-import React, { useState, useCallback, useMemo, useEffect } from 'react';
-import { Settings, Image, User, Search, Watch } from 'lucide-react';
+import React, { useState, useCallback, useMemo, useEffect, useRef } from 'react';
+import { Image, User, Search, Watch } from 'lucide-react';
 import { useWorkout } from '../../context/WorkoutContext';
 import { useAuth } from '../../context/AuthContext';
 import { useTranslation } from '../../utils/translations';
@@ -19,6 +19,9 @@ import { isMockEnduranceSession } from '../../utils/calendarUtils';
 import Card, { CardHeader, CardTitle, CardContent } from '../ui/Card';
 import { Input } from '../ui/Input';
 import { settingsTheme as settingsUi } from './SettingsTab/settingsThemeClasses';
+import { SETTINGS_GROUPS } from './SettingsTab/settingsGroups';
+import SettingsGroupFrame from './SettingsTab/components/SettingsGroupFrame';
+import './SettingsTab/settingsTones.css';
 
 // Hooks
 import { useSettingsStats } from './SettingsTab/hooks/useSettingsStats';
@@ -34,8 +37,10 @@ import { useSportExportPreview } from './SettingsTab/hooks/useSportExportPreview
 
 // Composants
 import ProfileSettings from './SettingsTab/components/ProfileSettings';
+import ProfileQuizSettings from './SettingsTab/components/ProfileQuizSettings';
 import SwipeNavigationSettings from './SettingsTab/components/SwipeNavigationSettings';
 import LanguageSettings from './SettingsTab/components/LanguageSettings';
+import AppBackgroundSettings from './SettingsTab/components/AppBackgroundSettings';
 import PrayerLocationSettings from './SettingsTab/components/PrayerLocationSettings';
 import InfoCards from './SettingsTab/components/InfoCards';
 import DataCleanupSection from './SettingsTab/components/DataCleanupSection';
@@ -60,11 +65,13 @@ import { isAdminUser } from '../../utils/accessControl';
 
 /** Sections paramètres : ancres + texte indexé pour la recherche (synonymes / termes courants) */
 const SETTINGS_SECTIONS = [
-  { id: 'settings-profil', label: 'Profil', searchText: 'profil avatar email vérification code mot de passe compte utilisateur migration données anonyme invité quiz onboarding questionnaire personnalisation' },
+  { id: 'settings-quiz', label: 'Quiz', searchText: 'quiz onboarding questionnaire bilan profil personnalisation reprendre générer entraînement nutrition' },
+  { id: 'settings-profil', label: 'Profil', searchText: 'profil avatar email vérification code mot de passe compte utilisateur migration données anonyme invité photo nom utilisateur' },
   { id: 'settings-github', label: 'GitHub', searchText: 'github code contributions calendrier oauth jeton pat développeur intégration module dashboard momentum' },
   { id: 'settings-spotify', label: 'Spotify', searchText: 'spotify musique premium oauth lecture player sidebar son en cours piste album api' },
   { id: 'settings-garmin', label: 'Garmin', searchText: 'garmin montre sync synchronisation backfill source comptes multi montres deviceid paramètres' },
   { id: 'settings-verrou', label: 'Verrouillage', searchText: 'verrouillage cadenas code pin mot de passe inactivité sécurité confidentialité session' },
+  { id: 'settings-apparence', label: 'Apparence', searchText: 'apparence fond application ambiance visuel arrière-plan animé statique momentum shader thème' },
   { id: 'settings-fonds-ecran', label: 'Fonds d\'écran', searchText: 'fond écran accueil verrouillage arrière-plan wallpaper lock home rotation images bannière' },
   { id: 'settings-carte', label: 'Carte profil', searchText: 'carte profil image handle username bannière sidebar logo' },
   { id: 'settings-bannieres', label: 'Bannières', searchText: 'bannières bannière import export rotation' },
@@ -148,11 +155,17 @@ const SettingsTab = () => {
   useEffect(() => {
     const pendingId = consumePendingSettingsScrollSection();
     if (!pendingId) return;
+    const group = SETTINGS_GROUPS.find((item) => (
+      item.sectionIds.includes(pendingId) || (pendingId === 'settings-profil-quiz' && item.id === 'account')
+    ));
+    if (group) setActiveGroupId(group.id);
     const t = window.setTimeout(() => scrollToSection(pendingId), 150);
     return () => window.clearTimeout(t);
   }, [scrollToSection]);
 
   const [settingsSearchQuery, setSettingsSearchQuery] = useState('');
+  const [activeGroupId, setActiveGroupId] = useState(SETTINGS_GROUPS[0].id);
+  const groupLockUntilRef = useRef(0);
 
   const { isSectionVisible, showSearchEmptyState } = useMemo(() => {
     const q = settingsSearchQuery.trim();
@@ -170,6 +183,46 @@ const SettingsTab = () => {
       showSearchEmptyState: matched.size === 0,
     };
   }, [settingsSearchQuery]);
+
+  const isGroupVisible = useCallback(
+    (group) => group.sectionIds.some((id) => isSectionVisible(id)),
+    [isSectionVisible]
+  );
+
+  const isGroupShown = useCallback(
+    (group) => {
+      if (!isGroupVisible(group)) return false;
+      if (settingsSearchQuery.trim()) return true;
+      return group.id === activeGroupId;
+    },
+    [isGroupVisible, settingsSearchQuery, activeGroupId]
+  );
+
+  useEffect(() => {
+    const nodes = SETTINGS_GROUPS
+      .map((group) => document.getElementById(`settings-group-${group.id}`))
+      .filter(Boolean);
+    if (!nodes.length) return undefined;
+    const observer = new IntersectionObserver(
+      (entries) => {
+        const hit = entries
+          .filter((entry) => entry.isIntersecting)
+          .sort((a, b) => b.intersectionRatio - a.intersectionRatio)[0];
+        const id = hit?.target?.id?.replace('settings-group-', '');
+        if (id && Date.now() > groupLockUntilRef.current) setActiveGroupId(id);
+      },
+      { rootMargin: '-15% 0px -60% 0px', threshold: [0.1, 0.25, 0.5] }
+    );
+    nodes.forEach((node) => observer.observe(node));
+    return () => observer.disconnect();
+  }, [settingsSearchQuery]);
+
+  const focusGroup = useCallback((groupId) => {
+    groupLockUntilRef.current = Date.now() + 800;
+    setSettingsSearchQuery('');
+    setActiveGroupId(groupId);
+    scrollToSection(`settings-group-${groupId}`);
+  }, [scrollToSection]);
 
   // États locaux pour les modals
   const [showProfileCardSettings, setShowProfileCardSettings] = useState(false);
@@ -306,95 +359,111 @@ const SettingsTab = () => {
   };
 
   return (
-    <div className="settings-page relative min-h-screen text-red-50">
-      <div className="relative z-10 space-y-6 p-6">
-        <style>{`
-        .settings-page {
-          background: transparent !important;
-        }
-        .settings-page [class*="bg-slate-"],
-        .settings-page [class*="bg-gray-"] {
-          background-color: rgba(0, 0, 0, 0.92) !important;
-        }
-        .settings-page [class*="border-slate-"],
-        .settings-page [class*="border-gray-"] {
-          border-color: rgba(185, 28, 28, 0.55) !important;
-        }
-        .settings-page [class*="text-slate-"],
-        .settings-page [class*="text-gray-"] {
-          color: rgb(254 202 202) !important;
-        }
-        .profile-input-dark input[type="email"],
-        .profile-input-dark input[type="password"],
-        .profile-input-dark input[type="text"] {
-          background-color: rgb(0 0 0) !important;
-          color: #fecaca !important;
-          border-color: rgba(185, 28, 28, 0.55) !important;
-        }
-        .profile-input-dark input[type="email"]:disabled,
-        .profile-input-dark input[type="password"]:disabled,
-        .profile-input-dark input[type="text"]:disabled {
-          background-color: rgb(0 0 0) !important;
-          color: #fca5a5 !important;
-          border-color: rgba(127, 29, 29, 0.5) !important;
-          opacity: 0.65 !important;
-        }
-      `}</style>
-        
-        <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-          <h2 className="flex items-center text-2xl font-bold text-red-100">
-            <Settings className="mr-3 text-red-400" size={28} />
-            Paramètres & Sauvegarde
-          </h2>
-        </div>
+    <div className="settings-page relative min-h-screen">
+      <div className="relative z-10 flex items-start gap-5 p-4 md:p-6">
+        <nav
+          className="sticky top-32 hidden max-h-[calc(100vh-8.5rem)] w-56 shrink-0 overflow-y-auto rounded-2xl border border-white/[0.08] bg-[#14161c]/80 p-3 backdrop-blur-md lg:block"
+          aria-label="Familles de paramètres"
+        >
+          <div className="mb-3 flex items-center gap-2 px-2 text-sm font-semibold text-zinc-100">
+            <span className="inline-block h-2 w-2 rounded-full bg-rose-400" aria-hidden="true" />
+            Momentum
+          </div>
+          <div className="space-y-1">
+            {SETTINGS_GROUPS.filter(isGroupVisible).map((group) => {
+              const active = group.id === activeGroupId;
+              const count = group.sectionIds.filter((id) => isSectionVisible(id)).length;
+              return (
+                <button
+                  key={group.id}
+                  type="button"
+                  onClick={() => focusGroup(group.id)}
+                  className={`flex w-full items-center justify-between rounded-xl px-3 py-2 text-left text-sm transition-colors ${
+                    active ? 'text-zinc-50' : 'text-zinc-400 hover:bg-white/[0.04] hover:text-zinc-200'
+                  }`}
+                  style={active ? { background: `color-mix(in srgb, ${group.accent} 18%, transparent)`, color: group.accent } : undefined}
+                >
+                  <span className="flex items-center gap-2">
+                    <span
+                      className="h-1.5 w-1.5 rounded-full"
+                      style={{ background: group.accent }}
+                      aria-hidden="true"
+                    />
+                    {group.label}
+                  </span>
+                  <span className="text-[11px] tabular-nums opacity-70">{count}</span>
+                </button>
+              );
+            })}
+          </div>
+          <div className="mt-4 flex items-center gap-2 border-t border-white/[0.06] px-2 pt-3">
+            <div className="flex h-8 w-8 items-center justify-center rounded-full bg-emerald-900/70 text-xs font-semibold text-emerald-100">
+              {(currentUser?.username || 'G').slice(0, 1).toUpperCase()}
+            </div>
+            <div className="min-w-0">
+              <div className="truncate text-xs font-medium text-zinc-100">{currentUser?.username || 'guest'}</div>
+              <div className="text-[10px] text-zinc-500">{currentUser?.id ? 'Compte' : 'Compte local'}</div>
+            </div>
+          </div>
+        </nav>
 
-        {/* Recherche dans les paramètres */}
-        <div className="mb-4">
+        <div className="min-w-0 flex-1 space-y-6">
+        <div>
           <Input
             id="settings-search"
             type="search"
             variant="search"
             icon={Search}
-            placeholder="Rechercher un paramètre (ex. phrases, budget, langue…)"
+            placeholder="Rechercher un paramètre…"
             value={settingsSearchQuery}
             onChange={(e) => setSettingsSearchQuery(e.target.value)}
             aria-label="Rechercher dans les paramètres"
-            className="!border-red-900/60 !bg-black !text-red-100 placeholder:!text-red-400/50"
-            containerClassName="max-w-xl"
+            className="!border-white/10 !bg-[#14161c] !text-zinc-100 placeholder:!text-zinc-500"
+            containerClassName="max-w-none"
           />
           {settingsSearchQuery.trim() && (
-            <p className="mt-2 text-xs text-red-300/70">
-              Affichage des blocs correspondant à votre recherche. Effacez le champ pour tout afficher.
+            <p className="mt-2 text-xs text-zinc-500">
+              Seuls les blocs correspondants restent affichés.
             </p>
           )}
         </div>
 
-        {/* Ancres : liens rapides vers les sections (filtrées si recherche active) */}
-        {SETTINGS_SECTIONS.some(({ id }) => isSectionVisible(id)) && (
-        <div className="mb-6 flex flex-wrap gap-2 rounded-xl border border-red-900/60 bg-black p-3">
-          {SETTINGS_SECTIONS.filter(({ id }) => isSectionVisible(id)).map(({ id, label }) => (
-            <button
-              key={id}
-              type="button"
-              onClick={() => scrollToSection(id)}
-              className="rounded-lg border border-red-900/50 bg-black px-3 py-1.5 text-xs font-medium text-red-100 transition-colors hover:border-red-600/70 hover:bg-red-950/50"
-            >
-              {label}
-            </button>
-          ))}
+        <div className="flex gap-2 overflow-x-auto pb-1 lg:hidden">
+          {SETTINGS_GROUPS.filter(isGroupVisible).map((group) => {
+            const active = group.id === activeGroupId;
+            return (
+              <button
+                key={group.id}
+                type="button"
+                onClick={() => focusGroup(group.id)}
+                className="shrink-0 rounded-full border px-3 py-1.5 text-xs font-medium"
+                style={{
+                  borderColor: active ? group.accent : 'rgba(255,255,255,0.1)',
+                  color: active ? group.accent : '#a1a1aa',
+                  background: active ? `color-mix(in srgb, ${group.accent} 16%, transparent)` : 'transparent',
+                }}
+              >
+                {group.label}
+              </button>
+            );
+          })}
         </div>
-        )}
 
         {showSearchEmptyState && (
           <div
-            className="mb-6 rounded-xl border border-dashed border-red-800/50 bg-red-950/20 px-4 py-8 text-center text-red-200/80"
+            className="rounded-2xl border border-dashed border-white/15 bg-white/[0.03] px-4 py-8 text-center text-sm text-zinc-400"
             role="status"
           >
             Aucun bloc de paramètres ne correspond à « {settingsSearchQuery.trim()} ». Essayez un autre mot ou effacez la recherche.
           </div>
         )}
 
-        {/* Section Mon Profil */}
+        <SettingsGroupFrame group={SETTINGS_GROUPS[0]} visible={isGroupShown(SETTINGS_GROUPS[0])}>
+        {isSectionVisible('settings-quiz') && (
+        <div id="settings-quiz" className="scroll-mt-28">
+          <ProfileQuizSettings currentUser={currentUser} setActiveTab={setActiveTab} />
+        </div>
+        )}
         {isSectionVisible('settings-profil') && (
         <div id="settings-profil" className="scroll-mt-4">
         <ProfileSettings
@@ -406,6 +475,14 @@ const SettingsTab = () => {
         </div>
         )}
 
+        {isSectionVisible('settings-verrou') && (
+        <div id="settings-verrou" className="scroll-mt-4">
+          <AppLockSettingsPanel />
+        </div>
+        )}
+        </SettingsGroupFrame>
+
+        <SettingsGroupFrame group={SETTINGS_GROUPS[1]} visible={isGroupShown(SETTINGS_GROUPS[1])}>
         {isSectionVisible('settings-github') && (
           <div className="scroll-mt-4">
             <GithubIntegrationSettings currentUser={currentUser} updateProfile={updateProfile} />
@@ -419,7 +496,7 @@ const SettingsTab = () => {
         )}
 
         {isSectionVisible('settings-garmin') && (
-          <div id="settings-garmin" className="scroll-mt-4">
+          <div id="settings-garmin" className="scroll-mt-4 lg:col-span-2">
             <Card variant="settings">
               <CardHeader variant="settings">
                 <CardTitle tone="settings" className="flex items-center normal-case tracking-normal">
@@ -441,7 +518,7 @@ const SettingsTab = () => {
                     }
                     setActiveTab('garmin');
                   }}
-                  className={`${settingsUi.btnPrimary} w-full`}
+                  className={`${settingsUi.btnPrimary} w-full sm:w-auto`}
                 >
                   Ouvrir les parametres Garmin
                 </button>
@@ -449,10 +526,12 @@ const SettingsTab = () => {
             </Card>
           </div>
         )}
+        </SettingsGroupFrame>
 
-        {isSectionVisible('settings-verrou') && (
-        <div id="settings-verrou" className="scroll-mt-4">
-          <AppLockSettingsPanel />
+        <SettingsGroupFrame group={SETTINGS_GROUPS[2]} visible={isGroupShown(SETTINGS_GROUPS[2])}>
+        {isSectionVisible('settings-apparence') && (
+        <div id="settings-apparence" className="scroll-mt-4">
+          <AppBackgroundSettings />
         </div>
         )}
 
@@ -588,7 +667,9 @@ const SettingsTab = () => {
         </QuotesErrorBoundary>
         </div>
         )}
+        </SettingsGroupFrame>
 
+        <SettingsGroupFrame group={SETTINGS_GROUPS[3]} visible={isGroupShown(SETTINGS_GROUPS[3])}>
         {/* Section Export */}
         {isSectionVisible('settings-export') && (
         <div id="settings-export" className="scroll-mt-4">
@@ -691,7 +772,9 @@ const SettingsTab = () => {
         />
         </div>
         )}
+        </SettingsGroupFrame>
 
+        <SettingsGroupFrame group={SETTINGS_GROUPS[4]} visible={isGroupShown(SETTINGS_GROUPS[4])}>
         {/* Section Navigation */}
         {isSectionVisible('settings-navigation') && (
         <div id="settings-navigation" className="scroll-mt-4">
@@ -742,13 +825,16 @@ const SettingsTab = () => {
         <PrayerLocationSettings         />
         </div>
         )}
+        </SettingsGroupFrame>
 
+        <SettingsGroupFrame group={SETTINGS_GROUPS[5]} visible={isGroupShown(SETTINGS_GROUPS[5])}>
         {/* Section Informations */}
         {isSectionVisible('settings-infos') && (
         <div id="settings-infos" className="scroll-mt-4">
         <InfoCards />
         </div>
         )}
+        </SettingsGroupFrame>
 
         {/* Modals */}
         {showHomePageSettings && (
@@ -760,6 +846,7 @@ const SettingsTab = () => {
           isOpen={showProfileCardSettings}
           onClose={() => setShowProfileCardSettings(false)}
         />
+        </div>
       </div>
     </div>
   );

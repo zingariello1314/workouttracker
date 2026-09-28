@@ -3,6 +3,7 @@ import {
   getCoreSportTabsPreloadProgress,
   markTodayViewPrepared,
   preloadCoreSportTabs,
+  preloadPriorityTabs,
   resetCoreSportTabsPreloadForTests,
   subscribeCoreSportTabsPreload
 } from '../preloadTabs';
@@ -46,6 +47,26 @@ describe('preloadCoreSportTabs', () => {
     });
     expect(seen.at(-1)).toBe(3);
     unsub();
+  });
+
+  it('charge Aujourd’hui avant Récap, Calendrier et la banque', async () => {
+    const order = [];
+    await preloadPriorityTabs({
+      today: () => {
+        order.push('today');
+      },
+      recap: () => {
+        order.push('recap');
+      },
+      calendar: () => {
+        order.push('calendar');
+      },
+      exercises: () => {
+        order.push('bank');
+      }
+    });
+
+    expect(order).toEqual(['today', 'recap', 'calendar', 'bank']);
   });
 
   it('ne bloque pas ready si un chunk échoue', async () => {

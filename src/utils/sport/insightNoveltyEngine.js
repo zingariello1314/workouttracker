@@ -4,8 +4,9 @@
 
 import {
   findHistoryEntry,
-  recentThemeCount,
-  RECENT_MS
+  RECENT_MS,
+  startOfLocalDayMs,
+  themeCountBeforeLocalDay
 } from './insightNoveltyStore';
 import {
   semanticGroupFromCandidateId,
@@ -34,8 +35,11 @@ export function computeCandidateNovelty(candidate, history, now = Date.now()) {
   const theme = themeFromCandidateId(candidate?.id);
   let novelty = 0.82;
   let penalty = 0;
+  const dayStart = startOfLocalDayMs(now);
 
-  const entry = findHistoryEntry(history, candidate?.id);
+  const rawEntry = findHistoryEntry(history, candidate?.id);
+  // Montré aujourd'hui : on le garde. La rotation ne commence que le jour suivant.
+  const entry = rawEntry && rawEntry.seenAt < dayStart ? rawEntry : null;
   if (entry) {
     const age = now - entry.seenAt;
     if (age <= RECENT_MS) {
@@ -51,7 +55,7 @@ export function computeCandidateNovelty(candidate, history, now = Date.now()) {
     }
   }
 
-  const themeRecent = recentThemeCount(history, theme, now, 7 * 86400000);
+  const themeRecent = themeCountBeforeLocalDay(history, theme, now, 7 * 86400000);
   if (themeRecent >= 1) {
     penalty += 14;
     novelty -= 0.14;

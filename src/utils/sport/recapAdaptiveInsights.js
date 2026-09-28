@@ -45,12 +45,14 @@ import {
   recordShownInsights,
   saveInsightHistory,
   loadLastInsightSignature,
-  saveLastInsightSignature
+  saveLastInsightSignature,
+  localDayKey
 } from './insightNoveltyStore';
 
 import { applyNatureWeights, columnCapsForCandidates, rewardToneForKind } from './recapInsightNature';
 import { mergeGarminDataForRecap } from './recapGarminMerge';
 import { periodVoice } from './recapPeriodDiscoveries';
+import { buildSpanStoryCandidates } from './recapSpanStory';
 
 const MIN_COLUMN_WEIGHT = 32;
 
@@ -1150,12 +1152,21 @@ function legacyToCandidates(legacyPistes) {
  * Sélection diversifiée : poids + pénalité pilier déjà pris + tie-break signature.
  * @returns {Array<{ id: string, horizon: string, pillar: string, weight: number, text: string }>}
  */
-export function selectBalancedCandidates(candidates, horizon, limit, signature) {
+function isRichColumnReading(candidate) {
+  const type = candidate?.interpretation?.type;
+  if (type === 'coach_reading' || type === 'composed_horizon_read') return true;
+  const id = String(candidate?.id || '');
+  return id.includes('relation.reading.') || id.includes('.disc_');
+}
+
+export function selectBalancedCandidates(candidates, horizon, limit, signature, now = Date.now()) {
   const pool = candidates.filter((c) => c.horizon === horizon && c.text);
   const picked = [];
   const usedPillars = new Set();
   const usedIds = new Set();
   const usedGroups = new Set();
+  const richPool = pool.some(isRichColumnReading);
+  const dayKey = localDayKey(now);
 
   while (picked.length < limit && pool.length > 0) {
     let best = null;
@@ -1165,6 +1176,8 @@ export function selectBalancedCandidates(candidates, horizon, limit, signature) 
       const group = semanticGroupFromCandidateId(c.id);
       let score = c.weight;
       if (String(c.id).includes('.disc_')) score += 14;
+      if (isRichColumnReading(c)) score += hashSig(`${dayKey}:${c.id}`) % 13;
+      else if (richPool) score -= 36;
       if (usedGroups.has(group) && group !== 'misc') score -= 16;
       if (usedPillars.has(c.pillar)) {
         const samePillarBest = picked.find((p) => p.pillar === c.pillar);
@@ -1201,6 +1214,18 @@ export function selectBalancedInsightTexts(candidates, horizon, limit, signature
   return selectBalancedCandidates(candidates, horizon, limit, signature).map((p) => p.text);
 }
 
+function stripTitleEcho(title, body) {
+  const t = String(title || '').trim();
+  let b = String(body || '').trim();
+  if (!t || !b) return b;
+  const head = t.toLowerCase().slice(0, Math.min(32, t.length));
+  if (b.toLowerCase().startsWith(head)) {
+    const cut = b.indexOf('. ');
+    if (cut > 12 && cut < 220) b = b.slice(cut + 2).trim();
+  }
+  return b;
+}
+
 function toInsightCard(p) {
   const ctx = p.interpretation?.context || {};
   const kind = ctx.kind || '';
@@ -1208,7 +1233,7 @@ function toInsightCard(p) {
   if (ctx.title && ctx.body) {
     return {
       title: ctx.title,
-      body: ctx.body,
+      body: stripTitleEcho(ctx.title, ctx.body),
       evidence: ctx.evidenceLine || '',
       confidence: ctx.confidenceLabel
         ? `Confiance : ${ctx.confidenceLabel}${ctx.sampleDays ? ` · Échantillon : ${ctx.sampleDays} j` : ''}`
@@ -1284,7 +1309,22 @@ export function buildAdaptiveRecapInsights(opts = {}) {
     recapState
   });
 
-  const candidates = composed.candidates || [];
+  const spanStories = buildSpanStoryCandidates({
+    snapshot,
+    window,
+    period,
+    getExerciseNameById,
+    garminData: mergedGarmin
+  });
+  const longPeriod = period === '30d' || period === '3m' || period === '6m' || period === '1y' || period === '2y' || period === 'all';
+  let candidates = [...spanStories, ...(composed.candidates || [])];
+  if (longPeriod) {
+    candidates = candidates.map((c) => {
+      if (String(c.id || '').includes('.span_')) return { ...c, weight: Math.max(c.weight || 0, 97) };
+      if (/cette semaine/i.test(String(c.text || ''))) return { ...c, weight: (c.weight || 0) - 55 };
+      return c;
+    });
+  }
 
   const vol = runningVolumeForWindow(snapshot, mergedGarmin, window);
   const kcalSum = activeKcalSumForWindow(

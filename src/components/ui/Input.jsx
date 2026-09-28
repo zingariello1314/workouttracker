@@ -17,6 +17,8 @@ const Input = ({
   fullWidth = true,
   className = '',
   containerClassName = '',
+  optional: _optional = false,
+  help,
   ...props
 }) => {
   const sizeStyles = {
@@ -49,6 +51,7 @@ const Input = ({
 
   const generatedId = useId();
   const inputId = props.id || generatedId;
+  const resolvedHelper = helperText || help;
 
   // Gérer l'icône : si c'est un composant React, l'invoquer
   const IconComponent = icon;
@@ -65,7 +68,7 @@ const Input = ({
   };
 
   return (
-    <div className={`${fullWidth ? 'w-full' : ''} ${containerClassName}`}>
+    <div className={`${fullWidth ? 'w-full' : ''} ${containerClassName}`} data-optional={_optional ? 'true' : undefined}>
       {label && (
         <label
           htmlFor={inputId}
@@ -88,7 +91,7 @@ const Input = ({
           id={inputId}
           className={`${baseStyles} ${borderStyles} ${sizeStyles[size]} ${booksTone && !isGlass ? 'text-[#e0f2fe] placeholder:text-[#93c5fd]/45' : ''} ${icon && iconPosition === 'left' ? 'pl-10' : ''} ${icon && iconPosition === 'right' ? 'pr-10' : ''} ${className}`}
           aria-invalid={error ? 'true' : 'false'}
-          aria-describedby={error ? `${inputId}-error` : helperText ? `${inputId}-helper` : undefined}
+          aria-describedby={error ? `${inputId}-error` : resolvedHelper ? `${inputId}-helper` : undefined}
           {...props}
         />
         {icon && iconPosition === 'right' && (
@@ -105,9 +108,9 @@ const Input = ({
           {error}
         </p>
       )}
-      {helperText && !error && (
+      {resolvedHelper && !error && (
         <p id={`${inputId}-helper`} className={`mt-1 text-sm ${booksTone ? 'text-[#93c5fd]/70' : 'text-slate-400'}`}>
-          {helperText}
+          {resolvedHelper}
         </p>
       )}
     </div>
@@ -124,6 +127,8 @@ const TextArea = React.forwardRef(({
   size = 'md',
   fullWidth = true,
   className = '',
+  optional: _optional = false,
+  help,
   ...props
 }, ref) => {
   const sizeStyles = {
@@ -156,9 +161,10 @@ const TextArea = React.forwardRef(({
 
   const generatedId = useId();
   const textAreaId = props.id || generatedId;
+  const resolvedHelper = helperText || help;
 
   return (
-    <div className={fullWidth ? 'w-full' : ''}>
+    <div className={fullWidth ? 'w-full' : ''} data-optional={_optional ? 'true' : undefined}>
       {label && (
         <label
           htmlFor={textAreaId}
@@ -173,7 +179,7 @@ const TextArea = React.forwardRef(({
         id={textAreaId}
         className={`${baseStyles} ${borderStyles} ${sizeStyles[size]} ${booksTone && !isGlass ? 'text-[#e0f2fe] placeholder:text-[#93c5fd]/45' : ''} ${className}`}
         aria-invalid={error ? 'true' : 'false'}
-        aria-describedby={error ? `${textAreaId}-error` : helperText ? `${textAreaId}-helper` : undefined}
+        aria-describedby={error ? `${textAreaId}-error` : resolvedHelper ? `${textAreaId}-helper` : undefined}
         {...props}
       />
       {error && (
@@ -181,9 +187,9 @@ const TextArea = React.forwardRef(({
           {error}
         </p>
       )}
-      {helperText && !error && (
+      {resolvedHelper && !error && (
         <p id={`${textAreaId}-helper`} className={`mt-1 text-sm ${booksTone ? 'text-[#93c5fd]/70' : 'text-slate-400'}`}>
-          {helperText}
+          {resolvedHelper}
         </p>
       )}
     </div>

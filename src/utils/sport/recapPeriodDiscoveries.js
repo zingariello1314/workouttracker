@@ -27,7 +27,7 @@ import {
 import { resolveExerciseNameForRecap } from './recapStrengthPeriodStats';
 import { formatRateFr } from './athleteTrainingIdentity';
 import { formatDayFr, daysBetweenYmd } from './recapTrainingTimeline';
-import { recentThemeCount } from './insightNoveltyStore';
+import { themeCountBeforeLocalDay } from './insightNoveltyStore';
 import { comparableWeeklyRates, SIGNAL_FAMILY_CAPS, signalFamilyOfKind } from './recapInsightNature';
 import {
   buildExerciseBaselines,
@@ -158,13 +158,28 @@ export function periodVoice(period, spanDays) {
     period === '6m' ||
     spanDays >= 180
   ) {
-    const yearish = period === '1y' || period === '2y' || period === 'all' || spanDays >= 300;
+    const yearish = period === '1y' || spanDays >= 300;
+    let thisPeriod = 'ces derniers mois';
+    let ofPeriod = 'de la période';
+    let now = 'cette période';
+    if (period === 'all') {
+      thisPeriod = 'l’ensemble du suivi';
+      ofPeriod = 'du parcours';
+      now = 'sur tout le suivi';
+    } else if (period === '2y') {
+      thisPeriod = 'ces deux années';
+      ofPeriod = 'de ces deux années';
+      now = 'sur deux ans';
+    } else if (yearish) {
+      thisPeriod = 'cette année';
+      ofPeriod = "de l'année";
+    }
     return {
       key: 'year',
-      unit: yearish ? 'année' : 'semestre',
-      now: 'cette période',
-      thisPeriod: yearish ? 'cette année' : 'ces derniers mois',
-      ofPeriod: yearish ? "de l'année" : 'de la période',
+      unit: period === 'all' ? 'parcours' : yearish ? 'année' : 'semestre',
+      now,
+      thisPeriod,
+      ofPeriod,
       daysWord: 'jours'
     };
   }
@@ -205,6 +220,17 @@ function sameWeekdaySessions(catalog, ymd, beforeYmd) {
   return (catalog || []).filter(
     (s) => s.date < beforeYmd && weekdayFr(s.date) === wd && (s.totalReps || 0) >= 20
   );
+}
+
+function muscleAvecArticle(label) {
+  const l = String(label || '');
+  if (/^(dos|cou|gainage)$/i.test(l)) return `le ${l}`;
+  return `les ${l}`;
+}
+
+function capLabel(label) {
+  const withArticle = muscleAvecArticle(label);
+  return withArticle.charAt(0).toUpperCase() + withArticle.slice(1);
 }
 
 function musclePortrait(p) {
@@ -580,8 +606,12 @@ export function buildPeriodComparisons({
   athleteIdentity = null
 } = {}) {
   const end = window?.end;
-  if (!snapshot || !end || !window?.start) {
+  if (!snapshot || !end) {
     return { period: emptyMeasure(window), d7: emptyMeasure(window), d30: emptyMeasure(window), d90: emptyMeasure(window) };
+  }
+  if (!window?.start) {
+    const span = period === '2y' ? 730 : period === '1y' ? 365 : period === '6m' ? 183 : period === '3m' ? 92 : period === '30d' ? 30 : 3650;
+    window = { start: addCalendarDays(end, -(span - 1)), end };
   }
   const ref = refFromYmd(end);
   const periodM = measureRecapWindow({
@@ -819,7 +849,7 @@ function detectDiscoveries(cmp, extras = {}) {
       : Math.round((p.trainingDays / Math.max(1, p.spanDays)) * 7 * 10) / 10;
     const sessionsBit = isToday
       ? `Tu as réalisé ${fmtInt(p.totalReps)} répétitions en ${formatDurationFr(p.minutes || p.totalMinutes)}`
-      : `${v.thisPeriod.charAt(0).toUpperCase()}${v.thisPeriod.slice(1)} représente ${p.trainingDays} séance${p.trainingDays > 1 ? 's' : ''}, ${fmtInt(p.totalReps)} répétitions et ${formatDurationFr(p.minutes || p.totalMinutes)} d'entraînement`;
+      : `${p.trainingDays} séance${p.trainingDays > 1 ? 's' : ''}, ${fmtInt(p.totalReps)} répétitions et ${formatDurationFr(p.minutes || p.totalMinutes)} d'entraînement`;
     const perSess =
       p.repsPerSession != null
         ? isToday
@@ -832,9 +862,18 @@ function detectDiscoveries(cmp, extras = {}) {
         : weekRate != null
           ? `. Tu es actuellement autour de ${formatRateFr(weekRate)} séances par semaine`
           : '';
-    const concentrate =
-      !isToday && p.trainingDays >= 2 && p.repsPerSession != null && p.repsPerSession >= 200
-        ? `. Le volume n'est pas simplement « en baisse » : il est concentré sur moins de journées, avec des séances suffisamment longues pour maintenir une exposition importante à chaque passage`
+    const sparse =
+      !isToday &&
+      p.trainingDays <= 2 &&
+      habitRate != null &&
+      weekRate != null &&
+      weekRate + 0.8 < habitRate;
+    const concentrate = sparse
+      ? p.trainingDays === 1
+        ? `. La baisse vient du nombre de journées entraînées, pas d'une séance particulièrement courte. ${fmtInt(p.totalReps)} reps sur une seule journée, c'est une organisation plus dense que ton rythme habituel`
+        : `. Tu n'as pas seulement réduit le total : tu as changé la façon dont il est réparti. Une semaine isolée ne pose pas de problème en soi ; elle rompt avec une organisation habituellement étalée sur plusieurs jours`
+      : !isToday && p.trainingDays >= 2 && p.repsPerSession != null && p.repsPerSession >= 200
+        ? `. Les séances restent longues. Ce qui change, c'est le nombre de journées, pas la durée de chacune`
         : '';
     out.push(
       discovery({
@@ -843,17 +882,13 @@ function detectDiscoveries(cmp, extras = {}) {
         family: 'volume_shape',
         title: isToday
           ? 'Le volume réalisé aujourd\'hui reste élevé par séance'
-          : p.trainingDays <= 3 && (habitRate == null || weekRate <= habitRate)
-            ? 'Le volume de la semaine est concentré sur moins de journées'
-            : `Le rythme ${v.ofPeriod} reste lisible par rapport à ton habitude`,
-        body: `${sessionsBit}${perSess}${habitBit}${concentrate}.${periodPortraitTail(p, v)}`,
-        evidence: [
-          `${p.trainingDays} séance${p.trainingDays > 1 ? 's' : ''}`,
-          `${fmtInt(p.totalReps)} reps`,
-          habitRate != null ? `habitude ${formatRateFr(habitRate)}/sem.` : null
-        ]
-          .filter(Boolean)
-          .join(' · '),
+          : sparse && p.trainingDays === 1
+            ? 'Une seule séance porte tout le volume'
+            : sparse || (p.trainingDays <= 3 && (habitRate == null || weekRate <= habitRate))
+              ? 'Peu de journées portent le volume'
+              : `Le rythme ${v.ofPeriod} reste lisible par rapport à ton habitude`,
+        body: `${sessionsBit}${perSess}${habitBit}${concentrate}.`,
+        evidence: '',
         weights: { importance: 0.96, reliability: 0.94, novelty: 0.82, fit: 1 },
         metrics: { trainingDays: p.trainingDays, totalReps: p.totalReps, weekRate, habitRate }
       })
@@ -968,19 +1003,12 @@ function detectDiscoveries(cmp, extras = {}) {
   if (p.muscles.length >= 2 && p.identifiedMuscleReps >= 80) {
     const top = p.muscles.slice(0, 4);
     const topShare = share(top[0].reps, p.totalReps);
-    const list = top
-      .map((m) => `${fmtInt(m.reps)} reps ${m.label}`)
-      .join(', ');
-    const extra = p.muscles.find((m) => m.group === MuscleGroups.CORE);
+    const extra = p.muscles.find((m) => m.group === MuscleGroups.CORE && !top.some((t) => t.group === m.group));
     const extraBit = extra && extra.reps >= 20 ? `, auxquels s'ajoutent ${fmtInt(extra.reps)} reps de ${extra.label}` : '';
-    const leadBit =
-      topShare != null
-        ? `Les ${top[0].label} représentent ainsi environ ${fmtPct(topShare)} du volume musculaire identifié`
-        : '';
     const pullShare = share(p.byMuscle[MuscleGroups.BACK]?.reps || 0, p.totalReps);
-    const pullBit =
-      pullShare != null
-        ? `. ${v.thisPeriod.charAt(0).toUpperCase()}${v.thisPeriod.slice(1)} n'est donc pas seulement caractérisée par ${fmtInt(p.totalReps)} répétitions : elle présente une dominante ${PUSH_GROUPS.has(top[0].group) ? 'poussée' : top[0].label}, avec un tirage qui représente environ ${fmtPct(pullShare)} du volume total`
+    const tirageBit =
+      pullShare != null && top[0].group !== MuscleGroups.BACK
+        ? `, et le tirage pèse environ ${fmtPct(pullShare)} du volume`
         : '';
     out.push(
       discovery({
@@ -988,10 +1016,19 @@ function detectDiscoveries(cmp, extras = {}) {
         nature: 'now',
         family: 'muscle_now',
         title: isToday
-          ? `${v.thisPeriod.charAt(0).toUpperCase()}${v.thisPeriod.slice(1)} est nettement orientée ${top[0].label}`
-          : `La répartition ${v.ofPeriod} montre un profil nettement orienté vers les ${top[0].label}`,
-        body: `${isToday ? "Aujourd'hui" : `La répartition ${v.ofPeriod}`} : ${list}${extraBit}. ${leadBit}${pullBit}.`,
-        evidence: top.map((m) => `${m.label} ${fmtInt(m.reps)}`).join(' · '),
+          ? `${fmtInt(top[0].reps)} reps pour ${muscleAvecArticle(top[0].label)} aujourd'hui`
+          : topShare != null
+            ? `${capLabel(top[0].label)} représente ${fmtPct(topShare)} des reps`
+            : `${capLabel(top[0].label)} mène le volume`,
+        body: `${fmtInt(top[0].reps)} de tes ${fmtInt(p.totalReps)} reps concernent ${muscleAvecArticle(top[0].label)}${
+          top.length > 1
+            ? `, contre ${top
+                .slice(1)
+                .map((m) => `${fmtInt(m.reps)} pour ${muscleAvecArticle(m.label)}`)
+                .join(', ')}`
+            : ''
+        }${extraBit}. Ce n'est pas le pic d'un seul exercice : plusieurs mouvements vont dans le même sens${tirageBit}.`,
+        evidence: `${top.length} groupes · ${fmtInt(p.identifiedMuscleReps)} reps identifiées`,
         weights: { importance: 0.86, reliability: 0.9, novelty: 0.84, fit: 0.96 },
         metrics: { topGroup: top[0].group, topShare }
       })
@@ -1861,11 +1898,7 @@ function detectDiscoveries(cmp, extras = {}) {
         kind: 'disc_sleep_freq',
         nature: 'journey',
         family: 'sleep_freq',
-        title: isToday
-          ? "Cette séance s'inscrit dans un lien entre nuits longues et jours actifs"
-          : isWeek
-            ? 'Cette semaine confirme un lien entre nuits longues et jours actifs'
-            : 'Les nuits longues favorisent aussi la répétition des jours actifs',
+        title: 'Les semaines bien dormies comptent plus de jours actifs',
         body: `Tes semaines contenant au moins 4 nuits au-dessus de 7 h 30 présentent une moyenne de ${fmt1(weekFreq.highDays)} jours actifs, contre ${fmt1(weekFreq.lowDays)} lorsque ce seuil n'est atteint que deux fois ou moins (${weekFreq.highWeeks} et ${weekFreq.lowWeeks} semaines). La différence porte donc à la fois sur le nombre de jours où tu t'entraînes et la quantité de travail réalisée lors de ces journées.`,
         evidence: `${fmt1(weekFreq.highDays)} j. · ${fmt1(weekFreq.lowDays)} j.`,
         weights: { importance: 0.86, reliability: 0.82, novelty: 0.92, fit: 0.9 },
@@ -1877,12 +1910,6 @@ function detectDiscoveries(cmp, extras = {}) {
   if (highShare) {
     const qSrc = isToday || isWeek ? d90 : p;
     const streak = maxConsecutiveTrainingDays(qSrc.repsByDate || p.repsByDate);
-    const timeBit =
-      qSrc.minutes >= 40
-        ? `, ${formatDurationFr(qSrc.minutes)} d'exercices`
-        : qSrc.totalMinutes >= 40
-          ? `, ${formatDurationFr(qSrc.totalMinutes)} d'activité`
-          : '';
     const lowBit =
       highShare.lowShortShare != null
         ? ` Les périodes sous 7 h 30 sont au contraire surreprésentées dans les journées à faible volume.`
@@ -1891,26 +1918,14 @@ function detectDiscoveries(cmp, extras = {}) {
       streak >= 8
         ? ` Ton record de ${streak} jours consécutifs montre que ta capacité à maintenir l'entraînement existe. La différence entre une période productive et une période moins productive réside davantage dans la répétition de journées suffisamment récupérées que dans un niveau maximal ponctuel.`
         : '';
-    const scopeLead = isToday
-      ? "Cette séance s'inscrit dans un trimestre"
-      : isWeek
-        ? 'Cette semaine confirme un trimestre'
-        : 'Sur trois mois, tu totalises';
-    const totalsBit = isToday || isWeek
-      ? ` où tu totalises ${fmtInt(qSrc.totalReps)} reps, ${qSrc.trainingDays} jours entraînés${timeBit}`
-      : ` ${fmtInt(qSrc.totalReps)} reps, ${qSrc.trainingDays} jours entraînés${timeBit}`;
     out.push(
       discovery({
         kind: 'disc_sleep_quarter',
         nature: 'journey',
         family: 'sleep_quarter',
-        title: isToday
-          ? 'Cette séance s’inscrit dans un trimestre où le sommeil explique les journées denses'
-          : isWeek
-            ? 'Cette semaine confirme un trimestre où le sommeil explique les journées denses'
-            : 'Le sommeil devient une variable explicative de ta progression',
-        body: `${scopeLead}${totalsBit}. Les nuits d'au moins 7 h 30 concentrent ${fmtPct(highShare.highShare)} des journées dépassant 300 reps, alors qu'elles représentent ${fmtPct(highShare.nightShare)} des nuits.${lowBit} Tes ${fmtInt(qSrc.totalReps)} reps ne proviennent pas d'une augmentation uniforme de ton volume quotidien : elles résultent de l'accumulation de journées où tu combines sommeil suffisant et entraînement complet.${streakBit}`,
-        evidence: `${fmtPct(highShare.highShare)} des ≥ 300 · ${fmtPct(highShare.nightShare)} des nuits`,
+        title: 'Les journées les plus denses suivent plus souvent de longues nuits',
+        body: `${highShare.highOk} des ${highShare.highN} journées à au moins 300 reps ont été précédées d'une nuit d'au moins 7 h 30. Ces nuits représentent ${fmtPct(highShare.nightShare)} de l'ensemble des nuits enregistrées.${lowBit} Le lien est net, sans qu'on puisse en conclure que le sommeil cause le volume : d'autres facteurs peuvent intervenir. Ce qui ressort, c'est que le volume élevé apparaît plus souvent après une nuit longue.${streakBit}`,
+        evidence: `${highShare.highOk}/${highShare.highN} journées ≥ 300 reps après ≥ 7 h 30`,
         weights: { importance: 0.93, reliability: 0.86, novelty: 0.94, fit: 0.97 },
         metrics: { ...highShare, streak }
       })
@@ -2345,13 +2360,13 @@ function bestCalendarMonths(repsByDate) {
   return Object.values(by).sort((a, b) => b.reps - a.reps);
 }
 
-function memoryFactor(history, kind) {
+function memoryFactor(history, kind, now = Date.now()) {
   if (!history?.entries?.length) return 1;
   const n =
-    recentThemeCount(history, `short.${kind}`) +
-    recentThemeCount(history, `medium.${kind}`) +
-    recentThemeCount(history, `long.${kind}`) +
-    recentThemeCount(history, kind);
+    themeCountBeforeLocalDay(history, `short.${kind}`, now) +
+    themeCountBeforeLocalDay(history, `medium.${kind}`, now) +
+    themeCountBeforeLocalDay(history, `long.${kind}`, now) +
+    themeCountBeforeLocalDay(history, kind, now);
   const portrait =
     kind === 'disc_volume_shape' ||
     kind === 'disc_pending_session' ||

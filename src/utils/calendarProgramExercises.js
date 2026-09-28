@@ -164,9 +164,7 @@ export function getPlannedExercisesForCalendarDate({
   dayName,
   dateStr,
   getTodayWorkout,
-  activeProgram,
-  isAdmin,
-  isAuthenticated
+  activeProgram
 }) {
   const workoutRaw = typeof getTodayWorkout === 'function' ? getTodayWorkout(date, false) : null;
   if (workoutRaw) {
@@ -176,15 +174,6 @@ export function getPlannedExercisesForCalendarDate({
       originalId: ex.originalId ?? ex.id,
       programName: activeProgram?.name || 'Programme actif',
       programId: activeProgram?.id || 'active'
-    }));
-  }
-
-  if (isAdmin && isAuthenticated && workoutProgram[dayName]?.exercices) {
-    return workoutProgram[dayName].exercices.map((ex) => ({
-      ...ex,
-      originalId: ex.id,
-      programName: 'Cycle 3+1',
-      programId: 'default'
     }));
   }
 

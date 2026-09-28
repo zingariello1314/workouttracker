@@ -90,6 +90,9 @@ export function formatCalendarGarminStripesTooltip(stripes, t) {
   if (stripes.some((s) => s.kind === 'steps')) {
     parts.push(t('calendar.heatmap.stripes.tooltipSteps', 'Pas'));
   }
+  if (stripes.some((s) => s.kind === 'gtg')) {
+    parts.push(t('calendar.heatmap.stripes.tooltipGtg', 'Grease the Groove'));
+  }
   if (stripes.some((s) => s.kind === 'workout')) {
     parts.push(t('calendar.heatmap.stripes.tooltipWorkout', 'Exercices cochés'));
   }

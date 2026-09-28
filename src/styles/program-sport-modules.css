@@ -126,6 +126,57 @@
   overflow: hidden;
 }
 
+.program-sport-shell .prog-day-header {
+  background: var(--today-surface) !important;
+  border-bottom: 1px solid var(--today-border) !important;
+}
+
+.program-sport-shell .prog-soft-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border-radius: 999px;
+  border: 1px solid var(--today-border);
+  background: rgba(255, 255, 255, 0.04);
+  padding: 6px 12px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--today-text);
+}
+
+.program-sport-shell .prog-soft-btn.is-amber {
+  border-color: rgba(242, 193, 78, 0.35);
+  color: var(--today-amber);
+}
+
+.program-sport-shell .prog-soft-btn.is-danger {
+  border-color: rgba(236, 111, 168, 0.35);
+  color: #f3a8c4;
+}
+
+.program-sport-shell .prog-soft-btn:hover {
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.program-sport-shell .prog-field {
+  width: 100%;
+  border-radius: 12px;
+  border: 1px solid var(--today-border);
+  background: rgba(255, 255, 255, 0.04);
+  padding: 10px 12px;
+  font-size: 14px;
+  color: var(--today-text);
+}
+
+.program-sport-shell .prog-field::placeholder {
+  color: var(--today-text-faint);
+}
+
+.program-sport-shell .prog-field:focus {
+  outline: none;
+  border-color: var(--today-border-strong);
+}
+
 .program-sport-shell .prog-day-head {
   display: flex;
   flex-wrap: wrap;
@@ -185,16 +236,50 @@
   grid-row: 1;
 }
 
+.program-sport-shell .prog-surface {
+  background: var(--today-surface) !important;
+  border: 1px solid var(--today-border) !important;
+  border-radius: 14px !important;
+  box-shadow: none !important;
+}
+
 .program-sport-shell .prog-stretch-col {
   grid-column: 2;
   grid-row: 1;
   min-width: 0;
   max-width: 100%;
   overflow: visible;
+  background: transparent;
+  border: none;
+  border-radius: 0;
+  padding: 0;
+}
+
+.program-sport-shell .prog-stretch-card {
+  position: relative;
   background: var(--today-surface);
   border: 1px solid var(--today-border);
-  border-radius: var(--today-radius);
-  padding: 16px;
+  border-radius: 14px;
+  padding: 12px 12px 10px 14px;
+  overflow: hidden;
+}
+
+.program-sport-shell .prog-stretch-card::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 3px;
+  background: var(--today-amber);
+}
+
+.program-sport-shell .prog-stretch-moment {
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--today-text-dim);
 }
 
 .program-sport-shell .prog-stretch-col .prog-section-label {
@@ -263,8 +348,127 @@
   border: 1px solid var(--today-border) !important;
   border-radius: 14px;
   padding: 14px 14px 12px 16px;
-  overflow: visible;
-  contain: layout;
+  overflow: hidden;
+}
+
+.program-sport-shell .prog-ex-gif {
+  width: 84px;
+  height: 64px;
+  flex-shrink: 0;
+  overflow: hidden;
+  border-radius: 10px;
+  background: #000;
+  border: 1px solid var(--today-border);
+}
+
+.program-sport-shell .prog-ex-gif img,
+.program-sport-shell .prog-ex-gif video {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  pointer-events: none;
+}
+
+.program-sport-shell .prog-ex-gif-fallback {
+  display: block;
+  width: 100%;
+  height: 100%;
+  background:
+    radial-gradient(circle at 30% 30%, rgba(15, 92, 69, 0.45), transparent 55%),
+    #05080c;
+}
+
+/* Même cadrage que la banque : buste et cuisses, muscles lisibles, sans recadrage trop serré. */
+.program-sport-shell .prog-ex-gif.is-anatomy {
+  width: 96px;
+  height: 84px;
+  background: #000;
+}
+
+.program-sport-shell .prog-ex-gif.is-anatomy,
+.program-sport-shell .prog-ex-gif.is-anatomy * {
+  min-height: 0 !important;
+}
+
+.program-sport-shell .prog-ex-gif.is-anatomy > * {
+  height: 100%;
+  width: 100%;
+}
+
+.program-sport-shell .prog-ex-gif.is-anatomy .rounded-xl {
+  border: none !important;
+  box-shadow: none !important;
+  border-radius: 8px !important;
+  background: #000 !important;
+}
+
+.program-sport-shell .prog-ex-gif.is-anatomy img {
+  object-fit: cover !important;
+  object-position: center 42% !important;
+}
+
+.picker-ex-thumb {
+  width: 112px;
+  height: 84px;
+  flex-shrink: 0;
+  overflow: hidden;
+  border-radius: 8px;
+  background: #000;
+  border: 1px solid rgba(15, 76, 92, 0.65);
+}
+
+.picker-ex-thumb.is-chosen {
+  width: 196px;
+  height: 146px;
+}
+
+.picker-ex-thumb img,
+.picker-ex-thumb video {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center;
+  pointer-events: none;
+}
+
+.picker-ex-thumb.is-anatomy,
+.picker-ex-thumb.is-anatomy * {
+  min-height: 0 !important;
+}
+
+.picker-ex-thumb.is-anatomy > * {
+  width: 100%;
+  height: 100%;
+}
+
+.picker-ex-thumb.is-anatomy .rounded-xl {
+  border: none !important;
+  box-shadow: none !important;
+  border-radius: 8px !important;
+  background: #000 !important;
+}
+
+.picker-ex-thumb.is-anatomy img {
+  object-fit: cover !important;
+  object-position: center 42% !important;
+}
+
+.program-sport-shell .prog-ex-pos {
+  width: 2.4rem;
+  flex-shrink: 0;
+  border-radius: 8px;
+  border: 1px solid rgba(15, 76, 92, 0.7);
+  background: #000;
+  color: #99f6e4;
+  font-size: 12px;
+  font-weight: 700;
+  padding: 2px 4px;
+  cursor: pointer;
+}
+
+.program-sport-shell .prog-ex-card.is-drop-target {
+  outline: 2px solid rgba(45, 212, 191, 0.85);
+  outline-offset: 1px;
 }
 
 .program-sport-shell .prog-ex-card::before {

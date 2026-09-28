@@ -18,5 +18,5 @@ export function isPhysicalActivityStripeKind(kind) {
  */
 export function filterCalendarStripesForYearView(stripes) {
   if (!Array.isArray(stripes)) return [];
-  return stripes.filter((s) => isPhysicalActivityStripeKind(s.kind));
+  return stripes.filter((s) => isPhysicalActivityStripeKind(s.kind) || s.kind === 'gtg');
 }

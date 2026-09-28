@@ -10,11 +10,13 @@
 import { useCallback, useRef } from 'react';
 import { createWorkoutRepository } from '../../../services/workout/createWorkoutRepository.js';
 import {
+  getContextRow,
   getLegacyUnscopedContext,
   openWorkoutContextDb,
   putContextRow,
 } from '../../../services/workout/workoutContextGateway.js';
 import { tryMergeSportProgramContextFromCloud } from '../../../services/sport/sportProgramContextCloud.js';
+import { shouldRejectEmptyProgramOverwrite } from '../../../utils/programPersistenceUtils.js';
 
 /**
  * Hook pour gérer la sauvegarde et le chargement du contexte
@@ -24,7 +26,7 @@ import { tryMergeSportProgramContextFromCloud } from '../../../services/sport/sp
  * @param {Function} setProgramHistory - Fonction pour définir l'historique des programmes
  * @param {Function} setWeekVariant - Fonction pour définir la variante de semaine
  * @param {Function} setIsGymMode - Fonction pour définir le mode gym
- * @returns {Object} { openContextDB, saveContextToDB, loadContext, autoSaveContext, flushAutoSave }
+ * @returns {Object} { openContextDB, saveContextToDB, loadContext, autoSaveContext, flushAutoSave, cancelPendingContextSave }
  */
 export const useWorkoutContextStorage = (
   setPrograms,
@@ -78,7 +80,7 @@ export const useWorkoutContextStorage = (
   }, []);
 
   const saveContextToDB = useCallback(
-    async (contextData) => {
+    async (contextData, opts = {}) => {
       const maxRetries = 3;
       const repo = getContextRepo();
 
@@ -86,6 +88,16 @@ export const useWorkoutContextStorage = (
         try {
           if (!contextData || typeof contextData !== 'object') {
             throw new Error('Données de contexte invalides');
+          }
+
+          if (!opts.allowEmptyPrograms) {
+            const existingRow = await getContextRow(contextScopeKey).catch(() => null);
+            if (shouldRejectEmptyProgramOverwrite(existingRow, contextData.programs, false)) {
+              console.warn(
+                '⚠️ Sauvegarde ignorée : liste de programmes vide, les programmes enregistrés sont conservés'
+              );
+              return;
+            }
           }
 
           const dataToSave = {
@@ -100,11 +112,14 @@ export const useWorkoutContextStorage = (
 
           await repo.saveProgramContext(contextScopeKey, contextData);
 
-          try {
-            localStorage.setItem(backupKey, JSON.stringify(dataToSave));
-          } catch (localStorageError) {
-            console.warn('⚠️ Impossible de sauvegarder le contexte en localStorage:', localStorageError);
-          }
+          const writeBackup = () => {
+            try {
+              localStorage.setItem(backupKey, JSON.stringify(dataToSave));
+            } catch (localStorageError) {
+              console.warn('⚠️ Impossible de sauvegarder le contexte en localStorage:', localStorageError);
+            }
+          };
+          setTimeout(writeBackup, 1200);
 
           return;
         } catch (error) {
@@ -133,9 +148,11 @@ export const useWorkoutContextStorage = (
     [getContextRepo, backupKey, contextRecordId, contextScopeKey]
   );
 
-  const loadContext = useCallback(async () => {
+  const loadContext = useCallback(async (opts = {}) => {
+    const superseded = () => typeof opts.isSuperseded === 'function' && opts.isSuperseded();
+
     const applyContext = (ctx) => {
-      if (!ctx) return;
+      if (!ctx || superseded()) return false;
       if (Array.isArray(ctx.programs)) {
         setPrograms(ctx.programs);
       }
@@ -151,19 +168,27 @@ export const useWorkoutContextStorage = (
       if (ctx.isGymMode !== undefined) {
         setIsGymMode(ctx.isGymMode);
       }
+      return true;
     };
 
     try {
       const mergedFromCloud = await tryMergeSportProgramContextFromCloud(contextScopeKey);
+      if (superseded()) return { status: 'superseded', superseded: true, context: null };
       if (mergedFromCloud) {
         const applied = { id: contextRecordId, ...mergedFromCloud };
-        applyContext(applied);
+        if (!applyContext(applied)) {
+          return { status: 'superseded', superseded: true, context: null };
+        }
         try {
-          await saveContextToDB(mergedFromCloud);
+          if (!superseded()) await saveContextToDB(mergedFromCloud);
         } catch (e) {
           console.warn('⚠️ Persistance après merge cloud sport:', e);
         }
-        return { ...applied, lastSaved: new Date().toISOString() };
+        if (superseded()) return { status: 'superseded', superseded: true, context: null };
+        return {
+          status: 'loaded',
+          context: { ...applied, lastSaved: new Date().toISOString() }
+        };
       }
 
       const repo = getContextRepo();
@@ -172,21 +197,23 @@ export const useWorkoutContextStorage = (
         // Ligne résiduelle { id, lastSaved } seule → `{}` : continuer vers legacy / backups.
         if (partial != null && Object.keys(partial).length > 0) {
           const savedContext = { id: contextRecordId, ...partial };
+          if (superseded()) return { status: 'superseded', superseded: true, context: null };
           applyContext(savedContext);
-          return savedContext;
+          return { status: 'loaded', context: savedContext };
         }
       }
 
       const legacyContext = await getLegacyUnscopedContext().catch(() => null);
       if (legacyContext) {
         const migratedContext = { ...legacyContext, id: contextRecordId };
+        if (superseded()) return { status: 'superseded', superseded: true, context: null };
         applyContext(migratedContext);
         try {
-          await putContextRow(contextScopeKey, legacyContext);
+          if (!superseded()) await putContextRow(contextScopeKey, legacyContext);
         } catch {
           // ignore migration write error
         }
-        return migratedContext;
+        return { status: 'loaded', context: migratedContext };
       }
 
       const scopeBackup = localStorage.getItem(backupKey);
@@ -196,19 +223,20 @@ export const useWorkoutContextStorage = (
         try {
           const parsedBackup = JSON.parse(backupCandidate);
           const normalized = { ...parsedBackup, id: contextRecordId };
+          if (superseded()) return { status: 'superseded', superseded: true, context: null };
           applyContext(normalized);
           console.warn('⚠️ Contexte chargé depuis localStorage backup');
-          return normalized;
+          return { status: 'loaded', context: normalized };
         } catch (parseError) {
           console.error('❌ Erreur parsing localStorage backup:', parseError);
-          return null;
+          return { status: 'error', context: null };
         }
       }
 
-      return null;
+      return { status: 'empty', context: null };
     } catch (error) {
       console.error('❌ Erreur chargement contexte:', error);
-      return null;
+      return { status: 'error', context: null };
     }
   }, [
     getContextRepo,
@@ -223,15 +251,19 @@ export const useWorkoutContextStorage = (
     saveContextToDB,
   ]);
 
+  const cancelPendingContextSave = useCallback(() => {
+    if (debounceTimerRef.current) {
+      clearTimeout(debounceTimerRef.current);
+      debounceTimerRef.current = null;
+    }
+  }, []);
+
   const flushAutoSave = useCallback(
-    (contextData) => {
-      if (debounceTimerRef.current) {
-        clearTimeout(debounceTimerRef.current);
-        debounceTimerRef.current = null;
-      }
-      return saveContextToDB(contextData);
+    (contextData, opts) => {
+      cancelPendingContextSave();
+      return saveContextToDB(contextData, opts);
     },
-    [saveContextToDB]
+    [cancelPendingContextSave, saveContextToDB]
   );
 
   const autoSaveContext = useCallback(
@@ -252,5 +284,6 @@ export const useWorkoutContextStorage = (
     loadContext,
     autoSaveContext,
     flushAutoSave,
+    cancelPendingContextSave,
   };
 };

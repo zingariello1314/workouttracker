@@ -1,24 +1,231 @@
-import { useEffect, useRef, useState } from 'react';
-import { computeRecapMuscleState } from '../utils/sport/recapMuscleLoadEngine';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { computeRecapMuscleState, getRecapDateWindow } from '../utils/sport/recapMuscleLoadEngine';
+import { RECAP_VIEW_PERIOD_IDS } from '../utils/sport/recapViewPeriods';
 import { buildRecapEnduranceDigest } from '../utils/sport/recapPageDigest';
 import { buildRecapEnrichmentBundle } from '../utils/sport/recapEnrichmentMetrics';
 import { computeRecapUserAssessment } from '../utils/sport/recapUserAssessment';
 import { buildAdaptiveRecapInsights } from '../utils/sport/recapAdaptiveInsights';
+import { buildSpanStoryCandidates, spanStoriesToInsights } from '../utils/sport/recapSpanStory';
+import { readingRichness } from '../utils/sport/recapReasoning';
 import { buildRecapProgramCoachAnalysis } from '../utils/sport/recapProgramCoachAnalysis';
+import { computeGarminDailyStats } from '../utils/sport/recapCrossCoachAggregate';
+import DateHelper from '../utils/dateHelper';
+import { markRecapViewPrepared } from '../utils/preloadTabs';
+
+function yieldFrame() {
+  return new Promise((resolve) => {
+    window.setTimeout(resolve, 0);
+  });
+}
 
 function scheduleHeavyWork(fn) {
-  if (typeof requestIdleCallback !== 'undefined') {
-    return requestIdleCallback(fn, { timeout: 150 });
-  }
   return window.setTimeout(fn, 0);
 }
 
 function cancelHeavyWork(id) {
-  if (typeof cancelIdleCallback !== 'undefined') {
-    cancelIdleCallback(id);
-  } else {
-    window.clearTimeout(id);
+  window.clearTimeout(id);
+}
+
+/** Une entrée par plage : changer de période ne relance pas un calcul déjà fait. */
+const bundlesByFull = new Map();
+
+function rememberBundle(fullKey, bundle) {
+  if (!fullKey || !bundle) return;
+  if (bundlesByFull.has(fullKey)) bundlesByFull.delete(fullKey);
+  bundlesByFull.set(fullKey, bundle);
+  while (bundlesByFull.size > 16) {
+    const oldest = bundlesByFull.keys().next().value;
+    bundlesByFull.delete(oldest);
   }
+}
+
+function garminWindowForPeriod(periodWindow) {
+  const end = periodWindow?.end;
+  if (!end) return null;
+  const lookback90 = DateHelper.addDays(end, -89);
+  const start = !periodWindow.start
+    ? DateHelper.addDays(end, -365)
+    : periodWindow.start <= lookback90
+      ? periodWindow.start
+      : lookback90;
+  return { start, end };
+}
+
+function garminPartialFromBundle(garminBundle, periodWindow, manualWalkByDate) {
+  const range = garminWindowForPeriod(periodWindow);
+  if (!garminBundle?.dailyMetrics || !range) return null;
+  const dailyMetrics = {};
+  Object.keys(garminBundle.dailyMetrics).forEach((date) => {
+    if (date >= range.start && date <= range.end) dailyMetrics[date] = garminBundle.dailyMetrics[date];
+  });
+  return {
+    status: 'ready',
+    ...computeGarminDailyStats(dailyMetrics, range.start, range.end, manualWalkByDate),
+    dailyMetrics
+  };
+}
+
+function checkedVolumeFingerprint(snapshot) {
+  const checked = snapshot?.checkedExercises || {};
+  const reps = snapshot?.reps || {};
+  const keys = Object.keys(checked);
+  let n = 0;
+  let sum = 0;
+  for (let i = 0; i < keys.length; i += 1) {
+    const key = keys[i];
+    if (checked[key] !== true) continue;
+    n += 1;
+    sum += Number(reps[key]) || 0;
+  }
+  const sessions = snapshot?.enduranceData?.sessions || {};
+  return [
+    n,
+    sum,
+    sessions.running?.length || 0,
+    sessions.pushups?.length || 0,
+    sessions.jumprope?.length || 0,
+    sessions.gainage?.length || 0
+  ].join(':');
+}
+
+function hashText(value) {
+  const s = String(value || '');
+  let h = 2166136261;
+  for (let i = 0; i < s.length; i += 1) {
+    h ^= s.charCodeAt(i);
+    h = Math.imul(h, 16777619);
+  }
+  return (h >>> 0).toString(36);
+}
+
+function buildRecapMetricsKey({
+  snapshot,
+  deferredPeriod,
+  periodWindow,
+  activeProgram,
+  programs,
+  profileQuestionnaireRaw,
+  garminPartial,
+  nutritionPartial,
+  garminBundle,
+  isAuthenticated,
+  isAdmin,
+  isGymMode
+}) {
+  const workoutKey = [
+    'span5',
+    deferredPeriod || '',
+    periodWindow?.start || '',
+    periodWindow?.end || '',
+    activeProgram?.id || activeProgram?.name || '',
+    (programs || []).map((p) => p?.id || p?.name || '').join(','),
+    hashText(
+      profileQuestionnaireRaw && typeof profileQuestionnaireRaw === 'object'
+        ? JSON.stringify(profileQuestionnaireRaw)
+        : ''
+    ),
+    checkedVolumeFingerprint(snapshot),
+    isAdmin ? 1 : 0,
+    isGymMode ? 1 : 0
+  ].join('|');
+
+  const bundleReady = Boolean(garminBundle?.dailyMetrics || garminBundle?.activities);
+  const garminLoading = !bundleReady && garminPartial?.status === 'loading';
+  const nutritionLoading = nutritionPartial?.status === 'loading';
+  const bundlePending = Boolean(isAuthenticated) && !bundleReady && garminPartial?.status === 'ready' && garminBundle == null;
+  const pending = garminLoading || nutritionLoading || bundlePending;
+
+  const garminBit = bundleReady
+    ? [
+        Object.keys(garminBundle.dailyMetrics || {}).length,
+        garminBundle.activities?.cardio?.length || 0
+      ].join(':')
+    : garminPartial?.status === 'ready'
+      ? [
+          garminPartial.daysWithStepsData ?? 0,
+          garminPartial.totalSteps28 ?? 0,
+          garminPartial.sleepSampleDays ?? 0,
+          garminPartial.avgSleepHours28 ?? ''
+        ].join(':')
+      : garminPartial?.status || 'none';
+  const nutritionBit =
+    nutritionPartial?.status === 'ready'
+      ? [
+          nutritionPartial.daysWithLoggedMeals28 ?? 0,
+          nutritionPartial.avgComplianceScore ?? '',
+          nutritionPartial.programsOwnedCount ?? 0
+        ].join(':')
+      : nutritionPartial?.status || 'none';
+  const bundleBit = 'bundle';
+
+  return {
+    workout: workoutKey,
+    full: `${workoutKey}|${garminBit}|${nutritionBit}|${bundleBit}`,
+    pending
+  };
+}
+
+function readSessionHit(key) {
+  if (!key?.full) return null;
+  const exact = bundlesByFull.get(key.full);
+  if (exact && !key.pending) return exact;
+  if (!key.pending) return null;
+  for (const [storedKey, bundle] of bundlesByFull) {
+    if (storedKey.startsWith(`${key.workout}|`)) return bundle;
+  }
+  return null;
+}
+
+function schedulePrefetchWork(fn) {
+  return window.setTimeout(fn, 48);
+}
+
+let prefetchStamp = '';
+
+function queuePeriodPrefetch(stamp, runOne) {
+  if (!stamp || prefetchStamp === stamp) return;
+  prefetchStamp = stamp;
+  const periods = RECAP_VIEW_PERIOD_IDS;
+  let index = 0;
+  const step = () => {
+    if (prefetchStamp !== stamp) return;
+    if (index >= periods.length) return;
+    const period = periods[index];
+    index += 1;
+    schedulePrefetchWork(() => {
+      if (prefetchStamp !== stamp) return;
+      try {
+        runOne(period);
+      } catch {
+        /* une plage en échec n'arrête pas les suivantes */
+      }
+      step();
+    });
+  };
+  schedulePrefetchWork(step);
+}
+
+function columnTextLength(insights) {
+  const cols = [insights?.shortTerm, insights?.mediumTerm, insights?.longTerm];
+  return cols.reduce((sum, col) => {
+    return (
+      sum +
+      (col || []).reduce((n, item) => n + String(item?.body || item?.text || '').length, 0)
+    );
+  }, 0);
+}
+
+function columnRichness(insights) {
+  const cols = [insights?.shortTerm, insights?.mediumTerm, insights?.longTerm];
+  return cols.reduce((sum, col) => {
+    return (
+      sum +
+      (col || []).reduce(
+        (n, item) => n + readingRichness(item?.body || item?.text || '', item?.title || ''),
+        0
+      )
+    );
+  }, 0);
 }
 
 /**
@@ -36,15 +243,60 @@ export function useRecapTabMetrics({
   isAdmin,
   isAuthenticated,
   nutritionPartialForRecap,
-  garminPartialForRecap,
+  garminPartialInput,
   garminDataForMetrics = null,
   periodWindow,
   programs,
   enabled = true
 }) {
-  const [bundle, setBundle] = useState(null);
-  const [computing, setComputing] = useState(enabled);
+  const inputKey = useMemo(
+    () =>
+      buildRecapMetricsKey({
+        snapshot,
+        deferredPeriod,
+        periodWindow,
+        activeProgram,
+        programs,
+        profileQuestionnaireRaw,
+        garminPartial: garminPartialInput,
+        nutritionPartial: nutritionPartialForRecap,
+        garminBundle: garminDataForMetrics,
+        isAuthenticated,
+        isAdmin,
+        isGymMode
+      }),
+    [
+      snapshot,
+      deferredPeriod,
+      periodWindow,
+      activeProgram,
+      programs,
+      profileQuestionnaireRaw,
+      garminPartialInput,
+      nutritionPartialForRecap,
+      garminDataForMetrics,
+      isAuthenticated,
+      isAdmin,
+      isGymMode
+    ]
+  );
+  const cachedHit = readSessionHit(inputKey);
+  const [bundle, setBundle] = useState(cachedHit);
+  const [computing, setComputing] = useState(enabled && !cachedHit);
+  const shownKeyRef = useRef(cachedHit ? inputKey.full : '');
+  if (cachedHit && !inputKey.pending && shownKeyRef.current !== inputKey.full) {
+    shownKeyRef.current = inputKey.full;
+    setBundle(cachedHit);
+    setComputing(false);
+  }
   const genRef = useRef(0);
+  const publishedInsightsRef = useRef(null);
+  const callbacksRef = useRef({});
+  callbacksRef.current = {
+    getExerciseNameById,
+    getWorkoutForDateForRecap,
+    getTodayWorkoutForCompletion
+  };
 
   useEffect(() => {
     if (!enabled) {
@@ -58,16 +310,35 @@ export function useRecapTabMetrics({
       return undefined;
     }
 
-    const gen = ++genRef.current;
-    setComputing(true);
+    if (inputKey.pending && !readSessionHit(inputKey)) {
+      setComputing(true);
+      return undefined;
+    }
 
-    const run = () => {
-      if (gen !== genRef.current) return;
+    const hit = readSessionHit(inputKey);
+    const gen = ++genRef.current;
+    if (!hit) setComputing(true);
+
+    const runFor = async (periodId, windowForPeriod, keyFull, publish) => {
+      if (publish && gen !== genRef.current) return;
+      await yieldFrame();
+      if (publish && gen !== genRef.current) return;
+
+      const garminPartialForRecap =
+        garminPartialFromBundle(
+          garminDataForMetrics,
+          windowForPeriod,
+          snapshot?.enduranceData?.manualDailyWalkByDate
+        ) || garminPartialInput;
+      const insightsMemory = publish ? publishedInsightsRef : { current: null };
+
+      const { getExerciseNameById, getWorkoutForDateForRecap, getTodayWorkoutForCompletion } =
+        callbacksRef.current;
 
       try {
         const recapState = computeRecapMuscleState(
           snapshot,
-          deferredPeriod,
+          periodId,
           getExerciseNameById,
           new Date()
         );
@@ -83,8 +354,10 @@ export function useRecapTabMetrics({
           garminPartial: garminPartialForRecap,
           garminData: garminDataForMetrics,
           programs: Array.isArray(programs) ? programs : [],
-          periodWindow
+          periodWindow: windowForPeriod
         });
+        await yieldFrame();
+        if (publish && gen !== genRef.current) return;
         const enrichment = buildRecapEnrichmentBundle({
           snapshot,
           window: recapState.window,
@@ -99,6 +372,8 @@ export function useRecapTabMetrics({
           isAdmin,
           isAuthenticated
         });
+        await yieldFrame();
+        if (publish && gen !== genRef.current) return;
 
         let recapAssessmentMerged = recapAssessment;
         let programCoachAnalysis = null;
@@ -114,16 +389,40 @@ export function useRecapTabMetrics({
             garminPartial: garminPartialForRecap,
             garminDailyMetrics:
               garminPartialForRecap?.status === 'ready' ? garminPartialForRecap.dailyMetrics : null,
-            period: deferredPeriod,
+            period: periodId,
             getExerciseNameById,
             profileQuestionnaireRaw,
             activeProgram,
             programs: Array.isArray(programs) ? programs : []
           });
 
+          let insights = adaptive.insights;
+          const nextLength = columnTextLength(insights);
+          const nextRichness = columnRichness(insights);
+          const prevPublished = insightsMemory.current;
+          const prevScore = prevPublished?.score ?? prevPublished?.richness ?? 0;
+          const prevLength = prevPublished?.length ?? prevPublished?.richness ?? 0;
+          if (
+            prevPublished &&
+            prevPublished.period === periodId &&
+            prevScore > 80 &&
+            nextRichness < prevScore * 0.72 &&
+            nextLength < prevLength * 0.72
+          ) {
+            insights = prevPublished.insights;
+          } else {
+            insightsMemory.current = {
+              period: periodId,
+              insights,
+              richness: nextRichness,
+              score: nextRichness,
+              length: nextLength
+            };
+          }
+
           recapAssessmentMerged = {
             ...recapAssessment,
-            insights: adaptive.insights,
+            insights,
             adaptiveKpis: adaptive.kpis,
             insightSignature: adaptive.signature ?? null,
             trainingState: adaptive.trainingState ?? null,
@@ -163,6 +462,24 @@ export function useRecapTabMetrics({
           if (process.env.NODE_ENV === 'development') {
             console.error('[useRecapTabMetrics] adaptive', adaptiveErr);
           }
+          const spanInsights = spanStoriesToInsights(
+            buildSpanStoryCandidates({
+              snapshot,
+              window: recapState.window,
+              period: periodId,
+              getExerciseNameById
+            })
+          );
+          const spanCount =
+            spanInsights.shortTerm.length + spanInsights.mediumTerm.length + spanInsights.longTerm.length;
+          if (spanCount > 0) {
+            recapAssessmentMerged = { ...recapAssessment, insights: spanInsights };
+          } else if (periodId !== 'today' && periodId !== '7d') {
+            recapAssessmentMerged = {
+              ...recapAssessment,
+              insights: { shortTerm: [], mediumTerm: [], longTerm: [] }
+            };
+          }
           try {
             programCoachAnalysis = buildRecapProgramCoachAnalysis({
               activeProgram,
@@ -185,17 +502,42 @@ export function useRecapTabMetrics({
           }
         }
 
-        if (gen !== genRef.current) return;
-        setBundle({
+        if (publish && gen !== genRef.current) return;
+        const nextBundle = {
           recapState,
           enduranceDigest,
           recapAssessment: recapAssessmentMerged,
           enrichment,
           programCoachAnalysis
-        });
+        };
+        rememberBundle(keyFull, nextBundle);
+        if (!publish) return;
+        shownKeyRef.current = keyFull;
+        setBundle(nextBundle);
         setComputing(false);
+        markRecapViewPrepared();
+        queuePeriodPrefetch(`${checkedVolumeFingerprint(snapshot)}|${garminDataForMetrics ? 'g' : 'n'}`, (period) => {
+          if (period === deferredPeriod) return;
+          const nextWindow = getRecapDateWindow(period);
+          const key = buildRecapMetricsKey({
+            snapshot,
+            deferredPeriod: period,
+            periodWindow: nextWindow,
+            activeProgram,
+            programs,
+            profileQuestionnaireRaw,
+            garminPartial: null,
+            nutritionPartial: nutritionPartialForRecap,
+            garminBundle: garminDataForMetrics,
+            isAuthenticated,
+            isAdmin,
+            isGymMode
+          });
+          if (key.pending || bundlesByFull.has(key.full)) return;
+          runFor(period, nextWindow, key.full, false);
+        });
       } catch (err) {
-        if (gen !== genRef.current) return;
+        if (!publish || gen !== genRef.current) return;
         if (process.env.NODE_ENV === 'development') {
           console.error('[useRecapTabMetrics]', err);
         }
@@ -203,29 +545,44 @@ export function useRecapTabMetrics({
       }
     };
 
+    const run = () => runFor(deferredPeriod, periodWindow, inputKey.full, true);
+
+    if (hit) {
+      setBundle(hit);
+      setComputing(false);
+      markRecapViewPrepared();
+      queuePeriodPrefetch(
+        `${checkedVolumeFingerprint(snapshot)}|${garminDataForMetrics ? 'g' : 'n'}`,
+        (period) => {
+          if (period === deferredPeriod) return;
+          const nextWindow = getRecapDateWindow(period);
+          const key = buildRecapMetricsKey({
+            snapshot,
+            deferredPeriod: period,
+            periodWindow: nextWindow,
+            activeProgram,
+            programs,
+            profileQuestionnaireRaw,
+            garminPartial: null,
+            nutritionPartial: nutritionPartialForRecap,
+            garminBundle: garminDataForMetrics,
+            isAuthenticated,
+            isAdmin,
+            isGymMode
+          });
+          if (key.pending || bundlesByFull.has(key.full)) return;
+          runFor(period, nextWindow, key.full, false);
+        }
+      );
+      return undefined;
+    }
+
     const id = scheduleHeavyWork(run);
     return () => {
       genRef.current += 1;
       cancelHeavyWork(id);
     };
-  }, [
-    snapshot,
-    deferredPeriod,
-    activeProgram,
-    profileQuestionnaireRaw,
-    getExerciseNameById,
-    getWorkoutForDateForRecap,
-    getTodayWorkoutForCompletion,
-    isGymMode,
-    isAdmin,
-    isAuthenticated,
-    nutritionPartialForRecap,
-    garminPartialForRecap,
-    garminDataForMetrics,
-    periodWindow,
-    programs,
-    enabled
-  ]);
+  }, [deferredPeriod, isGymMode, inputKey.full, inputKey.pending, inputKey.workout, enabled]);
 
   return { computing, ...bundle };
 }

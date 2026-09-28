@@ -73,7 +73,8 @@
     "optionalWeightedTitle": "Marquer comme lesté (charge externe optionnelle)",
     "variations": "Variations d'exercice",
     "variationsShort": "Variations",
-    "noExercises": "Aucun exercice prévu pour aujourd'hui"
+    "noExercises": "Aucun exercice prévu pour aujourd'hui",
+    "saving": "Enregistrement…"
   },
   "recordDate": {
     "prevDay": "Jour précédent",
@@ -93,7 +94,8 @@
     "titleOfDay": "Étirements du jour",
     "save": "Enregistrer",
     "discard": "Annuler",
-    "unsavedChanges": "Modifications non sauvegardées"
+    "unsavedChanges": "Modifications non sauvegardées",
+    "saving": "Enregistrement…"
   },
   "challenges": {
     "title": "Défis actifs",

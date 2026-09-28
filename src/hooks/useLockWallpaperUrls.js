@@ -1,8 +1,8 @@
-import { useEffect, useMemo } from 'react';
+import { useMemo } from 'react';
 import { useAppLock } from '../context/AppLockContext';
 import { useAuth } from '../context/AuthContext';
 import { useHomepageImages } from './useHomepageImages';
-import { preloadLockWallpaperUrls, readEmergencyHomeImages } from '../utils/lockWallpaperPreload';
+import { readEmergencyHomeImages } from '../utils/lockWallpaperPreload';
 import { resolveLockWallpaperEntries, resolveLockWallpaperUrls } from '../utils/wallpaperTargets';
 import {
   resolveLockWallpaperAdvanceOnClick,
@@ -41,10 +41,6 @@ export function useLockWallpaperUrls() {
     ]
   );
 
-  useEffect(() => {
-    preloadLockWallpaperUrls(urls);
-  }, [urls]);
-
   return urls;
 }
 
@@ -65,10 +61,6 @@ export function useLockWallpaperPlayback() {
 
   const urls = useMemo(() => entries.map((entry) => entry.url), [entries]);
   const weights = useMemo(() => entries.map((entry) => entry.weight), [entries]);
-
-  useEffect(() => {
-    preloadLockWallpaperUrls(urls);
-  }, [urls]);
 
   return {
     urls,

@@ -10,6 +10,8 @@ export const PROGRAM_EXERCISE_SCORING_ALIAS_PAIRS = [
   ['Pompes serrées diamant', 'Pompes serrées'],
   ['Curl alterné', 'Curl haltères'],
   ['Développé militaire unilatéral', 'Développé militaire haltères assis'],
+  ['Développé militaire unilatéral assis', 'Développé militaire haltères assis'],
+  ['Curl concentration assis', 'Curl concentration'],
   ['Planche bras tendus', 'Gainage'],
   ['Planche', 'Gainage'],
   ['Planche dynamique', 'Gainage dynamique'],

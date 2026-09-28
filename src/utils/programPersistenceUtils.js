@@ -11,6 +11,18 @@ import {
  * Programmes issus des templates embarqués — uniquement pour premier lancement (aucun programme en base).
  * @returns {{ defaultProgram: object, optimizedProgram: object }}
  */
+/**
+ * Une sauvegarde automatique ne doit pas remplacer des programmes déjà en base
+ * par une liste vide (rechargement / session pas encore hydratée).
+ * Une suppression explicite passe `allowEmptyPrograms`.
+ */
+export function shouldRejectEmptyProgramOverwrite(existingRow, nextPrograms, allowEmptyPrograms = false) {
+  if (allowEmptyPrograms) return false;
+  if (!Array.isArray(nextPrograms) || nextPrograms.length > 0) return false;
+  const existing = existingRow?.programs;
+  return Array.isArray(existing) && existing.length > 0;
+}
+
 export function buildTemplateProgramsForFirstLaunch() {
   const convertedSchedule = {};
 

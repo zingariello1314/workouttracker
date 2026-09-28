@@ -1,4 +1,5 @@
 import manifest from '../../data/bankMediaManifest.json';
+import { getExerciseDatabaseKey } from '../../utils/exerciseHeroContent';
 
 export function bankMediaUrl(sourcePath) {
   if (!sourcePath) return '';
@@ -23,7 +24,8 @@ export function exerciseHasGif(exercise) {
 export function mediaForExercise(exercise) {
   if (!exercise) return null;
   const ids = [];
-  if (exercise.databaseKey) ids.push(`db:${exercise.databaseKey}`);
+  const dbKey = exercise.databaseKey || getExerciseDatabaseKey(exercise);
+  if (dbKey) ids.push(`db:${dbKey}`);
   if (exercise.scoringKey) ids.push(`score:${exercise.scoringKey}`);
   if (typeof exercise.id === 'string' && exercise.id.startsWith('cardio_')) ids.push(`cardio:${exercise.id}`);
   for (const id of ids) {

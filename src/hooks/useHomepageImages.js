@@ -17,21 +17,29 @@ import {
   readHomepagePreferencesFromStorage,
   writeHomepagePreferencesToStorage,
 } from '../utils/homepageImagePreferences.js';
+import { isSharedWallpaperSrc } from '../utils/sharedWallpaperSrc.js';
 
 const log = logger.module('useHomepageImages');
 
+/** Dernière collection enregistrée dans cet onglet, par compte. Survit au changement de page. */
+const wallpaperSessionByScope = new Map();
+
 export const useHomepageImages = () => {
   const { currentUser, isAuthenticated } = useAuth();
-  const [backgroundImages, setBackgroundImages] = useState([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [systemHealth, setSystemHealth] = useState('unknown');
-  const backgroundImagesRef = useRef([]);
-  const lastSaveTimeRef = useRef(0); // ✅ Phase 7: Protection contre sauvegardes trop rapprochées
-  const shuffledImagesRef = useRef(null); // ✅ RANDOMISATION : Cache shuffle par session
   const scopeKey = useMemo(() => {
     if (!isAuthenticated || !currentUser?.id) return 'guest';
     return `user-${currentUser.id}`;
   }, [currentUser?.id, isAuthenticated]);
+  const [backgroundImages, setBackgroundImages] = useState(
+    () => wallpaperSessionByScope.get(scopeKey) || []
+  );
+  const [isLoading, setIsLoading] = useState(
+    () => !(wallpaperSessionByScope.get(scopeKey)?.length)
+  );
+  const [systemHealth, setSystemHealth] = useState('unknown');
+  const backgroundImagesRef = useRef([]);
+  const lastSaveTimeRef = useRef(0); // ✅ Phase 7: Protection contre sauvegardes trop rapprochées
+  const shuffledImagesRef = useRef(null); // ✅ RANDOMISATION : Cache shuffle par session
   const scopedType = useMemo(() => `homepage_background_${scopeKey}`, [scopeKey]);
   const scopedFallbackKey = useMemo(() => `homepage_images_fallback_${scopeKey}`, [scopeKey]);
   const scopedEmergencyKey = useMemo(() => `homepage_images_emergency_${scopeKey}`, [scopeKey]);
@@ -71,6 +79,7 @@ export const useHomepageImages = () => {
       log.warn('❌ Image invalide: pas une chaîne de caractères');
       return false;
     }
+    if (isSharedWallpaperSrc(base64)) return true;
     if (!base64.startsWith('data:image/')) {
       log.warn('❌ Image invalide: ne commence pas par data:image/');
       return false;
@@ -84,6 +93,13 @@ export const useHomepageImages = () => {
       return false;
     }
     return true;
+  };
+
+  const sortStoredImages = (items) => {
+    if (items.every((item) => Number.isFinite(item?.sortOrder))) {
+      return [...items].sort((a, b) => a.sortOrder - b.sortOrder);
+    }
+    return [...items].sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
   };
 
   // Ouvrir IndexedDB de manière robuste avec réparation automatique
@@ -286,6 +302,7 @@ export const useHomepageImages = () => {
         setSystemHealth('excellent');
         const normalized = normalizeHomepageImages(validImages);
         persistImagePreferences(normalized);
+        wallpaperSessionByScope.set(scopeKey, normalized);
         backgroundImagesRef.current = normalized;
         lastSaveTimeRef.current = Date.now();
         setBackgroundImages(normalized);
@@ -421,8 +438,7 @@ export const useHomepageImages = () => {
               // Diviser traitement en chunks pour éviter violations performance (>500ms)
               const processImagesChunked = async () => {
                 // ✅ Phase 3: Charger images (format v3 avec thumbnail ou v2 string)
-                const sortedImages = results
-                  .sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp))
+                const sortedImages = sortStoredImages(results)
                   .map((item, index) => hydrateHomepageImageFromDbItem(item, index))
                   .filter(img => {
                     // Valider : string Base64 ou objet avec full Base64
@@ -522,8 +538,7 @@ export const useHomepageImages = () => {
             
             if (filteredResults.length > 0) {
               // ✅ Phase 3: Charger images (format v3 avec thumbnail ou v2 string)
-              const sortedImages = filteredResults
-                .sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp))
+              const sortedImages = sortStoredImages(filteredResults)
                 .map((item, index) => hydrateHomepageImageFromDbItem(item, index))
                 .filter(img => {
                   // Valider : string Base64 ou objet avec full Base64
@@ -665,8 +680,15 @@ export const useHomepageImages = () => {
       log.debug('🔍 Chargement avec récupération automatique...');
       setIsLoading(true);
       
-      // 1. Essayer IndexedDB
-      let images = await loadImagesFromIndexedDB();
+      // IndexedDB peut dépasser quelques secondes quand la sélection de fonds est lourde.
+      // On attend le résultat : un délai court publiait une liste vide et l’accueil restait sans image.
+      let images = [];
+      try {
+        images = await loadImagesFromIndexedDB();
+      } catch (idbError) {
+        log.warn('⚠️ Lecture IndexedDB des fonds impossible', idbError);
+        images = [];
+      }
       if (imagesLoadStale(generation)) {
         log.debug('⏭️ Chargement images annulé (périmètre ou utilisateur changé)');
         return;
@@ -861,10 +883,16 @@ export const useHomepageImages = () => {
       // 5. Aucune image trouvée
       log.debug('📭 Aucune image trouvée dans tous les systèmes');
       if (!imagesLoadStale(generation)) {
-        // ✅ Phase 7: Mettre à jour la ref IMMÉDIATEMENT
-        backgroundImagesRef.current = [];
-        setBackgroundImages([]);
-        setSystemHealth('unknown');
+        const cached = wallpaperSessionByScope.get(scopeKey);
+        if (cached?.length) {
+          backgroundImagesRef.current = cached;
+          setBackgroundImages(cached);
+          setSystemHealth('good');
+        } else {
+          backgroundImagesRef.current = [];
+          setBackgroundImages([]);
+          setSystemHealth('unknown');
+        }
       }
       setIsLoading(false);
       
@@ -1099,12 +1127,13 @@ export const useHomepageImages = () => {
 
   // Initialisation + rechargement quand l’utilisateur (ou invité) change
   useEffect(() => {
+    let cancelled = false;
     const gen = beginNewImagesLoadGeneration();
     shuffledImagesRef.current = null;
 
     const initializeSystem = async () => {
       await loadImagesWithRecovery(gen);
-      if (imagesLoadStale(gen)) return;
+      if (cancelled || imagesLoadStale(gen)) return;
       await checkSystemHealth();
     };
 
@@ -1112,6 +1141,7 @@ export const useHomepageImages = () => {
 
     const cleanup = startAutoSave();
     return () => {
+      cancelled = true;
       cleanup();
     };
   }, [scopedEmergencyKey, scopedFallbackKey, scopedMetadataKey, scopedSyncEmergencyKey, scopedType]);

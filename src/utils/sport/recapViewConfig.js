@@ -30,7 +30,7 @@ export const RECAP_NAV_SECTIONS = [
   }
 ];
 
-export function readStoredRecapView(fallback = RECAP_VIEW_IDS.SNAPSHOT) {
+export function readStoredRecapView(fallback = RECAP_VIEW_IDS.ANALYSE) {
   try {
     const stored = localStorage.getItem(RECAP_ACTIVE_VIEW_LS);
     if (stored && Object.values(RECAP_VIEW_IDS).includes(stored)) return stored;

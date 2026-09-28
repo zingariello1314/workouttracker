@@ -3,6 +3,7 @@
  */
 
 import { exerciseDatabase } from '../../data/exerciseDatabase';
+import { exerciseMatchesCatalogKey } from './exerciseGradeCatalogMetrics';
 import { resolveCatalogDef } from './exerciseGradeDiscovery';
 import { estimateOneRmKg } from './oneRmEstimate';
 

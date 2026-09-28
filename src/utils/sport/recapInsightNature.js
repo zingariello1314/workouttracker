@@ -5,9 +5,9 @@
  * Elle ne dit pas si une lecture est un événement, une trajectoire ou un parcours.
  *
  * Colonnes UI (horizon) = projection de la nature :
- *   now         → short  (Maintenant)
- *   trajectory  → medium (Trajectoire)
- *   journey     → long   (Parcours)
+ *   now         → short  (Ce que tu as fait)
+ *   trajectory  → medium (Ce que ça change)
+ *   journey     → long   (Ce qui a évolué)
  */
 
 export const INSIGHT_NATURE = {

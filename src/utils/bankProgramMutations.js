@@ -3,7 +3,7 @@
  */
 
 import { stretchDatabase } from '../data/stretchDatabase';
-import { exerciseDatabase } from '../data/exerciseDatabase';
+import { exerciseDatabase, resolveExerciseDatabaseKey } from '../data/exerciseDatabase';
 import { getExerciseProgramNotes } from './exerciseHeroContent';
 import {
   normalizeStretchSlots,
@@ -76,21 +76,7 @@ export function createEmptyBankProgramSchedule() {
 export function resolveExerciseBankKey(exercise) {
   if (!exercise) return null;
   if (exercise.databaseKey && exerciseDatabase[exercise.databaseKey]) return exercise.databaseKey;
-  const n = String(exercise.name || '').toLowerCase().trim();
-  if (!n) return null;
-  const directKey = Object.keys(exerciseDatabase).find((k) => k.toLowerCase() === n);
-  if (directKey) return directKey;
-  for (const [key, ex] of Object.entries(exerciseDatabase)) {
-    if (String(ex.name || '').toLowerCase().trim() === n) return key;
-    const vars = Array.isArray(ex.variations) ? ex.variations : [];
-    const hit = vars.some(
-      (v) =>
-        v &&
-        (n.includes(String(v).toLowerCase()) || String(v).toLowerCase().includes(n))
-    );
-    if (hit) return key;
-  }
-  return null;
+  return resolveExerciseDatabaseKey(exercise.name);
 }
 
 function inferProgramCategoryFromBankExercise(dbEx) {

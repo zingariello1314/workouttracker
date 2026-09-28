@@ -450,8 +450,9 @@ const DataEntryTab = () => {
                         </div>
                       </td>
                       {lastSevenDays.map((day) => {
-                        const dayWorkout = isAdmin && isAuthenticated ? workoutProgram[day.dayName] : null;
-                        const dayExercise = dayWorkout?.exercices.find(ex => ex.name === exercise.name);
+                        const dayRaw = getTodayWorkout ? getTodayWorkout(day.date, false) : null;
+                        const dayExercises = dayRaw?.exercices || dayRaw?.exercises || [];
+                        const dayExercise = dayExercises.find((ex) => ex.name === exercise.name);
                         const key = `${day.dateStr}_${exercise.id}`;
                         const currentData = getCurrentData();
                         const reps = currentData.reps[key] || '';

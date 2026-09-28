@@ -14,6 +14,7 @@ import {
   hasMomentumWorkoutForDate,
   runningSessionMatchesCalendarDate
 } from './calendarDayMomentumStripes';
+import { hasNonGtgMomentumWorkoutForDate } from './calendarGtgDay';
 import { pairMomentumRunsWithGarminForDate } from './garminEnduranceSessionBridge';
 import { isGarminRunningLikeActivity, isGarminWalkingLikeActivity } from './garminRunningLaps';
 import { CALENDAR_PHYSICAL_ACTIVITY_COLOR } from './calendarPhysicalActivityStripes';
@@ -296,7 +297,7 @@ export function buildDedupedPhysicalActivityRecapRows(
 ) {
   if (!dateStr) return [];
   const rows = [];
-  const hasWorkout = hasMomentumWorkoutForDate(workoutData, dateStr);
+  const hasWorkout = hasNonGtgMomentumWorkoutForDate(workoutData, dateStr);
   const streetGarmin = getGarminStreetCardioActivitiesForDate(garminData, dateStr);
 
   if (hasWorkout) {
@@ -408,7 +409,7 @@ function countMomentumCheckedExercises(workoutData, dateStr) {
 export function countStreetWorkoutSessionsForDate(workoutData, garminData, dateStr) {
   if (!dateStr) return 0;
   const streetGarmin = getGarminStreetCardioActivitiesForDate(garminData, dateStr);
-  const hasWorkout = hasMomentumWorkoutForDate(workoutData, dateStr);
+  const hasWorkout = hasNonGtgMomentumWorkoutForDate(workoutData, dateStr);
   if (hasWorkout) return Math.max(1, streetGarmin.length);
   return streetGarmin.length;
 }
@@ -425,7 +426,7 @@ export function buildDedupedPhysicalActivityStripes(workoutData, garminData, dat
   if (!dateStr) return [];
 
   const stripes = [];
-  const hasWorkout = hasMomentumWorkoutForDate(workoutData, dateStr);
+  const hasWorkout = hasNonGtgMomentumWorkoutForDate(workoutData, dateStr);
   const streetCount = countStreetWorkoutSessionsForDate(workoutData, garminData, dateStr);
   const runCount = countRunSessionsForDate(workoutData, garminData, dateStr);
 

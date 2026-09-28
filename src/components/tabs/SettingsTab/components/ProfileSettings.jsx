@@ -2,22 +2,11 @@
  * Paramètres du profil (avatar, email, mot de passe, migration).
  */
 
-import React, { useMemo } from 'react';
+import React from 'react';
 import { User, Mail, Lock, Image, BadgeCheck, HelpCircle } from 'lucide-react';
 import Card, { CardHeader, CardTitle, CardContent } from '../../../ui/Card';
 import { Input } from '../../../ui/Input';
 import { settingsTheme as S } from '../settingsThemeClasses';
-import { ONBOARDING_OPEN_EVENT, PROFILE_QUESTION_DEFS } from '../../../../features/profileQuestionnaire/constants';
-import { normalizeProfileQuestionnaire } from '../../../../features/profileQuestionnaire/schema';
-import {
-  buildQuizPrefillPayload,
-  openProgramCreationFromQuiz,
-  PENDING_QUIZ_PREFILL_NUTRITION_KEY,
-  PENDING_QUIZ_PREFILL_TRAINING_KEY,
-  writePendingQuizPrefill
-} from '../../../../features/profileQuestionnaire/prefill';
-
-import { useProfileQuestionnaire } from '../../../../features/profileQuestionnaire/useProfileQuestionnaire';
 
 const ProfileSettings = ({
   currentUser,
@@ -25,7 +14,6 @@ const ProfileSettings = ({
   setActiveTab,
   migrationSettings
 }) => {
-  const { snoozeQuizReminder } = useProfileQuestionnaire();
 
   if (!currentUser) return null;
 
@@ -73,55 +61,9 @@ const ProfileSettings = ({
 
   const fieldClass = `${S.input} px-4 py-3`;
   const emailVerified = currentUser?.emailVerified === true;
-  const profileQuestionnaire = normalizeProfileQuestionnaire(currentUser?.profileQuestionnaire || null);
-  const questionnaireAnswers = profileQuestionnaire?.answers || {};
-  const quizStarted = profileQuestionnaire.completedCount > 0;
-  const quizComplete =
-    profileQuestionnaire.totalCount > 0 &&
-    profileQuestionnaire.completedCount === profileQuestionnaire.totalCount;
-  const questionMap = PROFILE_QUESTION_DEFS.reduce((acc, q) => {
-    acc[q.id] = q;
-    return acc;
-  }, {});
-  const summarizeAnswer = (questionId) => {
-    const q = questionMap[questionId];
-    const raw = questionnaireAnswers?.[questionId];
-    if (!q || raw == null) return 'Non renseigné';
-    if (Array.isArray(raw)) {
-      if (raw.length === 0) return 'Non renseigné';
-      if (q.type === 'days') return raw.join(', ');
-      const optionsMap = new Map((q.options || []).map((opt) => [String(opt.key), opt.label]));
-      return raw.map((x) => optionsMap.get(String(x)) || String(x)).join(', ');
-    }
-    if (q.type === 'slider') return `${raw}%`;
-    if (q.type === 'vitals' && typeof raw === 'object' && !Array.isArray(raw)) {
-      const bits = [];
-      if (raw.sex === 'male') bits.push('H');
-      else if (raw.sex === 'female') bits.push('F');
-      else if (raw.sex === 'other') bits.push('Autre');
-      if (raw.age != null) bits.push(`${raw.age} ans`);
-      if (raw.weightKg != null) bits.push(`${raw.weightKg} kg`);
-      if (raw.heightCm != null) bits.push(`${raw.heightCm} cm`);
-      return bits.length ? bits.join(' · ') : 'Non renseigné';
-    }
-    const option = (q.options || []).find((opt) => String(opt.key) === String(raw));
-    return option?.label || String(raw);
-  };
   const canSubmitPassword =
     Boolean(newPassword && confirmPassword) &&
     Boolean((oldPassword && oldPassword.trim()) || (lockReady && appLockCode && appLockCode.trim()));
-  const prefillPayload = buildQuizPrefillPayload(currentUser?.profileQuestionnaire || null);
-
-  const quizHistoryCount = (profileQuestionnaire.quizRoundHistory || []).length;
-  const showQuizRenewal = useMemo(() => {
-    const done = profileQuestionnaire.onboardingWizardCompletedAt;
-    if (!done) return false;
-    const snoozeUntil = profileQuestionnaire.quizReminderSnoozeUntil;
-    if (snoozeUntil && new Date(snoozeUntil) > new Date()) return false;
-    const t = new Date(done).getTime();
-    return Number.isFinite(t) && Date.now() - t > 90 * 86400000;
-  }, [profileQuestionnaire.onboardingWizardCompletedAt, profileQuestionnaire.quizReminderSnoozeUntil]);
-
   return (
     <Card variant="settings" className="profile-input-dark">
       <CardHeader variant="settings">
@@ -138,124 +80,6 @@ const ProfileSettings = ({
       </CardHeader>
       <CardContent>
         <div className="space-y-6">
-          <div id="settings-profil-quiz" className="scroll-mt-6 space-y-3 rounded-xl border border-violet-800/40 bg-violet-950/20 p-4">
-            <div className="flex flex-wrap items-center justify-between gap-2">
-              <p className="text-sm font-medium text-violet-100">Profil onboarding & personnalisation</p>
-              <span className="rounded-full border border-violet-600/50 bg-violet-900/35 px-2.5 py-0.5 text-[11px] text-violet-100/90">
-                {profileQuestionnaire.completedCount}/{profileQuestionnaire.totalCount} réponses
-              </span>
-            </div>
-
-            {showQuizRenewal ? (
-              <div className="rounded-lg border border-amber-600/45 bg-amber-950/25 p-3 text-[11px] leading-relaxed text-amber-100/90">
-                <p className="font-semibold text-amber-200">Ton dernier quiz date de plus de 3 mois</p>
-                <p className="mt-1">
-                  Refaire le bilan depuis ici met à jour les suggestions ; les versions précédentes restent consultables
-                  dans <span className="text-amber-200">Sport → Récap</span>.
-                </p>
-                <div className="mt-2 flex flex-wrap gap-2">
-                  <button
-                    type="button"
-                    onClick={() => window.dispatchEvent(new Event(ONBOARDING_OPEN_EVENT))}
-                    className={`${S.btnSecondary} text-xs`}
-                  >
-                    Nouveau bilan quiz
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => snoozeQuizReminder()}
-                    className="rounded-lg border border-amber-800/60 px-3 py-1.5 text-xs text-amber-200 hover:bg-amber-950/40"
-                  >
-                    Rappeler dans 3 mois
-                  </button>
-                </div>
-              </div>
-            ) : null}
-
-            {!quizStarted ? (
-              <>
-                <p className="text-xs leading-relaxed text-violet-100/80">
-                  Fais le quiz pour débloquer une expérience plus complète et pouvoir générer plus facilement des
-                  programmes d’entraînement et nutrition adaptés à ton profil.
-                </p>
-                <button
-                  type="button"
-                  onClick={() => window.dispatchEvent(new Event(ONBOARDING_OPEN_EVENT))}
-                  className={`${S.btnPrimary} w-full`}
-                >
-                  Démarrer le quiz profil
-                </button>
-              </>
-            ) : (
-              <>
-                <div className="rounded-lg border border-violet-700/40 bg-black/30 p-3 text-xs text-violet-100/80">
-                  <p className="mb-2 font-medium text-violet-100">
-                    {quizComplete
-                      ? 'Quiz complété : voici ton récapitulatif principal.'
-                      : 'Quiz partiellement complété : voici le récapitulatif actuel.'}
-                    {quizHistoryCount > 0 ? (
-                      <span className="ml-2 text-[10px] font-normal text-violet-300/80">
-                        ({quizHistoryCount} bilan antérieur{quizHistoryCount > 1 ? 's' : ''} en archive — Récap)
-                      </span>
-                    ) : null}
-                  </p>
-                  {profileQuestionnaire.lastCompletionRecap?.placement ? (
-                    <p className="mb-2 rounded-lg border border-emerald-700/40 bg-emerald-950/25 px-2 py-1.5 text-emerald-100/95">
-                      <span className="font-medium">Dernier bilan :</span>{' '}
-                      {profileQuestionnaire.lastCompletionRecap.placement.score0to100}/100 —{' '}
-                      {profileQuestionnaire.lastCompletionRecap.placement.bandLabel}
-                      {profileQuestionnaire.lastCompletionRecap.placement.dataTrust ? (
-                        <span className="block text-[10px] text-emerald-200/70 mt-0.5">
-                          {profileQuestionnaire.lastCompletionRecap.placement.dataTrust}
-                        </span>
-                      ) : null}
-                    </p>
-                  ) : null}
-                  <div className="grid gap-1.5">
-                    <p><span className="text-violet-200/90">Mesures (quiz):</span> {summarizeAnswer('vitalsSelfReport')}</p>
-                    <p><span className="text-violet-200/90">Objectif:</span> {summarizeAnswer('goalPhysique')}</p>
-                    <p><span className="text-violet-200/90">Physique actuel:</span> {summarizeAnswer('currentPhysique')}</p>
-                    <p><span className="text-violet-200/90">Priorités:</span> {summarizeAnswer('priorityMuscleGroups')}</p>
-                    <p><span className="text-violet-200/90">Niveau:</span> {summarizeAnswer('experienceLevel')}</p>
-                    <p><span className="text-violet-200/90">Lieu:</span> {summarizeAnswer('trainingLocation')}</p>
-                    <p><span className="text-violet-200/90">Jours disponibles:</span> {summarizeAnswer('availableTrainingDays')}</p>
-                    <p><span className="text-violet-200/90">Durée séance:</span> {summarizeAnswer('preferredSessionDuration')}</p>
-                    <p><span className="text-violet-200/90">Étirements (créneaux):</span> {summarizeAnswer('stretchDistribution')}</p>
-                    <p><span className="text-violet-200/90">Variantes A/B:</span> {summarizeAnswer('weekAlternation')}</p>
-                  </div>
-                </div>
-                <div className="grid gap-2 sm:grid-cols-3">
-                  <button
-                    type="button"
-                    onClick={() => window.dispatchEvent(new Event(ONBOARDING_OPEN_EVENT))}
-                    className={`${S.btnSecondary} w-full`}
-                  >
-                    Mettre à jour le quiz
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      openProgramCreationFromQuiz(currentUser?.profileQuestionnaire, { setActiveTab });
-                    }}
-                    className={`${S.btnSecondary} w-full`}
-                  >
-                    Générer entraînement
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      writePendingQuizPrefill(PENDING_QUIZ_PREFILL_NUTRITION_KEY, prefillPayload);
-                      if (setActiveTab) setActiveTab('nutrition');
-                    }}
-                    className={`${S.btnSecondary} w-full`}
-                  >
-                    Générer nutrition
-                  </button>
-                </div>
-              </>
-            )}
-          </div>
-
           <div className="space-y-3">
             <label className={`flex items-center ${S.label}`}>
               <Image className="mr-2" size={16} />
