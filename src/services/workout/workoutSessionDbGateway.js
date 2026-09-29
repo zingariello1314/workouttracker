@@ -260,6 +260,8 @@ export async function migrateLegacySessionsFromAggregate(scopeKey, aggregateRow)
 
     listLegacySessionDatesInAggregate,
 
+    sessionSliceHasStoredDay,
+
   } = await import('../../utils/workoutSessionPersistence.js');
 
 
@@ -276,13 +278,7 @@ export async function migrateLegacySessionsFromAggregate(scopeKey, aggregateRow)
 
     const slice = extractDaySliceFromAggregate(aggregateRow, dateStr);
 
-    const hasMaps = Object.keys(slice.mapFields || {}).length > 0;
-
-    const hasVar = slice.dailyVariations != null;
-
-    const hasCircuit = slice.circuitProgress != null;
-
-    if (!hasMaps && !hasVar && !hasCircuit) continue;
+    if (!sessionSliceHasStoredDay(slice)) continue;
 
     const existing = await getWorkoutSessionDay(scopeKey, dateStr);
     if (existing) continue;

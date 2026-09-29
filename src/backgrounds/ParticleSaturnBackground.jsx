@@ -1,45 +1,23 @@
-import { useEffect, useState } from 'react';
-import ParticleSaturn from '../components/originkit/ui/particle-saturn';
+import { SceneHost } from './sceneHost';
 
-/**
- * Fond plein écran. La scène Three.js ne démarre qu’une fois l’écran de
- * chargement initial retiré : son premier rendu WebGL bloque le fil principal
- * et figeait la restauration des préférences.
- */
-export default function ParticleSaturnBackground() {
-  const [armed, setArmed] = useState(false);
+function createSaturnWorker() {
+  return new Worker(new URL('./engines/particleSaturn.worker.js', import.meta.url), { type: 'module' });
+}
 
-  useEffect(() => {
-    let timer = 0;
-    let cancelled = false;
+function startSaturn(canvas, size) {
+  return import('./engines/saturnScene.js').then(({ startParticleSaturn }) => startParticleSaturn(canvas, size));
+}
 
-    const startedAt = Date.now();
-    const poll = () => {
-      if (cancelled) return;
-      if (document.getElementById('welcome-gate-title')) {
-        timer = window.setTimeout(poll, 200);
-        return;
-      }
-      if (Date.now() - startedAt < 500) {
-        timer = window.setTimeout(poll, 50);
-        return;
-      }
-      setArmed(true);
-    };
-
-    timer = window.setTimeout(poll, 0);
-    return () => {
-      cancelled = true;
-      window.clearTimeout(timer);
-    };
-  }, []);
-
+/** Fond Saturne. L'animation tourne dans un worker, le canvas reste visible. */
+export default function ParticleSaturnBackground({ params, paused = false, epoch = 0 }) {
   return (
-    <div
-      className="fixed inset-0"
-      style={{ pointerEvents: 'none', zIndex: -1, backgroundColor: '#07060a' }}
-    >
-      {armed ? <ParticleSaturn /> : null}
-    </div>
+    <SceneHost
+      color="#07060a"
+      startScene={startSaturn}
+      createWorker={createSaturnWorker}
+      params={params}
+      paused={paused}
+      epoch={epoch}
+    />
   );
 }

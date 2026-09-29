@@ -10,8 +10,9 @@ import {
   mergeSessionDaysIntoAggregate,
   workoutMetadataFingerprint,
   listLegacySessionDatesInAggregate,
+  applyDayKeysToWorkoutRow,
 } from '../utils/workoutSessionPersistence.js';
-import { persistWorkoutSessionDay } from '../services/workout/workoutDbGateway.js';
+import { persistWorkoutSessionDay, getWorkoutRow, putWorkoutRow } from '../services/workout/workoutDbGateway.js';
 import {
   getAllWorkoutSessionsForScope,
   migrateLegacySessionsFromAggregate,
@@ -34,6 +35,7 @@ import {
 } from '../services/endurance/enduranceWipeGuard';
 import { normalizeExerciseSetLog } from '../utils/exerciseSetLogUtils';
 import { yieldToNextPaint, scheduleTodayCheckIdle } from '../utils/todayCheckMeasure';
+import { withIdbOperationTimeout } from '../utils/sessionSaveTimeout.js';
 
 const workoutDataLog = logger.module('useWorkoutData');
 
@@ -686,9 +688,34 @@ export const useWorkoutData = (options = {}) => {
     return { ...slice, mapFields };
   };
 
+  const saveSessionDayOntoAggregate = async (newData, effectiveKey, sessionDay) => {
+    const raw = await getWorkoutRow(effectiveKey);
+    if (!raw || typeof raw !== 'object') {
+      throw new Error('WORKOUT_ROW_UNAVAILABLE');
+    }
+    const flat =
+      raw.data && typeof raw.data === 'object'
+        ? { ...raw.data, id: raw.id || effectiveKey }
+        : { ...raw, id: effectiveKey };
+    const patched = applyDayKeysToWorkoutRow(flat, newData, sessionDay);
+    await putWorkoutRow(effectiveKey, { ...patched, id: effectiveKey });
+  };
+
   const saveSessionDayIncremental = async (newData, effectiveKey, sessionDay, skipCloud = false) => {
     const slice = sanitizeSessionDaySlice(extractDaySliceFromAggregate(newData, sessionDay));
-    await persistWorkoutSessionDay(effectiveKey, sessionDay, newData, slice);
+    try {
+      await persistWorkoutSessionDay(effectiveKey, sessionDay, newData, slice);
+    } catch (error) {
+      const missingStore =
+        error?.message === 'WORKOUT_SESSION_STORE_MISSING' ||
+        error?.message === 'WORKOUT_STORE_MISSING';
+      if (!missingStore) throw error;
+      workoutDataLog.warn('Store séance absent, repli sur la ligne workouts', error);
+      await withIdbOperationTimeout(
+        saveSessionDayOntoAggregate(newData, effectiveKey, sessionDay),
+        12000
+      );
+    }
 
     if (!skipCloud && !ephemeral && !generateTestData && isWorkoutAggregateCloudSyncEnabled()) {
       const { accessToken } = readServerTokens();

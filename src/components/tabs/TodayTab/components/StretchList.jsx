@@ -14,6 +14,7 @@ import React, { memo, useMemo } from 'react';
 import { Sun, Cloud, Moon } from 'lucide-react';
 import StretchItem from './StretchItem';
 import { useStretchTracking } from '../hooks/useStretchTracking';
+import { useSessionDraftVersion } from '../../../../context/WorkoutContext/sessionDraftStore';
 import { normalizeStretchSlots, STRETCH_MOMENTS } from '../../../../utils/stretchUtils';
 import { getDayName } from '../../../../utils/dateUtils';
 
@@ -59,6 +60,7 @@ const StretchList = memo(({ stretches, date, onAfterStretchDataChange }) => {
 StretchList.displayName = 'StretchList';
 
 const MomentBlock = memo(({ moment, items, date, onAfterStretchDataChange }) => {
+  useSessionDraftVersion();
   const meta = MOMENT_META[moment] || { label: moment, Icon: Sun, color: 'text-slate-400' };
   const { Icon } = meta;
   const ids = useMemo(() => items.map((it) => it.id), [items]);

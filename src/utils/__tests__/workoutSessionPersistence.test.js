@@ -4,9 +4,20 @@ import {
   mergeSessionDaysIntoAggregate,
   listLegacySessionDatesInAggregate,
   workoutMetadataFingerprint,
+  sessionSliceHasStoredDay,
 } from '../workoutSessionPersistence.js';
 
 describe('workoutSessionPersistence', () => {
+  it('sessionSliceHasStoredDay ignore les maps vides', () => {
+    const empty = extractDaySliceFromAggregate({ reps: {}, checkedExercises: {} }, '2026-06-05');
+    expect(sessionSliceHasStoredDay(empty)).toBe(false);
+    const withReps = extractDaySliceFromAggregate(
+      { reps: { '2026-06-05_101': '12' }, checkedExercises: {} },
+      '2026-06-05'
+    );
+    expect(sessionSliceHasStoredDay(withReps)).toBe(true);
+  });
+
   it('extractDaySliceFromAggregate isole les clés du jour', () => {
     const data = {
       reps: {

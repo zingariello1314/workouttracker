@@ -7,12 +7,11 @@ export const SESSION_SAVE_TIMEOUT_MS = 25000;
  * @returns {Promise<unknown>}
  */
 export function withSessionSaveTimeout(promise, timeoutMs = SESSION_SAVE_TIMEOUT_MS) {
-  return Promise.race([
-    promise,
-    new Promise((_, reject) => {
-      setTimeout(() => reject(new Error('SESSION_SAVE_TIMEOUT')), timeoutMs);
-    }),
-  ]);
+  let timer;
+  const timeout = new Promise((_, reject) => {
+    timer = setTimeout(() => reject(new Error('SESSION_SAVE_TIMEOUT')), timeoutMs);
+  });
+  return Promise.race([promise, timeout]).finally(() => clearTimeout(timer));
 }
 
 export function isSessionSaveTimeoutError(error) {
@@ -27,10 +26,9 @@ const IDB_OPERATION_TIMEOUT_MS = 8000;
  * @param {number} [timeoutMs]
  */
 export function withIdbOperationTimeout(promise, timeoutMs = IDB_OPERATION_TIMEOUT_MS) {
-  return Promise.race([
-    promise,
-    new Promise((_, reject) => {
-      setTimeout(() => reject(new Error('IDB_OPERATION_TIMEOUT')), timeoutMs);
-    }),
-  ]);
+  let timer;
+  const timeout = new Promise((_, reject) => {
+    timer = setTimeout(() => reject(new Error('IDB_OPERATION_TIMEOUT')), timeoutMs);
+  });
+  return Promise.race([promise, timeout]).finally(() => clearTimeout(timer));
 }

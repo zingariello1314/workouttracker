@@ -196,7 +196,10 @@ export async function withEphemeralWorkoutDb(fn) {
   try {
     db = await openWorkoutTrackerDbAtCurrentVersion();
   } catch (err) {
-    if (err?.message === 'WORKOUT_STORE_MISSING' || err?.message === 'IDB_OPERATION_TIMEOUT') {
+    // Un open trop lent n’est pas une base vide. Lancer une montée de version
+    // puis l’abandonner laisse la requête IndexedDB bloquée : toutes les
+    // ouvertures suivantes attendent indéfiniment (sauvegarde séance en timeout).
+    if (err?.message === 'WORKOUT_STORE_MISSING') {
       await bootstrapWorkoutStoresIfNeeded();
       db = await openWorkoutTrackerDbAtCurrentVersion();
     } else {
@@ -271,23 +274,12 @@ export async function persistWorkoutSessionDay(scopeKey, sessionDay, _fullData, 
 
   prepareWorkoutEphemeralWrite();
 
-  try {
-    await withIdbOperationTimeout(writeSessionStore(), SESSION_PUT_TIMEOUT_MS);
-  } catch (firstErr) {
-    if (
-      firstErr?.message === 'WORKOUT_SESSION_STORE_MISSING' ||
-      firstErr?.message === 'IDB_OPERATION_TIMEOUT' ||
-      firstErr?.message === 'WORKOUT_STORE_MISSING'
-    ) {
-      await releaseWorkoutTrackerConnectionsForUpgrade();
-      await bootstrapWorkoutStoresIfNeeded();
-      await withIdbOperationTimeout(writeSessionStore(), SESSION_PUT_TIMEOUT_MS);
-    } else {
-      throw firstErr;
-    }
-  }
+  await withIdbOperationTimeout(writeSessionStore(), SESSION_PUT_TIMEOUT_MS);
 
-  const verified = await getWorkoutSessionDay(scopeKey, sessionDay);
+  const verified = await withIdbOperationTimeout(
+    getWorkoutSessionDay(scopeKey, sessionDay),
+    OPEN_TIMEOUT_MS
+  );
   if (!verified) {
     throw new Error('WORKOUT_SESSION_VERIFY_FAILED');
   }

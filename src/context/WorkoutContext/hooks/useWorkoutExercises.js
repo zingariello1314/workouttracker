@@ -1,10 +1,9 @@
 /**
  * Hook pour la gestion des exercices et étirements
  *
- * L’UI lit `tempDataRef` tout de suite (coche / reps / kg). La persistance
- * part toute seule après un court debounce — plus besoin d’attendre
- * « Enregistrer ». Si une sauvegarde est déjà en cours, les nouvelles coches
- * restent dans le ref et partent juste après (pas d’écrasement).
+ * L’UI lit `tempDataRef` tout de suite (coche / reps / kg).
+ * « Enregistrer » écrit ce brouillon. Une sauvegarde déjà en cours ne doit
+ * ni être abandonnée ni effacer les reps saisies pendant l’écriture.
  *
  * @module context/WorkoutContext/hooks/useWorkoutExercises
  */
@@ -172,7 +171,8 @@ export const useWorkoutExercises = (
   const persistFullDraftRef = useRef(async () => {});
   const pendingDraftBumpRef = useRef(0);
   const autoPersistTimerRef = useRef(null);
-  const persistQueuedRef = useRef(false);
+  const persistTailRef = useRef(Promise.resolve());
+  const draftRevisionRef = useRef(0);
 
   const scheduleSessionDraftBump = useCallback(() => {
     if (pendingDraftBumpRef.current) return;
@@ -224,12 +224,16 @@ export const useWorkoutExercises = (
       const { emitType, force, snapshot, sessionDayOverride } = options;
       const dirtyAtStart = { ...dirtyFlagsRef.current };
       const td = snapshot ?? tempDataRef.current;
-      if (!td) return;
-      if (!force && !dirtyAtStart.exercises && !dirtyAtStart.stretches) return;
-      if (isPersistingSessionRef.current) {
-        persistQueuedRef.current = true;
-        return;
-      }
+      if (!td) return 'empty';
+      if (!force && !dirtyAtStart.exercises && !dirtyAtStart.stretches) return 'clean';
+
+      const previous = persistTailRef.current;
+      let releaseTail = () => {};
+      const gate = new Promise((resolve) => {
+        releaseTail = resolve;
+      });
+      persistTailRef.current = gate;
+      await previous.catch(() => {});
 
       isPersistingSessionRef.current = true;
       if (autoPersistTimerRef.current) {
@@ -252,6 +256,7 @@ export const useWorkoutExercises = (
             : sessionCalendarDateStr && /^\d{4}-\d{2}-\d{2}$/.test(sessionCalendarDateStr)
               ? sessionCalendarDateStr
               : getDateStr(new Date());
+        const revisionAtWrite = draftRevisionRef.current;
         await updateData(payload, {
           strict: true,
           sessionDay,
@@ -260,9 +265,11 @@ export const useWorkoutExercises = (
           applyReactAfterPaint: force
         });
 
-        if (tempDataRef.current && tempDataRef.current !== td) {
-          persistQueuedRef.current = true;
-          return;
+        if (
+          draftRevisionRef.current !== revisionAtWrite ||
+          (tempDataRef.current && tempDataRef.current !== td)
+        ) {
+          return 'stale';
         }
 
         if (force) {
@@ -295,6 +302,7 @@ export const useWorkoutExercises = (
             }
           }, 800);
         }
+        return 'saved';
       } catch (error) {
         console.error('❌ Erreur lors de la persistance du brouillon séance:', error);
         startTransition(() => {
@@ -304,7 +312,7 @@ export const useWorkoutExercises = (
         throw error;
       } finally {
         isPersistingSessionRef.current = false;
-        persistQueuedRef.current = false;
+        releaseTail();
       }
     },
     [
@@ -320,25 +328,31 @@ export const useWorkoutExercises = (
 
   /** Enregistrement explicite : toujours le ref en priorité (évite closure React périmée sur le clic). */
   const saveSessionDraft = useCallback(async () => {
-    const dirtyAtClick = { ...dirtyFlagsRef.current };
-    const snapshot = tempDataRef.current ?? tempData ?? null;
+    for (let attempt = 0; attempt < 4; attempt += 1) {
+      const dirtyAtClick = { ...dirtyFlagsRef.current };
+      const snapshot = tempDataRef.current ?? tempData ?? null;
 
-    if (!dirtyAtClick.exercises && !dirtyAtClick.stretches) {
-      clearDraftState();
-      return;
+      if (!dirtyAtClick.exercises && !dirtyAtClick.stretches) {
+        clearDraftState();
+        return;
+      }
+
+      if (!snapshot) {
+        console.warn('[useWorkoutExercises] Enregistrer : brouillon manquant malgré modifications signalées.');
+        clearDraftState();
+        return;
+      }
+
+      const result = await persistFullDraft({
+        force: true,
+        snapshot,
+        emitType: 'session'
+      });
+      if (result !== 'stale') return;
     }
-
-    if (!snapshot) {
-      console.warn('[useWorkoutExercises] Enregistrer : brouillon manquant malgré modifications signalées.');
-      clearDraftState();
-      return;
+    if (dirtyFlagsRef.current.exercises || dirtyFlagsRef.current.stretches) {
+      throw new Error('SESSION_DRAFT_STILL_DIRTY');
     }
-
-    await persistFullDraft({
-      force: true,
-      snapshot,
-      emitType: 'session'
-    });
   }, [tempData, persistFullDraft, clearDraftState]);
 
   const saveExerciseChanges = saveSessionDraft;
@@ -409,6 +423,7 @@ export const useWorkoutExercises = (
     }
     if (String(map[storageKey] ?? '') === String(value ?? '')) return;
     map[storageKey] = value;
+    draftRevisionRef.current += 1;
     dirtyFlagsRef.current = { ...dirtyFlagsRef.current, exercises: true };
     setSessionCommitDirty({ exercises: true });
   }, []);
@@ -418,6 +433,7 @@ export const useWorkoutExercises = (
       const draft = ensureMutableExerciseDraft();
       const changed = mutator(draft);
       if (changed === false) return draft;
+      draftRevisionRef.current += 1;
       dirtyFlagsRef.current = { ...dirtyFlagsRef.current, exercises: true };
       setSessionCommitDirty({ exercises: true });
       if (options.exerciseId != null && options.exerciseId !== '') {
@@ -434,6 +450,7 @@ export const useWorkoutExercises = (
 
   const updateTempExerciseData = useCallback((newData, options = {}) => {
     tempDataRef.current = newData;
+    draftRevisionRef.current += 1;
     dirtyFlagsRef.current = { ...dirtyFlagsRef.current, exercises: true };
     setSessionCommitDirty({ exercises: true });
     if (options.exerciseId != null && options.exerciseId !== '') {
@@ -447,6 +464,7 @@ export const useWorkoutExercises = (
 
   const updateTempStretchData = useCallback((newData, options = {}) => {
     tempDataRef.current = newData;
+    draftRevisionRef.current += 1;
     dirtyFlagsRef.current = { ...dirtyFlagsRef.current, stretches: true };
     setSessionCommitDirty({ stretches: true });
     if (!options.silent) {

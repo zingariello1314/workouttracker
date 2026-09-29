@@ -13,6 +13,7 @@ import React, { memo, useCallback, useState } from 'react';
 import { ChevronDown, ChevronUp, Clock, Target } from 'lucide-react';
 import { Checkbox } from '../../../ui/Input';
 import { useStretchTracking } from '../hooks/useStretchTracking';
+import { useSessionDraftVersion } from '../../../../context/WorkoutContext/sessionDraftStore';
 import SessionEffortBlock from './SessionEffortBlock';
 
 /**
@@ -33,6 +34,7 @@ function formatDuration(seconds) {
  * @param {boolean} [props.defaultExpanded=false] - Affiche les instructions en clair par défaut
  */
 const StretchItem = memo(({ item, date, defaultExpanded = false, onAfterStretchDataChange }) => {
+  useSessionDraftVersion();
   const { toggleStretch, getStretchStatus, updateStretchSessionEffortStars } = useStretchTracking({
     date,
     onAfterStretchDataChange,

@@ -77,6 +77,9 @@ function emit() {
   const preference = getAppBackgroundPreference();
   syncRotateTimer(preference);
   listeners.forEach((listener) => listener(preference));
+  if (typeof window !== 'undefined') {
+    window.dispatchEvent(new CustomEvent('momentum:app-background', { detail: preference }));
+  }
 }
 
 function syncRotateTimer(preference) {

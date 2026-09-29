@@ -16,20 +16,21 @@ export function useAppBackground() {
   const [revision, setRevision] = useState(0);
 
   useEffect(() => {
-    const unsubscribe = subscribeAppBackground((next) => {
-      setPreference(next);
+    const apply = (next) => {
+      setPreference(next && typeof next === 'object' ? next : getAppBackgroundPreference());
       setRevision((value) => value + 1);
-    });
-    const onStorage = (event) => {
-      if (event.key === APP_BACKGROUND_STORAGE_KEY) {
-        setPreference(getAppBackgroundPreference());
-        setRevision((value) => value + 1);
-      }
     };
+    const unsubscribe = subscribeAppBackground(apply);
+    const onStorage = (event) => {
+      if (event.key === APP_BACKGROUND_STORAGE_KEY) apply(getAppBackgroundPreference());
+    };
+    const onSameTab = (event) => apply(event.detail);
     window.addEventListener('storage', onStorage);
+    window.addEventListener('momentum:app-background', onSameTab);
     return () => {
       unsubscribe();
       window.removeEventListener('storage', onStorage);
+      window.removeEventListener('momentum:app-background', onSameTab);
     };
   }, []);
 

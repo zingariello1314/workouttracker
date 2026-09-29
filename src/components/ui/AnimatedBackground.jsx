@@ -138,10 +138,9 @@ export default function AnimatedBackground({ className = '' }) {
   return (
     <div
       ref={hostRef}
-      className={`fixed inset-0 ${className}`}
+      className={`absolute inset-0 ${className}`}
       style={{
         pointerEvents: 'none',
-        zIndex: -1,
         backgroundColor: '#0a2e1a'
       }}
     />

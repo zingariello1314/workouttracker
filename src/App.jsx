@@ -466,7 +466,8 @@ const WorkoutTrackerContent = () => {
           inset: 0,
           zIndex: -1,
           transform: 'translateZ(0)',
-          display: 'block'
+          display: 'block',
+          background: appBackground.fallbackBackground
         }}
       >
         <AppBackground />

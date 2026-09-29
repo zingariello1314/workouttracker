@@ -65,6 +65,21 @@ export function extractDaySliceFromAggregate(data, dateStr) {
   return { mapFields, dailyVariations, circuitProgress };
 }
 
+/**
+ * Vrai seulement s’il y a des données pour ce jour.
+ * `mapFields` contient toujours les noms de champs, même vides : ce n’est pas une séance.
+ * @param {{ mapFields?: Record<string, unknown>, dailyVariations?: unknown, circuitProgress?: unknown }} slice
+ */
+export function sessionSliceHasStoredDay(slice) {
+  const maps = slice?.mapFields && typeof slice.mapFields === 'object' ? slice.mapFields : {};
+  for (const map of Object.values(maps)) {
+    if (map && typeof map === 'object' && !Array.isArray(map) && Object.keys(map).length > 0) {
+      return true;
+    }
+  }
+  return slice?.dailyVariations != null || slice?.circuitProgress != null;
+}
+
 function sessionRowDate(row, maps) {
   if (typeof row?.dateStr === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(row.dateStr)) {
     return row.dateStr;

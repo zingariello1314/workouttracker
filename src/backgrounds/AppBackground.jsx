@@ -1,15 +1,17 @@
-import { lazy, Suspense } from 'react';
+import { lazy, Suspense, useEffect, useState } from 'react';
 import { getBackgroundOption } from './backgroundRegistry';
+import { isBackgroundStudioOpen } from './backgroundStudio';
 import { useAppBackground } from './useAppBackground';
 
 const componentCache = new Map();
 
 function getLazyBackground(id) {
   const option = getBackgroundOption(id);
-  if (!componentCache.has(option.id)) {
-    componentCache.set(option.id, lazy(option.load));
+  const cacheKey = option.baseId || option.id;
+  if (!componentCache.has(cacheKey)) {
+    componentCache.set(cacheKey, lazy(option.load));
   }
-  return componentCache.get(option.id);
+  return componentCache.get(cacheKey);
 }
 
 /**
@@ -19,10 +21,24 @@ function getLazyBackground(id) {
  */
 export default function AppBackground() {
   const { option } = useAppBackground();
+  const [studioOpen, setStudioOpen] = useState(isBackgroundStudioOpen);
+
+  useEffect(() => {
+    const sync = () => setStudioOpen(document.documentElement.dataset.backgroundStudio === '1');
+    window.addEventListener('momentum:background-studio', sync);
+    return () => window.removeEventListener('momentum:background-studio', sync);
+  }, []);
+
+  if (studioOpen) {
+    return <div style={{ position: 'absolute', inset: 0, background: option.fallbackBackground }} />;
+  }
+
   const Active = getLazyBackground(option.id);
   return (
-    <Suspense fallback={null}>
-      <Active key={option.id} />
-    </Suspense>
+    <div style={{ position: 'absolute', inset: 0, background: option.fallbackBackground }}>
+      <Suspense fallback={null}>
+        <Active key={option.id} params={option.params} />
+      </Suspense>
+    </div>
   );
 }

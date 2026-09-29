@@ -1,10 +1,13 @@
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { Check, Palette } from 'lucide-react';
 import Card, { CardHeader, CardTitle, CardContent } from '../../../ui/Card';
 import { settingsTheme as S } from '../settingsThemeClasses';
-import { backgroundOptions } from '../../../../backgrounds/backgroundRegistry';
+import { backgroundOptions, listBackgroundOptions } from '../../../../backgrounds/backgroundRegistry';
+import { defaultParams, setBackgroundStudioOpen, studioFor } from '../../../../backgrounds/backgroundStudio';
+import { removeVariant, subscribeVariants } from '../../../../backgrounds/backgroundVariants';
 import { useAppBackground } from '../../../../backgrounds/useAppBackground';
 import { BACKGROUND_TAB_TARGETS, ROTATE_INTERVALS } from '../../../../backgrounds/backgroundTargets';
+import BackgroundStudio from '../../../../backgrounds/BackgroundStudioPanel';
 
 const TYPE_LABEL = {
   animated: 'Animé',
@@ -39,6 +42,60 @@ function BackgroundOptionThumb({ option }) {
 const AppBackgroundSettings = () => {
   const { id: activeId, option: active, preference, setBackgroundId, updatePreference } = useAppBackground();
   const mode = preference.mode;
+  const [options, setOptions] = useState(listBackgroundOptions);
+  const [draft, setDraft] = useState(null);
+
+  useEffect(() => subscribeVariants(() => setOptions(listBackgroundOptions())), []);
+
+  useEffect(() => () => setBackgroundStudioOpen(false), []);
+
+  const closeStudio = useCallback(() => {
+    setBackgroundStudioOpen(false);
+    setDraft(null);
+  }, []);
+
+  const openStudio = (option) => {
+    const baseId = option.baseId || option.id;
+    if (!studioFor(baseId)) return;
+    setBackgroundStudioOpen(true);
+    setDraft({
+      token: `${option.id}:${Date.now()}`,
+      baseId,
+      params: option.params || defaultParams(baseId),
+    });
+  };
+
+  const removeCreated = (option) => {
+    removeVariant(option.id);
+    if (preference.mode === 'single' && preference.singleId === option.id) {
+      setBackgroundId(option.baseId);
+      return;
+    }
+    const rotateIds = preference.rotateIds.filter((id) => id !== option.id);
+    const perTab = { ...preference.perTab };
+    Object.keys(perTab).forEach((key) => {
+      if (perTab[key] === option.id) delete perTab[key];
+    });
+    updatePreference({
+      rotateIds: rotateIds.length ? rotateIds : preference.rotateIds,
+      perTab,
+    });
+  };
+
+  useEffect(() => {
+    const warm = () => {
+      backgroundOptions.forEach((option) => {
+        option.load().catch(() => {});
+      });
+    };
+    const idleId = window.requestIdleCallback
+      ? window.requestIdleCallback(warm, { timeout: 1500 })
+      : window.setTimeout(warm, 300);
+    return () => {
+      if (window.cancelIdleCallback && typeof idleId === 'number') window.cancelIdleCallback(idleId);
+      else window.clearTimeout(idleId);
+    };
+  }, []);
 
   const toggleRotate = (backgroundId) => {
     const has = preference.rotateIds.includes(backgroundId);
@@ -51,7 +108,10 @@ const AppBackgroundSettings = () => {
     });
   };
 
+  const fallbackName = options.find((item) => item.id === preference.singleId)?.name || 'Momentum';
+
   return (
+    <>
     <Card variant="settings">
       <CardHeader variant="settings">
         <CardTitle tone="settings" className="flex items-center normal-case tracking-normal">
@@ -108,46 +168,77 @@ const AppBackgroundSettings = () => {
             role={mode === 'single' ? 'radiogroup' : 'group'}
             aria-label="Fonds disponibles"
           >
-            {backgroundOptions.map((option) => {
+            {options.map((option) => {
               const inRotation = preference.rotateIds.includes(option.id);
               const selected = mode === 'rotate' ? inRotation : preference.singleId === option.id;
               const order = preference.rotateIds.indexOf(option.id);
+              const canEdit = Boolean(studioFor(option.baseId || option.id));
+              const choose = () => {
+                if (mode === 'rotate') toggleRotate(option.id);
+                else if (mode === 'single') setBackgroundId(option.id);
+                else updatePreference({ singleId: option.id });
+              };
               return (
-                <button
+                <div
                   key={option.id}
-                  type="button"
-                  role={mode === 'single' ? 'radio' : 'checkbox'}
-                  aria-checked={selected}
-                  onClick={() => {
-                    if (mode === 'rotate') toggleRotate(option.id);
-                    else if (mode === 'single') setBackgroundId(option.id);
-                    else updatePreference({ singleId: option.id });
-                  }}
-                  className={`overflow-hidden rounded-lg border text-left transition-colors ${
+                  className={`overflow-hidden rounded-lg border transition-colors ${
                     selected
                       ? 'border-white/30 bg-white/[0.06]'
                       : 'border-white/10 bg-black/20 hover:border-white/20'
                   }`}
                 >
-                  <div className="relative aspect-[16/10] overflow-hidden">
-                    <BackgroundOptionThumb option={option} />
-                    {activeId === option.id && (
-                      <span className="absolute right-2 top-2 inline-flex items-center gap-1 rounded-full border border-white/20 bg-black/70 px-2 py-0.5 text-[10px] font-semibold tracking-wide text-zinc-100">
-                        <Check size={11} strokeWidth={3} />
-                        ACTIF
-                      </span>
-                    )}
-                    {mode === 'rotate' && order >= 0 && (
-                      <span className="absolute left-2 top-2 rounded-full bg-black/70 px-2 py-0.5 text-[10px] text-zinc-100">
-                        {order + 1}
-                      </span>
-                    )}
-                  </div>
-                  <div className="space-y-0.5 px-3 py-2.5">
-                    <div className="text-sm font-medium text-zinc-50">{option.name}</div>
-                    <div className={S.mutedXs}>{TYPE_LABEL[option.type] || option.type}</div>
-                  </div>
-                </button>
+                  <button
+                    type="button"
+                    role={mode === 'single' ? 'radio' : 'checkbox'}
+                    aria-checked={selected}
+                    onPointerEnter={() => {
+                      option.load().catch(() => {});
+                    }}
+                    onClick={choose}
+                    className="block w-full text-left"
+                  >
+                    <div className="relative aspect-[16/10] overflow-hidden">
+                      <BackgroundOptionThumb option={option} />
+                      {activeId === option.id && (
+                        <span className="absolute right-2 top-2 inline-flex items-center gap-1 rounded-full border border-white/20 bg-black/70 px-2 py-0.5 text-[10px] font-semibold tracking-wide text-zinc-100">
+                          <Check size={11} strokeWidth={3} />
+                          ACTIF
+                        </span>
+                      )}
+                      {mode === 'rotate' && order >= 0 && (
+                        <span className="absolute left-2 top-2 rounded-full bg-black/70 px-2 py-0.5 text-[10px] text-zinc-100">
+                          {order + 1}
+                        </span>
+                      )}
+                    </div>
+                    <div className={`space-y-0.5 px-3 pt-2.5 ${canEdit || option.variant ? '' : 'pb-2.5'}`}>
+                      <div className="text-sm font-medium text-zinc-50">{option.name}</div>
+                      <div className={S.mutedXs}>{TYPE_LABEL[option.type] || option.type}</div>
+                    </div>
+                  </button>
+                  {(canEdit || option.variant) && (
+                    <div className="flex gap-2 px-3 pb-2.5 pt-2">
+                      {canEdit && (
+                        <button
+                          type="button"
+                          onClick={() => openStudio(option)}
+                          className="rounded-full border border-white/15 px-2.5 py-1 text-[11px] text-zinc-100 hover:bg-white/10"
+                        >
+                          Régler
+                        </button>
+                      )}
+                      {option.variant && (
+                        <button
+                          type="button"
+                          onClick={() => removeCreated(option)}
+                          className="rounded-full border border-white/10 px-2.5 py-1 text-[11px] text-zinc-400 hover:bg-white/10"
+                        >
+                          Retirer
+                        </button>
+                      )}
+                    </div>
+                  )}
+                </div>
               );
             })}
           </div>
@@ -167,8 +258,8 @@ const AppBackgroundSettings = () => {
                       updatePreference({ perTab });
                     }}
                   >
-                    <option value="">Repli ({backgroundOptions.find((item) => item.id === preference.singleId)?.name})</option>
-                    {backgroundOptions.map((option) => (
+                    <option value="">Repli ({fallbackName})</option>
+                    {options.map((option) => (
                       <option key={option.id} value={option.id}>{option.name}</option>
                     ))}
                   </select>
@@ -183,6 +274,19 @@ const AppBackgroundSettings = () => {
         </div>
       </CardContent>
     </Card>
+    {draft && (
+      <BackgroundStudio
+        key={draft.token}
+        baseId={draft.baseId}
+        initialParams={draft.params}
+        onClose={closeStudio}
+        onCreated={(entry) => {
+          setBackgroundId(entry.id);
+          closeStudio();
+        }}
+      />
+    )}
+    </>
   );
 };
 

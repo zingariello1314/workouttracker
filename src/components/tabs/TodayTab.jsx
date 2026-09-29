@@ -895,11 +895,13 @@ const TodayTab = () => {
     const prev = pendingCheckFrameRef.current.get(key);
     if (prev) cancelAnimationFrame(prev);
     const frame = requestAnimationFrame(() => {
-      const afterPaint = requestAnimationFrame(() => {
-        pendingCheckFrameRef.current.delete(key);
+      pendingCheckFrameRef.current.delete(key);
+      try {
         applyExerciseCheckRef.current(exerciseId, date, shouldCheck);
-      });
-      pendingCheckFrameRef.current.set(key, afterPaint);
+      } catch (error) {
+        console.error('Erreur lors de la coche exercice:', error);
+        clearOptimisticCheck(exerciseId);
+      }
     });
     pendingCheckFrameRef.current.set(key, frame);
   };
