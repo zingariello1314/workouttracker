@@ -462,7 +462,7 @@ export function detectRecapMilestones({
         vs != null
           ? ` Avec ${fmtInt(last.reps)} répétitions, tu reviens à ${fmtPct(vs)} de ton volume moyen avant l'interruption.`
           : ''
-      }`,
+      } Ce volume mesure l'ampleur de la reprise, pas à lui seul une progression. Il devient un retour dans l'entraînement s'il se répète sur plusieurs séances.`,
       evidence: `${fmtInt(gap)} j. · ${fmtInt(last.reps)} reps`,
       importance: 0.93
     });

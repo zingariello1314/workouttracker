@@ -1621,20 +1621,22 @@ export const exerciseDatabase = {
     ]
   },
   "extension triceps couché latéral à un haltère": {
-    name: "Extension triceps couché latéral à un haltère",
+    name: "Side-Lying Single-Arm Dumbbell Triceps Extension",
     category: "Triceps",
     primaryMuscles: ["Triceps brachial"],
-    secondaryMuscles: [],
+    secondaryMuscles: ["Chef long du triceps", "Anconé", "Stabilisateurs de l'épaule"],
     equipment: "Haltère + Banc",
     difficulty: 2,
     isNew: true,
     summary: "Allongé sur le côté · un haltère · un bras après l’autre",
     description:
-      "Position : Allongé sur le côté sur un banc, maintenez un haltère dans la main du bras qui travaille. Le bras est positionné au-dessus du torse, coude fléchi.\n\nExécution : Fléchissez le coude pour abaisser l’haltère de manière contrôlée vers le côté de la tête ou derrière celle-ci, puis tendez le bras pour ramener l’haltère à la position de départ. Gardez le bras supérieur aussi stable que possible afin de concentrer le mouvement sur le triceps.\n\nPoints clés : Contrôler la descente, éviter de bouger l’épaule et conserver un mouvement fluide du coude. Effectuez toutes les répétitions d’un côté avant de changer de bras. Ce n’est pas l’extension couché à un haltère tenu à deux mains, dos à plat.",
+      "Allongé sur le côté sur un banc, jambes un peu fléchies, pieds au sol ou contre le banc. L’autre bras sert à tenir l’équilibre. L’haltère est dans la main du dessus, bras au-dessus de l’épaule, coude fléchi vers le plafond, haut du bras calé. Tu fléchis le coude pour descendre l’haltère derrière la tête, jusqu’à un étirement confortable du triceps, puis tu le pousses en haut en contractant le triceps, sans verrouiller le coude d’un coup. Le haut du bras ne voyage pas, le poignet reste neutre, le bassin ne pivote pas et ne décolle pas. Tu finis un côté avant de changer, avec la même amplitude. La charge reste plus légère qu’une extension triceps classique : la position sur le côté tient moins bien. Ce n’est pas le single-arm dumbbell lying triceps extension, dos à plat et paume vers l’intérieur, ni l’extension couché à un haltère tenu à deux mains, ni la barre au front, ni le kickback. Inspire en descendant, expire en tendant. 3 séries de 10 à 12 de chaque bras, repos 60 s.",
     variations: [
+      "extension triceps couché latéral à un haltère",
       "extension triceps couché latéral",
       "extension triceps allongé sur le côté",
       "side lying dumbbell triceps extension",
+      "side-lying single-arm dumbbell triceps extension",
       "lying one arm triceps extension latéral"
     ]
   },
@@ -6937,6 +6939,30 @@ export const exerciseDatabase = {
     isNew: true,
     description: "Debout dans le Smith, avant des pieds sur un step, barre sur les épaules. Tu laisses les talons descendre sous le step, puis tu montes sur la pointe sans plier les genoux. Le step sert l’amplitude, le rail guide la barre. La charge utile est souvent plus basse que sur le hip thrust ou les bulgares de la même séance. Ce n’est pas les mollets inversés Smith, où les orteils tirent vers le tibia, ni les mollets assis, ni les mollets haltères. Expire en montant. 3 séries de 10 à 15.",
     variations: ["smith calf raise", "mollets debout smith sur step"]
+  },
+
+  "bent-arm lateral dumbbell raise": {
+    name: "Bent-Arm Lateral Dumbbell Raise",
+    category: "Épaules",
+    primaryMuscles: ["Deltoïdes postérieurs"],
+    secondaryMuscles: ["Trapèzes moyens", "Trapèzes inférieurs", "Rhomboïdes", "Deltoïdes moyens", "Coiffe des rotateurs"],
+    equipment: "Haltères + Banc",
+    difficulty: 2,
+    isNew: true,
+    description: "Assis au bout d’un banc, pieds ancrés, buste penché jusqu’à être presque parallèle au sol, dos droit et nuque dans l’axe. Un haltère dans chaque main, coudes fléchis à environ 90°. Cet angle ne change pas. Tu écartes les coudes vers l’extérieur et vers le haut, jusqu’à l’horizontale, ou un peu au-dessus si les épaules restent basses. En haut, les avant-bras dessinent un W : tu marques une seconde en contractant l’arrière des épaules, puis tu redescends lentement. Le geste part des épaules. Le buste ne se redresse pas pour donner de l’élan, les épaules ne montent pas vers les oreilles, et les mains ne prennent pas le dessus sur les coudes. La charge reste légère : la trajectoire compte plus que les kilos. Ce n’est pas l’oiseau, où les bras restent presque tendus, ni l’oiseau penché debout, ni l’oiseau machine, poitrine contre le dossier, ni le face pull, ni un rowing. Inspire en descendant, expire en écartant. 3 séries de 12 à 15, repos 60 s.",
+    variations: ["bent-arm lateral dumbbell lateral raise", "bent arm lateral raise", "oiseau assis", "oiseau coudes fléchis", "oiseau en W", "seated bent over rear delt fly", "rear delt raise assis"]
+  },
+
+  "single-arm dumbbell lying triceps extension": {
+    name: "Single-Arm Dumbbell Lying Triceps Extension",
+    category: "Triceps",
+    primaryMuscles: ["Triceps brachial"],
+    secondaryMuscles: ["Chef long du triceps", "Anconé", "Stabilisateurs de l'épaule"],
+    equipment: "Haltère + Banc",
+    difficulty: 2,
+    isNew: true,
+    description: "Allongé sur le dos sur un banc, pieds au sol, un haltère dans une seule main, bras tendu au-dessus de l’épaule, paume vers l’intérieur. Le coude reste légèrement déverrouillé, les épaules calées sur le banc, le tronc gainé. L’autre bras peut rester sur le ventre ou sur le banc. Tu fléchis le coude pour amener l’haltère vers le côté de la tête, puis légèrement derrière, sans le laisser tomber. Seul l’avant-bras bouge : le haut du bras reste presque vertical et ne part pas largement sur le côté. Tu pousses vers le plafond en contractant le triceps, sans verrouiller le coude d’un coup. Le poignet reste neutre, le dos ne se cambre pas pour aider. Tu finis un bras avant de changer, ou tu alternes si la position reste propre. La charge passe près de la tête : elle reste contrôlable. Ce n’est pas l’extension couché à un haltère tenu à deux mains, ni les extensions triceps allongé à deux haltères, ni la barre au front, ni le side-lying single-arm dumbbell triceps extension, allongé sur le côté, ni le kickback. Inspire en descendant, expire en tendant. 3 séries de 10 à 12 de chaque bras, repos 60 s.",
+    variations: ["single arm dumbbell lying triceps extension", "extension triceps couché un bras", "lying one arm neutral triceps extension", "french press unilatéral couché"]
   }
 
 };

@@ -242,6 +242,7 @@ function describeExercise(exId, sessions, endYmd, getExerciseNameById, snapshot)
     current: { date: last.date, reps: last.reps, meanLast3: currentMean },
     habitual: habit,
     pr: prSession ? { date: prSession.date, reps: prReps } : null,
+    setLevel: setMedian != null ? { median: setMedian, sessions: setSessions.length, atLevel: atSet } : null,
     prAgeDays: prSession && endYmd ? daysBetweenYmd(prSession.date, endYmd) : null,
     spanDays: daysBetweenYmd(first.date, last.date),
     sessionsAtHabitual: atHabit,

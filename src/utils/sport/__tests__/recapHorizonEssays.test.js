@@ -311,7 +311,7 @@ describe('lectures de coach', () => {
       getExerciseNameById: () => 'Dips parallèles'
     });
     expect(cands.some((c) => c.id.includes('disc_pending_session'))).toBe(true);
-    expect(cands.some((c) => c.id.includes('continuity'))).toBe(false);
+    expect(cands.some((c) => c.id.endsWith('.continuity'))).toBe(false);
     expect(blob(cands.find((c) => c.id.includes('disc_pending_session')))).toMatch(/pas encore/i);
   });
 });

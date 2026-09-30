@@ -35,6 +35,7 @@ import {
   findExerciseSessions
 } from './recapInsightHelpers';
 import { buildComposedInterpretationPipeline } from './recapInterpretationPipeline';
+import { keepDistinctProofCards } from './recapCardKinship';
 import { semanticGroupFromCandidateId } from './insightSemanticThemes';
 import {
   applyNoveltyWeights,
@@ -1302,13 +1303,11 @@ export function selectBalancedInsightTexts(candidates, horizon, limit, signature
 }
 
 function stripTitleEcho(title, body) {
-  const t = String(title || '').trim();
-  let b = String(body || '').trim();
-  if (!t || !b) return b;
-  const head = t.toLowerCase().slice(0, Math.min(32, t.length));
-  if (b.toLowerCase().startsWith(head)) {
-    const cut = b.indexOf('. ');
-    if (cut > 12 && cut < 220) b = b.slice(cut + 2).trim();
+  const t = String(title || '').trim().replace(/…$/, '').trim();
+  const b = String(body || '').trim();
+  if (!t || !b || t.length < 24) return b;
+  if (b.toLowerCase().startsWith(t.toLowerCase())) {
+    return b.slice(t.length).replace(/^[\s.…]+/, '').trim();
   }
   return b;
 }
@@ -1446,11 +1445,16 @@ export function buildAdaptiveRecapInsights(opts = {}) {
     spanDays = 365;
   }
   const voiceKey = periodVoice(period, spanDays).key;
+  const distinctCandidates = keepDistinctProofCards(weightedCandidates, {
+    period,
+    window,
+    metricDates: Object.keys(mergedGarmin?.dailyMetrics || {})
+  });
   const caps = columnCapsForCandidates(weightedCandidates, {
     voiceKey,
     detectedKinds: (composed.periodDiscoveries?.all || []).map((d) => d.kind)
   });
-  const pickedColumns = selectNarrativeColumns(weightedCandidates, caps, signature);
+  const pickedColumns = selectNarrativeColumns(distinctCandidates, caps, signature);
   const pickedShort = pickedColumns.short;
   const pickedMedium = pickedColumns.medium;
   const pickedLong = pickedColumns.long;

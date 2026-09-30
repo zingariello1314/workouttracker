@@ -80,7 +80,28 @@ const CLAIM_TABLE = {
   disc_sleep_reference: { topic: 'sommeil.repere', sense: 'relation' },
   disc_sleep_weekend: { topic: 'sommeil.weekend', sense: 'relation' },
   disc_sleep_tolerance: { topic: 'sommeil.tolerance', sense: 'relation' },
-  disc_sleep_drift: { topic: 'sommeil.rythme', sense: 'transformation' }
+  disc_sleep_drift: { topic: 'sommeil.rythme', sense: 'transformation' },
+  disc_th_concentration_now: { topic: 'volume.concentration', sense: 'fact' },
+  disc_th_concentration_trajectory: { topic: 'volume.concentration', sense: 'relation' },
+  disc_th_concentration_journey: { topic: 'volume.concentration', sense: 'transformation' },
+  disc_th_rhythm_now: { topic: 'volume.rythme', sense: 'fact' },
+  disc_th_rhythm_trajectory: { topic: 'volume.rythme', sense: 'relation' },
+  disc_th_rhythm_journey: { topic: 'volume.rythme', sense: 'transformation' },
+  disc_th_composition_now: { topic: 'mix.composition', sense: 'fact' },
+  disc_th_composition_trajectory: { topic: 'mix.composition', sense: 'relation' },
+  disc_th_composition_journey: { topic: 'mix.composition', sense: 'transformation' },
+  disc_th_repertoire_now: { topic: 'repertoire', sense: 'fact' },
+  disc_th_repertoire_trajectory: { topic: 'repertoire', sense: 'relation' },
+  disc_th_repertoire_journey: { topic: 'repertoire', sense: 'transformation' },
+  disc_th_pushPull_now: { topic: 'mix.poussee', sense: 'fact' },
+  disc_th_pushPull_trajectory: { topic: 'mix.poussee', sense: 'relation' },
+  disc_th_pushPull_journey: { topic: 'mix.poussee', sense: 'transformation' },
+  disc_th_series_now: { topic: 'exercice.serie', sense: 'fact' },
+  disc_th_series_trajectory: { topic: 'exercice.serie', sense: 'relation' },
+  disc_th_series_journey: { topic: 'exercice.serie', sense: 'transformation' },
+  disc_th_continuity_now: { topic: 'fenetre.continuite', sense: 'fact' },
+  disc_th_continuity_trajectory: { topic: 'fenetre.continuite', sense: 'relation' },
+  disc_th_continuity_journey: { topic: 'fenetre.continuite', sense: 'transformation' }
 };
 
 const SLEEP_DOSE = new Set([

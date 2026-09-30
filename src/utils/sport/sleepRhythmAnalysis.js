@@ -272,12 +272,16 @@ function rhythmFact(profile) {
       ? ` La nuit du ${formatYmd(atypical.ymd)} s'écarte d'au moins 1 h 30 de ce placement.`
       : '';
 
+  const durationBit =
+    profile.duration?.median != null
+      ? `, pour une durée autour de ${formatClockFr(profile.duration.median).replace(/^0 h /, '')}`
+      : '';
   if (level >= 3) {
     return card(
       'disc_sleep_rhythm_habit',
       'now',
       'sleep_rhythm',
-      `Rythme habituel récent : ${placement}${mid}. ${extra}${atypicalBit}`.replace(/\s+/g, ' ').trim(),
+      `Rythme habituel récent : ${placement}${mid}${durationBit}. La durée et le placement sont deux lectures distinctes : une nuit longue peut rester très tardive.${extra}${atypicalBit}`.replace(/\s+/g, ' ').trim(),
       `${n} nuits · ${profile.spanDays} j`,
       band,
       78
@@ -299,11 +303,13 @@ function rhythmFact(profile) {
     );
   }
   const one = clocks[0];
+  const oneDuration =
+    one.durationMin != null ? `, soit environ ${formatClockFr(one.durationMin).replace(/^0 h /, '')}` : '';
   return card(
     'disc_sleep_rhythm_obs',
     'now',
     'sleep_rhythm',
-    `Observation : le ${formatYmd(one.ymd)}, coucher à ${formatClockFr(one.bedMin)}, lever à ${formatClockFr(one.wakeMin)}.`,
+    `Observation : le ${formatYmd(one.ymd)}, coucher à ${formatClockFr(one.bedMin)}, lever à ${formatClockFr(one.wakeMin)}${oneDuration}. Une seule nuit ne suffit pas à décrire un rythme.`,
     '1 nuit',
     { ...band, n: 1 },
     60
@@ -318,7 +324,7 @@ function regularityCard(profile) {
       'disc_sleep_regularity',
       'now',
       'sleep_regularity',
-      `Régularité : tes couchers restent groupés, avec un écart typique d'environ ${Math.round(iqrMin)} min.`,
+      `Régularité : tes couchers restent groupés, avec un écart typique d'environ ${Math.round(iqrMin)} min. L'heure de début de nuit varie peu ; cela ne dit pas, à soi seul, si ce placement est tôt ou tard.`,
       `IQR coucher ${Math.round(iqrMin)} min`,
       { sleepClockBand: profile.sleepClockBand, axis: 'bed' },
       72
@@ -329,7 +335,7 @@ function regularityCard(profile) {
       'disc_sleep_regularity',
       'now',
       'sleep_regularity',
-      `Régularité : tes couchers se dispersent, avec un écart typique d'environ ${Math.round(iqrMin)} min.`,
+      `Tes heures de coucher restent dispersées, avec un écart typique d'environ ${Math.round(iqrMin)} min. Le rythme ne se résume donc pas à une heure habituelle unique : l'heure à laquelle la nuit commence change fortement d'un jour à l'autre. Le placement, tôt ou tard, est une autre question.`,
       `IQR coucher ${Math.round(iqrMin)} min`,
       { sleepClockBand: profile.sleepClockBand, axis: 'bed' },
       72
@@ -348,7 +354,7 @@ function referenceCard(profile) {
     very
       ? 'Repère général : ce placement est très tardif par rapport à une plage classique de coucher (22 h 30–0 h 30) ou de milieu de nuit (2 h 00–4 h 00). Ce repère ne dit pas que c’est un problème.'
       : 'Repère général : ce placement est plus tardif qu’une plage classique de coucher (22 h 30–0 h 30) ou de milieu de nuit (2 h 00–4 h 00). Ce repère ne dit pas que c’est un problème.',
-    profile.reference,
+    very ? 'placement très tardif' : 'placement plus tardif',
     { sleepClockBand: profile.sleepClockBand, level: profile.reference },
     66
   );
@@ -369,7 +375,7 @@ function weekendCard(profile) {
     'trajectory',
     'sleep_weekend',
     `Le week-end, c’est ${names.join(' et ')} qui se décale, d’environ ${gap} min par rapport aux nuits de semaine.`,
-    weekend.axes.join('+'),
+    names.join(' et '),
     {
       sleepClockBand: profile.sleepClockBand,
       axis: weekend.axes.join('+'),

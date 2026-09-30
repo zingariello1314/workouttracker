@@ -913,15 +913,18 @@ export function buildHorizonEssayCandidates(opts = {}) {
   }
 
   const prStory = journey?.narratives?.prVsLevel;
-  if (prStory && !progressRows.some((e) => e.exerciseId === prStory.exerciseId)) {
+  if (
+    prStory?.setLevel &&
+    !progressRows.some((e) => e.exerciseId === prStory.exerciseId)
+  ) {
     long(
       'journey_pr_vs_level',
-      `Ton record de ${prStory.pr.reps} reps reste éloigné de ce que tu reproduis`,
-      `Le record de ${prStory.name} (${prStory.pr.reps} reps, le ${formatDayFr(prStory.pr.date, true)}${
+      `Ta meilleure série de ${prStory.pr.reps} reps reste éloignée de la série que tu reproduis`,
+      `La meilleure série observée de ${prStory.name} est de ${prStory.pr.reps} reps, le ${formatDayFr(prStory.pr.date, true)}${
         prStory.prAgeDays != null ? `, il y a ${prStory.prAgeDays} j.` : ''
-      }) indique le plafond d'un jour. Sur ${prStory.sessionsAtHabitual} séances comparables, le niveau habituel reste autour de ${Math.round(
-        prStory.habitual.median
-      )}–${Math.round(prStory.habitual.mean)} reps.`,
+      }. Sur ${prStory.setLevel.sessions} séances avec des séries saisies, le niveau de série habituel reste autour de ${Math.round(
+        prStory.setLevel.median
+      )} reps. Ce n'est pas le total de la séance, et ce n'est pas un record déclaré.`,
       `${prStory.sessions} séances observées`,
       0.9,
       {

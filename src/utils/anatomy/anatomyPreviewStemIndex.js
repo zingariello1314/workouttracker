@@ -14,7 +14,8 @@ function baseUrl() {
 }
 
 export function getAnatomyPreviewIndexUrl() {
-  return `${baseUrl()}/anatomy-previews/index.json`;
+  // force-cache ignore un index déjà vu : incrémenter quand un stem est ajouté.
+  return `${baseUrl()}/anatomy-previews/index.json?v=526`;
 }
 
 /** @returns {Promise<Set<string>>} */

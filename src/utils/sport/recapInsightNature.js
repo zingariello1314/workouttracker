@@ -26,31 +26,33 @@ export const NATURE_TO_HORIZON = {
  * Plafonds par famille de signal (sport / sommeil / jalon).
  * Un maximum, jamais un plancher : slot vide si le signal n'est pas publiable.
  */
+const COLUMN_TARGET = { sport: 8, sleep: 2, milestone: 1 };
+
 export const SIGNAL_FAMILY_CAPS = {
   today: {
-    now: { sport: 5, sleep: 2, milestone: 1 },
-    trajectory: { sport: 5, sleep: 2, milestone: 1 },
-    journey: { sport: 4, sleep: 2, milestone: 1 }
+    now: { ...COLUMN_TARGET },
+    trajectory: { ...COLUMN_TARGET },
+    journey: { ...COLUMN_TARGET }
   },
   week: {
-    now: { sport: 5, sleep: 2, milestone: 1 },
-    trajectory: { sport: 5, sleep: 2, milestone: 1 },
-    journey: { sport: 4, sleep: 2, milestone: 1 }
+    now: { ...COLUMN_TARGET },
+    trajectory: { ...COLUMN_TARGET },
+    journey: { ...COLUMN_TARGET }
   },
   month: {
-    now: { sport: 6, sleep: 2, milestone: 1 },
-    trajectory: { sport: 6, sleep: 2, milestone: 1 },
-    journey: { sport: 5, sleep: 2, milestone: 1 }
+    now: { ...COLUMN_TARGET },
+    trajectory: { ...COLUMN_TARGET },
+    journey: { ...COLUMN_TARGET }
   },
   long: {
-    now: { sport: 6, sleep: 2, milestone: 1 },
-    trajectory: { sport: 6, sleep: 2, milestone: 1 },
-    journey: { sport: 5, sleep: 2, milestone: 1 }
+    now: { ...COLUMN_TARGET },
+    trajectory: { ...COLUMN_TARGET },
+    journey: { ...COLUMN_TARGET }
   },
   year: {
-    now: { sport: 6, sleep: 2, milestone: 1 },
-    trajectory: { sport: 6, sleep: 2, milestone: 1 },
-    journey: { sport: 5, sleep: 2, milestone: 1 }
+    now: { ...COLUMN_TARGET },
+    trajectory: { ...COLUMN_TARGET },
+    journey: { ...COLUMN_TARGET }
   }
 };
 
@@ -71,8 +73,8 @@ export function angleCapsFromFamilies(voiceKey, { hasMilestone = false } = {}) {
 }
 
 /** Totaux UI semaine sans jalon — dérivés des familles. */
-export const NATURE_COLUMN_CAPS = { short: 7, medium: 7, long: 6 };
-export const NATURE_COLUMN_CAPS_WITH_MILESTONES = { short: 8, medium: 8, long: 7 };
+export const NATURE_COLUMN_CAPS = { short: 10, medium: 10, long: 10 };
+export const NATURE_COLUMN_CAPS_WITH_MILESTONES = { short: 11, medium: 11, long: 11 };
 
 /**
  * @param {object[]} [candidates]
@@ -168,6 +170,27 @@ export const KIND_NATURE = {
   disc_sleep_weekend: 'trajectory',
   disc_sleep_tolerance: 'trajectory',
   disc_sleep_drift: 'journey',
+  disc_th_concentration_now: 'now',
+  disc_th_concentration_trajectory: 'trajectory',
+  disc_th_concentration_journey: 'journey',
+  disc_th_rhythm_now: 'now',
+  disc_th_rhythm_trajectory: 'trajectory',
+  disc_th_rhythm_journey: 'journey',
+  disc_th_composition_now: 'now',
+  disc_th_composition_trajectory: 'trajectory',
+  disc_th_composition_journey: 'journey',
+  disc_th_repertoire_now: 'now',
+  disc_th_repertoire_trajectory: 'trajectory',
+  disc_th_repertoire_journey: 'journey',
+  disc_th_pushPull_now: 'now',
+  disc_th_pushPull_trajectory: 'trajectory',
+  disc_th_pushPull_journey: 'journey',
+  disc_th_series_now: 'now',
+  disc_th_series_trajectory: 'trajectory',
+  disc_th_series_journey: 'journey',
+  disc_th_continuity_now: 'now',
+  disc_th_continuity_trajectory: 'trajectory',
+  disc_th_continuity_journey: 'journey',
   disc_rest_assoc: 'trajectory',
   disc_muscle_share_shift: 'trajectory',
   disc_ratio_structure: 'trajectory',

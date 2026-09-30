@@ -40,7 +40,6 @@ const REVIEWED_EXISTING_VIDEOS = [
   ['videos muscles/curl concentration assis.mp4', 'db:curl concentration'],
   ['troisieme dossier gif/biceps/dumbbell-concentration-curl.gif', ['db:curl concentration']],
   ['troisieme dossier gif/triceps/dumbbell-lying-triceps-extension.gif', ['db:extensions triceps allongé', 'db:extension triceps couché à un haltère']],
-  ['troisieme dossier gif/triceps/dumbbell-lying-one-arm-pronated-triceps-extension.gif', ['db:extension triceps couché latéral à un haltère']],
   ['videos muscles/developpé couché incliné a la barre .mp4', 'db:développé incliné'],
   ['videos muscles/fente avec halteres.mp4', 'db:fentes'],
   ['videos muscles/leg press 2.mp4', 'db:presse à cuisses'],
