@@ -2,6 +2,8 @@
 
 Écrit le 29 septembre 2026. Le quota Originkit (10 téléchargements par jour) était épuisé vers 3 h 40. Aucun de ces onze composants n’est dans le dépôt : ni le fichier source, ni le fond dans l’application.
 
+Nouvel essai le 30 septembre 2026 vers 0 h 20 : le quota du nouveau créneau était déjà plein (10/10, réinitialisation annoncée dans environ 20 h). La commande a été lancée, aucun fichier n’a été écrit. Ne pas inventer les visuels en attendant.
+
 Ne pas inventer un shader de remplacement. Lancer la commande indiquée, puis porter le vrai source dans un worker, comme les fonds déjà en place.
 
 Ne pas écrire la clé API dans un fichier. L’exporter seulement dans le shell (`ORIGINKIT_API_KEY`), lancer la commande, puis la retirer. Ne pas la committer.

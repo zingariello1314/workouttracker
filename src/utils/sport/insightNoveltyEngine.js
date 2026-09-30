@@ -12,6 +12,10 @@ import {
   semanticGroupFromCandidateId,
   semanticGroupRecentPenalty
 } from './insightSemanticThemes';
+import { claimFromCandidate, sameClaimState } from './recapNarrativeClaims';
+
+/** Même ordre de grandeur qu'un kind déjà revu : l'idée ne gagne plus contre une autre. */
+const CLAIM_REPEAT_PENALTY = 40;
 
 /** Extrait un thème stable depuis l'id candidat. */
 export function themeFromCandidateId(id) {
@@ -65,6 +69,16 @@ export function computeCandidateNovelty(candidate, history, now = Date.now()) {
   if (semanticPenalty > 0) {
     penalty += semanticPenalty;
     novelty -= semanticPenalty / 100;
+  }
+
+  const claim = claimFromCandidate(candidate);
+  const claimRepeated = (history?.entries || []).some((entry) => {
+    if (!entry?.claim || entry.seenAt >= dayStart) return false;
+    return sameClaimState(entry.claim, claim);
+  });
+  if (claimRepeated) {
+    penalty += CLAIM_REPEAT_PENALTY;
+    novelty -= 0.4;
   }
 
   if (candidate?.pillar === 'interpretation') {

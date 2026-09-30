@@ -1301,7 +1301,9 @@ function detectDiscoveries(cmp, extras = {}) {
   if (d30.trainingDays >= 6 && p.trainingDays >= 1 && p.spanDays >= 1) {
     const recentPct = share(p.trainingDays, p.spanDays);
     const monthPct = share(d30.trainingDays, 30);
-    if (recentPct != null && monthPct != null) {
+    // La fenêtre de 30 jours est déjà d30 : la comparer à elle-même ne dit rien.
+    const comparesItself = p.spanDays === 30 && p.trainingDays === d30.trainingDays;
+    if (recentPct != null && monthPct != null && !comparesItself) {
       out.push(
         discovery({
           kind: 'disc_freq_continuity',

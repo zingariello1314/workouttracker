@@ -159,11 +159,13 @@ export function detectTrainingRelations(state, eventBundle = null, meta = {}) {
 
   const sla = features.sessionAlignment;
   const programPct = features.programCompletionPct;
-  if (programPct != null && programPct < 72) {
+  // 0 % et alignement nul : rien n'a été coché. Ce n'est pas une séance raccourcie.
+  const nothingChecked = programPct <= 0 && (sla == null || sla <= 0);
+  if (programPct != null && programPct < 72 && !nothingChecked) {
     const missedDays =
       sla != null && sla >= 68 && (freqDown || (features.sessions28d ?? 99) <= (features.prevSessions28d ?? 0) * 0.75);
     const incompleteSessions =
-      sla != null && sla < 58 && (features.sessions28d ?? 0) >= 3;
+      sla != null && sla > 0 && sla < 58 && (features.sessions28d ?? 0) >= 3;
     const gapType = missedDays
       ? 'program_gap_adherence'
       : incompleteSessions

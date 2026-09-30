@@ -9,7 +9,8 @@ const RECENT_MS = 14 * 86400000;
 const STALE_MS = 60 * 86400000;
 
 /**
- * @typedef {{ id: string, theme: string, seenAt: number, count: number }} InsightHistoryEntry
+ * @typedef {{ topic?: string|null, sense?: string, stateKey?: string }} NarrativeClaim
+ * @typedef {{ id: string, theme: string, seenAt: number, count: number, claim?: NarrativeClaim }} InsightHistoryEntry
  * @typedef {{ entries: InsightHistoryEntry[], version: number }} InsightHistory
  */
 
@@ -29,7 +30,16 @@ function safeParse(raw) {
           id: String(e.id),
           theme: String(e.theme),
           seenAt: Number(e.seenAt) || 0,
-          count: Math.max(1, Number(e.count) || 1)
+          count: Math.max(1, Number(e.count) || 1),
+          ...(e.claim?.topic
+            ? {
+                claim: {
+                  topic: String(e.claim.topic),
+                  sense: String(e.claim.sense || ''),
+                  stateKey: String(e.claim.stateKey || 'present')
+                }
+              }
+            : {})
         }))
     };
   } catch {
@@ -69,22 +79,34 @@ export function pruneInsightHistory(history, now = Date.now()) {
   return { version: 1, entries };
 }
 
+function claimPayload(claim) {
+  if (!claim?.topic) return {};
+  return {
+    claim: {
+      topic: String(claim.topic),
+      sense: String(claim.sense || ''),
+      stateKey: String(claim.stateKey || 'present')
+    }
+  };
+}
+
 /**
  * @param {InsightHistory} history
- * @param {{ id: string, theme: string }[]} items
+ * @param {{ id: string, theme: string, claim?: NarrativeClaim }[]} items
  * @returns {InsightHistory}
  */
 export function recordShownInsights(history, items, now = Date.now()) {
   const base = pruneInsightHistory(history || emptyInsightHistory(), now);
   const map = new Map(base.entries.map((e) => [e.id, { ...e }]));
 
-  (items || []).forEach(({ id, theme }) => {
+  (items || []).forEach(({ id, theme, claim }) => {
     if (!id || !theme) return;
     const prev = map.get(id);
+    const stored = claimPayload(claim);
     if (prev) {
-      map.set(id, { ...prev, seenAt: now, count: prev.count + 1, theme });
+      map.set(id, { ...prev, seenAt: now, count: prev.count + 1, theme, ...stored });
     } else {
-      map.set(id, { id, theme, seenAt: now, count: 1 });
+      map.set(id, { id, theme, seenAt: now, count: 1, ...stored });
     }
   });
 

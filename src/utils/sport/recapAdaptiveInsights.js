@@ -50,11 +50,14 @@ import {
 } from './insightNoveltyStore';
 
 import { applyNatureWeights, columnCapsForCandidates, rewardToneForKind } from './recapInsightNature';
+import { claimFromCandidate } from './recapNarrativeClaims';
 import { mergeGarminDataForRecap } from './recapGarminMerge';
 import { periodVoice } from './recapPeriodDiscoveries';
 import { buildSpanStoryCandidates } from './recapSpanStory';
 
 const MIN_COLUMN_WEIGHT = 32;
+/** Deux cartes à cet écart ou moins sont départagées par la rotation. Au-delà, le score brut gagne. */
+const ROTATION_BAND = 3;
 
 function inWindow(dateStr, window) {
   return dateStr && isDateInRecapWindow(dateStr, window);
@@ -1159,55 +1162,129 @@ function isRichColumnReading(candidate) {
   return id.includes('relation.reading.') || id.includes('.disc_');
 }
 
-export function selectBalancedCandidates(candidates, horizon, limit, signature, now = Date.now()) {
-  const pool = candidates.filter((c) => c.horizon === horizon && c.text);
-  const picked = [];
-  const usedPillars = new Set();
-  const usedIds = new Set();
-  const usedGroups = new Set();
-  const richPool = pool.some(isRichColumnReading);
-  const dayKey = localDayKey(now);
+function rotationJitter(candidate, dayKey, signature) {
+  let jitter = (hashSig(`${signature}:${candidate.id}`) % 17) * 0.3;
+  if (isRichColumnReading(candidate)) jitter += hashSig(`${dayKey}:${candidate.id}`) % 13;
+  return jitter;
+}
 
-  while (picked.length < limit && pool.length > 0) {
-    let best = null;
-    let bestScore = -Infinity;
-    for (const c of pool) {
-      if (usedIds.has(c.id)) continue;
-      const group = semanticGroupFromCandidateId(c.id);
-      let score = c.weight;
-      if (String(c.id).includes('.disc_')) score += 14;
-      if (isRichColumnReading(c)) score += hashSig(`${dayKey}:${c.id}`) % 13;
-      else if (richPool) score -= 8;
-      if (usedGroups.has(group) && group !== 'misc') score -= 16;
-      if (usedPillars.has(c.pillar)) {
-        const samePillarBest = picked.find((p) => p.pillar === c.pillar);
-        if (samePillarBest && c.weight - samePillarBest.weight < 14) score -= 14;
-        else score -= 8;
-      }
-      if (c.pillar === 'legacy') {
-        if (picked.some((p) => p.pillar === 'legacy')) score -= 22;
-        if (picked.length >= 2) score -= 10;
-      }
-      if (c.pillar === 'interpretation' && picked.some((p) => p.pillar === 'interpretation')) {
-        score -= 3;
-      }
-      score += (hashSig(`${signature}:${c.id}`) % 17) * 0.3;
-      if (score > bestScore) {
-        bestScore = score;
-        best = c;
+function columnBaseScore(candidate, horizonState, richPool) {
+  const group = semanticGroupFromCandidateId(candidate.id);
+  let score = candidate.weight || 0;
+  if (String(candidate.id).includes('.disc_')) score += 14;
+  if (!isRichColumnReading(candidate) && richPool) score -= 8;
+  if (horizonState.usedGroups.has(group) && group !== 'misc') score -= 16;
+  if (horizonState.usedPillars.has(candidate.pillar)) {
+    const samePillarBest = horizonState.picked.find((p) => p.pillar === candidate.pillar);
+    if (samePillarBest && candidate.weight - samePillarBest.weight < 14) score -= 14;
+    else score -= 8;
+  }
+  if (candidate.pillar === 'legacy') {
+    if (horizonState.picked.some((p) => p.pillar === 'legacy')) score -= 22;
+    if (horizonState.picked.length >= 2) score -= 10;
+  }
+  if (
+    candidate.pillar === 'interpretation' &&
+    horizonState.picked.some((p) => p.pillar === 'interpretation')
+  ) {
+    score -= 3;
+  }
+  return score;
+}
+
+function claimBlocks(candidate, registry) {
+  const claim = claimFromCandidate(candidate);
+  if (!claim.topic) return false;
+  return registry.some((row) => row.topic === claim.topic && row.sense === claim.sense);
+}
+
+function rememberClaim(candidate, registry) {
+  const claim = claimFromCandidate(candidate);
+  if (claim.topic) registry.push({ topic: claim.topic, sense: claim.sense });
+}
+
+/**
+ * Un seul passage pour les colonnes demandées. Le registre de claims est partagé :
+ * même sujet + même sens → une seule carte, quel que soit l'horizon.
+ * Un sens plus profond du même sujet reste admissible.
+ *
+ * @param {Array} candidates
+ * @param {Record<string, number>} limits
+ * @param {string} signature
+ * @param {number} now
+ * @param {{ topic: string, sense: string }[]} registry
+ */
+export function selectNarrativeColumns(candidates, limits, signature, now = Date.now(), registry = null) {
+  const shared = registry || [];
+  const dayKey = localDayKey(now);
+  const horizons = Object.keys(limits);
+  const state = {};
+  horizons.forEach((horizon) => {
+    const pool = (candidates || []).filter((c) => c.horizon === horizon && c.text);
+    state[horizon] = {
+      pool,
+      picked: [],
+      usedGroups: new Set(),
+      usedPillars: new Set(),
+      richPool: pool.some(isRichColumnReading),
+      limit: limits[horizon]
+    };
+  });
+  const usedIds = new Set();
+
+  const eligible = (horizon) => {
+    const row = state[horizon];
+    if (!row || row.picked.length >= row.limit) return [];
+    return row.pool.filter((c) => !usedIds.has(c.id) && !claimBlocks(c, shared));
+  };
+
+  while (horizons.some((horizon) => eligible(horizon).length > 0)) {
+    const scored = [];
+    horizons.forEach((horizon) => {
+      eligible(horizon).forEach((c) => {
+        scored.push({
+          c,
+          horizon,
+          base: columnBaseScore(c, state[horizon], state[horizon].richPool)
+        });
+      });
+    });
+    if (!scored.length) break;
+    scored.sort((a, b) => b.base - a.base || String(a.c.id).localeCompare(String(b.c.id)));
+    const top = scored[0];
+    const second = scored[1];
+    let choice = top;
+    if (second && top.base - second.base <= ROTATION_BAND) {
+      const band = scored.filter((row) => top.base - row.base <= ROTATION_BAND);
+      const sameHorizon = band.every((row) => row.horizon === top.horizon);
+      if (sameHorizon) {
+        band.forEach((row) => {
+          row.final = row.base + rotationJitter(row.c, dayKey, signature);
+        });
+        band.sort((a, b) => b.final - a.final || String(a.c.id).localeCompare(String(b.c.id)));
+        choice = band[0];
       }
     }
-    if (!best) break;
-    if (bestScore < MIN_COLUMN_WEIGHT) {
-      break;
-    }
-    picked.push(best);
-    usedIds.add(best.id);
-    usedPillars.add(best.pillar);
-    usedGroups.add(semanticGroupFromCandidateId(best.id));
+    if (choice.base < MIN_COLUMN_WEIGHT) break;
+
+    const horizonState = state[choice.horizon];
+    horizonState.picked.push(choice.c);
+    usedIds.add(choice.c.id);
+    horizonState.usedPillars.add(choice.c.pillar);
+    horizonState.usedGroups.add(semanticGroupFromCandidateId(choice.c.id));
+    rememberClaim(choice.c, shared);
   }
 
-  return picked;
+  const out = {};
+  horizons.forEach((horizon) => {
+    out[horizon] = state[horizon].picked;
+  });
+  return out;
+}
+
+export function selectBalancedCandidates(candidates, horizon, limit, signature, now = Date.now(), registry = null) {
+  const picked = selectNarrativeColumns(candidates, { [horizon]: limit }, signature, now, registry);
+  return picked[horizon] || [];
 }
 
 export function selectBalancedInsightTexts(candidates, horizon, limit, signature) {
@@ -1363,31 +1440,21 @@ export function buildAdaptiveRecapInsights(opts = {}) {
     voiceKey,
     detectedKinds: (composed.periodDiscoveries?.all || []).map((d) => d.kind)
   });
-  const pickedShort = selectBalancedCandidates(
-    weightedCandidates,
-    'short',
-    caps.short,
-    signature
-  );
-  const pickedMedium = selectBalancedCandidates(
-    weightedCandidates,
-    'medium',
-    caps.medium,
-    signature
-  );
-  const pickedLong = selectBalancedCandidates(
-    weightedCandidates,
-    'long',
-    caps.long,
-    signature
-  );
+  const pickedColumns = selectNarrativeColumns(weightedCandidates, caps, signature);
+  const pickedShort = pickedColumns.short;
+  const pickedMedium = pickedColumns.medium;
+  const pickedLong = pickedColumns.long;
   const allPicked = [...pickedShort, ...pickedMedium, ...pickedLong];
 
   const prevSig = loadLastInsightSignature();
   if (prevSig !== signature && allPicked.length > 0) {
     const nextHistory = recordShownInsights(
       insightHistory,
-      allPicked.map((c) => ({ id: c.id, theme: c.noveltyTheme || themeFromCandidateId(c.id) }))
+      allPicked.map((c) => ({
+        id: c.id,
+        theme: c.noveltyTheme || themeFromCandidateId(c.id),
+        claim: claimFromCandidate(c)
+      }))
     );
     saveInsightHistory(nextHistory);
     saveLastInsightSignature(signature);

@@ -656,4 +656,29 @@ describe('recapPeriodDiscoveries', () => {
     });
     expect(week.selected.some((d) => String(d.kind).startsWith('disc_sleep_'))).toBe(true);
   });
+
+  it('ne compare pas la fenêtre de 30 jours à elle-même', () => {
+    const snapshot = { reps: {}, checkedExercises: {} };
+    const end = '2026-09-30';
+    for (let i = 0; i < 6; i += 1) {
+      addCheck(snapshot, DateHelper.addDays(end, -i * 4), 501, 40);
+    }
+    const month = buildPeriodDiscoveryBundle({
+      snapshot,
+      window: { start: '2026-09-01', end },
+      period: '30d',
+      getExerciseNameById: getName
+    });
+    expect(month.all.some((d) => d.kind === 'disc_freq_continuity')).toBe(false);
+
+    const quarter = buildPeriodDiscoveryBundle({
+      snapshot,
+      window: { start: '2026-07-01', end },
+      period: '3m',
+      getExerciseNameById: getName
+    });
+    const continuity = quarter.all.find((d) => d.kind === 'disc_freq_continuity');
+    expect(continuity).toBeTruthy();
+    expect(continuity.evidence).not.toMatch(/^6\/30 j\. · 6\/30 j\.$/);
+  });
 });

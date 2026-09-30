@@ -148,6 +148,26 @@ describe('relations screenshot', () => {
       }
     });
     expect(incomplete.some((r) => r.type === 'program_gap_completion')).toBe(true);
+
+    const emptyLog = detectTrainingRelations({
+      load: axis('stable', 'stable', 0.7, []),
+      performance: axis('stable', 'stable', 0.65, []),
+      recovery: axis('sufficient', 'stable', 0.6, []),
+      fatigue: axis('low', 'stable', 0.5, []),
+      adherence: axis('low', 'unknown', 0.7, []),
+      programResponse: axis('unknown', 'unknown', 0.5, []),
+      lifePhase: null,
+      context: {},
+      features: {
+        volumeDeltaPct: 0,
+        programCompletionPct: 0,
+        sessionAlignment: 0,
+        sessions28d: 8,
+        prevSessions28d: 8,
+        frequencyDeltaPct: 0
+      }
+    });
+    expect(emptyLog.some((r) => String(r.type).startsWith('program_gap_'))).toBe(false);
   });
 
   it('émet un écart programme même sans alignement séance', () => {

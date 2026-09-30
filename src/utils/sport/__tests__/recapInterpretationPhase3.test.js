@@ -92,14 +92,21 @@ describe('insightSemanticThemes', () => {
 
   it('pénalise un groupe sémantique déjà montré', () => {
     const now = Date.now();
+    const yesterday = now - 26 * 60 * 60 * 1000;
     let history = emptyInsightHistory();
     history = recordShownInsights(
       history,
       [{ id: 'relation.adaptation_success', theme: 'adaptation_success' }],
-      now
+      yesterday
     );
     const penalty = semanticGroupRecentPenalty(history, 'relation.adaptation_under_load', now);
     expect(penalty).toBeGreaterThan(0);
+    const sameDay = recordShownInsights(
+      emptyInsightHistory(),
+      [{ id: 'relation.adaptation_success', theme: 'adaptation_success' }],
+      now
+    );
+    expect(semanticGroupRecentPenalty(sameDay, 'relation.adaptation_under_load', now)).toBe(0);
   });
 });
 
