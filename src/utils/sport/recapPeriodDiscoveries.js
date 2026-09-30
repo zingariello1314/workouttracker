@@ -29,6 +29,7 @@ import { formatRateFr } from './athleteTrainingIdentity';
 import { formatDayFr, daysBetweenYmd } from './recapTrainingTimeline';
 import { themeCountBeforeLocalDay } from './insightNoveltyStore';
 import { comparableWeeklyRates, SIGNAL_FAMILY_CAPS, signalFamilyOfKind } from './recapInsightNature';
+import { buildSleepRhythmDiscoveries } from './sleepRhythmAnalysis';
 import {
   buildExerciseBaselines,
   buildSessionCatalog,
@@ -2177,37 +2178,32 @@ function detectDiscoveries(cmp, extras = {}) {
   const runKm = Number(p.runningKm) || 0;
   const runMin = Number(p.runningMinutes) || 0;
   const prevKm = Number(prev30?.runningKm) || 0;
-  const prevMin = Number(prev30?.runningMinutes) || 0;
   if ((runKm >= 1.5 || runMin >= 15) && p.totalReps >= 80) {
-    const strengthMin = Number(p.minutes) || 0;
     const kmPct = prevKm >= 1.5 ? pctChange(runKm, prevKm) : null;
     const repsPct = prev30?.totalReps >= 80 ? pctChange(p.totalReps, prev30.totalReps) : null;
     let read = 'Course et renforcement coexistent sur la période : ce n’est pas un bloc cardio isolé du reste de l’entraînement.';
     if (kmPct != null && repsPct != null && kmPct < -12 && repsPct > 8) {
-      read = `Le volume de course recule (${fmtSignedPct(kmPct)}) tandis que le renforcement augmente (${fmtSignedPct(repsPct)}) : le mois n'est pas plus inactif, il est plus musclé.`;
+      read = `Le volume de course recule (${fmtSignedPct(kmPct)}) tandis que les reps de renforcement augmentent (${fmtSignedPct(repsPct)}).`;
     } else if (kmPct != null && repsPct != null && kmPct > 12 && repsPct < -8) {
-      read = `La course augmente (${fmtSignedPct(kmPct)}) alors que les reps de renforcement reculent (${fmtSignedPct(repsPct)}) : le cardio prend une place plus grande dans l'exposition totale.`;
+      read = `La course augmente (${fmtSignedPct(kmPct)}) alors que les reps de renforcement reculent (${fmtSignedPct(repsPct)}).`;
     } else if (kmPct == null && prevKm < 1) {
       read = 'La course réapparaît à côté du renforcement, au lieu de rester un compartiment vide.';
     }
-    const timeBit =
-      strengthMin >= 20 && runMin >= 10
-        ? ` Tu cumules ${formatDurationFr(runMin)} de course et ${formatDurationFr(strengthMin)} d'exercices de renforcement (${fmtPct((runMin / (runMin + strengthMin)) * 100)} du temps d'activité identifié en course).`
-        : '';
+    const runClock = runMin >= 10 ? ` en ${formatDurationFr(runMin)}` : '';
     out.push(
       discovery({
         kind: 'disc_cardio_strength',
         nature: 'trajectory',
         family: 'cardio_strength',
         title: 'Course et renforcement se lisent ensemble, pas comme deux analyses séparées',
-        body: `${v.thisPeriod.charAt(0).toUpperCase()}${v.thisPeriod.slice(1)} combine ${fmt1(runKm)} km de course et ${fmtInt(p.totalReps)} reps de renforcement.${
+        body: `${v.thisPeriod.charAt(0).toUpperCase()}${v.thisPeriod.slice(1)} combine ${fmt1(runKm)} km de course${runClock} et ${fmtInt(p.totalReps)} reps de renforcement.${
           prevKm >= 1 || prev30?.totalReps >= 80
             ? ` Sur les 30 jours d'avant : ${fmt1(prevKm)} km et ${fmtInt(prev30.totalReps)} reps.`
             : ''
-        }${timeBit} ${read}`,
+        } ${read}`,
         evidence: `${fmt1(runKm)} km · ${fmtInt(p.totalReps)} reps`,
         weights: { importance: 0.86, reliability: 0.88, novelty: 0.9, fit: 0.92 },
-        metrics: { runKm, runMin, strengthMin, kmPct, repsPct }
+        metrics: { runKm, runMin, kmPct, repsPct }
       })
     );
   }
@@ -2697,7 +2693,10 @@ export function buildPeriodDiscoveryBundle(opts = {}) {
       vs: 'sessions'
     })
   };
-  const all = detectDiscoveries(comparisons, extras);
+  const all = [
+    ...detectDiscoveries(comparisons, extras),
+    ...buildSleepRhythmDiscoveries({ nights: allNights, sessions: catalog })
+  ];
   const traced = selectPeriodDiscoveriesWithTrace(
     all,
     opts.insightHistory || null,

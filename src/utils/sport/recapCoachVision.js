@@ -19,6 +19,7 @@ import { countTrainingDaysInRange } from './recapTrainingDayTruth';
 import { normalizeProfileQuestionnaire } from '../../features/profileQuestionnaire/schema';
 import { resolveStreetSkillPlan } from '../../features/profileQuestionnaire/quizStreetSkillGoal';
 import { collectCheckedExerciseRepHistory } from './recapAdaptiveInsights';
+import { sessionsAsStructuredSets } from './exercisePerformanceUnit';
 import { findExerciseSessions, pctChange, magnitudeWord, challengeProgressPct } from './recapInsightHelpers';
 import {
   buildGarminCardioById,
@@ -144,10 +145,14 @@ function synthesizePerformanceThread(snapshot, window, getExerciseNameById, answ
   const snippets = [];
   const street = resolveStreetSkillPlan(answers || {});
 
+  let pullId = null;
   let pullSessions = [];
   for (const id of ['101', '501', 101, 501]) {
     const s = findExerciseSessions(byEx, id);
-    if (s.length > pullSessions.length) pullSessions = s;
+    if (s.length > pullSessions.length) {
+      pullSessions = s;
+      pullId = id;
+    }
   }
   if (pullSessions.length >= 4) {
     const first = pullSessions[0].reps;
@@ -155,10 +160,23 @@ function synthesizePerformanceThread(snapshot, window, getExerciseNameById, answ
     const max = Math.max(...pullSessions.map((s) => s.reps));
     if (last > first) {
       snippets.push(
-        `au tirage, la courbe repasse de ${first} à ${last} reps sur la fenêtre (pic ${max}) sans chercher un record à chaque séance`
+        `au tirage, la courbe de volume repasse de ${first} à ${last} reps sur la fenêtre (pic de volume ${max})`
       );
-    } else if (max >= 8) {
-      snippets.push(`tu consolides un niveau autour de ${Math.round(pullSessions.slice(-5).reduce((a, s) => a + s.reps, 0) / Math.min(5, pullSessions.length))} reps aux tractions`);
+    }
+    const pullSets = sessionsAsStructuredSets(snapshot, pullSessions, pullId);
+    if (pullSets.length >= 4) {
+      const ceiling = Math.max(...pullSets.map((s) => s.reps));
+      const tail = pullSets.slice(-5);
+      const atPeak = tail.filter((s) => s.reps >= ceiling && ceiling >= 5).length;
+      if (pullSets.length - 1 >= 4 && atPeak >= 3) {
+        snippets.push(
+          `Ces ${ceiling} reps sont devenues ton niveau récemment reproductible aux tractions.`
+        );
+      } else if (atPeak >= 3) {
+        snippets.push(
+          `Cette série de ${ceiling} apparaît sur ${atPeak} de tes ${tail.length} dernières séances de tirage.`
+        );
+      }
     }
   }
 

@@ -861,11 +861,11 @@ export function buildHorizonEssayCandidates(opts = {}) {
       const habitN = lead.habitual?.median != null ? Math.round(lead.habitual.median) : null;
       const prBit =
         lead.pr && lead.prDistinctFromHabitual
-          ? ` Ton record est de ${lead.pr.reps} reps${
+          ? ` Ta meilleure série observée est de ${lead.pr.reps} reps${
               lead.prAgeDays != null ? ` (il y a ${lead.prAgeDays} j.)` : ''
-            } : ce n'est pas le niveau que tu reproduis séance après séance.`
+            } : ce n'est pas le niveau de série que tu reproduis à chaque séance.`
           : lead.pr
-            ? ` Meilleure séance : ${lead.pr.reps} reps.`
+            ? ` Meilleure série observée : ${lead.pr.reps} reps.`
             : '';
       const cons =
         lead.robustnessKind === 'LEVEL_ESTABLISHED'

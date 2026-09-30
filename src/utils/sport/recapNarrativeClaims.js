@@ -73,7 +73,14 @@ const CLAIM_TABLE = {
   session_cost: { topic: 'cout.seance', sense: 'cost' },
   span_session_cost: { topic: 'cout.seance', sense: 'cost' },
   disc_pending_session: { topic: 'seance.attente', sense: 'fact' },
-  disc_pending_context: { topic: 'seance.attente', sense: 'relation' }
+  disc_pending_context: { topic: 'seance.attente', sense: 'relation' },
+  disc_sleep_rhythm_obs: { topic: 'sommeil.rythme', sense: 'fact' },
+  disc_sleep_rhythm_habit: { topic: 'sommeil.rythme', sense: 'fact' },
+  disc_sleep_regularity: { topic: 'sommeil.regularite', sense: 'fact' },
+  disc_sleep_reference: { topic: 'sommeil.repere', sense: 'relation' },
+  disc_sleep_weekend: { topic: 'sommeil.weekend', sense: 'relation' },
+  disc_sleep_tolerance: { topic: 'sommeil.tolerance', sense: 'relation' },
+  disc_sleep_drift: { topic: 'sommeil.rythme', sense: 'transformation' }
 };
 
 const SLEEP_DOSE = new Set([
@@ -96,7 +103,10 @@ const COMPARISON_KEYS = [
   'volumeDeltaPct',
   'freqDeltaPct',
   'pctFromReliable',
-  'beforeReps'
+  'beforeReps',
+  'driftMin',
+  'weekendGapMin',
+  'volumeDelta'
 ];
 
 export function kindFromNarrativeCandidate(candidate) {
@@ -171,7 +181,13 @@ const IDENTITY_KEYS = new Set([
   'topGroup',
   'muscle',
   'kind',
-  'date'
+  'date',
+  'sleepClockBand',
+  'pattern',
+  'axis',
+  'n',
+  'level',
+  'spanDays'
 ]);
 
 function filledMetrics(metrics) {
@@ -218,6 +234,9 @@ export function stateKeyFromMetrics(topic, metrics) {
   const m = metrics || {};
   const topicStr = String(topic || '');
   if (m.consolidated === true && topicStr.startsWith('exercice.')) return 'consolide';
+  if (topicStr.startsWith('sommeil.') && m.sleepClockBand != null) {
+    return `horloge-${m.sleepClockBand}`;
+  }
 
   const share = firstNum(m, ['sharePct', 'ofMonthPct', 'topShare', 'pushPct', 'pct', 'ofMonth']);
   const delta = firstNum(m, [

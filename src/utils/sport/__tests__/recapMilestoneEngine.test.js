@@ -95,28 +95,57 @@ describe('recapMilestoneEngine', () => {
     expect(cumul.body).toMatch(/1[\s\u00a0]?000/);
   });
 
-  it('consolide un record reproduit sur plusieurs séances', () => {
+  it('consolide une série observée, pas le volume de la séance', () => {
+    const early = ['2026-07-01', '2026-07-08', '2026-07-15'];
+    const late = ['2026-08-10', '2026-08-17', '2026-08-24', '2026-08-31'];
     const catalog = [
-      ...['2026-07-01', '2026-07-08', '2026-07-15'].map((date) => ({
+      ...early.map((date) => ({
         date,
-        totalReps: 20,
+        totalReps: 24,
         minutes: 30,
-        exercises: [{ id: '101', name: 'Tractions pronation', reps: 6 }]
+        exercises: [{ id: '101', name: 'Tractions pronation', reps: 24 }]
       })),
-      ...['2026-08-10', '2026-08-17', '2026-08-24', '2026-08-31'].map((date) => ({
+      ...late.map((date) => ({
         date,
-        totalReps: 28,
+        totalReps: 36,
         minutes: 30,
-        exercises: [{ id: '101', name: 'Tractions pronation', reps: 9 }]
+        exercises: [{ id: '101', name: 'Tractions pronation', reps: 36 }]
       }))
     ];
+    const exerciseSetLogs = {};
+    early.forEach((date) => {
+      exerciseSetLogs[`${date}_101`] = { sets: [{ reps: 6 }, { reps: 6 }, { reps: 6 }, { reps: 6 }] };
+    });
+    late.forEach((date) => {
+      exerciseSetLogs[`${date}_101`] = { sets: [{ reps: 9 }, { reps: 9 }, { reps: 9 }, { reps: 9 }] };
+    });
     const ms = detectRecapMilestones({
       catalog,
       window: { start: '2026-08-25', end: '2026-08-31' },
       voiceKey: 'week',
-      snapshot: { reps: {}, checkedExercises: {} }
+      snapshot: { reps: {}, checkedExercises: {}, exerciseSetLogs }
     });
-    expect(ms.some((m) => m.kind === 'disc_ms_pr_consolidated')).toBe(true);
+    const card = ms.find((m) => m.kind === 'disc_ms_pr_consolidated');
+    expect(card).toBeTruthy();
+    expect(card.body).toMatch(/9/);
+    expect(card.body).not.toMatch(/36/);
+    expect(card.body).not.toMatch(/record déclaré/);
+  });
+
+  it('ne consolide pas un total de séance sans séries saisies', () => {
+    const catalog = ['2026-08-10', '2026-08-17', '2026-08-24', '2026-08-31'].map((date) => ({
+      date,
+      totalReps: 48,
+      minutes: 30,
+      exercises: [{ id: '101', name: 'Tractions pronation', reps: 48 }]
+    }));
+    const ms = detectRecapMilestones({
+      catalog,
+      window: { start: '2026-08-25', end: '2026-08-31' },
+      voiceKey: 'week',
+      snapshot: { reps: {}, checkedExercises: {}, exerciseSetLogs: {} }
+    });
+    expect(ms.some((m) => m.kind === 'disc_ms_pr' || m.kind === 'disc_ms_pr_consolidated')).toBe(false);
   });
 
   it('ajoute le jalon en extra sans évincer le portrait de volume', () => {

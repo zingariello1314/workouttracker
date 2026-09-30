@@ -5,6 +5,7 @@
 
 import DateHelper from '../dateHelper';
 import { collectCheckedExerciseRepHistory } from './recapAdaptiveInsights';
+import { sessionsAsStructuredSets } from './exercisePerformanceUnit';
 import { acuteChronicRepsRatio } from './recapInsightHelpers';
 import { isDateInRecapWindow } from './recapMuscleLoadEngine';
 
@@ -61,9 +62,10 @@ function detectRepPrs(snapshot, window, getExerciseNameById, performanceRobustne
   const robustByEx = new Map((performanceRobustness || []).map((r) => [String(r.exerciseId), r]));
   const byEx = collectCheckedExerciseRepHistory(snapshot, window);
   for (const [exId, sessions] of byEx) {
-    if (!sessions?.length) continue;
-    const maxSession = sessions.reduce((best, s) => (s.reps > best.reps ? s : best), sessions[0]);
-    const priorMax = sessions
+    const setSessions = sessionsAsStructuredSets(snapshot, sessions, exId);
+    if (setSessions.length < 2) continue;
+    const maxSession = setSessions.reduce((best, s) => (s.reps > best.reps ? s : best), setSessions[0]);
+    const priorMax = setSessions
       .filter((s) => s.date < maxSession.date)
       .reduce((m, s) => Math.max(m, s.reps), 0);
     if (priorMax <= 0 || maxSession.reps <= priorMax) continue;

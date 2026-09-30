@@ -50,11 +50,13 @@ describe('performanceRobustness', () => {
   });
 
   it('analyse les exercices du snapshot', () => {
-    const snapshot = { reps: {}, checkedExercises: {} };
+    const snapshot = { reps: {}, checkedExercises: {}, exerciseSetLogs: {} };
     ['2026-05-05', '2026-05-12', '2026-05-19'].forEach((date, i) => {
       const key = `${date}_101`;
-      snapshot.reps[key] = 10 + i * 2;
+      const best = 10 + i * 2;
+      snapshot.reps[key] = best + 8;
       snapshot.checkedExercises[key] = true;
+      snapshot.exerciseSetLogs[key] = { sets: [{ reps: 8 }, { reps: best }] };
     });
     const rows = analyzePerformanceRobustness({
       snapshot,

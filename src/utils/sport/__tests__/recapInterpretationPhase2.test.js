@@ -98,10 +98,13 @@ describe('trainingEventDetector', () => {
   it('détecte un PR reps', () => {
     const snapshot = { reps: {}, checkedExercises: {} };
     const window = { start: '2026-05-01', end: '2026-06-01' };
+    snapshot.exerciseSetLogs = {};
     ['2026-05-05', '2026-05-12', '2026-05-20'].forEach((date, i) => {
       const key = `${date}_101`;
-      snapshot.reps[key] = i < 2 ? 15 : 18;
+      const best = i < 2 ? 15 : 18;
+      snapshot.reps[key] = best + 8;
       snapshot.checkedExercises[key] = true;
+      snapshot.exerciseSetLogs[key] = { sets: [{ reps: 8 }, { reps: best }] };
     });
 
     const bundle = detectTrainingEvents({

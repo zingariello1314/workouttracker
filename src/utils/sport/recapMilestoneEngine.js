@@ -14,6 +14,7 @@ import {
   extractDateStrFromWorkoutKey,
   extractExerciseIdFromWorkoutKey
 } from '../exerciseKeyGenerator';
+import { resolveExercisePerformance, structuredBestSetReps } from './exercisePerformanceUnit';
 
 export const REP_CUMUL_THRESHOLDS = [100, 500, 1000, 5000, 10000, 25000, 50000, 100000];
 export const SESSION_THRESHOLDS = [10, 25, 50, 100, 250, 500];
@@ -657,7 +658,10 @@ export function detectRecapMilestones({
     const series = [];
     sessions.forEach((s) => {
       const hit = (s.exercises || []).find((e) => String(e.id) === id);
-      if (hit && hit.reps >= 3) series.push({ date: s.date, reps: hit.reps, name: hit.name || first.name });
+      const best = structuredBestSetReps(snapshot, s.date, id);
+      if (hit && best != null && best >= 3) {
+        series.push({ date: s.date, reps: best, name: hit.name || first.name });
+      }
     });
     if (series.length < 3) return;
     const last = series[series.length - 1];
@@ -667,14 +671,19 @@ export function detectRecapMilestones({
       const recent = series.slice(-5);
       const atPeak = recent.filter((x) => x.reps >= priorMax && priorMax >= 5).length;
       if (atPeak >= 3 && priorMax >= last.reps && voiceKey !== 'today') {
+        const recentLevel = series.length - 1 >= 4;
         prs.push({
           kind: 'disc_ms_pr_consolidated',
           nature: 'trajectory',
           family: 'ms_pr',
           type: 'PR_CONSOLIDATED',
           date: last.date,
-          title: `Le record de ${fmtInt(priorMax)} ${last.name.toLowerCase()} n'est plus un événement isolé`,
-          body: `Ton record de ${fmtInt(priorMax)} ${last.name.toLowerCase()} n'est plus un événement isolé : tu l'as reproduit sur ${atPeak} séances au cours des ${recent.length} dernières. Ce niveau devient désormais ta référence récente plutôt qu'un PR isolé.`,
+          title: recentLevel
+            ? `Ces ${fmtInt(priorMax)} reps sont devenues ton niveau récemment reproductible`
+            : `Cette série de ${fmtInt(priorMax)} apparaît sur ${atPeak} de tes ${recent.length} dernières séances`,
+          body: recentLevel
+            ? `Ces ${fmtInt(priorMax)} reps de ${last.name.toLowerCase()} sont devenues ton niveau récemment reproductible : cette série apparaît sur ${atPeak} de tes ${recent.length} dernières séances.`
+            : `Cette série de ${fmtInt(priorMax)} ${last.name.toLowerCase()} apparaît sur ${atPeak} de tes ${recent.length} dernières séances.`,
           evidence: `${fmtInt(priorMax)} reps · ${atPeak}/${recent.length}`,
           importance: 0.91
         });
@@ -682,14 +691,21 @@ export function detectRecapMilestones({
       return;
     }
     if (last.reps - priorMax < 1) return;
+    const official = resolveExercisePerformance(snapshot, `${last.date}_${id}`).official;
+    const officialReps =
+      official && (!official.performanceType || official.performanceType === 'reps') ? official.reps : 0;
+    const aboveDeclared =
+      officialReps > 0 && last.reps > officialReps
+        ? ` Cette série de ${fmtInt(last.reps)} dépasse ton record déclaré de ${fmtInt(officialReps)}, sans le remplacer.`
+        : '';
     prs.push({
       kind: 'disc_ms_pr',
       nature: 'now',
       family: 'ms_pr',
       type: 'PR_REPS',
       date: last.date,
-      title: `Nouveau record : ${fmtInt(last.reps)} ${last.name.toLowerCase()}`,
-      body: `Nouveau record : ${fmtInt(last.reps)} ${last.name.toLowerCase()} (précédent ${fmtInt(priorMax)}). Ce n'est pas encore un niveau : c'est le plafond d'un jour. Il le deviendra si tu le reproduis.`,
+      title: `Meilleure série observée : ${fmtInt(last.reps)} ${last.name.toLowerCase()}`,
+      body: `Meilleure série observée : ${fmtInt(last.reps)} ${last.name.toLowerCase()}. Ce n'est pas un record déclaré : c'est le plafond d'une série réellement saisie (précédent ${fmtInt(priorMax)}).${aboveDeclared}`,
       evidence: `${fmtInt(priorMax)} → ${fmtInt(last.reps)}`,
       importance: 0.92
     });

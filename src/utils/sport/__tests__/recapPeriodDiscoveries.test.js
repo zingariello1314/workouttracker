@@ -285,7 +285,19 @@ describe('recapPeriodDiscoveries', () => {
     addCheck(snapshot, '2026-08-10', 502, 40);
     addCheck(snapshot, '2026-08-18', 502, 40);
     addCheck(snapshot, '2026-08-31', 502, 48);
-    const garmin = { activities: { cardio: [] }, dailyMetrics: {} };
+    const garmin = {
+      activities: {
+        cardio: [
+          {
+            date: '2026-08-15',
+            activityName: 'Musculation',
+            activityType: { typeKey: 'strength_training' },
+            duration: 2516 * 60
+          }
+        ]
+      },
+      dailyMetrics: {}
+    };
     const bundle = buildPeriodDiscoveryBundle({
       snapshot,
       window: { start: '2026-08-02', end: '2026-08-31' },
@@ -296,8 +308,12 @@ describe('recapPeriodDiscoveries', () => {
     const row = bundle.all.find((d) => d.kind === 'disc_cardio_strength');
     expect(row).toBeTruthy();
     expect(row.body).toMatch(/km/i);
+    expect(row.body).toMatch(/en 1 h 36/);
     expect(row.body).toMatch(/reps/i);
     expect(row.body).not.toMatch(/pas assez/i);
+    expect(row.body).not.toMatch(/41 h 56/);
+    expect(row.body).not.toMatch(/temps d'activité/i);
+    expect(row.body).not.toMatch(/d'exercices de renforcement/i);
   });
 
   it('sur 30 jours, compare au mois précédent avec densité par séance', () => {

@@ -3,6 +3,7 @@
  */
 
 import { collectCheckedExerciseRepHistory } from './recapAdaptiveInsights';
+import { sessionsAsStructuredSets } from './exercisePerformanceUnit';
 
 /** @typedef {'PR_EVENT'|'LEVEL_ESTABLISHED'|'LEVEL_STABLE'|'OUTLIER'|null} PerformanceLevelKind */
 
@@ -67,8 +68,9 @@ export function analyzePerformanceRobustness(opts = {}) {
   const out = [];
 
   for (const [exId, sessions] of byEx) {
-    if (!sessions || sessions.length < 2) continue;
-    const row = classifyExercisePerformanceLevel(sessions);
+    const setSessions = sessionsAsStructuredSets(snapshot, sessions, exId);
+    if (setSessions.length < 2) continue;
+    const row = classifyExercisePerformanceLevel(setSessions);
     if (!row.kind) continue;
     let exerciseName = `Exercice ${exId}`;
     if (typeof getExerciseNameById === 'function') {

@@ -365,6 +365,31 @@ describe('scénarios de narration', () => {
     expect(picked.short.map((c) => c.id)).toContain(today.id);
     expect(picked.medium.map((c) => c.id)).toContain(week.id);
   });
+
+  it('laisse le fait de rythme à côté de sa dérive, et n’en garde qu’un exemplaire', () => {
+    const fact = card({
+      kind: 'disc_sleep_rhythm_habit',
+      horizon: 'short',
+      weight: 80,
+      metrics: { sleepClockBand: 1380 }
+    });
+    const echo = card({
+      kind: 'disc_sleep_rhythm_obs',
+      horizon: 'short',
+      weight: 70,
+      id: 'relation.reading.short.disc_sleep_rhythm_obs',
+      metrics: { sleepClockBand: 1380 }
+    });
+    const drift = card({
+      kind: 'disc_sleep_drift',
+      horizon: 'long',
+      weight: 78,
+      metrics: { sleepClockBand: 1380, driftMin: 60 }
+    });
+    const picked = selectNarrativeColumns([fact, echo, drift], CAPS, 'sig', NOW);
+    expect(picked.short.map((c) => c.id)).toEqual([fact.id]);
+    expect(picked.long.map((c) => c.id)).toContain(drift.id);
+  });
 });
 
 describe('garde-fou de richesse du second passage', () => {

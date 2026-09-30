@@ -51,6 +51,7 @@ import {
 
 import { applyNatureWeights, columnCapsForCandidates, rewardToneForKind } from './recapInsightNature';
 import { claimFromCandidate } from './recapNarrativeClaims';
+import { structuredBestSetReps } from './exercisePerformanceUnit';
 import { mergeGarminDataForRecap } from './recapGarminMerge';
 import { periodVoice } from './recapPeriodDiscoveries';
 import { buildSpanStoryCandidates } from './recapSpanStory';
@@ -203,12 +204,14 @@ function maxRecordedWeightKgInWindow(snapshot, window) {
   return max;
 }
 
-function checkedMaxRepsForExerciseIds(byEx, idList) {
+function checkedMaxRepsForExerciseIds(snapshot, byEx, idList) {
   let max = 0;
   for (const id of idList) {
     const sessions = findExerciseSessions(byEx, id);
-    if (!sessions?.length) continue;
-    max = Math.max(max, ...sessions.map((s) => s.reps));
+    for (const s of sessions || []) {
+      const best = structuredBestSetReps(snapshot, s.date, id);
+      if (best != null) max = Math.max(max, best);
+    }
   }
   return max;
 }
@@ -239,36 +242,42 @@ function buildExerciseRepCandidates(opts) {
     const sd = stdDev(values);
     if (med == null || med < 2) continue;
 
-    const latest = sessions[sessions.length - 1];
-    const prior = sessions.slice(0, -1);
-    const prevMax = prior.length ? Math.max(...prior.map((s) => s.reps)) : 0;
-
     const isStableHabit = sd <= Math.max(1.5, med * 0.12) && recent.length >= 4;
+    const structuredRecent = recent
+      .map((s) => {
+        const best = structuredBestSetReps(snapshot, s.date, exId);
+        return best == null ? null : { date: s.date, reps: best };
+      })
+      .filter(Boolean);
+    const latestSet = structuredRecent[structuredRecent.length - 1];
+    const priorSets = structuredRecent.slice(0, -1);
+    const prevMax = priorSets.length ? Math.max(...priorSets.map((s) => s.reps)) : 0;
 
-    if (latest.reps > prevMax && prior.length >= 2) {
-      const gain = latest.reps - prevMax;
+    if (latestSet && latestSet.reps > prevMax && priorSets.length >= 2) {
+      const gain = latestSet.reps - prevMax;
       if (gain >= 1 && gain <= 5) {
         candidates.push({
-          id: `ex.pr.${exId}.${latest.date}`,
+          id: `ex.pr.${exId}.${latestSet.date}`,
           horizon: gain === 1 && isStableHabit ? 'short' : 'medium',
           pillar: 'training',
           weight: 72 + Math.min(18, gain * 4 + (isStableHabit ? 8 : 0)),
           text:
             gain === 1 && isStableHabit
-              ? `${name} : tu es souvent autour de ${Math.round(med)} reps ; le ${formatFrDate(latest.date)} tu passes à ${latest.reps} (+1) — micro-progression à ancrer en répétant ce niveau.`
-              : `${name} : nouveau pic à ${latest.reps} reps le ${formatFrDate(latest.date)} (max précédent ${prevMax}) — progresse prudemment sans viser l'échec la séance suivante.`
+              ? `${name} : tu es souvent autour de ${Math.round(med)} reps ; le ${formatFrDate(latestSet.date)} ta meilleure série passe à ${latestSet.reps} (+1) — micro-progression à ancrer en répétant ce niveau.`
+              : `${name} : meilleure série observée à ${latestSet.reps} reps le ${formatFrDate(latestSet.date)} (série précédente ${prevMax}). Ce n'est pas un record déclaré.`
         });
       } else if (gain > 5) {
         candidates.push({
-          id: `ex.pr.big.${exId}.${latest.date}`,
+          id: `ex.pr.big.${exId}.${latestSet.date}`,
           horizon: 'medium',
           pillar: 'training',
           weight: 78,
-          text: `${name} : saut net à ${latest.reps} reps le ${formatFrDate(latest.date)} (+${gain} vs ton max avant) — vérifie la forme et la récup avant de viser à nouveau ce chiffre.`
+          text: `${name} : la meilleure série passe à ${latestSet.reps} reps le ${formatFrDate(latestSet.date)} (+${gain} vs tes séries d'avant). Ce n'est pas un record déclaré.`
         });
       }
     }
 
+    const latest = sessions[sessions.length - 1];
     if (isStableHabit && latest.reps === Math.round(med) && recent.length >= 5) {
       candidates.push({
         id: `ex.habit.${exId}`,
@@ -448,6 +457,7 @@ function buildGtgMaxLinkCandidates(opts) {
     const gtgMax = resolveGtgMaxReps(def.id, ctx);
     if (gtgMax <= 0) return;
     const checkedMax = checkedMaxRepsForExerciseIds(
+      snapshot,
       byEx,
       def.recordExerciseIds.map(String)
     );

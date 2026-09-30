@@ -80,6 +80,22 @@ describe('claimFromCandidate', () => {
     expect(claim.sense).toBe('fact');
   });
 
+  it('bande le rythme de sommeil par 30 minutes et distingue le fait de la dérive', () => {
+    const fact = claimFromCandidate(
+      candidate('disc_sleep_rhythm_habit', { sleepClockBand: 1380 }, { horizon: 'short' })
+    );
+    const drift = claimFromCandidate(
+      candidate('disc_sleep_drift', { sleepClockBand: 1380, driftMin: 50 }, { horizon: 'long' })
+    );
+    expect(fact).toMatchObject({ topic: 'sommeil.rythme', sense: 'fact', stateKey: 'horloge-1380' });
+    expect(drift).toMatchObject({
+      topic: 'sommeil.rythme',
+      sense: 'transformation',
+      stateKey: 'horloge-1380'
+    });
+    expect(fact.sense).not.toBe(drift.sense);
+  });
+
   it('traite un ratio sans comparaison comme un fait, pas comme une relation', () => {
     const bare = claimFromCandidate(
       candidate('disc_ratio_structure', { pullNow: 20, pushNow: 80 }, { horizon: 'medium' })

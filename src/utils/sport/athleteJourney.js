@@ -10,6 +10,7 @@ import {
   extractExerciseIdFromWorkoutKey
 } from '../exerciseKeyGenerator';
 import { classifyExercisePerformanceLevel } from './performanceRobustness';
+import { sessionsAsStructuredSets } from './exercisePerformanceUnit';
 import { daysBetweenYmd, isRunningLikeName } from './recapTrainingTimeline';
 import { movementFamily } from './recapExposureNarratives';
 
@@ -190,7 +191,7 @@ function medianIntervalDays(sessions) {
   return round1(median(gaps));
 }
 
-function describeExercise(exId, sessions, endYmd, getExerciseNameById) {
+function describeExercise(exId, sessions, endYmd, getExerciseNameById, snapshot) {
   const name = exerciseName(exId, getExerciseNameById);
   if (isRunningLikeName(name)) return null;
   if (sessions.length < 4) return null;
@@ -199,8 +200,9 @@ function describeExercise(exId, sessions, endYmd, getExerciseNameById) {
   const last = sessions[sessions.length - 1];
   const reliable = firstReliableReference(sessions);
   const habit = habitualLevel(sessions);
-  const prReps = Math.max(...sessions.map((s) => s.reps));
-  const prSession = sessions.find((s) => s.reps === prReps);
+  const setSessions = sessionsAsStructuredSets(snapshot, sessions, exId);
+  const prReps = setSessions.length ? Math.max(...setSessions.map((s) => s.reps)) : null;
+  const prSession = prReps == null ? null : setSessions.find((s) => s.reps === prReps);
   const robustness = classifyExercisePerformanceLevel(sessions);
   const currentMean = round1(mean(sessions.slice(-3).map((s) => s.reps)));
   const atHabit =
@@ -220,9 +222,11 @@ function describeExercise(exId, sessions, endYmd, getExerciseNameById) {
     pct != null &&
     Math.abs(pct) >= 15;
 
-  const prGap =
-    prReps != null && habit?.median != null ? round1(prReps - habit.median) : null;
-  const prDistinct = prGap != null && prGap >= 2 && atHabit >= 3;
+  const setMedian = setSessions.length >= 3 ? median(setSessions.map((s) => s.reps)) : null;
+  const atSet =
+    setMedian == null ? 0 : setSessions.filter((s) => s.reps >= setMedian - 1).length;
+  const prGap = prReps != null && setMedian != null ? round1(prReps - setMedian) : null;
+  const prDistinct = prGap != null && prGap >= 2 && atSet >= 3;
   const milestones = detectMilestones(reliable.skippedOutlier ? sessions.slice(1) : sessions);
   const lastHit = milestones.hits[milestones.hits.length - 1] || null;
   const plateau = detectPlateau(sessions, habit, endYmd, lastHit?.date);
@@ -341,7 +345,7 @@ export function buildAthleteJourney({ snapshot = {}, window = null, getExerciseN
       allDates.add(s.date);
       totalReps += s.reps;
     });
-    const row = describeExercise(exId, sessions, endYmd, getExerciseNameById);
+    const row = describeExercise(exId, sessions, endYmd, getExerciseNameById, snapshot);
     if (row) exercises.push(row);
   });
 
