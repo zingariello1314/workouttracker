@@ -31,6 +31,13 @@ import { themeCountBeforeLocalDay } from './insightNoveltyStore';
 import { comparableWeeklyRates, SIGNAL_FAMILY_CAPS, signalFamilyOfKind } from './recapInsightNature';
 import { buildSleepRhythmDiscoveries } from './sleepRhythmAnalysis';
 import { buildThreadDiscoveries, rewriteSleepDiscoveries } from './recapAnalysisProofs';
+import { applyEditorialGate } from './recapEditorialGate';
+import { createSetShiftReader } from './recapSetShift';
+import { describeCalendarShape } from './recapCalendarShape';
+import { describeStepReadings } from './recapStepReading';
+import { describeRestDay } from './recapRestDayReading';
+import { primaryGroup, sameDayCompanions, writeExerciseEvent } from './recapFactReading';
+import { buildGtgUnplannedDiscoveries } from './recapGtgUnplannedReading';
 import {
   buildExerciseBaselines,
   buildSessionCatalog,
@@ -377,7 +384,7 @@ function scoreOf({ importance, reliability, novelty, fit }) {
 function discovery(partial) {
   const score = partial.score != null ? partial.score : scoreOf(partial.weights || {});
   return {
-    id: partial.kind,
+    id: partial.id || partial.kind,
     kind: partial.kind,
     nature: partial.nature,
     family: partial.family,
@@ -699,6 +706,23 @@ export function buildPeriodComparisons({
   };
 }
 
+function sessionRhythmClause(p, opts = {}) {
+  if (opts.today && p?.repsPerSession != null && opts.d7?.repsPerSession != null && Number(opts.d7.repsPerSession) > 0) {
+    const pct = ((p.repsPerSession - opts.d7.repsPerSession) / opts.d7.repsPerSession) * 100;
+    if (Math.abs(pct) < 8) return '';
+    const dir = pct > 0 ? 'au-dessus' : 'en dessous';
+    return `. Le rythme de cette séance (${fmtInt(p.repsPerSession)} répétitions) est ${dir} de ta moyenne des 7 derniers jours (environ ${fmtInt(opts.d7.repsPerSession)} par journée de renforcement)`;
+  }
+  if (p?.repsPerSession == null || !(Number(p.trainingDays) >= 2)) return '';
+  const strength = Number(p.strengthDays) || 0;
+  const trained = Number(p.trainingDays) || 0;
+  if (strength > 0 && trained > strength) {
+    return `. Ces répétitions portent sur ${strength} journées de renforcement, à côté de ${trained} journées entraînées au calendrier`;
+  }
+  const dur = p.minutesPerSession ? ` et ${formatDurationFr(p.minutesPerSession)}` : '';
+  return `, soit environ ${fmtInt(p.repsPerSession)} répétitions${dur} par séance`;
+}
+
 function detectDiscoveries(cmp, extras = {}) {
   const out = [];
   const { period: p, d7, d30, d90, prev30, first30, identity, voice: v } = cmp;
@@ -717,6 +741,24 @@ function detectDiscoveries(cmp, extras = {}) {
   const catalog = extras.catalog || [];
 
   if (emptyPeriod) {
+    const restToday = isToday ? describeRestDay({
+      program: extras.activeProgram,
+      snapshot: extras.snapshot,
+      date: p.window?.end
+    }) : null;
+    if (restToday) {
+      out.push(
+        discovery({
+          kind: 'disc_rest_day',
+          nature: 'now',
+          family: 'rest_day',
+          title: restToday.title,
+          body: restToday.body,
+          evidence: restToday.evidence,
+          weights: { importance: 0.98, reliability: 0.96, novelty: 0.9, fit: 1 }
+        })
+      );
+    }
     const end = p.window?.end;
     const last = lastCatalogSession(catalog, end);
     const twins = sameWeekdaySessions(catalog, end, end);
@@ -750,6 +792,7 @@ function detectDiscoveries(cmp, extras = {}) {
             sleepCtx.habitHours != null ? `, habitude ~${fmt1(sleepCtx.habitHours)} h` : ''
           }) : la récupération précède la séance, elle ne l'attend pas.`
         : '';
+    if (!restToday) {
     out.push(
       discovery({
         kind: 'disc_pending_session',
@@ -791,7 +834,50 @@ function detectDiscoveries(cmp, extras = {}) {
         })
       );
     }
+    }
   }
+
+  const calendar = !isToday
+    ? describeCalendarShape({
+        repsByDate: p.repsByDate,
+        start: p.window?.start,
+        end: p.window?.end,
+        thisPeriod: v.thisPeriod
+      })
+    : null;
+  if (calendar) {
+    out.push(
+      discovery({
+        kind: 'disc_calendar_rhythm',
+        nature: 'now',
+        family: 'calendar_rhythm',
+        title: calendar.title,
+        body: calendar.body,
+        evidence: calendar.evidence,
+        weights: { importance: 0.84, reliability: 0.9, novelty: 0.8, fit: isWeek ? 1 : 0.86 }
+      })
+    );
+  }
+
+  describeStepReadings({
+    dailyMetrics: extras.garminData?.dailyMetrics,
+    start: p.window?.start,
+    end: p.window?.end,
+    trainingDates: Object.keys(p.repsByDate || {}),
+    thisPeriod: v.thisPeriod
+  }).forEach((step) => {
+    out.push(
+      discovery({
+        kind: step.nature === 'now' ? 'disc_steps_split' : 'disc_steps_level',
+        nature: step.nature,
+        family: 'steps',
+        title: step.title,
+        body: step.body,
+        evidence: step.evidence,
+        weights: { importance: 0.8, reliability: 0.88, novelty: 0.84, fit: 0.9 }
+      })
+    );
+  });
 
   if ((isToday || isWeek) && !emptyPeriod && p.repsPerHour != null && p.minutes >= 20) {
     const densityRef = isToday || isWeek ? d30 : isMonth ? prev30 : first30;
@@ -827,12 +913,7 @@ function detectDiscoveries(cmp, extras = {}) {
         vs7 != null
           ? `, tout en restant ${Math.abs(vs7) < 4 ? 'quasiment au niveau' : vs7 >= 0 ? 'au-dessus' : 'en retrait'} de ta moyenne des 7 derniers jours (${fmtInt(d7.repsPerHour)} reps/h)`
           : '';
-      const sessBit =
-        p.repsPerSession != null && d7.repsPerSession != null && isToday
-          ? `. Le volume par séance (${fmtInt(p.repsPerSession)} reps) reste proche de ta moyenne des 7 derniers jours (≈${fmtInt(d7.repsPerSession)} reps/séance)`
-          : p.repsPerSession != null && p.trainingDays >= 2
-            ? `, soit environ ${fmtInt(p.repsPerSession)} reps et ${formatDurationFr(p.minutesPerSession || 0)} par séance`
-            : '';
+      const sessBit = sessionRhythmClause(p, { today: isToday, d7 });
       out.push(
         discovery({
           kind: 'disc_density',
@@ -870,12 +951,7 @@ function detectDiscoveries(cmp, extras = {}) {
     const sessionsBit = isToday
       ? `Tu as réalisé ${fmtInt(p.totalReps)} répétitions en ${formatDurationFr(p.minutes || p.totalMinutes)}`
       : `${p.trainingDays} séance${p.trainingDays > 1 ? 's' : ''}, ${fmtInt(p.totalReps)} répétitions et ${formatDurationFr(p.minutes || p.totalMinutes)} d'entraînement`;
-    const perSess =
-      p.repsPerSession != null
-        ? isToday
-          ? ''
-          : `, soit environ ${fmtInt(p.repsPerSession)} reps${p.minutesPerSession ? ` et ${formatDurationFr(p.minutesPerSession)}` : ''} par séance`
-        : '';
+    const perSess = isToday ? '' : sessionRhythmClause(p);
     const habitBit =
       habitRate != null && weekRate != null
         ? `. Ton rythme hebdomadaire reste donc ${Math.abs(weekRate - habitRate) < 0.6 ? 'proche' : weekRate < habitRate ? 'inférieur' : 'supérieur'} à ton niveau habituel de ${formatRateFr(habitRate)} séances/semaine`
@@ -951,15 +1027,13 @@ function detectDiscoveries(cmp, extras = {}) {
               : volPct > 0
                 ? 'Le volume du mois dépasse celui du mois précédent'
                 : 'Le volume du mois recule par rapport au mois précédent',
-        body: `Ces 30 jours totalisent ${fmtInt(p.totalReps)} répétitions en ${p.trainingDays} jours entraînés${
-          p.repsPerSession != null ? `, soit environ ${fmtInt(p.repsPerSession)} reps par séance` : ''
-        }${vsPrev}.${vsRead}${
+        body: `Ces 30 jours totalisent ${fmtInt(p.totalReps)} répétitions en ${p.trainingDays} jours entraînés${sessionRhythmClause(p)}${vsPrev}.${vsRead}${
           Number.isFinite(features.volumeDelta28Pct) && Number.isFinite(features.volumeDelta7Pct)
             ? ` Les répétitions suivies sur 28 jours sont ${fmtSignedPct(features.volumeDelta28Pct)} que le mois comparable, tandis que les 7 derniers jours ${
                 features.volumeDelta7Pct > 4 ? 'repartent' : 'restent'
               } (${fmtSignedPct(features.volumeDelta7Pct)}).`
             : ''
-        }${periodPortraitTail(p, v)}${continuityTail(v, p, d7, d30)}`,
+        }`,
         evidence: prev30?.totalReps >= 200
           ? `${fmtInt(p.totalReps)} vs ${fmtInt(prev30.totalReps)} · ${fmtSignedPct(volPct)}`
           : `${fmtInt(p.totalReps)} reps · ${p.trainingDays} j.`,
@@ -1040,6 +1114,25 @@ function detectDiscoveries(cmp, extras = {}) {
       pullShare != null && top[0].group !== MuscleGroups.BACK
         ? `, et le tirage pèse environ ${fmtPct(pullShare)} du volume`
         : '';
+    const nearBit =
+      top.length > 1 && top[0].reps - top[1].reps <= Math.max(20, top[0].reps * 0.08)
+        ? ` L'écart entre ${top[0].label} et ${top[1].label} n'est que de ${fmtInt(top[0].reps - top[1].reps)} reps : la première place est serrée.`
+        : '';
+    const pushNow = p.pushReps || 0;
+    const backNow = p.byMuscle[MuscleGroups.BACK]?.reps || 0;
+    const ratioBit =
+      pushNow >= 80 && backNow > 0 && pushNow > backNow * 1.6
+        ? ` La poussée identifiée compte ${fmtInt(pushNow)} reps contre ${fmtInt(backNow)} au dos, environ ${(pushNow / backNow).toFixed(1).replace('.', ',')} pour 1.`
+        : '';
+    const missingPull =
+      pushNow > backNow * 2
+        ? ` Pour revenir vers 2 pour 1 dans cette fenêtre, il manquerait environ ${fmtInt(Math.round(pushNow / 2 - backNow))} reps de dos.`
+        : '';
+    const indirect =
+      top[0].group === MuscleGroups.SHOULDERS &&
+      (p.exercises || []).some((exercise) => /pomp|développé|developpe/i.test(exercise.name || ''))
+        ? ` Les pompes et les développés de la fenêtre ne sont pas tous dans ces reps d'épaules : la charge réelle sur l'épaule dépasse cette part.`
+        : '';
     out.push(
       discovery({
         kind: 'disc_muscle_now',
@@ -1057,7 +1150,7 @@ function detectDiscoveries(cmp, extras = {}) {
                 .map((m) => `${fmtInt(m.reps)} pour ${muscleAvecArticle(m.label)}`)
                 .join(', ')}`
             : ''
-        }${extraBit}. Ce n'est pas le pic d'un seul exercice : plusieurs mouvements vont dans le même sens${tirageBit}. Cette part décrit la composition de ${v.thisPeriod}, pas celle d'une séance isolée.`,
+        }${extraBit}.${nearBit} Ce n'est pas le pic d'un seul exercice : plusieurs mouvements vont dans le même sens${tirageBit}.${ratioBit}${missingPull}${indirect} Cette part décrit la composition de ${v.thisPeriod}, pas celle d'une séance isolée.`,
         evidence: `${top.length} groupes · ${fmtInt(p.identifiedMuscleReps)} reps identifiées`,
         weights: { importance: 0.86, reliability: 0.9, novelty: 0.84, fit: 0.96 },
         metrics: { topGroup: top[0].group, topShare }
@@ -1067,17 +1160,41 @@ function detectDiscoveries(cmp, extras = {}) {
 
   if (p.peakDay && p.trainingDays >= 2 && (p.peakDay.sharePct || 0) >= 28) {
     const peakEx = (p.peakDay.exercises || p.exercisesByDate?.[p.peakDay.date] || []).slice(0, 3);
+    const otherReps = Math.max(0, (p.totalReps || 0) - p.peakDay.reps);
+    const sessionValues = Object.values(p.repsByDate || {})
+      .map(Number)
+      .filter((n) => n > 0)
+      .sort((a, b) => a - b);
+    const mid = Math.floor(sessionValues.length / 2);
+    const sessionMedian = sessionValues.length
+      ? sessionValues.length % 2
+        ? sessionValues[mid]
+        : (sessionValues[mid - 1] + sessionValues[mid]) / 2
+      : null;
+    const leadPeak = peakEx[0];
+    const peakMates = leadPeak
+      ? sameDayCompanions(leadPeak, { [p.peakDay.date]: p.peakDay.exercises || [] })
+      : [];
+    const mateBit = peakMates.length
+      ? ` ${fmtInt(leadPeak.reps + peakMates[0].reps)} de ces reps (${leadPeak.name.toLowerCase()} et ${String(peakMates[0].name).toLowerCase()}) portent sur le même groupe.`
+      : '';
     out.push(
       discovery({
         kind: 'disc_peak_day',
         nature: 'now',
         family: 'peak_day',
         title: `La séance du ${formatDayFr(p.peakDay.date, true)} concentre une part importante ${v.ofPeriod}`,
-        body: `La séance du ${formatDayFr(p.peakDay.date, true)} concentre à elle seule ${fmtInt(p.peakDay.reps)} reps, soit environ ${fmtPct(p.peakDay.sharePct)} de toutes les répétitions ${v.ofPeriod}.${
+        body: `La séance du ${formatDayFr(p.peakDay.date, true)} concentre ${fmtInt(p.peakDay.reps)} reps, soit ${fmtPct(p.peakDay.sharePct)} de la fenêtre.${
+          otherReps > 0 ? ` Les autres jours cumulent ${fmtInt(otherReps)} reps.` : ''
+        }${
           peakEx.length
-            ? ` Avec ${peakEx.map((e) => `${fmtInt(e.reps)} ${e.name.toLowerCase()}`).join(', ')}, cette séance combine plusieurs familles de mouvement.`
+            ? ` Elle mêle ${peakEx.map((e) => `${fmtInt(e.reps)} ${e.name.toLowerCase()}`).join(', ')}.`
             : ''
-        } Elle constitue donc une séance beaucoup plus représentative de ton organisation actuelle que le seul nombre de répétitions ne le laisse apparaître.`,
+        }${
+          sessionMedian != null && p.peakDay.reps > sessionMedian * 1.12
+            ? ` La médiane des séances est ${fmtInt(Math.round(sessionMedian))} reps : ce pic fausse une moyenne, il ne décrit pas la séance habituelle.`
+            : ''
+        }${mateBit}`,
         evidence: `${formatDayFr(p.peakDay.date, true)} · ${fmtInt(p.peakDay.reps)} reps · ${fmtPct(p.peakDay.sharePct)}`,
         weights: { importance: 0.87, reliability: 0.93, novelty: 0.88, fit: isWeek ? 1 : 0.8 },
         metrics: { peakDate: p.peakDay.date, peakReps: p.peakDay.reps, sharePct: p.peakDay.sharePct }
@@ -1251,30 +1368,65 @@ function detectDiscoveries(cmp, extras = {}) {
     const gap = inclusiveCalendarSpanDays(gapDate, p.window.start) - 1;
     return gap >= 21 && e.reps >= 24;
   });
-  const named = [...emerging, ...returning].filter(
-    (e, i, arr) => arr.findIndex((x) => x.id === e.id) === i
-  );
+  const named = [...emerging, ...returning]
+    .filter((e, i, arr) => arr.findIndex((x) => x.id === e.id) === i)
+    .sort((a, b) => b.reps - a.reps)
+    .slice(0, 8);
   if (named.length) {
-    const isNew = emerging.some((e) => named.find((n) => n.id === e.id));
-    out.push(
-      discovery({
-        kind: 'disc_emergence',
-        nature: 'trajectory',
-        family: 'emergence',
-        title: isNew
-          ? `${named.map((e) => e.name).join(' et ')} ${named.length > 1 ? 'modifient' : 'modifie'} le répertoire de ${v.thisPeriod}`
-          : `${named.map((e) => e.name).join(' et ')} réapparaissent dans ${v.thisPeriod}`,
-        body: `${named
-          .map((e) => {
-            const neu = emerging.some((x) => x.id === e.id);
-            return `${e.name} (${fmtInt(e.reps)} reps) ${neu ? "apparaissent dans cette fenêtre" : 'réapparaissent après une absence'}`;
-          })
-          .join('. ')}. Ils ne doivent pas être mélangés aux exercices déjà très fréquents pour calculer naïvement une progression globale : ils constituent de nouveaux points de comparaison dans ton historique.`,
-        evidence: named.map((e) => e.name).join(' · '),
-        weights: { importance: 0.9, reliability: 0.88, novelty: 0.96, fit: 0.98 },
-        metrics: { names: named.map((e) => e.name) }
-      })
-    );
+    const eventReader = createSetShiftReader(extras.snapshot, p.window?.end);
+    named.forEach((e) => {
+      const neu = emerging.some((x) => x.id === e.id);
+      const dates = Object.keys(p.exercisesByDate || {})
+        .filter((date) => (p.exercisesByDate[date] || []).some((other) => String(other.id) === String(e.id)))
+        .sort();
+      const lastDate = dates[dates.length - 1];
+      const dayReps = lastDate
+        ? (p.exercisesByDate[lastDate] || []).find((other) => String(other.id) === String(e.id))?.reps
+        : null;
+      const setBit = lastDate ? eventReader.forSession(e.id, lastDate, dayReps) : '';
+      const gapDate = p.lastSeenBefore?.[e.id];
+      const gapDays = !neu && gapDate ? Math.max(0, inclusiveCalendarSpanDays(gapDate, p.window.start) - 1) : null;
+      const companions = sameDayCompanions(e, p.exercisesByDate);
+      const groupId = primaryGroup(e.name);
+      const group = groupId ? p.muscles?.find((muscle) => muscle.group === groupId) : null;
+      const peer = named.find(
+        (other) =>
+          other.id !== e.id &&
+          !emerging.some((row) => row.id === other.id) &&
+          !neu &&
+          primaryGroup(other.name) &&
+          primaryGroup(other.name) === groupId
+      );
+      out.push(
+        discovery({
+          id: `disc_emergence:${e.id}`,
+          kind: 'disc_emergence',
+          nature: 'trajectory',
+          family: 'emergence',
+          score: 94 - named.indexOf(e),
+          title: neu
+            ? `${e.name} apparaît dans ${v.thisPeriod}`
+            : `${e.name} revient dans ${v.thisPeriod}`,
+          body: writeExerciseEvent({
+            exercise: e,
+            totalReps: p.totalReps,
+            emerging: neu,
+            gapDays,
+            companions,
+            setBit,
+            voice: v.key,
+            groupReps: group?.reps || null,
+            groupLabel: group?.label || '',
+            pushReps: p.pushReps || 0,
+            backReps: p.byMuscle?.[MuscleGroups.BACK]?.reps || 0,
+            peer: peer || null
+          }),
+          evidence: `${e.name} · ${fmtInt(e.reps)} reps`,
+          weights: { importance: 0.9, reliability: 0.88, novelty: 0.96, fit: 0.98 },
+          metrics: { exerciseId: String(e.id), factId: `emergence|${e.id}`, name: e.name }
+        })
+      );
+    });
   }
 
   if (
@@ -1415,6 +1567,7 @@ function detectDiscoveries(cmp, extras = {}) {
     }
   }
 
+  const setShifts = createSetShiftReader(extras.snapshot, p.window?.end);
   const habitHits = baselines
     .filter((b) => b.established && b.median != null && b.last?.date >= p.window.start && Math.abs(b.vsHabitPct || 0) >= 12)
     .sort((a, b) => Math.abs(b.vsHabitPct) - Math.abs(a.vsHabitPct));
@@ -1426,6 +1579,12 @@ function detectDiscoveries(cmp, extras = {}) {
       !isToday && windowEx?.reps
         ? ` Sur ${v.thisPeriod}, tu as accumulé ${fmtInt(windowEx.reps)} répétitions de ce mouvement (${windowEx.days || 1} séance${(windowEx.days || 1) > 1 ? 's' : ''}).`
         : '';
+    const stableHabit =
+      habitLead.p25 != null && habitLead.p75 != null && Math.abs(habitLead.p75 - habitLead.p25) < 1;
+    const habitClause = stableHabit
+      ? `à ${fmt1(habitLead.median)} répétitions`
+      : `autour de ${fmt1(habitLead.median)} répétitions (médiane, écart interquartile ${fmt1(habitLead.p25)}–${fmt1(habitLead.p75)})`;
+    const setBit = setShifts.forSession(habitLead.id, habitLead.last.date, habitLead.lastReps);
     out.push(
       discovery({
         kind: 'disc_vs_habit',
@@ -1434,7 +1593,7 @@ function detectDiscoveries(cmp, extras = {}) {
         title: above
           ? `${habitLead.name} : ${v.thisPeriod} ${agreeEst(v)} au-dessus de ton niveau habituel`
           : `${habitLead.name} : ${v.thisPeriod} ${agreeEst(v)} en retrait de ton niveau habituel`,
-        body: `Tes séances de ${habitLead.name.toLowerCase()} se situent habituellement autour de ${fmt1(habitLead.median)} répétitions (médiane, écart interquartile ${fmt1(habitLead.p25)}–${fmt1(habitLead.p75)}). Les ${fmtInt(habitLead.lastReps)} répétitions ${isToday ? "réalisées aujourd'hui" : `du ${formatDayFr(habitLead.last.date, true)}`} placent cette séance environ ${fmtPct(Math.abs(habitLead.vsHabitPct))} ${above ? 'au-dessus' : 'en dessous'} de ton niveau habituel.${periodBit} Ce n'est pas un record : c'est un écart à ce que tu reproduis d'habitude.`,
+        body: `Tes séances de ${habitLead.name.toLowerCase()} se situent habituellement ${habitClause}. Les ${fmtInt(habitLead.lastReps)} répétitions ${isToday ? "réalisées aujourd'hui" : `du ${formatDayFr(habitLead.last.date, true)}`} placent cette séance environ ${fmtPct(Math.abs(habitLead.vsHabitPct))} ${above ? 'au-dessus' : 'en dessous'} de ton niveau habituel.${setBit ? ` ${setBit}` : ''}${periodBit} Ce n'est pas un record : c'est un écart à ce que tu reproduis d'habitude.`,
         evidence: `${fmtInt(habitLead.lastReps)} vs habituel ${fmt1(habitLead.median)} · ${fmtSignedPct(habitLead.vsHabitPct)}`,
         weights: {
           importance: isToday ? 0.94 : 0.7,
@@ -1482,13 +1641,32 @@ function detectDiscoveries(cmp, extras = {}) {
     .filter((b) => b.established && b.vsInitialPct != null && Math.abs(b.vsInitialPct) >= 15 && b.historicalMean >= 5)
     .sort((a, b) => Math.abs(b.vsInitialPct) - Math.abs(a.vsInitialPct))[0];
   if (progressLead) {
+    const setLevel = setShifts.acrossLevel(progressLead.id);
     out.push(
       discovery({
         kind: 'disc_exercise_progress',
         nature: 'journey',
         family: 'exercise_progress',
         title: `${progressLead.name} a ${progressLead.vsInitialPct >= 0 ? 'progressé' : 'reculé'} de ${fmtPct(Math.abs(progressLead.vsInitialPct))} depuis tes premières séances comparables`,
-        body: `Niveau initial (moyenne des ${Math.min(5, progressLead.sessions)} premières séances) : environ ${fmt1(progressLead.historicalMean)} reps. Niveau actuel (moyennes récentes hors dernière saisie) : environ ${fmt1(progressLead.currentMean)} reps, soit ${fmtSignedPct(progressLead.vsInitialPct)}. ${
+        body: `Niveau initial (moyenne des ${Math.min(5, progressLead.sessions)} premières séances) : environ ${fmt1(progressLead.historicalMean)} reps. Niveau actuel (moyenne des dernières séances, dernière saisie comprise) : environ ${fmt1(progressLead.currentMean)} reps, soit ${fmtSignedPct(progressLead.vsInitialPct)}. Les premières séances servent aussi à apprendre le geste : une partie de l'écart avec ce départ peut venir de là.${
+          progressLead.recentMean != null && progressLead.last?.reps != null
+            ? ` Sans la dernière saisie, la moyenne récente est ${fmt1(progressLead.recentMean)} reps. La dernière séance (${fmtInt(progressLead.last.reps)} reps) se lit à part.`
+            : ''
+        }${
+          /pomp/i.test(progressLead.name || '')
+            ? (() => {
+                const kin = (p.exercises || []).find(
+                  (exercise) =>
+                    /pomp/i.test(exercise.name || '') &&
+                    String(exercise.name).toLowerCase() !== String(progressLead.name).toLowerCase() &&
+                    (exercise.reps || 0) >= 40
+                );
+                return kin
+                  ? ` Dans la même fenêtre, ${kin.name.toLowerCase()} compte ${fmtInt(kin.reps)} répétitions : poignets, coudes et épaules encaissent les deux.`
+                  : '';
+              })()
+            : ''
+        } ${setLevel ? `${setLevel} ` : ''}${
           progressLead.consolidated
             ? `Surtout, cette progression est désormais consolidée : ${progressLead.aboveOldMean} de tes ${progressLead.last5Count} dernières performances dépassent ton ancien niveau moyen.`
             : `Le record (${fmtInt(progressLead.best)} le ${progressLead.bestDate ? formatDayFr(progressLead.bestDate, true) : '—'}) n'est pas le niveau : le niveau, c'est ce que tu reproduis.`
@@ -1713,6 +1891,18 @@ function detectDiscoveries(cmp, extras = {}) {
         family: 'sleep_assoc',
         title: 'Autour de 7 h 30, les journées fortes et les journées courtes ne se répartissent pas pareil',
         body: `Sur ${sep.highN} séances dépassant 300 reps, ${sep.highOk} ont été précédées d'au moins 7 h 30 de sommeil. À l'inverse, ${sep.lowShort} des ${sep.lowN} séances sous 250 reps ont suivi une nuit plus courte. ${
+          (sep.highN || 0) + (sep.lowN || 0) < 20
+            ? `L'écart porte sur ${(sep.highN || 0) + (sep.lowN || 0)} séances : assez pour être suivi, pas assez pour en faire une règle. `
+            : ''
+        }${
+          sep.highN > 0 && sep.lowN > 0
+            ? `L'écart entre les deux proportions est d'environ ${fmtInt(Math.abs(Math.round((sep.highOk / sep.highN - (sep.lowN - sep.lowShort) / sep.lowN) * 100)))} points. `
+            : ''
+        }${
+          p.trainingDays > 0 && p.spanDays > p.trainingDays
+            ? `Cette fenêtre a aussi des jours sans séance : une nuit plus longue peut venir de ces jours-là, pas seulement précéder le volume. `
+            : ''
+        }${
           perfSleep?.volumeDominates
             ? `Le phénomène concerne surtout la quantité de travail réalisée : les performances sur le mouvement le plus chargé varient moins (${fmtPct(Math.abs(perfSleep.deltaPct || 0))}) que le volume total de séance (${fmtPct(Math.abs(perfSleep.volDeltaPct || 0))}).`
             : `Le phénomène concerne surtout la quantité de travail réalisée : le sommeil semble davantage associé à ta capacité à maintenir une séance longue et volumineuse qu'à une augmentation automatique de chaque série.`
@@ -2061,7 +2251,14 @@ function detectDiscoveries(cmp, extras = {}) {
             prev30.totalReps > 0
               ? `est ${fmtSignedPct(pctChange(p.totalReps, prev30.totalReps) || 0)}`
               : 'n’a pas le même ordre de grandeur'
-          }. On lit ici un changement de structure, pas seulement une hausse ou une baisse de répétitions.`,
+          }.${(() => {
+            const gone = (prev30.exercises || [])
+              .filter((exercise) => (exercise.reps || 0) >= 48 && !(p.byExercise?.[exercise.id]?.reps > 0))
+              .sort((a, b) => b.reps - a.reps)[0];
+            return gone
+              ? ` ${gone.name} comptait ${fmtInt(gone.reps)} répétitions sur la période précédente et n'apparaît plus ici. Une partie du changement de part vient de cette disparition, pas seulement d'une baisse générale.`
+              : '';
+          })()} On lit ici un changement de structure, pas seulement une hausse ou une baisse de répétitions.`,
           evidence: `${lead.label} ${fmtPct(lead.thenShare)} → ${fmtPct(lead.nowShare)}`,
           weights: { importance: 0.9, reliability: 0.88, novelty: 0.9, fit: 0.96 },
           metrics: { group: lead.group, nowShare: lead.nowShare, thenShare: lead.thenShare }
@@ -2352,7 +2549,14 @@ function appendMilestoneDiscoveries(out, extras, v) {
           novelty: 0.96,
           fit: 0.95
         },
-        metrics: { type: m.type, date: m.date }
+        score: m.exerciseId ? 91 : undefined,
+        metrics: {
+          type: m.type,
+          date: m.date,
+          exerciseId: m.exerciseId || undefined,
+          factId: m.exerciseId ? `ms|${m.kind}|${m.exerciseId}` : undefined,
+          name: m.title
+        }
       })
     );
   });
@@ -2450,8 +2654,9 @@ function memoryFactor(history, kind, now = Date.now()) {
 /** Ce qui doit gagner chaque angle, selon la question de la plage. */
 export const PERIOD_DISCOVERY_PRIORITY = {
   today: {
-    now: ['disc_pending_session', 'disc_density', 'disc_sleep_night', 'disc_volume_shape', 'disc_vs_habit', 'disc_exercise_share'],
+    now: ['disc_gtg_unplanned_now', 'disc_pending_session', 'disc_density', 'disc_sleep_night', 'disc_volume_shape', 'disc_vs_habit', 'disc_exercise_share'],
     trajectory: [
+      'disc_gtg_unplanned_role',
       'disc_pending_context',
       'disc_sleep_combo',
       'disc_sleep_volume',
@@ -2467,6 +2672,7 @@ export const PERIOD_DISCOVERY_PRIORITY = {
       'disc_stimulus_mix'
     ],
     journey: [
+      'disc_gtg_unplanned_progress',
       'disc_sleep_zones',
       'disc_anchor',
       'disc_sleep_freq',
@@ -2479,8 +2685,9 @@ export const PERIOD_DISCOVERY_PRIORITY = {
     ]
   },
   week: {
-    now: ['disc_pending_session', 'disc_sleep_week', 'disc_volume_shape', 'disc_sleep_deep', 'disc_sleep_night', 'disc_peak_day', 'disc_density'],
+    now: ['disc_gtg_unplanned_now', 'disc_pending_session', 'disc_sleep_week', 'disc_volume_shape', 'disc_sleep_deep', 'disc_sleep_night', 'disc_peak_day', 'disc_density'],
     trajectory: [
+      'disc_gtg_unplanned_role',
       'disc_pending_context',
       'disc_sleep_volume',
       'disc_sleep_perf',
@@ -2491,12 +2698,15 @@ export const PERIOD_DISCOVERY_PRIORITY = {
       'disc_sleep_rpe',
       'disc_sleep_efficiency',
       'disc_sleep_family',
+      'disc_muscle_share_shift',
+      'disc_sleep_assoc',
       'disc_exercise_base',
       'disc_push_pull',
       'disc_structural_memory',
       'disc_stimulus_mix'
     ],
     journey: [
+      'disc_gtg_unplanned_progress',
       'disc_sleep_freq',
       'disc_sleep_zones',
       'disc_anchor',
@@ -2509,8 +2719,9 @@ export const PERIOD_DISCOVERY_PRIORITY = {
     ]
   },
   month: {
-    now: ['disc_volume_shape', 'disc_density', 'disc_muscle_now'],
+    now: ['disc_gtg_unplanned_now', 'disc_volume_shape', 'disc_density', 'disc_muscle_now'],
     trajectory: [
+      'disc_gtg_unplanned_role',
       'disc_sleep_month',
       'disc_sleep_perf',
       'disc_sleep_load',
@@ -2525,11 +2736,12 @@ export const PERIOD_DISCOVERY_PRIORITY = {
       'disc_sleep_architecture',
       'disc_stimulus_mix'
     ],
-    journey: ['disc_sleep_zones', 'disc_sleep_j2', 'disc_best_month', 'disc_exercise_progress', 'disc_quarter_profile']
+    journey: ['disc_gtg_unplanned_progress', 'disc_sleep_zones', 'disc_sleep_j2', 'disc_best_month', 'disc_exercise_progress', 'disc_quarter_profile']
   },
   long: {
-    now: ['disc_volume_shape', 'disc_muscle_now', 'disc_density'],
+    now: ['disc_gtg_unplanned_now', 'disc_volume_shape', 'disc_muscle_now', 'disc_density'],
     trajectory: [
+      'disc_gtg_unplanned_role',
       'disc_sleep_volume',
       'disc_sleep_perf',
       'disc_sleep_combo',
@@ -2539,13 +2751,14 @@ export const PERIOD_DISCOVERY_PRIORITY = {
       'disc_sleep_architecture',
       'disc_family_fade'
     ],
-    journey: ['disc_sleep_quarter', 'disc_best_month', 'disc_sleep_freq', 'disc_sleep_delayed', 'disc_sleep_j2', 'disc_quarter_arc']
+    journey: ['disc_gtg_unplanned_progress', 'disc_sleep_quarter', 'disc_best_month', 'disc_sleep_freq', 'disc_sleep_delayed', 'disc_sleep_j2', 'disc_quarter_arc']
   }
 };
 PERIOD_DISCOVERY_PRIORITY.year = {
   now: PERIOD_DISCOVERY_PRIORITY.long.now,
   trajectory: PERIOD_DISCOVERY_PRIORITY.long.trajectory,
   journey: [
+    'disc_gtg_unplanned_progress',
     'disc_sleep_quarter',
     'disc_best_month',
     'disc_exercise_progress',
@@ -2560,7 +2773,6 @@ const DISCOVERY_RIVALS = [
   ['disc_anchor', 'disc_freq_continuity'],
   ['disc_quarter_arc', 'disc_quarter_profile'],
   ['disc_exercise_share', 'disc_repertoire'],
-  ['disc_structural_memory', 'disc_emergence'],
   ['disc_family_fade', 'disc_emergence'],
   ['disc_muscle_share_shift', 'disc_muscle_reorient'],
   ['disc_sleep_volume', 'disc_sleep_assoc', 'disc_sleep_combo', 'disc_sleep_month', 'disc_sleep_perf'],
@@ -2572,6 +2784,11 @@ function rivalBlocked(kind, usedKinds) {
   return DISCOVERY_RIVALS.some(
     (group) => group.includes(kind) && group.some((k) => k !== kind && usedKinds.has(k))
   );
+}
+
+function discoveryIdentity(d) {
+  const exerciseId = d?.metrics?.exerciseId;
+  return exerciseId ? `${d.kind}:${exerciseId}` : d.kind;
 }
 
 function inferDropReason(d, selected, famCaps) {
@@ -2600,16 +2817,18 @@ export function selectPeriodDiscoveriesWithTrace(discoveries, insightHistory = n
     ...d,
     score: Math.round((d.score || 0) * memoryFactor(insightHistory, d.kind))
   }));
-  const byKind = new Map();
+  const byIdentity = new Map();
   scored.forEach((d) => {
     if (!d?.kind) return;
-    const prev = byKind.get(d.kind);
-    if (!prev || (d.score || 0) > (prev.score || 0)) byKind.set(d.kind, d);
+    const key = discoveryIdentity(d);
+    const prev = byIdentity.get(key);
+    if (!prev || (d.score || 0) > (prev.score || 0)) byIdentity.set(key, d);
   });
-  const unique = [...byKind.values()];
+  const unique = [...byIdentity.values()];
   const sorted = unique.sort((a, b) => (b.score || 0) - (a.score || 0));
   const byAngle = { now: [], trajectory: [], journey: [] };
   const usedKind = new Set();
+  const usedIdentity = new Set();
   const usedKindByNature = { now: new Set(), trajectory: new Set(), journey: new Set() };
   const usedFamilyByNature = { now: new Map(), trajectory: new Map(), journey: new Map() };
   const familyCount = {
@@ -2623,7 +2842,8 @@ export function selectPeriodDiscoveriesWithTrace(discoveries, insightHistory = n
   const canTake = (d) => {
     const nature = d.nature || 'trajectory';
     if ((d.score || 0) < 36) return false;
-    if (usedKind.has(d.kind)) return false;
+    if (usedIdentity.has(discoveryIdentity(d))) return false;
+    if (!d.metrics?.exerciseId && usedKind.has(d.kind)) return false;
     if (rivalBlocked(d.kind, usedKindByNature[nature])) return false;
     const seenFamily = usedFamilyByNature[nature].get(d.family) || 0;
     if (d.family && seenFamily >= 2 && (d.score || 0) < 86) return false;
@@ -2639,6 +2859,7 @@ export function selectPeriodDiscoveriesWithTrace(discoveries, insightHistory = n
     if (!canTake(d)) return false;
     byAngle[nature].push(d);
     usedKind.add(d.kind);
+    usedIdentity.add(discoveryIdentity(d));
     usedKindByNature[nature].add(d.kind);
     if (d.family) {
       usedFamilyByNature[nature].set(d.family, (usedFamilyByNature[nature].get(d.family) || 0) + 1);
@@ -2679,13 +2900,11 @@ export function selectPeriodDiscoveriesWithTrace(discoveries, insightHistory = n
 
   const selected = [...byAngle.now, ...byAngle.trajectory, ...byAngle.journey];
   const dropped = unique
-    .filter((d) => !usedKind.has(d.kind))
+    .filter((d) => !usedIdentity.has(discoveryIdentity(d)))
     .map((d) => ({
-      kind: d.kind,
+      ...d,
       nature: d.nature || 'trajectory',
-      family: d.family,
       signalFamily: signalFamilyOfKind(d.kind),
-      score: d.score,
       reason: inferDropReason(d, selected, famCaps)
     }));
 
@@ -2705,6 +2924,43 @@ export function selectPeriodDiscoveries(discoveries, insightHistory = null, voic
  *   preferPeriodNow: boolean
  * }}
  */
+function refillAfterGate(selected, pool, voiceKey) {
+  const kept = [...(selected || [])];
+  const seen = new Set(kept.map((card) => discoveryIdentity(card)));
+  const famCaps = SIGNAL_FAMILY_CAPS[voiceKey] || SIGNAL_FAMILY_CAPS.week;
+  const counts = {
+    now: { sport: 0, sleep: 0, milestone: 0 },
+    trajectory: { sport: 0, sleep: 0, milestone: 0 },
+    journey: { sport: 0, sleep: 0, milestone: 0 }
+  };
+  const familyCount = { now: new Map(), trajectory: new Map(), journey: new Map() };
+  kept.forEach((card) => {
+    const nature = card.nature || 'trajectory';
+    counts[nature][signalFamilyOfKind(card.kind)] += 1;
+    if (card.family) {
+      familyCount[nature].set(card.family, (familyCount[nature].get(card.family) || 0) + 1);
+    }
+  });
+  [...(pool || [])].filter((card) => card.reason === 'cap')
+    .sort((a, b) => (b.score || 0) - (a.score || 0))
+    .forEach((card) => {
+      const identity = discoveryIdentity(card);
+      if (seen.has(identity)) return;
+      const nature = card.nature || 'trajectory';
+      const sig = signalFamilyOfKind(card.kind);
+      if ((counts[nature][sig] || 0) >= (famCaps[nature]?.[sig] ?? 0)) return;
+      const seenFamily = familyCount[nature].get(card.family) || 0;
+      if (card.family && seenFamily >= 2 && (card.score || 0) < 86) return;
+      const gated = applyEditorialGate([card], { voiceKey });
+      if (!gated.length) return;
+      kept.push(gated[0]);
+      seen.add(identity);
+      counts[nature][sig] += 1;
+      if (card.family) familyCount[nature].set(card.family, seenFamily + 1);
+    });
+  return kept;
+}
+
 export function buildPeriodDiscoveryBundle(opts = {}) {
   const comparisons = buildPeriodComparisons(opts);
   const end = opts.window?.end;
@@ -2752,6 +3008,7 @@ export function buildPeriodDiscoveryBundle(opts = {}) {
     garminData: opts.garminData,
     getExerciseNameById: opts.getExerciseNameById,
     profileQuestionnaireRaw: opts.profileQuestionnaireRaw || null,
+    activeProgram: opts.activeProgram || null,
     allNights,
     sleepWindowFacts: publishWindowSleepFacts({
       trainedPairs: trainedInWindow,
@@ -2772,6 +3029,11 @@ export function buildPeriodDiscoveryBundle(opts = {}) {
       comparisons,
       catalog,
       snapshot: opts.snapshot
+    }),
+    ...buildGtgUnplannedDiscoveries({
+      snapshot: opts.snapshot,
+      window: opts.window,
+      profileQuestionnaireRaw: opts.profileQuestionnaireRaw || null
     })
   ];
   const traced = selectPeriodDiscoveriesWithTrace(
@@ -2779,7 +3041,12 @@ export function buildPeriodDiscoveryBundle(opts = {}) {
     opts.insightHistory || null,
     comparisons.voice?.key || 'week'
   );
-  const selected = traced.selected;
+  const voiceKey = comparisons.voice?.key || 'week';
+  const selected = refillAfterGate(
+    applyEditorialGate(traced.selected, { voiceKey }),
+    traced.dropped,
+    voiceKey
+  );
   const dropped = traced.dropped;
   const preferPeriodNow = selected.some((d) => d.nature === 'now');
   const sleepDetected = all.filter((d) => signalFamilyOfKind(d.kind) === 'sleep').map((d) => d.kind);

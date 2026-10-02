@@ -63,7 +63,15 @@ export class LocalBooksRepository extends BooksRepositoryPhase1 {
   async loadAll() {
     const db = await openBooksDb();
     if (!db) return [];
-    return getAllWithDb(db);
+    try {
+      return await getAllWithDb(db);
+    } finally {
+      try {
+        db.close();
+      } catch {
+        // ignore
+      }
+    }
   }
 
   async saveMerged(books) {
@@ -77,6 +85,14 @@ export class LocalBooksRepository extends BooksRepositoryPhase1 {
     booksIdxLog.debug('[booksIndexedDB] Sauvegarde de', safeBooks.length, 'livres');
 
     return new Promise((resolve) => {
+      const finish = (value) => {
+        try {
+          db.close();
+        } catch {
+          // ignore
+        }
+        resolve(value);
+      };
       try {
         getAllWithDb(db).then((allExistingBooks) => {
           const userIdsToUpdate = new Set(safeBooks.map((b) => b.userId).filter(Boolean));
@@ -106,7 +122,7 @@ export class LocalBooksRepository extends BooksRepositoryPhase1 {
           clearRequest.onsuccess = () => {
             let remaining = booksToKeep.length + safeBooks.length;
             if (remaining === 0) {
-              resolve(true);
+              finish(true);
               return;
             }
             let failed = false;
@@ -126,7 +142,7 @@ export class LocalBooksRepository extends BooksRepositoryPhase1 {
                     booksToKeep.length + safeBooks.length,
                     'livres sauvegardés'
                   );
-                  resolve(false);
+                  finish(false);
                 }
               };
               putRequest.onsuccess = () => {
@@ -135,7 +151,7 @@ export class LocalBooksRepository extends BooksRepositoryPhase1 {
                   if (!failed) {
                     booksIdxLog.debug('[booksIndexedDB] ✅', savedCount, 'livres sauvegardés avec succès (merge intelligent)');
                   }
-                  resolve(!failed);
+                  finish(!failed);
                 }
               };
             };
@@ -146,12 +162,12 @@ export class LocalBooksRepository extends BooksRepositoryPhase1 {
 
           clearRequest.onerror = (error) => {
             console.error('[booksIndexedDB] ❌ Erreur lors du clear:', error);
-            resolve(false);
+            finish(false);
           };
         });
       } catch (error) {
         console.error('[booksIndexedDB] ❌ Exception lors de la sauvegarde:', error);
-        resolve(false);
+        finish(false);
       }
     });
   }

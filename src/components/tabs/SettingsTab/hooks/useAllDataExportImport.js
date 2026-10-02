@@ -28,6 +28,11 @@ import {
   persistSportProgramContext
 } from '../utils/sportExportBundle';
 import { mergeGtgData } from '../../../../services/endurance/gtgDataMerge';
+import { mergeWorkoutTableLists } from '../../../../services/workout/workoutAggregateDefaults';
+import { importBudgetData } from '../../../../utils/budgetExportImport';
+import { importNutritionBackup } from '../utils/importNutritionBackup';
+import { restoreSportLocalSnapshot } from '../utils/sportLocalSnapshot';
+import { withIdbOperationTimeout } from '../../../../utils/sessionSaveTimeout';
 
 /**
  * Hook pour gérer l'import/export complet de toutes les données
@@ -437,7 +442,8 @@ export const useAllDataExportImport = (
         circuitDefinitionsVersion: importedData.circuitDefinitionsVersion || backupData.circuitDefinitionsVersion || '1.0',
         bodyTrackingReminders: importedData.bodyTrackingReminders || backupData.bodyTrackingReminders || [],
         bodyTrackingLastUpdated: new Date().toISOString(),
-        bodyTrackingPrefs: importedData.bodyTrackingPrefs || backupData.bodyTrackingPrefs || {}
+        bodyTrackingPrefs: importedData.bodyTrackingPrefs || backupData.bodyTrackingPrefs || {},
+        workoutTables: mergeWorkoutTableLists(backupData.workoutTables, importedData.workoutTables)
       };
 
       // Nettoyer les IDs dupliqués dans les sessions après fusion
@@ -540,8 +546,15 @@ export const useAllDataExportImport = (
         }
       }
       
-      // Sauvegarder les données fusionnées et nettoyées
-      await updateData(mergedData);
+      // strict : une sauvegarde bloquée doit finir en erreur, pas en succès silencieux.
+      // On continue Garmin / nutrition / budget même si l’entraînement n’a pas pu s’écrire.
+      let workoutSaveError = null;
+      try {
+        await updateData(mergedData, { strict: true, skipReact: true, skipCloud: true });
+      } catch (saveErr) {
+        workoutSaveError = saveErr;
+        console.error('[Settings] Sauvegarde entraînement interrompue:', saveErr);
+      }
 
       const programCtx = extractSportProgramContextFromImport(importedData);
       if (programCtx) {
@@ -580,12 +593,51 @@ export const useAllDataExportImport = (
         }
       }
 
+      const nutritionPayload =
+        allDataPreviewData?.rawExport?.data?.nutritionData
+        || allDataPreviewData?.rawExport?.nutritionData;
+      if (nutritionPayload) {
+        try {
+          const nutritionResult = await importNutritionBackup(nutritionPayload);
+          if (nutritionResult.skipped) {
+            console.warn('[Settings] Nutrition absente ou vide — repas non importés');
+          } else {
+            console.log('[Settings] ✅ Import nutrition', nutritionResult.stores);
+          }
+        } catch (nutritionErr) {
+          console.warn('[Settings] Import nutrition ignoré:', nutritionErr);
+        }
+      }
+
+      const budgetPayload =
+        allDataPreviewData?.rawExport?.data?.budgetData
+        || allDataPreviewData?.rawExport?.budgetData;
+      if (budgetPayload) {
+        try {
+          await importBudgetData(budgetPayload, { merge: true, validate: true });
+          console.log('[Settings] ✅ Import budget');
+        } catch (budgetErr) {
+          console.warn('[Settings] Import budget ignoré:', budgetErr);
+        }
+      }
+
+      const localSnapshot =
+        allDataPreviewData?.rawExport?.sportLocalSnapshot
+        || allDataPreviewData?.rawExport?.data?.sportLocalSnapshot;
+      if (localSnapshot) {
+        try {
+          restoreSportLocalSnapshot(localSnapshot);
+        } catch (snapshotErr) {
+          console.warn('[Settings] Jalons de grades non restaurés:', snapshotErr);
+        }
+      }
+
       // Importer les livres si présents dans l'export
       const booksPreview = allDataPreviewData?.booksPreview;
       if (booksPreview && booksPreview.valid && Array.isArray(booksPreview.books)) {
         const booksToSave = booksPreview.books;
         try {
-          const indexedOk = await saveBooksToIndexedDB(booksToSave);
+          const indexedOk = await withIdbOperationTimeout(saveBooksToIndexedDB(booksToSave), 12000);
           if (indexedOk) {
             console.log(`[Settings] ✅ Import Livres réussi (${booksToSave.length} livres restaurés dans IndexedDB depuis l'export global)`);
           } else {
@@ -602,6 +654,12 @@ export const useAllDataExportImport = (
         console.log('[Settings] ✅ Import complet réussi, données rechargées depuis IndexedDB');
       }
       
+      if (workoutSaveError) {
+        setAllDataImportStatus('error');
+        setTimeout(() => setAllDataImportStatus(null), 8000);
+        return;
+      }
+
       setAllDataImportStatus('success');
       setShowAllDataImportPreview(false);
       setImportData('');

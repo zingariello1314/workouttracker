@@ -44,6 +44,8 @@ import {
   prepareSportExportBundle
 } from '../utils/sportExportBundle';
 import { resolveLatestProgramContext } from '../../../../utils/programVersionUtils';
+import { flushAllAppPersistence } from '../../../../services/persistence/appPersistenceFlush';
+import { collectSportLocalSnapshot } from '../utils/sportLocalSnapshot';
 import {
   buildGarminDailyIndex,
   buildGarminExportSummary
@@ -112,7 +114,13 @@ export const useSettingsExport = (
   const exportAllData = useCallback(async () => {
     try {
       setExportStatus('loading');
-      
+
+      try {
+        await flushAllAppPersistence();
+      } catch (flushErr) {
+        console.warn('[export] Flush avant export incomplet:', flushErr);
+      }
+
       const currentData = await loadFromDB();
       const dataToExport = currentData || data;
       const storedProgramContext = await loadSportProgramContext(storageKey);
@@ -133,9 +141,16 @@ export const useSettingsExport = (
 
       // Récupérer données Nutrition
       let nutritionData = null;
+      let nutritionWarning = null;
       try {
         nutritionData = await exportNutritionData();
+        if (nutritionData?.unavailable) {
+          nutritionWarning = nutritionData.reason || 'nutrition-unavailable';
+          console.warn('⚠️ Nutrition non incluse dans l’export:', nutritionWarning);
+          nutritionData = null;
+        }
       } catch (error) {
+        nutritionWarning = error?.message || 'nutrition-export-failed';
         console.warn('⚠️ Erreur récupération données Nutrition pour export global:', error);
       }
       
@@ -162,6 +177,7 @@ export const useSettingsExport = (
         exportDate: new Date().toISOString(),
         exportType: 'Sport Complete',
         appName: 'Momentum',
+        sportLocalSnapshot: collectSportLocalSnapshot(),
         data: sportBundle.data,
         sportExport: {
           ...sportBundle.sportExport,
@@ -228,7 +244,8 @@ export const useSettingsExport = (
             dateRange: booksExport.metadata?.dateRange || { earliest: null, latest: null },
             estimatedSizeKB: booksExport.metadata?.estimatedSizeKB || 0
           },
-          garminSummary: garminData ? buildGarminExportSummary(garminData) : null
+          garminSummary: garminData ? buildGarminExportSummary(garminData) : null,
+          nutritionWarning
         }
       };
 
@@ -379,6 +396,9 @@ export const useSettingsExport = (
     try {
       setNutritionExportStatus('loading');
       const nutritionData = await exportNutritionData();
+      if (nutritionData?.unavailable) {
+        throw new Error(nutritionData.reason || 'nutrition-db-not-ready');
+      }
       
       const totalMeals = nutritionData.meals?.length || 0;
       const totalDailyMeals = nutritionData.dailyMeals?.length || 0;

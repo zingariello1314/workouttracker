@@ -13,6 +13,22 @@ export function programUpdatedAtMs(program) {
  * @param {object|null} b
  * @param {{ preferSecondIfTie?: boolean }} [opts]
  */
+function scheduleRichness(program) {
+  const sched = program?.schedule;
+  if (!sched || typeof sched !== 'object') return 0;
+  let n = 0;
+  for (const day of Object.values(sched)) {
+    if (!day || typeof day !== 'object') continue;
+    n += Array.isArray(day.exercises) ? day.exercises.length : 0;
+    n += Array.isArray(day.exercices) ? day.exercices.length : 0;
+    n += day.salleVariants?.semaineA?.exercises?.length || 0;
+    n += day.salleVariants?.semaineB?.exercises?.length || 0;
+    n += day.salleVariants?.semaineA?.exercices?.length || 0;
+    n += day.salleVariants?.semaineB?.exercices?.length || 0;
+  }
+  return n;
+}
+
 export function pickLatestProgram(a, b, opts = {}) {
   if (!a) return b || null;
   if (!b) return a;
@@ -20,6 +36,12 @@ export function pickLatestProgram(a, b, opts = {}) {
   const tb = programUpdatedAtMs(b);
   if (tb > ta) return b;
   if (ta > tb) return a;
+  if (ta === 0 && tb === 0) {
+    const ra = scheduleRichness(a);
+    const rb = scheduleRichness(b);
+    if (rb > ra) return b;
+    if (ra > rb) return a;
+  }
   return opts.preferSecondIfTie ? b : a;
 }
 
@@ -61,6 +83,9 @@ export function resolveLatestProgramContext(idbCtx, liveCtx) {
   const activeCandidate = pickLatestProgram(a.activeProgram, b.activeProgram, {
     preferSecondIfTie: Boolean(b.activeProgram)
   });
+  const activeFromLive = Boolean(activeCandidate && b.activeProgram && activeCandidate === b.activeProgram);
+  const flagSource = activeFromLive ? b : a;
+  const flagFallback = activeFromLive ? a : b;
   const activeFromList =
     activeCandidate?.id != null ? programs.find((p) => p.id === activeCandidate.id) : null;
   const history = [...(a.programHistory || [])];
@@ -74,7 +99,7 @@ export function resolveLatestProgramContext(idbCtx, liveCtx) {
     programs,
     activeProgram: activeFromList || activeCandidate || null,
     programHistory: history,
-    weekVariant: b.weekVariant ?? a.weekVariant ?? 'A',
-    isGymMode: b.isGymMode ?? a.isGymMode ?? false
+    weekVariant: flagSource.weekVariant ?? flagFallback.weekVariant ?? 'A',
+    isGymMode: flagSource.isGymMode ?? flagFallback.isGymMode ?? false
   };
 }

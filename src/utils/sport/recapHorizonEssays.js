@@ -261,7 +261,11 @@ function reading({ horizon, nature, kind, title, body, evidence = '', relevance,
   const resolvedNature = nature || natureForKind(kind);
   const resolvedHorizon = horizon || horizonForNature(resolvedNature);
   return {
-    id: `relation.reading.${resolvedHorizon}.${kind}`,
+    id: `relation.reading.${resolvedHorizon}.${kind}${(() => {
+      const stamp = extra?.metrics?.factId || extra?.metrics?.exerciseId || '';
+      const safe = String(stamp).replace(/[^a-zA-Z0-9_-]+/g, '-');
+      return safe ? `.${safe}` : '';
+    })()}`,
     type: 'coach_reading',
     pillar: 'interpretation',
     horizon: resolvedHorizon,

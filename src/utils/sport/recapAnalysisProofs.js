@@ -79,6 +79,7 @@ function observedFrom(measure, catalog, voice) {
   return {
     reps,
     sessions: num(measure?.trainingDays),
+    strengthDays: pending ? null : num(measure?.strengthDays),
     repsPerSession: pending ? null : num(measure?.repsPerSession),
     pending,
     lastSession: last
@@ -102,7 +103,9 @@ function comparisonFrom(label, measure) {
   return {
     label,
     reps: measure.totalReps,
-    sessions: num(measure.trainingDays)
+    sessions: num(measure.trainingDays),
+    strengthDays: num(measure.strengthDays),
+    repsPerSession: num(measure.repsPerSession)
   };
 }
 
@@ -448,7 +451,7 @@ export function buildThreadDiscoveries(input) {
         body: text.body,
         evidence: text.evidence,
         relevance: 0.9,
-        metrics: { thread: row.thread, axes: text.axes, sense: row.sense }
+        metrics: { thread: row.thread, axes: text.axes, sense: row.sense, factId: text.factId, analysisType: text.analysisType }
       };
     })
     .filter(Boolean);

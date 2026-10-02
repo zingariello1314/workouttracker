@@ -28,13 +28,24 @@ export const GTG_DAILY_XP_CAP = 72;
  * @param {{ repsInWorkout?: boolean }} [options] — si true, les reps GTG ne génèrent plus d’XP ici (déjà via reps programme).
  */
 export function computeGtgXpForDayPlan(dayPlan, options = {}) {
-  if (!dayPlan || dayPlan.plannedMiniSets <= 0) {
+  if (!dayPlan || ((dayPlan.plannedMiniSets || 0) <= 0 && (dayPlan.doneReps || 0) <= 0)) {
     return {
       xp: 0,
       repsXp: 0,
       bonus50: 0,
       bonus100: 0,
       doneReps: 0,
+      progressPct: 0
+    };
+  }
+
+  if ((dayPlan.plannedMiniSets || 0) <= 0) {
+    return {
+      xp: 0,
+      repsXp: 0,
+      bonus50: 0,
+      bonus100: 0,
+      doneReps: dayPlan.doneReps || 0,
       progressPct: 0
     };
   }

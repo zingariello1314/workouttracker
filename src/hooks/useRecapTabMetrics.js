@@ -13,14 +13,7 @@ import { markRecapViewPrepared } from '../utils/preloadTabs';
 
 function yieldFrame() {
   return new Promise((resolve) => {
-    const wait = () => {
-      if (navigator.scheduling?.isInputPending?.({ includeContinuous: true })) {
-        window.setTimeout(wait, 80);
-        return;
-      }
-      window.setTimeout(resolve, 0);
-    };
-    wait();
+    window.setTimeout(resolve, 0);
   });
 }
 
@@ -36,27 +29,9 @@ function scheduleHeavyWork(fn) {
     timerId = 0;
   };
 
-  const attempt = (deadline) => {
-    if (cancelled) return;
-    const inputPending = navigator.scheduling?.isInputPending?.({ includeContinuous: true });
-    const sliceTooSmall = deadline && !deadline.didTimeout && deadline.timeRemaining() < 12;
-    if (inputPending || sliceTooSmall) {
-      clear();
-      if (typeof requestIdleCallback === 'function') {
-        idleId = requestIdleCallback(attempt, { timeout: 4000 });
-      } else {
-        timerId = window.setTimeout(() => attempt(null), 250);
-      }
-      return;
-    }
-    fn();
-  };
-
-  if (typeof requestIdleCallback === 'function') {
-    idleId = requestIdleCallback(attempt, { timeout: 4000 });
-  } else {
-    timerId = window.setTimeout(() => attempt(null), 48);
-  }
+  timerId = window.setTimeout(() => {
+    if (!cancelled) fn();
+  }, 0);
 
   return () => {
     cancelled = true;
@@ -70,15 +45,23 @@ function cancelHeavyWork(cancel) {
 
 /** Une entrée par plage : changer de période ne relance pas un calcul déjà fait. */
 const bundlesByFull = new Map();
+const bundlesByWorkout = new Map();
 let hasPublishedPeriod = false;
 
-function rememberBundle(fullKey, bundle) {
+function rememberBundle(fullKey, workoutKey, bundle) {
   if (!fullKey || !bundle) return;
   if (bundlesByFull.has(fullKey)) bundlesByFull.delete(fullKey);
   bundlesByFull.set(fullKey, bundle);
+  if (workoutKey) {
+    bundlesByWorkout.delete(workoutKey);
+    bundlesByWorkout.set(workoutKey, { fullKey, bundle });
+  }
   while (bundlesByFull.size > 16) {
     const oldest = bundlesByFull.keys().next().value;
     bundlesByFull.delete(oldest);
+    for (const [wk, row] of bundlesByWorkout) {
+      if (row.fullKey === oldest) bundlesByWorkout.delete(wk);
+    }
   }
 }
 
@@ -208,15 +191,14 @@ function buildRecapMetricsKey({
   };
 }
 
-function readSessionHit(key) {
-  if (!key?.full) return null;
-  const exact = bundlesByFull.get(key.full);
-  if (exact && !key.pending) return exact;
-  if (!key.pending) return null;
-  for (const [storedKey, bundle] of bundlesByFull) {
-    if (storedKey.startsWith(`${key.workout}|`)) return bundle;
-  }
-  return null;
+function readExactHit(key) {
+  if (!key?.full || key.pending) return null;
+  return bundlesByFull.get(key.full) || null;
+}
+
+function readWorkoutHit(key) {
+  if (!key?.workout) return null;
+  return bundlesByWorkout.get(key.workout)?.bundle || null;
 }
 
 function columnTextLength(insights) {
@@ -294,15 +276,18 @@ export function useRecapTabMetrics({
       isGymMode
     ]
   );
-  const cachedHit = readSessionHit(inputKey);
+  const exactHit = readExactHit(inputKey);
+  const workoutHit = readWorkoutHit(inputKey);
+  const cachedHit = exactHit || workoutHit;
   const [bundle, setBundle] = useState(cachedHit);
   const [computing, setComputing] = useState(enabled && !cachedHit);
-  const shownKeyRef = useRef(cachedHit ? inputKey.full : '');
-  if (cachedHit && !inputKey.pending && shownKeyRef.current !== inputKey.full) {
-    shownKeyRef.current = inputKey.full;
+  const shownKeyRef = useRef(exactHit ? inputKey.full : cachedHit ? inputKey.workout : '');
+  const displayKey = exactHit ? inputKey.full : inputKey.workout;
+  if (cachedHit && shownKeyRef.current !== displayKey) {
+    shownKeyRef.current = displayKey;
     setBundle(cachedHit);
     setComputing(false);
-  } else if (enabled && !cachedHit && !computing) {
+  } else if (enabled && !cachedHit && !bundle && !computing) {
     setComputing(true);
   }
   const genRef = useRef(0);
@@ -326,14 +311,30 @@ export function useRecapTabMetrics({
       return undefined;
     }
 
-    if (inputKey.pending && !readSessionHit(inputKey)) {
+    if (inputKey.pending && !readWorkoutHit(inputKey) && !bundle) {
       setComputing(true);
       return undefined;
     }
 
-    const hit = readSessionHit(inputKey);
+    const exact = readExactHit(inputKey);
+    const stale = readWorkoutHit(inputKey);
     const gen = ++genRef.current;
-    if (!hit) setComputing(true);
+    if (exact) {
+      shownKeyRef.current = inputKey.full;
+      setBundle(exact);
+      setComputing(false);
+      hasPublishedPeriod = true;
+      markRecapViewPrepared();
+      return undefined;
+    }
+    if (stale) {
+      shownKeyRef.current = inputKey.workout;
+      setBundle(stale);
+      setComputing(false);
+      hasPublishedPeriod = true;
+    }
+    if (inputKey.pending) return undefined;
+    if (!stale) setComputing(true);
 
     const runFor = async (periodId, windowForPeriod, keyFull, publish) => {
       if (gen !== genRef.current) return;
@@ -526,7 +527,7 @@ export function useRecapTabMetrics({
           enrichment,
           programCoachAnalysis
         };
-        rememberBundle(keyFull, nextBundle);
+        rememberBundle(keyFull, inputKey.workout, nextBundle);
         if (!publish || gen !== genRef.current) return;
         shownKeyRef.current = keyFull;
         setBundle(nextBundle);
@@ -542,16 +543,7 @@ export function useRecapTabMetrics({
       }
     };
 
-    if (hit) {
-      shownKeyRef.current = inputKey.full;
-      setBundle(hit);
-      setComputing(false);
-      hasPublishedPeriod = true;
-      markRecapViewPrepared();
-      return undefined;
-    }
-
-    setComputing(true);
+    setComputing(!stale);
     const cancel = scheduleHeavyWork(() => {
       runFor(deferredPeriod, periodWindow, inputKey.full, true);
     });
@@ -561,7 +553,9 @@ export function useRecapTabMetrics({
     };
   }, [deferredPeriod, isGymMode, inputKey.full, inputKey.pending, inputKey.workout, enabled, periodWindow]);
 
-  const contentReady = !enabled || (!computing && Boolean(bundle));
+  const showingThisPeriod =
+    shownKeyRef.current === inputKey.full || shownKeyRef.current === inputKey.workout;
+  const contentReady = !enabled || (Boolean(bundle) && showingThisPeriod);
   return {
     computing,
     contentReady,

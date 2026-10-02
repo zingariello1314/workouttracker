@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useGarminData } from './useGarminData';
 import { computeGarminDailyStats } from '../utils/sport/recapCrossCoachAggregate';
 
@@ -19,13 +19,20 @@ export function useRecapCrossCoachGarmin(opts = {}) {
     status: enabled && readyRange ? 'loading' : 'skipped'
   }));
 
+  const partialRef = useRef(partial);
+  partialRef.current = partial;
+
   useEffect(() => {
-    if (!enabled || !readyRange || !dbReady) {
-      setPartial({ status: 'skipped' });
-      return;
+    if (!enabled || !readyRange || !dbReady) return undefined;
+    const rangeKey = `${readyRange.startYmd}|${readyRange.endYmd}|${
+      manualWalkByDate ? Object.keys(manualWalkByDate).length : 0
+    }`;
+    if (partialRef.current.status === 'ready' && partialRef.current.rangeKey === rangeKey) {
+      return undefined;
     }
 
     let cancelled = false;
+    setPartial((prev) => (prev.status === 'ready' ? prev : { status: 'loading' }));
     const run = async () => {
       try {
         const { dailyMetrics } = await loadDataByRange(readyRange.startYmd, readyRange.endYmd);
@@ -36,7 +43,7 @@ export function useRecapCrossCoachGarmin(opts = {}) {
           readyRange.endYmd,
           manualWalkByDate
         );
-        setPartial({ status: 'ready', ...stats, dailyMetrics: dailyMetrics || {} });
+        setPartial({ status: 'ready', rangeKey, ...stats, dailyMetrics: dailyMetrics || {} });
       } catch {
         if (!cancelled) {
           setPartial({

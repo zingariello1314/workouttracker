@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import DateHelper from '../utils/dateHelper';
 import { useNutritionData } from './useNutritionData';
 import { useAuth } from '../context/AuthContext';
@@ -24,14 +24,18 @@ export function useRecapCrossCoachNutrition(opts = {}) {
     status: enabled ? 'loading' : 'skipped'
   }));
 
+  const partialRef = useRef(partial);
+  partialRef.current = partial;
+
   useEffect(() => {
-    if (!enabled) {
-      setPartial({ status: 'skipped' });
-      return;
-    }
+    if (!enabled) return undefined;
     if (!dbReady) {
-      setPartial({ status: 'loading' });
-      return;
+      setPartial((prev) => (prev.status === 'ready' ? prev : { status: 'loading' }));
+      return undefined;
+    }
+    const rangeKey = `${range.startYmd}|${range.endYmd}|${userId || ''}`;
+    if (partialRef.current.status === 'ready' && partialRef.current.rangeKey === rangeKey) {
+      return undefined;
     }
 
     let cancelled = false;
@@ -105,6 +109,7 @@ export function useRecapCrossCoachNutrition(opts = {}) {
 
         setPartial({
           status: 'ready',
+          rangeKey,
           daysWithLoggedMeals28,
           mealsByDate: byDate,
           avgComplianceScore:

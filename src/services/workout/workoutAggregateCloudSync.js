@@ -1,4 +1,5 @@
 import { putMomentumApiV1WorkoutAggregate } from '../sync/fetchMomentumApiV1.js';
+import { mergeWorkoutTableLists } from './workoutAggregateDefaults.js';
 
 const DEBOUNCE_MS = 3500;
 let timerId = null;
@@ -197,6 +198,8 @@ export function mergeCloudWinningRowOverLocal(localRaw, cloudAgg, storageKey) {
       L.garminActivityDateOverrides,
       C.garminActivityDateOverrides
     ),
+    historyReps: mergeShallowRecordMaps(L.historyReps, C.historyReps),
+    workoutTables: mergeWorkoutTableLists(L.workoutTables, C.workoutTables),
     restDaySwaps: mergeShallowRecordMaps(L.restDaySwaps, C.restDaySwaps),
     calendarMonthPlanSnapshots: mergeShallowRecordMaps(
       L.calendarMonthPlanSnapshots,

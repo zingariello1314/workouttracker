@@ -13,6 +13,7 @@
  * @module hooks/nutritionDataUtils
  */
 
+import { trackWorkoutTrackerConnection } from '../services/workout/workoutDbGateway.js';
 import {
   DB_NAME,
   DB_VERSION_NUTRITION,
@@ -52,6 +53,23 @@ export {
 let dbInstance = null;
 let openingPromise = null; // Promise de l'ouverture en cours (pour éviter appels multiples)
 
+/** Ferme la connexion dès qu'une autre partie du code monte la version. */
+function holdNutritionDb(db) {
+  if (!db) return db;
+  db.onversionchange = () => {
+    try {
+      db.close();
+    } catch {
+      // ignore
+    }
+    if (dbInstance === db) {
+      dbInstance = null;
+      openingPromise = null;
+    }
+  };
+  return trackWorkoutTrackerConnection(db);
+}
+
 // ==================== LOGGING ====================
 // ✅ Réduction drastique des logs pour éviter spam console
 
@@ -73,12 +91,23 @@ const log = {
  * 
  * @returns {Promise<IDBDatabase|null>} Instance de la DB ou null si erreur
  */
+async function waitUntilWorkoutSchemaIdle() {
+  try {
+    const { whenWorkoutTrackerUpgradeSettled } = await import('../services/workout/workoutDbGateway.js');
+    await whenWorkoutTrackerUpgradeSettled();
+  } catch {
+    // La migration sport ne doit pas empêcher une ouverture plus tard.
+  }
+}
+
 export const openNutritionDB = async () => {
   // Vérifier support IndexedDB
   if (!window.indexedDB) {
     log.warn('IndexedDB non supporté, nutrition désactivée');
     return null;
   }
+
+  await waitUntilWorkoutSchemaIdle();
 
   // Si instance déjà ouverte, la retourner immédiatement
   if (dbInstance) {
@@ -124,7 +153,7 @@ export const openNutritionDB = async () => {
         };
         
         openRequest.onsuccess = (openEvent) => {
-          dbInstance = openEvent.target.result;
+          dbInstance = holdNutritionDb(openEvent.target.result);
           openingPromise = null;
           // Logs supprimés pour éviter spam
           
@@ -174,7 +203,7 @@ export const openNutritionDB = async () => {
               };
               
               upgradeRequest.onsuccess = (upgradeEvent) => {
-                dbInstance = upgradeEvent.target.result;
+                dbInstance = holdNutritionDb(upgradeEvent.target.result);
                 openingPromise = null;
                 log.info(`✅ IndexedDB migrée avec succès: v${dbInstance.version}`);
                 log.debug(`Stores disponibles: ${Array.from(dbInstance.objectStoreNames).join(', ')}`);
@@ -206,7 +235,7 @@ export const openNutritionDB = async () => {
               log.warn('Corruption détectée lors ouverture, tentative récupération...');
               const recoveredDb = await handleCorruption(error, { autoRecover: true, autoReset: false });
               if (recoveredDb) {
-                dbInstance = recoveredDb;
+                dbInstance = holdNutritionDb(recoveredDb);
                 log.info('✅ IndexedDB récupérée après corruption');
                 resolve(recoveredDb);
                 return;
@@ -232,7 +261,7 @@ export const openNutritionDB = async () => {
         };
         
         fallbackRequest.onsuccess = (fallbackEvent) => {
-          dbInstance = fallbackEvent.target.result;
+          dbInstance = holdNutritionDb(fallbackEvent.target.result);
           openingPromise = null;
           log.info(`✅ IndexedDB ouverte (fallback): v${dbInstance.version}`);
           resolve(dbInstance);

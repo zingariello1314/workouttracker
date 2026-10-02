@@ -5,6 +5,8 @@
  * @module services/apprentissage/apprentissageDbGateway
  */
 
+import { trackWorkoutTrackerConnection } from '../workout/workoutDbGateway.js';
+
 export const APPRENTISSAGE_TRACKER_DB_NAME = 'WorkoutTrackerDB';
 
 export const STORE_APPRENTISSAGE_SUBJECTS = 'apprentissage_subjects';
@@ -129,7 +131,7 @@ export const openApprentissageDB = () => {
         };
 
         upgradeRequest.onsuccess = (e) => {
-          resolve(e.target.result);
+          resolve(trackWorkoutTrackerConnection(e.target.result));
         };
 
         upgradeRequest.onerror = () => {
@@ -137,7 +139,7 @@ export const openApprentissageDB = () => {
           resolve(null);
         };
       } else {
-        resolve(db);
+        resolve(trackWorkoutTrackerConnection(db));
       }
     };
 

@@ -76,7 +76,8 @@ export function buildComposedInterpretationPipeline(opts = {}) {
     athleteIdentity,
     insightHistory: opts.insightHistory || null,
     features: trainingState?.features || null,
-    profileQuestionnaireRaw: opts.profileQuestionnaireRaw || null
+    profileQuestionnaireRaw: opts.profileQuestionnaireRaw || null,
+    activeProgram: opts.activeProgram || null
   });
 
   const eventBundle = detectTrainingEvents({

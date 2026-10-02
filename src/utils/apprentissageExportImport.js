@@ -105,6 +105,11 @@ export const prepareApprentissageExportData = async (userId = 'main') => {
       sessionsHistory = (await loadSessionsHistoryFromIndexedDB(db, userId)) || [];
       timer = await loadTimerFromIndexedDB(db, userId);
       planner = await loadPlannerFromIndexedDB(db, userId);
+      try {
+        db.close();
+      } catch {
+        // ignore
+      }
     } else {
       // Fallback localStorage
       subjects = loadFromStorage(STORAGE_KEYS.SUBJECTS, []);

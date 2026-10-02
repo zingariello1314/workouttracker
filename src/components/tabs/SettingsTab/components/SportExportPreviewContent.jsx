@@ -178,7 +178,10 @@ export function SportExportPreviewContent({
           <li>• Défis actifs : {endurance.challenges} défis</li>
           <li>
             • GTG : {endurance.gtgExercises ?? 0} exercice(s) suivi(s), {endurance.gtgDays ?? 0} jour(s)
-            enregistré(s)
+            enregistré(s), {endurance.gtgMiniSetsDone ?? 0} mini-série(s) cochée(s),{' '}
+            {endurance.gtgRepsDone ?? 0} reps (dont {endurance.gtgAdHocMiniSetsDone ?? 0} hors planning,{' '}
+            {endurance.gtgAdHocRepsDone ?? 0} reps). Le fichier contient chaque ligne avec date, heure,
+            exercice, reps, source (prévu ou hors planning) et l’heure de coche.
           </li>
         </ul>
       </div>

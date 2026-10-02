@@ -41,10 +41,6 @@ export function decompressTimeSeriesDelta(compressed) {
     [timestampKey]: firstTimestamp // Utiliser le timestamp converti en nombre
   }];
 
-  // 🔴 DEBUG : Logger le premier point pour diagnostic
-  const firstDate = new Date(firstTimestamp);
-  console.log(`[decompressTimeSeriesDelta] Premier point: ${firstDate.toISOString()} (${firstDate.toLocaleString('fr-FR')}), BPM: ${first[valueKey]}`);
-
   let prevTs = firstTimestamp;
   let prevVal = first[valueKey] || 0;
 
@@ -85,13 +81,6 @@ export function decompressTimeSeriesDelta(compressed) {
 
       prevTs = currTs;
       prevVal = currVal;
-      
-      // 🔴 DEBUG : Logger le dernier point pour diagnostic
-      if (i === compressed.length - 1) {
-        const lastDate = new Date(currTs);
-        console.log(`[decompressTimeSeriesDelta] Dernier point: ${lastDate.toISOString()} (${lastDate.toLocaleString('fr-FR')}), BPM: ${currVal}`);
-        console.log(`[decompressTimeSeriesDelta] Total décompressé: ${decompressed.length} points`);
-      }
     } else {
       // Point complet (ne devrait pas arriver après le premier)
       let deltaTimestamp = delta[timestampKey];

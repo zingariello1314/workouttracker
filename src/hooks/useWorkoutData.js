@@ -13,6 +13,7 @@ import {
   applyDayKeysToWorkoutRow,
 } from '../utils/workoutSessionPersistence.js';
 import { persistWorkoutSessionDay, getWorkoutRow, putWorkoutRow } from '../services/workout/workoutDbGateway.js';
+import { projectPersistedWorkout } from '../services/workout/workoutAggregateDefaults.js';
 import {
   getAllWorkoutSessionsForScope,
   migrateLegacySessionsFromAggregate,
@@ -187,6 +188,9 @@ const INITIAL_WORKOUT_DATA = {
   exerciseSessionEffortStars: {},
   /** Triple ressenti par séance : { "YYYY-MM-DD_id": { difficulty, feeling, pleasure } } */
   exerciseSessionPerceived: {},
+  historyReps: {},
+  workoutTables: [],
+  garminActivityDateOverrides: {},
   /**
    * 1–5 « plaisir / qualité du ressenti » (plus = meilleure séance) — mêmes clés que l’effort perçu.
    */
@@ -505,6 +509,7 @@ export const useWorkoutData = (options = {}) => {
     const migratedDataStep2 = migrateDayJustifications(migratedDataStep1);
     const migratedData = migrateCircuits(migratedDataStep2);
     return {
+      ...projectPersistedWorkout(migratedData),
       checkedExercises: migratedData.checkedExercises || {},
       reps: migratedData.reps || {},
       exerciseWeights:
@@ -608,6 +613,7 @@ export const useWorkoutData = (options = {}) => {
         sessions: {
           boxing: [],
           pushups: [],
+          gainage: [],
           swimming: [],
           jumprope: [],
           running: []
@@ -925,6 +931,7 @@ export const useWorkoutData = (options = {}) => {
 
       // Créer un objet avec la nouvelle structure et validation finale
       const dataToSave = {
+        ...projectPersistedWorkout(newData),
         // ✅ Clé de stockage dépendante de l'utilisateur
         id: effectiveKey,
         checkedExercises: newData && newData.checkedExercises ? { ...newData.checkedExercises } : {},
@@ -1062,6 +1069,7 @@ export const useWorkoutData = (options = {}) => {
                   sessions: {
                     boxing: [],
                     pushups: [],
+                    gainage: [],
                     swimming: [],
                     jumprope: [],
                     running: []

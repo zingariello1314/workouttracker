@@ -81,6 +81,26 @@ export const deduplicateTimeSeries = (series) => {
  * @param {number} existingLast - Timestamp du dernier point des données existantes
  * @returns {string} Stratégie de fusion : 'replace', 'subset', 'extendAfter', 'extendBefore', 'overlap'
  */
+function readSeriesBounds(series) {
+  if (!Array.isArray(series) || series.length === 0) return null;
+  let first = series[0]?.timestamp;
+  if (typeof first === 'string') first = Date.parse(first);
+  if (typeof first !== 'number' || Number.isNaN(first)) return null;
+  const compressed = series.length > 1 && series[1]
+    && (series[1].d_ts !== undefined || series[1].d_val !== undefined);
+  if (!compressed) {
+    let last = series[series.length - 1]?.timestamp;
+    if (typeof last === 'string') last = Date.parse(last);
+    if (typeof last !== 'number' || Number.isNaN(last)) return null;
+    return { first, last };
+  }
+  let last = first;
+  for (let i = 1; i < series.length; i += 1) {
+    last += series[i]?.d_ts || 0;
+  }
+  return { first, last };
+}
+
 const compareTimeRanges = (newFirst, newLast, existingFirst, existingLast) => {
   // Nouvelles données couvrent plage complète (plus large)
   if (newFirst <= existingFirst && newLast >= existingLast) {
@@ -185,6 +205,20 @@ export const mergeTimeSeriesIntelligently = (
       ...existingTimeSeries,
       ...newTimeSeries
     ]);
+  }
+
+  const newBounds = readSeriesBounds(newTimeSeries);
+  const existingBounds = readSeriesBounds(existingTimeSeries);
+  if (newBounds && existingBounds) {
+    const quickStrategy = compareTimeRanges(
+      newBounds.first,
+      newBounds.last,
+      existingBounds.first,
+      existingBounds.last
+    );
+    if (quickStrategy === 'replace') {
+      return newTimeSeries;
+    }
   }
   
   // Décompresser pour comparaison (nécessaire pour comparer plages temporelles)

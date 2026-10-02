@@ -626,6 +626,8 @@ export const useNutritionData = () => {
   const exportAll = useCallback(async () => {
     if (!dbReady) {
       return {
+        unavailable: true,
+        reason: 'nutrition-db-not-ready',
         dailyMeals: [],
         meals: [],
         programs: [],
@@ -711,6 +713,8 @@ export const useNutritionData = () => {
         mlModels: { models: [], metadata: { total: 0, exportedAt: new Date().toISOString() } },
         exportDate: new Date().toISOString(),
         version: '1.0',
+        unavailable: true,
+        reason: 'nutrition-export-failed',
         error: error.message
       };
     }

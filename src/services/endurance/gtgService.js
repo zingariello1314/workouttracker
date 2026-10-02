@@ -484,10 +484,77 @@ function migrateLegacyDayRecord(dayRecord, selectedIds) {
   return { exercises, slots: legacySlots };
 }
 
+/** Heure `HH:MM` sur 24 h, ou null si la saisie est inutilisable. */
+export function normalizeGtgClockTime(raw) {
+  const match = String(raw || '').trim().match(/^(\d{1,2}):(\d{2})$/);
+  if (!match) return null;
+  const hours = Number(match[1]);
+  const minutes = Number(match[2]);
+  if (hours < 0 || hours > 23 || minutes < 0 || minutes > 59) return null;
+  return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`;
+}
+
+function normalizeAdHocPassages(raw) {
+  if (!Array.isArray(raw)) return [];
+  return raw
+    .map((row) => {
+      if (!row || typeof row !== 'object') return null;
+      const time = normalizeGtgClockTime(row.time);
+      const id = String(row.id || '').trim();
+      if (!time || !id) return null;
+      const items = (Array.isArray(row.items) ? row.items : [])
+        .map((item) => {
+          const exerciseId = String(item?.exerciseId || '').trim();
+          const reps = Math.round(Number(item?.reps));
+          if (!exerciseId || !Number.isFinite(reps) || reps <= 0) return null;
+          return {
+            exerciseId,
+            reps,
+            done: item.done !== false,
+            updatedAt: item.updatedAt || row.createdAt || null
+          };
+        })
+        .filter(Boolean);
+      if (!items.length) return null;
+      return {
+        id,
+        time,
+        createdAt: row.createdAt || null,
+        items
+      };
+    })
+    .filter(Boolean);
+}
+
 export function getDayRecord(gtgData, dateStr, selectedIds = []) {
   const days = gtgData?.days || {};
   const raw = days[dateStr] || {};
-  return migrateLegacyDayRecord(raw, selectedIds);
+  const migrated = migrateLegacyDayRecord(raw, selectedIds);
+  return {
+    ...migrated,
+    adHoc: normalizeAdHocPassages(raw.adHoc)
+  };
+}
+
+function persistDayRecord(normalized, dateStr, dayRecord) {
+  const nextDay = { exercises: dayRecord.exercises || {} };
+  if (dayRecord.slots && typeof dayRecord.slots === 'object' && Object.keys(dayRecord.slots).length > 0) {
+    nextDay.slots = dayRecord.slots;
+  }
+  const adHoc = normalizeAdHocPassages(dayRecord.adHoc);
+  if (adHoc.length) nextDay.adHoc = adHoc;
+  return {
+    ...normalized,
+    days: {
+      ...normalized.days,
+      [dateStr]: nextDay
+    }
+  };
+}
+
+function newAdHocId(dateStr, time) {
+  const rand = Math.random().toString(36).slice(2, 8);
+  return `ah_${dateStr}_${String(time).replace(':', '')}_${rand}`;
 }
 
 function getExerciseDaySlots(dayRecord, exerciseId) {
@@ -510,15 +577,22 @@ export function buildGtgDayPlan(gtgData, dateStr, ctx = {}) {
   const exercisePlans = selectedIds.map((id) => {
     const plan = getGtgExercisePlan(id, ctx);
     const schedule = getPerExerciseSchedule(config, id);
-    const slots = schedule.slotTimes.map((time, index) => ({
-      index,
-      time,
-      reps: plan.repsPerSet,
-      rangeLow: plan.rangeLow,
-      rangeHigh: plan.rangeHigh,
-      maxReps: plan.maxReps,
-      done: isMiniSetDone(dayRecord, index, id)
-    }));
+    const storedSlots = getExerciseDaySlots(dayRecord, id);
+    const slots = schedule.slotTimes.map((time, index) => {
+      const stored = storedSlots?.[String(index)];
+      return {
+        index,
+        time,
+        reps: plan.repsPerSet,
+        rangeLow: plan.rangeLow,
+        rangeHigh: plan.rangeHigh,
+        maxReps: plan.maxReps,
+        done: Boolean(stored?.done),
+        updatedAt: stored?.updatedAt || null,
+        adHoc: false,
+        adHocId: null
+      };
+    });
     const completedCount = slots.filter((s) => s.done).length;
     return {
       ...plan,
@@ -530,15 +604,41 @@ export function buildGtgDayPlan(gtgData, dateStr, ctx = {}) {
     };
   });
 
+  const adHocPassages = dayRecord.adHoc || [];
+  exercisePlans.forEach((ep) => {
+    const extra = [];
+    adHocPassages.forEach((passage) => {
+      (passage.items || []).forEach((item) => {
+        if (item.exerciseId !== ep.exerciseId) return;
+        extra.push({
+          index: null,
+          time: passage.time,
+          reps: item.reps,
+          rangeLow: ep.rangeLow,
+          rangeHigh: ep.rangeHigh,
+          maxReps: ep.maxReps,
+          done: Boolean(item.done),
+          updatedAt: item.updatedAt || passage.createdAt || null,
+          adHoc: true,
+          adHocId: passage.id
+        });
+      });
+    });
+    if (extra.length) ep.slots = [...ep.slots, ...extra];
+  });
+
   const timeMap = new Map();
   exercisePlans.forEach((ep) => {
     ep.slots.forEach((s) => {
+      if (s.adHoc) return;
       if (!timeMap.has(s.time)) timeMap.set(s.time, []);
       timeMap.get(s.time).push({
         exerciseId: ep.exerciseId,
         reps: s.reps,
         done: s.done,
-        slotIndex: s.index
+        slotIndex: s.index,
+        adHoc: false,
+        adHocId: null
       });
     });
   });
@@ -547,11 +647,43 @@ export function buildGtgDayPlan(gtgData, dateStr, ctx = {}) {
     .map(([time, items], index) => ({
       index,
       time,
+      adHoc: false,
+      adHocId: null,
       items,
       completedCount: items.filter((i) => i.done).length,
       totalCount: items.length,
       isComplete: items.length > 0 && items.every((i) => i.done)
     }));
+
+  adHocPassages.forEach((passage) => {
+    const items = (passage.items || [])
+      .filter((item) => selectedIds.includes(item.exerciseId))
+      .map((item) => ({
+        exerciseId: item.exerciseId,
+        reps: item.reps,
+        done: Boolean(item.done),
+        slotIndex: null,
+        adHoc: true,
+        adHocId: passage.id
+      }));
+    if (!items.length) return;
+    slots.push({
+      index: slots.length,
+      time: passage.time,
+      adHoc: true,
+      adHocId: passage.id,
+      items,
+      completedCount: items.filter((i) => i.done).length,
+      totalCount: items.length,
+      isComplete: items.length > 0 && items.every((i) => i.done)
+    });
+  });
+  slots.sort((a, b) => {
+    const byTime = parseTimeToMinutes(a.time) - parseTimeToMinutes(b.time);
+    if (byTime !== 0) return byTime;
+    if (a.adHoc === b.adHoc) return String(a.adHocId || '').localeCompare(String(b.adHocId || ''));
+    return a.adHoc ? 1 : -1;
+  });
 
   const exercises = exercisePlans.map((ep) => ({
     exerciseId: ep.exerciseId,
@@ -562,19 +694,32 @@ export function buildGtgDayPlan(gtgData, dateStr, ctx = {}) {
   }));
 
   let plannedMiniSets = 0;
-  let doneMiniSets = 0;
+  let donePlannedMiniSets = 0;
   let doneReps = 0;
+  let adHocMiniSets = 0;
+  let adHocDoneMiniSets = 0;
+  let adHocDoneReps = 0;
   exercisePlans.forEach((ep) => {
     ep.slots.forEach((s) => {
+      if (s.adHoc) {
+        adHocMiniSets += 1;
+        if (s.done) {
+          adHocDoneMiniSets += 1;
+          adHocDoneReps += s.reps;
+          doneReps += s.reps;
+        }
+        return;
+      }
       plannedMiniSets += 1;
       if (s.done) {
-        doneMiniSets += 1;
+        donePlannedMiniSets += 1;
         doneReps += s.reps;
       }
     });
   });
 
-  const progressPct = plannedMiniSets > 0 ? (doneMiniSets / plannedMiniSets) * 100 : 0;
+  const doneMiniSets = donePlannedMiniSets + adHocDoneMiniSets;
+  const progressPct = plannedMiniSets > 0 ? (donePlannedMiniSets / plannedMiniSets) * 100 : 0;
 
   return {
     dateStr,
@@ -583,8 +728,12 @@ export function buildGtgDayPlan(gtgData, dateStr, ctx = {}) {
     exercisePlans,
     slots,
     plannedMiniSets,
+    donePlannedMiniSets,
     doneMiniSets,
     doneReps,
+    adHocMiniSets,
+    adHocDoneMiniSets,
+    adHocDoneReps,
     progressPct,
     reached50: progressPct >= 50,
     reached100: progressPct >= 99.5
@@ -604,13 +753,68 @@ export function toggleGtgMiniSet(gtgData, dateStr, slotIndex, exerciseId) {
   exDay.slots[key] = { done: !cur, updatedAt: new Date().toISOString() };
   exercises[exerciseId] = exDay;
 
-  return {
-    ...normalized,
-    days: {
-      ...normalized.days,
-      [dateStr]: { exercises }
-    }
+  return persistDayRecord(normalized, dateStr, { ...dayRecord, exercises });
+}
+
+/**
+ * Passage hors planning : une heure, les reps réellement faites, coché comme un créneau prévu.
+ * Les exercices à 0 rep sont ignorés.
+ */
+export function addGtgAdHocPassage(gtgData, dateStr, { time, items } = {}) {
+  const normalized = normalizeGtgData(gtgData);
+  const clock = normalizeGtgClockTime(time);
+  if (!clock) return normalized;
+  const selected = new Set(normalized.config.selectedIds || []);
+  const now = new Date().toISOString();
+  const cleanItems = (Array.isArray(items) ? items : [])
+    .map((item) => {
+      const exerciseId = String(item?.exerciseId || '').trim();
+      const reps = Math.round(Number(item?.reps));
+      if (!selected.has(exerciseId) || !Number.isFinite(reps) || reps <= 0) return null;
+      return { exerciseId, reps, done: true, updatedAt: now };
+    })
+    .filter(Boolean);
+  if (!cleanItems.length) return normalized;
+
+  const dayRecord = getDayRecord(normalized, dateStr, normalized.config.selectedIds);
+  const passage = {
+    id: newAdHocId(dateStr, clock),
+    time: clock,
+    createdAt: now,
+    items: cleanItems
   };
+  return persistDayRecord(normalized, dateStr, {
+    ...dayRecord,
+    adHoc: [...(dayRecord.adHoc || []), passage]
+  });
+}
+
+export function toggleGtgAdHocItem(gtgData, dateStr, adHocId, exerciseId) {
+  const normalized = normalizeGtgData(gtgData);
+  if (!normalized.config.selectedIds.includes(exerciseId)) return normalized;
+  const dayRecord = getDayRecord(normalized, dateStr, normalized.config.selectedIds);
+  let found = false;
+  const adHoc = (dayRecord.adHoc || []).map((passage) => {
+    if (passage.id !== adHocId) return passage;
+    return {
+      ...passage,
+      items: (passage.items || []).map((item) => {
+        if (item.exerciseId !== exerciseId) return item;
+        found = true;
+        return { ...item, done: !item.done, updatedAt: new Date().toISOString() };
+      })
+    };
+  });
+  if (!found) return normalized;
+  return persistDayRecord(normalized, dateStr, { ...dayRecord, adHoc });
+}
+
+export function removeGtgAdHocPassage(gtgData, dateStr, adHocId) {
+  const normalized = normalizeGtgData(gtgData);
+  const dayRecord = getDayRecord(normalized, dateStr, normalized.config.selectedIds);
+  const adHoc = (dayRecord.adHoc || []).filter((passage) => passage.id !== adHocId);
+  if (adHoc.length === (dayRecord.adHoc || []).length) return normalized;
+  return persistDayRecord(normalized, dateStr, { ...dayRecord, adHoc });
 }
 
 export function updateGtgConfig(gtgData, patch = {}) {
@@ -687,9 +891,15 @@ export function collectGtgMiniSetHistory(gtgData, startYmd, endYmd, ctx = {}) {
         rows.push({
           dateStr,
           time: s.time,
-          slotIndex: s.index,
+          slotIndex: s.adHoc ? null : s.index,
           exerciseId: ep.exerciseId,
-          reps: s.reps
+          reps: s.reps,
+          adHoc: Boolean(s.adHoc),
+          adHocId: s.adHocId || null,
+          updatedAt: s.updatedAt || null,
+          maxReps: ep.maxReps,
+          rangeLow: ep.rangeLow,
+          rangeHigh: ep.rangeHigh
         });
       });
     });
@@ -721,6 +931,61 @@ export function aggregateGtgMiniSetsByDate(gtgData, ctx = {}) {
   return map;
 }
 
+/**
+ * Journal plat de toutes les mini-séries GTG (prévues et hors planning), cochées ou non.
+ * Sert à l'export Sport : date, heure, exercice, reps, source.
+ */
+export function buildGtgExportJournal(gtgData, ctx = {}) {
+  const normalized = normalizeGtgData(gtgData);
+  const dates = Object.keys(normalized.days || {}).filter((d) => /^\d{4}-\d{2}-\d{2}$/.test(d)).sort();
+  const rows = [];
+  dates.forEach((dateStr) => {
+    const plan = buildGtgDayPlan(normalized, dateStr, ctx);
+    (plan.exercisePlans || []).forEach((ep) => {
+      const label = getGtgExerciseLabel(ep.exerciseId, normalized.config, ctx);
+      (ep.slots || []).forEach((slot) => {
+        rows.push({
+          date: dateStr,
+          time: slot.time,
+          exerciseId: ep.exerciseId,
+          exerciseLabel: label,
+          reps: slot.reps,
+          done: Boolean(slot.done),
+          source: slot.adHoc ? 'adHoc' : 'planned',
+          slotIndex: slot.adHoc ? null : slot.index,
+          adHocId: slot.adHocId || null,
+          updatedAt: slot.updatedAt || null,
+          maxReps: ep.maxReps ?? null,
+          rangeLow: ep.rangeLow ?? null,
+          rangeHigh: ep.rangeHigh ?? null
+        });
+      });
+    });
+  });
+  return rows;
+}
+
+export function summarizeGtgForExport(gtgData, ctx = {}) {
+  const normalized = normalizeGtgData(gtgData);
+  const journal = buildGtgExportJournal(normalized, ctx);
+  const done = journal.filter((row) => row.done);
+  const adHoc = journal.filter((row) => row.source === 'adHoc');
+  const adHocDone = adHoc.filter((row) => row.done);
+  const sumReps = (rows) => rows.reduce((sum, row) => sum + (Number(row.reps) || 0), 0);
+  return {
+    days: Object.keys(normalized.days || {}).length,
+    exercises: (normalized.config.selectedIds || []).length,
+    miniSets: journal.length,
+    miniSetsDone: done.length,
+    repsDone: sumReps(done),
+    adHocMiniSets: adHoc.length,
+    adHocMiniSetsDone: adHocDone.length,
+    adHocRepsDone: sumReps(adHocDone),
+    entriesWithTime: journal.filter((row) => row.time).length,
+    journal
+  };
+}
+
 export function listGtgFundamentalBankSuggestions() {
   return listGtgBankExercises().filter((e) => e.isFundamental);
 }
@@ -741,6 +1006,11 @@ export function gtgChecksum(gtg) {
       const slots = day.exercises?.[ex]?.slots || {};
       Object.keys(slots).forEach((si) => {
         if (slots[si]?.done) tally += `+${d}:${ex}:${si}`;
+      });
+    });
+    (day.adHoc || []).forEach((passage) => {
+      (passage.items || []).forEach((item) => {
+        if (item?.done) tally += `+${d}:ah:${passage.id}:${item.exerciseId}:${item.reps}`;
       });
     });
   });

@@ -110,7 +110,7 @@ describe('rédacteur après parenté', () => {
   it('un dérivé ne recommence pas par le total de la fenêtre', () => {
     const card = writeThreadCard({
       thread: 'repertoire',
-      sense: 'fact',
+      sense: 'transformation',
       voice: '30d',
       windowLabel: 'Ces 30 jours',
       axes: ['repertoire', 'volume'],
@@ -123,5 +123,6 @@ describe('rédacteur après parenté', () => {
     expect(card.body).toMatch(/Pompes \(endurance\)/);
     expect(card.body).not.toMatch(/3\s?467/);
     expect(card.body).not.toMatch(/Ces 30 jours compte/);
+    expect(card.title).not.toMatch(/3\s?467/);
   });
 });

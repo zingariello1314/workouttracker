@@ -26,12 +26,15 @@ export default function CalendarGtgDayModule({ workoutData, dateStr, profileQues
         </h4>
         <span className="text-xs text-orange-100/80">
           {t('calendar.heatmap.dayDetails.gtgSummary', {
-            doneSets: view.doneMiniSets,
+            doneSets: view.donePlannedMiniSets ?? view.doneMiniSets,
             plannedSets: view.plannedMiniSets,
             doneReps: view.doneReps,
             plannedReps: view.plannedReps,
             defaultValue: '{{doneSets}}/{{plannedSets}} mini-séries · {{doneReps}}/{{plannedReps}} reps'
           })}
+          {view.adHocDoneMiniSets > 0
+            ? ` · +${view.adHocDoneMiniSets} hors planning (${view.adHocDoneReps} reps)`
+            : ''}
         </span>
       </div>
       <div className="mb-3 h-1.5 overflow-hidden rounded-full bg-black/50">
@@ -53,14 +56,17 @@ export default function CalendarGtgDayModule({ workoutData, dateStr, profileQues
               </span>
             </div>
             <ul className="space-y-1">
-              {ep.slots.map((slot) => (
+              {ep.slots.map((slot, slotIndex) => (
                 <li
-                  key={`${ep.exerciseId}-${slot.time}`}
+                  key={`${ep.exerciseId}-${slotIndex}`}
                   className={`flex items-center justify-between gap-2 text-xs ${
                     slot.done ? 'text-orange-100' : 'text-slate-500'
                   }`}
                 >
-                  <span className="font-mono">{slot.time}</span>
+                  <span className="font-mono">
+                    {slot.time}
+                    {slot.adHoc ? ' · hors planning' : ''}
+                  </span>
                   <span>
                     {slot.reps} {t('calendar.heatmap.dayDetails.reps', 'reps')}
                     {' · '}

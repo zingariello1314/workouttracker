@@ -9,6 +9,7 @@ import {
   resolveExerciseNameFromIndex
 } from '../utils/workoutExerciseIdResolve';
 import { configureProgramExerciseLookup } from '../utils/programExerciseRegistry';
+import { sameMovementName } from '../utils/sport/recapExerciseIdentity';
 import { getDateStr, getDayName, getAutoWeekVariant } from '../utils/dateUtils';
 // ✅ PHASE 4 : Import des utilitaires de l'historique
 import { 
@@ -427,6 +428,8 @@ const WorkoutProvider = ({ children }) => {
           daySchedule.exercises.forEach((ex, index) => {
             const baseId = convertToStableNumericId(ex.id, index);
             const numericId = makeUniqueNumericId(baseId, usedIds);
+            const previous = exerciseIdMappingRef.current.get(numericId);
+            if (previous?.name && ex.name && !sameMovementName(previous.name, ex.name)) return;
             exerciseIdMappingRef.current.set(numericId, {
               name: ex.name,
               originalId: ex.id
@@ -440,6 +443,8 @@ const WorkoutProvider = ({ children }) => {
               list.forEach((ex, index) => {
                 const baseId = convertToStableNumericId(ex.id, index);
                 const numericId = makeUniqueNumericId(baseId, usedIds);
+                const previous = exerciseIdMappingRef.current.get(numericId);
+                if (previous?.name && ex.name && !sameMovementName(previous.name, ex.name)) return;
                 exerciseIdMappingRef.current.set(numericId, {
                   name: ex.name,
                   originalId: ex.id
@@ -456,16 +461,15 @@ const WorkoutProvider = ({ children }) => {
   // ⚠️ IMPORTANT : Définie avant useWorkoutHistory pour éviter l'erreur "Cannot access before initialization"
   const getExerciseNameById = useCallback((exerciseId) => {
     const searchId = typeof exerciseId === 'string' ? parseInt(exerciseId) : exerciseId;
-    
-    // ✅ PRIORITÉ 1 : Chercher dans le mapping du programme actif (plus rapide)
-    const mappedExercise = exerciseIdMappingRef.current.get(searchId);
-    if (mappedExercise?.name) {
-      return mappedExercise.name;
-    }
 
     const snapName = getCurrentData()?.exerciseDisplayNames?.[String(searchId)];
     if (snapName && !isFallbackExerciseLabel(snapName)) {
       return snapName;
+    }
+
+    const mappedExercise = exerciseIdMappingRef.current.get(searchId);
+    if (mappedExercise?.name) {
+      return mappedExercise.name;
     }
 
     const fromPrograms = resolveExerciseNameFromIndex(searchId, programNameIndexRef.current);

@@ -5,6 +5,8 @@
  * @module services/quietquest/quietQuestDbGateway
  */
 
+import { trackWorkoutTrackerConnection } from '../workout/workoutDbGateway.js';
+
 export const QUIET_QUEST_TRACKER_DB_NAME = 'WorkoutTrackerDB';
 
 export const STORE_QUIETQUEST_QUESTS = 'quietquest_quests';
@@ -180,12 +182,12 @@ export const openQuietQuestDB = () => {
         };
         upgradeRequest.onsuccess = (e) => {
           console.log('[quietQuestIndexedDB] ✅ Base mise à jour avec tous les stores');
-          resolve(e.target.result);
+          resolve(trackWorkoutTrackerConnection(e.target.result));
         };
         upgradeRequest.onerror = () => resolve(null);
         return;
       }
-      resolve(db);
+      resolve(trackWorkoutTrackerConnection(db));
     };
 
     request.onerror = (event) => {
@@ -233,7 +235,7 @@ export const openQuietQuestDB = () => {
                 db.createObjectStore(STORE_APP_STATE, { keyPath: 'userId' });
               }
             };
-            newRequest.onsuccess = (e) => resolve(e.target.result);
+            newRequest.onsuccess = (e) => resolve(trackWorkoutTrackerConnection(e.target.result));
             newRequest.onerror = () => resolve(null);
           };
           deleteRequest.onerror = () => resolve(null);

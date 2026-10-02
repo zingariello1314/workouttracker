@@ -75,36 +75,44 @@ class BatchStorageManager {
       throw new Error('IndexedDB unavailable');
     }
 
-    const tx = db.transaction([STORE_DAILY_METRICS], 'readwrite');
-    const store = tx.objectStore(STORE_DAILY_METRICS);
     const scope = getGarminScope();
+    const existingMap = await new Promise((resolve, reject) => {
+      const readTx = db.transaction([STORE_DAILY_METRICS], 'readonly');
+      this.#loadExistingRecords(
+        readTx.objectStore(STORE_DAILY_METRICS),
+        entries.map(([date]) => date)
+      ).then(resolve, reject);
+    });
 
-    try {
-      const existingMap = await this.#loadExistingRecords(store, entries.map(([date]) => date));
-
-      await Promise.all(
-        entries.map(([date, metrics]) => {
-          const existing = existingMap.get(date) || null;
-          const merged = mergeDailyMetrics(metrics, existing, date);
-          return this.#putRecord(store, { ...merged, date, userId: scope });
-        })
-      );
-
-      await this.#awaitTransaction(tx);
-      const duration = now() - start;
-      log.debug('[BatchStorageManager] Daily metrics batch saved', {
-        saved: entries.length,
-        duration
-      });
-
-      return {
-        saved: entries.length,
-        duration
-      };
-    } catch (error) {
-      tx.abort();
-      throw error;
+    const mergedRows = [];
+    for (let i = 0; i < entries.length; i += 1) {
+      const [date, metrics] = entries[i];
+      const existing = existingMap.get(date) || null;
+      const merged = mergeDailyMetrics(metrics, existing, date);
+      mergedRows.push({ ...merged, date, userId: scope });
+      if (i % 5 === 4) {
+        await new Promise((resolve) => setTimeout(resolve, 0));
+      }
     }
+
+    const chunkSize = 20;
+    for (let offset = 0; offset < mergedRows.length; offset += chunkSize) {
+      const chunk = mergedRows.slice(offset, offset + chunkSize);
+      const tx = db.transaction([STORE_DAILY_METRICS], 'readwrite');
+      const store = tx.objectStore(STORE_DAILY_METRICS);
+      await Promise.all(chunk.map((row) => this.#putRecord(store, row)));
+      await this.#awaitTransaction(tx);
+    }
+    const duration = now() - start;
+    log.debug('[BatchStorageManager] Daily metrics batch saved', {
+      saved: entries.length,
+      duration
+    });
+
+    return {
+      saved: entries.length,
+      duration
+    };
   }
 
   #flattenActivities(activitiesByType) {

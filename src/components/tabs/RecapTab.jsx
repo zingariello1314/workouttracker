@@ -62,6 +62,8 @@ function RecapLoadingLabel({ view, mode }) {
   );
 }
 
+const loadedRecapChunks = new Set();
+
 const VIEW_CHUNK_LOADERS = {
   snapshot: () => import('../sport/recap/views/RecapSnapshotView'),
   analyse: () => import('../sport/recap/views/RecapAnalyseView'),
@@ -110,7 +112,10 @@ const RecapTab = () => {
 
   const [activeView, setActiveView] = useState(() => readStoredRecapView());
   const isGradesView = activeView === RECAP_VIEW_IDS.GRADES;
-  const [chunkReady, setChunkReady] = useState({});
+  const [chunkReady, setChunkReady] = useState(() => {
+    const stored = readStoredRecapView();
+    return loadedRecapChunks.has(stored) ? { [stored]: true } : {};
+  });
 
   useEffect(() => {
     if (isGradesView) return undefined;
@@ -119,6 +124,7 @@ const RecapTab = () => {
     let cancelled = false;
     load()
       .then(() => {
+        loadedRecapChunks.add(activeView);
         if (!cancelled) {
           setChunkReady((prev) => (prev[activeView] ? prev : { ...prev, [activeView]: true }));
         }
@@ -178,7 +184,7 @@ const RecapTab = () => {
   const [garminBundle, setGarminBundle] = useState(null);
 
   useEffect(() => {
-    if (isGradesView || !dbReady || !isAuthenticated) {
+    if (!dbReady || !isAuthenticated) {
       return undefined;
     }
     let cancelled = false;
@@ -192,7 +198,7 @@ const RecapTab = () => {
     return () => {
       cancelled = true;
     };
-  }, [isGradesView, dbReady, loadAllData, isAuthenticated, data]);
+  }, [dbReady, loadAllData, isAuthenticated]);
 
   const {
     contentReady,

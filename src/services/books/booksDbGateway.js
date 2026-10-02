@@ -5,6 +5,7 @@
  */
 
 import logger from '../../utils/logger.js';
+import { trackWorkoutTrackerConnection } from '../workout/workoutDbGateway.js';
 
 const booksIdxLog = logger.module('booksIndexedDB');
 
@@ -91,7 +92,7 @@ export const openBooksDb = () => {
         };
         upgradeRequest.onsuccess = (e) => {
           booksIdxLog.debug('[booksDbGateway] ✅ Base mise à jour avec le store "books"');
-          resolve(e.target.result);
+          resolve(trackWorkoutTrackerConnection(e.target.result));
         };
         upgradeRequest.onerror = (e) => {
           console.error('[booksDbGateway] ❌ Erreur upgrade forcé:', e.target.error);
@@ -100,7 +101,7 @@ export const openBooksDb = () => {
         return;
       }
       booksIdxLog.debug('[booksDbGateway] ✅ Base ouverte, store "books" présent');
-      resolve(db);
+      resolve(trackWorkoutTrackerConnection(db));
     };
 
     request.onerror = (event) => {

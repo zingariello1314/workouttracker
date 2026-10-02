@@ -72,6 +72,11 @@ export const useSettingsStats = () => {
             validationsCount: validations.length,
             userLevel: userData?.level || 1,
           });
+          try {
+            db.close();
+          } catch {
+            // ignore
+          }
         } else {
           // Fallback localStorage
           const quests = loadFromStorage(STORAGE_KEYS.quests, []);

@@ -14,31 +14,45 @@ import { resolveVisualGroupsFromLabels } from '../anatomy/fineMuscleToVisualGrou
 
 
 
+const dbLookupCache = new Map();
+
 function dbLookupFlexible(name) {
 
   if (!name) return null;
 
   const n = String(name).toLowerCase().trim();
 
+  if (dbLookupCache.has(n)) return dbLookupCache.get(n);
+
   let hit = findExerciseInDatabase(n);
 
-  if (hit) return hit;
+  if (hit) {
+    dbLookupCache.set(n, hit);
+    return hit;
+  }
 
   const base = n.split('(')[0].trim();
 
   hit = findExerciseInDatabase(base);
 
-  if (hit) return hit;
+  if (hit) {
+    dbLookupCache.set(n, hit);
+    return hit;
+  }
 
   for (const key of Object.keys(exerciseDatabase)) {
 
     if (n.includes(key) || key.includes(n.slice(0, Math.min(n.length, 12)))) {
+
+      dbLookupCache.set(n, exerciseDatabase[key]);
 
       return exerciseDatabase[key];
 
     }
 
   }
+
+  dbLookupCache.set(n, null);
 
   return null;
 

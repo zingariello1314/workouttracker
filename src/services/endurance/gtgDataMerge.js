@@ -11,6 +11,57 @@ function laterIso(a, b) {
   return String(a) >= String(b) ? a : b;
 }
 
+function mergeAdHocItems(leftItems, rightItems) {
+  const byExercise = new Map();
+  [...(leftItems || []), ...(rightItems || [])].forEach((item) => {
+    const exerciseId = String(item?.exerciseId || '').trim();
+    if (!exerciseId) return;
+    const prev = byExercise.get(exerciseId);
+    const reps = Math.round(Number(item?.reps) || 0);
+    if (!prev) {
+      byExercise.set(exerciseId, {
+        exerciseId,
+        reps,
+        done: Boolean(item?.done),
+        updatedAt: item?.updatedAt || null
+      });
+      return;
+    }
+    byExercise.set(exerciseId, {
+      exerciseId,
+      reps: Math.max(prev.reps, reps),
+      done: Boolean(prev.done || item?.done),
+      updatedAt: laterIso(prev.updatedAt, item?.updatedAt)
+    });
+  });
+  return [...byExercise.values()].filter((item) => item.reps > 0);
+}
+
+function mergeAdHocPassages(left, right) {
+  const byId = new Map();
+  [...(Array.isArray(left) ? left : []), ...(Array.isArray(right) ? right : [])].forEach((row) => {
+    const id = String(row?.id || '').trim();
+    if (!id) return;
+    const prev = byId.get(id);
+    if (!prev) {
+      byId.set(id, {
+        id,
+        time: row.time,
+        createdAt: row.createdAt || null,
+        items: mergeAdHocItems(row.items, [])
+      });
+      return;
+    }
+    byId.set(id, {
+      id,
+      time: row.time || prev.time,
+      createdAt: prev.createdAt || row.createdAt || null,
+      items: mergeAdHocItems(prev.items, row.items)
+    });
+  });
+  return [...byId.values()].filter((row) => row.time && row.items.length);
+}
+
 function mergeDayRecord(left, right) {
   if (!left) return right || { exercises: {} };
   if (!right) return left;
@@ -29,7 +80,8 @@ function mergeDayRecord(left, right) {
   });
   return {
     exercises,
-    slots: { ...(left.slots || {}), ...(right.slots || {}) }
+    slots: { ...(left.slots || {}), ...(right.slots || {}) },
+    adHoc: mergeAdHocPassages(left.adHoc, right.adHoc)
   };
 }
 

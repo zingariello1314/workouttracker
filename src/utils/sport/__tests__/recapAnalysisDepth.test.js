@@ -57,7 +57,7 @@ describe('writeThreadCard', () => {
     expect(card.body).not.toMatch(/habitude/);
   });
 
-  it('une nuit ne devient pas une habitude', () => {
+  it('une nuit ne devient pas une carte', () => {
     const card = writeThreadCard({
       thread: 'sleepPlacement',
       sense: 'fact',
@@ -67,9 +67,7 @@ describe('writeThreadCard', () => {
       sleep: { level: 1, n: 1, bedLabel: '4 h 08', wakeLabel: '14 h 06' },
       observed: {}
     });
-    expect(card.body).toMatch(/Observation/);
-    expect(card.body).toMatch(/4 h 08/);
-    expect(card.body).not.toMatch(/habitude/);
+    expect(card).toBeNull();
   });
 
   it('le fil continuité sans lecture ne sort pas', () => {
@@ -84,7 +82,7 @@ describe('writeThreadCard', () => {
     })).toBeNull();
   });
 
-  it('un total seul ne devient pas une série', () => {
+  it('un total seul ne devient pas une carte de série', () => {
     const card = writeThreadCard({
       thread: 'series',
       sense: 'fact',
@@ -97,10 +95,7 @@ describe('writeThreadCard', () => {
         series: { name: 'Pompes', totalOnly: true, volume: 48, bestSet: null }
       }
     });
-    expect(card.body).toMatch(/48/);
-    expect(card.body).toMatch(/pas une série/);
-    expect(card.body).not.toMatch(/record/);
-    expect(card.body).not.toMatch(/Meilleure série/);
+    expect(card).toBeNull();
   });
 });
 
@@ -188,13 +183,12 @@ describe('dossiers de fenêtre', () => {
   it('7 jours : volume, fréquence, concentration et continuité si les deux côtés existent', () => {
     const snapshot = snapshotBetween(8, 9, 80);
     const { cards } = bundle('7d', snapshot, '2026-09-28');
-    const rhythm = cards.find((c) => c.kind === 'disc_th_rhythm_now');
-    expect(rhythm?.body || '').toMatch(/répétitions/);
-    expect(rhythm?.body || '').toMatch(/séance/);
-    const continuity = cards.find((c) => c.kind === 'disc_th_continuity_now');
+    const bodies = cards.map((c) => c.body).join('\n');
+    expect(bodies).not.toMatch(/familles identifiées|pas un déséquilibre|ce n'est pas la série/i);
+    const continuity = cards.find((c) => c.kind === 'disc_th_continuity_journey');
     if (continuity) {
-      expect(continuity.body).toMatch(/pic confirmé|pic relativisé|manque de recul/);
       expect(continuity.body).toMatch(/30 jours/);
+      expect(continuity.body).not.toMatch(/pic relativisé/);
     }
     const absent = writeThreadCard({
       thread: 'rhythm',
@@ -204,14 +198,14 @@ describe('dossiers de fenêtre', () => {
       axes: ['volume', 'frequency'],
       observed: { reps: 200, sessions: 3, repsPerSession: 66 }
     });
-    expect(absent.body).not.toMatch(/sommeil|record|bloc /i);
+    expect(absent).toBeNull();
   });
 
   it('6 mois nomme deux blocs et 1 an nomme les mois extrêmes', () => {
     const snapshot = snapshotBetween(4, 9, 100);
     const six = bundle('6m', snapshot, '2026-09-28');
     const year = bundle('1y', snapshot, '2026-09-28');
-    const sixCard = six.cards.find((c) => c.kind === 'disc_th_rhythm_now');
+    const sixCard = six.cards.find((c) => c.kind === 'disc_th_rhythm_journey');
     const yearCard = year.cards.find((c) => c.kind === 'disc_th_rhythm_now');
     expect(sixCard?.body || '').toMatch(/bloc/i);
     expect(sixCard?.body || '').not.toMatch(/mois le plus creux/);
@@ -235,10 +229,8 @@ describe('dossiers de fenêtre', () => {
   it('une série structurée reste distincte du record déclaré', () => {
     const snapshot = snapshotBetween(9, 9, 40);
     const { cards } = bundle('30d', snapshot, '2026-09-28');
-    const series = cards.find((c) => c.kind === 'disc_th_series_now');
-    expect(series?.body || '').toMatch(/Meilleure série/);
-    expect(series.body).toMatch(/12/);
-    expect(series.body).toMatch(/record déclaré/);
-    expect(series.body).toMatch(/ne le remplace pas/);
+    const series = cards.find((c) => String(c.kind).includes('series'));
+    expect(series).toBeUndefined();
+    expect(cards.map((c) => c.body).join('\n')).not.toMatch(/ne le remplace pas/);
   });
 });

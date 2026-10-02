@@ -33,6 +33,11 @@ function dayRecordHasDoneSlot(day) {
       }
     }
   }
+  if (Array.isArray(day.adHoc)) {
+    for (const passage of day.adHoc) {
+      if ((passage?.items || []).some((item) => item?.done && (Number(item.reps) || 0) > 0)) return true;
+    }
+  }
   return false;
 }
 
@@ -140,7 +145,10 @@ export function buildCalendarGtgDayView(workoutData, dateStr, ctx = {}) {
   const exercisePlans = (plan.exercisePlans || [])
     .filter((ep) => (ep.completedCount || 0) > 0 || (ep.slots || []).some((s) => s.done))
     .map((ep) => {
-      const plannedReps = (ep.slots || []).reduce((sum, s) => sum + (Number(s.reps) || 0), 0);
+      const plannedReps = (ep.slots || []).reduce(
+        (sum, s) => (s.adHoc ? sum : sum + (Number(s.reps) || 0)),
+        0
+      );
       const doneReps = (ep.slots || []).reduce(
         (sum, s) => (s.done ? sum + (Number(s.reps) || 0) : sum),
         0
@@ -155,14 +163,18 @@ export function buildCalendarGtgDayView(workoutData, dateStr, ctx = {}) {
         slots: (ep.slots || []).map((s) => ({
           time: s.time,
           reps: s.reps,
-          done: Boolean(s.done)
+          done: Boolean(s.done),
+          adHoc: Boolean(s.adHoc)
         }))
       };
     });
   const plannedReps = exercisePlans.reduce((sum, ep) => sum + ep.plannedReps, 0);
   return {
     doneMiniSets: plan.doneMiniSets,
+    donePlannedMiniSets: plan.donePlannedMiniSets,
     plannedMiniSets: plan.plannedMiniSets,
+    adHocDoneMiniSets: plan.adHocDoneMiniSets || 0,
+    adHocDoneReps: plan.adHocDoneReps || 0,
     doneReps: plan.doneReps,
     plannedReps,
     progressPct: plan.progressPct,

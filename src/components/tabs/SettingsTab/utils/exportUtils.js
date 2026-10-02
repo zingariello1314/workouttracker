@@ -7,6 +7,7 @@
  */
 
 import { ENDURANCE_SCHEMA_VERSION } from '../../../../services/endurance/enduranceDataService';
+import { summarizeGtgForExport } from '../../../../services/endurance/gtgService';
 
 /**
  * Construit les statistiques d'export pour les données d'endurance
@@ -59,13 +60,7 @@ export const buildEnduranceExportStats = (enduranceData = {}) => {
     { total: challenges.length, byStatus: {} }
   );
 
-  const gtgDays =
-    enduranceData.gtg?.days && typeof enduranceData.gtg.days === 'object'
-      ? Object.keys(enduranceData.gtg.days).length
-      : 0;
-  const gtgExercises = Array.isArray(enduranceData.gtg?.config?.selectedIds)
-    ? enduranceData.gtg.config.selectedIds.length
-    : 0;
+  const gtgSummary = summarizeGtgForExport(enduranceData.gtg || {});
 
   return {
     schemaVersion: enduranceData.schemaVersion || ENDURANCE_SCHEMA_VERSION,
@@ -76,8 +71,15 @@ export const buildEnduranceExportStats = (enduranceData = {}) => {
     jumpropeDetail,
     challenges: challengeStats,
     gtg: {
-      days: gtgDays,
-      exercises: gtgExercises
+      days: gtgSummary.days,
+      exercises: gtgSummary.exercises,
+      miniSets: gtgSummary.miniSets,
+      miniSetsDone: gtgSummary.miniSetsDone,
+      repsDone: gtgSummary.repsDone,
+      adHocMiniSets: gtgSummary.adHocMiniSets,
+      adHocMiniSetsDone: gtgSummary.adHocMiniSetsDone,
+      adHocRepsDone: gtgSummary.adHocRepsDone,
+      entriesWithTime: gtgSummary.entriesWithTime
     }
   };
 };

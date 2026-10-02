@@ -16,17 +16,21 @@ import { useProfileQuestionnaire } from '../../../../features/profileQuestionnai
 import { useTranslation } from '../../../../utils/translations';
 import { GTG_BUILTIN_IDS, listGtgBankExercises } from '../../../../services/endurance/gtgExerciseBank';
 import {
+  addGtgAdHocPassage,
   addGtgBankExercise,
   buildGtgDayPlan,
   getGtgExerciseLabel,
   getPerExerciseSchedule,
   normalizeGtgData,
+  removeGtgAdHocPassage,
   removeGtgExercise,
   todayYmd,
+  toggleGtgAdHocItem,
   toggleGtgMiniSet,
   updateGtgConfig,
   updateGtgExerciseConfig
 } from '../../../../services/endurance/gtgService';
+import GtgAdHocPassageForm from '../../../endurance/GtgAdHocPassageForm';
 import { syncGtgDayToWorkoutData } from '../../../../services/endurance/gtgWorkoutSync';
 import { applyWorkoutRepIntegrations } from '../../../../services/endurance/workoutRepIntegrations';
 import { applyGtgDeclaredMaxToData } from '../../../../services/endurance/gtgMaxPerformance';
@@ -193,9 +197,25 @@ export default function GtgSessionsPanel() {
   );
 
   const onToggleMiniSet = useCallback(
-    (slotIndex, exerciseId) => {
-      const next = toggleGtgMiniSet(gtgData, today, slotIndex, exerciseId);
+    (item) => {
+      const next = item.adHoc
+        ? toggleGtgAdHocItem(gtgData, today, item.adHocId, item.exerciseId)
+        : toggleGtgMiniSet(gtgData, today, item.slotIndex, item.exerciseId);
       persistGtg(next, today);
+    },
+    [gtgData, today, persistGtg]
+  );
+
+  const onAddPassage = useCallback(
+    ({ time, items }) => {
+      persistGtg(addGtgAdHocPassage(gtgData, today, { time, items }), today);
+    },
+    [gtgData, today, persistGtg]
+  );
+
+  const onRemovePassage = useCallback(
+    (adHocId) => {
+      persistGtg(removeGtgAdHocPassage(gtgData, today, adHocId), today);
     },
     [gtgData, today, persistGtg]
   );
@@ -246,7 +266,8 @@ export default function GtgSessionsPanel() {
               <div className="mb-1 flex justify-between text-[11px] text-slate-400">
                 <span>{t('endurance.gtg.progress')}</span>
                 <span>
-                  {dayPlan.doneMiniSets}/{dayPlan.plannedMiniSets}
+                  {dayPlan.donePlannedMiniSets}/{dayPlan.plannedMiniSets}
+                  {dayPlan.adHocDoneMiniSets > 0 ? ` · +${dayPlan.adHocDoneMiniSets}` : ''}
                 </span>
               </div>
               <div className="relative h-2 overflow-hidden rounded-full bg-slate-800">
@@ -263,35 +284,55 @@ export default function GtgSessionsPanel() {
         <div className="space-y-3">
           {dayPlan.slots.map((slot) => (
             <div
-              key={slot.index}
+              key={slot.adHoc ? slot.adHocId : `plan-${slot.time}`}
               className={`rounded-xl border p-4 ${
-                slot.isComplete
-                  ? 'border-emerald-600/50 bg-emerald-950/20'
-                  : 'border-slate-700/50 bg-slate-900/30'
+                slot.adHoc
+                  ? 'border-dashed border-amber-500/45 bg-amber-950/10'
+                  : slot.isComplete
+                    ? 'border-emerald-600/50 bg-emerald-950/20'
+                    : 'border-slate-700/50 bg-slate-900/30'
               }`}
             >
-              <div className="mb-3 flex items-center justify-between">
+              <div className="mb-3 flex items-center justify-between gap-2">
                 <div className="flex items-center gap-2">
-                  <Clock className="h-4 w-4 text-sky-300" />
+                  <Clock className={`h-4 w-4 ${slot.adHoc ? 'text-amber-300' : 'text-sky-300'}`} />
                   <span className="font-mono text-lg font-semibold text-white">{slot.time}</span>
                   <span className="text-[11px] text-slate-500">
                     {slot.completedCount}/{slot.totalCount}
                   </span>
+                  {slot.adHoc ? (
+                    <span className="rounded-full bg-amber-900/50 px-2 py-0.5 text-[10px] text-amber-100">
+                      hors planning
+                    </span>
+                  ) : null}
                 </div>
-                {slot.isComplete && (
-                  <span className="inline-flex items-center gap-1 rounded-full bg-emerald-900/50 px-2 py-0.5 text-[11px] text-emerald-200">
-                    <Check className="h-3 w-3" />
-                    {t('endurance.gtg.slotDone')}
-                  </span>
-                )}
+                <div className="flex items-center gap-2">
+                  {slot.isComplete && (
+                    <span className="inline-flex items-center gap-1 rounded-full bg-emerald-900/50 px-2 py-0.5 text-[11px] text-emerald-200">
+                      <Check className="h-3 w-3" />
+                      {t('endurance.gtg.slotDone')}
+                    </span>
+                  )}
+                  {slot.adHoc ? (
+                    <button
+                      type="button"
+                      disabled={saving}
+                      onClick={() => onRemovePassage(slot.adHocId)}
+                      className="rounded-md p-1 text-slate-400 hover:text-rose-300"
+                      aria-label="Retirer ce passage"
+                    >
+                      <Trash2 className="h-3.5 w-3.5" />
+                    </button>
+                  ) : null}
+                </div>
               </div>
               <div className="flex flex-wrap gap-2">
                 {slot.items.map((item) => (
                   <button
-                    key={item.exerciseId}
+                    key={`${item.adHocId || 'plan'}-${item.exerciseId}-${item.slotIndex}`}
                     type="button"
                     disabled={saving}
-                    onClick={() => onToggleMiniSet(item.slotIndex, item.exerciseId)}
+                    onClick={() => onToggleMiniSet(item)}
                     className={`rounded-xl border px-3 py-2 text-left text-sm transition ${
                       item.done
                         ? 'border-emerald-500/60 bg-emerald-950/40 text-emerald-100'
@@ -309,6 +350,12 @@ export default function GtgSessionsPanel() {
             </div>
           ))}
         </div>
+        <GtgAdHocPassageForm
+          exerciseIds={gtgData.config.selectedIds}
+          labelFor={labelFor}
+          disabled={saving}
+          onSubmit={onAddPassage}
+        />
       </div>
 
       {/* Configuration */}

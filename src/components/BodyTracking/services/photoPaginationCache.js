@@ -19,6 +19,7 @@
  */
 
 import logger from '../../../utils/logger';
+import { trackWorkoutTrackerConnection } from '../../../services/workout/workoutDbGateway.js';
 import {
   PHOTO_PAGINATION_CACHE_DB_NAME,
   PHOTO_PAGINATION_CACHE_STORE,
@@ -46,10 +47,34 @@ const CACHE_CONFIG = {
 let dbInstance = null;
 let dbOpenPromise = null;
 
+function holdPhotoCacheDb(db) {
+  if (!db) return db;
+  db.onversionchange = () => {
+    try {
+      db.close();
+    } catch {
+      // ignore
+    }
+    if (dbInstance === db) {
+      dbInstance = null;
+      dbOpenPromise = null;
+    }
+  };
+  return trackWorkoutTrackerConnection(db);
+}
+
 /**
  * ✅ Ouvrir connexion IndexedDB avec gestion robuste
  */
-const openDB = () => {
+const openDB = async () => {
+  try {
+    const { whenWorkoutTrackerUpgradeSettled } = await import(
+      '../../../services/workout/workoutDbGateway.js'
+    );
+    await whenWorkoutTrackerUpgradeSettled();
+  } catch {
+    // ignore
+  }
   // Retourner promise existante si déjà en cours
   if (dbOpenPromise) {
     return dbOpenPromise;
@@ -99,7 +124,7 @@ const openDB = () => {
         
         upgradeRequest.onsuccess = (upgradeEvent) => {
           const upgradeDb = upgradeEvent.target.result;
-          dbInstance = upgradeDb;
+          dbInstance = holdPhotoCacheDb(upgradeDb);
           dbOpenPromise = null;
           log.debug(`✅ IndexedDB ouverte avec upgrade: ${upgradeDb.name} v${upgradeDb.version}`);
           resolve(upgradeDb);
@@ -114,7 +139,7 @@ const openDB = () => {
         return;
       }
 
-      dbInstance = db;
+      dbInstance = holdPhotoCacheDb(db);
       dbOpenPromise = null;
       log.debug(`✅ IndexedDB ouverte: ${db.name} v${db.version}`);
       resolve(db);

@@ -15,6 +15,7 @@ import {
 import { normalizeStretchSlots, flattenStretchItems } from '../../../../utils/stretchUtils';
 import { createWorkoutRepository } from '../../../../services/workout/createWorkoutRepository';
 import { buildEnduranceExportStats } from './exportUtils';
+import { summarizeGtgForExport } from '../../../../services/endurance/gtgService';
 import {
   aggregateLiftVolumeKgByDate,
   computeVolumeKgForWorkoutKey
@@ -492,6 +493,7 @@ export function prepareSportExportBundle({ workoutData, programContext = null, u
 
   const dailyJournal = buildSportDailyJournal(workoutData, { programs, activeProgram });
   const dailyLiftVolume = buildDailyLiftVolumeDetail(workoutData, { programs, activeProgram });
+  const gtgExport = summarizeGtgForExport(workoutData.enduranceData?.gtg || {});
 
   const data = {
     ...workoutData,
@@ -509,7 +511,8 @@ export function prepareSportExportBundle({ workoutData, programContext = null, u
     sportExport: {
       schemaVersion: '2.0',
       dailyJournal,
-      dailyLiftVolume
+      dailyLiftVolume,
+      gtgJournal: gtgExport.journal
     },
     metadata: buildSportExportMetadata(workoutData, { programs, activeProgram, programHistory }, userProfile)
   };
@@ -594,7 +597,12 @@ export function buildSportExportPreview(workoutData = {}, programCtx = {}, userP
       running: (sessions.running || ed.runningSessions || []).length,
       challenges: (ed.challenges || []).length,
       gtgDays: ed.gtg?.days ? Object.keys(ed.gtg.days).length : 0,
-      gtgExercises: Array.isArray(ed.gtg?.config?.selectedIds) ? ed.gtg.config.selectedIds.length : 0
+      gtgExercises: Array.isArray(ed.gtg?.config?.selectedIds) ? ed.gtg.config.selectedIds.length : 0,
+      gtgMiniSetsDone: meta.enduranceSummary?.gtg?.miniSetsDone ?? 0,
+      gtgRepsDone: meta.enduranceSummary?.gtg?.repsDone ?? 0,
+      gtgAdHocMiniSetsDone: meta.enduranceSummary?.gtg?.adHocMiniSetsDone ?? 0,
+      gtgAdHocRepsDone: meta.enduranceSummary?.gtg?.adHocRepsDone ?? 0,
+      gtgJournalEntries: meta.enduranceSummary?.gtg?.miniSets ?? 0
     },
     bodyTracking: {
       photos: (workoutData.progressPhotos || []).length,

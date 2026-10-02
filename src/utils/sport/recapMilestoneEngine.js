@@ -15,6 +15,13 @@ import {
   extractExerciseIdFromWorkoutKey
 } from '../exerciseKeyGenerator';
 import { resolveExercisePerformance, structuredBestSetReps } from './exercisePerformanceUnit';
+import { createSetShiftReader } from './recapSetShift';
+import {
+  isHoldExerciseName,
+  movementKey,
+  volumeSharedWithRepSibling
+} from './recapExerciseIdentity';
+import { sameDayCompanions } from './recapFactReading';
 
 export const REP_CUMUL_THRESHOLDS = [100, 500, 1000, 5000, 10000, 25000, 50000, 100000];
 export const SESSION_THRESHOLDS = [10, 25, 50, 100, 250, 500];
@@ -173,6 +180,49 @@ function row(partial) {
     importance: 0.9,
     ...partial
   };
+}
+
+function longestTrainingRun(done) {
+  if (!done.length) return null;
+  let best = { n: 1, reps: done[0].totalReps || 0, start: done[0].date, end: done[0].date };
+  let cur = { ...best };
+  for (let i = 1; i < done.length; i += 1) {
+    const gap = daysBetweenYmd(done[i - 1].date, done[i].date);
+    if (gap != null && gap <= 1) {
+      cur = {
+        n: cur.n + 1,
+        reps: cur.reps + (done[i].totalReps || 0),
+        start: cur.start,
+        end: done[i].date
+      };
+    } else {
+      cur = { n: 1, reps: done[i].totalReps || 0, start: done[i].date, end: done[i].date };
+    }
+    if (cur.n > best.n) best = { ...cur };
+  }
+  return best;
+}
+
+function cumulReading(done, threshold) {
+  const count = done.length || 1;
+  const first = done[0];
+  const last = done[done.length - 1];
+  const days = first && last ? daysBetweenYmd(first.date, last.date) : null;
+  const perWeek = days > 0 ? (count / days) * 7 : null;
+  const mean = Math.round(threshold / count);
+  const lead = `Tu viens de dépasser ${fmtInt(threshold)} répétitions cumulées depuis ta première saisie${
+    first?.date ? `, le ${formatDayFr(first.date, true)}` : ''
+  }${days != null ? `, il y a ${fmtInt(days)} jours` : ''}. Elles ont été réalisées en ${fmtInt(count)} séances, soit une moyenne de ${fmtInt(mean)} reps par séance.`;
+  const rate =
+    perWeek != null
+      ? ` Ça représente environ ${perWeek.toFixed(1).replace('.', ',')} séance${perWeek >= 2 ? 's' : ''} par semaine sur cette durée.`
+      : '';
+  const run = longestTrainingRun(done);
+  const concentration =
+    run && run.n >= 5 && count >= 8 && run.n / count >= 0.35
+      ? ` Le détail compte plus que la moyenne : ${fmtInt(run.n)} séances se suivent du ${formatDayFr(run.start, true)} au ${formatDayFr(run.end, true)}, soit une part importante des ${fmtInt(count)} séances. Le reste du parcours est plus clairsemé. L'historique alterne un enchaînement et des périodes plus vides, il n'est pas un rythme régulier caché derrière la moyenne.`
+      : '';
+  return `${lead}${rate}${concentration}`;
 }
 
 function eligible(date, window, voiceKey, { firstAbsolute = false } = {}) {
@@ -425,29 +475,66 @@ export function detectRecapMilestones({
   }
 
   const returns = [];
-  firstByEx.forEach((first, id) => {
-    const dates = [];
-    const byDate = [];
-    sessions.forEach((s) => {
-      const hit = (s.exercises || []).find((e) => String(e.id) === id);
-      if (hit && hit.reps >= 6) {
-        dates.push(s.date);
-        byDate.push({ date: s.date, reps: hit.reps, name: hit.name || first.name });
+  const setShifts = createSetShiftReader(snapshot, window.end);
+  const byMovement = new Map();
+  sessions.forEach((s) => {
+    (s.exercises || []).forEach((e) => {
+      if ((e.reps || 0) < 6) return;
+      const key = movementKey(e.name) || `id:${e.id}`;
+      if (!byMovement.has(key)) byMovement.set(key, []);
+      const list = byMovement.get(key);
+      const sameDay = list.find((row) => row.date === s.date);
+      const row = {
+        date: s.date,
+        reps: e.reps,
+        name: e.name || nameOf(e.id),
+        id: String(e.id)
+      };
+      if (!sameDay) {
+        list.push(row);
+        return;
+      }
+      if (e.reps > sameDay.reps) {
+        sameDay.reps = e.reps;
+        sameDay.name = row.name;
+        sameDay.id = row.id;
       }
     });
-    if (dates.length < 2) return;
+  });
+  byMovement.forEach((byDate) => {
+    byDate.sort((a, b) => a.date.localeCompare(b.date));
+    if (byDate.length < 2) return;
+    const dates = byDate.map((row) => row.date);
     const last = byDate[byDate.length - 1];
     const prev = byDate[byDate.length - 2];
     const gap = daysBetweenYmd(prev.date, last.date);
     const med = medianInterval(dates.slice(0, -1));
     if (!eligible(last.date, window, voiceKey) || !isMeaningfulAbsence(gap, med)) return;
+    const day = sessions.find((s) => s.date === last.date);
+    if (isHoldExerciseName(last.name) && volumeSharedWithRepSibling(day, last.id, last.reps)) return;
     const prior = byDate.slice(0, -1).slice(-8);
     const avg = mean(prior.map((x) => x.reps));
     const vs = avg > 0 ? (last.reps / avg) * 100 : null;
     const ratio = med >= 1 ? gap / med : null;
+    const unit = isHoldExerciseName(last.name) ? 'seconds' : 'reps';
+    const amountWord = unit === 'seconds' ? 'secondes' : 'répétitions';
+    const setBit = setShifts.forSession(last.id, last.date, last.reps, unit);
+    const mates = sameDayCompanions(
+      { id: last.id, name: last.name, dates: [last.date] },
+      { [last.date]: day?.exercises || [] }
+    );
+    const mateBit = mates.length
+      ? ` Le même jour, ${mates
+          .map((other) => `${fmtInt(other.reps)} répétitions de ${String(other.name).toLowerCase()}`)
+          .join(' et ')} portent sur le même muscle principal. Si la suivante baisse, regarde cette fatigue avant d'y voir une perte.`
+      : '';
+    const oneParam = /restent du même ordre|reste le même/.test(setBit || '')
+      ? ` Un seul paramètre a bougé. Le répéter avant d'en changer un autre garde la mesure lisible.`
+      : '';
     returns.push({
       gap,
       ratio: ratio || 0,
+      exerciseId: last.id,
       kind: 'disc_ms_return',
       nature: 'now',
       family: 'ms_return',
@@ -460,15 +547,19 @@ export function detectRecapMilestones({
           : ''
       }${
         vs != null
-          ? ` Avec ${fmtInt(last.reps)} répétitions, tu reviens à ${fmtPct(vs)} de ton volume moyen avant l'interruption.`
+          ? ` Avec ${fmtInt(last.reps)} ${amountWord}, tu reviens à ${fmtPct(vs)} de ton volume moyen avant l'interruption.`
           : ''
-      } Ce volume mesure l'ampleur de la reprise, pas à lui seul une progression. Il devient un retour dans l'entraînement s'il se répète sur plusieurs séances.`,
-      evidence: `${fmtInt(gap)} j. · ${fmtInt(last.reps)} reps`,
+      }${setBit ? ` ${setBit}` : ''}${oneParam}${mateBit} Ce volume mesure l'ampleur de la reprise, pas à lui seul une progression. Il devient un retour dans l'entraînement s'il se répète sur plusieurs séances.`,
+      evidence: `${fmtInt(gap)} j. · ${fmtInt(last.reps)} ${amountWord}`,
       importance: 0.93
     });
   });
   returns.sort((a, b) => b.gap * 10 + b.ratio - (a.gap * 10 + a.ratio));
-  if (returns[0] && !out.some((m) => m.family === 'ms_return')) out.push(row(returns[0]));
+  const returnCap = voiceKey === 'today' ? 1 : 3;
+  returns.slice(0, returnCap).forEach((item) => {
+    if (out.some((m) => m.kind === 'disc_ms_return' && m.exerciseId === item.exerciseId)) return;
+    out.push(row(item));
+  });
 
   const gtg = gtgDates(snapshot);
   if (gtg.length >= 2) {
@@ -575,7 +666,7 @@ export function detectRecapMilestones({
           type: 'CUMUL_REPS',
           date: s.date,
           title: `Tu viens de dépasser ${fmtInt(th)} répétitions cumulées`,
-          body: `Tu viens de dépasser ${fmtInt(th)} répétitions cumulées depuis ta première saisie. Ces ${fmtInt(th)} répétitions ont été réalisées en ${fmtInt(sessCount)} séances, soit une moyenne de ${fmtInt(th / Math.max(1, sessCount))} reps par séance.`,
+          body: cumulReading(sessions.slice(0, sessCount), th),
           evidence: `${fmtInt(cumul)} reps · ${fmtInt(sessCount)} séances`,
           importance: th >= 10000 ? 0.97 : 0.9
         })
@@ -784,8 +875,9 @@ export function detectRecapMilestones({
   const byKind = new Map();
   out.forEach((m) => {
     if (!m?.kind) return;
-    const prev = byKind.get(m.kind);
-    if (!prev || (m.importance || 0) > (prev.importance || 0)) byKind.set(m.kind, m);
+    const key = m.exerciseId ? `${m.kind}:${m.exerciseId}` : m.kind;
+    const prev = byKind.get(key);
+    if (!prev || (m.importance || 0) > (prev.importance || 0)) byKind.set(key, m);
   });
   return [...byKind.values()].sort((a, b) => (b.importance || 0) - (a.importance || 0));
 }
@@ -1296,7 +1388,7 @@ function pushReturnDurableMilestones(out, { sessions, window, voiceKey }) {
       date: top.last,
       title: top.durable
         ? `La reprise de ${name} est devenue durable`
-        : `${fmtInt(top.n)} séances de ${name} depuis le retour`,
+        : `${fmtInt(top.n)} séances ${/^[aeiouéèêh]/i.test(name) ? "d'" : 'de '}${name} depuis le retour`,
       body: top.durable
         ? `La reprise de ${name} est devenue durable : ${fmtInt(top.n)} séances en ${fmtInt(top.daysSince)} jours, alors que l'interruption avait duré ${fmtInt(top.gap)} jours. Ce n'est plus l'événement du retour : c'est la continuité qui s'installe.`
         : `Depuis la reprise de ${name} le ${formatDayFr(top.ret, true)}, tu as enchaîné ${fmtInt(top.n)} séances en ${fmtInt(top.daysSince)} jours. L'interruption de ${fmtInt(top.gap)} jours n'est plus l'événement : c'est la suite qui se construit.`,

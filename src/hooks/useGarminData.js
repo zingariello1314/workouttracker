@@ -10,7 +10,7 @@
  * Le hook gère uniquement :
  * - L'état `dbReady` (initialisation IndexedDB)
  * - L'export/import JSON (délégation à loadAllData/save)
- * - L'auto-purge quotidienne (délégation à garminDataPurge)
+ * - La purge quotidienne des courbes intra-jour (les jours et activités restent)
  * 
  * @module useGarminData
  */
@@ -101,24 +101,26 @@ export const useGarminData = () => {
       });
   }, []);
 
-  // Auto-purge quotidienne (une fois par jour)
+  // Une fois par jour : retire les courbes intra-jour de plus de 90 jours.
+  // Les activités et les métriques quotidiennes (kcal, pas, FC) restent, sinon
+  // un export ne peut jamais contenir plus de 90 jours d’historique.
   useEffect(() => {
     if (!dbReady) return;
-    
-    const lastPurge = localStorage.getItem('lastGarminPurge');
+
+    const lastPurge = localStorage.getItem('lastGarminTimeSeriesPurge');
     const now = new Date().toISOString().split('T')[0];
-    
+
     if (lastPurge !== now) {
-      autoPurge(dbReady)
+      purgeOldTimeSeries(dbReady)
         .then((summary) => {
-          if (summary && (summary.activitiesPurged || summary.metricsPurged)) {
-            console.debug('[GarminData] autoPurge summary', summary);
+          if (summary && summary.entriesUpdated) {
+            console.debug('[GarminData] purge time series', summary);
           }
         })
         .catch((error) => {
-          console.error('[GarminData] autoPurge error', error);
+          console.error('[GarminData] purge time series error', error);
         });
-      localStorage.setItem('lastGarminPurge', now);
+      localStorage.setItem('lastGarminTimeSeriesPurge', now);
     }
   }, [dbReady]);
 
