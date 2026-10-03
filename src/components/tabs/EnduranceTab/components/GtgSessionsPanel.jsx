@@ -359,7 +359,7 @@ export default function GtgSessionsPanel() {
       </div>
 
       {/* Configuration */}
-      <div className="rounded-2xl border border-[#0F4C5C]/50 bg-black p-6">
+      <div id="endurance-gtg-config" className="scroll-mt-24 rounded-2xl border border-[#0F4C5C]/50 bg-black p-6">
         <h4 className="mb-4 text-lg font-semibold text-white">{t('endurance.gtg.configTitle')}</h4>
 
         <div className="mb-6 rounded-xl border border-violet-500/30 bg-violet-950/15 p-4">

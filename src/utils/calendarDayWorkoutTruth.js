@@ -3,6 +3,7 @@
  * ne pas confondre programme prévu, Garmin passif (pas / minutes intensité) et activité volontaire.
  */
 
+import { garminActivityMatchesCalendarDate } from './calendarUtils';
 import { dayHasGarminRecordedActivity } from './dayJustificationUtils';
 
 /**
@@ -12,19 +13,21 @@ import { dayHasGarminRecordedActivity } from './dayJustificationUtils';
  * @param {(value: unknown, ctx?: string) => number} parseDurationToMinutes
  * @param {(minutes: number, thresholds: object) => number} calculateTimeIntensityLevel
  * @param {{ thresholds: object }} dynamicTimeThresholds
+ * @param {object|null} [workoutData] agrégat (overrides de date logique)
  */
 export function getRecordedGarminWorkoutForDate(
   garminData,
   dateStr,
-  { parseDurationToMinutes, calculateTimeIntensityLevel, dynamicTimeThresholds }
+  { parseDurationToMinutes, calculateTimeIntensityLevel, dynamicTimeThresholds, workoutData = null }
 ) {
   if (!garminData || !dateStr) {
     return { hasActivity: false, intensity: 0, duration: 0, source: null };
   }
 
-  const swimming = (garminData.activities?.swimming || []).filter((a) => a.date === dateStr);
-  const jumpRope = (garminData.activities?.jumpRope || []).filter((a) => a.date === dateStr);
-  const cardio = (garminData.activities?.cardio || []).filter((a) => a.date === dateStr);
+  const onDay = (activity) => garminActivityMatchesCalendarDate(activity, dateStr, workoutData);
+  const swimming = (garminData.activities?.swimming || []).filter(onDay);
+  const jumpRope = (garminData.activities?.jumpRope || []).filter(onDay);
+  const cardio = (garminData.activities?.cardio || []).filter(onDay);
 
   let totalActivityDuration = 0;
   [...swimming, ...jumpRope, ...cardio].forEach((act) => {

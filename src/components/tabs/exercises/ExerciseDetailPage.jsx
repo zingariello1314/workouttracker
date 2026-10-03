@@ -27,9 +27,12 @@ import { exerciseUsesExternalLoad } from '../../../utils/programUtils';
 import { resolveExerciseDetailProfile } from '../../../utils/exerciseDetailProfile';
 import {
   getExerciseDatabaseHit,
+  getExerciseDatabaseKey,
   getExerciseVolumeModeTranslationKey,
   formatMuscleList
 } from '../../../utils/exerciseHeroContent';
+import YoutubeClickToPlay from '../../media/YoutubeClickToPlay';
+import { EXERCISE_BANK_GUIDE_VIDEOS } from '../../../data/guideVideos';
 import AnatomyBankHighlight from '../../anatomy/AnatomyBankHighlight';
 import { BankDetailMedia, mediaForExercise } from '../../sport/BankLinkedMedia';
 import ExercisePerceivedRessentiPanel from './ExercisePerceivedRessentiPanel';
@@ -68,6 +71,21 @@ function MultilineBlock({ text, className = 'text-sm text-slate-300 leading-rela
 
 function profileText(t, profileId, field, fallback = '') {
   return t(`exercisesTab.detailProfiles.${profileId}.${field}`, fallback);
+}
+
+function ExerciseDetailGuideAndMedia({ exercise, videosRef, gifRef }) {
+  const dbKey = getExerciseDatabaseKey(exercise);
+  const guide = dbKey ? EXERCISE_BANK_GUIDE_VIDEOS[dbKey] || null : null;
+  const media = mediaForExercise(exercise);
+  if (!guide && !media) return null;
+  return (
+    <div ref={videosRef} className="space-y-4">
+      {guide ? (
+        <YoutubeClickToPlay videoId={guide.id} start={guide.start} title={guide.title} />
+      ) : null}
+      <BankDetailMedia media={media} gifRef={gifRef} />
+    </div>
+  );
 }
 
 /**
@@ -417,8 +435,8 @@ const ExerciseDetailPage = ({
         </div>
       </div>
 
-      <BankDetailMedia
-        media={mediaForExercise(exercise)}
+      <ExerciseDetailGuideAndMedia
+        exercise={exercise}
         videosRef={detailVideosRef}
         gifRef={detailGifRef}
       />

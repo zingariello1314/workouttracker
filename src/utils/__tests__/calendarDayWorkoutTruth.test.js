@@ -66,4 +66,24 @@ describe('calendarDayWorkoutTruth', () => {
     expect(result.hasActivity).toBe(true);
     expect(result.duration).toBe(42);
   });
+
+  it('compte une activité Garmin sur sa date réaffectée, plus sur le jour d’enregistrement', () => {
+    const opts = {
+      parseDurationToMinutes: (v) => Number(v) || 0,
+      calculateTimeIntensityLevel: () => 2,
+      dynamicTimeThresholds: { thresholds: {} },
+      workoutData: {
+        garminActivityDateOverrides: { 8801: { logicalDate: '2026-10-02' } }
+      }
+    };
+    const garminData = {
+      activities: {
+        cardio: [{ id: 8801, garminId: 8801, date: '2026-10-01', duration: 58 }],
+        swimming: [],
+        jumpRope: []
+      }
+    };
+    expect(getRecordedGarminWorkoutForDate(garminData, '2026-10-02', opts).duration).toBe(58);
+    expect(getRecordedGarminWorkoutForDate(garminData, '2026-10-01', opts).duration).toBe(0);
+  });
 });

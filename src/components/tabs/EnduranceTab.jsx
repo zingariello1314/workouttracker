@@ -77,7 +77,15 @@ import { isWalkingLikeRunningSession } from '../../utils/runningSessionMovementK
 import { flattenEnduranceSessionsWithCalendarDate } from '../../services/sport/TrainingDayTruthService';
 
 const EnduranceTab = () => {
-  const { data, updateData, getWorkoutHistory, pendingEnduranceSubTab, clearPendingEnduranceSubTab } =
+  const {
+    data,
+    updateData,
+    getWorkoutHistory,
+    pendingEnduranceSubTab,
+    pendingEnduranceFocus,
+    clearPendingEnduranceSubTab,
+    clearPendingEnduranceFocus
+  } =
     useWorkout();
   const t = useTranslation();
   const {
@@ -683,6 +691,31 @@ const EnduranceTab = () => {
     const nextActivity = activityType || challengeForm.activityType || 'pushups';
     setChallengeForm(createDefaultChallengeFormState(nextActivity));
   }, [challengeForm.activityType]);
+
+  useEffect(() => {
+    if (!pendingEnduranceFocus || activeTab !== pendingEnduranceFocus.tabId) return;
+    if (pendingEnduranceFocus.tabId === 'pushups') {
+      setPushupsSubView('sessions');
+    }
+    if (pendingEnduranceFocus.openChallengeModal) {
+      setChallengeForm(createDefaultChallengeFormState('pushups'));
+      setUI({ showChallengeModal: true });
+    }
+    const anchorId = pendingEnduranceFocus.anchorId;
+    clearPendingEnduranceFocus?.();
+    if (!anchorId) return;
+    let attempts = 0;
+    const scrollToAnchor = () => {
+      const el = document.getElementById(anchorId);
+      if (el) {
+        el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        return;
+      }
+      attempts += 1;
+      if (attempts < 12) window.setTimeout(scrollToAnchor, 120);
+    };
+    window.setTimeout(scrollToAnchor, 80);
+  }, [pendingEnduranceFocus, activeTab, clearPendingEnduranceFocus, setUI]);
 
   const submitSession = useCallback(async (activityType, payload, resetFn) => {
     return handleSubmitSession({
@@ -3412,7 +3445,7 @@ const EnduranceTab = () => {
               </button>
             </div>
             
-            <div className="space-y-5">
+            <div id="endurance-pushup-challenge-form" className="scroll-mt-6 space-y-5">
               <div>
                 <label className="block text-slate-300 text-sm font-medium mb-2">{t('endurance.challenges.modal.name')}</label>
                 <input

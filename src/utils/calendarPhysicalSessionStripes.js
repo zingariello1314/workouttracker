@@ -9,7 +9,7 @@ import {
   garminActivityMatchesCalendarDate,
   parseDurationToMinutes
 } from './calendarUtils';
-import { coerceGarminDateOverrides } from './sessionCalendarDate';
+import { coerceGarminDateOverrides, resolveGarminActivityCalendarDate } from './sessionCalendarDate';
 import {
   hasMomentumWorkoutForDate,
   runningSessionMatchesCalendarDate
@@ -192,8 +192,8 @@ export function extractGarminActivityCaloriesKcal(act) {
 }
 
 /** Somme kcal des activités street Garmin du jour (hors course / marche). */
-export function getStreetWorkoutCaloriesKcalForDate(garminData, dateStr) {
-  const acts = getGarminStreetCardioActivitiesForDate(garminData, dateStr);
+export function getStreetWorkoutCaloriesKcalForDate(garminData, dateStr, workoutData = null) {
+  const acts = getGarminStreetCardioActivitiesForDate(garminData, dateStr, workoutData);
   if (!acts.length) return null;
   let sum = 0;
   let any = false;
@@ -210,7 +210,7 @@ export function getStreetWorkoutCaloriesKcalForDate(garminData, dateStr) {
 function isStreetWorkoutSessionDate(workoutData, garminData, dateStr) {
   if (!dateStr) return false;
   if (hasMomentumWorkoutForDate(workoutData, dateStr)) return true;
-  return getGarminStreetCardioActivitiesForDate(garminData, dateStr).length > 0;
+  return getGarminStreetCardioActivitiesForDate(garminData, dateStr, workoutData).length > 0;
 }
 
 /**
@@ -232,9 +232,10 @@ export function computeStreetWorkoutCaloriesAverageKcal(
     const m = key.match(/^(\d{4}-\d{2}-\d{2})_/);
     if (m) dateSet.add(m[1]);
   }
+  const overrides = coerceGarminDateOverrides(workoutData);
   for (const act of garminData.activities.cardio) {
     if (!isGarminStreetCardioActivity(act)) continue;
-    const ds = String(act.date || act.startTimeLocal || '').match(/^(\d{4}-\d{2}-\d{2})/)?.[1];
+    const ds = resolveGarminActivityCalendarDate(act, overrides);
     if (ds) dateSet.add(ds);
   }
 
@@ -242,7 +243,7 @@ export function computeStreetWorkoutCaloriesAverageKcal(
   for (const ds of dateSet) {
     if (excludeDateStr && ds === excludeDateStr) continue;
     if (!isStreetWorkoutSessionDate(workoutData, garminData, ds)) continue;
-    const kcal = getStreetWorkoutCaloriesKcalForDate(garminData, ds);
+    const kcal = getStreetWorkoutCaloriesKcalForDate(garminData, ds, workoutData);
     if (kcal != null && kcal > 0) samples.push(kcal);
   }
 
@@ -298,7 +299,7 @@ export function buildDedupedPhysicalActivityRecapRows(
   if (!dateStr) return [];
   const rows = [];
   const hasWorkout = hasNonGtgMomentumWorkoutForDate(workoutData, dateStr);
-  const streetGarmin = getGarminStreetCardioActivitiesForDate(garminData, dateStr);
+  const streetGarmin = getGarminStreetCardioActivitiesForDate(garminData, dateStr, workoutData);
 
   if (hasWorkout) {
     const count = countMomentumCheckedExercises(workoutData, dateStr);
@@ -326,7 +327,7 @@ export function buildDedupedPhysicalActivityRecapRows(
         })
       );
     }
-    const streetKcal = getStreetWorkoutCaloriesKcalForDate(garminData, dateStr);
+    const streetKcal = getStreetWorkoutCaloriesKcalForDate(garminData, dateStr, workoutData);
     if (streetKcal != null && streetKcal > 0) {
       parts.push(`${streetKcal} kcal`);
     }
@@ -375,7 +376,7 @@ export function computeDedupedPhysicalDurationMin(workoutData, garminData, dateS
   if (hasMomentumWorkoutForDate(workoutData, dateStr)) {
     total += getStreetWorkoutDurationMinForDate(workoutData, garminData, dateStr);
   } else {
-    total += getGarminStreetCardioActivitiesForDate(garminData, dateStr).reduce(
+    total += getGarminStreetCardioActivitiesForDate(garminData, dateStr, workoutData).reduce(
       (s, act) => s + activityDurationMin(act),
       0
     );
@@ -408,7 +409,7 @@ function countMomentumCheckedExercises(workoutData, dateStr) {
  */
 export function countStreetWorkoutSessionsForDate(workoutData, garminData, dateStr) {
   if (!dateStr) return 0;
-  const streetGarmin = getGarminStreetCardioActivitiesForDate(garminData, dateStr);
+  const streetGarmin = getGarminStreetCardioActivitiesForDate(garminData, dateStr, workoutData);
   const hasWorkout = hasNonGtgMomentumWorkoutForDate(workoutData, dateStr);
   if (hasWorkout) return Math.max(1, streetGarmin.length);
   return streetGarmin.length;

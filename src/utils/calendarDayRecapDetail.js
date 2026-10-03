@@ -317,7 +317,7 @@ export function buildWorkoutDetailContext(workoutData, dateStr, intensity, garmi
   const durationMin =
     streetDur > 0 ? Math.round(streetDur) : Math.round(Number(intensity?.duration) || 0);
   const caloriesKcal =
-    garminData && dateStr ? getStreetWorkoutCaloriesKcalForDate(garminData, dateStr) : null;
+    garminData && dateStr ? getStreetWorkoutCaloriesKcalForDate(garminData, dateStr, workoutData) : null;
   const avgStats =
     garminData && workoutData && dateStr
       ? computeStreetWorkoutCaloriesAverageKcal(garminData, workoutData, dateStr)

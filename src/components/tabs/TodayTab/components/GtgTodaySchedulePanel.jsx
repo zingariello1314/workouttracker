@@ -13,6 +13,7 @@ import {
   toggleGtgAdHocItem,
   toggleGtgMiniSet
 } from '../../../../services/endurance/gtgService';
+import { hasMeaningfulGtgData } from '../../../../services/endurance/gtgDataMerge';
 import GtgAdHocPassageForm from '../../../endurance/GtgAdHocPassageForm';
 import { syncGtgDayToWorkoutData } from '../../../../services/endurance/gtgWorkoutSync';
 import { applyWorkoutRepIntegrations } from '../../../../services/endurance/workoutRepIntegrations';
@@ -29,7 +30,7 @@ const BUILTIN_LABEL_KEYS = {
  * Emploi du temps GTG du jour (Aujourd’hui) — dissocié des exercices programme.
  */
 export default function GtgTodaySchedulePanel({ date }) {
-  const { data, updateData } = useWorkout();
+  const { data, updateData, requestOpenEnduranceSubTab } = useWorkout();
   const { questionnaire: profileQuestionnaire } = useProfileQuestionnaire();
   const t = useTranslation();
   const [saving, setSaving] = useState(false);
@@ -104,7 +105,33 @@ export default function GtgTodaySchedulePanel({ date }) {
     [gtgData, dateStr, persistGtg]
   );
 
-  if (selectedCount === 0) return null;
+  const configured = hasMeaningfulGtgData(gtgRaw) && selectedCount > 0;
+  if (!configured) {
+    return (
+      <div className="today-module-card today-gtg-panel rounded-xl border-2 border-violet-500/35 bg-black p-5 shadow-lg space-y-3">
+        <h3 className="text-lg font-semibold text-white">
+          {t('today.gtg.scheduleTitle', 'Grease the Groove — emploi du temps')}
+        </h3>
+        <p className="text-sm text-slate-400 max-w-xl">
+          {t(
+            'today.gtg.empty',
+            'Le Grease the Groove n’est pas encore paramétré. Choisis les exercices, les créneaux et les reps dans Défis pour afficher l’emploi du temps ici.'
+          )}
+        </p>
+        <button
+          type="button"
+          onClick={() =>
+            requestOpenEnduranceSubTab?.('gtg', {
+              anchorId: 'endurance-gtg-config'
+            })
+          }
+          className="rounded-lg bg-violet-700/80 px-4 py-2 text-sm font-medium text-white hover:bg-violet-600/90"
+        >
+          {t('today.gtg.setup', 'Paramétrer le Grease the Groove')}
+        </button>
+      </div>
+    );
+  }
 
   const progressBarPct = Math.min(100, Math.max(0, dayPlan.progressPct));
 

@@ -31,6 +31,42 @@ describe('GarminDateOverrideService', () => {
     expect(next.enduranceData.sessions.running[0].logicalDate).toBe('2026-06-01');
   });
 
+  it('une activité Garmin sans session endurance ne lève pas si required est faux', () => {
+    const base = {
+      garminActivityDateOverrides: {},
+      enduranceData: { sessions: { running: [] } }
+    };
+    const withOverride = buildAggregateWithGarminDateOverride(base, {
+      garminId: 4242,
+      logicalDate: '2026-10-02'
+    });
+    const next = buildAggregateWithSessionLogicalDate(withOverride, {
+      sessionId: 4242,
+      activityType: 'cardio',
+      logicalDate: '2026-10-02',
+      required: false
+    });
+    expect(next.garminActivityDateOverrides['4242'].logicalDate).toBe('2026-10-02');
+    expect(next.enduranceData.sessions.running).toEqual([]);
+  });
+
+  it('retrouve la session même si elle est dans une autre famille', () => {
+    const base = {
+      enduranceData: {
+        sessions: {
+          running: [{ id: 'g7', garminId: 'g7', date: '2026-10-01', distance: 5 }]
+        }
+      }
+    };
+    const next = buildAggregateWithSessionLogicalDate(base, {
+      sessionId: 'g7',
+      activityType: 'cardio',
+      logicalDate: '2026-10-02',
+      required: false
+    });
+    expect(next.enduranceData.sessions.running[0].logicalDate).toBe('2026-10-02');
+  });
+
   it('describeSessionCalendarDates détecte réaffectation', () => {
     const agg = {
       garminActivityDateOverrides: { g1: { logicalDate: '2026-06-01' } }

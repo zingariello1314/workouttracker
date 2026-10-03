@@ -32,30 +32,52 @@ export function buildAggregateWithGarminDateOverride(currentData, { garminId, lo
   };
 }
 
+function sessionMatchesId(session, sid) {
+  return String(session?.id) === sid || String(session?.garminId) === sid;
+}
+
 /**
  * Réaffecte une session endurance (course, etc.) via logicalDate sur la session.
+ * Cherche d'abord `activityType`, puis les autres familles : une activité Garmin
+ * cardio peut n'exister que dans `sessions.running`, ou nulle part (cardio indoor).
  * @param {object} currentData
- * @param {{ sessionId: string|number, activityType: string, logicalDate: string }} params
+ * @param {{ sessionId: string|number, activityType?: string, logicalDate: string, required?: boolean }} params
  */
-export function buildAggregateWithSessionLogicalDate(currentData, { sessionId, activityType, logicalDate }) {
+export function buildAggregateWithSessionLogicalDate(
+  currentData,
+  { sessionId, activityType, logicalDate, required = true }
+) {
   const logical = normalizeDateString(logicalDate);
-  if (!logical || sessionId == null || !activityType) {
+  if (!logical || sessionId == null || (required && !activityType)) {
     throw new Error('[GarminDateOverrideService] sessionId, activityType et logicalDate requis');
   }
 
   const endurance = currentData?.enduranceData || {};
   const sessions = { ...(endurance.sessions || {}) };
-  const list = Array.isArray(sessions[activityType]) ? [...sessions[activityType]] : [];
   const sid = String(sessionId);
-  let found = false;
+  const types = [];
+  if (activityType && sessions[activityType]) types.push(activityType);
+  else if (activityType) types.push(activityType);
+  Object.keys(sessions).forEach((key) => {
+    if (!types.includes(key)) types.push(key);
+  });
 
-  const nextList = list.map((session) => {
-    if (String(session?.id) !== sid && String(session?.garminId) !== sid) return session;
-    found = true;
-    return { ...session, logicalDate: logical };
+  let found = false;
+  const nextSessions = { ...sessions };
+  types.forEach((type) => {
+    const list = Array.isArray(nextSessions[type]) ? nextSessions[type] : [];
+    let typeFound = false;
+    const nextList = list.map((session) => {
+      if (!sessionMatchesId(session, sid)) return session;
+      typeFound = true;
+      found = true;
+      return { ...session, logicalDate: logical };
+    });
+    if (typeFound) nextSessions[type] = nextList;
   });
 
   if (!found) {
+    if (!required) return currentData;
     throw new Error('[GarminDateOverrideService] session introuvable');
   }
 
@@ -63,10 +85,7 @@ export function buildAggregateWithSessionLogicalDate(currentData, { sessionId, a
     ...currentData,
     enduranceData: {
       ...endurance,
-      sessions: {
-        ...sessions,
-        [activityType]: nextList
-      }
+      sessions: nextSessions
     }
   };
 }
@@ -91,23 +110,31 @@ export function buildAggregateWithoutGarminDateOverride(currentData, garminId) {
 export function buildAggregateClearSessionLogicalDate(currentData, { sessionId, activityType }) {
   const endurance = currentData?.enduranceData || {};
   const sessions = { ...(endurance.sessions || {}) };
-  const list = Array.isArray(sessions[activityType]) ? [...sessions[activityType]] : [];
   const sid = String(sessionId);
+  const types = [];
+  if (activityType) types.push(activityType);
+  Object.keys(sessions).forEach((key) => {
+    if (!types.includes(key)) types.push(key);
+  });
 
-  const nextList = list.map((session) => {
-    if (String(session?.id) !== sid && String(session?.garminId) !== sid) return session;
-    const { logicalDate: _removed, ...rest } = session;
-    return rest;
+  const nextSessions = { ...sessions };
+  types.forEach((type) => {
+    const list = Array.isArray(nextSessions[type]) ? nextSessions[type] : [];
+    let typeFound = false;
+    const nextList = list.map((session) => {
+      if (!sessionMatchesId(session, sid)) return session;
+      typeFound = true;
+      const { logicalDate: _removed, ...rest } = session;
+      return rest;
+    });
+    if (typeFound) nextSessions[type] = nextList;
   });
 
   return {
     ...currentData,
     enduranceData: {
       ...endurance,
-      sessions: {
-        ...sessions,
-        [activityType]: nextList
-      }
+      sessions: nextSessions
     }
   };
 }

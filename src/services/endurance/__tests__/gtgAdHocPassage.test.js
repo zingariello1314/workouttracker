@@ -3,6 +3,7 @@ import {
   addGtgAdHocPassage,
   buildGtgDayPlan,
   buildGtgExportJournal,
+  normalizeGtgData,
   removeGtgAdHocPassage,
   toggleGtgAdHocItem,
   toggleGtgMiniSet
@@ -168,5 +169,14 @@ describe('passages GTG hors planning', () => {
         expect.objectContaining({ exerciseId: 'dips', reps: 6, done: false })
       ])
     );
+  });
+
+  it('un compte sans config GTG ne reçoit pas les exercices par défaut', () => {
+    expect(normalizeGtgData({}).config.selectedIds).toEqual([]);
+    expect(normalizeGtgData({ days: { '2026-10-01': { exercises: {} } } }).config.selectedIds).toEqual([
+      'pullups',
+      'dips',
+      'pushups'
+    ]);
   });
 });

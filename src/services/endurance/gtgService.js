@@ -106,13 +106,29 @@ function isValidGtgExerciseId(id, catalog) {
   return false;
 }
 
-export function normalizeGtgConfig(raw = {}) {
+function rawGtgHasPractice(raw) {
+  const days = raw?.days;
+  if (days && typeof days === 'object' && Object.keys(days).length > 0) return true;
+  const cfg = raw?.config;
+  if (!cfg || typeof cfg !== 'object') return false;
+  if (cfg.customCatalog && Object.keys(cfg.customCatalog).length > 0) return true;
+  if (cfg.protocolByExercise && Object.keys(cfg.protocolByExercise).length > 0) return true;
+  return false;
+}
+
+export function normalizeGtgConfig(raw = {}, { allowBuiltinFallback = false } = {}) {
   const customCatalog =
     raw.customCatalog && typeof raw.customCatalog === 'object' ? { ...raw.customCatalog } : {};
-  const selectedIds = Array.isArray(raw.selectedIds)
+  const explicitSelection = Array.isArray(raw.selectedIds);
+  const selectedIds = explicitSelection
     ? raw.selectedIds.filter((id) => isValidGtgExerciseId(id, customCatalog))
-    : [...GTG_BUILTIN_IDS];
-  const safeSelected = selectedIds.length > 0 ? selectedIds : [...GTG_BUILTIN_IDS];
+    : allowBuiltinFallback
+      ? [...GTG_BUILTIN_IDS]
+      : [];
+  const safeSelected =
+    selectedIds.length > 0 || explicitSelection || !allowBuiltinFallback
+      ? selectedIds
+      : [...GTG_BUILTIN_IDS];
   const scheduleFrom = String(raw.scheduleFrom || DEFAULT_SCHEDULE_FROM).slice(0, 5);
   const scheduleTo = String(raw.scheduleTo || DEFAULT_SCHEDULE_TO).slice(0, 5);
   const intervalHours = Math.max(1, Math.min(4, Math.round(Number(raw.intervalHours) || DEFAULT_INTERVAL_HOURS)));
@@ -203,7 +219,10 @@ export function getPerExerciseSchedule(config, exerciseId) {
 }
 
 export function normalizeGtgData(raw = {}) {
-  const config = normalizeGtgConfig(raw.config || {});
+  const explicit = Array.isArray(raw?.config?.selectedIds);
+  const config = normalizeGtgConfig(raw.config || {}, {
+    allowBuiltinFallback: !explicit && rawGtgHasPractice(raw)
+  });
   const days = raw.days && typeof raw.days === 'object' ? { ...raw.days } : {};
   const workoutSync =
     raw.workoutSync && typeof raw.workoutSync === 'object' ? { ...raw.workoutSync } : {};

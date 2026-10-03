@@ -340,17 +340,33 @@ function PushupChallengeCard({
   );
 }
 
+function hasConfiguredPushupChallenge(challenges) {
+  return (challenges || []).some(
+    (c) => c && c.activityType === 'pushups' && c.status !== 'completed' && c.status !== 'cancelled'
+  );
+}
+
 export default function PushupChallengeTodayPanel({ date }) {
-  const { data, updateData, setSelectedExercise, setShowExerciseVariations } = useWorkout();
+  const { data, updateData, setSelectedExercise, setShowExerciseVariations, requestOpenEnduranceSubTab } =
+    useWorkout();
   const t = useTranslation();
   const dateStr = useMemo(() => getDateStr(date), [date]);
   const [saving, setSaving] = useState(false);
   const [forms, setForms] = useState({});
 
-  const { due, offSchedule } = useMemo(() => {
+  const pushupChallenges = useMemo(() => {
     const ed = loadEnduranceData(data?.enduranceData || {});
-    return partitionPushupChallengesForTodayPanel(ed.challenges || [], dateStr, { workoutData: data });
-  }, [data, dateStr]);
+    return ed.challenges || [];
+  }, [data]);
+
+  const configured = useMemo(
+    () => hasConfiguredPushupChallenge(pushupChallenges),
+    [pushupChallenges]
+  );
+
+  const { due, offSchedule } = useMemo(() => {
+    return partitionPushupChallengesForTodayPanel(pushupChallenges, dateStr, { workoutData: data });
+  }, [pushupChallenges, dateStr, data]);
 
   const allShown = useMemo(() => [...due, ...offSchedule], [due, offSchedule]);
   const offScheduleIds = useMemo(() => new Set(offSchedule.map((c) => String(c.id))), [offSchedule]);
@@ -415,6 +431,37 @@ export default function PushupChallengeTodayPanel({ date }) {
     },
     [data, dateStr, forms, updateData]
   );
+
+  if (!configured) {
+    return (
+      <div className="today-module-card today-pushup-panel rounded-xl border-2 border-amber-500/35 bg-black p-5 shadow-lg space-y-3">
+        <div className="flex items-center gap-2">
+          <Award className="h-5 w-5 text-amber-300" />
+          <h3 className="text-lg font-semibold text-white">
+            {t('today.pushupChallenge.title', 'Défis pompes — aujourd’hui')}
+          </h3>
+        </div>
+        <p className="text-sm text-slate-400 max-w-xl">
+          {t(
+            'today.pushupChallenge.empty',
+            'Aucun défi pompes n’est paramétré. Crée-le dans Défis pour retrouver ici l’objectif, les séries et la séance du jour.'
+          )}
+        </p>
+        <button
+          type="button"
+          onClick={() =>
+            requestOpenEnduranceSubTab?.('pushups', {
+              anchorId: 'endurance-pushup-challenge-form',
+              openChallengeModal: true
+            })
+          }
+          className="rounded-lg bg-amber-700/80 px-4 py-2 text-sm font-medium text-white hover:bg-amber-600/90"
+        >
+          {t('today.pushupChallenge.setup', 'Paramétrer le défi pompes')}
+        </button>
+      </div>
+    );
+  }
 
   if (allShown.length === 0) return null;
 

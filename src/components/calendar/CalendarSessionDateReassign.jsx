@@ -30,13 +30,15 @@ export default function CalendarSessionDateReassign({
     try {
       let next = workoutData;
       const gid = session?.garminId ?? session?.id;
-      if (session?.garminId != null || session?.source === 'garmin') {
+      const isGarmin = session?.garminId != null || session?.source === 'garmin';
+      if (isGarmin) {
         next = buildAggregateWithGarminDateOverride(next, { garminId: gid, logicalDate: draftDate });
       }
       next = buildAggregateWithSessionLogicalDate(next, {
         sessionId: session?.id ?? gid,
         activityType,
-        logicalDate: draftDate
+        logicalDate: draftDate,
+        required: !isGarmin
       });
       await updateData(next);
     } catch (e) {

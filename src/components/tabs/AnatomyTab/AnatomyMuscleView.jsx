@@ -7,6 +7,8 @@ import AnatomyMuscleRail from './AnatomyMuscleRail';
 import { ANATOMY } from './anatomyTheme';
 import { hasFunctionMagazine } from './functionSectionLayout';
 import { sectionKicker } from './anatomyVisualTokens';
+import YoutubeClickToPlay from '../../media/YoutubeClickToPlay';
+import { ANATOMY_MUSCLE_GUIDE_VIDEOS } from '../../../data/guideVideos';
 
 function extractRelatedLines(content) {
   const rec = content?.sections?.find((s) => s.id === 'recrutement');
@@ -48,6 +50,7 @@ export default function AnatomyMuscleView({ muscleId, onOpenMuscle }) {
     activeSection?.id === 'fonctions' && hasFunctionMagazine(activeSection.blocks);
 
   const relatedMuscles = useMemo(() => extractRelatedLines(content), [content]);
+  const muscleGuide = ANATOMY_MUSCLE_GUIDE_VIDEOS[muscleId] || null;
 
   const onNavClick = useCallback((id) => {
     setActiveSectionId(id);
@@ -110,6 +113,14 @@ export default function AnatomyMuscleView({ muscleId, onOpenMuscle }) {
               </div>
             ) : null}
           </header>
+
+          {muscleGuide ? (
+            <YoutubeClickToPlay
+              videoId={muscleGuide.id}
+              start={muscleGuide.start}
+              title={muscleGuide.title}
+            />
+          ) : null}
 
           <div className="lg:hidden flex gap-2 overflow-x-auto pb-1 -mx-1 px-1">
             {navItems.map((item) => (

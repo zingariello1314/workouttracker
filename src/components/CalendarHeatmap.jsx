@@ -994,6 +994,7 @@ const CalendarHeatmap = ({
     allData?.checkedExercises,
     allData?.checkedStretches,
     allData?.enduranceData,
+    allData?.garminActivityDateOverrides,
     allData?.dayJustifications,
     allData?.restDaySwaps,
     allData?.sessionFeedbacks,
@@ -1991,11 +1992,14 @@ const CalendarHeatmap = ({
     const recordedGarminWorkout = getRecordedGarminWorkoutForDate(garminData, dateStr, {
       parseDurationToMinutes,
       calculateTimeIntensityLevel,
-      dynamicTimeThresholds
+      dynamicTimeThresholds,
+      workoutData: currentData
     });
 
     if (!hasLoggedVoluntaryWorkout) {
       realDuration = recordedGarminWorkout.duration || 0;
+    } else if (recordedGarminWorkout.duration > realDuration) {
+      realDuration = recordedGarminWorkout.duration;
     }
         // Les sessions d'endurance détaillées n'impactent PAS l'intensité du calendrier
         // Seules les activités complémentaires de l'onglet Aujourd'hui comptent

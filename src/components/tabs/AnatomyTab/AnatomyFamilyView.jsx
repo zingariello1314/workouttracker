@@ -21,6 +21,8 @@ import { kickerForFamilyIntro } from './anatomyDigestLayout';
 import { layoutFamilySectionRows } from './familySectionRows';
 
 import AnatomyMuscleThumbPreview from '../../anatomy/AnatomyMuscleThumbPreview';
+import YoutubeClickToPlay from '../../media/YoutubeClickToPlay';
+import { ANATOMY_FAMILY_GUIDE_VIDEOS } from '../../../data/guideVideos';
 
 
 
@@ -199,14 +201,19 @@ export default function AnatomyFamilyView({ familyId, onOpenMuscle }) {
   if (!fam) return null;
 
   const chips = FAMILY_CHIPS[fam.id] || [fam.summary];
+  const guide = ANATOMY_FAMILY_GUIDE_VIDEOS[fam.id] || null;
 
   return (
 
     <div className="space-y-10 pb-16 max-w-6xl">
 
-      <header>
+      <header className="space-y-5">
 
         <h1 className="text-2xl md:text-3xl font-bold text-white tracking-tight">{fam.name}</h1>
+
+        {guide ? (
+          <YoutubeClickToPlay videoId={guide.id} start={guide.start} title={guide.title} />
+        ) : null}
 
       </header>
 

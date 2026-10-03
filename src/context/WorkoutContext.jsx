@@ -85,6 +85,7 @@ const WorkoutProvider = ({ children }) => {
   const [activeTab, setActiveTabState] = useState('home');
   /** Sous-onglet cible (Course, Pompes, etc.) à appliquer au prochain affichage de l’onglet Défis */
   const [pendingEnduranceSubTab, setPendingEnduranceSubTab] = useState(null);
+  const [pendingEnduranceFocus, setPendingEnduranceFocus] = useState(null);
   /** Navigation calendrier depuis Récap / benchmarks : { dateYmd, scrollAnchor? } */
   const [pendingCalendarDeepLink, setPendingCalendarDeepLink] = useState(null);
   const [previousTab, setPreviousTab] = useState(null);
@@ -116,8 +117,12 @@ const WorkoutProvider = ({ children }) => {
     setPendingEnduranceSubTab(null);
   }, []);
 
+  const clearPendingEnduranceFocus = useCallback(() => {
+    setPendingEnduranceFocus(null);
+  }, []);
+
   const requestOpenEnduranceSubTab = useCallback(
-    (tabId) => {
+    (tabId, focus = null) => {
       const valid = [
         'running',
         'walking',
@@ -133,6 +138,15 @@ const WorkoutProvider = ({ children }) => {
       ];
       if (!valid.includes(tabId)) return;
       setPendingEnduranceSubTab(tabId);
+      setPendingEnduranceFocus(
+        focus && typeof focus === 'object'
+          ? {
+              tabId,
+              anchorId: focus.anchorId || null,
+              openChallengeModal: Boolean(focus.openChallengeModal)
+            }
+          : null
+      );
       if (activeTab !== 'endurance') {
         setPreviousTab(activeTab);
         setActiveTabState('endurance');
@@ -1661,8 +1675,10 @@ const WorkoutProvider = ({ children }) => {
     activeTab,
     setActiveTab,
     pendingEnduranceSubTab,
+    pendingEnduranceFocus,
     requestOpenEnduranceSubTab,
     clearPendingEnduranceSubTab,
+    clearPendingEnduranceFocus,
     pendingCalendarDeepLink,
     requestOpenCalendarDay,
     clearPendingCalendarDeepLink,
