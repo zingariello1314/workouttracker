@@ -18,14 +18,19 @@ import {
   getExerciseVolumeFromLog,
   lookupProgramExerciseStub
 } from './exerciseLoadVolume';
-import { mergedDailySteps, normalizeManualDailyWalkByDate } from './sport/manualDailyWalkUtils';
-import { isMockEnduranceSession, collectEnduranceSessionsForCalendarDay, parseDurationToMinutes } from './calendarUtils';
+import { mergedStepsFromDaily, normalizeManualDailyWalkByDate } from './sport/manualDailyWalkUtils';
+import {
+  isMockEnduranceSession,
+  collectEnduranceSessionsForCalendarDay,
+  parseDurationToMinutes
+} from './calendarUtils';
 import { normalizeDifficultyForCalendarModel } from './sessionFeedbackUtils';
 import { parseRunningSessionDurationMinutes } from './runningPersonalRecords';
 import { computeProgramCompletionCheckedRatio } from './programCompletionBonus';
 import { buildWeightByDateMap } from './sport/recapAssessmentSeries';
 import { computeNutritionDayScore } from './calendarNutritionDay';
-
+import { gtgCompletionForCalendarDay } from './calendarGtgCompletion';
+import { sumGarminActivityCaloriesKcalForDate } from './calendarPhysicalSessionStripes';
 const STRENGTH_REF_LOAD = 420;
 const ENDURANCE_REF_LOAD = 95;
 const GARMIN_REF_SCORE = 72;
@@ -338,17 +343,19 @@ function enduranceLoadForDate(dateStr, workoutData) {
 
 function garminActivityScore(dateStr, garminData, workoutData) {
   const dm = garminData?.dailyMetrics?.[dateStr];
-  if (!dm) return { score: null, parts: [] };
+  const activityKcal = sumGarminActivityCaloriesKcalForDate(garminData, dateStr, workoutData);
+  if (!dm && activityKcal <= 0) return { score: null, parts: [] };
 
   const manual = normalizeManualDailyWalkByDate(workoutData?.enduranceData?.manualDailyWalkByDate);
-  const steps = mergedDailySteps(dm?.steps, manual[dateStr]);
-  const kcal =
-    dm?.calories?.active != null
+  const steps = dm ? mergedStepsFromDaily(dm, manual[dateStr]) : 0;
+  const kcal = !dm
+    ? 0
+    : dm?.calories?.active != null
       ? Number(dm.calories.active) || 0
       : Number(dm.activeKilocalories ?? dm.activeKcal) || 0;
 
   let intMin = 0;
-  const im = dm.intensityMinutes;
+  const im = dm?.intensityMinutes;
   if (im) {
     const mod = Math.max(0, Number(im.moderate) || 0);
     const vig = Math.max(0, Number(im.vigorous) || 0);
@@ -357,11 +364,25 @@ function garminActivityScore(dateStr, garminData, workoutData) {
 
   const stepsS = steps > 0 ? clampScore((steps / 14000) * 55) : 0;
   const kcalS = kcal > 0 ? clampScore((kcal / 900) * 50) : 0;
+  const activityKcalS = activityKcal > 0 ? clampScore((activityKcal / 600) * 50) : 0;
   const intS = intMin > 0 ? clampScore((intMin / 75) * 45) : 0;
 
   const parts = [];
   if (stepsS > 0) parts.push({ label: 'Pas', score: stepsS, detail: `${steps.toLocaleString('fr-FR')} pas` });
-  if (kcalS > 0) parts.push({ label: 'Kcal actives', score: kcalS, detail: `${Math.round(kcal)} kcal` });
+  if (kcalS > 0) {
+    parts.push({
+      label: 'Kcal journée',
+      score: kcalS,
+      detail: `${Math.round(kcal)} kcal sur la journée (Garmin), distinct des séances`
+    });
+  }
+  if (activityKcalS > 0) {
+    parts.push({
+      label: 'Kcal activités',
+      score: activityKcalS,
+      detail: `${activityKcal} kcal sur les séances enregistrées`
+    });
+  }
   if (intS > 0) {
     parts.push({ label: 'Minutes intensives', score: intS, detail: `${Math.round(intMin)} min (modéré + soutenu)` });
   }
@@ -534,7 +555,7 @@ export function computeCalendarDayHolisticScore({
       id: 'nutrition',
       label: 'Nutrition / repas',
       score: nutrition.score,
-      detail: `${nutrition.mealCount} repas · ${Math.round(nutrition.totalKcal)} kcal · ${nutrition.foodCount} aliment(s) — visible dans l'onglet Nutrition.`,
+      detail: `${nutrition.mealCount} repas · ${Math.round(nutrition.totalKcal)} kcal repas · ${nutrition.foodCount} aliment(s) — visible dans l'onglet Nutrition.`,
       active: true
     });
   } else {
@@ -561,6 +582,18 @@ export function computeCalendarDayHolisticScore({
     });
   }
 
+  const gtg = gtgCompletionForCalendarDay(workoutData, dateStr);
+  const gtgScore = gtg ? clampScore(gtg.completion01 * 100) : null;
+  if (gtg && gtgScore > 0) {
+    criteria.push({
+      id: 'gtg',
+      label: 'Grease the Groove',
+      score: gtgScore,
+      detail: `${Math.round(gtg.donePassages * 10) / 10}/${gtg.plannedPassages} créneaux (prévus ou sur mesure) · ${gtg.doneReps}/${gtg.plannedReps} reps. La note suit surtout le nombre de passages, puis le quota de reps.`,
+      active: true
+    });
+  }
+
   const loggedDimensions = [
     strength.score != null,
     running != null || enduranceScore != null,
@@ -569,7 +602,8 @@ export function computeCalendarDayHolisticScore({
     sleepBonus != null,
     stretch.score != null,
     nutrition != null,
-    weight != null
+    weight != null,
+    gtgScore != null
   ].filter(Boolean).length;
 
   if (loggedDimensions === 0) {
@@ -594,7 +628,8 @@ export function computeCalendarDayHolisticScore({
     nutrition: 0.12,
     weight: 0.04,
     feedback: 0.04,
-    sleep: 0.02
+    sleep: 0.02,
+    gtg: 0.14
   };
   let sum = 0;
   let wSum = 0;
@@ -633,16 +668,21 @@ export function computeCalendarDayHolisticScore({
     sum += clampScore(sleepBonus * 12.5) * weights.sleep;
     wSum += weights.sleep;
   }
+  if (gtgScore != null) {
+    sum += gtgScore * weights.gtg;
+    wSum += weights.gtg;
+  }
 
   const base = wSum > 0 ? sum / wSum : 0;
   const completenessBonus = clampScore(Math.min(10, (loggedDimensions - 1) * 2.8));
-  const score = clampScore(base + completenessBonus * 0.38);
+  const gtgFullBonus = gtg && gtg.completion01 >= 0.999 ? 4 : 0;
+  const score = clampScore(base + completenessBonus * 0.38 + gtgFullBonus);
 
   criteria.push({
     id: 'completeness',
     label: 'Complétude du jour',
     score: clampScore(38 + loggedDimensions * 11),
-    detail: `${loggedDimensions} dimension(s) active(s) sur 8 possibles — chaque donnée saisie (étirements, repas, pesée…) augmente le poids et la fiabilité de la note.`,
+      detail: `${loggedDimensions} dimension(s) active(s) sur 9 possibles — chaque donnée saisie (étirements, repas, pesée, GTG…) augmente le poids et la fiabilité de la note.`,
     active: true
   });
 

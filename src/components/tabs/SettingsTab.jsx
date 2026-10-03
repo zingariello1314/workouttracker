@@ -41,6 +41,7 @@ import ProfileQuizSettings from './SettingsTab/components/ProfileQuizSettings';
 import SwipeNavigationSettings from './SettingsTab/components/SwipeNavigationSettings';
 import LanguageSettings from './SettingsTab/components/LanguageSettings';
 import AppBackgroundSettings from './SettingsTab/components/AppBackgroundSettings';
+import CalendarMonthTilesSettings from './SettingsTab/components/CalendarMonthTilesSettings';
 import PrayerLocationSettings from './SettingsTab/components/PrayerLocationSettings';
 import InfoCards from './SettingsTab/components/InfoCards';
 import DataCleanupSection from './SettingsTab/components/DataCleanupSection';
@@ -71,7 +72,7 @@ const SETTINGS_SECTIONS = [
   { id: 'settings-spotify', label: 'Spotify', searchText: 'spotify musique premium oauth lecture player sidebar son en cours piste album api' },
   { id: 'settings-garmin', label: 'Garmin', searchText: 'garmin montre sync synchronisation backfill source comptes multi montres deviceid paramètres' },
   { id: 'settings-verrou', label: 'Verrouillage', searchText: 'verrouillage cadenas code pin mot de passe inactivité sécurité confidentialité session' },
-  { id: 'settings-apparence', label: 'Apparence', searchText: 'apparence fond application ambiance visuel arrière-plan animé statique momentum shader thème' },
+  { id: 'settings-apparence', label: 'Apparence', searchText: 'apparence fond application ambiance visuel arrière-plan animé statique momentum shader thème calendrier mois tuiles blocs course pas reps kcal ordre glisser' },
   { id: 'settings-fonds-ecran', label: 'Fonds d\'écran', searchText: 'fond écran accueil verrouillage arrière-plan wallpaper lock home rotation images bannière' },
   { id: 'settings-carte', label: 'Carte profil', searchText: 'carte profil image handle username bannière sidebar logo' },
   { id: 'settings-bannieres', label: 'Bannières', searchText: 'bannières bannière import export rotation' },
@@ -532,6 +533,7 @@ const SettingsTab = () => {
         {isSectionVisible('settings-apparence') && (
         <div id="settings-apparence" className="scroll-mt-4">
           <AppBackgroundSettings />
+          <CalendarMonthTilesSettings />
         </div>
         )}
 

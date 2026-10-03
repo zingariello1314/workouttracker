@@ -83,6 +83,16 @@ describe('shouldOfferDayJustificationInDetail', () => {
     ).toBe(true);
   });
 
+  it('propose la justification même s’il y a des reps ou une petite activité', () => {
+    expect(
+      shouldOfferDayJustificationInDetail(
+        { reps: 24, completedCount: 0, duration: 0 },
+        { dayJustifications: {} },
+        '2026-10-01'
+      )
+    ).toBe(true);
+  });
+
   it('refuse si le jour est déjà justifié', () => {
     expect(
       shouldOfferDayJustificationInDetail(

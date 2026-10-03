@@ -588,7 +588,7 @@ const CalendarTab = () => {
                     </p>
                   ) : null}
                   <p className="mt-2 text-[11px] text-amber-500/90">
-                    Touchez pour ouvrir ce jour sur le calendrier (symboles en haut à droite des cases).
+                    Touchez pour ouvrir ce jour sur le calendrier (performances en bas à gauche, au-dessus des barres ; repos en haut à droite).
                   </p>
                 </button>
               ) : yearDayBadges.stepsTopThree.length > 0 ? (

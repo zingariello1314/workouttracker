@@ -49,7 +49,7 @@ import {
   buildCalendarDayAllStripes
 } from '../utils/calendarDayAllStripes';
 import { CALENDAR_MOMENTUM_STRIPE_COLORS } from '../utils/calendarDayMomentumStripes';
-import { CALENDAR_PHYSICAL_ACTIVITY_COLOR } from '../utils/calendarPhysicalActivityStripes';
+import { CALENDAR_PHYSICAL_ACTIVITY_COLOR, filterCalendarStripesForYearView } from '../utils/calendarPhysicalActivityStripes';
 import { computeDedupedPhysicalDurationMin } from '../utils/calendarPhysicalSessionStripes';
 import { normalizeProfileQuestionnaire } from '../features/profileQuestionnaire/schema';
 import { computeCalendarMonthSportStats } from '../utils/calendarMonthSportStats';
@@ -92,6 +92,7 @@ import {
   calendarDayHasPaintSignal,
   calendarDayHasWorkoutActivity
 } from '../utils/calendarDayVisualModel';
+import { gtgCompletionForCalendarDay } from '../utils/calendarGtgCompletion';
 import {
   withSessionSaveTimeout,
   isSessionSaveTimeoutError,
@@ -148,11 +149,11 @@ import {
   shouldOpenWorkoutChoicePanel,
   isRestDayJustificationFromIntensity,
   isAutreDayJustificationFromIntensity,
-  isPatternJustificationDayFromIntensity,
   restDayCellBackgroundStyle,
   autreDayCellBackgroundStyle,
   justificationCellBackgroundStyle,
   calendarDayUsesMinimalDetailView,
+  calendarDayHasEmptyWorkoutStats,
   shouldOfferDayJustificationInDetail,
   JUSTIFICATION_REASONS,
   JUSTIFICATION_COLORS,
@@ -192,7 +193,7 @@ import {
   calculateCurrentTrainingStreak,
   calculateLongestTrainingStreak,
 } from '../utils/trainingStreakUtils';
-import { normalizeManualDailyWalkByDate, mergedDailySteps } from '../utils/sport/manualDailyWalkUtils';
+import { normalizeManualDailyWalkByDate, mergedStepsFromDaily } from '../utils/sport/manualDailyWalkUtils';
 import {
   isSessionFeedbackFilled,
   normalizeDifficultyForCalendarModel,
@@ -305,7 +306,7 @@ function calendarDayNumberLayoutClass(compact) {
 function hasMeaningfulGarminDailyMetrics(garminData, dateStr, manualSteps = 0) {
   if (!dateStr) return false;
   const dm = garminData?.dailyMetrics?.[dateStr];
-  const steps = mergedDailySteps(dm?.steps, manualSteps);
+  const steps = mergedStepsFromDaily(dm, manualSteps);
   const kcal = Number(dm?.calories?.active) || 0;
   const mod = Number(dm?.intensityMinutes?.moderate) || 0;
   const vig = Number(dm?.intensityMinutes?.vigorous) || 0;
@@ -2117,9 +2118,7 @@ const CalendarHeatmap = ({
     const dm = garminData?.dailyMetrics?.[dateStr];
     const manualStepsNorm = normalizeManualDailyWalkByDate(currentData?.enduranceData?.manualDailyWalkByDate);
     const manualStepsForDay = manualStepsNorm[dateStr]?.steps ?? 0;
-    const garminStepsRounded =
-      dm?.steps != null && Number.isFinite(Number(dm.steps)) ? Math.max(0, Math.round(Number(dm.steps))) : 0;
-    const stepsVal = mergedDailySteps(garminStepsRounded, manualStepsForDay);
+    const stepsVal = mergedStepsFromDaily(dm, manualStepsForDay);
     let intensityMinutesTotal = 0;
     let intensityMinutesModerate;
     let intensityMinutesVigorous;
@@ -2160,6 +2159,9 @@ const CalendarHeatmap = ({
         ? computeLiftVolumeRelativeVisualBoost01(dateStr, dayLiftVol, liftVolumeByDateMap)
         : 0;
 
+    const gtgQuota =
+      variant === 'sport' ? gtgCompletionForCalendarDay(currentData, dateStr) : null;
+
     const visualContext = computeCalendarDayVisualContext({
       level: adjustedIntensity,
       activeKcal,
@@ -2167,6 +2169,7 @@ const CalendarHeatmap = ({
       steps: stepsVal,
       stepsRefMedian: garminStepsMedianRef,
       intensityMinutesTotal,
+      gtgCompletion01: gtgQuota?.completion01 || 0,
       ...(intensityMinutesModerate !== undefined && intensityMinutesVigorous !== undefined
         ? {
             intensityMinutesModerate,
@@ -3377,8 +3380,9 @@ const CalendarHeatmap = ({
                 ((variant === 'books' || variant === 'apprentissage') &&
                   questTileCount > 0 &&
                   dayHasPaint);
+              const hideStripesOnJustifiedDay = isAutreDayJustificationFromIntensity(intensityForCell);
               const dayGarminStripes =
-                variant === 'sport' && day.isCurrentMonth && !isPatternJustificationDayFromIntensity(intensityForCell)
+                variant === 'sport' && day.isCurrentMonth && !hideStripesOnJustifiedDay
                   ? dayStripesForDate(dayDateStr, intensityForCell)
                   : [];
               const isRestDay = day.isCurrentMonth && isRestDayJustificationFromIntensity(intensityForCell);
@@ -3458,18 +3462,14 @@ const CalendarHeatmap = ({
                 {dayGarminStripes.length > 0 && (
                   <CalendarDayDataStripes stripes={dayGarminStripes} compact={isSidebarEmbed} />
                 )}
-                {isRestDay && (
-                  <CalendarRestDayMarker
-                    compact={isSidebarEmbed}
-                    corner={dayTopBadges.length > 0 ? 'bottom-right' : 'top-right'}
-                  />
-                )}
+                {isRestDay && <CalendarRestDayMarker compact={isSidebarEmbed} />}
                 {isAutreDay && <CalendarOtherDayMarker compact={isSidebarEmbed} />}
                 <CalendarDayTopBadges
                   badges={dayTopBadges}
                   compact={isSidebarEmbed}
                   sizeScale={monthBadgeScale}
                   stripeReservePx={dayStripeReserve}
+                  anchor="bottom-left"
                 />
                 {day.isToday && (
                   <div
@@ -3825,17 +3825,18 @@ const CalendarHeatmap = ({
                           ? getDayColorStyle(yIntensity, false)
                           : paddingDayCellStyle();
                         const yDayNumTone = yCell.dayNumberClass ?? compositeDayNumberClass();
-                        const yGarminStripes =
-                          variant === 'sport' && day.isCurrentMonth && !isPatternJustificationDayFromIntensity(yIntensity)
-                            ? dayStripesForDate(yDateStr, yIntensity)
-                            : [];
                         const yIsRestDay = day.isCurrentMonth && isRestDayJustificationFromIntensity(yIntensity);
                         const yIsAutreDay = day.isCurrentMonth && isAutreDayJustificationFromIntensity(yIntensity);
+                        const yGarminStripes =
+                          variant === 'sport' && day.isCurrentMonth && !yIsAutreDay
+                            ? dayStripesForDate(yDateStr, yIntensity)
+                            : [];
                         const yTopBadges =
                           variant === 'sport' && day.isCurrentMonth
-                            ? calendarBadgesForDate(yDateStr, calendarDayBadges)
+                            ? calendarBadgesForDate(yDateStr, calendarDayBadges, { weekStyle: 'crown' })
                             : [];
-                        const yStripeReserve = calendarStripeReservePx(true, yGarminStripes.length);
+                        const yYearStripes = filterCalendarStripesForYearView(yGarminStripes);
+                        const yStripeReserve = calendarStripeReservePx(true, yYearStripes.length);
                         const yearBadgeScale = calendarBadgeSizeScale({
                           compact: true,
                           yearColumns: yearViewColumns
@@ -3891,8 +3892,8 @@ const CalendarHeatmap = ({
                           >
                             {day.isCurrentMonth ? day.date.getDate() : null}
                           </span>
-                          {yGarminStripes.length > 0 && (
-                            <CalendarDayDataStripes stripes={yGarminStripes} compact physicalOnly />
+                          {yYearStripes.length > 0 && (
+                            <CalendarDayDataStripes stripes={yYearStripes} compact />
                           )}
                           {yIsRestDay && (
                             <CalendarRestDayMarker
@@ -3906,6 +3907,7 @@ const CalendarHeatmap = ({
                             compact
                             sizeScale={yearBadgeScale}
                             stripeReservePx={yStripeReserve}
+                            anchor="top-right"
                           />
                         </div>
                       );
@@ -3996,6 +3998,9 @@ const CalendarHeatmap = ({
                       highlights={month.monthHighlights || {}}
                       holders={sportRecordHolders}
                       monthIndex={monthIndex}
+                      weekLeaders={calendarDayBadges?.weekLeaders}
+                      calendarYear={month.date.getFullYear()}
+                      calendarMonth={month.date.getMonth()}
                       t={t}
                       onOpenHighlight={openCalendarHighlight}
                     />
@@ -5330,12 +5335,7 @@ const CalendarHeatmap = ({
           const manualSel = normalizeManualDailyWalkByDate(allData?.enduranceData?.manualDailyWalkByDate)[
             selectedDateStr
           ];
-          const mergedDetailSteps = mergedDailySteps(
-            dailyMetrics?.steps != null && Number.isFinite(Number(dailyMetrics.steps))
-              ? Math.round(Number(dailyMetrics.steps))
-              : 0,
-            manualSel?.steps ?? 0
-          );
+          const mergedDetailSteps = mergedStepsFromDaily(dailyMetrics, manualSel?.steps ?? 0);
           const swimming = (garminData?.activities?.swimming || []).filter(a => a.date === selectedDateStr);
           const jumpRope = (garminData?.activities?.jumpRope || []).filter(a => a.date === selectedDateStr);
           const cardio = (garminData?.activities?.cardio || []).filter(a => a.date === selectedDateStr);
@@ -5352,13 +5352,15 @@ const CalendarHeatmap = ({
           });
           // ✅ NOUVEAU : Récupérer la justification pour ce jour
           const justification = selectedDate.intensity?.justification || getDayJustification(allData, selectedDateStr);
+          const recordedEffortOnDay = !calendarDayHasEmptyWorkoutStats(selectedDate.intensity);
           const showMinimalDayView =
-            !!justification ||
-            calendarDayUsesMinimalDetailView(
-              selectedDate.intensity,
-              allData,
-              selectedDateStr
-            );
+            !recordedEffortOnDay &&
+            (!!justification ||
+              calendarDayUsesMinimalDetailView(
+                selectedDate.intensity,
+                allData,
+                selectedDateStr
+              ));
           const canJustifyThisDay = shouldOfferDayJustificationInDetail(
             selectedDate.intensity,
             allData,
@@ -5494,7 +5496,7 @@ const CalendarHeatmap = ({
                     </span>
                   </div>
                   <div>
-                    Kcal actives : <strong>{championDetail.breakdown.activeKcal}</strong>{' '}
+                    Kcal journée : <strong>{championDetail.breakdown.activeKcal}</strong>{' '}
                     <span className="text-amber-400">
                       ({formatPctVsAverage(championDetail.vsAverage?.activeKcal)})
                     </span>
@@ -5614,12 +5616,6 @@ const CalendarHeatmap = ({
                 </div>
               </div>
             )}
-
-            {!showMinimalDayView && canJustifyThisDay ? (
-              <div className="mt-4 space-y-3">
-                <CalendarDayQuickActions {...dayQuickActionsProps} />
-              </div>
-            ) : null}
 
             {!showMinimalDayView && garminAdjustments && (
               <div className="bg-slate-800/40 border border-amber-500/25 rounded-lg p-4">
@@ -6336,13 +6332,7 @@ const CalendarHeatmap = ({
               </div>
             ) : (
               <div className="mt-6 space-y-4 border-t border-slate-700/60 pt-6">
-                {!canJustifyThisDay ? (
-                  <CalendarDayQuickActions
-                    {...dayQuickActionsProps}
-                    onJustifyAbsence={null}
-                    onModifyJustification={null}
-                  />
-                ) : null}
+                <CalendarDayQuickActions {...dayQuickActionsProps} />
 
                 {variant === 'sport' ? (
                   <div ref={holisticDetailRef}>

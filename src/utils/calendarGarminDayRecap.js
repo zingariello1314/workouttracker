@@ -4,7 +4,7 @@
 
 import { parseDurationToMinutes, garminActivityMatchesCalendarDate } from './calendarUtils';
 import { coerceGarminDateOverrides } from './sessionCalendarDate';
-import { mergedDailySteps } from './sport/manualDailyWalkUtils';
+import { mergedStepsFromDaily } from './sport/manualDailyWalkUtils';
 import { activeKcalFromDaily } from './calendarKcalLeader';
 import { isGarminRunningLikeActivity, isGarminWalkingLikeActivity } from './garminRunningLaps';
 import { CALENDAR_GARMIN_STRIPE_COLORS } from './calendarDayGarminStripes';
@@ -87,7 +87,7 @@ function pushActivityRows(rows, acts, bucket, t) {
     const cal = activityCalories(act);
     const parts = [];
     if (dur > 0) parts.push(formatDurationMin(dur));
-    if (cal != null && cal > 0) parts.push(`${cal} kcal`);
+    if (cal != null && cal > 0) parts.push(`${cal} kcal séance`);
     rows.push({
       id: `${bucket}-${idx}-${act.garminId ?? act.id ?? idx}`,
       kind: 'activity',
@@ -216,6 +216,26 @@ export function buildGarminDayRecapRows(
     });
   }
 
+  let activityKcalSum = 0;
+  [...cardio, ...swimming, ...jumpRope].forEach((act) => {
+    const cal = activityCalories(act);
+    if (cal != null && cal > 0) activityKcalSum += cal;
+  });
+  if (activityKcalSum > 0) {
+    rows.push({
+      id: 'activityKcal',
+      kind: 'activityKcal',
+      iconBg: '#fb7185',
+      icon: '🏃',
+      title: t('calendar.heatmap.garminRecap.activityKcal', 'Kcal activités'),
+      subtitle: t('calendar.heatmap.garminRecap.activityKcalDetail', {
+        kcal: activityKcalSum.toLocaleString('fr-FR'),
+        defaultValue: `${activityKcalSum.toLocaleString('fr-FR')} kcal sur les séances`
+      }),
+      stripeColor: '#fb7185'
+    });
+  }
+
   const activeKcal = activeKcalFromDaily(dm);
   if (activeKcal > 0) {
     rows.push({
@@ -223,16 +243,16 @@ export function buildGarminDayRecapRows(
       kind: 'activeKcal',
       iconBg: '#f59e0b',
       icon: '🔥',
-      title: t('calendar.heatmap.garminRecap.activeKcal', 'Kcal actives'),
+      title: t('calendar.heatmap.garminRecap.activeKcal', 'Kcal journée'),
       subtitle: t('calendar.heatmap.garminRecap.activeKcalDetail', {
         kcal: activeKcal.toLocaleString('fr-FR'),
-        defaultValue: `${activeKcal.toLocaleString('fr-FR')} kcal`
+        defaultValue: `${activeKcal.toLocaleString('fr-FR')} kcal sur la journée`
       }),
       stripeColor: '#f59e0b'
     });
   }
 
-  const steps = mergedDailySteps(dm?.steps, manualSteps);
+  const steps = mergedStepsFromDaily(dm, manualSteps);
   if (steps >= 180) {
     const goal = Number(dm?.stepsGoal) || 10000;
     const pct = Math.min(999, Math.round((steps / goal) * 100));
@@ -307,7 +327,7 @@ export function buildCalendarDayGarminStripes(
     stripes.push({ kind: 'sleep', color: CALENDAR_GARMIN_STRIPE_COLORS.sleep, key: 'sleep' });
   }
 
-  const steps = mergedDailySteps(dm?.steps, manualSteps);
+  const steps = mergedStepsFromDaily(dm, manualSteps);
   if (steps >= 180) {
     stripes.push({ kind: 'steps', color: CALENDAR_GARMIN_STRIPE_COLORS.steps, key: 'steps' });
   }

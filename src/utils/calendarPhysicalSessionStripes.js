@@ -191,6 +191,23 @@ export function extractGarminActivityCaloriesKcal(act) {
   return Number.isFinite(n) && n > 0 ? Math.round(n) : null;
 }
 
+/**
+ * Somme des kcal des séances Garmin du jour (course, cardio, natation, corde).
+ * Distinct des kcal actives de la journée (dailyMetrics.calories.active).
+ */
+export function sumGarminActivityCaloriesKcalForDate(garminData, dateStr, workoutData = null) {
+  if (!garminData?.activities || !dateStr) return 0;
+  let sum = 0;
+  for (const bucket of ['cardio', 'swimming', 'jumpRope']) {
+    for (const act of garminData.activities[bucket] || []) {
+      if (!garminActivityMatchesCalendarDate(act, dateStr, workoutData)) continue;
+      const kcal = extractGarminActivityCaloriesKcal(act);
+      if (kcal != null) sum += kcal;
+    }
+  }
+  return sum;
+}
+
 /** Somme kcal des activités street Garmin du jour (hors course / marche). */
 export function getStreetWorkoutCaloriesKcalForDate(garminData, dateStr, workoutData = null) {
   const acts = getGarminStreetCardioActivitiesForDate(garminData, dateStr, workoutData);
@@ -329,7 +346,7 @@ export function buildDedupedPhysicalActivityRecapRows(
     }
     const streetKcal = getStreetWorkoutCaloriesKcalForDate(garminData, dateStr, workoutData);
     if (streetKcal != null && streetKcal > 0) {
-      parts.push(`${streetKcal} kcal`);
+      parts.push(`${streetKcal} kcal séance`);
     }
     rows.push({
       id: 'momentum-workout',
@@ -349,7 +366,7 @@ export function buildDedupedPhysicalActivityRecapRows(
           : act.calories;
       const parts = [];
       if (dur > 0) parts.push(formatDurationMinLabel(dur));
-      if (cal != null && Number(cal) > 0) parts.push(`${Math.round(Number(cal))} kcal`);
+      if (cal != null && Number(cal) > 0) parts.push(`${Math.round(Number(cal))} kcal séance`);
       rows.push({
         id: `physical-street-${act.garminId ?? act.id ?? i}`,
         kind: 'activity',

@@ -373,10 +373,15 @@ export function shouldOfferDayJustification(data, dateStr, garminData = null) {
   return true;
 }
 
-/** Proposer « Justifier l'absence » dans le détail jour (aligné sur les stats affichées). */
+/**
+ * Proposer « Justifier l'absence » dans le détail jour.
+ * Un jour avec quelques reps ou du GTG peut quand même être catégorisé repos :
+ * l'activité reste enregistrée, la case prend la couleur de la justification.
+ */
 export function shouldOfferDayJustificationInDetail(intensity, data, dateStr) {
   if (hasDayJustification(data, dateStr)) return false;
-  return calendarDayHasEmptyWorkoutStats(intensity);
+  if (intensity?.justification) return false;
+  return true;
 }
 
 /**

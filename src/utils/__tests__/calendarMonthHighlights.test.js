@@ -66,6 +66,8 @@ describe('computeCalendarMonthHighlights', () => {
     expect(h.bestDayReps?.value).toBe(120);
     expect(h.bestDayReps?.dateYmd).toBe('2026-05-10');
     expect(h.stretchCount).toBe(1);
+    expect(h.weekRepTotals[1]).toBe(120);
+    expect(h.weekRepTotals[2]).toBe(80);
   });
 
   it('calcule kcal moyennes et record kcal', () => {

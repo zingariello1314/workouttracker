@@ -5,7 +5,7 @@ import { aggregateCheckedRepsByDateAndExerciseId, enduranceRepsForSession } from
 import { collectPushupEnduranceSessions } from './recapMuscleLoadEngine';
 import { normalizeDateString, isMockEnduranceSession } from '../calendarUtils';
 import { aggregateLiftVolumeKgByDate } from '../exerciseLoadVolume';
-import { normalizeManualDailyWalkByDate, mergedDailySteps } from './manualDailyWalkUtils';
+import { normalizeManualDailyWalkByDate, mergedStepsFromDaily } from './manualDailyWalkUtils';
 import { getDateStr } from '../dateUtils';
 import { endurancePushupsAlreadyInWorkoutTotals } from '../../services/endurance/pushupEnduranceWorkoutKeys';
 
@@ -85,10 +85,8 @@ export function buildMergedStepsByDate(dailyMetrics, manualRaw) {
   keys.forEach((dateKey) => {
     if (!/^\d{4}-\d{2}-\d{2}$/.test(String(dateKey))) return;
     const row = gm[dateKey];
-    const gSteps =
-      row?.steps != null && Number.isFinite(Number(row.steps)) ? Math.max(0, Math.round(Number(row.steps))) : 0;
     const mSteps = manual[dateKey]?.steps || 0;
-    const steps = mergedDailySteps(gSteps, mSteps);
+    const steps = mergedStepsFromDaily(row, mSteps);
     if (steps > 0) map.set(dateKey, steps);
   });
   return map;

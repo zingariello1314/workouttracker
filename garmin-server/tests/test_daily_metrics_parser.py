@@ -10,6 +10,7 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from parsers.daily_metrics_parser import (
     parse_daily_steps,
+    resolve_daily_steps,
     parse_daily_distance,
     parse_daily_calories,
     parse_daily_heart_rate,
@@ -39,6 +40,16 @@ class TestParseDailySteps:
         result = parse_daily_steps(stats, '2025-11-01')
         # Doit retourner 0 ou None, pas crasher
         assert result == 0 or result is None
+
+    def test_resolve_uses_stats_when_samples_empty(self):
+        """Mois anciens : get_steps_data vide, totalSteps dans les stats."""
+        result = resolve_daily_steps({}, {'totalSteps': 8432, 'activeKilocalories': 420}, '2024-03-12')
+        assert result == 8432
+
+    def test_resolve_prefers_stats_total_over_partial_samples(self):
+        samples = [{'steps': 40}, {'steps': 15}]
+        result = resolve_daily_steps(samples, {'totalSteps': 9000}, '2024-03-12')
+        assert result == 9000
 
 
 class TestParseDailyDistance:

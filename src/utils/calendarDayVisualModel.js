@@ -78,6 +78,7 @@ export function calendarDayHasPaintSignal(intensity) {
  * @param {number} [p.enduranceLoad]
  * @param {number} [p.totalReps]
  * @param {number} [p.relativeLiftVolumeBoost01] — ajustement mineur (≈ ±0–0,04) selon volume kg×reps vs mois / jours passés
+ * @param {number} [p.gtgCompletion01] 0–1 : quota de créneaux GTG (prévus ou sur mesure) et de reps, pas le total brut de reps
  */
 export function computeCalendarDayVisualContext(p) {
   const level = Number(p.level) || 0;
@@ -194,6 +195,14 @@ export function computeCalendarDayVisualContext(p) {
   if (Number.isFinite(relLift) && relLift !== 0) {
     compositeRaw += Math.max(-0.014, Math.min(0.042, relLift));
   }
+  /* GTG : le signal est le nombre de créneaux tenus (se déplacer x fois) plus le quota de reps.
+     Les reps brutes sont trop petites pour teinter une case ; 100 % de créneaux ajoute une teinte nette
+     et un bonus, y compris un jour de repos. */
+  const gtgCompletion = Math.max(0, Math.min(1, Number(p.gtgCompletion01) || 0));
+  if (gtgCompletion > 0) {
+    compositeRaw += gtgCompletion * 0.2;
+    compositeRaw += gtgCompletion >= 0.999 ? 0.045 : gtgCompletion * 0.02;
+  }
   const composite01 = Math.max(0, Math.min(1, compositeRaw));
 
   const denom = preBlend > 1e-6 ? preBlend : 1;
@@ -242,6 +251,7 @@ export function computeCalendarDayVisualContext(p) {
     /** Unités « brutes » avant normalisation en parts (affichage détail jour). */
     contribAbsolute: { ...contrib },
     synergyStreetEndurance,
+    gtgCompletion01: gtgCompletion,
     approxRepEquivFromKcal,
     approxRepEquivFromSteps,
     weights: w

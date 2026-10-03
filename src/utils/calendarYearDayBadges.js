@@ -3,6 +3,14 @@ import { computeCalendarStepsLeaders } from './calendarStepsLeaders';
 import { computeCalendarKcalLeader } from './calendarKcalLeader';
 import { computeDayStrengthWeightedLoad } from './calendarDayTrainingScores';
 import { findBestDaySteps } from './calendarMonthHighlights';
+import {
+  calendarWeekIdFromDate,
+  computeCalendarWeekLeaders,
+  weekHonorLevels,
+  weekHonorWinner,
+  weekHonorEmoji,
+  CALENDAR_WEEK_HONOR_TITLES
+} from './calendarWeekLeaders';
 
 export const CALENDAR_BADGE_EMOJI = {
   steps: '👣',
@@ -159,12 +167,17 @@ export function computeCalendarYearDayBadges({
     intensityLeaderDate: intensityLeader?.date ?? null,
     volumeLeader,
     runLeader,
-    intensityLeader
+    intensityLeader,
+    weekLeaders: computeCalendarWeekLeaders(workoutData, garminData)
   };
 }
 
-/** @returns {Array<{ type?: 'crown', emoji?: string, title: string }>} */
-export function calendarBadgesForDate(dateStr, badges) {
+/**
+ * @param {{ weekStyle?: 'emoji' | 'crown' }} [options]
+ * `emoji` (vue mois) : un signe par palmarès. `crown` (vue année) : une couronne par niveau.
+ * @returns {Array<{ type?: 'crown', emoji?: string, title: string }>}
+ */
+export function calendarBadgesForDate(dateStr, badges, options = {}) {
   if (!dateStr || !badges) return [];
 
   const items = [];
@@ -184,7 +197,7 @@ export function calendarBadgesForDate(dateStr, badges) {
     items.push({ emoji: CALENDAR_BADGE_EMOJI.monthSteps, title: 'Jour le plus de pas du mois' });
   }
   if (badges.kcalLeaderDate === dateStr) {
-    items.push({ emoji: CALENDAR_BADGE_EMOJI.kcal, title: 'Jour le plus de kcal actives' });
+    items.push({ emoji: CALENDAR_BADGE_EMOJI.kcal, title: 'Jour le plus de kcal journée' });
   }
   if (badges.volumeLeaderDate === dateStr) {
     items.push({ emoji: CALENDAR_BADGE_EMOJI.volume, title: 'Record de volume' });
@@ -196,7 +209,51 @@ export function calendarBadgesForDate(dateStr, badges) {
     items.push({ emoji: CALENDAR_BADGE_EMOJI.intensity, title: "Pic d'intensité" });
   }
 
+  appendWeekHonorBadges(items, dateStr, badges, options.weekStyle === 'crown' ? 'crown' : 'emoji');
+
   return items;
+}
+
+function appendWeekHonorBadges(items, dateStr, badges, weekStyle) {
+  const week = calendarWeekIdFromDate(dateStr);
+  const leaders = badges.weekLeaders;
+  if (!week || !leaders) return;
+  ['steps', 'reps'].forEach((metric) => {
+    const levels = weekHonorLevels(leaders[metric], week.year, week.monthIndex, week.bucket);
+    const emoji = weekHonorEmoji(metric, levels);
+    if (!emoji) return;
+    const titles = levels.map((level) => CALENDAR_WEEK_HONOR_TITLES[metric][level]);
+    const winner = weekHonorWinner(leaders[metric], levels[0], week.year, week.monthIndex);
+    const unit = metric === 'steps' ? 'pas en moyenne' : 'reps';
+    const slot = `S${week.bucket + 1}`;
+    const valueBit = winner
+      ? ` (${slot}, ${winner.value.toLocaleString('fr-FR')} ${unit})`
+      : ` (${slot})`;
+    const joined = titles.map((title) => title.toLowerCase()).join(' · ');
+    const description = `Ce jour fait partie de la ${joined}${valueBit}.`;
+    if (weekStyle === 'crown') {
+      levels.forEach((level) => {
+        items.push({
+          type: 'crown',
+          kind: 'week',
+          metric,
+          levels: [level],
+          title: CALENDAR_WEEK_HONOR_TITLES[metric][level],
+          description
+        });
+      });
+      return;
+    }
+    if (!emoji) return;
+    items.push({
+      emoji,
+      kind: 'week',
+      metric,
+      levels,
+      title: titles.join(' + '),
+      description
+    });
+  });
 }
 
 /** Échelle de taille des emojis : plus de colonnes année → plus petit (surtout 3–5 colonnes). */
@@ -235,7 +292,9 @@ export function calendarBadgeDetailsForDate(dateStr, badges) {
     let description = item.title;
 
     const rank = badges.championRankByDate?.[dateStr];
-    if (item.type === 'crown') {
+    if (item.kind === 'week') {
+      description = item.description || item.title;
+    } else if (item.type === 'crown') {
       const ch = badges.championTopThree?.[0];
       description = ch
         ? `Meilleur jour d'entraînement ${year} — score composite maximal (reps ${ch.breakdown?.reps ?? '—'}, volume ${ch.breakdown?.volumeKg ?? '—'} kg, course ${ch.breakdown?.runningKm ?? '—'} km).`
@@ -258,7 +317,7 @@ export function calendarBadgeDetailsForDate(dateStr, badges) {
     } else if (item.emoji === CALENDAR_BADGE_EMOJI.monthSteps) {
       description = `Jour avec le plus de pas de ce mois (hors record annuel, déjà marqué 👣).`;
     } else if (item.emoji === CALENDAR_BADGE_EMOJI.kcal) {
-      description = `Record de kcal actives Garmin sur ${year} pour cette date.`;
+      description = `Record de kcal de la journée Garmin sur ${year} pour cette date. Distinct des kcal d'une séance.`;
     } else if (item.emoji === CALENDAR_BADGE_EMOJI.volume) {
       const v = badges.volumeLeader;
       description =
@@ -293,6 +352,18 @@ export function calendarBadgeLegendItems() {
     { key: 'kcal', emoji: CALENDAR_BADGE_EMOJI.kcal, label: 'kcal' },
     { key: 'volume', emoji: CALENDAR_BADGE_EMOJI.volume, label: 'volume' },
     { key: 'run', emoji: CALENDAR_BADGE_EMOJI.run, label: 'course' },
-    { key: 'intensity', emoji: CALENDAR_BADGE_EMOJI.intensity, label: 'intensité' }
+    { key: 'intensity', emoji: CALENDAR_BADGE_EMOJI.intensity, label: 'intensité' },
+    { key: 'weekStepsMonth', emoji: '👟', label: 'semaine pas · mois' },
+    { key: 'weekStepsYear', emoji: '🥾', label: 'semaine pas · année' },
+    { key: 'weekStepsAll', emoji: '🗻', label: 'semaine pas · toujours' },
+    { key: 'weekStepsMonthYear', emoji: '🧭', label: 'semaine pas · mois + année' },
+    { key: 'weekStepsYearAll', emoji: '🌐', label: 'semaine pas · année + toujours' },
+    { key: 'weekStepsThree', emoji: '🌠', label: 'semaine pas · les trois' },
+    { key: 'weekRepsMonth', emoji: '🥊', label: 'semaine reps · mois' },
+    { key: 'weekRepsYear', emoji: '🦾', label: 'semaine reps · année' },
+    { key: 'weekRepsAll', emoji: '🦁', label: 'semaine reps · toujours' },
+    { key: 'weekRepsMonthYear', emoji: '🐯', label: 'semaine reps · mois + année' },
+    { key: 'weekRepsYearAll', emoji: '🐲', label: 'semaine reps · année + toujours' },
+    { key: 'weekRepsThree', emoji: '💎', label: 'semaine reps · les trois' }
   ];
 }

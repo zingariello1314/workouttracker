@@ -763,7 +763,7 @@ export default function DashboardCombinedActivityCalendar(props) {
                 <li>Défis validés : {det.sport.validatedChallenges}</li>
                 <li>Pas : {det.sport.steps.toLocaleString('fr-FR')}</li>
                 <li>Minutes intensité : {det.sport.intensityMinutes}</li>
-                <li>kcal actives : {det.sport.activeKcal}</li>
+                <li>Kcal journée : {det.sport.activeKcal}</li>
                 <li>Activités Garmin (natation, corde, cardio…) : {det.sport.garminActivitiesCount}</li>
                 <li>Ligne Garmin : {det.sport.hasGarminRow ? 'oui' : 'non'}</li>
               </ul>

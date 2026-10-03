@@ -79,6 +79,21 @@ def parse_daily_steps(steps_data: Any, date_str: str) -> int:
     return 0
 
 
+def resolve_daily_steps(steps_data: Any, stats: Any, date_str: str) -> int:
+    """
+    Total de pas du jour.
+
+    L'app Garmin affiche le total des stats (`totalSteps`). `get_steps_data`
+    ne renvoie souvent que des échantillons récents : pour les mois anciens
+    il est vide, alors que les stats (et donc les kcal) sont bien là.
+    On prend le total des stats dès qu'il est positif, sinon la somme des échantillons.
+    """
+    from_stats = parse_daily_steps(stats, date_str) if isinstance(stats, dict) and stats else 0
+    if from_stats > 0:
+        return from_stats
+    return parse_daily_steps(steps_data, date_str)
+
+
 def parse_daily_distance(stats: Dict, steps_data: Any, date_str: str, swim_list: List, jump_list: List, cardio_list: List) -> float:
     """
     Parse la distance quotidienne depuis Garmin.

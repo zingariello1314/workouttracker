@@ -13,7 +13,7 @@ import {
 } from './sport/runningVolumeTruth';
 import { computeNonRunningExerciseMinutesForDate } from './calendarPhysicalSessionStripes';
 import { dayCountsAsCalendarTrainingDay } from './sport/recapTrainingDayTruth';
-import { mergedDailySteps, normalizeManualDailyWalkByDate } from './sport/manualDailyWalkUtils';
+import { mergedStepsFromDaily, normalizeManualDailyWalkByDate } from './sport/manualDailyWalkUtils';
 
 function stepsForDate(garminData, workoutData, dateStr) {
   const manualMap = normalizeManualDailyWalkByDate(
@@ -21,7 +21,7 @@ function stepsForDate(garminData, workoutData, dateStr) {
   );
   const manualSteps = manualMap?.[dateStr]?.steps ?? 0;
   const dm = garminData?.dailyMetrics?.[dateStr];
-  return mergedDailySteps(dm?.steps, manualSteps);
+  return mergedStepsFromDaily(dm, manualSteps);
 }
 
 function activeKcalFromGarminDaily(garminData, dateStr) {

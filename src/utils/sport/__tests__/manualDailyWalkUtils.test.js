@@ -2,6 +2,8 @@ import { describe, expect, it } from 'vitest';
 import {
   resolveDailySteps,
   mergedDailySteps,
+  mergedStepsFromDaily,
+  stepsFromGarminDaily,
   computeStepsXpFromResolved,
   sumMergedDailyStepsTotal,
   formatStepsProvenance,
@@ -54,6 +56,14 @@ describe('resolveDailySteps', () => {
     expect(mergedDailySteps(4000, 3000)).toBe(4000);
     expect(mergedDailySteps(3000, 5000)).toBe(3000);
     expect(mergedDailySteps(0, 5000)).toBe(5000);
+  });
+
+  it('lit les pas anciens : objet, totalSteps frère, liste', () => {
+    expect(stepsFromGarminDaily({ steps: { totalSteps: 8421 }, calories: { active: 400 } })).toBe(8421);
+    expect(stepsFromGarminDaily({ steps: 0, totalSteps: 9100, calories: { active: 380 } })).toBe(9100);
+    expect(stepsFromGarminDaily({ steps: [{ steps: 100 }, { steps: 250 }] })).toBe(350);
+    expect(mergedStepsFromDaily({ steps: 0, totalSteps: 9100 }, 0)).toBe(9100);
+    expect(stepsFromGarminDaily({ steps: 1200, totalSteps: 50 })).toBe(1200);
   });
 
   it('plafond anti-abus sur saisie manuelle', () => {

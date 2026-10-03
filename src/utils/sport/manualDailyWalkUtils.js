@@ -32,6 +32,75 @@ function normalizeGarminSteps(garminSteps) {
   return Math.max(0, Math.round(Number(garminSteps) || 0));
 }
 
+const DAILY_STEP_ALIASES = [
+  'totalSteps',
+  'stepCount',
+  'stepsCount',
+  'dailyStepCount',
+  'allDayStepCount',
+  'wellnessSteps',
+  'wellnessTotalSteps',
+  'totalStepsValue',
+  'stepsValue'
+];
+
+const STEP_PAYLOAD_KEYS = [
+  'totalSteps',
+  'steps',
+  'value',
+  'total',
+  'count',
+  'stepCount',
+  'stepsValue',
+  'totalStepsValue',
+  'allDayStepCount',
+  'dailyStepCount'
+];
+
+function scalarSteps(value) {
+  if (typeof value === 'boolean' || value == null || value === '') return 0;
+  if (typeof value === 'object') return 0;
+  const n = Math.round(Number(value));
+  return Number.isFinite(n) && n > 0 ? n : 0;
+}
+
+function stepsFromPayload(payload, depth = 0) {
+  if (depth > 4 || payload == null) return 0;
+  const scalar = scalarSteps(payload);
+  if (scalar > 0) return scalar;
+  if (Array.isArray(payload)) {
+    return payload.reduce((sum, item) => sum + stepsFromPayload(item, depth + 1), 0);
+  }
+  if (typeof payload !== 'object') return 0;
+  for (const key of STEP_PAYLOAD_KEYS) {
+    if (payload[key] == null) continue;
+    const n = stepsFromPayload(payload[key], depth + 1);
+    if (n > 0) return n;
+  }
+  return 0;
+}
+
+/**
+ * Pas Garmin d'une journée, y compris les formes anciennes :
+ * nombre, chaîne, objet `{ totalSteps }`, liste intra-journée,
+ * ou champ frère `totalSteps` quand `steps` est resté à 0.
+ */
+export function stepsFromGarminDaily(daily) {
+  if (daily == null) return 0;
+  if (typeof daily !== 'object') return scalarSteps(daily);
+  const fromStepsField = stepsFromPayload(daily.steps);
+  if (fromStepsField > 0) return fromStepsField;
+  for (const key of DAILY_STEP_ALIASES) {
+    const n = stepsFromPayload(daily[key]);
+    if (n > 0) return n;
+  }
+  return 0;
+}
+
+export function mergedStepsFromDaily(daily, manualSteps) {
+  return mergedDailySteps(stepsFromGarminDaily(daily), manualSteps);
+}
+
 function parseManualEntry(manualInput) {
   if (manualInput == null) return null;
   if (typeof manualInput === 'object' && !Array.isArray(manualInput)) {
@@ -178,10 +247,8 @@ export function sumMergedDailyStepsTotal(dailyMetrics, manualByDateRaw) {
   let total = 0;
   keys.forEach((dateKey) => {
     const dm = gm[dateKey];
-    const gSteps =
-      dm?.steps != null && Number.isFinite(Number(dm.steps)) ? Math.max(0, Math.round(Number(dm.steps))) : 0;
     const manualEntry = manual[dateKey] || null;
-    total += resolveDailySteps(gSteps, manualEntry).total;
+    total += resolveDailySteps(stepsFromGarminDaily(dm), manualEntry).total;
   });
   return total;
 }

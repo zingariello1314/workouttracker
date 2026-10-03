@@ -432,9 +432,26 @@ export const mergeActivityRecord = (existing, newItem, type) => {
  * mergeNumericValue(0, 5000) // 5000 (évite écraser avec 0)
  * mergeNumericValue(5000, 0) // 5000 (nouvelles valides)
  */
+function coerceMergeNumber(value) {
+  if (value == null || value === '') return null;
+  if (typeof value === 'number') return Number.isFinite(value) ? value : null;
+  if (typeof value === 'string') {
+    const n = Number(value);
+    return Number.isFinite(n) ? n : null;
+  }
+  if (typeof value === 'object' && !Array.isArray(value)) {
+    const nested = value.totalSteps ?? value.steps ?? value.value ?? value.total ?? value.count ?? value.stepCount;
+    if (nested != null && typeof nested !== 'object') {
+      const n = Number(nested);
+      return Number.isFinite(n) ? n : null;
+    }
+  }
+  return null;
+}
+
 export const mergeNumericValue = (newValue, existingValue, defaultValue = 0) => {
-  const newNum = newValue !== undefined && newValue !== null ? Number(newValue) : null;
-  const existingNum = existingValue !== undefined && existingValue !== null ? Number(existingValue) : null;
+  const newNum = coerceMergeNumber(newValue);
+  const existingNum = coerceMergeNumber(existingValue);
   
   // Si nouvelles valides (> 0) ET >= existantes, utiliser nouvelles
   if (newNum !== null && newNum > 0 && (existingNum === null || newNum >= existingNum)) {
@@ -481,9 +498,16 @@ const mergeDistanceValue = (newValue, existingValue, date = null) => {
  * @param {Object} existingMetrics - Métriques existantes
  * @returns {Object} Métriques fusionnées
  */
+function existingStepsForMerge(existingMetrics) {
+  const direct = coerceMergeNumber(existingMetrics?.steps);
+  if (direct != null && direct > 0) return existingMetrics.steps;
+  if (existingMetrics?.totalSteps != null) return existingMetrics.totalSteps;
+  return existingMetrics?.steps;
+}
+
 export const mergeSimpleMetrics = (newMetrics, existingMetrics) => {
   return {
-    steps: mergeNumericValue(newMetrics.steps, existingMetrics.steps),
+    steps: mergeNumericValue(newMetrics.steps, existingStepsForMerge(existingMetrics)),
     distance: mergeDistanceValue(newMetrics.distance, existingMetrics.distance, newMetrics.date || null),
     floors: mergeNumericValue(newMetrics.floors, existingMetrics.floors)
   };

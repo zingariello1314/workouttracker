@@ -3,7 +3,7 @@
  * La teinte d’intensité (fond) reste inchangée ; ces traits s’ajoutent par-dessus.
  */
 
-import { mergedDailySteps } from './sport/manualDailyWalkUtils';
+import { mergedStepsFromDaily } from './sport/manualDailyWalkUtils';
 import { garminActivityMatchesCalendarDate } from './calendarUtils';
 import { coerceGarminDateOverrides } from './sessionCalendarDate';
 
@@ -62,7 +62,7 @@ export function hasGarminSleepForDate(garminData, dateStr) {
  */
 export function hasRecordedStepsForDate(garminData, dateStr, manualSteps = 0) {
   const dm = garminData?.dailyMetrics?.[dateStr];
-  const steps = mergedDailySteps(dm?.steps, manualSteps);
+  const steps = mergedStepsFromDaily(dm, manualSteps);
   return steps >= STEPS_STRIPE_MIN;
 }
 

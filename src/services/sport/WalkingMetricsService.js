@@ -6,7 +6,8 @@ import {
   normalizeManualDailyWalkByDate,
   resolveDailySteps,
   computeStepsXpFromResolved,
-  sumMergedDailyStepsTotal
+  sumMergedDailyStepsTotal,
+  stepsFromGarminDaily
 } from '../../utils/sport/manualDailyWalkUtils';
 
 /**
@@ -15,11 +16,7 @@ import {
  * @param {object | null | undefined} manualEntry — manualDailyWalkByDate[date]
  */
 export function getDaySteps(dailyMetricsRow, manualEntry) {
-  const gSteps =
-    dailyMetricsRow?.steps != null && Number.isFinite(Number(dailyMetricsRow.steps))
-      ? Math.max(0, Math.round(Number(dailyMetricsRow.steps)))
-      : 0;
-  return resolveDailySteps(gSteps, manualEntry || null);
+  return resolveDailySteps(stepsFromGarminDaily(dailyMetricsRow), manualEntry || null);
 }
 
 /**

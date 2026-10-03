@@ -27,12 +27,12 @@ from parsers.activity_parser import (
     parse_run_cardio_metrics,
 )
 from parsers.daily_metrics_parser import (
-    parse_daily_steps,
     parse_daily_distance,
     parse_daily_calories,
     parse_daily_heart_rate,
     parse_daily_intensity_minutes,
-    parse_daily_floors
+    parse_daily_floors,
+    resolve_daily_steps
 )
 from parsers.sleep_parser import (
     parse_sleep_data,
@@ -1207,7 +1207,9 @@ if effective_email and effective_password:
                             if cached_daily_before_api:
                                 # Vérifier que ce n'est pas juste des métadonnées
                                 cache_content = {k: v for k, v in cached_daily_before_api.items() if not k.startswith('_')}
-                                if cache_content and (cache_content.get('steps', 0) > 0 or cache_content.get('calories', {}).get('total', 0) > 0):
+                                cached_steps = cache_content.get('steps', 0) if cache_content else 0
+                                steps_ok = isinstance(cached_steps, (int, float)) and not isinstance(cached_steps, bool) and cached_steps > 0
+                                if cache_content and steps_ok:
                                     should_skip_api_calls = True
                                     print_debug(f"✅ PHASE 3.1 - Cache parsé disponible, skip appels API pour steps/stats (économie de requêtes Garmin)")
                                 else:
@@ -1482,9 +1484,24 @@ if effective_email and effective_password:
                         day_daily_temp.get('calories', {}).get('total', 0) == 0 and
                         len(day_daily_temp.get('heartRate', {}).get('timeSeries', [])) == 0
                     )
+                    cached_steps = day_daily_temp.get('steps', 0)
+                    steps_unusable = (
+                        not isinstance(cached_steps, (int, float))
+                        or isinstance(cached_steps, bool)
+                        or cached_steps <= 0
+                    )
+                    cached_calories = day_daily_temp.get('calories') or {}
+                    calories_present = 0
+                    if isinstance(cached_calories, dict):
+                        calories_present = cached_calories.get('total') or cached_calories.get('active') or 0
                     
+                    # Pas à 0 (ou objet legacy) alors que les kcal sont déjà là :
+                    # le cache a été figé avant la lecture de stats.totalSteps. On reparse.
+                    if steps_unusable and calories_present:
+                        print_debug(f"⚠️ Cache steps absent pour {d_str}, re-parse depuis stats.totalSteps")
+                        cached_daily = None
                     # Si données vides et après 00:15, invalider le cache
-                    if is_empty and minutes_since_midnight > 15 and d_str == current_date:
+                    elif is_empty and minutes_since_midnight > 15 and d_str == current_date:
                         print_debug(f"⚠️ Cache invalidé: données vides pour {d_str} après 00:15 (minutes depuis minuit: {minutes_since_midnight:.1f})")
                         cached_daily = None  # Forcer re-parsing
                     else:
@@ -1562,7 +1579,7 @@ if effective_email and effective_password:
                 try:
                     # ✅ PHASE 3.1 : Parser steps/calories/distance seulement si pas de cache Phase 3.1
                     if not should_skip_static_parsing:
-                        day_daily["steps"] = parse_daily_steps(steps_data, d_str)
+                        day_daily["steps"] = resolve_daily_steps(steps_data, stats, d_str)
                         day_daily["distance"] = parse_daily_distance(stats, steps_data, d_str, day_swim, day_jump, day_cardio)
                         day_daily["floors"] = parse_daily_floors(stats)
                         

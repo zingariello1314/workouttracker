@@ -52,6 +52,8 @@ export default function CalendarDayQuickActions({
   }, [workoutData, dateStr]);
 
   const completedCount = intensity?.completedCount ?? 0;
+  const hasLoggedWork =
+    completedCount > 0 || (intensity?.reps ?? 0) > 0 || (intensity?.duration ?? 0) > 0;
   const showJustify = typeof onJustifyAbsence === 'function';
   const showModifyJustification = typeof onModifyJustification === 'function';
   const isJustifiedDay = Boolean(justification);
@@ -63,12 +65,12 @@ export default function CalendarDayQuickActions({
           <div className="flex-1">
             <h4 className="mb-1 flex items-center gap-2 font-medium text-emerald-300">
               <Activity className="h-5 w-5" />
-              {completedCount === 0
-                ? tr(
+              {hasLoggedWork
+                ? tr('calendar.heatmap.dayDetails.modifyWorkout', 'Modifier ma séance')
+                : tr(
                     'calendar.heatmap.dayDetails.noWorkoutLogged',
                     'Aucune séance enregistrée'
-                  )
-                : tr('calendar.heatmap.dayDetails.modifyWorkout', 'Modifier ma séance')}
+                  )}
             </h4>
             <p className="text-sm text-slate-300">
               {isJustifiedDay
@@ -76,14 +78,14 @@ export default function CalendarDayQuickActions({
                     'calendar.heatmap.dayDetails.justifiedDayHint',
                     'Tu peux modifier la nature de l’absence ou saisir une séance si tu t’es trompé.'
                   )
-                : completedCount === 0
+                : hasLoggedWork
                   ? tr(
-                      'calendar.heatmap.dayDetails.noWorkoutLoggedHint',
-                      'Tu peux saisir ta séance ou justifier une absence pour ce jour.'
+                      'calendar.heatmap.dayDetails.modifyWorkoutKeepRest',
+                      'Tu peux modifier la séance, ou catégoriser ce jour en repos. Les reps et le GTG restent enregistrés.'
                     )
                   : tr(
-                      'calendar.heatmap.dayDetails.modifyWorkoutMessage',
-                      'Vous pouvez modifier ou compléter votre séance enregistrée.'
+                      'calendar.heatmap.dayDetails.noWorkoutLoggedHint',
+                      'Tu peux saisir ta séance ou justifier une absence pour ce jour.'
                     )}
             </p>
           </div>
@@ -95,9 +97,9 @@ export default function CalendarDayQuickActions({
               icon={Save}
               className="w-full sm:w-auto"
             >
-              {completedCount === 0
-                ? tr('calendar.heatmap.dayDetails.enterWorkout', 'Saisir ma séance')
-                : tr('calendar.heatmap.dayDetails.modifyWorkout', 'Modifier ma séance')}
+              {hasLoggedWork
+                ? tr('calendar.heatmap.dayDetails.modifyWorkout', 'Modifier ma séance')
+                : tr('calendar.heatmap.dayDetails.enterWorkout', 'Saisir ma séance')}
             </Button>
             {showModifyJustification ? (
               <Button

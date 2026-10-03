@@ -8,9 +8,11 @@ import { isDateInRecapWindow } from './sport/recapMuscleLoadEngine';
 import { inferMuscleGroupsForExercise } from './sport/recapMuscleInference';
 import { aggregateCheckedRepsByDateAndExerciseId } from './trainingLoadUtils';
 import { lookupProgramExerciseStub, aggregateLiftVolumeKgByDate } from './exerciseLoadVolume';
+import { weekRepTotalsForWindow } from './calendarWeekLeaders';
 import { activeKcalFromDaily } from './calendarKcalLeader';
+import { sumGarminActivityCaloriesKcalForDate } from './calendarPhysicalSessionStripes';
 import { coachSleepHours } from './sport/recapCrossCoachAggregate';
-import { mergedDailySteps, normalizeManualDailyWalkByDate } from './sport/manualDailyWalkUtils';
+import { mergedStepsFromDaily, normalizeManualDailyWalkByDate } from './sport/manualDailyWalkUtils';
 import {
   buildGarminCardioById,
   filterRunningSessionsBase,
@@ -61,7 +63,7 @@ function stepsForDate(garminData, workoutData, dateStr) {
   );
   const manualSteps = manualMap?.[dateStr]?.steps ?? 0;
   const dm = garminData?.dailyMetrics?.[dateStr];
-  return mergedDailySteps(dm?.steps, manualSteps);
+  return mergedStepsFromDaily(dm, manualSteps);
 }
 
 function enumerateDatesInWindow(window) {
@@ -130,6 +132,62 @@ export function findBestDaySteps(garminData, workoutData, window) {
     }
   });
   return best;
+}
+
+function runningKmByDate(workoutData, garminData) {
+  const garminById = buildGarminCardioById(garminData?.activities?.cardio);
+  const stored = workoutData?.enduranceData?.sessions?.running || [];
+  const merged = mergeRunningSessionsWithGarmin(stored, garminById);
+  const filtered = filterRunningSessionsBase(merged, garminById);
+  const rows = buildRunningSessionRows(filtered, garminById);
+  const kmByDate = new Map();
+  for (const row of rows) {
+    if (!row?.date || !(row.dist > 0)) continue;
+    kmByDate.set(row.date, (kmByDate.get(row.date) || 0) + row.dist);
+  }
+  return kmByDate;
+}
+
+function computeWeekKmTotals(workoutData, garminData, window) {
+  const sums = [0, 0, 0, 0];
+  if (!window) return sums;
+  const kmByDate = runningKmByDate(workoutData, garminData);
+  enumerateDatesInWindow(window).forEach((dateYmd) => {
+    const km = kmByDate.get(dateYmd) || 0;
+    if (km <= 0) return;
+    const dayNum = Number(String(dateYmd).slice(8, 10));
+    if (!Number.isFinite(dayNum)) return;
+    sums[weekBucketForDayOfMonth(dayNum)] += km;
+  });
+  return sums.map((value) => Math.round(value * 10) / 10);
+}
+
+function computeActivityKcalAggregates(garminData, workoutData, window) {
+  const empty = {
+    activityKcalTotal: 0,
+    avgActivityKcalPerDay: 0,
+    activityKcalDays: 0,
+    bestActivityKcalDay: null
+  };
+  if (!window) return empty;
+  let sum = 0;
+  let days = 0;
+  let best = null;
+  enumerateDatesInWindow(window).forEach((dateYmd) => {
+    const kcal = sumGarminActivityCaloriesKcalForDate(garminData, dateYmd, workoutData);
+    if (kcal <= 0) return;
+    sum += kcal;
+    days += 1;
+    if (!best || kcal > best.value) {
+      best = { value: kcal, dateYmd, scrollAnchor: null };
+    }
+  });
+  return {
+    activityKcalTotal: sum,
+    avgActivityKcalPerDay: days > 0 ? Math.round(sum / days) : 0,
+    activityKcalDays: days,
+    bestActivityKcalDay: best
+  };
 }
 
 function computeWeekStepAverages(garminData, workoutData, window) {
@@ -378,6 +436,7 @@ export function computeCalendarMonthHighlights(
   );
 
   const garminAgg = computeGarminMonthAggregates(garminData, workoutData, window);
+  const activityKcal = computeActivityKcalAggregates(garminData, workoutData, window);
 
   return {
     bestDayReps: findBestDayReps(monthDays, getDateStrFn),
@@ -388,6 +447,11 @@ export function computeCalendarMonthHighlights(
     bestKcalDay: garminAgg.bestKcalDay,
     bestDaySteps: garminAgg.bestDaySteps,
     weekStepAvgs: garminAgg.weekStepAvgs,
+    weekRepTotals: weekRepTotalsForWindow(workoutData, window),
+    weekKmTotals: computeWeekKmTotals(workoutData, garminData, window),
+    activityKcalTotal: activityKcal.activityKcalTotal,
+    avgActivityKcalPerDay: activityKcal.avgActivityKcalPerDay,
+    bestActivityKcalDay: activityKcal.bestActivityKcalDay,
     totalSteps: garminAgg.totalSteps || 0,
     avgSleepHours: garminAgg.avgSleepHours,
     sleepSampleDays: garminAgg.sleepSampleDays,
