@@ -136,12 +136,17 @@ import {
 } from '../utils/trainingLoadUtils';
 import { exerciseUsesExternalLoad } from '../utils/programUtils';
 import {
+  getExerciseWeightUiMode,
+  exerciseShowsWeightField
+} from '../utils/exerciseWeightEligibility';
+import {
   computeVolumeKgReps,
   computeVolumeKgForWorkoutKey,
   aggregateLiftVolumeKgByDate,
   exerciseIsDumbbellEquipment,
   inferDefaultSetCount
 } from '../utils/exerciseLoadVolume';
+import PushupChallengeTodayPanel from './tabs/TodayTab/components/PushupChallengeTodayPanel.jsx';
 import ReferenceDifficultyStars from './sport/ReferenceDifficultyStars';
 import { resolveExerciseScoring } from '../utils/exerciseScoringResolver';
 import {
@@ -487,6 +492,7 @@ const CalendarHeatmap = ({
   const [weightsData, setWeightsData] = useState({});
   const [weightPerArmData, setWeightPerArmData] = useState({});
   const [perSetWeightsData, setPerSetWeightsData] = useState({});
+  const [markedWeightedData, setMarkedWeightedData] = useState({});
   const [isSaving, setIsSaving] = useState(false);
   const [dataUpdateTrigger, setDataUpdateTrigger] = useState(0); // ✅ NOUVEAU : Pour forcer le re-render après sauvegarde
   /** Jour du programme (lundi… dimanche) dont on affiche les exercices ; la sauvegarde reste sur la date du calendrier. */
@@ -721,6 +727,7 @@ const CalendarHeatmap = ({
       const initialWeights = {};
       const initialPerArm = {};
       const initialSetWeights = {};
+      const initialMarkedWeighted = {};
       
       workout.exercices.forEach(exercise => {
         const keys = collectCalendarRepKeysForExercise(dateStr, exercise);
@@ -730,6 +737,8 @@ const CalendarHeatmap = ({
         initialChecked[exercise.id] = allDataForEntry.checkedExercises?.[finalKey] || false;
         initialWeights[exercise.id] = resolveExerciseWeightDisplay(allDataForEntry, keys, finalKey);
         initialPerArm[exercise.id] = resolveExerciseWeightPerArm(allDataForEntry, keys, finalKey);
+        initialMarkedWeighted[exercise.id] =
+          allDataForEntry.exerciseMarkedWeighted?.[finalKey] === true;
         const setRow = resolveExerciseSetWeightsDisplay(allDataForEntry, keys, finalKey);
         if (setRow) {
           initialSetWeights[exercise.id] = setRow.map((s) => String(s ?? ''));
@@ -741,6 +750,7 @@ const CalendarHeatmap = ({
       setWeightsData(initialWeights);
       setWeightPerArmData(initialPerArm);
       setPerSetWeightsData(initialSetWeights);
+      setMarkedWeightedData(initialMarkedWeighted);
     }
   }, [panelMode, workout, panelDate, selectedVariant, getCurrentData, getDateStr, dataUpdateTrigger]);
   // Utiliser getCurrentData() pour accéder aux données actuelles (temp + sauvegardées)
@@ -3833,7 +3843,7 @@ const CalendarHeatmap = ({
                             : [];
                         const yTopBadges =
                           variant === 'sport' && day.isCurrentMonth
-                            ? calendarBadgesForDate(yDateStr, calendarDayBadges, { weekStyle: 'crown' })
+                            ? calendarBadgesForDate(yDateStr, calendarDayBadges)
                             : [];
                         const yYearStripes = filterCalendarStripesForYearView(yGarminStripes);
                         const yStripeReserve = calendarStripeReservePx(true, yYearStripes.length);
@@ -4227,6 +4237,12 @@ const CalendarHeatmap = ({
           // Handlers
           const handleRepsChange = (exerciseId, value) => {
             setRepsData(prev => ({ ...prev, [exerciseId]: value }));
+            const parsed = parseInt(String(value ?? '').replace(/\s/g, ''), 10);
+            if (Number.isFinite(parsed) && parsed > 0) {
+              setCheckedExercises((prev) =>
+                prev[exerciseId] ? prev : { ...prev, [exerciseId]: true }
+              );
+            }
           };
 
           const handleWeightChange = (exerciseId, value) => {
@@ -4237,6 +4253,27 @@ const CalendarHeatmap = ({
               delete next[exerciseId];
               return next;
             });
+          };
+
+          const handleMarkedWeightedChange = (exerciseId, checked) => {
+            setMarkedWeightedData((prev) => ({ ...prev, [exerciseId]: checked }));
+            if (!checked) {
+              setWeightsData((prev) => {
+                const next = { ...prev };
+                delete next[exerciseId];
+                return next;
+              });
+              setWeightPerArmData((prev) => {
+                const next = { ...prev };
+                delete next[exerciseId];
+                return next;
+              });
+              setPerSetWeightsData((prev) => {
+                const next = { ...prev };
+                delete next[exerciseId];
+                return next;
+              });
+            }
           };
 
           const handleWeightPerArmChange = (exerciseId, checked) => {
@@ -4305,7 +4342,7 @@ const CalendarHeatmap = ({
           };
 
           const handleWeightInputFocus = (exerciseId, exercise) => {
-            if (!exerciseUsesExternalLoad(exercise)) return;
+            if (!exerciseShowsWeightField(exercise, markedWeightedData[exerciseId])) return;
             const displayed = String(weightsData[exerciseId] || '').trim();
             if (displayed) return;
             const ids = [exerciseId, exercise?.originalId].filter((x) => x != null);
@@ -4348,14 +4385,20 @@ const CalendarHeatmap = ({
               const updatedWeights = { ...(latestData.exerciseWeights || {}) };
               const updatedWeightPerArm = { ...(latestData.exerciseWeightPerArm || {}) };
               const updatedSetWeights = { ...(latestData.exerciseSetWeights || {}) };
+              const updatedMarkedWeighted = { ...(latestData.exerciseMarkedWeighted || {}) };
               
               // ✅ CORRECTION : Unifier la logique de sauvegarde en utilisant uniquement currentWorkout.exercices
               // Cela garantit que les IDs utilisés correspondent exactement à ceux du workout
               const savedKeys = [];
               currentWorkout.exercices.forEach(exercise => {
                 const exerciseId = exercise.id; // ID converti si programme personnalisé
-                const isChecked = checkedExercises[exerciseId] || false;
                 const reps = repsData[exerciseId] || '';
+                const parsedRepsPreview =
+                  reps === '' || reps == null ? 0 : parseInt(String(reps), 10);
+                const hasReps =
+                  Number.isFinite(parsedRepsPreview) && parsedRepsPreview > 0;
+                // Reps renseignées ⇒ on enregistre même sans coche manuelle
+                const isChecked = Boolean(checkedExercises[exerciseId]) || hasReps;
                 
                 const baseKey = `${saveDateStr}_${exerciseId}`;
                 const key = weekSuffix ? `${baseKey}${weekSuffix}` : baseKey;
@@ -4384,6 +4427,11 @@ const CalendarHeatmap = ({
                   } else {
                     delete updatedWeightPerArm[key];
                   }
+                  if (markedWeightedData[exerciseId]) {
+                    updatedMarkedWeighted[key] = true;
+                  } else {
+                    delete updatedMarkedWeighted[key];
+                  }
                   const setRow = perSetWeightsData[exerciseId];
                   if (
                     Array.isArray(setRow) &&
@@ -4403,13 +4451,15 @@ const CalendarHeatmap = ({
                     updatedCheckedExercises[key] !== undefined ||
                     updatedWeights[key] !== undefined ||
                     updatedWeightPerArm[key] !== undefined ||
-                    updatedSetWeights[key] !== undefined
+                    updatedSetWeights[key] !== undefined ||
+                    updatedMarkedWeighted[key] !== undefined
                   ) {
                     delete updatedReps[key];
                     delete updatedCheckedExercises[key];
                     delete updatedWeights[key];
                     delete updatedWeightPerArm[key];
                     delete updatedSetWeights[key];
+                    delete updatedMarkedWeighted[key];
                     if (isDebugDate) {
                       console.log(`[DEBUG handleSave] 🗑️ Supprimé: ${key} (variante actuelle uniquement)`);
                     }
@@ -4442,6 +4492,7 @@ const CalendarHeatmap = ({
                 exerciseWeights: updatedWeights,
                 exerciseWeightPerArm: updatedWeightPerArm,
                 exerciseSetWeights: updatedSetWeights,
+                exerciseMarkedWeighted: updatedMarkedWeighted
               };
 
               let payloadWithSetLogs = payload;
@@ -4497,6 +4548,7 @@ const CalendarHeatmap = ({
               setWeightsData({});
               setWeightPerArmData({});
               setPerSetWeightsData({});
+              setMarkedWeightedData({});
               setSelectedProgramId(null);
               setSelectedVariant(null);
               setWorkoutEntryTemplateDay(null);
@@ -4561,8 +4613,8 @@ const CalendarHeatmap = ({
                     });
                   }
                   
-                  // Recalculer l'intensité avec les données fraîches
-                  const dayIntensity = getIntensityForDate(displayDate);
+                  // Recalculer l'intensité avec le snapshot fraîchement vérifié
+                  const dayIntensity = getIntensityForDate(displayDate, freshData);
                   
                   if (isDebugDate) {
                     console.log(`[DEBUG handleSave] Intensité recalculée:`, {
@@ -4678,6 +4730,7 @@ const CalendarHeatmap = ({
                       setWeightsData({});
                       setWeightPerArmData({});
                       setPerSetWeightsData({});
+                      setMarkedWeightedData({});
                       setSelectedProgramId(null);
                       setSelectedVariant(null);
                       setWorkoutEntryTemplateDay(null);
@@ -4787,7 +4840,9 @@ const CalendarHeatmap = ({
                         const exerciseId = exercise.id;
                         const currentReps = repsData[exerciseId] || '';
                         const isChecked = checkedExercises[exerciseId] || false;
-                        const showWeightField = exerciseUsesExternalLoad(exercise);
+                        const weightUiMode = getExerciseWeightUiMode(exercise);
+                        const markedWeighted = markedWeightedData[exerciseId] === true;
+                        const showWeightField = exerciseShowsWeightField(exercise, markedWeighted);
                         const weightStr = showWeightField ? (weightsData[exerciseId] || '') : '';
                         const setWeightsRow = showWeightField ? (perSetWeightsData[exerciseId] || null) : null;
                         const exerciseUnit = detectExerciseUnit(exercise);
@@ -4872,6 +4927,20 @@ const CalendarHeatmap = ({
                                     </>
                                   )}
                                 </div>
+                                {weightUiMode?.mode === 'optional' && (
+                                  <label className="flex items-center gap-2 text-xs text-slate-400 cursor-pointer">
+                                    <Checkbox
+                                      checked={markedWeighted}
+                                      onChange={(e) =>
+                                        handleMarkedWeightedChange(exerciseId, e.target.checked)
+                                      }
+                                      className="scale-90 text-violet-400"
+                                      name={`cal_weighted_${exerciseId}`}
+                                      disabled={isSaving}
+                                    />
+                                    {t('today.exercises.optionalWeighted', 'Lesté')}
+                                  </label>
+                                )}
                                 {showWeightField && (
                                   <div className="flex items-center gap-1">
                                     <Input
@@ -5126,6 +5195,7 @@ const CalendarHeatmap = ({
                       setWeightsData({});
                       setWeightPerArmData({});
                       setPerSetWeightsData({});
+                      setMarkedWeightedData({});
                       setSelectedProgramId(null);
                       setSelectedVariant(null);
                       setWorkoutEntryTemplateDay(null);
@@ -5614,6 +5684,15 @@ const CalendarHeatmap = ({
                     )}
                   </div>
                 </div>
+              </div>
+            )}
+
+            {!showMinimalDayView && (
+              <div className="rounded-xl border border-violet-500/35 bg-black/40 p-3">
+                <h4 className="mb-2 text-sm font-medium text-violet-200">
+                  {t('calendar.heatmap.dayDetails.challengesTitle', 'Défis (ce jour)')}
+                </h4>
+                <PushupChallengeTodayPanel date={selectedDate.date} />
               </div>
             )}
 

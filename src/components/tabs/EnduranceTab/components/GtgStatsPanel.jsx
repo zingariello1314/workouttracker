@@ -1,5 +1,5 @@
 import React, { useMemo } from 'react';
-import { Lightbulb, TrendingDown, TrendingUp, BarChart3 } from 'lucide-react';
+import { Activity, Gauge, Lightbulb, TrendingDown, TrendingUp, BarChart3 } from 'lucide-react';
 import { useTranslation } from '../../../../utils/translations';
 import { buildGtgAnalyticsBundle } from '../../../../services/endurance/gtgAnalyticsService';
 import {
@@ -7,12 +7,21 @@ import {
   getGtgExerciseLabel,
   normalizeGtgData
 } from '../../../../services/endurance/gtgService';
+import { GTG_DAY_FEEL_ORDER } from '../../../../services/endurance/gtgProtocolSignals';
 import EnduranceDisciplineStatsPanel from '../../../sport/charts/EnduranceDisciplineStatsPanel.jsx';
+import { ZONE_STYLE } from './GtgProtocolPracticeStrip';
 
 const toneClass = {
   positive: 'border-emerald-600/45 bg-emerald-950/25 text-emerald-100',
   tip: 'border-violet-500/40 bg-violet-950/20 text-violet-100',
   warn: 'border-amber-600/45 bg-amber-950/20 text-amber-100'
+};
+
+const FEEL_BAR = {
+  easy: 'bg-emerald-500/80',
+  stable: 'bg-sky-500/80',
+  drift: 'bg-amber-500/80',
+  hard: 'bg-rose-500/80'
 };
 
 function RankingList({ title, items, valueKey, suffix = '', icon = null }) {
@@ -66,7 +75,9 @@ export default function GtgStatsPanel({ gtgData, ctx, activeProgram }) {
     return rows.slice(-40).reverse();
   }, [gtgData, analytics.start28, analytics.endYmd, ctxWithT]);
 
-  const { rankings, suggestions, programGaps, window } = analytics;
+  const { rankings, suggestions, programGaps, window, protocol } = analytics;
+  const feelCounts = protocol?.feelCounts || { easy: 0, stable: 0, drift: 0, hard: 0 };
+  const loggedFeels = protocol?.loggedFeels || 0;
 
   return (
     <div className="space-y-6">
@@ -85,6 +96,109 @@ export default function GtgStatsPanel({ gtgData, ctx, activeProgram }) {
             <div className="text-2xl font-bold tabular-nums text-white">{chip.value}</div>
           </div>
         ))}
+      </div>
+
+      <div className="overflow-hidden rounded-2xl border border-teal-500/30 bg-gradient-to-br from-black via-slate-950 to-teal-950/20">
+        <div className="border-b border-teal-500/20 px-5 py-4">
+          <div className="flex items-start gap-3">
+            <div className="rounded-xl border border-teal-500/35 bg-teal-950/40 p-2.5">
+              <Gauge className="h-5 w-5 text-teal-200" />
+            </div>
+            <div>
+              <h3 className="text-lg font-semibold text-white">{t('endurance.gtg.stats.protocolTitle')}</h3>
+              <p className="mt-0.5 text-xs text-slate-400">{t('endurance.gtg.stats.protocolHint')}</p>
+            </div>
+          </div>
+        </div>
+
+        <div className="space-y-5 px-5 py-4">
+          {(protocol?.doses || []).length === 0 ? (
+            <p className="text-sm text-slate-500">{t('endurance.gtg.protocolTrack.noExercises')}</p>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full min-w-[520px] text-left text-xs">
+                <thead>
+                  <tr className="text-slate-500">
+                    <th className="pb-2 pr-3">{t('endurance.gtg.stats.colExercise')}</th>
+                    <th className="pb-2 pr-3">{t('endurance.gtg.stats.colDose')}</th>
+                    <th className="pb-2 pr-3">{t('endurance.gtg.stats.colRir')}</th>
+                    <th className="pb-2 pr-3">{t('endurance.gtg.stats.colZone')}</th>
+                    <th className="pb-2">{t('endurance.gtg.stats.colSignals')}</th>
+                  </tr>
+                </thead>
+                <tbody className="text-slate-200">
+                  {protocol.doses.map((d) => (
+                    <tr key={d.exerciseId} className="border-t border-slate-800/80">
+                      <td className="py-2.5 pr-3 font-medium">{d.label}</td>
+                      <td className="py-2.5 pr-3 tabular-nums">
+                        {d.repsPerSet}/{d.maxReps || '—'}
+                        {d.pctOfMax != null ? ` · ${d.pctOfMax}%` : ''}
+                      </td>
+                      <td className="py-2.5 pr-3 tabular-nums">{d.rir != null ? d.rir : '—'}</td>
+                      <td className="py-2.5 pr-3">
+                        <span
+                          className={`inline-block rounded-md border px-2 py-0.5 text-[10px] uppercase tracking-wide ${
+                            ZONE_STYLE[d.zone] || ZONE_STYLE.conservative
+                          }`}
+                        >
+                          {t(`endurance.gtg.protocolTrack.zone.${d.zone}`)}
+                        </span>
+                      </td>
+                      <td className="py-2.5">
+                        <div className="flex flex-wrap gap-1">
+                          {(d.signals?.priority || []).slice(0, 3).map((sig) => (
+                            <span
+                              key={sig}
+                              className="rounded-full border border-teal-500/25 bg-teal-950/20 px-1.5 py-0.5 text-[10px] text-teal-100/90"
+                            >
+                              {t(`endurance.gtg.protocolTrack.signal.${sig}`)}
+                            </span>
+                          ))}
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+
+          <div className="rounded-xl border border-slate-700/45 bg-slate-950/40 p-4">
+            <div className="mb-2 flex items-center gap-2 text-sm font-medium text-slate-100">
+              <Activity className="h-4 w-4 text-amber-300" />
+              {t('endurance.gtg.stats.feelTitle')}
+            </div>
+            <p className="mb-3 text-[11px] text-slate-500">{t('endurance.gtg.stats.feelHint')}</p>
+            {loggedFeels === 0 ? (
+              <p className="text-sm text-slate-500">{t('endurance.gtg.stats.feelEmpty')}</p>
+            ) : (
+              <div className="space-y-2">
+                <div className="flex h-2.5 overflow-hidden rounded-full bg-slate-800">
+                  {GTG_DAY_FEEL_ORDER.map((feel) => {
+                    const n = feelCounts[feel] || 0;
+                    if (!n) return null;
+                    return (
+                      <div
+                        key={feel}
+                        className={`${FEEL_BAR[feel]} transition-all`}
+                        style={{ width: `${(n / loggedFeels) * 100}%` }}
+                        title={`${t(`endurance.gtg.protocolTrack.feel.${feel}`)}: ${n}`}
+                      />
+                    );
+                  })}
+                </div>
+                <div className="flex flex-wrap gap-3 text-[11px] text-slate-400">
+                  {GTG_DAY_FEEL_ORDER.map((feel) => (
+                    <span key={feel} className="inline-flex items-center gap-1.5">
+                      <span className={`h-2 w-2 rounded-full ${FEEL_BAR[feel]}`} />
+                      {t(`endurance.gtg.protocolTrack.feel.${feel}`)} · {feelCounts[feel] || 0}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
       </div>
 
       <EnduranceDisciplineStatsPanel

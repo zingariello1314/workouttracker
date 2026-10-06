@@ -12,6 +12,12 @@ import {
   listGtgBankExercises,
   makeGtgDbExerciseId
 } from './gtgExerciseBank';
+import {
+  buildGtgExerciseDose,
+  normalizeGtgDayFeel,
+  summarizeGtgProtocolTracking
+} from './gtgProtocolSignals';
+import { getLatestWeightSnapshot } from '../../utils/sport/recapAssessmentSeries';
 
 /** @deprecated utiliser GTG_BUILTIN_IDS */
 export const GTG_EXERCISE_IDS = GTG_BUILTIN_IDS;
@@ -178,12 +184,19 @@ export function normalizeGtgConfig(raw = {}, { allowBuiltinFallback = false } = 
       slotMode: exSlotMode,
       slotTimes: exSlotTimes.slice(0, 12)
     };
+    const repsTarget = Math.round(Number(pe.repsPerSet));
+    if (Number.isFinite(repsTarget) && repsTarget > 0) {
+      perExercise[id].repsPerSet = Math.min(200, repsTarget);
+    }
   });
 
   const protocolByExercise =
     raw.protocolByExercise && typeof raw.protocolByExercise === 'object'
       ? { ...raw.protocolByExercise }
       : {};
+
+  const bwRaw = Number(raw.bodyWeightKg);
+  const bodyWeightKg = Number.isFinite(bwRaw) && bwRaw > 0 ? Math.round(bwRaw * 10) / 10 : null;
 
   return {
     selectedIds: safeSelected,
@@ -196,7 +209,8 @@ export function normalizeGtgConfig(raw = {}, { allowBuiltinFallback = false } = 
     intervalHours,
     slotMode,
     perExercise,
-    protocolByExercise
+    protocolByExercise,
+    bodyWeightKg
   };
 }
 
@@ -320,6 +334,17 @@ export function updateGtgExerciseConfig(gtgData, exerciseId, patch = {}) {
     cur.slotTimes = patch.slotTimes.map((t) => String(t || '').slice(0, 5)).slice(0, 12);
   }
 
+  if ('repsPerSet' in patch) {
+    const v = patch.repsPerSet;
+    if (v === '' || v === null || v === undefined) {
+      delete cur.repsPerSet;
+    } else {
+      const n = Math.round(Number(v));
+      if (Number.isFinite(n) && n > 0) cur.repsPerSet = Math.min(200, n);
+      else delete cur.repsPerSet;
+    }
+  }
+
   perExercise[exerciseId] = cur;
 
   const manualMax = { ...normalized.config.manualMax };
@@ -408,14 +433,27 @@ export function resolveGtgMaxReps(exerciseId, { workoutData = {}, profileQuestio
 }
 
 /**
- * Prescription GTG (protocole) : reps loin de l’échec + fourchette de passages/jour.
- * ~25 % du max (ex. 2 reps pour un max de 9), 4–8 passages (jusqu’à 10 si l’écart d’objectif est grand).
+ * Estime un max à partir des reps faites à chaque passage (~50 % du max, aligné pratique GTG).
+ * Ex. 3 reps/créneau → max estimé 6.
  */
-export function estimateGtgProtocolDay(currentMax, goal) {
+export function estimateGtgMaxFromWorkingReps(workingReps) {
+  const r = Math.max(1, Math.round(Number(workingReps) || 1));
+  return Math.max(r + 1, Math.round(r / 0.5));
+}
+
+/**
+ * Prescription GTG (protocole) : reps loin de l’échec + fourchette de passages/jour.
+ * Si `workingReps` est fourni (saisie utilisateur), il prime ; sinon ~50 % du max.
+ */
+export function estimateGtgProtocolDay(currentMax, goal, opts = {}) {
   const max = Math.max(1, Math.round(Number(currentMax) || 1));
   const defaultGoal = Math.max(max + 1, Math.round(max * 1.67));
   const target = Math.max(max + 1, Math.round(Number(goal) || defaultGoal));
-  const reps = Math.max(1, Math.round(max * 0.25));
+  const explicit = Math.round(Number(opts.workingReps));
+  const reps =
+    Number.isFinite(explicit) && explicit > 0
+      ? Math.min(200, Math.max(1, explicit))
+      : Math.max(1, Math.round(max * 0.5));
   let minPassages = 4;
   let maxPassages = 8;
   if (target >= max * 1.8) maxPassages = 10;
@@ -429,7 +467,8 @@ export function estimateGtgProtocolDay(currentMax, goal) {
     minPassages,
     maxPassages,
     stimulusPct,
-    fatiguePct
+    fatiguePct,
+    maxEstimatedFromReps: Boolean(opts.maxEstimatedFromReps)
   };
 }
 
@@ -464,7 +503,8 @@ export function updateGtgProtocolExercise(gtgData, exerciseId, patch = {}) {
 }
 
 /**
- * Reps cible (~50 %) + fourchette 40–60 % pour l'affichage.
+ * Reps cible (~50 % du max) + fourchette 40–60 % — fallback si l'utilisateur
+ * n'a pas saisi explicitement un nombre de reps par créneau.
  */
 export function computeGtgRepsPerSet(maxReps) {
   const m = Math.max(1, Math.round(Number(maxReps) || 1));
@@ -476,8 +516,28 @@ export function computeGtgRepsPerSet(maxReps) {
 
 export function getGtgExercisePlan(exerciseId, ctx = {}) {
   const maxReps = resolveGtgMaxReps(exerciseId, ctx);
+  const config = normalizeGtgConfig(ctx.workoutData?.enduranceData?.gtg?.config || {});
+  const explicit = Math.round(Number(config.perExercise?.[exerciseId]?.repsPerSet));
+  if (Number.isFinite(explicit) && explicit > 0) {
+    const reps = Math.min(200, Math.max(1, explicit));
+    return {
+      exerciseId,
+      maxReps,
+      repsPerSet: reps,
+      rangeLow: reps,
+      rangeHigh: reps,
+      targetExplicit: true
+    };
+  }
   const { reps, rangeLow, rangeHigh } = computeGtgRepsPerSet(maxReps);
-  return { exerciseId, maxReps, repsPerSet: reps, rangeLow, rangeHigh };
+  return {
+    exerciseId,
+    maxReps,
+    repsPerSet: reps,
+    rangeLow,
+    rangeHigh,
+    targetExplicit: false
+  };
 }
 
 function migrateLegacyDayRecord(dayRecord, selectedIds) {
@@ -551,7 +611,8 @@ export function getDayRecord(gtgData, dateStr, selectedIds = []) {
   const migrated = migrateLegacyDayRecord(raw, selectedIds);
   return {
     ...migrated,
-    adHoc: normalizeAdHocPassages(raw.adHoc)
+    adHoc: normalizeAdHocPassages(raw.adHoc),
+    dayFeel: normalizeGtgDayFeel(raw.dayFeel ?? migrated.dayFeel)
   };
 }
 
@@ -562,6 +623,8 @@ function persistDayRecord(normalized, dateStr, dayRecord) {
   }
   const adHoc = normalizeAdHocPassages(dayRecord.adHoc);
   if (adHoc.length) nextDay.adHoc = adHoc;
+  const feel = normalizeGtgDayFeel(dayRecord.dayFeel);
+  if (feel) nextDay.dayFeel = feel;
   return {
     ...normalized,
     days: {
@@ -569,6 +632,62 @@ function persistDayRecord(normalized, dateStr, dayRecord) {
       [dateStr]: nextDay
     }
   };
+}
+
+/**
+ * Qualité de journée (protocole) : facile / stable / dérive / dur.
+ * Repasser le même ressenti le retire.
+ */
+export function setGtgDayFeel(gtgData, dateStr, feel) {
+  const normalized = normalizeGtgData(gtgData);
+  const dayRecord = getDayRecord(normalized, dateStr, normalized.config.selectedIds);
+  const next = normalizeGtgDayFeel(feel);
+  const cleared = next && dayRecord.dayFeel === next ? null : next;
+  return persistDayRecord(normalized, dateStr, { ...dayRecord, dayFeel: cleared });
+}
+
+/** Doses RIR/%/zone pour les exercices sélectionnés (plan courant). */
+export function buildGtgSelectedDoses(gtgData, ctx = {}) {
+  const normalized = normalizeGtgData(gtgData);
+  return normalized.config.selectedIds.map((exerciseId) => {
+    const plan = getGtgExercisePlan(exerciseId, {
+      ...ctx,
+      workoutData: {
+        ...(ctx.workoutData || {}),
+        enduranceData: {
+          ...(ctx.workoutData?.enduranceData || {}),
+          gtg: normalized
+        }
+      }
+    });
+    return buildGtgExerciseDose(exerciseId, {
+      maxReps: plan.maxReps,
+      repsPerSet: plan.repsPerSet,
+      label: getGtgExerciseLabel(exerciseId, normalized.config, ctx)
+    });
+  });
+}
+
+/** Ressentis du jour sur une fenêtre [start, end]. */
+export function collectGtgDayFeels(gtgData, startYmd, endYmd) {
+  const normalized = normalizeGtgData(gtgData);
+  const feelByDate = {};
+  if (!startYmd || !endYmd || startYmd > endYmd) return feelByDate;
+  let cursor = startYmd;
+  while (cursor <= endYmd) {
+    const day = getDayRecord(normalized, cursor, normalized.config.selectedIds);
+    if (day.dayFeel) feelByDate[cursor] = day.dayFeel;
+    cursor = DateHelper.addDays(cursor, 1);
+  }
+  return feelByDate;
+}
+
+/** Bundle protocole pour Stats (doses + feels + alertes). */
+export function buildGtgProtocolInsights(gtgData, ctx = {}, endYmd = DateHelper.getTodayLocal()) {
+  const start28 = DateHelper.addDays(endYmd, -27);
+  const doses = buildGtgSelectedDoses(gtgData, ctx);
+  const feelByDate = collectGtgDayFeels(gtgData, start28, endYmd);
+  return summarizeGtgProtocolTracking({ doses, feelByDate });
 }
 
 function newAdHocId(dateStr, time) {
@@ -1007,6 +1126,29 @@ export function summarizeGtgForExport(gtgData, ctx = {}) {
 
 export function listGtgFundamentalBankSuggestions() {
   return listGtgBankExercises().filter((e) => e.isFundamental);
+}
+
+/**
+ * Poids pour personnaliser le protocole (lest / %).
+ * Priorité : config GTG → dernière mesure Body → questionnaire profil.
+ * @returns {{ kg: number|null, source: 'gtg'|'body'|'quiz'|null, known: boolean }}
+ */
+export function resolveGtgBodyWeightKg(gtgData, { workoutData = {}, profileQuestionnaire = null } = {}) {
+  const fromGtg = Number(normalizeGtgData(gtgData).config.bodyWeightKg);
+  if (Number.isFinite(fromGtg) && fromGtg > 0) {
+    return { kg: Math.round(fromGtg * 10) / 10, source: 'gtg', known: true };
+  }
+  const snap = getLatestWeightSnapshot(workoutData?.progressEntries);
+  const fromBody = Number(snap?.weightKg);
+  if (Number.isFinite(fromBody) && fromBody > 0) {
+    return { kg: Math.round(fromBody * 10) / 10, source: 'body', known: true };
+  }
+  const answers = profileQuestionnaire?.answers || {};
+  const fromQuiz = Number(answers?.vitalsSelfReport?.weightKg ?? answers?.weightKg);
+  if (Number.isFinite(fromQuiz) && fromQuiz > 0) {
+    return { kg: Math.round(fromQuiz * 10) / 10, source: 'quiz', known: true };
+  }
+  return { kg: null, source: null, known: false };
 }
 
 /** Signature légère pour invalidation cache XP. */

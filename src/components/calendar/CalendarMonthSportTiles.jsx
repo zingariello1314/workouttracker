@@ -12,7 +12,7 @@ import {
   visibleCalendarMonthTileIds,
   writeCalendarMonthTileLayout
 } from '../../utils/calendarMonthTileLayout';
-import { weekHonorsForMonth, CALENDAR_WEEK_HONOR_TITLES } from '../../utils/calendarWeekLeaders';
+import { weekHonorsForMonth, weekHonorEmoji, CALENDAR_WEEK_HONOR_TITLES } from '../../utils/calendarWeekLeaders';
 import {
   calendarMonthExpandId,
   isCalendarMonthExpanded,
@@ -77,14 +77,15 @@ function formatDuration(minutes) {
 }
 
 function WeekHonorMark({ levels, metric }) {
-  const list = Array.isArray(levels) ? levels : [];
-  if (!list.length) return null;
-  const title = list.map((level) => CALENDAR_WEEK_HONOR_TITLES[metric]?.[level]).filter(Boolean).join(' + ');
+  const emoji = weekHonorEmoji(metric, levels);
+  if (!emoji) return null;
+  const title = (Array.isArray(levels) ? levels : [])
+    .map((level) => CALENDAR_WEEK_HONOR_TITLES[metric]?.[level])
+    .filter(Boolean)
+    .join(' + ');
   return (
-    <span className="inline-flex items-center" title={title} aria-label={title}>
-      {list.map((level) => (
-        <Crown key={level} className="h-3 w-3 text-amber-300" aria-hidden />
-      ))}
+    <span className="inline-flex items-center text-[12px] leading-none" title={title} aria-label={title}>
+      {emoji}
     </span>
   );
 }
@@ -103,7 +104,7 @@ function SummaryStat({ dot, value, label, crowned }) {
 }
 
 function WeekBars({ values, formatValue, honors, metric, barClass }) {
-  const list = Array.isArray(values) && values.length === 4 ? values : [0, 0, 0, 0];
+  const list = Array.isArray(values) && values.length > 0 ? values : [0];
   const max = Math.max(...list, 0);
   return (
     <div className="mt-3 space-y-1.5">
@@ -562,8 +563,8 @@ export default function CalendarMonthSportTiles({
   const summaryGrid =
     !expanded && summary.length > 0 ? (
       <div className="mt-3 grid grid-cols-3 gap-x-2 gap-y-3">
-        {summary.map((item) => (
-          <SummaryStat key={item.key} {...item} />
+        {summary.map(({ key, ...item }) => (
+          <SummaryStat key={key} {...item} />
         ))}
       </div>
     ) : null;

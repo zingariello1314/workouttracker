@@ -1,5 +1,7 @@
 /**
- * Meilleures semaines du calendrier (S1–S4, comme sous les mois).
+ * Meilleures semaines du calendrier (lun–dim, bornées au mois).
+ * Si le mois commence un jeudi, S1 = jeudi→dimanche ; puis des semaines lun–dim.
+ * Un badge « meilleure semaine » s’affiche sur chaque jour de cette semaine (≤ 7).
  * Pas : moyenne des jours avec des pas. Reps : total coché + séances d'endurance.
  * La meilleure semaine de l'année est aussi celle de son mois.
  * La meilleure de tous les temps est aussi celle de son année et de son mois.
@@ -10,21 +12,51 @@ import { mergedStepsFromDaily, normalizeManualDailyWalkByDate } from './sport/ma
 
 const YMD = /^(\d{4})-(\d{2})-(\d{2})$/;
 
+/** Lundi = 0 … Dimanche = 6 */
+function mondayBasedDow(year, monthIndex, day) {
+  return (new Date(year, monthIndex, day).getDay() + 6) % 7;
+}
+
+/**
+ * Semaines lun–dim clipées au mois : S1 peut être partielle
+ * (ex. mois qui démarre jeudi → S1 = jeudi–dimanche).
+ */
 export function calendarWeekIdFromDate(dateStr) {
   const match = YMD.exec(String(dateStr || ''));
   if (!match) return null;
   const day = Number(match[3]);
   if (!Number.isFinite(day) || day < 1) return null;
-  const bucket = day <= 7 ? 0 : day <= 14 ? 1 : day <= 21 ? 2 : 3;
   const year = Number(match[1]);
   const monthIndex = Number(match[2]) - 1;
   if (monthIndex < 0 || monthIndex > 11) return null;
+  const lastDay = new Date(year, monthIndex + 1, 0).getDate();
+  if (day > lastDay) return null;
+
+  const firstDow = mondayBasedDow(year, monthIndex, 1);
+  const firstWeekLen = 7 - firstDow;
+  const bucket = day <= firstWeekLen ? 0 : 1 + Math.floor((day - firstWeekLen - 1) / 7);
+
   return {
     year,
     monthIndex,
     bucket,
     id: `${match[1]}-${match[2]}-${bucket}`
   };
+}
+
+export function calendarWeekBucketCount(year, monthIndex) {
+  const y = Number(year);
+  const m = Number(monthIndex);
+  if (!Number.isFinite(y) || !Number.isFinite(m) || m < 0 || m > 11) return 0;
+  const lastDay = new Date(y, m + 1, 0).getDate();
+  const ymd = `${y}-${String(m + 1).padStart(2, '0')}-${String(lastDay).padStart(2, '0')}`;
+  const last = calendarWeekIdFromDate(ymd);
+  return (last?.bucket ?? 0) + 1;
+}
+
+export function emptyWeekBucketArray(year, monthIndex) {
+  const n = calendarWeekBucketCount(year, monthIndex);
+  return Array.from({ length: Math.max(0, n) }, () => 0);
 }
 
 export function calendarRepsByDate(workoutData) {
@@ -143,13 +175,15 @@ export function computeCalendarWeekLeaders(workoutData, garminData) {
 }
 
 export function weekRepTotalsForWindow(workoutData, window) {
-  const sums = [0, 0, 0, 0];
-  if (!window?.start || !window?.end) return sums;
+  if (!window?.start || !window?.end) return [];
+  const start = calendarWeekIdFromDate(window.start);
+  if (!start) return [];
+  const sums = emptyWeekBucketArray(start.year, start.monthIndex);
   const repsMap = calendarRepsByDate(workoutData);
   repsMap.forEach((reps, dateStr) => {
     if (dateStr < window.start || dateStr > window.end || reps <= 0) return;
     const week = calendarWeekIdFromDate(dateStr);
-    if (!week) return;
+    if (!week || week.bucket < 0 || week.bucket >= sums.length) return;
     sums[week.bucket] += reps;
   });
   return sums;
@@ -168,9 +202,10 @@ export function weekHonorLevels(metric, year, monthIndex, bucket) {
 }
 
 export function weekHonorsForMonth(leaders, year, monthIndex) {
+  const buckets = Array.from({ length: calendarWeekBucketCount(year, monthIndex) }, (_, i) => i);
   return {
-    steps: [0, 1, 2, 3].map((bucket) => weekHonorLevels(leaders?.steps, year, monthIndex, bucket)),
-    reps: [0, 1, 2, 3].map((bucket) => weekHonorLevels(leaders?.reps, year, monthIndex, bucket))
+    steps: buckets.map((bucket) => weekHonorLevels(leaders?.steps, year, monthIndex, bucket)),
+    reps: buckets.map((bucket) => weekHonorLevels(leaders?.reps, year, monthIndex, bucket))
   };
 }
 

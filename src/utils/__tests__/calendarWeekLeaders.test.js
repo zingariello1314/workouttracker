@@ -4,6 +4,8 @@ import {
   calendarBadgeDetailsForDate
 } from '../calendarYearDayBadges';
 import {
+  calendarWeekBucketCount,
+  calendarWeekIdFromDate,
   computeCalendarWeekLeaders,
   weekHonorsForMonth
 } from '../calendarWeekLeaders';
@@ -33,6 +35,27 @@ describe('meilleures semaines du calendrier', () => {
     }
   };
 
+  it('découpe les semaines lun–dim (S1 partielle si le mois commence en milieu de semaine)', () => {
+    // Oct 2026 commence un jeudi → S1 = jeu–dim (1–4), puis lun–dim
+    expect(calendarWeekIdFromDate('2026-10-01')).toMatchObject({
+      year: 2026,
+      monthIndex: 9,
+      bucket: 0,
+      id: '2026-10-0'
+    });
+    expect(calendarWeekIdFromDate('2026-10-04')?.bucket).toBe(0);
+    expect(calendarWeekIdFromDate('2026-10-05')?.bucket).toBe(1);
+    expect(calendarWeekIdFromDate('2026-10-11')?.bucket).toBe(1);
+    expect(calendarWeekIdFromDate('2026-10-12')?.bucket).toBe(2);
+    expect(calendarWeekIdFromDate('2026-10-31')?.bucket).toBe(4);
+    expect(calendarWeekBucketCount(2026, 9)).toBe(5);
+
+    // Juin 2026 commence un lundi → S1 = 1–7
+    expect(calendarWeekIdFromDate('2026-06-01')?.bucket).toBe(0);
+    expect(calendarWeekIdFromDate('2026-06-07')?.bucket).toBe(0);
+    expect(calendarWeekIdFromDate('2026-06-08')?.bucket).toBe(1);
+  });
+
   it('donne la couronne du mois, de l’année et de tous les temps, et les fait coïncider', () => {
     const leaders = computeCalendarWeekLeaders(workoutData, garminData);
     expect(leaders.steps.allTime.id).toBe('2025-08-0');
@@ -54,9 +77,10 @@ describe('meilleures semaines du calendrier', () => {
     expect(august.steps[0]).toEqual(['allTime', 'year', 'month']);
   });
 
-  it('indique dans le détail du jour que la journée appartient à ces semaines', () => {
+  it('indique dans le détail du jour que la journée appartient à ces semaines (mêmes emojis mois/année)', () => {
     const weekLeaders = computeCalendarWeekLeaders(workoutData, garminData);
-    const badges = calendarBadgesForDate('2025-08-05', { weekLeaders });
+    // 3 août 2025 (dimanche) est dans S1 partielle août ; 5 août est déjà S2
+    const badges = calendarBadgesForDate('2025-08-03', { weekLeaders });
     const stepsBadge = badges.find((badge) => badge.metric === 'steps');
     expect(badges.filter((badge) => badge.metric === 'steps')).toHaveLength(1);
     expect(stepsBadge.emoji).toBe('🌠');
@@ -66,15 +90,11 @@ describe('meilleures semaines du calendrier', () => {
     expect(stepsBadge.title).toContain('Meilleure semaine du mois · pas');
     expect(badges.find((badge) => badge.metric === 'reps')?.emoji).toBe('🐯');
 
-    const yearBadges = calendarBadgesForDate('2025-08-05', { weekLeaders }, { weekStyle: 'crown' });
+    const yearBadges = calendarBadgesForDate('2025-08-03', { weekLeaders }, { weekStyle: 'crown' });
     const yearSteps = yearBadges.filter((badge) => badge.metric === 'steps');
-    expect(yearSteps).toHaveLength(3);
-    expect(yearSteps.every((badge) => badge.type === 'crown')).toBe(true);
-    expect(yearSteps.map((badge) => badge.title)).toEqual([
-      'Meilleure semaine de tous les temps · pas',
-      "Meilleure semaine de l'année · pas",
-      'Meilleure semaine du mois · pas'
-    ]);
+    expect(yearSteps).toHaveLength(1);
+    expect(yearSteps[0].emoji).toBe('🌠');
+    expect(yearSteps[0].type).toBeUndefined();
 
     const details = calendarBadgeDetailsForDate('2026-06-04', {
       weekLeaders,

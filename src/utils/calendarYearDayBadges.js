@@ -174,10 +174,11 @@ export function computeCalendarYearDayBadges({
 
 /**
  * @param {{ weekStyle?: 'emoji' | 'crown' }} [options]
- * `emoji` (vue mois) : un signe par palmarès. `crown` (vue année) : une couronne par niveau.
+ * Honneurs de semaine : toujours les emojis (vues mois et année).
+ * `weekStyle: 'crown'` est ignoré (conservé pour compatibilité).
  * @returns {Array<{ type?: 'crown', emoji?: string, title: string }>}
  */
-export function calendarBadgesForDate(dateStr, badges, options = {}) {
+export function calendarBadgesForDate(dateStr, badges, _options = {}) {
   if (!dateStr || !badges) return [];
 
   const items = [];
@@ -209,12 +210,12 @@ export function calendarBadgesForDate(dateStr, badges, options = {}) {
     items.push({ emoji: CALENDAR_BADGE_EMOJI.intensity, title: "Pic d'intensité" });
   }
 
-  appendWeekHonorBadges(items, dateStr, badges, options.weekStyle === 'crown' ? 'crown' : 'emoji');
+  appendWeekHonorBadges(items, dateStr, badges);
 
   return items;
 }
 
-function appendWeekHonorBadges(items, dateStr, badges, weekStyle) {
+function appendWeekHonorBadges(items, dateStr, badges) {
   const week = calendarWeekIdFromDate(dateStr);
   const leaders = badges.weekLeaders;
   if (!week || !leaders) return;
@@ -231,20 +232,6 @@ function appendWeekHonorBadges(items, dateStr, badges, weekStyle) {
       : ` (${slot})`;
     const joined = titles.map((title) => title.toLowerCase()).join(' · ');
     const description = `Ce jour fait partie de la ${joined}${valueBit}.`;
-    if (weekStyle === 'crown') {
-      levels.forEach((level) => {
-        items.push({
-          type: 'crown',
-          kind: 'week',
-          metric,
-          levels: [level],
-          title: CALENDAR_WEEK_HONOR_TITLES[metric][level],
-          description
-        });
-      });
-      return;
-    }
-    if (!emoji) return;
     items.push({
       emoji,
       kind: 'week',

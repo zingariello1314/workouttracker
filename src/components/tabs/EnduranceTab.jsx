@@ -315,6 +315,9 @@ const EnduranceTab = () => {
   }, [dbReady, loadAllData, sessions.running, runningClassificationCtx]);
 
   /** Importe les activités Garmin manquantes dans enduranceData (aligne historique ↔ stats km). */
+  const importToEnduranceRef = useRef(importToEndurance);
+  importToEnduranceRef.current = importToEndurance;
+
   useEffect(() => {
     if (!dbReady || (activeTab !== 'running' && activeTab !== 'walking')) return;
     let cancelled = false;
@@ -322,7 +325,7 @@ const EnduranceTab = () => {
       try {
         const loaded = await loadAllData();
         if (cancelled || !loaded?.activities) return;
-        await importToEndurance(loaded);
+        await importToEnduranceRef.current(loaded);
       } catch (e) {
         console.warn('[EnduranceTab] Import Garmin → endurance:', e);
       }
@@ -334,7 +337,7 @@ const EnduranceTab = () => {
       cancelled = true;
       window.removeEventListener('garmin:data:updated', onGarminUpdate);
     };
-  }, [dbReady, activeTab, loadAllData, importToEndurance]);
+  }, [dbReady, activeTab, loadAllData]);
 
   const runningSessionsMerged = useMemo(() => {
     const garminActs = garminRunningById ? [...garminRunningById.values()] : [];

@@ -225,8 +225,8 @@ export default function EnduranceCalendarModernPanel({
                 <div className="text-[11px] text-teal-200/70">seances</div>
               </div>
               <div className="mb-1 grid grid-cols-7 gap-1">
-                {WEEKDAYS_FR.map((w) => (
-                  <div key={`${month.monthIdx}-${w}`} className="text-center text-[10px] text-slate-500">{w}</div>
+                {WEEKDAYS_FR.map((w, i) => (
+                  <div key={`${month.monthIdx}-wd-${i}`} className="text-center text-[10px] text-slate-500">{w}</div>
                 ))}
               </div>
               <div className="grid grid-cols-7 gap-1">

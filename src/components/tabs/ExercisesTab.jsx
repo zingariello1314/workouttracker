@@ -134,7 +134,6 @@ const ExercisesTabBody = () => {
   // Fonction pour extraire les exercices selon la source de données
   const getExercisesFromSource = useMemo(() => {
     if (isGuest) return {};
-    if (isStandardUser) return {};
     let sourceProgram = null;
     
     switch (dataSource) {
@@ -265,7 +264,7 @@ const ExercisesTabBody = () => {
     }
     // Invités et non-admin : ne jamais retomber sur workoutProgram
     return sourceProgram || {};
-  }, [dataSource, visibleActiveProgram, visiblePrograms, selectedProgram, isAdmin, isGuest, isStandardUser, t]);
+  }, [dataSource, visibleActiveProgram, visiblePrograms, selectedProgram, isAdmin, isGuest, t]);
 
   // Convertir le programme en format enrichi
   const enhancedProgram = useMemo(() => {
@@ -374,45 +373,36 @@ const ExercisesTabBody = () => {
 
     if (isGuest) return [];
     if (dataSource === 'exercise_bank' && !bankPrepared) return [];
-    if (isStandardUser || dataSource === 'exercise_bank') return mergeReferenceExercises([]);
 
-    // Priorité aux exercices synchronisés si disponibles ET s'ils sont enrichis
-    if (syncData && syncData.exercises && syncData.exercises.length > 0 && 
-        syncData.exercises.some(ex => ex.category || ex.metadata)) {
-      const withSource = syncData.exercises.map((exercise) => ({
-        ...exercise,
-        sourceDay: exercise.sourceDay || t('exercisesTab.misc.defaultProgram')
-      }));
-      return mergeReferenceExercises(withSource);
+    // Banque complète (référentiel) — sans filtre programme
+    if (dataSource === 'exercise_bank') {
+      return mergeReferenceExercises([]);
     }
-    
+
+    // Sources programme : uniquement les exercices du programme choisi (ne pas réinjecter toute la banque)
     const exercises = [];
-    
-    Object.values(enhancedProgram.days).forEach(day => {
+    Object.values(enhancedProgram?.days || {}).forEach((day) => {
       if (day.exercises) {
         exercises.push(...day.exercises);
       }
-      
       if (day.salleVariants) {
-        Object.values(day.salleVariants).forEach(variant => {
+        Object.values(day.salleVariants).forEach((variant) => {
           if (variant.exercises) {
             exercises.push(...variant.exercises);
           }
         });
       }
     });
-    
-    const uniqueExercises = exercises.filter((exercise, index, self) => 
-      index === self.findIndex(e => e.id === exercise.id)
+
+    const uniqueExercises = exercises.filter(
+      (exercise, index, self) => index === self.findIndex((e) => e.id === exercise.id)
     );
-    
-    const fromProgram = uniqueExercises.map(exercise => ({
+
+    return uniqueExercises.map((exercise) => ({
       ...exercise,
       sourceDay: exercise.sourceDay || t('exercisesTab.misc.defaultProgram')
     }));
-
-    return mergeReferenceExercises(fromProgram);
-  }, [enhancedProgram, syncData, t, isGuest, isStandardUser, dataSource, bankPrepared]);
+  }, [enhancedProgram, t, isGuest, dataSource, bankPrepared]);
 
   // Filtrer les exercices
   const filteredExercises = useMemo(() => {
@@ -906,7 +896,7 @@ const ExercisesTabBody = () => {
         </CardContent>
       </Card>
       )}
-      {isAdmin && (
+      {isAuthenticated && (
       <Card variant="sport">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
@@ -915,7 +905,7 @@ const ExercisesTabBody = () => {
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="flex flex-wrap gap-2">
+          <div className="flex flex-wrap items-center gap-2">
             <button
               type="button"
               onClick={() => {
@@ -924,27 +914,10 @@ const ExercisesTabBody = () => {
                 setSelectedProgram(null);
               }}
               className={`gradient-button-premium gradient-button-premium-sm rounded-lg ${
-                dataSource === 'exercise_bank'
-                  ? 'gradient-button-premium-variant'
-                  : ''
+                dataSource === 'exercise_bank' ? 'gradient-button-premium-variant' : ''
               }`}
             >
-              Tous les exercices (banque)
-            </button>
-            <button
-              type="button"
-              onClick={() => {
-                setDataSource('default');
-                setViewMode('exercises');
-                setSelectedProgram(null);
-              }}
-              className={`gradient-button-premium gradient-button-premium-sm rounded-lg ${
-                dataSource === 'default'
-                  ? 'gradient-button-premium-variant'
-                  : ''
-              }`}
-            >
-              {t('exercisesTab.source.default')}
+              {t('exercisesTab.source.allBank', 'Tous les exercices')}
             </button>
             <button
               type="button"
@@ -955,37 +928,70 @@ const ExercisesTabBody = () => {
               }}
               disabled={!visibleActiveProgram}
               className={`gradient-button-premium gradient-button-premium-sm rounded-lg ${
-                dataSource === 'active_program'
-                  ? 'gradient-button-premium-variant'
-                  : ''
+                dataSource === 'active_program' ? 'gradient-button-premium-variant' : ''
               } ${!visibleActiveProgram ? 'opacity-50 cursor-not-allowed' : ''}`}
             >
-              {t('exercisesTab.source.activeProgram')} {visibleActiveProgram ? `(${visibleActiveProgram.name})` : t('exercisesTab.source.activeProgramNone')}
+              {visibleActiveProgram
+                ? t('exercisesTab.source.activeProgramNamed', {
+                    programName: visibleActiveProgram.name,
+                    defaultValue: `Programme actif (${visibleActiveProgram.name})`
+                  })
+                : t('exercisesTab.source.activeProgramNone', 'Aucun programme actif')}
             </button>
-            <button
-              type="button"
-              onClick={() => {
-                setDataSource('all_programs');
-                setViewMode('programs');
-                setSelectedProgram(null);
-              }}
-              disabled={visiblePrograms.length === 0}
-              className={`gradient-button-premium gradient-button-premium-sm rounded-lg ${
-                dataSource === 'all_programs'
-                  ? 'gradient-button-premium-variant'
-                  : ''
-              } ${visiblePrograms.length === 0 ? 'opacity-50 cursor-not-allowed' : ''}`}
-            >
-              {t('exercisesTab.source.allPrograms', { count: visiblePrograms.length })}
-            </button>
+            {visiblePrograms.length > 0 ? (
+              <select
+                value={
+                  dataSource === 'all_programs' && selectedProgram?.id != null
+                    ? String(selectedProgram.id)
+                    : ''
+                }
+                onChange={(e) => {
+                  const id = e.target.value;
+                  if (!id) return;
+                  const program = visiblePrograms.find((p) => String(p.id) === String(id));
+                  if (!program) return;
+                  setSelectedProgram(program);
+                  setDataSource('all_programs');
+                  setViewMode('exercises');
+                }}
+                className="rounded-lg border border-[#0F4C5C]/60 bg-black px-3 py-2 text-sm text-teal-100"
+                aria-label={t('exercisesTab.source.pickProgram', 'Choisir un programme')}
+              >
+                <option value="">
+                  {t('exercisesTab.source.pickProgram', 'Autre programme…')}
+                </option>
+                {visiblePrograms.map((program) => (
+                  <option key={program.id} value={String(program.id)}>
+                    {program.name}
+                  </option>
+                ))}
+              </select>
+            ) : null}
           </div>
           <div className="mt-3 text-sm text-slate-400">
-            {dataSource === 'exercise_bank' && 'Affichage de toute la banque d’exercices (sans doublons).'}
-            {dataSource === 'default' && t('exercisesTab.source.description.default')}
-            {dataSource === 'active_program' && visibleActiveProgram && t('exercisesTab.source.description.activeProgram', { programName: visibleActiveProgram.name })}
-            {dataSource === 'active_program' && !visibleActiveProgram && t('exercisesTab.source.description.activeProgramNone')}
-            {dataSource === 'all_programs' && viewMode === 'programs' && t('exercisesTab.source.description.allProgramsSelect', { count: visiblePrograms.length })}
-              {dataSource === 'all_programs' && viewMode === 'exercises' && selectedProgram && t('exercisesTab.source.description.allProgramsView', { programName: selectedProgram.name })}
+            {dataSource === 'exercise_bank' &&
+              t(
+                'exercisesTab.source.description.bank',
+                'Affichage de toute la banque d’exercices (sans doublons).'
+              )}
+            {dataSource === 'active_program' &&
+              visibleActiveProgram &&
+              t('exercisesTab.source.description.activeProgram', {
+                programName: visibleActiveProgram.name,
+                defaultValue: `Exercices du programme actif « ${visibleActiveProgram.name} » uniquement.`
+              })}
+            {dataSource === 'active_program' &&
+              !visibleActiveProgram &&
+              t(
+                'exercisesTab.source.description.activeProgramNone',
+                'Aucun programme actif — active un programme pour filtrer.'
+              )}
+            {dataSource === 'all_programs' &&
+              selectedProgram &&
+              t('exercisesTab.source.description.allProgramsView', {
+                programName: selectedProgram.name,
+                defaultValue: `Exercices du programme « ${selectedProgram.name} » uniquement.`
+              })}
           </div>
         </CardContent>
       </Card>

@@ -8,6 +8,7 @@ import { calculateAutoReps } from '../../utils/exerciseCalculations';
 import { getDayName } from '../../utils/dateUtils';
 import {
   buildGtgDayPlan,
+  buildGtgProtocolInsights,
   getPerExerciseSchedule,
   collectGtgMiniSetHistory,
   getGtgExerciseLabel,
@@ -263,6 +264,31 @@ export function computeGtgPracticeSuggestions({
     });
   }
 
+  const protocol = buildGtgProtocolInsights(normalized, ctx, endYmd);
+  protocol.hotDoses.slice(0, 2).forEach((d) => {
+    suggestions.push({
+      id: `dose_hot_${d.exerciseId}`,
+      priority: d.zone === 'classic' ? 82 : 74,
+      tone: 'warn',
+      templateKey: d.zone === 'classic' ? 'gtgCoachDoseClassic' : 'gtgCoachDoseDemanding',
+      payload: {
+        name: d.label,
+        pct: d.pctOfMax ?? '—',
+        rir: d.rir ?? '—'
+      }
+    });
+  });
+  const feelStress = protocol.alerts.find((a) => a.kind === 'feel');
+  if (feelStress) {
+    suggestions.push({
+      id: 'feel_stress',
+      priority: 78,
+      tone: 'warn',
+      templateKey: 'gtgCoachFeelStress',
+      payload: { pct: feelStress.stressRatio, days: feelStress.loggedFeels }
+    });
+  }
+
   if (window.daysWithAny === 0 && programGaps.some((g) => g.isFundamentalName && g.ratio < 0.7)) {
     suggestions.push({
       id: 'try_gtg_fundamentals',
@@ -304,7 +330,8 @@ export function computeGtgPracticeSuggestions({
     suggestions: suggestions.slice(0, 8),
     programGaps: programGaps.slice(0, 10),
     window,
-    rankings
+    rankings,
+    protocol
   };
 }
 

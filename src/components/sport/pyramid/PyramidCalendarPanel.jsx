@@ -135,8 +135,8 @@ const PyramidCalendarPanel = () => {
                 <div className="text-[11px] text-teal-200/70">pyramides</div>
               </div>
               <div className="mb-1 grid grid-cols-7 gap-1">
-                {WEEKDAYS_FR.map((w) => (
-                  <div key={`${month.monthIdx}-${w}`} className="text-center text-[10px] text-slate-500">
+                {WEEKDAYS_FR.map((w, i) => (
+                  <div key={`${month.monthIdx}-wd-${i}`} className="text-center text-[10px] text-slate-500">
                     {w}
                   </div>
                 ))}

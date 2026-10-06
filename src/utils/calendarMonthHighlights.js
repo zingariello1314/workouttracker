@@ -8,7 +8,7 @@ import { isDateInRecapWindow } from './sport/recapMuscleLoadEngine';
 import { inferMuscleGroupsForExercise } from './sport/recapMuscleInference';
 import { aggregateCheckedRepsByDateAndExerciseId } from './trainingLoadUtils';
 import { lookupProgramExerciseStub, aggregateLiftVolumeKgByDate } from './exerciseLoadVolume';
-import { weekRepTotalsForWindow } from './calendarWeekLeaders';
+import { weekRepTotalsForWindow, calendarWeekIdFromDate, emptyWeekBucketArray } from './calendarWeekLeaders';
 import { activeKcalFromDaily } from './calendarKcalLeader';
 import { sumGarminActivityCaloriesKcalForDate } from './calendarPhysicalSessionStripes';
 import { coachSleepHours } from './sport/recapCrossCoachAggregate';
@@ -99,11 +99,15 @@ function findBestDayVolumeKg(workoutData, window) {
   return best;
 }
 
-function weekBucketForDayOfMonth(dayNum) {
-  if (dayNum <= 7) return 0;
-  if (dayNum <= 14) return 1;
-  if (dayNum <= 21) return 2;
-  return 3;
+function weekBucketsForWindow(window) {
+  if (!window?.start) return [];
+  const week = calendarWeekIdFromDate(window.start);
+  if (!week) return [];
+  return emptyWeekBucketArray(week.year, week.monthIndex);
+}
+
+function weekBucketForDateYmd(dateYmd) {
+  return calendarWeekIdFromDate(dateYmd)?.bucket ?? null;
 }
 
 export function formatCalendarHighlightDayLabel(dateYmd, language = 'fr') {
@@ -149,15 +153,15 @@ function runningKmByDate(workoutData, garminData) {
 }
 
 function computeWeekKmTotals(workoutData, garminData, window) {
-  const sums = [0, 0, 0, 0];
-  if (!window) return sums;
+  const sums = weekBucketsForWindow(window);
+  if (!window || sums.length === 0) return sums;
   const kmByDate = runningKmByDate(workoutData, garminData);
   enumerateDatesInWindow(window).forEach((dateYmd) => {
     const km = kmByDate.get(dateYmd) || 0;
     if (km <= 0) return;
-    const dayNum = Number(String(dateYmd).slice(8, 10));
-    if (!Number.isFinite(dayNum)) return;
-    sums[weekBucketForDayOfMonth(dayNum)] += km;
+    const bucket = weekBucketForDateYmd(dateYmd);
+    if (bucket == null || bucket < 0 || bucket >= sums.length) return;
+    sums[bucket] += km;
   });
   return sums.map((value) => Math.round(value * 10) / 10);
 }
@@ -191,12 +195,12 @@ function computeActivityKcalAggregates(garminData, workoutData, window) {
 }
 
 function computeWeekStepAverages(garminData, workoutData, window) {
-  const sums = [0, 0, 0, 0];
-  const counts = [0, 0, 0, 0];
+  const sums = weekBucketsForWindow(window);
+  const counts = sums.map(() => 0);
+  if (!window || sums.length === 0) return sums;
   enumerateDatesInWindow(window).forEach((dateYmd) => {
-    const dayNum = Number(String(dateYmd).slice(8, 10));
-    if (!Number.isFinite(dayNum)) return;
-    const bucket = weekBucketForDayOfMonth(dayNum);
+    const bucket = weekBucketForDateYmd(dateYmd);
+    if (bucket == null || bucket < 0 || bucket >= sums.length) return;
     const steps = stepsForDate(garminData, workoutData, dateYmd);
     if (steps > 0) {
       sums[bucket] += steps;

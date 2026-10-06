@@ -163,21 +163,13 @@ export function useGarminImport() {
 
               if (existingRunningIdx >= 0) {
                 const prev = existingRunning[existingRunningIdx];
+                // Ne réécrire que si le type course/marche doit être corrigé — évite un updateData à chaque ouverture d’onglet
                 if (prev.type !== runType && (hasLaps || isWalk)) {
                   existingRunning[existingRunningIdx] = {
                     ...prev,
                     type: runType
                   };
                   importedCount++;
-                } else {
-                  existingRunning[existingRunningIdx] = {
-                    ...session,
-                    ...prev,
-                    id: prev.id,
-                    logicalDate: prev.logicalDate,
-                    date: prev.date ?? session.date,
-                    garminId: prev.garminId ?? session.garminId
-                  };
                 }
               } else if (
                 !activityExists(gAct, { swimming: [], jumprope: existingJumpRope, running: existingRunning })
@@ -198,7 +190,13 @@ export function useGarminImport() {
         newSessions.running = existingRunning;
       }
 
-      // 🟡 FIX #21 : Mettre à jour enduranceData avec retry en cas d'échec
+      // 🟡 FIX #21 : Mettre à jour enduranceData uniquement s’il y a du neuf (évite boucle freeze Marche/Course)
+      if (importedCount === 0) {
+        log.debug('No new Garmin activities to import');
+        retryCountRef.current = 0;
+        return { success: true, imported: 0, errors };
+      }
+
       try {
         await updateData({
           ...workoutData,

@@ -628,6 +628,56 @@
     "exerciseScheduleTitle": "Horaires de cet exercice",
     "exerciseScheduleSummary": "{{from}}–{{to}}, toutes les {{n}} h ({{count}} créneaux)",
     "exerciseSlotsToday": "Créneaux du jour pour cet exercice",
+    "protocolData": {
+      "title": "Données pour un protocole à toi",
+      "hint": "Optionnel mais utile : ton vrai max et ton poids calent les exemples (RIR, volume, % de lest) — pas de chiffres figés type « 15 tractions ».",
+      "later": "Plus tard",
+      "save": "Enregistrer",
+      "weightLabel": "Poids corporel",
+      "weightHint": "Pour les exemples de lest (+5 / +10 kg) dans le guide Protocole. Tu peux aussi le tirer du Body Tracking.",
+      "maxHint": "Max réel au même standard que tes passes GTG (pas une estimation). Sert au RIR et aux volumes du guide.",
+      "maxUnit": "reps max"
+    },
+    "protocolTrack": {
+      "title": "Dose & signaux (protocole)",
+      "hint": "RIR et % du max pour rester frais ; signaux à surveiller selon le mouvement ; ressenti en fin de journée.",
+      "noExercises": "Ajoute un exercice pour voir la dose et les signaux.",
+      "feelTitle": "Ressenti du jour",
+      "feelHint": "Optionnel — une pastille suffit. Aide à voir si la dose reste « greasy ».",
+      "zone": {
+        "minimal": "Minimal",
+        "conservative": "Prudent",
+        "solid": "Solide",
+        "demanding": "Exigeant",
+        "classic": "Classique"
+      },
+      "feel": {
+        "easy": "Facile",
+        "stable": "Stable",
+        "drift": "Dérive",
+        "hard": "Dur"
+      },
+      "signal": {
+        "amplitude": "Amplitude",
+        "trajectory": "Trajectoire",
+        "speed": "Vitesse",
+        "rir": "RIR",
+        "joints": "Articulations",
+        "reps": "Reps",
+        "wrists": "Poignets",
+        "height": "Hauteur",
+        "transition": "Transition",
+        "line": "Ligne",
+        "balance": "Équilibre",
+        "control": "Contrôle",
+        "legHeight": "Hauteur jambes",
+        "pelvis": "Bassin",
+        "shoulders": "Épaules",
+        "power": "Puissance",
+        "quality": "Qualité",
+        "recovery": "Récup"
+      }
+    },
     "calendar": {
       "perfUnit": "mini-séries GTG",
       "intensityHint": "Intensité = nombre de mini-séries GTG cochées ce jour-là (année affichée)."
@@ -637,8 +687,17 @@
       "reps28": "Reps GTG (28 j)",
       "activeDays28": "Jours actifs",
       "fullDays28": "Jours complets",
+      "protocolTitle": "Protocole · dose & qualité",
+      "protocolHint": "Ce que le guide demande de suivre : charge par exo (RIR / %), signaux prioritaires, ressenti sur 28 jours.",
+      "colDose": "Dose",
+      "colRir": "RIR",
+      "colZone": "Zone",
+      "colSignals": "Signaux",
+      "feelTitle": "Ressenti (28 j)",
+      "feelHint": "Répartition des journées notées en Pratique.",
+      "feelEmpty": "Aucun ressenti noté — utilise la bande en Pratique en fin de journée.",
       "coachTitle": "Avis & suggestions",
-      "coachHint": "Analyse de ta pratique GTG, de ton programme (prévu vs coches) et des fondamentaux — tout est optionnel.",
+      "coachHint": "Analyse de ta pratique GTG, de la dose protocole, de ton programme (prévu vs coches) et des fondamentaux — tout est optionnel.",
       "noSuggestions": "Pas assez de données pour des suggestions pour l'instant.",
       "programTitle": "Programme vs réalisé (28 j)",
       "programHint": "Reps prévues dans ton programme actif vs reps réellement cochées dans l'onglet Programme.",
@@ -664,7 +723,10 @@
         "gtgCoachTodayAlmost": "Aujourd'hui à {{pct}} % du plan GTG — encore un ou deux créneaux faciles si tu as le temps.",
         "gtgCoachTryFundamentals": "Tes fondamentaux (tractions, dips, pompes) sont en retard vs le programme : le GTG est fait pour ça, sans séance lourde.",
         "gtgCoachProgressionRep": "Plusieurs journées GTG complètes : si c'est trop facile plusieurs jours d'affilée, +1 rep par série.",
-        "gtgCoachCustomWorking": "{{name}} (banque) répond bien en GTG — bon candidat à garder dans la rotation."
+        "gtgCoachCustomWorking": "{{name}} (banque) répond bien en GTG — bon candidat à garder dans la rotation.",
+        "gtgCoachDoseClassic": "{{name}} est à ~{{pct}} % du max (RIR {{rir}}) — zone classique / haute : baisse les reps si la qualité ou le ressenti dérive.",
+        "gtgCoachDoseDemanding": "{{name}} est en zone exigeante (~{{pct}} %, RIR {{rir}}) — OK si frais ; sinon descends vers 25–35 %.",
+        "gtgCoachFeelStress": "{{pct}} % des jours notés sont « dérive » ou « dur » ({{days}} j) — allège la dose ou les créneaux quelques jours."
       }
     }
   },

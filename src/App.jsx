@@ -337,8 +337,6 @@ const WorkoutTrackerContent = () => {
         return <ProgressTab />;
       case 'endurance':
         return <EnduranceTab />;
-      case 'calendar':
-        return <CalendarTab />;
       case 'program':
         return <ProgramTab />;
       case 'addiction-quit':

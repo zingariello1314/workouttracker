@@ -624,6 +624,56 @@
     "exerciseScheduleTitle": "This exercise's schedule",
     "exerciseScheduleSummary": "{{from}}–{{to}}, every {{n}} h ({{count}} slots)",
     "exerciseSlotsToday": "Today's slots for this exercise",
+    "protocolData": {
+      "title": "Data for a protocol that fits you",
+      "hint": "Optional but useful: your real max and bodyweight tune the examples (RIR, volume, weighted %) — no rigid “15 pull-ups” defaults.",
+      "later": "Later",
+      "save": "Save",
+      "weightLabel": "Bodyweight",
+      "weightHint": "For weighted examples (+5 / +10 kg) in the Protocol guide. Can also come from Body Tracking.",
+      "maxHint": "Real max at the same standard as your GTG sets (not an estimate). Feeds RIR and volume examples in the guide.",
+      "maxUnit": "rep max"
+    },
+    "protocolTrack": {
+      "title": "Dose & signals (protocol)",
+      "hint": "RIR and % of max to stay fresh; movement-specific signals; end-of-day feel.",
+      "noExercises": "Add an exercise to see dose and signals.",
+      "feelTitle": "Day feel",
+      "feelHint": "Optional — one tap is enough. Helps see if the dose stays greasy.",
+      "zone": {
+        "minimal": "Minimal",
+        "conservative": "Prudent",
+        "solid": "Solid",
+        "demanding": "Demanding",
+        "classic": "Classic"
+      },
+      "feel": {
+        "easy": "Easy",
+        "stable": "Stable",
+        "drift": "Drift",
+        "hard": "Hard"
+      },
+      "signal": {
+        "amplitude": "ROM",
+        "trajectory": "Path",
+        "speed": "Speed",
+        "rir": "RIR",
+        "joints": "Joints",
+        "reps": "Reps",
+        "wrists": "Wrists",
+        "height": "Height",
+        "transition": "Transition",
+        "line": "Line",
+        "balance": "Balance",
+        "control": "Control",
+        "legHeight": "Leg height",
+        "pelvis": "Pelvis",
+        "shoulders": "Shoulders",
+        "power": "Power",
+        "quality": "Quality",
+        "recovery": "Recovery"
+      }
+    },
     "calendar": {
       "perfUnit": "GTG mini-sets",
       "intensityHint": "Intensity = GTG mini-sets checked that day (displayed year)."
@@ -633,8 +683,17 @@
       "reps28": "GTG reps (28d)",
       "activeDays28": "Active days",
       "fullDays28": "Full days",
+      "protocolTitle": "Protocol · dose & quality",
+      "protocolHint": "What the guide asks you to track: per-move load (RIR / %), priority signals, feel over 28 days.",
+      "colDose": "Dose",
+      "colRir": "RIR",
+      "colZone": "Zone",
+      "colSignals": "Signals",
+      "feelTitle": "Feel (28d)",
+      "feelHint": "Distribution of days tagged in Practice.",
+      "feelEmpty": "No feel logged yet — use the Practice strip at end of day.",
       "coachTitle": "Insights & suggestions",
-      "coachHint": "GTG practice, program planned vs checked, and fundamentals — all optional.",
+      "coachHint": "GTG practice, protocol dose, program planned vs checked, and fundamentals — all optional.",
       "noSuggestions": "Not enough data for suggestions yet.",
       "programTitle": "Program vs done (28d)",
       "programHint": "Planned reps in your active program vs reps checked in the Program tab.",
@@ -660,7 +719,10 @@
         "gtgCoachTodayAlmost": "Today at {{pct}}% of GTG plan — one or two more easy slots if you have time.",
         "gtgCoachTryFundamentals": "Fundamentals (pull-ups, dips, push-ups) lag the program — GTG is built for that without a heavy session.",
         "gtgCoachProgressionRep": "Several full GTG days — if sets feel trivial for days, add +1 rep per set.",
-        "gtgCoachCustomWorking": "{{name}} (bank) responds well to GTG — worth keeping in rotation."
+        "gtgCoachCustomWorking": "{{name}} (bank) responds well to GTG — worth keeping in rotation.",
+        "gtgCoachDoseClassic": "{{name}} is ~{{pct}}% of max (RIR {{rir}}) — classic/high zone: drop reps if quality or feel drifts.",
+        "gtgCoachDoseDemanding": "{{name}} is in a demanding zone (~{{pct}}%, RIR {{rir}}) — fine if fresh; otherwise aim 25–35%.",
+        "gtgCoachFeelStress": "{{pct}}% of tagged days are drift/hard ({{days}}d) — ease dose or slots for a few days."
       }
     }
   },

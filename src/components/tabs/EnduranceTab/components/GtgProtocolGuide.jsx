@@ -4,11 +4,14 @@ import { useProfileQuestionnaire } from '../../../../features/profileQuestionnai
 import { useTranslation } from '../../../../utils/translations';
 import {
   defaultGtgProtocolGoal,
+  estimateGtgMaxFromWorkingReps,
   estimateGtgProtocolDay,
   getGtgExerciseLabel,
   normalizeGtgData,
+  resolveGtgBodyWeightKg,
   resolveGtgMaxReps,
   todayYmd,
+  updateGtgExerciseConfig,
   updateGtgProtocolExercise
 } from '../../../../services/endurance/gtgService';
 import { applyGtgDeclaredMaxToData } from '../../../../services/endurance/gtgMaxPerformance';
@@ -22,70 +25,64 @@ const RAIL = [
       ['s01', '01 Définition'],
       ['s02', '02 Pourquoi'],
       ['s03', '03 Spécificité'],
-      ['s04', '04 Sans échec'],
-      ['s05', '05 Fatigue'],
-      ['s06', '06 RIR'],
-      ['s07', '07 Ton cas'],
-      ['s08', '08 Combien'],
-      ['s09', '09 2–3 reps']
+      ['s04', '04 Échec & fatigue'],
+      ['s06', '05 RIR & intensité'],
+      ['s09', '06 Combien de reps'],
+      ['s11', '07 Autorégulation'],
+      ['s12', '08 Signaux'],
+      ['s15', '09 Volume'],
+      ['s17', '10 Ratio'],
+      ['s19', '11 Tractions']
     ]
   },
   {
     id: 'II',
-    title: 'II — La question du lest',
+    title: 'II — Lest',
     links: [
-      ['s10', '10 Pourquoi lester'],
-      ['s11', '11 Le mécanisme'],
-      ['s12', '12 Le piège'],
-      ['s13', '13 GTG + force'],
-      ['s14', '14 Pas obligatoire'],
-      ['s15', '15 Étude grimpeurs'],
-      ['s16', '16 Le volume'],
-      ['s17', '17 Le ratio'],
-      ['s18', '18 Hypertrophie'],
-      ['s19', '19 Pourquoi tractions']
+      ['s20', '12 Pourquoi lester'],
+      ['s22', '13 Continuum'],
+      ['s25', '14 Force ≠ série'],
+      ['s28', '15 Trois volets']
     ]
   },
   {
     id: 'III',
     title: 'III — Par mouvement',
     links: [
-      ['s20', '20 Pompes'],
-      ['s21', '21 Dips'],
-      ['s22', '22 Technique'],
-      ['s23', '23 Explosif'],
-      ['s24', '24 Quand lester'],
-      ['s25', '25 Effet indirect'],
-      ['s26', '26 Force ≠ endurance'],
-      ['s27', '27 Les charges'],
-      ['s28', '28 Synthèse']
+      ['s29', '16 Matrice'],
+      ['s30', '17 Pompes & dips'],
+      ['s32', '18 Isométriques'],
+      ['s34', '19 Technique & explosif'],
+      ['s36', '20 Objectifs']
     ]
   },
   {
     id: 'IV',
-    title: 'IV — Ton programme',
+    title: 'IV — Construire',
     links: [
-      ['s29', '29 Pas toute la journée'],
-      ['s30', '30 Trop dur ?'],
-      ['s31', '31 Récupération'],
-      ['s32', '32 Le piège'],
-      ['s33', '33 Ton plan'],
-      ['s34', '34 Ton lest'],
-      ['s35', '35 Ton max'],
-      ['s36', '36 Pas chaque jour'],
-      ['s37', '37 4×5 vs GTG'],
-      ['s38', '38 Optimisation'],
-      ['s39', '39 L’idée centrale'],
-      ['s40', '40 Verdict'],
-      ['s41', '41 Conclusion']
+      ['s38', '21 Logique GTG'],
+      ['s40', '22 Volume & récup'],
+      ['s43', '23 Progresser'],
+      ['s46', '24 Limites']
     ]
   },
   {
     id: 'V',
-    title: 'V — La science',
+    title: 'V — Science',
     links: [
-      ['s42', '42 Ce qu’on sait'],
+      ['s50', '25 Preuves'],
       ['sources', 'Sources']
+    ]
+  },
+  {
+    id: 'VI',
+    title: 'VI — Ton cas',
+    links: [
+      ['s53', '26 Point de départ'],
+      ['s56', '27 Progression'],
+      ['s57', '28 Mesurer'],
+      ['s59', '29 Boîte à outils'],
+      ['s62', '30 Conclusion']
     ]
   }
 ];
@@ -135,8 +132,20 @@ function computeGtgAnchorOffset(root) {
   return headerH + extra + 8;
 }
 
-function ProtocolExerciseCard({ name, currentMax, goal, onChangeMax, onChangeGoal }) {
-  const est = estimateGtgProtocolDay(currentMax, goal);
+function ProtocolExerciseCard({
+  name,
+  currentMax,
+  goal,
+  workingReps,
+  maxIsEstimated,
+  onChangeMax,
+  onChangeGoal,
+  onChangeReps
+}) {
+  const est = estimateGtgProtocolDay(currentMax, goal, {
+    workingReps,
+    maxEstimatedFromReps: maxIsEstimated
+  });
   return (
     <div className="gauge-wrap">
       <h2 className="gauge-exercise">{name}</h2>
@@ -161,6 +170,11 @@ function ProtocolExerciseCard({ name, currentMax, goal, onChangeMax, onChangeGoa
             onChange={(e) => onChangeMax(e.target.value)}
           />
           <span className="lbl">Max actuel</span>
+          {maxIsEstimated ? (
+            <span className="gauge-hint">estimé ≈ 2× reps</span>
+          ) : (
+            <span className="gauge-hint">ton vrai max</span>
+          )}
         </div>
         <div className="gauge-arrow">→</div>
         <div className="gauge-stat">
@@ -179,8 +193,17 @@ function ProtocolExerciseCard({ name, currentMax, goal, onChangeMax, onChangeGoa
       </div>
       <div className="gauge-metrics bottom">
         <div className="gauge-stat">
-          <span className="val">{est.reps}</span>
-          <span className="lbl">reps</span>
+          <input
+            className="gauge-input gauge-input-sm"
+            type="number"
+            min={1}
+            max={200}
+            inputMode="numeric"
+            aria-label="Reps par créneau"
+            value={est.reps}
+            onChange={(e) => onChangeReps(e.target.value)}
+          />
+          <span className="lbl">reps / passage</span>
         </div>
         <div className="gauge-stat">
           <span className="val">{est.minPassages}</span>
@@ -209,6 +232,80 @@ export default function GtgProtocolGuide() {
 
   const selectedIds = gtgData.config.selectedIds || [];
 
+  const caseExample = useMemo(() => {
+    const enabledId =
+      selectedIds.find((id) => gtgData.config.protocolByExercise?.[id]?.enabled !== false) ||
+      selectedIds[0] ||
+      null;
+    if (!enabledId) {
+      return { max: 9, reps: 2, goal: 15, label: 'tractions' };
+    }
+    const proto = gtgData.config.protocolByExercise?.[enabledId] || {};
+    const workingRepsRaw = gtgData.config.perExercise?.[enabledId]?.repsPerSet;
+    const workingReps =
+      Number.isFinite(Number(workingRepsRaw)) && Number(workingRepsRaw) > 0
+        ? Math.round(Number(workingRepsRaw))
+        : null;
+    const estimatedMax =
+      workingReps != null ? estimateGtgMaxFromWorkingReps(workingReps) : null;
+    const resolvedMax = resolveGtgMaxReps(enabledId, ctx);
+    const max =
+      proto.currentMax > 0
+        ? Math.round(proto.currentMax)
+        : estimatedMax != null
+          ? estimatedMax
+          : resolvedMax > 0
+            ? Math.round(resolvedMax)
+            : 9;
+    const reps =
+      workingReps != null
+        ? workingReps
+        : Math.max(1, Math.min(3, Math.round(max * 0.25) || 2));
+    const goal = proto.goal > 0 ? Math.round(proto.goal) : defaultGtgProtocolGoal(max);
+    return {
+      max,
+      reps,
+      goal,
+      label: getGtgExerciseLabel(enabledId, gtgData.config, ctx)
+    };
+  }, [selectedIds, gtgData, ctx]);
+
+  const mx = caseExample.max;
+  const wr = caseExample.reps;
+  const pct2 = mx > 0 ? Math.round((2 / mx) * 100) : 22;
+  const pct3 = mx > 0 ? Math.round((3 / mx) * 100) : 33;
+  const pct5 = mx > 0 ? Math.round((5 / mx) * 100) : 56;
+  const pctWr = mx > 0 ? Math.round((wr / mx) * 100) : null;
+  const rirWr = mx > 0 ? Math.max(0, mx - wr) : null;
+
+  const bodyW = useMemo(
+    () => resolveGtgBodyWeightKg(gtgData, { workoutData: data, profileQuestionnaire }),
+    [gtgData, data, profileQuestionnaire]
+  );
+  const bwKnown = bodyW.known;
+  const bw = bodyW.kg;
+  const bwLabel = bwKnown ? `${bw}` : '~70';
+  const bwPlus5 = bwKnown ? Math.round((bw + 5) * 10) / 10 : 75;
+  const bwPlus10 = bwKnown ? Math.round((bw + 10) * 10) / 10 : 80;
+  const pctLest5 = bwKnown ? Math.round((5 / bw) * 1000) / 10 : 7.1;
+  const pctLest10 = bwKnown ? Math.round((10 / bw) * 1000) / 10 : 14.3;
+
+  const dayEstimate = useMemo(
+    () => estimateGtgProtocolDay(mx, caseExample.goal, { workingReps: wr }),
+    [mx, caseExample.goal, wr]
+  );
+  const passagesEx = Math.max(
+    dayEstimate.minPassages || 4,
+    Math.min(dayEstimate.maxPassages || 8, Math.round(((dayEstimate.minPassages || 4) + (dayEstimate.maxPassages || 8)) / 2))
+  );
+  const dayVol = wr * passagesEx;
+  const weekVol = dayVol * 5;
+
+  const pushMax = useMemo(() => resolveGtgMaxReps('pushups', ctx), [ctx]);
+  const dipMax = useMemo(() => resolveGtgMaxReps('dips', ctx), [ctx]);
+  const pushStartLow = Math.max(1, Math.round(pushMax * 0.25));
+  const pushStartHigh = Math.max(pushStartLow, Math.round(pushMax * 0.35));
+
   const persistProtocol = useCallback(
     (exerciseId, patch) => {
       if (typeof updateData !== 'function') return;
@@ -234,6 +331,30 @@ export default function GtgProtocolGuide() {
       updateData(nextData);
     },
     [data, gtgData, updateData, ctx]
+  );
+
+  const persistWorkingReps = useCallback(
+    (exerciseId, raw) => {
+      if (typeof updateData !== 'function') return;
+      const trimmed = String(raw ?? '').trim();
+      const n = trimmed === '' ? null : Math.round(Number(String(trimmed).replace(',', '.')));
+      const repsPerSet = Number.isFinite(n) && n > 0 ? n : null;
+      let nextGtg = updateGtgExerciseConfig(gtgData, exerciseId, { repsPerSet });
+      const proto = nextGtg.config.protocolByExercise?.[exerciseId] || {};
+      // Si le max n’a pas été saisi à la main, on laisse l’estimation suivre les reps
+      if (!(proto.currentMax > 0) && repsPerSet > 0) {
+        // no-op on protocol.currentMax — l’UI estimera via estimateGtgMaxFromWorkingReps
+      }
+      updateData({
+        ...data,
+        enduranceData: {
+          ...(data.enduranceData || {}),
+          gtg: nextGtg,
+          lastUpdated: new Date().toISOString()
+        }
+      });
+    },
+    [data, gtgData, updateData]
   );
 
   useEffect(() => {
@@ -347,8 +468,21 @@ export default function GtgProtocolGuide() {
               .filter((id) => gtgData.config.protocolByExercise?.[id]?.enabled !== false)
               .map((id) => {
                 const proto = gtgData.config.protocolByExercise?.[id] || {};
+                const workingRepsRaw = gtgData.config.perExercise?.[id]?.repsPerSet;
+                const workingReps =
+                  Number.isFinite(Number(workingRepsRaw)) && Number(workingRepsRaw) > 0
+                    ? Math.round(Number(workingRepsRaw))
+                    : null;
+                const estimatedMax =
+                  workingReps != null ? estimateGtgMaxFromWorkingReps(workingReps) : null;
                 const resolvedMax = resolveGtgMaxReps(id, ctx);
-                const currentMax = proto.currentMax > 0 ? proto.currentMax : resolvedMax;
+                const maxIsEstimated = !(proto.currentMax > 0) && estimatedMax != null;
+                const currentMax =
+                  proto.currentMax > 0
+                    ? proto.currentMax
+                    : estimatedMax != null
+                      ? estimatedMax
+                      : resolvedMax;
                 const goal =
                   proto.goal > 0 ? proto.goal : defaultGtgProtocolGoal(currentMax);
                 return (
@@ -357,8 +491,11 @@ export default function GtgProtocolGuide() {
                     name={getGtgExerciseLabel(id, gtgData.config, ctx)}
                     currentMax={currentMax}
                     goal={goal}
+                    workingReps={workingReps}
+                    maxIsEstimated={maxIsEstimated}
                     onChangeMax={(raw) => persistProtocol(id, { currentMax: raw })}
                     onChangeGoal={(raw) => persistProtocol(id, { goal: raw })}
+                    onChangeReps={(raw) => persistWorkingReps(id, raw)}
                   />
                 );
               })}
@@ -392,694 +529,1367 @@ export default function GtgProtocolGuide() {
 
             <Sec id="s01" num="01" title="Qu’est-ce que le Grease the Groove ?">
               <p>
-                Le Grease the Groove, généralement abrégé GTG, est une méthode d’entraînement destinée
-                principalement à améliorer la performance dans un mouvement précis. L’idée
-                fondamentale est simple : faire très souvent le mouvement, mais avec suffisamment peu
-                de fatigue pour pouvoir le refaire fréquemment.
+                Le <strong>Grease the Groove (GTG)</strong> est une méthode de pratique destinée à
+                améliorer la performance dans un mouvement précis en multipliant les occasions de
+                l’exécuter — sans que chaque exposition ne devienne une vraie série d’entraînement
+                fatigante.
               </p>
+              <div className="quote">Pratiquer souvent, avec suffisamment de marge pour pouvoir pratiquer à nouveau.</div>
               <p>
-                Contrairement à une séance classique où tu pourrais faire 4 × 5 tractions suivies d’un
-                repos puis recommencer, le GTG disperse les répétitions dans la journée. Par exemple,
-                tu pourrais faire 2 tractions à 10h, 2 à 12h, 2 à 14h, 2 à 16h et 2 à 18h : tu as
-                effectué 10 répétitions, mais elles n’ont pas été concentrées dans une seule séance.
+                Chaque exposition doit rester assez submaximale pour préserver la qualité, limiter la
+                fatigue aiguë et permettre de répéter le mouvement régulièrement. Le GTG n’impose{' '}
+                <strong>ni nombre universel de reps, ni % fixe du max, ni intervalle obligatoire</strong>{' '}
+                entre les séries.
               </p>
-              <p>
-                Le principe n’est donc pas simplement de faire beaucoup de répétitions, c’est de
-                multiplier les occasions de pratiquer le mouvement sans accumuler énormément de
-                fatigue à chaque occasion.
-              </p>
+              <ul className="bullets">
+                <li>niveau du pratiquant, mouvement et variante</li>
+                <li>charge externe éventuelle et nombre de reps</li>
+                <li>proximité de l’échec et fréquence des expositions</li>
+                <li>capacité à récupérer de l’ensemble du programme</li>
+              </ul>
+              <div className="principle">
+                Méthode de distribution de la pratique et de gestion de la fatigue — pas une recette « X
+                reps toutes les Y heures ».
+              </div>
+              <div className="split">
+                <div className="a">
+                  <h4>Séance classique</h4>
+                  <p>
+                    4 × 5 → repos → encore des séries. Volume concentré : la fatigue monte et peut
+                    modifier les perfs en cours de séance.
+                  </p>
+                </div>
+                <div className="b">
+                  <h4>GTG</h4>
+                  <p>
+                    2–3 reps → plusieurs heures → 2–3 reps… Pratique répartie : chaque exposition peut
+                    rester plus fraîche.
+                  </p>
+                </div>
+              </div>
+              <div className="quote">
+                La différence n’est pas « beaucoup vs peu de reps » — c’est volume concentré vs volume
+                distribué. À volume équivalent, une fréquence plus élevée n’est pas automatiquement
+                supérieure : l’intérêt du GTG est surtout la qualité et la distribution de la pratique.
+              </div>
             </Sec>
 
             <Sec id="s02" num="02" title="Pourquoi cette méthode peut fonctionner">
               <p>
-                Il faut comprendre qu’une performance comme une traction maximale n’est pas uniquement
-                déterminée par la taille ou la force brute de tes muscles. Elle dépend notamment de la
-                force musculaire, de la coordination intermusculaire, de la coordination
-                intramusculaire, de la capacité du système nerveux à recruter les unités motrices, de
-                la technique, de la trajectoire, du rythme du mouvement, de la capacité à maintenir
-                cette technique lorsque la fatigue augmente, et de la spécificité de l’exercice. C’est
-                particulièrement important pour les mouvements comme les tractions, les pompes, les
-                dips, le muscle-up, le handstand ou le L-sit.
+                Une performance ne dépend pas uniquement de la quantité de muscle. Pour une traction
+                propre, il faut notamment :
               </p>
+              <ul className="bullets">
+                <li>produire assez de force et activer les muscles au bon moment</li>
+                <li>coordonner les articulations, contrôler la trajectoire</li>
+                <li>stabiliser le tronc, position efficace des épaules / omoplates</li>
+                <li>appliquer cette force dans le contexte précis du mouvement</li>
+              </ul>
+              <div className="quote">
+                Les premières améliorations sur un mouvement complexe peuvent être fortement influencées
+                par des adaptations neuromusculaires et spécifiques à la tâche — sans que le muscle soit
+                exclu. Les adaptations de force peuvent dépendre de la tâche entraînée.
+              </div>
+              <div className="split">
+                <div className="a">
+                  <h4>Débutant</h4>
+                  <p>
+                    Beaucoup de progression via l’apprentissage : trajectoire, coordination, moins de
+                    parasites, meilleur timing, meilleure utilisation des muscles déjà disponibles —
+                    sans transformer immédiatement la masse.
+                  </p>
+                </div>
+                <div className="b">
+                  <h4>Avancé</h4>
+                  <p>
+                    Moins de « gains gratuits ». La progression dépend davantage de force max / relative,
+                    puissance, endurance spécifique, maintien de la technique sous contrainte.
+                  </p>
+                </div>
+              </div>
               <p>
-                Tu peux donc devenir meilleur à un mouvement non seulement parce que tes muscles
-                deviennent plus gros, mais aussi parce que ton système nerveux devient plus efficace
-                pour produire ce mouvement. C’est l’une des raisons pour lesquelles le GTG est
-                particulièrement intéressant pour les exercices où l’objectif est d’augmenter le
-                nombre de répétitions propres.
+                Le GTG ne remplace pas toutes les autres formes d’entraînement. Son intérêt apparaît
+                surtout quand une partie de la limitation vient du fait que{' '}
+                <strong>le mouvement lui-même doit être beaucoup pratiqué</strong>, avec une qualité
+                assez élevée. C’est une méthode de pratique — pas une théorie où toute progression serait
+                « simplement nerveuse ».
               </p>
             </Sec>
 
             <Sec id="s03" num="03" title="Le principe de spécificité">
               <p>
-                C’est probablement l’un des concepts les plus importants à comprendre. Si ton objectif
-                est de faire davantage de tractions, alors faire des tractions est extrêmement
-                spécifique à cet objectif. Faire du tirage horizontal peut renforcer certains muscles
-                utiles, faire du curl peut renforcer les biceps, faire du rowing peut renforcer le
-                dos, mais aucun de ces exercices ne reproduit exactement la coordination nécessaire
-                pour réaliser une traction.
+                Plus l’objectif concerne un mouvement précis, plus une partie importante de
+                l’entraînement doit en reproduire les caractéristiques pertinentes. Pour{' '}
+                {caseExample.label}, pratiquer ce mouvement reste le moyen le plus spécifique.
+                Complémentaires (rowing, développé, curl…) renforcent des capacités utiles sans
+                reproduire prise, trajectoire, amplitude, coordination, stabilisation ni la façon dont
+                la fatigue s’exprime dans le mouvement cible.
               </p>
-              <p>
-                C’est le principe de spécificité de l’entraînement, et cela explique pourquoi le GTG
-                peut être particulièrement intéressant pour les mouvements au poids du corps : tu
-                pratiques exactement la compétence que tu souhaites améliorer, très régulièrement.
-              </p>
-            </Sec>
-
-            <Sec id="s04" num="04" title="Le deuxième principe : ne pas aller à l’échec">
-              <p>
-                C’est là que le GTG se distingue vraiment d’un entraînement classique. Supposons que
-                ton maximum actuel soit 9 tractions. Si tu fais 9 reps, tu es à l’échec ou
-                pratiquement à l’échec ; si tu fais 8 reps, tu es extrêmement proche de l’échec ; mais
-                si tu fais 2 à 3 reps, tu es très loin de ton maximum. Et c’est précisément ce que
-                l’on recherche avec le GTG.
-              </p>
-              <p>
-                La littérature scientifique moderne est d’ailleurs assez intéressante sur ce point :
-                atteindre systématiquement l’échec n’est pas nécessaire pour développer la force. Une
-                méta-analyse de 2022 portant sur 15 études n’a trouvé aucune différence significative
-                globale entre l’entraînement à l’échec et sans échec pour les gains de force ou
-                d’hypertrophie. Une méta-analyse publiée en 2026, portant sur 20 études et 556
-                participants, arrive également à la conclusion que l’entraînement sans échec est au
-                moins aussi efficace pour la plupart des adaptations neuromusculaires et pourrait même
-                présenter un petit avantage pour la force dynamique.
-              </p>
-              <p>
-                Cela ne signifie pas que l’échec est mauvais, cela signifie plutôt qu’il n’est pas
-                obligatoire pour progresser. Et pour une méthode basée sur la répétition fréquente
-                d’un mouvement, c’est extrêmement intéressant.
-              </p>
-            </Sec>
-
-            <Sec id="s05" num="05" title="Pourquoi éviter la fatigue dans le GTG">
-              <div className="split">
-                <div className="a">
-                  <h4>5 reps, frais</h4>
-                  <p>
-                    Technique propre, descente et remontée contrôlées. Tu recommences plusieurs heures
-                    plus tard dans le même état.
-                  </p>
+              <div className="quote">
+                La spécificité n’est pas binaire — c’est un continuum. Un exercice peut être très
+                spécifique sur une dimension et beaucoup moins sur une autre.
+              </div>
+              <div className="metrics-4">
+                <div>
+                  <div className="k">Mouvement</div>
+                  <p>Même geste ou geste différent ?</p>
                 </div>
-                <div className="b">
-                  <h4>9 reps, à l’échec</h4>
-                  <p>
-                    Dernières répétitions lentes, technique dégradée, récupération longue avant de
-                    pouvoir recommencer.
-                  </p>
+                <div>
+                  <div className="k">Charge</div>
+                  <p>PDC, externe, assistance ou variante plus dure ?</p>
+                </div>
+                <div>
+                  <div className="k">Vitesse / amplitude</div>
+                  <p>Contrôlé, dynamique, explosif ? Même amplitude ?</p>
+                </div>
+                <div>
+                  <div className="k">Fatigue</div>
+                  <p>Rep isolée, petite série ou longue série ?</p>
                 </div>
               </div>
               <p>
-                La seconde situation produit beaucoup plus de fatigue, mais elle ne produit pas
-                nécessairement davantage d’amélioration de ta capacité à faire une nouvelle série
-                plusieurs heures plus tard. C’est justement pour cela que le GTG cherche à maximiser
-                la qualité de pratique rapportée à la fatigue, plutôt que simplement la fatigue par
-                séance.
+                Une traction lestée peut être <strong>très spécifique à la traction comme mouvement</strong>
+                , tout en étant moins spécifique à une série longue au poids du corps ({mx} →{' '}
+                {caseExample.goal}) : même geste, résistance par rep différente. Cohérent avec la
+                littérature : les adaptations de force dépendent de la tâche réellement entraînée.
               </p>
             </Sec>
 
-            <Sec id="s06" num="06" title="Le concept de RIR">
+            <Sec id="s04" num="04" title="Échec, fatigue et répétabilité">
               <p>
-                Pour comprendre le GTG, il faut connaître le RIR (Reps In Reserve), c’est-à-dire le
-                nombre de répétitions que tu pourrais encore faire avant l’échec. Ce sont des
-                estimations : le RIR réel varie selon la fatigue, la technique, le jour ou le
-                sommeil — mais cela permet de comprendre ton cas, avec un maximum de 9.
+                Le GTG ne transforme pas chaque exposition en test maximal. L’échec n’est pas nécessaire
+                pour provoquer des adaptations — les méta-analyses ne montrent pas de supériorité
+                systématique de l’échec pour force ou hypertrophie.
+              </p>
+              <div className="quote">Mais « plus loin de l’échec = toujours mieux » n’est pas non plus la règle.</div>
+              <div className="stat-row">
+                <div>
+                  <div className="num">{mx}</div>
+                  <div className="lbl">0 RIR — échec</div>
+                </div>
+                <div>
+                  <div className="num">{Math.max(1, mx - 1)}</div>
+                  <div className="lbl">~1 RIR — trop proche</div>
+                </div>
+                <div>
+                  <div className="num">2–3</div>
+                  <div className="lbl">marge / répétabilité</div>
+                </div>
+              </div>
+              <p>
+                Plus on se rapproche de l’échec, plus la fatigue aiguë monte et plus certaines qualités
+                de performance chutent. Compare deux séries du même mouvement :
+              </p>
+              <div className="split">
+                <div className="a">
+                  <h4>Série A</h4>
+                  <p>
+                    Reps propres, amplitude et trajectoire stables, vitesse relative conservée, marge
+                    importante.
+                  </p>
+                </div>
+                <div className="b">
+                  <h4>Série B</h4>
+                  <p>
+                    Reps plus lentes, amplitude qui raccourcit, trajectoire dégradée, compensations,
+                    dernière rep très proche de la limite.
+                  </p>
+                </div>
+              </div>
+              <div className="principle">
+                Les deux peuvent stimuler — mais pas le même coût immédiat, ni la même facilité à être
+                reproduites plusieurs fois dans la journée. Compromis : stimulus spécifique × qualité ×
+                répétabilité.
+              </div>
+            </Sec>
+
+            <Sec id="s06" num="05" title="RIR, % du max et ton cas">
+              <p>
+                Le <strong>RIR</strong> (<em>Repetitions In Reserve</em>) = reps qu’il resterait
+                théoriquement possible de faire avant l’échec dans les mêmes conditions. Si{' '}
+                <strong>{mx}</strong> est réellement ton max <em>du jour</em> au même standard :
               </p>
               <div className="box">
+                <div className="box-title">Approximation théorique — max du jour = {mx}</div>
                 <table className="rir">
                   <thead>
                     <tr>
-                      <th>Répétitions</th>
-                      <th>RIR estimé</th>
+                      <th>Reps réalisées</th>
+                      <th>RIR théorique</th>
                     </tr>
                   </thead>
                   <tbody>
-                    {[
-                      ['9 reps', '0 RIR'],
-                      ['8 reps', '~1 RIR'],
-                      ['7 reps', '~2 RIR'],
-                      ['6 reps', '~3 RIR'],
-                      ['5 reps', '~4 RIR'],
-                      ['4 reps', '~5 RIR'],
-                      ['3 reps', '~6 RIR'],
-                      ['2 reps', '~7 RIR'],
-                      ['1 rep', '~8 RIR']
-                    ].map(([reps, rir]) => (
-                      <tr key={reps}>
-                        <td className="reps">{reps}</td>
-                        <td>{rir}</td>
-                      </tr>
-                    ))}
+                    {Array.from({ length: Math.min(mx, 9) }, (_, i) => {
+                      const reps = mx - i;
+                      return (
+                        <tr key={reps}>
+                          <td className="reps">{reps}</td>
+                          <td>{i === 0 ? '0' : `~${i}`}</td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+              <p>
+                Moins fiable si le max est ancien, la récup varie, la technique n’est pas standardisée,
+                la vitesse change, ou le « max » n’est pas réellement maximal.
+              </p>
+              <div className="metrics-4">
+                <div>
+                  <div className="k">% max de reps</div>
+                  <p>
+                    {`2/${mx} ≈ ${pct2}%`} = proportion de reps effectuées — pas « {pct2}% d’intensité ».
+                  </p>
+                </div>
+                <div>
+                  <div className="k">% 1RM</div>
+                  <p>
+                    Au PDC : charge externe max ≠ résistance totale ≠ difficulté de variante. Pas
+                    interchangeables.
+                  </p>
+                </div>
+                <div>
+                  <div className="k">RIR / RPE</div>
+                  <p>Marge et effort ressenti vs la limite du jour — mieux pour autoréguler.</p>
+                </div>
+                <div>
+                  <div className="k">Ton cas</div>
+                  <p>
+                    5/{mx} = {pct5}% du max de reps. Ne permet pas de conclure à un RIR fixe ni à un %
+                    d’intensité.
+                  </p>
+                </div>
+              </div>
+              <div className="quote">
+                Le % du max de reps est un repère descriptif, pas une mesure complète de l’intensité.
+              </div>
+            </Sec>
+
+            <Sec id="s09" num="06" title="Combien de répétitions pour ton GTG ?">
+              <p>
+                Il n’existe pas de chiffre scientifiquement établi du type « max {mx} → GTG optimal =
+                exactement X reps ». Les études éclairent charge, effort, fatigue, force et hypertrophie
+                — elles ne démontrent pas 2 ou 3 reps comme dose universelle.
+              </p>
+              <div className="rep-grid">
+                <div>
+                  <div className="n">1</div>
+                  <div className="t">rep</div>
+                  <div className="d">Très faible coût, qualité max, exposition minimale</div>
+                </div>
+                <div className="pick">
+                  <div className="n">2</div>
+                  <div className="t">reps</div>
+                  <div className="d">Très conservateur</div>
+                </div>
+                <div className="pick">
+                  <div className="n">3</div>
+                  <div className="t">reps</div>
+                  <div className="d">Toujours submax, exposition plus réelle</div>
+                </div>
+                <div>
+                  <div className="n">4</div>
+                  <div className="t">reps</div>
+                  <div className="d">Demande sensiblement plus importante</div>
+                </div>
+                <div>
+                  <div className="n">5</div>
+                  <div className="t">reps</div>
+                  <div className="d">Se rapproche d’une série classique</div>
+                </div>
+              </div>
+              <div className="quote">
+                Avec un max de {mx}, 2–3 reps = point de départ prudent, pas zone optimale démontrée.
+                Pas « {mx} max → 20 % → 3 reps → donc GTG », mais : besoin de pratique fréquente →
+                forte marge → 2–3 comme hypothèse → observation de la réponse.
+              </div>
+              <div className="split">
+                <div className="a">
+                  <h4>Sensation cible</h4>
+                  <p>« J’aurais pu continuer facilement. »</p>
+                </div>
+                <div className="b">
+                  <h4>À éviter</h4>
+                  <p>« J’ai réussi à faire mes 3 reps. »</p>
+                </div>
+              </div>
+              <p>
+                Une personne à {mx} peut tolérer 4 ; une autre trouver 3 déjà trop coûteux selon le reste
+                de l’entraînement. Le nombre se valide par la réponse — pas par un simple calcul.
+              </p>
+            </Sec>
+
+            <Sec id="s11" num="07" title="Comment déterminer toi-même le nombre de reps ?">
+              <p>Le meilleur départ n’est pas un pourcentage magique — trois questions :</p>
+              <div className="steps">
+                <div>
+                  <h4>Maximum propre</h4>
+                  <p>
+                    Même prise, départ, amplitude, fin, sans compensation volontaire. Sinon « +1 rep »
+                    peut juste être un changement de standard.
+                  </p>
+                </div>
+                <div>
+                  <h4>Quelle marge conserver ?</h4>
+                  <p>
+                    Un % du max de reps peut servir de point de départ, jamais de loi : 20 % d’un max de
+                    5 ≠ 20 % d’un max de 50 en coût. Interprète avec niveau, variante, mécanique,
+                    fréquence et reste du programme.
+                  </p>
+                </div>
+                <div>
+                  <h4>Que se passe-t-il après ?</h4>
+                  <p>
+                    « Cette dose me permet-elle de continuer à pratiquer de la même manière ? » — plutôt
+                    que « ai-je réussi le nombre prévu ? ».
+                  </p>
+                </div>
+              </div>
+              <div className="box">
+                <div className="box-title">Grille — réussir ≠ correctement doser</div>
+                <table className="obj">
+                  <thead>
+                    <tr>
+                      <th>Indicateur</th>
+                      <th>Compatible GTG</th>
+                      <th>Trop difficile</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      <td className="o">Marge</td>
+                      <td className="a">importante</td>
+                      <td>faible</td>
+                    </tr>
+                    <tr>
+                      <td className="o">Exécution</td>
+                      <td className="a">stable</td>
+                      <td>compensation</td>
+                    </tr>
+                    <tr>
+                      <td className="o">Amplitude</td>
+                      <td className="a">conservée</td>
+                      <td>réduction</td>
+                    </tr>
+                    <tr>
+                      <td className="o">Effort</td>
+                      <td className="a">maîtrisé</td>
+                      <td>série très difficile</td>
+                    </tr>
+                    <tr>
+                      <td className="o">Exposition suivante</td>
+                      <td className="a">perfs proches</td>
+                      <td>baisse nette</td>
+                    </tr>
+                    <tr>
+                      <td className="o">Récupération</td>
+                      <td className="a">normale</td>
+                      <td>fatigue inhabituelle</td>
+                    </tr>
                   </tbody>
                 </table>
               </div>
             </Sec>
 
-            <Sec id="s07" num="07" title="Ton cas : maximum de 9 tractions">
+            <Sec id="s12" num="08" title="Signaux : RIR, vitesse et qualité">
               <p>
-                Ton maximum actuel est de 9 tractions, et à 9 tu es complètement mort. Ton
-                entraînement classique actuel est 4 × 5 tractions, soit 20 répétitions au total. Le
-                point intéressant est que 5 répétitions représentent environ 56 % de ton maximum de
-                9, mais ce pourcentage ne signifie pas 56 % de ton effort : la quatrième série peut
-                devenir beaucoup plus difficile parce que la fatigue s’accumule.
+                Le RIR est utile, mais pas l’unique signal. La priorité dépend de la nature du mouvement
+                — une rep peut être « valide » tout en étant beaucoup plus lente et coûteuse.
               </p>
-              <p>
-                Ton entraînement classique ressemble donc davantage à une succession de 5 répétitions
-                entrecoupées de repos, alors que ton GTG pourrait ressembler à 2 répétitions espacées
-                de plusieurs heures. La fatigue locale et systémique est beaucoup plus faible à chaque
-                occasion.
-              </p>
-            </Sec>
-
-            <Sec id="s08" num="08" title="Combien de répétitions pour ton GTG ?">
-              <p>
-                Avec un maximum de 9 : <strong>1 répétition</strong> est extrêmement facile mais
-                potentiellement un stimulus assez faible si tu ne fais pas assez de passages.{' '}
-                <strong>2 répétitions</strong> sont très intéressantes — tu pratiques énormément le
-                mouvement tout en restant très loin de l’échec. <strong>3 répétitions</strong> le sont
-                également, en augmentant légèrement le stimulus. <strong>4 répétitions</strong>{' '}
-                commencent à devenir un vrai travail, et se rapprochent de ton entraînement classique.{' '}
-                <strong>5 répétitions</strong> correspondent déjà à ton niveau actuel — pour un GTG,
-                on ne commence pas ici.
-              </p>
-            </Sec>
-
-            <Sec id="s09" num="09" title="Pourquoi 2–3 reps te conviennent particulièrement">
-              <div className="stat-row">
-                <div>
-                  <div className="num">22%</div>
-                  <div className="lbl">de ton max à 2 reps</div>
+              <div className="box">
+                <table className="obj">
+                  <thead>
+                    <tr>
+                      <th>Mouvement</th>
+                      <th>Signal particulièrement important</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      <td className="o">Traction stricte</td>
+                      <td>amplitude, trajectoire, vitesse</td>
+                    </tr>
+                    <tr>
+                      <td className="o">Muscle-up</td>
+                      <td>hauteur, vitesse, transition, trajectoire</td>
+                    </tr>
+                    <tr>
+                      <td className="o">Handstand</td>
+                      <td>ligne corporelle, équilibre, contrôle</td>
+                    </tr>
+                    <tr>
+                      <td className="o">L-sit</td>
+                      <td>hauteur des jambes, bassin, épaules</td>
+                    </tr>
+                    <tr>
+                      <td className="o">Explosif</td>
+                      <td>vitesse, hauteur ou puissance</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+              <div className="quote">
+                Velocity loss : plus la perte de vitesse monte, plus reps, effort perçu et fatigue
+                montent, et certaines perfs explosives baissent — selon exercice et charge. Pas de règle
+                « −20 % = arrêt obligatoire ». Plus la vitesse est centrale au mouvement, plus une
+                dégradation nette devient pertinente pour juger l’exposition.
+              </div>
+              <div className="split">
+                <div className="a">
+                  <h4>Traction stricte</h4>
+                  <p>Légère variation de vitesse souvent acceptable.</p>
                 </div>
-                <div>
-                  <div className="num">33%</div>
-                  <div className="lbl">de ton max à 3 reps</div>
+                <div className="b">
+                  <h4>Mouvement explosif</h4>
+                  <p>La même perte peut changer profondément la nature de la rep.</p>
                 </div>
               </div>
+            </Sec>
+
+            <Sec id="s15" num="09" title="Le problème du volume">
+              <p>Répartir les séries ne fait pas disparaître le volume. Fréquence ≠ volume.</p>
+              <div className="box">
+                <div className="box-title">Organisations — volume brut</div>
+                <table className="rir">
+                  <thead>
+                    <tr>
+                      <th>Organisation</th>
+                      <th>Répétitions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {[
+                      ['10 × 2', '20'],
+                      ['10 × 3', '30'],
+                      ['10 × 5', '50'],
+                      ['20 × 3', '60'],
+                      ['30 × 3', '90']
+                    ].map(([f, v]) => (
+                      <tr key={f}>
+                        <td className="reps">{f}</td>
+                        <td>{v}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+              <div className="quote">
+                90 reps restent 90 reps en volume brut — pas forcément le même coût. Deux séries de 5
+                peuvent différer selon variante, charge, RIR, amplitude, vitesse, technique et récup.
+              </div>
               <p>
-                Cela laisse énormément de marge, et c’est précisément ce que l’on veut. L’objectif
-                n’est pas de savoir quelle est la plus grosse série que tu peux répéter, mais plutôt
-                quelle est la plus grosse quantité de pratique de qualité que tu peux accumuler sans
-                compromettre les répétitions suivantes. C’est une distinction fondamentale.
+                Une rep très loin de l’échec ≠ une rep après une longue série déjà très fatigante. Le
+                fractionnement modifie fortement le <strong>coût aigu</strong> de chaque exposition —
+                sans rendre le volume total gratuit. Le GTG organise volume et pratique ; il ne fait pas
+                disparaître la fatigue.
+              </p>
+            </Sec>
+
+            <Sec id="s17" num="10" title="Maximiser le ratio stimulus / fatigue">
+              <p>
+                Le ratio stimulus / fatigue n’est pas une grandeur physiologique à unité universelle —
+                c’est un <strong>cadre de décision</strong>.
+              </p>
+              <div className="split">
+                <div className="a">
+                  <h4>Exposition A</h4>
+                  <MiniBar stimulus={70} fatigue={15} />
+                  <p style={{ marginTop: '0.7rem' }}>
+                    Pratique spécifique intéressante, assez de fraîcheur pour recommencer des heures plus
+                    tard.
+                  </p>
+                </div>
+                <div className="b">
+                  <h4>Exposition B</h4>
+                  <MiniBar stimulus={75} fatigue={70} />
+                  <p style={{ marginTop: '0.7rem' }}>
+                    Un peu plus stimulante, mais fatigue beaucoup plus haute — qualité ou répétabilité
+                    réduites.
+                  </p>
+                </div>
+              </div>
+              <div className="principle">
+                Pour une méthode fondée sur de nombreuses expositions, A peut être plus intéressant même
+                si B « paraît » plus productif isolément. But ≠ maximiser le stimulus d’une série →
+                maximiser la pratique de qualité accumulable et répétable dans le temps.
+              </div>
+              <p>
+                Compatible avec les données : se rapprocher systématiquement de l’échec n’est pas
+                nécessaire pour s’adapter, et peut augmenter le coût de fatigue sans meilleurs résultats
+                automatiques.
+              </p>
+            </Sec>
+
+            <Sec id="s19" num="11" title="Pourquoi les tractions se prêtent bien à une pratique fréquente">
+              <p>
+                Les {caseExample.label.toLowerCase()} (et les tractions en général) possèdent plusieurs
+                caractéristiques qui les rendent particulièrement intéressantes pour une pratique
+                fréquente — sans que cela les rende automatiquement adaptées à une fréquence élevée
+                pour tout le monde.
+              </p>
+              <div className="metrics-4">
+                <div>
+                  <div className="k">Identifiable</div>
+                  <p>
+                    Prise, départ, trajectoire, amplitude, position du corps, critère de validation —
+                    le geste peut être standardisé. Sinon on ne sait plus si la progression vient de la
+                    perf ou d’un changement d’exécution.
+                  </p>
+                </div>
+                <div>
+                  <div className="k">Mesurable</div>
+                  <p>
+                    Max de reps, reps à difficulté donnée, qualité, variante, charge externe,
+                    répétabilité. Deux pratiquants à max {mx} peuvent avoir une capacité très
+                    différente à reproduire {wr} reps plusieurs fois dans la journée.
+                  </p>
+                </div>
+                <div>
+                  <div className="k">Spécifique</div>
+                  <p>
+                    Coordination, trajectoire, stabilisation, production de force dans cette
+                    configuration, rythme, contrôle. Une partie de l’amélioration dépend de la façon
+                    dont la force doit être produite — les compléments ne remplacent pas tout.
+                  </p>
+                </div>
+                <div>
+                  <div className="k">Modulable</div>
+                  <p>
+                    PDC, variante, assistance, lest. Les petites séries ({wr} reps chez toi) sont
+                    faciles à caser sans transformer chaque passage en séance.
+                  </p>
+                </div>
+              </div>
+              <div className="quote">
+                Une bonne candidate au GTG n’est pas seulement un exercice qu’on peut répéter souvent —
+                c’est un mouvement dont la difficulté peut être assez contrôlée pour que la répétition
+                fréquente reste compatible avec qualité, performance et récupération.
+              </div>
+              <p>
+                La tolérance dépend du volume total, de ton niveau (max {mx}), de la récupération, des
+                autres tirages, de la charge, et de la tolérance des coudes, épaules, poignets et tissus
+                conjonctifs.
               </p>
             </Sec>
 
             <ChapterDivider
               num="II"
               title="La question du lest"
-              subtitle="Ta question de départ, en détail"
+              subtitle="Force, réserve, et ce que le GTG ne remplace pas"
             />
 
-            <Sec id="s10" num="10" title="Mais alors pourquoi ajouter du lest ?">
+            <Sec id="s20" num="12" title="Mais alors pourquoi ajouter du lest ?">
               <p>
-                Tu t’es demandé : si tu fais déjà du GTG avec 2 à 3 tractions, pourquoi ne pas mettre
-                du lest et faire 1 à 2 tractions lestées ? Est-ce que ça ne serait pas encore plus
-                efficace ? Oui, dans certaines conditions, parce que le lest augmente l’intensité. Une
-                traction lestée avec +5 kg signifie que ton système musculaire doit produire davantage
-                de force qu’avec ton poids seul : tu transformes le mouvement en un exercice davantage
-                orienté vers la force.
+                Si le poids du corps permet déjà de pratiquer le mouvement, pourquoi ajouter une charge
+                ? Parce que le PDC n’est pas forcément une résistance assez élevée pour développer au
+                mieux certaines qualités de force. Une ou quelques reps lestées exposent à une{' '}
+                <strong>production de force plus importante par répétition</strong>, avec moins de
+                reps — mais ça change la nature du travail.
               </p>
-              <p>
-                Les données scientifiques générales sur l’entraînement en résistance vont dans ce
-                sens : les charges élevées sont généralement plus efficaces pour développer la force
-                maximale, alors que l’hypertrophie peut être obtenue avec une gamme beaucoup plus
-                large de charges.
-              </p>
-            </Sec>
-
-            <Sec id="s11" num="11" title="Pourquoi le lest peut améliorer la force">
-              <p>
-                Avec une traction lestée à +10 kg, tu dois déplacer ton poids plus 10 kg, et le
-                système nerveux doit produire davantage de force. Cela peut améliorer ta capacité à
-                produire une force élevée, et une capacité de force supérieure peut ensuite rendre ton
-                poids corporel relativement « plus léger ». Les méta-analyses sur les charges montrent
-                effectivement que les entraînements à charge élevée donnent généralement de meilleurs
-                résultats pour la force maximale, tandis que l’hypertrophie est beaucoup moins
-                dépendante de la charge lorsque le volume et l’effort sont appropriés.
-              </p>
-            </Sec>
-
-            <Sec id="s12" num="12" title="Mais attention : « plus lourd » ≠ « meilleur GTG »">
-              <p>
-                Le GTG n’a pas pour objectif de maximiser chaque mini-série. Si tu prends un lest
-                tellement lourd qu’une seule répétition représente quasiment ton maximum, tu détruis
-                le principe du GTG : tu obtiens plutôt du travail de force lourde. Ce n’est pas
-                mauvais, mais ce n’est plus vraiment le même stimulus.
-              </p>
-              <div className="mini-gauge">
-                <span className="lab" style={{ color: 'var(--gtg-stimulus)' }}>
-                  GTG
-                </span>
-                <div className="track">
-                  <div style={{ background: 'var(--gtg-stimulus)', width: '35%' }} />
-                  <div style={{ background: 'var(--gtg-fatigue)', width: '8%' }} />
+              <div className="stat-row">
+                <div>
+                  <div className="num">{bwLabel}</div>
+                  <div className="lbl">
+                    kg PDC{bwKnown ? '' : ' (ordre de grandeur)'}
+                  </div>
+                </div>
+                <div>
+                  <div className="num">{bwPlus5}</div>
+                  <div className="lbl">+5 kg → masse externe ≈</div>
+                </div>
+                <div>
+                  <div className="num">+{pctLest10}%</div>
+                  <div className="lbl">
+                    vs PDC seul avec +10 kg ({bwPlus10} kg)
+                  </div>
                 </div>
               </div>
-              <div className="mini-gauge">
-                <span className="lab" style={{ color: 'var(--gtg-fatigue)' }}>
-                  Travail lourd
-                </span>
-                <div className="track">
-                  <div style={{ background: 'var(--gtg-stimulus)', width: '55%' }} />
-                  <div style={{ background: 'var(--gtg-fatigue)', width: '45%' }} />
-                </div>
+              {!bwKnown && (
+                <p>
+                  Indique ton poids en Pratique (bandeau « Données protocole ») pour caler ces
+                  pourcentages sur toi — {pctLest5}&nbsp;% pour +5&nbsp;kg et {pctLest10}&nbsp;% pour
+                  +10&nbsp;kg sur ~70&nbsp;kg ne sont que des repères moyens.
+                </p>
+              )}
+              <div className="quote">
+                {bwKnown ? bw : '~70'} kg de PDC ≠ « les muscles soulèvent exactement {bwKnown ? bw : 70}{' '}
+                kg ». Répartition des masses, angles, bras de levier et trajectoire modifient la demande.
+                PDC + lest = approximation de la résistance externe, pas une mesure de force par muscle.
               </div>
-            </Sec>
-
-            <Sec id="s13" num="13" title="Le meilleur raisonnement : GTG + force">
               <div className="split">
                 <div className="a">
-                  <h4>Bloc A — GTG</h4>
+                  <h4>Pourquoi le lest intéresse</h4>
                   <p>
-                    2–3 tractions au poids du corps, plusieurs fois par jour. Technique, coordination,
-                    automatisation, volume de pratique, faible fatigue.
+                    Charge ↑ → reps réalisables ↓ → chaque rep demande plus de force, volume plus
+                    bas, production de force davantage prioritaire. Les méta-analyses favorisent les
+                    charges élevées pour la force max ; l’hypertrophie tolère une gamme plus large.
                   </p>
                 </div>
                 <div className="b">
-                  <h4>Bloc B — lesté</h4>
+                  <h4>Ce que ce n’est pas</h4>
                   <p>
-                    1–3 tractions lestées, charge faible, très loin de l’échec. Force, recrutement,
-                    exposition à une intensité supérieure.
+                    Pas juste « rendre les tractions plus dures ». C’est modifier la{' '}
+                    <strong>qualité de contrainte</strong> de chaque répétition — complémentaire du GTG
+                    à {wr} reps / {mx} max, pas un remplacement automatique.
                   </p>
                 </div>
               </div>
-              <p>Cela combine deux qualités différentes.</p>
             </Sec>
 
-            <Sec id="s14" num="14" title="Et le lest n’est pas forcément nécessaire">
-              <p>
-                Il ne faut pas conclure que GTG plus lest est obligatoirement supérieur au GTG sans
-                lest. On ne dispose pas de suffisamment de données directes permettant de faire cette
-                affirmation pour le GTG spécifiquement. C’est une extrapolation raisonnable à partir
-                de la littérature sur la force et la spécificité, pas une conclusion directement
-                démontrée par un essai clinique comparant les deux méthodes.
-              </p>
-            </Sec>
-
-            <Sec id="s15" num="15" title="Une étude particulièrement intéressante pour les tractions">
-              <p>
-                Une étude publiée en 2024 chez des grimpeurs a comparé différentes modalités
-                d’entraînement impliquant notamment des tractions. Après cinq semaines, les groupes
-                d’entraînement ont amélioré leur force maximale, avec des adaptations différentes
-                selon le type de contraction utilisé. Cela confirme que la manière dont tu entraînes
-                la traction influence les adaptations obtenues — mais cela ne permet pas de dire que
-                le GTG lesté est automatiquement supérieur.
-              </p>
-            </Sec>
-
-            <Sec id="s16" num="16" title="Le problème du volume">
-              <div className="box">
-                <div className="box-title">Trois programmes, 10 passages</div>
-                <table className="rir">
-                  <thead>
-                    <tr>
-                      <th>Format</th>
-                      <th>Volume total</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    <tr>
-                      <td className="reps">10 × 2 reps</td>
-                      <td>20 tractions</td>
-                    </tr>
-                    <tr>
-                      <td className="reps">10 × 3 reps</td>
-                      <td>30 tractions</td>
-                    </tr>
-                    <tr>
-                      <td className="reps">10 × 5 reps</td>
-                      <td>50 tractions</td>
-                    </tr>
-                  </tbody>
-                </table>
+            <Sec id="s22" num="13" title="Continuum : GTG, force, et complémentarité">
+              <div className="principle">
+                très facile → submaximal → modérément difficile → proche de l’échec → maximal
               </div>
               <p>
-                Le dernier programme semble évidemment « meilleur » sur le papier, mais ce n’est pas
-                aussi simple : plus le nombre de répétitions par mini-série augmente, plus la fatigue
-                augmente, et tu risques de transformer progressivement ton GTG en entraînement
-                classique simplement dispersé dans la journée.
+                Une zone ne dicte pas une fréquence magique. Une série plus difficile a souvent un
+                coût aigu plus élevé, mais la tolérance dépend aussi du nombre de séries, des reps, du
+                mouvement, de la charge, du niveau, de la récupération et des tissus.
+              </p>
+              <div className="split">
+                <div className="a">
+                  <h4>Bloc GTG</h4>
+                  <p>
+                    Priorité : spécificité, qualité, répétabilité, pratique fréquente, faible fatigue
+                    aiguë par exposition. Chez toi : ~{wr} reps (≈ {pctWr != null ? `${pctWr}%` : '—'}{' '}
+                    du max {mx}, RIR ~{rirWr ?? '—'}). Le PDC suffit si ces caractéristiques tiennent.
+                  </p>
+                </div>
+                <div className="b">
+                  <h4>Bloc force</h4>
+                  <p>
+                    Produire beaucoup de force, résistance élevée. Souvent 1–5 reps —{' '}
+                    <em>exemple</em>, pas définition universelle ni prescription GTG. Pas un test max
+                    à chaque série. Les charges élevées favorisent davantage le 1RM ; l’hypertrophie
+                    s’obtient sur une gamme plus large.
+                  </p>
+                </div>
+              </div>
+              <div className="quote">
+                On ne peut pas conclure « GTG lesté &gt; GTG au PDC » dans tous les cas. Ce sont deux
+                contraintes pour des besoins différents.
+              </div>
+            </Sec>
+
+            <Sec id="s25" num="14" title="Une traction max et une série max ne sont pas la même qualité">
+              <p>
+                Une répétition très lourde et une série très longue peuvent toutes deux être
+                « difficiles », sans demander exactement la même chose.
+              </p>
+              <div className="split">
+                <div className="a">
+                  <h4>1 rep lourde</h4>
+                  <p>
+                    Production de force élevée, coordination sous forte contrainte, capacité à
+                    produire cette force sur une seule répétition.
+                  </p>
+                </div>
+                <div className="b">
+                  <h4>Série de {mx} (ton max)</h4>
+                  <p>
+                    Force suffisante + capacité à répéter + économie + coordination maintenue +
+                    tolérance à la fatigue locale + technique qui tient malgré l’accumulation. Pas
+                    simplement « 1 = force » et « {mx} = endurance » : les qualités se chevauchent ;
+                    la différence est la <strong>contrainte dominante</strong>.
+                  </p>
+                </div>
+              </div>
+              <p>
+                Pour une perf max sur série longue, il faut pouvoir produire assez de force{' '}
+                <em>et</em> la reproduire assez longtemps — d’où l’intérêt de séparer GTG (marge) et
+                tests / blocs force.
               </p>
             </Sec>
 
-            <Sec id="s17" num="17" title="Le vrai objectif : maximiser le ratio stimulus/fatigue">
+            <Sec id="s28" num="15" title="Ce que cela signifie pour ton GTG">
               <p>
-                Un stimulus de 10 pour une fatigue de 2 est excellent. Un stimulus de 12 pour une
-                fatigue de 10 peut être moins intéressant si tu dois répéter le mouvement plusieurs
-                fois dans la journée. Le GTG cherche à obtenir beaucoup de stimulus technique et
-                nerveux avec relativement peu de fatigue — cohérent avec le fait que l’échec
-                musculaire n’est pas nécessaire pour obtenir des gains de force.
+                Trois outils, sans leur coller artificiellement une seule adaptation — calés sur ton
+                max {mx} et ta dose actuelle ({wr}/passage) :
               </p>
-            </Sec>
-
-            <Sec id="s18" num="18" title="GTG et hypertrophie : ce n’est pas la même chose">
-              <p>
-                Le GTG est surtout intéressant lorsqu’on veut améliorer une performance spécifique,
-                par exemple passer de 9 à 15 tractions. Mais si ton objectif principal est de
-                maximiser la masse musculaire du dos et des biceps, le GTG n’est pas nécessairement
-                la meilleure méthode à lui seul, parce que l’hypertrophie répond principalement à
-                l’ensemble du stimulus d’entraînement : tension mécanique, volume, proximité de
-                l’échec, progression, récupération et nutrition.
-              </p>
-              <p>
-                Le GTG est donc un excellent outil de performance spécifique, mais il ne constitue pas
-                à lui seul un programme d’hypertrophie complet.
-              </p>
-            </Sec>
-
-            <Sec id="s19" num="19" title="Pourquoi le GTG est particulièrement adapté aux tractions">
-              <p>
-                Les tractions sont presque un cas d’école pour le GTG, parce qu’elles sont faciles à
-                standardiser, relativement peu traumatisantes lorsqu’elles sont maîtrisées, très
-                spécifiques, mesurables, réalisables sans énormément de matériel, fortement
-                dépendantes de la technique et de la coordination, et facilement divisibles en petites
-                séries.
-              </p>
+              <div className="split cols-3">
+                <div className="a">
+                  <h4>GTG PDC</h4>
+                  <p>
+                    Spécificité, pratique fréquente, qualité, répétabilité, faible fatigue aiguë.
+                    Ton cas : {wr} reps × ~{passagesEx} passages ≈ {dayVol} reps/jour possibles.
+                  </p>
+                </div>
+                <div className="b">
+                  <h4>Travail lesté</h4>
+                  <p>
+                    Production de force élevée, surcharge externe
+                    {bwKnown
+                      ? ` (ex. +10 kg ≈ +${pctLest10}% vs tes ${bw} kg)`
+                      : ' (renseigne ton poids pour un % précis)'}
+                    . Utile quand l’objectif inclut la force max.
+                  </p>
+                </div>
+                <div className="c">
+                  <h4>Séries classiques</h4>
+                  <p>
+                    Volume concentré, fatigue locale, séries de plusieurs reps, hypertrophie
+                    potentielle si volume/effort suffisent. Un 4 × 5 avec max {mx} n’est pas auto
+                    « de l’endurance » — ça dépend de la proximité de l’échec, du repos, de la charge.
+                  </p>
+                </div>
+              </div>
+              <div className="quote">
+                La différence n’est pas « une méthode = une adaptation », mais la qualité que chaque
+                méthode met davantage au premier plan.
+              </div>
             </Sec>
 
             <ChapterDivider
               num="III"
               title="Par mouvement"
-              subtitle="Pompes, dips, mouvements techniques et explosifs"
+              subtitle="Même méthode, prescriptions différentes"
             />
 
-            <Sec id="s20" num="20" title="Et pour les pompes ?">
+            <Sec id="s29" num="16" title="Pourquoi tous les exercices ne doivent pas être traités pareil">
               <p>
-                Même logique. Si ton objectif est de faire plus de pompes, tu peux parfaitement
-                utiliser un GTG : par exemple, avec un maximum de 30, tu pourrais faire 8 à 10 reps
-                plusieurs fois dans la journée. Mais l’intérêt du lest dépend de ton objectif : si tu
-                veux simplement augmenter ton nombre de pompes, le poids du corps est déjà très
-                efficace ; si tu veux augmenter ta force maximale, le lest devient plus intéressant.
+                « GTG » décrit une manière de distribuer et de gérer la pratique — pas{' '}
+                <strong>
+                  {wr} reps × {passagesEx} passages/jour pour tout
+                </strong>
+                . L’unité de travail dépend du mouvement.
+              </p>
+              <div className="box">
+                <table className="obj">
+                  <thead>
+                    <tr>
+                      <th>Exercice</th>
+                      <th>Intérêt GTG</th>
+                      <th>Variable prioritaire</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      <td className="o">Traction</td>
+                      <td className="a">élevé</td>
+                      <td>reps / qualité / RIR</td>
+                    </tr>
+                    <tr>
+                      <td className="o">Pompe</td>
+                      <td className="a">élevé</td>
+                      <td>reps / variante</td>
+                    </tr>
+                    <tr>
+                      <td className="o">Dip</td>
+                      <td>intéressant, prudent</td>
+                      <td>reps / qualité / RIR</td>
+                    </tr>
+                    <tr>
+                      <td className="o">Handstand</td>
+                      <td className="a">très intéressant tech.</td>
+                      <td>qualité / temps</td>
+                    </tr>
+                    <tr>
+                      <td className="o">L-sit</td>
+                      <td className="a">intéressant</td>
+                      <td>secondes / variante</td>
+                    </tr>
+                    <tr>
+                      <td className="o">Muscle-up</td>
+                      <td>si niveau suffisant</td>
+                      <td>vitesse / qualité</td>
+                    </tr>
+                    <tr>
+                      <td className="o">Planche / front lever</td>
+                      <td>intéressant</td>
+                      <td>variante / temps</td>
+                    </tr>
+                    <tr>
+                      <td className="o">Saut</td>
+                      <td>spécifique, vol. limité</td>
+                      <td>vitesse / hauteur / qualité</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+              <p>
+                Coût mécanique, technicité, risque de dégradation, besoin de vitesse, mode de mesure,
+                tolérance aux reps et potentiel de fréquence ne sont pas les mêmes. Adapte le GTG à la
+                variable qui limite vraiment la performance.
               </p>
             </Sec>
 
-            <Sec id="s21" num="21" title="Et pour les dips ?">
+            <Sec id="s30" num="17" title="Pompes et dips">
+              <div className="split">
+                <div className="a">
+                  <h4>Pompes</h4>
+                  <p>
+                    Faciles à fractionner. Avec un max autour de {pushMax}, un départ type{' '}
+                    {pushStartLow}–{pushStartHigh} reps peut convenir à certains — ce n’est{' '}
+                    <em>pas</em> déduit mécaniquement du max. Observe RIR, vitesse, amplitude,
+                    stabilité, fréquence prévue, réponse aux passages suivants. Variante (pieds
+                    surélevés, lest) = autre coût. Poignets / coudes / épaules peuvent limiter avant
+                    les muscles.
+                  </p>
+                </div>
+                <div className="b">
+                  <h4>Dips</h4>
+                  <p>
+                    {dipMax > 0
+                      ? `Max de référence ~${dipMax} — `
+                      : ''}
+                    prudence supplémentaire : contrainte mécanique et position articulaire. Évite la
+                    règle « plus dur = fréquence forcément plus basse » : ça dépend de toi, de la
+                    technique, du volume et de la charge. Une série peut sembler facile
+                    musculairement tout en chargeant beaucoup les tissus — temporalités différentes.
+                  </p>
+                </div>
+              </div>
+            </Sec>
+
+            <Sec id="s32" num="18" title="L-sit et handstand">
+              <div className="split">
+                <div className="a">
+                  <h4>L-sit</h4>
+                  <p>
+                    Compter des « reps » a peu de sens. Variables : durée, qualité de position,
+                    variante, hauteur des jambes, bassin, épaules. Progresser sans poids : tuck → une
+                    jambe → straddle → jambes tendues ; aussi levier, hauteur, angles, compression.
+                    Deux L-sits de 10 s peuvent être très différents. Critère d’arrêt = dégradation
+                    de la position, pas un chrono arbitraire.
+                  </p>
+                </div>
+                <div className="b">
+                  <h4>Handstand</h4>
+                  <p>
+                    Pratique fraîche : équilibre, ligne, corrections, épaules, perception. La fatigue
+                    rend les corrections moins précises → accumulation de tentatives dégradées.
+                    Fréquence utile <em>si</em> chaque exposition garde assez de qualité. Poignets,
+                    coudes, épaules comptent. Davantage de tentatives ≠ mieux pratiquer.
+                  </p>
+                </div>
+              </div>
+              <div className="quote">
+                Pour un mouvement technique, une tentative supplémentaire qui dégrade fortement la
+                ligne ou l’équilibre a une valeur très différente d’une tentative fraîche.
+              </div>
+            </Sec>
+
+            <Sec id="s34" num="19" title="Technique, muscle-up et explosivité">
+              <div className="quote">1 répétition propre peut être plus informative que 3 répétitions dégradées.</div>
               <p>
-                Encore plus intéressant, car les dips sont naturellement plus faciles à charger. Tu
-                peux avoir des dips au poids du corps pour le GTG et des dips lestés pour la force. Le
-                problème est que les dips chargent fortement les épaules, les pectoraux et les
-                triceps, donc la tolérance au volume doit être surveillée : plus un exercice est
-                exigeant pour les articulations, moins on est agressif avec la fréquence du GTG.
+                Le muscle-up combine force de tirage, vitesse, coordination, trajectoire, transition,
+                et force dans une fenêtre temporelle précise. La pratique fréquente peut améliorer la
+                coordination, mais ne compense pas indéfiniment une qualité physique limitante. Si
+                force ou puissance manquent, multiplier des reps techniquement insuffisantes ne
+                résout pas le problème — il faut entraîner la qualité limitante.
               </p>
+              <div className="split">
+                <div className="a">
+                  <h4>Mouvements explosifs</h4>
+                  <p>
+                    Le RIR est parfois moins informatif que vitesse, hauteur, distance, qualité du
+                    geste ou puissance. Une rep peut être loin de l’échec tout en étant déjà trop
+                    lente pour l’objectif. La perte de vitesse compte surtout quand la vitesse{' '}
+                    <em>est</em> l’objectif.
+                  </p>
+                </div>
+                <div className="b">
+                  <h4>Pas de seuil universel</h4>
+                  <p>
+                    Aucun % de velocity loss optimal pour tous les mouvements. Le seuil dépend de
+                    l’exercice, de la charge, de l’objectif, du niveau et de la fatigue recherchée. La
+                    littérature : plus de perte de vitesse ↔ plus de fatigue aiguë — pas un seuil
+                    unique optimal.
+                  </p>
+                </div>
+              </div>
             </Sec>
 
-            <Sec id="s22" num="22" title="Et pour les exercices très techniques ?">
+            <Sec id="s36" num="20" title="Tableau des objectifs">
+              <div className="box">
+                <table className="obj">
+                  <thead>
+                    <tr>
+                      <th>Objectif</th>
+                      <th>Priorité</th>
+                      <th>Effort</th>
+                      <th>Critère d’arrêt</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      <td className="o">Technique</td>
+                      <td>précision</td>
+                      <td>très faible → faible</td>
+                      <td className="a">perte technique</td>
+                    </tr>
+                    <tr>
+                      <td className="o">Force</td>
+                      <td>production de force</td>
+                      <td>modéré → élevé</td>
+                      <td>qualité / capacité à produire</td>
+                    </tr>
+                    <tr>
+                      <td className="o">Hypertrophie</td>
+                      <td>tension + volume</td>
+                      <td>modéré → élevé</td>
+                      <td>fatigue contrôlée / qualité</td>
+                    </tr>
+                    <tr>
+                      <td className="o">Endurance de reps</td>
+                      <td>volume spécifique</td>
+                      <td>variable</td>
+                      <td>dégradation liée à la fatigue</td>
+                    </tr>
+                    <tr>
+                      <td className="o">Explosivité</td>
+                      <td>vitesse / puissance</td>
+                      <td>faible → modéré</td>
+                      <td className="a">ralentissement / baisse de perf</td>
+                    </tr>
+                    <tr>
+                      <td className="o">GTG perf.</td>
+                      <td>spécificité + répétabilité</td>
+                      <td>faible → modéré</td>
+                      <td className="a">dérive qualité / marge insuffisante</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
               <p>
-                Là, le GTG peut être extrêmement intéressant, par exemple pour le handstand, le L-sit,
-                le muscle-up, le front lever ou la planche, parce que la performance dépend énormément
-                de la coordination. Mais le GTG doit parfois être encore plus éloigné de l’échec : tu
-                veux pratiquer une répétition propre, et non une répétition dégueulasse obtenue avec
-                compensation.
-              </p>
-            </Sec>
-
-            <Sec id="s23" num="23" title="Le cas particulier des mouvements explosifs">
-              <p>
-                Pour des mouvements comme le muscle-up, les tractions explosives, les pompes
-                explosives ou les sauts, le principe reste valable mais il faut être particulièrement
-                attentif à la qualité. Une répétition explosive doit rester explosive : si ta vitesse
-                diminue fortement, le stimulus n’est plus exactement le même. Le GTG doit être arrêté
-                avant que la fatigue ne dégrade la vitesse ou la technique.
-              </p>
-            </Sec>
-
-            <Sec id="s24" num="24" title="Quand le lest est particulièrement intéressant">
-              <table className="obj">
-                <thead>
-                  <tr>
-                    <th>Objectif</th>
-                    <th>Approche</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <tr>
-                    <td className="o">Endurance de reps (9→15)</td>
-                    <td className="a">Principalement poids du corps</td>
-                  </tr>
-                  <tr>
-                    <td className="o">Force maximale (+20kg)</td>
-                    <td className="a">Le lest devient très intéressant</td>
-                  </tr>
-                  <tr>
-                    <td className="o">Hypertrophie</td>
-                    <td className="a">Lest ou poids du corps, peu importe</td>
-                  </tr>
-                  <tr>
-                    <td className="o">Technique</td>
-                    <td className="a">Poids du corps ou charge très faible</td>
-                  </tr>
-                  <tr>
-                    <td className="o">Mouvement explosif</td>
-                    <td className="a">Charge légère, priorité à la vitesse</td>
-                  </tr>
-                </tbody>
-              </table>
-            </Sec>
-
-            <Sec id="s25" num="25" title="Pourquoi le lest peut indirectement améliorer ton nombre de reps">
-              <p>
-                Si tu es capable de faire une traction avec +15 kg mais que ton maximum au poids du
-                corps est 9, développer davantage de force maximale fait que ton poids corporel
-                représente une proportion moindre de ta capacité maximale — comparable à quelqu’un qui
-                devient plus fort au squat. Cela peut rendre les répétitions au poids du corps moins
-                coûteuses. Mais une traction maximale et une série maximale de tractions ne sont pas
-                exactement la même qualité physique.
-              </p>
-            </Sec>
-
-            <Sec id="s26" num="26" title="Force ≠ endurance musculaire">
-              <p>
-                Pour faire une traction très lourde, tu as besoin de beaucoup de force. Pour faire 15
-                tractions consécutives, tu as besoin de force, de coordination, de technique, de
-                résistance musculaire locale, de capacité à gérer la fatigue et d’une bonne économie
-                du mouvement. Si ton objectif est de passer de 9 à 15, faire uniquement du très lourd
-                serait une erreur : tu dois conserver du travail spécifique au poids du corps.
-              </p>
-            </Sec>
-
-            <Sec id="s27" num="27" title="Ce que les recherches sur les charges nous apprennent">
-              <p>
-                Une méta-analyse de Schoenfeld et collègues portant sur 21 études a trouvé des gains
-                de 1RM supérieurs avec les charges élevées, alors que les gains d’hypertrophie étaient
-                comparables entre différentes plages de charges lorsqu’elles étaient menées à un
-                niveau d’effort suffisant. Une autre méta-analyse portant sur 28 études et 747 adultes
-                retrouve également un avantage des charges élevées et modérées pour la force, tandis
-                que l’hypertrophie ne dépend pas fortement de la charge. Une large méta-analyse en
-                réseau portant sur 178 études pour la force et 119 pour l’hypertrophie a classé les
-                charges élevées parmi les plus efficaces pour développer la force.
-              </p>
-            </Sec>
-
-            <Sec id="s28" num="28" title="Ce que cela signifie pour ton GTG">
-              <p>
-                On peut construire une logique en trois volets : le <strong>GTG au poids du corps</strong>{' '}
-                apporte spécificité, technique, répétition, coordination et faible fatigue ; les{' '}
-                <strong>tractions lestées</strong> apportent intensité, force maximale, recrutement et
-                réserve de force ; les <strong>séries classiques</strong> apportent volume, résistance
-                musculaire et tolérance aux répétitions sous fatigue. C’est beaucoup plus complet que
-                de choisir une seule méthode.
+                Catégories non étanches. Une série de {wr} (ta dose GTG) ou de 5 peut servir force,
+                hypertrophie, technique, perf spécifique ou endurance locale selon charge, difficulté,
+                RIR, repos et contexte. Ne définis pas un objectif uniquement par une plage de reps.
               </p>
             </Sec>
 
             <ChapterDivider
               num="IV"
-              title="Ton programme"
-              subtitle="Application concrète, avec un max de 9"
+              title="Construire le GTG"
+              subtitle="Dose, récupération, progression — sans te brûler"
             />
 
-            <Sec id="s29" num="29" title="Le GTG n’est pas « faire des tractions toute la journée »">
-              <p>
-                C’est une erreur fréquente. Le GTG n’est pas de faire le maximum de tractions possible
-                pendant toute la journée : c’est presque l’inverse. C’est faire suffisamment de
-                répétitions pour pratiquer énormément le mouvement, sans que cette pratique ne fatigue
-                suffisamment pour dégrader les répétitions suivantes. La fatigue est une variable que
-                tu cherches activement à contrôler.
-              </p>
-            </Sec>
-
-            <Sec id="s30" num="30" title="Comment savoir si tes séries sont trop difficiles ?">
-              <div className="split">
-                <div className="b">
-                  <h4>Mauvais signe</h4>
-                  <p>
-                    2 → 2 → 2 → 1 → impossible. Ou une deuxième rep lente, tu balances, tu cambres,
-                    l’amplitude change.
-                  </p>
-                </div>
-                <div className="a">
-                  <h4>Bon signe</h4>
-                  <p>
-                    Tu termines chaque mini-série avec la sensation que tu aurais pu continuer
-                    facilement.
-                  </p>
-                </div>
+            <Sec id="s38" num="21" title="Logique GTG : dose, qualité, signaux d’arrêt">
+              <div className="quote">
+                Pas « combien de reps puis-je réussir ? » — plutôt « combien puis-je pratiquer tout en
+                gardant une qualité assez stable pour recommencer ? »
               </div>
-            </Sec>
-
-            <Sec id="s31" num="31" title="Le GTG doit respecter la récupération">
               <p>
-                Même si chaque série est facile, le volume quotidien peut devenir énorme : 3 reps sur
-                10 passages donnent 30 reps, très facile ; 3 reps sur 30 passages donnent 90 reps, ce
-                n’est plus anodin. Il faut regarder le volume total quotidien, le volume hebdomadaire
-                et les autres entraînements. Comme tu fais déjà des séances classiques, évite d’ajouter
-                brutalement un énorme GTG par-dessus.
+                La dose naît de l’interaction{' '}
+                <strong>difficulté × volume × fréquence × récupération</strong>. Isolément, {wr} reps
+                sont faciles ; répétées {passagesEx} fois, ça devient {dayVol} reps — un vrai volume.
               </p>
-            </Sec>
-
-            <Sec id="s32" num="32" title="Le piège du « je ne vais pas à l’échec, donc j’en fais énormément »">
-              <p>
-                C’est faux. Ne pas aller à l’échec diminue la fatigue par série, mais ne la supprime
-                pas. Si tu fais suffisamment de séries, la fatigue cumulée peut devenir importante —
-                un programme doit prendre en compte le volume total.
-              </p>
-            </Sec>
-
-            <Sec id="s33" num="33" title="Ton cas concret">
-              <p>
-                Avec un maximum de 9 et un entraînement en 4 × 5, je verrais ton GTG comme un
-                complément, pas comme un remplacement. Conceptuellement : 2 tractions le matin, 2 en
-                fin de matinée, 2 en début d’après-midi, 2 en milieu d’après-midi, 2 le soir — 10
-                répétitions supplémentaires. Tu peux monter progressivement vers 2–3 reps par passage
-                si cela ne dégrade pas ton entraînement normal.
-              </p>
-            </Sec>
-
-            <Sec id="s34" num="34" title="Et le lest dans ton cas ?">
-              <p>
-                Là, sois plus conservateur : un GTG principal de 2–3 reps au poids du corps, avec
-                éventuellement quelques séries séparées de 1–2 reps lestées légères. Pas besoin de
-                transformer chaque passage GTG en traction lestée — ton objectif n’est pas seulement
-                de déplacer davantage de poids, mais de devenir meilleur aux tractions au poids du
-                corps.
-              </p>
-            </Sec>
-
-            <Sec id="s35" num="35" title="Le meilleur indicateur : ton maximum">
-              <p>
-                Teste périodiquement ton maximum — semaine 0 : 9 — puis entraîne-toi, en évitant de
-                tester tous les jours. Ce qui t’intéresse, c’est l’évolution de ton maximum propre au
-                fil des semaines.
-              </p>
-            </Sec>
-
-            <Sec id="s36" num="36" title="Pourquoi ne pas tester tous les jours ?">
-              <p>
-                Le test maximal est lui-même un entraînement très fatigant. Aller à l’échec tous les
-                jours entraîne surtout ta capacité à te fatiguer, sans donner à ton corps les
-                conditions optimales pour progresser. Le travail submaximal permet d’accumuler
-                davantage de répétitions de qualité sans payer constamment le coût de l’échec.
-              </p>
-            </Sec>
-
-            <Sec id="s37" num="37" title="La grande différence entre GTG et ton 4×5">
-              <p>
-                Ton 4×5 est une vraie séance structurée, avec un volume concentré et une fatigue
-                progressive. Le GTG, réparti en petits passages, est une distribution du volume. Il
-                ne faut pas forcément considérer l’un comme « meilleur » que l’autre : ils produisent
-                des stimuli différents.
-              </p>
-            </Sec>
-
-            <Sec id="s38" num="38" title="Le GTG est surtout un outil d’optimisation">
-              <div className="mode-grid">
-                <div>
-                  <h4>Classique</h4>
-                  <MiniBar stimulus={60} fatigue={40} />
-                </div>
-                <div>
-                  <h4>GTG</h4>
-                  <MiniBar stimulus={38} fatigue={8} />
-                </div>
-                <div>
-                  <h4>Lourd</h4>
-                  <MiniBar stimulus={55} fatigue={45} />
-                </div>
-                <div>
-                  <h4>Test max</h4>
-                  <MiniBar stimulus={65} fatigue={65} />
-                </div>
+              <div className="box">
+                <div className="box-title">Hiérarchie pratique des signaux — outil d’autorégulation</div>
+                <table className="obj">
+                  <thead>
+                    <tr>
+                      <th>Priorité</th>
+                      <th>Signal</th>
+                      <th>Action</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      <td className="o">1</td>
+                      <td>technique qui change</td>
+                      <td className="a">réduire</td>
+                    </tr>
+                    <tr>
+                      <td className="o">2</td>
+                      <td>vitesse qui chute nettement</td>
+                      <td className="a">réduire</td>
+                    </tr>
+                    <tr>
+                      <td className="o">3</td>
+                      <td>marge devenue faible (RIR)</td>
+                      <td className="a">réduire</td>
+                    </tr>
+                    <tr>
+                      <td className="o">4</td>
+                      <td>passage suivant moins bon</td>
+                      <td className="a">réduire</td>
+                    </tr>
+                    <tr>
+                      <td className="o">5</td>
+                      <td>récupération anormale</td>
+                      <td className="a">réduire le volume total</td>
+                    </tr>
+                  </tbody>
+                </table>
               </div>
-              <p>Un programme intelligent peut utiliser les quatre.</p>
-            </Sec>
-
-            <Sec id="s39" num="39" title="Le concept central à retenir">
-              <p style={{ fontStyle: 'italic', color: 'var(--gtg-ink)', fontSize: '1.1rem' }}>
-                Le GTG cherche à transformer un mouvement en compétence très bien maîtrisée grâce à
-                une répétition fréquente, submaximale et de haute qualité. Le but n’est pas de te
-                détruire, le but est de rendre le mouvement de plus en plus facile à produire.
-              </p>
-            </Sec>
-
-            <Sec id="s40" num="40" title="Alors, GTG lesté : oui ou non ?">
               <p>
-                <strong>Tractions</strong> — oui, potentiellement, en complément : poids du corps pour
-                la spécificité et l’endurance, lest pour la force maximale. <strong>Pompes</strong> —
-                même logique, mais le lest est moins indispensable pour juste augmenter le nombre.{' '}
-                <strong>Dips</strong> — le lest est très intéressant pour la force, mais surveille la
-                fatigue articulaire. <strong>Mouvements techniques</strong> — le lest est généralement
-                moins intéressant, priorité à la qualité. <strong>Mouvements explosifs</strong> — le
-                lest doit être utilisé avec prudence, une charge trop élevée peut altérer la vitesse.
+                Si le nombre prévu est atteint mais avec amplitude réduite, trajectoire différente ou
+                compensation, la série n’est plus équivalente à la précédente — même si le compteur
+                affiche encore {wr}.
               </p>
             </Sec>
 
-            <Sec id="s41" num="41" title="La conclusion pour toi">
-              <p>
-                Avec un maximum de 9 et un 4 × 5 comme travail classique, je ne chercherais pas à
-                faire un GTG de 5 reps. Commence plutôt autour de 2–3 tractions par passage, puis
-                observe si ton entraînement normal reste aussi bon. Si tu veux introduire du lest : GTG
-                au poids du corps en base, tractions lestées en complément de force — pas un GTG
-                entièrement lesté.
-              </p>
+            <Sec id="s40" num="22" title="Volume, récupération et volume invisible">
               <div className="flow">
-                <div>Reps au poids du corps → qualité de pratique</div>
-                <div>→ faible fatigue → meilleure maîtrise du mouvement</div>
-                <div>Travail lesté → force maximale</div>
-                <div>Séries classiques → tolérance aux séries longues</div>
-                <div className="goal">→ objectif : dépasser 9 répétitions</div>
+                <div>
+                  Passage : {wr} reps
+                </div>
+                <div>
+                  Journée : {wr} × {passagesEx} = {dayVol}
+                </div>
+                <div>
+                  Semaine (5 j) : {dayVol} × 5 = {weekVol}
+                </div>
+                <div className="goal">+ séances classiques → volume total réel</div>
+              </div>
+              <div className="quote">
+                Volume brut ≠ contrainte totale. Deux semaines à {weekVol} reps peuvent produire des
+                charges très différentes selon variante, amplitude, charge, RIR, vitesse, qualité et
+                repos.
+              </div>
+              <div className="split">
+                <div className="a">
+                  <h4>Récupérer quoi ?</h4>
+                  <p>
+                    Capacité neuromusculaire (force + qualité), tissus conjonctifs, articulations,
+                    sommeil, stress, autres entraînements, séances prioritaires. Un GTG qui dégrade
+                    systématiquement la séance principale du lendemain n’est plus « gratuit ».
+                  </p>
+                </div>
+                <div className="b">
+                  <h4>Volume invisible</h4>
+                  <p>
+                    {wr} « faciles » × encore × encore → +{dayVol} reps/jour. Le coût ne disparaît pas
+                    parce que chaque exposition est courte : la charge se cumule.
+                  </p>
+                </div>
+              </div>
+            </Sec>
+
+            <Sec id="s43" num="23" title="Comment progresser sans seulement ajouter des reps ?">
+              <p>
+                Progresser ≠ forcément plus de reps. Plusieurs variables — et le principe clé :{' '}
+                <strong>ne pas tout augmenter en même temps</strong>.
+              </p>
+              <div className="metrics-4">
+                <div>
+                  <div className="k">Qualité</div>
+                  <p>
+                    Même volume ({dayVol}/j), meilleure amplitude, trajectoire, moins de
+                    compensation, meilleure vitesse.
+                  </p>
+                </div>
+                <div>
+                  <div className="k">Passages</div>
+                  <p>
+                    Même {wr}/passage, plus d’expositions → volume ↑. Traite ça comme une vraie
+                    progression.
+                  </p>
+                </div>
+                <div>
+                  <div className="k">Par passage</div>
+                  <p>
+                    {wr} → {wr + 1} augmente le coût de chaque exposition. Ne combine pas auto avec +
+                    fréquence.
+                  </p>
+                </div>
+                <div>
+                  <div className="k">Difficulté</div>
+                  <p>Variante, charge, amplitude, vitesse, position — ou même volume ressenti plus facile.</p>
+                </div>
+              </div>
+              <div className="quote">
+                Ex. : {dayVol} reps → encore {dayVol} reps, mais moins de ralentissement et plus de
+                marge. Ce n’est pas forcément une « surcharge progressive » classique, mais c’est une
+                adaptation. Si tu montes reps + passages + difficulté d’un coup, tu ne sauras plus
+                quoi a marché — ni quoi a surchargé.
+              </div>
+            </Sec>
+
+            <Sec id="s46" num="24" title="Limites : fin du GTG, coût et fréquence">
+              <div className="quote">
+                Le GTG n’est pas un nombre de reps, de passages, d’intervalles ou d’heures. C’est la
+                relation difficulté → qualité → fatigue → fréquence → récupération.
+              </div>
+              <p>
+                Quand augmenter la fréquence provoque une dégradation persistante de la qualité ou de
+                la récupération, le principe cesse progressivement d’être respecté — même si tu coches
+                encore {wr} reps.
+              </p>
+              <div className="metrics-4">
+                <div>
+                  <div className="k">Coût / rep</div>
+                  <p>
+                    50 pompes ≠ 50 dips. Masse déplacée, amplitude, leviers, position, stabilité,
+                    variante, RIR, vitesse, charge externe.
+                  </p>
+                </div>
+                <div>
+                  <div className="k">Force / poids</div>
+                  <p>
+                    {bwKnown
+                      ? `À ${bw} kg, +10 kg ≈ +${pctLest10}% de masse externe vs PDC.`
+                      : `À ~70 kg, +10 kg ≈ +${pctLest10}% (renseigne ton poids pour un chiffre perso).`}{' '}
+                    Repère utile — pas +{pctLest10}% d’intensité musculaire.
+                  </p>
+                </div>
+                <div>
+                  <div className="k">Fréquence ≠ volume</div>
+                  <p>
+                    Fréquence = expositions. Volume = travail accumulé. On peut monter l’une sans
+                    l’autre, ou les deux. Le GTG joue surtout sur la{' '}
+                    <strong>distribution dans le temps</strong>.
+                  </p>
+                </div>
+                <div>
+                  <div className="k">Fatigue</div>
+                  <p>
+                    Submaximal = moins de fatigue aiguë <em>par</em> exposition. Pas volume gratuit :
+                    {passagesEx} × {wr} reste {dayVol} reps.
+                  </p>
+                </div>
               </div>
             </Sec>
 
             <ChapterDivider
               num="V"
-              title="La science"
-              subtitle="Ce qui est démontré, ce qui est extrapolé"
+              title="Science et niveau de preuve"
+              subtitle="Ce qui est établi, ce qui est extrapolé"
             />
 
-            <Sec id="s42" num="42" title="Ce que la science permet réellement de conclure">
+            <Sec id="s50" num="25" title="Science : ce qu’on sait, et à quel niveau">
               <div className="split">
                 <div className="a">
-                  <h4>Bien démontré</h4>
+                  <h4>Bien établi</h4>
                   <p>
-                    L’entraînement de résistance améliore la force ; les charges élevées sont
-                    efficaces pour la force max ; l’échec n’est pas nécessaire pour progresser ;
-                    l’hypertrophie tolère une large gamme de charges ; la fréquence, le volume et la
-                    spécificité comptent.
+                    Résistance → force ; spécificité ; charges élevées pour force max ; échec non
+                    indispensable ; hypertrophie sur large gamme ; à volume égalisé, fréquence ≠ avantage
+                    magique.
                   </p>
                 </div>
                 <div className="b">
                   <h4>Moins démontré</h4>
                   <p>
-                    Que le GTG plusieurs fois par jour bat une séance classique ; que le GTG lesté bat
-                    le GTG classique ; que 2 reps soit « scientifiquement optimal » pour un max de 9.
+                    GTG multi-jours &gt; séance classique ; GTG lesté &gt; PDC ; ratio précis « optimal »
+                    pour un max donné.
                   </p>
                 </div>
               </div>
+              <div className="metrics-4">
+                <div>
+                  <div className="k">A</div>
+                  <p>Démontré directement.</p>
+                </div>
+                <div>
+                  <div className="k">B</div>
+                  <p>Cohérent avec la littérature.</p>
+                </div>
+                <div>
+                  <div className="k">C</div>
+                  <p>Principe pratique.</p>
+                </div>
+                <div>
+                  <div className="k">D</div>
+                  <p>Exemple de programmation individuelle.</p>
+                </div>
+              </div>
+              <div className="quote">
+                La plupart des études viennent de l’entraînement classique — elles éclairent le GTG sans
+                le démontrer comme protocole. « Fréquence sans bénéfice à volume égal » ≠ « GTG inutile ».
+              </div>
+            </Sec>
+
+            <ChapterDivider
+              num="VI"
+              title={`Ton cas : max ${mx}`}
+              subtitle="Point de départ, progression, conclusion actionnable"
+            />
+
+            <Sec id="s53" num="26" title="Point de départ raisonnable">
+              <div className="stat-row">
+                <div>
+                  <div className="num">2–3</div>
+                  <div className="lbl">reps / passage (ex.)</div>
+                </div>
+                <div>
+                  <div className="num">4–6</div>
+                  <div className="lbl">passages / jour (ex.)</div>
+                </div>
+                <div>
+                  <div className="num">+50%</div>
+                  <div className="lbl">vs une séance 4×5 si +10 reps</div>
+                </div>
+              </div>
+              <div className="flow">
+                <div>Matin — 2</div>
+                <div>Fin de matinée — 2</div>
+                <div>Début d’après-midi — 2</div>
+                <div>Milieu d’après-midi — 2</div>
+                <div>Fin d’après-midi — 2</div>
+                <div>Soir — 2</div>
+                <div className="goal">Total : 12 reps (+60 % vs une séance de 20)</div>
+              </div>
+              <div className="sign-list">
+                <div className="good">
+                  <h4>Passer à 3 si</h4>
+                  <ul>
+                    <li>2 systématiquement facile</li>
+                    <li>tech stable, pas de douleur</li>
+                    <li>séances + max OK</li>
+                  </ul>
+                </div>
+                <div className="bad">
+                  <h4>Réduire si</h4>
+                  <ul>
+                    <li>3 → 3 → 2 → 2</li>
+                    <li>ralentissement inhabituel</li>
+                    <li>fatigue qui traîne</li>
+                  </ul>
+                </div>
+              </div>
               <p>
-                Ces dernières propositions sont des applications pratiques du raisonnement issu de la
-                littérature, pas des constantes biologiques universelles. Le lest peut très
-                probablement compléter le GTG en apportant un stimulus de force que le GTG très léger
-                ne fournit pas autant — mais il ne faut pas confondre « ajouter une qualité
-                d’entraînement » avec « rendre toute la méthode automatiquement meilleure ».
+                2 → 3 = +50 % du volume par exposition : n’augmente pas la fréquence en même temps.
               </p>
+            </Sec>
+
+            <Sec id="s56" num="27" title="Exemple de progression pratique">
+              <div className="quote">
+                Ce qui suit n’est pas une progression démontrée comme optimale — c’est un exemple
+                prudent d’augmentation d’une seule variable à la fois (niveau D).
+              </div>
+              <div className="phase-grid">
+                <div>
+                  <div className="ph">Phase 1 — tolérance</div>
+                  <div className="rx">2 reps × 4–5 passages</div>
+                  <p>Tester combien de pratique supplémentaire tu absorbes sans dérive.</p>
+                </div>
+                <div>
+                  <div className="ph">Phase 2 — volume</div>
+                  <div className="rx">2 reps × 6–8 passages</div>
+                  <p>Augmenter la fréquence des expositions, pas encore les reps.</p>
+                </div>
+                <div>
+                  <div className="ph">Phase 3 — stimulus / passage</div>
+                  <div className="rx">évent. 3 reps × 5–8</div>
+                  <p>N’augmente les reps que si 2 reste systématiquement facile.</p>
+                </div>
+                <div>
+                  <div className="ph">Phase 4 — maintenir & évaluer</div>
+                  <div className="rx">volume stable → retest</div>
+                  <p>Observer max, qualité et récupération avant de recharger.</p>
+                </div>
+              </div>
+              <p>
+                Lesté : bloc séparé, faible nombre de reps selon charge relative et RIR — pas chaque
+                passage GTG.
+              </p>
+            </Sec>
+
+            <Sec id="s57" num="28" title="Mesurer : max, 4×5 et GTG">
+              <p>
+                Semaine 0 → {mx} (standard exact : amplitude, prise, départ, fin, compensations).
+                Entraîne sans tester constamment. Retest toutes les 2–6 semaines, conditions
+                standardisées. Autres indicateurs : vitesse à 3 reps, qualité à volume identique, RIR
+                à charge donnée, volume toléré, récupération.
+              </p>
+              <div className="split">
+                <div className="a">
+                  <h4>4 × 5</h4>
+                  <p>Volume concentré, fatigue progressive, travail sous fatigue, séance structurée.</p>
+                </div>
+                <div className="b">
+                  <h4>GTG</h4>
+                  <p>Volume dispersé, faible fatigue / passage, nombreuses expositions, fraîcheur.</p>
+                </div>
+              </div>
+              <p>
+                Aucun n’est automatiquement « meilleur » — pas mutuellement exclusifs : une même
+                programmation peut combiner les deux.
+              </p>
+            </Sec>
+
+            <Sec id="s59" num="29" title={`Boîte à outils : ${mx} → ${caseExample.goal}`}>
+              <div className="toolkit">
+                <div>
+                  <h4>Classique</h4>
+                  <MiniBar stimulus={60} fatigue={40} />
+                  <p>Volume concentré, fatigue contrôlée, hypertrophie potentielle.</p>
+                </div>
+                <div>
+                  <h4>GTG</h4>
+                  <MiniBar stimulus={38} fatigue={8} />
+                  <p>Spécificité, technique, fréquence sous faible fatigue aiguë.</p>
+                </div>
+                <div>
+                  <h4>Lourd</h4>
+                  <MiniBar stimulus={55} fatigue={45} />
+                  <p>Force maximale et réserve — sans transformer chaque série en test.</p>
+                </div>
+                <div>
+                  <h4>Test max</h4>
+                  <MiniBar stimulus={65} fatigue={65} />
+                  <p>Mesure périodique — pas le cœur du programme.</p>
+                </div>
+              </div>
+              <div className="box">
+                <div className="box-title">Stratégie complète</div>
+                <div className="flow" style={{ margin: 0 }}>
+                  <div>GTG PDC → pratique fréquente submaximale</div>
+                  <div>Travail lesté → force maximale</div>
+                  <div>Séries multi-reps → tenir sous fatigue</div>
+                  <div>Complémentaire → dorsaux, biceps, gainage…</div>
+                  <div className="goal">Tests périodiques → mesurer le max</div>
+                </div>
+              </div>
+              <div className="qa-grid">
+                <div>
+                  <div className="k">Force</div>
+                  <p className="q">Puis-je produire assez de force pour cette répétition ?</p>
+                  <p className="a">Priorité du travail lourd.</p>
+                </div>
+                <div>
+                  <div className="k">Technique</div>
+                  <p className="q">Puis-je organiser correctement le mouvement ?</p>
+                  <p className="a">Cœur du GTG + expositions fraîches.</p>
+                </div>
+                <div>
+                  <div className="k">Endurance</div>
+                  <p className="q">Puis-je répéter cette performance plusieurs fois ?</p>
+                  <p className="a">GTG + pratique spécifique.</p>
+                </div>
+                <div>
+                  <div className="k">Résistance</div>
+                  <p className="q">Puis-je la conserver malgré la fatigue ?</p>
+                  <p className="a">Séries classiques / multi-reps.</p>
+                </div>
+              </div>
+              <p>
+                Avant de prescrire : identifier le facteur limitant (force, technique, endurance,
+                explosivité, mobilité, tolérance au volume).
+              </p>
+            </Sec>
+
+            <Sec id="s62" num="30" title="La conclusion — et la règle finale">
+              <p>
+                Avec max <strong>{mx}</strong> et un 4 × 5 : ne démarre pas à 5 reps en GTG. Pars sur{' '}
+                <strong>2–3</strong> — non pas parce que c’est une zone scientifiquement optimale pour
+                un max de {mx}, mais comme point de départ prudent pour tester la tolérance au volume
+                supplémentaire. Technique stricte, sans échec, marge pour que les passages suivants
+                restent faciles. Lest en complément de force, pas pour transformer chaque mini-série.
+              </p>
+              <div className="quote">
+                Le meilleur GTG n’est pas celui qui maximise les reps du jour — c’est celui qui
+                maximise la pratique spécifique que tu peux répéter assez longtemps pour progresser,
+                sans que fatigue, baisse de qualité ou volume total ne deviennent limitants.
+              </div>
+              <div className="principle">
+                Chaîne de décision : objectif → facteur limitant → exercice → difficulté → RIR →
+                qualité/vitesse → volume → fréquence → récupération → progression — puis seulement « dans
+                ton cas, probablement 2–3 reps ».
+              </div>
             </Sec>
 
             <footer className="proto-footer" id="sources">
               <h3 className="mono">SOURCES</h3>
               <ol>
                 <li>
-                  <em>Strength and Hypertrophy Adaptations Between Low- vs. High-Load Resistance Training</em>{' '}
-                  — Schoenfeld et al., 2017
-                </li>
-                <li>
                   <em>Muscular adaptations in low- versus high-load resistance training: A meta-analysis</em>{' '}
                   — Schoenfeld et al., 2016
+                </li>
+                <li>
+                  <em>Strength and Hypertrophy Adaptations Between Low- vs. High-Load Resistance Training</em>{' '}
+                  — Schoenfeld et al., 2017
                 </li>
                 <li>
                   <em>Resistance Training Load Effects on Muscle Hypertrophy and Strength Gain</em> — Lopez
@@ -1111,10 +1921,65 @@ export default function GtgProtocolGuide() {
                   </em>{' '}
                   — 2024
                 </li>
+                <li>
+                  <em>Specificity of early motor unit adaptations with resistive exercise training</em> — Del
+                  Vecchio et al., 2024
+                </li>
+                <li>
+                  <em>
+                    Resistance training-induced adaptations in the neuromuscular system: Physiological
+                    mechanisms and implications for human performance
+                  </em>{' '}
+                  — 2025
+                </li>
+                <li>
+                  <em>
+                    How many times per week should a muscle be trained to maximize muscle hypertrophy? A
+                    systematic review and meta-analysis of studies examining the effects of resistance
+                    training frequency
+                  </em>{' '}
+                  — Schoenfeld, Grgic &amp; Krieger, 2019
+                </li>
+                <li>
+                  <em>
+                    Effect of Resistance Training Frequency on Gains in Muscular Strength: A Systematic
+                    Review and Meta-Analysis
+                  </em>{' '}
+                  — Ralston et al., 2018
+                </li>
+                <li>
+                  <em>
+                    The Acute and Chronic Effects of Implementing Velocity Loss Thresholds During Resistance
+                    Training: A Systematic Review, Meta-Analysis, and Critical Evaluation of the Literature
+                  </em>{' '}
+                  — García-Ramos et al., 2022
+                </li>
+                <li>
+                  <em>
+                    The Effect of Velocity Loss on Strength Development and Related Training Efficiency: A
+                    Dose–Response Meta-Analysis
+                  </em>{' '}
+                  — 2023
+                </li>
+                <li>
+                  <em>
+                    Effects of Velocity Loss Threshold during Resistance Training on Strength and Athletic
+                    Adaptations: A Systematic Review with Meta-Analysis
+                  </em>{' '}
+                  — 2022
+                </li>
+                <li>
+                  <em>
+                    Resistance training prescription for muscle strength and hypertrophy in healthy adults: a
+                    systematic review and Bayesian network meta-analysis
+                  </em>{' '}
+                  — 2023
+                </li>
               </ol>
             </footer>
           </div>
         </main>
+
       </div>
     </div>
   );

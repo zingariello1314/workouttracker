@@ -171,6 +171,22 @@
   border-bottom-color: var(--gtg-chalk);
 }
 
+.gtg-protocol .gauge-input-sm {
+  width: 2.6rem;
+  font-size: 1.2rem;
+}
+
+.gtg-protocol .gauge-hint {
+  display: block;
+  margin-top: 0.2rem;
+  font-family: 'Oswald', sans-serif;
+  font-size: 0.62rem;
+  font-weight: 500;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--gtg-ink-faint);
+}
+
 .gtg-protocol .gauge-metrics {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -289,11 +305,12 @@
 .gtg-protocol .rail {
   position: sticky;
   top: 0;
-  max-height: min(100vh, 920px);
-  overflow-y: auto;
+  align-self: start;
   padding: 2.2rem 1.2rem 3rem 1.5rem;
   border-right: 1px solid var(--gtg-line);
-  scrollbar-width: thin;
+  /* Pas de scroll interne : le sommaire suit le flux de la page */
+  max-height: none;
+  overflow: visible;
 }
 
 .gtg-protocol .rail-chapter {
@@ -593,10 +610,12 @@
 
 .gtg-protocol .flow div {
   position: relative;
-  padding: 0.35rem 0 0.35rem 0.9rem;
+  padding: 0.45rem 0 0.45rem 0.9rem;
   font-family: 'JetBrains Mono', monospace;
-  font-size: 0.85rem;
+  font-size: 0.88rem;
   color: var(--gtg-ink-dim);
+  line-height: 1.45;
+  max-width: 36rem;
 }
 
 .gtg-protocol .flow div::before {
@@ -613,6 +632,349 @@
 .gtg-protocol .flow div.goal {
   color: var(--gtg-chalk);
   font-weight: 700;
+}
+
+.gtg-protocol .quote {
+  margin: 1.3rem 0;
+  padding: 1rem 1.2rem;
+  border-left: 3px solid var(--gtg-chalk);
+  background: var(--gtg-bg-raised);
+  color: var(--gtg-ink);
+  font-size: 1.05rem;
+  font-style: italic;
+  line-height: 1.55;
+}
+
+.gtg-protocol .quote strong {
+  font-style: normal;
+}
+
+.gtg-protocol .principle {
+  margin: 1.2rem 0;
+  padding: 0.85rem 1rem;
+  border: 1px dashed var(--gtg-line);
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.82rem;
+  letter-spacing: 0.02em;
+  color: var(--gtg-chalk);
+  line-height: 1.55;
+}
+
+.gtg-protocol .bullets {
+  margin: 0.8rem 0 1.2rem;
+  padding: 0;
+  list-style: none;
+}
+
+.gtg-protocol .bullets li {
+  position: relative;
+  padding: 0.35rem 0 0.35rem 1.15rem;
+  color: var(--gtg-ink-dim);
+  font-size: 0.98rem;
+}
+
+.gtg-protocol .bullets li::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0.85rem;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--gtg-stimulus);
+}
+
+.gtg-protocol .steps {
+  margin: 1.2rem 0;
+  counter-reset: gtg-step;
+}
+
+.gtg-protocol .steps > div {
+  display: grid;
+  grid-template-columns: 2.4rem minmax(0, 1fr);
+  column-gap: 0.85rem;
+  row-gap: 0.2rem;
+  padding: 0.85rem 0;
+  border-bottom: 1px solid var(--gtg-line);
+  counter-increment: gtg-step;
+}
+
+.gtg-protocol .steps > div:last-child {
+  border-bottom: none;
+}
+
+.gtg-protocol .steps > div::before {
+  content: counter(gtg-step, decimal-leading-zero);
+  grid-column: 1;
+  grid-row: 1 / span 2;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.78rem;
+  color: var(--gtg-chalk);
+  padding-top: 0.15rem;
+  line-height: 1.4;
+}
+
+.gtg-protocol .steps h4 {
+  grid-column: 2;
+  margin: 0;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.78rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--gtg-ink);
+}
+
+.gtg-protocol .steps p {
+  grid-column: 2;
+  margin: 0;
+  font-size: 0.95rem;
+  color: var(--gtg-ink-dim);
+  line-height: 1.55;
+  max-width: 38rem;
+}
+
+.gtg-protocol .phase-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1px;
+  background: var(--gtg-line);
+  border: 1px solid var(--gtg-line);
+  margin: 1.3rem 0;
+}
+
+.gtg-protocol .phase-grid > div {
+  background: var(--gtg-bg-raised);
+  padding: 1.1rem 1.15rem;
+}
+
+.gtg-protocol .phase-grid .ph {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.7rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--gtg-chalk);
+  margin-bottom: 0.35rem;
+}
+
+.gtg-protocol .phase-grid .rx {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: var(--gtg-ink);
+  margin-bottom: 0.35rem;
+}
+
+.gtg-protocol .phase-grid p {
+  margin: 0;
+  font-size: 0.9rem;
+  color: var(--gtg-ink-dim);
+  line-height: 1.45;
+}
+
+.gtg-protocol .toolkit {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1px;
+  background: var(--gtg-line);
+  border: 1px solid var(--gtg-line);
+  margin: 1.3rem 0;
+}
+
+.gtg-protocol .toolkit > div {
+  background: var(--gtg-bg-raised);
+  padding: 1.15rem 1.2rem;
+}
+
+.gtg-protocol .toolkit h4 {
+  margin: 0 0 0.55rem;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.74rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--gtg-ink);
+}
+
+.gtg-protocol .toolkit p {
+  margin: 0.45rem 0 0;
+  font-size: 0.9rem;
+  color: var(--gtg-ink-dim);
+  line-height: 1.45;
+}
+
+.gtg-protocol .qa-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1px;
+  background: var(--gtg-line);
+  border: 1px solid var(--gtg-line);
+  margin: 1.3rem 0;
+}
+
+.gtg-protocol .qa-grid > div {
+  background: var(--gtg-bg-raised);
+  padding: 1.15rem 1.2rem;
+}
+
+.gtg-protocol .qa-grid .k {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.72rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--gtg-chalk);
+  margin-bottom: 0.4rem;
+}
+
+.gtg-protocol .qa-grid .q {
+  margin: 0 0 0.45rem;
+  color: var(--gtg-ink);
+  font-size: 1rem;
+  line-height: 1.4;
+}
+
+.gtg-protocol .qa-grid .a {
+  margin: 0;
+  font-size: 0.88rem;
+  color: var(--gtg-ink-dim);
+  line-height: 1.4;
+}
+
+.gtg-protocol .metrics-4 {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1px;
+  background: var(--gtg-line);
+  border: 1px solid var(--gtg-line);
+  margin: 1.3rem 0;
+}
+
+.gtg-protocol .metrics-4 > div {
+  background: var(--gtg-bg-raised);
+  padding: 1rem 1.05rem;
+}
+
+.gtg-protocol .metrics-4 .k {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.72rem;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--gtg-chalk);
+  margin-bottom: 0.35rem;
+}
+
+.gtg-protocol .metrics-4 p {
+  margin: 0;
+  font-size: 0.9rem;
+  color: var(--gtg-ink-dim);
+  line-height: 1.4;
+}
+
+@media (max-width: 720px) {
+  .gtg-protocol .phase-grid,
+  .gtg-protocol .toolkit,
+  .gtg-protocol .qa-grid,
+  .gtg-protocol .metrics-4,
+  .gtg-protocol .sign-list,
+  .gtg-protocol .split.cols-3 {
+    grid-template-columns: 1fr;
+  }
+
+  .gtg-protocol .rep-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+.gtg-protocol .rep-grid {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 1px;
+  background: var(--gtg-line);
+  border: 1px solid var(--gtg-line);
+  margin: 1.3rem 0;
+}
+
+.gtg-protocol .rep-grid > div {
+  background: var(--gtg-bg-raised);
+  padding: 0.85rem 0.55rem;
+  text-align: center;
+}
+
+.gtg-protocol .rep-grid .n {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 1.35rem;
+  font-weight: 700;
+  color: var(--gtg-ink);
+}
+
+.gtg-protocol .rep-grid .t {
+  font-size: 0.68rem;
+  color: var(--gtg-ink-faint);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  margin-top: 0.25rem;
+}
+
+.gtg-protocol .rep-grid .d {
+  margin-top: 0.45rem;
+  font-size: 0.78rem;
+  color: var(--gtg-ink-dim);
+  line-height: 1.35;
+}
+
+.gtg-protocol .rep-grid > div.pick {
+  background: var(--gtg-bg-raised-2);
+}
+
+.gtg-protocol .rep-grid > div.pick .n {
+  color: var(--gtg-chalk);
+}
+
+.gtg-protocol .split.cols-3 {
+  grid-template-columns: 1fr 1fr 1fr;
+}
+
+.gtg-protocol .split .c h4 {
+  color: var(--gtg-chalk);
+}
+
+.gtg-protocol .sign-list {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1px;
+  background: var(--gtg-line);
+  border: 1px solid var(--gtg-line);
+  margin: 1.3rem 0;
+}
+
+.gtg-protocol .sign-list > div {
+  background: var(--gtg-bg-raised);
+  padding: 1.1rem 1.2rem;
+}
+
+.gtg-protocol .sign-list h4 {
+  margin: 0 0 0.55rem;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.74rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.gtg-protocol .sign-list .bad h4 {
+  color: var(--gtg-fatigue);
+}
+
+.gtg-protocol .sign-list .good h4 {
+  color: var(--gtg-stimulus);
+}
+
+.gtg-protocol .sign-list ul {
+  margin: 0;
+  padding-left: 1.1rem;
+  color: var(--gtg-ink-dim);
+  font-size: 0.92rem;
+}
+
+.gtg-protocol .sign-list li {
+  margin: 0.2rem 0;
 }
 
 .gtg-protocol table.obj {

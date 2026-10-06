@@ -19,11 +19,14 @@ import {
   addGtgAdHocPassage,
   addGtgBankExercise,
   buildGtgDayPlan,
+  buildGtgSelectedDoses,
+  getDayRecord,
   getGtgExerciseLabel,
   getPerExerciseSchedule,
   normalizeGtgData,
   removeGtgAdHocPassage,
   removeGtgExercise,
+  setGtgDayFeel,
   todayYmd,
   toggleGtgAdHocItem,
   toggleGtgMiniSet,
@@ -31,6 +34,8 @@ import {
   updateGtgExerciseConfig
 } from '../../../../services/endurance/gtgService';
 import GtgAdHocPassageForm from '../../../endurance/GtgAdHocPassageForm';
+import GtgProtocolPracticeStrip from './GtgProtocolPracticeStrip';
+import GtgProtocolDataBanner from './GtgProtocolDataBanner';
 import { syncGtgDayToWorkoutData } from '../../../../services/endurance/gtgWorkoutSync';
 import { applyWorkoutRepIntegrations } from '../../../../services/endurance/workoutRepIntegrations';
 import { applyGtgDeclaredMaxToData } from '../../../../services/endurance/gtgMaxPerformance';
@@ -177,20 +182,19 @@ export default function GtgSessionsPanel() {
     [gtgData, persistGtg]
   );
 
-  const onManualMaxChange = useCallback(
+  const onRepsPerSetChange = useCallback(
     (exerciseId, raw) => {
       const trimmed = String(raw ?? '').trim();
       if (trimmed === '') {
-        persistGtg(updateGtgExerciseConfig(gtgData, exerciseId, { manualMax: null }), today);
+        persistGtg(updateGtgExerciseConfig(gtgData, exerciseId, { repsPerSet: null }), today);
         return;
       }
       const n = Math.round(Number(trimmed.replace(',', '.')));
       persistGtg(
         updateGtgExerciseConfig(gtgData, exerciseId, {
-          manualMax: Number.isFinite(n) && n > 0 ? n : null
+          repsPerSet: Number.isFinite(n) && n > 0 ? n : null
         }),
-        today,
-        Number.isFinite(n) && n > 0 ? { exerciseId, reps: n } : null
+        today
       );
     },
     [gtgData, persistGtg, today]
@@ -228,6 +232,19 @@ export default function GtgSessionsPanel() {
     return map;
   }, [dayPlan.exercisePlans]);
 
+  const protocolDoses = useMemo(() => buildGtgSelectedDoses(gtgData, ctx), [gtgData, ctx]);
+  const todayFeel = useMemo(
+    () => getDayRecord(gtgData, today, gtgData.config.selectedIds).dayFeel,
+    [gtgData, today]
+  );
+
+  const onDayFeel = useCallback(
+    (feel) => {
+      persistGtg(setGtgDayFeel(gtgData, today, feel), today);
+    },
+    [gtgData, today, persistGtg]
+  );
+
   return (
     <div className="space-y-6">
       <button
@@ -249,6 +266,23 @@ export default function GtgSessionsPanel() {
           <p className="text-slate-400">{t('endurance.gtg.methodOptional')}</p>
         </div>
       )}
+
+      <GtgProtocolDataBanner
+        gtgData={gtgData}
+        ctx={ctx}
+        data={data}
+        updateData={updateData}
+        saving={saving}
+        t={t}
+      />
+
+      <GtgProtocolPracticeStrip
+        doses={protocolDoses}
+        dayFeel={todayFeel}
+        onFeelChange={onDayFeel}
+        saving={saving}
+        t={t}
+      />
 
       {/* Emploi du temps — en haut, juste après l'explication */}
       <div className="rounded-2xl border border-[#0F4C5C]/50 bg-black p-6">
@@ -497,7 +531,9 @@ export default function GtgSessionsPanel() {
           {gtgData.config.selectedIds.map((id) => {
             const ep = exercisePlanById.get(id);
             const plan = dayPlan.exercises.find((e) => e.exerciseId === id);
-            const manualVal = gtgData.config.manualMax?.[id];
+            const peCfg = gtgData.config.perExercise?.[id] || {};
+            const repsTargetVal = peCfg.repsPerSet;
+            const suggestedHalf = Math.max(1, Math.round((plan?.maxReps || 1) * 0.5));
             const sched = getPerExerciseSchedule(gtgData.config, id);
             const expanded = expandedExerciseId === id;
             return (
@@ -517,11 +553,9 @@ export default function GtgSessionsPanel() {
                   <div>
                     <div className="text-sm font-medium text-white">{labelFor(id)}</div>
                     <div className="mt-0.5 text-[11px] text-slate-400">
-                      {t('endurance.gtg.repsHint', {
+                      {t('endurance.gtg.repsPerSlotSummary', {
                         reps: plan?.repsPerSet ?? '—',
-                        low: plan?.rangeLow ?? '—',
-                        high: plan?.rangeHigh ?? '—',
-                        max: plan?.maxReps ?? '—'
+                        defaultValue: `${plan?.repsPerSet ?? '—'} reps / créneau`
                       })}
                       {' · '}
                       {t('endurance.gtg.exerciseScheduleSummary', {
@@ -548,20 +582,52 @@ export default function GtgSessionsPanel() {
 
                 {expanded && (
                   <div className="space-y-4 border-t border-slate-700/50 px-4 pb-4 pt-3">
-                    <label className="block text-[11px] text-slate-400">{t('endurance.gtg.manualMax')}</label>
+                    {(() => {
+                      const dose = protocolDoses.find((d) => d.exerciseId === id);
+                      if (!dose) return null;
+                      return (
+                        <div className="rounded-lg border border-teal-500/25 bg-teal-950/15 p-3">
+                          <div className="mb-2 flex flex-wrap items-center gap-2 text-[11px]">
+                            <span className="rounded-md border border-violet-500/35 bg-violet-950/30 px-2 py-1 tabular-nums text-violet-100">
+                              {dose.pctOfMax != null ? `${dose.pctOfMax}% du max` : '—'}
+                            </span>
+                            <span className="rounded-md border border-slate-600/60 bg-slate-900/60 px-2 py-1 tabular-nums text-slate-200">
+                              RIR {dose.rir != null ? dose.rir : '—'}
+                            </span>
+                            <span className="rounded-md border border-teal-500/35 bg-teal-950/30 px-2 py-1 text-teal-100">
+                              {t(`endurance.gtg.protocolTrack.zone.${dose.zone}`)}
+                            </span>
+                          </div>
+                          <div className="flex flex-wrap gap-1.5">
+                            {(dose.signals?.priority || []).map((sig) => (
+                              <span
+                                key={sig}
+                                className="rounded-full border border-teal-500/25 bg-black/30 px-2 py-0.5 text-[10px] text-teal-100/90"
+                              >
+                                {t(`endurance.gtg.protocolTrack.signal.${sig}`)}
+                              </span>
+                            ))}
+                          </div>
+                        </div>
+                      );
+                    })()}
+                    <label className="block text-[11px] text-slate-400">
+                      {t('endurance.gtg.repsPerSlot', 'Reps par créneau')}
+                    </label>
                     <p className="mb-1 text-[10px] text-violet-300/80">
-                      {t('endurance.gtg.performanceMaxHint', {
+                      {t('endurance.gtg.repsPerSlotHint', {
+                        suggested: suggestedHalf,
                         max: plan?.maxReps ?? '—',
-                        defaultValue: `Suggestion (Performances / historique) : ${plan?.maxReps ?? '—'} reps max — modifiable, non obligatoire.`
+                        defaultValue: `Combien de reps à chaque passage. Suggestion classique (~50 % du max ${plan?.maxReps ?? '—'}) : ${suggestedHalf}.`
                       })}
                     </p>
                     <input
                       type="number"
                       min={1}
                       max={200}
-                      placeholder={String(plan?.maxReps ?? '')}
-                      value={manualVal ?? ''}
-                      onChange={(e) => onManualMaxChange(id, e.target.value)}
+                      placeholder={String(suggestedHalf)}
+                      value={repsTargetVal ?? ''}
+                      onChange={(e) => onRepsPerSetChange(id, e.target.value)}
                       className="w-full rounded-lg border border-slate-600 bg-black px-3 py-2 text-sm text-white"
                     />
 
