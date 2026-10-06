@@ -2134,7 +2134,7 @@ const TodayTab = () => {
       ) : null}
 
       {/* Exercices */}
-      <div className="today-ex-section">
+      <div id="today-exercises-section" className="today-ex-section scroll-mt-28">
         <div className="today-section-head">
         <h3 className="font-semibold text-white mb-0 flex items-center gap-2">
           {t('today.exercises.title')}

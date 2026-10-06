@@ -189,13 +189,32 @@ export default function GithubIntegrationSettings({ currentUser, updateProfile }
             <code className="text-emerald-200">read:user</code>) — même effet pour le module Code, à manier avec
             précaution.
           </p>
-          <div className="flex flex-col gap-2 sm:flex-row sm:items-end">
+          <div className="relative flex flex-col gap-2 sm:flex-row sm:items-end">
+            {/* Leurres : le champ PAT ne doit pas être pris pour un login Google */}
+            <div
+              aria-hidden="true"
+              className="pointer-events-none absolute -left-[10000px] h-px w-px overflow-hidden opacity-0"
+            >
+              <input type="text" name="username" autoComplete="username" tabIndex={-1} defaultValue="" />
+              <input
+                type="password"
+                name="password"
+                autoComplete="current-password"
+                tabIndex={-1}
+                defaultValue=""
+              />
+            </div>
             <Input
               type="password"
-              autoComplete="off"
+              name="github-personal-access-token"
+              autoComplete="new-password"
               placeholder="github_pat_… ou gho_…"
               value={pat}
               onChange={(e) => setPat(e.target.value)}
+              data-lpignore="true"
+              data-1p-ignore="true"
+              data-bwignore="true"
+              data-form-type="other"
               className="!border-red-900/50 !bg-black !text-red-50 sm:flex-1"
               containerClassName="sm:flex-1"
             />

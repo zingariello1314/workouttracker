@@ -57,6 +57,15 @@ const NutritionTab = () => {
     }));
   }, [activeSection]);
 
+  useEffect(() => {
+    const onNav = (event) => {
+      const section = event?.detail?.section;
+      if (typeof section === 'string' && section) setActiveSection(section);
+    };
+    window.addEventListener('sport:nutrition-section', onNav);
+    return () => window.removeEventListener('sport:nutrition-section', onNav);
+  }, []);
+
   // ✅ OPTIMISATION Phase 15.1 : Configuration pour préservation état sections
   const config = useMemo(() => getNutritionConfig(), []);
   const preserveSectionState = config.performance.preserveSectionState ?? true;
@@ -199,17 +208,19 @@ const NutritionTab = () => {
         {/* ✅ OPTIMISATION Phase 15.1 : Rendus conditionnels optimisés */}
         {/* Garder sections montées mais cachées pour préserver état */}
         
-        {renderSection(
-          'journal',
-          NutritionJournal,
-          {
-            selectedDate,
-            onDateChange: setSelectedDate,
-            nutritionData,
-            garminData
-          },
-          t('nutrition.skeletons.journal')
-        )}
+        <div id="nutrition-journal-section" className="scroll-mt-28">
+          {renderSection(
+            'journal',
+            NutritionJournal,
+            {
+              selectedDate,
+              onDateChange: setSelectedDate,
+              nutritionData,
+              garminData
+            },
+            t('nutrition.skeletons.journal')
+          )}
+        </div>
 
         {renderSection('bank', NutritionFoodBank, {}, t('nutrition.skeletons.bank'))}
         

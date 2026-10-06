@@ -1,27 +1,12 @@
 /**
- * Barre XP Sport
+ * Barre XP Sport — HUD repliable (grille, hachures, ghost niveau).
  */
 
-import React from 'react';
-import {
-  Dumbbell,
-  Flame,
-  Footprints,
-  Target,
-  CheckCircle,
-  Trophy,
-  Map,
-  ListOrdered,
-  Scale,
-  Sparkles,
-  Repeat,
-  Salad,
-  Timer,
-  Clock
-} from 'lucide-react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { useSportGrade } from '../../../../hooks/useSportGrade';
-import SportGradeBarSummary from '../../../sport/grades/SportGradeBarSummary';
-import { openSportRecapGradesView } from '../../../../utils/sport/recapViewConfig';
+import SportGradeEmblem from '../../../sport/grades/SportGradeEmblem';
+import { sportGradeLabel, sportPalierLabel } from '../../../sport/grades/SportGradeIdentity';
+import { navigateFromSportXpBar } from '../../../../utils/sport/sportXpBarNavigate';
 import { useWorkout } from '../../../../context/WorkoutContext';
 import {
   SPORT_XP_PER_TOTAL_KG_VOLUME,
@@ -34,366 +19,676 @@ import {
 import { STEPS_XP_RATE_VERIFIED, STEPS_XP_RATE_DECLARATIVE } from '../../../../utils/sport/manualDailyWalkUtils';
 import { useTranslation } from '../../../../utils/translations';
 import { formatCalendarSportDuration } from '../../../../utils/calendarSportStatsFormat';
+import {
+  getXpAppearancePreference,
+  isDetailFieldOn,
+  listAllSportXpAccents,
+  resolveSportXpAccentHex,
+  subscribeXpAppearance,
+  updateXpAppearancePreference
+} from '../../../../utils/xpAppearancePreference';
+import styles from './SportXPBar.module.css';
+
+function fmt(n, opts) {
+  return Number(n || 0).toLocaleString('fr-FR', opts);
+}
+
+function pctOf(part, total) {
+  if (!total || total <= 0) return '0 %';
+  const x = (part / total) * 100;
+  if (x > 0 && x < 0.1) return '<0,1 %';
+  return `${x.toFixed(1).replace('.', ',')} %`;
+}
+
+const ROW_FIELD = {
+  weightedReps: 'rowWeightedReps',
+  checked: 'rowChecked',
+  volume: 'rowVolume',
+  stretches: 'rowStretches',
+  challenges: 'rowChallenges',
+  weightedTime: 'rowWeightedTime',
+  circuits: 'rowCircuits',
+  gtg: 'rowGtg',
+  feedback: 'rowFeedback',
+  programBonus: 'rowProgramBonus',
+  calories: 'rowCalories',
+  steps: 'rowSteps',
+  food: 'rowFood',
+  running: 'rowRunning',
+  pushups: 'rowPushups',
+  jumpRope: 'rowJumpRope',
+  plank: 'rowPlank',
+  dailyAvg: 'rowDailyAvg',
+  mastery: 'rowMastery'
+};
+
+function buildXpGroups(breakdown, t, refTwoStarTenReps, dailyInsights, masteryScore, preference) {
+  const on = (id) => isDetailFieldOn(id, preference);
+
+  const trainingRows = [
+    {
+      id: 'weightedReps',
+      name: 'Reps pondérées',
+      hint: `Réf. charge 10 reps ~2★ ≈ ${refTwoStarTenReps} XP`,
+      amount: fmt(breakdown.reps),
+      unit: 'reps',
+      xp: Math.round(breakdown.weightedRepsXp || 0)
+    },
+    {
+      id: 'checked',
+      name: 'Exercices cochés',
+      hint: `×${SPORT_XP_PER_CHECKED_EXERCISE} XP / exercice`,
+      amount: fmt(breakdown.exercises),
+      unit: 'exercices',
+      xp: Math.round(breakdown.exercisesXp || 0)
+    },
+    {
+      id: 'volume',
+      name: 'Volume cumulé',
+      hint: `${SPORT_XP_PER_TOTAL_KG_VOLUME.toLocaleString('fr-FR', {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 3
+      })} XP/kg · plafond ${SPORT_XP_LIFTED_VOLUME_CAP.toLocaleString('fr-FR')} · dédup. 1 exo/jour`,
+      amount: fmt(breakdown.liftedVolumeKg ?? 0, { maximumFractionDigits: 0 }),
+      unit: 'kg×reps',
+      xp: Math.round(breakdown.liftedVolumeKgXp || 0)
+    },
+    {
+      id: 'stretches',
+      name: 'Étirements',
+      hint: '100→300 XP / coche selon notes',
+      amount: fmt(breakdown.stretches ?? 0),
+      unit: (breakdown.stretches ?? 0) > 0 ? `étirements (${breakdown.stretches} cochés)` : 'étirements',
+      xp: Math.round(breakdown.stretchesXp || 0)
+    },
+    {
+      id: 'challenges',
+      name: 'Défis',
+      hint: '×50 XP',
+      amount: fmt(breakdown.challenges),
+      unit: 'défis',
+      xp: Math.round(breakdown.challengesXp || 0)
+    },
+    {
+      id: 'weightedTime',
+      name: 'Temps pondéré',
+      hint: '',
+      amount: formatCalendarSportDuration(breakdown.timeMinutes ?? 0),
+      unit: 'exos en durée',
+      xp: Math.round(breakdown.weightedTimeXp || 0)
+    },
+    {
+      id: 'circuits',
+      name: 'Circuits',
+      hint:
+        (breakdown.circuitTripleAchievedDays ?? 0) > 0
+          ? `${breakdown.circuitTripleAchievedDays}× 3× cible`
+          : '',
+      amount: fmt(breakdown.circuitCompletedDays ?? 0),
+      unit: 'circuits',
+      xp: Math.round(breakdown.circuitsXp || 0)
+    },
+    {
+      id: 'gtg',
+      name: 'GTG',
+      hint: (breakdown.gtgReps ?? 0) > 0 ? `${fmt(breakdown.gtgReps)} reps` : '',
+      amount: fmt(breakdown.gtgReps ?? 0),
+      unit: 'reps GTG',
+      xp: Math.round(breakdown.gtgXp || 0)
+    },
+    {
+      id: 'feedback',
+      name: 'Séances + feedback',
+      hint: '×25 XP',
+      amount: '',
+      unit: '',
+      xp: Math.round(breakdown.sessionsFeedbackXp || 0)
+    },
+    {
+      id: 'programBonus',
+      name: 'Bonus complétion programme',
+      hint: '',
+      amount: '',
+      unit: '',
+      xp: Math.round(breakdown.programCompletionBonusXp || 0)
+    },
+    {
+      id: 'mastery',
+      name: 'Score de maîtrise',
+      hint: 'Agrégat utilisé pour les grades (reps, séances, kcal…)',
+      amount: masteryScore != null ? fmt(masteryScore, { maximumFractionDigits: 0 }) : '',
+      unit: 'pts',
+      xp: 0,
+      forceShow: masteryScore != null && masteryScore > 0
+    }
+  ].filter((row) => on(ROW_FIELD[row.id]));
+
+  const stepsHint =
+    (breakdown.stepsXpDeclarative ?? 0) > 0
+      ? `${fmt(breakdown.stepsXpVerified ?? breakdown.stepsXp ?? 0)} montre + ${fmt(
+          breakdown.stepsXpDeclarative
+        )} déclaratif ×50 %`
+      : `${STEPS_XP_RATE_VERIFIED.toLocaleString('fr-FR', {
+          minimumFractionDigits: 4,
+          maximumFractionDigits: 4
+        })}× pas montre · ${STEPS_XP_RATE_DECLARATIVE.toLocaleString('fr-FR', {
+          minimumFractionDigits: 4,
+          maximumFractionDigits: 4
+        })}× déclaratif`;
+
+  const activityRows = [
+    {
+      id: 'calories',
+      name: 'Calories',
+      hint: `${SPORT_XP_PER_ACTIVE_CALORIE.toLocaleString('fr-FR', {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2
+      })}× kcal actives Garmin cumulées`,
+      amount: fmt(breakdown.calories),
+      unit: 'cal',
+      xp: Math.round(breakdown.caloriesXp || 0)
+    },
+    {
+      id: 'steps',
+      name: 'Pas',
+      hint: stepsHint,
+      amount: fmt(breakdown.steps),
+      unit: 'pas',
+      xp: Math.round(breakdown.stepsXp || 0)
+    },
+    {
+      id: 'food',
+      name: 'Aliments',
+      hint: `${SPORT_XP_PER_NUTRITION_FOOD_REGISTERED}× lignes journal`,
+      amount: fmt(breakdown.nutritionFoodItems ?? 0),
+      unit: 'aliments',
+      xp: Math.round(breakdown.nutritionFoodXp || 0)
+    },
+    {
+      id: 'dailyAvg',
+      name: 'Moyenne XP / jour actif',
+      hint:
+        dailyInsights?.daysWithXp > 0
+          ? `${fmt(dailyInsights.daysWithXp)} jours avec XP`
+          : 'Aucun jour actif encore',
+      amount: dailyInsights?.averageDailyXp != null ? fmt(dailyInsights.averageDailyXp) : '',
+      unit: 'XP / jour',
+      xp: 0,
+      forceShow: (dailyInsights?.averageDailyXp || 0) > 0
+    }
+  ].filter((row) => on(ROW_FIELD[row.id]));
+
+  const trophyRows = [
+    {
+      id: 'running',
+      name: 'Course',
+      hint: '',
+      amount: fmt(breakdown.runningTotalDistanceKm ?? 0, { maximumFractionDigits: 1 }),
+      unit: `km cumul · ${fmt(breakdown.runningSessionCount ?? 0)} sorties`,
+      xp: Math.round(breakdown.runningTrophies || 0)
+    },
+    {
+      id: 'pushups',
+      name: 'Pompes',
+      hint: '',
+      amount: '',
+      unit: '',
+      xp: Math.round(breakdown.pushupTrophies || 0)
+    },
+    {
+      id: 'jumpRope',
+      name: 'Corde',
+      hint: '',
+      amount: '',
+      unit: '',
+      xp: Math.round(breakdown.jumpRopeTrophies || 0)
+    },
+    {
+      id: 'plank',
+      name: 'Gainage',
+      hint: '',
+      amount: '',
+      unit: '',
+      xp: Math.round(breakdown.gainageTrophies || 0)
+    }
+  ].filter((row) => on(ROW_FIELD[row.id]));
+
+  return [
+    { id: 'training', name: 'Entraînement & défis', color: 'var(--c1)', rows: trainingRows },
+    { id: 'activity', name: 'Activité & nutrition', color: 'var(--c2)', rows: activityRows },
+    { id: 'trophies', name: 'Trophées', color: 'var(--c3)', rows: trophyRows }
+  ].map((group) => {
+    const total = group.rows.reduce((sum, row) => sum + (row.xp || 0), 0);
+    const rows = [...group.rows].sort((a, b) => b.xp - a.xp);
+    return { ...group, total, rows };
+  });
+}
 
 const SportXPBar = () => {
-  const { totalXP, level, breakdown, progress, grades, isLoading } = useSportGrade();
-  const { setActiveTab } = useWorkout();
+  const { totalXP, level, breakdown, progress, grades, isLoading, dailyInsights, masteryScore } =
+    useSportGrade();
+  const { setActiveTab, requestOpenEnduranceSubTab } = useWorkout();
   const t = useTranslation();
-  const goRecapGrades = () => {
-    openSportRecapGradesView();
-    setActiveTab('recap');
+  const [open, setOpen] = useState(false);
+  const [preference, setPreference] = useState(getXpAppearancePreference);
+
+  useEffect(() => subscribeXpAppearance(setPreference), []);
+
+  const accentHex = resolveSportXpAccentHex(preference);
+  const accents = listAllSportXpAccents(preference);
+  const refTwoStarTenReps = sportXpReferenceTenRepsTwoStarBodyweight();
+
+  const goNav = (targetId, event) => {
+    event?.stopPropagation?.();
+    event?.preventDefault?.();
+    navigateFromSportXpBar(targetId, { setActiveTab, requestOpenEnduranceSubTab });
   };
+
+  const goRecapGrades = (event) => {
+    goNav('grades', event);
+  };
+
   const gradesHint = t('recap.grades.openGradesHint', 'Voir le détail dans Récap → Grades');
   const xpOnLevel = progress.xpOnLevel ?? 0;
   const xpForLevel = progress.xpForLevel ?? 1000;
   const xpNeeded = progress.xpNeeded ?? 0;
   const pct = Math.min(100, Math.max(0, progress.percent ?? 0));
 
-  const refTwoStarTenReps = sportXpReferenceTenRepsTwoStarBodyweight();
+  const progGradeId = grades?.progression?.gradeId;
+  const progTier = grades?.progression?.tier;
+  const merGradeId = grades?.merited?.gradeId;
+  const merTier = grades?.merited?.tier;
+  const progName = sportGradeLabel(progGradeId, t);
+  const progPalier = sportPalierLabel(progTier, t);
+  const merName = sportGradeLabel(merGradeId, t);
+  const merPalier = sportPalierLabel(merTier, t);
+  const sameMerited = merGradeId === progGradeId && Number(merTier) === Number(progTier);
+
+  const groups = useMemo(
+    () =>
+      buildXpGroups(breakdown || {}, t, refTwoStarTenReps, dailyInsights, masteryScore, preference),
+    [breakdown, t, refTwoStarTenReps, dailyInsights, masteryScore, preference]
+  );
+
+  const maxRowXp = useMemo(
+    () => Math.max(1, ...groups.flatMap((g) => g.rows.map((r) => r.xp || 0))),
+    [groups]
+  );
+
+  const trainingPlusActivity = (groups[0]?.total || 0) + (groups[1]?.total || 0);
+  const stackPieces = useMemo(() => {
+    const pieces = [];
+    groups.forEach((group) => {
+      group.rows
+        .filter((r) => r.xp > 0)
+        .forEach((row, i) => {
+          pieces.push({
+            key: `${group.id}-${row.id}`,
+            flex: row.xp,
+            color: group.color,
+            opacity: Math.max(0.4, 1 - i * 0.18),
+            title: `${row.name} · ${fmt(row.xp)} XP`
+          });
+        });
+    });
+    return pieces;
+  }, [groups]);
+
+  const setAccent = (id) => {
+    updateXpAppearancePreference({ sportAccentId: id });
+  };
+
+  const toggleOpen = () => setOpen((value) => !value);
+
+  if (isLoading) {
+    return (
+      <div className={styles.wrap}>
+        <section className={styles.xp} style={{ '--acb': accentHex }}>
+          <div className={styles.loading} aria-hidden="true">
+            <div className={styles.pulse} style={{ width: '42%' }} />
+            <div className={styles.pulse} style={{ width: '72%' }} />
+            <div className={styles.pulse} style={{ width: '55%' }} />
+          </div>
+        </section>
+      </div>
+    );
+  }
 
   return (
-    <div className="rounded-xl border-2 border-[#0F4C5C]/85 bg-black p-4 shadow-lg shadow-black/40 space-y-4">
-      {isLoading ? (
-        <div className="flex w-full min-w-0 items-stretch gap-3 rounded-lg px-0.5 py-0.5" aria-hidden="true">
-          <div className="h-14 w-14 shrink-0 animate-pulse rounded-lg bg-[#0F4C5C]/40" />
-          <div className="min-w-0 flex-1 space-y-2 py-0.5">
-            <div className="h-3 w-24 animate-pulse rounded bg-[#0F4C5C]/35" />
-            <div className="h-5 w-36 animate-pulse rounded bg-[#0F4C5C]/45" />
-            <div className="h-3 w-28 animate-pulse rounded bg-[#0F4C5C]/30" />
-          </div>
-        </div>
-      ) : (
-        <SportGradeBarSummary
-          progressionGradeId={grades?.progression?.gradeId}
-          progressionTier={grades?.progression?.tier}
-          meritedGradeId={grades?.merited?.gradeId}
-          meritedTier={grades?.merited?.tier}
-          level={level}
-          onClick={goRecapGrades}
-          title={gradesHint}
-        />
-      )}
-
-      <div className="mb-1 flex flex-wrap items-start justify-between gap-3 border-t border-[#0F4C5C]/35 pt-3">
-        <div className="flex min-w-0 flex-1 items-start gap-2">
-          <Dumbbell className="mt-0.5 h-5 w-5 shrink-0 text-teal-300" />
-          <div className="min-w-0">
-            <div className={`font-semibold text-sky-50 ${isLoading ? 'animate-pulse text-transparent bg-[#0F4C5C]/45 rounded w-20 h-5' : ''}`}>
-              {isLoading ? '·' : `Niveau ${level}`}
-            </div>
-            <p className="mt-0.5 text-xs text-teal-200/75">
-              XP sur le palier niveau {level} :{' '}
-              <span className="font-semibold tabular-nums text-cyan-300">
-                {xpOnLevel.toLocaleString('fr-FR')}
-              </span>
-              <span className="text-slate-500"> / </span>
-              <span className="tabular-nums text-slate-300">
-                {xpForLevel.toLocaleString('fr-FR')}
-              </span>{' '}
-              <span className="text-slate-500">XP</span>
-            </p>
-          </div>
-        </div>
-        <div className="flex shrink-0 flex-col items-end gap-2 sm:flex-row sm:items-start">
-          <span className="text-sm text-teal-100/90">
-            {totalXP.toLocaleString('fr-FR')} XP total
-          </span>
-          <div className="min-w-[9.5rem] rounded-lg border border-[#0F5C45]/45 bg-[#0F4C5C]/20 px-3 py-2 text-right">
-            <div className="text-[10px] font-medium uppercase tracking-wide text-cyan-200/70">
-              Reste jusqu&apos;au niveau {level + 1}
-            </div>
-            <div className="text-xl font-bold tabular-nums text-cyan-200 drop-shadow-[0_0_10px_rgba(34,211,238,0.25)]">
-              {xpNeeded.toLocaleString('fr-FR')}{' '}
-              <span className="text-sm font-semibold text-cyan-100/90">XP</span>
-            </div>
-          </div>
-        </div>
+    <div className={styles.wrap}>
+      <div className={styles.sw} onClick={(e) => e.stopPropagation()}>
+        <span>Couleur</span>
+        {accents.map((item) => (
+          <button
+            key={item.id}
+            type="button"
+            data-a={item.id}
+            style={{ background: item.hex }}
+            aria-label={item.label}
+            aria-pressed={preference.sportAccentId === item.id}
+            onClick={() => setAccent(item.id)}
+          />
+        ))}
       </div>
 
-      <div className="mb-2 h-2.5 w-full overflow-hidden rounded-full border border-[#0F4C5C]/55 bg-black">
+      <section
+        className={`${styles.xp}${open ? ` ${styles.open}` : ''}`}
+        style={{ '--acb': accentHex }}
+      >
         <div
-          className="h-full bg-gradient-to-r from-[#0F4C5C] via-cyan-700 to-emerald-700 transition-all"
-          style={{ width: `${pct}%` }}
-        />
-      </div>
-      <div className="mb-3 flex flex-wrap items-center justify-between gap-x-3 gap-y-1 text-xs text-teal-200/85">
-        <span className="tabular-nums">
-          Encore <span className="font-semibold text-cyan-200">{xpNeeded.toLocaleString('fr-FR')} XP</span> jusqu&apos;au
-          niveau {level + 1}
-        </span>
-        <span className="text-teal-400/70">{Math.round(pct)} %</span>
-      </div>
-
-      <div className="grid grid-cols-2 gap-2 text-xs sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-9">
-        <div className="flex items-center gap-1">
-          <Dumbbell className="h-3 w-3 shrink-0 text-sky-400" />
-          <span className="text-sky-400/95">{breakdown.reps.toLocaleString('fr-FR')} reps</span>
-        </div>
-        <div
-          className="flex min-w-0 flex-col gap-0.5"
-          title={t(
-            'today.sportXp.sessionTimeHint',
-            'Durée des séances : Garmin (muscu, cardio, course) et défis endurance (pompes, etc.).'
-          )}
+          className={styles.top}
+          onClick={toggleOpen}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter' || e.key === ' ') {
+              e.preventDefault();
+              toggleOpen();
+            }
+          }}
+          role="button"
+          tabIndex={0}
+          aria-expanded={open}
         >
-          <div className="flex items-center gap-1">
-            <Clock className="h-3 w-3 shrink-0 text-teal-400" />
-            <span className="text-sky-400/95">
-              {t('today.sportXp.sessionTimeLabel', '{{dur}} séances', {
-                dur: formatCalendarSportDuration(breakdown.sessionMinutes ?? 0)
-              })}
-            </span>
+          <div className={styles.bgl} />
+          <div className={styles.hat} />
+          <div className={styles.ghost} aria-hidden="true">
+            {level}
           </div>
-        </div>
-        <div
-          className="flex min-w-0 flex-col gap-0.5"
-          title={t(
-            'today.sportXp.heldTimeHint',
-            'Exercices du journal en minutes ou secondes (corde, gainage, cardio au minuteur…) + durée des sorties course. Hors défis pompes (reps) et hors durée de séance Garmin muscu (voir « séances »).'
-          )}
-        >
-          <div className="flex items-center gap-1">
-            <Timer className="h-3 w-3 shrink-0 text-cyan-400" />
-            <span className="text-sky-400/95">
-              {t('today.sportXp.heldTimeLabel', '{{dur}} exos en durée', {
-                dur: formatCalendarSportDuration(breakdown.timeMinutes ?? 0)
-              })}
-            </span>
+          <div className={styles.edge} />
+
+          <button
+            type="button"
+            className={styles.gradeBtn}
+            onClick={goRecapGrades}
+            title={gradesHint}
+            aria-label={gradesHint}
+          >
+            <div className={styles.img}>
+              {progGradeId ? (
+                <SportGradeEmblem
+                  gradeId={progGradeId}
+                  layout={open ? 'recap' : 'bar'}
+                  className="!h-full !w-full !max-h-none !max-w-none !border-0 !bg-transparent !shadow-none !rounded-sm"
+                />
+              ) : null}
+            </div>
+          </button>
+
+          <button type="button" className={`${styles.gradeBtn} ${styles.grd}`} onClick={goRecapGrades} title={gradesHint}>
+            <div className={styles.k}>Grade</div>
+            <div className={styles.gname}>{progName || '—'}</div>
+            <div className={styles.chips}>
+              <span className={styles.chip}>{progPalier || '—'}</span>
+              {level != null ? <span className={styles.lv}>Niveau {level}</span> : null}
+            </div>
+          </button>
+
+          <div className={styles.pr}>
+            <div className={styles.ends}>
+              <span>
+                <b>Niveau {level}</b>
+              </span>
+              <span>Niveau {level + 1}</span>
+            </div>
+            <div
+              className={styles.trk}
+              role="progressbar"
+              aria-valuenow={Math.round(pct)}
+              aria-valuemin={0}
+              aria-valuemax={100}
+            >
+              <i style={{ width: `${pct}%` }} />
+              <b style={{ left: `${pct}%` }} />
+            </div>
+            <div className={styles.rem}>
+              <strong>
+                {fmt(xpNeeded)}
+                <span>XP restants</span>
+              </strong>
+              <em>
+                <b>{Math.round(pct)} %</b> · {fmt(xpOnLevel)} / {fmt(xpForLevel)} XP
+              </em>
+            </div>
           </div>
-        </div>
-        <div className="flex min-w-0 flex-col gap-0.5">
-          <div className="flex items-center gap-1">
-            <Scale className="h-3 w-3 shrink-0 text-amber-300/90" />
-            <span className="text-sky-400/95">
-              {(breakdown.liftedVolumeKg ?? 0).toLocaleString('fr-FR', { maximumFractionDigits: 0 })} kg×reps
-            </span>
-          </div>
-          <span className="pl-4 text-[10px] leading-tight text-amber-200/85">
-            +{(breakdown.liftedVolumeKgXp ?? 0).toLocaleString('fr-FR')} XP (dédup. 1 exo/jour)
-          </span>
-        </div>
-        <div className="flex items-center gap-1">
-          <CheckCircle className="h-3 w-3 shrink-0 text-sky-400" />
-          <span className="text-sky-400/95">{breakdown.exercises} exercices</span>
-        </div>
-        <div className="flex min-w-0 flex-col gap-0.5">
-          <div className="flex items-center gap-1">
-            <Sparkles className="h-3 w-3 shrink-0 text-teal-300" />
-            <span className="text-sky-400/95">
-              {(breakdown.stretches ?? 0).toLocaleString('fr-FR')} étirements
-            </span>
-          </div>
-          <span className="pl-4 text-[10px] leading-tight text-teal-200/85">
-            +{(breakdown.stretchesXp ?? 0).toLocaleString('fr-FR')} XP (100→300 / coche selon notes)
-          </span>
-        </div>
-        <div className="flex min-w-0 flex-col gap-0.5">
-          <div className="flex items-center gap-1">
-            <Repeat className="h-3 w-3 shrink-0 text-amber-300" />
-            <span className="text-sky-400/95">
-              {(breakdown.circuitCompletedDays ?? 0).toLocaleString('fr-FR')} circuits
-            </span>
-          </div>
-          <span className="pl-4 text-[10px] leading-tight text-amber-200/85">
-            +{(breakdown.circuitsXp ?? 0).toLocaleString('fr-FR')} XP
-            {(breakdown.circuitTripleAchievedDays ?? 0) > 0
-              ? ` · ${breakdown.circuitTripleAchievedDays} 3× cible`
-              : ''}
-          </span>
-        </div>
-        <div className="flex items-center gap-1">
-          <Flame className="h-3 w-3 shrink-0 text-[#e85d4c]" />
-          <span className="text-sky-400/95">{breakdown.calories.toLocaleString('fr-FR')} cal</span>
-        </div>
-        <div className="flex items-center gap-1">
-          <Footprints className="h-3 w-3 shrink-0 text-sky-400" />
-          <span className="text-sky-400/95">{breakdown.steps.toLocaleString('fr-FR')} pas</span>
-        </div>
-        <div className="flex min-w-0 flex-col gap-0.5">
-          <div className="flex items-center gap-1">
-            <Salad className="h-3 w-3 shrink-0 text-emerald-300/95" />
-            <span className="text-sky-400/95">
-              {(breakdown.nutritionFoodItems ?? 0).toLocaleString('fr-FR')} aliments
-            </span>
-          </div>
-          <span className="pl-4 text-[10px] leading-tight text-emerald-200/85">
-            +{(breakdown.nutritionFoodXp ?? 0).toLocaleString('fr-FR')} XP (
-            {SPORT_XP_PER_NUTRITION_FOOD_REGISTERED}× lignes journal)
-          </span>
-          <span className="pl-4 text-[10px] leading-tight text-slate-500">
-            Réf. charge 10 reps ~2★ (reps pond.) ≈ {refTwoStarTenReps} XP
-          </span>
-        </div>
-        <div className="flex items-center gap-1">
-          <Target className="h-3 w-3 shrink-0 text-sky-400" />
-          <span className="text-sky-400/95">{breakdown.challenges} défis</span>
-        </div>
-        <div className="col-span-2 mt-1 border-t border-[#0F4C5C]/35 pt-2 text-[10px] leading-snug text-slate-500 sm:col-span-3 md:col-span-4 lg:col-span-9">
-          <span className="font-medium text-slate-400">Répartition XP (hors trophées course/corde…) : </span>
-          <span className="tabular-nums text-slate-400">
-            {(breakdown.weightedRepsXp ?? 0).toLocaleString('fr-FR')} reps pond.
-          </span>
-          {(breakdown.weightedTimeXp ?? 0) > 0 ? (
-            <>
-              <span className="text-slate-600"> · </span>
-              <span className="tabular-nums text-slate-400">
-                {(breakdown.weightedTimeXp ?? 0).toLocaleString('fr-FR')} temps pond.
-              </span>
-            </>
-          ) : null}
-          <span className="text-slate-600"> · </span>
-          <span className="tabular-nums text-slate-400">
-            {(breakdown.liftedVolumeKgXp ?? 0).toLocaleString('fr-FR')} vol. cumul (
-            {SPORT_XP_PER_TOTAL_KG_VOLUME.toLocaleString('fr-FR', {
-              minimumFractionDigits: 2,
-              maximumFractionDigits: 3
-            })}{' '}
-            XP/kg, plaf. {SPORT_XP_LIFTED_VOLUME_CAP.toLocaleString('fr-FR')})
-          </span>
-          <span className="text-slate-600"> · </span>
-          <span className="tabular-nums text-slate-400">
-            {(breakdown.caloriesXp ?? 0).toLocaleString('fr-FR')} cal (
-            {SPORT_XP_PER_ACTIVE_CALORIE.toLocaleString('fr-FR', {
-              minimumFractionDigits: 2,
-              maximumFractionDigits: 2
-            })}
-            × kcal actives Garmin cumulées)
-          </span>
-          <span className="text-slate-600"> · </span>
-          <span className="tabular-nums text-slate-400">
-            {(breakdown.stepsXp ?? 0).toLocaleString('fr-FR')} pas
-            {(breakdown.stepsXpDeclarative ?? 0) > 0
-              ? ` (${(breakdown.stepsXpVerified ?? breakdown.stepsXp ?? 0).toLocaleString('fr-FR')} montre + ${(breakdown.stepsXpDeclarative ?? 0).toLocaleString('fr-FR')} déclaratif ×50 %)`
-              : ` (${STEPS_XP_RATE_VERIFIED.toLocaleString('fr-FR', { minimumFractionDigits: 4, maximumFractionDigits: 4 })}× pas montre, ${STEPS_XP_RATE_DECLARATIVE.toLocaleString('fr-FR', { minimumFractionDigits: 4, maximumFractionDigits: 4 })}× déclaratif)`}
-          </span>
-          {(breakdown.exercisesXp ?? 0) > 0 ? (
-            <>
-              <span className="text-slate-600"> · </span>
-              <span className="tabular-nums text-slate-400">
-                {breakdown.exercisesXp.toLocaleString('fr-FR')} ex. cochés ({SPORT_XP_PER_CHECKED_EXERCISE}×)
-              </span>
-            </>
-          ) : null}
-          {(breakdown.stretchesXp ?? 0) > 0 ? (
-            <>
-              <span className="text-slate-600"> · </span>
-              <span className="tabular-nums text-slate-400">
-                {breakdown.stretchesXp.toLocaleString('fr-FR')} étirements
-                {(breakdown.stretches ?? 0) > 0
-                  ? ` (${breakdown.stretches} cochés)`
-                  : ''}
-              </span>
-            </>
-          ) : null}
-          {(breakdown.gtgXp ?? 0) > 0 ? (
-            <>
-              <span className="text-slate-600"> · </span>
-              <span className="tabular-nums text-slate-400">
-                {breakdown.gtgXp.toLocaleString('fr-FR')} GTG
-                {(breakdown.gtgReps ?? 0) > 0 ? ` (${breakdown.gtgReps} reps)` : ''}
-              </span>
-            </>
-          ) : null}
-          {(breakdown.circuitsXp ?? 0) > 0 ? (
-            <>
-              <span className="text-slate-600"> · </span>
-              <span className="tabular-nums text-slate-400">
-                {breakdown.circuitsXp.toLocaleString('fr-FR')} circuits
-                {(breakdown.circuitCompletedDays ?? 0) > 0
-                  ? ` (${breakdown.circuitCompletedDays} cible(s) atteinte(s)`
-                  : ''}
-                {(breakdown.circuitTripleAchievedDays ?? 0) > 0
-                  ? `, ${breakdown.circuitTripleAchievedDays}× 3× cible)`
-                  : (breakdown.circuitCompletedDays ?? 0) > 0
-                    ? ')'
-                    : ''}
-              </span>
-            </>
-          ) : null}
-          {(breakdown.challengesXp ?? 0) > 0 ? (
-            <>
-              <span className="text-slate-600"> · </span>
-              <span className="tabular-nums text-slate-400">
-                {breakdown.challengesXp.toLocaleString('fr-FR')} défis (50×)
-              </span>
-            </>
-          ) : null}
-          {(breakdown.sessionsFeedbackXp ?? 0) > 0 ? (
-            <>
-              <span className="text-slate-600"> · </span>
-              <span className="tabular-nums text-slate-400">
-                {breakdown.sessionsFeedbackXp.toLocaleString('fr-FR')} séances +feedback (25×)
-              </span>
-            </>
-          ) : null}
-          {(breakdown.programCompletionBonusXp ?? 0) > 0 ? (
-            <>
-              <span className="text-slate-600"> · </span>
-              <span className="tabular-nums text-slate-400">
-                {breakdown.programCompletionBonusXp.toLocaleString('fr-FR')} bonus complétion programme
-              </span>
-            </>
-          ) : null}
-          {(breakdown.nutritionFoodXp ?? 0) > 0 ? (
-            <>
-              <span className="text-slate-600"> · </span>
-              <span className="tabular-nums text-slate-400">
-                {breakdown.nutritionFoodXp.toLocaleString('fr-FR')} nutrition (
-                {(breakdown.nutritionFoodItems ?? 0).toLocaleString('fr-FR')} aliments ×{' '}
-                {SPORT_XP_PER_NUTRITION_FOOD_REGISTERED})
-              </span>
-            </>
-          ) : null}
+
+          <button
+            type="button"
+            className={`${styles.tot} ${styles.gradeBtn}`}
+            onClick={(e) => goNav('totalXp', e)}
+            title={gradesHint}
+          >
+            <span>XP TOTAL</span>
+            <b>{fmt(totalXP)}</b>
+          </button>
+
+          <button
+            type="button"
+            className={styles.tg}
+            aria-expanded={open}
+            aria-label={open ? 'Réduire' : 'Détails'}
+            onClick={(e) => {
+              e.stopPropagation();
+              toggleOpen();
+            }}
+          >
+            <i aria-hidden="true" />
+          </button>
         </div>
 
-        <div className="flex flex-col gap-0.5 sm:col-span-2 lg:col-span-3">
-          <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
-            <div className="flex items-center gap-1">
-              <Trophy className="h-3 w-3 shrink-0 text-amber-300" />
-              <span className="text-sky-400/95">
-                {(breakdown.runningTrophies ?? 0).toLocaleString('fr-FR')} XP trophées course
-              </span>
-            </div>
-            <div className="flex items-center gap-1">
-              <Map className="h-3 w-3 shrink-0 text-emerald-400/90" />
-              <span className="text-sky-400/95">
-                {(breakdown.runningTotalDistanceKm ?? 0).toLocaleString('fr-FR', { maximumFractionDigits: 1 })} km
-                cumul
-              </span>
-            </div>
-            <div className="flex items-center gap-1">
-              <ListOrdered className="h-3 w-3 shrink-0 text-teal-400/90" />
-              <span className="text-sky-400/95">
-                {(breakdown.runningSessionCount ?? 0).toLocaleString('fr-FR')} sorties course
-              </span>
-            </div>
-          </div>
-          <span className="pl-4 text-[10px] leading-tight text-slate-500">
-            {(breakdown.runningTrophyTiers ?? 0).toLocaleString('fr-FR')} paliers ·{' '}
-            {(breakdown.runningTrophiesUnlocked ?? 0).toLocaleString('fr-FR')} trophées avec au moins un palier
-          </span>
-          <div className="flex flex-wrap items-center gap-x-3 gap-y-1 pt-1">
-            <div className="flex items-center gap-1">
-              <Trophy className="h-3 w-3 shrink-0 text-violet-300" />
-              <span className="text-sky-400/95">
-                {(breakdown.jumpRopeTrophies ?? 0).toLocaleString('fr-FR')} XP trophées corde
-              </span>
-            </div>
-            <div className="flex items-center gap-1">
-              <Trophy className="h-3 w-3 shrink-0 text-cyan-300" />
-              <span className="text-sky-400/95">
-                {(breakdown.gainageTrophies ?? 0).toLocaleString('fr-FR')} XP trophées gainage
-              </span>
-            </div>
-            <div className="flex items-center gap-1">
-              <Trophy className="h-3 w-3 shrink-0 text-rose-300" />
-              <span className="text-sky-400/95">
-                {(breakdown.pushupTrophies ?? 0).toLocaleString('fr-FR')} XP trophées pompes
-              </span>
+        <div className={styles.body}>
+          <div>
+            <div className={styles.in}>
+              {(isDetailFieldOn('meritedBox', preference) ||
+                isDetailFieldOn('levelXpBox', preference)) && (
+                <div className={styles.strip}>
+                  {isDetailFieldOn('meritedBox', preference) ? (
+                    <button
+                      type="button"
+                      className={`${styles.box} ${styles.gradeBtn}`}
+                      onClick={goRecapGrades}
+                      title={gradesHint}
+                    >
+                      <div className={styles.k}>Grade mérité</div>
+                      <div className={styles.v}>
+                        {merName} · {merPalier}
+                      </div>
+                      <p>
+                        {sameMerited
+                          ? 'identique à la progression'
+                          : `${merName} · ${merPalier}`}
+                      </p>
+                    </button>
+                  ) : null}
+                  {isDetailFieldOn('levelXpBox', preference) ? (
+                    <div className={styles.box}>
+                      <div className={styles.k}>XP sur le palier niveau {level}</div>
+                      <div className={styles.v}>
+                        {fmt(xpOnLevel)} <small>/ {fmt(xpForLevel)} XP</small>
+                      </div>
+                      <p>
+                        Encore {fmt(xpNeeded)} XP jusqu&apos;au niveau {level + 1}
+                      </p>
+                    </div>
+                  ) : null}
+                </div>
+              )}
+
+              <div className={styles.sh}>
+                <h2>D&apos;où vient ton XP</h2>
+                <span>
+                  <b>{fmt(totalXP)}</b>XP au total
+                </span>
+              </div>
+              <p className={styles.lead}>
+                Chaque ligne : ce que tu as fait → l&apos;XP que ça t&apos;a rapporté. Triée de la plus
+                grosse source à la plus petite. Entraînement + Activité = répartition hors trophées
+                course/corde… (<b>{fmt(trainingPlusActivity)} XP</b>).
+              </p>
+
+              {isDetailFieldOn('breakdownStack', preference) ? (
+                <>
+                  <div className={styles.stack} aria-hidden="true">
+                    {stackPieces.map((piece, index) => (
+                      <i
+                        key={piece.key}
+                        title={piece.title}
+                        style={{
+                          flex: piece.flex,
+                          background: piece.color,
+                          opacity: piece.opacity,
+                          transitionDelay: `${index * 60}ms`
+                        }}
+                      />
+                    ))}
+                  </div>
+                  <div className={styles.leg}>
+                    {groups.map((group) => (
+                      <button
+                        key={group.id}
+                        type="button"
+                        className={styles.linkish}
+                        style={{
+                          '--c': group.color,
+                          display: 'block',
+                          width: '100%',
+                          textAlign: 'left',
+                          background: 'var(--pan2)',
+                          border: '1px solid var(--ln)',
+                          borderTop: '3px solid var(--c)',
+                          padding: '10px 14px',
+                          color: 'inherit',
+                          font: 'inherit',
+                          letterSpacing: '0.06em',
+                          textTransform: 'uppercase',
+                          textDecoration: 'none'
+                        }}
+                        onClick={(e) =>
+                          goNav(
+                            group.id === 'training'
+                              ? 'groupTraining'
+                              : group.id === 'activity'
+                                ? 'groupActivity'
+                                : 'groupTrophies',
+                            e
+                          )
+                        }
+                      >
+                        {group.name}
+                        <b style={{ display: 'block', color: 'var(--c)', fontSize: 22, marginTop: 3, textTransform: 'none' }}>
+                          {fmt(group.total)} XP
+                          <small style={{ fontSize: 12, color: 'var(--mut)', fontWeight: 500, marginLeft: 5 }}>
+                            {pctOf(group.total, totalXP)}
+                          </small>
+                        </b>
+                      </button>
+                    ))}
+                  </div>
+                </>
+              ) : null}
+
+              {isDetailFieldOn('breakdownRows', preference)
+                ? groups.map((group) => (
+                    <div key={group.id} style={{ '--c': group.color }}>
+                      <div className={styles.gh}>
+                        <strong>{group.name}</strong>
+                        <span>
+                          {fmt(group.total)}
+                          <small>
+                            XP · {pctOf(group.total, totalXP)}
+                          </small>
+                        </span>
+                      </div>
+                      <div className={styles.col}>
+                        <span>Source</span>
+                        <span>Ce que tu as fait</span>
+                        <span>XP gagné</span>
+                        <span>Part</span>
+                      </div>
+                      {group.rows.map((row) => (
+                        <div
+                          key={row.id}
+                          role="button"
+                          tabIndex={0}
+                          className={`${styles.r} ${styles.rClick}${row.xp === 0 ? ` ${styles.z}` : ''}`}
+                          style={{
+                            '--w': `${Math.min(100, (row.xp / maxRowXp) * 100).toFixed(1)}%`
+                          }}
+                          title={`Voir : ${row.name}`}
+                          onClick={(e) => goNav(row.id, e)}
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter' || e.key === ' ') {
+                              e.preventDefault();
+                              goNav(row.id, e);
+                            }
+                          }}
+                        >
+                          <div className={styles.n}>
+                            {row.name}
+                            {row.hint ? <small>{row.hint}</small> : null}
+                          </div>
+                          <div className={styles.a}>
+                            {row.amount ? (
+                              <>
+                                {row.amount} <span>{row.unit}</span>
+                              </>
+                            ) : null}
+                          </div>
+                          <div className={styles.xv}>
+                            {row.xp === 0 && !row.forceShow ? '+0' : row.xp > 0 ? fmt(row.xp) : '—'}
+                            {row.xp > 0 ? <small>XP</small> : null}
+                          </div>
+                          <div className={styles.pc}>
+                            {row.xp > 0 ? pctOf(row.xp, totalXP) : '—'}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  ))
+                : null}
+
+              {(isDetailFieldOn('miscSessions', preference) ||
+                isDetailFieldOn('miscTrophies', preference)) && (
+                <div className={styles.misc}>
+                  {isDetailFieldOn('miscSessions', preference) ? (
+                    <button
+                      type="button"
+                      className={styles.linkish}
+                      style={{
+                        background: 'none',
+                        border: 0,
+                        padding: 0,
+                        color: 'inherit',
+                        font: 'inherit'
+                      }}
+                      onClick={(e) => goNav('miscSessions', e)}
+                    >
+                      Séances cumulées{' '}
+                      <b>{formatCalendarSportDuration(breakdown.sessionMinutes ?? 0)}</b>
+                    </button>
+                  ) : null}
+                  {isDetailFieldOn('miscTrophies', preference) ? (
+                    <button
+                      type="button"
+                      className={styles.linkish}
+                      style={{
+                        background: 'none',
+                        border: 0,
+                        padding: 0,
+                        color: 'inherit',
+                        font: 'inherit'
+                      }}
+                      onClick={(e) => goNav('miscTrophies', e)}
+                    >
+                      <b>{fmt(breakdown.runningTrophyTiers ?? 0)}</b> paliers ·{' '}
+                      <b>{fmt(breakdown.runningTrophiesUnlocked ?? 0)}</b> trophées avec au moins un
+                      palier
+                    </button>
+                  ) : null}
+                </div>
+              )}
             </div>
           </div>
         </div>
-      </div>
+      </section>
     </div>
   );
 };

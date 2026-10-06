@@ -33,6 +33,10 @@ import { useNutritionGamification } from '../../../../hooks/useNutritionGamifica
 import { ALL_BADGES } from '../../../../services/nutrition/badges';
 import BadgeDetailView from './BadgeDetailView';
 import VirtualizedBadgeGrid from './VirtualizedBadgeGrid';
+import {
+  getXpAppearancePreference,
+  subscribeXpAppearance
+} from '../../../../utils/xpAppearancePreference';
 
 // ✅ OPTIMISATION 3.1 : Extraire fonctions constantes en dehors du composant
 const getRarityColor = (rarity) => {
@@ -72,6 +76,17 @@ const NutritionGamification = () => {
 
   const [activeTab, setActiveTab] = useState('overview'); // 'overview' | 'badges' | 'progress'
   const [selectedBadge, setSelectedBadge] = useState(null); // Badge sélectionné pour vue détail (null = liste, badge object = vue détail)
+  const [xpAccent, setXpAccent] = useState(
+    () => getXpAppearancePreference().nutritionXpAccent
+  );
+
+  useEffect(
+    () =>
+      subscribeXpAppearance((pref) => {
+        setXpAccent(pref.nutritionXpAccent);
+      }),
+    []
+  );
 
   // ✅ OPTIMISATION 1.5 : getLevelProgress est maintenant une valeur, pas une fonction
   const levelProgress = getLevelProgress;
@@ -271,8 +286,11 @@ const NutritionGamification = () => {
               </div>
               <div className="h-2 w-full rounded-full bg-[#0F4C5C]/35">
                 <div
-                  className="h-2 rounded-full bg-gradient-to-r from-sky-500 to-cyan-500 transition-all"
-                  style={{ width: `${levelProgress.progressPercent}%` }}
+                  className="h-2 rounded-full transition-all"
+                  style={{
+                    width: `${levelProgress.progressPercent}%`,
+                    background: `linear-gradient(90deg, color-mix(in srgb, ${xpAccent} 70%, #000), ${xpAccent})`
+                  }}
                 />
               </div>
               <div className="text-xs text-teal-800">
@@ -512,8 +530,11 @@ const NutritionGamification = () => {
                     </div>
                     <div className="h-3 w-full rounded-full bg-[#0F4C5C]/35">
                       <div
-                        className="h-3 rounded-full bg-gradient-to-r from-sky-500 to-cyan-500 transition-all"
-                        style={{ width: `${levelProgress.progressPercent}%` }}
+                        className="h-3 rounded-full transition-all"
+                        style={{
+                          width: `${levelProgress.progressPercent}%`,
+                          background: `linear-gradient(90deg, color-mix(in srgb, ${xpAccent} 70%, #000), ${xpAccent})`
+                        }}
                       />
                     </div>
                     <div className="text-sm text-teal-700">

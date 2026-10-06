@@ -3,7 +3,7 @@ import { createPortal } from 'react-dom';
 import { Maximize2, Pause, Play, RotateCcw, Undo2, X } from 'lucide-react';
 import { baseNameTaken, getBackgroundOption } from './backgroundRegistry';
 import { defaultParams, normalizeParams, studioFor } from './backgroundStudio';
-import { createVariant, variantNameTaken } from './backgroundVariants';
+import { createVariant, updateVariant, variantNameTaken } from './backgroundVariants';
 
 function FieldControl({ field, value, onChange }) {
   if (field.type === 'toggle') {
@@ -89,16 +89,24 @@ function FieldControl({ field, value, onChange }) {
   );
 }
 
-export default function BackgroundStudio({ baseId, initialParams, onClose, onCreated }) {
+export default function BackgroundStudio({
+  baseId,
+  initialParams,
+  variantId = null,
+  initialName = '',
+  onClose,
+  onSaved
+}) {
   const studio = studioFor(baseId);
   const option = getBackgroundOption(baseId);
   const Active = useMemo(() => (option.load ? lazy(option.load) : null), [option]);
   const stageRef = useRef(null);
+  const editingExisting = Boolean(variantId && String(variantId).startsWith('variant-'));
   const [params, setParams] = useState(() => normalizeParams(baseId, initialParams) || defaultParams(baseId));
   const [paused, setPaused] = useState(false);
   const [epoch, setEpoch] = useState(0);
   const [openGroups, setOpenGroups] = useState(() => new Set());
-  const [name, setName] = useState('');
+  const [name, setName] = useState(() => (editingExisting ? String(initialName || '') : ''));
   const [error, setError] = useState('');
   const [full, setFull] = useState(false);
 
@@ -149,6 +157,16 @@ export default function BackgroundStudio({ baseId, initialParams, onClose, onCre
   };
 
   const save = () => {
+    const nextParams = normalizeParams(baseId, params);
+    if (editingExisting) {
+      const entry = updateVariant(variantId, { params: nextParams });
+      if (!entry) {
+        setError('Mise à jour impossible.');
+        return;
+      }
+      onSaved?.(entry);
+      return;
+    }
     const label = name.trim();
     if (!label) {
       setError('Indique un nom pour ce fond.');
@@ -161,13 +179,13 @@ export default function BackgroundStudio({ baseId, initialParams, onClose, onCre
     const entry = createVariant({
       name: label,
       baseId,
-      params: normalizeParams(baseId, params),
+      params: nextParams
     });
     if (!entry) {
       setError('Enregistrement impossible.');
       return;
     }
-    onCreated(entry);
+    onSaved?.(entry);
   };
 
   return createPortal(
@@ -236,25 +254,34 @@ export default function BackgroundStudio({ baseId, initialParams, onClose, onCre
             })}
           </div>
           <div className="space-y-2 border-t border-white/10 p-4">
-            <label className="block text-xs text-zinc-300">
-              Nom du nouveau fond
-              <input
-                value={name}
-                maxLength={40}
-                onChange={(event) => {
-                  setName(event.target.value);
-                  setError('');
-                }}
-                placeholder="Ex. Disque bleu nuit"
-                className="mt-1 w-full rounded-lg border border-white/15 bg-black/40 px-3 py-2 text-sm text-zinc-50 outline-none focus:border-white/30"
-              />
-            </label>
+            {editingExisting ? (
+              <p className="text-xs text-zinc-400">
+                Tu modifies <span className="text-zinc-100">{name || 'ta copie'}</span>. Enregistrer met à jour
+                cette version — sans en créer une nouvelle.
+              </p>
+            ) : (
+              <label className="block text-xs text-zinc-300">
+                Nom du nouveau fond
+                <input
+                  value={name}
+                  maxLength={40}
+                  onChange={(event) => {
+                    setName(event.target.value);
+                    setError('');
+                  }}
+                  placeholder="Ex. Disque bleu nuit"
+                  className="mt-1 w-full rounded-lg border border-white/15 bg-black/40 px-3 py-2 text-sm text-zinc-50 outline-none focus:border-white/30"
+                />
+              </label>
+            )}
             {error ? <p className="text-xs text-red-300">{error}</p> : null}
             <button type="button" onClick={save} className="w-full rounded-lg bg-white px-3 py-2 text-sm font-medium text-black">
-              Enregistrer
+              {editingExisting ? 'Enregistrer les modifications' : 'Enregistrer'}
             </button>
             <p className="text-[11px] leading-relaxed text-zinc-500">
-              Le fond d’origine reste intact. L’enregistrement crée un fond distinct.
+              {editingExisting
+                ? 'Le fond d’origine reste intact. Seule ta copie est mise à jour.'
+                : 'Le fond d’origine reste intact. L’enregistrement crée un fond distinct.'}
             </p>
           </div>
         </aside>

@@ -63,7 +63,7 @@ import SpotifyOAuthLanding from './components/spotify/SpotifyOAuthLanding';
 import { MomentumTabLoadOverlay, MomentumTabInlineLoader, MomentumModalLoadCard } from './components/ui/MomentumBrandedLoading';
 import RecapTabSkeleton from './components/sport/recap/shell/RecapTabSkeleton';
 import { startStartupPipeline } from './utils/preloadTabs';
-import SportXPBar from './components/tabs/TodayTab/components/SportXPBar';
+import SportXpBarSlot from './components/tabs/TodayTab/components/SportXpBarSlot';
 import CodeXPBar from './components/code/CodeXPBar';
 import { isSportSubTab } from './constants/sportSubTabs';
 import { isCodeSubTab } from './constants/codeSubTabs';
@@ -530,16 +530,15 @@ const WorkoutTrackerContent = () => {
               >
               <Suspense fallback={<TabSuspenseFallback tabId={activeTab} />}>
                   <div className="container mx-auto px-4">
-                    {isSportSubTab(activeTab) && activeTab !== 'anatomy' && (
-                      <div
+                    {isSportSubTab(activeTab) && (
+                      <SportXpBarSlot
+                        tabId={activeTab}
                         className={
                           activeTab === 'today'
                             ? 'today-sport-shell today-xp-wrap mb-5 mt-5 scroll-mt-40 pt-1'
                             : 'mb-5 mt-5 scroll-mt-40 pt-1'
                         }
-                      >
-                        <SportXPBar />
-                      </div>
+                      />
                     )}
                     {isCodeSubTab(activeTab) && (
                       <div className="mb-5 mt-5 scroll-mt-40 pt-1">
@@ -558,18 +557,17 @@ const WorkoutTrackerContent = () => {
                 aria-hidden={activeTab !== 'today'}
               >
                 {activeTab === 'today' && (
-                  <div className="today-sport-shell today-xp-wrap mb-5 mt-5 scroll-mt-40 pt-1">
-                    <SportXPBar />
-                  </div>
+                  <SportXpBarSlot
+                    tabId="today"
+                    className="today-sport-shell today-xp-wrap mb-5 mt-5 scroll-mt-40 pt-1"
+                  />
                 )}
                 <TodayTabHost />
               </div>
             )}
             {activeTab === 'calendar' && (
               <div className="container mx-auto px-4">
-                <div className="mb-5 mt-5 scroll-mt-40 pt-1">
-                  <SportXPBar />
-                </div>
+                <SportXpBarSlot tabId="calendar" className="mb-5 mt-5 scroll-mt-40 pt-1" />
                 <CalendarTabHost />
               </div>
             )}
@@ -580,9 +578,7 @@ const WorkoutTrackerContent = () => {
                 aria-hidden={activeTab !== 'recap'}
               >
                 {activeTab === 'recap' && (
-                  <div className="mb-5 mt-5 scroll-mt-40 pt-1">
-                    <SportXPBar />
-                  </div>
+                  <SportXpBarSlot tabId="recap" className="mb-5 mt-5 scroll-mt-40 pt-1" />
                 )}
                 <RecapTabHost />
               </div>

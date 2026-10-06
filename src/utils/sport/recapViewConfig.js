@@ -40,16 +40,20 @@ export function readStoredRecapView(fallback = RECAP_VIEW_IDS.ANALYSE) {
   return fallback;
 }
 
-/** Ouvre le sous-onglet Récap → Grades (à appeler avant setActiveTab('recap')). */
-export function openSportRecapGradesView() {
+/** Ouvre une vue Récap (à appeler avant setActiveTab('recap')). */
+export function openSportRecapView(viewId) {
+  const view = Object.values(RECAP_VIEW_IDS).includes(viewId) ? viewId : RECAP_VIEW_IDS.ANALYSE;
   try {
-    localStorage.setItem(RECAP_ACTIVE_VIEW_LS, RECAP_VIEW_IDS.GRADES);
+    localStorage.setItem(RECAP_ACTIVE_VIEW_LS, view);
   } catch {
     /* ignore */
   }
   if (typeof window !== 'undefined') {
-    window.dispatchEvent(
-      new CustomEvent('sport:recap-view', { detail: { view: RECAP_VIEW_IDS.GRADES } })
-    );
+    window.dispatchEvent(new CustomEvent('sport:recap-view', { detail: { view } }));
   }
+}
+
+/** Ouvre le sous-onglet Récap → Grades (à appeler avant setActiveTab('recap')). */
+export function openSportRecapGradesView() {
+  openSportRecapView(RECAP_VIEW_IDS.GRADES);
 }

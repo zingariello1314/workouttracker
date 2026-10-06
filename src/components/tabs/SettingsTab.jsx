@@ -41,6 +41,7 @@ import ProfileQuizSettings from './SettingsTab/components/ProfileQuizSettings';
 import SwipeNavigationSettings from './SettingsTab/components/SwipeNavigationSettings';
 import LanguageSettings from './SettingsTab/components/LanguageSettings';
 import AppBackgroundSettings from './SettingsTab/components/AppBackgroundSettings';
+import XpAppearanceSettings from './SettingsTab/components/XpAppearanceSettings';
 import CalendarMonthTilesSettings from './SettingsTab/components/CalendarMonthTilesSettings';
 import PrayerLocationSettings from './SettingsTab/components/PrayerLocationSettings';
 import InfoCards from './SettingsTab/components/InfoCards';
@@ -72,7 +73,7 @@ const SETTINGS_SECTIONS = [
   { id: 'settings-spotify', label: 'Spotify', searchText: 'spotify musique premium oauth lecture player sidebar son en cours piste album api' },
   { id: 'settings-garmin', label: 'Garmin', searchText: 'garmin montre sync synchronisation backfill source comptes multi montres deviceid paramètres' },
   { id: 'settings-verrou', label: 'Verrouillage', searchText: 'verrouillage cadenas code pin mot de passe inactivité sécurité confidentialité session' },
-  { id: 'settings-apparence', label: 'Apparence', searchText: 'apparence fond application ambiance visuel arrière-plan animé statique momentum shader thème calendrier mois tuiles blocs course pas reps kcal ordre glisser' },
+  { id: 'settings-apparence', label: 'Apparence', searchText: 'apparence fond application ambiance visuel arrière-plan animé statique momentum shader thème calendrier mois tuiles blocs course pas reps kcal ordre glisser barre xp sport couleur accent nutrition onglets infos détail hud' },
   { id: 'settings-fonds-ecran', label: 'Fonds d\'écran', searchText: 'fond écran accueil verrouillage arrière-plan wallpaper lock home rotation images bannière' },
   { id: 'settings-carte', label: 'Carte profil', searchText: 'carte profil image handle username bannière sidebar logo' },
   { id: 'settings-bannieres', label: 'Bannières', searchText: 'bannières bannière import export rotation' },
@@ -165,6 +166,7 @@ const SettingsTab = () => {
   }, [scrollToSection]);
 
   const [settingsSearchQuery, setSettingsSearchQuery] = useState('');
+  const [settingsSearchUnlocked, setSettingsSearchUnlocked] = useState(false);
   const [activeGroupId, setActiveGroupId] = useState(SETTINGS_GROUPS[0].id);
   const groupLockUntilRef = useRef(0);
 
@@ -409,19 +411,52 @@ const SettingsTab = () => {
         </nav>
 
         <div className="min-w-0 flex-1 space-y-6">
-        <div>
-          <Input
-            id="settings-search"
-            type="search"
-            variant="search"
-            icon={Search}
-            placeholder="Rechercher un paramètre…"
-            value={settingsSearchQuery}
-            onChange={(e) => setSettingsSearchQuery(e.target.value)}
-            aria-label="Rechercher dans les paramètres"
-            className="!border-white/10 !bg-[#14161c] !text-zinc-100 placeholder:!text-zinc-500"
-            containerClassName="max-w-none"
-          />
+        <div className="relative">
+          <form
+            className="max-w-none"
+            autoComplete="off"
+            onSubmit={(e) => e.preventDefault()}
+          >
+            {/* Leurres non contrôlés : Chrome y dépose le login Google au lieu de la recherche */}
+            <div
+              aria-hidden="true"
+              className="pointer-events-none absolute -left-[10000px] top-0 h-px w-px overflow-hidden opacity-0"
+            >
+              <input type="text" name="username" autoComplete="username" tabIndex={-1} defaultValue="" />
+              <input
+                type="password"
+                name="password"
+                autoComplete="current-password"
+                tabIndex={-1}
+                defaultValue=""
+              />
+            </div>
+            <Input
+              id="settings-search"
+              name="momentum-settings-filter"
+              type="search"
+              inputMode="search"
+              role="searchbox"
+              variant="search"
+              icon={Search}
+              placeholder="Rechercher un paramètre…"
+              value={settingsSearchQuery}
+              onChange={(e) => setSettingsSearchQuery(e.target.value)}
+              onFocus={() => setSettingsSearchUnlocked(true)}
+              readOnly={!settingsSearchUnlocked}
+              autoComplete="off"
+              autoCorrect="off"
+              autoCapitalize="off"
+              spellCheck={false}
+              data-lpignore="true"
+              data-1p-ignore="true"
+              data-bwignore="true"
+              data-form-type="other"
+              aria-label="Rechercher dans les paramètres"
+              className="!border-white/10 !bg-[#14161c] !text-zinc-100 placeholder:!text-zinc-500"
+              containerClassName="max-w-none"
+            />
+          </form>
           {settingsSearchQuery.trim() && (
             <p className="mt-2 text-xs text-zinc-500">
               Seuls les blocs correspondants restent affichés.
@@ -531,8 +566,9 @@ const SettingsTab = () => {
 
         <SettingsGroupFrame group={SETTINGS_GROUPS[2]} visible={isGroupShown(SETTINGS_GROUPS[2])}>
         {isSectionVisible('settings-apparence') && (
-        <div id="settings-apparence" className="scroll-mt-4">
+        <div id="settings-apparence" className="scroll-mt-4 space-y-4">
           <AppBackgroundSettings />
+          <XpAppearanceSettings />
           <CalendarMonthTilesSettings />
         </div>
         )}
