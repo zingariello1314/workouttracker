@@ -41,7 +41,7 @@ describe('calculateSportXP — isométrique (paliers sec × coeff catalogue)', (
     );
   });
 
-  it('ne confond pas un hold isométrique avec un exercice temps cardio', () => {
+  it('compte les holds isométriques dans exos en durée (affichage), sans XP temps cardio', () => {
     const seconds = 60;
     const data = {
       checkedExercises: { [`2026-08-13_${gainageId}`]: true },
@@ -53,7 +53,7 @@ describe('calculateSportXP — isométrique (paliers sec × coeff catalogue)', (
       getExerciseNameById: (id) => (id === gainageId ? 'Gainage' : '')
     });
 
-    expect(result.breakdown?.timeMinutes ?? 0).toBe(0);
+    expect(result.breakdown?.timeMinutes ?? 0).toBe(1);
     expect(result.breakdown?.weightedTimeXp ?? 0).toBe(0);
   });
 });

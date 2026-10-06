@@ -223,6 +223,6 @@
     "sessionTimeLabel": "{{dur}} séances",
     "sessionTimeHint": "Durée des séances : Garmin (muscu, cardio, course) et défis endurance (pompes, etc.).",
     "heldTimeLabel": "{{dur}} exos en durée",
-    "heldTimeHint": "Exercices du journal saisis en minutes ou secondes (corde, cardio au minuteur…), pas les séries de reps."
+    "heldTimeHint": "Exercices du journal en minutes ou secondes (corde, gainage, cardio au minuteur…) + durée des sorties course. Hors défis pompes et hors durée de séance Garmin muscu (voir « séances »)."
   }
 }

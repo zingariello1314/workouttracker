@@ -3,6 +3,7 @@ import { useWorkout } from '../../../../context/WorkoutContext';
 import { useProfileQuestionnaire } from '../../../../features/profileQuestionnaire/useProfileQuestionnaire';
 import { useTranslation } from '../../../../utils/translations';
 import {
+  buildGtgPersonalizedCase,
   defaultGtgProtocolGoal,
   estimateGtgMaxFromWorkingReps,
   estimateGtgProtocolDay,
@@ -32,7 +33,7 @@ const RAIL = [
       ['s12', '08 Signaux'],
       ['s15', '09 Volume'],
       ['s17', '10 Ratio'],
-      ['s19', '11 Tractions']
+      ['s19', '11 Pratique fréquente']
     ]
   },
   {
@@ -146,9 +147,14 @@ function ProtocolExerciseCard({
     workingReps,
     maxEstimatedFromReps: maxIsEstimated
   });
+  const rir = Math.max(0, Math.round(currentMax) - Math.round(est.reps));
+  const pct = currentMax > 0 ? Math.round((est.reps / currentMax) * 100) : null;
   return (
     <div className="gauge-wrap">
       <h2 className="gauge-exercise">{name}</h2>
+      <p className="gauge-sync-note">
+        Modifier ici met à jour Pratique (créneaux, dose) et Aujourd’hui — même base de données GTG.
+      </p>
       <div className="gauge-labels">
         <span className="s">Stimulus</span>
         <span className="f">Fatigue</span>
@@ -170,11 +176,11 @@ function ProtocolExerciseCard({
             onChange={(e) => onChangeMax(e.target.value)}
           />
           <span className="lbl">Max actuel</span>
-          {maxIsEstimated ? (
-            <span className="gauge-hint">estimé ≈ 2× reps</span>
-          ) : (
-            <span className="gauge-hint">ton vrai max</span>
-          )}
+          <span className="gauge-hint">
+            {maxIsEstimated
+              ? 'estimé ≈ 2× reps — saisis ton vrai max pour caler RIR & textes'
+              : 'standard stable (prise, amplitude, fin)'}
+          </span>
         </div>
         <div className="gauge-arrow">→</div>
         <div className="gauge-stat">
@@ -189,6 +195,7 @@ function ProtocolExerciseCard({
             onChange={(e) => onChangeGoal(e.target.value)}
           />
           <span className="lbl">Objectif</span>
+          <span className="gauge-hint">cible à moyen terme — alimente la boîte à outils</span>
         </div>
       </div>
       <div className="gauge-metrics bottom">
@@ -204,14 +211,20 @@ function ProtocolExerciseCard({
             onChange={(e) => onChangeReps(e.target.value)}
           />
           <span className="lbl">reps / passage</span>
+          <span className="gauge-hint">
+            = dose Pratique / Aujourd’hui
+            {pct != null ? ` · ~${pct}% · RIR ${rir}` : ''}
+          </span>
         </div>
         <div className="gauge-stat">
           <span className="val">{est.minPassages}</span>
           <span className="lbl">passages min.</span>
+          <span className="gauge-hint">fourchette indicative</span>
         </div>
         <div className="gauge-stat">
           <span className="val">{est.maxPassages}</span>
           <span className="lbl">passages max.</span>
+          <span className="gauge-hint">à valider par ta récup</span>
         </div>
       </div>
     </div>
@@ -238,7 +251,7 @@ export default function GtgProtocolGuide() {
       selectedIds[0] ||
       null;
     if (!enabledId) {
-      return { max: 9, reps: 2, goal: 15, label: 'tractions' };
+      return buildGtgPersonalizedCase({ max: 9, reps: 2, goal: 15, label: 'tractions' });
     }
     const proto = gtgData.config.protocolByExercise?.[enabledId] || {};
     const workingRepsRaw = gtgData.config.perExercise?.[enabledId]?.repsPerSet;
@@ -262,12 +275,12 @@ export default function GtgProtocolGuide() {
         ? workingReps
         : Math.max(1, Math.min(3, Math.round(max * 0.25) || 2));
     const goal = proto.goal > 0 ? Math.round(proto.goal) : defaultGtgProtocolGoal(max);
-    return {
+    return buildGtgPersonalizedCase({
       max,
       reps,
       goal,
       label: getGtgExerciseLabel(enabledId, gtgData.config, ctx)
-    };
+    });
   }, [selectedIds, gtgData, ctx]);
 
   const mx = caseExample.max;
@@ -275,8 +288,8 @@ export default function GtgProtocolGuide() {
   const pct2 = mx > 0 ? Math.round((2 / mx) * 100) : 22;
   const pct3 = mx > 0 ? Math.round((3 / mx) * 100) : 33;
   const pct5 = mx > 0 ? Math.round((5 / mx) * 100) : 56;
-  const pctWr = mx > 0 ? Math.round((wr / mx) * 100) : null;
-  const rirWr = mx > 0 ? Math.max(0, mx - wr) : null;
+  const pctWr = caseExample.pct;
+  const rirWr = caseExample.rir;
 
   const bodyW = useMemo(
     () => resolveGtgBodyWeightKg(gtgData, { workoutData: data, profileQuestionnaire }),
@@ -285,21 +298,54 @@ export default function GtgProtocolGuide() {
   const bwKnown = bodyW.known;
   const bw = bodyW.kg;
   const bwLabel = bwKnown ? `${bw}` : '~70';
+  const bwSourceNote =
+    bodyW.source === 'impedance'
+      ? 'impédancemètre'
+      : bodyW.source === 'metrics'
+        ? 'Aujourd’hui / métriques'
+        : bodyW.source === 'quiz'
+          ? 'profil'
+          : bodyW.source === 'gtg'
+            ? 'saisie GTG'
+            : null;
   const bwPlus5 = bwKnown ? Math.round((bw + 5) * 10) / 10 : 75;
   const bwPlus10 = bwKnown ? Math.round((bw + 10) * 10) / 10 : 80;
   const pctLest5 = bwKnown ? Math.round((5 / bw) * 1000) / 10 : 7.1;
   const pctLest10 = bwKnown ? Math.round((10 / bw) * 1000) / 10 : 14.3;
 
-  const dayEstimate = useMemo(
-    () => estimateGtgProtocolDay(mx, caseExample.goal, { workingReps: wr }),
-    [mx, caseExample.goal, wr]
-  );
-  const passagesEx = Math.max(
-    dayEstimate.minPassages || 4,
-    Math.min(dayEstimate.maxPassages || 8, Math.round(((dayEstimate.minPassages || 4) + (dayEstimate.maxPassages || 8)) / 2))
-  );
-  const dayVol = wr * passagesEx;
-  const weekVol = dayVol * 5;
+  const passagesEx = caseExample.passagesMid;
+  const dayVol = caseExample.dayVol;
+  const weekVol = caseExample.weekVol;
+  const startLow = caseExample.startLow;
+  const startHigh = caseExample.startHigh;
+  const startMid = caseExample.startMid;
+  const classicPerSet = caseExample.classicPerSet;
+  const classicVol = caseExample.classicVol;
+  const classicLow = caseExample.classicLow;
+  const classicHigh = caseExample.classicHigh;
+  const halfMax = caseExample.halfMax;
+  const gtgSamplePassages = caseExample.samplePassages;
+  const gtgVsClassicPct = caseExample.vsClassicPct;
+  const bumpPct = caseExample.bumpPct;
+  const doseBand = caseExample.doseBand;
+  const maxBand = caseExample.maxBand;
+
+  const rail = useMemo(() => {
+    return RAIL.map((ch) => {
+      if (ch.id !== 'VI') return ch;
+      return {
+        ...ch,
+        title: `VI — ${caseExample.label} · max ${mx}`,
+        links: [
+          ['s53', `26 ${startLow}–${startHigh}`],
+          ['s56', '27 Progression'],
+          ['s57', `28 ${mx}→${caseExample.goal}`],
+          ['s59', '29 Boîte à outils'],
+          ['s62', '30 Conclusion']
+        ]
+      };
+    });
+  }, [caseExample.label, caseExample.goal, mx, startLow, startHigh]);
 
   const pushMax = useMemo(() => resolveGtgMaxReps('pushups', ctx), [ctx]);
   const dipMax = useMemo(() => resolveGtgMaxReps('dips', ctx), [ctx]);
@@ -505,7 +551,7 @@ export default function GtgProtocolGuide() {
 
       <div className="layout">
         <nav className="rail" aria-label="Sommaire du protocole GTG">
-          {RAIL.map((ch) => (
+          {rail.map((ch) => (
             <div key={ch.id} className="rail-chapter" data-chapter={ch.id}>
               <div className="rail-chapter-title">{ch.title}</div>
               <div className="rail-links">
@@ -555,15 +601,15 @@ export default function GtgProtocolGuide() {
                 <div className="a">
                   <h4>Séance classique</h4>
                   <p>
-                    4 × 5 → repos → encore des séries. Volume concentré : la fatigue monte et peut
-                    modifier les perfs en cours de séance.
+                    4 × {classicPerSet} → repos → encore des séries. Volume concentré : la fatigue monte
+                    et peut modifier les perfs en cours de séance.
                   </p>
                 </div>
                 <div className="b">
                   <h4>GTG</h4>
                   <p>
-                    2–3 reps → plusieurs heures → 2–3 reps… Pratique répartie : chaque exposition peut
-                    rester plus fraîche.
+                    {startLow}–{startHigh} reps → plusieurs heures → encore… Pratique répartie : chaque
+                    exposition peut rester plus fraîche. Chez toi : {wr}/passage.
                   </p>
                 </div>
               </div>
@@ -576,8 +622,8 @@ export default function GtgProtocolGuide() {
 
             <Sec id="s02" num="02" title="Pourquoi cette méthode peut fonctionner">
               <p>
-                Une performance ne dépend pas uniquement de la quantité de muscle. Pour une traction
-                propre, il faut notamment :
+                Une performance ne dépend pas uniquement de la quantité de muscle. Pour un(e){' '}
+                {caseExample.label.toLowerCase()} propre, il faut notamment :
               </p>
               <ul className="bullets">
                 <li>produire assez de force et activer les muscles au bon moment</li>
@@ -648,10 +694,11 @@ export default function GtgProtocolGuide() {
                 </div>
               </div>
               <p>
-                Une traction lestée peut être <strong>très spécifique à la traction comme mouvement</strong>
-                , tout en étant moins spécifique à une série longue au poids du corps ({mx} →{' '}
-                {caseExample.goal}) : même geste, résistance par rep différente. Cohérent avec la
-                littérature : les adaptations de force dépendent de la tâche réellement entraînée.
+                Un(e) {caseExample.label.toLowerCase()} lesté(e) peut être{' '}
+                <strong>très spécifique au mouvement</strong>, tout en étant moins spécifique à une
+                série longue au poids du corps ({mx} → {caseExample.goal}) : même geste, résistance
+                par rep différente. Cohérent avec la littérature : les adaptations de force dépendent
+                de la tâche réellement entraînée.
               </p>
             </Sec>
 
@@ -1021,12 +1068,15 @@ export default function GtgProtocolGuide() {
               </p>
             </Sec>
 
-            <Sec id="s19" num="11" title="Pourquoi les tractions se prêtent bien à une pratique fréquente">
+            <Sec
+              id="s19"
+              num="11"
+              title={`Pourquoi les ${caseExample.label.toLowerCase()} se prêtent bien à une pratique fréquente`}
+            >
               <p>
-                Les {caseExample.label.toLowerCase()} (et les tractions en général) possèdent plusieurs
-                caractéristiques qui les rendent particulièrement intéressantes pour une pratique
-                fréquente — sans que cela les rende automatiquement adaptées à une fréquence élevée
-                pour tout le monde.
+                Les {caseExample.label.toLowerCase()} possèdent plusieurs caractéristiques qui les
+                rendent particulièrement intéressantes pour une pratique fréquente — sans que cela
+                les rende automatiquement adaptées à une fréquence élevée pour tout le monde.
               </p>
               <div className="metrics-4">
                 <div>
@@ -1091,7 +1141,12 @@ export default function GtgProtocolGuide() {
                 <div>
                   <div className="num">{bwLabel}</div>
                   <div className="lbl">
-                    kg PDC{bwKnown ? '' : ' (ordre de grandeur)'}
+                    kg PDC
+                    {bwKnown
+                      ? bwSourceNote
+                        ? ` · ${bwSourceNote}`
+                        : ''
+                      : ' (ordre de grandeur)'}
                   </div>
                 </div>
                 <div>
@@ -1107,7 +1162,7 @@ export default function GtgProtocolGuide() {
               </div>
               {!bwKnown && (
                 <p>
-                  Indique ton poids en Pratique (bandeau « Données protocole ») pour caler ces
+                  Indique ton poids (ou mesure-le en Impédancemètre / Aujourd’hui) pour caler ces
                   pourcentages sur toi — {pctLest5}&nbsp;% pour +5&nbsp;kg et {pctLest10}&nbsp;% pour
                   +10&nbsp;kg sur ~70&nbsp;kg ne sont que des repères moyens.
                 </p>
@@ -1129,9 +1184,9 @@ export default function GtgProtocolGuide() {
                 <div className="b">
                   <h4>Ce que ce n’est pas</h4>
                   <p>
-                    Pas juste « rendre les tractions plus dures ». C’est modifier la{' '}
-                    <strong>qualité de contrainte</strong> de chaque répétition — complémentaire du GTG
-                    à {wr} reps / {mx} max, pas un remplacement automatique.
+                    Pas juste « rendre les {caseExample.label.toLowerCase()} plus dures ». C’est
+                    modifier la <strong>qualité de contrainte</strong> de chaque répétition —
+                    complémentaire du GTG à {wr} reps / {mx} max, pas un remplacement automatique.
                   </p>
                 </div>
               </div>
@@ -1171,7 +1226,11 @@ export default function GtgProtocolGuide() {
               </div>
             </Sec>
 
-            <Sec id="s25" num="14" title="Une traction max et une série max ne sont pas la même qualité">
+            <Sec
+              id="s25"
+              num="14"
+              title={`Un max à 1 et une série de ${mx} ne sont pas la même qualité`}
+            >
               <p>
                 Une répétition très lourde et une série très longue peuvent toutes deux être
                 « difficiles », sans demander exactement la même chose.
@@ -1228,8 +1287,9 @@ export default function GtgProtocolGuide() {
                   <h4>Séries classiques</h4>
                   <p>
                     Volume concentré, fatigue locale, séries de plusieurs reps, hypertrophie
-                    potentielle si volume/effort suffisent. Un 4 × 5 avec max {mx} n’est pas auto
-                    « de l’endurance » — ça dépend de la proximité de l’échec, du repos, de la charge.
+                    potentielle si volume/effort suffisent. Un 4 × {classicPerSet} avec max {mx} n’est
+                    pas auto « de l’endurance » — ça dépend de la proximité de l’échec, du repos, de
+                    la charge.
                   </p>
                 </div>
               </div>
@@ -1620,7 +1680,7 @@ export default function GtgProtocolGuide() {
                   <p>
                     {bwKnown
                       ? `À ${bw} kg, +10 kg ≈ +${pctLest10}% de masse externe vs PDC.`
-                      : `À ~70 kg, +10 kg ≈ +${pctLest10}% (renseigne ton poids pour un chiffre perso).`}{' '}
+                      : `À ~70 kg, +10 kg ≈ +${pctLest10}% (poids Body / Aujourd’hui pour un chiffre perso).`}{' '}
                     Repère utile — pas +{pctLest10}% d’intensité musculaire.
                   </p>
                 </div>
@@ -1692,191 +1752,371 @@ export default function GtgProtocolGuide() {
 
             <ChapterDivider
               num="VI"
-              title={`Ton cas : max ${mx}`}
-              subtitle="Point de départ, progression, conclusion actionnable"
+              title={caseExample.chapterTitle}
+              subtitle={caseExample.chapterSubtitle}
             />
 
-            <Sec id="s53" num="26" title="Point de départ raisonnable">
+            <Sec id="s53" num="26" title={caseExample.startTitle}>
+              <p>
+                Ton maximum actuel est de <strong>{mx}</strong> {caseExample.label.toLowerCase()}{' '}
+                propres (même standard). Objectif déclaré : <strong>{caseExample.goal}</strong>.
+                Cela permet un point de départ pratique — pas de déduire une « dose optimale » de
+                GTG. L’objectif initial : trouver{' '}
+                <strong>
+                  la plus petite dose qui ajoute une pratique utile sans perturber ton entraînement
+                  habituel
+                </strong>
+                .
+              </p>
+              {maxBand === 'novice' && (
+                <div className="quote">
+                  Max bas ({mx}) : la littérature pratique GTG pousse plutôt vers{' '}
+                  <strong>1 rep propre × plus de passages</strong> que vers des mini-séries
+                  multi-reps. La « moitié du max » n’a presque plus de sens ici.
+                </div>
+              )}
+              {doseBand === 'tooHot' && (
+                <div className="quote">
+                  Attention : {wr}/passage ≈ {pctWr}% de ton max ({mx}) — au-delà de la zone
+                  classique ~{classicLow}–{classicHigh} (~½ max = {halfMax}). Qualité et RIR (~
+                  {rirWr}) d’abord.
+                </div>
+              )}
               <div className="stat-row">
                 <div>
-                  <div className="num">2–3</div>
-                  <div className="lbl">reps / passage (ex.)</div>
+                  <div className="num">
+                    {startLow}–{startHigh}
+                  </div>
+                  <div className="lbl">reps / passage (départ prudent)</div>
                 </div>
                 <div>
-                  <div className="num">4–6</div>
-                  <div className="lbl">passages / jour (ex.)</div>
+                  <div className="num">{wr}</div>
+                  <div className="lbl">
+                    ton réglage ({pctWr}% · RIR {rirWr})
+                  </div>
                 </div>
                 <div>
-                  <div className="num">+50%</div>
-                  <div className="lbl">vs une séance 4×5 si +10 reps</div>
+                  <div className="num">
+                    {classicLow}–{classicHigh}
+                  </div>
+                  <div className="lbl">zone classique (~½ max {halfMax})</div>
                 </div>
               </div>
-              <div className="flow">
-                <div>Matin — 2</div>
-                <div>Fin de matinée — 2</div>
-                <div>Début d’après-midi — 2</div>
-                <div>Milieu d’après-midi — 2</div>
-                <div>Fin d’après-midi — 2</div>
-                <div>Soir — 2</div>
-                <div className="goal">Total : 12 reps (+60 % vs une séance de 20)</div>
-              </div>
-              <div className="sign-list">
-                <div className="good">
-                  <h4>Passer à 3 si</h4>
-                  <ul>
-                    <li>2 systématiquement facile</li>
-                    <li>tech stable, pas de douleur</li>
-                    <li>séances + max OK</li>
-                  </ul>
+              <div className="box">
+                <div className="box-title">
+                  Exemple — {startMid} reps × {gtgSamplePassages} passages = {startMid * gtgSamplePassages}{' '}
+                  reps (départ)
                 </div>
-                <div className="bad">
-                  <h4>Réduire si</h4>
-                  <ul>
-                    <li>3 → 3 → 2 → 2</li>
-                    <li>ralentissement inhabituel</li>
-                    <li>fatigue qui traîne</li>
-                  </ul>
+                <div className="flow" style={{ margin: 0 }}>
+                  {Array.from({ length: Math.min(6, gtgSamplePassages) }).map((_, i) => {
+                    const labels = [
+                      'Matin',
+                      'Fin de matinée',
+                      'Début d’après-midi',
+                      'Milieu d’après-midi',
+                      'Fin d’après-midi',
+                      'Soir'
+                    ];
+                    return (
+                      <div key={labels[i]}>
+                        {labels[i]} — {startMid}
+                      </div>
+                    );
+                  })}
+                  <div className="goal">
+                    Total {startMid * gtgSamplePassages} · vs {classicVol} sur 4×{classicPerSet} (= +
+                    {gtgVsClassicPct} % de volume brut au départ, pas d’intensité)
+                  </div>
                 </div>
               </div>
               <p>
-                2 → 3 = +50 % du volume par exposition : n’augmente pas la fréquence en même temps.
+                Les {classicVol} reps du 4×{classicPerSet} sont concentrées ; les{' '}
+                {startMid * gtgSamplePassages} du GTG de départ sont dispersées, avec une fatigue
+                aiguë généralement plus faible par exposition. Même volume brut ≠ même contrainte.
+                À ta dose actuelle ({wr}×{passagesEx}) ≈ {dayVol} reps/jour possibles.
               </p>
+              <div className="quote">
+                Point de départ = hypothèse testable, pas prescription scientifiquement optimale.
+                Fourchettes inspirées des pratiques GTG (≈½ max classique, 20–30 % prudent) —
+                niveau de preuve D.
+              </div>
+              <div className="sign-list">
+                <div className="good">
+                  <h4>
+                    Passer de {startLow} → {startHigh}
+                    {startHigh < classicHigh ? ` puis → ${classicHigh}` : ''}
+                  </h4>
+                  <ul>
+                    <li>{startLow} systématiquement facile</li>
+                    <li>technique & vitesse stables</li>
+                    <li>passages suivants comparables</li>
+                    <li>pas de douleur inhabituelle</li>
+                    <li>séances classiques + max OK</li>
+                  </ul>
+                  <p>
+                    {startLow} → {startHigh} = +{bumpPct} % du volume par exposition — n’augmente pas
+                    la fréquence en même temps.
+                  </p>
+                </div>
+                <div className="bad">
+                  <h4>Réduire si (tendance, pas 1 jour)</h4>
+                  <ul>
+                    <li>série anormalement lente</li>
+                    <li>technique / amplitude qui dérive</li>
+                    <li>passages de moins en moins bons</li>
+                    <li>baisse inhabituelle en séance classique</li>
+                    <li>fatigue qui persiste / douleur</li>
+                  </ul>
+                </div>
+              </div>
+              {wr > startHigh && doseBand !== 'tooHot' && (
+                <p>
+                  Ton réglage actuel ({wr}/passage) est au-dessus du départ prudent {startLow}–
+                  {startHigh}
+                  {wr <= classicHigh
+                    ? ` — encore dans / près de la zone classique (${classicLow}–${classicHigh}).`
+                    : '.'}{' '}
+                  Observe qualité, RIR (~{rirWr}) et ressenti ; baisse si la tendance dérive.
+                </p>
+              )}
             </Sec>
 
-            <Sec id="s56" num="27" title="Exemple de progression pratique">
+            <Sec id="s56" num="27" title={caseExample.progressionTitle}>
               <div className="quote">
-                Ce qui suit n’est pas une progression démontrée comme optimale — c’est un exemple
-                prudent d’augmentation d’une seule variable à la fois (niveau D).
+                Pas une progression démontrée comme optimale — exemple prudent pour tester la
+                quantité de pratique tolérable. <strong>Niveau de preuve : D</strong> (exemple
+                individuel, calé sur max {mx}, dose {wr}, objectif {caseExample.goal}).
               </div>
               <div className="phase-grid">
                 <div>
                   <div className="ph">Phase 1 — tolérance</div>
-                  <div className="rx">2 reps × 4–5 passages</div>
-                  <p>Tester combien de pratique supplémentaire tu absorbes sans dérive.</p>
+                  <div className="rx">
+                    {startLow} rep{startLow > 1 ? 's' : ''} × {caseExample.passagesMin}–
+                    {Math.min(caseExample.passagesMin + 1, caseExample.passagesMax)} passages
+                  </div>
+                  <p>
+                    {maxBand === 'novice'
+                      ? 'Installe 1 rep propre répétée. Qualité > volume/passage.'
+                      : 'Petite quantité supplémentaire bien tolérée ? Observe qualité, vitesse, récup, impact sur les séances.'}
+                  </p>
                 </div>
                 <div>
-                  <div className="ph">Phase 2 — volume</div>
-                  <div className="rx">2 reps × 6–8 passages</div>
-                  <p>Augmenter la fréquence des expositions, pas encore les reps.</p>
+                  <div className="ph">Phase 2 — volume distribué</div>
+                  <div className="rx">
+                    {startLow} rep{startLow > 1 ? 's' : ''} × {caseExample.passagesMin + 2}–
+                    {caseExample.passagesMax} passages
+                  </div>
+                  <p>
+                    Même difficulté / passage, plus d’expositions → volume ↑. Le GTG n’annule pas la
+                    surveillance de la récupération.
+                  </p>
                 </div>
                 <div>
-                  <div className="ph">Phase 3 — stimulus / passage</div>
-                  <div className="rx">évent. 3 reps × 5–8</div>
-                  <p>N’augmente les reps que si 2 reste systématiquement facile.</p>
+                  <div className="ph">Phase 3 — travail / passage</div>
+                  <div className="rx">
+                    évent. {startHigh}
+                    {startHigh < classicHigh ? `–${classicHigh}` : ''} reps × quelques passages
+                  </div>
+                  <p>
+                    Seulement si {startLow} reste systématiquement facile. Zone classique cible ≈{' '}
+                    {classicLow}–{classicHigh} (~½ de {mx}). Ne monte pas reps + fréquence +
+                    difficulté + travail classique d’un coup.
+                  </p>
                 </div>
                 <div>
-                  <div className="ph">Phase 4 — maintenir & évaluer</div>
-                  <div className="rx">volume stable → retest</div>
-                  <p>Observer max, qualité et récupération avant de recharger.</p>
+                  <div className="ph">Phase 4 — stabiliser & évaluer</div>
+                  <div className="rx">
+                    dose stable ({wr}) → tendance vers {caseExample.goal}
+                  </div>
+                  <p>
+                    Max, qualité, perf à N reps, répétabilité, récup, impact sur le reste. Pas besoin
+                    d’augmenter le GTG juste parce que la journée paraît facile.
+                  </p>
                 </div>
               </div>
-              <p>
-                Lesté : bloc séparé, faible nombre de reps selon charge relative et RIR — pas chaque
-                passage GTG.
-              </p>
+              <div className="split">
+                <div className="a">
+                  <h4>GTG</h4>
+                  <p>
+                    Pratique fréquente et spécifique — chez toi {wr}/passage (~{pctWr}%), objectif{' '}
+                    {caseExample.goal}.
+                  </p>
+                </div>
+                <div className="b">
+                  <h4>Lesté</h4>
+                  <p>
+                    Bloc distinct : surcharge orientée force, reps selon charge et marge — pas chaque
+                    mini-série GTG.
+                  </p>
+                </div>
+              </div>
             </Sec>
 
-            <Sec id="s57" num="28" title="Mesurer : max, 4×5 et GTG">
+            <Sec id="s57" num="28" title={caseExample.measureTitle}>
               <p>
-                Semaine 0 → {mx} (standard exact : amplitude, prise, départ, fin, compensations).
-                Entraîne sans tester constamment. Retest toutes les 2–6 semaines, conditions
-                standardisées. Autres indicateurs : vitesse à 3 reps, qualité à volume identique, RIR
-                à charge donnée, volume toléré, récupération.
+                <strong>Semaine 0 → max {mx}</strong>, seulement si le standard est identique : prise,
+                départ, amplitude, critère de fin, sans compensations artificielles. Sans ça, comparer{' '}
+                {mx} → {caseExample.midGoal} → {caseExample.goal} ne dit pas si la capacité a vraiment
+                progressé.
               </p>
               <div className="split">
                 <div className="a">
-                  <h4>4 × 5</h4>
-                  <p>Volume concentré, fatigue progressive, travail sous fatigue, séance structurée.</p>
+                  <h4>Ne pas tester constamment</h4>
+                  <p>
+                    Un max est une mesure, pas un exercice quotidien. Retest toutes les{' '}
+                    <strong>2–6 semaines</strong> comme repère (pas une règle universelle) —
+                    standardise surtout les conditions.
+                  </p>
+                </div>
+                <div className="b">
+                  <h4>Autres indicateurs</h4>
+                  <p>
+                    Vitesse à {wr} reps, qualité à volume égal, RIR (~{rirWr}), volume toléré,
+                    récupération. Ils peuvent bouger avant le max. En Pratique : ressenti du jour +
+                    dose ; en Stats : volume, RIR/zone, feels.
+                  </p>
+                </div>
+              </div>
+              <div className="split">
+                <div className="a">
+                  <h4>4 × {classicPerSet}</h4>
+                  <p>
+                    Volume concentré ({classicVol} reps), fatigue qui s’accumule dans la séance,
+                    pratique structurée sous fatigue locale.
+                  </p>
                 </div>
                 <div className="b">
                   <h4>GTG</h4>
-                  <p>Volume dispersé, faible fatigue / passage, nombreuses expositions, fraîcheur.</p>
+                  <p>
+                    Volume dispersé (~{dayVol}/j si {wr}×{passagesEx}), faible fatigue / exposition,
+                    plus d’occasions fraîches. Pas concurrents : tu peux combiner les deux.
+                  </p>
                 </div>
               </div>
-              <p>
-                Aucun n’est automatiquement « meilleur » — pas mutuellement exclusifs : une même
-                programmation peut combiner les deux.
-              </p>
+              <div className="quote">
+                Quelle organisation développe la qualité visée ({caseExample.label.toLowerCase()} →{' '}
+                {caseExample.goal}) sans dépasser la récupération ? Aucune n’est automatiquement «
+                meilleure ».
+              </div>
             </Sec>
 
-            <Sec id="s59" num="29" title={`Boîte à outils : ${mx} → ${caseExample.goal}`}>
+            <Sec id="s59" num="29" title={caseExample.toolkitTitle}>
+              <p>
+                Passer de <strong>{mx}</strong> à <strong>{caseExample.goal}</strong>{' '}
+                {caseExample.label.toLowerCase()} propres ne tient probablement pas à une seule
+                qualité — plusieurs facteurs se chevauchent.
+              </p>
               <div className="toolkit">
                 <div>
                   <h4>Classique</h4>
                   <MiniBar stimulus={60} fatigue={40} />
-                  <p>Volume concentré, fatigue contrôlée, hypertrophie potentielle.</p>
+                  <p>
+                    Volume concentré (ex. 4×{classicPerSet}), séries multi-reps, fatigue, hypertrophie
+                    potentielle, tenir sous fatigue.
+                  </p>
                 </div>
                 <div>
                   <h4>GTG</h4>
-                  <MiniBar stimulus={38} fatigue={8} />
-                  <p>Spécificité, technique, fréquence sous faible fatigue aiguë.</p>
+                  <MiniBar
+                    stimulus={caseExample.stimulusPct || 38}
+                    fatigue={caseExample.fatiguePct || 8}
+                  />
+                  <p>
+                    Spécificité, fréquence, qualité, pratique à faible fatigue aiguë — ton dose : {wr}
+                    /passage ({pctWr}% · zone {doseBand}).
+                  </p>
                 </div>
                 <div>
                   <h4>Lourd</h4>
                   <MiniBar stimulus={55} fatigue={45} />
-                  <p>Force maximale et réserve — sans transformer chaque série en test.</p>
+                  <p>
+                    Force max / réserve. Une rep qui était lourde peut devenir plus légère — sans
+                    garantir seul le max PDC.
+                  </p>
                 </div>
                 <div>
                   <h4>Test max</h4>
                   <MiniBar stimulus={65} fatigue={65} />
-                  <p>Mesure périodique — pas le cœur du programme.</p>
+                  <p>Mesurer, vérifier, comparer — pas le cœur du programme.</p>
                 </div>
               </div>
               <div className="box">
-                <div className="box-title">Stratégie complète</div>
-                <div className="flow" style={{ margin: 0 }}>
-                  <div>GTG PDC → pratique fréquente submaximale</div>
-                  <div>Travail lesté → force maximale</div>
-                  <div>Séries multi-reps → tenir sous fatigue</div>
-                  <div>Complémentaire → dorsaux, biceps, gainage…</div>
-                  <div className="goal">Tests périodiques → mesurer le max</div>
-                </div>
+                <div className="box-title">Complémentaire</div>
+                <p>
+                  Dorsaux, biceps, tronc, stabilisateurs d’épaule… complètent la pratique spécifique
+                  sans la remplacer.
+                </p>
               </div>
+              <p className="box-title" style={{ marginTop: '1.2rem' }}>
+                Quelle qualité limite réellement tes {caseExample.goal}{' '}
+                {caseExample.label.toLowerCase()} ?
+              </p>
               <div className="qa-grid">
                 <div>
                   <div className="k">Force</div>
-                  <p className="q">Puis-je produire assez de force pour cette répétition ?</p>
-                  <p className="a">Priorité du travail lourd.</p>
+                  <p className="q">Puis-je produire assez de force pour la répétition ?</p>
+                  <p className="a">→ travail lourd / variantes adaptées</p>
                 </div>
                 <div>
                   <div className="k">Technique</div>
                   <p className="q">Puis-je organiser correctement le mouvement ?</p>
-                  <p className="a">Cœur du GTG + expositions fraîches.</p>
+                  <p className="a">→ pratique spécifique fraîche (GTG)</p>
                 </div>
                 <div>
-                  <div className="k">Endurance</div>
-                  <p className="q">Puis-je répéter cette performance plusieurs fois ?</p>
-                  <p className="a">GTG + pratique spécifique.</p>
+                  <div className="k">Répéter</div>
+                  <p className="q">Puis-je reproduire encore et encore ?</p>
+                  <p className="a">→ pratique multi-reps spécifique</p>
                 </div>
                 <div>
-                  <div className="k">Résistance</div>
-                  <p className="q">Puis-je la conserver malgré la fatigue ?</p>
-                  <p className="a">Séries classiques / multi-reps.</p>
+                  <div className="k">Fatigue</div>
+                  <p className="q">Puis-je tenir quand la fatigue monte ?</p>
+                  <p className="a">→ séries classiques / multi-reps</p>
                 </div>
               </div>
               <p>
-                Avant de prescrire : identifier le facteur limitant (force, technique, endurance,
-                explosivité, mobilité, tolérance au volume).
+                Autres freins possibles : mobilité, position articulaire, puissance, masse corporelle
+                {bwKnown ? ` (${bw} kg)` : ''}, tolérance au volume, douleurs. La bonne question n’est
+                pas « quelle méthode est la meilleure ? » mais{' '}
+                <strong>« quelle qualité me limite actuellement ? »</strong>.
               </p>
             </Sec>
 
-            <Sec id="s62" num="30" title="La conclusion — et la règle finale">
+            <Sec id="s62" num="30" title={caseExample.conclusionTitle}>
+              <p>{caseExample.conclusionLead}</p>
+              <div className="split">
+                <div className="a">
+                  <h4>Pas le critère</h4>
+                  <p>« J’ai réussi toutes mes séries de {wr}. »</p>
+                </div>
+                <div className="b">
+                  <h4>Le vrai critère</h4>
+                  <p>
+                    « Je peux les répéter avec exécution propre, marge suffisante (RIR ~{rirWr}) et
+                    mes perfs habituelles ailleurs. »
+                  </p>
+                </div>
+              </div>
               <p>
-                Avec max <strong>{mx}</strong> et un 4 × 5 : ne démarre pas à 5 reps en GTG. Pars sur{' '}
-                <strong>2–3</strong> — non pas parce que c’est une zone scientifiquement optimale pour
-                un max de {mx}, mais comme point de départ prudent pour tester la tolérance au volume
-                supplémentaire. Technique stricte, sans échec, marge pour que les passages suivants
-                restent faciles. Lest en complément de force, pas pour transformer chaque mini-série.
+                Lest en complément de force si besoin ; test max périodique et standardisé ; séries
+                classiques pour volume sous fatigue ; GTG pour répartir la pratique spécifique à
+                faible coût aigu (~{dayVol} reps/j à ta dose actuelle × {passagesEx} passages).
+              </p>
+              <div className="principle">
+                Objectif → facteur limitant → exercice → difficulté → marge/RIR → qualité & vitesse →
+                volume → fréquence → récupération → progression → évaluation — puis seulement : «{' '}
+                {caseExample.conclusionRule} »
+              </div>
+              <p>
+                Cette logique s’adapte à un max de 3, {mx} ou 30, comme à un muscle-up, un L-sit ou un
+                handstand — sans transformer une règle pratique en pseudo-loi. Recale max / reps /
+                objectif dans le module Protocole (Pratique) : titres et conclusions de cette partie
+                suivent.
               </p>
               <div className="quote">
-                Le meilleur GTG n’est pas celui qui maximise les reps du jour — c’est celui qui
-                maximise la pratique spécifique que tu peux répéter assez longtemps pour progresser,
-                sans que fatigue, baisse de qualité ou volume total ne deviennent limitants.
-              </div>
-              <div className="principle">
-                Chaîne de décision : objectif → facteur limitant → exercice → difficulté → RIR →
-                qualité/vitesse → volume → fréquence → récupération → progression — puis seulement « dans
-                ton cas, probablement 2–3 reps ».
+                Le meilleur GTG n’est pas celui qui maximise les reps d’aujourd’hui. C’est celui qui
+                maximise la pratique spécifique de qualité que tu peux répéter assez longtemps pour
+                progresser, sans que fatigue, dégradation technique, récupération ou volume total ne
+                deviennent limitants.
               </div>
             </Sec>
 

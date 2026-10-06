@@ -477,6 +477,162 @@ export function defaultGtgProtocolGoal(currentMax) {
   return Math.max(max + 1, Math.round(max * 1.67));
 }
 
+/**
+ * Cas personnalisé pour le guide Protocole (§VI) — non rigide.
+ * Sources pratiques GTG (Tsatsouline / synthèses) : ~½ max « classique »,
+ * 30–50 % prudent, jamais à l’échec ; fréquences 4–8+ passages selon tolérance.
+ * Les fourchettes sont des hypothèses de programmation (niveau D), pas une dose optimale démontrée.
+ *
+ * @param {{ max: number, reps?: number|null, goal?: number|null, label?: string }} input
+ */
+export function buildGtgPersonalizedCase({ max, reps = null, goal = null, label = 'exercice' } = {}) {
+  const mx = Math.max(1, Math.round(Number(max) || 1));
+  const gl = Math.max(mx + 1, Math.round(Number(goal) || defaultGtgProtocolGoal(mx)));
+  const dayEst = estimateGtgProtocolDay(mx, gl, {
+    workingReps: Number.isFinite(Number(reps)) && Number(reps) > 0 ? Number(reps) : null
+  });
+  const wr = dayEst.reps;
+
+  // Départ prudent ≈ 20–30 % ; classique GTG ≈ 40–50 % (½ max Pavel / synthèses).
+  let startLow = Math.max(1, Math.round(mx * 0.2));
+  let startHigh = Math.max(startLow, Math.round(mx * 0.3));
+  const classicLow = Math.max(1, Math.round(mx * 0.4));
+  const classicHigh = Math.max(classicLow, Math.round(mx * 0.5));
+  const halfMax = Math.max(1, Math.round(mx * 0.5));
+
+  const pct = Math.round((wr / mx) * 100);
+  const rir = Math.max(0, mx - wr);
+
+  let maxBand = 'mid';
+  if (mx < 5) maxBand = 'novice';
+  else if (mx < 10) maxBand = 'low';
+  else if (mx < 20) maxBand = 'mid';
+  else maxBand = 'high';
+
+  // 40–60 % ≈ classique « ½ max » (arrondi inclus) ; au-delà = exigeant / trop chaud.
+  let doseBand = 'prudent';
+  if (pct <= 20) doseBand = 'minimal';
+  else if (pct <= 35) doseBand = 'prudent';
+  else if (pct <= 60) doseBand = 'classic';
+  else if (pct <= 70) doseBand = 'demanding';
+  else doseBand = 'tooHot';
+
+  // Novice : plutôt 1 rep × plus de passages (GTG débutants).
+  if (maxBand === 'novice') {
+    startLow = 1;
+    startHigh = Math.max(1, Math.min(2, Math.max(1, Math.round(mx * 0.5))));
+  }
+
+  const passagesMin = dayEst.minPassages;
+  const passagesMax = dayEst.maxPassages;
+  const passagesMid = Math.round((passagesMin + passagesMax) / 2);
+  const classicPerSet = Math.max(3, Math.min(Math.round(mx / 3) || 5, halfMax));
+  const classicVol = 4 * classicPerSet;
+  const samplePassages = Math.min(passagesMax, Math.max(6, passagesMid));
+  const sampleDayVol = wr * samplePassages;
+  const startSampleVol = startLow * samplePassages;
+  const vsClassicPct = classicVol > 0 ? Math.round((startSampleVol / classicVol) * 100) : 0;
+  const bumpPct =
+    startLow > 0 ? Math.round(((Math.max(startHigh, wr) - startLow) / startLow) * 100) : 50;
+  const startMid = Math.min(startHigh, Math.max(startLow, Math.min(wr, startHigh)));
+  const midGoal = Math.round(mx + (gl - mx) * 0.4);
+
+  const chapterTitle = `Ton cas : ${label} · max ${mx}`;
+  const chapterSubtitle =
+    maxBand === 'novice'
+      ? 'Peu de reps au max — qualité et 1–2 par passage d’abord'
+      : maxBand === 'high'
+        ? 'Max élevé — la dose absolute monte, la logique % / RIR reste'
+        : 'Point de départ, progression, conclusion actionnable';
+
+  const startTitle =
+    maxBand === 'novice'
+      ? `Départ : 1–${startHigh} propre(s) (max ${mx})`
+      : doseBand === 'tooHot'
+        ? `Recaler : ${wr}/passage trop chaud pour max ${mx}`
+        : `Point de départ : ${startLow}–${startHigh} (max ${mx})`;
+
+  const progressionTitle =
+    maxBand === 'novice'
+      ? `Progression : plus de passages avant plus de reps`
+      : `Progression pratique · ${label}`;
+
+  const measureTitle = `Mesurer : max ${mx} → objectif ${gl}`;
+
+  const toolkitTitle = `Boîte à outils : ${mx} → ${gl}`;
+
+  let conclusionTitle = 'Conclusion — dose calée sur ton max';
+  let conclusionLead = '';
+  let conclusionRule = '';
+
+  if (maxBand === 'novice') {
+    conclusionTitle = `Conclusion — max ${mx} : 1 rep propre d’abord`;
+    conclusionLead = `Avec seulement ${mx} ${label.toLowerCase()} au max, le GTG classique « moitié » se réduit souvent à 1 rep propre × ${passagesMin}–${passagesMax} passages. Priorité : qualité et répétabilité, pas le volume par exposition.`;
+    conclusionRule = `dans ton cas (max ${mx}), ${startLow}–${startHigh} rep(s) / passage est un départ raisonnable — plutôt plus de passages que plus de reps.`;
+  } else if (doseBand === 'tooHot') {
+    conclusionTitle = `Conclusion — ${wr} reps trop près du max ${mx}`;
+    conclusionLead = `Ton réglage actuel (${wr}/passage ≈ ${pct} % du max, RIR ~${rir}) est au-dessus de la zone GTG classique (~${classicLow}–${classicHigh}, soit ~½ max). Ce n’est pas « interdit », mais la fatigue et la dégradation technique montent vite — recalibre vers ${startLow}–${startHigh} ou ${classicLow}–${halfMax} si la qualité dérive.`;
+    conclusionRule = `dans ton cas, viser ${startLow}–${classicHigh} reps / passage (pas ${wr}) tant que le max reste ${mx}.`;
+  } else if (doseBand === 'demanding') {
+    conclusionTitle = `Conclusion — dose exigeante (${pct} % du max)`;
+    conclusionLead = `Tu es à ${wr}/passage pour un max de ${mx} (${pct} %, RIR ~${rir}) — au-dessus du demi-max classique (~${halfMax}). Compatible GTG seulement si chaque passage reste explosif et comparable ; sinon redescends vers ${classicLow}–${classicHigh}.`;
+    conclusionRule = `dans ton cas, ${classicLow}–${classicHigh} est la zone « classique » ; ${wr} reste tenable seulement avec marge réelle.`;
+  } else if (doseBand === 'classic') {
+    conclusionTitle = `Conclusion — zone classique (~½ max)`;
+    conclusionLead = `Avec max ${mx} et ${wr}/passage (~${pct} %, RIR ~${rir}), tu es dans la fourchette GTG souvent citée (~${classicLow}–${classicHigh} / ½ max ≈ ${halfMax}). Valide par la qualité répétée, pas par « j’ai fini les séries ».`;
+    conclusionRule = `dans ton cas, ${wr} reps / passage (~${pct} % de ${mx}) est un ancrage classique raisonnable.`;
+  } else if (doseBand === 'minimal') {
+    conclusionTitle = `Conclusion — dose minimale (${wr}/passage)`;
+    conclusionLead = `Tu es très bas (${wr}/passage ≈ ${pct} % de ${mx}). Excellent pour installer le geste ; quand c’est systématiquement facile, tu peux monter vers le départ prudent ${startLow}–${startHigh} puis la zone classique ${classicLow}–${classicHigh}.`;
+    conclusionRule = `dans ton cas, ${startLow}–${startHigh} reps / passage est le prochain cran utile si ${wr} est trop « vide ».`;
+  } else {
+    conclusionTitle = `Conclusion — départ prudent (${startLow}–${startHigh})`;
+    conclusionLead = `Avec un max de ${mx} ${label.toLowerCase()}, un départ prudent type ${startLow}–${startHigh} reps / passage (~20–30 %) laisse de la marge ; la zone classique GTG tourne autour de ${classicLow}–${classicHigh} (~½ max ${halfMax}). Ton réglage actuel : ${wr}/passage (${pct} %, RIR ~${rir}).`;
+    conclusionRule = `dans ton cas, ${startLow}–${startHigh} reps / passage est un départ raisonnable.`;
+  }
+
+  return {
+    max: mx,
+    reps: wr,
+    goal: gl,
+    label,
+    pct,
+    rir,
+    maxBand,
+    doseBand,
+    startLow,
+    startHigh,
+    startMid,
+    classicLow,
+    classicHigh,
+    halfMax,
+    midGoal,
+    passagesMin,
+    passagesMax,
+    passagesMid,
+    classicPerSet,
+    classicVol,
+    samplePassages,
+    sampleDayVol,
+    startSampleVol,
+    vsClassicPct,
+    bumpPct,
+    dayVol: wr * passagesMid,
+    weekVol: wr * passagesMid * 5,
+    chapterTitle,
+    chapterSubtitle,
+    startTitle,
+    progressionTitle,
+    measureTitle,
+    toolkitTitle,
+    conclusionTitle,
+    conclusionLead,
+    conclusionRule,
+    stimulusPct: dayEst.stimulusPct,
+    fatiguePct: dayEst.fatiguePct
+  };
+}
+
 export function updateGtgProtocolExercise(gtgData, exerciseId, patch = {}) {
   const normalized = normalizeGtgData(gtgData);
   const prev = normalized.config.protocolByExercise?.[exerciseId] || {};
@@ -1130,25 +1286,33 @@ export function listGtgFundamentalBankSuggestions() {
 
 /**
  * Poids pour personnaliser le protocole (lest / %).
- * Priorité : config GTG → dernière mesure Body → questionnaire profil.
- * @returns {{ kg: number|null, source: 'gtg'|'body'|'quiz'|null, known: boolean }}
+ * Priorité : dernière mesure Body (impédance / métriques Aujourd’hui) → questionnaire →
+ * saisie manuelle GTG (fallback seulement si rien d’autre).
+ * Ainsi une MAJ dans impédancemètre ou Aujourd’hui se propage partout dans GTG.
+ * @returns {{ kg: number|null, source: 'impedance'|'metrics'|'quiz'|'gtg'|null, known: boolean, dateYmd?: string|null }}
  */
 export function resolveGtgBodyWeightKg(gtgData, { workoutData = {}, profileQuestionnaire = null } = {}) {
-  const fromGtg = Number(normalizeGtgData(gtgData).config.bodyWeightKg);
-  if (Number.isFinite(fromGtg) && fromGtg > 0) {
-    return { kg: Math.round(fromGtg * 10) / 10, source: 'gtg', known: true };
-  }
   const snap = getLatestWeightSnapshot(workoutData?.progressEntries);
   const fromBody = Number(snap?.weightKg);
   if (Number.isFinite(fromBody) && fromBody > 0) {
-    return { kg: Math.round(fromBody * 10) / 10, source: 'body', known: true };
+    const source = snap?.entryType === 'impedance' ? 'impedance' : 'metrics';
+    return {
+      kg: Math.round(fromBody * 10) / 10,
+      source,
+      known: true,
+      dateYmd: snap?.dateYmd || null
+    };
   }
   const answers = profileQuestionnaire?.answers || {};
   const fromQuiz = Number(answers?.vitalsSelfReport?.weightKg ?? answers?.weightKg);
   if (Number.isFinite(fromQuiz) && fromQuiz > 0) {
-    return { kg: Math.round(fromQuiz * 10) / 10, source: 'quiz', known: true };
+    return { kg: Math.round(fromQuiz * 10) / 10, source: 'quiz', known: true, dateYmd: null };
   }
-  return { kg: null, source: null, known: false };
+  const fromGtg = Number(normalizeGtgData(gtgData).config.bodyWeightKg);
+  if (Number.isFinite(fromGtg) && fromGtg > 0) {
+    return { kg: Math.round(fromGtg * 10) / 10, source: 'gtg', known: true, dateYmd: null };
+  }
+  return { kg: null, source: null, known: false, dateYmd: null };
 }
 
 /** Signature légère pour invalidation cache XP. */

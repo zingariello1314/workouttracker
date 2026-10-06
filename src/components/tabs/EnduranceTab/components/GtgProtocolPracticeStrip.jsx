@@ -18,12 +18,14 @@ const FEEL_STYLE = {
 };
 
 /**
- * Bandeau pratique aligné protocole : dose (RIR/%) + signaux + ressenti du jour.
+ * Bandeau pratique aligné protocole : dose (RIR/%) éditable + signaux + ressenti.
+ * Changer les reps ici = même config que Protocole / Aujourd’hui.
  */
 export default function GtgProtocolPracticeStrip({
   doses = [],
   dayFeel = null,
   onFeelChange,
+  onRepsChange,
   saving = false,
   t
 }) {
@@ -39,6 +41,7 @@ export default function GtgProtocolPracticeStrip({
             <p className="mt-0.5 text-xs leading-relaxed text-slate-400">
               {t('endurance.gtg.protocolTrack.hint')}
             </p>
+            <p className="mt-1 text-[10px] text-teal-200/70">{t('endurance.gtg.protocolTrack.syncHint')}</p>
           </div>
         </div>
       </div>
@@ -63,14 +66,31 @@ export default function GtgProtocolPracticeStrip({
                     {t(`endurance.gtg.protocolTrack.zone.${d.zone}`)}
                   </span>
                 </div>
-                <div className="mb-3 flex flex-wrap gap-2 text-[11px]">
-                  <span className="rounded-md border border-violet-500/35 bg-violet-950/30 px-2 py-1 tabular-nums text-violet-100">
-                    {d.repsPerSet}/{d.maxReps || '—'} · {d.pctOfMax != null ? `${d.pctOfMax}%` : '—'}
-                  </span>
-                  <span className="rounded-md border border-slate-600/60 bg-slate-900/60 px-2 py-1 tabular-nums text-slate-200">
-                    RIR {d.rir != null ? d.rir : '—'}
+
+                <label className="mb-1 block text-[10px] uppercase tracking-wide text-slate-500">
+                  {t('endurance.gtg.protocolTrack.repsLabel')}
+                </label>
+                <div className="mb-2 flex flex-wrap items-center gap-2">
+                  <input
+                    type="number"
+                    min={1}
+                    max={200}
+                    disabled={saving || typeof onRepsChange !== 'function'}
+                    value={d.repsPerSet || ''}
+                    onChange={(e) => onRepsChange?.(d.exerciseId, e.target.value)}
+                    className="w-20 rounded-lg border border-violet-500/40 bg-violet-950/30 px-2 py-1.5 text-sm tabular-nums text-violet-50"
+                    aria-label={`${d.label} reps`}
+                  />
+                  <span className="text-[11px] text-slate-400">
+                    / {d.maxReps || '—'} max
+                    {d.pctOfMax != null ? ` · ${d.pctOfMax}%` : ''}
+                    {d.rir != null ? ` · RIR ${d.rir}` : ''}
                   </span>
                 </div>
+                <p className="mb-3 text-[10px] leading-relaxed text-slate-500">
+                  {t('endurance.gtg.protocolTrack.repsFieldHint')}
+                </p>
+
                 <div className="flex flex-wrap gap-1.5">
                   {(d.signals?.priority || []).slice(0, 4).map((sig) => (
                     <span

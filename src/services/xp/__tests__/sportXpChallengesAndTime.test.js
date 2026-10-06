@@ -24,6 +24,7 @@ describe('XP sport — défis loggés et temps cumulé', () => {
     expect(result.breakdown.challenges).toBe(3);
     expect(result.breakdown.challengesXp).toBe(150);
     expect(result.breakdown.sessionMinutes).toBeGreaterThanOrEqual(20);
+    // Défis pompes : durée dans « séances », pas dans « exos en durée »
     expect(result.breakdown.timeMinutes).toBe(0);
   });
 
@@ -48,5 +49,26 @@ describe('XP sport — défis loggés et temps cumulé', () => {
     const result = calculateSportXP(workoutData, garminData, workoutData.enduranceData);
     expect(result.breakdown.sessionMinutes).toBeGreaterThanOrEqual(60);
     expect(result.breakdown.timeMinutes).toBe(0);
+  });
+
+  it('inclut la durée de course dans exos en durée, sans les pompes', () => {
+    const endurance = {
+      sessions: {
+        running: [
+          {
+            id: 'run1',
+            date: '2026-08-27',
+            duration: 42,
+            distance: 8.3
+          }
+        ],
+        pushups: [{ id: 'p1', date: '2026-08-27', count: 100, duration: 12 }]
+      },
+      challenges: []
+    };
+    const workoutData = { checkedExercises: {}, reps: {}, enduranceData: endurance };
+    const result = calculateSportXP(workoutData, null, endurance);
+    expect(result.breakdown.timeMinutes).toBeGreaterThanOrEqual(40);
+    expect(result.breakdown.runningSessionCount).toBeGreaterThanOrEqual(1);
   });
 });

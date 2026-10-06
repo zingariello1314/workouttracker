@@ -111,7 +111,16 @@
   letter-spacing: 0.08em;
   text-transform: uppercase;
   color: var(--gtg-ink);
+  margin: 0 0 0.45rem;
+}
+
+.gtg-protocol .gauge-sync-note {
+  font-family: 'Source Serif 4', Georgia, serif;
+  font-size: 0.78rem;
+  line-height: 1.45;
+  color: var(--gtg-ink-dim);
   margin: 0 0 1rem;
+  max-width: 42ch;
 }
 
 .gtg-protocol .hero-cards {
@@ -975,6 +984,13 @@
 
 .gtg-protocol .sign-list li {
   margin: 0.2rem 0;
+}
+
+.gtg-protocol .sign-list p {
+  margin: 0.65rem 0 0;
+  font-size: 0.82rem;
+  line-height: 1.4;
+  color: var(--gtg-ink-dim);
 }
 
 .gtg-protocol table.obj {

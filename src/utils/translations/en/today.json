@@ -220,6 +220,6 @@
     "sessionTimeLabel": "{{dur}} sessions",
     "sessionTimeHint": "Session time: Garmin (strength, cardio, running) and endurance challenges (push-ups, etc.).",
     "heldTimeLabel": "{{dur}} timed moves",
-    "heldTimeHint": "Journal exercises logged in minutes or seconds (jump rope, timed cardio…), not rep sets."
+    "heldTimeHint": "Journal exercises in minutes or seconds (jump rope, holds, timed cardio…) + run durations. Excludes push-up challenges and Garmin strength session length (see "sessions")."
   }
 }

@@ -1,11 +1,13 @@
 import React, { useMemo } from 'react';
-import { Activity, Gauge, Lightbulb, TrendingDown, TrendingUp, BarChart3 } from 'lucide-react';
+import { Activity, Gauge, Lightbulb, TrendingDown, TrendingUp, BarChart3, Target } from 'lucide-react';
 import { useTranslation } from '../../../../utils/translations';
 import { buildGtgAnalyticsBundle } from '../../../../services/endurance/gtgAnalyticsService';
 import {
   collectGtgMiniSetHistory,
+  defaultGtgProtocolGoal,
   getGtgExerciseLabel,
-  normalizeGtgData
+  normalizeGtgData,
+  resolveGtgMaxReps
 } from '../../../../services/endurance/gtgService';
 import { GTG_DAY_FEEL_ORDER } from '../../../../services/endurance/gtgProtocolSignals';
 import EnduranceDisciplineStatsPanel from '../../../sport/charts/EnduranceDisciplineStatsPanel.jsx';
@@ -79,6 +81,28 @@ export default function GtgStatsPanel({ gtgData, ctx, activeProgram }) {
   const feelCounts = protocol?.feelCounts || { easy: 0, stable: 0, drift: 0, hard: 0 };
   const loggedFeels = protocol?.loggedFeels || 0;
 
+  const goalRows = useMemo(() => {
+    const normalized = normalizeGtgData(gtgData);
+    return (normalized.config.selectedIds || []).map((id) => {
+      const proto = normalized.config.protocolByExercise?.[id] || {};
+      const max =
+        proto.currentMax > 0
+          ? Math.round(proto.currentMax)
+          : Math.round(resolveGtgMaxReps(id, ctxWithT) || 0);
+      const goal =
+        proto.goal > 0 ? Math.round(proto.goal) : max > 0 ? defaultGtgProtocolGoal(max) : 0;
+      const pct = max > 0 && goal > 0 ? Math.min(100, Math.round((max / goal) * 100)) : 0;
+      return {
+        id,
+        label: getGtgExerciseLabel(id, normalized.config, ctxWithT),
+        max,
+        goal,
+        pct,
+        dose: (protocol?.doses || []).find((d) => d.exerciseId === id)
+      };
+    });
+  }, [gtgData, ctxWithT, protocol?.doses]);
+
   return (
     <div className="space-y-6">
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
@@ -96,6 +120,55 @@ export default function GtgStatsPanel({ gtgData, ctx, activeProgram }) {
             <div className="text-2xl font-bold tabular-nums text-white">{chip.value}</div>
           </div>
         ))}
+      </div>
+
+      {goalRows.length > 0 && (
+        <div className="rounded-2xl border border-[#0F4C5C]/55 bg-black p-5">
+          <div className="mb-3 flex items-center gap-2">
+            <Target className="h-5 w-5 text-teal-300" />
+            <h3 className="text-sm font-semibold text-white">{t('endurance.gtg.stats.goalTitle')}</h3>
+          </div>
+          <p className="mb-4 text-xs text-slate-500">{t('endurance.gtg.stats.goalHint')}</p>
+          <div className="space-y-3">
+            {goalRows.map((row) => (
+              <div key={row.id}>
+                <div className="mb-1 flex items-center justify-between text-xs">
+                  <span className="font-medium text-slate-200">{row.label}</span>
+                  <span className="tabular-nums text-teal-200/90">
+                    {row.max || '—'} → {row.goal || '—'}
+                    {row.dose ? ` · ${row.dose.repsPerSet}/pass · RIR ${row.dose.rir ?? '—'}` : ''}
+                  </span>
+                </div>
+                <div className="h-1.5 overflow-hidden rounded-full bg-slate-800">
+                  <div
+                    className="h-full rounded-full bg-teal-500/80 transition-all"
+                    style={{ width: `${row.pct}%` }}
+                  />
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      <div className="rounded-xl border border-slate-700/45 bg-slate-950/40 px-4 py-3">
+        <div className="mb-2 text-[11px] font-medium uppercase tracking-wide text-slate-400">
+          {t('endurance.gtg.stats.trackMapTitle')}
+        </div>
+        <div className="grid gap-2 sm:grid-cols-2 text-[11px] text-slate-400">
+          <div>
+            <span className="text-emerald-300/90">●</span> {t('endurance.gtg.stats.trackVolume')}
+          </div>
+          <div>
+            <span className="text-emerald-300/90">●</span> {t('endurance.gtg.stats.trackDose')}
+          </div>
+          <div>
+            <span className="text-emerald-300/90">●</span> {t('endurance.gtg.stats.trackFeel')}
+          </div>
+          <div>
+            <span className="text-amber-300/90">○</span> {t('endurance.gtg.stats.trackSoft')}
+          </div>
+        </div>
       </div>
 
       <div className="overflow-hidden rounded-2xl border border-teal-500/30 bg-gradient-to-br from-black via-slate-950 to-teal-950/20">

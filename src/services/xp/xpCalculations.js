@@ -59,7 +59,7 @@ export {
 } from '../../utils/stretchPerceivedRatings';
 
 /** Incrémenter quand la formule XP Sport change (invalidation cache `useSportXP`). */
-export const SPORT_XP_FORMULA_REVISION = 7;
+export const SPORT_XP_FORMULA_REVISION = 8;
 
 /** Reps pondérées : XP = charge pondérée cumulée × ce facteur. */
 export const SPORT_XP_WEIGHTED_LOAD_FACTOR = 0.68;
@@ -309,6 +309,20 @@ export const calculateBooksXPFromSessionsOnly = (sessions) => {
  * @param {Object} enduranceData - Données d'endurance
  * @returns {Object} { totalXP, breakdown }
  */
+/**
+ * Unité d’affichage pour « exos en durée » (journal : min ou sec).
+ * Inclut les isométriques (sec) — l’XP force reste sur le chemin pondéré séparé.
+ */
+function resolveJournalTimedDisplayUnit(scoring, unitInfo) {
+  if (scoring?.scoringType === 'isometric') return 'sec';
+  if (scoring?.unit === 'seconds') return 'sec';
+  if (scoring?.unit === 'minutes') return 'min';
+  if (unitInfo?.isTimeBased) {
+    return unitInfo.unit === 'min' ? 'min' : 'sec';
+  }
+  return null;
+}
+
 export const calculateSportXP = (workoutData, garminData, enduranceData, sportOptions = {}) => {
   let totalXP = 0;
   const breakdown = {
@@ -390,10 +404,11 @@ export const calculateSportXP = (workoutData, garminData, enduranceData, sportOp
   };
 
   // 1. XP pondérée : reps dynamiques · isométriques (paliers) · temps cardio/min séparé
+  // Affichage « exos en durée » : journal min/sec (holds inclus) + course ; défis pompes exclus.
   const repsMap = workoutData.reps || {};
   const coeffs = workoutData.exerciseIntensityCoeffs || {};
   let totalReps = 0;
-  let totalTimeMinutes = 0;
+  let journalTimedMinutes = 0;
   let weightedLoad = 0;
   let weightedTimeLoad = 0;
   let totalLiftedVolumeKg = 0;
@@ -429,6 +444,11 @@ export const calculateSportXP = (workoutData, garminData, enduranceData, sportOp
       medianKg
     );
 
+    const timedUnit = resolveJournalTimedDisplayUnit(scoring, unitInfo);
+    if (timedUnit) {
+      journalTimedMinutes += storedTimeToDisplayMinutes(raw, timedUnit);
+    }
+
     if (scoring?.scoringType === 'isometric' && scoring?.unit === 'seconds') {
       weightedLoad += computeStrengthCalendarContribution(
         exerciseLike,
@@ -441,7 +461,6 @@ export const calculateSportXP = (workoutData, garminData, enduranceData, sportOp
 
     const isTime = unitInfo?.isTimeBased === true && scoring?.scoringType !== 'dynamic';
     if (isTime) {
-      totalTimeMinutes += storedTimeToDisplayMinutes(raw, unitInfo.unit);
       weightedTimeLoad += raw * coeff;
       return;
     }
@@ -457,7 +476,6 @@ export const calculateSportXP = (workoutData, garminData, enduranceData, sportOp
   });
 
   breakdown.reps = totalReps;
-  breakdown.timeMinutes = Math.round(totalTimeMinutes * 10) / 10;
   const snapshotForTime = {
     ...workoutData,
     enduranceData: enduranceData || workoutData.enduranceData
@@ -643,6 +661,12 @@ export const calculateSportXP = (workoutData, garminData, enduranceData, sportOp
   const runningVolume = computeRunningVolumeTotals(runningSessions, garminById, { period: 'all' });
   breakdown.runningTotalDistanceKm = runningVolume.totalKm;
   breakdown.runningSessionCount = runningVolume.sessionCount;
+  const runningTimedMinutes = (runningVolume.rows || []).reduce(
+    (sum, row) => sum + Math.max(0, Number(row.durMin) || 0),
+    0
+  );
+  // Affichage barre XP : journal min/sec (holds inclus) + durée course ; défis pompes hors scope.
+  breakdown.timeMinutes = Math.round((journalTimedMinutes + runningTimedMinutes) * 10) / 10;
   const runningTrophyEval = evaluateRunningTrophies({
     runningSessions,
     garminById,

@@ -149,7 +149,7 @@ const SportXPBar = () => {
           className="flex min-w-0 flex-col gap-0.5"
           title={t(
             'today.sportXp.heldTimeHint',
-            'Exercices du journal saisis en minutes ou secondes (corde, cardio au minuteur…), pas les séries de reps.'
+            'Exercices du journal en minutes ou secondes (corde, gainage, cardio au minuteur…) + durée des sorties course. Hors défis pompes (reps) et hors durée de séance Garmin muscu (voir « séances »).'
           )}
         >
           <div className="flex items-center gap-1">

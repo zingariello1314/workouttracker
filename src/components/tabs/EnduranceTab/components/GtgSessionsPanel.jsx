@@ -280,6 +280,7 @@ export default function GtgSessionsPanel() {
         doses={protocolDoses}
         dayFeel={todayFeel}
         onFeelChange={onDayFeel}
+        onRepsChange={onRepsPerSetChange}
         saving={saving}
         t={t}
       />
@@ -618,7 +619,7 @@ export default function GtgSessionsPanel() {
                       {t('endurance.gtg.repsPerSlotHint', {
                         suggested: suggestedHalf,
                         max: plan?.maxReps ?? '—',
-                        defaultValue: `Combien de reps à chaque passage. Suggestion classique (~50 % du max ${plan?.maxReps ?? '—'}) : ${suggestedHalf}.`
+                        defaultValue: `Reps à chaque passage (= Protocole & Aujourd’hui). Départ prudent souvent ~20–25 % du max ; suggestion classique (~50 % de ${plan?.maxReps ?? '—'}) : ${suggestedHalf}.`
                       })}
                     </p>
                     <input

@@ -46,6 +46,7 @@ export function getLatestWeightSnapshot(progressEntries) {
         weightKg: Math.round(w * 10) / 10,
         dateYmd: d,
         ts,
+        entryType: e.type === 'impedance' ? 'impedance' : 'metrics',
         bodyFat: bf != null && Number.isFinite(Number(bf)) ? Math.round(Number(bf) * 10) / 10 : null
       };
     }
