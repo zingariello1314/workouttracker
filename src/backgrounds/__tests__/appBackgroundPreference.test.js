@@ -111,5 +111,11 @@ describe('fond de l’application', () => {
     expect(defaultParams('chrome-cells').cursor).toBe(true);
     expect(normalizeParams('chrome-cells', { cursor: false }).cursor).toBe(false);
     expect(normalizeParams('tornado', { direction: 'sideways' }).direction).toBe('up');
+    expect(isKnownBackgroundId('lattice-flight')).toBe(true);
+    expect(getBackgroundOption('lattice-flight').name).toBe('Vol de lattice');
+    expect(studioFor('lattice-flight')?.title).toBe('Vol de lattice');
+    expect(defaultParams('lattice-flight').cursor).toBe(true);
+    expect(defaultParams('lattice-flight').density).toBe(307);
+    expect(normalizeParams('lattice-flight', { cursor: false }).cursor).toBe(false);
   });
 });

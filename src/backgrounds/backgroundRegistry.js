@@ -86,6 +86,14 @@ export const backgroundOptions = [
     loadThumbnail: () => import('./thumbnails/TornadoThumbnail'),
     fallbackBackground: 'linear-gradient(180deg, #000000 0%, #2a120c 100%)',
   },
+  {
+    id: 'lattice-flight',
+    name: 'Vol de lattice',
+    type: 'animated',
+    load: () => import('./LatticeFlightBackground'),
+    loadThumbnail: () => import('./thumbnails/LatticeFlightThumbnail'),
+    fallbackBackground: 'linear-gradient(180deg, #000000 0%, #001820 100%)',
+  },
 ];
 
 const byId = new Map(backgroundOptions.map((option) => [option.id, option]));

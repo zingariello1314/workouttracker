@@ -250,6 +250,23 @@ export const BACKGROUND_STUDIOS = {
         ]
       }
     ]
+  },
+  'lattice-flight': {
+    baseId: 'lattice-flight',
+    title: 'Vol de lattice',
+    fields: [
+      color('background', 'Fond', '#000000'),
+      color('baseColor', 'Couleur de base', '#00ffff'),
+      range('density', 'Densité', 50, 500, 1, 307),
+      range('speed', 'Vitesse', 0, 100, 1, 27),
+      range('thickness', 'Épaisseur', 1, 40, 1, 4),
+      range('fog', 'Brouillard', 1, 200, 1, 100),
+      range('distance', 'Distance', 1, 20, 1, 3),
+      range('yaw', 'Caméra yaw', -90, 90, 1, -43),
+      range('pitch', 'Caméra pitch', -10, 90, 1, 65),
+      toggle('cursor', 'Curseur', true)
+    ],
+    groups: []
   }
 };
 
