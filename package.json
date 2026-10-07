@@ -31,7 +31,9 @@
     "fix:three": "node scripts/fix-three-warnings.js",
     "anatomy:preview-keys": "vite-node scripts/list-anatomy-preview-keys.mjs",
     "anatomy:preview-index": "node scripts/write-anatomy-preview-index.mjs",
-    "anatomy:preview-render": "vite-node scripts/render-anatomy-previews.mjs"
+    "anatomy:preview-render": "vite-node scripts/render-anatomy-previews.mjs",
+    "package:portable": "node scripts/package-portable.mjs",
+    "package:portable:lite": "node scripts/package-portable.mjs --lite"
   },
   "dependencies": {
     "@hello-pangea/dnd": "^18.0.1",

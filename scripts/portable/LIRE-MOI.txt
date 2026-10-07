@@ -1,0 +1,112 @@
+================================================================================
+  MOMENTUM — version portable (Windows)
+================================================================================
+
+Train. Track. Progress.
+
+Ce dossier est une copie autonome de l’application Momentum.
+Tu continues à développer dans ton dépôt git habituel ; ce ZIP n’est qu’une
+publication pour lancer l’app en local.
+
+--------------------------------------------------------------------------------
+1. PRÉREQUIS (à installer une seule fois sur le PC)
+--------------------------------------------------------------------------------
+
+  • Node.js 18+ (LTS) : https://nodejs.org/
+  • Python 3.10+     : https://www.python.org/downloads/
+      → coche « Add python.exe to PATH » à l’installation
+
+Vérifier dans un terminal :
+
+  node -v
+  npm -v
+  python --version
+
+--------------------------------------------------------------------------------
+2. PREMIER LANCEMENT
+--------------------------------------------------------------------------------
+
+  1. Dézippe ce dossier où tu veux (ex. Documents\Momentum).
+  2. Double-clique sur :  start-momentum.bat
+     (ou clic droit → Exécuter avec PowerShell sur start-momentum.ps1)
+
+  Le script va :
+    • créer un environnement Python (.venv)
+    • installer les dépendances backend
+    • installer les paquets npm
+    • lancer l’application
+
+  3. Ouvre le navigateur :  http://localhost:3001
+  4. Crée un compte / connecte-toi si besoin.
+
+Durée du premier lancement : plusieurs minutes (téléchargement des paquets).
+Les suivants sont beaucoup plus rapides.
+
+--------------------------------------------------------------------------------
+3. LANCER À NOUVEAU (après le premier setup)
+--------------------------------------------------------------------------------
+
+  Double-clique encore sur start-momentum.bat
+  — ou dans ce dossier :
+
+      npm run dev
+
+  Puis ouvre : http://localhost:3001
+
+--------------------------------------------------------------------------------
+4. MISES À JOUR (quand un nouveau ZIP sort)
+--------------------------------------------------------------------------------
+
+Tes données (entraînements, nutrition, etc.) sont surtout stockées dans le
+NAVIGATEUR (IndexedDB), pas dans ce dossier.
+
+Option A — recommandée si tu restes sur le même PC / même navigateur
+  • Avant de remplacer les fichiers : Paramètres → Export (sauvegarde).
+  • Remplace le dossier de l’app par le nouveau ZIP (ou écrase les fichiers).
+  • Relance start-momentum.bat
+  • Si quelque chose manque : Paramètres → Import.
+
+Option B — nouveau PC ou navigateur vidé
+  • Export depuis l’ancienne installation, puis Import après connexion.
+
+Se connecter seul ne restaure PAS automatiquement tout l’historique local.
+
+--------------------------------------------------------------------------------
+5. CE QUI N’EST PAS DANS CE ZIP (volontairement)
+--------------------------------------------------------------------------------
+
+  • node_modules / .venv          → recréés au premier lancement
+  • tes fichiers .env secrets
+  • bases SQLite / stores perso du backend
+  • dossiers de développement (git, tests, caches…)
+
+Des clés API optionnelles (GitHub, EmailJS, etc.) se configurent via
+.env.example → copie en .env à la racine si tu en as besoin.
+Sans elles, l’essentiel de l’app fonctionne en local.
+
+--------------------------------------------------------------------------------
+6. PROBLÈMES FRÉQUENTS
+--------------------------------------------------------------------------------
+
+  « python introuvable »
+      Réinstalle Python en cochant Add to PATH, puis rouvre le terminal.
+
+  « .venv / uvicorn échoue »
+      Supprime le dossier .venv puis relance start-momentum.bat
+
+  Port 3001 ou 8000 déjà utilisé
+      Ferme l’ancienne fenêtre Momentum, ou tue le processus qui occupe le port.
+
+  Page blanche / erreur backend
+      Regarde la fenêtre noire du terminal : les messages d’erreur y apparaissent.
+
+--------------------------------------------------------------------------------
+7. SÉCURITÉ
+--------------------------------------------------------------------------------
+
+Ne partage pas ton fichier .env ni une copie de backend/*.db.
+Ce ZIP public ne doit contenir aucun secret.
+
+================================================================================
+Momentum — https://momentum-os.download  (quand le site est en ligne)
+================================================================================
