@@ -1,5 +1,17 @@
-import React, { useEffect, useMemo, useState } from 'react';
-import { Activity, Focus, Info, Layers, Pause, RotateCcw, RotateCw, Search, X } from 'lucide-react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import {
+  Activity,
+  Focus,
+  Info,
+  Layers,
+  Maximize2,
+  Minimize2,
+  Pause,
+  RotateCcw,
+  RotateCw,
+  Search,
+  X,
+} from 'lucide-react';
 import AnatomyAtlasScene from './AnatomyAtlasScene.jsx';
 import { DEFAULT_VISIBLE, SYSTEMS, EXPLANATIONS, explanation } from './anatomy.js';
 import './anatomyAtlas.css';
@@ -18,7 +30,31 @@ const initialState = {
   inspectorOpen: false,
 };
 
+function getFullscreenElement() {
+  return (
+    document.fullscreenElement ||
+    document.webkitFullscreenElement ||
+    document.msFullscreenElement ||
+    null
+  );
+}
+
+async function requestElementFullscreen(el) {
+  if (!el) return;
+  if (el.requestFullscreen) return el.requestFullscreen();
+  if (el.webkitRequestFullscreen) return el.webkitRequestFullscreen();
+  if (el.msRequestFullscreen) return el.msRequestFullscreen();
+  throw new Error('Plein écran non supporté par ce navigateur.');
+}
+
+async function exitDocumentFullscreen() {
+  if (document.exitFullscreen) return document.exitFullscreen();
+  if (document.webkitExitFullscreen) return document.webkitExitFullscreen();
+  if (document.msExitFullscreen) return document.msExitFullscreen();
+}
+
 export default function AnatomyAtlasView() {
+  const embedRef = useRef(null);
   const [atlas, setAtlas] = useState(null);
   const [state, setState] = useState(initialState);
   const [progress, setProgress] = useState(0);
@@ -30,6 +66,7 @@ export default function AnatomyAtlasView() {
   const [chosen, setChosen] = useState(null);
   /** Remonte le canvas WebGL sans recharger toute la page. */
   const [sceneKey, setSceneKey] = useState(0);
+  const [isFullscreen, setIsFullscreen] = useState(false);
 
   useEffect(() => {
     const abort = new AbortController();
@@ -53,6 +90,33 @@ export default function AnatomyAtlasView() {
     setProgress(0);
     setSceneKey((k) => k + 1);
   };
+
+  useEffect(() => {
+    const syncFs = () => {
+      const el = embedRef.current;
+      setIsFullscreen(!!el && getFullscreenElement() === el);
+    };
+    document.addEventListener('fullscreenchange', syncFs);
+    document.addEventListener('webkitfullscreenchange', syncFs);
+    return () => {
+      document.removeEventListener('fullscreenchange', syncFs);
+      document.removeEventListener('webkitfullscreenchange', syncFs);
+    };
+  }, []);
+
+  const toggleFullscreen = useCallback(async () => {
+    const el = embedRef.current;
+    if (!el) return;
+    try {
+      if (getFullscreenElement() === el) {
+        await exitDocumentFullscreen();
+      } else {
+        await requestElementFullscreen(el);
+      }
+    } catch (e) {
+      setError(e?.message || 'Impossible d’activer le plein écran.');
+    }
+  }, []);
 
   const parts = useMemo(() => new Map((atlas?.parts || []).map((p) => [p.id, p])), [atlas]);
   const counts = useMemo(
@@ -118,7 +182,11 @@ export default function AnatomyAtlasView() {
   const sceneState = { ...state, inspectorOpen: details && selectedParts.length > 0 };
 
   return (
-    <div className="human-atlas-embed" data-atlas-embed>
+    <div
+      ref={embedRef}
+      className={`human-atlas-embed${isFullscreen ? ' is-fullscreen' : ''}`}
+      data-atlas-embed
+    >
       <div className="studio">
         {atlas ? (
           <AnatomyAtlasScene
@@ -159,6 +227,15 @@ export default function AnatomyAtlasView() {
           >
             <Search size={16} />
             <span className="hidden sm:inline">Find</span>
+          </button>
+          <button
+            type="button"
+            className={`icon-button${isFullscreen ? ' active' : ''}`}
+            aria-label={isFullscreen ? 'Quitter le plein écran' : 'Plein écran'}
+            title={isFullscreen ? 'Quitter le plein écran (Échap)' : 'Plein écran'}
+            onClick={toggleFullscreen}
+          >
+            {isFullscreen ? <Minimize2 size={16} /> : <Maximize2 size={16} />}
           </button>
           <button
             type="button"

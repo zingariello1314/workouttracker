@@ -19,6 +19,23 @@
   box-shadow: 0 12px 40px rgba(0, 0, 0, 0.35);
 }
 
+/* Plein écran navigateur : tout l'écran, hors chrome Momentum */
+.human-atlas-embed:fullscreen,
+.human-atlas-embed:-webkit-full-screen,
+.human-atlas-embed.is-fullscreen:fullscreen,
+.human-atlas-embed.is-fullscreen:-webkit-full-screen {
+  width: 100vw;
+  width: 100dvw;
+  height: 100vh;
+  height: 100dvh;
+  min-height: 100vh;
+  min-height: 100dvh;
+  max-width: none;
+  border-radius: 0;
+  border: 0;
+  box-shadow: none;
+}
+
 .human-atlas-embed *,
 .human-atlas-embed *::before,
 .human-atlas-embed *::after {
