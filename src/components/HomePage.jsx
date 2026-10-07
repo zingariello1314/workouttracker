@@ -23,6 +23,13 @@ import { getSettings } from '../services/swipeNavigationSettings';
 import { useQuoteDisplay } from '../hooks/useQuoteDisplay';
 import { SplineScene } from './ui/SplineScene';
 import { MomentumWelcomeGate } from './ui/MomentumBrandedLoading';
+import {
+  getAppliedHomeLayout,
+  HOME_WIDGET_DEFS,
+  resolveHomeAccentHex,
+  subscribeHomeAppearance
+} from '../utils/homeAppearancePreference';
+import { renderHomeWidget } from './home/renderHomeWidget';
 
 const log = logger.component('HomePage');
 
@@ -88,7 +95,27 @@ const HomePage = () => {
   currentImageIndexRef.current = currentImageIndex;
   homeOrderRef.current = homePlayback.order;
   const [userLocation, setUserLocation] = useState('');
-  
+  /** null = modèle stock (accueil actuel) — aucune personnalisation appliquée. */
+  const [homeLayout, setHomeLayout] = useState(() => getAppliedHomeLayout());
+
+  useEffect(() => subscribeHomeAppearance((store) => setHomeLayout(store.active)), []);
+
+  const homeAccent = resolveHomeAccentHex(homeLayout);
+  const showRobot = !homeLayout || homeLayout.showRobot !== false;
+  const showKeywords = !homeLayout || homeLayout.showKeywords !== false;
+
+  const widgetsByZone = (() => {
+    if (!homeLayout?.widgets) return { left: [], bottomLeft: [], bottomRight: [] };
+    const zones = { left: [], bottomLeft: [], bottomRight: [] };
+    HOME_WIDGET_DEFS.forEach((def) => {
+      const w = homeLayout.widgets[def.id];
+      if (!w?.enabled) return;
+      const zone = zones[w.zone] ? w.zone : def.defaultZone;
+      zones[zone].push({ def, variant: w.variant || def.defaultVariant });
+    });
+    return zones;
+  })();
+
   // ✅ Load swipe navigation settings from localStorage
   const [swipeSettings, setSwipeSettings] = useState(() => getSettings());
   
@@ -667,6 +694,15 @@ const HomePage = () => {
     }, 200);
   };
 
+  const homeWidgetCtx = {
+    accent: homeAccent,
+    metrics: homeLayout?.metrics,
+    xpOptions: homeLayout?.xpOptions,
+    t,
+    isAuthenticated,
+    onAboutCta: () => navigateToTab(isAuthenticated ? 'today' : 'auth')
+  };
+
   // ✅ Masquer la scrollbar sur la page d'accueil
   useEffect(() => {
     // Ajouter une classe au body pour masquer la scrollbar
@@ -733,10 +769,14 @@ const HomePage = () => {
   }, []);
 
   useEffect(() => {
+    if (!showRobot) {
+      setSplineReady(true);
+      return undefined;
+    }
     if (!isLargeScreen || splineReady) return undefined;
     const timer = window.setTimeout(() => setSplineReady(true), 25000);
     return () => window.clearTimeout(timer);
-  }, [isLargeScreen, splineReady]);
+  }, [isLargeScreen, showRobot, splineReady]);
 
   // ✅ Announce navigation to screen readers when swipe is detected
   useEffect(() => {
@@ -850,7 +890,7 @@ const HomePage = () => {
         </div>
       )}
 
-      {activeTab === 'home' && isLargeScreen && (
+      {activeTab === 'home' && isLargeScreen && showRobot && (
         <div
           className="fixed bottom-0 right-[8rem] xl:right-[16rem] w-72 h-72 xl:w-96 xl:h-96 z-50 pointer-events-none"
           aria-hidden={shouldShowLoading}
@@ -1011,6 +1051,7 @@ const HomePage = () => {
       })()}
 
       {/* Footer : z-0 pour rester sous la zone citation (main z-[1]) si jamais le layout déborde d’un px. */}
+      {!homeLayout ? (
       <footer className="relative z-0 grid shrink-0 grid-cols-[minmax(0,1fr)_auto] md:flex md:flex-row md:justify-between md:items-end items-end gap-3 md:gap-8 px-4 pb-6 pt-0 md:px-8 md:pb-12 flex-shrink-0" style={{ minHeight: 'fit-content' }}>
         {/* Section À propos améliorée */}
         <div className="self-start flex min-h-0 w-full md:max-w-2xl flex-col bg-black/10 backdrop-blur-3xl rounded-2xl border border-white/5 px-4 py-3 shadow-2xl max-h-[40vh] overflow-auto md:max-h-none md:overflow-visible md:rounded-3xl md:px-6 md:py-4">
@@ -1077,6 +1118,54 @@ const HomePage = () => {
           </div>
         </div>
       </footer>
+      ) : (
+      <>
+        {widgetsByZone.left.length > 0 ? (
+          <aside className="relative z-0 order-first flex w-full shrink-0 flex-col gap-2 px-4 md:absolute md:bottom-28 md:left-8 md:top-auto md:z-20 md:w-64 md:px-0 xl:left-10">
+            {widgetsByZone.left.map(({ def, variant }) =>
+              renderHomeWidget(def, variant, homeWidgetCtx)
+            )}
+          </aside>
+        ) : null}
+        <footer
+          className="relative z-0 grid shrink-0 grid-cols-[minmax(0,1fr)_auto] items-end gap-3 px-4 pb-6 pt-0 md:flex md:flex-row md:items-end md:justify-between md:gap-8 md:px-8 md:pb-12"
+          style={{ minHeight: 'fit-content', ['--home-ac']: homeAccent }}
+        >
+          <div className="flex w-full min-h-0 max-h-[40vh] flex-col gap-2 overflow-auto self-start md:max-h-none md:max-w-2xl md:overflow-visible">
+            {widgetsByZone.bottomLeft.map(({ def, variant }) =>
+              renderHomeWidget(def, variant, homeWidgetCtx)
+            )}
+          </div>
+          <div
+            className="flex w-auto flex-shrink-0 flex-col items-end gap-2 text-right"
+            style={{ minHeight: 'fit-content' }}
+          >
+            {widgetsByZone.bottomRight.map(({ def, variant }) =>
+              renderHomeWidget(def, variant, homeWidgetCtx)
+            )}
+            {showKeywords ? (
+              <div
+                className="space-y-0.5 text-xs font-semibold text-white md:space-y-2 md:text-base"
+                style={{ textShadow: '1px 1px 2px rgba(0,0,0,0.7)' }}
+              >
+                <div>{t('home.keywords.fitness')}</div>
+                <div>{t('home.keywords.performance')}</div>
+                <div>{t('home.keywords.progress')}</div>
+                <div>{t('home.keywords.intelligence')}</div>
+                <div>{t('home.keywords.startTransformation')}</div>
+                <div>{userLocation}</div>
+              </div>
+            ) : null}
+            <div
+              className="mt-1 flex h-[44px] w-[44px] flex-shrink-0 items-center justify-end md:mt-2"
+              data-swipe-ignore
+            >
+              <LanguageSelector variant="compact" />
+            </div>
+          </div>
+        </footer>
+      </>
+      )}
       </div>
       </>
       )}

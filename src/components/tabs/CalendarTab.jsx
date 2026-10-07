@@ -76,6 +76,18 @@ const CalendarTab = () => {
     clearPendingCalendarDeepLink();
   }, [pendingCalendarDeepLink, clearPendingCalendarDeepLink]);
 
+  useEffect(() => {
+    const onXpCalendarNav = (event) => {
+      const dateStr = event?.detail?.dateStr;
+      const anchorId = event?.detail?.anchorId || 'calendar-xp-insights';
+      if (!dateStr) return;
+      setJumpToCalendarDate(dateStr);
+      setCalendarScrollAnchor(anchorId);
+    };
+    window.addEventListener('sport:calendar-select-date', onXpCalendarNav);
+    return () => window.removeEventListener('sport:calendar-select-date', onXpCalendarNav);
+  }, []);
+
   const profileAge = useMemo(() => {
     const q = normalizeProfileQuestionnaire(currentUser?.profileQuestionnaire);
     const age = q?.answers?.vitalsSelfReport?.age;

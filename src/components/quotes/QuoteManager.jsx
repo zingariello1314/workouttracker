@@ -4,7 +4,7 @@
  */
 
 import React, { useState } from 'react';
-import { Quote, AlertTriangle, CheckCircle } from 'lucide-react';
+import { Quote, AlertTriangle, CheckCircle, ChevronDown, ChevronUp } from 'lucide-react';
 import Card, { CardHeader, CardTitle, CardContent } from '../ui/Card';
 import { settingsTheme as S } from '../tabs/SettingsTab/settingsThemeClasses';
 import { useQuotes } from '../../hooks/useQuotes';
@@ -31,6 +31,7 @@ export function QuoteManager() {
 
   const [editingQuote, setEditingQuote] = useState(null);
   const [showAddForm, setShowAddForm] = useState(false);
+  const [listOpen, setListOpen] = useState(false);
   const [actionStatus, setActionStatus] = useState(null); // { type: 'success' | 'error', message: string }
 
   // Handle mode change
@@ -246,32 +247,54 @@ export function QuoteManager() {
               </select>
             </div>
 
-            {/* Quote List */}
-            <QuoteList
-              quotes={quotes}
-              onEdit={setEditingQuote}
-              onDelete={handleDeleteQuote}
-              onTogglePin={handleTogglePin}
-              onReorder={handleReorder}
-              autoSplitLineGoal={settings?.autoSplitLineGoal ?? null}
-            />
-
-            {/* Add Quote Form */}
-            {!showAddForm ? (
+            {/* Liste citations — repliable */}
+            <div className="overflow-hidden rounded-lg border border-white/10 bg-black/25">
               <button
                 type="button"
-                onClick={() => setShowAddForm(true)}
-                className={`${S.btnPrimary} w-full`}
+                onClick={() => setListOpen((v) => !v)}
+                className="flex w-full items-center justify-between gap-2 px-3 py-2.5 text-left text-sm text-zinc-100 hover:bg-white/[0.04]"
+                aria-expanded={listOpen}
               >
-                <span>+</span>
-                <span>Ajouter une citation</span>
+                <span className="font-medium">
+                  Liste des citations
+                  <span className={`ml-2 text-xs font-normal ${S.muted}`}>
+                    ({quotes?.length || 0})
+                  </span>
+                </span>
+                {listOpen ? (
+                  <ChevronUp className="h-4 w-4 shrink-0 text-zinc-400" />
+                ) : (
+                  <ChevronDown className="h-4 w-4 shrink-0 text-zinc-400" />
+                )}
               </button>
-            ) : (
-              <AddQuoteForm
-                onAdd={handleAddQuote}
-                onCancel={() => setShowAddForm(false)}
-              />
-            )}
+              {listOpen ? (
+                <div className="space-y-3 border-t border-white/10 px-3 py-3">
+                  <QuoteList
+                    quotes={quotes}
+                    onEdit={setEditingQuote}
+                    onDelete={handleDeleteQuote}
+                    onTogglePin={handleTogglePin}
+                    onReorder={handleReorder}
+                    autoSplitLineGoal={settings?.autoSplitLineGoal ?? null}
+                  />
+                  {!showAddForm ? (
+                    <button
+                      type="button"
+                      onClick={() => setShowAddForm(true)}
+                      className={`${S.btnPrimary} w-full`}
+                    >
+                      <span>+</span>
+                      <span>Ajouter une citation</span>
+                    </button>
+                  ) : (
+                    <AddQuoteForm
+                      onAdd={handleAddQuote}
+                      onCancel={() => setShowAddForm(false)}
+                    />
+                  )}
+                </div>
+              ) : null}
+            </div>
 
             {/* Export/Import */}
             <ExportImportSection onImportComplete={handleImportComplete} />

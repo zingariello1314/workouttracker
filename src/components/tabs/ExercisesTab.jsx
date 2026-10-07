@@ -1,7 +1,6 @@
 import React, { useState, useMemo, useContext, useEffect } from 'react';
 import { useWorkout } from '../../context/WorkoutContext';
 import { WorkoutContext } from '../../context/WorkoutContext';
-import { workoutProgram } from '../../data/workoutProgram';
 import { exerciseDatabase } from '../../data/exerciseDatabase';
 import { convertLegacyProgram, filterExercises, enrichExercise, inferTrainingDiscipline } from '../../utils/programUtils';
 import { CARDIO_REFERENCE_EXERCISES } from '../../data/cardioExerciseCatalog';
@@ -48,6 +47,41 @@ const BANK_SUB_TABS = {
   CIRCUITS: 'circuits'     // Routines vidéo, composition à déterminer plus tard
 };
 
+const PROGRAM_WEEK_DAYS = ['lundi', 'mardi', 'mercredi', 'jeudi', 'vendredi', 'samedi', 'dimanche'];
+const PROGRAM_DAY_LABELS = {
+  lundi: 'Lundi',
+  mardi: 'Mardi',
+  mercredi: 'Mercredi',
+  jeudi: 'Jeudi',
+  vendredi: 'Vendredi',
+  samedi: 'Samedi',
+  dimanche: 'Dimanche'
+};
+
+function normalizeExerciseIdentity(exercise) {
+  const dbKey = exercise?.databaseKey || getExerciseDatabaseKey(exercise);
+  if (dbKey) return `db:${dbKey}`;
+  const name = String(exercise?.name || exercise?.nom || '')
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .trim();
+  if (name) return `name:${name}`;
+  return `id:${exercise?.id ?? ''}`;
+}
+
+/** Déduplique sauf quand un filtre jour est actif (même exo OK sur des jours différents). */
+function dedupeProgramExercises(list, { keepPerDay = false } = {}) {
+  const seen = new Set();
+  return list.filter((ex) => {
+    const identity = normalizeExerciseIdentity(ex);
+    const key = keepPerDay ? `${ex.programDay || ''}::${identity}` : identity;
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
+}
+
 const ExercisesTabBody = () => {
   const { data, updateData } = useWorkout();
   const { programs, activeProgram, updateProgram } = useContext(WorkoutContext);
@@ -91,6 +125,8 @@ const ExercisesTabBody = () => {
   const [autoSync, setAutoSync] = useState(true);
   const [selectedProgram, setSelectedProgram] = useState(null); // Pour la navigation dans les programmes
   const [viewMode, setViewMode] = useState('exercises'); // 'exercises' ou 'programs'
+  /** Disposition liste programme : par muscle (banque) ou chronologique (lundi → dimanche). */
+  const [programLayout, setProgramLayout] = useState('chrono');
   /** Sélection sous-onglet : exercises (banque exos) | stretches (banque étirements) | program (mon programme) */
   const [bankSubTab, setBankSubTab] = useState(BANK_SUB_TABS.EXERCISES);
   /** La grille complète ne se monte pas dans le premier rendu : sinon l’onglet reste sur « Chargement… ». */
@@ -121,11 +157,22 @@ const ExercisesTabBody = () => {
     return () => window.removeEventListener('sport:exercises-bank-subtab', onNav);
   }, []);
 
-  // ✅ Visibilité des programmes selon l'authentification
-  // - invité (déconnecté) : aucun programme visible, aucun programme actif
-  // - utilisateur connecté : ses propres programmes (gérés ailleurs via userId)
-  const visiblePrograms = isAuthenticated ? programs : [];
+  // Même liste que l’onglet Programme (tous les programmes du compte connecté)
+  const visiblePrograms = useMemo(() => {
+    if (!isAuthenticated) return [];
+    const list = (Array.isArray(programs) ? programs : []).filter(Boolean);
+    if (
+      activeProgram?.id != null &&
+      !list.some((p) => String(p.id) === String(activeProgram.id))
+    ) {
+      return [activeProgram, ...list];
+    }
+    return list;
+  }, [isAuthenticated, programs, activeProgram]);
   const visibleActiveProgram = isAuthenticated ? activeProgram : null;
+  const isProgramDataSource =
+    dataSource === 'active_program' ||
+    (dataSource === 'all_programs' && Boolean(selectedProgram));
 
   // Synchronisation automatique des exercices depuis les programmes
   useEffect(() => {
@@ -246,41 +293,12 @@ const ExercisesTabBody = () => {
         }
         break;
       default:
-        // Utiliser le programme par défaut (workoutProgram) AVEC activités complémentaires
-        // ✅ Mais uniquement pour l'admin : les autres comptes ne doivent PAS voir ton programme codé en dur
-        if (isAdmin) {
-          sourceProgram = {};
-          Object.entries(workoutProgram).forEach(([day, dayData]) => {
-            sourceProgram[day] = {
-              ...dayData,
-              exercices: [
-                // Exercices classiques
-                ...(dayData.exercices || []),
-                // Activités complémentaires
-                ...(dayData.complementaryActivity ? [{
-                  id: `complementary_${dayData.complementaryActivity.name.toLowerCase()}`,
-                  name: dayData.complementaryActivity.name,
-                  series: `1×${dayData.complementaryActivity.duration}min`,
-                  type: dayData.complementaryActivity.type,
-                  materiel: dayData.complementaryActivity.name === "Boxe" ? t('exercisesTab.equipment.boxingGloves') : t('exercisesTab.equipment.pool'),
-                  notes: `${dayData.complementaryActivity.timeSlot} - ${dayData.complementaryActivity.benefits.join(', ')}`
-                }] : [])
-              ]
-            };
-          });
-        } else {
-          // Pour les autres utilisateurs (et invités) : programme par défaut masqué
-          // On renvoie une structure vide, ils pourront utiliser leurs propres programmes via les autres sources
-          sourceProgram = {};
-        }
+        // Plus de fallback Cycle 3+1 / workoutProgram dans la banque
+        sourceProgram = {};
     }
-    
-    if (isAdmin) {
-      return sourceProgram || workoutProgram;
-    }
-    // Invités et non-admin : ne jamais retomber sur workoutProgram
+
     return sourceProgram || {};
-  }, [dataSource, visibleActiveProgram, visiblePrograms, selectedProgram, isAdmin, isGuest, t]);
+  }, [dataSource, visibleActiveProgram, visiblePrograms, selectedProgram, isGuest, t]);
 
   // Convertir le programme en format enrichi
   const enhancedProgram = useMemo(() => {
@@ -395,29 +413,40 @@ const ExercisesTabBody = () => {
       return mergeReferenceExercises([]);
     }
 
-    // Sources programme : uniquement les exercices du programme choisi (ne pas réinjecter toute la banque)
+    // Sources programme : occurrences avec jour / slot (dédup plus bas selon filtres)
     const exercises = [];
-    Object.values(enhancedProgram?.days || {}).forEach((day) => {
-      if (day.exercises) {
-        exercises.push(...day.exercises);
-      }
+    Object.entries(enhancedProgram?.days || {}).forEach(([dayKey, day]) => {
+      const programDay = PROGRAM_WEEK_DAYS.includes(dayKey)
+        ? dayKey
+        : PROGRAM_WEEK_DAYS.find((d) => dayKey.endsWith(`_${d}`)) || dayKey;
+      const dayFocus = day.focus || day.name || '';
+      (day.exercises || []).forEach((ex) => {
+        exercises.push({
+          ...ex,
+          programDay,
+          programSlot: 'maison',
+          programFocus: dayFocus
+        });
+      });
       if (day.salleVariants) {
-        Object.values(day.salleVariants).forEach((variant) => {
-          if (variant.exercises) {
-            exercises.push(...variant.exercises);
-          }
+        Object.entries(day.salleVariants).forEach(([variantKey, variant]) => {
+          (variant.exercises || []).forEach((ex) => {
+            exercises.push({
+              ...ex,
+              programDay,
+              programSlot: variantKey,
+              programFocus: dayFocus
+            });
+          });
         });
       }
     });
 
-    const uniqueExercises = exercises.filter(
-      (exercise, index, self) => index === self.findIndex((e) => e.id === exercise.id)
-    );
-
     /** Même vue carte que la banque (GIF / muscles) : rattacher chaque exo programme à la fiche banque. */
-    return uniqueExercises.map((exercise) => {
+    return exercises.map((exercise) => {
       const dbKey = exercise.databaseKey || getExerciseDatabaseKey(exercise);
       const bank = dbKey ? buildBankExerciseViewFromDatabaseKey(dbKey, t) : null;
+      const dayLabel = PROGRAM_DAY_LABELS[exercise.programDay] || exercise.programDay || '';
       if (bank) {
         return {
           ...bank,
@@ -428,7 +457,10 @@ const ExercisesTabBody = () => {
           notes: exercise.notes || bank.notes,
           type: exercise.type,
           databaseKey: dbKey,
-          sourceDay: exercise.sourceDay || t('exercisesTab.misc.defaultProgram')
+          programDay: exercise.programDay,
+          programSlot: exercise.programSlot,
+          programFocus: exercise.programFocus,
+          sourceDay: dayLabel || exercise.sourceDay || t('exercisesTab.misc.defaultProgram')
         };
       }
       const enriched = enrichExercise(exercise);
@@ -442,21 +474,62 @@ const ExercisesTabBody = () => {
           exercise.trainingDiscipline ||
           inferTrainingDiscipline(enriched),
         equipment: enriched.metadata?.equipment || exercise.equipment || exercise.materiel,
-        sourceDay: exercise.sourceDay || t('exercisesTab.misc.defaultProgram')
+        programDay: exercise.programDay,
+        programSlot: exercise.programSlot,
+        programFocus: exercise.programFocus,
+        sourceDay: dayLabel || exercise.sourceDay || t('exercisesTab.misc.defaultProgram')
       };
     });
   }, [enhancedProgram, t, isGuest, dataSource, bankPrepared]);
 
   // Filtrer les exercices
   const filteredExercises = useMemo(() => {
-    let list = filterExercises(allExercises, filters);
+    let list = [...allExercises];
+
+    // Filtres programme (uniquement si source = un programme)
+    if (isProgramDataSource) {
+      if (filters.programDay) {
+        list = list.filter((ex) => ex.programDay === filters.programDay);
+      }
+      if (filters.programSlot) {
+        list = list.filter((ex) => ex.programSlot === filters.programSlot);
+      }
+      if (filters.programFocus) {
+        const needle = String(filters.programFocus).toLowerCase();
+        list = list.filter((ex) => String(ex.programFocus || '').toLowerCase().includes(needle));
+      }
+      // Vue muscle : un seul exemplaire global (sauf filtre jour).
+      // Vue chrono : 1× par jour pour pouvoir enchaîner lundi → dimanche.
+      const keepPerDay = programLayout === 'chrono' || Boolean(filters.programDay);
+      list = dedupeProgramExercises(list, { keepPerDay });
+    }
+
+    list = filterExercises(list, filters);
     if (filters.hasVideo === 'yes') list = list.filter((exercise) => exerciseHasVideo(exercise));
     if (filters.hasVideo === 'no') list = list.filter((exercise) => !exerciseHasVideo(exercise));
     if (filters.hasGif === 'yes') list = list.filter((exercise) => exerciseHasGif(exercise));
     if (filters.hasGif === 'no') list = list.filter((exercise) => !exerciseHasGif(exercise));
     if (filters.isNew === 'yes') list = list.filter((exercise) => exercise.isNew);
+
+    if (isProgramDataSource && programLayout === 'chrono') {
+      return [...list].sort((a, b) => {
+        const ia = PROGRAM_WEEK_DAYS.indexOf(a.programDay);
+        const ib = PROGRAM_WEEK_DAYS.indexOf(b.programDay);
+        return (ia < 0 ? 99 : ia) - (ib < 0 ? 99 : ib);
+      });
+    }
     return sortExercisesByMuscleName(list, exerciseHasGif);
-  }, [allExercises, filters]);
+  }, [allExercises, filters, isProgramDataSource, programLayout]);
+
+  const programFocusOptions = useMemo(() => {
+    if (!isProgramDataSource) return [];
+    const set = new Set();
+    allExercises.forEach((ex) => {
+      const f = String(ex.programFocus || '').trim();
+      if (f) set.add(f);
+    });
+    return [...set].sort((a, b) => a.localeCompare(b, 'fr'));
+  }, [allExercises, isProgramDataSource]);
 
   const groupedExerciseBank = useMemo(() => {
     const byCategory = new Map();
@@ -472,6 +545,35 @@ const ExercisesTabBody = () => {
         rows
       }));
   }, [filteredExercises]);
+
+  /** Groupes lundi → dimanche (sans sous-catégories muscle). */
+  const chronologicalDayGroups = useMemo(() => {
+    if (!isProgramDataSource || programLayout !== 'chrono') return [];
+    const byDay = new Map();
+    filteredExercises.forEach((row) => {
+      const day = row.programDay || 'autre';
+      if (!byDay.has(day)) byDay.set(day, []);
+      byDay.get(day).push(row);
+    });
+    return PROGRAM_WEEK_DAYS.filter((day) => byDay.has(day)).map((day) => {
+      const rows = byDay.get(day);
+      const muscles = [];
+      const seenMuscle = new Set();
+      rows.forEach((ex) => {
+        const m = getExerciseMuscleCategory(ex);
+        if (!m || seenMuscle.has(m)) return;
+        seenMuscle.add(m);
+        muscles.push(m);
+      });
+      return {
+        day,
+        label: PROGRAM_DAY_LABELS[day] || day,
+        focus: rows.find((r) => r.programFocus)?.programFocus || '',
+        muscles,
+        rows
+      };
+    });
+  }, [filteredExercises, isProgramDataSource, programLayout]);
 
   useEffect(() => {
     if (bankSubTab !== BANK_SUB_TABS.EXERCISES) return undefined;
@@ -544,7 +646,13 @@ const ExercisesTabBody = () => {
   }, [allExercises]);
 
   const handleFilterChange = (newFilters) => {
-    setFilters(newFilters);
+    // ExerciseFilter ne gère pas les filtres programme : on les conserve.
+    setFilters((prev) => ({
+      ...newFilters,
+      ...(prev.programDay ? { programDay: prev.programDay } : {}),
+      ...(prev.programSlot ? { programSlot: prev.programSlot } : {}),
+      ...(prev.programFocus ? { programFocus: prev.programFocus } : {})
+    }));
   };
 
   const getDifficultyColor = (difficulty) => {
@@ -556,8 +664,9 @@ const ExercisesTabBody = () => {
   };
 
   const bankListPending = dataSource === 'exercise_bank' && !bankPrepared;
+  const useChronoLayout = isProgramDataSource && programLayout === 'chrono';
   let bankSlotsLeft = dataSource === 'exercise_bank' ? bankRenderLimit : Number.POSITIVE_INFINITY;
-  const visibleExerciseGroups = bankListPending
+  const visibleExerciseGroups = bankListPending || useChronoLayout
     ? []
     : groupedExerciseBank.flatMap((group) => {
         if (bankSlotsLeft <= 0) return [];
@@ -828,7 +937,7 @@ const ExercisesTabBody = () => {
         <div className="relative z-10 space-y-6 p-6">
           {subTabsHeader}
           {!visibleActiveProgram ? (
-            <MyProgramBankView activeProgram={visibleActiveProgram} isAdmin={isAdmin} />
+            <MyProgramBankView activeProgram={visibleActiveProgram} />
           ) : bankProgramEditorOpen ? (
             <ProgramDetailView
               program={visibleActiveProgram}
@@ -857,7 +966,7 @@ const ExercisesTabBody = () => {
                   </button>
                 </CardContent>
               </Card>
-              <MyProgramBankView activeProgram={visibleActiveProgram} isAdmin={isAdmin} />
+              <MyProgramBankView activeProgram={visibleActiveProgram} />
             </>
           )}
         </div>
@@ -953,6 +1062,13 @@ const ExercisesTabBody = () => {
                 setDataSource('exercise_bank');
                 setViewMode('exercises');
                 setSelectedProgram(null);
+                setFilters((prev) => {
+                  const next = { ...prev };
+                  delete next.programDay;
+                  delete next.programSlot;
+                  delete next.programFocus;
+                  return next;
+                });
               }}
               className={`gradient-button-premium gradient-button-premium-sm rounded-lg ${
                 dataSource === 'exercise_bank' ? 'gradient-button-premium-variant' : ''
@@ -960,54 +1076,50 @@ const ExercisesTabBody = () => {
             >
               {t('exercisesTab.source.allBank', 'Tous les exercices')}
             </button>
-            <button
-              type="button"
-              onClick={() => {
-                setDataSource('active_program');
-                setViewMode('exercises');
-                setSelectedProgram(null);
-              }}
-              disabled={!visibleActiveProgram}
-              className={`gradient-button-premium gradient-button-premium-sm rounded-lg ${
-                dataSource === 'active_program' ? 'gradient-button-premium-variant' : ''
-              } ${!visibleActiveProgram ? 'opacity-50 cursor-not-allowed' : ''}`}
-            >
-              {visibleActiveProgram
-                ? t('exercisesTab.source.activeProgramNamed', {
-                    programName: visibleActiveProgram.name,
-                    defaultValue: `Programme actif (${visibleActiveProgram.name})`
-                  })
-                : t('exercisesTab.source.activeProgramNone', 'Aucun programme actif')}
-            </button>
-            {visiblePrograms.length > 0 ? (
-              <select
-                value={
-                  dataSource === 'all_programs' && selectedProgram?.id != null
-                    ? String(selectedProgram.id)
-                    : ''
+            <select
+              value={
+                dataSource === 'all_programs' && selectedProgram?.id != null
+                  ? String(selectedProgram.id)
+                  : ''
+              }
+              onChange={(e) => {
+                const id = e.target.value;
+                if (!id) {
+                  setSelectedProgram(null);
+                  setDataSource('exercise_bank');
+                  setFilters((prev) => {
+                    const next = { ...prev };
+                    delete next.programDay;
+                    delete next.programSlot;
+                    delete next.programFocus;
+                    return next;
+                  });
+                  return;
                 }
-                onChange={(e) => {
-                  const id = e.target.value;
-                  if (!id) return;
-                  const program = visiblePrograms.find((p) => String(p.id) === String(id));
-                  if (!program) return;
-                  setSelectedProgram(program);
-                  setDataSource('all_programs');
-                  setViewMode('exercises');
-                }}
-                className="rounded-lg border border-[#0F4C5C]/60 bg-black px-3 py-2 text-sm text-teal-100"
-                aria-label={t('exercisesTab.source.pickProgram', 'Choisir un programme')}
-              >
-                <option value="">
-                  {t('exercisesTab.source.pickProgram', 'Autre programme…')}
+                const program = visiblePrograms.find((p) => String(p.id) === String(id));
+                if (!program) return;
+                setSelectedProgram(program);
+                setDataSource('all_programs');
+                setViewMode('exercises');
+              }}
+              className="min-w-[220px] rounded-lg border border-[#0F4C5C]/60 bg-black px-3 py-2 text-sm text-teal-100"
+              aria-label={t('exercisesTab.source.pickProgram', 'Choisir un programme')}
+            >
+              <option value="">
+                {visiblePrograms.length
+                  ? t('exercisesTab.source.pickProgram', 'Choisir un programme…')
+                  : t(
+                      'exercisesTab.source.noUserPrograms',
+                      'Aucun programme créé'
+                    )}
+              </option>
+              {visiblePrograms.map((program) => (
+                <option key={program.id} value={String(program.id)}>
+                  {program.name}
+                  {visibleActiveProgram?.id === program.id ? ' · actif' : ''}
                 </option>
-                {visiblePrograms.map((program) => (
-                  <option key={program.id} value={String(program.id)}>
-                    {program.name}
-                  </option>
-                ))}
-              </select>
-            ) : null}
+              ))}
+            </select>
           </div>
           <div className="mt-3 text-sm text-slate-400">
             {dataSource === 'exercise_bank' &&
@@ -1015,24 +1127,17 @@ const ExercisesTabBody = () => {
                 'exercisesTab.source.description.bank',
                 'Affichage de toute la banque d’exercices (sans doublons).'
               )}
-            {dataSource === 'active_program' &&
-              visibleActiveProgram &&
-              t('exercisesTab.source.description.activeProgram', {
-                programName: visibleActiveProgram.name,
-                defaultValue: `Exercices du programme actif « ${visibleActiveProgram.name} » uniquement.`
-              })}
-            {dataSource === 'active_program' &&
-              !visibleActiveProgram &&
-              t(
-                'exercisesTab.source.description.activeProgramNone',
-                'Aucun programme actif — active un programme pour filtrer.'
-              )}
             {dataSource === 'all_programs' &&
               selectedProgram &&
               t('exercisesTab.source.description.allProgramsView', {
                 programName: selectedProgram.name,
-                defaultValue: `Exercices du programme « ${selectedProgram.name} » uniquement.`
+                defaultValue: `Exercices du programme « ${selectedProgram.name} » uniquement (doublons fusionnés, sauf filtre par jour).`
               })}
+            {isAuthenticated && visiblePrograms.length === 0 &&
+              t(
+                'exercisesTab.source.description.noUserPrograms',
+                'Aucun programme dans ton compte — crée-en un dans l’onglet Programme.'
+              )}
           </div>
         </CardContent>
       </Card>
@@ -1110,7 +1215,120 @@ const ExercisesTabBody = () => {
               {t('exercisesTab.filters.title')}
             </CardTitle>
           </CardHeader>
-          <CardContent>
+          <CardContent className="space-y-4">
+            {isProgramDataSource ? (
+              <div className="space-y-3 rounded-xl border border-teal-500/25 bg-teal-950/20 p-3">
+                <div>
+                  <p className="text-xs font-semibold uppercase tracking-wider text-teal-300/90">
+                    Filtres programme
+                  </p>
+                  <p className="mt-1 text-[11px] text-slate-500">
+                    Disponibles uniquement quand un de tes programmes est la source.
+                  </p>
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setProgramLayout('chrono')}
+                    className={`rounded-lg border px-3 py-1.5 text-xs font-medium transition ${
+                      programLayout === 'chrono'
+                        ? 'border-teal-400/50 bg-teal-500/20 text-teal-100'
+                        : 'border-white/10 text-slate-400 hover:border-white/20 hover:text-slate-200'
+                    }`}
+                  >
+                    Ordre chronologique (lun → dim)
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setProgramLayout('muscle')}
+                    className={`rounded-lg border px-3 py-1.5 text-xs font-medium transition ${
+                      programLayout === 'muscle'
+                        ? 'border-teal-400/50 bg-teal-500/20 text-teal-100'
+                        : 'border-white/10 text-slate-400 hover:border-white/20 hover:text-slate-200'
+                    }`}
+                  >
+                    Par groupe musculaire
+                  </button>
+                </div>
+                <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
+                  <label className="text-[11px] text-slate-400">
+                    Jour de la semaine
+                    <select
+                      value={filters.programDay || ''}
+                      onChange={(e) =>
+                        setFilters((prev) => ({
+                          ...prev,
+                          programDay: e.target.value || undefined
+                        }))
+                      }
+                      className="mt-1 w-full rounded-lg border border-[#0F4C5C]/60 bg-black px-2.5 py-2 text-sm text-teal-100"
+                    >
+                      <option value="">Tous les jours (dédupliqué)</option>
+                      {PROGRAM_WEEK_DAYS.map((day) => (
+                        <option key={day} value={day}>
+                          {PROGRAM_DAY_LABELS[day]}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                  <label className="text-[11px] text-slate-400">
+                    Emplacement / variante
+                    <select
+                      value={filters.programSlot || ''}
+                      onChange={(e) =>
+                        setFilters((prev) => ({
+                          ...prev,
+                          programSlot: e.target.value || undefined
+                        }))
+                      }
+                      className="mt-1 w-full rounded-lg border border-[#0F4C5C]/60 bg-black px-2.5 py-2 text-sm text-teal-100"
+                    >
+                      <option value="">Tous (maison + salle)</option>
+                      <option value="maison">Maison</option>
+                      <option value="semaineA">Salle — semaine A</option>
+                      <option value="semaineB">Salle — semaine B</option>
+                    </select>
+                  </label>
+                  <label className="text-[11px] text-slate-400">
+                    Focus du jour
+                    <select
+                      value={filters.programFocus || ''}
+                      onChange={(e) =>
+                        setFilters((prev) => ({
+                          ...prev,
+                          programFocus: e.target.value || undefined
+                        }))
+                      }
+                      className="mt-1 w-full rounded-lg border border-[#0F4C5C]/60 bg-black px-2.5 py-2 text-sm text-teal-100"
+                    >
+                      <option value="">Tous les focus</option>
+                      {programFocusOptions.map((focus) => (
+                        <option key={focus} value={focus}>
+                          {focus}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                </div>
+                {(filters.programDay || filters.programSlot || filters.programFocus) && (
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setFilters((prev) => {
+                        const next = { ...prev };
+                        delete next.programDay;
+                        delete next.programSlot;
+                        delete next.programFocus;
+                        return next;
+                      })
+                    }
+                    className="text-[11px] text-teal-300/90 underline-offset-2 hover:underline"
+                  >
+                    Réinitialiser les filtres programme
+                  </button>
+                )}
+              </div>
+            ) : null}
             <ExerciseFilter
               onFilterChange={handleFilterChange}
               activeFilters={filters}
@@ -1199,6 +1417,45 @@ const ExercisesTabBody = () => {
                     : t('exercisesTab.exercises.noneHint')
                   }
                 </p>
+              </div>
+            ) : useChronoLayout ? (
+              <div className="space-y-8">
+                {chronologicalDayGroups.map((dayGroup) => (
+                  <section key={dayGroup.day} className="space-y-3">
+                    <header className="border-b border-[#0F4C5C]/50 pb-2">
+                      <h3 className="text-base font-semibold tracking-wide text-teal-100">
+                        {dayGroup.label}
+                        <span className="ml-2 text-sm font-normal text-slate-500">
+                          ({dayGroup.rows.length})
+                        </span>
+                      </h3>
+                      {dayGroup.focus ? (
+                        <p className="mt-0.5 text-xs text-slate-400">{dayGroup.focus}</p>
+                      ) : null}
+                      <p className="mt-1.5 text-[12px] leading-snug text-slate-300">
+                        <span className="font-medium text-teal-300/90">Muscles sollicités :</span>{' '}
+                        {dayGroup.muscles.length
+                          ? dayGroup.muscles.join(' · ')
+                          : '—'}
+                      </p>
+                    </header>
+                    <div className="grid grid-cols-1 items-stretch gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+                      {dayGroup.rows.map((exercise, index) => (
+                        <SportBankExerciseCard
+                          key={`${dayGroup.day}-${exercise.programSlot || 'x'}-${exercise.id}-${index}`}
+                          exercise={exercise}
+                          onOpenDetail={setDetailExercise}
+                          effectiveLoadCoeff={resolveExerciseIntensityCoeff(exercise, intensityCoeffs)}
+                          hasRecordedMax={maxRecordsByExerciseId.has(String(exercise.id))}
+                          maxRecord={maxRecordsByExerciseId.get(String(exercise.id)) || null}
+                          showAddButton={isAuthenticated}
+                          onRequestAddToProgram={isAuthenticated ? (p) => setBankAddPayload(p) : undefined}
+                          workoutData={data}
+                        />
+                      ))}
+                    </div>
+                  </section>
+                ))}
               </div>
             ) : (
               <div className="space-y-6">

@@ -8,13 +8,16 @@ import {
   addCardIcon,
   deleteCardIcon,
   setActiveCardIcon,
+  setGradeArtAsCardIcon,
+  ensureDefaultGradeArtCard,
+  resolveProfileCardIconUrl,
   getUserTitle,
   optimizeImage,
   getRotationSettings,
   saveRotationSettings,
   rotateToNextImage
 } from '../services/profileCard/profileCardStorage';
-import { readProfileCardWarm } from '../services/profileCard/profileCardWarmCache';
+import { readProfileCardWarm, rememberProfileCardWarm } from '../services/profileCard/profileCardWarmCache';
 import logger from '../utils/logger';
 
 const profileCardHookLog = logger.module('useProfileCard');
@@ -36,6 +39,8 @@ export const useProfileCard = (username = 'guest') => {
     cardIconUrl: warm?.cardIconUrl || null,
     cardIcons: warm?.cardIcons || [],
     activeCardIconIndex: warm?.activeCardIconIndex ?? 0,
+    gradeArtId: warm?.gradeArtId || null,
+    cardIconMode: warm?.cardIconMode || null,
     isLoading: !(warm?.avatarUrl || warm?.cardIconUrl)
   });
 
@@ -70,22 +75,37 @@ export const useProfileCard = (username = 'guest') => {
         isLoading: !(prev.avatarUrl || prev.cardIconUrl)
       }));
 
-      const data = await getProfileData(username);
+      let data = await getProfileData(username);
       const title = getUserTitle(username);
       const settings = await getRotationSettings(username);
 
-      setProfileData({
+      // Carte vide → illustration du grade (novice par défaut tant que le hook grade n’a pas sync)
+      if (
+        data == null ||
+        (!(data.cardIcons || []).length &&
+          data.cardIconMode !== 'upload' &&
+          !data.gradeArtId)
+      ) {
+        data = await ensureDefaultGradeArtCard(username, data?.gradeArtId || 'novice');
+      }
+
+      const resolvedCardIconUrl = resolveProfileCardIconUrl(data, data?.gradeArtId || 'novice');
+      const next = {
         avatarUrl: data?.avatarUrl || null,
         avatars: data?.avatars || [],
         activeAvatarIndex: data?.activeAvatarIndex ?? 0,
         handle: data?.handle || username,
         title,
         status: 'En ligne',
-        cardIconUrl: data?.cardIconUrl || null,
+        cardIconUrl: resolvedCardIconUrl,
         cardIcons: data?.cardIcons || [],
         activeCardIconIndex: data?.activeCardIconIndex ?? 0,
+        gradeArtId: data?.gradeArtId || null,
+        cardIconMode: data?.cardIconMode || null,
         isLoading: false
-      });
+      };
+      setProfileData(next);
+      rememberProfileCardWarm(username, next);
 
       if (settings) {
         setRotationSettings(settings);
@@ -231,6 +251,33 @@ export const useProfileCard = (username = 'guest') => {
       return { success: true };
     } catch (error) {
       console.error('[useProfileCard] Erreur lors de la sélection de l\'image de fond:', error);
+      return { success: false, error };
+    }
+  }, [username, loadProfileData]);
+
+  /**
+   * Utilise l’art d’un grade débloqué comme fond de carte.
+   */
+  const selectGradeArt = useCallback(async (gradeId) => {
+    try {
+      await setGradeArtAsCardIcon(username, gradeId);
+      await loadProfileData();
+      return { success: true };
+    } catch (error) {
+      console.error('[useProfileCard] Erreur sélection art grade:', error);
+      return { success: false, error };
+    }
+  }, [username, loadProfileData]);
+
+  /**
+   * Applique le grade mérité si la carte n’a pas encore d’image.
+   */
+  const ensureGradeArtDefault = useCallback(async (meritedGradeId) => {
+    try {
+      await ensureDefaultGradeArtCard(username, meritedGradeId || 'novice');
+      await loadProfileData();
+      return { success: true };
+    } catch (error) {
       return { success: false, error };
     }
   }, [username, loadProfileData]);
@@ -387,6 +434,8 @@ export const useProfileCard = (username = 'guest') => {
     cardIconUrl: profileData.cardIconUrl,
     cardIcons: profileData.cardIcons,
     activeCardIconIndex: profileData.activeCardIconIndex,
+    gradeArtId: profileData.gradeArtId,
+    cardIconMode: profileData.cardIconMode,
     isLoading: profileData.isLoading,
     username,
     rotationSettings,
@@ -399,6 +448,8 @@ export const useProfileCard = (username = 'guest') => {
     addNewCardIcon,
     removeCardIcon,
     selectCardIcon,
+    selectGradeArt,
+    ensureGradeArtDefault,
     refresh,
     rotateNext,
     updateRotationSettings

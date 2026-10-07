@@ -65,7 +65,19 @@ export const SPORT_XP_DETAIL_FIELDS = [
   { id: 'miscTrophies', label: 'Pied : paliers / trophées', defaultOn: true }
 ];
 
+/** Blocs majeurs du détail (ordre = drag & drop dans Apparence). */
+export const SPORT_XP_LAYOUT_BLOCKS = [
+  { id: 'headerCards', label: 'Cartes grade mérité & XP palier' },
+  { id: 'breakdownStack', label: 'Répartition visuelle (stack + légende)' },
+  { id: 'groupTraining', label: 'Bloc Entraînement & défis' },
+  { id: 'groupActivity', label: 'Bloc Activité & nutrition' },
+  { id: 'groupTrophies', label: 'Bloc Trophées' },
+  { id: 'misc', label: 'Pied séances & paliers' }
+];
+
 const DEFAULT_SHOW_TABS = SPORT_XP_TAB_OPTIONS.map((t) => t.id);
+const DEFAULT_LAYOUT_ORDER = SPORT_XP_LAYOUT_BLOCKS.map((b) => b.id);
+const DEFAULT_DETAIL_FIELD_ORDER = SPORT_XP_DETAIL_FIELDS.map((f) => f.id);
 
 function defaultDetailFields() {
   const out = {};
@@ -81,9 +93,28 @@ function defaultPreference() {
     customAccents: [],
     showTabs: [...DEFAULT_SHOW_TABS],
     detailFields: defaultDetailFields(),
+    layoutOrder: [...DEFAULT_LAYOUT_ORDER],
+    detailFieldOrder: [...DEFAULT_DETAIL_FIELD_ORDER],
     nutritionAccent: '#22c55e',
     nutritionXpAccent: '#22d3ee'
   };
+}
+
+function normalizeOrder(rawOrder, defaults) {
+  const allowed = new Set(defaults);
+  const seen = new Set();
+  const out = [];
+  if (Array.isArray(rawOrder)) {
+    for (const id of rawOrder) {
+      if (!allowed.has(id) || seen.has(id)) continue;
+      seen.add(id);
+      out.push(id);
+    }
+  }
+  for (const id of defaults) {
+    if (!seen.has(id)) out.push(id);
+  }
+  return out;
 }
 
 function sanitizeHex(value, fallback) {
@@ -141,6 +172,8 @@ function normalize(raw) {
     customAccents,
     showTabs,
     detailFields,
+    layoutOrder: normalizeOrder(raw.layoutOrder, DEFAULT_LAYOUT_ORDER),
+    detailFieldOrder: normalizeOrder(raw.detailFieldOrder, DEFAULT_DETAIL_FIELD_ORDER),
     nutritionAccent: sanitizeHex(raw.nutritionAccent, base.nutritionAccent),
     nutritionXpAccent: sanitizeHex(raw.nutritionXpAccent, base.nutritionXpAccent)
   };
@@ -209,6 +242,26 @@ export function isDetailFieldOn(fieldId, preference) {
   const pref = preference || getXpAppearancePreference();
   if (pref.detailFields?.[fieldId] === false) return false;
   return true;
+}
+
+export function getLayoutOrder(preference) {
+  const pref = preference || getXpAppearancePreference();
+  return normalizeOrder(pref.layoutOrder, DEFAULT_LAYOUT_ORDER);
+}
+
+export function getDetailFieldOrder(preference) {
+  const pref = preference || getXpAppearancePreference();
+  return normalizeOrder(pref.detailFieldOrder, DEFAULT_DETAIL_FIELD_ORDER);
+}
+
+/** Compare deux ids de champs selon l’ordre perso (défaut catalogue). */
+export function compareDetailFieldOrder(aId, bId, preference) {
+  const order = getDetailFieldOrder(preference);
+  const ia = order.indexOf(aId);
+  const ib = order.indexOf(bId);
+  const sa = ia === -1 ? 9999 : ia;
+  const sb = ib === -1 ? 9999 : ib;
+  return sa - sb;
 }
 
 export function listAllSportXpAccents(preference) {

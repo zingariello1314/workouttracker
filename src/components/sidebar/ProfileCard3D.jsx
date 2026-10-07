@@ -63,18 +63,16 @@ const ProfileCard3D = ({
 
   const name = currentUsername || username || 'Utilisateur';
   
-  // CORRECTION: Avatar = petite image ronde, CardIcon = grande image de fond
-  // Ne jamais afficher le logo - seulement les images uploadées
-  // Filtrer les URLs invalides ou vides
-  const finalAvatarUrl = avatarUrl && 
-                         avatarUrl !== '/logo.png' && 
-                         avatarUrl.startsWith('data:image/') && 
-                         avatarUrl.length > 50 ? avatarUrl : null;
-  
-  const finalCardIconUrl = cardIconUrl && 
-                           cardIconUrl !== '/logo.png' && 
-                           cardIconUrl.startsWith('data:image/') && 
-                           cardIconUrl.length > 50 ? cardIconUrl : null;
+  // Avatar = petite image ronde ; CardIcon = fond de carte (upload ou art de grade)
+  const isValidCardImage = (url) =>
+    Boolean(
+      url &&
+        url !== '/logo.png' &&
+        ((url.startsWith('data:image/') && url.length > 50) || url.startsWith('/sport-grades/'))
+    );
+
+  const finalAvatarUrl = isValidCardImage(avatarUrl) ? avatarUrl : null;
+  const finalCardIconUrl = isValidCardImage(cardIconUrl) ? cardIconUrl : null;
 
   // Gérer les transitions fluides pour cardIcon (système double layer)
   useEffect(() => {

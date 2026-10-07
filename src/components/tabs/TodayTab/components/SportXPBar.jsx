@@ -20,6 +20,8 @@ import { STEPS_XP_RATE_VERIFIED, STEPS_XP_RATE_DECLARATIVE } from '../../../../u
 import { useTranslation } from '../../../../utils/translations';
 import { formatCalendarSportDuration } from '../../../../utils/calendarSportStatsFormat';
 import {
+  compareDetailFieldOrder,
+  getLayoutOrder,
   getXpAppearancePreference,
   isDetailFieldOn,
   listAllSportXpAccents,
@@ -253,24 +255,34 @@ function buildXpGroups(breakdown, t, refTwoStarTenReps, dailyInsights, masterySc
     }
   ].filter((row) => on(ROW_FIELD[row.id]));
 
+  const sortRows = (rows) =>
+    [...rows].sort((a, b) => {
+      const byOrder = compareDetailFieldOrder(ROW_FIELD[a.id], ROW_FIELD[b.id], preference);
+      if (byOrder !== 0) return byOrder;
+      return (b.xp || 0) - (a.xp || 0);
+    });
+
   return [
     { id: 'training', name: 'Entraînement & défis', color: 'var(--c1)', rows: trainingRows },
     { id: 'activity', name: 'Activité & nutrition', color: 'var(--c2)', rows: activityRows },
     { id: 'trophies', name: 'Trophées', color: 'var(--c3)', rows: trophyRows }
   ].map((group) => {
     const total = group.rows.reduce((sum, row) => sum + (row.xp || 0), 0);
-    const rows = [...group.rows].sort((a, b) => b.xp - a.xp);
-    return { ...group, total, rows };
+    return { ...group, total, rows: sortRows(group.rows) };
   });
 }
 
-const SportXPBar = () => {
+const SportXPBar = ({ previewMode = false, embed = false }) => {
   const { totalXP, level, breakdown, progress, grades, isLoading, dailyInsights, masteryScore } =
     useSportGrade();
   const { setActiveTab, requestOpenEnduranceSubTab } = useWorkout();
   const t = useTranslation();
-  const [open, setOpen] = useState(false);
+  const [open, setOpen] = useState(Boolean(previewMode));
   const [preference, setPreference] = useState(getXpAppearancePreference);
+
+  useEffect(() => {
+    if (previewMode) setOpen(true);
+  }, [previewMode]);
 
   useEffect(() => subscribeXpAppearance(setPreference), []);
 
@@ -315,10 +327,30 @@ const SportXPBar = () => {
     [groups]
   );
 
-  const trainingPlusActivity = (groups[0]?.total || 0) + (groups[1]?.total || 0);
+  const groupsById = useMemo(() => {
+    const map = {};
+    groups.forEach((g) => {
+      map[g.id] = g;
+    });
+    return map;
+  }, [groups]);
+
+  const layoutOrder = getLayoutOrder(preference);
+  const trainingPlusActivity =
+    (groupsById.training?.total || 0) + (groupsById.activity?.total || 0);
   const stackPieces = useMemo(() => {
     const pieces = [];
-    groups.forEach((group) => {
+    const orderedGroups = layoutOrder
+      .filter((id) => id.startsWith('group'))
+      .map((id) => {
+        if (id === 'groupTraining') return groupsById.training;
+        if (id === 'groupActivity') return groupsById.activity;
+        if (id === 'groupTrophies') return groupsById.trophies;
+        return null;
+      })
+      .filter(Boolean);
+    const list = orderedGroups.length ? orderedGroups : groups;
+    list.forEach((group) => {
       group.rows
         .filter((r) => r.xp > 0)
         .forEach((row, i) => {
@@ -332,13 +364,256 @@ const SportXPBar = () => {
         });
     });
     return pieces;
-  }, [groups]);
+  }, [groups, groupsById, layoutOrder]);
 
   const setAccent = (id) => {
     updateXpAppearancePreference({ sportAccentId: id });
   };
 
   const toggleOpen = () => setOpen((value) => !value);
+
+  const renderGroupTable = (group) => {
+    if (!group || !isDetailFieldOn('breakdownRows', preference)) return null;
+    if (!group.rows.length) return null;
+    return (
+      <div key={group.id} style={{ '--c': group.color }}>
+        <div className={styles.gh}>
+          <strong>{group.name}</strong>
+          <span>
+            {fmt(group.total)}
+            <small>
+              XP · {pctOf(group.total, totalXP)}
+            </small>
+          </span>
+        </div>
+        <div className={styles.col}>
+          <span>Source</span>
+          <span>Ce que tu as fait</span>
+          <span>XP gagné</span>
+          <span>Part</span>
+        </div>
+        {group.rows.map((row) => (
+          <div
+            key={row.id}
+            role="button"
+            tabIndex={0}
+            className={`${styles.r} ${styles.rClick}${row.xp === 0 ? ` ${styles.z}` : ''}`}
+            style={{
+              '--w': `${Math.min(100, (row.xp / maxRowXp) * 100).toFixed(1)}%`
+            }}
+            title={`Voir : ${row.name}`}
+            onClick={(e) => goNav(row.id, e)}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                goNav(row.id, e);
+              }
+            }}
+          >
+            <div className={styles.n}>
+              {row.name}
+              {row.hint ? <small>{row.hint}</small> : null}
+            </div>
+            <div className={styles.a}>
+              {row.amount ? (
+                <>
+                  {row.amount} <span>{row.unit}</span>
+                </>
+              ) : null}
+            </div>
+            <div className={styles.xv}>
+              {row.xp === 0 && !row.forceShow ? '+0' : row.xp > 0 ? fmt(row.xp) : '—'}
+              {row.xp > 0 ? <small>XP</small> : null}
+            </div>
+            <div className={styles.pc}>{row.xp > 0 ? pctOf(row.xp, totalXP) : '—'}</div>
+          </div>
+        ))}
+      </div>
+    );
+  };
+
+  const renderLayoutBlock = (blockId) => {
+    switch (blockId) {
+      case 'headerCards':
+        if (
+          !(
+            isDetailFieldOn('meritedBox', preference) ||
+            isDetailFieldOn('levelXpBox', preference)
+          )
+        ) {
+          return null;
+        }
+        return (
+          <div key="headerCards" className={styles.strip}>
+            {isDetailFieldOn('meritedBox', preference) ? (
+              <button
+                type="button"
+                className={`${styles.box} ${styles.gradeBtn}`}
+                onClick={goRecapGrades}
+                title={gradesHint}
+              >
+                <div className={styles.k}>Grade mérité</div>
+                <div className={styles.v}>
+                  {merName} · {merPalier}
+                </div>
+                <p>
+                  {sameMerited
+                    ? 'identique à la progression'
+                    : `${merName} · ${merPalier}`}
+                </p>
+              </button>
+            ) : null}
+            {isDetailFieldOn('levelXpBox', preference) ? (
+              <div className={styles.box}>
+                <div className={styles.k}>XP sur le palier niveau {level}</div>
+                <div className={styles.v}>
+                  {fmt(xpOnLevel)} <small>/ {fmt(xpForLevel)} XP</small>
+                </div>
+                <p>
+                  Encore {fmt(xpNeeded)} XP jusqu&apos;au niveau {level + 1}
+                </p>
+              </div>
+            ) : null}
+          </div>
+        );
+      case 'breakdownStack':
+        if (!isDetailFieldOn('breakdownStack', preference)) return null;
+        return (
+          <React.Fragment key="breakdownStack">
+            <div className={styles.stack} aria-hidden="true">
+              {stackPieces.map((piece, index) => (
+                <i
+                  key={piece.key}
+                  title={piece.title}
+                  style={{
+                    flex: piece.flex,
+                    background: piece.color,
+                    opacity: piece.opacity,
+                    transitionDelay: `${index * 60}ms`
+                  }}
+                />
+              ))}
+            </div>
+            <div className={styles.leg}>
+              {(['training', 'activity', 'trophies']
+                .map((id) => groupsById[id])
+                .filter(Boolean)
+              ).map((group) => (
+                <button
+                  key={group.id}
+                  type="button"
+                  className={styles.linkish}
+                  style={{
+                    '--c': group.color,
+                    display: 'block',
+                    width: '100%',
+                    textAlign: 'left',
+                    background: 'var(--pan2)',
+                    border: '1px solid var(--ln)',
+                    borderTop: '3px solid var(--c)',
+                    padding: '10px 14px',
+                    color: 'inherit',
+                    font: 'inherit',
+                    letterSpacing: '0.06em',
+                    textTransform: 'uppercase',
+                    textDecoration: 'none'
+                  }}
+                  onClick={(e) =>
+                    goNav(
+                      group.id === 'training'
+                        ? 'groupTraining'
+                        : group.id === 'activity'
+                          ? 'groupActivity'
+                          : 'groupTrophies',
+                      e
+                    )
+                  }
+                >
+                  {group.name}
+                  <b
+                    style={{
+                      display: 'block',
+                      color: 'var(--c)',
+                      fontSize: 22,
+                      marginTop: 3,
+                      textTransform: 'none'
+                    }}
+                  >
+                    {fmt(group.total)} XP
+                    <small
+                      style={{
+                        fontSize: 12,
+                        color: 'var(--mut)',
+                        fontWeight: 500,
+                        marginLeft: 5
+                      }}
+                    >
+                      {pctOf(group.total, totalXP)}
+                    </small>
+                  </b>
+                </button>
+              ))}
+            </div>
+          </React.Fragment>
+        );
+      case 'groupTraining':
+        return renderGroupTable(groupsById.training);
+      case 'groupActivity':
+        return renderGroupTable(groupsById.activity);
+      case 'groupTrophies':
+        return renderGroupTable(groupsById.trophies);
+      case 'misc':
+        if (
+          !(
+            isDetailFieldOn('miscSessions', preference) ||
+            isDetailFieldOn('miscTrophies', preference)
+          )
+        ) {
+          return null;
+        }
+        return (
+          <div key="misc" className={styles.misc}>
+            {isDetailFieldOn('miscSessions', preference) ? (
+              <button
+                type="button"
+                className={styles.linkish}
+                style={{
+                  background: 'none',
+                  border: 0,
+                  padding: 0,
+                  color: 'inherit',
+                  font: 'inherit'
+                }}
+                onClick={(e) => goNav('miscSessions', e)}
+              >
+                Séances cumulées{' '}
+                <b>{formatCalendarSportDuration(breakdown.sessionMinutes ?? 0)}</b>
+              </button>
+            ) : null}
+            {isDetailFieldOn('miscTrophies', preference) ? (
+              <button
+                type="button"
+                className={styles.linkish}
+                style={{
+                  background: 'none',
+                  border: 0,
+                  padding: 0,
+                  color: 'inherit',
+                  font: 'inherit'
+                }}
+                onClick={(e) => goNav('miscTrophies', e)}
+              >
+                <b>{fmt(breakdown.runningTrophyTiers ?? 0)}</b> paliers ·{' '}
+                <b>{fmt(breakdown.runningTrophiesUnlocked ?? 0)}</b> trophées avec au moins un
+                palier
+              </button>
+            ) : null}
+          </div>
+        );
+      default:
+        return null;
+    }
+  };
 
   if (isLoading) {
     return (
@@ -356,20 +631,22 @@ const SportXPBar = () => {
 
   return (
     <div className={styles.wrap}>
-      <div className={styles.sw} onClick={(e) => e.stopPropagation()}>
-        <span>Couleur</span>
-        {accents.map((item) => (
-          <button
-            key={item.id}
-            type="button"
-            data-a={item.id}
-            style={{ background: item.hex }}
-            aria-label={item.label}
-            aria-pressed={preference.sportAccentId === item.id}
-            onClick={() => setAccent(item.id)}
-          />
-        ))}
-      </div>
+      {!embed ? (
+        <div className={styles.sw} onClick={(e) => e.stopPropagation()}>
+          <span>Couleur</span>
+          {accents.map((item) => (
+            <button
+              key={item.id}
+              type="button"
+              data-a={item.id}
+              style={{ background: item.hex }}
+              aria-label={item.label}
+              aria-pressed={preference.sportAccentId === item.id}
+              onClick={() => setAccent(item.id)}
+            />
+          ))}
+        </div>
+      ) : null}
 
       <section
         className={`${styles.xp}${open ? ` ${styles.open}` : ''}`}
@@ -477,41 +754,6 @@ const SportXPBar = () => {
         <div className={styles.body}>
           <div>
             <div className={styles.in}>
-              {(isDetailFieldOn('meritedBox', preference) ||
-                isDetailFieldOn('levelXpBox', preference)) && (
-                <div className={styles.strip}>
-                  {isDetailFieldOn('meritedBox', preference) ? (
-                    <button
-                      type="button"
-                      className={`${styles.box} ${styles.gradeBtn}`}
-                      onClick={goRecapGrades}
-                      title={gradesHint}
-                    >
-                      <div className={styles.k}>Grade mérité</div>
-                      <div className={styles.v}>
-                        {merName} · {merPalier}
-                      </div>
-                      <p>
-                        {sameMerited
-                          ? 'identique à la progression'
-                          : `${merName} · ${merPalier}`}
-                      </p>
-                    </button>
-                  ) : null}
-                  {isDetailFieldOn('levelXpBox', preference) ? (
-                    <div className={styles.box}>
-                      <div className={styles.k}>XP sur le palier niveau {level}</div>
-                      <div className={styles.v}>
-                        {fmt(xpOnLevel)} <small>/ {fmt(xpForLevel)} XP</small>
-                      </div>
-                      <p>
-                        Encore {fmt(xpNeeded)} XP jusqu&apos;au niveau {level + 1}
-                      </p>
-                    </div>
-                  ) : null}
-                </div>
-              )}
-
               <div className={styles.sh}>
                 <h2>D&apos;où vient ton XP</h2>
                 <span>
@@ -519,172 +761,11 @@ const SportXPBar = () => {
                 </span>
               </div>
               <p className={styles.lead}>
-                Chaque ligne : ce que tu as fait → l&apos;XP que ça t&apos;a rapporté. Triée de la plus
-                grosse source à la plus petite. Entraînement + Activité = répartition hors trophées
-                course/corde… (<b>{fmt(trainingPlusActivity)} XP</b>).
+                Chaque ligne : ce que tu as fait → l&apos;XP que ça t&apos;a rapporté. Ordre
+                personnalisable dans Apparence. Entraînement + Activité hors trophées :{' '}
+                <b>{fmt(trainingPlusActivity)} XP</b>.
               </p>
-
-              {isDetailFieldOn('breakdownStack', preference) ? (
-                <>
-                  <div className={styles.stack} aria-hidden="true">
-                    {stackPieces.map((piece, index) => (
-                      <i
-                        key={piece.key}
-                        title={piece.title}
-                        style={{
-                          flex: piece.flex,
-                          background: piece.color,
-                          opacity: piece.opacity,
-                          transitionDelay: `${index * 60}ms`
-                        }}
-                      />
-                    ))}
-                  </div>
-                  <div className={styles.leg}>
-                    {groups.map((group) => (
-                      <button
-                        key={group.id}
-                        type="button"
-                        className={styles.linkish}
-                        style={{
-                          '--c': group.color,
-                          display: 'block',
-                          width: '100%',
-                          textAlign: 'left',
-                          background: 'var(--pan2)',
-                          border: '1px solid var(--ln)',
-                          borderTop: '3px solid var(--c)',
-                          padding: '10px 14px',
-                          color: 'inherit',
-                          font: 'inherit',
-                          letterSpacing: '0.06em',
-                          textTransform: 'uppercase',
-                          textDecoration: 'none'
-                        }}
-                        onClick={(e) =>
-                          goNav(
-                            group.id === 'training'
-                              ? 'groupTraining'
-                              : group.id === 'activity'
-                                ? 'groupActivity'
-                                : 'groupTrophies',
-                            e
-                          )
-                        }
-                      >
-                        {group.name}
-                        <b style={{ display: 'block', color: 'var(--c)', fontSize: 22, marginTop: 3, textTransform: 'none' }}>
-                          {fmt(group.total)} XP
-                          <small style={{ fontSize: 12, color: 'var(--mut)', fontWeight: 500, marginLeft: 5 }}>
-                            {pctOf(group.total, totalXP)}
-                          </small>
-                        </b>
-                      </button>
-                    ))}
-                  </div>
-                </>
-              ) : null}
-
-              {isDetailFieldOn('breakdownRows', preference)
-                ? groups.map((group) => (
-                    <div key={group.id} style={{ '--c': group.color }}>
-                      <div className={styles.gh}>
-                        <strong>{group.name}</strong>
-                        <span>
-                          {fmt(group.total)}
-                          <small>
-                            XP · {pctOf(group.total, totalXP)}
-                          </small>
-                        </span>
-                      </div>
-                      <div className={styles.col}>
-                        <span>Source</span>
-                        <span>Ce que tu as fait</span>
-                        <span>XP gagné</span>
-                        <span>Part</span>
-                      </div>
-                      {group.rows.map((row) => (
-                        <div
-                          key={row.id}
-                          role="button"
-                          tabIndex={0}
-                          className={`${styles.r} ${styles.rClick}${row.xp === 0 ? ` ${styles.z}` : ''}`}
-                          style={{
-                            '--w': `${Math.min(100, (row.xp / maxRowXp) * 100).toFixed(1)}%`
-                          }}
-                          title={`Voir : ${row.name}`}
-                          onClick={(e) => goNav(row.id, e)}
-                          onKeyDown={(e) => {
-                            if (e.key === 'Enter' || e.key === ' ') {
-                              e.preventDefault();
-                              goNav(row.id, e);
-                            }
-                          }}
-                        >
-                          <div className={styles.n}>
-                            {row.name}
-                            {row.hint ? <small>{row.hint}</small> : null}
-                          </div>
-                          <div className={styles.a}>
-                            {row.amount ? (
-                              <>
-                                {row.amount} <span>{row.unit}</span>
-                              </>
-                            ) : null}
-                          </div>
-                          <div className={styles.xv}>
-                            {row.xp === 0 && !row.forceShow ? '+0' : row.xp > 0 ? fmt(row.xp) : '—'}
-                            {row.xp > 0 ? <small>XP</small> : null}
-                          </div>
-                          <div className={styles.pc}>
-                            {row.xp > 0 ? pctOf(row.xp, totalXP) : '—'}
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  ))
-                : null}
-
-              {(isDetailFieldOn('miscSessions', preference) ||
-                isDetailFieldOn('miscTrophies', preference)) && (
-                <div className={styles.misc}>
-                  {isDetailFieldOn('miscSessions', preference) ? (
-                    <button
-                      type="button"
-                      className={styles.linkish}
-                      style={{
-                        background: 'none',
-                        border: 0,
-                        padding: 0,
-                        color: 'inherit',
-                        font: 'inherit'
-                      }}
-                      onClick={(e) => goNav('miscSessions', e)}
-                    >
-                      Séances cumulées{' '}
-                      <b>{formatCalendarSportDuration(breakdown.sessionMinutes ?? 0)}</b>
-                    </button>
-                  ) : null}
-                  {isDetailFieldOn('miscTrophies', preference) ? (
-                    <button
-                      type="button"
-                      className={styles.linkish}
-                      style={{
-                        background: 'none',
-                        border: 0,
-                        padding: 0,
-                        color: 'inherit',
-                        font: 'inherit'
-                      }}
-                      onClick={(e) => goNav('miscTrophies', e)}
-                    >
-                      <b>{fmt(breakdown.runningTrophyTiers ?? 0)}</b> paliers ·{' '}
-                      <b>{fmt(breakdown.runningTrophiesUnlocked ?? 0)}</b> trophées avec au moins un
-                      palier
-                    </button>
-                  ) : null}
-                </div>
-              )}
+              {layoutOrder.map((blockId) => renderLayoutBlock(blockId))}
             </div>
           </div>
         </div>

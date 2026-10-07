@@ -1,6 +1,15 @@
 import React, { useState, useRef } from 'react';
+import { Lock } from 'lucide-react';
 import { useProfileCard } from '../../hooks/useProfileCard';
+import { useSportGrade } from '../../hooks/useSportGrade';
 import ProfileCardRotationSettings from './ProfileCardRotationSettings';
+import {
+  SPORT_GRADE_IDS,
+  gradeIndex,
+  sportGradeArtUrl
+} from '../../services/xp/sportGradeCatalog';
+import { sportGradeLabel } from '../sport/grades/SportGradeIdentity';
+import { useTranslation } from '../../utils/translations';
 import './ProfileCardSettings.css';
 
 /**
@@ -8,6 +17,8 @@ import './ProfileCardSettings.css';
  * Permet de modifier l'avatar et le handle
  */
 const ProfileCardSettings = ({ username, isOpen, onClose }) => {
+  const t = useTranslation();
+  const { grades } = useSportGrade();
   const { 
     avatarUrl, 
     avatars, 
@@ -16,6 +27,8 @@ const ProfileCardSettings = ({ username, isOpen, onClose }) => {
     cardIconUrl,
     cardIcons,
     activeCardIconIndex,
+    gradeArtId,
+    cardIconMode,
     rotationSettings,
     addNewAvatar, 
     removeAvatar, 
@@ -24,8 +37,11 @@ const ProfileCardSettings = ({ username, isOpen, onClose }) => {
     addNewCardIcon,
     removeCardIcon,
     selectCardIcon,
+    selectGradeArt,
     updateRotationSettings
   } = useProfileCard(username);
+
+  const meritedIdx = Math.max(0, gradeIndex(grades?.merited?.gradeId || 'novice'));
   
   const [newHandle, setNewHandle] = useState(handle);
   const [isUploading, setIsUploading] = useState(false);
@@ -263,11 +279,107 @@ const ProfileCardSettings = ({ username, isOpen, onClose }) => {
             </p>
           </div>
 
+          {/* Arts de grades (débloqués) */}
+          <div className="profile-settings-section">
+            <h3>Arts de grades — fond de carte</h3>
+            <p className="profile-settings-description">
+              Chaque grade mérité débloque son illustration pour ta carte. Les grades verrouillés
+              restent grisés. Ton choix est enregistré.
+            </p>
+            <div className="profile-settings-avatar-gallery" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(88px, 1fr))' }}>
+              {SPORT_GRADE_IDS.map((gid) => {
+                const unlocked = gradeIndex(gid) <= meritedIdx;
+                const art = sportGradeArtUrl(gid);
+                const name = sportGradeLabel(gid, t);
+                const selected = cardIconMode === 'grade' && gradeArtId === gid;
+                return (
+                  <div
+                    key={gid}
+                    className={`profile-settings-avatar-item ${selected ? 'active' : ''}`}
+                    style={{ position: 'relative' }}
+                    title={
+                      unlocked
+                        ? `Utiliser ${name}`
+                        : `Débloque le grade ${name} pour ajouter cette image à ta carte de profil`
+                    }
+                  >
+                    <button
+                      type="button"
+                      disabled={!unlocked}
+                      onClick={async () => {
+                        if (!unlocked) return;
+                        setMessage('⏳ Application…');
+                        const result = await selectGradeArt(gid);
+                        setMessage(result.success ? '✅ Art de grade appliqué!' : '❌ Erreur');
+                        setTimeout(() => setMessage(''), 3000);
+                      }}
+                      style={{
+                        display: 'block',
+                        width: '100%',
+                        padding: 0,
+                        border: 0,
+                        background: 'transparent',
+                        cursor: unlocked ? 'pointer' : 'not-allowed'
+                      }}
+                    >
+                      <img
+                        src={art}
+                        alt={name}
+                        style={{
+                          filter: unlocked ? 'none' : 'grayscale(1) brightness(0.45)',
+                          opacity: unlocked ? 1 : 0.75
+                        }}
+                      />
+                    </button>
+                    {!unlocked ? (
+                      <div
+                        style={{
+                          position: 'absolute',
+                          inset: 0,
+                          display: 'flex',
+                          flexDirection: 'column',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          gap: 4,
+                          pointerEvents: 'none',
+                          color: '#e4e4e7',
+                          textShadow: '0 1px 4px #000'
+                        }}
+                      >
+                        <Lock size={16} />
+                        <span style={{ fontSize: 9, padding: '0 4px', textAlign: 'center' }}>
+                          {name}
+                        </span>
+                      </div>
+                    ) : null}
+                    {selected ? <div className="profile-settings-avatar-badge">✓</div> : null}
+                    {unlocked ? (
+                      <div
+                        style={{
+                          fontSize: 9,
+                          textAlign: 'center',
+                          marginTop: 4,
+                          color: '#a1a1aa'
+                        }}
+                      >
+                        {name}
+                      </div>
+                    ) : null}
+                  </div>
+                );
+              })}
+            </div>
+            <p className="profile-settings-hint">
+              Survole un cadenas : « Débloque le grade … pour ajouter cette image à ta carte de
+              profil ».
+            </p>
+          </div>
+
           {/* Galerie d'images de fond */}
           <div className="profile-settings-section">
-            <h3>Images de Fond de la Carte ({cardIcons.length})</h3>
+            <h3>Images de Fond importées ({cardIcons.length})</h3>
             <p className="profile-settings-description">
-              Ces images apparaissent en plein écran au fond de la carte
+              Photos personnelles en plein écran au fond de la carte (en plus des arts de grades)
             </p>
             
             {/* Image de fond actuelle */}
@@ -284,14 +396,16 @@ const ProfileCardSettings = ({ username, isOpen, onClose }) => {
                 {cardIcons.map((cardIcon, index) => (
                   <div 
                     key={cardIcon.id} 
-                    className={`profile-settings-avatar-item ${index === activeCardIconIndex ? 'active' : ''}`}
+                    className={`profile-settings-avatar-item ${
+                      cardIconMode === 'upload' && index === activeCardIconIndex ? 'active' : ''
+                    }`}
                   >
                     <img 
                       src={cardIcon.dataUrl} 
                       alt={`Image de fond ${index + 1}`}
                       onClick={() => handleCardIconSelect(index)}
                     />
-                    {index === activeCardIconIndex && (
+                    {cardIconMode === 'upload' && index === activeCardIconIndex && (
                       <div className="profile-settings-avatar-badge">✓</div>
                     )}
                     <button

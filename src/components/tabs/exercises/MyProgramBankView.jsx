@@ -6,8 +6,7 @@
  * dans l’onglet Banque → Mon programme (même écran que l’onglet Programme).
  *
  * Utilise :
- *   • `activeProgram.schedule` (programme custom de l'utilisateur si présent)
- *   • `workoutProgram` par défaut pour l'admin si pas de programme custom actif
+ *   • `activeProgram.schedule` (programme créé / actif de l'utilisateur)
  *   • `normalizeStretchSlots` pour résoudre les étirements vers la banque
  *
  * @module MyProgramBankView
@@ -26,7 +25,6 @@ import {
   ChevronUp
 } from 'lucide-react';
 import Card, { CardContent, CardHeader, CardTitle } from '../../ui/Card';
-import { workoutProgram } from '../../../data/workoutProgram';
 import { normalizeStretchSlots, STRETCH_MOMENTS } from '../../../utils/stretchUtils';
 
 const PROGRAM_WEEK_DAYS = ['lundi', 'mardi', 'mercredi', 'jeudi', 'vendredi', 'samedi', 'dimanche'];
@@ -212,11 +210,10 @@ const DayBlock = ({ dayKey, dayData, defaultOpen }) => {
   );
 };
 
-const MyProgramBankView = ({ activeProgram, isAdmin }) => {
-  // Source : programme custom actif si présent, sinon programme par défaut admin
+const MyProgramBankView = ({ activeProgram }) => {
+  // Source : uniquement le programme actif créé / choisi par l’utilisateur
   const source = useMemo(() => {
     if (activeProgram?.schedule) {
-      // Normaliser le programme custom au format unifié
       const out = {};
       PROGRAM_WEEK_DAYS.forEach((day) => {
         const d = activeProgram.schedule[day] || {};
@@ -231,11 +228,8 @@ const MyProgramBankView = ({ activeProgram, isAdmin }) => {
       });
       return { kind: 'active', name: activeProgram.name, days: out };
     }
-    if (isAdmin) {
-      return { kind: 'default', name: 'Programme par défaut (Cycle 3+1)', days: workoutProgram };
-    }
     return { kind: 'none', name: null, days: null };
-  }, [activeProgram, isAdmin]);
+  }, [activeProgram]);
 
   if (!source.days) {
     return (
@@ -284,9 +278,7 @@ const MyProgramBankView = ({ activeProgram, isAdmin }) => {
           <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
             <div className="rounded bg-slate-900/40 px-3 py-2">
               <div className="text-[10px] uppercase tracking-wide text-slate-500">Source</div>
-              <div className="text-sm text-white">
-                {source.kind === 'active' ? 'Programme actif' : 'Programme par défaut'}
-              </div>
+              <div className="text-sm text-white">Programme actif</div>
             </div>
             <div className="rounded bg-slate-900/40 px-3 py-2">
               <div className="text-[10px] uppercase tracking-wide text-slate-500">Exercices total</div>

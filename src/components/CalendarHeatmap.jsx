@@ -66,6 +66,7 @@ import CalendarRestDayMarker from './calendar/CalendarRestDayMarker';
 import CalendarOtherDayMarker from './calendar/CalendarOtherDayMarker';
 import CalendarGarminDayRecap from './calendar/CalendarGarminDayRecap';
 import CalendarDayRecapDetailPanel from './calendar/CalendarDayRecapDetailPanel';
+import CalendarXpInsightsPanel from './calendar/CalendarXpInsightsPanel';
 import CalendarDayQuickActions from './calendar/CalendarDayQuickActions';
 import CalendarDayTopBadges from './calendar/CalendarDayTopBadges';
 import CalendarMonthSportTiles from './calendar/CalendarMonthSportTiles';
@@ -5652,6 +5653,10 @@ const CalendarHeatmap = ({
                   'Aucune donnée Garmin pour ce jour (sommeil, pas, fréquence cardiaque…). Tu peux compléter tes pas manuellement ci-dessous.'
                 )}
               </div>
+            ) : null}
+
+            {variant === 'sport' && !showMinimalDayView && !recapDetailRow ? (
+              <CalendarXpInsightsPanel />
             ) : null}
 
             {/* Statistiques d'entraînement — masquées en vue minimale (repos / absence / jour vide) */}

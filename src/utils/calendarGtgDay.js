@@ -10,7 +10,8 @@ import {
 } from '../services/endurance/gtgWorkoutSync';
 
 /** Orange dédié GTG, distinct du orange des autres activités physiques (#ff5c00). */
-export const CALENDAR_GTG_STRIPE_COLOR = '#ff8c00';
+/** Barre calendrier GTG — vert foncé (distinct des autres activités). */
+export const CALENDAR_GTG_STRIPE_COLOR = '#166534';
 
 function dayRecordHasDoneSlot(day) {
   if (!day || typeof day !== 'object') return false;

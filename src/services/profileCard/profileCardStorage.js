@@ -9,6 +9,29 @@ import {
   STORE_PROFILE_CARDS,
   applyProfileCardSchemaUpgrade,
 } from './profileCardDbGateway.js';
+import { sportGradeArtUrl, hasSportGradeArt } from '../xp/sportGradeCatalog.js';
+
+export function isProfileCardImageUrl(url) {
+  if (!url || url === '/logo.png') return false;
+  if (url.startsWith('data:image/') && url.length > 50) return true;
+  if (url.startsWith('/sport-grades/')) return true;
+  return false;
+}
+
+export function resolveProfileCardIconUrl(data, fallbackGradeId = 'novice') {
+  if (!data) {
+    return hasSportGradeArt(fallbackGradeId) ? sportGradeArtUrl(fallbackGradeId) : null;
+  }
+  const mode = data.cardIconMode || (data.cardIcons?.length ? 'upload' : 'grade');
+  if (mode === 'grade') {
+    const gid = data.gradeArtId || fallbackGradeId || 'novice';
+    const art = sportGradeArtUrl(gid);
+    if (art) return art;
+  }
+  if (isProfileCardImageUrl(data.cardIconUrl)) return data.cardIconUrl;
+  const gid = data.gradeArtId || fallbackGradeId || 'novice';
+  return sportGradeArtUrl(gid);
+}
 
 /**
  * Ouvre la connexion à IndexedDB
@@ -250,7 +273,8 @@ export const addCardIcon = async (username, cardIconDataUrl) => {
       ...existingData,
       cardIcons,
       activeCardIconIndex,
-      cardIconUrl: cardIcons[activeCardIconIndex].dataUrl
+      cardIconUrl: cardIcons[activeCardIconIndex].dataUrl,
+      cardIconMode: 'upload'
     });
     
     return cardIcons.length - 1;
@@ -284,14 +308,25 @@ export const deleteCardIcon = async (username, index) => {
       activeCardIconIndex = Math.max(0, cardIcons.length - 1);
     }
     
-    // Définir l'image active ou null si aucune image
-    const cardIconUrl = cardIcons.length > 0 ? cardIcons[activeCardIconIndex].dataUrl : null;
+    let cardIconUrl = null;
+    let cardIconMode = existingData.cardIconMode;
+    let gradeArtId = existingData.gradeArtId;
+    if (cardIcons.length > 0) {
+      cardIconUrl = cardIcons[activeCardIconIndex].dataUrl;
+      cardIconMode = 'upload';
+    } else {
+      gradeArtId = gradeArtId || 'novice';
+      cardIconMode = 'grade';
+      cardIconUrl = sportGradeArtUrl(gradeArtId);
+    }
     
     await saveProfileData(username, {
       ...existingData,
       cardIcons,
       activeCardIconIndex,
-      cardIconUrl
+      cardIconUrl,
+      cardIconMode,
+      gradeArtId
     });
   } catch (error) {
     console.error('[ProfileCardStorage] Erreur lors de la suppression de l\'image de carte:', error);
@@ -317,12 +352,57 @@ export const setActiveCardIcon = async (username, index) => {
     await saveProfileData(username, {
       ...existingData,
       activeCardIconIndex: index,
-      cardIconUrl: cardIcons[index].dataUrl
+      cardIconUrl: cardIcons[index].dataUrl,
+      cardIconMode: 'upload'
     });
   } catch (error) {
     console.error('[ProfileCardStorage] Erreur lors de la définition de l\'image de carte active:', error);
     throw error;
   }
+};
+
+/**
+ * Utilise l’illustration d’un grade débloqué comme image de fond de la carte.
+ * @param {string} username
+ * @param {string} gradeId
+ */
+export const setGradeArtAsCardIcon = async (username, gradeId) => {
+  if (!hasSportGradeArt(gradeId)) {
+    throw new Error('Illustration de grade indisponible');
+  }
+  const existingData = (await getProfileData(username)) || {};
+  const url = sportGradeArtUrl(gradeId);
+  await saveProfileData(username, {
+    ...existingData,
+    gradeArtId: gradeId,
+    cardIconMode: 'grade',
+    cardIconUrl: url
+  });
+  return url;
+};
+
+/**
+ * Si aucune image uploadée / grade choisi : applique le grade mérité (ou novice).
+ */
+export const ensureDefaultGradeArtCard = async (username, meritedGradeId = 'novice') => {
+  const existingData = (await getProfileData(username)) || {};
+  const hasUploads = (existingData.cardIcons || []).length > 0;
+  if (existingData.cardIconMode === 'upload' && hasUploads) return existingData;
+  if (existingData.cardIconMode === 'grade' && existingData.gradeArtId) return existingData;
+  if (hasUploads && existingData.cardIconUrl) return existingData;
+
+  const gradeId = meritedGradeId || 'novice';
+  const url = sportGradeArtUrl(gradeId);
+  if (!url) return existingData;
+
+  const next = {
+    ...existingData,
+    gradeArtId: gradeId,
+    cardIconMode: 'grade',
+    cardIconUrl: url
+  };
+  await saveProfileData(username, next);
+  return next;
 };
 
 /**
@@ -345,9 +425,8 @@ export const getCardIcon = async (username) => {
     const data = await getProfileData(username);
     const cardIconUrl = data?.cardIconUrl;
     
-    // Ne jamais retourner le logo - seulement les data URLs valides
-    if (!cardIconUrl || cardIconUrl === '/logo.png' || !cardIconUrl.startsWith('data:image/')) {
-      return null;
+    if (!isProfileCardImageUrl(cardIconUrl)) {
+      return resolveProfileCardIconUrl(data);
     }
     
     return cardIconUrl;

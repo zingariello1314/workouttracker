@@ -70,7 +70,7 @@ export default function RecapSessionsView({
   const periodLabel = t(`recap.period.${period}`);
 
   return (
-    <div className="space-y-5">
+    <div id="recap-sessions-feedback" className="scroll-mt-28 space-y-5">
       <header className="rounded-xl border border-[#0F4C5C]/55 bg-gradient-to-br from-teal-950/30 to-black px-4 py-4">
         <div className="flex items-start gap-3">
           <div className="rounded-lg border border-teal-500/30 bg-teal-950/40 p-2.5">

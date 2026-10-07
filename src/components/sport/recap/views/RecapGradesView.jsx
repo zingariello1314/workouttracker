@@ -173,7 +173,7 @@ export default function RecapGradesView() {
             style={{ width: `${progress.percent ?? 0}%` }}
           />
         </div>
-        <p className="mt-2 text-[11px] text-slate-500">
+        <p id="recap-grades-mastery" className="mt-2 scroll-mt-28 text-[11px] text-slate-500">
           {t(
             'recap.grades.masteryLine',
             `Score de maîtrise : ${masteryScore.toLocaleString('fr-FR')}`,

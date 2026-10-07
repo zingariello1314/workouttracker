@@ -14,7 +14,9 @@ export function rememberProfileCardWarm(username, data) {
     handle: data.handle || String(username),
     cardIconUrl: data.cardIconUrl || null,
     cardIcons: data.cardIcons || [],
-    activeCardIconIndex: data.activeCardIconIndex ?? 0
+    activeCardIconIndex: data.activeCardIconIndex ?? 0,
+    gradeArtId: data.gradeArtId || null,
+    cardIconMode: data.cardIconMode || null
   };
 }
 

@@ -1,15 +1,30 @@
-import React, { useEffect, useState } from 'react';
-import { Gauge, Plus, Trash2 } from 'lucide-react';
+import React, { useEffect, useMemo, useState } from 'react';
+import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
+import { Gauge, GripVertical, Plus, Trash2 } from 'lucide-react';
 import Card, { CardHeader, CardTitle, CardContent } from '../../../ui/Card';
 import { settingsTheme as S } from '../settingsThemeClasses';
+import SportXPBar from '../../TodayTab/components/SportXPBar';
 import {
+  getDetailFieldOrder,
+  getLayoutOrder,
   getXpAppearancePreference,
   listAllSportXpAccents,
   SPORT_XP_DETAIL_FIELDS,
+  SPORT_XP_LAYOUT_BLOCKS,
   SPORT_XP_TAB_OPTIONS,
   subscribeXpAppearance,
   updateXpAppearancePreference
 } from '../../../../utils/xpAppearancePreference';
+
+function reorder(list, startIndex, endIndex) {
+  const next = Array.from(list);
+  const [removed] = next.splice(startIndex, 1);
+  next.splice(endIndex, 0, removed);
+  return next;
+}
+
+const fieldById = Object.fromEntries(SPORT_XP_DETAIL_FIELDS.map((f) => [f.id, f]));
+const blockById = Object.fromEntries(SPORT_XP_LAYOUT_BLOCKS.map((b) => [b.id, b]));
 
 const XpAppearanceSettings = () => {
   const [preference, setPreference] = useState(getXpAppearancePreference);
@@ -20,6 +35,8 @@ const XpAppearanceSettings = () => {
 
   const accents = listAllSportXpAccents(preference);
   const showAllTabs = preference.showTabs.length >= SPORT_XP_TAB_OPTIONS.length;
+  const layoutOrder = useMemo(() => getLayoutOrder(preference), [preference]);
+  const fieldOrder = useMemo(() => getDetailFieldOrder(preference), [preference]);
 
   const toggleTab = (tabId) => {
     const has = preference.showTabs.includes(tabId);
@@ -67,6 +84,22 @@ const XpAppearanceSettings = () => {
     updateXpAppearancePreference({ customAccents, sportAccentId });
   };
 
+  const onLayoutDragEnd = (result) => {
+    if (!result.destination) return;
+    if (result.source.index === result.destination.index) return;
+    updateXpAppearancePreference({
+      layoutOrder: reorder(layoutOrder, result.source.index, result.destination.index)
+    });
+  };
+
+  const onFieldDragEnd = (result) => {
+    if (!result.destination) return;
+    if (result.source.index === result.destination.index) return;
+    updateXpAppearancePreference({
+      detailFieldOrder: reorder(fieldOrder, result.source.index, result.destination.index)
+    });
+  };
+
   return (
     <Card variant="settings">
       <CardHeader variant="settings">
@@ -78,9 +111,21 @@ const XpAppearanceSettings = () => {
       <CardContent>
         <div className="space-y-6">
           <p className={S.body}>
-            Personnalise la barre XP Sport (HUD), les infos dépliées, les sous-onglets où elle apparaît,
-            et les accents des barres Nutrition.
+            Personnalise la barre XP Sport (HUD), l’ordre des blocs, les infos dépliées, les
+            sous-onglets où elle apparaît, et les accents Nutrition. L’aperçu ci-dessous se met à
+            jour en direct.
           </p>
+
+          <section className="space-y-2">
+            <h4 className="text-sm font-medium text-zinc-100">Aperçu live — barre XP Sport</h4>
+            <p className={`text-xs ${S.muted}`}>
+              Coche, décoche ou réordonne : la barre reflète immédiatement tes choix (données
+              réelles du compte).
+            </p>
+            <div className="overflow-hidden rounded-xl border border-white/10 bg-black/40 p-2">
+              <SportXPBar previewMode />
+            </div>
+          </section>
 
           <section className="space-y-2">
             <h4 className="text-sm font-medium text-zinc-100">Couleur accent Sport</h4>
@@ -183,30 +228,117 @@ const XpAppearanceSettings = () => {
           </section>
 
           <section className="space-y-2">
-            <h4 className="text-sm font-medium text-zinc-100">Infos du détail (déplié)</h4>
+            <h4 className="text-sm font-medium text-zinc-100">Ordre des sections (glisser-déposer)</h4>
             <p className={`text-xs ${S.muted}`}>
-              Ajoute ou retire des blocs / lignes. Les nouvelles infos (moyenne journalière, maîtrise)
-              s’appuient sur l’activité déjà calculée.
+              Déplace chaque bloc pour composer le détail déplié comme tu veux. La barre se met à
+              jour tout de suite.
             </p>
-            <div className="max-h-64 space-y-1 overflow-y-auto rounded-lg border border-white/10 bg-black/30 p-2">
-              {SPORT_XP_DETAIL_FIELDS.map((field) => {
-                const checked = preference.detailFields[field.id] !== false;
-                return (
-                  <label
-                    key={field.id}
-                    className="flex cursor-pointer items-center gap-2 rounded px-2 py-1 text-xs text-zinc-300 hover:bg-white/[0.04]"
+            <DragDropContext onDragEnd={onLayoutDragEnd}>
+              <Droppable droppableId="xp-layout-blocks">
+                {(provided, snapshot) => (
+                  <div
+                    ref={provided.innerRef}
+                    {...provided.droppableProps}
+                    className={`space-y-1.5 rounded-lg border border-white/10 bg-black/30 p-2 ${
+                      snapshot.isDraggingOver ? 'border-violet-400/40 bg-violet-950/20' : ''
+                    }`}
                   >
-                    <input
-                      type="checkbox"
-                      checked={checked}
-                      onChange={() => toggleField(field.id)}
-                      className="rounded border-white/20"
-                    />
-                    {field.label}
-                  </label>
-                );
-              })}
-            </div>
+                    {layoutOrder.map((id, index) => {
+                      const block = blockById[id];
+                      if (!block) return null;
+                      return (
+                        <Draggable key={id} draggableId={id} index={index}>
+                          {(dragProvided, dragSnapshot) => (
+                            <div
+                              ref={dragProvided.innerRef}
+                              {...dragProvided.draggableProps}
+                              className={`flex items-center gap-2 rounded-lg border px-2.5 py-2 text-xs ${
+                                dragSnapshot.isDragging
+                                  ? 'border-violet-400/50 bg-violet-950/40 shadow-lg'
+                                  : 'border-white/10 bg-white/[0.03] text-zinc-200'
+                              }`}
+                            >
+                              <button
+                                type="button"
+                                className="cursor-grab text-zinc-500 active:cursor-grabbing"
+                                aria-label="Déplacer"
+                                {...dragProvided.dragHandleProps}
+                              >
+                                <GripVertical size={14} />
+                              </button>
+                              <span className="min-w-0 flex-1">{block.label}</span>
+                              <span className={`tabular-nums ${S.muted}`}>{index + 1}</span>
+                            </div>
+                          )}
+                        </Draggable>
+                      );
+                    })}
+                    {provided.placeholder}
+                  </div>
+                )}
+              </Droppable>
+            </DragDropContext>
+          </section>
+
+          <section className="space-y-2">
+            <h4 className="text-sm font-medium text-zinc-100">Infos du détail — ordre & visibilité</h4>
+            <p className={`text-xs ${S.muted}`}>
+              Coche pour afficher, glisse pour réordonner les lignes dans les tableaux. L’aperçu
+              suit en direct.
+            </p>
+            <DragDropContext onDragEnd={onFieldDragEnd}>
+              <Droppable droppableId="xp-detail-fields">
+                {(provided, snapshot) => (
+                  <div
+                    ref={provided.innerRef}
+                    {...provided.droppableProps}
+                    className={`max-h-72 space-y-1 overflow-y-auto rounded-lg border border-white/10 bg-black/30 p-2 ${
+                      snapshot.isDraggingOver ? 'border-violet-400/40' : ''
+                    }`}
+                  >
+                    {fieldOrder.map((id, index) => {
+                      const field = fieldById[id];
+                      if (!field) return null;
+                      const checked = preference.detailFields[field.id] !== false;
+                      return (
+                        <Draggable key={id} draggableId={id} index={index}>
+                          {(dragProvided, dragSnapshot) => (
+                            <div
+                              ref={dragProvided.innerRef}
+                              {...dragProvided.draggableProps}
+                              className={`flex items-center gap-2 rounded px-2 py-1.5 text-xs ${
+                                dragSnapshot.isDragging
+                                  ? 'bg-violet-950/50 shadow'
+                                  : 'text-zinc-300 hover:bg-white/[0.04]'
+                              }`}
+                            >
+                              <button
+                                type="button"
+                                className="cursor-grab text-zinc-500 active:cursor-grabbing"
+                                aria-label="Déplacer"
+                                {...dragProvided.dragHandleProps}
+                              >
+                                <GripVertical size={14} />
+                              </button>
+                              <label className="flex min-w-0 flex-1 cursor-pointer items-center gap-2">
+                                <input
+                                  type="checkbox"
+                                  checked={checked}
+                                  onChange={() => toggleField(field.id)}
+                                  className="rounded border-white/20"
+                                />
+                                <span className="truncate">{field.label}</span>
+                              </label>
+                            </div>
+                          )}
+                        </Draggable>
+                      );
+                    })}
+                    {provided.placeholder}
+                  </div>
+                )}
+              </Droppable>
+            </DragDropContext>
           </section>
 
           <section className="space-y-3">

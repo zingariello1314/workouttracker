@@ -5,6 +5,7 @@ import { useNavigation } from '../../hooks/useNavigation';
 import { useAuth } from '../../context/AuthContext';
 import { measureSync, SIDEBAR_OPERATIONS } from '../../utils/performanceMonitor';
 import ProfileCard3D from './ProfileCard3D';
+import GradeArtCardOffer from './GradeArtCardOffer';
 import ModuleRenderer from './ModuleRenderer';
 import SpotifySidebarCard from './SpotifySidebarCard';
 import '../../styles/sidebar-premium.css';
@@ -219,6 +220,7 @@ const SidebarPremium = memo(() => {
           enableTilt={true}
           enableMobileTilt={false}
         />
+        <GradeArtCardOffer />
         
         {/* Statuts Système (Grille 2x2) */}
         <div className="sidebar-system-status" role="group" aria-label="Statuts système">
