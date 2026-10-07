@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useLayoutEffect, useMemo, useState } from 'react';
+import React, { lazy, Suspense, useCallback, useEffect, useLayoutEffect, useMemo, useState } from 'react';
 import AnatomyAccueilView from './AnatomyAccueilView';
 import AnatomyFamiliesIndexView from './AnatomyFamiliesIndexView';
 import AnatomyFamilyView from './AnatomyFamilyView';
@@ -6,12 +6,15 @@ import AnatomyMuscleView from './AnatomyMuscleView';
 import AnatomyShell from './AnatomyShell';
 import { getAnatomyFamily, getAnatomyMuscle } from '../../../data/anatomy/anatomyRegistry';
 
-/** @typedef {{ view: 'home' } | { view: 'families' } | { view: 'family', familyId: string } | { view: 'muscle', muscleId: string }} AnatomyRoute */
+const AnatomyAtlasView = lazy(() => import('./atlas/AnatomyAtlasView.jsx'));
+
+/** @typedef {{ view: 'home' } | { view: 'families' } | { view: 'family', familyId: string } | { view: 'muscle', muscleId: string } | { view: 'atlas' }} AnatomyRoute */
 
 function parseHashRoute() {
   const raw = typeof window !== 'undefined' ? window.location.hash : '';
   const m = raw.match(/^#anatomy(?:\/([^/?]+))?(?:\/([^/?]+))?/);
   if (!m) return { view: 'home' };
+  if (m[1] === 'atlas') return { view: 'atlas' };
   if (m[1] === 'families' && !m[2]) return { view: 'families' };
   if (m[1] === 'family' && m[2]) return { view: 'family', familyId: decodeURIComponent(m[2]) };
   if (m[1] === 'muscle' && m[2]) return { view: 'muscle', muscleId: decodeURIComponent(m[2]) };
@@ -27,11 +30,13 @@ function writeHashRoute(route) {
     return;
   }
   const seg =
-    route.view === 'families'
-      ? '#anatomy/families'
-      : route.view === 'family'
-        ? `#anatomy/family/${encodeURIComponent(route.familyId)}`
-        : `#anatomy/muscle/${encodeURIComponent(route.muscleId)}`;
+    route.view === 'atlas'
+      ? '#anatomy/atlas'
+      : route.view === 'families'
+        ? '#anatomy/families'
+        : route.view === 'family'
+          ? `#anatomy/family/${encodeURIComponent(route.familyId)}`
+          : `#anatomy/muscle/${encodeURIComponent(route.muscleId)}`;
   if (window.location.hash !== seg) {
     window.history.replaceState(null, '', seg);
   }
@@ -99,6 +104,12 @@ export default function AnatomyTab() {
     writeHashRoute(next);
   }, []);
 
+  const openAtlas = useCallback(() => {
+    const next = { view: 'atlas' };
+    setRoute(next);
+    writeHashRoute(next);
+  }, []);
+
   const onSearchExercise = useCallback(
     (hit) => {
       if (hit.kind !== 'exercise') return;
@@ -141,9 +152,11 @@ export default function AnatomyTab() {
   const shellMode =
     route.view === 'home'
       ? 'accueil'
-      : route.view === 'muscle'
-        ? 'fiche'
-        : 'famille';
+      : route.view === 'atlas'
+        ? 'atlas'
+        : route.view === 'muscle'
+          ? 'fiche'
+          : 'famille';
 
   const familyId = useMemo(() => {
     if (route.view === 'family') return route.familyId;
@@ -154,6 +167,19 @@ export default function AnatomyTab() {
   const muscleId = route.view === 'muscle' ? route.muscleId : null;
 
   const body = useMemo(() => {
+    if (route.view === 'atlas') {
+      return (
+        <Suspense
+          fallback={
+            <div className="rounded-2xl border border-white/10 bg-[#0f1419] px-4 py-16 text-center text-sm text-slate-400">
+              Chargement de l’atlas 3D…
+            </div>
+          }
+        >
+          <AnatomyAtlasView />
+        </Suspense>
+      );
+    }
     if (route.view === 'families') {
       return <AnatomyFamiliesIndexView onOpenFamily={openFamily} />;
     }
@@ -173,7 +199,11 @@ export default function AnatomyTab() {
   }, [route, openFamily, openMuscle, onSearchExercise]);
 
   return (
-    <div className="min-h-full px-4 py-6 md:px-8 md:py-8 max-w-7xl mx-auto">
+    <div
+      className={`min-h-full px-4 py-6 md:px-8 md:py-8 mx-auto ${
+        route.view === 'atlas' ? 'max-w-[1400px]' : 'max-w-7xl'
+      }`}
+    >
       <AnatomyShell
         mode={shellMode}
         familyId={familyId}
@@ -182,6 +212,7 @@ export default function AnatomyTab() {
         onFamilleCatalog={openFamiliesCatalog}
         onOpenFamily={openFamily}
         onFiche={openMuscle}
+        onAtlas={openAtlas}
       >
         {body}
       </AnatomyShell>

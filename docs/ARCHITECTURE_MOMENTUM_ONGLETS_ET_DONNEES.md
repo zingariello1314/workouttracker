@@ -220,11 +220,14 @@ Format de chaque entrée :
 
 ### 5.3 Sport › Anatomie — `anatomy`
 
+Sous-onglets shell : Accueil · Famille · Fiche muscle · **Atlas** (`#anatomy/atlas`).
+
 | | |
 | --- | --- |
-| **UI** | `AnatomyTab` |
-| **Données** | Registres `src/data` / `anatomyRegistry` ; contenus blocs anatomie ; lien volume entraînement (snapshot workout) pour contextualiser |
+| **UI** | `AnatomyTab` (+ `atlas/AnatomyAtlasView` pour l’explorateur 3D BodyParts3D) |
+| **Données** | Registres `src/data` / `anatomyRegistry` ; contenus blocs anatomie ; assets Atlas dans `public/human-atlas/models/` |
 | **Écrit** | Peu / prefs de vue |
+| **Atlas** | Contenu confiné au conteneur (pas de plein écran sur sidebar / nav Sport) ; attribution CC BY 4.0 |
 
 ---
 

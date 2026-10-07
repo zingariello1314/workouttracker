@@ -278,6 +278,7 @@ export const translations = {
     'anatomy.tabHome': 'Accueil',
     'anatomy.tabFamily': 'Famille',
     'anatomy.tabSheet': 'Fiche muscle',
+    'anatomy.tabAtlas': 'Atlas',
     'anatomy.subtitleHome':
       'Comprends ton corps pour t’entraîner plus intelligemment. Cherche un muscle, un exercice, un objectif — ou explore le modèle 3D.',
     'anatomy.searchPlaceholderLong':

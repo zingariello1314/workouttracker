@@ -4,7 +4,7 @@ import { useTranslation } from '../../../utils/translations';
 import { getAnatomyFamily, getAnatomyMuscle } from '../../../data/anatomy/anatomyRegistry';
 import { ANATOMY } from './anatomyTheme';
 
-/** Onglets Accueil · Famille · Fiche muscle + fil d’Ariane (maquettes). */
+/** Onglets Accueil · Famille · Fiche muscle · Atlas + fil d’Ariane (maquettes). */
 export default function AnatomyShell({
   mode,
   familyId,
@@ -13,6 +13,7 @@ export default function AnatomyShell({
   onFamilleCatalog,
   onOpenFamily,
   onFiche,
+  onAtlas,
   children
 }) {
   const t = useTranslation();
@@ -28,13 +29,19 @@ export default function AnatomyShell({
           <button type="button" onClick={onAccueil} className={ANATOMY.breadcrumb}>
             {t('anatomy.title', 'Anatomie')}
           </button>
+          {mode === 'atlas' ? (
+            <>
+              <ChevronRight className="h-3 w-3 opacity-40 text-[#8E8E93]" />
+              <span className="text-white">{t('anatomy.tabAtlas', 'Atlas')}</span>
+            </>
+          ) : null}
           {mode === 'famille' && !family ? (
             <>
               <ChevronRight className="h-3 w-3 opacity-40 text-[#8E8E93]" />
               <span className="text-slate-300">{t('anatomy.tabFamily', 'Famille')}</span>
             </>
           ) : null}
-          {family ? (
+          {family && mode !== 'atlas' ? (
             <>
               <ChevronRight className="h-3 w-3 opacity-40 text-[#8E8E93]" />
               <button
@@ -46,7 +53,7 @@ export default function AnatomyShell({
               </button>
             </>
           ) : null}
-          {muscle ? (
+          {muscle && mode !== 'atlas' ? (
             <>
               <ChevronRight className="h-3 w-3 opacity-40 text-[#8E8E93]" />
               <span className="text-white">{muscle.name}</span>
@@ -67,6 +74,9 @@ export default function AnatomyShell({
             onClick={() => muscleId && onFiche?.(muscleId)}
           >
             {t('anatomy.tabSheet', 'Fiche muscle')}
+          </button>
+          <button type="button" className={tabClass(mode === 'atlas')} onClick={onAtlas}>
+            {t('anatomy.tabAtlas', 'Atlas')}
           </button>
         </div>
       </div>
