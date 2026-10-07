@@ -272,17 +272,21 @@ function buildXpGroups(breakdown, t, refTwoStarTenReps, dailyInsights, masterySc
   });
 }
 
-const SportXPBar = ({ previewMode = false, embed = false }) => {
+const SportXPBar = ({ previewMode = false, embed = false, forceCollapsed = false }) => {
   const { totalXP, level, breakdown, progress, grades, isLoading, dailyInsights, masteryScore } =
     useSportGrade();
   const { setActiveTab, requestOpenEnduranceSubTab } = useWorkout();
   const t = useTranslation();
-  const [open, setOpen] = useState(Boolean(previewMode));
+  const [open, setOpen] = useState(Boolean(previewMode) && !forceCollapsed);
   const [preference, setPreference] = useState(getXpAppearancePreference);
 
   useEffect(() => {
+    if (forceCollapsed) {
+      setOpen(false);
+      return;
+    }
     if (previewMode) setOpen(true);
-  }, [previewMode]);
+  }, [previewMode, forceCollapsed]);
 
   useEffect(() => subscribeXpAppearance(setPreference), []);
 
@@ -370,7 +374,10 @@ const SportXPBar = ({ previewMode = false, embed = false }) => {
     updateXpAppearancePreference({ sportAccentId: id });
   };
 
-  const toggleOpen = () => setOpen((value) => !value);
+  const toggleOpen = () => {
+    if (forceCollapsed) return;
+    setOpen((value) => !value);
+  };
 
   const renderGroupTable = (group) => {
     if (!group || !isDetailFieldOn('breakdownRows', preference)) return null;
@@ -654,16 +661,20 @@ const SportXPBar = ({ previewMode = false, embed = false }) => {
       >
         <div
           className={styles.top}
-          onClick={toggleOpen}
-          onKeyDown={(e) => {
-            if (e.key === 'Enter' || e.key === ' ') {
-              e.preventDefault();
-              toggleOpen();
-            }
-          }}
-          role="button"
-          tabIndex={0}
-          aria-expanded={open}
+          onClick={forceCollapsed ? undefined : toggleOpen}
+          onKeyDown={
+            forceCollapsed
+              ? undefined
+              : (e) => {
+                  if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    toggleOpen();
+                  }
+                }
+          }
+          role={forceCollapsed ? undefined : 'button'}
+          tabIndex={forceCollapsed ? undefined : 0}
+          aria-expanded={forceCollapsed ? undefined : open}
         >
           <div className={styles.bgl} />
           <div className={styles.hat} />
@@ -737,18 +748,20 @@ const SportXPBar = ({ previewMode = false, embed = false }) => {
             <b>{fmt(totalXP)}</b>
           </button>
 
-          <button
-            type="button"
-            className={styles.tg}
-            aria-expanded={open}
-            aria-label={open ? 'Réduire' : 'Détails'}
-            onClick={(e) => {
-              e.stopPropagation();
-              toggleOpen();
-            }}
-          >
-            <i aria-hidden="true" />
-          </button>
+          {!forceCollapsed ? (
+            <button
+              type="button"
+              className={styles.tg}
+              aria-expanded={open}
+              aria-label={open ? 'Réduire' : 'Détails'}
+              onClick={(e) => {
+                e.stopPropagation();
+                toggleOpen();
+              }}
+            >
+              <i aria-hidden="true" />
+            </button>
+          ) : null}
         </div>
 
         <div className={styles.body}>

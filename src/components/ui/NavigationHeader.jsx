@@ -120,14 +120,25 @@ const NavigationHeader = ({ activeTabOverride = null, previewConfig = null } = {
     'settings'
   ];
 
+  /* Config appliquée : nav ancrée en absolute à droite pour que wrap/colonne
+     ne poussent pas la citation ni le footer. Stock : flux inchangé. */
+  const anchoredNav = Boolean(layout);
+
   return (
-    <header className="relative z-10 flex flex-row md:flex-row md:justify-between md:items-center px-3 pt-1 pb-2 md:p-8 gap-2 md:gap-0 flex-shrink-0">
-      <div className="flex flex-shrink-0 items-start gap-2 -ml-0 md:-ml-8 mr-1 md:mr-8 mt-0 md:-mt-24" role="banner">
+    <header
+      className={`relative z-10 flex flex-shrink-0 flex-row items-start gap-2 px-3 pt-1 pb-2 md:items-center md:gap-0 md:p-8 ${
+        anchoredNav ? 'md:min-h-[7.5rem]' : 'md:justify-between'
+      }`}
+    >
+      <div
+        className="mt-0 flex flex-shrink-0 items-start gap-2 -ml-0 mr-1 md:-ml-8 md:-mt-24 md:mr-8"
+        role="banner"
+      >
         <div className="flex flex-col items-center justify-start">
           <img
             src="/logo.png"
             alt="Momentum application logo"
-            className="w-8 h-8 md:w-24 md:h-24 rounded-xl md:rounded-2xl opacity-95 drop-shadow-2xl translate-y-0 md:translate-y-[55px]"
+            className="h-8 w-8 rounded-xl opacity-95 drop-shadow-2xl md:h-24 md:w-24 md:translate-y-[55px] md:rounded-2xl"
             role="img"
           />
         </div>
@@ -135,7 +146,7 @@ const NavigationHeader = ({ activeTabOverride = null, previewConfig = null } = {
           <button
             type="button"
             onClick={lockNow}
-            className="mt-1 md:mt-[60px] shrink-0 rounded-xl border border-white/15 bg-white/5 p-2 text-slate-100 backdrop-blur-md transition hover:border-sky-400/40 hover:bg-white/10 hover:text-white md:p-2.5"
+            className="mt-1 shrink-0 rounded-xl border border-white/15 bg-white/5 p-2 text-slate-100 backdrop-blur-md transition hover:border-sky-400/40 hover:bg-white/10 hover:text-white md:mt-[60px] md:p-2.5"
             title={t('nav.lockApp')}
             aria-label={t('nav.lockAppAria')}
           >
@@ -145,13 +156,17 @@ const NavigationHeader = ({ activeTabOverride = null, previewConfig = null } = {
       </div>
 
       <nav
-        className="w-full md:w-auto flex items-center md:justify-end overflow-visible"
+        className={
+          anchoredNav
+            ? 'absolute right-3 top-1 z-20 flex max-w-[min(100%-1.5rem,42rem)] justify-end overflow-visible md:right-8 md:top-6'
+            : 'flex w-full items-center overflow-visible md:w-auto md:justify-end'
+        }
         role="navigation"
         aria-label="Main navigation"
       >
         {layout ? (
           <div
-            className="home-nav-root w-full md:w-auto text-white text-xs md:text-base font-medium px-0.5"
+            className="home-nav-root text-xs font-medium text-white md:text-base px-0.5"
             data-style={layout.navStyle || 'verre'}
             data-layout={layout.navLayout || 'row'}
             style={{ '--home-nav-ac': resolveHomeAccentHex(layout) }}
@@ -173,7 +188,7 @@ const NavigationHeader = ({ activeTabOverride = null, previewConfig = null } = {
             </div>
           </div>
         ) : (
-          <div className="grid grid-cols-3 sm:grid-cols-4 md:flex md:flex-nowrap gap-1.5 md:gap-0 md:space-x-2 text-white text-xs md:text-base font-medium w-full md:w-auto px-0.5">
+          <div className="grid w-full grid-cols-3 gap-1.5 px-0.5 text-xs font-medium text-white sm:grid-cols-4 md:flex md:w-auto md:flex-nowrap md:gap-0 md:space-x-2 md:text-base">
             {stockTabs.map((id) => (
               <button
                 key={id}

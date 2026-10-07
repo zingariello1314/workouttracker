@@ -25,7 +25,7 @@ import { SplineScene } from './ui/SplineScene';
 import { MomentumWelcomeGate } from './ui/MomentumBrandedLoading';
 import {
   getAppliedHomeLayout,
-  HOME_WIDGET_DEFS,
+  listHomeWidgetsInZone,
   resolveHomeAccentHex,
   subscribeHomeAppearance
 } from '../utils/homeAppearancePreference';
@@ -103,18 +103,13 @@ const HomePage = () => {
   const homeAccent = resolveHomeAccentHex(homeLayout);
   const showRobot = !homeLayout || homeLayout.showRobot !== false;
   const showKeywords = !homeLayout || homeLayout.showKeywords !== false;
+  const showLocation = !homeLayout || homeLayout.showLocation !== false;
+  const showLanguage = !homeLayout || homeLayout.showLanguage !== false;
 
-  const widgetsByZone = (() => {
-    if (!homeLayout?.widgets) return { left: [], bottomLeft: [], bottomRight: [] };
-    const zones = { left: [], bottomLeft: [], bottomRight: [] };
-    HOME_WIDGET_DEFS.forEach((def) => {
-      const w = homeLayout.widgets[def.id];
-      if (!w?.enabled) return;
-      const zone = zones[w.zone] ? w.zone : def.defaultZone;
-      zones[zone].push({ def, variant: w.variant || def.defaultVariant });
-    });
-    return zones;
-  })();
+  const widgetsByZone = {
+    bottomLeft: homeLayout ? listHomeWidgetsInZone(homeLayout, 'bottomLeft') : [],
+    bottomRight: homeLayout ? listHomeWidgetsInZone(homeLayout, 'bottomRight') : []
+  };
 
   // ✅ Load swipe navigation settings from localStorage
   const [swipeSettings, setSwipeSettings] = useState(() => getSettings());
@@ -694,7 +689,7 @@ const HomePage = () => {
     }, 200);
   };
 
-  const homeWidgetCtx = {
+  const homeWidgetCtxBase = {
     accent: homeAccent,
     metrics: homeLayout?.metrics,
     xpOptions: homeLayout?.xpOptions,
@@ -1119,52 +1114,49 @@ const HomePage = () => {
         </div>
       </footer>
       ) : (
-      <>
-        {widgetsByZone.left.length > 0 ? (
-          <aside className="relative z-0 order-first flex w-full shrink-0 flex-col gap-2 px-4 md:absolute md:bottom-28 md:left-8 md:top-auto md:z-20 md:w-64 md:px-0 xl:left-10">
-            {widgetsByZone.left.map(({ def, variant }) =>
-              renderHomeWidget(def, variant, homeWidgetCtx)
-            )}
-          </aside>
-        ) : null}
         <footer
-          className="relative z-0 grid shrink-0 grid-cols-[minmax(0,1fr)_auto] items-end gap-3 px-4 pb-6 pt-0 md:flex md:flex-row md:items-end md:justify-between md:gap-8 md:px-8 md:pb-12"
+          className="relative z-0 grid shrink-0 grid-cols-1 items-end gap-4 px-4 pb-6 pt-0 sm:grid-cols-[minmax(0,1.4fr)_minmax(0,0.9fr)] md:gap-8 md:px-8 md:pb-12"
           style={{ minHeight: 'fit-content', ['--home-ac']: homeAccent }}
         >
-          <div className="flex w-full min-h-0 max-h-[40vh] flex-col gap-2 overflow-auto self-start md:max-h-none md:max-w-2xl md:overflow-visible">
+          <div className="flex w-full min-h-0 max-h-[42vh] flex-col gap-2 overflow-auto self-start md:max-h-none md:overflow-visible">
             {widgetsByZone.bottomLeft.map(({ def, variant }) =>
-              renderHomeWidget(def, variant, homeWidgetCtx)
+              renderHomeWidget(def, variant, { ...homeWidgetCtxBase, zone: 'bottomLeft' })
             )}
           </div>
           <div
-            className="flex w-auto flex-shrink-0 flex-col items-end gap-2 text-right"
+            className="flex w-full flex-shrink-0 flex-col items-end gap-2 text-right"
             style={{ minHeight: 'fit-content' }}
           >
             {widgetsByZone.bottomRight.map(({ def, variant }) =>
-              renderHomeWidget(def, variant, homeWidgetCtx)
+              renderHomeWidget(def, variant, { ...homeWidgetCtxBase, zone: 'bottomRight' })
             )}
-            {showKeywords ? (
+            {(showKeywords || showLocation) && (
               <div
                 className="space-y-0.5 text-xs font-semibold text-white md:space-y-2 md:text-base"
                 style={{ textShadow: '1px 1px 2px rgba(0,0,0,0.7)' }}
               >
-                <div>{t('home.keywords.fitness')}</div>
-                <div>{t('home.keywords.performance')}</div>
-                <div>{t('home.keywords.progress')}</div>
-                <div>{t('home.keywords.intelligence')}</div>
-                <div>{t('home.keywords.startTransformation')}</div>
-                <div>{userLocation}</div>
+                {showKeywords ? (
+                  <>
+                    <div>{t('home.keywords.fitness')}</div>
+                    <div>{t('home.keywords.performance')}</div>
+                    <div>{t('home.keywords.progress')}</div>
+                    <div>{t('home.keywords.intelligence')}</div>
+                    <div>{t('home.keywords.startTransformation')}</div>
+                  </>
+                ) : null}
+                {showLocation ? <div>{userLocation}</div> : null}
+              </div>
+            )}
+            {showLanguage ? (
+              <div
+                className="mt-1 flex h-[44px] w-[44px] flex-shrink-0 items-center justify-end md:mt-2"
+                data-swipe-ignore
+              >
+                <LanguageSelector variant="compact" />
               </div>
             ) : null}
-            <div
-              className="mt-1 flex h-[44px] w-[44px] flex-shrink-0 items-center justify-end md:mt-2"
-              data-swipe-ignore
-            >
-              <LanguageSelector variant="compact" />
-            </div>
           </div>
         </footer>
-      </>
       )}
       </div>
       </>

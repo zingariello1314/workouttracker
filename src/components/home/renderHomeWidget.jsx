@@ -7,10 +7,10 @@ import HomeTodayExercisesWidget from './widgets/HomeTodayExercisesWidget';
 import HomeStatsWidget from './widgets/HomeStatsWidget';
 
 /**
- * Rend un widget accueil depuis le registre (id + variante + config layout).
+ * Rend un widget accueil depuis le registre (id + variante + zone + config).
  */
 export function renderHomeWidget(def, variant, ctx) {
-  const { accent, metrics, xpOptions, t, isAuthenticated, onAboutCta } = ctx;
+  const { accent, metrics, xpOptions, t, isAuthenticated, onAboutCta, zone } = ctx;
 
   switch (def.id) {
     case 'about':
@@ -31,6 +31,7 @@ export function renderHomeWidget(def, variant, ctx) {
           variant={variant}
           accent={accent}
           xpOptions={xpOptions}
+          zone={zone}
         />
       );
     case 'month':

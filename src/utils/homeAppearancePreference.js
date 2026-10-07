@@ -44,8 +44,8 @@ export const HOME_NAV_STYLES = [
 
 export const HOME_NAV_LAYOUTS = [
   { id: 'row', label: 'Une ligne', hint: 'Comme aujourd’hui (desktop)' },
-  { id: 'wrap', label: 'Plusieurs lignes', hint: 'Retour à la ligne fluide' },
-  { id: 'stack', label: 'Colonne', hint: 'Les uns sous les autres' }
+  { id: 'wrap', label: 'Plusieurs lignes', hint: 'Retour à la ligne, ancré à droite' },
+  { id: 'stack', label: 'Colonne', hint: 'Empilés à droite, sans pousser le contenu' }
 ];
 
 export const HOME_ACCENTS = [
@@ -56,6 +56,14 @@ export const HOME_ACCENTS = [
   { id: 'argent', label: 'Argent', hex: '#cdd3e2' }
 ];
 
+/** Uniquement bas gauche / bas droite — pas de colonne latérale. */
+export const HOME_ZONES = ['bottomLeft', 'bottomRight'];
+
+export const HOME_ZONE_LABELS = {
+  bottomLeft: 'Bas gauche',
+  bottomRight: 'Bas droite'
+};
+
 export const HOME_WIDGET_DEFS = [
   {
     id: 'about',
@@ -65,10 +73,11 @@ export const HOME_WIDGET_DEFS = [
       { id: 'full', label: 'Complet' },
       { id: 'short', label: 'Court' }
     ],
-    zones: ['left', 'bottomLeft', 'bottomRight'],
+    zones: [...HOME_ZONES],
     defaultZone: 'bottomLeft',
     defaultVariant: 'full',
-    defaultEnabled: true
+    defaultEnabled: true,
+    defaultOrder: 10
   },
   {
     id: 'xpBar',
@@ -79,36 +88,11 @@ export const HOME_WIDGET_DEFS = [
       { id: 'compact', label: 'Compact' },
       { id: 'detailed', label: 'Détaillé' }
     ],
-    zones: ['left', 'bottomLeft', 'bottomRight'],
+    zones: [...HOME_ZONES],
     defaultZone: 'bottomRight',
     defaultVariant: 'compact',
-    defaultEnabled: false
-  },
-  {
-    id: 'month',
-    title: 'Mois en cours',
-    description: 'Calendrier ou bandeau des jours entraînés',
-    variants: [
-      { id: 'minimal', label: 'Minimal' },
-      { id: 'calendar', label: 'Calendrier' }
-    ],
-    zones: ['left', 'bottomLeft', 'bottomRight'],
-    defaultZone: 'bottomLeft',
-    defaultVariant: 'calendar',
-    defaultEnabled: false
-  },
-  {
-    id: 'week',
-    title: 'Semaine en cours',
-    description: '7 tuiles ou pastilles de la semaine',
-    variants: [
-      { id: 'band', label: 'Bandeau' },
-      { id: 'dots', label: 'Points' }
-    ],
-    zones: ['left', 'bottomLeft', 'bottomRight'],
-    defaultZone: 'bottomRight',
-    defaultVariant: 'dots',
-    defaultEnabled: false
+    defaultEnabled: false,
+    defaultOrder: 20
   },
   {
     id: 'todayExercises',
@@ -118,10 +102,39 @@ export const HOME_WIDGET_DEFS = [
       { id: 'full', label: 'Complet' },
       { id: 'checks', label: 'Coches seules' }
     ],
-    zones: ['left', 'bottomLeft', 'bottomRight'],
-    defaultZone: 'left',
+    zones: [...HOME_ZONES],
+    defaultZone: 'bottomLeft',
     defaultVariant: 'full',
-    defaultEnabled: false
+    defaultEnabled: false,
+    defaultOrder: 30
+  },
+  {
+    id: 'month',
+    title: 'Mois en cours',
+    description: 'Calendrier ou bandeau des jours entraînés',
+    variants: [
+      { id: 'minimal', label: 'Minimal' },
+      { id: 'calendar', label: 'Calendrier' }
+    ],
+    zones: [...HOME_ZONES],
+    defaultZone: 'bottomLeft',
+    defaultVariant: 'calendar',
+    defaultEnabled: false,
+    defaultOrder: 40
+  },
+  {
+    id: 'week',
+    title: 'Semaine en cours',
+    description: '7 tuiles ou pastilles de la semaine',
+    variants: [
+      { id: 'band', label: 'Bandeau' },
+      { id: 'dots', label: 'Points' }
+    ],
+    zones: [...HOME_ZONES],
+    defaultZone: 'bottomRight',
+    defaultVariant: 'dots',
+    defaultEnabled: false,
+    defaultOrder: 50
   },
   {
     id: 'stats',
@@ -131,18 +144,13 @@ export const HOME_WIDGET_DEFS = [
       { id: 'grid', label: 'Grille' },
       { id: 'row', label: 'Ligne' }
     ],
-    zones: ['left', 'bottomLeft', 'bottomRight'],
+    zones: [...HOME_ZONES],
     defaultZone: 'bottomRight',
     defaultVariant: 'grid',
-    defaultEnabled: false
+    defaultEnabled: false,
+    defaultOrder: 60
   }
 ];
-
-export const HOME_ZONE_LABELS = {
-  left: 'Gauche',
-  bottomLeft: 'Bas gauche',
-  bottomRight: 'Bas droite'
-};
 
 export const HOME_METRIC_DEFS = [
   { id: 'reps', label: 'Reps', tone: 'accent' },
@@ -174,10 +182,18 @@ function defaultWidgets() {
     out[def.id] = {
       enabled: def.defaultEnabled === true,
       zone: def.defaultZone,
-      variant: def.defaultVariant
+      variant: def.defaultVariant,
+      order: def.defaultOrder
     };
   });
   return out;
+}
+
+function migrateZone(zone, fallback) {
+  if (zone === 'bottomLeft' || zone === 'bottomRight') return zone;
+  /* Anciennes zones left/right → bas gauche */
+  if (zone === 'left' || zone === 'right') return 'bottomLeft';
+  return fallback;
 }
 
 /** Config visuelle « modèle de base » = accueil actuel Momentum. */
@@ -188,6 +204,8 @@ export function stockHomeLayoutConfig() {
     navOrder: [...HOME_NAV_TAB_IDS],
     showRobot: true,
     showKeywords: true,
+    showLocation: true,
+    showLanguage: true,
     accentId: 'violet',
     metrics: defaultMetrics(),
     xpOptions: defaultXpOptions(),
@@ -231,10 +249,13 @@ function normalizeLayoutConfig(raw) {
     HOME_WIDGET_DEFS.forEach((def) => {
       const w = raw.widgets[def.id];
       if (!w || typeof w !== 'object') return;
+      const order =
+        typeof w.order === 'number' && Number.isFinite(w.order) ? w.order : def.defaultOrder;
       widgets[def.id] = {
         enabled: typeof w.enabled === 'boolean' ? w.enabled : def.defaultEnabled === true,
-        zone: def.zones.includes(w.zone) ? w.zone : def.defaultZone,
-        variant: def.variants.some((v) => v.id === w.variant) ? w.variant : def.defaultVariant
+        zone: migrateZone(w.zone, def.defaultZone),
+        variant: def.variants.some((v) => v.id === w.variant) ? w.variant : def.defaultVariant,
+        order
       };
     });
   }
@@ -259,6 +280,8 @@ function normalizeLayoutConfig(raw) {
     navOrder: normalizeNavOrder(raw.navOrder),
     showRobot: raw.showRobot !== false,
     showKeywords: raw.showKeywords !== false,
+    showLocation: raw.showLocation !== false,
+    showLanguage: raw.showLanguage !== false,
     accentId,
     metrics,
     xpOptions,
@@ -410,9 +433,24 @@ export function applyHomePresetBuiltin(kind) {
       widgets: {
         ...stock.widgets,
         about: { ...stock.widgets.about, enabled: false },
-        xpBar: { enabled: true, zone: 'bottomRight', variant: 'compact' },
-        month: { enabled: true, zone: 'bottomLeft', variant: 'calendar' },
-        todayExercises: { enabled: true, zone: 'left', variant: 'full' }
+        todayExercises: {
+          enabled: true,
+          zone: 'bottomLeft',
+          variant: 'full',
+          order: 10
+        },
+        month: {
+          enabled: true,
+          zone: 'bottomLeft',
+          variant: 'calendar',
+          order: 20
+        },
+        xpBar: {
+          enabled: true,
+          zone: 'bottomRight',
+          variant: 'compact',
+          order: 10
+        }
       }
     };
   } else if (kind === 'minimal') {
@@ -421,8 +459,18 @@ export function applyHomePresetBuiltin(kind) {
       widgets: {
         ...stock.widgets,
         about: { ...stock.widgets.about, enabled: false },
-        xpBar: { enabled: true, zone: 'bottomLeft', variant: 'minimal' },
-        week: { enabled: true, zone: 'bottomRight', variant: 'dots' }
+        xpBar: {
+          enabled: true,
+          zone: 'bottomLeft',
+          variant: 'minimal',
+          order: 10
+        },
+        week: {
+          enabled: true,
+          zone: 'bottomRight',
+          variant: 'dots',
+          order: 10
+        }
       }
     };
   }
@@ -430,9 +478,57 @@ export function applyHomePresetBuiltin(kind) {
   return writeStore(normalizeStore({ ...store, draft }));
 }
 
+/** Active un widget dans une zone (bouton + de l’aperçu). */
+export function enableHomeWidgetInZone(widgetId, zone) {
+  const def = HOME_WIDGET_DEFS.find((d) => d.id === widgetId);
+  if (!def || !HOME_ZONES.includes(zone)) return getHomeAppearanceStore();
+  const store = getHomeAppearanceStore();
+  const draft = store.draft || stockHomeLayoutConfig();
+  const peers = HOME_WIDGET_DEFS.filter(
+    (d) => draft.widgets[d.id]?.enabled && draft.widgets[d.id]?.zone === zone
+  );
+  const maxOrder = peers.reduce((m, d) => Math.max(m, draft.widgets[d.id]?.order ?? 0), 0);
+  return writeStore(
+    normalizeStore({
+      ...store,
+      draft: {
+        ...draft,
+        widgets: {
+          ...draft.widgets,
+          [widgetId]: {
+            ...draft.widgets[widgetId],
+            enabled: true,
+            zone,
+            variant: draft.widgets[widgetId]?.variant || def.defaultVariant,
+            order: maxOrder + 10
+          }
+        }
+      }
+    })
+  );
+}
+
 export function resolveHomeAccentHex(config) {
   const id = config?.accentId || 'violet';
   return HOME_ACCENTS.find((a) => a.id === id)?.hex || '#a06bff';
+}
+
+/** Widgets actifs d’une zone, triés. */
+export function listHomeWidgetsInZone(layout, zone) {
+  if (!layout?.widgets || !HOME_ZONES.includes(zone)) return [];
+  return HOME_WIDGET_DEFS.map((def) => {
+    const w = layout.widgets[def.id];
+    if (!w?.enabled) return null;
+    const z = migrateZone(w.zone, def.defaultZone);
+    if (z !== zone) return null;
+    return {
+      def,
+      variant: w.variant || def.defaultVariant,
+      order: typeof w.order === 'number' ? w.order : def.defaultOrder
+    };
+  })
+    .filter(Boolean)
+    .sort((a, b) => a.order - b.order || a.def.defaultOrder - b.def.defaultOrder);
 }
 
 export function subscribeHomeAppearance(listener) {
