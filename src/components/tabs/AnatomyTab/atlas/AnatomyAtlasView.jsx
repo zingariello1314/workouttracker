@@ -101,6 +101,10 @@ export default function AnatomyAtlasView() {
     return () => {
       document.removeEventListener('fullscreenchange', syncFs);
       document.removeEventListener('webkitfullscreenchange', syncFs);
+      const el = embedRef.current;
+      if (el && getFullscreenElement() === el) {
+        exitDocumentFullscreen().catch(() => {});
+      }
     };
   }, []);
 
